@@ -2624,3 +2624,10 @@ Calls the lanes made without a ruling:
   except while a redo is pending: then nothing is drawn into, so undo can step past the group's making and a redo
   brings it back. A shape drawn in that wait is unmirrored, and the fresh group comes after it. Turning symmetry off
   when its group went was the alternative.
+
+## Audit round thirty-five (2026-11-17): draw's surfaces
+
+- 2026-11-17 (the fixer's call): a command-row asset shown as a panel (Simplify and Offset, Fillet, Undo, and the
+  rest of the row) has no hide button, since the View menu lists none of the command row and only Preferences
+  could bring it back. Hiding one stays in Preferences. Listing the command row's assets in the View menu was the
+  alternative.

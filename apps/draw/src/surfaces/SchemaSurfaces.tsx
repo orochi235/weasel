@@ -26,7 +26,9 @@ export function useAssetBinding(asset: SurfaceAsset): SchemaBinding {
 /** Where the menu surface puts its switch among the asset's own children: a key no asset uses. */
 const SWITCH_KEY = '$surface';
 
-/** A schema asset drawn as a right-sidebar panel, its header offering the other surfaces. */
+/** A schema asset drawn as a right-sidebar panel, its header offering the other surfaces. A command-row asset's
+ *  panel has no hide button: the View menu lists none of the command row (`CHROME_ITEMS`), so only Preferences could
+ *  show it again. */
 export function SchemaPanel({ asset, chrome, order }: { asset: SurfaceAsset; chrome: PanelChrome; order?: PrefOrder }) {
   const { values, onChange, title } = useAssetBinding(asset);
   const tree = useMemo(() => nestPrefValues(values), [values]);
@@ -36,7 +38,7 @@ export function SchemaPanel({ asset, chrome, order }: { asset: SurfaceAsset; chr
       title={title ?? asset.label}
       collapsed={chrome.collapsed}
       onCollapsedChange={chrome.onToggleCollapse}
-      onHide={chrome.onHide}
+      {...(asset.row === 'command' ? {} : { onHide: chrome.onHide })}
       actions={<SurfaceSwitchButton asset={asset} current="panel" />}
     >
       <PrefsForm schema={schema} layout="list" values={tree} onChange={onChange ?? ignore} renderers={asset.renderers?.panel} />
