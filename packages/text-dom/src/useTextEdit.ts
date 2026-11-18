@@ -11,20 +11,18 @@ import type { TextStyle } from '@weasel-js/text';
 import { resolveTextStyle } from '@weasel-js/text';
 import { editEnd, imeKey, timerScheduler } from '@weasel-js/ui-input';
 import { historyKey } from '@weasel-js/gestures';
-import type { StyledRun } from '@weasel-js/text';
 import { domToRuns } from './domRuns';
 import { holdForFaces, installSelectionStyle, openingRange } from './overlayOpen';
 import { effectiveRangeStyle, type RangeStyle, type RunStylePatch } from '@weasel-js/text';
 import { armedOver, usePendingStyle } from './armedStyle';
 import { overlayHistory, type OverlayHistory, type OverlayState } from './overlayHistory';
-import { draftChanged, overlayDraft, writeEdit } from './overlayDraft';
+import { seedDraft, writeEdit, type EditDraft } from './overlayDraft';
 import { usePublishedRange } from './publishedRange';
 import { overlayTop } from './overlayFrame';
 import { mountOverlayBoxes, placeOverlay } from './overlayPlace';
 export { overlayTop };
 import { applyOverlayStyle } from './overlayStyle';
 import { useHeldNodeStyle } from './heldNodeStyle';
-import { seedOverlay, type CaretHolder } from './overlaySeed';
 import {
   readSelectionOffsets, writeRunsPreservingSelection,
 } from './overlaySelection';
@@ -55,11 +53,7 @@ export function useTextEdit(
   const tickRef = useRef<() => void>(() => {});
   const frameLoop = useVisibleRaf(() => { tickRef.current(); });
   const initialCaretRef = useRef<number | 'all'>('all');
-  /** What the overlay read back as when the edit opened, before any input. */
-  const openedRef = useRef<string | null>(null);
-  const sentRef = useRef(''); // the last draft sent, as JSON; before the first, the overlay as it opened
-  const holderRef = useRef<CaretHolder | null>(null);
-  const priorRunsRef = useRef<readonly StyledRun[] | undefined>(undefined); // the node's, as the edit opened
+  const draftRef = useRef<EditDraft | null>(null);
   const { pendingStyle, pendingRef, pendingAtRef, armPending, dropPending } = usePendingStyle();
   const historyRef = useRef<OverlayHistory | null>(null);
   const { selection, rangeStyle, selectionRef, publishRange, syncSelection, clearSelection } =
@@ -71,20 +65,13 @@ export function useTextEdit(
   const commit = useCallback(() => {
     const id = editingId;
     const overlay = overlayRef.current;
-    if (id == null || !overlay) return void setEditingId(null);
-    // Runs are written when the node already had them — or stale styling
-    // survives a Cmd-B that turned it off — or when the edit produced
-    // styling. A plain-text edit of a plain-text node commits text alone.
-    const read = domToRuns(overlay);
-    const style = nodeStyleRef.current;
-    // Compared untrimmed: a seeded trailing newline reads back the same at
-    // both ends, where the trimmed form would differ from the node's text.
-    if (!style && JSON.stringify(read) === openedRef.current) {
-      setEditingId(null);
-      return;
+    const draft = draftRef.current;
+    if (id == null || !overlay || !draft) return void setEditingId(null);
+    const edit = draft.finished(overlay, nodeStyleRef.current);
+    if (edit) {
+      holdNodeStyle(null);
+      writeEdit(optsRef.current, id, edit);
     }
-    holdNodeStyle(null);
-    writeEdit(optsRef.current, id, overlayDraft(read, holderRef.current, priorRunsRef.current, style));
     setEditingId(null);
   }, [editingId, optsRef, holdNodeStyle, setEditingId, nodeStyleRef]);
 
@@ -97,8 +84,8 @@ export function useTextEdit(
 
   const sendDraft = useCallback((overlay: HTMLElement) => {
     const id = editingIdRef.current;
-    const draft = overlayDraft(domToRuns(overlay), holderRef.current, priorRunsRef.current, nodeStyleRef.current);
-    if (id !== null && draftChanged(sentRef, draft)) optsRef.current.onInput?.(id, draft);
+    const draft = draftRef.current?.changed(overlay, nodeStyleRef.current);
+    if (id !== null && draft) optsRef.current.onInput?.(id, draft);
   }, [editingIdRef, optsRef, nodeStyleRef]);
 
   const { applyStyleToSelection, toggleStyle } = useSelectionStyling({
@@ -119,10 +106,8 @@ export function useTextEdit(
     overlay.setAttribute('contenteditable', 'true');
     overlay.spellcheck = false;
     baseRef.current = style;
-    const initialRuns = (priorRunsRef.current = optsRef.current.getRuns?.(editingId));
-    holderRef.current = seedOverlay(overlay, getText(editingId), initialRuns, style);
-    openedRef.current = JSON.stringify(domToRuns(overlay));
-    sentRef.current = JSON.stringify(overlayDraft(domToRuns(overlay), holderRef.current, initialRuns));
+    const initialRuns = optsRef.current.getRuns?.(editingId);
+    const draft = (draftRef.current = seedDraft(overlay, getText(editingId), initialRuns, style));
     applyOverlayStyle(overlay, style);
     const holdFor = optsRef.current.fontHold ?? TEXT_EDIT_FONT_HOLD;
     const hold = holdFor > 0 ? holdForFaces(style, initialRuns ?? []) : null;
@@ -187,12 +172,12 @@ export function useTextEdit(
     };
 
     const written = (range: TextEditSelection) => {
-      holderRef.current?.wrote(overlay, range.end);
+      draft.holder.wrote(overlay, range.end);
       dropPending();
       publishRange(overlay, range);
     };
     const edited = () => {
-      holderRef.current?.edited(overlay);
+      draft.holder.edited(overlay);
       place();
       boxes.scroller.reveal();
       sendDraft(overlay);
@@ -202,12 +187,12 @@ export function useTextEdit(
       read: (): OverlayState | null => {
         const at = readSelectionOffsets(overlay) ?? selectionRef.current;
         const runs = domToRuns(overlay);
-        return at && { runs: holderRef.current?.trim(runs) ?? runs, selection: at, style: nodeStyleRef.current };
+        return at && { runs: draft.holder.trim(runs), selection: at, style: nodeStyleRef.current };
       },
       write: ({ runs, selection: at, style: held }) => {
         const base = restyleNode(overlay, editingId, held);
         writeRunsPreservingSelection(overlay, runs, at.start, at.end, base);
-        holderRef.current?.reseed(runs);
+        draft.holder.reseed(runs);
         written(at);
         edited();
       },
