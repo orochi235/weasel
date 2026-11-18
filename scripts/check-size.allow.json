@@ -64,9 +64,6 @@
   "packages/guides/src/layout/strategies/tileGrid.ts": {
     "longestFunction": 281
   },
-  "packages/history/src/history.ts": {
-    "longestFunction": 347
-  },
   "packages/hud/src/attach.ts": {
     "longestFunction": 135
   },
