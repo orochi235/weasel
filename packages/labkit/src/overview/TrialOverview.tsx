@@ -295,9 +295,9 @@ function ChromeCanvas({
       const at = px(world.x, world.y * camera.frame.yDir);
       const { halo, bars } = crosshairRects(at.x, at.y, { x: 1, y: 1 });
       ctx.fillStyle = 'rgb(0 0 0 / 60%)';
-      for (const r of halo) ctx.fillRect(r.x, r.y, r.w, r.h);
+      for (const r of halo) ctx.fillRect(r.x, r.y, r.width, r.height);
       ctx.fillStyle = colors.crosshair;
-      for (const r of bars) ctx.fillRect(r.x, r.y, r.w, r.h);
+      for (const r of bars) ctx.fillRect(r.x, r.y, r.width, r.height);
     }
   });
   return <canvas ref={setCanvas} className="lk-overview__canvas lk-overview__chrome" />;

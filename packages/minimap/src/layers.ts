@@ -49,7 +49,7 @@ const HALO = 1;
 export const CROSSHAIR_HALO = 'rgba(0, 0, 0, 0.6)';
 
 /** An axis-aligned rect, `{ x, y, w, h }`. */
-export interface CrosshairRect { x: number; y: number; w: number; h: number }
+export interface CrosshairRect { x: number; y: number; width: number; height: number }
 
 /**
  * The linked crosshair at (`x`, `y`) as rects in the caller's units, where one
@@ -62,13 +62,13 @@ export function crosshairRects(
 ): { halo: CrosshairRect[]; bars: CrosshairRect[] } {
   const kx = Math.abs(unitsPerPx.x), ky = Math.abs(unitsPerPx.y);
   const bars: CrosshairRect[] = [
-    { x: x - (GAP + ARM) * kx, y: y - (THICK / 2) * ky, w: ARM * kx, h: THICK * ky },
-    { x: x + GAP * kx, y: y - (THICK / 2) * ky, w: ARM * kx, h: THICK * ky },
-    { x: x - (THICK / 2) * kx, y: y - (GAP + ARM) * ky, w: THICK * kx, h: ARM * ky },
-    { x: x - (THICK / 2) * kx, y: y + GAP * ky, w: THICK * kx, h: ARM * ky },
+    { x: x - (GAP + ARM) * kx, y: y - (THICK / 2) * ky, width: ARM * kx, height: THICK * ky },
+    { x: x + GAP * kx, y: y - (THICK / 2) * ky, width: ARM * kx, height: THICK * ky },
+    { x: x - (THICK / 2) * kx, y: y - (GAP + ARM) * ky, width: THICK * kx, height: ARM * ky },
+    { x: x - (THICK / 2) * kx, y: y + GAP * ky, width: THICK * kx, height: ARM * ky },
   ];
   const hx = HALO * kx, hy = HALO * ky;
-  const halo = bars.map((b) => ({ x: b.x - hx, y: b.y - hy, w: b.w + 2 * hx, h: b.h + 2 * hy }));
+  const halo = bars.map((b) => ({ x: b.x - hx, y: b.y - hy, width: b.width + 2 * hx, height: b.height + 2 * hy }));
   return { halo, bars };
 }
 
@@ -94,7 +94,7 @@ export function createLinkedCursorLayer(opts: {
       const { halo, bars } = crosshairRects(p.world.x, p.world.y, { x: 1 / view.scale.x, y: 1 / view.scale.y });
       const rect = (r: CrosshairRect, c: string): DrawCommand => ({
         kind: 'path',
-        path: { kind: 'rect', x: r.x, y: r.y, width: r.w, height: r.h },
+        path: { kind: 'rect', ...r },
         fill: { paint: { kind: 'solid', color: c } },
       });
       const accent = color();

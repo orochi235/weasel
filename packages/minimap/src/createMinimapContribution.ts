@@ -138,7 +138,7 @@ export function createMinimapContribution<TData = unknown, TLayer extends string
   // under a live fit the overrides and scroll offsets — as it is read on every
   // frame and every event.
   let cached: {
-    scene: unknown; descriptor: unknown; version: number; shown: number; scrolled: number; w: number; h: number; view: View;
+    scene: unknown; descriptor: unknown; version: number; shown: number; scrolled: number; width: number; height: number; view: View;
   } | null = null;
   const fitCamera = (outer: View, dims: Dims): View => {
     const scene = deps?.get('scene') as Scene<unknown, string, unknown> | undefined;
@@ -150,11 +150,11 @@ export function createMinimapContribution<TData = unknown, TLayer extends string
     const scrolled = fit === 'live' ? scene.scroll.getGeneration() : 0;
     const descriptor = (deps?.get('poseDescriptor') ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<unknown>;
     if (cached && cached.scene === scene && cached.descriptor === descriptor && cached.version === version
-        && cached.shown === shown && cached.scrolled === scrolled && cached.w === r.w && cached.h === r.h) {
+        && cached.shown === shown && cached.scrolled === scrolled && cached.width === r.w && cached.height === r.h) {
       return cached.view;
     }
     const view = computeFitView(scene, { width: r.w, height: r.h }, fit, descriptor);
-    cached = { scene, descriptor, version, shown, scrolled, w: r.w, h: r.h, view };
+    cached = { scene, descriptor, version, shown, scrolled, width: r.w, height: r.h, view };
     return view;
   };
 
