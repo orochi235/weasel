@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, useContext, useMemo, useState } from 'react';
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
   type Action,
   ActionDisabledReason,
@@ -65,11 +65,16 @@ export interface LoupeProviderProps {
 /** Owns whether the loupe shows and the color it reads, for every control that shows them, and keeps the lens to
  *  them and to its mode and magnification, which are prefs. */
 export function LoupeProvider({ canvasRef, ready, source, children }: LoupeProviderProps) {
-  const [visible, setVisible] = useState(LOUPE_SCHEMA.children.on.default);
+  const [visible, setShown] = useState(LOUPE_SCHEMA.children.on.default);
   const [mode] = usePref('loupe.mode');
   const [factor] = usePref('loupe.factor');
   const settings = useMemo((): LoupeSettings => ({ visible, mode, factor }), [visible, mode, factor]);
   const [color, setColor] = useState<string | null>(null);
+  // A hidden lens reads nothing: the color it last read is not under any loupe now.
+  const setVisible = useCallback((v: boolean) => {
+    setShown(v);
+    if (!v) setColor(null);
+  }, []);
 
   const colorRef = useLatest(color);
   const copy = useMemo((): Action => ({
@@ -86,7 +91,7 @@ export function LoupeProvider({ canvasRef, ready, source, children }: LoupeProvi
   }), [colorRef]);
   useAction(copy);
 
-  const state = useMemo((): LoupeState => ({ ...settings, color, setVisible }), [settings, color]);
+  const state = useMemo((): LoupeState => ({ ...settings, color, setVisible }), [settings, color, setVisible]);
 
   return (
     <LoupeContext.Provider value={state}>
@@ -104,6 +109,8 @@ function LoupeLens({ canvasRef, source, settings, state, onColor }: {
   onColor: (hex: string | null) => void;
 }) {
   const hud = useHud(canvasRef, { font: 'sans-serif' });
+  // Unmounted, the lens reads nothing, and says so.
+  useEffect(() => () => onColor(null), [onColor]);
   const pickColor = usePickColor();
   useLoupe(canvasRef, hud, source, settings, {
     onColorChange: onColor,
