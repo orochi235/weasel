@@ -3,25 +3,20 @@ import {
   forwardRef,
   useCallback,
   useLayoutEffect,
-  useRef,
   useState,
-  type FocusEvent,
   type HTMLAttributes,
-  type KeyboardEvent,
-  type MouseEvent,
   type ReactNode,
   type Ref,
 } from 'react';
-import { isInControlWithin } from '@weasel-js/gestures';
 import { assignRef } from '@weasel-js/react';
 import { dropSide } from '@weasel-js/ui-input';
 import { LIST_ROLES, listMode } from '@weasel-js/ui-logic';
-import { modsOf, REORDER_SKIP, type ReorderGhost } from '../../useReorderDragList';
-import { useRowNavigation } from '../../useRowNavigation';
-import { untabControls, walkControls } from '../../rowControls';
+import { REORDER_SKIP, type ReorderGhost } from '../../useReorderDragList';
+import { untabControls } from '../../rowControls';
 import { DragGhost } from '../DragGhost';
 import type { HoldProps } from '../Disabled';
 import { useControlHold, type ControlHold } from '../Disabled/controlHold';
+import { useRowInput } from './useRowInput';
 import s from './ItemList.module.css';
 
 /** One row. `id` is the React key. */
@@ -147,33 +142,13 @@ export const ItemList = forwardRef(function ItemList(
     [ref],
   );
 
-  /** The element of each row that takes focus: the row itself, or in a grid its label cell. */
-  const targets = useRef(new Map<string, HTMLElement>());
-  const ranges = selectionMode === 'multiple' && onSelectRange !== undefined && looks;
-  const nav = useRowNavigation<HTMLDivElement>({
-    rows,
-    isSelected: (id) => !!rows.find((r) => r.id === id)?.selected,
-    target: (id) => targets.current.get(id),
-    anchorOnFocus: true,
-    ...(ranges ? {
-      onExtend: (to: string, from: string) => {
-        let at = rows.findIndex((r) => r.id === nav.anchor.current);
-        if (at < 0) {
-          nav.anchor.current = from;
-          at = rows.findIndex((r) => r.id === from);
-        }
-        const end = rows.findIndex((r) => r.id === to);
-        onSelectRange(rows.slice(Math.min(at, end), Math.max(at, end) + 1).map((r) => r.id));
-      },
-    } : {}),
-    ...(onNudge && !hold.refuses ? { onNudge: (id: string, delta: -1 | 1) => onNudge(id, rows.findIndex((r) => r.id === id), delta) } : {}),
-    onAction: (id, mods) => {
-      nav.anchor.current = id;
-      if (looks) onAction?.(id, rows.findIndex((r) => r.id === id), mods);
-    },
+  const input = useRowInput({
+    rows, mode, looks, moves: !hold.refuses,
+    ranges: selectionMode === 'multiple' && onSelectRange !== undefined && looks,
+    onAction, onNudge, onSelectRange,
   });
 
-  useUntabbedTrailing(mode === 'grid', targets.current);
+  useUntabbedTrailing(mode === 'grid', input.targets);
 
   const cls = [s.list, className].filter(Boolean).join(' ');
   if (rows.length === 0) {
@@ -183,51 +158,6 @@ export const ItemList = forwardRef(function ItemList(
       </div>
     );
   }
-
-  const onKeyDown = (row: ItemListRow, i: number) => (e: KeyboardEvent<HTMLDivElement>) => {
-    row.rowProps?.onKeyDown?.(e);
-    if (e.defaultPrevented) return;
-    const target = targets.current.get(row.id);
-    if (!target) return;
-    const onTarget = e.target === target;
-    const controlCell = mode === 'grid'
-      ? e.currentTarget.querySelector<HTMLElement>(`.${s.trailing}`)
-      : null;
-    if (!onTarget && !controlCell?.contains(e.target as Node)) return;
-
-    if (onTarget && nav.onKeyDown(row.id, e)) return;
-    switch (e.key) {
-      case 'ArrowDown':
-      case 'ArrowUp':
-        // From a row's controls, Up and Down still move between rows.
-        e.preventDefault();
-        nav.go(row.id, i + (e.key === 'ArrowDown' ? 1 : -1), e.shiftKey);
-        return;
-      case 'ArrowRight':
-      case 'ArrowLeft':
-      case 'Escape':
-        if (controlCell) walkControls(e, controlCell, target, onTarget);
-        return;
-      default:
-    }
-  };
-
-  const onClick = (row: ItemListRow, i: number) => (e: MouseEvent<HTMLDivElement>) => {
-    row.rowProps?.onClick?.(e);
-    if (e.defaultPrevented || isInControlWithin(e.target, e.currentTarget)) return;
-    nav.anchor.current = row.id;
-    if (looks) onAction?.(row.id, i, modsOf(e));
-  };
-
-  const onFocus = (row: ItemListRow) => (e: FocusEvent<HTMLDivElement>) => {
-    row.rowProps?.onFocus?.(e);
-    if (e.target === targets.current.get(row.id)) nav.onFocus(row.id);
-  };
-
-  const targetRef = (id: string) => (el: HTMLElement | null) => {
-    if (el) targets.current.set(id, el);
-    else targets.current.delete(id);
-  };
 
   const trailingColumn = mode === 'grid' && rows.some((row) => row.trailing != null);
   const roles = LIST_ROLES[mode];
@@ -246,7 +176,7 @@ export const ItemList = forwardRef(function ItemList(
         <DragGhost at={ghost} from={container}><GhostRows rows={rows} ids={ghost.ids} /></DragGhost>
       ) : null}
       {rows.map((row, i) => {
-        const tabIndex = interactive ? (row.id === nav.tabStop && hold.access.reachable ? 0 : -1) : undefined;
+        const tabIndex = interactive ? (row.id === input.tabStop && hold.access.reachable ? 0 : -1) : undefined;
         const content = (
           <>
             {row.leading}
@@ -266,20 +196,20 @@ export const ItemList = forwardRef(function ItemList(
             role={roles.row}
             aria-selected={selectionMode && mode !== 'list' ? !!row.selected : undefined}
             ref={(el) => {
-              nav.rowRef(row.id)(el);
-              if (mode === 'listbox') targetRef(row.id)(el);
+              input.rowRef(row.id)(el);
+              if (mode === 'listbox') input.targetRef(row.id)(el);
             }}
             tabIndex={mode === 'listbox' ? tabIndex : row.rowProps?.tabIndex}
-            onKeyDown={interactive ? onKeyDown(row, i) : row.rowProps?.onKeyDown}
-            onClick={interactive ? onClick(row, i) : row.rowProps?.onClick}
-            onFocus={interactive ? onFocus(row) : row.rowProps?.onFocus}
+            onKeyDown={interactive ? input.onKeyDown(row, i) : row.rowProps?.onKeyDown}
+            onClick={interactive ? input.onClick(row, i) : row.rowProps?.onClick}
+            onFocus={interactive ? input.onFocus(row) : row.rowProps?.onFocus}
             data-drop={dropSide(dropIndex, i, rows.length)}
             data-dragging={row.dragging ? 'true' : undefined}
             {...(interactive ? rowHold(hold) : {})}
           >
             {mode === 'grid' ? (
               <>
-                <div role="gridcell" className={s.cell} ref={targetRef(row.id)} tabIndex={tabIndex}>
+                <div role="gridcell" className={s.cell} ref={input.targetRef(row.id)} tabIndex={tabIndex}>
                   {content}
                 </div>
                 {trailingColumn && (
