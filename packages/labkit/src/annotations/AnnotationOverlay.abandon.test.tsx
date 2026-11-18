@@ -72,7 +72,7 @@ function surfaceFor(clears: SurfaceClear[]): SurfaceHandle {
       return () => {};
     },
     registerPainter: (_id, paint: TilePainter) => {
-      paint({ x: 0, y: 0, w: 100, h: 50 }, { visible: new Map() } as never);
+      paint({ x: 0, y: 0, width: 100, height: 50 }, { visible: new Map() } as never);
       return () => {};
     },
     containerRef: () => {},
@@ -86,7 +86,7 @@ function surfaceFor(clears: SurfaceClear[]): SurfaceHandle {
 const target: AnnotationTarget = {
   id: 'pane',
   ref: { current: null },
-  content: { w: 100, h: 50 },
+  content: { width: 100, height: 50 },
   positionDependsOn: ['k'],
 };
 

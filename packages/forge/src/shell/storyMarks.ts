@@ -15,7 +15,7 @@ function documentCss(doc: Document): string {
 /** Where a story host's content is: the box its scroller scrolls, and the part of that the host shows. */
 export interface StoryBox {
   /** The scrolled content's size, never smaller than the host's own box. */
-  content: { w: number; h: number };
+  content: { width: number; height: number };
   /** The host's layout box, at the scroller's offset into the content. */
   shown: ContentWindow;
 }
@@ -29,8 +29,8 @@ export function storyBox(host: HTMLElement | null): StoryBox {
   const h = Math.max(1, host?.offsetHeight ?? 0);
   const scroller = host?.querySelector<HTMLElement>(':scope > .fg-story__scroll') ?? null;
   return {
-    content: { w: Math.max(w, scroller?.scrollWidth ?? 0), h: Math.max(h, scroller?.scrollHeight ?? 0) },
-    shown: { x: scroller?.scrollLeft ?? 0, y: scroller?.scrollTop ?? 0, w, h },
+    content: { width: Math.max(w, scroller?.scrollWidth ?? 0), height: Math.max(h, scroller?.scrollHeight ?? 0) },
+    shown: { x: scroller?.scrollLeft ?? 0, y: scroller?.scrollTop ?? 0, width: w, height: h },
   };
 }
 
@@ -43,7 +43,7 @@ export function storyBox(host: HTMLElement | null): StoryBox {
  */
 export function captureHost(host: HTMLElement): Extract<CaptureSource, { kind: 'svg' }> {
   const doc = host.ownerDocument;
-  const { w, h } = storyBox(host).content;
+  const { width: w, height: h } = storyBox(host).content;
   const root = doc.createElement('div');
   root.setAttribute('data-fg-capture', '');
   const tokens = scanCssVars(doc, undefined, host)

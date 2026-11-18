@@ -7,7 +7,7 @@ const mark = (kind: AnnotationKind, extra: Partial<Annotation> = {}): Annotation
   id: `t/${Math.random()}`,
   target: 't',
   kind,
-  frac: { x: 0, y: 0, w: 0.1, h: 0.1 },
+  frac: { x: 0, y: 0, width: 0.1, height: 0.1 },
   ...extra,
 });
 

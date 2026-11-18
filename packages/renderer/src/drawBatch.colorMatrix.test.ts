@@ -51,7 +51,7 @@ describe('renderer — a group color matrix and the run', () => {
   const rect = (x: number, color = '#ff0000'): DrawCommand => ({
     kind: 'path', path: { kind: 'rect', x, y: 0, width: 10, height: 10 }, fill: { paint: { color } },
   });
-  const img = (x: number): DrawCommand => ({ kind: 'image', image: atlas, x, y: 0, w: 16, h: 16 });
+  const img = (x: number): DrawCommand => ({ kind: 'image', image: atlas, x, y: 0, width: 16, height: 16 });
   const gradient = (x: number, opacity?: number): DrawCommand => ({
     kind: 'path',
     path: { kind: 'rect', x, y: 0, width: 10, height: 10 },

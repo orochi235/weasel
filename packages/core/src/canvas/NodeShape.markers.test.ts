@@ -8,7 +8,7 @@ const LINE: PolygonPath = {
   coords: new Float32Array([0, 0, 100, 0]),
   fillRule: 'nonzero',
 };
-const POSE = { x: 0, y: 0, w: 100, h: 1, rotation: 0 };
+const POSE = { x: 0, y: 0, width: 100, height: 1, rotation: 0 };
 
 function nodeWith(stroke: unknown) {
   return { id: 'n1', data: { path: LINE, fill: null, stroke } } as never;

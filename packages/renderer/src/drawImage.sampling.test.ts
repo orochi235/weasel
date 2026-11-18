@@ -36,7 +36,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
   it('sets NEAREST mag filter for sampling:"nearest" image draws', () => {
     const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
     const cmd: DrawCommand = {
-      kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 64, h: 64, sampling: 'nearest',
+      kind: 'image', image: fakeBitmap, x: 0, y: 0, width: 64, height: 64, sampling: 'nearest',
     };
     r.render([cmd]);
     const magCalls = recorder.calls.filter(
@@ -51,12 +51,12 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
     // this fails if drawImage stops setting the filter — which the naive
     // version of this test could not detect.
     const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
-    r.render([{ kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 64, h: 64 }]);
+    r.render([{ kind: 'image', image: fakeBitmap, x: 0, y: 0, width: 64, height: 64 }]);
     recorder.reset();
 
     r.render([
-      { kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 64, h: 64, sampling: 'nearest' },
-      { kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 64, h: 64 },
+      { kind: 'image', image: fakeBitmap, x: 0, y: 0, width: 64, height: 64, sampling: 'nearest' },
+      { kind: 'image', image: fakeBitmap, x: 0, y: 0, width: 64, height: 64 },
     ]);
     expect(recorder.calls.filter((c) => c.name === 'drawElements').map((c) => c.args[1])).toEqual([6, 6]);
     const magFilters = recorder.calls
@@ -75,12 +75,12 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
     const unregister = registerOwnDrawPaint();
     const breaker = ownDrawRect(0, 0, 8);
     const img = {
-      kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, w: 64, h: 64,
+      kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, width: 64, height: 64,
       sampling: 'nearest' as const,
     };
     // Warm the bitmap's cache first: its upload writes a MAG_FILTER of its own,
     // which this test would otherwise count as a filter change.
-    r.render([{ kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 64, h: 64 }, breaker]);
+    r.render([{ kind: 'image', image: fakeBitmap, x: 0, y: 0, width: 64, height: 64 }, breaker]);
     recorder.reset();
 
     r.render([img, breaker, img, breaker, img, breaker, img]);
@@ -100,8 +100,8 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
     // both ways however many slots the run has left.
     const a = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
     r.render([
-      { kind: 'image', image: a, x: 0, y: 0, w: 16, h: 16, sampling: 'nearest' },
-      { kind: 'image', image: a, x: 0, y: 0, w: 16, h: 16, sampling: 'linear' },
+      { kind: 'image', image: a, x: 0, y: 0, width: 16, height: 16, sampling: 'nearest' },
+      { kind: 'image', image: a, x: 0, y: 0, width: 16, height: 16, sampling: 'linear' },
     ]);
     // Replayed rather than counted: creating a slot binds its VAO too, so the
     // bind that matters is whichever was live when the draw went out.
@@ -120,7 +120,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
   // buffers, which cost 5.4 us a draw. See tests/perf/image-quad.spec.ts.
   it('mints no GL objects for an image draw once every ring slot exists', () => {
     const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
-    const img = { kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, w: 16, h: 16 };
+    const img = { kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, width: 16, height: 16 };
     // Slots are created on first use and sized in tiers, so warming means a
     // full turn at each run length this test then draws. Nothing about it is
     // per-frame — it stops after one turn.
@@ -138,8 +138,8 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
   it('frees the ring slots it took on dispose', () => {
     const a = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
     r.render([
-      { kind: 'image', image: a, x: 0, y: 0, w: 16, h: 16, sampling: 'nearest' },
-      { kind: 'image', image: a, x: 0, y: 0, w: 16, h: 16, sampling: 'linear' },
+      { kind: 'image', image: a, x: 0, y: 0, width: 16, height: 16, sampling: 'nearest' },
+      { kind: 'image', image: a, x: 0, y: 0, width: 16, height: 16, sampling: 'linear' },
     ]);
     recorder.reset();
 

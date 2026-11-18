@@ -18,7 +18,7 @@ import { useEffect } from 'react';
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };
 
-const PANEL = { x: 100, y: 0, w: 100, h: 100 };
+const PANEL = { x: 100, y: 0, width: 100, height: 100 };
 const PANEL_VIEW: View = { x: 0, y: 0, scale: { x: 8, y: 8 } };
 
 beforeAll(() => {

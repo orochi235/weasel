@@ -22,7 +22,7 @@ void main() { ${body} }
 }
 
 function shader(program: ShaderProgramHandle, uniforms: Record<string, ShaderUniform>): DrawCommand {
-  return { kind: 'shader', program, uniforms, bounds: { x: 0, y: 0, w: 10, h: 10 } };
+  return { kind: 'shader', program, uniforms, bounds: { x: 0, y: 0, width: 10, height: 10 } };
 }
 
 /** The location the recorder handed back for `name`, most recent first. */

@@ -17,7 +17,7 @@ type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };
 
 /** The panel occupies x ∈ [100, 200) of a 300×200 canvas at the client origin. */
-const PANEL = { x: 100, y: 0, w: 100, h: 100 };
+const PANEL = { x: 100, y: 0, width: 100, height: 100 };
 const PANEL_VIEW: View = { x: 1000, y: 2000, scale: { x: 2, y: 2 } };
 
 beforeAll(() => {
@@ -74,7 +74,7 @@ describe('a view answers the ingestion and dispatcher deps for itself', () => {
     const h = mount();
     const deps = h.panel().target.deps!();
     expect(deps.ingestion!.viewportWorldRect()).toEqual({
-      x: 1000, y: 2000, width: PANEL.w / 2, height: PANEL.h / 2,
+      x: 1000, y: 2000, width: PANEL.width / 2, height: PANEL.height / 2,
     });
   });
 

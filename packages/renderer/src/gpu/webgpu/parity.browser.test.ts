@@ -125,8 +125,8 @@ describe('WebGL and WebGPU draw the same pixels', () => {
   it('an image, magnified and translucent', async () => {
     const image = await bitmap(4, 4, (x, y) => [x * 80, 255 - y * 60, 90, 120 + 40 * ((x + y) % 4)]);
     await expectParity('image', [
-      { kind: 'image', image, x: 6, y: 5, w: 30, h: 26 },
-      { kind: 'image', image, x: 40, y: 20, w: 16, h: 16, opacity: 0.6 },
+      { kind: 'image', image, x: 6, y: 5, width: 30, height: 26 },
+      { kind: 'image', image, x: 40, y: 20, width: 16, height: 16, opacity: 0.6 },
     ] as DrawCommand[]);
   });
 

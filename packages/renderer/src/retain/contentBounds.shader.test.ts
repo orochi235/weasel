@@ -11,7 +11,7 @@ const FILL = 'out vec4 o; void main() { o = vec4(1.0); }';
 afterEach(() => _resetProgramRegistryForTests());
 
 function shader(id: string, vert: string, frag: string): ShaderDrawCommand {
-  return { kind: 'shader', program: registerProgram(id, { glsl: vert ? { vert, frag } : { frag } }), uniforms: {}, bounds: { x: 100, y: 50, w: 40, h: 20 } };
+  return { kind: 'shader', program: registerProgram(id, { glsl: vert ? { vert, frag } : { frag } }), uniforms: {}, bounds: { x: 100, y: 50, width: 40, height: 20 } };
 }
 
 const bound = (cmd: ShaderDrawCommand) => contentBounds([cmd], mat3.translated(mat3.identity(), 300, 300), [], 2, W, H);
@@ -41,7 +41,7 @@ describe('contentBounds for a custom shader', () => {
   });
 
   it('takes the whole buffer for a program nobody registered', () => {
-    const cmd: ShaderDrawCommand = { kind: 'shader', program: { id: 'missing' }, uniforms: {}, bounds: { x: 0, y: 0, w: 1, h: 1 } };
+    const cmd: ShaderDrawCommand = { kind: 'shader', program: { id: 'missing' }, uniforms: {}, bounds: { x: 0, y: 0, width: 1, height: 1 } };
     expect(bound(cmd)).toEqual({ x: 0, y: 0, width: W, height: H });
   });
 });

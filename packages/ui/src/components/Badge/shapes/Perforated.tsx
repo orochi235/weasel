@@ -21,10 +21,10 @@ function PerforatedComponent({ variant, focused, params }: {
   const box = useSvgBox(ref);
 
   // Convert CSS-px hole sizing into viewBox units so holes look circular on either axis.
-  const rx = (cfg.holeRadius / box.w) * 100;
-  const ry = (cfg.holeRadius / box.h) * 100;
-  const nH = Math.max(2, Math.round(box.w / cfg.holePitch));
-  const nV = Math.max(2, Math.round(box.h / cfg.holePitch));
+  const rx = (cfg.holeRadius / box.width) * 100;
+  const ry = (cfg.holeRadius / box.height) * 100;
+  const nH = Math.max(2, Math.round(box.width / cfg.holePitch));
+  const nV = Math.max(2, Math.round(box.height / cfg.holePitch));
 
   const notches: { cx: number; cy: number }[] = [];
   for (let i = 0; i < nH; i++) {

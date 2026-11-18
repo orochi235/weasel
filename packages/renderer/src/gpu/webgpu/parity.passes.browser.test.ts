@@ -82,7 +82,7 @@ describe('WebGL and WebGPU draw the same passes', () => {
   it('a custom shader with WGSL', async () => {
     const b = await openBackends({ width: W, height: H, dpr: 1 });
     const d = await renderBoth(b, [GROUND, {
-      kind: 'shader', program: TINTED, uniforms: { u_tint: [1, 0.8, 0.6, 1] }, bounds: { x: 6, y: 4, w: 50, h: 38 },
+      kind: 'shader', program: TINTED, uniforms: { u_tint: [1, 0.8, 0.6, 1] }, bounds: { x: 6, y: 4, width: 50, height: 38 },
     }]);
     expect(d.over, report('custom shader (WGSL)', d)).toBe(0);
   });
@@ -91,7 +91,7 @@ describe('WebGL and WebGPU draw the same passes', () => {
     const b = await openBackends({ width: W, height: H, dpr: 1 });
     const d = await renderBoth(b, [GROUND, {
       kind: 'shader', program: PACKED, uniforms: { u_tint: [0.9, 0.4, 0.2], u_gain: 0.8, u_shift: [0.1, -0.2] },
-      bounds: { x: 6, y: 4, w: 50, h: 38 },
+      bounds: { x: 6, y: 4, width: 50, height: 38 },
     }]);
     expect(d.over, report('custom shader (vec3 + f32 + vec2 uniforms)', d)).toBe(0);
   });

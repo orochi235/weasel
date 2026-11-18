@@ -87,7 +87,7 @@ function mount(
 ) {
   const surface = (s: SelectionApi, tools?: ToolsApi) => (
     <SceneCanvas scene={scene} layers={{}} width={400} height={300} view={ROOT} onViewChange={onViewChange} ref={api} selection={s} {...(tools ? { tools } : {})} {...extra}>
-      <CanvasView id="pip" bounds={{ x: 250, y: 180, w: 140, h: 105 }} defaultView={{ x: 0, y: 0, scale: { x: 0.25, y: 0.25 } }} cameraRef={pip} />
+      <CanvasView id="pip" bounds={{ x: 250, y: 180, width: 140, height: 105 }} defaultView={{ x: 0, y: 0, scale: { x: 0.25, y: 0.25 } }} cameraRef={pip} />
       <ViewMarker id="root-aim" source={null} target="pip" {...opts.rootAim} />
       {opts.markers}
     </SceneCanvas>

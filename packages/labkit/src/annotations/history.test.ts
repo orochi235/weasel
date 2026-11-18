@@ -8,13 +8,13 @@ import { createMarkStore } from './store';
 import type { AnnotationInit, AnnotationTargetInfo } from './types';
 
 const TARGETS: AnnotationTargetInfo[] = [
-  { id: 'left', content: { w: 200, h: 100 } },
-  { id: 'right', content: { w: 200, h: 100 } },
+  { id: 'left', content: { width: 200, height: 100 } },
+  { id: 'right', content: { width: 200, height: 100 } },
 ];
 
 const MARK: Omit<AnnotationInit, 'target'> = {
   kind: 'rect',
-  frac: { x: 0.1, y: 0.1, w: 0.2, h: 0.2 },
+  frac: { x: 0.1, y: 0.1, width: 0.2, height: 0.2 },
 };
 
 const store = () => createMarkStore({ targets: () => TARGETS });

@@ -60,7 +60,7 @@ export function insertPreviewCommands(
           out.push({
             kind: 'image',
             image: bmp,
-            x: sx, y: sy, w: sw, h: sh,
+            x: sx, y: sy, width: sw, height: sh,
             opacity: PREVIEW_CONTENT_OPACITY,
           });
         }

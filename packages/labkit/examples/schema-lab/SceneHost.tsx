@@ -8,7 +8,7 @@ import { watchResize } from '@weasel-js/react';
  *  observer back into itself. */
 export function SceneHost<TData>({ scene }: { scene: Scene<TData, 'default', RectPose> }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
-  const [size, setSize] = useState({ w: 800, h: 600 });
+  const [size, setSize] = useState({ width: 800, height: 600 });
 
   useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
 
@@ -20,14 +20,14 @@ export function SceneHost<TData>({ scene }: { scene: Scene<TData, 'default', Rec
       const w = Math.round(entry.contentRect.width);
       const h = Math.round(entry.contentRect.height);
       if (w <= 0 || h <= 0) return;
-      setSize((prev) => (prev.w === w && prev.h === h ? prev : { w, h }));
+      setSize((prev) => (prev.width === w && prev.height === h ? prev : { width: w, height: h }));
     });
   }, []);
 
   return (
     <div ref={hostRef} className="sl-scene-host">
       <div className="sl-scene-fill">
-        <SceneCanvas width={size.w} height={size.h} scene={scene} />
+        <SceneCanvas width={size.width} height={size.height} scene={scene} />
       </div>
     </div>
   );

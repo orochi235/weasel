@@ -52,7 +52,7 @@ describe('kit:image painter', () => {
     const painter = findNodeShape(imageNode('a'))!;
     const cmds = painter.paint(imageNode('a'), POSE);
     expect(cmds).toHaveLength(1);
-    expect(cmds[0]).toMatchObject({ kind: 'image', image: bmp, x: 10, y: 20, w: 30, h: 40 });
+    expect(cmds[0]).toMatchObject({ kind: 'image', image: bmp, x: 10, y: 20, width: 30, height: 40 });
   });
 
   it('draws its previous picture while a new src decodes, then the new one', async () => {
@@ -99,7 +99,7 @@ describe('kit:image painter', () => {
       const painter = findNodeShape(imageNode('a'))!;
       const cmds = painter.paint(imageNode('a'), POSE, { resolveImage: () => bmp });
       expect(cmds).toHaveLength(1);
-      expect(cmds[0]).toMatchObject({ kind: 'image', image: bmp, x: 10, y: 20, w: 30, h: 40 });
+      expect(cmds[0]).toMatchObject({ kind: 'image', image: bmp, x: 10, y: 20, width: 30, height: 40 });
     });
 
     it('deterministic grey placeholder when the resolver returns undefined', async () => {
@@ -142,8 +142,8 @@ describe('kit:image painter', () => {
     it('scales a fractional source rect to the decoded bitmap', () => {
       const [cmd] = paint({ source: { x: 0.25, y: 0.5, width: 0.5, height: 0.25 } });
       expect(cmd).toMatchObject({
-        kind: 'image', x: 10, y: 20, w: 30, h: 40,
-        source: { x: 50, y: 50, w: 100, h: 25 },
+        kind: 'image', x: 10, y: 20, width: 30, height: 40,
+        source: { x: 50, y: 50, width: 100, height: 25 },
       });
     });
 

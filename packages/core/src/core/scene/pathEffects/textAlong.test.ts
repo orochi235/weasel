@@ -17,7 +17,7 @@ const LINE = pathFromD('M0 0 L100 0');
 
 const centers = (parts: readonly DerivedPart[]) => parts.map((p) => {
   const b = boundsOfPath(p.path);
-  return { x: b.x + b.width / 2, y: b.y + b.height / 2, w: b.width, h: b.height };
+  return { x: b.x + b.width / 2, y: b.y + b.height / 2, width: b.width, height: b.height };
 });
 const lay = (effect: Partial<TextAlongEffect>, n: number, path: Path = LINE) =>
   centers(textAlongParts({ ...FX, ...effect }, squares(n), path));
@@ -28,7 +28,7 @@ describe('textAlongParts', () => {
     expect(got.map((c) => c.x)).toEqual([5, 15, 25].map((x) => expect.closeTo(x, 9)));
     for (const c of got) {
       expect(c.y).toBeCloseTo(-5, 9);
-      expect([c.w, c.h].map((v) => Math.round(v))).toEqual([10, 10]);
+      expect([c.width, c.height].map((v) => Math.round(v))).toEqual([10, 10]);
     }
   });
 
@@ -61,7 +61,7 @@ describe('textAlongParts', () => {
       length: 10, middle: 0, parts: [{ path: rectPath(0, -(i + 1), 10, i + 1), fill: INK }],
     }));
     const drawn = (effect: Partial<TextAlongEffect>, n: number) =>
-      centers(textAlongParts({ ...FX, ...effect }, tall(n), LINE)).map((c) => ({ x: c.x, h: Math.round(c.h) }));
+      centers(textAlongParts({ ...FX, ...effect }, tall(n), LINE)).map((c) => ({ x: c.x, h: Math.round(c.height) }));
 
     it("at start 0.9 both sides show only the path's 90..100, each the letter that falls there", () => {
       expect(drawn({ side: 'path', start: 0.9 }, 3)).toEqual([{ x: expect.closeTo(95, 9), h: 1 }]);
@@ -164,7 +164,7 @@ describe('textAlongParts', () => {
     const parts = effectParts(FX, [a, b])!;
     expect(parts).toHaveLength(1);
     expect(parts[0]!.fill).toBe(INK);
-    expect(centers(parts)[0]).toEqual({ x: expect.closeTo(10, 9), y: expect.closeTo(0, 9), w: 20, h: 10 });
+    expect(centers(parts)[0]).toEqual({ x: expect.closeTo(10, 9), y: expect.closeTo(0, 9), width: 20, height: 10 });
   });
 
   it('via effectParts, a source with items lays them', () => {

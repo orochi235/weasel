@@ -22,9 +22,9 @@ interface Config {
   label: string;
 }
 
-const CONTENT = { w: 260, h: 180 };
+const CONTENT = { width: 260, height: 180 };
 /** The picture and its caption, which is what the stage lays out and zooms. */
-const STAGE = { width: CONTENT.w, height: CONTENT.h + 26 };
+const STAGE = { width: CONTENT.width, height: CONTENT.height + 26 };
 
 type PaneRef = { current: HTMLDivElement | null };
 const panes = new Map<string, PaneRef>();
@@ -48,7 +48,7 @@ const svgOf = (ref: PaneRef) => (): CaptureSource => ({
 /** A crude bracket, drawn from the config so a change visibly moves it. */
 function Part({ angle, shading }: { angle: number; shading: Config['shading'] }) {
   return (
-    <svg viewBox="0 0 260 180" width={CONTENT.w} height={CONTENT.h} role="img" aria-label="Part">
+    <svg viewBox="0 0 260 180" width={CONTENT.width} height={CONTENT.height} role="img" aria-label="Part">
       <title>Part</title>
       <rect width="260" height="180" fill="#f4f1ea" />
       <g transform={`rotate(${angle} 130 90)`}>

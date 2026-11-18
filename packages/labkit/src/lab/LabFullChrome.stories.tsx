@@ -19,7 +19,7 @@ interface ScanState {
   marks: number[];
 }
 
-const PLOT = { w: 240, h: 120 };
+const PLOT = { width: 240, height: 120 };
 
 function scanSchema(traceColor: string) {
   return f.schema({
@@ -105,16 +105,16 @@ function scanInstrument(
             c.strokeStyle = '#8894a8';
             c.globalAlpha = 0.3;
             c.lineWidth = 1 / zoom;
-            for (let x = 0; x <= PLOT.w; x += 20) {
+            for (let x = 0; x <= PLOT.width; x += 20) {
               c.beginPath();
               c.moveTo(x, 0);
-              c.lineTo(x, PLOT.h);
+              c.lineTo(x, PLOT.height);
               c.stroke();
             }
-            for (let y = 0; y <= PLOT.h; y += 20) {
+            for (let y = 0; y <= PLOT.height; y += 20) {
               c.beginPath();
               c.moveTo(0, y);
-              c.lineTo(PLOT.w, y);
+              c.lineTo(PLOT.width, y);
               c.stroke();
             }
             c.globalAlpha = 1;
@@ -129,7 +129,7 @@ function scanInstrument(
             c.beginPath();
             state.samples.forEach((sample, i) => {
               const x = i * 10;
-              const y = PLOT.h - Math.min(PLOT.h, sample * config.gain * 0.7);
+              const y = PLOT.height - Math.min(PLOT.height, sample * config.gain * 0.7);
               if (i === 0) c.moveTo(x, y);
               else c.lineTo(x, y);
             });
@@ -144,7 +144,7 @@ function scanInstrument(
             for (const x of state.marks) {
               c.beginPath();
               c.moveTo(x, 0);
-              c.lineTo(x, PLOT.h);
+              c.lineTo(x, PLOT.height);
               c.stroke();
             }
           },

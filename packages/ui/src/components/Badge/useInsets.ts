@@ -17,10 +17,10 @@ interface InsetSource<P> {
 }
 
 /** The content's layout size, and the padding its badge has apart from the insets, in CSS px. */
-interface Measured { w: number; h: number; pad: ShapeInsets }
+interface Measured { width: number; height: number; pad: ShapeInsets }
 
 const same = (a: Measured, b: Measured) =>
-  a.w === b.w && a.h === b.h && SIDES.every((side) => a.pad[side] === b.pad[side]);
+  a.width === b.width && a.height === b.height && SIDES.every((side) => a.pad[side] === b.pad[side]);
 
 /** The padding of `badge` that its `--badge-inset-*` properties did not put there. */
 function ownPadding(badge: HTMLElement): ShapeInsets {
@@ -41,9 +41,9 @@ function useMeasured(ref: RefObject<HTMLElement | null>, enabled: boolean): Meas
     const el = enabled ? ref.current : null;
     const badge = el?.parentElement;
     if (!el || !badge) return;
-    const set = (w: number, h: number) => {
-      if (w <= 0 || h <= 0) return;
-      const next = { w, h, pad: ownPadding(badge) };
+    const set = (width: number, height: number) => {
+      if (width <= 0 || height <= 0) return;
+      const next = { width, height, pad: ownPadding(badge) };
       setMeasured((was) => (was && same(was, next) ? was : next));
     };
     const r = el.getBoundingClientRect();
@@ -70,7 +70,7 @@ const STILL: Moved = { bloat: 0 };
 export function fitMoved(
   build: (boxW: number, boxH: number) => BaseSampler,
   points: readonly (readonly [number, number])[],
-  content: { w: number; h: number },
+  content: { width: number; height: number },
   floor: ShapeInsets,
   moved: Moved,
 ): ShapeInsets {
@@ -78,11 +78,11 @@ export function fitMoved(
   let clear = 0;
   // The clearance only grows, so this ends: nothing asks for more than the furthest move.
   for (;;) {
-    const box = { w: content.w + insets.left + insets.right, h: content.h + insets.top + insets.bottom };
-    const held = { left: insets.left, top: insets.top, right: insets.left + content.w, bottom: insets.top + content.h };
+    const box = { width: content.width + insets.left + insets.right, height: content.height + insets.top + insets.bottom };
+    const held = { left: insets.left, top: insets.top, right: insets.left + content.width, bottom: insets.top + content.height };
     // In half pixels, so a change in the outline's length, which sets how many times an effect
     // repeats along it, seldom changes the clearance.
-    const need = Math.ceil(inwardReach(build(box.w, box.h), moved.effects, moved.bloat, box, held) * 2) / 2;
+    const need = Math.ceil(inwardReach(build(box.width, box.height), moved.effects, moved.bloat, box, held) * 2) / 2;
     if (need <= clear) return insets;
     clear = need;
     insets = fitInsets(points, content, floor, clear);

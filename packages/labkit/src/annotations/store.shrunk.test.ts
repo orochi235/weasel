@@ -3,10 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { annotationsFromJSON, createMarkStore } from './store';
 
 const targets = () => [
-  { id: '__proto__', content: { w: 50, h: 80 } },
-  { id: 'constructor', content: { w: 100, h: 100 } },
+  { id: '__proto__', content: { width: 50, height: 80 } },
+  { id: 'constructor', content: { width: 100, height: 100 } },
 ];
-const FRAC = { x: 0, y: 0, w: 0.0625, h: 0.0625 };
+const FRAC = { x: 0, y: 0, width: 0.0625, height: 0.0625 };
 
 describe('a target named like a key every object inherits', () => {
   it('takes a new mark in a store read back from a save that holds none of its own', () => {

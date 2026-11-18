@@ -31,8 +31,8 @@ const image = (img: ImageBitmap, extra: Partial<Extract<DrawCommand, { kind: 'im
   image: img,
   x: 10,
   y: 20,
-  w: 30,
-  h: 40,
+  width: 30,
+  height: 40,
   ...extra,
 });
 
@@ -61,7 +61,7 @@ describe('images', () => {
   });
 
   it('draws a source sub-rect clipped to the destination', async () => {
-    const { content } = await render([image(fakeImage(10, 10), { source: { x: 5, y: 0, w: 5, h: 10 } })]);
+    const { content } = await render([image(fakeImage(10, 10), { source: { x: 5, y: 0, width: 5, height: 10 } })]);
     expect(content).toContain('10 20 30 40 re');
     expect(content).toContain('W\nn');
     // 5 source pixels fill 30 points: the whole 10 pixel image is 60 wide, starting 30 left of x.

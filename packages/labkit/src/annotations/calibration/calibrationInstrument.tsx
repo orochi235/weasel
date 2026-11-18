@@ -46,9 +46,9 @@ function schema(start: CalibrationConfig) {
 function wholePicture(el: HTMLElement | null): string {
   const svg = el?.querySelector('svg')?.cloneNode(true);
   if (!(svg instanceof SVGSVGElement)) return '';
-  svg.setAttribute('viewBox', `0 0 ${CONTENT.w} ${CONTENT.h}`);
-  svg.setAttribute('width', String(CONTENT.w));
-  svg.setAttribute('height', String(CONTENT.h));
+  svg.setAttribute('viewBox', `0 0 ${CONTENT.width} ${CONTENT.height}`);
+  svg.setAttribute('width', String(CONTENT.width));
+  svg.setAttribute('height', String(CONTENT.height));
   return svg.outerHTML;
 }
 
@@ -63,11 +63,11 @@ function Stage({
   const frame = useRef<HTMLDivElement | null>(null);
   const size = pictureSize(config);
   useLayoutEffect(() => {
-    if (config.scrolled && frame.current) frame.current.scrollTop = size.h * SCROLLED_STARTS;
-  }, [config.scrolled, size.h]);
+    if (config.scrolled && frame.current) frame.current.scrollTop = size.height * SCROLLED_STARTS;
+  }, [config.scrolled, size.height]);
   // The scrolled pane's height follows the picture's, which only the condition knows.
   const height = {
-    ['--lk-cal-frame-h' as string]: `${size.h * SCROLLED_SHOWS}px`,
+    ['--lk-cal-frame-h' as string]: `${size.height * SCROLLED_SHOWS}px`,
   } as CSSProperties;
   return (
     <div

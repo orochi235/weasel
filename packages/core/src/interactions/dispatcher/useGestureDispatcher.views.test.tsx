@@ -20,7 +20,7 @@ import type { InputEvent } from '@weasel-js/routing';
 import type { Point } from '@weasel-js/geom';
 
 /** The panel occupies x ∈ [100, 200) of a canvas whose origin is (0, 0). */
-const PANEL_RECT = { x: 100, y: 0, w: 100, h: 100 };
+const PANEL_RECT = { x: 100, y: 0, width: 100, height: 100 };
 const FLAT: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 function spyOn(d: Dispatcher): { d: Dispatcher; seen: InputEvent[] } {

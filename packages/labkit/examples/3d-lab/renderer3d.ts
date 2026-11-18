@@ -58,8 +58,8 @@ export interface SolidDraw {
 export interface DeviceRect {
   x: number;
   y: number;
-  w: number;
-  h: number;
+  width: number;
+  height: number;
 }
 
 export interface Renderer3d {
@@ -238,11 +238,11 @@ export function createRenderer3d(gl: WebGL2RenderingContext): Renderer3d {
     },
 
     draw(solids, camera, rect, chrome, cssSize, snap, handles = []) {
-      if (rect.w <= 0 || rect.h <= 0) return;
+      if (rect.width <= 0 || rect.height <= 0) return;
 
       gl.enable(gl.SCISSOR_TEST);
-      gl.scissor(rect.x, rect.y, rect.w, rect.h);
-      gl.viewport(rect.x, rect.y, rect.w, rect.h);
+      gl.scissor(rect.x, rect.y, rect.width, rect.height);
+      gl.viewport(rect.x, rect.y, rect.width, rect.height);
       gl.clearColor(0.1, 0.11, 0.14, 1);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -251,7 +251,7 @@ export function createRenderer3d(gl: WebGL2RenderingContext): Renderer3d {
       gl.enable(gl.CULL_FACE);
       gl.cullFace(gl.BACK);
 
-      const viewProjection = cameraViewProjection(camera, rect.w / rect.h);
+      const viewProjection = cameraViewProjection(camera, rect.width / rect.height);
 
       gl.useProgram(lineProgram);
       gl.uniformMatrix4fv(lineUniforms.mvp, false, new Float32Array(viewProjection));

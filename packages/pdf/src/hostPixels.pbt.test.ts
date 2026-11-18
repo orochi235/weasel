@@ -32,7 +32,7 @@ const fits = (px: RasterPixels) =>
   Number.isSafeInteger(px.width) && Number.isSafeInteger(px.height) && px.width > 0 && px.height > 0 && px.data.length === px.width * px.height * 4;
 
 const image = (n: number): DrawCommand => ({
-  kind: 'image', image: { width: 2, height: 2, n } as unknown as ImageBitmap, x: 10, y: 10, w: 20, h: 20,
+  kind: 'image', image: { width: 2, height: 2, n } as unknown as ImageBitmap, x: 10, y: 10, width: 20, height: 20,
 } as DrawCommand);
 
 const blurred: DrawCommand = {

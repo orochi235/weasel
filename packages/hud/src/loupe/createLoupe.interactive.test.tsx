@@ -53,7 +53,7 @@ interface Mounted {
  * `{ x: 1012, y: 1014.375, scale: 8 }`, and the press lands on world
  * (1016.25, 1021.25) — on `p`.
  */
-const PANEL = { x: 250, y: 250, w: 150, h: 150 };
+const PANEL = { x: 250, y: 250, width: 150, height: 150 };
 const PANEL_VIEW = { x: 1000, y: 1000, scale: { x: 2, y: 2 } };
 
 async function mount(opts: { panel?: boolean; panelHides?: boolean } = {}): Promise<Mounted> {

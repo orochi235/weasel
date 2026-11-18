@@ -72,7 +72,7 @@ async function drawRaster(
 
 /** A shader command's bounds are screen space, which is the page's frame here. */
 export function writeShader(ctx: PageCtx, cmd: ShaderDrawCommand, state: DrawState): Promise<void> {
-  const { x, y, w, h } = cmd.bounds;
+  const { x, y, width: w, height: h } = cmd.bounds;
   const x0 = Math.max(0, Math.floor(x));
   const y0 = Math.max(0, Math.floor(y));
   const x1 = Math.min(ctx.width, Math.ceil(x + w));

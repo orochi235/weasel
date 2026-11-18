@@ -27,7 +27,7 @@ const waitForFrame = () => new Promise<void>(r => requestAnimationFrame(() => r(
 /** A 64-texel image drawn 8 pixels wide: an eighth of its size. */
 function smallImageLayer(): RenderLayer<unknown> {
   const img = { width: 64, height: 64, close: () => {} } as unknown as ImageBitmap;
-  const cmd: DrawCommand = { kind: 'image', image: img, x: 0, y: 0, w: 8, h: 8 };
+  const cmd: DrawCommand = { kind: 'image', image: img, x: 0, y: 0, width: 8, height: 8 };
   return { id: 'probe', label: 'Probe', space: 'screen', draw: () => [cmd] };
 }
 

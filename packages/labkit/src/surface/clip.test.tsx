@@ -128,8 +128,8 @@ describe('useTiledSurface visible rects', () => {
     render(<Harness />);
     flush();
     const first = frames.at(-1);
-    expect(first?.rects.get('a')).toEqual({ x: 200, y: 50, w: 400, h: 100 });
-    expect(first?.visible.get('a')).toEqual({ x: 200, y: 50, w: 100, h: 100 });
+    expect(first?.rects.get('a')).toEqual({ x: 200, y: 50, width: 400, height: 100 });
+    expect(first?.visible.get('a')).toEqual({ x: 200, y: 50, width: 100, height: 100 });
 
     // The viewport narrows past the tile, which has not moved.
     flush();
@@ -139,7 +139,7 @@ describe('useTiledSurface visible rects', () => {
     flush();
     const moved = frames[settled];
     expect(moved?.retiled).toBe(true);
-    expect(moved?.rects.get('a')).toEqual({ x: 200, y: 50, w: 400, h: 100 });
-    expect(moved?.visible.get('a')).toEqual({ x: 200, y: 50, w: 0, h: 100 });
+    expect(moved?.rects.get('a')).toEqual({ x: 200, y: 50, width: 400, height: 100 });
+    expect(moved?.visible.get('a')).toEqual({ x: 200, y: 50, width: 0, height: 100 });
   });
 });

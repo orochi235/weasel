@@ -15,7 +15,7 @@ afterEach(cleanup);
 
 interface Probe {
   mounts: number;
-  sizes: Array<{ w: number; h: number }>;
+  sizes: Array<{ width: number; height: number }>;
   gl: WebGLRenderingContext | null;
 }
 
@@ -30,7 +30,7 @@ function GlTile({ probe }: { probe: Probe }) {
     probe.gl = canvas.getContext('webgl');
     const ro = new ResizeObserver(([entry]) => {
       if (!entry) return;
-      probe.sizes.push({ w: entry.contentRect.width, h: entry.contentRect.height });
+      probe.sizes.push({ width: entry.contentRect.width, height: entry.contentRect.height });
     });
     ro.observe(canvas);
     return () => ro.disconnect();
@@ -67,7 +67,7 @@ test('a double-clicked tile fills the window from the top layer, on the same ele
   expect(after.width).toBeGreaterThan(window.innerWidth * 0.9);
   expect(after.height).toBeGreaterThan(window.innerHeight * 0.8);
   expect(after.width).toBeGreaterThan(before.width);
-  await expect.poll(() => probe.sizes.at(-1)?.w ?? 0).toBeCloseTo(after.width, 0);
+  await expect.poll(() => probe.sizes.at(-1)?.width ?? 0).toBeCloseTo(after.width, 0);
 
   // Not remounted: the same element, the same live context, one mount.
   expect(getByTestId('gl')).toBe(canvas);

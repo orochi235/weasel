@@ -14,7 +14,7 @@ const BROKEN = registerProgram('refused-wgsl', {
 
 const FRAME: DrawCommand[] = [
   { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 40, height: 30 }, fill: { paint: { color: '#0000ff' } } },
-  { kind: 'shader', program: BROKEN, uniforms: {}, bounds: { x: 0, y: 0, w: 10, h: 10 } },
+  { kind: 'shader', program: BROKEN, uniforms: {}, bounds: { x: 0, y: 0, width: 10, height: 10 } },
 ];
 
 afterAll(() => releaseDevice());

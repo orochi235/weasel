@@ -77,7 +77,7 @@ describe('a group color matrix, in a real context', () => {
 
   it('paints a solid and an image of one color alike, whichever opens the run', async () => {
     const image = await orangeBitmap();
-    const img = (x: number): DrawCommand => ({ kind: 'image', image, x, y: 0, w: 4, h: SIZE });
+    const img = (x: number): DrawCommand => ({ kind: 'image', image, x, y: 0, width: 4, height: SIZE });
     const solidFirst = paint([{ kind: 'group', colorMatrix: MATRIX, children: [solid(0), img(4)] }]);
     expectNear(solidFirst(1, 4), [...MAPPED, 255]);
     expectNear(solidFirst(5, 4), [...MAPPED, 255]);
@@ -97,7 +97,7 @@ describe('a group color matrix, in a real context', () => {
     ];
     const commands: DrawCommand[] = [{
       kind: 'group', colorMatrix: scaled, alpha: 0.5,
-      children: [{ kind: 'image', image, x: 0, y: 0, w: SIZE, h: SIZE }],
+      children: [{ kind: 'image', image, x: 0, y: 0, width: SIZE, height: SIZE }],
     }];
     const tinted = paint(commands)(4, 4);
     renderer!.dispose();
@@ -116,7 +116,7 @@ describe('a group color matrix, in a real context', () => {
 
   it('paints images under two matrices and under none in one draw, each by its own', async () => {
     const image = await orangeBitmap();
-    const img = (x: number): DrawCommand => ({ kind: 'image', image, x, y: 0, w: 2, h: SIZE });
+    const img = (x: number): DrawCommand => ({ kind: 'image', image, x, y: 0, width: 2, height: SIZE });
     // Lifts blue by a half and leaves the rest: a second matrix no tint expresses.
     const other = [
       1, 0, 0, 0, 0,
@@ -141,7 +141,7 @@ describe('a group color matrix, in a real context', () => {
     const image = await orangeBitmap();
     const commands: DrawCommand[] = [{
       kind: 'group', colorMatrix: MATRIX, alpha: 0.5,
-      children: [{ kind: 'image', image, x: 0, y: 0, w: SIZE, h: SIZE, opacity: 0.5 }],
+      children: [{ kind: 'image', image, x: 0, y: 0, width: SIZE, height: SIZE, opacity: 0.5 }],
     }];
     const at = paint(commands);
     // Premultiplied by a quarter: the group's half and the image's.

@@ -62,10 +62,10 @@ describe('a subscriber that throws does not stop the ones after it', () => {
 
   it('in an annotation store', () => {
     const store = createMarkStore({
-      targets: () => [{ id: 't', content: { w: 10, h: 10 } }],
+      targets: () => [{ id: 't', content: { width: 10, height: 10 } }],
     });
     afterAThrow(store.subscribe, () =>
-      store.add({ target: 't', kind: 'rect', frac: { x: 0, y: 0, w: 0.1, h: 0.1 } }),
+      store.add({ target: 't', kind: 'rect', frac: { x: 0, y: 0, width: 0.1, height: 0.1 } }),
     );
   });
 });

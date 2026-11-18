@@ -44,11 +44,11 @@ export const labelText = fc.oneof(
 const color = fc.constantFrom('#000000', '#ffffff', 'red', '#123456', 'rgb(10, 200, 30)');
 
 export const solidRect: fc.Arbitrary<DrawCommand> = fc.record({
-  x: coord, y: coord, w: fc.oneof(extent, extent.map((e) => -e)), h: fc.oneof(extent, extent.map((e) => -e)),
+  x: coord, y: coord, width: fc.oneof(extent, extent.map((e) => -e)), height: fc.oneof(extent, extent.map((e) => -e)),
   fill: fc.option(color, { nil: undefined }), stroke: fc.option(fc.tuple(color, extent), { nil: undefined }),
 }).filter((r) => r.fill !== undefined || r.stroke !== undefined).map((r) => ({
   kind: 'path',
-  path: { kind: 'rect', x: r.x, y: r.y, width: r.w, height: r.h },
+  path: { kind: 'rect', x: r.x, y: r.y, width: r.width, height: r.height },
   ...(r.fill ? { fill: { paint: { color: r.fill } } } : {}),
   ...(r.stroke ? { stroke: { paint: { color: r.stroke[0] }, width: r.stroke[1] } } : {}),
 }));

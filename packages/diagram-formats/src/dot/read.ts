@@ -163,14 +163,14 @@ const most = (m: number, v: number) => Math.max(m, v);
 function positions(nodes: DataNode[], attrs: ReadonlyMap<string, Attrs>, bb: string | undefined) {
   const centers = nodes.map((n) => str(attrs.get(n.id)!, 'pos')?.replace(/!$/, '').split(',').map(Number));
   if (nodes.length === 0 || centers.some((c) => c === undefined || c.length < 2 || !c.every(Number.isFinite))) return null;
-  const size = (n: DataNode) => ({ w: n.width ?? 0.75 * POINTS_PER_INCH, h: n.height ?? 0.5 * POINTS_PER_INCH });
+  const size = (n: DataNode) => ({ width: n.width ?? 0.75 * POINTS_PER_INCH, height: n.height ?? 0.5 * POINTS_PER_INCH });
   const box = bb?.split(',').map(Number);
-  const xs = nodes.flatMap((n, i) => [centers[i]![0]! - size(n).w / 2, centers[i]![0]! + size(n).w / 2]);
-  const ys = nodes.flatMap((n, i) => [centers[i]![1]! - size(n).h / 2, centers[i]![1]! + size(n).h / 2]);
+  const xs = nodes.flatMap((n, i) => [centers[i]![0]! - size(n).width / 2, centers[i]![0]! + size(n).width / 2]);
+  const ys = nodes.flatMap((n, i) => [centers[i]![1]! - size(n).height / 2, centers[i]![1]! + size(n).height / 2]);
   const [llx, lly, right, top] = box?.length === 4 && box.every(Number.isFinite)
     ? box : [xs.reduce(least, Infinity), ys.reduce(least, Infinity), xs.reduce(most, -Infinity), ys.reduce(most, -Infinity)];
   const placed = nodes.map((n, i) => ({
-    ...n, at: { x: round(centers[i]![0]! - llx! - size(n).w / 2), y: round(top - centers[i]![1]! - size(n).h / 2) },
+    ...n, at: { x: round(centers[i]![0]! - llx! - size(n).width / 2), y: round(top - centers[i]![1]! - size(n).height / 2) },
   }));
   return { nodes: placed, size: { width: round(right - llx!), height: round(top - lly!) } };
 }

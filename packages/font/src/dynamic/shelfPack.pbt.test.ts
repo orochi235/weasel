@@ -15,7 +15,7 @@ describe('ShelfPacker, property', () => {
     const t = tally();
     fc.assert(fc.property(config.chain((c) => fc.tuple(fc.constant(c), sizes(c.pageSize))), ([{ pageSize, maxPages }, rects]) => {
       const packer = new ShelfPacker(pageSize, maxPages);
-      const placed: (ShelfAlloc & { w: number; h: number })[] = [];
+      const placed: (ShelfAlloc & { width: number; height: number })[] = [];
       for (const [w, h] of rects) {
         const before = packer.pageCount;
         const fits = packer.fits(w, h);
@@ -34,10 +34,10 @@ describe('ShelfPacker, property', () => {
         expect(spot.y + h).toBeLessThanOrEqual(pageSize);
         for (const o of placed) {
           if (o.page !== spot.page) continue;
-          const apart = spot.x + w <= o.x || o.x + o.w <= spot.x || spot.y + h <= o.y || o.y + o.h <= spot.y;
+          const apart = spot.x + w <= o.x || o.x + o.width <= spot.x || spot.y + h <= o.y || o.y + o.height <= spot.y;
           expect(apart).toBe(true);
         }
-        placed.push({ ...spot, w, h });
+        placed.push({ ...spot, width: w, height: h });
       }
     }), runs(RUNS));
     t.atLeast('placed', 500);

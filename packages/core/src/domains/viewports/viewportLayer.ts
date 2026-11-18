@@ -14,7 +14,7 @@ import type { ResolvableView, ViewRect } from './viewResolver';
  * **Inner view semantics.** The source layers draw as if the inner view
  * filled the screen at world-origin. The viewport then translates the result
  * so that the inner view's origin lands at `bounds.x, bounds.y` and clips to
- * `(bounds.w, bounds.h)`.
+ * `(bounds.width, bounds.height)`.
  *
  * **This layer paints; it does not take input.** `<CanvasView>` is built on
  * it and routes the pointer stream through the kit's gesture dispatcher —
@@ -103,7 +103,7 @@ export function createViewportLayer<TData, TSource = TData>(
       const b = bounds(outerView, dims);
       // Inner content drawn through `view`, then translated so the inner
       // view's screen origin lines up with the viewport top-left.
-      const innerDims = { width: b.w, height: b.h, dpr: dims.dpr };
+      const innerDims = { width: b.width, height: b.height, dpr: dims.dpr };
       const children: DrawCommand[] = background
         ? backgroundFillCommands({ kind: 'solid', color: background }, innerDims)
         : [];
@@ -118,7 +118,7 @@ export function createViewportLayer<TData, TSource = TData>(
       const group: GroupDrawCommand = {
         kind: 'group',
         transform,
-        clip: clipAt ? clipWithin(b, clipAt(outerView, dims)) : { kind: 'rect', x: 0, y: 0, width: b.w, height: b.h },
+        clip: clipAt ? clipWithin(b, clipAt(outerView, dims)) : { kind: 'rect', x: 0, y: 0, width: b.width, height: b.height },
         children,
       };
       return [group];
@@ -131,7 +131,7 @@ export function createViewportLayer<TData, TSource = TData>(
 function clipWithin(b: ViewRect, clip: ViewRect): { kind: 'rect'; x: number; y: number; width: number; height: number } {
   const x0 = Math.max(b.x, clip.x);
   const y0 = Math.max(b.y, clip.y);
-  const x1 = Math.min(b.x + b.w, clip.x + clip.w);
-  const y1 = Math.min(b.y + b.h, clip.y + clip.h);
+  const x1 = Math.min(b.x + b.width, clip.x + clip.width);
+  const y1 = Math.min(b.y + b.height, clip.y + clip.height);
   return { kind: 'rect', x: x0 - b.x, y: y0 - b.y, width: Math.max(0, x1 - x0), height: Math.max(0, y1 - y0) };
 }

@@ -5,8 +5,8 @@ import { annotationsFromJSON, createMarkStore } from './store';
 import type { AnnotationInit, AnnotationsApi, AnnotationTargetInfo, FracPoint } from './types';
 
 const TARGETS: AnnotationTargetInfo[] = [
-  { id: 'naive', content: { w: 256, h: 170 }, positionDependsOn: ['angle', 'shading'] },
-  { id: 'occt', content: { w: 256, h: 170 } },
+  { id: 'naive', content: { width: 256, height: 170 }, positionDependsOn: ['angle', 'shading'] },
+  { id: 'occt', content: { width: 256, height: 170 } },
 ];
 
 function makeStore() {
@@ -16,7 +16,7 @@ function makeStore() {
 const RING: AnnotationInit = {
   target: 'naive',
   kind: 'rect',
-  frac: { x: 0.3322, y: 0.3581, w: 0.02, h: 0.0861 },
+  frac: { x: 0.3322, y: 0.3581, width: 0.02, height: 0.0861 },
   title: 'spurious ring at r=12.80',
   status: 'open',
   tags: ['geometry'],
@@ -66,7 +66,7 @@ describe('the annotation store', () => {
 
   it('hit-tests a point, and widens the hit by the tolerance', () => {
     const store = makeStore();
-    const id = store.add({ ...RING, frac: { x: 0.2, y: 0.2, w: 0.2, h: 0.2 } });
+    const id = store.add({ ...RING, frac: { x: 0.2, y: 0.2, width: 0.2, height: 0.2 } });
 
     expect(store.hitTest('naive', { x: 0.3, y: 0.3 }).map((a) => a.id)).toEqual([id]);
     expect(store.hitTest('naive', { x: 0.15, y: 0.3 })).toHaveLength(0);
@@ -91,11 +91,11 @@ describe('the annotation store', () => {
     // The box is (0.2,0.2)-(0.6,0.6). `straddling` overlaps it but hangs out
     // past the far corner — the case that separates enclosure from mere
     // overlap. Two marks that are both wholly outside would not.
-    const inside = store.add({ ...RING, frac: { x: 0.3, y: 0.3, w: 0.1, h: 0.1 } });
-    store.add({ ...RING, frac: { x: 0.5, y: 0.5, w: 0.3, h: 0.3 } });
-    store.add({ ...RING, frac: { x: 0.7, y: 0.7, w: 0.2, h: 0.2 } });
+    const inside = store.add({ ...RING, frac: { x: 0.3, y: 0.3, width: 0.1, height: 0.1 } });
+    store.add({ ...RING, frac: { x: 0.5, y: 0.5, width: 0.3, height: 0.3 } });
+    store.add({ ...RING, frac: { x: 0.7, y: 0.7, width: 0.2, height: 0.2 } });
 
-    const got = store.within('naive', { x: 0.2, y: 0.2, w: 0.4, h: 0.4 });
+    const got = store.within('naive', { x: 0.2, y: 0.2, width: 0.4, height: 0.4 });
     expect(got.map((a) => a.id)).toEqual([inside]);
   });
 
@@ -107,8 +107,8 @@ describe('the annotation store', () => {
     expect(store.get(id)?.status).toBe('fixed');
     expect(store.get(id)?.frac).toEqual(RING.frac);
 
-    store.update(id, { frac: { x: 0.1, y: 0.1, w: 0.3, h: 0.3 } });
-    expect(store.get(id)?.frac).toEqual({ x: 0.1, y: 0.1, w: 0.3, h: 0.3 });
+    store.update(id, { frac: { x: 0.1, y: 0.1, width: 0.3, height: 0.3 } });
+    expect(store.get(id)?.frac).toEqual({ x: 0.1, y: 0.1, width: 0.3, height: 0.3 });
     expect(store.get(id)?.status).toBe('fixed');
     expect(store.get(id)?.title).toBe(RING.title);
   });
@@ -162,7 +162,7 @@ describe('the annotation store', () => {
     const id = store.add(RING);
     const fn = vi.fn();
     store.subscribe(fn);
-    store.update(id, { title: 'moved', frac: { x: 0.1, y: 0.1, w: 0.3, h: 0.3 } });
+    store.update(id, { title: 'moved', frac: { x: 0.1, y: 0.1, width: 0.3, height: 0.3 } });
     expect(fn).toHaveBeenCalledTimes(1);
     expect(store.undo()).toBe(true);
     expect(store.get(id)).toMatchObject({ title: RING.title, frac: RING.frac });
@@ -343,12 +343,12 @@ describe('the annotation store', () => {
     const id = store.add({
       target: 'naive',
       kind: 'point',
-      frac: { x: 0.25, y: 0.5, w: 0, h: 0 },
+      frac: { x: 0.25, y: 0.5, width: 0, height: 0 },
       points: [{ x: 0.25, y: 0.5 }],
     });
     expect(store.get(id)).toMatchObject({
       kind: 'point',
-      frac: { x: 0.25, y: 0.5, w: 0, h: 0 },
+      frac: { x: 0.25, y: 0.5, width: 0, height: 0 },
       points: [{ x: 0.25, y: 0.5 }],
     });
 
@@ -361,7 +361,7 @@ describe('the annotation store', () => {
     const id = store.add({
       target: 'naive',
       kind: 'point',
-      frac: { x: 0.25, y: 0.5, w: 0, h: 0 },
+      frac: { x: 0.25, y: 0.5, width: 0, height: 0 },
       points: [{ x: 0.25, y: 0.5 }],
     });
     expect(store.hitTest('naive', { x: 0.26, y: 0.51 })).toHaveLength(0);
@@ -391,7 +391,10 @@ describe('the annotation store', () => {
 /** What a target's first mark draws, as its path's points in fractions of the
  *  content box — the drawn side, to hold against what the store hit-tests. */
 function drawn(store: AnnotationsApi, target = 'naive'): FracPoint[] {
-  const { w, h } = TARGETS.find((t) => t.id === target)?.content ?? { w: 0, h: 0 };
+  const { width: w, height: h } = TARGETS.find((t) => t.id === target)?.content ?? {
+    width: 0,
+    height: 0,
+  };
   const [painted] = store.paintedMarks(target);
   if (!painted) throw new Error('no mark painted');
   const [cmd] = markCommands(painted.mark, painted.style);
@@ -425,13 +428,13 @@ describe('a moved mark', () => {
   const POINT: AnnotationInit = {
     target: 'naive',
     kind: 'point',
-    frac: { x: 0.25, y: 0.5, w: 0, h: 0 },
+    frac: { x: 0.25, y: 0.5, width: 0, height: 0 },
     points: [{ x: 0.25, y: 0.5 }],
   };
   const LINE: AnnotationInit = {
     target: 'naive',
     kind: 'line',
-    frac: { x: 0.1, y: 0.2, w: 0.5, h: 0.4 },
+    frac: { x: 0.1, y: 0.2, width: 0.5, height: 0.4 },
     points: [
       { x: 0.1, y: 0.6 },
       { x: 0.6, y: 0.2 },
@@ -441,7 +444,7 @@ describe('a moved mark', () => {
   it('draws a point where the store hit-tests it after update moves it', () => {
     const store = makeStore();
     const id = store.add(POINT);
-    store.update(id, { frac: { x: 0.75, y: 0.25, w: 0, h: 0 } });
+    store.update(id, { frac: { x: 0.75, y: 0.25, width: 0, height: 0 } });
 
     expectNear([centerOf(drawn(store))], [{ x: 0.75, y: 0.25 }]);
     expect(store.hitTest('naive', { x: 0.75, y: 0.25 }, 0.001).map((a) => a.id)).toEqual([id]);
@@ -452,7 +455,7 @@ describe('a moved mark', () => {
     for (const kind of ['line', 'arrow', 'stroke'] as const) {
       const store = makeStore();
       const id = store.add({ ...LINE, kind });
-      store.update(id, { frac: { x: 0.3, y: 0.3, w: 0.5, h: 0.4 } });
+      store.update(id, { frac: { x: 0.3, y: 0.3, width: 0.5, height: 0.4 } });
       const moved = [
         { x: 0.3, y: 0.7 },
         { x: 0.8, y: 0.3 },
@@ -465,7 +468,7 @@ describe('a moved mark', () => {
   it('stretches stored vertices with a resized box', () => {
     const store = makeStore();
     const id = store.add(LINE);
-    store.update(id, { frac: { x: 0.1, y: 0.2, w: 0.25, h: 0.8 } });
+    store.update(id, { frac: { x: 0.1, y: 0.2, width: 0.25, height: 0.8 } });
     expectNear(drawn(store), [
       { x: 0.1, y: 1 },
       { x: 0.35, y: 0.2 },
@@ -487,7 +490,7 @@ describe('a moved mark', () => {
     const id = store.add(POINT);
     store.update(id, { points: [{ x: 0.9, y: 0.9 }] });
 
-    expect(store.get(id)?.frac).toEqual({ x: 0.9, y: 0.9, w: 0, h: 0 });
+    expect(store.get(id)?.frac).toEqual({ x: 0.9, y: 0.9, width: 0, height: 0 });
     expectNear([centerOf(drawn(store))], [{ x: 0.9, y: 0.9 }]);
   });
 

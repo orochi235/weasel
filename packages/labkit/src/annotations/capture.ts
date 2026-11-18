@@ -95,7 +95,7 @@ export interface ComposeSvgArgs {
  */
 export function composeCaptureSvg(args: ComposeSvgArgs): string {
   const { base, scene, draw, scale, onWarn } = args;
-  const { w, h } = draw.content;
+  const { width: w, height: h } = draw.content;
   const baseXml =
     base === undefined
       ? ''
@@ -179,7 +179,7 @@ async function stackRaster(
 
   const render = {
     scene,
-    sourceRect: { x: 0, y: 0, width: draw.content.w, height: draw.content.h },
+    sourceRect: { x: 0, y: 0, width: draw.content.width, height: draw.content.height },
     scale: { x: scale, y: scale },
     drawOne: createMarkDrawOne(draw),
   };
@@ -214,8 +214,8 @@ export async function captureTarget(
   const format = opts.format ?? 'png';
   const scale = opts.scale ?? 2;
   const { content } = args.draw;
-  const width = Math.max(1, Math.round(content.w * scale));
-  const height = Math.max(1, Math.round(content.h * scale));
+  const width = Math.max(1, Math.round(content.width * scale));
+  const height = Math.max(1, Math.round(content.height * scale));
   const base = await args.base?.();
   const compose: ComposeSvgArgs = {
     base,

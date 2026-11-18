@@ -133,8 +133,8 @@ const lookup = fc.record({
   }));
 
 const rectIn = (w: number, h: number) => fc.record({
-  x: fc.integer({ min: 0, max: w }), y: fc.integer({ min: 0, max: h }), w: fc.integer({ min: 0, max: w }), h: fc.integer({ min: 0, max: h }),
-}).map((r) => ({ x: r.x, y: r.y, width: Math.min(r.w, w - r.x), height: Math.min(r.h, h - r.y) }));
+  x: fc.integer({ min: 0, max: w }), y: fc.integer({ min: 0, max: h }), width: fc.integer({ min: 0, max: w }), height: fc.integer({ min: 0, max: h }),
+}).map((r) => ({ x: r.x, y: r.y, width: Math.min(r.width, w - r.x), height: Math.min(r.height, h - r.y) }));
 
 const reserve = fc.record({
   id: ids, key: keyArb, rect: rectIn(64, 48), ms, reach: fc.boolean(), commit: fc.oneof({ weight: 4, arbitrary: fc.constant(true) }, { weight: 1, arbitrary: fc.constant(false) }),

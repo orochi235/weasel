@@ -9,7 +9,7 @@ function viewAt(id: string, x: number, y: number): ResolvableView {
   return {
     id,
     view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
-    rect: { x, y, w: 100, h: 100 },
+    rect: { x, y, width: 100, height: 100 },
   };
 }
 
@@ -91,7 +91,7 @@ describe('gesture stickiness', () => {
   it('reports the pinned view its current rect, not the one it began with', () => {
     const { r, setViews } = resolver();
     r.begin(1, ...client(50, 50));
-    setViews([{ ...viewAt('a', 0, 0), rect: { x: 20, y: 20, w: 100, h: 100 } }]);
+    setViews([{ ...viewAt('a', 0, 0), rect: { x: 20, y: 20, width: 100, height: 100 } }]);
     expect(r.at(1, ...client(50, 50)).world).toEqual({ x: 30, y: 30 });
   });
 

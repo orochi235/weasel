@@ -327,7 +327,7 @@ defineInstrument<State, Config>({
   // …
   annotations: {
     targets: () => [
-      { id: 'pane', ref: paneRef, content: { w: 260, h: 180 }, positionDependsOn: ['angle'] },
+      { id: 'pane', ref: paneRef, content: { width: 260, height: 180 }, positionDependsOn: ['angle'] },
     ],
     meaning: {
       statuses: [

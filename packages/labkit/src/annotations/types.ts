@@ -1,10 +1,11 @@
+import type { Rect } from '@weasel-js/geom';
 import type { RefObject } from 'react';
 import type { ViewTransform2D } from '../instrument/types';
 import type { TrialInfo } from '../state/types';
 import type { SerializedMarkHistory } from './history';
 import type { MarkStyle, PaintableMark } from './paint';
 import type { MarkScene } from './store';
-import type { ContentWindow } from './view';
+import type { ContentSize, ContentWindow } from './view';
 
 /** A point in fractions of a target's content box. */
 export interface FracPoint {
@@ -16,12 +17,7 @@ export interface FracPoint {
  *
  *  Fractions rather than pixels because a mark must survive a change of render
  *  resolution: the picture gets bigger, the mark stays on the same feature. */
-export interface FracRect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
+export type FracRect = Rect;
 
 /** What shape a mark is. The kinds map onto weasel's own tools; an arrow is a
  *  line carrying an end marker, not a separate geometry. A point is zero-size
@@ -150,7 +146,7 @@ export interface AnnotationTargetInfo {
   id: string;
   /** Intrinsic content size in CSS pixels at zoom 1 — the box fractions are
    *  fractions *of*, and the target's world. */
-  content: { w: number; h: number };
+  content: ContentSize;
   /** Config keys whose change means a stored position no longer refers to the
    *  same picture. labkit snapshots and compares them without knowing what any
    *  of them mean. */

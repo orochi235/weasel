@@ -32,7 +32,7 @@ import {
 import { useOptionalViewInputs, type SurfaceViewInputs, type ViewRuleInputs } from './viewInputs';
 import type { CanvasViewProps, ViewRect } from './canvasViewProps';
 export type { CanvasViewProps, ViewRect } from './canvasViewProps';
-import { NO_RECT, sizeOf, useViewNesting } from './useViewNesting';
+import { NO_RECT, useViewNesting } from './useViewNesting';
 import { useViewClientMaps } from './useViewClientMaps';
 import {
   useOptionalViewRegistry,
@@ -109,7 +109,7 @@ export function CanvasView(props: CanvasViewProps): null {
   const viewApi = useMemo<ViewApi>(() => ({
     get: camera,
     set: setViewFromInput,
-    hostSize: () => sizeOf(rectNow()),
+    hostSize: () => rectNow(),
     layerIsPainted,
   }), [camera, rectNow, setViewFromInput, layerIsPainted]);
 
@@ -119,7 +119,7 @@ export function CanvasView(props: CanvasViewProps): null {
   const ingestionApi = useMemo<IngestionDep>(() => {
     const base = (): IngestionDep | undefined => depRegistryRef.current?.get('ingestion');
     return {
-      viewportWorldRect: () => viewportWorldRect(camera(), sizeOf(rectNow())),
+      viewportWorldRect: () => viewportWorldRect(camera(), rectNow()),
       get resolveSrc() { return base()?.resolveSrc; },
       get svg() { return base()?.svg; },
       get clipboard() { return base()?.clipboard; }, get handlers() { return base()?.handlers; },
@@ -201,7 +201,7 @@ export function CanvasView(props: CanvasViewProps): null {
       // view's frame and envelope. One painted over the surface already had
       // its chance: it occludes the view before routing reaches here.
       const extra = registry?.surface()?.hitTestExtras(
-        world.x, world.y, camera(), sizeOf(rectNow()), helpersRef.current, drawnLayers(),
+        world.x, world.y, camera(), rectNow(), helpersRef.current, drawnLayers(),
       );
       return extra ? layerAffordance(extra.layerId, extra.hit) : registry?.markerAt(id, world) ?? inner(world);
     };

@@ -115,7 +115,7 @@ const DEFAULT_BACKGROUND = '#18181c';
  * A minimap inside a `<SceneCanvas>`, installed with one entry:
  *
  * ```tsx
- * const minimap = useMemo(() => createMinimapContribution({ rect: { x: 8, y: 8, w: 160, h: 110 } }), []);
+ * const minimap = useMemo(() => createMinimapContribution({ rect: { x: 8, y: 8, width: 160, height: 110 } }), []);
  * <SceneCanvas ambient={[minimap]} … />
  * ```
  *
@@ -150,11 +150,11 @@ export function createMinimapContribution<TData = unknown, TLayer extends string
     const scrolled = fit === 'live' ? scene.scroll.getGeneration() : 0;
     const descriptor = (deps?.get('poseDescriptor') ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<unknown>;
     if (cached && cached.scene === scene && cached.descriptor === descriptor && cached.version === version
-        && cached.shown === shown && cached.scrolled === scrolled && cached.width === r.w && cached.height === r.h) {
+        && cached.shown === shown && cached.scrolled === scrolled && cached.width === r.width && cached.height === r.height) {
       return cached.view;
     }
-    const view = computeFitView(scene, { width: r.w, height: r.h }, fit, descriptor);
-    cached = { scene, descriptor, version, shown, scrolled, width: r.w, height: r.h, view };
+    const view = computeFitView(scene, r, fit, descriptor);
+    cached = { scene, descriptor, version, shown, scrolled, width: r.width, height: r.height, view };
     return view;
   };
 

@@ -91,8 +91,10 @@ export interface LensReadoutProps<C> extends LensSlotProps<C> {
 
 const TILE = 'lab-loupe';
 
-const sameSize = (a: { w: number; h: number } | null, b: { w: number; h: number }) =>
-  a !== null && a.w === b.w && a.h === b.h;
+const sameSize = (
+  a: { width: number; height: number } | null,
+  b: { width: number; height: number },
+) => a !== null && a.width === b.width && a.height === b.height;
 
 function boxStyle(rect: { x: number; y: number; w: number; h: number }): CSSProperties {
   // A measured rect has nowhere to live but the element's own style; set as
@@ -189,7 +191,7 @@ function reticleClient<C>(
  *  the canvas's, current with every frame the surface paints. */
 function useLensTile(layer: HTMLElement | null, redraw: () => void) {
   const surface = useSurfaceOptional();
-  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+  const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   useEffect(() => {
     if (!surface || !layer) return;
     surface.registerTile(TILE, layer);
@@ -198,7 +200,7 @@ function useLensTile(layer: HTMLElement | null, redraw: () => void) {
   useEffect(
     () =>
       surface?.registerPainter(TILE, (rect) => {
-        const next = { w: rect.w, h: rect.h };
+        const next = { width: rect.width, height: rect.height };
         setSize((prev) => (sameSize(prev, next) ? prev : next));
         // After the surface commits the size: the renderer reads its size from
         // the last render, and a redraw landing first paints at the old one.
@@ -349,8 +351,8 @@ export function LensOverlay<C>({
             features={[pickPreset, movePreset, transformPreset, editPreset]}
             ref={attachSceneCanvas}
             scene={scene}
-            width={size.w}
-            height={size.h}
+            width={size.width}
+            height={size.height}
             view={view}
             paintInto={{ canvas, x: 0, y: 0 }}
             inputElement={input}

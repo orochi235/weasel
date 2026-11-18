@@ -36,7 +36,7 @@ const inspector = defineInstrument<Record<string, never>, Record<string, never>>
   initialState: () => ({}),
   render: () => <Pane />,
   annotations: {
-    targets: () => [{ id: 'pane', ref: { current: null }, content: { w: 200, h: 100 } }],
+    targets: () => [{ id: 'pane', ref: { current: null }, content: { width: 200, height: 100 } }],
   },
 });
 
@@ -76,7 +76,7 @@ async function writeAsOtherTab(backing: Map<string, unknown>, key: string, recor
 const at = (x: number) => ({
   target: 'pane',
   kind: 'rect' as const,
-  frac: { x, y: 0.3, w: 0.1, h: 0.1 },
+  frac: { x, y: 0.3, width: 0.1, height: 0.1 },
 });
 
 /** A mark document holding one mark, as a lab stores it. */

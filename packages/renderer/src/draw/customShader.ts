@@ -159,7 +159,7 @@ export function drawShader(ctx: DrawContext, cmd: ShaderDrawCommand): void {
   }
 
   if (program.has('u_proj')) program.set('u_proj', 'mat3', mat3.toUniform(projFor(ctx)));
-  program.set4f('u_bounds', cmd.bounds.x, cmd.bounds.y, cmd.bounds.w, cmd.bounds.h);
+  program.set4f('u_bounds', cmd.bounds.x, cmd.bounds.y, cmd.bounds.width, cmd.bounds.height);
   const [ox, oy] = (ctx.renderTarget ? ctx.renderTarget.fragOrigin : ctx.fragOrigin) ?? [0, 0];
   program.set2f('u_fragOrigin', ox, oy);
   // WGSL's is the same corner counted from the top of the buffer drawn in.

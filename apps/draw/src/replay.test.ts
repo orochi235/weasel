@@ -12,7 +12,7 @@ function baseRecording(events: Recording['events']): Recording {
   return {
     version: 1,
     startedAt: new Date().toISOString(),
-    viewport: { w: 1000, h: 800 },
+    viewport: { width: 1000, height: 800 },
     scene: null,
     events,
   };

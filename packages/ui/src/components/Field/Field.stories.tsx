@@ -48,11 +48,11 @@ export const WithOutput: Story = {
 };
 
 function SizeField(args: FieldProps) {
-  const [size, setSize] = useState({ w: 210, h: 297 });
+  const [size, setSize] = useState({ width: 210, height: 297 });
   return (
     <Field {...args}>
-      <UnitField aria-label="Width" value={size.w} onChange={(w) => setSize({ ...size, w })} />
-      <UnitField aria-label="Height" value={size.h} onChange={(h) => setSize({ ...size, h })} />
+      <UnitField aria-label="Width" value={size.width} onChange={(width) => setSize({ ...size, width })} />
+      <UnitField aria-label="Height" value={size.height} onChange={(height) => setSize({ ...size, height })} />
     </Field>
   );
 }
