@@ -36,19 +36,23 @@ function effectSchema(type: BadgeEffect): ResolvedConfig {
   return schema;
 }
 
-function EffectBody({ effect, effects, onChange }: {
+/** The stack with one effect's type or param set to `value`. */
+const withEdit = (effects: readonly LabEffect[], effect: LabEffect, path: string, value: unknown): LabEffect[] =>
+  path === 'type' ? setEffectType(effects, effect.id, value as BadgeEffect) : setEffectParam(effects, effect.id, path, value);
+
+function EffectBody({ effect, effects, onChange, onDraft }: {
   effect: LabEffect;
   effects: readonly LabEffect[];
   onChange: (next: LabEffect[]) => void;
+  onDraft: (next: LabEffect[]) => void;
 }) {
   return (
     <ControlPanel
       schema={effectSchema(effect.type)}
       config={{ type: effect.type, ...effect.params }}
       pack="one-up"
-      setConfig={(path, value) => onChange(path === 'type'
-        ? setEffectType(effects, effect.id, value as BadgeEffect)
-        : setEffectParam(effects, effect.id, path, value))}
+      setConfig={(path, value) => onChange(withEdit(effects, effect, path, value))}
+      draftConfig={(path, value) => onDraft(withEdit(effects, effect, path, value))}
     />
   );
 }
@@ -57,7 +61,13 @@ function EffectBody({ effect, effects, onChange }: {
  * The ordered effect stack: add one, open a card by its number to edit it, drag a card by its number to
  * reorder, and switch, rename, duplicate, or remove each one.
  */
-function EffectsEditor({ effects, onChange }: { effects: readonly LabEffect[]; onChange: (next: LabEffect[]) => void }) {
+function EffectsEditor({ effects, onChange, onDraft, disabled }: {
+  effects: readonly LabEffect[];
+  disabled: boolean;
+  onChange: (next: LabEffect[]) => void;
+  /** The stack an edit is passing through, which the edit's settled `onChange` makes one undo step with. */
+  onDraft: (next: LabEffect[]) => void;
+}) {
   const [selected, setSelected] = useState<string | null>(null);
   const cards = useMemo(() => effects.map(cardOf), [effects]);
   const next = nextEffectId(effects);
@@ -68,6 +78,7 @@ function EffectsEditor({ effects, onChange }: { effects: readonly LabEffect[]; o
         placeholder="Add effect…"
         selectedKey={null}
         options={TYPE_OPTIONS}
+        disabled={disabled}
         onSelectionChange={(type) => {
           onChange(addEffect(effects, type));
           setSelected(String(next));
@@ -78,11 +89,12 @@ function EffectsEditor({ effects, onChange }: { effects: readonly LabEffect[]; o
         aria-label="Effects"
         items={cards}
         kinds={EFFECT_KINDS}
+        disabled={disabled}
         onChange={(list) => onChange(list.map(effectOf))}
         selected={selected}
         onSelectionChange={setSelected}
         onDuplicate={(card) => ({ ...card, id: String(next), name: `${card.name} copy` })}
-        renderBody={(card) => <EffectBody effect={card.effect} effects={effects} onChange={onChange} />}
+        renderBody={(card) => <EffectBody effect={card.effect} effects={effects} onChange={onChange} onDraft={onDraft} />}
       />
     </div>
   );
@@ -90,6 +102,13 @@ function EffectsEditor({ effects, onChange }: { effects: readonly LabEffect[]; o
 
 /** Draws the `effects` leaf as the effect stack. */
 export const effectsRenderer: LeafRenderer = Object.assign(
-  (ctx: RowContext) => <EffectsEditor effects={(ctx.value as LabEffect[] | undefined) ?? []} onChange={ctx.setValue} />,
+  (ctx: RowContext) => (
+    <EffectsEditor
+      effects={(ctx.value as LabEffect[] | undefined) ?? []}
+      onChange={ctx.setValue}
+      onDraft={ctx.drafts?.setValue ?? ctx.setValue}
+      disabled={ctx.disabled === true}
+    />
+  ),
   { wide: true },
 );

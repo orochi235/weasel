@@ -3,8 +3,8 @@ export type { BadgeDomProps, BadgeOwnProps, BadgeProps } from './Badge';
 export type { BadgeCorner, BadgeShape, BadgeVariant, BadgeSize } from './types';
 export { BADGE_VARIANT_ICONS } from './variantIcons';
 export {
-  BADGE_BASES, BADGE_EFFECTS, BADGE_SHAPES, badgeEffectZone, badgeShapeRendering,
-  type BadgeEffectZone, type BadgeShapeRendering,
+  BADGE_BASES, BADGE_EFFECTS, BADGE_SHAPES, badgeBaseDefaults, badgeEffectDefaults, badgeEffectZone,
+  badgeShapeDefaults, badgeShapeRendering, type BadgeEffectZone, type BadgeShapeRendering,
 } from './catalog';
 export { BADGE_LOOKS, type BadgeLook, lookAttrs, lookOf, lookProps } from './looks';
 

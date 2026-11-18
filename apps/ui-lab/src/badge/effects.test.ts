@@ -29,7 +29,7 @@ describe('the effect stack', () => {
 
   it('leaves an effect that is off out of the badge, and hands a color param over as a color literal', () => {
     const [outline] = addEffect([], 'outline');
-    const specs = effectSpecs([{ ...outline!, params: { ...outline!.params, color: '#ff0000' } }, { ...outline!, id: 2, on: false }]);
+    const specs = effectSpecs([{ ...outline!, params: { ...outline!.params, colorOwn: true, color: '#ff0000' } }, { ...outline!, id: 2, on: false }]);
     expect(specs).toHaveLength(1);
     expect(specs[0]!.params).toMatchObject({ width: 1, dash: '', color: expect.objectContaining({}) });
     expect(typeof (specs[0]!.params as { color: unknown }).color).not.toBe('string');
@@ -37,5 +37,11 @@ describe('the effect stack', () => {
 
   it('gives a heading row no param', () => {
     expect(Object.keys(effectSpecs(addEffect([], 'aqua'))[0]!.params ?? {})).not.toContain('__body__');
+  });
+
+  it("leaves a theme color unset until its switch is on, and never hands the badge the switch", () => {
+    const [outline] = addEffect([], 'outline');
+    const [spec] = effectSpecs([{ ...outline!, params: { ...outline!.params, color: '#ff0000' } }]);
+    expect(Object.keys(spec!.params ?? {})).toEqual(['width', 'opacity', 'dash', 'blendMode']);
   });
 });

@@ -16,9 +16,11 @@ afterEach(cleanup);
 
 const ANCHORS: SplineAnchor[] = [{ s: 0, r: 48, w: 1 }, { s: 0.5, r: 30, w: 1 }, { s: 1, r: 40, w: 1 }];
 
-function mount(anchors = ANCHORS) {
+function mount(anchors = ANCHORS, disabled = false) {
   const handlers = { onAnchorDraft: vi.fn(), onAnchorChange: vi.fn(), onAnchorDelete: vi.fn(), onAnchorAdd: vi.fn() };
-  const { container } = render(<OctantSplineEditor anchors={anchors} mode="octant" evalAtS={() => 30} {...handlers} />);
+  const { container } = render(
+    <OctantSplineEditor anchors={anchors} mode="octant" evalAtS={() => 30} disabled={disabled} {...handlers} />,
+  );
   return { host: container.querySelector('svg')!.parentElement!, ...handlers };
 }
 
@@ -42,6 +44,18 @@ describe('the spline curve editor', () => {
     expect(idx).toBe(1);
     expect(settled).toEqual(onAnchorDraft.mock.calls.at(-1)![1]);
     expect(settled.r).toBeGreaterThan(30);
+  });
+
+  it("takes a press anywhere on a heavy dot's drawn ring", () => {
+    const { host, onAnchorChange } = mount([ANCHORS[0]!, { s: 0.5, r: 30, w: 3 }, ANCHORS[2]!]);
+    const at = polarPoint('octant', 0.5, 30);
+    act(() => {
+      fire(host, 'pointerdown', { clientX: at.x + 3.7, clientY: at.y });
+      fire(host, 'pointermove', { clientX: at.x + 8, clientY: at.y });
+      fire(host, 'pointerup', { clientX: at.x + 8, clientY: at.y, buttons: 0 });
+    });
+    expect(onAnchorChange).toHaveBeenCalledTimes(1);
+    expect(onAnchorChange.mock.calls[0]![0]).toBe(1);
   });
 
   it('takes no press away from the empty editor', () => {
@@ -90,5 +104,21 @@ describe('the spline curve editor', () => {
       host.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 30, clientY: -10, altKey: true }));
     });
     expect(onAnchorAdd).toHaveBeenCalledTimes(1);
+  });
+
+  it('takes no edit while disabled: no drag, scroll, removal or insertion', () => {
+    const { host, ...handlers } = mount([...ANCHORS.slice(0, 2), { s: 0.75, r: 35, w: 1 }, ANCHORS[2]!], true);
+    const mid = polarPoint('octant', 0.5, 30);
+    act(() => {
+      fire(host, 'pointerdown', { clientX: mid.x, clientY: mid.y });
+      fire(host, 'pointermove', { clientX: mid.x + 8, clientY: mid.y });
+      fire(host, 'pointerup', { clientX: mid.x + 8, clientY: mid.y, buttons: 0 });
+      host.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, clientX: mid.x, clientY: mid.y, deltaY: -1 }));
+      host.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: mid.x, clientY: mid.y, button: 2 }));
+      fire(host, 'pointerdown', { clientX: 30, clientY: -10, altKey: true });
+      fire(host, 'pointerup', { clientX: 30, clientY: -10, altKey: true, buttons: 0 });
+      host.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 30, clientY: -10, altKey: true }));
+    });
+    for (const handler of Object.values(handlers)) expect(handler).not.toHaveBeenCalled();
   });
 });

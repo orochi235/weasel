@@ -1,4 +1,5 @@
 import { type ConfigSchema, f } from '@weasel-js/labkit';
+import type { CSSProperties } from 'react';
 import {
   BADGE_BASES, BADGE_LOOKS, type BadgeBase, type BadgeLook, type BadgeVariant,
 } from '@weasel-js/ui/components/Badge';
@@ -98,4 +99,19 @@ export function composedBaseParams(shape: Pick<ComposeShape, 'base' | 'params'>)
 /** The padding as `<Badge padding>` takes it, a linked axis drawing its leading side on both. */
 export function composedPadding({ top, right, bottom, left, linkX, linkY }: ComposeConfig['padding']): string {
   return `${top}px ${linkX ? left : right}px ${linkY ? top : bottom}px ${left}px`;
+}
+
+/**
+ * The label's dragged offset and type settings as its inline style, holding only what is set. Both vary per edit,
+ * so the label takes them inline rather than from a class.
+ */
+export function composedLabelStyle({ look, type }: Pick<ComposeConfig, 'look' | 'type'>): CSSProperties {
+  const style: CSSProperties = {};
+  if (look.labelX !== 0 || look.labelY !== 0) style.transform = `translate(${look.labelX}px, ${look.labelY}px)`;
+  if (type.font !== 'inherit') style.fontFamily = type.font;
+  if (type.sizeDelta !== 0) style.fontSize = `calc(1em + ${type.sizeDelta}px)`;
+  if (type.bold) style.fontWeight = 700;
+  if (type.italic) style.fontStyle = 'italic';
+  if (type.caps !== 'normal') style.fontVariantCaps = type.caps;
+  return style;
 }

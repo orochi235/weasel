@@ -48,10 +48,11 @@ describe('composeSnippet', () => {
     const config = defaults();
     const [outline] = addEffect([], 'outline');
     const text = composeSnippet({
+      ...config,
       shape: {
         ...config.shape,
         effects: [
-          { ...outline!, params: { width: 1, color: '#ff0000', dash: '' } },
+          { ...outline!, params: { width: 1, colorOwn: true, color: '#ff0000', dash: '' } },
           { ...outline!, id: 2, on: false },
         ],
       },
@@ -65,6 +66,7 @@ describe('composeSnippet', () => {
       '    { type: "outline", params: { width: 1, color: cssColorLiteral("#ff0000"), dash: "" } },',
       '  ]}',
       '  emphasis="high" variant="solid" size="sm"',
+      '  padding="1px 6px 1px 6px"',
       '>HI</Badge>',
     ].join('\n'));
   });
@@ -72,6 +74,7 @@ describe('composeSnippet', () => {
   it('adds bloat and crawl only when set', () => {
     const config = defaults();
     const text = composeSnippet({
+      ...config,
       shape: { ...config.shape, base: 'polygon' },
       look: { ...config.look, look: 'info', variant: 'outline', size: 'md', bloat: 2, crawl: true, crawlSpeed: 0.5, label: 'X' },
     });
@@ -79,9 +82,39 @@ describe('composeSnippet', () => {
       '<Badge',
       '  base="polygon"',
       '  grade="info" variant="outline" size="md"',
+      '  padding="1px 6px 1px 6px"',
       '  bloat={2}',
       '  crawl={0.5}',
       '>X</Badge>',
     ].join('\n'));
+  });
+
+  it('pads the badge as the stage does', () => {
+    const config = defaults();
+    const text = composeSnippet({ ...config, padding: { ...config.padding, top: 10, linkX: false, right: 3 } });
+    expect(text).toContain('  padding="10px 3px 10px 6px"');
+  });
+
+  it('writes a label holding a JSX-special character as a string expression', () => {
+    const config = defaults();
+    const label = (text: string) => composeSnippet({ ...config, look: { ...config.look, label: text } }).split('\n').at(-1);
+    expect(label('a{b}')).toBe('>{"a{b}"}</Badge>');
+    expect(label('<NEW>')).toBe('>{"<NEW>"}</Badge>');
+    expect(label('R&D')).toBe('>{"R&D"}</Badge>');
+    expect(label('PLAIN TEXT')).toBe('>PLAIN TEXT</Badge>');
+  });
+
+  it("styles the label with the stage's offset and type settings, and leaves it bare at their defaults", () => {
+    const config = defaults();
+    const last = (c: ComposeConfig) => composeSnippet(c).split('\n').at(-1);
+    expect(last(config)).toBe('>COMPOSE</Badge>');
+    expect(last({
+      ...config,
+      look: { ...config.look, labelX: 2, labelY: -1 },
+      type: { ...config.type, font: 'system-ui, sans-serif', sizeDelta: 3, bold: true, italic: true, caps: 'small-caps' },
+    })).toBe(
+      '><span style={{ display: "inline-block", transform: "translate(2px, -1px)", fontFamily: "system-ui, sans-serif", '
+      + 'fontSize: "calc(1em + 3px)", fontWeight: 700, fontStyle: "italic", fontVariantCaps: "small-caps" }}>COMPOSE</span></Badge>',
+    );
   });
 });

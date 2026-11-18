@@ -2,7 +2,7 @@ import { type Action, ActionDisabledReason, ANY_MODS, defineAction, type Immedia
 import { OCTANT_SPLINE_MAX_ANCHORS, OCTANT_SPLINE_MIN_ANCHORS } from '@weasel-js/ui/components/Badge/geometry';
 import type { SplineAnchor, SplineMode } from './splineAnchors';
 import {
-  dragEnd, dragInterior, insertionAt, normalAxisAt, polarPoint, projectOntoAxis, wheelWeight, type Point,
+  dotRadius, DOT_STROKE, dragEnd, dragInterior, insertionAt, normalAxisAt, polarPoint, projectOntoAxis, wheelWeight, type Point,
 } from './splineGeometry';
 
 declare module '@weasel-js/routing' {
@@ -13,12 +13,14 @@ declare module '@weasel-js/routing' {
   }
 }
 
-/** How near a dot, in editor units, a press has to land to take it. */
+/** How near a dot's center, in editor units, a press has to land to take it, however small the dot is drawn. */
 const HIT_RADIUS = 3;
 
 /** What the editor's actions read and write, current on every event. */
 export interface SplineEditorInput {
   mode: SplineMode;
+  /** Set, every action stands down: the curve is shown, not edited. */
+  disabled?: boolean;
   anchors: readonly SplineAnchor[];
   /** The curve as drawn, which a Shift-drag's normal is taken from. */
   samples: readonly Point[];
@@ -36,11 +38,13 @@ export interface SplineEditorInput {
 export function anchorAt(input: Pick<SplineEditorInput, 'mode' | 'anchors'>, at: WorldPoint | undefined): number {
   if (!at) return -1;
   let best = -1;
-  let bestD = HIT_RADIUS;
+  let bestD = Infinity;
   input.anchors.forEach((anchor, idx) => {
     const p = polarPoint(input.mode, anchor.s, anchor.r);
     const d = Math.hypot(p.x - at.x, p.y - at.y);
-    if (d <= bestD) {
+    // A heavy dot is drawn wider than the hit radius, and its whole drawn ring takes the press.
+    const reach = Math.max(HIT_RADIUS, dotRadius(anchor.w) + DOT_STROKE / 2);
+    if (d <= reach && d <= bestD) {
       best = idx;
       bestD = d;
     }
@@ -52,6 +56,9 @@ const pinned = (input: Pick<SplineEditorInput, 'anchors'>, idx: number): boolean
 
 const on = (ok: boolean) => (ok ? true : ActionDisabledReason.NotApplicable);
 
+/** The dot under `at` that an edit may take: -1 over no dot, and always while the editor is disabled. */
+const editableAt = (input: SplineEditorInput, at: WorldPoint | undefined): number => (input.disabled ? -1 : anchorAt(input, at));
+
 /**
  * The curve editor's input as actions on its own dispatcher, whose world is the editor's view box: drag a dot to
  * move it (Shift locks it to the curve's normal), Alt-click to insert one, right-click an interior dot to remove
@@ -62,12 +69,12 @@ export function splineEditorActions(input: { readonly current: SplineEditorInput
     id: 'badge-spline.move',
     label: 'Move anchor',
     defaultBinding: { kind: 'drag', mods: ANY_MODS },
-    enabled: (_deps, at) => on(anchorAt(input.current, at) >= 0),
+    enabled: (_deps, at) => on(editableAt(input.current, at) >= 0),
     invoker: {
       timing: 'ongoing',
       start(ctx) {
         const now = input.current;
-        const idx = anchorAt(now, ctx.drag?.start ?? ctx.world);
+        const idx = editableAt(now, ctx.drag?.start ?? ctx.world);
         if (idx < 0) return {};
         const original = now.anchors[idx]!;
         const end = pinned(now, idx) ? (idx === 0 ? 'first' : 'last') : null;
@@ -99,12 +106,12 @@ export function splineEditorActions(input: { readonly current: SplineEditorInput
     id: 'badge-spline.insert',
     label: 'Insert anchor',
     defaultBinding: { kind: 'click', mods: { alt: true } },
-    enabled: () => on(input.current.anchors.length < OCTANT_SPLINE_MAX_ANCHORS),
+    enabled: () => on(!input.current.disabled && input.current.anchors.length < OCTANT_SPLINE_MAX_ANCHORS),
     invoker: {
       timing: 'immediate',
       run(_deps, params) {
         const world = params?.world;
-        if (!world) return 'pass';
+        if (!world || input.current.disabled) return 'pass';
         const at = insertionAt(input.current.mode, world);
         input.current.insert(at.s, at.r);
         return undefined;
@@ -118,13 +125,13 @@ export function splineEditorActions(input: { readonly current: SplineEditorInput
     defaultBinding: { kind: 'contextMenu' },
     enabled: (_deps, at) => {
       const now = input.current;
-      const idx = anchorAt(now, at);
+      const idx = editableAt(now, at);
       return on(idx >= 0 && !pinned(now, idx) && now.anchors.length > OCTANT_SPLINE_MIN_ANCHORS);
     },
     invoker: {
       timing: 'immediate',
       run(_deps, params) {
-        const idx = anchorAt(input.current, params?.world);
+        const idx = editableAt(input.current, params?.world);
         if (idx < 0) return 'pass';
         input.current.remove(idx);
         return undefined;
@@ -136,14 +143,15 @@ export function splineEditorActions(input: { readonly current: SplineEditorInput
     id: 'badge-spline.weigh',
     label: 'Change anchor weight',
     defaultBinding: { kind: 'wheel' },
-    enabled: (_deps, at) => on(anchorAt(input.current, at) >= 0),
+    enabled: (_deps, at) => on(editableAt(input.current, at) >= 0),
     invoker: {
       timing: 'immediate',
       run(_deps, params) {
         const { world, deltaY = 0 } = params ?? {};
         const now = input.current;
-        const idx = anchorAt(now, world);
-        if (idx < 0) return 'pass';
+        const idx = editableAt(now, world);
+        // A sideways scroll has no weight change to make, so it passes on rather than writing an empty step.
+        if (idx < 0 || deltaY === 0) return 'pass';
         const anchor = now.anchors[idx]!;
         now.commit(idx, { ...anchor, w: wheelWeight(anchor.w, deltaY) });
         return undefined;

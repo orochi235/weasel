@@ -11,6 +11,12 @@ const MAX_RADIUS = 71;
 /** The closest a dragged anchor may come to a neighbor along the curve. */
 const NEIGHBOR_GAP = 0.005;
 
+/** The stroke an anchor dot is outlined with, in viewBox units. */
+export const DOT_STROKE = 0.7;
+
+/** The radius an anchor dot of weight `w` is drawn at, a held one at a fixed size. */
+export const dotRadius = (w: number, active = false): number => (active ? 2.6 : 1.5 + w * 0.7);
+
 const toHalf = (v: number): number => Math.round(v * 2) / 2;
 
 /** The angle the curve's far end sits at: the diagonal for an octant, the next cardinal for a quadrant. */
@@ -89,7 +95,8 @@ export function normalAxisAt(samples: readonly Point[], point: Point): Axis {
   return { nx: (flip * -ty) / length, ny: (flip * tx) / length, ox: origin.x, oy: origin.y };
 }
 
-/** An anchor's weight after one wheel notch: scrolling up adds a tenth. */
+/** An anchor's weight after one wheel notch: scrolling up adds a tenth, and a sideways scroll changes nothing. */
 export function wheelWeight(w: number, deltaY: number): number {
+  if (deltaY === 0) return w;
   return clamp(Math.round((w + (deltaY > 0 ? -0.1 : 0.1)) * 10) / 10, 0, 3);
 }

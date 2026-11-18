@@ -104,4 +104,8 @@ describe('wheelWeight', () => {
     expect(wheelWeight(3, -1)).toBe(3);
     expect(wheelWeight(0, 1)).toBe(0);
   });
+
+  it('leaves the weight alone for a wheel event with no vertical part', () => {
+    expect(wheelWeight(1, 0)).toBe(1);
+  });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  BADGE_BASES, BADGE_EFFECTS, BADGE_SHAPES, badgeEffectZone, badgeShapeRendering,
+  BADGE_BASES, BADGE_EFFECTS, BADGE_SHAPES, badgeBaseDefaults, badgeEffectDefaults, badgeEffectZone,
+  badgeShapeDefaults, badgeShapeRendering,
 } from '@weasel-js/ui/components/Badge';
 
 describe('the badge catalog', () => {
@@ -23,5 +24,14 @@ describe('the badge catalog', () => {
     expect(badgeEffectZone('shadow')).toBe('background');
     expect(badgeEffectZone('perforations')).toBe('mask');
     expect(badgeEffectZone('sheen')).toBe('foreground');
+  });
+
+  it('gives the params each shape, base, and effect draws with when none are set, as a copy', () => {
+    expect(badgeShapeDefaults('ribbon')).toEqual({ left: 'inward', right: 'outward', taperWidth: 8 });
+    expect(badgeShapeDefaults('pill')).toEqual({});
+    expect(badgeBaseDefaults('chamfered-rect')).toHaveProperty('chamfer');
+    expect(badgeEffectDefaults('shadow')).toEqual({ dx: 1, dy: 2, opacity: 0.28 });
+    (badgeEffectDefaults('shadow') as Record<string, unknown>).dx = 9;
+    expect(badgeEffectDefaults('shadow')).toHaveProperty('dx', 1);
   });
 });

@@ -23,6 +23,11 @@ describe('readAnchors', () => {
     ]);
   });
 
+  it('draws a quadrant\'s far end at its first anchor\'s radius and weight, as the base does', () => {
+    expect(readAnchors({ mode: 'quadrant' }).at(-1)).toEqual({ s: 1, r: 48, w: 1 });
+    expect(readAnchors(withAnchorCount({ mode: 'quadrant', r0: 40, w0: 2 }, 6)).at(-1)).toEqual({ s: 1, r: 40, w: 2 });
+  });
+
   it('holds the count between three and twelve', () => {
     expect(anchorCount({ count: 1 })).toBe(3);
     expect(anchorCount({ count: 40 })).toBe(12);

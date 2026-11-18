@@ -7,7 +7,7 @@ import { useLatest } from '@weasel-js/react';
 import { type RefObject, useMemo, useRef, useState } from 'react';
 import { type SplineEditorInput, splineEditorActions } from './splineActions';
 import type { SplineAnchor, SplineMode } from './splineAnchors';
-import { maxAngle, polarPoint, sampleCurve } from './splineGeometry';
+import { dotRadius, DOT_STROKE, maxAngle, polarPoint, sampleCurve } from './splineGeometry';
 import s from './OctantSplineEditor.module.css';
 
 const RINGS = [10, 20, 30, 40, 50, 60, 70];
@@ -96,8 +96,8 @@ function AnchorDot({ anchor, at, pinned, active }: { anchor: SplineAnchor; at: {
         data-active={active || undefined}
         cx={at.x}
         cy={at.y}
-        r={active ? 2.6 : 1.5 + anchor.w * 0.7}
-        strokeWidth="0.7"
+        r={dotRadius(anchor.w, active)}
+        strokeWidth={DOT_STROKE}
       />
       <text x={at.x + 2.5} y={at.y - 1.5} fontSize="2.8" className={s.anchorLabel}>
         {`(${anchor.s.toFixed(2)}, ${anchor.r.toFixed(1)}) w${anchor.w.toFixed(1)}`}
@@ -107,9 +107,13 @@ function AnchorDot({ anchor, at, pinned, active }: { anchor: SplineAnchor; at: {
 }
 
 /** One octant (or quadrant) of a spline base, drawn in polar form with its anchors as dots its actions edit. */
-export function OctantSplineEditor({ anchors, mode, evalAtS, onAnchorDraft, onAnchorChange, onAnchorDelete, onAnchorAdd }: {
+export function OctantSplineEditor({
+  anchors, mode, evalAtS, disabled = false, onAnchorDraft, onAnchorChange, onAnchorDelete, onAnchorAdd,
+}: {
   anchors: SplineAnchor[];
   mode: SplineMode;
+  /** Shows the curve without taking any edit to it. */
+  disabled?: boolean;
   evalAtS: (s: number) => number;
   /** An anchor as a drag passes through it. */
   onAnchorDraft: (idx: number, next: SplineAnchor) => void;
@@ -123,12 +127,12 @@ export function OctantSplineEditor({ anchors, mode, evalAtS, onAnchorDraft, onAn
   const [active, setActive] = useState<number | null>(null);
   const samples = sampleCurve(mode, evalAtS);
   const input = useLatest<SplineEditorInput>({
-    mode, anchors, samples, setActive,
+    mode, anchors, samples, disabled, setActive,
     draft: onAnchorDraft, commit: onAnchorChange, remove: onAnchorDelete, insert: onAnchorAdd,
   });
   const last = anchors.length - 1;
   return (
-    <div className={s.editor}>
+    <div className={s.editor} data-disabled={disabled || undefined}>
       <SplineEditorInputs hostRef={hostRef} svgRef={svgRef} input={input} />
       <div ref={hostRef} className={s.host}>
         <svg
