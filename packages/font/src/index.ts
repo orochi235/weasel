@@ -15,18 +15,18 @@ export {
   faceMetricsFor,
   ensureFontTexture,
   textureCacheKey,
-  resolveFontVariant,
-  cachedFontVariant,
-  resolveCanvasFallback,
-  listAtlasFonts,
-  listFontWeights,
   fontRegistry,
   isFontPending,
-  warmFonts,
 } from './registerFont';
+export { resolveFontVariant, cachedFontVariant } from './resolveFontVariant';
+export { resolveCanvasFallback } from './canvasFallback';
+export { warmFonts } from './warmFonts';
+export { listAtlasFonts, listFontWeights } from './fontCatalog';
 export type {
-  FontEntry, FontFamilyFaces, FontRequest, ResolveResult, RegisteredFont, RegisterFontOptions,
+  FontEntry, FontFamilyFaces, ResolveResult, RegisterFontOptions,
 } from './registerFont';
+export type { FontRequest } from './warmFonts';
+export type { RegisteredFont } from './fontCatalog';
 
 export {
   setFontFallbackPolicy,

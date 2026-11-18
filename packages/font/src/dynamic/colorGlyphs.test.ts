@@ -7,7 +7,7 @@ import { colorPageTextureId, syncColorPageTexture, _getColorPagesForTests, _getP
 import type { GlyphRasterizer } from './glyphRasterizer';
 import type { GlyphTextureSink } from '../textureSink';
 import { resolveColorCluster } from '../resolveGlyph';
-import { resolveCanvasFallback } from '../registerFont';
+import { resolveCanvasFallback } from '../canvasFallback';
 import { _resetFallbackForTests, setFontFallbackPolicy } from '../fallback';
 
 const W = 6;
