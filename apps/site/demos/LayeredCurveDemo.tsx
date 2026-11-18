@@ -24,7 +24,10 @@ const BEVEL_FILL = { side: 'below' } as const;
 
 interface PartitionState { x: number }
 
-function createPartitionLayer(): CurveLayer<PartitionState> {
+const HANDLE = { w: 10, h: 28 };
+const HANDLE_SLOP = 4;
+
+export function createPartitionLayer(): CurveLayer<PartitionState> {
   return {
     id: 'partition',
     render(state, ctx) {
@@ -35,8 +38,8 @@ function createPartitionLayer(): CurveLayer<PartitionState> {
         <g>
           <line x1={x} x2={x} y1={0} y2={h} stroke={stroke} strokeDasharray="5 4" strokeWidth={1.5} />
           <rect
-            x={x - 5} y={h / 2 - 14}
-            width={10} height={28} rx={2}
+            x={x - HANDLE.w / 2} y={h / 2 - HANDLE.h / 2}
+            width={HANDLE.w} height={HANDLE.h} rx={2}
             fill={stroke}
             className={s.handle}
             data-anchor-index="partition"
@@ -45,8 +48,11 @@ function createPartitionLayer(): CurveLayer<PartitionState> {
       );
     },
     hitTest(state, plot, ctx) {
+      // Only the drawn handle: the seam's own line carries both curves' end anchors, which must stay draggable.
       const x = ctx.toPlot({ x: state.x, y: 0 }).x;
-      return Math.abs(plot.x - x) < 12 ? { kind: 'handle' } : null;
+      const onHandle = Math.abs(plot.x - x) <= HANDLE.w / 2 + HANDLE_SLOP
+        && Math.abs(plot.y - ctx.plotSize.height / 2) <= HANDLE.h / 2 + HANDLE_SLOP;
+      return onHandle ? { kind: 'handle' } : null;
     },
     onPointerDown(_state, hit) {
       if (hit.kind !== 'handle') return;

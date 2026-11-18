@@ -1,7 +1,7 @@
 import { Profiler } from 'react';
 import { describe, it, expect } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { LayeredCurveDemo } from '../LayeredCurveDemo';
+import { LayeredCurveDemo, createPartitionLayer } from '../LayeredCurveDemo';
 
 const anchors = (container: HTMLElement, layer: string) =>
   [...container.querySelectorAll(`[data-layer-id="${layer}"] [aria-label]`)].map((el) => el.getAttribute('aria-label'));
@@ -27,5 +27,20 @@ describe('LayeredCurveDemo', () => {
     fireEvent.change(screen.getByRole('slider'), { target: { value: '0.05' } });
     fireEvent.change(screen.getByRole('slider'), { target: { value: '0.25' } });
     expect([anchors(container, 'bevel'), anchors(container, 'spline')]).toEqual(before);
+  });
+});
+
+describe('the partition handle', () => {
+  const layer = createPartitionLayer();
+  const ctx = { toPlot: (p: { x: number }) => ({ x: p.x * 640, y: 0 }), plotSize: { width: 640, height: 380 } } as never;
+  const hit = (x: number, y: number) => layer.hitTest!({ x: 0.25 }, { x, y }, ctx);
+
+  it('claims a press on the handle it draws', () => {
+    expect(hit(160, 190)).toEqual({ kind: 'handle' });
+  });
+
+  it('leaves the seam anchors above and below it to their curves', () => {
+    expect(hit(160, 80)).toBeNull();
+    expect(hit(160, 330)).toBeNull();
   });
 });
