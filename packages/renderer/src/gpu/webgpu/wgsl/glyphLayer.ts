@@ -47,13 +47,13 @@ fn corner(v: VIn, r: vec4f, k: i32) -> vec2f {
   let field = u.u_fieldScale[o.v_texSlot].v;
   o.v_cell = vec2f(0.0);
   if (0.5 * (field.x / pxPerU + field.y / pxPerV) > ${NEEDS_AREA}) {
-    let c0 = corner(v, r, 0);
-    let c1 = corner(v, r, 1);
-    let c3 = corner(v, r, 3);
-    let span = abs((c1.x - c0.x) * (c3.y - c0.y) - (c1.y - c0.y) * (c3.x - c0.x));
+    let lr = mat2x2f(u.u_model[0].xy, u.u_model[1].xy) * mat2x2f(v.a_pen.z, v.a_pen.w, -v.a_pen.w, v.a_pen.z);
+    let top = lr * vec2f(size.x, 0.0);
+    let side = lr * vec2f(-size.y * v.a_glyph.z, size.y);
+    let span = abs(top.x * side.y - top.y * side.x);
     if (span > 0.0) {
       let grow = ${GLYPH_AREA_MARGIN.toFixed(1)} / u.u_devicePx;
-      let g = grow * size * vec2f(length(c3 - c0), length(c1 - c0)) / span;
+      let g = grow * size * vec2f(length(side), length(top)) / span;
       r += vec4f(-g, g);
       let dt = uvSize * g / size;
       t += vec4f(-dt, dt);

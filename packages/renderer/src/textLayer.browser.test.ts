@@ -120,6 +120,15 @@ describe('a text layer against its texts', () => {
     expect(d.calls).toBe(2);
   });
 
+  it('draws the same at the density of a million-glyph wall', () => {
+    const rows: TextDrawCommand[] = [];
+    for (let i = 0; i < 60; i++) rows.push(text(2, 2 + i * 1.5, 'abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!?#%&abcdefghijklmnop', 1.3));
+    const d = both(rows);
+    expect(d.inked).toBeGreaterThan(1000);
+    expect(d.over).toBe(0);
+    expect(d.calls).toBe(2);
+  });
+
   it('draws the same under a turned view', () => {
     const d = both(LINES, view(1.2, 0.5, 40, -10));
     expect(d.over).toBe(0);

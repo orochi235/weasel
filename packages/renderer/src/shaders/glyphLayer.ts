@@ -80,11 +80,14 @@ void main() {
   vec2 field = u_fieldScale[v_texSlot];
   v_cell = vec2(0.0);
   if (0.5 * (field.x / pxPerU + field.y / pxPerV) > ${NEEDS_AREA}) {
-    vec2 c0 = corner(r, 0), c1 = corner(r, 1), c3 = corner(r, 3);
-    float span = abs((c1.x - c0.x) * (c3.y - c0.y) - (c1.y - c0.y) * (c3.x - c0.x));
+    // The quad's top and left edges on screen: the transform's linear part of the turned edges.
+    mat2 lr = mat2(u_model[0].xy, u_model[1].xy) * mat2(a_pen.z, a_pen.w, -a_pen.w, a_pen.z);
+    vec2 top = lr * vec2(size.x, 0.0);
+    vec2 side = lr * vec2(-size.y * a_glyph.z, size.y);
+    float span = abs(top.x * side.y - top.y * side.x);
     if (span > 0.0) {
       float grow = ${GLYPH_AREA_MARGIN.toFixed(1)} / u_devicePx;
-      vec2 g = grow * size * vec2(length(c3 - c0), length(c1 - c0)) / span;
+      vec2 g = grow * size * vec2(length(side), length(top)) / span;
       r += vec4(-g, g);
       vec2 dt = uvSize * g / size;
       t += vec4(-dt, dt);

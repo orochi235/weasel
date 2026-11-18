@@ -65,6 +65,10 @@ interface Measured {
   /** Per measured frame: draw calls, and bytes written to GL buffers. */
   drawCalls: number[];
   uploaded: number[];
+  /** Between consecutive measured frames' starts: what a viewer sees, CPU and GPU together. */
+  intervals: number[];
+  /** Render and a one-pixel readback, which waits for the GPU. */
+  synced: number[];
 }
 
 test.setTimeout(1_800_000);
@@ -205,6 +209,8 @@ test('text wall: frame cost of static text against glyph count', async ({ page, 
       const cpu: number[] = [];
       const gpu: number[] = [];
       const drawCalls: number[] = [];
+      const intervals: number[] = [];
+      let last = NaN;
       const uploaded: number[] = [];
       const mark = (globalThis as unknown as { __textWallProfile: (on: boolean) => Promise<void> }).__textWallProfile;
       const pending: { q: WebGLQuery; measured: boolean }[] = [];
@@ -232,10 +238,12 @@ test('text wall: frame cost of static text against glyph count', async ({ page, 
           const t1 = performance.now();
           if (q && timer) { gl.endQuery(timer.TIME_ELAPSED_EXT); pending.push({ q, measured }); }
           if (measured) {
+            if (!Number.isNaN(last)) intervals.push(t0 - last);
             cpu.push(t1 - t0);
             drawCalls.push(renderer.lastFrameStats().drawCalls);
             uploaded.push(uploadedBytes);
           }
+          last = t0;
           collect();
           f += 1;
           if (cpu.length >= opts.measure || performance.now() - started > opts.maxMs) {
@@ -252,9 +260,20 @@ test('text wall: frame cost of static text against glyph count', async ({ page, 
         await new Promise((r) => requestAnimationFrame(r));
         collect();
       }
+      // A one-pixel readback waits for the GPU, so this is the frame's CPU and GPU end to end. The
+      // timer query alone is not that: under ANGLE's Metal backend it has read a draw at 187 ms
+      // while frames came every 16.8 ms.
+      const synced: number[] = [];
+      const one = new Uint8Array(4);
+      for (let k = 0; k < Math.min(30, opts.measure); k++) {
+        const t0 = performance.now();
+        renderer.render(commands, view(f + k, moving));
+        gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, one);
+        synced.push(performance.now() - t0);
+      }
       return {
         glyphs, commands: built.commands.length, fontPx, frames: cpu.length, firstMs,
-        truncated: cpu.length < opts.measure, cpu, gpu, paints: painted, drawCalls, uploaded,
+        truncated: cpu.length < opts.measure, cpu, gpu, paints: painted, drawCalls, uploaded, intervals, synced,
       };
     };
     return { glRenderer, gpuTimer: !!timer };
@@ -294,6 +313,8 @@ test('text wall: frame cost of static text against glyph count', async ({ page, 
       drawCalls: metric(q(m.drawCalls, 0.5), 'count', 'p50 draw calls a frame', m.drawCalls),
       uploadedMB: metric(q(m.uploaded, 0.5) / 1e6, 'MB', 'p50 bytes written to GL buffers a frame', m.uploaded),
       firstMs: metric(m.firstMs, 'ms', 'CPU of the first frame, which lays the wall out and builds a layer'),
+      frameP50: metric(q(m.intervals, 0.5), 'ms', 'p50 interval between frames', m.intervals),
+      syncedP50: metric(q(m.synced, 0.5), 'ms', 'p50 of render and a one-pixel readback, which waits for the GPU', m.synced),
     };
     if (m.gpu.length) metrics.gpuP50 = metric(gpu50, 'ms', `p50 of ${m.gpu.length} timer queries`, m.gpu);
     run.item(`${cell.layout} ${cell.draw} ${cell.motion} n=${cell.glyphs}`, metrics, {
@@ -305,7 +326,7 @@ test('text wall: frame cost of static text against glyph count', async ({ page, 
       `cpu p50 ${cpu50.toFixed(2).padStart(8)}ms  p95 ${cpu95.toFixed(2).padStart(8)}ms  ` +
       `gpu ${(m.gpu.length ? gpu50.toFixed(2) : '-').padStart(7)}ms  ` +
       `draws ${String(q(m.drawCalls, 0.5)).padStart(4)}  up ${(q(m.uploaded, 0.5) / 1e6).toFixed(2).padStart(7)}MB  ` +
-      `first ${m.firstMs.toFixed(1).padStart(7)}ms` +
+      `first ${m.firstMs.toFixed(1).padStart(7)}ms  frame ${q(m.intervals, 0.5).toFixed(1).padStart(6)}ms  synced ${q(m.synced, 0.5).toFixed(1).padStart(6)}ms` +
       `${m.truncated ? `  (stopped at ${m.frames} frames)` : ''}`,
     );
   }
