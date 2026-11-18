@@ -1,6 +1,6 @@
-import { SceneCanvas, useScene, viewPreset, type Fill } from '@weasel-js/core';
+import { SceneCanvas, useScene, viewPreset, type Fill, type PlacedPage } from '@weasel-js/core';
 import { movePreset, selectPreset } from '@weasel-js/editing';
-import { pageGridSchema, usePageGrid } from '@weasel-js/editor';
+import { pageGridSchema, usePageGrid, usePaperLayer } from '@weasel-js/editor';
 import { pref } from '@weasel-js/prefs';
 import { usePrefGroup, usePrefsStore, usePrefsState } from '@weasel-js/prefs/react';
 import { localStorageAdapter } from '@weasel-js/storage';
@@ -10,7 +10,9 @@ import s from './PageGridDemo.module.css';
 
 const SCHEMA = pref.group('Preferences', { grid: pageGridSchema });
 
-const PAGE = { width: 400, height: 280 };
+const PAGE: PlacedPage = { id: 'page', index: 0, x: 0, y: 0, width: 400, height: 280 };
+const PAGES = [PAGE];
+const PAPER = '#ffffff';
 const RECTS: { id: string; x: number; y: number; width: number; height: number; fill: Fill }[] = [
   { id: 'a', x: 40, y: 40, width: 80, height: 60, fill: { paint: { color: '#7fb069' } } },
   { id: 'b', x: 200, y: 120, width: 60, height: 60, fill: { paint: { color: '#a48bd4' } } },
@@ -20,7 +22,8 @@ export function PageGridDemo() {
   const store = usePrefsStore(SCHEMA, { storage: localStorageAdapter, prefix: 'weasel-demo-page-grid.' });
   const { form } = usePrefsState(store);
   const [grid] = usePrefGroup(store, 'grid');
-  const { layer, source } = usePageGrid({ ...grid, page: PAGE, background: '#ffffff' });
+  const paper = usePaperLayer(PAGES, PAPER);
+  const { layer, source } = usePageGrid({ ...grid, page: PAGE, background: PAPER });
   const scene = useScene({ items: RECTS });
   const snap = useMemo(() => ({ sources: source ? [source] : [] }), [source]);
 
@@ -34,7 +37,7 @@ export function PageGridDemo() {
         className="ckd-canvas"
         scene={scene}
         snap={snap}
-        layers={layer ? { grid: { layer } } : {}}
+        layers={{ paper: { layer: paper, before: 'grid' }, ...(layer ? { grid: { layer } } : {}) }}
       />
     </div>
   );
