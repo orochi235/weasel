@@ -9,17 +9,15 @@
  */
 import type { ReactNode } from 'react';
 import { isPrimaryPress } from '@weasel-js/gestures';
-import { hitTestAnchor, hitTestCurve } from './hitTest';
 import { arrowMove } from '@weasel-js/quantity';
 import { attract } from '@weasel-js/ui-input';
 import { snapRadiusPx as kitSnapRadiusPx } from '../../snap';
-import type { CurveLayer, EmptyDownArgs, KeyDownArgs, LayerCtx, LayerGesture, LayerHit, LayerRenderCtx, PlotPoint } from './layerTypes';
-import { clamp } from '@weasel-js/geom';
+import type { CurveLayer, EmptyDownArgs, KeyDownArgs, LayerCtx, LayerGesture, LayerHit, LayerRenderCtx } from './layerTypes';
 import {
-  activeBezier, applyKeyframeDrag, keyframeLayerState, moveKeyTo,
-  type Bezier, type KeyframeDrag, type KeyframeDragResult, type KeyframeLayerState,
+  activeBezier, applyKeyframeDrag, clampTo, keyframeLayerState, nudgedBezier, nudgedKey, withHandleAt,
+  type KeyframeDrag, type KeyframeDragResult, type KeyframeLayerState,
 } from './keyframeEdits';
-import { handlePoints, keyframeSegments } from './keyframeCurve';
+import { keyframeHitAt } from './keyframeCurve';
 import { keyframeMarks, type KeyframeNames } from './keyframeMarks';
 import { keyTargetIn } from './layerMarks';
 
@@ -46,28 +44,20 @@ export interface KeyframeLayerOptions {
   step?: { x?: number; y?: number };
 }
 
-export const KEY_HIT_PX = 8;
-export const HANDLE_HIT_PX = 8;
-export const CURVE_HIT_PX = 6;
-const HANDLE_STEP = 0.01;
-
-function clampTo(v: number, range?: readonly [number, number]): number {
-  return range ? clamp(v, range[0], range[1]) : v;
-}
-
-/** `bezier` with handle `h` moved by `dx`, `dy` key steps; a handle's x stays within its segment. */
-function nudgedBezier(bezier: Bezier, h: number, dx: number, dy: number): Bezier {
-  const next = [...bezier] as [number, number, number, number];
-  next[h * 2] = Math.min(1, Math.max(0, next[h * 2] + dx * HANDLE_STEP));
-  next[h * 2 + 1] += dy * HANDLE_STEP;
-  return next;
-}
+export { CURVE_HIT_PX, HANDLE_HIT_PX, KEY_HIT_PX } from './keyframeCurve';
 
 /** A gesture ends by applying its drag, or by dropping it. */
 const settleDrag = {
   onCommit(state: KeyframeLayerState) { return { ...state, ...applyKeyframeDrag(state), drag: null }; },
   onCancel(state: KeyframeLayerState) { return { ...state, drag: null }; },
 };
+
+function handleGesture(segment: number, handle: 0 | 1): LayerGesture<KeyframeLayerState> {
+  return {
+    onMove(state, model) { return withHandleAt(state, segment, handle, model); },
+    ...settleDrag,
+  };
+}
 
 /**
  * Builds a keyframe layer for `LayeredCurveEditor`. Model x is time and model
@@ -87,19 +77,6 @@ export function createKeyframeLayer(cfg: KeyframeLayerOptions = {}): CurveLayer<
     return keyframeMarks(state, ctx, names);
   }
 
-  function hitTest(state: KeyframeLayerState, plot: PlotPoint, ctx: LayerCtx): LayerHit | null {
-    const bezier = activeBezier(state);
-    if (bezier) {
-      const h = hitTestAnchor(handlePoints(state, bezier, ctx), plot, ctx.kitSettings?.get('targets.curveHandleHitPx') ?? HANDLE_HIT_PX);
-      if (h) return { kind: 'handle', payload: { handle: h.index } };
-    }
-    const k = hitTestAnchor(state.keys.map((key) => ctx.toPlot({ x: key.t, y: key.value })), plot, ctx.kitSettings?.get('targets.curveKeyHitPx') ?? KEY_HIT_PX);
-    if (k) return { kind: 'key', payload: { index: k.index } };
-    const c = hitTestCurve(keyframeSegments(state.drag, state.keys, ctx), plot, ctx.kitSettings?.get('targets.curveHitPx') ?? CURVE_HIT_PX);
-    if (c) return { kind: 'segment', payload: { segment: c.segIdx + 1 } };
-    return null;
-  }
-
   function keyGesture(index: number): LayerGesture<KeyframeLayerState> {
     return {
       onMove(state, model, e, ctx) {
@@ -109,24 +86,6 @@ export function createKeyframeLayer(cfg: KeyframeLayerOptions = {}): CurveLayer<
           t = clampTo(attract(t, cfg.snapX, Math.abs(perPx) * snapRadiusPx(ctx)), cfg.xClamp);
         }
         return { ...state, drag: { kind: 'key', index, t, value: clampTo(model.y, cfg.yClamp) } };
-      },
-      ...settleDrag,
-    };
-  }
-
-  function handleGesture(segment: number, handle: 0 | 1): LayerGesture<KeyframeLayerState> {
-    return {
-      onMove(state, model) {
-        const a = state.keys[segment - 1];
-        const b = state.keys[segment];
-        const d = state.drag;
-        if (!a || !b || d?.kind !== 'handle') return state;
-        const xf = b.t === a.t ? 0 : Math.min(1, Math.max(0, (model.x - a.t) / (b.t - a.t)));
-        const yf = b.value === a.value ? 0 : (model.y - a.value) / (b.value - a.value);
-        const bezier = [...d.bezier] as [number, number, number, number];
-        bezier[handle * 2] = xf;
-        bezier[handle * 2 + 1] = yf;
-        return { ...state, drag: { kind: 'handle', segment, bezier } };
       },
       ...settleDrag,
     };
@@ -175,13 +134,8 @@ export function createKeyframeLayer(cfg: KeyframeLayerOptions = {}): CurveLayer<
     }
     if (!move) return;
     e.preventDefault();
-    const m = ctx.modelRange;
-    const stepX = cfg.step?.x ?? Math.abs(m.xMax - m.xMin) / 100;
-    const stepY = cfg.step?.y ?? Math.abs(m.yMax - m.yMin) / 100;
-    const t = clampTo(k.t + move.dx * stepX, cfg.xClamp);
-    const value = clampTo(k.value + move.dy * stepY, cfg.yClamp);
-    if (t === k.t && value === k.value) return;
-    const moved = moveKeyTo(state, index, t, value);
+    const moved = nudgedKey(state, index, move, ctx.modelRange, cfg);
+    if (!moved) return;
     extra.commit({ ...state, ...moved, drag: null });
     // Marks are keyed by index, so the one at the key's new index is the
     // element that draws it after the re-sort.
@@ -224,5 +178,5 @@ export function createKeyframeLayer(cfg: KeyframeLayerOptions = {}): CurveLayer<
     }
   }
 
-  return { id, render, hitTest, onPointerDown, onKeyDown };
+  return { id, render, hitTest: keyframeHitAt, onPointerDown, onKeyDown };
 }

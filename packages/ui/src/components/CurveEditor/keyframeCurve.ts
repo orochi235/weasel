@@ -1,7 +1,8 @@
 import { type EasingFn, type Keyframe } from '@weasel-js/animator';
 import { cubicBezierEasing, lerp, resolveEasing } from '@weasel-js/geom';
-import type { LayerCtx, PlotPoint } from './layerTypes';
-import type { Bezier, KeyframeLayerState } from './keyframeEdits';
+import { hitTestAnchor, hitTestCurve } from './hitTest';
+import type { LayerCtx, LayerHit, PlotPoint } from './layerTypes';
+import { activeBezier, type Bezier, type KeyframeLayerState } from './keyframeEdits';
 
 const SAMPLES_PER_SEGMENT = 16;
 
@@ -32,6 +33,24 @@ export function keyframeSegments(
     out.push(pts);
   }
   return out;
+}
+
+export const KEY_HIT_PX = 8;
+export const HANDLE_HIT_PX = 8;
+export const CURVE_HIT_PX = 6;
+
+/** What a press at `plot` lands on: a handle of the selected segment, else a key, else a segment. */
+export function keyframeHitAt(state: KeyframeLayerState, plot: PlotPoint, ctx: Pick<LayerCtx, 'toPlot' | 'kitSettings'>): LayerHit | null {
+  const bezier = activeBezier(state);
+  if (bezier) {
+    const h = hitTestAnchor(handlePoints(state, bezier, ctx), plot, ctx.kitSettings?.get('targets.curveHandleHitPx') ?? HANDLE_HIT_PX);
+    if (h) return { kind: 'handle', payload: { handle: h.index } };
+  }
+  const k = hitTestAnchor(state.keys.map((key) => ctx.toPlot({ x: key.t, y: key.value })), plot, ctx.kitSettings?.get('targets.curveKeyHitPx') ?? KEY_HIT_PX);
+  if (k) return { kind: 'key', payload: { index: k.index } };
+  const c = hitTestCurve(keyframeSegments(state.drag, state.keys, ctx), plot, ctx.kitSettings?.get('targets.curveHitPx') ?? CURVE_HIT_PX);
+  if (c) return { kind: 'segment', payload: { segment: c.segIdx + 1 } };
+  return null;
 }
 
 /** The plot positions of the selected segment's two bezier handles. */

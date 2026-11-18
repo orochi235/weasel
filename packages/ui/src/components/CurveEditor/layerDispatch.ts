@@ -89,9 +89,25 @@ export function dispatchPress(
   return null;
 }
 
-/** Offer a key to one layer, and return the edit it committed, if any. */
-export function offerKey(entry: LayerEntry, e: KeyboardEvent, ctx: LayerCtx): LayerEdit | null {
-  const c = committer(entry, entry.state);
-  entry.layer.onKeyDown?.(entry.state, e, ctx, { commit: c.commit });
-  return c.edit();
+/**
+ * Offer a key to each layer, top to bottom, until one prevents its default. Each edit a layer commits goes to
+ * `onEdit` before the next layer is asked, with what `before` read just ahead of that layer's turn.
+ */
+export function dispatchKey<B>(
+  layers: readonly LayerEntry[],
+  e: KeyboardEvent,
+  ctx: LayerCtx,
+  before: () => B,
+  onEdit: (before: B, edit: LayerEdit) => void,
+): void {
+  for (let i = layers.length - 1; i >= 0; i--) {
+    const entry = layers[i];
+    if (!entry.layer.onKeyDown) continue;
+    const prior = before();
+    const c = committer(entry, entry.state);
+    entry.layer.onKeyDown(entry.state, e, ctx, { commit: c.commit });
+    const edit = c.edit();
+    if (edit) onEdit(prior, edit);
+    if (e.defaultPrevented) return;
+  }
 }

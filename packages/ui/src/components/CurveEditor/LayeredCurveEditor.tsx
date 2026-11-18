@@ -7,8 +7,6 @@ import {
   type ReactNode,
 } from 'react';
 import { historyKey } from '@weasel-js/gestures';
-import type { ModifierState } from '@weasel-js/routing';
-import { useKitSettings, useLatest } from '@weasel-js/react';
 import {
   Plot2D,
   type Plot2DHandle,
@@ -16,17 +14,15 @@ import {
   type AxesSettings,
   type TickSettings,
 } from '../Plot2D';
-import type { ModelRange } from '../Plot2D/geometry';
 import { dlog } from '../../dlog';
 import s from './CurveEditor.module.css';
-import { dispatchContextMenu, dispatchPress, offerKey, type LayerEdit, type LayerPoint } from './layerDispatch';
+import { dispatchContextMenu, dispatchKey, dispatchPress, type LayerEdit, type LayerPoint } from './layerDispatch';
 import { LayerHostContext, settleLayer, useLayerRegistry, type LayerHost } from './layerHost';
-import { layerCtxOver, readModifiers } from './layerCtx';
+import { readModifiers, usePlotLayerCtx } from './layerCtx';
 import type { HoldProps } from '../Disabled';
 import { useControlHold } from '../Disabled/controlHold';
 import { useLayerHistory, type LayerSnapshot } from './useLayerHistory';
 import { useLayerGesture } from './useLayerGesture';
-import type { LayerCtx } from './layerTypes';
 
 /** Props for {@link LayeredCurveEditor}. Disabled or read-only, no press, key, or context menu reaches a layer, and
  *  undo and redo do nothing; disabled with no reason, the plot and every mark in it leave the tab order. */
@@ -84,24 +80,9 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
   const historyEnabled = props.history !== false;
   const hold = useControlHold(props);
 
-  const modelRange: ModelRange = useMemo(
-    () => ({ xMin: xRange[0], xMax: xRange[1], yMin: yRange[0], yMax: yRange[1] }),
-    [xRange, yRange],
-  );
-  const plotSize = useMemo(() => ({ width, height }), [width, height]);
-
+  const { ctxFor: makeCtx, base: renderCtxBase } = usePlotLayerCtx(xRange, yRange, width, height);
   const { register, layers } = useLayerRegistry();
-  const modelRangeRef = useLatest(modelRange);
-  const plotSizeRef = useLatest(plotSize);
-  const kitSettings = useKitSettings();
   const plotRef = useRef<Plot2DHandle | null>(null);
-
-  // Handlers read the plot through refs, never render-time values, so a
-  // mid-drag re-render (another layer's state included) reaches the next move.
-  const makeCtx = useCallback(
-    (modifiers: ModifierState): LayerCtx => ({ ...layerCtxOver(modelRangeRef.current, plotSizeRef.current, kitSettings), modifiers }),
-    [modelRangeRef, plotSizeRef, kitSettings],
-  );
 
   const { snapshot, record, undo, redo } = useLayerHistory(layers);
 
@@ -146,18 +127,10 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       e.preventDefault();
       return;
     }
-    const ctx = makeCtx(readModifiers(e));
-    const ls = layers();
-    for (let i = ls.length - 1; i >= 0; i--) {
-      if (!ls[i].layer.onKeyDown) continue;
-      const before = snapshot();
-      const edit = offerKey(ls[i], e.nativeEvent, ctx);
-      if (edit) settleEdit(before, edit);
-      // The layer prevents default on the native event, which the synthetic
-      // event's `isDefaultPrevented` does not observe.
-      if (e.nativeEvent.defaultPrevented) return;
-    }
-  }, [historyEnabled, undo, redo, makeCtx, snapshot, settleEdit, layers]);
+    // A layer prevents default on the native event, which the synthetic
+    // event's `isDefaultPrevented` does not observe.
+    dispatchKey(layers(), e.nativeEvent, makeCtx(readModifiers(e)), snapshot, settleEdit);
+  },[historyEnabled, undo, redo, makeCtx, snapshot, settleEdit, layers]);
 
   const onSvgContextMenu = useCallback((
     e: ReactMouseEvent<SVGSVGElement>,
@@ -170,7 +143,6 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
   }, [busy, makeCtx, snapshot, settleEdit, layers]);
 
   // ── render ─────────────────────────────────────────────────────────
-  const renderCtxBase = useMemo(() => layerCtxOver(modelRange, plotSize, kitSettings), [modelRange, plotSize, kitSettings]);
   const host = useMemo<LayerHost>(() => ({ register, base: renderCtxBase, active: activeEntry }), [register, renderCtxBase, activeEntry]);
 
   const cls = [s.root, className].filter(Boolean).join(' ');

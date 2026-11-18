@@ -4,7 +4,10 @@ import { Diamond } from './Diamond';
 import { isHiddenAnchor, isPinnedEndpointAt } from './anchorRules';
 import s from './CurveEditor.module.css';
 import type { LayerRenderCtx } from './layerTypes';
-import type { EndpointMode, FunctionLayerOptions, FunctionLayerState } from './functionLayerTypes';
+import type { EndpointMode, FillSettings, FunctionLayerOptions, FunctionLayerState } from './functionLayerTypes';
+import type { InterpolationMode } from '@weasel-js/geom';
+import { CurveFill } from './CurveFill';
+import { curvePaths } from './functionCurve';
 
 /** What a function layer's options say about how its anchors look, fixed when the layer is built. */
 export interface AnchorLook extends Pick<FunctionLayerOptions, 'label' | 'renderAnchor' | 'hideNonInteractive'> {
@@ -13,10 +16,44 @@ export interface AnchorLook extends Pick<FunctionLayerOptions, 'label' | 'render
   readonly curveVisible: boolean;
 }
 
+/** How a function layer's options say its anchors look. */
+export function anchorLookFor(cfg: FunctionLayerOptions): AnchorLook {
+  return {
+    endpoints: cfg.endpoints ?? 'free',
+    curveVisible: cfg.curve !== false && cfg.curve !== null,
+    label: cfg.label, renderAnchor: cfg.renderAnchor, hideNonInteractive: cfg.hideNonInteractive,
+  };
+}
+
 const formatCoord = (n: number): string => present(n, decimal({ maxPlaces: 3 })).spoken;
 
+/**
+ * Everything a function layer draws: its fill, its curve unless hidden, and, given `anchors`, a mark per anchor.
+ */
+export function functionMarks(
+  state: FunctionLayerState,
+  ctx: LayerRenderCtx,
+  curve: { interpolation: InterpolationMode; fill: FillSettings | undefined; visible: boolean },
+  anchors: AnchorLook | null,
+): ReactNode {
+  const paths = curvePaths(state.points, curve.interpolation, curve.fill, ctx);
+  return (
+    <>
+      {paths.fill && curve.fill && <CurveFill d={paths.fill} fill={ctx.colorCss(curve.fill.color)} />}
+      {paths.line && curve.visible && (
+        <path
+          className={s.curve}
+          d={paths.line}
+          fill="none"
+        />
+      )}
+      {anchors && anchorMarks(state, ctx, anchors)}
+    </>
+  );
+}
+
 /** One focusable, named mark per anchor a function layer shows: the consumer's `renderAnchor`, else a dot or a diamond. */
-export function anchorMarks(state: FunctionLayerState, ctx: LayerRenderCtx, look: AnchorLook): ReactNode[] {
+function anchorMarks(state: FunctionLayerState, ctx: LayerRenderCtx, look: AnchorLook): ReactNode[] {
   const { points, activeIndex } = state;
   const { endpoints, curveVisible } = look;
   return points.map((point, i) => {
