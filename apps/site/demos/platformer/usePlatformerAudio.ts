@@ -57,6 +57,9 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
   const audio = useRef<Audio | null>(null);
   const [audioState, setAudioState] = useState<'off' | 'suspended' | 'running'>('off');
   const [musicOn, setMusicOn] = useState(true);
+  // The switch as of now, for the unlock's callback: `musicOn` is the value of
+  // the render that clicked, and a toggle can land before the unlock resolves.
+  const musicOnNow = useRef(true);
 
   /** Frames left before the music stops; -1 once it has. */
   const cutMusicIn = useRef(-1);
@@ -81,7 +84,7 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
       if (a?.engine !== engine) return;
       setAudioState(engine.state() === 'running' ? 'running' : 'suspended');
       if (!a.bed) {
-        engine.bus(BED_BUS).mute(!musicOn);
+        engine.bus(BED_BUS).mute(!musicOnNow.current);
         const bed = createPatternPlayer(engine, {
           tempo: BED_TEMPO, events: bedEvents(), length: BED_STEPS, detune: bedDetune,
         });
@@ -94,7 +97,8 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
   /** The bed is the only sound that runs on its own — everything else is a
    *  one-shot that stops when you do — so it gets a switch of its own. */
   const toggleMusic = () => {
-    const next = !musicOn;
+    const next = !musicOnNow.current;
+    musicOnNow.current = next;
     audio.current?.engine.bus(BED_BUS).mute(!next);
     setMusicOn(next);
   };
