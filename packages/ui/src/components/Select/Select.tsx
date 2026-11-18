@@ -10,10 +10,12 @@ import {
   ListBoxSection as RACListBoxSection,
   Header,
   Text,
+  SelectStateContext,
   type SelectProps as RACSelectProps,
   type ListBoxItemProps as RACListBoxItemProps,
 } from 'react-aria-components';
 import { Popover } from '../Popover';
+import { heldItemProps, useHeldAriaRef, useHeldPick } from '../heldItem';
 import { AlignOverTrigger, NO_NUDGE, type Press } from './alignOverTrigger';
 import { FieldFoot, fieldRootClass, type FieldSlotProps, type FieldStateProps } from '../Field/fieldSlots';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
@@ -157,6 +159,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   const placeholder = mixed ? MIXED_HINT : placeholderProp;
   const triggerRef = useObjectRef(ref);
   const pressRef = useRef<Press | null>(null);
+  const { probe, pick } = useHeldPick(SelectStateContext);
   const [nudge, setNudge] = useState(NO_NUDGE);
   const sized = useFieldSizeClass(size, className);
   const { id: triggerId, ...field } = useRacField({ id, 'aria-label': rest['aria-label'], 'aria-labelledby': rest['aria-labelledby'], 'aria-describedby': racHeld['aria-describedby'], invalid, required, labeled: label !== undefined });
@@ -168,14 +171,15 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
       {...field}
       {...(held ? { isOpen: false, onOpenChange: undefined } : open !== undefined ? { isOpen: open } : {})}
       selectedKey={mixed ? null : shownKey}
-      onSelectionChange={(k) => {
-        if (held) return;
+      onSelectionChange={(picked) => {
+        const k = held ? undefined : pick(shownKey, picked);
+        if (k === undefined) return;
         if (selectedKey === undefined) setOwnKey(k as T | null);
         onSelectionChange?.(k as T);
       }}
       className={selectClass({ orientation, width, variant, indicator, className: sized })}
     >
-      {anchor}
+      {anchor}{probe}
       {label !== undefined && <Label className={f.label}>{label}</Label>}
       <TriggerTooltip
         content={tooltipContent({ tooltip, shortcut, ariaLabel: rest['aria-label'], label })}
@@ -194,14 +198,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
               isPlaceholder ? (placeholder ?? defaultChildren) : <InTrigger.Provider value>{defaultChildren}</InTrigger.Provider>
             }
           </SelectValue>
-          {width === 'fit' && (
-            <span className={s.sizer} aria-hidden="true">
-              {placeholder !== undefined && <span>{placeholder}</span>}
-              {optionLabels(options, children, SelectSection).map((l, i) => (
-                <span key={i}>{l}</span>
-              ))}
-            </span>
-          )}
+          {width === 'fit' && <FitSizer placeholder={placeholder} options={options}>{children}</FitSizer>}
           {indicator === 'chevron' && <Caret className={s.chevron} />}
         </RACButton>
       </TriggerTooltip>
@@ -253,6 +250,18 @@ function selectClass({ orientation, width, variant, indicator, className }: Pick
       .filter(Boolean)
       .join(' '),
   });
+}
+
+/** The labels a `width='fit'` trigger sizes itself against, hidden. */
+function FitSizer<T extends OptionKey>({ placeholder, options, children }: { placeholder?: ReactNode } & Pick<SelectProps<T>, 'options' | 'children'>) {
+  return (
+    <span className={s.sizer} aria-hidden="true">
+      {placeholder !== undefined && <span>{placeholder}</span>}
+      {optionLabels(options, children, SelectSection).map((l, i) => (
+        <span key={i}>{l}</span>
+      ))}
+    </span>
+  );
 }
 
 /** A select's list: its `options`, or else its `children`. */
@@ -352,10 +361,12 @@ function textValueOf(children: ReactNode, explicit: string | undefined): string 
  */
 export function SelectItem({ children, icon, className, textValue, description, disabled, disabledReason, ...rest }: SelectItemProps) {
   const note = (disabled && disabledReason) || description;
+  const row = useHeldAriaRef(disabled);
   return (
     <RACListBoxItem
       {...rest}
-      isDisabled={disabled}
+      ref={row}
+      {...heldItemProps(disabled)}
       textValue={textValueOf(children, textValue)}
       className={[s.option, className].filter(Boolean).join(' ')}
     >

@@ -24,6 +24,7 @@ import type { OptionKey } from '../../optionKey';
 import { useRacField } from '../Field/racField';
 import f from '../Field/Field.module.css';
 import listbox from '../Select/listbox.module.css';
+import { heldItemProps, isHeldKey, useHeldAriaRef } from '../heldItem';
 import s from './ComboBox.module.css';
 
 
@@ -220,7 +221,14 @@ function ComboBoxFrame({
   // commit from a text one.
   const onKeyDownCapture = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== 'Enter' || imeKey(e.nativeEvent)) return;
-    if (state?.isOpen && state.selectionManager.focusedKey != null) return;
+    const focused = state?.isOpen ? state.selectionManager.focusedKey : null;
+    // React Aria's commit would clear the selection and close the list on a held option.
+    if (focused != null && isHeldKey(state!.collection, focused)) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    if (focused != null) return;
     revertingRef.current = true;
     const text = e.currentTarget.value;
     if (text !== '') onCommitText?.(text);
@@ -267,10 +275,12 @@ export type ComboBoxItemProps = Omit<RACListBoxItemProps, 'className' | 'isDisab
 /** One row in a {@link ComboBox}'s filtered list. */
 export function ComboBoxItem({ className, disabled, icon, description, disabledReason, children, textValue, ...rest }: ComboBoxItemProps) {
   const note = (disabled && disabledReason) || description;
+  const row = useHeldAriaRef(disabled);
   return (
     <RACListBoxItem
       {...rest}
-      isDisabled={disabled}
+      ref={row}
+      {...heldItemProps(disabled)}
       textValue={textValue ?? (typeof children === 'string' ? children : undefined)}
       className={[listbox.option, className].filter(Boolean).join(' ')}
     >
