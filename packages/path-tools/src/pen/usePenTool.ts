@@ -5,18 +5,18 @@ import type { ModifierState, Tool } from '@weasel-js/core';
 import type { Action, ToolOptionShare } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
-import { withinPxRadius, type PathAnchorHit, type PolygonPath } from '@weasel-js/geom';
+import { type PathAnchorHit, type PolygonPath } from '@weasel-js/geom';
 import { createPenPreviewLayer, penReachOf } from './penPreviewLayer';
 import { commitPen } from './penCommit';
 import { pickUpEndpoint } from './penContinuation';
 import { commitJoin, joinable } from './penJoin';
+import { createPenTrail } from './penTrail';
 import { placeAt, withinCloseRadius, type PenPlacement } from './penTargets';
 import { PEN_HANDLE_ROLES, pullHandle } from './penHandle';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../icons.gen';
 import { penOptionValues, penToolOptions } from './penOptions';
 import { anchorCount, freshScratch, resetScratch, startSubpath } from './penScratch';
-import { createPointerFollower } from '@weasel-js/editing';
 
 /**
  * In-progress pen anchor. A click places a corner, with no handles. A drag
@@ -147,43 +147,10 @@ export function usePenTool(
   const closesAt = useCallback((deps: ActionDeps, ax: number, ay: number, wx: number, wy: number): boolean =>
     withinCloseRadius(deps, ax, ay, wx, wy, penReachOf(optsRef.current).close), [optsRef]);
 
-  // The rubber band and the close hint trail the `pointer` dep while a path is
-  // in progress. `followed` is the deps last followed through.
-  const trail = useMemo(() => {
-    let followed: ActionDeps | undefined;
-    const follower = createPointerFollower(() => track());
-    const track = (): void => {
-      const s = scratchRef.current!;
-      if (!s.current && s.finishedSubpaths.length === 0) follower.unfollow();
-      const at = s.current ? follower.pointer()?.get() ?? null : null;
-      // A handle drag snaps through its own session, and hides the rubber band.
-      if (!at || s.draggingHandleAt !== null) snaps.stop();
-      s.cursor = !at ? null
-        : s.draggingHandleAt !== null ? { ...at.world }
-          : snaps.trail(followed?.snap, at.world, s.current?.anchors.at(-1));
-      const first = s.current && s.current.anchors.length >= 3 ? s.current.anchors[0] : null;
-      s.closeHintActive = first !== null && s.cursor !== null && withinPxRadius(
-        first.x - s.cursor.x, first.y - s.cursor.y,
-        penReachOf(optsRef.current).close, followed?.view?.get().scale ?? { x: 1, y: 1 },
-      );
-      forceRender();
-    };
-    return {
-      /** Repaint after a scratch change. */
-      refresh: track,
-      /** The same, following `deps`' pointer from here on. */
-      update(deps: ActionDeps): void {
-        followed = deps; // eslint-disable-line react-hooks/immutability -- the trail's own deps, read by `track`
-        follower.follow(deps.pointer);
-        track();
-      },
-      stop(): void {
-        follower.unfollow();
-        snaps.stop();
-        forceRender();
-      },
-    };
-  }, [snaps, optsRef]);
+  const trail = useMemo(
+    () => createPenTrail(scratchRef.current!, snaps, () => penReachOf(optsRef.current).close, forceRender),
+    [snaps, optsRef],
+  );
 
   /**
    * Actions the pen owns, registered by `useToolActions` from inside the
