@@ -1,37 +1,27 @@
-import { createPaintResources, type OwnedPaintResources } from './paintResources';
 import type { ShaderProgram } from './shaders/ShaderProgram';
-import type { GpuBuffer, GpuDevice, GpuPassDesc, GpuTexture } from './gpu/types';
+import type { GpuDevice, GpuPassDesc } from './gpu/types';
 import { openWebGL } from './gpu/webgl/openWebGL';
 import { openWebGPU } from './gpu/webgpu/openWebGPU';
-import {
-  LazyProgram, PATH_FILL_SPEC, PATH_FILL_VCOLOR_SPEC, GRAD_FILL_SPEC, PATTERN_FILL_SPEC, GLYPH_PAINT_SPECS,
-  BatchVariantPrograms, createBatchFill,
-} from './shaders/builtinPrograms';
 import { glyphGeneration, resetBakeBudget, DEFAULT_BAKE_BUDGET } from '@weasel-js/font';
 import { textEngineGeneration } from '@weasel-js/text';
 import { PaintScratch } from './paintScratch';
-import { GLMeshCache } from './cache/GLMeshCache';
-import { GLTextureCache } from './cache/GLTextureCache';
 import { textureRegistry } from './textures/registerTexture';
-import { GLImageCache, type ImageMinification } from './cache/GLImageCache';
-import { GradientRampAtlas } from './cache/GradientRampAtlas';
+import type { ImageMinification } from './cache/GLImageCache';
 import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
 import { inCssPixels, type FlattenTolerance } from './draw/flattenTolerance';
 import type { GlMat3, Rect } from '@weasel-js/geom';
-import { OUTLINE_MIN_SCREEN_PX, type DrawContext, type GlyphPaintKind } from './draw';
+import { OUTLINE_MIN_SCREEN_PX, type DrawContext } from './draw';
 import { drawStream, now } from './drawStream';
 import { drawIdFrame } from './draw/idRender';
 import { readPixels, readPixelsSync } from './readPixels';
 import { createIdComposite } from './draw/idComposite';
-import { DrawBatch } from './drawBatch';
 import { registerRendererParts } from './rendererParts';
-import { QUAD_VERTICES, QUAD_INDICES } from './shaders/customPrelude';
 import type { ShaderProgramHandle } from './shaders/registerProgram';
 import { CustomPrograms } from './shaders/CustomPrograms';
 import { EffectTargets } from './effects/EffectTargets';
 import { RetainedSurfaces } from './retain/RetainedSurfaces';
-import { createWhiteTexture } from './cache/whiteTexture';
+import { ContextResources } from './contextResources';
 import { paintDrawKindRegistry } from './paintKinds';
 import {
   DEFAULT_RETAIN_BUDGET, type IdBuffer, type RenderIdsOptions, type RenderOptions, type RenderSpanStats,
@@ -52,26 +42,8 @@ const NO_RETAINED = { composited: 0, redrawn: 0, declined: 0, bytes: 0 } as cons
 export class WeaselRenderer {
   private readonly gpu: GpuDevice;
   private stats: RenderStats = { drawCalls: 0, ms: 0, spans: [], retained: NO_RETAINED };
-  /** Built on the first frame that draws with each, so a one-shot render of
-   *  plain shapes builds the batch program alone. */
-  private readonly pathFill: LazyProgram;
-  private readonly pathFillVColor: LazyProgram;
-  private batchFill: ShaderProgram;
-  private readonly batchVariants: BatchVariantPrograms;
-  private readonly gradFill: LazyProgram;
-  private readonly patternFill: LazyProgram;
-  /** Compiled on first use: only atlas text under a texture paint needs one. */
-  private readonly glyphPaintPrograms: Record<GlyphPaintKind, LazyProgram>;
-  private meshCache: GLMeshCache;
-  private textureCache: GLTextureCache;
-  private imageCache: GLImageCache;
-  private gradRamps: GradientRampAtlas;
+  private readonly res: ContextResources;
   private readonly programs: CustomPrograms;
-  private quad: { vertices: GpuBuffer; indices: GpuBuffer } | null = null;
-  private drawBatch: DrawBatch;
-  /** 1x1 white, so a batch flush sampling no image still samples something —
-   *  see `shaders/batchFill.ts`. */
-  private whiteTexture: GpuTexture | null = null;
   private readonly groupState = new GroupState();
   private widthCss: number;
   private heightCss: number;
@@ -96,11 +68,6 @@ export class WeaselRenderer {
   /** True after `dispose()`. A disposed renderer ignores further `render()`
    *  calls and `registerProgram()` calls. */
   private disposed = false;
-  /** What registered paint kinds hang their GPU state on. One per context
-   *  generation: a restore releases it and opens the next. */
-  private paintResources: OwnedPaintResources = createPaintResources();
-  /** The program an id frame hands a group's ids back with; built by the first. */
-  private idComposite: ShaderProgram | null = null;
 
   constructor(opts: WeaselRendererOptions) {
     const { device, lossTarget } = opts.gpu ? { ...openWebGPU(opts.gpu), lossTarget: null } : openWebGL(opts);
@@ -137,25 +104,11 @@ export class WeaselRenderer {
     }
     this.gpu.beginFrame();
 
-    this.pathFill = new LazyProgram(this.gpu, PATH_FILL_SPEC);
-    this.pathFillVColor = new LazyProgram(this.gpu, PATH_FILL_VCOLOR_SPEC);
-    this.gradFill = new LazyProgram(this.gpu, GRAD_FILL_SPEC);
-    this.patternFill = new LazyProgram(this.gpu, PATTERN_FILL_SPEC);
-    this.batchVariants = new BatchVariantPrograms(this.gpu);
-    this.batchFill = createBatchFill(this.gpu);
-    const glyph = (kind: GlyphPaintKind) => new LazyProgram(this.gpu, GLYPH_PAINT_SPECS[kind]);
-    this.glyphPaintPrograms = { pattern: glyph('pattern'), gradient: glyph('gradient'), texture: glyph('texture') };
-
-    this.meshCache = new GLMeshCache(this.gpu);
-    this.textureCache = new GLTextureCache(this.gpu, (source) => this.imageCache.noteDrawn(source));
-    this.imageCache = new GLImageCache(this.gpu, this.imageMinification);
-    this.gradRamps = new GradientRampAtlas(this.gpu);
-    this.uploadQuadGeometry();
-    this.drawBatch = new DrawBatch(this.gpu, this.batchFill);
-    this.whiteTexture = createWhiteTexture(this.gpu);
+    const res = new ContextResources(this.gpu, this.imageMinification);
+    this.res = res;
     registerRendererParts(this, () => ({
-      drawBatch: this.drawBatch, batchVariants: this.batchVariants, meshCache: this.meshCache,
-      textureCache: this.textureCache, imageCache: this.imageCache, gradRamps: this.gradRamps,
+      drawBatch: res.drawBatch, batchVariants: res.batchVariants, meshCache: res.meshCache,
+      textureCache: res.textureCache, imageCache: res.imageCache, gradRamps: res.gradRamps,
       groupState: this.groupState,
     }));
     // Last: a constructor that throws (a lost context fails the compile above) must leave no listener to rebuild it.
@@ -165,20 +118,6 @@ export class WeaselRenderer {
       this.lossTarget.addEventListener('webglcontextlost', this.boundOnLost);
       this.lossTarget.addEventListener('webglcontextrestored', this.boundOnRestored);
     }
-  }
-
-  private lazyPrograms(): LazyProgram[] {
-    return [
-      this.pathFill, this.pathFillVColor, this.gradFill, this.patternFill, ...Object.values(this.glyphPaintPrograms),
-      ...this.batchVariants.lazy(),
-    ];
-  }
-
-  private uploadQuadGeometry(): void {
-    this.quad = {
-      vertices: this.gpu.createBuffer('vertex', QUAD_VERTICES, 'static'),
-      indices: this.gpu.createBuffer('index', QUAD_INDICES, 'static'),
-    };
   }
 
   /**
@@ -250,20 +189,7 @@ export class WeaselRenderer {
     this.effectTargets.releaseAll();
     this.retained.releaseAll();
     this.paintScratch.release();
-    this.paintResources.release();
-    this.paintResources = createPaintResources();
-    for (const lazy of this.lazyPrograms()) lazy.abandon();
-    this.batchFill = createBatchFill(this.gpu);
-    this.idComposite = null;
-    this.meshCache = new GLMeshCache(this.gpu);
-    this.textureCache = new GLTextureCache(this.gpu, (source) => this.imageCache.noteDrawn(source));
-    this.imageCache.abandon();
-    this.imageCache = new GLImageCache(this.gpu, this.imageMinification);
-    this.gradRamps = new GradientRampAtlas(this.gpu);
-
-    this.uploadQuadGeometry();
-    this.drawBatch = new DrawBatch(this.gpu, this.batchFill);
-    this.whiteTexture = createWhiteTexture(this.gpu);
+    this.res.restore(this.imageMinification);
     this.programs.restore();
   }
 
@@ -277,33 +203,16 @@ export class WeaselRenderer {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
-    const gpu = this.gpu;
     if (this.lossTarget) {
       this.lossTarget.removeEventListener('webglcontextlost', this.boundOnLost);
       this.lossTarget.removeEventListener('webglcontextrestored', this.boundOnRestored);
     }
-    this.meshCache.dispose();
-    this.paintResources.release();
-    for (const lazy of this.lazyPrograms()) lazy.release();
-    gpu.deleteProgram(this.batchFill);
-    if (this.idComposite) gpu.deleteProgram(this.idComposite);
-    this.idComposite = null;
+    this.res.dispose();
     this.programs.dispose();
-    this.textureCache.free();
-    this.imageCache.dispose();
-    this.gradRamps.free();
-    if (this.quad) {
-      gpu.deleteBuffer(this.quad.vertices);
-      gpu.deleteBuffer(this.quad.indices);
-    }
-    this.quad = null;
-    this.drawBatch.dispose();
-    if (this.whiteTexture) gpu.deleteTexture(this.whiteTexture);
-    this.whiteTexture = null;
     this.effectTargets.releaseAll();
     this.retained.releaseAll();
     this.paintScratch.release();
-    gpu.dispose?.();
+    this.gpu.dispose?.();
   }
 
   /**
@@ -321,7 +230,7 @@ export class WeaselRenderer {
     const spanStats: RenderSpanStats[] = [];
     this.stats = { drawCalls: 0, ms: 0, spans: spanStats, retained: NO_RETAINED };
     const gpu = this.gpu;
-    this.imageCache.beginFrame();
+    this.res.imageCache.beginFrame();
     this.beginFrame();
     this.retained.beginFrame([glyphGeneration(), textEngineGeneration(), textureRegistry.getVersion(),
       paintDrawKindRegistry.getVersion(), this.programs.epoch, this.flattenTolerance, this.widthCss, this.heightCss,
@@ -347,7 +256,7 @@ export class WeaselRenderer {
     // Free transient resources allocated during this frame (e.g. per-frame
     // stroke ribbons from tessellateStroke). Done after all draws complete
     // so we never delete a buffer that's still bound to a pending draw.
-    this.meshCache.freeTransient();
+    this.res.meshCache.freeTransient();
     const retained = this.retained;
     retained.endFrame();
     this.stats.retained = {
@@ -396,14 +305,15 @@ export class WeaselRenderer {
     this.beginFrame();
     const gpu = this.gpu;
     gpu.beginFrame();
-    this.idComposite ??= createIdComposite(gpu);
+    const res = this.res;
+    res.idComposite ??= createIdComposite(gpu);
     const spec = { ...opts, width: device.width, height: device.height, dpr: this.dpr };
     try {
-      return drawIdFrame(gpu, this.effectTargets, this.idComposite, spec, commands, (renderTarget, ids, culled) => drawStream(
+      return drawIdFrame(gpu, this.effectTargets, res.idComposite, spec, commands, (renderTarget, ids, culled) => drawStream(
         this.frameContext(viewMatrix, opts.screen, undefined, { renderTarget, fragOrigin: [0, 0], ids }), culled, [], [], { drawCalls: 0 }), sync);
     } finally {
       // A throw must not leave a shared context bound to a target back in the pool.
-      this.meshCache.freeTransient();
+      res.meshCache.freeTransient();
       gpu.beginFrame();
       gpu.beginPass(this.canvasPass());
       gpu.endPass();
@@ -416,13 +326,14 @@ export class WeaselRenderer {
     // Free GPU resources whose Mesh was GC'd since the last frame. Done here,
     // before any draws — deleting from the FinalizationRegistry callback
     // directly races a draw in flight.
-    this.meshCache.drainPendingDeletes();
-    this.textureCache.sweep(textureRegistry);
+    const res = this.res;
+    res.meshCache.drainPendingDeletes();
+    res.textureCache.sweep(textureRegistry);
     this.programs.refresh();
     this.groupState.reset();
-    this.drawBatch.reset();
+    res.drawBatch.reset();
     // A frame that threw part-way left its clip here.
-    this.drawBatch.clip = null;
+    res.drawBatch.clip = null;
   }
 
   /** The draw context of one frame; `target` says where it draws. */
@@ -432,25 +343,26 @@ export class WeaselRenderer {
     target: Pick<DrawContext, 'renderTarget' | 'fragOrigin' | 'retained' | 'ids' | 'canvasPass'>,
   ): DrawContext {
     const device = this.deviceRect();
-    const { pathFill, pathFillVColor, gradFill, patternFill } = this;
+    const res = this.res;
+    const { pathFill, pathFillVColor, gradFill, patternFill, glyphPaintPrograms } = res;
     return {
       gpu: this.gpu,
       get pathFill() { return pathFill.get(); },
       get pathFillVColor() { return pathFillVColor.get(); },
-      batchFill: this.batchFill,
-      batchVariants: this.batchVariants,
+      batchFill: res.batchFill,
+      batchVariants: res.batchVariants,
       get gradFill() { return gradFill.get(); },
       get patternFill() { return patternFill.get(); },
-      meshCache: this.meshCache,
-      textureCache: this.textureCache,
-      imageCache: this.imageCache,
-      gradRamps: this.gradRamps,
+      meshCache: res.meshCache,
+      textureCache: res.textureCache,
+      imageCache: res.imageCache,
+      gradRamps: res.gradRamps,
       programRegistry: this.programs.registry,
       ensureProgram: (id) => (this.disposed ? null : this.programs.ensure(id)),
-      glyphPaintProgram: (kind) => this.glyphPaintPrograms[kind].get(),
-      quad: this.quad,
-      drawBatch: this.drawBatch,
-      whiteTexture: this.whiteTexture,
+      glyphPaintProgram: (kind) => glyphPaintPrograms[kind].get(),
+      quad: res.quad,
+      drawBatch: res.drawBatch,
+      whiteTexture: res.whiteTexture,
       state: this.groupState,
       widthCss: this.widthCss,
       heightCss: this.heightCss,
@@ -463,7 +375,7 @@ export class WeaselRenderer {
       paintScratch: this.paintScratch,
       deviceWidth: device.width,
       deviceHeight: device.height,
-      paintResources: this.paintResources,
+      paintResources: res.paintResources,
       stats,
       ...target,
     };
@@ -492,8 +404,7 @@ export class WeaselRenderer {
     const next = mode ?? 'auto';
     if (this.disposed || next === this.imageMinification) return;
     this.imageMinification = next;
-    this.imageCache.dispose();
-    this.imageCache = new GLImageCache(this.gpu, next);
+    this.res.setImageMinification(next);
   }
 
   resize(dims: { width: number; height: number; dpr: number }): void {
@@ -507,11 +418,11 @@ export class WeaselRenderer {
   }
 
   /** @internal */ _gpu(): GpuDevice { return this.gpu; }
-  /** @internal */ _pathFill(): ShaderProgram { return this.pathFill.get(); }
-  /** @internal */ _pathFillVColor(): ShaderProgram { return this.pathFillVColor.get(); }
-  /** @internal */ _batchFill(): ShaderProgram { return this.batchFill; }
-  /** @internal */ _gradFill(): ShaderProgram { return this.gradFill.get(); }
-  /** @internal */ _patternFill(): ShaderProgram { return this.patternFill.get(); }
+  /** @internal */ _pathFill(): ShaderProgram { return this.res.pathFill.get(); }
+  /** @internal */ _pathFillVColor(): ShaderProgram { return this.res.pathFillVColor.get(); }
+  /** @internal */ _batchFill(): ShaderProgram { return this.res.batchFill; }
+  /** @internal */ _gradFill(): ShaderProgram { return this.res.gradFill.get(); }
+  /** @internal */ _patternFill(): ShaderProgram { return this.res.patternFill.get(); }
   /** @internal */ _widthCss(): number { return this.widthCss; }
   /** @internal */ _heightCss(): number { return this.heightCss; }
   /** @internal */ _dpr(): number { return this.dpr; }
