@@ -5,6 +5,7 @@
  */
 import type { Point } from '../paths/cubicMath';
 import type { UvMap } from './quad';
+import type { Rect } from '../box';
 
 /** A grid of `rows` × `cols` patches: `(rows + 1) × (cols + 1)` points, row by
  *  row from the top. */
@@ -16,7 +17,7 @@ export interface MeshGrid {
 
 /** An even grid of `rows` × `cols` patches over the box. */
 export function meshGridOver(
-  box: { x: number; y: number; width: number; height: number },
+  box: Rect,
   rows: number,
   cols: number,
 ): MeshGrid {

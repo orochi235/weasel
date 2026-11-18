@@ -9,14 +9,10 @@ import { meshGridFrom, meshGridOver, bicubicMesh, coonsMesh, type MeshGrid } fro
 import { pinWarpMap, type WarpPin } from './pinWarp';
 import { bilinearQuad, projectiveQuad, type Quad, type UvMap } from './quad';
 import { warpPath } from './warpPath';
+import type { Rect } from '../box';
 
 /** An axis-aligned box: the area a plane warp or a cloth warp was laid over. */
-export interface WarpRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export type WarpRect = Rect;
 
 /** How a plane warp maps its box onto its corners. `free` is bilinear, and bends
  *  straight lines; `perspective` is projective, and keeps them straight. */
