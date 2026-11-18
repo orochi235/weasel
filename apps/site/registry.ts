@@ -714,7 +714,7 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/SequenceDiagramDemo.tsx',
   },
   {
-    id: 'diagram-groups',
+    id: 'diagram-clusters',
     title: 'Diagram clusters',
     package: 'diagram',
     description: "A cluster in diagramScene's data draws a box around its members, and layered and tree keep those members together: each cluster gets a column on the cross axis that nothing else enters, in every rank from its first member's to its last. The box is a scene node that derives its pose from its members, so dragging a member carries the box with it. An edge naming a cluster meets the box, and ranks against the cluster's first stage.",
