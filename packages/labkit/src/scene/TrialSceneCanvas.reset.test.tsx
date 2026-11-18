@@ -12,7 +12,9 @@ import { TrialSceneCanvas } from './TrialSceneCanvas';
 import { type SceneTrialState, useTrialScene } from './useTrialScene';
 
 beforeAll(() => {
-  HTMLCanvasElement.prototype.getContext = vi.fn(() => null) as unknown as HTMLCanvasElement['getContext'];
+  HTMLCanvasElement.prototype.getContext = vi.fn(
+    () => null,
+  ) as unknown as HTMLCanvasElement['getContext'];
 });
 
 type Pose = { x: number; y: number; width: number; height: number };
@@ -23,7 +25,15 @@ const BOX = asNodeId('box');
 const create = () => {
   const scene = createScene<{ kind: 'rect' }, 'main', Pose>({
     systemLayers: [{ id: 'main' }],
-    initial: [{ id: BOX, kind: 'mark', layer: 'main', data: { kind: 'rect' }, pose: { x: 0, y: 0, width: 10, height: 10 } }],
+    initial: [
+      {
+        id: BOX,
+        kind: 'mark',
+        layer: 'main',
+        data: { kind: 'rect' },
+        pose: { x: 0, y: 0, width: 10, height: 10 },
+      },
+    ],
   });
   scene.setSelection([BOX]);
   return scene;
@@ -33,13 +43,18 @@ const create = () => {
 function recordingHost() {
   let id: string | null = null;
   let anchors: ReadonlySet<number> = new Set();
+  const setAnchors = (next: ReadonlySet<number>) => {
+    anchors = next;
+  };
   const host: PathEditHost = {
     editingId: () => id,
-    setEditingId: (next) => { id = next; },
+    setEditingId: (next) => {
+      id = next;
+    },
     selectedAnchors: () => anchors,
-    setSelectedAnchors: (next) => { anchors = next; },
+    setSelectedAnchors: setAnchors,
   };
-  return { host, open: () => id, anchors: () => [...anchors] };
+  return { host, setAnchors, open: () => id, anchors: () => [...anchors] };
 }
 
 let live: ReturnType<typeof create>;
@@ -49,7 +64,13 @@ async function mount(host: PathEditHost, opening: PathEditOpening | undefined) {
     const scene = useTrialScene(ctx, create);
     live = scene;
     return (
-      <TrialSceneCanvas features={[drawPreset]} scene={scene} trial={ctx.trial} pathEdit={host} defaultPathEdit={opening} />
+      <TrialSceneCanvas
+        features={[drawPreset]}
+        scene={scene}
+        trial={ctx.trial}
+        pathEdit={host}
+        defaultPathEdit={opening}
+      />
     );
   }
   const instrument = defineInstrument<State, Record<string, never>>({
@@ -64,7 +85,12 @@ async function mount(host: PathEditHost, opening: PathEditOpening | undefined) {
 /** An edit, so the trial has something to Reset, then the Reset. */
 async function editAndReset() {
   act(() => {
-    live.add({ kind: 'mark', layer: 'main', data: { kind: 'rect' }, pose: { x: 20, y: 0, width: 10, height: 10 } });
+    live.add({
+      kind: 'mark',
+      layer: 'main',
+      data: { kind: 'rect' },
+      pose: { x: 20, y: 0, width: 10, height: 10 },
+    });
   });
   await userEvent.click(screen.getByRole('button', { name: 'Reset trial' }));
 }
@@ -76,22 +102,23 @@ describe('<TrialSceneCanvas> on Reset', () => {
     expect(rec.open()).toBe(BOX);
     act(() => {
       rec.host.setEditingId(null);
-      rec.host.setSelectedAnchors!(new Set());
+      rec.setAnchors(new Set());
     });
     await editAndReset();
     expect(rec.open()).toBe(BOX);
     expect(rec.anchors()).toEqual([1]);
   });
 
-  it('closes a path opened since, when it opened on none', async () => {
+  // A host that opens a path itself, such as a mode machine, owns it past a Reset.
+  it('leaves the open path alone when it opened on none', async () => {
     const rec = recordingHost();
     await mount(rec.host, undefined);
     act(() => {
       rec.host.setEditingId(BOX);
-      rec.host.setSelectedAnchors!(new Set([0, 2]));
+      rec.setAnchors(new Set([0, 2]));
     });
     await editAndReset();
-    expect(rec.open()).toBeNull();
-    expect(rec.anchors()).toEqual([]);
+    expect(rec.open()).toBe(BOX);
+    expect(rec.anchors()).toEqual([0, 2]);
   });
 });
