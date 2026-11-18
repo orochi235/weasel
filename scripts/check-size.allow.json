@@ -79,35 +79,11 @@
   "packages/kernel3d/src/deps.ts": {
     "longestFunction": 138
   },
-  "packages/labkit/src/annotations/AnnotationOverlay.tsx": {
-    "longestFunction": 146
-  },
-  "packages/labkit/src/annotations/ExportMenu.tsx": {
-    "longestFunction": 123
-  },
-  "packages/labkit/src/annotations/store.ts": {
-    "longestFunction": 293
-  },
-  "packages/labkit/src/controls/ControlMatrix.tsx": {
-    "longestFunction": 136
-  },
-  "packages/labkit/src/controls/panelRows.tsx": {
-    "longestFunction": 206
-  },
   "packages/labkit/src/lab/Lab.tsx": {
     "longestFunction": 169
   },
   "packages/labkit/src/lab/Workspace.tsx": {
     "longestFunction": 159
-  },
-  "packages/labkit/src/lightbox/Lightbox.tsx": {
-    "longestFunction": 140
-  },
-  "packages/labkit/src/loupe/TrialLoupe.tsx": {
-    "longestFunction": 154
-  },
-  "packages/labkit/src/loupe/useLoupe.ts": {
-    "longestFunction": 181
   },
   "packages/labkit/src/specimen/Specimen.tsx": {
     "lines": 795,
