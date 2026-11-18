@@ -1,21 +1,15 @@
-import { useLatest } from '@weasel-js/core';
-import type { Instrument, InstrumentList } from '@weasel-js/labkit';
+import type { InstrumentList } from '@weasel-js/labkit';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { getOwn, sameList } from '@weasel-js/registry';
 import type { FrameSetup } from '../frame/FrameController';
 import type { FrameImporters } from '../frame/mountFrame';
-import { stableStringify } from '../protocol/messages';
-import { loadIndexBundle } from '../story/indexBundle';
-import { indexId, isIndexId } from '../story/indexPages';
 import { type Libraries, TITLE_LIBRARIES } from '../story/library';
 import { loadStories } from '../story/load';
 import type { IndexEntry, LoadedStory } from '../story/types';
-import { type AnswerBook, createAnswerBook } from './answers';
-import { documentInstrument, type Loaded, pendingInstrument } from './documentInstrument';
 import type { GlobalDeclarations } from './globals';
+import { buildInstruments, EMPTY_CACHE, type InstrumentCache } from './instrumentCache';
 import { type FrameReady, readyKey } from './readyKey';
 import type { StoryHosts } from './storyHosts';
-import { storyInstrument } from './storyInstrument';
+import { pruned, useStoryLoads } from './storyLoads';
 
 /** The lab instruments `useStoryRegistry` builds, and the calls that keep them current. */
 export interface StoryRegistry {
@@ -47,51 +41,8 @@ export interface StoryRegistryOptions {
   load?: (mod: Record<string, unknown>, title: string, parameters?: Record<string, unknown>) => LoadedStory[];
 }
 
-interface Built {
-  entryKey: string;
-  ready: FrameReady | undefined;
-  loaded: Loaded | undefined;
-  fault: Error | undefined;
-  frameUrl: string;
-  globals: GlobalDeclarations;
-  setup: FrameSetup | undefined;
-  inDocument: boolean;
-  generation: number;
-  revision: number;
-  instrument: Instrument<unknown, unknown>;
-}
-
-interface Cache {
-  built: ReadonlyMap<string, Built>;
-  books: ReadonlyMap<string, AnswerBook>;
-  list: InstrumentList;
-}
-
 const NO_GLOBALS: GlobalDeclarations = {};
 const NO_SETUP: FrameSetup = {};
-
-const pruned = <V>(map: ReadonlyMap<string, V>, ids: Set<string>): ReadonlyMap<string, V> =>
-  [...map.keys()].every((id) => ids.has(id)) ? map : new Map([...map].filter(([id]) => ids.has(id)));
-
-const toError = (error: unknown): Error => (error instanceof Error ? error : new Error(String(error)));
-
-type Imports = Map<string, Promise<Record<string, unknown>>>;
-
-/**
- * `importOf`, noting each import it hands out, and whether each is still its file's in `current`: a reload drops a
- * file's import for a newer one, whose answer a load that read the old one must not overwrite when it lands late.
- */
-function trackedImports(importOf: (file: string) => Promise<Record<string, unknown>>, current: Imports) {
-  const read: Imports = new Map();
-  return {
-    importOf: (file: string) => {
-      const loading = importOf(file);
-      read.set(file, loading);
-      return loading;
-    },
-    latest: () => [...read].every(([file, loading]) => current.get(file) === loading),
-  };
-}
 
 /**
  * One instrument per story in `index`, each schema holding a `$globals` group for `globals`. The lab's global values
@@ -100,10 +51,7 @@ function trackedImports(importOf: (file: string) => Promise<Record<string, unkno
 export function useStoryRegistry(index: readonly IndexEntry[], options: StoryRegistryOptions): StoryRegistry {
   const { frameUrl, globals = NO_GLOBALS, importers, setup = NO_SETUP, libraries = TITLE_LIBRARIES, load = loadStories, hosts } = options;
   const [readies, setReadies] = useState<ReadonlyMap<string, FrameReady>>(() => new Map());
-  const [loaded, setLoaded] = useState<ReadonlyMap<string, Loaded>>(() => new Map());
-  const [faults, setFaults] = useState<ReadonlyMap<string, Error>>(() => new Map());
-  // Per file, how many reloads it has had: a pending face keyed by it asks again after one.
-  const [generations, setGenerations] = useState<ReadonlyMap<string, number>>(() => new Map());
+  const { loaded, faults, generations, request, reload, prune } = useStoryLoads({ index, importers, setup, load, libraries });
   // Bumped when a story's frame answers something new. labkit's panel re-reads the answer book only when
   // the trial's config changes, and replacing the instrument is what refills it.
   const [revisions, setRevisions] = useState<ReadonlyMap<string, number>>(() => new Map());
@@ -123,145 +71,22 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
     setPrunedFor(indexIds);
     const ids = new Set(index.map((entry) => entry.id));
     setReadies((prev) => pruned(prev, ids));
-    setLoaded((prev) => pruned(prev, ids));
-    setFaults((prev) => pruned(prev, ids));
+    prune(ids);
     setRevisions((prev) => pruned(prev, ids));
   }
 
-  // One import per file, shared by every entry it holds; a reload drops the file's promise and asks again.
-  const imports = useRef<Imports>(new Map());
-  const liveRef = useLatest({ index, importers, setup, load, libraries });
-  // Files asked for before the importers held them: a story file added while the workshop runs lists first.
-  const missing = useRef(new Set<string>());
+  const committed = useRef<InstrumentCache>(EMPTY_CACHE);
 
-  const importOf = useCallback((file: string): Promise<Record<string, unknown>> => {
-    let loading = imports.current.get(file);
-    if (!loading) {
-      const importer = getOwn(liveRef.current.importers ?? {}, file);
-      if (!importer) missing.current.add(file);
-      loading = importer ? importer() : Promise.reject(new Error(`No importer for ${file}`));
-      imports.current.set(file, loading);
-    }
-    return loading;
-  }, [liveRef]);
-
-  const request = useCallback(
-    (entry: IndexEntry): void => {
-      const { setup: current, load: loadModule } = liveRef.current;
-      const settle = (ids: string[], result: Map<string, Loaded>) => {
-        setLoaded((prev) => {
-          const next = new Map(prev);
-          for (const [id, value] of result) next.set(id, value);
-          return next;
-        });
-        setFaults((prev) => (ids.some((id) => prev.has(id)) ? pruned(prev, new Set([...prev.keys()].filter((id) => !ids.includes(id)))) : prev));
-      };
-      const fail = (ids: string[], error: unknown) => {
-        const fault = toError(error);
-        setFaults((prev) => new Map([...prev, ...ids.map((id): [string, Error] => [id, fault])]));
-      };
-      const reads = trackedImports(importOf, imports.current);
-      if (isIndexId(entry.id)) {
-        const { index: entries, libraries } = liveRef.current;
-        const source = { index: entries, importOf: reads.importOf, load: loadModule, parameters: current.parameters, prepare: current.prepare, libraries };
-        void loadIndexBundle(entry.id, source)
-          .then((bundle) => { if (reads.latest()) settle([entry.id], new Map<string, Loaded>([[entry.id, { kind: 'index', bundle }]])); })
-          .catch((error: unknown) => { if (reads.latest()) fail([entry.id], error); });
-        return;
-      }
-      const siblings = liveRef.current.index.filter((e) => e.file === entry.file && !isIndexId(e.id));
-      const ids = siblings.map((e) => e.id);
-      void reads.importOf(entry.file)
-        .then(async (mod) => {
-          const stories = loadModule(mod, entry.title, current.parameters);
-          const result = new Map<string, Loaded>();
-          for (const sibling of siblings) {
-            const story = stories.find((s) => s.exportName === sibling.exportName);
-            if (!story) continue;
-            await current.prepare?.(story);
-            result.set(sibling.id, { kind: 'story', story });
-          }
-          if (!result.has(entry.id)) throw new Error(`${entry.file} has no story export "${entry.exportName}"`);
-          if (reads.latest()) settle(ids, result);
-        })
-        .catch((error: unknown) => { if (reads.latest()) fail(ids, error); });
-    },
-    [importOf, liveRef],
+  const cache = useMemo<InstrumentCache>(
+    () =>
+      buildInstruments(
+        committed.current,
+        index,
+        { readies, loaded, faults, generations, revisions },
+        { frameUrl, globals, setup, hosts, inDocument: importers !== undefined, onReady, request },
+      ),
+    [index, readies, loaded, faults, generations, revisions, frameUrl, globals, setup, hosts, importers, onReady, request],
   );
-
-  const reload = useCallback(
-    (file: string) => {
-      imports.current.delete(file);
-      const affected = liveRef.current.index.filter((e) => e.file === file || (isIndexId(e.id) && liveRef.current.index.some((s) => s.file === file && indexId(s.title) === e.id)));
-      const ids = new Set(affected.map((e) => e.id));
-      setLoaded((prev) => pruned(prev, new Set([...prev.keys()].filter((id) => !ids.has(id)))));
-      setFaults((prev) => pruned(prev, new Set([...prev.keys()].filter((id) => !ids.has(id)))));
-      setGenerations((prev) => new Map(prev).set(file, (prev.get(file) ?? 0) + 1));
-    },
-    [liveRef],
-  );
-
-  useEffect(() => {
-    for (const file of [...missing.current]) {
-      if (!importers || !getOwn(importers, file)) continue;
-      missing.current.delete(file);
-      reload(file);
-    }
-  }, [importers, reload]);
-
-  const committed = useRef<Cache>({ built: new Map(), books: new Map(), list: [] });
-
-  const cache = useMemo<Cache>(() => {
-    const previous = committed.current;
-    const built = new Map<string, Built>();
-    const books = new Map<string, AnswerBook>();
-    const list = index.map((entry) => {
-      const ready = readies.get(entry.id);
-      const inDocument = importers !== undefined && entry.isolate === undefined;
-      const had = loaded.get(entry.id);
-      const fault = faults.get(entry.id);
-      const generation = generations.get(entry.file) ?? 0;
-      const revision = revisions.get(entry.id) ?? 0;
-      const entryKey = stableStringify(entry);
-      const answers = previous.books.get(entry.id) ?? createAnswerBook();
-      books.set(entry.id, answers);
-      const held = previous.built.get(entry.id);
-      const kept =
-        held &&
-        held.entryKey === entryKey &&
-        held.ready === ready &&
-        held.loaded === had &&
-        held.fault === fault &&
-        held.frameUrl === frameUrl &&
-        held.globals === globals &&
-        held.setup === setup &&
-        held.inDocument === inDocument &&
-        held.generation === generation &&
-        held.revision === revision
-          ? held
-          : {
-              entryKey,
-              ready,
-              loaded: had,
-              fault,
-              frameUrl,
-              globals,
-              setup,
-              inDocument,
-              generation,
-              revision,
-              instrument: !inDocument
-                ? storyInstrument({ entry, ready, answers, frameUrl, onReady, globals, setup })
-                : had
-                  ? documentInstrument({ entry, loaded: had, setup, globals, ...(hosts ? { hosts } : {}) })
-                  : pendingInstrument({ entry, globals, load: request, generation, ...(fault ? { fault } : {}) }),
-            };
-      built.set(entry.id, kept);
-      return kept.instrument;
-    });
-    const unchanged = sameList(list, previous.list);
-    return { built, books, list: unchanged ? previous.list : list };
-  }, [index, readies, loaded, faults, generations, revisions, frameUrl, globals, setup, hosts, importers, onReady, request]);
 
   useLayoutEffect(() => {
     committed.current = cache;
