@@ -1,4 +1,4 @@
-import { useContext, useLayoutEffect, type Context, type RefCallback, type RefObject } from 'react';
+import { createElement, useContext, useLayoutEffect, useRef, type Context, type ReactElement, type RefCallback, type RefObject } from 'react';
 import type { Key } from 'react-aria-components';
 
 /**
@@ -61,8 +61,27 @@ export function pastHeld(collection: Walkable, from: Key | null, to: Key): Key |
 /** Keeps `into` on the React Aria state `context` provides where this renders, for a handler above it to read. */
 export function StateProbe<S>({ context, into }: { context: Context<S | null>; into: RefObject<S | null> }): null {
   const state = useContext(context);
+  // React Aria renders a collection's children twice, once with no state to build it; that copy leaves the ref be.
   useLayoutEffect(() => {
-    into.current = state;
+    if (state) into.current = state;
   });
   return null;
+}
+
+/** A probe to render under a React Aria select-like `context`, and what a pick of `picked` from `from` comes to there:
+ *  itself, the first free row past it the way it was going when it is held ({@link pastHeld}), or `undefined` for
+ *  none. */
+export function useHeldPick<S extends { collection: Walkable }>(context: Context<S | null>): {
+  probe: ReactElement;
+  pick(from: Key | null, picked: Key | null): Key | null | undefined;
+} {
+  const state = useRef<S | null>(null);
+  return {
+    probe: createElement(StateProbe<S>, { context, into: state }),
+    pick(from, picked) {
+      const coll = state.current?.collection;
+      if (picked === null || !coll || !isHeldKey(coll, picked)) return picked;
+      return pastHeld(coll, from, picked) ?? undefined;
+    },
+  };
 }
