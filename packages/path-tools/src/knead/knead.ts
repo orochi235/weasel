@@ -5,7 +5,7 @@
 import {
   type ActionDeps, ActionDisabledReason, defineAction, type InvocationCtx, type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
-import { pref, PX_UNIT } from '@weasel-js/prefs';
+import { pref, PX_UNIT } from '@weasel-js/prefs-schema';
 import { pxReach, kneadPath, type PolygonPath, type Point } from '@weasel-js/geom';
 import { brushRing } from '@weasel-js/cursor';
 import { PATH_GROUP, commitOps, drawnAabbOf, reshapeOps, shownNodeOf, withPath, type PathNode, pathOperationTags } from '@weasel-js/core';

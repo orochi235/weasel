@@ -1,6 +1,6 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { createMemoryAdapter } from '@weasel-js/labkit';
-import type { PrefEnum, PrefGroup } from '@weasel-js/prefs';
+import type { PrefEnum, PrefGroup } from '@weasel-js/prefs-schema';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ShellConfig } from '../config';
 import type { IndexEntry } from '../story/types';

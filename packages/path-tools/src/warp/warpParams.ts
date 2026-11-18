@@ -3,7 +3,7 @@
  * form lays them out by kind, and the last-operation panel shows the ones a
  * warp drag or a `configureWarp` run used.
  */
-import { pref, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { pref, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs-schema';
 import type { HeldPathWarp } from './pathWarp';
 import {
   type ConfigureWarpParams, DEFAULT_CLOTH_SIZE, DEFAULT_WARP_TOLERANCE, WARP_LABELS, type WarpKind, type WarpSettings,

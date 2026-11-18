@@ -1,5 +1,5 @@
 import type {} from '@weasel-js/react';
-import { pref, type PrefValuesOf } from '@weasel-js/prefs';
+import { pref, type PrefValuesOf } from '@weasel-js/prefs-schema';
 import { DOLLY_RATE, ORBIT_RATE } from './tools';
 
 /** The `orbit3d` area as a prefs group whose paths are the `KitSettings` paths. */

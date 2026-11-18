@@ -1,5 +1,5 @@
 import type {} from '@weasel-js/react';
-import { pref, PX_UNIT, type PrefValuesOf } from '@weasel-js/prefs';
+import { pref, PX_UNIT, type PrefValuesOf } from '@weasel-js/prefs-schema';
 import { ANCHOR_RADIUS_PX, CLOSE_HINT_RADIUS_PX, HANDLE_DOT_RADIUS_PX, PEN_CLOSE_HIT_PX } from './pen/penPreviewLayer';
 import { SLICE_CLOSE_HIT_PX, VERTEX_RADIUS_PX } from './slice/useSliceTool';
 

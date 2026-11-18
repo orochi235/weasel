@@ -1,6 +1,6 @@
 import type { Action, ActionDeps, ImmediateParams, OngoingInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction, resolveParams } from '@weasel-js/routing';
-import { pref, PX_UNIT } from '@weasel-js/prefs';
+import { pref, PX_UNIT } from '@weasel-js/prefs-schema';
 import { meanScale, pathToAnchors, pxReach, type PolygonPath, type Point } from '@weasel-js/geom';
 import type { VertexWidth } from '@weasel-js/paint';
 import { commitOps, reshapeTo, type AnyScene } from '@weasel-js/core';

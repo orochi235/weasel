@@ -13,7 +13,7 @@ import {
   type CornerShape,
   type PolygonPath,
 } from '@weasel-js/geom';
-import { pref } from '@weasel-js/prefs';
+import { pref } from '@weasel-js/prefs-schema';
 import { ANCHORS_GROUP, pathOperationTags, type EditAnchorsDep } from '@weasel-js/core';
 import { openPathEditOf, requiresAnchorSelection } from '../pathEdit/anchorEditing';
 import { DEFAULT_FILLET_SHAPE, editedPath } from './editFillet';

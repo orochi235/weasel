@@ -14,7 +14,7 @@ import { sceneReach, type PlacedRig } from '../bone/placedRig';
 import type { RigEditState } from '../bone/rigEditState';
 import { resolveParams } from '@weasel-js/routing';
 import type { WeightBrushParams } from '../actionParamSchema';
-import { pref, PX_UNIT } from '@weasel-js/prefs';
+import { pref, PX_UNIT } from '@weasel-js/prefs-schema';
 import { brushRing } from '@weasel-js/cursor';
 
 /** One path under the rig node, where it is drawn, with the weights now showing. */

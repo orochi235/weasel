@@ -5,7 +5,7 @@ import {
   openPathEnds, pathDistanceToPoint, pathEndAnchorIndex, pathToAnchors,
   type AnchorSet, type ReachToMeetOptions, type OpenPathEnd, type PenAnchor, type PointOrigin, type PolygonPath,
 } from '@weasel-js/geom';
-import { pref } from '@weasel-js/prefs';
+import { pref } from '@weasel-js/prefs-schema';
 import { PATH_GROUP, commitOps, type Op, type PathNode, reshapeOps, operandPathNodes, pathOperationTags } from '@weasel-js/core';
 import {
   pressOf, scenePathNodes, strokeReachPref, strokesBesides, type StrokePress, type StrokePressParams,

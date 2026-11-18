@@ -2,7 +2,7 @@
 import { type ActionDeps, ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import { snipPathAt, type SnipResult } from '@weasel-js/geom';
 import { PATH_GROUP, commitOps, createDeleteNodeOp, reshapeOps, type PathNode, pathOperationTags } from '@weasel-js/core';
-import { pref } from '@weasel-js/prefs';
+import { pref } from '@weasel-js/prefs-schema';
 import { pressOf, scenePathNodes, strokeReachPref, strokesBesides, type StrokePressParams } from '../shared/scenePaths';
 import { icon } from '../icons.gen';
 import type {} from '../actionParamSchema';

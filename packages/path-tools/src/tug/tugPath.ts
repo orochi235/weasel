@@ -2,7 +2,7 @@ import {
   ActionDisabledReason, type ActionDeps, defineAction, type InvocationCtx, type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
 import type { CursorSpec } from '@weasel-js/cursor';
-import { pref } from '@weasel-js/prefs';
+import { pref } from '@weasel-js/prefs-schema';
 import {
   editAnchorSetTracked, tugPathEnd, lengthToward, nearestPathAnchor, openEndAt, pathEndAnchorIndex,
   pathEndFrame, pathToAnchors, type AnchorSet, type TugMode, type PointOrigin, type PolygonPath,

@@ -3,7 +3,7 @@
  * command whose params the last-operation panel adjusts afterward.
  */
 import { resamplePath, type ResamplePathOptions } from '@weasel-js/geom';
-import { pref } from '@weasel-js/prefs';
+import { pref } from '@weasel-js/prefs-schema';
 import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import { commitOps, pathOperationTags, reshapeOps, operandPathNodes } from '@weasel-js/core';
 import { icon } from '../icons.gen';

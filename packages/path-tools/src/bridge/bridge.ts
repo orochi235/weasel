@@ -8,7 +8,7 @@ import { ANCHORS_GROUP, pathOperationTags } from '@weasel-js/core';
 import { anchorEditWouldChange, commitAnchorEdit, openPathEditOf } from '../pathEdit/anchorEditing';
 import { createJoinPathsAction } from '../pathCommands/cutJoin';
 import { joinSelectedAnchors } from '../pathEdit/anchorJoin';
-import { pref } from '@weasel-js/prefs';
+import { pref } from '@weasel-js/prefs-schema';
 import { icon } from '../icons.gen';
 import type {} from '../actionParamSchema';
 

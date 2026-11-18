@@ -25,7 +25,7 @@ import {
   type SceneNode, type AnyScene,
 } from '@weasel-js/core';
 import { editAnchorsAction } from '../pathEdit/editAnchors/editAnchors';
-import { pref, PX_UNIT } from '@weasel-js/prefs';
+import { pref, PX_UNIT } from '@weasel-js/prefs-schema';
 import { constraintLinkNode, constraintLinkOf } from './constraintLinks';
 import type {} from '../actionParamSchema';
 

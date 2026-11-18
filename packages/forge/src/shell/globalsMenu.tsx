@@ -1,5 +1,5 @@
 import type { LabMenus } from '@weasel-js/labkit';
-import { type PrefGroup, pref } from '@weasel-js/prefs';
+import { type PrefGroup, pref } from '@weasel-js/prefs-schema';
 import { useEffect, useMemo } from 'react';
 import { getOwn } from '@weasel-js/registry';
 import type { StoryGlobals } from '../protocol/messages';

@@ -3,7 +3,7 @@
  * selection holds, the values they hold, and the params a change makes.
  */
 import type { ActionDeps, ActionSettingsOf, ActionSettingsState } from '@weasel-js/routing';
-import { mapPrefConditionPaths, type PrefGroup } from '@weasel-js/prefs';
+import { mapPrefConditionPaths, type PrefGroup } from '@weasel-js/prefs-schema';
 import { pathEffectOf, type NodeId, type PathEffect, type AnyScene } from '@weasel-js/core';
 import { SettingsFields } from '../settingsFields';
 import { effectSettingDefaults, PATH_EFFECT_PARAMS } from './effectForms';

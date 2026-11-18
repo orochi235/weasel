@@ -1,5 +1,5 @@
 import type {} from '@weasel-js/react';
-import { pref, PX_UNIT, type PrefValuesOf } from '@weasel-js/prefs';
+import { pref, PX_UNIT, type PrefValuesOf } from '@weasel-js/prefs-schema';
 import { JOINT_RADIUS_PX } from './bone/boneOverlay';
 import { POINT_RADIUS_PX } from './weight/weightOverlay';
 

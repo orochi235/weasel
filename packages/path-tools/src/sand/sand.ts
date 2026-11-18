@@ -1,6 +1,6 @@
 import { ActionDisabledReason, defineAction, type OngoingHandle, resolveParams } from '@weasel-js/routing';
 import { brushRing } from '@weasel-js/cursor';
-import { pref, PX_UNIT } from '@weasel-js/prefs';
+import { pref, PX_UNIT } from '@weasel-js/prefs-schema';
 import {
   anchorsUnderBrush,
   editAnchorSetTracked,

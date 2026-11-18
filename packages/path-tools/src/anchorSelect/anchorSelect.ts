@@ -13,7 +13,7 @@ import {
 import { pathOperationTags, type EditAnchorsDep, type KeySpec } from '@weasel-js/core';
 import { openPathEditOf, requiresAnchorSelection } from '../pathEdit/anchorEditing';
 import { icon, type PathToolsIconName } from '../icons.gen';
-import { pref, type PrefGroup } from '@weasel-js/prefs';
+import { pref, type PrefGroup } from '@weasel-js/prefs-schema';
 
 /** The group every action here is in, which an `ActionBar` can show. */
 export const ANCHOR_SELECTION_GROUP = 'anchorSelection';
