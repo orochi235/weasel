@@ -3,9 +3,12 @@ import { describe, it, expect } from 'vitest';
 import { parseLevel, TILE } from '../platformer/level';
 import { CAM_SCALE, DEAD_ZONE_X, cameraView, createCamera, followCamera } from '../platformer/camera';
 
+/** A geometry fixture: no spawn or goal needed. */
+const fixture = (rows: string[]) => parseLevel(rows, { markers: 'optional' });
+
 const DIMS = { width: 640, height: 360 };
 // 40 x 20 tiles — wider and taller than the viewport in world units.
-const BIG = parseLevel(Array.from({ length: 20 }, () => '.'.repeat(40)));
+const BIG = fixture(Array.from({ length: 20 }, () => '.'.repeat(40)));
 
 describe('followCamera', () => {
   it('does not move while the target is inside the dead zone', () => {
@@ -37,7 +40,7 @@ describe('followCamera', () => {
   });
 
   it('centers a level smaller than the viewport instead of clamping it to a corner', () => {
-    const SMALL = parseLevel(Array.from({ length: 4 }, () => '.'.repeat(4)));
+    const SMALL = fixture(Array.from({ length: 4 }, () => '.'.repeat(4)));
     let cam = createCamera({ x: 0, y: 0 });
     for (let i = 0; i < 300; i++) cam = followCamera(cam, { x: 1e4, y: 1e4 }, DIMS, SMALL, 1 / 60);
     const view = cameraView(cam, DIMS);

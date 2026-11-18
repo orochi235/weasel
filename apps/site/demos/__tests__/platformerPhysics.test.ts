@@ -3,7 +3,10 @@ import { describe, it, expect } from 'vitest';
 import { parseLevel, TILE } from '../platformer/level';
 import { BODY_H, COYOTE, JUMP_BUFFER, STEP, createBodyState, spikeOverlap, stepBody, type BodyState, type Input } from '../platformer/physics';
 
-const FLAT = parseLevel([
+/** A geometry fixture: no spawn or goal needed. */
+const fixture = (rows: string[]) => parseLevel(rows, { markers: 'optional' });
+
+const FLAT = fixture([
   '.....',
   '.....',
   '.....',
@@ -52,7 +55,7 @@ describe('stepBody gravity and floor', () => {
   });
 });
 
-const WALLS = parseLevel([
+const WALLS = fixture([
   '.......',
   '.......',
   '..###..',
@@ -88,7 +91,7 @@ describe('stepBody walls', () => {
 });
 
 describe('one-way platforms', () => {
-  const ONEWAY_LEVEL = parseLevel([
+  const ONEWAY_LEVEL = fixture([
     '.....',
     '.....',
     '.....',
@@ -122,7 +125,7 @@ describe('one-way platforms', () => {
 
 describe('jump feel', () => {
   it('allows a jump shortly after walking off a ledge', () => {
-    const LEDGE = parseLevel(['.....', '.....', '.....', '##...', '.....']);
+    const LEDGE = fixture(['.....', '.....', '.....', '##...', '.....']);
     let s = createBodyState({ x: 1.5 * TILE, y: 2 * TILE });
     for (let i = 0; i < 120; i++) s = stepBody(s, LEDGE, IDLE, STEP);
     expect(s.body.onGround).toBe(true);
@@ -139,7 +142,7 @@ describe('jump feel', () => {
   });
 
   it('stands on a ledge edge instead of sliding off it', () => {
-    const LEDGE = parseLevel(['.....', '.....', '.....', '###..']);
+    const LEDGE = fixture(['.....', '.....', '.....', '###..']);
     // Overhangs the edge by 5 of its 14px width — normal play on 24px tiles.
     let s = createBodyState({ x: 3 * TILE - 2, y: 2 * TILE });
     for (let i = 0; i < 200; i++) s = stepBody(s, LEDGE, IDLE, STEP);
@@ -147,7 +150,7 @@ describe('jump feel', () => {
   });
 
   it('refuses a jump once coyote time has fully decayed', () => {
-    const LEDGE = parseLevel(['.....', '.....', '.....', '##...', '.....']);
+    const LEDGE = fixture(['.....', '.....', '.....', '##...', '.....']);
     let s = createBodyState({ x: 1.5 * TILE, y: 2 * TILE });
     for (let i = 0; i < 120; i++) s = stepBody(s, LEDGE, IDLE, STEP);
     let steps = 0;
@@ -226,7 +229,7 @@ describe('jump feel', () => {
 
 describe('spikeOverlap', () => {
   it('detects a body standing in spikes', () => {
-    const SPIKY = parseLevel(['.....', '..^..', '#####']);
+    const SPIKY = fixture(['.....', '..^..', '#####']);
     const on = createBodyState({ x: 2.5 * TILE, y: 1.5 * TILE });
     const off = createBodyState({ x: 0.5 * TILE, y: 1.5 * TILE });
     expect(spikeOverlap(on.body, SPIKY)).toBe(true);
@@ -236,7 +239,7 @@ describe('spikeOverlap', () => {
 
 describe('? blocks and bonks', () => {
   // Row 0: a `?` at col 2. Rows 1-3: open air. Row 4: floor.
-  const BONK_LEVEL = parseLevel([
+  const BONK_LEVEL = fixture([
     '..?..',
     '.....',
     '.....',
@@ -249,7 +252,7 @@ describe('? blocks and bonks', () => {
   it('blocks horizontal motion, same as SOLID', () => {
     // A `?` wall two tiles tall — tall enough that a grounded body's own
     // height (which pokes up into the row above the floor) still meets it.
-    const WALL = parseLevel(['.......', '.......', '.......', '.......', '..?....', '..?....', '#######']);
+    const WALL = fixture(['.......', '.......', '.......', '.......', '..?....', '..?....', '#######']);
     let s = createBodyState({ x: 0.5 * TILE, y: 3 * TILE });
     const RIGHT: Input = { left: false, right: true, jumpHeld: false, jumpPressed: false };
     for (let i = 0; i < 240; i++) s = stepBody(s, WALL, RIGHT, STEP);
@@ -271,7 +274,7 @@ describe('? blocks and bonks', () => {
   });
 
   it('bonks a `?` the head strikes beside a solid block', () => {
-    const STRADDLE = parseLevel(['.#?..', '.....', '.....', '.....', '#####']);
+    const STRADDLE = fixture(['.#?..', '.....', '.....', '.....', '#####']);
     // Straddling columns 1 and 2, rising into both.
     let s = createBodyState({ x: 2 * TILE, y: TILE + BODY_H / 2 + 1 });
     s = { ...s, body: { ...s.body, vy: -400 } };

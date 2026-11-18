@@ -6,7 +6,10 @@ import {
   ENEMY_H, ENEMY_W, createCoins, createEnemies, resolveContacts, stepEnemy,
 } from '../platformer/entities';
 
-const LEDGE = parseLevel([
+/** A geometry fixture: no spawn or goal needed. */
+const fixture = (rows: string[]) => parseLevel(rows, { markers: 'optional' });
+
+const LEDGE = fixture([
   '.......',
   '.......',
   '.#####.',
@@ -39,7 +42,7 @@ describe('stepEnemy', () => {
   });
 
   it('turns around at a wall', () => {
-    const BOXED = parseLevel(['.....', '#...#', '#####']);
+    const BOXED = fixture(['.....', '#...#', '#####']);
     let e = createEnemies([{ x: 2.5 * TILE, y: 1.5 * TILE }])[0];
     e = { ...e, vx: 40 };
     let reversed = false;
@@ -52,7 +55,7 @@ describe('stepEnemy', () => {
   });
 
   it('walks along a one-way platform', () => {
-    const PLATFORM = parseLevel(['.......', '.......', '.=====.', '.......']);
+    const PLATFORM = fixture(['.......', '.......', '.=====.', '.......']);
     let e = createEnemies([{ x: 3.5 * TILE, y: 1.5 * TILE }])[0];
     const startX = e.x;
     for (let i = 0; i < 30; i++) e = stepEnemy(e, PLATFORM, 1 / 60);
@@ -60,7 +63,7 @@ describe('stepEnemy', () => {
   });
 
   it('turns around at a ? block, which stops the player too', () => {
-    const BOXED = parseLevel(['.....', '?...?', '#####']);
+    const BOXED = fixture(['.....', '?...?', '#####']);
     let e = createEnemies([{ x: 2.5 * TILE, y: 1.5 * TILE }])[0];
     e = { ...e, vx: 40 };
     for (let i = 0; i < 600; i++) {

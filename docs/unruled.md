@@ -2638,3 +2638,6 @@ Calls the lanes made without a ruling:
 - 2026-11-18 (the fixer's call): the platformer's spikes cost a life, as an enemy hit, a bonk and a fall do; they
   already played the whole hurt sequence and granted invulnerability, but took nothing. Taking the hurt
   sequence off spikes, so they are only a bounce, was the alternative.
+- 2026-11-18 (the fixer's call): the platformer's `parseLevel` throws on a level with no `S` or no `G` unless passed
+  `{ markers: 'optional' }`, which the geometry-only test fixtures use, and throws on a second `S` or `G` either way,
+  naming both. Defaulting a missing marker to (0, 0), as before, was the alternative.

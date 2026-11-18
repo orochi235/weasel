@@ -2,6 +2,9 @@
 import { describe, it, expect } from 'vitest';
 import { parseLevel, tileAt, SOLID, ONEWAY, SPIKE, QUESTION, EMPTY, TILE } from '../platformer/level';
 
+/** A geometry fixture: no spawn or goal needed. */
+const fixture = (rows: string[]) => parseLevel(rows, { markers: 'optional' });
+
 const ROWS = [
   '....G',
   '.o.e.',
@@ -48,15 +51,30 @@ describe('parseLevel', () => {
   });
 
   it('rejects ragged rows', () => {
-    expect(() => parseLevel(['##', '#'])).toThrow(/ragged/i);
+    expect(() => fixture(['##', '#'])).toThrow(/ragged/i);
   });
 
   it('rejects an unknown glyph instead of silently reading it as air', () => {
-    expect(() => parseLevel(['..', '.x'])).toThrow(/unknown glyph "x".*column 1.*row 1/i);
+    expect(() => fixture(['..', '.x'])).toThrow(/unknown glyph "x".*column 1.*row 1/i);
+  });
+
+  it('throws on a level with no spawn or no goal', () => {
+    expect(() => parseLevel(['..G', '###'])).toThrow(/no "S"/);
+    expect(() => parseLevel(['S..', '###'])).toThrow(/no "G"/);
+  });
+
+  it('throws on a second spawn or goal, naming both', () => {
+    expect(() => parseLevel(['S.SG', '####'])).toThrow(/second "S" at column 2, row 0.*first is at column 0, row 0/);
+    expect(() => parseLevel(['SG.G', '####'])).toThrow(/second "G"/);
+  });
+
+  it('lets a geometry fixture leave the markers out, but never duplicate one', () => {
+    expect(fixture(['...', '###']).spawn).toEqual({ x: 0, y: 0 });
+    expect(() => fixture(['S.S', '###'])).toThrow(/second "S"/);
   });
 
   it('parses a `?` block as solid, distinct question geometry', () => {
-    const level = parseLevel(['.?.', '###']);
+    const level = fixture(['.?.', '###']);
     expect(tileAt(level, 1, 0)).toBe(QUESTION);
     expect(tileAt(level, 1, 0)).not.toBe(SOLID);
   });
