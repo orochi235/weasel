@@ -79,7 +79,7 @@ function cullOne(cmd: DrawCommand, m: GlMat3, box: Box, dpr: number): DrawComman
  * rather than a command. Same slack, same NaN-keeps rule.
  */
 export function boundsMissRect(
-  bounds: { x: number; y: number; width: number; height: number },
+  bounds: Rect,
   transform: GlMat3,
   rect: Rect,
 ): boolean {

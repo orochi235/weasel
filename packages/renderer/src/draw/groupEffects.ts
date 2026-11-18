@@ -3,8 +3,8 @@ import type { EffectTargets } from '../effects/EffectTargets';
 import { compositeProgramId } from '../effects/composite';
 import { blendFactorsOf, isOwnComposite, leavesUncovered } from '../effects/compositeOp';
 import { effectsReach } from '../effects/types';
-import { boxWithin, contentBox, type DeviceRect } from '../retain/contentBounds';
-import type { GlMat3 } from '@weasel-js/geom';
+import { boxWithin, contentBox } from '../retain/contentBounds';
+import type { GlMat3, Rect } from '@weasel-js/geom';
 import type { DrawContext } from './drawContext';
 import { warnOnceUniform } from './customShader';
 import { compositeOver, drawFullscreenQuad, insideBuffer, returnToRenderTarget, windowProjection } from './effects';
@@ -36,9 +36,9 @@ const SIDE_STEP = 64;
  * changes what lies outside its group over all of `window`.
  */
 export function effectsWindow(
-  cmd: GroupDrawCommand, transform: GlMat3, window: DeviceRect,
+  cmd: GroupDrawCommand, transform: GlMat3, window: Rect,
   width: number, height: number, scale: number, maxSide: number,
-): DeviceRect | null {
+): Rect | null {
   const reach = cmd.effects && cmd.effects.length > 0 ? effectsReach(cmd.effects) : 0;
   if (!Number.isFinite(reach)) return { x: 0, y: 0, width, height };
   if (isOwnComposite(cmd.composite) && !leavesUncovered(cmd.composite!)) return window;

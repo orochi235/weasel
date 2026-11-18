@@ -1,4 +1,4 @@
-import type { Path, GlMat3 } from '@weasel-js/geom';
+import type { Path, GlMat3, Rect } from '@weasel-js/geom';
 import type { PaintResources } from '../paintKinds';
 import type { GroupState } from '../state/GroupState';
 import type { GLMeshCache } from '../cache/GLMeshCache';
@@ -12,7 +12,6 @@ import { DrawBatch } from '../drawBatch';
 import type { ClipBox } from '../batchClip';
 import type { EffectTargets } from '../effects/EffectTargets';
 import type { RetainedSurfaces } from '../retain/RetainedSurfaces';
-import type { DeviceRect } from '../retain/contentBounds';
 import type { PaintScratch } from '../paintScratch';
 import type { StagedBatchState } from './batchRun';
 import type { FlattenTolerance } from './flattenTolerance';
@@ -108,7 +107,7 @@ export interface DrawContext {
    *  absent. */
   renderTarget?: {
     readonly pass: GpuPassDesc; readonly fragOrigin?: readonly [number, number];
-    readonly window?: DeviceRect;
+    readonly window?: Rect;
   } | null;
   /** Where the default framebuffer puts this renderer's bottom-left corner,
    *  in device pixels: a custom shader's `u_fragOrigin` while

@@ -198,7 +198,7 @@ export class WeaselRenderer {
 
   /** This renderer's rect in device pixels, top-left origin. A tile rounds its
    *  edges rather than its size, so two that share a CSS edge share a device one. */
-  private deviceRect(): { x: number; y: number; width: number; height: number } {
+  private deviceRect(): Rect {
     const ox = this.target?.origin.x ?? 0;
     const oy = this.target?.origin.y ?? 0;
     const x = Math.round(ox * this.dpr);
@@ -216,7 +216,7 @@ export class WeaselRenderer {
   }
 
   /** This renderer's rect as GL addresses it, from the buffer's bottom left. */
-  private glRect(): { x: number; y: number; width: number; height: number } {
+  private glRect(): Rect {
     const { x, y, width, height } = this.deviceRect();
     if (!this.target) return { x: 0, y: 0, width, height };
     return { x, y: this.gpu.canvasSize().height - y - height, width, height };

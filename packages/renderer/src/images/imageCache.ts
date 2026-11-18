@@ -21,6 +21,7 @@ import { forgetDecodedVector, isVectorImageSrc, loadImageBitmap, type ImageLoade
 import { noteImageRead } from './imageReads';
 import { imagePatternTextureId } from '../patterns/imagePatternId';
 import { unregisterTexture } from '../textures/registerTexture';
+import type { Rect } from '@weasel-js/geom';
 
 export { bitmapSrc, holdImageBitmaps, isBitmapSrc, isVectorImageSrc };
 
@@ -38,7 +39,7 @@ export interface ImageNodeData {
      *  bitmap's width and height from its top-left. Omitted draws the whole
      *  bitmap. Fractions, so the data means the same thing before the bitmap
      *  has decoded and after `src` is swapped for another resolution. */
-    source?: { x: number; y: number; width: number; height: number };
+    source?: Rect;
     /** Mirror the drawn region within the pose rect. The rect does not move. */
     flipX?: boolean;
     flipY?: boolean;
