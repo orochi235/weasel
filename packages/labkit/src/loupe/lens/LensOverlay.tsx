@@ -96,14 +96,14 @@ const sameSize = (
   b: { width: number; height: number },
 ) => a !== null && a.width === b.width && a.height === b.height;
 
-function boxStyle(rect: { x: number; y: number; w: number; h: number }): CSSProperties {
+function boxStyle(rect: { x: number; y: number; width: number; height: number }): CSSProperties {
   // A measured rect has nowhere to live but the element's own style; set as
   // custom properties, which the stylesheet reads.
   return {
     ['--lk-lens-x' as string]: `${rect.x}px`,
     ['--lk-lens-y' as string]: `${rect.y}px`,
-    ['--lk-lens-w' as string]: `${rect.w}px`,
-    ['--lk-lens-h' as string]: `${rect.h}px`,
+    ['--lk-lens-w' as string]: `${rect.width}px`,
+    ['--lk-lens-h' as string]: `${rect.height}px`,
   } as CSSProperties;
 }
 
