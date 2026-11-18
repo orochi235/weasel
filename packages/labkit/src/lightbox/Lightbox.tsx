@@ -1,20 +1,10 @@
-import { useLatest } from '@weasel-js/core';
 import { Icon } from '@weasel-js/ui/components/Icon';
-import {
-  type MouseEvent,
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { type MouseEvent, type ReactNode, type Ref, useRef } from 'react';
 import { icon } from '../icons.gen';
-import { useSurfaceOptional } from '../surface/useSurfaceTile';
-import { LightboxContext, type LightboxContextValue } from './LightboxContext';
-import { useLightboxLayers } from './LightboxLayers';
-import { inertOutside, liftStack, opensLightbox } from './modal';
+import { LightboxContext } from './LightboxContext';
+import { opensLightbox } from './modal';
+import { useLightboxModal } from './useLightboxModal';
+import { useLightboxState } from './useLightboxState';
 
 /** Props for `<Lightbox>`. */
 export interface LightboxProps {
@@ -46,25 +36,45 @@ function dialogProps(label: string) {
   } as const;
 }
 
-/** Disabling closes an open lightbox for good: its owner hears it, and enabling it again does not reopen it. */
-function useDisablingCloses(
-  disabled: boolean,
-  open: boolean,
-  setOwn: (open: boolean) => void,
-  onChangeRef: { readonly current: ((expanded: boolean) => void) | undefined },
-): void {
-  const [wasDisabled, setWasDisabled] = useState(disabled);
-  const [closings, setClosings] = useState(0);
-  if (disabled !== wasDisabled) {
-    setWasDisabled(disabled);
-    if (disabled && open) {
-      setOwn(false);
-      setClosings((n) => n + 1);
-    }
+/** The corner button: close while open, expand while closed, and none while that is not offered. */
+function LightboxButton({
+  expanded,
+  offered,
+  set,
+  closeRef,
+}: {
+  expanded: boolean;
+  /** Whether a closed lightbox offers its expand button. */
+  offered: boolean;
+  set: (expanded: boolean) => void;
+  closeRef: Ref<HTMLButtonElement>;
+}) {
+  if (expanded) {
+    return (
+      <button
+        ref={closeRef}
+        type="button"
+        className="lk-lightbox__button lk-lightbox__close"
+        aria-label="Close expanded view"
+        title="Close (Esc)"
+        onClick={() => set(false)}
+      >
+        <Icon name={icon('ui:close')} size={16} />
+      </button>
+    );
   }
-  useLayoutEffect(() => {
-    if (closings > 0) onChangeRef.current?.(false);
-  }, [closings, onChangeRef]);
+  if (!offered) return null;
+  return (
+    <button
+      type="button"
+      className="lk-lightbox__button lk-lightbox__open"
+      aria-label="Expand"
+      title="Expand"
+      onClick={() => set(true)}
+    >
+      <Icon name={icon('ui:fullscreen')} size={16} />
+    </button>
+  );
 }
 
 /**
@@ -94,76 +104,14 @@ export function Lightbox({
   onExpandedChange,
   className,
 }: LightboxProps) {
-  const [own, setOwn] = useState(false);
-  const expanded = !disabled && (expandedProp ?? own);
-  const onChangeRef = useLatest(onExpandedChange);
-  const expandedRef = useLatest(expanded);
+  const { expanded, set, ctx, claimed } = useLightboxState(
+    disabled,
+    expandedProp,
+    onExpandedChange,
+  );
   const rootRef = useRef<HTMLDivElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
-  const [claims, setClaims] = useState(0);
-  const layers = useLightboxLayers();
-  const surface = useSurfaceOptional();
-  useDisablingCloses(disabled, expandedProp ?? own, setOwn, onChangeRef);
-
-  const set = useCallback(
-    (next: boolean) => {
-      if (next === expandedRef.current) return;
-      setOwn(next);
-      onChangeRef.current?.(next);
-    },
-    [expandedRef, onChangeRef],
-  );
-  const ctx = useMemo<LightboxContextValue | null>(
-    () =>
-      disabled
-        ? null
-        : {
-            expanded,
-            open: () => set(true),
-            close: () => set(false),
-            toggle: () => set(!expandedRef.current),
-            claimControl: () => {
-              setClaims((n) => n + 1);
-              return () => setClaims((n) => n - 1);
-            },
-          },
-    [disabled, expanded, set, expandedRef],
-  );
-
-  // Lift, trap and focus before paint, so the first frame is already the
-  // expanded one. The popover attribute is set here rather than rendered: a
-  // closed popover is `display: none`, which would hide the tile.
-  useLayoutEffect(() => {
-    const el = rootRef.current;
-    if (!expanded || !el) return;
-    const returnTo = document.activeElement as HTMLElement | null;
-    const stack = [...layers.below, el, ...layers.above].filter(
-      (layer): layer is HTMLElement => layer !== null,
-    );
-    const unlift = liftStack(stack, el);
-    const release = inertOutside(stack);
-    // A shared buffer lifted with this one must stop painting every other tile
-    // over it. A tile inside a lifted layer came along too, so it stays.
-    surface?.scope(stack);
-    closeRef.current?.focus({ preventScroll: true });
-    return () => {
-      surface?.scope(null);
-      release();
-      unlift();
-      if (returnTo?.isConnected) returnTo.focus({ preventScroll: true });
-    };
-  }, [expanded, layers, surface]);
-
-  useEffect(() => {
-    if (!expanded) return;
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key !== 'Escape' || e.defaultPrevented) return;
-      e.preventDefault();
-      set(false);
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [expanded, set]);
+  useLightboxModal(expanded, rootRef, closeRef, set);
 
   const onDoubleClick = (e: MouseEvent<HTMLDivElement>): void => {
     if (disabled || !expandOnDoubleClick || !opensLightbox(e, e.currentTarget)) return;
@@ -180,34 +128,6 @@ export function Lightbox({
   if (expanded) classes.push('lk-lightbox--expanded');
   if (className) classes.push(className);
 
-  let control: ReactNode = null;
-  if (expanded) {
-    control = (
-      <button
-        ref={closeRef}
-        type="button"
-        className="lk-lightbox__button lk-lightbox__close"
-        aria-label="Close expanded view"
-        title="Close (Esc)"
-        onClick={() => set(false)}
-      >
-        <Icon name={icon('ui:close')} size={16} />
-      </button>
-    );
-  } else if (!disabled && claims === 0) {
-    control = (
-      <button
-        type="button"
-        className="lk-lightbox__button lk-lightbox__open"
-        aria-label="Expand"
-        title="Expand"
-        onClick={() => set(true)}
-      >
-        <Icon name={icon('ui:fullscreen')} size={16} />
-      </button>
-    );
-  }
-
   return (
     <LightboxContext.Provider value={ctx}>
       {/* biome-ignore lint/a11y/noStaticElementInteractions: the double-click is an opt-in shortcut; the expand and close buttons are the keyboard path */}
@@ -220,7 +140,12 @@ export function Lightbox({
         onClick={onClick}
       >
         <div className="lk-lightbox__frame">{children}</div>
-        {control}
+        <LightboxButton
+          expanded={expanded}
+          offered={!disabled && !claimed}
+          set={set}
+          closeRef={closeRef}
+        />
       </div>
     </LightboxContext.Provider>
   );
