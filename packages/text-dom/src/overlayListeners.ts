@@ -64,8 +64,6 @@ export function listenToOverlay(
     commit();
   };
 
-  // Typing can change the line count; re-placing on `input` rather than on the
-  // next frame keeps a center/bottom-aligned overlay from jumping a frame late.
   const listeners = Object.entries({
     keydown: onKeyDown, blur: onBlur, input: typing.onInput, beforeinput: typing.onBeforeInput,
     compositionstart: typing.onCompositionStart, compositionend: typing.onCompositionEnd,

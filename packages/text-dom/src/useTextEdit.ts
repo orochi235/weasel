@@ -7,30 +7,24 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { useLatest, useVisibleRaf } from '@weasel-js/react';
-import type { TextStyle } from '@weasel-js/text';
-import { resolveTextStyle } from '@weasel-js/text';
-import { domToRuns } from './domRuns';
-import { effectiveRangeStyle, type RangeStyle, type RunStylePatch } from '@weasel-js/text';
-import { armedOver, usePendingStyle } from './armedStyle';
-import { overlayHistory, type OverlayHistory, type OverlayState } from './overlayHistory';
-import { writeEdit, type EditDraft } from './overlayDraft';
-import { usePublishedRange } from './publishedRange';
-import { overlayTop } from './overlayFrame';
-export { overlayTop };
-import { openEditOverlay } from './editOverlay';
-import { useHeldNodeStyle } from './heldNodeStyle';
 import {
-  readSelectionOffsets, writeRunsPreservingSelection,
-} from './overlaySelection';
-import { typingHandlers } from './overlayTyping';
-import { listenToOverlay } from './overlayListeners';
+  effectiveRangeStyle, resolveTextStyle, type RangeStyle, type RunStylePatch, type TextStyle,
+} from '@weasel-js/text';
+import { armedOver, usePendingStyle } from './armedStyle';
+import { openEditOverlay } from './editOverlay';
 import { useEditingId } from './editSession';
+import { useHeldNodeStyle } from './heldNodeStyle';
+import { writeEdit, type EditDraft } from './overlayDraft';
+import { createOverlayEdits } from './overlayEdits';
+import { overlayTop } from './overlayFrame';
+import type { OverlayHistory } from './overlayHistory';
+import { listenToOverlay } from './overlayListeners';
+import { usePublishedRange } from './publishedRange';
 import { useSelectionStyling } from './selectionStyling';
 import { TEXT_EDIT_FONT_HOLD } from './textEditTypes';
-import type {
-  StartEditOptions, TextEditSelection, UseTextEditOptions,
-  UseTextEditReturn,
-} from './textEditTypes';
+import type { StartEditOptions, UseTextEditOptions, UseTextEditReturn } from './textEditTypes';
+
+export { overlayTop };
 
 /** In-place text editing via a contenteditable overlay positioned over the text node's screen-space pose. */
 export function useTextEdit(
@@ -112,40 +106,20 @@ export function useTextEdit(
     // alongside the editor would otherwise render one frame with no selection.
     syncSelection();
 
-    const written = (range: TextEditSelection) => {
-      draft.holder.wrote(overlay, range.end);
-      dropPending();
-      publishRange(overlay, range);
-    };
-    const edited = () => {
-      draft.holder.edited(overlay);
-      place();
-      boxes.scroller.reveal();
-      sendDraft(overlay);
-      history.after();
-    };
-    const history = (historyRef.current = overlayHistory({
-      read: (): OverlayState | null => {
-        const at = readSelectionOffsets(overlay) ?? selectionRef.current;
-        const runs = domToRuns(overlay);
-        return at && { runs: draft.holder.trim(runs), selection: at, style: nodeStyleRef.current };
-      },
-      write: ({ runs, selection: at, style: held }) => {
-        const base = restyleNode(overlay, editingId, held);
-        writeRunsPreservingSelection(overlay, runs, at.start, at.end, base);
-        draft.holder.reseed(runs);
-        written(at);
-        edited();
-      },
-    }));
-    const typing = typingHandlers(overlay, {
+    const { history, typing } = createOverlayEdits(overlay, {
+      holder: draft.holder,
       pending: () => pendingRef.current,
       base: () => baseRef.current,
       lastRange: () => selectionRef.current,
-      onWritten: written,
-      onEdited: edited,
-      history,
+      nodeStyle: () => nodeStyleRef.current,
+      restyle: (held) => restyleNode(overlay, editingId, held),
+      follow: () => {
+        place();
+        boxes.scroller.reveal();
+      },
+      dropPending, publishRange, sendDraft,
     });
+    historyRef.current = history;
 
     const stopListening = listenToOverlay(overlay, boxes.scroll, {
       optsRef, commit, cancel: cancelEdit, history, toggleStyle, typing, syncSelection,
