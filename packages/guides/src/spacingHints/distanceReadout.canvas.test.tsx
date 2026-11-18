@@ -34,7 +34,7 @@ describe('distanceReadout on a SceneCanvas', () => {
     const readout = preset.contributions!.find((c) => c.id === 'distanceReadout') as DistanceReadoutContribution;
     const { container } = render(
       <SceneCanvas features={[pickPreset, preset]} width={300} height={200} scene={scene}
-        selectionOptions={{ mode: 'multi', initial: [asNodeId('a')] }} />,
+        selectionOptions={{ mode: 'multiple', initial: [asNodeId('a')] }} />,
     );
     const canvas = container.querySelector('canvas')!;
     // jsdom's canvas rect is all zeros and the view is identity, so client coords are world coords.

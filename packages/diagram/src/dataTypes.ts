@@ -5,7 +5,7 @@ import type { AddNodeSpec, MarkerRef, Page, PageLayoutOptions, PoseComposition, 
 import type { Vec2 } from '@weasel-js/core/math';
 import type { BodySpec, MeasureRowText, Row } from './body';
 import type { DiagramEdge } from './edgeTrait';
-import type { DiagramAnchor } from './group';
+import type { DiagramAnchor } from './clusterBox';
 import type { DiagramLabel } from './labelTrait';
 import type { LayoutFn, LayoutOptions, LayoutPorts } from './layout';
 import type { DataMark, DiagramMark } from './marks';
@@ -96,20 +96,20 @@ export interface DataEdge {
 }
 
 /** A box drawn around some nodes, which layout keeps together. */
-export interface DataGroup {
+export interface DataCluster {
   /** Shares one namespace with node ids. */
   id: string;
-  /** Node ids, and the ids of groups nested in this one. A node or group a
-   *  later group also names stays in this one; an id that is neither is
-   *  ignored, and so is one that would put a group inside itself. */
+  /** Node ids, and the ids of clusters nested in this one. A node or cluster a
+   *  later cluster also names stays in this one; an id that is neither is
+   *  ignored, and so is one that would put a cluster inside itself. */
   members: readonly string[];
   /** Drawn inside the box, above its members. */
   label?: string;
   /** Between the box and its members, and around the label. Default
-   *  `DiagramSceneOptions.groupPadding`. */
+   *  `DiagramSceneOptions.clusterPadding`. */
   padding?: number;
   /** The axis its members can be dragged along to change their order, in a
-   *  `DiagramView` given `onReorder`. A member that is a group carries
+   *  `DiagramView` given `onReorder`. A member that is a cluster carries
    *  everything inside it. */
   reorder?: 'x' | 'y';
 }
@@ -118,10 +118,10 @@ export interface DataGroup {
 export interface DiagramData {
   nodes: readonly DataNode[];
   edges: readonly DataEdge[];
-  /** A group may be a member of another. `layered`, `tree`, `force`, and `chain`
-   *  keep each group's members together; `'none'` ignores groups but still
+  /** A cluster may be a member of another. `layered`, `tree`, `force`, and `chain`
+   *  keep each cluster's members together; `'none'` ignores clusters but still
    *  draws them. */
-  groups?: readonly DataGroup[];
+  clusters?: readonly DataCluster[];
   /** Containers and pools: regions drawn as scene containers that hold their
    *  members, which a `DiagramView` drags shapes into and out of. */
   containers?: readonly DataContainer[];
@@ -290,13 +290,13 @@ export interface DiagramSceneOptions<TLayer extends string = 'main'> {
   /** A node's look; `undefined` keeps the theme's, else {@link DEFAULT_NODE_STYLE}. */
   nodeStyle?: (node: DataNode) => NodeStyle | undefined;
   /** Default 12. */
-  groupPadding?: number;
-  /** A group's box and label. `text` colors the label. `undefined` keeps the theme's
-   *  container, else `DEFAULT_GROUP_STYLE`. */
-  groupStyle?: (group: DataGroup) => NodeStyle | undefined;
+  clusterPadding?: number;
+  /** A cluster's box and label. `text` colors the label. `undefined` keeps the theme's
+   *  container, else `DEFAULT_CLUSTER_STYLE`. */
+  clusterStyle?: (cluster: DataCluster) => NodeStyle | undefined;
   /** An edge's look; `undefined` keeps the theme's, else `DEFAULT_EDGE_STYLE`. */
   edgeStyle?: (edge: DataEdge) => EdgeStyle | undefined;
-  /** Styles nodes by their `style` role, and edges, groups and text by the theme, where the
+  /** Styles nodes by their `style` role, and edges, clusters and text by the theme, where the
    *  functions above leave them; and its face is the default `font`. */
   theme?: DiagramTheme;
   /** How the scene the specs go into folds a child's pose into its container's: each

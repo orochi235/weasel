@@ -1,6 +1,6 @@
 import type { NodeId } from 'core/scene/types';
 import { asFollower, followerLandings } from 'core/pages/pagePlacement';
-import { pageOfNode } from 'core/pages/pageNodes';
+import { pageIdOf } from 'core/pages/pageNodes';
 import type { DropVerdict } from './dropVerdict';
 import type { CanDropIntoDep } from './layoutDeps';
 import { composesFrames, frameInverts, type PoseComposition } from 'core/scene/composeFrame';
@@ -29,7 +29,7 @@ function drawsFlat(scene: ChildReader, parent: NodeId): boolean {
 /** Where each of `ids` belongs by the follower rule (`followerLandings`) once they land in `parent`: each of
  *  them, and what is under it, is on `parent`'s page. `undefined` for an id that follows none. */
 function followerPages(scene: ChildReader, parent: NodeId, ids: readonly string[]): (string | null | undefined)[] {
-  const landing = pageOfNode(scene, parent);
+  const landing = pageIdOf(scene, parent);
   const followers = ids.flatMap((id) => asFollower(id, scene.get(id as NodeId)) ?? []);
   const pages = followerLandings(scene, new Map(ids.map((id) => [id, landing])), followers);
   return ids.map((id) => pages.get(id));
@@ -51,7 +51,7 @@ export function childVerdict(
   if (target?.pageRun !== undefined) {
     return ids.length > 0 && followerPages(scene, parent, ids).every((page) => page === null);
   }
-  const own = target?.page === undefined ? null : pageOfNode(scene, parent);
+  const own = target?.page === undefined ? null : pageIdOf(scene, parent);
   if (own !== null && followerPages(scene, parent, ids).some((page) => page !== undefined && page !== own)) {
     return false;
   }

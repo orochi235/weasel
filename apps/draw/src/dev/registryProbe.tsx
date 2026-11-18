@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { EDITOR_ACTIONS, EDITOR_PREFERENCES_KEY } from '@weasel-js/editor';
+import { EDITOR_ACTIONS, EDITOR_PREFS_KEY } from '@weasel-js/editor';
 import { actionBindings, actionItems, keySpecShortcut, SceneCanvas, defaultNodeRouting, useActionsRegistry, useCommand, useScene, type NodePropertiesEntry, type ToolDef, type ToolsApi } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
 import { actionIcon } from '@weasel-js/ui/components/Icon';
@@ -12,7 +12,7 @@ import { useDebugCommands } from './devRoutes';
 import { DRAW_NODE_PROPERTIES } from './registryData';
 import { GESTURE_CATALOG_KEYS, type DeclaredRoute, type ToolSurface, type ToolEntry, type ActionEntry, type CallbackRef, type CallbackSource } from './registryEntries';
 import s from './RegistryInspector.module.css';
-import { BUILTIN_TOOL_IDS } from '@weasel-js/editing';
+import { KIT_TOOL_IDS } from '@weasel-js/editing';
 import { getOwn, hasOwnKey } from '@weasel-js/registry';
 
 export interface RegistrySnapshot {
@@ -46,7 +46,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
   });
   useDebugCommands();
   const { label: prefsLabel, ...prefsOptions } = DRAW_PREFERENCES_COMMAND;
-  useCommand(EDITOR_ACTIONS.preferences, prefsLabel, noop, { ...prefsOptions, keys: EDITOR_PREFERENCES_KEY });
+  useCommand(EDITOR_ACTIONS.preferences, prefsLabel, noop, { ...prefsOptions, keys: EDITOR_PREFS_KEY });
   useFileCommands({
     scene, filename: 'probe', paperSize: 'letter',
     setFilename: noop, showFirstPage: noop, leaveMode: noop, page: null,
@@ -164,7 +164,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
         scene={scene}
         width={200}
         height={200}
-        features={DRAW_FEATURES} defaultTools={BUILTIN_TOOL_IDS}
+        features={DRAW_FEATURES} defaultTools={KIT_TOOL_IDS}
         ambient={AMBIENT}
         routing={defaultNodeRouting}
         onToolsCreated={handleToolsCreated}

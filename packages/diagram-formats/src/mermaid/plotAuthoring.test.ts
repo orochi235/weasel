@@ -3,7 +3,7 @@ import {
   insertGanttSection, insertGanttTask, insertGitCommand, insertJourneySection, insertJourneyTask, insertPacketField, insertPieSlice,
   insertQuadrantClass, insertQuadrantPoint, insertRadarAxis, insertRadarCurve, insertSankeyLink, insertTimelineEvent, insertTimelinePeriod,
   insertTimelineSection, insertXyRow, insertXySeries, setGanttTaskId, setGanttTaskStart, setGanttTaskTags, setGitCommandField,
-  setGitCommandKind, setJourneyActors, setPacketBits, setPieShowData, setQuadrantPoint, setQuadrantPointClass, setRadarValue, setSankeyEnd,
+  setGitCommandKind, setJourneyActors, setPacketBits, setPieShowData, setQuadrantPointAt, setQuadrantPointClass, setRadarValue, setSankeyEnd,
   setXyAxisTitle, setXyCategory, setXySeriesKind, setXyValue, setXyValueBound, withTitle, type GanttData, type GitGraphData, type JourneyData, type PacketData, type PieData, type PlotData,
   type QuadrantData, type RadarData, type SankeyData, type TimelineData, type XyChartData,
 } from '@weasel-js/plot';
@@ -76,7 +76,7 @@ const CASES: { name: string; data: PlotData; write: (p: PlotPage) => ExportResul
     name: 'quadrant',
     data: build(
       { kind: 'quadrant', points: [] } as QuadrantData, (d) => insertQuadrantPoint(d, 0), (d) => insertQuadrantPoint(d, 1),
-      (d) => setQuadrantPoint(d, 1, { x: 0.25, y: 0.75 }), (d) => insertQuadrantClass(d, 0), (d) => setQuadrantPointClass(d, 0, 'class1'),
+      (d) => setQuadrantPointAt(d, 1, { x: 0.25, y: 0.75 }), (d) => insertQuadrantClass(d, 0), (d) => setQuadrantPointClass(d, 0, 'class1'),
     ),
     write: writeMermaidQuadrant, read: readMermaidQuadrant,
   },

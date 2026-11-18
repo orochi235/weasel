@@ -11,7 +11,7 @@
  * at a time (`shapedRuns.ts`), and its kerning is already in their advances.
  */
 import {
-  glyphIn, metricsOf, resolveColorCluster, cachedFontVariant, resolveGlyph, warnNoMetrics,
+  glyphIn, glyphMetricsOf, resolveColorCluster, cachedFontVariant, resolveGlyph, warnNoMetrics,
   type BmFont, type BmFontChar, type GlyphMetrics, type ResolvedGlyph, type ResolveResult,
 } from '@weasel-js/font';
 import { graphemeEnds } from '../measure/graphemes';
@@ -119,7 +119,7 @@ export function measureRuns(
   for (let runIndex = 0; runIndex < runs.length; runIndex++) {
     const run = runs[runIndex];
     const resolved = cachedFontVariant(run.fontFamily, run.fontWeight, run.fontStyle);
-    const metrics = metricsOf(resolved);
+    const metrics = glyphMetricsOf(resolved);
     if (!metrics) {
       // Laying out as nothing is indistinguishable from empty text downstream,
       // so this is the only signal a consumer ever gets.

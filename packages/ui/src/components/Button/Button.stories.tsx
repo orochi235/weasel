@@ -6,7 +6,7 @@ import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { EMPHASIS_ICONS, GRADE_ICONS } from '../appearanceIcons';
 import { EMPHASES, GRADES } from '@weasel-js/theme';
 import { BADGE_LOOKS, lookProps } from '../Badge/looks';
-import { Sequence, values } from '@weasel-js/ui/components/Sequence';
+import { Sequence, valuesSweep } from '@weasel-js/ui/components/Sequence';
 import s from './Button.stories.module.css';
 
 const meta: Meta<typeof Button> = {
@@ -210,7 +210,7 @@ const SIZES: ControlSize[] = ['sm', 'md'];
 export const Matrix: Story = {
   tags: ['gallery'],
   render: (args) => (
-    <Sequence label="Size by variant" sweep={values(SIZES)} across={values(VARIANTS)}>
+    <Sequence aria-label="Size by variant" sweep={valuesSweep(SIZES)} across={valuesSweep(VARIANTS)}>
       {(sz, v) => (
         <div className={s.pair}>
           <Button {...args} variant={v} size={sz}>Button</Button>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { auto } from '../config/auto';
+import { AUTO } from '../config/auto';
 import type { Instrument } from '../instrument/types';
 import { createLabStore } from './store';
 import type { CreateLabStoreOptions } from './types';
@@ -198,7 +198,7 @@ describe('save/load/delete snapshots', () => {
     s.getState().saveSnapshot('w1', 'snap1');
     expect(s.getState().savedSnapshots[0]?.auto).toEqual([]);
     const snapId = s.getState().savedSnapshots[0]?.id ?? '';
-    s.getState().updateTrialConfig('w1', 'x', auto);
+    s.getState().updateTrialConfig('w1', 'x', AUTO);
     expect(s.getState().trials[0]?.auto).toEqual(['x']);
     s.getState().loadSnapshot(snapId, 'w1');
     expect(s.getState().trials[0]?.auto).toBeUndefined();

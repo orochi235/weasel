@@ -2,7 +2,7 @@
 // value leaves `useToolbarBinding` binds.
 
 import { DEFAULT_MAX_ZOOM, DEFAULT_MIN_ZOOM } from '@weasel-js/core';
-import { SET_HOPS_ACTION_ID, SET_ROUTER_ACTION_IDS } from '@weasel-js/diagram';
+import { TOGGLE_HOPS_ACTION_ID, SET_ROUTER_ACTION_IDS } from '@weasel-js/diagram';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { CHART_ACTIONS } from '../chartCommands';
 import { icon } from '../icons.gen';
@@ -31,7 +31,7 @@ export const TOOLBAR_ASSETS: readonly ToolbarAsset[] = [
   asset('zoom', 'Zoom', {
     out: pref.action('viewport.zoom:out', { icon: icon('ui:zoomOut') }),
     [ZOOM_PATH]: pref.number('Zoom', 1, {
-      min: DEFAULT_MIN_ZOOM, max: DEFAULT_MAX_ZOOM, unit: { suffix: '%', scale: 0.01, precision: 0 },
+      min: DEFAULT_MIN_ZOOM, max: DEFAULT_MAX_ZOOM, unit: { suffix: '%', scale: 0.01, places: 0 },
     }),
     in: pref.action('viewport.zoom:in', { icon: icon('ui:zoomIn') }),
     fit: pref.action('viewport.zoom:reset', { name: 'Fit page', icon: icon('ui:fit') }),
@@ -48,7 +48,7 @@ export const TOOLBAR_ASSETS: readonly ToolbarAsset[] = [
     orthogonal: pref.action(SET_ROUTER_ACTION_IDS.orthogonal),
     bezier: pref.action(SET_ROUTER_ACTION_IDS.bezier),
     avoid: pref.action(SET_ROUTER_ACTION_IDS.avoid),
-    hops: pref.action(SET_HOPS_ACTION_ID),
+    hops: pref.action(TOGGLE_HOPS_ACTION_ID),
   }),
   asset('arrange', 'Arrange', {
     autoLayout: pref.action(CHART_ACTIONS.autoLayout),

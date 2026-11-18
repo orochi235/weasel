@@ -10,7 +10,7 @@ import type {
 } from '../types';
 import { BufferUsage, ShaderStage } from './flags';
 import { Frame, UniformRing } from './wgpuFrame';
-import { DEFAULT_ATTRIBUTE, needsDefaultAttribute, pipelineFor } from './wgpuPipelines';
+import { DEFAULT_ATTRIBUTE, needsDefaultAttribute, ensurePipeline } from './wgpuPipelines';
 import { NDC_GROUP, WgpuProgram, type WgpuProgramHost } from './wgpuProgram';
 import * as res from './wgpuResources';
 import {
@@ -182,7 +182,7 @@ export class WebGPUDevice implements GpuDevice, WgpuProgramHost {
     this.uploadUniforms(program);
     const pass = frame.pass;
     const { target, encoder } = pass;
-    const pipeline = pipelineFor(this.device, program, geom, target, state);
+    const pipeline = ensurePipeline(this.device, program, geom, target, state);
     if (!pipeline) return;
     if (pass.pipeline !== pipeline) {
       encoder.setPipeline(pipeline);

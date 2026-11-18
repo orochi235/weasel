@@ -30,7 +30,7 @@ function setup() {
     <PointerContextProvider store={pointer}>
       <SceneCanvas
         features={[arrangePreset]} scene={scene} layers={{}} width={64} height={64}
-        selectionOptions={{ mode: 'multi', initial: [asNodeId('a'), asNodeId('b')] }}
+        selectionOptions={{ mode: 'multiple', initial: [asNodeId('a'), asNodeId('b')] }}
         actions={{ 'align.left': { defaultBinding: keys } }}
       />
     </PointerContextProvider>,

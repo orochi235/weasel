@@ -27,7 +27,7 @@ export {
 } from '@weasel-js/renderer/mesh';
 export type {
   BakedMesh,
-  MeshBox,
+  MeshRect,
   MeshGradientPaint,
   MeshGuides,
   MeshHandle,

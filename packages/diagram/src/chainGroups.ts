@@ -12,13 +12,13 @@
 import { maxOf, minOf } from '@weasel-js/geom';
 import type { Hanging } from './chainRoutes';
 import { rankGaps, rankInset } from './cluster';
-import type { Graph, GraphGroup, GraphNode } from './graph';
+import type { Graph, GraphCluster, GraphNode } from './graph';
 import { extent, type LayoutAxes, type Slot } from './layout';
 
-function depths(groups: readonly GraphGroup[]): Map<string, number> {
+function depths(groups: readonly GraphCluster[]): Map<string, number> {
   const byId = new Map(groups.map((g) => [g.id, g]));
   const depth = new Map<string, number>();
-  const of = (g: GraphGroup): number => {
+  const of = (g: GraphCluster): number => {
     if (!depth.has(g.id)) {
       const parent = g.parent === undefined ? undefined : byId.get(g.parent);
       depth.set(g.id, parent === undefined ? 0 : of(parent) + 1);
@@ -29,7 +29,7 @@ function depths(groups: readonly GraphGroup[]): Map<string, number> {
   return depth;
 }
 
-const deepestFirst = (groups: readonly GraphGroup[]): GraphGroup[] => {
+const deepestFirst = (groups: readonly GraphCluster[]): GraphCluster[] => {
   const depth = depths(groups);
   return [...groups].sort((p, q) => depth.get(q.id)! - depth.get(p.id)!);
 };
@@ -43,7 +43,7 @@ const deepestFirst = (groups: readonly GraphGroup[]): GraphGroup[] => {
  * that group's deepest member, keeping its order.
  */
 export function groupHanging(graph: Graph, line: readonly GraphNode[], hanging: Hanging): Hanging {
-  const groups = graph.groups ?? [];
+  const groups = graph.clusters ?? [];
   if (groups.length === 0) return hanging;
   const index = new Map(line.map((n, i) => [n.id, i]));
   const byId = new Map(groups.map((g) => [g.id, g]));
@@ -53,7 +53,7 @@ export function groupHanging(graph: Graph, line: readonly GraphNode[], hanging: 
   for (const node of graph.nodes) {
     if (index.has(node.id)) continue;
     const first = index.get(hanging.owner.get(node.id)!)!;
-    for (let g = node.group === undefined ? undefined : byId.get(node.group); g !== undefined;
+    for (let g = node.cluster === undefined ? undefined : byId.get(node.cluster); g !== undefined;
       g = g.parent === undefined ? undefined : byId.get(g.parent)) {
       const members = onLine.get(g.id)!;
       if (members.length === 0) continue;
@@ -95,7 +95,7 @@ function nearest(members: readonly string[], from: number, index: ReadonlyMap<st
  *  starts at the line has to come first. */
 function clearColumns(
   graph: Graph,
-  ordered: readonly GraphGroup[],
+  ordered: readonly GraphCluster[],
   index: ReadonlyMap<string, number>,
   owner: ReadonlyMap<string, string>,
   start: ReadonlyMap<string, number>,
@@ -111,7 +111,7 @@ function clearColumns(
     const holding = ordered.filter((g) => g.members.some((m) => m === lineId || hung.includes(m)));
     const atLine = holding.filter((g) => g.members.includes(lineId));
     const kept = new Set(atLine.flatMap((g) => g.members));
-    const clear = (g: GraphGroup, fixed: ReadonlySet<string>) => {
+    const clear = (g: GraphCluster, fixed: ReadonlySet<string>) => {
       const members = new Set(g.members);
       const own = hung.filter((id) => members.has(id)).map((id) => level.get(id)!);
       const low = members.has(lineId) ? 0 : minOf(own);
@@ -193,7 +193,7 @@ export function bandGaps(
 ): number[] {
   const insets = rankGaps(graph, bands, axes, 0);
   const out = gaps.map((gap, i) => gap + (insets[i] ?? 0));
-  const groups = graph.groups ?? [];
+  const groups = graph.clusters ?? [];
   if (axes.rank !== 'x' || !groups.some((g) => g.minWidth !== undefined)) return out;
 
   const bandOf = new Map<string, number>();
@@ -228,7 +228,7 @@ export function bandGaps(
 }
 
 /** A group as {@link widenForMinWidth} reads it. */
-export interface MinWidthGroup {
+export interface MinWidthCluster {
   id: string;
   minWidth?: number;
   /** Its box's inset before and after along the rank. */
@@ -250,12 +250,12 @@ export interface MinWidthGroup {
  * as they stand; `lo > hi` for a group with none placed.
  */
 export function widenForMinWidth(
-  groups: readonly MinWidthGroup[],
+  groups: readonly MinWidthCluster[],
   gaps: number[],
   span: (id: string, gaps: readonly number[]) => { lo: number; hi: number },
 ): void {
   const byId = new Map(groups.map((g) => [g.id, g]));
-  const boxOf = (g: MinWidthGroup, minWidth: number): { lo: number; hi: number } => {
+  const boxOf = (g: MinWidthCluster, minWidth: number): { lo: number; hi: number } => {
     let { lo, hi } = span(g.id, gaps);
     [lo, hi] = [lo - g.inset.lo, hi + g.inset.hi];
     for (const id of g.children) {

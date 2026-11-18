@@ -12,7 +12,7 @@ import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { composeAlphaFor } from '../sceneSlotWiring';
 import { useSceneAdapter } from '../useSceneAdapter';
 import type { SceneCanvasProps } from './props';
-import { useNodeAtPoint } from './useNodeAtPoint';
+import { useBestHit } from './useBestHit';
 import type { NodeKinds } from './useNodeKinds';
 import { useScenePickers, type UseScenePickersArgs } from './useScenePickers';
 import { useOptionalViewRegistry } from '../viewRegistry';
@@ -94,7 +94,7 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
     selectTool: args.selectTool,
   });
 
-  const getNodeAtPoint = useNodeAtPoint({
+  const getNodeAtPoint = useBestHit({
     pickBest: selectTool.pickBest, nodes: adapter, kindOf,
   });
 

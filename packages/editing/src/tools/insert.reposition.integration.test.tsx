@@ -59,7 +59,7 @@ function mount() {
       canvasRef,
       actions: registry!,
       entriesById: new Map(Object.entries(api.registry)),
-      classifyTarget: () => ({ body: 'empty' }),
+      classifyTarget: () => ({ bodyTarget: 'empty' }),
     });
     return <canvas ref={canvasRef} data-testid="canvas" />;
   }

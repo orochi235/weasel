@@ -4,7 +4,7 @@ import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { runAxe } from '../frame/a11y';
 import type { FrameSetup } from '../frame/FrameController';
-import type { A11yReport, Globals } from '../protocol/messages';
+import type { A11yReport, StoryGlobals } from '../protocol/messages';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { createTrialFrames, TrialFramesContext } from './trialFrames';
 import { TrialHost } from './TrialHost';
@@ -13,7 +13,7 @@ afterEach(() => {
   for (const el of Array.from(document.head.querySelectorAll('[data-fg-globals], [data-fg-overrides]'))) el.remove();
 });
 
-const seen = (globals: Globals) => <p data-testid="globals">{JSON.stringify(globals)}</p>;
+const seen = (globals: StoryGlobals) => <p data-testid="globals">{JSON.stringify(globals)}</p>;
 
 describe('TrialHost', () => {
   it('is a themed box: applies the globals to itself with a scope naming only it, and again when they change', () => {

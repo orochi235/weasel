@@ -10,12 +10,12 @@ import {
   WeaselProvider,
 } from '@weasel-js/core';
 import {
-  BUILTIN_TOOL_IDS,
   editPreset,
+  KIT_TOOL_IDS,
   type KitToolId,
   movePreset,
   pickPreset,
-  shapeToolKitPreset,
+  shapeToolsOfferedPreset,
   transformPreset,
 } from '@weasel-js/editing';
 import { usePencilTool } from '@weasel-js/path-tools';
@@ -43,7 +43,7 @@ import { boundsOf, roundPoints, toShape, type WorldRect } from './frac';
 import { markStyleFrom } from './options';
 import { useOverlayTile } from './overlayTile';
 import { POINT_MARK_SHAPE } from './paint';
-import { seenFrom } from './staleness';
+import { seenValues } from './staleness';
 import type { MarkScene } from './store';
 import { ANNOTATION_WEASEL_TOOLS, annotationToolInfo, annotationToolOptions } from './toolMap';
 import type {
@@ -131,11 +131,11 @@ const FEATURES = [
   movePreset,
   transformPreset,
   editPreset,
-  shapeToolKitPreset,
+  shapeToolsOfferedPreset,
   ANNOTATION_TEXT,
 ];
 const BUILTIN_ANNOTATION_TOOLS = ANNOTATION_WEASEL_TOOLS.filter((t): t is KitToolId =>
-  (BUILTIN_TOOL_IDS as readonly string[]).includes(t),
+  (KIT_TOOL_IDS as readonly string[]).includes(t),
 );
 
 /** One factory per weasel tool, each making the mark the rail's tool means. */
@@ -152,7 +152,7 @@ function insertFactories(
       const info = annotationToolInfo(toolRef.current);
       const kind: AnnotationKind | undefined = info?.kind;
       if (!kind) return null;
-      const seen = seenFrom(configRef.current, target.positionDependsOn ?? []);
+      const seen = seenValues(configRef.current, target.positionDependsOn ?? []);
       const tool = toolRef.current ?? '';
       const style = markStyleFrom(tool, annotationToolOptions(tool), values);
       const geometry = insertedGeometry(extras as unknown as Record<string, unknown>);

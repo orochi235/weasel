@@ -69,12 +69,12 @@ describe('useShapeBuilderTool', () => {
 
   it('shows the face under the pointer, red while Alt is held, and nothing off every face', () => {
     const s = setup();
-    s.fire('shapeBuilder.hover', { world: { x: 7, y: 5 }, mods: noMods });
+    s.fire('shapeBuilder.showFace', { world: { x: 7, y: 5 }, mods: noMods });
     expect(s.painted()).toEqual([[expect.anything(), 5, 5]]);
     const plain = s.painted()[0]![0];
-    s.fire('shapeBuilder.hover', { world: { x: 7, y: 5 }, mods: { ...noMods, alt: true } });
+    s.fire('shapeBuilder.showFace', { world: { x: 7, y: 5 }, mods: { ...noMods, alt: true } });
     expect(s.painted()[0]![0]).not.toEqual(plain);
-    s.fire('shapeBuilder.hover', { world: { x: 40, y: 5 }, mods: noMods });
+    s.fire('shapeBuilder.showFace', { world: { x: 40, y: 5 }, mods: noMods });
     expect(s.painted()).toEqual([]);
   });
 
@@ -112,20 +112,20 @@ describe('useShapeBuilderTool', () => {
 
   it('takes the one face a click lands on', () => {
     const s = setup();
-    s.fire('shapeBuilder.click', { press: { x: 2, y: 5 }, mods: { ...noMods, alt: true } });
+    s.fire('shapeBuilder.takeFace', { press: { x: 2, y: 5 }, mods: { ...noMods, alt: true } });
     expect(s.made()).toEqual([['divide', 'b', 10, 5], ['divide', 'b', 5, 5]]);
   });
 
   it('declines its drag and click with fewer than two selected, so the drag marquee-selects', () => {
     const s = setup(['a']);
     expect(s.enabled('shapeBuilder')).not.toBe(true);
-    expect(s.enabled('shapeBuilder.click')).not.toBe(true);
+    expect(s.enabled('shapeBuilder.takeFace')).not.toBe(true);
     expect(s.tool().bindings!.map((b) => b.actionId)).toContain('areaSelect');
   });
 
   it('clears what it shows when the tool is put down', () => {
     const s = setup();
-    s.fire('shapeBuilder.hover', { world: { x: 7, y: 5 }, mods: noMods });
+    s.fire('shapeBuilder.showFace', { world: { x: 7, y: 5 }, mods: noMods });
     s.tool().onDeactivate?.();
     expect(s.painted()).toEqual([]);
   });

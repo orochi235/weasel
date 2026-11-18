@@ -67,7 +67,7 @@ export interface EdgeEndOptions<TPose> extends PortsOptions<TPose> {
  *  `derivePath` routes it. `null` for a node that is not a drawable edge. */
 export function createEdgeEnds<TPose>(participants: ParticipantSource<TPose>, opts: EdgeEndOptions<TPose> = {}) {
   const derive = edgeRouter<TPose>({
-    ...(opts.geometry ? { geometry: opts.geometry } : {}),
+    ...(opts.poseDescriptor ? { poseDescriptor: opts.poseDescriptor } : {}),
     ...(opts.read ? { read: opts.read } : {}),
     ...(opts.routers ? { routers: opts.routers } : {}),
   });
@@ -146,7 +146,7 @@ export function createEdgeEndAffordance<TPose>(
 /** The composed layer, for `CanvasExtensionApi.registerLayer`. Register it
  *  after the port layer: the last-registered layer is hit first, and an edge's
  *  end sits on a port. */
-export function edgeEndLayer<TPose>(
+export function createEdgeEndLayer<TPose>(
   participants: ParticipantSource<TPose>,
   selected: () => readonly string[],
   opts: EdgeEndAffordanceOptions<TPose> = {},

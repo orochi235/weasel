@@ -29,7 +29,7 @@ describe('FallthroughDiagram', () => {
     expect(rows).toHaveLength(3);
     const winners = rows.filter((r) => r.hasAttribute('data-winner'));
     expect(winners).toHaveLength(1);
-    expect(winners[0]!.textContent).toContain('exitPathEdit');
+    expect(winners[0]!.textContent).toContain('leavePathEdit');
     expect(winners[0]!.getAttribute('aria-current')).toBe('true');
     expect(rows[0]!.textContent).toContain('declined: not-applicable');
     expect(rows[2]!.textContent).toContain('not asked');

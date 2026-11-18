@@ -163,7 +163,7 @@ export function styleAtRange(
  * Does any run carry styling of its own? A flag stored as `false` counts as
  * none, so runs whose styling was toggled back off read as `false`.
  */
-export function runsCarryStyling(runs: readonly StyledRun[]): boolean {
+export function hasStyledRun(runs: readonly StyledRun[]): boolean {
   return runs.some((run) =>
     STYLE_KEYS.some((key) => {
       const value = run[key];

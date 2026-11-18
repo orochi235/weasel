@@ -15,7 +15,7 @@ export const DEFAULT_REASON_LABELS: Readonly<Record<string, string>> = {
 /**
  * The words chrome shows for why an action cannot run: `labels[reason]`, else
  * `reason` itself, so a consumer's own reason string still reads. `reason` is
- * what {@link useActionStates} reports as `ActionState.reason`, an
+ * what {@link useActionStates} reports as `ActionState.disabledReason`, an
  * `ActionDisabledReason` or any string an action's `enabled` returned; pass
  * `labels` to change the wording, starting from {@link DEFAULT_REASON_LABELS}.
  *
@@ -25,8 +25,8 @@ export const DEFAULT_REASON_LABELS: Readonly<Record<string, string>> = {
  * return (
  *   <ActionButton
  *     label="Delete"
- *     disabled={!state.enabled}
- *     {...(state.reason !== undefined ? { disabledReason: reasonLabel(state.reason) } : {})}
+ *     disabled={state.disabled}
+ *     {...(state.disabledReason !== undefined ? { disabledReason: reasonLabel(state.disabledReason) } : {})}
  *     onPress={run}
  *   />
  * );

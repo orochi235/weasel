@@ -10,7 +10,7 @@ import { flushSync } from 'react-dom';
 import { SceneCanvas, createPageRun, createScene, fitViewToPage, placeOnPages, placedPagesOf, type NodeId, type RectPose, type Scene, type SelectionApi, type View } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
 import { textPreset } from '@weasel-js/text-tools';
-import { EDGE_DERIVE_PATH, withDiagramRegistry, registerDiagramShape, diagramOffPage, installOffPageMarkers } from '@weasel-js/diagram';
+import { EDGE_DERIVE_PATH, withDiagramRegistry, registerDiagramShape, createDiagramOffPageContribution, installOffPageMarkers } from '@weasel-js/diagram';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 import { drawPreset, useSelection } from '@weasel-js/editing';
 
@@ -21,7 +21,7 @@ registerCanvasFont('sans-serif');
 const W = 600;
 const H = 300;
 const LOOK = { style: { fontFamily: 'sans-serif', fontSize: 12 }, fill: '#ffffff', background: '#3060c0' };
-const AMBIENT = [diagramOffPage()];
+const AMBIENT = [createDiagramOffPageContribution()];
 
 /**
  * Two 200 by 150 pages, 200 apart: p1 spans x 0..200, p2 x 400..600. Shape a

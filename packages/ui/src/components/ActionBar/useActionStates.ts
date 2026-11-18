@@ -1,13 +1,13 @@
 import { useLayoutEffect, useReducer, useSyncExternalStore } from 'react';
-import { buildDepsFromRequires, eligibleNow, evaluateActive, evaluateEnabled, type ActionItem } from '@weasel-js/routing';
+import { createActionDeps, eligibleNow, checkActive, checkEnabled, type ActionItem } from '@weasel-js/routing';
 import { useOptionalDepRegistry } from '@weasel-js/routing/react';
 
 /** What chrome shows of one action: whether it can run, and whether it is on. */
 export interface ActionState {
-  enabled: boolean;
+  disabled: boolean;
   active: boolean | undefined;
   /** Why it cannot run, when it says — an `ActionDisabledReason`. */
-  reason?: string;
+  disabledReason?: string;
 }
 
 const noSubscribe = (): (() => void) => () => {};
@@ -27,17 +27,17 @@ const noSubscribe = (): (() => void) => () => {};
 export function useActionStates(items: readonly ActionItem[]): ActionState[] {
   const depReg = useOptionalDepRegistry();
   const read = (item: ActionItem): ActionState => {
-    const deps = depReg ? buildDepsFromRequires(item.action, depReg) : undefined;
-    const active = evaluateActive(item.action, deps, item.params);
-    if (!eligibleNow(item.action, depReg?.get('ruleCtx'))) return { enabled: false, active };
-    const { enabled, reason } = evaluateEnabled(item.action, deps, undefined, item.params);
-    return { enabled, active, ...(reason !== undefined ? { reason } : {}) };
+    const deps = depReg ? createActionDeps(item.action, depReg) : undefined;
+    const active = checkActive(item.action, deps, item.params);
+    if (!eligibleNow(item.action, depReg?.get('ruleCtx'))) return { disabled: true, active };
+    const { enabled, reason } = checkEnabled(item.action, deps, undefined, item.params);
+    return { disabled: !enabled, active, ...(reason !== undefined ? { disabledReason: reason } : {}) };
   };
   // The snapshot is what the chrome shows, so a notice that changes none of
   // it costs no render.
   const states = (): string => items.map((item) => {
     const now = read(item);
-    return `${now.enabled}/${now.active}/${now.reason ?? ''}`;
+    return `${now.disabled}/${now.active}/${now.disabledReason ?? ''}`;
   }).join();
   useSyncExternalStore(depReg?.subscribe ?? noSubscribe, states, states);
 
@@ -46,7 +46,7 @@ export function useActionStates(items: readonly ActionItem[]): ActionState[] {
   useLayoutEffect(() => {
     const stale = items.some((item, i) => {
       const now = read(item);
-      return now.enabled !== shown[i]!.enabled || now.active !== shown[i]!.active;
+      return now.disabled !== shown[i]!.disabled || now.active !== shown[i]!.active;
     });
     if (stale) recheck();
   });

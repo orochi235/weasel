@@ -3,7 +3,7 @@
  * each keystroke or restyle reports as a draft — and handing it to the host:
  * a draft when it changed, a commit through the host's options.
  */
-import { runsCarryStyling, runsToPlainText, type StyledRun, type TextStyle } from '@weasel-js/text';
+import { hasStyledRun, runsToPlainText, type StyledRun, type TextStyle } from '@weasel-js/text';
 import type { CaretHolder } from './overlaySeed';
 import type { TextEditCommit, TextEditDraft, UseTextEditOptions } from './textEditTypes';
 
@@ -20,7 +20,7 @@ export function overlayDraft(
   style: TextStyle | null = null,
 ): TextEditCommit {
   const runs = holder?.trim(read) ?? read;
-  const inPlay = (priorRuns != null && priorRuns.length > 0) || runsCarryStyling(runs);
+  const inPlay = (priorRuns != null && priorRuns.length > 0) || hasStyledRun(runs);
   // Read from the DOM, not `innerText`: a browser applies `text-transform`
   // to what that reports, and a break stand-in reads back as its `\n`.
   const text = runsToPlainText(runs);
@@ -35,13 +35,13 @@ export function draftChanged(sent: { current: string }, draft: TextEditDraft): b
   return true;
 }
 
-/** Write a finished edit through `opts`: its `commit` where there is one, else each setter it has. */
+/** Write a finished edit through `opts`: its `onChange` where there is one, else each setter it has. */
 export function writeEdit(
-  opts: Pick<UseTextEditOptions, 'commit' | 'setRuns' | 'setStyle' | 'setText'>,
+  opts: Pick<UseTextEditOptions, 'onChange' | 'setRuns' | 'setStyle' | 'setText'>,
   id: string,
   edit: TextEditCommit,
 ): void {
-  if (opts.commit) return opts.commit(id, edit);
+  if (opts.onChange) return opts.onChange(id, edit);
   if (edit.style) opts.setStyle?.(id, edit.style);
   opts.setText?.(id, edit.text);
   if (opts.setRuns && edit.runs) opts.setRuns(id, edit.runs);

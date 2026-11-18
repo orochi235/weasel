@@ -14,7 +14,7 @@ export type PrefBoundAt = (read: PrefBoundReader) => number | undefined;
  * `leaf` with its `minAt` and `maxAt` read against `read` and folded into
  * `min` and `max`, whichever is tighter. The leaf itself when it has neither.
  */
-export function prefNumberAt(leaf: PrefNumber, read: PrefBoundReader): PrefNumber {
+export function prefBoundedNumber(leaf: PrefNumber, read: PrefBoundReader): PrefNumber {
   const { minAt, maxAt, ...rest } = leaf;
   if (minAt === undefined && maxAt === undefined) return leaf;
   const lo = minAt?.(read);

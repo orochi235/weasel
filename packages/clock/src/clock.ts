@@ -3,7 +3,7 @@ import { followMix } from './mixFollow';
 import { passesOf, placeOf } from './place';
 import { type Ramp, stepRamp } from './ramp';
 import type { Clock, ClockHandle, ClockPosition, ClockSpec } from './types';
-import { checkDuration, checkLoop, checkOrigin, checkRampTime, checkRate, checkSpeed, ratesOf } from './validate';
+import { checkDuration, checkLoop, checkOrigin, checkRampTime, checkRate, checkSpeed, speedsOf } from './validate';
 
 /** Where `clock` stands, for a record to reopen it at; `declared` is the
  *  duration its spec gave, and `declaredOrigin` the origin. */
@@ -197,7 +197,7 @@ function syncTo(run: Run, hub: Hub, timestamp: number): void {
   }
 }
 
-function clockOf(run: Run, hub: Hub, seekable: boolean, rates: readonly number[]): Clock {
+function createClockView(run: Run, hub: Hub, seekable: boolean, speeds: readonly number[]): Clock {
   const clock: Clock = {
     get elapsed() {
       return run.elapsed;
@@ -220,7 +220,7 @@ function clockOf(run: Run, hub: Hub, seekable: boolean, rates: readonly number[]
     get speed() {
       return run.speed;
     },
-    rates,
+    speeds,
     seekable,
     get ended() {
       return Number.isFinite(run.span) && run.elapsed >= run.span;
@@ -293,7 +293,7 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
   const openRate = spec.rate ?? 0;
   checkRate(openRate, seekable);
   if (at) checkRate(at.rate, seekable);
-  const rates = ratesOf(spec);
+  const speeds = speedsOf(spec);
 
   const origin = at?.origin ?? spec.origin ?? 0;
   checkOrigin(origin);
@@ -333,7 +333,7 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
     follow: followMix(mix),
     opening,
   };
-  const clock = clockOf(run, hub, seekable, rates);
+  const clock = createClockView(run, hub, seekable, speeds);
   hub.follow(run.elapsed);
 
   let declared: Declared = {

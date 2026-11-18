@@ -14,7 +14,7 @@ import { measureNode } from '@weasel-js/measure';
 import { type TextStyle } from '@weasel-js/text';
 import { parsedToDoc, svgNodesToSceneDrafts, SWILL_NAMESPACES } from './svgInterop';
 import { leafOfObj } from './svgImport';
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import { asPaint, registerPaintKindLoader } from '@weasel-js/paint-kinds';
 import { ANNOTATION_LAYER, DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import type { Stroke, Fill } from '@weasel-js/core';
@@ -93,7 +93,7 @@ describe('text export', () => {
       t: {
         kind: 'mark',
         pose: { x: 5, y: 6, width: 120, height: 40 },
-        data: { text: 'Hi', style: { fontSize: 32 }, stroke: strokeOf('#c0392b', 3) },
+        data: { text: 'Hi', style: { fontSize: 32 }, stroke: solidStroke('#c0392b', 3) },
       },
     }, ['t']);
 
@@ -117,7 +117,7 @@ describe('text export', () => {
       t: {
         kind: 'mark',
         pose: { x: 5, y: 6, width: 120, height: 40 },
-        data: { text: 'Hi', style: { fontSize: 32 }, fill: null, stroke: strokeOf('#c0392b', 3) },
+        data: { text: 'Hi', style: { fontSize: 32 }, fill: null, stroke: solidStroke('#c0392b', 3) },
       },
     }, ['t']);
 
@@ -136,7 +136,7 @@ describe('text export', () => {
       t: {
         kind: 'mark',
         pose: { x: 5, y: 6, width: 120, height: 40 },
-        data: { text: 'Hi', style: { fontSize: 32 }, stroke: strokeOf('#c0392b', 3) },
+        data: { text: 'Hi', style: { fontSize: 32 }, stroke: solidStroke('#c0392b', 3) },
       },
     }, ['t']);
 
@@ -206,7 +206,7 @@ describe('Save then Open', () => {
       r: {
         kind: 'mark',
         pose: { x: 10, y: 20, width: 30, height: 40 },
-        data: { path: { kind: 'rect', x: 0, y: 0, width: 30, height: 40 }, fill: null, stroke: strokeOf('#00ff00', 2) },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 30, height: 40 }, fill: null, stroke: solidStroke('#00ff00', 2) },
       },
     }, ['r']);
 

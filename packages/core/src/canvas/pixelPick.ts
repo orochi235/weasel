@@ -43,7 +43,7 @@ export function pixelPickEvery(
       if (pickId === 0 || exclude.has(pickId)) continue;
       exclude.add(pickId);
       fresh = true;
-      const node = ids.nodeOf(pickId);
+      const node = ids.idOfPickId(pickId);
       if (node !== null) found.push(node);
     }
     if (!fresh) break;

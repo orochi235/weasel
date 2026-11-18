@@ -1,7 +1,7 @@
 import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import type { PrefFieldChoice } from '@weasel-js/ui/components/Prefs';
 import { drawsOwn } from '../config/drawsOwn';
-import { schemaNodeAtPath } from '../config/path';
+import { schemaNodeAt } from '../config/path';
 import type { LeafRenderer, ResolvedConfig } from '../config/types';
 import { isSliderLeaf, labField } from './fields';
 
@@ -15,7 +15,7 @@ export function drawsAnyAt(
   path: string,
 ): boolean {
   if (!visible(path)) return false;
-  const found = schemaNodeAtPath(resolved.group, path);
+  const found = schemaNodeAt(resolved.group, path);
   if (!found || isPrefLeaf(found)) return found !== undefined;
   return Object.keys(found.children).some((key) => drawsAnyAt(resolved, visible, `${path}.${key}`));
 }
@@ -39,7 +39,7 @@ export function pairableAt(
   visible: (path: string) => boolean,
   path: string,
 ): readonly [path: string, leaf: PrefLeaf] | undefined {
-  const found = schemaNodeAtPath(resolved.group, path);
+  const found = schemaNodeAt(resolved.group, path);
   if (!found || !isPrefLeaf(found)) return undefined;
   if (!visible(path)) return undefined;
   if (drawsOwn(resolved, renderers, path, found)) return undefined;

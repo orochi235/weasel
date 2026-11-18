@@ -74,7 +74,7 @@ describe('createButton', () => {
       const onChange = vi.fn();
       const b = createButton({ id: 'b', ...m.b, label: 'Go', fill: FILL, hoverFill: HOVER, pressedFill: PRESSED, onChange });
       const heard: ButtonEvent[] = [];
-      for (const e of ['press', 'hover', 'leave'] as const) b.on(e, () => heard.push(e));
+      for (const e of ['press', 'hover', 'leave'] as const) b.subscribe(e, () => heard.push(e));
       for (const c of cmds) {
         const deps = b.deps!(ctx);
         const changes = onChange.mock.calls.length;
@@ -99,7 +99,7 @@ describe('createButton', () => {
       const run = (dx: number, dy: number) => {
         const b = createButton({ id: 'b', x: 10 + dx, y: 10 + dy, w: 80, h: 24, label: 'Go' });
         const heard: ButtonEvent[] = [];
-        for (const e of ['press', 'hover', 'leave'] as const) b.on(e, () => heard.push(e));
+        for (const e of ['press', 'hover', 'leave'] as const) b.subscribe(e, () => heard.push(e));
         for (const c of cmds) apply(b, 'x' in c ? { ...c, x: c.x + dx, y: c.y + dy } : c);
         return heard;
       };
@@ -135,23 +135,25 @@ describe('createButton', () => {
         const held = EVENTS.map(() => new Set<number>());
         const calls: [number, ButtonEvent][] = [];
         let disposed = false;
+        const offs = new Map<string, () => void>();
+        const sub = (i: number, e: ButtonEvent): void => { offs.set(`${i}:${e}`, b.subscribe(e, handlers[i]![EVENTS.indexOf(e)]!)); };
+        const unsub = (i: number, e: ButtonEvent): void => { offs.get(`${i}:${e}`)?.(); offs.delete(`${i}:${e}`); };
         const handlers: ButtonHandler[][] = acts.map((_, i) => EVENTS.map((e) => () => {
           calls.push([i, e]);
           // A runaway report stops here rather than hanging the run.
           if (calls.length > 500) throw new Error('runaway');
           const x = acts[i]!;
           if (disposed) return;
-          if (x.a === 'off') { b.off(x.e, handlers[x.i]![EVENTS.indexOf(x.e)]!); held[EVENTS.indexOf(x.e)]!.delete(x.i); }
-          if (x.a === 'on') { b.on(x.e, handlers[x.i]![EVENTS.indexOf(x.e)]!); held[EVENTS.indexOf(x.e)]!.add(x.i); }
+          if (x.a === 'off') { unsub(x.i, x.e); held[EVENTS.indexOf(x.e)]!.delete(x.i); }
+          if (x.a === 'on') { sub(x.i, x.e); held[EVENTS.indexOf(x.e)]!.add(x.i); }
           if (x.a === 'reon') {
-            const h = handlers[x.i]![EVENTS.indexOf(x.e)]!;
-            b.off(x.e, h); b.on(x.e, h);
+            unsub(x.i, x.e); sub(x.i, x.e);
             held[EVENTS.indexOf(x.e)]!.add(x.i);
           }
           if (x.a === 'throw') { seen.hit('throw'); throw new Error('listener'); }
           if (x.a === 'dispose') { disposed = true; b.dispose(); }
         }));
-        for (const [i, e] of subs) { b.on(e, handlers[i]![EVENTS.indexOf(e)]!); held[EVENTS.indexOf(e)]!.add(i); }
+        for (const [i, e] of subs) { sub(i, e); held[EVENTS.indexOf(e)]!.add(i); }
         const m: Model = { held: false, down: false, hovered: false, b: { x: 10, y: 10, w: 80, h: 24 } };
         for (const c of cmds) {
           if (disposed) break;

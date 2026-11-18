@@ -173,7 +173,7 @@ export interface Slot {
  * Without one, it puts the layout's bounding box where the graph's already
  * starts, so a second run computes the same translation and writes nothing.
  */
-export function settle(
+export function placeSlots(
   graph: Graph,
   slots: ReadonlyMap<string, Slot>,
   opts: LayoutOptions = {},
@@ -189,10 +189,10 @@ export function settle(
     placed.set(node.id, worldOf(slot, extent(node.bounds, axes.rank), axes));
   }
 
-  return translated(graph, placed, pinned, tolerance);
+  return movesFrom(graph, placed, pinned, tolerance);
 }
 
-/** A slot's top-left in world coordinates, before {@link settle}'s
+/** A slot's top-left in world coordinates, before {@link placeSlots}'s
  *  translation, for something `depth` deep along the rank axis. */
 export function worldOf(slot: Slot, depth: number, axes: LayoutAxes): Vec2 {
   const along = axes.sign === 1 ? slot.rank : -(slot.rank + depth);
@@ -238,10 +238,10 @@ export function untilSettled(
 }
 
 /**
- * {@link settle}'s second half, for a layout that already works in world
+ * {@link placeSlots}'s second half, for a layout that already works in world
  * coordinates.
  */
-export function translated(
+export function movesFrom(
   graph: Graph,
   placed: ReadonlyMap<string, Vec2>,
   pinned: ReadonlySet<string>,
@@ -262,7 +262,7 @@ export function translated(
   return out;
 }
 
-/** How far {@link translated} moves a placement: onto the first pinned node,
+/** How far {@link movesFrom} moves a placement: onto the first pinned node,
  *  or else so its low corner lands on the graph's current one. */
 export function anchorOffset(
   graph: Graph,

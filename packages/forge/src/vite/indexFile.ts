@@ -1,5 +1,5 @@
 import type * as t from '@babel/types';
-import type { Viewport } from '../protocol/messages.ts';
+import type { StoryViewport } from '../protocol/messages.ts';
 import { storyId, storyNameFromExport } from '../story/ids.ts';
 import type { IndexEntry } from '../story/types.ts';
 import {
@@ -204,7 +204,7 @@ function isolateOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers:
 }
 
 /** A native story's `viewport`, when both sides are number literals. */
-function viewportOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers: Set<string>): Viewport | undefined {
+function viewportOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers: Set<string>): StoryViewport | undefined {
   const value = objectOf(prop(obj, 'viewport'), bindings, wrappers);
   const width = prop(value, 'width');
   const height = prop(value, 'height');

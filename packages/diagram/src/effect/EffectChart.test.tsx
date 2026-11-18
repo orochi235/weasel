@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 interface SeenProps {
   background?: unknown;
   minScale?: number;
-  onSelect?: (id: string | null) => void;
+  onSelectionChange?: (id: string | null) => void;
   specs?: readonly { id?: unknown; pickable?: boolean }[];
   portOptions?: {
     showsPort?: (port: { type?: string }) => boolean;
@@ -47,9 +47,9 @@ describe('EffectChart picking', () => {
     const onSelect = vi.fn();
     render(<EffectChart pipeline={pipeline} width={100} height={100} onSelect={onSelect} />);
     const view = seen[seen.length - 1]!;
-    view.onSelect!('blur');
-    view.onSelect!('g');
-    view.onSelect!(null);
+    view.onSelectionChange!('blur');
+    view.onSelectionChange!('g');
+    view.onSelectionChange!(null);
     expect(onSelect.mock.calls.map((c) => c[0])).toEqual(['blur', null, null]);
   });
 

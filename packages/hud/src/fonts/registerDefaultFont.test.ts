@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerDefaultFont, DEFAULT_FONT_FAMILY } from './registerDefaultFont';
-import { getFont, resolveFontVariant } from '@weasel-js/font';
+import { getAtlasFont, resolveFontVariant } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 
 describe('registerDefaultFont', () => {
@@ -23,7 +23,7 @@ describe('registerDefaultFont', () => {
     expect(global.fetch).not.toHaveBeenCalled();
     resolveFontVariant(DEFAULT_FONT_FAMILY, 400, 'normal');
     await landed;
-    expect(getFont(DEFAULT_FONT_FAMILY)).not.toBeNull();
+    expect(getAtlasFont(DEFAULT_FONT_FAMILY)).not.toBeNull();
   });
 
   it('is idempotent', async () => {

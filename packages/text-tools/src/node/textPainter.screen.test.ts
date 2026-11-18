@@ -10,7 +10,7 @@ import type { Dispatcher, OngoingHandle } from '@weasel-js/routing';
 import { textPoseOf, type TextNodeData } from './textPainter';
 import { asNodeId, AUTO_POSE_DESCRIPTOR, buildSceneViewCommands, createScene, defaultDrawOne, drawnBoundsOf, findNodeShape, findShapeSilhouette, shapeCoversPoint, type SceneNode as Node, type RectPose } from '@weasel-js/core';
 import { _resetShapePaintersForTests } from 'canvas/NodeShape';
-import { hitTestArea } from 'canvas/deps/hitTestArea';
+import { hitTestRect } from 'canvas/deps/hitTestArea';
 import { pickWalk, scenePickSource } from 'canvas/pickWalk';
 import { scenePointQuery } from 'canvas/SceneCanvas/scenePointQuery';
 import { usePreviewGhostLayer } from 'canvas/SceneCanvas/usePreviewGhostLayer';
@@ -93,7 +93,7 @@ describe('kit:text — a { px } font size', () => {
     const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     scene.add({ id: asNodeId('t'), kind: 'mark', layer: 'main', data, pose: POSE });
     const box = { x: full!.width * 0.7, y: full!.height * 0.2, width: full!.width * 0.1, height: full!.height * 0.1 };
-    const at = (s: number) => hitTestArea(scene, box, { camera: { x: 0, y: 0, scale: { x: s, y: s } } });
+    const at = (s: number) => hitTestRect(scene, box, { camera: { x: 0, y: 0, scale: { x: s, y: s } } });
     expect(at(1)).toEqual([asNodeId('t')]);
     expect(at(2)).toEqual([]);
   });
@@ -167,8 +167,8 @@ describe('kit:text — a { px } font size, clipping its children', () => {
     const scene = clipScene();
     const { x, y, w, h } = inWorldOnly();
     const box = { x, y, width: w * 0.05, height: h * 0.1 };
-    expect(hitTestArea(scene, box, { camera: at(1) })).toContain(asNodeId('c'));
-    expect(hitTestArea(scene, box, { camera: at(2) })).not.toContain(asNodeId('c'));
+    expect(hitTestRect(scene, box, { camera: at(1) })).toContain(asNodeId('c'));
+    expect(hitTestRect(scene, box, { camera: at(2) })).not.toContain(asNodeId('c'));
   });
 
   it('clips them in a gesture preview to the outline drawn at the view scale', () => {

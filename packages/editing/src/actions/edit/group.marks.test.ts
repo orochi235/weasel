@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { ungroupAction } from './group';
 import { createScene } from '@weasel-js/core/engine';
-import { hitTestArea } from '@weasel-js/core';
+import { hitTestRect } from '@weasel-js/core';
 import type { NodeId } from '@weasel-js/core';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 
@@ -33,9 +33,9 @@ describe('a mark that has children', () => {
     const member = scene.add({ kind: 'mark', layer: 'main', pose: pose(0), data: {}, parent: group });
     const box = { x: -5, y: -5, width: 200, height: 30 };
 
-    const taken = hitTestArea(scene as never, box);
+    const taken = hitTestRect(scene as never, box);
     expect(taken).toEqual(expect.arrayContaining([parent, child, member]));
     expect(taken).not.toContain(group);
-    expect(hitTestArea(scene as never, box, undefined, undefined, { includeGroups: true })).toContain(group);
+    expect(hitTestRect(scene as never, box, undefined, undefined, { includeGroups: true })).toContain(group);
   });
 });

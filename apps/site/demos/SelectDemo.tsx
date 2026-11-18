@@ -10,8 +10,8 @@ const LOCKED = new Set(['Background']);
 type Convention = 'list' | 'shift';
 
 const POLICIES: Record<Convention, SelectPolicy> = {
-  list: { mode: 'multi', toggle: ['meta', 'ctrl'], range: 'shift' },
-  shift: { mode: 'multi', toggle: 'shift' },
+  list: { mode: 'multiple', toggle: ['meta', 'ctrl'], range: 'shift' },
+  shift: { mode: 'multiple', toggle: 'shift' },
 };
 
 const CONVENTIONS: { value: Convention; label: string }[] = [
@@ -42,9 +42,9 @@ export function SelectDemo() {
       />
       <div className={s.body}>
         <ItemList
-          selection="multi"
+          selectionMode="multiple"
           containerProps={{ 'aria-label': 'Layers' }}
-          onActivate={(id, _index, mods) => press(id, mods)}
+          onAction={(id, _index, mods) => press(id, mods)}
           rows={ROWS.map((id) => ({
             id,
             selected: state.ids.includes(id),

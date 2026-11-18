@@ -2,13 +2,13 @@
 '@weasel-js/core': major
 ---
 
-`viewport.pinchZoom`'s two-finger binding is named `viewport.pinchZoom.multiTouch`, after the gesture it binds.
+`viewport.touchZoom`'s two-finger binding is named `viewport.touchZoom.multiTouch`, after the gesture it binds.
 
 ```ts
 // Before
 <SceneCanvas bindingOverrides={{ 'viewport.pinchZoom.pinch': unbound() }} />
 // After
-<SceneCanvas bindingOverrides={{ 'viewport.pinchZoom.multiTouch': unbound() }} />
+<SceneCanvas bindingOverrides={{ 'viewport.touchZoom.multiTouch': unbound() }} />
 ```
 
 <!-- entry: breaking -->

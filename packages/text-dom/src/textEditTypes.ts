@@ -89,7 +89,7 @@ export interface TextEditClipRect {
   height: number;
 }
 
-/** What one edit session changed, as `UseTextEditOptions.commit` receives it. */
+/** What one edit session changed, as `UseTextEditOptions.onChange` receives it. */
 export interface TextEditCommit {
   text: string;
   runs?: StyledRun[];
@@ -97,7 +97,7 @@ export interface TextEditCommit {
   style?: TextStyle;
 }
 
-/** What the overlay holds mid-edit, as {@link UseTextEditOptions.onDraft} reports it: what a commit would write now. */
+/** What the overlay holds mid-edit, as {@link UseTextEditOptions.onInput} reports it: what a commit would write now. */
 export type TextEditDraft = TextEditCommit;
 
 /** Options for `useTextEdit`. */
@@ -120,7 +120,7 @@ export interface UseTextEditOptions {
    * inside a node whose own `TextStyle` sets it. Run flags are additive, so
    * that edit is expressed by lowering the node flag and raising it on the
    * runs outside the selection — which needs somewhere to put the new node
-   * style. Without this or `commit`, such a toggle is declined and nothing
+   * style. Without this or `onChange`, such a toggle is declined and nothing
    * changes. See `flagRange` in `@weasel-js/text`.
    *
    * Called when the edit commits, never during it: the session holds the
@@ -139,7 +139,7 @@ export interface UseTextEditOptions {
    * where it is; a scrollable container would drag the canvas after the caret.
    */
   getClipRect?: () => TextEditClipRect | null;
-  /** Commit text. Caller wraps in op/undo. Required unless `commit` is given. */
+  /** Commit text. Caller wraps in op/undo. Required unless `onChange` is given. */
   setText?: (id: string, text: string) => void;
   /**
    * Take the whole edit in one call, so the caller can make it one write and
@@ -148,7 +148,7 @@ export interface UseTextEditOptions {
    * play (see `setRuns`), `style` when the edit rewrote the node's own style
    * (see `setStyle`).
    */
-  commit?: (id: string, edit: TextEditCommit) => void;
+  onChange?: (id: string, edit: TextEditCommit) => void;
   /**
    * Called on each edit to the overlay's text, and on each restyle of it, with
    * what a commit would write now: `runs` present when runs are in play (see
@@ -157,7 +157,7 @@ export interface UseTextEditOptions {
    * laid along a path, to follow the typing. Not a commit: a cancel follows
    * as it would without it.
    */
-  onDraft?: (id: string, draft: TextEditDraft) => void;
+  onInput?: (id: string, draft: TextEditDraft) => void;
   /**
    * Optional: read the current rich-text runs for `id`. When provided AND
    * returns a non-empty array, the overlay renders the runs as styled

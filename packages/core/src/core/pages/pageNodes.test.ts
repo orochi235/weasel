@@ -3,7 +3,7 @@ import { createScene, sceneFromJSON } from '../scene/scene';
 import { composeWorldPose } from '../scene/composePose';
 import { scenePoseAdapter } from '../scene/scenePoseAdapter';
 import type { NodeId } from '../scene/types';
-import { createPageRun, isPaged, pageNodeOf, pageOfNode, pageRunOf } from './pageNodes';
+import { createPageRun, isPaged, pageNodeOf, pageIdOf, pageRunOf } from './pageNodes';
 import { movePage, pageMembers, pagesOf, placedPagesOf, removePage, renamePage, resizePage } from './pageEdits';
 
 type Pose = { x: number; y: number; width: number; height: number };
@@ -92,9 +92,9 @@ describe('page nodes', () => {
     const grandchild = scene.add({
       kind: 'mark', layer: 'ink', parent: child, pose: { x: 0, y: 0, width: 1, height: 1 }, data: { n: 'g' },
     });
-    expect(pageOfNode(scene, grandchild)).toBe('b');
-    expect(pageOfNode(scene, 'a' as NodeId)).toBe('a');
-    expect(pageOfNode(scene, pageRunOf(scene)!)).toBeNull();
+    expect(pageIdOf(scene, grandchild)).toBe('b');
+    expect(pageIdOf(scene, 'a' as NodeId)).toBe('a');
+    expect(pageIdOf(scene, pageRunOf(scene)!)).toBeNull();
   });
 });
 
@@ -119,7 +119,7 @@ describe('a page whose id a node already holds', () => {
   it('answers the page edits and the page reads by its page id', () => {
     const { scene, page } = collided();
     const on = scene.add({ kind: 'mark', layer: 'ink', parent: page, pose: { x: 1, y: 1, width: 5, height: 5 }, data: { n: 'on' } });
-    expect(pageOfNode(scene, on)).toBe('b');
+    expect(pageIdOf(scene, on)).toBe('b');
     expect(pageMembers(scene).get('b')).toEqual([on]);
     renamePage(scene, 'b', 'Back');
     resizePage(scene, 'b', { width: 200, height: 50 });

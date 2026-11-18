@@ -4,7 +4,7 @@
 import { setOwn } from '@weasel-js/registry';
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import { prefSectionLeaves, type PrefList, isPrefScope, type PrefSelection, type PrefMap, type PrefLeaf, type PrefObject, prefScopedDefault, prefVariantOf, type PrefUnion } from '@weasel-js/prefs-schema';
-import { dropUnlisted, mapScopeValues, repairScope, writeDeclared, overridesOfPref, scopeSelectorsOf } from '@weasel-js/prefs-schema/internal';
+import { dropUnlisted, mapScopeValues, repairScope, writeDeclared, prefOverridesLookup, declaredSelectorsOf } from '@weasel-js/prefs-schema/internal';
 import { optionsOf, selectionAt } from './snapshot';
 import { isAutoRecord, recordValue, stampRecord } from './stamp';
 
@@ -54,9 +54,9 @@ export function prefWrites({ leaves, cache, selectors, admitted, version, select
   /** The leaf's split default as stored, where it has one it can hold. */
   const unsetScope = (leaf: PrefLeaf): unknown => {
     const scope = prefScopedDefault(leaf);
-    const axes = scopeSelectorsOf(leaf);
+    const axes = declaredSelectorsOf(leaf);
     if (scope === undefined || !axes?.length) return undefined;
-    return repairScope(scope, axes, (by) => optionsOf({ selectors, admitted }, by), (member) => encodeInfinity(leaf, member), overridesOfPref(leaf));
+    return repairScope(scope, axes, (by) => optionsOf({ selectors, admitted }, by), (member) => encodeInfinity(leaf, member), prefOverridesLookup(leaf));
   };
   const store = (path: string, stored: unknown): void => {
     // Unset is stored as nothing, which a stamp would turn into something.
@@ -69,9 +69,9 @@ export function prefWrites({ leaves, cache, selectors, admitted, version, select
       console.warn(`[prefs] no leaf at "${path}"; ignoring the write`);
       return;
     }
-    const split = !!scopeSelectorsOf(leaf)?.length;
+    const split = !!declaredSelectorsOf(leaf)?.length;
     if (split && isPrefScope(value)) {
-      store(path, dropUnlisted(mapScopeValues(value, (member) => encodeInfinity(leaf, member)), overridesOfPref(leaf)));
+      store(path, dropUnlisted(mapScopeValues(value, (member) => encodeInfinity(leaf, member)), prefOverridesLookup(leaf)));
       return;
     }
     const stored = encodeInfinity(leaf, value);
@@ -82,9 +82,9 @@ export function prefWrites({ leaves, cache, selectors, admitted, version, select
     const had = cache.has(path) && !isAutoRecord(cache.get(path)) ? recordValue(cache.get(path)) : unsetScope(leaf);
     const now = selection();
     const under = write?.at ? selectionAt(selectors, now, write.at, admitted) : now;
-    const overridesOf = overridesOfPref(leaf);
+    const overridesOf = prefOverridesLookup(leaf);
     const absent = encodeInfinity(leaf, leaf.default);
-    store(path, writeDeclared(dropUnlisted(had, overridesOf), scopeSelectorsOf(leaf)!, under, now, stored, absent, overridesOf, had !== undefined));
+    store(path, writeDeclared(dropUnlisted(had, overridesOf), declaredSelectorsOf(leaf)!, under, now, stored, absent, overridesOf, had !== undefined));
   };
   return { set };
 }

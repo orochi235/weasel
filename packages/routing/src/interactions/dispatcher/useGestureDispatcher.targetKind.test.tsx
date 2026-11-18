@@ -67,7 +67,7 @@ describe('kind: target forms read the classifier’s node kind', () => {
       <Harness>
         <Probe
           actionDef={clickAction(spy, 'kind:text')}
-          classifyTarget={() => ({ body: 'unselected-body', kind: 'text' })}
+          classifyTarget={() => ({ bodyTarget: 'unselected-body', bodyKind: 'text' })}
         />
       </Harness>,
     );
@@ -81,7 +81,7 @@ describe('kind: target forms read the classifier’s node kind', () => {
       <Harness>
         <Probe
           actionDef={clickAction(spy, 'kind:text')}
-          classifyTarget={() => ({ body: 'unselected-body', kind: 'rect' })}
+          classifyTarget={() => ({ bodyTarget: 'unselected-body', bodyKind: 'rect' })}
         />
       </Harness>,
     );
@@ -95,7 +95,7 @@ describe('kind: target forms read the classifier’s node kind', () => {
       <Harness>
         <Probe
           actionDef={clickAction(spy, 'kind:text')}
-          classifyTarget={() => ({ body: 'unselected-body' })}
+          classifyTarget={() => ({ bodyTarget: 'unselected-body' })}
         />
       </Harness>,
     );
@@ -109,7 +109,7 @@ describe('kind: target forms read the classifier’s node kind', () => {
       <Harness>
         <Probe
           actionDef={clickAction(spy, 'kind:text:selected')}
-          classifyTarget={() => ({ body: 'unselected-body', kind: 'text' })}
+          classifyTarget={() => ({ bodyTarget: 'unselected-body', bodyKind: 'text' })}
         />
       </Harness>,
     );
@@ -123,7 +123,7 @@ describe('kind: target forms read the classifier’s node kind', () => {
       <Harness>
         <Probe
           actionDef={clickAction(spy, 'kind:text:selected')}
-          classifyTarget={() => ({ body: 'selected-body', kind: 'text' })}
+          classifyTarget={() => ({ bodyTarget: 'selected-body', bodyKind: 'text' })}
         />
       </Harness>,
     );

@@ -21,7 +21,7 @@ export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement
   const follower = useMemo(() => followHistory(client, rootId), [client, rootId]);
   const [steps, setSteps] = useState<Sequenced<DevtoolsHistoryRecord>[]>([]);
   const [position, setPosition] = useState<DevtoolsHistorySlice['position'] | null>(null);
-  const [checkpoints, setCheckpoints] = useState<DevtoolsHistorySlice['checkpoints'] | null>(null);
+  const [historyEntries, setHistoryEntries] = useState<DevtoolsHistorySlice['historyEntries'] | null>(null);
   const [showStack, setShowStack] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -36,7 +36,7 @@ export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement
         if (!live) return;
         if (slice.entries.length) setSteps((prev) => [...prev, ...sequenced(slice.entries, slice.cursor)].slice(-KEEP));
         setPosition(slice.position);
-        setCheckpoints(slice.checkpoints ?? null);
+        setHistoryEntries(slice.historyEntries ?? null);
         setNow(Date.now());
         setError(null);
       }, (err: Error) => { if (live) setError(err.message); });
@@ -48,7 +48,7 @@ export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement
   }, [client, rootId, follower]);
 
   const toggleStack = (on: boolean): void => {
-    follower.setCheckpoints(on);
+    follower.setHistoryEntries(on);
     setShowStack(on);
     readNow.current();
   };
@@ -64,19 +64,19 @@ export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement
         <Badge size="sm" variant="subtle" emphasis={position?.canRedo ? 'high' : 'low'}>
           {position?.canRedo ? 'can redo' : 'nothing to redo'}
         </Badge>
-        <Switch isSelected={showStack} onChange={toggleStack}>checkpoints</Switch>
+        <Switch isSelected={showStack} onChange={toggleStack}>entries</Switch>
         <Button size="sm" variant="ghost" disabled={steps.length === 0} onClick={() => setSteps([])}>Clear</Button>
         <span className={s.position} role="status" aria-label="Position" title="entries applied / entries in all">
           {position ? `${position.index} / ${position.total}` : ''}
         </span>
       </div>
       <div className={s.body}>
-        {showStack && checkpoints && (
+        {showStack && historyEntries && (
           <section aria-label="Checkpoint stack">
-            <h3 className={s.heading}>Checkpoints</h3>
-            {checkpoints.length === 0 ? <p className={s.note}>The stacks are empty.</p> : (
-              <ol className={s.stack} aria-label="Checkpoints">
-                {checkpoints.map((c, i) => (
+            <h3 className={s.heading}>History entries</h3>
+            {historyEntries.length === 0 ? <p className={s.note}>The stacks are empty.</p> : (
+              <ol className={s.stack} aria-label="History entries">
+                {historyEntries.map((c, i) => (
                   <li key={c.id} className={position && i < position.index ? s.applied : s.redoable}>
                     {c.label || c.id}
                   </li>

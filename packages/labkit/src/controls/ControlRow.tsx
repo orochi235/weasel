@@ -33,9 +33,9 @@ import {
 } from '@weasel-js/ui/components/Properties';
 import type { ReactNode } from 'react';
 import { drawsOwn, entryAt } from '../config/drawsOwn';
-import { valueAtPath, withValueAtPath } from '../config/path';
+import { configValueAt, withConfigValueAt } from '../config/path';
 import type { LeafRenderer, ResolvedConfig } from '../config/types';
-import { aliasTargetsOf, conditionedLeaf, isLeafActive } from '../config/visible';
+import { aliasTargetsOf, conditionedLeaf, isRowActive } from '../config/visible';
 import { boundAction } from './boundAction';
 import { CurveRow } from './CurveRow';
 import { type ControlPack, spansGrid } from './controlPack';
@@ -110,7 +110,7 @@ export function ControlRow<TC extends Record<string, unknown>>(props: ControlRow
             path={props.path}
             form="row"
             disabled={props.disabled}
-            active={isLeafActive(resolved, props.path, props.config, props.over)}
+            active={isRowActive(resolved, props.path, props.config, props.over)}
           />
         )}
       </PropertySpan>
@@ -208,7 +208,7 @@ function CompoundRow({
         <CompoundControl
           {...control}
           // A condition inside the leaf reads the value being edited, not the one stored.
-          config={withValueAtPath(control.config, control.path, draft)}
+          config={withConfigValueAt(control.config, control.path, draft)}
           value={draft}
           onChange={setDraft}
         />
@@ -278,7 +278,7 @@ function ActionRow({
           path={path}
           form="row"
           disabled={disabled}
-          active={isLeafActive(resolved, path, config, over)}
+          active={isRowActive(resolved, path, config, over)}
         />
       </PropertyRow>
     </RowScope>
@@ -376,7 +376,7 @@ function LeafRow<TC extends Record<string, unknown>>({
       </RowScope>
     );
 
-  const read = (p: string): unknown => valueAtPath(shown, p);
+  const read = (p: string): unknown => configValueAt(shown, p);
   const field = labField(leaf, value, write, choices, disabled, draft, read, settles, textWaitMs);
   if (field === null)
     return <UnwiredRow label={label} kind={leaf.kind} description={description} />;

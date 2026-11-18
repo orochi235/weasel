@@ -12,8 +12,8 @@ import { groupStages, nextGroupId, ungroup } from './groupEdit';
 import { useGroupTitle } from './groupTitle';
 import { editorScene, type EditorLookOptions } from './editorMapping';
 import { applyLookRoutes } from './lookRoutes';
-import { editorReorders, type ReorderSource } from './editorReorder';
-import { renameGroupContribution } from './renameGroupAction';
+import { createEditorReorderContributions, type ReorderSource } from './editorReorder';
+import { createRenameGroupContribution } from './renameGroupAction';
 import { useReleaseReplaced } from './releaseReplaced';
 import { paintRun } from './run';
 import { useRunPortOptions } from './runPorts';
@@ -131,7 +131,7 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
       const boxes = new Map(shown.map((s) => [s.id as string, s.pose as EffectBox]));
       return { doc: d, order: b.order, laneOrder: b.laneOrder, boxOf: (id) => boxes.get(id), onChange: report };
     };
-    return [...editorReorders(source), renameGroupContribution(source, setRenaming)];
+    return [...createEditorReorderContributions(source), createRenameGroupContribution(source, setRenaming)];
   }, [now]);
 
   useImperativeHandle(ref, () => ({
@@ -199,8 +199,8 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
       onDelete={handlers.onDelete}
       {...(look === 'nodeGraph' ? { onEdit: handlers.onEdit } : { ambient })}
       selectionMode="multiple"
-      onSelect={picks.pick}
-      {...(picks.shown !== undefined ? { selected: picks.shown } : {})}
+      onSelectionChange={picks.pick}
+      {...(picks.shown !== undefined ? { selection: picks.shown } : {})}
       {...(pages !== undefined ? { pages } : {})}
       {...(title !== null ? { overlays: title } : {})}
       {...(background !== undefined ? { background } : {})}

@@ -4,7 +4,7 @@ import { useRun } from '../Run';
 import type { HoldProps } from '../Disabled';
 import { ownHold, useControlHold } from '../Disabled/controlHold';
 import {
-  heldApply, SwatchButton, swatchesIn, swatchId, swatchKeyDown, swatchMarks, useSwatchApply, useSwatchStop, type SwatchChange, type SwatchValue,
+  heldApply, SwatchButton, swatchesIn, swatchId, swatchKeyDown, swatchMarks, useSwatchApply, useSwatchStop, type SwatchSelect, type SwatchValue,
 } from './SwatchButton';
 import { tiling } from '../../tiling';
 import { SwatchRings } from './SwatchRings';
@@ -14,7 +14,7 @@ import s from './SwatchGrid.module.css';
 export interface SwatchGridOption {
   /** The swatch's paint, a CSS color. */
   value: string | null;
-  /** What tells this swatch apart: the key a palette's `value` names and its `onChange` hands back. Give one where
+  /** What tells this swatch apart: the key a palette's `value` names and its `onSelect` hands back. Give one where
    *  two swatches share a color. Default: `value`. */
   id?: string;
   /** Accessible name and tooltip. Defaults to the value, or "None". */
@@ -38,11 +38,11 @@ export interface SwatchGridProps extends HoldProps {
    *  back either way, for the app to add or take out. */
   value?: SwatchValue;
   /** A click, Enter or Space on a swatch, with its id and the swatch. */
-  onChange: SwatchChange;
+  onSelect: SwatchSelect;
   /** The alternate target — shift-click, right-click (the browser menu is
    *  suppressed) and Shift+Enter. Drawing apps route this to the slot that
    *  isn't focused: click for fill, shift-click for stroke. */
-  onAltChange?: SwatchChange;
+  onAltSelect?: SwatchSelect;
   /** The swatch under the pointer or holding focus, and `null` as the pointer leaves or focus goes: for a readout
    *  naming it. */
   onHoverChange?: (option: SwatchGridOption | null) => void;
@@ -60,7 +60,7 @@ export interface SwatchGridProps extends HoldProps {
  * roves — one tab stop, on the current swatch, with the arrows moving by one
  * across and by a row up and down.
  *
- * The grid applies nothing itself. `onChange` and `onAltChange` hand the
+ * The grid applies nothing itself. `onSelect` and `onAltSelect` hand the
  * swatch to the app, which decides what "apply" means: set its active paint,
  * write the selection through `useOngoingAction`'s `commit`, or both.
  *
@@ -72,14 +72,14 @@ export interface SwatchGridProps extends HoldProps {
 export function SwatchGrid(props: SwatchGridProps): ReactElement {
   const run = useRun();
   if (run.shape !== undefined && run.shape.kind !== 'line') {
-    const { options, value, columns = 6, onChange, onAltChange, onHoverChange, className } = props;
+    const { options, value, columns = 6, onSelect, onAltSelect, onHoverChange, className } = props;
     return (
       <SwatchRings
         {...ownHold(props)}
         shape={run.shape}
         align={run.align ?? 'center'}
-        onChange={onChange}
-        onAltChange={onAltChange}
+        onSelect={onSelect}
+        onAltSelect={onAltSelect}
         onHoverChange={onHoverChange}
         groups={[{ key: 'grid', label: props['aria-label'], options, value, columns, className }]}
       />
@@ -91,7 +91,7 @@ export function SwatchGrid(props: SwatchGridProps): ReactElement {
 function SwatchGridLine(props: SwatchGridProps): ReactElement {
   const { options, value, className, onHoverChange: hover } = props;
   const hold = useControlHold(props);
-  const apply = heldApply(useSwatchApply(props.onChange, props.onAltChange), hold);
+  const apply = heldApply(useSwatchApply(props.onSelect, props.onAltSelect), hold);
   const columns = props.columns ?? 6;
   const lastRow = props.align ?? 'start';
   const tiles = tiling(options.length, { columns, lastRow });

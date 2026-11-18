@@ -2,7 +2,7 @@
  * Order: reorder each rank to cut crossings, with barycenter sweeps and
  * transposition, keeping every group's members contiguous in each rank.
  */
-import type { GraphGroup, GraphNode } from '../graph';
+import type { GraphCluster, GraphNode } from '../graph';
 import { placeAmong, sidesOf, type Sides } from './places';
 import type { Hop, Rows } from './types';
 
@@ -84,8 +84,8 @@ export function crossings(rows: Rows, hops: readonly Hop[]): number {
 
 /** How {@link orderRows} keeps groups together and when it stops. */
 export interface OrderOptions {
-  /** Groups as the graph has them, for keeping members together. */
-  groups?: readonly GraphGroup[];
+  /** Clusters as the graph has them, for keeping members together. */
+  clusters?: readonly GraphCluster[];
   /** Sweeps in a row without improvement before stopping. Default 4. */
   patience?: number;
   /** Hard cap on sweeps. Default 24. */
@@ -93,7 +93,7 @@ export interface OrderOptions {
 }
 
 /** A group's chain of enclosing groups, outermost first, ending with itself. */
-function chainsOf(groups: readonly GraphGroup[]): (group: string | undefined) => readonly string[] {
+function createChainReader(groups: readonly GraphCluster[]): (group: string | undefined) => readonly string[] {
   const parent = new Map(groups.map((g) => [g.id, g.parent]));
   const cache = new Map<string, string[]>();
   const chain = (id: string, seen: Set<string>): string[] => {
@@ -122,7 +122,7 @@ const newBlock = (first: number, group?: string): Block => ({
 });
 
 /** Each ordered group's direct members by their place in its order. */
-function placesOf(groups: readonly GraphGroup[]): Map<string, Map<string, number>> {
+function placesOf(groups: readonly GraphCluster[]): Map<string, Map<string, number>> {
   return new Map(groups.filter((g) => g.ordered !== undefined).map((g) => [g.id, new Map(g.ordered!.map((m, i) => [m, i]))]));
 }
 
@@ -143,7 +143,7 @@ function sortRank(
   row.forEach((n, i) => {
     const k = key(n, i);
     let at = root;
-    for (const g of chainOf(n.group)) {
+    for (const g of chainOf(n.cluster)) {
       let next = at.sub.get(g);
       if (next === undefined) {
         next = newBlock(i, g);
@@ -246,7 +246,7 @@ function transpose(work: Work): void {
       for (let i = 0; i + 1 < row.length; i++) {
         const u = row[i]!;
         const v = row[i + 1]!;
-        if (u.group !== v.group || (u.group !== undefined && work.places.has(u.group))) continue;
+        if (u.cluster !== v.cluster || (u.cluster !== undefined && work.places.has(u.cluster))) continue;
         const now = cost(u.id, v.id);
         pos.set(v.id, i);
         pos.set(u.id, i + 1);
@@ -275,8 +275,8 @@ function transpose(work: Work): void {
 export function orderRows(rows: Rows, hops: readonly Hop[], opts: OrderOptions = {}): Rows {
   const patience = opts.patience ?? 4;
   const maxSweeps = opts.maxSweeps ?? 24;
-  const chainOf = chainsOf(opts.groups ?? []);
-  const places = placesOf(opts.groups ?? []);
+  const chainOf = createChainReader(opts.clusters ?? []);
+  const places = placesOf(opts.clusters ?? []);
   const byRank = hopsByRank(rows, hops);
   const ups = new Map<string, Near[]>();
   const downs = new Map<string, Near[]>();

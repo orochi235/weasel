@@ -1,17 +1,17 @@
 import type { WorldPoint } from '@weasel-js/routing';
-import type { UseMoveOptions } from 'interactions/gestures/moveOptions';
-import type { UseResizeOptions } from 'interactions/gestures/resizeOptions';
-import type { UseRotateOptions } from 'interactions/gestures/rotateOptions';
+import type { MoveOptions } from 'interactions/actions/moveOptions';
+import type { ResizeOptions } from 'interactions/actions/resizeOptions';
+import type { RotateOptions } from 'interactions/actions/rotateOptions';
 
 /** `<SceneCanvas selectTool>`. `pickBest` configures the internal select tool, and is
  *  ignored under a `tools` takeover; `handleHitRadius` sizes the handles' hit area, and
  *  `move`, `resize` and `rotate` configure their presets, either way. */
 export interface SceneCanvasSelectTool<TPose> {
-  move?: UseMoveOptions<TPose>;
-  resize?: UseResizeOptions<TPose>;
+  move?: MoveOptions<TPose>;
+  resize?: ResizeOptions<TPose>;
   /** Rotation options, or `false` to hide the rotation handle and bind it to
    *  nothing; the `rotate` action stays, for other tools and `actions.rotate`. */
-  rotate?: UseRotateOptions<TPose> | false;
+  rotate?: RotateOptions<TPose> | false;
   handleHitRadius?: number;
   /** Override the body-pick used on click/pointerdown. Alt-aware: receives
    *  the live alt state + current selection so consumers can implement

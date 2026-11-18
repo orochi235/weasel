@@ -47,7 +47,7 @@ export interface TimelineProps extends HoldProps {
   onInput?: (next: Track[]) => void;
   onChange: (next: Track[]) => void;
   onCancel?: () => void;
-  onScrub: (t: number) => void;
+  onSeek: (t: number) => void;
 
   /** The playback controls. Omitted, the row holds the time readout and the
    *  Graph switch alone; `false` hides the row. */
@@ -69,7 +69,7 @@ export interface TimelineProps extends HoldProps {
 export function Timeline(props: TimelineProps): ReactElement {
   const {
     tracks, duration, playhead,
-    onInput, onChange, onScrub,
+    onInput, onChange, onSeek,
     renderKeyEditor, label, className,
   } = props;
 
@@ -165,7 +165,7 @@ export function Timeline(props: TimelineProps): ReactElement {
             window={win}
             bounds={bounds}
             playhead={playhead}
-            onScrub={edits ? onScrub : ignore}
+            onSeek={edits ? onSeek : ignore}
             onWindowChange={hold.disabled ? ignore : setWindow}
           />
         </div>
@@ -184,10 +184,10 @@ export function Timeline(props: TimelineProps): ReactElement {
               expanded={expanded.has(row.key)}
               snapTimes={snapTimes}
               hold={laneHold}
-              onToggleExpand={() => toggle(row.key)}
-              onSelect={(keyIndex) => selectKey({ trackPath, keyIndex })}
+              onExpandedChange={() => toggle(row.key)}
+              onSelectionChange={(keyIndex) => selectKey({ trackPath, keyIndex })}
               onKeyInput={(keyIndex, toMs) => onInput?.(moveKey(tracks, { trackPath, keyIndex }, toMs).tracks)}
-              onKeyCommit={(keyIndex, toMs) => {
+              onKeyChange={(keyIndex, toMs) => {
                 const sel = { trackPath, keyIndex };
                 if (keyTime(tracks, sel) === Math.max(0, toMs)) return;
                 const r = moveKey(tracks, sel, toMs);
@@ -195,7 +195,7 @@ export function Timeline(props: TimelineProps): ReactElement {
                 selectKey(r.selection);
               }}
               onKeysInput={(keys) => onInput?.(setKeys(tracks, trackPath, keys))}
-              onKeysCommit={(keys) => onChange(setKeys(tracks, trackPath, keys))} onCancel={props.onCancel}
+              onKeysChange={(keys) => onChange(setKeys(tracks, trackPath, keys))} onCancel={props.onCancel}
               onInsert={(atMs) => {
                 const r = insertKey(tracks, trackPath, atMs);
                 onChange(r.tracks);

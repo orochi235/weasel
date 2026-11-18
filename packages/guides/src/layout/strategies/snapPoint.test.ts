@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { snapPoint } from './snapPoint';
-import { nearest } from '../snaps';
+import { nearestSnap } from '../snaps';
 
 type P = { x: number; y: number };
 
@@ -142,9 +142,9 @@ describe('snapPoint', () => {
   });
 
   it('accepts a snap override', () => {
-    const layout = snapPoint<P>({ pattern: 'corners', snap: nearest<P>() });
+    const layout = snapPoint<P>({ pattern: 'corners', snap: nearestSnap<P>() });
     const targets = layout.getDropTargets(container, [], dragged({ x: 0, y: 0 }));
-    // nearest never returns null when targets non-empty.
+    // nearestSnap never returns null when targets non-empty.
     expect(layout.snap.pickTarget(targets, { x: 50, y: 50 })).not.toBeNull();
   });
 });

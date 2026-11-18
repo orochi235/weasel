@@ -1,5 +1,5 @@
 /**
- * `clearRuns`: a runs array the caches have seen, refilled in place by its
+ * `evictRunsForRefill`: a runs array the caches have seen, refilled in place by its
  * owner. Whatever the caches held for its old content must not answer for the
  * new, and must not be read from it later.
  */
@@ -7,7 +7,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { _resetFontRegistryForTests, _resetFallbackForTests } from '@weasel-js/font/test-seams';
 import { registerFixture, stubFetch, RUN_PLAIN } from './testing/fontFixtures';
 import { _resetArrayPoolForTests } from './arrayPool';
-import { cachedLayoutRuns, clearRuns, _resetLayoutCacheForTests } from './layoutCache';
+import { cachedLayoutRuns, evictRunsForRefill, _resetLayoutCacheForTests } from './layoutCache';
 import { layoutRuns } from './layoutRuns';
 import { cachedPaintRuns } from './paintCache';
 import { entryOf } from './runsEntries';
@@ -33,7 +33,7 @@ describe('refilling a runs array in place', () => {
     const runs = [RUN_PLAIN('AB 12')];
     expect(textOf(runs)).toBe('AB 12');
     const entry = entryOf(runs);
-    clearRuns(runs);
+    evictRunsForRefill(runs);
     runs[0].text = 'XY 98';
     expect(textOf(runs)).toBe('XY 98');
     expect(entryOf(runs)).toBe(entry);
@@ -44,7 +44,7 @@ describe('refilling a runs array in place', () => {
   it('lets fresh runs with the old content lay out the old text', () => {
     const runs = [RUN_PLAIN('AB 12')];
     textOf(runs);
-    clearRuns(runs);
+    evictRunsForRefill(runs);
     runs[0].text = 'XY 98';
     textOf(runs);
     expect(textOf([RUN_PLAIN('AB 12')])).toBe('AB 12');
@@ -58,7 +58,7 @@ describe('refilling a runs array in place', () => {
     cachedPaintRuns(laidA, a, {}, 'read');
     const laidB = cachedLayoutRuns(b, OPTS, 'read');
     expect(laidB).toBe(laidA);
-    clearRuns(a);
+    evictRunsForRefill(a);
     a[0].fill = blue;
     expect(cachedPaintRuns(laidB, b, {}, 'read').groups[0].fill).toBe(blue);
   });

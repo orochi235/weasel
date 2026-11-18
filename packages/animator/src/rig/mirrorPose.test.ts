@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { mat3 } from '@weasel-js/geom';
 import { mirrorPose } from './mirrorPose';
 import { resolveSkeleton } from './resolveSkeleton';
-import type { Pose, Skeleton } from './types';
+import type { SkeletonPose, Skeleton } from './types';
 
 const SKELETON: Skeleton = {
   joints: [
@@ -13,7 +13,7 @@ const SKELETON: Skeleton = {
   ],
 };
 
-const POSE: Pose = {
+const POSE: SkeletonPose = {
   hip: { x: 1.5, y: 2 },
   torso: { rotation: 0.3 },
   arm: { rotation: -0.7, scaleX: 1.2 },
@@ -31,7 +31,7 @@ describe('mirrorPose', () => {
   it('reads and writes a joint named like an Object.prototype member as its own', () => {
     const rig: Skeleton = { joints: [{ name: 'constructor', parent: null, bind: { x: 2, y: 0, rotation: 0, scaleX: 1, scaleY: 1 } }] };
     expect(mirrorPose(rig, {}).constructor).toMatchObject({ x: -4 });
-    const out = mirrorPose(rig, JSON.parse('{"__proto__": {"x": 1}}') as Pose);
+    const out = mirrorPose(rig, JSON.parse('{"__proto__": {"x": 1}}') as SkeletonPose);
     expect(Object.getPrototypeOf(out)).toBe(Object.prototype);
     expect(Object.keys(out)).toContain('__proto__');
   });

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefCondition } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
-import { prefValueAtPath } from './helpers';
+import { prefValueAt } from './helpers';
 import type { PrefLeaf, PrefObject } from './schema';
-import { applyPrefConditions, PREF_STATUS, prefJudge, prefReader, prefStatusAt, prefStatusUnder } from './status';
+import { applyPrefConditions, ROOT_PREF_STATUS, prefJudge, prefReader, prefStatusAt, prefStatusUnder } from './status';
 import type { PrefUnion } from './union';
 
 const bool = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
@@ -11,26 +11,26 @@ const bool = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
 const num = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
   ({ kind: 'number', name, description: '', default: 0, ...extra }) as PrefLeaf;
 
-const over = (values: unknown) => prefJudge({ name: '', children: {} }, (path) => prefValueAtPath(values, path));
+const over = (values: unknown) => prefJudge({ name: '', children: {} }, (path) => prefValueAt(values, path));
 
 const on: PrefCondition = { path: 'snap.on' };
 
 describe('prefStatusUnder', () => {
   it('is shown and enabled with no condition, under a status that is', () => {
-    expect(prefStatusUnder(PREF_STATUS, {}, over({}))).toEqual({ shown: true, enabled: true });
+    expect(prefStatusUnder(ROOT_PREF_STATUS, {}, over({}))).toEqual({ shown: true, enabled: true });
   });
 
   it('answers for the node and for what is above it', () => {
     const judge = over({ snap: { on: false } });
-    expect(prefStatusUnder(PREF_STATUS, { showIf: on }, judge)).toEqual({ shown: false, enabled: true });
-    expect(prefStatusUnder(PREF_STATUS, { enableIf: on }, judge)).toEqual({ shown: true, enabled: false });
+    expect(prefStatusUnder(ROOT_PREF_STATUS, { showIf: on }, judge)).toEqual({ shown: false, enabled: true });
+    expect(prefStatusUnder(ROOT_PREF_STATUS, { enableIf: on }, judge)).toEqual({ shown: true, enabled: false });
     expect(prefStatusUnder({ shown: false, enabled: true }, {}, judge).shown).toBe(false);
     expect(prefStatusUnder({ shown: true, enabled: false }, {}, judge).enabled).toBe(false);
   });
 
   it('tells the judge which field it is asked about', () => {
     const asked: string[] = [];
-    prefStatusUnder(PREF_STATUS, { showIf: on, enableIf: on }, (_c, field) => (asked.push(field), true));
+    prefStatusUnder(ROOT_PREF_STATUS, { showIf: on, enableIf: on }, (_c, field) => (asked.push(field), true));
     expect(asked).toEqual(['showIf', 'enableIf']);
   });
 });

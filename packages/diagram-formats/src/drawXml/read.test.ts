@@ -3,14 +3,14 @@ import { join } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { DataContainer, DataEdge, DataNode } from '@weasel-js/diagram';
 import type { DiagramDocument } from '../document';
-import { DRAW_XML } from './format';
+import { DIAGRAM_DRAW_XML } from './format';
 import { outlineOf } from './readStyle';
 import { parseStyle } from './style';
 import { asGraph } from '../testing/asGraph';
 import { documentSpecs } from '../toScene';
 
 const fixture = (name: string): string => readFileSync(join(__dirname, 'fixtures', name), 'utf8');
-const read = (text: string) => Promise.resolve(DRAW_XML.read!(text));
+const read = (text: string) => Promise.resolve(DIAGRAM_DRAW_XML.read!(text));
 
 const nodes = (doc: DiagramDocument, page = 0): Map<string, DataNode> => new Map(doc.pages.map(asGraph)[page]!.data.nodes.map((n) => [n.id, n]));
 const edges = (doc: DiagramDocument, page = 0): Map<string, DataEdge> => new Map(doc.pages.map(asGraph)[page]!.data.edges.map((e) => [e.id!, e]));
@@ -19,15 +19,15 @@ const regions = (doc: DiagramDocument, page = 0): Map<string, DataContainer> =>
 
 describe('detecting draw-style XML', () => {
   it('knows the file by its root element', () => {
-    expect(DRAW_XML.detect(fixture('flow.xml'))).toBe(true);
-    expect(DRAW_XML.detect(fixture('model.xml'))).toBe(true);
-    expect(DRAW_XML.detect('<!-- a note -->\n<mxfile><diagram/></mxfile>')).toBe(true);
+    expect(DIAGRAM_DRAW_XML.detect(fixture('flow.xml'))).toBe(true);
+    expect(DIAGRAM_DRAW_XML.detect(fixture('model.xml'))).toBe(true);
+    expect(DIAGRAM_DRAW_XML.detect('<!-- a note -->\n<mxfile><diagram/></mxfile>')).toBe(true);
   });
 
   it('turns down other XML and other text', () => {
-    expect(DRAW_XML.detect('<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg"/>')).toBe(false);
-    expect(DRAW_XML.detect('{"format":"weasel-diagram"}')).toBe(false);
-    expect(DRAW_XML.detect('digraph { a -> b }')).toBe(false);
+    expect(DIAGRAM_DRAW_XML.detect('<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg"/>')).toBe(false);
+    expect(DIAGRAM_DRAW_XML.detect('{"format":"weasel-diagram"}')).toBe(false);
+    expect(DIAGRAM_DRAW_XML.detect('digraph { a -> b }')).toBe(false);
   });
 });
 
@@ -127,7 +127,7 @@ describe('reading a file of pages', () => {
   });
 
   it('reads a group cell as a group of what it holds', () => {
-    expect(doc.pages.map(asGraph)[0]!.data.groups).toEqual([{ id: 'grp', members: ['g1', 'g2'] }]);
+    expect(doc.pages.map(asGraph)[0]!.data.clusters).toEqual([{ id: 'grp', members: ['g1', 'g2'] }]);
     expect(nodes(doc).get('g2')!.at).toEqual({ x: 560, y: 300 });
   });
 
@@ -231,7 +231,7 @@ describe('reading groups and connectors in a model', () => {
       <mxCell id="b" value="B" vertex="1" parent="g"><mxGeometry x="100" y="0" width="40" height="20" as="geometry"/></mxCell>
     </root></mxGraphModel>`);
     const page = document.pages.map(asGraph)[0]!;
-    expect(page.data.groups).toBeUndefined();
+    expect(page.data.clusters).toBeUndefined();
     expect(regions(document).get('c')!.members).toEqual(['a', 'b']);
     expect(warnings).toContain('Groups inside a container or lane were dropped; their shapes stay in it.');
     expect(() => documentSpecs(document)).not.toThrow();
@@ -246,7 +246,7 @@ describe('reading groups and connectors in a model', () => {
       <mxCell id="e" edge="1" parent="1" source="b" target="g2"><mxGeometry relative="1" as="geometry"/></mxCell>
     </root></mxGraphModel>`);
     const page = document.pages.map(asGraph)[0]!;
-    expect(page.data.groups).toEqual([{ id: 'g1', members: ['a'] }]);
+    expect(page.data.clusters).toEqual([{ id: 'g1', members: ['a'] }]);
     expect(page.data.edges).toEqual([]);
     expect(warnings).toContain('Connectors with a loose end, or with an end on another connector, were left out.');
   });

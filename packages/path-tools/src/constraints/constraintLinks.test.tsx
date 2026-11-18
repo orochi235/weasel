@@ -4,7 +4,7 @@ import { createElement, type ReactNode } from 'react';
 import { pathAnchorPoints, polygonFromPoints, type PathConstraint, type PolygonPath } from '@weasel-js/geom';
 import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
-import { IDENTITY_POSE_COMPOSITION, createScene, createTransformOp, defaultCommitAdapter, effectivePose, findNodeShape, type EditAnchorsDep, type NodeId, type Op, type PathEditMark, type SelectionApi, type TransformFollower, type AnyScene } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, createScene, createSetPoseOp, defaultCommitAdapter, effectivePose, findNodeShape, type EditAnchorsDep, type NodeId, type Op, type PathEditMark, type SelectionApi, type TransformFollower, type AnyScene } from '@weasel-js/core';
 import { pathEditPreset } from '../pathsPreset';
 import { deleteAnchorsAction } from '../pathEdit/anchorEditing';
 import { editAnchorsAction } from '../pathEdit/editAnchors/editAnchors';
@@ -97,7 +97,7 @@ function setup() {
   const move = (id: NodeId, dx: number, dy: number) => {
     const from = scene.get(id)!.pose as PolygonPath;
     const to = polygonFromPoints(pathAnchorPoints(from).map((p) => ({ x: p.x + dx, y: p.y + dy }))) as PolygonPath;
-    let ops: Op[] | null = [createTransformOp({ id, from, to, label: 'Move' })];
+    let ops: Op[] | null = [createSetPoseOp({ id, from, to, label: 'Move' })];
     for (const follower of followers()) ops = ops && follower.finish(ops, 'Move');
     if (ops) adapter.applyOps(ops, 'Move');
   };

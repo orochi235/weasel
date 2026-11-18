@@ -5,7 +5,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
-import { createScene, createTransformOp } from '@weasel-js/core/engine';
+import { createScene, createSetPoseOp } from '@weasel-js/core/engine';
 import { asNodeId, type NodeId, type RectPose } from '@weasel-js/core';
 import type { LayoutStrategy } from '@weasel-js/core/engine';
 import { moveAction } from './action';
@@ -64,7 +64,7 @@ describe('moveAction — canDropInto', () => {
       getDropTargets: (_c: unknown, _k: unknown, d: { pose: RectPose }) => [{ pose: d.pose, origin: { x: d.pose.x, y: d.pose.y } }],
       reflowPoses: () => new Map(),
       commitDrop: (_c: unknown, _k: unknown, d: { id: string; originPose: RectPose; pose: RectPose }) =>
-        [createTransformOp<RectPose>({ id: d.id, from: d.originPose, to: d.pose, label: 'Drop' })],
+        [createSetPoseOp<RectPose>({ id: d.id, from: d.originPose, to: d.pose, label: 'Drop' })],
     } as unknown as LayoutStrategy<unknown>;
     const asked: [string, readonly string[]][] = [];
     const canDropInto = (parent: string, ids: readonly string[]) => {

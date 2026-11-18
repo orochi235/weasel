@@ -16,7 +16,7 @@ import {
 } from './dynamic/dynamicAtlas';
 import { getFontFallbackPolicy, getDefaultFontFamily, _clearFallbackWarnings } from './fallback';
 import {
-  hasFontOutlines, listFontOutlines, loadFontOutlines, outlineMetrics, outlineStatus,
+  hasFontOutlines, listFontOutlines, loadFontOutlines, outlineFace, outlineStatus,
 } from './outline/outlineRegistry';
 import type { FaceMetrics } from './faceMetrics';
 import { atlasResult, sharedExactResult } from './atlasResult';
@@ -38,7 +38,7 @@ export type FontFamilyFaces = ReadonlyMap<string, FontEntry>;
 
 const registry = createReflectable<FontFamilyFaces>({ name: 'fonts' });
 
-/** Every registered family and its faces, in registration order. `listFonts`
+/** Every registered family and its faces, in registration order. `listAtlasFonts`
  *  is the same set shaped for a font picker. */
 export const fontRegistry: Reflection<FontFamilyFaces> = registry.reflection;
 
@@ -78,7 +78,7 @@ export function _resetFontRegistryForTests(): void {
 }
 
 /** Exact lookup — does NOT walk the fallback chain. Use `resolveFontVariant` for that. */
-export function getFont(
+export function getAtlasFont(
   family: string,
   weight: number = 400,
   style: FontStyle = 'normal',
@@ -89,7 +89,7 @@ export function getFont(
 /**
  * The decoration and script metrics of an exact `(family, weight, style)` —
  * the atlas's when one is registered, else a loaded outline face's. Like
- * {@link getFont}, it walks no fallback chain and enrolls no canvas font.
+ * {@link getAtlasFont}, it walks no fallback chain and enrolls no canvas font.
  * An idle outline face starts loading, as it would for layout.
  * A run already resolved for layout reads `faceMetricsOf(result)` instead.
  */
@@ -98,8 +98,8 @@ export function faceMetricsFor(
   weight: number = 400,
   style: FontStyle = 'normal',
 ): FaceMetrics | undefined {
-  return getFont(family, weight, style)?.font.faceMetrics
-    ?? outlineMetrics(family, weight, style)?.faceMetrics;
+  return getAtlasFont(family, weight, style)?.font.faceMetrics
+    ?? outlineFace(family, weight, style)?.faceMetrics;
 }
 
 /** One family in the registry and the variants registered for it — what a
@@ -113,7 +113,7 @@ export interface RegisteredFont {
  * Enumerate the registry. Families come back in registration order; variants
  * sorted by weight, then style.
  */
-export function listFonts(): readonly RegisteredFont[] {
+export function listAtlasFonts(): readonly RegisteredFont[] {
   const out: RegisteredFont[] = [];
   for (const family of registeredFamilies) {
     const keys = new Set([
@@ -387,7 +387,7 @@ function settle(family: string, token: object): void {
  * registered for this exact variant has not finished loading. Tells a face
  * that is missing from one that is merely late.
  */
-export function fontPending(family: string, weight = 400, style: FontStyle = 'normal'): boolean {
+export function isFontPending(family: string, weight = 400, style: FontStyle = 'normal'): boolean {
   if (atlasPending(family)) return true;
   const outline = outlineStatus(family, weight, style);
   return outline === 'idle' || outline === 'loading';
@@ -404,7 +404,7 @@ export function ensureFontTexture(
   style: FontStyle,
   textureCache: GlyphTextureSink,
 ): boolean {
-  const entry = getFont(family, weight, style);
+  const entry = getAtlasFont(family, weight, style);
   if (!entry) return false;
   textureCache.upload(textureCacheKey(family, weight, style), entry.bitmap);
   return true;
@@ -435,7 +435,7 @@ function missResolveResult(
   // Outline-only: a family with parsed font bytes and no atlas. Ranked above
   // every fallback below because it is the *real* face, and below explicit
   // canvas enrollment, which is a consumer saying which tier it wants.
-  const face = outlineMetrics(family, weight, style);
+  const face = outlineFace(family, weight, style);
   if (face) {
     return {
       entry: null,
@@ -446,7 +446,7 @@ function missResolveResult(
     };
   }
   // Its bytes are on their way, which outranks a stand-in as a pending atlas does.
-  if (fontPending(family, weight, style)) return pendingMiss(family, weight, style);
+  if (isFontPending(family, weight, style)) return pendingMiss(family, weight, style);
 
   const policy = getFontFallbackPolicy();
 
@@ -569,7 +569,7 @@ export function cachedFontVariant(family: string, weight: number, style: FontSty
  * policy `'none'`, which documents a miss as a *hard* miss, or with no canvas
  * to rasterize into (SSR, a jsdom test without one).
  */
-export function resolveGlyphFallback(
+export function resolveCanvasFallback(
   family: string,
   weight: number,
   style: FontStyle,

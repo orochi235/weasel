@@ -24,7 +24,7 @@ export type Aim3d = ViewAim<Frustum3d> & { readonly kind: 'frustum'; readonly vi
 /** How a kernel3d view meets a 2D one. */
 export interface Aim3dOptions {
   /** The world's up: the axis the camera turns about and the ground, where a 2D world lies, is at right angles to.
-   *  `World3d.up`, as `createInsert` takes it. Default `+y`. */
+   *  `World3d.up`, as `createInsert3dDep` takes it. Default `+y`. */
   up?: Vec3;
 }
 

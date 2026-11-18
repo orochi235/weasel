@@ -6,7 +6,7 @@
 
 New `<Density size>` sets the size of every `sm`/`md` control inside it, and `useDensity` reads it.
 
-The nearest scope wins, and a control's own `size` wins over any scope. With no scope, each control keeps its default: `md`, or `sm` for `CycleButton`. `Button`, `SegmentedBar`, `ColorModeControl`, `CycleButton`, and `Bar` read it. ui-logic's `resolveSize(own, scope, fallback)` is the same rule without React, for a host such as hud.
+The nearest scope wins, and a control's own `size` wins over any scope. With no scope, each control keeps its default: `md`, or `sm` for `CycleButton`. `Button`, `SegmentedBar`, `ColorModeControl`, `CycleButton`, and `Bar` read it. ui-logic's `resolveControlSize(own, scope, fallback)` is the same rule without React, for a host such as hud.
 
 ```tsx
 <Density size="sm">

@@ -1,4 +1,4 @@
-export { createHistory, touchedIdsFromOps, HistoryRestoreError } from './history';
+export { createHistory, touchedIdsOf, HistoryRestoreError } from './history';
 export type {
   HistoryRecovery,
   HistoryRestoreReport,
@@ -21,6 +21,6 @@ export type {
   RecordEntryOptions,
 } from './history';
 export type { Op } from './op';
-export { swapOp } from './swapOp';
-export type { SwapArgs, SwapOpOptions } from './swapOp';
+export { createSwapOp } from './createSwapOp';
+export type { SwapArgs, SwapOpOptions } from './createSwapOp';
 export type { Journal, BeginJournalOptions } from './journal';

@@ -13,7 +13,7 @@ import {
   chromeLineWidthScale,
   cursorPaintMatrix,
   cursorPaintOps,
-  cursorWorldSize,
+  worldCursorPx,
 } from '@weasel-js/cursor';
 import type { CursorGlyph, CursorPaintOp } from '@weasel-js/cursor';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
@@ -89,7 +89,7 @@ export function createPaintedCursorLayer(state: PaintedCursorState): RenderLayer
       const scale = (view.scale.x + view.scale.y) / 2;
       const worldSized = cursor.worldRadius !== undefined;
       const size = worldSized
-        ? cursorWorldSize(glyph, cursor.worldRadius as number, scale)
+        ? worldCursorPx(glyph, cursor.worldRadius as number, scale)
         : (cursor.size ?? 24);
       if (!(size > 0) || !Number.isFinite(size)) return [];
 

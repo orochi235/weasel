@@ -8,7 +8,7 @@ import type { OptionKey } from './optionKey';
 export type AsyncOption<T extends OptionKey> = ListOption<T>;
 
 /** Options for {@link useAsyncOptions}. */
-export type UseAsyncOptionsProps<T extends OptionKey> = {
+export type UseAsyncOptionsOptions<T extends OptionKey> = {
   /**
    * Fetches the options for a query. The signal aborts when a later keystroke
    * supersedes this call, so a `fetch` should forward it.
@@ -42,7 +42,7 @@ export function useAsyncOptions<T extends OptionKey = string>({
   load,
   debounceMs = 150,
   minLength = 0,
-}: UseAsyncOptionsProps<T>): AsyncOptionsResult<T> {
+}: UseAsyncOptionsOptions<T>): AsyncOptionsResult<T> {
   const [inputValue, setInputValue] = useState('');
   const [options, setOptions] = useState<ReadonlyArray<AsyncOption<T>>>([]);
   const [loading, setLoading] = useState(false);

@@ -48,7 +48,7 @@ function copySubtree(
  * list that was copied with it, and the original of each that was not: the
  * originals are still in the scene to follow.
  */
-export function copySelection(
+export function copyOps(
   scene: AnyScene,
   ids: readonly string[],
   poseOf: CopyPose,

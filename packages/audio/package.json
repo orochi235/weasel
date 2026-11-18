@@ -23,6 +23,9 @@
     "test": "node ../../scripts/package-test.mjs",
     "build": "tsup"
   },
+  "devDependencies": {
+    "@weasel-js/registry": "*"
+  },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
   "repository": {

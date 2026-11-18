@@ -1,4 +1,4 @@
-import { createHistory, type SerializedHistory, type SwapArgs, swapOp, useLatest } from '@weasel-js/core';
+import { createHistory, type SerializedHistory, type SwapArgs, createSwapOp, useLatest } from '@weasel-js/core';
 import { type TokenScale, usePersistedState, useTrialId } from '@weasel-js/labkit';
 import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import type { CssOverrides } from './overrides';
@@ -48,7 +48,7 @@ export function useVarsHistory(state: VarsState, apply: (from: VarsState, to: Va
     latestApply.current(from, to);
   };
   const swap = (before: VarsState, after: VarsState, coalesceKey?: string) =>
-    swapOp({ name: SWAP, label: 'edit vars', before, after, emit, ...(coalesceKey !== undefined ? { coalesceKey } : {}) });
+    createSwapOp({ name: SWAP, label: 'edit vars', before, after, emit, ...(coalesceKey !== undefined ? { coalesceKey } : {}) });
 
   const history = useMemo(() => {
     const opened = createHistory(null, {

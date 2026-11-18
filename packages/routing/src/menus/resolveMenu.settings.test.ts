@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { MenuEntry, MenuNumberEntry, SubmenuEntry } from '@weasel-js/menu';
+import type { MenuEntry, MenuNumberEntry, MenuSubmenuEntry } from '@weasel-js/menu';
 import { pref, type PrefGroup } from '@weasel-js/prefs-schema';
 import { resolveSchemaMenu, type MenuSources } from './resolveMenu';
 import { ActionDisabledReason, type Action } from '../interactions/actions/action';
@@ -40,7 +40,7 @@ function resolve(action: Action, trigger = vi.fn(() => true)): MenuEntry[] {
   return resolveSchemaMenu({ name: '', children: { resize: pref.action('resize') } }, src);
 }
 
-const rows = (e: MenuEntry | undefined) => (e as SubmenuEntry).entries.filter((r) => r.kind !== 'separator');
+const rows = (e: MenuEntry | undefined) => (e as MenuSubmenuEntry).entries.filter((r) => r.kind !== 'separator');
 
 describe('resolveSchemaMenu: an action carrying settings', () => {
   it('is a submenu of its form, holding the values it reads', () => {

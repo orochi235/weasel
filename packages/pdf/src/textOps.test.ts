@@ -11,7 +11,7 @@ import {
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { pathFromD, transformPath } from '@weasel-js/geom';
 import { MAX_DASH_RUNS } from '@weasel-js/paint';
-import { dashLength } from '@weasel-js/stroke';
+import { dashRunLength } from '@weasel-js/stroke';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -289,7 +289,7 @@ describe('writeText', () => {
 
   it('keeps a text stroke dashed when each glyph is under the dash cap and only their sum is over it', async () => {
     const d = registryFontSource.outline('sans-serif', 400, 'normal', 'H'.charCodeAt(0))!;
-    const length = dashLength(transformPath(pathFromD(d), [SIZE, 0, 0, SIZE, 0, 0]));
+    const length = dashRunLength(transformPath(pathFromD(d), [SIZE, 0, 0, SIZE, 0, 0]));
     // An [on, off] dash of v cuts a line of this length into length / v runs: 60% of the cap per H.
     const v = length / (0.6 * MAX_DASH_RUNS);
     const stroke = { paint: { color: '#ff0000' }, width: 2, dash: [v, v] };

@@ -1,11 +1,11 @@
 /** Shrunk counterexamples from `schema.pbt.test.ts` and `sectionTree.pbt.test.ts`, kept as plain examples. */
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
-import { isStale, seenFrom } from '../annotations/staleness';
+import { isStale, seenValues } from '../annotations/staleness';
 import { f } from './builder';
 import { drawsOwn } from './drawsOwn';
 import { configFromPrefs } from './fromPrefs';
-import { hasConfigPath, schemaNodeAtPath } from './path';
+import { hasConfigPath, schemaNodeAt } from './path';
 import { resolveConfigSchema } from './resolve';
 import { sectionTree } from './sectionTree';
 import { prefsFromConfig } from './toPrefs';
@@ -26,7 +26,7 @@ describe('a schema keyed __proto__', () => {
   it('holds its default and its node under that key', () => {
     expect(hasConfigPath(schema.defaults(), '__proto__')).toBe(true);
     expect(Object.getPrototypeOf(schema.defaults())).toBe(Object.prototype);
-    expect(schemaNodeAtPath(resolved.group, '__proto__')).toMatchObject({ kind: 'list' });
+    expect(schemaNodeAt(resolved.group, '__proto__')).toMatchObject({ kind: 'list' });
   });
 
   it('reads back through prefsFromConfig and f.prefs', () => {
@@ -59,7 +59,7 @@ describe('a leaf keyed as something every object inherits', () => {
   });
 
   it('is never stale for a key a mark did not see', () => {
-    expect(isStale(seenFrom({}, ['toString']), { toString: 1 }, ['toString'])).toBe(false);
+    expect(isStale(seenValues({}, ['toString']), { toString: 1 }, ['toString'])).toBe(false);
   });
 });
 

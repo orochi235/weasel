@@ -57,7 +57,7 @@ export function splitMarks(split: SplitCtx | undefined, values: unknown, ctx: Le
 /** The control that opens a row whose value may be split: nothing for a row with nothing to open to. */
 export function SplitToggle({ state, onToggle }: { state: SplitRowState; onToggle: () => void }) {
   if (!state.opens) return null;
-  return <Disclosure className={c.toggle} label={state.name} open={state.open} onToggle={onToggle} aria-controls={state.open ? state.bodyId : undefined} />;
+  return <Disclosure className={c.toggle} label={state.name} open={state.open} onOpenChange={onToggle} aria-controls={state.open ? state.bodyId : undefined} />;
 }
 
 /**

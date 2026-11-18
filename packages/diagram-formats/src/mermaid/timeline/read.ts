@@ -3,7 +3,7 @@ import type { TimelineData, TimelinePeriod, TimelineSection } from '@weasel-js/p
 import type { ImportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
 import { lineError } from '../../lineError';
-import { pageNameOf, statementsOf } from '../common/lines';
+import { readPageName, statementsOf } from '../common/lines';
 import { numberedText } from '../common/text';
 
 /** The page a timeline is read onto. */
@@ -41,7 +41,7 @@ export function readMermaidTimeline(text: string): ImportResult {
     last = { label: label!, events: said };
     sections[sections.length - 1]!.periods.push(last);
   }
-  const name = pageNameOf(src, warnings);
+  const name = readPageName(src, warnings);
   if (title !== undefined && src.title !== undefined && title !== src.title) {
     warnings.add('The front matter title was dropped; the chart is named by its title statement.');
   }

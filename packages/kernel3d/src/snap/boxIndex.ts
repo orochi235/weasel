@@ -8,6 +8,7 @@
 import type { NodeId } from '@weasel-js/routing';
 import type { Aabb } from '@weasel-js/geom/3d';
 import { createBvh, createSettledCache, type BoxN, type Bvh, type SettledCache } from '@weasel-js/geom/nd';
+import { createPart } from '@weasel-js/registry';
 import { boxIndexable, withDescendants, worldBoxes, type Node3d, type World3d } from '../world';
 
 interface Built {
@@ -18,7 +19,7 @@ interface Built {
   always: readonly number[];
 }
 
-const CACHE = new WeakMap<object, SettledCache<Built>>();
+const cacheOf = createPart((_world: object): SettledCache<Built> => createSettledCache());
 
 let builds = 0;
 
@@ -47,9 +48,7 @@ function build<TData, TLayer extends string>(world: World3d<TData, TLayer>): Bui
 }
 
 function current<TData, TLayer extends string>(world: World3d<TData, TLayer>): Built | null {
-  let cache = CACHE.get(world);
-  if (cache === undefined) CACHE.set(world, (cache = createSettledCache()));
-  return cache.read([world.scene.getVersion(), world.bounds], () => build(world));
+  return cacheOf(world).read([world.scene.getVersion(), world.bounds], () => build(world));
 }
 
 /** Grows a box by a relative epsilon, so rounding between the tree's tests

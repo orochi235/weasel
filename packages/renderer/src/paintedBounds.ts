@@ -1,6 +1,6 @@
 import { type Path, mat3, type GlMat3 } from '@weasel-js/geom';
 import { DEFAULT_MITER_LIMIT, resolveScreenLength, type Stroke } from '@weasel-js/paint';
-import { markerReach, resolveStrokeWidth, widestStrokeWidth } from '@weasel-js/stroke';
+import { markerReach, widestStrokeWidth } from '@weasel-js/stroke';
 import {
   SPRITE_STRIDE, type DrawCommand, type ImageDrawCommand, type PathDrawCommand, type ShaderDrawCommand,
   type SpritesDrawCommand,
@@ -150,7 +150,7 @@ function strokeReach(stroke: Stroke, m: GlMat3): number {
 export function strokeReachAt(stroke: Stroke, scale: number, least = scale): number {
   const at = least > 0 ? least : scale;
   const px = typeof stroke.width === 'object';
-  const base = resolveStrokeWidth(stroke.width ?? 1, px ? at : scale);
+  const base = resolveScreenLength(stroke.width ?? 1, px ? at : scale);
   // A `{ px }` ribbon is built in the transform's stretch, where the miter of a world per-vertex width is limited
   // across its edge and can reach (scale / least)² as far in world along the axis the transform shrinks most.
   const stretch = px && least > 0 ? (scale / least) ** 2 : 1;
@@ -174,10 +174,10 @@ function spritesBox(sprites: Float32Array, m: GlMat3): ScreenBox {
 
 /** The AABB of the local rect's corners taken through `m`. */
 export function screenBox(x0: number, y0: number, x1: number, y1: number, m: GlMat3): ScreenBox {
-  const [ax, ay] = mat3.apply(m, x0, y0);
-  const [bx, by] = mat3.apply(m, x1, y0);
-  const [cx, cy] = mat3.apply(m, x1, y1);
-  const [dx, dy] = mat3.apply(m, x0, y1);
+  const [ax, ay] = mat3.transformPoint(m, x0, y0);
+  const [bx, by] = mat3.transformPoint(m, x1, y0);
+  const [cx, cy] = mat3.transformPoint(m, x1, y1);
+  const [dx, dy] = mat3.transformPoint(m, x0, y1);
   return {
     minX: Math.min(ax, bx, cx, dx), minY: Math.min(ay, by, cy, dy),
     maxX: Math.max(ax, bx, cx, dx), maxY: Math.max(ay, by, cy, dy),

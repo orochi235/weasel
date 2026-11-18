@@ -2,7 +2,7 @@ import { fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it } from 'vitest';
-import { auto } from '../config/auto';
+import { AUTO } from '../config/auto';
 import { f } from '../config/builder';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
@@ -10,7 +10,7 @@ import { Lab } from '../lab/Lab';
 // Count is auto with no resolver: only the instrument knows what it came to. It quotes it in its readout.
 const counted = defineInstrument({
   name: 'Counted',
-  config: f.schema({ count: f.number(3).range(1, 20).initial(auto).quote() }),
+  config: f.schema({ count: f.number(3).range(1, 20).initial(AUTO).quote() }),
   initialState: () => ({}),
   render: (ctx) => (
     <>

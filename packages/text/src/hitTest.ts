@@ -37,14 +37,14 @@ function caretCells(cells: readonly LaidOutCell[]): LaidOutCell[] {
   return out;
 }
 
-/** Options for `pointInTextPose`. */
+/** Options for `textPoseContainsPoint`. */
 export interface PointInTextPoseOptions {
   /** Extra padding (world units) added to the rect on all sides. Default 0. */
   padding?: number;
 }
 
 /** Coarse pose-rect hit-test for a text node — suitable for click-to-edit dispatch. */
-export function pointInTextPose(
+export function textPoseContainsPoint(
   x: number,
   y: number,
   pose: TextPose,

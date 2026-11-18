@@ -8,7 +8,7 @@ import fc from 'fast-check';
 import { IDENTITY_POSE_COMPOSITION, createScene, type SnapCollect } from '@weasel-js/core';
 import type { Vec3 } from '@weasel-js/geom/3d';
 import { createCamera } from '../camera';
-import { createSnap } from '../deps';
+import { createSnap3dDep } from '../deps';
 import { isFinite3, pose, runs, tally, timeoutFor, v3 } from '../pbt.fixture';
 import { aabbOfPose, type Pose3 } from '../pose3';
 import { projectPoint } from '../project';
@@ -83,7 +83,7 @@ describe('groundGridSource, property', () => {
       });
       const vp = { camera: createCamera({ target: at, distance: 6, pitch: 0.6, yaw: 0.4 }), width: 800, height: 600 };
       const world: W = { scene, viewport: () => vp };
-      const snap = createSnap(world, { sources: [boxSnapSource(world), groundGridSource({ world, step })], reachPx: 12 });
+      const snap = createSnap3dDep(world, { sources: [boxSnapSource(world), groundGridSource({ world, step })], reachPx: 12 });
       const c = projectPoint({ ...boxCorner(aabbOfPose(p), corner), y: 0 }, vp);
       if (!c) return;
       const press = { x: c.x + 3, y: c.y - 2 };

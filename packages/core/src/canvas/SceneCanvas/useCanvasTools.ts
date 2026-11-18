@@ -1,9 +1,11 @@
+import { createPart } from '@weasel-js/registry';
 import { useEffect, useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { Action } from '@weasel-js/routing';
 import { createLongPressFeedbackContribution } from '../../domains/longPress/longPressFeedback';
 import { createViewMarkerContribution } from '../../domains/viewports/viewMarkerDrag';
 import { useTools, type Contribution, type Tool, type ToolsApi } from '../../tools/overlayBinding';
+import { alwaysOn } from '@weasel-js/routing/react';
 import { useWithProvidedAmbient } from '../ambientContributions';
 import type { SurfaceContribution } from '../surfaceContribution';
 import {
@@ -27,18 +29,16 @@ export function isToolsApi(tools: ToolsApi | ToolsPatch): tools is ToolsApi {
   return typeof (tools as ToolsApi).setActive === 'function';
 }
 
-const presetSerials = new WeakMap<object, number>();
 let nextSerial = 0;
+const presetSerials = createPart((_e: object) => nextSerial++);
 const entryKey = (e: FeaturePreset): string => {
   // A name from untyped code reaches `resolveFeatures`, which says what to pass instead.
   if (typeof e !== 'object') return String(e);
-  let n = presetSerials.get(e);
-  if (n === undefined) presetSerials.set(e, (n = nextSerial++));
-  return `#${n}`;
+  return `#${presetSerials(e)}`;
 };
 
 /** The presets a canvas runs with. Keyed on the entries, not the array, so
- *  an inline `features={[drawPreset, pathTools]}` does not re-derive every render. */
+ *  an inline `features={[drawPreset, pathToolsPreset]}` does not re-derive every render. */
 export function useEnabledFeatures(
   features: readonly FeaturePreset[] | undefined,
   selectRotates: boolean,
@@ -80,7 +80,8 @@ export function useCanvasTools(args: {
   /** The canvas's own api, built whether or not a takeover replaces it. */
   internal: ToolsApi;
   takeover: ToolsApi | null;
-  /** The surface's own always-on entries a takeover's ambient leaves out: they apply under it too. */
+  /** Under a takeover, the canvas's own always-on entries whose ids the takeover holds no entry for: they apply
+   *  under it as they would without it. Empty with no takeover, where `internal` holds them. */
   surface: readonly SurfaceContribution[];
 } {
   const { enabled, tools: toolsProp, defaultTools, inertia, defaultActiveTool, modes, onToolsCreated } = args;
@@ -117,13 +118,10 @@ export function useCanvasTools(args: {
     ...(modes ? { modes } : {}),
   });
   const tools = takeover ?? internal;
-  const takeoverAmbient = takeover?.ambient;
-  const surface = useMemo(() => {
-    if (!takeoverAmbient) return [];
-    const missing = (e: SurfaceContribution | null): e is SurfaceContribution =>
-      e !== null && !takeoverAmbient.some((t) => t.id === e.id);
-    return [markerDrag, pressFeedback].filter(missing);
-  }, [takeoverAmbient, markerDrag, pressFeedback]);
+  const surface = useMemo(
+    () => (takeover ? mergedAmbient.filter((e) => !takeover.has(e.id)).map(alwaysOn) : []),
+    [takeover, mergedAmbient],
+  );
 
   const onToolsCreatedRef = useLatest(onToolsCreated);
   useEffect(() => { onToolsCreatedRef.current?.(tools); }, [tools, onToolsCreatedRef]);

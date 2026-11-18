@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import type { EventModifiers } from '@weasel-js/gestures';
 import { useState } from 'react';
-import { useReorderDragList, type PressModifiers, type ReorderItem } from '@weasel-js/ui';
+import { useReorderDragList, type ReorderItem } from '@weasel-js/ui';
 import { Button } from '@weasel-js/ui/components/Button';
 import { ItemList } from '@weasel-js/ui/components/ItemList';
 import s from './ItemList.stories.module.css';
@@ -31,9 +32,9 @@ export const Selectable: Story = {
     return (
       <div className={s.list}>
         <ItemList {...args}
-          selection="single"
+          selectionMode="single"
           containerProps={{ 'aria-label': 'History' }}
-          onActivate={setCurrent}
+          onAction={setCurrent}
           rows={['Initial', 'Draw rect', 'Fill', 'Move'].map((label, i) => ({
             id: String.fromCharCode(97 + i),
             label,
@@ -61,7 +62,7 @@ export const Reorder: Story = {
       { id: 'd', label: 'Highlights' },
     ]);
     const [selected, setSelected] = useState<string[]>(['b']);
-    const press = (id: string, mods: PressModifiers) => setSelected((cur) => {
+    const press = (id: string, mods: EventModifiers) => setSelected((cur) => {
       if (!mods.shiftKey) return [id];
       return cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
     });
@@ -82,9 +83,9 @@ export const Reorder: Story = {
       <div className={s.list}>
         <ItemList {...args}
           ref={drag.containerProps.ref}
-          selection="multi"
+          selectionMode="multiple"
           containerProps={{ 'aria-label': 'Layers' }}
-          onActivate={(id, _i, mods) => press(id, mods)}
+          onAction={(id, _i, mods) => press(id, mods)}
           onSelectRange={setSelected}
           onNudge={drag.nudge}
           dropIndex={drag.state.targetIndex}
@@ -114,9 +115,9 @@ export const WithControls: Story = {
     return (
       <div className={s.wide}>
         <ItemList {...args}
-          selection="single"
+          selectionMode="single"
           containerProps={{ 'aria-label': 'Layers' }}
-          onActivate={setSelected}
+          onAction={setSelected}
           rows={['Background', 'Sketch', 'Ink'].map((label, i) => {
             const id = String.fromCharCode(97 + i);
             return {

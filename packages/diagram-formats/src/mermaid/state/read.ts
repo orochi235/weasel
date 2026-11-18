@@ -8,7 +8,7 @@ import type { DataContainer, DataEdge, DataNode, LayoutDirection } from '@weasel
 import type { ImportResult } from '../../document';
 import { IdMint, Membership, Warnings, decodeEntities, graphPage } from '../../graphRead';
 import { DIRECTIONS } from '../class/read';
-import { pageNameOf, type MermaidDirection } from '../common/lines';
+import { readPageName, type MermaidDirection } from '../common/lines';
 import { StyleSheet } from '../common/styles';
 import { parseStateDiagram, type StateStmt, type StateType } from './parse';
 
@@ -165,7 +165,7 @@ export function readStateDiagram(text: string): ImportResult {
     });
     return { id, role: 'pool', label, axis: 'y', lanes };
   });
-  const name = pageNameOf(source, r.warnings);
+  const name = readPageName(source, r.warnings);
   const page = graphPage({
     ...(name !== undefined ? { name } : {}),
     ...(direction !== undefined ? { direction } : {}),

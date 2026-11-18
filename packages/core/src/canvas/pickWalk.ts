@@ -164,7 +164,7 @@ interface CommonMemo { path?: Path; next: Map<Path, CommonMemo> }
 
 /**
  * Collect every candidate the query hits, back-to-front — the last element is
- * the topmost, which is the order `pickTopMostHit` expects.
+ * the topmost, which is the order `topmostOf` expects.
  */
 export function pickWalk<TPose>(
   src: PickSource<TPose>,
@@ -287,10 +287,10 @@ export interface ViewPickGates {
 }
 
 /** The gates a bare adapter takes from its view, plus how that view's camera
- *  maps into each parallax layer — see `scenePlaneOf`. */
+ *  maps into each parallax layer — see `createLayerPlaneLookup`. */
 export interface AdapterPickGates extends ViewPickGates {
   planeOf?: (layer: string) => PlaneMap | null;
 }
 
-export { scenePickSource, scenePlaneOf, type ScenePickSourceOptions } from './scenePickSource';
+export { scenePickSource, createLayerPlaneLookup, type ScenePickSourceOptions } from './scenePickSource';
 export { adapterPickSource } from './adapterPickSource';

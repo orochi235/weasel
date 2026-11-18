@@ -1,5 +1,5 @@
 import { getOwn, setOwn } from '@weasel-js/registry';
-import { enumerateSelections, fullSelection, isByAxis, pick } from '../../axes.ts';
+import { enumerateAxisChoices, fullAxisChoice, isByAxis, pick } from '../../axes.ts';
 import type { SerializableColorList } from '../../colorListItems.ts';
 import { AXES_EXT, overrideKey, RAMPS_EXT, TINTS_EXT, type DtcgAxesExtension } from '../../dtcg/axesExtension.ts';
 import { refTarget } from '../../dtcg/resolve.ts';
@@ -24,7 +24,7 @@ interface Layer {
   modes: Record<string, Record<string, DtcgGroup>>;
 }
 
-/** A DTCG document as {@link toDTCG} writes it. */
+/** A DTCG document as {@link toDtcg} writes it. */
 export interface DtcgExport {
   readonly name: string;
   readonly defaultMode?: string;
@@ -38,8 +38,8 @@ export interface DtcgExport {
 }
 
 /**
- * A theme's own tokens as a DTCG document `loadDTCG` reads back. `extends` is
- * not carried; pass it to `loadDTCG`. Every mode the chain declares is written,
+ * A theme's own tokens as a DTCG document `fromDtcg` reads back. `extends` is
+ * not carried; pass it to `fromDtcg`. Every mode the chain declares is written,
  * so a token that leaves one out still falls through to the parent on the way back.
  *
  * DTCG has one variant dimension, so the plain groups hold mode, with every
@@ -48,9 +48,9 @@ export interface DtcgExport {
  * layer per combination of non-default values some token actually varies by.
  * The theme's own ramps and tints travel under `com.weasel.ramps` and `com.weasel.tints`.
  */
-export function toDTCG(theme: Theme): DtcgExport {
+export function toDtcg(theme: Theme): DtcgExport {
   const axes = themeAxes(theme);
-  const defaults = fullSelection(axes);
+  const defaults = fullAxisChoice(axes);
   const nonMode = Object.keys(axes).filter((a) => a !== 'mode');
   const declaredModes = Object.keys(axes.mode?.values ?? {});
 
@@ -108,7 +108,7 @@ export function toDTCG(theme: Theme): DtcgExport {
     if (varying.length > 0) setOwn(varies, name, varying);
     const modes = used.has('mode') ? [...new Set([...declaredModes, ...modeKeys])] : [];
 
-    for (const combo of enumerateSelections(Object.fromEntries(varying.map((a) => [a, getOwn(axes, a)!])))) {
+    for (const combo of enumerateAxisChoices(Object.fromEntries(varying.map((a) => [a, getOwn(axes, a)!])))) {
       const key = overrideKey(axes, combo);
       const layer = key === '' ? base : ownEntry(overrides, key, (): Layer => ({ primitives: {}, modes: {} }));
       const sel = { ...defaults, ...combo };

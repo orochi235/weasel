@@ -1,5 +1,5 @@
 /** A scene's history steps as the devtools hook keeps them: one plain record per step, in a rolling ring. */
-import { touchedIdsFromOps, type History, type HistoryStep } from '@weasel-js/history';
+import { touchedIdsOf, type History, type HistoryStep } from '@weasel-js/history';
 import type { TraceRing } from '@weasel-js/routing';
 import type { DevtoolsHistoryOp, DevtoolsHistoryRecord, DevtoolsHistorySlice } from './protocol';
 import type { DevtoolsRoot } from './root';
@@ -11,7 +11,7 @@ export const HISTORY_RECORD_LIMITS = { entries: 50, ops: 50 };
 const SUMMARY = { depth: 4, items: 20, chars: 200 };
 
 function opOf(op: HistoryStep['entries'][number]['ops'][number]): DevtoolsHistoryOp {
-  return { kind: op.name ?? '?', targets: [...touchedIdsFromOps([op])], summary: serialize(op.args, SUMMARY) };
+  return { kind: op.name ?? '?', targets: [...touchedIdsOf([op])], summary: serialize(op.args, SUMMARY) };
 }
 
 function recordOf(step: HistoryStep, history: Pick<History, 'undoDepth' | 'redoDepth'>): DevtoolsHistoryRecord {
@@ -36,7 +36,7 @@ export function recordHistory(history: History, ring: TraceRing<DevtoolsHistoryR
   });
 }
 
-export function historySlice(root: DevtoolsRoot, cursor: number, checkpoints: boolean | undefined): DevtoolsHistorySlice {
+export function historySlice(root: DevtoolsRoot, cursor: number, historyEntries: boolean | undefined): DevtoolsHistorySlice {
   const ring = root.source.history;
   const scene = root.source.scene();
   if (!ring || !scene) throw new Error('no history to read');
@@ -47,6 +47,6 @@ export function historySlice(root: DevtoolsRoot, cursor: number, checkpoints: bo
     cursor: slice.cursor,
     position: { index, total: index + scene.history.redoDepth(), canUndo: scene.canUndo(), canRedo: scene.canRedo() },
   };
-  if (checkpoints) out.checkpoints = scene.historyEntries().map((e) => ({ id: e.id, label: e.label }));
+  if (historyEntries) out.historyEntries = scene.historyEntries().map((e) => ({ id: e.id, label: e.label }));
   return out;
 }

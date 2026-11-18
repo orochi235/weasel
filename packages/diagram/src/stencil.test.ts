@@ -3,7 +3,7 @@ import { createElement, type ReactNode } from 'react';
 import { renderHook } from '@testing-library/react';
 import { commitOps, createPageRun, createScene, DepRegistryProvider, useDepRegistry, useDepSource, type ActionDeps, type InsertDep, type RectPose } from '@weasel-js/core';
 import { withDiagramRegistry } from './edge';
-import { FLOWCHART_STENCILS, stencilBuild, stencilKind } from './stencil';
+import { FLOWCHART_STENCILS, stencilInsertOps, stencilKind } from './stencil';
 import { DEFAULT_NODE_STYLE } from './fromData';
 import { CONTAINER_STENCILS, lanesOf } from './containers/containerStencils';
 import { useStencilInsert, useStencilTool, type StencilInsertOptions } from './stencilTool';
@@ -29,11 +29,11 @@ const insertedNodes = (ops: { name: string; args: unknown }[]) =>
     return (op.args as { node: InsertedNode }).node;
   });
 
-describe('stencilBuild', () => {
+describe('stencilInsertOps', () => {
   it('turns a click on a diamond into a container at the stencil size plus one text row', () => {
     const diamond = byId('decision');
     expect(diamond.outline).toBe('diamond');
-    const { id, ops } = stencilBuild(diamond, { x: 10, y: 20, width: 0, height: 0 }, { layer: 'main', newId: idMinter() });
+    const { id, ops } = stencilInsertOps(diamond, { x: 10, y: 20, width: 0, height: 0 }, { layer: 'main', newId: idMinter() });
     const [box, text, ...rest] = insertedNodes(ops as never);
     expect(rest).toEqual([]);
     expect(box!.id).toBe(id);
@@ -50,13 +50,13 @@ describe('stencilBuild', () => {
   });
 
   it('keeps a dragged box where it was drawn', () => {
-    const { ops } = stencilBuild(byId('process'), { x: 0, y: 0, width: 300, height: 200 }, { layer: 'main', newId: idMinter() });
+    const { ops } = stencilInsertOps(byId('process'), { x: 0, y: 0, width: 300, height: 200 }, { layer: 'main', newId: idMinter() });
     expect(insertedNodes(ops as never)[0]!.pose).toMatchObject({ x: 0, y: 0, width: 300, height: 200 });
   });
 
   it('inserts as one undo entry', () => {
     const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
-    const { id, ops } = stencilBuild(byId('decision'), { x: 10, y: 20, width: 0, height: 0 }, { layer: 'main', newId: () => scene.mintId() });
+    const { id, ops } = stencilInsertOps(byId('decision'), { x: 10, y: 20, width: 0, height: 0 }, { layer: 'main', newId: () => scene.mintId() });
     commitOps({ scene } as unknown as ActionDeps, ops, 'Insert Decision');
     expect(scene.get(id as never)?.kind).toBe('mark');
     expect(scene.childrenOf(id as never)).toHaveLength(1);
@@ -71,14 +71,14 @@ describe('stencilBuild', () => {
       ['process', 'decision', 'terminal', 'data', 'manual', 'preparation', 'connector'],
     );
     for (const s of FLOWCHART_STENCILS) {
-      const { ops } = stencilBuild(s, { x: 0, y: 0, width: 0, height: 0 }, { layer: 'main', newId: idMinter(s.id) });
+      const { ops } = stencilInsertOps(s, { x: 0, y: 0, width: 0, height: 0 }, { layer: 'main', newId: idMinter(s.id) });
       expect(insertedNodes(ops as never)[0]!.data.diagram?.outline).toBe(s.outline);
     }
   });
 
   it("colors the body and its text with diagramScene's node style, or the style it is given", () => {
     const colors = (style?: typeof DEFAULT_NODE_STYLE) => {
-      const [box, text] = insertedNodes(stencilBuild(byId('process'), { x: 0, y: 0, width: 0, height: 0 }, {
+      const [box, text] = insertedNodes(stencilInsertOps(byId('process'), { x: 0, y: 0, width: 0, height: 0 }, {
         layer: 'main', newId: idMinter(), ...(style ? { style } : {}),
       }).ops as never);
       return [box!.data.fill?.paint.color, box!.data.stroke?.paint.color, box!.data.stroke?.width, text!.data.fill?.paint.color];
@@ -89,7 +89,7 @@ describe('stencilBuild', () => {
 
   it("lays a stencil's own style over the style it is given", () => {
     const ring = { ...byId('connector'), style: { strokeWidth: 4 } };
-    const [box, text] = insertedNodes(stencilBuild(ring, { x: 0, y: 0, width: 0, height: 0 }, {
+    const [box, text] = insertedNodes(stencilInsertOps(ring, { x: 0, y: 0, width: 0, height: 0 }, {
       layer: 'main', newId: idMinter(), style: { fill: '#fff', stroke: '#333', text: '#111', strokeWidth: 1.5 },
     }).ops as never);
     expect([box!.data.fill?.paint.color, box!.data.stroke?.paint.color, box!.data.stroke?.width, text!.data.fill?.paint.color])
@@ -97,7 +97,7 @@ describe('stencilBuild', () => {
   });
 
   it('sets its text rows in the face it is given', () => {
-    const [, text] = insertedNodes(stencilBuild(byId('process'), { x: 0, y: 0, width: 0, height: 0 }, {
+    const [, text] = insertedNodes(stencilInsertOps(byId('process'), { x: 0, y: 0, width: 0, height: 0 }, {
       layer: 'main', newId: idMinter(), font: { fontFamily: 'serif', fontSize: 15 },
     }).ops as never);
     expect((text!.data as { style?: { fontFamily: string; fontSize: number } }).style).toMatchObject({ fontFamily: 'serif', fontSize: 15 });

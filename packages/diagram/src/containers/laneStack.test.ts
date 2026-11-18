@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pointInPath, type Path } from '@weasel-js/geom';
+import { pathContainsPoint, type Path } from '@weasel-js/geom';
 import type { LayoutDragged, RectPose } from '@weasel-js/core';
 import { laneStackLayout } from './laneStack';
 
@@ -30,8 +30,8 @@ describe('laneStackLayout', () => {
 
   it('takes drops past the header only', () => {
     const region = rows.dropRegion!(POOL) as Path;
-    expect(pointInPath(region, 10, 50)).toBe(false);
-    expect(pointInPath(region, 100, 50)).toBe(true);
+    expect(pathContainsPoint(region, 10, 50)).toBe(false);
+    expect(pathContainsPoint(region, 100, 50)).toBe(true);
   });
 
   it('offers a dragged lane each gap, and shifts the others to make room', () => {

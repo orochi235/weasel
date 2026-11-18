@@ -1,10 +1,10 @@
 import { diagramContainerOf } from './containers/trait';
-import { diagramGroupOf } from './group';
+import { diagramClusterOf } from './clusterBox';
 import { dataKeyReader, type DiagramNodeLike } from './trait';
 
 /** A built shape body: a participant that is neither a region nor a diagram group. */
 export const isDiagramBody = (node: { data: unknown }): boolean =>
-  diagramContainerOf(node) === null && diagramGroupOf(node) === null
+  diagramContainerOf(node) === null && diagramClusterOf(node) === null
   && dataKeyReader(node as DiagramNodeLike) !== null;
 
 /** A body or a region: what a diagram's own box is made of. */

@@ -5,7 +5,7 @@
  */
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { enumerateSelections } from '../axes';
+import { enumerateAxisChoices } from '../axes';
 import { tokensAt } from '../chainTokens';
 import type { ThemeDefinition } from '../definition';
 import type { RawToken } from '../dtcg/types';
@@ -16,7 +16,7 @@ import { derive } from './derive';
 import type { Lookup } from './merge';
 
 const RUNS = 150;
-const SELECTIONS = enumerateSelections(AXES);
+const SELECTIONS = enumerateAxisChoices(AXES);
 
 const plain = (t: RawToken) => JSON.parse(JSON.stringify(t)) as RawToken;
 const plainAll = (tokens: Readonly<Record<string, RawToken>>) => Object.fromEntries(Object.entries(tokens).map(([n, t]) => [n, plain(t)]));

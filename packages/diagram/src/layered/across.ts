@@ -6,7 +6,7 @@
  * and widens to take in any other.
  */
 import { maxOf, minOf } from '@weasel-js/geom';
-import type { Graph, GraphGroup } from '../graph';
+import type { Graph, GraphCluster } from '../graph';
 import { extent, type LayoutAxes } from '../layout';
 import { crossInset } from '../cluster';
 import type { Rows } from './types';
@@ -31,7 +31,7 @@ interface Item {
   /** Where its low edge must go, when it holds a pin. */
   fixed?: number;
   /** The group whose column it is, if it is one. */
-  group?: GraphGroup;
+  group?: GraphCluster;
   /** The nodes it carries. */
   members: string[];
   /** Whether it spans more than one rank. */
@@ -41,11 +41,11 @@ interface Item {
 /** What every level of {@link settleAcross} shares. */
 interface Context {
   input: AcrossInput;
-  groups: ReadonlyMap<string, GraphGroup>;
+  groups: ReadonlyMap<string, GraphCluster>;
   rankOf: ReadonlyMap<string, number>;
   sizes: ReadonlyMap<string, number>;
   /** The groups each node is in, outermost first. */
-  chains: ReadonlyMap<string, readonly GraphGroup[]>;
+  chains: ReadonlyMap<string, readonly GraphCluster[]>;
 }
 
 const EPS = 1e-6;
@@ -57,16 +57,16 @@ const EPS = 1e-6;
  */
 export function settleAcross(input: AcrossInput): Map<string, number> | undefined {
   const { graph, rows, axes } = input;
-  const groups = new Map((graph.groups ?? []).map((g) => [g.id, g]));
+  const groups = new Map((graph.clusters ?? []).map((g) => [g.id, g]));
   const rankOf = new Map<string, number>();
   const sizes = new Map<string, number>();
-  const chains = new Map<string, GraphGroup[]>();
+  const chains = new Map<string, GraphCluster[]>();
   for (const [r, row] of rows.entries()) {
     for (const node of row) {
       rankOf.set(node.id, r);
       sizes.set(node.id, extent(node.bounds, axes.cross));
-      const chain: GraphGroup[] = [];
-      for (let g = node.group === undefined ? undefined : groups.get(node.group); g !== undefined; g = g.parent === undefined ? undefined : groups.get(g.parent)) chain.unshift(g);
+      const chain: GraphCluster[] = [];
+      for (let g = node.cluster === undefined ? undefined : groups.get(node.cluster); g !== undefined; g = g.parent === undefined ? undefined : groups.get(g.parent)) chain.unshift(g);
       chains.set(node.id, chain);
     }
   }
@@ -173,7 +173,7 @@ function itemsAt(ctx: Context, ids: readonly string[], depth: number, pref: Read
 }
 
 /** Where `members` reach across at `at`, with `group`'s room around them. */
-function spanOf(ctx: Context, group: GraphGroup | undefined, members: readonly string[], at: ReadonlyMap<string, number>): { pref: number; width: number } {
+function spanOf(ctx: Context, group: GraphCluster | undefined, members: readonly string[], at: ReadonlyMap<string, number>): { pref: number; width: number } {
   const lo = minOf(members, (id) => at.get(id)!);
   const hi = maxOf(members, (id) => at.get(id)! + ctx.sizes.get(id)!);
   const pad = group === undefined ? { lo: 0, hi: 0 } : padOf(group, ctx.groups, ctx.input.axes);
@@ -182,7 +182,7 @@ function spanOf(ctx: Context, group: GraphGroup | undefined, members: readonly s
 
 /** The room a group's box keeps across beyond its members on each side,
  *  through the deepest group nested in it on that side. */
-function padOf(group: GraphGroup, groups: ReadonlyMap<string, GraphGroup>, axes: LayoutAxes): { lo: number; hi: number } {
+function padOf(group: GraphCluster, groups: ReadonlyMap<string, GraphCluster>, axes: LayoutAxes): { lo: number; hi: number } {
   const own = crossInset(group.inset, axes);
   let lo = 0;
   let hi = 0;

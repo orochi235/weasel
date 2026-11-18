@@ -34,5 +34,5 @@ export {
   type ClothWarp,
   type PathWarp,
   type PinWarp,
-  type WarpBox,
+  type WarpRect,
 } from './pathWarp';

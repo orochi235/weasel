@@ -3,7 +3,7 @@
  * the mode permits it. Everything on `<SceneCanvas>` that asks — the
  * `editAnchors` dep, the anchor overlay, the selection overlay, the rule
  * context, and the select tool's shift-click lock — gets the one answer, also
- * when the target stops qualifying without `exitPathEdit` having run.
+ * when the target stops qualifying without `leavePathEdit` having run.
  */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
@@ -182,7 +182,7 @@ describe('a path being anchor-edited, with its node selected', () => {
   });
 });
 
-describe('a path whose node leaves the selection mid-edit, without exitPathEdit', () => {
+describe('a path whose node leaves the selection mid-edit, without leavePathEdit', () => {
   function deselected(props?: Record<string, unknown>) {
     const t = setup(props);
     t.enter();

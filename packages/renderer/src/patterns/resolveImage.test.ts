@@ -9,7 +9,7 @@ import { _resetTextureRegistryForTests, getTexture, textureRegistry } from '../t
 import {
   __setImageLoaderForTests, _resetImageCacheForTests, getImageBitmap, imageStatus, releaseImage, setImageCacheBudget,
 } from '../images/imageCache';
-import { resolveFillPattern } from './resolveSpec';
+import { resolvePaintPattern } from './resolveSpec';
 import { stencilledEvenOdd } from '../testing/stencilledEvenOdd';
 
 const SRC = 'data:image/png;base64,AAAA';
@@ -42,15 +42,15 @@ describe('an image pattern paint', () => {
     const paint: ImagePatternPaint = {
       kind: 'image', src: SRC, width: 30, height: 15, units: 'world', origin: { x: 2, y: 3 }, opacity: 0.5,
     };
-    expect(resolveFillPattern(paint)).toEqual({
+    expect(resolvePaintPattern(paint)).toEqual({
       kind: 'texture', texture: { id: `image:${SRC}` }, width: 30, height: 15,
       units: 'world', origin: { x: 2, y: 3 }, opacity: 0.5,
     });
   });
 
   it('gives two paints of one picture one texture id', () => {
-    const a = resolveFillPattern({ kind: 'image', src: SRC });
-    const b = resolveFillPattern({ kind: 'image', src: SRC, width: 4 });
+    const a = resolvePaintPattern({ kind: 'image', src: SRC });
+    const b = resolvePaintPattern({ kind: 'image', src: SRC, width: 4 });
     expect((a as { texture: { id: string } }).texture.id).toBe((b as { texture: { id: string } }).texture.id);
   });
 
@@ -103,14 +103,14 @@ describe('drawing an image pattern', () => {
 
   it('draws nothing and says nothing while the picture loads', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const paint = resolveFillPattern({ kind: 'image', src: SRC });
+    const paint = resolvePaintPattern({ kind: 'image', src: SRC });
     const { rec } = draw(paint);
     expect(rec.calls.some((c) => c.name === 'texImage2D')).toBe(false);
     expect(warn).not.toHaveBeenCalled();
   });
 
   it('tiles at the extent the paint names, not the bitmap size', async () => {
-    const paint = resolveFillPattern({ kind: 'image', src: SRC, width: 30, height: 15 });
+    const paint = resolvePaintPattern({ kind: 'image', src: SRC, width: 30, height: 15 });
     draw(paint);
     await settle();
     const { rec, r } = draw(paint);
@@ -121,7 +121,7 @@ describe('drawing an image pattern', () => {
   });
 
   it('tiles at the bitmap size when the paint names no extent', async () => {
-    const paint = resolveFillPattern({ kind: 'image', src: SRC });
+    const paint = resolvePaintPattern({ kind: 'image', src: SRC });
     draw(paint);
     await settle();
     const { rec, r } = draw(paint);
@@ -134,7 +134,7 @@ describe('drawing an image pattern', () => {
   it('tiles an SVG at its natural size after an image node re-rasterizes it larger', async () => {
     const SVG = 'data:image/svg+xml,%3Csvg%3E';
     __setImageLoaderForTests(async (_src, size) => fakeBitmap(size?.width ?? 8, size?.height ?? 4));
-    const paint = resolveFillPattern({ kind: 'image', src: SVG });
+    const paint = resolvePaintPattern({ kind: 'image', src: SVG });
     draw(paint);
     await settle();
     // What an image node drawing the same picture at 4x asks of the cache.
@@ -160,7 +160,7 @@ describe('releasing a picture an image pattern drew', () => {
   });
 
   it('drops its registry entry, and the renderer frees its texture on the next frame', async () => {
-    const paint = resolveFillPattern({ kind: 'image', src: SRC });
+    const paint = resolvePaintPattern({ kind: 'image', src: SRC });
     const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
     const cmd = [{ kind: 'path', path: SQUARE, fill: { paint } } as DrawCommand];
@@ -195,7 +195,7 @@ describe('an image pattern under the image cache budget', () => {
     // A 2x2 bitmap decodes to 16 bytes; this holds one.
     setImageCacheBudget(20);
     __setImageLoaderForTests(async () => fakeBitmap(2, 2));
-    const paint = resolveFillPattern({ kind: 'image', src: SRC });
+    const paint = resolvePaintPattern({ kind: 'image', src: SRC });
     const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
     const cmd = [{ kind: 'path', path: SQUARE, fill: { paint } } as DrawCommand];

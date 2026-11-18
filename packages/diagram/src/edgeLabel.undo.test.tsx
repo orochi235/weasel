@@ -7,7 +7,7 @@ import { createScene, type ActionDeps, type Scene } from '@weasel-js/core';
 import { useSceneTextEdit } from '@weasel-js/text-tools';
 import { afterEach, describe, expect, it } from 'vitest';
 import { EDGE_DERIVE_PATH } from './edge';
-import { dropEmptyEdgeLabel, editEdgeLabelAction } from './edgeLabel';
+import { dropEmptyEdgeLabel, createEditEdgeLabelAction } from './edgeLabel';
 
 interface Rect { x: number; y: number; width: number; height: number }
 type Sc = Scene<{ text?: string }, 'main', Rect>;
@@ -27,7 +27,7 @@ function setup() {
   const hook = renderHook(() => useSceneTextEdit(scene, container, { onEnd: (id) => dropEmptyEdgeLabel(scene as never, id) }));
   const entries = scene.historyEntries().length;
   const open = () => {
-    const { invoker } = editEdgeLabelAction();
+    const { invoker } = createEditEdgeLabelAction();
     if (invoker?.timing !== 'immediate') throw new Error('expected an immediate invoker');
     const deps = { scene, nodeAtPoint: () => 'e1', textEdit: { startEdit: hook.result.current.startEdit } } as unknown as ActionDeps;
     act(() => { invoker.run(deps, { world: { x: 150, y: 20 } }); });

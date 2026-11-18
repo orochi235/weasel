@@ -1,5 +1,5 @@
 import type { NodeId, Scene, Op } from '@weasel-js/core';
-import { createTransformOp, translatePoseViaDescriptor, type PoseDescriptor, carriedDescendants, sceneCarrySource } from '@weasel-js/core/engine';
+import { createSetPoseOp, translatePoseViaDescriptor, type PoseDescriptor, carriedDescendants, sceneCarrySource } from '@weasel-js/core/engine';
 
 /** What a move gesture captured at its start, as this pass reads it. */
 export interface LandedDescendantsInput {
@@ -44,7 +44,7 @@ export function landedDescendantOps(input: LandedDescendantsInput, ops: readonly
     );
     for (const [id, pose] of carried) {
       const node = scene.get(id);
-      if (node) out.push(createTransformOp<unknown>({ id, from: node.pose, to: pose, label }));
+      if (node) out.push(createSetPoseOp<unknown>({ id, from: node.pose, to: pose, label }));
     }
   }
   return out;

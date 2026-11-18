@@ -1,6 +1,6 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { isPrefCondition, prefConditionHolds, type PrefCondition, type PrefConditionValue, type PrefTest, type PrefGroup, prefValueAtPath, type PrefList, type PrefMap, type PrefLeaf, type PrefObject, type PrefUnion } from '@weasel-js/prefs-schema';
+import { isPrefCondition, prefConditionHolds, type PrefCondition, type PrefConditionValue, type PrefTest, type PrefGroup, prefValueAt, type PrefList, type PrefMap, type PrefLeaf, type PrefObject, type PrefUnion } from '@weasel-js/prefs-schema';
 import { checkPrefCondition, checkPrefConditions } from './conditionCheck';
 import { leaf, runs, tally, timeoutFor, valueOf } from '@weasel-js/prefs-schema/testing/pbt.fixture';
 
@@ -51,9 +51,9 @@ describe('checkPrefCondition, properties', () => {
         const problems = checkPrefCondition(test, schema);
         for (const p of problems) t.count(p.code);
         if (problems.length === 0) t.count('clean');
-        const holds = trees.map((tree) => prefConditionHolds(test, (path) => prefValueAtPath(tree, path)));
+        const holds = trees.map((tree) => prefConditionHolds(test, (path) => prefValueAt(tree, path)));
         if (problems.some((p) => p.code === 'no-leaf')) {
-          for (const tree of trees) expect(prefValueAtPath(tree, test.path)).toBeUndefined();
+          for (const tree of trees) expect(prefValueAt(tree, test.path)).toBeUndefined();
         }
         if (problems.some((p) => p.code === 'value' || p.code === 'option')) {
           // `isNot` a value never held always holds; every other operator never does.

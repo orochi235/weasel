@@ -9,7 +9,7 @@ import { diagramLayoutOf, useSceneSync, type ContainerEdit, type EdgeRoute, type
 const DATA: DiagramData = {
   nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }, { id: 'c', lines: ['c'] }],
   edges: [{ from: 'a', to: 'b' }, { from: 'b', to: 'c' }, { from: 'a', to: 'c' }],
-  groups: [{ id: 'g', members: ['b', 'c'], label: 'g' }],
+  clusters: [{ id: 'g', members: ['b', 'c'], label: 'g' }],
 };
 
 const poseOf = (specs: readonly DiagramSpec[], id: string) => {

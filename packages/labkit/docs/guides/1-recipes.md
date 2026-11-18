@@ -312,7 +312,7 @@ To pin a layer (always visible, not reorderable), give `layers.ids` a `LayerDesc
 ```tsx
 const config = f.schema({
   level: f.number(0).range(-0.12, 0.12).step(0.001).suffix("em").stops([0]),
-  depth: f.number(0.5).range(0, 1).step(0.01).unit({ suffix: "%", scale: 0.01, precision: 0 }).stops([0.5]),
+  depth: f.number(0.5).range(0, 1).step(0.01).unit({ suffix: "%", scale: 0.01, places: 0 }).stops([0.5]),
 });
 ```
 

@@ -12,7 +12,7 @@
 import { PATH_L, PATH_M, type PolygonPath } from '@weasel-js/geom';
 import type { CommandPaint, CommandStroke } from '@weasel-js/paint';
 import { markerDrawCommands, WeaselRenderer, type DrawCommand } from '@weasel-js/renderer';
-import { resolveStrokeWidth } from '@weasel-js/stroke';
+import { resolveScreenLength } from '@weasel-js/paint';
 import { createGLRecorder } from '../../../packages/renderer/src/testing/glRecorder';
 import { rendererParts } from '../../../packages/renderer/src/rendererParts';
 import { group } from './group';
@@ -53,7 +53,7 @@ function tween(stroke: CommandStroke, rebuilt: boolean): () => void {
     const commands: DrawCommand[] = rebuilt
       ? [
           { kind: 'path', path, stroke: { ...trimmed, markerStart: undefined, markerEnd: undefined } },
-          ...markerDrawCommands(path, trimmed, resolveStrokeWidth(stroke.width ?? 1, 1), undefined),
+          ...markerDrawCommands(path, trimmed, resolveScreenLength(stroke.width ?? 1, 1), undefined),
         ]
       : [{ kind: 'path', path, stroke: trimmed }];
     r.render(commands);

@@ -1,6 +1,6 @@
 /** The scene specs `diagramScene` makes for edges and their labels. */
 import { polylineFromPoints } from '@weasel-js/core';
-import type { WireLabel } from './dataGroups';
+import type { WireLabel } from './dataClusters';
 import { EDGE_DERIVE_PATH } from './edge';
 import type { MeasureRowText } from './body';
 import type { DataEdge, DiagramSceneOptions, DiagramSpec } from './dataTypes';

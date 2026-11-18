@@ -19,7 +19,7 @@ npm install @weasel-js/select
 import { intentOf, select } from '@weasel-js/select';
 
 // A list's convention: Cmd/Ctrl toggles a row, shift ranges from the anchor.
-const policy = { mode: 'multi', toggle: ['meta', 'ctrl'], range: 'shift' } as const;
+const policy = { mode: 'multiple', toggle: ['meta', 'ctrl'], range: 'shift' } as const;
 
 let state = { ids: ['b'], anchor: 'b' };
 state = select(state, 'd', intentOf({ shift: true, meta: false, ctrl: false }, policy), {
@@ -32,7 +32,7 @@ state = select(state, 'd', intentOf({ shift: true, meta: false, ctrl: false }, p
 | intent | ids | anchor |
 |---|---|---|
 | `replace` | `[id]` | `id` |
-| `single` | `[id]`; every intent resolves to it on an id `forceSingle` holds | `id` |
+| `alone` | `[id]`; every intent resolves to it on an id `forceSingle` holds | `id` |
 | `toggle` | the selected ids `forceSingle` does not hold, with `id` added or removed | `id` |
 | `range` | ids from anchor to `id` in `order`, skipping those `forceSingle` holds; `[id]` if there is no anchor or either end is outside `order` | unchanged; `id` when it falls back to `[id]` |
 

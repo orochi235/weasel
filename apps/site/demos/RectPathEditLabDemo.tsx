@@ -65,7 +65,7 @@ function Panel({ scene, host }: { scene: LabScene; host: PathEditHost }) {
         <Button disabled={!target || target === editing} onClick={() => actions?.trigger('enterPathEdit')}>
           Edit path
         </Button>
-        <Button disabled={!editing} onClick={() => actions?.trigger('exitPathEdit')}>
+        <Button disabled={!editing} onClick={() => actions?.trigger('leavePathEdit')}>
           Done
         </Button>
       </div>

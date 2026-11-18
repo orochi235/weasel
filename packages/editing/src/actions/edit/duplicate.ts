@@ -1,6 +1,6 @@
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { commitOps, nodeDescriptors, poseDescriptorOf, translatePoseViaDescriptor, scenePoseFrame } from '@weasel-js/core/engine';
-import { copySelection, requiresContent, storedDelta, recordTransform, DUPLICATE_OFFSET } from '@weasel-js/core';
+import { copyOps, requiresContent, storedDelta, recordTransform, DUPLICATE_OFFSET } from '@weasel-js/core';
 import { icon } from '../../icons.gen';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
 import { pref } from '@weasel-js/prefs-schema';
@@ -38,7 +38,7 @@ export function duplicateSelection(
 
   const descriptorOf = nodeDescriptors(scene, poseDescriptorOf(deps.poseDescriptor));
   const frame = scenePoseFrame(scene);
-  const { ops, copies } = copySelection(
+  const { ops, copies } = copyOps(
     scene,
     ids,
     (id, node, isRoot) => {

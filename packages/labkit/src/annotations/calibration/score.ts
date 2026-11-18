@@ -1,4 +1,4 @@
-import { distance, pointSegmentDist } from '@weasel-js/geom';
+import { distance, pointSegmentDistance } from '@weasel-js/geom';
 import { MARK_COLOR, MARK_WIDTH } from '../paint';
 import type { Annotation } from '../types';
 import type { Box, Exercise, Guide, Pt } from './exercises';
@@ -75,7 +75,7 @@ export function distanceToCurve(p: Pt, curve: readonly Pt[]): number {
   for (let i = 1; i < curve.length; i++) {
     const a = curve[i - 1] as Pt;
     const b = curve[i] as Pt;
-    best = Math.min(best, pointSegmentDist(p.x, p.y, a.x, a.y, b.x, b.y));
+    best = Math.min(best, pointSegmentDistance(p.x, p.y, a.x, a.y, b.x, b.y));
   }
   return best;
 }

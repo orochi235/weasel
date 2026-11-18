@@ -3,7 +3,7 @@ import { createEnteredGroup } from '@weasel-js/core';
 import { add, multiply, quatFromAxisAngle, type Aabb, type Mat4, type Vec3 } from '@weasel-js/geom/3d';
 import { createCamera } from './camera';
 import { POSE3_COMPOSITION } from './composePose3';
-import { createAreaSelect, createNodeAtPoint, screenBoxOf, worldPoseOf } from './deps';
+import { createAreaSelect3dDep, createNodeAtPoint3dDep, screenBoxOf, worldPoseOf } from './deps';
 import { aabbOfPose, pose3, poseMatrix, type Pose3 } from './pose3';
 import { projectPoint, type Viewport3d } from './project';
 import { snapBoxes } from './snap/boxIndex';
@@ -87,14 +87,14 @@ describe('a solid two containers deep', () => {
 
   it('is picked at its world position, not its stored one', () => {
     const { scene, deep, deepBox } = nested();
-    const pick = createNodeAtPoint(worldOf(scene));
+    const pick = createNodeAtPoint3dDep(worldOf(scene));
     expect(pick(projectPoint(center(deepBox), viewport())!)).toBe(deep);
     expect(pick(projectPoint(scene.get(deep)!.pose.position, viewport())!)).not.toBe(deep);
   });
 
   it('is picked where a gesture holds its container', () => {
     const { scene, outer, deep, deepBox } = nested();
-    const pick = createNodeAtPoint(worldOf(scene));
+    const pick = createNodeAtPoint3dDep(worldOf(scene));
     const shift = { x: 0, y: 0, z: 3 };
     const at = projectPoint(add(center(deepBox), shift), viewport())!;
     expect(pick(at)).not.toBe(deep);
@@ -110,14 +110,14 @@ describe('a solid two containers deep', () => {
     const at = projectPoint(center(deepBox), viewport())!;
     expect(at.x).toBeGreaterThan(box.x);
     expect(at.x).toBeLessThan(box.x + box.width);
-    const marquee = createAreaSelect(world, { get: () => [], set: () => {} });
+    const marquee = createAreaSelect3dDep(world, { get: () => [], set: () => {} });
     expect(marquee.hitTestArea({ x: at.x - 1, y: at.y - 1, width: 2, height: 2 })).toEqual([deep]);
   });
 
   it('is marqueed as a click selects it: its outermost container, then each level in as one is entered', () => {
     const { scene, root, outer, inner, deep, deepBox } = nested();
     const entered = createEnteredGroup(scene as never);
-    const marquee = createAreaSelect(worldOf(scene), { get: () => [], set: () => {} }, null, { entered });
+    const marquee = createAreaSelect3dDep(worldOf(scene), { get: () => [], set: () => {} }, null, { entered });
     const all = { x: 0, y: 0, width: 800, height: 600 };
     const at = projectPoint(center(deepBox), viewport())!;
     const onDeep = { x: at.x - 1, y: at.y - 1, width: 2, height: 2 };
@@ -135,7 +135,7 @@ describe('a solid two containers deep', () => {
   it('leaves its containers unpicked: they draw nothing, with or without a bounds function', () => {
     const { scene, outer, inner } = nested();
     for (const bounds of [true, false]) {
-      const pick = createNodeAtPoint(worldOf(scene, bounds));
+      const pick = createNodeAtPoint3dDep(worldOf(scene, bounds));
       for (const id of [outer, inner]) {
         expect(pick(projectPoint(worldPoseOf(scene, id)!.position, viewport())!)).toBeNull();
       }

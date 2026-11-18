@@ -99,13 +99,13 @@ export interface PortAffordanceOptions<TPose> {
   /** Also the chrome-caps visibility id. Default {@link PORT_LAYER_ID}. */
   id?: string;
   read?: DiagramNodeReader;
-  geometry?: PoseDescriptor<TPose>;
+  poseDescriptor?: PoseDescriptor<TPose>;
   /** Which participants show their ports. Default: all of them. Gate on
    *  selection or hover by reading `state`. */
   shows?: (node: DiagramNodeLike, state: ChromeState) => boolean;
   /** Which of a participant's ports show. Default: all of them. A port
    *  this turns away is not painted or grabbable, and passed with the connect
-   *  options (as `diagramPorts` and `DiagramView` do), no connect lands on it. */
+   *  options (as `createDiagramPortsContribution` and `DiagramView` do), no connect lands on it. */
   showsPort?: (port: Port) => boolean;
   /** Screen-pixel hit radius. Default 8, the kit's `HANDLE_BASE_PX`. */
   hitRadiusPx?: number;
@@ -159,7 +159,7 @@ export function createPortAffordance<TPose>(
     strength = 'exclusive',
   } = opts;
   const portOpts = {
-    ...(opts.geometry ? { geometry: opts.geometry } : {}),
+    ...(opts.poseDescriptor ? { poseDescriptor: opts.poseDescriptor } : {}),
     ...(opts.read ? { read: opts.read } : {}),
   };
   const paintOf = (port: Port): AffordanceRegion['paint'] => {

@@ -3,7 +3,7 @@ import { scenePoseFrame, RIGID_POSE_COMPOSITION, worldPosesOf, createScene, deri
 import { withDiagramRegistry } from '../edge';
 import { diagramScene, edgeIdOf, type DiagramSpec } from '../fromData';
 import { specWorldPoses } from '../specWorld';
-import { nestGroups } from '../groupTree';
+import { nestClusters } from '../clusterTree';
 import { portOn, uniqueGroups, uniqueStages } from './draw';
 import { SAMPLES } from './lab/samples';
 import { laneId, lanes } from './lanes';
@@ -193,7 +193,7 @@ describe('lanes wires', () => {
       const top = Math.min(...bands.map((b) => b.y));
       const bottom = Math.max(...bands.map((b) => b.y + b.height));
       const boxOf = (id: string) => worldPosesOf(specs, RIGID_POSE_COMPOSITION).get(id) as Box | undefined;
-      const groups = nestGroups(uniqueGroups(p), (id) => p.stages.some((s) => s.id === id)).flatMap((g) => {
+      const groups = nestClusters(uniqueGroups(p), (id) => p.stages.some((s) => s.id === id)).flatMap((g) => {
         const box = boxOf(g.id);
         return box === undefined ? [] : [{ id: g.id, members: g.members, box }];
       });

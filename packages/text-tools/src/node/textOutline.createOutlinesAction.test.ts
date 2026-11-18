@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { stubDeps } from 'interactions/actions/testUtils';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { buildDepsFromRequires, ActionDisabledReason, BETWEEN_GESTURES, type ImmediateInvoker } from '@weasel-js/routing';
+import { createActionDeps, ActionDisabledReason, BETWEEN_GESTURES, type ImmediateInvoker } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
 import { registerFontOutlines } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
@@ -39,7 +39,7 @@ describe('createOutlinesAction', () => {
     const { adapter } = makeAdapter({});
     const bag: Record<string, unknown> = { operands: selectionOf([]), createOutlinesAdapter: adapter };
     const registry = { get: (name: string) => bag[name] } as unknown as DepRegistry;
-    const deps = buildDepsFromRequires(createOutlinesAction, registry);
+    const deps = createActionDeps(createOutlinesAction, registry);
     expect(() => createOutlinesAction.enabled?.(deps)).not.toThrow();
     expect(() => (createOutlinesAction.invoker as ImmediateInvoker).run(deps, {})).not.toThrow();
   });

@@ -1,5 +1,5 @@
 import type { GestureSpec, ModSpec } from '@weasel-js/gestures';
-import { getOwn } from '@weasel-js/registry';
+import { createPart, getOwn } from '@weasel-js/registry';
 import type { GestureBinding } from '../interactions/actions/binding';
 import type { HotkeyTrigger } from './types';
 
@@ -15,7 +15,7 @@ export function heldModifierOf(trigger: HotkeyTrigger | undefined): Modifier | n
   return trigger === undefined ? null : getOwn(MODIFIER_OF, trigger) ?? null;
 }
 
-const loosened = new WeakMap<GestureBinding, Partial<Record<Modifier, GestureBinding>>>();
+const loosened = createPart((_binding: GestureBinding): Partial<Record<Modifier, GestureBinding>> => ({}));
 
 /**
  * `binding` as an entry held on `modifier` sees it: a binding that does not
@@ -29,9 +29,7 @@ export function withHeldModifier(binding: GestureBinding, modifier: Modifier): G
   const mods: Partial<ModSpec> | undefined = binding.spec.mods;
   if (mods?.[modifier] !== undefined) return binding;
   if ((modifier === 'ctrl' || modifier === 'meta') && mods?.mod === false) return binding;
-  let byModifier = loosened.get(binding);
-  if (!byModifier) loosened.set(binding, byModifier = {});
-  return byModifier[modifier] ??= {
+  return loosened(binding)[modifier] ??= {
     ...binding,
     spec: { ...binding.spec, mods: { ...mods, [modifier]: 'optional' } } as GestureSpec,
   };

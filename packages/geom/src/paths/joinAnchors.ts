@@ -124,7 +124,7 @@ export function joinAnchorsAt(set: AnchorSet, flatA: number, flatB: number, opti
  * The two open-subpath ends nearest each other that `accept` allows, on two
  * different subpaths. Null when there are no two such subpaths.
  */
-export function closestOpenEnds(
+export function nearestOpenEnds(
   set: AnchorSet,
   accept: (a: SubpathEnd, b: SubpathEnd) => boolean = () => true,
 ): [SubpathEnd, SubpathEnd] | null {

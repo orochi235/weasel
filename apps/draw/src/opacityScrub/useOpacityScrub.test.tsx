@@ -56,7 +56,7 @@ function setup({ selected = true, data = { fill: { paint: solid('#ff0000') } } a
         data: other,
       }] : [])],
     });
-    const selection = useSelection({ mode: 'multi', scene, initial: selected ? (other ? [ID, B] : [ID]) : [] });
+    const selection = useSelection({ mode: 'multiple', scene, initial: selected ? (other ? [ID, B] : [ID]) : [] });
     const { tool, percent } = useOpacityScrub({
       scene: scene as unknown as Parameters<typeof useOpacityScrub>[0]['scene'],
       selection,

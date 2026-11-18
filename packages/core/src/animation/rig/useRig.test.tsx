@@ -4,7 +4,7 @@ import { createScene } from '../../core/scene/scene';
 import type { RectPose } from '../../core/scene/types';
 import { useRig } from './useRig';
 import type { Rig } from './bindRig';
-import { hostAnimator, type Skeleton } from '@weasel-js/animator';
+import { createHostedAnimator, type Skeleton } from '@weasel-js/animator';
 import { linear } from '@weasel-js/geom';
 
 const SKELETON: Skeleton = {
@@ -35,7 +35,7 @@ describe('useRig', () => {
     const id = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
     const bindings = { root: id };
     let now = 0;
-    const host = hostAnimator({ now: () => now, requestFrame: () => {} });
+    const host = createHostedAnimator({ now: () => now, requestFrame: () => {} });
     const { animator } = host;
     const step = (ms: number) => { now += ms; host.tick(now); };
     let rig!: Rig;

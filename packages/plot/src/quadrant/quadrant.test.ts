@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PlotHandle } from '../editing/editors';
 import { PLOT_THEME, seriesColor } from '../theme';
 import { compileQuadrant, quadrantAt, quadrantValueAt } from './compile';
-import { setQuadrantAxisLabel, setQuadrantLabel, setQuadrantPoint, setQuadrantPointName } from './edit';
+import { setQuadrantAxisLabel, setQuadrantLabel, setQuadrantPointAt, setQuadrantPointName } from './edit';
 import { quadrantEditor } from './editor';
 import type { QuadrantData } from './types';
 
@@ -88,12 +88,12 @@ describe('compileQuadrant', () => {
 
 describe('quadrant edits', () => {
   it('moves and renames a point', () => {
-    const moved = setQuadrantPoint(REACH, 0, { x: 0.5, y: 0.5 });
+    const moved = setQuadrantPointAt(REACH, 0, { x: 0.5, y: 0.5 });
     expect(moved.points[0]).toEqual({ name: 'Campaign A', x: 0.5, y: 0.5 });
     expect(moved.points[1]).toBe(REACH.points[1]);
-    expect(setQuadrantPoint(REACH, 0, { x: 0.3, y: 0.6 })).toBe(REACH);
+    expect(setQuadrantPointAt(REACH, 0, { x: 0.3, y: 0.6 })).toBe(REACH);
     expect(setQuadrantPointName(REACH, 1, 'C').points[1]!.name).toBe('C');
-    expect(() => setQuadrantPoint(REACH, 5, { x: 0, y: 0 })).toThrow(/no point 5/);
+    expect(() => setQuadrantPointAt(REACH, 5, { x: 0, y: 0 })).toThrow(/no point 5/);
   });
 
   it('sets and drops axis and quadrant labels', () => {

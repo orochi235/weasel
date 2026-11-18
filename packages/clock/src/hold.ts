@@ -34,7 +34,7 @@ export function holdAt(handle: ClockHandle, shown: number | null): PlayheadHold 
   );
 }
 
-/** A recorded position `holdElapsed` holds at. */
+/** A recorded position `holdPosition` holds at. */
 export type HeldPosition = Pick<ClockPosition, 'elapsed' | 'passEnd' | 'duration' | 'origin'>;
 
 /**
@@ -44,7 +44,7 @@ export type HeldPosition = Pick<ClockPosition, 'elapsed' | 'passEnd' | 'duration
  * showed within it. `pending` reports the `elapsed` it holds for, on the
  * clock's current span.
  */
-export function holdElapsed(handle: ClockHandle, at: HeldPosition): PlayheadHold {
+export function holdPosition(handle: ClockHandle, at: HeldPosition): PlayheadHold {
   return holdWhere(
     handle,
     (clock) => elapsedOn(clock, at),

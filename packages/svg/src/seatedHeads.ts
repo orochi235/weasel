@@ -8,7 +8,7 @@
 
 import { markerInset, type Path } from '@weasel-js/core';
 import { splitByClosure, splitSubpaths } from '@weasel-js/geom';
-import { insetPath } from '@weasel-js/stroke';
+import { trimPathEnds } from '@weasel-js/stroke';
 import { drawsAsGroup } from './openSubpathFill';
 import { seats } from './markerDefs';
 import { writesOutline } from './strokeOutlineSvg';
@@ -41,7 +41,7 @@ function cutShaft(path: Path, stroke: SvgStroke): { path: Path; start: boolean; 
   const end = insetOf(stroke.markerEnd, width);
   if (!(start > 0) && !(end > 0)) return null;
   if (splitSubpaths(path).length !== 1 || splitByClosure(path).closed !== null) return null;
-  const cut = insetPath(path, start, end);
+  const cut = trimPathEnds(path, start, end);
   return cut && { path: cut, start: start > 0, end: end > 0 };
 }
 

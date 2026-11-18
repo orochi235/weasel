@@ -122,10 +122,10 @@ describe('useTextEdit — one write per session', () => {
     expect(h.runCommits[0].runs).toEqual([{ text: 'one two', italic: true }]);
   });
 
-  it('hands the whole edit to a commit option in one call, and calls no other writer', () => {
+  it('hands the whole edit to an onChange option in one call, and calls no other writer', () => {
     const { h, setStyle } = italicNode();
     const commit = vi.fn();
-    h.opts.commit = commit;
+    h.opts.onChange = commit;
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
@@ -142,11 +142,11 @@ describe('useTextEdit — one write per session', () => {
     expect(h.runCommits).toEqual([]);
   });
 
-  it('lowers a node flag with a commit option and no setStyle', () => {
+  it('lowers a node flag with an onChange option and no setStyle', () => {
     const { h } = italicNode();
     delete h.opts.setStyle;
     const commit = vi.fn();
-    h.opts.commit = commit;
+    h.opts.onChange = commit;
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     unslantTwo(getOverlay(h.container)!);
@@ -154,10 +154,10 @@ describe('useTextEdit — one write per session', () => {
     expect(commit.mock.calls[0][1].style).toEqual({ fontSize: 16, fontStyle: 'normal' });
   });
 
-  it('leaves runs and style out of a plain edit handed to a commit option', () => {
+  it('leaves runs and style out of a plain edit handed to an onChange option', () => {
     const h = makeRichHarness({ a: { text: 'abc' } });
     const commit = vi.fn();
-    h.opts.commit = commit;
+    h.opts.onChange = commit;
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     appendChar(getOverlay(h.container)!, 'd');

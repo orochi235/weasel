@@ -8,7 +8,7 @@ import fc from 'fast-check';
 import { act, renderHook } from '@testing-library/react';
 import type { Op } from '@weasel-js/core';
 import { eighth, runs, tally, timeoutFor } from '../pbt.fixture';
-import { addGuideOp, removeGuideOp, replaceGuideOp } from './ops';
+import { createAddGuideOp, createRemoveGuideOp, createReplaceGuideOp } from './ops';
 import type { Guide } from './types';
 import { useGuides, type UseGuidesReturn } from './useGuides';
 
@@ -119,11 +119,11 @@ describe('useGuides, stateful', () => {
         if (a.kind === 'add') {
           const over = a.over !== null && list.length > 0 ? list[a.over % list.length]!.id : null;
           if (over !== null) t.count('add over');
-          op = addGuideOp(store, { id: over ?? `n${fresh++}`, axis: a.axis, offset: a.offset });
+          op = createAddGuideOp(store, { id: over ?? `n${fresh++}`, axis: a.axis, offset: a.offset });
         }
         else if ((a.kind === 'move' || a.kind === 'remove') && list.length > 0) {
           const g = list[a.pick % list.length]!;
-          op = a.kind === 'move' ? replaceGuideOp(store, g, { ...g, offset: a.offset }) : removeGuideOp(store, g);
+          op = a.kind === 'move' ? createReplaceGuideOp(store, g, { ...g, offset: a.offset }) : createRemoveGuideOp(store, g);
           if (a.kind === 'remove' && a.pick % list.length < list.length - 1) t.count('remove inside');
         } else if (a.kind === 'undo' && done.length > 0) {
           const { op: last, before } = done.pop()!;
@@ -179,11 +179,11 @@ describe('useGuides, stateful', () => {
     const b = { id: 'b', axis: 'y' as const, offset: 2 };
     const c = { id: 'c', axis: 'x' as const, offset: 3 };
     act(() => { for (const g of [a, b, c]) store.addGuide(g); });
-    const over = addGuideOp(store, { ...a, offset: 9 });
+    const over = createAddGuideOp(store, { ...a, offset: 9 });
     act(() => { over.apply(null); });
     act(() => { over.invert().apply(null); });
     expect(r.hook.current.getGuides()).toEqual([a, b, c]);
-    const remove = removeGuideOp(store, b);
+    const remove = createRemoveGuideOp(store, b);
     act(() => { remove.apply(null); });
     act(() => { remove.invert().apply(null); });
     expect(r.hook.current.getGuides()).toEqual([a, b, c]);

@@ -1,6 +1,6 @@
 import { fireEvent, screen } from '@testing-library/react';
 import { openPrefsSync, type PrefGroup } from '@weasel-js/prefs';
-import { usePrefsValues } from '@weasel-js/prefs/react';
+import { usePrefsState } from '@weasel-js/prefs/react';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
@@ -24,7 +24,7 @@ const SCHEMA = {
 
 function StoreBound() {
   const [store] = useState(() => openPrefsSync(SCHEMA, { storage: createMemoryAdapter(new Map()), prefix: 't.' }));
-  const { form } = usePrefsValues(store);
+  const { form } = usePrefsState(store);
   return <PrefsForm {...form} layout="list" />;
 }
 

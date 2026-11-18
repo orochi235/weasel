@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { panAction } from '@weasel-js/kernel3d';
+import { cameraPanAction } from '@weasel-js/kernel3d';
 import { Kernel3dDemo } from '../Kernel3dDemo';
 
 beforeAll(() => {
@@ -36,7 +36,7 @@ describe('Kernel3dDemo', () => {
   });
 
   it('pans on a Shift+drag with Orbit, the binding the orbit tool declares', () => {
-    const start = vi.spyOn(panAction.invoker as { start: (...args: never[]) => unknown }, 'start');
+    const start = vi.spyOn(cameraPanAction.invoker as { start: (...args: never[]) => unknown }, 'start');
     const { before, after } = orbitDrag(true);
     expect(start).toHaveBeenCalled();
     expect(after).toBe(before);

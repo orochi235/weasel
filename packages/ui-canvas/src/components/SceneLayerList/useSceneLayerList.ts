@@ -1,6 +1,6 @@
 import {
   asNodeId, createDeleteOp, createMoveToIndexOp, createReparentOp, createSetDataOp, createSetHiddenOp, createSetLockedOp,
-  defaultCommitAdapter, dispatchApplyBatch, isAnnotationLayer, pageName, pageOfNode, pageRunOf, placedPagesOf,
+  defaultCommitAdapter, dispatchApplyBatch, isAnnotationLayer, pageName, pageIdOf, pageRunOf, placedPagesOf,
   withoutPageStructure,
 } from '@weasel-js/core';
 import type { NodeId, SelectionApi } from '@weasel-js/routing';
@@ -137,7 +137,7 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
       const kids = scene.childrenOf(id);
       if (id === run) return build(kids, extra);
       const children = kids.length > 0 ? { children: build(kids, extra) } : {};
-      const page = node.page === undefined ? undefined : pages.get(pageOfNode(scene, id)!);
+      const page = node.page === undefined ? undefined : pages.get(pageIdOf(scene, id)!);
       if (page !== undefined) return [{ id, label: pageName(page, page.index), fixed: true, ...children }];
       return [{
         ...itemFor(node), ...extra, id, visible: node.hidden !== true, locked: node.locked === true, ...children,

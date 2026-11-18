@@ -1,5 +1,5 @@
 import type { Instrument } from '@weasel-js/labkit';
-import { type ConfigNode, type ConfigShape, isConfigBranch, valueAtPath } from '@weasel-js/labkit/config';
+import { type ConfigNode, type ConfigShape, isConfigBranch, configValueAt } from '@weasel-js/labkit/config';
 import type { IndexEntry } from '../../story/types';
 import { type Libraries, TITLE_LIBRARIES } from '../../story/library';
 
@@ -69,7 +69,7 @@ export function storyDossier(input: {
   const schema = ready ? instrument?.config : undefined;
   const args = schema
     ? leaves(schema.nodes).map(({ path, node }): DossierArg => {
-        const value = valueAtPath(config, path);
+        const value = configValueAt(config, path);
         return {
           path,
           label: node.annotations.name ?? path.split('.').pop() ?? path,

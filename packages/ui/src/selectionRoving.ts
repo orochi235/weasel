@@ -6,12 +6,12 @@ export function selectionRoving(
   model: SelectionModel,
   count: number,
   enabled?: (index: number) => boolean,
-): Pick<UseRovingTabIndexOptions, 'tabStopIndex' | 'onNavigate' | 'onActivate'> {
+): Pick<UseRovingTabIndexOptions, 'tabStopIndex' | 'onNavigate' | 'onAction'> {
   const keys = selectionKeys(model, count, enabled);
   const { activate } = keys;
   return {
     tabStopIndex: keys.tabStop,
     onNavigate: keys.landed,
-    onActivate: activate && ((index, event) => activate(index, { alt: event.altKey })),
+    onAction: activate && ((index, event) => activate(index, { alt: event.altKey })),
   };
 }

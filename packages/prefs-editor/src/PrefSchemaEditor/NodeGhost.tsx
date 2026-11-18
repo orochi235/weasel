@@ -10,7 +10,7 @@ const NO_VALUES = {};
 const ignore = () => {};
 
 /** Whether `node` is drawn as an entry in the form's rail. */
-export function ghostIsPage(node: SchemaNode, topLevel: boolean): boolean {
+export function nodeIsPage(node: SchemaNode, topLevel: boolean): boolean {
   return !isPrefLeaf(node) && !isPrefSection(node) && (node.as === 'page' || (node.as === undefined && topLevel));
 }
 
@@ -26,7 +26,7 @@ export function NodeGhost({ node, topLevel = false, renderers, over }: {
   /** The schema a pointer names its setting in, which the ghost of one is drawn as. */
   over?: SchemaRoot;
 }) {
-  if (ghostIsPage(node, topLevel)) return <div className={s.ghostPage}>{node.name}</div>;
+  if (nodeIsPage(node, topLevel)) return <div className={s.ghostPage}>{node.name}</div>;
   const drawn = isPrefLeaf(node)
     ? node
     // A section is drawn as the group it would be; the form's list has no pages, so a bare group is a heading.

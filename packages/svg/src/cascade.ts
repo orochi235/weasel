@@ -8,6 +8,7 @@
  * the inherited cascade once, and leaves read resolved values directly.
  */
 
+import { createPart } from '@weasel-js/registry';
 import { parseDeclarations, type Declaration } from './cssScan';
 import { containerQueryHolds, queryContainerOf } from './container';
 import { compareSpecificity, specificity, type Specificity } from './specificity';
@@ -132,8 +133,6 @@ function matches(el: Element, selector: string): boolean {
   }
 }
 
-const elementCache = new WeakMap<Element, ReadonlyMap<string, string>>();
-
 const PROPERTY_NAMES = Object.keys(PROPERTIES) as PropertyName[];
 
 /**
@@ -143,9 +142,7 @@ const PROPERTY_NAMES = Object.keys(PROPERTIES) as PropertyName[];
  * each importance, reversed for `!important`. A value CSS rejects is dropped,
  * as CSS drops it, so the one below it stands.
  */
-function cascaded(el: Element): ReadonlyMap<string, string> {
-  const cached = elementCache.get(el);
-  if (cached) return cached;
+const cascaded = createPart((el: Element): ReadonlyMap<string, string> => {
   const sheet = el.ownerDocument && documentSheet(el.ownerDocument);
   const matched = (sheet ? sheet.rules : []).filter((r) => matches(el, r.selector)
     && (!r.containers || containersHold(el, r.containers, sheet!.media)));
@@ -167,9 +164,8 @@ function cascaded(el: Element): ReadonlyMap<string, string> {
     for (const r of ordered) r.declarations.forEach(declare);
     inline.forEach(declare);
   }
-  elementCache.set(el, out);
   return out;
-}
+});
 
 /**
  * Resolve an element's own (cascaded, pre-inheritance) value for a property:

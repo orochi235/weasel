@@ -1,6 +1,6 @@
 import { TrialIdContext, useTrialClockHandle } from '@weasel-js/labkit';
 import { type ReactNode, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import type { Layout } from '../../protocol/messages';
+import type { StoryLayout } from '../../protocol/messages';
 import { shownTime } from '../../timeline/shown';
 import { useCssOverrides } from '../cssVars/overrides';
 import { createCaptureTrials, type LoupeCapture, LoupeCaptureContext, type Revision, type TrialInputs } from './captureContext';
@@ -9,7 +9,7 @@ import { createLiveLenses, LiveLensesContext } from './liveLenses';
 /** Props for `CaptureInputs`. */
 export interface CaptureInputsProps {
   entry: TrialInputs['entry'];
-  layout: Layout;
+  layout: StoryLayout;
   config: unknown;
   state: unknown;
   /** Whether the story declares a timeline, so the trial's clock is its playhead. A story in a frame has none here. */

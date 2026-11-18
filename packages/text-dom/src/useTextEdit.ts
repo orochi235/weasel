@@ -15,7 +15,7 @@ import type { StyledRun } from '@weasel-js/text';
 import { domToRuns, type OverlayRunBase } from './domRuns';
 import { holdForFaces, installSelectionStyle, openingRange } from './overlayOpen';
 import {
-  applyStyleToRange, effectiveRangeStyle, nodeHasFlag, rangeWeight, setFlagOverRange,
+  applyStyleToRange, effectiveRangeStyle, styleHasFlag, rangeWeight, setFlagOverRange,
   styleAtRange, unboldPatch, type FlagKey, type RangeStyle, type RunStylePatch,
 } from '@weasel-js/text';
 import { armedOver, armPatch, usePendingStyle } from './armedStyle';
@@ -57,7 +57,7 @@ function patchForToggle(
   }
   const on = toggle === 'bold'
     ? rangeWeight(current, nodeStyle).bold === true
-    : current[toggle] === true || nodeHasFlag(nodeStyle, toggle);
+    : current[toggle] === true || styleHasFlag(nodeStyle, toggle);
   return { [toggle]: !on };
 }
 
@@ -135,7 +135,7 @@ export function useTextEdit(
   const sendDraft = useCallback((overlay: HTMLElement) => {
     const id = editingIdRef.current;
     const draft = overlayDraft(domToRuns(overlay), holderRef.current, priorRunsRef.current, nodeStyleRef.current);
-    if (id !== null && draftChanged(sentRef, draft)) optsRef.current.onDraft?.(id, draft);
+    if (id !== null && draftChanged(sentRef, draft)) optsRef.current.onInput?.(id, draft);
   }, [editingIdRef, optsRef]);
 
   /** Hold `style` as the node's, or the node's own for `null`, and dress the overlay in it. */
@@ -162,7 +162,7 @@ export function useTextEdit(
     // it takes the rewrite in `setFlagOverRange`: clear the node flag, raise
     // it outside the range. It reaches existing text even from a collapsed caret.
     const id = editingIdRef.current;
-    const canWriteStyle = optsRef.current.setStyle !== undefined || optsRef.current.commit !== undefined;
+    const canWriteStyle = optsRef.current.setStyle !== undefined || optsRef.current.onChange !== undefined;
     const runs = domToRuns(overlay);
     if (patch.bold === false && !('fontWeight' in patch) && id !== null) {
       patch = { ...patch, ...unboldPatch(styleOf(id) ?? {}) };
@@ -171,7 +171,7 @@ export function useTextEdit(
       ? (Object.keys(patch) as FlagKey[]).find((key) =>
           key !== 'bold'
           && patch[key] === false
-          && nodeHasFlag(styleOf(id) ?? {}, key))
+          && styleHasFlag(styleOf(id) ?? {}, key))
       : undefined;
     if (unsetFlag !== undefined && id !== null) {
       const r = setFlagOverRange(runs, styleOf(id) ?? {}, range.start, range.end, unsetFlag, false);

@@ -12,7 +12,7 @@ import {
   viewPreset,
 } from '@weasel-js/core';
 import {
-  dither, gridOnScreen, protectTexture,
+  dither, deviceGrid, createProtectTexture,
   type DitherMethod, type ProtectTexture,
 } from '@weasel-js/dither';
 import num from '@weasel-js/theme/numeric.module.css';
@@ -34,7 +34,7 @@ const STAGE = { width: W, height: H };
 const dpr = () => (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
 
 /** The kit's default zoom stops at 8, and 300 dpi opens at 12.5 on a 1× screen. */
-const ZOOM_RANGE = { zoom: { min: 0.5, max: 48 }, pinchZoom: { min: 0.5, max: 48 } };
+const ZOOM_RANGE = { zoom: { min: 0.5, max: 48 }, touchZoom: { min: 0.5, max: 48 } };
 
 type GridChoice = 'screen' | 180 | 300;
 /** Where a grid opens: on whole dots for a printer's, the whole page for the screen's. */
@@ -116,7 +116,7 @@ export function DitherDemo() {
     if (!masked || !printGrid) return;
     let current = true;
     let made: ProtectTexture | null = null;
-    marksMask(scene, printGrid).then(({ mask, width, height }) => protectTexture(mask, width, height)).then((t) => {
+    marksMask(scene, printGrid).then(({ mask, width, height }) => createProtectTexture(mask, width, height)).then((t) => {
       if (!current) { t.dispose(); return; }
       made = t;
       undisposed.current = t;
@@ -130,7 +130,7 @@ export function DitherDemo() {
   }, [scene, version, masked, printGrid]);
 
   const layerGroups = useMemo<LayerGroup[]>(() => {
-    const at = (view: View, dpr: number) => (printGrid ? gridOnScreen(printGrid, view, dpr) : 'screen' as const);
+    const at = (view: View, dpr: number) => (printGrid ? deviceGrid(printGrid, view, dpr) : 'screen' as const);
     if (crisp === 'layer') {
       return [
         { id: 'dither-art', layers: ['scene:art'], effects: (view, dims) => dither({ method: gpuMethod, threshold, grid: at(view, dims.dpr) }) },

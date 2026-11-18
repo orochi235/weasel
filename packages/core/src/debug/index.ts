@@ -22,7 +22,7 @@ export type {
   RecordedSnap,
   RecordedLayer,
   RecordedViewport,
-  ViewportGestureKind,
+  ViewportMoveKind,
   FrameStats,
   LayerFrameStats,
   CanvasDebugSink,

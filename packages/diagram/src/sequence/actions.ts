@@ -8,12 +8,12 @@ import type { Action, InvocationCtx, OngoingHandle, RectPose, SurfaceContributio
 import { moveParticipant, moveStep, reconnectMessage } from './edit';
 import { sequenceCommitOf, type SequenceEditOptions } from './commit';
 import { SELECT_SEQUENCE_PART_ACTION_ID, selectSequencePartAction } from './select';
-import { SEQUENCE_AFFORDANCE_KIND, SEQUENCE_LAYER_ID, placedSequences, sequenceLayer, sequenceScratchOf, type PlacedSequence, type SequenceScratch } from './layer';
+import { SEQUENCE_AFFORDANCE_KIND, SEQUENCE_LAYER_ID, placedSequences, createSequenceLayer, sequenceScratchOf, type PlacedSequence, type SequenceScratch } from './layer';
 import { sequencePartOf, sequenceRootOf } from './trait';
 import type { SequenceData } from './types';
 
 /** The action that drags a sequence part. */
-export const SEQUENCE_DRAG_ACTION_ID = 'diagram.sequence.drag';
+export const DRAG_SEQUENCE_ACTION_ID = 'diagram.sequence.drag';
 /** The action that absorbs the rest of a press on a sequence part, so it reaches neither marquee nor pan. */
 export const GRAB_SEQUENCE_ACTION_ID = 'diagram.sequence.grab';
 
@@ -100,7 +100,7 @@ function previewOf(p: Press, id: string, pose: RectPose, at: Vec2): RectPose {
 export function createSequenceDragAction(opts: SequenceEditOptions = {}): Action {
   const commit = sequenceCommitOf(opts);
   return {
-    id: opts.id ?? SEQUENCE_DRAG_ACTION_ID,
+    id: opts.id ?? DRAG_SEQUENCE_ACTION_ID,
     label: 'Move sequence part',
     group: 'diagram',
     requires: ['scene'],
@@ -147,13 +147,13 @@ const grab: Action = {
  * Text is edited in place by the host's text editor, through
  * `foldSequenceText`.
  */
-export function diagramSequence(opts: SequenceEditOptions & { scene: AnyScene }): SurfaceContribution {
-  const actionId = opts.id ?? SEQUENCE_DRAG_ACTION_ID;
+export function createDiagramSequenceContribution(opts: SequenceEditOptions & { scene: AnyScene }): SurfaceContribution {
+  const actionId = opts.id ?? DRAG_SEQUENCE_ACTION_ID;
   const target = `affordance:${SEQUENCE_AFFORDANCE_KIND}` as const;
   return {
     id: 'weasel-diagram-sequence',
     eligibility: { claimed: [SEQUENCE_LAYER_ID] },
-    layers: [sequenceLayer(opts.scene)],
+    layers: [createSequenceLayer(opts.scene)],
     actions: [createSequenceDragAction({ ...opts, id: actionId }), grab, selectSequencePartAction],
     bindings: [
       { spec: { kind: 'drag', target }, actionId, opts: { id: 'weasel-diagram-sequence.drag' } },

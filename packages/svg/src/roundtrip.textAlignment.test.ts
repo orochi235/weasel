@@ -39,7 +39,7 @@ describe('text with no stated direction', () => {
       levels: new Uint8Array(end - start).fill(1),
     }),
     mirror: () => null,
-    baseLevel: () => 1,
+    paragraphLevel: () => 1,
   };
   const ser = (style: Record<string, unknown>) => serializeSvg(
     [{ id: 't1', kind: 'text', x: 0, y: 0, width: 100, height: 20, text: 'AB', style }] as unknown as SvgNode[],

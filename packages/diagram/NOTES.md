@@ -45,7 +45,7 @@ not published.
 
 - **An exclusive claim bars a whole gesture protocol.** `claimedKinds:
   ['pointer']` covers `pointerDown`, `click` and `drag`; binding only `drag`
-  leaves the press with nowhere to go. `grabPortAction` absorbs the other two.
+  leaves the press with nowhere to go. `createClaimPressAction` absorbs the other two.
 
 - **The deps bag is built once, at `start`.** Every later pump event carries
   `deps: {}`, so an action reading a dep in `onEnd` reads nothing and commits

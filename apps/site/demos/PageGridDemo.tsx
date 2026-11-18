@@ -2,7 +2,7 @@ import { SceneCanvas, useScene, viewPreset, type Fill } from '@weasel-js/core';
 import { movePreset, selectPreset } from '@weasel-js/editing';
 import { pageGridSchema, usePageGrid } from '@weasel-js/editor';
 import { pref } from '@weasel-js/prefs';
-import { usePrefGroup, usePrefsStore, usePrefsValues } from '@weasel-js/prefs/react';
+import { usePrefGroup, usePrefsStore, usePrefsState } from '@weasel-js/prefs/react';
 import { localStorageAdapter } from '@weasel-js/storage';
 import { PrefsForm } from '@weasel-js/ui/components/Prefs';
 import { useMemo } from 'react';
@@ -18,7 +18,7 @@ const RECTS: { id: string; x: number; y: number; width: number; height: number; 
 
 export function PageGridDemo() {
   const store = usePrefsStore(SCHEMA, { storage: localStorageAdapter, prefix: 'weasel-demo-page-grid.' });
-  const { form } = usePrefsValues(store);
+  const { form } = usePrefsState(store);
   const [grid] = usePrefGroup(store, 'grid');
   const { layer, source } = usePageGrid({ ...grid, page: PAGE, background: '#ffffff' });
   const scene = useScene({ items: RECTS });

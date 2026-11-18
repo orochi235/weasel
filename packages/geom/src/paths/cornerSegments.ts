@@ -11,6 +11,7 @@ import type { Point } from './cubicMath';
 import { worldCoords } from './pathOrigin';
 import { segmentLength, segmentTAtLength } from './segmentLength';
 import { lerp } from '../scalar';
+import { createPart } from '@weasel-js/registry';
 
 /** One segment as a cubic; a line has its controls on its ends. */
 export interface Seg {
@@ -102,12 +103,10 @@ function closeContour(c: Contour, unfold: () => void): void {
 /** Arc length of `seg`, exact. */
 export function segLength(seg: Seg): number {
   if (seg.line) return Math.hypot(seg.p3.x - seg.p0.x, seg.p3.y - seg.p0.y);
-  let len = lengths.get(seg);
-  if (len === undefined) lengths.set(seg, (len = segmentLength(flatSeg(seg), 2)));
-  return len;
+  return lengths(seg);
 }
 
-const lengths = new WeakMap<Seg, number>();
+const lengths = createPart((seg: Seg): number => segmentLength(flatSeg(seg), 2));
 
 const flatSeg = ({ p0, c1, c2, p3 }: Seg): number[] => [p0.x, p0.y, c1.x, c1.y, c2.x, c2.y, p3.x, p3.y];
 

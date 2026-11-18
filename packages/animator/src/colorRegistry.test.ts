@@ -1,22 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { ColorOverrideRegistry } from './colorRegistry';
+import { createColorOverrideRegistry } from './colorRegistry';
 
 describe('ColorOverrideRegistry', () => {
   it('set + get round-trips an array override', () => {
-    const r = new ColorOverrideRegistry();
+    const r = createColorOverrideRegistry();
     r.set('a', 'fill', [1, 2, 3, 4]);
     expect(r.get('a', 'fill')).toEqual([1, 2, 3, 4]);
   });
 
   it('set + get round-trips a function override', () => {
-    const r = new ColorOverrideRegistry();
+    const r = createColorOverrideRegistry();
     const fn = (base: readonly number[]) => base.slice();
     r.set('a', 'stroke', fn);
     expect(r.get('a', 'stroke')).toBe(fn);
   });
 
   it('notifies nobody for a write of the override a channel holds', () => {
-    const r = new ColorOverrideRegistry();
+    const r = createColorOverrideRegistry();
     const fn = (base: readonly number[]) => base.slice();
     r.set('a', 'fill', [1, Number.NaN, 3, 4]);
     r.set('a', 'stroke', fn);
@@ -32,7 +32,7 @@ describe('ColorOverrideRegistry', () => {
   });
 
   it('clear removes one channel without affecting the other', () => {
-    const r = new ColorOverrideRegistry();
+    const r = createColorOverrideRegistry();
     r.set('a', 'fill', [1, 2, 3, 4]);
     r.set('a', 'stroke', [5, 6, 7, 8]);
     r.clear('a', 'fill');
@@ -41,7 +41,7 @@ describe('ColorOverrideRegistry', () => {
   });
 
   it('clearAll removes every override', () => {
-    const r = new ColorOverrideRegistry();
+    const r = createColorOverrideRegistry();
     r.set('a', 'fill', [1, 2, 3, 4]);
     r.set('b', 'stroke', [5, 6, 7, 8]);
     r.clearAll();
@@ -50,7 +50,7 @@ describe('ColorOverrideRegistry', () => {
   });
 
   it('version increments on set and clear', () => {
-    const r = new ColorOverrideRegistry();
+    const r = createColorOverrideRegistry();
     const v0 = r.version();
     r.set('a', 'fill', [1, 2, 3, 4]);
     expect(r.version()).toBeGreaterThan(v0);
@@ -60,13 +60,13 @@ describe('ColorOverrideRegistry', () => {
   });
 
   it('counts a target asked for and never moved as nothing', () => {
-    const r = new ColorOverrideRegistry();
+    const r = createColorOverrideRegistry();
     r.target('a', 'fill', 4);
     expect(r.has('a')).toBe(false);
   });
 
   it('tells subscribers of a set and a clear', () => {
-    const r = new ColorOverrideRegistry();
+    const r = createColorOverrideRegistry();
     let told = 0;
     const off = r.subscribe(() => { told += 1; });
     r.set('a', 'fill', [1, 2, 3, 4]);

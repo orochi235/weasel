@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { actionCatalog, dissolve, filed, keyTails } from './actionCatalog';
+import { actionCatalog, dissolve, fileActions, keyTails } from './actionCatalog';
 import { actionLeaf, type SchemaAction } from './actionLeaves';
 
 const UNDO: SchemaAction = { key: 'edit.undo', label: 'Undo' };
@@ -35,27 +35,27 @@ describe('actionCatalog', () => {
   });
 });
 
-describe('filed', () => {
+describe('fileActions', () => {
   it('is the catalog itself where a pref fires every action', () => {
     const catalog = actionCatalog(ACTIONS);
-    expect(filed(catalog, ACTIONS)).toBe(catalog);
+    expect(fileActions(catalog, ACTIONS)).toBe(catalog);
   });
 
   it('leaves an action where the reader put it, under whatever name', () => {
     const catalog = group('Actions', { history: group('History', { back: { ...actionLeaf(UNDO), name: 'Step back' } }) });
-    expect(filed(catalog, [UNDO])).toBe(catalog);
+    expect(fileActions(catalog, [UNDO])).toBe(catalog);
   });
 
   it('adds an action no pref fires to the group its key names, after what the group holds', () => {
     const catalog = group('Actions', { edit: group('Editing', { editUndo: actionLeaf(UNDO) }) });
-    const next = filed(catalog, [UNDO, REDO, SAVE]);
+    const next = fileActions(catalog, [UNDO, REDO, SAVE]);
     expect(Object.keys((next.children.edit as PrefGroup).children)).toEqual(['editUndo', 'editRedo']);
     expect(Object.keys(next.children)).toEqual(['edit', 'save']);
   });
 
   it('gives a new group and a new pref keys nothing beside them has, and finds the group again', () => {
     const catalog = group('Actions', { edit: actionLeaf({ key: 'old', label: 'Edit' }), save: group('Saving', {}) });
-    const next = filed(catalog, [UNDO, SAVE, REDO]);
+    const next = fileActions(catalog, [UNDO, SAVE, REDO]);
     expect(Object.keys(next.children)).toEqual(['edit', 'save', 'edit2', 'save2']);
     expect(Object.keys((next.children.edit2 as PrefGroup).children)).toEqual(['editUndo', 'editRedo']);
   });

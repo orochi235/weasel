@@ -1,6 +1,6 @@
 import { SceneCanvas, type SceneCanvasApi, type SelectionApi, type PlacedPage, type ToolsApi, PATH_GEOMETRY_PROJECTION, type RenderLayer, type View, createWorkspaceTintLayer } from '@weasel-js/core';
 import {
-  type Measurements, measurementsContribution, measureEndSource, MeasureReadout, useMeasureTool,
+  type Measurements, createMeasurementsContribution, measureEndSource, MeasureReadout, useMeasureTool,
 } from '@weasel-js/measure';
 import { type UseSceneTextEditReturn } from '@weasel-js/text-tools';
 import { usePathToolsTools } from '@weasel-js/path-tools';
@@ -37,9 +37,9 @@ import { DRAW_NODE_ROUTING } from './nodeKinds';
 import { usePathOverlays } from './usePathOverlays';
 import { useSymmetry } from './useSymmetry';
 import { useSpacingHints } from './useSpacingHints';
-import { BUILTIN_TOOLS, useEyedropperTool } from '@weasel-js/editing';
+import { KIT_TOOLS, useEyedropperTool } from '@weasel-js/editing';
 
-const DRAW_TOOLS = [BUILTIN_TOOLS];
+const DRAW_TOOLS = [KIT_TOOLS];
 
 // OS-dropped and pasted SVG files unpack into real scene nodes rather than one embedded-image
 // node. `clipboard.reviver` revives typed-array node data carried by weasel-JSON clipboard
@@ -130,7 +130,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   const pickColor = usePickColor();
   const eyedropperTool = useEyedropperTool({ onPick: (hex) => { if (hex) pickColor(hex); } });
   const measureEntry = useMemo(
-    () => measurementsContribution(scene as never, measurements),
+    () => createMeasurementsContribution(scene as never, measurements),
     [scene, measurements],
   );
   const rulersEntry = rulers.rulers?.contribution;
@@ -210,7 +210,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
             // Pick on the drawn shape, not the bounding box: clicking the blank right half of a
             // text box, or the notch of a star, should reach whatever is behind it.
             geometry={{ picking: 'shape' }}
-            viewport={{ pinchZoom: true, recenter }}
+            viewport={{ touchZoom: true, recenter }}
             cursorCoordsHud
             pickHud
             modalityHud

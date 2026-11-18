@@ -66,7 +66,7 @@ export interface SceneStandardActionsInputs {
   onViewChange: (v: View) => void;
   /** Wires the `poseDescriptor` dep every built-in pose-touching action reads. */
   poseDescriptor: PoseDescriptor<unknown>;
-  /** Forwarded so `cancelGestureAction` and other actions that need to
+  /** Forwarded so `cancelAllAction` and other actions that need to
    *  abort in-flight handles can read the dispatcher's control surface. */
   dispatcher: Dispatcher;
   /** World-space picker forwarded so the `nodeAtPoint` dep source can
@@ -167,7 +167,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   useViewportActions({
     pan: viewOn ? (viewport?.pan ?? true) : false,
     zoom: viewOn ? viewportZoom : false,
-    pinchZoom: viewOn ? (viewport?.pinchZoom ?? true) : false,
+    touchZoom: viewOn ? (viewport?.touchZoom ?? true) : false,
     rev: standardActionsKey,
   });
 

@@ -1,4 +1,4 @@
-import { getOwn } from '@weasel-js/registry';
+import { createPart, getOwn } from '@weasel-js/registry';
 import { useCallback, useMemo, type RefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { Dispatcher, RuleCtx } from '@weasel-js/routing';
@@ -15,7 +15,7 @@ import type { CanvasExtensionApi } from '../canvasExtension';
 import { useOptionalViewRegistry } from '../viewRegistry';
 import { presetChromeRules, type EnabledPresets } from './features';
 import { PRESET_OWNED_CHROME } from './presets/chrome';
-import type { NodeAtPoint } from './useNodeAtPoint';
+import type { BestHitPicker } from './useBestHit';
 import { worldPointAt } from './worldPointAt';
 import { useChromeRulesDep } from '../deps/chromeRules';
 
@@ -29,7 +29,7 @@ export function useSceneHover(args: {
   canvasApiRef: RefObject<Pick<CanvasExtensionApi, 'clientToWorld'> | null>;
   /** The surface's own camera, for a point no declared view claims. */
   viewRef: { readonly current: View };
-  nodeAtPointRef: { readonly current: NodeAtPoint | undefined };
+  nodeAtPointRef: { readonly current: BestHitPicker | undefined };
   enabled: boolean;
   onChange?: (id: NodeId | null) => void;
 }): HoverTracking {
@@ -81,15 +81,12 @@ export function useChromeRules(args: {
   }, [chromeVisibility, selectable, enabled]);
 }
 
-const hiddenSets = new WeakMap<readonly string[], ReadonlySet<string>>();
+const hiddenSets = createPart((hides: readonly string[]): ReadonlySet<string> => new Set(hides));
 
 /** The chrome the active tool hides (`ToolDef.hides`), or undefined. */
 export function hiddenChromeOf(tools: { active: string | null; registry: Readonly<Record<string, { hides?: readonly string[] }>> }): ReadonlySet<string> | undefined {
   const hides = tools.active ? getOwn(tools.registry, tools.active)?.hides : undefined;
-  if (!hides) return undefined;
-  let set = hiddenSets.get(hides);
-  if (!set) hiddenSets.set(hides, (set = new Set(hides)));
-  return set;
+  return hides ? hiddenSets(hides) : undefined;
 }
 
 /** The chrome-caps answers for the surface's own view. */

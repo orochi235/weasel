@@ -1,5 +1,5 @@
 import { useElapsedRaf } from '@weasel-js/react';
-import { defineInstrument, f, Lab, type ViewTransform } from '@weasel-js/labkit';
+import { defineInstrument, f, Lab, type ViewTransform2D } from '@weasel-js/labkit';
 import { type CanvasSource, createCanvasSource, TrialLoupe } from '@weasel-js/labkit/loupe';
 import { useEffect, useRef, useState } from 'react';
 import '@weasel-js/labkit/styles.css';
@@ -60,7 +60,7 @@ const drawn = defineInstrument({
 });
 
 interface CardProps {
-  view: ViewTransform;
+  view: ViewTransform2D;
   lines: number;
 }
 
@@ -84,7 +84,7 @@ function Card({ view, lines }: CardProps) {
   );
 }
 
-const IDENTITY: ViewTransform = { zoom: 1, pan: { x: 0, y: 0 } };
+const IDENTITY: ViewTransform2D = { zoom: 1, pan: { x: 0, y: 0 } };
 
 const written = defineInstrument({
   name: 'Written detail',

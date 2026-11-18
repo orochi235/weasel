@@ -83,7 +83,7 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
   it("picks a leaf whose AABB is inside an ancestor group's clip, as that group", () => {
     // Paired with the case above. The clip is deliberately smaller than the
     // container's AABB, so passing documents clip-pass rather than
-    // pure-AABB-pass. `pickTopMostHit` drops the ancestor, leaving the leaf,
+    // pure-AABB-pass. `topmostOf` drops the ancestor, leaving the leaf,
     // and the press then selects the leaf's group.
     const h = harness([
       {

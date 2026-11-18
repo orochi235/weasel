@@ -50,7 +50,7 @@ export {
   findShapeBounds,
   DEFAULT_INK,
   shapeCoversPoint,
-  getNodeShapes,
+  nodeShapeEntries,
   createNodeShapes,
   defaultNodeShapes,
   nodeShapesOf,
@@ -69,7 +69,7 @@ export type {
 // A node kind's outline as paths, and the generation its geometry moves on.
 export { NodeOutlineError, findNodeOutline, sceneNodeOutline, geometryGenerationOf } from '../canvas/nodeOutline';
 export type { NodeOutline, NodeOutlineCtx, PaintedPath } from '../canvas/nodeOutline';
-export { drawnBoundsOf, drawnAABBOf, inkExtentsOf, findShapeDrawnBounds } from '../canvas/drawnBounds';
+export { drawnBoundsOf, drawnAabbOf, inkExtentsOf, findShapeDrawnBounds } from '../canvas/drawnBounds';
 export { inheritedPaintIn, paintAbove, withInheritedPaintBounds, withInheritedPaints } from '../canvas/inheritedPaints';
 export { inheritedPaintOf, inheritsPaint, withInheritedPaint } from '../core/scene/inheritedPaint';
 export type { ResolvedPaintFields } from '../core/scene/inheritedPaint';

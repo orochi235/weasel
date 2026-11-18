@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { pathToMultiPolygon, multiPolygonToPath, type MultiPolygon, type Ring } from './adapter';
 import { PATH_M, PATH_L, PATH_Z } from '../commands';
 import type { RectPath, PolygonPath } from '../path';
-import { pointInPath } from '../pathHitTest';
+import { pathContainsPoint } from '../pathHitTest';
 
 describe('pathToMultiPolygon', () => {
   it('emits a single 4-corner ring for a RectPath', () => {
@@ -126,8 +126,8 @@ describe('round-trip', () => {
   it('rect → MultiPolygon → PolygonPath preserves inside-ness', () => {
     const rect: RectPath = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
     const round = multiPolygonToPath(pathToMultiPolygon(rect));
-    expect(pointInPath(round, 5, 5)).toBe(true);
-    expect(pointInPath(round, 15, 5)).toBe(false);
+    expect(pathContainsPoint(round, 5, 5)).toBe(true);
+    expect(pathContainsPoint(round, 15, 5)).toBe(false);
   });
 });
 

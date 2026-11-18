@@ -12,8 +12,8 @@ import type { Vec3 } from '@weasel-js/geom/3d';
 import {
   type Camera3d,
   type Camera3dDep,
-  cameraRigActions,
   clampCamera,
+  createCameraRigActions,
   type OrbitLimits,
 } from '@weasel-js/kernel3d';
 import { useKitSettings, watchResize } from '@weasel-js/react';
@@ -240,7 +240,7 @@ function OrbitDispatch({
   const actions = useMemo(
     () => [
       ...(labMenu !== null ? [contextMenuAction] : []),
-      ...cameraRigActions({ drag, wheel, trackpadPinch, touchPinch, home: homes }),
+      ...createCameraRigActions({ drag, wheel, trackpadPinch, touchPinch, doubleClick: homes }),
     ],
     [drag, wheel, trackpadPinch, touchPinch, homes, labMenu],
   );

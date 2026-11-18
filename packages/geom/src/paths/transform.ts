@@ -3,12 +3,12 @@
  * called every pointermove during a drag — so the polygon variant mutates
  * the float buffer directly to keep allocation pressure off the GC.
  *
- * `scalePathToBounds` is for the resize interaction: given the path's
+ * `fitPathToRect` is for the resize interaction: given the path's
  * current AABB and the desired new AABB, scales every coordinate
  * proportionally.
  */
 
-import { boxToBox } from '../affine';
+import { rectToRect } from '../affine';
 import { forEachSegment, pathCommandCoordCount } from '../commands';
 import { boundsOfPath } from './bounds';
 import { transformPath } from './transformPath';
@@ -41,14 +41,14 @@ function translatePolygonCopy(path: PolygonPath, dx: number, dy: number): Polygo
 }
 
 /**
- * Scale a path's coords so its current AABB maps to `target`. Resize
+ * Scale and translate a path's coords so its current AABB maps onto `target`. Resize
  * interactions use this to make a polygon follow a corner-handle drag.
  *
  * A degenerate source axis (zero width or height) has no ratio to scale by,
- * so `boxToBox` translates that axis instead — a zero scale is not
+ * so `rectToRect` translates that axis instead — a zero scale is not
  * invertible and would discard what is left on it.
  */
-export function scalePathToBounds(path: Path, target: RectPath): Path {
+export function fitPathToRect(path: Path, target: RectPath): Path {
   if (path.kind === 'rect') {
     return { kind: 'rect', x: target.x, y: target.y, width: target.width, height: target.height };
   }
@@ -57,7 +57,7 @@ export function scalePathToBounds(path: Path, target: RectPath): Path {
 }
 
 function scalePolygon(path: PolygonPath, src: RectPath, dst: RectPath): PolygonPath {
-  const m = boxToBox(src.x, src.y, src.width, src.height, dst.x, dst.y, dst.width, dst.height);
+  const m = rectToRect(src.x, src.y, src.width, src.height, dst.x, dst.y, dst.width, dst.height);
   // src/dst are axis-aligned, so the polygon stays a polygon after this pure scale+translate.
   return transformPath(path, m) as PolygonPath;
 }

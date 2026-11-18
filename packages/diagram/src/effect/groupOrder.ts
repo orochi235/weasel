@@ -1,8 +1,8 @@
 /** Where each group sits along the main chain, and the sequence a group's title drags it along. */
 import type { Vec2 } from '@weasel-js/core';
 import { maxOf, minOf, rectContainsPoint } from '@weasel-js/geom';
-import { groupLabelIdOf } from '../dataGroups';
-import { sequenceSlots, type ReorderItem, type ReorderSlots } from '../reorder';
+import { clusterLabelIdOf } from '../dataClusters';
+import { slotsAlong, type ReorderItem, type ReorderSlots } from '../reorder';
 import type { ReorderSource } from './editorReorder';
 import { groupContents } from './groupEdit';
 import { mainChain } from './mainChain';
@@ -102,8 +102,8 @@ export function groupSlotsAt(source: ReorderSource, at: Vec2): ReorderSlots | nu
   const items: ReorderItem[] = placed.map(({ id, bounds }) => {
     if (!isGroup.has(id)) return { id, bounds, grip: null };
     const inside = groupContents(doc, id);
-    const carries = [...inside.groups, ...inside.stages, ...[...inside.groups].map(groupLabelIdOf)];
+    const carries = [...inside.groups, ...inside.stages, ...[...inside.groups].map(clusterLabelIdOf)];
     return { id, bounds, grip: groupGripOf(doc, id, boxOf) ?? null, carries };
   });
-  return items.length < 2 ? null : sequenceSlots(order.axis, items);
+  return items.length < 2 ? null : slotsAlong(order.axis, items);
 }

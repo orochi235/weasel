@@ -5,8 +5,8 @@ import { page } from 'vitest/browser';
 import { useState } from 'react';
 import type { PrefAlias, PrefGroup } from '@weasel-js/prefs';
 import { AssetEditor } from '@weasel-js/prefs-editor';
-import { type Workspace, workspaceCodec } from '@weasel-js/prefs/edit';
-import { DEMO_WORKSPACE } from './AssetEditor.demo';
+import { type AssetSet, assetSetCodec } from '@weasel-js/prefs/edit';
+import { DEMO_ASSET_SET } from './AssetEditor.demo';
 import { drag, grip, pointer, pointIn, type Point } from './pointerDrag.fixture';
 import { keyedRow } from './treeRows.fixture';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
@@ -17,12 +17,12 @@ import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 beforeAll(() => page.viewport(1500, 800));
 afterEach(cleanup);
 
-const codec = workspaceCodec([]);
-let latest: Workspace = DEMO_WORKSPACE;
-function Live({ start = DEMO_WORKSPACE }: { start?: Workspace }) {
-  const [workspace, setWorkspace] = useState(start);
-  latest = workspace;
-  return <div style={{ width: 1460, height: 700 }}><AssetEditor list workspace={workspace} codec={codec} onChange={setWorkspace} /></div>;
+const codec = assetSetCodec([]);
+let latest: AssetSet = DEMO_ASSET_SET;
+function Live({ start = DEMO_ASSET_SET }: { start?: AssetSet }) {
+  const [assetSet, setAssetSet] = useState(start);
+  latest = assetSet;
+  return <div style={{ width: 1460, height: 700 }}><AssetEditor list assetSet={assetSet} codec={codec} onChange={setAssetSet} /></div>;
 }
 
 const box = (el: Element): DOMRect => el.getBoundingClientRect();
@@ -74,7 +74,7 @@ test('every row of the list is one line tall, a lock set after its label and not
 });
 
 test('a label too long for the list is cut short on its one line, and its lock stays in the row', () => {
-  const long: Workspace = { assets: DEMO_WORKSPACE.assets.map((a) => (a.id === 'export' ? { ...a, label: 'Export, as the file menu and the toolbar both lay it out' } : a)) };
+  const long: AssetSet = { assets: DEMO_ASSET_SET.assets.map((a) => (a.id === 'export' ? { ...a, label: 'Export, as the file menu and the toolbar both lay it out' } : a)) };
   renderWithIcons(<Live start={long} />);
   const row = option('Export');
   const lock = box(within(row).getByRole('img', { name: 'Dynamic' }));
@@ -142,7 +142,7 @@ test('a pointer dragged in a panel\'s tree moves in the panel, and still points 
   const section = rootOf('canvas').children.lines as PrefGroup;
   expect(Object.keys(section.children)).toEqual(['snap', 'grid']);
   expect((section.children.snap as PrefAlias).of).toBe('view.snap');
-  expect(rootOf('settings')).toBe(DEMO_WORKSPACE.assets[0]!.root);
+  expect(rootOf('settings')).toBe(DEMO_ASSET_SET.assets[0]!.root);
 });
 
 /** Carry `from` over `to` and hold it there; what this returns lets go. */
@@ -173,7 +173,7 @@ test('a read-only panel marks no place to drop, in its tree or in its preview, a
   expect(structure().querySelector('[data-drop]')).toBeNull();
   release();
   expect(dragTool('Separator')).toBeDisabled();
-  expect(latest).toBe(DEMO_WORKSPACE);
+  expect(latest).toBe(DEMO_ASSET_SET);
   // Where its pointer points is shown, and takes no press.
   fireEvent.click(within(structure()).getByText('format'));
   const attributes = screen.getByRole('region', { name: 'Attributes' });

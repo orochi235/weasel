@@ -15,7 +15,7 @@ export { createTickTimer, type TickTimer } from './tickTimer';
 export { createSoundCache, type SoundCache, type SoundHandle } from './soundCache';
 export {
   createVoicePool,
-  type VoicePool, type VoicePoolOptions, type VoiceRecord, type Acquisition,
+  type VoicePool, type VoicePoolOptions, type VoiceRecord, type VoiceAcquisition,
   type StealPolicy,
 } from './voicePool';
 export { spatialize, type SpatialOptions, type SpatialPoint } from './spatialize';
@@ -29,15 +29,15 @@ export {
   type PatternPlayer, type PatternPlayerOptions, type PatternEvent, type PatternNote,
   type PatternHit, type PatternNoise, type PatternDetune,
 } from './patternPlayer';
-export { patternVoicePeaks, type PatternLoadOptions } from './patternLoad';
+export { patternVoicePeaks, type PatternVoicePeaksOptions } from './patternLoad';
 export {
-  readScoreCue, scoreCues, scoreModes, scoreParams,
+  readScoreCue, SCORE_CUES, SCORE_MODES, resolveScoreMood,
   type ScoreMood, type ScoreCue, type ScoreCueName, type ScoreCueReading, type ScoreMode,
-  type ScoreParams,
+  type ScoreSettings,
 } from './scoreMood';
 export { SCORE_BAR_STEPS, scoreBar, scoreChord, type ScoreBarOptions } from './scoreBar';
 export { createScore, type Score, type ScoreOptions, type ScoreState } from './score';
-export { noiseSamples, partialPresets } from './synthVoice';
+export { noiseSamples, PARTIAL_PRESETS } from './synthVoice';
 export {
   createNoteKernel, createNoiseKernel, renderNote, renderNoise,
   type KernelNote, type KernelNoise, type VoiceKernel,
@@ -56,8 +56,8 @@ export {
   type NoiseNodeOptions, type OscillatorNodeOptions, type OscillatorWave,
 } from './graph/sources';
 export {
-  compressorNode, createGainNode, createMixNode, createPanNode, delayNode, filterNode, insertNode,
-  reverbNode, type ReverbNodeOptions,
+  createCompressorNode, createGainNode, createMixNode, createPanNode, createDelayNode, createFilterNode, createInsertNode,
+  createReverbNode, type ReverbNodeOptions,
 } from './graph/processors';
 export type {
   AudioGraph, AudioGraphOptions, GraphNodeDef, GraphPatch, GraphTarget,

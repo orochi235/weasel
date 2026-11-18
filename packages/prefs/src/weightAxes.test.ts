@@ -2,7 +2,7 @@ import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup } from '@weasel-js/prefs-schema';
 import { createPrefsStore } from './store';
-import { prefWeightAxes } from './weightAxes';
+import { createWeightAxes } from './weightAxes';
 
 const MODE = 'look.mode';
 
@@ -22,8 +22,8 @@ const SCHEMA = {
   },
 } satisfies PrefGroup;
 
-describe('prefWeightAxes', () => {
-  const axes = prefWeightAxes({ [MODE]: ['dark', 'light'], 'look.density': ['compact', 'roomy'] });
+describe('createWeightAxes', () => {
+  const axes = createWeightAxes({ [MODE]: ['dark', 'light'], 'look.density': ['compact', 'roomy'] });
 
   it('gives each option of each selector one axis, named by the selector and the option', () => {
     expect(axes.count).toBe(4);
@@ -38,16 +38,16 @@ describe('prefWeightAxes', () => {
   it('reads a store at a point between two options, as an animation over the axes passes it', () => {
     const cache = createRecordCache({ storage: createMemoryAdapter(), prefix: 'p.', initial: [['gap', { $by: MODE, $in: { dark: 4, light: 8 } }]] });
     const store = createPrefsStore(SCHEMA, cache);
-    const mode = prefWeightAxes({ [MODE]: ['dark', 'light'] });
+    const mode = createWeightAxes({ [MODE]: ['dark', 'light'] });
     expect(store.get('gap', { weights: mode.from([0.25, 0.75]) })).toBe(7);
   });
 
   it('keeps a selector or option named like an Object.prototype member as data', () => {
-    const axes = prefWeightAxes(JSON.parse('{"__proto__": ["toString"]}') as Record<string, string[]>);
+    const axes = createWeightAxes(JSON.parse('{"__proto__": ["toString"]}') as Record<string, string[]>);
     const weights = axes.from([0.5]);
     expect(Object.getPrototypeOf(weights)).toBe(Object.prototype);
     expect(Object.hasOwn(weights, '__proto__')).toBe(true);
     expect(axes.to(weights)).toEqual([0.5]);
-    expect(prefWeightAxes({ a: ['constructor'] }).to({ a: {} })).toEqual([0]);
+    expect(createWeightAxes({ a: ['constructor'] }).to({ a: {} })).toEqual([0]);
   });
 });

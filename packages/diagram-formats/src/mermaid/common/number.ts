@@ -12,7 +12,7 @@ export function mermaidNumber(text: string): number | undefined {
 }
 
 /** `text` as a number. Throws, naming `line`, on text {@link mermaidNumber} does not read. */
-export function numberAt(text: string, line: number): number {
+export function requireNumber(text: string, line: number): number {
   const n = mermaidNumber(text);
   if (n === undefined) throw lineError('Mermaid', line, `"${text}" is not a number`);
   return n;

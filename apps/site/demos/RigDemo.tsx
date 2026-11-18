@@ -13,7 +13,7 @@ import type { TextStyle } from '@weasel-js/text';
 import { createTextPreset } from '@weasel-js/text-tools';
 import type {
   HoldHandle,
-  Pose,
+  SkeletonPose,
   SampledTrack,
   Skeleton,
 } from '@weasel-js/animator';
@@ -52,14 +52,14 @@ const skeletonAt = (rootX: number): Skeleton => ({
   })),
 });
 
-const POSE_A: Pose = {
+const POSE_A: SkeletonPose = {
   torso: { rotation: -0.15 },
   upperArm: { rotation: -0.9 },
   forearm: { rotation: -0.7 },
   thigh: { rotation: 0.45 },
   shin: { rotation: -0.35 },
 };
-const POSE_B: Pose = {
+const POSE_B: SkeletonPose = {
   torso: { rotation: 0.15 },
   upperArm: { rotation: 0.85 },
   forearm: { rotation: 0.9 },
@@ -92,8 +92,8 @@ function figure(prefix: string, rootX: number, color: string): Figure {
   const bindings: Record<string, NodeId[]> = {};
   for (const bone of BONES) {
     const m = rest.get(bone.name)!;
-    const [ox, oy] = mat3.apply(m, 0, 0);
-    const [tx, ty] = mat3.apply(m, bone.length, 0);
+    const [ox, oy] = mat3.transformPoint(m, 0, 0);
+    const [tx, ty] = mat3.transformPoint(m, bone.length, 0);
     const ids = ['bone', 'joint', 'label'].map((k) => asNodeId(`${prefix}:${k}:${bone.name}`));
     nodes.push(
       {
@@ -145,7 +145,7 @@ const INITIAL: NodeSpec[] = [
   ...BY_SLIDER.nodes,
   ...BY_TRACK.nodes,
   caption('caption:slider', 60, 'holds on rig.target, by weight and joint', '#7fb069'),
-  caption('caption:track', 330, 'SampledTrack<Pose> on rig.target', '#d4a574'),
+  caption('caption:track', 330, 'SampledTrack<SkeletonPose> on rig.target', '#d4a574'),
 ];
 
 // Bones and joint markers ride their joints rigidly; labels follow the joint
@@ -153,7 +153,7 @@ const INITIAL: NodeSpec[] = [
 const rigid = rigidRigApply(RECT_POSE_DESCRIPTOR);
 const APPLY: RigApply<RectPose> = (world, ctx) => {
   if (!ctx.node.includes(':label:')) return rigid(world, ctx);
-  const [x, y] = mat3.apply(world, 0, 0);
+  const [x, y] = mat3.transformPoint(world, 0, 0);
   return { ...ctx.rest, x: x + 8, y: y - 14 };
 };
 
@@ -188,7 +188,7 @@ export function RigDemo() {
     ]);
     let reaching: HoldHandle | undefined;
     // The solver starts from the two poses as one: the same mix, sampled instead of held.
-    const body = sampleTrack<Pose>(
+    const body = sampleTrack<SkeletonPose>(
       { kind: 'sampled', keys: [{ t: 0, value: POSE_A }, { t: 1, value: POSE_B }], target }, blend,
     )!;
     let last = '';
@@ -218,7 +218,7 @@ export function RigDemo() {
       return;
     }
     const a = POSE_A.torso!.rotation!;
-    const track: SampledTrack<Pose> = {
+    const track: SampledTrack<SkeletonPose> = {
       kind: 'sampled', label: 'pose',
       keys: [
         { t: 0, value: POSE_A },

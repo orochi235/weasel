@@ -38,11 +38,11 @@ from the schema that draws them rather than declared beside it:
 type View = PrefValuesOf<typeof SCHEMA.children.view>; // { gridVisible: boolean; gridGap: number; mode: 'dark' | 'light' }
 ```
 
-`usePref(store, path)`, `usePrefGroup(store, path)` and `usePrefsValues(store)`
+`usePref(store, path)`, `usePrefGroup(store, path)` and `usePrefsState(store)`
 bind it to React. They live in `@weasel-js/prefs/react`, so the main entry
 never loads React. `usePrefGroup` reads a group as one object, ready to spread
 into options typed by `PrefValuesOf`, and its setter writes the leaves a patch
-names. `usePrefsValues` returns the pieces `@weasel-js/ui`'s `PrefsForm` takes.
+names. `usePrefsState` returns the pieces `@weasel-js/ui`'s `PrefsForm` takes.
 
 `usePrefsStore(schema, { storage, prefix })` gives a component a store of its
 own: open from its first render, closed with its writes sent when it unmounts.
@@ -90,7 +90,7 @@ leaf's `infinity` word.
 A bound that depends on where the value is held takes `minAt` or `maxAt`: a
 function handed a reader of the values beside it, by the paths a condition
 there would name, returning the bound or `undefined`. It is taken with `min`
-or `max`, the tighter winning, and `prefNumberAt(leaf, read)` folds it in for
+or `max`, the tighter winning, and `prefBoundedNumber(leaf, read)` folds it in for
 one holder. A box's width that may not go under its node's own minimum reads
 `data.minSize` this way: `SelectionPanel` resolves it against each node and
 holds each write to that node's bound, and `PrefsForm` and labkit's
@@ -157,7 +157,7 @@ what a transition between two options shows on the way:
 store.get('limit', { weights: { 'look.mode': { dark: 0.25, light: 0.75 } } });
 ```
 
-`prefWeightAxes` lays weights out as numbers, the `axes` an `@weasel-js/animator` target takes, so an
+`createWeightAxes` lays weights out as numbers, the `axes` an `@weasel-js/animator` target takes, so an
 animation carries the read from one option to the other. `applyTheme`'s `weights` have the same shape:
 
 ```ts
@@ -165,7 +165,7 @@ let weights: PrefWeights = { 'look.mode': { dark: 1, light: 0 } };
 const target = createTarget({
   get: () => weights,
   set: (next) => { weights = next; },
-  axes: prefWeightAxes({ 'look.mode': ['dark', 'light'] }),
+  axes: createWeightAxes({ 'look.mode': ['dark', 'light'] }),
   show: (now) => draw(store.get('limit', { weights: now })),
 });
 animator.tween({ target, to: { 'look.mode': { dark: 0, light: 1 } }, ms: 300 });
@@ -177,10 +177,10 @@ says otherwise for a kind. `store.values({ at: { 'look.mode': 'light' } })` is
 the whole tree as it would read with the selectors set as given.
 
 `store.scopes()` is what every scoped pref holds, by path: one map until
-something changes. `usePrefsValues` returns it shaped for `PrefsForm`:
+something changes. `usePrefsState` returns it shaped for `PrefsForm`:
 
 ```tsx
-const { values, set, scopes, setAt } = usePrefsValues(store);
+const { values, set, scopes, setAt } = usePrefsState(store);
 <PrefsForm schema={schema} values={values} onChange={set}
   scopes={scopes} onChangeAt={setAt} othersLabel="Other modes" />
 ```
@@ -225,8 +225,8 @@ a CSS unit, a boolean as `1` or `0`, an enum's option as an identifier, and a
 string quoted; a leaf of any other kind is left out unless the `value` option
 writes it. `root`, `property`, and `attribute` rename what it writes.
 
-`prefsDefaultsSource(schema)` stands in for a store at its defaults, so
-`prefsCss(prefsDefaultsSource(schema))` is a schema's stylesheet with no store.
+`createDefaultsSource(schema)` stands in for a store at its defaults, so
+`prefsCss(createDefaultsSource(schema))` is a schema's stylesheet with no store.
 The Vite plugin in `@weasel-js/prefs/vite` serves that sheet for every schema
 you name, by module and export, and rewrites it when a schema changes:
 
@@ -250,7 +250,7 @@ changes; `kitSettingsCssOptions(at)` is the naming it uses.
 
 `@weasel-js/prefs/edit` is the model behind a schema editor, with no React and no DOM: edits to a schema's tree
 (`addNode`, `moveNodes`, `renameKey`, `copyNodes`, `aliasNodes`), a leaf's kind and attributes (`changeKind`,
-`setAttribute`), printing a schema as source and diffing two (`printSchema`, `diffSchemas`), a `Workspace` of
-schema, layout, action, and bundle assets and its `workspaceCodec`, and a condition's rows and its flow as a diagram
+`setAttribute`), printing a schema as source and diffing two (`printSchema`, `diffSchemas`), an `AssetSet` of
+schema, layout, action, and bundle assets and its `assetSetCodec`, and a condition's rows and its flow as a diagram
 (`prefConditionFlow`). `@weasel-js/prefs-editor` draws an editor over it.
 

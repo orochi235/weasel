@@ -5,10 +5,10 @@
  * rides on the node so the serializer emits a `rotate` transform.
  */
 import { textFrameFields } from './svgNote';
-import { type Fill, type Path, type PlacedPage, type Scene, type Stroke, boundsOfPath, composesFrames, definesFrame, derivedDepOf, documentOf, inheritedPaintIn, withInheritedPaint, fillInPoseFrame, isAnnotationNode, pageOfNode, pathEffectOf, pathEffectParts, resolveFill, resolvePartPaint, resolveStroke, pathInPoseFrame, shapeGeneratorOf, type ShapeGenerator, worldPoses } from '@weasel-js/core';
+import { type Fill, type Path, type PlacedPage, type Scene, type Stroke, boundsOfPath, composesFrames, definesFrame, derivedDepOf, documentOf, inheritedPaintIn, withInheritedPaint, paintToLocalUnits, isAnnotationNode, pageIdOf, pathEffectOf, pathEffectParts, resolveFill, resolvePartPaint, resolveStroke, pathInPoseBox, shapeGeneratorOf, type ShapeGenerator, worldPoses } from '@weasel-js/core';
 import { layoutTextPose } from '@weasel-js/text';
 import {
-  computeBounds,
+  svgBoundsOf,
   serializeSvg,
   warmSvg,
   type SerializeOptions,
@@ -69,7 +69,7 @@ function leafToObj(id: string, data: ShownDrawData, pose: WeaselDrawPose): Obj |
   if (data.path == null) return null;
   const generator = shapeGeneratorOf(data);
   return {
-    ...pathObj(id, pathInPoseFrame(data.path, pose), pose, data.fill, data.stroke),
+    ...pathObj(id, pathInPoseBox(data.path, pose), pose, data.fill, data.stroke),
     ...(generator ? toolOfGenerator(generator) : {}),
   };
 }
@@ -91,8 +91,8 @@ function pathObj(
     // The path above is baked into page coordinates, and the serializer
     // emits gradients as `userSpaceOnUse` — so a box-relative gradient has
     // to be resolved against the same pose.
-    fill: painted.fill && { ...painted.fill, paint: fillInPoseFrame(painted.fill.paint, pose) },
-    stroke: painted.stroke && { ...painted.stroke, paint: fillInPoseFrame(painted.stroke.paint, pose) },
+    fill: painted.fill && { ...painted.fill, paint: paintToLocalUnits(painted.fill.paint, pose) },
+    stroke: painted.stroke && { ...painted.stroke, paint: paintToLocalUnits(painted.stroke.paint, pose) },
   };
   if (pose.rotation) o.rotation = pose.rotation;
   return o;
@@ -111,7 +111,7 @@ function placedFromFrameOf<TLayer extends string>(
   while (frame != null && !definesFrame(scene.get(frame as never)!)) frame = scene.get(frame as never)!.parent;
   const above = frame != null && composesFrames(scene.composition) ? poseOf(frame) : undefined;
   const pose = above ? scene.composition.compose(above, { x, y, width, height }) : { x, y, width, height };
-  return { path: pathInPoseFrame(path, pose), pose };
+  return { path: pathInPoseBox(path, pose), pose };
 }
 
 /** A live path effect as the paths it shows — what Expand to Paths would
@@ -187,7 +187,7 @@ function sceneSourceOf<TLayer extends string>(
     roots: scene.roots.flatMap((id) => (scene.get(id)?.pageRun === undefined ? [id] : scene.childrenOf(id))).map(String),
     childrenOf: (id) => scene.childrenOf(id as never).map(String),
     get: (id) => scene.get(id as never),
-    pageIdOf: (id) => (scene.get(id as never)?.page === undefined ? undefined : pageOfNode(scene, id as never) ?? undefined),
+    pageIdOf: (id) => (scene.get(id as never)?.page === undefined ? undefined : pageIdOf(scene, id as never) ?? undefined),
     nodeOf: (id) => {
       const node = scene.get(id as never);
       return node && { label: node.data?.label, locked: node.locked };
@@ -277,7 +277,7 @@ export function selectionToSvgString<TLayer extends string>(
   ids: readonly string[],
 ): Promise<string> {
   const nodes = sceneToSvgNodes(sceneSourceOf(scene, poseOfIn(scene)), ids);
-  const bounds = computeBounds(nodes);
+  const bounds = svgBoundsOf(nodes);
   return serializeWarm(nodes, {
     viewBox: bounds,
     width: bounds.width,

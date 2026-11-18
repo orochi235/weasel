@@ -8,7 +8,7 @@ import { RunBand, RunEnds, useRunRow, type RunItemPlace } from '../Along/useRunR
 import type { HoldProps } from '../Disabled';
 import { useControlHold, type ControlHold } from '../Disabled/controlHold';
 import {
-  heldApply, SwatchButton, swatchesIn, swatchId, swatchKeyDown, swatchMarks, useSwatchApply, useSwatchStop, type SwatchApply, type SwatchChange,
+  heldApply, SwatchButton, swatchesIn, swatchId, swatchKeyDown, swatchMarks, useSwatchApply, useSwatchStop, type SwatchApply, type SwatchSelect,
   type SwatchValue,
 } from './SwatchButton';
 import type { SwatchGridOption } from './SwatchGrid';
@@ -36,8 +36,8 @@ export interface SwatchRingsProps extends HoldProps {
   shape: TrackShape;
   align: RunAlign;
   groups: readonly SwatchRingGroup[];
-  onChange: SwatchChange;
-  onAltChange?: SwatchChange;
+  onSelect: SwatchSelect;
+  onAltSelect?: SwatchSelect;
   onHoverChange?: (option: SwatchGridOption | null) => void;
   className?: string;
 }
@@ -77,7 +77,7 @@ function useSwatchMetrics(root: RefObject<HTMLElement | null>): SwatchMetrics {
  * keep two swatches apart; a palette's rows past there share its last ring, which scrolls along itself as any ring
  * too long for its run does.
  */
-export function SwatchRings({ shape, align, groups, onChange, onAltChange, onHoverChange, className, ...own }: SwatchRingsProps): ReactElement {
+export function SwatchRings({ shape, align, groups, onSelect, onAltSelect, onHoverChange, className, ...own }: SwatchRingsProps): ReactElement {
   const root = useRef<HTMLDivElement>(null);
   const { size, gap, leads } = useSwatchMetrics(root);
   const direction = useInlineDirection(root);
@@ -91,7 +91,7 @@ export function SwatchRings({ shape, align, groups, onChange, onAltChange, onHov
     return { plan: kept, rings: ringsOf(shape, ringDepths(ringThicknesses(kept, leads, size), gap), direction) };
   }, [shape, rows, leads, size, gap, direction]);
   const hold = useControlHold(own);
-  const apply = heldApply(useSwatchApply(onChange, onAltChange), hold);
+  const apply = heldApply(useSwatchApply(onSelect, onAltSelect), hold);
   const firsts = plan.map((_, i) => plan.slice(0, i).reduce((a, b) => a + b, 0));
   return hold.wrap(
     <div ref={root} className={className ? `${s.rings} ${className}` : s.rings} data-held={hold.held}>

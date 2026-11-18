@@ -1,5 +1,5 @@
 import '@weasel-js/theme/tokens.css';
-import { applyTheme, type Selection, type Theme } from '@weasel-js/theme';
+import { applyTheme, type AxisChoice, type Theme } from '@weasel-js/theme';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { CSSProperties } from 'react';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -9,7 +9,7 @@ import { PropertyGroup, PropertyPanel } from '@weasel-js/ui/components/Propertie
 import p from '../../components/Properties/Properties.module.css';
 
 /** Test support: one of everything a desktop theme restyles, under `theme` at `selection`. */
-export function mountThemed(theme: Theme, selection: Selection) {
+export function mountThemed(theme: Theme, selection: AxisChoice) {
   const host = document.createElement('div');
   document.body.append(host);
   const release = applyTheme(host, theme, selection);

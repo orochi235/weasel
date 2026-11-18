@@ -3,7 +3,7 @@ import { f } from '@weasel-js/labkit/config';
 import { describe, expect, it, vi } from 'vitest';
 import { meta, story } from '../../story/define';
 import { loadNativeModule } from '../../story/native';
-import type { ComponentDeps } from '../../story/types';
+import type { ComponentNode } from '../../story/types';
 import { runAxe } from '../a11y';
 import { type IndexEnv, IndexPage } from './IndexPage';
 
@@ -23,7 +23,7 @@ const envOf = (over: Partial<IndexEnv> = {}): IndexEnv => ({
   ...over,
 });
 
-const DEPS: ComponentDeps = { source: 'ui/Dialog/Dialog.tsx', uses: ['ui/Badge', 'ui/Foundations/Button'], usedBy: [] };
+const DEPS: ComponentNode = { source: 'ui/Dialog/Dialog.tsx', uses: ['ui/Badge', 'ui/Foundations/Button'], usedBy: [] };
 
 describe('IndexPage', () => {
   it('says when the component was created and last changed, each with the release that shipped it', () => {

@@ -5,7 +5,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { alignToGrid, snapToPitch, type OutputGrid } from '@weasel-js/geom';
-import { createTransformOp } from 'core/ops/transform';
+import { createSetPoseOp } from 'core/ops/setPose';
 import { buildSceneViewCommands } from 'canvas/sceneViewRender';
 import { createScene } from './scene';
 import { asNodeId, type RectPose, type Scene } from './types';
@@ -68,7 +68,7 @@ describe('the quantize pass', () => {
     const before = scene.get(BOX)!.pose;
     scene.setPose(BOX, { ...before, width: 3.3 });
     expect(dots(scene.get(BOX)!.pose.width)).toBeCloseTo(8, 9);
-    scene.applyBatch([createTransformOp({ id: BOX, from: scene.get(BOX)!.pose, to: { ...before, height: 2.1 } })], 'Size', {
+    scene.applyBatch([createSetPoseOp({ id: BOX, from: scene.get(BOX)!.pose, to: { ...before, height: 2.1 } })], 'Size', {
       setPose: (id: string, pose: RectPose) => scene.setPose(asNodeId(id), pose),
     });
     expect(dots(scene.get(BOX)!.pose.height)).toBeCloseTo(5, 9);

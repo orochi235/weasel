@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { rootsTreeForTests as rootsTree, stubDepsForTests as stubDeps } from '@weasel-js/core/test-seams';
-import { buildDepsFromRequires, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
+import { createActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
 import { pathFromD } from '@weasel-js/geom';
 import { asNodeId } from '@weasel-js/core';
@@ -35,7 +35,7 @@ describe('outlineStrokeAction', () => {
     const { adapter } = makeAdapter({});
     const bag: Record<string, unknown> = { operands: selectionOf([]), createOutlinesAdapter: adapter };
     const registry = { get: (name: string) => bag[name] } as unknown as DepRegistry;
-    const deps = buildDepsFromRequires(outlineStrokeAction, registry);
+    const deps = createActionDeps(outlineStrokeAction, registry);
     expect(() => outlineStrokeAction.enabled?.(deps)).not.toThrow();
     expect(() => (outlineStrokeAction.invoker as ImmediateInvoker).run(deps, {})).not.toThrow();
   });

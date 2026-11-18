@@ -109,7 +109,7 @@ describe('portsOf — rotation', () => {
 describe('portsOf — the geometry seam', () => {
   it('reads bounds through the descriptor it is given', () => {
     const ports = portsOf(node({ diagram: {} }), POSE, {
-      geometry: RECT_POSE_DESCRIPTOR as PoseDescriptor<Rect>,
+      poseDescriptor: RECT_POSE_DESCRIPTOR as PoseDescriptor<Rect>,
     });
     expect(ports[0]!.point).toEqual({ x: 50, y: 0 });
   });
@@ -120,7 +120,7 @@ describe('portsOf — the geometry seam', () => {
   it('turns the ports when the descriptor reports a rotation', () => {
     const turned: Rect = { ...POSE, rotation: Math.PI / 2 };
     const ports = portsOf(node({ diagram: {} }), turned, {
-      geometry: RECT_POSE_DESCRIPTOR as PoseDescriptor<Rect>,
+      poseDescriptor: RECT_POSE_DESCRIPTOR as PoseDescriptor<Rect>,
     });
     expect(at(ports[0]!.point)).toEqual({ x: 70, y: 20 });
   });

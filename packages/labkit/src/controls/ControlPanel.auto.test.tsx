@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { auto } from '../config/auto';
+import { AUTO } from '../config/auto';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
 import { ControlPanel } from './ControlPanel';
@@ -123,7 +123,7 @@ describe('<ControlPanel> auto', () => {
       />,
     );
     await userEvent.click(screen.getByRole('button', { name: 'Pin Gap' }));
-    expect(setConfig).toHaveBeenCalledWith('gap', auto);
+    expect(setConfig).toHaveBeenCalledWith('gap', AUTO);
   });
 
   it('keeps the sentinel out of a config it is not given an auto set for', async () => {

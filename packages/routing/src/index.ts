@@ -13,7 +13,7 @@
 // package stands alone; @weasel-js/core re-exports each from its own path.
 export type {
   NodeId, View, Bounds, SelectionApi, SelectionMode, SelectionExtendKey,
-  DeviceProfile, DebugSink, HandleKind, HitShape, ViewportGestureKind, ModifierState, ResizeAnchor,
+  DeviceProfile, DebugSink, HandleKind, HitShape, ViewportMoveKind, ModifierState, ResizeAnchor,
 } from './vocabulary';
 
 // ─── dependency schema ────────────────────────────────────────────────────
@@ -139,7 +139,7 @@ export { actionsTagged, taggedActionItems, matchActionItem } from './interaction
 // Both a const table and the union of its values, under one name.
 export { actionCursor, ActionDisabledReason } from './interactions/actions/action';
 export type { ActionUnavailable } from './interactions/actions/action';
-export { actionBindings, bindAction, routedOpts } from './interactions/actions/binding';
+export { actionBindings, bindAction, bindingOptionsOf } from './interactions/actions/binding';
 export type { GestureBinding, BindingOf, BoundGesture, BindingSource } from './interactions/actions/binding';
 export { dynamicActionId } from './interactions/actions/actionIds';
 export type {
@@ -147,9 +147,9 @@ export type {
 } from './interactions/actions/actionIds';
 export { defineAction } from './interactions/actions/defineAction';
 export type { ActionOf, ActionSettingsOf, ActionVariantOf } from './interactions/actions/defineAction';
-export { evaluateActive, evaluateEnabled } from './interactions/actions/actionEnabled';
+export { checkActive, checkEnabled } from './interactions/actions/actionEnabled';
 export type { ActionEnabledResult } from './interactions/actions/actionEnabled';
-export { buildDepsFromRequires } from './interactions/actions/buildDeps';
+export { createActionDeps } from './interactions/actions/buildDeps';
 export { createDepRegistry } from './interactions/actions/depNode';
 export type { DepRegistry, DepListing, DepSource } from './interactions/actions/depNode';
 export { validateActionId, validateActionDefaultBinding } from './interactions/actions/registry';
@@ -202,7 +202,7 @@ export { tuneToolOptions } from './tools/tuneToolOptions';
 export type { ThresholdDragOptions, ThresholdDragHandle } from './interactions/thresholdDrag';
 export { startCarry } from './interactions/carry';
 export type { Carry, CarryCallbacks, CarryPayload, CarryPointer, CarryStage } from './interactions/carry';
-export { sweepAction, SWEEP_BINDING } from './interactions/sweep';
+export { createSweepAction, SWEEP_SPEC } from './interactions/sweep';
 export type { SweepItem, SweepOptions, SweepPress, SweepRun } from './interactions/sweep';
 export type {
   PointerSession, PointerSessionOptions, PointerSessionCallbacks, PointerSessionCancelReason, SwallowClickOptions,
@@ -223,7 +223,7 @@ export type { AssemblyInputs } from './contributions/assemble';
 export { mergeContributions } from './contributions/merge';
 export { modeShortcuts, modeShortcutSpec } from './contributions/modeShortcuts';
 export type { ModeShortcutHandlers } from './contributions/modeShortcuts';
-export { captureGesture, captureKey, createKeymapStack, describeKeymap, KEYMAP_HOLD, keymapContribution, keymapLeaderBindingId, keymapLeaderId, keymapShortcuts } from './keymaps';
+export { captureGesture, captureKey, createKeymapStack, describeKeymap, KEYMAP_HOLD, createKeymapContribution, keymapLeaderBindingId, keymapLeaderId, keymapShortcuts } from './keymaps';
 export type { CaptureGestureOptions, CaptureKeyOptions, CaptureKind, CapturedSpec, DescribeKeymapOptions, KeymapDef, KeymapDescription, KeymapRow, KeymapStack, KeymapUnbound, KeymapVerdict, OpenKeymap } from './keymaps';
 
 // ─── tools ────────────────────────────────────────────────────────────────
@@ -237,7 +237,7 @@ export {
   createToolOptionValues, heldToolOptions, keepToolOptions, setToolOption, shareToolOptions, SHARED_TOOL_OPTIONS,
   steppedOption, toolOptionActionIds, toolOptionLeaf, toolOptionNumberLeaf, toolOptionParams, toolOptionSlot, withToolOptionDefault,
 } from './tools/toolOptions';
-export type { ToolOptions, ToolOptionShare, ToolOptionStep, ToolOptionValues } from './tools/toolOptions';
+export type { ToolOptionsSpec, ToolOptionShare, ToolOptionStep, ToolOptionValues } from './tools/toolOptions';
 export { toolOptionSteps } from './tools/toolOptionSteps';
 export { prefsToolOptionValues, toolOptionsPrefs } from './tools/toolOptionPrefs';
 export { declaredToolShortcuts, TOOL_ACTIVATE_ID, toolShortcutsOf } from './tools/toolShortcuts';

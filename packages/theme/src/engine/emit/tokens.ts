@@ -1,4 +1,4 @@
-import { enumerateSelections } from '../../axes.ts';
+import { enumerateAxisChoices } from '../../axes.ts';
 import type { ThemeDefinition } from '../../definition.ts';
 import { bake } from '../bake.ts';
 import { axisDependencies } from '../deps.ts';
@@ -23,7 +23,7 @@ export function generateTokens(definitions: readonly ThemeDefinition[]): Generat
   const ordered = [roots[0], ...definitions.filter((d) => d.extends)];
 
   const problems = ordered.flatMap((def) => {
-    const selections = enumerateSelections(mergeChain(def, lookup).axes ?? {});
+    const selections = enumerateAxisChoices(mergeChain(def, lookup).axes ?? {});
     // An axis with no values leaves nothing to enumerate; one derive still reports the axis.
     return (selections.length > 0 ? selections : [{}]).flatMap((sel) =>
       derive(def, sel, lookup).issues.map((issue) => `${def.name} ${JSON.stringify(sel)}: ${JSON.stringify(issue)}`),

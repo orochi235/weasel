@@ -1,4 +1,4 @@
-import { pressTarget } from '../tools/builtin/pressTarget';
+import { pressTarget } from './pressTarget';
 
 /** How {@link doubleClickTarget} reads the tree. */
 export interface DoubleClickTree {

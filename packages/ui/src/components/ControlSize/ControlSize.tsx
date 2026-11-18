@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from 'react';
-import { resolveSize, type ControlSize } from '@weasel-js/ui-logic';
+import { resolveControlSize, type ControlSize } from '@weasel-js/ui-logic';
 
 export type { ControlSize } from '@weasel-js/ui-logic';
 
@@ -23,7 +23,7 @@ export function ControlSizeScope({ size, children }: ControlSizeScopeProps) {
 
 /** The size a control draws at: `own`, else the nearest {@link ControlSizeScope}'s, else `fallback` (default `'md'`). */
 export function useControlSize(own?: ControlSize, fallback?: ControlSize): ControlSize {
-  return resolveSize(own, useContext(ControlSizeContext), fallback);
+  return resolveControlSize(own, useContext(ControlSizeContext), fallback);
 }
 
 /** The nearest {@link ControlSizeScope}'s size, or `undefined` outside every scope: for a control that, unscoped and

@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import { buildDepsFromRequires, dynamicActionId, resolveSchemaMenu } from '@weasel-js/routing';
+import { createActionDeps, dynamicActionId, resolveSchemaMenu } from '@weasel-js/routing';
 import { useLatest } from '@weasel-js/react';
 import { useActionsRegistry, useOptionalDepRegistry } from '@weasel-js/routing/react';
 import type { PrefGroup } from '@weasel-js/prefs';
@@ -100,7 +100,7 @@ export function useBarMenuResolver(): (schema: PrefGroup, sources: BarMenuSource
   const depReg = useOptionalDepRegistry();
   return (schema, { values, onChange, over }) => resolveSchemaMenu(schema, {
     actions: () => registry?.list() ?? [],
-    depsFor: (action) => (depReg ? buildDepsFromRequires(action, depReg) : undefined),
+    depsFor: (action) => (depReg ? createActionDeps(action, depReg) : undefined),
     trigger: (id, params) => registry?.trigger(dynamicActionId(id), params) ?? false,
     values,
     ...(onChange ? { onChange } : {}),

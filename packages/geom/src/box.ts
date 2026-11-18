@@ -42,7 +42,7 @@ export function boxContainsBox(outer: Box, inner: Box): boolean {
 
 /** Interleaved corner ring for a rect at (x,y,w,h), wound clockwise from the
  *  origin corner. The closing edge is implicit — the same unclosed shape
- *  `pointInPolygon` takes, and what a repeated first vertex would leave as a
+ *  `polygonContainsPoint` takes, and what a repeated first vertex would leave as a
  *  zero-length segment for anything that strokes it. */
 export function rectToContour(x: number, y: number, w: number, h: number): Float64Array {
   return Float64Array.of(x, y, x + w, y, x + w, y + h, x, y + h);

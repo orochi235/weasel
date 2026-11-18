@@ -2,7 +2,7 @@ import { createScene, type NodeId, type RectPose } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
 import { plotRootOf, plotSpecs, replacePlotData, type PlotSceneData, type PlotSpec } from '../plotScene';
 import type { XyChartData } from '../xychart/types';
-import { foldPlotText, isPlotText, plotTextOf } from './textEdit';
+import { foldPlotText, isPlotText, plotTextDatumOf } from './textEdit';
 
 const measure = (text: string) => ({ width: text.length * 7, height: 14 });
 const DATA: XyChartData = { kind: 'xychart', title: 'Sales', series: [{ kind: 'bar', values: [4, 6] }] };
@@ -24,7 +24,7 @@ function setup() {
 describe('editing a chart\'s text in place', () => {
   it('knows a text mark naming an edit from any other', () => {
     const { scene } = setup();
-    expect(plotTextOf(scene.get('p/title' as NodeId))).toEqual({ edit: 'title' });
+    expect(plotTextDatumOf(scene.get('p/title' as NodeId))).toEqual({ edit: 'title' });
     expect(isPlotText(scene.get('p/title' as NodeId)!.data)).toBe(true);
     expect(isPlotText(scene.get('p/axis:value:label:0' as NodeId)!.data)).toBe(false);
   });

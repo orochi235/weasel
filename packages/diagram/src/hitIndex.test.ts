@@ -7,8 +7,8 @@ import { describe, expect, it } from 'vitest';
 import { createScene, documentPose, type AffordanceRegion, type ChromeState, type Scene, type View } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH } from './edge';
 import { edgeLabelSpec } from './edgeLabel';
-import { labelDragLayer, labelUnder } from './labelDragLayer';
-import { portLayer, sceneParticipants } from './portLayer';
+import { createLabelDragLayer, labelUnder } from './labelDragLayer';
+import { createPortLayer, sceneParticipants } from './portLayer';
 import { createPortAffordance, type ParticipantSource } from './portAffordance';
 
 interface Rect { x: number; y: number; width: number; height: number; rotation?: number }
@@ -86,7 +86,7 @@ function points(scene: Sc, seed: number): [number, number][] {
   return out;
 }
 
-describe('portLayer through its index', () => {
+describe('createPortLayer through its index', () => {
   for (const seed of [1, 2, 3]) {
     it(`hits what testing every port hits (seed ${seed})`, () => {
       const scene = diagram(seed);
@@ -97,8 +97,8 @@ describe('portLayer through its index', () => {
         shows: (node: { id: string }, s: ChromeState) => s.selection.length === 0 || s.selection.some((id) => id === node.id) || node.id.endsWith('1'),
         showsPort: (port: { id: string }) => port.id !== 'n',
       };
-      const linear = portLayer<Rect>(() => src(), opts);
-      const indexed = portLayer<Rect>(counted, opts);
+      const linear = createPortLayer<Rect>(() => src(), opts);
+      const indexed = createPortLayer<Rect>(counted, opts);
       const states = [
         state([], () => true),
         state(['n2', 'n5', 'n8', 'n40'], (l) => l !== 'back'),
@@ -121,7 +121,7 @@ describe('portLayer through its index', () => {
 
   it('reads a scene change', () => {
     const scene = diagram(4);
-    const layer = portLayer<Rect>(sceneParticipants(scene));
+    const layer = createPortLayer<Rect>(sceneParticipants(scene));
     const s = state([], () => true);
     const view = VIEWS[0]!;
     layer.hitTest(0, 0, s, view, DIMS);
@@ -156,13 +156,13 @@ describe('painting ports', () => {
   });
 });
 
-describe('labelDragLayer through its index', () => {
+describe('createLabelDragLayer through its index', () => {
   for (const seed of [1, 2, 3]) {
     it(`hits what testing every label hits (seed ${seed})`, () => {
       const scene = diagram(seed);
       const linearScene = Object.assign(Object.create(scene) as Sc, { getVersion: undefined });
-      const linear = labelDragLayer(linearScene as never) as ReturnType<typeof portLayer>;
-      const indexed = labelDragLayer(scene as never) as ReturnType<typeof portLayer>;
+      const linear = createLabelDragLayer(linearScene as never) as ReturnType<typeof createPortLayer>;
+      const indexed = createLabelDragLayer(scene as never) as ReturnType<typeof createPortLayer>;
       const s = state([], () => true);
       const labels = scene.renderOrderNodes().filter((n) => n.id.endsWith('/label'));
       const r = rng(seed);

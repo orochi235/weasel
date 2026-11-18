@@ -31,7 +31,7 @@ const noSubscribe = (): (() => void) => () => {};
 export interface MeasureReadoutProps {
   /** The scene the measurements are nodes of. */
   scene: Scene<unknown, string, unknown>;
-  /** The same object `useMeasureTool` and `measurementsContribution` are given. */
+  /** The same object `useMeasureTool` and `createMeasurementsContribution` are given. */
   measurements: Measurements;
   /** Additional class for the root, to place it. */
   className?: string;
@@ -89,8 +89,8 @@ export function MeasureReadout({ scene, measurements: ms, className }: MeasureRe
               description={items[i]!.description}
               grade={items[i]!.grade}
               labeled
-              disabled={!state.enabled}
-              {...(state.reason !== undefined ? { disabledReason: reasonLabel(state.reason) } : {})}
+              disabled={state.disabled}
+              {...(state.disabledReason !== undefined ? { disabledReason: reasonLabel(state.disabledReason) } : {})}
               onPress={() => trigger(cmd)}
             />
           );

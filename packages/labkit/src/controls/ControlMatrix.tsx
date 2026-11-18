@@ -10,9 +10,9 @@ import {
 import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
 import { useOverlayPortal } from '@weasel-js/ui/portal-host';
 import { type ReactElement, type ReactNode, useRef, useState } from 'react';
-import { valueAtPath } from '../config/path';
+import { configValueAt } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
-import { aliasTargetsOf, isLeafEnabled, isLeafVisible } from '../config/visible';
+import { aliasTargetsOf, isRowEnabled, isRowVisible } from '../config/visible';
 import { FieldChoicesContext, useFieldChoicesOf } from './fieldChoices';
 import type { OpenCell } from './MatrixEditor';
 import { MatrixPopover } from './MatrixPopover';
@@ -155,7 +155,7 @@ export function ControlMatrix({
   const cellAt = (path: string): MatrixTarget | undefined => matrixTargetAt(schema, path, targets);
 
   // A row is named in `rows`, so a leaf's static `hidden` does not drop it; a `showIf` does.
-  const visible = (path: string): boolean => isLeafVisible(schema, path, config, true, over);
+  const visible = (path: string): boolean => isRowVisible(schema, path, config, true, over);
   const rowSpecs = rowSpecsOf(rows, columns, cellAt, visible);
 
   const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange, twisty });
@@ -203,14 +203,14 @@ export function ControlMatrix({
                     key={column.key}
                     cell={cell}
                     shown={visible(path)}
-                    value={cell && valueAtPath(config, cell.at)}
+                    value={cell && configValueAt(config, cell.at)}
                     name={`${nameOf(column)} ${label}`}
                     absent={`${nameOf(column)} has no ${label}`}
                     inherited={inherited}
                     hint={inherited ? hintFor(column) : undefined}
                     canUnpin={inherit && !first && !inherited}
                     summary={row.summary ?? (cell && getOwn(schema.dialogs, cell.at)?.summary)}
-                    disabled={!isLeafEnabled(schema, path, config, over)}
+                    disabled={!isRowEnabled(schema, path, config, over)}
                     setConfig={setConfig}
                     onOpen={(el) => {
                       triggerRef.current = el;

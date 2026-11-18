@@ -12,7 +12,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { Action } from './action';
-import { evaluateEnabled } from './actionEnabled';
+import { checkEnabled } from './actionEnabled';
 import { isDev, useLatest } from '@weasel-js/react';
 import { createReflectable } from '@weasel-js/registry';
 import {
@@ -20,7 +20,7 @@ import {
   type DepRegistry,
   type DepName,
 } from './depRegistry';
-import { buildDepsFromRequires } from './buildDeps';
+import { createActionDeps } from './buildDeps';
 import type { ActionDeps, WorldPoint } from './invoker';
 import { dynamicActionId, type ActionParamsOf, type InvokeParams } from './actionIds';
 import type { ImmediateParams } from '../dispatcher/inputFacts';
@@ -45,7 +45,7 @@ export const ActionsContext = createContext<ActionsRegistry | null>(null);
  *  action that needs the consumer's history must declare it. */
 function depsFor(a: Action, r: DepRegistry | null): ActionDeps {
   if (!r) return {};
-  if (a.requires) return buildDepsFromRequires(a, r);
+  if (a.requires) return createActionDeps(a, r);
   return {
     selection: r.get('selection' as DepName),
     scene: r.get('scene' as DepName),
@@ -128,7 +128,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
         const a = this.resolve(id);
         if (a?.invoker?.timing !== 'immediate') return false;
         const deps = depsFor(a, this.deps());
-        const ran = evaluateEnabled(a, deps, pointOf(params), params).enabled;
+        const ran = checkEnabled(a, deps, pointOf(params), params).enabled;
         if (ran) a.invoker.run(deps, params);
         return ran;
       },
@@ -279,7 +279,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       const a = leaf.resolve(id);
       if (!a?.invoker || a.invoker.timing !== 'immediate' || !leaf.eligibleNow(a)) return false;
       const deps = leaf.depsOf(a);
-      if (!evaluateEnabled(a, deps, pointOf(params), params).enabled) return false;
+      if (!checkEnabled(a, deps, pointOf(params), params).enabled) return false;
       try {
         if (a.invoker.run(deps, params) === 'pass') return false;
       } catch (err) {

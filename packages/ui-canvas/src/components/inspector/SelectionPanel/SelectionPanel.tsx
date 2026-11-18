@@ -6,6 +6,7 @@ import {
   asNodeId,
   nodeTraitsOf,
   paintAbove,
+  routeKind,
   type FeaturePreset,
   type NodePropertiesEntry,
   type NodeRoutingEntry,
@@ -16,7 +17,7 @@ import { panelSource } from '@weasel-js/ui/components/PanelCells';
 import { PrefsSource } from '@weasel-js/ui/components/PrefsSource';
 import type { LeafRenderer } from '@weasel-js/ui/components/PanelCells';
 import { kindBreakdown, panelEntryOf, panelRowsOf } from '@weasel-js/ui/components/PanelCells';
-import { classifyKind, type AnyNode } from './nodeModel';
+import type { AnyNode } from './nodeModel';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { conditionedSections } from '@weasel-js/ui/components/PanelCells';
 import type { MarkHiddenProps } from '@weasel-js/ui/components/Prefs';
@@ -73,7 +74,7 @@ export interface SelectionPanelProps<TData, TLayer extends string, TPose> extend
   over?: PrefGroup | PrefSection;
   /** The scene's outermost unit scope. Given, a field whose leaf measures a
    *  length shows it in the unit scopes the selected nodes share, through
-   *  `prefLeafInScopes`; what is typed is still stored in world units. */
+   *  `prefLeafInUnitScopes`; what is typed is still stored in world units. */
   units?: UnitScope;
   /** Kind → header label. Default: capitalized kind name. */
   kindLabel?: (kind: string) => string;
@@ -88,12 +89,12 @@ export interface SelectionPanelProps<TData, TLayer extends string, TPose> extend
    * the tab that holds it. A path the panel draws no row for marks the row
    * it lies inside, or nothing.
    */
-  selected?: readonly string[];
-  /** The reader pressed or focused into a row, reported as `selected` names
+  marked?: readonly string[];
+  /** The reader pressed or focused into a row, reported as `marked` names
    *  it: a paired row as its first leaf, and a section's heading, tab, or
    *  panel as the section's key. `how.toggle` is true when Cmd or Ctrl was
    *  held. A press on one of several marked rows is reported on its click. */
-  onSelect?: (path: string, how: PrefSelectHow) => void;
+  onMark?: (path: string, how: PrefSelectHow) => void;
   className?: string;
 }
 
@@ -128,7 +129,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   const traits = useLatest({ properties, routing });
   const writes = useMemo(
     () => leafWrites(scene, (node) =>
-      panelEntryOf(traits.current.properties, classifyKind(node, traits.current.routing))?.settle),
+      panelEntryOf(traits.current.properties, routeKind(traits.current.routing, node.data, node))?.settle),
     [scene, traits],
   );
 
@@ -136,7 +137,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     .map((id) => scene.get(asNodeId(id)))
     .filter((n): n is NonNullable<typeof n> => n != null) as readonly AnyNode[];
 
-  const kinds = nodes.map((n) => classifyKind(n, routing));
+  const kinds = nodes.map((n) => routeKind(routing, n.data, n));
   const records = nodes.map((n) => nodeRecord(n, (node) => paintAbove(scene, node as never)));
   const selectionKey = compositeKey(nodes.map((n) => n.id));
   const scope = conditionedSections(kinds, properties, records, renderers?.alias !== undefined, props.markHidden === true, props.over);
@@ -145,9 +146,9 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   warnUnwritable(kinds, panelLeaves);
   const leaves = new Map(panelLeaves.map(({ path, leaf }) => [path, leaf] as const));
   const fields = prefFieldChoices({ name: '', members: Object.fromEntries(leaves) });
-  const shown = panelMarkedPaths(sections, props.selected ?? NO_MARKS, renderers);
+  const shown = panelMarkedPaths(sections, props.marked ?? NO_MARKS, renderers);
   const marks: PanelMarks = { selected: shown, lead: shown.at(-1) ?? null, ...(props.markHidden ? { hidden: scope.hidden } : {}) };
-  const rowSelection = useSelectedRow(props.selected ?? NO_MARKS, marks.lead ?? null, props.onSelect);
+  const rowSelection = useSelectedRow(props.marked ?? NO_MARKS, marks.lead ?? null, props.onMark);
   const { settles, textWaitMs } = useParamsPolicy('panel');
 
   if (nodes.length === 0) {

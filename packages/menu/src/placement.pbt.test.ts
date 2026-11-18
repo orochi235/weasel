@@ -6,22 +6,22 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { placeMenu, placeMenuUnder, placeSubmenu, type MenuDirection, type MenuSide, type Point, type Rect, type Size } from './placement';
+import { placeMenu, placeMenuUnder, placeSubmenu, type MenuDirection, type MenuSide, type Point, type MenuRect, type MenuSize } from './placement';
 import { runs, tally, timeoutFor } from './pbt.fixture';
 
 const RUNS = 500;
 
-const bounds: fc.Arbitrary<Rect> = fc.record({ x: fc.integer({ min: -200, max: 200 }), y: fc.integer({ min: -200, max: 200 }), w: fc.integer({ min: 0, max: 800 }), h: fc.integer({ min: 0, max: 600 }) });
-const size: fc.Arbitrary<Size> = fc.record({ w: fc.integer({ min: 0, max: 900 }), h: fc.integer({ min: 0, max: 700 }) });
+const bounds: fc.Arbitrary<MenuRect> = fc.record({ x: fc.integer({ min: -200, max: 200 }), y: fc.integer({ min: -200, max: 200 }), w: fc.integer({ min: 0, max: 800 }), h: fc.integer({ min: 0, max: 600 }) });
+const size: fc.Arbitrary<MenuSize> = fc.record({ w: fc.integer({ min: 0, max: 900 }), h: fc.integer({ min: 0, max: 700 }) });
 const point: fc.Arbitrary<Point> = fc.record({ x: fc.integer({ min: -400, max: 1200 }), y: fc.integer({ min: -400, max: 1000 }) });
-const rect: fc.Arbitrary<Rect> = fc.record({ x: fc.integer({ min: -400, max: 1200 }), y: fc.integer({ min: -400, max: 1000 }), w: fc.integer({ min: 0, max: 300 }), h: fc.integer({ min: 0, max: 60 }) });
-const small: fc.Arbitrary<Size> = fc.record({ w: fc.integer({ min: 0, max: 300 }), h: fc.integer({ min: 0, max: 200 }) });
+const rect: fc.Arbitrary<MenuRect> = fc.record({ x: fc.integer({ min: -400, max: 1200 }), y: fc.integer({ min: -400, max: 1000 }), w: fc.integer({ min: 0, max: 300 }), h: fc.integer({ min: 0, max: 60 }) });
+const small: fc.Arbitrary<MenuSize> = fc.record({ w: fc.integer({ min: 0, max: 300 }), h: fc.integer({ min: 0, max: 200 }) });
 const dir = fc.constantFrom<MenuDirection>('ltr', 'rtl');
 const side = fc.constantFrom<MenuSide>('top', 'bottom', 'left', 'right');
 
 /** Check `p` keeps a menu of `s` inside `b` on each axis it fits, and at the near edge on one it does not. Which
  *  edge an rtl menu too wide for the viewport favors is open (docs/unruled.md). */
-function inside(p: Point, s: Size, b: Rect, d: MenuDirection, t: ReturnType<typeof tally>): void {
+function inside(p: Point, s: MenuSize, b: MenuRect, d: MenuDirection, t: ReturnType<typeof tally>): void {
   if (s.w <= b.w) {
     expect(p.x).toBeGreaterThanOrEqual(b.x);
     expect(p.x + s.w).toBeLessThanOrEqual(b.x + b.w);
@@ -34,7 +34,7 @@ function inside(p: Point, s: Size, b: Rect, d: MenuDirection, t: ReturnType<type
   } else expect(p.y).toBe(b.y);
 }
 
-const mirrorRect = (r: Rect): Rect => ({ ...r, x: -(r.x + r.w) });
+const mirrorRect = (r: MenuRect): MenuRect => ({ ...r, x: -(r.x + r.w) });
 
 describe('placeMenu', () => {
   it('stays inside the viewport, opens down and forward where that fits, and mirrors under rtl', () => {

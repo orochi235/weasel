@@ -26,8 +26,8 @@ describe('patternTileSpace, property', () => {
         }
         if (Math.abs(det) < 1e-3) return;
         t.count('mapped');
-        const [px, py] = mat3.apply(space, sx, sy);
-        const [tx, ty] = mat3.apply(got, sx, sy);
+        const [px, py] = mat3.transformPoint(space, sx, sy);
+        const [tx, ty] = mat3.transformPoint(got, sx, sy);
         const bx = origin.x + T[0] * tx + T[2] * ty, by = origin.y + T[1] * tx + T[3] * ty;
         const tol = 1e-8 * (1 + Math.abs(px) + Math.abs(py) + Math.abs(origin.x) + Math.abs(origin.y)) / Math.min(1, Math.abs(det));
         expect(Math.abs(bx - px)).toBeLessThanOrEqual(tol);

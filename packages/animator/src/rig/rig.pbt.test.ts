@@ -10,8 +10,8 @@ import { mirrorPose } from './mirrorPose';
 import { compose, resolveSkeleton } from './resolveSkeleton';
 import { addJoint, jointAt, jointPositions, moveJoint, removeJoint } from './skeletonEdits';
 import { solveIk, type IkLimit } from './solveIk';
-import { jointShares, setWeights } from './weightEdits';
-import type { JointTransform, Pose, Skeleton } from './types';
+import { jointShares, setJointWeights } from './weightEdits';
+import type { JointTransform, SkeletonPose, Skeleton } from './types';
 import { runs, tally } from '../pbt.fixture';
 
 const RUNS = runs(300);
@@ -27,11 +27,11 @@ const skeleton: fc.Arbitrary<Skeleton> = fc.array(fc.tuple(fc.nat(), fc.boolean(
     joints: js.map(([p, root, bind], i) => ({ name: `j${i}`, parent: i === 0 || root ? null : `j${p % i}`, bind })),
   }));
 const delta = fc.record({ x: coord, y: coord, rotation: angle, scaleX: scale, scaleY: scale }, { requiredKeys: [] });
-const poseOf = (s: Skeleton): fc.Arbitrary<Pose> =>
+const poseOf = (s: Skeleton): fc.Arbitrary<SkeletonPose> =>
   fc.array(fc.option(delta, { nil: undefined }), { minLength: s.joints.length, maxLength: s.joints.length })
     .map((ds) => Object.fromEntries(ds.flatMap((d, i) => (d ? [[`j${i}`, d]] : []))));
 
-const origin = (m: GlMat3): [number, number] => mat3.apply(m, 0, 0);
+const origin = (m: GlMat3): [number, number] => mat3.transformPoint(m, 0, 0);
 /** Close to a float32 resolve of a chain of up to six joints of these sizes. */
 const near = (a: number, b: number): void => { expect(Math.abs(a - b)).toBeLessThanOrEqual(2e-3 * Math.max(1, Math.abs(a), Math.abs(b))); };
 
@@ -47,7 +47,7 @@ describe('mirrorPose, property', () => {
         near(fy, y);
         // The mirror of a point is the point mirrored, carried by the joint, and mirrored back.
         for (const [px, py] of [[1, 0], [0, 1], [3, -2]] as const) {
-          const [mx, my] = mat3.apply(m, -px, py), [gx, gy] = mat3.apply(f, px, py);
+          const [mx, my] = mat3.transformPoint(m, -px, py), [gx, gy] = mat3.transformPoint(f, px, py);
           near(gx, -mx);
           near(gy, my);
         }
@@ -109,7 +109,7 @@ describe('skeleton edits, property', () => {
   });
 });
 
-describe('setWeights, property', () => {
+describe('setJointWeights, property', () => {
   const weights = (count: number) => fc.array(fc.constantFrom(0, 0.25, 0.5, 1, 2), { maxLength: count + 2 });
   it('gives the joint its weight on each point named and leaves each such point summing to 1', () => {
     const t = tally();
@@ -120,7 +120,7 @@ describe('setWeights, property', () => {
       fc.array(fc.tuple(fc.integer({ min: -1, max: count }), fc.oneof(fc.double({ min: -0.5, max: 1.5, noNaN: true }), fc.constantFrom(0, 1)))),
     )), ([count, skin, joint, edits]) => {
       const set = new Map(edits);
-      const next = setWeights(skin, count, joint, set);
+      const next = setJointWeights(skin, count, joint, set);
       for (const w of Object.values(next)) {
         expect(w).toHaveLength(count);
         expect(w.some((x) => x > 0)).toBe(true);
@@ -160,7 +160,7 @@ describe('solveIk, property', () => {
     fc.assert(fc.property(chain, coord, coord, fc.boolean(), ({ skeleton: s, n, tip, limits }, x, y, limited) => {
       const joints = s.joints.map((j) => j.name);
       const r = solveIk(s, {}, { joints, tip, target: { x, y }, ...(limited ? { limits } : {}) });
-      const [tx, ty] = mat3.apply(resolveSkeleton(s, r.pose).get(`j${n - 1}`)!, tip.x, tip.y);
+      const [tx, ty] = mat3.transformPoint(resolveSkeleton(s, r.pose).get(`j${n - 1}`)!, tip.x, tip.y);
       near(r.distance, Math.hypot(tx - x, ty - y));
       expect(r.reached).toBe(r.distance <= 0.01);
       if (limited) {

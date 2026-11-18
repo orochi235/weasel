@@ -21,7 +21,7 @@ export { canvasPixelSource, compositeOver, createSampler } from './sampler';
 export type { MaybePromise, PixelSource, Rgba, Sampler } from './sampler';
 export {
   createLoupeActions, createLoupeAimActions,
-  LOUPE_AIM_ID, LOUPE_LEAVE_ID, LOUPE_MAGNIFY_ID, LOUPE_PEEK_ID, LOUPE_PICK_ID, WHEEL_RATE,
+  LOUPE_AIM_ID, LOUPE_LEAVE_ID, LOUPE_MAGNIFY_ID, LOUPE_PEEK_ID, LOUPE_PICK_ID, LOUPE_WHEEL_RATE,
 } from './actions';
 export type { LoupeAimInput, LoupeInputApi } from './actions';
 export type { LoupeAimParams } from './actionParamSchema';

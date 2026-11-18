@@ -263,7 +263,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
       drag={drag}
       hold={hold}
       onInput={(edit) => rangeInput(edge, edit)}
-      onCommit={rangeCommit}
+      onChange={rangeCommit}
     />
   );
 

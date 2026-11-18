@@ -5,7 +5,7 @@ import { scenePoseAdapter } from './scenePoseAdapter';
 import { asNodeId } from './types';
 import type { NodeId, RectPose } from './types';
 import type { LayoutStrategy } from '../../layout/types';
-import { createTransformOp } from 'core/ops/transform';
+import { createSetPoseOp } from 'core/ops/setPose';
 import { createSetLayoutOp } from 'core/ops/setLayout';
 import { defaultOpRegistry } from 'core/ops/registry';
 
@@ -247,7 +247,7 @@ describe('scene container layout', () => {
       setPose: (id: string, pose: RectPose) => scene.setPose(asNodeId(id), pose),
     };
     scene.applyBatch(
-      [createTransformOp<RectPose>({ id: C as string, from: CONTAINER, to: { ...CONTAINER, width: 70 } })],
+      [createSetPoseOp<RectPose>({ id: C as string, from: CONTAINER, to: { ...CONTAINER, width: 70 } })],
       'resize',
       adapter,
     );
@@ -280,7 +280,7 @@ describe('scene container layout', () => {
     const depth = scene.historyIndex();
     const adapter = { setPose: (id: string, pose: RectPose) => scene.setPose(asNodeId(id), pose) };
     const resize = (from: number, to: number) => scene.applyBatch(
-      [createTransformOp<RectPose>({ id: C as string, from: { ...CONTAINER, width: from }, to: { ...CONTAINER, width: to } })],
+      [createSetPoseOp<RectPose>({ id: C as string, from: { ...CONTAINER, width: from }, to: { ...CONTAINER, width: to } })],
       'resize',
       adapter,
     );

@@ -8,7 +8,7 @@ import {
 } from '@weasel-js/core';
 import { createCamera, type Camera3d } from './camera';
 import type { Camera3dDep } from './cameraDep';
-import { pinchDollyAction } from './tools';
+import { cameraPinchDollyAction } from './tools';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -24,7 +24,7 @@ function Mount({ dep }: { dep: Camera3dDep }) {
   const actions = useActionsRegistry();
   const deps = useDepRegistry();
   deps.register('camera3d', () => dep);
-  if (actions && !actions.list().some((a) => a.id === pinchDollyAction.id)) actions.register(pinchDollyAction);
+  if (actions && !actions.list().some((a) => a.id === cameraPinchDollyAction.id)) actions.register(cameraPinchDollyAction);
   useGestureDispatcher({ canvasRef: ref, actions: actions!, entriesById: new Map() });
   return <canvas ref={ref} data-testid="canvas" />;
 }

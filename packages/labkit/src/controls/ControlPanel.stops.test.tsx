@@ -22,7 +22,7 @@ function stubRect(el: HTMLElement, rect: { width: number }) {
   });
 }
 
-const PERCENT = { suffix: '%', scale: 0.01, precision: 0 };
+const PERCENT = { suffix: '%', scale: 0.01, places: 0 };
 const schema = resolveConfigSchema(
   f.schema({
     level: f.number(0.2).range(-1, 1).step(0.01).stops([0]).label('Level'),

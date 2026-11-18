@@ -1,5 +1,5 @@
 import { isPlainObject } from '@weasel-js/core';
-import type { Globals, Layout } from '../../protocol/messages';
+import type { StoryGlobals, StoryLayout } from '../../protocol/messages';
 import { type CapturePayload, MAX_DPR, MIN_DPR } from '../../vite/capture/payload';
 import type { CssOverrides } from '../cssVars/overrides';
 import { effectiveGlobals, GLOBALS_KEY, storyConfig } from '../globals';
@@ -24,12 +24,12 @@ export const NO_BOX = "the story's box has no size";
 /** What a capture of one trial is built from. */
 export interface CapturePayloadInput {
   entry: TrialInputs['entry'];
-  layout: Layout;
+  layout: StoryLayout;
   /** The trial's whole config, forge's `$` keys included. */
   config: unknown;
   state: unknown;
   /** The globals the capture renders under: the comparison resolved over the trial's own. */
-  globals: Globals;
+  globals: StoryGlobals;
   overrides: CssOverrides;
   /** The story's host, whose box the capture takes. */
   host: HTMLElement;

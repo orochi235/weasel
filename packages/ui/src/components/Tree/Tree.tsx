@@ -1,3 +1,4 @@
+import type { EventModifiers } from '@weasel-js/gestures';
 import {
   forwardRef,
   useId,
@@ -10,7 +11,7 @@ import {
 } from 'react';
 import { isInControlWithin } from '@weasel-js/gestures';
 import { intentOf, rangeOf, select as selectFrom, type SelectPolicy } from '@weasel-js/select';
-import { listKeys, modsOf, selectModifiers, type PressModifiers } from '../../useReorderDragList';
+import { listKeys, modsOf, selectModifiers } from '../../useReorderDragList';
 import { useRowNavigation } from '../../useRowNavigation';
 import { useControlHold } from '../Disabled/controlHold';
 import { TreeDragGhost } from './TreeGhost';
@@ -26,7 +27,7 @@ import { useRowTip } from './useRowTip';
 import { useTreeDrag } from './useTreeDrag';
 export type { TreeNode, TreeProps, TreeSelectionMode } from './treeTypes';
 
-const NO_MODS: PressModifiers = { shiftKey: false, ctrlKey: false, metaKey: false, altKey: false };
+const NO_MODS: EventModifiers = { shiftKey: false, ctrlKey: false, metaKey: false, altKey: false };
 
 /**
  * A hierarchy of rows that expand and collapse: a file tree, a registry
@@ -114,8 +115,8 @@ export const Tree = forwardRef(function Tree(
     if (next.size !== selected.size || [...next].some((x) => !selected.has(x))) setSelected(next);
   };
 
-  const select = (id: string, mods: PressModifiers) => {
-    const policy: SelectPolicy = { mode: selectionMode === 'multiple' ? 'multi' : 'single', ...listKeys() };
+  const select = (id: string, mods: EventModifiers) => {
+    const policy: SelectPolicy = { mode: selectionMode === 'multiple' ? 'multiple' : 'single', ...listKeys() };
     const result = selectFrom({ ids: [...selected], anchor: anchor.current }, id, intentOf(selectModifiers(mods), policy), {
       order: order(), forceSingle: single,
     });
@@ -123,7 +124,7 @@ export const Tree = forwardRef(function Tree(
     commitSelection(result.ids);
   };
 
-  const activate = (node: TreeNode, mods: PressModifiers) => {
+  const activate = (node: TreeNode, mods: EventModifiers) => {
     if (node.disabled || hold.disabled) return;
     if (pressFolds) toggle(node);
     if (selectable) select(node.id, mods);
@@ -145,7 +146,7 @@ export const Tree = forwardRef(function Tree(
         commitSelection(rangeOf(ids, ids[0]!, ids[ids.length - 1]!, single));
       },
     } : {}),
-    onActivate: (id, mods) => { const node = nodeAt(id); if (node) activate(node, mods); },
+    onAction: (id, mods) => { const node = nodeAt(id); if (node) activate(node, mods); },
     tree: {
       isBranch: (id) => !!nodeAt(id)?.children,
       isOpen: (id) => !!nodeAt(id)?.children && expanded.has(id),

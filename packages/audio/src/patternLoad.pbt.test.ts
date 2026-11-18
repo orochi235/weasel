@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { resolveEnvelope } from './envelope';
 import { patternLength, type PatternEvent } from './patternPlayer';
-import { patternVoicePeaks, type PatternLoadOptions } from './patternLoad';
+import { patternVoicePeaks, type PatternVoicePeaksOptions } from './patternLoad';
 import { runs, tally, timeoutFor } from './pbt.fixture';
 
 const RUNS = 300;
@@ -36,7 +36,7 @@ const options = fc.record({
 });
 
 /** The most spans holding a slot at once on each bus, by counting at every span's start. */
-function bruteForce(events: readonly PatternEvent[], o: PatternLoadOptions & { hit?: number }): Record<string, number> {
+function bruteForce(events: readonly PatternEvent[], o: PatternVoicePeaksOptions & { hit?: number }): Record<string, number> {
   const spb = o.stepsPerBeat ?? 4;
   const stepMs = 60_000 / o.tempo / spb;
   const lead = o.lookahead ?? 100;
@@ -63,7 +63,7 @@ describe('patternVoicePeaks', () => {
   it('counts the most voices a bus holds at once, as a brute-force count does', () => {
     const seen = tally();
     fc.assert(fc.property(fc.array(event, { maxLength: 10 }), options, (events, o) => {
-      const opts: PatternLoadOptions = {
+      const opts: PatternVoicePeaksOptions = {
         tempo: o.tempo, stepsPerBeat: o.stepsPerBeat, loop: o.loop, lookahead: o.lookahead,
         ...(o.length !== undefined ? { length: o.length } : {}),
         ...(o.bus !== undefined ? { bus: o.bus } : {}),
@@ -84,7 +84,7 @@ describe('patternVoicePeaks', () => {
   it('never counts fewer voices for a pattern with an event added', () => {
     fc.assert(fc.property(fc.array(event, { maxLength: 8 }), event, options, (events, extra, o) => {
       // A fixed length, so the added event cannot stretch the pass and spread the rest out.
-      const opts: PatternLoadOptions = { tempo: o.tempo, stepsPerBeat: o.stepsPerBeat, loop: o.loop, lookahead: o.lookahead, length: 64 };
+      const opts: PatternVoicePeaksOptions = { tempo: o.tempo, stepsPerBeat: o.stepsPerBeat, loop: o.loop, lookahead: o.lookahead, length: 64 };
       const before = patternVoicePeaks(events, opts);
       const after = patternVoicePeaks([...events, extra], opts);
       for (const [bus, n] of Object.entries(before)) expect(after[bus]).toBeGreaterThanOrEqual(n);

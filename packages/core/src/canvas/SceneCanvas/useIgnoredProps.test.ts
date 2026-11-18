@@ -21,7 +21,7 @@ describe('useIgnoredProps', () => {
       const { rerender } = renderHook<void, Parameters<typeof useIgnoredProps>[0]>((p) => useIgnoredProps(p), {
         initialProps: { tools: takeover, defaultTools: ['rect'], defaultActiveTool: 'rect' },
       });
-      rerender({ tools: takeover, defaultTools: ['rect'], defaultActiveTool: 'rect', ambient: [] });
+      rerender({ tools: takeover, defaultTools: ['rect'], defaultActiveTool: 'rect' });
       rerender({ tools: takeover, defaultTools: ['rect'] });
     });
     expect(said).toHaveLength(1);
@@ -31,7 +31,7 @@ describe('useIgnoredProps', () => {
   it('is quiet for the patch form of tools, and for a takeover with nothing else set', () => {
     expect(warnings(() => {
       renderHook(() => useIgnoredProps({ tools: { rect: false }, defaultTools: ['rect'], defaultActiveTool: 'rect' }));
-      renderHook(() => useIgnoredProps({ tools: takeover, ambient: [] }));
+      renderHook(() => useIgnoredProps({ tools: takeover }));
     })).toEqual([]);
   });
 

@@ -56,7 +56,7 @@ key asks for (`selectAll`, `move`, `toggle`, `activate`, `type`) and the caller 
 ## Focus
 
 `tabSort(targets, declared)` is Tab order, targets that declare a place first, and `tabStep` is one Tab step
-through it. The `FocusScope`s of `@weasel-js/hud` and `@weasel-js/ui` (`domFocusScope`) move focus by them.
+through it. The `FocusScope`s of `@weasel-js/hud` and `@weasel-js/ui` (`createDomFocusScope`) move focus by them.
 
 Targets placed freely, with no row or grid to walk, take the arrows by where they sit. `nearestToward(from, targets,
 heading)` is the index of the target focus moves to: the cheapest by `headingCost`, which adds the travel along the
@@ -65,9 +65,9 @@ reads the heading off an arrow key.
 
 ## Selection and grids
 
-`selection(spec, values)` is which of a run of items are on: one value or `null` (`mode: 'single'`, which may
+`createSelectionModel(spec, values)` is which of a run of items are on: one value or `null` (`mode: 'single'`, which may
 `allowDeselect` and may not follow focus), or a list of them (`'multiple'`), either with `mixedValues`, where the
-sources disagree. `selectionOfEach(items)` is the same over items that each own a boolean. The model says each
+sources disagree. `createEachSelectionModel(items)` is the same over items that each own a boolean. The model says each
 item's state (`'on'`, `'off'`, `'mixed'`), what a press does, and runs an `edit`, a run of changes from its own
 copy that it can revert; `sweepFrom` is a sweep's, setting each item it reaches to the opposite of whether the
 pressed one was on. `selectionKeys` says what the keyboard does with it.
@@ -97,7 +97,7 @@ the track with a map or in the value's own units without one.
 
 A track need not show its whole range. A `Span` is a stretch of values, and a track that shows
 one span of a longer range is a windowed track: `spanPan` and `spanZoom` move the window inside
-its bounds, `spanZoom` about a value that keeps its place, and `spanPlace` and `spanShare` put a
+its bounds, `spanZoom` about a value that keeps its place, and `spanFraction` and `spanShare` put a
 value and a length at their fractions of it. Values outside the window map to places off the
 track's ends, so a thumb can sit out of view and a drag can carry one there.
 

@@ -1,10 +1,6 @@
 import { normalizeZoom } from '@weasel-js/core';
 import { type Camera3d, clampCamera, createCamera, type OrbitLimits } from '@weasel-js/kernel3d';
-import type { ViewTransform } from '../instrument/types';
-
-/** The 2D view labkit has always shipped, and what a trial gets when it names no
- *  other. Re-exported under its own name so a consumer can say which it means. */
-export type ViewTransform2D = ViewTransform;
+import type { ViewTransform2D } from '../instrument/types';
 
 /** Zoom 1, no pan. */
 export const DEFAULT_VIEW: ViewTransform2D = { zoom: 1, pan: { x: 0, y: 0 } };

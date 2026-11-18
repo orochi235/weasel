@@ -3,7 +3,7 @@ import { type ReactNode, useState } from 'react';
 import { PropertyField, PropertyList, type PropertyFieldProps, RowScope } from '@weasel-js/ui/components/Properties';
 import { SideBySide } from './layouts.story';
 import s from './PropertyField.stories.module.css';
-import { compact, decimal, endless, unit, type Display, type Endless } from '@weasel-js/quantity';
+import { compact, decimal, withInfinity, unit, type Display, type Endless } from '@weasel-js/quantity';
 
 const meta: Meta<typeof PropertyField> = {
   title: 'ui/Properties/PropertyField',
@@ -142,9 +142,9 @@ export const AttachedUnits: Story = {
 export const EndlessEnd: Story = {
   render: (args) => (
     <div className={s.column}>
-      <Slider args={args} initial={Infinity} label="Cut at" min={0} max={5000} step={50} unit="ms" endless="max" display={endless(decimal({ grouping: false }), 'never')} />
-      <Slider args={args} initial={1200} label="Mute at" min={0} max={8000} step={100} unit="ms" endless="max" display={endless(decimal({ grouping: false }), 'never')} />
-      <Slider args={args} initial={Infinity} label="Cap step" min={16} max={64} step={8} endless="max" display={endless(unit('ms'), 'uncapped')} />
+      <Slider args={args} initial={Infinity} label="Cut at" min={0} max={5000} step={50} unit="ms" endless="max" display={withInfinity(decimal({ grouping: false }), 'never')} />
+      <Slider args={args} initial={1200} label="Mute at" min={0} max={8000} step={100} unit="ms" endless="max" display={withInfinity(decimal({ grouping: false }), 'never')} />
+      <Slider args={args} initial={Infinity} label="Cap step" min={16} max={64} step={8} endless="max" display={withInfinity(unit('ms'), 'uncapped')} />
       <Slider args={args} initial={-Infinity} label="Floor" min={0} max={100} endless="min" />
     </div>
   ),

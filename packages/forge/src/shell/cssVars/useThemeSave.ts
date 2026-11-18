@@ -2,7 +2,7 @@ import { type AxisDefs, THEME_SOURCES } from '@weasel-js/theme';
 import { httpThemeApi, type ThemeApi } from '@weasel-js/theme/engine';
 import { useMemo, useState } from 'react';
 import { deepEqual } from '@weasel-js/registry';
-import type { Globals } from '../../protocol/messages';
+import type { StoryGlobals } from '../../protocol/messages';
 import type { CssOverrides } from './overrides';
 import { applyScaleEdits, type ScaleEdit } from './saveScales';
 import { applyTokenEdits, canSave } from './saveTokens';
@@ -29,7 +29,7 @@ export interface UnsavedScale {
 export interface ThemeSaveOptions {
   readonly trialId: string | null;
   /** The globals the trial renders under, which pick the axis values a save writes into. */
-  readonly globals: Globals;
+  readonly globals: StoryGlobals;
   /** Where a save goes. Defaults to the dev server's theme store. */
   readonly themeApi: ThemeApi | undefined;
   readonly scales: readonly UnsavedScale[];

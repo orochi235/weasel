@@ -1,7 +1,7 @@
 import type { PrefGroup } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
 import { icon } from '../icons.gen';
-import { auto } from './auto';
+import { AUTO } from './auto';
 import { f } from './builder';
 import { resolveConfigSchema } from './resolve';
 import { titleCase } from './rules';
@@ -266,7 +266,7 @@ describe('resolveConfigSchema / nested groups', () => {
     const r = resolveConfigSchema(
       f.schema({
         gap: f.number(12).auto(() => 18),
-        cols: f.number(3).initial(auto),
+        cols: f.number(3).initial(AUTO),
         bare: f.number(1).auto(),
         plain: f.number(0),
       }),

@@ -1,5 +1,5 @@
 import { createPageRun, createScene, placedPagesOf } from '@weasel-js/core';
-import { HORIZONTAL_AXIS, isSymmetryGroup, readGroup, symmetryGroupSpec, VERTICAL_AXIS } from '@weasel-js/symmetry';
+import { HORIZONTAL_AXIS, isSymmetryGroup, symmetryOf, symmetryGroupSpec, VERTICAL_AXIS } from '@weasel-js/symmetry';
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DRAW_REGISTRY, type DrawScene } from './drawDocument';
@@ -32,7 +32,7 @@ describe('useSymmetry', () => {
     expect(drawPrefs().get('view.symmetry')).toBe(true);
     const [group] = groups(scene);
     expect(insertInto(result)).toBe(group!.id);
-    expect(readGroup(scene as never, group!.id)).toMatchObject({
+    expect(symmetryOf(scene as never, group!.id)).toMatchObject({
       center: { x: 300, y: 400 }, spec: { kind: 'both', angle: HORIZONTAL_AXIS },
     });
   });
@@ -43,7 +43,7 @@ describe('useSymmetry', () => {
     renderHook(() => useSymmetry(scene, PAGE));
     act(() => drawPrefs().set('view.symmetryAxis', 'horizontal'));
     expect(groups(scene)).toHaveLength(1);
-    expect(readGroup(scene as never, groups(scene)[0]!.id)?.spec).toMatchObject({ kind: 'mirror', angle: HORIZONTAL_AXIS });
+    expect(symmetryOf(scene as never, groups(scene)[0]!.id)?.spec).toMatchObject({ kind: 'mirror', angle: HORIZONTAL_AXIS });
   });
 
   it('draws into the group a reopened document already has', () => {
@@ -73,7 +73,7 @@ describe('useSymmetry', () => {
     const [group] = groups(scene);
     expect(group!.parent).toBe('p2');
     expect(p2.x).not.toBe(0);
-    expect(readGroup(scene as never, group!.id)?.center).toEqual({ x: p2.x + 300, y: p2.y + 400 });
+    expect(symmetryOf(scene as never, group!.id)?.center).toEqual({ x: p2.x + 300, y: p2.y + 400 });
     // Stored in the page's frame.
     expect(scene.get(group!.id)!.pose).toMatchObject({ x: 300, y: 400 });
     first.unmount();

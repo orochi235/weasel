@@ -3,29 +3,29 @@
  * action keeps its gesture and swaps its commit for one that reports a data
  * edit, so the host changes its data and the view follows through the specs.
  */
-import { dragPanContribution, useLatest, type Action, type ActionsProp, type Contribution, type FeaturePreset, type RectPose, type SurfaceContribution, type AnyScene } from '@weasel-js/core';
+import { createDragPanContribution, useLatest, type Action, type ActionsProp, type Contribution, type FeaturePreset, type RectPose, type SurfaceContribution, type AnyScene } from '@weasel-js/core';
 import { useMemo } from 'react';
 import { isBodyEnd } from './connectTargets';
 import { diagramContainerOf, titleIdOf } from './containers/trait';
-import { diagramLabelDrag, diagramPorts, diagramWaypoints } from './contribution';
-import { editEdgeLabelAction, editEdgeLabelBinding } from './edgeLabel';
+import { diagramLabels, createDiagramPortsContribution, createDiagramWaypointsContribution } from './contribution';
+import { createEditEdgeLabelAction, editEdgeLabelBinding } from './edgeLabel';
 import { diagramEdgeOf } from './edgeTrait';
 import type { DiagramSpec } from './dataTypes';
 import type { ParticipantSource } from './portAffordance';
-import { portLayer } from './portLayer';
-import { diagramEdgeEnds, type EndChange } from './reconnect';
+import { createPortLayer } from './portLayer';
+import { createDiagramEdgeEndsContribution, type EndChange } from './reconnect';
 import { createGroupReorderPreset } from './groupReorder';
 import { regionEditing } from './regionEditing';
 import type { ContainerEdit } from './regionSync';
 import { dataKeyReader } from './trait';
 import { worldWith } from './worldWith';
 import type { DeleteReport, DiagramViewProps, NodeResize, ReconnectChange } from './diagramViewProps';
-import { diagramSequence } from './sequence/actions';
+import { createDiagramSequenceContribution } from './sequence/actions';
 import type { SequenceEdit } from './sequence/commit';
 import { createSequenceDeleteAction } from './sequence/select';
 import { createResizeAction, createDeleteAction } from '@weasel-js/editing';
 
-const AMBIENT = [dragPanContribution()];
+const AMBIENT = [createDragPanContribution()];
 // A drag on empty canvas pans: the select tool's marquee would outrank the ambient pan.
 const NO_MARQUEE = { areaSelect: null };
 
@@ -64,7 +64,7 @@ export function removedData(scene: AnyScene, ids: readonly string[]): DeleteRepo
 }
 
 /** Core's `delete`, reporting what it would remove instead of removing it. */
-export function reportDeleteAction(report: (removed: DeleteReport) => void): Action {
+export function createReportDeleteAction(report: (removed: DeleteReport) => void): Action {
   return createDeleteAction({
     commit: (ids, deps) => {
       if (deps.scene === undefined) return;
@@ -107,7 +107,7 @@ export function resizeReports(
 
 /** Core's `resize`, reporting the selected boxes it would leave instead of writing them, in world: a
  *  container's or pool's to `region` as a box edit, any other's to `report`. */
-export function reportResizeAction(
+export function createReportResizeAction(
   report: ((resizes: readonly NodeResize[]) => void) | undefined,
   region?: (edit: ContainerEdit) => void,
 ): Action {
@@ -166,7 +166,7 @@ export function useDiagramEditing(
   const sequences = props.onEditSequence !== undefined;
 
   const ports = useMemo(() => mode === 'connect'
-    ? diagramPorts<RectPose>({
+    ? createDiagramPortsContribution<RectPose>({
         ...portOptions,
         participants: source,
         bodies: connectBodies === true,
@@ -182,11 +182,11 @@ export function useDiagramEditing(
   // A registered layer with no `hitTest` is painted and claims no press.
   const shown = useMemo((): SurfaceContribution | null => {
     if (mode !== 'show') return null;
-    const { hitTest: _hitTest, ...paintOnly } = portLayer<RectPose>(source, portOptions);
+    const { hitTest: _hitTest, ...paintOnly } = createPortLayer<RectPose>(source, portOptions);
     return { id: 'weasel-diagram-ports-shown', eligibility: { always: true }, layers: [paintOnly] };
   }, [mode, source, portOptions]);
   const ends = useMemo(() => reconnects
-    ? diagramEdgeEnds<RectPose>({
+    ? createDiagramEdgeEndsContribution<RectPose>({
         participants: source,
         selected,
         bodies: connectBodies === true,
@@ -197,14 +197,14 @@ export function useDiagramEditing(
       })
     : null, [reconnects, source, selected, connectBodies, canConnect, portOptions, report]);
   const route = useMemo(() => routes
-    ? diagramWaypoints<RectPose>({
+    ? createDiagramWaypointsContribution<RectPose>({
         participants: source,
         selected,
         commit: ({ edgeId, waypoints }) => report.current.onEditRoute?.({ edge: edgeId, waypoints }),
       })
     : null, [routes, source, selected, report]);
   const labelDrag = useMemo(() => labelMoves
-    ? diagramLabelDrag({
+    ? diagramLabels({
         scene,
         selected,
         commit: ({ edgeId, placement }) => report.current.onMoveLabel?.({ edge: edgeId, placement }),
@@ -214,7 +214,7 @@ export function useDiagramEditing(
     ? {
         id: 'weasel-diagram-edge-label',
         eligibility: { always: true },
-        actions: [editEdgeLabelAction({ commit: (edgeId) => report.current.onEditLabel?.(edgeId) })],
+        actions: [createEditEdgeLabelAction({ commit: (edgeId) => report.current.onEditLabel?.(edgeId) })],
         bindings: [editEdgeLabelBinding()],
       }
     : null, [labels, report]);
@@ -224,16 +224,16 @@ export function useDiagramEditing(
   );
   const regions = useMemo(() => (regionEdits ? regionEditing(scene, selected, report) : null), [regionEdits, scene, selected, report]);
   const sequence = useMemo(
-    () => (sequences ? diagramSequence({ scene, commit: (edit) => report.current.onEditSequence?.(edit) }) : null),
+    () => (sequences ? createDiagramSequenceContribution({ scene, commit: (edit) => report.current.onEditSequence?.(edit) }) : null),
     [sequences, scene, report],
   );
   const actions = useMemo(() => ({
     ...NO_MARQUEE,
     ...(sequences
       ? { delete: sequenceDeleteAction(scene, (edit) => report.current.onEditSequence?.(edit), deletes ? (r) => report.current.onDelete?.(r) : null) }
-      : deletes ? { delete: reportDeleteAction((r) => report.current.onDelete?.(r)) } : {}),
+      : deletes ? { delete: createReportDeleteAction((r) => report.current.onDelete?.(r)) } : {}),
     ...(resizes || regionEdits
-      ? { resize: reportResizeAction((r) => report.current.onResize?.(r), (e) => report.current.onEditContainer?.(e)) }
+      ? { resize: createReportResizeAction((r) => report.current.onResize?.(r), (e) => report.current.onEditContainer?.(e)) }
       : {}),
   }), [deletes, sequences, scene, resizes, regionEdits, report]);
 

@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
-import { createScene, createTransformOp, asNodeId, type RectPose } from '@weasel-js/core/engine';
+import { createScene, createSetPoseOp, asNodeId, type RectPose } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
 import type { LayoutStrategy, ReflowTransition, MoveBehavior } from '@weasel-js/core/engine';
 import { moveAction } from './action';
@@ -34,7 +34,7 @@ function fixture(hooks: Partial<Hooks>, more: { behaviors?: MoveBehavior<unknown
     commitDrop: () => [],
     ...hooks,
   } as unknown as LayoutStrategy<unknown>;
-  const onGestureEnd = vi.fn();
+  const onRunEnd = vi.fn();
   const base = {
     world: { x: 115, y: 115 },
     modifiers: MODS,
@@ -49,14 +49,14 @@ function fixture(hooks: Partial<Hooks>, more: { behaviors?: MoveBehavior<unknown
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
   const handle = invoker.start(
     base as unknown as InvocationCtx,
-    { behaviors: more.behaviors ?? [], params: { onGestureEnd } } as BindingOptions,
+    { behaviors: more.behaviors ?? [], params: { onRunEnd } } as BindingOptions,
   );
   const dragTo = (x: number, y: number): InvocationCtx => ({
     ...base,
     world: { x, y },
     drag: { start: { x: 115, y: 115 }, current: { x, y }, delta: { x: x - 115, y: y - 115 } },
   }) as unknown as InvocationCtx;
-  return { scene, handle, dragTo, onGestureEnd };
+  return { scene, handle, dragTo, onRunEnd };
 }
 
 /** Records what a move asks of the reflow transition. */
@@ -73,16 +73,16 @@ function recorder() {
 
 describe('moveAction — a layout drop behind the binding\'s behaviors', () => {
   it('leaves the commit to a binding behavior that answers at end, and still settles its glides', () => {
-    const commitDrop = vi.fn((): Op[] => [createTransformOp<RectPose>({ id: KID, from: HOME, to: SLOT, label: 'Drop' })]);
+    const commitDrop = vi.fn((): Op[] => [createSetPoseOp<RectPose>({ id: KID, from: HOME, to: SLOT, label: 'Drop' })]);
     const { calls, reflow } = recorder();
     const claims: MoveBehavior<unknown> = { onEnd: () => [] };
-    const { scene, handle, dragTo, onGestureEnd } = fixture({ commitDrop }, { behaviors: [claims], reflow });
+    const { scene, handle, dragTo, onRunEnd } = fixture({ commitDrop }, { behaviors: [claims], reflow });
     handle.onMove!(dragTo(155, 155));
     expect(calls).toEqual(['glide:sib']);
     handle.onEnd!(dragTo(155, 155), 'commit');
     expect(commitDrop).not.toHaveBeenCalled();
     expect(scene.get(KID)!.pose).toEqual(HOME);
-    expect(onGestureEnd).toHaveBeenCalledWith(true);
+    expect(onRunEnd).toHaveBeenCalledWith(true);
     expect(calls.slice(1)).toEqual(['settle:sib', 'settle:kid:from150']);
   });
 
@@ -90,13 +90,13 @@ describe('moveAction — a layout drop behind the binding\'s behaviors', () => {
     const commitDrop = vi.fn((): Op[] => []);
     const { calls, reflow } = recorder();
     const throws: MoveBehavior<unknown> = { onEnd: () => { throw new Error('behavior failed'); } };
-    const { scene, handle, dragTo, onGestureEnd } = fixture({ commitDrop }, { behaviors: [throws], reflow });
+    const { scene, handle, dragTo, onRunEnd } = fixture({ commitDrop }, { behaviors: [throws], reflow });
     handle.onMove!(dragTo(155, 155));
     expect(() => handle.onEnd!(dragTo(155, 155), 'commit')).toThrow('behavior failed');
     expect(calls.slice(1)).toEqual(['settle:sib', 'settle:kid:from150']);
     expect(commitDrop).not.toHaveBeenCalled();
     expect(scene.get(KID)!.pose).toEqual(HOME);
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    expect(onRunEnd).toHaveBeenCalledWith(false);
   });
 
   it('asks no source layout to release when a binding behavior answers at end', () => {
@@ -112,21 +112,21 @@ describe('moveAction — a layout drop behind the binding\'s behaviors', () => {
 describe('moveAction — a layout drop with nothing to write', () => {
   it('commits nothing and does not translate when the accepted drop yields no ops', () => {
     const applyOps = vi.fn();
-    const { scene, handle, dragTo, onGestureEnd } = fixture({ commitDrop: () => [] }, { deps: { applyOps } });
+    const { scene, handle, dragTo, onRunEnd } = fixture({ commitDrop: () => [] }, { deps: { applyOps } });
     handle.onMove!(dragTo(155, 155));
     handle.onEnd!(dragTo(155, 155), 'commit');
     expect(applyOps).not.toHaveBeenCalled();
     expect(scene.get(KID)!.pose).toEqual(HOME);
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    expect(onRunEnd).toHaveBeenCalledWith(false);
   });
 
   it('commits nothing and does not translate when a release claims the drop with no ops', () => {
     const applyOps = vi.fn();
-    const { scene, handle, dragTo, onGestureEnd } = fixture({ releaseDrop: () => [] }, { deps: { applyOps } });
+    const { scene, handle, dragTo, onRunEnd } = fixture({ releaseDrop: () => [] }, { deps: { applyOps } });
     handle.onMove!(dragTo(500, 500));
     handle.onEnd!(dragTo(500, 500), 'commit');
     expect(applyOps).not.toHaveBeenCalled();
     expect(scene.get(KID)!.pose).toEqual(HOME);
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    expect(onRunEnd).toHaveBeenCalledWith(false);
   });
 });

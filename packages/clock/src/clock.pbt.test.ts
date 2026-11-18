@@ -1,5 +1,5 @@
 /**
- * Property tests of the clock. A stateful model test drives random syncs, rates, ramps, seeks, duration and loop
+ * Property tests of the clock. A stateful model test drives random syncs, speeds, ramps, seeks, duration and loop
  * writes, declarations, resets, and rebases against a model of where the playhead goes, checking after every step
  * that it stands inside the run with a pass and phase that read it back, and that a mix follows it. Then seek
  * determinism, time scaling composing across frames, ramps reaching their ends exactly, a recorded position
@@ -338,7 +338,7 @@ describe('clock laws', () => {
       rate: fc.option(fc.constantFrom(Number.NaN, Infinity, -1, 1), { nil: undefined }),
       origin: fc.option(fc.constantFrom(Number.NaN, -Infinity, 3), { nil: undefined }),
       speed: fc.option(fc.constantFrom(0, -1, Number.NaN, Infinity, 2), { nil: undefined }),
-      rates: fc.option(fc.constantFrom([], [0], [Number.NaN], [1, 2], [Infinity]), { nil: undefined }),
+      speeds: fc.option(fc.constantFrom([], [0], [Number.NaN], [1, 2], [Infinity]), { nil: undefined }),
       start: fc.option(fc.constantFrom<number | 'end'>('end', Number.NaN, 5), { nil: undefined }),
       seekable: fc.option(fc.boolean(), { nil: undefined }),
     }, { requiredKeys: [] });

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { f, GroupNode, NumberNode } from './index';
+import { ConfigGroup, f, NumberNode } from './index';
 
 describe('config node classes', () => {
   it('are exported as values', () => {
     expect(typeof NumberNode).toBe('function');
-    expect(typeof GroupNode).toBe('function');
+    expect(typeof ConfigGroup).toBe('function');
     expect(f.number(1)).toBeInstanceOf(NumberNode);
-    expect(f.group({ n: f.number(1) })).toBeInstanceOf(GroupNode);
+    expect(f.group({ n: f.number(1) })).toBeInstanceOf(ConfigGroup);
   });
 
   it('can be extended', () => {

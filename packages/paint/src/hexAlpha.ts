@@ -14,9 +14,9 @@ export function toHex8(color: string): string {
   return tryNormalizeHex(color, 'rgba') ?? color;
 }
 
-/** Return the alpha channel of `color` (`#rgba` or `#rrggbbaa`) as 0..1.
+/** The alpha channel of `color` (`#rgba` or `#rrggbbaa`) as 0..1.
  *  Defaults to 1 for any other form. */
-export function getAlpha01(color: string): number {
+export function hexAlpha(color: string): number {
   if (!color.startsWith('#') || (color.length !== 5 && color.length !== 9)) return 1;
   const hex = tryNormalizeHex(color, 'rgba');
   return hex ? Number.parseInt(hex.slice(7), 16) / 255 : 1;
@@ -41,5 +41,5 @@ export function mergeAlphaFromPrev(picked: string, prev: string): string {
     const hex = tryNormalizeHex(picked);
     if (hex) return hex;
   }
-  return withAlpha01(picked, getAlpha01(prev));
+  return withAlpha01(picked, hexAlpha(prev));
 }

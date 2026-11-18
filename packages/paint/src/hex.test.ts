@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { rgbaToHex } from './color';
-import { byteHex, hexToRgbBytes, parseHexBytes, rgbaHex } from './hex';
+import { byteHex, hexToRgbBytes, parseHexBytes, opaqueHexOfBytes } from './hex';
 
 describe('parseHexBytes', () => {
   it('reads six and eight digits', () => {
@@ -41,9 +41,9 @@ describe('byteHex', () => {
   });
 });
 
-describe('rgbaHex', () => {
+describe('opaqueHexOfBytes', () => {
   it('writes the color of any pixel with alpha, and null for a transparent one', () => {
-    expect(rgbaHex([0, 10, 255, 1])).toBe('#000aff');
-    expect(rgbaHex([12, 34, 56, 0])).toBeNull();
+    expect(opaqueHexOfBytes([0, 10, 255, 1])).toBe('#000aff');
+    expect(opaqueHexOfBytes([12, 34, 56, 0])).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 /** The cut polyline itself: where it crosses itself, and the loops it closes inside a path. */
 
-import { pointInPolygon } from '../polyline';
+import { polygonContainsPoint } from '../polyline';
 import { nearlyParallel, lerp } from '../scalar';
 import type { Point } from '../paths/cubicMath';
 import { type Contour, evalSeg, reverseContour, sampleContour, signedArea } from './contourSegments';
@@ -153,7 +153,7 @@ export function cutOutLoops(regions: Contour[][], loops: Point[][]): boolean {
     const samples = sampleContour(ring);
     const within = (c: Contour): boolean => {
       const p = evalSeg(c[0], 0.5);
-      return pointInPolygon(samples, p.x, p.y);
+      return polygonContainsPoint(samples, p.x, p.y);
     };
     const region = regions[at];
     regions[at] = [...region.filter((c) => !within(c)), reverseContour(ring)];

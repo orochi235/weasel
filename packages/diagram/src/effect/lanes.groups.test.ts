@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_GROUP_INSET } from '../cluster';
+import { DEFAULT_CLUSTER_INSET } from '../cluster';
 import { built, P } from './lanesFixture';
 import { laneTypeOf } from './lanes';
 import type { EffectGroup, EffectPipeline } from './types';
@@ -44,7 +44,7 @@ describe('lanes groups', () => {
   it('widens a group to fit a long title, and keeps it clear of its neighbors', () => {
     const p = withGroups([{ id: 'g', label: 'A very long group title indeed, longer than its stages', members: ['blur'] }]);
     const { box } = built(p);
-    expect(box('g').width).toBeGreaterThanOrEqual(box('g/label').width + 2 * DEFAULT_GROUP_INSET - 1e-6);
+    expect(box('g').width).toBeGreaterThanOrEqual(box('g/label').width + 2 * DEFAULT_CLUSTER_INSET - 1e-6);
     expectBlock(p, 'g', ['blur']);
   });
 

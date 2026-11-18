@@ -1,4 +1,4 @@
-import { type LeafRenderer, valueAtPath } from '@weasel-js/labkit';
+import { type LeafRenderer, configValueAt } from '@weasel-js/labkit';
 import type { BadgeBase } from '@weasel-js/ui/components/Badge';
 import { OCTANT_SPLINE_MAX_ANCHORS, OCTANT_SPLINE_MIN_ANCHORS } from '@weasel-js/ui/components/Badge/geometry';
 import { PropertyField } from '@weasel-js/ui/components/Properties';
@@ -16,7 +16,7 @@ function SplineRow({ path, value, values, setValue, drafts, disabled }: RowConte
   const group = path.slice(0, path.lastIndexOf('.'));
   const base = group.slice(group.lastIndexOf('.') + 1) as BadgeBase;
   const curve = value as SplineCurve;
-  const mode = splineMode((valueAtPath(values, group) ?? {}) as Params);
+  const mode = splineMode((configValueAt(values, group) ?? {}) as Params);
   // The anchor helpers read the mode beside the slots, as the base does.
   const bag: Params = { ...curve, mode };
   const slotsOf = ({ mode: _mode, ...slots }: Params): Params => slots;

@@ -22,7 +22,7 @@ import { resolveRuns, resolveRunsInto } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
 import type { TextVerticalAlign, ResolvedRun, ResolvedTextStyle } from '@weasel-js/text';
 import { isSolidPaint, type Paint } from '@weasel-js/paint';
-import type { FillPoseBox } from './fillInPoseFrame';
+import type { Rect } from '@weasel-js/geom';
 import { commandFill, commandPaint } from './patterns/commandPaint';
 
 /** The style each command resolves into: read while its runs resolve, and
@@ -63,7 +63,7 @@ export function textCommandFromRuns(
 /**
  * {@link textCommandFromRuns} into `cmd`, an earlier result of it that the
  * caller owns, refilled in place along with its runs and returned. For text
- * rewritten every frame: call `clearRuns(cmd.runs)` first, and anything still
+ * rewritten every frame: call `evictRunsForRefill(cmd.runs)` first, and anything still
  * holding `cmd` sees the new text.
  */
 export function textCommandFromRunsInto(
@@ -142,7 +142,7 @@ export function textCommandFromPose(pose: TextPose, scale = 1): TextDrawCommand 
   };
 }
 
-function runsInPoseFrame(runs: ResolvedRun[], box: FillPoseBox): ResolvedRun[] {
+function runsInPoseFrame(runs: ResolvedRun[], box: Rect): ResolvedRun[] {
   if (runs.every((r) => isSolid(r.fill?.paint) && isSolid(r.stroke?.paint))) return runs;
   return runs.map((r) => {
     const fill = r.fill && commandFill(r.fill, box);

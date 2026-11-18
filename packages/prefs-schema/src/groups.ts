@@ -126,7 +126,7 @@ export interface PrefSection {
 
 /** Whether a panel draws a group or a section drawn `as` this in a bordered, titled box: a `panel`, and a `menu`,
  *  which a panel has no menu to open as. */
-export function prefAsBox(as: PrefGroupAs | undefined): boolean {
+export function prefDrawsAsBox(as: PrefGroupAs | undefined): boolean {
   return as === 'panel' || as === 'menu';
 }
 

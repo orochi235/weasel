@@ -218,7 +218,7 @@ const gradientKinds = derivedList(
  * way out, `fromStops` on the way in — keeping `interpolate` and `opacity`.
  * Lossy wherever the kinds hold different information.
  */
-export function switchGradientKind(paint: Paint, kind: PaintKind): Paint | undefined {
+export function withPaintKind(paint: Paint, kind: PaintKind): Paint | undefined {
   const from = paintKindOf(paint);
   const to = getPaintKind(kind);
   if (!from?.stopsOf || !to?.fromStops) return undefined;
@@ -235,8 +235,8 @@ export function switchGradientKind(paint: Paint, kind: PaintKind): Paint | undef
 }
 
 /** The registry entry for a paint, or `undefined` when its kind is unknown. */
-export function paintKindOf(fill: Paint): PaintKindEntry | undefined {
-  return getPaintKind(fill.kind ?? 'solid');
+export function paintKindOf(paint: Paint): PaintKindEntry | undefined {
+  return getPaintKind(paint.kind ?? 'solid');
 }
 
 /** @internal Back to the built-ins alone, once the renderer's half is reset too; tests reach it

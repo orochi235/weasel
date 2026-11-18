@@ -1,7 +1,7 @@
 import { mixRgbaWeighted, parseColor, rgbaToHex } from '@weasel-js/paint';
 import { trimNumber } from '@weasel-js/geom';
 import { getOwn, setOwn } from '@weasel-js/registry';
-import { fullSelection, type Selection } from './axes.ts';
+import { fullAxisChoice, type AxisChoice } from './axes.ts';
 import { readCssNumber } from './cssNumber.ts';
 import { resolveTheme, themeAxes, type ResolvedTheme } from './resolveTheme.ts';
 import type { Theme } from './theme.ts';
@@ -54,9 +54,9 @@ function blend(members: readonly Weighted[]): string {
  * that is an alias in one mode and a literal in the other blends like any
  * other. An axis `weights` leaves out stays at `selection`.
  */
-export function blendTheme(theme: Theme, weights: AxisWeights, selection: Selection = {}): ResolvedTheme {
+export function blendTheme(theme: Theme, weights: AxisWeights, selection: AxisChoice = {}): ResolvedTheme {
   const axes = themeAxes(theme);
-  let at: { selection: Selection; weight: number }[] = [{ selection: fullSelection(axes, selection), weight: 1 }];
+  let at: { selection: AxisChoice; weight: number }[] = [{ selection: fullAxisChoice(axes, selection), weight: 1 }];
   for (const [axis, shares] of Object.entries(weights)) {
     const values = getOwn(axes, axis)?.values;
     if (!values) continue;

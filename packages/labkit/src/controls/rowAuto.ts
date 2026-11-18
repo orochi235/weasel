@@ -1,15 +1,15 @@
 import {
-  leafAtReset,
   type PrefLeaf,
   type PrefNumber,
   prefAutoValue,
   prefCanAuto,
-  prefLeafValue,
+  prefValueOrDefault,
+  sourceLeafIsAtReset,
 } from '@weasel-js/prefs';
 import { PropertyAutoReadout } from '@weasel-js/ui/components/Properties';
 import { createElement, type ReactNode, useMemo } from 'react';
 import { autoQuotes, autoResolverOf, resolveAutoConfig } from '../config/autoConfig';
-import { valueAtPath } from '../config/path';
+import { configValueAt } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
 import { leafValueAt } from './fields';
 import { numberText, summarizeLeaf, summarizeValue } from './inDialog';
@@ -36,7 +36,7 @@ export interface RowAutoSource {
   shown: Record<string, unknown>;
   auto: ReadonlySet<string> | undefined;
   setRowAuto: ((path: string, next: boolean, value: unknown) => void) | undefined;
-  /** Writes one value, the `auto` sentinel included: what a reset goes through. */
+  /** Writes one value, the `AUTO` sentinel included: what a reset goes through. */
   setConfig: (path: string, value: unknown) => void;
 }
 
@@ -48,10 +48,10 @@ function useUnpinned(
 ): { value?: unknown; cycles?: true } {
   return useMemo(() => {
     if (!resolves) return {};
-    if (isAutoRow) return { value: valueAtPath(shown, path) };
+    if (isAutoRow) return { value: configValueAt(shown, path) };
     try {
       return {
-        value: valueAtPath(
+        value: configValueAt(
           resolveAutoConfig(resolved, config, new Set([...(auto ?? []), path])),
           path,
         ),
@@ -76,11 +76,11 @@ export function useRowAuto(source: RowAutoSource) {
   // Read out of the resolved config rather than re-running this leaf's own
   // resolver, so the row reports the value the instrument actually got — the
   // two diverge as soon as a resolver reads another auto path.
-  const resolvedValue = isAutoRow ? valueAtPath(shown, path) : undefined;
+  const resolvedValue = isAutoRow ? configValueAt(shown, path) : undefined;
   // An auto row's control stays live, so it draws the value in effect (`prefAutoValue`: the report or the
   // resolver's, else `auto.value`), never the stale pinned value underneath. Pinning keeps it. With none yet,
   // the control has to draw something, and draws what a field holding nothing draws.
-  const value = isAutoRow ? prefLeafValue(leaf, prefAutoValue(leaf, resolvedValue)) : pinned;
+  const value = isAutoRow ? prefValueOrDefault(leaf, prefAutoValue(leaf, resolvedValue)) : pinned;
   const setAuto = (next: boolean): void => setRowAuto?.(path, next, value);
   // What the row would read as auto, pinned or not: the config resolved with
   // this path unpinned beside the ones that already are. Only where something
@@ -103,7 +103,7 @@ export function useRowAuto(source: RowAutoSource) {
   };
 }
 
-/** The row's reset, where its leaf is not already as a reset leaves it (`leafIsAtReset`). */
+/** The row's reset, where its leaf is not already as a reset leaves it (`readingIsAtReset`). */
 function rowReset({
   path,
   leaf,
@@ -115,5 +115,5 @@ function rowReset({
   setConfig,
 }: RowAutoSource): (() => void) | undefined {
   const source = createLabConfigSource({ resolved, config, shown, setConfig, auto, setRowAuto });
-  return leafAtReset(source, path, leaf) ? undefined : () => source.reset([path]);
+  return sourceLeafIsAtReset(source, path, leaf) ? undefined : () => source.reset([path]);
 }

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
-import { hitTestArea, hitTestLassoPolygon, regionPickOptions } from './hitTestArea';
+import { hitTestRect, hitTestLassoPolygon, regionPickOptions } from './hitTestArea';
 
 type Pose = { x: number; y: number; width: number; height: number };
 const CAMERA: View = { x: 400, y: 0, scale: { x: 1, y: 1 } };
@@ -23,8 +23,8 @@ describe('region picks over parallax layers', () => {
   it('marquees a plane node where it is painted', () => {
     const scene = makeScene();
     const opts = { camera: CAMERA };
-    expect(hitTestArea(scene, { x: 290, y: -10, width: 30, height: 30 }, opts)).toEqual(['hill']);
-    expect(hitTestArea(scene, { x: -10, y: -10, width: 30, height: 30 }, opts)).toEqual(['crate']);
+    expect(hitTestRect(scene, { x: 290, y: -10, width: 30, height: 30 }, opts)).toEqual(['hill']);
+    expect(hitTestRect(scene, { x: -10, y: -10, width: 30, height: 30 }, opts)).toEqual(['crate']);
   });
 
   it('lassos through the plane too', () => {

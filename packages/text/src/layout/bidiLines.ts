@@ -76,7 +76,7 @@ export function analyzeParagraphs(
     },
     baseLevel(at) {
       const p = holding(at);
-      return p === undefined ? 0 : engine.baseLevel(p.analysis);
+      return p === undefined ? 0 : engine.paragraphLevel(p.analysis);
     },
   };
 }

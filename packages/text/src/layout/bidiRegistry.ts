@@ -50,7 +50,7 @@ export function paragraphDirection(
     if (isParagraphSeparator(cp)) break;
     cps.push(cp);
   }
-  return directionOfLevel(engine.baseLevel(engine.analyze(cps, 'auto')));
+  return directionOfLevel(engine.paragraphLevel(engine.analyze(cps, 'auto')));
 }
 
 /**

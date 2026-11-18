@@ -1,5 +1,5 @@
 import { clamp } from '@weasel-js/geom';
-import type { ViewTransform } from '../../instrument/types';
+import type { ViewTransform2D } from '../../instrument/types';
 import { type Box, CONTENT, EXERCISES } from './exercises';
 
 export const SCALES = ['0.5', '1', '2'] as const;
@@ -50,7 +50,7 @@ export function zoomWindow(c: CalibrationConfig): Box {
 }
 
 /** The target's camera under a zoom, against its element's box; none at zoom 1, where labkit fits the content. */
-export function targetView(c: CalibrationConfig): ViewTransform | undefined {
+export function targetView(c: CalibrationConfig): ViewTransform2D | undefined {
   if (c.zoom === '1') return undefined;
   const k = pxPerUnit(c);
   const win = zoomWindow(c);

@@ -3,7 +3,7 @@
  * curves refitted through them.
  */
 import type { PolygonPath } from '../path';
-import { nearestOnCubic, nearestOnLine } from '../nearest';
+import { nearestOnCubic, nearestOnSegment } from '../nearest';
 import { anchorsToPath, isAnchorSmooth, pathToAnchors, type PenAnchor } from './anchors';
 import { keepCorner } from './fitRun';
 import { arcRun, type ArcRun } from './arcRun';
@@ -150,14 +150,14 @@ function fitPiece(
   }
   const a = samples[0];
   const e = samples[FIT_SAMPLES];
-  if (worst(samples, (p) => nearestOnLine(p.x, p.y, a.x, a.y, e.x, e.y).dist) <= tol) {
+  if (worst(samples, (p) => nearestOnSegment(p.x, p.y, a.x, a.y, e.x, e.y).distance) <= tol) {
     out.push({ end: e });
     return;
   }
   const tStart = run.headingAt(s0);
   const into = run.headingAt(s1, true);
   const { cp1, cp2 } = fitCubicWithTangents(samples, tStart, { x: -into.x, y: -into.y }, { params, passes: 3 });
-  const err = worst(samples, (p) => nearestOnCubic(p.x, p.y, a.x, a.y, cp1.x, cp1.y, cp2.x, cp2.y, e.x, e.y).dist);
+  const err = worst(samples, (p) => nearestOnCubic(p.x, p.y, a.x, a.y, cp1.x, cp1.y, cp2.x, cp2.y, e.x, e.y).distance);
   if (err > tol && depth < MAX_HALVINGS) {
     const mid = (s0 + s1) / 2;
     fitPiece(run, s0, mid, tol, depth + 1, out);

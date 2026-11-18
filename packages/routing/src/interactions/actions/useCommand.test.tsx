@@ -5,7 +5,7 @@ import { ActionsProvider, useActionsRegistry } from './ActionsProvider';
 import { actionItems } from './actionItems';
 import { actionShortcuts } from './actionShortcuts';
 import { actionBindings } from './binding';
-import { evaluateActive, evaluateEnabled } from './actionEnabled';
+import { checkActive, checkEnabled } from './actionEnabled';
 import type { ActionUnavailable, ActionVariant } from './action';
 import { useCommand, type CommandOptions } from './useCommand';
 import { toIconRef } from '@weasel-js/icons';
@@ -123,14 +123,14 @@ describe('useCommand', () => {
     const action = found()!;
     rerender({ label: 'A', run, options: { enabled: () => 'not-applicable', active: () => true } });
     expect(found()).toBe(action);
-    expect(evaluateEnabled(action).enabled).toBe(false);
-    expect(evaluateActive(action)).toBe(true);
+    expect(checkEnabled(action).enabled).toBe(false);
+    expect(checkActive(action)).toBe(true);
   });
 
   it('lets enabled answer with a sentence, which reaches every surface as the reason', () => {
     expectTypeOf<ReturnType<NonNullable<CommandOptions['enabled']>>>().toEqualTypeOf<true | ActionUnavailable>();
     const { found } = mount({ label: 'A', run: vi.fn(), options: { enabled: () => 'Open a document first' } });
-    expect(evaluateEnabled(found()!)).toEqual({ enabled: false, reason: 'Open a document first' });
+    expect(checkEnabled(found()!)).toEqual({ enabled: false, reason: 'Open a document first' });
   });
 
   const variants = () => [
@@ -182,9 +182,9 @@ describe('useCommand', () => {
       },
     });
     const [a, b] = actionItems(found()!);
-    expect(evaluateEnabled(a!.action, undefined, undefined, a!.params)).toEqual({ enabled: true });
-    expect(evaluateEnabled(b!.action, undefined, undefined, b!.params)).toEqual({ enabled: false, reason: 'Not for two' });
-    expect([evaluateActive(a!.action, undefined, a!.params), evaluateActive(b!.action, undefined, b!.params)]).toEqual([true, false]);
+    expect(checkEnabled(a!.action, undefined, undefined, a!.params)).toEqual({ enabled: true });
+    expect(checkEnabled(b!.action, undefined, undefined, b!.params)).toEqual({ enabled: false, reason: 'Not for two' });
+    expect([checkActive(a!.action, undefined, a!.params), checkActive(b!.action, undefined, b!.params)]).toEqual([true, false]);
     expect(registry.trigger(dynamicActionId('cmd.a'), { n: 2 })).toBe(false);
     expect(run).not.toHaveBeenCalled();
   });

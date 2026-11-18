@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { partialPresets, renderNoise, renderNote } from '@weasel-js/audio';
+import { PARTIAL_PRESETS, renderNoise, renderNote } from '@weasel-js/audio';
 import { CENTER_GAIN, renderEngine } from '@weasel-js/audio/testing/renderEngine';
 import { centroid, peaks, powerSpectrum, rmsEnvelope } from '@weasel-js/audio/testing/spectrum';
 import type { NoiseOptions, NoteOptions } from './types';
@@ -36,7 +36,7 @@ describe('a note kernel against the node graph', () => {
     },
     'a square': { pitch: 220, wave: 'square', duration: 300, gain: 0.5 },
     'harmonic levels': { pitch: 330, wave: [1, 0.5, 0.25], duration: 300 },
-    'a bell': { pitch: 'C5', wave: partialPresets.bell, duration: 400, envelope: { release: 200 } },
+    'a bell': { pitch: 'C5', wave: PARTIAL_PRESETS.bell, duration: 400, envelope: { release: 200 } },
     'a glide': { pitch: 200, glide: { to: 800 }, duration: 300 },
   };
 

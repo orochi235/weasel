@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeWheelAction, type WheelInput } from 'core/viewport/wheelHandler';
+import { viewAfterWheel, type WheelInput } from 'core/viewport/wheelHandler';
 import type { View } from 'core/viewport/view';
 import { viewportZoomAction } from './viewportZoom';
 import { viewportWheelPanAction } from './viewportWheelPan';
@@ -22,39 +22,39 @@ function makeView(initial: View = base): ViewApi & { value: View } {
 // ---------------------------------------------------------------------------
 
 describe('the wheel actions agree with the reducer', () => {
-  it('viewport.zoom matches computeWheelAction on a modified wheel', () => {
+  it('viewport.zoom matches viewAfterWheel on a modified wheel', () => {
     const view = makeView({ x: 3, y: -7, scale: { x: 2, y: 2 } });
     const invoker = viewportZoomAction.invoker!;
     if (invoker.timing !== 'immediate') throw new Error('expected an immediate invoker');
     invoker.run({ view }, { kind: 'wheel', deltaY: -120, clientX: 250, clientY: 130 });
     expect(view.value).toEqual(
-      computeWheelAction(
+      viewAfterWheel(
         { x: 3, y: -7, scale: { x: 2, y: 2 } },
         { deltaX: 0, deltaY: -120, metaKey: true, ...at(250, 130) },
       ),
     );
   });
 
-  it('viewport.wheelPan matches computeWheelAction on a bare wheel', () => {
+  it('viewport.wheelPan matches viewAfterWheel on a bare wheel', () => {
     const view = makeView({ x: 3, y: -7, scale: { x: 2, y: 4 } });
     const invoker = viewportWheelPanAction.invoker!;
     if (invoker.timing !== 'immediate') throw new Error('expected an immediate invoker');
     invoker.run({ view }, { deltaX: 12, deltaY: -30 });
     expect(view.value).toEqual(
-      computeWheelAction(
+      viewAfterWheel(
         { x: 3, y: -7, scale: { x: 2, y: 4 } },
         { deltaX: 12, deltaY: -30, ...at(0, 0) },
       ),
     );
   });
 
-  it('viewport.wheelPan matches computeWheelAction on shift+wheel', () => {
+  it('viewport.wheelPan matches viewAfterWheel on shift+wheel', () => {
     const view = makeView({ x: 3, y: -7, scale: { x: 2, y: 4 } });
     const invoker = viewportWheelPanAction.invoker!;
     if (invoker.timing !== 'immediate') throw new Error('expected an immediate invoker');
     invoker.run({ view }, { deltaX: 0, deltaY: -30, swapAxis: true });
     expect(view.value).toEqual(
-      computeWheelAction(
+      viewAfterWheel(
         { x: 3, y: -7, scale: { x: 2, y: 4 } },
         { deltaX: 0, deltaY: -30, shiftKey: true, ...at(0, 0) },
       ),

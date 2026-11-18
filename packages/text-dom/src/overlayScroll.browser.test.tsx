@@ -39,7 +39,7 @@ function Editor({ text, caret, pose, style }: {
         fontSize: 16, zoom, clip: { top: INSET, right: INSET, bottom: INSET, left: INSET }, ...pose,
       };
     },
-    commit: () => {},
+    onChange: () => {},
   });
   const { startEdit } = edit;
   useEffect(() => { startEdit('n', { caret }); }, [startEdit, caret]);

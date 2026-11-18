@@ -138,7 +138,7 @@ describe('<CanvasView>', () => {
         layers={{}}
         width={300}
         height={200}
-        viewport={{ pinchZoom: true }}
+        viewport={{ touchZoom: true }}
         onViewChange={outer}
         views={[{ id: 'panel', bounds: PANEL, onViewChange: panel }]}
       />,
@@ -462,7 +462,7 @@ describe('<CanvasView> hit-testing', () => {
 
   it('classifies a body under the point in this view\'s coordinates', () => {
     expect(panelTarget(['b']).classifyTarget!({ x: 45, y: 5 }))
-      .toMatchObject({ body: 'selected-body' });
+      .toMatchObject({ bodyTarget: 'selected-body' });
   });
 
   // World (31, 22) is 11.2px from c's top-left corner — outside the 8px fine

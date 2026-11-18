@@ -1,7 +1,7 @@
 import { decodeSnapshot, encodeSnapshot, stringifySnapshot } from '@weasel-js/core';
 import { readStored, useAutosave } from '@weasel-js/editor';
 import { readEffectDoc, type EffectDoc } from '@weasel-js/diagram/effect';
-import { createHistory, swapOp } from '@weasel-js/history';
+import { createHistory, createSwapOp } from '@weasel-js/history';
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { reportPipelineSave } from '../reportFailure';
 
@@ -60,7 +60,7 @@ export function usePipelineDoc(storageKey: string = PIPELINE_STORAGE_KEY): Pipel
   const change = useCallback((next: EffectDoc, label: string) => {
     const before = base.current ?? current.current;
     base.current = null;
-    history.apply(swapOp({ name: 'pipeline.set', label, before, after: next, emit }), label);
+    history.apply(createSwapOp({ name: 'pipeline.set', label, before, after: next, emit }), label);
   }, [history, emit]);
   const preview = useCallback((next: EffectDoc) => {
     base.current ??= current.current;

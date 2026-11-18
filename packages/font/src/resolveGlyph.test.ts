@@ -7,7 +7,7 @@ import {
 import { BAKE_SIZE } from './dynamic/glyphRasterizer';
 import { glyphOutline, registerFontOutlines, _resetFontOutlinesForTests } from './outline/outlineRegistry';
 import { registerTestFont } from './testing/registerTestFont';
-import { metricsOf } from './glyphMetrics';
+import { glyphMetricsOf } from './glyphMetrics';
 import { glyphIn, resolveGlyph } from './resolveGlyph';
 
 const MISSING = 0xe000;
@@ -42,11 +42,11 @@ async function registerOutlineFace(family: string): Promise<void> {
   await new Promise<void>((r) => setTimeout(r, 0));
 }
 
-describe('metricsOf', () => {
+describe('glyphMetricsOf', () => {
   it('reads an atlas in its bake-size units', async () => {
     await registerTestFont('inter');
     const resolved = resolveFontVariant('inter', 400, 'normal');
-    const m = metricsOf(resolved)!;
+    const m = glyphMetricsOf(resolved)!;
     const font = resolved.entry!.font;
     expect(m.size).toBe(font.info.size);
     expect(m.base).toBe(font.common.base);
@@ -56,13 +56,13 @@ describe('metricsOf', () => {
 
   it('reads a parsed face in ems', async () => {
     await registerOutlineFace('solo');
-    const m = metricsOf(resolveFontVariant('solo', 400, 'normal'))!;
+    const m = glyphMetricsOf(resolveFontVariant('solo', 400, 'normal'))!;
     expect([m.size, m.base, m.advanceOf(65), m.advanceOf(67), m.kernOf(65, 66)]).toEqual([1, 0.8, 0.6, null, -0.05]);
   });
 
   it('measures a canvas face on request', () => {
     registerCanvasFont('Dyn');
-    const m = metricsOf(resolveFontVariant('Dyn', 400, 'normal'))!;
+    const m = glyphMetricsOf(resolveFontVariant('Dyn', 400, 'normal'))!;
     expect(m.size).toBe(BAKE_SIZE);
     expect(m.advanceOf(65)).toBe(22);
     expect(m.advanceOf(MISSING)).toBeNull();
@@ -72,7 +72,7 @@ describe('metricsOf', () => {
   it('reads a face measured again in place', () => {
     registerCanvasFont('Dyn');
     const resolved = resolveFontVariant('Dyn', 400, 'normal');
-    const m = metricsOf(resolved)!;
+    const m = glyphMetricsOf(resolved)!;
     const font = resolved.dynamicFace!.font;
     expect([m.ascent, m.descent]).toEqual([40, 8]);
     font.faceMetrics = { ascent: 30 / BAKE_SIZE, descent: 6 / BAKE_SIZE };
@@ -85,10 +85,10 @@ describe('metricsOf', () => {
 
   it('is one object per face, and none for a miss', async () => {
     await registerTestFont('inter');
-    expect(metricsOf(resolveFontVariant('inter', 400, 'normal')))
-      .toBe(metricsOf(resolveFontVariant('inter', 400, 'normal')));
+    expect(glyphMetricsOf(resolveFontVariant('inter', 400, 'normal')))
+      .toBe(glyphMetricsOf(resolveFontVariant('inter', 400, 'normal')));
     setFontFallbackPolicy('none');
-    expect(metricsOf(resolveFontVariant('never-registered', 400, 'normal'))).toBeUndefined();
+    expect(glyphMetricsOf(resolveFontVariant('never-registered', 400, 'normal'))).toBeUndefined();
   });
 });
 
@@ -158,7 +158,7 @@ describe('glyphIn and resolveGlyph into a given object', () => {
   it('write the answer into it and return it, and leave it be on a miss', async () => {
     await registerTestFont('inter');
     const resolved = resolveFontVariant('inter', 400, 'normal');
-    const into = { resolved, metrics: metricsOf(resolved)!, advance: -1, font: null, glyph: null };
+    const into = { resolved, metrics: glyphMetricsOf(resolved)!, advance: -1, font: null, glyph: null };
     const fresh = glyphIn(resolved, 65)!;
     expect(glyphIn(resolved, 65, into)).toBe(into);
     expect(into).toEqual(fresh);

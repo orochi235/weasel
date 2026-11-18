@@ -1,6 +1,6 @@
 import type { PrefLeaf } from '@weasel-js/prefs';
-import { createEmitter, getOwn } from '@weasel-js/registry';
-import { type ToolOptions, type ToolOptionValues, toolOptionParams } from '@weasel-js/routing';
+import { createEmitter, createPart, getOwn } from '@weasel-js/registry';
+import { type ToolOptionsSpec, type ToolOptionValues, toolOptionParams } from '@weasel-js/routing';
 import type { RecordCache } from '@weasel-js/storage';
 import { valueRecord } from '../state/labRecords';
 import { MARK_COLOR, MARK_TEXT_SIZE, MARK_WIDTH } from './paint';
@@ -41,14 +41,14 @@ export const MARK_SIZE_LEAF: PrefLeaf = {
 
 /** The options of a tool that draws a line: its width and color. Labkit binds no actions to them; the overlay reads
  *  them when it makes a mark. */
-export const MARK_LINE_OPTIONS: ToolOptions = {
+export const MARK_LINE_OPTIONS: ToolOptionsSpec = {
   actionId: [],
   prefs: { name: 'Mark', as: 'bar', children: { width: MARK_WIDTH_LEAF, color: MARK_COLOR_LEAF } },
   share: { width: MARK_WIDTH_KEY, color: MARK_COLOR_KEY },
 };
 
 /** The text tool's options: its size, and the color every mark shares. */
-export const MARK_TEXT_OPTIONS: ToolOptions = {
+export const MARK_TEXT_OPTIONS: ToolOptionsSpec = {
   actionId: [],
   prefs: {
     name: 'Text',
@@ -61,7 +61,7 @@ export const MARK_TEXT_OPTIONS: ToolOptions = {
 /** The style fields a mark of `kind` carries, read from `options` in `values`. */
 export function markStyleFrom(
   toolId: string,
-  options: ToolOptions | undefined,
+  options: ToolOptionsSpec | undefined,
   values: ToolOptionValues,
 ): Pick<AnnotationData, 'width' | 'color' | 'fontSize'> {
   if (!options) return {};
@@ -76,13 +76,9 @@ export function markStyleFrom(
 const TOOL_OPTIONS_RECORD = 'toolOptions';
 type Held = Readonly<Record<string, Readonly<Record<string, unknown>>>>;
 const NONE: Readonly<Record<string, unknown>> = Object.freeze({});
-const byRecords = new WeakMap<RecordCache, ToolOptionValues>();
-
 /** The lab's tool option values, kept in its records so they survive a reload and every trial reads the same ones.
  *  One per record cache. */
-export function labToolOptionValues(records: RecordCache): ToolOptionValues {
-  const known = byRecords.get(records);
-  if (known) return known;
+export const labToolOptionValues = createPart((records: RecordCache): ToolOptionValues => {
   const name = valueRecord(null, TOOL_OPTIONS_RECORD);
   const held = (): Held => (records.has(name) ? (records.get(name) as Held) : {});
   const changed = createEmitter();
@@ -97,6 +93,5 @@ export function labToolOptionValues(records: RecordCache): ToolOptionValues {
     },
     subscribe: changed.subscribe,
   };
-  byRecords.set(records, values);
   return values;
-}
+});

@@ -10,45 +10,45 @@ function toggle(name: string): HTMLElement {
 
 describe('CharacterOptions — flag toggles', () => {
   it('turns a flag on', () => {
-    const onPatch = vi.fn();
-    renderWithIcons(<CharacterOptions style={{ bold: false }} onPatch={onPatch} />);
+    const onChange = vi.fn();
+    renderWithIcons(<CharacterOptions value={{ bold: false }} onChange={onChange} />);
     fireEvent.click(toggle('Bold'));
-    expect(onPatch).toHaveBeenCalledWith({ bold: true });
+    expect(onChange).toHaveBeenCalledWith({ bold: true });
   });
 
   it('turns a flag off', () => {
-    const onPatch = vi.fn();
-    renderWithIcons(<CharacterOptions style={{ bold: true }} onPatch={onPatch} />);
+    const onChange = vi.fn();
+    renderWithIcons(<CharacterOptions value={{ bold: true }} onChange={onChange} />);
     fireEvent.click(toggle('Bold'));
-    expect(onPatch).toHaveBeenCalledWith({ bold: false });
+    expect(onChange).toHaveBeenCalledWith({ bold: false });
   });
 
   it('patches only the flag that changed', () => {
-    const onPatch = vi.fn();
+    const onChange = vi.fn();
     renderWithIcons(
       <CharacterOptions
-        style={{ bold: true, italic: true, underline: true }}
-        onPatch={onPatch}
+        value={{ bold: true, italic: true, underline: true }}
+        onChange={onChange}
       />,
     );
     fireEvent.click(toggle('Italic'));
-    expect(onPatch).toHaveBeenCalledWith({ italic: false });
+    expect(onChange).toHaveBeenCalledWith({ italic: false });
   });
 
   it('renders a mixed flag as indeterminate', () => {
-    renderWithIcons(<CharacterOptions style={{ bold: MIXED }} onPatch={vi.fn()} />);
+    renderWithIcons(<CharacterOptions value={{ bold: MIXED }} onChange={vi.fn()} />);
     expect(toggle('Bold')).toHaveAttribute('aria-pressed', 'mixed');
   });
 
   it('turns a mixed flag fully on', () => {
-    const onPatch = vi.fn();
-    renderWithIcons(<CharacterOptions style={{ bold: MIXED }} onPatch={onPatch} />);
+    const onChange = vi.fn();
+    renderWithIcons(<CharacterOptions value={{ bold: MIXED }} onChange={onChange} />);
     fireEvent.click(toggle('Bold'));
-    expect(onPatch).toHaveBeenCalledWith({ bold: true });
+    expect(onChange).toHaveBeenCalledWith({ bold: true });
   });
 
   it('offers all five run flags', () => {
-    renderWithIcons(<CharacterOptions style={{}} onPatch={vi.fn()} />);
+    renderWithIcons(<CharacterOptions value={{}} onChange={vi.fn()} />);
     for (const name of ['Bold', 'Italic', 'Underline', 'Strikethrough', 'Overline']) {
       expect(toggle(name)).toHaveAttribute('aria-pressed', 'false');
     }
@@ -57,51 +57,51 @@ describe('CharacterOptions — flag toggles', () => {
 
 describe('CharacterOptions — weight', () => {
   it('shows the weight and patches a picked one', () => {
-    const onPatch = vi.fn();
-    renderWithIcons(<CharacterOptions style={{ fontWeight: 400 }} onPatch={onPatch} />);
+    const onChange = vi.fn();
+    renderWithIcons(<CharacterOptions value={{ fontWeight: 400 }} onChange={onChange} />);
     const weight = screen.getByRole('button', { name: /Weight/ });
     expect(weight).toHaveTextContent('400 Regular');
     fireEvent.click(weight);
     fireEvent.click(screen.getByRole('option', { name: '300 Light' }));
-    expect(onPatch).toHaveBeenCalledWith({ fontWeight: 300 });
+    expect(onChange).toHaveBeenCalledWith({ fontWeight: 300 });
   });
 
   it('draws a mixed weight as Mixed', () => {
-    renderWithIcons(<CharacterOptions style={{ fontWeight: MIXED }} onPatch={vi.fn()} />);
+    renderWithIcons(<CharacterOptions value={{ fontWeight: MIXED }} onChange={vi.fn()} />);
     expect(screen.getByRole('button', { name: /Weight/ })).toHaveTextContent('Mixed');
   });
 });
 
 describe('CharacterOptions — script', () => {
   it('sets superscript', () => {
-    const onPatch = vi.fn();
-    renderWithIcons(<CharacterOptions style={{}} onPatch={onPatch} />);
+    const onChange = vi.fn();
+    renderWithIcons(<CharacterOptions value={{}} onChange={onChange} />);
     fireEvent.click(toggle('Superscript'));
-    expect(onPatch).toHaveBeenCalledWith({ script: 'super' });
+    expect(onChange).toHaveBeenCalledWith({ script: 'super' });
   });
 
   it('clears by clicking the lit segment — off is the enum\'s absence', () => {
-    const onPatch = vi.fn();
-    renderWithIcons(<CharacterOptions style={{ script: 'super' }} onPatch={onPatch} />);
+    const onChange = vi.fn();
+    renderWithIcons(<CharacterOptions value={{ script: 'super' }} onChange={onChange} />);
     fireEvent.click(toggle('Superscript'));
-    expect(onPatch).toHaveBeenCalledWith({ script: undefined });
+    expect(onChange).toHaveBeenCalledWith({ script: undefined });
   });
 
   it('swaps rather than stacking — the two are mutually exclusive', () => {
-    const onPatch = vi.fn();
-    renderWithIcons(<CharacterOptions style={{ script: 'super' }} onPatch={onPatch} />);
+    const onChange = vi.fn();
+    renderWithIcons(<CharacterOptions value={{ script: 'super' }} onChange={onChange} />);
     fireEvent.click(toggle('Subscript'));
-    expect(onPatch).toHaveBeenCalledWith({ script: 'sub' });
+    expect(onChange).toHaveBeenCalledWith({ script: 'sub' });
   });
 
   it('renders a mixed script as indeterminate on both segments', () => {
-    renderWithIcons(<CharacterOptions style={{ script: MIXED }} onPatch={vi.fn()} />);
+    renderWithIcons(<CharacterOptions value={{ script: MIXED }} onChange={vi.fn()} />);
     expect(toggle('Superscript')).toHaveAttribute('aria-pressed', 'mixed');
     expect(toggle('Subscript')).toHaveAttribute('aria-pressed', 'mixed');
   });
 
   it('does not light a script segment for an unset script', () => {
-    renderWithIcons(<CharacterOptions style={{}} onPatch={vi.fn()} />);
+    renderWithIcons(<CharacterOptions value={{}} onChange={vi.fn()} />);
     expect(toggle('Superscript')).toHaveAttribute('aria-pressed', 'false');
     expect(toggle('Subscript')).toHaveAttribute('aria-pressed', 'false');
   });
@@ -110,7 +110,7 @@ describe('CharacterOptions — script', () => {
 describe('CharacterOptions — script primitives', () => {
   it('shows the two fractions as percentages', () => {
     renderWithIcons(
-      <CharacterOptions style={{ baselineShift: 0.333, fontScale: 0.583 }} onPatch={vi.fn()} />,
+      <CharacterOptions value={{ baselineShift: 0.333, fontScale: 0.583 }} onChange={vi.fn()} />,
     );
     // The unit's suffix is drawn beside the field rather than inside its
     // value, so a typed number needs no punctuation stripped back off.
@@ -120,73 +120,73 @@ describe('CharacterOptions — script primitives', () => {
   });
 
   it('commits a percentage back as the fraction the run stores', () => {
-    const onPatch = vi.fn();
-    renderWithIcons(<CharacterOptions style={{ fontScale: 1 }} onPatch={onPatch} />);
+    const onChange = vi.fn();
+    renderWithIcons(<CharacterOptions value={{ fontScale: 1 }} onChange={onChange} />);
     const input = screen.getByRole('spinbutton', { name: 'Scale' });
     fireEvent.change(input, { target: { value: '50%' } });
     fireEvent.blur(input);
-    expect(onPatch).toHaveBeenCalledWith({ fontScale: 0.5 });
+    expect(onChange).toHaveBeenCalledWith({ fontScale: 0.5 });
   });
 
   it('takes a negative baseline shift — that is what a subscript is', () => {
-    const onPatch = vi.fn();
-    renderWithIcons(<CharacterOptions style={{ baselineShift: 0 }} onPatch={onPatch} />);
+    const onChange = vi.fn();
+    renderWithIcons(<CharacterOptions value={{ baselineShift: 0 }} onChange={onChange} />);
     const input = screen.getByRole('spinbutton', { name: 'Baseline shift' });
     fireEvent.change(input, { target: { value: '-33.3%' } });
     fireEvent.blur(input);
-    expect(onPatch).toHaveBeenCalledWith({ baselineShift: -0.333 });
+    expect(onChange).toHaveBeenCalledWith({ baselineShift: -0.333 });
   });
 });
 
 describe('CharacterOptions — numeric fields', () => {
   it('shows the shared font size', () => {
-    renderWithIcons(<CharacterOptions style={{ fontSize: 18 }} onPatch={vi.fn()} />);
+    renderWithIcons(<CharacterOptions value={{ fontSize: 18 }} onChange={vi.fn()} />);
     expect(screen.getByRole('spinbutton', { name: 'Size' })).toHaveValue('18');
   });
 
   it('shows a mixed font size as an empty Mixed placeholder', () => {
-    renderWithIcons(<CharacterOptions style={{ fontSize: MIXED }} onPatch={vi.fn()} />);
+    renderWithIcons(<CharacterOptions value={{ fontSize: MIXED }} onChange={vi.fn()} />);
     const input = screen.getByRole('spinbutton', { name: 'Size' });
     expect(input).toHaveValue('');
     expect(input).toHaveAttribute('placeholder', 'Mixed');
   });
 
   it('commits a font size on blur', () => {
-    const onPatch = vi.fn();
-    renderWithIcons(<CharacterOptions style={{ fontSize: 18 }} onPatch={onPatch} />);
+    const onChange = vi.fn();
+    renderWithIcons(<CharacterOptions value={{ fontSize: 18 }} onChange={onChange} />);
     const input = screen.getByRole('spinbutton', { name: 'Size' });
     fireEvent.change(input, { target: { value: '24' } });
     fireEvent.blur(input);
-    expect(onPatch).toHaveBeenCalledWith({ fontSize: 24 });
+    expect(onChange).toHaveBeenCalledWith({ fontSize: 24 });
   });
 
   it('commits tracking on blur', () => {
-    const onPatch = vi.fn();
-    renderWithIcons(<CharacterOptions style={{ letterSpacing: 0 }} onPatch={onPatch} />);
+    const onChange = vi.fn();
+    renderWithIcons(<CharacterOptions value={{ letterSpacing: 0 }} onChange={onChange} />);
     const input = screen.getByRole('spinbutton', { name: 'Tracking' });
     fireEvent.change(input, { target: { value: '1.5' } });
     fireEvent.blur(input);
-    expect(onPatch).toHaveBeenCalledWith({ letterSpacing: 1.5 });
+    expect(onChange).toHaveBeenCalledWith({ letterSpacing: 1.5 });
   });
 });
 
 describe('CharacterOptions — fill', () => {
   it('shows a solid fill color', () => {
     renderWithIcons(
-      <CharacterOptions style={{ fill: { paint: { color: '#ff0000ff' } } }} onPatch={vi.fn()} />,
+      <CharacterOptions value={{ fill: { paint: { color: '#ff0000ff' } } }} onChange={vi.fn()} />,
     );
     expect(screen.getByLabelText('Color')).toHaveValue('#ff0000');
   });
 
   it('patches a solid fill', () => {
-    const onPatch = vi.fn();
+    const onChange = vi.fn();
     renderWithIcons(
-      <CharacterOptions style={{ fill: { paint: { color: '#ff0000ff' } } }} onPatch={onPatch} />,
+      <CharacterOptions value={{ fill: { paint: { color: '#ff0000ff' } } }} onChange={onChange} />,
     );
     const input = screen.getByLabelText('Color');
     fireEvent.input(input, { target: { value: '#00ff00' } });
     fireEvent.blur(input);
-    expect(onPatch).toHaveBeenCalledWith({ fill: { paint: { color: '#00ff00ff' } } });
+    expect(onChange).toHaveBeenCalledWith({ fill: { paint: { color: '#00ff00ff' } } });
   });
 
   it('treats a non-solid fill as indeterminate rather than inventing a swatch', () => {
@@ -195,7 +195,7 @@ describe('CharacterOptions — fill', () => {
     // no committed value until the first real edit — is exactly right here.
     const { container } = renderWithIcons(
       <CharacterOptions
-        style={{
+        value={{
           fill: {
             paint: {
               kind: 'linear-gradient',
@@ -205,7 +205,7 @@ describe('CharacterOptions — fill', () => {
             },
           },
         }}
-        onPatch={vi.fn()}
+        onChange={vi.fn()}
       />,
     );
     expect(container.querySelector('[data-mixed]')).not.toBeNull();
@@ -213,7 +213,7 @@ describe('CharacterOptions — fill', () => {
 
   it('treats a mixed fill as indeterminate', () => {
     const { container } = renderWithIcons(
-      <CharacterOptions style={{ fill: MIXED }} onPatch={vi.fn()} />,
+      <CharacterOptions value={{ fill: MIXED }} onChange={vi.fn()} />,
     );
     expect(container.querySelector('[data-mixed]')).not.toBeNull();
   });
@@ -221,57 +221,57 @@ describe('CharacterOptions — fill', () => {
 
 describe('CharacterOptions — no fill', () => {
   it('lights the chip for a range with no fill, and for an unfilled node', () => {
-    const { rerender, container } = renderWithIcons(<CharacterOptions style={{ fill: null }} onPatch={vi.fn()} />);
+    const { rerender, container } = renderWithIcons(<CharacterOptions value={{ fill: null }} onChange={vi.fn()} />);
     expect(toggle('No fill')).toHaveAttribute('aria-pressed', 'true');
     expect(container.querySelector('[data-mixed]')).toBeNull();
     // `effectiveRangeStyle` leaves `fill` off an unfilled node's range.
-    rerender(<CharacterOptions style={{ bold: false }} onPatch={vi.fn()} />);
+    rerender(<CharacterOptions value={{ bold: false }} onChange={vi.fn()} />);
     expect(toggle('No fill')).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('lights it, unmixed, for a fill that carries no paint', () => {
-    const { container } = renderWithIcons(<CharacterOptions style={{ fill: {} }} onPatch={vi.fn()} />);
+    const { container } = renderWithIcons(<CharacterOptions value={{ fill: {} }} onChange={vi.fn()} />);
     expect(toggle('No fill')).toHaveAttribute('aria-pressed', 'true');
     expect(container.querySelector('[data-mixed]')).toBeNull();
   });
 
   it('leaves it unlit over a filled range, a mixed one included', () => {
-    const { rerender } = renderWithIcons(<CharacterOptions style={{ fill: { paint: { color: '#ff0000ff' } } }} onPatch={vi.fn()} />);
+    const { rerender } = renderWithIcons(<CharacterOptions value={{ fill: { paint: { color: '#ff0000ff' } } }} onChange={vi.fn()} />);
     expect(toggle('No fill')).toHaveAttribute('aria-pressed', 'false');
-    rerender(<CharacterOptions style={{ fill: MIXED }} onPatch={vi.fn()} />);
+    rerender(<CharacterOptions value={{ fill: MIXED }} onChange={vi.fn()} />);
     expect(toggle('No fill')).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('unfills the range', () => {
-    const onPatch = vi.fn();
-    renderWithIcons(<CharacterOptions style={{ fill: { paint: { color: '#ff0000ff' } } }} onPatch={onPatch} />);
+    const onChange = vi.fn();
+    renderWithIcons(<CharacterOptions value={{ fill: { paint: { color: '#ff0000ff' } } }} onChange={onChange} />);
     fireEvent.click(toggle('No fill'));
-    expect(onPatch).toHaveBeenCalledWith({ fill: null });
+    expect(onChange).toHaveBeenCalledWith({ fill: null });
   });
 
   it('fills an unfilled range with the color the field shows', () => {
-    const onPatch = vi.fn();
-    renderWithIcons(<CharacterOptions style={{ fill: null }} onPatch={onPatch} />);
+    const onChange = vi.fn();
+    renderWithIcons(<CharacterOptions value={{ fill: null }} onChange={onChange} />);
     expect(screen.getByLabelText('Color')).toHaveValue('#000000');
     fireEvent.click(toggle('No fill'));
-    expect(onPatch).toHaveBeenCalledWith({ fill: { paint: { color: '#000000' } } });
+    expect(onChange).toHaveBeenCalledWith({ fill: { paint: { color: '#000000' } } });
   });
 });
 
 describe('CharacterOptions — idle', () => {
   it('draws no controls for a null style, the value useTextEdit reports outside an edit', () => {
-    renderWithIcons(<CharacterOptions style={null} onPatch={vi.fn()} />);
+    renderWithIcons(<CharacterOptions value={null} onChange={vi.fn()} />);
     expect(screen.queryByRole('button')).toBeNull();
     expect(screen.queryByText('Text')).toBeNull();
   });
 
   it('renders no bar for a null style, so an app does not show an empty strip', () => {
-    renderWithIcons(<CharacterOptions style={null} onPatch={vi.fn()} />);
+    renderWithIcons(<CharacterOptions value={null} onChange={vi.fn()} />);
     expect(screen.queryByRole('toolbar')).toBeNull();
   });
 
   it('keeps the bar for a tenant that is not character styling', () => {
-    renderWithIcons(<CharacterOptions style={null} onPatch={vi.fn()}><button>Loupe</button></CharacterOptions>);
+    renderWithIcons(<CharacterOptions value={null} onChange={vi.fn()}><button>Loupe</button></CharacterOptions>);
     expect(screen.getByRole('toolbar')).toBeInTheDocument();
   });
 });
@@ -280,7 +280,7 @@ describe('isCharacterChrome', () => {
   it('claims a control in the bar and a kit popover, and nothing else', () => {
     renderWithIcons(
       <>
-        <CharacterOptions style={{ bold: false }} onPatch={vi.fn()} />
+        <CharacterOptions value={{ bold: false }} onChange={vi.fn()} />
         <div data-weasel-overlay=""><span data-testid="option" /></div>
         <span data-testid="elsewhere" />
       </>,

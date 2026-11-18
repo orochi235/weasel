@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createScene } from './scene';
 import { asNodeId } from './types';
-import { createTransformOp } from 'core/ops/transform';
+import { createSetPoseOp } from 'core/ops/setPose';
 import type { Op } from 'core/ops/types';
 
 const POSE = { x: 0, y: 0, width: 10, height: 10 };
@@ -73,8 +73,8 @@ describe('Scene — replaying an entry whose node an untracked edit took', () =>
     add('a');
     add('b');
     scene.applyBatch([
-      createTransformOp({ id: A, from: { ...POSE }, to: { ...POSE, x: 5 } }),
-      createTransformOp({ id: B, from: { ...POSE }, to: { ...POSE, x: 7 } }),
+      createSetPoseOp({ id: A, from: { ...POSE }, to: { ...POSE, x: 5 } }),
+      createSetPoseOp({ id: B, from: { ...POSE }, to: { ...POSE, x: 7 } }),
     ], 'move both', adapter);
     scene.untracked(() => scene.remove(A));
 
@@ -87,7 +87,7 @@ describe('Scene — replaying an entry whose node an untracked edit took', () =>
     const { scene, add, adapter } = makeScene();
     add('b');
     expect(() => scene.applyBatch(
-      [createTransformOp({ id: A, from: { ...POSE }, to: { ...POSE, x: 5 } })], 'move', adapter,
+      [createSetPoseOp({ id: A, from: { ...POSE }, to: { ...POSE, x: 5 } })], 'move', adapter,
     )).toThrow('unknown node id "a"');
     expect(scene.canUndo()).toBe(true);
     expect(scene.history.undoDepth()).toBe(1);

@@ -1,6 +1,6 @@
 import { mat3, type Path, type GlMat3 } from '@weasel-js/geom';
 import {
-  MAX_CUT_PLANES, axisAlignedClipRect, batchCut, convexCutPlanes, intersectClipRects, type BatchCut, type ClipRect,
+  MAX_CUT_PLANES, axisAlignedClipBox, batchCut, convexCutPlanes, intersectClipBoxes, type BatchCut, type ClipBox,
 } from '../batchClip';
 import {
   meetHulls, hullOf, snappedRectOf, windowMap, type Hull, type HullSet, type WindowMap,
@@ -42,7 +42,7 @@ const IDENTITY = mat3.identity();
  * which the CPU cut refuses (see `enterUncut`).
  */
 function enterClip(ctx: DrawContext, path: Path, transform: GlMat3): void {
-  const aligned = axisAlignedClipRect(path, transform);
+  const aligned = axisAlignedClipBox(path, transform);
   const map = aligned === null ? null : hullMap(ctx);
   const snapped = map === null ? null : snappedRectOf(path, transform, map);
   const rect = snapped ? snapped.rect : aligned;
@@ -149,10 +149,10 @@ function materializeClips(ctx: DrawContext): void {
 }
 
 function syncBatchClip(ctx: DrawContext): void {
-  let rect: ClipRect | null = null;
+  let rect: ClipBox | null = null;
   const planes: Float64Array[] = [];
   for (const entry of ctx.clipStack) {
-    if (entry.rect) rect = rect ? intersectClipRects(rect, entry.rect) : entry.rect;
+    if (entry.rect) rect = rect ? intersectClipBoxes(rect, entry.rect) : entry.rect;
     if (entry.planes) planes.push(entry.planes);
   }
   ctx.drawBatch.clip = batchCut(rect, planes, cutsSlanted(ctx));

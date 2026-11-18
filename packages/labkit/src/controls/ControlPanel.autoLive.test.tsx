@@ -1,7 +1,7 @@
 import { act, fireEvent, screen, within } from '@testing-library/react';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
-import { auto } from '../config/auto';
+import { AUTO } from '../config/auto';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
 import { ControlPanel } from './ControlPanel';
@@ -18,7 +18,7 @@ const autoRow = (node: { label(name: string): { auto(): unknown } }) => {
 
 const pinned = (setConfig: ReturnType<typeof vi.fn>, value: unknown): void => {
   expect(setConfig).toHaveBeenCalledWith('thing', value);
-  expect(setConfig).not.toHaveBeenCalledWith('thing', auto);
+  expect(setConfig).not.toHaveBeenCalledWith('thing', AUTO);
 };
 
 describe('an auto row keeps its control live, and an edit pins it', () => {

@@ -187,7 +187,7 @@ function ParallaxDemoInner() {
           view={view}
           onViewChange={setView}
           viewport={{ pan: { axis: 'x' } }}
-          selectionOptions={{ mode: 'multi' }}
+          selectionOptions={{ mode: 'multiple' }}
           layers={{
             paraSky: { layer: sky, before: 'scene:hills' },
             paraGround: { layer: ground, before: 'scene:trees' },

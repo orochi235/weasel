@@ -2,7 +2,7 @@
 
 import { prefConditionHolds, prefConditionReadsItem, type PrefCondition, type PrefConditionReader } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
-import { isPrefLeaf, isPrefSection, prefSectionLeaves, prefValueAtPath } from './helpers';
+import { isPrefLeaf, isPrefSection, prefSectionLeaves, prefValueAt } from './helpers';
 import { prefSchemaHolding } from './holding';
 import type { PrefLeaf } from './schema';
 import { prefShownReader } from './shown';
@@ -29,8 +29,8 @@ export interface PrefEntry {
 /** What `entry` holds at `path`, the empty path being the entry itself: its own value, else that part of the item's default. */
 function entryValue({ item, value }: PrefEntry, path: string): unknown {
   if (path === '') return value !== undefined ? value : item.default;
-  const held = prefValueAtPath(value, path);
-  return held !== undefined ? held : prefValueAtPath(item.default, path);
+  const held = prefValueAt(value, path);
+  return held !== undefined ? held : prefValueAt(item.default, path);
 }
 
 /**
@@ -68,13 +68,13 @@ export function deferEntryConditions(holds: PrefConditionJudge): PrefConditionJu
 export function prefReader(schema: PrefGroup | PrefSection, values: unknown, over?: PrefGroup | PrefSection): (path: string) => unknown {
   const beyond = over && prefReader(over, values);
   return (path) => {
-    const held = prefValueAtPath(values, path);
+    const held = prefValueAt(values, path);
     if (held !== undefined) return held;
     if (beyond && prefSchemaHolding(schema, path, over) === over) return beyond(path);
     if (isPrefSection(schema)) {
       for (const [key, leaf] of prefSectionLeaves(schema.members)) {
         if (path === key) return leaf.default;
-        if (path.startsWith(`${key}.`)) return prefValueAtPath(leaf.default, path.slice(key.length + 1));
+        if (path.startsWith(`${key}.`)) return prefValueAt(leaf.default, path.slice(key.length + 1));
       }
       return undefined;
     }
@@ -84,7 +84,7 @@ export function prefReader(schema: PrefGroup | PrefSection, values: unknown, ove
       if (!Object.hasOwn(node.children, steps[i]!)) return undefined;
       const child: PrefLeaf | PrefGroup = node.children[steps[i]!]!;
       if (!isPrefLeaf(child)) node = child;
-      else return i === steps.length - 1 ? child.default : prefValueAtPath(child.default, steps.slice(i + 1).join('.'));
+      else return i === steps.length - 1 ? child.default : prefValueAt(child.default, steps.slice(i + 1).join('.'));
     }
     return undefined;
   };

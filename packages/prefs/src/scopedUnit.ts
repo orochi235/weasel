@@ -8,13 +8,13 @@ import { isPrefLeaf, type PrefSection, isBuiltinPref, type PrefLeaf, prefUnit, t
  * unit of that system accepted as typed text. A scope's `scale` converts what
  * is shown and typed; what is stored stays in world units.
  */
-export function scopedPrefUnit(
+export function unitScopedPrefUnit(
   scopes: readonly UnitScope[],
-  opts?: { display?: Unit; precision?: number; suffix?: string; compact?: boolean },
+  opts?: { display?: Unit; places?: number; suffix?: string; compact?: boolean },
 ): PrefLinearUnit {
   const system = scopes[scopes.length - 1]!.system;
   const own = prefUnit(system, opts?.display ?? system.base, {
-    ...(opts?.precision === undefined ? {} : { precision: opts.precision }),
+    ...(opts?.places === undefined ? {} : { places: opts.places }),
     ...(opts?.suffix === undefined ? {} : { suffix: opts.suffix }),
     ...(opts?.compact ? { compact: true } : {}),
   });
@@ -28,16 +28,16 @@ export function scopedPrefUnit(
 /**
  * `leaf` as a surface showing it where `scopes` enclose the value draws it:
  * a number leaf whose `measure` is `'length'` and that names no `unit` of its
- * own takes {@link scopedPrefUnit}'s, and so does each one an object leaf's
+ * own takes {@link unitScopedPrefUnit}'s, and so does each one an object leaf's
  * children, or a list's, a map's or a union's entries, hold. Every surface
  * showing a scene node's fields reads its leaves through this. The same leaf
  * comes back where nothing changes, and with no scopes.
  */
-export function prefLeafInScopes<L extends PrefLeaf>(leaf: L, scopes: readonly UnitScope[] | undefined): L {
+export function prefLeafInUnitScopes<L extends PrefLeaf>(leaf: L, scopes: readonly UnitScope[] | undefined): L {
   if (!scopes || scopes.length === 0) return leaf;
   const l = leaf as PrefLeaf;
   if (isBuiltinPref(l) && l.kind === 'number' && l.measure === 'length' && !l.unit) {
-    return { ...leaf, unit: scopedPrefUnit(scopes) };
+    return { ...leaf, unit: unitScopedPrefUnit(scopes) };
   }
   if (!isBuiltinPref(l)) return leaf;
   if (l.kind === 'object') {
@@ -45,13 +45,13 @@ export function prefLeafInScopes<L extends PrefLeaf>(leaf: L, scopes: readonly U
     return children === l.children ? leaf : { ...leaf, children };
   }
   if (l.kind === 'list' || l.kind === 'map') {
-    const item = prefLeafInScopes(l.item, scopes);
+    const item = prefLeafInUnitScopes(l.item, scopes);
     return item === l.item ? leaf : { ...leaf, item };
   }
   if (l.kind === 'union') {
     let changed = false;
     const variants = Object.fromEntries(Object.entries(l.variants).map(([key, v]) => {
-      const next = prefLeafInScopes(v, scopes);
+      const next = prefLeafInUnitScopes(v, scopes);
       if (next !== v) changed = true;
       return [key, next];
     }));
@@ -65,7 +65,7 @@ function membersInScopes(
 ): Record<string, PrefLeaf | PrefSection> {
   let changed = false;
   const out = Object.fromEntries(Object.entries(members).map(([key, m]) => {
-    const next = isPrefLeaf(m) ? prefLeafInScopes(m, scopes) : sectionInScopes(m, scopes);
+    const next = isPrefLeaf(m) ? prefLeafInUnitScopes(m, scopes) : sectionInScopes(m, scopes);
     if (next !== m) changed = true;
     return [key, next];
   }));

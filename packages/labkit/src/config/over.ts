@@ -1,6 +1,6 @@
 import { type PrefGroup, type PrefSection, prefReader, prefSchemaHolding } from '@weasel-js/prefs';
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { fillConfigDefaults, withValueAtPath } from './path';
+import { fillConfigDefaults, withConfigValueAt } from './path';
 import type { ResolvedConfig } from './types';
 
 /**
@@ -32,7 +32,7 @@ const NO_VALUES: Readonly<Record<string, unknown>> = {};
 export function useKeptOver(given: LabOver | undefined): LabOver {
   const [values, setValues] = useState<Record<string, unknown>>({});
   const set = useCallback(
-    (path: string, value: unknown) => setValues((v) => withValueAtPath(v, path, value)),
+    (path: string, value: unknown) => setValues((v) => withConfigValueAt(v, path, value)),
     [],
   );
   const kept = useMemo<LabOver>(() => ({ values, set }), [values, set]);

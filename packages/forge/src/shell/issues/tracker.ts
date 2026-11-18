@@ -1,5 +1,5 @@
 import type { ConfigSchema } from '@weasel-js/labkit/config';
-import type { Globals } from '../../protocol/messages';
+import type { StoryGlobals } from '../../protocol/messages';
 import { formatRoute, knobsToParams, pinParams } from '../../route/url';
 import { ISSUES_PATH, type IssueRepo, type IssuesAnswer, issueLabel } from '../../vite/issues/answer';
 
@@ -27,7 +27,7 @@ export function reopenLink(
   story: string,
   schema: Pick<ConfigSchema<unknown>, 'nodes'>,
   config: unknown,
-  globals: Globals,
+  globals: StoryGlobals,
 ): string {
   return `${page}${formatRoute({ story, params: { ...knobsToParams(schema, config), ...pinParams(globals) } })}`;
 }

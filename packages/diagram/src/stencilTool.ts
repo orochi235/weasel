@@ -3,12 +3,12 @@
  * drag to core's `insert` action, and the `insert` dep that builds the body.
  */
 import { useMemo } from 'react';
-import { commitOps, defineTool, commitSelectionOps, insertSite, scenePoseFrame, useDepRegistry, useDepSource, useLatest, type ActionDeps, type InsertDep, type NodeId, type Op, type Tool } from '@weasel-js/core';
+import { commitOps, defineTool, createCommitSelectionOps, insertSite, scenePoseFrame, useDepRegistry, useDepSource, useLatest, type ActionDeps, type InsertDep, type NodeId, type Op, type Tool } from '@weasel-js/core';
 import type { MeasureRowText } from './body';
 import { diagramDropParentAt, type DropParentScene } from './containers/canDropInto';
 import { containerBuild, type ContainerStencil } from './containers/containerStencils';
 import type { NodeStyle } from './dataTypes';
-import { stencilBuild, stencilIdOf, stencilKind, type DiagramStencil } from './stencil';
+import { stencilInsertOps, stencilIdOf, stencilKind, type DiagramStencil } from './stencil';
 import { roleStyle } from './theme/resolve';
 import type { DiagramTheme } from './theme/types';
 import { INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING } from '@weasel-js/editing';
@@ -97,7 +97,7 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
         });
       }
       const shapeStyle = stencil.themeRole !== undefined && theme !== undefined ? roleStyle(theme, stencil.themeRole) : style;
-      return stencilBuild(stencil, bounds, {
+      return stencilInsertOps(stencil, bounds, {
         ...common, ...(shapeStyle ? { style: shapeStyle } : {}), ...(measure ? { measure } : {}), ...(font ? { font } : {}),
       });
     };
@@ -119,7 +119,7 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
         if (built === null) return null;
         const deps = { scene, applyOps: registry.get('applyOps'), operands: registry.get('operands') };
         const label = `Insert ${stencil.label}`;
-        commitOps(deps as unknown as ActionDeps, [...built.ops, ...commitSelectionOps(select, built.id, label)], label);
+        commitOps(deps as unknown as ActionDeps, [...built.ops, ...createCommitSelectionOps(select, built.id, label)], label);
         return built.id;
       },
     };

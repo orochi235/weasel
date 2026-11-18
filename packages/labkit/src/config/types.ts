@@ -233,7 +233,7 @@ export interface NodeOptions extends BranchOptions {
   /** Errors for this leaf under `config`, the instrument's whole config. */
   validate?: (leaf: PrefLeaf, config: Record<string, unknown>) => string[];
   /** The leaf may be auto, and its row's label toggles it: `.auto()` sets
-   *  it, and `.initial(auto)` sets it with `on`. It becomes the resolved
+   *  it, and `.initial(AUTO)` sets it with `on`. It becomes the resolved
    *  leaf's `auto`; a leaf without it is always pinned. */
   auto?: PrefAuto;
   /** Computes this leaf's value while it is auto. Attaching one is what gives

@@ -43,7 +43,7 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   handle a consumer re-shows with `chromeVisibility` does nothing when dragged and warns nothing.
 - 2026-10-19: A tool lives in the package that owns the action it binds, written into CLAUDE.md's
   "What gets its own package". `ToolSet` is the composition unit (`defaultTools`, preset `tools`,
-  and `ToolPalette`'s `include` take one); `BUILTIN_TOOL_IDS` is now derived from `BUILTIN_TOOLS`,
+  and `ToolPalette`'s `include` take one); `KIT_TOOL_IDS` is now derived from `KIT_TOOLS`,
   and a shape kind's `family` decides which set names it. draw's `usePathToolsTools` moved into
   path-tools and now also builds spiro and the shape builder.
 
@@ -292,7 +292,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `step` then work from `b`. Whether `current` should follow the last page gone to until the view moves.
 - 2026-10-20 (overnight pass): The document stores every pose in world units; a container's unit
   scope converts only for display, entry and snapping. Grid snapping (`gridSnapSource({ scopes })`)
-  and length fields (`measure: 'length'`, `prefLeafInScopes`, `SelectionPanel`'s `units`) use the
+  and length fields (`measure: 'length'`, `prefLeafInUnitScopes`, `SelectionPanel`'s `units`) use the
   scope every subject node shares. Inside a scope a bare `spacing` counts that scope's base units;
   the grid's origin stays in world space. Only box position, size and text padding are lengths.
   The drawn grid and an insert gesture's snap still use the root scope (filed under Units).
@@ -412,8 +412,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   to the top of the tree. A transform (move, nudge, rotate, resize, flip, align, distribute) leaves a node stored
   in one where it is and moves the rest. This replaces the 2026-11-11 call that read such an axis as collapsed.
 
-- 2026-11-11 (my call, core second property pass): `unionBounds` and `unionAABB` skip a box with a corner that is
-  not finite (a `NaN` or infinite field, or an edge past the double range), as `unionAABB` skips a hole, and a union of
+- 2026-11-11 (my call, core second property pass): `unionBounds` and `unionAabb` skip a box with a corner that is
+  not finite (a `NaN` or infinite field, or an edge past the double range), as `unionAabb` skips a hole, and a union of
   only such boxes is `null`. Before, a `NaN` width counted the box's `x` and not its far edge, and a union of such
   boxes alone came back with a width of `-Infinity`.
 - 2026-11-11 (my call, core second property pass): `createMoveToIndexOp` holds its index as the finite integer that
@@ -422,7 +422,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `scene.add`, `scene.move`, and `scene.reorder` record the index the node lands at by the same rule (`slotIndex`:
   truncated, held to the ends, `NaN` at the start), so a reorder at `NaN` of a node already first is no edit.
 - 2026-11-11 (my call, core second property pass): a box remap from a box of subnormal width or height keeps that
-  axis's scale, as one from a box of no extent does: geom's `extentScale`, which `boxToBox`, the rect pose descriptor,
+  axis's scale, as one from a box of no extent does: geom's `extentScale`, which `rectToRect`, the rect pose descriptor,
   and `remapRotatedLeaf` share. The true factor is past the double range.
 
 ## Rendering, canvas, and paint
@@ -448,7 +448,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Ruled 2026-11-10 (my call, overnight sweep): kernel3d's `headFor` gives a head whose `maxShare` is 0 no length
   on a line of unknown (infinite) length, reading `0 · ∞` at its limit: a head allowed no share of the line has none.
 - Ruled 2026-11-10 (my call, overnight sweep): kernel3d's `aimSpace3d` unprojects onto the ground at height 0 when
-  `up` lies just off an axis, as `createInsert` lays its footprint at 0: the hit is on the ground by construction, so
+  `up` lies just off an axis, as `createInsert3dDep` lays its footprint at 0: the hit is on the ground by construction, so
   rounding left in `up` is no height.
 - 2026-11-11 (my call, core second property pass): `zoomAt` takes a `NaN` or negative factor as no zoom on that axis
   (a negative one had turned the axis over, `NaN` had dropped it to `ZOOM_FLOOR`), and a factor of 0 as the clamp's
@@ -611,7 +611,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   request no longer starts Chromium to fail there.
 - 2026-11-11 (my call, icons second property pass): the `.lbx` writer rasterizes a command whose object would hold a
   number that is not finite (a group transform with `NaN` or `Infinity`, an infinite stroke width, a scale past the
-  double range) and skips such `lbxObjects` with a reason, and `writeLbx` throws a `RangeError` for a `length` that
+  double range) and skips such `lbxObjectsCommand` with a reason, and `writeLbx` throws a `RangeError` for a `length` that
   is not a positive finite number. A `-0` position is written and reads back as `0`.
 - 2026-11-11 (my call, core canvas second pass): a marquee rect with a negative width or height (`rectRegion`,
   `hitTestArea`) is the same rect named from its other corner, as the marquee drag's `rectBetween` already makes it,
@@ -972,7 +972,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `horizontal`, `both` and grid layouts, reading the container's computed `direction` at each key
   unless the new `dir` option says otherwise. ui declares its own `RovingDirection` rather than
   depend on `@weasel-js/text` for `TextDirection`.
-- 2026-10-20 (overnight pass): Every params surface reads a leaf's value through `prefLeafValue`
+- 2026-10-20 (overnight pass): Every params surface reads a leaf's value through `prefValueOrDefault`
   (`@weasel-js/prefs`): the held value, else the default, with `undefined` and `null` both absent,
   except a paint's `null`, which means no paint. A clearable leaf holding nothing shows cleared,
   so labkit now draws a clearable number empty where its key is missing. `SelectionPanel` keeps its
@@ -1141,7 +1141,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   see the test page's default 414×896.
 - 2026-10-11: Diagram groups nest and their boxes take presses; the `orthogonal` router turns at
   once after a waypoint where it would double back. Audio has `onDrop`.
-- 2026-10-12: labkit's `isEntryShown` takes the resolved schema; `DragState` carries `from`; a
+- 2026-10-12: labkit's `isConfigNodeShown` takes the resolved schema; `DragState` carries `from`; a
   remote mark write rebuilds the store. `createScore` is new in audio.
 - 2026-10-13: The platformer's bed is engine voices, and `voiceLimit` went from 24 to 48.
 - 2026-10-13 (pass 6): labkit's `dist` inlines no `@weasel-js` package. `LabSwitcher` is a bare
@@ -1269,7 +1269,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   step, and row still follow the pointer's own direction and distance once it moves, so a knob pressed off its line
   turns the axis onto the pointer at the first move.
 - Ruled 2026-11-10 (my call, overnight sweep): `bakeCursor` and `cursorFor` bake a size that is not a finite positive
-  number at the default 24, as `resolveCursorTier` already reads a spec's size, one rule for both; a size past the
+  number at the default 24, as `resolveCursor` already reads a spec's size, one rule for both; a size past the
   cap, `Infinity` included, still throws. `brushRing` gives a radius of 0 or more a size of at least one pixel, so a
   brush too small to round to one draws a one-pixel ring rather than the default 24; a negative or `NaN` radius still
   falls to the default.
@@ -1312,13 +1312,13 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `symmetryTransforms` and every `SYMMETRY_KINDS` row (ce0289dd1). That includes a point turn about a center near
   the double range's end, whose copy would draw at finite places but whose affine's translation overflows; the
   original still draws. Rejected: throwing, which would fail every draw of a group a far drag put there.
-- 2026-11-11 (my call, symmetry second pass): `specOfData` reads a field of the wrong type at its default, a kind
+- 2026-11-11 (my call, symmetry second pass): `symmetrySpecOf` reads a field of the wrong type at its default, a kind
   `SYMMETRY_KINDS` does not hold as its own as `mirror`, and a cell that is not a wallpaper cell as `none`
   (b686c535b). It does not report them; nothing in symmetry has a place to.
 - 2026-11-11 (my call, cursor second pass): `placeCursorPath` throws a `RangeError` for a scale or move that makes a
   coordinate `NaN` or infinite (e3481a9d2), as `bakeCursor` refuses an infinite size, rather than dropping the point.
 - Open (dither second pass, 2026-11-11): `dither()` takes an output grid whose pitch is 0, `NaN`, or infinite, as
-  `gridOnScreen` gives for a view scaled to 0, and passes it to the shader, which divides by it. No ruling on whether
+  `deviceGrid` gives for a view scaled to 0, and passes it to the shader, which divides by it. No ruling on whether
   it throws, draws nothing, or falls back to the screen grid.
 
 ## draw
@@ -1426,8 +1426,8 @@ calls its builds made where the spec was silent.
   a cycle only through an edge still fading out is wired once that edge has closed. The graph's
   output starts at gain 0, so the first `start()` fades in. `apply` validates the whole list first,
   but a `set` that throws lets the rest apply and then rethrows. `dispose()` fades out over `fadeMs`
-  while sounding. `delayNode`'s `maxTime` defaults to 2000 ms. `impulseResponse` lives in
-  `@weasel-js/audio`, and `reverbNode` builds its impulse from `seconds` (default 2).
+  while sounding. `createDelayNode`'s `maxTime` defaults to 2000 ms. `impulseResponse` lives in
+  `@weasel-js/audio`, and `createReverbNode` builds its impulse from `seconds` (default 2).
 - 2026-10-20 (arc 4, live runner): Audio stage types are prefixed `audio.`, and pipeline mode splits a
   mixed pipeline so the image runner never sees them. The runner ships from
   `@weasel-js/diagram/effect-audio`, with `@weasel-js/audio` an optional peer. Stages on a feedback
@@ -1477,7 +1477,7 @@ Calls the round made:
   full-precision `interpolateSrgb`, with its own gray-hue rule. Left as is, as the comment there asks.
 - `contrastLineColor` reads only hex (a test pins `papayawhip` to black); `contrastRatio` beside it
   reads any CSS color. Left as is.
-- Rotate and resize fire `onGestureStart` at press; move fires it on the first movement. Left as is.
+- Rotate and resize fire `onRunStart` at press; move fires it on the first movement. Left as is.
 - core's `unionBounds` drops a NaN coordinate; geom's `unionRects` passes it through. Not folded.
 - forge's `ForgeLoupe` clamp, audio's `scoreMood` clamp, plot's `freshName` and editor's page-run id
   keep their own copies: folding each adds a dependency on geom or registry.
@@ -1495,7 +1495,7 @@ Calls the round made:
 
 ## Audit round seven (2026-11-08)
 
-- `fitViewToBounds`, `fitViewToPage`, `fitZoom`, `fitToBounds` and `computeFitViewport` return `null` for empty
+- `fitViewToBounds`, `fitViewToPage`, `fitZoom` and `fitSize` return `null` for empty
   content, and the viewport's owner resolves it to the reset view (Mike ruled that an empty fit goes to Cmd-0's view;
   the `null` return type, a breaking change, is the agent's way of getting there). Fit Content on a lone point now
   goes to the reset view rather than centering the point.
@@ -1521,7 +1521,7 @@ Calls the round made:
 - `CommandPalette`'s action-settings dialog stays editable when its action turns disabled; the popover disables. Left as is.
 - `CommandPalette`'s `reasonLabels` replaces the default wording rather than merging with it. Left as is.
 - `createMarkdownRenderer` ignores a run's own `fill`, and under a `textBaseline` other than alphabetic places each
-  run by its own font's metrics. Left as is. `PositionedRun.lineSize` is new, after `size` was removed.
+  run by its own font's metrics. Left as is. `CanvasPositionedRun.lineSize` is new, after `size` was removed.
 - `onClick`, hover, `getNodeAtPoint` and press classification take the topmost hit, not `selectTool.pickBest`, whose
   docs say they name the node a click selects; `pickBest` cannot see the asking view's camera or the live Alt key.
   Left as is.
@@ -1881,7 +1881,7 @@ Calls the lanes made without a ruling:
 - 2026-11-12 (the lane's call): `PrefsForm` takes `errors`, a `ReadonlyMap` from leaf path to message, shown under the
   leaf's row as its `error` (set through `<RowScope>` since 2026-11-14). A map, as `auto` and `mixed` are sets,
   rather than a `validate` field on the leaf: what counts as wrong is the caller's to say. `SelectionPanel` has no such prop yet.
-- 2026-11-12 (the lane's call): `usePrefsValues` returns `setAuto(path, next)` for `PrefsForm`'s `onAutoChange`, where
+- 2026-11-12 (the lane's call): `usePrefsState` returns `setAuto(path, next)` for `PrefsForm`'s `onAutoChange`, where
   its JSDoc had offered `reset`. It pins at `store.get(path)`; theme-editor keeps its own, which pins at the value the
   pinned theme shows.
 - Open: `Slider` now follows the number fields' locale, but number text that only displays does not:
@@ -1942,13 +1942,13 @@ Calls the lanes made without a ruling:
   `@weasel-js/text` already called it, over text-shaping's `Shaper`).
 - 2026-11-12: Face addressing splits by job. Registering and loading take a `FontVariant` object
   (`registerFont`, `registerFontOutlines`, `unregisterFontOutlines`, `loadFontOutlines`, `warmFonts`'s
-  `FontRequest`); a lookup of one face takes `(family, weight = 400, style = 'normal')` positionally (`getFont`,
-  `fontPending`, `hasFontOutlines`, `outlineStatus`, `cssFontFamily`, `cssFontFamilyLoading`), since those run per
+  `FontRequest`); a lookup of one face takes `(family, weight = 400, style = 'normal')` positionally (`getAtlasFont`,
+  `isFontPending`, `hasFontOutlines`, `outlineStatus`, `cssFontFamily`, `cssFontFamilyLoading`), since those run per
   run and per frame. `cssFontFamily` moved to the lookup shape.
 - 2026-11-12: The scripts the no-shaper warning names are Arabic, Syriac, Thaana, N'Ko, the Indic blocks, Tibetan,
   Myanmar, Khmer and Mongolian, letters and marks only. Thai and Lao are left out: set one glyph per code point,
   they read, if with marks placed less well.
-- `fittedTextPose` is renamed `fitTextToBox`, on the maintainer's call (2026-11-12): `fitTextPose` sizes a text
+- `fittedTextPose` is renamed `bakeTextFit`, on the maintainer's call (2026-11-12): `fitBoxToText` sizes a text
   pose's box to its text, and the renamed one sizes the text to its box.
 
 ## Audit round twenty-one (2026-11-12): geometry and drawing
@@ -1978,7 +1978,7 @@ Calls the lanes made without a ruling:
   follow `Array.find`).
 - Sticky keeps S, Knead moves to U, and Reach moves from U to Shift+U, on the maintainer's call
   (2026-11-12). The star tool has no default key at all.
-- Open: two tool sets are not named for their tools' palette group, which `BUILTIN_TOOL_GROUPS` says each set is:
+- Open: two tool sets are not named for their tools' palette group, which `KIT_TOOL_GROUPS` says each set is:
   `RESHAPE_TOOLS` (`reshape`) holds tools in the `path` group, and `RIG_TOOLS` (`rig`) tools in `shape`. Renaming
   the groups moves where the tools sit on a palette; renaming the sets does not.
 - Open: most tool hooks outside the drag-to-insert tools take a `keybinding` option (`null` to drop the key):
@@ -2002,8 +2002,9 @@ Calls the lanes made without a ruling:
   types, which core's barrel re-exports, are the text lane's.
 - 2026-11-12: Layer factories are named `create*Layer` (now in `docs/conventions.md`); core's `pagesLayer`,
   `workspaceTintLayer` and `modeDecorationLayer` were renamed to it.
-- Open: diagram's `edgeEndLayer`, `labelDragLayer`, `laneLayer`, `portLayer`, `seamLayer`, `sequenceLayer`
-  and `waypointLayer`, and guides' `rulersHitLayer`, are bare-named layer factories outside this lane.
+- 2026-11-17: diagram's `edgeEndLayer`, `labelDragLayer`, `laneLayer`, `portLayer`, `sequenceLayer` and
+  `waypointLayer` became `create*Layer`.
+- Open: labkit's `seamLayer` and guides' `rulersHitLayer` are bare-named layer factories outside this lane.
 - 2026-11-12: `useSliceDep` was removed rather than given siblings: it was `useDepSource('slice', () => dep)`
   under another name, and no other dep had one.
 - 2026-11-12: `<SceneCanvas initialActiveTool>` became `defaultActiveTool`, the prefix `defaultView` and
@@ -2048,7 +2049,7 @@ Calls the lanes made without a ruling:
   layers in `layers`, registered in entry order and all again when any entry's list changes, so a rebuilt entry keeps
   its place in hit order. `attach` → `registerLayer` would have moved a rebuilt entry's layer to the top. Every diagram
   editing helper and `plot`'s `plotEditing` return one entry; `createDiagramContribution`, the connect half without
-  its layer, is gone rather than kept beside `diagramPorts` (2026-11-12).
+  its layer, is gone rather than kept beside `createDiagramPortsContribution` (2026-11-12).
 - `d3` and `diagram-elk` are `weasel.tier: "other"`, not `plugin`: neither hands a canvas a layer, tool, action, dep or
   draw command. d3 joins data into a scene and diagram-elk is a layout planner for diagram. `kernel3d` stays `other`
   as a host for 3D scenes, though it ships a tool and deps (2026-11-12).
@@ -2058,6 +2059,8 @@ Calls the lanes made without a ruling:
   animations. Its `NoisePatch.noise` stays beside the graph's `NoiseNodeOptions.color`, since patterns are saved as
   data (2026-11-12).
 - Contribution factories keep their packages' names (`diagramPorts`, `plotEditing`, `createMinimapContribution`): core
+  itself mixes `createDragPanContribution` and `createPresentationContribution`, and no convention picks one. Presets do
+- Contribution factories keep their packages' names (`createDiagramPortsContribution`, `plotEditing`, `createMinimapContribution`): core
   itself mixes `dragPanContribution` and `createPresentationContribution`, and no convention picks one. Presets do
   have one, now in `docs/conventions.md` (2026-11-12).
 - A `createSpacingHintsPreset` given an `id` names its sources `<id>.spacing` and `<id>.alignment`; with none they
@@ -2080,7 +2083,7 @@ Calls the lanes made without a ruling:
 
 ## Audit round twenty-two (2026-11-13): the prefs schema
 
-- A store-bound form binds through `usePrefsValues(store).form`, spread on `PrefsForm` or `PrefsDialog`, so every
+- A store-bound form binds through `usePrefsState(store).form`, spread on `PrefsForm` or `PrefsDialog`, so every
   bundled one offers Auto and splits scoped leaves the same way. Theme-editor's form keeps its own binding: its
   writes go through its undo history and only its token rows inherit. `Prefs.split.stories.tsx` keeps its explicit
   props, since spreading `form` would add Auto toggles to a story about split rows (2026-11-13).
@@ -2107,7 +2110,7 @@ Calls the lanes made without a ruling:
 - 2026-11-13 (the lane's call): the hand tool and the lasso commit nothing to the history (a pan edits the view, a
   lasso the selection), so the walk over every built-in tool checks that they leave the history alone instead of
   undoing them. `image`, `eyedropper` and `measure` need arguments, so they are in no built-in tool set and no
-  `BUILTIN_TOOL_GROUPS` entry; they sit in the `shape` and `view` palette groups when a host mounts them.
+  `KIT_TOOL_GROUPS` entry; they sit in the `shape` and `view` palette groups when a host mounts them.
 - No two tool keys collide, in core or across path-tools and rig, and no action binds a bare letter. The star and
   image tools have no key; the bare letters no tool takes are C, D, O, Q, X and Z (B is pin warp, F plane warp, J bone,
   U knead, W weight and Y snip).
@@ -2139,7 +2142,8 @@ Calls the lanes made without a ruling:
   tools, tunings and commands on one canvas. Neither found a collision once `reportRouteConflicts` stopped counting
   `hover` bindings, which all run (2026-11-13).
 - An action's own key binding carries `BETWEEN_GESTURES`, or a phase of its own, unless it only moves the view
-  (`viewport.zoom.*`), is an Escape that `cancelGesture` takes mid-drag (`exitPathEdit`, `tool.resetToDefault`), or
+  (`viewport.zoom.*`), is an Escape that `dispatch.cancelAll` takes mid-drag (`exitPathEdit`, `tool.resetToDefault`), or
+  (`viewport.zoom.*`), is an Escape that `cancelGesture` takes mid-drag (`leavePathEdit`, `tool.resetToDefault`), or
   opens a keymap. `kitBindingPhases.test.tsx` holds the kit to it, and the tool keys now carry it as the offhand keys
   did. draw's color keys and view toggles do not: they change the next shape's style or the view, not the document,
   and a change mid-draw reaching the shape is how the tool options work (2026-11-13).
@@ -2179,9 +2183,9 @@ Calls the lanes made without a ruling:
   WebKit's gesture events when wheel zoom is on. A WebKit pinch carries the world point under its focal point, as a
   wheel does, so an action can zoom about it without its own client-to-world map.
 - 2026-11-13 (maintainer-approved; the lane's calls on the shape): the minimap takes a two-finger touch pinch,
-  `minimap.pinch` bound as `<id>.multiTouch`. It zooms the main camera about the world point between the fingers,
+  `minimap.touchZoom` bound as `<id>.multiTouch`. It zooms the main camera about the world point between the fingers,
   read through the minimap's own camera, and that point keeps its place in the main view as the fingers move, so the
-  main view follows them the way a one-finger pan does (the opposite sign to `viewport.pinchZoom`, whose content
+  main view follows them the way a one-finger pan does (the opposite sign to `viewport.touchZoom`, whose content
   follows the fingers). It clamps as the wheel does. The minimap's camera reaches the action as the `view` dep, which
   `<MinimapCanvas>` now publishes beside `rootView`: the pair a `<CanvasView>` answers on a surface, so one action
   runs in both hosts, and any secondary view with a dispatcher of its own answers the same pair. Its `set` drops the
@@ -2216,7 +2220,7 @@ Calls the lanes made without a ruling:
 ## Auto and reset (2026-11-13)
 
 - Auto is opt-in and is a distinct concept from default (maintainer's ruling, 2026-11-13). A leaf can be auto only
-  where its schema declares `auto`; prefs, `PrefsForm`/`PrefsDialog`, `usePrefsValues(store).form`, `SelectionPanel`,
+  where its schema declares `auto`; prefs, `PrefsForm`/`PrefsDialog`, `usePrefsState(store).form`, `SelectionPanel`,
   labkit and the theme editor all read `prefCanAuto`. `auto: false` meant the same as no `auto` and is gone. While
   auto a leaf reads its owner's computed value, else `auto.value`, never `default`; this corrects the first pass
   of this section, which made the default the last case of auto and let a leaf with `auto` unset be auto
@@ -2290,7 +2294,7 @@ Calls the lanes made without a ruling:
   entry's, not an action's, and say which action the gesture runs, not what the modifier does to it; what a modifier
   does mid-gesture is a modifier role, declared per action, so the sheet would repeat "Shift: Constrain" under each
   action that snaps. A keymap's own keys stay `<KeymapHint>`'s; its leader is listed as a command (2026-11-13).
-- `<EditorShell>` mounts the sheet; a workspace names its tools with `useEditorTools(tools, toolSets)`, since the shell
+- `<EditorShell>` mounts the sheet; a workspace names its tools with `usePublishEditorTools(tools, toolSets)`, since the shell
   sits above the canvas that holds them. `<Lab>` mounts one too, naming the lab's `TrialTool`s, with a row in its Lab
   menu (2026-11-13).
 
@@ -2309,10 +2313,10 @@ Calls the lanes made without a ruling:
 
 ## Audit round twenty-three (2026-11-13): the apps
 
-- 2026-11-13 (the lane's call): a double-click on text opens it through `editTextAt`, an action of its own in the
+- 2026-11-13 (the lane's call): a double-click on text opens it through `enterTextEditAt`, an action of its own in the
   `textEdit` feature (part of `edit`), rather than a default binding on `enterTextEdit`: that one opens the
   selection and is what the text and sticky tools' clicks reach, which should keep opening the selected node
-  whatever glyph is under the click. `editTextAt` declines where the double-click names a group, so text
+  whatever glyph is under the click. `enterTextEditAt` declines where the double-click names a group, so text
   in a group enters the group first and opens on the next double-click, as path edit does.
 - 2026-11-13 (the lane's call): a canvas inside a host's `useSceneTextEdit` container answers the `textEdit` dep
   with that editor, so a host binds nothing for a double-click or a text tool to reach it. `TextEditDepPublisher`

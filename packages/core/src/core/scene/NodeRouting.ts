@@ -1,4 +1,4 @@
-import { createReflectable, valuesOf, type Reflection } from '@weasel-js/registry';
+import { createReflectable, createValuesReader, type Reflection } from '@weasel-js/registry';
 
 /**
  * A routing-trait classifier entry. Other traits (shape, label, icon, …)
@@ -60,7 +60,7 @@ export function routeKind(
  *  kind name throws. */
 export function createNodeRouting(): NodeRouting {
   const kinds = createReflectable<NodeRoutingEntry>({ name: 'node routing' });
-  const list = valuesOf(kinds);
+  const list = createValuesReader(kinds);
   return {
     register(kind) {
       if (kinds.has(kind.name)) {

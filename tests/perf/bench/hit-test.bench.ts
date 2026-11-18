@@ -1,7 +1,7 @@
 /**
  * Area hit-testing against node count and query-rect size.
  *
- * `hitTestArea` asks the scene's BVH pick index for the nodes the query's box
+ * `hitTestRect` asks the scene's BVH pick index for the nodes the query's box
  * can reach, then runs the per-node kernel (O(silhouette verts x area verts)
  * for path-shaped poses) on those alone. The "full walk" groups run the same
  * query through `pickWalk` with no index, which visits every node. The index
@@ -9,7 +9,7 @@
  * every bench below walks; vitest's warmup absorbs it.
  */
 import { group } from './group';
-import { hitTestArea } from 'canvas/deps/hitTestArea';
+import { hitTestRect } from 'canvas/deps/hitTestArea';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { rectRegion } from 'core/geometry/regionHit';
 import { regionPickQuery } from 'canvas/deps/hitTestArea';
@@ -18,7 +18,7 @@ import { scenePickIndex } from 'canvas/pickIndex/scenePickIndex';
 import { scenePointQuery } from 'canvas/SceneCanvas/scenePointQuery';
 import { aabbOfPose } from 'canvas/SceneCanvas/poseGeometry';
 import type { Scene } from 'core/scene/types';
-import { pointInPath } from '@weasel-js/geom';
+import { pathContainsPoint } from '@weasel-js/geom';
 import { curvyPath, polygonPath, scatterScene } from './fixtures';
 
 const NODE_COUNTS = [100, 1000, 10000];
@@ -45,46 +45,46 @@ const polyScenes = new Map(
 
 const asAny = (s: unknown) => s as Scene<unknown, string, unknown>;
 
-group('hitTestArea — rect poses, node count (25% query rect)', (bench) => {
+group('hitTestRect — rect poses, node count (25% query rect)', (bench) => {
   const bounds = rectFor(0.5);
   for (const n of NODE_COUNTS) {
     const scene = asAny(rectScenes.get(n));
     bench(`${n} nodes`, () => {
-      hitTestArea(scene, bounds);
+      hitTestRect(scene, bounds);
     });
   }
 });
 
-group('hitTestArea — rect poses, query-rect size (1000 nodes)', (bench) => {
+group('hitTestRect — rect poses, query-rect size (1000 nodes)', (bench) => {
   const scene = asAny(rectScenes.get(1000));
   for (const { label, f } of RECTS) {
     const bounds = rectFor(f);
     // Hit count in the label so a flat curve across this axis reads as "the
     // scan does the same work regardless", not as "the fixture never varied".
-    const hits = hitTestArea(scene, bounds).length;
+    const hits = hitTestRect(scene, bounds).length;
     bench(`${label} (${hits} hits)`, () => {
-      hitTestArea(scene, bounds);
+      hitTestRect(scene, bounds);
     });
   }
 });
 
-group('hitTestArea — 24-gon silhouettes, node count (25% query rect)', (bench) => {
+group('hitTestRect — 24-gon silhouettes, node count (25% query rect)', (bench) => {
   const bounds = rectFor(0.5);
   for (const n of NODE_COUNTS) {
     const scene = asAny(polyScenes.get(n));
     bench(`${n} nodes`, () => {
-      hitTestArea(scene, bounds);
+      hitTestRect(scene, bounds);
     });
   }
 });
 
-group('hitTestArea — 24-gon silhouettes, query-rect size (1000 nodes)', (bench) => {
+group('hitTestRect — 24-gon silhouettes, query-rect size (1000 nodes)', (bench) => {
   const scene = asAny(polyScenes.get(1000));
   for (const { label, f } of RECTS) {
     const bounds = rectFor(f);
-    const hits = hitTestArea(scene, bounds).length;
+    const hits = hitTestRect(scene, bounds).length;
     bench(`${label} (${hits} hits)`, () => {
-      hitTestArea(scene, bounds);
+      hitTestRect(scene, bounds);
     });
   }
 });
@@ -105,18 +105,18 @@ group('aabbOfPose — the per-node fast-reject itself', (bench) => {
   }
 });
 
-group('pointInPath — per-node kernel, by vertex count', (bench) => {
+group('pathContainsPoint — per-node kernel, by vertex count', (bench) => {
   // The point-pick path (`poseContains`) reaches this once per candidate.
   for (const sides of [4, 24, 256]) {
     const path = polygonPath(sides, 100, 0, 0);
     bench(`${sides}-gon`, () => {
-      pointInPath(path, 10, 10);
+      pathContainsPoint(path, 10, 10);
     });
   }
   for (const curves of [8, 64]) {
     const path = curvyPath(curves);
     bench(`${curves} cubics (flattened per call)`, () => {
-      pointInPath(path, 10, 10);
+      pathContainsPoint(path, 10, 10);
     });
   }
 });

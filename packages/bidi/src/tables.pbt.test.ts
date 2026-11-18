@@ -6,7 +6,6 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { bidiClassOf, mirrorOf, pairedBracket } from './tables';
-import { mirror } from './index';
 import { BY_CLASS, anyCodePoint, runs, tally, timeoutFor } from './pbt.fixture';
 import type { BidiClass } from './types';
 
@@ -27,7 +26,7 @@ describe('bidi tables, property', () => {
   it('mirrors as an involution with no fixed point, and pairs a bracket with its mirror', () => {
     const t = tally();
     fc.assert(fc.property(someCodePoint, (cp) => {
-      const m = mirror(cp);
+      const m = mirrorOf(cp);
       expect(m).toBe(mirrorOf(cp));
       const b = pairedBracket(cp);
       if (m === null) {
@@ -37,7 +36,7 @@ describe('bidi tables, property', () => {
       }
       t.count('mirrored');
       expect(m).not.toBe(cp);
-      expect(mirror(m)).toBe(cp);
+      expect(mirrorOf(m)).toBe(cp);
       if (b === null) return;
       t.count('bracket');
       expect(b.pair).toBe(m);

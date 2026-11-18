@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useReducer, useRef, useState } from 'react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
-import { commitOps, createDeleteOp, defineTool, pointSnap, resolveEditablePathOf, selectCommitted, snapMods } from '@weasel-js/core';
+import { commitOps, createDeleteOp, defineTool, pointSnap, resolveEditablePathOf, commitSelectionFrom, snapMods } from '@weasel-js/core';
 import type { ModifierState, Op, Tool } from '@weasel-js/core';
 import type { Action, ToolOptionShare } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
@@ -150,7 +150,7 @@ export function usePenTool(
         set.closed.push(...addedClosed.slice(1));
       })!;
       if (samePath(next.path, cont.original)) return;
-      edit.applyEdit(cont.id, next.path, 'Continue path', next.origins, optsRef.current.autoSelect ? selectCommitted(deps.operands) : undefined);
+      edit.applyEdit(cont.id, next.path, 'Continue path', next.origins, optsRef.current.autoSelect ? commitSelectionFrom(deps.operands) : undefined);
     },
     [optsRef],
   );
@@ -172,7 +172,7 @@ export function usePenTool(
       s.finishedSubpaths.every((sp) => sp.closed) &&
       (open === null || open.closed);
     const path = buildPath(s.finishedSubpaths, open);
-    const select = optsRef.current.autoSelect ? selectCommitted(deps.operands) : undefined;
+    const select = optsRef.current.autoSelect ? commitSelectionFrom(deps.operands) : undefined;
     deps.insert?.commit(boundsOfPath(path), { kind: 'path', path, closed: allClosed, style: penOptionValues(optsRef.current.toolOptions, deps).style }, undefined, select);
     resetScratch(s);
   }, [commitContinuation, optsRef]);

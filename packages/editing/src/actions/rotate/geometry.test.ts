@@ -10,7 +10,7 @@ import {
   rotatePoint,
   rectCorners,
   rotatedRectCorners,
-  pointInRotatedRect,
+  rotatedRectContainsPoint,
 } from '@weasel-js/core';
 
 const close = (a: number, b: number, eps = 1e-9) => Math.abs(a - b) < eps;
@@ -96,18 +96,18 @@ describe('rotatedRectCorners', () => {
   });
 });
 
-describe('pointInRotatedRect', () => {
+describe('rotatedRectContainsPoint', () => {
   it('center is always inside', () => {
     const pose = { x: 0, y: 0, width: 10, height: 10, rotation: 0.5 };
     const c = aabbCenter(pose);
-    expect(pointInRotatedRect(pose, c.x, c.y)).toBe(true);
+    expect(rotatedRectContainsPoint(pose, c.x, c.y)).toBe(true);
   });
 
   it('axis-aligned (rotation=0) reduces to AABB containment', () => {
     const pose = { x: 0, y: 0, width: 10, height: 10, rotation: 0 };
-    expect(pointInRotatedRect(pose, 5, 5)).toBe(true);
-    expect(pointInRotatedRect(pose, -1, 5)).toBe(false);
-    expect(pointInRotatedRect(pose, 11, 5)).toBe(false);
+    expect(rotatedRectContainsPoint(pose, 5, 5)).toBe(true);
+    expect(rotatedRectContainsPoint(pose, -1, 5)).toBe(false);
+    expect(rotatedRectContainsPoint(pose, 11, 5)).toBe(false);
   });
 
   it('45° rotation: corner outside AABB but inside rotated rect', () => {
@@ -115,12 +115,12 @@ describe('pointInRotatedRect', () => {
     // is outside an axis-aligned 10x10 at (0,0) but inside the 45°-rotated
     // version (which extends to y ≈ 5 - 5√2 ≈ -2.07 along the top vertex).
     const pose = { x: 0, y: 0, width: 10, height: 10, rotation: Math.PI / 4 };
-    expect(pointInRotatedRect(pose, 5, -1.4)).toBe(true);
-    expect(pointInRotatedRect(pose, 5, -3)).toBe(false); // outside the rotated diamond
+    expect(rotatedRectContainsPoint(pose, 5, -1.4)).toBe(true);
+    expect(rotatedRectContainsPoint(pose, 5, -3)).toBe(false); // outside the rotated diamond
   });
 
   it('point well outside any rotation is outside', () => {
     const pose = { x: 0, y: 0, width: 10, height: 10, rotation: 1.234 };
-    expect(pointInRotatedRect(pose, 100, 100)).toBe(false);
+    expect(rotatedRectContainsPoint(pose, 100, 100)).toBe(false);
   });
 });

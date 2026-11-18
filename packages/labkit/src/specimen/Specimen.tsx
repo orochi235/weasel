@@ -249,7 +249,7 @@ function ButtonsAndToggles() {
               { value: 'annotate', label: 'Annotate' },
             ]}
           />
-          <Disclosure open={open} onToggle={() => setOpen((o) => !o)} label="Shapes" />
+          <Disclosure open={open} onOpenChange={setOpen} label="Shapes" />
         </div>
       </Cell>
       <Cell label="Tabs">
@@ -719,7 +719,7 @@ function EditorsAndPlots() {
             duration={2000}
             playhead={playhead}
             onChange={setTracks}
-            onScrub={setPlayhead}
+            onSeek={setPlayhead}
           />
         </div>
       </Cell>

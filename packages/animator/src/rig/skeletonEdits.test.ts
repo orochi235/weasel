@@ -11,7 +11,7 @@ const j = (name: string, parent: string | null, x = 0, y = 0, rotation = 0) => (
 /** hip at (100, 100) turned a quarter, so its children's +x runs down the page. */
 const LEG: Skeleton = { joints: [j('hip', null, 100, 100, Math.PI / 2), j('knee', 'hip', 50), j('foot', 'knee', 40)] };
 
-const at = (s: Skeleton, name: string) => mat3.apply(resolveSkeleton(s, {}).get(name)!, 0, 0).map(Math.round);
+const at = (s: Skeleton, name: string) => mat3.transformPoint(resolveSkeleton(s, {}).get(name)!, 0, 0).map(Math.round);
 
 describe('jointPositions and jointAt', () => {
   it('answers where each joint rests', () => {

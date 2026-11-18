@@ -12,7 +12,7 @@ export function cubicPointAt(p0: Point, p1: Point, p2: Point, p3: Point, t: numb
 
 /** De Casteljau subdivision of a cubic at parameter t. The point-shaped face
  *  of geom's `splitCubicAt`; `left[3]` and `right[0]` are the point at t. */
-export function splitCubicAtT(
+export function splitCubicPoints(
   p0: Point, p1: Point, p2: Point, p3: Point,
   t: number,
 ): { left: [Point, Point, Point, Point]; right: [Point, Point, Point, Point] } {

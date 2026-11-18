@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  axisAlignedClipRect, batchCut, clipConvexPolygon, convexCutPlanes, cutConvexPolygon, intersectClipRects,
+  axisAlignedClipBox, batchCut, clipConvexPolygon, convexCutPlanes, cutConvexPolygon, intersectClipBoxes,
 } from './batchClip';
 import { pathFromD } from '@weasel-js/geom';
 
@@ -59,35 +59,35 @@ describe('clipConvexPolygon', () => {
   });
 });
 
-describe('axisAlignedClipRect', () => {
+describe('axisAlignedClipBox', () => {
   const rect = { kind: 'rect' as const, x: 1, y: 2, width: 3, height: 4 };
 
   it('maps a rect through a scale and translate', () => {
     const m = new Float32Array([2, 0, 0, 0, -1, 0, 10, 20, 1]);
-    expect(axisAlignedClipRect(rect, m)).toEqual({ x0: 12, y0: 14, x1: 18, y1: 18 });
+    expect(axisAlignedClipBox(rect, m)).toEqual({ x0: 12, y0: 14, x1: 18, y1: 18 });
   });
 
   it('accepts a quarter turn, which keeps the axes', () => {
     const quarter = new Float32Array([0, 1, 0, -1, 0, 0, 0, 0, 1]);
-    expect(axisAlignedClipRect(rect, quarter)).toEqual({ x0: -6, y0: 1, x1: -2, y1: 4 });
+    expect(axisAlignedClipBox(rect, quarter)).toEqual({ x0: -6, y0: 1, x1: -2, y1: 4 });
   });
 
   it('refuses a turn that takes the rect off the axes', () => {
     const c = Math.SQRT1_2;
-    expect(axisAlignedClipRect(rect, new Float32Array([c, c, 0, -c, c, 0, 0, 0, 1]))).toBeNull();
+    expect(axisAlignedClipBox(rect, new Float32Array([c, c, 0, -c, c, 0, 0, 0, 1]))).toBeNull();
   });
 
   it('refuses anything but a rect path', () => {
     const poly = { kind: 'polygon', commands: new Uint8Array(), coords: new Float32Array(), fillRule: 'nonzero' };
-    expect(axisAlignedClipRect(poly as never, identity)).toBeNull();
+    expect(axisAlignedClipBox(poly as never, identity)).toBeNull();
   });
 });
 
-describe('intersectClipRects', () => {
+describe('intersectClipBoxes', () => {
   it('keeps the overlap, and an empty rect when there is none', () => {
-    expect(intersectClipRects({ x0: 0, y0: 0, x1: 5, y1: 5 }, { x0: 3, y0: -1, x1: 9, y1: 4 }))
+    expect(intersectClipBoxes({ x0: 0, y0: 0, x1: 5, y1: 5 }, { x0: 3, y0: -1, x1: 9, y1: 4 }))
       .toEqual({ x0: 3, y0: 0, x1: 5, y1: 4 });
-    const none = intersectClipRects({ x0: 0, y0: 0, x1: 1, y1: 1 }, { x0: 2, y0: 2, x1: 3, y1: 3 });
+    const none = intersectClipBoxes({ x0: 0, y0: 0, x1: 1, y1: 1 }, { x0: 2, y0: 2, x1: 3, y1: 3 });
     expect(none.x1 < none.x0).toBe(true);
   });
 });

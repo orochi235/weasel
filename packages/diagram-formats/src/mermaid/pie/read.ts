@@ -3,8 +3,8 @@ import type { PieData, PieSlice } from '@weasel-js/plot';
 import type { ImportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
 import { lineError } from '../../lineError';
-import { pageNameOf, statementsOf } from '../common/lines';
-import { numberAt } from '../common/number';
+import { readPageName, statementsOf } from '../common/lines';
+import { requireNumber } from '../common/number';
 import { unquote } from '../xychart/parse';
 
 /** The page a pie is read onto. */
@@ -30,7 +30,7 @@ export function readMermaidPie(text: string): ImportResult {
     }
     const m = SLICE.exec(s.text);
     if (m === null) throw lineError('Mermaid', s.line, `"${s.text}" is not a pie slice`);
-    const value = numberAt(m[2]!, s.line);
+    const value = requireNumber(m[2]!, s.line);
     if (value < 0) throw lineError('Mermaid', s.line, `a slice's value must not be negative, and ${m[2]} is`);
     const label = unquote(m[1]!);
     if (labels.has(label)) {
@@ -40,7 +40,7 @@ export function readMermaidPie(text: string): ImportResult {
     labels.add(label);
     slices.push({ label, value });
   }
-  const named = pageNameOf(src, warnings);
+  const named = readPageName(src, warnings);
   if (title !== undefined && src.title !== undefined && src.title !== title) warnings.add('The front matter title was dropped; the chart is titled by its own.');
   title ??= src.title;
   const data: PieData = { kind: 'pie', ...(title !== undefined ? { title } : {}), ...(head[1] !== undefined ? { showData: true } : {}), slices };

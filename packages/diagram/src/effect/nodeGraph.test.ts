@@ -28,7 +28,7 @@ describe('nodeGraph', () => {
 
   it('makes one node per stage, by stage id, and passes groups through', () => {
     expect(data.nodes.map((n) => n.id)).toEqual(['src', 'q', 'blur', 'flag']);
-    expect(data.groups).toEqual([{ id: 'g', label: 'Soften', members: ['blur'] }]);
+    expect(data.clusters).toEqual([{ id: 'g', label: 'Soften', members: ['blur'] }]);
   });
 
   it('gives a stage a title row, a ports row with inputs left and outputs right, then its params', () => {
@@ -87,7 +87,7 @@ describe('nodeGraph', () => {
 
   it('keeps the first of two groups sharing an id, and drops a group named like a stage', () => {
     const twice = nodeGraph({ ...P, groups: [...P.groups!, { id: 'g', members: ['src'] }, { id: 'src', members: ['flag'] }] });
-    expect(twice.data.groups).toEqual([{ id: 'g', label: 'Soften', members: ['blur'] }]);
+    expect(twice.data.clusters).toEqual([{ id: 'g', label: 'Soften', members: ['blur'] }]);
     expect(() => diagramScene(twice.data, twice.scene)).not.toThrow();
   });
 
@@ -120,7 +120,7 @@ describe('nodeGraph', () => {
 
   it('answers an empty pipeline with empty data that diagramScene accepts', () => {
     const empty = nodeGraph({ stages: [], wires: [] });
-    expect(empty.data).toEqual({ nodes: [], edges: [], groups: [] });
+    expect(empty.data).toEqual({ nodes: [], edges: [], clusters: [] });
     expect(diagramScene(empty.data, empty.scene)).toEqual([]);
   });
 

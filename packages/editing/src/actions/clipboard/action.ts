@@ -1,5 +1,5 @@
 import { ActionDisabledReason, defineAction, type Action, BETWEEN_GESTURES } from '@weasel-js/routing';
-import { requiresSelection } from '@weasel-js/core';
+import { requiresOperands } from '@weasel-js/core';
 import { kitWeaselJsonHandler } from '../../ingest/weaselJsonHandler';
 import type { NodeId } from '@weasel-js/core';
 import { claimable, INGEST_REQUIRES, ingestFromEvent } from '../edit/ingest';
@@ -30,7 +30,7 @@ export const clipboardCopyAction: Action & { requires: string[] } = {
       deps.clipboard?.copy();
     },
   },
-  enabled: requiresSelection,
+  enabled: requiresOperands,
 };
 
 /**
@@ -103,7 +103,7 @@ const PASTE_EVENT_HANDLERS = [kitWeaselJsonHandler];
  * Bound to `text/plain` because that is the only flavor of a copy a paste
  * event carries; a paste without text stays the page's.
  */
-export const clipboardPasteEventAction = defineAction({
+export const clipboardPasteCopiedAction = defineAction({
   id: 'clipboard.pasteEvent',
   label: 'Paste copied nodes',
   defaultBinding: [{ spec: { kind: 'paste', types: ['text/plain'], mods: ANY_MODS }, opts: { id: 'clipboard.pasteEvent.paste' } }],

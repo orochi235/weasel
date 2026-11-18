@@ -37,7 +37,7 @@ function mount() {
   let overlay: RenderLayer<unknown> | null = null;
 
   function Adapter() {
-    const sel = useSelection({ scene, mode: 'multi' });
+    const sel = useSelection({ scene, mode: 'multiple' });
     selection = sel;
     const adapter: BooleansAdapter = {
       ...rootsTree(ids.slice()),

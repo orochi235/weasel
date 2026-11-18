@@ -68,11 +68,11 @@ What comes back, beyond a `LayoutPlan`'s `moves`, `waypoints` and `labels`:
 | `unheld` | Pinned nodes ELK put somewhere else. The layout is translated so the first pin stays where it is; ELK cannot be told about the rest. |
 
 An edge the author routed (`GraphEdge.authored`) still shapes the layout but
-gets no route back. Anything else ELK takes goes in `layoutOptions`, applied
+gets no route back. Anything else ELK takes goes in `elkOptions`, applied
 over the options derived from the rest:
 
 ```ts
-await elkPlan(graph, { layoutOptions: { 'elk.algorithm': 'mrtree' } });
+await elkPlan(graph, { elkOptions: { 'elk.algorithm': 'mrtree' } });
 ```
 
 ## Size, and where it runs

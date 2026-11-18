@@ -16,11 +16,11 @@
  */
 import { createSimulation, type SimulationForce, type SimulationNode } from '@weasel-js/simulation';
 import type { Graph } from './graph';
-import { groupCohesion, separateGroups } from './forceGroups';
+import { groupCohesion, separateClusters } from './forceClusters';
 import {
   center,
   pinnedSet,
-  translated,
+  movesFrom,
   type LayoutFn,
   type LayoutOptions,
   type LayoutResult,
@@ -216,7 +216,7 @@ export function forceRelaxation(graph: Graph, opts: ForceOptions = {}): ForceRel
     y: bodies.reduce((sum, b) => sum + b.y, 0) / bodies.length,
   };
 
-  const groups = graph.groups ?? [];
+  const groups = graph.clusters ?? [];
   const sim = createSimulation<ForceBody>({
     nodes: bodies,
     forces: [
@@ -225,7 +225,7 @@ export function forceRelaxation(graph: Graph, opts: ForceOptions = {}): ForceRel
       gravity(bodies, centroid, gravityStrength),
       separateBoxes(bodies, padding),
       ...(groups.length > 0
-        ? [groupCohesion(groups, byId, groupStrength), separateGroups(groups, bodies, byId, padding)]
+        ? [groupCohesion(groups, byId, groupStrength), separateClusters(groups, bodies, byId, padding)]
         : []),
     ],
   });
@@ -256,7 +256,7 @@ export const force = (graph: Graph, opts: ForceOptions = {}): LayoutResult => {
   if (graph.nodes.length === 0) return new Map();
   const relaxation = forceRelaxation(graph, opts);
   relaxation.sim.tick(opts.iterations ?? DEFAULTS.iterations);
-  return translated(graph, relaxation.placed(), relaxation.pinned, opts.tolerance);
+  return movesFrom(graph, relaxation.placed(), relaxation.pinned, opts.tolerance);
 };
 
 /** `ForceOptions` only widens `LayoutOptions`, so this is a `LayoutFn` — but

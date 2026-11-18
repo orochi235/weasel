@@ -1,8 +1,8 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import {
   type ActionsRegistry,
-  evaluateActive,
-  evaluateEnabled,
+  checkActive,
+  checkEnabled,
   key,
   useActionsRegistry,
 } from '@weasel-js/core';
@@ -112,8 +112,8 @@ describe('a lab’s header commands', () => {
     const dark = find('lab.mode.dark');
     const light = find('lab.mode.light');
     if (!dark || !light) throw new Error('mode commands missing');
-    expect(evaluateActive(dark)).toBe(true);
-    expect(evaluateActive(light)).toBe(false);
+    expect(checkActive(dark)).toBe(true);
+    expect(checkActive(light)).toBe(false);
   });
 
   it("registers a header item contribution as lab.item.<id>, run with the lab's chrome context", async () => {
@@ -235,7 +235,7 @@ describe('a lab’s header commands', () => {
     );
     const off = registry?.list().find((a) => a.id === 'lab.item.x-off');
     if (!off) throw new Error('no command');
-    expect(evaluateEnabled(off)).toEqual({ enabled: false, reason: 'Nothing to publish' });
+    expect(checkEnabled(off)).toEqual({ enabled: false, reason: 'Nothing to publish' });
   });
 
   it('gives a header item’s command the glyph, shortcut and grade its button shows', async () => {

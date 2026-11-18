@@ -11,14 +11,14 @@ export interface ConditionFlowNode {
   outline?: 'stadium';
 }
 
-/** A path from one box, or one group, to the next. */
+/** A path from one box, or one cluster, to the next. */
 export interface ConditionFlowEdge {
   from: string;
   to: string;
 }
 
 /** A `not`: the boxes it wraps, passed only where no path through them reaches their end. */
-export interface ConditionFlowGroup {
+export interface ConditionFlowCluster {
   id: string;
   members: readonly string[];
   label: string;
@@ -28,7 +28,7 @@ export interface ConditionFlowGroup {
 export interface ConditionFlow {
   nodes: ConditionFlowNode[];
   edges: ConditionFlowEdge[];
-  groups: ConditionFlowGroup[];
+  clusters: ConditionFlowCluster[];
 }
 
 /** How {@link prefConditionFlow} names what it draws. */
@@ -66,13 +66,13 @@ function testLines({ test, negated }: TestRow, found: ConditionLeaf | undefined)
 /**
  * `condition` as a flow from a first box to a last: the condition holds where a path runs between them through
  * tests that hold. The parts of an `all` stand in a line, each after the one before; the parts of an `any` stand
- * side by side, any one of them a way through. A `not` is a group round what it wraps, passed where no path gets
+ * side by side, any one of them a way through. A `not` is a cluster round what it wraps, passed where no path gets
  * through it, but for the ones a single comparison says: is not set, and is none of. An `all` of nothing is the
  * bare path and an `any` of nothing a box nothing leaves, as each evaluates.
  */
 export function prefConditionFlow(condition: PrefCondition | undefined, schema: PrefGroup | PrefSection, opts: ConditionFlowOptions = {}): ConditionFlow {
   const leaves = conditionLeaves(schema, opts.entryOf, opts.over);
-  const flow: ConditionFlow = { nodes: [{ id: CONDITION_FLOW_START, lines: ['start'], outline: 'stadium' }], edges: [], groups: [] };
+  const flow: ConditionFlow = { nodes: [{ id: CONDITION_FLOW_START, lines: ['start'], outline: 'stadium' }], edges: [], clusters: [] };
   const join = (from: readonly string[], to: string): void => { for (const id of from) flow.edges.push({ from: id, to }); };
   const box = (id: string, lines: readonly string[], entries: readonly string[]): string => {
     flow.nodes.push({ id, lines });
@@ -80,7 +80,7 @@ export function prefConditionFlow(condition: PrefCondition | undefined, schema: 
     return id;
   };
 
-  /** Draws `part` after `entries`, and says what a path leaves it by and which of its boxes stand outside any group it made. */
+  /** Draws `part` after `entries`, and says what a path leaves it by and which of its boxes stand outside any cluster it made. */
   const draw = (part: PrefCondition, entries: readonly string[], at: string): { exits: string[]; made: string[] } => {
     const row = testRowOf(part);
     const lines = row && testLines(row, conditionLeafOf(leaves, row.test));
@@ -93,7 +93,7 @@ export function prefConditionFlow(condition: PrefCondition | undefined, schema: 
       const id = `not:${at}`;
       // Nothing inside to pass or fail: the not of what always holds is a dead end.
       if (inner.made.length === 0) return { exits: [], made: [box(`never:${at}`, ['never'], entries)] };
-      flow.groups.push({ id, members: inner.made, label: 'not' });
+      flow.clusters.push({ id, members: inner.made, label: 'not' });
       join(entries, id);
       return { exits: [id], made: [id] };
     }

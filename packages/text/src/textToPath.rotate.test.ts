@@ -7,7 +7,7 @@ import { registerFontOutlines, loadFontOutlines, type OutlineFace } from '@wease
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { layoutTextPose, type TextPose } from '@weasel-js/text';
-import { boundsOfPath, pointInPath } from '@weasel-js/geom';
+import { boundsOfPath, pathContainsPoint } from '@weasel-js/geom';
 import { textToPath, type TextOutlineSource } from './textToPath';
 
 /** A half-em square sitting on the baseline at the pen, for every letter. */
@@ -59,11 +59,11 @@ describe('textToPath of turned glyphs', () => {
     const p = pen(src);
     const path = textToPath(src, POSE);
     // A half turn hangs each square below the baseline, to the left of its pen.
-    expect(pointInPath(path, p.x - 25, p.y + 25)).toBe(true);
-    expect(pointInPath(path, p.x + 60 - 25, p.y + 25)).toBe(true);
-    expect(pointInPath(path, p.x + 25, p.y - 25)).toBe(false);
+    expect(pathContainsPoint(path, p.x - 25, p.y + 25)).toBe(true);
+    expect(pathContainsPoint(path, p.x + 60 - 25, p.y + 25)).toBe(true);
+    expect(pathContainsPoint(path, p.x + 25, p.y - 25)).toBe(false);
     // The third glyph, upright, sits where it would have.
-    expect(pointInPath(path, p.x + 120 + 25, p.y - 25)).toBe(true);
-    expect(pointInPath(path, p.x + 120 + 25, p.y + 25)).toBe(false);
+    expect(pathContainsPoint(path, p.x + 120 + 25, p.y - 25)).toBe(true);
+    expect(pathContainsPoint(path, p.x + 120 + 25, p.y + 25)).toBe(false);
   });
 });

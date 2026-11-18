@@ -86,7 +86,7 @@ export function addLaneLocked(scene: AnyScene, pool: Pick<PoolLanes, 'id'>): boo
   return [pool.id, titleIdOf(pool.id)].some((id) => scene.isLocked(id as NodeId));
 }
 
-/** Options for {@link laneLayer}. */
+/** Options for {@link createLaneLayer}. */
 export interface LaneLayerOptions {
   /** Screen-pixel reach of a boundary either side of it. Default 4. */
   hitRadiusPx?: number;
@@ -174,6 +174,6 @@ export function createLaneAffordance(scene: AnyScene, opts: LaneLayerOptions = {
 }
 
 /** The composed layer, for `CanvasExtensionApi.registerLayer`. */
-export function laneLayer(scene: AnyScene, opts: LaneLayerOptions = {}): RenderLayer<unknown> {
+export function createLaneLayer(scene: AnyScene, opts: LaneLayerOptions = {}): RenderLayer<unknown> {
   return composeAffordanceLayer(LANE_LAYER_ID, 'Diagram lanes', [createLaneAffordance(scene, opts)]) as unknown as RenderLayer<unknown>;
 }

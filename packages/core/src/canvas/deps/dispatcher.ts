@@ -1,6 +1,6 @@
 /**
  * `useDispatcherDepSource` — wires the `dispatcher` dep so actions can
- * abort in-flight handles (`cancelGestureAction` is the kit's only
+ * abort in-flight handles (`cancelAllAction` is the kit's only
  * built-in consumer today; consumer-app actions wanting drag-cancel
  * semantics use the same surface).
  *

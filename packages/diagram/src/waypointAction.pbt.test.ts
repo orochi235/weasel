@@ -13,7 +13,7 @@ import { edgeLabelIdOf } from './edgeLabel';
 import { edgeIdOf } from './edgeId';
 import type { DiagramEdge } from './edgeTrait';
 import { diagramScene } from './fromData';
-import { commitLabelToScene } from './labelDragAction';
+import { commitLabelToScene } from './moveLabelAction';
 import type { DiagramLabel } from './labelTrait';
 import { runs, tally, timeoutFor } from './pbt.fixture';
 import { commitRouteToScene } from './waypointAction';

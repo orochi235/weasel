@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { tileGrid } from './tileGrid';
-import { none } from '../snaps';
+import { noSnap } from '../snaps';
 
 type P = { x: number; y: number; width: number; height: number };
 
@@ -197,7 +197,7 @@ describe('tileGrid', () => {
     expect(calls).toEqual([{ id: 'a', pose: draggedPose }]);
   });
 
-  it('default snap is cellAt (returns target under pointer)', () => {
+  it('default snap is cellThenNearest (returns target under pointer)', () => {
     const layout = tileGrid<P>({ cols: 2, rows: 1 });
     const targets = layout.getDropTargets(container, [], {
       id: 'd',
@@ -256,7 +256,7 @@ describe('tileGrid', () => {
   });
 
   it('accepts a snap override', () => {
-    const layout = tileGrid<P>({ cols: 2, rows: 1, snap: none<P>() });
+    const layout = tileGrid<P>({ cols: 2, rows: 1, snap: noSnap<P>() });
     const targets = layout.getDropTargets(container, [], {
       id: 'd',
       originPose: { x: 0, y: 0, width: 10, height: 10 },

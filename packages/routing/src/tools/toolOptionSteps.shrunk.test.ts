@@ -2,13 +2,13 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import type { PrefNumber } from '@weasel-js/prefs-schema';
 import type { ImmediateInvoker } from '../interactions/actions/invoker';
-import { createToolOptionValues, type ToolOptions } from './toolOptions';
+import { createToolOptionValues, type ToolOptionsSpec } from './toolOptions';
 import { toolOptionSteps, WHEEL_SIZE_MAX_STEPS } from './toolOptionSteps';
 
 afterEach(() => { vi.useRealTimers(); });
 
 function wheel() {
-  const options: ToolOptions = {
+  const options: ToolOptionsSpec = {
     actionId: 'brush', size: { option: 'n', plus: 1 },
     prefs: { name: 'B', description: '', children: { n: { kind: 'number', name: 'N', description: '', default: 0 } as PrefNumber } },
   };

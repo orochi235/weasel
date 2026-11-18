@@ -5,14 +5,14 @@ import { cancelPendingRemoval } from './pendingRemovals';
 import { transitionCancelKey } from './cancelKey';
 import { createTransition, interruptNode } from './transition';
 import type {
-  BindOptions,
+  D3BindOptions,
   D3Binding,
   D3Selection,
 } from './types';
 
 /**
  * Bind a data array to a scene. Returns a builder; configure with `.pose()` /
- * `.data()` / `.enterFrom()`, then call `.join()` to emit the diff.
+ * `.payload()` / `.enterFrom()`, then call `.join()` to emit the diff.
  *
  * Diff semantics (by `options.key`):
  * - data has key not in scene → ENTER (scene.add)
@@ -31,10 +31,10 @@ export function d3Bind<
 >(
   scene: Scene<TPayload, TLayer, TPose>,
   data: readonly TData[],
-  options: BindOptions<TData, TPose>,
+  options: D3BindOptions<TData, TPose>,
 ): D3Binding<TData, TPose, TPayload> {
   let poseFn: ((d: TData, i: number) => TPose) | null = null;
-  let dataFn: ((d: TData, i: number) => TPayload) | null = null;
+  let payloadFn: ((d: TData, i: number) => TPayload) | null = null;
   let enterFromFn: ((d: TData, i: number) => TPose) | null = null;
   let exitFn: ((exit: D3Selection<TPayload, TPose>) => void) | null = null;
 
@@ -43,8 +43,8 @@ export function d3Bind<
       poseFn = fn;
       return binding;
     },
-    data(fn) {
-      dataFn = fn;
+    payload(fn) {
+      payloadFn = fn;
       return binding;
     },
     enterFrom(fn) {
@@ -105,7 +105,7 @@ export function d3Bind<
         for (const i of enterIndices) {
           const id = dataKeys[i];
           const pose = poseFn ? poseFn(data[i], i) : (undefined as unknown as TPose);
-          const payload = dataFn ? dataFn(data[i], i) : ({} as TPayload);
+          const payload = payloadFn ? payloadFn(data[i], i) : ({} as TPayload);
           if (pose === undefined) {
             throw new Error(
               'd3Bind.join: enter node has no pose. Call `.pose(fn)` before `.join()`.',
@@ -122,7 +122,7 @@ export function d3Bind<
         for (const i of updateIndices) {
           const id = dataKeys[i];
           if (poseFn) scene.setPose(id, poseFn(data[i], i));
-          if (dataFn) scene.update(id, { data: dataFn(data[i], i) });
+          if (payloadFn) scene.update(id, { data: payloadFn(data[i], i) });
         }
         if (!exitFn) {
           for (const id of exitIds) scene.remove(id);
@@ -223,7 +223,7 @@ function createSelection<TData, TPose>(
     transition(name?: string) {
       if (!animator) {
         throw new Error(
-          'd3Bind.transition: pass `animator` in BindOptions to enable transitions',
+          'd3Bind.transition: pass `animator` in D3BindOptions to enable transitions',
         );
       }
       const resolvedGeometry = (geometry ??

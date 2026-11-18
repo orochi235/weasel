@@ -3,7 +3,7 @@
  * it to the text it now holds, so what it covers and what covers it are
  * measured from the words drawn, not the empty box it was added with.
  */
-import { createTransformOp, type NodeId, type Op, type SceneEditSummary, type AnyScene } from '@weasel-js/core';
+import { createSetPoseOp, type NodeId, type Op, type SceneEditSummary, type AnyScene } from '@weasel-js/core';
 import type { MeasureRowText, RowTextStyle } from '../body';
 import { DEFAULT_FONT, labelSize, labelStyleOf } from '../edgeLabel';
 import { diagramLabelOf } from '../labelTrait';
@@ -31,7 +31,7 @@ export function labelFitOps(
     const size = labelSize(data.text, data.style ?? labelStyleOf(DEFAULT_FONT), measure);
     if (Math.abs(size.width - node.pose.width) < 1e-6 && Math.abs(size.height - node.pose.height) < 1e-6) continue;
     sizes.set(id, size);
-    ops.push(createTransformOp({ id, from: node.pose, to: { ...node.pose, ...size }, label: 'Fit label' }));
+    ops.push(createSetPoseOp({ id, from: node.pose, to: { ...node.pose, ...size }, label: 'Fit label' }));
   }
   return { ops, sizes };
 }

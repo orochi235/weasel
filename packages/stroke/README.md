@@ -19,11 +19,11 @@ into another path. It has no scene graph, no renderer, and no React.
 
 `tessellateStroke(path, stroke, options)` answers a triangle mesh: width, cap,
 join, miter limit, dash, alignment, and per-vertex widths are all in it.
-`resolveStrokeWidth` turns a `{ px }` width into path units at a given scale.
+`resolveScreenLength`, from `@weasel-js/paint`, turns a `{ px }` width into path units at a given scale.
 
 A stroke that must stay a fixed number of screen pixels wide under a
 non-uniform zoom is built in a *stroke metric*, the linear part of the
-transform it will be drawn through. `strokeSpaceOf` makes one, and the
+transform it will be drawn through. `strokeMetricOf` makes one, and the
 `polylineIntoMetric` / `coordsOutOfMetric` family moves points in and out of
 it.
 

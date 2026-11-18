@@ -102,7 +102,7 @@ describe('ActionBar', () => {
     expect(run).toHaveBeenCalledTimes(1);
   });
 
-  it('disabled state from evaluateEnabled reflects on the button', () => {
+  it('disabled state from checkEnabled reflects on the button', () => {
     renderWithIcons(
       <Harness
         actions={[

@@ -96,8 +96,8 @@ function drawLook(doc: EffectDoc, look: EditorLook, options: EditorLookOptions[E
     const at = getOwn(doc.places, n.id);
     return at === undefined ? n : { ...n, at: { x: at.x, y: at.y }, pinned: true };
   });
-  const { groups = [], ...rest } = drawn.data;
-  const containers = groups.map((g): DataContainer => {
+  const { clusters = [], ...rest } = drawn.data;
+  const containers = clusters.map((g): DataContainer => {
     const box = doc.groupBoxes && getOwn(doc.groupBoxes, g.id);
     return {
       id: g.id, role: 'container', label: g.label ?? '', members: g.members,

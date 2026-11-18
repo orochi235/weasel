@@ -11,6 +11,7 @@ import {
   type Contour,
 } from './cornerSegments';
 import type { Point } from './cubicMath';
+import { createPart } from '@weasel-js/registry';
 
 /** Below this turn (radians) an anchor is smooth, and no corner can be cut. */
 const MIN_TURN = 1e-3;
@@ -122,18 +123,15 @@ export interface ResolvedCorners {
   anchorSources: Uint32Array | null;
 }
 
-const expanded = new WeakMap<PolygonPath, ResolvedCorners>();
+const expanded = createPart((path: PolygonPath): ResolvedCorners =>
+  hasCorners(path) ? expand(path) : { path: withoutCorners(path), anchorSources: null });
 
 /** {@link resolveCorners}, also answering which source anchor each anchor of
  *  the result came from, so an array kept per anchor (`vertexColors`) can be
  *  carried onto it with {@link remapPerAnchor}. */
 export function resolveCornersWithSources(path: PolygonPath): ResolvedCorners {
   if (path.corners === undefined) return { path, anchorSources: null };
-  const hit = expanded.get(path);
-  if (hit) return hit;
-  const out = hasCorners(path) ? expand(path) : { path: withoutCorners(path), anchorSources: null };
-  expanded.set(path, out);
-  return out;
+  return expanded(path);
 }
 
 /**

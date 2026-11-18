@@ -119,7 +119,7 @@ export function TextDemo() {
   return (
     <div className="ckd-demo">
       <div className="ckd-strip-slot">
-        <CharacterOptions className="ckd-strip" style={edit.effectiveStyle} onPatch={edit.applyStyleToSelection} />
+        <CharacterOptions className="ckd-strip" value={edit.effectiveStyle} onChange={edit.applyStyleToSelection} />
       </div>
       <div className="ckd-canvas-frame" ref={setFrame}>
         <DemoStage width={W} height={H}>

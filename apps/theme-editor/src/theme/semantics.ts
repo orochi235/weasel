@@ -1,5 +1,5 @@
 import { getOwn } from '@weasel-js/registry';
-import { isByAxis, type Selection, type ThemeDefinition, type Varying } from '@weasel-js/theme';
+import { isByAxis, type AxisChoice, type ThemeDefinition, type Varying } from '@weasel-js/theme';
 import { contrast, type SemanticRule } from '@weasel-js/theme/engine';
 import type { ModeView } from './draft';
 import { ruleSummary, stepOf } from './model';
@@ -50,7 +50,7 @@ export function defaultRule(
   }
 }
 
-export function pickRule(rule: Varying<SemanticRule>, selection: Selection): SemanticRule | undefined {
+export function pickRule(rule: Varying<SemanticRule>, selection: AxisChoice): SemanticRule | undefined {
   let r: unknown = rule;
   while (isByAxis(r)) {
     const value = getOwn(selection, r.by);

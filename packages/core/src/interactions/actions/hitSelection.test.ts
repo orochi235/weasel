@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hitTargets, selectionFromHits } from './hitSelection';
+import { targetsOf, selectionFromHits } from './hitSelection';
 
 describe('selectionFromHits', () => {
   it('replaces the selection with the hits', () => {
@@ -16,9 +16,9 @@ describe('selectionFromHits', () => {
   });
 });
 
-describe('hitTargets', () => {
+describe('targetsOf', () => {
   it('hands targetOf only the id, so an optional second parameter keeps its default', () => {
     const targetOf = (id: string, depth = 0) => (depth === 0 ? `${id}!` : id);
-    expect(hitTargets(['a', 'b'], targetOf)).toEqual(['a!', 'b!']);
+    expect(targetsOf(['a', 'b'], targetOf)).toEqual(['a!', 'b!']);
   });
 });

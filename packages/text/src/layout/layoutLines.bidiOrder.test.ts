@@ -20,7 +20,7 @@ describe('layoutRuns — bidi seam', () => {
       return { order, levels: new Int16Array(end - start).fill(1) };
     },
     mirror: () => null,
-    baseLevel: () => 0,
+    paragraphLevel: () => 0,
   };
 
   it('lays out in logical order when no engine is supplied', async () => {

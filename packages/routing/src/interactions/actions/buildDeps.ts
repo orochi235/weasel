@@ -15,7 +15,7 @@ import { isDev } from '@weasel-js/react';
 const DEV = isDev();
 
 /** Build the deps bag for an action from its declared `requires`. */
-export function buildDepsFromRequires(action: Action, depRegistry: DepRegistry): ActionDeps {
+export function createActionDeps(action: Action, depRegistry: DepRegistry): ActionDeps {
   const requires = action.requires ?? [];
   const entries = requires.map((name) => [name, depRegistry.get(name)]);
   const deps = Object.fromEntries(entries) as ActionDeps;

@@ -9,7 +9,6 @@ interface Props {
   tools?: ToolsApi | ToolsPatch;
   defaultTools?: readonly unknown[];
   defaultActiveTool?: string;
-  ambient?: readonly unknown[];
   selectTool?: { pickBest?: unknown };
   geometry?: { pickEvery?: unknown; picking?: string };
 }
@@ -21,7 +20,6 @@ export function ignoredProps(props: Props): { underTakeover: string[]; underPick
   if (props.tools && isToolsApi(props.tools)) {
     if (props.defaultTools?.length) underTakeover.push('defaultTools');
     if (props.defaultActiveTool !== undefined) underTakeover.push('defaultActiveTool');
-    if (props.ambient?.length) underTakeover.push('ambient');
     if (props.selectTool?.pickBest) underTakeover.push('selectTool.pickBest');
   }
   const underPickEvery = props.geometry?.pickEvery && props.geometry.picking !== undefined ? ['geometry.picking'] : [];

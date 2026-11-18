@@ -85,6 +85,12 @@ function declareSlot<T extends Contribution<unknown>>(tool: T, slot: 'focus' | '
   return sameEligibility(tool.eligibility, eligibility) ? tool : { ...tool, eligibility };
 }
 
+/** `entry` declared live under any tool, as `useTools` declares each of its `ambient` entries: what a host
+ *  routing an always-on entry outside `useTools` hands the dispatcher. */
+export function alwaysOn<T extends Contribution<unknown>>(entry: T): T {
+  return declareSlot(entry, 'always');
+}
+
 const NO_AMBIENT: readonly never[] = [];
 
 /** `registry` and `ambient` as last passed, kept by identity for as long as
@@ -142,7 +148,7 @@ function slotSources<TOverlay>(sources: { registry: Record<string, Tool<TOverlay
     setOwn(registry, id, declareSlot(tool, 'focus'));
   }
   for (const tool of sources.ambient) claim(tool);
-  const ambient = sources.ambient.map((t) => declareSlot(t, 'always'));
+  const ambient = sources.ambient.map(alwaysOn);
   const byId = new Map<string, Contribution<TOverlay>>();
   for (const tool of [...Object.values(registry), ...ambient]) {
     const prior = byId.get(tool.id);

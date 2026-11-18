@@ -1,10 +1,10 @@
 import { useMemo, useRef, useState } from 'react';
-import { DiagramView, diagramScene, type DataEdge, type DataGroup, type DataNode, type DiagramViewApi } from '@weasel-js/diagram';
+import { DiagramView, diagramScene, type DataEdge, type DataCluster, type DataNode, type DiagramViewApi } from '@weasel-js/diagram';
 import { Button } from '@weasel-js/ui/components/Button';
 import { FONT, moved, routed } from './diagram/shared';
 import { DemoStage } from './DemoStage';
 
-/** Two subsystems that feed each other at every stage, so without groups
+/** Two subsystems that feed each other at every stage, so without clusters
  *  their stages would interleave rank by rank. */
 const NODES: DataNode[] = ['fetch', 'decode', 'cache', 'probe', 'score', 'report', 'clock']
   .map((id) => ({ id, lines: [id] }));
@@ -15,7 +15,7 @@ const EDGES: DataEdge[] = [
   // An edge naming a group meets its box, and ranks against its first stage.
   { from: 'clock', to: 'ingest' },
 ];
-const GROUPS: DataGroup[] = [
+const GROUPS: DataCluster[] = [
   { id: 'ingest', members: ['fetch', 'decode', 'cache'], label: 'ingest' },
   { id: 'health', members: ['probe', 'score', 'report'], label: 'health' },
 ];
@@ -23,7 +23,7 @@ const GROUPS: DataGroup[] = [
 /** The nodes where the layered layout puts them. Laid out once: a layout in
  *  `groupSpecs` would run again on every drag and take the drag back. */
 export const START: DataNode[] = (() => {
-  const laidOut = diagramScene({ nodes: NODES, edges: EDGES, groups: GROUPS }, { font: FONT });
+  const laidOut = diagramScene({ nodes: NODES, edges: EDGES, clusters: GROUPS }, { font: FONT });
   return NODES.map((n) => {
     const { x, y } = laidOut.find((s) => s.id === n.id)!.pose;
     return { ...n, at: { x, y } };
@@ -31,7 +31,7 @@ export const START: DataNode[] = (() => {
 })();
 
 export function groupSpecs(nodes: readonly DataNode[], edges: readonly DataEdge[] = EDGES) {
-  return diagramScene({ nodes: [...nodes], edges: [...edges], groups: GROUPS }, { layout: 'none', font: FONT });
+  return diagramScene({ nodes: [...nodes], edges: [...edges], clusters: GROUPS }, { layout: 'none', font: FONT });
 }
 
 export function DiagramGroupsDemo() {

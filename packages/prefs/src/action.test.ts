@@ -3,7 +3,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import { type PrefAction, type PrefActions, pref, type PrefGroup, prefHoldsValue, isBuiltinPref } from '@weasel-js/prefs-schema';
 import { checkPrefCondition } from './conditionCheck';
 import { prefsCss } from './css';
-import { prefsDefaultsSource } from './defaultsSource';
+import { createDefaultsSource } from './defaultsSource';
 import { prefDrawsSeveral, prefIsCompound } from './kinds';
 import type { PrefPath } from '@weasel-js/prefs-schema';
 import { createPrefsStore } from './store';
@@ -33,7 +33,7 @@ describe('an actions leaf', () => {
     const cache = createRecordCache({ storage: createMemoryAdapter(new Map()), prefix: 'p.' });
     const store = createPrefsStore(SCHEMA, cache);
     expect(store.values()).toEqual({ view: { gap: 4 } });
-    expect(prefsDefaultsSource(SCHEMA).values()).toEqual({ view: { gap: 4 } });
+    expect(createDefaultsSource(SCHEMA).values()).toEqual({ view: { gap: 4 } });
     expect(prefsCss(store)).not.toContain('arrange');
   });
 

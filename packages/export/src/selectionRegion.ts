@@ -1,4 +1,4 @@
-import { documentOf, drawnAABBOf, drawnBoundsScene, scenePoseAdapter, unionAABB, withoutPageStructure, worldPoseLookup, type NodeId } from '@weasel-js/core';
+import { documentOf, drawnAabbOf, drawnBoundsScene, scenePoseAdapter, unionAabb, withoutPageStructure, worldPoseLookup, type NodeId } from '@weasel-js/core';
 import type { ExportRegion, ExportScene } from './exportTypes';
 
 /**
@@ -13,8 +13,8 @@ export function selectionRegion(scene: ExportScene, ids: readonly string[], name
   const boxes = withoutPageStructure(doc, ids).map((id) => {
     const pose = world(id);
     return pose === null || doc.get(id as NodeId) === undefined
-      ? null : drawnAABBOf(drawn, id as NodeId, pose, { worldPoseOf: (m) => world(m) });
+      ? null : drawnAabbOf(drawn, id as NodeId, pose, { worldPoseOf: (m) => world(m) });
   });
-  const box = unionAABB(boxes);
+  const box = unionAabb(boxes);
   return box === null ? null : { x: box.x, y: box.y, width: box.width, height: box.height, ...(name !== undefined ? { name } : {}) };
 }

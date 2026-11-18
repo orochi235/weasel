@@ -2,7 +2,7 @@
 import type { GitCommand, GitCommitType } from '@weasel-js/plot';
 import { lineError } from '../../lineError';
 import type { Statement } from '../common/lines';
-import { numberAt } from '../common/number';
+import { requireNumber } from '../common/number';
 
 const FORMAT = 'Mermaid';
 const TYPES: readonly string[] = ['NORMAL', 'REVERSE', 'HIGHLIGHT'];
@@ -58,7 +58,7 @@ export function commandOf({ text, line }: Statement): GitCommand {
       const { name, rest: after } = nameOf(rest, 'branch', line);
       const order = attributes(after, 'branch', ['order'], line).get('order');
       if (order !== undefined && !/^\d+$/.test(order)) throw lineError(FORMAT, line, `"${order}" is not an order; it is a whole number`);
-      return { kind: 'branch', name, ...(order !== undefined ? { order: numberAt(order, line) } : {}) };
+      return { kind: 'branch', name, ...(order !== undefined ? { order: requireNumber(order, line) } : {}) };
     }
     case 'checkout':
     case 'switch': {

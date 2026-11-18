@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
-import { createMenuController, withLinks, type MenuController, type Rect } from '@weasel-js/menu';
+import { createMenuController, withLinks, type MenuController, type MenuRect } from '@weasel-js/menu';
 import { useWindowEvent } from '@weasel-js/react';
 import { useMenuHost } from '@weasel-js/routing/react';
 import type { MenuHost, OpenMenu } from '@weasel-js/routing';
@@ -105,7 +105,7 @@ function Panels({ controller, open, close, takeFocus, labelledBy, inside, releas
   const root = useMemo(() => (open.under ? { client: open.client, under: open.under, ...(open.side ? { side: open.side } : {}) } : { client: open.client }), [open]);
   const focusable = takeFocus || (typeof document !== 'undefined' && document.activeElement?.id.startsWith(`${idBase}-panel-`) === true);
   const rowId = (level: number) => `${idBase}-${level}-${stack[level]}`;
-  const rowRect = (level: number): Rect | null => {
+  const rowRect = (level: number): MenuRect | null => {
     const el = stack[level] == null ? null : document.getElementById(rowId(level));
     if (!el) return null;
     const r = el.getBoundingClientRect();

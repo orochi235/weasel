@@ -1,13 +1,13 @@
 import { getOwn, setOwn, isPlainObject } from '@weasel-js/registry';
 import {
-  isPrefLeaf, prefClampNumber, prefNumberAt, prefSectionLeaves,
+  isPrefLeaf, prefClampNumber, prefBoundedNumber, prefSectionLeaves,
   type PrefLeaf, type PrefNumber, type PrefObject, type PrefSection,
 } from '@weasel-js/prefs';
 import type { PanelRecord } from './model';
 
 /** `leaf` as it bounds `record`: a number leaf's `minAt` and `maxAt` read against the record's own values. */
 export function leafAt(leaf: PrefLeaf, record: PanelRecord): PrefLeaf {
-  return leaf.kind === 'number' ? prefNumberAt(leaf as PrefNumber, (path) => record.valueAt(path)) : leaf;
+  return leaf.kind === 'number' ? prefBoundedNumber(leaf as PrefNumber, (path) => record.valueAt(path)) : leaf;
 }
 
 /**

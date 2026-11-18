@@ -31,7 +31,7 @@ function makeScene(kind: PathEffect['kind']) {
 
 function Host({ kind }: { kind: PathEffect['kind'] }) {
   const scene = useState(() => makeScene(kind))[0];
-  const selection = useSelection({ mode: 'multi', scene, initial: [asNodeId('fx')] });
+  const selection = useSelection({ mode: 'multiple', scene, initial: [asNodeId('fx')] });
   const host: SidebarHost = {
     scene, selection, measurements: useState(() => createMeasurements({ layer: ANNOTATION_LAYER }))[0],
     filename: '', setFilename: () => {}, backgroundColor: '#ffffff', setBackgroundColor: () => {},

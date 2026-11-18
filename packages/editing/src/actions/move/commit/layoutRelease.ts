@@ -1,5 +1,5 @@
 import { createReparentOp, asNodeId, type NodeId, followerOpsFor } from '@weasel-js/core';
-import { createTransformOp, composeChildFrame, composeWorldPose, rebaseLocalPose, type PoseAdapter, sceneViewPoseAdapter, poseDescriptorForNode, pageOfNode } from '@weasel-js/core/engine';
+import { createSetPoseOp, composeChildFrame, composeWorldPose, rebaseLocalPose, type PoseAdapter, sceneViewPoseAdapter, poseDescriptorForNode, pageIdOf } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
 import type { LayoutChild, LayoutContainer } from '@weasel-js/core/engine';
 import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
@@ -121,7 +121,7 @@ export function layoutReleaseOps(
         toParentId: toParent as string | null,
         label: 'Reparent',
       }));
-      exitOps.push(createTransformOp<unknown>({
+      exitOps.push(createSetPoseOp<unknown>({
         id: id as string,
         from: node.pose,
         to,
@@ -131,7 +131,7 @@ export function layoutReleaseOps(
   }
   if (released.size === 0 && exits.size === 0) return undefined;
   const { scene } = session;
-  const landed = new Map([...exits].map(([id, to]) => [id as string, to === null ? null : pageOfNode(scene, to)]));
+  const landed = new Map([...exits].map(([id, to]) => [id as string, to === null ? null : pageIdOf(scene, to)]));
   const followers = followerOpsFor(scene, landed, session.lifecycle.label);
   if (followers === null) return null;
   return [

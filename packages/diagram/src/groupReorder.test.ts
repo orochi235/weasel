@@ -7,7 +7,7 @@ import { createStepReorderAction } from './groupReorder';
 const DATA: DiagramData = {
   nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }],
   edges: [],
-  groups: [{ id: 'rows', members: ['a', 'b'], reorder: 'y' }],
+  clusters: [{ id: 'rows', members: ['a', 'b'], reorder: 'y' }],
 };
 
 function setup(selected: string) {

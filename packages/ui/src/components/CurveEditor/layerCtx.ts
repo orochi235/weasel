@@ -1,12 +1,13 @@
 import type { KitSettingsStore } from '@weasel-js/react';
 import { modelToPlot, plotToModel, type ModelRange } from '../Plot2D/geometry';
-import type { LayerCtx, LayerModifiers } from './layerTypes';
+import type { ModifierState } from '@weasel-js/routing';
+import type { LayerCtx } from './layerTypes';
 
 /** What a layer sees held when no event says: a render, or a cancel. */
-export const NO_MODIFIERS: LayerModifiers = { shift: false, alt: false, meta: false, ctrl: false };
+export const NO_MODIFIERS: ModifierState = { shift: false, alt: false, meta: false, ctrl: false };
 
 /** The modifiers `e` was fired with. */
-export function readModifiers(e: { shiftKey: boolean; altKey: boolean; metaKey: boolean; ctrlKey: boolean }): LayerModifiers {
+export function readModifiers(e: { shiftKey: boolean; altKey: boolean; metaKey: boolean; ctrlKey: boolean }): ModifierState {
   return { shift: e.shiftKey, alt: e.altKey, meta: e.metaKey, ctrl: e.ctrlKey };
 }
 

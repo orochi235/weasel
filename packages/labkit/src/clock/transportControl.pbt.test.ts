@@ -65,11 +65,11 @@ class Speed implements fc.Command<Model, Real> {
   run(m: Model, r: Real): void {
     const was = r.clock.rate;
     if (this.step) {
-      const rates = r.clock.rates;
+      const speeds = r.clock.speeds;
       const next =
         this.by > 0
-          ? rates.find((x) => x > m.speed)
-          : [...rates].reverse().find((x) => x < m.speed);
+          ? speeds.find((x) => x > m.speed)
+          : [...speeds].reverse().find((x) => x < m.speed);
       t.count(next === undefined ? 'stepped past the end' : 'stepped');
       if (next !== undefined) m.speed = next;
       control(r).stepSpeed(this.by > 0 ? 1 : -1);

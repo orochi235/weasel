@@ -100,7 +100,7 @@ those on too; any of them can also be passed alone:
 
 Path edit, the pen, the pencil, the knife, the path commands and Create Outlines are
 `@weasel-js/path-tools`': its `pathsPreset` (`anchorKeysPreset`, `outlinesPreset`, `pathEditPreset`,
-`pathCommandsPreset`), which `pathTools` includes, and the tools `usePathToolsTools` builds.
+`pathCommandsPreset`), which `pathToolsPreset` includes, and the tools `usePathToolsTools` builds.
 
 Text is a package of its own, `@weasel-js/text-tools`: `textPreset` teaches a canvas the text node
 kind (its painter, routing, properties, inserts, in-place editor, a double-click opening it, and
@@ -133,8 +133,8 @@ itself. For a page that picks presets by name (a URL, a settings file); importin
 it puts every core preset in the bundle.
 
 `move`, `resize` and `rotate` belong to the selection, not to the select tool:
-they are always-live entries (editing's `selectionMoveContribution`,
-`selectionResizeContribution`, `selectionRotateContribution`), so a drag on the selection moves it under
+they are always-live entries (editing's `createSelectionMoveContribution`,
+`createSelectionResizeContribution`, `createSelectionRotateContribution`), so a drag on the selection moves it under
 any tool that leaves the drag unclaimed. The select tool itself only chooses:
 it picks on press, marquees on an empty drag, and clears on an empty click.
 
@@ -605,7 +605,7 @@ interface Op {
 }
 ```
 
-Constructors live under `packages/core/src/core/ops/`: `createTransformOp`,
+Constructors live under `packages/core/src/core/ops/`: `createSetPoseOp`,
 `createInsertOp`, `createDeleteOp`, `createSetSelectionOp`,
 `createReorderOp`, etc. Every gesture and action hook produces ops on
 commit; `dispatchApplyBatch(adapter, ops, label)` calls
@@ -692,7 +692,7 @@ A paged document is one scene whose pages are nodes, so one view, one history, a
 them (`packages/core/src/core/pages/`). The **page run** is a root group laid out by `pageRunLayout`, its pages in a
 column or a row with a gap; each **page** is a group under it whose pose is its rect, which frames what is on it
 (local coordinates, origin at its top-left) and clips it (`pageClip`). What is on a page is its child: membership is
-the tree. `createPageRun` makes a scene paged, `isPaged` and `pageRunOf` ask whether it is, `pageOfNode` names the
+the tree. `createPageRun` makes a scene paged, `isPaged` and `pageRunOf` ask whether it is, `pageIdOf` names the
 page a node is under, and [taxonomy.md](./taxonomy.md#page) says how pages, followers, the pasteboard and paging
 relate.
 
@@ -996,7 +996,7 @@ function Editor() {
       width={W} height={H}
       scene={scene}
       features={[drawPreset]}
-      selectionOptions={{ mode: 'multi' }}
+      selectionOptions={{ mode: 'multiple' }}
       layers={{
         scene: {
           drawOne: (node, pose) => [
@@ -1020,7 +1020,7 @@ The kit maintains several **registry** data structures — keyed lookups that ma
 
 | Registry | Keyed by | Scope | Mutability | Where it lives | Reflection | Used by |
 |---|---|---|---|---|---|---|
-| **Fonts** | `family` → `weight\|style` | App (module) lifetime | Runtime-mutable; entries are idempotent | Module-global reflectable in `registerFont.ts` | `fontRegistry`; `listFonts()`; `listFontWeights(family)` | `WeaselRenderer`, text layout |
+| **Fonts** | `family` → `weight\|style` | App (module) lifetime | Runtime-mutable; entries are idempotent | Module-global reflectable in `registerFont.ts` | `fontRegistry`; `listAtlasFonts()`; `listFontWeights(family)` | `WeaselRenderer`, text layout |
 | **Font outlines** | `family\|weight\|style` | App (module) lifetime | Runtime-mutable; register / unregister | Module-global reflectable in `outline/outlineRegistry.ts` | `fontOutlineRegistry` (notifies on load-state changes too); `listFontOutlines()` | `paintRuns` (above the size threshold) |
 | **Tools** | Tool id string | Component lifetime, pinned at `useTools` call | Constructor-fixed (registry reference is live, but entries are set at hook call) | Hook return (`ToolsApi.registry`) in `packages/routing/src/tools/useTools.ts` | Implicitly — `registry` field is enumerable | Gesture dispatcher, tool palette UI |
 | **Ops** | Op kind string (`kit:*` reserved) | Scene lifetime | Constructor-fixed via `ops` option; runtime additions via `scene.registerOp()` | Internal `Map` inside `createScene` closure | No | `Scene.undo()`, `Scene.redo()`, `scene.recordOp()` |
@@ -1031,7 +1031,7 @@ The kit maintains several **registry** data structures — keyed lookups that ma
 | **Easings** | Easing name string | Module lifetime | Read-only (compile-time constant) | Named export `EASINGS` in `easings.ts` | Implicitly — plain object, enumerable by key | `useAnimator`, animation hooks |
 | **Shader programs (source)** | Program id string | Module lifetime | Extension rules (below); `registerProgram` keeps its registration, `programSourceRegistry.register` returns the release | Module-global `ExtensionRegistry` in `registerProgram.ts` | `programSourceRegistry` | `WeaselRenderer.registerProgram()` |
 | **Shader programs (compiled)** | Program id string | Renderer lifetime | Runtime-mutable; rebuilt on GL context restore | `Map` on each `WeaselRenderer` instance | No | `draw.ts` dispatch, `kind: 'shader'` draw commands |
-| **Paint kinds** | `Paint` discriminant | App (module) lifetime | Runtime-mutable; `registerPaintKind` returns a disposer; overrides stack; a kind with a loader registers on first lookup | Module-global reflectable in `core/paint/paintKinds.ts` | `paintKindRegistry`; `listPaintKinds()`, `listGradientKinds()`; `usePaintKinds()`, `useGradientKinds()`, `usePaintKind(id)` in React | `draw.ts` fill dispatch, `fillInPoseFrame`, `<defs>` emit, `PaintInput`'s and `GradientEditor`'s kind bars, `switchGradientKind` |
+| **Paint kinds** | `Paint` discriminant | App (module) lifetime | Runtime-mutable; `registerPaintKind` returns a disposer; overrides stack; a kind with a loader registers on first lookup | Module-global reflectable in `core/paint/paintKinds.ts` | `paintKindRegistry`; `listPaintKinds()`, `listGradientKinds()`; `usePaintKinds()`, `useGradientKinds()`, `usePaintKind(id)` in React | `draw.ts` fill dispatch, `paintToLocalUnits`, `<defs>` emit, `PaintInput`'s and `GradientEditor`'s kind bars, `withPaintKind` |
 | **Stroke markers** | Marker id string | App (module) lifetime | Runtime-mutable; `registerMarker` returns a disposer; overrides stack | Module-global reflectable in `@weasel-js/stroke` | `markerRegistry`; `listMarkers()` | Stroke end-cap drawing, `markerCommandCache` |
 | **Textures** | Auto-assigned `tex_N` id | App (module) lifetime | Runtime-mutable; `unregisterTexture` drops one | Module-global reflectable in `registerTexture.ts` | `textureRegistry` | `GLTextureCache`, `kind: 'shader'` uniform binding |
 | **Canvas layers** | Slot name string | Component lifetime, fixed at render | Constructor-fixed (prop value at render time) | `LayersMap` prop on `<SceneCanvas>`, built into `<Canvas>`'s `CanvasLayers` | Implicitly — `Object.entries` over the prop | `<Canvas>` layer compositor |
@@ -1065,7 +1065,7 @@ A kind can also load on demand. `registerPaintKindLoader(id, load)` declares one
 
 **Canvas layers** — the `LayersMap` prop is not a traditional registry but fits the pattern: it maps string slot names to layer configs, the compositor enumerates them at render time, and custom entries declare ordering via `before?` / `after?` anchors. Scope is per-`<Canvas>` instance; the map is treated as immutable for a given render pass.
 
-Their lifecycles differ — module-global vs. scene-scoped vs. React-context vs. component-prop — so each keeps its own validation, fallbacks and lifecycle (fonts' variant fallback, ops' `kit:*` reservation). Their storage is one shape: every kit registry keeps its keyed entries in `createReflectable` and hands out its reflection, so a debug overlay or a conflict check walks any of them the same way (ruled 2026-11-16). That shape is `createReflectable<V>()` (`@weasel-js/registry`, re-exported from core): a keyed store a registry embeds and writes through, which hands out a read-only `Reflection` — `get`, `has`, `entries()`, `subscribe`, `getVersion`. `entries()` returns the same frozen array until the next change, so the whole surface drops straight into `useSyncExternalStore`. Each entry carries the live value, the registrant's `source` when it named one (built-ins register as `'kit'`), and `shadowed` — the registrants it displaced, oldest first, which is the conflict report. Each registrant is one frozen object for as long as it is registered, the live one reported as the entry's `live`, so the owner can remove any one of them with `release(key, registrant)`. Two write verbs: `push` stacks and returns a release that uncovers what it displaced (paint kinds, markers), and `set` replaces in place like `Map.set` (fonts, modes) and returns a release that does nothing once a later `set` replaced it. A `push` with a `rank` stays under higher-ranked registrants whenever they arrived, which is how icon overrides stay over tables added after them. `batch(fn)` announces a run of writes as one change, and `valuesOf(reflection)` reads the live values as one cached array. `stack(key)` reads one key's registrants live last without building the entries, which is how a dep source reads the ones beneath it on every `get`. The actions and dep registries keep one store per scope node, created `layered` (stacking there is how a scope overrides, so it draws no clash warning) and, for actions, `holdPlace`, which keeps an id released and registered again in one tick in its place, as `useAction` does when its action object changes; each hands its node's store out as `registry.reflection`.
+Their lifecycles differ — module-global vs. scene-scoped vs. React-context vs. component-prop — so each keeps its own validation, fallbacks and lifecycle (fonts' variant fallback, ops' `kit:*` reservation). Their storage is one shape: every kit registry keeps its keyed entries in `createReflectable` and hands out its reflection, so a debug overlay or a conflict check walks any of them the same way (ruled 2026-11-16). That shape is `createReflectable<V>()` (`@weasel-js/registry`, re-exported from core): a keyed store a registry embeds and writes through, which hands out a read-only `Reflection` — `get`, `has`, `entries()`, `subscribe`, `getVersion`. `entries()` returns the same frozen array until the next change, so the whole surface drops straight into `useSyncExternalStore`. Each entry carries the live value, the registrant's `source` when it named one (built-ins register as `'kit'`), and `shadowed` — the registrants it displaced, oldest first, which is the conflict report. Each registrant is one frozen object for as long as it is registered, the live one reported as the entry's `live`, so the owner can remove any one of them with `release(key, registrant)`. Two write verbs: `push` stacks and returns a release that uncovers what it displaced (paint kinds, markers), and `set` replaces in place like `Map.set` (fonts, modes) and returns a release that does nothing once a later `set` replaced it. A `push` with a `rank` stays under higher-ranked registrants whenever they arrived, which is how icon overrides stay over tables added after them. `batch(fn)` announces a run of writes as one change, and `createValuesReader(reflection)` reads the live values as one cached array. `stack(key)` reads one key's registrants live last without building the entries, which is how a dep source reads the ones beneath it on every `get`. The actions and dep registries keep one store per scope node, created `layered` (stacking there is how a scope overrides, so it draws no clash warning) and, for actions, `holdPlace`, which keeps an id released and registered again in one tick in its place, as `useAction` does when its action object changes; each hands its node's store out as `registry.reflection`.
 
 **Extension registries.** A registry whose entries change what a document does when it is read back — op factories, which rebuild a restored history's ops, and shader sources — is an `ExtensionRegistry` (`createExtensionRegistry` in `@weasel-js/registry`), and every one follows the same rules (2026-11-14):
 

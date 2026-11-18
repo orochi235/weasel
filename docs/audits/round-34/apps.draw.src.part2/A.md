@@ -26,7 +26,7 @@
 
 ## Copy-as-SVG's viewBox is the selection's geometric box, so strokes and markers at its edges are cut off
 - where: apps/draw/src/svgExport.ts:267-278 (selectionToSvgString)
-- scenario: select a rect with a 10px stroke and copy (or Export selection); paste into another app. The `viewBox`/`width`/`height` are `unionAABB` of the roots' poses, which bound the geometry only, so the outer 5px of the stroke on every side (and any arrowhead past an endpoint, or a text overhang) is outside the viewBox and clipped. The bounds should be the painted bounds. The box also counts roots the export skips (a node on an annotation or hidden layer, filtered by `isPainted`), leaving empty margin.
+- scenario: select a rect with a 10px stroke and copy (or Export selection); paste into another app. The `viewBox`/`width`/`height` are `unionAabb` of the roots' poses, which bound the geometry only, so the outer 5px of the stroke on every side (and any arrowhead past an endpoint, or a text overhang) is outside the viewBox and clipped. The bounds should be the painted bounds. The box also counts roots the export skips (a node on an annotation or hidden layer, filtered by `isPainted`), leaving empty margin.
 - evidence: read
 - severity: low
 

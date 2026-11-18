@@ -31,10 +31,10 @@ export function pathShape(path: Path, options: { flattenTolerance?: number } = {
     nearest(p: Point, opts) {
       const n = measure.nearest(p);
       const f = length === 0 ? 0 : n.s / length;
-      if (!opts?.open || !closed || length === 0) return { f, dist: n.dist };
+      if (!opts?.open || !closed || length === 0) return { f, distance: n.distance };
       const about = opts.about ?? 0.5;
       const unwrapped = [f - 1, f + 1].reduce((best, g) => (Math.abs(g - about) < Math.abs(best - about) ? g : best), f);
-      return { f: unwrapped, dist: n.dist };
+      return { f: unwrapped, distance: n.distance };
     },
   };
   Object.defineProperty(shape, 'path', { value: path, enumerable: false });

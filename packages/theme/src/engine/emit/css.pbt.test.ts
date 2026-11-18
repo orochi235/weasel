@@ -6,7 +6,7 @@
  */
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { enumerateSelections, type Selection } from '../../axes';
+import { enumerateAxisChoices, type AxisChoice } from '../../axes';
 import { tokensAt } from '../../chainTokens';
 import type { ThemeDefinition } from '../../definition';
 import type { RawToken } from '../../dtcg/types';
@@ -18,7 +18,7 @@ import type { Lookup } from '../merge';
 import { cssValue, emitCss } from './css';
 
 const RUNS = 120;
-const SELECTIONS = enumerateSelections(AXES);
+const SELECTIONS = enumerateAxisChoices(AXES);
 const VAR = /var\(--wzl-([\w-]+)\)/g;
 
 interface Rule {
@@ -108,7 +108,7 @@ describe('emitCss against a model of the cascade', () => {
         for (const sel of SELECTIONS) {
           const tokens = tokensAt(chain, sel);
           const want = expected(tokens);
-          const got = computed(rules, { theme, ...(sel as Selection) });
+          const got = computed(rules, { theme, ...(sel as AxisChoice) });
           for (const n of Object.keys(tokens)) {
             if (want(n).includes('<cycle>')) continue;
             // A reference to a token the chain has none of here: the sheet cannot unset it, so it shows the value

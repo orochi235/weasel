@@ -14,7 +14,7 @@
 
 ## A y range emptied by a negative bleed lets the copy-count guard pass, and the x loop then runs once per column with nothing to draw
 - where: packages/parallax/src/createTiledLayer.ts:98 (createTiledLayer draw, `tiling` guard) and :116
-- scenario: the guard multiplies the two spans. When `bleed.y` is negative by more than half the visible height, so the start and end land in different cells, `tiledProject` answers `to < from` on y (for example `{ from: 1, to: -1 }`, span −1). The product is then negative and passes `<= MAX_COPIES` no matter how large the x span is. The outer `for i` loop then runs `kx.to − kx.from + 1` times (millions to billions when zoomed out on a small `period.x`), each pass with an empty inner loop. That is a frame-long or multi-second stall where the cap means to draw nothing. The guard should treat an empty axis as zero copies, or test each span alone. Nothing rejects a negative `bleed`; its doc gives no sign constraint.
+- scenario: the guard multiplies the two spans. When `bleed.y` is negative by more than half the visible height, so the start and end land in different cells, `tileRange` answers `to < from` on y (for example `{ from: 1, to: -1 }`, span −1). The product is then negative and passes `<= MAX_COPIES` no matter how large the x span is. The outer `for i` loop then runs `kx.to − kx.from + 1` times (millions to billions when zoomed out on a small `period.x`), each pass with an empty inner loop. That is a frame-long or multi-second stall where the cap means to draw nothing. The guard should treat an empty axis as zero copies, or test each span alone. Nothing rejects a negative `bleed`; its doc gives no sign constraint.
 - evidence: read
 - severity: low
 
@@ -24,6 +24,6 @@ packages/parallax/src/createParallaxPlane.ts
 packages/parallax/src/createTiledLayer.ts
 packages/parallax/src/index.ts
 packages/parallax/src/pbt.fixture.ts
-packages/parallax/src/tiledProject.ts
+packages/parallax/src/tileRange.ts
 
 <!-- done: 3 findings, files read: 6 -->

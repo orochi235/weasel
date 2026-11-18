@@ -1,5 +1,5 @@
 /**
- * WeaselDraw's editor: one `<SceneCanvas features={[drawPreset, pathTools]}>` with every built-in tool over a
+ * WeaselDraw's editor: one `<SceneCanvas features={[drawPreset, pathToolsPreset]}>` with every built-in tool over a
  * `useScene` document, saved to the session (IndexedDB, or localStorage without it) 300 ms after each change.
  */
 import { useScene } from '@weasel-js/core';
@@ -27,7 +27,7 @@ export function App(): ReactElement {
     initial: initialScene,
     doc: initialDoc,
   });
-  const selection = useSelection({ mode: 'multi', scene });
+  const selection = useSelection({ mode: 'multiple', scene });
   const modality = useModality(scene);
   useSessionPersistence(scene);
 

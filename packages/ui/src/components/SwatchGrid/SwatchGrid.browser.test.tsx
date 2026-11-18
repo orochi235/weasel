@@ -13,7 +13,7 @@ test('a glyph sits centered over its swatch in its ink, without growing it', asy
       <SwatchGrid
         aria-label="Tapes"
         columns={6}
-        onChange={() => {}}
+        onSelect={() => {}}
         options={[
           { id: 'plain', value: '#2a7ab0ff', label: 'Plain' },
           { id: 'inked', value: '#2a7ab0ff', label: 'Inked', glyph: 'A', ink: 'rgb(255, 255, 255)' },

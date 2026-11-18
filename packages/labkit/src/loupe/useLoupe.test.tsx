@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { WeaselProvider } from '@weasel-js/core';
-import { WHEEL_RATE } from '@weasel-js/loupe';
+import { LOUPE_WHEEL_RATE } from '@weasel-js/loupe';
 import { KitSettingsProvider } from '@weasel-js/react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
@@ -197,7 +197,7 @@ describe('useLoupe', () => {
     expect(Number(read('factor'))).toBeGreaterThan(6);
   });
 
-  it('walks the factor at loupe.wheelRate, else WHEEL_RATE', () => {
+  it('walks the factor at loupe.wheelRate, else LOUPE_WHEEL_RATE', () => {
     const afterNotch = (rate?: number): number => {
       const { unmount } = render(
         rate === undefined ? (
@@ -216,7 +216,7 @@ describe('useLoupe', () => {
       unmount();
       return factor;
     };
-    expect(afterNotch()).toBeCloseTo(6 * Math.exp(50 * WHEEL_RATE));
+    expect(afterNotch()).toBeCloseTo(6 * Math.exp(50 * LOUPE_WHEEL_RATE));
     expect(afterNotch(0.004)).toBeCloseTo(6 * Math.exp(0.2));
   });
 

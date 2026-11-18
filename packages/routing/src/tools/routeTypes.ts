@@ -40,9 +40,9 @@ export interface ToolDef<TOverlay = KernelOverlay> {
    * it binds: a brush's size and strength. `<SceneCanvas>` tunes that action
    * from the `toolOptionValues` dep, and `defineTool` adds step actions for the
    * size and strength, keyed to `[` `]` and `Shift+[` `Shift+]` while this is
-   * the active tool. See {@link import('./toolOptions').ToolOptions}.
+   * the active tool. See {@link import('./toolOptions').ToolOptionsSpec}.
    */
-  options?: import('./toolOptions').ToolOptions;
+  options?: import('./toolOptions').ToolOptionsSpec;
   /** Chrome ids (`'selection.resize-handles'`) hidden, and not hit-tested,
    *  while this is the active tool: chrome its own controls stand in for. */
   hides?: readonly string[];

@@ -36,7 +36,7 @@ function MountDispatcher({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasE
     canvasRef,
     actions: registry!,
     entriesById: new Map(),
-    classifyTarget: () => ({ body: 'selected-body' }),
+    classifyTarget: () => ({ bodyTarget: 'selected-body' }),
   });
   return <canvas ref={canvasRef} data-testid="canvas" />;
 }

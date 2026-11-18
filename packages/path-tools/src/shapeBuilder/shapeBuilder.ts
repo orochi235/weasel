@@ -2,7 +2,7 @@
  * Shape building: the selected paths cut into the faces their outlines bound,
  * then a pick of those faces united into one path, or deleted, as one undo step.
  */
-import { pointInPath, type PolygonPath } from '@weasel-js/geom';
+import { pathContainsPoint, type PolygonPath } from '@weasel-js/geom';
 import { pathFacePieces, pathUnion } from '@weasel-js/geom/booleans';
 import { type NodeId, type PathPaint } from '@weasel-js/core';
 import { commitBooleanPieces, resolveBooleanOperands, type BooleanCommitPiece, type BooleanOpOptions, type BooleanOpResult, type BooleansAdapter } from '@weasel-js/editing';
@@ -59,7 +59,7 @@ export function planShapeBuilder(
   return {
     kind: 'faces',
     faces,
-    faceAt: (x, y) => faces.findIndex((f) => pointInPath(f.path, x, y)),
+    faceAt: (x, y) => faces.findIndex((f) => pathContainsPoint(f.path, x, y)),
     commit(picked, mode) {
       const chosen = [...new Set(picked)].filter((i) => i >= 0 && i < cut.length);
       if (chosen.length === 0) return { kind: 'noop', reason: 'empty-result' };

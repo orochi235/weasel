@@ -1,4 +1,4 @@
-import { pointInPath, rectContainsPointHalfOpen } from '@weasel-js/geom';
+import { pathContainsPoint, rectContainsPointHalfOpen } from '@weasel-js/geom';
 import type { NodeId, Scene, StrategyView } from '@weasel-js/core';
 import { poseDescriptorForNode, toPlane, type PlaneMap, childFrameAt, composeWorldPose, sceneViewPoseAdapter, refusalOf, isPageStructure } from '@weasel-js/core/engine';
 import type { DropRegion, LayoutContainer, LayoutStrategy, LayoutDep } from '@weasel-js/core/engine';
@@ -39,7 +39,7 @@ function regionContains(
   const local = { x: point.x - bounds.x, y: point.y - bounds.y };
   return typeof region === 'function'
     ? region(local)
-    : pointInPath(region, local.x, local.y);
+    : pathContainsPoint(region, local.x, local.y);
 }
 
 function chooseContainer(
@@ -102,10 +102,10 @@ export function pickContainer(
     if (!node || isPageStructure(node)) return;
     const worldPose = composeWorldPose(poseAdapter, id as string, pc.compose);
     const g = poseDescriptorForNode(d, node);
-    const worldAABB = g.getBounds(worldPose);
+    const worldAabb = g.getBounds(worldPose);
     const plane = planeOf(session.view, node.layer);
     const at = plane ? toPlane(plane, center) : center;
-    if (!testInside(id, worldPose, worldAABB, layout, at)) return;
+    if (!testInside(id, worldPose, worldAabb, layout, at)) return;
     const verdict = session.verdict(id);
     if (verdict === false) return;
     const refused = refusalOf(verdict);
@@ -119,7 +119,7 @@ export function pickContainer(
     }
     candidates.push({
       id,
-      bounds: worldAABB,
+      bounds: worldAabb,
       content,
       view,
       layout,

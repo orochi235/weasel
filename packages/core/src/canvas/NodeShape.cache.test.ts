@@ -114,7 +114,7 @@ describe('paint caching', () => {
   // inside them. `renderer/cache/cache.ts` memoizes tessellation as
   // `WeakMap<Path, Mesh>`, keyed on Path *identity*, so it only ever pays off
   // if the same Path object comes back frame after frame. `pathForShape` and
-  // the non-identity branch of `pathInPoseFrame` both allocate, which meant
+  // the non-identity branch of `pathInPoseBox` both allocate, which meant
   // that cache was consulted, missed and repopulated on every draw.
   function paintOf(node: Node<unknown, string, RectPose>, pose: RectPose): PathDrawCommand {
     const painter = findNodeShape(node);

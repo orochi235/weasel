@@ -1,7 +1,7 @@
 /** One draw-style graph model as a {@link DocumentPage}. */
 import type { Vec2 } from '@weasel-js/core/math';
 import { freshId } from '@weasel-js/registry';
-import type { DataContainer, DataEdge, DataGroup, DataLane, DataNode, DiagramData } from '@weasel-js/diagram';
+import type { DataContainer, DataEdge, DataCluster, DataLane, DataNode, DiagramData } from '@weasel-js/diagram';
 import type { DocumentPage } from '../document';
 import { PAGE_MARGIN } from '../pageLayout';
 import { shiftData } from '../shiftData';
@@ -99,7 +99,7 @@ function keptGroups(page: PageCells, warn: Warn): Set<RawCell> {
   return new Set(groups.filter(kept));
 }
 
-function readGroup({ page, idOf, groups }: Reader, cell: RawCell): DataGroup {
+function readGroup({ page, idOf, groups }: Reader, cell: RawCell): DataCluster {
   return { id: idOf.get(cell)!, members: groupMembers(page, cell, (c) => groups.has(c)).map((c) => idOf.get(c)!) };
 }
 
@@ -177,7 +177,7 @@ export function readPage(model: Element, src: PageSource, ids: IdSpace, warn: Wa
   const data: DiagramData = {
     nodes: of('shape').map((c) => readNode(reader, c)),
     edges: of('edge').map((c) => readEdge(reader, c, byCellId)).filter((e): e is DataEdge => e !== null),
-    ...(groups.length > 0 ? { groups } : {}),
+    ...(groups.length > 0 ? { clusters: groups } : {}),
     ...(containers.length > 0 ? { containers } : {}),
   };
   const fit = fitted(data, src);

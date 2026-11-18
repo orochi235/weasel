@@ -3,7 +3,7 @@ import {
   DiagramView,
   diagramScene,
   type DataEdge,
-  type DataGroup,
+  type DataCluster,
   type DataNode,
   type DiagramLayout,
   type DiagramViewApi,
@@ -47,7 +47,7 @@ const EDGES: DataEdge[] = [
 ].map((e) => ({ ...e, router: 'orthogonal' }));
 
 /** `middle` sits inside `compiler`. */
-const GROUPS: DataGroup[] = [
+const GROUPS: DataCluster[] = [
   { id: 'compiler', members: ['parse', 'middle', 'emit'], label: 'compiler' },
   { id: 'middle', members: ['check', 'fold'], label: 'middle' },
 ];
@@ -56,7 +56,7 @@ export function DiagramElkDemo() {
   const [nodes, setNodes] = useState(NODES);
   const [edges, setEdges] = useState(EDGES);
   const specs = useMemo(
-    () => diagramScene({ nodes, edges, groups: GROUPS }, { layout: 'none', font: FONT }),
+    () => diagramScene({ nodes, edges, clusters: GROUPS }, { layout: 'none', font: FONT }),
     [nodes, edges],
   );
   const view = useRef<DiagramViewApi>(null);

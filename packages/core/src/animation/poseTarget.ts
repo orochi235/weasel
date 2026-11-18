@@ -1,3 +1,4 @@
+import { createPart } from '@weasel-js/registry';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../core/geometry/poseDescriptor';
 import { documentPose, type PoseSource } from '../core/scene/effectivePose';
 import type { NodeId, PoseOverride, PoseOverrides } from '../core/scene/types';
@@ -35,17 +36,8 @@ export function poseAxes<TPose>(
   return descriptor?.axes?.(like) ?? (axesOf(like) as TargetAxes<TPose> | null);
 }
 
-const publishers = new WeakMap<object, () => void>();
-
 /** One function per overrides table, so every target publishing into it shares one commit a frame. */
-function publisherOf<TPose>(overrides: PoseOverrides<TPose>): () => void {
-  let publish = publishers.get(overrides);
-  if (!publish) {
-    publish = () => overrides.commit();
-    publishers.set(overrides, publish);
-  }
-  return publish;
-}
+const publisherOf = createPart((overrides: { commit(): void }): (() => void) => () => overrides.commit());
 
 /**
  * `poseAxes` for the pose `get` answers, with `from` keeping the fields that are not axes as
@@ -154,7 +146,7 @@ export function createPoseTarget<TPose>(opts: PoseTargetOptions<TPose>): Target<
   return target;
 }
 
-const sceneTargets = new WeakMap<object, Map<string, Target<unknown>>>();
+const sceneTargets = createPart((_overrides: object) => new Map<string, Target<unknown>>());
 
 /** Whether two poses hold the same fields, compared without allocating: a running target asks on every publish. */
 function samePoseShallow(a: unknown, b: unknown): boolean {
@@ -185,11 +177,7 @@ export function scenePoseTarget<TPose>(
   id: string,
   descriptor?: PoseDescriptor<TPose>,
 ): Target<TPose> | undefined {
-  let made = sceneTargets.get(scene.overrides);
-  if (!made) {
-    made = new Map();
-    sceneTargets.set(scene.overrides, made);
-  }
+  const made = sceneTargets(scene.overrides);
   const nid = id as NodeId;
   const node = scene.get(nid);
   const by = descriptor ?? (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>);

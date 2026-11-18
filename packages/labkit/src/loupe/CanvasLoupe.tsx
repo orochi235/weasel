@@ -3,7 +3,7 @@ import { type LoupeMode, type LoupePoint, type LoupeSize, loupeExtent } from '@w
 import { useEffect, useRef } from 'react';
 import type { CanvasStackSurface } from '../canvas/CanvasStackContext';
 import type { WorldFrame, WorldSpec } from '../canvas/worldSpec';
-import type { ViewTransform } from '../instrument/types';
+import type { ViewTransform2D } from '../instrument/types';
 import { drawCanvasLens } from './canvasLens';
 
 /** Props for `<CanvasLoupe>`. */
@@ -15,7 +15,7 @@ export interface CanvasLoupeProps {
   diameter: LoupeSize;
   /** The stack being magnified: its layers, its pixels, and its measured box. */
   surface: CanvasStackSurface;
-  view: ViewTransform;
+  view: ViewTransform2D;
   frame: WorldFrame;
   worldSpec?: WorldSpec;
 }

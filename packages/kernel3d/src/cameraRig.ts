@@ -5,7 +5,7 @@ import {
   PINCH_DOLLY_TOUCH,
 } from './cameraBindings';
 import type { Camera3dDep } from './cameraDep';
-import { dollyAction, homeAction, orbitAction, panAction, pinchDollyAction } from './tools';
+import { cameraDollyAction, cameraHomeAction, cameraOrbitAction, cameraPanAction, cameraPinchDollyAction } from './tools';
 
 /** Which gestures an orbit camera's rig binds. Each one left off reaches whatever is under the camera. */
 export interface CameraRigGestures {
@@ -18,7 +18,7 @@ export interface CameraRigGestures {
   /** Two fingers on a touch screen dolly. Default `true`. */
   touchPinch?: boolean;
   /** A double click returns the camera to the dep's `home`. Default `true`. */
-  home?: boolean;
+  doubleClick?: boolean;
 }
 
 /** Options for {@link cameraRig}. */
@@ -37,25 +37,25 @@ function bind(action: Action, bindings: readonly (BoundGesture | false)[]): Acti
  * dispatcher reads: `cameraRig`'s ambient entry, or an `ActionsRegistry` under a `useGestureDispatcher` of
  * the host's own. An action none of whose gestures is on is left out. Every action reads the `camera3d` dep.
  */
-export function cameraRigActions(gestures: CameraRigGestures = {}): Action[] {
-  const { drag = false, wheel = 'plain', trackpadPinch = true, touchPinch = true, home = true } = gestures;
+export function createCameraRigActions(gestures: CameraRigGestures = {}): Action[] {
+  const { drag = false, wheel = 'plain', trackpadPinch = true, touchPinch = true, doubleClick = true } = gestures;
   return [
-    ...bind(orbitAction, [drag && ORBIT_DRAG]),
-    ...bind(panAction, [drag && PAN_DRAG]),
-    ...bind(dollyAction, [
+    ...bind(cameraOrbitAction, [drag && ORBIT_DRAG]),
+    ...bind(cameraPanAction, [drag && PAN_DRAG]),
+    ...bind(cameraDollyAction, [
       wheel === 'plain' && DOLLY_WHEEL,
       wheel === 'mod' && DOLLY_MOD_WHEEL,
       trackpadPinch && DOLLY_TRACKPAD_PINCH,
       trackpadPinch && DOLLY_PINCH,
     ]),
-    ...bind(pinchDollyAction, [touchPinch && PINCH_DOLLY_TOUCH]),
-    ...bind(homeAction, [home && HOME_DOUBLE_CLICK]),
+    ...bind(cameraPinchDollyAction, [touchPinch && PINCH_DOLLY_TOUCH]),
+    ...bind(cameraHomeAction, [doubleClick && HOME_DOUBLE_CLICK]),
   ];
 }
 
 /**
  * The ambient entry that puts an orbit camera on a `<SceneCanvas>`: the `camera3d` dep, and
- * {@link cameraRigActions} for `opts`. By default those are the camera actions the orbit tool does not
+ * {@link createCameraRigActions} for `opts`. By default those are the camera actions the orbit tool does not
  * carry — the wheel and trackpad dolly, the two-finger pinch, and the double-click home, which passes when
  * the dep has no `home`.
  *
@@ -69,7 +69,7 @@ export function cameraRig(camera3d: Camera3dDep, opts: CameraRigOptions = {}): S
   return {
     id,
     eligibility: { always: true },
-    actions: cameraRigActions(gestures),
+    actions: createCameraRigActions(gestures),
     deps: { camera3d: () => camera3d },
   };
 }

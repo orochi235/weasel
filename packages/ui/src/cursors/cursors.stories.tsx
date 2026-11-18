@@ -13,7 +13,7 @@ import {
   chromeLineWidthScale,
   cursorPaintMatrix,
   cursorPaintOps,
-  cursorWorldSize,
+  worldCursorPx,
   CURSOR_ANGLE_STEPS,
   GLYPHS,
   cursorGlyph,
@@ -179,7 +179,7 @@ export const PaintedTier: StoryObj = {
         </p>
         <div className={s.painted}>
           {[10, 24, 60, 120].map((worldRadius) => {
-            const size = cursorWorldSize(glyph, worldRadius, 1);
+            const size = worldCursorPx(glyph, worldRadius, 1);
             const ops = cursorPaintOps(glyph, {
               lineWidthScale: chromeLineWidthScale(glyph, size),
             });

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { InvocationCtx } from '@weasel-js/routing';
 import { resizeAction } from './action';
-import { createScene, createTransformOp } from '@weasel-js/core/engine';
+import { createScene, createSetPoseOp } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/core';
 import type { ResizePolicy } from '@weasel-js/core/engine';
 
@@ -80,26 +80,26 @@ describe('resizeAction — lifecycle via the resizePolicy dep', () => {
     expect(s.recorded()).toBe(0);
   });
 
-  it('fires onGestureStart with the resized ids and onGestureEnd(true) on commit', () => {
-    const onGestureStart = vi.fn();
-    const onGestureEnd = vi.fn();
-    const s = setup({ onGestureStart, onGestureEnd });
+  it('fires onRunStart with the resized ids and onRunEnd(true) on commit', () => {
+    const onRunStart = vi.fn();
+    const onRunEnd = vi.fn();
+    const s = setup({ onRunStart, onRunEnd });
     resize(s);
-    expect(onGestureStart).toHaveBeenCalledWith([s.a]);
-    expect(onGestureEnd).toHaveBeenCalledTimes(1);
-    expect(onGestureEnd).toHaveBeenCalledWith(true);
+    expect(onRunStart).toHaveBeenCalledWith([s.a]);
+    expect(onRunEnd).toHaveBeenCalledTimes(1);
+    expect(onRunEnd).toHaveBeenCalledWith(true);
   });
 
-  it('fires onGestureEnd(false) on cancel', () => {
-    const onGestureEnd = vi.fn();
-    const s = setup({ onGestureEnd });
+  it('fires onRunEnd(false) on cancel', () => {
+    const onRunEnd = vi.fn();
+    const s = setup({ onRunEnd });
     resize(s, 'cancel');
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    expect(onRunEnd).toHaveBeenCalledWith(false);
   });
 
   it('a behavior onEnd returning ops commits those in place of the resize', () => {
     const marker: Pose = { x: 7, y: 7, width: 11, height: 11 };
-    const onEnd = () => [createTransformOp<Pose>({ id: s.a, from: s.scene.get(s.a)!.pose, to: marker, label: 'Marker' })];
+    const onEnd = () => [createSetPoseOp<Pose>({ id: s.a, from: s.scene.get(s.a)!.pose, to: marker, label: 'Marker' })];
     const s = setup({ constraints: [{ onEnd }] as never });
     resize(s);
     expect(s.scene.get(s.a)!.pose).toEqual(marker);

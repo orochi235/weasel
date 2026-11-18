@@ -4,7 +4,7 @@ import {
 } from '@weasel-js/core';
 import { add, scale, type Vec3 } from '@weasel-js/geom/3d';
 import { createCamera } from '../camera';
-import { createPoseDescriptor, createSnap } from '../deps';
+import { createPoseDescriptor, createSnap3dDep } from '../deps';
 import { pose3, type Pose3 } from '../pose3';
 import { projectPoint, type Viewport3d } from '../project';
 import { alignPlaneSource, groundGridSource } from '../snap/sources';
@@ -105,13 +105,13 @@ describe('the axis move', () => {
   it('lines a box up with a plane it passes going up, storing the plane exactly', () => {
     // The second box's top is at z = 2; the first's top starts at 1.
     const r = rig([pose3({ x: 0, y: 0, z: 0.5 }), pose3({ x: 3, y: 0, z: 1 }, { x: 1, y: 1, z: 2 })], Z_UP);
-    dragAlong(r, 'z', 0.98, { snap: createSnap(r.world, { sources: [alignPlaneSource(r.world)] }) });
+    dragAlong(r, 'z', 0.98, { snap: createSnap3dDep(r.world, { sources: [alignPlaneSource(r.world)] }) });
     expect(positionOf(r)).toEqual({ x: 0, y: 0, z: 1.5 });
   });
 
   it('snaps along the ground to the grid, storing the line exactly', () => {
     const r = rig([pose3({ x: 0.25, y: 0.5, z: 0.25 })]);
-    dragAlong(r, 'x', 0.71, { snap: createSnap(r.world, { sources: [groundGridSource({ world: r.world, step: 0.5 })] }) });
+    dragAlong(r, 'x', 0.71, { snap: createSnap3dDep(r.world, { sources: [groundGridSource({ world: r.world, step: 0.5 })] }) });
     expect(positionOf(r)).toEqual({ x: 1, y: 0.5, z: 0.25 });
   });
 

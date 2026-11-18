@@ -14,8 +14,8 @@ const RUN_MID_GESTURE: Readonly<Record<string, string>> = {
   'viewport.zoom.out': 'moves only the view',
   'viewport.zoom.reset': 'moves only the view',
   'viewport.zoom.fit': 'moves only the view',
-  'exitPathEdit.key': "Escape, which cancelGesture's engaged-phase binding takes mid-drag",
-  'tool.resetToDefault.key': "Escape, which cancelGesture's engaged-phase binding takes mid-drag",
+  'leavePathEdit.key': "Escape, which dispatch.cancelAll's engaged-phase binding takes mid-drag",
+  'tool.resetToDefault.key': "Escape, which dispatch.cancelAll's engaged-phase binding takes mid-drag",
   'keymap.pathfinder.leader': 'opens a keymap and changes nothing',
 };
 

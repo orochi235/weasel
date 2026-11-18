@@ -71,7 +71,7 @@ export function lineObject(cmd: PathDrawCommand, state: DrawState): LineObject |
   const stroke = plainStroke(cmd.stroke, state.alpha, scale);
   if (!local || !stroke || stroke.align !== 'center') return undefined;
   const points = local.map((p) => {
-    const [x, y] = mat3.apply(state.transform, p.x, p.y);
+    const [x, y] = mat3.transformPoint(state.transform, p.x, p.y);
     return { x, y };
   });
   const xs = points.map((p) => p.x);

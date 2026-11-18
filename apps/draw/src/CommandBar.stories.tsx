@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { ActionsProvider, DepRegistryProvider, asNodeId, createScene, useAction, useCommand, useDepSource } from '@weasel-js/core';
 import { CommandBar, type CommandBarProps } from './CommandBar';
 import { StripDock } from './surfaces/StripSurfaces';
-import { EDITOR_ACTIONS, EDITOR_PREFERENCES_KEY } from '@weasel-js/editor';
+import { EDITOR_ACTIONS, EDITOR_PREFS_KEY } from '@weasel-js/editor';
 import {
   DRAW_PREFERENCES_COMMAND,
   releaseCompoundAction,
@@ -25,7 +25,7 @@ import { useStandardActions, useSelection } from '@weasel-js/editing';
 // deps a story has no document for, and stay off.
 function Actions({ selected, compound, children }: { selected: number; compound: boolean; children: ReactNode }) {
   const selection = useSelection({
-    mode: 'multi',
+    mode: 'multiple',
     initial: Array.from({ length: selected }, (_, i) => asNodeId(`n${i}`)),
   });
   useStandardActions({ selection });
@@ -57,7 +57,7 @@ function Actions({ selected, compound, children }: { selected: number; compound:
   useAction(toggleSymmetryAction);
   useAction(releaseCompoundAction);
   const { label, ...preferences } = DRAW_PREFERENCES_COMMAND;
-  useCommand(EDITOR_ACTIONS.preferences, label, noop, { ...preferences, keys: EDITOR_PREFERENCES_KEY });
+  useCommand(EDITOR_ACTIONS.preferences, label, noop, { ...preferences, keys: EDITOR_PREFS_KEY });
   useDebugCommands();
   useFileCommands({
     scene: storyScene, filename: 'story', paperSize: 'letter',

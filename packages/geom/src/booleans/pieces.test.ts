@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { pathCrop, pathCropPieces, pathDivide, pathDividePieces, pathFacePieces, pathMerge, pathTrim } from './index';
 import type { RectPath } from '../path';
-import { pointInPath } from '../pathHitTest';
+import { pathContainsPoint } from '../pathHitTest';
 
 const r = (x: number, y: number, w: number, h: number): RectPath => ({
   kind: 'rect', x, y, width: w, height: h,
@@ -11,9 +11,9 @@ describe('pathDividePieces', () => {
   it('names every input covering each piece, back to front', () => {
     const pieces = pathDividePieces(r(0, 0, 10, 10), r(5, 0, 10, 10));
     expect(pieces.map((p) => p.sources)).toEqual([[0], [1], [0, 1]]);
-    expect(pointInPath(pieces[0].path, 2, 5)).toBe(true);
-    expect(pointInPath(pieces[1].path, 12, 5)).toBe(true);
-    expect(pointInPath(pieces[2].path, 7, 5)).toBe(true);
+    expect(pathContainsPoint(pieces[0].path, 2, 5)).toBe(true);
+    expect(pathContainsPoint(pieces[1].path, 12, 5)).toBe(true);
+    expect(pathContainsPoint(pieces[2].path, 7, 5)).toBe(true);
   });
 
   it('skips the subsets that cover nothing', () => {
@@ -36,14 +36,14 @@ describe('pathFacePieces', () => {
     // The bar crosses the box, leaving the box two faces on either side of it.
     const pieces = pathFacePieces(r(0, 0, 30, 10), r(10, -5, 10, 20));
     expect(pieces.map((p) => p.sources)).toEqual([[0], [0], [1], [1], [0, 1]]);
-    const holds = (x: number, y: number) => pieces.findIndex((p) => pointInPath(p.path, x, y));
+    const holds = (x: number, y: number) => pieces.findIndex((p) => pathContainsPoint(p.path, x, y));
     expect(new Set([holds(5, 5), holds(25, 5), holds(15, -2), holds(15, 12), holds(15, 5)]).size).toBe(5);
   });
 
   it('keeps a face with a hole as one piece', () => {
     const pieces = pathFacePieces(r(0, 0, 30, 30), r(10, 10, 10, 10));
     expect(pieces.map((p) => p.sources)).toEqual([[0], [0, 1]]);
-    expect(pointInPath(pieces[0]!.path, 15, 15)).toBe(false);
+    expect(pathContainsPoint(pieces[0]!.path, 15, 15)).toBe(false);
   });
 });
 
@@ -51,7 +51,7 @@ describe('pathCropPieces', () => {
   it('names the input each piece was clipped from, skipping one outside the mask', () => {
     const pieces = pathCropPieces(r(0, 0, 5, 5), r(100, 100, 5, 5), r(0, 5, 5, 5), r(0, 0, 10, 10));
     expect(pieces.map((p) => p.sources)).toEqual([[0], [2]]);
-    expect(pointInPath(pieces[1].path, 2, 7)).toBe(true);
+    expect(pathContainsPoint(pieces[1].path, 2, 7)).toBe(true);
   });
 
   it('gives pathCrop its paths', () => {
@@ -64,11 +64,11 @@ describe('pathTrim', () => {
   it('removes from each input what the inputs in front of it cover', () => {
     const pieces = pathTrim(r(0, 0, 10, 10), r(5, 0, 10, 10), r(12, 0, 10, 10));
     expect(pieces.map((p) => p.sources)).toEqual([[0], [1], [2]]);
-    expect(pointInPath(pieces[0].path, 2, 5)).toBe(true);
-    expect(pointInPath(pieces[0].path, 7, 5)).toBe(false);
-    expect(pointInPath(pieces[1].path, 7, 5)).toBe(true);
-    expect(pointInPath(pieces[1].path, 13, 5)).toBe(false);
-    expect(pointInPath(pieces[2].path, 13, 5)).toBe(true);
+    expect(pathContainsPoint(pieces[0].path, 2, 5)).toBe(true);
+    expect(pathContainsPoint(pieces[0].path, 7, 5)).toBe(false);
+    expect(pathContainsPoint(pieces[1].path, 7, 5)).toBe(true);
+    expect(pathContainsPoint(pieces[1].path, 13, 5)).toBe(false);
+    expect(pathContainsPoint(pieces[2].path, 13, 5)).toBe(true);
   });
 
   it('drops an input that is wholly hidden', () => {
@@ -80,7 +80,7 @@ describe('pathTrim', () => {
     expect(pathTrim()).toEqual([]);
     const [only] = pathTrim(r(0, 0, 10, 10));
     expect(only.sources).toEqual([0]);
-    expect(pointInPath(only.path, 5, 5)).toBe(true);
+    expect(pathContainsPoint(only.path, 5, 5)).toBe(true);
   });
 });
 
@@ -90,11 +90,11 @@ describe('pathMerge', () => {
     const pieces = pathMerge(inputs, (i) => (i === 1 ? 'blue' : 'red'));
     expect(pieces.map((p) => p.sources)).toEqual([[1], [0, 2]]);
     const red = pieces[1].path;
-    expect(pointInPath(red, 2, 5)).toBe(true);
-    expect(pointInPath(red, 20, 5)).toBe(true);
-    expect(pointInPath(red, 7, 5)).toBe(false);
+    expect(pathContainsPoint(red, 2, 5)).toBe(true);
+    expect(pathContainsPoint(red, 20, 5)).toBe(true);
+    expect(pathContainsPoint(red, 7, 5)).toBe(false);
     // The blue piece still loses what the red one in front of it covers.
-    expect(pointInPath(pieces[0].path, 13, 5)).toBe(false);
+    expect(pathContainsPoint(pieces[0].path, 13, 5)).toBe(false);
   });
 
   it('is pathTrim when every key differs', () => {

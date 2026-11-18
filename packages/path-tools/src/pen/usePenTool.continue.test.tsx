@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { type PolygonPath, pathFromD } from '@weasel-js/geom';
 import { pathToAnchors, remapPointValues } from '@weasel-js/geom';
-import { hitTestAreaForTests as hitTestArea } from '@weasel-js/core/test-seams';
+import { hitTestRectForTests as hitTestRect } from '@weasel-js/core/test-seams';
 import { IDENTITY_POSE_COMPOSITION, resolveEditablePathOf } from '@weasel-js/core';
 import type { Scene } from '@weasel-js/core';
 import { setup } from './testing/penHarness';
@@ -145,7 +145,7 @@ describe('usePenTool', () => {
       const applyEdit = vi.fn();
       const p = setup({
         deps: {
-          areaSelect: { hitTestArea: (b: Parameters<typeof hitTestArea>[1]) => hitTestArea(scene, b) },
+          areaSelect: { hitTestArea: (b: Parameters<typeof hitTestRect>[1]) => hitTestRect(scene, b) },
           editAnchors: { getEditablePath: (id: string) => resolveEditablePathOf(scene.get(id as never) as never), applyEdit },
         },
       });

@@ -1,6 +1,6 @@
 import { ShellDevtools } from '@weasel-js/devtools/mount';
 import { isDev } from '@weasel-js/react';
-import { declaredSelection, type Theme } from '@weasel-js/theme';
+import { declaredAxisChoice, type Theme } from '@weasel-js/theme';
 import { ThemeProvider, useResolvedColorMode } from '@weasel-js/theme/react';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { useStore } from 'zustand/react';
@@ -48,7 +48,7 @@ import { useFocusPick } from './useFocusPick';
 
 /** The selection a lab themes itself at, less any axis its theme does not declare. */
 function labSelection(theme: Theme, mode: string, density: LabDensity | undefined) {
-  return declaredSelection(theme, { mode, density: density ?? 'comfortable' });
+  return declaredAxisChoice(theme, { mode, density: density ?? 'comfortable' });
 }
 
 function LabFallback({

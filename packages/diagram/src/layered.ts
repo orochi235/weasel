@@ -16,9 +16,9 @@
 import type { LayoutFn } from './layout';
 import { layeredPlan } from './layered/plan';
 
-export { backEdges, ranksOf } from './layered/cycles';
+export { backEdges, longestPathRanks } from './layered/cycles';
 export { layeredPlan, type LayeredPlan } from './layered/plan';
-export { ranksByLength } from './layered/rank';
+export { simplexRanks } from './layered/rank';
 
 /** The ranked layout: each edge points one rank further along `direction`.
  *  Under `order: 'seeded'` a re-run moves nothing; `order: 'barycenter'`

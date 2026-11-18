@@ -11,7 +11,7 @@ import {
   shrinkAnchorSelection, smoothAnchors, type AnchorSet, type PolygonPath,
 } from '@weasel-js/geom';
 import { pathOperationTags, type EditAnchorsDep, type KeySpec } from '@weasel-js/core';
-import { depOf, requiresAnchorSelection } from '../pathEdit/anchorEditing';
+import { openPathEditOf, requiresAnchorSelection } from '../pathEdit/anchorEditing';
 import { icon, type PathToolsIconName } from '../icons.gen';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 
@@ -27,11 +27,11 @@ function editedSet(dep: EditAnchorsDep): AnchorSet | null {
 }
 
 const pathOpen = (deps?: ActionDeps): true | ActionDisabledReason =>
-  depOf(deps) ? true : ActionDisabledReason.SelectionRequired;
+  openPathEditOf(deps) ? true : ActionDisabledReason.SelectionRequired;
 
 /** A selection command bound to `key`; `needsSelection` when `pick` reads
  *  the current selection and so has nothing to do without one. */
-function makeSelectCommand<const Id extends PathToolsIconName>(
+function createAnchorSelectAction<const Id extends PathToolsIconName>(
   id: Id, label: string, key: KeySpec, needsSelection: boolean, pick: Pick<ActionParamsOf<Id>>, params?: PrefGroup,
 ) {
   const enabled = needsSelection ? requiresAnchorSelection : pathOpen;
@@ -48,7 +48,7 @@ function makeSelectCommand<const Id extends PathToolsIconName>(
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const dep = depOf(deps);
+        const dep = openPathEditOf(deps);
         const set = dep && enabled(deps) === true ? editedSet(dep) : null;
         if (set) dep!.setSelectedAnchors(pick(set, [...dep!.selectedAnchors], params));
       },
@@ -74,13 +74,13 @@ const stepOf = (params: Readonly<{ n?: number }> | undefined): number => {
 };
 
 /** Add each selected anchor's neighbors along the path. `]`. */
-export const growAnchorSelectionAction = makeSelectCommand(
+export const growAnchorSelectionAction = createAnchorSelectAction(
   'growAnchorSelection', 'Grow anchor selection', { kind: 'key', key: ']', code: 'BracketRight' }, true,
   (set, selected) => growAnchorSelection(set, selected),
 );
 
 /** Drop the anchors at the ends of each selected run. `[`. */
-export const shrinkAnchorSelectionAction = makeSelectCommand(
+export const shrinkAnchorSelectionAction = createAnchorSelectAction(
   'shrinkAnchorSelection', 'Shrink anchor selection', { kind: 'key', key: '[', code: 'BracketLeft' }, true,
   (set, selected) => shrinkAnchorSelection(set, selected),
 );
@@ -90,25 +90,25 @@ export const shrinkAnchorSelectionAction = makeSelectCommand(
  * from its first selected anchor, or from the start of every subpath when
  * none is selected. Alt+N.
  */
-export const selectEveryNthAnchorAction = makeSelectCommand(
+export const selectEveryNthAnchorAction = createAnchorSelectAction(
   'selectEveryNthAnchor', 'Select every Nth anchor', altKey('n', 'KeyN'), false,
   (set, selected, params) => everyNthAnchor(set, stepOf(params), selected), SELECT_EVERY_NTH_ANCHOR_PARAMS,
 );
 
 /** Select every corner anchor of the edited path. Alt+C. */
-export const selectCornerAnchorsAction = makeSelectCommand(
+export const selectCornerAnchorsAction = createAnchorSelectAction(
   'selectCornerAnchors', 'Select corner anchors', altKey('c', 'KeyC'), false,
   (set) => cornerAnchors(set),
 );
 
 /** Select every smooth anchor of the edited path. Alt+M. */
-export const selectSmoothAnchorsAction = makeSelectCommand(
+export const selectSmoothAnchorsAction = createAnchorSelectAction(
   'selectSmoothAnchors', 'Select smooth anchors', altKey('m', 'KeyM'), false,
   (set) => smoothAnchors(set),
 );
 
 /** Select the anchors that are not selected, and only those. Alt+I. */
-export const invertAnchorSelectionAction = makeSelectCommand(
+export const invertAnchorSelectionAction = createAnchorSelectAction(
   'invertAnchorSelection', 'Invert anchor selection', altKey('i', 'KeyI'), false,
   (set, selected) => invertAnchorSelection(set, selected),
 );

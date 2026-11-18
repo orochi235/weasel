@@ -13,7 +13,7 @@ import { resolvePrefUnit } from './unit';
  * slider's track, a step of 1 — is a display-space number already. `min` and
  * `max` are points, so they convert the way the value does; `step` is a
  * distance, and a unit with an offset maps zero somewhere else, so converting
- * it as a point would scale it wrong; under a unit's `precision` it is rounded
+ * it as a point would scale it wrong; under a unit's `places` it is rounded
  * up to the smallest step that changes the shown value; `stops` are points. A decreasing
  * conversion swaps which end is the lower one, and which end is `endless`.
  */
@@ -22,11 +22,11 @@ export function prefDisplayBounds(
 ): { min?: number; max?: number; step: number; endless?: Endless; stops?: readonly number[] } {
   const ends = p.endless === undefined ? {} : { endless: p.endless };
   if (!p.unit) return { min: p.min, max: p.max, step: p.step ?? 1, ...ends, ...(p.stops ? { stops: p.stops } : {}) };
-  const { toDisplay, toDisplayExact, precision } = resolvePrefUnit(p.unit);
+  const { toDisplay, toDisplayExact, places } = resolvePrefUnit(p.unit);
   const backward = toDisplay(1) < toDisplay(0);
   const lo = p.min === undefined ? undefined : toDisplay(p.min);
   const hi = p.max === undefined ? undefined : toDisplay(p.max);
-  const step = p.step === undefined ? 1 : displayStep(Math.abs(toDisplayExact(p.step) - toDisplayExact(0)), precision);
+  const step = p.step === undefined ? 1 : displayStep(Math.abs(toDisplayExact(p.step) - toDisplayExact(0)), places);
   const flip = { min: 'max', max: 'min', both: 'both' } as const;
   const endless = backward && p.endless !== undefined ? flip[p.endless] : p.endless;
   const stops = p.stops?.map(toDisplay);
@@ -39,13 +39,13 @@ export function prefDisplayBounds(
   };
 }
 
-/** `exact` rounded up to a whole number of the places `precision` shows, so a step always changes what is shown. */
-function displayStep(exact: number, precision: number | undefined): number {
-  if (precision === undefined) return exact;
-  const quantum = 10 ** -precision;
+/** `exact` rounded up to a whole number of the last place `places` shows, so a step always changes what is shown. */
+function displayStep(exact: number, places: number | undefined): number {
+  if (places === undefined) return exact;
+  const quantum = 10 ** -places;
   // The quotient is rounded first so binary dust (1.1 / 0.1 = 11.000000000000002) does not ceil a step up.
   const quanta = Math.max(1, Math.ceil(Number((exact / quantum).toFixed(9))));
-  return Number((quanta * quantum).toFixed(precision));
+  return Number((quanta * quantum).toFixed(places));
 }
 
 /** Distinguishes a leaf from a group or a section while walking a schema tree. */
@@ -94,7 +94,7 @@ export function prefLeafAt(schema: PrefGroup | PrefSection, path: string): PrefL
 
 /** Get the value at a dotted path inside a nested value tree. Returns
  *  `undefined` when a segment is missing or hits a non-object. */
-export function prefValueAtPath(values: unknown, path: string): unknown {
+export function prefValueAt(values: unknown, path: string): unknown {
   let cur: unknown = values;
   for (const seg of path.split('.')) {
     if (cur == null || typeof cur !== 'object' || !Object.hasOwn(cur, seg)) return undefined;
@@ -176,7 +176,7 @@ export function setOwnPrefValue(tree: Record<string, unknown>, key: string, valu
 }
 
 /** Set `value` at the dotted `path` in `root` itself, creating missing branches. */
-export function assignPrefValueAtPath(root: Record<string, unknown>, path: string, value: unknown): void {
+export function assignPrefValueAt(root: Record<string, unknown>, path: string, value: unknown): void {
   const parts = path.split('.');
   let cursor = root;
   for (const part of parts.slice(0, -1)) {
@@ -190,7 +190,7 @@ export function assignPrefValueAtPath(root: Record<string, unknown>, path: strin
  *  nested tree `PrefsForm` reads: the inverse of {@link flattenPrefValues}. */
 export function nestPrefValues(values: Readonly<Record<string, unknown>> | undefined): Record<string, unknown> {
   const tree: Record<string, unknown> = {};
-  for (const [path, value] of Object.entries(values ?? {})) assignPrefValueAtPath(tree, path, value);
+  for (const [path, value] of Object.entries(values ?? {})) assignPrefValueAt(tree, path, value);
   return tree;
 }
 
@@ -199,7 +199,7 @@ export function nestPrefValues(values: Readonly<Record<string, unknown>> | undef
 export function flattenPrefValues(schema: PrefGroup, tree: unknown): [string, unknown][] {
   const out: [string, unknown][] = [];
   for (const path of prefLeaves(schema).keys()) {
-    const value = prefValueAtPath(tree, path);
+    const value = prefValueAt(tree, path);
     if (value !== undefined) out.push([path, value]);
   }
   return out;

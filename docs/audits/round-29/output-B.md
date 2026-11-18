@@ -26,7 +26,7 @@
 
 ## SVG region export culls nodes by their unrotated, unstroked pose box, so it drops content PNG/PDF draw in the same region
 - where: packages/svg/src/regionSvgNodes.ts:50-52, 134-139 (meets, include)
-- scenario: `include` keeps a node only when `meets(pose(node), region)`, with `pose` the world `RectPose`'s `x/y/width/height` — rotation, `transform` (skew/scale) and stroke width are all ignored, and a group's own box decides for its whole subtree (fromKit's `include` "leaves a node out, with everything under it"). A rect rotated 45° whose corner crosses into the region, a shape whose thick stroke straddles the region edge, or a child lying outside its group's box is drawn by `exportRegionPng`/`exportRegionsPdf` (which clip to `sourceRect`) but missing from `exportRegionSvg` of the same region. `selectionRegion` already measures with `drawnAABBOf` (strokes included); the SVG cull should use the drawn world bounds too.
+- scenario: `include` keeps a node only when `meets(pose(node), region)`, with `pose` the world `RectPose`'s `x/y/width/height` — rotation, `transform` (skew/scale) and stroke width are all ignored, and a group's own box decides for its whole subtree (fromKit's `include` "leaves a node out, with everything under it"). A rect rotated 45° whose corner crosses into the region, a shape whose thick stroke straddles the region edge, or a child lying outside its group's box is drawn by `exportRegionPng`/`exportRegionsPdf` (which clip to `sourceRect`) but missing from `exportRegionSvg` of the same region. `selectionRegion` already measures with `drawnAabbOf` (strokes included); the SVG cull should use the drawn world bounds too.
 - evidence: read
 - severity: medium
 

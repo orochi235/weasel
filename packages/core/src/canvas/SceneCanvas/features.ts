@@ -19,8 +19,8 @@ import { toolIdsOf, type Action, type ToolEntry } from '@weasel-js/routing';
 import { never } from 'domains/chrome-caps/conditions';
 import type { ChromeId, VisibilityRules } from 'domains/chrome-caps/types';
 import type { MoveBehavior } from 'interactions/gestures/types';
-import type { UseMoveOptions } from 'interactions/gestures/moveOptions';
-import type { UseRotateOptions } from 'interactions/gestures/rotateOptions';
+import type { MoveOptions } from 'interactions/actions/moveOptions';
+import type { RotateOptions } from 'interactions/actions/rotateOptions';
 import type { Contribution, Tool } from 'tools/overlayBinding';
 import type { PathEditExtension } from 'domains/paths/pathEditExtension';
 import type { SnapSource } from 'domains/snap/types';
@@ -72,8 +72,8 @@ export interface PresetBuild {
 /** What a preset's ambient bindings are built from: the `selectTool` options
  *  that configure them. */
 export interface FeatureBindingOptions {
-  move?: UseMoveOptions<unknown>;
-  rotate?: UseRotateOptions<unknown>;
+  move?: MoveOptions<unknown>;
+  rotate?: RotateOptions<unknown>;
 }
 
 /**
@@ -141,8 +141,8 @@ export interface FeaturePreset {
   readonly shapes?: readonly (NodeShapeEntry<never, never> | PresetNodeShape)[];
   readonly properties?: readonly NodePropertiesEntry[];
   /** Entries installed beside `<SceneCanvas ambient>`, with every role they
-   *  declare: deps, overlays, `attach`, views, frame hooks. A `tools` takeover
-   *  brings its own ambient and leaves them out. */
+   *  declare: deps, overlays, `attach`, views, frame hooks. They apply under a
+   *  `tools` takeover too, except one whose id the takeover holds. */
   readonly contributions?: readonly SurfaceContribution[];
   /** Components the canvas renders inside itself while the preset is on, after its own deps and before its
    *  children: for a part that needs React and the mounted canvas, such as an editing overlay. A dep one

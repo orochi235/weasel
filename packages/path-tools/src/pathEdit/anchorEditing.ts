@@ -45,7 +45,7 @@ import { BETWEEN_GESTURES } from '@weasel-js/routing';
 import type {} from '../actionParamSchema';
 
 /** The `editAnchors` dep while a path is open, or null. */
-export function depOf(deps: ActionDeps | undefined): EditAnchorsDep | null {
+export function openPathEditOf(deps: ActionDeps | undefined): EditAnchorsDep | null {
   const dep = deps?.editAnchors;
   if (!dep || !dep.editingId) return null;
   return dep;
@@ -78,19 +78,19 @@ export function commitAnchorEdit(
 
 /** Whether `edit` would change the edited path, tried on a scratch decode. */
 export function anchorEditWouldChange(deps: ActionDeps | undefined, edit: (set: AnchorSet) => boolean | void): boolean {
-  const dep = depOf(deps);
+  const dep = openPathEditOf(deps);
   const path = dep ? worldPathOf(dep) : null;
   return path !== null && editAnchorSetTracked(path, edit) !== null;
 }
 
 /** Enabled while a path is open. */
 function plainAnchorEditing(deps?: ActionDeps): true | ActionDisabledReason {
-  return depOf(deps) ? true : ActionDisabledReason.SelectionRequired;
+  return openPathEditOf(deps) ? true : ActionDisabledReason.SelectionRequired;
 }
 
 /** Enabled only while a path is in edit mode with anchors selected. */
 export function requiresAnchorSelection(deps?: ActionDeps): true | ActionDisabledReason {
-  const dep = depOf(deps);
+  const dep = openPathEditOf(deps);
   if (!dep || dep.selectedAnchors.size === 0) return ActionDisabledReason.SelectionRequired;
   return true;
 }
@@ -127,7 +127,7 @@ export const selectAnchorAction: Action = inPlane(defineAction({
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
-      const dep = depOf(deps);
+      const dep = openPathEditOf(deps);
       if (!dep) return;
       const world = params?.world;
       if (!world) return;
@@ -179,7 +179,7 @@ export const deleteAnchorsAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      const dep = depOf(deps);
+      const dep = openPathEditOf(deps);
       if (!dep || deleteSelectedMark(dep) || dep.selectedAnchors.size === 0) return;
       const doomed = [...dep.selectedAnchors];
       const changed = commitAnchorEdit(dep, 'Delete anchor', (set) =>
@@ -191,7 +191,7 @@ export const deleteAnchorsAction: Action & { requires: string[] } = {
   // An edit that would change nothing is disabled (ruled 2026-11-10): a delete the path refuses, such as one
   // that would leave a lone anchor.
   enabled: (deps) => {
-    const dep = depOf(deps);
+    const dep = openPathEditOf(deps);
     if (dep?.selectedMark) return canDeleteSelectedMark(dep) ? true : ActionDisabledReason.NotApplicable;
     const selection = requiresAnchorSelection(deps);
     if (selection !== true) return selection;
@@ -219,7 +219,7 @@ export const cutPathAtAnchorAction: Action = inPlane(defineAction({
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
-      const dep = depOf(deps);
+      const dep = openPathEditOf(deps);
       if (!dep) return;
       const world = params?.world;
       if (!world) return;
@@ -233,15 +233,15 @@ export const cutPathAtAnchorAction: Action = inPlane(defineAction({
       if (changed) dep.setSelectedAnchors([]);
     },
   },
-  enabled: (deps) => (depOf(deps) ? true : ActionDisabledReason.SelectionRequired),
+  enabled: (deps) => (openPathEditOf(deps) ? true : ActionDisabledReason.SelectionRequired),
 }), editingLayer);
 
 /** Shift on the press adds the marqueed anchors to the selection. */
-export const MARQUEE_ANCHORS_ROLES = {
+export const AREA_SELECT_ANCHORS_ROLES = {
   'selection.add': { label: 'Add to the anchor selection', keys: ['shift'] },
 } as const satisfies ModifierRoles;
 
-const addHeld = roleReader(MARQUEE_ANCHORS_ROLES);
+const addHeld = roleReader(AREA_SELECT_ANCHORS_ROLES);
 
 /**
  * Rubber-band select anchors by dragging on empty canvas while a path is
@@ -251,18 +251,18 @@ const addHeld = roleReader(MARQUEE_ANCHORS_ROLES);
  * The in-flight rect goes on the `editAnchors` dep so the path-editing
  * overlay can draw it.
  */
-export const marqueeAnchorsAction: Action & { requires: string[] } = inPlane({
-  id: 'marqueeAnchors',
+export const areaSelectAnchorsAction: Action & { requires: string[] } = inPlane({
+  id: 'areaSelectAnchors',
   label: 'Marquee-select anchors',
   tags: pathOperationTags('drag'),
-  defaultBinding: [{ spec: { kind: 'drag', target: 'empty', mods: roleMods(MARQUEE_ANCHORS_ROLES) }, opts: { id: 'marqueeAnchors.drag' } }],
+  defaultBinding: [{ spec: { kind: 'drag', target: 'empty', mods: roleMods(AREA_SELECT_ANCHORS_ROLES) }, opts: { id: 'areaSelectAnchors.drag' } }],
   eligible: { capability: 'edits-anchors' },
-  modifierRoles: MARQUEE_ANCHORS_ROLES,
+  modifierRoles: AREA_SELECT_ANCHORS_ROLES,
   requires: ['editAnchors'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx): OngoingHandle {
-      const dep = depOf(ctx.deps);
+      const dep = openPathEditOf(ctx.deps);
       // Not editing → decline so the dispatcher falls through to the
       // node-level areaSelect.
       if (!dep) return {};

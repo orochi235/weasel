@@ -1,8 +1,8 @@
 import type { KeyLegend } from './Keycaps';
-import { keyLegendsFromMods, keyLegendsFromShortcut, type KeyLegendOptions, type LogicalMod } from '@weasel-js/gestures';
+import { keyLegendsFromMods, keyLegendsFromShortcut, type KeyLegendOptions, type ModifierKey } from '@weasel-js/gestures';
 import { getOwn } from '@weasel-js/registry';
 
-const MODS: Readonly<Record<string, LogicalMod>> = { mod: 'mod', shift: 'shift', alt: 'alt' };
+const MODS: Readonly<Record<string, ModifierKey>> = { mod: 'mod', shift: 'shift', alt: 'alt' };
 
 /**
  * A shortcut written for any platform, as prose names one (`Mod+Shift+Z`, `Alt`, `Escape`), as `KeySequence`

@@ -46,7 +46,7 @@ tokens:
 | Token vocabulary | 12 pre-existing + 4 new button-state = 16 | Font tokens deliberately excluded. |
 | Per-widget overrides | Inline style props win over theme | "Explicit > implicit" — additive, non-breaking change. |
 | Theme refresh cadence | Read on every HUD draw | One `getComputedStyle` + ~16 property lookups; sub-millisecond. |
-| Theme refresh trigger | Piggybacks on existing redraw events | Consumer calls `hud.markDirty()` after manual CSS swaps. |
+| Theme refresh trigger | Piggybacks on existing redraw events | Consumer calls `hud.requestRedraw()` after manual CSS swaps. |
 | Cross-package | weasel-ui's CSS components migrate to `--wzl-*` | Mechanical sed-style rename. |
 | Legacy `--wui-*` | Dropped | Migrate the one WeaselDraw demo import; this is exploratory work, no published external consumers. |
 
@@ -226,13 +226,13 @@ weasel-theme; weasel-theme depends on nothing.
 | `api.element` is null (boot window) | `readTokens(null)` returns `DEFAULT_TOKENS` mapped to camelCase. One-frame visual stability. |
 | Consumer never imports `tokens.css` | `getPropertyValue` returns empty; falls back to `DEFAULT_TOKENS`. HUD looks identical to spec defaults. |
 | Consumer sets a CSS variable to an invalid color | Renderer's existing color parser handles it (clamps or warns — pre-existing). |
-| Consumer changes a CSS variable mid-session (dark-mode toggle) | Next `requestRedraw` reads the new value. If nothing else triggers redraw, HUD stays on old theme. **Consumer responsibility:** call `hud.markDirty()` after manual theme swap. |
+| Consumer changes a CSS variable mid-session (dark-mode toggle) | Next `requestRedraw` reads the new value. If nothing else triggers redraw, HUD stays on old theme. **Consumer responsibility:** call `hud.requestRedraw()` after manual theme swap. |
 | `DEFAULT_TOKENS` drifts from `tokens.css` | `tokens.test.ts` parity check fails. |
 | Consumer overrides one widget's color and changes the theme | Override wins; theme change only affects widgets using the default. |
 
 The mid-session-theme-change case is the only user-visible gap: the HUD's "read
 on draw" model is reactive to state-driven redraws, not to CSS-mutation events.
-Documenting the `hud.markDirty()` call is the v1 mitigation; automatic
+Documenting the `hud.requestRedraw()` call is the v1 mitigation; automatic
 detection (`MutationObserver`, `prefers-color-scheme` media-query listener) is a
 future enhancement, not v1.
 
@@ -274,7 +274,7 @@ selectors. Animation/transition of CSS variables.
 - **`hud.refreshTheme()` cache-and-invalidate escape hatch.** Caching tokens would
   save microseconds; not worth the complexity.
 - **Automatic detection of `prefers-color-scheme` changes** or `MutationObserver`
-  on theme-affecting attributes. Consumers call `hud.markDirty()` manually.
+  on theme-affecting attributes. Consumers call `hud.requestRedraw()` manually.
 - **Font tokens (`--wzl-font-family`, `--wzl-font-size`).** Font registration is
   the renderer's domain; per-widget font size is a per-widget decision, not theme.
 - **Light/dark mode variants** as part of weasel-theme itself. Consumers handle

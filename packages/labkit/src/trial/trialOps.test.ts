@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { auto } from '../config/auto';
+import { AUTO } from '../config/auto';
 import { f } from '../config/builder';
 import { defineInstrument } from '../instrument/defineInstrument';
 import type { Instrument } from '../instrument/types';
@@ -44,7 +44,7 @@ const subjectInstrument: Instrument<{ label: string }, SubjectConfig> = {
 const schemaInstrument = defineInstrument({
   name: 'Schemed',
   config: f.schema({
-    cols: f.number(3).initial(auto),
+    cols: f.number(3).initial(AUTO),
     gap: f.number(12),
     grid: f.group({ size: f.number(4) }),
   }),
@@ -138,7 +138,7 @@ describe('addTrial', () => {
   });
 
   it('honors auto in a seed config and keeps the sentinel out of the record', () => {
-    const out = addTrial([], instruments, 'Schemed', { config: { gap: auto } });
+    const out = addTrial([], instruments, 'Schemed', { config: { gap: AUTO } });
     expect(out[0]?.auto).toContain('gap');
     expect(out[0]?.autoSeed).toEqual(['gap']);
     expect((out[0]?.config as { gap: number } | undefined)?.gap).toBe(12);
@@ -154,7 +154,7 @@ describe('addTrial', () => {
   });
 
   it('honors auto at a nested seed path', () => {
-    const out = addTrial([], instruments, 'Schemed', { config: { grid: { size: auto } } });
+    const out = addTrial([], instruments, 'Schemed', { config: { grid: { size: AUTO } } });
     expect(out[0]?.auto).toContain('grid.size');
     expect((out[0]?.config as { grid: { size: number } } | undefined)?.grid.size).toBe(4);
   });
@@ -245,7 +245,7 @@ describe('resetTrial', () => {
   });
 
   it('un-pins the paths the trial opened auto again, from schema and from seed', () => {
-    const arr = addTrial([], instruments, 'Schemed', { config: { gap: auto } });
+    const arr = addTrial([], instruments, 'Schemed', { config: { gap: AUTO } });
     head(arr).auto = [];
     const reset = resetTrial(arr, head(arr).id, instruments);
     expect([...(reset[0]?.auto ?? [])].sort()).toEqual(['cols', 'gap']);

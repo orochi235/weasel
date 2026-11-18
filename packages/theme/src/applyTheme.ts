@@ -1,4 +1,4 @@
-import { axisScheme, fullSelection, wzlAttr, wzlValue, type AxisDefs, type Selection } from './axes';
+import { axisScheme, fullAxisChoice, wzlAttr, wzlValue, type AxisDefs, type AxisChoice } from './axes';
 import { blendTheme, type AxisWeights } from './blendTheme';
 import { resolveTheme, themeAxes } from './resolveTheme';
 import type { Theme } from './theme';
@@ -46,7 +46,7 @@ function declarations(theme: Theme, tokens: Readonly<Record<string, string>>): s
 }
 
 /** Warns, once each, of a selection axis `theme` does not declare (unless `ignoreUnknownAxes`) and of a value its axis lacks. */
-function warnUnknownSelection(theme: Theme, axes: AxisDefs, selection: Selection, ignoreUnknownAxes: boolean): void {
+function warnUnknownAxisChoice(theme: Theme, axes: AxisDefs, selection: AxisChoice, ignoreUnknownAxes: boolean): void {
   for (const [axis, value] of Object.entries(selection)) {
     const def = getOwn(axes, axis);
     if (!def) {
@@ -101,12 +101,12 @@ export interface ApplyThemeOptions {
  * In development it warns, once each, of a selection axis the theme does not
  * declare and of an axis value the theme lacks, which takes the axis default.
  */
-export function applyTheme(el: HTMLElement, theme: Theme, selection: Selection = {}, options: ApplyThemeOptions = {}): () => void {
+export function applyTheme(el: HTMLElement, theme: Theme, selection: AxisChoice = {}, options: ApplyThemeOptions = {}): () => void {
   if (typeof document === 'undefined') return () => {};
 
   const axes = themeAxes(theme);
-  warnUnknownSelection(theme, axes, selection, options.ignoreUnknownAxes ?? false);
-  const sel = fullSelection(axes, selection);
+  warnUnknownAxisChoice(theme, axes, selection, options.ignoreUnknownAxes ?? false);
+  const sel = fullAxisChoice(axes, selection);
   const picked = Object.entries(sel);
   const names = picked.map(([a]) => a);
   const scheme = picked.map(([a, v]) => axisScheme(axes, a, v)).find((s) => s !== undefined);

@@ -61,7 +61,7 @@ export interface PaintKindEntry extends PaintDrawKind {
   /**
    * The stop list this paint reads as. With `fromStops`, it is what makes a
    * kind a gradient: `listGradientKinds` returns the kinds carrying both, and
-   * `switchGradientKind` converts between any two of them through the list.
+   * `withPaintKind` converts between any two of them through the list.
    */
   stopsOf?(paint: Paint): GradStop[];
   /** A paint of this kind built from a stop list, in `bounds` units. The

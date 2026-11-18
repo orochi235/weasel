@@ -10,7 +10,7 @@ describe('a log axis', () => {
   it('spends more of the track on the narrow end than a linear one', () => {
     // The reason `'log'` is the default: on a linear axis the narrow stops of a
     // width ladder all pile into the leftmost sixth.
-    expect(unitScale(logScale, MIN, MAX).map(1 / 16)).toBeGreaterThan(unitScale(linearScale, MIN, MAX).map(1 / 16));
+    expect(unitScale(logScale, MIN, MAX).position(1 / 16)).toBeGreaterThan(unitScale(linearScale, MIN, MAX).position(1 / 16));
   });
 });
 
@@ -21,7 +21,7 @@ describe('BandEditor\'s scale, through prefNumberScale', () => {
 
   it('spaces a log axis by ratio and a linear one by difference', () => {
     const log = unitScale(prefNumberScale('log', 'BandEditor')!, 1, 100);
-    expect(log.map(10)).toBeCloseTo(0.5, 12);
+    expect(log.position(10)).toBeCloseTo(0.5, 12);
     expect(prefNumberScale('linear', 'BandEditor')).toBeUndefined();
   });
 
@@ -38,8 +38,8 @@ describe('BandEditor\'s scale, through prefNumberScale', () => {
     const log = fresh.prefNumberScale('log', 'BandEditor')!;
 
     const unit = unitScale(log, 0, 100);
-    expect(unit.map(50)).toBeCloseTo(0.5, 12);
-    expect(unitScale(log, -4, 4).map(0)).toBeCloseTo(0.5, 12);
+    expect(unit.position(50)).toBeCloseTo(0.5, 12);
+    expect(unitScale(log, -4, 4).position(0)).toBeCloseTo(0.5, 12);
 
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0][0]).toMatch(/^BandEditor: a log track needs a range above zero/);
@@ -51,11 +51,11 @@ describe('withinAxis', () => {
     const whole = unitScale(logScale, 1, 1000);
     const part = unitScale(withinAxis(logScale, 1, 1000), 10, 100);
     // 10..100 is the middle third of a log axis over 1..1000.
-    expect(part.map(10)).toBeCloseTo(0, 12);
-    expect(part.map(100)).toBeCloseTo(1, 12);
+    expect(part.position(10)).toBeCloseTo(0, 12);
+    expect(part.position(100)).toBeCloseTo(1, 12);
     for (const v of [10, 20, 31.6, 50, 100]) {
-      expect(part.map(v)).toBeCloseTo((whole.map(v) - 1 / 3) * 3, 9);
-      expect(part.invert(part.map(v))).toBeCloseTo(v, 9);
+      expect(part.position(v)).toBeCloseTo((whole.position(v) - 1 / 3) * 3, 9);
+      expect(part.invert(part.position(v))).toBeCloseTo(v, 9);
     }
   });
 });

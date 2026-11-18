@@ -1,9 +1,9 @@
 import {
   f,
   isConfigBranch,
-  isEntryShown,
+  isConfigNodeShown,
   resolveConfigSchema,
-  schemaNodeAtPath,
+  schemaNodeAt,
   type Annotations,
   type BranchAnnotations,
   type ConfigBranch,
@@ -134,14 +134,14 @@ export function answerSchema(
   const walk = (shape: ConfigShape, at: string): void => {
     for (const [key, entry] of Object.entries(shape)) {
       const path = joinPath(at, key);
-      if (!isEntryShown(entry, record, group)) hidden.push(path);
+      if (!isConfigNodeShown(entry, record, group)) hidden.push(path);
       if (isConfigBranch(entry)) {
         walk(entry.children, path);
         continue;
       }
       const { validate } = entry.options;
       if (!validate) continue;
-      const leaf = schemaNodeAtPath(group, path);
+      const leaf = schemaNodeAt(group, path);
       if (!leaf || 'children' in leaf) continue;
       const found = validate(leaf, record);
       if (found.length > 0) setOwn(errors, path, found);

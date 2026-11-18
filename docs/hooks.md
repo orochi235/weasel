@@ -65,7 +65,7 @@ bindings: [
 | `useStandardActions(opts)` | Registers the kit-standard descriptors and publishes `selection` / `view` / `scene` / `history` / `activeTool` as live dep sources. No-ops silently when either provider is absent. |
 | `useActionsRegistry()` | The registry handle: `register(action)`, `trigger(id, params?)`, enumeration for palettes and toolbars. |
 | `useAction(action)` | Register one `Action` descriptor for the lifetime of the calling component. No-ops when no `<ActionsProvider>` is in scope — with a dev-only warning, so a production build says nothing. |
-| `evaluateEnabled(...)` | Resolve an action's `enabled` predicate against current deps. |
+| `checkEnabled(...)` | Resolve an action's `enabled` predicate against current deps. |
 | `useKeybindings(...)` | Tool-activation hotkeys, as the parametric `tool.activate` action, and Escape back to the default tool, as `tool.resetToDefault`. Mounted by `<SceneCanvas>`. A tool's hold-to-engage `hotkey` becomes `tool.offhand`, registered with the tool rather than here. |
 | `useGestureDispatcher(...)` | The input router `<SceneCanvas>` mounts. Reach for it only if you're building a custom canvas surface. |
 
@@ -84,8 +84,8 @@ actions with no default binding fire only via a tool's `bindings` or a `trigger`
 
 | Action id | Default binding |
 |---|---|
-| `escape` | Escape (channel `*`, phase `initial`) |
-| `cancelGesture` | Escape (channel `*`, phase `engaged`) — aborts an in-flight gesture |
+| `deselect` | Escape (channel `*`, phase `initial`) |
+| `dispatch.cancelAll` | Escape (channel `*`, phase `engaged`) — aborts an in-flight gesture |
 | `selectAll` | Mod+A |
 | `delete` | Delete, Backspace (phase `initial`, so a mid-drag press is ignored) |
 | `transformAgain` | Mod+D — repeats the last move, rotate, resize, or duplicate; duplicates when there is none |
@@ -101,7 +101,7 @@ actions with no default binding fire only via a tool's `bindings` or a `trigger`
 | `createOutlines` (*path-tools*) | Mod+Enter |
 | `joinPaths` (*path-tools*) | Mod+J; in path edit `joinAnchors` answers it |
 | `averageAnchors` (*path-tools*) | Mod+Alt+Shift+J (`axis: 'both'`) |
-| `exitPathEdit` (*path-tools*) | Escape; with a tool on other than the mode's `defaultTool` it returns to that tool instead (`returnToModeDefault`), so a second Escape leaves path edit. A mode shortcut's `exit` and `cancel` do the same |
+| `leavePathEdit` (*path-tools*) | Escape; with a tool on other than the mode's `defaultTool` it returns to that tool instead (`returnToModeDefault`), so a second Escape leaves path edit. A mode shortcut's `exit` and `cancel` do the same |
 | `deleteAnchors` (*path-tools*) | Delete, Backspace (phase `initial`) |
 | `nudgeAnchors.<dir>` (*path-tools*) | Arrow / Shift+Arrow, as `nudge` |
 
@@ -116,15 +116,15 @@ macOS Option+bracket emits a curly quote, so both codepoints are listed.
 | `move` | drag on `selected-body` |
 | `editAnchors` (*path-tools*) | drag whose press hit an anchor or control-handle affordance; it ties `move` on specificity, and `move` turns those presses down, as it does a segment's or a path-tools poise grip's (`isPathEditPart`) |
 | `bendSegment` (*path-tools*) | drag whose press hit the edited path's `segment` affordance, between anchors; `move` turns those down too |
-| `marqueeAnchors` (*path-tools*) | drag on `empty` |
+| `areaSelectAnchors` (*path-tools*) | drag on `empty` |
 | `enterPathEdit` (*path-tools*) | double-click on a body |
-| `editTextAt` | double-click on a body: opens the text node under the pointer (the `textEdit` feature) |
+| `enterTextEditAt` | double-click on a body: opens the text node under the pointer (the `textEdit` feature) |
 | `menu.context` | the `contextMenu` gesture |
 | `selectAnchor` (*path-tools*) | click |
 | `editEffectText` (*text-tools*) | click on a body: in path edit on a path an effect hides, a click on that effect opens its text, off the open path's anchors |
 | `insertPathAnchor` (*path-tools*) | Alt+click |
 | `cutPathAtAnchor` (*path-tools*) | Alt+Shift+click |
-| `viewport.pinchZoom` | two-finger `multiTouch` |
+| `viewport.touchZoom` | two-finger `multiTouch` |
 | `ingest` | `drop` or `paste`, any modifiers |
 | `clipboard.pasteEvent` | `paste` carrying `text/plain`, any modifiers — registered only where `ingest` is not |
 
@@ -132,10 +132,10 @@ macOS Option+bracket emits a curly quote, so both codepoints are listed.
 
 A plain drag carries no intent, so no action answers one by default. The tools
 and contributions that want one bind it: `areaSelect` from the select tool (or,
-under every tool, `areaSelectContribution()`), `insert` and
-`insert.adjustRotation` from the shape tools, `lassoSelect` from the lasso tool,
+under every tool, `createAreaSelectContribution()`), `insert` and
+`insert.rotate` from the shape tools, `lassoSelect` from the lasso tool,
 `slice` from path-tools' slice tool, `viewport.dragPan` from the hand tool (or, on any
-unclaimed drag, `dragPanContribution()`), and `resize`, `rotate` and `clone`
+unclaimed drag, `createDragPanContribution()`), and `resize`, `rotate` and `clone`
 from the `resize`, `rotate` and `move` presets' selection contributions.
 
 `clearSelection` (fires from `useSelectTool`'s empty-click binding),
@@ -222,7 +222,7 @@ same question by id. The two answer `TextEditDep.textAt` and
 `TextEditDep.isTextNode`.
 
 A canvas running `@weasel-js/text-tools`' `textPreset` mounts one of these itself, so it needs
-no wiring for the text and sticky tools to open an edit, nor for a double-click to: `editTextAt`
+no wiring for the text and sticky tools to open an edit, nor for a double-click to: `enterTextEditAt`
 is bound to it, opens what `textAt` names, and declines where the double-click names a group,
 whose own double-click enters it. `createTextPreset({ editor })` takes the same options, or
 `false` for none. It stands down for a host's own: a `useSceneTextEdit` whose container
@@ -270,7 +270,7 @@ not routed by the dispatcher — you own the pointer events.
 | `useDragRect(opts)` | `useDragGesture` producing live `bounds` from start→current, with `minBounds` and an `isSubThreshold` flag on the end ctx. `setStart` / `setCurrent` let you override mid-gesture. |
 | `useDragRadial(opts)` | `useDragGesture` producing `{ center, radius, rotation }`, with `minRadius`. |
 | `useHandleDrag(opts)` | From `@weasel-js/routing/react`. Returns `{ onPointerDown }` for a DOM/SVG handle; reports coordinates local to the handle's owning `<svg>` (or a `getRect` override). |
-| `startThresholdDrag(e, opts)` | From `@weasel-js/routing`. Not a hook — call it from a `pointerdown` handler. Captures the pointer, activates past `threshold` (default 4px), then `onMove` / `onCommit` / `onCancel`. Returns `{ isDragging(), cancel() }`. |
+| `startThresholdDrag(e, opts)` | From `@weasel-js/routing`. Not a hook — call it from a `pointerdown` handler. Captures the pointer, calls `onStart` past `threshold` (default 4px), then `onMove` / `onEnd` / `onCancel`. Returns `{ isDragging(), cancel() }`. |
 | `useDragHandle()` / `useDropZone()` | DOM-level cross-surface drag with a typed `DragPayload` (`{ kind, ids, data }`) and a global drop-zone registry — for dragging between panels and the canvas. |
 
 ## Viewport and utility hooks
@@ -278,8 +278,8 @@ not routed by the dispatcher — you own the pointer events.
 `<SceneCanvas>` doesn't own these; wire them in your component.
 
 - `useCanvasSize(ref)` — observed CSS-pixel size.
-- `useAutoCenter(...)` — viewport helpers.
-- `computeWheelAction(view, input)` — the kit's wheel convention as a pure
+- `useFitOnce(...)` — viewport helpers.
+- `viewAfterWheel(view, input)` — the kit's wheel convention as a pure
   reducer over `View`: bare wheel pans, shift+wheel pans horizontally,
   Cmd/Ctrl+wheel zooms under the pointer. `wheelPan` / `wheelZoom` are its
   halves, and `viewport.wheelPan` / `viewport.zoom` are the wired form.

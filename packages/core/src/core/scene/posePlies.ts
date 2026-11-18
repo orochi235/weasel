@@ -3,6 +3,7 @@
  * overrides, one voice per depth, cued bottom first, so a later ply folds
  * over an earlier one.
  */
+import { createPart } from '@weasel-js/registry';
 import type { Path } from '@weasel-js/geom';
 import { kit, last, mix, mul, patch, type Channel, type Handle } from '@msb235/blits';
 import type { NodeId, PoseOverride } from './types';
@@ -14,11 +15,10 @@ type ShowData = (stored: never) => unknown;
 
 /** Per lower function, per upper one, the two run in turn: kept, so a node
  *  shows one function while neither ply replaces its own. */
-const composed = new WeakMap<ShowData, WeakMap<ShowData, ShowData>>();
+const composed = createPart((_lower: ShowData) => new WeakMap<ShowData, ShowData>());
 
 function after(lower: ShowData, upper: ShowData): ShowData {
-  let byUpper = composed.get(lower);
-  if (byUpper === undefined) composed.set(lower, byUpper = new WeakMap());
+  const byUpper = composed(lower);
   let both = byUpper.get(upper);
   if (both === undefined) byUpper.set(upper, both = (stored) => upper(lower(stored) as never));
   return both;

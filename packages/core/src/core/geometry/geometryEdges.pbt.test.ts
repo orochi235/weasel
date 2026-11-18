@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { transformPoint, extentScale, poseFrameOf } from '@weasel-js/geom';
 import { coord, positive, runs, tally, timeoutFor } from '../pbt.fixture';
-import { unionAABB, unionBounds, axisAlignedBounds } from './unionBounds';
+import { unionAabb, unionBounds, axisAlignedBounds } from './unionBounds';
 import { RECT_POSE_DESCRIPTOR, remapRotatedLeaf, type RotatedPose } from './poseDescriptor';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 
@@ -35,14 +35,14 @@ describe('unions are a join', () => {
       expect(joined.x).toBe(u.x);
       expect(joined.y).toBe(u.y);
       expect(Math.abs(joined.x + joined.width - (u.x + u.width))).toBeLessThanOrEqual(1e-9 * Math.max(1, Math.abs(u.x), u.width));
-      expect(unionAABB(boxes)).toEqual(unionAABB(shuffled));
+      expect(unionAabb(boxes)).toEqual(unionAabb(shuffled));
     }), runs(N));
   }, T);
 
   it('a union over boxes at the edges of the range is null, or finite with no negative size, and holds every finite box', () => {
     const t = tally();
     fc.assert(fc.property(fc.array(wildBox, { maxLength: 5 }), (boxes) => {
-      for (const u of [unionBounds(boxes), unionAABB(boxes)]) {
+      for (const u of [unionBounds(boxes), unionAabb(boxes)]) {
         const real = boxes.filter((b) => allFinite(b) && Number.isFinite(b.x + b.width) && Number.isFinite(b.y + b.height));
         if (u === null) {
           expect(real, 'a union of finite boxes is something').toEqual([]);

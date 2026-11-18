@@ -29,7 +29,7 @@ function sharedAt(storage: StorageAdapter, prefix: string): Shared {
   return entry;
 }
 
-function heldAt(at: Shared, schema: PrefGroup): Held {
+function heldOf(at: Shared, schema: PrefGroup): Held {
   let entry = at.bySchema.get(schema);
   if (!entry) at.bySchema.set(schema, (entry = { store: null, holders: 0 }));
   return entry;
@@ -66,7 +66,7 @@ function closeUnheldSoon(storage: StorageAdapter, prefix: string, schema: PrefGr
 function acquire<S extends PrefGroup>(schema: S, options: UsePrefsStoreOptions): PrefsStore<S> {
   const { storage, prefix } = options;
   const at = sharedAt(storage, prefix);
-  const entry = heldAt(at, schema);
+  const entry = heldOf(at, schema);
   if (!entry.store) {
     at.open ??= openPrefsCacheSync(options);
     entry.store = createPrefsStore(
@@ -104,7 +104,7 @@ function acquire<S extends PrefGroup>(schema: S, options: UsePrefsStoreOptions):
 export function usePrefsStore<S extends PrefGroup>(schema: S, options: UsePrefsStoreOptions): PrefsStore<S> {
   const { storage, prefix } = options;
   const hold = useCallback(() => {
-    const entry = heldAt(sharedAt(storage, prefix), schema);
+    const entry = heldOf(sharedAt(storage, prefix), schema);
     entry.holders++;
     return () => {
       if (--entry.holders === 0) closeUnheldSoon(storage, prefix, schema, entry);

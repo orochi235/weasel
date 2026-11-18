@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefSection } from './groups';
-import { prefValueAtPath } from './helpers';
+import { prefValueAt } from './helpers';
 import type { PrefLeaf } from './schema';
 import { applyPrefConditions, prefJudge } from './status';
 
@@ -23,7 +23,7 @@ const schema: PrefGroup = {
     phases: { kind: 'list', name: 'Phases', description: '', default: [], item: stroke } as PrefLeaf,
   },
 };
-const judge = (values: unknown) => prefJudge(schema, (path) => prefValueAtPath(values, path));
+const judge = (values: unknown) => prefJudge(schema, (path) => prefValueAt(values, path));
 
 describe('applyPrefConditions keeping what a showIf hides', () => {
   it('drops nothing, and names the path of every leaf, field, and group that is hidden', () => {

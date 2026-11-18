@@ -7,13 +7,13 @@ import { Icon } from '@weasel-js/ui/components/Icon';
 import { icon as glyph } from '../icons.gen';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getOwn } from '@weasel-js/registry';
-import type { Globals } from '../protocol/messages';
+import type { StoryGlobals } from '../protocol/messages';
 import { followApp, type GlobalDeclaration, type GlobalDeclarations, type GlobalOption, labGlobals, labOptions } from './globals';
 
 const RECORD = 'fg-globals';
 
 /** The lab's global values, as persisted in the lab, and a setter for one. */
-export function useLabGlobals(declarations: GlobalDeclarations): [Globals, (key: string, value: string) => void] {
+export function useLabGlobals(declarations: GlobalDeclarations): [StoryGlobals, (key: string, value: string) => void] {
   const [stored, setStored] = usePersistedState<unknown>(RECORD, null, { scope: 'lab' });
   const values = useMemo(() => labGlobals(declarations, stored), [declarations, stored]);
   const set = useCallback(
@@ -37,7 +37,7 @@ function selectOption({ value, label, icon, disabled, disabledReason, descriptio
 interface GlobalSelectProps {
   name: string;
   declaration: GlobalDeclaration;
-  values: Globals;
+  values: StoryGlobals;
   set: (key: string, value: string) => void;
   labeled?: boolean;
 }
@@ -96,7 +96,7 @@ function NestedGlobals({
   label: string;
   icon: IconSpec;
   nested: readonly [string, GlobalDeclaration][];
-  values: Globals;
+  values: StoryGlobals;
   set: (key: string, value: string) => void;
 }) {
   const anchor = useRef<HTMLButtonElement>(null);
@@ -140,7 +140,7 @@ export function LabGlobals({
   onChange,
 }: {
   declarations: GlobalDeclarations;
-  onChange: (values: Globals) => void;
+  onChange: (values: StoryGlobals) => void;
 }) {
   const [values] = useLabGlobals(declarations);
   const { mode } = useLabContext();

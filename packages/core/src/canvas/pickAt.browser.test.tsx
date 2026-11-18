@@ -67,7 +67,7 @@ describe('pickAt on a real canvas', () => {
       scene, width: 100, height: 100, dpr: 1, ref: api, layers: { scene: { drawOne } },
     } as never)));
     await settle();
-    const node = async (x: number, y: number) => scenePickIds(scene).nodeOf((await api.current!.pickAt(x, y)) ?? 0);
+    const node = async (x: number, y: number) => scenePickIds(scene).idOfPickId((await api.current!.pickAt(x, y)) ?? 0);
     expect(await node(60, 40)).toBe(disc);
     expect(await node(10, 80)).toBe(under);
     // Inside the disc's bounds, outside its circle: the node under it.
@@ -103,9 +103,9 @@ describe("geometry.picking: 'pixels' on a real canvas", () => {
     expect(pick(95, 95)).toEqual([]);
     expect(result.current.pickBest({ x: 45, y: 40 })).toBe(disc);
     const without = await api.current!.readIds({ x: 45, y: 40, width: 0, height: 0 }, {
-      exclude: new Set([scenePickIds(scene).idOf(disc)]),
+      exclude: new Set([scenePickIds(scene).pickIdOf(disc)]),
     });
-    expect(scenePickIds(scene).nodeOf(without!.data[0]!)).toBe(under);
+    expect(scenePickIds(scene).idOfPickId(without!.data[0]!)).toBe(under);
   });
 });
 
@@ -121,10 +121,10 @@ describe('RasterSession.renderIds', () => {
       expect([ids.width, ids.height]).toEqual([100, 100]);
       const pick = scenePickIds(scene);
       const at = (x: number, y: number) => ids.data[y * 100 + x];
-      expect(pick.nodeOf(at(60, 40))).toBe(disc);
-      expect(pick.nodeOf(at(10, 80))).toBe(under);
+      expect(pick.idOfPickId(at(60, 40))).toBe(disc);
+      expect(pick.idOfPickId(at(10, 80))).toBe(under);
       expect(at(90, 90)).toBe(0);
-      const mask = idMask(ids, new Set([pick.idOf(disc)]));
+      const mask = idMask(ids, new Set([pick.pickIdOf(disc)]));
       expect([mask[40 * 100 + 60], mask[80 * 100 + 10]]).toEqual([1, 0]);
     } finally {
       session.dispose();

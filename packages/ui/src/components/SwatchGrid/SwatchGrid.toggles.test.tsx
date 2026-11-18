@@ -12,9 +12,9 @@ const OPTIONS: SwatchGridOption[] = [
 const swatch = (name: string) => screen.getByRole('button', { name });
 
 function mount(over: Partial<Parameters<typeof SwatchGrid>[0]> = {}) {
-  const onChange = vi.fn();
-  render(<SwatchGrid options={OPTIONS} onChange={onChange} columns={4} aria-label="Colors" {...over} />);
-  return { onChange };
+  const onSelect = vi.fn();
+  render(<SwatchGrid options={OPTIONS} onSelect={onSelect} columns={4} aria-label="Colors" {...over} />);
+  return { onSelect };
 }
 
 describe('SwatchGrid toggles', () => {
@@ -27,9 +27,9 @@ describe('SwatchGrid toggles', () => {
   });
 
   it('hands a pressed swatch back on click, for the caller to release', () => {
-    const { onChange } = mount({ value: ['red'] });
+    const { onSelect } = mount({ value: ['red'] });
     fireEvent.click(swatch('Red'));
-    expect(onChange).toHaveBeenCalledWith('red', OPTIONS[0]);
+    expect(onSelect).toHaveBeenCalledWith('red', OPTIONS[0]);
   });
 
   it('puts the tab stop on the first pressed swatch', () => {
@@ -47,14 +47,14 @@ describe('SwatchGrid toggles', () => {
 
 describe('SwatchGrid disabled swatches', () => {
   it('applies nothing from a disabled swatch, on click, alt-click, or Shift+Enter', () => {
-    const onAltChange = vi.fn();
-    const { onChange } = mount({ onAltChange });
+    const onAltSelect = vi.fn();
+    const { onSelect } = mount({ onAltSelect });
     fireEvent.click(swatch('Blue'));
     fireEvent.click(swatch('Gray'), { shiftKey: true });
     fireEvent.contextMenu(swatch('Blue'));
     fireEvent.keyDown(swatch('Blue'), { key: 'Enter', shiftKey: true });
-    expect(onChange).not.toHaveBeenCalled();
-    expect(onAltChange).not.toHaveBeenCalled();
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(onAltSelect).not.toHaveBeenCalled();
   });
 
   it('stays reachable, marked disabled, and says why', () => {
@@ -69,9 +69,9 @@ describe('SwatchGrid disabled swatches', () => {
   });
 
   it('leaves the rest applying', () => {
-    const { onChange } = mount();
+    const { onSelect } = mount();
     fireEvent.click(swatch('Green'));
-    expect(onChange).toHaveBeenCalledWith('green', OPTIONS[1]);
+    expect(onSelect).toHaveBeenCalledWith('green', OPTIONS[1]);
   });
 });
 

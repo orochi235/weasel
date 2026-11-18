@@ -35,7 +35,7 @@ export function backEdges(graph: Graph): Set<string> {
 
 /** Longest-path rank per node: one past its deepest predecessor, ignoring
  *  `back`. Every node with no predecessor is rank 0. */
-export function ranksOf(graph: Graph, back: ReadonlySet<string>): Map<string, number> {
+export function longestPathRanks(graph: Graph, back: ReadonlySet<string>): Map<string, number> {
   const ranks = new Map<string, number>();
   // A node still being resolved counts as rank 0, which only a missed back
   // edge can reach: a wrong rank rather than a walk that never ends.

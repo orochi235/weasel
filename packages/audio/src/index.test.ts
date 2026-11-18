@@ -26,7 +26,7 @@ describe('@weasel-js/audio public surface', () => {
 
   it('exports the noise and inharmonic voice surface', () => {
     expect(audio.noiseSamples('pink', 64)).toHaveLength(64);
-    const bell: audio.Inharmonic = audio.partialPresets.bell;
+    const bell: audio.Inharmonic = audio.PARTIAL_PRESETS.bell;
     const filter: audio.VoiceFilter = { frequency: 200, amount: 800, envelope: { decay: 40, sustain: 0 } };
     const hiss: audio.NoiseOptions = { noise: 'white', filter };
     const hat: audio.PatternEvent = { step: 2, ...hiss, length: 1 };
@@ -46,14 +46,14 @@ describe('@weasel-js/audio public surface', () => {
   });
 
   it('exports the scoring layer, from a mood down to a bar of events', () => {
-    const mood: audio.ScoreMood = audio.scoreCues[0].mood;
-    const params: audio.ScoreParams = audio.scoreParams(mood);
+    const mood: audio.ScoreMood = audio.SCORE_CUES[0].mood;
+    const params: audio.ScoreSettings = audio.resolveScoreMood(mood);
     const bar: audio.PatternEvent[] = audio.scoreBar(params, 0);
     expect(bar.length).toBeGreaterThan(0);
-    expect(audio.readScoreCue(mood).name).toBe(audio.scoreCues[0].name);
+    expect(audio.readScoreCue(mood).name).toBe(audio.SCORE_CUES[0].name);
     expect(audio.scoreChord(params, 0)).toHaveLength(3);
     expect(typeof audio.createScore).toBe('function');
-    const load: audio.PatternLoadOptions = { tempo: params.tempo, length: audio.SCORE_BAR_STEPS };
+    const load: audio.PatternVoicePeaksOptions = { tempo: params.tempo, length: audio.SCORE_BAR_STEPS };
     // Each bar's three tones are still releasing as the next bar's begin.
     expect(audio.patternVoicePeaks(bar, load).sfx).toBe(6);
   });
@@ -71,7 +71,7 @@ describe('@weasel-js/audio public surface', () => {
     // Types erase, so this is a compile-time assertion: the names must resolve.
     const opts: audio.VoicePoolOptions = { limit: 2, steal: 'quietest' };
     const record: audio.VoiceRecord = { startedAt: 0, gain: 1 };
-    const got: audio.Acquisition = audio.createVoicePool(opts).acquire(record);
+    const got: audio.VoiceAcquisition = audio.createVoicePool(opts).acquire(record);
     expect(got.slot).toBe(0);
   });
 
@@ -82,8 +82,8 @@ describe('@weasel-js/audio public surface', () => {
   it('exports the patchable graph and its node factories', () => {
     for (const f of [
       audio.createAudioGraph, audio.createFileSourceNode, audio.createOscillatorNode, audio.createNoiseNode,
-      audio.createGainNode, audio.createPanNode, audio.createMixNode, audio.filterNode, audio.delayNode,
-      audio.reverbNode, audio.compressorNode, audio.insertNode, audio.impulseResponse,
+      audio.createGainNode, audio.createPanNode, audio.createMixNode, audio.createFilterNode, audio.createDelayNode,
+      audio.createReverbNode, audio.createCompressorNode, audio.createInsertNode, audio.impulseResponse,
     ]) expect(typeof f).toBe('function');
     const patch: audio.GraphPatch = { kind: 'connect', from: 'a', to: { output: true } };
     const wave: audio.OscillatorWave = 'square';

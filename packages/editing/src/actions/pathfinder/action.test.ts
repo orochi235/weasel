@@ -10,7 +10,7 @@ import {
   pathfinderMergeAction,
 } from './action';
 import { asNodeId } from '@weasel-js/core/engine';
-import { pathFromD, pointInPath, type Path } from '@weasel-js/geom';
+import { pathFromD, pathContainsPoint, type Path } from '@weasel-js/geom';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import { rootsTreeForTests as rootsTree } from '@weasel-js/core/test-seams';
@@ -114,9 +114,9 @@ describe('Pathfinder actions and strokes', () => {
       applyOps: () => {},
     };
     runDescriptor(pathfinderSubtractAction, adapter);
-    expect(pointInPath(made[0]!, 50, 50)).toBe(false);
-    expect(pointInPath(made[0]!, 50, 40)).toBe(true);
+    expect(pathContainsPoint(made[0]!, 50, 50)).toBe(false);
+    expect(pathContainsPoint(made[0]!, 50, 40)).toBe(true);
     // The filled box's own stroke is not part of its shape.
-    expect(pointInPath(made[0]!, -3, 20)).toBe(false);
+    expect(pathContainsPoint(made[0]!, -3, 20)).toBe(false);
   });
 });

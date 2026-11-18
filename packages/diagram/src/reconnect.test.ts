@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { overlaysOf, type InvocationCtx, type OngoingHandle } from '@weasel-js/core';
-import { createReconnectAction, diagramEdgeEnds, type EndChange, type ReconnectOptions } from './reconnect';
+import { createReconnectAction, createDiagramEdgeEndsContribution, type EndChange, type ReconnectOptions } from './reconnect';
 import { EDGE_END_AFFORDANCE_KIND, createEdgeEndAffordance } from './edgeEndLayer';
 import { EDGE_DERIVE_PATH } from './edge';
 import type { GraphNodeLike } from './graph';
@@ -247,7 +247,7 @@ describe('the edge-end affordance', () => {
   });
 
   it('comes with a contribution that binds the drag to the reconnect action', () => {
-    const contribution = diagramEdgeEnds<Rect>({ participants: PARTICIPANTS, selected: () => ['ab'] });
+    const contribution = createDiagramEdgeEndsContribution<Rect>({ participants: PARTICIPANTS, selected: () => ['ab'] });
     expect(contribution.layers?.map((l) => l.id)).toEqual(['diagram-edge-ends']);
     expect(EDGE_END_AFFORDANCE_KIND).toBe('layer:diagram-edge-ends');
     expect(contribution.eligibility).toEqual({ claimed: ['diagram-edge-ends'] });

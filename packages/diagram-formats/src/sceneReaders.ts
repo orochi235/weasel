@@ -1,14 +1,14 @@
 /**
  * What `documentFromScene` reads off one scene node: a shape as a `DataNode`,
  * a connector as a `DataEdge`, a container or pool as a `DataContainer`, and a
- * group as a `DataGroup`, each in coordinates from its page's corner.
+ * group as a `DataCluster`, each in coordinates from its page's corner.
  */
 import type { RectPose } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { deepEqual } from '@weasel-js/registry';
 import {
-  DEFAULT_PORTS, EDGE_STROKE_WIDTH, HEADER_PAD, groupLabelIdOf, NODE_STROKE_WIDTH, dataEdgeStyle, dataNodeStyle, dataRegionStyle, diagramContainerOf, diagramEdgeOf, layoutOwnsPort,
-  layoutOwnsRoute, poolAxisOf, sequencePartOf, sequenceRootOf, titleIdOf, type DataContainer, type DataEdge, type DataGroup, type DataLane, type DataNode, type DiagramLabel,
+  DEFAULT_PORTS, EDGE_STROKE_WIDTH, HEADER_PAD, clusterLabelIdOf, NODE_STROKE_WIDTH, dataEdgeStyle, dataNodeStyle, dataRegionStyle, diagramContainerOf, diagramEdgeOf, layoutOwnsPort,
+  layoutOwnsRoute, poolAxisOf, sequencePartOf, sequenceRootOf, titleIdOf, type DataContainer, type DataEdge, type DataCluster, type DataLane, type DataNode, type DiagramLabel,
   type DiagramRouter, type DiagramTheme, type EdgeStyle, type NodeStyle, type BodyDivider, type BodyLayout, type HeaderBand, type Row,
 } from '@weasel-js/diagram';
 
@@ -41,14 +41,14 @@ const same = (a: unknown, b: unknown): boolean => deepEqual(a, b, { undefinedAsA
 const moved = (p: Vec2, by: Vec2): Vec2 => ({ x: p.x - by.x, y: p.y - by.y });
 
 /** What a scene node is to the document, or `null` for something drawn on another's behalf. */
-export function kindOf(node: ReadNode): 'shape' | 'region' | 'group' | 'edge' | 'sequence' | null {
+export function kindOf(node: ReadNode): 'shape' | 'region' | 'cluster' | 'edge' | 'sequence' | null {
   if (sequenceRootOf(node) !== null) return 'sequence';
   if (sequencePartOf(node) !== null) return null;
   if (diagramEdgeOf(node) !== null) return 'edge';
   if (diagramContainerOf(node) !== null) return 'region';
   const trait = traitOf(node);
   if (trait === null) return null;
-  if ('group' in trait) return 'group';
+  if ('cluster' in trait) return 'cluster';
   return 'outline' in trait ? 'shape' : null;
 }
 
@@ -268,16 +268,16 @@ function lanesOf(scene: ReadScene, poolId: string, axis: 'x' | 'y', theme: Diagr
   });
 }
 
-/** A group: the shapes and groups it is drawn around, and its label. */
-export function readGroup(scene: ReadScene, node: ReadNode): DataGroup {
-  const group = traitOf(node)!.group as { reorder?: 'x' | 'y' };
+/** A cluster: the shapes and clusters it is drawn around, and its label. */
+export function readCluster(scene: ReadScene, node: ReadNode): DataCluster {
+  const cluster = traitOf(node)!.cluster as { reorder?: 'x' | 'y' };
   const members = (Array.isArray(node.dependsOn) ? node.dependsOn : []).filter((id) => {
     const member = scene.get(id as never);
     return member !== undefined && kindOf(member) !== null && kindOf(member) !== 'edge';
   });
   return {
     id: node.id, members,
-    ...optional('label', textOf(scene, groupLabelIdOf(node.id))),
-    ...optional('reorder', group.reorder),
+    ...optional('label', textOf(scene, clusterLabelIdOf(node.id))),
+    ...optional('reorder', cluster.reorder),
   };
 }

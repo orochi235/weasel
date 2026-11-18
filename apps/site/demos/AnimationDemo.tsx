@@ -30,7 +30,7 @@ const toCenter = (p: Card): Card => ({ ...p, x: p.x + p.width / 2, y: p.y + p.he
 
 export function AnimationCards({ animator }: { animator: Animator }) {
   const scene = useScene<Card>({ items: INITIAL });
-  const selection = useSelection({ scene, mode: 'multi' });
+  const selection = useSelection({ scene, mode: 'multiple' });
   const nextId = useRef(1);
   const [size, setSize] = useState<Dims>({ width: W, height: H });
 

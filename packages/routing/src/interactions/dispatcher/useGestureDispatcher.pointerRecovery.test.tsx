@@ -63,7 +63,7 @@ describe('a held pointer whose release goes missing', () => {
       },
     };
     const { container } = render(
-      <Harness><Probe actionDef={dragAction} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
+      <Harness><Probe actionDef={dragAction} classifyTarget={() => ({ bodyTarget: 'empty' })} /></Harness>,
     );
     const canvas = container.querySelector('canvas')!;
     act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1, buttons: 1 }); });
@@ -93,7 +93,7 @@ describe('a held pointer whose release goes missing', () => {
       },
     };
     const { container } = render(
-      <Harness><Probe actionDef={dragAction} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
+      <Harness><Probe actionDef={dragAction} classifyTarget={() => ({ bodyTarget: 'empty' })} /></Harness>,
     );
     const canvas = container.querySelector('canvas')!;
     act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1, buttons: 1 }); });
@@ -119,7 +119,7 @@ describe('a held pointer whose release goes missing', () => {
       },
     };
     const { container } = render(
-      <Harness><Probe actionDef={dragAction} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
+      <Harness><Probe actionDef={dragAction} classifyTarget={() => ({ bodyTarget: 'empty' })} /></Harness>,
     );
     const canvas = container.querySelector('canvas')!;
     act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1, buttons: 1 }); });
@@ -145,7 +145,7 @@ describe('a held pointer whose release goes missing', () => {
       },
     };
     const { container } = render(
-      <Harness><Probe actionDef={dragAction} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
+      <Harness><Probe actionDef={dragAction} classifyTarget={() => ({ bodyTarget: 'empty' })} /></Harness>,
     );
     const canvas = container.querySelector('canvas')!;
     act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1 }); });
@@ -167,7 +167,7 @@ describe('a held pointer whose release goes missing', () => {
       },
     };
     const { container } = render(
-      <Harness><Probe actionDef={dragAction} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
+      <Harness><Probe actionDef={dragAction} classifyTarget={() => ({ bodyTarget: 'empty' })} /></Harness>,
     );
     const canvas = container.querySelector('canvas')!;
     act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1, buttons: 1 }); });
@@ -198,7 +198,7 @@ describe('a held pointer whose release goes missing', () => {
       },
     };
     const { container } = render(
-      <Harness><Probe actionDef={dragAction} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
+      <Harness><Probe actionDef={dragAction} classifyTarget={() => ({ bodyTarget: 'empty' })} /></Harness>,
     );
     const canvas = container.querySelector('canvas')!;
     act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1, buttons: 1 }); });
@@ -229,7 +229,7 @@ describe('a held pointer whose release goes missing', () => {
         <Harness>
           <Probe
             actionDef={dragAction}
-            classifyTarget={() => ({ body: 'empty' })}
+            classifyTarget={() => ({ bodyTarget: 'empty' })}
             {...(keyboard !== undefined ? { keyboard } : {})}
           />
         </Harness>,
@@ -270,7 +270,7 @@ describe('a held pointer whose release goes missing', () => {
         invoker: { timing: 'immediate', run: () => clickSpy() },
       };
       const { container } = render(
-        <Harness><Probe actionDef={clickAction} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
+        <Harness><Probe actionDef={clickAction} classifyTarget={() => ({ bodyTarget: 'empty' })} /></Harness>,
       );
       const canvas = container.querySelector('canvas')!;
       act(() => { fire(canvas, 'pointerdown', { clientX: 10, clientY: 10, pointerId: 1, buttons: 1 }); });

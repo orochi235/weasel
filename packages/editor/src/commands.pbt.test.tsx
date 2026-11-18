@@ -9,7 +9,7 @@ import { cleanup, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { ActionsProvider, actionBindings, useActionsRegistry, type BoundGesture } from '@weasel-js/core';
 import { FILE_KEYS, useNewCommand, useOpenCommand, useSaveCommand, type FileCommandOptions } from './fileCommands';
-import { EDITOR_ACTIONS, EDITOR_PREFERENCES_KEY, PreferencesCommand } from './editorCommands';
+import { EDITOR_ACTIONS, EDITOR_PREFS_KEY, PrefsCommand } from './editorCommands';
 import { runs, tally, timeoutFor } from './pbt.fixture';
 
 const RUNS = 100;
@@ -43,8 +43,8 @@ describe('file and editor commands', () => {
         seen.count(k === undefined ? 'default' : k === null ? 'none' : 'given');
         if (which === 'preferences') {
           const opts = { ...rest, ...(k !== undefined ? { keys: k } : {}), ...(label ? { label } : {}) };
-          const { action, specs } = registered(() => PreferencesCommand({ options: opts, open: vi.fn() }), EDITOR_ACTIONS.preferences);
-          expect(specs).toEqual(want(k, EDITOR_PREFERENCES_KEY));
+          const { action, specs } = registered(() => PrefsCommand({ options: opts, open: vi.fn() }), EDITOR_ACTIONS.preferences);
+          expect(specs).toEqual(want(k, EDITOR_PREFS_KEY));
           expect(action.label).toBe(label ?? 'Preferences…');
           if (rest.group) expect(action.group).toBe(rest.group);
           return;

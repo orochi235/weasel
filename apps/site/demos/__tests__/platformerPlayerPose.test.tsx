@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { bindClip, createTarget, skeletonAxes, sampleTrack } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
-import type { Pose, SampledTrack } from '@weasel-js/animator';
+import type { SkeletonPose, SampledTrack } from '@weasel-js/animator';
 import { createScene } from '@weasel-js/core';
 import { FADE_MS, createAnimState, nextAnimState, type AnimCtx, type AnimState } from '../platformer/animState';
 import { CLIPS, type ClipName } from '../platformer/clips';
@@ -14,9 +14,9 @@ const RUNNING: AnimCtx = { onGround: true, vx: 150, vy: 0, hurt: false };
 const RISING: AnimCtx = { onGround: false, vx: 0, vy: -300, hurt: false };
 const DT = 1 / 60;
 
-const scratch = createTarget<Pose>({ get: () => ({}), set: () => {}, axes: skeletonAxes(PLAYER_SKELETON) });
-const clipAt = (name: ClipName, t: number): Pose =>
-  sampleTrack(bindClip(CLIPS[name], { target: () => scratch, weight: () => () => 1 }).tracks[0] as SampledTrack<Pose>, t)!;
+const scratch = createTarget<SkeletonPose>({ get: () => ({}), set: () => {}, axes: skeletonAxes(PLAYER_SKELETON) });
+const clipAt = (name: ClipName, t: number): SkeletonPose =>
+  sampleTrack(bindClip(CLIPS[name], { target: () => scratch, weight: () => () => 1 }).tracks[0] as SampledTrack<SkeletonPose>, t)!;
 
 /** A player pose on an animator the test steps. `show` is one frame of the demo's loop: the
  *  animator's frame, then the state put on the target, as its `onTick` does. */
@@ -29,7 +29,7 @@ function setup() {
     cancelFrame: () => {},
   }));
   const player = createPlayerPose(result.current, createScene({ systemLayers: [{ id: 'main' }] }));
-  const show = (s: AnimState): Pose => {
+  const show = (s: AnimState): SkeletonPose => {
     act(() => {
       now += DT * 1000;
       for (const cb of cbs.splice(0)) cb(now);
@@ -40,7 +40,7 @@ function setup() {
   return { player, show, animator: result.current };
 }
 
-const rotation = (pose: Pose, joint: string) => pose[joint]?.rotation ?? 0;
+const rotation = (pose: SkeletonPose, joint: string) => pose[joint]?.rotation ?? 0;
 
 describe('createPlayerPose', () => {
   it('shows the clip in play, a frame after the state that asked for it', () => {

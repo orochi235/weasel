@@ -4,10 +4,10 @@ import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { AssetEditor } from './AssetEditor';
 import {
   asset, assets, attributes, CODE, hasRow, Live, pickRow, rekey, row, SETTINGS, structure, tool, WITH_LOCKED,
-  WORKSPACE,
+  ASSET_SET,
 } from './AssetEditor.fixture';
-import { type Workspace, workspaceCodec } from '@weasel-js/prefs/edit';
-import { pointer } from '@weasel-js/prefs/testing/editWorkspace';
+import { type AssetSet, assetSetCodec } from '@weasel-js/prefs/edit';
+import { pointer } from '@weasel-js/prefs/testing/editAssetSet';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 afterEach(() => {
@@ -16,13 +16,13 @@ afterEach(() => {
 });
 
 /** A dialog holding one page under `key`, a path the panel holds a pointer at. */
-const dialogWith = (key: string): Workspace['assets'][number] => ({
+const dialogWith = (key: string): AssetSet['assets'][number] => ({
   id: 'settings', label: 'Settings', kind: 'schema',
   root: { name: 'Settings', children: { [key]: { name: 'Page', children: { on: { kind: 'boolean', name: 'On', description: '', default: true } } } } },
 });
 
 const literal = () => screen.getByTestId('schema-literal').textContent;
-const last = (onChange: ReturnType<typeof vi.fn>): Workspace => onChange.mock.calls.at(-1)![0] as Workspace;
+const last = (onChange: ReturnType<typeof vi.fn>): AssetSet => onChange.mock.calls.at(-1)![0] as AssetSet;
 
 describe('AssetEditor asset list', () => {
   it('lists Settings under Dialogs and Code under Panels', () => {
@@ -48,7 +48,7 @@ describe('AssetEditor asset list', () => {
 
   it('selects nothing in the asset picked, whatever was selected in the one left', () => {
     // Both hold a row at the path `grid`.
-    const start: Workspace = { assets: [dialogWith('grid'), WORKSPACE.assets[1]!] };
+    const start: AssetSet = { assets: [dialogWith('grid'), ASSET_SET.assets[1]!] };
     renderWithIcons(<Live start={start} />);
     pickRow('grid');
     expect(row('grid')).toHaveAttribute('aria-selected', 'true');
@@ -79,9 +79,9 @@ describe('AssetEditor asset list', () => {
   });
 
   it('selects the panel a step changed, and none of the rows the dialog had selected', () => {
-    const code = WORKSPACE.assets[1]!;
+    const code = ASSET_SET.assets[1]!;
     const panel = { ...code, root: { ...CODE, children: { ...CODE.children, extra: pointer('view.extra') } } } as typeof code;
-    const start: Workspace = { assets: [dialogWith('extra'), panel] };
+    const start: AssetSet = { assets: [dialogWith('extra'), panel] };
     renderWithIcons(<Live start={start} />);
     fireEvent.click(asset('Code'));
     pickRow('grid');
@@ -132,7 +132,7 @@ describe('AssetEditor asset list', () => {
   });
 
   it('draws no list, and no pane for one, unless asked', () => {
-    renderWithIcons(<AssetEditor workspace={WORKSPACE} codec={workspaceCodec([])} onChange={() => {}} />);
+    renderWithIcons(<AssetEditor assetSet={ASSET_SET} codec={assetSetCodec([])} onChange={() => {}} />);
     expect(screen.queryByRole('listbox', { name: 'Assets' })).toBeNull();
     expect(screen.queryByRole('complementary')).toBeNull();
     expect(screen.queryByRole('separator', { name: 'Resize sidebar' })).toBeNull();
@@ -145,11 +145,11 @@ describe('AssetEditor over several assets', () => {
     return { getItem: (k: string) => held.get(k) ?? null, setItem: (k: string, v: string) => { held.set(k, v); }, removeItem: (k: string) => { held.delete(k); }, held };
   };
 
-  it('keeps its history under a host that makes its workspace anew each time it draws', () => {
+  it('keeps its history under a host that makes its asset set anew each time it draws', () => {
     function Host() {
       const [roots, setRoots] = useRoots();
-      const workspace: Workspace = { assets: WORKSPACE.assets.map((a, i) => ({ ...a, root: roots[i]! })) };
-      return <AssetEditor list workspace={workspace} codec={workspaceCodec([])} onChange={(next) => setRoots(next.assets.map((a) => a.root))} />;
+      const assetSet: AssetSet = { assets: ASSET_SET.assets.map((a, i) => ({ ...a, root: roots[i]! })) };
+      return <AssetEditor list assetSet={assetSet} codec={assetSetCodec([])} onChange={(next) => setRoots(next.assets.map((a) => a.root))} />;
     }
     renderWithIcons(<Host />);
     pickRow('snap');
@@ -172,7 +172,7 @@ describe('AssetEditor over several assets', () => {
 
   it('keeps each asset\'s folded rows apart', () => {
     // Both hold a group at the path `view`.
-    const start: Workspace = { assets: [WORKSPACE.assets[0]!, { ...WORKSPACE.assets[1]!, root: { name: 'Code', children: { view: { name: 'Rows', as: 'section', children: CODE.children } } } }] };
+    const start: AssetSet = { assets: [ASSET_SET.assets[0]!, { ...ASSET_SET.assets[1]!, root: { name: 'Code', children: { view: { name: 'Rows', as: 'section', children: CODE.children } } } }] };
     const view = renderWithIcons(<Live start={start} draftKey="ws" />);
     fireEvent.click(tool('Collapse all'));
     expect(hasRow('grid')).toBe(false);
@@ -190,5 +190,5 @@ describe('AssetEditor over several assets', () => {
 });
 
 function useRoots() {
-  return useState(WORKSPACE.assets.map((a) => a.root));
+  return useState(ASSET_SET.assets.map((a) => a.root));
 }

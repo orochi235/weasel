@@ -3,6 +3,7 @@
 import { splitCubicAt, splitQuadraticAt } from '../curve';
 import { ringSignedArea } from '../polyline';
 import type { Point } from '../paths/cubicMath';
+import { nearestOnCubic, nearestOnQuadratic, nearestOnSegment, type CurveNearest } from '../nearest';
 
 /** A Bézier segment by its control points: 2 = line, 3 = quadratic, 4 = cubic. */
 export type Seg = Point[];
@@ -13,6 +14,13 @@ export interface Station {
   seg: number;
   t: number;
   pt: Point;
+}
+
+/** The point on `s` nearest `p`. */
+export function nearestOnSeg(s: Seg, p: Point): CurveNearest {
+  if (s.length === 2) return nearestOnSegment(p.x, p.y, s[0].x, s[0].y, s[1].x, s[1].y);
+  if (s.length === 3) return nearestOnQuadratic(p.x, p.y, s[0].x, s[0].y, s[1].x, s[1].y, s[2].x, s[2].y);
+  return nearestOnCubic(p.x, p.y, s[0].x, s[0].y, s[1].x, s[1].y, s[2].x, s[2].y, s[3].x, s[3].y);
 }
 
 export function evalSeg(s: Seg, t: number): Point {

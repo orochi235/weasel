@@ -5,9 +5,9 @@
  */
 import type { Action, ActionSource } from '../actions/action';
 import { gateEnabled } from '../actions/actionEnabled';
-import { actionBindings, routedOpts, type GestureBinding } from '../actions/binding';
+import { actionBindings, bindingOptionsOf, type GestureBinding } from '../actions/binding';
 import { NO_OVERRIDES } from '../actions/bindingOverrides';
-import { buildDepsFromRequires } from '../actions/buildDeps';
+import { createActionDeps } from '../actions/buildDeps';
 import { resolveParams } from '../actions/bindingOpts';
 import { withRoleMods } from '../actions/modifierRoles';
 import type { ActionDeps } from '../actions/invoker';
@@ -173,10 +173,10 @@ export function walk(
     // Deps are built before the gate so predicates can read them; the
     // winner's invoke reuses the same bag. Shared with
     // `ActionsRegistry.trigger`, including the dev undeclared-read guard.
-    const deps = buildDepsFromRequires(action, ctx.depRegistry);
+    const deps = createActionDeps(action, ctx.depRegistry);
     const gate = action.enabled;
     const enabled = gate
-      ? gateEnabled(action, () => gate(deps, worldPointOf(event), carriedBy(event), resolveParams(routedOpts(match.binding)?.params), ctx.viewId))
+      ? gateEnabled(action, () => gate(deps, worldPointOf(event), carriedBy(event), resolveParams(bindingOptionsOf(match.binding)?.params), ctx.viewId))
       : true;
     if (enabled !== true) { push({ kind: 'declined', reason: String(enabled) }); continue; }
     if (stop !== 'exhausted') { push({ kind: 'outranked' }); continue; }

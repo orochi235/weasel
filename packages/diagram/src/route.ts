@@ -109,7 +109,7 @@ export function layeredPorts(
   direction?: LayoutDirection,
 ): Map<string, LayoutPorts> {
   const faces = FACES[direction ?? 'down'];
-  const compass = new Set<string>(graph.groups?.map((g) => g.id) ?? []);
+  const compass = new Set<string>(graph.clusters?.map((g) => g.id) ?? []);
   for (const node of graph.nodes) {
     if (hasCompassPort(node, faces.out) && hasCompassPort(node, faces.in)) compass.add(node.id);
   }
@@ -122,7 +122,7 @@ export function layeredPorts(
     edges: [...edges.values()],
     ranks,
     waypoints: new Map(),
-    members: new Map((graph.groups ?? []).map((g) => [g.id, g.members])),
+    members: new Map((graph.clusters ?? []).map((g) => [g.id, g.members])),
     compass,
     ...(direction !== undefined ? { direction } : {}),
   });

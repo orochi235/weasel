@@ -37,5 +37,5 @@ export interface BidiEngine {
   mirror(cp: number): number | null;
   /** The level the analysed paragraph reads at: even left to right, odd right
    *  to left. What `'auto'` resolved to, for aligning `start` and `end`. */
-  baseLevel(analysis: BidiAnalysis): number;
+  paragraphLevel(analysis: BidiAnalysis): number;
 }

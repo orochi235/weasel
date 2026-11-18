@@ -12,15 +12,15 @@ export interface EditorCommandOptions extends Pick<CommandOptions, 'icon' | 'gro
 }
 
 /** `editor.preferences`'s key unless `keys` says otherwise: Mod+,. */
-export const EDITOR_PREFERENCES_KEY: KeySpec = { kind: 'key', key: ',', mods: { mod: true } };
+export const EDITOR_PREFS_KEY: KeySpec = { kind: 'key', key: ',', mods: { mod: true } };
 
 /** The key that turns snapping off and on: Mod+Shift+;, Photoshop's View › Snap. Shift turns ; into :, and
  *  `code` holds it to the key US layouts put ; on, whatever another layout types there. */
 export const SNAPPING_KEY: KeySpec = { kind: 'key', key: [';', ':'], code: 'Semicolon', mods: { mod: true, shift: true } };
 
 /** Registers `editor.preferences`, which calls `open`, bound to Mod+, unless `options.keys` says otherwise. */
-export function PreferencesCommand({ options = {}, open }: { options?: EditorCommandOptions; open: () => void }): null {
-  const { label = 'Preferences…', keys = { spec: EDITOR_PREFERENCES_KEY, opts: { id: `${EDITOR_ACTIONS.preferences}.key` } }, ...rest } = options;
+export function PrefsCommand({ options = {}, open }: { options?: EditorCommandOptions; open: () => void }): null {
+  const { label = 'Preferences…', keys = { spec: EDITOR_PREFS_KEY, opts: { id: `${EDITOR_ACTIONS.preferences}.key` } }, ...rest } = options;
   useCommand(EDITOR_ACTIONS.preferences, label, open, { ...rest, ...(keys !== null ? { keys } : {}) });
   return null;
 }

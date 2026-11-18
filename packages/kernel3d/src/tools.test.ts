@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { toolGaps, type ActionDeps, type ImmediateInvoker, type InvocationCtx, type OngoingInvoker } from '@weasel-js/core';
 import { createCamera, type Camera3d } from './camera';
 import type { Camera3dDep } from './cameraDep';
-import { dollyAction, homeAction, orbitAction, panAction, pinchDollyAction, useOrbitTool } from './tools';
+import { cameraDollyAction, cameraHomeAction, cameraOrbitAction, cameraPanAction, cameraPinchDollyAction, useOrbitTool } from './tools';
 import { KERNEL3D_TOOLS, useKernel3dTools } from './toolSets';
 
 describe('useOrbitTool', () => {
@@ -18,7 +18,7 @@ describe('useOrbitTool', () => {
 
   it('carries the actions its bindings name', () => {
     const { result } = renderHook(() => useOrbitTool());
-    expect(result.current.actions).toEqual([orbitAction, panAction]);
+    expect(result.current.actions).toEqual([cameraOrbitAction, cameraPanAction]);
   });
 
   it('is a complete tool, its glyph drawn here', () => {
@@ -52,22 +52,22 @@ function depsFor(init: Partial<Camera3d>, extra: Partial<Camera3dDep> = {}) {
 const NO_MODS = { alt: false, ctrl: false, meta: false, shift: false };
 const ctxOf = (deps: ActionDeps, more: Partial<InvocationCtx> = {}) =>
   ({ world: { x: 0, y: 0 }, screen: { x: 0, y: 0 }, modifiers: NO_MODS, deps, ...more }) as InvocationCtx;
-const run = (action: typeof dollyAction, deps: ActionDeps, params?: Record<string, unknown>) =>
+const run = (action: typeof cameraDollyAction, deps: ActionDeps, params?: Record<string, unknown>) =>
   (action.invoker as ImmediateInvoker).run(deps, params);
 
 describe('camera.dolly', () => {
   it('holds to the dep limits rather than the defaults', () => {
     const { deps, camera } = depsFor({ distance: 1000 }, { limits: () => ({ maxDistance: 1e6 }) });
-    run(dollyAction, deps, { deltaY: 100 });
+    run(cameraDollyAction, deps, { deltaY: 100 });
     expect(camera().distance).toBeGreaterThan(1000);
   });
 
   it('dollies about the point under the pointer, the middle leaving the target put', () => {
     const middle = depsFor({ distance: 10 });
-    run(dollyAction, middle.deps, { deltaY: -100, clientX: 400, clientY: 300 });
+    run(cameraDollyAction, middle.deps, { deltaY: -100, clientX: 400, clientY: 300 });
     expect(middle.camera().target).toEqual({ x: 0, y: 0, z: 0 });
     const right = depsFor({ distance: 10 });
-    run(dollyAction, right.deps, { deltaY: -100, clientX: 700, clientY: 300 });
+    run(cameraDollyAction, right.deps, { deltaY: -100, clientX: 700, clientY: 300 });
     // In toward a point right of the middle: at yaw 0 the target moves to +x.
     expect(right.camera().distance).toBeLessThan(10);
     expect(right.camera().target.x).toBeGreaterThan(0);
@@ -75,20 +75,20 @@ describe('camera.dolly', () => {
 
   it('reads the pointer from the pane origin, for a pane offset on its canvas', () => {
     const plain = depsFor({ distance: 10 });
-    run(dollyAction, plain.deps, { deltaY: -100, clientX: 700, clientY: 100 });
+    run(cameraDollyAction, plain.deps, { deltaY: -100, clientX: 700, clientY: 100 });
     const offset = depsFor({ distance: 10 }, { origin: () => ({ x: 300, y: 50 }) });
-    run(dollyAction, offset.deps, { deltaY: -100, clientX: 1000, clientY: 150 });
+    run(cameraDollyAction, offset.deps, { deltaY: -100, clientX: 1000, clientY: 150 });
     expect(offset.camera()).toEqual(plain.camera());
   });
 
   it('dollies in on a Safari pinch that spreads', () => {
     const { deps, camera } = depsFor({ distance: 10 });
-    run(dollyAction, deps, { scale: 2 });
+    run(cameraDollyAction, deps, { scale: 2 });
     expect(camera().distance).toBeCloseTo(5);
   });
 
   it('binds the ctrl+wheel a trackpad pinch arrives as', () => {
-    const specs = (dollyAction.defaultBinding as { spec: { kind: string; mods?: object } }[])
+    const specs = (cameraDollyAction.defaultBinding as { spec: { kind: string; mods?: object } }[])
       .map((b) => b.spec);
     expect(specs).toContainEqual({ kind: 'wheel', mods: { ctrl: true } });
   });
@@ -97,7 +97,7 @@ describe('camera.dolly', () => {
 describe('camera.pan', () => {
   it('moves the target and nothing else, from the camera the drag began on', () => {
     const { deps, camera } = depsFor({ distance: 10 });
-    const handle = (panAction.invoker as OngoingInvoker).start(ctxOf(deps), undefined);
+    const handle = (cameraPanAction.invoker as OngoingInvoker).start(ctxOf(deps), undefined);
     const drag = (dx: number) => ctxOf(deps, {
       drag: { start: { x: 0, y: 0 }, current: { x: dx, y: 0 }, delta: { x: dx, y: 0 }, screenDelta: { x: dx, y: 0 } },
     } as Partial<InvocationCtx>);
@@ -119,10 +119,10 @@ describe('a camera drag the camera changes under', () => {
 
   it('keeps a wheel dolly made mid-orbit, and turns on from where it was', () => {
     const { deps, camera } = depsFor({ distance: 10 });
-    const handle = (orbitAction.invoker as OngoingInvoker).start(ctxOf(deps), undefined);
+    const handle = (cameraOrbitAction.invoker as OngoingInvoker).start(ctxOf(deps), undefined);
     handle.onMove?.(dragTo(deps, 10));
     const yaw = camera().yaw;
-    run(dollyAction, deps, { deltaY: 200 });
+    run(cameraDollyAction, deps, { deltaY: 200 });
     const dollied = camera().distance;
     expect(dollied).toBeGreaterThan(10);
     handle.onMove?.(dragTo(deps, 20));
@@ -132,7 +132,7 @@ describe('a camera drag the camera changes under', () => {
 
   it('keeps a camera set mid-pan, and pans on from it', () => {
     const { deps, camera } = depsFor({ distance: 10 });
-    const handle = (panAction.invoker as OngoingInvoker).start(ctxOf(deps), undefined);
+    const handle = (cameraPanAction.invoker as OngoingInvoker).start(ctxOf(deps), undefined);
     handle.onMove?.(dragTo(deps, 10));
     (deps.camera3d as Camera3dDep).set(createCamera({ distance: 10, target: { x: 0, y: 5, z: 0 } }));
     handle.onMove?.(dragTo(deps, 10));
@@ -141,7 +141,7 @@ describe('a camera drag the camera changes under', () => {
 
   it('keeps a dolly made mid-pinch', () => {
     const { deps, camera } = depsFor({ distance: 10 });
-    const handle = (pinchDollyAction.invoker as OngoingInvoker).start(
+    const handle = (cameraPinchDollyAction.invoker as OngoingInvoker).start(
       ctxOf(deps, { multiTouch: { spread: 100 } } as Partial<InvocationCtx>),
       undefined,
     );
@@ -158,10 +158,10 @@ describe('a camera drag the camera changes under', () => {
   it('turns on from a home set mid-orbit that is the camera the orbit began on (shrunk)', () => {
     const home = createCamera({ distance: 10 });
     const { deps, camera } = depsFor({}, { home: () => home });
-    run(homeAction, deps);
-    const handle = (orbitAction.invoker as OngoingInvoker).start(ctxOf(deps), undefined);
+    run(cameraHomeAction, deps);
+    const handle = (cameraOrbitAction.invoker as OngoingInvoker).start(ctxOf(deps), undefined);
     handle.onMove?.(dragTo(deps, 10));
-    run(homeAction, deps);
+    run(cameraHomeAction, deps);
     handle.onMove?.(dragTo(deps, 30));
     expect(camera().yaw).toBeCloseTo(-20 * 0.006);
   });
@@ -176,7 +176,7 @@ describe('a camera drag the camera changes under', () => {
       size: () => ({ width: 800, height: 600 }),
     };
     const deps = { camera3d } as unknown as ActionDeps;
-    const handle = (orbitAction.invoker as OngoingInvoker).start(ctxOf(deps), undefined);
+    const handle = (cameraOrbitAction.invoker as OngoingInvoker).start(ctxOf(deps), undefined);
     handle.onMove?.(dragTo(deps, 10));
     const once = pending!;
     handle.onMove?.(dragTo(deps, 20));
@@ -189,7 +189,7 @@ describe('a camera drag the camera changes under', () => {
 describe('camera.pinchDolly', () => {
   it('dollies by the ratio of the spread', () => {
     const { deps, camera } = depsFor({ distance: 10 });
-    const handle = (pinchDollyAction.invoker as OngoingInvoker).start(
+    const handle = (cameraPinchDollyAction.invoker as OngoingInvoker).start(
       ctxOf(deps, { multiTouch: { spread: 100 } } as Partial<InvocationCtx>),
       undefined,
     );
@@ -200,7 +200,7 @@ describe('camera.pinchDolly', () => {
   it('reads the centroid from the pane origin, for a pane offset on its canvas', () => {
     const pinch = (extra: Partial<Camera3dDep>, centroid: { x: number; y: number }) => {
       const { deps, camera } = depsFor({ distance: 10 }, extra);
-      const handle = (pinchDollyAction.invoker as OngoingInvoker).start(
+      const handle = (cameraPinchDollyAction.invoker as OngoingInvoker).start(
         ctxOf(deps, { multiTouch: { spread: 100, centroid } } as Partial<InvocationCtx>),
         undefined,
       );
@@ -217,10 +217,10 @@ describe('camera.home', () => {
   it('sets the dep to its home, and does nothing without one', () => {
     const home = createCamera({ yaw: 1 });
     const a = depsFor({}, { home: () => home });
-    run(homeAction, a.deps);
+    run(cameraHomeAction, a.deps);
     expect(a.camera()).toBe(home);
     const b = depsFor({ yaw: 2 });
-    run(homeAction, b.deps);
+    run(cameraHomeAction, b.deps);
     expect(b.camera().yaw).toBe(2);
   });
 });
@@ -229,7 +229,7 @@ describe('a camera action with no camera to move', () => {
   const none = {} as ActionDeps;
 
   it('hands a drag or a pinch on with an empty handle', () => {
-    for (const action of [orbitAction, panAction, pinchDollyAction]) {
+    for (const action of [cameraOrbitAction, cameraPanAction, cameraPinchDollyAction]) {
       const handle = (action.invoker as OngoingInvoker).start(
         ctxOf(none, { multiTouch: { spread: 100 } } as Partial<InvocationCtx>),
         undefined,
@@ -239,15 +239,15 @@ describe('a camera action with no camera to move', () => {
   });
 
   it('passes on a wheel, a pinch or a double click it does nothing with', () => {
-    expect(run(dollyAction, none, { deltaY: 100 })).toBe('pass');
-    expect(run(homeAction, none)).toBe('pass');
-    expect(run(homeAction, depsFor({}).deps)).toBe('pass');
+    expect(run(cameraDollyAction, none, { deltaY: 100 })).toBe('pass');
+    expect(run(cameraHomeAction, none)).toBe('pass');
+    expect(run(cameraHomeAction, depsFor({}).deps)).toBe('pass');
   });
 
   it('passes on a wheel that moves only sideways, leaving the camera as it was', () => {
     const { deps, camera } = depsFor({ distance: 10 });
     const before = camera();
-    expect(run(dollyAction, deps, { deltaX: 40, deltaY: 0 })).toBe('pass');
+    expect(run(cameraDollyAction, deps, { deltaX: 40, deltaY: 0 })).toBe('pass');
     expect(camera()).toBe(before);
   });
 });

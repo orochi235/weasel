@@ -5,7 +5,7 @@ import {
   cursorFor,
   cursorGlyph,
   cursorVariants,
-  resolveCursorTier,
+  resolveCursor,
   type CursorVariant,
 } from '@weasel-js/cursor';
 import { Field } from '@weasel-js/ui/components/Field';
@@ -49,7 +49,7 @@ function Tile({ variant, selected, onSelect }: {
 
 /**
  * The same glyph declared as a tool cursor at any size. Below the cap the
- * canvas gets a CSS `url()` cursor; above it `resolveCursorTier` answers
+ * canvas gets a CSS `url()` cursor; above it `resolveCursor` answers
  * `painted`, the canvas's cursor goes to `none`, and the painted-cursor layer
  * draws the glyph under the pointer instead.
  */
@@ -63,7 +63,7 @@ export function CursorDemo() {
     () => defineTool({ id: 'cursor', cursor: { glyph, ...(mark ? { mark } : {}), size, fallback: FALLBACK } }),
     [glyph, mark, size],
   );
-  const tier = resolveCursorTier({ glyph, size }).kind;
+  const tier = resolveCursor({ glyph, size }).kind;
 
   return (
     <div className={s.demo}>

@@ -12,7 +12,7 @@ import { diagramContainerOf } from './containers/trait';
 import type { DiagramSceneData } from './dataTypes';
 import { worldRectOf } from './overlays';
 import type { ParticipantSource } from './portAffordance';
-import { sequenceSlots, type ReorderGap } from './reorder';
+import { slotsAlong, type ReorderGap } from './reorder';
 import { membersOf } from './reorderModel';
 
 /** Where a carried item is over. */
@@ -43,7 +43,7 @@ function placeAmong(scene: DiagramScene, container: string, at: Vec2): { index: 
     const before = (b: Bounds) => at.y > b.y + b.height || (at.y >= b.y && at.x > b.x + b.width / 2);
     return { index: boxed.filter((m) => before(m.bounds)).length, gap: null };
   }
-  const slots = sequenceSlots(axis, [...boxed].sort((p, q) => p.bounds[axis] - q.bounds[axis]));
+  const slots = slotsAlong(axis, [...boxed].sort((p, q) => p.bounds[axis] - q.bounds[axis]));
   const gap = slots.gaps[nearestGap(slots.gaps.map((g) => g.a[axis]), at[axis])] ?? null;
   return { index: gap?.index ?? 0, gap };
 }

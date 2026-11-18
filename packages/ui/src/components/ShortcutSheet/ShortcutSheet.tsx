@@ -15,7 +15,7 @@ export interface ShortcutSheetProps {
   /** The tools whose keys it lists, each under its name and glyph. Absent, it lists no tools. */
   tools?: { readonly registry: Readonly<Record<string, ShortcutTool>> } | null;
   /** The sets the tools are grouped by, in order; tools in none follow under "Other tools". Default none, so every
-   *  tool is under "Other tools"; a canvas built on editing's tools passes its `BUILTIN_TOOL_GROUPS`. */
+   *  tool is under "Other tools"; a canvas built on editing's tools passes its `KIT_TOOL_GROUPS`. */
   toolSets?: readonly ToolSet[];
   /** Write keys as a Mac's keyboard prints them. Default: whether this is an Apple platform, as the dispatcher reads `mod`. */
   apple?: boolean;
@@ -85,7 +85,7 @@ export function ShortcutSheet({
   const parts = sheetParts(description, query, platform);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} isDismissable title={title} className={styles.sheet} bodyClassName={styles.body}>
+    <Dialog open={open} onOpenChange={onOpenChange} dismissable title={title} className={styles.sheet} bodyClassName={styles.body}>
       <input
         className={styles.search}
         type="search"

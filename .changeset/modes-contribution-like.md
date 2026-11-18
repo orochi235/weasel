@@ -2,6 +2,6 @@
 '@weasel-js/modes': minor
 ---
 
-`ContributionLike` names what `eligibleContribution` reads from an entry, beside `eligibleTool`'s `ToolLike`.
+`ContributionLike` names what `isContributionEligible` reads from an entry, beside `isToolEligible`'s `ToolLike`.
 
 <!-- entry: api -->

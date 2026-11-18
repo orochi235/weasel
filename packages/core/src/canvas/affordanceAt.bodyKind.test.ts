@@ -1,6 +1,6 @@
 /**
  * `buildClassifyTarget` reports both halves of a body hit: how it relates to
- * the selection (`body`) and what it actually is (`kind`). The second half is
+ * the selection (`bodyTarget`) and what it actually is (`bodyKind`). The second half is
  * what makes the `kind:<k>` / `kind:<k>:selected` TargetSpec forms resolvable.
  */
 
@@ -20,19 +20,19 @@ const KINDS: Record<string, string> = { 'text-1': 'text', 'rect-1': 'rect' };
 describe('buildClassifyTarget — body classification', () => {
   const classify = buildClassifyTarget(() => SELECTION, pickBest, (id) => KINDS[id]);
 
-  it('reports the selection relationship on `body`', () => {
-    expect(classify({ x: 25, y: 25 }).body).toBe('selected-body');
-    expect(classify({ x: 85, y: 25 }).body).toBe('unselected-body');
-    expect(classify({ x: 200, y: 25 }).body).toBe('empty');
+  it('reports the selection relationship on `bodyTarget`', () => {
+    expect(classify({ x: 25, y: 25 }).bodyTarget).toBe('selected-body');
+    expect(classify({ x: 85, y: 25 }).bodyTarget).toBe('unselected-body');
+    expect(classify({ x: 200, y: 25 }).bodyTarget).toBe('empty');
   });
 
-  it('reports the node kind on `kind`', () => {
-    expect(classify({ x: 25, y: 25 }).kind).toBe('text');
-    expect(classify({ x: 85, y: 25 }).kind).toBe('rect');
+  it('reports the node kind on `bodyKind`', () => {
+    expect(classify({ x: 25, y: 25 }).bodyKind).toBe('text');
+    expect(classify({ x: 85, y: 25 }).bodyKind).toBe('rect');
   });
 
-  it('leaves `kind` undefined on empty canvas', () => {
-    expect(classify({ x: 200, y: 25 }).kind).toBeUndefined();
+  it('leaves `bodyKind` undefined on empty canvas', () => {
+    expect(classify({ x: 200, y: 25 }).bodyKind).toBeUndefined();
   });
 });
 
@@ -40,11 +40,11 @@ describe('buildClassifyTarget — absent kind resolver', () => {
   const classify = buildClassifyTarget(() => SELECTION, pickBest);
 
   it('still classifies the body', () => {
-    expect(classify({ x: 25, y: 25 }).body).toBe('selected-body');
+    expect(classify({ x: 25, y: 25 }).bodyTarget).toBe('selected-body');
   });
 
-  it('leaves `kind` undefined rather than inventing one', () => {
-    expect(classify({ x: 25, y: 25 }).kind).toBeUndefined();
+  it('leaves `bodyKind` undefined rather than inventing one', () => {
+    expect(classify({ x: 25, y: 25 }).bodyKind).toBeUndefined();
   });
 });
 
@@ -53,7 +53,7 @@ describe('buildClassifyTarget — resolver returns nothing for a hit node', () =
 
   it('reports the body without a kind', () => {
     const c = classify({ x: 25, y: 25 });
-    expect(c.body).toBe('selected-body');
-    expect(c.kind).toBeUndefined();
+    expect(c.bodyTarget).toBe('selected-body');
+    expect(c.bodyKind).toBeUndefined();
   });
 });

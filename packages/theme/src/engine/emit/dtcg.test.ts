@@ -1,25 +1,25 @@
 import { getOwn } from '@weasel-js/registry';
 import { describe, expect, it } from 'vitest';
-import { loadDTCG } from '../../loadDTCG';
-import { enumerateSelections } from '../../axes';
+import { fromDtcg } from '../../fromDtcg';
+import { enumerateAxisChoices } from '../../axes';
 import { AXES_EXT } from '../../dtcg/axesExtension';
 import { resolveTheme, themeAxes } from '../../resolveTheme';
 import { defineTheme, weaselTheme } from '../../theme';
-import { toDTCG } from './dtcg';
+import { toDtcg } from './dtcg';
 
-describe('toDTCG', () => {
+describe('toDtcg', () => {
   it('writes a token type and a mode named like Object.prototype members as groups of their own', () => {
     const axes = { mode: { default: 'dark', values: { dark: {}, toString: {} } } };
     const t = defineTheme({ name: 'x', extends: null, axes, pins: { gap: { value: 1, type: 'constructor' }, tone: { by: 'mode', dark: '#000000', toString: '#ffffff' } } });
-    const doc = toDTCG(t);
+    const doc = toDtcg(t);
     expect(getOwn(doc.primitives, 'constructor')).toEqual({ $type: 'constructor', gap: { $value: 1 } });
     expect(getOwn(getOwn(doc.modes, 'toString') ?? {}, 'unknown')).toEqual({ $type: 'unknown', tone: { $value: '#ffffff' } });
     expect(Object.hasOwn(Object, 'gap')).toBe(false);
     expect(Object.hasOwn(Object.prototype.toString, 'unknown')).toBe(false);
   });
 
-  it('round-trips the built-in theme through loadDTCG', () => {
-    const back = loadDTCG({ ...toDTCG(weaselTheme), extends: null });
+  it('round-trips the built-in theme through fromDtcg', () => {
+    const back = fromDtcg({ ...toDtcg(weaselTheme), extends: null });
     for (const mode of ['dark', 'light']) {
       expect(resolveTheme(back, { mode })).toEqual(resolveTheme(weaselTheme, { mode }));
     }
@@ -27,19 +27,19 @@ describe('toDTCG', () => {
 
   it('round-trips a theme that leaves a mode out, so it still falls through', () => {
     const t = defineTheme({ name: 'x', pins: { backdrop: { by: 'mode', dark: { value: 'url(a.png)', type: 'gradient' } }, 'radius-md': { value: '9px', type: 'dimension' } } });
-    const back = loadDTCG({ ...toDTCG(t), extends: weaselTheme });
+    const back = fromDtcg({ ...toDtcg(t), extends: weaselTheme });
     for (const mode of ['dark', 'light']) expect(resolveTheme(back, { mode })).toEqual(resolveTheme(t, { mode }));
   });
 
   it('round-trips the ramps and tints a theme declares itself', () => {
-    const back = loadDTCG({ ...toDTCG(weaselTheme), extends: null });
+    const back = fromDtcg({ ...toDtcg(weaselTheme), extends: null });
     expect(back.ramps).toEqual(weaselTheme.ramps);
     expect(back.tints).toEqual(weaselTheme.tints);
   });
 
   it("round-trips a pin's scope", () => {
     const t = defineTheme({ name: 'x', pins: { 'gray-50': { value: '#f5f5f6', type: 'color', scope: ['density'] } } });
-    const back = loadDTCG({ ...toDTCG(t), extends: weaselTheme });
+    const back = fromDtcg({ ...toDtcg(t), extends: weaselTheme });
     expect(back.tokens['gray-50']).toMatchObject({ value: '#f5f5f6', scope: ['density'] });
   });
 
@@ -47,25 +47,25 @@ describe('toDTCG', () => {
     (groups[type]?.[name] as { $value?: unknown } | undefined)?.$value;
 
   it('writes an alias as a path through its target’s type group', () => {
-    const doc = toDTCG(weaselTheme);
+    const doc = toDtcg(weaselTheme);
     expect(valueOf(doc.modes.dark, 'color', 'surface')).toBe('{color.gray-800}');
     expect(valueOf(doc.primitives, 'color', 'gray-800')).toBeDefined();
   });
 
   it('finds an alias target’s type in the theme it extends', () => {
     const t = defineTheme({ name: 'x', pins: { edge: { value: '{space-md}', type: 'dimension' } } });
-    expect(valueOf(toDTCG(t).primitives, 'dimension', 'edge')).toBe('{dimension.space-md}');
+    expect(valueOf(toDtcg(t).primitives, 'dimension', 'edge')).toBe('{dimension.space-md}');
   });
 
   it('leaves an alias bare when no theme in the chain has its target', () => {
     const t = defineTheme({ name: 'x', extends: null, pins: { a: { value: '{nope}', type: 'color' } } });
-    expect(valueOf(toDTCG(t).primitives, 'color', 'a')).toBe('{nope}');
+    expect(valueOf(toDtcg(t).primitives, 'color', 'a')).toBe('{nope}');
   });
 
   it('exports a theme whose parent has an axis besides mode that the theme never varies by', () => {
     const parent = defineTheme({ name: 'dp', axes: { density: { default: 'a', values: { a: {}, b: {} } } }, pins: { gap: { by: 'density', a: '1px', b: '2px' } } });
     const kid = defineTheme({ name: 'k', extends: parent, pins: { 'radius-md': { value: '9px', type: 'dimension' } } });
-    expect(valueOf(toDTCG(kid).primitives, 'dimension', 'radius-md')).toBe('9px');
+    expect(valueOf(toDtcg(kid).primitives, 'dimension', 'radius-md')).toBe('9px');
   });
 
   it('writes a non-mode axis at its default branch in the plain groups', () => {
@@ -74,7 +74,7 @@ describe('toDTCG', () => {
       axes: { density: { default: 'a', values: { a: {}, b: {} } } },
       pins: { gap: { by: 'density', a: { value: '1px', type: 'dimension' }, b: { value: '2px', type: 'dimension' } } },
     });
-    expect(valueOf(toDTCG(t).primitives, 'dimension', 'gap')).toBe('1px');
+    expect(valueOf(toDtcg(t).primitives, 'dimension', 'gap')).toBe('1px');
   });
 
   it('keeps mode varying underneath a flattened non-mode axis', () => {
@@ -89,7 +89,7 @@ describe('toDTCG', () => {
         },
       },
     });
-    const doc = toDTCG(t);
+    const doc = toDtcg(t);
     expect(valueOf(doc.modes.dark, 'dimension', 'edge')).toBe('1px');
     expect(valueOf(doc.modes.light, 'dimension', 'edge')).toBe('3px');
   });
@@ -118,8 +118,8 @@ describe('toDTCG', () => {
   for (const [label, base] of [['no parent', null], ['the built-in parent', weaselTheme]] as const) {
     it(`round-trips every axis losslessly, over ${label}`, () => {
       const t = defineTheme({ name: 'three', extends: base, axes, pins });
-      const back = loadDTCG({ ...JSON.parse(JSON.stringify(toDTCG(t))), extends: base });
-      const selections = enumerateSelections(themeAxes(t));
+      const back = fromDtcg({ ...JSON.parse(JSON.stringify(toDtcg(t))), extends: base });
+      const selections = enumerateAxisChoices(themeAxes(t));
       expect(selections).toHaveLength(12);
       for (const sel of selections) expect(resolveTheme(back, sel), JSON.stringify(sel)).toEqual(resolveTheme(t, sel));
       expect(themeAxes(back)).toEqual(themeAxes(t));
@@ -127,12 +127,12 @@ describe('toDTCG', () => {
   }
 
   it('round-trips the built-in theme at every selection', () => {
-    const back = loadDTCG({ ...toDTCG(weaselTheme), extends: null });
-    for (const sel of enumerateSelections(themeAxes(weaselTheme))) expect(resolveTheme(back, sel)).toEqual(resolveTheme(weaselTheme, sel));
+    const back = fromDtcg({ ...toDtcg(weaselTheme), extends: null });
+    for (const sel of enumerateAxisChoices(themeAxes(weaselTheme))) expect(resolveTheme(back, sel)).toEqual(resolveTheme(weaselTheme, sel));
   });
 
   it('keeps the plain groups at every non-mode axis’s default, so a tool ignoring the extension reads them', () => {
-    const doc = toDTCG(defineTheme({ name: 'three', extends: null, axes, pins }));
+    const doc = toDtcg(defineTheme({ name: 'three', extends: null, axes, pins }));
     expect(valueOf(doc.primitives, 'dimension', 'gap')).toBe('4px');
     expect(valueOf(doc.modes.light, 'dimension', 'edge')).toBe('4px');
     expect(valueOf(doc.modes.dark, 'dimension', 'pad')).toBe('12px');
@@ -147,13 +147,13 @@ describe('toDTCG', () => {
       axes,
       pins: { gap: pins.gap, 'focus-ring': pins['focus-ring'], surface: pins.surface },
     });
-    const ext = toDTCG(t).$extensions?.[AXES_EXT];
+    const ext = toDtcg(t).$extensions?.[AXES_EXT];
     expect(Object.keys(ext?.overrides ?? {}).sort()).toEqual(['contrast=high', 'density=compact', 'density=roomy']);
     expect(valueOf(ext!.overrides['contrast=high'].primitives, 'color', 'focus-ring')).toBe('#ff0000');
   });
 
   it('writes a theme varying by mode alone with its axes and no overrides', () => {
     const t = defineTheme({ name: 'm', extends: null, axes: { mode: axes.mode }, pins: { surface: pins.surface } });
-    expect(toDTCG(t).$extensions?.[AXES_EXT]).toEqual({ axes: { mode: axes.mode }, varies: {}, overrides: {} });
+    expect(toDtcg(t).$extensions?.[AXES_EXT]).toEqual({ axes: { mode: axes.mode }, varies: {}, overrides: {} });
   });
 });

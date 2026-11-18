@@ -1,7 +1,7 @@
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { describe, expect, it, vi } from 'vitest';
 import { type PrefGroup, PREF_ELSE } from '@weasel-js/prefs-schema';
-import { checkPrefSplits } from './splitCheck';
+import { checkPrefScopes } from './splitCheck';
 import { recordValue } from './stamp';
 import { createPrefsStore } from './store';
 
@@ -111,7 +111,7 @@ describe('checking per', () => {
       name: 'Typo', admits: ['document', 'layout'],
       children: { width: { kind: 'number', name: 'Width', description: '', default: 1, scopes: [{ selector: 'docment' }] } },
     } satisfies PrefGroup;
-    expect(checkPrefSplits(schema).map((p) => p.problem)).toEqual(['selector "docment" is not admitted by this schema (it admits: document, layout)']);
+    expect(checkPrefScopes(schema).map((p) => p.problem)).toEqual(['selector "docment" is not admitted by this schema (it admits: document, layout)']);
   });
 
   it('names a selector admitted that is a pref', () => {
@@ -119,7 +119,7 @@ describe('checking per', () => {
       name: 'Bad', admits: ['mode'],
       children: { mode: { kind: 'enum', name: 'Mode', description: '', default: 'a', options: [{ value: 'a', label: 'A' }] } },
     } satisfies PrefGroup;
-    expect(checkPrefSplits(schema).map((p) => p.problem)).toEqual(['the schema admits "mode", which is a pref']);
+    expect(checkPrefScopes(schema).map((p) => p.problem)).toEqual(['the schema admits "mode", which is a pref']);
   });
 
   it('names an undeclared selector, an option that is none, and a selector listed twice', () => {
@@ -133,12 +133,12 @@ describe('checking per', () => {
         },
       },
     } satisfies PrefGroup;
-    expect(checkPrefSplits(schema).map((p) => p.problem)).toEqual([
+    expect(checkPrefScopes(schema).map((p) => p.problem)).toEqual([
       'its closed list names "z", which is no option of "mode"',
       'selector "doc" is not admitted by this schema (it admits none)',
       '"doc" is listed twice',
     ]);
-    expect(checkPrefSplits(SCHEMA)).toEqual([]);
+    expect(checkPrefScopes(SCHEMA)).toEqual([]);
   });
 
   it('warns of nothing for a schema whose rules are sound', () => {

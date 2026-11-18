@@ -79,7 +79,7 @@ export function deleteTarget(gl: WebGL2RenderingContext, cache: GlCache, target:
   }
 }
 
-function resolvedOf(gl: WebGL2RenderingContext, target: GlTarget): WebGLFramebuffer {
+function ensureResolved(gl: WebGL2RenderingContext, target: GlTarget): WebGLFramebuffer {
   if (target.resolved) return target.resolved.fbo;
   const color = renderbuffer(gl, gl.RGBA8, 0, target.width, target.height);
   const fbo = gl.createFramebuffer()!;
@@ -102,7 +102,7 @@ export function resolve(
   // rect asked for, over a neighboring tile: only a whole-buffer resolve
   // lands straight in the surface.
   if (source.samples > 0 && (x !== 0 || y !== 0 || width !== source.width || height !== source.height)) {
-    const via = resolvedOf(gl, source);
+    const via = ensureResolved(gl, source);
     gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, via);
     gl.blitFramebuffer(0, 0, width, height, 0, 0, width, height, gl.COLOR_BUFFER_BIT, gl.NEAREST);
     gl.bindFramebuffer(gl.READ_FRAMEBUFFER, via);

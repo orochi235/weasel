@@ -75,12 +75,12 @@ describe('SelectionPanel markHidden', () => {
   });
 
   it('keeps a hidden row one to pick, as any other', () => {
-    const onSelect = vi.fn();
-    const container = setup({ on: false }, { markHidden: true, onSelect });
+    const onMark = vi.fn();
+    const container = setup({ on: false }, { markHidden: true, onMark });
     const row = at(container, 'data.size');
     expect(row).toHaveAttribute('data-pref-leaf');
     fireEvent.pointerDown(row);
-    expect(onSelect).toHaveBeenCalledWith('data.size', { toggle: false });
+    expect(onMark).toHaveBeenCalledWith('data.size', { toggle: false });
   });
 
   it('keeps drawing a disabled row disabled, and does not mark it', () => {

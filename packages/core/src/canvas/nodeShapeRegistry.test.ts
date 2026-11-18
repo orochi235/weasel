@@ -4,7 +4,7 @@ import { createScene } from 'core/scene/scene';
 import { documentOf } from 'core/scene/documentOf';
 import { createEditingSession } from 'core/scene/editingSession';
 import { asNodeId } from 'core/scene/types';
-import { findNodeShape, findShapeSilhouette, getNodeShapes, registerNodeShape, shapeCoversPoint } from './NodeShape';
+import { findNodeShape, findShapeSilhouette, nodeShapeEntries, registerNodeShape, shapeCoversPoint } from './NodeShape';
 import { createNodeShapes, defaultNodeShapes, nodeShapesOf, scopedShapeClaims } from './nodeShapeRegistry';
 import type { NodeShapeEntry } from './nodeShapeTypes';
 import { pathFromD } from '@weasel-js/geom';
@@ -62,11 +62,11 @@ describe('scene-scoped node shapes', () => {
     const offHigh = shapes.register(high, { priority: 'high' });
     const offGlobal = registerNodeShape({ ...gem, id: 'test:global-high' }, { priority: 'high' });
     const offNormal = shapes.register(gem);
-    const ids = getNodeShapes(shapes).map((e) => e.id);
+    const ids = nodeShapeEntries(shapes).map((e) => e.id);
     expect(ids.indexOf('test:high')).toBeLessThan(ids.indexOf('test:global-high'));
     expect(ids.indexOf('kit:text')).toBeLessThan(ids.indexOf('test:gem'));
     expect(ids.at(-1)).toBe('kit:rect-fallback');
-    expect(getNodeShapes(defaultNodeShapes).map((e) => e.id)).not.toContain('test:high');
+    expect(nodeShapeEntries(defaultNodeShapes).map((e) => e.id)).not.toContain('test:high');
     offHigh(); offGlobal(); offNormal();
   });
 

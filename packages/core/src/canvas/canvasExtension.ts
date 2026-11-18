@@ -173,7 +173,7 @@ export interface CanvasExtensionApi {
    * answer. It draws that frame again
    * as an id frame (`WeaselRenderer.renderIdsAsync`) culled to the one device
    * pixel, so it sees what custom shaders and effects paint, not their bounds.
-   * `<SceneCanvas>` gives each node's paint `scenePickIds(scene).idOf(id)`.
+   * `<SceneCanvas>` gives each node's paint `scenePickIds(scene).pickIdOf(id)`.
    *
    * A 3D host (`@weasel-js/kernel3d`) draws with its consumer's renderer rather
    * than this one, so this sees none of what it draws; it picks by ray.

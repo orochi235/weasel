@@ -1,5 +1,5 @@
 // apps/site/demos/platformer/clips.ts
-import type { Clip, ClipKey, Pose } from '@weasel-js/animator';
+import type { Clip, ClipKey, SkeletonPose } from '@weasel-js/animator';
 
 /** What a clip calls the player's pose, for `sceneClipTargets` to resolve. */
 export const PLAYER = 'rig:player';
@@ -9,7 +9,7 @@ export const FADE = 'fade';
 /** A clip of the player: one track of poses, in milliseconds. */
 export type PlayerClip = Clip & { duration: number };
 
-const clip = (duration: number, keys: (ClipKey & { value: Pose })[]): PlayerClip => ({
+const clip = (duration: number, keys: (ClipKey & { value: SkeletonPose })[]): PlayerClip => ({
   version: 1,
   duration,
   tracks: [{ kind: 'sampled', target: PLAYER, weight: FADE, keys }],
@@ -17,7 +17,7 @@ const clip = (duration: number, keys: (ClipKey & { value: Pose })[]): PlayerClip
 
 /** Arms and legs swung to one side; `s` flips the whole thing for the other half
  *  of the cycle, which is what makes one authored key serve both footfalls. */
-const stride = (s: 1 | -1, lift: number): Pose => ({
+const stride = (s: 1 | -1, lift: number): SkeletonPose => ({
   hip: { y: lift },
   torso: { rotation: -0.08 * s },
   thighL: { rotation: 0.5 * s },
@@ -30,7 +30,7 @@ const stride = (s: 1 | -1, lift: number): Pose => ({
   foreR: { rotation: 0.3 },
 });
 
-const NEUTRAL: Pose = {
+const NEUTRAL: SkeletonPose = {
   hip: { y: 0 },
   torso: { rotation: 0 },
   thighL: { rotation: 0.08 },

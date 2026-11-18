@@ -7,7 +7,7 @@ import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { AnnotationsContext } from './AnnotationsContext';
 import { ExportMenu } from './ExportMenu';
-import { createAnnotationStore } from './store';
+import { createMarkStore } from './store';
 import type { AnnotationsApi, AnnotationTargetInfo, CaptureOptions } from './types';
 
 const TARGETS: AnnotationTargetInfo[] = [
@@ -25,7 +25,7 @@ function mount(store: AnnotationsApi | null) {
 
 /** A store whose capture is a spy — the real one needs a browser. */
 function spied(): { store: AnnotationsApi; capture: ReturnType<typeof vi.fn> } {
-  const store = createAnnotationStore({ targets: () => TARGETS });
+  const store = createMarkStore({ targets: () => TARGETS });
   const capture = vi.fn(async (target: string, opts?: CaptureOptions) => ({
     target,
     blob: new Blob(['x'], { type: 'image/png' }),
@@ -78,7 +78,7 @@ describe('<ExportMenu>', () => {
 
   it('falls back to a target that still exists once the chosen one is gone', async () => {
     let targets = TARGETS;
-    const base = createAnnotationStore({ targets: () => targets });
+    const base = createMarkStore({ targets: () => targets });
     const capture = vi.fn(async (target: string) => ({
       target,
       blob: new Blob(['x'], { type: 'image/png' }),

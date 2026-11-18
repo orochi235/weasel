@@ -96,13 +96,13 @@ export interface CommitSelection {
 
 /** The ops a commit of node `id` appends to its batch for `select`: none
  *  without one, else the selection change from `select.from`. */
-export function commitSelectionOps(select: CommitSelection | undefined, id: string, label?: string): Op[] {
+export function createCommitSelectionOps(select: CommitSelection | undefined, id: string, label?: string): Op[] {
   if (!select) return [];
   return [createSetSelectionOp({ from: select.from, to: select.selectNode ? [asNodeId(id)] : [], ...(label !== undefined ? { label } : {}) })];
 }
 
 /** The {@link CommitSelection} that leaves the committed node selected, from
  *  `operands` as they stand; none without operands. */
-export function selectCommitted(operands: Pick<OperandsDep, 'get'> | undefined): CommitSelection | undefined {
+export function commitSelectionFrom(operands: Pick<OperandsDep, 'get'> | undefined): CommitSelection | undefined {
   return operands ? { from: [...operands.get()], selectNode: true } : undefined;
 }

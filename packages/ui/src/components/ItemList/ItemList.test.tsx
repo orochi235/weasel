@@ -138,8 +138,8 @@ describe('ItemList', () => {
       expect(items[1]).not.toHaveAttribute('aria-selected');
     });
 
-    it('is a single-select listbox of options with selection="single"', () => {
-      render(<ItemList rows={ROWS} selection="single" containerProps={{ 'aria-label': 'Layers' }} />);
+    it('is a single-select listbox of options with selectionMode="single"', () => {
+      render(<ItemList rows={ROWS} selectionMode="single" containerProps={{ 'aria-label': 'Layers' }} />);
       const box = screen.getByRole('listbox', { name: 'Layers' });
       expect(box).not.toHaveAttribute('aria-multiselectable');
       const opts = screen.getAllByRole('option');
@@ -147,13 +147,13 @@ describe('ItemList', () => {
     });
 
     it('marks a multi-select listbox', () => {
-      render(<ItemList rows={ROWS} selection="multi" />);
+      render(<ItemList rows={ROWS} selectionMode="multiple" />);
       expect(screen.getByRole('listbox')).toHaveAttribute('aria-multiselectable', 'true');
     });
 
     it('becomes a grid when rows carry controls, so the controls are not inside an option', () => {
       render(<ItemList
-        selection="multi"
+        selectionMode="multiple"
         rows={ROWS.map((r) => ({ ...r, trailing: <button type="button">Hide {r.id}</button> }))}
       />);
       expect(screen.getByRole('grid')).toHaveAttribute('aria-multiselectable', 'true');
@@ -167,7 +167,7 @@ describe('ItemList', () => {
 
     it('gives every row the same cells when only some rows carry controls', () => {
       render(<ItemList
-        selection="multi"
+        selectionMode="multiple"
         rows={ROWS.map((r, i) => (i === 1 ? r : { ...r, trailing: <button type="button">Hide {r.id}</button> }))}
       />);
       const counts = screen.getAllByRole('row').map((r) => r.querySelectorAll('[role="gridcell"]').length);
@@ -175,7 +175,7 @@ describe('ItemList', () => {
     });
 
     it('is a grid with no selection state for an activate-only list', () => {
-      render(<ItemList rows={ROWS} onActivate={() => {}} />);
+      render(<ItemList rows={ROWS} onAction={() => {}} />);
       expect(screen.getByRole('grid')).toBeInTheDocument();
       expect(screen.getAllByRole('row')[0]).not.toHaveAttribute('aria-selected');
     });
@@ -191,17 +191,17 @@ describe('ItemList', () => {
     const opt = (label: string) => screen.getByRole('option', { name: label });
 
     it('puts one row in the tab order: the selected one', () => {
-      render(<ItemList rows={ROWS} selection="single" />);
+      render(<ItemList rows={ROWS} selectionMode="single" />);
       expect(screen.getAllByRole('option').map((o) => o.tabIndex)).toEqual([-1, 0, -1, -1]);
     });
 
     it('falls back to the first row when nothing is selected', () => {
-      render(<ItemList rows={ROWS.map((r) => ({ ...r, selected: false }))} selection="single" />);
+      render(<ItemList rows={ROWS.map((r) => ({ ...r, selected: false }))} selectionMode="single" />);
       expect(opt('A').tabIndex).toBe(0);
     });
 
     it('moves focus with the arrows and stops at the ends', () => {
-      render(<ItemList rows={ROWS} selection="single" />);
+      render(<ItemList rows={ROWS} selectionMode="single" />);
       act(() => { opt('B').focus(); });
       fireEvent.keyDown(opt('B'), { key: 'ArrowDown' });
       expect(opt('C')).toHaveFocus();
@@ -213,7 +213,7 @@ describe('ItemList', () => {
     });
 
     it('goes to either end with Home and End', () => {
-      render(<ItemList rows={ROWS} selection="single" />);
+      render(<ItemList rows={ROWS} selectionMode="single" />);
       act(() => { opt('B').focus(); });
       fireEvent.keyDown(opt('B'), { key: 'End' });
       expect(opt('D')).toHaveFocus();
@@ -222,31 +222,31 @@ describe('ItemList', () => {
     });
 
     it('keeps the tab stop on the row that last had focus', () => {
-      render(<ItemList rows={ROWS} selection="single" />);
+      render(<ItemList rows={ROWS} selectionMode="single" />);
       act(() => { opt('D').focus(); });
       expect(opt('D').tabIndex).toBe(0);
       expect(opt('B').tabIndex).toBe(-1);
     });
 
     it('activates with Enter and Space, passing the modifiers a click would', () => {
-      const onActivate = vi.fn();
-      render(<ItemList rows={ROWS} selection="multi" onActivate={onActivate} />);
+      const onAction = vi.fn();
+      render(<ItemList rows={ROWS} selectionMode="multiple" onAction={onAction} />);
       fireEvent.keyDown(opt('C'), { key: 'Enter' });
       fireEvent.keyDown(opt('C'), { key: ' ', shiftKey: true });
-      expect(onActivate).toHaveBeenNthCalledWith(1, 'c', 2, expect.objectContaining({ shiftKey: false }));
-      expect(onActivate).toHaveBeenNthCalledWith(2, 'c', 2, expect.objectContaining({ shiftKey: true }));
+      expect(onAction).toHaveBeenNthCalledWith(1, 'c', 2, expect.objectContaining({ shiftKey: false }));
+      expect(onAction).toHaveBeenNthCalledWith(2, 'c', 2, expect.objectContaining({ shiftKey: true }));
     });
 
     it('activates on click, with modifiers', () => {
-      const onActivate = vi.fn();
-      render(<ItemList rows={ROWS} selection="multi" onActivate={onActivate} />);
+      const onAction = vi.fn();
+      render(<ItemList rows={ROWS} selectionMode="multiple" onAction={onAction} />);
       fireEvent.click(opt('A'), { metaKey: true });
-      expect(onActivate).toHaveBeenCalledWith('a', 0, expect.objectContaining({ metaKey: true }));
+      expect(onAction).toHaveBeenCalledWith('a', 0, expect.objectContaining({ metaKey: true }));
     });
 
     it('nudges the row with Alt+Arrow and keeps focus on it', () => {
       const onNudge = vi.fn();
-      render(<ItemList rows={ROWS} selection="single" onNudge={onNudge} />);
+      render(<ItemList rows={ROWS} selectionMode="single" onNudge={onNudge} />);
       act(() => { opt('B').focus(); });
       fireEvent.keyDown(opt('B'), { key: 'ArrowDown', altKey: true });
       expect(onNudge).toHaveBeenCalledWith('b', 1, 1);
@@ -254,24 +254,24 @@ describe('ItemList', () => {
     });
 
     it('refocuses a nudged row after the list reorders around it', () => {
-      const { rerender } = render(<ItemList rows={ROWS} selection="single" onNudge={() => {}} />);
+      const { rerender } = render(<ItemList rows={ROWS} selectionMode="single" onNudge={() => {}} />);
       act(() => { opt('B').focus(); });
       fireEvent.keyDown(opt('B'), { key: 'ArrowUp', altKey: true });
       (document.activeElement as HTMLElement).blur();
       const [a, b, ...rest] = ROWS;
-      rerender(<ItemList rows={[b!, a!, ...rest]} selection="single" onNudge={() => {}} />);
+      rerender(<ItemList rows={[b!, a!, ...rest]} selectionMode="single" onNudge={() => {}} />);
       expect(opt('B')).toHaveFocus();
     });
 
     it('lets a consumer key handler claim a key first', () => {
-      const onActivate = vi.fn();
+      const onAction = vi.fn();
       render(<ItemList
-        selection="single"
-        onActivate={onActivate}
+        selectionMode="single"
+        onAction={onAction}
         rows={[{ id: 'a', label: 'A', rowProps: { onKeyDown: (e) => e.preventDefault() } }]}
       />);
       fireEvent.keyDown(opt('A'), { key: 'Enter' });
-      expect(onActivate).not.toHaveBeenCalled();
+      expect(onAction).not.toHaveBeenCalled();
     });
   });
 
@@ -290,7 +290,7 @@ describe('ItemList', () => {
     const btn = (name: string) => screen.getByRole('button', { name });
 
     it('focuses the label cell, and keeps the controls out of the tab order', () => {
-      render(<ItemList selection="single" rows={rows(() => {})} />);
+      render(<ItemList selectionMode="single" rows={rows(() => {})} />);
       expect(cell('A').tabIndex).toBe(0);
       expect(btn('eye a').tabIndex).toBe(-1);
       expect(btn('lock b').tabIndex).toBe(-1);
@@ -298,23 +298,23 @@ describe('ItemList', () => {
 
     it('runs a control without activating its row', () => {
       const onToggle = vi.fn();
-      const onActivate = vi.fn();
-      render(<ItemList selection="single" onActivate={onActivate} rows={rows(onToggle)} />);
+      const onAction = vi.fn();
+      render(<ItemList selectionMode="single" onAction={onAction} rows={rows(onToggle)} />);
       fireEvent.click(btn('eye b'));
       expect(onToggle).toHaveBeenCalledWith('b-eye');
-      expect(onActivate).not.toHaveBeenCalled();
+      expect(onAction).not.toHaveBeenCalled();
     });
 
     it('leaves Enter and Space on a control to the control', () => {
-      const onActivate = vi.fn();
-      render(<ItemList selection="single" onActivate={onActivate} rows={rows(() => {})} />);
+      const onAction = vi.fn();
+      render(<ItemList selectionMode="single" onAction={onAction} rows={rows(() => {})} />);
       const ev = fireEvent.keyDown(btn('eye a'), { key: 'Enter' });
       expect(ev).toBe(true);
-      expect(onActivate).not.toHaveBeenCalled();
+      expect(onAction).not.toHaveBeenCalled();
     });
 
     it('walks into and across the controls with the arrows, and back out', () => {
-      render(<ItemList selection="single" rows={rows(() => {})} />);
+      render(<ItemList selectionMode="single" rows={rows(() => {})} />);
       act(() => { cell('A').focus(); });
       fireEvent.keyDown(cell('A'), { key: 'ArrowRight' });
       expect(btn('eye a')).toHaveFocus();
@@ -329,7 +329,7 @@ describe('ItemList', () => {
     });
 
     it('walks the controls with the arrows mirrored in a right-to-left list', () => {
-      const { container } = render(<ItemList selection="single" rows={rows(() => {})} />);
+      const { container } = render(<ItemList selectionMode="single" rows={rows(() => {})} />);
       container.setAttribute('dir', 'rtl');
       act(() => { cell('A').focus(); });
       fireEvent.keyDown(cell('A'), { key: 'ArrowLeft' });
@@ -342,7 +342,7 @@ describe('ItemList', () => {
     });
 
     it('moves between rows from a control too', () => {
-      render(<ItemList selection="single" rows={rows(() => {})} />);
+      render(<ItemList selectionMode="single" rows={rows(() => {})} />);
       act(() => { btn('eye a').focus(); });
       fireEvent.keyDown(btn('eye a'), { key: 'ArrowDown' });
       expect(cell('B')).toHaveFocus();
@@ -356,20 +356,20 @@ describe('ItemList keyboard range selection', () => {
   const opt = (label: string) => screen.getByRole('option', { name: label });
   const setup = () => {
     const onSelectRange = vi.fn();
-    const onActivate = vi.fn();
-    render(<ItemList rows={ROWS} selection="multi" onActivate={onActivate} onSelectRange={onSelectRange} />);
-    return { onSelectRange, onActivate };
+    const onAction = vi.fn();
+    render(<ItemList rows={ROWS} selectionMode="multiple" onAction={onAction} onSelectRange={onSelectRange} />);
+    return { onSelectRange, onAction };
   };
 
   it('extends a range from the focused row with Shift+Arrow, moving focus', () => {
-    const { onSelectRange, onActivate } = setup();
+    const { onSelectRange, onAction } = setup();
     act(() => { opt('B').focus(); });
     fireEvent.keyDown(opt('B'), { key: 'ArrowDown', shiftKey: true });
     expect(opt('C')).toHaveFocus();
     expect(onSelectRange).toHaveBeenLastCalledWith(['b', 'c']);
     fireEvent.keyDown(opt('C'), { key: 'ArrowDown', shiftKey: true });
     expect(onSelectRange).toHaveBeenLastCalledWith(['b', 'c', 'd']);
-    expect(onActivate).not.toHaveBeenCalled();
+    expect(onAction).not.toHaveBeenCalled();
   });
 
   it('shrinks and then crosses the anchor, keeping list order', () => {
@@ -410,17 +410,17 @@ describe('ItemList keyboard range selection', () => {
   });
 
   it('only moves focus on Shift+Arrow without onSelectRange', () => {
-    const onActivate = vi.fn();
-    render(<ItemList rows={ROWS} selection="multi" onActivate={onActivate} />);
+    const onAction = vi.fn();
+    render(<ItemList rows={ROWS} selectionMode="multiple" onAction={onAction} />);
     act(() => { opt('A').focus(); });
     fireEvent.keyDown(opt('A'), { key: 'ArrowDown', shiftKey: true });
     expect(opt('B')).toHaveFocus();
-    expect(onActivate).not.toHaveBeenCalled();
+    expect(onAction).not.toHaveBeenCalled();
   });
 
   it('extends no range in a single-select list', () => {
     const onSelectRange = vi.fn();
-    render(<ItemList rows={ROWS} selection="single" onSelectRange={onSelectRange} />);
+    render(<ItemList rows={ROWS} selectionMode="single" onSelectRange={onSelectRange} />);
     act(() => { opt('A').focus(); });
     fireEvent.keyDown(opt('A'), { key: 'ArrowDown', shiftKey: true });
     expect(opt('B')).toHaveFocus();
@@ -432,7 +432,7 @@ describe('ItemList range anchor', () => {
   it('re-anchors on a row focused by the pointer', () => {
     const onSelectRange = vi.fn();
     const rows = ['a', 'b', 'c', 'd'].map((id) => ({ id, label: id.toUpperCase() }));
-    render(<ItemList rows={rows} selection="multi" onSelectRange={onSelectRange} />);
+    render(<ItemList rows={rows} selectionMode="multiple" onSelectRange={onSelectRange} />);
     const opt = (label: string) => screen.getByRole('option', { name: label });
     act(() => { opt('A').focus(); });
     fireEvent.keyDown(opt('A'), { key: 'ArrowDown', shiftKey: true });

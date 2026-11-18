@@ -10,7 +10,7 @@ import { SceneCanvas } from './SceneCanvas';
 import type { SceneCanvasApi } from './canvasExtension';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
-import { dragPanContribution } from '../tools/builtin/hand/dragPanContribution';
+import { createDragPanContribution } from '../tools/builtin/hand/createDragPanContribution';
 import type { CanvasDebugSink, DebugFlags } from '../debug/types';
 import type { Contribution } from '../tools/overlayBinding';
 import { viewPreset } from 'canvas/SceneCanvas/presets';
@@ -76,7 +76,7 @@ describe('SceneCanvas debug', () => {
   });
 
   it('records a drag pan against the view it started from, anchored at the press', () => {
-    const { canvas, sinkRef } = mount({ viewport: true }, [dragPanContribution()]);
+    const { canvas, sinkRef } = mount({ viewport: true }, [createDragPanContribution()]);
     const fire = (type: string, x: number, y: number) =>
       canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, isPrimary: true }));
     act(() => {

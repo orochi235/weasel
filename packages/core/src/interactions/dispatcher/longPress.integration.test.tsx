@@ -55,7 +55,7 @@ function mount(
       canvasRef: ref,
       actions: registry!,
       entriesById: new Map(),
-      classifyTarget: () => ({ body: 'empty' as const }),
+      classifyTarget: () => ({ bodyTarget: 'empty' as const }),
       longPress: opts,
     });
     return <canvas ref={ref} data-testid="canvas" />;

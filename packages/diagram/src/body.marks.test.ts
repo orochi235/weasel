@@ -46,7 +46,7 @@ describe('a built diagram body', () => {
     expect(isDiagramBody({ data: { diagram: { outline: 'rect' } } })).toBe(true);
     expect(isDiagramBody({ data: { diagram: { container: { role: 'container' } } } })).toBe(false);
     expect(isBodyOrRegion({ data: { diagram: { container: { role: 'lane' } } } })).toBe(true);
-    expect(isDiagramBody({ data: { diagram: { group: { inset: 8 } } } })).toBe(false);
+    expect(isDiagramBody({ data: { diagram: { cluster: { inset: 8 } } } })).toBe(false);
     expect(isBodyOrRegion({ data: { diagram: { from: {}, to: {} } } })).toBe(false);
   });
 });

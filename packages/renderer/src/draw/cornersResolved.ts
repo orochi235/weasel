@@ -1,17 +1,14 @@
 import { remapPerAnchor, resolveCornersWithSources } from '@weasel-js/geom';
 import type { PathDrawCommand } from '../DrawCommand';
+import { createPart } from '@weasel-js/registry';
 
 /** The ribbon cache compares `vertexWidths` by reference, so a remapped copy
  *  has to be the same array on every frame its source array and the corner
  *  expansion (cached per path) are. */
-const REMAPPED = new WeakMap<readonly unknown[], WeakMap<Uint32Array, unknown[]>>();
+const remappedBySources = createPart<readonly unknown[], WeakMap<Uint32Array, unknown[]>>(() => new WeakMap());
 
 function remapped<T>(values: readonly T[], sources: Uint32Array, stride: number): T[] {
-  let bySources = REMAPPED.get(values);
-  if (bySources === undefined) {
-    bySources = new WeakMap();
-    REMAPPED.set(values, bySources);
-  }
+  const bySources = remappedBySources(values);
   let out = bySources.get(sources) as T[] | undefined;
   if (out === undefined) {
     out = remapPerAnchor(values, sources, stride);

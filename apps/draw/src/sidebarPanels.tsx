@@ -69,8 +69,8 @@ export function PaletteSwatches(): ReactElement {
       aria-label="Palette"
       value={focusedPaint === null ? null : solidColorOf(focusedPaint)}
       columns={10}
-      onChange={(v) => apply(colors.focused, v)}
-      onAltChange={(v) => apply(other, v)}
+      onSelect={(v) => apply(colors.focused, v)}
+      onAltSelect={(v) => apply(other, v)}
     />
   );
 }

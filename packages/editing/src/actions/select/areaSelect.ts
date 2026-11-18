@@ -2,7 +2,7 @@ import { rectBetween } from '@weasel-js/geom';
 import type { Action, InvocationCtx, OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
 import type { NodeId } from '@weasel-js/core';
 import type { AreaSelectDep, ViewApi } from '@weasel-js/core/engine';
-import { hitTargets, selectionFromHits, finiteThroughout } from '@weasel-js/core';
+import { targetsOf, selectionFromHits, finiteThroughout } from '@weasel-js/core';
 
 interface AreaSelectScratch {
   dep: AreaSelectDep;
@@ -49,9 +49,9 @@ export const areaSelectAction: Action & { requires: string[] } = {
       }
 
       // Decline while a path is in anchor-edit mode, where an empty-canvas
-      // drag is `marqueeAnchorsAction`'s. Capability eligibility filters this
+      // drag is `areaSelectAnchorsAction`'s. Capability eligibility filters this
       // only for consumers that wired a mode registry; without one
-      // areaSelect's active scope would beat marqueeAnchors' ambient scope.
+      // areaSelect's active scope would beat areaSelectAnchors' ambient scope.
       const editAnchors = ctx.deps.editAnchors;
       if (editAnchors?.editingId) return {};
 
@@ -98,7 +98,7 @@ export const areaSelectAction: Action & { requires: string[] } = {
             return;
           }
 
-          const hits = hitTargets(d.hitTestArea(area, view), d.targetOf) as NodeId[];
+          const hits = targetsOf(d.hitTestArea(area, view), d.targetOf) as NodeId[];
 
           d.setSelection(selectionFromHits(d.getSelection(), hits, shiftHeld));
         },

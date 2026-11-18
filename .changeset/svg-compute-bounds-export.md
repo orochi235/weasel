@@ -2,7 +2,7 @@
 '@weasel-js/svg': minor
 ---
 
-New `computeBounds(nodes)`: the box an `SvgNode` tree's ink covers, strokes and marker heads included.
+New `svgBoundsOf(nodes)`: the box an `SvgNode` tree's ink covers, strokes and marker heads included.
 
 It is the `viewBox` `serializeSvg` writes when given none.
 

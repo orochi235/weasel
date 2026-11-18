@@ -1,6 +1,6 @@
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { WorldPoint } from '@weasel-js/routing';
-import type { RegionPickView } from 'core/adapters/types';
+import type { PickingView } from 'core/adapters/types';
 
 /** `<SceneCanvas geometry>`: hit-test and bounds overrides. The surface picks,
  *  hovers, clicks, draws chrome and runs actions through them, under its own
@@ -9,12 +9,12 @@ export interface SceneCanvasGeometry {
   /** Hit-test override. Return the topmost id, the full back-to-front hit
    *  stack (`string[]`), or `null` for empty space. The stack form lets a
    *  consumer with domain overlap ordering (e.g. children over their
-   *  container) feed the kit's `pickTopMostHit` the true order instead of
+   *  container) feed the kit's `topmostOf` the true order instead of
    *  pre-collapsing to one id. Matches `Canvas`'s `pickEvery` shape.
    *  `view` is the view the pick is asked for: its `viewId` when it is not the
    *  surface's own, so a 3D host casts the ray from that view's camera, and the
    *  layer gate of whichever view asks, when it hides anything. */
-  pickEvery?: (world: WorldPoint, view?: RegionPickView) => string | string[] | null;
+  pickEvery?: (world: WorldPoint, view?: PickingView) => string | string[] | null;
   boundsOf?: (id: string) => Bounds | null;
   /**
    * What "the pointer is on this node" means for the default body-pick.

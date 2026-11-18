@@ -86,7 +86,7 @@ describe('useHandTool held-key engagement in a bare <SceneCanvas>', () => {
           width={100} height={100}
           layers={{}}
           features={[viewPreset]}
-          viewport={{ pinchZoom: true }}
+          viewport={{ touchZoom: true }}
           onToolsCreated={(t) => { tools = t; }}
         />
       );

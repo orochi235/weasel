@@ -46,13 +46,13 @@ describe('a condition as a flow', () => {
 
   it('draws a not no comparison says as a group round what it wraps, entered and left as one box', () => {
     const flow = flowOf({ all: [grid, { not: { any: [mm, range] } }] });
-    expect(flow.groups).toEqual([{ id: 'not:0.1', members: ['test:0.1.not.0', 'test:0.1.not.1'], label: 'not' }]);
+    expect(flow.clusters).toEqual([{ id: 'not:0.1', members: ['test:0.1.not.0', 'test:0.1.not.1'], label: 'not' }]);
     expect(flow.edges.map((e) => `${e.from}>${e.to}`)).toEqual(['start>test:0.0', 'test:0.0>not:0.1', 'not:0.1>end']);
   });
 
   it('holds a not inside a not as a group inside a group', () => {
     const flow = flowOf({ not: { all: [grid, { not: { any: [mm, range] } }] } });
-    expect(flow.groups.map((g) => [g.id, g.members])).toEqual([
+    expect(flow.clusters.map((g) => [g.id, g.members])).toEqual([
       ['not:0.not.1', ['test:0.not.1.not.0', 'test:0.not.1.not.1']],
       ['not:0', ['test:0.not.0', 'not:0.not.1']],
     ]);

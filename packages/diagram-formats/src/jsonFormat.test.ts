@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DIAGRAM_THEMES } from '@weasel-js/diagram';
-import type { DiagramDocument } from './document';
+import type { DiagramDocument, DocumentPage, ImportResult } from './document';
 import { DIAGRAM_JSON } from './jsonFormat';
 import { documentSpecs } from './toScene';
 
@@ -11,6 +11,24 @@ describe('DIAGRAM_JSON', () => {
       pages: [{ id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'a', lines: ['A'] }], edges: [] } }],
     });
     expect(DIAGRAM_JSON.read!(text)).toMatchObject({ document: { pages: [{ id: 'p', kind: 'graph' }] } });
+  });
+
+  it('reads a version 1 graph page, written with groups, to the document version 2 writes', () => {
+    const page = (data: object, grid: object) => ({ kind: 'graph', id: 'p', width: 400, height: 300, layout: { name: 'grid', options: { grid } }, data });
+    const nodes = [{ id: 'a', lines: ['A'] }, { id: 'b', lines: ['B'] }];
+    const v1 = JSON.stringify({
+      format: 'weasel-diagram', version: 1,
+      pages: [page({ nodes, edges: [], groups: [{ id: 'G', members: ['a', 'b'], label: 'G' }] }, { columns: 1, groupColumns: { G: 2 } })],
+    });
+    const doc: DiagramDocument = {
+      pages: [page({ nodes, edges: [], clusters: [{ id: 'G', members: ['a', 'b'], label: 'G' }] }, { columns: 1, clusterColumns: { G: 2 } }) as DocumentPage],
+    };
+    const written = DIAGRAM_JSON.write!(doc).text;
+    expect(JSON.parse(written)).toMatchObject({ version: 2 });
+    expect(DIAGRAM_JSON.read!(v1)).toEqual(DIAGRAM_JSON.read!(written));
+    const specs = documentSpecs((DIAGRAM_JSON.read!(v1) as ImportResult).document);
+    expect(specs.specs.some((s) => s.id === 'G')).toBe(true);
+    expect(specs).toEqual(documentSpecs(doc));
   });
 
   it('round-trips a plot page', () => {

@@ -193,7 +193,7 @@ export function GeomDemo() {
           <tr>
             <td className={s.fn}><span className={s.swatchProbe} />nearestOnCubic</td>
             <td>probe to the nearest point on the curve, at t = {m.near.t.toFixed(2)}</td>
-            <td className={s.num}>{fmt(m.near.dist)}</td>
+            <td className={s.num}>{fmt(m.near.distance)}</td>
           </tr>
         </tbody>
       </table>

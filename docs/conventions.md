@@ -98,11 +98,9 @@ A duplication audit flags these again each time. Each stays two, for the reason 
 Local- vs world-space bounds, and `nodeAtPoint` vs `pickBest`, are different
 questions. Miter apex vs capsule, and butt cap vs half-disc, are a defensible hit
 model over shared base geometry. `unionBounds` stays rotation-free beside
-`unionAABB` for commit-time actions that write poses back in the unrotated frame.
+`unionAabb` for commit-time actions that write poses back in the unrotated frame.
 SVG's `#000000` initial fill is a spec default, not drift.
-`useBuiltinShapeTools`' run of hook calls are not a list, and are already
-compiler-linked through the return type. `sceneToAdapter`'s area walk
-returns containers where the live marquee dep does not — one flag on the shared
+`sceneToAdapter`'s area walk returns containers where the live marquee dep does not — one flag on the shared
 walk, because a bare-adapter consumer has no selection parent-folding to fold
 them back in.
 
@@ -110,8 +108,8 @@ In labkit, modes, d3, paint, and ui:
 labkit's camera (`worldToScreen`, `zoomAt`, `centerOn`, `clampZoomAbout`) is a
 pan/zoom/`yDir` view model, not affine kernel math. labkit's `fitView` anchors at
 the origin where `TrialOverview`'s `fitRect` centers with padding. `toShape`
-collapses a zero-size axis to 0 where `boxToBox` keeps scale 1, and Plot2D's
-`modelToPlot` fails on a zero range where `boxToBox` would silently not scale.
+collapses a zero-size axis to 0 where `rectToRect` keeps scale 1, and Plot2D's
+`modelToPlot` fails on a zero range where `rectToRect` would silently not scale.
 `toDeviceRect` is a y-flip plus device-pixel snap. Badge's `polygonSampler`
 parameterizes a polygon by CSS-pixel arc length under the viewBox's anisotropic
 scale, and Powerline carries its own normals. paint's `lerpHueDeg` is CSS Color 4
@@ -136,7 +134,7 @@ measure readout does; whether it should follow the rule is open in
 `docs/unruled.md`.
 
 A bounds function given nothing to bound returns `null` (`boundsOfCoords`,
-`unionRects`, `unionBoundsPath`, `aabbOfPoints`); one given a path that draws
+`unionRects`, `boundsOfPaths`, `aabbOfPoints`); one given a path that draws
 nothing returns a zero-size box.
 
 ## An action's tunable values are its params
@@ -168,7 +166,7 @@ holding nothing reads on that surface: its default in a form, unset over scene n
 `absentIsDefault`. **Reset** puts a leaf back as its schema starts it
 (`prefResetOf`): auto where it says `auto.on`, otherwise pinned at `default`. A surface that keeps no auto state,
 such as `SelectionPanel` over scene nodes, resets to `default` (`prefStoredReset`). Every row that edits a leaf offers `ResetControl` (`@weasel-js/ui/components/Properties`) while
-`prefIsReset` says the leaf differs, and the heading of a group or section that says `resettable` offers one for
+`prefIsAtReset` says the leaf differs, and the heading of a group or section that says `resettable` offers one for
 everything under it (`prefResets`). A prefs store, `PrefsForm`, `PrefsDialog`, `SelectionPanel`, labkit's
 `ControlPanel` and the theme editor all go through these: each surface reads its leaves through a `PrefsSource`
 (`@weasel-js/prefs`, handed to React leaves by ui's `<PrefsSource>`), and a reset is the `resetPlan` over it, which leaves out readouts and
@@ -216,9 +214,25 @@ functions, built or declared, and on a `Map` keeping an array of them per key;
 a collection of callbacks that are not subscribers goes on its allowlist with
 the reason.
 
+A part each owner gets once, made on its first read and the same on every read after, goes through
+`createPart(make)` from registry, never a module-level `WeakMap` read and written by hand (2026-11-17). Its reader
+is a query, so it keeps a query name (`transportHoldOf`). `make` takes the owner alone: a part that also turns on
+another argument, a cache that is invalidated, or one that is read without being made is not a part, and keeps its
+own map.
+
 Equality goes through registry too: `deepEqual` for plain data, never
 `JSON.stringify` (which is key-order sensitive and drops `undefined` keys), and
 `sameList` for two lists in order.
+
+## Bundling registry
+
+A package that depends on no other weasel package (geom, paint, audio) still calls registry's helpers the way
+every other package does, so how a cache or a key read is written never turns on what a package depends on
+(2026-11-17). It lists `@weasel-js/registry` as a `devDependency` and sets `inlineRegistry: true` in its tsup
+preset, which inlines the parts it uses; its manifest keeps no weasel dependency, and it keeps its standalone
+badge. Registry is the only package inlined this way: its code holds no state that two copies would have to
+share, which is what made ui's bundled react-aria provider break dialogs (`check:bundled-deps`). A registry type
+never appears in an inlining package's exported types.
 
 ## Kit settings
 

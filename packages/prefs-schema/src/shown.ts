@@ -15,14 +15,14 @@ const variantOf = (value: unknown, tag: string): unknown =>
 
 /** What the control over `leaf` shows for `stored`: what its `encoding` reads it as, else `stored` itself.
  *  `siblings` is the object the leaf is a field of. */
-export function prefShownValue(leaf: PrefLeaf, stored: unknown, siblings?: Record<string, unknown>): unknown {
+export function prefDecodedValue(leaf: PrefLeaf, stored: unknown, siblings?: Record<string, unknown>): unknown {
   if (leaf.kind !== 'boolean' && leaf.kind !== 'enum') return stored;
   const { encoding } = leaf as PrefBoolean | PrefEnum;
   return encoding ? (encoding.read as (stored: unknown, siblings: Siblings) => unknown)(stored, siblings) : stored;
 }
 
 /**
- * `read` with each value handed back as {@link prefShownValue} gives it, for
+ * `read` with each value handed back as {@link prefDecodedValue} gives it, for
  * the leaf of `schema` at that path, a field of an `object` or a `union` leaf
  * included. A field's siblings are what `read` finds at its leaf's path. A
  * path read from the entry is held to `item`, the leaf describing that entry.
@@ -39,6 +39,6 @@ export function prefShownReader(
     const held = found.find((each) => (each.variants ?? []).every((v) => variantOf(read(v.at, from), v.tag) === v.key));
     if (held === undefined) return stored;
     const object = held.within === undefined ? undefined : read(held.within, from);
-    return prefShownValue(held.leaf, stored, typeof object === 'object' && object !== null ? (object as Siblings) : undefined);
+    return prefDecodedValue(held.leaf, stored, typeof object === 'object' && object !== null ? (object as Siblings) : undefined);
   };
 }

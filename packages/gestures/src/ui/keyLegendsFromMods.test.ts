@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { keyLegendsFromMods, keyLegendFromKey, type LogicalMod, type Platform } from './keyLegendsFromMods';
+import { keyLegendsFromMods, keyLegendFromKey, type Platform } from './keyLegendsFromMods';
+import type { ModifierKey } from '../grammar/routeGrammar';
 
 describe('keyLegendsFromMods — platform mapping', () => {
   it('maps `mod` to ⌘ on macOS (symbol legend default)', () => {
@@ -56,7 +57,7 @@ describe('keyLegendsFromMods — legend override', () => {
 
   it('honors legend: "symbol" off macOS with the ISO/IEC 9995-7 symbols', () => {
     for (const platform of ['windows', 'linux'] as const) {
-      expect(keyLegendsFromMods(['mod', 'ctrl', 'alt', 'shift', 'meta'].map((name) => ({ name: name as LogicalMod })), { platform, legend: 'symbol' }))
+      expect(keyLegendsFromMods(['mod', 'ctrl', 'alt', 'shift', 'meta'].map((name) => ({ name: name as ModifierKey })), { platform, legend: 'symbol' }))
         .toEqual(['⎈', '⎈', '⎇', '⇧', '⊞'].map((label) => ({ label })));
       expect(['Escape', 'Enter', 'Tab', 'Space', 'Backspace', 'Delete', 'ContextMenu'].map((k) => keyLegendFromKey(k, { platform, legend: 'symbol' }).label))
         .toEqual(['⎋', '↵', '⇥', '␣', '⟵', '⌦', '▤']);

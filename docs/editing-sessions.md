@@ -52,7 +52,7 @@ undo any entry. What each entry restores is a selection, and which session it re
 
 The rule follows where the user is looking: an undo selects what it changed in the canvas it was pressed in.
 A consumer building a second `History` over the scene (a mode machine) passes
-`sceneSelectionStore(session)` to restore into a session the same way.
+`sceneHistorySelection(session)` to restore into a session the same way.
 
 ## Changes and subscriptions
 
@@ -79,13 +79,13 @@ through its own session previews only there, and its committed edit reaches ever
 ```tsx
 // before: a panel view with a selection of its own
 <SceneCanvas scene={scene}>
-  <CanvasView id="panel" bounds={PANEL} selectionOptions={{ mode: 'multi' }} />
+  <CanvasView id="panel" bounds={PANEL} selectionOptions={{ mode: 'multiple' }} />
 </SceneCanvas>
 
 // after: a canvas of its own over a session of its own
 const session = useEditingSession(scene);
 <SceneCanvas scene={scene} />
-<SceneCanvas scene={session} selectionOptions={{ mode: 'multi' }} />
+<SceneCanvas scene={session} selectionOptions={{ mode: 'multiple' }} />
 ```
 
 `CanvasView`'s `deps` no longer takes a `selection` either.

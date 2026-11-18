@@ -2,7 +2,7 @@ import type { Action } from '@weasel-js/routing';
 import type { Stroke } from '@weasel-js/paint';
 import { createPaintAction } from './createPaintAction';
 import type { OpacityParams } from '@weasel-js/core';
-import { paintWithAlpha, solid, strokeOf, DEFAULT_STROKE_COLOR } from '@weasel-js/paint';
+import { paintWithAlpha, solid, solidStroke, DEFAULT_STROKE_COLOR } from '@weasel-js/paint';
 
 /**
  * Static descriptor for the `setStrokeOpacity` Action.
@@ -23,7 +23,7 @@ export const setStrokeOpacityAction: Action = createPaintAction<
   initialState: (pick) => pick('alpha01') ?? 1,
   readParams: (_prev, params) => params?.alpha01 ?? null,
   merge: (prev, alpha01) => {
-    const base = prev ?? strokeOf(DEFAULT_STROKE_COLOR);
+    const base = prev ?? solidStroke(DEFAULT_STROKE_COLOR);
     // A stroke with no paint has no opacity to set; seed the same default
     // colour a strokeless node gets, keeping the width and joins it has.
     return { ...base, paint: paintWithAlpha(base.paint ?? solid(DEFAULT_STROKE_COLOR), alpha01) };

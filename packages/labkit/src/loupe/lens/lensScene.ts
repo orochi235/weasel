@@ -4,7 +4,7 @@ import {
   createScene,
   createSetDataOp,
   createSetDependsOnOp,
-  createTransformOp,
+  createSetPoseOp,
   type DerivePathFn,
   type DerivePoseFn,
   effectivePose,
@@ -226,7 +226,7 @@ export function keepHeldOps<C>(scene: LensScene<C>, nodeId: string, label: strin
   const node = scene.get(nodeId as never);
   const held = scene.overrides.read(nodeId as never)?.pose;
   return node && held
-    ? [createTransformOp({ id: node.id, from: node.pose, to: { ...held }, label })]
+    ? [createSetPoseOp({ id: node.id, from: node.pose, to: { ...held }, label })]
     : [];
 }
 
@@ -265,7 +265,7 @@ export function setLensOps<C>(
   const factor = patch.factor ?? from.factor;
   if (factor !== from.factor && from.aim !== 'glass' && body && reticle) {
     const to = patchAt(body.pose, factor, center(reticle.pose));
-    ops.push(createTransformOp({ id: ids.reticle, from: reticle.pose, to, label, coalesceKey }));
+    ops.push(createSetPoseOp({ id: ids.reticle, from: reticle.pose, to, label, coalesceKey }));
   }
   return ops;
 }
@@ -290,7 +290,7 @@ export function setAimOps<C>(scene: LensScene<C>, lensId: string, to: LensAim): 
     const reticle = scene.get(ids.reticle);
     if (reticle !== undefined) {
       ops.push(
-        createTransformOp({
+        createSetPoseOp({
           id: ids.reticle,
           from: reticle.pose,
           to: effectivePose(scene, reticle),

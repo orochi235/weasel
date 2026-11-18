@@ -8,7 +8,7 @@ import { IDENTITY_JOINT, type Joint, type Skeleton } from './types';
 export function jointPositions(skeleton: Skeleton): Map<string, { x: number; y: number }> {
   const out = new Map<string, { x: number; y: number }>();
   for (const [name, m] of resolveSkeleton(skeleton, {})) {
-    const [x, y] = mat3.apply(m, 0, 0);
+    const [x, y] = mat3.transformPoint(m, 0, 0);
     out.set(name, { x, y });
   }
   return out;
@@ -35,7 +35,7 @@ function inParent(skeleton: Skeleton, parent: string | null, x: number, y: numbe
   if (!world) throw new Error(`The skeleton has no joint "${parent}".`);
   const inverse = mat3.invert(world);
   if (!inverse) throw new Error(`Joint "${parent}" is singular at the bind pose.`);
-  return mat3.apply(inverse, x, y);
+  return mat3.transformPoint(inverse, x, y);
 }
 
 /** `skeleton` with `name` resting at `(x, y)`. The joints under it keep their offsets from it,

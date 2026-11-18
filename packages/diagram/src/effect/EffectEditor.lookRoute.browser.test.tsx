@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { viewToTransform, type RectPose } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
 import { fitDiagram } from '@weasel-js/diagram';
-import { diagramScene, sequenceSlots } from '@weasel-js/diagram';
+import { diagramScene, slotsAlong } from '@weasel-js/diagram';
 import { EFFECT_MIN_SCALE, EffectEditor, editorScene, wireEnds, mainChain } from '@weasel-js/diagram/effect';
 import type { LanesOptions } from './lanes';
 import { io, w } from './skipFixture';
@@ -38,7 +38,7 @@ function drawn() {
   const screen = (p: { x: number; y: number }) => ({ x: t.panX + p.x * t.zoom.x, y: t.panY + p.y * t.zoom.y });
   const box = (id: string) => specs.find((s) => s.id === id)!.pose as RectPose;
   const [p, q] = wireEnds(specs, 'w2')!;
-  const slots = sequenceSlots('x', built.order!.items.map(({ id }) => ({ id, bounds: box(id) })));
+  const slots = slotsAlong('x', built.order!.items.map(({ id }) => ({ id, bounds: box(id) })));
   return {
     straight: p.y === q.y,
     middle: screen({ x: (p.x + q.x) / 2, y: p.y }),

@@ -3,7 +3,7 @@ import {
 } from 'react';
 import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodeRoutingEntry, type Scene } from '@weasel-js/core';
 import {
-  isPrefSection, prefAliasTarget, prefLeafAt, prefSectionLeaves, prefValueAtPath, type PrefAlias, type PrefGroup,
+  isPrefSection, prefAliasTarget, prefLeafAt, prefSectionLeaves, prefValueAt, type PrefAlias, type PrefGroup,
   type PrefSection,
 } from '@weasel-js/prefs';
 import { SelectionPanel } from '@weasel-js/ui-canvas';
@@ -206,7 +206,7 @@ type PreviewScene = Scene<unknown, 'default', unknown>;
  * A scene of one node holding each leaf's default at the node path its key names, and for a pointer into `over`
  * the default of the leaf it shows, at that leaf's path.
  */
-function sceneOf(schema: PrefSection, over: SchemaRoot | undefined): PreviewScene {
+function createPreviewScene(schema: PrefSection, over: SchemaRoot | undefined): PreviewScene {
   let node: { pose?: unknown; data?: unknown } = {};
   for (const [key, leaf] of prefSectionLeaves(schema.members)) {
     const shown = leaf.kind === 'alias' && over ? prefAliasTarget(leaf as PrefAlias, (at) => prefLeafAt(over, at)) : { path: key, leaf };
@@ -227,14 +227,14 @@ function SectionPreview({ schema, renderers, selected, onSelect, onDefaults, ove
 }) {
   // Each leaf's value as the node was seeded, which is no value for a key outside `pose` and `data`: only what an edit changed is a new default.
   const [scene, seeded] = useMemo(() => {
-    const made = sceneOf(schema, over);
+    const made = createPreviewScene(schema, over);
     const node = made.get(NODE);
-    return [made, new Map(prefSectionLeaves(schema.members).map(([key]) => [key, JSON.stringify(prefValueAtPath(node, key))]))] as const;
+    return [made, new Map(prefSectionLeaves(schema.members).map(([key]) => [key, JSON.stringify(prefValueAt(node, key))]))] as const;
   }, [schema, over]);
   useEffect(() => scene.subscribe(() => {
     const node = scene.get(NODE);
     const edits = [...seeded].flatMap(([key, was]): DefaultEdit[] => {
-      const value = prefValueAtPath(node, key);
+      const value = prefValueAt(node, key);
       return JSON.stringify(value) === was ? [] : [[key.split('.'), value]];
     });
     if (edits.length > 0) onDefaults(edits);
@@ -246,8 +246,8 @@ function SectionPreview({ schema, renderers, selected, onSelect, onDefaults, ove
       <div className={s.previewStage}>
         <SidebarPanel className={s.previewPanel}>
         <SelectionPanel scene={scene} selection={SELECTION} properties={[{ name: KIND, schema }]} routing={ROUTING}
-          renderers={renderers} kindLabel={() => schema.name} selected={marked} markHidden over={over}
-          onSelect={onSelect && ((path, how) => {
+          renderers={renderers} kindLabel={() => schema.name} marked={marked} markHidden over={over}
+          onMark={onSelect && ((path, how) => {
             const at = treePathOfPanel(schema, path);
             if (at !== null) onSelect(at, rangeIn(how, (row) => treePathOfPanel(schema, row)));
           })} />

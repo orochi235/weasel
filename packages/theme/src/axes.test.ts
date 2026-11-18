@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { enumerateSelections, fullSelection, isByAxis, pick, selectionKey, type AxisDefs } from './axes';
+import { enumerateAxisChoices, fullAxisChoice, isByAxis, pick, axisChoiceKey, type AxisDefs } from './axes';
 import { overrideKey } from './dtcg/axesExtension';
 import type { LightnessRampDef, ThemeDefinition } from './definition';
 
@@ -10,11 +10,11 @@ const AXES: AxisDefs = {
 
 describe('axes', () => {
   it('fills missing and unknown axis values with defaults', () => {
-    expect(fullSelection(AXES, { mode: 'light', density: 'nope' })).toEqual({ mode: 'light', density: 'comfortable' });
+    expect(fullAxisChoice(AXES, { mode: 'light', density: 'nope' })).toEqual({ mode: 'light', density: 'comfortable' });
   });
 
   it('reads an axis value named like an Object.prototype member as unknown', () => {
-    expect(fullSelection(AXES, { mode: 'toString', density: 'constructor' })).toEqual({ mode: 'dark', density: 'comfortable' });
+    expect(fullAxisChoice(AXES, { mode: 'toString', density: 'constructor' })).toEqual({ mode: 'dark', density: 'comfortable' });
     expect(pick({ by: 'mode', dark: 1, light: 2 }, { mode: 'toString' })).toEqual({ ok: false, axis: 'mode', value: 'toString' });
   });
 
@@ -25,7 +25,7 @@ describe('axes', () => {
   });
 
   it('enumerates the cross product in declaration order', () => {
-    expect(enumerateSelections(AXES).map((s) => selectionKey(AXES, s))).toEqual([
+    expect(enumerateAxisChoices(AXES).map((s) => axisChoiceKey(AXES, s))).toEqual([
       'mode=dark,density=comfortable',
       'mode=dark,density=compact',
       'mode=light,density=comfortable',
@@ -41,12 +41,12 @@ describe('axes', () => {
 
   it('picks through nested by objects', () => {
     const v = { by: 'mode', dark: { by: 'density', comfortable: 4, compact: 3 }, light: 5 };
-    expect(pick(v, fullSelection(AXES, { density: 'compact' }))).toEqual({ ok: true, value: 3 });
-    expect(pick(v, fullSelection(AXES, { mode: 'light' }))).toEqual({ ok: true, value: 5 });
+    expect(pick(v, fullAxisChoice(AXES, { density: 'compact' }))).toEqual({ ok: true, value: 3 });
+    expect(pick(v, fullAxisChoice(AXES, { mode: 'light' }))).toEqual({ ok: true, value: 5 });
   });
 
   it('reports a missing value instead of throwing', () => {
-    expect(pick({ by: 'mode', dark: 1 }, fullSelection(AXES, { mode: 'light' }))).toEqual({
+    expect(pick({ by: 'mode', dark: 1 }, fullAxisChoice(AXES, { mode: 'light' }))).toEqual({
       ok: false, axis: 'mode', value: 'light',
     });
   });
@@ -58,7 +58,7 @@ describe('axes', () => {
       lightness: [0.9, 0.2],
       chroma: { peak: { by: 'mode', dark: { by: 'density', comfortable: 0.01, compact: 0.02 }, light: 0.03 } },
     };
-    expect(pick(ramp.chroma!.peak, fullSelection(AXES, { mode: 'dark', density: 'compact' }))).toEqual({
+    expect(pick(ramp.chroma!.peak, fullAxisChoice(AXES, { mode: 'dark', density: 'compact' }))).toEqual({
       ok: true, value: 0.02,
     });
   });
@@ -78,7 +78,7 @@ describe('axes', () => {
         },
       },
     };
-    expect(pick(def.semantics!.fg, fullSelection(AXES, { mode: 'dark', density: 'compact' }))).toEqual({
+    expect(pick(def.semantics!.fg, fullAxisChoice(AXES, { mode: 'dark', density: 'compact' }))).toEqual({
       ok: true, value: { ramp: 'gray', step: '800' },
     });
   });

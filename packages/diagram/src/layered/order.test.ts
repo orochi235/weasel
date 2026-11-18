@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { GraphGroup, GraphNode } from '../graph';
+import type { GraphCluster, GraphNode } from '../graph';
 import { crossings, orderRows } from './order';
 import { PLACEHOLDER, type Hop, type Rows } from './types';
 
 const node = (id: string, group?: string): GraphNode => ({
-  id, bounds: { x: 0, y: 0, width: 10, height: 10 }, pinned: false, ...(group === undefined ? {} : { group }),
+  id, bounds: { x: 0, y: 0, width: 10, height: 10 }, pinned: false, ...(group === undefined ? {} : { cluster: group }),
 });
 const rowsOf = (...ids: string[][]): Rows => ids.map((row) => row.map((id) => node(id)));
 const hopsOf = (...pairs: [string, string][]): Hop[] => pairs.map(([from, to], i) => ({ from, to, edge: `e${i}` }));
@@ -34,7 +34,7 @@ function generated(seed: number): { rows: Rows; hops: Hop[] } {
 }
 
 /** Whether each group's members in every rank sit in one unbroken run. */
-function contiguous(rows: Rows, groups: readonly GraphGroup[]): boolean {
+function contiguous(rows: Rows, groups: readonly GraphCluster[]): boolean {
   return groups.every((g) => rows.every((row) => {
     const at = row.flatMap((n, i) => (g.members.includes(n.id) ? [i] : []));
     return at.length === 0 || at[at.length - 1]! - at[0]! === at.length - 1;
@@ -107,7 +107,7 @@ describe('orderRows', () => {
   });
 
   it('keeps every group contiguous in every rank', () => {
-    const groups: GraphGroup[] = [
+    const groups: GraphCluster[] = [
       { id: 'g', members: ['a', 'c', 'y'], inset },
     ];
     const rows: Rows = [
@@ -116,18 +116,18 @@ describe('orderRows', () => {
     ];
     // Pulls b between a and c, and y away from them, if groups were ignored.
     const hops = hopsOf(['a', 'x'], ['b', 'y'], ['c', 'z']);
-    const out = orderRows(rows, hops, { groups });
+    const out = orderRows(rows, hops, { clusters: groups });
     expect(contiguous(out, groups)).toBe(true);
   });
 
   it('makes a seed that splits a group contiguous', () => {
-    const groups: GraphGroup[] = [{ id: 'g', members: ['a', 'c'], inset }];
+    const groups: GraphCluster[] = [{ id: 'g', members: ['a', 'c'], inset }];
     const rows: Rows = [[node('a', 'g'), node('b'), node('c', 'g')]];
-    expect(ids(orderRows(rows, [], { groups }))).toEqual([['a', 'c', 'b']]);
+    expect(ids(orderRows(rows, [], { clusters: groups }))).toEqual([['a', 'c', 'b']]);
   });
 
   it('keeps a nested group contiguous inside its parent', () => {
-    const groups: GraphGroup[] = [
+    const groups: GraphCluster[] = [
       { id: 'outer', members: ['a', 'b', 'c', 'd'], inset },
       { id: 'inner', members: ['b', 'd'], inset, parent: 'outer' },
     ];
@@ -138,20 +138,20 @@ describe('orderRows', () => {
     // e's neighbor sits between inner's and the rest of outer's, which would
     // split outer if inner sorted as outer's sibling.
     const hops = hopsOf(['p', 'b'], ['p', 'd'], ['q', 'e'], ['r', 'a'], ['r', 'c']);
-    const out = orderRows(rows, hops, { groups });
+    const out = orderRows(rows, hops, { clusters: groups });
     expect(contiguous(out, groups)).toBe(true);
   });
 
   it('keeps a placeholder inside its group’s run', () => {
     const ph = `${PLACEHOLDER}e0:1`;
-    const groups: GraphGroup[] = [{ id: 'g', members: ['m'], inset }];
+    const groups: GraphCluster[] = [{ id: 'g', members: ['m'], inset }];
     const rows: Rows = [
       [node('p'), node('q'), node('r')],
       [node('m', 'g'), node('y'), node(ph, 'g')],
     ];
     // Without the group, the seed already has no crossings and y stays between.
     const hops = hopsOf(['p', 'm'], ['q', 'y'], ['r', ph]);
-    const out = orderRows(rows, hops, { groups });
+    const out = orderRows(rows, hops, { clusters: groups });
     expect(ids(out)[1]).toEqual(['m', ph, 'y']);
   });
 

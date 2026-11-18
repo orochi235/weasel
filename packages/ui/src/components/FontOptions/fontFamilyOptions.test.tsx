@@ -8,14 +8,14 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { act, render, screen, fireEvent } from '@testing-library/react';
 
-const listFonts = vi.fn();
+const listAtlasFonts = vi.fn();
 const listCanvasFonts = vi.fn();
 const resolveFontVariant = vi.fn();
 const faces = { generation: 0, listeners: new Set<() => void>() };
 
 vi.mock('@weasel-js/font', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@weasel-js/font')>()),
-  listFonts: () => listFonts(),
+  listAtlasFonts: () => listAtlasFonts(),
   listCanvasFonts: () => listCanvasFonts(),
   resolveFontVariant: (...args: unknown[]) => resolveFontVariant(...args),
   faceGeneration: () => faces.generation,
@@ -33,7 +33,7 @@ function labels(args?: Parameters<typeof fontFamilyOptions>[0]): unknown[] {
 }
 
 beforeEach(() => {
-  listFonts.mockReset();
+  listAtlasFonts.mockReset();
   listCanvasFonts.mockReset();
   listCanvasFonts.mockReturnValue([]);
   resolveFontVariant.mockReset();
@@ -42,7 +42,7 @@ beforeEach(() => {
 
 describe('fontFamilyOptions', () => {
   it('offers every registered family', () => {
-    listFonts.mockReturnValue([
+    listAtlasFonts.mockReturnValue([
       { family: 'sans-serif', variants: [{ weight: 400, style: 'normal' }] },
       { family: 'serif', variants: [{ weight: 400, style: 'normal' }] },
     ]);
@@ -53,7 +53,7 @@ describe('fontFamilyOptions', () => {
   });
 
   it('keeps an unregistered value and names what is actually rendering', () => {
-    listFonts.mockReturnValue([{ family: 'sans-serif', variants: [] }]);
+    listAtlasFonts.mockReturnValue([{ family: 'sans-serif', variants: [] }]);
     resolveFontVariant.mockReturnValue({
       substituted: { requested: 'Inter', resolved: 'sans-serif' },
     });
@@ -64,18 +64,18 @@ describe('fontFamilyOptions', () => {
   });
 
   it('says only what it knows when nothing was substituted', () => {
-    listFonts.mockReturnValue([{ family: 'sans-serif', variants: [] }]);
+    listAtlasFonts.mockReturnValue([{ family: 'sans-serif', variants: [] }]);
     expect(labels({ value: 'Inter' })).toEqual(['sans-serif', 'Inter — not loaded']);
   });
 
   it('probes the substitution at the variant the text actually renders at', () => {
-    listFonts.mockReturnValue([{ family: 'sans-serif', variants: [] }]);
+    listAtlasFonts.mockReturnValue([{ family: 'sans-serif', variants: [] }]);
     fontFamilyOptions({ value: 'Inter', weight: 700, fontStyle: 'italic' });
     expect(resolveFontVariant).toHaveBeenCalledWith('Inter', 700, 'italic');
   });
 
   it('offers canvas-served families alongside baked ones', () => {
-    listFonts.mockReturnValue([{ family: 'sans-serif', variants: [] }]);
+    listAtlasFonts.mockReturnValue([{ family: 'sans-serif', variants: [] }]);
     listCanvasFonts.mockReturnValue([
       { family: 'Georgia', enrollment: 'explicit' },
       { family: 'Impact', enrollment: 'explicit' },
@@ -87,13 +87,13 @@ describe('fontFamilyOptions', () => {
     // Regression guard: before both tiers were listed, selecting one of these
     // fell through to the unregistered-value path and the menu claimed a
     // family that renders fine was "not loaded".
-    listFonts.mockReturnValue([{ family: 'sans-serif', variants: [] }]);
+    listAtlasFonts.mockReturnValue([{ family: 'sans-serif', variants: [] }]);
     listCanvasFonts.mockReturnValue([{ family: 'Georgia', enrollment: 'explicit' }]);
     expect(labels({ value: 'Georgia' })).toEqual(['sans-serif', 'Georgia']);
   });
 
   it('lists a family once when both tiers report it', () => {
-    listFonts.mockReturnValue([{ family: 'Georgia', variants: [] }]);
+    listAtlasFonts.mockReturnValue([{ family: 'Georgia', variants: [] }]);
     listCanvasFonts.mockReturnValue([{ family: 'Georgia', enrollment: 'auto' }]);
     expect(labels({ value: 'Georgia' })).toEqual(['Georgia']);
   });
@@ -106,7 +106,7 @@ describe('useFontFamilyOptions', () => {
   }
 
   it('feeds a Select that reports the picked family', () => {
-    listFonts.mockReturnValue([{ family: 'sans-serif', variants: [] }]);
+    listAtlasFonts.mockReturnValue([{ family: 'sans-serif', variants: [] }]);
     const onChange = vi.fn();
     render(<FamilySelect onChange={onChange} />);
     fireEvent.click(screen.getByRole('button'));
@@ -115,9 +115,9 @@ describe('useFontFamilyOptions', () => {
   });
 
   it('offers a family registered after it rendered', () => {
-    listFonts.mockReturnValue([{ family: 'sans-serif', variants: [] }]);
+    listAtlasFonts.mockReturnValue([{ family: 'sans-serif', variants: [] }]);
     render(<FamilySelect value="Inter" onChange={vi.fn()} />);
-    listFonts.mockReturnValue([
+    listAtlasFonts.mockReturnValue([
       { family: 'sans-serif', variants: [] },
       { family: 'Inter', variants: [] },
     ]);

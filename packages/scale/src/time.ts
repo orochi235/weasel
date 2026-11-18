@@ -114,7 +114,6 @@ export function timeScale(opts: TimeScaleOptions): TimeScale {
     kind: 'time',
     domain: [d0, d1],
     range: [r0, r1],
-    map,
     position: map,
     invert: (at) => (r1 === r0 ? d0 : unmap((at - r0) / (r1 - r0))),
     ticks: (count = 5) => {

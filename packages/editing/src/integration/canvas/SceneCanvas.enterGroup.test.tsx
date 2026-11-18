@@ -37,7 +37,7 @@ function setup(opts: { entered?: (scene: never) => EnteredGroupApi; overrides?: 
   const entered = opts.entered?.(scene as never);
   let sel!: SelectionApi;
   function Canvas() {
-    sel = useSelection({ mode: 'multi' });
+    sel = useSelection({ mode: 'multiple' });
     return (
       <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={300} height={40} selection={sel}
         ambient={[modeTriggers(registry, { enter })]} modes={registry}

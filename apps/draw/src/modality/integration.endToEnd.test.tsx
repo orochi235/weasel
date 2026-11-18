@@ -66,7 +66,7 @@ function MachineHarness({
     });
     return s as unknown as DrawScene;
   });
-  const selection = useSelection({ mode: 'multi', scene });
+  const selection = useSelection({ mode: 'multiple', scene });
   const [pathEdit] = useState(() => modePathEdit(machine, (id) => hasEditablePath(scene.get(asNodeId(id)))));
   const modes = useCanvasModes(machine, scene, selection, pathEdit);
 

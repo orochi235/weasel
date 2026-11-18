@@ -44,9 +44,9 @@ interface Part {
  * graph always ranks the same.
  *
  * If `back` leaves a cycle, no valid ranking exists; that component keeps its
- * longest-path start, which `ranksOf` would also give.
+ * longest-path start, which `longestPathRanks` would also give.
  */
-export function ranksByLength(graph: Graph, back: ReadonlySet<string>): Map<string, number> {
+export function simplexRanks(graph: Graph, back: ReadonlySet<string>): Map<string, number> {
   const index = new Map<string, number>();
   graph.nodes.forEach((node, i) => index.set(node.id, i));
   const arcs: Arc[] = [];
@@ -59,7 +59,7 @@ export function ranksByLength(graph: Graph, back: ReadonlySet<string>): Map<stri
   // A group spans the ranks from a node above all its members to one below
   // them, both standing in for the group's box and nothing else.
   let count = graph.nodes.length;
-  for (const group of graph.groups ?? []) {
+  for (const group of graph.clusters ?? []) {
     const members = [...new Set(group.members.map((id) => index.get(id)).filter((i): i is number => i !== undefined))];
     if (members.length < 2) continue;
     const [top, bottom] = [count, count + 1];

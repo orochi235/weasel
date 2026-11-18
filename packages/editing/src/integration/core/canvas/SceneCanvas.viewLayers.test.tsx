@@ -112,8 +112,8 @@ describe('<SceneCanvas layerVisibility> hides a layer in that view only', () => 
   const selections: Record<'hidden' | 'shown', SelectionApi | null> = { hidden: null, shown: null };
 
   function Pair({ scene }: { scene: Scene<D, L, P> }): ReactNode {
-    const hidden = useSelection({ mode: 'multi' });
-    const shown = useSelection({ mode: 'multi' });
+    const hidden = useSelection({ mode: 'multiple' });
+    const shown = useSelection({ mode: 'multiple' });
     selections.hidden = hidden;
     selections.shown = shown;
     return (
@@ -207,7 +207,7 @@ describe('<CanvasView layerVisibility> hides a layer in that view only', () => {
     }
     let selection!: SelectionApi;
     function Host(): ReactNode {
-      selection = useSelection({ mode: 'multi' });
+      selection = useSelection({ mode: 'multiple' });
       return (
         <SceneCanvas features={[drawPreset]} scene={makeScene()} selection={selection} width={800} height={800} layers={LAYERS}
           views={[{
@@ -224,8 +224,8 @@ describe('<CanvasView layerVisibility> hides a layer in that view only', () => {
     const panel = registry.list().find((r) => r.id === 'panel')!;
     const outer = { x: 0, y: 0, scale: { x: 1, y: 1 } };
     expect(colorsIn(panel.layer.draw({}, outer, { width: 800, height: 800, dpr: 1 }))).toEqual([BASE]);
-    expect(panel.target.classifyTarget!({ x: 125, y: 45 })).toEqual({ body: 'empty' });
-    expect(panel.target.classifyTarget!({ x: 25, y: 45 }).body).toBe('unselected-body');
+    expect(panel.target.classifyTarget!({ x: 125, y: 45 })).toEqual({ bodyTarget: 'empty' });
+    expect(panel.target.classifyTarget!({ x: 25, y: 45 }).bodyTarget).toBe('unselected-body');
 
     const canvas = container.querySelector('canvas')!;
     expect(colorsIn(painted.get(canvas))).toContain(FX);
@@ -296,7 +296,7 @@ describe('selection chrome stays off a layer a panel hides', () => {
   async function panelWith(layerVisibility: Record<string, boolean> | undefined) {
     let registry!: ViewRegistry;
     function Host(): ReactNode {
-      const selection = useSelection({ mode: 'multi', initial: [asNodeId('b')] });
+      const selection = useSelection({ mode: 'multiple', initial: [asNodeId('b')] });
       return (
         <SceneCanvas features={[drawPreset]} scene={makeScene()} selection={selection} width={800} height={800}
           layers={LAYERS}

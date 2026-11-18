@@ -1,4 +1,4 @@
-import { shareToolOptions, toolOptionParams, withToolOptionDefault, type ActionDeps, type ToolOptions, type ToolOptionShare } from '@weasel-js/routing';
+import { shareToolOptions, toolOptionParams, withToolOptionDefault, type ActionDeps, type ToolOptionsSpec, type ToolOptionShare } from '@weasel-js/routing';
 import type {} from '../actionParamSchema';
 import { DEFAULT_SHAPE_PAINT, shapeToolOptions, type InsertStyle, insertStyleOf } from '@weasel-js/editing';
 
@@ -20,12 +20,12 @@ export const PEN_TOOL_OPTIONS = shapeToolOptions({
 });
 
 /** The pen's options at a use site: `share` laid over its own, and `autoCommitOnClose` as that option's default. */
-export function penToolOptions(share: ToolOptionShare | undefined, autoCommitOnClose: boolean | undefined): ToolOptions {
+export function penToolOptions(share: ToolOptionShare | undefined, autoCommitOnClose: boolean | undefined): ToolOptionsSpec {
   return withToolOptionDefault(shareToolOptions(PEN_TOOL_OPTIONS, share), 'autoCommitOnClose', autoCommitOnClose);
 }
 
 /** What the pen draws with now, and whether closing a subpath commits it. */
-export function penOptionValues(options: ToolOptions, deps: ActionDeps): { style: InsertStyle | undefined; autoCommitOnClose: boolean } {
+export function penOptionValues(options: ToolOptionsSpec, deps: ActionDeps): { style: InsertStyle | undefined; autoCommitOnClose: boolean } {
   const params = toolOptionParams('pen', options, deps.toolOptionValues);
   return { style: insertStyleOf(params), autoCommitOnClose: params.autoCommitOnClose !== false };
 }

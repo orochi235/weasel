@@ -10,8 +10,8 @@ import { SIDE_TRACK_GAP } from '../chainRoutes';
 import { EDGE_DERIVE_PATH } from '../edge';
 import { edgeLabelIdOf } from '../edgeLabel';
 import { diagramScene, edgeIdOf, LABEL_PLACEMENT } from '../fromData';
-import { type DataEdge, type DataGroup, type DataNode, type DiagramData, type DiagramRouter, type DiagramSceneOptions, type DiagramSpec, type EdgeStyle } from '../dataTypes';
-import { nestGroups } from '../groupTree';
+import { type DataEdge, type DataCluster, type DataNode, type DiagramData, type DiagramRouter, type DiagramSceneOptions, type DiagramSpec, type EdgeStyle } from '../dataTypes';
+import { nestClusters } from '../clusterTree';
 import { labelCenter } from '../label';
 import { portSitesOf } from '../ports';
 
@@ -242,7 +242,7 @@ export interface Laid {
   column: ReadonlyMap<string, number>;
   router: DiagramRouter;
   measure: MeasureRowText | undefined;
-  groups?: readonly DataGroup[];
+  clusters?: readonly DataCluster[];
 }
 
 /** A group's box as the scene draws it, the run of columns it stands over, and the stages it holds. */
@@ -275,7 +275,7 @@ function walledIn(grid: LaneGrid, walls: readonly Wall[]): LaneGrid {
 export function routeWires(
   wires: readonly { edge: DataEdge; style: EdgeStyle }[], nodes: readonly DataNode[], laid: Laid,
 ): { edges: { edge: DataEdge; style: EdgeStyle }[]; tracks: ReadonlyMap<number, number> } {
-  const specs = worldSpecs({ nodes, edges: wires.map((w) => w.edge), ...(laid.groups !== undefined ? { groups: laid.groups } : {}) }, {
+  const specs = worldSpecs({ nodes, edges: wires.map((w) => w.edge), ...(laid.clusters !== undefined ? { clusters: laid.clusters } : {}) }, {
     layout: 'none', router: laid.router, ...(laid.measure !== undefined ? { measure: laid.measure } : {}),
   });
   const spec = new Map(specs.map((s) => [s.id as string, s]));
@@ -286,7 +286,7 @@ export function routeWires(
     const [site, ...sites] = portSitesOf({ id: stage, data: s.data } as never, s.pose, port);
     return { column: laid.column.get(stage)!, point: site?.point ?? { x: 0, y: 0 }, normal: site?.normal ?? null, sites };
   };
-  const walls = nestGroups(laid.groups ?? [], (id) => ink.has(id)).flatMap((g): Wall[] => {
+  const walls = nestClusters(laid.clusters ?? [], (id) => ink.has(id)).flatMap((g): Wall[] => {
     const box = spec.get(g.id)?.pose as Box | undefined;
     const at = g.members.flatMap((m) => (laid.column.has(m) ? [laid.column.get(m)!] : []));
     return box === undefined || at.length === 0 ? [] : [{ box, first: minOf(at), last: maxOf(at), holds: new Set(g.members) }];

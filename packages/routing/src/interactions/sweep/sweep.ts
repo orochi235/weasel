@@ -36,7 +36,7 @@ export interface SweepRun<K> {
   end?(how: 'commit' | 'cancel'): void;
 }
 
-/** What {@link sweepAction} needs from the surface it sweeps. */
+/** What {@link createSweepAction} needs from the surface it sweeps. */
 export interface SweepOptions<K> {
   /** Action id. Default `'sweep'`; a surface with two sweeps names them apart. */
   id?: string;
@@ -53,7 +53,7 @@ export interface SweepOptions<K> {
    */
   accepts?(item: SweepItem<K>, ctx: { deps?: InvocationCtx['deps'] }): boolean;
   /**
-   * The input that sweeps. Default {@link SWEEP_BINDING}: a drag under any
+   * The input that sweeps. Default {@link SWEEP_SPEC}: a drag under any
    * modifiers, which any drag naming a modifier or a target outranks. A
    * surface that sweeps only with Alt held, or only for a pen, says so here.
    */
@@ -67,7 +67,7 @@ export interface SweepOptions<K> {
 }
 
 /** A drag under any modifiers: the lowest-ranked drag binding there is. */
-export const SWEEP_BINDING: GestureSpec = {
+export const SWEEP_SPEC: GestureSpec = {
   kind: 'drag',
   mods: ANY_MODS,
 };
@@ -92,12 +92,12 @@ function itemAt<K>(surface: Element, keyOf: SweepOptions<K>['keyOf'], x: number,
 
 /**
  * An action that sweeps the items of `opts.surface()`, bound by default to
- * {@link SWEEP_BINDING} on the ambient tier: the lowest rank a drag binding can hold. Its
+ * {@link SWEEP_SPEC} on the ambient tier: the lowest rank a drag binding can hold. Its
  * points are client pixels, so the surface's dispatcher leaves
  * `clientToWorld` unset; a surface whose items are controls sets
  * `controls: 'take'` on it.
  */
-export function sweepAction<K>(opts: SweepOptions<K>): Action {
+export function createSweepAction<K>(opts: SweepOptions<K>): Action {
   const pressed = (at: { x: number; y: number } | undefined): SweepItem<K> | null => {
     const surface = opts.surface();
     return surface && at ? itemAt(surface, opts.keyOf, at.x, at.y) : null;
@@ -105,7 +105,7 @@ export function sweepAction<K>(opts: SweepOptions<K>): Action {
   return {
     id: opts.id ?? 'sweep',
     label: opts.label ?? 'Sweep',
-    defaultBinding: opts.binding ?? SWEEP_BINDING,
+    defaultBinding: opts.binding ?? SWEEP_SPEC,
     enabled: (deps, at) => {
       const item = pressed(at);
       return item !== null && (opts.accepts?.(item, { deps }) ?? true) ? true : ActionDisabledReason.NotApplicable;

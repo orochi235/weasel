@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import type { Point } from '../paths/cubicMath';
 import { arcShape } from './arc';
-import { placeAlongRun, runPlaces, runStationAt } from './place';
+import { placeAlongRun, runPlaces, runPlaceAt } from './place';
 import { trackRun } from './run';
 import { lineShape } from './shape';
 
@@ -36,24 +36,24 @@ describe('runPlaces', () => {
   });
 });
 
-describe('runStationAt', () => {
+describe('runPlaceAt', () => {
   const run = trackRun(lineShape(C, { x: 100, y: 0 }));
   test('within the run it is the run’s own place, moved along its up by shift', () => {
-    close(runStationAt(run, 25).point, { x: 25, y: 0 });
-    close(runStationAt(run, 25, 5).point, { x: 25, y: -5 });
+    close(runPlaceAt(run, 25).point, { x: 25, y: 0 });
+    close(runPlaceAt(run, 25, 5).point, { x: 25, y: -5 });
   });
   test('past either end it carries on straight', () => {
-    close(runStationAt(run, -20).point, { x: -20, y: 0 });
-    close(runStationAt(run, 130).point, { x: 130, y: 0 });
+    close(runPlaceAt(run, -20).point, { x: -20, y: 0 });
+    close(runPlaceAt(run, 130).point, { x: 130, y: 0 });
   });
   test("with 'follow', past an arc's end it carries on round the arc's circle, tipped to it there", () => {
     // The top quarter, 12 to 3 o'clock, radius 100: a quarter turn past its end is 6 o'clock.
     const arc = trackRun(arcShape({ center: C, radius: 100, start: 0, end: 90 }), 0, 1, { side: 'path' });
     const quarter = (Math.PI / 2) * 100;
-    close(runStationAt(arc, 2 * quarter, 0, 'follow').point, { x: 0, y: 100 });
-    close(runStationAt(arc, -quarter, 0, 'follow').point, { x: -100, y: 0 });
-    expect(runStationAt(arc, 2 * quarter, 0, 'follow').angle).toBeCloseTo(180);
-    close(runStationAt(arc, 2 * quarter, 10, 'follow').point, { x: 0, y: 110 });
+    close(runPlaceAt(arc, 2 * quarter, 0, 'follow').point, { x: 0, y: 100 });
+    close(runPlaceAt(arc, -quarter, 0, 'follow').point, { x: -100, y: 0 });
+    expect(runPlaceAt(arc, 2 * quarter, 0, 'follow').angle).toBeCloseTo(180);
+    close(runPlaceAt(arc, 2 * quarter, 10, 'follow').point, { x: 0, y: 110 });
   });
 });
 

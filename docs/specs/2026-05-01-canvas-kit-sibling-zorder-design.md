@@ -96,7 +96,7 @@ Each op records, in its closure, a snapshot of `getChildren(parent)` for every
 parent it touches **before** applying. Its inverse is a single
 `createMoveToIndexOp`-style op (or a small bundle of them, one per parent)
 that calls `setChildOrder(parent, snapshot)`. This is the same shape as
-`createTransformOp`'s before/after pose — the op holds both ends of the edit.
+`createSetPoseOp`'s before/after pose — the op holds both ends of the edit.
 
 ### Op shape
 

@@ -12,7 +12,7 @@ import { zoomAt, axisZoomFactor } from './zoomAt';
 import { clampView } from './clampView';
 import { viewportWorldRect } from './viewportWorldRect';
 import { fitViewToBounds, hasExtent } from './fitViewToBounds';
-import { fitToBounds } from './fitToBounds';
+import { fitSize } from './fitSize';
 import { interpolateView } from './interpolateView';
 import { deriveParallaxView, fromPlane, planeMap, planeToPlane, rectToPlane, toPlane } from './parallax';
 import { clientToWorld } from './clientToWorld';
@@ -206,10 +206,10 @@ describe('fitViewToBounds', () => {
     t.atLeast('clamped', 10);
   }, T);
 
-  it('fitToBounds centers the content at the zoom fitZoom gives, and is null exactly when there is nothing to fit', () => {
+  it('fitSize centers the content at the zoom fitZoom gives, and is null exactly when there is nothing to fit', () => {
     fc.assert(fc.property(positive(1, 4000), positive(1, 4000), fc.oneof(positive(1e-3, 1e5), fc.constant(0), fc.constant(-5)),
       fc.oneof(positive(1e-3, 1e5), fc.constant(0)), fc.integer({ min: 0, max: 30 }), (vw, vh, cw, ch, pad) => {
-        const out = fitToBounds(vw, vh, cw, ch, pad);
+        const out = fitSize(vw, vh, cw, ch, pad);
         if (!(cw > 0 || ch > 0)) return void expect(out).toBeNull();
         expect(out).not.toBeNull();
         const { zoom, panX, panY } = out!;

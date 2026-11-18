@@ -8,7 +8,7 @@ import { flattenCubic } from '../flatten';
 import type { Path, PolygonPath } from '../path';
 import { PathBuilder } from './builder';
 import { lineSegment, pathToCubicContours, splitSegment, type CubicSegment } from './cubicContours';
-import { segmentCrossings } from './segmentCrossings';
+import { crossingsAmong } from './crossingsAmong';
 import { pathSignedArea } from './winding';
 import { lerp } from '../scalar';
 
@@ -50,7 +50,7 @@ export function mergeRegion(path: Path, opts: MergeRegionOptions = {}): PolygonP
   // A segment another contour already runs along carries no edge of its own; its twin decides that.
   const segs = distinct(all, snap);
   const cuts: Cut[][] = segs.map(() => []);
-  for (const x of segmentCrossings(segs)) {
+  for (const x of crossingsAmong(segs)) {
     const p = crossingPoint(segs[x.a]!, x.s, segs[x.b]!, x.t, snap);
     cuts[x.a]!.push({ t: x.s, p });
     cuts[x.b]!.push({ t: x.t, p });

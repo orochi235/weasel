@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createScene, type ActionDeps, type RectPose } from '@weasel-js/core';
-import { reportDeleteAction } from './diagramEditing';
+import { createReportDeleteAction } from './diagramEditing';
 import { withDiagramRegistry } from './edge';
 import { diagramScene, edgeIdOf, type DiagramData } from './fromData';
 import { deletePreset } from '@weasel-js/editing';
@@ -45,7 +45,7 @@ describe("DiagramView's report-only delete", () => {
   const GROUPED: DiagramData = {
     nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }, { id: 'c', lines: ['c'] }],
     edges: [{ from: 'G', to: 'c' }, { from: 'a', to: 'b' }],
-    groups: [{ id: 'G', members: ['a', 'b'] }],
+    clusters: [{ id: 'G', members: ['a', 'b'] }],
   };
 
   function reportFor(selected: string[]) {
@@ -55,7 +55,7 @@ describe("DiagramView's report-only delete", () => {
       registry: withDiagramRegistry(),
     });
     const report = vi.fn();
-    const action = reportDeleteAction(report);
+    const action = createReportDeleteAction(report);
     const selection = { get: () => selected, set: vi.fn() };
     (action.invoker as { run: (deps: ActionDeps) => void }).run({ scene, operands: selection, applyOps: vi.fn() } as unknown as ActionDeps);
     return { report, scene, selection };

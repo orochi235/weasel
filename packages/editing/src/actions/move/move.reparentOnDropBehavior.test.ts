@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
-import { createScene, createTransformOp, asNodeId, type RectPose } from '@weasel-js/core/engine';
+import { createScene, createSetPoseOp, asNodeId, type RectPose } from '@weasel-js/core/engine';
 import type { LayoutStrategy, MoveBehavior } from '@weasel-js/core/engine';
 import { moveAction } from './action';
 
@@ -19,7 +19,7 @@ function drop(dx: number, more: { behaviors?: MoveBehavior<unknown>[]; deps?: ob
   scene.add({ id: A, kind: 'mark', layer: 'main', data: {}, pose: HOME });
   scene.add({ id: T, kind: 'group', layer: 'main', data: {}, pose: { x: 100, y: 100, width: 200, height: 200 } });
   const nodeAtPoint = vi.fn(() => T);
-  const onGestureEnd = vi.fn();
+  const onRunEnd = vi.fn();
   const base = {
     world: { x: 5, y: 5 },
     modifiers: MODS,
@@ -29,28 +29,28 @@ function drop(dx: number, more: { behaviors?: MoveBehavior<unknown>[]; deps?: ob
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
   const handle = invoker.start(
     base as unknown as InvocationCtx,
-    { behaviors: more.behaviors ?? [], params: { reparentOnDrop: 'top', onGestureEnd } } as BindingOptions,
+    { behaviors: more.behaviors ?? [], params: { reparentOnDrop: 'top', onRunEnd } } as BindingOptions,
   );
   const drag = { start: { x: 5, y: 5 }, current: { x: 5 + dx, y: 5 + dx }, delta: { x: dx, y: dx } };
   const at = { ...base, world: drag.current, drag } as unknown as InvocationCtx;
   handle.onMove!(at);
   handle.onEnd!(at, 'commit');
-  return { scene, nodeAtPoint, onGestureEnd };
+  return { scene, nodeAtPoint, onRunEnd };
 }
 
 describe('moveAction — reparent-on-drop behind the other behaviors', () => {
   it('reparents under the node the pointer is released over', () => {
-    const { scene, nodeAtPoint, onGestureEnd } = drop(195);
+    const { scene, nodeAtPoint, onRunEnd } = drop(195);
     expect(nodeAtPoint).toHaveBeenCalledTimes(1);
     expect(scene.get(A)!.parent).toBe(T);
-    expect(onGestureEnd).toHaveBeenCalledWith(true);
+    expect(onRunEnd).toHaveBeenCalledWith(true);
   });
 
   it('does not look for a drop target when a binding behavior answers at end', () => {
-    const { scene, nodeAtPoint, onGestureEnd } = drop(195, { behaviors: [{ onEnd: () => [] }] });
+    const { scene, nodeAtPoint, onRunEnd } = drop(195, { behaviors: [{ onEnd: () => [] }] });
     expect(nodeAtPoint).not.toHaveBeenCalled();
     expect(scene.get(A)!.parent).toBe(null);
-    expect(onGestureEnd).toHaveBeenCalledWith(true);
+    expect(onRunEnd).toHaveBeenCalledWith(true);
   });
 
   it('does not look for one when a layout drop took the selection', () => {
@@ -59,7 +59,7 @@ describe('moveAction — reparent-on-drop behind the other behaviors', () => {
       childPoses: () => new Map(),
       getDropTargets: () => [{ pose: SLOT, origin: { x: SLOT.x, y: SLOT.y } }],
       reflowPoses: () => new Map(),
-      commitDrop: () => [createTransformOp<RectPose>({ id: A, from: HOME, to: SLOT, label: 'Drop' })],
+      commitDrop: () => [createSetPoseOp<RectPose>({ id: A, from: HOME, to: SLOT, label: 'Drop' })],
     } as unknown as LayoutStrategy<unknown>;
     const { scene, nodeAtPoint } = drop(195, { deps: { layout: { getLayout: (id: string) => (id === T ? layout : null) } } });
     expect(nodeAtPoint).not.toHaveBeenCalled();
@@ -69,9 +69,9 @@ describe('moveAction — reparent-on-drop behind the other behaviors', () => {
   });
 
   it('does not look for one, or commit, on a drag that went nowhere', () => {
-    const { scene, nodeAtPoint, onGestureEnd } = drop(0);
+    const { scene, nodeAtPoint, onRunEnd } = drop(0);
     expect(nodeAtPoint).not.toHaveBeenCalled();
     expect(scene.get(A)!.parent).toBe(null);
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    expect(onRunEnd).toHaveBeenCalledWith(false);
   });
 });

@@ -11,7 +11,7 @@ import { deepEqual } from '@weasel-js/registry';
 import fc from 'fast-check';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
-import { valueAtPath, withValueAtPath } from '../config/path';
+import { configValueAt, withConfigValueAt } from '../config/path';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { unruledConfigSchema } from '../instrument/serializers';
 import { runs, tally, timeoutFor } from '../pbt.fixture';
@@ -79,7 +79,7 @@ class Write implements fc.Command<Model, Real> {
   run(m: Model, r: Real): void {
     const value = this.path === 'g.c' ? this.n % 2 === 1 : this.n;
     act(() => r.writes().setConfig(this.path, value));
-    if (valueAtPath(m.now.config, this.path) === value) {
+    if (configValueAt(m.now.config, this.path) === value) {
       t.count('wrote what it held');
       check(m, r);
       return;
@@ -93,7 +93,7 @@ class Write implements fc.Command<Model, Real> {
       m.undo.push({ before: m.now });
       m.redo = [];
     }
-    m.now = { config: withValueAtPath(m.now.config, this.path, value) };
+    m.now = { config: withConfigValueAt(m.now.config, this.path, value) };
     m.last = { path: this.path, at: m.clock, start };
     if (same && deepEqual(m.now, start)) {
       t.count('a gesture back where it began');

@@ -16,7 +16,7 @@ import type { Scene, NodeId } from '@weasel-js/core';
 import type { ActionDisabledReason } from '@weasel-js/routing';
 import { defaultNodeRouting } from '@weasel-js/core';
 import type { NodeRoutingEntry } from '@weasel-js/core';
-import { drawPreset, BUILTIN_TOOL_IDS } from '@weasel-js/editing';
+import { drawPreset, KIT_TOOL_IDS } from '@weasel-js/editing';
 
 type D = { kind: string; path?: unknown; fill?: string };
 type L = 'main';
@@ -288,7 +288,7 @@ describe('clone smoke (alt-drag via select tool)', () => {
         layers={{}}
         width={400}
         height={400}
-        features={[drawPreset]} defaultTools={BUILTIN_TOOL_IDS}
+        features={[drawPreset]} defaultTools={KIT_TOOL_IDS}
         selectionOptions={{ initial: [id] }}
         actions={{
           // clone requires 'selection' + 'scene' deps — both wired in SceneCanvas.
@@ -324,7 +324,7 @@ describe('clone smoke (alt-drag via select tool)', () => {
         layers={{}}
         width={400}
         height={400}
-        features={[drawPreset]} defaultTools={BUILTIN_TOOL_IDS}
+        features={[drawPreset]} defaultTools={KIT_TOOL_IDS}
         // No initial selection — the alt-drag must select-and-clone in one go.
         actions={{
           clone: { enabled: () => true as const },

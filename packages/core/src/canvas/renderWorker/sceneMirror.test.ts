@@ -66,18 +66,18 @@ describe('the render worker scene copy', () => {
     const mirror = createSceneMirror();
     // The page numbers c and b first, as a pick of them would.
     const pageIds = scenePickIds(page);
-    const [c, b] = [pageIds.idOf('c'), pageIds.idOf('b')];
+    const [c, b] = [pageIds.pickIdOf('c'), pageIds.pickIdOf('b')];
     const sync = () => { const d = diff.next(page as unknown as Scene<unknown, string, unknown>); if (d) mirror.apply(structuredClone(d)); };
     sync();
     const copyIds = scenePickIds(mirror.scene!);
-    for (const k of ['g', 'a', 'b', 'c']) expect(copyIds.nodeOf(pageIds.idOf(k))).toBe(k);
-    expect([copyIds.idOf('c'), copyIds.idOf('b')]).toEqual([c, b]);
+    for (const k of ['g', 'a', 'b', 'c']) expect(copyIds.idOfPickId(pageIds.pickIdOf(k))).toBe(k);
+    expect([copyIds.pickIdOf('c'), copyIds.pickIdOf('b')]).toEqual([c, b]);
     page.remove(id('a'));
     page.add(box('d', 9));
     sync();
-    expect(copyIds.nodeOf(pageIds.idOf('d'))).toBe('d');
-    expect(copyIds.idOf('d')).toBe(pageIds.idOf('d'));
-    expect(copyIds.nodeOf(pageIds.idOf('c'))).toBe('c');
+    expect(copyIds.idOfPickId(pageIds.pickIdOf('d'))).toBe('d');
+    expect(copyIds.pickIdOf('d')).toBe(pageIds.pickIdOf('d'));
+    expect(copyIds.idOfPickId(pageIds.pickIdOf('c'))).toBe('c');
   });
 
   it('resets when the layer stack changes', () => {

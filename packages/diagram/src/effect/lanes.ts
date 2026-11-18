@@ -1,9 +1,9 @@
 import { maxOf, minOf } from '@weasel-js/geom';
 import type { MeasureRowText } from '../body';
 import { insetOf } from '../cluster';
-import { groupLabelIdOf } from '../dataGroups';
+import { clusterLabelIdOf } from '../dataClusters';
 import type { DataNode, DiagramRouter } from '../dataTypes';
-import { nestGroups } from '../groupTree';
+import { nestClusters } from '../clusterTree';
 import { diagramNodeOf } from '../trait';
 import type { PortSpec } from '../types';
 import {
@@ -108,14 +108,14 @@ type Overhang = { left: number; top: number; right: number; bottom: number };
  *  insets of the group boxes around it, a title's included. And the width
  *  of each labeled group's title. */
 function sizesOf(nodes: readonly DataNode[], groups: readonly EffectGroup[], measure: MeasureRowText | undefined) {
-  const specs = worldSpecs({ nodes, edges: [], groups }, { layout: 'none', ...(measure !== undefined ? { measure } : {}) });
+  const specs = worldSpecs({ nodes, edges: [], clusters: groups }, { layout: 'none', ...(measure !== undefined ? { measure } : {}) });
   const pose = new Map(specs.map((s) => [s.id as string, s.pose as Box]));
   const spec = new Map(specs.map((s) => [s.id as string, s]));
-  const nested = nestGroups(groups, (id) => nodes.some((n) => n.id === id))
-    .map((g) => ({ members: g.members, inset: insetOf(diagramNodeOf({ id: g.id, kind: 'mark', data: spec.get(g.id)?.data })?.group?.inset) }));
+  const nested = nestClusters(groups, (id) => nodes.some((n) => n.id === id))
+    .map((g) => ({ members: g.members, inset: insetOf(diagramNodeOf({ id: g.id, kind: 'mark', data: spec.get(g.id)?.data })?.cluster?.inset) }));
   const boxed = (id: string, side: 'top' | 'bottom') => nested.reduce((sum, g) => sum + (g.members.includes(id) ? g.inset[side] : 0), 0);
   const titles = new Map(groups.flatMap((g) => {
-    const title = pose.get(groupLabelIdOf(g.id));
+    const title = pose.get(clusterLabelIdOf(g.id));
     return title === undefined ? [] : [[g.id, title.width] as const];
   }));
   const size = new Map(nodes.map((n) => {
@@ -249,7 +249,7 @@ export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
   // another; a few rounds settle each corridor's tracks.
   let insets = insetsFor(rows.length + 1, new Map());
   let laid = place(plan, insets);
-  const route = (at: typeof laid) => routeWires(wires, at.nodes, { grid: at, column, router, measure: options.measure, groups });
+  const route = (at: typeof laid) => routeWires(wires, at.nodes, { grid: at, column, router, measure: options.measure, clusters: groups });
   let routed = route(laid);
   for (let round = 0; round < 4; round++) {
     const need = insetsFor(rows.length + 1, routed.tracks);
@@ -268,7 +268,7 @@ export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
   const laneStyle = new Map(rows.map((t, i) => [laneId(t), bodies[i % bodies.length]!]));
 
   return {
-    data: { nodes: [...laneNodes, ...laid.nodes], edges: edges.map((e) => e.edge), groups },
+    data: { nodes: [...laneNodes, ...laid.nodes], edges: edges.map((e) => e.edge), clusters: groups },
     scene: {
       layout: 'none',
       router,

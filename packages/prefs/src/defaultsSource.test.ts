@@ -2,7 +2,7 @@ import { createMemoryAdapter } from '@weasel-js/storage';
 import { describe, expect, it } from 'vitest';
 import { pref } from '@weasel-js/prefs-schema';
 import { prefsCss } from './css';
-import { prefsDefaultsSource } from './defaultsSource';
+import { createDefaultsSource } from './defaultsSource';
 import { openPrefsSync } from './open';
 
 const byMode = (dark: unknown, light: unknown) => ({ $by: 'look.mode', $in: { dark, light } });
@@ -18,16 +18,16 @@ const SCHEMA = pref.group('Prefs', {
   shown: pref.boolean('Shown', true),
 });
 
-describe('prefsDefaultsSource', () => {
+describe('createDefaultsSource', () => {
   it('writes the same CSS as a store opened at defaults', () => {
     const store = openPrefsSync(SCHEMA, { storage: createMemoryAdapter(), prefix: 'x.' });
-    const css = prefsCss(prefsDefaultsSource(SCHEMA));
+    const css = prefsCss(createDefaultsSource(SCHEMA));
     expect(css).toBe(prefsCss(store));
     expect(css).toContain('--gap: 9px;');
   });
 
   it('reads a split default at a selection, and its scope', () => {
-    const source = prefsDefaultsSource(SCHEMA);
+    const source = createDefaultsSource(SCHEMA);
     expect(source.get('gap')).toBe(4);
     expect(source.values({ at: { 'look.mode': 'light' } }).gap).toBe(6);
     expect(source.scope('gap')).toEqual(SCHEMA.children.gap.defaultScope);

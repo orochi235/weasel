@@ -38,7 +38,7 @@ function read(root: HTMLElement, shape: TrackShape | null): TwinReading {
       value: el.getAttribute('aria-valuenow') ?? '',
       spoken: el.getAttribute('aria-valuetext') ?? '',
       angle: angleOf(el),
-      off: shape ? shape.nearest(p).dist : null,
+      off: shape ? shape.nearest(p).distance : null,
     };
   });
   return { thumbs, readouts: root.querySelectorAll('[data-readout]').length, labels: root.querySelectorAll('[data-slider-stop-label]').length };

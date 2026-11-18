@@ -22,7 +22,7 @@ function setup(tune: ActionTunings) {
   render(
     <SceneCanvas
       features={[arrangePreset]} scene={scene} layers={{}} width={64} height={64}
-      selectionOptions={{ mode: 'multi', initial: [asNodeId('a'), asNodeId('b')] }}
+      selectionOptions={{ mode: 'multiple', initial: [asNodeId('a'), asNodeId('b')] }}
       tune={tune}
     />,
   );

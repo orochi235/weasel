@@ -49,7 +49,7 @@ test('the tabs sit on the top arc in reading order, upright, the rule half a tab
   const box = boxOf('tabs');
   const tabs = within(box).getAllByRole('tab');
   const centers = tabs.map((t) => centerIn(box, t));
-  for (const c of centers) expect(run.nearest(c).dist).toBeLessThanOrEqual(1);
+  for (const c of centers) expect(run.nearest(c).distance).toBeLessThanOrEqual(1);
   const ds = centers.map((c) => along(run, c));
   for (let i = 1; i < ds.length; i++) expect(ds[i]).toBeGreaterThan(ds[i - 1]!);
   // Upright: a tab's text runs left to right across the top.
@@ -92,7 +92,7 @@ test('on the bottom arc the page tabs read left to right, + last, the rule insid
   const box = boxOf('pages');
   const parts = [...within(box).getAllByRole('tab'), within(box).getByRole('button', { name: 'Add page' })];
   const centers = parts.map((el) => centerIn(box, el));
-  for (const c of centers) expect(run.nearest(c).dist).toBeLessThanOrEqual(1);
+  for (const c of centers) expect(run.nearest(c).distance).toBeLessThanOrEqual(1);
   for (let i = 1; i < centers.length; i++) expect(centers[i]!.x).toBeGreaterThan(centers[i - 1]!.x);
   const center = { x: config.size / 2, y: config.size / 2 };
   const radius = Math.hypot(run.at(0).point.x - center.x, run.at(0).point.y - center.y);

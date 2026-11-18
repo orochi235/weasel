@@ -14,7 +14,7 @@ import { SNAP_ROLES, type SnapDep, type SnapSession } from '@weasel-js/core/engi
 import {
   roleMods, type Action, type AffordanceHit, type Contribution, type InvocationCtx, type NodeId, type OngoingHandle,
 } from '@weasel-js/routing';
-import { createSnap } from '../deps';
+import { createSnap3dDep } from '../deps';
 import { viewportOf, type World3d } from '../world';
 import {
   AXIS_DIRECTIONS, WORLD_AXES, axisHandleAt, axisHandles, type AxisHandle, type AxisHandleOptions, type WorldAxis,
@@ -22,7 +22,7 @@ import {
 import { moveAction } from '@weasel-js/editing/engine';
 
 /** The axis move's action id. */
-export const AXIS_MOVE_ACTION_ID = 'move3d.axis';
+export const MOVE_AXIS_ACTION_ID = 'move3d.axis';
 /** Id of the entry `createAxisMove` builds. */
 export const AXIS_MOVE_CONTRIBUTION_ID = 'kernel3d.axisMove';
 /** The prefix of an axis handle's hit `kind`; the axis follows it. */
@@ -65,7 +65,7 @@ const isAxisHandle = Object.assign((hit: unknown): boolean => axisOfHit(hit) !==
 /**
  * An axis move over `world`. Register `contribution` beside the canvas's other
  * ambient entries, hand `handleAt` to the dispatcher, and draw `handles`. The
- * move snaps through the `snap` dep when that is `createSnap`'s: along the
+ * move snaps through the `snap` dep when that is `createSnap3dDep`'s: along the
  * axis, a box lines up with the boxes and planes it passes and, on the ground,
  * with the grid.
  */
@@ -77,11 +77,11 @@ export function createAxisMove<TData, TLayer extends string>(
     ...(opts.headPx !== undefined ? { headPx: opts.headPx } : {}),
     ...(opts.axes ? { axes: opts.axes } : {}),
   };
-  const unsourced = createSnap(world, { viewId: opts.viewId ?? null });
+  const unsourced = createSnap3dDep(world, { viewId: opts.viewId ?? null });
   const inner = moveAction.invoker;
 
   const action: Action = {
-    id: AXIS_MOVE_ACTION_ID,
+    id: MOVE_AXIS_ACTION_ID,
     label: 'Move Along Axis',
     group: 'transform',
     activeCursor: 'move',
@@ -110,7 +110,7 @@ export function createAxisMove<TData, TLayer extends string>(
       actions: [action],
       bindings: [{
         spec: { kind: 'drag', target: { kindOf: isAxisHandle }, mods: roleMods(SNAP_ROLES) },
-        actionId: AXIS_MOVE_ACTION_ID,
+        actionId: MOVE_AXIS_ACTION_ID,
         opts: { id: 'kernel3d.axisMove.handle' },
       }],
     },
@@ -132,7 +132,7 @@ export function createAxisMove<TData, TLayer extends string>(
 
 /**
  * A snap dep whose move sessions run along `dir`. A session of `host` that
- * reports no landing, as one that is not `createSnap`'s does not, is passed
+ * reports no landing, as one that is not `createSnap3dDep`'s does not, is passed
  * over for `unsourced`'s, which snaps to nothing but still lands on the axis.
  */
 function alongAxis(dir: { x: number; y: number; z: number }, host: SnapDep | undefined, unsourced: SnapDep): SnapDep {

@@ -17,7 +17,7 @@ export interface GuideStore {
  * serialized history. Over a guide with the same id, it replaces that guide,
  * and its inverse puts it back.
  */
-export function addGuideOp(store: GuideStore, guide: Guide, index?: number): Op {
+export function createAddGuideOp(store: GuideStore, guide: Guide, index?: number): Op {
   let held: Guide | undefined;
   return {
     label: 'Add Guide',
@@ -25,7 +25,7 @@ export function addGuideOp(store: GuideStore, guide: Guide, index?: number): Op 
       held = store.getGuides().find((g) => g.id === guide.id);
       store.addGuide(guide, index);
     },
-    invert: () => (held ? replaceGuideOp(store, guide, held) : removeGuideOp(store, guide)),
+    invert: () => (held ? createReplaceGuideOp(store, guide, held) : createRemoveGuideOp(store, guide)),
   };
 }
 
@@ -34,7 +34,7 @@ export function addGuideOp(store: GuideStore, guide: Guide, index?: number): Op 
  *  which a store changed since `from` was read may hold in place of `from`,
  *  and removes `to` from a store that held no guide with its id; before, it
  *  puts `from` back. */
-export function replaceGuideOp(store: GuideStore, from: Guide, to: Guide): Op {
+export function createReplaceGuideOp(store: GuideStore, from: Guide, to: Guide): Op {
   let applied = false;
   let held: Guide | undefined;
   return {
@@ -44,14 +44,14 @@ export function replaceGuideOp(store: GuideStore, from: Guide, to: Guide): Op {
       applied = true;
       store.addGuide(to);
     },
-    invert: () => (!applied ? replaceGuideOp(store, to, from) : held ? replaceGuideOp(store, to, held) : removeGuideOp(store, to)),
+    invert: () => (!applied ? createReplaceGuideOp(store, to, from) : held ? createReplaceGuideOp(store, to, held) : createRemoveGuideOp(store, to)),
   };
 }
 
 /** Remove the guide with `guide`'s id from `store` as an op, a no-op when it
  *  holds none. Once applied, its inverse adds back the guide it removed, where
  *  it stood; before, it adds `guide`. */
-export function removeGuideOp(store: GuideStore, guide: Guide): Op {
+export function createRemoveGuideOp(store: GuideStore, guide: Guide): Op {
   let applied = false;
   let at = -1;
   let held: Guide | undefined;
@@ -66,7 +66,7 @@ export function removeGuideOp(store: GuideStore, guide: Guide): Op {
       store.removeGuide(guide.id);
       return undefined;
     },
-    invert: () => (!applied ? addGuideOp(store, guide) : held ? addGuideOp(store, held, at) : { label: op.label, apply: () => 'noop', invert: () => op }),
+    invert: () => (!applied ? createAddGuideOp(store, guide) : held ? createAddGuideOp(store, held, at) : { label: op.label, apply: () => 'noop', invert: () => op }),
   };
   return op;
 }

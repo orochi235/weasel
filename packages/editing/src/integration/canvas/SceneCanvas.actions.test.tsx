@@ -58,7 +58,7 @@ describe('SceneCanvas actions integration', () => {
     );
     const last = seen.at(-1)!;
     expect(last).toContain('selectAll');
-    expect(last).toContain('escape');
+    expect(last).toContain('deselect');
     expect(last).toContain('duplicate');
     expect(last.filter(i => i.startsWith('nudge.'))).toHaveLength(4);
     expect(last.filter(i => i.startsWith('reorder.'))).toHaveLength(2);
@@ -109,7 +109,7 @@ describe('SceneCanvas actions integration', () => {
       </SceneCanvas>,
     );
     expect(seen.at(-1)).not.toContain('selectAll');
-    expect(seen.at(-1)).toContain('escape');
+    expect(seen.at(-1)).toContain('deselect');
   });
 
   it('partial override keeps default id/label/defaultBinding, replaces run', () => {

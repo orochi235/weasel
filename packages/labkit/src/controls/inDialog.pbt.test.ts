@@ -11,7 +11,7 @@ import { summarizeLeaf, summarizeValue } from './inDialog';
 
 const RUNS = 200;
 
-const deg = { scale: Math.PI / 180, precision: 0, suffix: '°' };
+const deg = { scale: Math.PI / 180, places: 0, suffix: '°' };
 const angle = { kind: 'number', name: 'Angle', description: '', default: 0, unit: deg } as const;
 const plain = { kind: 'number', name: 'Count', description: '', default: 0 } as const;
 const item = fc.constantFrom<PrefLeaf>(angle, plain);

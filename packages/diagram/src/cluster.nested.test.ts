@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { force } from './force';
 import { layered } from './layered';
 import { tree } from './tree';
-import { contains, graphOf, nestedBoxOf, overlaps, placed } from './groupFixture';
+import { contains, graphOf, nestedBoxOf, overlaps, placed } from './clusterFixture';
 
 // A system holding two subsystems and a node of its own, beside an outsider
 // every part of it talks to. Ungrouped, the outsider's edges pull it into the
@@ -28,11 +28,11 @@ describe.each([
 
   it('reads the inner groups as members of the outer one', () => {
     const { graph } = boxes();
-    const byId = new Map(graph.groups!.map((g) => [g.id, g]));
+    const byId = new Map(graph.clusters!.map((g) => [g.id, g]));
     expect(byId.get('P')!.parent).toBe('System');
     expect(byId.get('System')!.members).toEqual(['p0', 'p1', 's', 'q0', 'q1']);
-    expect(graph.node('p0')!.group).toBe('P');
-    expect(graph.node('s')!.group).toBe('System');
+    expect(graph.node('p0')!.cluster).toBe('P');
+    expect(graph.node('s')!.cluster).toBe('System');
   });
 
   it('keeps the two inner boxes clear of each other', () => {

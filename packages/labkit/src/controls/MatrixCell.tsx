@@ -1,11 +1,16 @@
-import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/paint';
-import { isBuiltinPref, type PrefLeaf, type PrefNumber, prefLeafValue } from '@weasel-js/prefs';
+import { hexAlpha, toHex8, withAlpha01 } from '@weasel-js/paint';
+import {
+  isBuiltinPref,
+  type PrefLeaf,
+  type PrefNumber,
+  prefValueOrDefault,
+} from '@weasel-js/prefs';
 import { qty } from '@weasel-js/quantity';
 import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
 import { type PropertyControlProps, stepDisplay } from '@weasel-js/ui/components/Properties';
 import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
 import type { CSSProperties, DOMAttributes, MouseEvent, ReactElement, ReactNode } from 'react';
-import { auto as autoValue } from '../config/auto';
+import { AUTO } from '../config/auto';
 import { useFieldChoices } from './fieldChoices';
 import { numberText, summarizeLeaf } from './inDialog';
 
@@ -55,7 +60,7 @@ export function MatrixCell({
   setConfig: (path: string, value: unknown) => void;
   onOpen: (el: HTMLElement) => void;
 }) {
-  const shown = prefLeafValue(leaf, value);
+  const shown = prefValueOrDefault(leaf, value);
   const write = (next: unknown): void => setConfig(path, next);
   const choices = useFieldChoices();
   const field = isBuiltinPref(leaf)
@@ -68,7 +73,7 @@ export function MatrixCell({
   const unpinned = (e: MouseEvent): boolean => {
     if (!e.altKey) return false;
     e.preventDefault();
-    if (canUnpin) setConfig(path, autoValue);
+    if (canUnpin) setConfig(path, AUTO);
     return true;
   };
 
@@ -169,7 +174,7 @@ function colorCell({
         }}
         onChange={(e) => {
           const rgb = e.currentTarget.value;
-          onChange(alpha ? withAlpha01(rgb, getAlpha01(stored)) : rgb);
+          onChange(alpha ? withAlpha01(rgb, hexAlpha(stored)) : rgb);
         }}
       />
     );

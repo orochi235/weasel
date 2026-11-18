@@ -72,6 +72,7 @@
     "check:lockstep": "node scripts/check-lockstep.mjs",
     "check:frame-loops": "node scripts/check-frame-loops.mjs",
     "check:listener-sets": "node scripts/check-listener-sets.mjs",
+    "check:part-caches": "node scripts/check-part-caches.mjs",
     "check:timers": "tsx scripts/check-timers.ts",
     "check:audio-worklet": "node packages/audio/scripts/gen-worklet.mjs --check",
     "check:size": "node scripts/check-size.mjs",

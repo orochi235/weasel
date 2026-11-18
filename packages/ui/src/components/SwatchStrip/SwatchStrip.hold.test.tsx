@@ -12,9 +12,9 @@ const COOL: SwatchPalette = { id: 'cool', name: 'Cool', colors: [{ value: '#0000
 describeHold('SwatchStrip', (mount, own) => {
   const store = createRecentColorsStore({ storage: null });
   store.record('#00ff00ff');
-  const onChange = vi.fn();
-  const onAltChange = vi.fn();
-  mount(<SwatchStrip store={store} palettes={[WARM]} onChange={onChange} onAltChange={onAltChange} {...own} />);
+  const onSelect = vi.fn();
+  const onAltSelect = vi.fn();
+  mount(<SwatchStrip store={store} palettes={[WARM]} onSelect={onSelect} onAltSelect={onAltSelect} {...own} />);
   return {
     targets: () => screen.getAllByRole('button'),
     tryAll: () => {
@@ -24,12 +24,12 @@ describeHold('SwatchStrip', (mount, own) => {
         fireEvent.contextMenu(swatch);
       }
     },
-    changed: () => onChange.mock.calls.length + onAltChange.mock.calls.length > 0 || store.get()[0] !== '#00ff00ff',
+    changed: () => onSelect.mock.calls.length + onAltSelect.mock.calls.length > 0 || store.get()[0] !== '#00ff00ff',
   };
 });
 
 it('holds its palette picker and marks its root', () => {
-  render(<SwatchStrip palettes={[WARM, COOL]} onChange={() => {}} disabled aria-label="Swatches" />);
+  render(<SwatchStrip palettes={[WARM, COOL]} onSelect={() => {}} disabled aria-label="Swatches" />);
   expect(screen.getByRole('group', { name: 'Swatches' })).toHaveAttribute('data-held', 'disabled');
   expect(screen.getByRole('button', { name: /Palette/ })).toBeDisabled();
 });

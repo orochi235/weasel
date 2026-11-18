@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { solid } from '@weasel-js/paint';
-import { asNodeId, createTransformOp, SceneCanvas, WeaselProvider, useScene, useVelocityTracker } from '@weasel-js/core';
+import { asNodeId, createSetPoseOp, SceneCanvas, WeaselProvider, useScene, useVelocityTracker } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
 import type { Dims, Fill, MoveBehavior, RectPose as Pose } from '@weasel-js/core';
 import type { Animator, PhysicsHandle } from '@weasel-js/animator';
@@ -75,7 +75,7 @@ function flickToGrid(args: {
         // The target committed the landing untracked; put the document back so the op records the move.
         const to = target.committed();
         target.commit(from);
-        ctx.adapter.applyOps?.([createTransformOp<Pose>({ id, from, to })], 'flick');
+        ctx.adapter.applyOps?.([createSetPoseOp<Pose>({ id, from, to })], 'flick');
       };
       const { vx, vy } = tracker.getVelocity();
       handle = animator.physics<Pose>({

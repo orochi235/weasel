@@ -3,22 +3,23 @@
  * draws a node in, from the pose shape by default. Caller-supplied `pickEvery` / `boundsOf` overrides via the
  * `geometry` arg take precedence. A select tool reads them through a preset's `build` context.
  */
+import { createPart } from '@weasel-js/registry';
 import { drawnBoundsScene } from '../derivedPath';
 import { useCallback, useMemo } from 'react';
 import { useKitSetting, useLatest } from '@weasel-js/react';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
 import {
-  passesPickGates, pickWalk, scenePickSource, scenePlaneOf, type PickCandidate, type ViewPickGates,
+  passesPickGates, pickWalk, scenePickSource, createLayerPlaneLookup, type PickCandidate, type ViewPickGates,
 } from 'canvas/pickWalk';
 import { rectFromPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { centersAmong } from 'tools/builtin/select/centersBetween';
-import { rangeAmong, type SelectRangeDep } from 'tools/builtin/select/selectRange';
-import { pickTopMostHit, type PickTopMostHitAdapter } from 'tools/builtin/pickTopMostHit';
+import { centersAmong } from 'canvas/centersBetween';
+import { rangeAmong, type SelectRangeDep } from 'canvas/selectRange';
+import { topmostOf, type TopmostTree } from 'canvas/topmostOf';
 import type { Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
-import type { UseMoveOptions } from 'interactions/gestures/moveOptions';
+import type { MoveOptions } from 'interactions/actions/moveOptions';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { drawnBoundsOf } from 'canvas/drawnBounds';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
@@ -92,7 +93,7 @@ export interface UseScenePickersArgs<TData, TLayer extends string, TPose> {
    *  they cannot be read at once (WebGPU), the pick walks the shapes instead. */
   readIds?: () => CanvasExtensionApi['readIdsSync'] | null;
   /** `<SceneCanvas selectTool>`, whose `move` the `move` preset's bindings carry. */
-  selectTool?: { move?: UseMoveOptions<TPose> };
+  selectTool?: { move?: MoveOptions<TPose> };
 }
 
 /** `id` drawn at `pose`, in world, as the chrome boxes it. */
@@ -118,7 +119,7 @@ export interface ScenePickers<TPose> {
    *  caller's `geometry.pickEvery` or the pose-walk default. */
   pickEvery: (world: WorldPoint, view?: PickView | null) => string[];
   /** Single-best hit under the world point, or null. Runs `pickEvery` then
-   *  collapses parent/child overlap via `pickTopMostHit` — matches the id
+   *  collapses parent/child overlap via `topmostOf` — matches the id
    *  the select tool's pointerdown classifier would settle on for a bare
    *  click. The canvas's `getNodeAtPoint` resolves through it. */
   pickBest: (world: WorldPoint, view?: PickView | null) => string | null;
@@ -143,11 +144,11 @@ export interface ScenePickers<TPose> {
   /** What a range click covers, as the select tool ranges: the `selectRange` dep. */
   selectRange: SelectRangeDep;
   /** Every id a press routed to `viewId`'s view lands on, back to front: what the select tool picks from. */
-  pressEvery: (world: WorldPoint, viewId?: string | null) => string[];
+  pickEveryIn: (world: WorldPoint, viewId?: string | null) => string[];
   /** The nodes a range press from `from` to `to` covers. */
   between: (from: string, to: string) => readonly string[];
   /** `selectTool.move` — what the `move` preset's bindings carry. */
-  moveOptions: UseMoveOptions<TPose>;
+  moveOptions: MoveOptions<TPose>;
 }
 
 export function useScenePickers<TData, TLayer extends string, TPose>(
@@ -167,7 +168,7 @@ export function useScenePickers<TData, TLayer extends string, TPose>(
   const pickTolerancePx = geometry?.pickTolerancePx ?? kitPickTolerancePx ?? DEFAULT_PICK_TOLERANCE_PX;
   const includeStroke = geometry?.boundsIncludeStroke ?? true;
   const moveOptions = opts?.move;
-  const wiredMoveOptions = useMemo<UseMoveOptions<TPose>>(() => moveOptions ?? {}, [moveOptions]);
+  const wiredMoveOptions = useMemo<MoveOptions<TPose>>(() => moveOptions ?? {}, [moveOptions]);
 
   const wiredHitBody = usePointPick({
     scene, d, pickEveryProp, shapePicking, pickTolerancePx, getView,
@@ -184,7 +185,7 @@ export function useScenePickers<TData, TLayer extends string, TPose>(
       const n = scene.get(asNodeId(id));
       const camera = cameraOf(view ?? getViewRef.current?.() ?? null);
       if (!n || !camera) return null;
-      return scenePlaneOf(scene.layers, camera)?.(n.layer) ?? null;
+      return createLayerPlaneLookup(scene.layers, camera)?.(n.layer) ?? null;
     };
   }, [scene, getViewRef]);
 
@@ -237,7 +238,7 @@ export function useScenePickers<TData, TLayer extends string, TPose>(
   const wiredPickBest = useMemo(() => {
     return (world: WorldPoint, view?: PickView | null): string | null => {
       const ids = wiredHitBody(world, view);
-      return pickTopMostHit(ids, adapter as unknown as PickTopMostHitAdapter);
+      return topmostOf(ids, adapter as unknown as TopmostTree);
     };
   }, [wiredHitBody, adapter]);
 
@@ -253,7 +254,7 @@ export function useScenePickers<TData, TLayer extends string, TPose>(
     planeOfNode: wiredPlaneOfNode,
     moveOptions: wiredMoveOptions,
     selectRange,
-    pressEvery: pressPick,
+    pickEveryIn: pressPick,
     between,
   };
 }
@@ -278,7 +279,7 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
   } = args;
   // Default pickEvery: walk renderOrder() forward (back-to-front) and collect
   // every node whose pose contains the world point. Order matches the
-  // `useSelectTool` contract — last element is the topmost — so `pickTopMostHit`
+  // `useSelectTool` contract — last element is the topmost — so `topmostOf`
   // picks correctly. Wraps the caller's `pickEvery` (string-or-null) into the
   // array form `useSelectTool` expects. `poseContainsRotated` reads
   // `pose.rotation` directly (the kit's one rotation convention), so rotated
@@ -349,17 +350,14 @@ function askedOwnView(view: PickView | null | undefined, own: Pick<PickView, 'sc
     && (view.x === undefined || view.x === own.x) && (view.y === undefined || view.y === own.y);
 }
 
-const ORDER = new WeakMap<readonly unknown[], Map<string, number>>();
+const ORDER = createPart((nodes: readonly { id: string }[]) => {
+  const index = new Map<string, number>();
+  for (let i = 0; i < nodes.length; i++) index.set(nodes[i].id, i);
+  return index;
+});
 
 /** Each node's place in `scene`'s paint order, cached until a structural edit. */
 function paintOrderOf(scene: { renderOrderNodes(): readonly { id: string }[] }): (id: string) => number {
-  const nodes = scene.renderOrderNodes();
-  let index = ORDER.get(nodes);
-  if (!index) {
-    index = new Map();
-    for (let i = 0; i < nodes.length; i++) index.set(nodes[i].id, i);
-    ORDER.set(nodes, index);
-  }
-  const at = index;
+  const at = ORDER(scene.renderOrderNodes());
   return (id) => at.get(id) ?? -1;
 }

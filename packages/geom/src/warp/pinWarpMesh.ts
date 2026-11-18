@@ -8,15 +8,15 @@ import earcut from 'earcut';
 import type { PolygonPath } from '../path';
 import type { Point } from '../paths/cubicMath';
 import { boundsOfPath } from '../paths/bounds';
-import { pointInPolygon } from '../polyline';
+import { polygonContainsPoint } from '../polyline';
 import { flattenPolygon } from '../tessellate/tessellate';
 import { resolveCrossings, type FlattenedContours } from '../tessellate/crossings';
 import { nestRings } from '../tessellate/nesting';
 import type { ArapMesh } from './arap';
 import { refineTriangulation } from './refine';
 import { addOrigin } from '../paths/pathOrigin';
-import { nearestOnLine } from '../nearest';
-import { pointSegmentDist } from '../points2';
+import { nearestOnSegment } from '../nearest';
+import { pointSegmentDistance } from '../points2';
 import { lerp } from '../scalar';
 
 /** A pin warp's mesh, and the vertex standing for each pin. */
@@ -94,7 +94,7 @@ function regionsOf(path: PolygonPath, tolerance: number, h: number): { regions: 
 const flatRing = (ring: MeshPoint[]) => ring.flatMap((p) => [p.x, p.y]);
 
 function inside(region: Region, x: number, y: number, flats = region.rings.map(flatRing)): boolean {
-  return flats.every((ring, i) => pointInPolygon(ring, x, y) === (i === 0));
+  return flats.every((ring, i) => polygonContainsPoint(ring, x, y) === (i === 0));
 }
 
 /** The nearest point on any ring of `region` to `(x, y)`. */
@@ -102,7 +102,7 @@ function nearestEdge(region: Region, x: number, y: number): { d: number; ring: n
   let best = { d: Infinity, ring: 0, edge: 0, t: 0 };
   region.rings.forEach((ring, r) => ring.forEach((a, i) => {
     const b = ring[(i + 1) % ring.length];
-    const { t, dist: d } = nearestOnLine(x, y, a.x, a.y, b.x, b.y);
+    const { t, distance: d } = nearestOnSegment(x, y, a.x, a.y, b.x, b.y);
     if (d < best.d) best = { d, ring: r, edge: i, t };
   }));
   return best;
@@ -151,7 +151,7 @@ function clearanceTest(rings: MeshPoint[][], r: number): (x: number, y: number) 
     for (let i = ci - 1; i <= ci + 1; i++) {
       for (let j = cj - 1; j <= cj + 1; j++) {
         for (const [a, b] of cells.get(key(i, j)) ?? []) {
-          if (pointSegmentDist(x, y, a.x, a.y, b.x, b.y) < r) return true;
+          if (pointSegmentDistance(x, y, a.x, a.y, b.x, b.y) < r) return true;
         }
       }
     }

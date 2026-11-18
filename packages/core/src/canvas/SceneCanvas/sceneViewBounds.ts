@@ -1,5 +1,5 @@
 import type { Dims } from 'core/layers/render';
-import { unionAABB } from 'core/geometry/unionBounds';
+import { unionAabb } from 'core/geometry/unionBounds';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
@@ -41,7 +41,7 @@ export function sceneViewBounds(
   const opts = prop === 'content' ? {} : prop.content;
   const margin = opts.margin ?? DEFAULT_CONTENT_MARGIN;
   const include = opts.include ?? [];
-  return (from, dims) => contentReach(unionAABB([contentBounds(), ...include]), margin, from, dims);
+  return (from, dims) => contentReach(unionAabb([contentBounds(), ...include]), margin, from, dims);
 }
 
 /**
@@ -54,5 +54,5 @@ export function contentReach(content: Bounds | null, margin: number, from: View,
   const mx = margin / Math.abs(from.scale.x);
   const my = margin / Math.abs(from.scale.y);
   const grown = { x: content.x - mx, y: content.y - my, width: content.width + 2 * mx, height: content.height + 2 * my };
-  return unionAABB([grown, viewportWorldRect(from, dims)]);
+  return unionAabb([grown, viewportWorldRect(from, dims)]);
 }

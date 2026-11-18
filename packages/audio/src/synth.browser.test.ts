@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { partialPresets } from '@weasel-js/audio';
+import { PARTIAL_PRESETS } from '@weasel-js/audio';
 import { CENTER_GAIN, renderEngine } from '@weasel-js/audio/testing/renderEngine';
 import {
   bandPower, centroid, octaveDensityDb, peaks, powerSpectrum, rms,
@@ -101,7 +101,7 @@ describe('inharmonic voices in a real graph', () => {
 
   it('rings a preset through the same path', async () => {
     const out = await renderEngine(0.5, (e) => {
-      e.playNote({ pitch: 440, wave: partialPresets.marimba, duration: 300 });
+      e.playNote({ pitch: 440, wave: PARTIAL_PRESETS.marimba, duration: 300 });
     });
     const s = powerSpectrum(out.subarray(0, ms(200)), RATE, 8192);
     expect(Math.abs(peaks(s, 1)[0] - 440)).toBeLessThan(s.binHz);

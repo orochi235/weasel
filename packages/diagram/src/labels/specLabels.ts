@@ -9,7 +9,7 @@ import { diagramContainerOf } from '../containers/trait';
 import { edgeRouter } from '../edge';
 import { diagramEdgeOf } from '../edgeTrait';
 import type { DiagramSpec } from '../dataTypes';
-import { diagramGroupOf } from '../group';
+import { diagramClusterOf } from '../clusterBox';
 import { diagramLabelOf, type DiagramLabel } from '../labelTrait';
 import { diagramNodeOf } from '../trait';
 import { specDeps, specWorldPoses } from '../specWorld';
@@ -39,7 +39,7 @@ function inputOf(specs: readonly DiagramSpec[]): PlaceLabelsInput {
       continue;
     }
     const node = { id, kind: spec.kind, data: spec.data };
-    if (spec.derivePose !== undefined || diagramContainerOf(node) !== null || diagramGroupOf(node) !== null || diagramNodeOf(node) === null) continue;
+    if (spec.derivePose !== undefined || diagramContainerOf(node) !== null || diagramClusterOf(node) !== null || diagramNodeOf(node) === null) continue;
     shapes.push({ id, box: world.get(id) ?? spec.pose });
   }
   return { shapes, routes, labels };

@@ -1,6 +1,6 @@
 import type { FontStyle } from '../fontStyle';
 import type { FaceEmbedding } from './OutlineFace';
-import { loadFontOutlines, outlineMetrics } from './outlineRegistry';
+import { loadFontOutlines, outlineFace } from './outlineRegistry';
 
 /**
  * The embeddable sfnt and glyph map of a registered outline face, once its
@@ -11,5 +11,5 @@ export async function fontEmbedding(
   family: string, weight: number, style: FontStyle,
 ): Promise<FaceEmbedding | null> {
   if ((await loadFontOutlines(family, { weight, style })) !== 'ready') return null;
-  return outlineMetrics(family, weight, style)?.embedding?.() ?? null;
+  return outlineFace(family, weight, style)?.embedding?.() ?? null;
 }

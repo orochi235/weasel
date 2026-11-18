@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
-import { buildDepsFromRequires } from '@weasel-js/routing';
+import { createActionDeps } from '@weasel-js/routing';
 import { createScene, asNodeId, type RectPose } from '@weasel-js/core/engine';
 import { gridSourceForTests as gridSource, sessionDepForTests as sessionDep } from '@weasel-js/core/test-seams';
 import type { SnapBegin, SnapDep } from '@weasel-js/core/engine';
@@ -31,7 +31,7 @@ function registry() {
 describe('an insert into a mark that canDropInto admits', () => {
   it('snaps a drawn insert in that mark', () => {
     const { reg, begun } = registry();
-    const deps = buildDepsFromRequires(insertAction, reg);
+    const deps = createActionDeps(insertAction, reg);
     const invoker = insertAction.invoker!;
     if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
     const ctx = { world: { x: 5, y: 5 }, screen: { x: 5, y: 5 }, modifiers: { alt: false, ctrl: false, meta: false, shift: false }, deps };
@@ -41,7 +41,7 @@ describe('an insert into a mark that canDropInto admits', () => {
 
   it('snaps a placed insert in that mark', () => {
     const { reg, begun } = registry();
-    const deps = buildDepsFromRequires(placeAction, reg);
+    const deps = createActionDeps(placeAction, reg);
     const invoker = placeAction.invoker!;
     if (invoker.timing !== 'immediate') throw new Error('expected immediate');
     invoker.run(deps, { kind: 'rect', world: { x: 5, y: 5 }, size: { width: 10, height: 10 } });

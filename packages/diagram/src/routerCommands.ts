@@ -120,6 +120,6 @@ export function createSetRouterAction<TPose>(router: keyof typeof SET_ROUTER_ACT
 }
 
 /** One command per shipped router, in menu order. */
-export function routerActions<TPose>(opts: SetRouterOptions<TPose>): Action[] {
+export function createRouterActions<TPose>(opts: SetRouterOptions<TPose>): Action[] {
   return (Object.keys(SET_ROUTER_ACTION_IDS) as (keyof typeof SET_ROUTER_ACTION_IDS)[]).map((r) => createSetRouterAction(r, opts));
 }

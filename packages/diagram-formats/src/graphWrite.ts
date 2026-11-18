@@ -9,7 +9,7 @@ import {
 } from '@weasel-js/diagram';
 import { normalizeHex, rgbaToHex, tryNormalizeHex, tryParseColor } from '@weasel-js/paint';
 import { deepEqual } from '@weasel-js/registry';
-import { graphPageOf, writtenPage, type DiagramDocument, type GraphPage, type WriteOptions } from './document';
+import { requireGraphPage, writtenPage, type DiagramDocument, type GraphPage, type WriteOptions } from './document';
 import { Warnings } from './graphRead';
 import { rowLines } from './rowLines';
 
@@ -72,7 +72,7 @@ function clusterTree(page: GraphPage, theme: DiagramTheme, warnings: Warnings, f
       for (const m of lane.members ?? []) claim(m, lane.id);
     });
   }
-  for (const g of page.data.groups ?? []) {
+  for (const g of page.data.clusters ?? []) {
     warnings.add(`${format} has no groups; they were written as ${format === 'DOT' ? 'clusters' : 'subgraphs'}, which read back as containers.`);
     all.push({ id: g.id, ...(g.label !== undefined ? { label: g.label } : {}), nodes: [], clusters: [] });
     for (const m of g.members) claim(m, g.id);
@@ -97,7 +97,7 @@ function clusterTree(page: GraphPage, theme: DiagramTheme, warnings: Warnings, f
 export function graphOut(doc: DiagramDocument, opts: WriteOptions | undefined, format: string, holdsPools = false): GraphOut | null {
   const written = writtenPage(doc, opts);
   if (written === null) return null;
-  const page = graphPageOf(written, format);
+  const page = requireGraphPage(written, format);
   const warnings = new Warnings();
   const theme = diagramThemeFrom(doc.theme);
   const byId = new Map(page.data.nodes.map((n) => [n.id, n]));

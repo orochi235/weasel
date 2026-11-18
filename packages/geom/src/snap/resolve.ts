@@ -1,7 +1,7 @@
 /** The snap resolver: every gesture's snap, in any dimension, as one search
  *  over affine constraints on the move `δ`. */
 
-import { closestOnFlat, flatDim, intersectFlats, solveLeastSquares, type Flat, type Vec } from './flat';
+import { nearestOnFlat, flatDim, intersectFlats, solveLeastSquares, type Flat, type Vec } from './flat';
 import { distance } from '../points';
 
 /** A `fallback` candidate holds only the axes no `target` claims. */
@@ -56,7 +56,7 @@ export interface SnapProblem<M> {
 
 /** The move `resolveSnap` chose and the candidates it meets. */
 export interface SnapResolution<M> {
-  /** `closestOnFlat(input, delta0)` when nothing snaps. */
+  /** `nearestOnFlat(input, delta0)` when nothing snaps. */
   delta: Vec;
   members: readonly SnapCandidate<M>[];
   /** Every in-reach candidate the result meets: the ones whose marks show. */
@@ -138,7 +138,7 @@ function liveCandidates<M>(problem: SnapProblem<M>, m: Measure): Live<M>[] {
     if (!probe || !isFiniteVec(probe) || !isFiniteVec(c.locus.at) || !c.locus.dirs.every(isFiniteVec)) continue;
     const within = intersectFlats(problem.input, { at: minus(c.locus.at, probe), dirs: c.locus.dirs }, m.eps);
     if (!within) continue;
-    const px = meets(m, c, probe, closestOnFlat(within, problem.delta0));
+    const px = meets(m, c, probe, nearestOnFlat(within, problem.delta0));
     if (px !== null) live.push({ c, probe, within, px });
   }
   return live;
@@ -181,13 +181,13 @@ function extend<M>(parent: Combo<M>, l: Live<M>, input: Flat, delta0: Vec, m: Me
   if (!flat) return null;
   const dim = flatDim(flat);
   if (dim >= parent.dim) return null;
-  const delta = closestOnFlat(flat, delta0);
+  const delta = nearestOnFlat(flat, delta0);
   if (!isFiniteVec(delta)) return null;
   const members = [...parent.members, l];
   const targetFlat = l.c.tier === 'target'
     ? intersectFlats(parent.targetFlat, l.within, m.eps) ?? flat
     : parent.targetFlat;
-  const reachAt = closestOnFlat(targetFlat, delta0);
+  const reachAt = nearestOnFlat(targetFlat, delta0);
   for (const mem of members) if (meets(m, mem.c, mem.probe, delta, reachAt) === null) return null;
   const kept = prune(members, input, dim, flatDim(targetFlat), m.eps);
   let px = 0;
@@ -255,7 +255,7 @@ function satisfiedBy<M>(problem: SnapProblem<M>, delta: Vec, reachAt: Vec, m: Me
     const probe = probes.get(c.probe);
     if (!probe) return false;
     const world = plus(probe, delta);
-    if (!(distance(closestOnFlat(c.locus, world), world) <= m.eps)) return false;
+    if (!(distance(nearestOnFlat(c.locus, world), world) <= m.eps)) return false;
     return meets(m, c, probe, delta, reachAt) !== null;
   });
 }
@@ -264,7 +264,7 @@ function satisfiedBy<M>(problem: SnapProblem<M>, delta: Vec, reachAt: Vec, m: Me
  *  candidates in reach, or `delta0` projected into `H` when none is. */
 export function resolveSnap<M>(problem: SnapProblem<M>): SnapResolution<M> {
   const { input, delta0 } = problem;
-  let base = closestOnFlat(input, delta0);
+  let base = nearestOnFlat(input, delta0);
   if (!isFiniteVec(base)) base = isFiniteVec(input.at) ? input.at : input.at.map(() => 0);
   const m = makeMeasure(problem, base, problem.tolerance ?? DEFAULT_EPS);
   const hDim = flatDim(input);
@@ -276,7 +276,7 @@ export function resolveSnap<M>(problem: SnapProblem<M>): SnapResolution<M> {
   return {
     delta: win.delta,
     members: win.members.map((l) => l.c),
-    satisfied: satisfiedBy(problem, win.delta, win === root ? win.delta : closestOnFlat(win.targetFlat, delta0), m),
+    satisfied: satisfiedBy(problem, win.delta, win === root ? win.delta : nearestOnFlat(win.targetFlat, delta0), m),
     codim: win.codim,
   };
 }

@@ -1,4 +1,4 @@
-import { enumerateSelections, selectionKey } from '../../axes.ts';
+import { enumerateAxisChoices, axisChoiceKey } from '../../axes.ts';
 import { tokensAt } from '../../chainTokens.ts';
 import type { ThemeDefinition } from '../../definition.ts';
 import { resolveTokens } from '../../dtcg/resolve.ts';
@@ -28,11 +28,11 @@ export function emitThemes(themes: readonly ThemesInput[]): string {
 
   const entries = themes.map(({ baked }) => {
     const chain = chainOf(baked, byName);
-    const selections = enumerateSelections(baked.axes).map((sel) => {
+    const selections = enumerateAxisChoices(baked.axes).map((sel) => {
       const resolved = resolveTokens(tokensAt(chain, sel));
       for (const n of Object.keys(resolved)) names.add(`--wzl-${n}`);
       const body = Object.entries(resolved).map(([n, v]) => `        '--wzl-${n}': ${JSON.stringify(v)},`).join('\n');
-      return `      ${quoted(selectionKey(baked.axes, sel))}: {\n${body}\n      },`;
+      return `      ${quoted(axisChoiceKey(baked.axes, sel))}: {\n${body}\n      },`;
     });
     return [
       `  ${JSON.stringify(baked.name)}: {`,

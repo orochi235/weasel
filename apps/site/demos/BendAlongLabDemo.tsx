@@ -1,4 +1,4 @@
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import { asNodeId, createScene, PATH_EFFECT_DERIVATIONS, pathEffectNode, pathNode, type RectPose, withPathEffectsRegistry } from '@weasel-js/core';
 import { pathEffectsPreset, pathsPreset, usePenTool } from '@weasel-js/path-tools';
 import {
@@ -37,11 +37,11 @@ const OPENING = { id: SPINE };
 function createLabScene() {
   const ribbon = pathNode('ribbon', 'M60 40 L220 40 L250 70 L220 100 L60 100 L90 70 Z', {
     fill: { paint: solid('#7fb069') },
-    stroke: strokeOf('#3d5a2a', 2),
+    stroke: solidStroke('#3d5a2a', 2),
   });
   const spine = pathNode('spine', 'M80 300 C180 160 300 420 420 260 C500 160 580 200 640 280', {
     fill: null,
-    stroke: strokeOf('#8a8a8a', 1),
+    stroke: solidStroke('#8a8a8a', 1),
   });
   const bent = { ...pathEffectNode({ kind: 'bendAlong', ...settingsOf(config.defaults()) }, [ribbon.id, spine.id], 'default', PATH_EFFECT_DERIVATIONS), id: asNodeId('bent') };
   return createScene<unknown, 'default', RectPose>({

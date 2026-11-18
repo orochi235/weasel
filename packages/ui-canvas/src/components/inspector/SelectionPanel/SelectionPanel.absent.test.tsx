@@ -5,7 +5,7 @@ import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEn
 import type { PrefLeaf } from '@weasel-js/prefs';
 import { SelectionPanel } from './SelectionPanel';
 import { MIXED } from '@weasel-js/ui/components/PanelCells';
-import { aggregateValue, type AnyNode } from './nodeModel';
+import { sharedNodeValue, type AnyNode } from './nodeModel';
 
 afterEach(cleanup);
 
@@ -32,9 +32,9 @@ function setup(nodes: Record<string, Record<string, unknown>>) {
 describe('a leaf whose absent value is its default', () => {
   it('reads an absent value as the fallback when aggregating', () => {
     const nodes = [{ pose: {} }, { pose: { turn: 0 } }] as unknown as AnyNode[];
-    expect(aggregateValue(nodes, 'pose.turn')).toBe(MIXED);
-    expect(aggregateValue(nodes, 'pose.turn', 0)).toBe(0);
-    expect(aggregateValue([{ pose: {} }, { pose: { turn: 1 } }] as unknown as AnyNode[], 'pose.turn', 0)).toBe(MIXED);
+    expect(sharedNodeValue(nodes, 'pose.turn')).toBe(MIXED);
+    expect(sharedNodeValue(nodes, 'pose.turn', 0)).toBe(0);
+    expect(sharedNodeValue([{ pose: {} }, { pose: { turn: 1 } }] as unknown as AnyNode[], 'pose.turn', 0)).toBe(MIXED);
   });
 
   it('shows the default for a node that holds nothing at the path, and leaves a plain leaf blank', () => {

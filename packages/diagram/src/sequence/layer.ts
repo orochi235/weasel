@@ -14,6 +14,7 @@ import {
   type Vec2,
   type AnyScene,
 } from '@weasel-js/core';
+import { createPart } from '@weasel-js/registry';
 import { keyedIndex } from '../keyedIndex';
 import type { SeqRect } from './layout';
 import { sequenceRootOf, type SequenceGeometry } from './trait';
@@ -107,22 +108,18 @@ function regionsOf(all: readonly PlacedSequence[]): { parts: AffordanceRegion[];
   return { parts, ends };
 }
 
-const INDEXES = new WeakMap<AnyScene, () => { parts: AffordanceRegion[]; ends: AffordanceRegion[] } | null>();
+const indexOf = createPart((scene: AnyScene): () => { parts: AffordanceRegion[]; ends: AffordanceRegion[] } | null =>
+  keyedIndex(
+    () => (typeof scene.getVersion === 'function' ? [scene.getVersion()] : undefined),
+    () => regionsOf(placedSequences(scene)),
+  ));
 
 function regionsIn(scene: AnyScene) {
-  let index = INDEXES.get(scene);
-  if (index === undefined) {
-    index = keyedIndex(
-      () => (typeof scene.getVersion === 'function' ? [scene.getVersion()] : undefined),
-      () => regionsOf(placedSequences(scene)),
-    );
-    INDEXES.set(scene, index);
-  }
-  return index() ?? regionsOf(placedSequences(scene));
+  return indexOf(scene)() ?? regionsOf(placedSequences(scene));
 }
 
 /** The composed layer, for `CanvasExtensionApi.registerLayer`. Register it last: the last registered is hit first. */
-export function sequenceLayer(scene: AnyScene): RenderLayer<unknown> {
+export function createSequenceLayer(scene: AnyScene): RenderLayer<unknown> {
   const parts: Affordance = { id: SEQUENCE_LAYER_ID, regions: () => regionsIn(scene).parts };
   const ends: Affordance = { id: `${SEQUENCE_LAYER_ID}-ends`, regions: () => regionsIn(scene).ends };
   return composeAffordanceLayer(SEQUENCE_LAYER_ID, 'Sequence diagram parts', [parts, ends]) as unknown as RenderLayer<unknown>;

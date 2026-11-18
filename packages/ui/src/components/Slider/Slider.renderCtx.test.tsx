@@ -50,12 +50,12 @@ describe('Slider render contexts', () => {
 
   it('tells the dragged thumb it is active, and only while it is dragged', () => {
     const { seen, thumbs } = setup();
-    expect(seen[1]!.at(-1)!.isActive).toBe(false);
+    expect(seen[1]!.at(-1)!.active).toBe(false);
     fireEvent.pointerDown(thumbs[1]!, { clientX: 240, pointerId: 1 });
-    expect(seen[1]!.at(-1)!.isActive).toBe(true);
-    expect(seen[0]!.at(-1)!.isActive).toBe(false);
+    expect(seen[1]!.at(-1)!.active).toBe(true);
+    expect(seen[0]!.at(-1)!.active).toBe(false);
     fireEvent.pointerUp(document, { clientX: 240, pointerId: 1 });
-    expect(seen[1]!.at(-1)!.isActive).toBe(false);
+    expect(seen[1]!.at(-1)!.active).toBe(false);
   });
 
   it('hands the track painter the track\'s width from its first paint', () => {

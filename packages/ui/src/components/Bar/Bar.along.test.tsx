@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, onTestFinished, test, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { arcShape, lineShape, runPlaces, runStationAt, trackRun, type TrackShape } from '@weasel-js/geom';
+import { arcShape, lineShape, runPlaces, runPlaceAt, trackRun, type TrackShape } from '@weasel-js/geom';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { Along, arcInBox } from '../Along';
 import { isApplePlatform } from '@weasel-js/gestures';
@@ -210,7 +210,7 @@ describe('Bar along a curve: scroll mode', () => {
     });
   };
   /** Where a chevron `out` px past an end of the run sits: on round the arc, clear of the item fading there. */
-  const pastEnd = (out: number) => runStationAt(trackRun(shape), out < 0 ? out : trackRun(shape).length + out, 0, 'follow');
+  const pastEnd = (out: number) => runPlaceAt(trackRun(shape), out < 0 ? out : trackRun(shape).length + out, 0, 'follow');
 
   test('items past the end are marked past, dividers included, and a chevron points out of that end', () => {
     render(<Along shape={shape}><PrefsBar schema={schema} label="Tools" /></Along>);
@@ -224,7 +224,7 @@ describe('Bar along a curve: scroll mode', () => {
   test('right to left, the chevron past the end sits at the left and points out of it', () => {
     render(<div dir="rtl"><Along shape={shape}><PrefsBar schema={schema} label="Tools" /></Along></div>);
     expect(marks()).toEqual(['end']);
-    const end = runStationAt(trackRun(shape, 0, 1, { direction: 'rtl' }), trackRun(shape).length + 10, 0, 'follow');
+    const end = runPlaceAt(trackRun(shape, 0, 1, { direction: 'rtl' }), trackRun(shape).length + 10, 0, 'follow');
     expect(end.point.x).toBeLessThan(shape.at(0.5).point.x);
     expect(turn('end')).toBeCloseTo(end.angle + 90);
   });
@@ -244,7 +244,7 @@ describe('Bar along a curve: scroll mode', () => {
     wheel(30);
     const a = items()[0]!;
     expect(a).toHaveAttribute('data-clipped', 'part');
-    const want = runStationAt(trackRun(shape), -10, 0, 'follow');
+    const want = runPlaceAt(trackRun(shape), -10, 0, 'follow');
     const got = placed(a);
     expect(got.x).toBeCloseTo(want.point.x);
     expect(got.y).toBeCloseTo(want.point.y);

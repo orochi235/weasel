@@ -1,5 +1,5 @@
 import { transformPoint, boundsOfCoords, type Affine } from '@weasel-js/geom';
-import { axisAlignedBounds, unionAABB } from 'core/geometry/unionBounds';
+import { axisAlignedBounds, unionAabb } from 'core/geometry/unionBounds';
 import { nodeGates } from 'core/scene/nodeGates';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -32,7 +32,7 @@ export function sceneContentBounds<TData, TLayer extends string, TPose>(
     const own = boxOf(node.id);
     if (own) for (const m of copies) parts.push(carried(own, m));
   }
-  return unionAABB(parts);
+  return unionAabb(parts);
 }
 
 /** The axis-aligned box `b` covers once carried through `m`. */

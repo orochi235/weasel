@@ -96,7 +96,7 @@ export function createStarTool(options: CreateStarToolOptions = {}): Tool {
       },
       {
         spec: { kind: 'wheel', phase: 'engaged', mods: { shift: true } },
-        actionId: 'insert.adjustRotation',
+        actionId: 'insert.rotate',
         opts: { id: 'star.wheelRotation' },
       },
       // ArrowUp/Down → adjust point count. Ported off the phase table for

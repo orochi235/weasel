@@ -6,7 +6,7 @@
 import { act, render } from '@testing-library/react';
 import { useState } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import type { ViewTransform } from '../instrument/types';
+import type { ViewTransform2D } from '../instrument/types';
 import { CanvasStack } from './CanvasStack';
 import type { CameraGestures } from './cameraGestures';
 import { Stage } from './Stage';
@@ -21,10 +21,10 @@ beforeAll(() => {
   proto.hasPointerCapture = vi.fn(() => true);
 });
 
-const OPEN: ViewTransform = { zoom: 1, pan: { x: 0, y: 0 } };
+const OPEN: ViewTransform2D = { zoom: 1, pan: { x: 0, y: 0 } };
 
 function mountStage(gestures?: CameraGestures) {
-  const seen: ViewTransform[] = [];
+  const seen: ViewTransform2D[] = [];
   function Host() {
     const [view, setView] = useState(OPEN);
     return (

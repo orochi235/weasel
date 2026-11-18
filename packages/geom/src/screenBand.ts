@@ -8,7 +8,7 @@
  * two ellipses, and the pixel slop has to be measured against that shape:
  * neither a scalar nor a per-axis world tolerance describes it.
  */
-import { pointSegmentDist2 } from './points2';
+import { pointSegmentDistance2 } from './points2';
 
 /** Linear part of a map to the screen: `x' = a·x + c·y`, `y' = b·x + d·y`. */
 export interface Linear2 {
@@ -56,7 +56,7 @@ export function capsuleWithinPx(
   const sax = m.a * ax + m.c * ay, say = m.b * ax + m.d * ay;
   const sbx = m.a * bx + m.c * by, sby = m.b * bx + m.d * by;
   const slop2 = slop * slop;
-  const dCenter2 = pointSegmentDist2(px0, py0, sax, say, sbx, sby);
+  const dCenter2 = pointSegmentDistance2(px0, py0, sax, say, sbx, sby);
   if (dCenter2 <= slop2) return true;
   if (r <= 0) return false;
   // Nothing in the band is farther from the centerline than r·s1 on screen.
@@ -91,7 +91,7 @@ function quadWithinPx(x: number, y: number, q: readonly number[], slop2: number)
   if (pos === 0 || neg === 0) return true;
   for (let i = 0; i < 8; i += 2) {
     const j = (i + 2) % 8;
-    if (pointSegmentDist2(x, y, q[i], q[i + 1], q[j], q[j + 1]) <= slop2) return true;
+    if (pointSegmentDistance2(x, y, q[i], q[i + 1], q[j], q[j + 1]) <= slop2) return true;
   }
   return false;
 }

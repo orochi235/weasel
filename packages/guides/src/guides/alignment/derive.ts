@@ -19,7 +19,7 @@ const EPS = 1e-3;
  *  Poses go through `opts.poseDescriptor`, so a rotated sibling advertises
  *  its ink edges rather than its stored box.
  *  The moving selection is measured with its stroke (`drawnBoundsOf`), so
- *  pass each sibling's `drawnAABBOf` box as its target for the two to agree.
+ *  pass each sibling's `drawnAabbOf` box as its target for the two to agree.
  *  The lines are in the camera's world: a sibling on a parallax layer needs
  *  `planeOf` to say which plane its pose is in. A box with a coordinate that
  *  is not finite offers no lines. */

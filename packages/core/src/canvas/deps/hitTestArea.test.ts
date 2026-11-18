@@ -5,12 +5,12 @@
  * A right-triangle polygon pose fills the lower-left half of its AABB
  * [0,0]-[100,100]; the upper-right corner of that AABB is EMPTY (no
  * silhouette). A rect-only AABB test would (wrongly) select the triangle
- * when the marquee only overlaps that empty corner. `hitTestArea` consults
+ * when the marquee only overlaps that empty corner. `hitTestRect` consults
  * the silhouette via the kernel, so it must NOT.
  */
 import { describe, it, expect } from 'vitest';
 import { PATH_M, PATH_L, PATH_C, PATH_Z, type PolygonPath } from '@weasel-js/geom';
-import { hitTestArea, hitTestLassoPolygon } from './hitTestArea';
+import { hitTestRect, hitTestLassoPolygon } from './hitTestArea';
 import { registerNodeShape } from 'canvas/NodeShape';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
@@ -18,7 +18,7 @@ import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/c
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 
 /** The hand-rolled scenes below stand in for a real `Scene`, which always
- *  carries an overrides map; `hitTestArea` resolves poses through it. */
+ *  carries an overrides map; `hitTestRect` resolves poses through it. */
 const NO_OVERRIDES = { read: () => undefined };
 
 /** Right triangle: (0,0) -> (100,0) -> (0,100), closed. AABB = [0,0,100,100].
@@ -43,18 +43,18 @@ function triangleScene(): Scene<unknown, string, unknown> {
   } as unknown as Scene<unknown, string, unknown>;
 }
 
-describe('hitTestArea — silhouette awareness', () => {
+describe('hitTestRect — silhouette awareness', () => {
   it('does NOT select a triangle when the marquee only overlaps its empty AABB corner', () => {
     const scene = triangleScene();
     // Marquee [90,90]-[98,98]: inside the triangle's AABB, but entirely on the
     // empty side of the hypotenuse (x+y > 100). Rect-only AABB would select it.
-    expect(hitTestArea(scene, { x: 90, y: 90, width: 8, height: 8 })).toEqual([]);
+    expect(hitTestRect(scene, { x: 90, y: 90, width: 8, height: 8 })).toEqual([]);
   });
 
   it('DOES select a triangle when the marquee actually touches its silhouette', () => {
     const scene = triangleScene();
     // Marquee [0,0]-[8,8]: overlaps the filled near-(0,0) corner of the triangle.
-    expect(hitTestArea(scene, { x: 0, y: 0, width: 8, height: 8 })).toEqual(['t']);
+    expect(hitTestRect(scene, { x: 0, y: 0, width: 8, height: 8 })).toEqual(['t']);
   });
 
   it('skips a pose without finite numeric bounds (historical hitTestAABB behavior)', () => {
@@ -70,7 +70,7 @@ describe('hitTestArea — silhouette awareness', () => {
       get: (id: NodeId) => nodes.get(id as string) as never,
       overrides: NO_OVERRIDES,
     } as unknown as Scene<unknown, string, unknown>;
-    expect(hitTestArea(scene, { x: 0, y: 0, width: 1000, height: 1000 })).toEqual([]);
+    expect(hitTestRect(scene, { x: 0, y: 0, width: 1000, height: 1000 })).toEqual([]);
   });
 });
 
@@ -80,9 +80,9 @@ describe('hitTestArea — silhouette awareness', () => {
  * `{x,y,width,height}` pose, so the pose carries no silhouette to test. The
  * painter does.
  */
-describe('hitTestArea — geometry held on node.data', () => {
+describe('hitTestRect — geometry held on node.data', () => {
   /** Same right triangle as above, but as `data.path` under a rect pose.
-   *  `pathInPoseFrame` maps the path's own [0,0,100,100] box onto the pose. */
+   *  `pathInPoseBox` maps the path's own [0,0,100,100] box onto the pose. */
   function dataTriangleScene(): Scene<unknown, string, unknown> {
     const nodes = new Map<string, { id: string; kind: 'mark'; pose: unknown; data: unknown }>();
     nodes.set('t', {
@@ -109,11 +109,11 @@ describe('hitTestArea — geometry held on node.data', () => {
   }
 
   it('drops the AABB false positive on the empty corner', () => {
-    expect(hitTestArea(dataTriangleScene(), { x: 90, y: 90, width: 8, height: 8 })).toEqual([]);
+    expect(hitTestRect(dataTriangleScene(), { x: 90, y: 90, width: 8, height: 8 })).toEqual([]);
   });
 
   it('still selects when the marquee touches the drawn silhouette', () => {
-    expect(hitTestArea(dataTriangleScene(), { x: 0, y: 0, width: 8, height: 8 })).toEqual(['t']);
+    expect(hitTestRect(dataTriangleScene(), { x: 0, y: 0, width: 8, height: 8 })).toEqual(['t']);
   });
 
   it('keeps AABB-overlap-is-a-hit for a node no painter matches', () => {
@@ -132,7 +132,7 @@ describe('hitTestArea — geometry held on node.data', () => {
       get: (id: NodeId) => nodes.get(id as string) as never,
       overrides: NO_OVERRIDES,
     } as unknown as Scene<unknown, string, unknown>;
-    expect(hitTestArea(scene, { x: 90, y: 90, width: 8, height: 8 })).toEqual(['p']);
+    expect(hitTestRect(scene, { x: 90, y: 90, width: 8, height: 8 })).toEqual(['p']);
   });
 });
 
@@ -151,7 +151,7 @@ function square(x: number, y: number): PolygonPath {
  * node without replacing its `pose` reference would serve a stale box — a
  * silent wrong hit rather than a crash. These drive the scene's real ops.
  */
-describe('hitTestArea — the memoized AABB tracks the scene', () => {
+describe('hitTestRect — the memoized AABB tracks the scene', () => {
   function movableScene() {
     const scene = createScene<{ label: string }, 'main', PolygonPath>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'main' }],
@@ -165,47 +165,47 @@ describe('hitTestArea — the memoized AABB tracks the scene', () => {
 
   it('follows a setPose', () => {
     const { scene, api, id } = movableScene();
-    expect(hitTestArea(scene, NEAR)).toEqual([id]);
-    expect(hitTestArea(scene, FAR)).toEqual([]);
+    expect(hitTestRect(scene, NEAR)).toEqual([id]);
+    expect(hitTestRect(scene, FAR)).toEqual([]);
 
     api.setPose(id, square(500, 500));
-    expect(hitTestArea(scene, NEAR)).toEqual([]);
-    expect(hitTestArea(scene, FAR)).toEqual([id]);
+    expect(hitTestRect(scene, NEAR)).toEqual([]);
+    expect(hitTestRect(scene, FAR)).toEqual([id]);
   });
 
   it('follows an undo of that setPose', () => {
     const { scene, api, id } = movableScene();
-    expect(hitTestArea(scene, NEAR)).toEqual([id]);
+    expect(hitTestRect(scene, NEAR)).toEqual([id]);
     api.setPose(id, square(500, 500));
     // Must reach the moved box first, or the undo below proves nothing.
-    expect(hitTestArea(scene, FAR)).toEqual([id]);
+    expect(hitTestRect(scene, FAR)).toEqual([id]);
 
     api.undo();
-    expect(hitTestArea(scene, NEAR)).toEqual([id]);
-    expect(hitTestArea(scene, FAR)).toEqual([]);
+    expect(hitTestRect(scene, NEAR)).toEqual([id]);
+    expect(hitTestRect(scene, FAR)).toEqual([]);
   });
 
   it('skips a node whose layer the scene has hidden', () => {
     const { scene, api, id } = movableScene();
-    expect(hitTestArea(scene, NEAR)).toEqual([id]);
+    expect(hitTestRect(scene, NEAR)).toEqual([id]);
 
     api.setLayerVisible('main', false);
-    expect(hitTestArea(scene, NEAR)).toEqual([]);
+    expect(hitTestRect(scene, NEAR)).toEqual([]);
     api.setLayerVisible('main', true);
-    expect(hitTestArea(scene, NEAR)).toEqual([id]);
+    expect(hitTestRect(scene, NEAR)).toEqual([id]);
   });
 
   it('is unaffected by a data change that leaves the pose alone', () => {
     const { scene, api, id } = movableScene();
-    expect(hitTestArea(scene, NEAR)).toEqual([id]);
+    expect(hitTestRect(scene, NEAR)).toEqual([id]);
 
     api.update(id, { data: { label: 'renamed' } });
-    expect(hitTestArea(scene, NEAR)).toEqual([id]);
-    expect(hitTestArea(scene, FAR)).toEqual([]);
+    expect(hitTestRect(scene, NEAR)).toEqual([id]);
+    expect(hitTestRect(scene, FAR)).toEqual([]);
   });
 });
 
-describe('hitTestArea — rotation and overrides', () => {
+describe('hitTestRect — rotation and overrides', () => {
   function rectScene(): Scene<unknown, string, unknown> {
     return createScene<unknown, string, unknown>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'default' }],
@@ -223,14 +223,14 @@ describe('hitTestArea — rotation and overrides', () => {
     // 100x20 at 45 deg puts a corner at (21.7, -32.4) — 32 units above the
     // pose box, which spans y 0..20. A marquee over that corner alone must
     // survive the fast-reject long enough for the silhouette test to claim it.
-    expect(hitTestArea(rectScene(), { x: 15, y: -40, width: 15, height: 15 }))
+    expect(hitTestRect(rectScene(), { x: 15, y: -40, width: 15, height: 15 }))
       .toEqual(['r']);
   });
 
   it('still rejects a marquee that clears the rotated ink entirely', () => {
     // Same expanded box, but this marquee sits in the empty part of it: the
     // expansion must not turn the fast-reject into the whole answer.
-    expect(hitTestArea(rectScene(), { x: 40, y: -30, width: 20, height: 15 }))
+    expect(hitTestRect(rectScene(), { x: 40, y: -30, width: 20, height: 15 }))
       .toEqual([]);
   });
 
@@ -247,18 +247,18 @@ describe('hitTestArea — rotation and overrides', () => {
     });
     scene.overrides.set('o' as NodeId, { pose: { x: 200, y: 200, width: 10, height: 10 } });
 
-    expect(hitTestArea(scene, { x: 195, y: 195, width: 20, height: 20 })).toEqual(['o']);
-    expect(hitTestArea(scene, { x: -5, y: -5, width: 20, height: 20 })).toEqual([]);
+    expect(hitTestRect(scene, { x: 195, y: 195, width: 20, height: 20 })).toEqual(['o']);
+    expect(hitTestRect(scene, { x: -5, y: -5, width: 20, height: 20 })).toEqual([]);
   });
 });
 
-describe('hitTestArea — non-rect poses', () => {
+describe('hitTestRect — non-rect poses', () => {
   it('fast-rejects and admits circles through a descriptor', () => {
     const scene = createScene<object, 'main', CirclePose>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
     const id = scene.add({ kind: 'mark', layer: 'main', pose: circle(10, 10, 5), data: {} });
     const s = scene;
-    expect(hitTestArea(s, { x: 0, y: 0, width: 20, height: 20 }, undefined, CIRCLE_POSE_DESCRIPTOR as never)).toEqual([id]);
-    expect(hitTestArea(s, { x: 30, y: 30, width: 5, height: 5 }, undefined, CIRCLE_POSE_DESCRIPTOR as never)).toEqual([]);
+    expect(hitTestRect(s, { x: 0, y: 0, width: 20, height: 20 }, undefined, CIRCLE_POSE_DESCRIPTOR as never)).toEqual([id]);
+    expect(hitTestRect(s, { x: 30, y: 30, width: 5, height: 5 }, undefined, CIRCLE_POSE_DESCRIPTOR as never)).toEqual([]);
   });
 });
 
@@ -364,7 +364,7 @@ describe('intersect flattens curves', () => {
   });
 
   it('a marquee beside the curve misses it', () => {
-    expect(hitTestArea(lobeScene(), { x: 95, y: 115, width: 4, height: 10 })).toEqual([]);
+    expect(hitTestRect(lobeScene(), { x: 95, y: 115, width: 4, height: 10 })).toEqual([]);
   });
 });
 
@@ -446,20 +446,20 @@ describe('intersect reads a closed outline by whether it is filled', () => {
   it('a marquee or lasso inside a filled square takes it', () => {
     const fill = { paint: { kind: 'solid', color: '#ff0000' } };
     const scene = sceneOf(box, { path: square, fill, stroke });
-    expect(hitTestArea(scene, inside)).toEqual(['sq']);
+    expect(hitTestRect(scene, inside)).toEqual(['sq']);
     expect(hitTestLassoPolygon(scene, insideLasso, 'intersect')).toEqual(['sq']);
   });
 
   it('a marquee or lasso inside an unfilled square misses it', () => {
     const scene = sceneOf(box, { path: square, fill: null, stroke });
-    expect(hitTestArea(scene, inside)).toEqual([]);
+    expect(hitTestRect(scene, inside)).toEqual([]);
     expect(hitTestLassoPolygon(scene, insideLasso, 'intersect')).toEqual([]);
   });
 
   it('a marquee across the outline of an unfilled square takes it', () => {
     const scene = sceneOf(box, { path: square, fill: null, stroke });
-    expect(hitTestArea(scene, acrossEdge)).toEqual(['sq']);
-    expect(hitTestArea(scene, { x: -10, y: -10, width: 120, height: 120 })).toEqual(['sq']);
+    expect(hitTestRect(scene, acrossEdge)).toEqual(['sq']);
+    expect(hitTestRect(scene, { x: -10, y: -10, width: 120, height: 120 })).toEqual(['sq']);
   });
 
   it('reads the ink of a path-shaped pose and of a painter with no silhouette', () => {
@@ -472,9 +472,9 @@ describe('intersect reads a closed outline by whether it is filled', () => {
     try {
       for (const pose of [square, box]) {
         const scene = sceneOf(pose, { hollow: true });
-        expect(hitTestArea(scene, inside)).toEqual([]);
+        expect(hitTestRect(scene, inside)).toEqual([]);
         expect(hitTestLassoPolygon(scene, insideLasso, 'intersect')).toEqual([]);
-        expect(hitTestArea(scene, acrossEdge)).toEqual(['sq']);
+        expect(hitTestRect(scene, acrossEdge)).toEqual(['sq']);
       }
     } finally {
       drop();
@@ -482,12 +482,12 @@ describe('intersect reads a closed outline by whether it is filled', () => {
   });
 });
 
-describe('hitTestArea — a box flipped through its anchor', () => {
+describe('hitTestRect — a box flipped through its anchor', () => {
   it('takes a bare box with a negative width or height, as a resize past the opposite edge leaves it', async () => {
     const { createScene } = await import('core/scene/scene');
     const scene = createScene<unknown, string, unknown>({ systemLayers: [{ id: 'a', visible: true, locked: false }] } as never);
     const id = scene.add({ kind: 'mark', layer: 'a', pose: { x: 100, y: 50, width: -50, height: -50 }, data: { kind: 'rect' } } as never);
-    expect(hitTestArea(scene, { x: 60, y: 10, width: 5, height: 5 })).toEqual([id]);
-    expect(hitTestArea(scene, { x: 110, y: 10, width: 5, height: 5 })).toEqual([]);
+    expect(hitTestRect(scene, { x: 60, y: 10, width: 5, height: 5 })).toEqual([id]);
+    expect(hitTestRect(scene, { x: 110, y: 10, width: 5, height: 5 })).toEqual([]);
   });
 });

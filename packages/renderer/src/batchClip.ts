@@ -32,7 +32,7 @@ import { cornersOf, dropCollinear, isConvex, reverse } from './batchHull';
 
 /** In the space batch vertices are staged in: after the model transform,
  *  before the projection. */
-export interface ClipRect {
+export interface ClipBox {
   x0: number;
   y0: number;
   x1: number;
@@ -40,10 +40,10 @@ export interface ClipRect {
 }
 
 /**
- * `path` under `m` as a `ClipRect`, or `null` when it is not one: not a rect
+ * `path` under `m` as a `ClipBox`, or `null` when it is not one: not a rect
  * path, or a transform that rotates or skews it off the axes.
  */
-export function axisAlignedClipRect(path: Path, m: GlMat3): ClipRect | null {
+export function axisAlignedClipBox(path: Path, m: GlMat3): ClipBox | null {
   if (path.kind !== 'rect') return null;
   const keepsAxes = (m[1] === 0 && m[3] === 0) || (m[0] === 0 && m[4] === 0);
   if (!keepsAxes) return null;
@@ -59,7 +59,7 @@ export function axisAlignedClipRect(path: Path, m: GlMat3): ClipRect | null {
   };
 }
 
-export function intersectClipRects(a: ClipRect, b: ClipRect): ClipRect {
+export function intersectClipBoxes(a: ClipBox, b: ClipBox): ClipBox {
   return {
     x0: Math.max(a.x0, b.x0), y0: Math.max(a.y0, b.y0),
     x1: Math.min(a.x1, b.x1), y1: Math.min(a.y1, b.y1),
@@ -74,7 +74,7 @@ const MAX_CLIP_PLANES = 8;
 
 /** What staged geometry is cut to: a rect, half-planes, or both. */
 export interface BatchCut {
-  readonly rect: ClipRect | null;
+  readonly rect: ClipBox | null;
   /** `a, b, c` for each half-plane, kept where `a * x + b * y + c >= 0`, in
    *  the space batch vertices are staged in. */
   readonly planes: Float64Array;
@@ -85,7 +85,7 @@ export interface BatchCut {
 const NO_PLANES = new Float64Array(0);
 
 /** `rect` and `planes` as one cut, or `null` when there is nothing to cut to. */
-export function batchCut(rect: ClipRect | null, planes: readonly Float64Array[], slanted: boolean): BatchCut | null {
+export function batchCut(rect: ClipBox | null, planes: readonly Float64Array[], slanted: boolean): BatchCut | null {
   if (rect === null && planes.length === 0) return null;
   let all: Float64Array = NO_PLANES;
   if (planes.length === 1) all = planes[0];
@@ -192,7 +192,7 @@ export function cutMisses(cut: BatchCut, src: Float32Array, from: number, n: num
  * `dst`; both need room for `n + 4` vertices.
  */
 export function clipConvexPolygon(
-  src: Float32Array, n: number, stride: number, rect: ClipRect,
+  src: Float32Array, n: number, stride: number, rect: ClipBox,
   dst: Float32Array, tmp: Float32Array,
 ): number {
   return cutConvexPolygon(src, n, stride, { rect, planes: NO_PLANES, slanted: false }, dst, tmp);

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useSyncExternalStore } from 'react';
 import {
-  prefLeaves, prefValueAtPath,
+  prefLeaves, prefValueAt,
   type PrefGroup, type PrefGroupAt, type PrefGroupPath, type PrefPath, type PrefScope, type PrefSelection,
   type PrefValueAt, type PrefValuesOf,
 } from '@weasel-js/prefs-schema';
@@ -39,7 +39,7 @@ export function usePrefGroup<S extends PrefGroup, P extends PrefGroupPath<S>>(
   path: P,
 ): [PrefValuesOf<PrefGroupAt<S, P>>, (patch: PrefGroupPatch<PrefValuesOf<PrefGroupAt<S, P>>>) => void] {
   const subscribe = useCallback((onChange: () => void) => store.subscribe(onChange), [store]);
-  const getSnapshot = () => prefValueAtPath(store.values(), path) as PrefValuesOf<PrefGroupAt<S, P>>;
+  const getSnapshot = () => prefValueAt(store.values(), path) as PrefValuesOf<PrefGroupAt<S, P>>;
   const value = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   const leaves = useMemo(() => prefLeaves(store.schema), [store]);
   const set = useCallback(
@@ -80,7 +80,7 @@ export interface PrefsFormBinding<S extends PrefGroup = PrefGroup> {
  *  `reset`, which puts a leaf or a group back as its schema says, and `unset` (the leaves nothing is stored
  *  for); for its scoped values, `scopes` and `setAt`. `stored` is `store.stored()`. `form` is all of it under
  *  `PrefsForm`'s prop names, to spread on: `<PrefsForm {...form} />`. */
-export function usePrefsValues<S extends PrefGroup>(store: PrefsStore<S>): {
+export function usePrefsState<S extends PrefGroup>(store: PrefsStore<S>): {
   values: Record<string, unknown>;
   set: (path: string, value: unknown) => void;
   unset: ReadonlySet<string>;

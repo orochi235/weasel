@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, fireEvent, within } from '@testing-library/react';
-import { scoreCues } from '@weasel-js/audio';
+import { SCORE_CUES } from '@weasel-js/audio';
 import { ScoreDemo } from '../ScoreDemo';
 
 const reading = (container: HTMLElement, label: string): string =>
@@ -11,7 +11,7 @@ describe('ScoreDemo', () => {
     const { container, getByTestId } = render(<ScoreDemo />);
     expect(container.querySelector('canvas')).toBeTruthy();
     expect(getByTestId('cue').textContent).toBe('investigation');
-    expect(getByTestId('device').textContent).toBe(scoreCues.find((c) => c.name === 'investigation')!.device);
+    expect(getByTestId('device').textContent).toBe(SCORE_CUES.find((c) => c.name === 'investigation')!.device);
   });
 
   it('moves every slider to a cue when that cue is picked, and shows its parameters', () => {

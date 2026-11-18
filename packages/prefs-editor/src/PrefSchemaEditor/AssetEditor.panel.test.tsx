@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { asset, attributes, Live, pickRow, row, structure, tool, WITH_LOCKED } from './AssetEditor.fixture';
-import { addNode, type Workspace } from '@weasel-js/prefs/edit';
-import { CODE, WORKSPACE } from '@weasel-js/prefs/testing/editWorkspace';
+import { addNode, type AssetSet } from '@weasel-js/prefs/edit';
+import { CODE, ASSET_SET } from '@weasel-js/prefs/testing/editAssetSet';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 afterEach(cleanup);
@@ -25,7 +25,7 @@ describe('AssetEditor on a panel', () => {
   });
 
   it('adds a panel a heading over its rows, not a page', () => {
-    let latest: Workspace = WORKSPACE;
+    let latest: AssetSet = ASSET_SET;
     renderWithIcons(<Live onChange={(next) => { latest = next; }} />);
     fireEvent.click(asset('Code'));
     fireEvent.click(tool('Add group'));
@@ -36,7 +36,7 @@ describe('AssetEditor on a panel', () => {
   });
 
   it('offers no kind to turn a panel\'s label into a setting', () => {
-    const start: Workspace = { assets: [WORKSPACE.assets[0]!, { ...WORKSPACE.assets[1]!, root: addNode(CODE, null, 'note', { kind: 'label', name: 'Note', description: '', default: undefined }) }] };
+    const start: AssetSet = { assets: [ASSET_SET.assets[0]!, { ...ASSET_SET.assets[1]!, root: addNode(CODE, null, 'note', { kind: 'label', name: 'Note', description: '', default: undefined }) }] };
     renderWithIcons(<Live start={start} />);
     fireEvent.click(asset('Code'));
     pickRow('note');

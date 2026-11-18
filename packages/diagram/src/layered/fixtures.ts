@@ -32,5 +32,5 @@ export const ANCHORS: DiagramData = {
     { from: 'join:either:start', to: 'voice:either', label: 'start' },
     { from: 'voice:one', to: 'voice:two', label: 'then' },
   ],
-  groups: [{ id: 'group:pair', label: 'pair · span, one after another', members: ['voice:one', 'voice:two'] }],
+  clusters: [{ id: 'group:pair', label: 'pair · span, one after another', members: ['voice:one', 'voice:two'] }],
 };

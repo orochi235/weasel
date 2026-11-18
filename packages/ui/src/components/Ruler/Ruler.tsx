@@ -60,7 +60,7 @@ export interface RulerProps extends Omit<HTMLAttributes<HTMLDivElement>, 'childr
 
 const ScaleContext = createContext<ContinuousScale | null>(null);
 
-const place = (scale: ContinuousScale, at: number): string => `${scale.map(at) * 100}%`;
+const place = (scale: ContinuousScale, at: number): string => `${scale.position(at) * 100}%`;
 
 function labelBox(el: Element, rank: number, at: number): LabelBox {
   const { left, right } = el.getBoundingClientRect();

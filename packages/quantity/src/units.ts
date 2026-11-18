@@ -82,10 +82,10 @@ export function resolveUnit(v: UnitValue | Quantity, unitSystem?: UnitSystem): n
 /** How {@link formatUnit} writes a value. */
 export interface FormatUnitOptions {
   /** Decimal places. Default 2. */
-  precision?: number;
+  places?: number;
   /** End with the unit's name. Default true. */
   suffix?: boolean;
-  /** Keep trailing zeros, so every value shows `precision` places. Default false. */
+  /** Keep trailing zeros, so every value shows `places` places. Default false. */
   pad?: boolean;
 }
 
@@ -101,10 +101,10 @@ export function formatUnit(
   opts?: FormatUnitOptions,
 ): string {
   const { factor, offset } = scaleOrThrow('formatUnit', unitSystem, displayUnit);
-  const precision = opts?.precision ?? 2;
+  const places = opts?.places ?? 2;
   const suffix = opts?.suffix ?? true;
   const display = (baseValue - offset) / factor;
-  let s = display.toFixed(precision);
+  let s = display.toFixed(places);
   if (Number(s) === 0) s = s.replace(/^-/, '');
   if (!opts?.pad && s.includes('.') && !s.includes('e')) {
     s = s.replace(/0+$/, '').replace(/\.$/, '');

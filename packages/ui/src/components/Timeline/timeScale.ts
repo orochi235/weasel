@@ -1,6 +1,6 @@
 import { linearScale, type LinearScale } from '@weasel-js/scale';
 import type { Span } from '@weasel-js/ui-input';
-import { spanPlace, spanShare } from '@weasel-js/ui-input';
+import { spanFraction, spanShare } from '@weasel-js/ui-input';
 
 /** A visible span of timeline time, in ms. */
 export type TimeWindow = Span;
@@ -15,11 +15,11 @@ export function windowScale(window: TimeWindow, widthPx: number): LinearScale {
 }
 
 /** Where `ms` sits in the window, as a fraction, and a duration as a fraction of it. */
-export { spanPlace, spanShare };
+export { spanFraction, spanShare };
 
 /** Where `ms` sits in the window, as a CSS percentage. */
 export function toPercent(window: TimeWindow, ms: number): string {
-  return `${spanPlace(window, ms) * 100}%`;
+  return `${spanFraction(window, ms) * 100}%`;
 }
 
 /** A duration as a CSS percentage, for a width. */

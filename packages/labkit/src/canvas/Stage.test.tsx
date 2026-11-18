@@ -4,7 +4,7 @@ import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { useState } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
-import type { ViewTransform } from '../instrument/types';
+import type { ViewTransform2D } from '../instrument/types';
 import { Lab } from '../lab/Lab';
 import { SurfaceContext } from '../surface/SurfaceContext';
 import type { SurfaceHandle } from '../surface/useTiledSurface';
@@ -71,7 +71,7 @@ describe('<Stage>', () => {
 
   it('zooms on the wheel', async () => {
     function Host() {
-      const [view, setView] = useState<ViewTransform>({ zoom: 1, pan: { x: 0, y: 0 } });
+      const [view, setView] = useState<ViewTransform2D>({ zoom: 1, pan: { x: 0, y: 0 } });
       return (
         <Stage size={{ width: 100, height: 100 }} view={view} onViewChange={setView}>
           <div />
@@ -90,7 +90,7 @@ describe('<Stage>', () => {
     // stage, so its wheel never bubbles here.
     const slot: CameraWheelSlot = { current: null };
     function Host() {
-      const [view, setView] = useState<ViewTransform>({ zoom: 1, pan: { x: 0, y: 0 } });
+      const [view, setView] = useState<ViewTransform2D>({ zoom: 1, pan: { x: 0, y: 0 } });
       return (
         <CameraWheelContext.Provider value={slot}>
           <Stage size={{ width: 100, height: 100 }} view={view} onViewChange={setView}>
@@ -139,7 +139,7 @@ describe('<Stage>', () => {
     // kind of move a ResizeObserver never reports.
     const invalidateRects = vi.fn();
     const surface = { invalidateRects } as unknown as SurfaceHandle;
-    const at = (view: ViewTransform) => (
+    const at = (view: ViewTransform2D) => (
       <SurfaceContext.Provider value={surface}>
         <Stage size={{ width: 100, height: 100 }} view={view} onViewChange={() => {}}>
           <div />

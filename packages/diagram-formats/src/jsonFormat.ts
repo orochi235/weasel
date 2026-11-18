@@ -3,7 +3,8 @@ import { diagramThemeErrors } from '@weasel-js/diagram';
 import type { DiagramDocument, DiagramFormat, DocumentPage, ExportResult, ImportResult, PageKind } from './document';
 
 const FORMAT = 'weasel-diagram';
-const VERSION = 1;
+/** 2 renamed a graph page's `groups` to `clusters` and its grid's `groupColumns` to `clusterColumns`. */
+const VERSION = 2;
 const KINDS: readonly PageKind[] = ['graph', 'sequence', 'plot'];
 
 interface DiagramJson extends DiagramDocument {
@@ -41,10 +42,35 @@ function read(text: string): ImportResult {
     const errors = diagramThemeErrors(theme);
     if (errors.length > 0) throw new Error(`A weasel diagram document whose theme does not check: ${errors.join('; ')}`);
   }
-  const { format: _f, version: _v, ...document } = json as DiagramJson;
+  const { format: _f, version, ...document } = json as DiagramJson;
   // Files written before pages had kinds hold only graphs.
-  const pages = document.pages.map((p) => ({ ...p, kind: p.kind ?? 'graph' }) as DocumentPage);
+  const pages = document.pages.map((p) => {
+    const page = { ...p, kind: p.kind ?? 'graph' } as DocumentPage;
+    return version < 2 && page.kind === 'graph' ? upgradeV1Page(page) : page;
+  });
   return { document: { ...document, pages }, warnings: [] };
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+/** `record` with `from` renamed to `to`, or `record` itself when it has no `from`. */
+function renamed(record: Record<string, unknown>, from: string, to: string): Record<string, unknown> {
+  if (!Object.hasOwn(record, from)) return record;
+  const { [from]: value, ...rest } = record;
+  return { ...rest, [to]: value };
+}
+
+/** A version 1 graph page in version 2's names. */
+function upgradeV1Page(page: DocumentPage): DocumentPage {
+  const p = page as unknown as Record<string, unknown>;
+  let out = isRecord(p.data) ? { ...p, data: renamed(p.data, 'groups', 'clusters') } : p;
+  const layout = p.layout;
+  if (isRecord(layout) && isRecord(layout.options) && isRecord(layout.options.grid)) {
+    const grid = renamed(layout.options.grid, 'groupColumns', 'clusterColumns');
+    out = { ...out, layout: { ...layout, options: { ...layout.options, grid } } };
+  }
+  return out as unknown as DocumentPage;
 }
 
 function write(doc: DiagramDocument): ExportResult {

@@ -75,7 +75,7 @@ function Demo() {
 
       let flipX = true;
       const flip = hud.button({ id: 'flip', x: COL[2] + 10, y: ROW[1] + 16, w: 120, h: 34, label: 'Flip the F' });
-      flip.on('press', () => linear.setFlip({ x: (flipX = !flipX) }));
+      flip.subscribe('press', () => linear.setFlip({ x: (flipX = !flipX) }));
       widgets.push(nearest, linear, top, flip);
     });
 

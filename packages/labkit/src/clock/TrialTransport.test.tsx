@@ -187,8 +187,8 @@ describe('<TrialTransport>', () => {
     expect(c().elapsed).toBe(1000);
   });
 
-  it("offers the clock's rates, and steps through them", async ({ mount }) => {
-    await mount({ duration: 64_000, rates: [1 / 16, 0.25, 1] }, { keys: true });
+  it("offers the clock's speeds, and steps through them", async ({ mount }) => {
+    await mount({ duration: 64_000, speeds: [1 / 16, 0.25, 1] }, { keys: true });
     key(' ');
     key('<');
     expect(c().rate).toBe(0.25);
@@ -200,7 +200,7 @@ describe('<TrialTransport>', () => {
   });
 
   it('reads a speed the way it is told to', async ({ mount }) => {
-    await mount({ duration: 1000, rates: [0.5, 1] }, { formatRate: (r) => `${1 / r} s/turn` });
+    await mount({ duration: 1000, speeds: [0.5, 1] }, { formatRate: (r) => `${1 / r} s/turn` });
     expect(screen.getByRole('slider', { name: /rate/i })).toHaveAttribute(
       'aria-valuetext',
       '1 s/turn',

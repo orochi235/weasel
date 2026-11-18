@@ -71,9 +71,9 @@ describe('SceneCanvas keydown dispatch', () => {
       <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}
         actions={{
           selectAll: { invoker: { timing: 'immediate', run: () => { throw new Error('boom'); } } },
-          // Override `enabled` so the dispatcher's gate doesn't suppress `escape`
+          // Override `enabled` so the dispatcher's gate doesn't suppress `deselect`
           // when there is no active selection (the test doesn't set one up).
-          escape: { invoker: { timing: 'immediate' as const, run: () => { next(); } }, enabled: () => true },
+          deselect: { invoker: { timing: 'immediate' as const, run: () => { next(); } }, enabled: () => true },
         }} />,
     );
     // jsdom is not Mac, so `mod: true` in the defaultBinding resolves to ctrlKey.

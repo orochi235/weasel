@@ -17,7 +17,7 @@ import { type CreateOutlinesAdapter } from '../outlines/createOutlines';
 import { warpLeavesOf } from './warpSelection';
 import type { WarpHandleScratch, WarpLive } from './warpActions';
 import { freshWarp, freshWarpBox, splitByWarp, type WarpKind, type WarpSettings } from './warpTargets';
-import type { WarpBox } from '@weasel-js/geom/warp';
+import type { WarpRect } from '@weasel-js/geom/warp';
 
 /** The id of the layer showing a `kind` warp's controls. A binding reaches
  *  its controls through `affordance:layer:<id>`. */
@@ -53,7 +53,7 @@ const LINE_SAMPLES = 12;
 const IDENTITY: Affine = [1, 0, 0, 1, 0, 0];
 
 /** A closed polygon around `box`: what a fresh warp over text alone is laid on. */
-const boxPath = (b: WarpBox): PolygonPath =>
+const boxPath = (b: WarpRect): PolygonPath =>
   pathFromD(`M ${b.x} ${b.y} H ${b.x + b.width} V ${b.y + b.height} H ${b.x} Z`) as PolygonPath;
 
 /** One group per warp the selection shares, then one for a fresh warp over

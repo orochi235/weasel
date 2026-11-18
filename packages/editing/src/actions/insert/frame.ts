@@ -4,7 +4,7 @@ import { resolveParams } from '@weasel-js/routing';
 import { snapMods } from '@weasel-js/core/engine';
 import type { GestureReaders } from '@weasel-js/core';
 import type { InsertPoint } from '@weasel-js/core/engine';
-import { computeBounds, effectiveOriginMode } from './geometry';
+import { insertRectFor, effectiveOriginMode } from './geometry';
 import { GESTURE_KEY, type InsertFrame, type InsertSession } from './session';
 
 /**
@@ -35,7 +35,7 @@ function shapeEndpoints(
     gctx.current.set(GESTURE_KEY, current);
     const mode = effectiveOriginMode(resolved?.['originMode'], raw.altHeld);
     for (const b of session.behaviors) {
-      const bounds = computeBounds(start.x, start.y, current.x, current.y, mode);
+      const bounds = insertRectFor(start.x, start.y, current.x, current.y, mode);
       const r = b.onMove?.(gctx, { start, current, bounds, pose: bounds });
       if (!r) continue;
       if (r.start && !startHeld) start = r.start;

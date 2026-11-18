@@ -3,7 +3,7 @@
  * count, or a fixed distance apart — and, with a spine, laid along it.
  */
 import {
-  boundsOfPath, measurePath, multiply, prepareTween, rotate, rotatePathAround, transformPath, translate, wrapAngle,
+  boundsOfPath, measurePath, multiply, prepareTween, rotate, rotatePathAbout, transformPath, translate, wrapAngle,
   lerp,
   type TweenPathsOptions, type Path, type PathMeasure,
 } from '@weasel-js/geom';
@@ -90,7 +90,7 @@ export function tweenParts(effect: TweenEffect, a: EffectSource, b: EffectSource
       const cx = lerp(turned.a.cx, turned.b.cx, t);
       const cy = lerp(turned.a.cy, turned.b.cy, t);
       const rotation = turned.a.rotation + turn * t;
-      if (rotation !== 0) path = rotatePathAround(path, cx, cy, rotation);
+      if (rotation !== 0) path = rotatePathAbout(path, cx, cy, rotation);
     }
     if (along) {
       const { point, tangent } = along.at(t * along.length);

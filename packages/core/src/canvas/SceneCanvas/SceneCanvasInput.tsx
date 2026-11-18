@@ -24,7 +24,7 @@ import type { CanvasViewState } from '../useCanvasView';
 import { GeometryProjectionRegistrar } from './poseRegistrars';
 import { usePointerPublisher } from './PointerProviderIfRoot';
 import type { BridgeAdapter, SceneCanvasProps } from './props';
-import type { NodeAtPoint } from './useNodeAtPoint';
+import type { BestHitPicker } from './useBestHit';
 import type { useSceneCanvasTools } from './useSceneCanvasTools';
 import { useEdgePan } from './useEdgePan';
 import { useContentBounds } from './useContentBounds';
@@ -70,7 +70,7 @@ export interface SceneCanvasInputProps {
     Picking, 'pickEvery' | 'pickBest' | 'boundsOf' | 'planeOfNode' | 'kindOfNode' | 'doubleClickNames' | 'viewLayerGate' | 'alphaOf' | 'enteredGroup' | 'reachable' | 'selectRange'
   > & { adapter: BridgeAdapter };
   /** The node a hit resolves to, for the `onClick` / `onDoubleClick` observers. */
-  nodeAtPointRef: MutableRefObject<NodeAtPoint | undefined>;
+  nodeAtPointRef: MutableRefObject<BestHitPicker | undefined>;
   tools: ReturnType<typeof useSceneCanvasTools>;
   viewOn: boolean;
   camera: { viewState: CanvasViewState; viewAnimation: SceneStandardActionsInputs['viewAnimation'] };

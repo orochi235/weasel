@@ -20,8 +20,8 @@ export interface AmbientContributionsProviderProps {
 /**
  * Installs `contributions` on every `<SceneCanvas>` below it, ahead of the canvas's own `ambient` entries, so a menu
  * both define lists the provided sections first. An `ambient` entry with the same id replaces a provided one. Nested
- * providers accumulate, and an inner provider's entry replaces an outer one of the same id. Like `ambient`, ignored by
- * a canvas whose `tools` prop is a takeover.
+ * providers accumulate, and an inner provider's entry replaces an outer one of the same id. Under a `tools` takeover,
+ * an entry whose id the takeover holds is the takeover's.
  */
 export function AmbientContributionsProvider({ contributions, children }: AmbientContributionsProviderProps) {
   const outer = useContext(AmbientContributionsContext);

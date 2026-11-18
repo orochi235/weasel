@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { solid, strokeOf, gradientForBounds } from '@weasel-js/paint';
+import { solid, solidStroke, gradientForBounds } from '@weasel-js/paint';
 import {
   asNodeId,
   createScene,
@@ -34,11 +34,11 @@ function sceneWith(data: Data) {
 
 const selection = { current: [asNodeId('n')] };
 
-type Marks = Pick<SelectionPanelProps<Data, 'default', RectPose>, 'selected' | 'onSelect'>;
+type Marks = Pick<SelectionPanelProps<Data, 'default', RectPose>, 'marked' | 'onMark'>;
 
 const TEXT = [textPreset];
 
-function Panel({ data, selected, onSelect }: { data: Data } & Marks) {
+function Panel({ data, marked, onMark }: { data: Data } & Marks) {
   // One scene per story, so an edit outlasts the render a pressed row causes.
   const scene = useMemo(() => sceneWith(data), [data]);
   return (
@@ -49,8 +49,8 @@ function Panel({ data, selected, onSelect }: { data: Data } & Marks) {
         features={TEXT}
         properties={[...defaultNodeProperties, ...inferredNodeProperties]}
         routing={inferredNodeRouting}
-        selected={selected}
-        onSelect={onSelect}
+        marked={marked}
+        onMark={onMark}
       />
     </div>
   );
@@ -71,7 +71,7 @@ export const Shape: Story = {
     data: {
       path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
       fill: { paint: solid('#7fb069') },
-      stroke: { ...strokeOf('#1c1c1c', 6), cap: 'round', join: 'bevel' },
+      stroke: { ...solidStroke('#1c1c1c', 6), cap: 'round', join: 'bevel' },
     },
   },
 };
@@ -83,7 +83,7 @@ export const ImportedDash: Story = {
     data: {
       path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
       fill: { paint: solid('#7fb069') },
-      stroke: { ...strokeOf('#1c1c1c', 6), dash: [9, 2, 2, 2] },
+      stroke: { ...solidStroke('#1c1c1c', 6), dash: [9, 2, 2, 2] },
     },
   },
 };
@@ -113,7 +113,7 @@ export const GradientFillPaint: Story = {
     data: {
       path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
       fill: { paint: gradientForBounds('linear-gradient', UNIT_BOX, RAMP, 'bounds') },
-      stroke: strokeOf('#1c1c1c', 4),
+      stroke: solidStroke('#1c1c1c', 4),
     },
   },
 };
@@ -126,7 +126,7 @@ export const GradientStrokePaint: Story = {
       path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
       fill: { paint: solid('#7fb069') },
       stroke: {
-        ...strokeOf('#1c1c1c', 6),
+        ...solidStroke('#1c1c1c', 6),
         paint: gradientForBounds('radial-gradient', UNIT_BOX, RAMP, 'bounds'),
       },
     },
@@ -139,12 +139,12 @@ export const PatternFillPaint: Story = {
     data: {
       path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
       fill: { paint: { kind: 'crosshatch', color: '#7fb069ff', size: 8, units: 'bounds' } },
-      stroke: strokeOf('#1c1c1c', 4),
+      stroke: solidStroke('#1c1c1c', 4),
     },
   },
 };
 
-/** What `selected` marks: the Position row, which `pose.y` shares with `pose.x`, and the Appearance section,
+/** What `marked` marks: the Position row, which `pose.y` shares with `pose.x`, and the Appearance section,
  *  named by its own key. A press on a row or on a section's heading selects it, and Cmd or Ctrl on a press adds
  *  it or takes it out. */
 export const SelectedRows: Story = {
@@ -154,8 +154,8 @@ export const SelectedRows: Story = {
     return (
       <Panel
         {...args}
-        selected={selected}
-        onSelect={(path, how) => setSelected((cur) =>
+        marked={selected}
+        onMark={(path, how) => setSelected((cur) =>
           !how.toggle ? [path] : cur.includes(path) ? cur.filter((p) => p !== path) : [...cur, path])}
       />
     );

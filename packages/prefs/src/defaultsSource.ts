@@ -1,7 +1,7 @@
 import { getOwn } from '@weasel-js/registry';
 import type { PrefsCssSource } from './css';
 import { type PrefGroup, prefHoldsValue, prefLeaves, isPrefScope, type PrefSelection, prefScopedDefault } from '@weasel-js/prefs-schema';
-import { assignPrefValueAtPath, selectionWeights } from '@weasel-js/prefs-schema/internal';
+import { assignPrefValueAt, selectionWeights } from '@weasel-js/prefs-schema/internal';
 import { readStored, resolveHeld, selectionAt } from './snapshot';
 import { prefSelectors, admittedSelectors } from './splitCheck';
 
@@ -10,7 +10,7 @@ import { prefSelectors, admittedSelectors } from './splitCheck';
  * default by its `defaultScope` — what `prefsCss` needs to write a schema's
  * stylesheet with no store and no storage, at build time say.
  */
-export function prefsDefaultsSource(schema: PrefGroup): PrefsCssSource {
+export function createDefaultsSource(schema: PrefGroup): PrefsCssSource {
   const leaves = new Map([...prefLeaves(schema)].filter(([, leaf]) => prefHoldsValue(leaf)));
   const selectors = prefSelectors(leaves);
   const admitted = admittedSelectors(schema);
@@ -31,7 +31,7 @@ export function prefsDefaultsSource(schema: PrefGroup): PrefsCssSource {
     values: (options) => {
       const selection = options?.at ? selectionAt(selectors, own, options.at, admitted) : own;
       const tree: Record<string, unknown> = {};
-      for (const path of leaves.keys()) assignPrefValueAtPath(tree, path, read(path, selection));
+      for (const path of leaves.keys()) assignPrefValueAt(tree, path, read(path, selection));
       return tree;
     },
     scope: (path) => {

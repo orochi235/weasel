@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { asNodeId, createScene, type AddNodeSpec, type RectPose, type UnitScope } from '@weasel-js/core';
 import { METRIC_MM } from '@weasel-js/quantity';
-import { documentRulerFrame, rulerFrameAt } from './reading';
+import { documentRulerFrame, createRulerFrameLookup } from './reading';
 
 type Spec = AddNodeSpec<object, 'main', RectPose>;
 const PT: UnitScope = { system: { base: 'pt', units: { pt: 1, in: 72 } } };
@@ -12,12 +12,12 @@ const spec = (id: string, extra: Partial<Spec> = {}): Spec =>
 const sceneOf = (specs: Spec[]) =>
   createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }], initial: specs }) as never;
 
-describe('rulerFrameAt', () => {
+describe('createRulerFrameLookup', () => {
   const scene = sceneOf([
     spec('part', { kind: 'group', units: MM, pose: { x: 100, y: 50, width: 200, height: 100 } }),
     spec('bolt', { parent: asNodeId('part') }),
   ]);
-  const at = rulerFrameAt(scene, PT, { x: 5, y: 5 });
+  const at = createRulerFrameLookup(scene, PT, { x: 5, y: 5 });
 
   it('reads the document outside every frame, from the origin it is given', () => {
     expect(at({ x: 10, y: 10 })).toEqual(documentRulerFrame(PT, { x: 5, y: 5 }));

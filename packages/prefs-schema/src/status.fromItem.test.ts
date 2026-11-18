@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup } from './groups';
-import { prefValueAtPath } from './helpers';
+import { prefValueAt } from './helpers';
 import type { PrefList } from './list';
 import type { PrefLeaf, PrefObject } from './schema';
 import { applyPrefConditions, applyPrefEntryConditions, prefJudge, prefStatusAt } from './status';
@@ -33,7 +33,7 @@ const schema: PrefGroup = {
   children: { mode: flag('Mode'), open: flag('Open'), eased: flag('Eased'), phases: list('Phases', phase) },
 };
 const ROOT = { mode: true, open: true, eased: true };
-const read = (values: unknown) => (path: string) => prefValueAtPath(values, path);
+const read = (values: unknown) => (path: string) => prefValueAt(values, path);
 const fields = (leaf: PrefLeaf): string[] => Object.keys((leaf as PrefObject).children);
 
 describe('a condition that reads the entry, with no entry to read', () => {

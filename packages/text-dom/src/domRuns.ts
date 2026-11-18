@@ -12,7 +12,7 @@
 
 import { isSolidPaint, type Fill, type Paint, type ScreenLength } from '@weasel-js/paint';
 import {
-  DEFAULT_TEXT_STYLE, isHardLineBreak, ownSmallCaps, resolveRunFace, smallCapsScaleFor, smallCapsText, transformRunTexts,
+  DEFAULT_TEXT_STYLE, isHardLineBreak, hasOwnSmallCaps, resolveRunFace, smallCapsScaleFor, smallCapsText, transformRunTexts,
   SMALL_CAPS_SCALE,
   type FontVariantCaps, type ResolvedTextStyle, type StyledRun, type TextTransform,
 } from '@weasel-js/text';
@@ -175,7 +175,7 @@ export function runsToDom(
     span.setAttribute('data-run', '');
     const face = resolveRunFace(run, base);
     if ((run.fontVariantCaps ?? base.fontVariantCaps) === 'small-caps'
-      && !ownSmallCaps(face.fontFamily, face.fontWeight, face.fontStyle)) {
+      && !hasOwnSmallCaps(face.fontFamily, face.fontWeight, face.fontStyle)) {
       const scale = smallCapsScaleFor(face.fontFamily, face.fontWeight, face.fontStyle);
       span.style.setProperty(SMALL_CAPS_SCALE_PROPERTY, String(scale));
       writeSmallCaps(span, run.text, run.textTransform ?? base.textTransform, run.lang ?? base.lang, before);
@@ -302,7 +302,7 @@ export function normalizeSmallCaps(parent: HTMLElement, base: OverlayRunBase = D
     if (el.hasAttribute('data-run')) {
       const text = sourceText(el);
       const face = resolveRunFace(toRun(text, own), base);
-      if (v === 'small-caps' && !ownSmallCaps(face.fontFamily, face.fontWeight, face.fontStyle)) {
+      if (v === 'small-caps' && !hasOwnSmallCaps(face.fontFamily, face.fontWeight, face.fontStyle)) {
         if (!piecesMatch(el, t, lang, before)) { writeSmallCaps(el, text, t, lang, before); changed = true; }
       } else if (el.querySelector('[data-small-caps]')) {
         el.replaceChildren();

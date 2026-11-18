@@ -1,5 +1,6 @@
 import { isApplePlatform } from './platform';
 import { getOwn } from '@weasel-js/registry';
+import type { ModifierKey } from '../grammar/routeGrammar';
 
 /** One key of a shortcut as a keyboard prints it. */
 export interface KeyLegend {
@@ -9,10 +10,6 @@ export interface KeyLegend {
    *  (e.g. an optional modifier). Defaults to false. */
   optional?: boolean;
 }
-
-/** Logical modifier name. Matches the kit's `ModifierKey` in shape — kept as a
- *  local type so `weasel-ui` stays independent of `@weasel-js/core`. */
-export type LogicalMod = 'mod' | 'shift' | 'alt' | 'ctrl' | 'meta';
 
 /** Detected (or overridden) platform. `'mod'` resolves to ⌘ on macOS,
  *  Ctrl on Windows / Linux. */
@@ -33,7 +30,7 @@ export type LegendStyle = 'auto' | 'symbol' | 'text';
 
 /** A modifier to render, named platform-independently. */
 export interface LogicalModSpec {
-  name: LogicalMod;
+  name: ModifierKey;
   /** Marks this modifier as optional (may be held but isn't required).
    *  Forwarded as the resulting `KeyLegend.optional`. */
   optional?: boolean;
@@ -56,7 +53,7 @@ export interface KeyLegendOptions {
 /** Key labels by modifier name or `KeyboardEvent.key`. See {@link KeyLegendOptions.labels}. */
 export type KeyLabels = Readonly<Record<string, string>>;
 
-const MOD_BY_PLATFORM: Record<LogicalMod, Record<Platform, Record<LegendStyle, string>>> = {
+const MOD_BY_PLATFORM: Record<ModifierKey, Record<Platform, Record<LegendStyle, string>>> = {
   mod: {
     macos:   { auto: '⌘',    symbol: '⌘', text: 'Cmd' },
     windows: { auto: 'Ctrl', symbol: '⎈', text: 'Ctrl' },

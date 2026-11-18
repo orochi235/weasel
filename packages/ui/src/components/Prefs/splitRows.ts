@@ -2,8 +2,8 @@ import { useCallback, useId, useMemo, useState } from 'react';
 import {
   prefLeafAt,
   prefScopeValue,
-  prefScopeSelectors,
-  prefValueAtPath,
+  prefStoredSelectors,
+  prefValueAt,
   prefOverrideOptions,
   prefOverridesOf,
   prefScopesOf,
@@ -111,14 +111,14 @@ export function splitShape(
 ): SplitShape | null {
   const axes = prefScopesOf(pref).map((scope) => scope.selector);
   if (!axes.length) return null;
-  const by = prefScopeSelectors(scope);
+  const by = prefStoredSelectors(scope);
   const levels: SplitLevel[] = [];
   for (const path of axes) {
     const leaf = selectorAt(path);
     if (leaf?.kind !== 'enum') continue;
     const selector = leaf as PrefEnum;
     if (!by.has(path)) continue;
-    const set = prefValueAtPath(values, path);
+    const set = prefValueAt(values, path);
     const value = typeof set === 'string' ? set : selector.default;
     const all = selector.options.map((option) => ({ value: option.value, label: option.label }));
     const overrides = prefOverridesOf(pref, path);

@@ -3,7 +3,7 @@
  * in one element, and the stroke traces only the span it draws in another, cut
  * where the canvas cuts it, so markers land at the window's ends.
  */
-import { fillInPoseFrame } from '@weasel-js/core';
+import { paintToLocalUnits } from '@weasel-js/core';
 import {
   boundsOfPath, lengthAtCurve, pathLengthTable, type Path,
 } from '@weasel-js/geom';
@@ -27,7 +27,7 @@ export function withTrimDrawn(node: SvgPathNode): SvgPathNode | SvgGroupNode | n
   const { trim, ...own } = stroke;
   // A run's own box is not the node's: a box-relative paint is placed on the whole path first.
   const bare = own.paint.kind === 'gradient'
-    ? { ...own, paint: { ...own.paint, paint: fillInPoseFrame(own.paint.paint, boundsOfPath(node.path)) } }
+    ? { ...own, paint: { ...own.paint, paint: paintToLocalUnits(own.paint.paint, boundsOfPath(node.path)) } }
     : own;
   const cut = trimmedPath(node.path, trim);
   const children: SvgPathNode[] = [

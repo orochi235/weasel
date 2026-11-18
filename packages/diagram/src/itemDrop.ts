@@ -35,7 +35,7 @@ export type { ItemDropTarget } from './itemDropTarget';
 export const DIAGRAM_ITEM_CARRY = 'weasel-diagram/item';
 
 /** The action a carried item's drop runs. */
-export const ITEM_DROP_ACTION_ID = 'diagram.dropItem';
+export const DROP_ITEM_ACTION_ID = 'diagram.dropItem';
 
 /** An item dropped on the diagram: the host's own value, and where it landed. */
 export interface ItemDrop extends ItemDropTarget {
@@ -82,13 +82,13 @@ const ANY = 'optional' as const;
 export function createItemDropAction(opts: ItemDropOptions): Action {
   const { participants, report, canDrop = () => true, requires = [] } = opts;
   return {
-    id: ITEM_DROP_ACTION_ID,
+    id: DROP_ITEM_ACTION_ID,
     label: 'Drop an item',
     group: 'diagram',
     requires: [...new Set<DepName>(['scene', ...requires])],
     defaultBinding: [{
       spec: { kind: 'carry', types: [DIAGRAM_ITEM_CARRY], mods: { alt: ANY, ctrl: ANY, meta: ANY, shift: ANY } },
-      opts: { id: `${ITEM_DROP_ACTION_ID}.carry` },
+      opts: { id: `${DROP_ITEM_ACTION_ID}.carry` },
     }],
     invoker: {
       timing: 'ongoing',
@@ -135,7 +135,7 @@ export function createItemDropAction(opts: ItemDropOptions): Action {
 }
 
 /** The item drop as a contribution, to pass as `ambient`. */
-export function itemDropContribution(opts: ItemDropOptions): Contribution {
+export function createItemDropContribution(opts: ItemDropOptions): Contribution {
   return {
     id: 'weasel-diagram-item-drop',
     eligibility: { always: true },
@@ -151,7 +151,7 @@ export function useItemDrop(
   const latest = useLatest(props);
   const on = props.onDropItem !== undefined;
   return useMemo(() => (on
-    ? itemDropContribution({
+    ? createItemDropContribution({
         participants,
         canDrop: (item, target) => latest.current.canDropItem?.(item, target) ?? true,
         report: (drop) => latest.current.onDropItem?.(drop),

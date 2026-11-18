@@ -1,6 +1,6 @@
 import { useCommand } from '@weasel-js/core';
 import {
-  RELEASE_MEMBERS_ACTION_ID, RESET_LABEL_ACTION_ID, RESET_ROUTE_ACTION_ID, SET_HOPS_ACTION_ID, SET_ROUTER_ACTION_IDS,
+  RELEASE_MEMBERS_ACTION_ID, RESET_LABEL_ACTION_ID, RESET_ROUTE_ACTION_ID, TOGGLE_HOPS_ACTION_ID, SET_ROUTER_ACTION_IDS,
 } from '@weasel-js/diagram';
 import { pref } from '@weasel-js/prefs';
 import {
@@ -45,7 +45,7 @@ export const CHART_MENUS: MenuContributions = {
         router: menuRun(SET_ROUTER_ACTION_IDS),
         route: menuRun({ resetRoute: RESET_ROUTE_ACTION_ID }),
         label: menuRun({ resetLabel: RESET_LABEL_ACTION_ID }),
-        hops: menuRun({ hops: SET_HOPS_ACTION_ID }),
+        hops: menuRun({ hops: TOGGLE_HOPS_ACTION_ID }),
       }, { as: 'menu' }),
     }),
   },

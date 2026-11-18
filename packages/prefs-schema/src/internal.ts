@@ -5,18 +5,18 @@
  * @packageDocumentation
  */
 export { formOf, ORDERINGS, partsOf, type Form } from './condition';
-export { assignPrefValueAtPath, setOwnPrefValue } from './helpers';
+export { assignPrefValueAt, setOwnPrefValue } from './helpers';
 export { prefLeavesHolding, prefLeavesHoldingIn, UNSEEN, type PrefLeavesFound, type PrefHeld, type PrefHeldVariant } from './holding';
 export {
   dropUnlisted,
   mapScopeValues,
-  overrideOptions,
+  prefOverrideOptions,
   repairScope,
-  scopeOptionValue,
-  scopeSelectors,
+  prefScopeOptionValue,
+  prefStoredSelectors,
   selectionWeights,
   upgradeScope,
   weighScope,
   writeDeclared,
 } from './scope';
-export { overridesOfPref, scopeSelectorsOf } from './scopeSpec';
+export { prefOverridesLookup, declaredSelectorsOf } from './scopeSpec';

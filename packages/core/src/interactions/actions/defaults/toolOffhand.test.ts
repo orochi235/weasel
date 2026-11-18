@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { matchModifiers, type ModifiersEvent } from '@weasel-js/gestures';
+import { matchModifiers, type EventModifiers } from '@weasel-js/gestures';
 import { createToolOffhandAction, buildToolOffhandBindings, heldKeySpec, offhandKeyFor, TOOL_OFFHAND_ID } from '@weasel-js/routing';
 
 describe('createToolOffhandAction', () => {
@@ -129,7 +129,7 @@ describe('heldKeySpec', () => {
   it('lets any other key engage with Shift or Alt held, and not with Cmd or Ctrl', () => {
     const spec = heldKeySpec(' ');
     expect(spec).toEqual({ kind: 'keyHeld', key: ' ', mods: { alt: 'optional', shift: 'optional' } });
-    const held = (down: Partial<ModifiersEvent>): boolean =>
+    const held = (down: Partial<EventModifiers>): boolean =>
       matchModifiers({ altKey: false, ctrlKey: false, metaKey: false, shiftKey: false, ...down }, spec.mods, true);
     expect(held({})).toBe(true);
     expect(held({ shiftKey: true })).toBe(true);

@@ -22,7 +22,7 @@ export const FollowsThePointer: Story = {
         const r = e.currentTarget.getBoundingClientRect();
         const grab = { x: e.clientX - r.left, y: e.clientY - r.top };
         const follow = (ev: PointerEvent) => setGhost({ left: ev.clientX - grab.x, top: ev.clientY - grab.y, width: r.width });
-        startThresholdDrag(e, { onActivate: follow, onMove: follow, onCommit: () => setGhost(null), onCancel: () => setGhost(null) });
+        startThresholdDrag(e, { onStart: follow, onMove: follow, onEnd: () => setGhost(null), onCancel: () => setGhost(null) });
       };
       return (
         <div ref={setFrom} className={s.chip} onPointerDown={press}>

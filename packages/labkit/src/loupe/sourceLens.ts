@@ -10,6 +10,7 @@ import {
   type SourceContext,
   sourceRegion,
 } from '@weasel-js/loupe';
+import { createPart } from '@weasel-js/registry';
 
 /** Anything a lens can be pointed at for its pixels: a `CanvasSource`, a
  *  canvas, or a context on one. */
@@ -23,7 +24,7 @@ function isCanvasSource(t: LoupeSourceTarget): t is CanvasSource {
 
 // One source per canvas or context, so a getter returning the same canvas
 // every frame keeps one snapshot rather than minting a new one per call.
-const made = new WeakMap<object, CanvasSource>();
+const made = createPart((target: SourceCanvas | SourceContext) => createCanvasSource(target));
 
 /** `source` as a `CanvasSource`, or `null` while a getter has nothing yet. */
 export function resolveLoupeSource(source: LoupeSource | undefined): CanvasSource | null {
@@ -31,12 +32,7 @@ export function resolveLoupeSource(source: LoupeSource | undefined): CanvasSourc
   const target = typeof source === 'function' ? source() : source;
   if (!target) return null;
   if (isCanvasSource(target)) return target;
-  let s = made.get(target);
-  if (!s) {
-    s = createCanvasSource(target);
-    made.set(target, s);
-  }
-  return s;
+  return made(target);
 }
 
 /**

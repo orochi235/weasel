@@ -2,7 +2,7 @@ import { fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it } from 'vitest';
-import { auto } from '../config/auto';
+import { AUTO } from '../config/auto';
 import { f } from '../config/builder';
 import type { ConfigRule, LeafRenderer } from '../config/types';
 import { defineInstrument } from '../instrument/defineInstrument';
@@ -216,7 +216,7 @@ describe('a config written as auto', () => {
           id: 'unpin-gap',
           region: 'toolbar' as const,
           render: (ctx) => (
-            <button type="button" onClick={() => ctx.setConfig('gap', auto)}>
+            <button type="button" onClick={() => ctx.setConfig('gap', AUTO)}>
               unpin gap
             </button>
           ),
@@ -253,7 +253,7 @@ describe('a config written as auto', () => {
         width: f.number(432).auto(),
         gap: f
           .number(12)
-          .initial(auto)
+          .initial(AUTO)
           .auto((c) => (c.width as number) / 24)
           .range(0, 48),
       }),

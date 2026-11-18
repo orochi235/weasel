@@ -86,7 +86,7 @@ packages/animator/src/colorHelpers.ts
 packages/animator/src/colorInterpolate.ts
 packages/animator/src/colorRegistry.ts
 packages/animator/src/elementTarget.ts
-packages/animator/src/hostAnimator.ts
+packages/animator/src/createHostedAnimator.ts
 packages/animator/src/index.ts
 packages/animator/src/loop.ts
 packages/animator/src/observe.ts

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { expandGroupEdges, insetOf } from './cluster';
+import { expandClusterEdges, insetOf } from './cluster';
 import { layered } from './layered';
 import { tree } from './tree';
-import { boxOf, graphOf, overlaps, placed } from './groupFixture';
+import { boxOf, graphOf, overlaps, placed } from './clusterFixture';
 
 // Two pipelines whose stages share ranks: a0 → a1 → a2 and b0 → b1 → b2, each
 // feeding the other's next stage, so ungrouped they interleave in every rank.
@@ -70,9 +70,9 @@ describe.each([
 describe('groups in the graph', () => {
   it('lists a group with its members, and marks each member', () => {
     const graph = graphOf(['a', 'b', 'c'], [], { G: ['a', 'b'] });
-    expect(graph.groups).toEqual([{ id: 'G', members: ['a', 'b'], inset: insetOf(12) }]);
-    expect(graph.node('a')?.group).toBe('G');
-    expect(graph.node('c')?.group).toBeUndefined();
+    expect(graph.clusters).toEqual([{ id: 'G', members: ['a', 'b'], inset: insetOf(12) }]);
+    expect(graph.node('a')?.cluster).toBe('G');
+    expect(graph.node('c')?.cluster).toBeUndefined();
   });
 
   it('is not a participant itself', () => {
@@ -81,25 +81,25 @@ describe('groups in the graph', () => {
 
   it('keeps a node two groups name in the first one', () => {
     const graph = graphOf(['a', 'b'], [], { G: ['a'], H: ['a', 'b'] });
-    expect(graph.groups?.map((g) => g.members)).toEqual([['a'], ['b']]);
+    expect(graph.clusters?.map((g) => g.members)).toEqual([['a'], ['b']]);
   });
 });
 
-describe('expandGroupEdges', () => {
+describe('expandClusterEdges', () => {
   const groups = [{ id: 'G', members: ['g0', 'g1', 'g2'], inset: insetOf(0) }];
   const inner = [{ id: 'i0', from: 'g0', to: 'g1' }, { id: 'i1', from: 'g1', to: 'g2' }];
 
   it('ranks an edge into a group against the members nothing inside points at', () => {
-    const out = expandGroupEdges([...inner, { id: 'e', from: 'x', to: 'G' }], groups);
+    const out = expandClusterEdges([...inner, { id: 'e', from: 'x', to: 'G' }], groups);
     expect(out.filter((e) => e.id.startsWith('e#')).map((e) => e.to)).toEqual(['g0']);
   });
 
   it('ranks an edge out of a group from the members that point nowhere inside', () => {
-    const out = expandGroupEdges([...inner, { id: 'e', from: 'G', to: 'y' }], groups);
+    const out = expandClusterEdges([...inner, { id: 'e', from: 'G', to: 'y' }], groups);
     expect(out.filter((e) => e.id.startsWith('e#')).map((e) => e.from)).toEqual(['g2']);
   });
 
   it('drops an edge between a group and its own member', () => {
-    expect(expandGroupEdges([{ id: 'e', from: 'G', to: 'g1' }], groups)).toEqual([]);
+    expect(expandClusterEdges([{ id: 'e', from: 'G', to: 'g1' }], groups)).toEqual([]);
   });
 });

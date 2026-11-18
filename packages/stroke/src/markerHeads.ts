@@ -5,7 +5,7 @@
 import type { MarkerRef, Stroke } from '@weasel-js/paint';
 import { type Path, type PolygonPath, boundsOfPath } from '@weasel-js/geom';
 import { extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
-import { isDev } from '@weasel-js/registry';
+import { createPart, isDev } from '@weasel-js/registry';
 import { getMarker, type MarkerEntry } from './strokeMarkers';
 import { markerKeyOf, resolveMarkerSize, strokeInsets } from './markerInset';
 import { markerSites, type MarkerSite } from './markerSites';
@@ -197,8 +197,8 @@ const READINGS_PER_ENTRY = 64;
 /** Each entry's farthest reach from its anchor at `size` 1, outline included,
  *  per value of the fields it reads — or per stroke object, when it does not
  *  say which. */
-const REACH_BY_READING = new WeakMap<MarkerEntry, Map<string, number>>();
-const REACH_BY_STROKE = new WeakMap<MarkerEntry, WeakMap<Stroke, number>>();
+const reachByReading = createPart<MarkerEntry, Map<string, number>>(() => new Map());
+const reachByStroke = createPart<MarkerEntry, WeakMap<Stroke, number>>(() => new WeakMap());
 
 function measureUnitReach(entry: MarkerEntry, stroke: Stroke): number {
   const b = boundsOfPath(entry.path({ size: 1, stroke }));
@@ -211,14 +211,12 @@ function measureUnitReach(entry: MarkerEntry, stroke: Stroke): number {
 function unitReach(entry: MarkerEntry, stroke: Stroke): number {
   const key = markerReadsKey(entry, stroke);
   if (key === null) {
-    let byStroke = REACH_BY_STROKE.get(entry);
-    if (byStroke === undefined) REACH_BY_STROKE.set(entry, (byStroke = new WeakMap()));
+    const byStroke = reachByStroke(entry);
     let reach = byStroke.get(stroke);
     if (reach === undefined) byStroke.set(stroke, (reach = measureUnitReach(entry, stroke)));
     return reach;
   }
-  let byReading = REACH_BY_READING.get(entry);
-  if (byReading === undefined) REACH_BY_READING.set(entry, (byReading = new Map()));
+  const byReading = reachByReading(entry);
   let reach = byReading.get(key);
   if (reach === undefined) {
     if (byReading.size >= READINGS_PER_ENTRY) byReading.clear();

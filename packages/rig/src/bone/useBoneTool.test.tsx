@@ -44,8 +44,8 @@ function setup(settings?: KitSettingsOverrides) {
   });
   /** Press at `from`, move to `to`, and release or cancel. */
   const drag = (from: [number, number], to: [number, number], reason: 'commit' | 'cancel' = 'commit', peek?: () => void) => {
-    const invoker = actionOf('bone.drag').invoker;
-    if (invoker?.timing !== 'ongoing') throw new Error('bone.drag is not ongoing');
+    const invoker = actionOf('bone.shape').invoker;
+    if (invoker?.timing !== 'ongoing') throw new Error('bone.shape is not ongoing');
     const handle = invoker.start(ctx(from[0], from[1]), undefined);
     handle.onMove?.(ctx(to[0], to[1], { x: from[0], y: from[1] }));
     peek?.();
@@ -145,7 +145,7 @@ describe('useBoneTool', () => {
   it('declines Delete and Escape with no joint active, and everything with no rig', () => {
     const t = setup();
     expect(t.fire('bone.remove')).toBe(false);
-    expect(t.fire('bone.clear')).toBe(false);
+    expect(t.fire('bone.deselect')).toBe(false);
     t.setTarget(null);
     expect(t.fire('bone.pick', { press: { x: 0, y: 0 } })).toBe(false);
     expect(t.drag([0, 0], [10, 10])).toEqual({});

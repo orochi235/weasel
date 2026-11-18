@@ -128,7 +128,7 @@ describe('attachHud', () => {
     attachHud(api, hud);
     const hoverFn = vi.fn();
     const btn = hud.button({ id: 'b', x: 10, y: 10, w: 50, h: 20, label: 'x' });
-    btn.on('hover', hoverFn);
+    btn.subscribe('hover', hoverFn);
 
     // Simulate the canvas dispatching onUncapturedMove under identity view
     // (worldX/Y = canvas pixels).

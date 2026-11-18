@@ -33,7 +33,7 @@ export interface GradientStopsProps {
   /** Drawn under the stop editor: the blend-space switch, when the editor shows one. */
   spaceBar: ReactNode;
   selectedStop?: number;
-  onSelectedStopChange?: (index: number) => void;
+  onSelectionChange?: (index: number) => void;
   /** The editor around this is inert, so nothing here can be removed. */
   disabled?: boolean;
   onInput?: (next: Paint) => void;
@@ -53,7 +53,7 @@ export function GradientStops(props: GradientStopsProps): ReactElement {
   const order = stopOrder(stops);
   const locale = useFieldLocale();
   const position = useMemo(() => new Intl.NumberFormat(locale, POSITION_FORMAT), [locale]);
-  const { selected, select, removing } = useStopSelection(stops, props.selectedStop, props.onSelectedStopChange);
+  const { selected, select, removing } = useStopSelection(stops, props.selectedStop, props.onSelectionChange);
 
   const trackRef = useRef<HTMLDivElement | null>(null);
   const handleEls = (): HTMLElement[] => Array.from(trackRef.current?.querySelectorAll<HTMLElement>(HANDLE) ?? []);

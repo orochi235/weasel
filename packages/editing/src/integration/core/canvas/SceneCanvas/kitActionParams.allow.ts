@@ -45,7 +45,7 @@ export const ACTION_LITERALS: Readonly<Record<string, Readonly<Record<string, st
     0.05: 'view: the share of a pass an arrow key moves the playhead, which commits nothing to the history',
   },
   'packages/loupe/src/actions.ts': { 0.002: 'view: magnification per wheel delta' },
-  'packages/measure/src/measureGestures.ts': { 6: 'reach: how near a press must land to a measurement' },
+  'packages/measure/src/measureActions.ts': { 6: 'reach: how near a press must land to a measurement' },
   'packages/path-tools/src/pathEdit/editAnchors/editAnchors.ts': { 10: RADIX },
   'packages/path-tools/src/pathCommands/cutJoin.ts': {
     6: 'count: the coordinates a cubic command carries', 4: 'count: the coordinates a quadratic command carries',

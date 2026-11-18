@@ -30,6 +30,14 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
+- **(P3) [agent] Under a `tools` takeover, the canvas's own always-on entries draw their overlays ungated by
+  mode.** `useContributionRoles` registers a `surface` entry's `overlay` as a plain layer, while the same entry
+  without a takeover draws through `useContributions`' `overlays`, which leaves out one whose capabilities the
+  active mode bars. Only an entry declaring `eligibility.capabilities` is affected. The fix is one overlay
+  pathway: hand the surface entries' overlays to the layer stack through the same mode-gated read.
+  Closes when a `surface` entry whose capabilities the active mode bars draws no overlay under a takeover,
+  tested beside `takeoverAmbient.test.tsx`.
+
 - **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
   hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable
   file (or one for text) through `previewPaths` (`packages/core/src/domains/ingestion/ghost.ts`). No test can
@@ -248,6 +256,13 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
+- **(P3) [maintainer] Whether the effect pipeline's `groups` become clusters too.** `EffectGroup` and
+  `EffectPipeline.groups` (`packages/diagram/src/effect/types.ts`) are the same membership box the diagram's
+  clusters are, but the effect editor also calls the act of making one "Group" (`groupStages`,
+  `diagram.renameGroup`, `groupBoxes`, the `group-loop` problem), and a saved `EffectDoc` holds the names, so a
+  rename needs its own migration. Left as `groups` on 2026-11-17. Closes when the maintainer rules, and the
+  ruling is carried out.
+
 ### Extension authoring and published consumers
 
 ---
@@ -263,12 +278,12 @@ Owner tags, after the priority (2026-10-26):
   a compressor.
 
 - **(P3) [maintainer] Nobody has listened to the generative score.** Every number
-  `scoreParams` maps a mood through was chosen from descriptions of the four
+  `resolveScoreMood` maps a mood through was chosen from descriptions of the four
   cues and is tested as structure only. Whether dread reads as dread is for
   ears: the `score` demo (`apps/site/demos/ScoreDemo.tsx`) plays each cue with
   its parameters beside the sliders.
   Closes when the maintainer has listened to all four cues in the `score` demo and kept or retuned their
-  `scoreParams`.
+  `resolveScoreMood`.
 
 ---
 
@@ -328,9 +343,9 @@ Owner tags, after the priority (2026-10-26):
   Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
   Closes when Shift+F10 on a real Windows or Linux Chrome opens the menu once.
 
-- **(P3) [waiting] Nothing in an app animates a selector's weights yet.** `prefWeightAxes` gives an
+- **(P3) [waiting] Nothing in an app animates a selector's weights yet.** `createWeightAxes` gives an
   animator target the axes, and nothing yet asks for a transition.
-  Closes when an app animates a selector's weights through `prefWeightAxes`, or on 2026-12-31 with none,
+  Closes when an app animates a selector's weights through `createWeightAxes`, or on 2026-12-31 with none,
   delete it.
 
 - **(P3) [maintainer] labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
@@ -555,6 +570,12 @@ only story runner in the repo.
   `packages/*/src` file, so the likely cause is a file another project writes there mid-run; none was found, and
   the log omits which files it flagged. Closes on a second sighting with the flagged paths printed (fix the
   writer) or when 2026-12-15 passes without one.
+
+- **(P3) [waiting] `diagram/src/avoid/avoid.scene.test.ts` "previews a drag frame without writing the scene"
+  got an empty preview once under the full suite** on teitou at `4d760ec147` (2026-11-17), then passed 6 of 6
+  runs alone here, 3 of 3 alone on teitou, and the next full run. The router keeps no time budget, so load
+  alone should not change its answer. Closes on a second sighting (find the order-dependent state) or on
+  2026-12-17 with none, delete it.
 
 - **(P3) [waiting] `workerRender.browser.test.tsx` "dims a node by the alpha the page computes" read a null pixel
   once under the full suite** at `b7ed8c10f` (2026-11-11), then passed 3 of 3 runs alone. Waiting on a second

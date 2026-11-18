@@ -7,6 +7,7 @@ import {
   getTexture,
   tileExtent,
 } from '@weasel-js/renderer';
+import { createPart } from '@weasel-js/registry';
 import { foldPixels } from './color';
 import { type DrawState, type PageCtx, pageFlip, skip } from './drawCommands';
 import { affinePlaces, ContentStream } from './content';
@@ -20,9 +21,9 @@ export type TextureFill = Extract<CommandPaint, { kind: 'texture' }>;
 type Source = ImageBitmap | HTMLImageElement;
 type Sampling = 'linear' | 'nearest' | undefined;
 
-const ids = new WeakMap<object, number>();
-const embedded = new WeakMap<object, Map<string, PdfRef>>();
 let nextId = 0;
+const idOf = createPart((_image: Source): number => ++nextId);
+const embeddedIn = createPart((_objects: object) => new Map<string, PdfRef>());
 
 function sizeOf(image: Source): { w: number; h: number } {
   const w = 'naturalWidth' in image ? image.naturalWidth : image.width;
@@ -46,15 +47,7 @@ export function fitsPixels(px: RasterPixels): boolean {
 
 /** A memo for this document: one entry per key, however many pages ask. */
 function memo(ctx: PageCtx): Map<string, PdfRef> {
-  let m = embedded.get(ctx.objects);
-  if (!m) embedded.set(ctx.objects, (m = new Map()));
-  return m;
-}
-
-function idOf(image: Source): number {
-  let id = ids.get(image);
-  if (id === undefined) ids.set(image, (id = ++nextId));
-  return id;
+  return embeddedIn(ctx.objects);
 }
 
 function imageObject(ctx: PageCtx, dict: PdfDict, data: Uint8Array): PdfRef {

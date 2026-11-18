@@ -3,7 +3,7 @@ import { checkSteps, checkTempo, patternLength, type PatternEvent, type PatternH
 
 /** Options for `patternVoicePeaks`. The first four mean what they mean to
  *  `createPatternPlayer`, and should be the values the player is given. */
-export interface PatternLoadOptions {
+export interface PatternVoicePeaksOptions {
   tempo: number;
   stepsPerBeat?: number;
   length?: number;
@@ -27,7 +27,7 @@ export interface PatternLoadOptions {
  */
 export function patternVoicePeaks(
   events: readonly PatternEvent[],
-  opts: PatternLoadOptions,
+  opts: PatternVoicePeaksOptions,
 ): Record<string, number> {
   checkTempo(opts.tempo);
   const stepsPerBeat = opts.stepsPerBeat ?? 4;

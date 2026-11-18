@@ -1,4 +1,4 @@
-import { applyPrefConditions, prefAliasTargets, prefJudge, prefLeafAt, prefSchemaHolding, type PrefAliasTargets, type PrefConditionJudge, type PrefEntry, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
+import { applyPrefConditions, createAliasTargets, prefJudge, prefLeafAt, prefSchemaHolding, type PrefAliasTargets, type PrefConditionJudge, type PrefEntry, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import { entryApplier, type EntryAt } from '../Prefs/entry';
 import { effectiveSections, nodeLeafValue, type PanelRecord, type PanelSchemaEntry, type PanelSection } from './model';
 
@@ -52,7 +52,7 @@ export function conditionedSections(
   const schemas: PrefSection[] = [];
   // A panel draws every field a leaf holds, so its aliases do.
   const targetsIn = (of: PrefGroup | PrefSection): PrefAliasTargets =>
-    prefAliasTargets(of, (entry) => selectionJudge(of, records, entry), { showHidden: true, markHidden: keepHidden });
+    createAliasTargets(of, (entry) => selectionJudge(of, records, entry), { showHidden: true, markHidden: keepHidden });
   const shared = over && targetsIn(over);
   const sections = effectiveSections(kinds, entries, rawAliases, (schema) => {
     schemas.push(schema);

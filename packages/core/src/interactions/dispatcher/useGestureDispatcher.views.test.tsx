@@ -15,7 +15,7 @@ import { createViewResolver } from 'domains/viewports/viewResolver';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../actions/depSchema';
 import { viewportDragPanAction } from '../actions/defaults/viewportDragPan';
-import { dragPanContribution, DRAG_PAN_ID } from '../../tools/builtin/hand/dragPanContribution';
+import { createDragPanContribution, DRAG_PAN_ID } from '../../tools/builtin/hand/createDragPanContribution';
 import type { InputEvent } from '@weasel-js/routing';
 import type { Point } from '@weasel-js/geom';
 
@@ -141,7 +141,7 @@ describe('useGestureDispatcher view routing', () => {
     const rootHold = { current: rootView };
     const panelHold = { current: panelView };
 
-    const PAN_ON_DRAG = new Map([[DRAG_PAN_ID, dragPanContribution()]]);
+    const PAN_ON_DRAG = new Map([[DRAG_PAN_ID, createDragPanContribution()]]);
 
     function Panner() {
       const registry = useActionsRegistry();
@@ -237,7 +237,7 @@ describe('useGestureDispatcher hit-test coordinates', () => {
       id: 'panel',
       dispatcher: createDispatcher(),
       affordanceAt: (p) => { seen.affordance.push({ ...p }); return null; },
-      classifyTarget: (p) => { seen.classify.push({ ...p }); return { body: 'empty' }; },
+      classifyTarget: (p) => { seen.classify.push({ ...p }); return { bodyTarget: 'empty' }; },
       clientToWorld: (x, y) => ({ x: x - PANEL_RECT.x, y }),
     };
     const { container } = render(

@@ -2,10 +2,10 @@
 // `scopes` that names something else: what a store warns of.
 
 import { type PrefGroup, prefHoldsValue, prefLeaves, prefOverridesOf, type PrefEnum, type PrefLeaf } from '@weasel-js/prefs-schema';
-import { overrideOptions, scopeSelectorsOf, scopeSelectors } from '@weasel-js/prefs-schema/internal';
+import { prefOverrideOptions, declaredSelectorsOf, prefStoredSelectors } from '@weasel-js/prefs-schema/internal';
 
 /** One thing wrong with a pref's scopes, or with what the schema admits. */
-export interface PrefSplitProblem {
+export interface PrefScopeProblem {
   code: 'valueless' | 'no-leaf' | 'not-enum' | 'encoded' | 'clearable' | 'split' | 'twice' | 'default' | 'per' | 'admits';
   /** The path of the pref whose `scopes` it is; `''` for the schema. */
   at: string;
@@ -14,13 +14,13 @@ export interface PrefSplitProblem {
   problem: string;
 }
 
-const refusal = (leaf: PrefLeaf | undefined): [PrefSplitProblem['code'], string] | undefined => {
+const refusal = (leaf: PrefLeaf | undefined): [PrefScopeProblem['code'], string] | undefined => {
   if (!leaf) return ['no-leaf', 'names no leaf'];
   if (leaf.kind !== 'enum') return ['not-enum', `names a ${leaf.kind} leaf, and only an enum has options to split by`];
   const selector = leaf as PrefEnum;
   if (selector.encoding) return ['encoded', 'names an enum with an encoding, whose stored value is not its option'];
   if (selector.clearable) return ['clearable', 'names a clearable enum, which may hold none of its options'];
-  if (scopeSelectorsOf(selector)?.length) return ['split', 'names a leaf that may itself be split'];
+  if (declaredSelectorsOf(selector)?.length) return ['split', 'names a leaf that may itself be split'];
   return undefined;
 };
 
@@ -28,7 +28,7 @@ const refusal = (leaf: PrefLeaf | undefined): [PrefSplitProblem['code'], string]
 export function prefSelectors(leaves: ReadonlyMap<string, PrefLeaf>): Map<string, readonly string[]> {
   const out = new Map<string, readonly string[]>();
   for (const leaf of leaves.values()) {
-    for (const path of scopeSelectorsOf(leaf) ?? []) {
+    for (const path of declaredSelectorsOf(leaf) ?? []) {
       const selector = leaves.get(path);
       if (out.has(path) || refusal(selector)) continue;
       out.set(path, (selector as PrefEnum).options.map((option) => option.value));
@@ -46,8 +46,8 @@ const notAdmitted = (path: string, admitted: ReadonlySet<string>): string =>
   `selector "${path}" is not admitted by this schema (${admitted.size ? `it admits: ${[...admitted].join(', ')}` : 'it admits none'})`;
 
 /** What is wrong with the `scopes` of the leaf at `at`. */
-function perProblems(at: string, leaf: PrefLeaf, leaves: ReadonlyMap<string, PrefLeaf>, admitted: ReadonlySet<string>): PrefSplitProblem[] {
-  const out: PrefSplitProblem[] = [];
+function perProblems(at: string, leaf: PrefLeaf, leaves: ReadonlyMap<string, PrefLeaf>, admitted: ReadonlySet<string>): PrefScopeProblem[] {
+  const out: PrefScopeProblem[] = [];
   leaf.scopes!.forEach((per, i) => {
     const path = per.selector;
     if (leaf.scopes!.findIndex((other) => other.selector === path) !== i) {
@@ -65,7 +65,7 @@ function perProblems(at: string, leaf: PrefLeaf, leaves: ReadonlyMap<string, Pre
     }
     const options = new Set((leaves.get(path) as PrefEnum).options.map((option) => option.value));
     const overrides = prefOverridesOf(leaf, path);
-    for (const option of overrides ? overrideOptions(overrides) : []) {
+    for (const option of overrides ? prefOverrideOptions(overrides) : []) {
       if (!options.has(option)) out.push({ code: 'per', at, path, problem: `its closed list names "${option}", which is no option of "${path}"` });
     }
   });
@@ -73,16 +73,16 @@ function perProblems(at: string, leaf: PrefLeaf, leaves: ReadonlyMap<string, Pre
 }
 
 /** Everything wrong with the `scopes` lists of `schema`'s prefs and with what it admits, in schema order. */
-export function checkPrefSplits(schema: PrefGroup): PrefSplitProblem[] {
+export function checkPrefScopes(schema: PrefGroup): PrefScopeProblem[] {
   const leaves = prefLeaves(schema);
   const admitted = admittedSelectors(schema);
-  const out: PrefSplitProblem[] = [];
+  const out: PrefScopeProblem[] = [];
   for (const path of admitted) {
     if (leaves.has(path)) out.push({ code: 'admits', at: '', path, problem: `the schema admits "${path}", which is a pref` });
   }
   for (const [at, leaf] of leaves) {
-    const axes = scopeSelectorsOf(leaf);
-    for (const path of scopeSelectors(leaf.defaultScope)) {
+    const axes = declaredSelectorsOf(leaf);
+    for (const path of prefStoredSelectors(leaf.defaultScope)) {
       if (axes?.includes(path)) continue;
       out.push({ code: 'default', at, path, problem: `its defaultScope is split by "${path}", which its scopes do not name` });
     }

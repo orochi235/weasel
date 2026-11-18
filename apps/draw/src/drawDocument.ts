@@ -23,7 +23,7 @@ export type TextFrameData = Pick<TextNodeData, 'background' | 'padding' | 'overf
 };
 
 /** Data stored on every leaf — kit-native shape consumed by PATH_PAINTER
- *  and the text painter. Tools synthesized by `defaultTools={BUILTIN_TOOL_IDS}`
+ *  and the text painter. Tools synthesized by `defaultTools={KIT_TOOL_IDS}`
  *  already produce this shape, so no per-tool `create` overrides are
  *  required. `text` is present on text-tool leaves only. */
 export interface WeaselDrawData extends TextFrameData {

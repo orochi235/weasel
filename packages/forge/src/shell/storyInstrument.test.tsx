@@ -7,7 +7,7 @@ import { flushSync } from 'react-dom';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type Channel, openChannel } from '../protocol/channel';
-import { FRAME_HELLO, type FromFrame, type Globals, PORT_HANDOFF, stableStringify, type ToFrame } from '../protocol/messages';
+import { FRAME_HELLO, type FromFrame, type StoryGlobals, PORT_HANDOFF, stableStringify, type ToFrame } from '../protocol/messages';
 import { type FramePool, FramePoolContext } from './framePool';
 import { flush, sayHello } from './labHarness';
 import { describeSchema } from '../protocol/schema';
@@ -103,7 +103,7 @@ function labWith(
   instrumentReady: FrameReady | undefined,
   onReady = vi.fn(),
   answers = createAnswerBook(),
-  labGlobals: Globals = globals,
+  labGlobals: StoryGlobals = globals,
 ) {
   const instrument = storyInstrument({ entry, ready: instrumentReady, answers, frameUrl: '/frame.html', onReady });
   const capturing = {
@@ -570,7 +570,7 @@ describe('FrameView with declared globals', () => {
 });
 
 describe('FrameView under a story registry', () => {
-  function RegistryLab({ labGlobals, lists, story = entry }: { labGlobals: Globals; lists: InstrumentList[]; story?: IndexEntry }) {
+  function RegistryLab({ labGlobals, lists, story = entry }: { labGlobals: StoryGlobals; lists: InstrumentList[]; story?: IndexEntry }) {
     const registry = useStoryRegistry([story], { frameUrl: '/frame.html' });
     lists.push(registry.instruments);
     return (

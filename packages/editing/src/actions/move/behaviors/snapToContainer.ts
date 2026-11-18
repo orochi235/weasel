@@ -1,4 +1,4 @@
-import { createTransformOp, definesFrame } from '@weasel-js/core/engine';
+import { createSetPoseOp, definesFrame } from '@weasel-js/core/engine';
 import { createReparentOp } from '@weasel-js/core';
 import type { Op } from '@weasel-js/core';
 import type { SnapTarget, BehaviorResult, CloneBehavior, MoveBehavior, MoveEnd, GestureContext } from '@weasel-js/core/engine';
@@ -187,7 +187,7 @@ function plantOps<TPose>(
   for (const [id, slot] of slots) {
     const to = ctx.frames ? ctx.frames.toLocalUnder(snap.parentId, slot) : slot;
     if (to === null) return null;
-    ops.push(createTransformOp<TPose>({ id, from: ctx.origin.get(id)!, to, label: moveLabel }));
+    ops.push(createSetPoseOp<TPose>({ id, from: ctx.origin.get(id)!, to, label: moveLabel }));
     reparent(id);
   }
   // A node with no slot of its own lands where the preview drew it.
@@ -231,7 +231,7 @@ function keptInPlace<TPose>(
     const from = translated.get(at) ?? ctx.adapter.getPose(at);
     const to = frames.toLocalUnder(parentId, frames.toWorld(at, from));
     if (to === null) return false;
-    ops.push(createTransformOp<TPose>({ id: at, from, to, label }));
+    ops.push(createSetPoseOp<TPose>({ id: at, from, to, label }));
     const node = ctx.adapter.getNode(at) as { dependsOn?: unknown; derivePose?: unknown } | undefined;
     if (node === undefined || definesFrame(node)) return true;
     for (const child of ctx.adapter.getNodes()) {

@@ -1,15 +1,15 @@
 import './capture.css';
 import { useLatest, useVisibleRaf } from '@weasel-js/core';
 import { interstellarTheme, LabRoot } from '@weasel-js/labkit';
-import { declaredSelection, type Theme } from '@weasel-js/theme';
+import { declaredAxisChoice, type Theme } from '@weasel-js/theme';
 import { ThemeProvider } from '@weasel-js/theme/react';
 import { OverlayPortalProvider } from '@weasel-js/ui/portal-host';
 import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useHostConditions } from '../../shell/hostConditions';
 import { LAB_DENSITY } from '../../shell/labDensity';
-import type { Globals } from '../../protocol/messages';
+import type { StoryGlobals } from '../../protocol/messages';
 import type { Loaded } from '../../story/indexBundle';
-import type { DepGraph, LoadedStory, StoryContext } from '../../story/types';
+import type { ComponentGraph, LoadedStory, StoryContext } from '../../story/types';
 import { holdAt } from '@weasel-js/clock';
 import { ClockContext } from '../../timeline/context';
 import { useOwnClock } from '../../timeline/StoryClock';
@@ -25,11 +25,11 @@ export interface CaptureViewProps {
   /** What the payload's id names: one story, or a component's index page. */
   subject: Loaded;
   /** The component graph an index page lists dependencies and history from. */
-  graph?: DepGraph | null | undefined;
+  graph?: ComponentGraph | null | undefined;
   payload: CapturePayload;
   setup: FrameSetup;
   /** The shell config's `labTheme`, which the workshop's lab is themed by. */
-  labTheme?: ((globals: Globals) => Theme) | undefined;
+  labTheme?: ((globals: StoryGlobals) => Theme) | undefined;
   /** Called once the story has painted with its fonts, so a screenshot taken then shows it settled. */
   onRendered: () => void;
 }
@@ -152,7 +152,7 @@ export function CaptureView({ subject, graph = null, payload, setup, labTheme, o
   if (payload.isolate) return box;
   const theme = labTheme?.(payload.lab.globals) ?? interstellarTheme;
   return (
-    <ThemeProvider theme={theme} selection={declaredSelection(theme, { mode: payload.lab.mode, density: LAB_DENSITY })}>
+    <ThemeProvider theme={theme} selection={declaredAxisChoice(theme, { mode: payload.lab.mode, density: LAB_DENSITY })}>
       <LabRoot>{box}</LabRoot>
     </ThemeProvider>
   );

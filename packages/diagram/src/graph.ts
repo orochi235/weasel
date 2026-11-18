@@ -7,10 +7,10 @@
  * hot path.
  */
 import { AUTO_POSE_DESCRIPTOR, type PoseDescriptor, type Vec2 } from '@weasel-js/core/math';
-import { expandGroupEdges, insetOf, type GroupInset } from './cluster';
+import { expandClusterEdges, insetOf, type ClusterInset } from './cluster';
 import { diagramContainerOf } from './containers/trait';
 import { diagramEdgeOf, layoutOwnsRoute } from './edgeTrait';
-import { nestGroups } from './groupTree';
+import { nestClusters } from './clusterTree';
 import { diagramLabelOf, type DiagramLabel } from './labelTrait';
 import type { Bounds, Outline } from './outline';
 import { diagramNodeOf, type DiagramNodeLike, type DiagramNodeReader } from './trait';
@@ -36,8 +36,8 @@ export interface GraphNode {
   bounds: Bounds;
   /** Layout must not move it. */
   pinned: boolean;
-  /** The innermost group it belongs to, when it belongs to one. */
-  group?: string;
+  /** The innermost cluster it belongs to, when it belongs to one. */
+  cluster?: string;
   /** Where its ports sit. Absent, the four compass midpoints
    *  (`DEFAULT_PORTS`). */
   ports?: readonly PortSpec[];
@@ -46,25 +46,25 @@ export interface GraphNode {
   outline?: Outline;
   /** How far past `bounds` it reaches (`DiagramNode.margin`). `planOf` lays
    *  it out as that much bigger. */
-  margin?: GroupInset;
+  margin?: ClusterInset;
 }
 
 /** A box drawn around some participants, which a layout keeps together and
  *  leaves room for. */
-export interface GraphGroup {
+export interface GraphCluster {
   id: string;
-  /** Every participant inside, through any group nested in this one, in
+  /** Every participant inside, through any cluster nested in this one, in
    *  source order. */
   members: readonly string[];
   /** Room the box keeps around what it holds, in world units. */
-  inset: GroupInset;
+  inset: ClusterInset;
   /** The narrowest its box may be across the world x axis, which a layout
    *  leaves room for. */
   minWidth?: number;
-  /** The group this one is directly inside. */
+  /** The cluster this one is directly inside. */
   parent?: string;
-  /** Its direct members, nodes and groups, in the order a layered layout
-   *  keeps them across every rank: set for a group that reorders. */
+  /** Its direct members, nodes and clusters, in the order a layered layout
+   *  keeps them across every rank: set for a cluster that reorders. */
   ordered?: readonly string[];
 }
 
@@ -90,7 +90,7 @@ export interface GraphEdge {
    *  in the ranks it crosses. */
   authored?: boolean;
   /** The edge as drawn, when this one stands in for an edge to or from a
-   *  group (see `expandGroupEdges`). */
+   *  cluster (see `expandClusterEdges`). */
   origin?: { id: string; from: string; to: string };
 }
 
@@ -113,8 +113,8 @@ export interface EdgeLabelRoom {
 export interface Graph {
   readonly nodes: readonly GraphNode[];
   readonly edges: readonly GraphEdge[];
-  /** Absent or empty for a graph with no groups. */
-  readonly groups?: readonly GraphGroup[];
+  /** Absent or empty for a graph with no clusters. */
+  readonly clusters?: readonly GraphCluster[];
   node(id: string): GraphNode | undefined;
   /** Edges leaving `id`, in source order. */
   outgoing(id: string): readonly GraphEdge[];
@@ -126,28 +126,28 @@ export interface Graph {
  *  yields bounds. Both default to the kit's own. */
 export interface BuildGraphOptions<TPose> {
   read?: DiagramNodeReader;
-  geometry?: PoseDescriptor<TPose>;
+  poseDescriptor?: PoseDescriptor<TPose>;
 }
 
 /**
  * Read a graph out of a source of scene nodes.
  *
  * A node is an edge if it carries the edge trait and names exactly two
- * dependencies; a group if its trait carries `group`, with its dependencies as
- * its members, which may be groups themselves (see `nestGroups`); a participant if the reader hands back any other
+ * dependencies; a cluster if its trait carries `cluster`, with its dependencies as
+ * its members, which may be clusters themselves (see `nestClusters`); a participant if the reader hands back any other
  * `DiagramNode`; and otherwise not in the diagram at all. An edge whose
- * endpoints are not both participants or groups is dropped, and an edge to a
- * group ranks against its members (see `expandGroupEdges`).
+ * endpoints are not both participants or clusters is dropped, and an edge to a
+ * cluster ranks against its members (see `expandClusterEdges`).
  */
 export function buildGraph<TPose>(
   source: GraphSource<TPose>,
   opts: BuildGraphOptions<TPose> = {},
 ): Graph {
-  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   const nodes: GraphNode[] = [];
   const byId = new Map<string, GraphNode>();
   const candidates: GraphEdge[] = [];
-  const groupNodes: { id: string; members: readonly string[]; inset: GroupInset; minWidth?: number; reorders?: boolean }[] = [];
+  const groupNodes: { id: string; members: readonly string[]; inset: ClusterInset; minWidth?: number; reorders?: boolean }[] = [];
   const routed = new Set<string>();
   const rooms = new Map<string, EdgeLabelRoom>();
   const items = [...source()];
@@ -178,27 +178,27 @@ export function buildGraph<TPose>(
     if (label !== null) {
       const deps = node.dependsOn;
       if (Array.isArray(deps) && deps.length === 1 && labelFollowsLayout(label.at) && !rooms.has(deps[0]!)) {
-        const { width, height } = geometry.getBounds(pose);
+        const { width, height } = poseDescriptor.getBounds(pose);
         rooms.set(deps[0]!, { width, height, ...(label.offset ? { offset: label.offset } : {}) });
       }
       continue;
     }
     const trait = diagramNodeOf(node, opts.read);
     if (trait === null || outer.has(node.id)) continue;
-    if (trait.group !== undefined) {
+    if (trait.cluster !== undefined) {
       const deps = node.dependsOn;
       groupNodes.push({
         id: node.id,
         members: Array.isArray(deps) ? deps : [],
-        inset: insetOf(trait.group.inset),
-        ...(trait.group.minWidth !== undefined ? { minWidth: trait.group.minWidth } : {}),
-        ...(trait.group.reorder !== undefined ? { reorders: true } : {}),
+        inset: insetOf(trait.cluster.inset),
+        ...(trait.cluster.minWidth !== undefined ? { minWidth: trait.cluster.minWidth } : {}),
+        ...(trait.cluster.reorder !== undefined ? { reorders: true } : {}),
       });
       continue;
     }
     const entry: GraphNode = {
       id: node.id,
-      bounds: geometry.getBounds(pose),
+      bounds: poseDescriptor.getBounds(pose),
       pinned: trait.pinned === true,
       ...(trait.ports !== undefined ? { ports: trait.ports } : {}),
       ...(trait.outline !== undefined ? { outline: trait.outline } : {}),
@@ -209,10 +209,10 @@ export function buildGraph<TPose>(
   }
 
   const declared = new Map(groupNodes.map((g) => [g.id, g]));
-  const live: GraphGroup[] = nestGroups(groupNodes, (id) => byId.has(id)).map((g) => {
+  const live: GraphCluster[] = nestClusters(groupNodes, (id) => byId.has(id)).map((g) => {
     for (const id of g.direct) {
       const node = byId.get(id);
-      if (node !== undefined) node.group = g.id;
+      if (node !== undefined) node.cluster = g.id;
     }
     return {
       id: g.id,
@@ -230,7 +230,7 @@ export function buildGraph<TPose>(
     const room = rooms.get(e.id);
     return room !== undefined && routed.has(e.id) ? { ...e, label: room } : e;
   });
-  return graphOf(nodes, expandGroupEdges(roomed.filter((e) => known(e.from) && known(e.to)), live), live);
+  return graphOf(nodes, expandClusterEdges(roomed.filter((e) => known(e.from) && known(e.to)), live), live);
 }
 
 /** For each node inside a container or a pool, the outermost one holding it.
@@ -255,8 +255,8 @@ function outermostRegions(items: readonly { node: GraphNodeLike }[]): Map<string
 
 const NONE: readonly GraphEdge[] = Object.freeze([]);
 
-/** The graph over `nodes`, `edges`, and `groups`, indexed for lookup. */
-export function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphGroup[] = []): Graph {
+/** The graph over `nodes`, `edges`, and `clusters`, indexed for lookup. */
+export function graphOf(nodes: GraphNode[], edges: GraphEdge[], clusters: GraphCluster[] = []): Graph {
   const byId = new Map(nodes.map((n) => [n.id, n]));
   const out = new Map<string, GraphEdge[]>();
   const into = new Map<string, GraphEdge[]>();
@@ -267,7 +267,7 @@ export function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphGro
   return {
     nodes,
     edges,
-    groups,
+    clusters,
     node: (id) => byId.get(id),
     outgoing: (id) => out.get(id) ?? NONE,
     incoming: (id) => into.get(id) ?? NONE,

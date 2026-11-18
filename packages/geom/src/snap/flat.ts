@@ -75,7 +75,7 @@ export function flatDim(f: Flat): number {
 }
 
 /** The point of `f` nearest `p`. */
-export function closestOnFlat(f: Flat, p: Vec): Vec {
+export function nearestOnFlat(f: Flat, p: Vec): Vec {
   const out = f.at.slice();
   for (const q of orthonormalize(f.dirs)) {
     let k = 0;
@@ -123,7 +123,7 @@ export function solveLeastSquares(given: readonly Vec[], rhs: Vec): number[] {
 
 /** The nearest pair of points, one on each flat. Parallel flats have many
  *  such pairs; this returns one of them. */
-export function closestBetweenFlats(a: Flat, b: Flat): { onA: Vec; onB: Vec } {
+export function nearestBetweenFlats(a: Flat, b: Flat): { onA: Vec; onB: Vec } {
   const qa = orthonormalize(a.dirs);
   const qb = orthonormalize(b.dirs);
   const d = b.at.map((v, i) => v - a.at[i]);
@@ -137,7 +137,7 @@ export function closestBetweenFlats(a: Flat, b: Flat): { onA: Vec; onB: Vec } {
 
 /** `a ∩ b`, or null when they miss each other by more than `eps`. */
 export function intersectFlats(a: Flat, b: Flat, eps = 1e-6): Flat | null {
-  const { onA, onB } = closestBetweenFlats(a, b);
+  const { onA, onB } = nearestBetweenFlats(a, b);
   let gap2 = 0;
   for (let i = 0; i < onA.length; i++) gap2 += (onA[i] - onB[i]) ** 2;
   if (!(Math.sqrt(gap2) <= eps) || !isFiniteVec(onA)) return null;

@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
 import { solid } from '@weasel-js/paint';
 import { asNodeId, SceneCanvas, useScene, createModeDecorationLayer, createWorkspaceTintLayer, type DrawCommand, WeaselProvider, textCommandFromRuns } from '@weasel-js/core';
 import {
-  ALL_TAGS,
+  SHIPPED_TAGS,
   IMPLICIT_TAGS,
   createModeDecorations,
   createModeRegistry,
@@ -18,7 +18,7 @@ import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import styles from './ModesDemo.module.css';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset, transformPreset, shapeToolKitPreset } from '@weasel-js/editing';
+import { movePreset, pickPreset, transformPreset, shapeToolsOfferedPreset } from '@weasel-js/editing';
 
 const W = 620, H = 340;
 
@@ -150,8 +150,8 @@ export function ModesDemo() {
             className="ckd-canvas"
             backgroundFill={{ color: '#ffffff' }}
             scene={scene}
-            selectionOptions={{ mode: 'multi' }}
-            features={[pickPreset, movePreset, transformPreset, shapeToolKitPreset]}
+            selectionOptions={{ mode: 'multiple' }}
+            features={[pickPreset, movePreset, transformPreset, shapeToolsOfferedPreset]}
             defaultTools={['select', 'hand', 'rect', 'ellipse']}
             modes={registry}
             ambient={shortcuts}
@@ -173,7 +173,7 @@ export function ModesDemo() {
           <dd>{mode.scoping ? 'on — shapes outside the target dim and ignore the pointer' : 'off'}</dd>
           <dt>Allows</dt>
           <dd className={styles.tags}>
-            {ALL_TAGS.map((tag) => {
+            {SHIPPED_TAGS.map((tag) => {
               const implicit = IMPLICIT_TAGS.includes(tag);
               const on = implicit || allowed.has(tag);
               return (

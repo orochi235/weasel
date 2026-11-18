@@ -1,6 +1,6 @@
 /** Settling a definition entry's `by`s and seeds, and reading a ramp or scale entry into the values `derive` makes tokens of. */
 import { hasOwnKey, isPlainObject, setOwn } from '@weasel-js/registry';
-import { isByAxis, pick, type Selection } from '../axes.ts';
+import { isByAxis, pick, type AxisChoice } from '../axes.ts';
 import { DEFAULT_CONSTRAINTS, type Anchor, type Constraints } from './color/generate.ts';
 import { categoricalRamp, lightnessRamp } from './ramps.ts';
 import { scale } from './scales.ts';
@@ -10,7 +10,7 @@ const SEED_REF = /^\{seeds\.([\w-]+)\}$/;
 const HEX = /^#[0-9a-f]{6}$/i;
 
 export interface SettleContext {
-  readonly sel: Selection;
+  readonly sel: AxisChoice;
   readonly seeds: Readonly<Record<string, number | string>>;
   /** Every seed the definition declares, whether or not it resolved at this selection. */
   readonly declaredSeeds: ReadonlySet<string>;

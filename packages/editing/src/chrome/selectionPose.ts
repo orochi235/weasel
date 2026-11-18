@@ -4,8 +4,8 @@
  * leaves, and the drawn box a scene supplies.
  */
 import type { Scale2 } from '@weasel-js/geom';
-import { drawnAABBOf, drawnBoundsOf, type DrawnBoundsScene } from '@weasel-js/core';
-import { unionAABB } from '@weasel-js/core/engine';
+import { drawnAabbOf, drawnBoundsOf, type DrawnBoundsScene } from '@weasel-js/core';
+import { unionAabb } from '@weasel-js/core/engine';
 import { framedBounds, visualBoundsViaDescriptor, type PoseDescriptor } from '@weasel-js/core';
 import { AUTO_POSE_DESCRIPTOR } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/core';
@@ -55,7 +55,7 @@ function boxReader<TPose>(
   });
   return {
     framed: (id, pose, scale) => drawnBoundsOf(leaves, id as NodeId, pose, opts(scale)),
-    aabb: (id, pose, scale) => drawnAABBOf(leaves, id as NodeId, pose, opts(scale)),
+    aabb: (id, pose, scale) => drawnAabbOf(leaves, id as NodeId, pose, opts(scale)),
   };
 }
 
@@ -129,7 +129,7 @@ export function composeSelectionPose<TPose>(
           ?? resolveLeaf(leafId);
         leafBounds.push(boxes.aabb(leafId, pose, scale));
       }
-      const u = unionAABB(leafBounds);
+      const u = unionAabb(leafBounds);
       if (u === null) return null;
       return d.fromBounds(u, getStoredPose(leaves[0]!));
     }
@@ -166,6 +166,6 @@ export function containerAwareBoundsResolver<TPose>(
       if (p !== null) leafBounds.push(boxes.aabb(leafId, p, scale));
     }
     if (leafBounds.length === 0) return null;
-    return unionAABB(leafBounds);
+    return unionAabb(leafBounds);
   };
 }

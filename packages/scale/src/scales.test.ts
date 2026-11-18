@@ -9,16 +9,16 @@ describe('linearScale', () => {
   const s = linearScale({ domain: [0, 100], range: [400, 0] });
 
   it('maps proportionally and inverts', () => {
-    expect(s.map(0)).toBe(400);
-    expect(s.map(25)).toBe(300);
+    expect(s.position(0)).toBe(400);
+    expect(s.position(25)).toBe(300);
     expect(s.position(100)).toBe(0);
     expect(s.invert(200)).toBe(50);
   });
 
   it("maps the domain's end onto the range's end itself, where a hand lerp misses it by an ulp", () => {
     expect(0.7 + 1 * (0.1 - 0.7)).not.toBe(0.1);
-    expect(linearScale({ domain: [0, 1], range: [0.7, 0.1] }).map(1)).toBe(0.1);
-    expect(logScale({ domain: [1, 10], range: [0.7, 0.1] }).map(10)).toBe(0.1);
+    expect(linearScale({ domain: [0, 1], range: [0.7, 0.1] }).position(1)).toBe(0.1);
+    expect(logScale({ domain: [1, 10], range: [0.7, 0.1] }).position(10)).toBe(0.1);
   });
 
   it('ticks on round steps of 1, 2 or 5', () => {
@@ -77,7 +77,7 @@ describe('linearScale', () => {
     expect(niceDomain([0, 1.7e308])).toEqual([0, 1.7e308]);
     expect(niceDomain([-1.7e308, 1.7e308])).toEqual([-1.7e308, 1.7e308]);
     expect(niceDomain([0, 5e-324])).toEqual([0, 5e-324]);
-    expect(linearScale({ domain: [0, 1.7e308], range: [0, 100], nice: 5 }).map(1e308)).toBeCloseTo(58.8, 1);
+    expect(linearScale({ domain: [0, 1.7e308], range: [0, 100], nice: 5 }).position(1e308)).toBeCloseTo(58.8, 1);
   });
 });
 
@@ -85,9 +85,9 @@ describe('logScale', () => {
   const s = logScale({ domain: [1, 1000], range: [0, 300] });
 
   it('maps each decade the same distance', () => {
-    expect(s.map(1)).toBe(0);
-    expect(s.map(10)).toBeCloseTo(100);
-    expect(s.map(100)).toBeCloseTo(200);
+    expect(s.position(1)).toBe(0);
+    expect(s.position(10)).toBeCloseTo(100);
+    expect(s.position(100)).toBeCloseTo(200);
     expect(s.invert(200)).toBeCloseTo(100);
   });
 
@@ -165,7 +165,7 @@ describe('timeScale', () => {
 
   it('maps instants proportionally', () => {
     const s = timeScale({ domain: [jan1, jan1 + 10 * day], range: [0, 100] });
-    expect(s.map(jan1 + 5 * day)).toBe(50);
+    expect(s.position(jan1 + 5 * day)).toBe(50);
     expect(s.invert(10)).toBe(jan1 + day);
   });
 

@@ -1,7 +1,7 @@
 export {
   amount,
   displayOf,
-  endless,
+  withInfinity,
   retag,
   tag,
   unitOf,
@@ -95,7 +95,7 @@ export {
 export {
   catalogUnit,
   catalogUnits,
-  unitCatalog,
+  unitRegistry,
   registerUnit,
   unitSpellings,
   unitSymbol,

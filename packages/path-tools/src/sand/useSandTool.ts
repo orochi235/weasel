@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { defineTool, type Tool, type ToolOptions } from '@weasel-js/core';
+import { defineTool, type Tool, type ToolOptionsSpec } from '@weasel-js/core';
 import { shareToolOptions, type ToolOptionShare } from '@weasel-js/routing';
 import { icon } from '../icons.gen';
 import { SAND_PARAMS } from './sand';
@@ -12,7 +12,7 @@ export const SAND_TOOL_OPTIONS = {
   prefs: SAND_PARAMS,
   size: { option: 'radiusPx', times: 1.25 },
   strength: { option: 'tolerance', times: 1.25 },
-} satisfies ToolOptions;
+} satisfies ToolOptionsSpec;
 
 /** Options for `useSandTool`. */
 export interface UseSandToolOptions {

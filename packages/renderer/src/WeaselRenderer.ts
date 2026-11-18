@@ -18,11 +18,11 @@ import { GradientRampAtlas } from './cache/GradientRampAtlas';
 import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
 import { inCssPixels, type FlattenTolerance } from './draw/flattenTolerance';
-import type { GlMat3 } from '@weasel-js/geom';
+import type { GlMat3, Rect } from '@weasel-js/geom';
 import { OUTLINE_MIN_SCREEN_PX, type DrawContext, type GlyphPaintKind } from './draw';
 import { drawStream, now } from './drawStream';
 import { drawIdFrame } from './draw/idRender';
-import { readPixels, readPixelsSync, type PixelRect } from './readPixels';
+import { readPixels, readPixelsSync } from './readPixels';
 import { createIdComposite } from './draw/idComposite';
 import { DrawBatch } from './drawBatch';
 import { registerRendererParts } from './rendererParts';
@@ -385,10 +385,10 @@ export class WeaselRenderer {
 
   /** The canvas's pixels in `rect`, device px from its top-left, as the last
    *  frame left them: RGBA, premultiplied, rows top-down. */
-  readPixels(rect: PixelRect): Promise<Uint8Array> { return readPixels(this.gpu, rect); }
+  readPixels(rect: Rect): Promise<Uint8Array> { return readPixels(this.gpu, rect); }
 
   /** `readPixels` answered at once. Throws on WebGPU, which reads back only through `readPixels`. */
-  readPixelsSync(rect: PixelRect): Uint8Array { return readPixelsSync(this.gpu, rect); }
+  readPixelsSync(rect: Rect): Uint8Array { return readPixelsSync(this.gpu, rect); }
 
   private idFrame(commands: DrawCommand[], viewMatrix: GlMat3 | undefined, opts: RenderIdsOptions, sync: boolean): IdBuffer | Promise<IdBuffer> {
     if (this.disposed || this.isContextLost()) return { x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) };

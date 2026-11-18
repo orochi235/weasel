@@ -214,7 +214,7 @@ export function createRasterSession(options: RasterSessionOptions = {}): RasterS
   let renderer: WeaselRenderer | null = null;
   let disposed = false;
 
-  function contextFor(width: number, height: number): WebGL2RenderingContext {
+  function prepareContext(width: number, height: number): WebGL2RenderingContext {
     if (!options.gl) {
       if (!canvas) {
         ({ canvas, gl } = openCanvas(options.createCanvas, width, height));
@@ -246,7 +246,7 @@ export function createRasterSession(options: RasterSessionOptions = {}): RasterS
     call: string, width: number, height: number, flattenTolerancePx: number | undefined,
   ): { ctx: WebGL2RenderingContext; renderer: WeaselRenderer } {
     if (disposed) throw new Error(`raster session: ${call}() on a disposed session`);
-    const ctx = contextFor(width, height);
+    const ctx = prepareContext(width, height);
     const flattenTolerance = { px: flattenTolerancePx ?? 0.25 };
     if (!renderer) {
       renderer = new WeaselRenderer({

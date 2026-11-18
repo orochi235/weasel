@@ -112,20 +112,20 @@ function stubTip(path: Parameters<typeof subpathOf>[0], end: 'from' | 'to'): { t
  * connector draws no stub at that end.
  */
 export function offPageTagDerivePose<TPose>(
-  opts: { geometry?: PoseDescriptor<TPose> } = {},
+  opts: { poseDescriptor?: PoseDescriptor<TPose> } = {},
 ): (node: { pose: TPose; data: unknown }, deps: readonly (DerivedDep<TPose> | undefined)[]) => TPose | null {
-  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   return (node, deps) => {
     const tag = offPageTagOf(node);
     const path = deps[0]?.path ?? null;
     if (tag === null || path === null) return null;
     const at = stubTip(path, tag.end);
     if (at === null) return null;
-    const b = geometry.getBounds(node.pose);
+    const b = poseDescriptor.getBounds(node.pose);
     const reach = GAP + (Math.abs(at.out.x) * b.width + Math.abs(at.out.y) * b.height) / 2;
     const cx = at.tip.x + at.out.x * reach;
     const cy = at.tip.y + at.out.y * reach;
-    return translatePoseViaDescriptor(node.pose, cx - (b.x + b.width / 2), cy - (b.y + b.height / 2), geometry);
+    return translatePoseViaDescriptor(node.pose, cx - (b.x + b.width / 2), cy - (b.y + b.height / 2), poseDescriptor);
   };
 }
 

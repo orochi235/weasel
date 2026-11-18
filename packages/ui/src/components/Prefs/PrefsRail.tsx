@@ -116,7 +116,7 @@ export function PrefsRail(props: PrefsRailProps) {
               {nested ? (
                 <Disclosure
                   open={unfolded(item.path)}
-                  onToggle={() => fold(item.path, !unfolded(item.path))}
+                  onOpenChange={(next) => fold(item.path, next)}
                   label={item.name}
                   tabIndex={-1}
                   className={s.railFold}

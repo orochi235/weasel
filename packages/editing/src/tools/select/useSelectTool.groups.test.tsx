@@ -5,7 +5,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { sceneToAdapter, useScene, pickTopMostHit } from '@weasel-js/core';
+import { sceneToAdapter, useScene, topmostOf } from '@weasel-js/core';
 import type { UseSceneOptions } from '@weasel-js/core/engine';
 import { asNodeId, scenePoseFrame } from '@weasel-js/core/engine';
 import { useSelectTool } from './useSelectTool';
@@ -33,7 +33,7 @@ function harness(
 ) {
   const { result } = renderHook(() => {
     const scene = useScene<unknown, 'default', Pose>({ systemLayers: [{ id: 'default' }], initial });
-    const sel = useSelection({ mode: 'multi' });
+    const sel = useSelection({ mode: 'multiple' });
     const adapter = sceneToAdapter(scene, { selection: sel });
     return { tool: useSelectTool(adapter as never, {} as never), sel, scene };
   });
@@ -167,12 +167,12 @@ describe('dragging a member of a group', () => {
   });
 });
 
-describe('pickTopMostHit with a group and its member', () => {
+describe('topmostOf with a group and its member', () => {
   const parentOf: Record<string, string | null> = { g: null, m: 'g' };
   const adapter = { getParent: (id: string) => parentOf[id] ?? null };
 
   it('a member under the point beats its group as the hit node', () => {
-    expect(pickTopMostHit(['g', 'm'], adapter)).toBe('m');
-    expect(pickTopMostHit(['m', 'g'], adapter)).toBe('m');
+    expect(topmostOf(['g', 'm'], adapter)).toBe('m');
+    expect(topmostOf(['m', 'g'], adapter)).toBe('m');
   });
 });

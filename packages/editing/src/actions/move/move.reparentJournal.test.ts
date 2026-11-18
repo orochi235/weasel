@@ -30,14 +30,14 @@ describe('moveAction — a refused reparent under an active journal', () => {
     scene.add({ id: T, kind: 'group', layer: 'main', data: {}, pose: { x: 40, y: 0, width: 100, height: 100 }, layout: refusing });
     const journal = scene.history.beginJournal({ label: 'session' });
     scene.setActiveJournalAccessor(() => (journal.isActive() ? journal : null));
-    const onGestureEnd = vi.fn();
+    const onRunEnd = vi.fn();
 
     const invoker = moveAction.invoker!;
     if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
     const deps = { operands: { get: () => [A] }, scene, nodeAtPoint: () => T };
     const handle = invoker.start(
       { world: { x: 5, y: 5 }, modifiers: MODS, deps } as unknown as InvocationCtx,
-      { params: { reparentOnDrop: 'top', onGestureEnd } },
+      { params: { reparentOnDrop: 'top', onRunEnd } },
     );
     const drag = { start: { x: 5, y: 5 }, current: { x: 55, y: 5 }, delta: { x: 50, y: 0 } };
     const at = { world: drag.current, modifiers: MODS, deps, drag } as unknown as InvocationCtx;
@@ -47,6 +47,6 @@ describe('moveAction — a refused reparent under an active journal', () => {
     expect(scene.get(A)!.parent).toBe(null);
     expect(scene.get(A)!.pose).toEqual(HOME);
     expect(journal.entries().undo).toHaveLength(0);
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    expect(onRunEnd).toHaveBeenCalledWith(false);
   });
 });

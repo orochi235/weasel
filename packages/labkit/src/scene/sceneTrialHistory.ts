@@ -1,5 +1,6 @@
 import type { Scene, SerializedSceneHistory } from '@weasel-js/core';
 import { maxOf } from '@weasel-js/geom';
+import { createPart } from '@weasel-js/registry';
 import { latestStamp } from '../state/savedUndo';
 import { TRIAL_EDIT_OP } from '../trial/trialEditOp';
 import type { TrialHistorySource } from '../trial/trialHistory';
@@ -7,16 +8,8 @@ import { editStamp, seedEditStamp } from '../undo/editStamp';
 
 type AnyScene = Pick<Scene<unknown, string, unknown>, 'history'>;
 
-const kept = new WeakMap<object, Map<number, number>>();
-
 /** The `editStamp`s kept for `scene`'s entries, one map per scene. */
-export function editStampsOf(scene: object): Map<number, number> {
-  const known = kept.get(scene);
-  if (known) return known;
-  const stamps = new Map<number, number>();
-  kept.set(scene, stamps);
-  return stamps;
-}
+export const editStampsOf = createPart((_scene: object) => new Map<number, number>());
 
 /**
  * Stamps each entry `scene` records or merges into with `editStamp`, by id,

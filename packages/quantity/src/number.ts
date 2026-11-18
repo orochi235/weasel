@@ -57,26 +57,26 @@ const DECIMAL_NUMBER = /^[-+]?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?$/i;
 const EXPONENTS: Record<string, number> = { k: 3, m: 6, b: 9, t: 12 };
 
 /** {@link formatCompact} in a given locale. */
-export function formatCompactIn(value: number, decimals: number, locale: string): string {
+export function formatCompactIn(value: number, places: number, locale: string): string {
   if (!Number.isFinite(value)) return signed(String(value));
-  if (belowCompact(value, decimals)) {
-    const plain = { useGrouping: false, minimumFractionDigits: decimals, maximumFractionDigits: decimals };
+  if (belowCompact(value, places)) {
+    const plain = { useGrouping: false, minimumFractionDigits: places, maximumFractionDigits: places };
     return signed(unsignedZero(value, (n) => n.toLocaleString(locale, plain)));
   }
   const parts = COMPACT_EN.formatToParts(Math.abs(value));
   const of = (type: string) => parts.filter((p) => p.type === type).map((p) => p.value).join('');
-  const places = of('fraction').length;
+  const shown = of('fraction').length;
   const mantissa = Number(`${of('integer').replaceAll(',', '')}.${of('fraction') || '0'}`)
-    .toLocaleString(locale, { minimumFractionDigits: places, maximumFractionDigits: places });
+    .toLocaleString(locale, { minimumFractionDigits: shown, maximumFractionDigits: shown });
   return `${value < 0 ? MINUS_SIGN : ''}${mantissa}${of('compact')}`;
 }
 
 const COMPACT_EN = new Intl.NumberFormat('en-US', { notation: 'compact', minimumSignificantDigits: 3, maximumSignificantDigits: 3 });
 
-/** Whether `value` shows below a thousand at `decimals` places, where a compact
+/** Whether `value` shows below a thousand at `places` places, where a compact
  *  readout writes it plain. Asked of the value as shown: 999.6 reads `1000`. */
-export function belowCompact(value: number, decimals: number): boolean {
-  return Number(Math.abs(value).toFixed(decimals)) < 1000;
+export function belowCompact(value: number, places: number): boolean {
+  return Number(Math.abs(value).toFixed(places)) < 1000;
 }
 
 /** {@link parseNumber} in a given locale. */

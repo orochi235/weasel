@@ -1,12 +1,12 @@
 /**
- * `sequenceSlots` on any run of items laid end to end along an axis: a gap before each item and one after the last,
+ * `slotsAlong` on any run of items laid end to end along an axis: a gap before each item and one after the last,
  * in order, each bar halfway between its neighbors, outside the run at either end, and spanning across the items
  * beside it.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { nonFinite, runs, timeoutFor } from './pbt.fixture';
-import { sequenceSlots, type ReorderItem } from './reorder';
+import { slotsAlong, type ReorderItem } from './reorder';
 
 const RUNS = 300;
 
@@ -15,7 +15,7 @@ const run = fc.tuple(
   fc.array(fc.record({ gap: fc.integer({ min: 0, max: 40 }), size: fc.integer({ min: 0, max: 80 }), across: fc.integer({ min: -30, max: 30 }), depth: fc.integer({ min: 0, max: 60 }) }), { maxLength: 7 }),
 );
 
-describe('sequenceSlots', () => {
+describe('slotsAlong', () => {
   it.each(['x', 'y'] as const)('lays a gap before each item and after the last, in order, along %s', (axis) => {
     fc.assert(fc.property(run, ([start, specs]) => {
       let at = start;
@@ -25,7 +25,7 @@ describe('sequenceSlots', () => {
         at += size;
         return { id: `i${k}`, bounds: box };
       });
-      const slots = sequenceSlots(axis, items);
+      const slots = slotsAlong(axis, items);
       expect(nonFinite(slots.gaps)).toEqual([]);
       expect(slots.gaps.map((g) => g.index)).toEqual(items.length === 0 ? [] : items.map((_, k) => k).concat(items.length));
       const cross = axis === 'x' ? 'y' : 'x';

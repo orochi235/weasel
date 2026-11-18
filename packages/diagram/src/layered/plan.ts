@@ -13,7 +13,7 @@ import {
   axesFor,
   extent,
   pinnedSet,
-  translated,
+  movesFrom,
   untilSettled,
   worldOf,
   type LayoutOptions,
@@ -28,7 +28,7 @@ import { holdPins } from './pins';
 import { turnOutward } from './inward';
 import { boxReach } from './reach';
 import { placeAcross } from './place';
-import { ranksByLength } from './rank';
+import { simplexRanks } from './rank';
 import { settlePlaces } from './places';
 import { layeredPorts } from '../route';
 
@@ -70,7 +70,7 @@ export function layeredPlan(graph: Graph, opts: LayoutOptions = {}): LayeredPlan
   // outsider moved out of a group's column, or a node beside a second pin off its
   // slot. Barycenter ordering reorders on every run, so it has no arrangement to
   // settle on.
-  if (opts.order === 'barycenter' || ((graph.groups?.length ?? 0) === 0 && pinnedSet(graph, opts).size < 2)) return planOnce(graph, opts);
+  if (opts.order === 'barycenter' || ((graph.clusters?.length ?? 0) === 0 && pinnedSet(graph, opts).size < 2)) return planOnce(graph, opts);
   // Each pass starts its placeholders on the routes the pass before laid out,
   // and the routes kept are the last pass's.
   let last: LayeredPlan | undefined;
@@ -94,11 +94,11 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
   const finding = opts.order === 'barycenter';
 
   const back = backEdges(graph);
-  const ranks = ranksByLength(graph, back);
+  const ranks = simplexRanks(graph, back);
   const expanded = expand(graph, ranks, back, { axes, nodeGap });
-  let rows = finding ? orderRows(expanded.rows, expanded.hops, { groups: graph.groups ?? [] }) : expanded.rows;
+  let rows = finding ? orderRows(expanded.rows, expanded.hops, { clusters: graph.clusters ?? [] }) : expanded.rows;
 
-  const grouped = (graph.groups?.length ?? 0) > 0;
+  const grouped = (graph.clusters?.length ?? 0) > 0;
   const pinned = pinnedSet(graph, opts);
   const across = () => {
     const preferred = placeAcross(rows, settlePlaces(rows, expanded.hops), axes.cross, nodeGap);
@@ -141,7 +141,7 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
     const slot = slots.get(node.id);
     if (slot !== undefined) placed.set(node.id, worldOf(slot, extent(node.bounds, axes.rank), axes));
   }
-  const moves = translated(graph, placed, pinned, opts.tolerance);
+  const moves = movesFrom(graph, placed, pinned, opts.tolerance);
   const offset = anchorOffset(graph, placed, pinned);
 
   // A pinned node stays where it is, not where its rank would put it, so

@@ -3,7 +3,7 @@ import fc from 'fast-check';
 import { boundsOfPath, multiply, pathContainsPoint, pathSignedArea, rotate, translate, type Path } from '@weasel-js/geom';
 import type { Stroke } from '@weasel-js/paint';
 import { strokeToPath } from './strokeToPath';
-import { strokeEdgeNear } from './strokeEdge';
+import { nearestStrokeEdge } from './strokeEdge';
 import { eighth, pathOf, polyline, polylineDistance, runs, tally, timeoutFor, type Pt } from './pbt.fixture';
 
 const RUNS = runs(100);
@@ -76,7 +76,7 @@ describe('strokeToPath, property', () => {
   }, timeoutFor(100, 60));
 });
 
-describe('strokeEdgeNear, property', () => {
+describe('nearestStrokeEdge, property', () => {
   it('agrees with the outline: a point it finds inside is inked, and one outside every edge is not', () => {
     // Round caps and joins make the ink exactly the points within half the width of the path.
     const inside = tally(), outside = tally();
@@ -90,7 +90,7 @@ describe('strokeEdgeNear, property', () => {
       for (const p of near) {
         const d = polylineDistance(p, pts, c);
         if (Math.abs(d - w / 2) < 0.02 * w + 0.01) continue;
-        const hit = strokeEdgeNear(path, s, p.x, p.y)!;
+        const hit = nearestStrokeEdge(path, s, p.x, p.y)!;
         expect(hit).not.toBeNull();
         if (hit.gap < 0) expect(d).toBeLessThan(w / 2);
         if (d > w / 2) expect(hit.gap).toBeGreaterThan(0);
@@ -104,7 +104,7 @@ describe('strokeEdgeNear, property', () => {
 
   it('measures a centered stroke of one width as the distance to its path less half the width', () => {
     fc.assert(fc.property(shape, width, eighth(150), eighth(150), ({ pts, closed: c }, w, x, y) => {
-      const hit = strokeEdgeNear(pathOf(pts, c), { paint: PAINT, width: w }, x, y)!;
+      const hit = nearestStrokeEdge(pathOf(pts, c), { paint: PAINT, width: w }, x, y)!;
       const d = polylineDistance({ x, y }, pts, c);
       // The nearest edge, not the nearest segment: a point between two can sit nearer the far one's edge.
       expect(Math.abs(hit.gap)).toBeLessThanOrEqual(Math.abs(d - w / 2) + 1e-9 * (1 + d));

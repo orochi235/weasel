@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Powerline } from '@weasel-js/ui/components/Powerline';
 import type { EdgeCap } from '@weasel-js/ui/components/Powerline';
 import { Badge, BADGE_VARIANT_ICONS } from '@weasel-js/ui/components/Badge';
-import { Sequence, values } from '@weasel-js/ui/components/Sequence';
+import { Sequence, valuesSweep } from '@weasel-js/ui/components/Sequence';
 import { BADGE_LOOKS, lookProps } from '../Badge/looks';
 
 const ALL_CAPS: EdgeCap[] = ['flat', 'chevron', 'slant', 'slant-up', 'round', 'scallop', 'puzzle', 'concave-chevron'];
@@ -52,7 +52,7 @@ export const EveryCapInOneRow: Story = {
 export const CapMatrix: Story = {
   tags: ['gallery'],
   render: (args) => (
-    <Sequence label="Edge caps" sweep={values(ALL_CAPS)} caption={false}>
+    <Sequence aria-label="Edge caps" sweep={valuesSweep(ALL_CAPS)} caption={false}>
       {(cap) => (
         <Powerline {...args}>
           <Badge emphasis="high" endCap={cap}>{String(cap)}</Badge>

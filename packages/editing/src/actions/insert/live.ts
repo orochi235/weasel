@@ -1,5 +1,5 @@
 /** What `insertLive.gesture` holds while an insert is in flight: the part of
- *  the gesture `insert.adjustRotation` and `insert.reposition` reach from
+ *  the gesture `insert.rotate` and `insert.reposition` reach from
  *  outside it. */
 export interface InsertLiveGesture {
   /** False once the gesture has ended. */

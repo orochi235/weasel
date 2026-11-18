@@ -13,9 +13,9 @@ import type { IconSpec } from '@weasel-js/icons';
 import {
   isPrefLeaf,
   pairRuns,
-  prefAliasTargets,
+  createAliasTargets,
   prefHeadingKey,
-  prefLeafValue,
+  prefValueOrDefault,
   prefSectionPath,
   sharedReading,
   type PrefAlias,
@@ -134,7 +134,7 @@ function panelItems<T>(entries: Iterable<T>, leaves: (entry: T) => PanelLeaf | u
 function flatten(schema: PrefSection, rawAliases: boolean, targets?: PrefAliasTargets): PanelSection[] {
   const sections: PanelSection[] = [];
   const untitled: PanelLeaf[] = [];
-  const into = targets ?? prefAliasTargets(schema, () => ALWAYS, { showHidden: true });
+  const into = targets ?? createAliasTargets(schema, () => ALWAYS, { showHidden: true });
   const shown = (key: string, leaf: PrefLeaf): PanelLeaf => {
     const target = leaf.kind === 'alias' && !rawAliases ? into.shown(leaf as PrefAlias) : undefined;
     return target ? { ...target, own: key } : { path: key, leaf };
@@ -278,10 +278,10 @@ const put = (copy: Record<string, unknown>, key: string, value: unknown): void =
   else setOwn(copy, key, value);
 };
 
-/** What a node holding `held` at a leaf's path shows there ({@link prefLeafValue}). Holding nothing reads as the
+/** What a node holding `held` at a leaf's path shows there ({@link prefValueOrDefault}). Holding nothing reads as the
  *  leaf's default only where it says absence means that, else as `undefined`, which a panel draws as unset. */
 export const nodeLeafValue = (leaf: PrefLeaf, held: unknown): unknown =>
-  prefLeafValue(leaf, held, { unset: leaf.absentIsDefault !== true });
+  prefValueOrDefault(leaf, held, { unset: leaf.absentIsDefault !== true });
 
 /** The one value `values` all are, or `MIXED`. */
 export function sharedValue(values: readonly unknown[]): unknown | Mixed {

@@ -45,7 +45,7 @@ upstream silently loses the optimization).
 **In `@weasel-js/geom`** — `paths/builder.ts` (`PathBuilder`, `rectPath`,
 `ellipsePath`, `regularPolygonPath`, `starPath`, `linePath`,
 `polygonFromPoints`), `paths/pathFromD.ts` (parse SVG `d`), `paths/bounds.ts`,
-`paths/pathDistance.ts`, `paths/pathAt.ts`, `paths/unionBoundsPath.ts`,
+`paths/pathDistance.ts`, `paths/pathAt.ts`, `paths/boundsOfPaths.ts`,
 `paths/transform.ts`, `paths/transformPath.ts`, `paths/compose.ts`,
 `paths/splitSubpaths.ts`, `paths/cubicMath.ts`, `paths/schneiderFit.ts`
 (curve fitting for freehand), `pathHitTest.ts`, `flatten.ts`, `curves/`

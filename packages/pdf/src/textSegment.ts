@@ -9,7 +9,7 @@ import {
   strokeHasInk,
 } from '@weasel-js/paint';
 import type { TextDrawCommand } from '@weasel-js/renderer';
-import { dashLength } from '@weasel-js/stroke';
+import { dashRunLength } from '@weasel-js/stroke';
 import { glyphTurn, type PlacedGlyph, SYNTHETIC_ITALIC_RADIANS, syntheticBoldOffset } from '@weasel-js/text';
 import { solidColor } from './color';
 import { utf16Hex } from './fonts/toUnicode';
@@ -207,7 +207,7 @@ function longestOutline(ctx: PageCtx, seg: TextSegment, dx: number, dy: number):
   let length = 0;
   for (const { g } of seg.glyphs) {
     const outline = isSpace(g.cp) ? null : placedOutline(ctx, g, dx, dy);
-    if (outline && hasOutline(outline)) length = Math.max(length, dashLength(outline));
+    if (outline && hasOutline(outline)) length = Math.max(length, dashRunLength(outline));
   }
   return length;
 }

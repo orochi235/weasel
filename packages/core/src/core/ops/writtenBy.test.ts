@@ -3,7 +3,7 @@ import { createScene } from 'core/scene/scene';
 import { sceneMutators } from 'core/scene/sceneMutators';
 import { asNodeId } from 'core/scene/types';
 import { createMoveToIndexOp } from './reorder';
-import { createTransformOp } from './transform';
+import { createSetPoseOp } from './setPose';
 import type { Op } from './types';
 import { writtenBy } from './writtenBy';
 
@@ -26,7 +26,7 @@ describe('writtenBy', () => {
   it('reads the pose a batch leaves a node, without writing the scene', () => {
     const sc = scene();
     const to = { x: 5, y: 0, width: 1, height: 1 };
-    const written = writtenBy(sc as never, [createTransformOp({ id: 'a', from: sc.get(asNodeId('a'))!.pose, to })]);
+    const written = writtenBy(sc as never, [createSetPoseOp({ id: 'a', from: sc.get(asNodeId('a'))!.pose, to })]);
     expect(written?.get('a')?.pose).toEqual(to);
     expect(sc.get(asNodeId('a'))!.pose).toEqual({ x: 0, y: 0, width: 1, height: 1 });
   });

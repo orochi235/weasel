@@ -50,7 +50,7 @@ function panel(selected?: readonly string[], onSelect?: (path: string, how: Pref
   const scene = createScene<unknown, 'default', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: { stroke: {} } });
   const view = (now?: readonly string[]) => (
-    <SelectionPanel scene={scene} selection={selection} properties={properties} routing={routing} selected={now} onSelect={onSelect} />
+    <SelectionPanel scene={scene} selection={selection} properties={properties} routing={routing} marked={now} onMark={onSelect} />
   );
   const { container, rerender } = render(view(selected));
   return {

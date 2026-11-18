@@ -3,7 +3,7 @@ import { render } from '@testing-library/react';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import type { IconRef } from '@weasel-js/icons';
-import { collectIcons, collectBundles, collectExports, collectPropertiesTrait, collectOpFactories, collectOpKinds, collectShapeTrait } from './registryData';
+import { collectIcons, collectBundles, collectExports, collectPropertiesTrait, collectOpFactories, collectOpKinds, collectShapeTrait, opFactoryNameFor } from './registryData';
 import type { ActionEntry, ToolEntry } from './registryEntries';
 import { icon } from '../icons.gen';
 import * as Weasel from '@weasel-js/core';
@@ -66,9 +66,7 @@ describe('registryData static collectors', () => {
 
   it('collectOpFactories names a real factory export for every registered op kind', () => {
     const ids = collectOpFactories().map((f) => f.id).sort();
-    const expected = Weasel.defaultOpRegistry.entries().map((e) => e.key)
-      .map((n) => `create${n[0]!.toUpperCase()}${n.slice(1)}Op`)
-      .sort();
+    const expected = Weasel.defaultOpRegistry.entries().map((e) => opFactoryNameFor(e.key)).sort();
     expect(ids).toEqual(expected);
   });
 
@@ -77,7 +75,7 @@ describe('registryData static collectors', () => {
     const ids = ops.map((o) => o.id);
     expect(ids).toContain('createInsertOp');
     expect(ids).toContain('createDeleteOp');
-    expect(ids).toContain('createTransformOp');
+    expect(ids).toContain('createSetPoseOp');
   });
 
   it('collectExports lists every core entry point with the names the barrel ships', () => {

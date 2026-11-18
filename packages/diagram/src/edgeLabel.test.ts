@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { AUTO_POSE_DESCRIPTOR, createScene, effectivePose, type ActionDeps, type Scene } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH } from './edge';
 import {
-  EDIT_EDGE_LABEL_ACTION_ID, dropEmptyEdgeLabel, edgeLabelSpec, editEdgeLabelAction, editEdgeLabelBinding, labelSize,
+  EDIT_EDGE_LABEL_ACTION_ID, dropEmptyEdgeLabel, edgeLabelSpec, createEditEdgeLabelAction, editEdgeLabelBinding, labelSize,
 } from './edgeLabel';
 import { seqMeasure } from './sequence/metrics';
 import { LABEL_DERIVE_POSE } from './label';
@@ -26,7 +26,7 @@ function sceneWithEdge(withLabel = false): Sc {
   return scene;
 }
 
-function runOn(action: ReturnType<typeof editEdgeLabelAction>, deps: ActionDeps, at = { x: 150, y: 20 }) {
+function runOn(action: ReturnType<typeof createEditEdgeLabelAction>, deps: ActionDeps, at = { x: 150, y: 20 }) {
   if (action.invoker?.timing !== 'immediate') throw new Error('expected an immediate invoker');
   action.invoker.run(deps, { world: { x: at.x, y: at.y } });
 }
@@ -66,17 +66,17 @@ describe('diagramScene labels', () => {
   });
 });
 
-describe('editEdgeLabelAction', () => {
+describe('createEditEdgeLabelAction', () => {
   it('binds a double-click', () => {
     expect(editEdgeLabelBinding()).toMatchObject({ spec: { kind: 'doubleClick' }, actionId: EDIT_EDGE_LABEL_ACTION_ID });
-    expect(editEdgeLabelAction().id).toBe(EDIT_EDGE_LABEL_ACTION_ID);
+    expect(createEditEdgeLabelAction().id).toBe(EDIT_EDGE_LABEL_ACTION_ID);
   });
 
   it('adds a label to an unlabeled edge in one history entry, then begins editing it', () => {
     const scene = sceneWithEdge();
     const before = scene.renderOrderNodes().length;
     const startEdit = vi.fn();
-    runOn(editEdgeLabelAction(), depsOf(scene, { textEdit: { startEdit } }));
+    runOn(createEditEdgeLabelAction(), depsOf(scene, { textEdit: { startEdit } }));
     expect(scene.renderOrderNodes()).toHaveLength(before + 1);
     expect(scene.get('e1/label' as never)).toBeDefined();
     expect(startEdit).toHaveBeenCalledWith('e1/label');
@@ -95,14 +95,14 @@ describe('editEdgeLabelAction', () => {
       },
     ]);
     const edgeParent = scene.get('e1' as never)!.parent;
-    runOn(editEdgeLabelAction(), depsOf(scene as never, { textEdit: { startEdit: vi.fn() } }));
+    runOn(createEditEdgeLabelAction(), depsOf(scene as never, { textEdit: { startEdit: vi.fn() } }));
     expect(scene.get('e1/label' as never)!.parent).toBe(edgeParent);
   });
 
   it('sets a new label in the style and color it is given', () => {
     const scene = sceneWithEdge();
     const style = { fontFamily: 'serif', fontSize: 14 };
-    runOn(editEdgeLabelAction({ style, fill: '#222' }), depsOf(scene, { textEdit: { startEdit: vi.fn() } }));
+    runOn(createEditEdgeLabelAction({ style, fill: '#222' }), depsOf(scene, { textEdit: { startEdit: vi.fn() } }));
     const data = scene.get('e1/label' as never)!.data as { style: unknown; fill: { paint: { color: string } } };
     expect(data.style).toEqual(style);
     expect(data.fill.paint.color).toBe('#222');
@@ -112,7 +112,7 @@ describe('editEdgeLabelAction', () => {
     const scene = sceneWithEdge(true);
     const before = scene.renderOrderNodes().length;
     const startEdit = vi.fn();
-    runOn(editEdgeLabelAction(), depsOf(scene, { textEdit: { startEdit } }));
+    runOn(createEditEdgeLabelAction(), depsOf(scene, { textEdit: { startEdit } }));
     expect(scene.renderOrderNodes()).toHaveLength(before);
     expect(startEdit).toHaveBeenCalledWith('e1/label');
   });
@@ -121,7 +121,7 @@ describe('editEdgeLabelAction', () => {
     const scene = sceneWithEdge();
     const commit = vi.fn();
     const deps = depsOf(scene);
-    runOn(editEdgeLabelAction({ commit }), deps);
+    runOn(createEditEdgeLabelAction({ commit }), deps);
     expect(commit).toHaveBeenCalledWith('e1', expect.objectContaining({ deps }));
     expect(scene.get('e1/label' as never)).toBeUndefined();
   });
@@ -136,7 +136,7 @@ describe('editEdgeLabelAction', () => {
     const box = AUTO_POSE_DESCRIPTOR.getBounds(effectivePose(scene as never, scene.get('e1/label' as never)! as never));
     const at = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
     const commit = vi.fn();
-    const action = editEdgeLabelAction({ commit });
+    const action = createEditEdgeLabelAction({ commit });
     runOn(action, depsOf(scene, {}, 'e2'), at);
     expect(commit).toHaveBeenCalledWith('e1', expect.anything());
     expect(action.enabled?.(depsOf(scene, {}, 'e2'), at)).toBe(true);
@@ -145,7 +145,7 @@ describe('editEdgeLabelAction', () => {
   it("edits the label a press on the label layer reports", () => {
     const scene = sceneWithEdge(true);
     const commit = vi.fn();
-    const action = editEdgeLabelAction({ commit });
+    const action = createEditEdgeLabelAction({ commit });
     if (action.invoker?.timing !== 'immediate') throw new Error('expected an immediate invoker');
     const payload = { targetId: 'e1/label', labelId: 'e1/label', edgeId: 'e1' };
     action.invoker.run(depsOf(scene, {}, null), { world: { x: -500, y: -500 }, affordance: { payload } });
@@ -154,7 +154,7 @@ describe('editEdgeLabelAction', () => {
 
   it('declines a double-click that is not on an edge', () => {
     const scene = sceneWithEdge();
-    const action = editEdgeLabelAction();
+    const action = createEditEdgeLabelAction();
     expect(action.enabled?.(depsOf(scene, {}, 'a'), { x: 10, y: 10 })).not.toBe(true);
     expect(action.enabled?.(depsOf(scene), { x: 150, y: 20 })).toBe(true);
   });

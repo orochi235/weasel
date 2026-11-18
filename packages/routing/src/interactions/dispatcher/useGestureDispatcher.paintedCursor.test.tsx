@@ -28,7 +28,7 @@ function Probe({ action, painted, affordanceAt }: {
     canvasRef,
     actions: registry!,
     entriesById: new Map(),
-    classifyTarget: () => ({ body: 'empty' }),
+    classifyTarget: () => ({ bodyTarget: 'empty' }),
     paintedCursor: () => painted,
     ...(affordanceAt ? { affordanceAt } : {}),
   });

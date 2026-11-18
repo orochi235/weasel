@@ -1,7 +1,7 @@
 import type { NodeId } from '../scene/types';
 import type { ModifierState } from '../modifierState';
 import type { Bounds } from '../viewport/fitViewToBounds';
-import { unionAABB } from 'core/geometry/unionBounds';
+import { unionAabb } from 'core/geometry/unionBounds';
 
 export type { Bounds };
 
@@ -102,7 +102,7 @@ export function buildChromeState(args: BuildChromeStateArgs): ChromeState {
     // it (a committed move, a live preview) without any of its inputs changing.
     get unionBounds() {
       if (!multi()) return null;
-      return unionAABB(shown().map((id) => effectiveBoundsOf(id)));
+      return unionAabb(shown().map((id) => effectiveBoundsOf(id)));
     },
   };
 }

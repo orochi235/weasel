@@ -1,7 +1,7 @@
 import { sameId } from './same';
 
 /** `single` always replaces; `multi` lets a policy's keys toggle and range. */
-export type SelectionMode = 'single' | 'multi';
+export type SelectionMode = 'single' | 'multiple';
 
 /** A modifier key a policy can assign to toggling or ranging. */
 export type SelectionExtendKey = 'shift' | 'meta' | 'ctrl';
@@ -9,9 +9,9 @@ export type SelectionExtendKey = 'shift' | 'meta' | 'ctrl';
 /** The modifiers held during a press. */
 export type SelectModifiers = Readonly<Record<SelectionExtendKey, boolean>>;
 
-/** What a press does to the selection. `single` selects the pressed id alone, as a press on an id
+/** What a press does to the selection. `alone` selects the pressed id alone, as a press on an id
  *  `forceSingle` holds does under any intent. */
-export type SelectIntent = 'replace' | 'toggle' | 'range' | 'single';
+export type SelectIntent = 'replace' | 'toggle' | 'range' | 'alone';
 
 /** Which keys toggle and which range, so a surface states its convention: a list usually
  *  toggles on Cmd/Ctrl and ranges on shift, a canvas toggles on shift. */
@@ -35,7 +35,7 @@ export interface SelectContext<K> {
    *  order: a canvas's nodes in the box the two span. Taken ahead of `order`; a range it gives
    *  nothing for replaces. */
   readonly between?: (from: K, to: K) => readonly K[];
-  /** Whether an id is selected only alone, a locked layer for one. A press on it is a `single` press
+  /** Whether an id is selected only alone, a locked layer for one. A press on it is an `alone` press
    *  whatever its modifiers; a range walking past it skips it, and a toggle drops it. Default: none. */
   readonly forceSingle?: (id: K) => boolean;
 }
@@ -61,7 +61,7 @@ export function rangeOf<K>(order: readonly K[], from: K, to: K, forceSingle: (id
  *  hands, so a caller can compare by reference. */
 export function select<K>(state: Selection<K>, id: K, intent: SelectIntent, context: SelectContext<K> = {}): Selection<K> {
   const forceSingle = context.forceSingle ?? never;
-  if (forceSingle(id)) intent = 'single';
+  if (forceSingle(id)) intent = 'alone';
   if (intent === 'toggle') {
     const kept = state.ids.filter((x) => !forceSingle(x));
     return { ids: kept.includes(id) ? kept.filter((x) => !sameId(x, id)) : [...kept, id], anchor: id };

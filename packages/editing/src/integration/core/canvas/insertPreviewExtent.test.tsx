@@ -81,7 +81,7 @@ function containsAll(
 // --- The three verified repros ------------------------------------------
 
 /** Centered Alt-drag of a hexagon: 50 right, 50 down from the anchor.
- *  `computeBounds` in center mode gives a 100×100 box (half-extent 50) but
+ *  `insertRectFor` in center mode gives a 100×100 box (half-extent 50) but
  *  the resolved circumradius is hypot(50,50) = 50√2. */
 const CENTERED_POLYGON: InsertPreview = {
   kind: 'insertPreview',

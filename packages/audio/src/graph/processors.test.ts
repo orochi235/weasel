@@ -5,7 +5,7 @@ import {
 } from '../testing/fakeAudioContext';
 import { allPaths } from '../testing/graphWalk';
 import {
-  compressorNode, createGainNode, createMixNode, createPanNode, delayNode, filterNode, reverbNode,
+  createCompressorNode, createGainNode, createMixNode, createPanNode, createDelayNode, createFilterNode, createReverbNode,
 } from './processors';
 
 const FADE = 10;
@@ -100,7 +100,7 @@ describe('mix', () => {
 describe('the effect adapters', () => {
   it('map delay params onto the effect', () => {
     const ctx = setup();
-    const d = delayNode(ctx, {});
+    const d = createDelayNode(ctx, {});
     expect(Object.keys(d.inputs)).toEqual(['in']);
     const input = d.inputs.in as never as FakeNode;
     const dry = input.connectedTo[0] as never as FakeGain;
@@ -119,14 +119,14 @@ describe('the effect adapters', () => {
   });
 
   it('lets a delay with no maxTime take any time up to 2000 ms', () => {
-    const d = delayNode(setup(), { time: 300 });
+    const d = createDelayNode(setup(), { time: 300 });
     expect(() => d.params.time(2000, 0)).not.toThrow();
-    expect(() => delayNode(setup(), { time: 3000 }).params.time(3000, 0)).not.toThrow();
+    expect(() => createDelayNode(setup(), { time: 3000 }).params.time(3000, 0)).not.toThrow();
   });
 
   it('map filter params onto the biquad', () => {
     const ctx = setup();
-    const f = filterNode(ctx, { type: 'peaking' });
+    const f = createFilterNode(ctx, { type: 'peaking' });
     const biquad = f.inputs.in as never as FakeBiquad;
     expect(f.output).toBe(f.inputs.in);
     f.params.frequency(1200, 0);
@@ -139,7 +139,7 @@ describe('the effect adapters', () => {
 
   it('map compressor attack and release from ms to seconds', () => {
     const ctx = setup();
-    const c = compressorNode(ctx, {});
+    const c = createCompressorNode(ctx, {});
     const comp = c.inputs.in as never as FakeCompressor;
     const makeup = c.output as never as FakeGain;
     c.params.attack(20, 0);
@@ -158,7 +158,7 @@ describe('the effect adapters', () => {
 
   it('forwards dispose: a delay node disconnects its feedback loop', () => {
     const ctx = setup();
-    const d = delayNode(ctx, {});
+    const d = createDelayNode(ctx, {});
     const delay = (d.inputs.in as never as FakeNode).connectedTo[1] as never as FakeDelay;
     const loop = delay.connectedTo[1];
     expect(loop.connectedTo).toContain(delay);
@@ -167,24 +167,24 @@ describe('the effect adapters', () => {
   });
 
   it('leaves dispose unset for an effect without one', () => {
-    expect(filterNode(setup(), {}).dispose).toBeUndefined();
+    expect(createFilterNode(setup(), {}).dispose).toBeUndefined();
   });
 });
 
-describe('reverbNode', () => {
-  const convolverOf = (def: ReturnType<typeof reverbNode>) =>
+describe('createReverbNode', () => {
+  const convolverOf = (def: ReturnType<typeof createReverbNode>) =>
     (def.inputs.in as never as FakeNode).connectedTo[1] as never as FakeConvolver;
 
   it('builds its impulse from seconds, defaulting to 2', () => {
     const ctx = setup();
-    expect((convolverOf(reverbNode(ctx, { seconds: 1 })).buffer as { duration: number }).duration).toBe(1);
-    expect((convolverOf(reverbNode(ctx, {})).buffer as { duration: number }).duration).toBe(2);
+    expect((convolverOf(createReverbNode(ctx, { seconds: 1 })).buffer as { duration: number }).duration).toBe(1);
+    expect((convolverOf(createReverbNode(ctx, {})).buffer as { duration: number }).duration).toBe(2);
   });
 
   it('uses a given impulse as is, and maps mix', () => {
     const ctx = setup();
     const impulse = ctx.createBuffer(1, 100, 100);
-    const r = reverbNode(ctx, { impulse: impulse as never, mix: 0 });
+    const r = createReverbNode(ctx, { impulse: impulse as never, mix: 0 });
     expect(convolverOf(r).buffer).toBe(impulse);
     const input = r.inputs.in as never as FakeNode;
     r.params.mix(0.25, 0);

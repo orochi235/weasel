@@ -1,4 +1,4 @@
-import { type ModuleInfo, moduleInfo, type ResolveImport } from './depGraph.ts';
+import { type ModuleInfo, moduleInfo, type ResolveImport } from './componentGraph.ts';
 
 /** One pass of following imports for one story file: what it read, and whether anything failed to resolve. */
 export interface Trace {

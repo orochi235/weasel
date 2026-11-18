@@ -220,7 +220,7 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
     capabilities: ['edits-page'],
     hookName: 'useSliceTool',
     cursor: 'crosshair',
-    presentation: { label: 'Slice', icon: icon('core:slice'), group: 'page' },
+    presentation: { label: 'Slice', icon: icon('core:slice'), group: 'slice' },
     ...(keybinding === null ? {} : { keybinding: keybinding ?? { key: 'K' } }),
     actions,
     overlay,

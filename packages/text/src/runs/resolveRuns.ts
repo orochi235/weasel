@@ -19,8 +19,9 @@ import { faceMetricsOf, cachedFontVariant, type FaceMetrics, type FontStyle } fr
 import type { StyledRun } from '../runs';
 import type { ResolvedTextStyle } from '../textStyle';
 import { transformRunTexts, type RunSourceMap } from './textTransform';
-import { ownSmallCaps, smallCapsScaleFor, smallCapsText } from './smallCaps';
+import { hasOwnSmallCaps, smallCapsScaleFor, smallCapsText } from './smallCaps';
 import { rejoinSplitPairs } from './codePointCuts';
+import { createPart } from '@weasel-js/registry';
 
 /** A run with every style resolved against the node's text style — no
  *  optional inheritance left. This is what layout and painting consume. */
@@ -98,21 +99,16 @@ export const SCRIPT_METRICS: Readonly<Record<'super' | 'sub', ScriptPreset>> = O
   sub: Object.freeze({ size: 0.583, shift: -0.333 }),
 });
 
-const resolvedScripts = new WeakMap<FaceMetrics, Readonly<Record<'super' | 'sub', ScriptPreset>>>();
+const resolvedScripts = createPart((face: FaceMetrics): Readonly<Record<'super' | 'sub', ScriptPreset>> => Object.freeze({
+  super: face.superscript ?? SCRIPT_METRICS.super,
+  sub: face.subscript ?? SCRIPT_METRICS.sub,
+}));
 
 /** The script presets for a face: its own `OS/2` values where it states
  *  them, {@link SCRIPT_METRICS} per half where it does not. */
 export function scriptMetrics(face?: FaceMetrics): Readonly<Record<'super' | 'sub', ScriptPreset>> {
   if (!face || (!face.superscript && !face.subscript)) return SCRIPT_METRICS;
-  let out = resolvedScripts.get(face);
-  if (!out) {
-    out = Object.freeze({
-      super: face.superscript ?? SCRIPT_METRICS.super,
-      sub: face.subscript ?? SCRIPT_METRICS.sub,
-    });
-    resolvedScripts.set(face, out);
-  }
-  return out;
+  return resolvedScripts(face);
 }
 
 /**
@@ -194,7 +190,7 @@ export function resolveRuns(
  * run already at an index is rewritten when it has the same optional fields as
  * its replacement. For a caller that owns `out` and hands nothing it held
  * to anyone who keeps it; one whose runs the text caches have seen calls
- * `clearRuns` on them first.
+ * `evictRunsForRefill` on them first.
  */
 export function resolveRunsInto(
   out: ResolvedRun[],
@@ -233,7 +229,7 @@ export function resolveRunsInto(
     let fontFeatures: readonly string[] | undefined;
     const smallCaps = (run.fontVariantCaps ?? style.fontVariantCaps) === 'small-caps';
     // A face with small capitals of its own draws them; the rest are synthesized.
-    if (smallCaps && ownSmallCaps(fontFamily, fontWeight, fontStyle)) {
+    if (smallCaps && hasOwnSmallCaps(fontFamily, fontWeight, fontStyle)) {
       fontFeatures = SMALL_CAPS_FEATURES;
     } else if (smallCaps) {
       const caps = smallCapsText(text, srcMap, run.lang ?? style.lang);

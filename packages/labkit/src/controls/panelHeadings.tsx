@@ -1,7 +1,7 @@
 import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import type { ReactNode } from 'react';
 import { headingLeaf } from '../config/headingLeaf';
-import { valueAtPath } from '../config/path';
+import { configValueAt } from '../config/path';
 import type { LeafRenderer, ResolvedConfig, SectionSpec } from '../config/types';
 import { BareControl, leafValueAt } from './fields';
 
@@ -37,7 +37,7 @@ export function liftedControl<TC extends Record<string, unknown>>(
         draft={draftConfig && ((value) => draftConfig(path, value))}
         name={typeof heading === 'string' ? heading : undefined}
         disabled={!enabled(path)}
-        read={(p) => valueAtPath(shown, p)}
+        read={(p) => configValueAt(shown, p)}
       />
     ) : undefined,
   };

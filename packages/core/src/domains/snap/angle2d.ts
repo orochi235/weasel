@@ -16,7 +16,7 @@ const PROBE = 'angle';
 const MAX_REACH_RAD = Math.PI / 6;
 
 /** Where `theta` lands, and what it met. Writes the marks to the store. */
-export function angleAt(
+export function snapAngle(
   inputs: Session2dInputs, sources: readonly SnapSource[], theta: number, mods: SnapMods,
 ): { theta: number; marks: readonly SnapMark[] } {
   const { req, store } = inputs;

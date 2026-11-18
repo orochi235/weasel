@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { PATH_C, PATH_M } from '../commands';
 import type { Path, PolygonPath } from '../path';
-import { pointInPath } from '../pathHitTest';
+import { pathContainsPoint } from '../pathHitTest';
 import { boundsOfPath } from './bounds';
 import { pathToCubicContours } from './cubicContours';
 import { growRegion } from './growRegion';
@@ -9,7 +9,7 @@ import { mergeRegion } from './mergeRegion';
 import { pathFromD } from './pathFromD';
 import { pathToD } from './pathToD';
 
-const inPath = (p: Path, x: number, y: number) => pointInPath(p, x, y, { flattenTolerance: 1e-4 });
+const inPath = (p: Path, x: number, y: number) => pathContainsPoint(p, x, y, { flattenTolerance: 1e-4 });
 
 /** Every grid point is filled by `merged` exactly where it is by `src`. */
 function expectSameRegion(src: Path, merged: Path, step: number): void {

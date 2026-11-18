@@ -5,7 +5,7 @@
 import { getOwn } from '@weasel-js/registry';
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import { blendPref, type PrefBlend } from './blend';
-import { assignPrefValueAtPath, setOwnPrefValue, overridesOfPref, scopeSelectors, repairScope, selectionWeights, weighScope } from '@weasel-js/prefs-schema/internal';
+import { assignPrefValueAt, setOwnPrefValue, prefOverridesLookup, prefStoredSelectors, repairScope, selectionWeights, weighScope } from '@weasel-js/prefs-schema/internal';
 import { prefScopedDefault, isPrefScope, type PrefScope, type PrefSelection, type PrefWeights, type PrefValidator, repairPrefValue, type PrefLeaf } from '@weasel-js/prefs-schema';
 import { isAutoRecord, recordValue } from './stamp';
 import { prefCanAuto, prefStartsAuto } from './autoReset';
@@ -49,7 +49,7 @@ export function readStored(source: Pick<SnapshotSource, 'selectors' | 'admitted'
   const repair = (value: unknown): unknown => repairPrefValue(leaf, value, source.validators);
   if (!isPrefScope(stored)) return repair(stored);
   const known = [...source.selectors.keys(), ...(source.admitted ?? [])];
-  const read = repairScope(stored, known, (path) => optionsOf(source, path), repair, overridesOfPref(leaf));
+  const read = repairScope(stored, known, (path) => optionsOf(source, path), repair, prefOverridesLookup(leaf));
   return read === undefined ? leaf.default : read;
 }
 
@@ -59,7 +59,7 @@ export const optionsOf = (source: Pick<SnapshotSource, 'selectors' | 'admitted'>
 
 /** `held` folded under `weights`: itself where it is not split. */
 export function resolveHeld(source: Pick<SnapshotSource, 'blends'>, leaf: PrefLeaf, held: unknown, weights: PrefWeights): unknown {
-  return isPrefScope(held) ? blendPref(leaf, weighScope(held, weights, leaf.default, overridesOfPref(leaf)), source.blends) : held;
+  return isPrefScope(held) ? blendPref(leaf, weighScope(held, weights, leaf.default, prefOverridesLookup(leaf)), source.blends) : held;
 }
 
 /** The store's snapshots: `current` builds one when there is none, and `drop` discards it when a record changed. */
@@ -122,10 +122,10 @@ export function createSnapshots(source: SnapshotSource): { current: () => Snapsh
     for (const [path, leaf] of leaves) {
       const value = held.get(path);
       if (isPrefScope(value)) scopes.set(path, value);
-      for (const selector of scopeSelectors(value)) splitUnder.set(selector, [...(splitUnder.get(selector) ?? []), path]);
+      for (const selector of prefStoredSelectors(value)) splitUnder.set(selector, [...(splitUnder.get(selector) ?? []), path]);
       const read = resolveHeld(source, leaf, value, weights);
       byPath.set(path, read);
-      assignPrefValueAtPath(tree, path, read);
+      assignPrefValueAt(tree, path, read);
     }
     return { byPath, held, scopes, selection, splitUnder, tree, unset, auto };
   };

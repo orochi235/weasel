@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, createTransformOp, derivedDepOf, documentPose, type InvocationCtx, type RectPose, type Scene } from '@weasel-js/core';
+import { createScene, createSetPoseOp, derivedDepOf, documentPose, type InvocationCtx, type RectPose, type Scene } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
 import { edgeLabelSpec } from '../edgeLabel';
@@ -69,7 +69,7 @@ describe('avoid routing in a scene', () => {
     scene.add(box('wall', 200, 300, 60, 260) as never);
     const before = routeOf(scene);
     const depth = scene.historyEntries().length;
-    scene.applyBatch([createTransformOp({ id: 'wall', from: scene.get('wall' as never)!.pose, to: { x: 200, y: -100, width: 60, height: 260 } })], 'Move', adapter);
+    scene.applyBatch([createSetPoseOp({ id: 'wall', from: scene.get('wall' as never)!.pose, to: { x: 200, y: -100, width: 60, height: 260 } })], 'Move', adapter);
     expect(routeOf(scene)).not.toEqual(before);
     expect(scene.historyEntries().length).toBe(depth + 1);
     scene.undo();

@@ -1,8 +1,8 @@
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { actionCatalog, catalogOf, type Workspace } from '@weasel-js/prefs/edit';
-import { assets, attributes, Live, pickRow, structure, tool, WORKSPACE } from './AssetEditor.fixture';
+import { actionCatalog, catalogOf, type AssetSet } from '@weasel-js/prefs/edit';
+import { assets, attributes, Live, pickRow, structure, tool, ASSET_SET } from './AssetEditor.fixture';
 import type { EditorAction } from './editorActions';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
@@ -13,8 +13,8 @@ const ACTIONS: readonly EditorAction[] = [
   { key: 'edit.paste', label: 'Paste' },
   { key: 'save', label: 'Save' },
 ];
-const WITH_CATALOG: Workspace = {
-  assets: [...WORKSPACE.assets, { id: 'actions', label: 'Actions', kind: 'actions', root: actionCatalog(ACTIONS.slice(0, 2)) }],
+const WITH_CATALOG: AssetSet = {
+  assets: [...ASSET_SET.assets, { id: 'actions', label: 'Actions', kind: 'actions', root: actionCatalog(ACTIONS.slice(0, 2)) }],
 };
 
 const list = () => screen.getByRole('tree', { name: 'Actions' });
@@ -22,10 +22,10 @@ const pickAction = (id: string) => fireEvent.click(list().querySelector(`[data-t
 const listed = () => [...list().querySelectorAll('[data-tree-id]')].map((row) => row.getAttribute('data-tree-id'));
 const name = () => within(attributes()).getByRole('textbox', { name: 'Name' }) as HTMLInputElement;
 
-function live(start: Workspace = WITH_CATALOG) {
+function live(start: AssetSet = WITH_CATALOG) {
   let latest = start;
   renderWithIcons(<Live start={start} actions={ACTIONS} onChange={(next) => { latest = next; }} />);
-  return { catalog: () => catalogOf(latest)!.root as PrefGroup, workspace: () => latest };
+  return { catalog: () => catalogOf(latest)!.root as PrefGroup, assetSet: () => latest };
 }
 const under = (group: PrefGroup, key: string) => (group.children[key] as PrefGroup).children;
 
@@ -88,15 +88,15 @@ describe('the action catalog in an asset editor', () => {
   });
 
   it('removes what is picked among the actions on Delete, and nothing of the dialog', () => {
-    const { catalog, workspace } = live();
+    const { catalog, assetSet } = live();
     pickAction('edit');
     fireEvent.keyDown(list(), { key: 'Delete' });
     expect(Object.keys(catalog().children)).toEqual(['editCopy', 'editPaste', 'save']);
-    expect(workspace().assets[0]!.root).toBe(WORKSPACE.assets[0]!.root);
+    expect(assetSet().assets[0]!.root).toBe(ASSET_SET.assets[0]!.root);
   });
 
-  it('lists the registry’s actions with nothing to sort them, where the workspace holds no catalog', () => {
-    live(WORKSPACE);
+  it('lists the registry’s actions with nothing to sort them, where the asset set holds no catalog', () => {
+    live(ASSET_SET);
     expect(listed()).toEqual(['edit', 'edit/editCopy', 'edit/editPaste', 'save']);
     expect(screen.queryByRole('button', { name: 'Add action group' })).toBeNull();
     pickAction('save');

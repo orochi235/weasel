@@ -114,7 +114,7 @@ export function useDockDrag({ root, layer, docks, bars, layout: given, onLayoutC
       origin: el,
       captureAt: 'threshold',
       threshold: latest.current.dragPx,
-      onActivate: () => {
+      onStart: () => {
         grab = grabBar(el, into, latest.current.docks, bar, latest.current.layout);
         setHeld(null);
         const unavailable = new Set(grab.boxes.filter((d) => !canEnter(bar, d)).map((d) => d.id));
@@ -134,7 +134,7 @@ export function useDockDrag({ root, layer, docks, bars, layout: given, onLayoutC
         const float = step.float;
         setView((v) => (v === null || (same(v.drop, mark) && same(v.float, float)) ? v : { ...v, drop: mark, float }));
       },
-      onCommit: () => {
+      onEnd: () => {
         end();
         swallowNextClick(el);
         if (next) commit(next);

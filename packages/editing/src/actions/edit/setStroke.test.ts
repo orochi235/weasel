@@ -4,7 +4,7 @@ import { setStrokeAction } from './setStroke';
 import type { InvocationCtx } from '@weasel-js/routing';
 import type { NodeId, Op } from '@weasel-js/core';
 import type { Stroke } from '@weasel-js/paint';
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import { makeScene, makeSelection, makeCtx, ongoingInvoker } from './paintActionTestUtils';
 
 const getInvoker = () => ongoingInvoker(setStrokeAction);
@@ -29,7 +29,7 @@ describe('setStrokeAction', () => {
   });
 
   it('does not write to scene on start', () => {
-    const scene = makeScene({ a: { stroke: strokeOf('#000000ff', 2) } });
+    const scene = makeScene({ a: { stroke: solidStroke('#000000ff', 2) } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff0000' } });
     getInvoker().start(ctx, { params: { color: '#ff0000' } });
     expect(scene.batch).not.toHaveBeenCalled();
@@ -37,7 +37,7 @@ describe('setStrokeAction', () => {
   });
 
   it('exposes the current color via previewData during the drag', () => {
-    const scene = makeScene({ a: { stroke: strokeOf('#000000ff', 2) } });
+    const scene = makeScene({ a: { stroke: solidStroke('#000000ff', 2) } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff0000' } });
     const h = getInvoker().start(ctx, { params: { color: '#ff0000' } });
     const preview = h.previewData?.('a' as unknown as NodeId);
@@ -45,7 +45,7 @@ describe('setStrokeAction', () => {
   });
 
   it('onMove updates the preview color without touching scene', () => {
-    const scene = makeScene({ a: { stroke: strokeOf('#000000ff', 2) } });
+    const scene = makeScene({ a: { stroke: solidStroke('#000000ff', 2) } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff0000' } });
     const h = getInvoker().start(ctx, { params: { color: '#ff0000' } });
     h.onMove?.({ ...ctx, params: { color: '#00ff00' } });
@@ -55,7 +55,7 @@ describe('setStrokeAction', () => {
   });
 
   it('onEnd("commit") writes one scene.batch with the final color', () => {
-    const scene = makeScene({ a: { stroke: strokeOf('#000000ff', 2) }, b: { stroke: strokeOf('#ffffffff', 2) } });
+    const scene = makeScene({ a: { stroke: solidStroke('#000000ff', 2) }, b: { stroke: solidStroke('#ffffffff', 2) } });
     const ctx = makeCtx({ selectionIds: ['a', 'b'], scene, params: { color: '#ff0000' } });
     const h = getInvoker().start(ctx, { params: { color: '#ff0000' } });
     h.onMove?.({ ...ctx, params: { color: '#00ff00' } });
@@ -69,7 +69,7 @@ describe('setStrokeAction', () => {
   });
 
   it('onEnd("cancel") does not write to scene', () => {
-    const scene = makeScene({ a: { stroke: strokeOf('#000000ff', 2) } });
+    const scene = makeScene({ a: { stroke: solidStroke('#000000ff', 2) } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff0000' } });
     const h = getInvoker().start(ctx, { params: { color: '#ff0000' } });
     h.onEnd?.(ctx, 'cancel');
@@ -78,7 +78,7 @@ describe('setStrokeAction', () => {
   });
 
   it("adopts the stroke paint's existing opacity when a 6-char color is supplied", () => {
-    const scene = makeScene({ a: { stroke: strokeOf('#11223380', 2) } });
+    const scene = makeScene({ a: { stroke: solidStroke('#11223380', 2) } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff0000' } });
     const h = getInvoker().start(ctx, { params: { color: '#ff0000' } });
     h.onEnd?.(ctx, 'commit');
@@ -87,7 +87,7 @@ describe('setStrokeAction', () => {
   });
 
   it('uses supplied alpha when an 8-char color is provided', () => {
-    const scene = makeScene({ a: { stroke: strokeOf('#11223380', 2) } });
+    const scene = makeScene({ a: { stroke: solidStroke('#11223380', 2) } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff000040' } });
     const h = getInvoker().start(ctx, { params: { color: '#ff000040' } });
     h.onEnd?.(ctx, 'commit');
@@ -119,7 +119,7 @@ describe('setStrokeAction', () => {
   // -------------------------------------------------------------------------
 
   it('routes the commit through the consumer applyOps hook once with setData ops + "Set stroke" label', () => {
-    const scene = makeScene({ a: { stroke: strokeOf('#000000ff', 2) }, b: { stroke: strokeOf('#ffffffff', 2) } });
+    const scene = makeScene({ a: { stroke: solidStroke('#000000ff', 2) }, b: { stroke: solidStroke('#ffffffff', 2) } });
     const applyOps = vi.fn<(ops: Op[], label: string) => void>();
     const ctx = makeCtx({ selectionIds: ['a', 'b'], scene, params: { color: '#ff0000' }, applyOps });
     const h = getInvoker().start(ctx, { params: { color: '#ff0000' } });
@@ -140,14 +140,14 @@ describe('setStrokeAction', () => {
     expect(args0.id).toBe('a');
     expect(args1.id).toBe('b');
     // `from` is the pre-commit data; `to` carries the recolored final stroke.
-    expect(args0.from.stroke).toEqual(strokeOf('#000000ff', 2));
+    expect(args0.from.stroke).toEqual(solidStroke('#000000ff', 2));
     expect((args0.to as { stroke: Stroke }).stroke).toEqual({ paint: { color: '#00ff00' }, width: 2 });
-    expect(args1.from.stroke).toEqual(strokeOf('#ffffffff', 2));
+    expect(args1.from.stroke).toEqual(solidStroke('#ffffffff', 2));
     expect((args1.to as { stroke: Stroke }).stroke).toEqual({ paint: { color: '#00ff00' }, width: 2 });
   });
 
   it('with no applyOps, falls back to one scene.applyBatch labeled "Set stroke"', () => {
-    const scene = makeScene({ a: { stroke: strokeOf('#000000ff', 2) } });
+    const scene = makeScene({ a: { stroke: solidStroke('#000000ff', 2) } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff0000' } });
     const h = getInvoker().start(ctx, { params: { color: '#ff0000' } });
     h.onEnd?.(ctx, 'commit');
@@ -169,7 +169,7 @@ describe('setStrokeAction — non-solid paints', () => {
   };
 
   it('writes a paint verbatim rather than folding an opacity into it', () => {
-    const scene = makeScene({ a: { stroke: strokeOf('#ffffff80', 2) } });
+    const scene = makeScene({ a: { stroke: solidStroke('#ffffff80', 2) } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
     const h = getInvoker().start(ctx);
     h.onEnd!(ctx, 'commit');
@@ -177,7 +177,7 @@ describe('setStrokeAction — non-solid paints', () => {
   });
 
   it('previews a paint during the gesture without writing to the scene', () => {
-    const scene = makeScene({ a: { stroke: strokeOf('#000000ff', 2) } });
+    const scene = makeScene({ a: { stroke: solidStroke('#000000ff', 2) } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
     const h = getInvoker().start(ctx);
     expect(h.previewData!('a')).toMatchObject({ stroke: { paint: GRADIENT, width: 2 } });
@@ -185,7 +185,7 @@ describe('setStrokeAction — non-solid paints', () => {
   });
 
   it('follows a paint edited mid-gesture, so a stop drag previews live', () => {
-    const scene = makeScene({ a: { stroke: strokeOf('#000000ff', 2) } });
+    const scene = makeScene({ a: { stroke: solidStroke('#000000ff', 2) } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
     const h = getInvoker().start(ctx);
     const moved = { ...GRADIENT, to: { x: 99, y: 0 } };
@@ -197,8 +197,8 @@ describe('setStrokeAction — non-solid paints', () => {
 
   it('commits one batch for a paint, as for a color', () => {
     const scene = makeScene({
-      a: { stroke: strokeOf('#000000ff', 2) },
-      b: { stroke: strokeOf('#ffffffff', 2) },
+      a: { stroke: solidStroke('#000000ff', 2) },
+      b: { stroke: solidStroke('#ffffffff', 2) },
     });
     const ctx = makeCtx({ selectionIds: ['a', 'b'], scene, params: { paint: GRADIENT } });
     const h = getInvoker().start(ctx);
@@ -207,7 +207,7 @@ describe('setStrokeAction — non-solid paints', () => {
   });
 
   it('lets a later color supersede a paint, so the picker still works after a gradient', () => {
-    const scene = makeScene({ a: { stroke: strokeOf('#000000ff', 2) } });
+    const scene = makeScene({ a: { stroke: solidStroke('#000000ff', 2) } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
     const h = getInvoker().start(ctx);
     h.onMove!({ ...ctx, params: { color: '#ff0000' } });
@@ -224,7 +224,7 @@ describe('setStrokeAction — non-solid paints', () => {
   });
 
   it('writes None as a stroke with no paint, keeping its width and dash', () => {
-    const scene = makeScene({ a: { stroke: { ...strokeOf('#000000ff', 3), dash: [4, 2] } } });
+    const scene = makeScene({ a: { stroke: { ...solidStroke('#000000ff', 3), dash: [4, 2] } } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: null } });
     const h = getInvoker().start(ctx);
     h.onEnd!(ctx, 'commit');

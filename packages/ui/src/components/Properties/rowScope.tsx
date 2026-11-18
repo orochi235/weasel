@@ -15,7 +15,7 @@ export interface RowState {
    *  word `auto`. */
   autoValue?: ReactNode;
   /** Given, a `ResetControl` after the label calls it: the owner passes it while the row's value is not what a
-   *  reset makes it (`prefIsReset`), and puts the setting back as its schema says. */
+   *  reset makes it (`prefIsAtReset`), and puts the setting back as its schema says. */
   onReset?: () => void;
   /** The row's value differs from a baseline of the owner's: its label is drawn in the accent color. */
   changed?: boolean;

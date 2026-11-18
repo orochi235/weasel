@@ -1,8 +1,8 @@
 import { getOwn } from '@weasel-js/registry';
 import { AUTO, prefCanAuto, type LeafReading } from '../autoReset';
-import { type PrefGroup, type PrefSection, prefLeafAt, prefValueAtPath, prefLeafValue, type PrefLeaf } from '@weasel-js/prefs-schema';
-import { sourceResetPlan, writePlan } from './policy';
-import { LEAF_FREE, type LeafState, type PrefsSource } from './prefsSource';
+import { type PrefGroup, type PrefSection, prefLeafAt, prefValueAt, prefValueOrDefault, type PrefLeaf } from '@weasel-js/prefs-schema';
+import { sourceResetPlan, writeResetPlan } from './policy';
+import { FREE_LEAF_STATUS, type PrefLeafStatus, type PrefsSource } from './prefsSource';
 
 /** What a values map's owner keeps beside the values. */
 export interface ValuesSourceOptions {
@@ -17,14 +17,14 @@ export interface ValuesSourceOptions {
   /** Puts a leaf back as its schema says, where the owner does that itself (a prefs store stores nothing for it). */
   onReset?: (path: string) => void;
   /** What the conditions over a path leave it. */
-  stateAt?: (path: string) => LeafState;
+  stateAt?: (path: string) => PrefLeafStatus;
   /** The schema the form's aliases point into, where an alias row's leaf is found. */
   over?: PrefGroup | PrefSection;
 }
 
 const parentOf = (values: unknown, path: string): Record<string, unknown> | undefined => {
   const dot = path.lastIndexOf('.');
-  const parent = dot === -1 ? values : prefValueAtPath(values, path.slice(0, dot));
+  const parent = dot === -1 ? values : prefValueAt(values, path.slice(0, dot));
   return typeof parent === 'object' && parent !== null ? (parent as Record<string, unknown>) : undefined;
 };
 
@@ -38,7 +38,7 @@ export function createValuesSource(
   set: (path: string, value: unknown) => void,
   options: ValuesSourceOptions = {},
 ): PrefsSource {
-  const { auto, onAutoChange, canAuto, mixed, onReset, stateAt = () => LEAF_FREE, over } = options;
+  const { auto, onAutoChange, canAuto, mixed, onReset, stateAt = () => FREE_LEAF_STATUS, over } = options;
   const leafAt = (path: string) => prefLeafAt(schema, path) ?? (over ? prefLeafAt(over, path) : undefined);
   const autoAt = (path: string): boolean | undefined => {
     const leaf = leafAt(path);
@@ -53,17 +53,17 @@ export function createValuesSource(
     schema,
     valueAt: (path): LeafReading => {
       const leaf = leafAt(path);
-      const stored = prefValueAtPath(get(), path);
+      const stored = prefValueAt(get(), path);
       const unpinned = autoAt(path);
       const at = unpinned === undefined ? {} : { auto: unpinned };
       if (mixed?.has(path)) return { value: undefined, mixed: true, each: [], ...at };
-      const value = leaf ? prefLeafValue(leaf, stored) : stored;
+      const value = leaf ? prefValueOrDefault(leaf, stored) : stored;
       return { value, mixed: false, each: [value], ...at };
     },
     write,
     update: (path, fn) => {
       const values = get();
-      write(path, fn(prefValueAtPath(values, path), parentOf(values, path)));
+      write(path, fn(prefValueAt(values, path), parentOf(values, path)));
     },
     autoAt,
     setAuto: (path, next) => {
@@ -73,7 +73,7 @@ export function createValuesSource(
     reset: (paths) => {
       const plan = sourceResetPlan(source, paths);
       if (onReset) for (const { path } of plan) onReset(path);
-      else writePlan(plan, write);
+      else writeResetPlan(plan, write);
     },
   };
   return source;
@@ -88,7 +88,7 @@ export function createRecordSource(
   leaves: Readonly<Record<string, PrefLeaf>>,
   values: Readonly<Record<string, unknown>> | undefined,
   onChange: ((path: string, value: unknown) => void) | undefined,
-  { mixed, stateAt = () => LEAF_FREE }: { mixed?: ReadonlySet<string>; stateAt?: (path: string) => LeafState } = {},
+  { mixed, stateAt = () => FREE_LEAF_STATUS }: { mixed?: ReadonlySet<string>; stateAt?: (path: string) => PrefLeafStatus } = {},
 ): PrefsSource {
   const schema: PrefSection = { name: '', members: leaves };
   const write = (path: string, value: unknown): void => onChange?.(path, value);
@@ -103,7 +103,7 @@ export function createRecordSource(
     update: (path, fn) => write(path, fn(values && getOwn(values, path))),
     autoAt: () => undefined,
     stateAt,
-    reset: (paths) => writePlan(sourceResetPlan(source, paths), write),
+    reset: (paths) => writeResetPlan(sourceResetPlan(source, paths), write),
   };
   return source;
 }

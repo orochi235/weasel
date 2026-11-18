@@ -56,7 +56,7 @@ export async function marksMask(scene: DitherScene, grid: OutputGrid): Promise<{
   const { width, height } = ids;
   const pickIds = scenePickIds(scene);
   const marks = [...scene.nodes.values()].filter((n) => n.layer === 'marks') as DitherNode[];
-  const mask = idMask(ids, new Set(marks.map((n) => pickIds.idOf(n.id))));
+  const mask = idMask(ids, new Set(marks.map((n) => pickIds.pickIdOf(n.id))));
   const zones = protectMask(protectRects(marks, protectedRect, grid), width, height);
   for (let i = 0; i < mask.length; i++) mask[i] = mask[i]! | zones[i]!;
   return { mask, width, height };

@@ -76,9 +76,9 @@ describe('the History tab', () => {
     await waitFor(() => expect(position()).toBe('0 / 0'));
     act(() => { t.root().source.scene()!.setPose('solo' as NodeId, { x: 70, y: 70, width: 20, height: 20 }); });
     await waitFor(() => expect(position()).toBe('1 / 1'));
-    expect(screen.queryByRole('list', { name: 'Checkpoints' })).toBeNull();
-    fireEvent.click(screen.getByRole('switch', { name: 'checkpoints' }));
-    const stack = await screen.findByRole('list', { name: 'Checkpoints' });
+    expect(screen.queryByRole('list', { name: 'History entries' })).toBeNull();
+    fireEvent.click(screen.getByRole('switch', { name: 'entries' }));
+    const stack = await screen.findByRole('list', { name: 'History entries' });
     await waitFor(() => expect(within(stack).getAllByRole('listitem')).toHaveLength(1));
   });
 });

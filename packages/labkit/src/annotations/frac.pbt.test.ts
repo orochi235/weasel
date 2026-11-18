@@ -7,7 +7,7 @@ import { deepEqual } from '@weasel-js/registry';
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { worldToScreen } from '../canvas/canvasCoords';
-import { hasConfigPath, valueAtPath, withValueAtPath } from '../config/path';
+import { configValueAt, hasConfigPath, withConfigValueAt } from '../config/path';
 import { configTree, leafValue, path, runs, tally, timeoutFor } from '../pbt.fixture';
 import {
   boundsOf,
@@ -19,7 +19,7 @@ import {
   toShape,
   worldToFrac,
 } from './frac';
-import { isStale, seenFrom } from './staleness';
+import { isStale, seenValues } from './staleness';
 import type { FracPoint, FracRect } from './types';
 import { fitView } from './view';
 
@@ -286,15 +286,15 @@ describe('staleness', () => {
         fc.property(
           configTree.chain((tree) => fc.tuple(fc.constant(tree), depsAndEdits(tree))),
           ([before, [deps, edits]]) => {
-            const seen = seenFrom(before, deps);
+            const seen = seenValues(before, deps);
             expect(isStale(seen, before, deps)).toBe(false);
             for (const k of Object.keys(seen)) expect(deps).toContain(k);
             let after: unknown = before;
-            for (const [p, v] of edits) after = withValueAtPath(after, p, v);
+            for (const [p, v] of edits) after = withConfigValueAt(after, p, v);
             const moved = deps.some(
               (k) =>
                 hasConfigPath(before, k) &&
-                !deepEqual(valueAtPath(before, k), valueAtPath(after, k)),
+                !deepEqual(configValueAt(before, k), configValueAt(after, k)),
             );
             const objectNow = after !== null && typeof after === 'object';
             t.count(moved && objectNow ? 'stale' : 'fresh');
@@ -314,14 +314,14 @@ describe('staleness', () => {
     () => {
       fc.assert(
         fc.property(configTree, keys, path, leafValue, (config, deps, added, value) => {
-          const seen = seenFrom(
+          const seen = seenValues(
             config,
             deps.filter((k) => k !== added),
           );
-          expect(isStale(seen, withValueAtPath(config, added, value), [...deps, added])).toBe(
+          expect(isStale(seen, withConfigValueAt(config, added, value), [...deps, added])).toBe(
             isStale(
               seen,
-              withValueAtPath(config, added, value),
+              withConfigValueAt(config, added, value),
               deps.filter((k) => k !== added),
             ),
           );

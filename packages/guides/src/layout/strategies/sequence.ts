@@ -1,5 +1,5 @@
 import {
-  createTransformOp,
+  createSetPoseOp,
   type ContainerBounds,
   type LayoutArrival,
   type LayoutChild,
@@ -147,12 +147,12 @@ export function sequenceLayout<TPose>(seq: Sequencer<TPose>): LayoutStrategy<TPo
         for (const c of children) {
           const to = poses.get(c.id);
           if (to !== undefined && moved(c.pose, to)) {
-            ops.push(createTransformOp<TPose>({ id: c.id, from: c.pose, to, label: seq.labels.shift }));
+            ops.push(createSetPoseOp<TPose>({ id: c.id, from: c.pose, to, label: seq.labels.shift }));
           }
         }
       }
       ops.push(
-        createTransformOp<TPose>({
+        createSetPoseOp<TPose>({
           id: dragged.id,
           from: dragged.originPose,
           to: target?.pose ?? dragged.pose,

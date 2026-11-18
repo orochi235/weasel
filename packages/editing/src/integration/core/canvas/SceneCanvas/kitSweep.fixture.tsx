@@ -95,7 +95,7 @@ export class Sweep {
     (p.actions ?? []).forEach((a) => this.action(a, at));
     if (p.ambient) {
       this.owner(p.ambient({}), at);
-      this.owner(p.ambient({ move: { moveLabel: 'Move' }, rotate: { rotateLabel: 'Rotate' } }), at);
+      this.owner(p.ambient({ move: { label: 'Move' }, rotate: { rotateLabel: 'Rotate' } }), at);
     }
     (p.contributions ?? []).forEach((c) => this.value(c, at));
     (p.tools ?? []).forEach((t) => this.value(t, at));
@@ -147,12 +147,12 @@ function coreFactories(s: Sweep): void {
   ])), 'tool.activate');
   s.value(createToolResetToDefaultAction(() => null), 'tool.resetToDefault');
   s.value(routing.createToolOffhandAction(routing.buildToolOffhandBindings([{ toolId: 'hand', key: ' ' }])), 'tool.offhand');
-  s.value(editing.selectionMoveContribution({ reparentOnDrop: 'top' }), 'selectionMoveContribution');
-  s.value(editing.selectionTransformContribution(), 'selectionTransformContribution');
-  s.value(editing.selectionResizeContribution(), 'selectionResizeContribution');
-  s.value(editing.selectionRotateContribution(), 'selectionRotateContribution');
-  s.value(editing.areaSelectContribution(), 'areaSelectContribution');
-  s.value(core.dragPanContribution(), 'dragPanContribution');
+  s.value(editing.createSelectionMoveContribution({ reparentOnDrop: 'top' }), 'createSelectionMoveContribution');
+  s.value(editing.createSelectionTransformContribution(), 'createSelectionTransformContribution');
+  s.value(editing.createSelectionResizeContribution(), 'createSelectionResizeContribution');
+  s.value(editing.createSelectionRotateContribution(), 'createSelectionRotateContribution');
+  s.value(editing.createAreaSelectContribution(), 'createAreaSelectContribution');
+  s.value(core.createDragPanContribution(), 'createDragPanContribution');
   s.value(core.createPresentationContribution(), 'createPresentationContribution');
   const modes = createModeRegistry({
     initial: 'object',
@@ -185,17 +185,17 @@ function packageFactories(s: Sweep, scene: never): void {
   s.value(symmetry.createSymmetry(scene), 'symmetry.createSymmetry');
   const measurements = measure.createMeasurements({ layer: 'notes' });
   s.hook(() => measure.useMeasureTools({ measurements }), 'measure tools');
-  s.value(measure.measurementsContribution(scene, measurements), 'measure.measurementsContribution');
-  s.value(diagram.diagramPorts({ participants: () => [] } as never), 'diagram.diagramPorts');
-  s.value(diagram.diagramWaypoints({} as never), 'diagram.diagramWaypoints');
-  s.value(diagram.diagramLabelDrag({} as never), 'diagram.diagramLabelDrag');
-  s.value(diagram.diagramEdgeEnds({} as never), 'diagram.diagramEdgeEnds');
-  s.value(diagram.reorderContribution({} as never), 'diagram.reorderContribution');
+  s.value(measure.createMeasurementsContribution(scene, measurements), 'measure.createMeasurementsContribution');
+  s.value(diagram.createDiagramPortsContribution({ participants: () => [] } as never), 'diagram.createDiagramPortsContribution');
+  s.value(diagram.createDiagramWaypointsContribution({} as never), 'diagram.createDiagramWaypointsContribution');
+  s.value(diagram.diagramLabels({} as never), 'diagram.diagramLabels');
+  s.value(diagram.createDiagramEdgeEndsContribution({} as never), 'diagram.createDiagramEdgeEndsContribution');
+  s.value(diagram.createReorderContribution({} as never), 'diagram.createReorderContribution');
   s.value(diagram.groupReorderContribution(() => {}), 'diagram.groupReorderContribution');
   s.value(diagram.createReorderPreset({} as never), 'diagram.createReorderPreset');
   s.value(diagram.createGroupReorderPreset(() => {}), 'diagram.createGroupReorderPreset');
-  s.value(diagram.diagramContainers({} as never), 'diagram.diagramContainers');
-  s.value(diagram.diagramOffPage(), 'diagram.diagramOffPage');
+  s.value(diagram.createDiagramContainersContribution({} as never), 'diagram.createDiagramContainersContribution');
+  s.value(diagram.createDiagramOffPageContribution(), 'diagram.createDiagramOffPageContribution');
   s.value(diagram.connectorTool({} as never), 'diagram.connectorTool');
   s.value(diagram.stencilTool({ id: 'box', label: 'Box' }), 'diagram.stencilTool');
   s.value({ id: 'diagram bindings', bindings: [diagram.editEdgeLabelBinding(), diagram.editContainerTitleBinding()] }, 'diagram');

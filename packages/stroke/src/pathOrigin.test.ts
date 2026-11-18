@@ -3,7 +3,7 @@ import { boundsOfPath, PathBuilder } from '@weasel-js/geom';
 import { tessellateStroke } from './tessellate/stroke';
 import { markerHeads } from './markerHeads';
 import { strokeToPath } from './strokeToPath';
-import { strokeEdgeNear } from './strokeEdge';
+import { nearestStrokeEdge } from './strokeEdge';
 
 const FAR = 262_144;
 const INK = { kind: 'solid', color: '#000' } as const;
@@ -33,7 +33,7 @@ describe('stroking a path measured from an origin', () => {
   });
 
   it('finds the stroke edge nearest a point where the line is', () => {
-    const hit = strokeEdgeNear(line(), { paint: INK, width: 2 }, FAR + 5, 7)!;
+    const hit = nearestStrokeEdge(line(), { paint: INK, width: 2 }, FAR + 5, 7)!;
     expect(hit.x - FAR).toBeCloseTo(5, 4);
     expect(hit.y).toBeCloseTo(5, 4);
     expect(hit.side).toBe('right');
@@ -43,7 +43,7 @@ describe('stroking a path measured from an origin', () => {
   it('reads the side an inner stroke inks inside the fill', () => {
     const square = new PathBuilder().setOrigin(FAR, 0)
       .moveTo(FAR, 0).lineTo(FAR + 100, 0).lineTo(FAR + 100, 100).lineTo(FAR, 100).close().build();
-    const hit = strokeEdgeNear(square, { paint: INK, width: 4, align: 'inner' }, FAR + 50, 3)!;
+    const hit = nearestStrokeEdge(square, { paint: INK, width: 4, align: 'inner' }, FAR + 50, 3)!;
     expect(hit.side).toBe('right');
     expect(hit.gap).toBeCloseTo(-1, 4);
   });

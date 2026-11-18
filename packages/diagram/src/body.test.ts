@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { bodyOutline, bodyTrait, layoutBody, layoutRowPorts, measureBody, sizeToBody } from './body';
+import { bodyOutline, bodyTrait, layoutBody, layoutRowPorts, measureBody, growToBody } from './body';
 import { buildBody } from './buildBody';
 import { outlinePath } from './outline';
 import { portsOf } from './ports';
@@ -72,32 +72,32 @@ describe('measureBody', () => {
   });
 });
 
-describe('sizeToBody', () => {
+describe('growToBody', () => {
   const floor = { minWidth: 100, minHeight: 40 };
 
   it('grows a pose too small for its body', () => {
-    expect(sizeToBody({ x: 0, y: 0, width: 10, height: 10 }, floor))
+    expect(growToBody({ x: 0, y: 0, width: 10, height: 10 }, floor))
       .toEqual({ x: 0, y: 0, width: 100, height: 40 });
   });
 
   it('leaves a bigger pose alone — the author set that', () => {
     const pose = { x: 0, y: 0, width: 300, height: 200 };
-    expect(sizeToBody(pose, floor)).toBe(pose);
+    expect(growToBody(pose, floor)).toBe(pose);
   });
 
   it('grows one axis without touching the other', () => {
-    expect(sizeToBody({ x: 0, y: 0, width: 10, height: 200 }, floor))
+    expect(growToBody({ x: 0, y: 0, width: 10, height: 200 }, floor))
       .toEqual({ x: 0, y: 0, width: 100, height: 200 });
   });
 
   it('keeps every other field on the pose', () => {
-    expect(sizeToBody({ x: 5, y: 6, width: 1, height: 1, rotation: 0.5 }, floor))
+    expect(growToBody({ x: 5, y: 6, width: 1, height: 1, rotation: 0.5 }, floor))
       .toEqual({ x: 5, y: 6, width: 100, height: 40, rotation: 0.5 });
   });
 
   it('returns the same object when nothing changed, so a memo keyed on it holds', () => {
     const pose = { x: 0, y: 0, width: 100, height: 40 };
-    expect(sizeToBody(pose, floor)).toBe(pose);
+    expect(growToBody(pose, floor)).toBe(pose);
   });
 });
 

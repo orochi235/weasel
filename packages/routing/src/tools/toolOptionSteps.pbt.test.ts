@@ -8,11 +8,11 @@ import fc from 'fast-check';
 import type { PrefNumber } from '@weasel-js/prefs-schema';
 import type { ImmediateInvoker } from '../interactions/actions/invoker';
 import { runs, tally } from '../pbt.fixture';
-import { createToolOptionValues, type ToolOptions } from './toolOptions';
+import { createToolOptionValues, type ToolOptionsSpec } from './toolOptions';
 import { toolOptionSteps, WHEEL_SIZE_BURST_MS, WHEEL_SIZE_MAX_STEPS, WHEEL_SIZE_STEP_PX } from './toolOptionSteps';
 
 // An option with no bounds that steps by one, so its value counts the steps taken.
-const OPTIONS: ToolOptions = {
+const OPTIONS: ToolOptionsSpec = {
   actionId: 'brush',
   prefs: { name: 'Brush', description: '', children: { n: { kind: 'number', name: 'N', description: '', default: 0 } as PrefNumber } },
   size: { option: 'n', plus: 1 },

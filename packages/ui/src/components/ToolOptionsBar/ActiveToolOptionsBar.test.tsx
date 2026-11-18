@@ -1,6 +1,6 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { createToolOptionValues, defineTool, type ToolOptions } from '@weasel-js/routing';
+import { createToolOptionValues, defineTool, type ToolOptionsSpec } from '@weasel-js/routing';
 import { SceneCanvas, WeaselProvider, createScene } from '@weasel-js/core';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { renderWithIcons } from '../../testing/withIcons';
@@ -9,7 +9,7 @@ import { ActiveToolOptionsBar } from './ActiveToolOptionsBar';
 const prefs = pref.group('Brush', {
   radiusPx: pref.number('Size', 16, { min: 4, max: 120, step: 1, control: 'slider', unit: PX_UNIT }),
 });
-const OPTIONS: ToolOptions = { actionId: 'brush', prefs };
+const OPTIONS: ToolOptionsSpec = { actionId: 'brush', prefs };
 const brush = defineTool({ id: 'brush', options: OPTIONS, presentation: { label: 'Brush' } });
 const select = defineTool({ id: 'select' });
 

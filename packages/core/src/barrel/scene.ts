@@ -33,7 +33,7 @@ export { createScrollOffsets, scrolledFrames, viewPoseAdapter } from 'core/scene
 export type { SceneScroll, ScrollOffsets, ScrollSource } from 'core/scene/scrollOffsets';
 export { carriedDescendants, heldInFrame, sceneCarrySource } from 'core/scene/carryDescendants';
 export type { CarrySource } from 'core/scene/carryDescendants';
-export { nestedHitTester } from 'core/scene/nestedHit';
+export { createNestedHitTester } from 'core/scene/nestedHit';
 export { unionOfChildrenVia } from 'core/scene/unionOfChildren';
 export type {
   NestedHitOptions,
@@ -41,7 +41,7 @@ export type {
 } from 'core/scene/nestedHit';
 
 // ─── Groups: union the bounds of a node set ─────────────────────────────────
-export { unionBounds, unionAABB, axisAlignedBounds, positiveBox } from '../core/geometry/unionBounds';
+export { unionBounds, unionAabb, axisAlignedBounds, positiveBox } from '../core/geometry/unionBounds';
 export type { RectPose } from '../core/geometry/unionBounds';
 
 // ─── Undo history: createHistory + entry shape ──────────────────────────────
@@ -76,14 +76,14 @@ export type {
   SwapArgs,
   SwapOpOptions,
 } from '@weasel-js/history';
-export { swapOp } from '@weasel-js/history';
+export { createSwapOp } from '@weasel-js/history';
 
 // ─── Adapters: the contracts the interaction layer reads ────────────────────
 export * from '../core/adapters/types';
 
 // ─── Scene primitive (kit-owned tree of marks and groups) ──────────────
 export {
-  createScene, sceneFromJSON, nodeKindOf, specsFromSerialized, isSerializedScene, localizeInScene, localizeWorldPoses, worldPosesOf, sceneSelectionStore, useScene, createEditingSession, isEditingSession, useEditingSession, asNodeId, hasChildren, isLeaf, statedFields, SCENE_HISTORY_FORM,
+  createScene, sceneFromJSON, savedNodeKind, specsFromSerialized, isSerializedScene, localizeInScene, localizeWorldPoses, worldPosesOf, sceneHistorySelection, useScene, createEditingSession, isEditingSession, useEditingSession, asNodeId, hasChildren, isLeaf, statedFields, SCENE_HISTORY_FORM,
   createPoseFeed, createPoseOverrides, definesFrame, derivedDepOf, derivedPose, documentDepOf, documentOf, documentPose, effectivePose, nodeAsShown, nodesAsShown, shownLookup,
   CLIP_NOTHING, UNION_OF_CHILDREN, clipNothing, unionOfChildren, SceneArrivalRefused, SnapshotKeyError, SnapshotShapeError, reconcileSpecs, sceneDeclaredScopes, sceneMagnification, sceneSharedUnitScopes, sceneUnitScopes,
   BOOLEAN_OF_CHILDREN, booleanOfChildren, booleanOpOf, booleanGroupFields, RestoredOpError,
@@ -125,6 +125,8 @@ export type {
   SceneEditSummary,
   ScenePoseReports,
   SceneRegistry,
+  NodeUpgrade,
+  SavedNode,
   SerializedLayer,
   SerializedNode,
   SerializedNodeV1,
@@ -133,6 +135,7 @@ export type {
   SerializedSceneV2,
   SavedScene,
   SkippedKey,
+  NodeFnFieldName,
   SpecsFromSerializedOptions,
   StatedNodeFields,
   V1Classifier,

@@ -1,3 +1,4 @@
+import { createPart } from '@weasel-js/registry';
 import type { StorageAdapter, StorageChange, SyncStorageAdapter } from './types';
 
 interface MemorySubscriber {
@@ -6,18 +7,13 @@ interface MemorySubscriber {
   on: (changes: StorageChange[]) => void;
 }
 
-const memorySubscribers = new WeakMap<Map<string, unknown>, Set<MemorySubscriber>>();
+const subscribersOf = createPart((_backing: Map<string, unknown>) => new Set<MemorySubscriber>());
 
 /** An in-memory store, discarded on reload. Values are copied in and out, as a
  *  real substrate would. Adapters built over one shared `backing` hear each
  *  other's writes — two tabs, for a test. */
 export function createMemoryAdapter(backing: Map<string, unknown> = new Map()): SyncStorageAdapter {
-  let subscribers = memorySubscribers.get(backing);
-  if (!subscribers) {
-    subscribers = new Set();
-    memorySubscribers.set(backing, subscribers);
-  }
-  const peers = subscribers;
+  const peers = subscribersOf(backing);
   const notify = (key: string, value: unknown): void => {
     for (const sub of peers) {
       if (sub.owner === adapter || !key.startsWith(sub.prefix)) continue;

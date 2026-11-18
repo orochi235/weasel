@@ -1,7 +1,7 @@
 /** A server-side consumer: geometry, the snapshot codec, and an undo history, in Node with no DOM. */
 import { boundsOfPath, pathFromD } from '@weasel-js/geom';
 import { pathUnion } from '@weasel-js/geom/booleans';
-import { createHistory, swapOp } from '@weasel-js/history';
+import { createHistory, createSwapOp } from '@weasel-js/history';
 import { stableStringify } from '@weasel-js/core/json';
 import { polygonFromPoints } from '@weasel-js/core/math';
 
@@ -15,7 +15,7 @@ const checks: [string, () => boolean][] = [
   ['undoes and redoes an op', () => {
     let title = 'draft';
     const history = createHistory(null);
-    history.apply(swapOp({ name: 'title', label: 'Rename', before: 'draft', after: 'final', emit: (v: string) => { title = v; } }));
+    history.apply(createSwapOp({ name: 'title', label: 'Rename', before: 'draft', after: 'final', emit: (v: string) => { title = v; } }));
     const applied = title === 'final';
     history.undo();
     const undone = title === 'draft';

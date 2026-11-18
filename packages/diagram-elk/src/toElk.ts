@@ -13,13 +13,13 @@ import {
   portsOf,
   type EdgeLabelRoom,
   type Graph,
-  type GraphGroup,
+  type GraphCluster,
   type GraphNode,
   type Port,
 } from '@weasel-js/diagram/layout';
 import type { ElkExtendedEdge, ElkNode, ElkPort } from 'elkjs/lib/elk-api.js';
 
-/** One drawn edge: a stand-in `expandGroupEdges` made folds back into this. */
+/** One drawn edge: a stand-in `expandClusterEdges` made folds back into this. */
 export interface DrawnEdge {
   id: string;
   from: string;
@@ -33,7 +33,7 @@ export interface DrawnEdge {
 /** ELK ids back to the graph's. */
 export interface ElkIndex {
   nodes: Map<string, GraphNode>;
-  groups: Map<string, GraphGroup>;
+  groups: Map<string, GraphCluster>;
   edges: Map<string, DrawnEdge>;
 }
 
@@ -73,7 +73,7 @@ export function drawnEdges(graph: Graph): DrawnEdge[] {
 /** The ELK graph for `graph`, its root carrying `layoutOptions`. */
 export function toElk(graph: Graph, layoutOptions: Record<string, string>): { root: ElkNode; index: ElkIndex } {
   const index: ElkIndex = { nodes: new Map(), groups: new Map(), edges: new Map() };
-  const groups = graph.groups ?? [];
+  const groups = graph.clusters ?? [];
   const elkIdOf = new Map<string, string>();
   graph.nodes.forEach((n, i) => {
     elkIdOf.set(n.id, `n${i}`);
@@ -96,10 +96,10 @@ export function toElk(graph: Graph, layoutOptions: Record<string, string>): { ro
   const known = (group: string | undefined) => (group !== undefined && index.groups.has(elkIdOf.get(group) ?? '') ? group : undefined);
   const parentOf = groupParents(groups, known);
   for (const n of graph.nodes) {
-    pushTo(leaves, known(n.group), leafOf(n, elkIdOf.get(n.id)!, named.get(n.id)));
+    pushTo(leaves, known(n.cluster), leafOf(n, elkIdOf.get(n.id)!, named.get(n.id)));
   }
   const transposed = minimumTransposed(layoutOptions);
-  const boxOf = (g: GraphGroup): ElkNode => {
+  const boxOf = (g: GraphCluster): ElkNode => {
     const children = [...groups.filter((c) => parentOf.get(c.id) === g.id).map(boxOf), ...(leaves.get(g.id) ?? [])];
     // A group holding nothing is a leaf to ELK, which reads a leaf's minimum the right way round.
     return { id: elkIdOf.get(g.id)!, layoutOptions: groupOptions(g, transposed && children.length > 0), children };
@@ -130,7 +130,7 @@ export function toElk(graph: Graph, layoutOptions: Record<string, string>): { ro
 
 /** Each group's parent as ELK nests it: the one it names, where the graph holds it, and none for a group whose parents
  *  lead back to itself, which would otherwise never be reached from the root. */
-function groupParents(groups: readonly GraphGroup[], known: (group: string | undefined) => string | undefined): Map<string, string | undefined> {
+function groupParents(groups: readonly GraphCluster[], known: (group: string | undefined) => string | undefined): Map<string, string | undefined> {
   const named = new Map(groups.map((g) => [g.id, known(g.parent)]));
   const out = new Map<string, string | undefined>();
   for (const g of groups) {
@@ -154,7 +154,7 @@ function leafOf(node: GraphNode, id: string, ports: ReadonlySet<string> | undefi
   return { ...leaf, ports: elkPorts, layoutOptions: { 'elk.portConstraints': 'FIXED_POS' } };
 }
 
-function groupOptions(g: GraphGroup, transposed: boolean): Record<string, string> {
+function groupOptions(g: GraphCluster, transposed: boolean): Record<string, string> {
   const { top, right, bottom, left } = g.inset;
   const options: Record<string, string> = { 'elk.padding': `[top=${top},left=${left},bottom=${bottom},right=${right}]` };
   if (g.minWidth !== undefined) {

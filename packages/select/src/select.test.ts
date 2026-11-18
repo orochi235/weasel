@@ -12,21 +12,21 @@ describe('intentOf', () => {
   });
 
   it('toggles on the toggle key and replaces without it', () => {
-    const policy = { mode: 'multi', toggle: 'shift' } as const;
+    const policy = { mode: 'multiple', toggle: 'shift' } as const;
     expect(intentOf(shift, policy)).toBe('toggle');
     expect(intentOf(meta, policy)).toBe('replace');
     expect(intentOf(none, policy)).toBe('replace');
   });
 
   it('accepts several toggle keys', () => {
-    const policy = { mode: 'multi', toggle: ['meta', 'ctrl'] } as const;
+    const policy = { mode: 'multiple', toggle: ['meta', 'ctrl'] } as const;
     expect(intentOf(meta, policy)).toBe('toggle');
     expect(intentOf(ctrl, policy)).toBe('toggle');
     expect(intentOf(shift, policy)).toBe('replace');
   });
 
   it('ranges on the range key, which wins over the toggle key', () => {
-    const policy = { mode: 'multi', toggle: ['meta', 'ctrl'], range: 'shift' } as const;
+    const policy = { mode: 'multiple', toggle: ['meta', 'ctrl'], range: 'shift' } as const;
     expect(intentOf(shift, policy)).toBe('range');
     expect(intentOf({ ...none, shift: true, meta: true }, policy)).toBe('range');
   });
@@ -65,7 +65,7 @@ describe('select', () => {
   });
 
   it('single selects the one id and anchors there, whatever is selected', () => {
-    expect(select(state(['a', 'b'], 'a'), 'd', 'single', { order })).toEqual({ ids: ['d'], anchor: 'd' });
+    expect(select(state(['a', 'b'], 'a'), 'd', 'alone', { order })).toEqual({ ids: ['d'], anchor: 'd' });
   });
 
   it('toggle on a forced-single id selects it alone', () => {

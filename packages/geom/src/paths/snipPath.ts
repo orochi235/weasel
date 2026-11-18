@@ -5,9 +5,8 @@
 
 import type { Path, PolygonPath } from '../path';
 import type { Point } from './cubicMath';
-import { evalSeg, subSeg, type Seg } from '../booleans/contourSegments';
+import { evalSeg, nearestOnSeg, subSeg, type Seg } from '../booleans/contourSegments';
 import { parseSubpaths } from '../booleans/contours';
-import { nearestOnCubic, nearestOnLine, nearestOnQuadratic } from '../nearest';
 import { crossingStops } from '../intersect/pathCrossings';
 import { writeSubpaths, type SegmentRun } from '../intersect/writeSubpaths';
 import { keepCorners } from './cornerRestore';
@@ -27,12 +26,6 @@ export interface SnipResult {
 }
 
 const EDGE = 1e-7;
-
-function nearestOn(s: Seg, p: Point): { t: number; dist: number } {
-  if (s.length === 2) return nearestOnLine(p.x, p.y, s[0].x, s[0].y, s[1].x, s[1].y);
-  if (s.length === 3) return nearestOnQuadratic(p.x, p.y, s[0].x, s[0].y, s[1].x, s[1].y, s[2].x, s[2].y);
-  return nearestOnCubic(p.x, p.y, s[0].x, s[0].y, s[1].x, s[1].y, s[2].x, s[2].y, s[3].x, s[3].y);
-}
 
 /** The stretch of `segs` between run positions `a` and `b`, where position
  *  `k + t` is parameter `t` on segment `k`. On a closed run `b` may pass the
@@ -68,13 +61,13 @@ export function snipPathAt(
   opts: SnipPathOptions = {},
 ): SnipResult | null {
   const subs = parseSubpaths(path, false);
-  let hit: { sub: number; at: number; dist: number } | null = null;
+  let hit: { sub: number; at: number; distance: number } | null = null;
   subs.forEach(({ segs }, sub) => segs.forEach((s, k) => {
-    const n = nearestOn(s, probe);
-    if (!hit || n.dist < hit.dist) hit = { sub, at: k + n.t, dist: n.dist };
+    const n = nearestOnSeg(s, probe);
+    if (!hit || n.distance < hit.distance) hit = { sub, at: k + n.t, distance: n.distance };
   }));
-  const found = hit as { sub: number; at: number; dist: number } | null;
-  if (!found || found.dist > (opts.radius ?? Infinity)) return null;
+  const found = hit as { sub: number; at: number; distance: number } | null;
+  if (!found || found.distance > (opts.radius ?? Infinity)) return null;
 
   const { segs, closed } = subs[found.sub];
   const n = segs.length;

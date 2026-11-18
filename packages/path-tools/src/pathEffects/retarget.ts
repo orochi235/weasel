@@ -4,7 +4,7 @@
  * it where the effect hides its sources, and undoes as one step.
  */
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
-import { commitOps, createSetDependsOnOp, deleteNode, hiddenSourcesTakenWith, type NodeId, type Op, pathEffectOf, type AnyNode, sourcesOf, type AnyScene } from '@weasel-js/core';
+import { commitOps, createSetDependsOnOp, createDeleteNodeOp, hiddenSourcesTakenWith, type NodeId, type Op, pathEffectOf, type AnyNode, sourcesOf, type AnyScene } from '@weasel-js/core';
 import { isTextData } from '@weasel-js/text';
 import { PATH_EFFECTS_GROUP, selectedEffects } from './actions';
 import { releasedOps, takenOps } from './hiding';
@@ -107,7 +107,7 @@ export const releasePathEffectAction: Action & { requires: string[] } = {
           if (show.length > 0) shown.add(source);
           ops.push(...show);
         }
-        ops.push(deleteNode(scene, effect, RELEASE_LABEL));
+        ops.push(createDeleteNodeOp(scene, effect, RELEASE_LABEL));
       }
       ops.push(...hiddenSourceDeleteOps(scene, [...leaving], RELEASE_LABEL, shown));
       // What the batch removes, worked out before it runs: the effects and the hidden sources they take.

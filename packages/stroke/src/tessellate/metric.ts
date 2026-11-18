@@ -58,7 +58,7 @@ const CONFORMAL_EPSILON = 1e-9;
  * metric. `metric` is `null` when the map is a similarity, where world space
  * already measures like the screen; `scale` is `0` for a singular map.
  */
-export function strokeSpaceOf(
+export function strokeMetricOf(
   a: number, b: number, c: number, d: number,
 ): { scale: number; metric: StrokeMetric | null } {
   const det2 = Math.abs(a * d - b * c);

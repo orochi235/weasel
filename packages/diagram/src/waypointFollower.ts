@@ -21,9 +21,9 @@ import { worldWith } from './worldWith';
 const EPS = 1e-6;
 
 /** The offset carrying `before` to `after`, read off their bounds. */
-function offsetOf(geometry: PoseDescriptor<unknown>, before: unknown, after: unknown): Vec2 {
-  const a = geometry.getBounds(before);
-  const b = geometry.getBounds(after);
+function offsetOf(poseDescriptor: PoseDescriptor<unknown>, before: unknown, after: unknown): Vec2 {
+  const a = poseDescriptor.getBounds(before);
+  const b = poseDescriptor.getBounds(after);
   return { x: b.x - a.x, y: b.y - a.y };
 }
 
@@ -38,7 +38,7 @@ function carried(edge: DiagramEdge, d: Vec2): DiagramEdge {
 /** Each edge whose two ends `frame` moves by one offset, with its data as
  *  that offset leaves it. `frame` holds the poses the transform gives the
  *  nodes it moves. */
-function followers(sc: AnyScene, geometry: PoseDescriptor<unknown>, frame: ReadonlyMap<string, unknown>): TransformPreviewNode[] {
+function followers(sc: AnyScene, poseDescriptor: PoseDescriptor<unknown>, frame: ReadonlyMap<string, unknown>): TransformPreviewNode[] {
   const out: TransformPreviewNode[] = [];
   const before = worldWith(sc);
   const after = worldWith(sc, frame);
@@ -47,8 +47,8 @@ function followers(sc: AnyScene, geometry: PoseDescriptor<unknown>, frame: Reado
     const ends = node.dependsOn;
     if (edge === null || (edge.waypoints ?? []).length === 0 || !Array.isArray(ends) || ends.length !== 2) continue;
     if (sc.get(ends[0]!) === undefined || sc.get(ends[1]!) === undefined) continue;
-    const d = offsetOf(geometry, before(ends[0]!), after(ends[0]!));
-    const e = offsetOf(geometry, before(ends[1]!), after(ends[1]!));
+    const d = offsetOf(poseDescriptor, before(ends[0]!), after(ends[0]!));
+    const e = offsetOf(poseDescriptor, before(ends[1]!), after(ends[1]!));
     if (Math.abs(d.x - e.x) > EPS || Math.abs(d.y - e.y) > EPS || (d.x === 0 && d.y === 0)) continue;
     const data = node.data as Record<string, unknown>;
     out.push({ id: node.id, pose: node.pose, data: { ...data, diagram: carried(edge, d) } });
@@ -67,15 +67,15 @@ export function posesMovedBy(sc: AnyScene, ops: Parameters<TransformFollower['fi
 
 /**
  * The transform follower that carries waypoints along with a move, for the
- * `transformFollowers` dep (`useTransformFollower`). `geometry` reads a pose's
+ * `transformFollowers` dep (`useTransformFollower`). `poseDescriptor` reads a pose's
  * bounds; default `AUTO_POSE_DESCRIPTOR`.
  */
 export function waypointFollower<TPose>(
   scene: Scene<unknown, string, TPose>,
-  geometry: PoseDescriptor<TPose> = AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>,
+  poseDescriptor: PoseDescriptor<TPose> = AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>,
 ): TransformFollower {
   const sc = scene as unknown as AnyScene;
-  const geo = geometry as PoseDescriptor<unknown>;
+  const geo = poseDescriptor as PoseDescriptor<unknown>;
   return {
     preview: (frame) => (frame.size === 0 ? [] : followers(sc, geo, frame)),
     finish(ops, label) {

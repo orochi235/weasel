@@ -50,13 +50,13 @@ export const Frames = story({
           <h3 className="lk-cf-title">
             Every {c.every} ms of one turn, each on a clock held at its time
           </h3>
-          <ClockFrames label="Frames" spec={{ duration: period, loop: true }} every={c.every}>
+          <ClockFrames aria-label="Frames" spec={{ duration: period, loop: true }} every={c.every}>
             <Hand period={period} size={c.size} />
           </ClockFrames>
         </section>
         <section aria-label="Sizes">
           <h3 className="lk-cf-title">Live at every size the size field offers</h3>
-          <Sequence label="Sizes" sweep={fieldSweep(SIZE)}>
+          <Sequence aria-label="Sizes" sweep={fieldSweep(SIZE)}>
             {(size) => <Hand period={period} size={size} />}
           </Sequence>
         </section>

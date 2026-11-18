@@ -6,17 +6,17 @@
  * `resize` and `rotate` presets.
  */
 import type { BindingOptions, GestureBinding } from '@weasel-js/routing';
-import type { MoveParams, RotateParams, Contribution, UseMoveOptions, UseRotateOptions } from '@weasel-js/core';
+import type { MoveParams, RotateParams, Contribution, MoveOptions, RotateOptions } from '@weasel-js/core';
 import { isResizeHandle, isRotateHandle, isPathEditPart } from '@weasel-js/routing';
 import { hitPredicate } from '@weasel-js/gestures';
 import { SNAP_ROLE_MODS } from '@weasel-js/core/engine';
-import { gestureLifecycleParams } from '@weasel-js/core';
+import { runLifecycleParams } from '@weasel-js/core';
 
-/** Options for {@link selectionMoveContribution}. */
+/** Options for {@link createSelectionMoveContribution}. */
 export interface SelectionMoveOptions<TPose = unknown> {
   /** Move-action options: `behaviors` become the move bindings'
    *  `opts.behaviors`, everything else their `opts.params`. */
-  move?: UseMoveOptions<TPose>;
+  move?: MoveOptions<TPose>;
   /** Reparent-on-drop behavior for drag-to-move. `'off'` (default) keeps
    *  translate-only commits. `'top'` lands the moved nodes at the top of the
    *  container under the drop point; `'above'` lands them immediately above the
@@ -24,13 +24,13 @@ export interface SelectionMoveOptions<TPose = unknown> {
   reparentOnDrop?: 'off' | 'top' | 'above';
 }
 
-/** Id of the entry {@link selectionMoveContribution} builds. */
+/** Id of the entry {@link createSelectionMoveContribution} builds. */
 export const SELECTION_MOVE_ID = 'selection.move';
-/** Id of the entry {@link selectionTransformContribution} builds. */
+/** Id of the entry {@link createSelectionTransformContribution} builds. */
 export const SELECTION_TRANSFORM_ID = 'selection.transform';
-/** Id of the entry {@link selectionResizeContribution} builds. */
+/** Id of the entry {@link createSelectionResizeContribution} builds. */
 export const SELECTION_RESIZE_ID = 'selection.resize';
-/** Id of the entry {@link selectionRotateContribution} builds. */
+/** Id of the entry {@link createSelectionRotateContribution} builds. */
 export const SELECTION_ROTATE_ID = 'selection.rotate';
 
 /** Drag a body to move the selection; Alt-drag to clone it. */
@@ -42,7 +42,7 @@ export function selectionMoveBindings<TPose>(
   // first-touch drag and a re-drag commit identically.
   const moveOpts: BindingOptions<MoveParams> = (() => {
     const move = options.move ?? {};
-    const params: MoveParams = gestureLifecycleParams({ ...move, label: move.moveLabel });
+    const params: MoveParams = runLifecycleParams(move);
     if (options.reparentOnDrop && options.reparentOnDrop !== 'off') params.reparentOnDrop = options.reparentOnDrop;
     if (move.expandIds) params.expandIds = move.expandIds;
     return {
@@ -104,19 +104,19 @@ export function selectionMoveBindings<TPose>(
   ];
 }
 
-/** Options for {@link selectionRotateContribution}. */
+/** Options for {@link createSelectionRotateContribution}. */
 export interface SelectionRotateOptions<TPose = unknown> {
   /** Rotate-action options: `behaviors` become the rotate binding's
    *  `opts.behaviors`, everything else its `opts.params`. */
-  rotate?: UseRotateOptions<TPose>;
+  rotate?: RotateOptions<TPose>;
 }
 
-/** Options for {@link selectionTransformContribution}. Resize takes its
- *  options through the `resizePolicy` dep (`useResizePolicy`), not here. */
+/** Options for {@link createSelectionTransformContribution}. Resize takes its
+ *  options through the `resizePolicy` dep (`useResizePolicyDepSource`), not here. */
 export type SelectionTransformOptions<TPose = unknown> = SelectionRotateOptions<TPose>;
 
 /** Drag a resize handle to resize the selection. Options come through the
- *  `resizePolicy` dep (`useResizePolicy`). */
+ *  `resizePolicy` dep (`useResizePolicyDepSource`). */
 export function selectionResizeBindings(): GestureBinding[] {
   return [{ spec: { kind: 'drag' as const, target: { kindOf: isResizeHandle }, mods: SNAP_ROLE_MODS }, actionId: 'resize', opts: { id: 'selection.resize.handle' } }];
 }
@@ -126,7 +126,7 @@ export function selectionRotateBindings<TPose>(
   options: SelectionRotateOptions<TPose> = {},
 ): GestureBinding[] {
   const rotate = options.rotate ?? {};
-  const params: RotateParams = gestureLifecycleParams({ ...rotate, label: rotate.rotateLabel });
+  const params: RotateParams = runLifecycleParams({ ...rotate, label: rotate.rotateLabel });
   if (rotate.pivot) params.pivot = rotate.pivot;
   const opts: BindingOptions<RotateParams> = {
     id: 'selection.rotate.handle',
@@ -149,7 +149,7 @@ export function selectionTransformBindings<TPose>(
 
 /** An always-live entry carrying {@link selectionMoveBindings}. Add it to a
  *  canvas's ambient list; `<SceneCanvas features={[movePreset]}>` does. */
-export function selectionMoveContribution<TPose>(
+export function createSelectionMoveContribution<TPose>(
   options: SelectionMoveOptions<TPose> = {},
 ): Contribution {
   return {
@@ -162,7 +162,7 @@ export function selectionMoveContribution<TPose>(
 /** An always-live entry carrying {@link selectionTransformBindings}: resize
  *  and rotate in one entry, what `<SceneCanvas features={[transformPreset]}>`
  *  turns on. */
-export function selectionTransformContribution<TPose>(
+export function createSelectionTransformContribution<TPose>(
   options: SelectionTransformOptions<TPose> = {},
 ): Contribution {
   return {
@@ -174,7 +174,7 @@ export function selectionTransformContribution<TPose>(
 
 /** An always-live entry carrying {@link selectionResizeBindings}. Add it to a
  *  canvas's ambient list; `<SceneCanvas features={[resizePreset]}>` does. */
-export function selectionResizeContribution(): Contribution {
+export function createSelectionResizeContribution(): Contribution {
   return {
     id: SELECTION_RESIZE_ID,
     eligibility: { always: true },
@@ -184,7 +184,7 @@ export function selectionResizeContribution(): Contribution {
 
 /** An always-live entry carrying {@link selectionRotateBindings}. Add it to a
  *  canvas's ambient list; `<SceneCanvas features={[rotatePreset]}>` does. */
-export function selectionRotateContribution<TPose>(
+export function createSelectionRotateContribution<TPose>(
   options: SelectionRotateOptions<TPose> = {},
 ): Contribution {
   return {
@@ -194,27 +194,27 @@ export function selectionRotateContribution<TPose>(
   };
 }
 
-/** Id of the entry {@link areaSelectContribution} builds. */
+/** Id of the entry {@link createAreaSelectContribution} builds. */
 export const AREA_SELECT_ID = 'selection.areaSelect';
 
 /** A press on empty canvas: no hit, and not on chrome over it — the rotation
  *  handle and the outer half of a resize handle sit off the body. */
-export const onEmptyCanvas = hitPredicate((hit, body) => hit == null && body === 'empty');
+export const isEmptyOffChrome = hitPredicate((hit, body) => hit == null && body === 'empty');
 
 /** A press on a node, off chrome. With no `classifyTarget` wired there is no
  *  body class to read, and every press off chrome passes. */
-export const onBody = hitPredicate((hit, body) => hit == null && body !== 'empty');
+export const isBodyOffChrome = hitPredicate((hit, body) => hit == null && body !== 'empty');
 
 /** An always-live entry that marquee-selects on a drag across empty canvas,
  *  under any tool that does not claim the drag itself. No preset installs it:
  *  the select tool already marquees, and a canvas that wants it under every
  *  tool adds this to its ambient list. */
-export function areaSelectContribution(): Contribution {
+export function createAreaSelectContribution(): Contribution {
   return {
     id: AREA_SELECT_ID,
     eligibility: { always: true },
     bindings: [{
-      spec: { kind: 'drag', target: { kindOf: onEmptyCanvas }, mods: { shift: 'optional' } },
+      spec: { kind: 'drag', target: { kindOf: isEmptyOffChrome }, mods: { shift: 'optional' } },
       actionId: 'areaSelect',
       opts: { id: 'selection.areaSelect.drag' },
     }],

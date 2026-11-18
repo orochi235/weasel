@@ -9,7 +9,7 @@ import { useHandleDrag, type HandleDragEnd, type HandleDragPoint } from '@weasel
 import {
   clientToCanvas,
   layoutBoxOf,
-  pointInRotatedRect,
+  rotatedRectContainsPoint,
   rotatePoint,
   useScene,
   cornerResizeHandles,
@@ -167,7 +167,7 @@ export function RotatedResizeMathDemo() {
     if (!hitAnchor) {
       // Body-translate only from green (canonical) panel.
       if (panel !== 'green') return;
-      if (!pointInRotatedRect(refPose, pt.x, pt.y)) return;
+      if (!rotatedRectContainsPoint(refPose, pt.x, pt.y)) return;
     }
 
     // Opened before the state below is written: a session still live from a

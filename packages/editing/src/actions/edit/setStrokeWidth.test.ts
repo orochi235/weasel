@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { setStrokeWidthAction } from './setStrokeWidth';
 import type { NodeId } from '@weasel-js/core';
 import type { Stroke } from '@weasel-js/paint';
-import { strokeOf } from '@weasel-js/paint';
+import { solidStroke } from '@weasel-js/paint';
 import { makeScene, makeCtx, ongoingInvoker } from './paintActionTestUtils';
 
 const getInvoker = () => ongoingInvoker(setStrokeWidthAction);
@@ -10,7 +10,7 @@ const strokeAfter = (scene: ReturnType<typeof makeScene>) => (scene.updates[0]!.
 
 describe('setStrokeWidthAction', () => {
   it('sets the width and keeps the paint, as one undo entry', () => {
-    const scene = makeScene({ a: { stroke: { ...strokeOf('#aabbccff', 3), cap: 'round' } } });
+    const scene = makeScene({ a: { stroke: { ...solidStroke('#aabbccff', 3), cap: 'round' } } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { width: 8 } });
     getInvoker().start(ctx, { params: { width: 8 } }).onEnd?.(ctx, 'commit');
     expect(scene.batches).toEqual(['Set stroke width']);
@@ -18,7 +18,7 @@ describe('setStrokeWidthAction', () => {
   });
 
   it('writes per-anchor widths, and takes them off with null', () => {
-    const tapered = { ...strokeOf('#000000ff', 2), vertexWidths: [1, 6, 1] };
+    const tapered = { ...solidStroke('#000000ff', 2), vertexWidths: [1, 6, 1] };
     const scene = makeScene({ a: { stroke: tapered } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { vertexWidths: [2, 9, 2] } });
     getInvoker().start(ctx, { params: { vertexWidths: [2, 9, 2] } }).onEnd?.(ctx, 'commit');
@@ -32,7 +32,7 @@ describe('setStrokeWidthAction', () => {
   });
 
   it('previews each tick of a drag and commits the last', () => {
-    const scene = makeScene({ a: { stroke: strokeOf('#000000ff', 1) } });
+    const scene = makeScene({ a: { stroke: solidStroke('#000000ff', 1) } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { width: 2 } });
     const h = getInvoker().start(ctx, { params: { width: 2 } });
     h.onMove?.({ ...ctx, params: { width: 5 } });

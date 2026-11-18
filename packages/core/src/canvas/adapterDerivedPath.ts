@@ -5,6 +5,7 @@
  * every adapter already answers both by id. Nothing pushes an invalidation
  * here, so freshness is the memo's own re-check of what the adapter answers.
  */
+import { createPart } from '@weasel-js/registry';
 import type { Path } from '@weasel-js/geom';
 import { resolveDerivedPath, type PathDerivingNode } from 'core/scene/derivedPath';
 import { createNodeMemoScope, type NodeMemoScope } from 'core/scene/nodeMemo';
@@ -19,7 +20,7 @@ export interface DerivingAdapter<TPose> {
   getChildren(parentId: string | null): readonly string[];
 }
 
-const scopes = new WeakMap<object, NodeMemoScope>();
+const scopes = createPart((_adapter: object): NodeMemoScope => createNodeMemoScope());
 
 /**
  * The path the node `id` computes from its dependencies, or `null` when it
@@ -29,12 +30,7 @@ const scopes = new WeakMap<object, NodeMemoScope>();
 export function adapterDerivedPathOf<TPose>(
   adapter: DerivingAdapter<TPose>,
 ): (id: string) => Path | null {
-  let scope = scopes.get(adapter);
-  if (scope === undefined) {
-    scope = createNodeMemoScope();
-    scopes.set(adapter, scope);
-  }
-  const slot = scope;
+  const slot = scopes(adapter);
   const poseOf = (id: string): TPose =>
     (typeof adapter.getWorldPose === 'function' ? adapter.getWorldPose(id) : adapter.getPose(id));
   const childrenOf = (id: NodeId): readonly NodeId[] =>

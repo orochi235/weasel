@@ -3,7 +3,7 @@ import { quadrantClassesOf, type QuadrantAxis, type QuadrantData, type QuadrantP
 import type { ImportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
 import { lineError } from '../../lineError';
-import { pageNameOf, statementsOf } from '../common/lines';
+import { readPageName, statementsOf } from '../common/lines';
 import { axisOf, pointOf, styleOf, textOf } from './parse';
 
 /** The page a quadrant chart is read onto. */
@@ -37,7 +37,7 @@ export function readMermaidQuadrant(text: string): ImportResult {
       points.push(point);
     }
   }
-  const named = pageNameOf(src, warnings);
+  const named = readPageName(src, warnings);
   if (title !== undefined && src.title !== undefined && src.title !== title) warnings.add('The front matter title was dropped; the chart is titled by its own.');
   title ??= src.title;
   while (quadrants.length > 0 && quadrants[quadrants.length - 1] === undefined) quadrants.pop();

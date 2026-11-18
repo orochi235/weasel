@@ -51,7 +51,7 @@ export interface SceneGestureDispatcherInputs {
    *  so path anchors are hit where the plane draws them. */
   planeOfNode?: (id: string) => import('core/viewport/parallax').PlaneMap | null;
   pickEvery?: (world: WorldPoint) => string[];
-  /** Single topmost hit (collapses parent/child via `pickTopMostHit`), used to
+  /** Single topmost hit (collapses parent/child via `topmostOf`), used to
    *  classify the body under the pointer. Must match the select tool's own
    *  resolution so a child node isn't misclassified by its parent's selection.
    *  Falls back to `pickEvery`'s last id when absent. */
@@ -193,7 +193,7 @@ function useClassifyTarget(
     if (!selectionRef || !pickEvery || !viewRef) return undefined;
     return buildClassifyTarget(
       () => selectionRef.current?.current ?? [],
-      // Use the select tool's own topmost-hit resolution (`pickTopMostHit`,
+      // Use the select tool's own topmost-hit resolution (`topmostOf`,
       // which collapses parent/child) so a child body is classified by ITS
       // OWN selection — not its parent's.
       (world: WorldPoint) => {

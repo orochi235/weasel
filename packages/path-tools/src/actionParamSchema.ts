@@ -88,8 +88,8 @@ declare module '@weasel-js/routing' {
     'girth.hover': Pick<ImmediateParams, 'world'>;
     snipPath: StrokePressParams;
     'snip.preview': StrokePressParams;
-    'shapeBuilder.hover': Pick<ImmediateParams, 'world' | 'mods'>;
-    'shapeBuilder.click': Pick<ImmediateParams, 'press' | 'mods'>;
+    'shapeBuilder.showFace': Pick<ImmediateParams, 'world' | 'mods'>;
+    'shapeBuilder.takeFace': Pick<ImmediateParams, 'press' | 'mods'>;
     equalizeHandles: { affordance?: AffordanceHit };
   }
 }

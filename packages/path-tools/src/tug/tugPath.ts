@@ -8,7 +8,7 @@ import {
   pathEndFrame, pathToAnchors, type AnchorSet, type TugMode, type PointOrigin, type PolygonPath,
 } from '@weasel-js/geom';
 import { type EditAnchorsDep, editingLayer, inPlane, pathOperationTags } from '@weasel-js/core';
-import { depOf } from '../pathEdit/anchorEditing';
+import { openPathEditOf } from '../pathEdit/anchorEditing';
 import { pathEditPreview } from '../pathEdit/editAnchors/preview';
 import type {} from '../actionParamSchema';
 
@@ -39,7 +39,7 @@ const TUG_CURSOR: CursorSpec = { glyph: 'pen', mark: 'add', fallback: 'crosshair
 const END_HIT_PX = 8;
 
 function editedPath(deps: ActionDeps | undefined): { dep: EditAnchorsDep; path: PolygonPath } | null {
-  const dep = depOf(deps);
+  const dep = openPathEditOf(deps);
   if (!dep) return null;
   const path = dep.getEditablePath(dep.editingId) as PolygonPath | null | undefined;
   return path?.kind === 'polygon' ? { dep, path } : null;
@@ -145,7 +145,7 @@ export const tugPathAction = inPlane(defineAction({
     },
   },
   enabled: (deps, at) => {
-    if (!depOf(deps)) return ActionDisabledReason.NotApplicable;
+    if (!openPathEditOf(deps)) return ActionDisabledReason.NotApplicable;
     if (at && !endUnder(deps, at.x, at.y)) return ActionDisabledReason.NotApplicable;
     return true;
   },

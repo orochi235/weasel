@@ -102,7 +102,7 @@ naming both versions, and the panel decides how far to degrade.
 | panel → page | `get-state` | → selection, view, active tool, registered tools, overlay flags in effect, probe values |
 | panel → page | `get-trace` | `cursor`, optional `coordCursor` → dispatch and mode-switch records after the cursor, the next cursor, `live` (what a press at the pointer would do), and coord records when asked |
 | panel → page | `get-registry` | → what the canvas registered: tools, actions, deps and node routing kinds (see "Registry" below) |
-| panel → page | `get-history` | `cursor`, optional `checkpoints` → history steps after the cursor, the next cursor, where the history stands, and every entry's label when asked (see "History" below) |
+| panel → page | `get-history` | `cursor`, optional `historyEntries` → history steps after the cursor, the next cursor, where the history stands, and every entry's label when asked (see "History" below) |
 | panel → page | `get-frame` | → the debug sink's stats for the last paint; null until the `fps` overlay is on. Not announced by `changed`: poll it |
 | panel → page | `select` | `ids` |
 | panel → page | `highlight` | `ids`: outlined through the debug overlay's `highlight` feature |
@@ -155,7 +155,7 @@ only while a panel is connected. Each record is `{ ts, step, entries, position }
 - `position` — entries applied, and entries in all, after the step.
 
 `get-history` also returns the position now, with `canUndo` and `canRedo`, and with
-`checkpoints: true`, every entry on the stacks as `{ id, label }`, oldest applied first. Edits made
+`historyEntries: true`, every entry on the stacks as `{ id, label }`, oldest applied first. Edits made
 inside a mode's journal reach the scene's history only when the journal commits, as one push.
 
 ## Mounting the panel

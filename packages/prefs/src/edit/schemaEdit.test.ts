@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
-import { addNode, aliasNodes, canAlias, carried, copyNodes, outermost, removeNodes, isValidKey, keyProblem, moveNodes, rebasePaths, nodeAt, removeNode, renameKey, setAttribute, uniqueKey, valuePathOf } from './schemaEdit';
+import { addNode, aliasNodes, canAlias, outermostInOrder, copyNodes, outermost, removeNodes, isValidKey, keyProblem, moveNodes, rebasePaths, nodeAt, removeNode, renameKey, setAttribute, uniqueKey, valuePathOf } from './schemaEdit';
 import { foldablePaths } from './folds';
 
 const enc = { read: () => true, write: (on: boolean) => on };
@@ -329,7 +329,7 @@ describe('several paths at once', () => {
   });
 
   it('lists what a drag of several carries in the schema\'s own order', () => {
-    expect(carried(ROOT, ['z', 'b/x', 'a/y', 'b'])).toEqual(['a/y', 'b', 'z']);
+    expect(outermostInOrder(ROOT, ['z', 'b/x', 'a/y', 'b'])).toEqual(['a/y', 'b', 'z']);
   });
 
   it('removes several nodes, a nested one going with its parent', () => {

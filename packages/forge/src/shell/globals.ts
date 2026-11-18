@@ -3,7 +3,7 @@ import type { IconSpec } from '@weasel-js/icons';
 import type { LabMode } from '@weasel-js/labkit';
 import { type ConfigSchema, f } from '@weasel-js/labkit/config';
 import { getOwn } from '@weasel-js/registry';
-import type { Globals } from '../protocol/messages';
+import type { StoryGlobals } from '../protocol/messages';
 
 /** One value a global offers. */
 export interface GlobalOption {
@@ -32,7 +32,7 @@ export interface GlobalDeclaration {
    * Whether the toolbar offers `value` given the lab's other values; every option shows when absent. `globals` is
    * resolved without any declaration's `shows`, so one `shows` cannot depend on another's outcome.
    */
-  shows?: (value: string, globals: Globals) => boolean;
+  shows?: (value: string, globals: StoryGlobals) => boolean;
   /**
    * What this global reads from the lab's own chrome. Given, the lab's value may be `App` (`FOLLOW_APP`), offered
    * first, and while it is the global follows that chrome control, as the header's mode switch sets it. A trial's
@@ -44,7 +44,7 @@ export interface GlobalDeclaration {
    * `modeGlobal`); undefined when it has none. `App` and `auto` are resolved to the mode they show before this is
    * asked. Absent, the lens swaps `light` and `dark`.
    */
-  opposite?: (value: string, globals: Globals) => string | undefined;
+  opposite?: (value: string, globals: StoryGlobals) => string | undefined;
 }
 
 /** The lab chrome's own settings a global can follow. */
@@ -76,19 +76,19 @@ const FORGE_KEYS: ReadonlySet<string> = new Set([GLOBALS_KEY, PLAYHEAD_KEY]);
 export const isForgePath = (path: string): boolean => FORGE_KEYS.has(path.split('.')[0]!);
 
 /** The options the toolbar offers for `declaration` at `globals`. */
-export function shownOptions(declaration: GlobalDeclaration, globals: Globals): GlobalDeclaration['options'] {
+export function shownOptions(declaration: GlobalDeclaration, globals: StoryGlobals): GlobalDeclaration['options'] {
   const { shows } = declaration;
   return shows ? declaration.options.filter((option) => shows(option.value, globals)) : declaration.options;
 }
 
 /** The options the lab's own control offers: `shownOptions`, after `App` where the declaration follows the app. */
-export function labOptions(declaration: GlobalDeclaration, globals: Globals): GlobalDeclaration['options'] {
+export function labOptions(declaration: GlobalDeclaration, globals: StoryGlobals): GlobalDeclaration['options'] {
   const shown = shownOptions(declaration, globals);
   return declaration.follows ? [APP_OPTION, ...shown] : shown;
 }
 
 /** `values` with each `App` replaced by what its declaration reads from `chrome`; `values` itself when none is. */
-export function followApp(declarations: GlobalDeclarations, values: Globals, chrome: LabChrome): Globals {
+export function followApp(declarations: GlobalDeclarations, values: StoryGlobals, chrome: LabChrome): StoryGlobals {
   const followed = Object.entries(declarations).flatMap(([key, { follows }]) =>
     follows && getOwn(values, key) === FOLLOW_APP ? [[key, follows(chrome)] as const] : [],
   );
@@ -100,9 +100,9 @@ export function followApp(declarations: GlobalDeclarations, values: Globals, chr
  * one its declaration's `shows` hides or its option disables falls back to the shown, enabled option nearest it in
  * `options`, the earlier on a tie.
  */
-export function labGlobals(declarations: GlobalDeclarations, stored: unknown): Globals {
+export function labGlobals(declarations: GlobalDeclarations, stored: unknown): StoryGlobals {
   const from = isRecord(stored) ? stored : {};
-  const offered: Globals = Object.fromEntries(
+  const offered: StoryGlobals = Object.fromEntries(
     Object.entries(declarations).map(([key, declaration]) => {
       const value = getOwn(from, key);
       const known =
@@ -127,7 +127,7 @@ export function labGlobals(declarations: GlobalDeclarations, stored: unknown): G
 }
 
 /** The lab's values, overridden by the pins in a trial's config that do not follow the lab. */
-export function effectiveGlobals(lab: Globals, pins: unknown): Globals {
+export function effectiveGlobals(lab: StoryGlobals, pins: unknown): StoryGlobals {
   if (!isRecord(pins)) return lab;
   const pinned = Object.entries(pins).filter(([key, value]) => Object.hasOwn(lab, key) && value !== FOLLOW_LAB);
   return pinned.length === 0 ? lab : { ...lab, ...Object.fromEntries(pinned) };

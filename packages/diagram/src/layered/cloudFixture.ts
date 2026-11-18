@@ -55,6 +55,6 @@ export const CLOUD: DiagramData = (() => {
   return {
     nodes: [...plain, ...grouped.map(({ id, lines }) => ({ id, lines }))],
     edges,
-    groups,
+    clusters: groups,
   };
 })();

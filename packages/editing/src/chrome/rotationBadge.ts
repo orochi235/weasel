@@ -1,7 +1,7 @@
 import type { DrawCommand } from '@weasel-js/renderer';
+import { resolveScreenLength } from '@weasel-js/paint';
 import { mat3, type GlMat3 } from '@weasel-js/renderer';
 import type { CommandStroke } from '@weasel-js/paint';
-import { resolveStrokeWidth } from '@weasel-js/stroke';
 import { PATH_L, PATH_M, type PolygonPath } from '@weasel-js/geom';
 import { rotationHandle } from './rotationHandleGeometry';
 import type { Bounds } from '@weasel-js/core';
@@ -27,7 +27,7 @@ export function rotationHandleCommands(
   const arcRadius = size;
   const ARC_HALF_ANGLE = (Math.PI * 240) / 360 / 2; // 120°
   const N_SEGS = 18;
-  const arcWidth = resolveStrokeWidth(handles.outline.width ?? 1, 1) * 1.5;
+  const arcWidth = resolveScreenLength(handles.outline.width ?? 1, 1) * 1.5;
   const stroke: CommandStroke = {
     paint: handles.fill.paint,
     width: arcWidth,

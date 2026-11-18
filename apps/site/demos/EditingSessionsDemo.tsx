@@ -25,7 +25,7 @@ function SessionCanvas({ session, children }: { session: DocScene; children?: Re
     <div className={styles.column}>
       <DemoStage width={W} height={H}>
         <SceneCanvas features={[viewPreset, pickPreset, movePreset]} className="ckd-canvas" scene={session}
-          selectionOptions={{ mode: 'multi' }}>
+          selectionOptions={{ mode: 'multiple' }}>
           {children}
         </SceneCanvas>
       </DemoStage>

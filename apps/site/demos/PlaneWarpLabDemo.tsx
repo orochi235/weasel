@@ -56,7 +56,7 @@ const SELECTED = [asNodeId('board'), asNodeId('disc')];
 
 function PlaneWarpTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const selection = useSelection({ scene, mode: 'multi', initial: SELECTED });
+  const selection = useSelection({ scene, mode: 'multiple', initial: SELECTED });
   const { mode, tolerance } = ctx.config;
   const settings = useMemo(() => ({ mode, tolerance }), [mode, tolerance]);
   useHeldWarpSettings('plane');

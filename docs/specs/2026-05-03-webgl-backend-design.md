@@ -161,7 +161,7 @@ consumers register additional faces via `registerFont(family, atlasUrl)`.
 
 Move off `isPointInPath` / `isPointInStroke` entirely. Implement CPU-side:
 
-- `pointInPath(point, path, fillRule)` — winding number on tessellated
+- `pathContainsPoint(point, path, fillRule)` — winding number on tessellated
   polygons; cached.
 - `pointNearStroke(point, path, width)` — distance-to-segment, accounting
   for caps and joins.

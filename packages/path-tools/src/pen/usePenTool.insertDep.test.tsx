@@ -3,9 +3,9 @@ import { act, render } from '@testing-library/react';
 import { usePenTool } from './usePenTool';
 import type { RectPose, Scene, SelectionApi, Tool } from '@weasel-js/core';
 import { DepRegistryProvider, useDepRegistry, useDepSource, type DepRegistry } from '@weasel-js/routing/react';
-import { buildDepsFromRequires } from '@weasel-js/routing';
+import { createActionDeps } from '@weasel-js/routing';
 import {
-  hitTestAreaForTests as hitTestArea, useEditAnchorsDepSourceForTests as useEditAnchorsDepSource,
+  hitTestRectForTests as hitTestRect, useEditAnchorsDepSourceForTests as useEditAnchorsDepSource,
 } from '@weasel-js/core/test-seams';
 import { useInsertDepSource } from '@weasel-js/editing';
 import { createScene, defaultCommitAdapter } from '@weasel-js/core';
@@ -35,7 +35,7 @@ describe('usePenTool — through the kit insert dep', () => {
       const action = tool.actions!.find((a) => a.id === id)!;
       if (action.invoker?.timing !== 'immediate') throw new Error(`${id} is not immediate`);
       const invoker = action.invoker;
-      act(() => { invoker.run(buildDepsFromRequires(action, reg), params); });
+      act(() => { invoker.run(createActionDeps(action, reg), params); });
     };
     const before = scene.historyEntries().length;
     run('pen.placeAnchor', { press: { x: 10, y: 20 } });
@@ -70,7 +70,7 @@ describe('usePenTool — through the kit insert dep', () => {
       useEditAnchorsDepSource(scene, selection, adapter);
       useDepSource('selection', () => selection);
       useDepSource('operands', () => selection);
-      useDepSource('areaSelect', () => ({ hitTestArea: (b: Parameters<typeof hitTestArea>[1]) => hitTestArea(scene, b) }) as never);
+      useDepSource('areaSelect', () => ({ hitTestArea: (b: Parameters<typeof hitTestRect>[1]) => hitTestRect(scene, b) }) as never);
       reg = useDepRegistry();
       tool = usePenTool();
       return null;
@@ -80,7 +80,7 @@ describe('usePenTool — through the kit insert dep', () => {
       const action = tool.actions!.find((a) => a.id === id)!;
       if (action.invoker?.timing !== 'immediate') throw new Error(`${id} is not immediate`);
       const invoker = action.invoker;
-      act(() => { invoker.run(buildDepsFromRequires(action, reg), params); });
+      act(() => { invoker.run(createActionDeps(action, reg), params); });
     };
     run('pen.placeAnchor', { press: { x: 10, y: 20 } });
     run('pen.placeAnchor', { press: { x: 60, y: 20 } });

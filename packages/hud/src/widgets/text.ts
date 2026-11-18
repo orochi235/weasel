@@ -1,7 +1,7 @@
 import { createRevision } from '../widget';
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent } from '../widget';
 import type { DrawCommand, TextDrawCommand } from '@weasel-js/core/renderer';
-import { clearRuns, dropRuns, type StyledRun, type TextStyle } from '@weasel-js/text';
+import { evictRunsForRefill, evictRuns, type StyledRun, type TextStyle } from '@weasel-js/text';
 import type { Fill } from '@weasel-js/paint';
 import { textCommandFromRuns, textCommandFromRunsInto } from '@weasel-js/core';
 
@@ -80,7 +80,7 @@ export function createText(opts: TextOptions): TextWidget {
           placed = textCommandFromRuns(bounds.x, bounds.y, RUNS, style) as TextDrawCommand;
           out[0] = placed;
         } else {
-          clearRuns(placed.runs);
+          evictRunsForRefill(placed.runs);
           textCommandFromRunsInto(placed, bounds.x, bounds.y, RUNS, style);
         }
         RUN.fill = undefined;
@@ -97,7 +97,7 @@ export function createText(opts: TextOptions): TextWidget {
     dispose() {
       if (disposed) return;
       disposed = true;
-      if (placed !== null) dropRuns(placed.runs);
+      if (placed !== null) evictRuns(placed.runs);
       opts.removeFromHud?.();
     },
   };

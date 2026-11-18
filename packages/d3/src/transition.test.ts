@@ -289,7 +289,7 @@ describe('d3Bind transition — selection.interrupt() namespace', () => {
         animator: animator.current as Animator,
       })
         .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
-        .data(() => ({ color: '#000' }))
+        .payload(() => ({ color: '#000' }))
         .join();
     });
     const apply = vi.fn();
@@ -299,7 +299,7 @@ describe('d3Bind transition — selection.interrupt() namespace', () => {
         animator: animator.current as Animator,
       })
         .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
-        .data(() => ({ color: '#fff' }))
+        .payload(() => ({ color: '#fff' }))
         .join();
       sel.transition('move')
         .duration(1000)
@@ -324,7 +324,7 @@ describe('d3Bind transition — custom .tween()', () => {
         animator: animator.current as Animator,
       })
         .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
-        .data(() => ({ color: '#000' }))
+        .payload(() => ({ color: '#000' }))
         .join();
     });
     const interpolate = vi.fn(
@@ -339,7 +339,7 @@ describe('d3Bind transition — custom .tween()', () => {
         animator: animator.current as Animator,
       })
         .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
-        .data(() => ({ color: '#fff' }))
+        .payload(() => ({ color: '#fff' }))
         .join();
       endPromise = sel
         .transition()

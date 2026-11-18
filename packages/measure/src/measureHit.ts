@@ -1,4 +1,4 @@
-import { pointSegmentDist } from '@weasel-js/geom';
+import { pointSegmentDistance } from '@weasel-js/geom';
 import { nodeGates, type NodeId, nodesAsShown, type Scene, shownLookup, type SnapSource } from '@weasel-js/core';
 import { measureEndsOf, type MeasureEnd, type MeasurePoint } from './measurement';
 import { measureIds, type Measurements } from './measurements';
@@ -15,7 +15,7 @@ export interface MeasureHit {
  * units of it, else a line within the same distance. A hidden or locked
  * measurement (`nodeGates`) is passed over.
  */
-export function measureAt(
+export function measureHitAt(
   scene: Pick<Scene<unknown, string, unknown>, 'nodesOnLayer' | 'get' | 'layers' | 'overrides'>,
   ms: Pick<Measurements, 'layer'>,
   p: MeasurePoint,
@@ -34,7 +34,7 @@ export function measureAt(
   }
   for (const id of ids) {
     const ends = measureEndsOf(shown.get(id));
-    if (ends && pointSegmentDist(p.x, p.y, ends.start.x, ends.start.y, ends.end.x, ends.end.y) <= tolerance) return { id, part: 'line' };
+    if (ends && pointSegmentDistance(p.x, p.y, ends.start.x, ends.start.y, ends.end.x, ends.end.y) <= tolerance) return { id, part: 'line' };
   }
   return null;
 }

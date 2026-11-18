@@ -1,5 +1,5 @@
 import { poseLinearOf } from '@weasel-js/geom';
-import { operandMethods, unionAABB, unionBounds, fixedCornerOf, visualBoundsViaDescriptor, type PoseDescriptor } from '@weasel-js/core/engine';
+import { operandMethods, unionAabb, unionBounds, fixedCornerOf, visualBoundsViaDescriptor, type PoseDescriptor } from '@weasel-js/core/engine';
 import type { InvocationCtx } from '@weasel-js/routing';
 import { localToWorld, pointerStateOf, sceneGestureFrames, carryPose, invertPlane, planeOf, shapeSources } from '@weasel-js/core';
 import { moveGestureAdapter } from '../move/gestureAdapter';
@@ -110,7 +110,7 @@ function boxExtents(
   if (leafExtents.every(isNoInkExtents)) return NO_INK_EXTENTS;
   const inked = isGroupPath
     ? unionBounds(leafBounds.map((b, i) => outsetBox(b, leafExtents[i]!)))
-    : unionAABB(starts.inkedBounds);
+    : unionAabb(starts.inkedBounds);
   return inked ? inkExtentsBetween(bounds, inked) : NO_INK_EXTENTS;
 }
 
@@ -129,7 +129,7 @@ export function captureBox(
   // is the box its drag resizes.
   const bounds = leafBounds.length === 1
     ? leafBounds[0]
-    : isGroupPath ? unionBounds(leafBounds)! : unionAABB(drawnBounds)!;
+    : isGroupPath ? unionBounds(leafBounds)! : unionAabb(drawnBounds)!;
 
   // Rotation captured only for the single-write-id path; group-resize
   // takes the AABB-frame (unrotated) path even if leaves have rotation.

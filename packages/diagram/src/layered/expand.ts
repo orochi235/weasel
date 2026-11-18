@@ -123,7 +123,7 @@ function portOf(places: readonly number[], side: 'from' | 'to'): Partial<Hop> {
  */
 export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, back: ReadonlySet<string>, opts: ExpandOptions): Expanded {
   const { axes } = opts;
-  const groups = new Map((graph.groups ?? []).map((g) => [g.id, g]));
+  const groups = new Map((graph.clusters ?? []).map((g) => [g.id, g]));
   const spanIn = (id: string, ranks: ReadonlyMap<string, number>): [number, number] | null => {
     const ids = groups.get(id)?.members ?? [id];
     const rs = ids.map((m) => ranks.get(m)).filter((r): r is number => r !== undefined);
@@ -137,7 +137,7 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
     (groups.get(id)?.members ?? [id]).filter((m) => ranks.get(m) === r && graph.node(m) !== undefined);
   const ancestry = (id: string): string[] => {
     const out: string[] = [];
-    let at = groups.has(id) ? groups.get(id)!.parent : graph.node(id)?.group;
+    let at = groups.has(id) ? groups.get(id)!.parent : graph.node(id)?.cluster;
     while (at !== undefined) {
       out.push(at);
       at = groups.get(at)?.parent;
@@ -199,7 +199,7 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
       const bounds = axes.cross === 'x'
         ? { x: at, y: 0, width: room.size, height: room.depth }
         : { x: 0, y: at, width: room.depth, height: room.size };
-      add(r, { id, bounds, pinned: false, ...(group !== undefined ? { group } : {}) });
+      add(r, { id, bounds, pinned: false, ...(group !== undefined ? { cluster: group } : {}) });
       // A placeholder with no width, as a zero nodeGap gives, carries its wire through the middle.
       const toAt = room.size > 0 ? room.wire / room.size : 0.5;
       for (const p of prev) hops.push({ from: p, to: id, edge: d.id, ...(prevAt ?? leave(p)), toAt });
@@ -229,7 +229,7 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
   return { rows, hops: dedupe(hops), chains, labelRows: new Set(labeled.labelRow.values()), labels, wires };
 }
 
-/** Each drawn edge once: the stand-ins `expandGroupEdges` made for one edge to
+/** Each drawn edge once: the stand-ins `expandClusterEdges` made for one edge to
  *  or from a group fold back into it. Self-loops draw no hops. */
 function drawnEdges(edges: readonly GraphEdge[], back: ReadonlySet<string>): Drawn[] {
   const seen = new Map<string, Drawn>();

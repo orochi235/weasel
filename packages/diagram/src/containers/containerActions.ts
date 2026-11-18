@@ -17,10 +17,10 @@ import {
   type RectPose,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
-import { grabPortAction, grabPortBindings } from '../connect';
+import { createClaimPressAction, claimPressBindings } from '../connect';
 import { addLane, canReleaseMembers, releaseMembers } from './containerStencils';
 import {
-  addLaneLocked, LANE_AFFORDANCE_KIND, LANE_LAYER_ID, laneLayer, laneResizeLocked, laneScratchOf, poolsOf, type LaneLayerOptions,
+  addLaneLocked, LANE_AFFORDANCE_KIND, LANE_LAYER_ID, createLaneLayer, laneResizeLocked, laneScratchOf, poolsOf, type LaneLayerOptions,
   type PoolLanes,
 } from './laneBoundaryLayer';
 import { MIN_LANE_SIZE } from './laneStack';
@@ -30,7 +30,7 @@ import type { AnyScene } from '@weasel-js/core';
 import type {} from '../actionParamSchema';
 
 /** The action that drags a lane's boundary. */
-export const LANE_RESIZE_ACTION_ID = 'diagram.resizeLane';
+export const RESIZE_LANE_ACTION_ID = 'diagram.resizeLane';
 /** The action the add-lane button runs. */
 export const ADD_LANE_ACTION_ID = 'diagram.addLane';
 /** The command that removes the selected containers and keeps their members. */
@@ -108,7 +108,7 @@ export interface LaneActionOptions extends LaneLayerOptions {
 export function createLaneResizeAction(opts: LaneActionOptions): Action {
   const commit = opts.commitResize ?? commitLaneResizeToScene;
   return {
-    id: LANE_RESIZE_ACTION_ID,
+    id: RESIZE_LANE_ACTION_ID,
     label: 'Resize lane',
     group: 'diagram',
     requires: ['scene'],
@@ -211,19 +211,19 @@ export function createReleaseMembersAction(opts: LaneActionOptions): Action {
  * lane boundary drag, the add-lane click, and the `diagram.releaseMembers`
  * command.
  */
-export function diagramContainers(opts: LaneActionOptions): SurfaceContribution {
+export function createDiagramContainersContribution(opts: LaneActionOptions): SurfaceContribution {
   const target = `affordance:${LANE_AFFORDANCE_KIND}` as const;
   return {
     id: 'weasel-diagram-containers',
     eligibility: { claimed: [LANE_LAYER_ID] },
-    layers: [laneLayer(opts.scene, opts)],
+    layers: [createLaneLayer(opts.scene, opts)],
     actions: [
-      createLaneResizeAction(opts), createAddLaneAction(opts), createReleaseMembersAction(opts), grabPortAction(GRAB_LANE_ACTION_ID),
+      createLaneResizeAction(opts), createAddLaneAction(opts), createReleaseMembersAction(opts), createClaimPressAction(GRAB_LANE_ACTION_ID),
     ],
     bindings: [
-      { spec: { kind: 'drag', target }, actionId: LANE_RESIZE_ACTION_ID, opts: { id: 'weasel-diagram-containers.drag' } },
+      { spec: { kind: 'drag', target }, actionId: RESIZE_LANE_ACTION_ID, opts: { id: 'weasel-diagram-containers.drag' } },
       { spec: { kind: 'click', target }, actionId: ADD_LANE_ACTION_ID, opts: { id: 'weasel-diagram-containers.click' } },
-      ...grabPortBindings(GRAB_LANE_ACTION_ID, LANE_AFFORDANCE_KIND).filter((b) => b.spec.kind !== 'click'),
+      ...claimPressBindings(GRAB_LANE_ACTION_ID, LANE_AFFORDANCE_KIND).filter((b) => b.spec.kind !== 'click'),
     ],
   };
 }

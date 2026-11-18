@@ -1,7 +1,7 @@
 import type { DrawCommand } from '@weasel-js/core';
 import { drawOneLayer, subscribeToSources, viewportWorldRect, type Dims, type RenderLayer } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
-import { tiledProject } from './tiledProject';
+import { tileRange } from './tileRange';
 
 /**
  * How far apart the copies sit, in world units. A bare number wraps the x
@@ -99,8 +99,8 @@ export function createTiledLayer<TData>(
       const p = periodAxes(typeof period === 'function' ? period(view, dims) : period);
       const b = bleedAxes(bleed);
       const shown = viewportWorldRect(view, dims);
-      const kx = tiledProject(shown.x, shown.x + shown.width, p.x, b.x);
-      const ky = tiledProject(shown.y, shown.y + shown.height, p.y, b.y);
+      const kx = tileRange(shown.x, shown.x + shown.width, p.x, b.x);
+      const ky = tileRange(shown.y, shown.y + shown.height, p.y, b.y);
 
       const out: DrawCommand[] = [];
       // Written so a non-finite span, which a zero view scale gives, fails it too, and so an axis

@@ -8,12 +8,12 @@
  * or a zoom about a screen point needs.
  */
 import type { View } from '@weasel-js/core';
-import type { Point, ViewTransform } from '../instrument/types';
+import type { Point, ViewTransform2D } from '../instrument/types';
 import { normalize2DView } from '../state/view';
 import { DEFAULT_FRAME, type WorldFrame } from './worldSpec';
 
 /** The weasel `View` equal to `view` under `frame`. */
-export function toCameraView(view: ViewTransform, frame: WorldFrame = DEFAULT_FRAME): View {
+export function toCameraView(view: ViewTransform2D, frame: WorldFrame = DEFAULT_FRAME): View {
   const v = normalize2DView(view);
   return {
     x: -(frame.originPx.x + v.pan.x) / v.zoom,
@@ -23,7 +23,7 @@ export function toCameraView(view: ViewTransform, frame: WorldFrame = DEFAULT_FR
 }
 
 /** The labkit camera equal to weasel `view` under `frame`. */
-export function fromCameraView(view: View, frame: WorldFrame = DEFAULT_FRAME): ViewTransform {
+export function fromCameraView(view: View, frame: WorldFrame = DEFAULT_FRAME): ViewTransform2D {
   const zoom = view.scale.x;
   return {
     zoom,

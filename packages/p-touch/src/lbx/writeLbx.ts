@@ -120,16 +120,16 @@ function collect(commands: readonly DrawCommand[], state: DrawState, clips: read
     if (carried) {
       const placed = placeCarried(carried, state);
       if (typeof placed === 'string') skipped.push({ kind: 'group', detail: placed });
-      else if (!placed.every(finiteObject)) skipped.push({ kind: 'group', detail: 'lbxObjects placed at a position no number can say' });
+      else if (!placed.every(finiteObject)) skipped.push({ kind: 'group', detail: 'lbxObjectsCommand placed at a position no number can say' });
       else if (placed.length > 0 && !insideClips(placed, clips)) {
-        skipped.push({ kind: 'group', detail: 'lbxObjects not wholly inside an axis-aligned rect clip' });
+        skipped.push({ kind: 'group', detail: 'lbxObjectsCommand not wholly inside an axis-aligned rect clip' });
       } else for (const object of placed) out.push({ object });
       continue;
     }
     if (cmd.kind === 'group' && rasterWhole(cmd)) {
       raster(cmd);
       for (let n = countCarriers(cmd.children); n > 0; n--) {
-        skipped.push({ kind: 'group', detail: 'lbxObjects under a group effect, isolate, color matrix or blend' });
+        skipped.push({ kind: 'group', detail: 'lbxObjectsCommand under a group effect, isolate, color matrix or blend' });
       }
       continue;
     }

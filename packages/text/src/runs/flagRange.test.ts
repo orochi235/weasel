@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { setFlagOverRange, nodeHasFlag } from './flagRange';
+import { setFlagOverRange, styleHasFlag } from './flagRange';
 import { styleAtRange } from './rangeStyle';
 import type { StyledRun } from '../runs';
 import type { TextStyle } from '../textStyle';
@@ -18,20 +18,20 @@ function effective(runs: StyledRun[], style: TextStyle, key: 'underline' | 'stri
   return false;
 }
 
-describe('nodeHasFlag', () => {
+describe('styleHasFlag', () => {
   it('reads bold off fontWeight and italic off fontStyle', () => {
-    expect(nodeHasFlag({ fontWeight: 700 }, 'bold')).toBe(true);
-    expect(nodeHasFlag({ fontWeight: 'bold' }, 'bold')).toBe(true);
-    expect(nodeHasFlag({ fontWeight: 400 }, 'bold')).toBe(false);
-    expect(nodeHasFlag({}, 'bold')).toBe(false);
-    expect(nodeHasFlag({ fontStyle: 'italic' }, 'italic')).toBe(true);
-    expect(nodeHasFlag({ fontStyle: 'normal' }, 'italic')).toBe(false);
+    expect(styleHasFlag({ fontWeight: 700 }, 'bold')).toBe(true);
+    expect(styleHasFlag({ fontWeight: 'bold' }, 'bold')).toBe(true);
+    expect(styleHasFlag({ fontWeight: 400 }, 'bold')).toBe(false);
+    expect(styleHasFlag({}, 'bold')).toBe(false);
+    expect(styleHasFlag({ fontStyle: 'italic' }, 'italic')).toBe(true);
+    expect(styleHasFlag({ fontStyle: 'normal' }, 'italic')).toBe(false);
   });
 
   it('reads the decorations off their own booleans', () => {
-    expect(nodeHasFlag({ underline: true }, 'underline')).toBe(true);
-    expect(nodeHasFlag({ underline: false }, 'underline')).toBe(false);
-    expect(nodeHasFlag({}, 'strikethrough')).toBe(false);
+    expect(styleHasFlag({ underline: true }, 'underline')).toBe(true);
+    expect(styleHasFlag({ underline: false }, 'underline')).toBe(false);
+    expect(styleHasFlag({}, 'strikethrough')).toBe(false);
   });
 });
 

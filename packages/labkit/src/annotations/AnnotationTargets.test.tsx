@@ -2,7 +2,7 @@ import { act, render } from '@testing-library/react';
 import { useRef } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AnnotationTargets } from './AnnotationTargets';
-import { createAnnotationStore } from './store';
+import { createMarkStore } from './store';
 import type { AnnotationsCapability } from './types';
 
 type Fire = (target: Element, width: number, height: number) => void;
@@ -44,7 +44,7 @@ describe('AnnotationTargets', () => {
   it("asks for its targets again when a target's element resizes, and not when it reports the same size", () => {
     const { fire, observed } = stubObserver();
     const asked = vi.fn();
-    const store = createAnnotationStore({ targets: () => [] });
+    const store = createMarkStore({ targets: () => [] });
     function Host() {
       const ref = useRef<HTMLDivElement | null>(null);
       const capability: AnnotationsCapability = {
@@ -83,7 +83,7 @@ describe('AnnotationTargets', () => {
   it('asks for its targets again when anything inside a target scrolls, and stops once it is gone', () => {
     stubObserver();
     const asked = vi.fn();
-    const store = createAnnotationStore({ targets: () => [] });
+    const store = createMarkStore({ targets: () => [] });
     function Host() {
       const ref = useRef<HTMLDivElement | null>(null);
       const capability: AnnotationsCapability = {
