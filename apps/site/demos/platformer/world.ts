@@ -52,6 +52,11 @@ export interface GameRefs {
   /** Seconds since the run was decided. Its own clock: `elapsed` stops with the
    *  simulation, and the ending needs to keep fading after that. */
   ended: number;
+  /** Seconds of presentation time: it advances in `stepWorld` and `stepEnding`
+   *  alike, so what moves on it (callouts, the shake's jitter) keeps moving
+   *  after the run is decided, when `elapsed` stops. */
+  clock: number;
+  /** Born, aged and expired on `clock`. */
   callouts: Callout[];
 }
 
@@ -95,6 +100,7 @@ export const freshGame = (): GameRefs => ({
   shake: 0,
   slide: null,
   ended: 0,
+  clock: 0,
   callouts: [],
 });
 
@@ -104,7 +110,7 @@ function sayOw(g: GameRefs): void {
   g.callouts = pushCallout(g.callouts, {
     text: 'ow',
     anchor: { kind: 'world', at: { x, y: y - BODY_H / 2 } },
-    bornAt: g.elapsed,
+    bornAt: g.clock,
     ttl: OW_CALLOUT_TTL,
   });
 }
@@ -125,8 +131,9 @@ export function stepWorld(g: GameRefs, step: Input, hooks: WorldHooks): void {
   }
 
   g.elapsed += STEP;
+  g.clock += STEP;
   g.shake = Math.max(0, g.shake - STEP);
-  g.callouts = stepCallouts(g.callouts, g.elapsed);
+  g.callouts = stepCallouts(g.callouts, g.clock);
 
   // A bonk requires the ceiling branch of resolveY to have actually fired
   // this step — walking under a `?` block never sets it. It always knocks, but
@@ -156,7 +163,7 @@ export function stepWorld(g: GameRefs, step: Input, hooks: WorldHooks): void {
         g.callouts = pushCallout(g.callouts, {
           text: 'FREE HEALTHCARE',
           anchor: { kind: 'screen' },
-          bornAt: g.elapsed,
+          bornAt: g.clock,
           ttl: HEALTHCARE_CALLOUT_TTL,
         });
       }
@@ -220,7 +227,9 @@ export const POLE: Flagpole = flagpoleAt(WORLD.goal);
  * `stepWorld` because it must keep running after the simulation stops.
  */
 export function stepEnding(g: GameRefs, dt: number, hooks: WorldHooks): void {
+  g.clock += dt;
   g.shake = Math.max(0, g.shake - dt);
+  g.callouts = stepCallouts(g.callouts, g.clock);
   if (!g.slide || g.slide.done) {
     // `ended` drives the ending card's fade, so it starts at the landing rather
     // than at the impact — the slide is the beat, and a card over it hides it.

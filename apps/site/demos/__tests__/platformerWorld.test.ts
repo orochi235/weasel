@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { SOLID, TILE, tileAt, toCol, toRow } from '../platformer/level';
 import { WORLD } from '../platformer/worldLevel';
-import { advanceWorld, freshGame, NO_HOOKS, stepWorld, type GameRefs } from '../platformer/world';
+import { advanceWorld, freshGame, NO_HOOKS, stepEnding, stepWorld, type GameRefs } from '../platformer/world';
 import { BODY_H, STEP } from '../platformer/physics';
 
 describe('WORLD', () => {
@@ -128,5 +128,29 @@ describe('advanceWorld', () => {
     expect(g.elapsed).toBeCloseTo(elapsed + STEP, 9);
     expect(g.score).toBe(0);
     expect(g.lives).toBe(0);
+  });
+});
+
+describe('stepEnding', () => {
+  const idle = { left: false, right: false, jumpHeld: false, jumpPressed: false };
+
+  it('lets the last hit\'s callout expire after the run is lost', () => {
+    const g = freshGame();
+    g.lives = 1;
+    const { x, y } = g.player.body;
+    g.enemies = [{ x, y, vx: 0, alive: true, phase: 0 }];
+    stepWorld(g, idle, NO_HOOKS);
+    expect(g.outcome).toBe('lost');
+    expect(g.callouts).toHaveLength(1);
+    for (let i = 0; i < 120; i++) stepEnding(g, 1 / 60, NO_HOOKS);
+    expect(g.callouts).toHaveLength(0);
+  });
+
+  it('keeps the clock the shake jitters on running after the run is decided', () => {
+    const g = freshGame();
+    g.outcome = 'won';
+    const clock = g.clock;
+    stepEnding(g, 0.1, NO_HOOKS);
+    expect(g.clock).toBeCloseTo(clock + 0.1, 9);
   });
 });
