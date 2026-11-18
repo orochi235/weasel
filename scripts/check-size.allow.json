@@ -37,9 +37,6 @@
     "lines": 413,
     "longestFunction": 329
   },
-  "packages/font/src/registerFont.ts": {
-    "lines": 681
-  },
   "packages/forge/src/frame/FrameController.tsx": {
     "longestFunction": 135
   },
