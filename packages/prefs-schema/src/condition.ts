@@ -16,7 +16,7 @@ export type PrefConditionValue = string | number | boolean | null;
  * `{ from: 'item', path: 'mode' }` on a field of a list's item reads `mode`
  * of the same entry, and an empty path is the entry itself. With `from: 'group'` the path is
  * read from the group the test's node is declared in, so a group can be mounted anywhere:
- * `{ from: 'group', path: 'on' }` on `view.symmetry.axis` reads `view.symmetry.on`. The value compared is the one
+ * `{ from: 'group', path: 'on' }` on `view.feature.axis` reads `view.feature.on`. The value compared is the one
  * the leaf's control shows, where an `encoding` stores another. With
  * several operators it holds while all of them do, so
  * `{ path: 'count', atLeast: 1, below: 10 }` is a range.

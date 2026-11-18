@@ -269,7 +269,7 @@ stay ambient because they tune every component at once.
 
 A feature group's leaves gate each other with tests read from their own group
 (`{ from: 'group', path: 'on' }`), never from the schema root, so the group
-stays a constant that mounts anywhere (`symmetrySchema`).
+stays a constant that mounts anywhere.
 
 A numeric limit the code depends on — renderer slack, animator retiming, a
 budget, a dev tool's timeout — stays a constant: listing it as a setting

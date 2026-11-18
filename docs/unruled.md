@@ -2616,11 +2616,3 @@ Calls the lanes made without a ruling:
   (`forge-counter--counter`), so `apps/forge/e2e/smoke.mjs` has the story with a string control and kept state it is
   written around. It had been removed from `apps/forge/stories` on 2026-09-25 (`c1705be650`), leaving the smoke check
   unable to pass. Deleting the smoke check was the alternative.
-
-## Audit round thirty-four (2026-11-17): draw
-
-- 2026-11-17 (the fixer's call): while live symmetry is on, a group it draws into that goes (a delete, an undo) is
-  replaced by the document's other top-level symmetry group or a fresh one at the page center, as after New or Open,
-  except while a redo is pending: then nothing is drawn into, so undo can step past the group's making and a redo
-  brings it back. A shape drawn in that wait is unmirrored, and the fresh group comes after it. Turning symmetry off
-  when its group went was the alternative.
