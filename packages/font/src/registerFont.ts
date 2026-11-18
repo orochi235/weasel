@@ -12,9 +12,7 @@ import { notifyGlyphReady } from './glyphReady';
 import { parseBmFont, type BmFont } from './FontAtlas';
 import type { GlyphTextureSink } from './textureSink';
 import { _clearFallbackWarnings } from './fallback';
-import {
-  listFontOutlines, outlineFace, outlineStatus,
-} from './outline/outlineRegistry';
+import { outlineFace, outlineStatus } from './outline/outlineRegistry';
 import type { FaceMetrics } from './faceMetrics';
 
 /** A registered face: its parsed metrics and the atlas image to sample. */
@@ -92,52 +90,6 @@ export function faceMetricsFor(
 ): FaceMetrics | undefined {
   return getAtlasFont(family, weight, style)?.font.faceMetrics
     ?? outlineFace(family, weight, style)?.faceMetrics;
-}
-
-/** One family in the registry and the variants registered for it — what a
- *  font picker can honestly offer. */
-export interface RegisteredFont {
-  family: string;
-  variants: readonly { weight: number; style: FontStyle }[];
-}
-
-/**
- * Enumerate the registry. Families come back in registration order; variants
- * sorted by weight, then style.
- */
-export function listAtlasFonts(): readonly RegisteredFont[] {
-  const out: RegisteredFont[] = [];
-  for (const family of registeredFamilies) {
-    const keys = new Set([
-      ...(registry.get(family)?.keys() ?? []),
-      ...(declared.get(family)?.keys() ?? []),
-    ]);
-    if (keys.size === 0) continue;
-    const variants = [...keys]
-      .map((key) => {
-        const [w, s] = key.split('|') as [string, FontStyle];
-        return { weight: Number(w), style: s };
-      })
-      .sort((a, b) => a.weight - b.weight || a.style.localeCompare(b.style));
-    out.push({ family, variants });
-  }
-  return out;
-}
-
-/**
- * The weights `family` has a real face for, on the atlas tier or the outline
- * tier, in either style. Ascending and deduplicated; empty for a family
- * nothing registered. An outline face whose load failed is left out. The
- * canvas tier is not consulted: it rasterizes whatever weight it is asked for.
- */
-export function listFontWeights(family: string): readonly number[] {
-  const weights = new Set<number>();
-  for (const key of registry.get(family)?.keys() ?? []) weights.add(Number(key.split('|')[0]));
-  for (const key of declared.get(family)?.keys() ?? []) weights.add(Number(key.split('|')[0]));
-  for (const face of listFontOutlines()) {
-    if (face.family === family && face.status !== 'failed') weights.add(face.weight);
-  }
-  return [...weights].sort((a, b) => a - b);
 }
 
 /** Options for {@link registerFont}. */
@@ -308,6 +260,11 @@ export function registeredFamilyNames(): string[] {
 /** Was `registerFont` ever called for `family`? */
 export function isRegisteredFamily(family: string): boolean {
   return registeredFamilies.has(family);
+}
+
+/** The keys of every variant of `family` registered, landed or declared lazily. */
+export function variantKeysOf(family: string): Set<string> {
+  return new Set([...(registry.get(family)?.keys() ?? []), ...(declared.get(family)?.keys() ?? [])]);
 }
 
 /** Every atlas fetch running for `family`. */

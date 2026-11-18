@@ -9,8 +9,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
 import { FIXTURE_FONT } from './FontAtlas';
 import {
-  _resetFontRegistryForTests, isFontPending, getAtlasFont, listAtlasFonts, registerFont,
+  _resetFontRegistryForTests, isFontPending, getAtlasFont, registerFont,
 } from './registerFont';
+import { listAtlasFonts } from './fontCatalog';
 import { warmFonts } from './warmFonts';
 import { cachedFontVariant, resolveFontVariant } from './resolveFontVariant';
 import { runs, tally, timeoutFor } from './pbt.fixture';
