@@ -69,7 +69,7 @@ export function ensurePipeline(
   const buffers: GPUVertexBufferLayout[] = [...geometry.layouts];
   if (missing.length > 0) {
     buffers.push({
-      arrayStride: 16, stepMode: 'instance',
+      arrayStride: 0, stepMode: 'instance',
       attributes: missing.map((shaderLocation) => ({ shaderLocation, offset: 0, format: 'float32x4' as const })),
     });
   }

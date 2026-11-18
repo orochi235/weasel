@@ -38,7 +38,11 @@ import {
   PATTERN_FILL_ATTRIBUTES,
 } from './patternFill';
 
-import { KIT_WGSL, batchFillProgram } from '../gpu/webgpu/wgsl/kitPrograms';
+import { KIT_WGSL, batchFillProgram, glyphLayerProgram } from '../gpu/webgpu/wgsl/kitPrograms';
+import {
+  GLYPH_LAYER_VERT_SRC, GLYPH_LAYER_AREA_VERT_SRC, GLYPH_LAYER_FRAG_SRC, GLYPH_LAYER_AREA_FRAG_SRC,
+  GLYPH_LAYER_UNIFORMS, GLYPH_LAYER_ATTRIBUTES,
+} from './glyphLayer';
 import type { BatchBuild } from '../gpu/webgpu/wgsl/batchFill';
 import {
   GLYPH_PAINT_VERT_SRC, GLYPH_PATTERN_FRAG_SRC, GLYPH_GRAD_FRAG_SRC, GLYPH_TEXTURE_FRAG_SRC,
@@ -125,6 +129,13 @@ const TRIMMED_RIBBON_SPEC: ProgramSpec = {
   vert: TRIMMED_RIBBON_VERT_SRC, frag: TRIMMED_RIBBON_FRAG_SRC, wgsl: KIT_WGSL.trimmedRibbon.code,
   uniforms: TRIMMED_RIBBON_UNIFORMS, attributes: TRIMMED_RIBBON_ATTRIBUTES,
 };
+/** The text layer's program (`shaders/glyphLayer.ts`): the point build, then the area build. */
+export const GLYPH_LAYER_SPECS: readonly [ProgramSpec, ProgramSpec] = [false, true].map((area): ProgramSpec => ({
+  vert: area ? GLYPH_LAYER_AREA_VERT_SRC : GLYPH_LAYER_VERT_SRC,
+  frag: area ? GLYPH_LAYER_AREA_FRAG_SRC : GLYPH_LAYER_FRAG_SRC,
+  wgsl: glyphLayerProgram(area).code, uniforms: GLYPH_LAYER_UNIFORMS, attributes: GLYPH_LAYER_ATTRIBUTES,
+  arrays: BATCH_ARRAYS,
+})) as [ProgramSpec, ProgramSpec];
 export const PATTERN_FILL_SPEC: ProgramSpec = {
   vert: PATTERN_VERT_SRC, frag: PATTERN_FRAG_SRC, wgsl: KIT_WGSL.patternFill.code, uniforms: PATTERN_FILL_UNIFORMS,
   attributes: PATTERN_FILL_ATTRIBUTES,

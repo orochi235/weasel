@@ -58,6 +58,8 @@ export interface GpuVertexBufferLayout {
   /** Bytes per vertex; 0 for tightly packed. */
   readonly stride: number;
   readonly attributes: readonly GpuVertexAttribute[];
+  /** Whether the buffer advances per vertex or per instance. Default `'vertex'`. */
+  readonly step?: 'vertex' | 'instance';
 }
 
 /** The integer type an index buffer holds. */
@@ -273,8 +275,9 @@ export interface GpuDevice {
   setScissor(rect: GpuRect | null): void;
   /** Zero the stencil bits `mask` holds, inside the scissor. */
   clearStencilBits(mask: number): void;
-  /** Draw `count` indices of `geometry` from `firstIndex`, as triangles. */
-  draw(state: GpuDrawState, geometry: GpuGeometry, count: number, firstIndex?: number): void;
+  /** Draw `count` indices of `geometry` from `firstIndex`, as triangles, `instances` times
+   *  (once by default), the buffers whose `step` is `'instance'` advancing once an instance. */
+  draw(state: GpuDrawState, geometry: GpuGeometry, count: number, firstIndex?: number, instances?: number): void;
 
   /** Copy the bottom-left `width × height` of multisampled `source` into
    *  `dest` at `x, y`. Not inside a pass. */

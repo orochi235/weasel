@@ -19,7 +19,7 @@ export interface RenderNeeds {
 /**
  * The fonts and paint kinds `commands` draw with, read off the commands
  * themselves: text runs, path fills and strokes, run fills and strokes, and
- * everything under a group. What `warmRender({ render })` loads, beside the
+ * everything under a group or in a text layer. What `warmRender({ render })` loads, beside the
  * pictures image nodes asked for while their commands were built. An image
  * command holds a bitmap already decoded, so it adds nothing.
  */
@@ -35,6 +35,7 @@ export function renderNeeds(commands: readonly DrawCommand[]): RenderNeeds {
   const walk = (list: readonly DrawCommand[]) => {
     for (const c of list) {
       if (c.kind === 'group') walk(c.children);
+      else if (c.kind === 'text-layer') walk(c.texts);
       else if (c.kind === 'path') {
         paint(c.fill?.paint);
         paint(c.stroke?.paint);

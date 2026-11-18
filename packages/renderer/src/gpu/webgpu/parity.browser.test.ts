@@ -142,6 +142,21 @@ describe('WebGL and WebGPU draw the same pixels', () => {
     } as DrawCommand], 2);
   });
 
+  it('text from a text layer, at rest and small enough for area coverage', async () => {
+    const run = (text: string, fontSize: number) => ({
+      text, fontFamily: FAMILY, fontSize, fontWeight: 400, fontStyle: 'normal' as const,
+      fill: { paint: { kind: 'solid' as const, color: '#222222' } }, letterSpacing: 0,
+      underline: false, strikethrough: false, overline: false, baselineShift: 0,
+    });
+    await expectParity('text layer', [{
+      kind: 'text-layer',
+      texts: [
+        { kind: 'text', x: 4, y: 6, runs: [run('Weasel', 18)], style: {} },
+        { kind: 'text', x: 4, y: 30, runs: [run('small small small', 5)], style: {} },
+      ],
+    } as DrawCommand], 2);
+  });
+
   it('per-vertex colors', async () => {
     await expectParity('vertex colors', [{
       kind: 'path', path: { kind: 'rect', x: 4, y: 4, width: 56, height: 40 },

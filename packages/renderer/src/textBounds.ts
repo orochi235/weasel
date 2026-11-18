@@ -1,5 +1,5 @@
 import { mat3, type GlMat3 } from '@weasel-js/geom';
-import type { TextDrawCommand } from './DrawCommand';
+import type { TextDrawCommand, TextLayerDrawCommand } from './DrawCommand';
 import { screenBox, strokeReachAt, type ScreenBox } from './paintedBounds';
 import { laidOutText } from './textLayout';
 import { glyphTurn } from '@weasel-js/text';
@@ -44,4 +44,37 @@ export function textBox(cmd: TextDrawCommand, m: GlMat3): ScreenBox | null {
   }
   if (minX === Infinity) return null;
   return screenBox(minX + dx, minY + dy, maxX + dx, maxY + dy, m);
+}
+
+const IDENTITY = mat3.identity();
+/** Each stroke-free layer's box in its own space, `null` for one painting nothing. */
+const layerBoxes = new WeakMap<readonly TextDrawCommand[], ScreenBox | null>();
+
+/**
+ * {@link textBox} for every text of a layer. A layer whose runs carry no
+ * stroke keeps its box in its own space, so a moving transform maps four
+ * corners rather than laying the layer out again.
+ */
+export function textLayerBox(cmd: TextLayerDrawCommand, m: GlMat3): ScreenBox | null {
+  const texts = cmd.texts;
+  if (texts.some((t) => t.runs.some((r) => r.stroke !== undefined))) return unionOf(texts, m);
+  let local = layerBoxes.get(texts);
+  if (local === undefined) {
+    local = unionOf(texts, IDENTITY);
+    layerBoxes.set(texts, local);
+  }
+  return local && screenBox(local.minX, local.minY, local.maxX, local.maxY, m);
+}
+
+function unionOf(texts: readonly TextDrawCommand[], m: GlMat3): ScreenBox | null {
+  let out: ScreenBox | null = null;
+  for (const t of texts) {
+    const b = textBox(t, m);
+    if (b === null) continue;
+    out = out === null ? { ...b } : {
+      minX: Math.min(out.minX, b.minX), minY: Math.min(out.minY, b.minY),
+      maxX: Math.max(out.maxX, b.maxX), maxY: Math.max(out.maxY, b.maxY),
+    };
+  }
+  return out;
 }
