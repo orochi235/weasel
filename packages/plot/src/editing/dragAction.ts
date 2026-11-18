@@ -12,7 +12,7 @@ import { plotEditorOf } from './editors';
 import { plotHandleScratchOf, plotOrigin } from './handleLayer';
 
 /** The action that drags a plot's handle. */
-export const PLOT_DRAG_ACTION_ID = 'plot.dragValue';
+export const EDIT_PLOT_VALUE_ACTION_ID = 'plot.editValue';
 
 /** A plot edited: the root, and the spec it now holds. */
 export interface PlotEdit {
@@ -70,12 +70,12 @@ export function commitPlotToScene(edit: PlotEdit, ctx: InvocationCtx, measure: P
   replacePlotData(scene, edit.rootId, edit.data, { label: 'Edit value', measure });
 }
 
-/** The `plot.dragValue` action: an ongoing drag that moves one value of a plot, previewing the marks it redraws. */
+/** The `plot.editValue` action: an ongoing drag that moves one value of a plot, previewing the marks it redraws. */
 export function createPlotDragAction(opts: PlotDragOptions = {}): Action {
   const measure = opts.measure ?? textMeasure;
   const commit = opts.commit ?? ((edit: PlotEdit, ctx: InvocationCtx) => commitPlotToScene(edit, ctx, measure));
   return {
-    id: opts.id ?? PLOT_DRAG_ACTION_ID,
+    id: opts.id ?? EDIT_PLOT_VALUE_ACTION_ID,
     label: 'Edit value',
     group: 'plot',
     requires: ['scene'],

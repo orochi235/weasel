@@ -49,7 +49,7 @@ describe('pathBox, property', () => {
       const ribbon = ribbonPoints(path, s, m);
       t.count(ribbon.length > 0 ? `${path.kind}:${s.align}` : 'no ribbon');
       const out = [...meshPoints(getMesh(path)), ...ribbon]
-        .map((p) => mat3.apply(m, p.x, p.y)).find(([x, y]) => !within(box, x, y, slack));
+        .map((p) => mat3.transformPoint(m, p.x, p.y)).find(([x, y]) => !within(box, x, y, slack));
       expect(out, `${out} outside ${JSON.stringify(box)}`).toBeUndefined();
     }), runs(200));
     for (const k of ['rect:center', 'rect:outer', 'rect:inner', 'polygon:center', 'polygon:outer', 'polygon:inner']) t.atLeast(k, 8);
@@ -81,19 +81,19 @@ describe('pathBox, property', () => {
 describe('paintedBox, property', () => {
   it('holds an image quad\'s corners, and every sprite\'s, under any transform', () => {
     const quad = fc.tuple(eighth(), eighth(), eighth(100), eighth(100));
-    fc.assert(fc.property(quad, fc.array(quad, { maxLength: 5 }), affine, ([x, y, w, h], sprites, m) => {
-      const image = paintedBox({ kind: 'image', x, y, w, h } as never, m)!;
+    fc.assert(fc.property(quad, fc.array(quad, { maxLength: 5 }), affine, ([x, y, width, height], sprites, m) => {
+      const image = paintedBox({ kind: 'image', x, y, width, height } as never, m)!;
       const data = new Float32Array(sprites.length * SPRITE_STRIDE);
       sprites.forEach((q, i) => data.set(q, i * SPRITE_STRIDE));
       const sheet = paintedBox({ kind: 'sprites', sprites: data } as never, m)!;
       if (sprites.length === 0) expect(sheet.minX).toBe(Infinity);
       const check = (box: ScreenBox, [qx, qy, qw, qh]: readonly number[]): void => {
         for (const [px, py] of [[qx, qy], [qx + qw, qy], [qx + qw, qy + qh], [qx, qy + qh]] as const) {
-          const [sx, sy] = mat3.apply(m, px!, py!);
+          const [sx, sy] = mat3.transformPoint(m, px!, py!);
           expect(within(box, sx, sy, 1e-9 * (1 + Math.abs(sx) + Math.abs(sy)))).toBe(true);
         }
       };
-      check(image, [x, y, w, h]);
+      check(image, [x, y, width, height]);
       for (const q of sprites) check(sheet, q);
     }), runs(300));
   });

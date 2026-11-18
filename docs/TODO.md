@@ -30,6 +30,14 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
+- **(P3) [agent] Under a `tools` takeover, the canvas's own always-on entries draw their overlays ungated by
+  mode.** `useContributionRoles` registers a `surface` entry's `overlay` as a plain layer, while the same entry
+  without a takeover draws through `useContributions`' `overlays`, which leaves out one whose capabilities the
+  active mode bars. Only an entry declaring `eligibility.capabilities` is affected. The fix is one overlay
+  pathway: hand the surface entries' overlays to the layer stack through the same mode-gated read.
+  Closes when a `surface` entry whose capabilities the active mode bars draws no overlay under a takeover,
+  tested beside `takeoverAmbient.test.tsx`.
+
 - **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
   hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable
   file (or one for text) through `previewPaths` (`packages/core/src/domains/ingestion/ghost.ts`). No test can
@@ -191,14 +199,6 @@ Owner tags, after the priority (2026-10-26):
   `apps/draw/src/useSymmetry.ts`).
   Closes when the maintainer has driven draw's Symmetry toggle hands-on and the defaults and keys he
   picks are committed.
-- **(P3) [maintainer] Undoing draw's symmetry group leaves Symmetry on, drawing into nothing.** Turning
-  Symmetry on (or a New, an Open, or deleting the page its group is on, with it on) makes the group as an undo
-  step of its own; one Undo removes it, the `view.symmetry` pref still reads on, and new shapes draw unmirrored
-  until it is toggled off and on
-  (`apps/draw/src/useSymmetry.ts`). Re-making the group on undo would wipe redo, and turning the pref off
-  breaks Undo past a New, which today lands back in the old document's group. Needs a ruling: whether
-  Symmetry's on/off is a pref or document state that undo moves.
-  Closes when the ruling is made and an Undo of the group leaves the toggle and the drawing agreeing.
 - **(P2) [maintainer] Tune the Measure tool hands-on, with the maintainer driving.** First-draft behavior and
   keys: its tool key, M, which moved Cloth warp off it when the two met in draw; the Shift angle
   step; that Move by and Rotate by fall back to the newest measurement when none is picked; and the
@@ -263,23 +263,16 @@ Owner tags, after the priority (2026-10-26):
   a compressor.
 
 - **(P3) [maintainer] Nobody has listened to the generative score.** Every number
-  `scoreParams` maps a mood through was chosen from descriptions of the four
+  `resolveScoreMood` maps a mood through was chosen from descriptions of the four
   cues and is tested as structure only. Whether dread reads as dread is for
   ears: the `score` demo (`apps/site/demos/ScoreDemo.tsx`) plays each cue with
   its parameters beside the sliders.
   Closes when the maintainer has listened to all four cues in the `score` demo and kept or retuned their
-  `scoreParams`.
+  `resolveScoreMood`.
 
 ---
 
 ## Selection, actions & UI panels
-
-- **(P3) [maintainer] An unsized `<Bar>` draws its buttons at one height and its fields at another.** With no
-  `size`, a bar's buttons resolve to `md` (28px at `comfortable`), while its CSS pins fields and segmented bars to
-  `control-h-sm` (24px), so a mixed toolbar row is uneven (`packages/ui/src/components/Bar`). This predates the
-  control-size scope and was left as is on 2026-11-15. Having an unsized bar scope its own resolved size would line
-  them up, but it changes every unsized labkit toolbar. Closes when the maintainer picks which height an unsized bar
-  draws its controls at and the bar draws them all there.
 
 - **(P3) [agent] A labkit panel that shows scene data records the showing as undo steps.** `useTrialConfigChange`
   puts a panel write's scene edits in its undo step, but the other direction has no surface: when a canvas edit
@@ -315,11 +308,13 @@ Owner tags, after the priority (2026-10-26):
   necessarily another spatial axis: color, opacity or overlay (onion skin) within a cell, or a sweep shown
   over time in each cell. Raised as a direction, not to build yet (2026-11-08). Closes when the maintainer
   has said how a third sweep shows and `<Sequence>` takes any number of sweeps.
-- **(P3) [maintainer] Should the arrow keys land on an `aria-disabled` item?** `useRovingTabIndex` skips it,
-  and `useRovingTabIndex.test.tsx` pins that. But a segment or an `ActionButton` with a `disabledReason` swaps
-  `disabled` for `aria-disabled` (`Tooltip/buttonTooltip.tsx`) so its reason can be read: in a `SegmentedBar` or
-  `ToolPalette` the keyboard never gets there, so the reason is mouse-only. APG allows either for a toolbar
-  (2026-11-07). Closes when the maintainer has picked one and the hook, `buttonTooltip.tsx`'s doc and the test agree.
+
+- **(P2) [agent] A disabled item's reason is out of a sighted keyboard user's reach.** Arrow keys pass over an
+  `aria-disabled` item (`useRovingTabIndex`, ruled 2026-11-17), and its reason lives only in a tooltip that opens on
+  hover or focus, so only a mouse reveals it; a screen reader still reads it from `aria-description`. Two fixes: a
+  disabled command invoked by its key says why (the status line or a toast), and the skip becomes per widget, kept for
+  toolbars while menus, listboxes and tabs stop on a disabled item as the ARIA guide recommends for them. Closes when
+  both ship with tests.
 
 - **(P3) [maintainer] Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a
@@ -328,19 +323,10 @@ Owner tags, after the priority (2026-10-26):
   Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
   Closes when Shift+F10 on a real Windows or Linux Chrome opens the menu once.
 
-- **(P3) [waiting] Nothing in an app animates a selector's weights yet.** `prefWeightAxes` gives an
+- **(P3) [waiting] Nothing in an app animates a selector's weights yet.** `createWeightAxes` gives an
   animator target the axes, and nothing yet asks for a transition.
-  Closes when an app animates a selector's weights through `prefWeightAxes`, or on 2026-12-31 with none,
+  Closes when an app animates a selector's weights through `createWeightAxes`, or on 2026-12-31 with none,
   delete it.
-
-- **(P3) [maintainer] labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
-  the ui component lacks, or on a look at the result in a browser:
-  `.lk-titlebar-button` is 18px square and `Button`'s smallest size is `--wzl-control-h-sm`;
-  `LabHeader`'s bare "Add trial" button, which sets its own baseline so its label lines up with the
-  title and would lose that as a `Button` with a leading icon; and the theme editor's number inputs
-  against `NumberField`.
-  Closes when those three are drawn by `Button` and `NumberField`, or the maintainer has ruled that each
-  stays hand-built.
 
 - **(P3) [maintainer] Some site demos still draw a dark look in light mode.** Every demo now sits under a
   theme in the reader's mode, and a scene reads a theme color with `useColorHex`
@@ -389,6 +375,11 @@ Owner tags, after the priority (2026-10-26):
 
 ### WeaselDraw app follow-ups (defer)
 
+- **(P2) [agent] draw's asset editor e2e spec fails on `main`.** `npm run test:e2e:draw -- asset-editor` fails 8 of
+  15 on 450e9708: the Attributes region holds two textboxes named "Name", so every `attrs(page)…'Name'` locator
+  is a strict-mode violation, and Remove and Delete no longer land the selection on the row the spec expects.
+  Nothing runs the spec, so it rotted unseen. Closes when the spec passes and runs somewhere that reports it.
+
 - **(P3) [maintainer] draw's SVG Save drops the measurements.** A saved file keeps paper size, title, groups,
   names, locks and line height under the `wd:` namespace (`apps/draw/src/svgInterop.ts`), but no layer list and
   no layer id on a shape, and `svgExport.ts` leaves out everything on an annotation layer as it leaves out a
@@ -422,6 +413,14 @@ Owner tags, after the priority (2026-10-26):
 
 ## forge
 
+- **(P3) [agent] A labkit sidebar section added under a mounted pane stack warns "Cannot update a component
+  while rendering a different component".** windease registers a new `<Panel>` during its render
+  (`useNodeBinding`), and the parent zone's layout subscription fires mid-render; it shows only under some
+  timing (seen in forge's `Workshop.test.tsx` on teitou, 2026-11-18). The fix is on windease's `main`
+  (808f837, unreleased; 2.3.0 is the latest published); `SidebarPanes.test.tsx` pins the bug
+  as an `it.fails` test, which goes red once the fix arrives. Closes when a windease release carries the fix,
+  weasel's dependency is bumped to it, and that test drops `.fails`.
+
 `@weasel-js/forge` is the component workshop built on labkit: each story renders
 in the workshop page as a lab trial with controls. A story that sets `isolate`
 renders in an iframe ("frame") instead; that path is frozen, kept for as long
@@ -448,9 +447,11 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
-- **(P3) [maintainer] `prefs-editor` and `export` have no badge on the site's Releases chips.** `PACKAGE_ICONS`
-  (`apps/site/releaseIcons.ts`) has no entry for either, so their chips draw no glyph; the badges are drawn in
-  `apps/site/icons/packages.mjs` and need the maintainer's sketch first. Closes when both have one.
+- **(P3) [maintainer] Seven published packages have no badge on the site's Releases chips:** `export`,
+  `paint-kinds`, `prefs-editor`, `prefs-schema`, `scale`, `text-tools` and `ui-canvas`. `PACKAGE_ICONS`
+  (`apps/site/releaseIcons.ts`) has no entry for them, so their chips draw no glyph; the badges are drawn in
+  `apps/site/icons/packages.mjs` and need the maintainer's sketch first. `releaseIcons.test.ts` holds the list
+  and fails on a new package without one. Closes when all seven have one.
 
 - **(P3) [waiting] `SegmentsArcView`'s arc test missed by 3.5 px in one full fleet run.** "segments sit on the
   arc, edge to edge, and the well runs one rim past the first and last"
@@ -544,12 +545,25 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P2) [agent] The `deps-tidy` branch fails the `check:idle-deps` it adds.** Its new check finds six packages
+  declaring a sibling their built output never names: icons-plugin → icons, labkit → animator, measure → theme,
+  rig → history and renderer, text-tools → icons and prefs-schema, ui-canvas → history (a dependency the branch
+  itself declares). It was taken out of batch 2026-11-18b for that, unmerged, in `.worktrees/deps-tidy`
+  (2026-11-18). Closes when each is dropped, moved to devDependencies, or shown the check is wrong, and the branch
+  merges through a green batch.
+
 - **(P3) [waiting] `typedoc/headerComments.test.mjs` "open no file with a doc comment on an export list" failed
   under the full suite** on studio at `c38ba3732` (2026-11-15), its retry too, taking 11.9 s against 1.3 s alone.
   It passed alone here and on studio's tree at the same commit, and passed in the next full run. It reads every
   `packages/*/src` file, so the likely cause is a file another project writes there mid-run; none was found, and
   the log omits which files it flagged. Closes on a second sighting with the flagged paths printed (fix the
   writer) or when 2026-12-15 passes without one.
+
+- **(P3) [waiting] `diagram/src/avoid/avoid.scene.test.ts` "previews a drag frame without writing the scene"
+  got an empty preview once under the full suite** on teitou at `4d760ec147` (2026-11-17), then passed 6 of 6
+  runs alone here, 3 of 3 alone on teitou, and the next full run. The router keeps no time budget, so load
+  alone should not change its answer. Closes on a second sighting (find the order-dependent state) or on
+  2026-12-17 with none, delete it.
 
 - **(P3) [waiting] `workerRender.browser.test.tsx` "dims a node by the alpha the page computes" read a null pixel
   once under the full suite** at `b7ed8c10f` (2026-11-11), then passed 3 of 3 runs alone. Waiting on a second

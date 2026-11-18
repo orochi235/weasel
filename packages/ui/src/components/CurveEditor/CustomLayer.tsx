@@ -49,7 +49,7 @@ export function CustomLayer<S>({ layer, state, onInput, onChange, onCancel }: Cu
   const handleHalf = useCallback((token: HandleSizeToken) => themeHandleHalf(token, resolved), [resolved]);
   return (
     <g ref={group} data-layer-id={layer.id}>
-      {layer.render((entry.current!.draft ? stateOf(entry.current!) : state) as S, { ...host.base, modifiers: NO_MODIFIERS, colorCss, handleHalf, isActive: host.active === entry.current })}
+      {layer.render((entry.current!.draft ? stateOf(entry.current!) : state) as S, { ...host.base, modifiers: NO_MODIFIERS, colorCss, handleHalf, active: host.active === entry.current })}
     </g>
   );
 }

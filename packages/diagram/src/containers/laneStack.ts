@@ -7,7 +7,7 @@
  * its name, and which nodes a pool admits (lanes) is `diagramCanDropInto`'s call.
  */
 import {
-  createTransformOp,
+  createSetPoseOp,
   type ContainerBounds,
   type LayoutArrival,
   type LayoutChild,
@@ -130,10 +130,10 @@ export function laneStackLayout(opts: LaneStackOptions): LayoutStrategy<RectPose
       for (const c of children) {
         const to = poses.get(c.id);
         if (to !== undefined && (to.x !== c.pose.x || to.y !== c.pose.y)) {
-          ops.push(createTransformOp<RectPose>({ id: c.id, from: c.pose, to, label: 'Shift lane' }));
+          ops.push(createSetPoseOp<RectPose>({ id: c.id, from: c.pose, to, label: 'Shift lane' }));
         }
       }
-      ops.push(createTransformOp<RectPose>({
+      ops.push(createSetPoseOp<RectPose>({
         id: dragged.id, from: dragged.originPose, to: target?.pose ?? dragged.pose, label: 'Move lane',
       }));
       return ops;

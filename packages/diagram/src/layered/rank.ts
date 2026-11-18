@@ -12,9 +12,9 @@ interface Arc {
   minlen: number;
 }
 
-/** What a rank of span costs a group, per member: enough that a group sits in
+/** What a rank of span costs a cluster, per member: enough that a cluster sits in
  *  one rank whenever its members' edges let it at any reasonable price. */
-const GROUP_WEIGHT = 4;
+const CLUSTER_WEIGHT = 4;
 
 /** A connected component: its nodes' graph indices in graph order, and its
  *  arcs in edge order, naming nodes by their position in `nodes`. */
@@ -30,11 +30,11 @@ interface Part {
  *
  * An edge in `back` counts as running the other way, so it is ranked and kept
  * forward like any other; a self-loop is ignored; parallel edges each count.
- * A group's members are also drawn into as few ranks as they can share: each
+ * A cluster's members are also drawn into as few ranks as they can share: each
  * rank between its first member's and its last costs every member
- * `GROUP_WEIGHT` edge lengths, so a group sits in one rank unless an edge
+ * `CLUSTER_WEIGHT` edge lengths, so a cluster sits in one rank unless an edge
  * between its members, or a much longer route elsewhere, needs more. Each
- * connected component, joining a group's members as one, is ranked on its own
+ * connected component, joining a cluster's members as one, is ranked on its own
  * and starts at rank 0.
  *
  * Starts from the longest-path ranking and improves it by network simplex,
@@ -44,9 +44,9 @@ interface Part {
  * graph always ranks the same.
  *
  * If `back` leaves a cycle, no valid ranking exists; that component keeps its
- * longest-path start, which `ranksOf` would also give.
+ * longest-path start, which `longestPathRanks` would also give.
  */
-export function ranksByLength(graph: Graph, back: ReadonlySet<string>): Map<string, number> {
+export function simplexRanks(graph: Graph, back: ReadonlySet<string>): Map<string, number> {
   const index = new Map<string, number>();
   graph.nodes.forEach((node, i) => index.set(node.id, i));
   const arcs: Arc[] = [];
@@ -56,17 +56,17 @@ export function ranksByLength(graph: Graph, back: ReadonlySet<string>): Map<stri
     if (from === undefined || to === undefined || from === to) continue;
     arcs.push(back.has(edge.id) ? { tail: to, head: from, weight: 1, minlen: 1 } : { tail: from, head: to, weight: 1, minlen: 1 });
   }
-  // A group spans the ranks from a node above all its members to one below
-  // them, both standing in for the group's box and nothing else.
+  // A cluster spans the ranks from a node above all its members to one below
+  // them, both standing in for the cluster's box and nothing else.
   let count = graph.nodes.length;
-  for (const group of graph.groups ?? []) {
-    const members = [...new Set(group.members.map((id) => index.get(id)).filter((i): i is number => i !== undefined))];
+  for (const cluster of graph.clusters ?? []) {
+    const members = [...new Set(cluster.members.map((id) => index.get(id)).filter((i): i is number => i !== undefined))];
     if (members.length < 2) continue;
     const [top, bottom] = [count, count + 1];
     count += 2;
     for (const m of members) {
-      arcs.push({ tail: top, head: m, weight: GROUP_WEIGHT, minlen: 0 });
-      arcs.push({ tail: m, head: bottom, weight: GROUP_WEIGHT, minlen: 0 });
+      arcs.push({ tail: top, head: m, weight: CLUSTER_WEIGHT, minlen: 0 });
+      arcs.push({ tail: m, head: bottom, weight: CLUSTER_WEIGHT, minlen: 0 });
     }
   }
 

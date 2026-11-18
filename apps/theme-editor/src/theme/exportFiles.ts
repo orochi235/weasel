@@ -1,6 +1,6 @@
 import { downloadBlob } from '@weasel-js/editor';
 import type { ThemeDefinition } from '@weasel-js/theme';
-import { axisDependencies, bakeChain, emitCss, serializeDefinition, toDTCG, type Lookup } from '@weasel-js/theme/engine';
+import { axisDependencies, bakeChain, emitCss, serializeDefinition, toDtcg, type Lookup } from '@weasel-js/theme/engine';
 import { runtimeTheme } from './model';
 
 export type ExportKind = 'css' | 'definition' | 'dtcg';
@@ -26,7 +26,7 @@ function chainOf(def: ThemeDefinition, lookup: Lookup): ThemeDefinition[] {
 export function exportFile(kind: ExportKind, def: ThemeDefinition, lookup: Lookup): ExportFile {
   if (kind === 'definition') return { filename: `${def.name}.json`, type: 'application/json', text: serializeDefinition(def) };
   if (kind === 'dtcg') {
-    return { filename: `${def.name}.tokens.json`, type: 'application/json', text: `${JSON.stringify(toDTCG(runtimeTheme(def, lookup)), null, 2)}\n` };
+    return { filename: `${def.name}.tokens.json`, type: 'application/json', text: `${JSON.stringify(toDtcg(runtimeTheme(def, lookup)), null, 2)}\n` };
   }
   const baked = bakeChain(def, lookup);
   const themes = chainOf(def, lookup).map((d, i) => ({ baked: baked[i], deps: axisDependencies(d, lookup), isDefault: i === 0 }));

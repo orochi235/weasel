@@ -9,7 +9,8 @@ import { defaultRoleStyle, type DiagramTheme } from '../theme/types';
 import type { PortSpec } from '../types';
 import { checkPipeline } from './check';
 import { formatParam } from './stageTypes';
-import type { EffectGroup, EffectPipeline, EffectPort, EffectStage, EffectWire } from './types';
+import type { EffectCluster, EffectPipeline, EffectPort, EffectStage, EffectWire } from './types';
+import type { Rect } from '@weasel-js/geom';
 
 /** The color of a value type, for a port or a wire. Answers `undefined`, a
  *  port with no type, with a neutral color. */
@@ -32,12 +33,12 @@ export interface EffectLookResult {
 }
 
 /** A sequence a look draws: the scene node ids of its items in order along
- *  `axis`. `reorder`'s `sequenceSlots` turns it into slots once the items
+ *  `axis`. `reorder`'s `slotsAlong` turns it into slots once the items
  *  have drawn boxes. */
 export interface LookOrder {
   axis: 'x' | 'y';
   /** `grip` is where a press picks the item up, in world units; default its drawn box. */
-  items: readonly { id: string; grip?: { x: number; y: number; width: number; height: number } }[];
+  items: readonly { id: string; grip?: Rect }[];
 }
 
 /** One way of drawing a pipeline. Unparameterized, a look whose options are
@@ -50,7 +51,7 @@ export const LOOK_THEME: DiagramTheme = DIAGRAM_THEMES.night!;
 /** The option every shipped look takes for its colors. */
 export interface LookThemeOptions {
   /** Stages take its default role, bypassed ones its muted role; value types its `series` in
-   *  turn; groups its container; lanes its lane bodies. Default `night`. */
+   *  turn; clusters its container; lanes its lane bodies. Default `night`. */
   theme?: DiagramTheme;
 }
 
@@ -104,11 +105,11 @@ export function uniqueStages(pipeline: EffectPipeline): EffectStage[] {
   return pipeline.stages.filter((s) => (seen.has(s.id) ? false : (seen.add(s.id), true)));
 }
 
-/** Groups with the repeats dropped, first one kept, and none that has the id
+/** Clusters with the repeats dropped, first one kept, and none that has the id
  *  of a stage: `diagramScene` throws on an id that names two things. */
-export function uniqueGroups(pipeline: EffectPipeline): EffectGroup[] {
+export function uniqueClusters(pipeline: EffectPipeline): EffectCluster[] {
   const seen = new Set(pipeline.stages.map((s) => s.id));
-  return (pipeline.groups ?? []).filter((g) => (seen.has(g.id) ? false : (seen.add(g.id), true)));
+  return (pipeline.clusters ?? []).filter((g) => (seen.has(g.id) ? false : (seen.add(g.id), true)));
 }
 
 /** The port called `id` among a stage's inputs and outputs, inputs first. */

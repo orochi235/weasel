@@ -59,42 +59,42 @@ describe('startThresholdDrag', () => {
     const start = makeStart();
     startThresholdDrag(start as unknown as React.PointerEvent, {
       onMove: () => {},
-      onCommit: () => {},
+      onEnd: () => {},
     });
     expect(start._capturedId).toBe(1);
     fireUp(100, 100);
   });
 
-  it('does not invoke onActivate or onMove until threshold exceeded', () => {
+  it('does not invoke onStart or onMove until threshold exceeded', () => {
     const start = makeStart(0, 0);
-    const onActivate = vi.fn();
+    const onStart = vi.fn();
     const onMove = vi.fn();
     startThresholdDrag(start as unknown as React.PointerEvent, {
       threshold: 4,
-      onActivate,
+      onStart,
       onMove,
-      onCommit: () => {},
+      onEnd: () => {},
     });
     // movement squared < threshold squared (16): 2,2 -> 8
     fireMove(2, 2);
-    expect(onActivate).not.toHaveBeenCalled();
+    expect(onStart).not.toHaveBeenCalled();
     expect(onMove).not.toHaveBeenCalled();
     fireUp(2, 2);
   });
 
-  it('invokes onActivate exactly once when threshold first exceeded', () => {
+  it('invokes onStart exactly once when threshold first exceeded', () => {
     const start = makeStart(0, 0);
-    const onActivate = vi.fn();
+    const onStart = vi.fn();
     const onMove = vi.fn();
     startThresholdDrag(start as unknown as React.PointerEvent, {
       threshold: 4,
-      onActivate,
+      onStart,
       onMove,
-      onCommit: () => {},
+      onEnd: () => {},
     });
     fireMove(10, 10);
     fireMove(20, 20);
-    expect(onActivate).toHaveBeenCalledTimes(1);
+    expect(onStart).toHaveBeenCalledTimes(1);
     expect(onMove).toHaveBeenCalledTimes(2);
     fireUp(20, 20);
   });
@@ -103,7 +103,7 @@ describe('startThresholdDrag', () => {
     const start = makeStart(0, 0);
     const handle = startThresholdDrag(start as unknown as React.PointerEvent, {
       onMove: () => {},
-      onCommit: () => {},
+      onEnd: () => {},
     });
     expect(handle.isDragging()).toBe(false);
     fireMove(50, 50);
@@ -111,27 +111,27 @@ describe('startThresholdDrag', () => {
     fireUp(50, 50);
   });
 
-  it('calls onCommit on pointerup when activated; releases pointer capture', () => {
+  it('calls onEnd on pointerup when activated; releases pointer capture', () => {
     const start = makeStart(0, 0);
-    const onCommit = vi.fn();
+    const onEnd = vi.fn();
     startThresholdDrag(start as unknown as React.PointerEvent, {
       onMove: () => {},
-      onCommit,
+      onEnd,
     });
     fireMove(50, 50);
     fireUp(60, 60);
-    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onEnd).toHaveBeenCalledTimes(1);
     expect(start._releasedId).toBe(1);
   });
 
   it('calls onClick, not onCancel, on a release below the threshold', () => {
     const start = makeStart(0, 0);
-    const onCommit = vi.fn();
+    const onEnd = vi.fn();
     const onCancel = vi.fn();
     const onClick = vi.fn();
     startThresholdDrag(start as unknown as React.PointerEvent, {
       onMove: () => {},
-      onCommit,
+      onEnd,
       onCancel,
       onClick,
     });
@@ -139,7 +139,7 @@ describe('startThresholdDrag', () => {
     expect(onClick).toHaveBeenCalledTimes(1);
     expect(onClick.mock.calls[0]?.[0]).toMatchObject({ type: 'pointerup', pointerId: 1 });
     expect(onCancel).not.toHaveBeenCalled();
-    expect(onCommit).not.toHaveBeenCalled();
+    expect(onEnd).not.toHaveBeenCalled();
   });
 
   it('calls onCancel, not onClick, on pointercancel', () => {
@@ -148,7 +148,7 @@ describe('startThresholdDrag', () => {
     const onClick = vi.fn();
     startThresholdDrag(start as unknown as React.PointerEvent, {
       onMove: () => {},
-      onCommit: () => {},
+      onEnd: () => {},
       onCancel,
       onClick,
     });
@@ -164,7 +164,7 @@ describe('startThresholdDrag', () => {
     const onClick = vi.fn();
     startThresholdDrag(start as unknown as React.PointerEvent, {
       onMove: () => {},
-      onCommit: () => {},
+      onEnd: () => {},
       onCancel,
       onClick,
     });
@@ -176,9 +176,9 @@ describe('startThresholdDrag', () => {
   it('ignores a second pointer arriving mid-gesture', () => {
     const start = makeStart(0, 0);
     const onCancel = vi.fn();
-    const onCommit = vi.fn();
+    const onEnd = vi.fn();
     const onMove = vi.fn();
-    const h = startThresholdDrag(start as unknown as React.PointerEvent, { onMove, onCommit, onCancel });
+    const h = startThresholdDrag(start as unknown as React.PointerEvent, { onMove, onEnd, onCancel });
     fireMove(50, 50);
     onMove.mockClear();
 
@@ -192,29 +192,29 @@ describe('startThresholdDrag', () => {
   it('cancel() ends a live gesture without committing', () => {
     const start = makeStart(0, 0);
     const onCancel = vi.fn();
-    const onCommit = vi.fn();
+    const onEnd = vi.fn();
     const onClick = vi.fn();
     const h = startThresholdDrag(start as unknown as React.PointerEvent, {
-      onMove: () => {}, onCommit, onCancel, onClick,
+      onMove: () => {}, onEnd, onCancel, onClick,
     });
     fireMove(50, 50);
     expect(h.isDragging()).toBe(true);
     h.cancel();
     expect(onCancel).toHaveBeenCalledTimes(1);
-    expect(onCommit).not.toHaveBeenCalled();
+    expect(onEnd).not.toHaveBeenCalled();
     expect(onClick).not.toHaveBeenCalled();
     // And it is really over: a later release commits nothing.
     fireUp(50, 50);
-    expect(onCommit).not.toHaveBeenCalled();
+    expect(onEnd).not.toHaveBeenCalled();
   });
 
   it('cancels a live drag on Escape, and keeps the key from whatever else listens for it', () => {
     const start = makeStart(0, 0);
     const onCancel = vi.fn();
-    const onCommit = vi.fn();
+    const onEnd = vi.fn();
     const outer = vi.fn();
     document.addEventListener('keydown', outer);
-    startThresholdDrag(start as unknown as React.PointerEvent, { onMove: () => {}, onCommit, onCancel });
+    startThresholdDrag(start as unknown as React.PointerEvent, { onMove: () => {}, onEnd, onCancel });
     fireMove(50, 50);
     const key = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
     document.body.dispatchEvent(key);
@@ -222,7 +222,7 @@ describe('startThresholdDrag', () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
     expect(outer).not.toHaveBeenCalled();
     fireUp(50, 50);
-    expect(onCommit).not.toHaveBeenCalled();
+    expect(onEnd).not.toHaveBeenCalled();
   });
 
   it('leaves Escape alone before the press is a drag, and after it ends', () => {
@@ -230,7 +230,7 @@ describe('startThresholdDrag', () => {
     const onCancel = vi.fn();
     const outer = vi.fn();
     document.addEventListener('keydown', outer);
-    startThresholdDrag(start as unknown as React.PointerEvent, { onMove: () => {}, onCommit: () => {}, onCancel });
+    startThresholdDrag(start as unknown as React.PointerEvent, { onMove: () => {}, onEnd: () => {}, onCancel });
     document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(onCancel).not.toHaveBeenCalled();
     fireMove(50, 50);
@@ -246,7 +246,7 @@ describe('startThresholdDrag', () => {
     const onMove = vi.fn();
     startThresholdDrag(start as unknown as React.PointerEvent, {
       onMove,
-      onCommit: () => {},
+      onEnd: () => {},
     });
     fireMove(50, 50);
     fireUp(50, 50);
@@ -257,16 +257,16 @@ describe('startThresholdDrag', () => {
 
   it('default threshold is DRAG_THRESHOLD_PX', () => {
     const start = makeStart(0, 0);
-    const onActivate = vi.fn();
+    const onStart = vi.fn();
     startThresholdDrag(start as unknown as React.PointerEvent, {
-      onActivate,
+      onStart,
       onMove: () => {},
-      onCommit: () => {},
+      onEnd: () => {},
     });
     fireMove(DRAG_THRESHOLD_PX - 0.5, 0);
-    expect(onActivate).not.toHaveBeenCalled();
+    expect(onStart).not.toHaveBeenCalled();
     fireMove(DRAG_THRESHOLD_PX, 0);
-    expect(onActivate).toHaveBeenCalledTimes(1);
+    expect(onStart).toHaveBeenCalledTimes(1);
     fireUp(DRAG_THRESHOLD_PX, 0);
   });
 });
@@ -287,7 +287,7 @@ describe('startThresholdDrag origin', () => {
 
   it('captures on `origin` rather than on the pressed element', () => {
     const { container, child, start } = makeOriginStart();
-    startThresholdDrag(start, { origin: container, onMove: () => {}, onCommit: () => {} });
+    startThresholdDrag(start, { origin: container, onMove: () => {}, onEnd: () => {} });
     expect(container.setPointerCapture).toHaveBeenCalledWith(1);
     expect(child.setPointerCapture).not.toHaveBeenCalled();
     fireUp(0, 0);
@@ -296,13 +296,13 @@ describe('startThresholdDrag origin', () => {
 
   it("with captureAt 'threshold', captures on `origin` only once the press is a drag", () => {
     const { container, start } = makeOriginStart();
-    const onActivate = vi.fn(() => {
+    const onStart = vi.fn(() => {
       expect(container.setPointerCapture).toHaveBeenCalledWith(1);
     });
-    startThresholdDrag(start, { origin: container, captureAt: 'threshold', onActivate, onMove: () => {}, onCommit: () => {} });
+    startThresholdDrag(start, { origin: container, captureAt: 'threshold', onStart, onMove: () => {}, onEnd: () => {} });
     expect(container.setPointerCapture).not.toHaveBeenCalled();
     fireMove(DRAG_THRESHOLD_PX + 1, 0);
-    expect(onActivate).toHaveBeenCalledTimes(1);
+    expect(onStart).toHaveBeenCalledTimes(1);
     fireUp(DRAG_THRESHOLD_PX + 1, 0);
     container.remove();
   });
@@ -312,7 +312,7 @@ describe('startThresholdDrag origin', () => {
     ['is canceled', null],
   ] as const)("with captureAt 'threshold', releases the capture it took when the drag %s", (_, finish) => {
     const { container, start } = makeOriginStart();
-    const handle = startThresholdDrag(start, { origin: container, captureAt: 'threshold', onMove: () => {}, onCommit: () => {} });
+    const handle = startThresholdDrag(start, { origin: container, captureAt: 'threshold', onMove: () => {}, onEnd: () => {} });
     fireMove(DRAG_THRESHOLD_PX + 1, 0);
     expect(container.releasePointerCapture).not.toHaveBeenCalled();
     if (finish) finish();
@@ -323,7 +323,7 @@ describe('startThresholdDrag origin', () => {
 
   it("with captureAt 'threshold', releases nothing for a press that never became a drag", () => {
     const { container, start } = makeOriginStart();
-    startThresholdDrag(start, { origin: container, captureAt: 'threshold', onMove: () => {}, onCommit: () => {} });
+    startThresholdDrag(start, { origin: container, captureAt: 'threshold', onMove: () => {}, onEnd: () => {} });
     fireUp(0, 0);
     expect(container.releasePointerCapture).not.toHaveBeenCalled();
     container.remove();
@@ -331,9 +331,9 @@ describe('startThresholdDrag origin', () => {
 
   it('survives the pressed element being removed mid-drag', () => {
     const { container, child, start } = makeOriginStart();
-    const onCommit = vi.fn();
+    const onEnd = vi.fn();
     const onCancel = vi.fn();
-    startThresholdDrag(start, { origin: container, onMove: () => {}, onCommit, onCancel });
+    startThresholdDrag(start, { origin: container, onMove: () => {}, onEnd, onCancel });
     fireMove(0, 50);
 
     child.remove();
@@ -343,15 +343,15 @@ describe('startThresholdDrag origin', () => {
 
     fireUp(0, 60);
     expect(onCancel).not.toHaveBeenCalled();
-    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onEnd).toHaveBeenCalledTimes(1);
     container.remove();
   });
 
   it('cancels when the origin itself is removed', () => {
     const { container, start } = makeOriginStart();
-    const onCommit = vi.fn();
+    const onEnd = vi.fn();
     const onCancel = vi.fn();
-    startThresholdDrag(start, { origin: container, onMove: () => {}, onCommit, onCancel });
+    startThresholdDrag(start, { origin: container, onMove: () => {}, onEnd, onCancel });
     fireMove(0, 50);
 
     container.remove();
@@ -361,14 +361,14 @@ describe('startThresholdDrag origin', () => {
 
     expect(onCancel).toHaveBeenCalledTimes(1);
     fireUp(0, 60);
-    expect(onCommit).not.toHaveBeenCalled();
+    expect(onEnd).not.toHaveBeenCalled();
   });
 
   it('commits when capture is lost but the origin is still there', () => {
     const { container, start } = makeOriginStart();
-    const onCommit = vi.fn();
+    const onEnd = vi.fn();
     const onCancel = vi.fn();
-    startThresholdDrag(start, { origin: container, onMove: () => {}, onCommit, onCancel });
+    startThresholdDrag(start, { origin: container, onMove: () => {}, onEnd, onCancel });
     fireMove(0, 50);
 
     const lost = new Event('lostpointercapture') as PointerEvent;
@@ -377,7 +377,7 @@ describe('startThresholdDrag origin', () => {
 
     fireUp(0, 60);
     expect(onCancel).not.toHaveBeenCalled();
-    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onEnd).toHaveBeenCalledTimes(1);
     container.remove();
   });
 });

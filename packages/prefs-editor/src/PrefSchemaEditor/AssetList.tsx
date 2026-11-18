@@ -97,7 +97,7 @@ export function AssetList({ assets, elsewhere = NONE, order, selected, changed, 
                   <Icon name={row.icon ?? HEADING_ICON[title]} size={16} className={s.rowIcon} />
                   <RailName slot="label" className={row.changed ? s.changed : undefined}>{row.label}</RailName>
                   <Badge size="xs" variant="subtle" tint={{ ref: '--_heading' }} className={`${s.badge} ${HEADING_BADGE[title].tint}`}>{HEADING_BADGE[title].word}</Badge>
-                  {row.readOnly && <Icon name={icon('ui:bolt')} size={16} label="Dynamic" className={s.dynamic} />}
+                  {row.readOnly && <Icon name={icon('ui:bolt')} size={16} aria-label="Dynamic" className={s.dynamic} />}
                 </RailOption>
               ))}
             </RailSection>

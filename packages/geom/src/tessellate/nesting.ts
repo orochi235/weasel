@@ -1,8 +1,8 @@
 /** How the rings of a fill that does not cross itself sit inside one another. */
 
-import { pointInPolygon, ringSignedArea } from '../polyline';
+import { polygonContainsPoint, ringSignedArea } from '../polyline';
 import type { FlattenedContours } from './crossings';
-import { pointSegmentDist } from '../points2';
+import { pointSegmentDistance } from '../points2';
 
 export interface Ring {
   start: number;
@@ -48,12 +48,12 @@ function contains(coords: number[], o: Ring, box: number[], r: Ring): boolean {
   for (let i = r.start; i < r.end; i++) {
     const x = coords[i * 2], y = coords[i * 2 + 1];
     if (x < box[0] || x > box[2] || y < box[1] || y > box[3]) return false;
-    if (!onOutline(coords, o, x, y, eps)) return pointInPolygon(coords, x, y, o.start, o.end);
+    if (!onOutline(coords, o, x, y, eps)) return polygonContainsPoint(coords, x, y, o.start, o.end);
   }
   for (let i = r.start; i < r.end; i++) {
     const j = i + 1 === r.end ? r.start : i + 1;
     const x = (coords[i * 2] + coords[j * 2]) / 2, y = (coords[i * 2 + 1] + coords[j * 2 + 1]) / 2;
-    if (!onOutline(coords, o, x, y, eps)) return pointInPolygon(coords, x, y, o.start, o.end);
+    if (!onOutline(coords, o, x, y, eps)) return polygonContainsPoint(coords, x, y, o.start, o.end);
   }
   return true;
 }
@@ -62,7 +62,7 @@ function onOutline(coords: number[], o: Ring, x: number, y: number, eps: number)
   for (let i = o.start; i < o.end; i++) {
     const j = i + 1 === o.end ? o.start : i + 1;
     const ax = coords[i * 2], ay = coords[i * 2 + 1];
-    if (pointSegmentDist(x, y, ax, ay, coords[j * 2], coords[j * 2 + 1]) <= eps) return true;
+    if (pointSegmentDistance(x, y, ax, ay, coords[j * 2], coords[j * 2 + 1]) <= eps) return true;
   }
   return false;
 }

@@ -34,7 +34,7 @@ function pointer(type: string, x: number, y: number): PointerEvent {
  * world (282.5, 292.5) — on `n` through the lens. On the canvas's own camera
  * the same press lands on `under`, which sits beneath the window.
  */
-const BOUNDS = { x: 24, y: 24, w: 220, h: 200 };
+const BOUNDS = { x: 24, y: 24, width: 220, height: 200 };
 const AIM = { x: 300, y: 300 };
 const PRESS = { x: 64, y: 103 };
 
@@ -53,7 +53,7 @@ interface Mounted {
  * `{ x: 1012, y: 1014.375, scale: 8 }`, and the press lands on world
  * (1016.25, 1021.25) — on `p`.
  */
-const PANEL = { x: 250, y: 250, w: 150, h: 150 };
+const PANEL = { x: 250, y: 250, width: 150, height: 150 };
 const PANEL_VIEW = { x: 1000, y: 1000, scale: { x: 2, y: 2 } };
 
 async function mount(opts: { panel?: boolean; panelHides?: boolean } = {}): Promise<Mounted> {
@@ -187,7 +187,7 @@ describe('an interactive loupe', () => {
     const m = await mount();
     await openLoupe(m, 'interactive');
     let top!: ReturnType<Hud['window']>;
-    await act(async () => { top = m.hud.window({ id: 'top', x: 40, y: 90, w: 60, h: 60, title: 'Top' }); });
+    await act(async () => { top = m.hud.window({ id: 'top', x: 40, y: 90, width: 60, height: 60, title: 'Top' }); });
     // (64, 103) is on `top`'s titlebar: dragging it moves the window.
     await press(m.canvas, [
       ['pointerdown', PRESS.x, PRESS.y],
@@ -291,7 +291,7 @@ describe('a loupe that paints through a view but takes no input', () => {
     });
     // The backdrop, then the view's clipped group.
     expect(cmds.map((c) => c.kind)).toEqual(['path', 'group']);
-    expect(cmds[1]).toMatchObject({ clip: { width: rect.w, height: rect.h } });
+    expect(cmds[1]).toMatchObject({ clip: { width: rect.width, height: rect.height } });
     const scales: number[] = [];
     const walk = (list: readonly DrawCommand[]) => {
       for (const c of list) {

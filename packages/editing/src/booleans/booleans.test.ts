@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { applyBooleanOp, type BooleansAdapter } from './booleans';
-import { boundsOfPath, pointInPath, type Path } from '@weasel-js/geom';
+import { boundsOfPath, pathContainsPoint, type Path } from '@weasel-js/geom';
 import { NodeOutlineError, type NodeOutline, asNodeId, type NodeId } from '@weasel-js/core';
 import type { Op } from '@weasel-js/core';
 import { IDENTITY_POSE_COMPOSITION, createScene, defaultCommitAdapter } from '@weasel-js/core/engine';
@@ -140,8 +140,8 @@ describe('applyBooleanOp — operation-specific behavior', () => {
     expect(result.kind).toBe('applied');
     expect(h.state.inserted).toHaveLength(1);
     const path = h.state.inserted[0]!.path;
-    expect(pointInPath(path, 2, 2)).toBe(true);
-    expect(pointInPath(path, 12, 12)).toBe(false);
+    expect(pathContainsPoint(path, 2, 2)).toBe(true);
+    expect(pathContainsPoint(path, 12, 12)).toBe(false);
   });
 
   it('intersect of disjoint inputs: noop with reason empty-result', () => {

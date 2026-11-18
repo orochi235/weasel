@@ -16,7 +16,7 @@ A view that must select apart is a canvas of its own over an `EditingSession`.
 // after
 const session = useEditingSession(scene);
 <SceneCanvas scene={scene} />
-<SceneCanvas scene={session} selectionOptions={{ mode: 'multi' }} />
+<SceneCanvas scene={session} selectionOptions={{ mode: 'multiple' }} />
 ```
 
 <!-- entry: breaking api -->

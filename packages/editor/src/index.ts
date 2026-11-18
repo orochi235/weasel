@@ -20,13 +20,13 @@ export {
   DOC_CLIPBOARD_ACTIONS, DOC_CLIPBOARD_KEYS, useDocClipboard,
   type DocClipboardCommandOptions, type DocClipboardOptions,
 } from './useDocClipboard';
-export { usePageGrid, type PageGridOptions } from './usePageGrid';
+export { pageGridSchema, usePageGrid, type PageGridOptions, type PageGridSettings } from './usePageGrid';
 export { EditorShell, type EditorShellProps } from './EditorShell';
-export { EditorTools, useEditorTools } from './shortcutSheet';
+export { PublishEditorTools, usePublishEditorTools } from './shortcutSheet';
 export { EDITOR_CONTEXT_MENUS, EDITOR_CONTEXT_MENUS_CONTRIBUTION } from './contextMenus';
-export { EDITOR_ACTIONS, EDITOR_PREFERENCES_KEY, SNAPPING_KEY, useEditorKeys, type EditorCommandOptions } from './editorCommands';
+export { EDITOR_ACTIONS, EDITOR_PREFS_KEY, SNAPPING_KEY, useEditorKeys, type EditorCommandOptions } from './editorCommands';
 export {
-  useEditorPrefs, useOpenPreferences, EditorPrefsDialog,
+  useEditorPrefs, useOpenPrefs, EditorPrefsDialog,
   type EditorPrefs, type EditorPrefsOptions, type EditorPrefsDialogProps,
 } from './editorPrefs';
 export {

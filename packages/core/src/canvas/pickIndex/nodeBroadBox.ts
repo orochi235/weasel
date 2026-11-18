@@ -8,7 +8,7 @@
  * grown in the pose's own frame by the ink's `outset`. A derived node is read
  * by its path alone, as both queries read it.
  */
-import { transformPoint, boundsOfPath, poseFrameOf, type Path } from '@weasel-js/geom';
+import { transformPoint, boundsOfPath, poseFrameOf, type Path, type Rect } from '@weasel-js/geom';
 import { findShapeInk, type NodeShapes } from 'canvas/NodeShape';
 import { AUTO_POSE_DESCRIPTOR, isPathLike, isRectPose } from 'core/geometry/autoPoseDescriptor';
 import { framedBounds } from 'core/geometry/poseDescriptor';
@@ -18,8 +18,6 @@ import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDe
 
 /** `[minX, minY, maxX, maxY]`, the layout `createBvh(2)` takes. */
 export type Box2 = [number, number, number, number];
-
-type Rect = { x: number; y: number; width: number; height: number };
 
 function grow(out: Box2, b: Rect, by: number): void {
   const x1 = b.x + b.width, y1 = b.y + b.height;

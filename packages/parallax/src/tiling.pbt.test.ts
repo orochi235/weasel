@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { drawOneLayer, viewportWorldRect, type View } from '@weasel-js/core';
-import { tiledProject } from './tiledProject';
+import { tileRange } from './tileRange';
 import { createTiledLayer } from './createTiledLayer';
 import { createParallaxLayer } from './createParallaxLayer';
 import { createParallaxPlane } from './createParallaxPlane';
@@ -14,13 +14,13 @@ import { coord, dims, nonFinite, offsetOf, period, recordingSource, runs, tally,
 
 const RUNS = 300;
 
-describe('tiledProject', () => {
+describe('tileRange', () => {
   it('names every cell the widened range touches, and no other', () => {
     const seen = tally();
     fc.assert(fc.property(coord(1e6), fc.double({ min: 0, max: 1e5, noNaN: true }), period, fc.double({ min: 0, max: 1e3, noNaN: true }),
       (start, span, p, bleed) => {
         const end = start + span;
-        const { from, to } = tiledProject(start, end, p, bleed);
+        const { from, to } = tileRange(start, end, p, bleed);
         seen.count(to - from > 0 ? 'several' : 'one');
         expect(Number.isSafeInteger(from) && Number.isSafeInteger(to)).toBe(true);
         expect(to).toBeGreaterThanOrEqual(from);
@@ -38,8 +38,8 @@ describe('tiledProject', () => {
     fc.assert(fc.property(fc.integer({ min: -1e6, max: 1e6 }), fc.integer({ min: 0, max: 1e5 }), fc.integer({ min: 1, max: 5000 }),
       fc.integer({ min: 0, max: 1000 }), fc.integer({ min: -1000, max: 1000 }),
       (start, span, p, bleed, n) => {
-        const a = tiledProject(start, start + span, p, bleed);
-        const b = tiledProject(start + n * p, start + span + n * p, p, bleed);
+        const a = tileRange(start, start + span, p, bleed);
+        const b = tileRange(start + n * p, start + span + n * p, p, bleed);
         expect(b).toEqual({ from: a.from + n, to: a.to + n });
       }), runs(RUNS));
   }, timeoutFor(RUNS, 2));
@@ -55,8 +55,8 @@ describe('createTiledLayer', () => {
       const tiled = createTiledLayer({ id: 't', label: 't', source: [layer], period: { x: px, y: py }, bleed: { x: bx, y: by } });
       const out = tiled.draw(undefined, v, d);
       const shown = viewportWorldRect(v, d);
-      const kx = tiledProject(shown.x, shown.x + shown.width, px, bx);
-      const ky = tiledProject(shown.y, shown.y + shown.height, py, by);
+      const kx = tileRange(shown.x, shown.x + shown.width, px, bx);
+      const ky = tileRange(shown.y, shown.y + shown.height, py, by);
       const want = (kx.to - kx.from + 1) * (ky.to - ky.from + 1);
       if (want > 4096) { seen.count('too many'); expect(out).toEqual([]); return; }
       seen.count(want > 1 ? 'several' : 'one');

@@ -6,7 +6,7 @@ import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
 import { ControlPanel } from './ControlPanel';
 
-const DEGREES: PrefLinearUnit = { suffix: '°', scale: Math.PI / 180, precision: 1 };
+const DEGREES: PrefLinearUnit = { suffix: '°', scale: Math.PI / 180, places: 1 };
 
 const resolved = (unit: PrefLinearUnit) =>
   resolveConfigSchema(f.schema({ angle: f.number(0).input().unit(unit).label('Angle') }), []);
@@ -15,7 +15,7 @@ const throughJson = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 describe('a number whose unit is data', () => {
   it.each([
     ['written out', DEGREES],
-    ['built from a unit system', prefUnit(ANGLE_RADIANS, 'deg', { precision: 1, suffix: '°' })],
+    ['built from a unit system', prefUnit(ANGLE_RADIANS, 'deg', { places: 1, suffix: '°' })],
   ] as const)(
     'resolves to a leaf holding the unit as it was given, which JSON carries whole: %s',
     (_name, unit) => {

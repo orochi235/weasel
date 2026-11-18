@@ -119,7 +119,7 @@ export interface ActionBehavior<TPose, TProposed, TMoveResult, TEnd extends Beha
    * released with nothing to commit, or refused by a container its ops
    * dropped something into, and true otherwise: the action or
    * a behavior made the commit, a behavior claiming it with no ops
-   * included. For move, resize, and rotate it is the value `onGestureEnd`
+   * included. For move, resize, and rotate it is the value `onRunEnd`
    * receives.
    */
   onSettled?(ctx: GestureContext<TPose>, committed: boolean): void;

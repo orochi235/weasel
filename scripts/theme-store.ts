@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 // Relative on purpose: vite loads its config in Node, where the aliases don't apply and the package's exports name a dist that may predate this code.
-import { enumerateSelections } from '../packages/theme/src/axes.ts';
+import { enumerateAxisChoices } from '../packages/theme/src/axes.ts';
 import type { ThemeDefinition } from '../packages/theme/src/definition.ts';
 import { derive, generateTokens, mergeChain } from '../packages/theme/src/engine.ts';
 import { serializeDefinition, type IssueReport, type PutResult, type StoredTheme } from '../packages/theme/src/store.ts';
@@ -129,7 +129,7 @@ export function createThemeStore(options: ThemeStoreOptions): ThemeStore {
 
       const issues: IssueReport[] = [];
       try {
-        for (const selection of enumerateSelections(mergeChain(definition, lookup).axes ?? {})) {
+        for (const selection of enumerateAxisChoices(mergeChain(definition, lookup).axes ?? {})) {
           for (const issue of derive(definition, selection, lookup).issues) issues.push({ selection, issue });
         }
       } catch (e) {

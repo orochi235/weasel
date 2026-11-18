@@ -4,6 +4,6 @@
  *
  * @packageDocumentation
  */
-export { usePref, usePrefsValues, type PrefsFormBinding } from './hooks';
+export { usePref, usePrefGroup, usePrefsState, type PrefGroupPatch, type PrefsFormBinding } from './hooks';
 export { usePrefsStore, type UsePrefsStoreOptions } from './usePrefsStore';
 export { KitSettingsFromPrefs } from './KitSettingsFromPrefs';

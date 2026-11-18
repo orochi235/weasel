@@ -3,7 +3,7 @@
  * variant, or the action itself when it declares none.
  */
 import type { IconSpec } from '@weasel-js/icons';
-import type { MenuGrade } from '@weasel-js/menu';
+import type { Grade } from '@weasel-js/registry';
 import type { Action, ActionVariant } from './action';
 
 const NO_TAGS: readonly string[] = Object.freeze([]);
@@ -18,7 +18,7 @@ export interface ActionItem {
   /** The variant's, else the action's. */
   description?: string;
   /** The variant's, else the action's. */
-  grade?: MenuGrade;
+  grade?: Grade;
   /** Display text for the shortcut: the variant's, else the action's. Absent, a surface shows the bindings
    *  `actionShortcuts` finds for `params` (`actionItemShortcuts`). */
   shortcut?: string;

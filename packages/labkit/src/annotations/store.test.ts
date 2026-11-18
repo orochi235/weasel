@@ -1,22 +1,22 @@
 import { asNodeId } from '@weasel-js/core';
 import { describe, expect, it, vi } from 'vitest';
 import { markCommands } from './paint';
-import { annotationsFromJSON, createAnnotationStore } from './store';
+import { annotationsFromJSON, createMarkStore } from './store';
 import type { AnnotationInit, AnnotationsApi, AnnotationTargetInfo, FracPoint } from './types';
 
 const TARGETS: AnnotationTargetInfo[] = [
-  { id: 'naive', content: { w: 256, h: 170 }, positionDependsOn: ['angle', 'shading'] },
-  { id: 'occt', content: { w: 256, h: 170 } },
+  { id: 'naive', content: { width: 256, height: 170 }, positionDependsOn: ['angle', 'shading'] },
+  { id: 'occt', content: { width: 256, height: 170 } },
 ];
 
 function makeStore() {
-  return createAnnotationStore({ targets: () => TARGETS });
+  return createMarkStore({ targets: () => TARGETS });
 }
 
 const RING: AnnotationInit = {
   target: 'naive',
   kind: 'rect',
-  frac: { x: 0.3322, y: 0.3581, w: 0.02, h: 0.0861 },
+  frac: { x: 0.3322, y: 0.3581, width: 0.02, height: 0.0861 },
   title: 'spurious ring at r=12.80',
   status: 'open',
   tags: ['geometry'],
@@ -66,7 +66,7 @@ describe('the annotation store', () => {
 
   it('hit-tests a point, and widens the hit by the tolerance', () => {
     const store = makeStore();
-    const id = store.add({ ...RING, frac: { x: 0.2, y: 0.2, w: 0.2, h: 0.2 } });
+    const id = store.add({ ...RING, frac: { x: 0.2, y: 0.2, width: 0.2, height: 0.2 } });
 
     expect(store.hitTest('naive', { x: 0.3, y: 0.3 }).map((a) => a.id)).toEqual([id]);
     expect(store.hitTest('naive', { x: 0.15, y: 0.3 })).toHaveLength(0);
@@ -81,8 +81,8 @@ describe('the annotation store', () => {
     store.add({ ...RING, target: 'occt' });
     // Not a filter over one scene: the scene a pane is handed holds only its
     // own marks, because its hit-test and marquee walk all of what they get.
-    expect(store.sceneFor('naive').renderOrder()).toHaveLength(1);
-    expect(store.sceneFor('occt').renderOrder()).toHaveLength(1);
+    expect(store.openScene('naive').renderOrder()).toHaveLength(1);
+    expect(store.openScene('occt').renderOrder()).toHaveLength(1);
     expect(store.query({ target: 'naive' }).map((a) => a.target)).toEqual(['naive']);
   });
 
@@ -91,11 +91,11 @@ describe('the annotation store', () => {
     // The box is (0.2,0.2)-(0.6,0.6). `straddling` overlaps it but hangs out
     // past the far corner — the case that separates enclosure from mere
     // overlap. Two marks that are both wholly outside would not.
-    const inside = store.add({ ...RING, frac: { x: 0.3, y: 0.3, w: 0.1, h: 0.1 } });
-    store.add({ ...RING, frac: { x: 0.5, y: 0.5, w: 0.3, h: 0.3 } });
-    store.add({ ...RING, frac: { x: 0.7, y: 0.7, w: 0.2, h: 0.2 } });
+    const inside = store.add({ ...RING, frac: { x: 0.3, y: 0.3, width: 0.1, height: 0.1 } });
+    store.add({ ...RING, frac: { x: 0.5, y: 0.5, width: 0.3, height: 0.3 } });
+    store.add({ ...RING, frac: { x: 0.7, y: 0.7, width: 0.2, height: 0.2 } });
 
-    const got = store.within('naive', { x: 0.2, y: 0.2, w: 0.4, h: 0.4 });
+    const got = store.within('naive', { x: 0.2, y: 0.2, width: 0.4, height: 0.4 });
     expect(got.map((a) => a.id)).toEqual([inside]);
   });
 
@@ -107,8 +107,8 @@ describe('the annotation store', () => {
     expect(store.get(id)?.status).toBe('fixed');
     expect(store.get(id)?.frac).toEqual(RING.frac);
 
-    store.update(id, { frac: { x: 0.1, y: 0.1, w: 0.3, h: 0.3 } });
-    expect(store.get(id)?.frac).toEqual({ x: 0.1, y: 0.1, w: 0.3, h: 0.3 });
+    store.update(id, { frac: { x: 0.1, y: 0.1, width: 0.3, height: 0.3 } });
+    expect(store.get(id)?.frac).toEqual({ x: 0.1, y: 0.1, width: 0.3, height: 0.3 });
     expect(store.get(id)?.status).toBe('fixed');
     expect(store.get(id)?.title).toBe(RING.title);
   });
@@ -162,7 +162,7 @@ describe('the annotation store', () => {
     const id = store.add(RING);
     const fn = vi.fn();
     store.subscribe(fn);
-    store.update(id, { title: 'moved', frac: { x: 0.1, y: 0.1, w: 0.3, h: 0.3 } });
+    store.update(id, { title: 'moved', frac: { x: 0.1, y: 0.1, width: 0.3, height: 0.3 } });
     expect(fn).toHaveBeenCalledTimes(1);
     expect(store.undo()).toBe(true);
     expect(store.get(id)).toMatchObject({ title: RING.title, frac: RING.frac });
@@ -175,7 +175,7 @@ describe('the annotation store', () => {
   // because jsdom has no WebGL2 and the overlay's canvas never paints or
   // hit-tests. That the canvas is bound to this scene is core's claim.
   it('merges the selection across targets, and maps it back to annotation ids', () => {
-    const store = createAnnotationStore({ targets: () => TARGETS, selection: 'per-target' });
+    const store = createMarkStore({ targets: () => TARGETS, selection: 'per-target' });
     const onNaive = store.add(RING);
     const onOcct = store.add({ ...RING, target: 'occt' });
 
@@ -188,10 +188,10 @@ describe('the annotation store', () => {
   it('reads back what the canvas would have written into the scene', () => {
     const store = makeStore();
     const id = store.add(RING);
-    const [node] = [...store.sceneFor('naive').renderOrder()];
+    const [node] = [...store.openScene('naive').renderOrder()];
     if (node === undefined) throw new Error('unreachable');
 
-    store.sceneFor('naive').setSelection([node]);
+    store.openScene('naive').setSelection([node]);
     expect(store.selection()).toEqual([id]);
   });
 
@@ -203,7 +203,7 @@ describe('the annotation store', () => {
     store.setSelection([onNaive]);
     store.setSelection([onOcct]);
     expect(store.selection()).toEqual([onOcct]);
-    expect(store.sceneFor('naive').getSelection()).toEqual([]);
+    expect(store.openScene('naive').getSelection()).toEqual([]);
   });
 
   it('drops an id it cannot resolve instead of throwing', () => {
@@ -244,7 +244,7 @@ describe('the annotation store', () => {
     /** Selects a mark the way its pane's canvas does: on that target's scene. */
     const click = (store: AnnotationsApi, id: string): void => {
       const [target, node] = id.split('/') as [string, string];
-      store.sceneFor(target).setSelection([asNodeId(node)]);
+      store.openScene(target).setSelection([asNodeId(node)]);
     };
 
     it('clears a selection standing in one target when a mark is selected in another', () => {
@@ -255,7 +255,7 @@ describe('the annotation store', () => {
       click(store, onNaive);
       click(store, onOcct);
       expect(store.selection()).toEqual([onOcct]);
-      expect(store.sceneFor('naive').getSelection()).toEqual([]);
+      expect(store.openScene('naive').getSelection()).toEqual([]);
     });
 
     it('tells subscribers once, after the other target is already cleared', () => {
@@ -290,12 +290,12 @@ describe('the annotation store', () => {
       click(store, onNaive);
 
       store.add({ ...RING, target: 'occt' });
-      store.sceneFor('occt').setSelection([]);
+      store.openScene('occt').setSelection([]);
       expect(store.selection()).toEqual([onNaive]);
     });
 
     it("keeps each target's own selection under `selection: 'per-target'`", () => {
-      const store = createAnnotationStore({ targets: () => TARGETS, selection: 'per-target' });
+      const store = createMarkStore({ targets: () => TARGETS, selection: 'per-target' });
       const onNaive = store.add(RING);
       const onOcct = store.add({ ...RING, target: 'occt' });
 
@@ -309,7 +309,7 @@ describe('the annotation store', () => {
 
     it('reads the mode at each change, for a capability swapped under a live store', () => {
       let mode: 'exclusive' | 'per-target' = 'per-target';
-      const store = createAnnotationStore({ targets: () => TARGETS, selection: () => mode });
+      const store = createMarkStore({ targets: () => TARGETS, selection: () => mode });
       const onNaive = store.add(RING);
       const onOcct = store.add({ ...RING, target: 'occt' });
 
@@ -343,12 +343,12 @@ describe('the annotation store', () => {
     const id = store.add({
       target: 'naive',
       kind: 'point',
-      frac: { x: 0.25, y: 0.5, w: 0, h: 0 },
+      frac: { x: 0.25, y: 0.5, width: 0, height: 0 },
       points: [{ x: 0.25, y: 0.5 }],
     });
     expect(store.get(id)).toMatchObject({
       kind: 'point',
-      frac: { x: 0.25, y: 0.5, w: 0, h: 0 },
+      frac: { x: 0.25, y: 0.5, width: 0, height: 0 },
       points: [{ x: 0.25, y: 0.5 }],
     });
 
@@ -361,7 +361,7 @@ describe('the annotation store', () => {
     const id = store.add({
       target: 'naive',
       kind: 'point',
-      frac: { x: 0.25, y: 0.5, w: 0, h: 0 },
+      frac: { x: 0.25, y: 0.5, width: 0, height: 0 },
       points: [{ x: 0.25, y: 0.5 }],
     });
     expect(store.hitTest('naive', { x: 0.26, y: 0.51 })).toHaveLength(0);
@@ -391,7 +391,10 @@ describe('the annotation store', () => {
 /** What a target's first mark draws, as its path's points in fractions of the
  *  content box — the drawn side, to hold against what the store hit-tests. */
 function drawn(store: AnnotationsApi, target = 'naive'): FracPoint[] {
-  const { w, h } = TARGETS.find((t) => t.id === target)?.content ?? { w: 0, h: 0 };
+  const { width: w, height: h } = TARGETS.find((t) => t.id === target)?.content ?? {
+    width: 0,
+    height: 0,
+  };
   const [painted] = store.paintedMarks(target);
   if (!painted) throw new Error('no mark painted');
   const [cmd] = markCommands(painted.mark, painted.style);
@@ -425,13 +428,13 @@ describe('a moved mark', () => {
   const POINT: AnnotationInit = {
     target: 'naive',
     kind: 'point',
-    frac: { x: 0.25, y: 0.5, w: 0, h: 0 },
+    frac: { x: 0.25, y: 0.5, width: 0, height: 0 },
     points: [{ x: 0.25, y: 0.5 }],
   };
   const LINE: AnnotationInit = {
     target: 'naive',
     kind: 'line',
-    frac: { x: 0.1, y: 0.2, w: 0.5, h: 0.4 },
+    frac: { x: 0.1, y: 0.2, width: 0.5, height: 0.4 },
     points: [
       { x: 0.1, y: 0.6 },
       { x: 0.6, y: 0.2 },
@@ -441,7 +444,7 @@ describe('a moved mark', () => {
   it('draws a point where the store hit-tests it after update moves it', () => {
     const store = makeStore();
     const id = store.add(POINT);
-    store.update(id, { frac: { x: 0.75, y: 0.25, w: 0, h: 0 } });
+    store.update(id, { frac: { x: 0.75, y: 0.25, width: 0, height: 0 } });
 
     expectNear([centerOf(drawn(store))], [{ x: 0.75, y: 0.25 }]);
     expect(store.hitTest('naive', { x: 0.75, y: 0.25 }, 0.001).map((a) => a.id)).toEqual([id]);
@@ -452,7 +455,7 @@ describe('a moved mark', () => {
     for (const kind of ['line', 'arrow', 'stroke'] as const) {
       const store = makeStore();
       const id = store.add({ ...LINE, kind });
-      store.update(id, { frac: { x: 0.3, y: 0.3, w: 0.5, h: 0.4 } });
+      store.update(id, { frac: { x: 0.3, y: 0.3, width: 0.5, height: 0.4 } });
       const moved = [
         { x: 0.3, y: 0.7 },
         { x: 0.8, y: 0.3 },
@@ -465,7 +468,7 @@ describe('a moved mark', () => {
   it('stretches stored vertices with a resized box', () => {
     const store = makeStore();
     const id = store.add(LINE);
-    store.update(id, { frac: { x: 0.1, y: 0.2, w: 0.25, h: 0.8 } });
+    store.update(id, { frac: { x: 0.1, y: 0.2, width: 0.25, height: 0.8 } });
     expectNear(drawn(store), [
       { x: 0.1, y: 1 },
       { x: 0.35, y: 0.2 },
@@ -476,7 +479,7 @@ describe('a moved mark', () => {
     const store = makeStore();
     const id = store.add(POINT);
     const node = asNodeId(id.slice(id.lastIndexOf('/') + 1));
-    store.sceneFor('naive').setPose(node, { x: 0.5 * 256, y: 0.1 * 170, width: 0, height: 0 });
+    store.openScene('naive').setPose(node, { x: 0.5 * 256, y: 0.1 * 170, width: 0, height: 0 });
 
     expectNear([centerOf(drawn(store))], [{ x: 0.5, y: 0.1 }]);
     expect(store.get(id)?.points).toEqual([{ x: 0.5, y: 0.1 }]);
@@ -487,7 +490,7 @@ describe('a moved mark', () => {
     const id = store.add(POINT);
     store.update(id, { points: [{ x: 0.9, y: 0.9 }] });
 
-    expect(store.get(id)?.frac).toEqual({ x: 0.9, y: 0.9, w: 0, h: 0 });
+    expect(store.get(id)?.frac).toEqual({ x: 0.9, y: 0.9, width: 0, height: 0 });
     expectNear([centerOf(drawn(store))], [{ x: 0.9, y: 0.9 }]);
   });
 
@@ -535,7 +538,7 @@ describe('a moved mark', () => {
       },
     };
     const store = annotationsFromJSON(legacy, () => []);
-    store.sceneFor('naive');
+    store.openScene('naive');
     const [node] = (store.toJSON().scenes.naive as { nodes: { data: unknown }[] }).nodes;
     expect(node?.data).toEqual({ target: 'naive', kind: 'line', points: LINE.points });
   });
@@ -544,7 +547,7 @@ describe('a moved mark', () => {
 describe('paintedMarks', () => {
   it("hands over a target's marks in world units with their resolved style", () => {
     let config: Record<string, string> = { angle: 'iso', shading: 'outline' };
-    const store = createAnnotationStore({
+    const store = createMarkStore({
       targets: () => TARGETS,
       meaning: { statuses: [{ id: 'open', label: 'Open', color: '#123456' }] },
       config: () => config,

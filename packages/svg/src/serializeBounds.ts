@@ -2,6 +2,7 @@ import { boundsOfPath, poseFrameOf, strokedBounds, type Path } from '@weasel-js/
 import { kitStroke } from './strokeOutlineSvg';
 import { type Matrix, type SvgNode, type SvgStroke, IDENTITY_MATRIX } from './types';
 import { multiply } from './transform';
+import type { Rect } from '@weasel-js/geom';
 
 /**
  * Tight bounding box around everything the tree draws, in the root's
@@ -10,7 +11,7 @@ import { multiply } from './transform';
  * applied here; a box taken from unrotated geometry crops the document. A
  * `hidden` node draws nothing and is left out.
  */
-export function computeBounds(nodes: SvgNode[]): { x: number; y: number; width: number; height: number } {
+export function svgBoundsOf(nodes: SvgNode[]): Rect {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   const visit = (n: SvgNode, ctm: Matrix): void => {
     if (n.hidden) return;

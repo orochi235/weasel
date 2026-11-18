@@ -1,11 +1,11 @@
-import { copyText } from '@weasel-js/react';
 import { ActionButton } from '@weasel-js/ui/components/ActionButton';
 import { Callout } from '@weasel-js/ui/components/Callout';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { useId, useState } from 'react';
 import { icon } from '../icons.gen';
 import { useAnnotationsOptional } from './AnnotationsContext';
-import type { CaptureResult } from './types';
+import { copyCapture, downloadCapture } from './saveCapture';
+import type { AnnotationsApi, CaptureOptions, CaptureResult } from './types';
 
 const SCALES = [1, 2, 4] as const;
 const FORMATS = [
@@ -15,35 +15,65 @@ const FORMATS = [
 
 type Format = (typeof FORMATS)[number]['id'];
 
-function fileName(result: CaptureResult): string {
-  return `${result.target.replace(/[^a-z0-9._-]+/gi, '-')}.${result.format}`;
+/** One labeled row of radio choices. A <fieldset>/<legend> cannot do this: a
+ *  legend is outside its fieldset's grid formatting context, so it will not
+ *  take a grid column and every choice row drops below its own label. */
+function ChoiceRow<T extends string | number>({
+  label,
+  name,
+  choices,
+  value,
+  onChange,
+}: {
+  label: string;
+  name: string;
+  choices: readonly { id: T; label: string }[];
+  value: T;
+  onChange: (next: T) => void;
+}) {
+  return (
+    <div className="lk-export__row">
+      <span>{label}</span>
+      <span className="lk-export__choices" role="radiogroup" aria-label={label}>
+        {choices.map((c) => (
+          <label key={c.id}>
+            <input
+              type="radio"
+              name={name}
+              checked={value === c.id}
+              onChange={() => onChange(c.id)}
+            />
+            {c.label}
+          </label>
+        ))}
+      </span>
+    </div>
+  );
 }
 
-/** A blob the person asked for, handed to the browser's own save flow. The
- *  object URL is revoked on the next turn — revoking it synchronously races
- *  the navigation the click starts. */
-function download(result: CaptureResult): void {
-  const url = URL.createObjectURL(result.blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName(result);
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 0);
-}
-
-const CLIPBOARD_REFUSED = 'The browser would not let the page write to the clipboard.';
-
-/** PNG goes to the clipboard as an image. SVG goes as text: `image/svg+xml`
- *  needs Chromium's `web ` prefix and nothing else reads it, while the markup
- *  is what a person pasting a vector export actually wants. */
-async function copy(result: CaptureResult): Promise<void> {
-  if (result.format === 'svg') {
-    if (!(await copyText(await result.blob.text()))) throw new Error(CLIPBOARD_REFUSED);
-    return;
-  }
-  const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
-  if (!clipboard?.write || typeof ClipboardItem === 'undefined') throw new Error(CLIPBOARD_REFUSED);
-  await clipboard.write([new ClipboardItem({ 'image/png': result.blob })]);
+/** One capture at a time, with what went wrong if it failed; `onDone` runs after one succeeds. */
+function useCaptureRun(
+  marks: AnnotationsApi | null,
+  target: string | null,
+  opts: CaptureOptions,
+  onDone: () => void,
+) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const run = async (then: (r: CaptureResult) => void | Promise<void>): Promise<void> => {
+    if (!marks || !target) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await then(await marks.capture(target, opts));
+      onDone();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return { busy, error, run };
 }
 
 /**
@@ -62,28 +92,14 @@ export function ExportMenu() {
   const [target, setTarget] = useState<string | null>(null);
   const [format, setFormat] = useState<Format>('png');
   const [scale, setScale] = useState<number>(2);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const titleId = useId();
+  const targets = marks?.targets() ?? [];
+  const chosen = targets.some((t) => t.id === target) ? target : (targets[0]?.id ?? null);
+  const { busy, error, run } = useCaptureRun(marks, chosen, { format, scale }, () =>
+    setOpen(false),
+  );
 
   if (!marks) return null;
-  const targets = marks.targets();
-  const chosen = targets.some((t) => t.id === target) ? target : (targets[0]?.id ?? null);
-
-  const run = async (then: (r: CaptureResult) => void | Promise<void>): Promise<void> => {
-    if (!chosen) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await then(await marks.capture(chosen, { format, scale }));
-      setOpen(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(false);
-    }
-  };
-
   return (
     <span className="lk-export" ref={setAnchor}>
       <ActionButton
@@ -122,48 +138,26 @@ export function ExportMenu() {
             </select>
           </label>
 
-          {/* A <fieldset>/<legend> cannot do this: a legend is outside its
-              fieldset's grid formatting context, so it will not take a grid
-              column and every choice row drops below its own label. */}
-          <div className="lk-export__row">
-            <span>Format</span>
-            <span className="lk-export__choices" role="radiogroup" aria-label="Format">
-              {FORMATS.map((f) => (
-                <label key={f.id}>
-                  <input
-                    type="radio"
-                    name="lk-export-format"
-                    checked={format === f.id}
-                    onChange={() => setFormat(f.id)}
-                  />
-                  {f.label}
-                </label>
-              ))}
-            </span>
-          </div>
-
-          <div className="lk-export__row">
-            <span>Scale</span>
-            <span className="lk-export__choices" role="radiogroup" aria-label="Scale">
-              {SCALES.map((s) => (
-                <label key={s}>
-                  <input
-                    type="radio"
-                    name="lk-export-scale"
-                    checked={scale === s}
-                    onChange={() => setScale(s)}
-                  />
-                  {s}×
-                </label>
-              ))}
-            </span>
-          </div>
+          <ChoiceRow
+            label="Format"
+            name="lk-export-format"
+            choices={FORMATS}
+            value={format}
+            onChange={setFormat}
+          />
+          <ChoiceRow
+            label="Scale"
+            name="lk-export-scale"
+            choices={SCALES.map((s) => ({ id: s, label: `${s}×` }))}
+            value={scale}
+            onChange={setScale}
+          />
 
           <div className="lk-export__actions">
-            <button type="button" disabled={busy || !chosen} onClick={() => run(download)}>
+            <button type="button" disabled={busy || !chosen} onClick={() => run(downloadCapture)}>
               Download
             </button>
-            <button type="button" disabled={busy || !chosen} onClick={() => run(copy)}>
+            <button type="button" disabled={busy || !chosen} onClick={() => run(copyCapture)}>
               Copy
             </button>
           </div>

@@ -26,7 +26,7 @@ describe('measurePath', () => {
 
   it('finds the arc length nearest a point, the inverse of at()', () => {
     const m = measurePath(elbow)!;
-    expect(m.nearest({ x: 30, y: -12 })).toMatchObject({ s: 30, dist: 12, point: { x: 30, y: 0 }, tangent: { x: 1, y: 0 } });
+    expect(m.nearest({ x: 30, y: -12 })).toMatchObject({ s: 30, distance: 12, point: { x: 30, y: 0 }, tangent: { x: 1, y: 0 } });
     expect(m.nearest({ x: 140, y: 150 })).toMatchObject({ s: 200, point: { x: 100, y: 100 } });
     const back = m.nearest(m.at(137).point);
     expect(back.s).toBeCloseTo(137, 9);
@@ -47,7 +47,7 @@ describe('measurePath', () => {
 
   it('answers a zero-length path at its point', () => {
     const m = measurePath(polylineFromPoints([{ x: 5, y: 5 }, { x: 5, y: 5 }]))!;
-    expect(m.nearest({ x: 8, y: 9 })).toMatchObject({ s: 0, dist: 5, point: { x: 5, y: 5 } });
+    expect(m.nearest({ x: 8, y: 9 })).toMatchObject({ s: 0, distance: 5, point: { x: 5, y: 5 } });
   });
 
   it('measures by exact arc length, so a fraction lands where a trim cuts', () => {

@@ -13,6 +13,7 @@ import {
 import { compose, identity, multiply, type Mat4 } from '@weasel-js/geom/3d';
 import { cubeData, gridData, sphereData } from './meshes3d';
 import { aabbOfSolid, type Pose3, type SolidKind } from './scene3d';
+import type { Rect } from '@weasel-js/geom';
 
 /** Translucency of an uncommitted pose. The 2D ghost layer uses 0.85; a lit
  *  solid needs more of the ground showing through to read as not-yet-there. */
@@ -55,13 +56,6 @@ export interface SolidDraw {
   ghost?: boolean;
 }
 
-export interface DeviceRect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-
 export interface Renderer3d {
   /** Erase the whole shared buffer, gutters included. The surface calls this
    *  through `registerClear` when the tile geometry changed. */
@@ -69,7 +63,7 @@ export interface Renderer3d {
   draw(
     solids: readonly SolidDraw[],
     camera: Camera3d,
-    rect: DeviceRect,
+    rect: Rect,
     chrome: readonly ChromeBox[],
     cssSize: { width: number; height: number },
     snap?: SnapDraw,
@@ -238,11 +232,11 @@ export function createRenderer3d(gl: WebGL2RenderingContext): Renderer3d {
     },
 
     draw(solids, camera, rect, chrome, cssSize, snap, handles = []) {
-      if (rect.w <= 0 || rect.h <= 0) return;
+      if (rect.width <= 0 || rect.height <= 0) return;
 
       gl.enable(gl.SCISSOR_TEST);
-      gl.scissor(rect.x, rect.y, rect.w, rect.h);
-      gl.viewport(rect.x, rect.y, rect.w, rect.h);
+      gl.scissor(rect.x, rect.y, rect.width, rect.height);
+      gl.viewport(rect.x, rect.y, rect.width, rect.height);
       gl.clearColor(0.1, 0.11, 0.14, 1);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -251,7 +245,7 @@ export function createRenderer3d(gl: WebGL2RenderingContext): Renderer3d {
       gl.enable(gl.CULL_FACE);
       gl.cullFace(gl.BACK);
 
-      const viewProjection = cameraViewProjection(camera, rect.w / rect.h);
+      const viewProjection = cameraViewProjection(camera, rect.width / rect.height);
 
       gl.useProgram(lineProgram);
       gl.uniformMatrix4fv(lineUniforms.mvp, false, new Float32Array(viewProjection));

@@ -12,31 +12,31 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from './test-seams';
-import { caretIndexAt, pointInTextPose } from './hitTest';
+import { caretIndexAt, textPoseContainsPoint } from './hitTest';
 import type { TextPose } from './pose';
 import { bidi } from '@weasel-js/bidi';
 import { registerBidi } from './layout/bidiRegistry';
 
 const pose: TextPose = { x: 10, y: 20, width: 100, height: 40, text: 'hi' };
 
-describe('pointInTextPose', () => {
+describe('textPoseContainsPoint', () => {
   it('hits inside the rect', () => {
-    expect(pointInTextPose(50, 30, pose)).toBe(true);
+    expect(textPoseContainsPoint(50, 30, pose)).toBe(true);
   });
 
   it('misses outside the rect', () => {
-    expect(pointInTextPose(5, 30, pose)).toBe(false);
-    expect(pointInTextPose(50, 70, pose)).toBe(false);
+    expect(textPoseContainsPoint(5, 30, pose)).toBe(false);
+    expect(textPoseContainsPoint(50, 70, pose)).toBe(false);
   });
 
   it('treats edges as inside', () => {
-    expect(pointInTextPose(10, 20, pose)).toBe(true);
-    expect(pointInTextPose(110, 60, pose)).toBe(true);
+    expect(textPoseContainsPoint(10, 20, pose)).toBe(true);
+    expect(textPoseContainsPoint(110, 60, pose)).toBe(true);
   });
 
   it('respects padding', () => {
-    expect(pointInTextPose(8, 30, pose)).toBe(false);
-    expect(pointInTextPose(8, 30, pose, { padding: 4 })).toBe(true);
+    expect(textPoseContainsPoint(8, 30, pose)).toBe(false);
+    expect(textPoseContainsPoint(8, 30, pose, { padding: 4 })).toBe(true);
   });
 });
 

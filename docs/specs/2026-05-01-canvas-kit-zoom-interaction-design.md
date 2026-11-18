@@ -10,7 +10,7 @@ canvas-kit already owns all the zoom math:
 
 - `ViewTransform.zoom` lives on the view transform.
 - `worldToScreen` / `screenToWorld` are zoom-aware.
-- `wheelHandler` (`computeWheelAction`) implements wheel-to-zoom with
+- `wheelHandler` (`viewAfterWheel`) implements wheel-to-zoom with
   focal-point preservation.
 
 What's missing is a **central hook that owns the zoom level and dispatches
@@ -24,7 +24,7 @@ that into one stateless coordinator that mirrors the shape of
 
 - **Animated/inertial zoom.** The hook snaps to the new value; if smoothing
   is wanted later it lives outside (a wrapper that interpolates `setZoom`).
-- **Zoom-to-fit / zoom-to-selection.** That's `useAutoCenter`'s territory
+- **Zoom-to-fit / zoom-to-selection.** That's `useFitOnce`'s territory
   (and a future `zoomToSelection` action). Out of scope here.
 - **Rotation or skew.** This is a 1D zoom hook.
 - **Per-axis zoom.** No real-world driver. If we ever need it, it gets a
@@ -137,7 +137,7 @@ setZoom(newZoom);
 setPan(newPan);
 ```
 
-This is the same formula `computeWheelAction` already uses, written in
+This is the same formula `viewAfterWheel` already uses, written in
 delta-form. Per-source focal:
 
 | Source           | Focal point                                                  |
@@ -252,23 +252,23 @@ Off by default. When `sources.doubleClick === true`:
 Imperative. Sets zoom to **1** and pan to **{0, 0}**. Hard-coded for now —
 not configurable.
 
-When we add `initialZoom`/`initialPan` (likely tied to `useAutoCenter`'s fit
+When we add `initialZoom`/`initialPan` (likely tied to `useFitOnce`'s fit
 result), `reset()` will restore those. Tracked as a follow-up; current call
-sites that auto-center can re-fit by re-running `useAutoCenter` after
+sites that auto-center can re-fit by re-running `useFitOnce` after
 `reset()`. Document this gotcha.
 
 ## Composition with sibling hooks
 
 ```
 ┌──────────────┐   ┌──────────────────┐   ┌────────────────────┐
-│ useAutoCenter│ → │ usePanInteraction│ ← │ useZoomInteraction │
+│ useFitOnce│ → │ usePanInteraction│ ← │ useZoomInteraction │
 │  (initial    │   │  (drag-pan)      │   │  (wheel/key/dbl/   │
 │   fit ONCE)  │   │                  │   │   pinch zoom +     │
 └──────────────┘   └──────────────────┘   │   focal-aware pan) │
                                           └────────────────────┘
 ```
 
-- **`useAutoCenter`** writes initial `zoom` and `pan` once, when viewport
+- **`useFitOnce`** writes initial `zoom` and `pan` once, when viewport
   first has size. After that it does nothing.
 - **`usePanInteraction`** updates `pan` only.
 - **`useZoomInteraction`** updates `zoom` AND `pan` (focal-aware zoom moves
@@ -281,7 +281,7 @@ all read; the consumer owns the transform.
 ## Out of scope (future)
 
 - Animated zoom (interpolated `setZoom` over time).
-- `useAutoCenter`-style fit-to-bounds via `zoomTo({ bounds })`.
+- `useFitOnce`-style fit-to-bounds via `zoomTo({ bounds })`.
 - `initialZoom`/`initialPan` as `reset()` targets.
 - Per-axis zoom.
 - Touch-events two-finger pinch (separate from trackpad). Browsers don't
@@ -304,14 +304,14 @@ Unit tests in `src/canvas-kit/hooks/useZoomInteraction.test.ts`, mirroring
 6. `reset()` — zoom→1, pan→{0,0}.
 7. `min === max` — every change is a no-op; pan also stays put (because k=1).
 
-## Relationship to `computeWheelAction`
+## Relationship to `viewAfterWheel`
 
-`computeWheelAction` (in `wheelHandler.ts`) implements the same focal-point
+`viewAfterWheel` (in `wheelHandler.ts`) implements the same focal-point
 math as a pure reducer, sibling to the hook. As of the Tier 1.5 cleanup pass,
 both use the multiplier convention with defaults `min=0.1`, `max=10`. The
 hook still inlines its own focal-point formula (a 5-line expression) rather
 than delegating, since the React lifecycle and ref handling don't compose
-cleanly with a pure reducer. `computeWheelAction` remains useful in
+cleanly with a pure reducer. `viewAfterWheel` remains useful in
 non-React reducers and for unit testing the math in isolation.
 
 ## Migration

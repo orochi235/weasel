@@ -48,22 +48,22 @@ describe("a split body's halves", () => {
       const px = fc.integer({ min: -500, max: 500 });
       fc.assert(
         fc.property(
-          fc.record({ x: px, y: px, w: fc.nat(800), h: fc.nat(800) }),
+          fc.record({ x: px, y: px, width: fc.nat(800), height: fc.nat(800) }),
           fc.double({ min: 0, max: 1, noNaN: true }),
           (interior, seam) => {
             const { left, right, seamX } = splitRects(interior, seam);
             expect(Number.isInteger(seamX)).toBe(true);
             expect(seamX).toBeGreaterThanOrEqual(interior.x);
-            expect(seamX).toBeLessThanOrEqual(interior.x + interior.w);
+            expect(seamX).toBeLessThanOrEqual(interior.x + interior.width);
             expect(left.x).toBe(interior.x);
-            expect(left.x + left.w).toBe(seamX);
+            expect(left.x + left.width).toBe(seamX);
             expect(right.x).toBe(seamX);
-            expect(right.x + right.w).toBe(interior.x + interior.w);
-            expect(left.w).toBeGreaterThanOrEqual(0);
-            expect(right.w).toBeGreaterThanOrEqual(0);
+            expect(right.x + right.width).toBe(interior.x + interior.width);
+            expect(left.width).toBeGreaterThanOrEqual(0);
+            expect(right.width).toBeGreaterThanOrEqual(0);
             for (const half of [left, right]) {
               expect(half.y).toBe(interior.y);
-              expect(half.h).toBe(interior.h);
+              expect(half.height).toBe(interior.height);
             }
           },
         ),
@@ -78,7 +78,7 @@ describe("a split body's halves", () => {
     () => {
       fc.assert(
         fc.property(
-          fc.record({ x: coord, y: coord, w: extent, h: extent }),
+          fc.record({ x: coord, y: coord, width: extent, height: extent }),
           fc.boolean(),
           (rect, grown) => {
             const inner = interiorOf(rect, grown);
@@ -87,8 +87,8 @@ describe("a split body's halves", () => {
               return;
             }
             expect(close(inner.x - HANDLE_SLOP, rect.x)).toBe(true);
-            expect(close(inner.x + inner.w + HANDLE_SLOP, rect.x + rect.w)).toBe(true);
-            expect(close(inner.y + inner.h + HANDLE_SLOP, rect.y + rect.h)).toBe(true);
+            expect(close(inner.x + inner.width + HANDLE_SLOP, rect.x + rect.width)).toBe(true);
+            expect(close(inner.y + inner.height + HANDLE_SLOP, rect.y + rect.height)).toBe(true);
           },
         ),
         runs(RUNS),

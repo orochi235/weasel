@@ -8,7 +8,7 @@ import { halfLeadingFor, numericWeight, resolveRunFace, resolveTextStyle, script
 import { metaAttrsXml, metaElementsXml } from './metaXml';
 import type { SvgTextNode } from './types';
 import { trimNumber } from './transform';
-import type { PaintServerRegistry } from './gradients';
+import type { PaintServerRegistry } from './paintServers';
 import { anchorOffset, svgDirection } from './textAnchor';
 import { boxTransformAttr } from './placeBox';
 import { coreStrokeAttrs, opacityAttr, type Warn } from './strokeAttrs';

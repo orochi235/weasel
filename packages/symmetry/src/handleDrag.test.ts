@@ -8,7 +8,7 @@ import { rectPath } from '@weasel-js/geom';
 import { createSymmetry } from './controller';
 import { symmetryRegistry } from './group';
 import type { SymmetryHandlePress } from './guide';
-import { handleDragAction } from './handleDrag';
+import { createSymmetryHandleAction } from './handleDrag';
 import { VERTICAL_AXIS } from './kinds';
 
 type Point = { x: number; y: number };
@@ -47,7 +47,7 @@ function rig() {
   /** Drag `handle`, pressed at `start`, to `to`; `seen` is what the readout
    *  held before the release. */
   const drag = (handle: SymmetryHandlePress['handle'], start: Point, to: Point, mods: Mods = {}) => {
-    const h = (handleDragAction(sym).invoker as OngoingInvoker).start(ctx(handle, start, start), undefined);
+    const h = (createSymmetryHandleAction(sym).invoker as OngoingInvoker).start(ctx(handle, start, start), undefined);
     h.onMove!(ctx(handle, start, to, mods));
     const seen = store.get();
     h.onEnd!(ctx(handle, start, to, mods), 'commit');

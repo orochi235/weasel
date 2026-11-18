@@ -1,24 +1,24 @@
 import { createStepRepeat, type StepRepeatOptions } from '@weasel-js/ui-input';
-import { menuNumberCanStep, type MenuController, type MenuNumberEntry, type Rect } from '@weasel-js/menu';
+import { menuNumberCanStep, type MenuController, type MenuNumberEntry, type MenuRect } from '@weasel-js/menu';
 import type { MenuPanelMetrics } from '@weasel-js/ui-logic';
-import { rowAt } from './drawPanel';
+import { rowAt } from './panelCommands';
 import { chipAt } from './valueRows';
 
 /** A number row's step chip: the row, and which way it steps. */
 export interface MenuChip { entry: MenuNumberEntry; dir: 1 | -1 }
 
 /** The topmost of `panels` under (x, y), or -1. */
-export function levelAt(panels: readonly Rect[], x: number, y: number): number {
+export function levelAt(panels: readonly MenuRect[], x: number, y: number): number {
   for (let i = panels.length - 1; i >= 0; i--) {
     const p = panels[i]!;
-    if (x >= p.x && x < p.x + p.w && y >= p.y && y < p.y + p.h) return i;
+    if (x >= p.x && x < p.x + p.width && y >= p.y && y < p.y + p.height) return i;
   }
   return -1;
 }
 
 /** The step chip under (x, y) of a number row that takes input, or null. */
 export function chipUnder(
-  c: Pick<MenuController, 'entriesAt'>, panels: readonly Rect[], m: MenuPanelMetrics, x: number, y: number,
+  c: Pick<MenuController, 'entriesAt'>, panels: readonly MenuRect[], m: MenuPanelMetrics, x: number, y: number,
 ): MenuChip | null {
   const level = levelAt(panels, x, y);
   if (level < 0) return null;
@@ -26,7 +26,7 @@ export function chipUnder(
   const index = rowAt(entries, m, y - p.y);
   const entry = index === null ? undefined : entries[index];
   if (entry?.kind !== 'number' || entry.disabled) return null;
-  const dir = chipAt(p.w, m, x - p.x);
+  const dir = chipAt(p.width, m, x - p.x);
   return dir === null ? null : { entry, dir };
 }
 

@@ -7,7 +7,7 @@ export const AB = edgeIdOf({ from: 'a', to: 'b', label: 'yes' });
 export const BC = edgeIdOf({ from: 'b', to: 'c' });
 
 /** Three shapes, `a` in the accent role and `b` with its fill set by hand, joined by two
- *  connectors, the first labeled, inside a titled group. */
+ *  connectors, the first labeled, inside a titled cluster. */
 export const THEMED: DiagramData = {
   nodes: [
     { id: 'a', lines: ['a'], style: 'accent' },
@@ -15,7 +15,7 @@ export const THEMED: DiagramData = {
     { id: 'c', lines: ['c'] },
   ],
   edges: [{ from: 'a', to: 'b', label: 'yes' }, { from: 'b', to: 'c' }],
-  groups: [{ id: 'g', members: ['a', 'b'], label: 'Group' }],
+  clusters: [{ id: 'g', members: ['a', 'b'], label: 'Group' }],
 };
 
 type Data = Record<string, unknown> & { diagram?: Record<string, unknown> };

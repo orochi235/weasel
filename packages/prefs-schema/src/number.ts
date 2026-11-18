@@ -26,7 +26,7 @@ export interface PrefNumberBase extends PrefValueBase<'number', number | undefin
   max?: number;
   /** A lower bound read from where the value is held — a scene node's own
    *  minimum — taken with `min`, the larger winning. A surface resolves it
-   *  per holder with `prefNumberAt`. */
+   *  per holder with `prefBoundedNumber`. */
   minAt?: PrefBoundAt;
   /** The upper counterpart of `minAt`, taken with `max`, the smaller winning. */
   maxAt?: PrefBoundAt;
@@ -40,7 +40,7 @@ export interface PrefNumberBase extends PrefValueBase<'number', number | undefin
   unit?: PrefNumberUnit;
   /** What the number measures. `'length'` is a length stored in world units: a
    *  surface showing a scene node's field gives it the unit of the unit scopes
-   *  the node sits in (`prefLeafInScopes`). A `unit` of the leaf's own wins. */
+   *  the node sits in (`prefLeafInUnitScopes`). A `unit` of the leaf's own wins. */
   measure?: 'length';
   /** The values a slider's drag catches on, in the stored unit like `min` and
    *  `max`: each is drawn on the track, a drag passing near one lands on it

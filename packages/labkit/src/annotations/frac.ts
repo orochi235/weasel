@@ -11,7 +11,7 @@ import type { FracPoint, FracRect } from './types';
  *  default `RectPose`, which is what the scene stores. */
 export type WorldRect = Rect;
 
-const boxOfFrac = (f: FracRect): Box => [f.x, f.y, f.x + f.w, f.y + f.h];
+const boxOfFrac = (f: FracRect): Box => [f.x, f.y, f.x + f.width, f.y + f.height];
 
 /** `n` as a share of `side`. A side too short to divide by, 0 or so small the share overflows, gives 0. */
 function share(n: number, side: number): number {
@@ -20,12 +20,12 @@ function share(n: number, side: number): number {
 }
 
 /** Where a fraction lands on a content box of this size. */
-export function fracToWorld(f: FracRect, content: { w: number; h: number }): WorldRect {
+export function fracToWorld(f: FracRect, content: { width: number; height: number }): WorldRect {
   return {
-    x: f.x * content.w,
-    y: f.y * content.h,
-    width: f.w * content.w,
-    height: f.h * content.h,
+    x: f.x * content.width,
+    y: f.y * content.height,
+    width: f.width * content.width,
+    height: f.height * content.height,
   };
 }
 
@@ -34,12 +34,12 @@ export function fracToWorld(f: FracRect, content: { w: number; h: number }): Wor
  *  A pane measured before layout is 0×0, and dividing by that would seed every
  *  stored position with `NaN` — which compares false against everything and so
  *  fails silently rather than loudly. Zero sides give zeros. */
-export function worldToFrac(r: WorldRect, content: { w: number; h: number }): FracRect {
+export function worldToFrac(r: WorldRect, content: { width: number; height: number }): FracRect {
   return {
-    x: share(r.x, content.w),
-    y: share(r.y, content.h),
-    w: share(r.width, content.w),
-    h: share(r.height, content.h),
+    x: share(r.x, content.width),
+    y: share(r.y, content.height),
+    width: share(r.width, content.width),
+    height: share(r.height, content.height),
   };
 }
 
@@ -51,8 +51,8 @@ export function roundFrac(f: FracRect): FracRect {
   return {
     x: Math.round(f.x * DP) / DP,
     y: Math.round(f.y * DP) / DP,
-    w: Math.round(f.w * DP) / DP,
-    h: Math.round(f.h * DP) / DP,
+    width: Math.round(f.width * DP) / DP,
+    height: Math.round(f.height * DP) / DP,
   };
 }
 
@@ -74,23 +74,23 @@ export function fracEncloses(outer: FracRect, inner: FracRect): boolean {
  *  `null` for none. */
 export function boundsOf(points: readonly FracPoint[]): FracRect | null {
   const b = boundsOfCoords(points.flatMap((p) => [p.x, p.y]));
-  return b && { x: b[0], y: b[1], w: b[2] - b[0], h: b[3] - b[1] };
+  return b && { x: b[0], y: b[1], width: b[2] - b[0], height: b[3] - b[1] };
 }
 
 /** Points restated as fractions of `box` itself, so they move and stretch with
  *  it. Unit-agnostic: `points` and `box` only have to share one. A box with no
  *  width or height puts every point on its edge along that axis. */
 export function toShape(points: readonly FracPoint[], box: FracRect): FracPoint[] {
-  return points.map((p) => ({ x: share(p.x - box.x, box.w), y: share(p.y - box.y, box.h) }));
+  return points.map((p) => ({
+    x: share(p.x - box.x, box.width),
+    y: share(p.y - box.y, box.height),
+  }));
 }
 
 /** `toShape`'s inverse: a shape placed in `box`, in `box`'s units. */
 export function fromShape(shape: readonly FracPoint[], box: FracRect): FracPoint[] {
-  return shape.map((s) => ({ x: box.x + s.x * box.w, y: box.y + s.y * box.h }));
+  return shape.map((s) => ({ x: box.x + s.x * box.width, y: box.y + s.y * box.height }));
 }
-
-/** A world rect as the `{ x, y, w, h }` the shape helpers take. */
-export const boxOf = (r: WorldRect): FracRect => ({ x: r.x, y: r.y, w: r.width, h: r.height });
 
 const roundPoint = (p: FracPoint): FracPoint => ({
   x: Math.round(p.x * DP) / DP,

@@ -25,7 +25,7 @@ function SessionCanvas({ session, children }: { session: DocScene; children?: Re
     <div className={styles.column}>
       <DemoStage width={W} height={H}>
         <SceneCanvas features={[viewPreset, pickPreset, movePreset]} className="ckd-canvas" scene={session}
-          selectionOptions={{ mode: 'multi' }}>
+          selectionOptions={{ mode: 'multiple' }}>
           {children}
         </SceneCanvas>
       </DemoStage>
@@ -49,7 +49,7 @@ export function EditingSessionsDemo() {
             {/* A view acts on its canvas's session: it shares the left canvas's selection. */}
             <CanvasView
               id="pip"
-              bounds={(_outer, dims) => ({ x: PIP.margin, y: dims.height - PIP.h - PIP.margin, w: PIP.w, h: PIP.h })}
+              bounds={(_outer, dims) => ({ x: PIP.margin, y: dims.height - PIP.height - PIP.margin, width: PIP.width, height: PIP.height })}
               defaultView={pipView(initial)}
               background="rgba(0,0,0,0.4)"
             />

@@ -11,7 +11,7 @@ import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from
 import { createCamera, dollyToward, orbitBy, panBy, type Camera3d } from './camera';
 import type { Camera3dDep } from './cameraDep';
 import { camera, runs, tally, timeoutFor } from './pbt.fixture';
-import { DOLLY_RATE, ORBIT_RATE, dollyAction, homeAction, orbitAction, panAction, pinchDollyAction } from './tools';
+import { DOLLY_RATE, ORBIT_RATE, cameraDollyAction, cameraHomeAction, cameraOrbitAction, cameraPanAction, cameraPinchDollyAction } from './tools';
 
 const RUNS = 150;
 const T = timeoutFor(RUNS, 20);
@@ -95,7 +95,7 @@ describe('the camera actions through long runs of gestures, stateful', () => {
       let m: Model | null = null;
       for (const c of cmds) {
         if (c.t === 'start') {
-          const action = c.kind === 'orbit' ? orbitAction : c.kind === 'pan' ? panAction : pinchDollyAction;
+          const action = c.kind === 'orbit' ? cameraOrbitAction : c.kind === 'pan' ? cameraPanAction : cameraPinchDollyAction;
           const start = host.dep.get();
           handle = (action.invoker as OngoingInvoker).start(ctxOf(deps, c.kind === 'pinch' ? { multiTouch: { spread: c.spread, centroid: c.at } } as Partial<InvocationCtx> : {})) as unknown as Handle;
           const zero = c.kind === 'pinch' ? 1 : { x: 0, y: 0 };
@@ -126,7 +126,7 @@ describe('the camera actions through long runs of gestures, stateful', () => {
             // Nothing else wrote: one move straight to this input, from the camera it began on, lands the same.
             const fresh = hostOf(m.start, false, homeCam);
             const freshDeps = { camera3d: fresh.dep } as unknown as ActionDeps;
-            const action = m.kind === 'orbit' ? orbitAction : m.kind === 'pan' ? panAction : pinchDollyAction;
+            const action = m.kind === 'orbit' ? cameraOrbitAction : m.kind === 'pan' ? cameraPanAction : cameraPinchDollyAction;
             const one = (action.invoker as OngoingInvoker).start(ctxOf(freshDeps, m.kind === 'pinch' ? { multiTouch: { spread: m.startSpread, centroid: m.at } } as Partial<InvocationCtx> : {})) as { onMove(m: InvocationCtx): void };
             one.onMove(ctxOf(freshDeps, m.kind === 'pinch'
               ? { multiTouch: { pinch: { currentSpread: c.spread } } } as Partial<InvocationCtx>
@@ -135,9 +135,9 @@ describe('the camera actions through long runs of gestures, stateful', () => {
             seen.count('untouched move');
           }
         } else if (c.t === 'wheel') {
-          if ((dollyAction.invoker as ImmediateInvoker).run(deps, { deltaY: c.deltaY, clientX: c.x, clientY: c.y }) !== 'pass' && m) m.outside = true;
+          if ((cameraDollyAction.invoker as ImmediateInvoker).run(deps, { deltaY: c.deltaY, clientX: c.x, clientY: c.y }) !== 'pass' && m) m.outside = true;
         } else if (c.t === 'home') {
-          (homeAction.invoker as ImmediateInvoker).run(deps);
+          (cameraHomeAction.invoker as ImmediateInvoker).run(deps);
           if (m) m.outside = true;
         } else if (c.t === 'set') {
           host.dep.set(c.camera);
@@ -156,7 +156,7 @@ describe('the camera actions through long runs of gestures, stateful', () => {
   it('dolly by the wheel about the point under it, at the rate asked for', () => {
     fc.assert(fc.property(camera, fc.double({ min: -300, max: 300, noNaN: true }), point, (c0, deltaY, at) => {
       const host = hostOf(c0, false, createCamera({}));
-      const out = (dollyAction.invoker as ImmediateInvoker).run({ camera3d: host.dep } as unknown as ActionDeps, { deltaY, clientX: at.x, clientY: at.y });
+      const out = (cameraDollyAction.invoker as ImmediateInvoker).run({ camera3d: host.dep } as unknown as ActionDeps, { deltaY, clientX: at.x, clientY: at.y });
       const factor = Math.exp(deltaY * DOLLY_RATE);
       if (factor === 1) {
         expect(out).toBe('pass');

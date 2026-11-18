@@ -1,5 +1,5 @@
 /** The buffer an id frame draws into, and reading its ids back. */
-import { mat3 } from '@weasel-js/geom';
+import { mat3, type Rect } from '@weasel-js/geom';
 import type { DrawCommand } from '../DrawCommand';
 import { cullDrawCommands } from '../cullDrawCommands';
 import type { EffectTargets } from '../effects/EffectTargets';
@@ -24,7 +24,7 @@ type RootTarget = NonNullable<DrawContext['renderTarget']>;
 
 /** The device pixels `rect` touches, top-left origin, clamped to the drawing:
  *  at least one pixel for a rect of no size, and none for one off the drawing. */
-export function idReadRect(spec: IdFrameSpec): { x: number; y: number; width: number; height: number } {
+export function idReadRect(spec: IdFrameSpec): Rect {
   const { width, height, dpr, rect } = spec;
   if (!rect) return { x: 0, y: 0, width, height };
   const fx = Math.floor(rect.x * dpr);

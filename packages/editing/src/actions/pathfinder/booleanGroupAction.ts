@@ -1,6 +1,6 @@
 import type { BooleanShapeOp, AnyScene } from '@weasel-js/core/engine';
-import { booleanGroupFields, followerMoveOps, followerMoves, createReparentOp, requiresContent, selectedRoots, inPaintOrder, slotAbove } from '@weasel-js/core';
-import { groupingSite, pageOfNode, commitOps, defaultCommitAdapter, createInsertOp, createTransformOp, AUTO_POSE_DESCRIPTOR, unionBounds, scenePoseFrame } from '@weasel-js/core/engine';
+import { booleanGroupFields, followerMoveOps, followerMoves, createReparentOp, requiresContent, rootsAmong, inPaintOrder, slotAbove } from '@weasel-js/core';
+import { groupingSite, pageIdOf, commitOps, defaultCommitAdapter, createInsertOp, createSetPoseOp, AUTO_POSE_DESCRIPTOR, unionBounds, scenePoseFrame } from '@weasel-js/core/engine';
 import type { Op, SceneNode as Node, NodeId } from '@weasel-js/core';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { icon } from '../../icons.gen';
@@ -23,7 +23,7 @@ export function booleanGroupOps(
   op: BooleanShapeOp = 'union',
   label = 'Make Boolean Group',
 ): { ops: Op[]; group: NodeId } | null {
-  const nodes = inPaintOrder(scene, selectedRoots(scene, ids)
+  const nodes = inPaintOrder(scene, rootsAmong(scene, ids)
     .map((id) => scene.get(id))
     .filter((n): n is Node<unknown, string, unknown> => n !== undefined));
   if (nodes.length < 2 || new Set(nodes.map((n) => n.layer)).size > 1) return null;
@@ -36,7 +36,7 @@ export function booleanGroupOps(
   const index = slotAbove(scene, parent, front.id);
   const own = (front.data ?? {}) as Record<string, unknown>;
   const data = { boolean: op, ...Object.fromEntries(PAINT_KEYS.filter((k) => Object.hasOwn(own, k)).map((k) => [k, own[k]])) };
-  const page = parent === null ? null : pageOfNode(scene, parent);
+  const page = parent === null ? null : pageIdOf(scene, parent);
   const followers = followerMoves(scene, new Map(nodes.map((n) => [n.id as string, page])));
   const locals = new Map<NodeId, unknown>();
   for (const n of nodes) {
@@ -56,7 +56,7 @@ export function booleanGroupOps(
   nodes.forEach((n, i) => {
     ops.push(createReparentOp({ id: n.id, fromParentId: n.parent ?? null, toParentId: group, toIndex: i, label }));
     // The group derives its pose from its members, so it is no frame: they keep the frame it sits in.
-    ops.push(createTransformOp<unknown>({ id: n.id, from: n.pose, to: locals.get(n.id), label }));
+    ops.push(createSetPoseOp<unknown>({ id: n.id, from: n.pose, to: locals.get(n.id), label }));
   });
   ops.push(...followerMoveOps(followers, label));
   return { ops, group };
@@ -90,6 +90,6 @@ export const makeBooleanGroupAction: Action & { requires: string[] } = {
   enabled: (deps) => {
     const given = requiresContent(2)(deps);
     if (given !== true) return given;
-    return selectedRoots(deps!.scene as AnyScene, deps!.operands!.get()).length >= 2 ? true : ActionDisabledReason.SelectionRequired;
+    return rootsAmong(deps!.scene as AnyScene, deps!.operands!.get()).length >= 2 ? true : ActionDisabledReason.SelectionRequired;
   },
 };

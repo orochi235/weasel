@@ -10,7 +10,7 @@ import { createMemoryAdapter } from '@weasel-js/storage';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAnnotations } from '../annotations/AnnotationsContext';
-import type { AnnotationsApi, SerializedAnnotations } from '../annotations/types';
+import type { AnnotationsApi, SerializedMarkStore } from '../annotations/types';
 import { defineInstrument } from '../instrument/defineInstrument';
 import type { InstrumentList } from '../instrument/types';
 import { Lab } from '../lab/Lab';
@@ -49,7 +49,7 @@ function marks(): AnnotationsApi {
   return api;
 }
 
-const TARGET = { id: 'pane', ref: { current: null }, content: { w: 200, h: 100 } };
+const TARGET = { id: 'pane', ref: { current: null }, content: { width: 200, height: 100 } };
 
 const inspector = defineInstrument<Record<string, never>, { angle: number }>({
   name: 'Inspector',
@@ -60,7 +60,7 @@ const inspector = defineInstrument<Record<string, never>, { angle: number }>({
 });
 
 /** The instrument keeps its own marks, so labkit must not keep them too. */
-let owned: SerializedAnnotations | null = null;
+let owned: SerializedMarkStore | null = null;
 let loads = 0;
 let gate: Promise<void> = Promise.resolve();
 const selfStoring = defineInstrument<Record<string, never>, Record<string, never>>({
@@ -101,7 +101,11 @@ function storedTrial(backing: Map<string, unknown>): Record<string, unknown> | u
     | undefined;
 }
 
-const MARK = { target: 'pane', kind: 'rect' as const, frac: { x: 0.2, y: 0.3, w: 0.1, h: 0.1 } };
+const MARK = {
+  target: 'pane',
+  kind: 'rect' as const,
+  frac: { x: 0.2, y: 0.3, width: 0.1, height: 0.1 },
+};
 
 describe('a trial that persists its marks', () => {
   beforeEach(() => {
@@ -156,7 +160,7 @@ describe('a trial that persists its marks', () => {
     let id = '';
     act(() => {
       id = marks().add(MARK);
-      marks().add({ ...MARK, frac: { x: 0.6, y: 0.6, w: 0.1, h: 0.1 } });
+      marks().add({ ...MARK, frac: { x: 0.6, y: 0.6, width: 0.1, height: 0.1 } });
     });
     first.unmount();
     // Nothing was written before the unmount: neither debounce had elapsed.

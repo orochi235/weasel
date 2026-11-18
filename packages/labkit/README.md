@@ -229,27 +229,27 @@ and the field pins at the new value, the same as `setConfig` on an auto path.
 Shift-click the row's label, or click the pin dot beside it, to hand it back to
 auto. So an instrument never asks for a "pin first" step: editing is pinning.
 
-`auto` is a value, so it goes wherever a config value goes:
+`AUTO` is a value, so it goes wherever a config value goes:
 
 ```ts
-import { auto, f } from '@weasel-js/labkit';
+import { AUTO, f } from '@weasel-js/labkit';
 
 const config = f.schema({
   width: f.number(432),
   gap: f.number(12).auto((c) => (c.width as number) / 24),
-  cols: f.number(3).initial(auto),
+  cols: f.number(3).initial(AUTO),
   seed: f.number(1),
   scale: f.number(1).auto(),
 });
 
-setConfig('gap', auto);
-addTrial('demo', { gap: auto });
+setConfig('gap', AUTO);
+addTrial('demo', { gap: AUTO });
 ```
 
 A field can be auto only if it says so. `.auto()` opts it in, and an auto field
 reads `undefined`. `.auto(fn)` also attaches a resolver: the instrument reads the
 computed value rather than writing `?? compute()` itself, and the ghosted control
-draws that number. `.initial(auto)` opts in and opens the field auto
+draws that number. `.initial(AUTO)` opts in and opens the field auto
 instead of pinned at its default. A field that says none of these, like `seed`,
 has no dot and no gesture: the default for a value the instrument cannot
 receive as `undefined`, like a color going straight to a uniform.
@@ -257,7 +257,7 @@ receive as `undefined`, like a color going straight to a uniform.
 **Make a lever auto wherever the instrument can work out a good value for
 it**: a count from the data, a spacing from the size, a scale that fits the
 view. Use `.auto(fn)` when the config is enough to compute it, `.auto()` when
-only the instrument can, at run time, and `.initial(auto)` when the computed
+only the instrument can, at run time, and `.initial(AUTO)` when the computed
 value is the better place to start. Don't put a separate "Auto X" checkbox
 beside the lever: the pin dot is that checkbox. Leave a lever pinned-only when
 `undefined` must never reach the instrument.
@@ -283,11 +283,11 @@ map.
 An auto row's readout is the bare word. A lever whose value is worth seeing at a
 glance, like a count, adds `.quote()`, and its row then reads `auto · 12`
 whenever a value is known, reported or resolved, through the leaf's own
-display (`auto · 90°`). `.quote()` also lets the leaf be auto, as `.initial(auto)`
+display (`auto · 90°`). `.quote()` also lets the leaf be auto, as `.initial(AUTO)`
 does:
 
 ```ts
-count: f.number(8).range(1, 64).initial(auto).quote(),
+count: f.number(8).range(1, 64).initial(AUTO).quote(),
 ```
 
 Nothing stores the sentinel. It is normalized at every boundary into the
@@ -327,7 +327,7 @@ defineInstrument<State, Config>({
   // …
   annotations: {
     targets: () => [
-      { id: 'pane', ref: paneRef, content: { w: 260, h: 180 }, positionDependsOn: ['angle'] },
+      { id: 'pane', ref: paneRef, content: { width: 260, height: 180 }, positionDependsOn: ['angle'] },
     ],
     meaning: {
       statuses: [
@@ -383,7 +383,7 @@ Export button in the toolbar; `onCapture` fires after every export, labkit's own
 chrome included.
 
 The pieces are exported for a host that wants to assemble them itself:
-`createAnnotationStore`, `<AnnotationOverlay>`, `<AnnotationTargets>`,
+`createMarkStore`, `<AnnotationOverlay>`, `<AnnotationTargets>`,
 `<MarkList>`, `<ExportMenu>`, `ANNOTATION_TOOLS` and `capturePlan`.
 
 ## A weasel scene in a trial
@@ -698,7 +698,7 @@ directly. Several expose more than the root does, `/state` most of all.
 | `/primitives` | PersistedFloatingPanel, Split, JobProgress |
 | `/chrome` | Regions, contribution types, built-in contributions |
 | `/controls` | `<ControlPanel>` and the config field types |
-| `/config` | The config schema builder (`f`) and its node types, `auto`, and the default-filling helpers |
+| `/config` | The config schema builder (`f`) and its node types, `AUTO`, and the default-filling helpers |
 | `/theme` | `interstellarTheme` alone, for an app that themes its chrome as labkit does without loading the rest |
 | `/canvas` | `<CanvasStack>`, `<Stage>`, `<Orbit>`, `<CameraInput>`, coordinate helpers |
 | `/layers` | `<LayerList>` from `@weasel-js/ui`, and the layers capability types |

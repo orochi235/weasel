@@ -55,7 +55,7 @@ export function nodeTraitsOf(features: readonly FeaturePreset[] | undefined, bas
   };
 }
 
-/** What {@link nodeKindPreset} builds a preset from: one kind's traits under one name, beside
+/** What {@link createNodeKindPreset} builds a preset from: one kind's traits under one name, beside
  *  any other preset role. */
 export interface NodeKindPresetSpec extends Omit<FeaturePreset, 'routing' | 'insertNodeFactories' | 'shapes' | 'properties'> {
   /** The kind's name: its routing kind, its properties entry's name, and the insert kind its
@@ -77,7 +77,7 @@ export interface NodeKindPresetSpec extends Omit<FeaturePreset, 'routing' | 'ins
  * contributions it brings. Turned on with `features`, everything it declares
  * installs; turned off, all of it goes, its tools included.
  */
-export function nodeKindPreset(spec: NodeKindPresetSpec): FeaturePreset {
+export function createNodeKindPreset(spec: NodeKindPresetSpec): FeaturePreset {
   const { kind, matches, shape, insert, properties, ...rest } = spec;
   return {
     ...rest,

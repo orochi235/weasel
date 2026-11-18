@@ -28,22 +28,22 @@ describe('resolvePrefUnit', () => {
     expect(same.fromDisplay(12.345)).toBe(12.345);
   });
 
-  it('rounds what a linear unit shows to its precision, and stores what is typed unrounded', () => {
-    const deg = resolvePrefUnit({ scale: Math.PI / 180, precision: 1 });
+  it('rounds what a linear unit shows to its places, and stores what is typed unrounded', () => {
+    const deg = resolvePrefUnit({ scale: Math.PI / 180, places: 1 });
     expect(deg.toDisplay(Math.PI / 3)).toBe(60);
     expect(deg.toDisplay(0.001)).toBe(0.1);
     expect(deg.fromDisplay(90)).toBeCloseTo(Math.PI / 2, 12);
   });
 
   it('rounds a negative half the way its format does, away from zero', () => {
-    const unit = resolvePrefUnit({ scale: 1, precision: 2 });
+    const unit = resolvePrefUnit({ scale: 1, places: 2 });
     expect(unit.format(-0.125)).toBe('-0.13');
     expect(unit.toDisplay(-0.125)).toBe(-0.13);
     expect(unit.toDisplay(-2.5 / 100)).toBe(Number(unit.format(-0.025)));
   });
 
   it('stores a decimal typed at a decimal scale as the decimal it is, with no binary dust', () => {
-    const percent = resolvePrefUnit({ scale: 0.01, precision: 1, suffix: '%' });
+    const percent = resolvePrefUnit({ scale: 0.01, places: 1, suffix: '%' });
     expect(33.3 * 0.01).not.toBe(0.333);
     expect(percent.fromDisplay(33.3)).toBe(0.333);
     expect(percent.fromDisplay(58.33)).toBe(0.5833);
@@ -59,14 +59,14 @@ describe('resolvePrefUnit', () => {
     expect(micro.fromDisplay(0.7)).toBe(7e-8);
   });
 
-  it('formats a linear unit to its precision, two places without one, and ends it with the suffix', () => {
+  it('formats a linear unit to its places, two places without one, and ends it with the suffix', () => {
     expect(resolvePrefUnit({ scale: 10, suffix: 'cm' }).format(25)).toBe('2.5cm');
     expect(resolvePrefUnit({ scale: 3 }).format(1)).toBe('0.33');
-    expect(resolvePrefUnit({ scale: Math.PI / 180, precision: 1, suffix: '°' }).format(Math.PI)).toBe('180.0°');
+    expect(resolvePrefUnit({ scale: Math.PI / 180, places: 1, suffix: '°' }).format(Math.PI)).toBe('180.0°');
   });
 
-  it('pads to its precision, so a column of values lines up', () => {
-    const unit = resolvePrefUnit({ scale: 1, precision: 2 });
+  it('pads to its places, so a column of values lines up', () => {
+    const unit = resolvePrefUnit({ scale: 1, places: 2 });
     expect(unit.format(1.5)).toBe('1.50');
     expect(unit.format(2.214)).toBe('2.21');
     expect(unit.display).toEqual(decimal({ places: 2, grouping: false }));
@@ -103,7 +103,7 @@ describe('prefUnit', () => {
   });
 
   it('builds data: a unit comes back from JSON equal, and converts the same', () => {
-    for (const unit of [prefUnit(METRIC_MM, 'cm'), prefUnit(ANGLE_RADIANS, 'deg', { precision: 1, suffix: '°' }), prefUnit(TEMPERATURE_K, 'degC', { precision: 2 })]) {
+    for (const unit of [prefUnit(METRIC_MM, 'cm'), prefUnit(ANGLE_RADIANS, 'deg', { places: 1, suffix: '°' }), prefUnit(TEMPERATURE_K, 'degC', { places: 2 })]) {
       const back = throughJson(unit);
       expect(back).toEqual(unit);
       expect(resolvePrefUnit(back).toDisplay(1.25)).toBe(resolvePrefUnit(unit).toDisplay(1.25));
@@ -112,8 +112,8 @@ describe('prefUnit', () => {
     expect(prefUnit(METRIC_MM, 'cm')).toEqual({ suffix: 'cm', scale: 10, accepts: { mm: 0.1, cm: 1, m: 100, km: 100_000 } });
   });
 
-  it('rounds what it shows to the precision given, and nothing else', () => {
-    const deg = resolvePrefUnit(prefUnit(ANGLE_RADIANS, 'deg', { precision: 1 }));
+  it('rounds what it shows to the places given, and nothing else', () => {
+    const deg = resolvePrefUnit(prefUnit(ANGLE_RADIANS, 'deg', { places: 1 }));
     expect(deg.toDisplay(Math.PI / 3)).toBe(60);
     expect(deg.toDisplay(0.001)).toBe(0.1);
     expect(deg.fromDisplay(90)).toBeCloseTo(Math.PI / 2, 12);
@@ -133,7 +133,7 @@ describe('prefUnit', () => {
   });
 
   it('converts through an offset in both directions', () => {
-    const c = resolvePrefUnit(prefUnit(TEMPERATURE_K, 'degC', { precision: 2 }));
+    const c = resolvePrefUnit(prefUnit(TEMPERATURE_K, 'degC', { places: 2 }));
     expect(c.toDisplay(273.15)).toBe(0);
     expect(c.toDisplay(373.15)).toBe(100);
     expect(c.fromDisplay(0)).toBeCloseTo(273.15, 9);
@@ -150,13 +150,13 @@ describe('prefUnit', () => {
 
   it('formats a stored value in the display unit', () => {
     expect(resolvePrefUnit(prefUnit(METRIC_MM, 'cm')).format(25)).toBe('2.5cm');
-    expect(resolvePrefUnit(prefUnit(ANGLE_RADIANS, 'deg', { precision: 1, suffix: '°' })).format(Math.PI)).toBe('180.0°');
+    expect(resolvePrefUnit(prefUnit(ANGLE_RADIANS, 'deg', { places: 1, suffix: '°' })).format(Math.PI)).toBe('180.0°');
   });
 });
 
 describe('prefDisplayBounds over a linear unit', () => {
   it('converts the ends as points and the step as a distance', () => {
-    const leaf: PrefNumber = { kind: 'number', name: 'T', description: '', default: 300, min: 273.15, max: 373.15, step: 5, unit: { scale: 1, offset: 273.15, precision: 2 } };
+    const leaf: PrefNumber = { kind: 'number', name: 'T', description: '', default: 300, min: 273.15, max: 373.15, step: 5, unit: { scale: 1, offset: 273.15, places: 2 } };
     expect(prefDisplayBounds(leaf)).toEqual({ min: 0, max: 100, step: 5 });
   });
 

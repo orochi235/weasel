@@ -5,7 +5,7 @@ import { createContext, useCallback, useContext, useMemo, useSyncExternalStore }
 import { spanOverrideOf } from './clockSpec';
 import { ownMoves, type PlayMoves, setLoop, subscribeSpeed } from './moves';
 import { seekShown, shownTime } from './shown';
-import type { Span, SpanOverride } from './types';
+import type { TimelineSpan, SpanOverride } from './types';
 
 /** The clock of the story rendering below it; null where the story declares no timeline. */
 export const ClockContext = createContext<ClockHandle | null>(null);
@@ -17,7 +17,7 @@ export interface StoryTimeline {
   playing: boolean;
   loop: boolean;
   rate: number;
-  span: Span;
+  span: TimelineSpan;
   play(): void;
   pause(): void;
   seek(time: number): void;

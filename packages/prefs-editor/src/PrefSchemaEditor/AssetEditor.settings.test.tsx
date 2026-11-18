@@ -3,8 +3,8 @@ import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { asset, Live, WITH_LOCKED } from './AssetEditor.fixture';
 import type { PaletteDrag } from './Palette';
 import { SettingsTree } from './SettingsTree';
-import { removeNode, type Workspace } from '@weasel-js/prefs/edit';
-import { CODE, pointer, SETTINGS, WORKSPACE } from '@weasel-js/prefs/testing/editWorkspace';
+import { removeNode, type AssetSet } from '@weasel-js/prefs/edit';
+import { CODE, pointer, SETTINGS, ASSET_SET } from '@weasel-js/prefs/testing/editAssetSet';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 afterEach(cleanup);
@@ -25,7 +25,7 @@ describe('the settings of a layout\'s dialog', () => {
   });
 
   it('mutes a setting the layout points at, and not one it does not', () => {
-    const start: Workspace = { assets: [WORKSPACE.assets[0]!, { ...WORKSPACE.assets[1]!, root: removeNode(CODE, 'snap') }] };
+    const start: AssetSet = { assets: [ASSET_SET.assets[0]!, { ...ASSET_SET.assets[1]!, root: removeNode(CODE, 'snap') }] };
     renderWithIcons(<Live start={start} />);
     fireEvent.click(asset('Code'));
     const muted = (key: string) => within(settings()).getByText(key).parentElement!.className.includes('pointed');

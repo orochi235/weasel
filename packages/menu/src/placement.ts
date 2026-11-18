@@ -1,9 +1,9 @@
 /** A position in viewport pixels (CSS pixels, as `getBoundingClientRect` reports). */
 export interface Point { x: number; y: number }
 /** A width and height in pixels. */
-export interface Size { w: number; h: number }
+export interface MenuSize { width: number; height: number }
 /** A rectangle in viewport pixels: top-left corner plus width and height. */
-export interface Rect { x: number; y: number; w: number; h: number }
+export interface MenuRect { x: number; y: number; width: number; height: number }
 
 /** Start at `at`, else end at `flipAt` (default `at`), else slide inside `[lo, lo + span]`. */
 function flipOrShift(at: number, len: number, lo: number, span: number, flipAt = at): number {
@@ -32,21 +32,21 @@ export type MenuDirection = 'ltr' | 'rtl';
 /** Where a menu of `size` opened at `anchor` goes: down and right of the
  *  anchor (left under `'rtl'`), flipped on an axis that does not fit, shifted inside `bounds`
  *  when neither side does. */
-export function placeMenu(size: Size, anchor: Point, bounds: Rect, dir: MenuDirection = 'ltr'): Point {
+export function placeMenu(size: MenuSize, anchor: Point, bounds: MenuRect, dir: MenuDirection = 'ltr'): Point {
   return {
-    x: (dir === 'rtl' ? flipOrShiftBack : flipOrShift)(anchor.x, size.w, bounds.x, bounds.w),
-    y: flipOrShift(anchor.y, size.h, bounds.y, bounds.h),
+    x: (dir === 'rtl' ? flipOrShiftBack : flipOrShift)(anchor.x, size.width, bounds.x, bounds.width),
+    y: flipOrShift(anchor.y, size.height, bounds.y, bounds.height),
   };
 }
 
 /** Where a submenu goes: beside `row`, right first (left under `'rtl'`), the other side if that does not
  *  fit, top-aligned with the row and shifted up to stay inside `bounds`. */
-export function placeSubmenu(size: Size, row: Rect, bounds: Rect, dir: MenuDirection = 'ltr'): Point {
+export function placeSubmenu(size: MenuSize, row: MenuRect, bounds: MenuRect, dir: MenuDirection = 'ltr'): Point {
   return {
     x: dir === 'rtl'
-      ? flipOrShiftBack(row.x, size.w, bounds.x, bounds.w, row.x + row.w)
-      : flipOrShift(row.x + row.w, size.w, bounds.x, bounds.w, row.x),
-    y: Math.max(bounds.y, Math.min(row.y, bounds.y + bounds.h - size.h)),
+      ? flipOrShiftBack(row.x, size.width, bounds.x, bounds.width, row.x + row.width)
+      : flipOrShift(row.x + row.width, size.width, bounds.x, bounds.width, row.x),
+    y: Math.max(bounds.y, Math.min(row.y, bounds.y + bounds.height - size.height)),
   };
 }
 
@@ -57,18 +57,18 @@ export type MenuSide = 'top' | 'bottom' | 'left' | 'right';
  *  when it does not fit there. Below or above, it is left-aligned and right-aligned to the button on an axis that does
  *  not fit (right-aligned first under `'rtl'`); beside, it is top-aligned and shifted up to stay inside `bounds`.
  *  Shifted inside `bounds` when neither side fits. */
-export function placeMenuUnder(size: Size, under: Rect, bounds: Rect, side: MenuSide = 'bottom', dir: MenuDirection = 'ltr'): Point {
+export function placeMenuUnder(size: MenuSize, under: MenuRect, bounds: MenuRect, side: MenuSide = 'bottom', dir: MenuDirection = 'ltr'): Point {
   if (side === 'left' || side === 'right') {
-    const x = side === 'left' && under.x - size.w >= bounds.x
-      ? held(under.x - size.w, size.w, bounds.x, bounds.w)
-      : flipOrShift(under.x + under.w, size.w, bounds.x, bounds.w, under.x);
-    return { x, y: Math.max(bounds.y, Math.min(under.y, bounds.y + bounds.h - size.h)) };
+    const x = side === 'left' && under.x - size.width >= bounds.x
+      ? held(under.x - size.width, size.width, bounds.x, bounds.width)
+      : flipOrShift(under.x + under.width, size.width, bounds.x, bounds.width, under.x);
+    return { x, y: Math.max(bounds.y, Math.min(under.y, bounds.y + bounds.height - size.height)) };
   }
-  const y = side === 'top' && under.y - size.h >= bounds.y
-    ? held(under.y - size.h, size.h, bounds.y, bounds.h)
-    : flipOrShift(under.y + under.h, size.h, bounds.y, bounds.h, under.y);
+  const y = side === 'top' && under.y - size.height >= bounds.y
+    ? held(under.y - size.height, size.height, bounds.y, bounds.height)
+    : flipOrShift(under.y + under.height, size.height, bounds.y, bounds.height, under.y);
   const x = dir === 'rtl'
-    ? flipOrShiftBack(under.x + under.w, size.w, bounds.x, bounds.w, under.x)
-    : flipOrShift(under.x, size.w, bounds.x, bounds.w, under.x + under.w);
+    ? flipOrShiftBack(under.x + under.width, size.width, bounds.x, bounds.width, under.x)
+    : flipOrShift(under.x, size.width, bounds.x, bounds.width, under.x + under.width);
   return { x, y };
 }

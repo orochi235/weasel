@@ -24,8 +24,8 @@ export const snapGantt = (t: number, step: number): number => Math.round(t / ste
  * after the task before it, leaves that dependency: it starts on the date from then on. Its end is kept as written,
  * so a duration moves with it and a date stays put.
  */
-export function moveGanttTask(data: GanttData, section: number, task: number, start: number): GanttData {
-  const target = taskAt(data, section, task, 'moveGanttTask');
+export function setGanttStartDay(data: GanttData, section: number, task: number, start: number): GanttData {
+  const target = taskAt(data, section, task, 'setGanttStartDay');
   const date = formatGanttDate(start, dateFormatOf(data));
   if (target.start.kind === 'date' && target.start.date === date) return data;
   return withTask(data, section, task, { ...target, start: { kind: 'date', date } });
@@ -36,8 +36,8 @@ export function moveGanttTask(data: GanttData, section: number, task: number, st
  * at least 1 (0 for a milestone), days and weeks counted past excluded days; a date takes the new date, not before the
  * start; an `until` end becomes a duration in days.
  */
-export function setGanttEnd(data: GanttData, section: number, task: number, end: number): GanttData {
-  const target = taskAt(data, section, task, 'setGanttEnd');
+export function setGanttEndDay(data: GanttData, section: number, task: number, end: number): GanttData {
+  const target = taskAt(data, section, task, 'setGanttEndDay');
   const start = scheduleGantt(data).spans[section]![task]!.start;
   const old = target.end;
   let next: GanttEnd;

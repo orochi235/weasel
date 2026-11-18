@@ -1,4 +1,5 @@
 import type { View } from './view';
+import type { Rect } from '@weasel-js/geom';
 
 /**
  * The world-space rectangle a camera shows in a host `size` CSS pixels across,
@@ -13,7 +14,7 @@ import type { View } from './view';
 export function viewportWorldRect(
   view: View,
   size: { width: number; height: number },
-): { x: number; y: number; width: number; height: number } {
+): Rect {
   const width = size.width / Math.abs(view.scale.x);
   const height = size.height / Math.abs(view.scale.y);
   return {

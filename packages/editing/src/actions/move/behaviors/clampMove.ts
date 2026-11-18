@@ -1,11 +1,11 @@
-import { unionRects, type FramedBox, type Rect } from '@weasel-js/geom';
+import { unionRects, type FramedRect, type Rect } from '@weasel-js/geom';
 import type { PoseDescriptor, MoveBehavior } from '@weasel-js/core/engine';
 import { AUTO_POSE_DESCRIPTOR } from '@weasel-js/core/engine';
 
 /** What {@link clampMove} takes. */
 export interface ClampMoveOptions<TPose> {
   /** The world rect the dragged nodes stay inside, or a function read each frame for one that changes. */
-  bounds: FramedBox | (() => FramedBox);
+  bounds: FramedRect | (() => FramedRect);
   /** Reads each pose's box. Default `AUTO_POSE_DESCRIPTOR`. */
   poseDescriptor?: PoseDescriptor<TPose>;
 }

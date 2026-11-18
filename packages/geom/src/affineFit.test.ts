@@ -11,13 +11,13 @@ describe('fitAffine', () => {
   it('recovers the map between a point set and its image', () => {
     const m = multiply(translate(40, -7), multiply(rotate(0.9), scale(1.5, 0.6)));
     const from = Float64Array.of(0, 0, 100, 0, 100, 100, 0, 100, 30, 70);
-    expectAffine(fitAffine(from, transformCoords(from, m)), m);
+    expectAffine(fitAffine(from, transformCoords(m, from)), m);
   });
 
   it('recovers a turn and an even scale of points on one line', () => {
     const m = multiply(translate(5, 5), multiply(rotate(-1.1), scale(2, 2)));
     const from = Float64Array.of(0, 0, 10, 10, 30, 30);
-    expectAffine(fitAffine(from, transformCoords(from, m)), m);
+    expectAffine(fitAffine(from, transformCoords(m, from)), m);
   });
 
   it('has no fit for fewer than two distinct points', () => {
@@ -30,7 +30,7 @@ describe('fitAffine', () => {
   it('fits distinct points however small their coordinates', () => {
     const m = multiply(rotate(0.4), scale(2, 3));
     const from = Float64Array.of(0, 0, 1e-13, 0, 0, 1e-13, 1e-13, 1e-13);
-    const got = fitAffine(from, transformCoords(from, m));
+    const got = fitAffine(from, transformCoords(m, from));
     expect(got).not.toBeNull();
     got!.slice(0, 4).forEach((x, i) => expect(x).toBeCloseTo(m[i], 9));
   });

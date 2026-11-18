@@ -1,7 +1,7 @@
 import type { ActionDeps, BindingOptions, InvocationCtx } from '@weasel-js/routing';
-import { operandMethods, unionAABB, nodeDescriptors, poseDescriptorOf, scenePoseFrame, type PoseFrame, drawnBoxes, type DrawnBoxes, inputSession, SNAP_ANGLE_STEP } from '@weasel-js/core/engine';
+import { operandMethods, unionAabb, nodeDescriptors, poseDescriptorOf, scenePoseFrame, type PoseFrame, drawnBoxes, type DrawnBoxes, createBareSnapSession, SNAP_ANGLE_STEP } from '@weasel-js/core/engine';
 import type { CommitSelectionMethods, GestureContext, RotateBehavior, PoseDescriptor, SnapBegin, SnapSession } from '@weasel-js/core/engine';
-import { pointerStateOf, transformFinisher, type TransformFinisher, sceneGestureFrames, gestureReaders, type GestureReaders, readGestureLifecycle, type GestureLifecycle, carryPose, invertPlane, planeOf, shapeSources } from '@weasel-js/core';
+import { pointerStateOf, transformFinisher, type TransformFinisher, sceneGestureFrames, gestureReaders, type GestureReaders, readRunLifecycle, type RunLifecycle, carryPose, invertPlane, planeOf, shapeSources } from '@weasel-js/core';
 import { resolveParams } from '@weasel-js/routing';
 import type { RotateParams, Op, NodeId, Scene, Bounds } from '@weasel-js/core';
 import { moveGestureAdapter } from '../move/gestureAdapter';
@@ -50,7 +50,7 @@ export interface RotateSession {
   /** Finishes the committed batch with the other nodes that change with it. */
   readonly finish?: TransformFinisher;
   readonly selectionMethods: CommitSelectionMethods | undefined;
-  readonly lifecycle: GestureLifecycle;
+  readonly lifecycle: RunLifecycle;
 }
 
 /** What one `onMove` produced. Replaced, not mutated, by the next. */
@@ -137,7 +137,7 @@ export function captureTurn(
   const boxes = drawnBoxes({ ...deps, scene }, poseFrame);
   const { originPoses, origins, visual } = captureOrigins(view, scene, ids, descriptorOf, poseFrame, boxes);
   if (originPoses.size === 0) return null;
-  const union = unionAABB(visual)!;
+  const union = unionAabb(visual)!;
   return {
     turn: {
       origins,
@@ -156,7 +156,7 @@ function beginSnap(ctx: InvocationCtx, ids: readonly string[], pivot: { x: numbe
   const req: SnapBegin = {
     gesture: 'rotate', ids, press: ctx.world, pivot, theta0, constrain: { step: SNAP_ANGLE_STEP },
   };
-  return ctx.deps.snap?.begin(req) ?? inputSession(req);
+  return ctx.deps.snap?.begin(req) ?? createBareSnapSession(req);
 }
 
 /** Capture a rotate at press. Null when nothing selected can turn. Runs each
@@ -200,7 +200,7 @@ export function beginRotate(
     applyOps: ctx.deps.applyOps,
     finish: transformFinisher(ctx.deps),
     selectionMethods: operandMethods(selection),
-    lifecycle: readGestureLifecycle(params, 'Rotate', behaviors),
+    lifecycle: readRunLifecycle(params, 'Rotate', behaviors),
   };
   return { session, readers };
 }

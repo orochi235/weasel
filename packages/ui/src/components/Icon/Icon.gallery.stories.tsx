@@ -33,7 +33,7 @@ function Sheet({ table = uiIcons, size, proof }: { table?: IconTable; size: numb
           <div className={proof ? `${s.sheet} ${s.proof}` : s.sheet}>
             {refs.map((ref) => (
               <figure key={ref}>
-                <Icon name={ref} size={size} label={ref} />
+                <Icon name={ref} size={size} aria-label={ref} />
                 <figcaption>{ref}</figcaption>
               </figure>
             ))}
@@ -52,7 +52,7 @@ function MarkedSheet({ size, proof }: { size: number; proof?: boolean }) {
     <div className={proof ? `${s.sheet} ${s.proof}` : s.sheet}>
       {MARKED.flatMap((name) => MARKS.map((mark) => (
         <figure key={name + mark}>
-          <Icon name={name} mark={mark} size={size} label={`${name}, ${mark}`} />
+          <Icon name={name} mark={mark} size={size} aria-label={`${name}, ${mark}`} />
           <figcaption>{name} + {mark}</figcaption>
         </figure>
       )))}

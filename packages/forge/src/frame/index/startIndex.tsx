@@ -3,7 +3,7 @@ import { Component, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import { createKitRoot } from '../../kitIcons';
 import type { Channel } from '../../protocol/channel';
-import type { FromFrame, Globals, ToFrame } from '../../protocol/messages';
+import type { FromFrame, StoryGlobals, ToFrame } from '../../protocol/messages';
 import { describeSchema } from '../../protocol/schema';
 import type { IndexBundle } from '../../story/indexBundle';
 import { runAxe } from '../a11y';
@@ -53,7 +53,7 @@ export function startIndex(options: StartIndexOptions): () => void {
   container.append(wrapper);
   const root = createKitRoot(wrapper, setup.icons);
   const globalsTarget = createGlobalsTarget(document.documentElement, ':root');
-  let globals: Globals | null = null;
+  let globals: StoryGlobals | null = null;
   let announced = false;
 
   const render = (): void => {

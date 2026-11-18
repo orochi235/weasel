@@ -21,10 +21,10 @@ test("a story host's box follows its scroller through the content, and a capture
   const scroller = host.querySelector<HTMLElement>('.fg-story__scroll') as HTMLElement;
   expect(scroller.scrollHeight).toBe(1200);
 
-  expect(storyBox(host).content.h).toBe(1200);
-  expect(storyBox(host).shown).toMatchObject({ y: 0, h: 300 });
+  expect(storyBox(host).content.height).toBe(1200);
+  expect(storyBox(host).shown).toMatchObject({ y: 0, height: 300 });
   scroller.scrollTop = 450;
-  expect(storyBox(host).shown).toMatchObject({ y: 450, h: 300 });
+  expect(storyBox(host).shown).toMatchObject({ y: 450, height: 300 });
 
   const svg = new DOMParser().parseFromString(captureHost(host).markup, 'image/svg+xml').documentElement;
   expect(svg.getAttribute('height')).toBe('1200');

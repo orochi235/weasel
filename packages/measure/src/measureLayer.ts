@@ -3,11 +3,11 @@ import {
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { pxReach, rectPath } from '@weasel-js/geom';
-import { measureCommands } from './measurePainter';
+import { measureDrawCommands } from './measurePainter';
 import { measureEndsOf, type MeasurePoint } from './measurement';
 import type { Measurements } from './measurements';
-import { measureAt, type MeasureHit } from './measureHit';
-import { MEASURE_HIT_PX } from './measureGestures';
+import { measureHitAt, type MeasureHit } from './measureHit';
+import { MEASURE_HIT_PX } from './measureActions';
 
 /** The registered layer's id; a press it claims routes as `layer:<id>`. */
 export const MEASURE_LAYER_ID = 'weasel-measure';
@@ -23,7 +23,7 @@ const HANDLE_PX = 3.5;
  * edits it rather than reaching the tool. Under the measure tool it claims
  * only the picked measurement's ends, so a drag from anywhere else measures.
  */
-export function measurementsLayer(scene: AnyScene, ms: Measurements): RenderLayer<unknown> {
+export function createMeasureLayer(scene: AnyScene, ms: Measurements): RenderLayer<unknown> {
   return {
     id: MEASURE_LAYER_ID,
     label: 'Measurements',
@@ -40,7 +40,7 @@ export function measurementsLayer(scene: AnyScene, ms: Measurements): RenderLaye
       };
       const out: DrawCommand[] = [];
       const draft = ms.draft.get();
-      if (draft) out.push(...measureCommands(toScreen(draft.start), toScreen(draft.end), 1));
+      if (draft) out.push(...measureDrawCommands(toScreen(draft.start), toScreen(draft.end), 1));
       const picked = ms.picked.get();
       const ends = picked === null ? null : measureEndsOf(shownLookup(scene).get(picked));
       if (ends && !scene.isHidden(picked!)) {
@@ -57,7 +57,7 @@ export function measurementsLayer(scene: AnyScene, ms: Measurements): RenderLaye
       return out;
     },
     hitTest: (wx, wy, _data, view): LayerHit<MeasureHit> | null => {
-      const hit = measureAt(scene, ms, { x: wx, y: wy }, pxReach(MEASURE_HIT_PX, view.scale));
+      const hit = measureHitAt(scene, ms, { x: wx, y: wy }, pxReach(MEASURE_HIT_PX, view.scale));
       if (!hit) return null;
       const onPickedEnd = hit.part !== 'line' && hit.id === ms.picked.get();
       if (ms.measuring.get() && !onPickedEnd) return null;

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { hostAnimator } from '../hostAnimator';
+import { createHostedAnimator } from '../createHostedAnimator';
 import { createTarget } from '../target';
 import type { AnimatorEvent } from '../types';
 
@@ -7,7 +7,7 @@ import type { AnimatorEvent } from '../types';
 function rig() {
   let now = 0;
   let asked = 0;
-  const hosted = hostAnimator({ now: () => now, requestFrame: () => { asked += 1; } });
+  const hosted = createHostedAnimator({ now: () => now, requestFrame: () => { asked += 1; } });
   const events: AnimatorEvent[] = [];
   hosted.animator.watch((e) => { events.push(e); });
   const seen: number[] = [];

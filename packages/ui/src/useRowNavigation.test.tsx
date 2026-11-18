@@ -23,7 +23,7 @@ function List({ rows, opts = {} }: { rows: readonly FocusRow[]; opts?: Opts }) {
           onKeyDown={(e) => nav.onKeyDown(r.id, e)}
         >
           {r.id}
-          <button type="button" onClick={() => opts.onActivate?.(`remove ${r.id}`, { shiftKey: false, ctrlKey: false, metaKey: false, altKey: false })}>x</button>
+          <button type="button" onClick={() => opts.onAction?.(`remove ${r.id}`, { shiftKey: false, ctrlKey: false, metaKey: false, altKey: false })}>x</button>
         </div>
       ))}
     </div>
@@ -179,17 +179,17 @@ describe('useRowNavigation', () => {
   });
 
   it('activates with Enter and Space, carrying the modifiers', () => {
-    const onActivate = vi.fn();
-    render(<List rows={FLAT} opts={{ onActivate }} />);
+    const onAction = vi.fn();
+    render(<List rows={FLAT} opts={{ onAction }} />);
     act(() => row('b').focus());
     key(' ', { shiftKey: true });
-    expect(onActivate).toHaveBeenCalledWith('b', expect.objectContaining({ shiftKey: true }));
+    expect(onAction).toHaveBeenCalledWith('b', expect.objectContaining({ shiftKey: true }));
   });
 
   it('hands focus to the next sibling when the focused row is removed', () => {
     function Removable() {
       const [rows, setRows] = useState(FLAT);
-      return <List rows={rows} opts={{ onActivate: (what) => setRows(rows.filter((r) => `remove ${r.id}` !== what)) }} />;
+      return <List rows={rows} opts={{ onAction: (what) => setRows(rows.filter((r) => `remove ${r.id}` !== what)) }} />;
     }
     render(<Removable />);
     const x = row('b').querySelector('button')!;

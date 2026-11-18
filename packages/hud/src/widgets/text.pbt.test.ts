@@ -41,7 +41,7 @@ describe('createText', () => {
       for (const c of cmds) {
         const deps = w.deps!({} as never);
         if (c.t === 'text') { w.setText(c.s); text = c.s; }
-        else if (c.t === 'bounds') { w.setBounds({ x: c.x, y: c.y, w: 0, h: s.fontSize }); x = c.x; y = c.y; }
+        else if (c.t === 'bounds') { w.setBounds({ x: c.x, y: c.y, width: 0, height: s.fontSize }); x = c.x; y = c.y; }
         else {
           const ctx = { dims: { width: 400, height: 300 }, defaultFont: FONTS[c.font]!, color: () => '#000', tokens: THEMES[c.theme]! };
           expect(w.draw(ctx)).toEqual(make(text, x, y).draw(ctx));

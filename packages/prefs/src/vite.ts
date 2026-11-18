@@ -8,7 +8,7 @@ import { getOwn } from '@weasel-js/registry';
 import { resolve } from 'node:path';
 import { runnerImport, type Plugin, type ResolvedConfig } from 'vite';
 import { prefsCss, type PrefsCssOptions } from './css';
-import { prefsDefaultsSource } from './defaultsSource';
+import { createDefaultsSource } from './defaultsSource';
 import type { PrefGroup } from '@weasel-js/prefs-schema';
 
 const ID = 'virtual:weasel-prefs.css';
@@ -50,7 +50,7 @@ export function weaselPrefsCss(options: WeaselPrefsCssOptions): Plugin {
       if (!schema || typeof schema !== 'object' || !('children' in schema)) {
         throw new Error(`[weasel-prefs] ${id} exports no PrefGroup named "${name}"`);
       }
-      parts.push(prefsCss(prefsDefaultsSource(schema), options.css));
+      parts.push(prefsCss(createDefaultsSource(schema), options.css));
     }
     return { css: parts.join('\n\n'), files: read };
   };

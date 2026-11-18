@@ -30,7 +30,8 @@ export interface Hud extends FocusScope<Widget> {
   add(widget: Widget): void;
   remove(widget: Widget): void;
   widgets(): readonly Widget[];
-  markDirty(): void;
+  /** Ask the bound host to paint again. A no-op while unbound. */
+  requestRedraw(): void;
   bind(host: HudHost): void;
   unbind(): void;
   /** Run `fn` after every paint the host lands. Survives bind/unbind: a
@@ -54,19 +55,19 @@ export interface Hud extends FocusScope<Widget> {
   /** The widgets Tab visits, in order: those declaring `tabOrder` first,
    *  ascending, then the rest in the order they were added. */
   tabOrder(): Widget[];
-  /** Create a rect widget, add it to the HUD, and wire onChange → markDirty. */
+  /** Create a rect widget, add it to the HUD, and wire onChange → requestRedraw. */
   rect(opts: RectOptions): RectWidget;
-  /** Create a text widget, add it to the HUD, and wire onChange → markDirty. */
+  /** Create a text widget, add it to the HUD, and wire onChange → requestRedraw. */
   text(opts: TextOptions): TextWidget;
-  /** Create an image widget, add it to the HUD, and wire onChange → markDirty. */
+  /** Create an image widget, add it to the HUD, and wire onChange → requestRedraw. */
   image(opts: ImageOptions): ImageWidget;
-  /** Create a label widget, add it to the HUD, and wire onChange → markDirty. */
+  /** Create a label widget, add it to the HUD, and wire onChange → requestRedraw. */
   label(opts: LabelOptions): LabelWidget;
-  /** Create a button widget, add it to the HUD, and wire onChange → markDirty. */
+  /** Create a button widget, add it to the HUD, and wire onChange → requestRedraw. */
   button(opts: ButtonOptions): ButtonWidget;
-  /** Create a window widget, add it to the HUD, and wire onChange → markDirty. */
+  /** Create a window widget, add it to the HUD, and wire onChange → requestRedraw. */
   window(opts: WindowOptions): WindowWidget;
-  /** Create a list widget, add it to the HUD, and wire onChange → markDirty. */
+  /** Create a list widget, add it to the HUD, and wire onChange → requestRedraw. */
   list(opts: ListOptions): ListWidget;
 }
 
@@ -179,7 +180,7 @@ export function createHud(): Hud {
     },
     tabOrder,
     subscribeFocus: focusSubs.subscribe,
-    markDirty() { requestRedraw(); },
+    requestRedraw,
     bind(h) {
       if (host) throw new Error('weasel-hud: HUD is already bound to a host.');
       host = h;

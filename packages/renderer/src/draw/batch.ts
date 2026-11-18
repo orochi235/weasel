@@ -12,6 +12,7 @@ import {
 } from './batchRun';
 import { type BatchPaint, rampVertices } from './gradient';
 import { pushPatternMesh } from './patternBatch';
+import type { Rect } from '@weasel-js/geom';
 
 /**
  * Vertices above which a mesh keeps its own draw, by whether a run is open.
@@ -178,7 +179,7 @@ function stagedColor(
 
 export function pushRect(
   ctx: DrawContext,
-  rect: { x: number; y: number; width: number; height: number },
+  rect: Rect,
   fill: { color: string; opacity?: number },
 ): void {
   const slot = stageSolid(ctx, 4);
@@ -201,7 +202,7 @@ function pushMesh(
 
 export function pushRampRect(
   ctx: DrawContext,
-  rect: { x: number; y: number; width: number; height: number },
+  rect: Rect,
   paint: Extract<BatchPaint, { kind: 'ramp' }>,
 ): void {
   const { slot, tint, rowV } = stageRamps(ctx, paint.stops, paint.space, 4);

@@ -51,10 +51,10 @@ export function arcShape(spec: ArcTrackSpec): ArcTrackShape {
       else f = 360 - offset < offset - sweep ? 0 : 1;
       const q = at(f).point;
       const dist = Math.hypot(p.x - q.x, p.y - q.y);
-      if (!options?.open) return { f, dist };
+      if (!options?.open) return { f, distance: dist };
       const mid = (options.about ?? 0.5) * sweep;
       const unwrapped = mid + wrapPositive(offset - mid + 180, 360) - 180;
-      return { f: unwrapped / sweep, dist };
+      return { f: unwrapped / sweep, distance: dist };
     },
   };
   Object.defineProperty(shape, 'arc', { value: spec, enumerable: false });

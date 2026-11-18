@@ -14,14 +14,14 @@ const named = (rows: Accepted): Accepted => rows.filter(([name]) => name !== '')
 const sameRows = (a: Accepted, b: Accepted): boolean => deepEqual(a, b, { undefinedAsAbsent: true });
 
 /** `unit` less what says nothing, and `undefined` once nothing is left of it but a scale of 1. */
-function tidy({ suffix, compact, scale, offset, accepts, precision }: PrefLinearUnit): PrefLinearUnit | undefined {
+function tidy({ suffix, compact, scale, offset, accepts, places }: PrefLinearUnit): PrefLinearUnit | undefined {
   const out: PrefLinearUnit = {
     ...(suffix ? { suffix } : {}),
     ...(compact ? { compact } : {}),
     scale,
     ...(offset ? { offset } : {}),
     ...(accepts && Object.keys(accepts).length > 0 ? { accepts } : {}),
-    ...(precision !== undefined ? { precision } : {}),
+    ...(places !== undefined ? { places } : {}),
   };
   return scale === 1 && Object.keys(out).length === 1 ? undefined : out;
 }
@@ -63,7 +63,7 @@ export function UnitEditor({ ctx }: { ctx: LeafContext }) {
         <Input aria-label="Unit suffix" value={unit.suffix ?? ''} onChange={(suffix) => write({ suffix })} />
         <NumberText label="Unit scale" value={unit.scale} accept={nonZero} onCommit={(n) => write({ scale: n ?? 1 })} />
         <NumberText label="Unit offset" value={unit.offset} onCommit={(offset) => write({ offset })} />
-        <NumberText label="Unit places" value={unit.precision} accept={wholeCount} onCommit={(precision) => write({ precision })} />
+        <NumberText label="Unit places" value={unit.places} accept={wholeCount} onCommit={(places) => write({ places })} />
       </div>
       {rows.length > 0 && (
         <div className={`${s.acceptRow} ${s.optionHeads}`} aria-hidden="true">

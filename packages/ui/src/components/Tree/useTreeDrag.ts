@@ -1,16 +1,19 @@
-import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type Ref } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type Ref } from 'react';
+import type { EventModifiers } from '@weasel-js/gestures';
 import { useKitSetting, useLatest } from '@weasel-js/react';
 import { after } from '@weasel-js/registry';
 import { startThresholdDrag, swallowNextClick, type ThresholdDragHandle } from '@weasel-js/routing';
-import { resolveDrop, type DropIndent, type DropMark, type DropRow, type ResolvedDrop, type TreeDropTarget } from '../../dropTarget';
-import type { PressModifiers, ReorderGhost } from '../../useReorderDragList';
-import { inlineDirection } from '../../useRovingTabIndex';
+import type { DropMark, ResolvedDrop, TreeDropTarget } from '../../dropTarget';
+import type { ReorderGhost } from '../../useReorderDragList';
 import { draggedIdsFor, isNoopMove, landsInside } from './treeMoves';
 import type { TreeNode } from './Tree';
 import { modsOf } from '../../useReorderDragList';
 import { useOutsideDrop, type TreeDropHandle } from './useOutsideDrop';
 import { isContextPress, isPrimaryPress, modHeld, isInControlWithin } from '@weasel-js/gestures';
+import { dropAt, type TreeDragRow } from './treeDropAt';
 import type {} from '../../kitSettings';
+
+export type { TreeDragRow } from './treeDropAt';
 
 export const HOVER_EXPAND_MS = 600;
 /** How far the ghost's corner sits from the pointer, so what is under the pointer stays visible. */
@@ -26,14 +29,6 @@ interface Modifiers {
   altKey: boolean;
   metaKey: boolean;
   ctrlKey: boolean;
-}
-
-/** A visible row as `Tree` walks it. */
-export interface TreeDragRow {
-  node: TreeNode;
-  parentId: string | null;
-  level: number;
-  index: number;
 }
 
 export interface UseTreeDragOptions {
@@ -53,7 +48,7 @@ export interface UseTreeDragOptions {
   externalDrag?: { x: number; y: number } | null;
   dropRef?: Ref<TreeDropHandle>;
   /** A press released without dragging — the row's activation. */
-  onPress(id: string, mods: PressModifiers): void;
+  onPress(id: string, mods: EventModifiers): void;
   expand(id: string): void;
 }
 
@@ -67,56 +62,66 @@ export interface TreeDragState {
   pointer: { x: number; y: number; outside: boolean } | null;
 }
 
-/** The point and the level indent {@link resolveDrop} reads, measured along the inline direction: levels step in
- *  from the right in a right-to-left tree, so there both are read with x negated. */
-function indentAt(
-  visible: readonly TreeDragRow[], rowEl: (id: string) => HTMLElement | undefined, x: number, y: number,
-): [{ x: number; y: number }, DropIndent | undefined] {
-  const first = visible[0] && rowEl(visible[0].node.id);
-  const deep = visible.find((v) => v.level > 1);
-  const deepEl = deep && rowEl(deep.node.id);
-  const parentEl = deep?.parentId != null ? rowEl(deep.parentId) : undefined;
-  const flip = first && inlineDirection(first) === 'rtl' ? -1 : 1;
-  const start = (el: HTMLElement): number => {
-    const r = el.getBoundingClientRect();
-    return flip < 0 ? -r.right : r.left;
-  };
-  const indent = first && deepEl && parentEl ? { originX: start(first), indent: start(deepEl) - start(parentEl) } : undefined;
-  return [{ x: flip * x, y }, indent];
-}
-
 /** A press on this node starts no drag. */
 const stays = (node: TreeNode | undefined) => !!node && (!!node.disabled || !!node.immovable);
 
 const IDLE: TreeDragState ={ dragging: null, effect: 'move', mark: null, ghost: null, pointer: null };
 
+/** What a drag does with these modifiers held, in a tree taking what `takes` has handlers for. */
+function effectFor(mods: Modifiers, takes: Pick<UseTreeDragOptions, 'onCopy' | 'onLink'>): TreeDragEffect {
+  if (!mods.altKey) return 'move';
+  if (modHeld(mods) && takes.onLink) return 'link';
+  return takes.onCopy ? 'copy' : 'move';
+}
+
+/** Whether a client point is off `box`. */
+const outsideOf = (box: HTMLElement, x: number, y: number): boolean => {
+  const r = box.getBoundingClientRect();
+  return x < r.left || x > r.right || y < r.top || y > r.bottom;
+};
+
+/** Report each press and release of Alt, Meta or Control to `onChange`, with the modifiers as they stand after it,
+ *  until the returned function is called. */
+function watchModifierKeys(onChange: (mods: Modifiers) => void): () => void {
+  const onKey = (k: KeyboardEvent) => {
+    if (k.key === 'Alt' || k.key === 'Meta' || k.key === 'Control') onChange({ altKey: k.altKey, metaKey: k.metaKey, ctrlKey: k.ctrlKey });
+  };
+  window.addEventListener('keydown', onKey);
+  window.addEventListener('keyup', onKey);
+  return () => {
+    window.removeEventListener('keydown', onKey);
+    window.removeEventListener('keyup', onKey);
+  };
+}
+
+/** Opens a closed row once a drag has rested over it: `aim` at the row a drop would go into, or at null. */
+function useHoverExpand() {
+  const hover = useRef<{ id: string; cancel: () => void } | null>(null);
+  const clear = useCallback(() => {
+    hover.current?.cancel();
+    hover.current = null;
+  }, []);
+  const aim = useCallback((into: string | null, delayMs: number, expand: (id: string) => void) => {
+    if (into === null) { clear(); return; }
+    if (hover.current?.id === into) return;
+    clear();
+    hover.current = { id: into, cancel: after(delayMs, () => expand(into)) };
+  }, [clear]);
+  return useMemo(() => ({ aim, clear }), [aim, clear]);
+}
+
 /** Pointer drag-to-reorder for `Tree`. Inert unless `enabled`. */
 export function useTreeDrag(opts: UseTreeDragOptions) {
   const o = useLatest({ ...opts, hoverExpandMs: useKitSetting('tree.hoverExpandMs') ?? HOVER_EXPAND_MS, dragPx: useKitSetting('gestures.dragPx') });
   const drag = useRef<ThresholdDragHandle | null>(null);
-  const hover = useRef<{ id: string; cancel: () => void } | null>(null);
+  const hover = useHoverExpand();
   const [state, setState] = useState<TreeDragState>(IDLE);
 
-  const clearHover = () => {
-    hover.current?.cancel();
-    hover.current = null;
-  };
-  useEffect(() => () => { drag.current?.cancel(); clearHover(); }, []);
+  useEffect(() => () => { drag.current?.cancel(); hover.clear(); }, [hover]);
 
   const resolve = useCallback((ids: readonly string[], x: number, y: number, effect: TreeDragEffect = 'move'): ResolvedDrop | null => {
     const { visible, expanded, rowEl, nodes, canDrop } = o.current;
-    const rows: DropRow[] = [];
-    for (const v of visible) {
-      const el = rowEl(v.node.id);
-      if (!el) continue;
-      const r = el.getBoundingClientRect();
-      rows.push({
-        id: v.node.id, parentId: v.parentId, level: v.level, index: v.index,
-        branch: !!v.node.children, expanded: expanded.has(v.node.id),
-        childCount: v.node.children?.length ?? 0, top: r.top, height: r.height,
-      });
-    }
-    const hit = resolveDrop(rows, ...indentAt(visible, rowEl, x, y));
+    const hit = dropAt(visible, rowEl, expanded, x, y);
     // A copy or a link dropped where its original sits is a second row beside it, and not nothing.
     if (landsInside(nodes, ids, hit.target) || (effect === 'move' && isNoopMove(nodes, ids, hit.target))) return null;
     if (canDrop && !canDrop(ids, hit.target, effect)) return null;
@@ -131,16 +136,16 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
   }, [o]);
 
   // A modifier pressed or let go with the pointer still: the drag changes what it would do without moving.
-  const unwatchAlt = useRef<(() => void) | null>(null);
+  const unwatchMods = useRef<(() => void) | null>(null);
 
   const reset = useCallback(() => {
     drag.current = null;
-    unwatchAlt.current?.();
-    unwatchAlt.current = null;
-    clearHover();
+    unwatchMods.current?.();
+    unwatchMods.current = null;
+    hover.clear();
     leaveOutside();
     setState(IDLE);
-  }, [leaveOutside]);
+  }, [leaveOutside, hover]);
 
   const external = useOutsideDrop({ at: opts.externalDrag, latest: o, resolve, handle: opts.dropRef });
 
@@ -156,29 +161,16 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
     let ids: string[] = [];
 
     let last = { clientX: e.clientX, clientY: e.clientY };
-    const effectOf = (ev: Modifiers): TreeDragEffect => {
-      if (!ev.altKey) return 'move';
-      if (modHeld(ev) && o.current.onLink) return 'link';
-      return o.current.onCopy ? 'copy' : 'move';
-    };
     const update = (ev: { clientX: number; clientY: number } & Modifiers) => {
       last = { clientX: ev.clientX, clientY: ev.clientY };
-      const how = effectOf(ev);
-      const r = box.getBoundingClientRect();
-      const out = ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom;
+      const how = effectFor(ev, o.current);
+      const out = outsideOf(box, ev.clientX, ev.clientY);
       const taken = out && o.current.onDragOutside?.(ids, { x: ev.clientX, y: ev.clientY }, how) === true;
       if (taken) outside.current = ids;
       else leaveOutside();
       const hit = taken ? null : resolve(ids, ev.clientX, ev.clientY, how);
       const into = hit?.mark?.where === 'into' ? hit.mark.id : null;
-      if (into && !o.current.expanded.has(into)) {
-        if (hover.current?.id !== into) {
-          clearHover();
-          hover.current = { id: into, cancel: after(o.current.hoverExpandMs, () => o.current.expand(into)) };
-        }
-      } else {
-        clearHover();
-      }
+      hover.aim(into && !o.current.expanded.has(into) ? into : null, o.current.hoverExpandMs, (row) => o.current.expand(row));
       setState({
         dragging: ids,
         effect: how,
@@ -191,23 +183,15 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
 
     drag.current = startThresholdDrag(e, {
       origin: box, threshold: o.current.dragPx,
-      onActivate: (ev) => {
+      onStart: (ev) => {
         ids = draggedIdsFor(o.current.nodes, o.current.selected, id);
         update(ev);
         // The event carries the modifiers as they stand once this key has changed.
-        const onKey = (k: KeyboardEvent) => {
-          if (k.key === 'Alt' || k.key === 'Meta' || k.key === 'Control') update({ ...last, altKey: k.altKey, metaKey: k.metaKey, ctrlKey: k.ctrlKey });
-        };
-        window.addEventListener('keydown', onKey);
-        window.addEventListener('keyup', onKey);
-        unwatchAlt.current = () => {
-          window.removeEventListener('keydown', onKey);
-          window.removeEventListener('keyup', onKey);
-        };
+        unwatchMods.current = watchModifierKeys((m) => update({ ...last, ...m }));
       },
       onMove: update,
-      onCommit: (ev) => {
-        const how = effectOf(ev);
+      onEnd: (ev) => {
+        const how = effectFor(ev, o.current);
         if (outside.current) {
           o.current.onDropOutside?.(ids, { x: ev.clientX, y: ev.clientY }, how);
         } else {
@@ -223,7 +207,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
       },
       onCancel: reset,
     });
-  }, [o, resolve, reset, leaveOutside]);
+  }, [o, resolve, reset, leaveOutside, hover]);
 
   return { state: state.mark || !external ? state : { ...state, mark: external.mark ?? null }, onPointerDown };
 }

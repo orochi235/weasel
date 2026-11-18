@@ -11,30 +11,8 @@ import type { DrawContext } from './drawContext';
 import { drawModel, setAlphaUniform, setColorMatrixUniforms, setProjAndModel, setSolidPaintUniforms } from './uniforms';
 import { gradientSpaceInverse, spaceInverseAbout, spaceToDevice } from './gradient';
 import { tileExtent } from './patternBatch';
-import { isDev } from '@weasel-js/registry';
+import { createPart, isDev } from '@weasel-js/registry';
 import { warnOnce } from '../warnOnce';
-
-/** The narrow renderer surface a registered paint kind binds against, built
- *  once per frame context. `DrawContext` is not consumer surface. */
-export function paintBindContext(ctx: DrawContext): PaintBindContext {
-  const cached = BIND_CONTEXTS.get(ctx);
-  if (cached) return cached;
-  const gpu = ctx.gpu;
-  const made: PaintBindContext = {
-    get alpha() { return ctx.state.alpha; },
-    spaceInverse: (units, about) => spaceInverseAbout(ctx, units, about),
-    spaceToDevice: (units) => spaceToDevice(ctx, units),
-    get maxTextureSize() { return ctx.imageCache.maxTextureSide; },
-    resources: ctx.paintResources ?? unownedPaintResources(gpu),
-    ramp: (stops, space) => {
-      const row = ctx.gradRamps.upload(stops, space);
-      return { texture: ctx.gradRamps.atlas()!, v: ctx.gradRamps.rowV(row) };
-    },
-    ...paintTextures(gpu),
-  };
-  BIND_CONTEXTS.set(ctx, made);
-  return made;
-}
 
 /** The texture half of a {@link PaintBindContext}: RGBA8 textures on `gpu`, bilinear and clamped. */
 export function paintTextures(gpu: GpuDevice): Pick<PaintBindContext, 'createTexture' | 'deleteTexture'> {
@@ -47,18 +25,25 @@ export function paintTextures(gpu: GpuDevice): Pick<PaintBindContext, 'createTex
 
 const PAINT_TEXTURE_SAMPLING = { min: 'linear', mag: 'linear', wrapS: 'clamp', wrapT: 'clamp' } as const;
 
-const BIND_CONTEXTS = new WeakMap<DrawContext, PaintBindContext>();
+/** The narrow renderer surface a registered paint kind binds against, built
+ *  once per frame context. `DrawContext` is not consumer surface. */
+export const paintBindContext = createPart((ctx: DrawContext): PaintBindContext => {
+  const gpu = ctx.gpu;
+  return {
+    get alpha() { return ctx.state.alpha; },
+    spaceInverse: (units, about) => spaceInverseAbout(ctx, units, about),
+    spaceToDevice: (units) => spaceToDevice(ctx, units),
+    get maxTextureSize() { return ctx.imageCache.maxTextureSide; },
+    resources: ctx.paintResources ?? unownedPaintResources(gpu),
+    ramp: (stops, space) => {
+      const row = ctx.gradRamps.upload(stops, space);
+      return { texture: ctx.gradRamps.atlas()!, v: ctx.gradRamps.rowV(row) };
+    },
+    ...paintTextures(gpu),
+  };
+});
 
-const UNOWNED_RESOURCES = new WeakMap<GpuDevice, PaintResources>();
-
-function unownedPaintResources(gpu: GpuDevice): PaintResources {
-  let made = UNOWNED_RESOURCES.get(gpu);
-  if (!made) {
-    made = createPaintResources();
-    UNOWNED_RESOURCES.set(gpu, made);
-  }
-  return made;
-}
+const unownedPaintResources = createPart<GpuDevice, PaintResources>(() => createPaintResources());
 
 /**
  * Bind a registered kind's paint: the program its `bind` names, `u_proj` and

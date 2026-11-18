@@ -1,5 +1,5 @@
 /** The properties a `text` node edits: its content, background, and typography beside the standard shape sections. */
-import type { PrefBooleanEncoding, PrefLeaf, PrefSection } from '@weasel-js/prefs';
+import type { PrefBooleanEncoding, PrefLeaf, PrefSection } from '@weasel-js/prefs-schema';
 import { decimal } from '@weasel-js/quantity';
 import { shapePropertiesSchema, type NodePropertiesEntry } from '@weasel-js/core';
 import { icon } from '../icons.gen';

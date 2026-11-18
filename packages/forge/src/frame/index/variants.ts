@@ -1,4 +1,4 @@
-import { type ConfigSchema, type ConfigShape, isConfigBranch, isEntryShown, resolveConfigSchema, titleCase } from '@weasel-js/labkit/config';
+import { type ConfigSchema, type ConfigShape, isConfigBranch, isConfigNodeShown, resolveConfigSchema, titleCase } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
 import { getOwn } from '@weasel-js/registry';
 
@@ -34,7 +34,7 @@ export function variantRows(schema: ConfigSchema<unknown>): VariantRow[] {
     for (const [key, entry] of Object.entries(shape)) {
       if (rows.length >= MAX_ROWS) return;
       const path = at === '' ? key : `${at}.${key}`;
-      if (!isEntryShown(entry, defaults, group)) continue;
+      if (!isConfigNodeShown(entry, defaults, group)) continue;
       if (isConfigBranch(entry)) {
         walk(entry.children, path);
         continue;

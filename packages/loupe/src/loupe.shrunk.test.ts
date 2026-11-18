@@ -5,14 +5,14 @@ import { createLoupeModel } from './model';
 
 describe('shrunk from the loupe properties', () => {
   it('places a band on a host with no room at a factor a lens point can be mapped back by', () => {
-    const got = placeBand({ band: { x: 0, y: 0, w: 0, h: 5e-324 }, factor: 0.01, maxWidth: 0, maxHeight: 0 });
+    const got = placeBand({ band: { x: 0, y: 0, width: 0, height: 5e-324 }, factor: 0.01, maxWidth: 0, maxHeight: 0 });
     expect(got.factor).toBe(ZOOM_FLOOR);
-    const q = loupeSourcePoint({ x: 0, y: 0 }, { x: 0, y: 0, w: got.width, h: got.height }, got.shows, got.factor);
+    const q = loupeSourcePoint({ x: 0, y: 0 }, { x: 0, y: 0, width: got.width, height: got.height }, got.shows, got.factor);
     expect(Number.isFinite(q.x) && Number.isFinite(q.y)).toBe(true);
   });
 
   it('never places a lens wider than the host, where rounding the band width up would', () => {
-    const got = placeBand({ band: { x: 0, y: 0, w: 5e-324, h: 0 }, factor: 32, maxWidth: 7.4e-323 });
+    const got = placeBand({ band: { x: 0, y: 0, width: 5e-324, height: 0 }, factor: 32, maxWidth: 7.4e-323 });
     expect(got.width).toBeLessThanOrEqual(7.4e-323);
   });
 

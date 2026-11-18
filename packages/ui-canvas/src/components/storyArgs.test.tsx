@@ -23,5 +23,5 @@ describe('a story drawing several instances applies its args to each', () => {
     const mod = (await import('./inspector/AnchorFields/AnchorFields.stories')) as unknown as Record<string, Story>;
     draw(mod[name], { unit: 'furlongs' });
     expect(screen.getAllByText('furlongs').length).toBeGreaterThan(0);
-  });
+  }, 15_000); // the story module's first import takes ~2.5s alone, and past 5s under a fleet run's load
 });

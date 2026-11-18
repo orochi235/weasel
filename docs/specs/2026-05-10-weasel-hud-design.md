@@ -102,7 +102,7 @@ import { createHud, attachHud } from '@weasel-js/hud';
 const hud = createHud();
 
 const save = hud.button({ x: 10, y: 10, w: 80, h: 24, label: 'Save' });
-save.on('press', () => doSave());
+save.subscribe('press', () => doSave());
 
 const status = hud.label({ x: 10, y: 40, text: 'idle' });
 
@@ -120,7 +120,7 @@ const detach = attachHud(canvasEl, hud);
 - `setBounds({ x, y, w, h }): void`
 - `setHidden(hidden: boolean): void`
 - `dispose(): void` — equivalent to `hud.remove(widget)`
-- `on(event, handler): void` / `off(event, handler): void`
+- `subscribe(event, handler): () => void`, returning the unsubscribe
 
 Plus type-specific setters: `button.setLabel`, `label.setText`, `text.setText`,
 `image.setImage`, `rect.setFill`, etc. Inline style props (`fill`, `borderColor`,

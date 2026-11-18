@@ -117,7 +117,7 @@ const FIT_CHECKS = 32;
 function fitError(n: number, a: number, b: number, p0: Point, [c1, c2, p3]: UnitCubic): number {
   const off = (w: number) => {
     const q = curveAt(n, w);
-    return nearestOnCubic(q.x, q.y, p0.x, p0.y, c1.x, c1.y, c2.x, c2.y, p3.x, p3.y).dist;
+    return nearestOnCubic(q.x, q.y, p0.x, p0.y, c1.x, c1.y, c2.x, c2.y, p3.x, p3.y).distance;
   };
   let worst = 0, at = 1;
   for (let i = 1; i < FIT_CHECKS; i++) {

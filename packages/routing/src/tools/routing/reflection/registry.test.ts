@@ -42,7 +42,7 @@ describe('buildRouteRegistry', () => {
       { spec: { kind: 'doubleClick' }, actionId: 'c' },
       { spec: { kind: 'pointerDown' }, actionId: 'd' },
     ])]);
-    expect(r.map((e) => e.gesture)).toEqual(['keyDown', 'keyHeld', 'dblTap', 'pointerDown']);
+    expect(r.map((e) => e.gesture)).toEqual(['keyDown', 'keyHeld', 'doubleClick', 'pointerDown']);
   });
 
   it('names multiTouch, carrying the finger count as the arg', () => {

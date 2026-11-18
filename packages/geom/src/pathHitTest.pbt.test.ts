@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { pointInPath, strokeHitTest } from './pathHitTest';
+import { pathContainsPoint, strokeHitTest } from './pathHitTest';
 import { transformPath } from './paths/transformPath';
 import { PathBuilder } from './paths/builder';
 import { transformPoint, multiply, rotate, scale, translate, type Affine } from './affine';
@@ -64,7 +64,7 @@ describe('hit-testing under a transform, property', () => {
       const [u, v] = transformPoint(m, x, y);
       const moved = transformPath(path, m);
       fc.pre(!strokeHitTest(moved, u, v, 0.05 * shrink(m), FINE));
-      expect(pointInPath(moved, u, v, FINE)).toBe(pointInPath(path, x, y, FINE));
+      expect(pathContainsPoint(moved, u, v, FINE)).toBe(pathContainsPoint(path, x, y, FINE));
     }), RUNS);
   });
 
@@ -74,7 +74,7 @@ describe('hit-testing under a transform, property', () => {
       expect(moved.kind).toBe('rect');
       fc.pre(!strokeHitTest(path, x, y, 1e-6 * 1000));
       const [u, v] = transformPoint(m, x, y);
-      expect(pointInPath(moved, u, v)).toBe(pointInPath(path, x, y));
+      expect(pathContainsPoint(moved, u, v)).toBe(pathContainsPoint(path, x, y));
     }), RUNS);
   });
 

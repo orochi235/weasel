@@ -1,20 +1,20 @@
 import { describe, it, expect } from 'vitest';
-import { nearestOnLine, nearestOnQuadratic, nearestOnCubic, nearestOnPath } from './nearest';
+import { nearestOnSegment, nearestOnQuadratic, nearestOnCubic, nearestOnPath } from './nearest';
 import { cubicEvalAt } from './curve';
 import { PATH_M, PATH_L, PATH_Q, PATH_C, PATH_Z } from './commands';
 
-describe('nearestOnLine', () => {
+describe('nearestOnSegment', () => {
   it('drops a perpendicular onto the interior', () => {
-    expect(nearestOnLine(5, 3, 0, 0, 10, 0)).toEqual({ x: 5, y: 0, t: 0.5, dist: 3 });
+    expect(nearestOnSegment(5, 3, 0, 0, 10, 0)).toEqual({ x: 5, y: 0, t: 0.5, distance: 3 });
   });
 
   it('clamps to the endpoints', () => {
-    expect(nearestOnLine(-4, 3, 0, 0, 10, 0)).toEqual({ x: 0, y: 0, t: 0, dist: 5 });
-    expect(nearestOnLine(14, -3, 0, 0, 10, 0)).toEqual({ x: 10, y: 0, t: 1, dist: 5 });
+    expect(nearestOnSegment(-4, 3, 0, 0, 10, 0)).toEqual({ x: 0, y: 0, t: 0, distance: 5 });
+    expect(nearestOnSegment(14, -3, 0, 0, 10, 0)).toEqual({ x: 10, y: 0, t: 1, distance: 5 });
   });
 
   it('answers t = 0 on a zero-length segment', () => {
-    expect(nearestOnLine(3, 4, 0, 0, 0, 0)).toEqual({ x: 0, y: 0, t: 0, dist: 5 });
+    expect(nearestOnSegment(3, 4, 0, 0, 0, 0)).toEqual({ x: 0, y: 0, t: 0, distance: 5 });
   });
 });
 
@@ -44,7 +44,7 @@ describe('nearestOnCubic', () => {
     const [x, y] = cubicEvalAt(...S, 0.37);
     const hit = nearestOnCubic(x, y, ...S);
     expect(hit.t).toBeCloseTo(0.37, 9);
-    expect(hit.dist).toBeCloseTo(0, 9);
+    expect(hit.distance).toBeCloseTo(0, 9);
   });
 
   it('answers the apex of a symmetric arch from directly above', () => {
@@ -52,14 +52,14 @@ describe('nearestOnCubic', () => {
     expect(hit.t).toBeCloseTo(0.5, 9);
     expect(hit.x).toBeCloseTo(5, 9);
     expect(hit.y).toBeCloseTo(7.5, 9);
-    expect(hit.dist).toBeCloseTo(12.5, 9);
+    expect(hit.distance).toBeCloseTo(12.5, 9);
   });
 
   it('lands exactly on an endpoint when the probe lies beyond it', () => {
     const start = nearestOnCubic(-3, -4, ...S);
-    expect(start).toEqual({ x: 0, y: 0, t: 0, dist: 5 });
+    expect(start).toEqual({ x: 0, y: 0, t: 0, distance: 5 });
     const end = nearestOnCubic(13, -4, ...S);
-    expect(end).toEqual({ x: 10, y: 0, t: 1, dist: 5 });
+    expect(end).toEqual({ x: 10, y: 0, t: 1, distance: 5 });
   });
 
   it('finds the tip of a cusp, where the derivative vanishes', () => {
@@ -69,14 +69,14 @@ describe('nearestOnCubic', () => {
     expect(hit.t).toBeCloseTo(0.5, 6);
     expect(hit.x).toBeCloseTo(0.5, 9);
     expect(hit.y).toBeCloseTo(0.75, 9);
-    expect(hit.dist).toBeCloseTo(0.25, 9);
+    expect(hit.distance).toBeCloseTo(0.25, 9);
   });
 
   it('picks the global minimum across a self-intersecting loop', () => {
     // A loop: the probe sits equidistant-ish from two arms; brute force decides.
     const loop = [0, 0, 12, 10, -2, 10, 10, 0] as const;
     const hit = nearestOnCubic(5, 4, ...loop);
-    expect(hit.dist).toBeLessThanOrEqual(bruteCubic(5, 4, loop) + 1e-9);
+    expect(hit.distance).toBeLessThanOrEqual(bruteCubic(5, 4, loop) + 1e-9);
   });
 
   it('matches dense brute-force sampling on random curves and probes', () => {
@@ -86,8 +86,8 @@ describe('nearestOnCubic', () => {
       const px = r() * 300 - 150, py = r() * 300 - 150;
       const hit = nearestOnCubic(px, py, c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7]);
       const brute = bruteCubic(px, py, c);
-      expect(hit.dist, `case ${i}`).toBeLessThanOrEqual(brute + 1e-9);
-      expect(hit.dist, `case ${i}`).toBeGreaterThan(brute - 1e-6);
+      expect(hit.distance, `case ${i}`).toBeLessThanOrEqual(brute + 1e-9);
+      expect(hit.distance, `case ${i}`).toBeGreaterThan(brute - 1e-6);
       const [x, y] = cubicEvalAt(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7], hit.t);
       expect(hit.x).toBeCloseTo(x, 9);
       expect(hit.y).toBeCloseTo(y, 9);
@@ -95,7 +95,7 @@ describe('nearestOnCubic', () => {
   });
 
   it('handles a curve collapsed to a single point', () => {
-    expect(nearestOnCubic(3, 4, 0, 0, 0, 0, 0, 0, 0, 0)).toMatchObject({ x: 0, y: 0, dist: 5 });
+    expect(nearestOnCubic(3, 4, 0, 0, 0, 0, 0, 0, 0, 0)).toMatchObject({ x: 0, y: 0, distance: 5 });
   });
 });
 
@@ -106,11 +106,11 @@ describe('nearestOnQuadratic', () => {
     expect(hit.t).toBeCloseTo(0.5, 9);
     expect(hit.x).toBeCloseTo(2, 9);
     expect(hit.y).toBeCloseTo(2, 9);
-    expect(hit.dist).toBeCloseTo(3, 9);
+    expect(hit.distance).toBeCloseTo(3, 9);
   });
 
   it('clamps to an endpoint', () => {
-    expect(nearestOnQuadratic(-3, -4, 0, 0, 2, 4, 4, 0)).toEqual({ x: 0, y: 0, t: 0, dist: 5 });
+    expect(nearestOnQuadratic(-3, -4, 0, 0, 2, 4, 4, 0)).toEqual({ x: 0, y: 0, t: 0, distance: 5 });
   });
 });
 
@@ -121,7 +121,7 @@ describe('nearestOnPath', () => {
 
   it('reports the line segment it lands on', () => {
     expect(nearestOnPath(commands, coords, 5, -2)).toEqual({
-      x: 5, y: 0, t: 0.5, dist: 2, commandIndex: 1, coordIndex: 2,
+      x: 5, y: 0, t: 0.5, distance: 2, commandIndex: 1, coordIndex: 2,
     });
   });
 
@@ -130,7 +130,7 @@ describe('nearestOnPath', () => {
     expect(hit.commandIndex).toBe(2);
     expect(hit.coordIndex).toBe(4);
     expect(hit.t).toBeCloseTo(1, 9);
-    expect(hit.dist).toBeCloseTo(10, 9);
+    expect(hit.distance).toBeCloseTo(10, 9);
   });
 
   it('reports the cubic segment it lands on', () => {
@@ -143,7 +143,7 @@ describe('nearestOnPath', () => {
 
   it('includes the closing edge a Z draws back to the subpath start', () => {
     const hit = nearestOnPath(commands, coords, -2, 5)!;
-    expect(hit).toEqual({ x: 0, y: 5, t: 0.5, dist: 2, commandIndex: 4, coordIndex: 14 });
+    expect(hit).toEqual({ x: 0, y: 5, t: 0.5, distance: 2, commandIndex: 4, coordIndex: 14 });
   });
 
   it('starts a segment after Z at the subpath start, as SVG does', () => {
@@ -151,7 +151,7 @@ describe('nearestOnPath', () => {
     const cmds = Uint8Array.of(PATH_M, PATH_L, PATH_Z, PATH_L);
     const cs = Float64Array.of(0, 0, 10, 0, 0, 10);
     const hit = nearestOnPath(cmds, cs, -1, 5)!;
-    expect(hit).toEqual({ x: 0, y: 5, t: 0.5, dist: 1, commandIndex: 3, coordIndex: 4 });
+    expect(hit).toEqual({ x: 0, y: 5, t: 0.5, distance: 1, commandIndex: 3, coordIndex: 4 });
   });
 
   it('keeps the first segment on a tie', () => {
@@ -173,10 +173,10 @@ describe('nearestOnPath', () => {
   });
 });
 
-describe('nearestOnLine at either end of the double range', () => {
+describe('nearestOnSegment at either end of the double range', () => {
   it('reports the distance to a probe past 1e154 or below 1e-154 away', () => {
     for (const scale of [1e-200, 1e200]) {
-      expect(nearestOnLine(0, 4 * scale, -scale, 0, scale, 0).dist / scale).toBeCloseTo(4, 12);
+      expect(nearestOnSegment(0, 4 * scale, -scale, 0, scale, 0).distance / scale).toBeCloseTo(4, 12);
     }
   });
 });

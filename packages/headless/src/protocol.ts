@@ -2,6 +2,7 @@
 // than from core, whose types reach React and the DOM, neither of which a Node caller has.
 import { decodeSnapshot, encodeSnapshot } from '@weasel-js/core/json';
 import { checkPixelRenderRect } from '@weasel-js/core/math';
+import type { Rect } from '@weasel-js/geom';
 
 /** The page script's global, set once the script has run. */
 export const PAGE_GLOBAL = '__weaselHeadless';
@@ -10,7 +11,7 @@ export const PAGE_GLOBAL = '__weaselHeadless';
  *  `colorOverrides` or `trimOverrides`. Each means what it means there. */
 export interface SerializableRenderArgs {
   /** Scene-space rect to render. */
-  sourceRect: { x: number; y: number; width: number; height: number };
+  sourceRect: Rect;
   /** Output pixels per scene unit, per axis. */
   scale: { x: number; y: number };
   /** Background fill, any CSS color. Default: transparent. */
@@ -54,7 +55,7 @@ export function sceneFromWire(wire: object): object {
   return decodeSnapshot(wire) as object;
 }
 
-type Rect = { x: unknown; y: unknown; width: unknown; height: unknown };
+type UncheckedRect = { x: unknown; y: unknown; width: unknown; height: unknown };
 const isRecord = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === 'object' && !Array.isArray(v);
 const shown = (v: unknown): string => {
   try {
@@ -81,7 +82,7 @@ export function readPageRequest(value: unknown): PageRequest {
   if (!isRecord(value.sourceRect)) refuse('sourceRect', 'an object', value.sourceRect);
   if (!isRecord(value.scale)) refuse('scale', 'an object', value.scale);
   // Refused here as the page's `renderSceneToPixels` refuses it, so such a request never starts a browser.
-  checkPixelRenderRect(value.sourceRect as Rect, value.scale as Rect, 'headless render request');
+  checkPixelRenderRect(value.sourceRect as UncheckedRect, value.scale as UncheckedRect, 'headless render request');
   if (value.format !== 'rgba' && value.format !== 'png') refuse('format', `'rgba' or 'png'`, value.format);
   if (value.background !== undefined && typeof value.background !== 'string') refuse('background', 'a CSS color string', value.background);
   if (value.flattenTolerancePx !== undefined) finite('flattenTolerancePx', value.flattenTolerancePx);

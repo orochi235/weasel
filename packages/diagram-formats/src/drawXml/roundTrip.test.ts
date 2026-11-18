@@ -5,13 +5,13 @@ import type { DiagramDocument } from '../document';
 import { documentFromScene } from '../fromScene';
 import { documentSpecs } from '../toScene';
 import { MEASURE, THEME, contentNodes, docScene, drawnScene, type DocScene } from '../testing/docScene';
-import { DRAW_XML } from './format';
+import { DIAGRAM_DRAW_XML } from './format';
 import { asGraph } from '../testing/asGraph';
 
 /** The scene `scene` comes back as through draw-style XML, and the warnings both ways. */
 async function throughXml(scene: DocScene): Promise<{ back: DocScene; doc: DiagramDocument; warnings: string[] }> {
-  const written = DRAW_XML.write!(documentFromScene(scene));
-  const { document: doc, warnings } = await DRAW_XML.read!(written.text);
+  const written = DIAGRAM_DRAW_XML.write!(documentFromScene(scene));
+  const { document: doc, warnings } = await DIAGRAM_DRAW_XML.read!(written.text);
   const back = drawnScene(documentSpecs(doc, { measure: MEASURE, theme: THEME }));
   return { back, doc, warnings: [...written.warnings, ...warnings] };
 }
@@ -62,7 +62,7 @@ describe('a chart through draw-style XML and back', () => {
   });
 
   it('reads back the very document it read, once written again', async () => {
-    const again = await DRAW_XML.read!(DRAW_XML.write!(result.doc).text);
+    const again = await DIAGRAM_DRAW_XML.read!(DIAGRAM_DRAW_XML.write!(result.doc).text);
     expect(again.document).toEqual(result.doc);
   });
 

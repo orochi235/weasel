@@ -35,8 +35,8 @@ describe('scales, shrunk (second pass)', () => {
     // Three doubles apart, with the value two from the first.
     const [d0, d1] = [999999999.9999981, 999999999.9999977];
     const v = 999999999.9999979;
-    expect(logScale({ domain: [d0, d1], range: [0, 1] }).map(v)).toBeCloseTo(2 / 3, 9);
-    expect(logScale({ domain: [d1, d0], range: [1, 0] }).map(v)).toBeCloseTo(2 / 3, 9);
+    expect(logScale({ domain: [d0, d1], range: [0, 1] }).position(v)).toBeCloseTo(2 / 3, 9);
+    expect(logScale({ domain: [d1, d0], range: [1, 0] }).position(v)).toBeCloseTo(2 / 3, 9);
   });
 
   it('spaces ticks across a domain near the largest double on a finite step', () => {

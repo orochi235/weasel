@@ -1,0 +1,99 @@
+import { describe, it, expect } from 'vitest';
+import { topmostOf } from './topmostOf';
+
+/** Every node a root. */
+const ROOT = (): null => null;
+
+describe('topmostOf', () => {
+  it('returns null for empty hit list', () => {
+    expect(topmostOf([], { getParent: () => null })).toBeNull();
+  });
+
+  it('returns the single id when only one hit', () => {
+    expect(topmostOf(['a'], { getParent: () => null })).toBe('a');
+  });
+
+  it('drops the parent when its child is also in the hit set', () => {
+    // F (container) listed before f1 (child) — common parent/child
+    // container-eats-child case.
+    const parents: Record<string, string | null> = { F: null, f1: 'F' };
+    const got = topmostOf(['F', 'f1'], { getParent: (id) => parents[id] ?? null });
+    expect(got).toBe('f1');
+  });
+
+  it('drops the parent regardless of order in the hit list', () => {
+    const parents: Record<string, string | null> = { F: null, f1: 'F' };
+    const got = topmostOf(['f1', 'F'], { getParent: (id) => parents[id] ?? null });
+    expect(got).toBe('f1');
+  });
+
+  it('drops grandparents and parents when a deep descendant is in the hit set', () => {
+    // root > group > leaf. All three cover the click.
+    const parents: Record<string, string | null> = { root: null, group: 'root', leaf: 'group' };
+    const got = topmostOf(['root', 'group', 'leaf'], { getParent: (id) => parents[id] ?? null });
+    expect(got).toBe('leaf');
+  });
+
+  it('returns the last id when no parent/child relation exists (sibling fallback)', () => {
+    // Two siblings overlap, both roots — fall back to "last", matching the
+    // common forward-iteration "bottom-first" convention.
+    const got = topmostOf(['a', 'b'], { getParent: () => null });
+    expect(got).toBe('b');
+  });
+
+  it('with mixed: keeps deepest among children-set, ignores unrelated siblings', () => {
+    // Hit set: [parent, child, sibling]. Parent contains child; sibling is
+    // unrelated. After parent drop -> ['child', 'sibling']. Tiebreaker picks
+    // last: 'sibling'. (We don't know z-order between child and sibling.)
+    const parents: Record<string, string | null> = { P: null, c: 'P', s: null };
+    const got = topmostOf(['P', 'c', 's'], { getParent: (id) => parents[id] ?? null });
+    expect(got).toBe('s');
+  });
+
+  it('survives a malformed adapter with cyclic getParent without infinite-looping', () => {
+    // Should not throw or hang.
+    const got = topmostOf(['a', 'b'], { getParent: (id) => (id === 'a' ? 'b' : 'a') });
+    // Both are "ancestors" of each other under the cycle — both get dropped,
+    // leaving []. Filtered length 0 — fall through to the fallback.
+    // Both are "ancestors" under the cycle and both get dropped; helper
+    // falls back to the original ids' last entry.
+    expect(got).toBe('b');
+  });
+
+  it('getZIndex beats array order for siblings', () => {
+    const z: Record<string, number> = { a: 5, b: 1, c: 3 };
+    expect(topmostOf(['a', 'b', 'c'], { getParent: ROOT, getZIndex: (id) => z[id] })).toBe('a');
+  });
+
+  it('getZIndex ties resolve the same way as no z at all — last wins', () => {
+    expect(topmostOf(['a', 'b'], { getParent: ROOT, getZIndex: () => 2 })).toBe('b');
+  });
+
+  it('ids the adapter has no z for sort below every id it does', () => {
+    const z: Record<string, number | undefined> = { b: -100 };
+    expect(topmostOf(['a', 'b'], { getParent: ROOT, getZIndex: (id) => z[id] })).toBe('b');
+    // …and when nothing is known, the array order still decides.
+    expect(topmostOf(['a', 'c'], { getParent: ROOT, getZIndex: (id) => z[id] })).toBe('c');
+  });
+
+  it('z ranks only the survivors of the parent/child collapse', () => {
+    // The container paints under its child but covers the point too. Even
+    // with the higher z, the ancestor must not win.
+    const parents: Record<string, string | null> = { P: null, c: 'P' };
+    const z: Record<string, number> = { P: 99, c: 0 };
+    const got = topmostOf(['P', 'c'], {
+      getParent: (id) => parents[id] ?? null,
+      getZIndex: (id) => z[id],
+    });
+    expect(got).toBe('c');
+  });
+
+  it('compareZ takes precedence over getZIndex', () => {
+    const got = topmostOf(['a', 'b'], {
+      getParent: ROOT,
+      getZIndex: (id) => (id === 'b' ? 10 : 0),
+      compareZ: (x, y) => (x === 'a' ? 1 : y === 'a' ? -1 : 0),
+    });
+    expect(got).toBe('a');
+  });
+});

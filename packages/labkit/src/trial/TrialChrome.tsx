@@ -1,8 +1,6 @@
 import { DevtoolsLabel } from '@weasel-js/core';
-import { type ReactNode, useContext, useMemo, useSyncExternalStore } from 'react';
+import { type ReactNode, useContext } from 'react';
 import { AnnotationsContext } from '../annotations/AnnotationsContext';
-import { CameraRegistryContext } from '../canvas/cameraRegistry';
-import { zoomCameraTo } from '../canvas/cameraZoom';
 import { drawsDom } from '../chrome/builtins';
 import { PaletteRegion } from '../chrome/regions/PaletteRegion';
 import { SidebarRegion } from '../chrome/regions/SidebarRegion';
@@ -18,19 +16,16 @@ import type {
   TrialSidebar,
 } from '../chrome/types';
 import type { AutoReports } from '../config/autoReports';
-import { useLabOverValues } from '../config/over';
 import { useConfigSchema } from '../config/useConfigSchema';
 import { useResolvedConfig } from '../config/useResolvedConfig';
 import type { Instrument } from '../instrument/types';
 import type { JobHandle } from '../job/types';
-import { type LabCommands, useLabCommands } from '../lab/LabContext';
+import { useLabCommands } from '../lab/LabContext';
 import { type ChordTarget, useLabChords } from '../lab/labChords';
 import { usePresentedTrial } from '../lab/presentation';
-import { useLightboxControl } from '../lightbox/LightboxContext';
 import { JobProgress } from '../primitives/JobProgress';
 import { LabStoreContext } from '../state/context';
 import type { TrialRecord } from '../state/types';
-import { as2DView, DEFAULT_VIEW, withZoom } from '../state/view';
 import { FloatSidebarContext } from './FloatSidebar';
 import { TrialBody } from './TrialBody';
 import type { TrialActions } from './TrialScope';
@@ -38,39 +33,15 @@ import { TrialTheme } from './TrialTheme';
 import { TrialTitleBar } from './TrialTitleBar';
 import { TrialTitleContext } from './trialTitle';
 import { UndockedSections } from './UndockedSections';
+import {
+  type LoupeBindings,
+  type UndoBindings,
+  useTrialChromeContext,
+} from './useTrialChromeContext';
 import { useTrialContributions } from './useTrialContributions';
-import { useTrialPanels } from './useTrialPanels';
 import { type TrialWritesOptions, useTrialWrites } from './useTrialWrites';
 
-/** The trial's loupe as its chrome sees it: its switch, the eyedropper's, and
- *  the color last picked through either. */
-export interface LoupeBindings {
-  on: boolean;
-  toggle: () => void;
-  dropper: boolean;
-  toggleDropper: () => void;
-  picked: string | null;
-}
-
-/** The chrome context's loupe fields, from the trial's bindings: all off while no lens is mounted. */
-function loupeChrome(loupe: LoupeBindings | undefined) {
-  return {
-    hasLoupe: loupe != null,
-    loupeOn: loupe?.on ?? false,
-    toggleLoupe: loupe?.toggle ?? NO_OP,
-    dropperOn: loupe?.dropper ?? false,
-    toggleDropper: loupe?.toggleDropper ?? NO_OP,
-    pickedColor: loupe?.picked ?? null,
-  };
-}
-
-/** The trial's undo history as its chrome sees it. */
-export interface UndoBindings {
-  canUndo: boolean;
-  canRedo: boolean;
-  undo: () => void;
-  redo: () => void;
-}
+export type { LoupeBindings, UndoBindings } from './useTrialChromeContext';
 
 /** How the lab dresses a trial's chrome, beyond what its instrument declares. */
 export interface TrialChromeOptions {
@@ -115,44 +86,13 @@ export interface TrialChromeProps extends TrialChromeOptions {
 }
 
 const NO_OP = (): void => {};
-const NO_RUN = (): boolean => false;
-
-/** The trial's Undo and Redo as its chrome offers them: inert without bindings. */
-const undoChrome = (b: UndoBindings | undefined) =>
-  ({
-    canUndo: b?.canUndo ?? false,
-    canRedo: b?.canRedo ?? false,
-    undo: b?.undo ?? NO_OP,
-    redo: b?.redo ?? NO_OP,
-  }) satisfies Partial<TrialChromeContext>;
 const NO_SLOT: ToolSlotContext = { activeToolId: null, setActiveTool: NO_OP };
-
-/** One frozen empty map, so a trial that has folded nothing keeps a stable
- *  context identity across renders. */
-const NO_SECTIONS: Readonly<Record<string, boolean>> = Object.freeze({});
-const noSubscribe = (): (() => void) => NO_OP;
-
-/** The trial view is opaque to labkit, so the zoom chrome asks for the 2D shape and goes inert
- *  when the trial holds something else — an orbit, say. An unplaced view reads as the default
- *  its canvas paints, so the status strip is in before the first fit. */
-const chromeView = (view: unknown) => as2DView(view) ?? (view === null ? DEFAULT_VIEW : null);
 
 /** The trial body's content class: flush for an instrument that draws its own canvas or stage. */
 const contentClassOf = (instrument: Instrument, presented: boolean): string | undefined =>
   [drawsDom(instrument) ? '' : 'lk-trial__content--flush', presented ? 'lk-trial__stage' : '']
     .filter(Boolean)
     .join(' ') || undefined;
-
-/** The lab's commands on one trial: its snapshots and the title bar's actions. */
-const labOpsOn = (lab: LabCommands, trialId: string) =>
-  ({
-    savedSnapshots: lab.savedSnapshots.filter((s) => s.trialId === trialId),
-    saveSnapshot: (name?: string) => lab.saveSnapshot(trialId, name),
-    loadSnapshot: (snapshotId: string) => lab.loadSnapshot(trialId, snapshotId),
-    clone: () => lab.cloneTrial(trialId),
-    reset: () => lab.resetTrial(trialId),
-    close: () => lab.closeTrial(trialId),
-  }) satisfies Partial<TrialChromeContext>;
 
 /** The trial's writes, for chrome mounted without a `setConfig`: its marks end a gesture, as in the trial. */
 function useChromeWrites(opts: Omit<TrialWritesOptions, 'marks' | 'mounted'>) {
@@ -207,95 +147,32 @@ export function TrialChrome({
   const { presented, ref: presentedRef } = usePresentedTrial(trialId);
   const storeCtx = useContext(LabStoreContext);
   if (!storeCtx) throw new Error('[labkit] TrialChrome requires <LabStoreProvider>');
-  // A store's actions never change, so they are read once rather than subscribed to.
-  const writes = useMemo(() => storeCtx.store.getState(), [storeCtx.store]);
-  const panels = useTrialPanels(storeCtx.store, trialId);
-
-  const view2d = chromeView(record.view);
+  const { store } = storeCtx;
 
   const configSchema = useConfigSchema(instrument);
   const { config: settled, auto } = useResolvedConfig(configSchema, record.config, record.auto);
-  const ownWrites = useChromeWrites({
-    store: storeCtx.store,
-    trialId,
-    instrument,
-    schema: configSchema,
-  });
+  const ownWrites = useChromeWrites({ store, trialId, instrument, schema: configSchema });
   const setConfig = setConfigProp ?? ownWrites.setConfig;
   const draftConfig = setConfigProp ? (draftConfigProp ?? setConfigProp) : ownWrites.draftConfig;
-  const overValues = useLabOverValues();
 
   const title = record.title ?? instrument.title ?? instrument.name;
-
-  // A trial's own camera zooms about the view's middle, in the instrument's range, as the lab's does.
-  const cameras = useContext(CameraRegistryContext);
-  const camera = useSyncExternalStore(
-    cameras?.subscribe ?? noSubscribe,
-    () => cameras?.get(trialId) ?? null,
-  );
-
-  // The title bar carries the expand toggle, so the lightbox drops its own.
-  const lightbox = useLightboxControl();
-
-  const ctx = useMemo<TrialChromeContext>(() => {
-    const setZoom = (z: number): void => {
-      if (camera) zoomCameraTo(camera, z);
-      else if (view2d) writes.updateTrialView(trialId, withZoom(view2d, z));
-    };
-    return {
-      trialId,
-      instrumentName: record.instrumentName,
-      title,
-      setTitle: (next) => writes.setTrialTitle(trialId, next),
-      isLastTrial,
-      zoom: camera ? camera.zoomOf(record.view) : (view2d?.zoom ?? null),
-      setZoom,
-      ...undoChrome(undoBindings),
-      runAction: actions?.run ?? NO_RUN,
-      ...loupeChrome(loupe),
-      canExpand: lightbox != null,
-      expanded: lightbox?.expanded ?? false,
-      toggleExpanded: lightbox?.toggle ?? NO_OP,
-      configSchema,
-      config: record.config,
-      auto,
-      reported,
-      setConfig,
-      draftConfig,
-      overValues,
-      collapsedSections: record.collapsedSections ?? NO_SECTIONS,
-      setSectionCollapsed: (key, collapsed) =>
-        writes.setTrialSectionCollapsed(trialId, key, collapsed),
-      colorMode: record.colorMode ?? 'auto',
-      setColorMode: (mode) => writes.setTrialColorMode(trialId, mode),
-      undockedPanels: panels.undocked,
-      undockPanel: panels.undockPanel,
-      dockPanel: panels.dockPanel,
-      ...labOpsOn(lab, trialId),
-      ...toolSlot,
-    };
-  }, [
+  const ctx = useTrialChromeContext({
     trialId,
     record,
     lab,
+    store,
     title,
     isLastTrial,
-    setConfig,
-    draftConfig,
     undoBindings,
     loupe,
-    lightbox,
-    view2d,
     toolSlot,
     actions,
     configSchema,
     auto,
     reported,
-    overValues,
-    panels,
-    writes,
-    camera,
-  ]);
+    setConfig,
+    draftConfig,
+  });
 
   const floating = sidebar === 'float';
   const { offered, shown } = useTrialContributions({
@@ -344,7 +221,7 @@ export function TrialChrome({
         <PaletteRegion contributions={inRegion('palette')} ctx={ctx} />
         <TrialBody
           width={record.sidebarWidth}
-          onWidthChange={(w) => writes.updateTrialSidebarWidth(trialId, w)}
+          onWidthChange={(w) => store.getState().updateTrialSidebarWidth(trialId, w)}
           contentClassName={contentClassOf(instrument, presented)}
           sidebar={floating || sections.length === 0 ? null : [docked, undocked]}
         >

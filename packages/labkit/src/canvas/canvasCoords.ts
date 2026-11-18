@@ -1,4 +1,4 @@
-import type { Point, ViewTransform } from '../instrument/types';
+import type { Point, ViewTransform2D } from '../instrument/types';
 import { DEFAULT_FRAME, type WorldFrame } from './worldSpec';
 
 /** Project a world point into screen coordinates under a view.
@@ -8,7 +8,7 @@ import { DEFAULT_FRAME, type WorldFrame } from './worldSpec';
  *  y downward. */
 export function worldToScreen(
   world: Point,
-  view: ViewTransform,
+  view: ViewTransform2D,
   frame: WorldFrame = DEFAULT_FRAME,
 ): Point {
   return {
@@ -20,7 +20,7 @@ export function worldToScreen(
 /** Unproject a screen point back to world coordinates under a view. */
 export function screenToWorld(
   screen: Point,
-  view: ViewTransform,
+  view: ViewTransform2D,
   frame: WorldFrame = DEFAULT_FRAME,
 ): Point {
   return {

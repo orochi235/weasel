@@ -1,15 +1,15 @@
-import { createMenuController, withLinks, type MenuController, type Rect } from '@weasel-js/menu';
+import { createMenuController, withLinks, type MenuController, type MenuRect } from '@weasel-js/menu';
 import { faceGeneration } from '@weasel-js/font';
 import type { ClaimableGesture, OpenMenu } from '@weasel-js/core';
-import { createEmitter } from '@weasel-js/registry';
+import { createEmitter, createPart } from '@weasel-js/registry';
 import { maxOf, minOf } from '@weasel-js/geom';
 import { createRevision, type HudAccessibleTree, type HudTextInput, type HudKeyEvent, type HudPointerEvent, type Widget, type WidgetBounds } from '../widget';
 import { accessibleMenu } from './accessibleMenu';
 import { menuPanelMetrics, menuRowSpans, type MenuPanelMetrics } from '@weasel-js/ui-logic';
 import { resolveTheme, weaselTheme, type ResolvedTheme } from '@weasel-js/theme';
-import { drawPanel, rowAt, type MenuIcons } from './drawPanel';
+import { panelCommands, rowAt, type MenuIcons } from './panelCommands';
 import { menuMeasureEnv } from './menuEnv';
-import { measureLabel } from './measureLabel';
+import { textWidth } from './textWidth';
 import { createPlacer } from './placePanels';
 import { caretAt, caretX } from './valueRows';
 import { createTextEditor, editMods } from './textEdit';
@@ -45,25 +45,25 @@ export interface MenuWidgetOptions {
   onChange(): void;
 }
 
-function underOnCanvas(r: Rect, toCanvas: (client: Point) => Point): Rect {
+function underOnCanvas(r: MenuRect, toCanvas: (client: Point) => Point): MenuRect {
   const a = toCanvas({ x: r.x, y: r.y });
-  const b = toCanvas({ x: r.x + r.w, y: r.y + r.h });
-  return { x: a.x, y: a.y, w: b.x - a.x, h: b.y - a.y };
+  const b = toCanvas({ x: r.x + r.width, y: r.y + r.height });
+  return { x: a.x, y: a.y, width: b.x - a.x, height: b.y - a.y };
 }
 
 /** The box around every panel. */
-function union(panels: readonly Rect[]): WidgetBounds {
+function union(panels: readonly MenuRect[]): WidgetBounds {
   const x0 = minOf(panels, (p) => p.x);
   const y0 = minOf(panels, (p) => p.y);
-  const x1 = maxOf(panels, (p) => p.x + p.w);
-  const y1 = maxOf(panels, (p) => p.y + p.h);
-  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+  const x1 = maxOf(panels, (p) => p.x + p.width);
+  const y1 = maxOf(panels, (p) => p.y + p.height);
+  return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
 }
 
 /** The edit `typing` runs as a widget's text input: its caret's place on the canvas, read off `panels()`, and its
  *  composition. `measure` gives the width of a run of a row's text. */
 function menuTextInput(
-  c: Pick<MenuController, 'entriesAt'>, typing: ReturnType<typeof createTextEditor>, panels: () => readonly Rect[],
+  c: Pick<MenuController, 'entriesAt'>, typing: ReturnType<typeof createTextEditor>, panels: () => readonly MenuRect[],
   metrics: () => MenuPanelMetrics, measure: (text: string) => number, subscribe: HudTextInput['subscribe'],
 ): HudTextInput {
   const read = () => {
@@ -75,8 +75,8 @@ function menuTextInput(
       const i = entries.indexOf(edit.entry);
       if (i < 0) continue;
       const p = ps[level]!, r = menuRowSpans(entries, m)[i]!;
-      const x = p.x + caretX(edit, p.w, m, measure);
-      return { rect: { x, y: p.y + r.y, w: Math.max(1, p.x + p.w - x), h: r.h }, label: edit.entry.label };
+      const x = p.x + caretX(edit, p.width, m, measure);
+      return { rect: { x, y: p.y + r.y, width: Math.max(1, p.x + p.width - x), height: r.h }, label: edit.entry.label };
     }
     return null;
   };
@@ -100,19 +100,14 @@ function menuKey(c: MenuController, typing: ReturnType<typeof createTextEditor>,
   return true;
 }
 
-const metricsByTheme = new WeakMap<ResolvedTheme, MenuPanelMetrics>();
-
 /** A menu's metrics in `tokens`, read once per theme. */
-function metricsIn(tokens: ResolvedTheme): MenuPanelMetrics {
-  let m = metricsByTheme.get(tokens);
-  if (!m) metricsByTheme.set(tokens, (m = menuPanelMetrics(menuMeasureEnv(tokens, '', () => 0))));
-  return m;
-}
+const metricsIn = createPart((tokens: ResolvedTheme): MenuPanelMetrics =>
+  menuPanelMetrics(menuMeasureEnv(tokens, '', () => 0)));
 
 /** A widget that draws `open` as one panel per open level, driven by a menu controller it owns. Its panels are
  *  sized by `measureMenuPanel` in the hud's theme, as the DOM menu's stylesheet sizes it. */
 export function createMenuWidget(opts: MenuWidgetOptions): Widget {
-  const measure = opts.measure ?? measureLabel;
+  const measure = opts.measure ?? textWidth;
   const locale = opts.locale ?? globalThis.navigator?.language;
   const edits = createEmitter();
   const rev = createRevision(() => { opts.onChange(); edits.emit(); });
@@ -132,7 +127,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   let family: string | null = null;
   let tokens = (builtIn ??= resolveTheme(weaselTheme));
   let placed = place(c, family, tokens);
-  let panels: Rect[] = placed.map((p) => p.rect);
+  let panels: MenuRect[] = placed.map((p) => p.rect);
   const replace = () => { placed = place(c, family, tokens); panels = placed.map((p) => p.rect); };
   let disposed = false;
   let armed = false;
@@ -176,7 +171,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
       c.press(level, index);
       typing.start(entries[index]);
       const e = entries[index];
-      const { w } = panels[level]!, x = evt.x - panels[level]!.x;
+      const { width: w } = panels[level]!, x = evt.x - panels[level]!.x;
       typing.place(e, (draft) => caretAt(draft, w, m, x, (s) => measure(s, m.font.size, family ?? '')));
     }
   };
@@ -206,7 +201,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
         measure, locale,
       };
       return placed.flatMap(({ rect, layout }, level) =>
-        drawPanel(ctx, rect, c.entriesAt(level), c.stack()[level] ?? null, opts.icons, values, layout));
+        panelCommands(ctx, rect, c.entriesAt(level), c.stack()[level] ?? null, opts.icons, values, layout));
     },
     hitTest: (x, y) => levelAt(panels, x, y) >= 0,
     cursorAt: () => 'default',

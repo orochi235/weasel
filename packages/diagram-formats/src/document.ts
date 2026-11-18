@@ -109,7 +109,7 @@ export function writtenPage(doc: DiagramDocument, opts: WriteOptions = {}): Docu
 }
 
 /** `page` as a graph, for a format that writes graphs only. Throws on a page of any other kind. */
-export function graphPageOf(page: DocumentPage, format: string): GraphPage {
+export function requireGraphPage(page: DocumentPage, format: string): GraphPage {
   if (page.kind !== 'graph') throw new Error(`${format} writes graph pages only; this page holds a ${(page as DocumentPage).kind}`);
   return page;
 }
@@ -125,11 +125,11 @@ export function graphPagesOf(doc: DiagramDocument, format: string, warn: (messag
 }
 
 /** Whether `format` can write every page of `doc`. */
-export function formatHolds(format: DiagramFormat, doc: DiagramDocument): boolean {
-  return formatTakes(format, new Set(doc.pages.map((p) => p.kind)));
+export function formatFits(format: DiagramFormat, doc: DiagramDocument): boolean {
+  return formatFitsKinds(format, new Set(doc.pages.map((p) => p.kind)));
 }
 
 /** Whether `format` reads and writes every kind in `kinds`: what a menu asks of `scenePageKinds`. */
-export function formatTakes(format: DiagramFormat, kinds: ReadonlySet<PageKind>): boolean {
+export function formatFitsKinds(format: DiagramFormat, kinds: ReadonlySet<PageKind>): boolean {
   return [...kinds].every((k) => format.kinds.includes(k));
 }

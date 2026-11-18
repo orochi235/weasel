@@ -4,8 +4,8 @@ import { Popover } from '@weasel-js/ui/components/Popover';
 import { PropertyList } from '@weasel-js/ui/components/Properties';
 import type { ReactNode, RefObject } from 'react';
 import { Dialog as RACDialog } from 'react-aria-components';
-import { auto as autoValue } from '../config/auto';
-import { valueAtPath } from '../config/path';
+import { AUTO } from '../config/auto';
+import { configValueAt } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
 import { clearable } from './MatrixCell';
 import { MatrixEditor, type OpenCell } from './MatrixEditor';
@@ -69,7 +69,7 @@ export function MatrixPopover({
               <Button
                 size="sm"
                 variant="ghost"
-                disabled={!valueAtPath(config, open.cell.at) || auto.has(open.cell.at)}
+                disabled={!configValueAt(config, open.cell.at) || auto.has(open.cell.at)}
                 onClick={() => setConfig(open.cell.at, null)}
               >
                 Clear
@@ -83,7 +83,7 @@ export function MatrixPopover({
                 variant="ghost"
                 disabled={auto.has(open.path)}
                 tooltip={`Inherit ${inheritHint(open)}`}
-                onClick={() => setConfig(open.path, autoValue)}
+                onClick={() => setConfig(open.path, AUTO)}
               >
                 Inherit
               </Button>

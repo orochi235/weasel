@@ -584,6 +584,64 @@ The default sweep is 486 measurements and took 78 minutes on msb-uai.
 stages; it traces more categories, so its busy figures are not comparable with a
 run without it. `HVD_ALLOC=1` adds the allocation profile above.
 
+## A wall of static text
+
+`text-wall.spec.ts` fills a 1600x1000 viewport with unchanging text, the font shrinking as the
+glyph count grows, and times `render` on a rAF loop. The commands are built once, so a frame is
+only the renderer drawing text that has not changed. `line` is one command per 80-glyph line,
+`block` is 64 commands of many lines each, and each is drawn either as plain `text` commands or
+as one `text-layer` holding them. `moving` zooms and pans the view every frame. It times a frame
+the way astv's stage bench does (`packages/bench` there), so the two can be read side by side.
+
+Each cell reports CPU (`performance.now()` around `render`), GPU (the timer query), the interval
+between frames, and `synced`: a render followed by a one-pixel readback, which waits for the GPU.
+Read `synced` for what a frame costs end to end. Under ANGLE's Metal backend the timer query
+misreads a text layer's draw: at 1.28M glyphs it reads 95-180 ms while frames come every 17 ms
+and `synced` is 26-33 ms (see `docs/PERF.md`, "The GPU timer query misreads").
+
+On teitou (Apple M5 Max, Metal ANGLE, headless Chromium 158) on 2026-11-18, at `9269d96b`, one
+pass, run alone on the node. ms a frame, p50 over 90 frames (`synced` over 30), `block`, camera
+moving; `line` and a still camera read within about 30% of these.
+
+| Glyphs | text CPU | layer CPU | text synced | layer synced | text upload | layer upload | text draws | layer draws |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+|     3,520 |   0.75 | 0.08 |   2.0 |  0.8 |   0.56 MB | 0 |   1 | 1 |
+|    13,360 |   2.06 | 0.09 |   3.8 |  1.1 |   2.14 MB | 0 |   2 | 1 |
+|    44,080 |   4.11 | 0.12 |   5.0 |  1.3 |   7.05 MB | 0 |   6 | 1 |
+|   114,400 |   8.09 | 0.10 |  11.1 |  3.1 |  18.30 MB | 0 |  14 | 1 |
+|   320,000 |  20.10 | 0.08 |  27.6 |  7.6 |  51.20 MB | 0 |  40 | 1 |
+| 1,280,000 |  96.19 | 0.02 | 102.8 | 26.0 | 204.80 MB | 0 | 157 | 1 |
+
+- **Plain text costs about 0.07 µs of CPU a glyph a frame**, moving or not. Each frame,
+  `placeGlyph` and the vertex writes turn every glyph into four screen-space vertices, about 90%
+  of the frame (`recorded/text-wall-profile-2026-11-18/`), and the batch uploads them again,
+  160 bytes a glyph.
+- **A text layer costs about 0.1 ms whatever the count and however the view moves.** Its glyphs
+  are uploaded once, as one instance each, and the vertex stage places them, so a frame is a
+  uniform and one draw. End to end it is 3x to 4x faster from 13k glyphs up.
+- **Building a layer costs about what one plain frame does** (`firstMs`): 8.4 ms at 114k for
+  `block`, 21 ms for `line`, 97-280 ms at 1.28M.
+
+The day before, at `0f939b37` on msb-uai (Apple M3 Max), plain text was set beside astv's stage:
+64 cards under an orbiting 3D camera, which keeps glyph instances on the GPU as the layer does.
+
+| Glyphs | weasel text CPU, moving | astv CPU, still | astv CPU, moving | astv GPU, moving |
+|---:|---:|---:|---:|---:|
+|   3,520 |  0.83 | 0.20 | 1.00 | 1.38 |
+|  13,360 |  2.95 | 0.40 | 1.80 | 1.46 |
+|  44,080 |  4.41 | 0.40 | 1.90 | 2.54 |
+|  82,960 |  8.47 | 0.40 | 2.30 | 2.90 |
+| 114,400 | 10.79 | 0.40 | 1.80 | 3.77 |
+
+astv's CPU clock is coarsened to 0.1 ms, most of its moving cost is its own re-plan, and its
+planner drew 114k glyphs of a 1.28M request, so its counts are the ones it drew.
+
+Runs: `tests/perf/recorded/text-layer-2026-11-18/` (text against layer),
+`text-wall-profile-2026-11-18/` (CPU profiles of plain text), and `text-wall-2026-11-17/` (against
+astv, with astv's `bench.jsonl`). `WEASEL_PERF_GLYPHS`, `WEASEL_PERF_LAYOUTS`, `WEASEL_PERF_DRAWS`
+and `WEASEL_PERF_MOTIONS` narrow the sweep, which took 2.7 minutes; `WEASEL_PERF_PROFILE=1`
+records a CPU profile of each cell.
+
 ## Element tweens on the compositor
 
 `compositor-handoff.spec.ts` animates `count` small elements with one weasel animator, either on the

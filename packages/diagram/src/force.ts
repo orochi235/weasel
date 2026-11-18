@@ -16,11 +16,11 @@
  */
 import { createSimulation, type SimulationForce, type SimulationNode } from '@weasel-js/simulation';
 import type { Graph } from './graph';
-import { groupCohesion, separateGroups } from './forceGroups';
+import { clusterCohesion, separateClusters } from './forceClusters';
 import {
   center,
   pinnedSet,
-  translated,
+  movesFrom,
   type LayoutFn,
   type LayoutOptions,
   type LayoutResult,
@@ -41,8 +41,8 @@ export interface ForceOptions extends LayoutOptions {
   gravity?: number;
   /** Clear space kept between two boxes, in world units. Default 24. */
   padding?: number;
-  /** How hard a group draws its members together, 0..1. Default 0.2. */
-  groupStrength?: number;
+  /** How hard a cluster draws its members together, 0..1. Default 0.2. */
+  clusterStrength?: number;
 }
 
 /** One node as the relaxation sees it: a simulation point centered on the
@@ -62,7 +62,7 @@ const DEFAULTS = {
   charge: -3000,
   gravity: 0.02,
   padding: 24,
-  groupStrength: 0.2,
+  clusterStrength: 0.2,
 } as const;
 
 /** The golden angle. Coincident nodes fan out along it, which spreads any
@@ -188,7 +188,7 @@ export function forceRelaxation(graph: Graph, opts: ForceOptions = {}): ForceRel
     charge: chargeStrength = DEFAULTS.charge,
     gravity: gravityStrength = DEFAULTS.gravity,
     padding = DEFAULTS.padding,
-    groupStrength = DEFAULTS.groupStrength,
+    clusterStrength = DEFAULTS.clusterStrength,
   } = opts;
 
   const pinned = pinnedSet(graph, opts);
@@ -216,7 +216,7 @@ export function forceRelaxation(graph: Graph, opts: ForceOptions = {}): ForceRel
     y: bodies.reduce((sum, b) => sum + b.y, 0) / bodies.length,
   };
 
-  const groups = graph.groups ?? [];
+  const clusters = graph.clusters ?? [];
   const sim = createSimulation<ForceBody>({
     nodes: bodies,
     forces: [
@@ -224,8 +224,8 @@ export function forceRelaxation(graph: Graph, opts: ForceOptions = {}): ForceRel
       links(byId, graph, linkDistance, linkStrength),
       gravity(bodies, centroid, gravityStrength),
       separateBoxes(bodies, padding),
-      ...(groups.length > 0
-        ? [groupCohesion(groups, byId, groupStrength), separateGroups(groups, bodies, byId, padding)]
+      ...(clusters.length > 0
+        ? [clusterCohesion(clusters, byId, clusterStrength), separateClusters(clusters, bodies, byId, padding)]
         : []),
     ],
   });
@@ -256,7 +256,7 @@ export const force = (graph: Graph, opts: ForceOptions = {}): LayoutResult => {
   if (graph.nodes.length === 0) return new Map();
   const relaxation = forceRelaxation(graph, opts);
   relaxation.sim.tick(opts.iterations ?? DEFAULTS.iterations);
-  return translated(graph, relaxation.placed(), relaxation.pinned, opts.tolerance);
+  return movesFrom(graph, relaxation.placed(), relaxation.pinned, opts.tolerance);
 };
 
 /** `ForceOptions` only widens `LayoutOptions`, so this is a `LayoutFn` — but

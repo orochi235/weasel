@@ -38,6 +38,9 @@ export interface PrefConditionEditorProps {
    * writes a test that reads from the entry (`from: 'item'`). Unset, the node is in no entry.
    */
   entryOf?: PrefList | PrefMap;
+  /** The value path of the group the condition's node is declared in, empty at the root: a test read from its group
+   *  (`from: 'group'`) is checked there. Unset, such a test is not checked. */
+  group?: string;
   /** What the condition decides, which names the group of controls: `Shown if`. */
   'aria-label'?: string;
   className?: string;
@@ -58,9 +61,9 @@ export interface PrefConditionEditorProps {
  * Copy puts the whole condition on the clipboard as JSON, and Paste replaces it with one read from there: how a
  * condition gets from one pref to another. A pasted test that reads a pref this schema lacks says so on its row.
  */
-export function PrefConditionEditor({ value, onChange, schema, over, exclude = NO_PATHS, entryOf, 'aria-label': ariaLabel, className }: PrefConditionEditorProps) {
+export function PrefConditionEditor({ value, onChange, schema, over, exclude = NO_PATHS, entryOf, group, 'aria-label': ariaLabel, className }: PrefConditionEditorProps) {
   const leaves = useMemo(() => conditionLeaves(schema, entryOf, over), [schema, entryOf, over]);
-  const site = useMemo<PrefConditionSite>(() => (entryOf ? { within: entryOf } : {}), [entryOf]);
+  const site = useMemo<PrefConditionSite>(() => ({ ...(entryOf ? { within: entryOf } : {}), ...(group === undefined ? {} : { group }) }), [entryOf, group]);
   const prefOptions = useMemo<ListOption[]>(() => leaves
     .filter((found) => found.from === 'item' || found.over || !exclude.some((out) => found.path === out || found.path.startsWith(`${out}.`)))
     .map((found) => {

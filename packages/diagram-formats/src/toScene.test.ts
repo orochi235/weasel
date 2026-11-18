@@ -4,7 +4,7 @@ import {
 } from '@weasel-js/diagram';
 import type { DiagramDocument } from './document';
 import {
-  asNodeId, createPageRun, createScene, pageNodeOf, pageOfNode, pagesOf, type RectPose,
+  asNodeId, createPageRun, createScene, pageNodeOf, pageIdOf, pagesOf, type RectPose,
 } from '@weasel-js/core';
 import { withDiagramRegistry } from '@weasel-js/diagram';
 import { addDocumentScene, documentSpecs } from './toScene';
@@ -214,7 +214,7 @@ describe('addDocumentScene', () => {
     expect(page).not.toBe('page-1');
     expect(scene.get(asNodeId('page-1'))!.page).toBeUndefined();
     expect(scene.get(asNodeId('page-1'))!.parent).toBe(page);
-    expect(pageOfNode(scene, asNodeId('page-1'))).toBe('page-1');
+    expect(pageIdOf(scene, asNodeId('page-1'))).toBe('page-1');
   });
 
   it('opens the same file twice over itself', async () => {
@@ -222,6 +222,6 @@ describe('addDocumentScene', () => {
     const scene = drawnScene(documentSpecs(document, { measure: MEASURE }));
     addDocumentScene(scene, documentSpecs(document, { measure: MEASURE }), 'Open');
     expect(pagesOf(scene)!.pages.map((p) => p.id)).toEqual(['page-1']);
-    expect(pageOfNode(scene, asNodeId('b'))).toBe('page-1');
+    expect(pageIdOf(scene, asNodeId('b'))).toBe('page-1');
   });
 });

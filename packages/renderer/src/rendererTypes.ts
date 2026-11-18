@@ -1,4 +1,4 @@
-import type { GlMat3 } from '@weasel-js/geom';
+import type { GlMat3, Rect } from '@weasel-js/geom';
 import type { ImageMinification } from './cache/GLImageCache';
 import type { FlattenTolerance } from './draw/flattenTolerance';
 import type { WebGPUSurface } from './gpu/webgpu/openWebGPU';
@@ -30,7 +30,7 @@ export interface RenderIdsOptions extends Pick<RenderOptions, 'screen'> {
   /** The part of the drawing to read ids for, in CSS pixels; it covers every
    *  device pixel it touches. Default all of it. Only commands that can reach
    *  it are drawn (`cullDrawCommands`), so a small rect is a cheap frame. */
-  rect?: { x: number; y: number; width: number; height: number };
+  rect?: Rect;
   /** The least alpha, 0 to 1, a fragment claims its pixel with. Default
    *  `1 / 255`: every pixel painted visibly. 0.5 claims the pixels whose
    *  centers a shape covers. A fragment of alpha 0 never claims. */

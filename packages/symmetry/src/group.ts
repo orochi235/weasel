@@ -1,4 +1,4 @@
-import type { Affine, Point } from '@weasel-js/geom';
+import type { Affine, Point, Rect } from '@weasel-js/geom';
 import {
   clipNothing, worldPoses, type AddNodeSpec, type CopiesFromPoseFn, type NodeId, type Scene, type SceneRegistry,
 } from '@weasel-js/core';
@@ -13,12 +13,7 @@ export interface SymmetryGroupData {
 }
 
 /** The box a symmetry group is posed at: empty, at its center. */
-export interface SymmetryPose {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export type SymmetryPose = Rect;
 
 /** Where a group's copies turn and reflect about: the middle of its pose. */
 export function centerOfPose(pose: unknown): Point {
@@ -50,7 +45,7 @@ const isExtent = (v: unknown): v is SymmetryExtent =>
  * file can: a kind or a cell the table does not name as its own, an extent that is not a box of numbers, or a number
  * or a flag that is not one.
  */
-export function specOfData(data: unknown): SymmetrySpec {
+export function symmetrySpecOf(data: unknown): SymmetrySpec {
   const s: unknown = (data as Partial<SymmetryGroupData> | null | undefined)?.symmetry;
   if (typeof s !== 'object' || s === null) return { ...DEFAULT_SYMMETRY };
   const out: Record<string, unknown> = { ...DEFAULT_SYMMETRY };
@@ -67,7 +62,7 @@ export function specOfData(data: unknown): SymmetrySpec {
 
 /** A symmetry group's copies: the `copiesFromPose` every group carries. */
 export const symmetryCopies: CopiesFromPoseFn<unknown> = (pose, node) =>
-  symmetryTransforms(specOfData(node.data), centerOfPose(pose));
+  symmetryTransforms(symmetrySpecOf(node.data), centerOfPose(pose));
 
 /** The registry key a group's `copiesFromPose` is saved under. */
 export const SYMMETRY_COPIES_KEY = 'weasel-symmetry:copies';
@@ -134,10 +129,10 @@ export function symmetryGroupOf(scene: Scene<unknown, string, unknown>, id: Node
 /** The spec and world center of group `id`, or `null` when it is not one.
  *  The center is where its copies turn and reflect about, in a group inside
  *  a frame as well as at the top of the scene. */
-export function readGroup(scene: Scene<unknown, string, unknown>, id: NodeId | string | null): { spec: SymmetrySpec; center: Point } | null {
+export function symmetryOf(scene: Scene<unknown, string, unknown>, id: NodeId | string | null): { spec: SymmetrySpec; center: Point } | null {
   if (!isSymmetryGroup(scene, id)) return null;
   const node = scene.get(id as NodeId)!;
-  return { spec: specOfData(node.data), center: centerOfPose(worldPoses(scene, 'shown')(node.id)) };
+  return { spec: symmetrySpecOf(node.data), center: centerOfPose(worldPoses(scene, 'shown')(node.id)) };
 }
 
 /**
@@ -146,6 +141,6 @@ export function readGroup(scene: Scene<unknown, string, unknown>, id: NodeId | s
  * `pathSymmetry` dep.
  */
 export function editSymmetries(scene: Scene<unknown, string, unknown>, id: NodeId | string | null): Affine[] {
-  const g = readGroup(scene, id);
+  const g = symmetryOf(scene, id);
   return g === null ? [] : SYMMETRY_KINDS[g.spec.kind].pointGroup(g.spec, g.center);
 }

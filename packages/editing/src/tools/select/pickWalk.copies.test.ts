@@ -3,7 +3,7 @@ import { multiply, scale, translate, type Affine } from '@weasel-js/geom';
 import { AUTO_POSE_DESCRIPTOR, createScene, asNodeId } from '@weasel-js/core/engine';
 import type { RectPose } from '@weasel-js/core/engine';
 import { adapterPointQuery } from './adapterPointQuery';
-import { hitTestArea, pickWalk, scenePickSource } from '@weasel-js/core';
+import { hitTestRect, pickWalk, scenePickSource } from '@weasel-js/core';
 
 const pointQuery = adapterPointQuery<RectPose>(AUTO_POSE_DESCRIPTOR as never, false);
 
@@ -69,13 +69,13 @@ describe('pickWalk: a container drawing copies', () => {
 
   it('lets a marquee over a copy take the child it copies', () => {
     const scene = copiedSquare([translate(100, 0)]);
-    expect(hitTestArea(scene as never, { x: 105, y: 5, width: 20, height: 20 })).toEqual(['sq']);
-    expect(hitTestArea(scene as never, { x: 40, y: 5, width: 20, height: 20 })).toEqual([]);
+    expect(hitTestRect(scene as never, { x: 105, y: 5, width: 20, height: 20 })).toEqual(['sq']);
+    expect(hitTestRect(scene as never, { x: 40, y: 5, width: 20, height: 20 })).toEqual([]);
   });
 
   it('carries a marquee through a rotating copy', () => {
     // A quarter turn about the origin takes the square to x ∈ [-20, -10], y ∈ [10, 20].
     const scene = copiedSquare([[0, 1, -1, 0, 0, 0]]);
-    expect(hitTestArea(scene as never, { x: -18, y: 12, width: 4, height: 4 })).toEqual(['sq']);
+    expect(hitTestRect(scene as never, { x: -18, y: 12, width: 4, height: 4 })).toEqual(['sq']);
   });
 });

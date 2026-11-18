@@ -44,7 +44,7 @@ export interface HeldPins {
 /**
  * A pin cannot be held when its rank's band cannot reach it without two
  * ranks' bands coming nearer than their least gap (see `placeBands`), or when
- * a group's column cannot go where its pins put it (see `settleAcross`).
+ * a cluster's column cannot go where its pins put it (see `settleAcross`).
  */
 export function holdPins(input: PinInput): HeldPins {
   const { graph, rows, axes, pinned } = input;

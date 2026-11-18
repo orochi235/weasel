@@ -4,14 +4,6 @@ import { CULL_SLACK_PX } from '../cullDrawCommands';
 import { clipped, listBox, pathBox, type ScreenBox } from '../paintedBounds';
 import type { RetainedClip } from './retainedKey';
 
-/** A rect of the drawing buffer in whole device pixels, from its top left. */
-export interface DeviceRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
 /** A box of device pixels by its edges, from the drawing buffer's top left.
  *  An edge is infinite where nothing bounds the content that way. */
 export interface DeviceBox {
@@ -50,7 +42,7 @@ function snapOut(box: ScreenBox, scale: number): DeviceBox {
 
 /** The part of `box` inside `window`; empty, at the origin, where they do
  *  not meet. */
-export function boxWithin(box: DeviceBox, window: DeviceRect): DeviceRect {
+export function boxWithin(box: DeviceBox, window: Rect): Rect {
   const x0 = Math.max(window.x, box.x0);
   const y0 = Math.max(window.y, box.y0);
   const x1 = Math.min(window.x + window.width, box.x1);
@@ -61,7 +53,7 @@ export function boxWithin(box: DeviceBox, window: DeviceRect): DeviceRect {
 
 /** Whether a surface drawn with `reach`, moved `dx, dy` device pixels, holds
  *  every pixel its group paints on a `width × height` buffer. */
-export function covers(reach: { box: DeviceBox; window: DeviceRect }, dx: number, dy: number, width: number, height: number): boolean {
+export function covers(reach: { box: DeviceBox; window: Rect }, dx: number, dy: number, width: number, height: number): boolean {
   const needed = boxWithin(reach.box, { x: -dx, y: -dy, width, height });
   if (needed.width === 0 || needed.height === 0) return true;
   const w = reach.window;
@@ -71,8 +63,8 @@ export function covers(reach: { box: DeviceBox; window: DeviceRect }, dx: number
 
 /** `rect` cut into tiles at most `side` on a side, row by row from its top
  *  left; the last in each row and column takes what is left. */
-export function tilesOf(rect: DeviceRect, side: number): DeviceRect[] {
-  const out: DeviceRect[] = [];
+export function tilesOf(rect: Rect, side: number): Rect[] {
+  const out: Rect[] = [];
   for (let y = 0; y < rect.height; y += side) {
     for (let x = 0; x < rect.width; x += side) {
       out.push({
@@ -91,7 +83,7 @@ export function tilesOf(rect: DeviceRect, side: number): DeviceRect[] {
 export function contentBounds(
   children: readonly DrawCommand[], transform: GlMat3, clips: readonly RetainedClip[],
   scale: number, width: number, height: number,
-): DeviceRect {
+): Rect {
   return boxWithin(contentBox(children, transform, clips, scale), { x: 0, y: 0, width, height });
 }
 

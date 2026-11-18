@@ -3,8 +3,8 @@ import { cleanup, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { actionCatalog, catalogOf, type Workspace } from '@weasel-js/prefs/edit';
-import { Live, WORKSPACE } from './AssetEditor.fixture';
+import { actionCatalog, catalogOf, type AssetSet } from '@weasel-js/prefs/edit';
+import { Live, ASSET_SET } from './AssetEditor.fixture';
 import { drag } from './pointerDrag.fixture';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
@@ -13,14 +13,14 @@ import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 afterEach(cleanup);
 
 const ACTIONS = [{ key: 'edit.copy', label: 'Copy' }, { key: 'edit.paste', label: 'Paste' }, { key: 'save', label: 'Save' }];
-const WITH_CATALOG: Workspace = {
-  assets: [...WORKSPACE.assets, { id: 'actions', label: 'Actions', kind: 'actions', root: actionCatalog(ACTIONS) }],
+const WITH_CATALOG: AssetSet = {
+  assets: [...ASSET_SET.assets, { id: 'actions', label: 'Actions', kind: 'actions', root: actionCatalog(ACTIONS) }],
 };
 
 const row = (label: string) =>
   within(screen.getByRole('tree', { name: 'Actions' })).getByText(label).closest('[role="treeitem"]')!.firstElementChild as HTMLElement;
 
-async function live(start: Workspace) {
+async function live(start: AssetSet) {
   let latest = start;
   await page.viewport(1500, 720);
   renderWithIcons(
@@ -42,9 +42,9 @@ test('an action dragged onto a group of the catalog moves into it, and its row s
   expect(row('Save')).toHaveTextContent('Save save');
 });
 
-test('with no catalog in the workspace a drag within the list moves nothing', async () => {
-  const latest = await live(WORKSPACE);
+test('with no catalog in the asset set a drag within the list moves nothing', async () => {
+  const latest = await live(ASSET_SET);
   drag(row('Save'), row('Edit'));
-  expect(latest()).toBe(WORKSPACE);
+  expect(latest()).toBe(ASSET_SET);
   expect(row('Copy')).toHaveTextContent('Copy copy');
 });

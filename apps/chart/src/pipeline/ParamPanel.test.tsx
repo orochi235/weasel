@@ -52,17 +52,17 @@ describe('ParamPanel', () => {
     expect((next as EffectDoc).pipeline.stages[0]!.params![0]!.value).toBe('Screen');
   });
 
-  it("shows a picked group's name, renamed through change as 'Rename group'", () => {
-    const doc: EffectDoc = { ...withBlur, pipeline: { ...withBlur.pipeline, groups: [{ id: 'g', label: 'Filters', members: ['blur'] }] } };
+  it("shows a picked cluster's name, renamed through change as 'Rename group'", () => {
+    const doc: EffectDoc = { ...withBlur, pipeline: { ...withBlur.pipeline, clusters: [{ id: 'g', label: 'Filters', members: ['blur'] }] } };
     const change = vi.fn();
-    render(<ParamPanel doc={doc} selected={null} group="g" change={change} preview={() => {}} cancel={() => {}} />);
+    render(<ParamPanel doc={doc} selected={null} cluster="g" change={change} preview={() => {}} cancel={() => {}} />);
     const name = screen.getByRole('textbox', { name: 'Name' }) as HTMLInputElement;
     expect(name.value).toBe('Filters');
     fireEvent.change(name, { target: { value: 'Blurs' } });
     fireEvent.blur(name);
     const [next, label] = change.mock.calls[0]!;
     expect(label).toBe('Rename group');
-    expect((next as EffectDoc).pipeline.groups).toEqual([{ id: 'g', label: 'Blurs', members: ['blur'] }]);
+    expect((next as EffectDoc).pipeline.clusters).toEqual([{ id: 'g', label: 'Blurs', members: ['blur'] }]);
   });
 
   it('says to pick a stage when none is selected', () => {

@@ -85,7 +85,7 @@ export function useWeightTool(options: UseWeightToolOptions): Tool {
     overlay,
     onDeactivate: () => env.paint(null),
     bindings: [
-      { spec: { kind: 'click', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'weight.click', opts: { id: 'weight.click' } },
+      { spec: { kind: 'click', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'weight.dab', opts: { id: 'weight.dab' } },
       { spec: { kind: 'drag', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'weight.paint', opts: { id: 'weight.paint' } },
     ],
   }), [actions, overlay, keybinding, env, share]);

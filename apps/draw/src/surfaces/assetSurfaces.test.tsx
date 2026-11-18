@@ -43,7 +43,7 @@ const NO_FILLETS: FilletControlsSelection = { editingId: () => null, selectedAnc
 
 function App({ docSelected = false, paperSize = 'a4' }: { docSelected?: boolean; paperSize?: SidebarHost['paperSize'] }) {
   const [scene] = useState(() => createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: DRAW_LAYERS }));
-  const selection = useSelection({ mode: 'multi', scene });
+  const selection = useSelection({ mode: 'multiple', scene });
   const [measurements] = useState(() => createMeasurements({ layer: ANNOTATION_LAYER }));
   const [simplifyTolerance, setSimplifyTolerance] = useState(1);
   const host: SidebarHost = {

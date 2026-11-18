@@ -8,12 +8,12 @@ import { EFFECT_MIN_SCALE } from './EffectChart';
 import { addStage, ensureWireIds, nextStageId } from './edit';
 import { editHandlers, pinShown, stageBoxes } from './editorHandlers';
 import { isPart, useEditorPicks } from './editorPicks';
-import { groupStages, nextGroupId, ungroup } from './groupEdit';
-import { useGroupTitle } from './groupTitle';
+import { clusterStages, nextClusterId, dissolveCluster } from './clusterEdit';
+import { useClusterTitle } from './clusterTitle';
 import { editorScene, type EditorLookOptions } from './editorMapping';
 import { applyLookRoutes } from './lookRoutes';
-import { editorReorders, type ReorderSource } from './editorReorder';
-import { renameGroupContribution } from './renameGroupAction';
+import { createEditorReorderContributions, type ReorderSource } from './editorReorder';
+import { createRenameClusterContribution } from './renameClusterAction';
 import { useReleaseReplaced } from './releaseReplaced';
 import { paintRun } from './run';
 import { useRunPortOptions } from './runPorts';
@@ -21,7 +21,8 @@ import { freeSpot } from './place';
 import type { LanesOptions } from './lanes';
 import type { NodeGraphOptions } from './nodeGraph';
 import { stageFromType, type EffectStageType } from './stageTypes';
-import type { EffectBox, EffectDoc, EffectRun } from './types';
+import type { EffectDoc, EffectRun } from './types';
+import type { Rect } from '@weasel-js/geom';
 
 /** Which look `EffectEditor` draws in, and that look's options. Keep the
  *  options object's identity steady between renders. */
@@ -47,14 +48,14 @@ export interface EffectEditorBaseProps {
   run?: EffectRun;
   /** A stage id, or null for none. */
   selected?: string | null;
-  /** Hears each pick: a stage's id, or `null` for anything else, a wire included; and every stage and group
-   *  picked, in the order they were, for `EffectEditorApi.group`. Cmd-click (Ctrl off macOS) adds one, or
+  /** Hears each pick: a stage's id, or `null` for anything else, a wire included; and every stage and cluster
+   *  picked, in the order they were, for `EffectEditorApi.cluster`. Cmd-click (Ctrl off macOS) adds one, or
    *  takes it out, and Shift-click picks everything between it and the last one clicked. */
   onSelect?: (stage: string | null, picked: readonly string[]) => void;
-  /** A group id, or null for none: drawn picked while no stage is. */
-  selectedGroup?: string | null;
-  /** Hears each pick: a group's id, or `null` for anything else. */
-  onSelectGroup?: (group: string | null) => void;
+  /** A cluster id, or null for none: drawn picked while no stage is. */
+  selectedCluster?: string | null;
+  /** Hears each pick: a cluster's id, or `null` for anything else. */
+  onSelectCluster?: (cluster: string | null) => void;
   /** CSS pixels. Omit both to fill the parent. */
   width?: number;
   height?: number;
@@ -77,31 +78,31 @@ export interface EffectEditorApi {
    *  shows, so nothing moves under it; the other looks place it themselves.
    *  Returns the new stage's id. */
   addStage(type: EffectStageType, client?: { x: number; y: number }): string;
-  /** Groups stages and groups, as `groupStages` does, and reports it as 'Group'.
+  /** Puts stages and clusters in a new cluster, as `clusterStages` does, and reports it as 'Group'.
    *  Under `nodeGraph` it first pins every stage where it shows, as a drag
-   *  does. Returns the new group's id, or `null` for no ids. */
-  group(ids: readonly string[]): string | null;
-  /** Dissolves a group, as `ungroup` does, and reports it as 'Ungroup'. */
-  ungroup(id: string): void;
-  /** Opens the field a group's title is renamed in, over its title, or above
+   *  does. Returns the new cluster's id, or `null` for no ids. */
+  cluster(ids: readonly string[]): string | null;
+  /** Dissolves a cluster, as `dissolveCluster` does, and reports it as 'Ungroup'. */
+  dissolveCluster(id: string): void;
+  /** Opens the field a cluster's title is renamed in, over its title, or above
    *  its box where it has none; a double-click on the title does
    *  the same. Renaming reports 'Rename group'. */
-  renameGroup(id: string): void;
+  renameCluster(id: string): void;
   /** The world rect the editor shows, or `null` before it has a size. */
-  visible(): { x: number; y: number; width: number; height: number } | null;
-  /** Where a stage, group, wire or a part of one is drawn, in client
+  visible(): Rect | null;
+  /** Where a stage, cluster, wire or a part of one is drawn, in client
    *  coordinates, as `DiagramViewApi.rectOf` reads it: `null` for an id the
    *  editor does not draw under its look, or before it mounts. */
-  rectOf(id: string): { x: number; y: number; width: number; height: number } | null;
+  rectOf(id: string): Rect | null;
 }
 
 /** The pipeline-mode editor: a look's drawing of an effect pipeline, whose
  *  ports wire output to input, and whose wires and stages reconnect and
- *  delete. Under `nodeGraph` stages drag freely, and each group is a titled
+ *  delete. Under `nodeGraph` stages drag freely, and each cluster is a titled
  *  box: drag a stage into or out of it, drag the box to carry what it holds,
  *  resize it, or double-click its title to rename it; under `rack` and `lanes` a
  *  stage on the main line drags along it to another place, rewiring the
- *  pipeline, a group drags along it by its title, and a double-click on that
+ *  pipeline, a cluster drags along it by its title, and a double-click on that
  *  title renames it; under `lanes` a lane drags by its header. A selected
  *  wire's route drags under every look: into `routes` under `nodeGraph`, and
  *  into `lookRoutes` under the others, where it holds only while the wire's
@@ -109,18 +110,18 @@ export interface EffectEditorApi {
  *  `labels`, and stays where it was put whatever the look. Every edit is a doc handed to `onChange`. Text paints only in a registered font family,
  *  as with `EffectChart`. */
 export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(function EffectEditor(
-  { doc, onChange, run, selected, onSelect, selectedGroup, onSelectGroup, look = 'nodeGraph', options, width, height, maxScale, bounded, refit, background, className },
+  { doc, onChange, run, selected, onSelect, selectedCluster, onSelectCluster, look = 'nodeGraph', options, width, height, maxScale, bounded, refit, background, className },
   ref,
 ) {
   const built = useMemo(() => editorScene(doc, look, options), [doc, look, options]);
   const specs = useMemo(() => applyLookRoutes(diagramScene(built.data, built.scene), doc, look, built)
-    // Only stages and groups pick, so a lane or a row is never lit while `onSelect` says none; DiagramView makes edges pickable again.
+    // Only stages and clusters pick, so a lane or a row is never lit while `onSelect` says none; DiagramView makes edges pickable again.
     .map((s) => (s.pickable === false || isPart(built, s.id as string) ? s : { ...s, pickable: false })), [built, doc, look]);
   const painted = useMemo(() => paintRun(doc.pipeline, specs, run, built.exits), [doc.pipeline, specs, run, built]);
   useReleaseReplaced(run);
   const portOptions = useRunPortOptions(built.color, doc.pipeline, run);
 
-  const picks = useEditorPicks(built, { selected, selectedGroup, onSelect, onSelectGroup });
+  const picks = useEditorPicks(built, { selected, selectedCluster, onSelect, onSelectCluster });
   const now = useLatest({ doc, built, specs, look, options, onChange });
   const view = useRef<DiagramViewApi | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
@@ -128,10 +129,10 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
   const ambient = useMemo(() => {
     const source = (): ReorderSource => {
       const { doc: d, built: b, specs: shown, onChange: report } = now.current;
-      const boxes = new Map(shown.map((s) => [s.id as string, s.pose as EffectBox]));
+      const boxes = new Map(shown.map((s) => [s.id as string, s.pose as Rect]));
       return { doc: d, order: b.order, laneOrder: b.laneOrder, boxOf: (id) => boxes.get(id), onChange: report };
     };
-    return [...editorReorders(source), renameGroupContribution(source, setRenaming)];
+    return [...createEditorReorderContributions(source), createRenameClusterContribution(source, setRenaming)];
   }, [now]);
 
   useImperativeHandle(ref, () => ({
@@ -147,30 +148,30 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
         report(addStage(pinned, stage, view.current.worldAt(client.x, client.y)), 'Add stage');
       } else {
         const boxes = stageBoxes(d, shown);
-        const alone: EffectDoc = { pipeline: { ...d.pipeline, stages: [stage], wires: [], groups: [] }, places: {} };
+        const alone: EffectDoc = { pipeline: { ...d.pipeline, stages: [stage], wires: [], clusters: [] }, places: {} };
         const size = stageBoxes(alone, drawnSpecs(alone, opts as NodeGraphOptions | undefined)).get(stage.id) ?? { width: 0, height: 0 };
         const at = freeSpot([...boxes.values()], size, view.current?.visible() ?? null);
         report(addStage(pinned, stage, at), 'Add stage');
       }
       return stage.id;
     },
-    group: (ids) => {
+    cluster: (ids) => {
       const { doc: d, specs: shown, look: l, onChange: report } = now.current;
       if (ids.length === 0) return null;
       const base = l === 'nodeGraph' ? pinShown(ensureWireIds(d), shown) : d;
-      report(groupStages(base, ids), 'Group');
-      return nextGroupId(d.pipeline);
+      report(clusterStages(base, ids), 'Group');
+      return nextClusterId(d.pipeline);
     },
-    ungroup: (id) => {
+    dissolveCluster: (id) => {
       const { doc: d, onChange: report } = now.current;
-      if (d.pipeline.groups?.some((g) => g.id === id)) report(ungroup(d, id), 'Ungroup');
+      if (d.pipeline.clusters?.some((g) => g.id === id)) report(dissolveCluster(d, id), 'Ungroup');
     },
-    renameGroup: (id) => setRenaming(id),
+    renameCluster: (id) => setRenaming(id),
     visible: () => view.current?.visible() ?? null,
     rectOf: (id) => view.current?.rectOf(id) ?? null,
   }), [now]);
 
-  const title = useGroupTitle(doc, look, renaming, setRenaming, onChange);
+  const title = useClusterTitle(doc, look, renaming, setRenaming, onChange);
   const fill = (look === 'nodeGraph' ? options?.theme ?? LOOK_THEME : LOOK_THEME).page;
   // Keyed on the pages themselves: a drag rebuilds `built.data`, and a new array would rebuild the pages layer.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -199,8 +200,8 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
       onDelete={handlers.onDelete}
       {...(look === 'nodeGraph' ? { onEdit: handlers.onEdit } : { ambient })}
       selectionMode="multiple"
-      onSelect={picks.pick}
-      {...(picks.shown !== undefined ? { selected: picks.shown } : {})}
+      onSelectionChange={picks.pick}
+      {...(picks.shown !== undefined ? { selection: picks.shown } : {})}
       {...(pages !== undefined ? { pages } : {})}
       {...(title !== null ? { overlays: title } : {})}
       {...(background !== undefined ? { background } : {})}

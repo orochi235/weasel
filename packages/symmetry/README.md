@@ -76,6 +76,17 @@ symmetry.create({ center: { x: 300, y: 200 }, symmetry: { kind: 'kaleidoscope', 
   nudged, if the path is its own image under some of its group's transforms,
   every image of what moves follows, and an anchor on an axis stays on it.
 
+For live symmetry an app's user turns on, `symmetrySchema` is its settings as
+a prefs group to mount in the app's schema (which way the group mirrors), and
+`symmetrySpecFor(axis)` is the kind and angle that setting draws into. Whether
+symmetry is on is the app's own session state, not a setting:
+
+```ts
+const SCHEMA = pref.group('Preferences', { symmetry: symmetrySchema });
+const [{ axis }] = usePrefGroup(store, 'symmetry');
+if (on) symmetry.update(id, { spec: symmetrySpecFor(axis) });
+```
+
 `symmetry.update(id, { spec, center })` changes a group as one undo step.
 `symmetry.bake(id)` replaces it with a plain group holding real copies of its
 leaves, each one's pose turned or mirrored the way the live copy drew it.

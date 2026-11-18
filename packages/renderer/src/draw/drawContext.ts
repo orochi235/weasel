@@ -1,4 +1,4 @@
-import type { Path, GlMat3 } from '@weasel-js/geom';
+import type { Path, GlMat3, Rect } from '@weasel-js/geom';
 import type { PaintResources } from '../paintKinds';
 import type { GroupState } from '../state/GroupState';
 import type { GLMeshCache } from '../cache/GLMeshCache';
@@ -9,14 +9,14 @@ import type { ShaderProgram } from '../shaders/ShaderProgram';
 import type { BatchVariants } from '../shaders/builtinPrograms';
 import type { Hull, HullSet } from '../batchHull';
 import { DrawBatch } from '../drawBatch';
-import type { ClipRect } from '../batchClip';
+import type { ClipBox } from '../batchClip';
 import type { EffectTargets } from '../effects/EffectTargets';
 import type { RetainedSurfaces } from '../retain/RetainedSurfaces';
-import type { DeviceRect } from '../retain/contentBounds';
 import type { PaintScratch } from '../paintScratch';
 import type { StagedBatchState } from './batchRun';
 import type { FlattenTolerance } from './flattenTolerance';
 import type { IdFrame } from './idFrame';
+import type { TextLayers } from './textLayer';
 import type { GpuBuffer, GpuDevice, GpuPassDesc, GpuTexture } from '../gpu/types';
 
 export interface DrawContext {
@@ -46,6 +46,10 @@ export interface DrawContext {
    *  first use. Absent without a renderer behind the context, and then such
    *  glyphs draw nothing. */
   glyphPaintProgram?(kind: GlyphPaintKind): ShaderProgram;
+  /** The text layer's program, built with the glyph taps for area coverage or without (`shaders/glyphLayer.ts`). */
+  glyphLayerProgram?(area: boolean): ShaderProgram;
+  /** The text layers this context keeps uploaded. Absent, a text layer draws text by text. */
+  textLayers?: TextLayers;
   /** The kit quad a shader command and an effect pass draw: `QUAD_VERTICES`
    *  and `QUAD_INDICES`. */
   quad: { readonly vertices: GpuBuffer; readonly indices: GpuBuffer } | null;
@@ -108,7 +112,7 @@ export interface DrawContext {
    *  absent. */
   renderTarget?: {
     readonly pass: GpuPassDesc; readonly fragOrigin?: readonly [number, number];
-    readonly window?: DeviceRect;
+    readonly window?: Rect;
   } | null;
   /** Where the default framebuffer puts this renderer's bottom-left corner,
    *  in device pixels: a custom shader's `u_fragOrigin` while
@@ -153,7 +157,7 @@ export interface ClipEntry {
   transform: GlMat3;
   /** Where staged geometry is cut, for a clip that is an axis-aligned rect;
    *  `null` otherwise. */
-  rect: ClipRect | null;
+  rect: ClipBox | null;
   /** The clip as half-planes the batch shader tests, for a convex one it can
    *  decide; `null` otherwise. A clip with none of this, `rect` and `planes`
    *  is one only the stencil can express. A rect clip has one too where it is snapped to

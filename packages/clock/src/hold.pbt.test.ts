@@ -1,12 +1,12 @@
 /**
  * Property tests of holds and the registry. `holdAt` pauses a clock at a shown time in its first pass and keeps it
- * there through declarations and duration writes until something else moves it; `holdElapsed` of a recorded
+ * there through declarations and duration writes until something else moves it; `holdPosition` of a recorded
  * position brings a clock back where the recorded one stood. The registry against a plain model of each id's stack of registrations.
  */
 import { describe, expect, it, onTestFinished, vi } from 'vitest';
 import fc from 'fast-check';
 import { clockPosition, createClock } from './clock';
-import { holdAt, holdElapsed, shownInPass } from './hold';
+import { holdAt, holdPosition, shownInPass } from './hold';
 import { duration, near, rate, reading, runs, spec, tally, timeoutFor } from './pbt.fixture';
 import { createClockRegistry, type ClockTarget } from './registry';
 import type { ClockHandle, ClockSpec } from './types';
@@ -66,7 +66,7 @@ describe('holdAt', () => {
   }, timeoutFor(RUNS, 3));
 });
 
-describe('holdElapsed', () => {
+describe('holdPosition', () => {
   it('brings a clock back where a recorded one stood, pass and all', () => {
     const t = tally();
     const looping: fc.Arbitrary<ClockSpec> = fc.oneof({ weight: 1, arbitrary: spec }, { weight: 3, arbitrary: fc.record({ duration: fc.constantFrom(100, 250, 0.1), loop: fc.constantFrom<boolean | number>(2, 3, 2.5, true), origin: fc.option(fc.constantFrom(0, 30), { nil: undefined }) }) });
@@ -79,7 +79,7 @@ describe('holdElapsed', () => {
       if (seek !== undefined) a.clock.seek(seek, 'end');
       const at = clockPosition(a.clock, s.duration, s.origin);
       const b = createClock(s);
-      const hold = holdElapsed(b, at);
+      const hold = holdPosition(b, at);
       const { rate: _ra, ...ra } = reading(a.clock);
       const { rate: _rb, ...rb } = reading(b.clock);
       expect(rb).toEqual(ra);

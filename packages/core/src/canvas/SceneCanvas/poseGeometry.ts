@@ -4,7 +4,7 @@
  * reaches hit-test, marquee, and bounds extraction alike.
  */
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { transformPoint, pointInPath, strokeHitTest, type Affine } from '@weasel-js/geom';
+import { transformPoint, pathContainsPoint, strokeHitTest, type Affine } from '@weasel-js/geom';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { framedBounds } from 'core/geometry/poseDescriptor';
 import { positiveBox } from 'core/geometry/unionBounds';
@@ -102,7 +102,7 @@ function containsInFrame<TPose>(
   const { opts } = slopForStrokeHit(screen, frame);
   if (pathLike) {
     // Inside the filled region, or within stroke slop.
-    if (pointInPath(pose, x, y)) return true;
+    if (pathContainsPoint(pose, x, y)) return true;
     return strokeHitTest(pose, x, y, reach, opts);
   }
   const b = aabbOfPose(pose, descriptor);
@@ -114,6 +114,6 @@ function containsInFrame<TPose>(
     kind: 'rect' as const,
     x: b.x - reach, y: b.y - reach, width: b.width + 2 * reach, height: b.height + 2 * reach,
   };
-  if (pointInPath(grown, x, y)) return true;
+  if (pathContainsPoint(grown, x, y)) return true;
   return hasSlop(screen) && strokeHitTest(grown, x, y, 0, opts);
 }

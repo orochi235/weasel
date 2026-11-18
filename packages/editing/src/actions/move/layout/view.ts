@@ -1,4 +1,4 @@
-import { translatePoseViaDescriptor, type PoseDescriptor, createTransformOp } from '@weasel-js/core/engine';
+import { translatePoseViaDescriptor, type PoseDescriptor, createSetPoseOp } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
 import type { PoseComposition, ContainerBounds, LayoutDragged } from '@weasel-js/core/engine';
 import { strategyView, type StrategyView } from '@weasel-js/core';
@@ -30,7 +30,7 @@ export function draggedInView(view: StrategyView<unknown>, arg: LayoutDragged<un
 
 /** World `point` in `view`'s space, carried there as the center of `pose`
  *  (measured by `g`) moved onto it. */
-export function pointInView(
+export function viewContainsPoint(
   view: StrategyView<unknown>, g: PoseDescriptor<unknown>, pose: unknown, point: { x: number; y: number },
 ): { x: number; y: number } {
   if (!view.turned) return point;
@@ -44,5 +44,5 @@ export function pointInView(
 export function opInWorld(view: StrategyView<unknown>, op: Op): Op {
   if (!view.turned || op.name !== 'transform') return op;
   const a = op.args as { id: string; from: unknown; to: unknown; label?: string; coalesceKey?: string };
-  return createTransformOp<unknown>({ ...a, from: view.toWorld(a.from), to: view.toWorld(a.to) });
+  return createSetPoseOp<unknown>({ ...a, from: view.toWorld(a.from), to: view.toWorld(a.to) });
 }

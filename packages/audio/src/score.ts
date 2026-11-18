@@ -2,7 +2,7 @@ import type { AudioEngine } from './createAudioEngine';
 import { createPatternPlayer } from './patternPlayer';
 import { SCORE_BAR_STEPS, scoreBar, type ScoreBarOptions } from './scoreBar';
 import {
-  readScoreCue, scoreParams, type ScoreCueReading, type ScoreMood, type ScoreParams,
+  readScoreCue, resolveScoreMood, type ScoreCueReading, type ScoreMood, type ScoreSettings,
 } from './scoreMood';
 
 /** What a score is playing in one bar, and why: the mood it was given, the cue
@@ -15,7 +15,7 @@ export interface ScoreState {
   cueBar: number;
   mood: ScoreMood;
   cue: ScoreCueReading;
-  params: ScoreParams;
+  params: ScoreSettings;
 }
 
 /** Options for `createScore`. */
@@ -44,7 +44,7 @@ export interface Score {
 
 /**
  * Music written continuously from a mood rather than chosen from clips. Each
- * bar is `scoreBar` of the mood's `scoreParams`, booked through a pattern
+ * bar is `scoreBar` of the mood's `resolveScoreMood`, booked through a pattern
  * player, and a new mood lands on the next bar line with its tempo.
  *
  * These devices work on a listener without asking them, which is what they are
@@ -62,7 +62,7 @@ export function createScore(engine: AudioEngine, opts: ScoreOptions): Score {
       cueBar: before && before.cue.name === cue.name ? before.cueBar + bar - before.bar : 0,
       mood: target,
       cue,
-      params: scoreParams(target),
+      params: resolveScoreMood(target),
     };
   };
   const eventsOf = (state: ScoreState) => scoreBar(state.params, state.cueBar, barOpts);

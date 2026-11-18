@@ -10,7 +10,7 @@ const ctx = (width = 400, height = 300): HudDrawCtx =>
 
 function plain(extra: Partial<Widget> = {}): Widget {
   return {
-    id: 'plain', bounds: { x: 0, y: 0, w: 10, h: 10 }, hidden: false,
+    id: 'plain', bounds: { x: 0, y: 0, width: 10, height: 10 }, hidden: false,
     draw: () => [], hitTest: () => false, onPointer: () => {}, dispose: () => {},
     ...extra,
   };
@@ -36,7 +36,7 @@ describe('the HUD layer\'s deps', () => {
     const label = hud.text({ id: 'a', x: 0, y: 0, text: 'one', fontSize: 14 });
     const changes: Array<() => void> = [
       () => label.setText('two'),
-      () => label.setBounds({ x: 5, y: 0, w: 0, h: 14 }),
+      () => label.setBounds({ x: 5, y: 0, width: 0, height: 14 }),
       () => label.setHidden(true),
       () => label.setHidden(false),
       () => hud.text({ id: 'b', x: 0, y: 20, text: 'more', fontSize: 14 }),
@@ -75,7 +75,7 @@ describe('the HUD layer\'s deps', () => {
   });
 
   it('move every frame while a showing widget declares no deps or paints content', () => {
-    for (const extra of [{}, { deps: () => [1], content: () => [], contentRect: { x: 0, y: 0, w: 5, h: 5 } }]) {
+    for (const extra of [{}, { deps: () => [1], content: () => [], contentRect: { x: 0, y: 0, width: 5, height: 5 } }]) {
       const { hud, deps } = setup();
       const w = plain(extra);
       hud.add(w);

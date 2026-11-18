@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "drawBooleansAdapter hands Pathfinder page-local geometry as \"world\", so a boolean across pages lands wrong",
+  "A layer row's gradient chip samples the midpoint in RGB and at full alpha, not in the gradient's own blend space"
+ ],
+ "b": [
+  "A text node with empty text shows a blank Layers row instead of falling back to a name",
+  "Turning machine-font outlines off leaves the 350- and 950-weight faces registered",
+  "Copy loupe color stays enabled and copies a stale hex once the loupe is hidden or its lens unmounts",
+  "Pathfinder's z-compare rebuilds and scans the whole render order on every comparison"
+ ]
+}

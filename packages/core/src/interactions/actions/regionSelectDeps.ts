@@ -1,11 +1,8 @@
 /** What the region selects and point picks ask of the canvas. */
 import type { NodeId } from 'core/scene/types';
-import type { RegionPickView } from 'core/adapters/types';
+import type { PickingView } from 'core/adapters/types';
 import type { WorldPoint } from '@weasel-js/routing';
-
-/** The part of the asking view a region hit-test consults. `get` is its
- *  camera, which a parallax layer is picked through. */
-export type HitTestView = RegionPickView;
+import type { Rect } from '@weasel-js/geom';
 
 /**
  * Topmost-node-at-world-point dep, for any action that needs a single-best
@@ -32,8 +29,8 @@ export interface AreaSelectDep {
   /** Return ids of all scene nodes whose AABB overlaps `bounds`, skipping any
    *  on a layer `view` — the view the gesture ran in — does not paint. */
   hitTestArea(
-    bounds: { x: number; y: number; width: number; height: number },
-    view?: HitTestView,
+    bounds: Rect,
+    view?: PickingView,
   ): NodeId[];
   /** The node selecting `id` selects: the outermost group above it that is
    *  not entered, as a click picks. Absent means `id` itself. */
@@ -58,12 +55,12 @@ export interface LassoSelectDep {
   hitTestLasso?(
     polygon: ReadonlyArray<WorldPoint>,
     mode: 'centers' | 'intersect' | 'enclosed',
-    view?: HitTestView,
+    view?: PickingView,
   ): string[];
   /** Return ids of nodes whose AABB overlaps the given rect (fallback). */
   hitTestArea(
-    bounds: { x: number; y: number; width: number; height: number },
-    view?: HitTestView,
+    bounds: Rect,
+    view?: PickingView,
   ): string[];
   /** The node selecting `id` selects: the outermost group above it that is
    *  not entered, as a click picks. Absent means `id` itself. */

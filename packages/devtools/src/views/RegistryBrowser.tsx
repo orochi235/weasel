@@ -40,7 +40,7 @@ export interface RegistryBrowserProps {
   /** In display order: the browser sorts nothing. */
   categories: readonly RegistryCategory[];
   selected: RegistryBrowserPick | null;
-  onSelect(pick: RegistryBrowserPick): void;
+  onSelectionChange(pick: RegistryBrowserPick): void;
   /** The picked entry's detail, or what to show with nothing picked. */
   detail: ReactNode;
   /** Category ids open at mount. Default none. */
@@ -100,7 +100,7 @@ function treeOf(categories: readonly RegistryCategory[]) {
  * open. Picking an entry from outside the tree opens its category.
  */
 export function RegistryBrowser(props: RegistryBrowserProps): ReactElement {
-  const { categories, selected, onSelect, detail, filterIcon, className } = props;
+  const { categories, selected, onSelectionChange, detail, filterIcon, className } = props;
   const [ownFilter, setOwnFilter] = useState('');
   const filter = props.filter ?? ownFilter;
   const setFilter = props.onFilterChange ?? setOwnFilter;
@@ -153,7 +153,7 @@ export function RegistryBrowser(props: RegistryBrowserProps): ReactElement {
           selectedIds={selectedIds}
           onAction={(id) => {
             const pick = picks.get(id);
-            if (pick) onSelect(pick);
+            if (pick) onSelectionChange(pick);
           }}
         />
       </div>

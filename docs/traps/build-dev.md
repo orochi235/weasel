@@ -15,7 +15,7 @@ the flattening.
 **A bare `export type { X } from '…'` does not bring `X` into the file's own scope.** Replacing a
 local declaration with a re-export leaves every use of the name in that same file unresolved — and
 if a DOM global answers to it, silently wrong rather than an error. `SelectionMode` is one:
-lib.dom declares `"select" | "start" | "end" | "preserve"`, so `mode: 'multi'` started failing in
+lib.dom declares `"select" | "start" | "end" | "preserve"`, so `mode: 'multiple'` started failing in
 eleven demos while the file that lost the declaration compiled clean. Write `import type { X } …`
 then `export type { X };`.
 

@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, act, screen } from '@testing-library/react';
 import { Button } from './Button';
+import { ControlSizeScope } from '../ControlSize';
 
 describe('Button', () => {
   it('renders children and fires onClick', () => {
@@ -50,6 +51,18 @@ describe('Button', () => {
     const cls = getByRole('button').className;
     expect(cls).toMatch(/variant_solid/);
     expect(cls).toMatch(/size_sm/);
+  });
+
+  it('draws at xs only when given it, over any scope', () => {
+    const { getAllByRole } = render(
+      <ControlSizeScope size="sm">
+        <Button size="xs">X</Button>
+        <Button>S</Button>
+      </ControlSizeScope>,
+    );
+    const [xs, scoped] = getAllByRole('button');
+    expect(xs!.className).toMatch(/size_xs/);
+    expect(scoped!.className).toMatch(/size_sm/);
   });
 
   it('iconOnly requires ariaLabel and applies aria-label', () => {

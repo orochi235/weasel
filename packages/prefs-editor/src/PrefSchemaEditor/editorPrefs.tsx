@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useSyncExternalStore } from 'react';
-import { prefValueAtPath, type PrefGroup, type PrefPath, type PrefsStore } from '@weasel-js/prefs';
+import { prefValueAt, type PrefGroup, type PrefPath, type PrefsStore } from '@weasel-js/prefs';
 import { ActionButton, Icon, PrefsDialog, setAtPath } from '@weasel-js/ui';
 import { icon } from '../icons.gen';
 
@@ -61,7 +61,7 @@ export function useEditorPrefs(store: PrefSchemaEditorPrefs | undefined): Editor
       if (store) store.set(path as PrefPath<Schema>, value as never);
       else setHeld((v) => setAtPath(v, path.split('.'), value) as Record<string, unknown>);
     },
-    selectDropped: prefValueAtPath(values, 'preview.selectDropped') !== false,
+    selectDropped: prefValueAt(values, 'preview.selectDropped') !== false,
   };
 }
 
@@ -82,7 +82,7 @@ export function useEditorSize(key: EditorSize, given?: EditorPrefs): { value: nu
   const above = useContext(EditorPrefsContext);
   const prefs = given ?? above;
   const path = `layout.${key}`;
-  const kept = prefValueAtPath(prefs?.values, path);
+  const kept = prefValueAt(prefs?.values, path);
   const [live, setLive] = useState<number | null>(null);
   // A new size in the settings, the drag's own landing or a reset, replaces whatever the last drag left showing.
   const [seen, setSeen] = useState(kept);

@@ -4,20 +4,20 @@
  * ordering question labkit has to answer, not something a single scene knows.
  */
 import { describe, expect, it } from 'vitest';
-import { createAnnotationStore } from './store';
+import { createMarkStore } from './store';
 import type { AnnotationInit, AnnotationTargetInfo } from './types';
 
 const TARGETS: AnnotationTargetInfo[] = [
-  { id: 'left', content: { w: 200, h: 100 } },
-  { id: 'right', content: { w: 200, h: 100 } },
+  { id: 'left', content: { width: 200, height: 100 } },
+  { id: 'right', content: { width: 200, height: 100 } },
 ];
 
 const MARK: Omit<AnnotationInit, 'target'> = {
   kind: 'rect',
-  frac: { x: 0.1, y: 0.1, w: 0.2, h: 0.2 },
+  frac: { x: 0.1, y: 0.1, width: 0.2, height: 0.2 },
 };
 
-const store = () => createAnnotationStore({ targets: () => TARGETS });
+const store = () => createMarkStore({ targets: () => TARGETS });
 
 describe('undo across targets', () => {
   it('takes back the last change wherever it was made', () => {
@@ -71,7 +71,7 @@ describe('undo across targets', () => {
     // append to the undo stack, leaving redo dead.
     const s = store();
     s.add({ ...MARK, target: 'left' });
-    s.sceneFor('left').undo();
+    s.openScene('left').undo();
 
     expect(s.query()).toHaveLength(0);
     expect(s.canRedo()).toBe(true);
@@ -86,7 +86,7 @@ describe('undo across targets', () => {
     s.add({ ...MARK, target: 'right' });
     s.undo();
     s.undo();
-    s.sceneFor('left').redo();
+    s.openScene('left').redo();
 
     expect(s.query({ target: 'left' })).toHaveLength(1);
     expect(s.canRedo()).toBe(true);

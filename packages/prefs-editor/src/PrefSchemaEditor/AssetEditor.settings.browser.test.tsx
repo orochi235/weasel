@@ -5,8 +5,8 @@ import { page } from 'vitest/browser';
 import { useState } from 'react';
 import { isPrefLeaf, type PrefAlias, type PrefGroup } from '@weasel-js/prefs';
 import { AssetEditor } from '@weasel-js/prefs-editor';
-import { type Workspace, workspaceCodec } from '@weasel-js/prefs/edit';
-import { DEMO_WORKSPACE } from './AssetEditor.demo';
+import { type AssetSet, assetSetCodec } from '@weasel-js/prefs/edit';
+import { DEMO_ASSET_SET } from './AssetEditor.demo';
 import { drag } from './pointerDrag.fixture';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
@@ -15,12 +15,12 @@ import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 beforeAll(() => page.viewport(1500, 800));
 afterEach(cleanup);
 
-const codec = workspaceCodec([]);
-let latest: Workspace = DEMO_WORKSPACE;
+const codec = assetSetCodec([]);
+let latest: AssetSet = DEMO_ASSET_SET;
 function Live() {
-  const [workspace, setWorkspace] = useState(DEMO_WORKSPACE);
-  latest = workspace;
-  return <div style={{ width: 1460, height: 700 }}><AssetEditor list workspace={workspace} codec={codec} onChange={setWorkspace} /></div>;
+  const [assetSet, setAssetSet] = useState(DEMO_ASSET_SET);
+  latest = assetSet;
+  return <div style={{ width: 1460, height: 700 }}><AssetEditor list assetSet={assetSet} codec={codec} onChange={setAssetSet} /></div>;
 }
 
 const option = (label: string) => within(screen.getByRole('listbox', { name: 'Assets' })).getByRole('option', { name: new RegExp(`^${label}`) });

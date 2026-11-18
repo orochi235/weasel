@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { catalogUnit, catalogUnits, registerUnit, unitCatalog, unitSpellings, unitSymbol } from './catalog';
+import { catalogUnit, catalogUnits, registerUnit, unitRegistry, unitSpellings, unitSymbol } from './catalog';
 import { speakUnit, unit } from './kinds/measure';
 import { parseNumber } from './localized';
 import { present } from './present';
@@ -91,17 +91,17 @@ describe('speech', () => {
 
 describe('registerUnit', () => {
   it('reflects the catalog by every spelling, reporting the built-in a registered unit shadows', () => {
-    expect(unitCatalog.get('°')?.name).toBe('degree');
-    expect(unitCatalog.entries().find((e) => e.key === 'inch')?.source).toBe('kit');
+    expect(unitRegistry.get('°')?.name).toBe('degree');
+    expect(unitRegistry.entries().find((e) => e.key === 'inch')?.source).toBe('kit');
     const release = registerUnit({ name: 'degree', symbol: { text: 'deg', aliases: ['°'] } });
     try {
-      const entry = unitCatalog.entries().find((e) => e.key === '°')!;
+      const entry = unitRegistry.entries().find((e) => e.key === '°')!;
       expect(entry.source).toBeUndefined();
       expect(entry.shadowed.map((s) => [s.value.name, s.source])).toEqual([['degree', 'kit']]);
     } finally {
       release();
     }
-    expect(unitCatalog.entries().find((e) => e.key === '°')?.shadowed).toEqual([]);
+    expect(unitRegistry.entries().find((e) => e.key === '°')?.shadowed).toEqual([]);
   });
 
   it('adds a unit every display and table reads, and takes it back out', () => {

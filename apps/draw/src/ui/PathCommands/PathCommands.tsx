@@ -3,7 +3,7 @@
  * commits one undo entry. The Simplify tolerance is also Sand's tolerance option, so the slider
  * reads and writes that pref (`useSimplifyTolerance`), and the brush's options row moves with it.
  */
-import { useState, type ReactElement } from 'react';
+import { useCallback, useState, type ReactElement } from 'react';
 import { useToolOptionParams } from '@weasel-js/routing/react';
 import { setToolOption } from '@weasel-js/core';
 import { DEFAULT_SIMPLIFY_TOLERANCE, OFFSET_PATH_PARAMS, SIMPLIFY_PATH_PARAMS } from '@weasel-js/path-tools';
@@ -25,7 +25,7 @@ const SAND = { id: 'sand', options: SAND_TOOL_OPTIONS };
 export function useSimplifyTolerance(): [number, (tolerance: number) => void] {
   const values = drawToolOptionValues();
   const tolerance = useToolOptionParams(SAND, values)?.tolerance;
-  const set = (t: number) => setToolOption(SAND.id, SAND.options, values, 'tolerance', t);
+  const set = useCallback((t: number) => setToolOption(SAND.id, SAND.options, values, 'tolerance', t), [values]);
   return [typeof tolerance === 'number' ? tolerance : DEFAULT_SIMPLIFY_TOLERANCE, set];
 }
 

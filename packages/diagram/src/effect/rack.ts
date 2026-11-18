@@ -2,7 +2,7 @@ import type { PortAnchor, PortSpec } from '../types';
 import { edgeIdOf } from '../fromData';
 import {
   LOOK_THEME, boxNode, drawableWires, exitLabel, isControl, kindOf, portOn, sceneStyles, stageStyle, typeColors,
-  uniqueGroups, uniqueStages, wireEdge, wireStyle, type EffectLook, type LookThemeOptions, type RunRowOptions,
+  uniqueClusters, uniqueStages, wireEdge, wireStyle, type EffectLook, type LookThemeOptions, type RunRowOptions,
 } from './draw';
 import { chainLinks } from './chainEdit';
 import { mainChain, skipDecisions, type Skip } from './mainChain';
@@ -222,7 +222,7 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
     data: {
       nodes,
       edges: edges.map((e) => e.edge),
-      groups: uniqueGroups(pipeline).map((g) => ({ ...g, members: g.members.filter((m) => !gone.has(m)) })),
+      clusters: uniqueClusters(pipeline).map((g) => ({ ...g, members: g.members.filter((m) => !gone.has(m)) })),
     },
     scene: {
       layout: 'chain',

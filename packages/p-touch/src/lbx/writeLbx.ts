@@ -2,7 +2,7 @@
  * A label's draw commands as a P-touch `.lbx` file.
  */
 import type { CommandRasterizer, RasterImage } from '@weasel-js/core';
-import { mat3, type GlMat3, type Path } from '@weasel-js/geom';
+import { mat3, type GlMat3, type Path, type Rect } from '@weasel-js/geom';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import {
   AUTO_LENGTH_MAX_PT,
@@ -120,16 +120,16 @@ function collect(commands: readonly DrawCommand[], state: DrawState, clips: read
     if (carried) {
       const placed = placeCarried(carried, state);
       if (typeof placed === 'string') skipped.push({ kind: 'group', detail: placed });
-      else if (!placed.every(finiteObject)) skipped.push({ kind: 'group', detail: 'lbxObjects placed at a position no number can say' });
+      else if (!placed.every(finiteObject)) skipped.push({ kind: 'group', detail: 'lbxObjectsCommand placed at a position no number can say' });
       else if (placed.length > 0 && !insideClips(placed, clips)) {
-        skipped.push({ kind: 'group', detail: 'lbxObjects not wholly inside an axis-aligned rect clip' });
+        skipped.push({ kind: 'group', detail: 'lbxObjectsCommand not wholly inside an axis-aligned rect clip' });
       } else for (const object of placed) out.push({ object });
       continue;
     }
     if (cmd.kind === 'group' && rasterWhole(cmd)) {
       raster(cmd);
       for (let n = countCarriers(cmd.children); n > 0; n--) {
-        skipped.push({ kind: 'group', detail: 'lbxObjects under a group effect, isolate, color matrix or blend' });
+        skipped.push({ kind: 'group', detail: 'lbxObjectsCommand under a group effect, isolate, color matrix or blend' });
       }
       continue;
     }
@@ -157,7 +157,7 @@ function collect(commands: readonly DrawCommand[], state: DrawState, clips: read
 }
 
 /** The smallest box holding every pixel with any alpha, or undefined when none has. */
-function inkBounds(img: RasterImage): { x: number; y: number; width: number; height: number } | undefined {
+function inkBounds(img: RasterImage): Rect | undefined {
   let x0 = img.width, y0 = img.height, x1 = -1, y1 = -1;
   for (let y = 0; y < img.height; y++) {
     for (let x = 0; x < img.width; x++) {
@@ -171,7 +171,7 @@ function inkBounds(img: RasterImage): { x: number; y: number; width: number; hei
   return x1 < 0 ? undefined : { x: x0, y: y0, width: x1 - x0 + 1, height: y1 - y0 + 1 };
 }
 
-function crop(img: RasterImage, box: { x: number; y: number; width: number; height: number }): Uint8ClampedArray {
+function crop(img: RasterImage, box: Rect): Uint8ClampedArray {
   const out = new Uint8ClampedArray(box.width * box.height * 4);
   for (let y = 0; y < box.height; y++) {
     const from = ((box.y + y) * img.width + box.x) * 4;

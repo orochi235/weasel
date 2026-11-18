@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createPathLayer } from './pathLayer';
 import { polygonFromPoints, rectPath, type Path } from '@weasel-js/geom';
 import type { CommandStroke, CommandFill } from '@weasel-js/paint';
-import { ColorOverrideRegistry, TrimOverrideRegistry } from '@weasel-js/animator';
+import { createColorOverrideRegistry, createTrimOverrideRegistry } from '@weasel-js/animator';
 
 // createPathLayer emits raw world-space PathDrawCommands. The viewToMat3
 // wrap is applied at drawLayers orchestration time, not in the layer itself
@@ -174,7 +174,7 @@ describe('createPathLayer color overrides', () => {
 
   it('uses an array override when registered for fill', () => {
     const overrideColors = [128, 128, 128, 255, 128, 128, 128, 255, 128, 128, 128, 255];
-    const registry = new ColorOverrideRegistry();
+    const registry = createColorOverrideRegistry();
     registry.set('tri', 'fill', overrideColors);
     const layer = createPathLayer({
       getNodes: () => [{ id: 'tri' }],
@@ -188,7 +188,7 @@ describe('createPathLayer color overrides', () => {
   });
 
   it('calls a function override with base colors and tMs', () => {
-    const registry = new ColorOverrideRegistry();
+    const registry = createColorOverrideRegistry();
     let received: { base?: readonly number[]; tMs?: number } = {};
     registry.set('tri', 'fill', (base, tMs) => {
       received = { base, tMs };
@@ -209,7 +209,7 @@ describe('createPathLayer color overrides', () => {
   });
 
   it('falls back to base colors if function override returns wrong length (dev guard)', () => {
-    const registry = new ColorOverrideRegistry();
+    const registry = createColorOverrideRegistry();
     registry.set('tri', 'fill', () => [1, 2, 3, 4]);
     const layer = createPathLayer({
       getNodes: () => [{ id: 'tri' }],
@@ -225,8 +225,8 @@ describe('createPathLayer color overrides', () => {
 
 describe('createPathLayer override repaints', () => {
   it('repaints for a bare set or clear on either registry it holds', () => {
-    const colorOverrides = new ColorOverrideRegistry();
-    const trimOverrides = new TrimOverrideRegistry();
+    const colorOverrides = createColorOverrideRegistry();
+    const trimOverrides = createTrimOverrideRegistry();
     const layer = createPathLayer({
       getNodes: () => [{ id: 'a' }],
       getPath: () => rectPath(0, 0, 10, 10),

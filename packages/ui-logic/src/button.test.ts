@@ -4,8 +4,8 @@ import { exactly, UNBOUNDED, type MeasureEnv } from './measure';
 
 /** A theme with round numbers and text 6px a character, ascent 10, descent 2. */
 const TOKENS: Record<string, string> = {
-  '--wzl-control-h': '28px', '--wzl-control-h-sm': '22px',
-  '--wzl-space-3': '6px', '--wzl-space-4': '8px', '--wzl-space-6': '12px',
+  '--wzl-control-h': '28px', '--wzl-control-h-sm': '22px', '--wzl-control-h-xs': '18px',
+  '--wzl-space-2': '4px', '--wzl-space-3': '6px', '--wzl-space-4': '8px', '--wzl-space-6': '12px',
   '--wzl-font-size': '12px', '--wzl-font-size-sm': '11px', '--wzl-font-weight-medium': '500',
 };
 const env = (extra: Record<string, string> = {}): MeasureEnv => ({
@@ -36,6 +36,19 @@ describe('measureButton', () => {
     const m = measureButton({ label: 'Go', size: 'sm', leadingIcon: 'x' }, UNBOUNDED, env({ '--wzl-button-pad-x': '4px' }));
     expect([m.width, m.height]).toEqual([12 + 6 + 12 + 8, 22]);
     expect(m.layout.parts.map((p) => p.rect.x)).toEqual([4, 22]);
+  });
+
+  it('reads the xs size: its height, tight padding, the small type and a 12px glyph', () => {
+    const m = measureButton({ label: 'Go', size: 'xs', leadingIcon: 'x' }, UNBOUNDED, env());
+    expect([m.width, m.height]).toEqual([12 + 6 + 12 + 8, 18]);
+    expect(m.layout.metrics.font.size).toBe(11);
+    expect(measureButton({ iconOnly: true, icon: 'x', size: 'xs' }, UNBOUNDED, env()).width).toBe(18);
+  });
+
+  it('takes its height from --wzl-button-h at any size, square when icon-only', () => {
+    const tall = env({ '--wzl-button-h': '30px' });
+    expect(measureButton({ label: 'Go', size: 'xs' }, UNBOUNDED, tall).height).toBe(30);
+    expect(measureButton({ iconOnly: true, icon: 'x', size: 'sm' }, UNBOUNDED, tall).width).toBe(30);
   });
 
   it('is square when icon-only', () => {

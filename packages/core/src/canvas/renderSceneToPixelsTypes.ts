@@ -1,5 +1,5 @@
 /** The types `renderSceneToPixels` and its siblings take and answer. */
-import type { GlMat3 } from '@weasel-js/geom';
+import type { GlMat3, Rect } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { PaintOverrides } from './paintOverrides';
 import type { View } from '../core/viewport/view';
@@ -30,7 +30,7 @@ export interface RenderSceneToPixelsArgs<TData, TLayer extends string, TPose> ex
   scene: Scene<TData, TLayer, TPose>;
   /** Scene-space rect to render (origin + size in scene units). Output pixel
    *  dimensions follow from rect × scale (round, min 1 — see module doc). */
-  sourceRect: { x: number; y: number; width: number; height: number };
+  sourceRect: Rect;
   /** Output pixels per scene unit, per axis. Anisotropic values supported. A
    *  negative axis is flipped: the output is sized from its magnitude, and the
    *  rect's far edge on that axis lands on the output's top or left. */

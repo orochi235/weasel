@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { cubicBounds, cubicEvalAt, elevateQuadraticToCubic } from './curve';
 import { flattenCubic } from './flatten';
-import { identity, invert, multiply, transformPoint, rotateAboutPoint, boxToBox, type Affine } from './affine';
+import { identity, invert, multiply, transformPoint, rotateAboutPoint, rectToRect, type Affine } from './affine';
 import { approxEq } from './scalar';
 import { boundsOfCoords, boxContainsPoint } from './box';
 import { transformCoords } from './affine';
@@ -124,13 +124,13 @@ describe('affine', () => {
     }
   });
 
-  it('boxToBox maps the source corners onto the destination corners', () => {
+  it('rectToRect maps the source corners onto the destination corners', () => {
     const r = rng(8);
     for (let i = 0; i < RUNS; i++) {
       const [sx, sy, dx, dy] = Array.from({ length: 4 }, () => (r() - 0.5) * 2000);
       const sw = (r() - 0.5) * 500 || 1, sh = (r() - 0.5) * 500 || 1;
       const dw = (r() - 0.5) * 500, dh = (r() - 0.5) * 500;
-      const m = boxToBox(sx, sy, sw, sh, dx, dy, dw, dh);
+      const m = rectToRect(sx, sy, sw, sh, dx, dy, dw, dh);
       const near = transformPoint(m, sx, sy);
       const far = transformPoint(m, sx + sw, sy + sh);
       expect(approxEq(near[0], dx, 1e-6)).toBe(true);
@@ -146,7 +146,7 @@ describe('affine', () => {
       const c = () => (r() - 0.5) * 20;
       const m: Affine = [c(), c(), c(), c(), c(), c()];
       const coords = Array.from({ length: 10 }, () => (r() - 0.5) * 2000);
-      const out = transformCoords(coords, m);
+      const out = transformCoords(m, coords);
       for (let k = 0; k < coords.length; k += 2) {
         const [x, y] = transformPoint(m, coords[k], coords[k + 1]);
         expect(out[k]).toBe(x);

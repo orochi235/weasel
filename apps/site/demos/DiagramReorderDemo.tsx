@@ -13,7 +13,7 @@ function stages(order: readonly string[]): DiagramData {
       { id: 'out', lines: ['output'] },
     ],
     edges: STAGES.flatMap((s) => [{ from: `${s}.in`, to: `${s}.fx` }, { from: `${s}.fx`, to: 'out' }]),
-    groups: [
+    clusters: [
       ...STAGES.map((s) => ({ id: s, members: [`${s}.in`, `${s}.fx`], label: s })),
       { id: 'stages', members: order, reorder: 'y' as const },
     ],

@@ -11,9 +11,9 @@ import { rectRegion } from 'core/geometry/regionHit';
 import { pickWalk, scenePickSource, type PickQuery } from './pickWalk';
 import { pointPick, regionPick } from './pickIndex/pickIndexFixture';
 import {
-  ancestorsOf, buildScene, clipBox, inside, intBox, modelHidden, modelLocked, nodeIdOf, runs, sceneSpec, timeoutFor,
-  type Box, type BoxScene, type SceneSpec,
+  ancestorsOf, buildScene, clipBox, inside, intBox, modelHidden, modelLocked, nodeIdOf, runs, sceneSpec, timeoutFor, type BoxScene, type SceneSpec,
 } from './pbt.fixture';
+import type { Rect } from '@weasel-js/geom';
 
 const RUNS = 200;
 const d = AUTO_POSE_DESCRIPTOR;
@@ -33,7 +33,7 @@ const pointIn = (spec: SceneSpec) => fc.oneof(
 );
 
 /** A marquee with half-integer corners. */
-const halfBox: fc.Arbitrary<Box> = intBox.map((b) => ({ x: b.x + 0.5, y: b.y + 0.5, width: b.width, height: b.height }));
+const halfBox: fc.Arbitrary<Rect> = intBox.map((b) => ({ x: b.x + 0.5, y: b.y + 0.5, width: b.width, height: b.height }));
 
 const withPoints = sceneSpec.chain((spec) => fc.tuple(fc.constant(spec), fc.array(pointIn(spec), { minLength: 1, maxLength: 6 })));
 
@@ -54,7 +54,7 @@ function gated(spec: SceneSpec, i: number, includeLocked: boolean, includeGroups
   return includeLocked || !modelLocked(spec, i);
 }
 
-const clipsAbove = (spec: SceneSpec, i: number): Box[] =>
+const clipsAbove = (spec: SceneSpec, i: number): Rect[] =>
   ancestorsOf(spec, i).filter((k) => spec.nodes[k]!.group && spec.nodes[k]!.clip).map((k) => clipBox(spec.nodes[k]!.pose));
 
 function modelPoint(spec: SceneSpec, order: number[], x: number, y: number, includeLocked: boolean): string[] {
@@ -64,14 +64,14 @@ function modelPoint(spec: SceneSpec, order: number[], x: number, y: number, incl
 }
 
 /** The open boxes' common part, or null when they share no area. */
-function common(boxes: readonly Box[]): Box | null {
+function common(boxes: readonly Rect[]): Rect | null {
   const x0 = Math.max(...boxes.map((b) => b.x)), y0 = Math.max(...boxes.map((b) => b.y));
   const x1 = Math.min(...boxes.map((b) => b.x + b.width)), y1 = Math.min(...boxes.map((b) => b.y + b.height));
   return x0 < x1 && y0 < y1 ? { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } : null;
 }
 
 /** A leaf is taken where the marquee meets what is drawn of it: its box inside every ancestor clip. */
-function modelMarquee(spec: SceneSpec, order: number[], m: Box): string[] {
+function modelMarquee(spec: SceneSpec, order: number[], m: Rect): string[] {
   return order.filter((i) => gated(spec, i, false, false)
     && common([spec.nodes[i]!.pose, m, ...clipsAbove(spec, i)]) !== null).map((i) => nodeIdOf(i) as string);
 }

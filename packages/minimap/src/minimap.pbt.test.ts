@@ -10,7 +10,7 @@ import { createScene, normalizeView, RECT_POSE_DESCRIPTOR, viewportWorldRect, ty
 import { viewScreenToWorld, viewWorldToScreen } from '@weasel-js/core';
 import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { computeFitView, computeIndicatorCommand, FALLBACK_FIT_VIEW } from './minimapMath';
-import { minimapCenterAction, minimapPanAction, minimapPinchAction, minimapZoomAction } from './actions';
+import { minimapCenterAction, minimapPanAction, minimapTouchZoomAction, minimapZoomAction } from './actions';
 import { runs, tally, timeoutFor } from './pbt.fixture';
 
 interface Pose { x: number; y: number; width: number; height: number }
@@ -245,7 +245,7 @@ describe('minimap actions, property', () => {
         const root = rootOf(() => main, (v) => { main = v; }, host);
         const camera = rootOf(() => minimap, () => {}, host);
         const deps = { rootView: root, view: camera } as unknown as ActionDeps;
-        const inv = minimapPinchAction({ min: 0.01, max: 100 }).invoker;
+        const inv = minimapTouchZoomAction({ min: 0.01, max: 100 }).invoker;
         if (inv?.timing !== 'ongoing') throw new Error('not ongoing');
         const at = (s: { spread: number; x: number; y: number }, pinch: boolean): InvocationCtx => ({
           world: { x: 0, y: 0 }, modifiers: MODS, deps,

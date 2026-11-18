@@ -1,13 +1,13 @@
 import { type Path, mat3, type GlMat3 } from '@weasel-js/geom';
 import { DEFAULT_MITER_LIMIT, resolveScreenLength, type Stroke } from '@weasel-js/paint';
-import { markerReach, resolveStrokeWidth, widestStrokeWidth } from '@weasel-js/stroke';
+import { markerReach, widestStrokeWidth } from '@weasel-js/stroke';
 import {
   SPRITE_STRIDE, type DrawCommand, type ImageDrawCommand, type PathDrawCommand, type ShaderDrawCommand,
   type SpritesDrawCommand,
 } from './DrawCommand';
 import { effectsReach } from './effects/types';
 import { getProgramSource } from './shaders/registerProgram';
-import { textBox } from './textBounds';
+import { textBox, textLayerBox } from './textBounds';
 
 /** An axis-aligned box in screen space, CSS pixels. */
 export interface ScreenBox { minX: number; minY: number; maxX: number; maxY: number }
@@ -39,6 +39,8 @@ export function commandBox(cmd: DrawCommand, m: GlMat3, scale: number): ScreenBo
       return paintedBox(cmd, m) ?? ANYWHERE;
     case 'text':
       return textBox(cmd, m) ?? EMPTY;
+    case 'text-layer':
+      return textLayerBox(cmd, m) ?? EMPTY;
     case 'shader':
       return shaderBox(cmd) ?? ANYWHERE;
   }
@@ -55,7 +57,7 @@ function shaderBox(cmd: ShaderDrawCommand): ScreenBox | null {
   const glsl = getProgramSource(cmd.program.id)?.glsl;
   if (!glsl || glsl.vert !== undefined) return null;
   if (/\bgl_FragCoord\b/.test(glsl.frag) && !/\bu_fragOrigin\b/.test(glsl.frag)) return null;
-  const { x, y, w, h } = cmd.bounds;
+  const { x, y, width: w, height: h } = cmd.bounds;
   return { minX: Math.min(x, x + w), minY: Math.min(y, y + h), maxX: Math.max(x, x + w), maxY: Math.max(y, y + h) };
 }
 
@@ -94,7 +96,7 @@ export function paintedBox(
 ): ScreenBox | null {
   switch (cmd.kind) {
     case 'path': return pathBox(cmd.path, cmd.stroke, m);
-    case 'image': return screenBox(cmd.x, cmd.y, cmd.x + cmd.w, cmd.y + cmd.h, m);
+    case 'image': return screenBox(cmd.x, cmd.y, cmd.x + cmd.width, cmd.y + cmd.height, m);
     case 'sprites': return spritesBox(cmd.sprites, m);
   }
 }
@@ -150,7 +152,7 @@ function strokeReach(stroke: Stroke, m: GlMat3): number {
 export function strokeReachAt(stroke: Stroke, scale: number, least = scale): number {
   const at = least > 0 ? least : scale;
   const px = typeof stroke.width === 'object';
-  const base = resolveStrokeWidth(stroke.width ?? 1, px ? at : scale);
+  const base = resolveScreenLength(stroke.width ?? 1, px ? at : scale);
   // A `{ px }` ribbon is built in the transform's stretch, where the miter of a world per-vertex width is limited
   // across its edge and can reach (scale / least)² as far in world along the axis the transform shrinks most.
   const stretch = px && least > 0 ? (scale / least) ** 2 : 1;
@@ -174,10 +176,10 @@ function spritesBox(sprites: Float32Array, m: GlMat3): ScreenBox {
 
 /** The AABB of the local rect's corners taken through `m`. */
 export function screenBox(x0: number, y0: number, x1: number, y1: number, m: GlMat3): ScreenBox {
-  const [ax, ay] = mat3.apply(m, x0, y0);
-  const [bx, by] = mat3.apply(m, x1, y0);
-  const [cx, cy] = mat3.apply(m, x1, y1);
-  const [dx, dy] = mat3.apply(m, x0, y1);
+  const [ax, ay] = mat3.transformPoint(m, x0, y0);
+  const [bx, by] = mat3.transformPoint(m, x1, y0);
+  const [cx, cy] = mat3.transformPoint(m, x1, y1);
+  const [dx, dy] = mat3.transformPoint(m, x0, y1);
   return {
     minX: Math.min(ax, bx, cx, dx), minY: Math.min(ay, by, cy, dy),
     maxX: Math.max(ax, bx, cx, dx), maxY: Math.max(ay, by, cy, dy),

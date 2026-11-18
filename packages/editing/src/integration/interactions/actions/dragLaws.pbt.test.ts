@@ -9,7 +9,7 @@ import fc from 'fast-check';
 import type { Action, ActionDeps, BindingOptions } from '@weasel-js/routing';
 import type { NodeId } from '@weasel-js/core';
 import type { RectPose } from '@weasel-js/core/engine';
-import { hitTestArea } from '@weasel-js/core';
+import { hitTestRect } from '@weasel-js/core';
 import { moveAction } from '../../../actions/move/action';
 import { resizeAction } from '../../../actions/resize/action';
 import { rotateAction } from '../../../actions/rotate/action';
@@ -168,7 +168,7 @@ describe('the marquee and insert, metamorphic properties', () => {
     const deps = {
       ...depsOf(scene),
       areaSelect: {
-        hitTestArea: (b: { x: number; y: number; width: number; height: number }) => hitTestArea(scene as never, b),
+        hitTestArea: (b: { x: number; y: number; width: number; height: number }) => hitTestRect(scene as never, b),
         getSelection: () => [...scene.getSelection()],
         setSelection: (next: NodeId[]) => scene.setSelection(next),
       },

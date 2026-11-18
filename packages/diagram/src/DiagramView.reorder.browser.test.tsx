@@ -11,7 +11,7 @@ const DATA: DiagramData = {
     { id: 'word', lines: ['word'] },
   ],
   edges: ['a', 'b', 'c'].flatMap((r) => [{ from: `${r}.patch`, to: `${r}.pool` }, { from: `${r}.pool`, to: 'word' }]),
-  groups: [
+  clusters: [
     ...['a', 'b', 'c'].map((r) => ({ id: r, members: [`${r}.patch`, `${r}.pool`] })),
     { id: 'layers', members: ['a', 'b', 'c'], reorder: 'y' as const },
   ],
@@ -25,7 +25,7 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-async function mount(more: { selected?: string; onViewChange?: (v: View) => void; onMove?: DiagramViewProps['onMove'] } = {}, specs = SPECS) {
+async function mount(more: { selection?: string; onViewChange?: (v: View) => void; onMove?: DiagramViewProps['onMove'] } = {}, specs = SPECS) {
   const host = document.createElement('div');
   document.body.append(host);
   const api = createRef<DiagramViewApi>();
@@ -69,7 +69,7 @@ it('reports nothing for a drag that leaves the order as it was', async () => {
   expect(changes).toEqual([]);
 });
 
-it('pans on a drag from a node outside any reorderable group', async () => {
+it('pans on a drag from a node outside any reorderable cluster', async () => {
   const views: View[] = [];
   const { api, canvas, changes } = await mount({ onViewChange: (v) => views.push(v) });
   await drag(canvas, middle(api.current!.rectOf('word')!), 60, 60);

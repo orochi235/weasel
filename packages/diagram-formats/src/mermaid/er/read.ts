@@ -9,7 +9,7 @@ import type { DataEdge, DataNode, Row } from '@weasel-js/diagram';
 import type { ImportResult } from '../../document';
 import { Warnings, decodeEntities, graphPage } from '../../graphRead';
 import { DIRECTIONS } from '../class/read';
-import { pageNameOf, type MermaidDirection } from '../common/lines';
+import { readPageName, type MermaidDirection } from '../common/lines';
 import { StyleSheet } from '../common/styles';
 import { parseErDiagram, type ErAttribute, type ErCardinality } from './parse';
 
@@ -59,7 +59,7 @@ export function readErDiagram(text: string): ImportResult {
     const colors = styles.colorsOf(id);
     return { id, rows, ...(colors !== undefined ? { colors } : {}) };
   });
-  const name = pageNameOf(source, warnings);
+  const name = readPageName(source, warnings);
   const dir = direction !== undefined ? DIRECTIONS[direction] : undefined;
   const page = graphPage({ ...(name !== undefined ? { name } : {}), ...(dir !== undefined ? { direction: dir } : {}), nodes, edges, containers: [] });
   return { document: { pages: [{ ...page, notation: 'er' }] }, warnings: warnings.all() };

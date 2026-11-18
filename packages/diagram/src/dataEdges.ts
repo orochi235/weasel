@@ -1,6 +1,6 @@
 /** The scene specs `diagramScene` makes for edges and their labels. */
 import { polylineFromPoints } from '@weasel-js/core';
-import type { WireLabel } from './dataGroups';
+import type { WireLabel } from './dataClusters';
 import { EDGE_DERIVE_PATH } from './edge';
 import type { MeasureRowText } from './body';
 import type { DataEdge, DiagramSceneOptions, DiagramSpec } from './dataTypes';
@@ -38,7 +38,7 @@ function placementOf(e: DataEdge, route: LayeredRoute | undefined, ctx: EdgeSpec
   return route?.labelAt === undefined ? placement : { ...placement, at: { near: route.labelAt } };
 }
 
-/** Each edge's label as a group's box takes it in: where it sits, when layout
+/** Each edge's label as a cluster's box takes it in: where it sits, when layout
  *  stationed it beside its waypoints, else only its id. */
 export function wireLabels(edges: readonly DataEdge[], ctx: EdgeSpecContext): WireLabel[] {
   const out: WireLabel[] = [];

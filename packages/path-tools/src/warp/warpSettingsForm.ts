@@ -3,7 +3,7 @@
  * they hold, and the params a change to one of them makes.
  */
 import type { ActionDeps, ActionSettingsOf, ActionSettingsState } from '@weasel-js/routing';
-import type { PrefGroup } from '@weasel-js/prefs';
+import type { PrefGroup } from '@weasel-js/prefs-schema';
 import { selectedWarpPaths } from './warpSelection';
 import { resolvePathWarp } from './pathWarp';
 import { SettingsFields } from '../settingsFields';

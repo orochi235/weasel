@@ -1,0 +1,50 @@
+{
+ "id": "apps.site.FrontPage",
+ "commit": "197362e015f1498c5cd6691c571634f8fb9575fb",
+ "date": "2026-11-17",
+ "files": [
+  "apps/site/FrontPage/FrontPage.module.css",
+  "apps/site/FrontPage/FrontPage.tsx",
+  "apps/site/FrontPage/GetStarted.module.css",
+  "apps/site/FrontPage/GetStarted.tsx",
+  "apps/site/FrontPage/VersionPill.module.css",
+  "apps/site/FrontPage/VersionPill.tsx",
+  "apps/site/FrontPage/Wordmark.module.css",
+  "apps/site/FrontPage/Wordmark.tsx",
+  "apps/site/FrontPage/projectTheme.ts",
+  "apps/site/FrontPage/tagline.ts"
+ ],
+ "a": 3,
+ "b": 2,
+ "m": 2,
+ "distinct": 3,
+ "chapman": 3,
+ "unfound": 0,
+ "read": {
+  "A": 10,
+  "B": 10
+ },
+ "patches": 3,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.3,
+   "B": 2.3,
+   "match": 0.1,
+   "fix": 3.6
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "tokens": 4770194,
+  "costUsd": 3.17
+ },
+ "fixCommits": [
+  "e83b8373ec49677a35f4fb2f6b9e461242ba6f3c",
+  "25fba9d0ac23c4925150417f790a6b2f1526d7b9",
+  "fd905b84a511c6cee37f098945489a80b87dfdab"
+ ]
+}

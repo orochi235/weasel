@@ -7,7 +7,7 @@ import type { AnnotationData, AnnotationMeaning } from './types';
 /** What resolving a mark's appearance needs beyond the mark itself. */
 export interface MarkDrawOptions {
   /** The target's content box — the world a mark's geometry is in. */
-  content: { w: number; h: number };
+  content: { width: number; height: number };
   /** The target's `positionDependsOn`, for staleness. */
   positionDependsOn?: readonly string[];
   /** The trial's config at the time of the draw. */

@@ -54,7 +54,7 @@ export function unitEdges<T>(
   max: number,
 ): number[] {
   const unit = unitScale(scale, min, max);
-  const edges = bands.map((b, i) => (i === 0 ? 0 : clamp01(unit.map(b.from))));
+  const edges = bands.map((b, i) => (i === 0 ? 0 : clamp01(unit.position(b.from))));
   edges.push(1);
   return edges;
 }

@@ -36,11 +36,11 @@ export function trackSlice(shape: TrackShape, from: number, to: number): TrackSh
     at: (f, options) => shape.at(lo + (options?.open ? f : clamp(f, 0, 1)) * span, options),
     nearest(p) {
       const n = shape.nearest(p);
-      if (span === 0) return { f: 0, dist: distanceAt(shape, lo, p) };
-      if (n.f >= lo && n.f <= hi) return { f: (n.f - lo) / span, dist: n.dist };
+      if (span === 0) return { f: 0, distance: distanceAt(shape, lo, p) };
+      if (n.f >= lo && n.f <= hi) return { f: (n.f - lo) / span, distance: n.distance };
       // The whole shape's nearest point is off the stretch, which says nothing of where the stretch's own is.
       const f = nearestWithin(shape, lo, hi, p);
-      return { f: (f - lo) / span, dist: distanceAt(shape, f, p) };
+      return { f: (f - lo) / span, distance: distanceAt(shape, f, p) };
     },
   };
 }

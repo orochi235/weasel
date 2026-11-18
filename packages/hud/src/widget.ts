@@ -1,15 +1,11 @@
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { ClaimableGesture, LayerDims, View } from '@weasel-js/core';
+import type { Rect } from '@weasel-js/geom';
 import type { ColorSource } from '@weasel-js/paint';
 import type { ResolvedTheme } from '@weasel-js/theme';
 
 /** A widget's rectangle, in screen-space CSS pixels relative to the canvas. */
-export interface WidgetBounds {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
+export type WidgetBounds = Rect;
 
 /** Everything a widget is given to draw itself. Deliberately carries no scene
  *  data, which is what lets a HUD render identically headlessly — a window's

@@ -10,10 +10,10 @@ import type { ShellConfig } from '../config';
 import { DEFAULT_TITLE } from '../title';
 import type { FrameSetup } from '../frame/FrameController';
 import type { FrameImporters } from '../frame/mountFrame';
-import { type Globals, stableStringify } from '../protocol/messages';
+import { type StoryGlobals, stableStringify } from '../protocol/messages';
 import { indexEntries } from '../story/indexPages';
 import { LibrariesContext, librariesFrom } from '../story/library';
-import type { DepGraph, IndexEntry } from '../story/types';
+import type { ComponentGraph, IndexEntry } from '../story/types';
 import { DependenciesContext } from './dependencies';
 import { missingInstrument } from './documentInstrument';
 import { A11Y_SECTION } from './a11y/A11yPanel';
@@ -57,7 +57,7 @@ export interface WorkshopProps {
   storageKey?: string;
   storage?: StorageAdapter;
   /** The component graph index pages list dependencies from. */
-  dependencies?: DepGraph;
+  dependencies?: ComponentGraph;
   /** The dev server's base, where it takes captures of a story; absent, lenses offer no Pixels source. */
   captureBase?: string;
   /** The dev server's base, where it lists a component's issues; absent, the Issues panel says it is not connected. */
@@ -166,12 +166,12 @@ export function Workshop(props: WorkshopProps) {
   );
   const reload = registry.reload;
   useEffect(() => changes?.subscribe(reload), [changes, reload]);
-  const [labValues, setLabValues] = useState<Globals>(() => labGlobals(declarations, undefined));
+  const [labValues, setLabValues] = useState<StoryGlobals>(() => labGlobals(declarations, undefined));
   const themeFor = config?.labTheme;
   const labTheme = useMemo(() => themeFor?.(labValues), [themeFor, labValues]);
   const [infoOpen, setInfoOpen] = useState(false);
   const reportLabValues = useCallback(
-    (next: Globals) => setLabValues((prev) => (stableStringify(prev) === stableStringify(next) ? prev : next)),
+    (next: StoryGlobals) => setLabValues((prev) => (stableStringify(prev) === stableStringify(next) ? prev : next)),
     [],
   );
   const infoCommand = useMemo(() => infoItem(() => setInfoOpen(true)), []);

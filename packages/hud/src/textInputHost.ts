@@ -49,7 +49,7 @@ export function wireTextInput(element: HTMLElement, hud: Hud, on: TextInputHandl
     const { left, top, scale } = layoutBoxOf(element);
     Object.assign(input.style, {
       left: `${left + state.rect.x * scale.x}px`, top: `${top + state.rect.y * scale.y}px`,
-      width: `${state.rect.w * scale.x}px`, height: `${state.rect.h * scale.y}px`,
+      width: `${state.rect.width * scale.x}px`, height: `${state.rect.height * scale.y}px`,
     });
     if (state.label) input.setAttribute('aria-label', state.label);
     else input.removeAttribute('aria-label');

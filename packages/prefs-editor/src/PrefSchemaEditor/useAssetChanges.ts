@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLatest } from '@weasel-js/core';
 import {
   type Asset, type AssetChanges, type AssetExport, assetOf, exportOf, formatChanges, type PrefTypes,
-  type SchemaChange, shownAssets, trackOrigins, type Workspace, workspaceChanges,
+  type SchemaChange, shownAssets, trackOrigins, type AssetSet, assetSetChanges,
 } from '@weasel-js/prefs/edit';
 
 const NO_CHANGES: readonly SchemaChange[] = [];
@@ -16,11 +16,11 @@ export interface SentAsset {
   literal: string;
 }
 
-/** Where an asset editor's changes go when the reader submits them: every changed asset, in the workspace's order. A promise it returns says whether they arrived. */
+/** Where an asset editor's changes go when the reader submits them: every changed asset, in the asset set's order. A promise it returns says whether they arrived. */
 export type SubmitAssets = (assets: readonly SentAsset[]) => void | Promise<void>;
 
-/** What a workspace has changed from its baseline, as the editor's panes ask for it. */
-export interface WorkspaceChanges {
+/** What an asset set has changed from its baseline, as the editor's panes ask for it. */
+export interface AssetSetChanges {
   /** The ids of the changed assets. */
   ids: ReadonlySet<string>;
   /** The changes of the asset `id`; none for one that stands at its baseline. */
@@ -35,33 +35,33 @@ export interface WorkspaceChanges {
   exported(id: string, types?: PrefTypes): AssetExport;
   /** Follow every node from `before` to what it became in `after`, an edit made in one step, so it stays paired with
    *  its baseline whatever the later steps make of its key and its name. */
-  follow(before: Workspace, after: Workspace): void;
+  follow(before: AssetSet, after: AssetSet): void;
 }
 
-function changesText(workspace: Workspace, each: readonly AssetChanges[]): string {
+function changesText(assetSet: AssetSet, each: readonly AssetChanges[]): string {
   // A lone dialog's changes need no heading, though a catalog is kept beside it, until that changes too.
-  const [lone, ...more] = shownAssets(workspace);
+  const [lone, ...more] = shownAssets(assetSet);
   if (more.length === 0 && each.every((c) => c.id === lone?.id)) return formatChanges(each[0]?.changes ?? NO_CHANGES);
-  return each.map(({ id, changes }) => `${assetOf(workspace, id)!.label}\n${formatChanges(changes)}`).join('\n\n');
+  return each.map(({ id, changes }) => `${assetOf(assetSet, id)!.label}\n${formatChanges(changes)}`).join('\n\n');
 }
 
 /**
- * The changes from `base` to `workspace`. A workspace `same` as the last one is not looked at again, so what the
- * panes are handed keeps its identity under a host that makes its workspace anew each time it draws. `report` is
+ * The changes from `base` to `assetSet`. An asset set `same` as the last one is not looked at again, so what the
+ * panes are handed keeps its identity under a host that makes its asset set anew each time it draws. `report` is
  * called with the changed assets' ids on mount, and again whenever the set is another one.
  */
 export function useAssetChanges(
-  base: Workspace, workspace: Workspace, same: (a: Workspace, b: Workspace) => boolean, report?: (ids: ReadonlySet<string>) => void,
-): WorkspaceChanges {
-  const [held, setHeld] = useState(workspace);
-  const current = held === workspace || same(held, workspace) ? held : workspace;
+  base: AssetSet, assetSet: AssetSet, same: (a: AssetSet, b: AssetSet) => boolean, report?: (ids: ReadonlySet<string>) => void,
+): AssetSetChanges {
+  const [held, setHeld] = useState(assetSet);
+  const current = held === assetSet || same(held, assetSet) ? held : assetSet;
   if (current !== held) setHeld(current);
   const [tracked, setTracked] = useState(() => ({ base, origins: trackOrigins(base) }));
   const track = tracked.base === base ? tracked : { base, origins: trackOrigins(base) };
   if (track !== tracked) setTracked(track);
   const { origins } = track;
-  const changes = useMemo<WorkspaceChanges>(() => {
-    const each = workspaceChanges(base, current, origins);
+  const changes = useMemo<AssetSetChanges>(() => {
+    const each = assetSetChanges(base, current, origins);
     const by = new Map(each.map((c) => [c.id, c.changes]));
     return {
       ids: new Set(by.keys()),

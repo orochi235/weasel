@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { checkPrefCondition } from './conditionCheck';
-import { type PrefGroup, prefValueAtPath, prefShownReader } from '@weasel-js/prefs-schema';
+import { type PrefGroup, prefValueAt, prefShownReader } from '@weasel-js/prefs-schema';
 
 const field = { kind: 'field', name: 'F', description: '', default: '' } as const;
 const SCHEMA = {
@@ -33,7 +33,7 @@ describe('a field two variants of a union describe differently (shrunk)', () => 
   });
 
   it('is shown as the variant the value holds describes it', () => {
-    const shown = (u: unknown) => prefShownReader(SCHEMA, (path) => prefValueAtPath({ u }, path));
+    const shown = (u: unknown) => prefShownReader(SCHEMA, (path) => prefValueAt({ u }, path));
     expect(shown({ type: 'q', on: 'yes' })('u.on')).toBe(true);
     expect(shown({ type: 'r', on: 'yes' })('u.on')).toBe('yes');
   });

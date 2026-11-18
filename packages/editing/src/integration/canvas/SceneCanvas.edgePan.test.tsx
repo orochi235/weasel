@@ -36,7 +36,7 @@ function mount(viewport: SceneCanvasViewport) {
   const id = scene.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x: 0, y: 0, width: 50, height: 50 } }) as NodeId;
   const apiRef = { current: null as SceneCanvasApi | null };
   function Mount(): ReactNode {
-    const selection = useSelection({ mode: 'multi', initial: [id] });
+    const selection = useSelection({ mode: 'multiple', initial: [id] });
     return <SceneCanvas ref={apiRef} features={[drawPreset]} scene={scene} width={200} height={200} selection={selection} viewport={viewport} />;
   }
   const { container } = render(<Mount />);

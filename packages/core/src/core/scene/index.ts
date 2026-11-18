@@ -1,15 +1,16 @@
 export { createScene, sceneFromJSON, type SceneFromJSONOptions } from './scene';
-export { sceneSelectionStore } from './sceneSelection';
+export { sceneHistorySelection } from './sceneSelection';
 export { useScene } from './useScene';
 export { createEditingSession, isEditingSession, type EditingSession } from './editingSession';
 export { useEditingSession } from './useEditingSession';
 export { asNodeId } from './types';
 export { hasChildren, isLeaf } from './treeShape';
 export { statedFields, type StatedNodeFields } from './statedFields';
-export { isSerializedScene, nodeKindOf, specsFromSerialized } from './serialization';
+export { isSerializedScene, savedNodeKind, specsFromSerialized } from './serialization';
 export { SnapshotKeyError, SnapshotShapeError } from './snapshotShape';
 export { localizeInScene, localizeWorldPoses, worldPosesOf, type PlacedSpec } from './worldSave';
 export type { SkippedKey, SpecsFromSerializedOptions, V1Classifier } from './serialization';
+export type { NodeFnFieldName } from './nodeFnFields';
 export { RestoredOpError } from './boundOps';
 export { SCENE_HISTORY_FORM } from './historyForm';
 export type { SerializedSceneHistory } from './historyForm';
@@ -42,6 +43,8 @@ export type {
   SceneArrivalHandler,
   ScenePoseReports,
   SceneRegistry,
+  NodeUpgrade,
+  SavedNode,
   SerializedNode,
   SerializedLayer,
   SerializedNodeV1,

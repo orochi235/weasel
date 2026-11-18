@@ -1,3 +1,5 @@
+import type { Rect } from '@weasel-js/geom';
+
 /**
  * Uniform-grid sprite sheet layout — frame index to the source rect an
  * `ImageDrawCommand` samples. Pure arithmetic over the grid description; it
@@ -28,7 +30,7 @@ export interface SpriteSheet {
 export function frameRect(
   sheet: SpriteSheet,
   index: number,
-): { x: number; y: number; w: number; h: number } {
+): Rect {
   const { frameWidth, frameHeight, columns } = sheet;
   const margin = sheet.margin ?? 0;
   const spacing = sheet.spacing ?? 0;
@@ -37,7 +39,7 @@ export function frameRect(
   return {
     x: margin + col * (frameWidth + spacing),
     y: margin + row * (frameHeight + spacing),
-    w: frameWidth,
-    h: frameHeight,
+    width: frameWidth,
+    height: frameHeight,
   };
 }

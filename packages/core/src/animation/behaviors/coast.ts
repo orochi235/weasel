@@ -2,6 +2,7 @@ import type { GestureContext } from 'interactions/gestures/types';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { Animator } from '@weasel-js/animator';
+import type { Rect } from '@weasel-js/geom';
 
 /** One flick still traveling: the nodes it carries, and how a new drag of one stops it. */
 export interface Coast {
@@ -17,7 +18,7 @@ export interface CoastArgs<TPose> {
   vx: number;
   vy: number;
   friction: number;
-  bounds: { x: number; y: number; width: number; height: number } | undefined;
+  bounds: Rect | undefined;
   boundary: 'stop' | 'continue';
   d: PoseDescriptor<TPose>;
   /** The behavior's running coasts. A coast adds itself and takes itself out as it ends. */

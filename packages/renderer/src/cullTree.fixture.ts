@@ -4,10 +4,9 @@
  */
 import fc from 'fast-check';
 import { expect } from 'vitest';
-import { mat3, type GlMat3 } from '@weasel-js/geom';
+import { mat3, type GlMat3, type Rect } from '@weasel-js/geom';
 import { getMesh } from './cache/cache';
 import { strokeMesh } from './cache/strokeMeshCache';
-import type { CullRect } from './cullDrawCommands';
 import type { DrawCommand, GroupDrawCommand } from './DrawCommand';
 import { pathBox, type ScreenBox } from './paintedBounds';
 import { resolveStrokeLengths, type StrokedPathCommand } from './strokeLengths';
@@ -30,9 +29,9 @@ const leaf: fc.Arbitrary<DrawCommand> = fc.oneof(
       ? { kind: 'path', path, stroke: { ...stroke, paint: PAINT } }
       : { kind: 'path', path, fill: { paint: PAINT } })) },
   { weight: 2, arbitrary: fc.tuple(spread(-300, 300), spread(-300, 300), spread(-200, 200), spread(-200, 200))
-    .map(([x, y, w, h]): DrawCommand => ({ kind: 'image', image: IMAGE, x, y, w, h })) },
+    .map(([x, y, w, h]): DrawCommand => ({ kind: 'image', image: IMAGE, x, y, width: w, height: h })) },
   // A program with no source the renderer knows: it may draw anywhere.
-  { weight: 1, arbitrary: fc.constant({ kind: 'shader', program: { id: 'pbt-unknown' }, bounds: { x: 0, y: 0, w: 1, h: 1 } } as unknown as DrawCommand) },
+  { weight: 1, arbitrary: fc.constant({ kind: 'shader', program: { id: 'pbt-unknown' }, bounds: { x: 0, y: 0, width: 1, height: 1 } } as unknown as DrawCommand) },
 );
 
 /** A transform keeping most of what it draws near the view, so both sides of the cut come up. */
@@ -76,7 +75,7 @@ export const tree = rawTree.map((cmds) => {
   return tag(cmds);
 });
 
-export const view: fc.Arbitrary<CullRect> = fc.record({
+export const view: fc.Arbitrary<Rect> = fc.record({
   x: spread(-400, 200), y: spread(-400, 200),
   width: fc.oneof({ weight: 1, arbitrary: fc.constant(0) }, { weight: 4, arbitrary: spread(0, 600) }),
   height: fc.oneof({ weight: 1, arbitrary: fc.constant(0) }, { weight: 4, arbitrary: spread(0, 600) }),
@@ -84,7 +83,7 @@ export const view: fc.Arbitrary<CullRect> = fc.record({
 
 /** Screen points `cmd` paints under `m`: the fill's or ribbon's vertices, an image's corners, and for a shader, which
  *  may paint anywhere, the view's center. */
-function painted(cmd: DrawCommand, m: GlMat3, rect: CullRect): Pt[] {
+function painted(cmd: DrawCommand, m: GlMat3, rect: Rect): Pt[] {
   if (cmd.kind === 'shader') return [{ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }];
   let pts: Pt[] = [];
   if (cmd.kind === 'path') {
@@ -95,9 +94,9 @@ function painted(cmd: DrawCommand, m: GlMat3, rect: CullRect): Pt[] {
       pts = meshPoints(getMesh(cmd.path));
     }
   } else if (cmd.kind === 'image') {
-    pts = [{ x: cmd.x, y: cmd.y }, { x: cmd.x + cmd.w, y: cmd.y }, { x: cmd.x + cmd.w, y: cmd.y + cmd.h }, { x: cmd.x, y: cmd.y + cmd.h }];
+    pts = [{ x: cmd.x, y: cmd.y }, { x: cmd.x + cmd.width, y: cmd.y }, { x: cmd.x + cmd.width, y: cmd.y + cmd.height }, { x: cmd.x, y: cmd.y + cmd.height }];
   }
-  return pts.map((p) => { const [x, y] = mat3.apply(m, p.x, p.y); return { x, y }; });
+  return pts.map((p) => { const [x, y] = mat3.transformPoint(m, p.x, p.y); return { x, y }; });
 }
 
 const E = 1e-3;
@@ -111,7 +110,7 @@ const inBox = (p: Pt, b: ScreenBox, grow = 0): boolean =>
  * than the truth, never more.
  */
 function paintsInside(
-  cmd: DrawCommand, m: GlMat3, rect: CullRect, dpr: number, clips: ScreenBox[] = [], grow = 0, outer: ScreenBox[] = [],
+  cmd: DrawCommand, m: GlMat3, rect: Rect, dpr: number, clips: ScreenBox[] = [], grow = 0, outer: ScreenBox[] = [],
 ): boolean {
   if (cmd.kind === 'group') {
     const inner = cmd.transform ? mat3.multiply(m, cmd.transform) : m;
@@ -134,7 +133,7 @@ function paintsInside(
 
 /** Check `out` is `cmds` with commands dropped and none reordered or changed, and that every command painting into
  *  `rect` stayed. */
-export function checkCull(cmds: readonly DrawCommand[], out: readonly DrawCommand[], m: GlMat3, rect: CullRect, dpr: number,
+export function checkCull(cmds: readonly DrawCommand[], out: readonly DrawCommand[], m: GlMat3, rect: Rect, dpr: number,
   t: ReturnType<typeof tally>): void {
   let j = 0;
   for (const cmd of cmds) {

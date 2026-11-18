@@ -2,8 +2,8 @@ import { useMemo, useState, type ReactNode } from 'react';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import type { LeafRenderer } from '@weasel-js/ui';
 import {
-  asWorkspace, catalogIn, type CustomKinds, type DraftStorage, NO_CATALOG, NO_TYPES, ONE, oneAssetCodec,
-  type PrefTypes, printSchema, sameSchema, schemaOf, type Workspace,
+  asAssetSet, catalogIn, type CustomKinds, type DraftStorage, NO_CATALOG, NO_TYPES, LONE_SCHEMA_ID, oneAssetCodec,
+  type PrefTypes, printSchema, sameSchema, schemaOf, type AssetSet,
 } from '@weasel-js/prefs/edit';
 import { AssetEditor } from './AssetEditor';
 import { useEditorActions, type EditorAction } from './editorActions';
@@ -20,7 +20,7 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
   original?: NoInfer<S>;
   /** Attribute schemas for custom kinds, by kind. A leaf of an unlisted custom kind edits its base fields only. */
   kinds?: CustomKinds;
-  /** The types the editor may place: leaves made with `prefType`. Each is offered by name beside the kinds, for a
+  /** The types the editor may place: leaves made with `namedPrefType`. Each is offered by name beside the kinds, for a
    *  pref and for the entry of a list or a map. A leaf made from one is a single row in the tree, edits only what
    *  its use sets (its key, name, description, default, and flags), and prints as the type's name, which the
    *  reader imports where the literal is pasted. An `object` leaf with no type keeps its editable children; a
@@ -91,9 +91,9 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   const [ownCatalog, setOwnCatalog] = useState(actionCatalog ?? NO_CATALOG);
   const catalog = listed ? actionCatalog ?? ownCatalog : undefined;
   const [firstCatalog] = useState(catalog);
-  const workspace = useMemo(() => asWorkspace(schema, catalog), [schema, catalog]);
-  const base = useMemo(() => original && asWorkspace(original, firstCatalog), [original, firstCatalog]);
-  const change = (next: Workspace) => {
+  const assetSet = useMemo(() => asAssetSet(schema, catalog), [schema, catalog]);
+  const base = useMemo(() => original && asAssetSet(original, firstCatalog), [original, firstCatalog]);
+  const change = (next: AssetSet) => {
     const sorted = catalogIn(next);
     if (sorted && sorted !== catalog) {
       setOwnCatalog(sorted);
@@ -103,8 +103,8 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   };
   // A submission holds the schema's changes alone: the catalog is the host's through `onActionCatalogChange`.
   const submit = onSubmit && ((sent: readonly SentAsset[]) => {
-    const mine = sent.find((a) => a.id === ONE);
+    const mine = sent.find((a) => a.id === LONE_SCHEMA_ID);
     return onSubmit(mine?.changes ?? [], mine?.literal ?? printSchema(schema, types));
   });
-  return <AssetEditor {...rest} types={types} codec={codec} same={sameSchema} workspace={workspace} onChange={change} original={base} onSubmit={submit} />;
+  return <AssetEditor {...rest} types={types} codec={codec} same={sameSchema} assetSet={assetSet} onChange={change} original={base} onSubmit={submit} />;
 }

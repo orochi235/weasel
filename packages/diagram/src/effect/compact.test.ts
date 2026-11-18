@@ -23,7 +23,7 @@ const P: EffectPipeline = {
     w(['blur', 'out'], ['mix', 'base']), w(['blur', 'out'], ['mix', 'over']), w(['mix', 'out'], ['out', 'in']),
     w(['osc', 'value'], ['blur', 'radius']),
   ],
-  groups: [{ id: 'g', members: ['blur', 'mix'] }],
+  clusters: [{ id: 'g', members: ['blur', 'mix'] }],
 };
 
 const strokeOpacity = (spec: DiagramSpec) => (spec.data as { stroke?: { paint?: { opacity?: number } } }).stroke?.paint?.opacity;
@@ -73,7 +73,7 @@ describe('compact', () => {
     const bad = compact({ ...P, wires: [...P.wires, w(['osc', 'value'], ['mix', 'over'])] });
     const edge = bad.data.edges.find((e) => e.from === 'osc' && e.to === 'mix')!;
     expect(bad.scene.edgeStyle!(edge)!.stroke).toBe(PROBLEM_COLOR);
-    expect(bad.data.groups).toEqual(P.groups);
+    expect(bad.data.clusters).toEqual(P.clusters);
   });
 
   it('dashes a line only when every wire in it is a control wire', () => {

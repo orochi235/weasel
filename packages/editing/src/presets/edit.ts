@@ -1,7 +1,7 @@
-import { cancelGestureAction, contextMenuAction } from '@weasel-js/core';
+import { cancelAllAction, contextMenuAction } from '@weasel-js/core';
 import type { FeaturePreset } from '@weasel-js/core';
 import { duplicateAction } from '../actions/edit/duplicate';
-import { escapeAction } from '../actions/edit/escape';
+import { deselectAction } from '../actions/edit/deselect';
 import { groupAction, ungroupAction } from '../actions/edit/group';
 import { selectAllAction } from '../actions/edit/selectAll';
 import { setFillAction } from '../actions/edit/setFill';
@@ -13,12 +13,12 @@ import { setVertexColorAction } from '../actions/edit/setVertexColor';
 import { transformAgainAction } from '../actions/transformAgain/action';
 import { nudgeDownAction, nudgeLeftAction, nudgeRightAction, nudgeUpAction } from '../actions/edit/nudge';
 import { insertPreset } from './insert';
-import { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from '../actions/clipboard/action';
+import { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteCopiedAction } from '../actions/clipboard/action';
 import { selectionPreset } from './selection';
 import { deleteAction } from '../actions/delete/delete';
 
 /** Escape, and canceling the gesture in flight. */
-export const escapePreset: FeaturePreset = { id: 'escape', label: 'Escape', actions: [escapeAction, cancelGestureAction], includes: [selectionPreset] };
+export const escapePreset: FeaturePreset = { id: 'escape', label: 'Escape', actions: [deselectAction, cancelAllAction], includes: [selectionPreset] };
 /** The context menu. */
 export const contextMenuPreset: FeaturePreset = { id: 'contextMenu', label: 'Context menu', actions: [contextMenuAction], includes: [selectionPreset] };
 /** Cmd/Ctrl+A. */
@@ -55,7 +55,7 @@ export const stylePreset: FeaturePreset = {
 export const clipboardPreset: FeaturePreset = {
   id: 'clipboard',
   label: 'Clipboard',
-  actions: [clipboardCutAction, clipboardCopyAction, clipboardPasteAction, clipboardPasteEventAction],
+  actions: [clipboardCutAction, clipboardCopyAction, clipboardPasteAction, clipboardPasteCopiedAction],
   includes: [insertPreset],
 };
 

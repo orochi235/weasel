@@ -3,14 +3,14 @@ import { type RefObject, useLayoutEffect, useRef } from 'react';
 import { createOverrides, type Overrides } from '../frame/cssVars';
 import type { FrameSetup } from '../frame/FrameController';
 import { createGlobalsTarget } from '../frame/globalsTarget';
-import type { Globals } from '../protocol/messages';
+import type { StoryGlobals } from '../protocol/messages';
 import type { CssOverrides } from './cssVars/overrides';
 
 /** A selector matching only the element carrying `id`. */
 export const scopeOf = (id: string) => `[data-fg-host="${id}"]`;
 
 /** Applies `globals` to the host carrying `hostId` through `setup`; the returned function removes what it styled. */
-export function applyGlobalsTo(host: HTMLElement, hostId: string, globals: Globals, setup: FrameSetup): () => void {
+export function applyGlobalsTo(host: HTMLElement, hostId: string, globals: StoryGlobals, setup: FrameSetup): () => void {
   const target = createGlobalsTarget(host, scopeOf(hostId));
   setup.applyGlobals?.(globals, target);
   return () => target.dispose();
@@ -23,7 +23,7 @@ export function applyGlobalsTo(host: HTMLElement, hostId: string, globals: Globa
  */
 export function useHostConditions(
   host: HTMLElement | null,
-  opts: { hostId: string; globals: Globals; overrides: CssOverrides; setup: FrameSetup },
+  opts: { hostId: string; globals: StoryGlobals; overrides: CssOverrides; setup: FrameSetup },
 ): RefObject<Overrides | null> {
   const { hostId, globals, overrides: persisted, setup } = opts;
   const latest = useLatest({ setup });

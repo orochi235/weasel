@@ -18,7 +18,7 @@ The reference is Illustrator: the framework owns the editing experience; the con
 
 Three new layers atop the existing kit (grid math, drag primitives, viewport, render):
 
-1. **Op + History.** Generic `Op<T>` interface with factory helpers (`createTransformOp`, `createReparentOp`, `createCreateOp`, `createDeleteOp`, `createSetSelectionOp`). Optional `createHistory(adapter)` Zustand-shaped store with `apply`, `applyBatch`, `undo`, `redo`. Apps with existing undo (e.g., the garden) ignore `createHistory` and route ops to their own machinery.
+1. **Op + History.** Generic `Op<T>` interface with factory helpers (`createSetPoseOp`, `createReparentOp`, `createCreateOp`, `createDeleteOp`, `createSetSelectionOp`). Optional `createHistory(adapter)` Zustand-shaped store with `apply`, `applyBatch`, `undo`, `redo`. Apps with existing undo (e.g., the garden) ignore `createHistory` and route ops to their own machinery.
 
 2. **SceneAdapter (per-hook narrow adapters).** Typed contracts the kit hooks consume. Apps provide one per hook by default; structurally typed so a wider object can satisfy multiple narrow interfaces.
 
@@ -39,7 +39,7 @@ Built-in factories (kit-shipped):
 
 | Factory | Payload | apply / invert |
 |---|---|---|
-| `createTransformOp` | `{ id, from: TPose, to: TPose }` | `setPose(id, to)` / swap from/to |
+| `createSetPoseOp` | `{ id, from: TPose, to: TPose }` | `setPose(id, to)` / swap from/to |
 | `createReparentOp` | `{ id, from: parentId\|null, to: parentId\|null }` | `setParent(id, to)` / swap |
 | `createCreateOp` | `{ object: TNode }` | `insertNode(object)` / `createDeleteOp` |
 | `createDeleteOp` | `{ object: TNode }` | `removeNode(id)` / `createCreateOp` |
@@ -228,7 +228,7 @@ interface GestureContext<TPose> {
 src/canvas-kit/
   ops/
     types.ts                # Op, applyBatch contract
-    transform.ts            # createTransformOp
+    transform.ts            # createSetPoseOp
     reparent.ts             # createReparentOp
     create.ts               # createCreateOp
     delete.ts               # createDeleteOp

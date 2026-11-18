@@ -5,7 +5,7 @@ import { moveAction } from './action';
 import type { InvocationCtx, BindingOptions } from '@weasel-js/routing';
 import type { NodeId, PoseOverrides, Scene } from '@weasel-js/core';
 import type { NodeAtPointDep } from '@weasel-js/core/engine';
-import { buildDepsFromRequires } from '@weasel-js/routing';
+import { createActionDeps } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
 
 /** The reparentOnDrop tests below assert LOCAL rebasing (world pose → local
@@ -572,12 +572,12 @@ describe('moveAction — reparentOnDrop', () => {
   });
 
   // End-to-end via the dispatcher's own dep builder. The other tests inject
-  // `nodeAtPoint` into `ctx.deps` by hand, bypassing `buildDepsFromRequires` —
+  // `nodeAtPoint` into `ctx.deps` by hand, bypassing `createActionDeps` —
   // which only surfaces deps the action declared in `requires`. This test
   // builds the deps bag exactly the way the dispatcher does, so it fails if
   // `nodeAtPoint` is missing from `moveAction.requires` (the dep never reaches
   // the invoker and reparent-on-drop silently no-ops).
-  it('reparentOnDrop fires when deps are built via buildDepsFromRequires (nodeAtPoint declared)', () => {
+  it('reparentOnDrop fires when deps are built via createActionDeps (nodeAtPoint declared)', () => {
     const scene = buildScene();
     const movingId = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
     const containerId = scene.add({ kind: 'group', layer: 'main', pose: { x: 50, y: 50, width: 100, height: 100 }, data: { kind: 'group' } });
@@ -595,7 +595,7 @@ describe('moveAction — reparentOnDrop', () => {
       register: () => () => {},
     } as unknown as DepRegistry;
 
-    const deps = buildDepsFromRequires(moveAction, registry);
+    const deps = createActionDeps(moveAction, registry);
     const invoker = moveAction.invoker;
     if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
     const baseCtx = {

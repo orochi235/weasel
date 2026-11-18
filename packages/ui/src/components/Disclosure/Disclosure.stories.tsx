@@ -12,11 +12,11 @@ export default meta;
 type Story = StoryObj<typeof Disclosure>;
 
 export const Closed: Story = {
-  args: { open: false, label: 'Shapes', onToggle: () => {} },
+  args: { open: false, label: 'Shapes', onOpenChange: () => {} },
 };
 
 export const Open: Story = {
-  args: { open: true, label: 'Shapes', onToggle: () => {} },
+  args: { open: true, label: 'Shapes', onOpenChange: () => {} },
 };
 
 /** Proofed large, because an off-center bar is a blurry pixel at 13px and
@@ -25,7 +25,7 @@ export const Sizes: Story = {
   render: (args) => (
     <div className={`${s.row} ${s.proof}`}>
       {[104, 52, 26, 13].map((size) => (
-        <Disclosure {...args} key={size} open={false} onToggle={() => {}} label={`${size}px`} size={size} />
+        <Disclosure {...args} key={size} open={false} onOpenChange={() => {}} label={`${size}px`} size={size} />
       ))}
     </div>
   ),
@@ -52,7 +52,7 @@ export const FacetTree: Story = {
           <div key={family}>
             <DisclosureRow
               open={!!open[family]}
-              onToggle={() => setOpen((o) => ({ ...o, [family]: !o[family] }))}
+              onOpenChange={(next) => setOpen((o) => ({ ...o, [family]: next }))}
               label={`${family} categories`}
               aria-controls={`facet-${family}`}
             >
@@ -81,9 +81,9 @@ export const FacetTree: Story = {
 export const States: Story = {
   render: (args) => (
     <div className={s.row}>
-      <Disclosure {...args} open={false} onToggle={() => {}} label="Shut" />
-      <Disclosure {...args} open onToggle={() => {}} label="Open" />
-      <Disclosure {...args} open={false} onToggle={() => {}} label="Disabled" disabled />
+      <Disclosure {...args} open={false} onOpenChange={() => {}} label="Shut" />
+      <Disclosure {...args} open onOpenChange={() => {}} label="Open" />
+      <Disclosure {...args} open={false} onOpenChange={() => {}} label="Disabled" disabled />
     </div>
   ),
 };

@@ -1,4 +1,4 @@
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import { asNodeId, createScene, PATH_EFFECT_DERIVATIONS, pathEffectNode, pathNode, type RectPose, withPathEffectsRegistry } from '@weasel-js/core';
 import { pathEffectsPreset, pathsPreset, usePenTool } from '@weasel-js/path-tools';
 import {
@@ -40,11 +40,11 @@ const OPENING = { id: TRACK };
 function createLabScene() {
   const tile = pathNode('tile', 'M40 40 L76 56 L40 72 L50 56 Z', {
     fill: { paint: solid('#d1495b') },
-    stroke: strokeOf('#6b1f2a', 1.5),
+    stroke: solidStroke('#6b1f2a', 1.5),
   });
   const track = pathNode('track', 'M80 320 C200 180 320 460 440 300 C520 200 600 240 660 320', {
     fill: null,
-    stroke: strokeOf('#8a8a8a', 1),
+    stroke: solidStroke('#8a8a8a', 1),
   });
   const copies = { ...pathEffectNode({ kind: 'repeatAlong', ...settingsOf(config.defaults()) }, [tile.id, track.id], 'default', PATH_EFFECT_DERIVATIONS), id: asNodeId('copies') };
   return createScene<unknown, 'default', RectPose>({

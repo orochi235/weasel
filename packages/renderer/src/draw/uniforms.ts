@@ -2,6 +2,7 @@ import type { ShaderProgram } from '../shaders/ShaderProgram';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
 import { parseColor } from '@weasel-js/paint';
 import type { DrawContext } from './drawContext';
+import { createPart } from '@weasel-js/registry';
 
 /**
  * Uniform values a program already holds this frame, so an unchanged one is
@@ -27,16 +28,14 @@ interface UploadedUniforms {
   alpha?: number;
 }
 
-const FRAME_UPLOADS = new WeakMap<DrawContext, WeakMap<ShaderProgram, UploadedUniforms>>();
+const uploadsOf = createPart<DrawContext, WeakMap<ShaderProgram, UploadedUniforms>>(() => new WeakMap());
 
-const FRAME_PROJ = new WeakMap<DrawContext, GlMat3>();
+const frameProjOf = createPart(
+  (ctx: DrawContext): GlMat3 => mat3.toUniform(mat3.screenToClip(ctx.widthCss, ctx.heightCss)),
+);
 
 function uploadedFor(ctx: DrawContext, prog: ShaderProgram): UploadedUniforms {
-  let byProgram = FRAME_UPLOADS.get(ctx);
-  if (!byProgram) {
-    byProgram = new WeakMap();
-    FRAME_UPLOADS.set(ctx, byProgram);
-  }
+  const byProgram = uploadsOf(ctx);
   let uploaded = byProgram.get(prog);
   if (!uploaded) {
     uploaded = {};
@@ -85,12 +84,7 @@ export function setAlphaUniform(ctx: DrawContext, prog: ShaderProgram, alpha: nu
  *  dimensions, unless the target being drawn covers some other window. */
 export function projFor(ctx: DrawContext): GlMat3 {
   if (ctx.projection) return ctx.projection;
-  let proj = FRAME_PROJ.get(ctx);
-  if (!proj) {
-    proj = mat3.toUniform(mat3.screenToClip(ctx.widthCss, ctx.heightCss));
-    FRAME_PROJ.set(ctx, proj);
-  }
-  return proj;
+  return frameProjOf(ctx);
 }
 
 /** Reused across draws: the transpose below rebuilt this every command. */

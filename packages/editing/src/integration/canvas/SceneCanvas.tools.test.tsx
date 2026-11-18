@@ -3,7 +3,7 @@ import { createEvent, act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas, useScene, useTools, defineTool } from '@weasel-js/core';
 import { asNodeId, WeaselProvider } from '@weasel-js/core/engine';
-import { drawPreset, BUILTIN_TOOL_IDS } from '@weasel-js/editing';
+import { drawPreset, KIT_TOOL_IDS } from '@weasel-js/editing';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
 beforeAll(() => {
@@ -211,7 +211,7 @@ describe('SceneCanvas consumer-tools keybindings auto-wiring', () => {
           scene={scene}
           width={100} height={100}
           layers={{}}
-          viewport={{ pinchZoom: true }}
+          viewport={{ touchZoom: true }}
           enableKeybindings={false}
           onToolsCreated={(t) => { captured = t; }}
         />
@@ -264,7 +264,7 @@ describe('SceneCanvas tools prop patch form', () => {
           scene={scene}
           width={100} height={100}
           layers={{}}
-          defaultTools={BUILTIN_TOOL_IDS}
+          defaultTools={KIT_TOOL_IDS}
           tools={{ star: false } as never}
           onToolsCreated={(t) => { captured = t; }}
         />
@@ -294,7 +294,7 @@ describe('SceneCanvas tools prop patch form', () => {
           scene={scene}
           width={100} height={100}
           layers={{}}
-          defaultTools={BUILTIN_TOOL_IDS}
+          defaultTools={KIT_TOOL_IDS}
           tools={{ star: customStar } as never}
           onToolsCreated={(t) => { captured = t; }}
         />

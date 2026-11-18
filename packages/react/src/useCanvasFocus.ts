@@ -20,7 +20,7 @@ export interface UseCanvasFocusOptions {
 
 /** What `useCanvasFocus` hands back: the focus state, the props that
  *  maintain it, and a getter for reading it from per-frame code. */
-export interface CanvasFocusReturn {
+export interface UseCanvasFocusReturn {
   /** Live boolean — true when the element has DOM focus. Triggers re-renders
    *  when the focus state changes (set via React state). */
   focused: boolean;
@@ -42,7 +42,7 @@ export interface CanvasFocusReturn {
 
 /** Track DOM focus on the canvas, so chrome that should only show while the
  *  canvas is focused can be gated on it. */
-export function useCanvasFocus(options: UseCanvasFocusOptions = {}): CanvasFocusReturn {
+export function useCanvasFocus(options: UseCanvasFocusOptions = {}): UseCanvasFocusReturn {
   const { initial = false, tabIndex = 0 } = options;
   const [focused, setFocusedState] = useState<boolean>(initial);
   // Every state change goes through a handler below that writes this first.

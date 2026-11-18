@@ -58,7 +58,7 @@ function waitForHandoff():Promise<{ port: MessagePort; id: string | null }> {
  */
 export async function mountFrame(options: MountFrameOptions): Promise<void> {
   const imports = new Map<string, Promise<Record<string, unknown>>>();
-  const importOf = (file: string): Promise<Record<string, unknown>> => {
+  const loadImport = (file: string): Promise<Record<string, unknown>> => {
     let loading = imports.get(file);
     if (!loading) {
       const importer = getOwn(options.importers, file);
@@ -76,7 +76,7 @@ export async function mountFrame(options: MountFrameOptions): Promise<void> {
   const early = location.hash.slice(1) || null;
   // Only starts the fetch; whoever awaits the import later sees its outcome.
   for (const file of new Set(early === null ? [] : entriesOf(early).map((e) => e.file))) {
-    if (Object.hasOwn(options.importers, file)) importOf(file).catch(() => {});
+    if (Object.hasOwn(options.importers, file)) loadImport(file).catch(() => {});
   }
 
   const handoff = waitForHandoff();
@@ -88,7 +88,7 @@ export async function mountFrame(options: MountFrameOptions): Promise<void> {
   try {
     if (isIndexId(id)) {
       const { load, setup } = options;
-      const source = { index: options.index, importOf, load, parameters: setup?.parameters, prepare: setup?.prepare };
+      const source = { index: options.index, importOf: loadImport, load, parameters: setup?.parameters, prepare: setup?.prepare };
       // The project's library table is the shell config's, which a frame document does not load.
       const bundle = await loadIndexBundle(id, source);
       startIndex({ bundle, channel, container, ...(setup ? { setup } : {}) });
@@ -96,7 +96,7 @@ export async function mountFrame(options: MountFrameOptions): Promise<void> {
     }
     const entry = options.index.find((e) => e.id === id);
     if (!entry) throw new Error(`No story with id "${id}"`);
-    const mod = await importOf(entry.file);
+    const mod = await loadImport(entry.file);
     const stories = (options.load ?? loadStories)(mod, entry.title, options.setup?.parameters);
     const story = stories.find((s) => s.exportName === entry.exportName);
     if (!story) throw new Error(`${entry.file} has no story export "${entry.exportName}"`);

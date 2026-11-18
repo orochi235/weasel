@@ -9,7 +9,7 @@
 import type { DrawCommand } from '@weasel-js/renderer';
 import { viewToMat3 } from '@weasel-js/renderer';
 import {
-  boxToBox, identity, invert, meanScale, multiply, pathToAnchors, poseFrameOf, transformPath, type Affine, type Path,
+  rectToRect, identity, invert, meanScale, multiply, pathToAnchors, poseFrameOf, transformPath, type Affine, type Path,
 } from '@weasel-js/geom';
 import { offsetPath, strokeToPath } from '@weasel-js/stroke';
 import type { CommandStroke, Stroke } from '@weasel-js/paint';
@@ -55,7 +55,7 @@ export function createShapeOutliner(): {
       const paths: Path[] = [];
       const boxed: string[] = [];
       for (const id of ids) {
-        const edge = edgeOf(id, reads, scale, edges);
+        const edge = traceEdge(id, reads, scale, edges);
         if (edge) paths.push(edge);
         else boxed.push(id);
       }
@@ -68,7 +68,7 @@ export function createShapeOutliner(): {
   };
 }
 
-function edgeOf(id: string, reads: ShapeOutlineReads, scale: number, edges: Map<string, Edge>): Path | null {
+function traceEdge(id: string, reads: ShapeOutlineReads, scale: number, edges: Map<string, Edge>): Path | null {
   const { scene } = reads;
   const node = scene.get(id as NodeId);
   if (!node || node.kind === 'group' || holdsMembers(scene, id as NodeId)) return null;
@@ -129,7 +129,7 @@ function boxMove(from: unknown, to: unknown): Affine | null {
   if (b?.x == null || b.y == null || b.width == null || b.height == null) return null;
   const unframe = invert(poseFrameOf(from) ?? identity());
   if (!unframe) return null;
-  const box = boxToBox(a.x, a.y, a.width, a.height, b.x, b.y, b.width, b.height);
+  const box = rectToRect(a.x, a.y, a.width, a.height, b.x, b.y, b.width, b.height);
   return multiply(poseFrameOf(to) ?? identity(), multiply(box, unframe));
 }
 

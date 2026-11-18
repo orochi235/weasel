@@ -1,8 +1,8 @@
 import { type ReactNode } from 'react';
 import {
   prefAliasName,
-  prefLeafValue,
-  prefValueAtPath,
+  prefValueOrDefault,
+  prefValueAt,
   type PrefAlias,
   type PrefAliasTargets,
   type PrefLeaf,
@@ -130,13 +130,13 @@ export function prefRenderContext(
   const path = at ?? own;
   // A placeholder shows what its node shows where it was dragged from.
   const from = at ?? dropValuePath(ctx.drop, own);
-  const stored = prefValueAtPath(ctx.values, from);
+  const stored = prefValueAt(ctx.values, from);
   const mixed = ctx.mixed?.has(from) ?? false;
   const { onAutoChange } = ctx;
   const inside = at === undefined ? undefined : ctx.targets;
   const entryAt = inside?.entryAt ?? ctx.entryAt;
   const toggles = autoTracked(ctx, path);
-  const value = mixed ? undefined : prefLeafValue(pref, stored);
+  const value = mixed ? undefined : prefValueOrDefault(pref, stored);
   const reset = rowReset(ctx, path, pref);
   const renderCtx: LeafContext = {
     path,

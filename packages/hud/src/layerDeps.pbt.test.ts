@@ -22,8 +22,8 @@ interface Fake extends Widget {
 }
 
 /** What a frame is judged against: everything the layer's deps are documented to follow. */
-interface Seen { list: number[]; hidden: boolean[]; bounds: number[]; deps: (unknown[] | undefined)[]; focused: number | null; visible: boolean; w: number; h: number }
-interface Model { dims: { w: number; h: number }; last: Seen | null }
+interface Seen { list: number[]; hidden: boolean[]; bounds: number[]; deps: (unknown[] | undefined)[]; focused: number | null; visible: boolean; width: number; height: number }
+interface Model { dims: { width: number; height: number }; last: Seen | null }
 interface Real { hud: Hud; pool: Fake[]; deps: (ctx: HudDrawCtx) => readonly unknown[]; held: readonly unknown[] | null }
 
 const hits = tally();
@@ -31,7 +31,7 @@ const hits = tally();
 function fakes(): Fake[] {
   return Array.from({ length: POOL }, (_, i) => {
     const w: Fake = {
-      id: `w${i}`, hidden: false, bounds: { x: 0, y: 0, w: 10, h: 10 }, values: [0], painter: false, focusable: true,
+      id: `w${i}`, hidden: false, bounds: { x: 0, y: 0, width: 10, height: 10 }, values: [0], painter: false, focusable: true,
       draw: () => [], hitTest: () => false, onPointer: () => {}, dispose: () => {},
     };
     Object.defineProperty(w, 'deps', { get: () => (w.values ? () => w.values! : undefined) });
@@ -45,11 +45,11 @@ function snapshot(m: Model, r: Real): Seen {
   return {
     list,
     hidden: list.map((i) => r.pool[i]!.hidden),
-    bounds: list.flatMap((i) => { const b = r.pool[i]!.bounds; return [b.x, b.y, b.w, b.h]; }),
+    bounds: list.flatMap((i) => { const b = r.pool[i]!.bounds; return [b.x, b.y, b.width, b.height]; }),
     deps: list.map((i) => (r.pool[i]!.hidden ? undefined : r.pool[i]!.values ?? undefined)),
     focused: r.hud.focused ? r.pool.indexOf(r.hud.focused as Fake) : null,
     visible: r.hud.focusVisible,
-    w: m.dims.w, h: m.dims.h,
+    width: m.dims.width, height: m.dims.height,
   };
 }
 
@@ -59,7 +59,7 @@ function unchanged(a: Seen, b: Seen): boolean {
   return a.list.length === b.list.length && a.list.every((v, i) => v === b.list[i])
     && a.hidden.every((v, i) => v === b.hidden[i]) && a.bounds.every((v, i) => v === b.bounds[i])
     && a.deps.every((d, i) => sameDeps(d, b.deps[i]))
-    && a.focused === b.focused && a.visible === b.visible && a.w === b.w && a.h === b.h;
+    && a.focused === b.focused && a.visible === b.visible && a.width === b.width && a.height === b.height;
 }
 
 type Cmd = fc.Command<Model, Real>;
@@ -69,7 +69,7 @@ const pick = fc.nat({ max: POOL - 1 });
 const frame = fc.constant(cmd('frame', (m, r) => {
   const now = snapshot(m, r);
   const live = now.list.some((i) => !r.pool[i]!.hidden && (!r.pool[i]!.values || r.pool[i]!.painter));
-  const held = r.deps({ dims: { width: m.dims.w, height: m.dims.h } } as HudDrawCtx);
+  const held = r.deps({ dims: { width: m.dims.width, height: m.dims.height } } as HudDrawCtx);
   const same = m.last !== null && !live && unchanged(m.last, now);
   if (r.held !== null) {
     expect(held === r.held).toBe(same);
@@ -81,7 +81,7 @@ const frame = fc.constant(cmd('frame', (m, r) => {
 
 const hide = fc.tuple(pick, fc.boolean()).map(([i, h]) => cmd(`hide ${i} ${h}`, (_m, r) => { r.pool[i]!.hidden = h; }));
 const moveTo = fc.tuple(pick, fc.constantFrom(0, -0, 5, 10), fc.constantFrom(0, 10, 10.5)).map(([i, x, w]) => cmd(`bounds ${i} ${x} ${w}`, (_m, r) => {
-  r.pool[i]!.bounds = { x, y: 0, w, h: 10 };
+  r.pool[i]!.bounds = { x, y: 0, width: w, height: 10 };
 }));
 const bump = fc.tuple(pick, fc.constantFrom('same', 'equal', 'other', 'nan', 'none')).map(([i, how]) => cmd(`deps ${i} ${how}`, (_m, r) => {
   const w = r.pool[i]!;
@@ -97,7 +97,7 @@ const remove = pick.map((i) => cmd(`remove ${i}`, (_m, r) => { r.hud.remove(r.po
 const focus = fc.tuple(fc.option(pick, { nil: null }), fc.boolean()).map(([i, visible]) => cmd(`focus ${i} ${visible}`, (_m, r) => {
   r.hud.focus(i === null ? null : r.pool[i]!, { visible });
 }));
-const resize = fc.tuple(fc.constantFrom(300, 400), fc.constantFrom(200, 300)).map(([w, h]) => cmd(`resize ${w}x${h}`, (m) => { m.dims = { w, h }; }));
+const resize = fc.tuple(fc.constantFrom(300, 400), fc.constantFrom(200, 300)).map(([w, h]) => cmd(`resize ${w}x${h}`, (m) => { m.dims = { width: w, height: h }; }));
 
 describe('createLayerDeps (stateful)', () => {
   it('holds its array exactly while every widget would draw what it drew last frame', () => {
@@ -105,7 +105,7 @@ describe('createLayerDeps (stateful)', () => {
       const pool = fakes();
       const hud = createHud();
       const r: Real = { hud, pool, deps: createLayerDeps(hud), held: null };
-      fc.modelRun(() => ({ model: { dims: { w: 400, h: 300 }, last: null }, real: r }), cmds);
+      fc.modelRun(() => ({ model: { dims: { width: 400, height: 300 }, last: null }, real: r }), cmds);
     }), runs(RUNS));
     for (const k of ['held', 'moved', 'live']) hits.atLeast(k, 30);
   }, timeoutFor(RUNS, 20));

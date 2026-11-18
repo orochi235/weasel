@@ -68,12 +68,12 @@ export interface UseLiveLayoutOptions<TPose> {
   algorithm?: string | LayoutFn | LayoutPlanner;
   layout?: LayoutOptions;
   /** The relaxation's forces, and when a live run of it counts as at rest. */
-  force?: Omit<ForceProducerOptions<TPose>, 'geometry'>;
+  force?: Omit<ForceProducerOptions<TPose>, 'poseDescriptor'>;
   /** Frames an eased layout takes to arrive. Default 24. */
   frames?: number;
   easing?: EasingFn;
   read?: DiagramNodeReader;
-  geometry?: PoseDescriptor<TPose>;
+  poseDescriptor?: PoseDescriptor<TPose>;
   /** The undo entry's name. Default `'Layout'`. */
   label?: string;
   /** Fires once the run has settled or been stopped and its poses are in the
@@ -112,7 +112,7 @@ export interface LiveLayout {
 function graphOf<TPose>(o: UseLiveLayoutOptions<TPose>): Graph {
   return buildGraph(o.source, {
     ...(o.read ? { read: o.read } : {}),
-    ...(o.geometry ? { geometry: o.geometry } : {}),
+    ...(o.poseDescriptor ? { poseDescriptor: o.poseDescriptor } : {}),
   });
 }
 
@@ -128,7 +128,7 @@ function planFor<TPose>(graph: Graph, o: UseLiveLayoutOptions<TPose>): LayoutPla
 /** The producer that eases from `graph` to `plan`, or relaxes `graph` when
  *  there is no plan. */
 function producerFor<TPose>(graph: Graph, plan: LayoutPlan | null, o: UseLiveLayoutOptions<TPose>): LiveLayoutProducer<TPose> {
-  if (plan === null) return forceProducer<TPose>(graph, { ...o.layout, ...o.force, ...(o.geometry ? { geometry: o.geometry } : {}) });
+  if (plan === null) return forceProducer<TPose>(graph, { ...o.layout, ...o.force, ...(o.poseDescriptor ? { poseDescriptor: o.poseDescriptor } : {}) });
   return easedProducer<TPose>(graph, () => plan.moves, {
     ...(o.frames === undefined ? {} : { frames: o.frames }),
     ...(o.easing ? { easing: o.easing } : {}),
@@ -183,10 +183,10 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
       for (const id of ctx.pinned.keys()) held.delete(id as string);
       placed = held;
     }
-    const poses = layoutPoses(o.scene, placed, o.geometry);
+    const poses = layoutPoses(o.scene, placed, o.poseDescriptor);
     // Routes ease only toward where they will be written, which a held run never writes.
     const { u } = progress(frame, o.frames ?? EASE_FRAMES, o.easing ?? easeInOutQuad);
-    eased.show(o.scene, held.current ? null : u, (id) => poses.get(id) ?? ctx.pinned.get(id as NodeId), o.geometry);
+    eased.show(o.scene, held.current ? null : u, (id) => poses.get(id) ?? ctx.pinned.get(id as NodeId), o.poseDescriptor);
     return { poses: [...poses] as [NodeId, TPose][], done };
   }, [optsRef, eased]);
 

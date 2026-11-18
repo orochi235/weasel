@@ -1,4 +1,5 @@
-import { closesCycle, duplicateNode, noNode, noParam, noPort, owns } from './errors';
+import { hasOwnKey } from '@weasel-js/registry';
+import { closesCycle, duplicateNode, noNode, noParam, noPort } from './errors';
 import { reaches } from './edges';
 import type { GraphNodeDef, GraphPatch, GraphTarget } from './types';
 
@@ -72,7 +73,7 @@ export function validatePatches(view: GraphView, patches: readonly GraphPatch[])
         edges = edges.filter((e) => !same(e, p.from, p.to));
         break;
       case 'set':
-        if (!owns(live(p.id).params, p.param)) throw noParam(p.id, p.param);
+        if (!hasOwnKey(live(p.id).params, p.param)) throw noParam(p.id, p.param);
         break;
     }
   }

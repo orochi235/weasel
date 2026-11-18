@@ -6,13 +6,13 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { transformPoint, multiply, rotateAboutPoint, translate, type Affine } from '@weasel-js/geom';
+import { transformPoint, multiply, rotateAboutPoint, translate, type Affine, type Rect } from '@weasel-js/geom';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { sceneContentBounds } from './contentBounds';
 import { copiesWithin } from './copiesAbove';
-import { runs, timeoutFor, type Box } from './pbt.fixture';
+import { runs, timeoutFor } from './pbt.fixture';
 
 const RUNS = 200;
 
@@ -27,7 +27,7 @@ const box = fc.record({
   width: fc.integer({ min: 1, max: 80 }), height: fc.integer({ min: 1, max: 80 }),
 });
 
-interface Level { copies: Affine[]; leaf: Box; hidden: boolean }
+interface Level { copies: Affine[]; leaf: Rect; hidden: boolean }
 
 /** `levels[i]` is a group holding a leaf and, past the last, the group of `levels[i + 1]`. */
 const chain = fc.array(fc.record({
@@ -40,7 +40,7 @@ const groupId = (i: number): NodeId => asNodeId(`g${i}`);
 const leafId = (i: number): NodeId => asNodeId(`l${i}`);
 
 function build(levels: readonly Level[]) {
-  const scene = createScene<null, 'a', Box>({ systemLayers: [{ id: 'a' }], composition: IDENTITY_POSE_COMPOSITION as never });
+  const scene = createScene<null, 'a', Rect>({ systemLayers: [{ id: 'a' }], composition: IDENTITY_POSE_COMPOSITION as never });
   levels.forEach((lv, i) => {
     scene.add({
       id: groupId(i), kind: 'group', layer: 'a', data: null, pose: { x: 0, y: 0, width: 0, height: 0 },
@@ -89,7 +89,7 @@ describe('sceneContentBounds', () => {
     fc.assert(fc.property(chain, (levels) => {
       const scene = build(levels);
       // A group's box is the union of its shown leaves; nothing nested draws copies of itself here.
-      const below = (i: number): Box[] => levels.slice(i).flatMap((lv, k) => (lv.hidden ? [] : [{ lv, k: k + i }]))
+      const below = (i: number): Rect[] => levels.slice(i).flatMap((lv, k) => (lv.hidden ? [] : [{ lv, k: k + i }]))
         .map(({ lv, k }) => {
           const ms = [[1, 0, 0, 1, 0, 0] as Affine, ...levels.slice(i + 1, k + 1).reduce<Affine[]>((acc, l) => (l.copies.length === 0 ? acc
             : acc.flatMap((m) => [m, ...l.copies.map((c) => multiply(m, c))])), [[1, 0, 0, 1, 0, 0]]).slice(1)];
@@ -128,13 +128,13 @@ describe('sceneContentBounds', () => {
   }, timeoutFor(RUNS, 5));
 });
 
-function cornersBox(b: Box, m: Affine): Box {
+function cornersBox(b: Rect, m: Affine): Rect {
   const pts = [[b.x, b.y], [b.x + b.width, b.y], [b.x, b.y + b.height], [b.x + b.width, b.y + b.height]].map(([x, y]) => transformPoint(m, x!, y!));
   const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
   return { x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) };
 }
 
-function unionOf(bs: readonly Box[]): Box {
+function unionOf(bs: readonly Rect[]): Rect {
   const x = Math.min(...bs.map((b) => b.x)), y = Math.min(...bs.map((b) => b.y));
   return { x, y, width: Math.max(...bs.map((b) => b.x + b.width)) - x, height: Math.max(...bs.map((b) => b.y + b.height)) - y };
 }

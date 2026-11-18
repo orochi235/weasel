@@ -1,6 +1,6 @@
-import { mat3, pointSegmentDist, worldCoords, type Path } from '@weasel-js/geom';
+import { mat3, pointSegmentDistance, worldCoords, type Path } from '@weasel-js/geom';
 import { resolveSkeleton } from './resolveSkeleton';
-import { skinnable, type Skin } from './skin';
+import { toSkinPolygon, type Skin } from './skin';
 import type { Skeleton } from './types';
 
 /** Options for `autoSkin`. */
@@ -24,7 +24,7 @@ interface Bone {
 function bonesOf(skeleton: Skeleton): Bone[] {
   const world = resolveSkeleton(skeleton, {});
   const at = new Map<string, [number, number]>();
-  for (const [name, m] of world) at.set(name, mat3.apply(m, 0, 0));
+  for (const [name, m] of world) at.set(name, mat3.transformPoint(m, 0, 0));
   const bones = new Map<string, Bone>();
   for (const joint of skeleton.joints) {
     if (joint.parent == null) continue;
@@ -52,7 +52,7 @@ export function autoSkin(path: Path, skeleton: Skeleton, options: AutoSkinOption
   const power = options.power ?? 4;
   const max = Math.max(1, options.max ?? 2);
   const bones = bonesOf(skeleton);
-  const coords = worldCoords(skinnable(path));
+  const coords = worldCoords(toSkinPolygon(path));
   const count = coords.length >> 1;
   const out = new Map<string, number[]>();
   const distance = new Float64Array(bones.length);
@@ -64,7 +64,7 @@ export function autoSkin(path: Path, skeleton: Skeleton, options: AutoSkinOption
     for (let b = 0; b < bones.length; b++) {
       const s = bones[b].segments;
       let d = Infinity;
-      for (let k = 0; k < s.length; k += 4) d = Math.min(d, pointSegmentDist(px, py, s[k], s[k + 1], s[k + 2], s[k + 3]));
+      for (let k = 0; k < s.length; k += 4) d = Math.min(d, pointSegmentDistance(px, py, s[k], s[k + 1], s[k + 2], s[k + 3]));
       distance[b] = d;
     }
     order.sort((a, b) => distance[a] - distance[b] || a - b);

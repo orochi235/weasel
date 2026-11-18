@@ -28,7 +28,7 @@ interface BarData { fill: Fill; stroke: Stroke; value: number }
 
 const BAR_STROKE: Stroke = { paint: solid('#222'), width: 1.5 };
 
-const INITIAL: Item[] = Array.from({ length: 12 }, (_, i) => ({
+export const INITIAL: Item[] = Array.from({ length: 12 }, (_, i) => ({
   id: `bar-${i}`,
   value: i + 1,
   color: `hsl(${(i * 360) / 12}, 65%, 60%)`,
@@ -37,11 +37,11 @@ const INITIAL: Item[] = Array.from({ length: 12 }, (_, i) => ({
 type SortKey = 'index' | 'asc' | 'desc' | 'shuffle';
 const SORT_KEYS: SortKey[] = ['index', 'asc', 'desc', 'shuffle'];
 
-function sortItems(items: readonly Item[], key: SortKey): Item[] {
+/** `items` in `key`'s order; `index` keeps the order they were given in. */
+export function sortItems(items: readonly Item[], key: SortKey): Item[] {
   const arr = [...items];
   switch (key) {
     case 'index':
-      arr.sort((a, b) => a.id.localeCompare(b.id));
       break;
     case 'asc':
       arr.sort((a, b) => a.value - b.value);
@@ -88,7 +88,7 @@ function D3SortableDemoInner() {
       animator,
     })
       .pose(poseFor)
-      .data((d) => ({ fill: { paint: solid(d.color) }, stroke: BAR_STROKE, value: d.value }));
+      .payload((d) => ({ fill: { paint: solid(d.color) }, stroke: BAR_STROKE, value: d.value }));
 
     const sel = binding.join();
 

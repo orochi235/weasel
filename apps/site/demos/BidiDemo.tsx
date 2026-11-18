@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { analyze, mirror, reorder, type BidiDirection } from '@weasel-js/bidi';
+import { analyze, mirrorOf, reorder, type BidiDirection } from '@weasel-js/bidi';
 import { Input } from '@weasel-js/ui/components/Input';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -18,6 +18,10 @@ const DIRECTIONS: { value: BidiDirection; label: string }[] = [
   { value: 'rtl', label: 'rtl' },
 ];
 
+/** `cps` as a string, a code point at a time: spread into one call, a long text
+ *  passes the engine's argument limit and throws. */
+export const fromCodePoints = (cps: readonly number[]) => cps.map((cp) => String.fromCodePoint(cp)).join('');
+
 const shown = (cp: number) => (cp === 0x20 ? '␣' : String.fromCodePoint(cp));
 
 export function BidiDemo() {
@@ -28,7 +32,7 @@ export function BidiDemo() {
   const analysis = analyze(cps, direction);
   const line = reorder(analysis, 0, cps.length);
   const painted = line.order.map((i) => {
-    const m = line.levels[i] % 2 === 1 ? mirror(cps[i]) : null;
+    const m = line.levels[i] % 2 === 1 ? mirrorOf(cps[i]) : null;
     return { i, cp: m ?? cps[i], mirrored: m !== null };
   });
 
@@ -81,7 +85,7 @@ export function BidiDemo() {
         <dt>browser</dt>
         <dd dir={direction}>{text}</dd>
         <dt>bidi</dt>
-        <dd className={s.forced}>{String.fromCodePoint(...painted.map((p) => p.cp))}</dd>
+        <dd className={s.forced}>{fromCodePoints(painted.map((p) => p.cp))}</dd>
       </dl>
     </div>
   );

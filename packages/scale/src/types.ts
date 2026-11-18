@@ -19,8 +19,6 @@ export interface Scale<T> {
 export interface ContinuousScale extends Scale<number> {
   readonly kind: 'linear' | 'log' | 'pow' | 'warp' | 'time';
   readonly domain: readonly [number, number];
-  /** `value` along the range; the same as {@link Scale.position}. */
-  map(value: number): number;
   /** The value at `at` along the range. */
   invert(at: number): number;
 }

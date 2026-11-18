@@ -37,7 +37,7 @@ export interface RangeEdgeHandleProps<T> {
   pointerUnit: (clientX: number, altKey: boolean) => number;
   drag: (down: ReactPointerEvent<HTMLElement>, onMove: (ev: PointerEvent) => void, onEnd: () => void) => void;
   onInput: (edit: RangeEdit<T>) => void;
-  onCommit: (edit: RangeEdit<T>) => void;
+  onChange: (edit: RangeEdit<T>) => void;
   /** The editor's hold: held, the end neither drags nor steps. */
   hold: ControlHold;
 }
@@ -55,7 +55,7 @@ export function RangeEdgeHandle<T>(props: RangeEdgeHandleProps<T>): ReactElement
   const unit = unitScale(scale, min, max);
   const toBase = (v: number): number => {
     if (!Number.isFinite(v)) return v;
-    const u = unit.map(v);
+    const u = unit.position(v);
     return Number.isNaN(u) ? -Infinity : u;
   };
   const unitLimits: [number, number] | undefined = limits && [toBase(limits[0]), toBase(limits[1])];
@@ -89,7 +89,7 @@ export function RangeEdgeHandle<T>(props: RangeEdgeHandleProps<T>): ReactElement
         props.onInput(edit);
       },
       () => {
-        if (latest) props.onCommit(latest);
+        if (latest) props.onChange(latest);
       },
     );
   };
@@ -105,7 +105,7 @@ export function RangeEdgeHandle<T>(props: RangeEdgeHandleProps<T>): ReactElement
     }
     e.preventDefault();
     const edit = fit(to);
-    if (edit && edit.bands !== committed) props.onCommit(edit);
+    if (edit && edit.bands !== committed) props.onChange(edit);
   };
 
   return (

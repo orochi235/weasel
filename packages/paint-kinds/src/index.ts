@@ -14,7 +14,7 @@
  */
 export {
   getPaintKind, listGradientKinds, listPaintKinds, paintKindOf, paintKindRegistry, patternFamily,
-  registerPaintKind, registerPaintKindLoader, seedTile, switchGradientKind,
+  registerPaintKind, registerPaintKindLoader, seedTile, withPaintKind,
 } from './paintKinds';
 export type { PaintKindLoader } from './paintKinds';
 export { asPaint } from './paintKindEntry';

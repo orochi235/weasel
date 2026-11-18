@@ -95,7 +95,7 @@ function sameIds(a: readonly NodeId[], b: readonly NodeId[]): boolean {
  *  building a second History over the same scene (a modality machine, a
  *  journal owner) that should restore selection the way the scene's own
  *  history does. */
-export function sceneSelectionStore(scene: {
+export function sceneHistorySelection(scene: {
   getSelection(): readonly NodeId[];
   setSelection(ids: readonly NodeId[]): void;
 }): HistorySelection {

@@ -7,7 +7,7 @@ import {
   type Action,
   type ActionsRegistry,
   contextMenuAction,
-  createPinchZoomAction,
+  createTouchZoomAction,
   createViewportZoomAction,
   defineAction,
   InputScope,
@@ -28,6 +28,7 @@ import {
   worldToScreen,
   type Yoke,
 } from '@weasel-js/core';
+import type { Rect } from '@weasel-js/geom';
 import {
   createContext,
   type ReactNode,
@@ -39,7 +40,7 @@ import {
   useRef,
 } from 'react';
 import type {} from '../actionParamSchema';
-import type { Point, ViewTransform } from '../instrument/types';
+import type { Point, ViewTransform2D } from '../instrument/types';
 import { LabContextMenusContext } from '../lab/labContextMenus';
 import { as2DView, normalize2DView } from '../state/view';
 import { useCameraWheelSlot } from './CameraWheelContext';
@@ -64,7 +65,7 @@ export interface CameraContextValue {
   /** The element the camera's dispatcher listens on. */
   element: () => HTMLElement | null;
   /** The content's own rect, frame-local, when it has one — a `<Stage>`'s. */
-  content?: { x: number; y: number; width: number; height: number };
+  content?: Rect;
 }
 
 /** The camera around the caller, or `null` outside one. */
@@ -88,8 +89,8 @@ export function CameraScope({ yoke, children }: { yoke?: Yoke; children: ReactNo
 
 /** Options for {@link useCameraView}. */
 export interface CameraViewOptions {
-  view: ViewTransform;
-  onViewChange: (v: ViewTransform) => void;
+  view: ViewTransform2D;
+  onViewChange: (v: ViewTransform2D) => void;
   frame: WorldFrame;
   hostRef: RefObject<HTMLElement | null>;
   minZoom?: number;
@@ -301,7 +302,7 @@ function CameraDispatch({
       ...(zoomBindings.length > 0
         ? [{ ...zoom, defaultBinding: zoomBindings as Action['defaultBinding'] }]
         : []),
-      ...(touchPinch ? [createPinchZoomAction(unclamped)] : []),
+      ...(touchPinch ? [createTouchZoomAction(unclamped)] : []),
       ...(taps ? [tap] : []),
       ...(homes ? [goHome] : []),
     ];

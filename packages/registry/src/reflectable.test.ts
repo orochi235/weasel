@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createReflectable, valuesOf, type Reflection } from './reflectable';
+import { createReflectable, createValuesReader, type Reflection } from './reflectable';
 
 /** These stack registrants on purpose; the clash warning has its own tests below. */
 function muteClashWarnings(): void {
@@ -447,11 +447,11 @@ describe('createReflectable clash warning', () => {
   });
 });
 
-describe('valuesOf', () => {
+describe('createValuesReader', () => {
   muteClashWarnings();
   it('reads live values in key order, the same array until the entries change', () => {
     const r = createReflectable<number>();
-    const values = valuesOf(r);
+    const values = createValuesReader(r);
     r.set('b', 2);
     r.push('a', 1);
     const first = values();

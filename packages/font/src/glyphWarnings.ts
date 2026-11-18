@@ -5,7 +5,7 @@
  */
 import { claimFallbackWarning, fallbackWarningClaimed } from './fallback';
 import type { FontStyle } from './fontStyle';
-import { fontPending } from './registerFont';
+import { isFontPending } from './registerFont';
 
 /** Say, once per family and code point, that no tier has a glyph for it. */
 export function warnMissingGlyph(family: string, cp: number): void {
@@ -29,7 +29,7 @@ const NOTHING_RENDERS = ['unusable-default', 'self-unusable-default', 'unregiste
  * missing, and when the registry has already said why it cannot render.
  */
 export function warnNoMetrics(family: string, weight: number, style: FontStyle): void {
-  if (fontPending(family, weight, style)) return;
+  if (isFontPending(family, weight, style)) return;
   const face = `${family}|${weight}|${style}`;
   if (NOTHING_RENDERS.some((kind) => fallbackWarningClaimed(`${kind}|${face}`))) return;
   if (!claimFallbackWarning(`no-metrics|${face}`)) return;

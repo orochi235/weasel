@@ -58,7 +58,7 @@ export function SliderThumb<T extends Thumb>(p: SliderThumbProps<T>): ReactEleme
       onKeyDown={p.onKeyDown}
       onContextMenu={p.onContextMenu}
     >
-      {customRender ? customRender({ width: p.box.width, height: p.box.height, isActive: active }) : (thumb.label ?? '')}
+      {customRender ? customRender({ width: p.box.width, height: p.box.height, active }) : (thumb.label ?? '')}
     </div>
   );
 }

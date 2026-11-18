@@ -3,7 +3,7 @@ import { findNodeShape, findShapeInk } from './NodeShape';
 import type { Node } from 'core/scene/types';
 import type { PathDrawCommand } from '@weasel-js/renderer';
 import type { Paint } from '@weasel-js/paint';
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 
 const POSE = { x: 0, y: 0, width: 100, height: 50 };
 const RECT_PATH = { kind: 'rect' as const, x: 0, y: 0, width: 100, height: 50 };
@@ -53,11 +53,11 @@ describe('kit:path accepts a Paint in data.fill', () => {
   });
 
   it('still leaves a stroke-only path unfilled', () => {
-    expect(paintOf({ path: RECT_PATH, stroke: strokeOf('#000', 2) }).fill).toBeUndefined();
+    expect(paintOf({ path: RECT_PATH, stroke: solidStroke('#000', 2) }).fill).toBeUndefined();
   });
 
   it('fills a stroked path when a gradient is declared', () => {
-    const cmd = paintOf({ path: RECT_PATH, fill: { paint: GRADIENT }, stroke: strokeOf('#000', 2) });
+    const cmd = paintOf({ path: RECT_PATH, fill: { paint: GRADIENT }, stroke: solidStroke('#000', 2) });
     expect(cmd.fill).toEqual({ paint: GRADIENT });
     expect(cmd.stroke?.width).toBe(2);
   });
@@ -66,7 +66,7 @@ describe('kit:path accepts a Paint in data.fill', () => {
 describe('ink() agrees with paint() about a Paint', () => {
   it('reports filled for a gradient, with or without a stroke', () => {
     expect(inkOf({ path: RECT_PATH, fill: { paint: GRADIENT } })?.filled).toBe(true);
-    expect(inkOf({ path: RECT_PATH, fill: { paint: GRADIENT }, stroke: strokeOf('#000', 2) })?.filled).toBe(true);
+    expect(inkOf({ path: RECT_PATH, fill: { paint: GRADIENT }, stroke: solidStroke('#000', 2) })?.filled).toBe(true);
   });
 
   it('keeps agreeing on the solid, null and absent cases', () => {
@@ -74,7 +74,7 @@ describe('ink() agrees with paint() about a Paint', () => {
       { path: RECT_PATH, fill: { paint: solid('#abc') } },
       { path: RECT_PATH, fill: null },
       { path: RECT_PATH },
-      { path: RECT_PATH, stroke: strokeOf('#000', 2) },
+      { path: RECT_PATH, stroke: solidStroke('#000', 2) },
     ]) {
       expect(inkOf(data)?.filled).toBe(paintOf(data).fill !== undefined);
     }

@@ -1,4 +1,4 @@
-import type { Path, GlMat3 } from '@weasel-js/geom';
+import type { Path, GlMat3, Rect } from '@weasel-js/geom';
 import type { CommandStroke, CommandFill } from '@weasel-js/paint';
 import type { TextAlign, TextDirection, TextStyle } from '@weasel-js/text';
 import type { ResolvedRun } from '@weasel-js/text';
@@ -12,6 +12,7 @@ export type DrawCommand =
   | PathDrawCommand
   | GroupDrawCommand
   | TextDrawCommand
+  | TextLayerDrawCommand
   | ImageDrawCommand
   | SpritesDrawCommand
   | ShaderDrawCommand;
@@ -185,7 +186,31 @@ export interface TextDrawCommand {
 }
 
 /**
- * Image draw command — renders `image` at screen-space rect (x, y, w, h).
+ * Text kept on the GPU: every glyph of `texts`, drawn as drawing each of them
+ * in turn would, but uploaded once as one instance a glyph and drawn in a call
+ * or two a frame however the transform above it moves. Reach for it for a few
+ * thousand glyphs or more that hold still across frames, such as a code view
+ * or a log: a frame of unchanged text then costs the CPU nothing per glyph,
+ * where a `TextDrawCommand` lays its glyphs out on the CPU every frame.
+ *
+ * Kept by the identity of `texts`, so `texts` and the commands in it must not
+ * be mutated once drawn; hand over a new array for new text. It is uploaded
+ * again when a glyph it shows becomes available, and freed at the end of any
+ * frame that does not draw it.
+ *
+ * Each text is drawn as a `TextDrawCommand` instead, every frame, while the
+ * layer holds what the instances cannot carry: an underline, strikethrough or
+ * overline, a stroke, a fill that is not a solid color, a color glyph, or a
+ * glyph large enough on screen to be drawn from its outline
+ * (`textOutlineMinScreenSize`) in a face that has one.
+ */
+export interface TextLayerDrawCommand {
+  kind: 'text-layer';
+  texts: readonly TextDrawCommand[];
+}
+
+/**
+ * Image draw command — renders `image` at screen-space rect (x, y, width, height).
  * The image is stretched to fit; no tiling. Use a pattern Paint on a path
  * for tiling.
  */
@@ -196,8 +221,8 @@ export interface ImageDrawCommand {
   image: ImageBitmap;
   x: number;
   y: number;
-  w: number;
-  h: number;
+  width: number;
+  height: number;
   opacity?: number;
   /** Magnification filter. `'linear'` (default) smooths; `'nearest'` shows
    *  device pixels as hard squares — required by anything magnifying a
@@ -210,7 +235,7 @@ export interface ImageDrawCommand {
    *  atlas frames need a gutter (see `SpriteSheet.spacing`) or `'nearest'`.
    *  A draw with `source` never samples mipmaps, so a frame drawn small aliases
    *  rather than blending in its neighbors. */
-  source?: { x: number; y: number; w: number; h: number };
+  source?: Rect;
   /** Mirror the sampled region within the destination rect. The quad does not
    *  move — a flipped draw covers exactly the pixels an unflipped one does. */
   flipX?: boolean;
@@ -267,5 +292,5 @@ export interface ShaderDrawCommand {
   uniforms: Record<string, ShaderUniform>;
   /** Screen-space bounding rect in CSS pixels, which the kit's vertex shader
    *  covers and nothing outside it. */
-  bounds: { x: number; y: number; w: number; h: number };
+  bounds: Rect;
 }

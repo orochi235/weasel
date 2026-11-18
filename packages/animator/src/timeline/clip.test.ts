@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { easeInOutSine, PATH_L, PATH_M, type PolygonPath } from '@weasel-js/geom';
 import { skeletonAxes } from '../rig/skeletonAxes';
-import { IDENTITY_JOINT, type Pose, type Skeleton } from '../rig/types';
+import { IDENTITY_JOINT, type SkeletonPose, type Skeleton } from '../rig/types';
 import { createTarget, type Target } from '../target';
 import { bindClip, toClip, type Clip, type ClipBinder, type ClipKey, type ClipSampledTrack } from './clip';
 import { sampleTrack } from './sampleTrack';
@@ -164,17 +164,17 @@ describe('a clip naming a target\'s axes', () => {
     tracks: [{ kind: 'sampled', target: 'rig:hero', axes: ['armL', 'foreL'], keys: [{ t: 0, value: {} }] }],
   };
   const over = (s: Skeleton): ClipBinder => binder({
-    target: () => createTarget<Pose>({ get: () => ({}), set: () => {}, axes: skeletonAxes(s) }) as never,
+    target: () => createTarget<SkeletonPose>({ get: () => ({}), set: () => {}, axes: skeletonAxes(s) }) as never,
   });
 
   it('keeps the names on the track, for its target to resolve', () => {
-    const track = bindClip(ARM, over(skeleton('hip', 'armL', 'foreL'))).tracks[0] as SampledTrack<Pose>;
+    const track = bindClip(ARM, over(skeleton('hip', 'armL', 'foreL'))).tracks[0] as SampledTrack<SkeletonPose>;
     expect(track.axes).toEqual(['armL', 'foreL']);
     expect(track.target!.axisIndexes(track.axes!)).toEqual([5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
   });
 
   it('follows the joints when the skeleton\'s order changes', () => {
-    const track = bindClip(ARM, over(skeleton('foreL', 'hip', 'armL'))).tracks[0] as SampledTrack<Pose>;
+    const track = bindClip(ARM, over(skeleton('foreL', 'hip', 'armL'))).tracks[0] as SampledTrack<SkeletonPose>;
     expect(track.target!.axisIndexes(track.axes!)).toEqual([10, 11, 12, 13, 14, 0, 1, 2, 3, 4]);
   });
 

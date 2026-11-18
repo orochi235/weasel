@@ -5,9 +5,9 @@ import {
   commitSequence, createSequenceDeleteAction, diagramResizable, diagramTypeOf, dropEmptyEdgeLabel, foldSequenceText, isSequenceText,
   offPageTagOf, rendererMeasure, SEQUENCE_TOOLS, sequencePartOf, STENCIL_TOOLS,
 } from '@weasel-js/diagram';
-import { foldPlotText, isPlotText, plotEditing, plotMarkOf, replacePlotData } from '@weasel-js/plot';
+import { foldPlotText, isPlotText, createPlotEditingContribution, plotMarkOf, replacePlotData } from '@weasel-js/plot';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
-import { useEditorTools, usePaperLayer, useSessionPersistence } from '@weasel-js/editor';
+import { usePublishEditorTools, usePaperLayer, useSessionPersistence } from '@weasel-js/editor';
 import { useCallback, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useChartCommands } from './chartCommands';
 import { useExportCommands } from './exportCommands';
@@ -34,7 +34,7 @@ import {
 } from './useChartDiagram';
 import { useChartSnap } from './useChartSnap';
 import './workspace.css';
-import { BUILTIN_TOOL_GROUPS, useSelection } from '@weasel-js/editing';
+import { KIT_TOOL_GROUPS, useSelection } from '@weasel-js/editing';
 
 // Module consts: SceneCanvas keys its wiring off these props' identity.
 const FALLBACK_PAGE = { x: 0, y: 0, ...CHART_PAGE };
@@ -61,7 +61,7 @@ function endTextEdit(scene: ChartScene, id: string): void {
 const isPaletteTool = (tool: Tool): boolean => !isStencilTool(tool) && !isSequenceTool(tool);
 
 /** What the shortcut sheet groups the tools by: core's sets, the sequence tools, then each stencil group. */
-const SHEET_TOOL_SETS = [...BUILTIN_TOOL_GROUPS, TEXT_TOOLS, SEQUENCE_TOOLS, ...STENCIL_TOOLS.members.filter(isToolSet)];
+const SHEET_TOOL_SETS = [...KIT_TOOL_GROUPS, TEXT_TOOLS, SEQUENCE_TOOLS, ...STENCIL_TOOLS.members.filter(isToolSet)];
 
 /** Chart mode: the scene is the document — stencil bodies joined by edges, on a page. */
 export function ChartWorkspace(): ReactElement {
@@ -69,12 +69,12 @@ export function ChartWorkspace(): ReactElement {
   const scene = useScene<ChartData, ChartLayer, ChartPose>({
     systemLayers: CHART_LAYERS, registry: CHART_REGISTRY, initial: initial.specs, doc: initial.doc,
   });
-  const selection = useSelection({ mode: 'multi', scene });
+  const selection = useSelection({ mode: 'multiple', scene });
   useSessionPersistence(scene, { ...CHART_SESSION, onSaved: reportChartSave });
   const theme = chartThemeOf(scene);
   const [toolOptionValues] = useState(createToolOptionValues);
   const diagram = useChartDiagram(scene, selection, theme, diagramTypeOf(scene));
-  const plot = useMemo(() => plotEditing({ scene: scene as never }), [scene]);
+  const plot = useMemo(() => createPlotEditingContribution({ scene: scene as never }), [scene]);
   // The plot's handles first, so a diagram handle beside one is hit over it.
   const ambient = useMemo(() => [plot, ...diagram.ambient], [diagram.ambient, plot]);
   const selectTool = useMemo(() => ({ resize: { resizable: diagramResizable(scene) } }), [scene]);
@@ -97,7 +97,7 @@ export function ChartWorkspace(): ReactElement {
     ...(gridLayer ? { grid: { layer: gridLayer } } : {}),
   }), [paperLayer, gridLayer]);
   const [tools, setTools] = useState<ToolsApi | null>(null);
-  useEditorTools(tools, SHEET_TOOL_SETS);
+  usePublishEditorTools(tools, SHEET_TOOL_SETS);
   const [themeOpen, setThemeOpen] = useState(false);
 
   const textEdit = useSceneTextEdit(scene, host, { escape: 'commit', isText: isEditableText, onEnd: (id) => endTextEdit(scene, id) });

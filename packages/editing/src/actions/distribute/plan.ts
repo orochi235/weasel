@@ -1,15 +1,6 @@
 import { settleWithinRounding } from '@weasel-js/core';
 import type { DistributeAxis, DistributeMode } from './distribute';
-
-/** Axis-aligned box a distribute plan is computed from. Pass the *visual*
- *  bounds (`visualBoundsViaDescriptor`) — a rotated shape's ink is wider than
- *  the box it was posed in, and both the stride and the gap divide by size. */
-export interface DistributeBounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+import type { Rect } from '@weasel-js/geom';
 
 /**
  * Where each box's min edge along `axis` should land. Result is parallel to
@@ -23,13 +14,13 @@ export interface DistributeBounds {
  * move when distributed again.
  */
 export function planDistribute(
-  bounds: readonly DistributeBounds[],
+  bounds: readonly Rect[],
   axis: DistributeAxis,
   mode: DistributeMode,
 ): number[] {
-  const min = (b: DistributeBounds): number => (axis === 'x' ? b.x : b.y);
-  const size = (b: DistributeBounds): number => (axis === 'x' ? b.width : b.height);
-  const center = (b: DistributeBounds): number => min(b) + size(b) / 2;
+  const min = (b: Rect): number => (axis === 'x' ? b.x : b.y);
+  const size = (b: Rect): number => (axis === 'x' ? b.width : b.height);
+  const center = (b: Rect): number => min(b) + size(b) / 2;
 
   const key = mode === 'centers' ? center : min;
   const order = bounds.map((b, i) => ({ b, i })).sort((p, q) => key(p.b) - key(q.b));
@@ -41,7 +32,7 @@ export function planDistribute(
 
   let scale = 0;
   for (const { b } of order) scale = Math.max(scale, Math.abs(min(b)), Math.abs(min(b) + size(b)));
-  const settle = (b: DistributeBounds, target: number): number => settleWithinRounding(min(b), target, scale);
+  const settle = (b: Rect, target: number): number => settleWithinRounding(min(b), target, scale);
 
   if (mode === 'centers') {
     const c0 = center(first);

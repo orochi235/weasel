@@ -33,8 +33,8 @@ export interface SetFlagResult {
   style: TextStyle;
 }
 
-/** Does the node style carry this flag? */
-export function nodeHasFlag(style: TextStyle, key: FlagKey): boolean {
+/** Does the style carry this flag? */
+export function styleHasFlag(style: TextStyle, key: FlagKey): boolean {
   switch (key) {
     case 'bold': return style.fontWeight !== undefined && isBoldWeight(style.fontWeight);
     case 'italic': return style.fontStyle === 'italic';
@@ -47,7 +47,7 @@ export function nodeHasFlag(style: TextStyle, key: FlagKey): boolean {
 /** The patch that takes bold off a range: the flag, and — in a node that is
  *  itself bold — a regular weight to override the node's. */
 export function unboldPatch(style: TextStyle): RunStylePatch {
-  return nodeHasFlag(style, 'bold') ? { bold: false, fontWeight: 400 } : { bold: false };
+  return styleHasFlag(style, 'bold') ? { bold: false, fontWeight: 400 } : { bold: false };
 }
 
 /** The node style with `key` cleared. */
@@ -82,7 +82,7 @@ export function setFlagOverRange(
   key: FlagKey,
   value: boolean,
 ): SetFlagResult {
-  if (value || !nodeHasFlag(style, key)) {
+  if (value || !styleHasFlag(style, key)) {
     return { runs: applyStyleToRange(runs, start, end, { [key]: value }), style };
   }
 

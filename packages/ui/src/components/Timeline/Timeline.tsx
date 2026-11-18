@@ -5,13 +5,14 @@ import type { Keyframe, SampledTrack, Track } from '@weasel-js/animator';
 import type { HoldProps } from '../Disabled';
 import { useControlHold, type ControlHold } from '../Disabled/controlHold';
 import s from './Timeline.module.css';
-import { EasingPicker } from '../EasingPicker/EasingPicker';
-import { Lane, type LaneHold } from './Lane';
+import { Lane, type LaneHold, type LaneProps } from './Lane';
 import { TimeRuler } from './TimeRuler';
 import { PlayheadReadout, Transport, type TransportProps } from '../Transport/Transport';
 import { buildLanes, trackAtPath, type LaneRow } from './lanes';
-import { deleteKey, insertKey, keyTime, moveKey, samePath, setKeyEasing, setKeys, setKeyValue, type KeySelection } from './keys';
+import { deleteKey, insertKey, keyTime, moveKey, samePath, setKeys, type KeyEdit, type KeySelection } from './keys';
 import type { TimeWindow } from './timeScale';
+import { useHeld, useKeyAndSegment, useTimeWindow } from './timelineState';
+import { TimelineInspector } from './TimelineInspector';
 
 export type { KeySelection } from './keys';
 export type { TimeWindow } from './timeScale';
@@ -47,7 +48,7 @@ export interface TimelineProps extends HoldProps {
   onInput?: (next: Track[]) => void;
   onChange: (next: Track[]) => void;
   onCancel?: () => void;
-  onScrub: (t: number) => void;
+  onSeek: (t: number) => void;
 
   /** The playback controls. Omitted, the row holds the time readout and the
    *  Graph switch alone; `false` hides the row. */
@@ -69,34 +70,15 @@ export interface TimelineProps extends HoldProps {
 export function Timeline(props: TimelineProps): ReactElement {
   const {
     tracks, duration, playhead,
-    onInput, onChange, onScrub,
+    onInput, onChange, onSeek,
     renderKeyEditor, label, className,
   } = props;
 
   const hold = useControlHold(props, { readonlyRole: false });
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
-  // Null until the user zooms in, so the window follows a duration that changes.
-  const [ownWindow, setOwnWindow] = useState<TimeWindow | null>(null);
-  const [selection, setSelection] = useHeld<KeySelection | null>(props.selection, null, props.onSelectionChange);
+  const { win, bounds, setWindow } = useTimeWindow(props.window, duration, props.onWindowChange);
+  const { selection, segmentSelection, selectKey, selectSegment, dropSegment } = useKeyAndSegment(props.selection, props.onSelectionChange);
   const [mode, setMode] = useHeld<'dope' | 'graph'>(props.mode, 'dope', props.onModeChange);
-  // By key index, so an edit that renumbers a track's keys drops it.
-  const [segmentSelection, setSegmentSelection] = useState<KeySelection | null>(null);
-
-  const bounds: TimeWindow = { from: 0, to: duration };
-  const win = props.window ?? ownWindow ?? bounds;
-  const setWindow = (w: TimeWindow): void => {
-    if (props.window === undefined) setOwnWindow(w.from <= 0 && w.to >= duration ? null : w);
-    props.onWindowChange?.(w);
-  };
-  // A key and a segment are one selection: taking either gives up the other.
-  const selectKey = (sel: KeySelection | null): void => {
-    setSelection(sel);
-    setSegmentSelection(null);
-  };
-  const selectSegment = (sel: KeySelection): void => {
-    setSegmentSelection(sel);
-    if (selection) setSelection(null);
-  };
 
   const rows = useMemo(() => buildLanes(tracks, expanded), [tracks, expanded]);
 
@@ -110,13 +92,16 @@ export function Timeline(props: TimelineProps): ReactElement {
     });
   };
 
-  const selectedTrack = selection ? trackAtPath(tracks, selection.trackPath) : undefined;
+  const commit = (r: KeyEdit): void => {
+    onChange(r.tracks);
+    selectKey(r.selection);
+  };
 
   const onRootKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>): void => {
     if (e.defaultPrevented || isEditableTarget(e.target)) return;
     if (e.key === 'Escape' && segmentSelection) {
       e.preventDefault();
-      setSegmentSelection(null);
+      dropSegment();
       return;
     }
     if ((e.key !== 'Delete' && e.key !== 'Backspace') || hold.refuses) return;
@@ -124,20 +109,9 @@ export function Timeline(props: TimelineProps): ReactElement {
     const target = marked === undefined ? selection : marked;
     if (target && trackAtPath(tracks, target.trackPath)?.kind === 'sampled') {
       e.preventDefault();
-      const r = deleteKey(tracks, target);
-      onChange(r.tracks);
-      selectKey(r.selection);
+      commit(deleteKey(tracks, target));
     }
   };
-
-  const selectedKey = selectedTrack?.kind === 'sampled'
-    ? (selectedTrack as SampledTrack<unknown>).keys[selection!.keyIndex]
-    : undefined;
-
-  const segmentTrack = segmentSelection ? trackAtPath(tracks, segmentSelection.trackPath) : undefined;
-  const segmentKey = segmentTrack?.kind === 'sampled'
-    ? (segmentTrack as SampledTrack<unknown>).keys[segmentSelection!.keyIndex]
-    : undefined;
 
   const edits = !hold.refuses;
   const laneHold: LaneHold = { edits, looks: !hold.disabled, tabIndex: hold.access.reachable ? 0 : -1, focus: hold.focus };
@@ -165,7 +139,7 @@ export function Timeline(props: TimelineProps): ReactElement {
             window={win}
             bounds={bounds}
             playhead={playhead}
-            onScrub={edits ? onScrub : ignore}
+            onSeek={edits ? onSeek : ignore}
             onWindowChange={hold.disabled ? ignore : setWindow}
           />
         </div>
@@ -184,56 +158,53 @@ export function Timeline(props: TimelineProps): ReactElement {
               expanded={expanded.has(row.key)}
               snapTimes={snapTimes}
               hold={laneHold}
-              onToggleExpand={() => toggle(row.key)}
-              onSelect={(keyIndex) => selectKey({ trackPath, keyIndex })}
-              onKeyInput={(keyIndex, toMs) => onInput?.(moveKey(tracks, { trackPath, keyIndex }, toMs).tracks)}
-              onKeyCommit={(keyIndex, toMs) => {
-                const sel = { trackPath, keyIndex };
-                if (keyTime(tracks, sel) === Math.max(0, toMs)) return;
-                const r = moveKey(tracks, sel, toMs);
-                onChange(r.tracks);
-                selectKey(r.selection);
-              }}
-              onKeysInput={(keys) => onInput?.(setKeys(tracks, trackPath, keys))}
-              onKeysCommit={(keys) => onChange(setKeys(tracks, trackPath, keys))} onCancel={props.onCancel}
-              onInsert={(atMs) => {
-                const r = insertKey(tracks, trackPath, atMs);
-                onChange(r.tracks);
-                selectKey(r.selection);
-              }}
+              onExpandedChange={() => toggle(row.key)}
+              onSelectionChange={(keyIndex) => selectKey({ trackPath, keyIndex })}
+              {...bindLaneEdits(tracks, trackPath, { onInput, onChange, commit })}
+              onCancel={props.onCancel}
               selectedSegment={segmentSelection && samePath(segmentSelection.trackPath, trackPath) ? segmentSelection.keyIndex : null}
               onSelectSegment={(keyIndex) => selectSegment({ trackPath, keyIndex })}
-              onPressEmpty={() => setSegmentSelection(null)}
+              onPressEmpty={dropSegment}
             />
           );
         })}
       </div>
 
-      {renderKeyEditor && !segmentSelection && selection && selectedKey && selectedTrack?.kind === 'sampled' ? (
-        <div className={s.inspector}>
-          {renderKeyEditor({
-            key: selectedKey,
-            track: selectedTrack as SampledTrack<unknown>,
-            selection,
-            commit: (next) => { if (edits) onChange(setKeyValue(tracks, selection, next.value)); },
-            setEasing: (easing) => { if (edits) onChange(setKeyEasing(tracks, selection, easing)); },
-          })}
-        </div>
-      ) : null}
-
-      {segmentSelection && segmentKey ? (
-        <div className={s.inspector}>
-          <EasingPicker
-            value={segmentKey.easing}
-            onChange={(next) => { if (edits) onChange(setKeyEasing(tracks, segmentSelection, next)); }}
-          />
-        </div>
-      ) : null}
+      <TimelineInspector
+        tracks={tracks}
+        selection={selection}
+        segmentSelection={segmentSelection}
+        renderKeyEditor={renderKeyEditor}
+        edits={edits}
+        onChange={onChange}
+      />
     </div>,
   ));
 }
 
 const ignore = (): void => {};
+
+/**
+ * A lane's edits as edits to the whole track list: live ones through `onInput`, and finished ones through `onChange`,
+ * or `commit` where the edit also moves the selection.
+ */
+function bindLaneEdits(tracks: readonly Track[], trackPath: readonly number[], report: {
+  onInput?: (next: Track[]) => void;
+  onChange: (next: Track[]) => void;
+  commit: (r: KeyEdit) => void;
+}): Pick<LaneProps, 'onKeyInput' | 'onKeyChange' | 'onKeysInput' | 'onKeysChange' | 'onInsert'> {
+  return {
+    onKeyInput: (keyIndex, toMs) => report.onInput?.(moveKey(tracks, { trackPath, keyIndex }, toMs).tracks),
+    onKeyChange: (keyIndex, toMs) => {
+      const sel = { trackPath, keyIndex };
+      if (keyTime(tracks, sel) === Math.max(0, toMs)) return;
+      report.commit(moveKey(tracks, sel, toMs));
+    },
+    onKeysInput: (keys) => report.onInput?.(setKeys(tracks, trackPath, keys)),
+    onKeysChange: (keys) => report.onChange(setKeys(tracks, trackPath, keys)),
+    onInsert: (atMs) => report.commit(insertKey(tracks, trackPath, atMs)),
+  };
+}
 
 /** The transport, or the time readout alone, and the Graph switch beside it. */
 function TransportRow({ transport, playhead, duration, hold, graph, onGraphChange }: {
@@ -284,14 +255,4 @@ function markedKey(el: Element, rows: readonly LaneRow[]): KeySelection | null |
   if (!mark || !lane) return undefined;
   const row = rows.find((r) => r.key === lane.getAttribute('data-lane-key'));
   return row ? { trackPath: row.path, keyIndex: Number(mark.getAttribute('data-keyframe-index')) } : null;
-}
-
-/** A value held here unless `given` is, reporting each change to `onChange` either way. */
-function useHeld<T>(given: T | undefined, initial: T, onChange?: (next: T) => void): [T, (next: T) => void] {
-  const [own, setOwn] = useState<T>(initial);
-  const set = (next: T): void => {
-    if (given === undefined) setOwn(next);
-    onChange?.(next);
-  };
-  return [given !== undefined ? given : own, set];
 }

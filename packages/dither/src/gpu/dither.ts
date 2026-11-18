@@ -2,7 +2,7 @@ import { registerEffect, type Effect, type TextureHandle } from '@weasel-js/rend
 import { DEFAULT_THRESHOLD, WHITE } from '../shared';
 import type { Rgb, Rgba } from '../types';
 import { DITHER_FRAG, DITHER_WGSL } from './frag';
-import type { DeviceGrid } from './gridOnScreen';
+import type { DeviceGrid } from './deviceGrid';
 
 const PROGRAM = registerEffect('weasel:dither', { glsl: DITHER_FRAG, wgsl: DITHER_WGSL });
 
@@ -11,7 +11,7 @@ const BLANK: Rgba = [0, 0, 0, 0];
 const SCREEN: DeviceGrid = { pitch: [1, 1], origin: [0, 0] };
 
 /** How the `dither` effect quantizes what its group drew. */
-export interface GpuDitherOptions {
+export interface DitherOptions {
   /** Default `'threshold'`. Error diffusion runs on the CPU only. */
   method?: 'threshold' | 'bayer';
   /** Gray (0–255) below it is ink. Default 128. */
@@ -23,9 +23,9 @@ export interface GpuDitherOptions {
   /** Default transparent. */
   blank?: Rgba;
   /** `'screen'` (one dot per device pixel, the default), or an output grid
-   *  placed with `gridOnScreen`. */
+   *  placed with `deviceGrid`. */
   grid?: 'screen' | DeviceGrid;
-  /** A protect mask in dot space, from `protectTexture`. Needs an output grid. */
+  /** A protect mask in dot space, from `createProtectTexture`. Needs an output grid. */
   protect?: { texture: TextureHandle; width: number; height: number };
 }
 
@@ -35,7 +35,7 @@ const premultiplied = ([r, g, b, a]: Rgba): number[] => {
 };
 
 /** Threshold or Bayer dithering as one effect pass. */
-export function dither(options: GpuDitherOptions = {}): Effect[] {
+export function dither(options: DitherOptions = {}): Effect[] {
   const method = options.method ?? 'threshold';
   if (method !== 'threshold' && method !== 'bayer') {
     throw new Error(`dither: '${String(method)}' is error diffusion, which runs on the CPU only (ditherPixels)`);

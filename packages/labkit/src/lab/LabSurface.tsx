@@ -29,7 +29,7 @@ export interface LabSurfaceProps {
 /** The `top` buffer: mounted only while some tenant claims it. */
 function useTopBuffer(
   ref: RefObject<HTMLCanvasElement | null>,
-  bufferRef: RefObject<{ w: number; h: number }>,
+  bufferRef: RefObject<{ width: number; height: number }>,
   surfaceRef: RefObject<ReturnType<typeof useTiledSurface> | null>,
 ) {
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
@@ -41,7 +41,7 @@ function useTopBuffer(
       ref.current = el;
       setCanvas(el);
       if (el) {
-        bufferRef.current = { w: 0, h: 0 };
+        bufferRef.current = { width: 0, height: 0 };
         surfaceRef.current?.invalidateAll();
       }
     },
@@ -79,7 +79,7 @@ export function LabSurface({ bodyRef, children, contributions }: LabSurfaceProps
   const [overLayer, setOverLayer] = useState<HTMLDivElement | null>(null);
   const ownOverRef = useRef<HTMLCanvasElement | null>(null);
   const ownUnderRef = useRef<HTMLCanvasElement | null>(null);
-  const bufferRef = useRef({ w: 0, h: 0 });
+  const bufferRef = useRef({ width: 0, height: 0 });
   const surfaceRef = useRef<ReturnType<typeof useTiledSurface> | null>(null);
   const ownTopRef = useRef<HTMLCanvasElement | null>(null);
   const top = useTopBuffer(ownTopRef, bufferRef, surfaceRef);
@@ -94,8 +94,8 @@ export function LabSurface({ bodyRef, children, contributions }: LabSurfaceProps
     if (canvases.length === 0) return;
     const w = Math.round(frame.size.width * frame.dpr);
     const h = Math.round(frame.size.height * frame.dpr);
-    if (bufferRef.current.w !== w || bufferRef.current.h !== h) {
-      bufferRef.current = { w, h };
+    if (bufferRef.current.width !== w || bufferRef.current.height !== h) {
+      bufferRef.current = { width: w, height: h };
       for (const c of canvases) {
         c.width = w;
         c.height = h;

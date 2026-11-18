@@ -1,6 +1,6 @@
 /** What selecting `hits` selects: each hit's `targetOf`, first answer kept,
  *  or the hits themselves when there is no `targetOf`. */
-export function hitTargets<T extends string>(hits: readonly T[], targetOf?: (id: T) => T): T[] {
+export function targetsOf<T extends string>(hits: readonly T[], targetOf?: (id: T) => T): T[] {
   return targetOf ? [...new Set(hits.map((id) => targetOf(id)))] : [...hits];
 }
 

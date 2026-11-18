@@ -1,7 +1,8 @@
 /** Counterexamples `registerFont.pbt.test.ts` shrank to, kept as examples. */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FIXTURE_FONT } from './FontAtlas';
-import { _resetFontRegistryForTests, registerFont, warmFonts } from './registerFont';
+import { _resetFontRegistryForTests, registerFont } from './registerFont';
+import { warmFonts } from './warmFonts';
 
 beforeEach(() => {
   _resetFontRegistryForTests();

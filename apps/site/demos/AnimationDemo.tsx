@@ -19,18 +19,31 @@ interface Pose { x: number; y: number; width: number; height: number }
 const W = 600, H = 400;
 const CARD_FILL = '#d4c4a8';
 const ACCENT_FILLS = ['#d4c4a8', '#c4d4a8', '#a8c4d4'];
-const INITIAL: Card[] = [
+export const INITIAL: Card[] = [
   { id: 'a', x: 100, y: 100, width: 80, height: 60, color: ACCENT_FILLS[0] },
   { id: 'b', x: 220, y: 100, width: 80, height: 60, color: ACCENT_FILLS[1] },
   { id: 'c', x: 340, y: 100, width: 80, height: 60, color: ACCENT_FILLS[2] },
 ];
+
+/** The size of a card "add card" makes. */
+const ADDED = { width: 60, height: 60 };
+
+/** Where a flung card's top-left may come to rest in a `size` canvas: momentum
+ *  clamps only that corner, so the rect is shrunk by the largest card the demo
+ *  makes, and every card stays whole on the canvas. */
+export function flingBounds(size: Dims) {
+  const cards = [...INITIAL, ADDED];
+  const width = Math.max(...cards.map((c) => c.width));
+  const height = Math.max(...cards.map((c) => c.height));
+  return { x: 0, y: 0, width: size.width - width, height: size.height - height };
+}
 
 /** A card collapsed to a point at its center: where one grows from and shrinks into. */
 const toCenter = (p: Card): Card => ({ ...p, x: p.x + p.width / 2, y: p.y + p.height / 2, width: 0, height: 0 });
 
 export function AnimationCards({ animator }: { animator: Animator }) {
   const scene = useScene<Card>({ items: INITIAL });
-  const selection = useSelection({ scene, mode: 'multi' });
+  const selection = useSelection({ scene, mode: 'multiple' });
   const nextId = useRef(1);
   const [size, setSize] = useState<Dims>({ width: W, height: H });
 
@@ -73,7 +86,7 @@ export function AnimationCards({ animator }: { animator: Animator }) {
         momentum<Card>({
           animator,
           friction: 0.93,
-          bounds: { x: 0, y: 0, width: size.width - 60, height: size.height - 60 },
+          bounds: flingBounds(size),
         }),
       ],
     },
@@ -96,7 +109,7 @@ export function AnimationCards({ animator }: { animator: Animator }) {
 
   const addCard = () => {
     const id = `n${nextId.current++}`;
-    insertCard({ id, x: 200 + Math.random() * 100, y: 250, width: 60, height: 60, color: CARD_FILL });
+    insertCard({ id, x: 200 + Math.random() * 100, y: 250, ...ADDED, color: CARD_FILL });
   };
 
   // Loop handles are not registered by id with the animator, so the effect cancels its own.

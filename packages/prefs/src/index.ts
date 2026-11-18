@@ -17,19 +17,20 @@ export {
   isPrefSection,
   mapPrefConditionPaths,
   nestPrefValues,
-  pairRowsOf,
+  prefPairRows,
   pref,
   PREF_CONDITION_FIELDS,
   PREF_ELSE,
   PREF_ENTRY,
   PREF_KINDS,
-  PREF_STATUS,
+  ROOT_PREF_STATUS,
   prefAliasedLeaf,
   prefAliasName,
   prefAliasTarget,
-  prefAsBox,
+  prefDrawsAsBox,
   prefClampNumber,
   prefConditionHolds,
+  prefConditionInGroup,
   prefConditionPaths,
   prefConditionReadsItem,
   prefDisplayBounds,
@@ -39,9 +40,9 @@ export {
   prefIsShown,
   prefJudge,
   prefLeafAt,
-  prefLeafValue,
+  prefValueOrDefault,
   prefLeaves,
-  prefNumberAt,
+  prefBoundedNumber,
   prefObjectBase,
   prefObjectField,
   prefObjectWithField,
@@ -51,24 +52,25 @@ export {
   prefSchemaHolding,
   prefScopedDefault,
   prefScopeOptionValue,
-  prefScopeSelectors,
+  prefStoredSelectors,
   prefScopesOf,
   prefScopeValue,
   prefSectionLeaves,
   prefSectionPath,
   prefShownReader,
-  prefShownValue,
+  prefDecodedValue,
   prefStatusAt,
   prefStatusIn,
   prefStatusUnder,
   prefUnit,
   prefUnitAccepts,
   prefValueAbsent,
-  prefValueAtPath,
+  prefValueAt,
   prefVariantDefault,
   prefVariantOf,
   PX_UNIT,
   repairPrefValue,
+  resolvePrefGroupConditions,
   resolvePrefUnit,
   VERSION_RECORD,
   visiblePrefSubtree,
@@ -91,6 +93,7 @@ export {
   type PrefCondition,
   type PrefConditionField,
   type PrefConditionJudge,
+  type PrefConditionFrom,
   type PrefConditionReader,
   type PrefConditionsApplied,
   type PrefConditionsOptions,
@@ -105,7 +108,6 @@ export {
   type PrefEnumOption,
   type PrefField,
   type PrefFunctionUnit,
-  type PrefGrade,
   type PrefGroup,
   type PrefGroupAs,
   type PrefKind,
@@ -159,7 +161,7 @@ export {
 export {
   prefAutoValue,
   prefCanAuto,
-  prefIsReset,
+  prefIsAtReset,
   prefResetOf,
   prefResets,
   prefStartsAuto,
@@ -167,33 +169,35 @@ export {
   type PrefReset,
   type PrefResetEntry,
   AUTO,
-  leafIsAtReset,
+  readingIsAtReset,
   resetPlan,
-  resetPlanAt,
+  resetPlans,
   prefNodeAt,
   type Auto,
   type LeafReading,
   type ResetWrite,
 } from './autoReset';
-export { prefWeightAxes, type PrefWeightAxes } from './weightAxes';
+export { createWeightAxes, type PrefWeightAxes } from './weightAxes';
 export { PREF_BLENDS, type PrefBlend } from './blend';
-export { checkPrefSplits, type PrefSplitProblem } from './splitCheck';
+export { checkPrefScopes, type PrefScopeProblem } from './splitCheck';
 export { prefsCss, prefsCssAttributes, type PrefsCssOptions, type PrefsCssSource } from './css';
-export { prefsDefaultsSource } from './defaultsSource';
+export { createDefaultsSource } from './defaultsSource';
 export { kitSettingsCssOptions } from './kitCss';
-export { prefAliasTargets, type PrefAliasTargets, type PrefAliasTargetsOptions } from './aliasTargets';
-export { prefType } from './type';
+export { createAliasTargets, type PrefAliasTargets, type PrefAliasTargetsOptions } from './aliasTargets';
+export { namedPrefType } from './type';
 export { prefFitsHeading, prefHeadingKey } from './heading';
-export type { PrefAtPath, PrefFieldsOf, PrefPath, PrefValueAt, PrefValueOf } from './paths';
+export type {
+  PrefAtPath, PrefFieldsOf, PrefGroupAt, PrefGroupPath, PrefPath, PrefValueAt, PrefValueOf, PrefValuesOf,
+} from '@weasel-js/prefs-schema';
 export type { PrefsMigration } from './migrate';
 export { openPrefs, openPrefsSync, type PrefsOptions } from './open';
 export type { PrefChange, PrefsStore } from './store';
-export { prefLeafInScopes, scopedPrefUnit } from './scopedUnit';
+export { prefLeafInUnitScopes, unitScopedPrefUnit } from './scopedUnit';
 export { pairRuns, type PairRun } from './pair';
 export { PREF_KIND_TRAITS, prefDrawsSeveral, prefIsCompound, type PrefKindTraits } from './kinds';
 export { mergePrefGroups } from './merge';
 export { orderPrefGroup, resolveOrder, type PrefOrder } from './order';
-export { LEAF_FREE, sharedReading, type LeafState, type PrefsSource, type SourceWriteOptions } from './sources/prefsSource';
-export { leafAtReset, resetReading, sourceIsAtReset, sourceResetPlan, writePlan } from './sources/policy';
+export { FREE_LEAF_STATUS, sharedReading, type PrefLeafStatus, type PrefsSource, type SourceWriteOptions } from './sources/prefsSource';
+export { sourceLeafIsAtReset, resetReader, sourceIsAtReset, sourceResetPlan, writeResetPlan } from './sources/policy';
 export { createRecordSource, createValuesSource, type ValuesSourceOptions } from './sources/valuesSource';
 export { createSelectionSource, type SelectionSource, type SelectionSourceInput } from './sources/selectionSource';

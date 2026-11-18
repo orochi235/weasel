@@ -14,7 +14,7 @@ import { render } from '@testing-library/react';
 import { SceneCanvas, useScene, useSceneAdapter, useTools } from '@weasel-js/core';
 import { asNodeId, WeaselProvider } from '@weasel-js/core/engine';
 import type { FeaturePreset } from '@weasel-js/core';
-import { arrangePreset, drawPreset, editPreset, movePreset, pickPreset, transformPreset, BUILTIN_TOOL_IDS, type KitToolId, useSelectTool, useSelection } from '@weasel-js/editing';
+import { arrangePreset, drawPreset, editPreset, movePreset, pickPreset, transformPreset, KIT_TOOL_IDS, type KitToolId, useSelectTool, useSelection } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -48,7 +48,7 @@ type P = { x: number; y: number; width: number; height: number };
 const TOOL_SETS: Record<string, readonly KitToolId[]> = {
   draw: [],
   'draw + shapes': ['rect', 'ellipse', 'line'],
-  'draw + every built-in': BUILTIN_TOOL_IDS,
+  'draw + every built-in': KIT_TOOL_IDS,
 };
 
 function Harness({ tools }: { tools: readonly KitToolId[] }) {
@@ -96,7 +96,7 @@ function ConsumerHarness({ features }: { features: readonly FeaturePreset[] }) {
       data: { color: '#f00' },
     }],
   });
-  const selection = useSelection({ mode: 'multi' });
+  const selection = useSelection({ mode: 'multiple' });
   const adapter = useSceneAdapter(scene, { selection });
   const select = useSelectTool(adapter, {});
   const tools = useTools({ active: 'select', registry: { select } });

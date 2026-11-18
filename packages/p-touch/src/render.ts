@@ -2,7 +2,7 @@
  * A label's scene to the pixels a printer lays down: one pixel per dot, the printable band only.
  */
 import { renderSceneToPixels, warmRender, type RasterImage, type RenderSceneToPixelsArgs } from '@weasel-js/core';
-import type { OutputGrid } from '@weasel-js/geom';
+import type { OutputGrid, Rect } from '@weasel-js/geom';
 import type { MediaSpec } from 'obwat';
 import type { Tape } from './tape';
 
@@ -31,7 +31,7 @@ export function printableBand(tape: Tape, media: MediaSpec): { y: number; height
  * printable band, so the output is exactly `printableDots` tall and the label's length in dots long.
  */
 export function labelRenderPlan({ length, tape, media, origin = { x: 0, y: 0 } }: LabelGeometry): {
-  sourceRect: { x: number; y: number; width: number; height: number };
+  sourceRect: Rect;
   scale: { x: number; y: number };
 } {
   const band = printableBand(tape, media);

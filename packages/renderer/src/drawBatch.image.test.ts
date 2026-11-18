@@ -57,7 +57,7 @@ describe('renderer — consecutive image batching', () => {
   });
 
   const img = (x: number, extra: Partial<DrawCommand & { kind: 'image' }> = {}) => ({
-    kind: 'image' as const, image: atlas, x, y: 0, w: 16, h: 16, ...extra,
+    kind: 'image' as const, image: atlas, x, y: 0, width: 16, height: 16, ...extra,
   });
 
   const rect = (x: number) => ({

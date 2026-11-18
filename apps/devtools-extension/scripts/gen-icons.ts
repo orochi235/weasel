@@ -15,7 +15,7 @@ const W_PATH =
   'L733 -1118H1009L1108 -705Q1134 -592 1165 -461.5Q1196 -331 1223 -175H1189Q1213 -330 1240.5 -460.5Q1268 -591 1294 -705' +
   'L1391 -1118H1710L1378 0H1073L949 -431Q931 -496 913 -574.5Q895 -653 878 -734.5Q861 -816 843 -887H896' +
   'Q879 -816 861.5 -734.5Q844 -653 826 -574Q808 -495 790 -431L666 0Z';
-const W_BOX = { x: 31, y: -1118, w: 1679, h: 1118 };
+const W_BOX = { x: 31, y: -1118, width: 1679, height: 1118 };
 
 /** The wordmark's gradient stops, read from its stylesheet so the two can't drift apart. */
 function wordmarkStops(): { color: string; offset: string }[] {
@@ -37,7 +37,7 @@ function iconSvg(): string {
     .join('');
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" ` +
-    `viewBox="${W_BOX.x} ${W_BOX.y - (W_BOX.w - W_BOX.h) / 2} ${W_BOX.w} ${W_BOX.w}">` +
+    `viewBox="${W_BOX.x} ${W_BOX.y - (W_BOX.width - W_BOX.height) / 2} ${W_BOX.width} ${W_BOX.width}">` +
     `<defs><linearGradient id="mark" x1="0" y1="0" x2="1" y2="0">${stops}</linearGradient></defs>` +
     `<path d="${W_PATH}" fill="url(#mark)"/></svg>`
   );

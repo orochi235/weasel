@@ -2,9 +2,10 @@
  * `DebugSink`, `HitShape` and `HandleKind` are declared in
  * `@weasel-js/routing`. Re-exported here, beside the overlay that reads one.
  */
-import type { DebugSink, HitShape, HandleKind, View, ViewportGestureKind } from '@weasel-js/routing';
+import type { DebugSink, HitShape, HandleKind, View, ViewportMoveKind } from '@weasel-js/routing';
 import type { DEBUG_FEATURES } from './features';
-export type { DebugSink, HitShape, HandleKind, ViewportGestureKind };
+import type { Rect } from '@weasel-js/geom';
+export type { DebugSink, HitShape, HandleKind, ViewportMoveKind };
 
 /** One bit per debug feature; absent keys are off. */
 export interface DebugFlags {
@@ -102,7 +103,7 @@ export interface RecordedHandle {
 /** A node's bounds as computed during the current frame. */
 export interface RecordedBounds {
   id: string;
-  bounds: { x: number; y: number; width: number; height: number };
+  bounds: Rect;
 }
 
 /** A node's transform origin as used during the current frame. */
@@ -129,7 +130,7 @@ export interface RecordedLayer {
 
 /** The last viewport change a gesture made. See `DebugSink.recordViewport`. */
 export interface RecordedViewport {
-  kind: ViewportGestureKind;
+  kind: ViewportMoveKind;
   from: View;
   to: View;
   /** World point the gesture held fixed, when it had one. */

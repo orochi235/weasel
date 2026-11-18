@@ -6,6 +6,7 @@
  * `derivedPose` — a *pose* can derive from a dependency's path, so
  * `effectivePose` has to be able to reach it.
  */
+import { createPart } from '@weasel-js/registry';
 import { nodeShapesOf } from './nodeShapeRegistry';
 import type { DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
 import { multiply, poseFrameInverseOf, poseFrameOf, type Path } from '@weasel-js/geom';
@@ -192,7 +193,7 @@ export function sceneDerivedPathOf<TData, TLayer extends string, TPose>(
   return (node) => overridePathOf(node) ?? derived(node);
 }
 
-const toPoseScopes = new WeakMap<object, { local?: NodeMemoScope; world?: NodeMemoScope }>();
+const toPoseScopes = createPart((_toPose: object): { local?: NodeMemoScope; world?: NodeMemoScope } => ({}));
 
 /** Where one way of reading poses memoizes its paths, or `undefined` for the
  *  scene's own slot: two readers painting one scene at different poses must
@@ -204,12 +205,7 @@ function memoSlotFor(
 ): string | NodeMemoScope | undefined {
   const frame = composes ? 'world' : 'local';
   if (toPose === undefined) return frame === 'world' ? 'kit:derivedPath:world' : undefined;
-  let scopes = toPoseScopes.get(toPose);
-  if (scopes === undefined) {
-    scopes = {};
-    toPoseScopes.set(toPose, scopes);
-  }
-  return (scopes[frame] ??= createNodeMemoScope());
+  return (toPoseScopes(toPose)[frame] ??= createNodeMemoScope());
 }
 
 /**
@@ -265,25 +261,22 @@ export function derivedFramePose<TPose>(painted: TPose, own: unknown): TPose {
   return { ...painted, rotation: o?.rotation, transform: o?.transform };
 }
 
-const drawnScenes = new WeakMap<object, DrawnBoundsScene>();
+const drawnScenes = createPart((scene: Scene<unknown, string, unknown>): DrawnBoundsScene => {
+  const pathOf = sceneDerivedPathOf(scene);
+  const shown = shownLookup(scene);
+  return {
+    get: (id) => shown.get(id) as never,
+    childrenOf: (id) => scene.childrenOf(id),
+    shapes: nodeShapesOf(scene),
+    derivedPathOf: (id) => {
+      const node = scene.get(id);
+      return node !== undefined && showsComputedPath(scene, node) ? pathOf(node) : null;
+    },
+  };
+});
 
 /** `scene` read as `drawnBoundsOf` reads one, each node that shows a computed
  *  path answering it. One object per scene, so it can key a memo. */
 export function drawnBoundsScene<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>): DrawnBoundsScene {
-  let held = drawnScenes.get(scene);
-  if (held === undefined) {
-    const pathOf = sceneDerivedPathOf(scene);
-    const shown = shownLookup(scene);
-    held = {
-      get: (id) => shown.get(id) as never,
-      childrenOf: (id) => scene.childrenOf(id),
-      shapes: nodeShapesOf(scene),
-      derivedPathOf: (id) => {
-        const node = scene.get(id);
-        return node !== undefined && showsComputedPath(scene, node) ? pathOf(node) : null;
-      },
-    };
-    drawnScenes.set(scene, held);
-  }
-  return held;
+  return drawnScenes(scene as unknown as Scene<unknown, string, unknown>);
 }

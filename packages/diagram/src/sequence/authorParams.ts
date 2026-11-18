@@ -3,7 +3,7 @@
  * figure, the message's arrow, the fragment's type, and the lifeline mark.
  * Each group is the last-operation panel's form and its tool's options.
  */
-import { pref } from '@weasel-js/prefs';
+import { pref } from '@weasel-js/prefs-schema';
 
 /** The Participant tool's options and the `addParticipant` action's params: what a click adds. */
 export const SEQUENCE_PARTICIPANT_PARAMS = pref.group('Participant', {

@@ -4,7 +4,7 @@
  */
 import type { OffPageSplit } from './trait';
 
-/** One connector as {@link offPageSplits} reads it: the page each end is on (`pageOfNode`), `null` for one on
+/** One connector as {@link offPageSplits} reads it: the page each end is on (`pageIdOf`), `null` for one on
  *  none, and the split it holds now, if any. */
 export interface OffPageEdgeInput {
   id: string;

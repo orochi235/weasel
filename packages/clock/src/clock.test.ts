@@ -504,15 +504,15 @@ describe('createClock', () => {
     expect(() => createClock({ seekable: false }, { elapsed: 10, rate: -1 })).toThrow(RangeError);
   });
 
-  describe('rates', () => {
+  describe('speeds', () => {
     it('offers the transport defaults unless told otherwise, sorted', () => {
-      expect(createClock({}).clock.rates).toEqual([0.25, 0.5, 1, 2, 4]);
-      expect(createClock({ rates: [1, 0.125, 0.5] }).clock.rates).toEqual([0.125, 0.5, 1]);
+      expect(createClock({}).clock.speeds).toEqual([0.25, 0.5, 1, 2, 4]);
+      expect(createClock({ speeds: [1, 0.125, 0.5] }).clock.speeds).toEqual([0.125, 0.5, 1]);
     });
 
     it('rejects an empty list or a rate that is not positive', () => {
-      expect(() => createClock({ rates: [] })).toThrow(RangeError);
-      expect(() => createClock({ rates: [1, 0] })).toThrow(RangeError);
+      expect(() => createClock({ speeds: [] })).toThrow(RangeError);
+      expect(() => createClock({ speeds: [1, 0] })).toThrow(RangeError);
     });
   });
 });

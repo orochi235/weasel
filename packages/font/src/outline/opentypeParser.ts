@@ -70,7 +70,7 @@ export function assertOpenType2(ns: OpenType): void {
  * not cover. That is a real glyph (the tofu box) and it renders, so report
  * the miss instead and let the caller's fallback ladder run.
  */
-function faceFor(
+function createOutlineFace(
   font: import('opentype.js').Font, gpos: PairKerning | null, sfnt: ArrayBuffer,
 ): OutlineFace {
   const upem = font.unitsPerEm;
@@ -207,7 +207,7 @@ export function createOpenTypeParser(postScriptName?: string): OutlineParser {
     if (cff) checkCff(cff);
     const cmap = tableOf(single, 'cmap');
     if (cmap) checkCmap(cmap);
-    return faceFor(parse(single), gposPairKerning(single), single);
+    return createOutlineFace(parse(single), gposPairKerning(single), single);
   };
 }
 

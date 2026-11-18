@@ -9,7 +9,7 @@ import type { ImportResult } from '../../document';
 import { IdMint, Warnings, decodeEntities, graphPage } from '../../graphRead';
 import { PAGE_MARGIN } from '../../pageLayout';
 import { lineError } from '../../lineError';
-import { pageNameOf } from '../common/lines';
+import { readPageName } from '../common/lines';
 import { wrapped } from '../common/text';
 import { parseKanban } from './parse';
 
@@ -62,7 +62,7 @@ export function readKanban(text: string): ImportResult {
   });
   const board = freshId(BOARD_ID, ids, { from: 2, bare: true });
   const tallest = columns.reduce((most, c) => Math.max(most, c.cards.reduce((h, card) => h + (wrapped(card.text, CARD_WRAP).length + card.meta.length) * ROW + 16 + GAP, 0)), 0);
-  const name = pageNameOf(source, warnings);
+  const name = readPageName(source, warnings);
   const pool: DataContainer = {
     id: board, role: 'pool', axis: 'x', lanes, ...(name !== undefined ? { label: name } : {}),
     box: { x: PAGE_MARGIN, y: PAGE_MARGIN, width: COLUMN_WIDTH * Math.max(1, lanes.length), height: HEADERS + GAP + tallest },

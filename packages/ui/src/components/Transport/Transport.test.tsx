@@ -5,13 +5,12 @@ import { I18nProvider } from '../../useFieldLocale';
 import { Transport } from './Transport';
 
 const props = {
-  paused: true,
+  playing: false,
   loop: false as boolean | number,
   rate: 1,
   playhead: 0,
   duration: 2000,
-  onPlay: () => {},
-  onPause: () => {},
+  onPlayingChange: () => {},
   onLoopChange: () => {},
   onRateChange: () => {},
 };
@@ -23,22 +22,22 @@ describe('Transport', () => {
   });
 
   it('shows pause while running', () => {
-    renderWithIcons(<Transport {...props} paused={false} />);
+    renderWithIcons(<Transport {...props} playing />);
     expect(screen.getByRole('button', { name: /pause/i })).toBeInTheDocument();
   });
 
-  it('calls onPlay when play is pressed', () => {
-    const onPlay = vi.fn();
-    renderWithIcons(<Transport {...props} onPlay={onPlay} />);
+  it('asks to play when play is pressed', () => {
+    const onPlayingChange = vi.fn();
+    renderWithIcons(<Transport {...props} onPlayingChange={onPlayingChange} />);
     fireEvent.click(screen.getByRole('button', { name: /play/i }));
-    expect(onPlay).toHaveBeenCalledTimes(1);
+    expect(onPlayingChange).toHaveBeenCalledExactlyOnceWith(true);
   });
 
-  it('calls onPause when pause is pressed', () => {
-    const onPause = vi.fn();
-    renderWithIcons(<Transport {...props} paused={false} onPause={onPause} />);
+  it('asks to pause when pause is pressed', () => {
+    const onPlayingChange = vi.fn();
+    renderWithIcons(<Transport {...props} playing onPlayingChange={onPlayingChange} />);
     fireEvent.click(screen.getByRole('button', { name: /pause/i }));
-    expect(onPause).toHaveBeenCalledTimes(1);
+    expect(onPlayingChange).toHaveBeenCalledExactlyOnceWith(false);
   });
 
   it('reads out the playhead against the duration', () => {

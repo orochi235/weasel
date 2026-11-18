@@ -1,0 +1,103 @@
+/** Every value's dotted path in a `PrefGroup` schema, where a group's key is a
+ *  segment; an `object` leaf is one path, its fields are not, and an `action`,
+ *  `actions`, `alias`, `label`, or `separator` leaf, holding no value, has none. A `PrefSection`
+ *  has no such paths: each of its leaves is addressed by its own key. */
+export type PrefPath<G, Prefix extends string = ''> =
+  G extends { children: infer C }
+    ? string extends keyof C
+      ? Prefix extends '' ? string : `${Prefix}.${string}`
+      : {
+          [K in keyof C & string]: C[K] extends { kind: string }
+            ? C[K] extends { kind: 'action' | 'actions' | 'alias' | 'label' | 'separator' } ? never : Prefix extends '' ? K : `${Prefix}.${K}`
+            : C[K] extends { children: Record<string, unknown> }
+              ? PrefPath<C[K], Prefix extends '' ? K : `${Prefix}.${K}`>
+              : never;
+        }[keyof C & string]
+    : never;
+
+/** The leaf at `P`. `unknown` under a group whose keys are not literal, as a
+ *  schema built at run time has them: nothing says which leaf is there, so
+ *  its value reads as `unknown`. */
+export type PrefAtPath<G, P extends string> =
+  G extends { children: infer C }
+    ? string extends keyof C
+      ? unknown
+    : P extends `${infer H}.${infer Rest}`
+      ? H extends keyof C
+        ? C[H] extends { kind: string }
+          ? never
+          : PrefAtPath<C[H], Rest>
+        : never
+      : P extends keyof C
+        ? C[P] extends { kind: string }
+          ? C[P]
+          : never
+        : never
+    : never;
+
+/** The fields an `object` leaf's `children` describe, sections folded in. Each is optional: an object may omit any. */
+export type PrefFieldsOf<C> = {
+  [K in keyof C as C[K] extends { kind: string } ? K : never]?: PrefValueOf<C[K]>;
+} & (
+  ({ [K in keyof C]: C[K] extends { members: infer M } ? (x: PrefFieldsOf<M>) => void : never }[keyof C]) extends
+    (x: infer I) => void ? I : never
+);
+
+/** What a leaf holds: its kind's value type for a built-in kind, the type of
+ *  its `default` for an app-defined one. A list holds an array of what its
+ *  `item` holds, a map a record of it, and a union one variant's fields
+ *  under that variant's tag — where the schema keeps `tag` a literal
+ *  (`tag: 'type' as const`); one widened to `string` is typed by its default. */
+export type PrefValueOf<L> =
+  L extends { kind: 'number' } ? number
+  : L extends { kind: 'boolean' } ? boolean
+  : L extends { kind: 'string' | 'color' | 'field' } ? string
+  : L extends { kind: 'paint' } ? unknown
+  : L extends { kind: 'enum'; options: readonly { value: infer T }[] }
+    ? L extends { clearable: true } ? T | undefined : T
+  : L extends { kind: 'list'; item: infer I } ? PrefValueOf<I>[]
+  : L extends { kind: 'map'; item: infer I } ? Record<string, PrefValueOf<I>>
+  : L extends { kind: 'union'; tag: infer T extends string; variants: infer V; default: infer D }
+    ? string extends keyof V | T
+      ? D
+      : { [K in keyof V & string]: { [P in T]: K } & (V[K] extends { children: infer C } ? PrefFieldsOf<C> : unknown) }[keyof V & string]
+  : L extends { default: infer D } ? D
+  : unknown;
+
+/** What the leaf at `P` holds. */
+export type PrefValueAt<G, P extends string> = PrefValueOf<PrefAtPath<G, P>>;
+
+/** Every group's dotted path in a `PrefGroup` schema: the paths `PrefValuesOf` can be read at. */
+export type PrefGroupPath<G, Prefix extends string = ''> =
+  G extends { children: infer C }
+    ? string extends keyof C
+      ? Prefix extends '' ? string : `${Prefix}.${string}`
+      : {
+          [K in keyof C & string]: C[K] extends { kind: string }
+            ? never
+            : C[K] extends { children: Record<string, unknown> }
+              ? (Prefix extends '' ? K : `${Prefix}.${K}`) | PrefGroupPath<C[K], Prefix extends '' ? K : `${Prefix}.${K}`>
+              : never;
+        }[keyof C & string]
+    : never;
+
+/** The group at `P`. */
+export type PrefGroupAt<G, P extends string> =
+  G extends { children: infer C }
+    ? P extends `${infer H}.${infer Rest}`
+      ? H extends keyof C ? PrefGroupAt<C[H], Rest> : never
+      : P extends keyof C ? (C[P] extends { kind: string } ? never : C[P]) : never
+    : never;
+
+/** What a group holds: an object keyed like its `children`, with each leaf's value
+ *  at its key and each nested group's values under its own. A leaf that holds no
+ *  value (an action, an alias, a label, a separator) gets no key. */
+export type PrefValuesOf<G> = G extends { children: infer C }
+  ? {
+      -readonly [K in keyof C as C[K] extends { kind: 'action' | 'actions' | 'alias' | 'label' | 'separator' }
+        ? never
+        : C[K] extends { kind: string } | { children: unknown } ? K : never]: C[K] extends { kind: string }
+        ? PrefValueOf<C[K]>
+        : PrefValuesOf<C[K]>;
+    }
+  : never;

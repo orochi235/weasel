@@ -58,7 +58,7 @@
  * ### Giving arrays back
  *
  * A layout's columns and its paintings' quads go back to a pool for the next
- * text of the same size once nothing can reach them: `dropRuns` has removed
+ * text of the same size once nothing can reach them: `evictRuns` has removed
  * every runs array filing it, the structural list has evicted it, and every
  * call handed it passed `'read'`. One `'keep'` handout pins it for good. That
  * is what lets a readout rewritten every frame, whose widget drops the runs it
@@ -138,7 +138,7 @@ function release(laid: LaidOutRuns): void {
   cols.recycle();
 }
 
-/** Variants of runs arrays `dropRuns` forgot, for the next runs arrays to fill. */
+/** Variants of runs arrays `evictRuns` forgot, for the next runs arrays to fill. */
 const spareVariants: Variant[] = [];
 const SPARE_MAX = 1024;
 
@@ -232,7 +232,7 @@ export function cachedLayoutRuns(
  *
  * Passing `runs` again afterwards is only a cache miss.
  */
-export function dropRuns(runs: readonly ResolvedRun[]): void {
+export function evictRuns(runs: readonly ResolvedRun[]): void {
   const entry = dropEntry(runs);
   if (entry === undefined) return;
   disown(entry.variants);
@@ -273,7 +273,7 @@ function structuralLayout(
 
 /**
  * Forget what the caches hold for `runs`, which its caller is about to refill
- * in place, leaving the array filed: unlike {@link dropRuns}, the next call
+ * in place, leaving the array filed: unlike {@link evictRuns}, the next call
  * with it costs no `WeakMap` set. A readout rewriting its text every frame
  * refills one runs array this way, so the command it hands the renderer
  * stays the same object.
@@ -282,7 +282,7 @@ function structuralLayout(
  * list compares later runs with these, and a painting may still have to build
  * its key from them.
  */
-export function clearRuns(runs: readonly ResolvedRun[]): void {
+export function evictRunsForRefill(runs: readonly ResolvedRun[]): void {
   const entry = entryOf(runs);
   if (entry === undefined) return;
   const s = entry.listed;

@@ -5,13 +5,13 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { createMenuController, type Rect } from '@weasel-js/menu';
+import { createMenuController, type MenuRect } from '@weasel-js/menu';
 import { menuLevel, openPath, runs, tally, timeoutFor } from '../pbt.fixture';
 import { menuRowSpans } from '@weasel-js/ui-logic';
-import { panelSize } from './drawPanel';
+import { measurePanel } from './panelCommands';
 import { menuTheme } from './menu.fixture';
 import { menuMeasureEnv } from './menuEnv';
-import { estimateWidth } from './measureLabel';
+import { estimateWidth } from './textWidth';
 import { createPlacer } from './placePanels';
 
 const RUNS = 200;
@@ -27,7 +27,7 @@ const scene = fc.record({
   anchor: fc.record({ x: across, y: across }),
   under: fc.option(fc.record({
     x: across, y: across,
-    w: fc.integer({ min: 0, max: 120 }), h: fc.integer({ min: 0, max: 40 }),
+    width: fc.integer({ min: 0, max: 120 }), height: fc.integer({ min: 0, max: 40 }),
   }), { nil: undefined }),
   perChar: fc.double({ min: 0.2, max: 1.2, noNaN: true }),
   family: fc.option(fc.constant('Inter'), { nil: null }),
@@ -38,7 +38,7 @@ function placeAll(s: Scene) {
   const c = createMenuController({ entries: s.entries, onClose: () => {} });
   openPath(c, s.path);
   const anchor = { x: s.anchor.x * s.canvas.width, y: s.anchor.y * s.canvas.height };
-  const under = s.under && { ...s.under, x: s.under.x * Math.max(0, s.canvas.width - s.under.w), y: s.under.y * Math.max(0, s.canvas.height - s.under.h) };
+  const under = s.under && { ...s.under, x: s.under.x * Math.max(0, s.canvas.width - s.under.width), y: s.under.y * Math.max(0, s.canvas.height - s.under.height) };
   const measure = (t: string, size: number) => t.length * size * s.perChar;
   const place = createPlacer({ anchor, under, canvasSize: () => s.canvas, measure });
   const rects = place(c, s.family, s.theme.tokens).map((p) => p.rect);
@@ -55,12 +55,12 @@ describe('createPlacer', () => {
       const { c, rects, sized } = placeAll(s);
       expect(rects).toHaveLength(c.stack().length);
       rects.forEach((r, level) => {
-        expect([r.x, r.y, r.w, r.h].every(Number.isFinite)).toBe(true);
-        const size = panelSize(c.entriesAt(level), menuMeasureEnv(s.theme.tokens, '', sized));
-        expect({ w: r.w, h: r.h }).toEqual(size);
-        if (fits(r.w, s.canvas.width)) { expect(r.x).toBeGreaterThanOrEqual(0); expect(r.x + r.w).toBeLessThanOrEqual(s.canvas.width); seen.hit('fits x'); }
+        expect([r.x, r.y, r.width, r.height].every(Number.isFinite)).toBe(true);
+        const size = measurePanel(c.entriesAt(level), menuMeasureEnv(s.theme.tokens, '', sized));
+        expect(r).toMatchObject({ width: size.width, height: size.height });
+        if (fits(r.width, s.canvas.width)) { expect(r.x).toBeGreaterThanOrEqual(0); expect(r.x + r.width).toBeLessThanOrEqual(s.canvas.width); seen.hit('fits x'); }
         else expect(r.x).toBe(0);
-        if (fits(r.h, s.canvas.height)) { expect(r.y).toBeGreaterThanOrEqual(0); expect(r.y + r.h).toBeLessThanOrEqual(s.canvas.height); seen.hit('fits y'); }
+        if (fits(r.height, s.canvas.height)) { expect(r.y).toBeGreaterThanOrEqual(0); expect(r.y + r.height).toBeLessThanOrEqual(s.canvas.height); seen.hit('fits y'); }
         else expect(r.y).toBe(0);
         if (level > 0) seen.hit('submenu');
       });
@@ -77,8 +77,8 @@ describe('createPlacer', () => {
         if (at + len <= span) { expect(got).toBe(at); seen.hit(`${name} down`); }
         else if (at - len >= 0) { expect(got).toBe(at - len); seen.hit(`${name} flipped`); }
       };
-      axis(anchor.x, r!.w, W, r!.x, 'x');
-      axis(anchor.y, r!.h, H, r!.y, 'y');
+      axis(anchor.x, r!.width, W, r!.x, 'x');
+      axis(anchor.y, r!.height, H, r!.y, 'y');
     }), runs(RUNS));
     for (const k of ['x down', 'x flipped', 'y down', 'y flipped']) seen.atLeast(k, 10);
   }, timeoutFor(RUNS, 10));
@@ -89,10 +89,10 @@ describe('createPlacer', () => {
       const { rects: [r], under } = placeAll(s);
       const u = under!;
       const { width: W, height: H } = s.canvas;
-      if (u.y + u.h + r!.h <= H) { expect(r!.y).toBe(u.y + u.h); seen.hit('below'); }
-      else if (u.y - r!.h >= 0) { expect(r!.y).toBe(u.y - r!.h); seen.hit('above'); }
-      if (u.x + r!.w <= W) { expect(r!.x).toBe(u.x); seen.hit('left-aligned'); }
-      else if (u.x + u.w - r!.w >= 0 && r!.w <= W) { expect(r!.x).toBe(u.x + u.w - r!.w); seen.hit('right-aligned'); }
+      if (u.y + u.height + r!.height <= H) { expect(r!.y).toBe(u.y + u.height); seen.hit('below'); }
+      else if (u.y - r!.height >= 0) { expect(r!.y).toBe(u.y - r!.height); seen.hit('above'); }
+      if (u.x + r!.width <= W) { expect(r!.x).toBe(u.x); seen.hit('left-aligned'); }
+      else if (u.x + u.width - r!.width >= 0 && r!.width <= W) { expect(r!.x).toBe(u.x + u.width - r!.width); seen.hit('right-aligned'); }
     }), runs(RUNS));
     for (const k of ['below', 'above', 'left-aligned', 'right-aligned']) seen.atLeast(k, 10);
   }, timeoutFor(RUNS, 10));
@@ -105,10 +105,10 @@ describe('createPlacer', () => {
       for (let level = 1; level < rects.length; level++) {
         const parent = rects[level - 1]!, r = rects[level]!;
         const row = menuRowSpans(c.entriesAt(level - 1), s.theme.m)[stack[level - 1]!]!;
-        const right = parent.x + parent.w;
-        if (right + r.w <= s.canvas.width) { expect(r.x).toBe(right); seen.hit('right'); }
-        else if (parent.x - r.w >= 0) { expect(r.x + r.w).toBeCloseTo(parent.x, 9); seen.hit('left'); }
-        expect(r.y).toBe(Math.max(0, Math.min(parent.y + row.y, s.canvas.height - r.h)));
+        const right = parent.x + parent.width;
+        if (right + r.width <= s.canvas.width) { expect(r.x).toBe(right); seen.hit('right'); }
+        else if (parent.x - r.width >= 0) { expect(r.x + r.width).toBeCloseTo(parent.x, 9); seen.hit('left'); }
+        expect(r.y).toBe(Math.max(0, Math.min(parent.y + row.y, s.canvas.height - r.height)));
       }
     }), runs(RUNS));
     for (const k of ['right', 'left']) seen.atLeast(k, 10);
@@ -121,7 +121,7 @@ describe('createPlacer', () => {
       expect(place(c, s.family, s.theme.tokens).map((p) => p.rect)).toEqual(rects);
       const depth = c.stack().length;
       openPath(c, more);
-      const after: Rect[] = place(c, s.family, s.theme.tokens).map((p) => p.rect);
+      const after: MenuRect[] = place(c, s.family, s.theme.tokens).map((p) => p.rect);
       if (c.stack().length > depth) seen.hit('deeper');
       expect(after.slice(0, depth)).toEqual(rects);
     }), runs(RUNS));

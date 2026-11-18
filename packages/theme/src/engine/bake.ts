@@ -1,5 +1,5 @@
 import { deepEqual, setOwn, getOwn } from '@weasel-js/registry';
-import { enumerateSelections, fullSelection, selectionKey, type AxisDefs, type Selection, type Varying } from '../axes.ts';
+import { enumerateAxisChoices, fullAxisChoice, axisChoiceKey, type AxisDefs, type AxisChoice, type Varying } from '../axes.ts';
 import { tokenAt } from '../chainTokens.ts';
 import type { SerializableColorList } from '../colorListItems.ts';
 import type { ThemeDefinition } from '../definition.ts';
@@ -38,16 +38,16 @@ function normalize(t: RawToken): RawToken {
 
 const same = (a: RawToken | undefined, b: RawToken | undefined) => deepEqual(a, b, { undefinedAsAbsent: true });
 
-/** Selection key → that selection's derived tokens. */
+/** Axis-choice key → that choice's derived tokens. */
 type Table = Map<string, Record<string, RawToken>>;
 
 function table(def: ThemeDefinition, axes: AxisDefs, lookup: Lookup | undefined): Table {
   const out: Table = new Map();
-  for (const sel of enumerateSelections(axes)) {
+  for (const sel of enumerateAxisChoices(axes)) {
     const { tokens } = derive(def, sel, lookup);
     const normalized: Record<string, RawToken> = {};
     for (const [name, t] of Object.entries(tokens)) setOwn(normalized, name, normalize(t));
-    out.set(selectionKey(axes, sel), normalized);
+    out.set(axisChoiceKey(axes, sel), normalized);
   }
   return out;
 }
@@ -79,18 +79,18 @@ function bakeOver(definition: ThemeDefinition, merged: ThemeDefinition, above: r
   const axes = merged.axes ?? {};
   const own = table(definition, axes, lookup);
 
-  const at = (sel: Selection, name: string) => {
-    const tokens = own.get(selectionKey(axes, sel));
+  const at = (sel: AxisChoice, name: string) => {
+    const tokens = own.get(axisChoiceKey(axes, sel));
     return getOwn(tokens, name);
   };
   /** What the runtime shows for `name` from the themes above. */
-  const inherited = (sel: Selection, name: string) => tokenAt(above, name, fullSelection(axes, sel));
+  const inherited = (sel: AxisChoice, name: string) => tokenAt(above, name, fullAxisChoice(axes, sel));
 
   const produced = new Set([...own.values()].flatMap((t) => Object.keys(t)));
   const ordered = definitionOrder(merged).filter((n) => produced.has(n));
   const names = [...ordered, ...[...produced].filter((n) => !ordered.includes(n))];
 
-  const selections = enumerateSelections(axes);
+  const selections = enumerateAxisChoices(axes);
   const tokens: Record<string, Varying<RawToken>> = {};
   for (const name of names) {
     // A selection this definition produced nothing at cannot unset the token, so it never counts as a change.
@@ -101,7 +101,7 @@ function bakeOver(definition: ThemeDefinition, merged: ThemeDefinition, above: r
     );
 
     const build = (i: number, sel: Record<string, string>): Varying<RawToken> | undefined => {
-      if (i === varying.length) return at(fullSelection(axes, sel), name);
+      if (i === varying.length) return at(fullAxisChoice(axes, sel), name);
       const [axis, d] = varying[i];
       const branch: Record<string, unknown> = { by: axis };
       let any = false;

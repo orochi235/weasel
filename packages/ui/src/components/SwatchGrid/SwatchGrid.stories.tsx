@@ -32,8 +32,8 @@ export const Default: Story = {
           {...args}
           options={args.options ?? PALETTE}
           value={fill}
-          onChange={setFill}
-          onAltChange={setStroke}
+          onSelect={setFill}
+          onAltSelect={setStroke}
         />
         <p>fill {fill ?? 'none'} · stroke {stroke ?? 'none'}</p>
       </div>
@@ -58,7 +58,7 @@ export const Glyphs: Story = {
     const [tape, setTape] = useState<string | null>('cerulean-black');
     return (
       <div>
-        <SwatchGrid {...args} options={args.options ?? TAPES} value={tape} onChange={setTape} />
+        <SwatchGrid {...args} options={args.options ?? TAPES} value={tape} onSelect={setTape} />
         <p>tape {tape ?? 'none'}</p>
       </div>
     );
@@ -85,7 +85,7 @@ export const Pinned: Story = {
           {...args}
           options={options}
           value={pinned}
-          onChange={(id) => {
+          onSelect={(id) => {
             if (id === null) return;
             setPinned((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
           }}

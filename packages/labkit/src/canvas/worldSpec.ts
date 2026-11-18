@@ -1,4 +1,4 @@
-import type { Point, ViewTransform } from '../instrument/types';
+import type { Point, ViewTransform2D } from '../instrument/types';
 
 /** How an instrument's world sits on the canvas, independent of the camera.
  *  The defaults reproduce the convention labkit shipped before this existed:
@@ -42,7 +42,7 @@ export function resolveFrame(spec: WorldSpec | undefined, size: ViewportSize): W
  *  `draw` works in them. Must stay the exact inverse of `screenToWorld`. */
 export function applyCamera(
   ctx: CanvasRenderingContext2D,
-  view: ViewTransform,
+  view: ViewTransform2D,
   frame: WorldFrame = DEFAULT_FRAME,
 ): void {
   ctx.translate(frame.originPx.x + view.pan.x, frame.originPx.y + view.pan.y);

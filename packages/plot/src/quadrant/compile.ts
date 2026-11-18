@@ -8,10 +8,11 @@ import type { PlotMeasure } from '../measure';
 import { seriesColor, type PlotTheme } from '../theme';
 import { quadrantClassOf } from './structure';
 import type { QuadrantData, QuadrantPoint, QuadrantPointStyle } from './types';
+import type { Rect } from '@weasel-js/geom';
 
 /** Where a quadrant chart's unit square landed. */
 export interface QuadrantLayout {
-  plot: { x: number; y: number; width: number; height: number };
+  plot: Rect;
 }
 
 const GAP = 6;

@@ -3,7 +3,7 @@ import { handlesOf } from '../editing/editors';
 import { PLOT_THEME, seriesColor } from '../theme';
 import { compileGantt } from './compile';
 import { formatGanttDate, formatHasHours, parseGanttDate, strftime } from './dates';
-import { moveGanttTask, setGanttEnd, setGanttSectionName, setGanttTaskName } from './edit';
+import { setGanttStartDay, setGanttEndDay, setGanttSectionName, setGanttTaskName } from './edit';
 import { ganttEditor } from './editor';
 import { addGanttDuration, excludedDays, scheduleGantt } from './schedule';
 import type { GanttData } from './types';
@@ -131,8 +131,8 @@ describe('compileGantt', () => {
     const { layout, get } = byKey(PLAN);
     const spec = get('task:0:0')!;
     expect(spec.data.plotMark).toEqual({ kind: 'span', datum: { section: 0, task: 0 } });
-    expect(spec.pose.x).toBeCloseTo(layout.time.map(at('2026-01-05')));
-    expect(spec.pose.x + spec.pose.width).toBeCloseTo(layout.time.map(at('2026-01-10')));
+    expect(spec.pose.x).toBeCloseTo(layout.time.position(at('2026-01-05')));
+    expect(spec.pose.x + spec.pose.width).toBeCloseTo(layout.time.position(at('2026-01-10')));
     expect(spec.data.fill?.paint.color).toBe(PLOT_THEME.axis);
     expect(get('task:0:1')!.data.fill?.paint.color).toBe(seriesColor(PLOT_THEME, 1));
     expect(get('task:1:0')!.data.fill?.paint.color).toBe(seriesColor(PLOT_THEME, 3));
@@ -143,7 +143,7 @@ describe('compileGantt', () => {
     const { layout, get } = byKey(PLAN);
     const ship = get('task:1:1')!;
     expect(ship.data.plotMark).toEqual({ kind: 'area', datum: { section: 1, task: 1 } });
-    expect(ship.pose.x + ship.pose.width / 2).toBeCloseTo(layout.time.map(at('2026-01-23')));
+    expect(ship.pose.x + ship.pose.width / 2).toBeCloseTo(layout.time.position(at('2026-01-23')));
     expect(ship.pose.width).toBeCloseTo(ship.pose.height);
   });
 
@@ -168,7 +168,7 @@ describe('compileGantt', () => {
     const { layout, get } = byKey({ ...PLAN, axisFormat: '%d %b' });
     expect(get('axis:time:label:0')!.data.text).toMatch(/^\d\d [A-Z][a-z]{2}$/);
     const today = get('today')!;
-    expect(today.pose.x).toBeCloseTo(layout.time.map(at('2026-01-14')));
+    expect(today.pose.x).toBeCloseTo(layout.time.position(at('2026-01-14')));
     expect(today.data.stroke?.paint.color).toBe(seriesColor(PLOT_THEME, 9));
     expect(byKey({ ...PLAN, todayMarker: 'off' }).get('today')).toBeUndefined();
     expect(byKey({ ...PLAN, todayMarker: 'stroke-width:5px,stroke:#0f0,opacity:0.5' }).get('today')!.data.stroke).toMatchObject({ paint: { color: '#0f0' }, width: 5 });
@@ -186,27 +186,27 @@ describe('compileGantt', () => {
 
 describe('gantt edits', () => {
   it('moves a task onto a date, leaving any dependency', () => {
-    const moved = moveGanttTask(PLAN, 1, 0, at('2026-01-12'));
+    const moved = setGanttStartDay(PLAN, 1, 0, at('2026-01-12'));
     expect(moved.sections[1]!.tasks[0]!.start).toEqual({ kind: 'date', date: '2026-01-12' });
     expect(scheduleGantt(moved).spans[1]![1]!.start).toBe(at('2026-01-23'));
-    expect(moveGanttTask(PLAN, 0, 0, at('2026-01-05'))).toBe(PLAN);
-    expect(() => moveGanttTask(PLAN, 0, 5, 0)).toThrow(/no task 5 in section 0/);
+    expect(setGanttStartDay(PLAN, 0, 0, at('2026-01-05'))).toBe(PLAN);
+    expect(() => setGanttStartDay(PLAN, 0, 5, 0)).toThrow(/no task 5 in section 0/);
   });
 
   it('ends a task in whole units of its duration, counting past excluded days', () => {
-    const review = setGanttEnd(PLAN, 0, 1, at('2026-01-16'));
+    const review = setGanttEndDay(PLAN, 0, 1, at('2026-01-16'));
     expect(review.sections[0]!.tasks[1]!.end).toEqual({ kind: 'duration', amount: 4, unit: 'd' });
     expect(scheduleGantt(review).spans[0]![1]!.end).toBe(at('2026-01-16'));
-    expect(setGanttEnd(PLAN, 0, 1, at('2026-01-10')).sections[0]!.tasks[1]!.end).toEqual({ kind: 'duration', amount: 1, unit: 'd' });
-    expect(setGanttEnd(PLAN, 1, 1, at('2026-01-20')).sections[1]!.tasks[1]!.end).toMatchObject({ amount: 0 });
-    expect(setGanttEnd(PLAN, 0, 1, at('2026-01-14'))).toBe(PLAN);
+    expect(setGanttEndDay(PLAN, 0, 1, at('2026-01-10')).sections[0]!.tasks[1]!.end).toEqual({ kind: 'duration', amount: 1, unit: 'd' });
+    expect(setGanttEndDay(PLAN, 1, 1, at('2026-01-20')).sections[1]!.tasks[1]!.end).toMatchObject({ amount: 0 });
+    expect(setGanttEndDay(PLAN, 0, 1, at('2026-01-14'))).toBe(PLAN);
   });
 
   it('sets a date end, not before the start, and turns an until end into days', () => {
-    expect(setGanttEnd(PLAN, 1, 0, at('2026-01-30')).sections[1]!.tasks[0]!.end).toEqual({ kind: 'date', date: '2026-01-30' });
-    expect(setGanttEnd(PLAN, 1, 0, at('2026-01-01')).sections[1]!.tasks[0]!.end).toEqual({ kind: 'date', date: '2026-01-10' });
+    expect(setGanttEndDay(PLAN, 1, 0, at('2026-01-30')).sections[1]!.tasks[0]!.end).toEqual({ kind: 'date', date: '2026-01-30' });
+    expect(setGanttEndDay(PLAN, 1, 0, at('2026-01-01')).sections[1]!.tasks[0]!.end).toEqual({ kind: 'date', date: '2026-01-10' });
     const until: GanttData = { kind: 'gantt', sections: [{ tasks: [{ name: 'T', start: { kind: 'date', date: '2026-01-05' }, end: { kind: 'until', ids: ['x'] } }] }] };
-    expect(setGanttEnd(until, 0, 0, at('2026-01-08')).sections[0]!.tasks[0]!.end).toEqual({ kind: 'duration', amount: 3, unit: 'd' });
+    expect(setGanttEndDay(until, 0, 0, at('2026-01-08')).sections[0]!.tasks[0]!.end).toEqual({ kind: 'duration', amount: 3, unit: 'd' });
   });
 
   it('renames sections and tasks, an empty name changing nothing', () => {
@@ -233,9 +233,9 @@ describe('the gantt editor', () => {
     const { layout, get } = byKey(PLAN);
     const trait = get('task:0:1')!.data.plotMark;
     const move = ganttEditor.drag(PLAN, trait, SIZE, PLOT_THEME, measure, 'move')!;
-    expect(move({ x: layout.time.map(at('2026-01-12') + 3_600_000), y: 0 }).sections[0]!.tasks[1]!.start).toEqual({ kind: 'date', date: '2026-01-12' });
+    expect(move({ x: layout.time.position(at('2026-01-12') + 3_600_000), y: 0 }).sections[0]!.tasks[1]!.start).toEqual({ kind: 'date', date: '2026-01-12' });
     const end = ganttEditor.drag(PLAN, trait, SIZE, PLOT_THEME, measure, 'end')!;
-    expect(end({ x: layout.time.map(at('2026-01-16')), y: 0 }).sections[0]!.tasks[1]!.end).toEqual({ kind: 'duration', amount: 4, unit: 'd' });
+    expect(end({ x: layout.time.position(at('2026-01-16')), y: 0 }).sections[0]!.tasks[1]!.end).toEqual({ kind: 'duration', amount: 4, unit: 'd' });
     expect(ganttEditor.drag(PLAN, trait, SIZE, PLOT_THEME, measure)).toBeNull();
   });
 

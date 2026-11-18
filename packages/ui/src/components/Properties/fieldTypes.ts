@@ -92,7 +92,7 @@ export interface PropertyNumberFieldProps extends PropertyFieldBase {
   step?: number;
   /** Which end stop of a slider stands for infinity: dragged there, it
    *  reports `Infinity` (`-Infinity` at `min`), and a value of ±Infinity sits
-   *  there. The readout shows `display`'s word for it — `endless(unit('ms'),
+   *  there. The readout shows `display`'s word for it — `withInfinity(unit('ms'),
    *  'never')` reads `never` — else `∞`, and drops `unit` beside it. */
   endless?: Endless;
   /** Values a slider catches on, drawn on its track: a drag passing within

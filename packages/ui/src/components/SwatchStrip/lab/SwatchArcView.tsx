@@ -51,7 +51,7 @@ export function SwatchArcView({ config }: { config: SwatchArcConfig }): ReactEle
           <h3 className={lab.sectionTitle}>Along the arc</h3>
           <div ref={root} className={s.box} data-lab-box>
             <Along arc={arc} align={align}>
-              <SwatchStrip store={store} palettes={palettes} columns={columns} value={value} onChange={setValue} />
+              <SwatchStrip store={store} palettes={palettes} columns={columns} value={value} onSelect={setValue} />
             </Along>
           </div>
         </section>

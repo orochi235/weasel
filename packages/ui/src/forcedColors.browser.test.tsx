@@ -94,7 +94,7 @@ describe('a chosen row still reads as chosen', () => {
   });
 
   test('the selected row of an item list', () => {
-    render(<ItemList selection="single" rows={[{ id: 'a', label: 'A', selected: true }, { id: 'b', label: 'B' }]} containerProps={{ 'aria-label': 'Items' }} />);
+    render(<ItemList selectionMode="single" rows={[{ id: 'a', label: 'A', selected: true }, { id: 'b', label: 'B' }]} containerProps={{ 'aria-label': 'Items' }} />);
     const row = (name: string) => screen.getByRole('option', { name });
     expect(bg(row('A'))).not.toBe(canvas());
   });

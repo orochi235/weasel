@@ -70,7 +70,7 @@ function writeCluster(
   lines.push(`${indent}}`);
 }
 
-function endOf(out: GraphOut, id: string, port: string | undefined): string {
+function writeEnd(out: GraphOut, id: string, port: string | undefined): string {
   if (port === undefined) return dotId(id);
   if (COMPASS.has(port)) return `${dotId(id)}:${port}`;
   out.warnings.add('DOT has only compass ports; connectors\' other ports were dropped.');
@@ -103,7 +103,7 @@ function edgeLine(out: GraphOut, edge: DataEdge): string | null {
     return null;
   }
   const own = changed(edgeStyleIn(out, edge), edgeStyleIn(out));
-  return `${endOf(out, edge.from, edge.fromPort)} -> ${endOf(out, edge.to, edge.toPort)}${attrList([
+  return `${writeEnd(out, edge.from, edge.fromPort)} -> ${writeEnd(out, edge.to, edge.toPort)}${attrList([
     edge.label !== undefined ? `label=${quoteLabel([edge.label])}` : null,
     edge.endLabels?.from ? `taillabel=${quoteLabel([edge.endLabels.from])}` : null,
     edge.endLabels?.to ? `headlabel=${quoteLabel([edge.endLabels.to])}` : null,

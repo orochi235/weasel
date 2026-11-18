@@ -12,7 +12,7 @@ describe('GroupState', () => {
   it('push() composes transform and multiplies alpha', () => {
     const s = new GroupState();
     s.push({ transform: mat3.translated(mat3.identity(), 10, 20), alpha: 0.5 });
-    const [x, y] = mat3.apply(s.transform, 0, 0);
+    const [x, y] = mat3.transformPoint(s.transform, 0, 0);
     expect(x).toBe(10);
     expect(y).toBe(20);
     expect(s.alpha).toBe(0.5);
@@ -30,7 +30,7 @@ describe('GroupState', () => {
     const s = new GroupState();
     s.push({ transform: mat3.translated(mat3.identity(), 10, 0), alpha: 0.5 });
     s.push({ transform: mat3.translated(mat3.identity(), 0, 20), alpha: 0.5 });
-    const [x, y] = mat3.apply(s.transform, 0, 0);
+    const [x, y] = mat3.transformPoint(s.transform, 0, 0);
     expect(x).toBe(10);
     expect(y).toBe(20);
     expect(s.alpha).toBe(0.25);

@@ -13,11 +13,11 @@ const U = HULL_UNITS;
 
 /** A viewport and the projection a draw into it goes through, maybe turned. */
 const target = fc.record({
-  w: fc.noBias(fc.integer({ min: 16, max: 1600 })), h: fc.noBias(fc.integer({ min: 16, max: 1600 })),
+  width: fc.noBias(fc.integer({ min: 16, max: 1600 })), height: fc.noBias(fc.integer({ min: 16, max: 1600 })),
   dpr: fc.constantFrom(1, 2, 1.5, 3),
   ox: fc.integer({ min: 0, max: 400 }), oy: fc.integer({ min: 0, max: 400 }),
   turn: fc.oneof({ weight: 3, arbitrary: fc.constant(0) }, { weight: 1, arbitrary: spread(-3.2, 3.2) }),
-}).map(({ w, h, dpr, ox, oy, turn }) => {
+}).map(({ width: w, height: h, dpr, ox, oy, turn }) => {
   let proj = mat3.screenToClip(w, h);
   if (turn !== 0) {
     const c = Math.cos(turn), s = Math.sin(turn);
@@ -64,7 +64,7 @@ function snapped(path: Path, m: GlMat3, map: WindowMap): number[] {
   const local = cornersOf(path)!;
   const pts: number[] = [];
   for (let i = 0; i < local.length; i += 2) {
-    const [sx, sy] = mat3.apply(m, local[i]!, local[i + 1]!);
+    const [sx, sy] = mat3.transformPoint(m, local[i]!, local[i + 1]!);
     pts.push(Math.round((map.ax * sx + map.bx * sy + map.cx) * U), Math.round((map.ay * sx + map.by * sy + map.cy) * U));
   }
   let area = 0;

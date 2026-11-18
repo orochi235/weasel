@@ -3,7 +3,7 @@ import type { GanttData, GanttTask } from '@weasel-js/plot';
 import type { ImportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
 import { lineError } from '../../lineError';
-import { pageNameOf, statementsOf } from '../common/lines';
+import { readPageName, statementsOf } from '../common/lines';
 import { parseGanttTask } from './parse';
 import { numberedText } from '../common/text';
 
@@ -40,7 +40,7 @@ export function readMermaidGantt(text: string): ImportResult {
     if (task === 'vert') warnings.add('Mermaid gantt vertical markers were dropped.');
     else sections[sections.length - 1]!.tasks.push(task);
   }
-  const name = pageNameOf(src, warnings);
+  const name = readPageName(src, warnings);
   const { title, ...rest } = settings;
   if (title !== undefined && src.title !== undefined && title !== src.title) {
     warnings.add('The front matter title was dropped; the chart is named by its title statement.');

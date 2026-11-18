@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { PathBuilder, pathLengthTable, pointAtLength, type Path } from '@weasel-js/geom';
 import { trimmedPath } from './trimmedPath';
-import { insetPath } from './insetPath';
+import { trimPathEnds } from './trimPathEnds';
 import { point, runs, tally, timeoutFor } from '../pbt.fixture';
 
 const RUNS = runs(200);
@@ -84,7 +84,7 @@ describe('trimmedPath, property', () => {
   }, timeoutFor(200, 20));
 });
 
-describe('insetPath, property', () => {
+describe('trimPathEnds, property', () => {
   it('cuts an open line back by its two insets, or answers null once they meet', () => {
     const open = fc.record({ from: point(100), to: fc.array(point(100), { minLength: 1, maxLength: 4 }), curve: fc.boolean() }).map(({ from, to, curve }) => {
       const b = new PathBuilder().moveTo(from.x, from.y);
@@ -101,7 +101,7 @@ describe('insetPath, property', () => {
     const met = tally();
     fc.assert(fc.property(open, insets, (path, [s, e]) => {
       const T = total(path);
-      const cut = insetPath(path, s * T, e * T);
+      const cut = trimPathEnds(path, s * T, e * T);
       if (s + e >= 1) {
         expect(cut).toBeNull();
         met.hit();

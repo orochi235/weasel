@@ -85,7 +85,7 @@ describe('diagramScene with containers', () => {
       edges: [],
       containers: [{ id: 'k', role: 'container', label: 'K', members: ['a', 'b'] }],
     };
-    const specs = diagramScene(data, { layout: 'none', groupPadding: 10 });
+    const specs = diagramScene(data, { layout: 'none', clusterPadding: 10 });
     expect(boxOf(specs, 'k')).toEqual({ x: -10, y: -38, width: 280, height: 188 });
     expect(diagramContainerOf(specOf(specs, 'k'))?.fitted).toBe(true);
   });
@@ -155,14 +155,14 @@ describe('diagramScene with containers', () => {
     expect(specs.find((s) => s.parent === 'a' && s.data.text === 'a')!.data.style?.fontFamily).toBe('Themed Face');
   });
 
-  it('refuses a node that a group and a region both claim, naming both', () => {
+  it('refuses a node that a cluster and a region both claim, naming both', () => {
     const data: DiagramData = {
       nodes: [node('a'), node('b')],
       edges: [],
-      groups: [{ id: 'g', members: ['a', 'b'] }],
+      clusters: [{ id: 'g', members: ['a', 'b'] }],
       containers: [{ id: 'k', role: 'container', members: ['a'], box: { x: 0, y: 0, width: 200, height: 100 } }],
     };
-    expect(() => diagramScene(data)).toThrow(/"a".*group "g".*region "k"/);
+    expect(() => diagramScene(data)).toThrow(/"a".*cluster "g".*region "k"/);
     expect(() => diagramScene({ ...data, containers: [{ id: 'k', role: 'container', members: ['a'] }] })).toThrow(/"a"/);
   });
 });

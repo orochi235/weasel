@@ -1,4 +1,4 @@
-import type { Affine, PolygonPath } from '@weasel-js/geom';
+import type { Affine, PolygonPath, Rect } from '@weasel-js/geom';
 import type { DragSample, WorldPoint } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
@@ -72,14 +72,14 @@ export interface InsertDep {
    * rejected the insert (e.g. sub-threshold bounds, unknown kind).
    */
   commit(
-    bounds: { x: number; y: number; width: number; height: number },
+    bounds: Rect,
     extras: InsertExtras,
     /** Absent when no gesture made the bounds: a path the pen or spiro
      *  drew, or content a paste ingests. A click-place reads as a drag out
      *  from its center. */
     ends?: InsertEnds,
     /** The selection change to commit in the same undo entry as the node. A
-     *  `commit` that applies ops appends `commitSelectionOps(select, id)` to
+     *  `commit` that applies ops appends `createCommitSelectionOps(select, id)` to
      *  them; one that applies none still sets the selection it names. */
     select?: CommitSelection,
   ): NodeId | null;
@@ -89,7 +89,7 @@ export interface InsertDep {
    * pen joins two paths this way. Without it such a caller declines.
    */
   build?(
-    bounds: { x: number; y: number; width: number; height: number },
+    bounds: Rect,
     extras: InsertExtras,
     ends?: InsertEnds,
   ): { id: NodeId; ops: Op[] } | null;
@@ -102,7 +102,7 @@ export interface InsertDep {
    * shows the shape where the release will land it.
    */
   peek?(
-    bounds: { x: number; y: number; width: number; height: number },
+    bounds: Rect,
     extras: InsertExtras,
     ends?: InsertEnds,
   ): { data: unknown; pose: unknown } | null;

@@ -1,4 +1,4 @@
-import { rectBetween } from '@weasel-js/geom';
+import { rectBetween, type Rect } from '@weasel-js/geom';
 
 /** Resolve the effective origin mode from the binding's nominal opt
  *  and live Alt state. Alt inverts: `corner` ⇄ `center`. Applies to
@@ -20,11 +20,11 @@ export function effectiveOriginMode(
  *  - `'center'`: bounds = symmetric AABB anchored on the start point.
  *    Used when the tool's Alt-modifier binding passes
  *    `originMode: 'center'` (Illustrator/Figma convention). */
-export function computeBounds(
+export function insertRectFor(
   startX: number, startY: number,
   currentX: number, currentY: number,
   originMode: 'corner' | 'center',
-): { x: number; y: number; width: number; height: number } {
+): Rect {
   if (originMode === 'center') {
     const dx = Math.abs(currentX - startX);
     const dy = Math.abs(currentY - startY);

@@ -10,8 +10,8 @@
  * `fillsOpenSubpaths`.
  */
 
-import { pointInPolygon, segmentsCross } from './polyline';
-import { pointSegmentDist2 } from './points2';
+import { polygonContainsPoint, segmentsCross } from './polyline';
+import { pointSegmentDistance2 } from './points2';
 import { rectsIntersect, type Rect } from './box';
 import type { Path } from './path';
 import type { CurveSpan } from './along/curvePosition';
@@ -24,13 +24,13 @@ import { lerp } from './scalar';
 
 
 /** Options for the path hit-tests. */
-export interface PointInPathOptions {
+export interface PathHitTestOptions {
   /** Bezier flattening tolerance in world units. Default 0.5. */
   flattenTolerance?: number;
 }
 
 /** Options for {@link polygonIntersectsPath}. */
-export interface PolygonIntersectsPathOptions extends PointInPathOptions {
+export interface PolygonIntersectsPathOptions extends PathHitTestOptions {
   /** False when nothing paints the path's interior: only its outline can meet
    *  the polygon, and a polygon lying wholly inside meets nothing. Default true. */
   filled?: boolean;
@@ -54,12 +54,12 @@ export interface StrokeHitTestOptions {
 
 // ─── Point vs path ──────────────────────────────────────────────────────────
 
-/** Filled-region hit-test for a path. Rect short-circuits to AABB; polygons run ray-cast / winding per `fillRule`. */
-export function pointInPath(
+/** Whether (x, y) lies within the filled region of `path`. Rect short-circuits to AABB; polygons run ray-cast / winding per `fillRule`. */
+export function pathContainsPoint(
   path: Path,
   x: number,
   y: number,
-  opts: PointInPathOptions = {},
+  opts: PathHitTestOptions = {},
 ): boolean {
   if (path.kind === 'rect') {
     return x >= path.x && x <= path.x + path.width && y >= path.y && y <= path.y + path.height;
@@ -85,7 +85,7 @@ export function pointInPath(
  * Stroke-distance hit-test. True when (x, y) lies within `threshold` world
  * units of the path's outline — when a stroke of total width `2 * threshold`
  * drawn along the path would cover the point. Works for open and closed
- * subpaths alike; OR it with {@link pointInPath} for fill-plus-stroke picking.
+ * subpaths alike; OR it with {@link pathContainsPoint} for fill-plus-stroke picking.
  * Every flattened segment is treated as a capsule of radius `threshold`.
  */
 export function strokeHitTest(
@@ -111,7 +111,7 @@ export function strokeHitTest(
   }
   const t2 = threshold * threshold;
   return walk(path, opts, (ax, ay, bx, by) =>
-    pointSegmentDist2(x, y, ax, ay, bx, by) <= t2);
+    pointSegmentDistance2(x, y, ax, ay, bx, by) <= t2);
 }
 
 function walk(path: Path, opts: StrokeHitTestOptions, visit: SegmentVisit): boolean {
@@ -142,8 +142,8 @@ function flattenVerts(poly: readonly Point[]): number[] {
 /** Edge-vs-edge segment intersection check between two closed polygons. */
 function polygonsIntersect(a: readonly Point[], b: readonly Point[]): boolean {
   if (a.length === 0 || b.length === 0) return false;
-  if (pointInPolygon(flattenVerts(a), b[0].x, b[0].y)) return true;
-  if (pointInPolygon(flattenVerts(b), a[0].x, a[0].y)) return true;
+  if (polygonContainsPoint(flattenVerts(a), b[0].x, b[0].y)) return true;
+  if (polygonContainsPoint(flattenVerts(b), a[0].x, a[0].y)) return true;
   for (let i = 0; i < a.length; i++) {
     const a0 = a[i], a1 = a[(i + 1) % a.length];
     for (let j = 0; j < b.length; j++) {
@@ -217,24 +217,14 @@ function anyVertexInRect(subpaths: readonly (readonly number[])[], r: Rect): boo
 function anyVertexInPolygon(subpaths: readonly (readonly number[])[], flatPoly: readonly number[]): boolean {
   for (const sub of subpaths) {
     for (let i = 0; i < sub.length; i += 2) {
-      if (pointInPolygon(flatPoly, sub[i], sub[i + 1])) return true;
+      if (polygonContainsPoint(flatPoly, sub[i], sub[i + 1])) return true;
     }
   }
   return false;
 }
 
-/** Returns true if (x, y) lies within the filled region of `path`. */
-export function pathContainsPoint(
-  path: Path,
-  x: number,
-  y: number,
-  opts: PointInPathOptions = {},
-): boolean {
-  return pointInPath(path, x, y, opts);
-}
-
 /** Returns true if `rect` is entirely contained within `path`. */
-export function pathContainsRect(path: Path, rect: Rect, opts: PointInPathOptions = {}): boolean {
+export function pathContainsRect(path: Path, rect: Rect, opts: PathHitTestOptions = {}): boolean {
   if (path.kind === 'rect') {
     return (
       rect.x >= path.x &&
@@ -246,7 +236,7 @@ export function pathContainsRect(path: Path, rect: Rect, opts: PointInPathOption
   const subpaths = closedSubpaths(path, opts);
   if (subpaths.length === 0) return false;
   for (const c of rectToVerts(rect)) {
-    if (!pointInPath(path, c.x, c.y, opts)) return false;
+    if (!pathContainsPoint(path, c.x, c.y, opts)) return false;
   }
   // Every corner is filled, but any contour reaching into the rect — the
   // boundary of a hole, or a concave notch — leaves part of it unfilled.
@@ -254,12 +244,12 @@ export function pathContainsRect(path: Path, rect: Rect, opts: PointInPathOption
 }
 
 /** Returns true if `rect` overlaps (intersects or contains) `path`. */
-export function pathIntersectsRect(path: Path, rect: Rect, opts: PointInPathOptions = {}): boolean {
+export function pathIntersectsRect(path: Path, rect: Rect, opts: PathHitTestOptions = {}): boolean {
   if (path.kind === 'rect') return rectsIntersect(path, rect);
   const subpaths = closedSubpaths(path, opts);
   if (subpaths.length === 0) return false;
   for (const c of rectToVerts(rect)) {
-    if (pointInPath(path, c.x, c.y, opts)) return true;
+    if (pathContainsPoint(path, c.x, c.y, opts)) return true;
   }
   if (anyVertexInRect(subpaths, rect)) return true;
   return anyEdgeCrossesRect(subpaths, rect);
@@ -269,7 +259,7 @@ export function pathIntersectsRect(path: Path, rect: Rect, opts: PointInPathOpti
 export function pathContainsPolygon(
   path: Path,
   polygon: readonly Point[],
-  opts: PointInPathOptions = {},
+  opts: PathHitTestOptions = {},
 ): boolean {
   if (polygon.length === 0) return false;
   if (path.kind === 'rect') {
@@ -284,7 +274,7 @@ export function pathContainsPolygon(
   const subpaths = closedSubpaths(path, opts);
   if (subpaths.length === 0) return false;
   for (const p of polygon) {
-    if (!pointInPath(path, p.x, p.y, opts)) return false;
+    if (!pathContainsPoint(path, p.x, p.y, opts)) return false;
   }
   return !anyVertexInPolygon(subpaths, flattenVerts(polygon)) &&
     !anyEdgeCrossesPolygon(subpaths, polygon);
@@ -294,7 +284,7 @@ export function pathContainsPolygon(
 export function pathIntersectsPolygon(
   path: Path,
   polygon: readonly Point[],
-  opts: PointInPathOptions = {},
+  opts: PathHitTestOptions = {},
 ): boolean {
   if (polygon.length === 0) return false;
   if (path.kind === 'rect') {
@@ -303,7 +293,7 @@ export function pathIntersectsPolygon(
   const subpaths = closedSubpaths(path, opts);
   if (subpaths.length === 0) return false;
   for (const p of polygon) {
-    if (pointInPath(path, p.x, p.y, opts)) return true;
+    if (pathContainsPoint(path, p.x, p.y, opts)) return true;
   }
   if (anyVertexInPolygon(subpaths, flattenVerts(polygon))) return true;
   return anyEdgeCrossesPolygon(subpaths, polygon);
@@ -317,7 +307,7 @@ export function pathIntersectsPolygon(
 export function polygonContainsPath(
   polygon: readonly Point[],
   path: Path,
-  opts: PointInPathOptions = {},
+  opts: PathHitTestOptions = {},
 ): boolean {
   if (polygon.length < 3) return false;
   let subpaths: (readonly number[])[];
@@ -331,7 +321,7 @@ export function polygonContainsPath(
   const flatPoly = flattenVerts(polygon);
   for (const sub of subpaths) {
     for (let i = 0; i < sub.length; i += 2) {
-      if (!pointInPolygon(flatPoly, sub[i], sub[i + 1])) return false;
+      if (!polygonContainsPoint(flatPoly, sub[i], sub[i + 1])) return false;
     }
   }
   // Every vertex is inside, but a concave polygon can still cut an edge. An
@@ -364,5 +354,5 @@ export function polygonIntersectsPath(
   }
   // No vertex inside and no crossing: the polygon lies wholly in one region
   // of the path, so one of its vertices decides whether that region is filled.
-  return filled && closed.length > 0 && pointInPath(path, polygon[0].x, polygon[0].y, opts);
+  return filled && closed.length > 0 && pathContainsPoint(path, polygon[0].x, polygon[0].y, opts);
 }

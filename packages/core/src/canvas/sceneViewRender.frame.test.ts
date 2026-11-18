@@ -37,7 +37,7 @@ function drawnCorners(cmds: readonly DrawCommand[], wanted: string): [number, nu
       } else if (cmd.kind === 'path' && cmd.path.kind === 'rect' && (cmd.fill?.paint as { color?: string } | undefined)?.color === wanted) {
         const { x, y, width, height } = cmd.path;
         for (const [px, py] of [[x, y], [x + width, y], [x + width, y + height], [x, y + height]]) {
-          out.push(m ? (mat3.apply(m as never, px, py) as [number, number]) : [px, py]);
+          out.push(m ? (mat3.transformPoint(m as never, px, py) as [number, number]) : [px, py]);
         }
       }
     }

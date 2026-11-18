@@ -12,8 +12,8 @@ import { _resetLayoutCacheForTests } from './test-seams';
 import { layoutTextPose, textFitScale, textPoseLayoutInput } from './layout/textPoseLayout';
 import { TEXT_FIT_TOLERANCE, scaleRuns } from './layout/textFit';
 import { layoutRuns } from './layout/layoutRuns';
-import { fitTextToBox } from './fitTextToBox';
-import { fitTextPose } from './fitTextPose';
+import { bakeTextFit } from './bakeTextFit';
+import { fitBoxToText } from './fitBoxToText';
 import { measureTextBounds } from './measure/measureTextBounds';
 import { textLineBoxes } from './measure/lineBoxes';
 import { caretIndexAt } from './hitTest';
@@ -124,15 +124,15 @@ describe("fit: 'shrink'", () => {
 
   it('settles into a pose that states the fitted sizes and lays out alike', () => {
     const pose = headline({ runs: [{ text: 'HEAD' }, { text: 'LINE', fontSize: { px: 80 } }] });
-    const settled = fitTextToBox(pose);
+    const settled = bakeTextFit(pose);
     expect(settled.fit).toBeUndefined();
     expect(boundsOf(settled).width).toBeCloseTo(boundsOf(pose).width, 6);
     expect(settled.runs![1]!.fontSize).toEqual({ px: 80 * textFitScale(pose) });
   });
 
-  it('leaves fitTextPose sizing the box to the text at its own size', () => {
+  it('leaves fitBoxToText sizing the box to the text at its own size', () => {
     const pose = headline();
-    expect(fitTextPose(pose, { axis: 'both' }).width).toBeCloseTo(boundsOf({ ...pose, fit: undefined }).width, 6);
+    expect(fitBoxToText(pose, { axis: 'both' }).width).toBeCloseTo(boundsOf({ ...pose, fit: undefined }).width, 6);
   });
 });
 

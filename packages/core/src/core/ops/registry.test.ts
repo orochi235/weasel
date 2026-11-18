@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import { createInsertOp } from './create';
 import { createDeleteOp } from './delete';
-import { createTransformOp } from './transform';
+import { createSetPoseOp } from './setPose';
 import { createSetPathOp, type SetPathFields } from './setPath';
 import { createSetTextOp } from './setText';
 import { createReparentOp } from './reparent';
@@ -105,11 +105,11 @@ describe('op-factory registry — per-factory round trip', () => {
   it('transform', () => {
     const args = { id: 'r1', from: { x: 0, y: 0 }, to: { x: 10, y: 20 }, label: 'Move' };
     applyBoth(
-      () => createTransformOp(args),
+      () => createSetPoseOp(args),
       (ad) => ad.poseCalls,
     );
     // Invert round-trips too.
-    const op = createTransformOp(args);
+    const op = createSetPoseOp(args);
     const inv = op.invert();
     expect(inv.name).toBe('transform');
     const rebuilt = defaultOpRegistry.rebuild(inv.name!, inv.args)!;
@@ -119,8 +119,8 @@ describe('op-factory registry — per-factory round trip', () => {
   });
 
   it('setPath', () => {
-    const from: SetPathFields = { path: { kind: 'rect', x: 0, y: 0, w: 1, h: 1 }, closed: true, params: {} };
-    const to: SetPathFields = { path: { kind: 'rect', x: 0, y: 0, w: 2, h: 2 }, closed: true, params: {} };
+    const from: SetPathFields = { path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, closed: true, params: {} };
+    const to: SetPathFields = { path: { kind: 'rect', x: 0, y: 0, width: 2, height: 2 }, closed: true, params: {} };
     applyBoth(
       () => createSetPathOp({ id: 'r1', from, to }),
       (ad) => ad.pathCalls,

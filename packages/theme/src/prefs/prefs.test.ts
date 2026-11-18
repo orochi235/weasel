@@ -1,4 +1,4 @@
-import { checkPrefSplits, openPrefsSync, prefLeaves, prefScopeSelectors, type PrefGroup, type PrefNumber } from '@weasel-js/prefs';
+import { checkPrefScopes, openPrefsSync, prefLeaves, prefStoredSelectors, type PrefGroup, type PrefNumber } from '@weasel-js/prefs';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import { describe, expect, it } from 'vitest';
 import { resolveTheme } from '../resolveTheme';
@@ -24,14 +24,14 @@ describe('themePrefsSchema', () => {
     expect(LEAVES.get('swatch.swatch-size')).toMatchObject({ kind: 'number', default: 28 });
     for (const [path, leaf] of LEAVES) {
       if (path.startsWith('axis.')) continue;
-      const differs = [...prefScopeSelectors(leaf.defaultScope)];
+      const differs = [...prefStoredSelectors(leaf.defaultScope)];
       const axes = ['axis.mode', 'axis.density'].filter((axis) => differs.includes(axis));
       expect(leaf.scopes, path).toEqual(axes.length ? axes.map((selector) => ({ selector })) : undefined);
     }
     expect(LEAVES.get('surface.surface')!.scopes).toEqual([{ selector: 'axis.mode' }]);
     expect(LEAVES.get('control.control-h')!.scopes).toEqual([{ selector: 'axis.density' }]);
     expect(LEAVES.get('font.font-mono')!.scopes).toBeUndefined();
-    expect(checkPrefSplits(SCHEMA)).toEqual([]);
+    expect(checkPrefScopes(SCHEMA)).toEqual([]);
   });
 
   it('edits a color as hex, a dimension as a number in its unit, and anything else as CSS text', () => {

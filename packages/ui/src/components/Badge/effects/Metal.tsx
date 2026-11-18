@@ -1,8 +1,8 @@
-import { trimNumber } from '@weasel-js/geom';
 import { cssColorLiteral, type ColorSource } from '@weasel-js/paint';
 import { useColorCss } from '@weasel-js/theme/react';
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
+import { GlassStrokes } from './glassStrokes';
 
 /**
  * Metal — opaque cousin of the Aqua treatment, with the same sub-passes. One
@@ -49,8 +49,6 @@ const DEFAULTS: Required<BadgeMetalEffectParams> = {
   rimWidth: 1,
 };
 
-const BEZEL_SAMPLES = 240;
-
 const Metal: EffectModule<BadgeMetalEffectParams> = {
   Component: ({ sampler, boxW, boxH, variant, params }) => {
     const bodyGradId = useId();
@@ -61,46 +59,6 @@ const Metal: EffectModule<BadgeMetalEffectParams> = {
     const cfg = { ...DEFAULTS, ...params };
     const accent = css(cfg.accent);
     const spec = Math.max(0, Math.min(cfg.specularity, 1));
-
-    // --- Bezel sample walk (same as Aqua: runs where ny < 0). ---
-    const total = sampler.totalCss;
-    type Pt = { x: number; y: number };
-    const runs: Pt[][] = [];
-    let cur: Pt[] | null = null;
-    for (let i = 0; i < BEZEL_SAMPLES; i++) {
-      const s = (i / BEZEL_SAMPLES) * total;
-      const pt = sampler.perimeterAt(s);
-      if (pt.ny < 0) {
-        if (!cur) {
-          cur = [];
-          runs.push(cur);
-        }
-        cur.push({ x: pt.x, y: pt.y });
-      } else {
-        cur = null;
-      }
-    }
-    if (runs.length > 1) {
-      const firstSample = sampler.perimeterAt(0);
-      const lastSample = sampler.perimeterAt(((BEZEL_SAMPLES - 1) / BEZEL_SAMPLES) * total);
-      if (firstSample.ny < 0 && lastSample.ny < 0) {
-        const head = runs.shift()!;
-        runs[runs.length - 1].push(...head);
-      }
-    }
-    const bezelPaths: string[] = [];
-    for (const run of runs) {
-      if (run.length < 2) continue;
-      let d = `M ${trimNumber(run[0].x, 3)} ${trimNumber(run[0].y, 3)}`;
-      for (let i = 1; i < run.length; i++) {
-        d += ` L ${trimNumber(run[i].x, 3)} ${trimNumber(run[i].y, 3)}`;
-      }
-      bezelPaths.push(d);
-    }
-
-    const widthScale = Math.max(100 / boxW, 100 / boxH);
-    const bezelWidthVb = cfg.bezelWidth * widthScale;
-    const rimWidthVb = cfg.rimWidth * widthScale;
 
     const equatorLo = Math.max(0, cfg.equator - cfg.equatorSpread);
     const equatorHi = Math.min(100, cfg.equator + cfg.equatorSpread);
@@ -153,28 +111,9 @@ const Metal: EffectModule<BadgeMetalEffectParams> = {
           />
         )}
 
-        {bezelPaths.map((d, i) => (
-          <path
-            key={`bz-${i}`}
-            d={d}
-            fill="none"
-            stroke="white"
-            strokeOpacity={bezelAlpha}
-            strokeWidth={bezelWidthVb}
-            strokeLinecap="round"
-            vectorEffect="non-scaling-stroke"
-            style={{ pointerEvents: 'none' }}
-          />
-        ))}
-
-        <path
-          d={sampler.bodyPath}
-          fill="none"
-          stroke="black"
-          strokeOpacity={rimAlpha}
-          strokeWidth={rimWidthVb}
-          vectorEffect="non-scaling-stroke"
-          style={{ pointerEvents: 'none' }}
+        <GlassStrokes
+          sampler={sampler} boxW={boxW} boxH={boxH}
+          bezelAlpha={bezelAlpha} bezelWidth={cfg.bezelWidth} rimAlpha={rimAlpha} rimWidth={cfg.rimWidth}
         />
       </>
     );

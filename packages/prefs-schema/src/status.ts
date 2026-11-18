@@ -8,15 +8,16 @@ import type { PrefAlias } from './alias';
 import { type PrefCondition, prefConditionReadsItem } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
 import { isPrefLeaf, isPrefSection, setOwnPrefValue } from './helpers';
+import { resolvePrefGroupConditions } from './groupConditions';
 import { deferEntryConditions, type PrefConditionJudge } from './judge';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
 import type { PrefLeaf, PrefObject } from './schema';
-import { PREF_ENTRY, PREF_STATUS, prefAliasStatus, prefStatusIn, prefStatusUnder, prefSectionPath, type PrefOwner, type PrefStatus } from './statusAt';
+import { PREF_ENTRY, ROOT_PREF_STATUS, prefAliasStatus, prefStatusIn, prefStatusUnder, prefSectionPath, type PrefOwner, type PrefStatus } from './statusAt';
 import type { PrefUnion } from './union';
 
 export { PREF_CONDITION_FIELDS, prefJudge, prefReader, type PrefConditionField, type PrefConditionJudge, type PrefEntry } from './judge';
-export { PREF_ENTRY, PREF_STATUS, prefStatusAt, prefStatusIn, prefStatusUnder, prefSectionPath, type PrefOwner, type PrefStatus, type PrefStatusAtOptions } from './statusAt';
+export { PREF_ENTRY, ROOT_PREF_STATUS, prefStatusAt, prefStatusIn, prefStatusUnder, prefSectionPath, type PrefOwner, type PrefStatus, type PrefStatusAtOptions } from './statusAt';
 
 const under = (prefix: string, key: string): string => (prefix === '' ? key : `${prefix}.${key}`);
 
@@ -167,8 +168,10 @@ function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds, answer
 export function applyPrefConditions<T extends PrefGroup | PrefSection>(
   schema: T,
   holds: PrefConditionJudge,
-  { keepEmpty = false, keepHidden = false, aliasOver, aliasHolds }: PrefConditionsOptions = {},
+  { keepEmpty = false, keepHidden = false, aliasOver: overGiven, aliasHolds }: PrefConditionsOptions = {},
 ): PrefConditionsApplied<T> {
+  schema = resolvePrefGroupConditions(schema);
+  const aliasOver = overGiven && resolvePrefGroupConditions(overGiven);
   const inItem = deferEntryConditions(holds);
   const answers = (condition: PrefCondition, by: PrefConditionJudge): boolean => by !== inItem || !prefConditionReadsItem(condition);
   const walk = leafWalk({ keepEmpty, keepHidden, inItem, aliasOver: aliasOver ?? schema, aliasHolds, answers });
@@ -191,10 +194,10 @@ export function applyPrefConditions<T extends PrefGroup | PrefSection>(
     return Object.keys(children).length === 0 && !keepEmpty && path !== '' ? null : { ...node, children };
   };
 
-  if (!isPrefSection(schema)) return { shown: group(schema, '', PREF_STATUS) as T | null, disabled, hidden, active };
-  const status = prefStatusUnder(PREF_STATUS, schema, holds);
+  if (!isPrefSection(schema)) return { shown: group(schema, '', ROOT_PREF_STATUS) as T | null, disabled, hidden, active };
+  const status = prefStatusUnder(ROOT_PREF_STATUS, schema, holds);
   if (!status.shown && !keepHidden) return { shown: null, disabled, hidden, active };
-  const kept = walk.members(schema.members, '', { node: schema, status, above: PREF_STATUS }, holds);
+  const kept = walk.members(schema.members, '', { node: schema, status, above: ROOT_PREF_STATUS }, holds);
   return { shown: kept === schema.members ? schema : { ...schema, members: kept }, disabled, hidden, active };
 }
 
@@ -229,6 +232,6 @@ export function applyPrefEntryConditions(
   const asked: PrefConditionJudge = (condition, field) => !prefConditionReadsItem(condition) || holds(condition, field);
   const answers = (condition: PrefCondition, by: PrefConditionJudge): boolean => by === asked && prefConditionReadsItem(condition);
   const walk = leafWalk({ keepEmpty, keepHidden, inItem: ALWAYS, answers });
-  const status = prefStatusUnder(PREF_STATUS, { enableIf: item.enableIf }, asked);
-  return { item: walk.inside(item, path, status, asked, PREF_STATUS, path), disabled: walk.disabled, hidden: walk.hidden, active: walk.active };
+  const status = prefStatusUnder(ROOT_PREF_STATUS, { enableIf: item.enableIf }, asked);
+  return { item: walk.inside(item, path, status, asked, ROOT_PREF_STATUS, path), disabled: walk.disabled, hidden: walk.hidden, active: walk.active };
 }

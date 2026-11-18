@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { type InvocationCtx, createTransformOp } from '@weasel-js/core';
+import { type InvocationCtx, createSetPoseOp } from '@weasel-js/core';
 import { tileGrid } from './tileGrid';
 import {
   type P,
@@ -54,7 +54,7 @@ describe('moveAction layout reflow', () => {
         dragged: { id: string; originPose: P; pose: P },
       ) => {
         released.push(`${container.id}:${dragged.id}`);
-        return [createTransformOp<P>({
+        return [createSetPoseOp<P>({
           id: dragged.id, from: dragged.pose, to: dragged.originPose, label: 'Release',
         })];
       },

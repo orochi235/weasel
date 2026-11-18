@@ -12,6 +12,7 @@ import type { LayerRun } from './layerRuns';
 import type { AnyRenderWorker } from './liveClients';
 import type { SceneRenderInputs } from './startSceneRenderWorker';
 import { setOwn } from '@weasel-js/registry';
+import type { Rect } from '@weasel-js/geom';
 
 /** What a canvas painted partly by a worker is told by its owner: which layers the worker paints,
  *  how to start one, and what the worker's frame reads beside the view and the size. */
@@ -108,7 +109,7 @@ export function paintWorkerRun(client: AnyRenderWorker, run: LayerRun, frame: St
 export async function readStackIds(
   surfaces: readonly StackSurface[],
   frames: PageFrames,
-  rect: { x: number; y: number; width: number; height: number },
+  rect: Rect,
   options: CanvasIdReadOptions | undefined,
 ): Promise<IdBuffer | null> {
   const reads = surfaces.map((s, i): IdBuffer | Promise<IdBuffer | null> | null => {

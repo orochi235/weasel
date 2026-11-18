@@ -10,7 +10,7 @@ import { SceneCanvas, createEnteredGroup, type EnteredGroupApi, type SelectionAp
 import { createCamera, type Camera3d } from './camera';
 import type { Camera3dDep } from './cameraDep';
 import { cameraRig } from './cameraRig';
-import { createNodeAtPoint, createPoseDescriptor, worldPoseOf } from './deps';
+import { createNodeAtPoint3dDep, createPoseDescriptor, worldPoseOf } from './deps';
 import { aabbOfPose } from './pose3';
 import { projectPoint, type Viewport3d } from './project';
 import { boundsOfTestNode, createNestedTestScene } from './testScene';
@@ -37,7 +37,7 @@ function setup() {
     height: H,
   });
   const world: World3d<TestData, TestLayer> = { scene, viewport, bounds: boundsOfTestNode };
-  const nodeAtPoint = createNodeAtPoint(world);
+  const nodeAtPoint = createNodeAtPoint3dDep(world);
   const pickEvery = (p: { x: number; y: number }) => nodeAtPoint(p);
   const poseDescriptor = createPoseDescriptor(world);
   const entered: EnteredGroupApi = createEnteredGroup(scene as never);
@@ -52,7 +52,7 @@ function setup() {
   const rig = cameraRig(camera3d);
   let sel!: SelectionApi;
   function Canvas() {
-    sel = useSelection({ mode: 'multi' });
+    sel = useSelection({ mode: 'multiple' });
     return (
       <SceneCanvas scene={scene} layers={{}} width={W} height={H} selection={sel} features={[pickPreset]}
         enteredGroup={entered} poseDescriptor={poseDescriptor} geometry={{ pickEvery }} ambient={[rig]} />

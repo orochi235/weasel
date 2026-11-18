@@ -4,20 +4,20 @@
  *
  * The signal-chain layout: a rack of effects with their side inputs under
  * them. Each chain node owns a column as long as the widest row hung on it, so
- * two neighbors' hangers never share space, and each group's members hang in
- * one stretch of columns with room left for its box (`chainGroups`).
+ * two neighbors' hangers never share space, and each cluster's members hang in
+ * one stretch of columns with room left for its box (`chainClusters`).
  */
 import { maxOf } from '@weasel-js/geom';
-import { groupHanging, levelGaps, lineGaps } from './chainGroups';
+import { clusterHanging, levelGaps, lineGaps } from './chainClusters';
 import { inPortOrder, SIDE_TRACK_GAP, sideRoutes, tracksNeeded, type Hanging } from './chainRoutes';
 import type { Graph, GraphNode } from './graph';
-import { backEdges, ranksOf } from './layered';
+import { backEdges, longestPathRanks } from './layered';
 import {
   DEFAULT_NODE_GAP,
   DEFAULT_RANK_GAP,
   axesFor,
   extent,
-  settle,
+  placeSlots,
   type LayoutAxes,
   type LayoutFn,
   type LayoutOptions,
@@ -37,7 +37,7 @@ function lineOf(graph: Graph, ids: readonly string[] | undefined): GraphNode[] {
   });
   if (given.length > 0) return given;
   const back = backEdges(graph);
-  const ranks = ranksOf(graph, back);
+  const ranks = longestPathRanks(graph, back);
   let end: GraphNode | undefined;
   for (const node of graph.nodes) {
     if (end === undefined || ranks.get(node.id)! > ranks.get(end.id)!) end = node;
@@ -96,7 +96,7 @@ function chainPlan(graph: Graph, opts: LayoutOptions = {}): LayoutPlan {
   const rankGap = opts.rankGap ?? DEFAULT_RANK_GAP;
   const line = lineOf(graph, opts.chain);
   if (line.length === 0) return { moves: new Map() };
-  const hanging = groupHanging(graph, line, hangFrom(graph, line));
+  const hanging = clusterHanging(graph, line, hangFrom(graph, line));
   const { owner, level } = hanging;
 
   const rows = new Map<string, GraphNode[][]>(line.map((n) => [n.id, []]));
@@ -110,17 +110,17 @@ function chainPlan(graph: Graph, opts: LayoutOptions = {}): LayoutPlan {
   }
   for (const [id, column] of rows) if (column[1]) column[1] = inPortOrder(graph, id, column[1], axes);
   const before = opts.chainSide === 'before';
-  const grouped = (graph.groups?.length ?? 0) > 0;
+  const clustered = (graph.clusters?.length ?? 0) > 0;
   const across = (side: number) => {
     const base = Array.from(levelSize.slice(1), (_, k) => (k === 0 ? side : nodeGap));
-    return grouped ? levelGaps(graph, hanging, levelSize, axes, before, base) : base;
+    return clustered ? levelGaps(graph, hanging, levelSize, axes, before, base) : base;
   };
   const slots = (rank: readonly number[], level: readonly number[]) =>
     slotsFor(line, rows, levelSize, axes, { node: nodeGap, rank, level }, before);
-  const gaps = grouped
+  const gaps = clustered
     ? lineGaps(graph, line, hanging, rankGap, axes, slots(line.map(() => 0), []))
     : line.map(() => rankGap);
-  const place = (side: number) => settle(graph, slots(gaps, across(side)), opts);
+  const place = (side: number) => placeSlots(graph, slots(gaps, across(side)), opts);
   // Where a side edge turns depends only on positions along the line, which
   // the gap across it does not move, so one trial run counts the tracks.
   let moves = place(nodeGap);

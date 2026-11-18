@@ -15,7 +15,7 @@ import { mapFillPaint } from './fillPaint';
 import { fillThroughMatrix } from './paintThroughMatrix';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
 import { carryUserScale } from './userScale';
-import type { GradientTable } from './gradients';
+import type { GradientTable } from './readGradients';
 import {
   deriveStyle, ownValue, styleValue, type StyleContext,
 } from './cascade';

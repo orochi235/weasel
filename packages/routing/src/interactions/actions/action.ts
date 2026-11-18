@@ -13,7 +13,7 @@ import type { PrefGroup } from '@weasel-js/prefs-schema';
 import type { BindingSource } from './binding';
 import type { DepName } from '../../index';
 import type { IngestItem } from '@weasel-js/gestures';
-import type { MenuGrade } from '@weasel-js/menu';
+import type { Grade } from '@weasel-js/registry';
 
 /** What content being routed brings to `Action.enabled`: a drop's or a
  *  paste's items, or a carry's payload with no items. */
@@ -34,7 +34,7 @@ export const ActionDisabledReason = {
   NotApplicable: 'not-applicable',
   /** A node the action would move or remove is locked, or sits in a locked subtree it would take. */
   Locked: 'locked',
-  /** Sentinel: the predicate threw. Surfaced by `evaluateEnabled`'s catch. */
+  /** Sentinel: the predicate threw. Surfaced by `checkEnabled`'s catch. */
   PredicateThrew: 'predicate-threw',
 } as const;
 /** Why an action is unavailable right now. */
@@ -55,7 +55,7 @@ export interface ActionPresentation {
   description?: string;
   /** How serious running it is, as `@weasel-js/theme`'s `Grade`: `'danger'` for one that destroys
    *  something. A surface draws the entry in its grade's color. */
-  grade?: MenuGrade;
+  grade?: Grade;
   /** The action's icon, by qualified name: `icon('group')` in the package that draws it. */
   icon?: IconSpec;
   /** Grouping key for palette/menu surfaces. Free-form string; the kit
@@ -105,7 +105,7 @@ export interface ActionVariant {
   /** Falls back to the action's own `description`. */
   description?: string;
   /** Falls back to the action's own `grade`. */
-  grade?: MenuGrade;
+  grade?: Grade;
   /** Display text for this variant's shortcut. Falls back to the action's own `shortcut`, and then to the
    *  bindings whose `opts.params` match `params`. */
   shortcut?: string;
@@ -125,7 +125,7 @@ export interface ActionDispatch extends BindingSource {
    *  The dispatcher (and `trigger`, when `requires` is present) resolves
    *  each name against the `DepRegistry` at invocation time and passes the
    *  resulting bag to the invoker. Dev builds warn when the invoker reads a
-   *  dep it didn't declare here — see `buildDepsFromRequires`. */
+   *  dep it didn't declare here — see `createActionDeps`. */
   requires?: readonly DepName[];
   /** Pluggable invocation strategy. The gesture dispatcher routes matched
    *  bindings through `invoker.start` / `invoker.run` depending on timing.

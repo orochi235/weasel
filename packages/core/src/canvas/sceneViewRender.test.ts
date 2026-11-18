@@ -16,9 +16,9 @@ import {
   renderSceneToCanvas,
   __getCachedRendererForTest,
 } from './sceneViewRender';
-import { rotateAroundAABBCenter } from './poseRotation';
+import { rotateAboutAabbCenter } from './poseRotation';
 import { defaultDrawOne } from './defaultDrawOne';
-import { getNodeShapes } from './NodeShape';
+import { nodeShapeEntries } from './NodeShape';
 
 // ---------------------------------------------------------------------------
 // Mock WeaselRenderer
@@ -321,7 +321,7 @@ describe('buildSceneViewCommands — rotation and per-node alpha', () => {
     const child = soleNodeOutput(commands) as GroupDrawCommand;
     expect(child.kind).toBe('group');
     expect(Array.from(child.transform!)).toEqual(
-      Array.from(rotateAroundAABBCenter(10, 20, 30, 40, Math.PI / 4)),
+      Array.from(rotateAboutAabbCenter(10, 20, 30, 40, Math.PI / 4)),
     );
     expect(child.children).toHaveLength(1);
     expect(child.children[0].kind).toBe('path');
@@ -359,7 +359,7 @@ describe('buildSceneViewCommands — rotation and per-node alpha', () => {
     expect(outer.alpha).toBe(0.5);
     const inner = outer.children[0] as GroupDrawCommand;
     expect(Array.from(inner.transform!)).toEqual(
-      Array.from(rotateAroundAABBCenter(10, 20, 30, 40, Math.PI / 4)),
+      Array.from(rotateAboutAabbCenter(10, 20, 30, 40, Math.PI / 4)),
     );
   });
 
@@ -397,7 +397,7 @@ describe('renderSceneToCanvas', () => {
   it('culls to its own size, bounding defaultDrawOne without being told how', () => {
     const scene = makeScene();
     const canvas = makeCanvas();
-    const painter = getNodeShapes().find((e) => e.id === 'kit:rect-fallback')!;
+    const painter = nodeShapeEntries().find((e) => e.id === 'kit:rect-fallback')!;
     const paint = vi.spyOn(painter, 'paint');
     // The second node starts at x 50, past this 40-wide view.
     renderSceneToCanvas({

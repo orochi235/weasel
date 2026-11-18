@@ -1,4 +1,4 @@
-import { decimal, defaultLocale, endless, fieldLocale, qty, withUnit, type Display } from '@weasel-js/quantity';
+import { decimal, defaultLocale, withInfinity, fieldLocale, qty, withUnit, type Display } from '@weasel-js/quantity';
 import type { MenuNumberEntry } from './entries';
 
 const FULL_PRECISION = decimal({ maxPlaces: 20, grouping: false });
@@ -6,7 +6,7 @@ const FULL_PRECISION = decimal({ maxPlaces: 20, grouping: false });
 /** How a number row's value shows: its `display`, by default every decimal it has, with its word for infinity. */
 export function menuNumberDisplay(e: Pick<MenuNumberEntry, 'display' | 'infinity'>): Display {
   const display = e.display ?? FULL_PRECISION;
-  return e.infinity === undefined ? display : endless(display, e.infinity);
+  return e.infinity === undefined ? display : withInfinity(display, e.infinity);
 }
 
 /** A number row's value as a renderer with no field of its own prints it: in {@link menuNumberDisplay}, written in

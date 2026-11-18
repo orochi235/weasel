@@ -1,4 +1,5 @@
 import { cssColorLiteral } from '@weasel-js/paint';
+import { GRADES, type Grade } from '@weasel-js/registry';
 import type { AppearanceProps } from '../appearance';
 
 /**
@@ -6,10 +7,10 @@ import type { AppearanceProps } from '../appearance';
  * (`info` … `danger`), an emphasis (`high`, `low`), neither (`none`), or `tint`, an exact color. A picker or a sweep
  * over looks names them this way and spreads {@link lookProps} onto the component.
  */
-export type BadgeLook = 'high' | 'info' | 'success' | 'warn' | 'danger' | 'low' | 'none' | 'tint';
+export type BadgeLook = 'high' | Grade | 'low' | 'none' | 'tint';
 
 /** Every look but `tint`, which needs a color. */
-export const BADGE_LOOKS: readonly Exclude<BadgeLook, 'tint'>[] = ['high', 'info', 'success', 'warn', 'danger', 'low', 'none'];
+export const BADGE_LOOKS: readonly Exclude<BadgeLook, 'tint'>[] = ['high', ...GRADES, 'low', 'none'];
 
 /** The appearance props that draw `look`; `tint`, a CSS color, colors the `tint` look. */
 export function lookProps(look: BadgeLook, tint?: string): Pick<AppearanceProps, 'grade' | 'emphasis' | 'tint'> {

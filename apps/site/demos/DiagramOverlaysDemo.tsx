@@ -59,8 +59,8 @@ export function DiagramOverlaysDemo() {
         specs={specs}
         className="ckd-canvas"
         pickEdges
-        selected={picked}
-        onSelect={(id) => setPicked(id !== null && data.nodes.some((n) => n.id === id) ? id : null)}
+        selection={picked}
+        onSelectionChange={(id) => setPicked(id !== null && data.nodes.some((n) => n.id === id) ? id : null)}
         onHover={(id) => { if (id !== null) setHovered(id); }}
         overlays={overlays}
       />

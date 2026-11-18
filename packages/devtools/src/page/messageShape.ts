@@ -32,7 +32,7 @@ export function isPanelMessage(m: unknown): m is PanelMessage {
     case 'get-frame':
     case 'get-registry': return true;
     case 'get-trace': return isNumber(m.cursor) && optional(m.coordCursor, isNumber);
-    case 'get-history': return isNumber(m.cursor) && optional(m.checkpoints, (v) => typeof v === 'boolean');
+    case 'get-history': return isNumber(m.cursor) && optional(m.historyEntries, (v) => typeof v === 'boolean');
     case 'select':
     case 'highlight': return isStrings(m.ids);
     case 'set-tool': return m.toolId === null || typeof m.toolId === 'string';

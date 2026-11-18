@@ -1,6 +1,6 @@
 import { resolvePrefUnit } from '@weasel-js/prefs';
 import { withUnit } from '@weasel-js/quantity';
-import { range, type Sweep, values } from '@weasel-js/ui/components/Sequence';
+import { rangeSweep, type Sweep, valuesSweep } from '@weasel-js/ui/components/Sequence';
 import type { ConfigNode } from './types';
 
 /** How finely to walk a number field that declares neither `step` nor `stops`. */
@@ -17,11 +17,11 @@ export interface FieldSweepOptions {
 export function fieldSweep<T>(node: ConfigNode<T>, options: FieldSweepOptions = {}): Sweep<T> {
   const ann = node.annotations;
   if (node.kind === 'boolean')
-    return values([false, true], (v) => (v ? 'on' : 'off')) as Sweep<unknown> as Sweep<T>;
+    return valuesSweep([false, true], (v) => (v ? 'on' : 'off')) as Sweep<unknown> as Sweep<T>;
   if (node.kind === 'enum') {
     const opts = ann.options ?? [];
     const labels = new Map(opts.map((o) => [o.value, o.label]));
-    return values(
+    return valuesSweep(
       opts.map((o) => o.value),
       (v) => labels.get(v) ?? v,
     ) as Sweep<unknown> as Sweep<T>;
@@ -34,16 +34,16 @@ export function fieldSweep<T>(node: ConfigNode<T>, options: FieldSweepOptions = 
   const label = (v: number): string =>
     unit ? withUnit(String(unit.toDisplay(v)), unit.suffix, { space: true }) : String(v);
   if (ann.stops && options.step === undefined && options.count === undefined)
-    return values(ann.stops, label) as Sweep<unknown> as Sweep<T>;
+    return valuesSweep(ann.stops, label) as Sweep<unknown> as Sweep<T>;
   const { min, max } = ann;
   if (min === undefined || max === undefined)
     throw new RangeError('a number field sweeps between its `range`; give it one');
   const step = options.step ?? (options.count === undefined ? ann.step : undefined);
   const sweep =
     step !== undefined
-      ? range({ from: min, to: max, step, label })
+      ? rangeSweep({ from: min, to: max, step, label })
       : options.count !== undefined
-        ? range({ from: min, to: max, count: options.count, label })
+        ? rangeSweep({ from: min, to: max, count: options.count, label })
         : null;
   if (!sweep)
     throw new RangeError(

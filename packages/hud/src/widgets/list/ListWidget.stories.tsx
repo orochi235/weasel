@@ -7,7 +7,7 @@ import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import s from '../widgets.stories.module.css';
 
 interface ListWidgetArgs {
-  selection: 'none' | 'single' | 'multi';
+  selectionMode: 'none' | 'single' | 'multiple';
   rowCount: number;
   width: number;
 }
@@ -16,7 +16,7 @@ const LABELS = ['Background', 'Sketch', 'Ink', 'Highlights', 'Shadows', 'Notes',
 
 /** A HUD list beside the DOM `ItemList` it shares one measure with, both on the same rows. Tab into the canvas,
  *  move with the arrows or by typing, pick with Enter or a press. */
-function ListWidget({ selection, rowCount, width }: ListWidgetArgs) {
+function ListWidget({ selectionMode, rowCount, width }: ListWidgetArgs) {
   const hud = useHud();
   const entry = useHudContribution(hud);
   const scene = useScene<{ id: string }>({ items: [] });
@@ -25,12 +25,12 @@ function ListWidget({ selection, rowCount, width }: ListWidgetArgs) {
     const id = String.fromCharCode(97 + i);
     return { id, label, selected: id === current, ...(i === 0 ? { swatch: '#3b82f6' } : {}) };
   });
-  const select = selection === 'none' ? undefined : selection;
+  const select = selectionMode === 'none' ? undefined : selectionMode;
 
   const list = useRef<HudListWidget | null>(null);
   useEffect(() => {
     const w = hud.list({
-      id: 'layers', x: 16, y: 16, w: width, rows, selection: select, accessibleName: 'Layers', onActivate: setCurrent,
+      id: 'layers', x: 16, y: 16, width, rows, selectionMode: select, accessibleName: 'Layers', onActivate: setCurrent,
     });
     list.current = w;
     return () => { w.dispose(); list.current = null; };
@@ -44,8 +44,8 @@ function ListWidget({ selection, rowCount, width }: ListWidgetArgs) {
       <div className={s.dom} style={{ width }}>
         <ItemList
           rows={rows.map(({ swatch, ...r }) => (swatch ? { ...r, leading: <span className={s.swatch} /> } : r))}
-          selection={select}
-          onActivate={setCurrent}
+          selectionMode={select}
+          onAction={setCurrent}
           containerProps={{ 'aria-label': 'Layers (DOM)' }}
         />
       </div>
@@ -56,9 +56,9 @@ function ListWidget({ selection, rowCount, width }: ListWidgetArgs) {
 const meta: Meta<typeof ListWidget> = {
   title: 'hud/ListWidget',
   component: ListWidget,
-  args: { selection: 'single', rowCount: 5, width: 200 },
+  args: { selectionMode: 'single', rowCount: 5, width: 200 },
   argTypes: {
-    selection: { control: 'inline-radio', options: ['none', 'single', 'multi'] },
+    selectionMode: { control: 'inline-radio', options: ['none', 'single', 'multiple'] },
     rowCount: { control: { type: 'range', min: 0, max: LABELS.length, step: 1 } },
     width: { control: { type: 'range', min: 120, max: 320, step: 10 } },
   },
@@ -67,5 +67,5 @@ export default meta;
 type Story = StoryObj<typeof ListWidget>;
 
 export const Selectable: Story = {};
-export const Plain: Story = { args: { selection: 'none' } };
+export const Plain: Story = { args: { selectionMode: 'none' } };
 export const Empty: Story = { args: { rowCount: 0 } };

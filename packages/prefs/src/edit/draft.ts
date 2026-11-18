@@ -7,6 +7,7 @@ import { isPrefLeaf, type PrefLeaf } from '../index';
 import { childrenOf, joinPath, nodeAt, ownChildrenOf, ownSlotOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { containsCode, overridesOf, STUB } from './schemaExport';
 import { findType, NO_TYPES, type PrefTypes } from './types';
+import { upgradeStored } from './upgrade';
 
 export { SWAP, type DraftStorage };
 
@@ -223,7 +224,7 @@ export function unpackSteps<R extends SchemaRoot>(stored: StoredSteps, source: R
 
 /** The draft saved under `key`; `null` when there is none, or storage cannot be read. */
 function readDraft(key: string, storage?: DraftStorage): StoredDraft | null {
-  const draft = readLocal(key, storage);
+  const draft = upgradeStored(readLocal(key, storage));
   return isPlainObject(draft) && typeof draft.savedAt === 'number' && isPlainObject(draft.schema) ? (draft as unknown as StoredDraft) : null;
 }
 

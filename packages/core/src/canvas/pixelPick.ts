@@ -6,13 +6,14 @@
 import type { IdBuffer } from '@weasel-js/renderer';
 import type { CanvasIdReadOptions } from './canvasExtension';
 import type { ScenePickIds } from './scenePickIds';
+import type { Rect } from '@weasel-js/geom';
 
 /** Id frames one pick draws at most. Each leaves out every node the ones
  *  before it found, so this bounds how deep a stack a pick can see. */
 export const MAX_PIXEL_PICK_PASSES = 64;
 
 type ReadIds = (
-  rect: { x: number; y: number; width: number; height: number },
+  rect: Rect,
   options?: CanvasIdReadOptions,
 ) => IdBuffer | null;
 
@@ -43,7 +44,7 @@ export function pixelPickEvery(
       if (pickId === 0 || exclude.has(pickId)) continue;
       exclude.add(pickId);
       fresh = true;
-      const node = ids.nodeOf(pickId);
+      const node = ids.idOfPickId(pickId);
       if (node !== null) found.push(node);
     }
     if (!fresh) break;

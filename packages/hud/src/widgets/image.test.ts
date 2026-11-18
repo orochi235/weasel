@@ -8,35 +8,35 @@ const ctx = { dims: { width: 100, height: 100 }, defaultFont: 'D', color: () => 
 describe('image widget', () => {
   it('emits an ImageDrawCommand for its bounds', () => {
     const fakeImage = {} as ImageBitmap;
-    const i = createImage({ id: 'i', x: 1, y: 2, w: 3, h: 4, image: fakeImage });
+    const i = createImage({ id: 'i', x: 1, y: 2, width: 3, height: 4, image: fakeImage });
     const cmds = i.draw({ dims: { width: 100, height: 100 }, defaultFont: 'd', color: () => '#000000', tokens: DEFAULT_RESOLVED_TOKENS });
-    expect(cmds[0]).toMatchObject({ kind: 'image', x: 1, y: 2, w: 3, h: 4 });
+    expect(cmds[0]).toMatchObject({ kind: 'image', x: 1, y: 2, width: 3, height: 4 });
   });
 
   it('throws on zero/negative bounds', () => {
     const fakeImage = {} as ImageBitmap;
-    expect(() => createImage({ id: 'i', x: 0, y: 0, w: 0, h: 10, image: fakeImage })).toThrow();
+    expect(() => createImage({ id: 'i', x: 0, y: 0, width: 0, height: 10, image: fakeImage })).toThrow();
   });
 
   it('hitTest returns true inside, false outside', () => {
     const fakeImage = {} as ImageBitmap;
-    const i = createImage({ id: 'i', x: 10, y: 10, w: 20, h: 20, image: fakeImage });
+    const i = createImage({ id: 'i', x: 10, y: 10, width: 20, height: 20, image: fakeImage });
     expect(i.hitTest(15, 15)).toBe(true);
     expect(i.hitTest(0, 0)).toBe(false);
   });
 
   it('claims nothing until setClaims gives it something to consume', () => {
-    const i = createImage({ id: 'i', x: 0, y: 0, w: 10, h: 10, image: {} as ImageBitmap });
+    const i = createImage({ id: 'i', x: 0, y: 0, width: 10, height: 10, image: {} as ImageBitmap });
     expect(i.claims).toEqual([]);
     i.setClaims(['pointer']);
     expect(i.claims).toEqual(['pointer']);
-    expect(createImage({ id: 'j', x: 0, y: 0, w: 10, h: 10, image: {} as ImageBitmap, claims: ['wheel'] }).claims)
+    expect(createImage({ id: 'j', x: 0, y: 0, width: 10, height: 10, image: {} as ImageBitmap, claims: ['wheel'] }).claims)
       .toEqual(['wheel']);
   });
 
   it('forwards sampling to the image draw command', () => {
     const bmp = { width: 4, height: 4, close: () => {} } as unknown as ImageBitmap;
-    const w = createImage({ id: 'i', x: 0, y: 0, w: 40, h: 40, image: bmp, sampling: 'nearest' });
+    const w = createImage({ id: 'i', x: 0, y: 0, width: 40, height: 40, image: bmp, sampling: 'nearest' });
     const cmd = w.draw(ctx)[0];
     expect(cmd).toMatchObject({ kind: 'image', sampling: 'nearest' });
   });
@@ -44,11 +44,11 @@ describe('image widget', () => {
   it('forwards the source rect and flips to the image draw command', () => {
     const bmp = { width: 64, height: 32, close: () => {} } as unknown as ImageBitmap;
     const w = createImage({
-      id: 'i', x: 0, y: 0, w: 16, h: 16, image: bmp,
-      source: { x: 16, y: 0, w: 16, h: 16 }, flipX: true,
+      id: 'i', x: 0, y: 0, width: 16, height: 16, image: bmp,
+      source: { x: 16, y: 0, width: 16, height: 16 }, flipX: true,
     });
     expect(w.draw(ctx)[0]).toMatchObject({
-      kind: 'image', source: { x: 16, y: 0, w: 16, h: 16 }, flipX: true,
+      kind: 'image', source: { x: 16, y: 0, width: 16, height: 16 }, flipX: true,
     });
   });
 
@@ -56,18 +56,18 @@ describe('image widget', () => {
     const bmp = { width: 64, height: 32, close: () => {} } as unknown as ImageBitmap;
     let changes = 0;
     const w = createImage({
-      id: 'i', x: 0, y: 0, w: 16, h: 16, image: bmp,
-      source: { x: 0, y: 0, w: 16, h: 16 }, onChange: () => { changes++; },
+      id: 'i', x: 0, y: 0, width: 16, height: 16, image: bmp,
+      source: { x: 0, y: 0, width: 16, height: 16 }, onChange: () => { changes++; },
     });
-    w.setSource({ x: 32, y: 0, w: 16, h: 16 });
-    expect(w.draw(ctx)[0]).toMatchObject({ source: { x: 32, y: 0, w: 16, h: 16 } });
+    w.setSource({ x: 32, y: 0, width: 16, height: 16 });
+    expect(w.draw(ctx)[0]).toMatchObject({ source: { x: 32, y: 0, width: 16, height: 16 } });
     expect(changes).toBe(1);
   });
 
   it('setSource(undefined) goes back to the whole bitmap', () => {
     const bmp = { width: 64, height: 32, close: () => {} } as unknown as ImageBitmap;
     const w = createImage({
-      id: 'i', x: 0, y: 0, w: 16, h: 16, image: bmp, source: { x: 16, y: 0, w: 16, h: 16 },
+      id: 'i', x: 0, y: 0, width: 16, height: 16, image: bmp, source: { x: 16, y: 0, width: 16, height: 16 },
     });
     w.setSource(undefined);
     expect((w.draw(ctx)[0] as { source?: unknown }).source).toBeUndefined();
@@ -75,7 +75,7 @@ describe('image widget', () => {
 
   it('setFlip leaves an omitted axis alone', () => {
     const bmp = { width: 64, height: 32, close: () => {} } as unknown as ImageBitmap;
-    const w = createImage({ id: 'i', x: 0, y: 0, w: 16, h: 16, image: bmp, flipY: true });
+    const w = createImage({ id: 'i', x: 0, y: 0, width: 16, height: 16, image: bmp, flipY: true });
     w.setFlip({ x: true });
     expect(w.draw(ctx)[0]).toMatchObject({ flipX: true, flipY: true });
     w.setFlip({ y: false });
@@ -86,7 +86,7 @@ describe('image widget', () => {
     const bmp = { width: 64, height: 32, close: () => {} } as unknown as ImageBitmap;
     let changes = 0;
     const w = createImage({
-      id: 'i', x: 0, y: 0, w: 16, h: 16, image: bmp, onChange: () => { changes++; },
+      id: 'i', x: 0, y: 0, width: 16, height: 16, image: bmp, onChange: () => { changes++; },
     });
     w.setFlip({ x: true });
     expect(changes).toBe(1);
@@ -94,9 +94,9 @@ describe('image widget', () => {
 
   it('throws when mutating source or flip after dispose', () => {
     const bmp = { width: 64, height: 32, close: () => {} } as unknown as ImageBitmap;
-    const w = createImage({ id: 'i', x: 0, y: 0, w: 16, h: 16, image: bmp });
+    const w = createImage({ id: 'i', x: 0, y: 0, width: 16, height: 16, image: bmp });
     w.dispose();
-    expect(() => w.setSource({ x: 0, y: 0, w: 1, h: 1 })).toThrow(/disposed/);
+    expect(() => w.setSource({ x: 0, y: 0, width: 1, height: 1 })).toThrow(/disposed/);
     expect(() => w.setFlip({ x: true })).toThrow(/disposed/);
   });
 });

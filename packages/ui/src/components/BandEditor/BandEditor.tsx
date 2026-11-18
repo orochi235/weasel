@@ -1,44 +1,21 @@
-import {
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type MouseEvent as ReactMouseEvent,
-  type PointerEvent as ReactPointerEvent,
-  type ReactElement,
-  type ReactNode,
-} from 'react';
-import { openPointerSession, type PointerSession } from '@weasel-js/routing';
-import { focusedControlOwnsKey, isEditableTarget, isPrimaryPress } from '@weasel-js/gestures';
+import { useId, useRef, type ReactElement, type ReactNode } from 'react';
 import { decimal, type Display, type Quantity } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
 import { QuantityText } from '../QuantityText';
-import { attract } from '@weasel-js/ui-input';
-import { useSnapRadiusPx } from '../../snap';
 import { linearScale, type ContinuousScaleFactory } from '@weasel-js/scale';
-import { clamp01 } from '@weasel-js/geom';
 import { prefNumberScale } from '../Prefs/prefNumberScale';
-import { trackOf, withinAxis } from './scale';
+import { drawnAxis } from './scale';
+import { useTrackPointer } from './useTrackPointer';
 import { retagBands, untag } from './retag';
-import { RangeEdgeHandle, type RangeEdit } from './RangeEdgeHandle';
-import { DraftGhost, type DraftGhostAt } from './DraftGhost';
+import { RangeEdgeHandle } from './RangeEdgeHandle';
+import { DraftGhost } from './DraftGhost';
 import { BandRuler, rulerDisplay, type BandTick } from './BandRuler';
 import { BandStrip } from './BandStrip';
 import type { HoldProps } from '../Disabled';
 import { useControlHold } from '../Disabled/controlHold';
-import {
-  bandBounds,
-  mergeBand,
-  normalizeBands,
-  splitBands,
-  toggleLock,
-  withSeams,
-  type Band,
-  type RangeEdge,
-} from './bands';
-import { sameSeams, seamGhost } from './seamGhost';
-import { alongTrack } from '../../alongTrack';
+import { normalizeBands, type Band, type RangeEdge } from './bands';
+import { useBandDraft } from './useBandDraft';
+import { createBandCommands } from './bandCommands';
 
 export type { Band, RangeEdge, BandTick };
 
@@ -92,33 +69,10 @@ export interface BandEditorProps<T, F extends Quantity = number> extends HoldPro
   className?: string;
 }
 
-/** A drag under way: the bands and range as the pointer has them, which edges it took from where, and the bands
- *  it began from, which a commit is measured against however the caller previewed it. */
-type Draft<T> = {
-  bands: Band<T>[];
-  range?: [number, number];
-  ghost: DraftGhostAt;
-  from?: Band<T>[];
-};
-
-/** `from` with its seams at `seams`, or null where that moves none of them. */
-function seamsMoved<T>(from: Band<T>[], seams: number[]): Band<T>[] | null {
-  const next = withSeams(from, seams);
-  return sameSeams(next, from) ? null : next;
-}
-
 const SEAM_DISPLAY = decimal();
 
 function keepData<T>(_at: number, from: T): T {
   return from;
-}
-
-/** The band key `e` presses: `x` or Delete merges, `l` locks, `s` splits. Null with a modifier held: `x` is a bare
- *  letter and Cmd/Ctrl+X is cut, which must not be swallowed. Caps Lock reports the letters capitalized with no Shift. */
-function bandKey(e: { key: string; metaKey: boolean; ctrlKey: boolean; altKey: boolean; shiftKey: boolean }): 'x' | 'l' | 's' | 'Delete' | null {
-  if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return null;
-  const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
-  return key === 'x' || key === 'l' || key === 's' || key === 'Delete' ? key : null;
 }
 
 /**
@@ -164,88 +118,30 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   const splitBand = props.splitBand ?? keepData;
 
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const sessionRef = useRef<PointerSession | null>(null);
-  useEffect(() => () => { sessionRef.current?.cancel(); }, []);
   const labelId = useId();
-  const [draft, setDraftState] = useState<Draft<T> | null>(null);
-  // Read by the handlers: a second pointermove can land before the render the first one scheduled.
-  const draftRef = useRef<Draft<T> | null>(null);
-  const setDraft = (next: Draft<T> | null): void => {
-    draftRef.current = next;
-    setDraftState(next);
-  };
   const value = tagged.map(untag);
   const retagged = (next: Band<T>[]): Band<T, F>[] => retagBands(tagged, next);
-  const onInput = props.onInput && ((next: Band<T>[]) => props.onInput?.(retagged(next)));
   const onChange = (next: Band<T>[]) => props.onChange(retagged(next));
   const committed = normalizeBands(value, min);
+  const { draft, drag, seamInput, seamCommit, seamCancel, rangeInput, rangeCommit } = useBandDraft<T>({
+    committed, min, max, onChange,
+    onInput: props.onInput && ((next) => props.onInput?.(retagged(next))),
+    onCancel: props.onCancel,
+    onRangeInput: props.onRangeInput && ((lo, hi, next) => props.onRangeInput?.(lo, hi, retagged(next))),
+    onRangeChange: props.onRangeChange && ((lo, hi, next) => props.onRangeChange?.(lo, hi, retagged(next))),
+  });
   // Drawn from the drag while one is under way, so the control moves with the pointer whether or not the consumer
   // wires `onInput`. Every edit reads `committed`.
   const bands = draft?.bands ?? committed;
   const shown = retagged(bands);
-  // An edge pulled past the track stretches the drawn axis to hold it until the drag ends; one pulled inward
-  // leaves the axis alone, so the track it vacated shows empty.
-  const [lo, hi] = draft?.range ?? [min, max];
-  const axisMin = Math.min(min, lo);
-  const axisMax = Math.max(max, hi);
   const sc = prefNumberScale(scale ?? 'log', 'BandEditor') ?? linearScale;
-  const { unit: axis, toUnit, fromUnit } = trackOf(sc, axisMin, axisMax);
+  const { lo, hi, axisMin, axisMax, bandScale, unit: axis, toUnit, fromUnit } = drawnAxis(sc, min, max, draft?.range);
+  const { snapRadiusPx, unitAt, pointerUnit } = useTrackPointer(trackRef, snap, ticks, toUnit);
 
-  const snapRadiusPx = useSnapRadiusPx();
-  const trackWidth = (): number => trackRef.current?.getBoundingClientRect().width ?? 0;
-
-  /** Unclamped: an edge drag reads the pointer past either end of the track. */
-  const rawUnitAt = (clientX: number): number => alongTrack(trackRef.current, clientX)?.f ?? 0;
-  const unitAt = (clientX: number): number => clamp01(rawUnitAt(clientX));
-
-  const snapped = (unit: number, altKey: boolean): number => {
-    if (!snap || altKey || !ticks || ticks.length === 0) return unit;
-    const width = trackWidth();
-    return width === 0 ? unit : attract(unit, ticks.map((tick) => toUnit(tick.at)), snapRadiusPx / width);
-  };
-
-  // An edge drag, which a second finger's press leaves to the first. One canceled puts its preview back.
-  const drag = (down: ReactPointerEvent<HTMLElement>, onMove: (ev: PointerEvent) => void, onEnd: () => void): void => {
-    if (sessionRef.current?.active) return;
-    sessionRef.current = openPointerSession(down.currentTarget, down, {
-      onMove,
-      onEnd: () => { sessionRef.current = null; setDraft(null); onEnd(); },
-      onCancel: () => {
-        sessionRef.current = null;
-        if (draftRef.current) { props.onRangeInput?.(min, max, retagged(committed)); props.onCancel?.(); }
-        setDraft(null);
-      },
-    }, { capture: false, escape: true });
-  };
-
-  const seamInput = (seams: number[]): void => {
-    const next = withSeams(committed, seams);
-    const current = draftRef.current;
-    if (sameSeams(next, current?.bands ?? committed)) return;
-    const ghost = current?.ghost ?? seamGhost(committed, next, min, max);
-    if (!ghost) return;
-    setDraft({ bands: next, ghost, from: current?.from ?? committed });
-    onInput?.(next);
-  };
-  const seamCommit = (seams: number[]): void => {
-    const next = seamsMoved(draftRef.current?.from ?? committed, seams);
-    setDraft(null);
-    if (next) onChange(next);
-  };
-
-  const onBandPointerDown = (index: number) => (e: ReactPointerEvent<HTMLButtonElement>): void => {
-    if (isPrimaryPress(e) && index !== selectedIndex) onSelectionChange?.(index);
-  };
-
-  const onBandFocus = (index: number) => (): void => { if (index !== selectedIndex) onSelectionChange?.(index); };
-
-  const rangeInput = (edge: RangeEdge, edit: RangeEdit<T>): void => {
-    setDraft({ bands: edit.bands, range: edit.range, ghost: { at: edge === 'min' ? min : max } });
-    props.onRangeInput?.(edit.range[0], edit.range[1], retagged(edit.bands));
-  };
-  const rangeCommit = (edit: RangeEdit<T>): void => {
-    props.onRangeChange?.(edit.range[0], edit.range[1], retagged(edit.bands));
-  };
+  const { onTrackPointerDown, onBandPointerDown, onBandFocus, onBandContextMenu, onRootKeyDown } = createBandCommands({
+    committed, min, max, selectedIndex, onSelectionChange, onChange,
+    canLock: !!props.onRangeChange, splitBand, toUnit, fromUnit, unitAt,
+  });
 
   const edgeHandle = (edge: RangeEdge): ReactNode => (
     <RangeEdgeHandle
@@ -259,64 +155,13 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
       display={display}
       tagged={edge === 'min' ? shown[0]?.from : undefined}
       toUnit={toUnit}
-      pointerUnit={(clientX, altKey) => snapped(rawUnitAt(clientX), altKey)}
+      pointerUnit={pointerUnit}
       drag={drag}
       hold={hold}
       onInput={(edit) => rangeInput(edge, edit)}
-      onCommit={rangeCommit}
+      onChange={rangeCommit}
     />
   );
-
-  const onBandContextMenu = (index: number) => (e: ReactMouseEvent<HTMLButtonElement>): void => {
-    if (!props.onRangeChange) return;
-    e.preventDefault();
-    onChange(toggleLock(committed, index));
-  };
-
-  const onTrackPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
-    if (!isPrimaryPress(e)) return;
-    e.preventDefault();
-    splitAt(fromUnit(unitAt(e.clientX)));
-  };
-
-  const splitAt = (at: number): boolean => {
-    const next = splitBands(committed, at, min, max, splitBand);
-    if (next === committed) return false;
-    onChange(next);
-    // The new band takes the next index, so a selection to its right moves up one to stay on its band.
-    const split = committed.filter((b) => b.from < at).length - 1;
-    if (selectedIndex !== null && selectedIndex !== undefined && selectedIndex > split) onSelectionChange?.(selectedIndex + 1);
-    return true;
-  };
-
-  const onRootKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>): void => {
-    const key = bandKey(e);
-    if (key === null) return;
-    if (isEditableTarget(e.target) || focusedControlOwnsKey(e.nativeEvent)) return;
-    if (selectedIndex === null || selectedIndex === undefined) return;
-    if (key === 'l') {
-      if (!props.onRangeChange) return;
-      e.preventDefault();
-      onChange(toggleLock(committed, selectedIndex));
-      return;
-    }
-    if (key === 's') {
-      // The middle of the band as drawn, so on a log scale the halves look equal.
-      const [from, to] = bandBounds(committed, selectedIndex, min, max);
-      if (splitAt(fromUnit((toUnit(from) + toUnit(to)) / 2))) e.preventDefault();
-      return;
-    }
-    const next = mergeBand(committed, selectedIndex);
-    if (next === committed) return;
-    e.preventDefault();
-    const root = e.currentTarget;
-    const merged = root.querySelector(`[data-band-index="${selectedIndex}"]`);
-    const absorbing = root.querySelector<HTMLElement>(`[data-band-index="${selectedIndex - 1}"]`);
-    onChange(next);
-    // Focusing a band selects it, so a merged band that held focus hands over both at once.
-    if (absorbing && merged?.contains(root.ownerDocument.activeElement)) absorbing.focus();
-    else onSelectionChange?.(selectedIndex - 1);
-  };
 
   return hold.wrap(
     <div
@@ -347,7 +192,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
           shown={shown}
           lo={lo}
           hi={hi}
-          scale={lo === axisMin && hi === axisMax ? sc : withinAxis(sc, axisMin, axisMax)}
+          scale={bandScale}
           toUnit={toUnit}
           fromUnit={fromUnit}
           snapTo={snap && ticks && ticks.length > 0 ? ticks.map((tick) => tick.at) : undefined}
@@ -361,7 +206,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
           hold={hold}
           onInput={seamInput}
           onChange={seamCommit}
-          onCancel={() => { setDraft(null); props.onCancel?.(); }}
+          onCancel={seamCancel}
         />
         {props.onRangeChange && edgeHandle('max')}
         {draft && <DraftGhost ghost={draft.ghost} toUnit={toUnit} />}

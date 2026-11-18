@@ -3,8 +3,7 @@ import type { Path, PolygonPath } from '../path';
 import { resolveCornersWithSources } from '../paths/corners';
 import { extractPolylines, type Polyline } from '../tessellate/polyline';
 import { closingAnchor, lengthTable, type LengthRun, type LengthTable } from './lengthTable';
-
-const tables = new WeakMap<Path, LengthTable>();
+import { createPart } from '@weasel-js/registry';
 
 /**
  * The exact length table of `path` as a stroke draws it: corners resolved,
@@ -15,9 +14,7 @@ const tables = new WeakMap<Path, LengthTable>();
  * the path's coords, measured from the path's origin, which the table carries
  * as its own `origin`. Kept per path.
  */
-export function pathLengthTable(path: Path): LengthTable {
-  const hit = tables.get(path);
-  if (hit) return hit;
+export const pathLengthTable: (path: Path) => LengthTable = createPart((path: Path): LengthTable => {
   let table: LengthTable;
   if (path.kind === 'rect') {
     table = lengthTable(extractPolylines(path), 2);
@@ -27,9 +24,8 @@ export function pathLengthTable(path: Path): LengthTable {
     table = lengthTable(extractPolylines(resolved).map((pl) => anchorRun(pl, controls)), 2, anchorSources);
     if (path.origin) table = { ...table, origin: path.origin };
   }
-  tables.set(path, table);
   return table;
-}
+});
 
 /** Per anchor, in `extractPolylines`' numbering, the control points of the curve arriving at it; null for a line or a move. */
 function controlsByAnchor(path: PolygonPath): (number[] | null)[] {

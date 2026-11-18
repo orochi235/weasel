@@ -16,7 +16,7 @@ import {
   computeFitView, FALLBACK_FIT_VIEW, type IndicatorStyle, type MinimapFit,
 } from './minimapMath';
 import {
-  minimapBindings, minimapCenterAction, minimapPanAction, minimapPinchAction, minimapZoomAction,
+  minimapBindings, minimapCenterAction, minimapPanAction, minimapTouchZoomAction, minimapZoomAction,
 } from './actions';
 import { createIndicatorLayer, createLinkedCursorLayer } from './layers';
 import { accentColorOf, FALLBACK_ACCENT, watchThemeOf } from '@weasel-js/core';
@@ -115,7 +115,7 @@ const DEFAULT_BACKGROUND = '#18181c';
  * A minimap inside a `<SceneCanvas>`, installed with one entry:
  *
  * ```tsx
- * const minimap = useMemo(() => createMinimapContribution({ rect: { x: 8, y: 8, w: 160, h: 110 } }), []);
+ * const minimap = useMemo(() => createMinimapContribution({ rect: { x: 8, y: 8, width: 160, height: 110 } }), []);
  * <SceneCanvas ambient={[minimap]} … />
  * ```
  *
@@ -138,7 +138,7 @@ export function createMinimapContribution<TData = unknown, TLayer extends string
   // under a live fit the overrides and scroll offsets — as it is read on every
   // frame and every event.
   let cached: {
-    scene: unknown; descriptor: unknown; version: number; shown: number; scrolled: number; w: number; h: number; view: View;
+    scene: unknown; descriptor: unknown; version: number; shown: number; scrolled: number; width: number; height: number; view: View;
   } | null = null;
   const fitCamera = (outer: View, dims: Dims): View => {
     const scene = deps?.get('scene') as Scene<unknown, string, unknown> | undefined;
@@ -150,11 +150,11 @@ export function createMinimapContribution<TData = unknown, TLayer extends string
     const scrolled = fit === 'live' ? scene.scroll.getGeneration() : 0;
     const descriptor = (deps?.get('poseDescriptor') ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<unknown>;
     if (cached && cached.scene === scene && cached.descriptor === descriptor && cached.version === version
-        && cached.shown === shown && cached.scrolled === scrolled && cached.w === r.w && cached.h === r.h) {
+        && cached.shown === shown && cached.scrolled === scrolled && cached.width === r.width && cached.height === r.height) {
       return cached.view;
     }
-    const view = computeFitView(scene, { width: r.w, height: r.h }, fit, descriptor);
-    cached = { scene, descriptor, version, shown, scrolled, w: r.w, h: r.h, view };
+    const view = computeFitView(scene, r, fit, descriptor);
+    cached = { scene, descriptor, version, shown, scrolled, width: r.width, height: r.height, view };
     return view;
   };
 
@@ -180,7 +180,7 @@ export function createMinimapContribution<TData = unknown, TLayer extends string
     }],
     actions: [
       minimapCenterAction(), minimapPanAction(),
-      ...(zoom ? [minimapZoomAction(zoom.clamp), minimapPinchAction(zoom.clamp)] : []),
+      ...(zoom ? [minimapZoomAction(zoom.clamp), minimapTouchZoomAction(zoom.clamp)] : []),
     ],
     bindings: minimapBindings(id, zoom !== null, [id]),
     overlay: [indicator, cursor.layer],

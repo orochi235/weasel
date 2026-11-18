@@ -93,13 +93,13 @@ export function sampleGradientStops(
  * wants a kind switch to be undoable should keep the original paint rather
  * than converting back.
  */
-export function withGradientKind(fill: GradientPaint, kind: GradientKind): GradientPaint {
-  if (fill.kind === kind) return fill;
+export function withGradientKind(paint: GradientPaint, kind: GradientKind): GradientPaint {
+  if (paint.kind === kind) return paint;
   const common = {
-    stops: fill.stops, units: fill.units,
-    interpolate: fill.interpolate, opacity: fill.opacity,
+    stops: paint.stops, units: paint.units,
+    interpolate: paint.interpolate, opacity: paint.opacity,
   };
-  const { center, radius, angle } = gradientGeometry(fill);
+  const { center, radius, angle } = gradientGeometry(paint);
 
   if (kind === 'linear-gradient') {
     const dx = Math.cos(angle) * radius;
@@ -122,24 +122,24 @@ export function withGradientKind(fill: GradientPaint, kind: GradientKind): Gradi
  * center is the segment midpoint, the radius is half its length, and the
  * angle is its direction.
  */
-export function gradientGeometry(fill: GradientPaint): {
+export function gradientGeometry(paint: GradientPaint): {
   center: { x: number; y: number };
   radius: number;
   angle: number;
 } {
-  if (fill.kind === 'linear-gradient') {
-    const dx = fill.to.x - fill.from.x;
-    const dy = fill.to.y - fill.from.y;
+  if (paint.kind === 'linear-gradient') {
+    const dx = paint.to.x - paint.from.x;
+    const dy = paint.to.y - paint.from.y;
     return {
-      center: { x: (fill.from.x + fill.to.x) / 2, y: (fill.from.y + fill.to.y) / 2 },
+      center: { x: (paint.from.x + paint.to.x) / 2, y: (paint.from.y + paint.to.y) / 2 },
       radius: Math.hypot(dx, dy) / 2,
       angle: Math.atan2(dy, dx),
     };
   }
-  if (fill.kind === 'radial-gradient') {
-    return { center: fill.center, radius: fill.radius, angle: 0 };
+  if (paint.kind === 'radial-gradient') {
+    return { center: paint.center, radius: paint.radius, angle: 0 };
   }
-  return { center: fill.center, radius: conicArmRadius(fill.units), angle: fill.angle };
+  return { center: paint.center, radius: conicArmRadius(paint.units), angle: paint.angle };
 }
 
 /**

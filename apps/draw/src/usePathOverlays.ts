@@ -1,52 +1,39 @@
-import {
-  always, never, type ChromeRulesDep, type Contribution, type VisibilityRules,
-} from '@weasel-js/core';
-import {
-  PATH_POISE_CHROME_ID, PATH_COMB_CHROME_ID, PATH_FILLETS_CHROME_ID, PATH_DIRECTION_CHROME_ID,
-} from '@weasel-js/path-tools';
+import { always, never, type ChromeRulesDep, type Contribution, type VisibilityRules } from '@weasel-js/core';
+import { PATH_EDIT_AID_CHROME_IDS, pathEditAidsVisibility, type PathEditAids } from '@weasel-js/path-tools';
 import { useMemo } from 'react';
-import { drawPrefs, usePref } from './prefs';
-import { hasOwnKey } from '@weasel-js/registry';
+import { drawPrefs, usePrefGroup } from './prefs';
 
-/** Each path-edit overlay's chrome id, and the View preference that shows it. */
-const OVERLAY_PREFS = {
-  [PATH_DIRECTION_CHROME_ID]: 'view.pathEditing.pathDirection',
-  [PATH_COMB_CHROME_ID]: 'view.pathEditing.pathComb',
-  [PATH_POISE_CHROME_ID]: 'view.pathEditing.pathPoise',
-  [PATH_FILLETS_CHROME_ID]: 'view.pathEditing.pathFillets',
-} as const;
+type Aid = keyof PathEditAids;
 
-type OverlayId = keyof typeof OVERLAY_PREFS;
-const isOverlay = (id: string): id is OverlayId => hasOwnKey(OVERLAY_PREFS, id);
+/** Each path-edit aid's chrome id, and the setting in the View preferences' Path editing group that shows it. */
+const AID_OF: ReadonlyMap<string, Aid> = new Map(
+  Object.entries(PATH_EDIT_AID_CHROME_IDS).map(([aid, id]) => [id, aid as Aid]),
+);
 
-/** The `chromeRules` dep over the View preferences: an overlay's rule is its preference, and setting one writes
- *  it. Every other id is the canvas's own. */
+/** The `chromeRules` dep over the View preferences: an aid's rule is its preference, and setting one writes it.
+ *  Every other id is the canvas's own. */
 function prefsChromeRules(below: () => ChromeRulesDep | undefined): ChromeRulesDep {
   return {
-    get: (id) => (isOverlay(id) ? (drawPrefs().get(OVERLAY_PREFS[id]) ? always : never) : below()?.get(id)),
+    get: (id) => {
+      const aid = AID_OF.get(id);
+      return aid === undefined ? below()?.get(id) : drawPrefs().get(`view.pathEditing.${aid}`) ? always : never;
+    },
     set: (id, rule) => {
-      if (isOverlay(id)) drawPrefs().set(OVERLAY_PREFS[id], rule !== never);
-      else below()?.set(id, rule);
+      const aid = AID_OF.get(id);
+      if (aid === undefined) below()?.set(id, rule);
+      else drawPrefs().set(`view.pathEditing.${aid}`, rule !== never);
     },
   };
 }
 
 /**
- * Path edit's overlays — direction, curvature comb, poise lines, and fillet widgets — driven by one View
- * preference each: the chrome rules that show or hide them on the canvas, and an entry sourcing the `chromeRules`
- * dep the `pathEdit.show.*` toggles write, so a toggle sets the preference.
+ * Path edit's aids — direction, curvature comb, poise lines, and fillet widgets — driven by the View preferences'
+ * Path editing group: the chrome rules that show or hide them on the canvas, and an entry sourcing the
+ * `chromeRules` dep the `pathEdit.show.*` toggles write, so a toggle sets the preference.
  */
 export function usePathOverlays(): { chromeVisibility: VisibilityRules; contribution: Contribution } {
-  const [direction] = usePref('view.pathEditing.pathDirection');
-  const [comb] = usePref('view.pathEditing.pathComb');
-  const [poise] = usePref('view.pathEditing.pathPoise');
-  const [fillets] = usePref('view.pathEditing.pathFillets');
-  const chromeVisibility = useMemo<VisibilityRules>(() => ({
-    [PATH_DIRECTION_CHROME_ID]: direction ? always : never,
-    [PATH_COMB_CHROME_ID]: comb ? always : never,
-    [PATH_POISE_CHROME_ID]: poise ? always : never,
-    [PATH_FILLETS_CHROME_ID]: fillets ? always : never,
-  }), [direction, comb, poise, fillets]);
+  const [aids] = usePrefGroup('view.pathEditing');
+  const chromeVisibility = useMemo(() => pathEditAidsVisibility(aids), [aids]);
   const contribution = useMemo<Contribution>(() => ({
     id: 'draw.pathOverlays',
     eligibility: { always: true },

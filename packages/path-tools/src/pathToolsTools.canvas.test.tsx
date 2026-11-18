@@ -1,5 +1,5 @@
 /**
- * Every tool path-tools ships, on a canvas with the `pathTools` feature: each has a complete definition whose
+ * Every tool path-tools ships, on a canvas with the `pathToolsPreset` feature: each has a complete definition whose
  * bindings name registered actions, its key makes it the active tool, and the reshaping tools commit through their
  * actions as one undo entry. The path-edit tools' commits are in `pathEditTools.canvas.test.tsx`, the shape
  * builder's in `useShapeBuilderTool.canvas.test.tsx`, and the warps' in `warp/`.
@@ -8,7 +8,7 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { IDENTITY_POSE_COMPOSITION, SceneCanvas, asNodeId, createScene, pathFromD, toolGaps, toolIdsOf, useActionsRegistry, type ActionsRegistry, type PolygonPath, type ToolsApi } from '@weasel-js/core';
-import { pathTools } from './presets';
+import { pathToolsPreset } from './presets';
 import { PATH_EDIT_TOOLS, PATH_TOOLS_TOOLS, usePathToolsTools } from './toolSets';
 import { ANCHORS_TOOL_ID } from './pathEdit/anchorsTool';
 import { drawPreset } from '@weasel-js/editing';
@@ -41,7 +41,7 @@ function mount(paths: Record<string, string>, selected: string[] = []) {
   function Harness() {
     const tools = usePathToolsTools();
     return (
-      <SceneCanvas features={[drawPreset, pathTools]} scene={scene} layers={{}} width={400} height={400} tools={tools}
+      <SceneCanvas features={[drawPreset, pathToolsPreset]} scene={scene} layers={{}} width={400} height={400} tools={tools}
         onToolsCreated={(t) => { api.tools = t; }}>
         <Grab />
       </SceneCanvas>

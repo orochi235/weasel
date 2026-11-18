@@ -3,7 +3,7 @@ import { operandMethods, nodeDescriptors, poseDescriptorOf, isPaged } from '@wea
 import { isPathEditPart, resolveParams } from '@weasel-js/routing';
 import type { MoveParams, Op, NodeId, Scene, ReparentOnDrop } from '@weasel-js/core';
 import type { PoseDescriptor, PoseComposition, GestureContext, MoveBehavior, CanDropIntoDep, LayoutDep, NodeAtPointDep, DropVerdict, GeometryProjection } from '@weasel-js/core/engine';
-import { gestureReaders, type GestureReaders, childVerdict, commitGestureOps, readGestureLifecycle, type GestureLifecycle, transformFinisher, type TransformFinisher, moveSources } from '@weasel-js/core';
+import { gestureReaders, type GestureReaders, childVerdict, commitRunOps, readRunLifecycle, type RunLifecycle, transformFinisher, type TransformFinisher, moveSources } from '@weasel-js/core';
 import { layoutDrop } from './behaviors/layoutDrop';
 import { reparentOnDrop } from './behaviors/reparentOnDrop';
 import { pageDrop } from './behaviors/pageDrop';
@@ -45,7 +45,7 @@ export interface MoveSession extends DragSnap {
   /** Finishes the committed batch with the other nodes that change with it. */
   readonly finish?: TransformFinisher;
   readonly geometryProjection?: GeometryProjection;
-  readonly lifecycle: GestureLifecycle;
+  readonly lifecycle: RunLifecycle;
   readonly nodeAtPoint: NodeAtPointDep | undefined;
   /** Whether a node takes the dragged roots; with no `canDropInto`, a group does and a mark does not. */
   readonly verdict: (parent: NodeId) => DropVerdict;
@@ -131,11 +131,11 @@ export function beginMove(
     ...(isPaged(scene) ? [pageDrop(gesture)] : []),
     reparentOnDrop(gesture),
   ];
-  const lifecycle = readGestureLifecycle(params, 'Move', behaviors);
+  const lifecycle = readRunLifecycle(params, 'Move', behaviors);
   // A behavior that commits after the gesture has ended, a coast coming to
   // rest, lands its batch the way the gesture's own commit does.
   const adapter = moveGestureAdapter<unknown>(scene, (ops, _label, through) =>
-    commitGestureOps({ scene, applyOps, adapter: through, finish }, lifecycle, ops), operandMethods(selection));
+    commitRunOps({ scene, applyOps, adapter: through, finish }, lifecycle, ops), operandMethods(selection));
   const readers = gestureReaders(ctx.deps);
   const gestureCtx = buildGestureContext(ctx, scene, ids, startPoses, adapter, readers);
   for (const b of behaviors) b.onStart?.(gestureCtx);

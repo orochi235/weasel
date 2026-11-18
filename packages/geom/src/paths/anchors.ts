@@ -10,7 +10,7 @@
  */
 
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, forEachSegment } from '../commands';
-import { nearestOnCubic, nearestOnLine } from '../nearest';
+import { nearestOnCubic, nearestOnSegment } from '../nearest';
 import type { Path, PolygonPath } from '../path';
 import { PathBuilder } from './builder';
 import { worldCoords } from './pathOrigin';
@@ -243,13 +243,13 @@ export function isStraightSegment(a: PenAnchor, b: PenAnchor): boolean {
  *  A straight segment is parameterized by arc length (`t` is the fraction of
  *  the way from `a` to `b`), matching how {@link insertAnchorOnSegment}
  *  splits one. */
-function nearestOnSegment(a: PenAnchor, b: PenAnchor, x: number, y: number): { t: number; d2: number } {
+function nearestOnAnchorSpan(a: PenAnchor, b: PenAnchor, x: number, y: number): { t: number; d2: number } {
   const p1 = a.outHandle ?? a;
   const p2 = b.inHandle ?? b;
   const hit = isStraightSegment(a, b)
-    ? nearestOnLine(x, y, a.x, a.y, b.x, b.y)
+    ? nearestOnSegment(x, y, a.x, a.y, b.x, b.y)
     : nearestOnCubic(x, y, a.x, a.y, p1.x, p1.y, p2.x, p2.y, b.x, b.y);
-  return { t: hit.t, d2: hit.dist * hit.dist };
+  return { t: hit.t, d2: hit.distance * hit.distance };
 }
 
 /** The segment of a decoded path nearest `(wx, wy)`, and the parameter `t`
@@ -270,7 +270,7 @@ export function nearestSegmentT(
     for (let i = 0; i < segCount; i++) {
       const ends = segmentEnds(anchors, closed, s, i);
       if (!ends) continue;
-      const hit = nearestOnSegment(ends.a, ends.b, wx, wy);
+      const hit = nearestOnAnchorSpan(ends.a, ends.b, wx, wy);
       if (hit.d2 < bestD2) {
         bestD2 = hit.d2;
         best = { sub: s, segIdx: i, t: hit.t };

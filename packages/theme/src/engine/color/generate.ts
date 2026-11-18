@@ -1,5 +1,14 @@
 import { lerp } from '@weasel-js/geom';
-import { chromaCap, contrast, CHROMA_WEIGHT, deltaE, hueGap, toHex, toLab, toLch, type Lch } from './oklch.ts';
+import { hueName, uniqueNames } from './hueNames.ts';
+import { searchHues } from './hueSearch.ts';
+import { chromaCap, contrast, hueGap, toHex, toLch, type Lch } from './oklch.ts';
+import { summarize } from './paletteStats.ts';
+import { peakAt, place, toHexPreview } from './placement.ts';
+
+export { hueName } from './hueNames.ts';
+export { floorDegrees } from './hueSearch.ts';
+export { toHexPreview } from './placement.ts';
+
 
 /**
  * A hue pinned into the palette with its own lightness.
@@ -94,52 +103,6 @@ export interface Palette {
   readonly feasible: boolean;
 }
 
-/** Lightness at which a hue reaches its highest chroma. */
-function peakLightness(H: number): number {
-  let bestL = 0.5;
-  let bestC = -1;
-  for (let L = 0.32; L <= 0.96; L += 0.01) {
-    const c = chromaCap(L, H);
-    if (c > bestC) {
-      bestC = c;
-      bestL = L;
-    }
-  }
-  return bestL;
-}
-
-const PEAK: (number | undefined)[] = new Array(360);
-const hueIndex = (H: number) => ((Math.round(H) % 360) + 360) % 360;
-const peakAt = (H: number) => (PEAK[hueIndex(H)] ??= peakLightness(hueIndex(H)));
-
-/** The default law: sit near this hue's chroma peak, pulled toward the target. */
-function place(H: number, c: Constraints): string {
-  const L = lerp(peakAt(H), c.lightnessTarget, c.lightnessPull);
-  return toHex(L, chromaCap(L, H) * c.chromaFraction, H);
-}
-
-const HUE_NAMES: readonly (readonly [number, string])[] = [
-  [15, 'rose'], [45, 'red'], [62, 'orange'], [85, 'amber'], [100, 'gold'],
-  [122, 'yellow'], [138, 'lime'], [165, 'green'], [195, 'teal'], [218, 'cyan'],
-  [245, 'sky'], [275, 'blue'], [310, 'violet'], [345, 'fuchsia'],
-];
-/** A plain color name for a hue in degrees: `red`, `teal`, `violet`. */
-export function hueName(H: number): string {
-  for (const [ceil, name] of HUE_NAMES) if (H < ceil) return name;
-  return 'rose';
-}
-
-/** Disambiguate repeats: two hues can land in one name's band. */
-function uniqueNames(hues: number[]): string[] {
-  const seen = new Map<string, number>();
-  return hues.map((h) => {
-    const base = hueName(h);
-    const n = (seen.get(base) ?? 0) + 1;
-    seen.set(base, n);
-    return n === 1 ? base : `${base}-${n}`;
-  });
-}
-
 /**
  * Pull each chroma toward the set mean.
  *
@@ -202,258 +165,6 @@ function farthestFirst(hues: number[]): number[] {
 }
 
 /**
- * Search hue positions that maximize mean chroma subject to the gates.
- *
- * Seeds matter: a uniform 360/n ring can never open a `2 * minHueGap` hole
- * around a pinned hue, so with anchors the seeds spread across the arc the
- * anchors leave free instead.
- */
-/** The share-of-even floor, in degrees, for a set of this size. */
-export function floorDegrees(c: Pick<Constraints, 'hueFloor' | 'count'>): number {
-  return c.hueFloor <= 0 ? 0 : (c.hueFloor * 360) / Math.max(1, c.count);
-}
-
-function searchHues(c: Constraints): number[] | null {
-  const minGapDeg = floorDegrees(c);
-  const anchorHues = c.anchors.map((a) => a.hue);
-  const anchorHexes = c.anchors.map(toHexPreview);
-  const freeCount = c.count - c.anchors.length;
-  if (freeCount < 0) return null;
-
-  // Hue is an integer 0-359 and the constraints are fixed for one call, so the
-  // placed color, its realized hue and its contrast are each computed once.
-  interface Placed {
-    hex: string;
-    hue: number;
-    contrast: number;
-    chroma: number;
-    surfaceDistance: number;
-    /** OKLab coordinates, chroma pre-weighted, so a pairwise distance in the
-     *  search is three subtractions rather than two color conversions. */
-    lab: readonly [number, number, number];
-  }
-  const weighted = (hex: string): readonly [number, number, number] => {
-    const [L, a, b] = toLab(hex);
-    return [L, CHROMA_WEIGHT * a, CHROMA_WEIGHT * b];
-  };
-  const between = (p: readonly [number, number, number], q: readonly [number, number, number]) =>
-    Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
-  const placed = new Map<number, Placed>();
-  const at = (H: number) => {
-    const key = ((Math.round(H) % 360) + 360) % 360;
-    let v = placed.get(key);
-    if (!v) {
-      const hex = place(key, c);
-      const lch = toLch(hex);
-      v = {
-        hex,
-        hue: lch.H,
-        contrast: contrast(hex, c.surface),
-        chroma: lch.C,
-        surfaceDistance: deltaE(hex, c.surface),
-        lab: weighted(hex),
-      };
-      placed.set(key, v);
-    }
-    return v;
-  };
-  const anchorMeta = anchorHexes.map((hex) => {
-    const lch = toLch(hex);
-    return {
-      hex,
-      hue: lch.H,
-      contrast: contrast(hex, c.surface),
-      chroma: lch.C,
-      surfaceDistance: deltaE(hex, c.surface),
-      lab: weighted(hex),
-    };
-  });
-  const metaFor = (free: number[]) => [...anchorMeta, ...free.map(at)];
-
-  /**
-   * How far a set is from legal, in one number: degrees of hue crowding plus
-   * contrast shortfall. Zero means feasible. The search descends this first and
-   * only then maximizes chroma, because a seed ring is often illegal and the
-   * legal region may not be reachable by chroma-improving moves alone.
-   */
-  const penalty = (free: number[]): number => {
-    const m = metaFor(free);
-    let p = 0;
-    if (minGapDeg > 0) {
-      for (let i = 0; i < m.length; i += 1) {
-        for (let j = i + 1; j < m.length; j += 1) {
-          const short = minGapDeg - hueGap(m[i].hue, m[j].hue);
-          if (short > 0) p += short;
-        }
-      }
-    }
-    if (c.minContrast > 0) {
-      for (const x of m) {
-        const short = c.minContrast - x.contrast;
-        if (short > 0) p += short * 40;
-      }
-    }
-    // Distances are small numbers in OKLab (0.10 already reads as two colors),
-    // so they are weighted up to sit on the same scale as degrees of crowding.
-    if (c.minSurfaceDistance > 0) {
-      for (const x of m) {
-        const short = c.minSurfaceDistance - x.surfaceDistance;
-        if (short > 0) p += short * 400;
-      }
-    }
-    if (c.minDistance > 0) {
-      for (let i = 0; i < m.length; i += 1) {
-        for (let j = i + 1; j < m.length; j += 1) {
-          const short = c.minDistance - between(m[i].lab, m[j].lab);
-          if (short > 0) p += short * 400;
-        }
-      }
-    }
-    return p;
-  };
-  const score = (free: number[]) => {
-    const m = metaFor(free);
-    return m.reduce((sum, x) => sum + x.chroma, 0) / m.length;
-  };
-  if (freeCount === 0) return penalty([]) > 0 ? null : [];
-
-  const seeds: number[][] = [];
-  const seedStep = Math.max(6, Math.round(freeCount * 1.6));
-  for (let start = 0; start < 360; start += seedStep) {
-    seeds.push(Array.from({ length: freeCount }, (_, i) => Math.round((start + (i * 360) / freeCount) % 360)));
-  }
-  if (anchorHues.length > 0) {
-    // A uniform ring can never open a 2 * minHueGap hole around a pinned hue,
-    // so also seed across the arc the anchors leave free.
-    const base = anchorHues[0];
-    const span = 360 - 2 * Math.max(minGapDeg, 1);
-    for (let jitter = -8; jitter <= 8; jitter += 2) {
-      for (const divisor of [Math.max(1, freeCount - 1), freeCount]) {
-        seeds.push(
-          Array.from({ length: freeCount }, (_, i) =>
-            Math.round((((base + minGapDeg + jitter + (i * span) / divisor) % 360) + 360) % 360),
-          ),
-        );
-      }
-    }
-  }
-
-  const STEPS = [-16, -8, -4, -2, -1, 1, 2, 4, 8, 16];
-
-  /**
-   * Everything one position contributes to the penalty: its own shortfalls plus
-   * the pairs it takes part in.
-   *
-   * `descend` moves exactly one hue at a time, so recomputing the whole set for
-   * each candidate costs O(n^2) to learn about O(n) changed terms. Scoring the
-   * moved position alone is what keeps the count slider live at 16 colors.
-   */
-  const penaltyAt = (m: readonly Placed[], i: number): number => {
-    let p = 0;
-    const x = m[i];
-    if (c.minContrast > 0) {
-      const short = c.minContrast - x.contrast;
-      if (short > 0) p += short * 40;
-    }
-    if (c.minSurfaceDistance > 0) {
-      const short = c.minSurfaceDistance - x.surfaceDistance;
-      if (short > 0) p += short * 400;
-    }
-    for (let j = 0; j < m.length; j += 1) {
-      if (j === i) continue;
-      if (minGapDeg > 0) {
-        const short = minGapDeg - hueGap(x.hue, m[j].hue);
-        if (short > 0) p += short;
-      }
-      if (c.minDistance > 0) {
-        const short = c.minDistance - between(x.lab, m[j].lab);
-        if (short > 0) p += short * 400;
-      }
-    }
-    return p;
-  };
-
-  const descend = (hues: number[], useChroma: boolean, keepLegal: boolean) => {
-    const current = [...hues];
-    let meta = metaFor(current);
-    const offset = anchorMeta.length;
-    for (let iteration = 0; iteration < 120; iteration += 1) {
-      let improved = false;
-      for (let i = 0; i < freeCount; i += 1) {
-        const slot = offset + i;
-        const beforeP = penaltyAt(meta, slot);
-        const beforeC = meta[slot].chroma;
-        for (const delta of STEPS) {
-          const next = (((current[i] + delta) % 360) + 360) % 360;
-          if (next === current[i]) continue;
-          const candidate = at(next);
-          const trialMeta = meta.slice();
-          trialMeta[slot] = candidate;
-          const afterP = penaltyAt(trialMeta, slot);
-          const better = useChroma
-            ? (keepLegal ? afterP <= beforeP : true) && candidate.chroma > beforeC
-            : afterP < beforeP;
-          if (!better) continue;
-          if (keepLegal && afterP > beforeP) continue;
-          current[i] = next;
-          meta = trialMeta;
-          improved = true;
-          break;
-        }
-      }
-      if (!improved) break;
-    }
-    return current;
-  };
-
-  let best: number[] | null = null;
-  let bestScore = -1;
-  for (const seed of seeds) {
-    const repaired = penalty(seed) > 0 ? descend(seed, false, false) : seed;
-    if (penalty(repaired) > 0) continue;
-    const tuned = descend(repaired, true, true);
-    if (penalty(tuned) > 0) continue;
-    const s = score(tuned);
-    if (s > bestScore) {
-      bestScore = s;
-      best = tuned;
-    }
-  }
-  return best;
-}
-
-/** Closest any two colors in the set look. */
-function pairwiseMin(hexes: string[]): number {
-  if (hexes.length < 2) return 1;
-  let min = Infinity;
-  for (let i = 0; i < hexes.length; i += 1) {
-    for (let j = i + 1; j < hexes.length; j += 1) min = Math.min(min, deltaE(hexes[i], hexes[j]));
-  }
-  return min;
-}
-
-function summarize(swatches: Swatch[], surface: string): Stats {
-  const cs = swatches.map((s) => s.lch.C);
-  const ls = swatches.map((s) => s.lch.L);
-  let gap = 360;
-  for (let i = 0; i < swatches.length; i += 1) {
-    for (let j = i + 1; j < swatches.length; j += 1) {
-      gap = Math.min(gap, hueGap(swatches[i].lch.H, swatches[j].lch.H));
-    }
-  }
-  return {
-    meanChroma: cs.reduce((a, b) => a + b, 0) / (cs.length || 1),
-    chromaSpread: Math.max(...cs) - Math.min(...cs),
-    lightnessSpread: Math.max(...ls) - Math.min(...ls),
-    minHueGap: swatches.length > 1 ? gap : 360,
-    hueFloorShare: swatches.length > 1 ? (gap * swatches.length) / 360 : 1,
-    minContrast: Math.min(...swatches.map((s) => contrast(s.hex, surface))),
-    minSurfaceDistance: Math.min(...swatches.map((s) => deltaE(s.hex, surface))),
-    minDistance: pairwiseMin(swatches.map((s) => s.hex)),
-  };
-}
-
-/**
  * A categorical palette of `count` swatches, anchors included, satisfying the gates. When no hue arrangement
  * satisfies them the result is still a full palette, with `feasible` false.
  */
@@ -508,12 +219,6 @@ export const DEFAULT_CONSTRAINTS: Constraints = {
   order: 'farthest',
 };
 
-/** The color an anchor will actually contribute, for a swatch beside its controls. */
-export function toHexPreview(a: Pick<Anchor, 'hue' | 'lightness' | 'chroma'>): string {
-  const cap = chromaCap(a.lightness, a.hue);
-  return toHex(a.lightness, a.chroma === undefined ? cap : Math.min(a.chroma, cap), a.hue);
-}
-
 /**
  * An anchor taken from an existing color — a brand hex, or a color lifted from
  * somewhere else in the theme. Lightness comes along with the hue, which is the
@@ -529,4 +234,3 @@ export function anchorFromHex(hex: string, name?: string): Anchor {
     chroma: Number(C.toFixed(4)),
   };
 }
-

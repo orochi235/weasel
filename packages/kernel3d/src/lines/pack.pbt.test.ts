@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { closestPointOnSegment, compose, type Vec3 } from '@weasel-js/geom/3d';
+import { nearestPointOnSegment, compose, type Vec3 } from '@weasel-js/geom/3d';
 import { quat, runs, tally, timeoutFor } from '../pbt.fixture';
 import { HEAD, HEAD_OVERDRAW, headFor, layoutLine, type HeadShape } from './head';
 import { LINE_FLOATS, packLines, visibleRuns, type Line3, type LineRun3 } from './pack';
@@ -94,7 +94,7 @@ function offRun(p: Vec3, r: LineRun3): number {
   const n = r.points.length;
   let best = Infinity;
   for (let i = 0; i < (r.closed ? n : n - 1); i++) {
-    best = Math.min(best, distance(p, closestPointOnSegment(p, r.points[i]!, r.points[(i + 1) % n]!)));
+    best = Math.min(best, distance(p, nearestPointOnSegment(p, r.points[i]!, r.points[(i + 1) % n]!)));
   }
   return best;
 }

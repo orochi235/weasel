@@ -6,7 +6,7 @@ import {
 } from '@weasel-js/core';
 import {
   DIAGRAM_THEME_KEY, DIAGRAM_THEMES, DIAGRAM_TYPE_DOC_KEY, EDGE_DERIVE_PATH, FLOWCHART_STENCILS, applyDiagramTheme, diagramThemeOf, diagramTypeDocOf,
-  stencilBuild,
+  stencilInsertOps,
 } from '@weasel-js/diagram';
 import { CHART_LAYERS, CHART_PAGE, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose } from './chartDocument';
 import {
@@ -28,7 +28,7 @@ function twoBodiesAndAnEdge() {
     { stencil: process!, at: { x: 100, y: 100, width: 0, height: 0 } },
     { stencil: decision!, at: { x: 400, y: 100, width: 0, height: 0 } },
   ].map(({ stencil, at }) => {
-    const built = stencilBuild(stencil, at, { layer: 'shapes', newId: () => scene.mintId() });
+    const built = stencilInsertOps(stencil, at, { layer: 'shapes', newId: () => scene.mintId() });
     commitOps({ scene } as unknown as ActionDeps, built.ops, 'Insert');
     return built.id as NodeId;
   });

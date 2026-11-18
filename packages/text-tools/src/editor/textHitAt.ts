@@ -1,5 +1,5 @@
 import { boundsOfPath, pathContainsPoint, type Path } from '@weasel-js/geom';
-import { caretIndexAt, pointInTextPose, type StyledRun, type TextFit, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
+import { caretIndexAt, textPoseContainsPoint, type StyledRun, type TextFit, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
 import { textBoxOf, textLayoutScale } from '../node/textPainter';
 import { AUTO_POSE_DESCRIPTOR, derivedPartsOf, effectSourceFor, indexedCandidates, nodesAsShown, sceneDerivedPathOf, scenePaintedPoseOf, shownLookup, targetTransformOf, worldToLocal, type RectPose, type Scene } from '@weasel-js/core';
 
@@ -24,7 +24,7 @@ export interface TextHitAtOptions {
 /**
  * The top-most unlocked text node at world `(cx, cy)`, and the caret there.
  *
- * `pointInTextPose` and `caretIndexAt` work in the node's own box, so the
+ * `textPoseContainsPoint` and `caretIndexAt` work in the node's own box, so the
  * point is taken back through the frame the node is drawn in. The whole box
  * takes the point, padding included; the caret is placed in the inset one.
  *
@@ -73,7 +73,7 @@ export function textHitAt<TData, TPose extends RectPose>(
       fit: read.fit?.(node.data),
     };
     const box = { x: at.x, y: at.y, width: at.width, height: at.height };
-    if (!pointInTextPose(p.x, p.y, { ...pose, ...box })) continue;
+    if (!textPoseContainsPoint(p.x, p.y, { ...pose, ...box })) continue;
     const scale = textLayoutScale({ style: pose.style, runs: pose.runs }, opts.scale);
     return { id: String(node.id), caret: caretIndexAt(p.x, p.y, pose, { scale }) };
   }

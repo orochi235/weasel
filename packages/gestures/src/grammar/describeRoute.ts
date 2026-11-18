@@ -172,8 +172,8 @@ function actionClause(parsed: ParsedRoute, arg: string | undefined, required: re
       const where = arg === 'leave' ? ` ${leftClause(parsed.target)}` : target;
       return userDoes(required, `moves the pointer${where}${held}`);
     }
-    case 'dblTap':
-      return userDoes(required, `double-taps${target}`);
+    case 'doubleClick':
+      return userDoes(required, `double-clicks${target}`);
     case 'drag': {
       const button = parsed.arg === 'middle' ? ' with the middle button'
         : parsed.arg === 'secondary' ? ' with the secondary button'

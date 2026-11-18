@@ -42,7 +42,7 @@ import type { Action } from '@weasel-js/routing';
 import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingOverlay, WorldPoint } from '@weasel-js/routing';
 import type { EditAnchorsDep, PathEditDrag, SnapBegin, SnapDep, SnapMods, SnapSession } from '@weasel-js/core';
 import {
-  type EditAnchorsParams, editingLayer, inPlane, inputSession, locksOf, pathOperationTags, SNAP_ROLES, snapMods,
+  type EditAnchorsParams, editingLayer, inPlane, createBareSnapSession, locksOf, pathOperationTags, SNAP_ROLES, snapMods,
 } from '@weasel-js/core';
 import { isAnchorOrControl, resolveParams, roleMods, roleReader, type ModifierRoles } from '@weasel-js/routing';
 import {
@@ -156,7 +156,7 @@ function anchorDragSnap(
           gesture: 'point', press: press.origin, ids: [press.id],
           also: { paths: [path], anchors }, constrain: 'axis',
         };
-        session = snap?.begin(req) ?? inputSession(req);
+        session = snap?.begin(req) ?? createBareSnapSession(req);
       }
       return session.at(world, mods).point;
     },

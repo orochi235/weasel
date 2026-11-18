@@ -1,11 +1,11 @@
 /**
- * `layoutMarkdown` over any runs: every figure finite, each line's runs tiling it from 0, the lines holding the
+ * `layoutCanvasRuns` over any runs: every figure finite, each line's runs tiling it from 0, the lines holding the
  * source in order with only hanging white space and hard breaks between them, every piece styled as the run it
  * came from, a line past the width only where no break was to be had, and one line per paragraph unwrapped.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { layoutMarkdown, type MarkdownFont, type PositionedRun } from './markdownText';
+import { layoutCanvasRuns, type MarkdownFont, type CanvasPositionedRun } from './markdownText';
 import type { StyledRun } from './runs';
 import { graphemeCount } from './measure/graphemes';
 import { isHardLineBreak, lineBreakOpportunities, NO_BREAK } from './layout/lineBreak/lineBreaks';
@@ -54,13 +54,13 @@ const opts = fc.record({ letterSpacing: fc.constantFrom(0, 1), tabSize: fc.const
 const BETWEEN = /^[ \t\n\r\u000b\u000c\u0085\u2028\u2029]*$/u;
 
 const close = (a: number, b: number) => Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b));
-const lineText = (rs: readonly PositionedRun[]) => rs.map((r) => r.text).join('');
+const lineText = (rs: readonly CanvasPositionedRun[]) => rs.map((r) => r.text).join('');
 
-describe('layoutMarkdown, property', () => {
+describe('layoutCanvasRuns, property', () => {
   it('lays every run out finite, each line tiled from 0 by its runs', () => {
     const t = tally();
     fc.assert(fc.property(fc.array(anyRun, { maxLength: 5 }), width, opts, (rs, w, o) => {
-      const out = layoutMarkdown(rs, w, SIZE, measure, o);
+      const out = layoutCanvasRuns(rs, w, SIZE, measure, o);
       let height = 0;
       let widest = 0;
       for (const line of out.lines) {
@@ -90,7 +90,7 @@ describe('layoutMarkdown, property', () => {
   it('holds the source in order, each piece styled as its run, with only hanging white space and breaks between lines', () => {
     const t = tally();
     fc.assert(fc.property(fc.array(plainRun, { maxLength: 5 }), width, opts, (rs, w, o) => {
-      const out = layoutMarkdown(rs, w, SIZE, measure, o);
+      const out = layoutCanvasRuns(rs, w, SIZE, measure, o);
       const source = rs.map((r) => r.text).join('');
       const runAt: StyledRun[] = rs.flatMap((r) => [...r.text].flatMap((ch) => Array<StyledRun>(ch.length).fill(r)));
       let at = 0;
@@ -121,7 +121,7 @@ describe('layoutMarkdown, property', () => {
   it('runs a line past the width only where no break opportunity with ink after it falls inside', () => {
     const t = tally();
     fc.assert(fc.property(fc.array(plainRun, { minLength: 1, maxLength: 5 }), fc.integer({ min: 1, max: 120 }), opts, (rs, w, o) => {
-      const out = layoutMarkdown(rs, w, SIZE, measure, o);
+      const out = layoutCanvasRuns(rs, w, SIZE, measure, o);
       const source = rs.map((r) => r.text).join('');
       const cps = [...source].map((c) => c.codePointAt(0)!);
       const breaks = lineBreakOpportunities(cps);
@@ -157,13 +157,13 @@ describe('layoutMarkdown, property', () => {
       cps.forEach((cp, i) => {
         if (isHardLineBreak(cp) && !(cp === 13 && cps[i + 1] === 10) && i < cps.length - 1) paragraphs++;
       });
-      expect(layoutMarkdown(rs, Infinity, SIZE, measure).lines).toHaveLength(paragraphs);
+      expect(layoutCanvasRuns(rs, Infinity, SIZE, measure).lines).toHaveLength(paragraphs);
     }), runs(RUNS));
   });
 
   it('raises a superscript and lowers a subscript, measured against the inherited size', () => {
     fc.assert(fc.property(fc.constantFrom('super' as const, 'sub' as const), fc.option(fc.constantFrom(0.3, -0.2), { nil: undefined }), (script, shift) => {
-      const out = layoutMarkdown([{ text: 'A', script, ...(shift === undefined ? {} : { baselineShift: shift }) }], Infinity, SIZE, measure);
+      const out = layoutCanvasRuns([{ text: 'A', script, ...(shift === undefined ? {} : { baselineShift: shift }) }], Infinity, SIZE, measure);
       const r = out.lines[0]!.runs[0]!;
       const want = shift ?? (script === 'super' ? 1 : -1);
       expect(Math.sign(-r.y)).toBe(Math.sign(want));

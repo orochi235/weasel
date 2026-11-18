@@ -17,7 +17,7 @@ describe('createMinimapContribution fit', () => {
       get: (name: string) => (name === 'scene' ? scene : name === 'poseDescriptor' ? descriptor : undefined),
     } as unknown as ContributionDepReader;
     const api = { element: null, requestRedraw: () => {} } as unknown as CanvasExtensionApi;
-    const minimap = createMinimapContribution({ rect: { x: 0, y: 0, w: 116, h: 116 } });
+    const minimap = createMinimapContribution({ rect: { x: 0, y: 0, width: 116, height: 116 } });
     minimap.attach!(api, reader);
     const fit = minimap.views![0]!.view as (outer: View, dims: typeof DIMS) => View;
 

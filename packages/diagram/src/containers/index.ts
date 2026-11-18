@@ -19,12 +19,12 @@ export type { RegionOptions, RegionSpec } from './regionSpecs';
 export { diagramCanDropInto, diagramDropParentAt } from './canDropInto';
 export type { CanReparent, DropParentScene } from './canDropInto';
 export {
-  LANE_AFFORDANCE_KIND, LANE_LAYER_ID, createLaneAffordance, laneLayer, laneScratchOf, poolsOf,
+  LANE_AFFORDANCE_KIND, LANE_LAYER_ID, createLaneAffordance, createLaneLayer, laneScratchOf, poolsOf,
 } from './laneBoundaryLayer';
 export type { LaneLayerOptions, LaneScratch, PoolLanes } from './laneBoundaryLayer';
 export {
-  ADD_LANE_ACTION_ID, LANE_RESIZE_ACTION_ID, RELEASE_MEMBERS_ACTION_ID, commitLaneResizeToScene, createAddLaneAction,
-  createLaneResizeAction, createReleaseMembersAction, diagramContainers, laneResizeFrame,
+  ADD_LANE_ACTION_ID, RESIZE_LANE_ACTION_ID, RELEASE_MEMBERS_ACTION_ID, commitLaneResizeToScene, createAddLaneAction,
+  createLaneResizeAction, createReleaseMembersAction, createDiagramContainersContribution, laneResizeFrame,
 } from './containerActions';
 export type { LaneActionOptions, LaneResize } from './containerActions';
-export { EDIT_CONTAINER_TITLE_ACTION_ID, editContainerTitleAction, editContainerTitleBinding, regionHeaderAt } from './containerTitle';
+export { EDIT_CONTAINER_TITLE_ACTION_ID, createEditContainerTitleAction, editContainerTitleBinding, regionHeaderAt } from './containerTitle';

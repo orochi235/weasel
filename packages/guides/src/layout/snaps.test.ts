@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { none, nearest, nearestWithin, cellAt, containedThenNearest } from './snaps';
+import { noSnap, nearestSnap, nearestWithin, cellThenNearest, containedThenNearest } from './snaps';
 import type { DropTarget } from '@weasel-js/core';
 
 type P = { x: number; y: number };
@@ -24,7 +24,7 @@ const region = (
 
 describe('none', () => {
   it('returns null regardless of input', () => {
-    const snap = none<P>();
+    const snap = noSnap<P>();
     expect(snap.pickTarget([target(0, 0), target(10, 10)], { x: 5, y: 5 })).toBeNull();
     expect(snap.pickTarget([], { x: 0, y: 0 })).toBeNull();
   });
@@ -32,7 +32,7 @@ describe('none', () => {
 
 describe('nearest', () => {
   it('returns the closest target by Euclidean distance', () => {
-    const snap = nearest<P>();
+    const snap = nearestSnap<P>();
     const got = snap.pickTarget(
       [target(0, 0), target(10, 0), target(0, 10)],
       { x: 9, y: 1 },
@@ -41,7 +41,7 @@ describe('nearest', () => {
   });
 
   it('returns null when targets is empty', () => {
-    expect(nearest<P>().pickTarget([], { x: 0, y: 0 })).toBeNull();
+    expect(nearestSnap<P>().pickTarget([], { x: 0, y: 0 })).toBeNull();
   });
 });
 
@@ -94,28 +94,28 @@ describe('containedThenNearest', () => {
   });
 });
 
-describe('cellAt', () => {
+describe('cellThenNearest', () => {
   it('also accepts hitBounds for new-style targets', () => {
-    const snap = cellAt<P>();
+    const snap = cellThenNearest<P>();
     const a = region(0, 0, { x: 0, y: 0, width: 10, height: 10 });
     expect(snap.pickTarget([a], { x: 5, y: 5 })?.origin).toEqual({ x: 0, y: 0 });
   });
 
   it('returns the target whose meta.cellRect contains the pointer', () => {
-    const snap = cellAt<P>();
+    const snap = cellThenNearest<P>();
     const a = target(0, 0, { cellRect: { x: 0, y: 0, width: 10, height: 10 } });
     const b = target(20, 0, { cellRect: { x: 10, y: 0, width: 10, height: 10 } });
     expect(snap.pickTarget([a, b], { x: 12, y: 5 })?.origin).toEqual({ x: 20, y: 0 });
   });
 
   it('falls back to nearest when pointer is outside all cells', () => {
-    const snap = cellAt<P>();
+    const snap = cellThenNearest<P>();
     const a = target(0, 0, { cellRect: { x: 0, y: 0, width: 10, height: 10 } });
     const b = target(20, 0, { cellRect: { x: 10, y: 0, width: 10, height: 10 } });
     expect(snap.pickTarget([a, b], { x: 100, y: 5 })?.origin).toEqual({ x: 20, y: 0 });
   });
 
   it('returns null when targets is empty', () => {
-    expect(cellAt<P>().pickTarget([], { x: 0, y: 0 })).toBeNull();
+    expect(cellThenNearest<P>().pickTarget([], { x: 0, y: 0 })).toBeNull();
   });
 });

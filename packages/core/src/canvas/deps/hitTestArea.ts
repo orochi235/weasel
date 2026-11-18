@@ -7,7 +7,7 @@
  * rect, rotated if the pose is.
  */
 import type { Scene, NodeId } from 'core/scene/types';
-import { transformPoint, boundsOfPath, meanScale, pathIntersectsRect, type Affine } from '@weasel-js/geom';
+import { transformPoint, boundsOfPath, meanScale, pathIntersectsRect, type Affine, type Rect } from '@weasel-js/geom';
 import type { LassoHitMode } from 'core/adapters/types';
 import {
   poseDescriptorForNode,
@@ -23,7 +23,7 @@ import {
 } from 'canvas/pickWalk';
 import { rectToPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 
-import type { HitTestView } from 'interactions/actions/depSchema';
+import type { PickingView } from 'interactions/actions/depSchema';
 import { findShapeInk, findShapeSilhouette } from 'canvas/NodeShape';
 import {
   polygonRegion,
@@ -36,14 +36,6 @@ import {
   type SelectRegion,
 } from 'core/geometry/regionHit';
 
-/** An axis-aligned world rect: what a marquee region query covers. */
-export interface AABBBounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
 /** What a region query takes back beyond leaves. */
 export interface RegionQueryOptions {
   /** Default `false`: a region that takes a group and its members
@@ -51,7 +43,7 @@ export interface RegionQueryOptions {
    *  to fold members back into their group, asks for them. */
   includeGroups?: boolean;
   /** The asking view's scale, for a node that sizes itself in screen pixels
-   *  (`{ px }` text). `hitTestArea` and its siblings read it off the camera. */
+   *  (`{ px }` text). `hitTestRect` and its siblings read it off the camera. */
   scale?: number;
 }
 
@@ -59,7 +51,7 @@ export interface RegionQueryOptions {
 /** The pick options a region dep hands the shared walk: the asking view's
  *  layer gate and camera, and the surface's alpha. */
 export function regionPickOptions(
-  view: HitTestView | undefined,
+  view: PickingView | undefined,
   alphaOf: ((id: string) => number) | undefined,
 ): ScenePickSourceOptions<unknown> {
   const camera = view?.get?.();
@@ -71,9 +63,9 @@ export function regionPickOptions(
 }
 
 /** Marquee entry point: every node the rect `bounds` meets. */
-export function hitTestArea(
+export function hitTestRect(
   scene: Scene<unknown, string, unknown>,
-  bounds: AABBBounds,
+  bounds: Rect,
   opts?: ScenePickSourceOptions<unknown>,
   descriptor: PoseDescriptor<unknown> = AUTO_POSE_DESCRIPTOR,
   query: RegionQueryOptions = {},
@@ -88,7 +80,7 @@ export function hitTestArea(
 export function hitTestAreaPolygon(
   scene: Scene<unknown, string, unknown>,
   area: ArrayLike<number>,
-  areaBounds?: AABBBounds,
+  areaBounds?: Rect,
   /** True when `area` IS its own bounding rect, so `areaBounds` containment
    *  implies containment in the area proper. Never pass this for a lasso
    *  polygon — a node inside the hull's box can miss the hull. */

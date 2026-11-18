@@ -79,7 +79,7 @@ function panned(at: number, by: number): number {
 }
 
 /** Pure reducer: the whole wheel convention in one call. */
-export function computeWheelAction(
+export function viewAfterWheel(
   view: View,
   input: WheelInput,
   clamp?: ZoomClampOptions,

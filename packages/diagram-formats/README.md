@@ -27,9 +27,9 @@ it is laid out whenever it is drawn, and its `name` is the diagram's title. A
 `'plot'` page holds one chart, a `PlotData` from `@weasel-js/plot`, which fills
 the page. Ids share one namespace across the document. Every format lists the
 page `kinds` it holds; a writer of the whole document leaves out a page of
-another kind with a warning, a one-page writer throws on one, and `formatHolds` says whether a format can write a whole document.
+another kind with a warning, a one-page writer throws on one, and `formatFits` says whether a format can write a whole document.
 `scenePageKinds(scene)` says which kinds a scene would export as from its
-top-level nodes alone (`{ page }` asks about the one page a one-page writer writes), and `formatTakes(format, kinds)` whether a format holds
+top-level nodes alone (`{ page }` asks about the one page a one-page writer writes), and `formatFitsKinds(format, kinds)` whether a format holds
 them: what a menu asks on every render. Edges whose ends are on different pages sit in
 `crossPageEdges`, with no waypoints, since they draw as two stubs and their
 off-page tags.
@@ -107,7 +107,7 @@ with it and rejects on a file nothing reads.
 | Format | Extensions | Reads | Writes |
 | --- | --- | --- | --- |
 | `DIAGRAM_JSON`, the document as JSON | `.diagram.json` | yes, graph, sequence, and plot pages | the whole document |
-| `DRAW_XML`, draw-style XML | `.xml` | yes, plain or compressed | every graph page, uncompressed |
+| `DIAGRAM_DRAW_XML`, draw-style XML | `.xml` | yes, plain or compressed | every graph page, uncompressed |
 | `DIAGRAM_MERMAID`, a Mermaid flowchart, class, state, ER, mind map, requirement, block, architecture, C4, kanban, or sequence diagram, or a chart | `.mmd`, `.mermaid` | yes | one page, a graph, a sequence, or a chart |
 | `DIAGRAM_DOT`, a Graphviz DOT graph | `.dot`, `.gv` | yes | one page |
 
@@ -266,7 +266,7 @@ naming the line on text it cannot read, and warns of what it drops.
 | Mermaid | Diagram |
 | --- | --- |
 | `a`, `a["text"]`, and the flowchart's other brackets | a node: its text (else its id) in the flowchart's outline for those brackets |
-| `columns 3` | the grid's `columns`, or a group's under `groupColumns`; `columns auto` leaves it unset |
+| `columns 3` | the grid's `columns`, or a group's under `clusterColumns`; `columns auto` leaves it unset |
 | `a:2`, `block:g:2` | `spans` |
 | `space`, `space:2` | `skips` on the next block; spaces after a level's last block are dropped, with a warning |
 | `block:g … end`, `block … end` | a container holding its blocks in order; an unnamed one is `block-1`, `block-2`, … |
@@ -400,17 +400,17 @@ what each format carries. The ones here add what a diagram needs:
 
 ```ts
 import { placedPagesOf } from '@weasel-js/core';
-import { pageRegionOf, pageRegionsOf } from '@weasel-js/export';
+import { pageRegionSource, pageRegionsSource } from '@weasel-js/export';
 import { exportPagePng, exportPageSvg, exportPagesPdf } from '@weasel-js/diagram-formats';
 
 const pages = placedPagesOf(scene);
-const svg = await exportPageSvg(scene, pageRegionOf(pages[0]), { title: 'Page 1' });
-const png = await exportPagePng(scene, pageRegionOf(pages[0]), { scale: 2 });
-const pdf = await exportPagesPdf(scene, pageRegionsOf(pages), { title: 'Chart', onDiagnostic: (d) => console.info(d.message) });
+const svg = await exportPageSvg(scene, pageRegionSource(pages[0]), { title: 'Page 1' });
+const png = await exportPagePng(scene, pageRegionSource(pages[0]), { scale: 2 });
+const pdf = await exportPagesPdf(scene, pageRegionsSource(pages), { title: 'Chart', onDiagnostic: (d) => console.info(d.message) });
 ```
 
 A page is a fixed rect or a function of the document the export draws.
-`pageRegionOf(page)` and `pageRegionsOf(pages)` find each page by its id in that
+`pageRegionSource(page)` and `pageRegionsSource(pages)` find each page by its id in that
 document, so a page moved while the export loaded is written where it now is,
 and one removed fails the export.
 

@@ -3,7 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import { linear } from '@weasel-js/geom';
 import type { InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { useAnimator } from '@weasel-js/animator/react';
-import { createScene, effectivePose, createTransformOp } from '@weasel-js/core/engine';
+import { createScene, effectivePose, createSetPoseOp } from '@weasel-js/core/engine';
 import { asNodeId, type NodeId, type RectPose, createReflowTransition, bindPoseTransition, type PoseTransitionSeat, createDepartures } from '@weasel-js/core';
 import { moveAction } from '../../actions/move/action';
 
@@ -100,11 +100,11 @@ describe('bindPoseTransition', () => {
 
   it("snaps an action's commit by default, and glides it when the seat admits it", () => {
     const snapped = setup();
-    act(() => { snapped.scene.applyBatch([createTransformOp<RectPose>({ id: A, from: at(0), to: at(60) })], 'Align', batchAdapter(snapped.scene)); });
+    act(() => { snapped.scene.applyBatch([createSetPoseOp<RectPose>({ id: A, from: at(0), to: at(60) })], 'Align', batchAdapter(snapped.scene)); });
     expect(snapped.where().x).toBe(60);
 
     const glided = setup({ glides: (w) => w.origin === 'ops' && w.label === 'Align' });
-    act(() => { glided.scene.applyBatch([createTransformOp<RectPose>({ id: A, from: at(0), to: at(60) })], 'Align', batchAdapter(glided.scene)); });
+    act(() => { glided.scene.applyBatch([createSetPoseOp<RectPose>({ id: A, from: at(0), to: at(60) })], 'Align', batchAdapter(glided.scene)); });
     expect(glided.where().x).toBe(0);
   });
 

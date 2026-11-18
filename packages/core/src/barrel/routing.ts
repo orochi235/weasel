@@ -45,12 +45,12 @@ export type {
   FinishPathParams, IngestParams, InsertParams, MoveParams, PaintParams, RotateParams,
   PlaceParams, CountStepParams, OpacityParams, ViewportZoomParams, WheelScrollParams, PickParams,
 } from '../interactions/actions/actionParamSchema';
-export { bindAction, defineAction, dynamicActionId, routedOpts } from '@weasel-js/routing';
+export { bindAction, defineAction, dynamicActionId, bindingOptionsOf } from '@weasel-js/routing';
 export type {
   ActionOf, ActionParamsOf, ActionSettingsOf, ActionVariantOf, BindingOf, DynamicActionId, InvokeParams,
   KnownActionId, NoParams,
 } from '@weasel-js/routing';
-export { eligibleNow, evaluateActive, evaluateEnabled, buildDepsFromRequires } from '@weasel-js/routing';
+export { eligibleNow, checkActive, checkEnabled, createActionDeps } from '@weasel-js/routing';
 export type { ActionEnabledResult } from '@weasel-js/routing';
 export { actionItemShortcuts, actionShortcuts, keySpecShortcut } from '@weasel-js/routing';
 export type { ActionShortcut } from '@weasel-js/routing';
@@ -79,10 +79,10 @@ export {
 export { NUDGE_LABEL, nudgeDelta, nudgeSpec, type NudgeDirection } from '../interactions/actions/defaults/nudgeSteps';
 export { reachesLocked } from '../interactions/actions/defaults/lockedReach';
 export {
-  pinchZoomAction,
-  createPinchZoomAction,
-  type PinchZoomOptions,
-} from '../interactions/actions/defaults/pinchZoom';
+  touchZoomAction,
+  createTouchZoomAction,
+  type TouchZoomOptions,
+} from '../interactions/actions/defaults/touchZoom';
 export type { SliceDep, ClipboardDep, OperandsDep } from '../interactions/actions/depSchema';
 export { operandList } from '../interactions/actions/operands';
 export { useActionSet, useStandardDeps } from '../interactions/actions/useActionSet';
@@ -107,10 +107,12 @@ export type { DepName, DepRegistry, DepListing, DepSource } from '@weasel-js/rou
 // Exported from its defining module rather than through depRegistry's
 // re-export, so `DepName = keyof DepSchema` resolves to a documented symbol.
 export type { DepSchema } from '../interactions/actions/depSchema';
-export type { RangeBetween, SelectRangeDep } from '../tools/builtin/select/selectRange';
+export type { RangeBetween, SelectRangeDep } from '../canvas/selectRange';
+export { topmostOf, type TopmostTree } from '../canvas/topmostOf';
+export { pressTarget, type PressTargetTree } from '../canvas/pressTarget';
 export type {
   AreaSelectDep,
-  HitTestView,
+  PickingView,
   ClipboardIngestCtx,
   EditAnchorsDep,
   FinishedEditFrame,
@@ -136,7 +138,7 @@ export type {
   SvgUnpacker,
   ViewApi,
 } from '../interactions/actions/depSchema';
-export type { GestureLifecycleOptions } from '../interactions/actions/gestureLifecycle';
+export type { RunLifecycleOptions } from '../interactions/actions/runLifecycle';
 export { insertSite, type InsertSite, type InsertSiteOptions } from '../canvas/deps/insertSite';
 export type { GeometryProjection, PoseChange } from '../interactions/actions/geometryProjection';
 export { PATH_GEOMETRY_PROJECTION } from '../interactions/actions/geometryProjection';

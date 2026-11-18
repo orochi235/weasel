@@ -11,7 +11,7 @@ const SPEC_KIND_TO_GESTURE: Record<SpecKind, GestureName | undefined> = {
   wheel: 'wheel',
   pinch: 'pinch',
   click: 'click',
-  doubleClick: 'dblTap',
+  doubleClick: 'doubleClick',
   contextMenu: 'contextMenu',
   longPress: 'longPress',
   drag: 'drag',

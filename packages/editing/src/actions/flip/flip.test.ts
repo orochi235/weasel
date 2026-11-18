@@ -10,7 +10,7 @@ interface Pose { x: number; y: number; width: number; height: number; rotation?:
 // ---------------------------------------------------------------------------
 // Stub scene
 //
-// The commit now emits `createTransformOp`s routed through a `commitOps`
+// The commit now emits `createSetPoseOp`s routed through a `commitOps`
 // helper: `applyOps(ops, 'Flip')` when a consumer hook is present, else
 // `scene.applyBatch(ops, 'Flip', defaultCommitAdapter(scene))`. The stub
 // mirrors the real scene: `applyBatch` records one undo entry and applies each

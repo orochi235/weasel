@@ -165,8 +165,8 @@ The **select tool** is a Tool in this sense and only chooses: `select.pick` on
 press, the deferred multi-click collapse on release, `areaSelect` on an empty
 drag, `clearSelection` on an empty click. Acting on the selection is not the
 select tool's. Moving, cloning, resizing and rotating it are `always` entries
-owned by the selection (`selectionMoveContribution`,
-`selectionResizeContribution`, `selectionRotateContribution` in
+owned by the selection (`createSelectionMoveContribution`,
+`createSelectionResizeContribution`, `createSelectionRotateContribution` in
 `tools/builtin/select`), so they are live
 under any tool that leaves the gesture unclaimed.
 
@@ -179,7 +179,7 @@ active, beneath any other tuning, and a host draws the options row from the same
 schema. Naming a size or a strength gives the tool step actions on `[` `]`,
 `Shift+[` `Shift+]`, and Shift+wheel, bound at active scope.
 
-An option is kept per tool unless it names a **shared key** (`ToolOptions.share`),
+An option is kept per tool unless it names a **shared key** (`ToolOptionsSpec.share`),
 and every tool naming that key reads and writes one value. Every read and write
 goes through the slot `toolOptionSlot` resolves. The shape tools share `fill`,
 `stroke`, `strokeWidth`, and `fillRule`, and text its `textFill`. A brush's size
@@ -275,7 +275,7 @@ implementing the slices its readers take. See
 ### Op
 
 An invertible, adapter-agnostic mutation: `{ apply(adapter), invert(): Op, label?, coalesceKey? }`.
-Op constructors live in `packages/core/src/core/ops/`: `createTransformOp`, `createInsertOp`,
+Op constructors live in `packages/core/src/core/ops/`: `createSetPoseOp`, `createInsertOp`,
 `createDeleteOp`, `createSetSelectionOp`, `createSetTextOp`, `createReorderOp`,
 `createSetPathOp`, etc. `dispatchApplyBatch(adapter, ops, label)` applies them in
 order (or hands them to `adapter.applyBatch` for history integration).
@@ -285,8 +285,8 @@ change. [Actions](#action) at the application layer produce op batches to expres
 user-intent operations; the action↔op mapping is many-to-many:
 
 - **1 action → 1 op**: `delete` → `createDeleteOp`.
-- **1 action → N ops**: `align left` → N `createTransformOp`s (one per selected item).
-- **0 ops for an action**: `zoom in`, `escape`, `toggle grid` — non-undoable state
+- **1 action → N ops**: `align left` → N `createSetPoseOp`s (one per selected item).
+- **0 ops for an action**: `zoom in`, `deselect`, `toggle grid` — non-undoable state
   changes bypass the op pipeline.
 - **Ops without an action**: a gesture commit can emit ops directly
   without dispatching through the action registry.
@@ -359,7 +359,7 @@ raises for it, while held on macOS and Linux or just after the release on
 Windows, so its menu opens on the release in place of the press (2026-11-11). An
 affordance's claim on the pointer is a claim on its primary press and does not
 bar a drag with another button. The `view` preset binds a middle drag to
-`viewport.dragPan` under every tool (`middleDragPanContribution`).
+`viewport.dragPan` under every tool (`createMiddleDragPanContribution`).
 
 A `hover` spec with `held` keeps reporting while a button is down, read the way
 `mods` reads a modifier: `held: 'optional'` (`hover ?held` in a route) fires
@@ -400,15 +400,15 @@ dispatcher; one without a binding still registers, and is reached by
 Actions are the *application layer* of state change — the verbs the user can
 invoke. Each one either produces an [Op](#op) batch (for undoable mutations like
 `delete`, `align`, `move`) or emits no ops (for transient/UI state like
-`zoom in`, `escape`, `toggle grid`).
+`zoom in`, `deselect`, `toggle grid`).
 
-Source layout reflects this: both one-shot actions (`delete`, `align`, `escape`, …)
+Source layout reflects this: both one-shot actions (`delete`, `align`, `deselect`, …)
 and drag-based actions (`move`, `resize`, `rotate`, `insert`, `area-select`, …) live
 under `packages/core/src/interactions/actions/`. All default actions are registered as descriptors
 and dispatched through the action registry. A tool's entire input surface is
 `Tool.bindings`, and every gesture resolves through one engine.
 
-Examples: `selectAll`, `escape`, `duplicate`, `nudge`, `reorder`, `delete`,
+Examples: `selectAll`, `deselect`, `duplicate`, `nudge`, `reorder`, `delete`,
 `align.{left,...}`, `distribute.{horizontal,vertical}`, `flip.{x,y}`. Kit defaults
 register via `<SceneCanvas>`, each with the `features` preset that carries it
 (`FEATURE_ACTION_IDS`), or with a tool that binds it; consumer-level actions
@@ -537,7 +537,7 @@ still shares by lifting its provider above both.
 
 `mute(id)` declares an id **not for this scope**: here and below it lists as
 absent and neither `trigger` nor `begin` fires it, while it stays registered
-where it was. `viewport={{ pinchZoom: false }}` and `actions={{ id: null }}` are
+where it was. `viewport={{ touchZoom: false }}` and `actions={{ id: null }}` are
 opt-outs for one canvas this way. `unregister` is the other door: it drops the
 action from the tier it is called on.
 
@@ -551,7 +551,7 @@ of keys, clicks or drags reached through one key first, `Loupe ▸ 2`. A
 **leader** is the binding that opens it, on an action of its own,
 `keymap.<id>`, at the hotkey tier, so it outranks what the active tool binds to
 the same key and it opens mid-gesture too (decided 2026-10-20).
-`keymapContribution` builds both from one definition. "Chord" is not the word:
+`createKeymapContribution` builds both from one definition. "Chord" is not the word:
 here that means a modifier combination (`BROWSER_RESERVED_CHORDS`).
 
 Tapping the leader opens the keymap for the next input. Holding it keeps the
@@ -625,7 +625,7 @@ in path edit, Escape exits the edit instead of resetting the tool. A plain drag
 carries no intent of its own, so no kit action binds one by default: the select
 tool marquees, the shape tools insert and the hand tool pans through their own
 bindings, and a canvas that wants a marquee or a pan under every tool adds
-`areaSelectContribution()` or `dragPanContribution()`. Path edit's anchor
+`createAreaSelectContribution()` or `createDragPanContribution()`. Path edit's anchor
 editing binds ambient drags on its own affordances, and a path-edit tool such
 as Sand binds its drag at the active tier, which outranks them;
 the `anchors` tool path edit starts on binds nothing, so they take the drag.
@@ -651,14 +651,14 @@ first whose action starts the gesture owns it to the end. An action hands a
 drag on only on purpose: an empty handle from `start`, or `'pass'` from
 `onMove`, offers it to the next candidate in rank order.
 
-A **sweep** (`sweepAction`) is that rule set put to use: an action on a
-`drag` taking any modifiers (`SWEEP_BINDING`) at the ambient tier, the lowest
+A **sweep** (`createSweepAction`) is that rule set put to use: an action on a
+`drag` taking any modifiers (`SWEEP_SPEC`) at the ambient tier, the lowest
 rank a drag binding holds, that sets each item of its surface the pointer
 crosses. Any drag naming a target or a modifier outranks it, an item's own
 drag takes the press first, and its `begin` returning `null` hands the drag
 on. The `sweep` prop of a `multiple` or `each` `SegmentedBar`, and of a
 `ToggleChips`, mounts one on the row, setting items through its selection model
-(ui-input's `selection`). Alt, read once at the press from the sweep's
+(ui-input's `createSelectionModel`). Alt, read once at the press from the sweep's
 `ctx.modifiers`, makes it a solo: the items reached so far on and every other
 off, worked out from the states at the press (`soloSweepFrom`, by
 `soloChanges`).
@@ -724,7 +724,7 @@ under `packages/guides/src/layout/strategies/`.
 `SelectionApi` — the kit's owned selection state, produced by `useSelection`.
 Exposes `current: string[]`, `get()`, `set()`, `add()`, `remove()`, `toggle()`,
 `clear()`, `contains()`, `applyClick()` and `intentOf()`. `applyClick` applies the configured
-click policy (`'single'` replaces; `'multi'` toggles with the extend key and ranges with the
+click policy (`'single'` replaces; `'multiple'` toggles with the extend key and ranges with the
 range key); `intentOf` says which of those a click's modifiers ask for, and is what a tool
 reads before a press rather than assuming a key. The
 `adapterMethods` sub-object (`{ getSelection, setSelection }`) is designed to be
@@ -869,7 +869,7 @@ they fit.
   `useDragRadial`, `useDragGesture` — the spatial input primitives.
 - **Actions** (depend on selection + scene): the
   [Actions Registry](#action) and its descriptors — `duplicate`, `delete`,
-  `nudge.*`, `reorder.*`, `selectAll`, `escape`, and the rest. Presets carry
+  `nudge.*`, `reorder.*`, `selectAll`, `deselect`, and the rest. Presets carry
   the descriptors, and `<SceneCanvas>` or `useStandardActions` registers them.
 - **Tools** (depend on gestures + actions): `useSelectTool`, `useRectTool` and
   the other shape tools, `useHandTool`, the viewport tools; `@weasel-js/path-tools`' `usePenTool`.
@@ -976,6 +976,10 @@ There is no persistent membership-list concept. A consumer that wants named,
 saved selections holds its own `Record<string, string[]>` and calls
 `selection.set(ids)`.
 
+diagram's membership boxes, `DiagramData.clusters` and the effect pipeline's `clusters`, are clusters in code
+and data, never groups, while the effect editor's commands still read "Group" and "Ungroup" on screen
+(2026-11-17).
+
 ### Marks and groups
 
 A node's kind says whether it draws itself (decided 2026-10-22). Having children is not a kind.
@@ -1022,7 +1026,7 @@ rebind:
 |---|---|---|---|
 | `select.deep` | the select tool | Cmd+Alt-press (Ctrl+Alt off macOS) on a body | selects the deepest pickable node under the pointer |
 | `group.enter` | `createGroupEntryContribution`, under any tool | double-click on a member of a group outside the entered one | enters the outermost such group |
-| `group.leave.key` | `createGroupEntryContribution`, under any tool | Escape, yielding to `escape` when nothing is entered | leaves one level |
+| `group.leave.key` | `createGroupEntryContribution`, under any tool | Escape, yielding to `deselect` when nothing is entered | leaves one level |
 | `group.leave.press` | the select tool | a press outside the entered group's box | leaves every group that box is outside of |
 
 The entered group is session state beside the selection (`enteredGroup` dep), never saved
@@ -1057,7 +1061,7 @@ A document is in one of two **modes**, read from its scene's structure, never st
 **Pages are containers** (decided 2026-11-02). The **page run** is a root group with a `pageRun` field, laid out
 by `pageRunLayout` (`direction`, `gap`, `align`); each **page** is a group under it with a `page` field (its name
 and `meta`), whose pose is its rect. A page's node id is its page id unless another node held that id when the page
-was made; then the `page` field keeps the page id, and `pageNodeOf` and `pageOfNode` translate (2026-11-03). A page frames its children, origin at its top-left, and clips them to its
+was made; then the `page` field keeps the page id, and `pageNodeOf` and `pageIdOf` translate (2026-11-03). A page frames its children, origin at its top-left, and clips them to its
 rect (`pageClip`). What is on a page is its child: membership is the tree, not geometry, so a page's content moves
 with it, and a drag onto another page reparents through the move action's `depart`/`arrive`, keeping its world
 position. `createPageRun` makes a scene paged; the page edits (`setPages`, `addPage`, `movePage`, …) write the

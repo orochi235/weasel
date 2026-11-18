@@ -1,5 +1,5 @@
 import type { PrefSection } from '@weasel-js/prefs-schema';
-import { createReflectable, valuesOf, type Reflection } from '@weasel-js/registry';
+import { createReflectable, createValuesReader, type Reflection } from '@weasel-js/registry';
 
 /**
  * One kind's entry in the **properties trait's** registry: a declarative
@@ -63,7 +63,7 @@ export function createNodeProperties(): NodeProperties {
       kinds.set(entry.name, entry);
     },
     get: kinds.get,
-    list: valuesOf(kinds),
+    list: createValuesReader(kinds),
     reflection: kinds.reflection,
   };
 }

@@ -48,12 +48,7 @@ export function SceneLoupe<TData, TLayer extends string, TPose>({
   const { width, height } = loupeExtent(diameter);
   const outer = typeof view === 'function' ? view() : view;
   const [wx, wy] = screenToWorld(aim.x, aim.y, viewToTransform(outer));
-  const inner = loupeInnerView(
-    { x: wx, y: wy },
-    outer,
-    { x: 0, y: 0, w: width, h: height },
-    factor,
-  );
+  const inner = loupeInnerView({ x: wx, y: wy }, outer, { x: 0, y: 0, width, height }, factor);
   return (
     <SceneViewCanvas
       scene={scene}

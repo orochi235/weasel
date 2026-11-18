@@ -4,12 +4,12 @@
 // computes while it is (`prefAutoValue`), and a reset puts it back as `prefResetOf` says.
 import './labTestSetup';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { auto, ControlPanel, f, isAuto, resolveAutoConfig, resolveConfigSchema } from '@weasel-js/labkit';
+import { AUTO, ControlPanel, f, isAuto, resolveAutoConfig, resolveConfigSchema } from '@weasel-js/labkit';
 import {
   openPrefsSync,
   prefAutoValue,
   prefCanAuto,
-  prefIsReset,
+  prefIsAtReset,
   prefLeafAt,
   prefResetOf,
   type PrefAuto,
@@ -17,7 +17,7 @@ import {
   type PrefLeaf,
   type PrefsStore,
 } from '@weasel-js/prefs';
-import { usePrefsValues } from '@weasel-js/prefs/react';
+import { usePrefsState } from '@weasel-js/prefs/react';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import { themeAxisPath, themePrefsSchema } from '@weasel-js/theme/prefs';
 import { PrefsForm } from '@weasel-js/ui/components/Prefs';
@@ -70,7 +70,7 @@ function check(surface: Surface, run: readonly Step[]): void {
     else expect(pinButton(surface.row)).toBeNull();
     expect(surface.shown()).toEqual(shown());
     expect(surface.read()).toEqual(read());
-    const reset = prefIsReset(leaf, state);
+    const reset = prefIsAtReset(leaf, state);
     expect(resetButton(surface.row) === null).toBe(reset);
     expect(resetButton(surface.group)?.getAttribute('aria-disabled') === 'true').toBe(reset);
   };
@@ -120,7 +120,7 @@ function prefsSurface(autoSpec: PrefAuto | undefined, seeded = new Map<string, u
   const schema = prefsSchema(autoSpec);
   const store = openPrefsSync(schema, { storage: createMemoryAdapter(seeded), prefix: 't.' });
   function Host() {
-    return <PrefsForm {...usePrefsValues(store).form} layout="list" />;
+    return <PrefsForm {...usePrefsState(store).form} layout="list" />;
   }
   return {
     store,
@@ -140,7 +140,7 @@ type LabSpec = 'none' | 'resolver' | 'starts' | { value: boolean };
  *  or an `auto.value`. */
 function labSurface(spec: LabSpec): Surface {
   const plain = f.boolean(true).switch();
-  const node = spec === 'resolver' ? plain.auto(() => false) : spec === 'starts' ? plain.initial(auto) : plain;
+  const node = spec === 'resolver' ? plain.auto(() => false) : spec === 'starts' ? plain.initial(AUTO) : plain;
   const resolved = resolveConfigSchema(f.schema({ view: f.group({ grid: node }).resettable() }));
   const view = resolved.group.children.view as PrefGroup;
   if (typeof spec === 'object') view.children.grid = { ...(view.children.grid as PrefLeaf), auto: { value: spec.value } };

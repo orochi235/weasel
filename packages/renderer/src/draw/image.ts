@@ -33,7 +33,7 @@ const isMinified = (limit: [number, number], sw: number, sh: number, dw: number,
 /** Whether a draw samples all of `image`, so mipmaps cannot pull in texels
  *  from outside what it shows. */
 const drawsWhole = (image: ImageBitmap, src: ImageDrawCommand['source']): boolean =>
-  !src || (src.x <= 0 && src.y <= 0 && src.x + src.w >= image.width && src.y + src.h >= image.height);
+  !src || (src.x <= 0 && src.y <= 0 && src.x + src.width >= image.width && src.y + src.height >= image.height);
 
 /** A closed bitmap reads as 0×0, and uploading one throws: the image cache
  *  closes what it drops, and a command kept past that draws nothing. */
@@ -44,7 +44,7 @@ export function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
   ctx.imageCache.upload(cmd.image, cmd.image);
   const whole = drawsWhole(cmd.image, cmd.source);
   if (whole && ctx.imageCache.lacksMipmaps(cmd.image)
-      && isMinified(minifiedLimits(ctx), cmd.image.width, cmd.image.height, cmd.w, cmd.h)) {
+      && isMinified(minifiedLimits(ctx), cmd.image.width, cmd.image.height, cmd.width, cmd.height)) {
     ctx.imageCache.buildMipmaps(cmd.image);
   }
   // Without mipmaps a whole draw samples as a sub-rect one does, so it stays in their run.
@@ -57,14 +57,14 @@ export function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
   let u0 = 0, v0 = 0, u1 = 1, v1 = 1;
   if (src) {
     const tw = cmd.image.width, th = cmd.image.height;
-    u0 = src.x / tw; u1 = (src.x + src.w) / tw;
-    v0 = src.y / th; v1 = (src.y + src.h) / th;
+    u0 = src.x / tw; u1 = (src.x + src.width) / tw;
+    v0 = src.y / th; v1 = (src.y + src.height) / th;
   }
   if (cmd.flipX) { const t = u0; u0 = u1; u1 = t; }
   if (cmd.flipY) { const t = v0; v0 = v1; v1 = t; }
 
   if (!ctx.drawBatch.pushQuad(
-    cmd.x, cmd.y, cmd.w, cmd.h, ctx.state.transform,
+    cmd.x, cmd.y, cmd.width, cmd.height, ctx.state.transform,
     u0, v0, u1, v1,
     // Group alpha rides here with the opacity, in the tint's fourth channel.
     (cmd.opacity ?? 1) * tint[3],

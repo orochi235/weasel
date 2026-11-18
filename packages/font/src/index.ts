@@ -11,22 +11,22 @@ export type { FaceMetrics, FaceRuleMetrics, FaceScriptMetrics, FaceMetricTables 
 
 export {
   registerFont,
-  getFont,
+  getAtlasFont,
   faceMetricsFor,
   ensureFontTexture,
   textureCacheKey,
-  resolveFontVariant,
-  cachedFontVariant,
-  resolveGlyphFallback,
-  listFonts,
-  listFontWeights,
   fontRegistry,
-  fontPending,
-  warmFonts,
+  isFontPending,
 } from './registerFont';
+export { resolveFontVariant, cachedFontVariant } from './resolveFontVariant';
+export { resolveCanvasFallback } from './canvasFallback';
+export { warmFonts } from './warmFonts';
+export { listAtlasFonts, listFontWeights } from './fontCatalog';
 export type {
-  FontEntry, FontFamilyFaces, FontRequest, ResolveResult, RegisteredFont, RegisterFontOptions,
+  FontEntry, FontFamilyFaces, ResolveResult, RegisterFontOptions,
 } from './registerFont';
+export type { FontRequest } from './warmFonts';
+export type { RegisteredFont } from './fontCatalog';
 
 export {
   setFontFallbackPolicy,
@@ -70,18 +70,18 @@ export {
   listFontOutlines,
   fontOutlineRegistry,
   glyphOutline,
-  outlineMetrics,
+  outlineFace,
   loadFontOutlines,
 } from './outline/outlineRegistry';
 export type {
   OutlineSource,
-  OutlineFontOptions,
+  RegisterFontOutlinesOptions,
   OutlineStatus,
   OutlineFaceInfo,
 } from './outline/outlineRegistry';
 export type { OutlineFace, OutlineParser, FaceEmbedding } from './outline/OutlineFace';
 export { fontEmbedding } from './outline/fontEmbedding';
-export { metricsOf } from './glyphMetrics';
+export { glyphMetricsOf } from './glyphMetrics';
 export type { GlyphMetrics } from './glyphMetrics';
 export { glyphIn, resolveGlyph, resolveColorCluster } from './resolveGlyph';
 export type { ResolvedGlyph } from './resolveGlyph';
@@ -101,6 +101,7 @@ export type { GlyphTextureSink, TexSource } from './textureSink';
 export {
   GLYPH_COVERAGE_GLSL,
   GLYPH_POINT_COVERAGE_GLSL,
+  GLYPH_AREA_FROM,
   GLYPH_AREA_MARGIN,
   GLYPH_MODE_MSDF,
   GLYPH_MODE_R8,

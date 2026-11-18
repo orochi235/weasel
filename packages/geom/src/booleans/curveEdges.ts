@@ -1,7 +1,7 @@
 /** The operands' outlines cut at every crossing into edges that meet only at their ends. */
 
 import type { Point } from '../paths/cubicMath';
-import { intersectSegments } from '../intersect/segmentIntersections';
+import { segmentCrossings } from '../intersect/segmentIntersections';
 import { type Seg, type Contour, evalSeg, subSeg } from './contourSegments';
 import { mergeCoincident, sharedStretch } from './curveOverlap';
 
@@ -94,7 +94,7 @@ function selfCrossing(seg: Seg): [number, number] | null {
   const l = subSeg(seg, 0, 0.5, seg[0], mid);
   const r = subSeg(seg, 0.5, 1, mid, seg[3]);
   if (!l || !r) return null;
-  const h = intersectSegments(l, r).find((c) => c.ta < 1 - 1e-6 || c.tb > 1e-6);
+  const h = segmentCrossings(l, r).find((c) => c.ta < 1 - 1e-6 || c.tb > 1e-6);
   return h ? [h.ta / 2, 0.5 + h.tb / 2] : null;
 }
 
@@ -156,8 +156,8 @@ export function cutEdges(given: readonly Contour[][], snap: number): Arrangement
       }
       return;
     }
-    let hits = intersectSegments(a.seg, b.seg, FIRST_HITS);
-    if (hits.length >= FIRST_HITS) hits = intersectSegments(a.seg, b.seg, NEAR_HITS);
+    let hits = segmentCrossings(a.seg, b.seg, FIRST_HITS);
+    if (hits.length >= FIRST_HITS) hits = segmentCrossings(a.seg, b.seg, NEAR_HITS);
     const near = adjacent(a, b);
     for (const h of hits) {
       if (near && ((h.ta > 1 - END_T && h.tb < END_T) || (h.ta < END_T && h.tb > 1 - END_T))) continue;

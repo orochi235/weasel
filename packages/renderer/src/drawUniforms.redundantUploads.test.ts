@@ -58,7 +58,7 @@ describe('WeaselRenderer.render — redundant uniform uploads', () => {
     // an image's under a plain scale, is mapped on the CPU and never reaches
     // the uniform. A clip only the stencil expresses breaks the run between them.
     const image = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
-    const img = (x: number): DrawCommand => ({ kind: 'image', image, x, y: 0, w: 16, h: 16 });
+    const img = (x: number): DrawCommand => ({ kind: 'image', image, x, y: 0, width: 16, height: 16 });
     /** Notched, so not convex: only the stencil expresses it. */
     const diamond: PolygonPath = {
       kind: 'polygon', commands: new Uint8Array([M, L, L, L, L, Z]),
@@ -76,7 +76,7 @@ describe('WeaselRenderer.render — redundant uniform uploads', () => {
     tinted[0] = 0.5; tinted[6] = 0.5; tinted[12] = 0.5; tinted[18] = 1;
     tinted[4] = 0.25;
     const image = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
-    const img = (x: number): DrawCommand => ({ kind: 'image', image, x, y: 0, w: 16, h: 16 });
+    const img = (x: number): DrawCommand => ({ kind: 'image', image, x, y: 0, width: 16, height: 16 });
     r.render([
       img(0),
       { kind: 'group', colorMatrix: tinted, children: [img(20)] } as unknown as DrawCommand,

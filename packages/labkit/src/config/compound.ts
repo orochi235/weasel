@@ -57,9 +57,9 @@ function itemLeaf(node: ConfigNode, key?: string): PrefLeaf {
   } as PrefLeaf;
 }
 
-function listOf(def: readonly string[]): ListNode;
-function listOf<T>(def: readonly T[], item: ConfigNode<T>): ListNode<T>;
-function listOf<T>(def: readonly T[], item?: ConfigNode<T>): ListNode<T> {
+function createListNode(def: readonly string[]): ListNode;
+function createListNode<T>(def: readonly T[], item: ConfigNode<T>): ListNode<T>;
+function createListNode<T>(def: readonly T[], item?: ConfigNode<T>): ListNode<T> {
   return new ListNode<T>([...def], item ? { item: itemLeaf(item) } : {});
 }
 
@@ -106,7 +106,7 @@ export const compound = {
   /** A list: of strings, or of whatever `item` builds — `f.list([0, 1], f.number(0).range(0, 9))`.
    *  Its row summarizes the list, and opens a dialog to edit it one entry per
    *  control. */
-  list: listOf,
+  list: createListNode,
 
   /** One value with these fields, read and written whole at this key — where
    *  `f.group` makes each field a leaf of its own. A field's label defaults to

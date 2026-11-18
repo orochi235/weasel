@@ -35,7 +35,7 @@ export function motionsFromRest(
 const RECT_COMMANDS = new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]);
 
 /** The path whose points a skin indexes: a rect as its four corners. */
-export function skinnable(path: Path): PolygonPath {
+export function toSkinPolygon(path: Path): PolygonPath {
   if (path.kind === 'polygon') return path;
   const { x, y, width, height } = path;
   return {
@@ -52,7 +52,7 @@ export function skinnable(path: Path): PolygonPath {
  * space `motions` are in; it is not modified. A point no joint weighs stays where it is.
  */
 export function skinPath(path: Path, skin: Skin, motions: ReadonlyMap<string, GlMat3>): PolygonPath {
-  const rest = skinnable(path);
+  const rest = toSkinPolygon(path);
   const from = worldCoords(rest);
   const count = from.length >> 1;
   const sum = new Float64Array(from.length);

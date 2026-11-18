@@ -4,7 +4,7 @@ import { AUTO_POSE_DESCRIPTOR, worldPoses, type Bounds, type NodeId, type PoseDe
 export function documentBoundsOf<TPose>(
   scene: Scene<unknown, string, TPose>,
   node: { id: string },
-  geometry: PoseDescriptor<unknown> = AUTO_POSE_DESCRIPTOR as PoseDescriptor<unknown>,
+  poseDescriptor: PoseDescriptor<unknown> = AUTO_POSE_DESCRIPTOR as PoseDescriptor<unknown>,
 ): Bounds {
-  return geometry.getBounds(worldPoses(scene, 'document')(node.id as NodeId));
+  return poseDescriptor.getBounds(worldPoses(scene, 'document')(node.id as NodeId));
 }

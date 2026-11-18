@@ -23,7 +23,7 @@ import { d3Bind } from '@weasel-js/d3';
 
 const binding = d3Bind(scene, points, { key: (d) => d.id, animator })
   .pose((d) => ({ x: d.x, y: d.y, width: 8, height: 8 }))
-  .data((d) => ({ label: d.name }))
+  .payload((d) => ({ label: d.name }))
   .join();
 
 binding.transition()

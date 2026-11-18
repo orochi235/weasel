@@ -3,7 +3,7 @@ import type { SankeyData, SankeyLink } from '@weasel-js/plot';
 import type { ImportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
 import { lineError } from '../../lineError';
-import { pageNameOf, statementsOf } from '../common/lines';
+import { readPageName, statementsOf } from '../common/lines';
 import { mermaidNumber } from '../common/number';
 
 /** The page a sankey is read onto. */
@@ -51,7 +51,7 @@ export function readMermaidSankey(text: string): ImportResult {
     return { source, target, value: flow };
   });
   const warnings = new Warnings();
-  const name = pageNameOf(src, warnings);
+  const name = readPageName(src, warnings);
   const data: SankeyData = { kind: 'sankey', ...(src.title !== undefined && src.title !== '' ? { title: src.title } : {}), links };
   const page: PlotPage = { kind: 'plot', id: 'page-1', ...(name ? { name } : {}), ...SANKEY_PAGE, data };
   return { document: { pages: [page] }, warnings: warnings.all() };

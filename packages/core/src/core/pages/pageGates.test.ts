@@ -8,7 +8,7 @@ import { buildSceneTree } from '../../canvas/buildSceneTree';
 import { pickWalk, scenePickSource } from '../../canvas/pickWalk';
 import { sceneToAdapter } from '../../canvas/sceneAdapter';
 import { doubleClickTarget } from '../../canvas/doubleClickTarget';
-import { pressTarget } from '../../tools/builtin/pressTarget';
+import { pressTarget } from '../../canvas/pressTarget';
 import { PAGE_CLIP } from './pageClip';
 import { ON_PAGE as R, PAGE_A as A, PAGE_B as B, pagedScene } from './pagedFixture';
 

@@ -18,7 +18,7 @@ const props = {
   window: { from: 0, to: 1000 },
   bounds: { from: 0, to: 1000 },
   playhead: 250,
-  onScrub: () => {},
+  onSeek: () => {},
   onWindowChange: () => {},
 };
 
@@ -56,46 +56,46 @@ describe('TimeRuler', () => {
   });
 
   it('scrubs to the pointer on pointerdown', () => {
-    const onScrub = vi.fn();
-    render(<TimeRuler {...props} onScrub={onScrub} />);
+    const onSeek = vi.fn();
+    render(<TimeRuler {...props} onSeek={onSeek} />);
     fireEvent.pointerDown(ruler(), { clientX: 100, clientY: 5, button: 0 });
-    expect(onScrub).toHaveBeenCalledWith(200);
+    expect(onSeek).toHaveBeenCalledWith(200);
   });
 
   it('scrubs continuously through a drag', () => {
-    const onScrub = vi.fn();
-    render(<TimeRuler {...props} onScrub={onScrub} />);
+    const onSeek = vi.fn();
+    render(<TimeRuler {...props} onSeek={onSeek} />);
     fireEvent.pointerDown(ruler(), { clientX: 100, clientY: 5, button: 0 });
     fireEvent.pointerMove(document, { clientX: 300, clientY: 5 });
     fireEvent.pointerUp(document, { clientX: 300, clientY: 5 });
-    expect(onScrub).toHaveBeenLastCalledWith(600);
+    expect(onSeek).toHaveBeenLastCalledWith(600);
   });
 
   it('stops scrubbing after pointerup', () => {
-    const onScrub = vi.fn();
-    render(<TimeRuler {...props} onScrub={onScrub} />);
+    const onSeek = vi.fn();
+    render(<TimeRuler {...props} onSeek={onSeek} />);
     fireEvent.pointerDown(ruler(), { clientX: 100, clientY: 5, button: 0 });
     fireEvent.pointerUp(document, { clientX: 100, clientY: 5 });
-    onScrub.mockClear();
+    onSeek.mockClear();
     fireEvent.pointerMove(document, { clientX: 400, clientY: 5 });
-    expect(onScrub).not.toHaveBeenCalled();
+    expect(onSeek).not.toHaveBeenCalled();
   });
 
   it('stops scrubbing after pointercancel', () => {
-    const onScrub = vi.fn();
-    render(<TimeRuler {...props} onScrub={onScrub} />);
+    const onSeek = vi.fn();
+    render(<TimeRuler {...props} onSeek={onSeek} />);
     fireEvent.pointerDown(ruler(), { clientX: 100, clientY: 5, button: 0 });
     fireEvent.pointerCancel(document, {});
-    onScrub.mockClear();
+    onSeek.mockClear();
     fireEvent.pointerMove(document, { clientX: 400, clientY: 5 });
-    expect(onScrub).not.toHaveBeenCalled();
+    expect(onSeek).not.toHaveBeenCalled();
   });
 
   it('clamps a scrub past the end of the window', () => {
-    const onScrub = vi.fn();
-    render(<TimeRuler {...props} onScrub={onScrub} />);
+    const onSeek = vi.fn();
+    render(<TimeRuler {...props} onSeek={onSeek} />);
     fireEvent.pointerDown(ruler(), { clientX: 900, clientY: 5, button: 0 });
-    expect(onScrub).toHaveBeenCalledWith(1000);
+    expect(onSeek).toHaveBeenCalledWith(1000);
   });
 
   // PROXY ASSERTION. jsdom's setPointerCapture records the call and has no other
@@ -158,13 +158,13 @@ describe('TimeRuler pointer session', () => {
   it('ends a scrub released outside the ruler', () => {
     const outside = document.createElement('div');
     document.body.appendChild(outside);
-    const onScrub = vi.fn();
-    render(<TimeRuler {...props} onScrub={onScrub} />);
+    const onSeek = vi.fn();
+    render(<TimeRuler {...props} onSeek={onSeek} />);
     fireEvent.pointerDown(ruler(), { clientX: 100, clientY: 5, button: 0, buttons: 1 });
     fireEvent.pointerUp(outside, { clientX: 900, clientY: 900, bubbles: true });
-    onScrub.mockClear();
+    onSeek.mockClear();
     fireEvent.pointerMove(document, { clientX: 400, clientY: 5, buttons: 1 });
-    expect(onScrub).not.toHaveBeenCalled();
+    expect(onSeek).not.toHaveBeenCalled();
     outside.remove();
   });
 
@@ -173,25 +173,25 @@ describe('TimeRuler pointer session', () => {
   // other half of the rule — a detached origin does cancel — belongs to
   // pointerSession.test.ts, which owns it without React in the way.
   it('keeps scrubbing when the ruler loses capture but stays mounted', () => {
-    const onScrub = vi.fn();
-    render(<TimeRuler {...props} onScrub={onScrub} />);
+    const onSeek = vi.fn();
+    render(<TimeRuler {...props} onSeek={onSeek} />);
     fireEvent.pointerDown(ruler(), { clientX: 100, clientY: 5, button: 0, buttons: 1 });
     fireEvent(ruler(), new PointerEvent('lostpointercapture', { pointerId: 0, bubbles: true }));
-    onScrub.mockClear();
+    onSeek.mockClear();
     fireEvent.pointerMove(document, { clientX: 400, clientY: 5, buttons: 1 });
-    expect(onScrub).toHaveBeenCalledTimes(1);
+    expect(onSeek).toHaveBeenCalledTimes(1);
   });
 
   it('treats a move with no button held as the release it missed', () => {
-    const onScrub = vi.fn();
-    render(<TimeRuler {...props} onScrub={onScrub} />);
+    const onSeek = vi.fn();
+    render(<TimeRuler {...props} onSeek={onSeek} />);
     fireEvent.pointerDown(ruler(), { clientX: 100, clientY: 5, button: 0, buttons: 1 });
     fireEvent.pointerMove(document, { clientX: 300, clientY: 5, buttons: 1 });
-    expect(onScrub).toHaveBeenLastCalledWith(600);
-    onScrub.mockClear();
+    expect(onSeek).toHaveBeenLastCalledWith(600);
+    onSeek.mockClear();
     fireEvent.pointerMove(document, { clientX: 400, clientY: 5, buttons: 0 });
     fireEvent.pointerMove(document, { clientX: 450, clientY: 5, buttons: 1 });
-    expect(onScrub).not.toHaveBeenCalled();
+    expect(onSeek).not.toHaveBeenCalled();
   });
 });
 

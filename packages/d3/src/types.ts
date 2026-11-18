@@ -5,7 +5,7 @@ import type { Animator } from '@weasel-js/animator';
  * Configuration for a `d3Bind` binding: how data keys map to scene nodes, and
  * what the binding needs in order to place and animate them.
  */
-export interface BindOptions<TData, TPose> {
+export interface D3BindOptions<TData, TPose> {
   /** Stable id derivation per datum — the binding diffs old vs new state by this key. `join()` throws on two data sharing one, and on a key the scene already gives a node other than a mark on the binding's layer. */
   key: (d: TData, i: number) => string;
   /** Which scene layer the binding enters, updates and exits leaves on. Defaults to the first of `scene.layers`, user or system. */
@@ -20,7 +20,7 @@ export interface BindOptions<TData, TPose> {
 }
 
 /**
- * Builder produced by `d3Bind`. Configure with `.pose()` / `.data()` / `.enterFrom()`,
+ * Builder produced by `d3Bind`. Configure with `.pose()` / `.payload()` / `.enterFrom()`,
  * then call `.join()` to emit the diff as one batched scene mutation and receive
  * a chainable `D3Selection`. `TPayload` is the scene's node data type, which
  * `d3Bind` infers from the scene it is given.
@@ -30,7 +30,7 @@ export interface D3Binding<TData, TPose, TPayload = Record<string, unknown>> {
   pose(fn: (d: TData, i: number) => TPose): this;
 
   /** Per-datum data payload. Replaces the leaf's existing data on update. */
-  data(fn: (d: TData, i: number) => TPayload): this;
+  payload(fn: (d: TData, i: number) => TPayload): this;
 
   /** Optional initial pose for ENTER nodes — `.transition()` will animate from this
    *  to the declared `.pose()`. Defaults to the same pose (entries snap in). */
@@ -68,7 +68,7 @@ export interface D3Selection<TData, TPose> {
   /** Iterate. Returns this for chaining. */
   each(fn: (d: TData, id: NodeId, i: number) => void): this;
 
-  /** Spawn a transition. Throws if `BindOptions.animator` wasn't supplied. */
+  /** Spawn a transition. Throws if `D3BindOptions.animator` wasn't supplied. */
   transition(name?: string): D3Transition<TData, TPose>;
 
   /** Interrupt the transitions named `name` (the unnamed ones if omitted) running or waiting

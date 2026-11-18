@@ -5,7 +5,7 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 import { createSetDataOp } from 'core/ops/setData';
-import { createTransformOp as createSetPoseOp } from 'core/ops/transform';
+import { createSetPoseOp } from 'core/ops/setPose';
 import { createScene } from './scene';
 import { asNodeId, type NodeId } from './types';
 import type { SceneEditPass, SceneEditSummary } from './editPass';

@@ -56,10 +56,11 @@ describe('AssetsPage', () => {
     },
   );
 
-  it("lists the feature bundles, with core's and path-tools' presets in their packages' sections", () => {
+  it("lists the feature bundles, with core's, editing's and path-tools' presets in their packages' sections", () => {
     renderWithIcons(<AssetsPage />);
     fireEvent.click(asset('Feature bundles'));
     expect(within(tree()).getByText('@weasel-js/core')).toBeInTheDocument();
+    expect(within(tree()).getByText('@weasel-js/editing')).toBeInTheDocument();
     expect(within(tree()).getByText('@weasel-js/path-tools')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'JSON' })).toBeInTheDocument();
   });

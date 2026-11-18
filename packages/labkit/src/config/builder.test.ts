@@ -1,6 +1,6 @@
 import { compact } from '@weasel-js/quantity';
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import { auto } from './auto';
+import { AUTO } from './auto';
 import { type EnumNode, f } from './builder';
 import type { ConfigOf, ConfigPath, ValueAtPath } from './types';
 
@@ -219,8 +219,8 @@ describe('auto on a node', () => {
     expect(n.options.autoResolve?.({ width: 432 })).toBe(18);
   });
 
-  it('.initial(auto) marks the node as starting unpinned', () => {
-    expect(f.number(3).initial(auto).options.auto).toEqual({ on: true });
+  it('.initial(AUTO) marks the node as starting unpinned', () => {
+    expect(f.number(3).initial(AUTO).options.auto).toEqual({ on: true });
     expect(f.number(3).options.auto).toBeUndefined();
   });
 
@@ -232,13 +232,13 @@ describe('auto on a node', () => {
 
   it('clones rather than mutating, like every other chaining method', () => {
     const base = f.number(3);
-    const unpinned = base.initial(auto);
+    const unpinned = base.initial(AUTO);
     expect(base.options.auto).toBeUndefined();
     expect(unpinned).not.toBe(base);
   });
 
   it('keeps the subclass, so kind-specific methods still chain after', () => {
-    const n = f.number(3).initial(auto).range(0, 10).suffix('px');
+    const n = f.number(3).initial(AUTO).range(0, 10).suffix('px');
     expect(n.annotations.min).toBe(0);
     expect(n.annotations.unit?.suffix).toBe('px');
     expect(n.options.auto).toEqual({ on: true });

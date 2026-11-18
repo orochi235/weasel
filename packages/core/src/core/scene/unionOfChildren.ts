@@ -1,4 +1,4 @@
-import { unionAABB } from 'core/geometry/unionBounds';
+import { unionAabb } from 'core/geometry/unionBounds';
 import {
   poseDescriptorForNode,
   visualBoundsViaDescriptor,
@@ -25,7 +25,7 @@ export function unionOfChildrenVia<TPose>(
         boxes.push(visualBoundsViaDescriptor(d.pose, poseDescriptorForNode(descriptor, d)));
       }
     }
-    const u = unionAABB(boxes);
+    const u = unionAabb(boxes);
     return u === null
       ? null
       : poseDescriptorForNode(descriptor, node).fromBounds(u, node.pose);

@@ -3,7 +3,7 @@ import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { describe, expect, it, vi } from 'vitest';
 import { type PrefGroup, prefLeaves, PREF_ELSE, type PrefScope, type PrefLeaf, type PrefScopeSpec } from '@weasel-js/prefs-schema';
 import { runs, tally, timeoutFor } from '@weasel-js/prefs-schema/testing/pbt.fixture';
-import { checkPrefSplits, prefSelectors, type PrefSplitProblem } from './splitCheck';
+import { checkPrefScopes, prefSelectors, type PrefScopeProblem } from './splitCheck';
 import { createPrefsStore } from './store';
 
 const OPTIONS = ['x', 'y', 'z'];
@@ -11,7 +11,7 @@ const options = OPTIONS.map((value) => ({ value, label: value }));
 const enumOf = (extra: Record<string, unknown> = {}): PrefLeaf => ({ kind: 'enum', name: 'E', description: '', default: 'x', options, ...extra }) as PrefLeaf;
 
 /** What a selector path holds, and whether a split by it is refused. */
-const SELECTORS: Record<string, { leaf?: PrefLeaf; refused?: PrefSplitProblem['code'] }> = {
+const SELECTORS: Record<string, { leaf?: PrefLeaf; refused?: PrefScopeProblem['code'] }> = {
   s0: { leaf: enumOf() },
   s1: { leaf: enumOf() },
   bad_encoded: { leaf: enumOf({ encoding: { read: () => 'x', write: () => 1 } }), refused: 'encoded' },
@@ -56,12 +56,12 @@ const schemaArb = fc.record({ p0: pref, p1: pref, admitsAdm: fc.boolean(), admit
 const selectionsOf = (selectors: readonly string[]): fc.Arbitrary<Record<string, string>> =>
   fc.tuple(...selectors.map((s) => fc.constantFrom(...OPTIONS).map((o) => [s, o] as const))).map((pairs) => Object.fromEntries(pairs));
 
-describe('checkPrefSplits, properties', () => {
+describe('checkPrefScopes, properties', () => {
   it('names each refused selector with its own code, and keeps only the plain enums as selectors', () => {
     const t = tally();
     fc.assert(
       fc.property(schemaArb, (schema) => {
-        const problems = checkPrefSplits(schema);
+        const problems = checkPrefScopes(schema);
         for (const p of problems) t.count(p.code);
         const leaves = prefLeaves(schema);
         const kept = prefSelectors(leaves);
@@ -87,7 +87,7 @@ describe('checkPrefSplits, properties', () => {
 
   it('lets a store over a schema it passes warn of nothing, read each split value as it was written, and read it the same once stored', () => {
     const t = tally();
-    const clean = schemaArb.filter((schema) => checkPrefSplits(schema).length === 0);
+    const clean = schemaArb.filter((schema) => checkPrefScopes(schema).length === 0);
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     fc.assert(
       fc.property(clean, fc.array(fc.tuple(fc.constantFrom('p0', 'p1'), selectionsOf(['s0', 's1', 'adm']), fc.integer({ min: 0, max: 100 })), { minLength: 1, maxLength: 8 }), (schema, writes) => {

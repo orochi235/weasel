@@ -1,4 +1,4 @@
-import { asNodeId, key, keymapContribution, SceneCanvas } from '@weasel-js/core';
+import { asNodeId, key, createKeymapContribution, SceneCanvas } from '@weasel-js/core';
 import { KeymapHint } from '@weasel-js/ui/components/KeymapHint';
 import { DemoStage } from './DemoStage';
 import s from './KeymapDemo.module.css';
@@ -25,7 +25,7 @@ const SCENE = {
  * are live only while it is open, so they take letters no other binding could
  * spare, and a click inside it aligns to the pointer.
  */
-const ARRANGE = keymapContribution({
+const ARRANGE = createKeymapContribution({
   id: 'arrange',
   label: 'Arrange',
   leader: key('Mod+K'),
@@ -47,7 +47,7 @@ export function KeymapDemo() {
         features={[pickPreset, movePreset, transformPreset, arrangePreset]}
         ambient={ARRANGE}
         claimKeys
-        selectionOptions={{ mode: 'multi', initial: RECTS.map((r) => asNodeId(r.id)) }}
+        selectionOptions={{ mode: 'multiple', initial: RECTS.map((r) => asNodeId(r.id)) }}
       >
         <KeymapHint className={s.hint} />
       </SceneCanvas>

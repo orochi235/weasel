@@ -128,7 +128,7 @@ describe('recording session', () => {
   /** A recording file of a press, then another press a minute on. */
   const LONG = (): Blob => {
     const press = (t: number) => ({ type: 'pointerdown', t, clientX: 1, clientY: 1, pointerId: 1, target: 'canvas' }) as const;
-    const rec: Recording = { version: 1, startedAt: '', viewport: { w: 1, h: 1 }, scene: null, events: [press(0), press(60_000)] };
+    const rec: Recording = { version: 1, startedAt: '', viewport: { width: 1, height: 1 }, scene: null, events: [press(0), press(60_000)] };
     return new Blob([JSON.stringify(rec)]);
   };
 

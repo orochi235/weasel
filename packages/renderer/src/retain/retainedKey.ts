@@ -1,9 +1,8 @@
-import type { GlMat3, Path } from '@weasel-js/geom';
+import type { GlMat3, Path, Rect } from '@weasel-js/geom';
 import { getOwn, sameList } from '@weasel-js/registry';
 import type { DrawCommand } from '../DrawCommand';
 import type { Effect } from '../effects/types';
 import type { ShaderUniform } from '../shaders/registerProgram';
-import type { DeviceRect } from './contentBounds';
 
 /** Everything a retained group's pixels were drawn under. Two keys that
  *  compare equal draw the same pixels. */
@@ -21,7 +20,7 @@ export interface RetainedKey {
   isolate?: boolean;
   /** The rect of the drawing buffer the target it composites into holds,
    *  when that is not the drawing buffer: a group's effects buffer. */
-  window?: DeviceRect;
+  window?: Rect;
 }
 
 /** A clip path and the transform it is in. */
@@ -116,7 +115,7 @@ function sameMatrix(a: GlMat3 | undefined, b: GlMat3 | undefined): boolean {
   return a === undefined ? b === undefined : b !== undefined && sameFloats(a, b);
 }
 
-function sameRect(a: DeviceRect | undefined, b: DeviceRect | undefined): boolean {
+function sameRect(a: Rect | undefined, b: Rect | undefined): boolean {
   if (a === undefined || b === undefined) return a === b;
   return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 }

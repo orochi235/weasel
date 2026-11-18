@@ -1,0 +1,82 @@
+/** Test fixture: a clustered graph, and where a layout leaves its boxes. */
+import { rectsOverlap, type Rect } from '@weasel-js/geom';
+import { getOwn } from '@weasel-js/registry';
+import { buildGraph, type Graph, type GraphNodeLike } from './graph';
+import type { LayoutOptions, LayoutResult } from './layout';
+
+const DEGENERATE: Rect = { x: 0, y: 0, width: 0, height: 0 };
+
+/** Built through `buildGraph`, so clusters are read the way a scene's are: a
+ *  node whose trait carries `cluster`, depending on its members. */
+export function graphOf(
+  ids: readonly string[],
+  edges: readonly (readonly [string, string])[],
+  clusters: Readonly<Record<string, readonly string[]>>,
+  inset = 12,
+): Graph {
+  const entries: { node: GraphNodeLike; pose: Rect }[] = [];
+  ids.forEach((id, i) => entries.push({
+    node: { id, kind: 'mark', data: { diagram: {} } },
+    pose: { x: i, y: i, width: 100, height: 40 },
+  }));
+  for (const [id, members] of Object.entries(clusters)) {
+    entries.push({
+      node: { id, kind: 'mark', data: { diagram: { cluster: { inset } } }, dependsOn: members },
+      pose: DEGENERATE,
+    });
+  }
+  edges.forEach(([from, to], i) => entries.push({
+    node: { id: `e${i}`, kind: 'mark', data: { diagram: { from: {}, to: {} } }, dependsOn: [from, to] },
+    pose: DEGENERATE,
+  }));
+  return buildGraph<Rect>(() => entries);
+}
+
+/** Every node where the layout put it. */
+export function placed<O extends LayoutOptions>(
+  graph: Graph,
+  fn: (graph: Graph, opts?: O) => LayoutResult,
+  opts?: O,
+): Map<string, Rect> {
+  const moved = fn(graph, opts);
+  return new Map(graph.nodes.map((n) => [n.id, { ...n.bounds, ...(moved.get(n.id) ?? {}) }]));
+}
+
+/** A cluster's box the way the scene derives it: its members' union, grown by the inset. */
+export function boxOf(at: Map<string, Rect>, members: readonly string[], inset: number): Rect {
+  const rs = members.map((m) => at.get(m)!);
+  const x = Math.min(...rs.map((r) => r.x)) - inset;
+  const y = Math.min(...rs.map((r) => r.y)) - inset;
+  return {
+    x,
+    y,
+    width: Math.max(...rs.map((r) => r.x + r.width)) + inset - x,
+    height: Math.max(...rs.map((r) => r.y + r.height)) + inset - y,
+  };
+}
+
+export const overlaps = rectsOverlap;
+
+/** A cluster's box where its members may themselves be clusters: the union of its
+ *  nodes and its inner clusters' boxes, grown by the inset. */
+export function nestedBoxOf(
+  at: Map<string, Rect>,
+  clusters: Readonly<Record<string, readonly string[]>>,
+  id: string,
+  inset: number,
+): Rect {
+  const rs = getOwn(clusters, id)!.map((m) => (Object.hasOwn(clusters, m) ? nestedBoxOf(at, clusters, m, inset) : at.get(m)!));
+  const x = Math.min(...rs.map((r) => r.x)) - inset;
+  const y = Math.min(...rs.map((r) => r.y)) - inset;
+  return {
+    x,
+    y,
+    width: Math.max(...rs.map((r) => r.x + r.width)) + inset - x,
+    height: Math.max(...rs.map((r) => r.y + r.height)) + inset - y,
+  };
+}
+
+/** Whether `inner` lies wholly within `outer`. */
+export const contains = (outer: Rect, inner: Rect) =>
+  inner.x >= outer.x && inner.y >= outer.y
+  && inner.x + inner.width <= outer.x + outer.width && inner.y + inner.height <= outer.y + outer.height;

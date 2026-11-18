@@ -1,20 +1,20 @@
-import { maxOf, minOf } from '@weasel-js/geom';
+import { maxOf, minOf, type Rect } from '@weasel-js/geom';
 import type { MeasureRowText } from '../body';
 import { insetOf } from '../cluster';
-import { groupLabelIdOf } from '../dataGroups';
+import { clusterLabelIdOf } from '../dataClusters';
 import type { DataNode, DiagramRouter } from '../dataTypes';
-import { nestGroups } from '../groupTree';
+import { nestClusters } from '../clusterTree';
 import { diagramNodeOf } from '../trait';
 import type { PortSpec } from '../types';
 import {
-  LOOK_THEME, boxNode, drawableWires, isControl, kindOf, sceneStyles, stageStyle, typeColors, uniqueGroups, uniqueStages,
+  LOOK_THEME, boxNode, drawableWires, isControl, kindOf, sceneStyles, stageStyle, typeColors, uniqueClusters, uniqueStages,
   wireEdges, type EffectLook, type LookThemeOptions, type RunRowOptions, type TypeColor,
 } from './draw';
 import { columnLefts, laneColumns, type LaneBlock, type Span } from './laneColumns';
-import { inkOf, routeWires, TRACK_GAP, worldSpecs, type Box } from './lanesRoutes';
+import { inkOf, routeWires, TRACK_GAP, worldSpecs } from './lanesRoutes';
 import { mainChain } from './mainChain';
 import { branchNode, type BranchChoice } from './symbols';
-import type { EffectGroup, EffectPipeline, EffectPort, EffectStage } from './types';
+import type { EffectCluster, EffectPipeline, EffectPort, EffectStage } from './types';
 
 /** Options for the `lanes` look. */
 export interface LanesOptions extends RunRowOptions, LookThemeOptions {
@@ -76,7 +76,7 @@ function laneHeights(count: number, least: number, needs: readonly { span: Span;
 
 /** An ordinary stage's ports, inputs on its left edge and outputs on its
  *  right, each spread within the stretch of its own type's lane the box covers. */
-function lanePorts(stage: EffectStage, box: Box, lane: ReadonlyMap<string, number>, band: (i: number) => [number, number]): PortSpec[] {
+function lanePorts(stage: EffectStage, box: Rect, lane: ReadonlyMap<string, number>, band: (i: number) => [number, number]): PortSpec[] {
   const side = (ports: readonly EffectPort[], u: number): PortSpec[] => ports.map((p) => {
     const same = ports.filter((q) => q.type === p.type);
     const [top, bottom] = band(lane.get(p.type)!);
@@ -100,22 +100,22 @@ function controlSideOf(stage: EffectStage, pipeline: EffectPipeline, lane: Reado
 }
 
 /** How far what a node draws reaches past its box on each side, and above
- *  and below, the boxes of the groups holding it. */
+ *  and below, the boxes of the clusters holding it. */
 type Overhang = { left: number; top: number; right: number; bottom: number };
 
 /** Each node's size as `diagramScene` would draw it unconstrained, and how
  *  far its marks reach past it: a decision's title and cut values, and the
- *  insets of the group boxes around it, a title's included. And the width
- *  of each labeled group's title. */
-function sizesOf(nodes: readonly DataNode[], groups: readonly EffectGroup[], measure: MeasureRowText | undefined) {
-  const specs = worldSpecs({ nodes, edges: [], groups }, { layout: 'none', ...(measure !== undefined ? { measure } : {}) });
-  const pose = new Map(specs.map((s) => [s.id as string, s.pose as Box]));
+ *  insets of the cluster boxes around it, a title's included. And the width
+ *  of each labeled cluster's title. */
+function sizesOf(nodes: readonly DataNode[], clusters: readonly EffectCluster[], measure: MeasureRowText | undefined) {
+  const specs = worldSpecs({ nodes, edges: [], clusters: clusters }, { layout: 'none', ...(measure !== undefined ? { measure } : {}) });
+  const pose = new Map(specs.map((s) => [s.id as string, s.pose as Rect]));
   const spec = new Map(specs.map((s) => [s.id as string, s]));
-  const nested = nestGroups(groups, (id) => nodes.some((n) => n.id === id))
-    .map((g) => ({ members: g.members, inset: insetOf(diagramNodeOf({ id: g.id, kind: 'mark', data: spec.get(g.id)?.data })?.group?.inset) }));
+  const nested = nestClusters(clusters, (id) => nodes.some((n) => n.id === id))
+    .map((g) => ({ members: g.members, inset: insetOf(diagramNodeOf({ id: g.id, kind: 'mark', data: spec.get(g.id)?.data })?.cluster?.inset) }));
   const boxed = (id: string, side: 'top' | 'bottom') => nested.reduce((sum, g) => sum + (g.members.includes(id) ? g.inset[side] : 0), 0);
-  const titles = new Map(groups.flatMap((g) => {
-    const title = pose.get(groupLabelIdOf(g.id));
+  const titles = new Map(clusters.flatMap((g) => {
+    const title = pose.get(clusterLabelIdOf(g.id));
     return title === undefined ? [] : [[g.id, title.width] as const];
   }));
   const size = new Map(nodes.map((n) => {
@@ -132,7 +132,7 @@ function sizesOf(nodes: readonly DataNode[], groups: readonly EffectGroup[], mea
   return { size, titles };
 }
 
-function laneNode(type: string, box: Box, color: TypeColor): DataNode {
+function laneNode(type: string, box: Rect, color: TypeColor): DataNode {
   return {
     id: laneId(type),
     lines: [],
@@ -158,7 +158,7 @@ function insetsFor(edges: number, tracks: ReadonlyMap<number, number>): number[]
 interface Plan {
   stages: readonly EffectStage[];
   drawn: readonly DataNode[];
-  size: ReadonlyMap<string, { box: Box; over: Overhang }>;
+  size: ReadonlyMap<string, { box: Rect; over: Overhang }>;
   spans: ReadonlyMap<string, Span>;
   column: ReadonlyMap<string, number>;
   blocks: readonly LaneBlock[];
@@ -219,7 +219,7 @@ function place(plan: Plan, insets: readonly number[]) {
  *  across the lanes of the types it reads and writes, as tall as they are,
  *  its ports in their own lanes. A decision keeps its symbol's size, centered
  *  across its lanes. Columns run left to right in the order the signal flows,
- *  and a group's members hold columns no other stage stands in. A wire runs around the stages between its ends along the lane edges, each
+ *  and a cluster's members hold columns no other stage stands in. A wire runs around the stages between its ends along the lane edges, each
  *  sharing one on a track of its own. */
 export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
   const theme = options.theme ?? LOOK_THEME;
@@ -233,9 +233,9 @@ export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
     ? { id: stage.id, ...branchNode(stage, pipeline, options.branch, { controlSide: controlSideOf(stage, pipeline, lane), style: stageStyle(stage, theme) }) }
     : boxNode(stage, { showParams: options.showParams !== false, rowPorts: false, ports: [], run: options })));
   const labels = rows.map((t): DataNode => ({ id: laneId(t), lines: [t] }));
-  const groups = uniqueGroups(pipeline);
-  const { size, titles } = sizesOf([...drawn, ...labels], groups, options.measure);
-  const { column, blocks } = laneColumns(stages, drawableWires(pipeline), spans, groups, titles);
+  const clusters = uniqueClusters(pipeline);
+  const { size, titles } = sizesOf([...drawn, ...labels], clusters, options.measure);
+  const { column, blocks } = laneColumns(stages, drawableWires(pipeline), spans, clusters, titles);
   const plan: Plan = {
     stages, drawn, size, spans, column, blocks, lane, rows: rows.length,
     least: Math.max(options.laneHeight ?? 48, maxOf(labels, (l) => size.get(l.id)!.box.height)),
@@ -249,7 +249,7 @@ export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
   // another; a few rounds settle each corridor's tracks.
   let insets = insetsFor(rows.length + 1, new Map());
   let laid = place(plan, insets);
-  const route = (at: typeof laid) => routeWires(wires, at.nodes, { grid: at, column, router, measure: options.measure, groups });
+  const route = (at: typeof laid) => routeWires(wires, at.nodes, { grid: at, column, router, measure: options.measure, clusters: clusters });
   let routed = route(laid);
   for (let round = 0; round < 4; round++) {
     const need = insetsFor(rows.length + 1, routed.tracks);
@@ -268,7 +268,7 @@ export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
   const laneStyle = new Map(rows.map((t, i) => [laneId(t), bodies[i % bodies.length]!]));
 
   return {
-    data: { nodes: [...laneNodes, ...laid.nodes], edges: edges.map((e) => e.edge), groups },
+    data: { nodes: [...laneNodes, ...laid.nodes], edges: edges.map((e) => e.edge), clusters: clusters },
     scene: {
       layout: 'none',
       router,

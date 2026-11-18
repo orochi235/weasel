@@ -6,7 +6,7 @@ import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import type { LabelObject } from 'bil-lbx';
 import { axisMap, type AxisMap, type DrawState } from './style';
 
-const CARRIED = Symbol('weasel.lbxObjects');
+const CARRIED = Symbol('weasel.lbxObjectsCommand');
 
 type Carrier = GroupDrawCommand & { [CARRIED]: readonly LabelObject[] };
 
@@ -17,7 +17,7 @@ type Carrier = GroupDrawCommand & { [CARRIED]: readonly LabelObject[] };
  * barcode's bar width, are written as given. Return it from the `drawOne` passed to `sceneToLbx` for
  * a node whose object the draw commands cannot say, as a barcode's bars do not say it is a barcode.
  */
-export function lbxObjects(objects: readonly LabelObject[]): DrawCommand {
+export function lbxObjectsCommand(objects: readonly LabelObject[]): DrawCommand {
   const carrier: Carrier = { kind: 'group', children: [], [CARRIED]: objects };
   return carrier;
 }
@@ -41,7 +41,7 @@ function placeObject(obj: LabelObject, map: AxisMap): LabelObject {
  */
 export function placeCarried(objects: readonly LabelObject[], state: DrawState): LabelObject[] | string {
   if (state.alpha <= 0) return [];
-  if (Math.abs(state.alpha - 1) > 1e-3) return 'lbxObjects under partial opacity';
+  if (Math.abs(state.alpha - 1) > 1e-3) return 'lbxObjectsCommand under partial opacity';
   const map = axisMap(state.transform);
-  return map ? objects.map((obj) => placeObject(obj, map)) : 'lbxObjects under a rotation, skew or mirror';
+  return map ? objects.map((obj) => placeObject(obj, map)) : 'lbxObjectsCommand under a rotation, skew or mirror';
 }

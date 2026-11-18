@@ -7,7 +7,7 @@
  * would come back with a dead key. `createScene` merges these under the
  * consumer's, which stays the winner on a key collision.
  */
-import { unionAABB } from '../geometry/unionBounds';
+import { unionAabb } from '../geometry/unionBounds';
 import type { RectPose, SceneRegistry } from './types';
 import { CLIP_NOTHING, clipNothing } from './clipNothing';
 import { BOOLEAN_OF_CHILDREN, booleanOfChildren } from './booleanOfChildren';
@@ -18,7 +18,7 @@ import { PAGE_CLIP, pageClip } from '../pages/pageClip';
 export const UNION_OF_CHILDREN = 'kit:unionOfChildren';
 
 /**
- * A container's pose as the envelope of what it holds — `unionAABB`, so a
+ * A container's pose as the envelope of what it holds — `unionAabb`, so a
  * rotated member contributes the extent of its ink rather than its unrotated
  * box. Paired with `dependsOn: 'children'`, this is what makes a group's
  * bounds track its members.
@@ -43,7 +43,7 @@ export function unionOfChildren<TPose>(
     poses.push(rect);
   }
   if (poses.length === 0) return null;
-  const union = unionAABB(poses);
+  const union = unionAabb(poses);
   // Sound by the check above: every member read as a rect, so the union is one
   // too, and a scene holding rect poses is a scene whose `TPose` is one.
   return union === null ? null : (union as unknown as TPose);

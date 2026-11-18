@@ -18,7 +18,7 @@ function Live({ initial }: { initial: TimeWindow }) {
   const [playhead, setPlayhead] = useState(4200);
   return (
     <div className={s.track}>
-      <TimeRuler window={win} bounds={BOUNDS} playhead={playhead} onScrub={setPlayhead} onWindowChange={setWin} />
+      <TimeRuler window={win} bounds={BOUNDS} playhead={playhead} onSeek={setPlayhead} onWindowChange={setWin} />
     </div>
   );
 }

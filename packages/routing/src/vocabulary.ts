@@ -8,7 +8,7 @@
  * these shapes is a change to core's contract that happens to be spelled here.
  */
 
-import type { FramedBox, View } from '@weasel-js/geom';
+import type { FramedRect, View, Rect } from '@weasel-js/geom';
 import type { SelectIntent, SelectionExtendKey, SelectionMode } from '@weasel-js/select';
 export type { SelectIntent, SelectionExtendKey, SelectionMode };
 
@@ -18,8 +18,8 @@ export type NodeId = string & { readonly __brand: 'NodeId' };
 export type { View };
 
 /** Axis-aligned rectangle in world space, with the frame it is drawn in;
- *  geom's `FramedBox`. */
-export type Bounds = FramedBox;
+ *  geom's `FramedRect`. */
+export type Bounds = FramedRect;
 
 
 /** The selection as routing reads and writes it. */
@@ -97,7 +97,7 @@ export type HitShape =
   | { kind: 'path'; d: Path2D };
 
 /** What a recorded viewport change was: a translation or a scale change. */
-export type ViewportGestureKind = 'pan' | 'zoom';
+export type ViewportMoveKind = 'pan' | 'zoom';
 
 /**
  * Where an action reports its hit math so the debug overlay can draw it. An
@@ -106,7 +106,7 @@ export type ViewportGestureKind = 'pan' | 'zoom';
 export interface DebugSink {
   recordHitbox(id: string, kind: 'body' | 'handle' | 'rotation' | 'anchor', shape: HitShape): void;
   recordHandle(id: string, position: { x: number; y: number }, kind: HandleKind): void;
-  recordBounds(id: string, bounds: { x: number; y: number; width: number; height: number }): void;
+  recordBounds(id: string, bounds: Rect): void;
   recordOrigin(id: string, point: { x: number; y: number }): void;
   recordSnapCandidate(point: { x: number; y: number }, accepted: boolean): void;
   recordLayer(id: string, label: string, space: 'world' | 'screen', index: number): void;
@@ -116,7 +116,7 @@ export interface DebugSink {
    * focal point — when it had one. Survives `beginFrame`; the next record
    * replaces it.
    */
-  recordViewport(kind: ViewportGestureKind, from: View, to: View, anchor?: { x: number; y: number }): void;
+  recordViewport(kind: ViewportMoveKind, from: View, to: View, anchor?: { x: number; y: number }): void;
   /** Clears every non-snap array. Called at the start of each Canvas render. */
   beginFrame(): void;
   /** Clears the snap array. Called at gesture end. */

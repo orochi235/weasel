@@ -21,8 +21,8 @@ export interface Hop {
 }
 
 /** A rank's members in order. A placeholder is a `GraphNode` whose id starts
- *  with {@link PLACEHOLDER}; its `group` is set only when both ends of its
- *  edge are inside that group. */
+ *  with {@link PLACEHOLDER}; its `cluster` is set only when both ends of its
+ *  edge are inside that cluster. */
 export type Rows = GraphNode[][];
 
 /** Every placeholder id starts with this. A NUL is not something a scene id

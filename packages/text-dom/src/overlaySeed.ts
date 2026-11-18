@@ -67,7 +67,7 @@ export function seedOverlay(
   };
 }
 
-/** An empty run left behind is dropped: it would answer `runsCarryStyling` by existing. */
+/** An empty run left behind is dropped: it would answer `hasStyledRun` by existing. */
 function trimCaretHolder(runs: StyledRun[]): StyledRun[] {
   const last = runs[runs.length - 1];
   if (last === undefined || !last.text.endsWith('\n')) return runs;

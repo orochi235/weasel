@@ -1,16 +1,22 @@
-import { clientToCanvas, useLatest } from '@weasel-js/core';
+import { useLatest } from '@weasel-js/core';
 import {
   createEyedropperModel,
-  createLoupeModel,
+  LOUPE_WHEEL_RATE,
   type LoupeInputApi,
   type LoupeMode,
   type LoupeModel,
   type LoupePoint,
-  WHEEL_RATE,
 } from '@weasel-js/loupe';
 import { useKitSetting } from '@weasel-js/react';
 import { type RefObject, useCallback, useEffect, useReducer, useRef } from 'react';
+import {
+  createHostLoupeInput,
+  createHostLoupeModel,
+  type HostPointer,
+  hostPointOf,
+} from './hostLoupe';
 import type { LoupeLens, ResolvedLoupe } from './types';
+import { useLensReport } from './useLensReport';
 
 /** Options for {@link useLoupe}. */
 export interface UseLoupeOptions<TData = unknown, TLayer extends string = string, TPose = unknown> {
@@ -126,11 +132,7 @@ export function useLoupe<TData = unknown, TLayer extends string = string, TPose 
 }: UseLoupeOptions<TData, TLayer, TPose>): LoupeState {
   const [, bump] = useReducer((n: number) => n + 1, 0);
 
-  const overRef = useRef(false);
-  // Where the pointer last was over the host, in client px. The model ignores
-  // aims while the lens is down, so this is what the lens opens at.
-  const pointerRef = useRef<{ clientX: number; clientY: number } | null>(null);
-  const peekingRef = useRef(false);
+  const pointer = useRef<HostPointer>({ over: false, client: null, peeking: false }).current;
   const enabledRef = useLatest(enabled);
   const sampleRef = useLatest(sample);
   const onColorChangeRef = useLatest(options.onColorChange);
@@ -144,41 +146,20 @@ export function useLoupe<TData = unknown, TLayer extends string = string, TPose 
 
   // Reads nothing but refs, so it is stable and an effect may depend on it.
   const shown = useCallback(
-    (): boolean => lensShown(overRef.current, enabledRef.current, peekingRef.current),
-    [enabledRef],
+    (): boolean => lensShown(pointer.over, enabledRef.current, pointer.peeking),
+    [enabledRef, pointer],
   );
 
   const modelRef = useRef<LoupeModel | null>(null);
-  if (modelRef.current === null) {
-    modelRef.current = createLoupeModel({
-      mode: options.mode,
-      factor: options.factor,
-      minFactor: options.minFactor,
-      maxFactor: options.maxFactor,
-      onColorChange: (hex) => onColorChangeRef.current?.(hex),
-      onPick: (hex) => onPickRef.current?.(hex),
-      surface: {
-        lens: () => {
-          const { center, shows, width, height, factor } = lensRef.current;
-          return {
-            x: center.x - width / 2,
-            y: center.y - height / 2,
-            w: width,
-            h: height,
-            shows,
-            factor,
-          };
-        },
-        // The lens follows the pointer and is painted over the host rather than
-        // into it, so it is never part of the picture being magnified.
-        covers: () => false,
-        sample: (p) => sampleRef.current?.(p) ?? null,
-        hidden: () => !shown(),
-        gone: () => goneRef.current,
-        changed: bump,
-      },
-    });
-  }
+  modelRef.current ??= createHostLoupeModel(options, {
+    lens: () => lensRef.current,
+    sample: (p) => sampleRef.current?.(p) ?? null,
+    shown,
+    gone: () => goneRef.current,
+    changed: bump,
+    onColorChange: (hex) => onColorChangeRef.current?.(hex),
+    onPick: (hex) => onPickRef.current?.(hex),
+  });
   const model = modelRef.current;
 
   const goneRef = useRef(false);
@@ -198,13 +179,10 @@ export function useLoupe<TData = unknown, TLayer extends string = string, TPose 
   // come up under a pointer that has not moved since. Stable, because `input`
   // captures it once.
   const hostRefRef = useLatest(hostRef);
-  const pointerOnHost = useCallback((): LoupePoint | null => {
-    const host = hostRefRef.current.current;
-    const p = pointerRef.current;
-    if (!host || !p) return null;
-    const [x, y] = clientToCanvas(host, p.clientX, p.clientY);
-    return { x, y };
-  }, [hostRefRef]);
+  const pointerOnHost = useCallback(
+    (): LoupePoint | null => hostPointOf(hostRefRef.current.current, pointer),
+    [hostRefRef, pointer],
+  );
   const aimAtPointer = useCallback((): void => {
     const at = pointerOnHost();
     if (at) modelRef.current?.aimAt(at);
@@ -215,72 +193,37 @@ export function useLoupe<TData = unknown, TLayer extends string = string, TPose 
   // where the pointer already is.
   useEffect(() => {
     if (enabled) aimAtPointer();
-    else if (!peekingRef.current) bump();
-  }, [enabled, aimAtPointer]);
+    else if (!pointer.peeking) bump();
+  }, [enabled, aimAtPointer, pointer]);
 
   // Subscribed while the lens is up, and before any effect the caller declares
   // after this hook runs — so a frame its own effect provokes is not missed.
   // This render's `enabled`: `enabledRef` holds the last committed one.
-  const visible = lensShown(overRef.current, enabled, peekingRef.current);
+  const visible = lensShown(pointer.over, enabled, pointer.peeking);
 
   const lens = lensOf(options, model, visible);
   const lensRef = useLatest(lens);
 
-  // Told on a change in value, not on every render: a host drawing into this
-  // box would otherwise redraw for each one.
-  const onLensRef = useLatest(options.onLens);
-  const reportedRef = useRef<string>(JSON.stringify(null));
-  const report = useCallback(
-    (next: LoupeLens | null): void => {
-      const key = JSON.stringify(next);
-      if (key === reportedRef.current) return;
-      reportedRef.current = key;
-      onLensRef.current?.(next);
-    },
-    [onLensRef],
-  );
-  const shownLens = visible ? lens : null;
-  const shownKey = JSON.stringify(shownLens);
-  useEffect(() => {
-    report(JSON.parse(shownKey) as LoupeLens | null);
-  }, [shownKey, report]);
-  useEffect(() => () => report(null), [report]);
+  useLensReport(options.onLens, visible ? lens : null);
   useEffect(() => {
     if (!visible || !subscribeResample) return;
     return subscribeResample(() => model.resample());
   }, [visible, subscribeResample, model]);
 
-  const wheelRateRef = useLatest(useKitSetting('loupe.wheelRate') ?? WHEEL_RATE);
+  const wheelRateRef = useLatest(useKitSetting('loupe.wheelRate') ?? LOUPE_WHEEL_RATE);
   const inputRef = useRef<LoupeInputApi | null>(null);
-  if (inputRef.current === null) {
-    inputRef.current = {
-      shown,
-      setPeeking: (on) => {
-        if (peekingRef.current === on) return;
-        peekingRef.current = on;
-        if (on) aimAtPointer();
-        bump();
-      },
-      magnifyBy: (deltaY) => magnify(modelRef.current, deltaY, wheelRateRef.current),
-      aimAt: (clientX, clientY) => {
-        overRef.current = true;
-        pointerRef.current = { clientX, clientY };
-        aimAtPointer();
-        if (shown()) bump();
-      },
-      leave: () => {
-        overRef.current = false;
-        pointerRef.current = null;
-        bump();
-      },
-      dropping: () => droppingRef.current,
-      pickAtPointer: () => {
-        const at = pointerOnHost();
-        if (at && shown() && insideLens(lensRef.current, at)) modelRef.current?.pick(at);
-        else if (at) void dropperRef.current?.pick(at);
-      },
-    };
-  }
+  inputRef.current ??= createHostLoupeInput(pointer, {
+    shown,
+    aimAtPointer,
+    changed: bump,
+    magnifyBy: (deltaY) => magnify(modelRef.current, deltaY, wheelRateRef.current),
+    dropping: () => droppingRef.current,
+    pickAtPointer: () => {
+      const at = pointerOnHost();
+      if (at && shown() && insideLens(lensRef.current, at)) modelRef.current?.pick(at);
+      else if (at) void dropperRef.current?.pick(at);
+    },
+  });
 
   return {
     visible,

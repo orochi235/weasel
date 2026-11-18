@@ -1,7 +1,7 @@
 import * as Weasel from '@weasel-js/core';
-import { defaultNodeProperties, nodeTraitsOf, type NodePropertiesEntry } from '@weasel-js/core';
-import { DRAW_FEATURES } from '../drawFeatures';
-import { FEATURE_NAMES, FEATURE_PRESETS } from '@weasel-js/editing';
+import type { NodePropertiesEntry } from '@weasel-js/core';
+import { DRAW_NODE_PROPERTIES, DRAW_PRESETS } from './drawPresets';
+import { FEATURE_NAMES } from '@weasel-js/editing';
 import { parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@weasel-js/core/routing';
 import { type PrefObject, prefSectionLeaves } from '@weasel-js/prefs';
 import { iconSpecRefs, toIconRef } from '@weasel-js/icons';
@@ -68,8 +68,7 @@ export function collectIcons(actions: readonly ActionEntry[]): readonly IconEntr
 
 /** Core's named presets, in the order `FEATURE_NAMES` lists them, each with the tools its includes mount. */
 export function collectBundles(): readonly BundleEntry[] {
-  const described = Weasel.describePresets({ '@weasel-js/core': Object.values(FEATURE_PRESETS) });
-  const byId = new Map(described.map((d) => [d.id, d]));
+  const byId = new Map(DRAW_PRESETS.map((d) => [d.id, d]));
   const toolsOf = (id: string): string[] => {
     const d = byId.get(id)!;
     return [...new Set([...d.includes.flatMap(toolsOf), ...d.tools])];
@@ -80,13 +79,20 @@ export function collectBundles(): readonly BundleEntry[] {
   });
 }
 
-/** The `createXOp` barrel export behind each registered op kind. The kit
- *  names every factory after its op kind, so the registry drives this list;
- *  the `typeof` guard turns a break in that convention into a missing row
- *  rather than a crash, and `registryData.test.ts` fails when it breaks. */
+/** Op kinds whose factory is not named after them: `transform` keeps its recorded name, so saved histories replay. */
+const FACTORY_NAMES: Readonly<Record<string, string>> = { transform: 'createSetPoseOp' };
+
+/** The barrel export that builds op kind `kind`: `create<Kind>Op`, but for {@link FACTORY_NAMES}. */
+export function opFactoryNameFor(kind: string): string {
+  return getOwn(FACTORY_NAMES, kind) ?? `create${kind[0]!.toUpperCase()}${kind.slice(1)}Op`;
+}
+
+/** The `createXOp` barrel export behind each registered op kind, so the registry drives this list;
+ *  the `typeof` guard turns a missing factory into a missing row rather than a crash, and
+ *  `registryData.test.ts` fails when one goes missing. */
 export function collectOpFactories(): readonly OpFactoryEntry[] {
   return Weasel.defaultOpRegistry.entries().map((e) => e.key)
-    .map((name) => `create${name[0]!.toUpperCase()}${name.slice(1)}Op`)
+    .map(opFactoryNameFor)
     .filter((name) => typeof getOwn(Weasel as unknown as Record<string, unknown>, name) === 'function')
     .map((id) => ({ kind: 'opFactory', id, label: id }));
 }
@@ -193,9 +199,6 @@ function kindIcon(id: Weasel.ShapeKind): ReactNode {
 }
 
 /** The property kinds a draw canvas merges: core's defaults and what draw's presets add (text's). */
-export const DRAW_NODE_PROPERTIES: readonly NodePropertiesEntry[] =
-  nodeTraitsOf(DRAW_FEATURES, { properties: defaultNodeProperties }).properties;
-
 export function collectPropertiesTrait(
   source: readonly NodePropertiesEntry[] = DRAW_NODE_PROPERTIES,
 ): readonly PropertiesKindEntry[] {

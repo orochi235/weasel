@@ -1,28 +1,28 @@
 import { describe, expect, it } from 'vitest';
-import { auto } from './auto';
-import { autoPathsOf, resolveAutoConfig } from './autoConfig';
+import { AUTO } from './auto';
+import { resolveAutoConfig, startAutoPathsOf } from './autoConfig';
 import { f } from './builder';
 import { resolveConfigSchema } from './resolve';
 
 const schema = f.schema({
   width: f.number(432),
   gap: f.number(12).auto((c) => (c.width as number) / 24),
-  cols: f.number(3).initial(auto),
+  cols: f.number(3).initial(AUTO),
   grid: f.group({ size: f.number(8).auto(() => 99) }),
 });
 const resolved = resolveConfigSchema(schema);
 const raw = { width: 432, gap: 12, cols: 3, grid: { size: 8 } };
 
-describe('autoPathsOf', () => {
+describe('startAutoPathsOf', () => {
   it('lists the dotted paths a schema starts auto', () => {
-    expect(autoPathsOf(resolved)).toEqual(['cols']);
+    expect(startAutoPathsOf(resolved)).toEqual(['cols']);
   });
 
   it('reaches leaves nested under a group', () => {
     const nested = resolveConfigSchema(
-      f.schema({ grid: f.group({ size: f.number(8).initial(auto) }) }),
+      f.schema({ grid: f.group({ size: f.number(8).initial(AUTO) }) }),
     );
-    expect(autoPathsOf(nested)).toEqual(['grid.size']);
+    expect(startAutoPathsOf(nested)).toEqual(['grid.size']);
   });
 });
 

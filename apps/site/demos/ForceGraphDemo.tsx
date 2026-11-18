@@ -1,6 +1,6 @@
 import { integer, present } from '@weasel-js/quantity';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { SceneCanvas, bodyPredicate, defineTool, dragPanContribution, useScene, ellipsePath, linePath, viewPreset } from '@weasel-js/core';
+import { SceneCanvas, bodyPredicate, defineTool, createDragPanContribution, useScene, ellipsePath, linePath, viewPreset } from '@weasel-js/core';
 import type {
   Action,
   Tool,
@@ -9,7 +9,7 @@ import type {
   RenderLayer,
   View,
 } from '@weasel-js/core';
-import type { Simulation } from '@weasel-js/simulation';
+import type { RunningSimulation } from '@weasel-js/simulation';
 import { useSimulation } from '@weasel-js/simulation/react';
 import type { DrawCommand } from '@weasel-js/renderer';
 import {
@@ -31,7 +31,7 @@ interface Pose { x: number; y: number; width: number; height: number }
 
 const GROUP_COLORS = ['#e25c4c', '#4ca7e2', '#5cc46e', '#e2b34c', '#9c6cd4'];
 
-const PAN_ON_DRAG = [dragPanContribution()];
+const PAN_ON_DRAG = [createDragPanContribution()];
 
 const leafOf = (n: GraphNode, radius: number) => ({
   id: n.id as never,
@@ -71,7 +71,7 @@ function paintEdges(
  *  the sim owns positions, and its tick syncs them into the scene. */
 function usePinTool(
   nodesRef: { current: GraphNode[] },
-  sim: Simulation<GraphNode>,
+  sim: RunningSimulation<GraphNode>,
   onPin: () => void,
 ): Tool {
   const pinAction = useMemo<Action>(() => ({
@@ -114,7 +114,7 @@ function usePinTool(
     presentation: { label: 'Pin', group: 'select' },
     actions: [pinAction],
     // Body target rather than a catch-all drag, so a drag on empty canvas
-    // falls through to the canvas's `dragPanContribution` instead of being swallowed.
+    // falls through to the canvas's `createDragPanContribution` instead of being swallowed.
     bindings: [{
       spec: {
         kind: 'drag',

@@ -4,7 +4,7 @@ import { kernel3dKitSettingsSchema } from '@weasel-js/kernel3d';
 import { labkitKitSettingsSchema } from '@weasel-js/labkit';
 import { pathToolsKitSettingsSchema } from '@weasel-js/path-tools';
 import { mergePrefGroups, openPrefsSync, prefCanAuto, prefLeaves, type PrefPath } from '@weasel-js/prefs';
-import { KitSettingsFromPrefs, usePrefsValues } from '@weasel-js/prefs/react';
+import { KitSettingsFromPrefs, usePrefsState } from '@weasel-js/prefs/react';
 import { useKitSettings, type KitSettingPath } from '@weasel-js/react';
 import { rigKitSettingsSchema } from '@weasel-js/rig';
 import { createMemoryAdapter } from '@weasel-js/storage';
@@ -58,7 +58,7 @@ describe("the bundled packages' kit settings schemas", () => {
   it('draw a row for every leaf in a form bound to their store', () => {
     const store = openPrefsSync(ALL, { storage: createMemoryAdapter(), prefix: PREFIX });
     function Form() {
-      return <PrefsForm layout="list" {...usePrefsValues(store).form} />;
+      return <PrefsForm layout="list" {...usePrefsState(store).form} />;
     }
     const { container } = renderWithIcons(<Form />);
     const missing = LEAVES.map(([path]) => path).filter((path) => !container.querySelector(`[data-pref-path="${path}"]`));
@@ -68,7 +68,7 @@ describe("the bundled packages' kit settings schemas", () => {
   it('offer Auto on just the leaves that declare it, which is none, and Reset once a leaf is set', () => {
     const store = openPrefsSync(ALL, { storage: createMemoryAdapter(), prefix: PREFIX });
     function Form() {
-      return <PrefsForm layout="list" {...usePrefsValues(store).form} />;
+      return <PrefsForm layout="list" {...usePrefsState(store).form} />;
     }
     const { container } = renderWithIcons(<Form />);
     expect(LEAVES.filter(([, leaf]) => prefCanAuto(leaf))).toEqual([]);

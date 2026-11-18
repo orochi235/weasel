@@ -1,3 +1,4 @@
+import type { ModifierState } from '@weasel-js/routing';
 /**
  * Layered curve editor contract.
  *
@@ -19,14 +20,6 @@ import type { Point as PlotPoint, ModelRange } from '../Plot2D/geometry';
 export type ModelPoint = PlotPoint;
 export type { PlotPoint };
 
-/** Modifier keys held at the moment a layer callback fires. */
-export interface LayerModifiers {
-  shift: boolean;
-  alt: boolean;
-  meta: boolean;
-  ctrl: boolean;
-}
-
 /** Read-only context passed to every layer hook. Layers use this to
  *  convert between plot (SVG-pixel) and model (data) coordinates. */
 export interface LayerCtx {
@@ -34,7 +27,7 @@ export interface LayerCtx {
   readonly plotSize: { readonly width: number; readonly height: number };
   toPlot(p: ModelPoint): PlotPoint;
   toModel(p: PlotPoint): ModelPoint;
-  readonly modifiers: LayerModifiers;
+  readonly modifiers: ModifierState;
   /** The kit settings the editor sees, for a layer's hit and snap radii. Absent, a layer uses its own constants. */
   readonly kitSettings?: KitSettingsStore;
 }
@@ -46,7 +39,7 @@ export interface LayerCtx {
 export interface LayerRenderCtx extends LayerCtx {
   /** True when this layer owns the currently-active gesture. Useful for
    *  surfacing "active anchor" visuals without threading the index. */
-  readonly isActive: boolean;
+  readonly active: boolean;
   /** A color source as a CSS color under the theme, tints, and palette in
    *  force; `undefined` for no source and for one nothing answers. */
   colorCss(source: ColorSource | null | undefined): string | undefined;

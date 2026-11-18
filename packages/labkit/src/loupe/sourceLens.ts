@@ -1,15 +1,16 @@
 import { layoutBoxOf } from '@weasel-js/core';
+import type { Rect } from '@weasel-js/geom';
 import {
   type CanvasSource,
   createCanvasSource,
   type LoupePoint,
   type LoupeSize,
   loupeExtent,
-  type SourceBox,
   type SourceCanvas,
   type SourceContext,
   sourceRegion,
 } from '@weasel-js/loupe';
+import { createPart } from '@weasel-js/registry';
 
 /** Anything a lens can be pointed at for its pixels: a `CanvasSource`, a
  *  canvas, or a context on one. */
@@ -23,7 +24,7 @@ function isCanvasSource(t: LoupeSourceTarget): t is CanvasSource {
 
 // One source per canvas or context, so a getter returning the same canvas
 // every frame keeps one snapshot rather than minting a new one per call.
-const made = new WeakMap<object, CanvasSource>();
+const made = createPart((target: SourceCanvas | SourceContext) => createCanvasSource(target));
 
 /** `source` as a `CanvasSource`, or `null` while a getter has nothing yet. */
 export function resolveLoupeSource(source: LoupeSource | undefined): CanvasSource | null {
@@ -31,12 +32,7 @@ export function resolveLoupeSource(source: LoupeSource | undefined): CanvasSourc
   const target = typeof source === 'function' ? source() : source;
   if (!target) return null;
   if (isCanvasSource(target)) return target;
-  let s = made.get(target);
-  if (!s) {
-    s = createCanvasSource(target);
-    made.set(target, s);
-  }
-  return s;
+  return made(target);
 }
 
 /**
@@ -45,7 +41,7 @@ export function resolveLoupeSource(source: LoupeSource | undefined): CanvasSourc
  * host, else — for an offscreen canvas, or one not on the page — the whole
  * host.
  */
-export function sourceBoxIn(source: CanvasSource, host: HTMLElement | null): SourceBox {
+export function sourceBoxIn(source: CanvasSource, host: HTMLElement | null): Rect {
   const own = source.box?.();
   if (own) return own;
   // Client px over the host's own scale: a zoomed stage or a scaled ancestor shows it larger than it lays out.
@@ -76,7 +72,7 @@ export function drawSourceLens(
     diameter: LoupeSize;
     dpr: number;
     source: CanvasSource;
-    box: SourceBox;
+    box: Rect;
   },
 ): void {
   const { aim, factor, diameter, dpr, source, box } = opts;

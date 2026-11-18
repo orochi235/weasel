@@ -1,5 +1,5 @@
 import { type RectPose } from '@weasel-js/core';
-import { mirrorPose, type Pose } from '@weasel-js/animator';
+import { mirrorPose, type SkeletonPose } from '@weasel-js/animator';
 import { BONE_LENGTH, BONE_WIDTH, PLAYER_SKELETON, ROOT_TO_FOOT } from './skeleton';
 import type { Vec2 } from './level';
 
@@ -17,7 +17,7 @@ import type { Vec2 } from './level';
  */
 
 /** A joint's local transform for one frame: bind plus this frame's delta. */
-function localOf(name: string, pose: Pose): { x: number; y: number; rotation: number } {
+function localOf(name: string, pose: SkeletonPose): { x: number; y: number; rotation: number } {
   const joint = PLAYER_SKELETON.joints.find((j) => j.name === name);
   if (!joint) throw new Error(`boneRig: no joint named "${name}"`);
   const d = pose[name];
@@ -32,7 +32,7 @@ function localOf(name: string, pose: Pose): { x: number; y: number; rotation: nu
  * Local poses for every bone, keyed by joint name. The rig root's pose is
  * world; the others are local to their parent bone. `at` is the player's center.
  */
-export function boneLocalPoses(pose: Pose, at: Vec2, facing: 1 | -1): Map<string, RectPose> {
+export function boneLocalPoses(pose: SkeletonPose, at: Vec2, facing: 1 | -1): Map<string, RectPose> {
   const out = new Map<string, RectPose>();
   const faced = facing === 1 ? pose : mirrorPose(PLAYER_SKELETON, pose);
 

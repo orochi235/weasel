@@ -9,5 +9,5 @@ chart, or a server laying out an axis takes them alike.
 import { linearScale } from '@weasel-js/scale';
 
 const x = linearScale({ domain: [0, 100], range: [0, 400] });
-x.map(25); // 100
+x.position(25); // 100
 ```

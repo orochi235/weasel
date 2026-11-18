@@ -5,7 +5,7 @@ import type { MoveSession } from '../session';
 import { pickContainer, type Candidate } from './container';
 import { carryDragged, gatherDragged, selectionCenter, type DraggedChild } from './dragged';
 import type { DropPass, LayoutPlacement } from './types';
-import { boxOf, containerView, draggedInView, pointInView } from './view';
+import { boxOf, containerView, draggedInView, viewContainsPoint } from './view';
 
 /** Dragged ids grouped by the container they are leaving, skipping any that
  *  stay put (`exclude` is the destination) or that had no container. */
@@ -61,7 +61,7 @@ function placeAll(
     const targets = layout.getDropTargets(container, children, arg);
     const probe = { x: edited.center.x + probeOffset.x, y: edited.center.y + probeOffset.y };
     const g = poseDescriptorForNode(session.projection, scene.get(edited.id)!);
-    const at = pointInView(view, g, dc.arg.pose, destPlane ? toPlane(destPlane, probe) : probe);
+    const at = viewContainsPoint(view, g, dc.arg.pose, destPlane ? toPlane(destPlane, probe) : probe);
     const target = layout.snap.pickTarget(targets, at);
     // All-or-nothing: a container that cannot take every member takes none
     // rather than splitting the selection between two homes.

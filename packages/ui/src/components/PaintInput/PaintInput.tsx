@@ -1,5 +1,5 @@
 import { useCallback, useState, type ReactElement } from 'react';
-import { switchGradientKind, type PaintKind, type PaintKindEntry } from '@weasel-js/paint-kinds';
+import { withPaintKind, type PaintKind, type PaintKindEntry } from '@weasel-js/paint-kinds';
 import { usePaintKind, usePaintKinds } from '@weasel-js/paint-kinds/react';
 import { Icon } from '../Icon/Icon';
 import type { IconSpec } from '@weasel-js/icons';
@@ -9,7 +9,7 @@ import { OpacityRange } from '../OpacityRange/OpacityRange';
 import { GradientEditor } from '../GradientEditor';
 import { paintKindEditor } from './paintKindEditor';
 import { PatternPicker } from '../PatternPicker';
-import { paintPreviewCss, solidColorOf, getAlpha01, paintAlpha, paintWithAlpha, solid, toHex8, withAlpha01, isPatternPaint, INHERIT, type Inherit, type Paint } from '@weasel-js/paint';
+import { paintPreviewCss, solidColorOf, hexAlpha, paintAlpha, paintWithAlpha, solid, toHex8, withAlpha01, isPatternPaint, INHERIT, type Inherit, type Paint } from '@weasel-js/paint';
 import { SegmentedBar, type SegmentedBarItem } from '../Segmented';
 import s from './PaintInput.module.css';
 
@@ -25,7 +25,7 @@ const NONE = 'none';
  *  so both fold in. */
 function solidHex8(paint: Paint): string {
   const hex8 = toHex8((paint as { color: string }).color);
-  return withAlpha01(hex8.slice(0, 7), getAlpha01(hex8) * paintAlpha(paint));
+  return withAlpha01(hex8.slice(0, 7), hexAlpha(hex8) * paintAlpha(paint));
 }
 
 /** `solid(color)` at the slider's own 1% resolution: the alpha arrives
@@ -185,7 +185,7 @@ export function PaintInput(props: PaintInputProps): ReactElement {
       onChange(seen);
       return;
     }
-    const converted = value != null ? switchGradientKind(value, kind) : undefined;
+    const converted = value != null ? withPaintKind(value, kind) : undefined;
     if (converted !== undefined) {
       onChange(converted);
       return;

@@ -1,7 +1,7 @@
 import {
   type ClockRegistry,
   clockPosition,
-  holdElapsed,
+  holdPosition,
   type PlayheadHold,
 } from '@weasel-js/clock';
 import { freshId } from '@weasel-js/registry';
@@ -57,7 +57,7 @@ export function snapshotCommands(
       if (after === before) return;
       holds.get(trialId)?.release();
       holds.delete(trialId);
-      if (position && handle) holds.set(trialId, holdElapsed(handle, position));
+      if (position && handle) holds.set(trialId, holdPosition(handle, position));
     },
   };
 }

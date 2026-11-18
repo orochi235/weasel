@@ -7,9 +7,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import type { InvocationCtx, OngoingInvoker } from '../actions/invoker';
 import { runs, tally, timeoutFor } from '../../pbt.fixture';
-import { sweepAction } from './sweep';
+import { createSweepAction } from './sweep';
 
-interface Grid { ox: number; oy: number; cols: number; rows: number; w: number; h: number }
+interface Grid { ox: number; oy: number; cols: number; rows: number; width: number; height: number }
 
 /** The most hit tests one move may take: far more than any grid here needs, far fewer than a runaway loop. */
 const HIT_TEST_BUDGET = 20_000;
@@ -22,8 +22,8 @@ afterEach(() => {
 });
 
 const cellAt = (g: Grid, x: number, y: number): string | undefined => {
-  const c = Math.floor((x - g.ox) / g.w);
-  const r = Math.floor((y - g.oy) / g.h);
+  const c = Math.floor((x - g.ox) / g.width);
+  const r = Math.floor((y - g.oy) / g.height);
   return c >= 0 && c < g.cols && r >= 0 && r < g.rows ? `${c},${r}` : undefined;
 };
 
@@ -46,7 +46,7 @@ function sweep(g: Grid, path: readonly { x: number; y: number }[]): { entered: s
     return key ? cells.get(key)! : document.body;
   };
   const entered: string[] = [];
-  const action = sweepAction<string>({
+  const action = createSweepAction<string>({
     surface: () => host,
     keyOf: (el) => (el as HTMLElement).dataset.key,
     begin: () => ({ enter: (item) => { entered.push(item.key); } }),
@@ -68,14 +68,14 @@ function sweep(g: Grid, path: readonly { x: number; y: number }[]): { entered: s
 const grid = fc.record({
   ox: fc.integer({ min: -50, max: 50 }), oy: fc.integer({ min: -50, max: 50 }),
   cols: fc.integer({ min: 1, max: 6 }), rows: fc.integer({ min: 1, max: 4 }),
-  w: fc.integer({ min: 4, max: 40 }), h: fc.integer({ min: 4, max: 40 }),
+  width: fc.integer({ min: 4, max: 40 }), height: fc.integer({ min: 4, max: 40 }),
 });
 const pointIn = (g: Grid) => fc.record({
-  x: fc.integer({ min: g.ox - 20, max: g.ox + g.cols * g.w + 20 }),
-  y: fc.integer({ min: g.oy - 20, max: g.oy + g.rows * g.h + 20 }),
+  x: fc.integer({ min: g.ox - 20, max: g.ox + g.cols * g.width + 20 }),
+  y: fc.integer({ min: g.oy - 20, max: g.oy + g.rows * g.height + 20 }),
 });
 const pressed = (g: Grid) => fc.record({
-  x: fc.integer({ min: g.ox, max: g.ox + g.cols * g.w - 1 }), y: fc.integer({ min: g.oy, max: g.oy + g.rows * g.h - 1 }),
+  x: fc.integer({ min: g.ox, max: g.ox + g.cols * g.width - 1 }), y: fc.integer({ min: g.oy, max: g.oy + g.rows * g.height - 1 }),
 });
 const drag = grid.chain((g) => fc.tuple(fc.constant(g), pressed(g), fc.array(pointIn(g), { minLength: 1, maxLength: 12 })));
 
@@ -89,7 +89,7 @@ function expectFollows(g: Grid, path: readonly { x: number; y: number }[], { ent
   });
 }
 
-describe('sweepAction', () => {
+describe('createSweepAction', () => {
   it('stands on the cell under the pointer after every move, entering none twice running', () => {
     fc.assert(fc.property(drag, ([g, first, rest]) => {
       const path = [first, ...rest];

@@ -5,8 +5,10 @@
   align-items: center;
   gap: var(--bar-gap, var(--wzl-space-3));
   min-inline-size: 0;
-  /* Every control on the line stands at one height, so their edges line up: boxes, selects, segments and buttons. */
+  /* Fields stand at the small height; an unsized bar's buttons keep 28px, ruled 2026-11-17. Every label on the line
+     shares the small font size. */
   --wzl-field-h: var(--wzl-control-h-sm);
+  --wzl-field-font-size: var(--wzl-font-size-sm);
   --wzl-select-h: var(--wzl-field-h);
   --tb-h: var(--wzl-field-h);
 }

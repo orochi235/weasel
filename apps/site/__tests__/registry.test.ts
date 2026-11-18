@@ -87,3 +87,22 @@ describe('the demo registry', () => {
     expect(bad.map((d) => d.id)).toEqual([]);
   });
 });
+
+describe('a demo named in another demo’s prose', () => {
+  // Titles like "Loupe (hud window)" share a stem; a reader searches the nav for the whole title.
+  it('is named by a title that exists', () => {
+    const titles = new Set(DEMOS.map((d) => d.title));
+    const stems = new Set(DEMOS.filter((d) => d.title.includes(' (')).map((d) => d.title.split(' (')[0]!));
+    const bad: string[] = [];
+    for (const d of DEMOS) {
+      for (const [, before, qualifier] of `${d.description} ${d.hint ?? ''}`.matchAll(/([\w-]+(?: [\w-]+)*) \(([^)]+)\)/g)) {
+        const words = before!.split(' ');
+        for (let i = 0; i < words.length; i++) {
+          const stem = words.slice(i).join(' ');
+          if (stems.has(stem) && !titles.has(`${stem} (${qualifier})`)) bad.push(`${d.id}: ${stem} (${qualifier})`);
+        }
+      }
+    }
+    expect(bad).toEqual([]);
+  });
+});

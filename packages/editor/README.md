@@ -23,15 +23,15 @@ It runs beside `@weasel-js/core`, `@weasel-js/geom`, `@weasel-js/guides`,
 
 | Area | Exports |
 |---|---|
-| Shell | `EditorShell`, `EDITOR_ACTIONS`, `EDITOR_PREFERENCES_KEY`, `SNAPPING_KEY`, `useEditorKeys`, `EDITOR_CONTEXT_MENUS`, `EDITOR_CONTEXT_MENUS_CONTRIBUTION` |
-| Preferences | `useEditorPrefs`, `useOpenPreferences`, `EditorPrefsDialog` |
+| Shell | `EditorShell`, `EDITOR_ACTIONS`, `EDITOR_PREFS_KEY`, `SNAPPING_KEY`, `useEditorKeys`, `EDITOR_CONTEXT_MENUS`, `EDITOR_CONTEXT_MENUS_CONTRIBUTION` |
+| Preferences | `useEditorPrefs`, `useOpenPrefs`, `EditorPrefsDialog` |
 | Menu bar | `editorMenuBar`, `menu`, `menuRun`, `EDITOR_MENU_TITLES` |
 | Session | `useSessionPersistence`, `useAutosave`, `readStored`, `writeSession`, `isUnreadableKey`, `sessionSaveReporter` |
 | Snapshots | `docFromSnapshot`, `nodeSpecsFromSnapshot`, `adoptSnapshotPages`, `snapshotRebuildsTree` |
 | Clipboard | `useDocClipboard`, `DOC_CLIPBOARD_ACTIONS`, `DOC_CLIPBOARD_KEYS` |
 | Files | `downloadBlob`, `pickFile`, `describeFileWarnings`, `reportFileWarnings` |
 | File commands | `useNewCommand`, `useOpenCommand`, `useSaveCommand`, `FILE_KEYS` |
-| Pages | `usePages`, `usePageSettle`, `PAGE_SETTLE_MS`, `usePageFit`, `usePaperLayer`, `usePageGrid` |
+| Pages | `usePages`, `usePageSettle`, `PAGE_SETTLE_MS`, `usePageFit`, `usePaperLayer`, `usePageGrid`, `pageGridSchema` |
 | Text editing | `TextEditDepPublisher` |
 
 ```tsx
@@ -150,6 +150,18 @@ reads the page nodes and edits them through core's page edits; its `add()` on a
 Continuous scene creates the page run, so the first page added makes the
 document paged. `usePaperLayer` draws each page's paper, and `usePageFit` fits
 the view to a page, or to the world origin when there is none.
+
+`usePageGrid` gives the grid over a page: a layer while it is shown and a snap
+source while snapping to it is on. Its settings are `pageGridSchema`, a prefs
+group to mount in the app's schema, and its options are that group's values
+plus the page and its fill:
+
+```tsx
+const SCHEMA = pref.group('Preferences', { view: pref.group('View', { grid: pageGridSchema }) });
+
+const [grid] = usePrefGroup(store, 'view.grid');
+const { layer, source } = usePageGrid({ ...grid, page, background });
+```
 
 Whether content may sit off every page, on a **pasteboard**, is the page run's
 `pasteboard` flag in core (`createPageRun(scene, pages, { pasteboard: true })`).

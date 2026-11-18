@@ -1,20 +1,20 @@
 import type { LabMenus } from '@weasel-js/labkit';
-import { type PrefGroup, pref } from '@weasel-js/prefs';
+import { type PrefGroup, pref } from '@weasel-js/prefs-schema';
 import { useEffect, useMemo } from 'react';
 import { getOwn } from '@weasel-js/registry';
-import type { Globals } from '../protocol/messages';
+import type { StoryGlobals } from '../protocol/messages';
 import { type GlobalDeclarations, labOptions } from './globals';
 import { useLabGlobals } from './GlobalsToolbar';
 
 const leafPath = (n: number): `globals.d${number}.v` => `globals.d${n}.v`;
 
 /**
- * The lab menu bar's Globals menu at `values`: a submenu per declaration holding one enum of the options the
+ * The lab menu bar's StoryGlobals menu at `values`: a submenu per declaration holding one enum of the options the
  * header's select offers. `undefined` when nothing is declared.
  */
 export function globalsMenu(
   declarations: GlobalDeclarations,
-  values: Globals,
+  values: StoryGlobals,
   set: (key: string, value: string) => void,
 ): LabMenus | undefined {
   const entries = Object.entries(declarations);
@@ -43,7 +43,7 @@ export function globalsMenu(
 }
 
 /**
- * Reports the lab's Globals menu to `onMenus` as the lab's values change. Renders nothing; mount it inside the
+ * Reports the lab's StoryGlobals menu to `onMenus` as the lab's values change. Renders nothing; mount it inside the
  * lab, since the values live there.
  */
 export function GlobalsMenus({

@@ -21,7 +21,7 @@ const INITIAL: Rect[] = [
 export function LayerListDemo() {
   const scene = useScene<Rect>({ items: INITIAL });
   // Lifted out of the canvas because the list reads and writes it too.
-  const selection = useSelection({ mode: 'multi', scene });
+  const selection = useSelection({ mode: 'multiple', scene });
 
   const layerList = useSceneLayerList({
     scene, selection,

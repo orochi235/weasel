@@ -18,7 +18,7 @@ import {
 import { boundsOfPath, transformPath } from '@weasel-js/core';
 import { readLength, resolveLength } from './lengths';
 import { isNonUniform, paintThroughMatrix, strokeThroughMatrix } from './paintThroughMatrix';
-import { collectGradients, type GradientTable } from './gradients';
+import { collectGradients, type GradientTable } from './readGradients';
 import { collectPatterns } from './patterns';
 import {
   bindStylesheets, deriveStyle, EMPTY_STYLE, ownProp, ownValue, styleValue, type StyleContext,

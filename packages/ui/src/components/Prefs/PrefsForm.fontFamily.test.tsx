@@ -8,13 +8,13 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm } from './PrefsForm';
 
-const listFonts = vi.fn();
+const listAtlasFonts = vi.fn();
 const listCanvasFonts = vi.fn();
 const resolveFontVariant = vi.fn();
 
 vi.mock('@weasel-js/font', async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
-  listFonts: () => listFonts(),
+  listAtlasFonts: () => listAtlasFonts(),
   listCanvasFonts: () => listCanvasFonts(),
   resolveFontVariant: (...args: unknown[]) => resolveFontVariant(...args),
 }));
@@ -72,8 +72,8 @@ const STYLE_SCHEMA: PrefGroup = {
 };
 
 beforeEach(() => {
-  listFonts.mockReset();
-  listFonts.mockReturnValue([
+  listAtlasFonts.mockReset();
+  listAtlasFonts.mockReturnValue([
     { family: 'sans-serif', variants: [] },
     { family: 'serif', variants: [] },
   ]);

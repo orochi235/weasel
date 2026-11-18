@@ -27,8 +27,8 @@ function Editor({ scene }) {
   const hudEntry = useHudContribution(hud);
 
   useEffect(() => {
-    const save = hud.button({ id: 'save', x: 12, y: 12, w: 96, h: 32, label: 'Save' });
-    save.on('press', () => console.log('saved'));
+    const save = hud.button({ id: 'save', x: 12, y: 12, width: 96, height: 32, label: 'Save' });
+    save.subscribe('press', () => console.log('saved'));
     return () => save.dispose();
   }, [hud]);
 
@@ -58,7 +58,7 @@ is what lets a HUD render headlessly and identically. A window's `content`
 painter is the single, explicit exception.
 
 `button` and `list` implement the measure/draw contract from `@weasel-js/ui-logic` that ui's `Button`
-and `ItemList` implement in the DOM: `hudButton.measure` and `hudList.measure`, with `hudMeasureEnv(ctx)`,
+and `ItemList` implement in the DOM: `hudButton.measure` and `hudItemList.measure`, with `hudMeasureEnv(ctx)`,
 give the box either target draws, so a host can size a widget before creating it.
 
 ## HUD or DOM text?

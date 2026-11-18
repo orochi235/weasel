@@ -111,20 +111,20 @@ export type {
   MarkPose,
   MarkScene,
   PaintedMark,
-  SerializedAnnotations,
   SerializedMarkHistory,
+  SerializedMarkStore,
   WorldRect,
 } from './annotations';
 export {
   annotationsFromJSON,
-  createAnnotationScene,
-  createAnnotationStore,
+  createMarkScene,
+  createMarkStore,
   fracContains,
   fracEncloses,
   fracToWorld,
   isStale,
   roundFrac,
-  seenFrom,
+  seenValues,
   worldToFrac,
 } from './annotations';
 export type { AnnotationOverlayProps } from './annotations/AnnotationOverlay';
@@ -205,8 +205,8 @@ export {
 } from './canvas';
 export * from './chrome';
 export * from './clock';
-export { type Auto, auto, isAuto } from './config/auto';
-export { autoPathsOf, resolveAutoConfig } from './config/autoConfig';
+export { AUTO, type Auto, isAuto } from './config/auto';
+export { resolveAutoConfig, startAutoPathsOf } from './config/autoConfig';
 export type { AutoReports } from './config/autoReports';
 export {
   ActionNode,
@@ -214,11 +214,11 @@ export {
   BaseNode,
   BooleanNode,
   ColorNode,
+  ConfigGroup,
   CurveNode,
   CustomNode,
   EnumNode,
   f,
-  GroupNode,
   isConfigBranch,
   LabelNode,
   ListNode,
@@ -233,11 +233,11 @@ export {
 export { type FieldSweepOptions, fieldSweep } from './config/fieldSweep';
 export type { LabOver, OverAccess } from './config/over';
 export {
+  configValueAt,
   fillConfigDefaults,
   hasConfigPath,
-  schemaNodeAtPath,
-  valueAtPath,
-  withValueAtPath,
+  schemaNodeAt,
+  withConfigValueAt,
 } from './config/path';
 export { resolveConfigSchema } from './config/resolve';
 export { applyRules, builtinRules, titleCase } from './config/rules';
@@ -275,7 +275,7 @@ export type {
 } from './config/types';
 export { useConfigSchema } from './config/useConfigSchema';
 export { useResolvedConfig } from './config/useResolvedConfig';
-export { conditionedLeaf, isEntryShown, isLeafEnabled, isLeafVisible } from './config/visible';
+export { conditionedLeaf, isConfigNodeShown, isRowEnabled, isRowVisible } from './config/visible';
 export {
   ControlMatrix,
   type ControlMatrixColumn,
@@ -307,7 +307,7 @@ export type {
   StageCapability,
   SystemEvent,
   UndoCapability,
-  ViewTransform,
+  ViewTransform2D,
 } from './instrument/types';
 export * from './job';
 export { type LoupeKitSettings, labkitKitSettingsSchema } from './kitSettings';
@@ -349,7 +349,7 @@ export type { UndockedPanel, UndockedPanels } from './state/undock';
 export { dockPanel, panelKey, undockPanel } from './state/undock';
 export { type PersistedStateOptions, usePersistedState } from './state/usePersistedState';
 export { useTrialState } from './state/useTrialState';
-export type { ViewTransform2D, ViewTransform3D } from './state/view';
+export type { ViewTransform3D } from './state/view';
 export { as2DView, as3DView, DEFAULT_VIEW } from './state/view';
 export * from './surface';
 export { interstellarTheme } from './theme/interstellar';

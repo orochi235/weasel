@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { pathFromD } from '@weasel-js/core';
 import { DIAGRAM_THEMES, dataNodeStyle, type DiagramData } from '@weasel-js/diagram';
 import type { DiagramDocument } from '../document';
-import { DRAW_XML } from './format';
+import { DIAGRAM_DRAW_XML } from './format';
 import { parseStyle, shapeOf } from './style';
 import { asGraph } from '../testing/asGraph';
 
@@ -51,12 +51,12 @@ const geometry = (doc: Document, id: string) => {
 };
 
 describe('writing draw-style XML', () => {
-  const { text, warnings } = DRAW_XML.write!(DOC);
+  const { text, warnings } = DIAGRAM_DRAW_XML.write!(DOC);
   const out = xml(text);
 
   it('writes well-formed XML that it recognizes', () => {
     expect(out.getElementsByTagName('parsererror')).toHaveLength(0);
-    expect(DRAW_XML.detect(text)).toBe(true);
+    expect(DIAGRAM_DRAW_XML.detect(text)).toBe(true);
   });
 
   it('writes a diagram per page, named as the app names it, with its size', () => {
@@ -68,12 +68,12 @@ describe('writing draw-style XML', () => {
 
   it('keeps the way a page runs, which an app that does not know it ignores', async () => {
     const doc: DiagramDocument = { pages: [{ ...DOC.pages[0]!, direction: 'right' } as DiagramDocument['pages'][number], DOC.pages[1]!] };
-    const written = DRAW_XML.write!(doc).text;
+    const written = DIAGRAM_DRAW_XML.write!(doc).text;
     expect(written).toContain('weaselDirection="right"');
-    const back = (await DRAW_XML.read!(written)).document.pages.map(asGraph);
+    const back = (await DIAGRAM_DRAW_XML.read!(written)).document.pages.map(asGraph);
     expect(back.map((p) => p.direction)).toEqual(['right', undefined]);
     const odd = written.replace('weaselDirection="right"', 'weaselDirection="sideways"');
-    const read = await DRAW_XML.read!(odd);
+    const read = await DIAGRAM_DRAW_XML.read!(odd);
     expect(asGraph(read.document.pages[0]!).direction).toBeUndefined();
     expect(read.warnings).toContain('A page direction a diagram does not have was dropped: sideways.');
   });
@@ -143,7 +143,7 @@ describe('writing draw-style XML', () => {
 
   it('keeps the root and layer cells clear of the items\' ids', () => {
     const taken: DiagramDocument = { pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: '1', lines: ['One'], at: { x: 0, y: 0 } }], edges: [] } }] };
-    const one = xml(DRAW_XML.write!(taken).text);
+    const one = xml(DIAGRAM_DRAW_XML.write!(taken).text);
     expect(cell(one, '1').getAttribute('vertex')).toBe('1');
     expect(cell(one, '1').getAttribute('parent')).toBe('1-2');
   });
@@ -153,7 +153,7 @@ describe('writing draw-style XML', () => {
       nodes: [{ id: 'a', lines: ['A'], at: { x: 0, y: 0 } }, { id: 'e/label:from', lines: ['B'], at: { x: 200, y: 0 } }],
       edges: [{ id: 'e', from: 'a', to: 'e/label:from', endLabels: { from: '1' } }],
     } }] };
-    const ids = [...xml(DRAW_XML.write!(doc).text).getElementsByTagName('mxCell')].map((c) => c.getAttribute('id'));
+    const ids = [...xml(DIAGRAM_DRAW_XML.write!(doc).text).getElementsByTagName('mxCell')].map((c) => c.getAttribute('id'));
     expect(new Set(ids).size).toBe(ids.length);
   });
 });
@@ -172,7 +172,7 @@ describe('writing what the format cannot carry', () => {
         },
       }],
     };
-    const { text, warnings } = DRAW_XML.write!(doc);
+    const { text, warnings } = DIAGRAM_DRAW_XML.write!(doc);
     expect(styleOf(xml(text), 'odd').values.get('rounded')).toBe('0');
     expect(warnings).toEqual(expect.arrayContaining([expect.stringMatching(/outline path/), expect.stringMatching(/Marks/)]));
   });
@@ -190,7 +190,7 @@ describe('writing what the format cannot carry', () => {
         },
       }],
     };
-    const { text, warnings } = DRAW_XML.write!(doc);
+    const { text, warnings } = DIAGRAM_DRAW_XML.write!(doc);
     expect(warnings).toContain('Ports of a shape\'s own, and port labels, were left out; connectors meeting them were written meeting the shape where the port sat.');
     expect(styleOf(xml(text), 'ab').values.get('exitY')).toBe('0.25');
   });
@@ -199,7 +199,7 @@ describe('writing what the format cannot carry', () => {
     const doc: DiagramDocument = {
       pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'a', lines: ['A'] }, { id: 'b', lines: ['B'] }], edges: [{ from: 'a', to: 'b' }] } }],
     };
-    const out = xml(DRAW_XML.write!(doc).text);
+    const out = xml(DIAGRAM_DRAW_XML.write!(doc).text);
     expect(geometry(out, 'a').width).toBeGreaterThan(0);
     expect(geometry(out, 'a').y).not.toBe(geometry(out, 'b').y);
   });
@@ -213,7 +213,7 @@ describe('writing what the format cannot carry', () => {
       nodes: OUTLINES.map((outline, i) => ({ id: outline, lines: [outline], outline, at: { x: i * 100, y: 0 }, width: 80, height: 60 })),
       edges: MARKERS.map((m, i) => ({ id: m, from: OUTLINES[i]!, to: OUTLINES[i + 1]!, colors: { markerEnd: m } })),
     } }] };
-    const back = (await DRAW_XML.read!(DRAW_XML.write!(doc).text)).document.pages.map(asGraph)[0]!.data;
+    const back = (await DIAGRAM_DRAW_XML.read!(DIAGRAM_DRAW_XML.write!(doc).text)).document.pages.map(asGraph)[0]!.data;
     expect(back.nodes.map((n) => n.outline)).toEqual([...OUTLINES]);
     expect(back.edges.map((e) => e.colors?.markerEnd)).toEqual([...MARKERS]);
   });
@@ -227,9 +227,9 @@ describe('writing what the format cannot carry', () => {
       nodes: OUTLINES.map((outline, i) => ({ id: outline, lines: [outline], outline, at: { x: i * 100, y: 0 }, width: 90, height: 80 })),
       edges: [],
     } }] };
-    const written = DRAW_XML.write!(doc);
+    const written = DIAGRAM_DRAW_XML.write!(doc);
     expect(written.warnings).toEqual([]);
-    const back = (await DRAW_XML.read!(written.text)).document.pages.map(asGraph)[0]!.data;
+    const back = (await DIAGRAM_DRAW_XML.read!(written.text)).document.pages.map(asGraph)[0]!.data;
     expect(back.nodes.map((n) => n.outline)).toEqual([...OUTLINES]);
     expect(back.nodes.filter((n) => n.verticalAlign !== undefined)).toEqual([]);
   });
@@ -241,7 +241,7 @@ describe('writing what the format cannot carry', () => {
       cell('end', 'shape=mxgraph.bpmn.event;outline=end;symbol=terminate;')}${
       cell('complex', 'shape=mxgraph.bpmn.gateway2;gwType=complex;')}${
       cell('task', 'shape=mxgraph.bpmn.task;taskMarker=user;rounded=1;')}</root></mxGraphModel></diagram></mxfile>`;
-    const back = (await DRAW_XML.read!(text)).document.pages.map(asGraph)[0]!.data;
+    const back = (await DIAGRAM_DRAW_XML.read!(text)).document.pages.map(asGraph)[0]!.data;
     expect(back.nodes.map((n) => [n.id, n.outline])).toEqual([['end', 'event'], ['complex', 'diamond'], ['task', 'roundRect']]);
   });
 
@@ -250,9 +250,9 @@ describe('writing what the format cannot carry', () => {
       nodes: [{ id: 'a', lines: ['A'], at: { x: 0, y: 0 } }, { id: 'b', lines: ['B'], at: { x: 200, y: 0 } }],
       edges: [{ id: 'ab', from: 'a', to: 'b', label: 'owns', endLabels: { from: '1', to: '0..*' } }],
     } }] };
-    const text = DRAW_XML.write!(doc).text;
+    const text = DIAGRAM_DRAW_XML.write!(doc).text;
     expect(geometry(xml(text), 'ab/label:from').x).toBe(-1);
-    const back = asGraph((await DRAW_XML.read!(text)).document.pages[0]!).data.edges[0]!;
+    const back = asGraph((await DIAGRAM_DRAW_XML.read!(text)).document.pages[0]!).data.edges[0]!;
     expect(back).toMatchObject({ label: 'owns', endLabels: { from: '1', to: '0..*' } });
   });
 
@@ -261,7 +261,7 @@ describe('writing what the format cannot carry', () => {
       nodes: [{ id: 'a', lines: ['A'], at: { x: 0, y: 0 } }, { id: 'b', lines: ['B'], at: { x: 200, y: 0 } }],
       edges: [{ id: 'ab', from: 'a', to: 'b', endLabels: { from: '<b>1</b>', to: 'x &amp; y' } }],
     } }] };
-    const back = asGraph((await DRAW_XML.read!(DRAW_XML.write!(doc).text)).document.pages[0]!).data.edges[0]!;
+    const back = asGraph((await DIAGRAM_DRAW_XML.read!(DIAGRAM_DRAW_XML.write!(doc).text)).document.pages[0]!).data.edges[0]!;
     expect(back.endLabels).toEqual({ from: '<b>1</b>', to: 'x &amp; y' });
   });
 
@@ -271,6 +271,6 @@ describe('writing what the format cannot carry', () => {
       edges: [{ from: 'a', to: 'b', colors: { trim: { end: 0.5 } } }],
     };
     const doc: DiagramDocument = { pages: [{ kind: 'graph', id: 'p', width: 300, height: 200, data }] };
-    expect(DRAW_XML.write!(doc).warnings).toEqual(['Trims on connectors were left out; they were written whole.']);
+    expect(DIAGRAM_DRAW_XML.write!(doc).warnings).toEqual(['Trims on connectors were left out; they were written whole.']);
   });
 });

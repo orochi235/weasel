@@ -4,7 +4,7 @@ import { editPreset } from './edit';
 import { ingestPreset } from './ingest';
 import { pathfinderPreset } from './pathfinder';
 import { selectPreset } from './select';
-import { selectToolKitPreset, shapeToolKitPreset } from './tools';
+import { selectToolsOfferedPreset, shapeToolsOfferedPreset } from './tools';
 import { movePreset, outlinePreset, resizePreset, rotatePreset } from './transform';
 import { viewPreset } from '@weasel-js/core';
 
@@ -22,6 +22,6 @@ export const drawPreset: FeaturePreset = {
   label: 'Draw',
   includes: [
     viewPreset, selectPreset, outlinePreset, resizePreset, rotatePreset, movePreset, editPreset, arrangePreset,
-    pathfinderPreset, ingestPreset, selectToolKitPreset, shapeToolKitPreset,
+    pathfinderPreset, ingestPreset, selectToolsOfferedPreset, shapeToolsOfferedPreset,
   ],
 };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cubicPointAt, splitCubicAtT, type Point } from './cubicMath';
+import { cubicPointAt, splitCubicPoints, type Point } from './cubicMath';
 import { fitCubicThroughDeletion } from './spanFit';
 import type { PenAnchor } from './anchors';
 
@@ -16,7 +16,7 @@ function worstRadialError(p0: Point, p1: Point, p2: Point, p3: Point, r: number)
 describe('fitCubicThroughDeletion', () => {
   it('gives back the original cubic when the anchor came from splitting it', () => {
     const p0 = { x: 0, y: 0 }, p1 = { x: 10, y: 40 }, p2 = { x: 70, y: 50 }, p3 = { x: 100, y: 0 };
-    const { left, right } = splitCubicAtT(p0, p1, p2, p3, 0.4);
+    const { left, right } = splitCubicPoints(p0, p1, p2, p3, 0.4);
     const { c1, c2 } = fitCubicThroughDeletion(
       { ...p0, outHandle: left[1] },
       { ...left[3], inHandle: left[2], outHandle: right[1] },

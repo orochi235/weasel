@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { EDITOR_ACTIONS, EDITOR_PREFERENCES_KEY } from '@weasel-js/editor';
+import { EDITOR_ACTIONS, EDITOR_PREFS_KEY } from '@weasel-js/editor';
 import { actionBindings, actionItems, keySpecShortcut, SceneCanvas, defaultNodeRouting, useActionsRegistry, useCommand, useScene, type NodePropertiesEntry, type ToolDef, type ToolsApi } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
 import { actionIcon } from '@weasel-js/ui/components/Icon';
@@ -9,10 +9,11 @@ import { DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDraw
 import { DRAW_FEATURES } from '../drawFeatures';
 import { useFileCommands } from '../fileCommands';
 import { useDebugCommands } from './devRoutes';
-import { DRAW_NODE_PROPERTIES } from './registryData';
+import { DRAW_NODE_PROPERTIES } from './drawPresets';
 import { GESTURE_CATALOG_KEYS, type DeclaredRoute, type ToolSurface, type ToolEntry, type ActionEntry, type CallbackRef, type CallbackSource } from './registryEntries';
 import s from './RegistryInspector.module.css';
-import { BUILTIN_TOOL_IDS } from '@weasel-js/editing';
+import { KIT_TOOL_IDS } from '@weasel-js/editing';
+import { toolSlotsSignature } from './toolkit/useToolReflection';
 import { getOwn, hasOwnKey } from '@weasel-js/registry';
 
 export interface RegistrySnapshot {
@@ -46,19 +47,19 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
   });
   useDebugCommands();
   const { label: prefsLabel, ...prefsOptions } = DRAW_PREFERENCES_COMMAND;
-  useCommand(EDITOR_ACTIONS.preferences, prefsLabel, noop, { ...prefsOptions, keys: EDITOR_PREFERENCES_KEY });
+  useCommand(EDITOR_ACTIONS.preferences, prefsLabel, noop, { ...prefsOptions, keys: EDITOR_PREFS_KEY });
   useFileCommands({
     scene, filename: 'probe', paperSize: 'letter',
     setFilename: noop, showFirstPage: noop, leaveMode: noop, page: null,
   });
 
   // `onToolsCreated` fires every render because `useTools` synthesizes a new ToolsApi literal
-  // each render. Track only the structural signature (registry tool ids) to avoid a render loop.
+  // each render. Track only the structural signature (the ids in both slots) to avoid a render loop.
   const [toolsRegistrySig, setToolsRegistrySig] = useState<string>('');
   const toolsRef = useRef<ToolsApi | null>(null);
   const handleToolsCreated = (api: ToolsApi) => {
     toolsRef.current = api;
-    const sig = Object.keys(api.registry).sort().join(',');
+    const sig = toolSlotsSignature(api);
     setToolsRegistrySig((prev) => (prev === sig ? prev : sig));
   };
   const tools = toolsRef.current;
@@ -164,7 +165,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
         scene={scene}
         width={200}
         height={200}
-        features={DRAW_FEATURES} defaultTools={BUILTIN_TOOL_IDS}
+        features={DRAW_FEATURES} defaultTools={KIT_TOOL_IDS}
         ambient={AMBIENT}
         routing={defaultNodeRouting}
         onToolsCreated={handleToolsCreated}

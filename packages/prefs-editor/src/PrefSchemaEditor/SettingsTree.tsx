@@ -4,7 +4,7 @@ import { Icon, PrefKindBadge, Tree, treeBranchIds, type TreeNode } from '@weasel
 import { seekRows, soughtRow } from './rowSearch';
 import { GROUP_ICON, type PaletteDrag } from './Palette';
 import {
-  childrenOf, joinPath, pointable, pointedAt, pointersTo, type SchemaNode, type SchemaRoot, valuePathOf,
+  childrenOf, joinPath, isAliasable, aliasedPaths, aliasesTo, type SchemaNode, type SchemaRoot, valuePathOf,
 } from '@weasel-js/prefs/edit';
 import { leafLabel, nodeLabel } from './structureRows';
 import { nodeIcon } from './nodeIcon';
@@ -17,7 +17,7 @@ function toRows(over: SchemaRoot, node: SchemaNode, path: string | null, placed:
     const id = joinPath(path, key);
     const row = soughtRow({ id, label: key, ...(child.description ? { tooltip: child.description } : {}) }, { text: [child.name, key], tags: child.tags });
     if (isPrefLeaf(child)) {
-      if (!pointable(over, id)) return [];
+      if (!isAliasable(over, id)) return [];
       const label = nodeLabel(child.name, key);
       const pointed = placed.has(valuePathOf(over, id));
       return [{ ...row, label: leafLabel(pointed ? <span className={s.pointed}>{label}</span> : label), leading: nodeIcon(child, false), trailing: <PrefKindBadge kind={child.type ?? child.kind} /> }];
@@ -46,7 +46,7 @@ export function SettingsTree({ over, layout, sought, ghost, onDrag, onDrop }: {
   onDrag(drag: PaletteDrag | null): void;
   onDrop(drag: PaletteDrag): void;
 }) {
-  const placed = useMemo(() => pointedAt(layout, over), [layout, over]);
+  const placed = useMemo(() => aliasedPaths(layout, over), [layout, over]);
   const all = useMemo(() => toRows(over, over, null, placed), [over, placed]);
   const rows = useMemo(
     () => seekRows(all, sought),
@@ -56,7 +56,7 @@ export function SettingsTree({ over, layout, sought, ghost, onDrag, onDrop }: {
   // One row a drag: what it carries is new to the layout, and lands as one node.
   const dragOf = (ids: readonly string[], point: { x: number; y: number }): PaletteDrag | null => {
     const id = ids[0];
-    const made = id === undefined ? undefined : pointersTo(over, id);
+    const made = id === undefined ? undefined : aliasesTo(over, id);
     if (id === undefined || !made) return null;
     return { item: { id, label: made.node.name, icon: icon('ui:link'), key: made.key, make: () => made.node }, node: made.node, ...point };
   };

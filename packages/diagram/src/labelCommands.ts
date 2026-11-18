@@ -2,7 +2,7 @@
  * The label edit that is not a drag: the Reset label command.
  */
 import { ActionDisabledReason, type Action, type InvocationCtx, type AnyScene } from '@weasel-js/core';
-import { commitLabelToScene, type LabelEdit } from './labelDragAction';
+import { commitLabelToScene, type LabelEdit } from './moveLabelAction';
 import { editableLabels } from './labelDragLayer';
 
 /** The command that puts the selected edges' dragged labels back where placement puts them. */

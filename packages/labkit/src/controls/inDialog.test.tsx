@@ -4,7 +4,7 @@ import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
-import { withValueAtPath } from '../config/path';
+import { withConfigValueAt } from '../config/path';
 import { resolveConfigSchema } from '../config/resolve';
 import { ControlPanel } from './ControlPanel';
 import { summarizeLeaf, summarizeValue } from './inDialog';
@@ -19,7 +19,7 @@ function Panel({ schema }: { schema: Parameters<typeof resolveConfigSchema>[0] }
       <ControlPanel
         schema={resolved}
         config={config}
-        setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
+        setConfig={(path, value) => setConfig((prev) => withConfigValueAt(prev, path, value))}
       />
       <output data-testid="config">{JSON.stringify(config)}</output>
     </>
@@ -159,7 +159,7 @@ describe('summarizeValue', () => {
 });
 
 describe('summarizeLeaf', () => {
-  const deg = { scale: Math.PI / 180, precision: 0, suffix: '°' };
+  const deg = { scale: Math.PI / 180, places: 0, suffix: '°' };
   const angle = { kind: 'number', name: 'Angle', description: '', default: 0, unit: deg } as const;
   const plain = { kind: 'number', name: 'Count', description: '', default: 0 } as const;
 

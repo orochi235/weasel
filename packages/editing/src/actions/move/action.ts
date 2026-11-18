@@ -1,7 +1,7 @@
 import { defineAction, type Action } from '@weasel-js/routing';
 import { createEmitter } from '@weasel-js/registry';
 import type { InvocationCtx } from '@weasel-js/routing';
-import { transformPreview, finiteFrame, closeGesture, runBehaviorCancel, inPlane, selectionLayer, recordTransform } from '@weasel-js/core';
+import { transformPreview, finiteFrame, closeRun, runBehaviorCancel, inPlane, selectionLayer, recordTransform } from '@weasel-js/core';
 import { beginMove, type MoveFrame } from './session';
 import type { ReparentOnDrop } from '@weasel-js/core';
 import { nextFrame } from './frame';
@@ -88,7 +88,7 @@ export const moveAction: Action = inPlane(defineAction({
             session.snap?.end();
             // After the commit, so no frame can paint the pre-drag pose between
             // the override going away and the document catching up.
-            closeGesture({ hold, previews: frame.previews, behaviors: session.behaviors, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
+            closeRun({ hold, previews: frame.previews, behaviors: session.behaviors, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
           }
         },
         previewIds: preview.previewIds,

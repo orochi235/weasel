@@ -8,6 +8,7 @@
  * an open text edit is showing. Handed `documentOf(scene)`, each of them reads
  * the document, because the view it is handed holds no overrides.
  */
+import { createPart } from '@weasel-js/registry';
 import type { NodeId, PoseHold, PoseOverride, PoseOverrides } from './types';
 
 const refuse = (): never => {
@@ -29,7 +30,7 @@ const DOCUMENT_OVERRIDES: PoseOverrides<never, never> = Object.freeze({
   hold: (): PoseHold<never, never> => refuse(),
 });
 
-const views = new WeakMap<object, object>();
+const views = createPart((source: object): object => Object.create(source, { overrides: { value: DOCUMENT_OVERRIDES } }) as object);
 
 /**
  * `source` read as its document holds it: the same object in every respect but
@@ -40,12 +41,7 @@ const views = new WeakMap<object, object>();
  */
 export function documentOf<TSource extends { readonly overrides: unknown }>(source: TSource): TSource {
   if (isDocument(source)) return source;
-  let view = views.get(source);
-  if (view === undefined) {
-    view = Object.create(source, { overrides: { value: DOCUMENT_OVERRIDES } }) as object;
-    views.set(source, view);
-  }
-  return view as TSource;
+  return views(source) as TSource;
 }
 
 /** Whether `source` is a {@link documentOf} view. */

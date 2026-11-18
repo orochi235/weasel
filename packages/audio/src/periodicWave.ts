@@ -1,14 +1,11 @@
+import { createPart } from '@weasel-js/registry';
 import { toUnitPeak } from './oscillator';
 
-const cache = new WeakMap<BaseAudioContext, Map<string, PeriodicWave>>();
+const wavesIn = createPart((_ctx: BaseAudioContext) => new Map<string, PeriodicWave>());
 
 /** A wave of sines, partial k at amplitude `partials[k - 1]`, made once per context. */
 export function periodicWave(ctx: BaseAudioContext, partials: readonly number[]): PeriodicWave {
-  let byKey = cache.get(ctx);
-  if (!byKey) {
-    byKey = new Map();
-    cache.set(ctx, byKey);
-  }
+  const byKey = wavesIn(ctx);
   const key = partials.join(',');
   let wave = byKey.get(key);
   if (!wave) {

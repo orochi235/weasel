@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { rotationDegreesUnit } from '@weasel-js/core';
-import { endless, unit } from '@weasel-js/quantity';
+import { withInfinity, unit } from '@weasel-js/quantity';
 import type { PrefLeaf } from '@weasel-js/prefs';
 import { FitScope } from '../FitLabel/FitLabel';
 import { prefFieldProps } from '../Prefs/prefField';
@@ -496,7 +496,7 @@ describe('prefFieldProps', () => {
 });
 
 describe('an endless slider end', () => {
-  const NEVER = endless(unit('ms'), 'never');
+  const NEVER = withInfinity(unit('ms'), 'never');
 
   it('reads its word at Infinity, with no unit beside it, and the track at the stop', () => {
     render(<PropertyControl kind="number" control="slider" name="Cut" value={Infinity} min={0} max={5000} step={50} unit="ms" display={NEVER} endless="max" onChange={() => {}} />);

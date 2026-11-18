@@ -7,7 +7,7 @@ import {
   _resetStrokeMeshCacheForTests,
   STROKE_CONFIGS_PER_PATH,
 } from './strokeMeshCache';
-import { strokeSpaceOf } from '@weasel-js/stroke';
+import { strokeMetricOf } from '@weasel-js/stroke';
 
 const rect = (): RectPath => ({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 });
 const base: Stroke = { width: 2, paint: { color: '#000000' } };
@@ -58,11 +58,11 @@ describe('stroke ribbon cache', () => {
   // out, so a pan, a uniform zoom or a turned view keeps hitting.
   it('keys on the metric, which a uniform zoom does not change', () => {
     const path = rect();
-    const fourToOne = { ribbon: { metric: strokeSpaceOf(4, 0, 0, 1).metric!, pxPerUnit: 2 } };
+    const fourToOne = { ribbon: { metric: strokeMetricOf(4, 0, 0, 1).metric!, pxPerUnit: 2 } };
     const first = strokeMesh(path, base, undefined, fourToOne);
     expect(first).not.toBe(strokeMesh(path, base, undefined));
-    expect(strokeMesh(path, base, undefined, { ribbon: { metric: strokeSpaceOf(8, 0, 0, 2).metric!, pxPerUnit: 4 } })).toBe(first);
-    expect(strokeMesh(path, base, undefined, { ribbon: { metric: strokeSpaceOf(1, 0, 0, 4).metric!, pxPerUnit: 2 } })).not.toBe(first);
+    expect(strokeMesh(path, base, undefined, { ribbon: { metric: strokeMetricOf(8, 0, 0, 2).metric!, pxPerUnit: 4 } })).toBe(first);
+    expect(strokeMesh(path, base, undefined, { ribbon: { metric: strokeMetricOf(1, 0, 0, 4).metric!, pxPerUnit: 2 } })).not.toBe(first);
   });
 
   it('hits when only paint changes — colors are not geometry', () => {

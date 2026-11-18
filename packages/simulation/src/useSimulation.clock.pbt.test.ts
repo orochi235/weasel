@@ -9,10 +9,10 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import { createClock, type ClockHandle } from '@weasel-js/clock';
 import { useSimulation } from './useSimulation';
 import { runs, tally, timeoutFor } from './pbt.fixture';
-import type { Simulation, SimulationNode } from './types';
+import type { RunningSimulation, SimulationNode } from './types';
 
 interface Model { elapsed: number; rate: number; slept: boolean; running: boolean; anchor: number; atAnchor: number; step: number }
-interface Real { handle: ClockHandle; sim: Simulation<SimulationNode>; ticks: number; wall: number; node: SimulationNode }
+interface Real { handle: ClockHandle; sim: RunningSimulation<SimulationNode>; ticks: number; wall: number; node: SimulationNode }
 
 const seen = tally();
 const owed = (m: Model): number => m.atAnchor + (m.running ? Math.floor((m.elapsed - m.anchor) / m.step) : 0);

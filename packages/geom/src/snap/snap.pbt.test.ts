@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { closestOnFlat, flatDim, intersectFlats, orthonormalize, solveLeastSquares, type Flat, type Vec } from './flat';
+import { nearestOnFlat, flatDim, intersectFlats, orthonormalize, solveLeastSquares, type Flat, type Vec } from './flat';
 import { resolveSnap, type SnapCandidate, type SnapProblem } from './resolve';
 import { createPathSnapIndex, findPathSnap, findPathSnaps, PATH_SNAP_KINDS } from './pathSnap';
 import { nearestOnPath } from '../nearest';
@@ -42,7 +42,7 @@ describe('flats, property', () => {
       // What a dropped vector keeps outside the span is below the rank tolerance of its length.
       for (const v of vecs) {
         const n = Math.hypot(...v);
-        const rest = closestOnFlat({ at: v.map(() => 0), dirs: q }, v);
+        const rest = nearestOnFlat({ at: v.map(() => 0), dirs: q }, v);
         expect(dist(rest, v)).toBeLessThanOrEqual(1e-6 * n * 1.01 + 1e-300);
       }
     }), RUNS);
@@ -56,7 +56,7 @@ describe('flats, property', () => {
       // A column so short its coefficient passes the double range has no answer to compare.
       fc.pre(x.every(Number.isFinite));
       const got = rhs.map((_, i) => cs.reduce((s, c, j) => s + x[j]! * c[i]!, 0));
-      const want = closestOnFlat({ at: rhs.map(() => 0), dirs: cs }, rhs);
+      const want = nearestOnFlat({ at: rhs.map(() => 0), dirs: cs }, rhs);
       // The normal equations square the columns' conditioning: a column keeping only a fraction `r` of its
       // length outside the ones before it costs up to an ulp over r² of the answer.
       let r = 1;
@@ -65,18 +65,18 @@ describe('flats, property', () => {
         const n = Math.hypot(...col);
         if (!(n > 0)) continue;
         const unit = col.map((v) => v / n);
-        const left = dist(closestOnFlat({ at: unit.map(() => 0), dirs: kept }, unit), unit);
+        const left = dist(nearestOnFlat({ at: unit.map(() => 0), dirs: kept }, unit), unit);
         if (left > 1e-6) { r = Math.min(r, left); kept.push(unit); }
       }
       expect(dist(got, want)).toBeLessThan((1e-6 + 1e-14 / (r * r)) * (Math.hypot(...rhs) + 1));
     }), RUNS);
   }, TIMEOUT);
 
-  it('closestOnFlat is a projection: on the flat, idempotent, and nearer than any other point of it', () => {
+  it('nearestOnFlat is a projection: on the flat, idempotent, and nearer than any other point of it', () => {
     fc.assert(fc.property(dimension.chain((n) => fc.tuple(flatOf(n), vecOf(n), fc.array(coord(10), { minLength: n + 1, maxLength: n + 1 }))), ([f, p, c]) => {
-      const q = closestOnFlat(f, p);
+      const q = nearestOnFlat(f, p);
       const scale = Math.hypot(...p) + Math.hypot(...f.at) + 1;
-      expect(dist(closestOnFlat(f, q), q)).toBeLessThan(scale * 1e-12);
+      expect(dist(nearestOnFlat(f, q), q)).toBeLessThan(scale * 1e-12);
       const other = f.dirs.reduce<Vec>((acc, d, i) => acc.map((v, k) => v + c[i]! * d[k]!), f.at);
       expect(dist(q, p)).toBeLessThanOrEqual(dist(other, p) + scale * 1e-12);
     }), RUNS);
@@ -90,8 +90,8 @@ describe('flats, property', () => {
       tally.met++;
       const scale = Math.hypot(...a.at) + Math.hypot(...b.at) + 100;
       const p = orthonormalize(x.dirs).reduce<Vec>((acc, d, i) => acc.map((v, k) => v + (c[i] ?? 0) * d[k]!), x.at);
-      expect(dist(closestOnFlat(a, p), p)).toBeLessThan(1e-6 * scale);
-      expect(dist(closestOnFlat(b, p), p)).toBeLessThan(1e-6 * scale);
+      expect(dist(nearestOnFlat(a, p), p)).toBeLessThan(1e-6 * scale);
+      expect(dist(nearestOnFlat(b, p), p)).toBeLessThan(1e-6 * scale);
       const n = a.at.length;
       expect(flatDim(x)).toBeGreaterThanOrEqual(flatDim(a) + flatDim(b) - n);
       expect(flatDim(x)).toBeLessThanOrEqual(Math.min(flatDim(a), flatDim(b)));
@@ -144,13 +144,13 @@ describe('resolveSnap, property', () => {
     fc.assert(fc.property(problemOf(fc.oneof(locus, slanted)), (prob) => {
       const r = resolveSnap(prob);
       const scale = 100;
-      expect(dist(closestOnFlat(prob.input, r.delta), r.delta)).toBeLessThan(1e-9 * scale);
+      expect(dist(nearestOnFlat(prob.input, r.delta), r.delta)).toBeLessThan(1e-9 * scale);
       const at = new Map(prob.probes.map((p) => [p.id, p.at]));
       for (const c of [...r.members, ...r.satisfied]) {
         const world = at.get(c.probe)!.map((v, i) => v + r.delta[i]!);
-        expect(dist(closestOnFlat(c.locus, world), world)).toBeLessThan(1e-6);
+        expect(dist(nearestOnFlat(c.locus, world), world)).toBeLessThan(1e-6);
       }
-      if (r.members.length === 0) expect(dist(r.delta, closestOnFlat(prob.input, prob.delta0))).toBeLessThan(1e-12 * scale);
+      if (r.members.length === 0) expect(dist(r.delta, nearestOnFlat(prob.input, prob.delta0))).toBeLessThan(1e-12 * scale);
       else tally.snapped++;
       if (prob.candidates.some((c) => c.required)) {
         // A required candidate the input can reach at all is always met; one every move meets pins nothing, so is no member.
@@ -160,7 +160,7 @@ describe('resolveSnap, property', () => {
           tally.required++;
           const met = required.some((c) => {
             const world = at.get(c.probe)!.map((v, i) => v + r.delta[i]!);
-            return dist(closestOnFlat(c.locus, world), world) < 1e-6;
+            return dist(nearestOnFlat(c.locus, world), world) < 1e-6;
           });
           expect(met).toBe(true);
         }
@@ -217,7 +217,7 @@ describe('path snapping, property', () => {
           for (const i of h.paths) {
             const p = ps[i]!;
             if (p.kind === 'rect') continue;
-            expect(nearestOnPath(p.commands, p.coords, h.x, h.y)!.dist).toBeLessThan(1e-3);
+            expect(nearestOnPath(p.commands, p.coords, h.x, h.y)!.distance).toBeLessThan(1e-3);
           }
         }
         if (h.kind === 'nearest') tally.nearest++;

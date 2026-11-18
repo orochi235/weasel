@@ -60,7 +60,7 @@ function Harness({ into }: { into: (live: Live) => void }): ReactElement {
     return s as unknown as DrawScene;
   });
   const [host] = useState(() => document.body.appendChild(document.createElement('div')));
-  const selection = useSelection({ mode: 'multi', scene });
+  const selection = useSelection({ mode: 'multiple', scene });
   const modality = useModality(scene as never);
   const { machine } = modality;
   const modeId = useModeId(machine);

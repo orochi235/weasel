@@ -4,7 +4,7 @@ import { cleanup, render } from '@testing-library/react';
 import { CameraContext, type CameraContextValue, CanvasStack } from '@weasel-js/labkit/canvas';
 import { useContext } from 'react';
 import { afterEach, expect, test, vi } from 'vitest';
-import type { ViewTransform } from '../instrument/types';
+import type { ViewTransform2D } from '../instrument/types';
 
 // A stack under a scaled ancestor — a `<Stage>`, a lens — draws in its layout
 // px, so its camera has to read the pointer in them too. Only a browser
@@ -17,7 +17,7 @@ function Grab({ into }: { into: { current: CameraContextValue | null } }) {
   return null;
 }
 
-function mountScaled(view: ViewTransform, onViewChange = vi.fn(), onHitTest = vi.fn()) {
+function mountScaled(view: ViewTransform2D, onViewChange = vi.fn(), onHitTest = vi.fn()) {
   const camera: { current: CameraContextValue | null } = { current: null };
   const { container } = render(
     <div className="lk-test-scaled-host">
@@ -79,7 +79,7 @@ test('a wheel zoom on a scaled stack keeps the point under the pointer still', (
       clientY: r.top + 60,
     }),
   );
-  const next = onViewChange.mock.calls.at(-1)?.[0] as ViewTransform | undefined;
+  const next = onViewChange.mock.calls.at(-1)?.[0] as ViewTransform2D | undefined;
   if (!next) throw new Error('the wheel changed no view');
   expect(next.zoom).toBeGreaterThan(1);
   expect(50 * next.zoom + next.pan.x).toBeCloseTo(50, 6);

@@ -36,11 +36,11 @@ describe('linearScale', () => {
     fc.assert(fc.property(end, end, range, share, (d0, d1, [r0, r1], t) => {
       fc.pre(d0 !== d1);
       const s = linearScale({ domain: [d0, d1], range: [r0, r1] });
-      expect(s.map(d0)).toBe(r0);
-      expect(s.map(d1)).toBe(r1);
+      expect(s.position(d0)).toBe(r0);
+      expect(s.position(d1)).toBe(r1);
       // Rounding at the double range's end can carry the point past it.
       const v = Math.min(Math.max(d0, d1), Math.max(Math.min(d0, d1), lerp(d0, d1, t)));
-      const at = s.map(v);
+      const at = s.position(v);
       expect(at).toBeGreaterThanOrEqual(Math.min(r0, r1) - 1e-9);
       expect(at).toBeLessThanOrEqual(Math.max(r0, r1) + 1e-9);
       if (!Number.isFinite(d1 - d0)) seen.count('wide');
@@ -57,7 +57,7 @@ describe('linearScale', () => {
     fc.assert(fc.property(end, end, range, anyFinite, anyFinite, (d0, d1, [r0, r1], a, b) => {
       fc.pre(d0 !== d1 && r0 !== r1);
       const s = linearScale({ domain: [d0, d1], range: [r0, r1] });
-      const [ma, mb] = [s.map(a), s.map(b)];
+      const [ma, mb] = [s.position(a), s.position(b)];
       expect(Number.isNaN(ma) || Number.isNaN(mb)).toBe(false);
       const same = (d1 > d0) === (r1 > r0);
       if (a < b) expect(same ? ma <= mb : ma >= mb).toBe(true);
@@ -125,13 +125,13 @@ describe('logScale', () => {
     fc.assert(fc.property(positive, positive, range, base, share, (d0, d1, [r0, r1], b, t) => {
       fc.pre(d0 !== d1);
       const s = logScale({ domain: [d0, d1], range: [r0, r1], base: b });
-      expect(s.map(d0)).toBe(r0);
-      expect(s.map(d1)).toBe(r1);
+      expect(s.position(d0)).toBe(r0);
+      expect(s.position(d1)).toBe(r1);
       const v = d0 ** (1 - t) * d1 ** t;
       fc.pre(Number.isFinite(v) && v > 0);
       if (r0 !== r1) {
         seen.count('inverted');
-        expect(Math.abs(s.invert(s.map(v)) / v - 1)).toBeLessThanOrEqual(1e-6);
+        expect(Math.abs(s.invert(s.position(v)) / v - 1)).toBeLessThanOrEqual(1e-6);
       }
       const ticks = s.ticks(5);
       const [lo, hi] = [Math.min(d0, d1), Math.max(d0, d1)];
@@ -156,10 +156,10 @@ describe('powScale', () => {
     fc.assert(fc.property(fc.integer({ min: -1000, max: 1000 }), fc.integer({ min: -1000, max: 1000 }), range, exponent, share, (d0, d1, [r0, r1], k, t) => {
       fc.pre(d0 !== d1 && r0 !== r1);
       const s = powScale({ domain: [d0, d1], range: [r0, r1], exponent: k });
-      expect(s.map(d0)).toBeCloseTo(r0, 9);
-      expect(s.map(d1)).toBeCloseTo(r1, 9);
+      expect(s.position(d0)).toBeCloseTo(r0, 9);
+      expect(s.position(d1)).toBeCloseTo(r1, 9);
       const v = d0 + t * (d1 - d0);
-      expect(Math.abs(s.invert(s.map(v)) - v)).toBeLessThanOrEqual(1e-6 * Math.max(1, Math.abs(d1 - d0)));
+      expect(Math.abs(s.invert(s.position(v)) - v)).toBeLessThanOrEqual(1e-6 * Math.max(1, Math.abs(d1 - d0)));
     }), runs(RUNS));
   }, timeoutFor(RUNS, 1));
 });
@@ -186,8 +186,8 @@ describe('timeScale', () => {
       if (ticks.length > 1) seen.count('ticked');
       const write = s.tickFormat(n);
       for (let i = 1; i < ticks.length; i++) expect(write(ticks[i]!)).not.toBe(write(ticks[i - 1]!));
-      expect(s.map(d0)).toBe(0);
-      expect(s.map(d1)).toBe(800);
+      expect(s.position(d0)).toBe(0);
+      expect(s.position(d1)).toBe(800);
     }), runs(RUNS));
     seen.atLeast('ticked', RUNS / 3);
   }, timeoutFor(RUNS, 3));

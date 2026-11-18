@@ -1,13 +1,14 @@
 import type { Page } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import type { DiagramLabel } from '../labelTrait';
+import type { Rect } from '@weasel-js/geom';
 
 /** An effects pipeline as plain data. It says what is wired to what and
  *  nothing about how any of it is drawn. */
 export interface EffectPipeline {
   stages: readonly EffectStage[];
   wires: readonly EffectWire[];
-  groups?: readonly EffectGroup[];
+  clusters?: readonly EffectCluster[];
   /** What the value types mean. A type no entry names is plain data. */
   types?: Readonly<Record<string, EffectType>>;
 }
@@ -59,11 +60,11 @@ export interface EffectWire {
   label?: string;
 }
 
-/** A box drawn around some stages, and around other groups. */
-export interface EffectGroup {
+/** A box drawn around some stages, and around other clusters. */
+export interface EffectCluster {
   id: string;
   label?: string;
-  /** Stage ids and group ids. */
+  /** Stage ids and cluster ids. */
   members: readonly string[];
 }
 
@@ -140,13 +141,10 @@ export interface EffectDoc {
   /** Where a person put each wire's label, by wire id. Along the route and
    *  off it, so it holds under every look, and over where a look puts it. */
   labels?: Readonly<Record<string, DiagramLabel>>;
-  /** Each group's box under `nodeGraph`, by group id, beside the pipeline as
-   *  `places` is. A group with none fits its members. */
-  groupBoxes?: Readonly<Record<string, EffectBox>>;
+  /** Each cluster's box under `nodeGraph`, by cluster id, beside the pipeline as
+   *  `places` is. A cluster with none fits its members. */
+  clusterBoxes?: Readonly<Record<string, Rect>>;
 }
-
-/** A box on the page, in world units. */
-export interface EffectBox { x: number; y: number; width: number; height: number }
 
 /** A wire's route under a look that places its stages itself. */
 export interface LookRoute {

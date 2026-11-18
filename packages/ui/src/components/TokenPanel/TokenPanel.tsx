@@ -241,7 +241,7 @@ function Section({
   const runs = useMemo(() => rowRuns(items, prefix), [items, prefix]);
   return (
     <section className={s.section} aria-label={title} data-token-category={id}>
-      <DisclosureRow className={s.sectionHead} open={open} onToggle={onToggle} label={title}>
+      <DisclosureRow className={s.sectionHead} open={open} onOpenChange={onToggle} label={title}>
         <span aria-hidden="true">{title}</span>
       </DisclosureRow>
       {open ? (

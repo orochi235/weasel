@@ -1,4 +1,4 @@
-import { renameGroup, setParam, type EffectDoc, type EffectParam, type EffectParamControl } from '@weasel-js/diagram/effect';
+import { renameCluster, setParam, type EffectDoc, type EffectParam, type EffectParamControl } from '@weasel-js/diagram/effect';
 import { PropertyField, PropertyList, PropertyNote, PropertyPanel } from '@weasel-js/ui/components/Properties';
 import type { ReactElement } from 'react';
 import type { PipelineDoc } from './usePipelineDoc';
@@ -7,8 +7,8 @@ export interface ParamPanelProps {
   doc: EffectDoc;
   /** The selected stage's id, or null. */
   selected: string | null;
-  /** The picked group's id, shown while no stage is selected. */
-  group?: string | null;
+  /** The picked cluster's id, shown while no stage is selected. */
+  cluster?: string | null;
   change: PipelineDoc['change'];
   preview: PipelineDoc['preview'];
   cancel: PipelineDoc['cancel'];
@@ -57,16 +57,16 @@ function ParamField({ param, edit }: { param: EffectParam; edit: ParamEdit }): R
 }
 
 /** The selected stage's params, each edited through its control and recorded as 'Set <label>'; with no
- *  stage selected, the picked group's name, recorded as 'Rename group'. */
-export function ParamPanel({ doc, selected, group, change, preview, cancel }: ParamPanelProps): ReactElement {
-  const picked = selected === null && group != null ? doc.pipeline.groups?.find((g) => g.id === group) : undefined;
+ *  stage selected, the picked cluster's name, recorded as 'Rename group'. */
+export function ParamPanel({ doc, selected, cluster, change, preview, cancel }: ParamPanelProps): ReactElement {
+  const picked = selected === null && cluster != null ? doc.pipeline.clusters?.find((g) => g.id === cluster) : undefined;
   if (picked !== undefined) {
     return (
       <PropertyPanel title="Group">
         <PropertyList>
           <PropertyField
             kind="string" control="input" label="Name" value={picked.label ?? ''}
-            onChange={(name) => change(renameGroup(doc, picked.id, name), 'Rename group')}
+            onChange={(name) => change(renameCluster(doc, picked.id, name), 'Rename group')}
           />
         </PropertyList>
       </PropertyPanel>

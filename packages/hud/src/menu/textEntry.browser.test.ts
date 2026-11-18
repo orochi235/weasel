@@ -80,7 +80,7 @@ describe('a HUD menu text row in a browser', () => {
   it('keeps DOM focus with the edit across a press on the menu', async () => {
     await userEvent.keyboard('{Enter}');
     const b = menu.bounds;
-    await userEvent.click(el, { position: { x: b.x + 20, y: b.y + b.h / 2 } });
+    await userEvent.click(el, { position: { x: b.x + 20, y: b.y + b.height / 2 } });
     expect(hud.focused).toBe(menu);
     expect(document.activeElement).toBe(input());
     await userEvent.keyboard('!{Enter}');

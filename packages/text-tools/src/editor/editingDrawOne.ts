@@ -7,7 +7,7 @@ export type EditingDrawOne = <TNode extends Node<unknown, string, unknown>>(
 ) => DrawCommand[];
 
 /** `base`, `defaultDrawOne` by default, less the text commands of the node `editingId` names. */
-export function drawOneEditing(editingId: string | null, base: EditingDrawOne = defaultDrawOne): EditingDrawOne {
+export function drawOneWithoutEditedText(editingId: string | null, base: EditingDrawOne = defaultDrawOne): EditingDrawOne {
   return (node, pose, view, ctx) => {
     const out = base(node, pose, view, ctx);
     return node.id === editingId ? withoutText(out) : out;

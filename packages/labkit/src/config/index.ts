@@ -1,5 +1,5 @@
-export { type Auto, auto, isAuto } from './auto';
-export { applyConfigWrite, autoPathsOf, resolveAutoConfig } from './autoConfig';
+export { AUTO, type Auto, isAuto } from './auto';
+export { applyConfigWrite, resolveAutoConfig, startAutoPathsOf } from './autoConfig';
 export type { AutoReports } from './autoReports';
 export {
   ActionNode,
@@ -7,11 +7,11 @@ export {
   BaseNode,
   BooleanNode,
   ColorNode,
+  ConfigGroup,
   CurveNode,
   CustomNode,
   EnumNode,
   f,
-  GroupNode,
   isConfigBranch,
   LabelNode,
   ListNode,
@@ -27,11 +27,11 @@ export type { Fields, FieldValues, Variants, VariantValues } from './compound';
 export { configFromPrefs } from './fromPrefs';
 export type { LabOver, OverAccess } from './over';
 export {
+  configValueAt,
   fillConfigDefaults,
   hasConfigPath,
-  schemaNodeAtPath,
-  valueAtPath,
-  withValueAtPath,
+  schemaNodeAt,
+  withConfigValueAt,
 } from './path';
 export { resolveConfigSchema } from './resolve';
 export { applyRules, builtinRules, titleCase } from './rules';
@@ -71,4 +71,4 @@ export type {
 } from './types';
 export { useConfigSchema } from './useConfigSchema';
 export { useResolvedConfig } from './useResolvedConfig';
-export { conditionedLeaf, isEntryShown, isLeafEnabled, isLeafVisible } from './visible';
+export { conditionedLeaf, isConfigNodeShown, isRowEnabled, isRowVisible } from './visible';

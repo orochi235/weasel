@@ -9,7 +9,7 @@ export interface Span {
 
 /** Where `v` sits along `span`, as a fraction: 0 at `from`, 1 at `to`, and outside that past either end.
  *  0 for an empty span. */
-export function spanPlace(span: Span, v: number): number {
+export function spanFraction(span: Span, v: number): number {
   const length = span.to - span.from;
   return length === 0 ? 0 : (v - span.from) / length;
 }
@@ -19,7 +19,7 @@ export function spanValue(span: Span, f: number): number {
   return lerp(span.from, span.to, f);
 }
 
-/** A length as a fraction of `span`'s. Unlike {@link spanPlace} it measures no position, so `span.from` has no say. */
+/** A length as a fraction of `span`'s. Unlike {@link spanFraction} it measures no position, so `span.from` has no say. */
 export function spanShare(span: Span, length: number): number {
   const whole = span.to - span.from;
   return whole === 0 ? 0 : length / whole;
@@ -28,11 +28,11 @@ export function spanShare(span: Span, length: number): number {
 /** `span` laid linearly along a track: the map {@link sliderAt} and {@link attract} read. Unclamped, so a
  *  place off either end of the track maps to a value outside the span. */
 export function spanMap(span: Span): TrackMap {
-  return { toFraction: (v) => spanPlace(span, v), toValue: (f) => spanValue(span, f) };
+  return { toFraction: (v) => spanFraction(span, v), toValue: (f) => spanValue(span, f) };
 }
 
 /** `span` moved inside `bounds`, keeping its length, or shortened to `bounds` where it is the longer. */
-export function spanHold(span: Span, bounds: Span): Span {
+export function spanClamp(span: Span, bounds: Span): Span {
   if (span.from >= bounds.from && span.to <= bounds.to) return { from: span.from, to: span.to };
   const length = Math.min(span.to - span.from, bounds.to - bounds.from);
   let from = span.from;
@@ -43,7 +43,7 @@ export function spanHold(span: Span, bounds: Span): Span {
 
 /** `span` shifted by `by` inside `bounds`, keeping its length. */
 export function spanPan(span: Span, by: number, bounds: Span): Span {
-  return spanHold({ from: span.from + by, to: span.to + by }, bounds);
+  return spanClamp({ from: span.from + by, to: span.to + by }, bounds);
 }
 
 /** `span` scaled by `factor` about `at`, which keeps its place along the track unless `bounds` push it.
@@ -52,5 +52,5 @@ export function spanZoom(span: Span, at: number, factor: number, bounds: Span, m
   const length = span.to - span.from;
   const next = Math.min(bounds.to - bounds.from, Math.max(minLength, length * factor));
   const f = length === 0 ? 0.5 : (at - span.from) / length;
-  return spanHold({ from: at - f * next, to: at + (1 - f) * next }, bounds);
+  return spanClamp({ from: at - f * next, to: at + (1 - f) * next }, bounds);
 }

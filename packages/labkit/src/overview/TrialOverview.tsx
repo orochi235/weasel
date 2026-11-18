@@ -23,10 +23,11 @@ import {
   type ViewApi,
   viewScreenToWorld,
 } from '@weasel-js/core';
+import type { Rect } from '@weasel-js/geom';
 import {
   crosshairRects,
-  MINIMAP_CENTER,
-  MINIMAP_PAN,
+  MINIMAP_CENTER_ACTION_ID,
+  MINIMAP_PAN_ACTION_ID,
   minimapCenterAction,
   minimapPanAction,
 } from '@weasel-js/minimap';
@@ -62,12 +63,7 @@ import { OverviewMarks } from './OverviewMarks';
 export const OVERVIEW_VIEW_ID = 'overview';
 
 /** A rect in the instrument's world. */
-export interface OverviewBounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export type OverviewBounds = Rect;
 
 /** What an overview's `render` is handed. */
 export interface OverviewRenderArgs {
@@ -105,10 +101,10 @@ const OVERVIEW_INPUT: Tool = {
   bindings: [
     {
       spec: { kind: 'pointerDown' },
-      actionId: MINIMAP_CENTER,
+      actionId: MINIMAP_CENTER_ACTION_ID,
       opts: { id: 'overview.pointerDown' },
     },
-    { spec: { kind: 'drag' }, actionId: MINIMAP_PAN, opts: { id: 'overview.drag' } },
+    { spec: { kind: 'drag' }, actionId: MINIMAP_PAN_ACTION_ID, opts: { id: 'overview.drag' } },
   ],
 };
 const TOOLS_BY_ID: ReadonlyMap<string, Tool> = new Map([[OVERVIEW_INPUT.id, OVERVIEW_INPUT]]);
@@ -295,9 +291,9 @@ function ChromeCanvas({
       const at = px(world.x, world.y * camera.frame.yDir);
       const { halo, bars } = crosshairRects(at.x, at.y, { x: 1, y: 1 });
       ctx.fillStyle = 'rgb(0 0 0 / 60%)';
-      for (const r of halo) ctx.fillRect(r.x, r.y, r.w, r.h);
+      for (const r of halo) ctx.fillRect(r.x, r.y, r.width, r.height);
       ctx.fillStyle = colors.crosshair;
-      for (const r of bars) ctx.fillRect(r.x, r.y, r.w, r.h);
+      for (const r of bars) ctx.fillRect(r.x, r.y, r.width, r.height);
     }
   });
   return <canvas ref={setCanvas} className="lk-overview__canvas lk-overview__chrome" />;

@@ -10,7 +10,7 @@ import type {
   PasteCtx,
   LassoHitMode,
   LassoSelectAdapter,
-  RegionPickView,
+  PickingView,
   LayerEnumerableAdapter,
   MoveAdapter,
 } from 'core/adapters/types';
@@ -22,7 +22,7 @@ import { sceneMutators } from 'core/scene/sceneMutators';
 import { asNodeId } from 'core/scene/types';
 import { nodeGates } from 'core/scene/nodeGates';
 import { applyOpsTo } from 'core/applyOps';
-import { hitTestArea, hitTestLassoPolygon, regionPickOptions } from 'canvas/deps/hitTestArea';
+import { hitTestRect, hitTestLassoPolygon, regionPickOptions } from 'canvas/deps/hitTestArea';
 import type { ScenePickSourceOptions } from 'canvas/pickWalk';
 import {
   poseDescriptorForNode,
@@ -41,6 +41,7 @@ import type { Bounds } from '../core/viewport/fitViewToBounds';
 import { scenePoseTarget } from '../animation/poseTarget';
 import { pasteSceneSnapshot, snapshotSceneSelection, type SceneClipboardEnv } from './sceneClipboard';
 import { DUPLICATE_OFFSET } from '../interactions/actions/duplicateOffset';
+import type { Rect } from '@weasel-js/geom';
 
 /** A scene adapter's pose reads: the stored pose, the world pose, and the fold between them. */
 function scenePoseReads<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>) {
@@ -190,7 +191,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
 
   const pickOpts: ScenePickSourceOptions<unknown> = {};
   // The asking view's layer gate and camera, over the adapter's own options.
-  const pickOptsFor = (view: RegionPickView | undefined): ScenePickSourceOptions<unknown> =>
+  const pickOptsFor = (view: PickingView | undefined): ScenePickSourceOptions<unknown> =>
     (view ? { ...pickOpts, ...regionPickOptions(view, undefined) } : pickOpts);
 
   const clipboardEnv: SceneClipboardEnv<TData, TLayer, TPose> = {
@@ -216,7 +217,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     ...scenePoseReads(scene),
     poseTarget: (id, descriptor) => scenePoseTarget(scene, id, descriptor ?? d),
     getLayers: () => scene.layers.map((l) => ({ id: l.id, visible: l.visible, parallax: l.parallax })),
-    pickIdOf: (id) => scenePickIds(scene).idOf(id),
+    pickIdOf: (id) => scenePickIds(scene).pickIdOf(id),
     subscribeLayers: (listener) => scene.subscribe(listener),
     getLayout: (id) => scene.layoutOf(asNodeId(id)),
     // With a label the ops are one batch checkpoint; without one they are
@@ -232,8 +233,8 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     setSelection,
     // The live marquee's and lasso's own hit-tests. Groups come back:
     // this adapter's consumer has nothing to fold children into them.
-    hitTestArea(rect: Bounds, view?: RegionPickView) {
-      return hitTestArea(
+    hitTestArea(rect: Bounds, view?: PickingView) {
+      return hitTestRect(
         scene,
         rect,
         pickOptsFor(view),
@@ -241,7 +242,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         { includeGroups: true },
       );
     },
-    hitTestLasso(polygon, mode: LassoHitMode, view?: RegionPickView) {
+    hitTestLasso(polygon, mode: LassoHitMode, view?: PickingView) {
       return hitTestLassoPolygon(
         scene,
         polygon,
@@ -257,7 +258,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     // the second add throws on id collision.
     ...(options.commitInsert
       ? {
-          commitInsert: (bounds: { x: number; y: number; width: number; height: number }) => {
+          commitInsert: (bounds: Rect) => {
             const created = options.commitInsert!(bounds);
             if (!created) return null;
             const layer = (options.insertLayer ?? ('default' as TLayer));

@@ -1,9 +1,10 @@
-import { scaleVertexWidth, type CommandPaint, type Stroke, type Paint, type VertexWidth } from '@weasel-js/paint';
+import { resolveScreenLength, scaleVertexWidth, type CommandPaint, type Stroke, type Paint, type VertexWidth } from '@weasel-js/paint';
 import type { PathDrawCommand } from '../DrawCommand';
+import { createPart } from '@weasel-js/registry';
 import type { GLMeshHandle } from '../cache/GLMeshCache';
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
-import { inkWidth, resolveStrokeWidth } from '@weasel-js/stroke';
+import { widthHasInk } from '@weasel-js/stroke';
 import { strokeMesh } from '../cache/strokeMeshCache';
 import { resolveStrokeLengths, type StrokedPathCommand } from '../strokeLengths';
 import { ribbonAligns, type StrokeSpaces } from '@weasel-js/stroke';
@@ -116,8 +117,8 @@ function drawPathStroke(ctx: DrawContext, rawCmd: StrokedPathCommand): void {
   const { cmd, spaces } = resolveStrokeLengths(ctx.state.transform, rawCmd);
   const stroke = cmd.stroke;
   // No width draws nothing, heads and per-vertex widths included.
-  const width = resolveStrokeWidth(stroke.width ?? 1, 1);
-  if (!inkWidth(width)) return;
+  const width = resolveScreenLength(stroke.width ?? 1, 1);
+  if (!widthHasInk(width)) return;
   const align = stroke.align ?? 'center';
   const metric = spaces.ribbon?.metric;
   // A rect the metric turns is no longer a rect in the space its ribbon is
@@ -218,22 +219,15 @@ function drawOwnRibbon(ctx: DrawContext, stroke: StrokedPathCommand['stroke'], m
 
 /** The ribbon cache compares `vertexWidths` by reference, so the doubled copy
  *  has to be the same array on every frame the source array is. */
-const DOUBLED_VERTEX_WIDTHS = new WeakMap<VertexWidth[], VertexWidth[]>();
-
-function doubledVertexWidths(widths: VertexWidth[]): VertexWidth[] {
-  let doubled = DOUBLED_VERTEX_WIDTHS.get(widths);
-  if (doubled === undefined) {
-    doubled = widths.map((w) => scaleVertexWidth(w, 2));
-    DOUBLED_VERTEX_WIDTHS.set(widths, doubled);
-  }
-  return doubled;
-}
+const doubledVertexWidths = createPart(
+  (widths: VertexWidth[]): VertexWidth[] => widths.map((w) => scaleVertexWidth(w, 2)),
+);
 
 /** The centered stroke twice as wide that an aligned one is cut from. */
 function doubledStroke(stroke: Stroke): Stroke {
   return {
     ...stroke,
-    width: resolveStrokeWidth(stroke.width ?? 1, 1) * 2,
+    width: resolveScreenLength(stroke.width ?? 1, 1) * 2,
     ...(stroke.vertexWidths ? { vertexWidths: doubledVertexWidths(stroke.vertexWidths) } : {}),
     align: 'center',
   };

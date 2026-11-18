@@ -111,14 +111,14 @@ export { matchSpec, matchModifiers, matchKey, matchKeyEvent, matchTarget, matchP
 export { CHORD_MODIFIERS, chordKey, codeLetter } from './ui/keyLetter';
 export type { ChordSource } from './ui/keyLetter';
 export { mimeMatchesGlob, matchIngestTypes, UNKNOWN_MIME } from './ui/ingestTypes';
-export type { PhaseContext, ModifiersEvent, TargetSpecForm } from './ui/match';
+export type { PhaseContext, TargetSpecForm } from './ui/match';
 export { isApplePlatform, isContextPress, modHeld, modKey } from './ui/platform';
 export { historyKey } from './ui/historyKey';
 
 // Shortcut legends: how a keyboard prints a binding's keys, per platform
 export { keyLegendsFromMods, keyLegendFromKey, detectPlatform, MODIFIER_LABELS } from './ui/keyLegendsFromMods';
 export type {
-  KeyLegend, LogicalMod, LogicalModSpec, Platform, LegendStyle, KeyLegendOptions, KeyLabels,
+  KeyLegend, LogicalModSpec, Platform, LegendStyle, KeyLegendOptions, KeyLabels,
 } from './ui/keyLegendsFromMods';
 export { keyLegendsFromShortcut } from './ui/keyLegendsFromShortcut';
 export { keyLegendFromCode } from './ui/keyLegendFromCode';

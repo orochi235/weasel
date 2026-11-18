@@ -12,7 +12,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { drawOneEditing, type EditingDrawOne } from './editingDrawOne';
+import { drawOneWithoutEditedText, type EditingDrawOne } from './editingDrawOne';
 import { textHitAt } from './textHitAt';
 import { registerHostTextEditor, type HostTextEditorHandle } from './hostTextEditors';
 import { editedData, sceneTextDrafts } from './sceneTextDrafts';
@@ -247,7 +247,7 @@ export function useSceneTextEditor<
       optsRef.current.onEnd?.(id);
       sceneRef.current.history.seal();
     },
-    onDraft: drafts.draft,
+    onInput: drafts.draft,
     getText: (id) => {
       const node = sceneRef.current.get(asNodeId(id));
       return node ? read.text(node.data) : '';
@@ -275,7 +275,7 @@ export function useSceneTextEditor<
       const node = sceneRef.current.get(asNodeId(id));
       return node ? read.runs(node.data) : undefined;
     },
-    commit: (id, { text, runs, style }) => {
+    onChange: (id, { text, runs, style }) => {
       const nid = asNodeId(id);
       const node = sceneRef.current.get(nid);
       // A node removed or locked during the edit takes no write; the edit still ends.
@@ -297,7 +297,7 @@ export function useSceneTextEditor<
     return node !== undefined && read.isText(node.data);
   }, [read, sceneRef]);
 
-  const drawOne = useMemo(() => drawOneEditing(edit.editingId), [edit.editingId]);
+  const drawOne = useMemo(() => drawOneWithoutEditedText(edit.editingId), [edit.editingId]);
   return { ...edit, textAt, isTextNode, drawOne };
 }
 

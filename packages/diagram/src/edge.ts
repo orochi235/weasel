@@ -25,7 +25,8 @@ import {
   type Vec2,
 } from '@weasel-js/core';
 import { getOwn } from '@weasel-js/registry';
-import { ANCHOR_DERIVE_POSE, DIAGRAM_ANCHOR, DIAGRAM_GROUP, GROUP_DERIVE_POSE } from './group';
+import { ANCHOR_DERIVE_POSE, DIAGRAM_ANCHOR, DIAGRAM_CLUSTER, CLUSTER_DERIVE_POSE } from './clusterBox';
+import { DIAGRAM_CLUSTER_UPGRADE, upgradeClusterNames } from './clusterUpgrade';
 import { CONTAINER_LAYOUTS } from './containers/layouts';
 import { DIAGRAM_LABEL, LABEL_DERIVE_POSE } from './label';
 import { DIAGRAM_OFF_PAGE_TAG, OFF_PAGE_TAG_DERIVE_POSE } from './offPage/tag';
@@ -64,8 +65,8 @@ export function resolveEnd<TPose>(
 }
 
 /** The point an end aims at when it names none: the center of its bounds. */
-export function boxCenter<TPose>(geometry: PoseDescriptor<TPose>, pose: TPose): Vec2 {
-  const b = geometry.getBounds(pose);
+export function boxCenter<TPose>(poseDescriptor: PoseDescriptor<TPose>, pose: TPose): Vec2 {
+  const b = poseDescriptor.getBounds(pose);
   return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
 }
 
@@ -189,12 +190,12 @@ function stubsPath(stubs: readonly (readonly Vec2[])[]): Path {
 export function edgeRouter<TPose>(
   opts: EdgeRouteOptions<TPose> = {},
 ): (node: { data: unknown }, deps: readonly (DerivedDep<TPose> | undefined)[]) => ResolvedRoute | null {
-  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
-  const portOpts: PortsOptions<TPose> = { geometry, ...(opts.read ? { read: opts.read } : {}) };
+  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const portOpts: PortsOptions<TPose> = { poseDescriptor, ...(opts.read ? { read: opts.read } : {}) };
   const allPorts = (d: DerivedDep<TPose>): Port[] =>
     portsOf(d.node as never, d.pose, portOpts);
   const standoffOf = (d: DerivedDep<TPose>): number => {
-    const b = geometry.getBounds(d.pose);
+    const b = poseDescriptor.getBounds(d.pose);
     return Math.min(b.width, b.height) / 2;
   };
 
@@ -205,7 +206,7 @@ export function edgeRouter<TPose>(
     if (fromDep === undefined || toDep === undefined) return null;
 
     const authored = edge.waypoints ?? [];
-    const aims = endAims(boxCenter(geometry, fromDep.pose), boxCenter(geometry, toDep.pose), authored, edge.route);
+    const aims = endAims(boxCenter(poseDescriptor, fromDep.pose), boxCenter(poseDescriptor, toDep.pose), authored, edge.route);
     const named = edge.from.port !== undefined ? 'from' : edge.to.port !== undefined ? 'to' : null;
     const loop = fromDep.node.id === toDep.node.id && (edge.from.port === undefined || edge.to.port === undefined)
       ? selfLoop(allPorts(fromDep), opts.selfLoopStandoff ?? standoffOf(fromDep), named === null ? {} : {
@@ -235,7 +236,8 @@ export const DIAGRAM_EDGE = 'diagram:edge';
 export const EDGE_DERIVE_PATH = edgeDerivePath<unknown>();
 
 /** Merge this package's registry entries under a consumer's, so an edge
- *  round-trips through `toJSON` without the consumer wiring the key. */
+ *  round-trips through `toJSON` without the consumer wiring the key, and a
+ *  save written under this package's older names still loads. */
 export function withDiagramRegistry<TPose, TData = unknown, TLayer extends string = string>(
   registry: SceneRegistry<TPose, TData, TLayer> = {},
 ): SceneRegistry<TPose, TData, TLayer> {
@@ -247,7 +249,7 @@ export function withDiagramRegistry<TPose, TData = unknown, TLayer extends strin
     },
     derivePose: {
       [DIAGRAM_LABEL]: LABEL_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
-      [DIAGRAM_GROUP]: GROUP_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
+      [DIAGRAM_CLUSTER]: CLUSTER_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
       [DIAGRAM_ANCHOR]: ANCHOR_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
       [DIAGRAM_OFF_PAGE_TAG]: OFF_PAGE_TAG_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
       ...registry.derivePose,
@@ -256,5 +258,6 @@ export function withDiagramRegistry<TPose, TData = unknown, TLayer extends strin
       ...(CONTAINER_LAYOUTS as unknown as NonNullable<SceneRegistry<TPose, TData, TLayer>['layout']>),
       ...registry.layout,
     },
+    upgrades: { [DIAGRAM_CLUSTER_UPGRADE]: upgradeClusterNames, ...registry.upgrades },
   };
 }

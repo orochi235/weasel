@@ -15,7 +15,7 @@ function makeHost(): HudHost & { redrawCount: number } {
 
 function makeWidget(id: string): Widget {
   return {
-    id, bounds: { x: 0, y: 0, w: 10, h: 10 }, hidden: false,
+    id, bounds: { x: 0, y: 0, width: 10, height: 10 }, hidden: false,
     draw: () => [], hitTest: () => false, onPointer: () => 'pass',
     dispose: () => {},
   };
@@ -26,7 +26,7 @@ describe('Hud', () => {
     const hud = createHud();
     hud.bind(makeHost());
     hud.unbind();
-    hud.rect({ id: 'r', x: 0, y: 0, w: 1, h: 1, fill: '#000' });
+    hud.rect({ id: 'r', x: 0, y: 0, width: 1, height: 1, fill: '#000' });
     hud.add(makeWidget('w'));
     expect(hud.widgets().map((w) => w.id)).toEqual(['r', 'w']);
     const host = makeHost();
@@ -66,24 +66,24 @@ describe('Hud', () => {
     expect(dispose).toHaveBeenCalled();
   });
 
-  it('markDirty triggers redraw when bound', () => {
+  it('requestRedraw triggers redraw when bound', () => {
     const hud = createHud();
     const host = makeHost();
     hud.bind(host);
-    hud.markDirty();
+    hud.requestRedraw();
     expect(host.redrawCount).toBe(1);
   });
 
-  it('markDirty before bind is a no-op (no crash, no redraw)', () => {
+  it('requestRedraw before bind is a no-op (no crash, no redraw)', () => {
     const hud = createHud();
-    expect(() => hud.markDirty()).not.toThrow();
+    expect(() => hud.requestRedraw()).not.toThrow();
   });
 
   it('mutating a hud-managed rect triggers redraw via injected onChange', () => {
     const hud = createHud();
     const host = makeHost();
     hud.bind(host);
-    const r = hud.rect({ id: 'r', x: 0, y: 0, w: 10, h: 10, fill: '#000' });
+    const r = hud.rect({ id: 'r', x: 0, y: 0, width: 10, height: 10, fill: '#000' });
     const before = host.redrawCount;
     r.setFill('#fff');
     expect(host.redrawCount).toBe(before + 1);
@@ -92,7 +92,7 @@ describe('Hud', () => {
   it('widget.dispose() removes the widget from the hud', () => {
     const hud = createHud();
     hud.bind(makeHost());
-    const r = hud.rect({ id: 'r', x: 0, y: 0, w: 10, h: 10, fill: '#000' });
+    const r = hud.rect({ id: 'r', x: 0, y: 0, width: 10, height: 10, fill: '#000' });
     expect(hud.widgets()).toEqual([r]);
     r.dispose();
     expect(hud.widgets()).toEqual([]);
@@ -101,7 +101,7 @@ describe('Hud', () => {
   it('widget.dispose() is idempotent — calling twice does not throw', () => {
     const hud = createHud();
     hud.bind(makeHost());
-    const r = hud.rect({ id: 'r', x: 0, y: 0, w: 10, h: 10, fill: '#000' });
+    const r = hud.rect({ id: 'r', x: 0, y: 0, width: 10, height: 10, fill: '#000' });
     r.dispose();
     expect(() => r.dispose()).not.toThrow();
     expect(hud.widgets()).toEqual([]);
@@ -110,7 +110,7 @@ describe('Hud', () => {
   it('hud.remove() followed by widget.dispose() does not double-remove', () => {
     const hud = createHud();
     hud.bind(makeHost());
-    const r = hud.rect({ id: 'r', x: 0, y: 0, w: 10, h: 10, fill: '#000' });
+    const r = hud.rect({ id: 'r', x: 0, y: 0, width: 10, height: 10, fill: '#000' });
     hud.remove(r);
     expect(hud.widgets()).toEqual([]);
     // dispose should be a no-op now (already disposed by hud.remove)
@@ -118,11 +118,11 @@ describe('Hud', () => {
     expect(hud.widgets()).toEqual([]);
   });
 
-  it('window() adds the widget and wires onChange to markDirty', () => {
+  it('window() adds the widget and wires onChange to requestRedraw', () => {
     const hud = createHud();
     const redraw = vi.fn();
     hud.bind({ requestRedraw: redraw, registerLayer: () => () => {}, subscribeFrame: () => () => {} });
-    const win = hud.window({ id: 'w', x: 0, y: 0, w: 200, h: 150, title: 'T' });
+    const win = hud.window({ id: 'w', x: 0, y: 0, width: 200, height: 150, title: 'T' });
     expect(hud.widgets()).toContain(win);
     redraw.mockClear();
     win.setTitle('U');
@@ -132,7 +132,7 @@ describe('Hud', () => {
   it('a disposed window removes itself from the hud', () => {
     const hud = createHud();
     hud.bind(makeHost());
-    const win = hud.window({ id: 'w', x: 0, y: 0, w: 200, h: 150, title: 'T' });
+    const win = hud.window({ id: 'w', x: 0, y: 0, width: 200, height: 150, title: 'T' });
     win.dispose();
     expect(hud.widgets()).not.toContain(win);
   });

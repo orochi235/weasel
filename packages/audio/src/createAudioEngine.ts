@@ -121,18 +121,18 @@ function busSlots(busNames: string[], opts: AudioEngineOptions) {
       byToken: new Map(),
     });
   }
-  const slotsFor = (bus: string): Slots => {
+  const requireSlots = (bus: string): Slots => {
     const s = slotsByBus.get(bus);
     if (!s) throw new Error(`@weasel-js/audio: unknown bus "${bus}"`);
     return s;
   };
   const active = (bus?: string): number => {
-    if (bus !== undefined) return slotsFor(bus).pool.active();
+    if (bus !== undefined) return requireSlots(bus).pool.active();
     let total = 0;
     for (const s of slotsByBus.values()) total += s.pool.active();
     return total;
   };
-  return { slotsFor, active };
+  return { requireSlots, active };
 }
 
 /** How synth voices are made: in the voice worklet once it has loaded, when
@@ -213,7 +213,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     throw new Error('@weasel-js/audio: an engine needs at least one bus');
   }
   const sounds = createSoundCache(ctx, opts.fetchFn);
-  const { slotsFor, active } = busSlots(busNames, opts);
+  const { requireSlots, active } = busSlots(busNames, opts);
   const { now, tickTimer, timers, scheduler } = engineClock(ctx, opts);
   const graph = createBusGraph(ctx, busNames, { ...timers, fadeMs: opts.insertFadeMs });
 
@@ -229,7 +229,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     onSuspend: () => warn.rearmLocked(),
   });
   const voices = createVoices({
-    ctx, scheduler, chains, slotsFor, warn,
+    ctx, scheduler, chains, requireSlots, warn,
     busInput: graph.input,
     defaultBus: busNames[0],
     staleFloor: watch.staleFloor,

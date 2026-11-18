@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { ANGLE_RADIANS } from '@weasel-js/quantity';
 import {
-  assignPrefValueAtPath,
+  assignPrefValueAt,
   filterPrefSubtree,
   flattenPrefValues,
   nestPrefValues,
   prefDisplayBounds,
   prefLeaves,
-  prefValueAtPath,
+  prefValueAt,
   VERSION_RECORD,
   visiblePrefSubtree,
 } from './helpers';
@@ -45,7 +45,7 @@ const SCHEMA: PrefGroup = {
   },
 };
 
-const degrees = prefUnit(ANGLE_RADIANS, 'deg', { precision: 1, suffix: '°' });
+const degrees = prefUnit(ANGLE_RADIANS, 'deg', { places: 1, suffix: '°' });
 
 describe('filterPrefSubtree', () => {
   it('keeps only matching leaves and prunes the groups left empty', () => {
@@ -202,14 +202,14 @@ describe('prefDisplayBounds', () => {
     expect(prefDisplayBounds({ ...leaf, min: undefined, max: 10, endless: undefined })).toEqual({ min: 90, step: 1 });
   });
 
-  it('widens a step to the smallest one the shown precision can display, never below the declared step', () => {
+  it('widens a step to the smallest one the shown places can display, never below the declared step', () => {
     const num = (step: number, unit: PrefNumber['unit']): PrefNumber => ({ kind: 'number', name: 'N', description: '', default: 0, step, unit });
-    const cm = { scale: 10, suffix: 'cm', precision: 0 };
+    const cm = { scale: 10, suffix: 'cm', places: 0 };
     expect(prefDisplayBounds(num(1, cm)).step).toBe(1);
     expect(prefDisplayBounds(num(2, cm)).step).toBe(1);
-    expect(prefDisplayBounds(num(0.5, { scale: 96, suffix: 'in', precision: 2 })).step).toBe(0.01);
-    expect(prefDisplayBounds(num(0.15, { scale: 1, precision: 1 })).step).toBe(0.2);
-    expect(prefDisplayBounds(num(1.1, { scale: 1, precision: 1 })).step).toBe(1.1);
+    expect(prefDisplayBounds(num(0.5, { scale: 96, suffix: 'in', places: 2 })).step).toBe(0.01);
+    expect(prefDisplayBounds(num(0.15, { scale: 1, places: 1 })).step).toBe(0.2);
+    expect(prefDisplayBounds(num(1.1, { scale: 1, places: 1 })).step).toBe(1.1);
     expect(prefDisplayBounds(num(1, { scale: 3 })).step).toBeCloseTo(1 / 3, 12);
   });
 
@@ -280,8 +280,8 @@ describe('flattenPrefValues', () => {
 
 describe('paths through names every object inherits', () => {
   it('reads nothing a tree does not hold itself', () => {
-    expect(prefValueAtPath({}, 'toString')).toBeUndefined();
-    expect(prefValueAtPath({ a: {} }, 'a.constructor.name')).toBeUndefined();
+    expect(prefValueAt({}, 'toString')).toBeUndefined();
+    expect(prefValueAt({ a: {} }, 'a.constructor.name')).toBeUndefined();
     const leaf = { kind: 'boolean', name: 'On', description: '', default: true } as const;
     const schema: PrefGroup = { name: 'T', children: { constructor: leaf, valueOf: leaf } };
     expect(flattenPrefValues(schema, { valueOf: false })).toEqual([['valueOf', false]]);
@@ -289,13 +289,13 @@ describe('paths through names every object inherits', () => {
 
   it('assigns into the tree and nowhere else', () => {
     const tree: Record<string, unknown> = {};
-    assignPrefValueAtPath(tree, 'constructor.probe', 1);
-    assignPrefValueAtPath(tree, '__proto__.probe', 2);
+    assignPrefValueAt(tree, 'constructor.probe', 1);
+    assignPrefValueAt(tree, '__proto__.probe', 2);
     expect((Object as unknown as Record<string, unknown>).probe).toBeUndefined();
     expect(({} as Record<string, unknown>).probe).toBeUndefined();
     expect(Object.getPrototypeOf(tree)).toBe(Object.prototype);
-    expect(prefValueAtPath(tree, 'constructor.probe')).toBe(1);
-    expect(prefValueAtPath(tree, '__proto__.probe')).toBe(2);
+    expect(prefValueAt(tree, 'constructor.probe')).toBe(1);
+    expect(prefValueAt(tree, '__proto__.probe')).toBe(2);
   });
 
   it('nests dotted values into a tree of their own, through any key', () => {
@@ -303,9 +303,9 @@ describe('paths through names every object inherits', () => {
     expect((Object as unknown as Record<string, unknown>).probe).toBeUndefined();
     expect(({} as Record<string, unknown>).probe).toBeUndefined();
     expect(Object.getPrototypeOf(tree)).toBe(Object.prototype);
-    expect(prefValueAtPath(tree, 'a.b')).toBe(1);
-    expect(prefValueAtPath(tree, 'a.c')).toBe(2);
-    expect(prefValueAtPath(tree, '__proto__.probe')).toBe(3);
-    expect(prefValueAtPath(tree, 'constructor.prototype.probe')).toBe(4);
+    expect(prefValueAt(tree, 'a.b')).toBe(1);
+    expect(prefValueAt(tree, 'a.c')).toBe(2);
+    expect(prefValueAt(tree, '__proto__.probe')).toBe(3);
+    expect(prefValueAt(tree, 'constructor.prototype.probe')).toBe(4);
   });
 });

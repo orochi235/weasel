@@ -1,7 +1,7 @@
 import { tryParseColor } from '@weasel-js/core';
 import { type LoupePoint, probeUnderLens } from '@weasel-js/labkit/loupe';
 import { compareSpecificity, type Specificity, specificity, splitTopLevel } from '@weasel-js/svg';
-import { getOwn } from '@weasel-js/registry';
+import { createPart, getOwn } from '@weasel-js/registry';
 import { cssRulesOf, sheetsOf, varRefs } from '../../frame/cssVarUse';
 
 /** A color an element shows, and the property it shows it through. */
@@ -170,7 +170,7 @@ interface Declared {
 }
 
 /** The rules declaring each property asked about, read from `rules` once per property. */
-function indexOf(rules: readonly Rule[]): (property: string) => readonly Declared[] {
+function createDeclaredIndex(rules: readonly Rule[]): (property: string) => readonly Declared[] {
   const index = new Map<string, Declared[]>();
   return (property) => {
     let got = index.get(property);
@@ -217,27 +217,25 @@ function declarationOf(el: Element, property: string, rules: readonly Declared[]
 
 /** How often each document's head has changed: a sheet added or removed, or a `<style>` rewritten, as a forge
  *  override or a vite CSS update does. */
-const revisions = new WeakMap<Document, { n: number; observer: MutationObserver | null }>();
+const revisions = createPart((doc: Document) => {
+  const made = { n: 0, observer: null as MutationObserver | null };
+  if (typeof MutationObserver !== 'undefined' && doc.head) {
+    made.observer = new MutationObserver(() => {
+      made.n += 1;
+    });
+    made.observer.observe(doc.head, { childList: true, subtree: true, characterData: true, attributes: true });
+  }
+  return made;
+});
 
 function revisionOf(doc: Document): number {
-  let r = revisions.get(doc);
-  if (!r) {
-    const made = { n: 0, observer: null as MutationObserver | null };
-    if (typeof MutationObserver !== 'undefined' && doc.head) {
-      made.observer = new MutationObserver(() => {
-        made.n += 1;
-      });
-      made.observer.observe(doc.head, { childList: true, subtree: true, characterData: true, attributes: true });
-    }
-    revisions.set(doc, made);
-    r = made;
-  }
+  const r = revisions(doc);
   // Records not yet delivered count now, so a change made in this same task is not missed.
   if ((r.observer?.takeRecords().length ?? 0) > 0) r.n += 1;
   return r.n;
 }
 
-const chains = new WeakMap<Element, Map<string, { key: string; chain: readonly ChainLink[] }>>();
+const chains = createPart((_el: Element) => new Map<string, { key: string; chain: readonly ChainLink[] }>());
 
 /**
  * How a color came to be: the declaration that sets its property, then, for each `var()` that names, the winning
@@ -250,20 +248,16 @@ const chains = new WeakMap<Element, Map<string, { key: string; chain: readonly C
 export function tokenChain(at: ColorAt): readonly ChainLink[] {
   const doc = at.element.ownerDocument;
   const key = `${at.value}|${revisionOf(doc)}|${doc.styleSheets.length}|${doc.adoptedStyleSheets?.length ?? 0}`;
-  let byProperty = chains.get(at.element);
-  const held = byProperty?.get(at.property);
+  const byProperty = chains(at.element);
+  const held = byProperty.get(at.property);
   if (held?.key === key) return held.chain;
   const chain = chainOf(at);
-  if (!byProperty) {
-    byProperty = new Map();
-    chains.set(at.element, byProperty);
-  }
   byProperty.set(at.property, { key, chain });
   return chain;
 }
 
 function chainOf(at: ColorAt): readonly ChainLink[] {
-  const declaring = indexOf(rulesOf(at.element.ownerDocument));
+  const declaring = createDeclaredIndex(rulesOf(at.element.ownerDocument));
   const chain: ChainLink[] = [];
   const seen = new Set<string>();
   const follow = (el: Element, property: string) => {

@@ -73,7 +73,7 @@ const branch: EffectPipeline = {
     w('src.out', 'q.in'), w('q.yes', 'matte.in'), w('q.no', 'flat.in'),
     w('matte.out', 'join.a'), w('flat.out', 'join.b'), w('join.out', 'out.in'),
   ],
-  groups: [{ id: 'alpha', label: 'Alpha handling', members: ['matte', 'flat'] }],
+  clusters: [{ id: 'alpha', label: 'Alpha handling', members: ['matte', 'flat'] }],
 };
 
 const bands: EffectPipeline = {
@@ -126,7 +126,7 @@ const broken: EffectPipeline = {
     w('ghost.out', 'mix.mask'),
     w('blur.image', 'mix.over'),
   ],
-  groups: [{ id: 'g', label: 'Missing', members: ['blur', 'nowhere'] }],
+  clusters: [{ id: 'g', label: 'Missing', members: ['blur', 'nowhere'] }],
 };
 
 export const SAMPLES: Readonly<Record<string, EffectPipeline>> = Object.freeze({

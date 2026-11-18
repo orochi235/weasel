@@ -7,7 +7,7 @@ import { colorPageTextureId, syncColorPageTexture, _getColorPagesForTests, _getP
 import type { GlyphRasterizer } from './glyphRasterizer';
 import type { GlyphTextureSink } from '../textureSink';
 import { resolveColorCluster } from '../resolveGlyph';
-import { resolveGlyphFallback } from '../registerFont';
+import { resolveCanvasFallback } from '../canvasFallback';
 import { _resetFallbackForTests, setFontFallbackPolicy } from '../fallback';
 
 const W = 6;
@@ -111,7 +111,7 @@ describe('syncColorPageTexture', () => {
 });
 
 describe('resolveColorCluster', () => {
-  const fallback = () => resolveGlyphFallback('Arial', 400, 'normal')!;
+  const fallback = () => resolveCanvasFallback('Arial', 400, 'normal')!;
 
   it('serves a cluster with emoji presentation from the canvas tier', () => {
     const hit = resolveColorCluster(fallback(), 'Arial', 400, 'normal', '👍🏽')!;

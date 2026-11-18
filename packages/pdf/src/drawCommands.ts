@@ -127,6 +127,7 @@ async function writeCommand(ctx: PageCtx, cmd: DrawCommand, state: DrawState): P
   else if (cmd.kind === 'group') await writeGroup(ctx, cmd, state);
   else if (cmd.kind === 'image' || cmd.kind === 'sprites') writeImage(ctx, cmd, state);
   else if (cmd.kind === 'text') await writeText(ctx, cmd, state);
+  else if (cmd.kind === 'text-layer') for (const text of cmd.texts) await writeText(ctx, text, state);
   else await writeShader(ctx, cmd, state);
 }
 

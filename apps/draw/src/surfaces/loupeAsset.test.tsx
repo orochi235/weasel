@@ -38,10 +38,10 @@ beforeAll(() => {
   }
 });
 
-function App() {
+function App({ ready = true }: { ready?: boolean }) {
   return (
     <ActionsProvider>
-      <LoupeProvider canvasRef={{ current: null }} ready source={[]}>
+      <LoupeProvider canvasRef={{ current: null }} ready={ready} source={[]}>
         <div data-testid="strip">
           <CommandBar />
           <StripDock />
@@ -117,6 +117,24 @@ describe('the loupe asset', () => {
     expect(loupeBar().getByRole('status', { name: 'Color' }).textContent).toBe('#336699');
     click(loupeBar().getByRole('button', { name: 'Copy' }));
     expect(writeText).toHaveBeenCalledWith('#336699');
+  });
+
+  it('forgets the color once the loupe hides, so Copy has nothing stale to copy', () => {
+    renderWithIcons(<App />);
+    click(loupeBar().getByRole('switch', { name: 'Loupe' }));
+    act(() => { lens.events!.onColorChange('#336699'); });
+    click(loupeBar().getByRole('switch', { name: 'Loupe' }));
+    click(loupeBar().getByRole('switch', { name: 'Loupe' }));
+    expect(loupeBar().getByRole('button', { name: 'Copy' })).toHaveAttribute('aria-disabled', 'true');
+    expect(loupeBar().queryByText('#336699')).toBeNull();
+  });
+
+  it('forgets the color when the lens unmounts', () => {
+    const { rerender } = renderWithIcons(<App />);
+    click(loupeBar().getByRole('switch', { name: 'Loupe' }));
+    act(() => { lens.events!.onColorChange('#336699'); });
+    rerender(<App ready={false} />);
+    expect(loupeBar().getByRole('button', { name: 'Copy' })).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('turns its switch off when the lens is closed from its own chrome', () => {

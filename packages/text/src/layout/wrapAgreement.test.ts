@@ -1,5 +1,5 @@
 /**
- * The two wrapping layouts — `layoutRuns` for the GL tier and `layoutMarkdown`
+ * The two wrapping layouts — `layoutRuns` for the GL tier and `layoutCanvasRuns`
  * for the 2D markdown renderer — measured with the same advances must end
  * every line at the same character.
  */
@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { layoutRuns } from './layoutRuns';
-import { layoutMarkdown, type MeasureFn } from '../markdownText';
+import { layoutCanvasRuns, type CanvasMeasureFn } from '../markdownText';
 import type { ResolvedRun } from '../runs/resolveRuns';
 
 const PARAGRAPHS: Record<string, string> = {
@@ -29,7 +29,7 @@ const FONT = {
 };
 
 /** The atlas's advances, which is what `layoutRuns` sums at scale 1. */
-const measure: MeasureFn = (text) => [...text].reduce((w, c) => w + advanceOf(c.codePointAt(0)!), 0);
+const measure: CanvasMeasureFn = (text) => [...text].reduce((w, c) => w + advanceOf(c.codePointAt(0)!), 0);
 
 beforeEach(async () => {
   _resetFontRegistryForTests();
@@ -61,10 +61,10 @@ const canvasLines = (texts: string[], maxWidth: number): string[] =>
     .map((l) => String.fromCodePoint(...l.cells.map((c) => c.cp)).replace(/ +$/, ''));
 
 const markdownLines = (texts: string[], maxWidth: number): string[] =>
-  layoutMarkdown(texts.map((text) => ({ text })), maxWidth, SIZE, measure).lines
+  layoutCanvasRuns(texts.map((text) => ({ text })), maxWidth, SIZE, measure).lines
     .map((l) => l.runs.map((r) => r.text).join('').replace(/ +$/, ''));
 
-describe('layoutMarkdown and layoutRuns wrap at the same places', () => {
+describe('layoutCanvasRuns and layoutRuns wrap at the same places', () => {
   for (const [name, text] of Object.entries(PARAGRAPHS)) {
     for (const split of [0, 5]) {
       it(`${name}${split ? `, split into runs of ${split}` : ''}`, () => {
@@ -85,7 +85,7 @@ describe('layoutMarkdown and layoutRuns wrap at the same places', () => {
       const gl = layoutRuns(runs.map((t) => ({ ...RUN(t), letterSpacing: 3 })), {
         align: 'left', maxWidth, lineHeight: 1.2,
       });
-      const md = layoutMarkdown(runs.map((t) => ({ text: t, letterSpacing: 3 })), maxWidth, SIZE, measure);
+      const md = layoutCanvasRuns(runs.map((t) => ({ text: t, letterSpacing: 3 })), maxWidth, SIZE, measure);
       expect(md.lines.map((l) => l.runs.map((r) => r.text).join('').trimEnd()), `at ${maxWidth}`)
         .toEqual(gl.lines.map((l) => String.fromCodePoint(...l.cells.map((c) => c.cp)).trimEnd()));
       expect(md.width, `at ${maxWidth}`).toBeCloseTo(gl.bounds.width, 9);

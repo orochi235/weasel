@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { createScene, derivedDepOf, type NodeId, type RectPose, type Vec2 } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH } from './edge';
-import { GROUP_DERIVE_POSE, boxAround } from './group';
+import { CLUSTER_DERIVE_POSE, boxAround } from './clusterBox';
 import { useLiveLayout } from './live';
 import { sceneParticipants } from './portLayer';
 
@@ -79,14 +79,14 @@ describe('a live run\'s eased routes', () => {
     expect((s.get(e)!.data as { diagram: { from: { port?: string } } }).diagram.from.port).toBe('s');
   });
 
-  it('meet a group\'s box where its members are drawn this frame', () => {
+  it('meet a cluster\'s box where its members are drawn this frame', () => {
     const s = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
     const a = s.add({ kind: 'mark', layer: 'main', pose: box(0, 0), data: { diagram: {} } });
     const b = s.add({ kind: 'mark', layer: 'main', pose: box(300, 10), data: { diagram: {} } });
     const c = s.add({ kind: 'mark', layer: 'main', pose: box(260, 200), data: { diagram: {} } });
     const g = s.add({
       kind: 'mark', layer: 'main', pose: box(0, 0, 0, 0),
-      data: { diagram: { group: { inset: 12 } } }, dependsOn: [b, c], derivePose: GROUP_DERIVE_POSE as never,
+      data: { diagram: { cluster: { inset: 12 } } }, dependsOn: [b, c], derivePose: CLUSTER_DERIVE_POSE as never,
     });
     const e = addEdge(s, a, g);
     const { clock, handle } = live(s, 'layered');
@@ -98,7 +98,7 @@ describe('a live run\'s eased routes', () => {
       const y0 = Math.min(pb.y, pc.y);
       const union = { x: x0, y: y0, width: Math.max(pb.x + pb.width, pc.x + pc.width) - x0, height: Math.max(pb.y + pb.height, pc.y + pc.height) - y0 };
       const g1 = boxAround(union, { inset: 12 });
-      // Downward layered arrives at the group by its north face.
+      // Downward layered arrives at the cluster by its north face.
       expect(drawn(s, e).at(-1)).toEqual({ x: g1.x + g1.width / 2, y: g1.y });
     }
   });

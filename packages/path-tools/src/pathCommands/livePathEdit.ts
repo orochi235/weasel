@@ -1,9 +1,9 @@
 import type { Action, InvocationCtx } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction, resolveParams } from '@weasel-js/routing';
 import type { PolygonPath } from '@weasel-js/geom';
-import type { PrefGroup, PrefNumber } from '@weasel-js/prefs';
+import type { PrefGroup, PrefNumber } from '@weasel-js/prefs-schema';
 import type { Op } from '@weasel-js/core';
-import { commitOps, type PathNode, pathOperationTags, selectedPathNodes, withPath } from '@weasel-js/core';
+import { commitOps, type PathNode, pathOperationTags, operandPathNodes, withPath } from '@weasel-js/core';
 import { getOwn } from '@weasel-js/registry';
 
 /** What one live path command does with its parameter, reading params `P`. */
@@ -40,10 +40,10 @@ function sameParams(a: object, b: object): boolean {
  * entry, and canceling leaves the scene untouched. A commit is the last
  * operation, which its handle replays from the paths as they were at the start.
  */
-export function livePathEdit<P = Record<string, unknown>>(spec: LivePathEditSpec<P>): Action {
+export function createLivePathEditAction<P = Record<string, unknown>>(spec: LivePathEditSpec<P>): Action {
   const leaf = getOwn(spec.params.children, spec.param) as PrefNumber | undefined;
   if (leaf?.kind !== 'number' || typeof leaf.default !== 'number') {
-    throw new Error(`livePathEdit: "${spec.id}" has no number leaf "${spec.param}" with a default in its params`);
+    throw new Error(`createLivePathEditAction: "${spec.id}" has no number leaf "${spec.param}" with a default in its params`);
   }
   const initial = leaf.default;
   return defineAction<string, P>({
@@ -57,7 +57,7 @@ export function livePathEdit<P = Record<string, unknown>>(spec: LivePathEditSpec
     invoker: {
       timing: 'ongoing',
       start(ctx, opts) {
-        const nodes = selectedPathNodes(ctx.deps);
+        const nodes = operandPathNodes(ctx.deps);
         if (nodes.length === 0) return {};
         const read = (params: Readonly<Partial<P>> | undefined): number | null => {
           const v = params?.[spec.param];
@@ -118,6 +118,6 @@ export function livePathEdit<P = Record<string, unknown>>(spec: LivePathEditSpec
         };
       },
     },
-    enabled: (deps) => (selectedPathNodes(deps).length > 0 ? true : ActionDisabledReason.SelectionRequired),
+    enabled: (deps) => (operandPathNodes(deps).length > 0 ? true : ActionDisabledReason.SelectionRequired),
   });
 }

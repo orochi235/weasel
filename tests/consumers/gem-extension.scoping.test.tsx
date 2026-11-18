@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
-import { SceneCanvas, asNodeId, buildSceneViewCommands, createScene, defaultDrawOne, getNodeShapes, findNodeShape, nodeKindPreset, nodeShapesOf, type FeaturePreset, type RectPose, type Scene, type SceneCanvasHit, type ToolsApi } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, buildSceneViewCommands, createScene, defaultDrawOne, nodeShapeEntries, findNodeShape, createNodeKindPreset, nodeShapesOf, type FeaturePreset, type RectPose, type Scene, type SceneCanvasHit, type ToolsApi } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui-canvas';
 import { GEM_BLUE, gemFeature, gemInsert, gemTool, isGem } from './gem-extension/src/index.js';
 import { selectPreset } from '@weasel-js/editing';
@@ -73,7 +73,7 @@ function click(testId: string, at: [number, number]) {
   });
 }
 
-const gemPainters = (s: Surface) => getNodeShapes(nodeShapesOf(s.scene)).filter((e) => e.id === 'app:gem').length;
+const gemPainters = (s: Surface) => nodeShapeEntries(nodeShapesOf(s.scene)).filter((e) => e.id === 'app:gem').length;
 /** Whether the scene's frame, as a canvas builds it, paints anything in the gem's color. */
 const paintsGem = (s: Surface) =>
   JSON.stringify(buildSceneViewCommands(s.scene, { x: 0, y: 0, scale: { x: 1, y: 1 } }, defaultDrawOne)).includes(GEM_BLUE);
@@ -157,8 +157,8 @@ describe('a custom node feature installed as one preset', () => {
   });
 
   it('leaves out a tool whose insert factory came from a preset that is gone', async () => {
-    const tool = nodeKindPreset({ id: 'app:gem-tool', kind: 'gem', matches: isGem, tools: [gemTool] });
-    const factory = nodeKindPreset({ id: 'app:gem-insert', kind: 'gem', matches: isGem, insert: gemInsert });
+    const tool = createNodeKindPreset({ id: 'app:gem-tool', kind: 'gem', matches: isGem, tools: [gemTool] });
+    const factory = createNodeKindPreset({ id: 'app:gem-insert', kind: 'gem', matches: isGem, insert: gemInsert });
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const a = surface();
     const b = surface();
@@ -174,8 +174,8 @@ describe('a custom node feature installed as one preset', () => {
   });
 
   it('throws when two presets give one kind different values', () => {
-    const one = nodeKindPreset({ id: 'one', kind: 'gem', matches: isGem });
-    const two = nodeKindPreset({ id: 'two', kind: 'gem', matches: (d) => isGem(d) });
+    const one = createNodeKindPreset({ id: 'one', kind: 'gem', matches: isGem });
+    const two = createNodeKindPreset({ id: 'two', kind: 'gem', matches: (d) => isGem(d) });
     const err = vi.spyOn(console, 'error').mockImplementation(() => {});
     const a = surface();
     const b = surface();

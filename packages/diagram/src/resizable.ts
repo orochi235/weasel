@@ -1,6 +1,6 @@
 import { diagramContainerOf } from './containers/trait';
 import { diagramEdgeOf } from './edgeTrait';
-import { diagramGroupOf } from './group';
+import { diagramClusterOf } from './clusterBox';
 import { diagramLabelOf } from './labelTrait';
 import { sequencePartOf } from './sequence/trait';
 
@@ -8,7 +8,7 @@ import { sequencePartOf } from './sequence/trait';
  * `<SceneCanvas selectTool={{ resize: { resizable } }}>` for a diagram scene:
  * edges and edge labels take their geometry from what they are attached to,
  * so their own pose is a placeholder, and a resize handle on it sits at the
- * origin and resizes nothing. A group's box is its members' union, and a
+ * origin and resizes nothing. A cluster's box is its members' union, and a
  * pool's lane is sized by its pool's stack and resized by dragging its
  * boundary. A sequence's part is drawn from its root's data, and a selected
  * one is there to be deleted, not resized.
@@ -17,7 +17,7 @@ export function diagramResizable(scene: { get(id: never): { data: unknown } | un
   return (id) => {
     const node = scene.get(id as never);
     return node === undefined
-      || (diagramEdgeOf(node) === null && diagramLabelOf(node) === null && diagramGroupOf(node) === null
+      || (diagramEdgeOf(node) === null && diagramLabelOf(node) === null && diagramClusterOf(node) === null
         && diagramContainerOf(node)?.role !== 'lane' && sequencePartOf(node) === null);
   };
 }

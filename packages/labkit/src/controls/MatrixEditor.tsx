@@ -3,13 +3,13 @@ import {
   type PrefGroup,
   type PrefLeaf,
   type PrefSection,
-  prefLeafValue,
+  prefValueOrDefault,
 } from '@weasel-js/prefs';
 import { enumControlAt, prefFieldProps } from '@weasel-js/ui/components/Prefs';
 import { PropertyField } from '@weasel-js/ui/components/Properties';
-import { valueAtPath } from '../config/path';
+import { configValueAt } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
-import { isLeafEnabled } from '../config/visible';
+import { isRowEnabled } from '../config/visible';
 import type { ControlMatrixColumn } from './ControlMatrix';
 import { ControlRow } from './ControlRow';
 import { useFieldChoices } from './fieldChoices';
@@ -49,12 +49,12 @@ export function MatrixEditor({
 }) {
   const { path, leaf } = open;
   const choices = useFieldChoices();
-  const disabled = !isLeafEnabled(schema, path, config, over);
+  const disabled = !isRowEnabled(schema, path, config, over);
   const field = isBuiltinPref(leaf)
     ? prefFieldProps(
         leaf,
         {
-          value: prefLeafValue(leaf, valueAtPath(config, path)),
+          value: prefValueOrDefault(leaf, configValueAt(config, path)),
           setValue: (next) => setConfig(path, next),
           fields: choices,
           disabled,

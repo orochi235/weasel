@@ -1,6 +1,5 @@
 {
-  "npm ci": 95.1,
-  "npm run build": 89.6,
+  "npm run build": 40.0,
   "npm run build -w @weasel-js/labkit": 7.9,
   "npx vitest run --project=forge-node packages/forge/src/csf/shims/alias.test.ts": 5,
   "npm run check:manifests": 12.7,
@@ -13,7 +12,6 @@
   "npm run check:changesets": 0.2,
   "npm run check:lockstep": 0.1,
   "npm run check:imports": 0.8,
-  "npm run check:build-order": 0.1,
   "npm run check:first-publish -- --warn": 21.5,
   "npm run check:frame-loops": 0.3,
   "npm run check:audio-worklet": 0.1,
@@ -39,5 +37,6 @@
   "npx vitest run --project=core --project=site --project=weasel-ui --project=draw --project=labkit --project=forge --project=forge-node --project=smoke": 90.4,
   "npx playwright install --with-deps chromium-headless-shell": 0.5,
   "npm run test:browser": 158,
-  "npm run test:stories:forge": 103.8
+  "npm run test:stories:forge": 103.8,
+  "npm ci --ignore-scripts": 5.0
 }

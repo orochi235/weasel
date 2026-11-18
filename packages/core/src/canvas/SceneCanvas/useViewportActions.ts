@@ -4,7 +4,7 @@
  * past its bounds — first, so it is asked before the pan and yields to it
  * anywhere else.
  *
- * Wheel pan and zoom are registered only here. `pinchZoom` is also a kit
+ * Wheel pan and zoom are registered only here. `touchZoom` is also a kit
  * standard action, so this hook re-registers a configured one over it, or
  * mutes it — muting rather than unregistering, so a sibling canvas sharing the
  * registry keeps its own. That overlap is why this must run after
@@ -24,9 +24,9 @@ import {
   type ViewportZoomOptions,
 } from 'interactions/actions/defaults/viewportZoom';
 import {
-  createPinchZoomAction,
-  type PinchZoomOptions,
-} from 'interactions/actions/defaults/pinchZoom';
+  createTouchZoomAction,
+  type TouchZoomOptions,
+} from 'interactions/actions/defaults/touchZoom';
 
 export function useViewportActions(args: {
   /** `true`/`false` toggles wheel pan; an object locks its axis (see
@@ -36,13 +36,13 @@ export function useViewportActions(args: {
    *  wheel trigger + scale clamp (see {@link ViewportZoomOptions}). */
   zoom: boolean | ViewportZoomOptions;
   /** `true`/`false` toggles two-finger pinch zoom; an object sets its scale
-   *  clamp (see {@link PinchZoomOptions}). */
-  pinchZoom: boolean | PinchZoomOptions;
+   *  clamp (see {@link TouchZoomOptions}). */
+  touchZoom: boolean | TouchZoomOptions;
   /** Changes whenever the standard action set re-registers, which puts the
    *  default pinch zoom back on top of a configured one. */
   rev?: string;
 }): void {
-  const { pan, zoom, pinchZoom, rev } = args;
+  const { pan, zoom, touchZoom, rev } = args;
   const reg = useActionsRegistry();
   const regRef = useLatest(reg);
   const zoomRef = useLatest(zoom);
@@ -52,7 +52,7 @@ export function useViewportActions(args: {
   // `interpolator`, `onDone`), so the zoom runs from the latest config instead.
   const panKey = typeof pan === 'object' ? JSON.stringify(pan) : String(pan);
   const zoomKey = typeof zoom === 'object' ? JSON.stringify(zoom) : String(zoom);
-  const pinchKey = typeof pinchZoom === 'object' ? JSON.stringify(pinchZoom) : String(pinchZoom);
+  const pinchKey = typeof touchZoom === 'object' ? JSON.stringify(touchZoom) : String(touchZoom);
 
   useEffect(() => {
     const r = regRef.current;
@@ -64,12 +64,12 @@ export function useViewportActions(args: {
       );
     }
     if (zoom) unregisters.push(r.register(liveZoomAction(zoom, () => zoomRef.current)));
-    if (pinchZoom) {
+    if (touchZoom) {
       unregisters.push(
-        r.register(createPinchZoomAction(typeof pinchZoom === 'object' ? pinchZoom : {})),
+        r.register(createTouchZoomAction(typeof touchZoom === 'object' ? touchZoom : {})),
       );
     } else {
-      unregisters.push(r.mute('viewport.pinchZoom'));
+      unregisters.push(r.mute('viewport.touchZoom'));
     }
     return () => { for (const u of unregisters) u(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- configs tracked via zoomKey / pinchKey
@@ -95,7 +95,7 @@ function liveZoomAction(zoom: true | ViewportZoomOptions, latest: () => boolean 
 
 /**
  * `viewport.zoom` with `viewport.animatedZoom` folded in as the zoom action's
- * `animate` option, the way `pinchZoom` carries the pinch tool's clamp.
+ * `animate` option, the way `touchZoom` carries the pinch tool's clamp.
  */
 export function viewportZoomOption(
   zoom: boolean | ViewportZoomOptions | undefined,

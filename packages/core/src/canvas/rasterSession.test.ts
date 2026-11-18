@@ -34,7 +34,7 @@ const BITMAP = { width: 8, height: 8 } as ImageBitmap;
  *  stroke (unbatchable, so its ribbon takes the persistent mesh cache from
  *  its second sighting on), and a solid rect (the batch). */
 const drawOne = (_node: unknown, p: RectPose): DrawCommand[] => [
-  { kind: 'image', image: BITMAP, x: p.x, y: p.y, w: p.width, h: p.height },
+  { kind: 'image', image: BITMAP, x: p.x, y: p.y, width: p.width, height: p.height },
   {
     kind: 'path',
     path: {

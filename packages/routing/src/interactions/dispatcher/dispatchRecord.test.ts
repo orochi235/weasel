@@ -90,7 +90,7 @@ function escapeScenario() {
   const run = { cancel: vi.fn(), escape: vi.fn(), reset: vi.fn(), exit: vi.fn() };
   const actions: Action[] = [
     {
-      id: 'cancelGesture', label: 'cancel',
+      id: 'dispatch.cancelAll', label: 'cancel',
       defaultBinding: { kind: 'key', key: 'Escape', phase: [{ channel: '*', phase: 'engaged' }] },
       invoker: { timing: 'immediate', run: run.cancel },
     },
@@ -106,7 +106,7 @@ function escapeScenario() {
       invoker: { timing: 'immediate', run: run.reset },
     },
     {
-      id: 'exitPathEdit', label: 'exit',
+      id: 'leavePathEdit', label: 'exit',
       defaultBinding: { kind: 'key', key: 'Escape' },
       eligible: { mode: 'path-edit' },
       invoker: { timing: 'immediate', run: run.exit },
@@ -155,12 +155,12 @@ describe('the dispatch record', () => {
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       viewId: null, mode: 'path-edit',
     });
-    // cancelGesture's engaged phase does not match with nothing in flight.
-    expect(r.matched.map((c) => c.actionId)).toEqual(['escape', 'exitPathEdit', 'tool.resetToDefault']);
+    // dispatch.cancelAll's engaged phase does not match with nothing in flight.
+    expect(r.matched.map((c) => c.actionId)).toEqual(['escape', 'leavePathEdit', 'tool.resetToDefault']);
     expect(r.dropped).toEqual([]);
     expect(rows(r)).toEqual([
       'escape first declined:not-applicable',
-      'exitPathEdit specificity:phase fired',
+      'leavePathEdit specificity:phase fired',
       'tool.resetToDefault context not-asked',
     ]);
     const [escape, exit, reset] = r.ranked.map((x) => x.candidate);
@@ -170,7 +170,7 @@ describe('the dispatch record', () => {
     });
     expect(exit).toMatchObject({ specificity: [0, 0, 0, 1], eligible: 'mode:path-edit' });
     expect(reset!.eligible).toBeUndefined();
-    expect(r.fired).toBe('exitPathEdit');
+    expect(r.fired).toBe('leavePathEdit');
     expect(r.outcome).toBe('handled');
   });
 
@@ -265,7 +265,7 @@ describe('the dispatch record', () => {
     expect(r.predicted).toBe(true);
     expect(rows(r)).toEqual([
       'escape first declined:not-applicable',
-      'exitPathEdit specificity:phase would-fire',
+      'leavePathEdit specificity:phase would-fire',
       'tool.resetToDefault context not-asked',
     ]);
     expect(Object.values(run).every((f) => f.mock.calls.length === 0)).toBe(true);

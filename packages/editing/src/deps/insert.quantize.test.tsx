@@ -9,7 +9,7 @@ import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-j
 import type { InvocationCtx, OngoingOverlay } from '@weasel-js/routing';
 import { snapToPitch, type OutputGrid } from '@weasel-js/geom';
 import { createScene, OUTPUT_GRID_KEY, quantizeSize, insertPreviewExtent } from '@weasel-js/core/engine';
-import { cycleFill, solid } from '@weasel-js/paint';
+import { paletteColorAt, solid } from '@weasel-js/paint';
 import { sceneMutators } from '@weasel-js/core';
 import type { RectPose, Scene, InsertDep } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
@@ -85,7 +85,7 @@ describe('an insert preview under a quantize rule', () => {
     drag(scene, dep, { x: 0, y: 0 }, many);
     drag(scene, dep, { x: 100, y: 0 }, many.map((p) => ({ x: p.x + 100, y: p.y })));
     const fills = [0, 1].map((n) => (onlyNode(scene, n).data as { fill?: unknown }).fill);
-    expect(fills).toEqual([{ paint: solid(cycleFill(1)) }, { paint: solid(cycleFill(2)) }]);
+    expect(fills).toEqual([{ paint: solid(paletteColorAt(1)) }, { paint: solid(paletteColorAt(2)) }]);
   });
 
   it('answers the node a release would make, minting nothing', () => {

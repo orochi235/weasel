@@ -4,7 +4,7 @@
  *
  * Nothing here knows a frame: the handles are in whatever space the mesh's
  * points are, so a caller resolves a `'bounds'` mesh onto its box first
- * (`fillInPoseFrame`) and normalizes the result back (`fillToBoundsFrame`).
+ * (`paintToLocalUnits`) and normalizes the result back (`paintToBoundsUnits`).
  */
 
 import type { MeshGradientPaint } from './meshPaint';

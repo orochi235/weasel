@@ -9,7 +9,7 @@
 import {
   type ActionDeps, ActionDisabledReason, defineAction, isFilletWidget, type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
-import { pref } from '@weasel-js/prefs';
+import { pref } from '@weasel-js/prefs-schema';
 import {
   CORNER_KEYWORDS,
   cornerFrames,

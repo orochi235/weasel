@@ -34,7 +34,7 @@ export interface LaneGraphProps {
   /** Live during a key drag. */
   onKeysInput?: (keys: readonly Keyframe<number>[]) => void;
   /** Once per edit: a drag's end, a handle's release, a key press. */
-  onKeysCommit: (keys: readonly Keyframe<number>[]) => void;
+  onKeysChange: (keys: readonly Keyframe<number>[]) => void;
   /** A key drag was canceled, after its preview was put back. */
   onCancel?: () => void;
   /** False: keys and segments still select, and nothing drags or steps. Default true. */
@@ -57,7 +57,7 @@ function valueRange(keys: readonly Keyframe<number>[]): [number, number] {
 export function LaneGraph(props: LaneGraphProps): ReactElement {
   const {
     keys, label, window: win, offset, snapTimes, selection, selectedSegment,
-    onSelect, onSelectSegment, onKeysInput, onKeysCommit, onCancel, edits = true,
+    onSelect, onSelectSegment, onKeysInput, onKeysChange, onCancel, edits = true,
   } = props;
 
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -96,7 +96,7 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
   const onLayerCommit = (next: KeyframeLayerState, prev: KeyframeLayerState): void => {
     setLive(null);
     previewed.current = null;
-    if (edits && next.keys !== prev.keys) onKeysCommit(next.keys);
+    if (edits && next.keys !== prev.keys) onKeysChange(next.keys);
   };
 
   const onLayerCancel = (): void => {

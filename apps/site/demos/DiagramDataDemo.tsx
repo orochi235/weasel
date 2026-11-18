@@ -34,7 +34,7 @@ export function DiagramDataDemo() {
     <div className="ckd-demo">
       <div className="ckd-row">picked: {picked ?? 'none'}</div>
       <DemoStage width={640} height={420}>
-        <DiagramView specs={specs} selected={picked} onSelect={setPicked} className="ckd-canvas" />
+        <DiagramView specs={specs} selection={picked} onSelectionChange={setPicked} className="ckd-canvas" />
       </DemoStage>
     </div>
   );

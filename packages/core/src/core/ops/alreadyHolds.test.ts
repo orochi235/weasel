@@ -5,7 +5,7 @@ import type { Op } from './types';
 import { createSetHiddenOp, createSetLockedOp } from './nodeFlags';
 import { createSetLayerOp } from './setLayer';
 import { createSetDataOp } from './setData';
-import { createTransformOp } from './transform';
+import { createSetPoseOp } from './setPose';
 import { createSetDependsOnOp } from './setDependsOn';
 import { createSetLayoutOp } from './setLayout';
 
@@ -21,7 +21,7 @@ describe('an op writing what the node already holds', () => {
     setLocked: (id) => createSetLockedOp({ id, from: true, to: false }),
     setLayer: (id) => createSetLayerOp({ id, from: 'plantings', to: 'structures' }),
     setData: (id) => createSetDataOp({ id, from: { label: 'x' }, to: { label: 'a' } }),
-    transform: (id) => createTransformOp({ id, from: { ...POSE, x: 3 }, to: { ...POSE } }),
+    transform: (id) => createSetPoseOp({ id, from: { ...POSE, x: 3 }, to: { ...POSE } }),
     setDependsOn: (id) => createSetDependsOnOp({ id, from: ['q'], to: undefined }),
     setLayout: (id) => createSetLayoutOp({ id, from: 'grid', to: null }),
   };
@@ -47,7 +47,7 @@ describe('an op writing what the node already holds', () => {
     const { s, id, adapter } = oneNode();
     const before = s.historyEntries().length;
     const to = { ...POSE, x: 40 };
-    s.applyBatch([createTransformOp({ id, from: to, to })], 'Move', adapter);
+    s.applyBatch([createSetPoseOp({ id, from: to, to })], 'Move', adapter);
     expect(s.get(id)?.pose).toEqual(to);
     expect(s.historyEntries()).toHaveLength(before + 1);
     s.undo();

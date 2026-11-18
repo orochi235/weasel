@@ -5,7 +5,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { f } from '../config/builder';
-import { valueAtPath } from '../config/path';
+import { configValueAt } from '../config/path';
 import {
   configDefaultsOf,
   configMigrationsOf,
@@ -63,16 +63,16 @@ const trialOf = (config: unknown): SerializedTrial => ({
 });
 
 function expectAdmitted(config: unknown, stored: Record<string, unknown>): void {
-  const n = valueAtPath(config, 'n');
+  const n = configValueAt(config, 'n');
   expect(typeof n === 'number' && n >= 0 && n <= 10).toBe(true);
-  expect(['a', 'b']).toContain(valueAtPath(config, 'mode'));
-  expect(typeof valueAtPath(config, 'on')).toBe('boolean');
-  const ink = valueAtPath(config, 'ink');
+  expect(['a', 'b']).toContain(configValueAt(config, 'mode'));
+  expect(typeof configValueAt(config, 'on')).toBe('boolean');
+  const ink = configValueAt(config, 'ink');
   expect(ink === '#ffffff' || (typeof ink === 'string' && ink === stored.ink)).toBe(true);
-  expect(typeof valueAtPath(config, 'label')).toBe('string');
-  const gap = valueAtPath(config, 'gap');
+  expect(typeof configValueAt(config, 'label')).toBe('string');
+  const gap = configValueAt(config, 'gap');
   expect(gap === undefined || typeof gap === 'number').toBe(true);
-  const size = valueAtPath(config, 'grid.size');
+  const size = configValueAt(config, 'grid.size');
   expect(typeof size === 'number' && size >= 1 && size <= 8).toBe(true);
 }
 
@@ -93,7 +93,7 @@ describe('a stored config, against its schema', () => {
           expectAdmitted(config, stored);
           if (Object.hasOwn(stored, 'retired')) {
             t.count('kept');
-            expect(valueAtPath(config, 'retired')).toEqual(stored.retired);
+            expect(configValueAt(config, 'retired')).toEqual(stored.retired);
           }
           const [snapshot] = hydrateSnapshots(
             [{ id: 's', instrumentName: 'Kinds', name: 's', config: stored, state: {} }] as never,

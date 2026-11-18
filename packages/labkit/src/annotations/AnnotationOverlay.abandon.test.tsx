@@ -15,8 +15,8 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext';
 import type { SurfaceClear, SurfaceHandle, TilePainter } from '../surface/useTiledSurface';
 import { AnnotationOverlay } from './AnnotationOverlay';
-import { seenFrom } from './staleness';
-import { createAnnotationScene } from './store';
+import { seenValues } from './staleness';
+import { createMarkScene } from './store';
 import type { AnnotationTarget } from './types';
 
 const frames = new Set<() => void>();
@@ -72,7 +72,7 @@ function surfaceFor(clears: SurfaceClear[]): SurfaceHandle {
       return () => {};
     },
     registerPainter: (_id, paint: TilePainter) => {
-      paint({ x: 0, y: 0, w: 100, h: 50 }, { visible: new Map() } as never);
+      paint({ x: 0, y: 0, width: 100, height: 50 }, { visible: new Map() } as never);
       return () => {};
     },
     containerRef: () => {},
@@ -86,7 +86,7 @@ function surfaceFor(clears: SurfaceClear[]): SurfaceHandle {
 const target: AnnotationTarget = {
   id: 'pane',
   ref: { current: null },
-  content: { w: 100, h: 50 },
+  content: { width: 100, height: 50 },
   positionDependsOn: ['k'],
 };
 
@@ -104,7 +104,7 @@ const abandoned = document.createElement('canvas');
 function mountThenAbandon(): SurfaceClear[] {
   const clears: SurfaceClear[] = [];
   const surface = surfaceFor(clears);
-  const scene = createAnnotationScene();
+  const scene = createMarkScene();
   renderThenAbandon<Props>(
     { toolId: 'line', config: { k: 1 }, canvas: committed },
     { toolId: 'arrow', config: { k: 2 }, canvas: abandoned },
@@ -130,7 +130,7 @@ describe('<AnnotationOverlay> across an abandoned render', () => {
     // `line` and `arrow` drive the same weasel tool; only the tool id the
     // factory reads tells them apart.
     const made = factories.line?.({ x: 0, y: 0, width: 1, height: 1 }, {} as never);
-    expect(made?.data).toMatchObject({ kind: 'line', seen: seenFrom({ k: 1 }, ['k']) });
+    expect(made?.data).toMatchObject({ kind: 'line', seen: seenValues({ k: 1 }, ['k']) });
   });
 
   it('clears the committed buffer', () => {

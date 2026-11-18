@@ -1,14 +1,7 @@
+import type { Rect } from '@weasel-js/geom';
 import type { GpuDevice } from './gpu/types';
 
-/** A rect of a canvas in whole device pixels, counted from its top-left. */
-export interface PixelRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-function checked(gpu: GpuDevice, rect: PixelRect): PixelRect {
+function checked(gpu: GpuDevice, rect: Rect): Rect {
   const { width, height } = gpu.canvasSize();
   const { x, y } = rect;
   if (![x, y, rect.width, rect.height].every(Number.isInteger)) {
@@ -28,11 +21,11 @@ function topDown(bytes: Uint8Array, width: number, height: number): Uint8Array {
   return out;
 }
 
-export function readPixels(gpu: GpuDevice, rect: PixelRect): Promise<Uint8Array> {
+export function readPixels(gpu: GpuDevice, rect: Rect): Promise<Uint8Array> {
   return gpu.readCanvas(checked(gpu, rect)).then((bytes) => topDown(bytes, rect.width, rect.height));
 }
 
-export function readPixelsSync(gpu: GpuDevice, rect: PixelRect): Uint8Array {
+export function readPixelsSync(gpu: GpuDevice, rect: Rect): Uint8Array {
   if (!gpu.readCanvasSync) throw new Error('weasel: WebGPU reads the canvas back only through readPixels');
   return topDown(gpu.readCanvasSync(checked(gpu, rect)), rect.width, rect.height);
 }

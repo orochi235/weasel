@@ -6,7 +6,7 @@ import {
   createScene,
   type NodeId,
   pageNodeOf,
-  pageOfNode,
+  pageIdOf,
   pageRunOf,
   pagesOf,
   placedPagesOf,
@@ -45,7 +45,7 @@ const save = (scene: DrawScene, backgroundColor = '#ffffff') =>
 const tree = (scene: DrawScene): unknown => {
   const walk = (id: NodeId): unknown => {
     const n = scene.get(id)!;
-    return { page: n.page === undefined ? undefined : pageOfNode(scene, id), kind: n.kind, pose: n.pose, children: scene.childrenOf(id).map(walk) };
+    return { page: n.page === undefined ? undefined : pageIdOf(scene, id), kind: n.kind, pose: n.pose, children: scene.childrenOf(id).map(walk) };
   };
   return scene.childrenOf(pageRunOf(scene)!).map(walk);
 };

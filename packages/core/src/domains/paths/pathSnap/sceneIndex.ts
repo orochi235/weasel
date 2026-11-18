@@ -1,3 +1,4 @@
+import { createPart } from '@weasel-js/registry';
 import { nodeShapesOf } from 'canvas/nodeShapeRegistry';
 import {
   createPathSnapIndex, type Path, type PathSnapIndex, type PathSnapTarget,
@@ -68,12 +69,10 @@ export function createSceneSnapIndexer(scene: SnapScene): (also?: SnapGeometry) 
   };
 }
 
-const indexers = new WeakMap<object, ReturnType<typeof createSceneSnapIndexer>>();
+const indexers = createPart(createSceneSnapIndexer);
 
 /** {@link createSceneSnapIndexer}, one per scene, so every source over a
  *  scene shares its index. */
 export function sceneSnapIndex(scene: SnapScene, also?: SnapGeometry): SceneSnapIndex {
-  let indexer = indexers.get(scene);
-  if (!indexer) indexers.set(scene, (indexer = createSceneSnapIndexer(scene)));
-  return indexer(also);
+  return indexers(scene)(also);
 }

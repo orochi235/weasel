@@ -6,7 +6,7 @@ import type { IconRef } from '@weasel-js/icons';
 import { ActionButton, DragGhost, Icon, ToolGroup } from '@weasel-js/ui';
 import { icon } from '../icons.gen';
 import { blankLeaf, type SchemaNode } from '@weasel-js/prefs/edit';
-import { GHOST_WIDTH, NodeGhost, ghostIsPage } from './NodeGhost';
+import { GHOST_WIDTH, NodeGhost, nodeIsPage } from './NodeGhost';
 import s from './PrefSchemaEditor.module.css';
 import { isPrimaryPress } from '@weasel-js/gestures';
 
@@ -108,9 +108,9 @@ export function Palette({ items, sections = false, ghost = true, disabled = fals
       // The palette, not the button: the tree redraws around a drag and the session must outlast that.
       origin: root.current,
       threshold: dragPx,
-      onActivate: (ev) => move(at(ev)),
+      onStart: (ev) => move(at(ev)),
       onMove: (ev) => move(at(ev)),
-      onCommit: (ev) => {
+      onEnd: (ev) => {
         session.current = null;
         setDrag(null);
         onDrop(at(ev));
@@ -141,7 +141,7 @@ export function Palette({ items, sections = false, ghost = true, disabled = fals
       )}
       {drag && ghost && root.current && (
         // Offset from the pointer so what is under it stays visible.
-        <DragGhost at={{ left: drag.x + 10, top: drag.y + 10, width: GHOST_WIDTH[ghostIsPage(drag.node, true) ? 'page' : 'node'] }} from={root.current}>
+        <DragGhost at={{ left: drag.x + 10, top: drag.y + 10, width: GHOST_WIDTH[nodeIsPage(drag.node, true) ? 'page' : 'node'] }} from={root.current}>
           <NodeGhost node={drag.node} topLevel />
         </DragGhost>
       )}

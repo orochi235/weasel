@@ -4,8 +4,8 @@ import { cubicBounds, cubicEvalAt, quadraticEvalAt, splitCubicAt, type CubicCoor
 import { nearestOnCubic } from './nearest';
 import { flattenCubic, flattenCubicWithArcLen, flattenQuadratic, flattenQuadraticWithArcLen } from './flatten';
 import { segmentLength, segmentTAtLength } from './paths/segmentLength';
-import { intersectSegments } from './intersect/segmentIntersections';
-import { pointSegmentDist } from './points2';
+import { segmentCrossings } from './intersect/segmentIntersections';
+import { pointSegmentDistance } from './points2';
 import { coord, runs, timeoutFor } from './pbt.fixture';
 
 const RUNS = runs(200);
@@ -60,9 +60,9 @@ describe('nearestOnCubic, property', () => {
       expect(hit.t).toBeLessThanOrEqual(1);
       const [x, y] = at(c, hit.t);
       expect(Math.hypot(x - hit.x, y - hit.y)).toBeLessThan(size(c) * 1e-12);
-      expect(Math.abs(hit.dist - Math.hypot(px - hit.x, py - hit.y))).toBeLessThan(size(c) * 1e-12);
+      expect(Math.abs(hit.distance - Math.hypot(px - hit.x, py - hit.y))).toBeLessThan(size(c) * 1e-12);
       const brute = Math.min(...samples(c, 3000).map(([sx, sy]) => Math.hypot(px - sx, py - sy)));
-      expect(hit.dist).toBeLessThanOrEqual(brute + size(c) * 1e-9);
+      expect(hit.distance).toBeLessThanOrEqual(brute + size(c) * 1e-9);
     }), RUNS);
   }, TIMEOUT);
 });
@@ -70,13 +70,13 @@ describe('nearestOnCubic, property', () => {
 describe('nearestOnCubic, two minima in one sampled basin (shrunk counterexamples)', () => {
   it('finds a point the curve passes through beside an anchor its handle sits on', () => {
     // The end's handle is on its anchor, so the refinement saw g = 0 at t = 1 and stopped there.
-    expect(nearestOnCubic(-1.0816205645975648e-9, 0, 0, 1.03139006961934e-9, -0.00013378324753995485, 0, 0, 0, 0, 0).dist).toBeLessThan(1e-11);
+    expect(nearestOnCubic(-1.0816205645975648e-9, 0, 0, 1.03139006961934e-9, -0.00013378324753995485, 0, 0, 0, 0, 0).distance).toBeLessThan(1e-11);
   });
 
   it('finds a point of the curve beside a fold, not the other side of it', () => {
     // The flattening's vertex at the fold: the far side, 5e-7 away, shared its sampled basin.
     const c = [0, 0, -4.6003908937305855, 0, 0, 0, 19.13117663435128, 0.006594193164349875] as const;
-    expect(nearestOnCubic(-1.649786044968359, 0.00008489762088653881, ...c).dist).toBeLessThan(1e-9);
+    expect(nearestOnCubic(-1.649786044968359, 0.00008489762088653881, ...c).distance).toBeLessThan(1e-9);
   });
 });
 
@@ -121,11 +121,11 @@ describe('flattenCubic, property', () => {
       // Each vertex is a point of the curve, at a dyadic parameter.
       for (let k = 2; k < line.length; k += 2) {
         const near = nearestOnCubic(line[k]!, line[k + 1]!, ...c);
-        expect(near.dist).toBeLessThan(size(c) * 1e-9);
+        expect(near.distance).toBeLessThan(size(c) * 1e-9);
       }
       for (const [x, y] of samples(c, 1000)) {
         let best = Infinity;
-        for (let k = 0; k + 3 < line.length; k += 2) best = Math.min(best, pointSegmentDist(x, y, line[k]!, line[k + 1]!, line[k + 2]!, line[k + 3]!));
+        for (let k = 0; k + 3 < line.length; k += 2) best = Math.min(best, pointSegmentDistance(x, y, line[k]!, line[k + 1]!, line[k + 2]!, line[k + 3]!));
         expect(best).toBeLessThanOrEqual(tol + eps);
       }
     }), RUNS);
@@ -143,7 +143,7 @@ describe('flattenQuadratic, property', () => {
       for (let k = 0; k <= 1000; k++) {
         const [x, y] = quadraticEvalAt(...q, k / 1000);
         let best = Infinity;
-        for (let i = 0; i + 3 < line.length; i += 2) best = Math.min(best, pointSegmentDist(x, y, line[i]!, line[i + 1]!, line[i + 2]!, line[i + 3]!));
+        for (let i = 0; i + 3 < line.length; i += 2) best = Math.min(best, pointSegmentDistance(x, y, line[i]!, line[i + 1]!, line[i + 2]!, line[i + 3]!));
         expect(best).toBeLessThanOrEqual(tol + size(q) * 1e-12);
       }
     }), RUNS);
@@ -227,12 +227,12 @@ function clearCrossings(a: P[], b: P[], n: number): P[] {
   return out;
 }
 
-describe('intersectSegments, a crossing at the very end of a curve (shrunk counterexample)', () => {
+describe('segmentCrossings, a crossing at the very end of a curve (shrunk counterexample)', () => {
   it('reports parameters inside 0..1', () => {
     // A cubic of subnormal length: the chord test's slack put ta at -1e-6, and refinement stopped before clamping it.
     const a = [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: -1.7285717905e-314 }];
     const b = [{ x: 1e-323, y: 0 }, { x: 0, y: -85.50024445890497 }, { x: 99.99999999781028, y: 0 }, { x: 0, y: 0 }];
-    const hits = intersectSegments(a, b);
+    const hits = segmentCrossings(a, b);
     expect(hits.length).toBeGreaterThan(0);
     for (const h of hits) {
       expect(h.ta).toBeGreaterThanOrEqual(0);
@@ -241,7 +241,7 @@ describe('intersectSegments, a crossing at the very end of a curve (shrunk count
   });
 });
 
-describe('intersectSegments, property', () => {
+describe('segmentCrossings, property', () => {
   // Mostly plain coordinates, so curves cross often; sometimes the edge cases `coord` favors.
   const value = fc.oneof({ weight: 4, arbitrary: fc.integer({ min: -1e6, max: 1e6 }).map((n) => n / 1e4) }, { weight: 1, arbitrary: coord(100) });
   const seg = fc.integer({ min: 2, max: 4 }).chain((n) => fc.array(value, { minLength: 2 * n, maxLength: 2 * n })).map((c) => pts(c));
@@ -249,7 +249,7 @@ describe('intersectSegments, property', () => {
   it('reports only points on both segments, and every square crossing a sampling finds', () => {
     const tally = { crossings: 0 };
     fc.assert(fc.property(seg, seg, (a, b) => {
-      const hits = intersectSegments(a, b);
+      const hits = segmentCrossings(a, b);
       for (const h of hits) {
         expect(h.ta).toBeGreaterThanOrEqual(0);
         expect(h.ta).toBeLessThanOrEqual(1);

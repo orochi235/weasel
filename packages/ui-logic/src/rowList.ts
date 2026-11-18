@@ -11,7 +11,7 @@ export type ListMode = 'list' | 'listbox' | 'grid';
 /** What decides a row list's {@link ListMode}. */
 export interface ListModeInput {
   /** Rows are selectable, one or many at once. */
-  readonly selection?: 'single' | 'multi';
+  readonly selectionMode?: 'single' | 'multiple';
   /** Rows answer a press. */
   readonly activatable?: boolean;
   /** Some row holds controls of its own. */
@@ -21,8 +21,8 @@ export interface ListModeInput {
 /** A row list's mode: `grid` when a row holds controls or rows activate without selecting, else `listbox` when
  *  they select, else `list`. */
 export function listMode(o: ListModeInput): ListMode {
-  if (o.controls || (o.activatable && !o.selection)) return 'grid';
-  return o.selection ? 'listbox' : 'list';
+  if (o.controls || (o.activatable && !o.selectionMode)) return 'grid';
+  return o.selectionMode ? 'listbox' : 'list';
 }
 
 /** The ARIA roles of a row list's container and its rows, by mode. */

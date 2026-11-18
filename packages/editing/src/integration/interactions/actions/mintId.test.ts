@@ -5,7 +5,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import { createScene } from '@weasel-js/core/engine';
-import { asNodeId, type NodeId, type Scene, sceneToAdapter, copySelection } from '@weasel-js/core';
+import { asNodeId, type NodeId, type Scene, sceneToAdapter, copyOps } from '@weasel-js/core';
 import { groupAction } from '@weasel-js/editing';
 
 interface Pose { x: number; y: number; width: number; height: number }
@@ -54,7 +54,7 @@ describe('scene.mintId', () => {
 
   it('names a copied node', () => {
     const { scene, a } = numbered();
-    const { copies } = copySelection(anyScene(scene), [a], (_id, node) => node.pose, 'Duplicate');
+    const { copies } = copyOps(anyScene(scene), [a], (_id, node) => node.pose, 'Duplicate');
     expect(copies).toHaveLength(1);
     expect(copies[0]).toMatch(SERVER_ID);
   });

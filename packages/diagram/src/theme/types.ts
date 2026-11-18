@@ -39,7 +39,7 @@ export interface DiagramTheme {
   edge: EdgeStyle;
   /** A connector's label, where the connector names no role. */
   label: { fill: string; font?: DiagramFont };
-  /** A group's or a container's box, its `text` the title's color. */
+  /** A cluster's or a container's box, its `text` the title's color. */
   container: NodeStyle;
   /** A pool's header, and its lanes' bodies in turn. */
   lane: { header: NodeStyle; bodies: readonly NodeStyle[] };

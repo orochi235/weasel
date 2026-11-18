@@ -11,7 +11,7 @@ export type PaletteSlot =
  * the palette shows, which may be in an earlier group than this one; `placed` carries the stacks
  * already laid out across groups. A stack left with one shown member is a lone tool.
  */
-export function slotsOf(
+export function placeSlots(
   group: readonly Tool[],
   shown: ReadonlyMap<string, Tool>,
   stackOf: ReadonlyMap<string, readonly string[]>,

@@ -5,6 +5,7 @@ import { prefAliasTarget, type PrefAlias } from './alias';
 import { prefConditionPaths, type PrefCondition } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
 import { isPrefLeaf, isPrefSection, prefLeafAt } from './helpers';
+import { resolvePrefGroupConditions } from './groupConditions';
 import { deferEntryConditions, type PrefConditionJudge } from './judge';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
@@ -30,7 +31,7 @@ export const PREF_ENTRY = '*';
 export const prefSectionPath = (at: string, key: string): string => (at === '' ? `#${key}` : `${at}.#${key}`);
 
 /** The status a schema's root sits in. */
-export const PREF_STATUS: PrefStatus = Object.freeze({ shown: true, enabled: true });
+export const ROOT_PREF_STATUS: PrefStatus = Object.freeze({ shown: true, enabled: true });
 
 /** The status of `node`, which sits directly under something whose status is `above`. */
 export function prefStatusUnder(
@@ -113,7 +114,7 @@ function statusInside(leaf: PrefLeaf, path: string, rest: string, owner: PrefOwn
 }
 
 function statusAt(schema: PrefGroup | PrefSection, path: string, holds: PrefConditionJudge): PrefStatus {
-  let owner: PrefOwner = { node: schema, status: prefStatusUnder(PREF_STATUS, schema, holds), above: PREF_STATUS };
+  let owner: PrefOwner = { node: schema, status: prefStatusUnder(ROOT_PREF_STATUS, schema, holds), above: ROOT_PREF_STATUS };
   if (path === '') return owner.status;
   if (isPrefSection(schema)) return statusAmong(schema.members, '', path, owner, holds) ?? owner.status;
   let node: PrefGroup = schema;
@@ -131,7 +132,8 @@ function statusAt(schema: PrefGroup | PrefSection, path: string, holds: PrefCond
 }
 
 /** `own`, an alias's status by its own conditions, narrowed by that of the leaf it shows in `over`, as `holds` judges `over`. */
-export function prefAliasStatus(own: PrefStatus, alias: PrefAlias, over: PrefGroup | PrefSection, holds: PrefConditionJudge): PrefStatus {
+export function prefAliasStatus(own: PrefStatus, alias: PrefAlias, overGiven: PrefGroup | PrefSection, holds: PrefConditionJudge): PrefStatus {
+  const over = resolvePrefGroupConditions(overGiven);
   const target = prefAliasTarget(alias, (path) => prefLeafAt(over, path));
   if (target === undefined) return own;
   const theirs = statusAt(over, target.path, holds);
@@ -161,6 +163,7 @@ export interface PrefStatusAtOptions {
 export function prefStatusAt(
   schema: PrefGroup | PrefSection, path: string, holds: PrefConditionJudge, { aliasOver, aliasHolds }: PrefStatusAtOptions = {},
 ): PrefStatus {
+  schema = resolvePrefGroupConditions(schema);
   const own = statusAt(schema, path, holds);
   const leaf = prefLeafAt(schema, path);
   return leaf?.kind === 'alias' ? prefAliasStatus(own, leaf as PrefAlias, aliasOver ?? schema, aliasHolds ?? holds) : own;

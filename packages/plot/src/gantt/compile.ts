@@ -1,5 +1,5 @@
 /** A gantt compiled to its marks: a row per task under its section, each task a span on a time axis. */
-import { maxOf } from '@weasel-js/geom';
+import { maxOf, type Rect } from '@weasel-js/geom';
 import { axisMarks, axisRoom } from '../axes';
 import { CHART_PAD as PAD, chartTitle } from '../chartTitle';
 import { spanMark } from '../marks/boxes';
@@ -16,7 +16,7 @@ import type { GanttData, GanttTag } from './types';
 /** Where a gantt's parts landed: the plot area, its time scale, and every task's resolved span. */
 export interface GanttLayout {
   /** The area the rows are drawn in, right of the section names and above the axis. */
-  plot: { x: number; y: number; width: number; height: number };
+  plot: Rect;
   time: TimeScale;
   schedule: GanttSchedule;
   /** What a drag snaps to, in milliseconds: an hour when the `dateFormat` carries hours, else a day. */
@@ -90,7 +90,7 @@ export function compileGantt(
   const today = Date.now();
   const [d0, d1] = schedule.domain;
   if (data.todayMarker?.trim() !== 'off' && today >= d0 && today <= d1) {
-    const x = time.map(today);
+    const x = time.position(today);
     marks.push(ruleMark({ key: 'today', from: { x, y: top }, to: { x, y: bottom }, ...todayStroke(data.todayMarker, theme) }));
   }
   marks.push(...taskMarks(data, layout, rowHeight, theme, measure));
@@ -110,8 +110,8 @@ function taskMarks(data: GanttData, layout: GanttLayout, rowHeight: number, them
     const fill = ganttTaskFill(task.tags, theme);
     const datum = { section: s, task: t };
     const key = `task:${s}:${t}`;
-    let x0 = time.map(span.start);
-    let x1 = time.map(span.end);
+    let x0 = time.position(span.start);
+    let x1 = time.position(span.end);
     if (task.tags?.includes('milestone')) {
       const r = barHeight / 2;
       const points = [{ x: x0 - r, y: cy }, { x: x0, y: cy - r }, { x: x0 + r, y: cy }, { x: x0, y: cy + r }];

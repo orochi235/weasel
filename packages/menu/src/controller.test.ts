@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createMenuController, type MenuScheduler } from './controller';
+import { createMenuController, type Scheduler } from './controller';
 import type { MenuEntry } from './entries';
 
 function fakeScheduler() {
   let now = 0;
   let timers: { at: number; fn: () => void }[] = [];
-  const s: MenuScheduler = {
+  const s: Scheduler = {
     now: () => now,
     set(fn, ms) {
       const t = { at: now + ms, fn };
@@ -93,10 +93,10 @@ describe('createMenuController', () => {
 
   it('keeps a submenu open while the pointer heads diagonally into it', () => {
     const { c, advance } = setup();
-    c.setPanel(0, { x: 0, y: 0, w: 100, h: 100 });
+    c.setPanel(0, { x: 0, y: 0, width: 100, height: 100 });
     c.hover(0, 2, { x: 50, y: 50 });
     advance(200);
-    c.setPanel(1, { x: 100, y: 40, w: 100, h: 60 });
+    c.setPanel(1, { x: 100, y: 40, width: 100, height: 60 });
     c.hover(0, 3, { x: 70, y: 60 });
     expect(c.stack()).toEqual([2, null]);
     c.hover(1, 0, { x: 110, y: 60 });
@@ -105,10 +105,10 @@ describe('createMenuController', () => {
 
   it('switches rows once the diagonal grace runs out', () => {
     const { c, advance } = setup();
-    c.setPanel(0, { x: 0, y: 0, w: 100, h: 100 });
+    c.setPanel(0, { x: 0, y: 0, width: 100, height: 100 });
     c.hover(0, 2, { x: 50, y: 50 });
     advance(200);
-    c.setPanel(1, { x: 100, y: 40, w: 100, h: 60 });
+    c.setPanel(1, { x: 100, y: 40, width: 100, height: 60 });
     c.hover(0, 3, { x: 70, y: 60 });
     advance(300);
     expect(c.stack()).toEqual([3]);
@@ -116,10 +116,10 @@ describe('createMenuController', () => {
 
   it('switches at once when the pointer moves away from the submenu', () => {
     const { c, advance } = setup();
-    c.setPanel(0, { x: 0, y: 0, w: 100, h: 100 });
+    c.setPanel(0, { x: 0, y: 0, width: 100, height: 100 });
     c.hover(0, 2, { x: 50, y: 50 });
     advance(200);
-    c.setPanel(1, { x: 100, y: 40, w: 100, h: 60 });
+    c.setPanel(1, { x: 100, y: 40, width: 100, height: 60 });
     c.hover(0, 3, { x: 30, y: 80 });
     expect(c.stack()).toEqual([3]);
   });
@@ -185,10 +185,10 @@ describe('createMenuController', () => {
 
   it('measures the diagonal grace from its first in-triangle move', () => {
     const { c, advance } = setup();
-    c.setPanel(0, { x: 0, y: 0, w: 100, h: 100 });
+    c.setPanel(0, { x: 0, y: 0, width: 100, height: 100 });
     c.hover(0, 2, { x: 50, y: 50 });
     advance(200);
-    c.setPanel(1, { x: 100, y: 40, w: 100, h: 60 });
+    c.setPanel(1, { x: 100, y: 40, width: 100, height: 60 });
     c.hover(0, 3, { x: 70, y: 60 });
     advance(100);
     c.hover(0, 3, { x: 75, y: 65 });
@@ -200,10 +200,10 @@ describe('createMenuController', () => {
 
   it('switches to the row under the pointer when the diagonal grace ends', () => {
     const { c, advance } = setup();
-    c.setPanel(0, { x: 0, y: 0, w: 100, h: 100 });
+    c.setPanel(0, { x: 0, y: 0, width: 100, height: 100 });
     c.hover(0, 2, { x: 50, y: 50 });
     advance(200);
-    c.setPanel(1, { x: 100, y: 40, w: 100, h: 60 });
+    c.setPanel(1, { x: 100, y: 40, width: 100, height: 60 });
     c.hover(0, 3, { x: 70, y: 60 });
     advance(100);
     c.hover(0, 5, { x: 80, y: 70 });
@@ -257,10 +257,10 @@ describe('createMenuController', () => {
 
   it('forgets the panel of a level that closed', () => {
     const { c, advance } = setup();
-    c.setPanel(0, { x: 0, y: 0, w: 100, h: 100 });
+    c.setPanel(0, { x: 0, y: 0, width: 100, height: 100 });
     c.hover(0, 2, { x: 50, y: 50 });
     advance(200);
-    c.setPanel(1, { x: 100, y: 40, w: 100, h: 60 });
+    c.setPanel(1, { x: 100, y: 40, width: 100, height: 60 });
     c.hover(0, 0, { x: 30, y: 80 });
     expect(c.stack()).toEqual([0]);
     c.hover(0, 2, { x: 50, y: 50 });

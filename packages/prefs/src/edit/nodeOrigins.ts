@@ -1,6 +1,6 @@
 import { flatten, pairNodes, type OriginOf } from './schemaExport';
 import type { SchemaNode } from './schemaEdit';
-import { assetOf, type Workspace } from './workspace';
+import { assetOf, type AssetSet } from './assetSet';
 
 /**
  * Where each node an editor has shown sat in its asset's baseline, followed one edit at a time. One edit changes a
@@ -10,11 +10,11 @@ export interface NodeOrigins {
   /** The asset `id`'s origins, for `diffSchemas`. */
   of(id: string): OriginOf;
   /** Carry every origin in `before` to the node it became in `after`. */
-  follow(before: Workspace, after: Workspace): void;
+  follow(before: AssetSet, after: AssetSet): void;
 }
 
 /** Origins seeded from `base`, each of its nodes at its own path. */
-export function trackOrigins(base: Workspace): NodeOrigins {
+export function trackOrigins(base: AssetSet): NodeOrigins {
   const byAsset = new Map<string, WeakMap<SchemaNode, string>>();
   const mapOf = (id: string) => {
     let map = byAsset.get(id);

@@ -57,7 +57,7 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false, 
   const key = leaf.action;
   const item = key === undefined ? undefined : all.flatMap(actionItems).find((i) => i.key === key);
 
-  const shown = useActionStates(item ? [item] : NO_ITEMS)[0] ?? { enabled: true, active: undefined };
+  const shown = useActionStates(item ? [item] : NO_ITEMS)[0] ?? { disabled: false, active: undefined };
   const settings = useActionSettings(item);
 
   const [pending, setPending] = useState(false);
@@ -84,8 +84,8 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false, 
       description,
       icon,
       shortcut: leaf.shortcut ?? (item ? actionShortcutText(item) : undefined),
-      disabled: disabled || (item !== undefined && !shown.enabled),
-      disabledReason: why ?? (item && !shown.enabled && shown.reason !== undefined ? reasonLabel(shown.reason) : undefined),
+      disabled: disabled || (item !== undefined && shown.disabled),
+      disabledReason: why ?? (item && shown.disabled && shown.disabledReason !== undefined ? reasonLabel(shown.disabledReason) : undefined),
       active: own ?? shown.active,
       grade: leaf.grade ?? item?.grade,
       missing: item ? undefined : key,

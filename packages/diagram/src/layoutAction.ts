@@ -48,7 +48,7 @@ export const layoutOf = (algorithm: string | LayoutFn): LayoutFn =>
 
 /** Options for {@link applyLayout}. */
 export interface ApplyLayoutOptions<TPose> {
-  geometry?: PoseDescriptor<TPose>;
+  poseDescriptor?: PoseDescriptor<TPose>;
   /** The undo entry's name. Default `'Layout'`. */
   label?: string;
   /** Edge routes to write in the same batch, from `routesOf`. */
@@ -86,7 +86,7 @@ function layoutWrites<TPose>(
   result: LayoutResult,
   opts: ApplyLayoutOptions<TPose>,
 ): LayoutWrites<TPose> {
-  const poses = layoutPoses(scene, result, opts.geometry);
+  const poses = layoutPoses(scene, result, opts.poseDescriptor);
   const data = opts.routes === undefined ? new Map<string, unknown>() : routeWrites(scene as never, opts.routes);
   // A node on a locked layer stays put, as it does under a live run.
   return { poses: [...poses].filter(([id]) => !scene.isLocked(id as never)), data };
@@ -126,7 +126,7 @@ function writeLayout<TPose>(
 export function layoutPoses<TPose>(
   scene: Scene<unknown, string, TPose>,
   result: LayoutResult,
-  geometry: PoseDescriptor<TPose> = AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>,
+  poseDescriptor: PoseDescriptor<TPose> = AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>,
 ): Map<string, TPose> {
   const sc = scene as unknown as AnyScene;
   const { compose, decompose } = sc.composition;
@@ -143,17 +143,17 @@ export function layoutPoses<TPose>(
   for (const id of ids) {
     const at = result.get(id)!;
     const world = composeWorldPose(stored, id, compose) as TPose;
-    const bounds = geometry.getBounds(world);
+    const bounds = poseDescriptor.getBounds(world);
     // A place a translate already wrote can land an ulp off it; that is no move.
     const dx = settleWithinRounding(bounds.x, at.x, Math.max(Math.abs(at.x), Math.abs(bounds.x))) - bounds.x;
     const dy = settleWithinRounding(bounds.y, at.y, Math.max(Math.abs(at.y), Math.abs(bounds.y))) - bounds.y;
     if (dx === 0 && dy === 0) continue;
     const parent = scene.get(id as never)!.parent;
-    const local = rebaseLocalPose(decided, translatePoseViaDescriptor(world, dx, dy, geometry), parent, compose, decompose);
+    const local = rebaseLocalPose(decided, translatePoseViaDescriptor(world, dx, dy, poseDescriptor), parent, compose, decompose);
     // A node in a singular frame, which no stored pose places, stays where it is.
     if (local === null) continue;
     out.set(id, local as TPose);
-    const carried = carriedDescendants(sceneCarrySource(sc), id as NodeId, (w) => translatePoseViaDescriptor(w as TPose, dx, dy, geometry));
+    const carried = carriedDescendants(sceneCarrySource(sc), id as NodeId, (w) => translatePoseViaDescriptor(w as TPose, dx, dy, poseDescriptor));
     for (const [d, pose] of carried) out.set(d, pose as TPose);
   }
   return out;
@@ -177,14 +177,14 @@ export interface LayoutActionOptions<TPose> {
   algorithm?: string | LayoutFn;
   layout?: LayoutOptions;
   read?: DiagramNodeReader;
-  geometry?: PoseDescriptor<TPose>;
+  poseDescriptor?: PoseDescriptor<TPose>;
 }
 
 /** Options for {@link layoutDiagram}. */
 export interface LayoutDiagramOptions<TPose> {
   layout?: LayoutOptions;
   read?: DiagramNodeReader;
-  geometry?: PoseDescriptor<TPose>;
+  poseDescriptor?: PoseDescriptor<TPose>;
   /** The undo entry's name. Default `'Layout'`. */
   label?: string;
 }
@@ -215,11 +215,11 @@ function planDiagram<TPose>(
 ): DiagramPlan<TPose> {
   const graph = buildGraph(source, {
     ...(opts.read ? { read: opts.read } : {}),
-    ...(opts.geometry ? { geometry: opts.geometry } : {}),
+    ...(opts.poseDescriptor ? { poseDescriptor: opts.poseDescriptor } : {}),
   });
   const plan = planOf(layoutOf(algorithm), graph, opts.layout);
   const writes = layoutWrites(scene, plan.moves, {
-    ...(opts.geometry ? { geometry: opts.geometry } : {}),
+    ...(opts.poseDescriptor ? { poseDescriptor: opts.poseDescriptor } : {}),
     routes: routesOf(graph, plan),
   });
   return { result: plan.moves, writes };
@@ -236,9 +236,9 @@ const sameEntries = <TPose>(a: readonly SourceEntry<TPose>[], b: readonly Source
  * participant it would move locked.
  */
 export function createLayoutAction<TPose>(opts: LayoutActionOptions<TPose>): Action {
-  const { read, geometry, layout, label } = opts;
+  const { read, poseDescriptor, layout, label } = opts;
   const options = {
-    ...(read ? { read } : {}), ...(geometry ? { geometry } : {}), ...(layout ? { layout } : {}), ...(label ? { label } : {}),
+    ...(read ? { read } : {}), ...(poseDescriptor ? { poseDescriptor } : {}), ...(layout ? { layout } : {}), ...(label ? { label } : {}),
   };
   const algorithm = opts.algorithm ?? 'layered';
   // `enabled` is asked on every render of a bar holding it, so the plan is kept

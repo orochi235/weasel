@@ -70,7 +70,7 @@ class BlockWriter {
   group(c: Cluster, indent: string): void {
     const named = !ANONYMOUS.test(c.id) || this.span(c.id) !== '';
     this.lines.push(`${indent}block${named ? `:${this.id(c.id)}${this.span(c.id)}` : ''}`);
-    const columns = this.grid.groupColumns && getOwn(this.grid.groupColumns, c.id);
+    const columns = this.grid.clusterColumns && getOwn(this.grid.clusterColumns, c.id);
     if (columns !== undefined) this.lines.push(`${indent}  columns ${columns}`);
     this.level(c.nodes.map((id) => this.out.byId.get(id)!), c.clusters, `${indent}  `);
     this.lines.push(`${indent}end`);

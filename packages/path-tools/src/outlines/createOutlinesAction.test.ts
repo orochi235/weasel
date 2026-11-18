@@ -5,7 +5,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { rectPath } from '@weasel-js/geom';
 import { rootsTreeForTests as rootsTree, stubDepsForTests as stubDeps } from '@weasel-js/core/test-seams';
-import { buildDepsFromRequires, ActionDisabledReason, BETWEEN_GESTURES, type ImmediateInvoker } from '@weasel-js/routing';
+import { createActionDeps, ActionDisabledReason, BETWEEN_GESTURES, type ImmediateInvoker } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
 import { asNodeId, NodeOutlineError, type NodeOutline } from '@weasel-js/core';
 import type { CreateOutlinesAdapter } from './createOutlines';
@@ -47,7 +47,7 @@ describe('createOutlinesAction', () => {
     const { adapter } = makeAdapter({});
     const bag: Record<string, unknown> = { operands: selectionOf([]), createOutlinesAdapter: adapter };
     const registry = { get: (name: string) => bag[name] } as unknown as DepRegistry;
-    const deps = buildDepsFromRequires(createOutlinesAction, registry);
+    const deps = createActionDeps(createOutlinesAction, registry);
     expect(() => createOutlinesAction.enabled?.(deps)).not.toThrow();
     expect(() => (createOutlinesAction.invoker as ImmediateInvoker).run(deps, {})).not.toThrow();
   });

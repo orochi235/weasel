@@ -1,10 +1,11 @@
 import {
   type Vec2,
-  createTransformOp,
+  createSetPoseOp,
   type LayoutSnap,
   type LayoutStrategy,
 } from '@weasel-js/core';
 import { nearestWithin } from '../snaps';
+import type { Rect } from '@weasel-js/geom';
 
 /** Which points within a container a child can snap to. */
 export type SnapPattern = 'corners' | 'edges' | 'center' | 'grid';
@@ -33,7 +34,7 @@ function gridRange(count: number, at: number): [number, number] {
 }
 
 function buildPoints(
-  bounds: { x: number; y: number; width: number; height: number },
+  bounds: Rect,
   pattern: SnapPattern,
   gridSpacing: number,
   near: Vec2,
@@ -110,7 +111,7 @@ export function snapPoint<TPose extends Vec2>(
     commitDrop(_container, _children, dragged, target) {
       const to = target === null ? dragged.pose : target.pose;
       return [
-        createTransformOp<TPose>({
+        createSetPoseOp<TPose>({
           id: dragged.id,
           from: dragged.originPose,
           to,

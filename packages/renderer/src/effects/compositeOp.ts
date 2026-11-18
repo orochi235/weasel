@@ -6,6 +6,7 @@
  * alpha or the other, which is a blend function and needs no second pass.
  */
 import type { DrawCommand } from '../DrawCommand';
+import { createPart } from '@weasel-js/registry';
 
 /** A Porter-Duff operator, named as canvas 2D's `globalCompositeOperation` names it. */
 export type CompositeOp =
@@ -61,14 +62,8 @@ export function leavesUncovered(composite: CompositeOp | BlendFactors): boolean 
   return destination === 'one' || destination === 'one-minus-source-alpha';
 }
 
-/** Keyed by array: the lists a renderer draws are not mutated once drawn. */
-const backdropReaders = new WeakMap<readonly DrawCommand[], boolean>();
-
-/** Whether any group in `commands`, at any depth, has its own composite, and so reads the pixels drawn before it. */
-export function readsBackdrop(commands: readonly DrawCommand[]): boolean {
-  const known = backdropReaders.get(commands);
-  if (known !== undefined) return known;
-  const reads = commands.some((cmd) => cmd.kind === 'group' && (isOwnComposite(cmd.composite) || readsBackdrop(cmd.children)));
-  backdropReaders.set(commands, reads);
-  return reads;
-}
+/** Whether any group in `commands`, at any depth, has its own composite, and so reads the pixels drawn before it.
+ *  Kept per array: the lists a renderer draws are not mutated once drawn. */
+export const readsBackdrop: (commands: readonly DrawCommand[]) => boolean = createPart((commands) => commands.some(
+  (cmd) => cmd.kind === 'group' && (isOwnComposite(cmd.composite) || readsBackdrop(cmd.children)),
+));

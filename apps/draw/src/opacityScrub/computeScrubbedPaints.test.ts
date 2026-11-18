@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import type { Paint } from '@weasel-js/core';
 import { computeScrubbedPaints } from './computeScrubbedPaints';
 
@@ -18,7 +18,7 @@ describe('computeScrubbedPaints', () => {
     // fill α=0.8, stroke α=0.4 → ratio 2:1
     // target brightest = 0.4 → factor 0.5 → fill α=0.4, stroke α=0.2
     const out = computeScrubbedPaints(
-      { fill: { paint: solid('#ff0000cc') }, stroke: strokeOf('#00ff0066') }, // 0xcc≈0.8, 0x66≈0.4
+      { fill: { paint: solid('#ff0000cc') }, stroke: solidStroke('#00ff0066') }, // 0xcc≈0.8, 0x66≈0.4
       0.4,
     );
     expect(alphas(out)).toEqual({ fill: 0.4, stroke: 0.2 });
@@ -26,7 +26,7 @@ describe('computeScrubbedPaints', () => {
 
   it('clamps target to [0, 1]', () => {
     const out = computeScrubbedPaints(
-      { fill: { paint: solid('#ff0000ff') }, stroke: strokeOf('#00ff00ff') },
+      { fill: { paint: solid('#ff0000ff') }, stroke: solidStroke('#00ff00ff') },
       1.5,
     );
     expect(alphas(out)).toEqual({ fill: 1, stroke: 1 });
@@ -34,21 +34,21 @@ describe('computeScrubbedPaints', () => {
 
   it('handles target = 0', () => {
     const out = computeScrubbedPaints(
-      { fill: { paint: solid('#ff0000ff') }, stroke: strokeOf('#00ff0080') },
+      { fill: { paint: solid('#ff0000ff') }, stroke: solidStroke('#00ff0080') },
       0,
     );
     expect(alphas(out)).toEqual({ fill: 0, stroke: 0 });
   });
 
   it('passes through an absent paint unchanged', () => {
-    const out = computeScrubbedPaints({ fill: null, stroke: strokeOf('#000000ff') }, 0.5);
+    const out = computeScrubbedPaints({ fill: null, stroke: solidStroke('#000000ff') }, 0.5);
     expect(out.fill).toBeNull();
     expect(alphas(out).stroke).toBe(0.5);
   });
 
   it('gives each paint the target when both start at 0, so a transparent node can be raised', () => {
     const out = computeScrubbedPaints(
-      { fill: { paint: solid('#ff000000') }, stroke: strokeOf('#00ff0000') },
+      { fill: { paint: solid('#ff000000') }, stroke: solidStroke('#00ff0000') },
       0.5,
     );
     expect(alphas(out)).toEqual({ fill: 0.5, stroke: 0.5 });

@@ -31,7 +31,7 @@ describe('<Canvas>', () => {
   // `<SceneCanvas>`), not by the tool-routing dispatcher this file drives.
   // Select's own behavior — applyClick on a body press, topmost collapse,
   // modifier hand-through — is covered directly in
-  // `tools/builtin/select/useSelectTool.test.ts` and its z-order sibling.
+  // `@weasel-js/editing`'s `tools/select/useSelectTool.*.test.tsx`.
 
   it('passes className and style through', () => {
     const { container } = render(

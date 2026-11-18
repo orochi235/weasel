@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { InvocationCtx } from '@weasel-js/routing';
 import { stubDeps } from '../testUtils';
 import { createViewportZoomAction } from './viewportZoom';
-import { createPinchZoomAction } from './pinchZoom';
+import { createTouchZoomAction } from './touchZoom';
 import { axisZoomFactor } from 'core/viewport/zoomAt';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
@@ -73,10 +73,10 @@ describe('createViewportZoomAction axis', () => {
   });
 });
 
-describe('createPinchZoomAction axis', () => {
+describe('createTouchZoomAction axis', () => {
   function pinch(axis: 'x' | 'y'): View {
     const view = makeView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
-    const action = createPinchZoomAction({ axis });
+    const action = createTouchZoomAction({ axis });
     if (action.invoker?.timing !== 'ongoing') throw new Error('Expected ongoing invoker');
     const base = {
       world: { x: 0, y: 0 },

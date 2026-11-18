@@ -4,7 +4,7 @@ import { plotRootOf, plotSpecs, type PlotSceneData, type PlotSpec } from '../plo
 import type { XyChartData } from '../xychart/types';
 import { createPlotDragAction } from './dragAction';
 import { plotHandles } from './handleLayer';
-import { plotEditing } from './plotEditing';
+import { createPlotEditingContribution } from './createPlotEditingContribution';
 
 const measure = (text: string) => ({ width: text.length * 7, height: 14 });
 const DATA: XyChartData = {
@@ -28,7 +28,7 @@ function setup() {
   return { scene, handle, unit, ctx, start };
 }
 
-describe('plot.dragValue', () => {
+describe('plot.editValue', () => {
   it('previews the marks the moved value redraws, in their own frame, and writes nothing', () => {
     const { scene, handle, unit, ctx, start } = setup();
     const drag = start();
@@ -83,9 +83,9 @@ describe('plot.dragValue', () => {
 
   it('is bound to a drag on the handle layer\'s kind', () => {
     const { scene } = setup();
-    const contribution = plotEditing({ scene: scene as never });
+    const contribution = createPlotEditingContribution({ scene: scene as never });
     expect(contribution.bindings?.find((b) => b.spec.kind === 'drag')).toMatchObject({
-      spec: { target: 'affordance:layer:plot-handles' }, actionId: 'plot.dragValue',
+      spec: { target: 'affordance:layer:plot-handles' }, actionId: 'plot.editValue',
     });
   });
 });

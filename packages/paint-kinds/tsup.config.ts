@@ -11,7 +11,7 @@ const LAZY_KINDS = ['meshKindLazy'];
 // Of the renderer's dist only `mesh.js` may be bundled: a shared chunk beside it would be one the renderer's index
 // also loads, registries included.
 const REGISTRY_STATE =
-  /packages\/registry\/|paint-kinds\/src\/paintKinds\.|packages\/renderer\/(src\/(paintKinds|shaders\/registerProgram)\.|dist\/(?!mesh\.))/;
+  /packages\/registry\/src\/mixed\.|paint-kinds\/src\/paintKinds\.|packages\/renderer\/(src\/(paintKinds|shaders\/registerProgram)\.|dist\/(?!mesh\.))/;
 
 async function selfContainedLazyKinds(): Promise<void> {
   for (const name of LAZY_KINDS) {

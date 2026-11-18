@@ -6,7 +6,7 @@ import type { Widget } from './widget';
 describe('createHud counterexamples', () => {
   it('holds a widget added twice once, where it was', () => {
     const w = (id: string): Widget => ({
-      id, bounds: { x: 0, y: 0, w: 1, h: 1 }, hidden: false, draw: () => [], hitTest: () => false, onPointer: () => {}, dispose: () => {},
+      id, bounds: { x: 0, y: 0, width: 1, height: 1 }, hidden: false, draw: () => [], hitTest: () => false, onPointer: () => {}, dispose: () => {},
     });
     const hud = createHud();
     const a = w('a'), b = w('b');
@@ -21,7 +21,7 @@ describe('createHud counterexamples', () => {
   it('reports no focus a listener ahead has already moved past', () => {
     const hud = createHud();
     const p0: Widget = {
-      id: 'p0', bounds: { x: 0, y: 0, w: 1, h: 1 }, hidden: false, focusable: true,
+      id: 'p0', bounds: { x: 0, y: 0, width: 1, height: 1 }, hidden: false, focusable: true,
       draw: () => [], hitTest: () => false, onPointer: () => {}, dispose: () => {},
     };
     hud.add(p0);

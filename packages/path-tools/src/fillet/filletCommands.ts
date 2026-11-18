@@ -13,9 +13,9 @@ import {
   type CornerShape,
   type PolygonPath,
 } from '@weasel-js/geom';
-import { pref } from '@weasel-js/prefs';
+import { pref } from '@weasel-js/prefs-schema';
 import { ANCHORS_GROUP, pathOperationTags, type EditAnchorsDep } from '@weasel-js/core';
-import { depOf, requiresAnchorSelection } from '../pathEdit/anchorEditing';
+import { openPathEditOf, requiresAnchorSelection } from '../pathEdit/anchorEditing';
 import { DEFAULT_FILLET_SHAPE, editedPath } from './editFillet';
 import { icon } from '../icons.gen';
 import type { SetFilletsParams } from '../actionParamSchema';
@@ -35,7 +35,7 @@ export type CycleFilletParams = {
 export const CYCLE_FILLET_PARAMS = pref.group(CYCLE_LABEL, {
   share: pref.number('Size for sharp corners', DEFAULT_FILLET_TRIM_SHARE, {
     description: 'How much of the room a sharp corner has its new shape cuts. A corner that already had a radius keeps it.',
-    min: 0.05, max: 1, step: 0.05, control: 'slider', unit: { scale: 0.01, suffix: '%', precision: 0 },
+    min: 0.05, max: 1, step: 0.05, control: 'slider', unit: { scale: 0.01, suffix: '%', places: 0 },
   }),
 });
 
@@ -78,7 +78,7 @@ function changeCorners(path: PolygonPath, frames: readonly CornerFrame[], change
 }
 
 function commitChange(deps: ActionDeps | undefined, label: string, change: (frames: CornerFrame[], path: PolygonPath) => CornerChange): void {
-  const dep = depOf(deps);
+  const dep = openPathEditOf(deps);
   const path = dep && editedPath(dep);
   if (!dep || !path) return;
   const frames = selectedCorners(dep, path);
@@ -89,7 +89,7 @@ function commitChange(deps: ActionDeps | undefined, label: string, change: (fram
 function cornersSelected(deps: ActionDeps | undefined): true | ActionDisabledReason {
   const selection = requiresAnchorSelection(deps);
   if (selection !== true) return selection;
-  const dep = depOf(deps);
+  const dep = openPathEditOf(deps);
   const path = dep && editedPath(dep);
   return dep && path && selectedCorners(dep, path).length > 0 ? true : ActionDisabledReason.NotApplicable;
 }
@@ -131,7 +131,7 @@ function setFilletsEdit(
   const shape = isCornerShape(params?.shape) ? params.shape : undefined;
   const radius = typeof params?.radius === 'number' && Number.isFinite(params.radius) ? params.radius : undefined;
   if (shape === undefined && radius === undefined) return null;
-  const dep = depOf(deps);
+  const dep = openPathEditOf(deps);
   const path = dep && editedPath(dep);
   if (!dep || !path) return null;
   const frames = selectedCorners(dep, path);

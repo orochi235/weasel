@@ -1,5 +1,5 @@
-import { prefLeaves, prefValueAtPath, type PrefGroup } from '@weasel-js/prefs';
-import { usePref, usePrefsStore, usePrefsValues } from '@weasel-js/prefs/react';
+import { prefLeaves, prefValueAt, type PrefGroup } from '@weasel-js/prefs';
+import { usePref, usePrefsStore, usePrefsState } from '@weasel-js/prefs/react';
 import { localStorageAdapter } from '@weasel-js/storage';
 import { Button } from '@weasel-js/ui/components/Button';
 import { PrefsForm } from '@weasel-js/ui/components/Prefs';
@@ -49,7 +49,7 @@ const show = (value: unknown) => (value === undefined ? '—' : JSON.stringify(v
 
 export function PrefsDemo() {
   const store = usePrefsStore(SCHEMA, { storage: localStorageAdapter, prefix: 'weasel-demo-prefs.' });
-  const { form, values, unset, stored, reset } = usePrefsValues(store);
+  const { form, values, unset, stored, reset } = usePrefsState(store);
   const [, setSize] = usePref(store, 'grid.size');
 
   return (
@@ -68,9 +68,9 @@ export function PrefsDemo() {
             {PATHS.map((path) => (
               <tr key={path}>
                 <td className={s.path}>{path}</td>
-                <td>{show(prefValueAtPath(values, path))}</td>
+                <td>{show(prefValueAt(values, path))}</td>
                 <td className={unset.has(path) ? s.unset : undefined}>
-                  {unset.has(path) ? 'unset' : show(prefValueAtPath(stored, path))}
+                  {unset.has(path) ? 'unset' : show(prefValueAt(stored, path))}
                 </td>
               </tr>
             ))}

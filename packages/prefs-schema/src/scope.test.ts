@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   PREF_ELSE,
   isPrefScope,
-  scopeSelectors,
+  prefStoredSelectors,
   mapScopeValues,
-  memberAt,
+  prefScopeValue,
   repairScope,
   selectionWeights,
   upgradeScope,
@@ -58,13 +58,13 @@ describe('weighScope', () => {
   });
 });
 
-describe('memberAt and writeDeclared', () => {
+describe('prefScopeValue and writeDeclared', () => {
   const order = [MODE, DENSITY];
   const shared = (by: string, value: unknown, own: Record<string, unknown> = {}) => ({ $by: by, $in: own, [PREF_ELSE]: value });
   const dark = { [MODE]: 'dark', [DENSITY]: 'compact' };
 
   it('reads the value a selection names, at any depth', () => {
-    expect(memberAt(byMode(byDensity(4, 8), 6), { [MODE]: 'dark', [DENSITY]: 'roomy' }, 0)).toBe(8);
+    expect(prefScopeValue(byMode(byDensity(4, 8), 6), { [MODE]: 'dark', [DENSITY]: 'roomy' }, 0)).toBe(8);
   });
 
   it('writes an option its own value, plain, leaving the others', () => {
@@ -89,10 +89,10 @@ describe('memberAt and writeDeclared', () => {
   });
 });
 
-describe('scopeSelectors and mapScopeValues', () => {
+describe('prefStoredSelectors and mapScopeValues', () => {
   it('names every selector a value is split by', () => {
-    expect([...scopeSelectors(byMode(byDensity(4, 8), 6))]).toEqual([MODE, DENSITY]);
-    expect([...scopeSelectors(4)]).toEqual([]);
+    expect([...prefStoredSelectors(byMode(byDensity(4, 8), 6))]).toEqual([MODE, DENSITY]);
+    expect([...prefStoredSelectors(4)]).toEqual([]);
   });
 
   it('maps each member and keeps the shape, returning the same value when nothing changed', () => {
@@ -139,7 +139,7 @@ describe('a selector or option named like an Object.prototype member', () => {
   it('reads as one the weights and the selection leave out', () => {
     const scope = { $by: 'constructor', $in: { a: 1 }, [PREF_ELSE]: 5 };
     expect(weighScope(scope, {}, 0)).toEqual([{ value: 5, weight: 1 }]);
-    expect(memberAt(scope, {}, 0)).toBe(5);
+    expect(prefScopeValue(scope, {}, 0)).toBe(5);
   });
 
   it('writes the shared value where the selection names no option', () => {

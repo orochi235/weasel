@@ -53,16 +53,16 @@ describe('diagramScene', () => {
     warn.mockRestore();
   });
 
-  it('passes over group and container members naming unknown ids, warning once per id', () => {
+  it('passes over cluster and container members naming unknown ids, warning once per id', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const specs = diagramScene({
       nodes: DATA.nodes, edges: [],
-      groups: [{ id: 'g', members: ['a', 'ghost-g'] }],
+      clusters: [{ id: 'g', members: ['a', 'ghost-g'] }],
       containers: [{ id: 'box', role: 'container', members: ['b', 'ghost-c'] }],
     });
     expect(specs.some((s) => s.id === 'ghost-g' || s.id === 'ghost-c')).toBe(false);
     expect(warn.mock.calls.map((c) => c[0])).toEqual([
-      expect.stringContaining('group "g" names "ghost-g"'),
+      expect.stringContaining('cluster "g" names "ghost-g"'),
       expect.stringContaining('container "box" names "ghost-c"'),
     ]);
     warn.mockRestore();
@@ -330,7 +330,7 @@ describe('diagramScene under a theme', () => {
   const data: DiagramData = {
     nodes: [{ id: 'a', lines: ['a'], style: 'warning' }, { id: 'b', lines: ['b'] }],
     edges: [{ from: 'a', to: 'b', label: 'go' }],
-    groups: [{ id: 'g', members: ['a'], label: 'G' }],
+    clusters: [{ id: 'g', members: ['a'], label: 'G' }],
   };
   type Painted = { fill?: { paint: { color: string } }; stroke?: { paint: { color: string } }; style?: { fontFamily: string }; diagram?: DiagramNode };
   const byId = (specs: ReturnType<typeof diagramScene>) => new Map(specs.map((s) => [s.id as string, s.data as Painted]));
@@ -344,7 +344,7 @@ describe('diagramScene under a theme', () => {
     expect(specs.get('b')!.diagram!.style).toBeUndefined();
   });
 
-  it("draws edges, labels, groups, and text in the theme's colors and face", () => {
+  it("draws edges, labels, clusters, and text in the theme's colors and face", () => {
     const specs = diagramScene(data, { theme });
     const map = byId(specs);
     const edge = edgeIdOf(data.edges[0]!);

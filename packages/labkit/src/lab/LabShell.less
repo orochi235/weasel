@@ -184,21 +184,6 @@
   font-size: var(--wzl-font-size-sm);
 }
 
-// A flex container reports its *first* item's baseline, and the leading icon
-// is an <svg> with none — so a centered button hands the header a baseline
-// synthesized from the icon's bottom edge, and the label lands 2px off the
-// title. Baseline here makes the label the button's baseline; the icon keeps
-// its own centering through `align-self`.
-.lk-lab-header__add {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--wzl-space-xs);
-}
-
-.lk-lab-header__add > svg {
-  align-self: center;
-}
-
 // The header controls the menus also hold: add trial (Lab), zoom and the theme (View). A bar too
 // narrow for them leaves them to the menus; they stay mounted, so their keys still answer.
 .lk-lab-header__in-menus {

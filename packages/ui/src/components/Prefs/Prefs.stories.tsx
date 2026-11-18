@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { expect } from '@weasel-js/forge/play';
 import { openPrefsSync, type PrefGroup } from '@weasel-js/prefs';
-import { usePrefsValues } from '@weasel-js/prefs/react';
+import { usePrefsState } from '@weasel-js/prefs/react';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import { PrefsForm, type LeafContext, PrefsDialog } from '@weasel-js/ui/components/Prefs';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -166,7 +166,7 @@ const TOOL_REGISTRY = ['pen', 'rect', 'ellipse', 'hand'];
 /** A form's values held in a prefs store in memory, as an app holds its own. */
 function useStoryValues(schema: PrefGroup) {
   const [store] = useState(() => openPrefsSync(schema, { storage: createMemoryAdapter(), prefix: 'story.' }));
-  const { values, set } = usePrefsValues(store);
+  const { values, set } = usePrefsState(store);
   return { values, onChange: set };
 }
 

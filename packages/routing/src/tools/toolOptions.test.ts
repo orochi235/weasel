@@ -2,10 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 import type { PrefNumber } from '@weasel-js/prefs-schema';
 import type { ImmediateInvoker } from '../interactions/actions/invoker';
 import { defineTool } from './defineTool';
-import { createToolOptionValues, steppedOption, toolOptionParams, type ToolOptions } from './toolOptions';
+import { createToolOptionValues, steppedOption, toolOptionParams, type ToolOptionsSpec } from './toolOptions';
 import { toolOptionSteps, WHEEL_SIZE_BURST_MS, WHEEL_SIZE_STEP_PX } from './toolOptionSteps';
 
-const OPTIONS: ToolOptions = {
+const OPTIONS: ToolOptionsSpec = {
   actionId: 'brush',
   prefs: {
     name: 'Brush',
@@ -88,7 +88,7 @@ describe('toolOptionParams', () => {
   });
 
   it('reads the infinity an endless end stands for as held', () => {
-    const endless: ToolOptions = {
+    const endless: ToolOptionsSpec = {
       ...OPTIONS,
       prefs: {
         ...OPTIONS.prefs,
@@ -101,7 +101,7 @@ describe('toolOptionParams', () => {
   });
 
   it('reads the default of an option named like an Object.prototype member', () => {
-    const named: ToolOptions = {
+    const named: ToolOptionsSpec = {
       ...OPTIONS,
       prefs: { ...OPTIONS.prefs, children: { toString: { kind: 'number', name: 'T', description: '', default: 3 } } },
     };

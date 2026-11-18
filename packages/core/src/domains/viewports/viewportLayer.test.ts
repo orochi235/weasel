@@ -23,7 +23,7 @@ function pip() {
     label: 'PiP',
     source: [EMPTY_SOURCE],
     view: { x: 250, y: 200, scale: { x: 1.6, y: 1.6 } },
-    bounds: (_outer, dims) => ({ x: 8, y: dims.height - 168, w: 240, h: 160 }),
+    bounds: (_outer, dims) => ({ x: 8, y: dims.height - 168, width: 240, height: 160 }),
   });
 }
 
@@ -91,12 +91,12 @@ describe('routing through a viewport', () => {
     const a = createViewportLayer<unknown>({
       id: 'a', label: 'a', source: [EMPTY_SOURCE],
       view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
-      bounds: () => ({ x: 0, y: 0, w: 100, h: 100 }),
+      bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
     });
     const b = createViewportLayer<unknown>({
       id: 'b', label: 'b', source: [EMPTY_SOURCE],
       view: { x: 500, y: 500, scale: { x: 1, y: 1 } },
-      bounds: () => ({ x: 50, y: 50, w: 100, h: 100 }),
+      bounds: () => ({ x: 50, y: 50, width: 100, height: 100 }),
     });
     expect(route([a, b], { x: 60, y: 60 })).toEqual({ id: 'b', point: { x: 510, y: 510 } });
     expect(route([a, b], { x: 10, y: 10 })).toEqual({ id: 'a', point: { x: 10, y: 10 } });
@@ -108,7 +108,7 @@ describe('routing through a viewport', () => {
       label: 'z',
       source: [EMPTY_SOURCE],
       view: () => ({ x: 0, y: 0, scale: { x: 0, y: 0 } }),
-      bounds: () => ({ x: 0, y: 0, w: 100, h: 100 }),
+      bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
     });
     const { point } = route([layer], { x: 10, y: 10 });
     expect(Number.isFinite(point.x) && Number.isFinite(point.y)).toBe(true);
@@ -117,7 +117,7 @@ describe('routing through a viewport', () => {
 
 describe('viewport draw', () => {
   const INNER: View = { x: 250, y: 200, scale: { x: 1.6, y: 1.6 } };
-  const BOUNDS = { x: 8, y: 232, w: 240, h: 160 };
+  const BOUNDS = { x: 8, y: 232, width: 240, height: 160 };
 
   /** Emits one world-space unit rect at the world origin. */
   const MARKER: RenderLayer<unknown> = {
@@ -209,7 +209,7 @@ describe('viewport draw', () => {
     const inner = group.children[0] as GroupDrawCommand;
     const composed = mat3.multiply(new Float32Array(group.transform!) as GlMat3, inner.transform!);
     const world = { x: 300, y: 250 };
-    const [sx, sy] = mat3.apply(composed, world.x, world.y);
+    const [sx, sy] = mat3.transformPoint(composed, world.x, world.y);
     const back = route([viewportOf([MARKER])], { x: sx, y: sy }).point;
     expect(back.x).toBeCloseTo(world.x);
     expect(back.y).toBeCloseTo(world.y);

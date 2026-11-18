@@ -6,9 +6,10 @@
  * A strategy sees ids and poses, never data, so it cannot tell a lane from a
  * shape. Which nodes a container admits is `diagramCanDropInto`'s call.
  */
-import { createTransformOp, type LayoutStrategy, type RectPose } from '@weasel-js/core';
+import { createSetPoseOp, type LayoutStrategy, type RectPose } from '@weasel-js/core';
 import { titlePose } from './titlePose';
 import { bodyBox, titleIdOf, type ContainerHeader } from './trait';
+import type { Rect } from '@weasel-js/geom';
 
 /** Options for {@link diagramContainerLayout}. */
 export interface ContainerLayoutOptions {
@@ -20,7 +21,7 @@ const center = (p: RectPose) => ({ x: p.x + p.width / 2, y: p.y + p.height / 2 }
 
 /** The title's pose when it is not already there; nothing else is placed. */
 export function titlePoses(
-  container: { id: string; bounds: { x: number; y: number; width: number; height: number } },
+  container: { id: string; bounds: Rect },
   children: readonly { id: string; pose: RectPose }[],
   header: ContainerHeader | undefined,
 ): Map<string, RectPose> {
@@ -38,7 +39,7 @@ export function diagramContainerLayout(opts: ContainerLayoutOptions = {}): Layou
     childPoses: (container, children) => titlePoses(container, children, header),
     getDropTargets: (_container, _children, dragged) => [{ pose: dragged.pose, origin: center(dragged.pose) }],
     reflowPoses: () => new Map(),
-    commitDrop: (_container, _children, dragged, target) => [createTransformOp<RectPose>({
+    commitDrop: (_container, _children, dragged, target) => [createSetPoseOp<RectPose>({
       id: dragged.id, from: dragged.originPose, to: target?.pose ?? dragged.pose, label: 'Drop',
     })],
     dropRegion(container) {

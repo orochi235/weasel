@@ -12,14 +12,14 @@ const ONE = specsOf({ nodes: [node('a', 0)], edges: [] });
 const TWO = specsOf({ nodes: [node('a', 0), node('b', 200)], edges: [] });
 const IDENTITY = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
-describe('DiagramView selected', () => {
+describe('DiagramView selection', () => {
   it('selects a node that arrives in the same render as the prop naming it', async () => {
     const onDelete = vi.fn();
     const view = (extra: Partial<DiagramViewProps>) => (
-      <DiagramView specs={ONE} width={500} height={300} view={IDENTITY} onViewChange={() => {}} onDelete={onDelete} selected={null} {...extra} />
+      <DiagramView specs={ONE} width={500} height={300} view={IDENTITY} onViewChange={() => {}} onDelete={onDelete} selection={null} {...extra} />
     );
     const { rerender } = render(view({}));
-    rerender(view({ specs: TWO, selected: 'b' }));
+    rerender(view({ specs: TWO, selection: 'b' }));
     await act(async () => {
       document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', code: 'Delete', bubbles: true, cancelable: true }));
       document.body.dispatchEvent(new KeyboardEvent('keyup', { key: 'Delete', code: 'Delete', bubbles: true }));

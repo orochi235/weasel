@@ -220,9 +220,9 @@ export const DropFromOutside: Story = {
     const press = (label: string) => (e: ReactPointerEvent<HTMLElement>) => {
       const pointOf = (ev: PointerEvent) => ({ x: ev.clientX, y: ev.clientY });
       startThresholdDrag(e, {
-        onActivate: (ev) => setAt(pointOf(ev)),
+        onStart: (ev) => setAt(pointOf(ev)),
         onMove: (ev) => setAt(pointOf(ev)),
-        onCommit: (ev) => {
+        onEnd: (ev) => {
           const target = drop.current?.targetAt(pointOf(ev));
           if (target) setNodes((n) => insertAt(n, [{ id: `new${++made.current}`, label }], target));
           setAt(null);

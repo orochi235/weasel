@@ -34,7 +34,7 @@ function makeFeature(probeLayer?: RenderLayer<unknown>) {
   const feature: SurfaceContribution = {
     id: 'feature',
     eligibility: { always: true },
-    views: [{ id: 'panel', bounds: { x: 100, y: 0, w: 100, h: 100 }, defaultView: PANEL_VIEW }],
+    views: [{ id: 'panel', bounds: { x: 100, y: 0, width: 100, height: 100 }, defaultView: PANEL_VIEW }],
     deps: { snap: () => snap },
     attach,
     ...(probeLayer ? { overlay: probeLayer } : {}),

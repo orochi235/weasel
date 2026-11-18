@@ -144,7 +144,7 @@ export function createWaypointAffordance<TPose>(
 /** The composed layer, for `CanvasExtensionApi.registerLayer`. Register it
  *  after the port layer and before the edge-end layer: the last registered is
  *  hit first, and an edge's end handle must win over a handle beside it. */
-export function waypointLayer<TPose>(
+export function createWaypointLayer<TPose>(
   participants: ParticipantSource<TPose>,
   selected: () => readonly string[],
   opts: WaypointAffordanceOptions<TPose> = {},

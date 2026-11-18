@@ -4,6 +4,7 @@ import type { View } from '../viewport/view';
 import type { PoseDescriptor } from '../geometry/poseDescriptor';
 import type { Target } from '@weasel-js/animator';
 import type { WorldPoint } from '@weasel-js/routing';
+import type { Rect } from '@weasel-js/geom';
 
 /**
  * Opaque clipboard payload: the kit never inspects entries. The adapter both
@@ -70,10 +71,10 @@ export interface MoveAdapter<TNode extends { id: string }, TPose> {
   getPose(id: string): TPose;
   /** The node's container, `null` for a root. */
   getParent(id: string): string | null;
-  /** Optional paint depth, read by `pickTopMostHit` to resolve two *siblings*
+  /** Optional paint depth, read by `topmostOf` to resolve two *siblings*
    *  whose bodies both cover the pointer. Without it the hit list's own order
    *  decides, which is right for a back-to-front walk and wrong for anything
-   *  else. See `PickTopMostHitAdapter` for the `compareZ` alternative. */
+   *  else. See `TopmostTree` for the `compareZ` alternative. */
   getZIndex?(id: string): number | null | undefined;
   compareZ?(a: string, b: string): number;
   setPose(id: string, pose: TPose): void;
@@ -105,8 +106,8 @@ export interface MoveAdapter<TNode extends { id: string }, TPose> {
   getLayout?(containerId: string): import('../../layout/types').LayoutStrategy<TPose> | null;
 }
 
-/** The view a region pick answers for. */
-export interface RegionPickView {
+/** What any pick consults of the view it is asked for: its camera and which layers it paints. Point picks take it too. */
+export interface PickingView {
   /** The camera the region was drawn under. With it, a node on a parallax
    *  layer is tested where that camera's plane paints it. */
   get?(): View;
@@ -129,8 +130,8 @@ export interface AreaSelectAdapter {
   /** Returns ids of nodes intersecting the world-space rect, as the view the
    *  rect was drawn in paints them. */
   hitTestArea?(
-    rect: { x: number; y: number; width: number; height: number },
-    view?: RegionPickView,
+    rect: Rect,
+    view?: PickingView,
   ): string[];
   /** Current selection — read by behaviors to compute additive merges. */
   getSelection?(): string[];
@@ -162,7 +163,7 @@ export interface LassoSelectAdapter extends AreaSelectAdapter {
   hitTestLasso?(
     polygon: ReadonlyArray<{ x: number; y: number }>,
     mode: LassoHitMode,
-    view?: RegionPickView,
+    view?: PickingView,
   ): string[];
 }
 
@@ -180,7 +181,7 @@ export interface InsertAdapter<TNode extends { id: string }> {
   /** Materialize a new node from drag-rect bounds (drag-to-insert tools).
    *  Optional: `sceneToAdapter` only fills it in when `options.commitInsert`
    *  is supplied. */
-  commitInsert?(bounds: { x: number; y: number; width: number; height: number }): TNode | null;
+  commitInsert?(bounds: Rect): TNode | null;
   /** Materialize the new nodes from a clipboard snapshot, in order.
    *  Optional — required only for paste. What it returns becomes the
    *  clipboard the next paste reads, so each node must be shaped like an item

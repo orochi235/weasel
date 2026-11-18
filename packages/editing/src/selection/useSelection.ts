@@ -96,7 +96,7 @@ export const createSelection: SelectionFactory = (store, options) => {
  * methods:
  *
  * ```tsx
- * const selection = useSelection({ mode: 'multi' });
+ * const selection = useSelection({ mode: 'multiple' });
  * const adapter = useSceneAdapter(scene, { selection: selection.adapterMethods });
  * ```
  *

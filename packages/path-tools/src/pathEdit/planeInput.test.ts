@@ -11,7 +11,7 @@ import {
 } from '@weasel-js/core';
 import { createEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
 import { editAnchorsAction } from './editAnchors/editAnchors';
-import { marqueeAnchorsAction, selectAnchorAction } from './anchorEditing';
+import { areaSelectAnchorsAction, selectAnchorAction } from './anchorEditing';
 
 // Camera panned to x=100 at 2x; the sky does not zoom and pans with it, so its
 // world is the camera's doubled and shifted: plane = (2x - 100, 2y).
@@ -113,7 +113,7 @@ describe('editing path anchors on a parallax plane', () => {
     const scene = makeScene();
     const editAnchors = makeEditAnchorsDep({ editingId: 'sun', getEditablePath: () => triangle() });
     // Camera 115..125 x 45..55 is sky 130..150 x 90..110: anchor 1 only.
-    drag(marqueeAnchorsAction, scene, { x: 115, y: 45 }, { x: 125, y: 55 }, { deps: { editAnchors } });
+    drag(areaSelectAnchorsAction, scene, { x: 115, y: 45 }, { x: 125, y: 55 }, { deps: { editAnchors } });
     expect([...editAnchors.selectedAnchors]).toEqual([1]);
   });
 });

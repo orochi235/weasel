@@ -29,7 +29,7 @@ type L = 'main';
 type P = { x: number; y: number; width: number; height: number };
 
 /** The panel occupies x ∈ [100, 200) of a 300×200 canvas at the client origin. */
-const PANEL = { x: 100, y: 0, w: 100, h: 100 };
+const PANEL = { x: 100, y: 0, width: 100, height: 100 };
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -138,7 +138,7 @@ describe('<CanvasView>', () => {
         layers={{}}
         width={300}
         height={200}
-        viewport={{ pinchZoom: true }}
+        viewport={{ touchZoom: true }}
         onViewChange={outer}
         views={[{ id: 'panel', bounds: PANEL, onViewChange: panel }]}
       />,
@@ -299,7 +299,7 @@ describe('<CanvasView> draw contribution', () => {
     expect(drawn).toEqual([{ x: 5, y: 7, scale: { x: 2, y: 2 } }]);
     expect(cmds[0]).toMatchObject({
       kind: 'group',
-      clip: { kind: 'rect', x: 0, y: 0, width: PANEL.w, height: PANEL.h },
+      clip: { kind: 'rect', x: 0, y: 0, width: PANEL.width, height: PANEL.height },
     });
   });
 
@@ -462,7 +462,7 @@ describe('<CanvasView> hit-testing', () => {
 
   it('classifies a body under the point in this view\'s coordinates', () => {
     expect(panelTarget(['b']).classifyTarget!({ x: 45, y: 5 }))
-      .toMatchObject({ body: 'selected-body' });
+      .toMatchObject({ bodyTarget: 'selected-body' });
   });
 
   // World (31, 22) is 11.2px from c's top-left corner — outside the 8px fine

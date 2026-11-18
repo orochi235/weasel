@@ -86,7 +86,7 @@ function handleAffordance(scene: AnyScene): Affordance {
   return { id: PLOT_HANDLE_LAYER_ID, regions, regionsAt: regions };
 }
 
-/** The handle layer, for a contribution's `layers` (as `plotEditing` carries it) or `registerLayer`. */
-export function plotHandleLayer(scene: AnyScene): RenderLayer<unknown> {
+/** The handle layer, for a contribution's `layers` (as `createPlotEditingContribution` carries it) or `registerLayer`. */
+export function createPlotHandleLayer(scene: AnyScene): RenderLayer<unknown> {
   return composeAffordanceLayer(PLOT_HANDLE_LAYER_ID, 'Plot handles', [handleAffordance(scene)]) as unknown as RenderLayer<unknown>;
 }

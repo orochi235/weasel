@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ActionDisabledReason, createScene, overlaysOf, type InvocationCtx, type OngoingHandle, type AnyScene } from '@weasel-js/core';
-import { createReorderAction, reorderContribution, sequenceSlots, REORDER_ACTION_ID, type ReorderOptions } from './reorder';
+import { createReorderAction, createReorderContribution, slotsAlong, REORDER_ACTION_ID, type ReorderOptions } from './reorder';
 
 const box = (x: number, y: number, width = 100, height = 40) => ({ x, y, width, height });
 
 /** Three boxes in a row, 40 apart: a at 0, b at 140, c at 280. */
-const SLOTS = sequenceSlots('x', [
+const SLOTS = slotsAlong('x', [
   { id: 'a', bounds: box(0, 0) },
   { id: 'b', bounds: box(140, 0) },
   { id: 'c', bounds: box(280, 10, 100, 60) },
@@ -29,7 +29,7 @@ function open(opts: Partial<ReorderOptions> = {}, start = { x: 20, y: 20 }): { h
   return { handle: action.invoker.start(ctx(start.x, start.y, start)), commit };
 }
 
-describe('sequenceSlots', () => {
+describe('slotsAlong', () => {
   it('puts a gap between each pair of items, halfway, spanning both', () => {
     expect(SLOTS.gaps).toEqual([
       { index: 0, a: { x: -20, y: 0 }, b: { x: -20, y: 40 } },
@@ -40,7 +40,7 @@ describe('sequenceSlots', () => {
   });
 
   it('runs down the y axis too', () => {
-    const slots = sequenceSlots('y', [{ id: 'a', bounds: box(0, 0) }, { id: 'b', bounds: box(0, 60) }]);
+    const slots = slotsAlong('y', [{ id: 'a', bounds: box(0, 0) }, { id: 'b', bounds: box(0, 60) }]);
     expect(slots.gaps.map((g) => g.a)).toEqual([{ x: 0, y: -10 }, { x: 0, y: 50 }, { x: 0, y: 110 }]);
   });
 });
@@ -57,7 +57,7 @@ describe('createReorderAction with the insertion bar', () => {
   });
 
   it('never picks up an item whose grip is null, but still gaps around it', () => {
-    const slots = sequenceSlots('x', [
+    const slots = slotsAlong('x', [
       { id: 'a', bounds: box(0, 0, 10, 10), grip: null },
       { id: 'b', bounds: box(20, 0, 10, 10) },
     ]);
@@ -70,7 +70,7 @@ describe('createReorderAction with the insertion bar', () => {
   it('carries every id in carries under a bar drag, each by the drag offset', () => {
     const poses: Record<string, ReturnType<typeof box>> = { g: box(0, 0), m1: box(50, 100), m2: box(80, 200) };
     const carryScene = { get: (id: string) => ({ id, pose: poses[id] }) } as unknown as AnyScene;
-    const slots = sequenceSlots('x', [{ id: 'g', bounds: box(0, 0), carries: ['g', 'm1', 'm2'] }, { id: 'b', bounds: box(140, 0) }]);
+    const slots = slotsAlong('x', [{ id: 'g', bounds: box(0, 0), carries: ['g', 'm1', 'm2'] }, { id: 'b', bounds: box(140, 0) }]);
     const action = createReorderAction({ slots: () => slots, commit: () => {} });
     if (action.invoker?.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
     const start = { x: 20, y: 20 };
@@ -143,7 +143,7 @@ describe('createReorderAction with the insertion bar', () => {
   });
 
   it('packs into a contribution binding a drag to the action', () => {
-    const c = reorderContribution({ slots: () => SLOTS, commit: () => {} });
+    const c = createReorderContribution({ slots: () => SLOTS, commit: () => {} });
     expect(c.actions!.map((a) => a.id)).toEqual([REORDER_ACTION_ID]);
     expect(c.bindings).toEqual([expect.objectContaining({ spec: expect.objectContaining({ kind: 'drag' }), actionId: REORDER_ACTION_ID })]);
   });
@@ -156,7 +156,7 @@ describe('createReorderAction sliding the others', () => {
     const spans = { a: [0, 40], b: [50, 20], c: [80, 40] } as const;
     for (const [id, [y, h]] of Object.entries(spans)) scene.add({ id: id as never, kind: 'mark', layer: 'main', pose: box(0, y, 100, h), data: {} });
     scene.add({ id: 'a.title' as never, kind: 'mark', layer: 'main', pose: box(10, 5, 50, 10), data: {} });
-    const slots = sequenceSlots('y', Object.entries(spans).map(([id, [y, h]]) => ({
+    const slots = slotsAlong('y', Object.entries(spans).map(([id, [y, h]]) => ({
       id, bounds: box(0, y, 100, h), ...(id === 'a' ? { carries: ['a', 'a.title'] } : {}),
     })));
     return { scene, slots };

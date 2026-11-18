@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { builtSteps, readCi, sourceChecks } from './ci-steps.mjs';
+import { builtSteps, installStep, readCi, sourceChecks, stepGroups } from './ci-steps.mjs';
 
 const FIXTURE = `
 jobs:
@@ -85,6 +85,14 @@ describe('the split at the first build', () => {
   });
 });
 
+describe('stepGroups', () => {
+  it('runs an install or a build alone, and the reading steps between them together', () => {
+    const runs = ['npm ci --ignore-scripts', 'npm run build', 'npm run check:a', 'npm run check:b',
+      'npm run build -w x', 'npm run check:c', 'npm run build:demo'];
+    expect(stepGroups(runs)).toEqual([[0], [1], [2, 3], [4], [5, 6]]);
+  });
+});
+
 describe('ci.yml itself', () => {
   const { steps } = readCi(readFileSync(join(import.meta.dirname, '../../.github/workflows/ci.yml'), 'utf8'));
   const built = builtSteps(steps).map((step) => step.run);
@@ -98,6 +106,10 @@ describe('ci.yml itself', () => {
       'npm run test:smoke:consumer -w @weasel-js/labkit',
       'npm run test:smoke:consumer',
     ]));
+  });
+
+  it('installs without the root prepare, which would build everything before the build step', () => {
+    expect(installStep(steps).run).toBe('npm ci --ignore-scripts');
   });
 
   it('leaves the gate none of them', () => {

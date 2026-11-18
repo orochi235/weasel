@@ -3,7 +3,7 @@ import type { Vec3 } from '@weasel-js/geom/3d';
 import { describe, expect, it } from 'vitest';
 import { aimSpace3d } from './aim';
 import { createCamera, MAX_PITCH } from './camera';
-import { createInsert, type Footprint } from './insert';
+import { createInsert3dDep, type Footprint } from './insert';
 import type { Viewport3d } from './project';
 import { POSE3_COMPOSITION } from './composePose3';
 import { pose3, type Pose3 } from './pose3';
@@ -15,17 +15,17 @@ const TOP: Viewport3d = { ...VP, camera: createCamera({ pitch: Math.PI / 2 - 1e-
 
 function footprintOf(vp: Viewport3d, up: Vec3 | undefined): Footprint | null {
   let seen: Footprint | null = null;
-  createInsert({ world: { viewport: () => vp, up }, mint: (f) => ((seen = f), 'n' as NodeId) })
+  createInsert3dDep({ world: { viewport: () => vp, up }, mint: (f) => ((seen = f), 'n' as NodeId) })
     .commit(DRAG, { kind: 'rect' } as never);
   return seen;
 }
 
-describe('createInsert', () => {
+describe('createInsert3dDep', () => {
   it('casts through the camera of the view it was built for, as the other dep factories do', () => {
     const right: Viewport3d = { ...TOP, camera: { ...TOP.camera, target: { x: 5, y: 0, z: 0 } } };
     const asked: (string | null | undefined)[] = [];
     let seen: Footprint | null = null;
-    createInsert({
+    createInsert3dDep({
       world: { viewport: (viewId) => { asked.push(viewId); return viewId === 'right' ? right : VP; }, up: { x: 0, y: 0, z: 1 } },
       viewId: 'right',
       mint: (f) => ((seen = f), 'n' as NodeId),
@@ -37,7 +37,7 @@ describe('createInsert', () => {
   it('takes its viewport and up from a world, so it casts where the world\'s snap and camera do', () => {
     const up = { x: 0, y: 0, z: 1 };
     let seen: Footprint | null = null;
-    createInsert({ world: { viewport: () => TOP, up }, mint: (f) => ((seen = f), 'n' as NodeId) })
+    createInsert3dDep({ world: { viewport: () => TOP, up }, mint: (f) => ((seen = f), 'n' as NodeId) })
       .commit(DRAG, { kind: 'rect' } as never);
     expect(seen).toEqual(footprintOf(TOP, up));
   });
@@ -84,7 +84,7 @@ describe('createInsert', () => {
       height: 600,
     };
     const minted: Footprint[] = [];
-    const insert = createInsert({ world: { viewport: () => shallow }, mint: (f) => (minted.push(f), 'n' as NodeId) });
+    const insert = createInsert3dDep({ world: { viewport: () => shallow }, mint: (f) => (minted.push(f), 'n' as NodeId) });
     // The top two corners leave above the horizon; the bottom two reach the ground.
     const across = { x: 300, y: 0, width: 200, height: 599 };
     const ends = { start: { x: 300, y: 0 }, end: { x: 500, y: 599 } };
@@ -94,7 +94,7 @@ describe('createInsert', () => {
   });
 });
 
-describe('createInsert with a node factory', () => {
+describe('createInsert3dDep with a node factory', () => {
   const up = { x: 0, y: 0, z: 1 };
   const scene = () => createScene<{ tag: string }, 'solids', Pose3>({
     composition: POSE3_COMPOSITION, systemLayers: [{ id: 'solids' }],
@@ -103,7 +103,7 @@ describe('createInsert with a node factory', () => {
 
   it('commits the node with the selection change as one undo step', () => {
     const sc = scene();
-    const insert = createInsert({ world: { scene: sc, viewport: () => TOP, up }, node: boxOn });
+    const insert = createInsert3dDep({ world: { scene: sc, viewport: () => TOP, up }, node: boxOn });
     const id = insert.commit(DRAG, { kind: 'rect' }, undefined, { from: [], selectNode: true })!;
     expect(sc.get(id)).toMatchObject({ layer: 'solids', parent: null, data: { tag: 'box' } });
     expect(sc.get(id)!.pose.position.z).toBe(0.5);
@@ -117,26 +117,26 @@ describe('createInsert with a node factory', () => {
 
   it('builds the ops without applying them, and declines where the factory does', () => {
     const sc = scene();
-    const insert = createInsert({ world: { scene: sc, viewport: () => TOP, up }, node: (f) => (f.width > 100 ? boxOn(f) : null) });
+    const insert = createInsert3dDep({ world: { scene: sc, viewport: () => TOP, up }, node: (f) => (f.width > 100 ? boxOn(f) : null) });
     expect(insert.build!(DRAG, { kind: 'rect' })).toBeNull();
     expect(insert.commit(DRAG, { kind: 'rect' })).toBeNull();
-    const wide = createInsert({ world: { scene: sc, viewport: () => TOP, up }, node: boxOn });
+    const wide = createInsert3dDep({ world: { scene: sc, viewport: () => TOP, up }, node: boxOn });
     const built = wide.build!(DRAG, { kind: 'rect' })!;
     expect(built.ops).toHaveLength(1);
     expect(sc.get(built.id)).toBeUndefined();
   });
 
   it('says what it needs when the world carries no scene', () => {
-    expect(() => createInsert({ world: { viewport: () => TOP }, node: boxOn })).toThrow(/needs `world.scene`/);
+    expect(() => createInsert3dDep({ world: { viewport: () => TOP }, node: boxOn })).toThrow(/needs `world.scene`/);
   });
 });
 
-describe('createInsert with a node factory and a selection of its own', () => {
+describe('createInsert3dDep with a node factory and a selection of its own', () => {
   it('commits the selection change to that selection, and undo puts it back there', () => {
     const sc = createScene<{ tag: string }, 'solids', Pose3>({ composition: POSE3_COMPOSITION, systemLayers: [{ id: 'solids' }] });
     let held: readonly NodeId[] = ['before' as NodeId];
     const selection = { get: () => held, set: (ids: NodeId[]) => { held = ids; } };
-    const insert = createInsert({
+    const insert = createInsert3dDep({
       world: { scene: sc, viewport: () => TOP, up: { x: 0, y: 0, z: 1 } },
       selection,
       node: (f) => ({ data: { tag: 'box' }, pose: pose3(f.center) }),

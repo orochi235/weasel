@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { DrawCanvas } from '@weasel-js/core';
 import {
-  createAudioEngine, createScore, readScoreCue, scoreBar, scoreCues, scoreParams,
+  createAudioEngine, createScore, readScoreCue, scoreBar, SCORE_CUES, resolveScoreMood,
 } from '@weasel-js/audio';
-import type { AudioEngine, Score, ScoreMood, ScoreParams, ScoreState } from '@weasel-js/audio';
+import type { AudioEngine, Score, ScoreMood, ScoreSettings, ScoreState } from '@weasel-js/audio';
 import { scoreRoll } from './score/scoreRoll';
 import { Button } from '@weasel-js/ui/components/Button';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
@@ -18,9 +18,9 @@ const BUILT_BAR = 8;
 
 type Axis = keyof ScoreMood;
 
-/** Each axis, its ends in words, and the parameters `scoreParams` reads off it. */
+/** Each axis, its ends in words, and the parameters `resolveScoreMood` reads off it. */
 const AXES: readonly {
-  axis: Axis; min: number; low: string; high: string; reads: readonly (keyof ScoreParams)[];
+  axis: Axis; min: number; low: string; high: string; reads: readonly (keyof ScoreSettings)[];
 }[] = [
   { axis: 'valence', min: -1, low: 'dark', high: 'bright', reads: ['mode', 'register', 'spread'] },
   { axis: 'tension', min: 0, low: 'settled', high: 'dissonant', reads: ['harmony', 'layers'] },
@@ -30,9 +30,9 @@ const AXES: readonly {
   },
 ];
 
-const LABELS: Partial<Record<keyof ScoreParams, string>> = { harmonicRhythm: 'chord every' };
+const LABELS: Partial<Record<keyof ScoreSettings, string>> = { harmonicRhythm: 'chord every' };
 
-function shown(params: ScoreParams, key: keyof ScoreParams): string {
+function shown(params: ScoreSettings, key: keyof ScoreSettings): string {
   switch (key) {
     case 'register': return `MIDI ${params.register}`;
     case 'spread': return `${params.spread} oct`;
@@ -44,13 +44,13 @@ function shown(params: ScoreParams, key: keyof ScoreParams): string {
   }
 }
 
-const CUE_ITEMS = scoreCues.map((c) => ({ value: c.name, label: c.name }));
+const CUE_ITEMS = SCORE_CUES.map((c) => ({ value: c.name, label: c.name }));
 
 const sameMood = (a: ScoreMood, b: ScoreMood): boolean =>
   a.valence === b.valence && a.tension === b.tension && a.urgency === b.urgency;
 
 export function ScoreDemo() {
-  const [mood, setMood] = useState<ScoreMood>(scoreCues[1].mood);
+  const [mood, setMood] = useState<ScoreMood>(SCORE_CUES[1].mood);
   /** The bar the score last booked, while it plays. */
   const [heard, setHeard] = useState<ScoreState | null>(null);
   const kit = useRef<{ engine: AudioEngine; score: Score } | null>(null);
@@ -86,9 +86,9 @@ export function ScoreDemo() {
   // While it plays, everything shown is the bar in force; a slider's move
   // lands on the next bar line, as it does in the sound.
   const cue = heard?.cue ?? readScoreCue(mood);
-  const params = heard?.params ?? scoreParams(mood);
+  const params = heard?.params ?? resolveScoreMood(mood);
   const cueBar = heard?.cueBar ?? BUILT_BAR;
-  const device = scoreCues.find((c) => c.name === cue.name)!.device;
+  const device = SCORE_CUES.find((c) => c.name === cue.name)!.device;
 
   return (
     <div className="ckd-demo">
@@ -96,8 +96,8 @@ export function ScoreDemo() {
         <Button pressed={heard !== null} onClick={toggle}>{heard ? 'stop' : 'play'}</Button>
         <SegmentedBar
           items={CUE_ITEMS}
-          value={scoreCues.find((c) => sameMood(mood, c.mood))?.name ?? null}
-          onChange={(name) => { const c = scoreCues.find((q) => q.name === name); if (c) steer(c.mood); }}
+          value={SCORE_CUES.find((c) => sameMood(mood, c.mood))?.name ?? null}
+          onChange={(name) => { const c = SCORE_CUES.find((q) => q.name === name); if (c) steer(c.mood); }}
           aria-label="Cue"
         />
         <span className={s.bar} data-testid="bar">
@@ -118,7 +118,7 @@ export function ScoreDemo() {
             <span data-testid="device">{device}</span>
           </div>
           <dl className={s.weights}>
-            {scoreCues.map((c) => (
+            {SCORE_CUES.map((c) => (
               <div key={c.name}>
                 <dt>{c.name}</dt>
                 <dd className={s.share}>{`${Math.round(cue.weights[c.name] * 100)}%`}</dd>

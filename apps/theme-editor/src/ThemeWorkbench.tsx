@@ -1,6 +1,6 @@
 import { Lab, type LabContribution } from '@weasel-js/labkit';
 import { LABS, THEME_EDITOR_LAB } from '@shared/labs';
-import { fullSelection, type Selection, type ThemeDefinition } from '@weasel-js/theme';
+import { fullAxisChoice, type AxisChoice, type ThemeDefinition } from '@weasel-js/theme';
 import { deepEqual, getOwn } from '@weasel-js/registry';
 import type { IssueReport, Lookup, PutResult, StoredTheme } from '@weasel-js/theme/engine';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -43,7 +43,7 @@ export interface WorkbenchProps {
 }
 
 const sameJson = (a: unknown, b: unknown) => deepEqual(a, b, { undefinedAsAbsent: true });
-const selectionText = (s: Selection) => Object.values(s).join(', ') || 'every selection';
+const selectionText = (s: AxisChoice) => Object.values(s).join(', ') || 'every selection';
 
 function IssueList({ title, issues }: { title: string; issues: readonly IssueReport[] }) {
   return (
@@ -97,7 +97,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
   const [report, setReport] = useState<PutResult | null>(null);
   const [saving, setSaving] = useState(false);
   const [layer, setLayer] = useState<LayerId>('ramps');
-  const [axisValues, setAxisValues] = useState<Selection>({});
+  const [axisValues, setAxisValues] = useState<AxisChoice>({});
   const [highlight, setHighlight] = useState<readonly string[]>([]);
   const [inspecting, setInspecting] = useState(false);
   const [reads, setReads] = useState<readonly string[]>([]);
@@ -271,7 +271,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
             aria-label={axis}
             width="fit"
             options={Object.keys(def.values).map((v) => ({ value: v, label: `${axis}: ${v}` }))}
-            selectedKey={getOwn(fullSelection(derived.axes, axisValues), axis)}
+            selectedKey={getOwn(fullAxisChoice(derived.axes, axisValues), axis)}
             onSelectionChange={(v) => setAxisValues((s) => ({ ...s, [axis]: v }))}
           />
         ))}

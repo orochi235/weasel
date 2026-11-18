@@ -1,4 +1,4 @@
-import { themeAxes, type Selection, type Theme } from '@weasel-js/theme';
+import { themeAxes, type AxisChoice, type Theme } from '@weasel-js/theme';
 import { ThemeProvider } from '@weasel-js/theme/react';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
@@ -20,7 +20,7 @@ export interface PreviewVariant {
 export interface ThemePreviewProps {
   readonly variants: readonly PreviewVariant[];
   /** Every axis but `mode`, which the preview shows all of. */
-  readonly selection: Selection;
+  readonly selection: AxisChoice;
   readonly inspecting?: boolean;
   readonly onInspect?: (target: Element, pane: Element) => void;
 }

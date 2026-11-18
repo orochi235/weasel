@@ -10,7 +10,7 @@ import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import { rectPath } from '@weasel-js/geom';
-import { applyOpsTo, createTransformOp } from 'core/ops';
+import { applyOpsTo, createSetPoseOp } from 'core/ops';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { registerNodeShape } from 'canvas/NodeShape';
 import { pickWalk, scenePickSource, type PickQuery } from 'canvas/pickWalk';
@@ -53,7 +53,7 @@ describe('scenePickIndex freshness', () => {
   it('follows a pose op', () => {
     const scene = sceneWith({ x: 0, y: 0, width: 20, height: 20 });
     expect(pick(scene, at(10, 10))).toEqual(['a']);
-    applyOpsTo(scene, [createTransformOp({ id: A, from: scene.get(A)!.pose, to: { x: 500, y: 500, width: 20, height: 20 } })]);
+    applyOpsTo(scene, [createSetPoseOp({ id: A, from: scene.get(A)!.pose, to: { x: 500, y: 500, width: 20, height: 20 } })]);
     expect(pick(scene, at(510, 510))).toEqual(['a']);
     expect(pick(scene, at(10, 10))).toEqual([]);
   });

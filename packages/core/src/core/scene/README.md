@@ -29,7 +29,7 @@ the offsets are wrong by exactly the parent's transform.
 | `composeFrame.ts` | `PoseComposition`, `composeWorldPose` (local chain → world), `rebaseLocalPose` (world → local under a new parent). |
 | `composePose.ts` | The rect and rigid compositions (`RECT_POSE_COMPOSITION`, `RIGID_POSE_COMPOSITION`) and their parts, `decomposeRectPose`, `worldPoseLookup`; re-exports `composeFrame.ts`. |
 | `../layers/children.ts` | `createChildrenLayer` — z-ordered child renderer. Replaces hand-rolled `for (id of getChildren())` loops with a `RenderLayer` over an `OrderedAdapter`. Index 0 draws first (bottom). No-ops silently when the adapter omits the optional `getChildren`, so z-order can be adopted incrementally. |
-| `nestedHit.ts` | `nestedHitTester` — hit-testing that descends through containers. |
+| `nestedHit.ts` | `createNestedHitTester` — hit-testing that descends through containers. |
 | `unionOfChildren.ts` | `unionOfChildrenVia` — a container's pose as the envelope of what it holds, read through a pose descriptor. Returns `null` for an emptied container. |
 
 ## Pose shape is generic, so composition is too

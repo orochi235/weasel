@@ -4,7 +4,7 @@ import { render, act } from '@testing-library/react';
 import React from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { Contribution, SceneCanvasApi, SelectionApi, ClaimableGesture } from '@weasel-js/core';
-import { selectToolKitPreset, shapeToolKitPreset, type KitToolId, useSelection } from '@weasel-js/editing';
+import { selectToolsOfferedPreset, shapeToolsOfferedPreset, type KitToolId, useSelection } from '@weasel-js/editing';
 import { useHud, useHudContribution } from './react';
 import type { HudPointerEvent, Widget } from './widget';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
@@ -58,7 +58,7 @@ function Harness(
       scene={scene}
       selection={selection}
       layers={{}}
-      features={[selectToolKitPreset, shapeToolKitPreset]}
+      features={[selectToolsOfferedPreset, shapeToolsOfferedPreset]}
       ambient={[hudTool, ...(extraAmbient ?? [])]}
       {...(defaultActiveTool
         ? { defaultActiveTool, defaultTools: ['select', defaultActiveTool] }
@@ -99,8 +99,8 @@ describe('weasel-hud integration', () => {
 
     expect(api.hudRef.current).not.toBeNull();
     let btn!: ReturnType<NonNullable<typeof api.hudRef.current>['button']>;
-    act(() => { btn = api.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' }); });
-    btn.on('press', api.press);
+    act(() => { btn = api.hudRef.current!.button({ id: 'save', x: 10, y: 10, width: 60, height: 24, label: 'Save' }); });
+    btn.subscribe('press', api.press);
 
     const canvas = container.querySelector('canvas')!;
     act(() => {
@@ -116,8 +116,8 @@ describe('weasel-hud integration', () => {
     const { container } = await mount(api);
 
     let btn!: ReturnType<NonNullable<typeof api.hudRef.current>['button']>;
-    act(() => { btn = api.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' }); });
-    btn.on('press', api.press);
+    act(() => { btn = api.hudRef.current!.button({ id: 'save', x: 10, y: 10, width: 60, height: 24, label: 'Save' }); });
+    btn.subscribe('press', api.press);
 
     const canvas = container.querySelector('canvas')!;
     act(() => {
@@ -133,8 +133,8 @@ describe('weasel-hud integration', () => {
     const { container } = await mount(api);
 
     let btn!: ReturnType<NonNullable<typeof api.hudRef.current>['button']>;
-    act(() => { btn = api.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' }); });
-    btn.on('press', api.press);
+    act(() => { btn = api.hudRef.current!.button({ id: 'save', x: 10, y: 10, width: 60, height: 24, label: 'Save' }); });
+    btn.subscribe('press', api.press);
     act(() => { btn.setHidden(true); });
 
     const canvas = container.querySelector('canvas')!;
@@ -155,7 +155,7 @@ describe('a HUD window is reachable while a drawing tool is active', () => {
 
     let win!: ReturnType<NonNullable<typeof apiOut.hudRef.current>['window']>;
     await act(async () => {
-      win = apiOut.hudRef.current!.window({ id: 'w1', x: 20, y: 20, w: 100, h: 80, title: 'Loupe' });
+      win = apiOut.hudRef.current!.window({ id: 'w1', x: 20, y: 20, width: 100, height: 80, title: 'Loupe' });
     });
 
     const canvas = container.querySelector('canvas')!;
@@ -184,7 +184,7 @@ describe('a HUD window is reachable while a drawing tool is active', () => {
 
     let win!: ReturnType<NonNullable<typeof apiOut.hudRef.current>['window']>;
     await act(async () => {
-      win = apiOut.hudRef.current!.window({ id: 'w1', x: 20, y: 20, w: 100, h: 80, title: 'Loupe' });
+      win = apiOut.hudRef.current!.window({ id: 'w1', x: 20, y: 20, width: 100, height: 80, title: 'Loupe' });
     });
 
     const canvas = container.querySelector('canvas')!;
@@ -206,7 +206,7 @@ describe('a HUD window is reachable while a drawing tool is active', () => {
     const { container } = await mount(apiOut, { defaultActiveTool: 'rect' });
 
     await act(async () => {
-      apiOut.hudRef.current!.window({ id: 'w1', x: 20, y: 20, w: 100, h: 80, title: 'Loupe' });
+      apiOut.hudRef.current!.window({ id: 'w1', x: 20, y: 20, width: 100, height: 80, title: 'Loupe' });
     });
 
     const canvas = container.querySelector('canvas')!;
@@ -233,7 +233,7 @@ describe('a HUD window is reachable while a drawing tool is active', () => {
 
     await act(async () => {
       apiOut.hudRef.current!.window({
-        id: 'w1', x: 20, y: 20, w: 100, h: 80, title: 'Loupe', titlebar: false,
+        id: 'w1', x: 20, y: 20, width: 100, height: 80, title: 'Loupe', titlebar: false,
       });
     });
 
@@ -251,7 +251,7 @@ describe('decorative widgets stay transparent to input', () => {
     const { container } = await mount(apiOut, { defaultActiveTool: 'rect' });
 
     await act(async () => {
-      apiOut.hudRef.current!.rect({ id: 'dim', x: 0, y: 0, w: 200, h: 200, fill: '#0008' });
+      apiOut.hudRef.current!.rect({ id: 'dim', x: 0, y: 0, width: 200, height: 200, fill: '#0008' });
     });
 
     const canvas = container.querySelector('canvas')!;
@@ -269,10 +269,10 @@ describe('decorative widgets stay transparent to input', () => {
     const { container } = await mount(apiOut, { defaultActiveTool: 'rect' });
 
     await act(async () => {
-      const btn = apiOut.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' });
-      btn.on('press', apiOut.press);
+      const btn = apiOut.hudRef.current!.button({ id: 'save', x: 10, y: 10, width: 60, height: 24, label: 'Save' });
+      btn.subscribe('press', apiOut.press);
       // Added after the button, so it sits above it in the hit-test walk.
-      apiOut.hudRef.current!.rect({ id: 'dim', x: 0, y: 0, w: 200, h: 200, fill: '#0008' });
+      apiOut.hudRef.current!.rect({ id: 'dim', x: 0, y: 0, width: 200, height: 200, fill: '#0008' });
     });
 
     const canvas = container.querySelector('canvas')!;
@@ -319,7 +319,7 @@ describe('chrome opacity is per gesture', () => {
   function panel(claims: readonly ClaimableGesture[] | undefined, sink: (e: HudPointerEvent) => void): Widget {
     return {
       id: 'panel',
-      bounds: { x: 10, y: 10, w: 60, h: 24 },
+      bounds: { x: 10, y: 10, width: 60, height: 24 },
       hidden: false,
       draw: () => [],
       hitTest: (x, y) => x >= 10 && x < 70 && y >= 10 && y < 34,
@@ -451,7 +451,7 @@ describe('key precedence', () => {
 
   function field(handles: readonly string[]): Widget {
     return {
-      id: 'field', bounds: { x: 10, y: 10, w: 60, h: 24 }, hidden: false, focusable: true,
+      id: 'field', bounds: { x: 10, y: 10, width: 60, height: 24 }, hidden: false, focusable: true,
       draw: () => [],
       hitTest: (x, y) => x >= 10 && x < 70 && y >= 10 && y < 34,
       onPointer: () => {},

@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { PATH_C, PATH_L } from '../commands';
 import type { Path } from '../path';
-import { pointInPath } from '../pathHitTest';
+import { pathContainsPoint } from '../pathHitTest';
 import { boundsOfPath } from './bounds';
 import { growRegion } from './growRegion';
 import { pathDistanceToPoint } from './pathDistance';
 import { pathFromD } from './pathFromD';
 
 /** Hit-tests against the curves themselves, not the default half-unit flattening. */
-const inPath = (p: Path, x: number, y: number) => pointInPath(p, x, y, { flattenTolerance: 1e-4 });
+const inPath = (p: Path, x: number, y: number) => pathContainsPoint(p, x, y, { flattenTolerance: 1e-4 });
 
 /** Every grid point whose distance from the region's edge is clear of `d` by
  *  `slack` lands where the true offset puts it: inside the region or within

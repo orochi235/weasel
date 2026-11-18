@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { styleAtRange, applyStyleToRange, runsCarryStyling, patchRangeStyle, MIXED } from './rangeStyle';
+import { styleAtRange, applyStyleToRange, hasStyledRun, patchRangeStyle, MIXED } from './rangeStyle';
 import type { StyledRun } from '../runs';
 
 const runs: StyledRun[] = [
@@ -31,7 +31,7 @@ describe('an unfilled range', () => {
 
   it('keeps apart from its inheriting neighbor, and counts as styling', () => {
     expect(applyStyleToRange([{ text: 'a', fill: null }, { text: 'b' }], 0, 0, {})).toHaveLength(2);
-    expect(runsCarryStyling([{ text: 'a', fill: null }])).toBe(true);
+    expect(hasStyledRun([{ text: 'a', fill: null }])).toBe(true);
   });
 
   it('survives an armed patch laid over a range style', () => {
@@ -315,35 +315,35 @@ describe('applyStyleToRange', () => {
   });
 });
 
-describe('runsCarryStyling', () => {
+describe('hasStyledRun', () => {
   it('is false for runs that are nothing but text', () => {
-    expect(runsCarryStyling([{ text: 'plain' }])).toBe(false);
-    expect(runsCarryStyling([{ text: 'two' }, { text: ' runs' }])).toBe(false);
+    expect(hasStyledRun([{ text: 'plain' }])).toBe(false);
+    expect(hasStyledRun([{ text: 'two' }, { text: ' runs' }])).toBe(false);
   });
 
   it('is false for no runs at all', () => {
-    expect(runsCarryStyling([])).toBe(false);
+    expect(hasStyledRun([])).toBe(false);
   });
 
   it('is true when any run sets a flag', () => {
-    expect(runsCarryStyling([{ text: 'a' }, { text: 'b', bold: true }])).toBe(true);
-    expect(runsCarryStyling([{ text: 'a', italic: true }])).toBe(true);
-    expect(runsCarryStyling([{ text: 'a', underline: true }])).toBe(true);
-    expect(runsCarryStyling([{ text: 'a', strikethrough: true }])).toBe(true);
+    expect(hasStyledRun([{ text: 'a' }, { text: 'b', bold: true }])).toBe(true);
+    expect(hasStyledRun([{ text: 'a', italic: true }])).toBe(true);
+    expect(hasStyledRun([{ text: 'a', underline: true }])).toBe(true);
+    expect(hasStyledRun([{ text: 'a', strikethrough: true }])).toBe(true);
   });
 
   it('is true when any run sets a non-flag key', () => {
-    expect(runsCarryStyling([{ text: 'a', fontSize: 24 }])).toBe(true);
-    expect(runsCarryStyling([{ text: 'a', fontFamily: 'serif' }])).toBe(true);
-    expect(runsCarryStyling([{ text: 'a', fill: { paint: { kind: 'solid', color: '#f00' } } }])).toBe(true);
+    expect(hasStyledRun([{ text: 'a', fontSize: 24 }])).toBe(true);
+    expect(hasStyledRun([{ text: 'a', fontFamily: 'serif' }])).toBe(true);
+    expect(hasStyledRun([{ text: 'a', fill: { paint: { kind: 'solid', color: '#f00' } } }])).toBe(true);
   });
 
   it('counts letterSpacing: 0, which cancels node-level tracking', () => {
-    expect(runsCarryStyling([{ text: 'a', letterSpacing: 0 }])).toBe(true);
+    expect(hasStyledRun([{ text: 'a', letterSpacing: 0 }])).toBe(true);
   });
 
   it('reads an explicit false flag as no styling — a run cannot un-set one', () => {
-    expect(runsCarryStyling([{ text: 'a', bold: false, underline: false }])).toBe(false);
+    expect(hasStyledRun([{ text: 'a', bold: false, underline: false }])).toBe(false);
   });
 });
 
@@ -358,7 +358,7 @@ describe('textTransform over a range', () => {
     const out = applyStyleToRange([{ text: 'ab', textTransform: 'lowercase' }], 1, 2, { textTransform: 'none' });
     expect(out).toEqual([{ text: 'a', textTransform: 'lowercase' }, { text: 'b', textTransform: 'none' }]);
     expect(styleAtRange(out, 0, 2).textTransform).toBe(MIXED);
-    expect(runsCarryStyling([{ text: 'a', textTransform: 'capitalize' }])).toBe(true);
+    expect(hasStyledRun([{ text: 'a', textTransform: 'capitalize' }])).toBe(true);
   });
 });
 
@@ -368,7 +368,7 @@ describe('fontWeight and bold', () => {
     expect(out).toEqual([{ text: 'a', fontWeight: 300 }, { text: 'b' }]);
     expect(styleAtRange(out, 0, 1).fontWeight).toBe(300);
     expect(styleAtRange(out, 0, 2).fontWeight).toBe(MIXED);
-    expect(runsCarryStyling(out)).toBe(true);
+    expect(hasStyledRun(out)).toBe(true);
   });
 
   it('a weight write drops the bold preset it supersedes', () => {
@@ -401,6 +401,6 @@ describe('fontVariantCaps over a range', () => {
     const out = applyStyleToRange([{ text: 'abc' }], 1, 2, { fontVariantCaps: 'small-caps' });
     expect(out).toEqual([{ text: 'a' }, { text: 'b', fontVariantCaps: 'small-caps' }, { text: 'c' }]);
     expect(styleAtRange(out, 0, 2).fontVariantCaps).toBe(MIXED);
-    expect(runsCarryStyling([{ text: 'a', fontVariantCaps: 'small-caps' }])).toBe(true);
+    expect(hasStyledRun([{ text: 'a', fontVariantCaps: 'small-caps' }])).toBe(true);
   });
 });

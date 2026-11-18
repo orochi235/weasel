@@ -1,4 +1,4 @@
-import { roundRectPath, type Path } from '@weasel-js/geom';
+import { roundRectPath, type Path, type Rect } from '@weasel-js/geom';
 import type { DrawCommand } from './DrawCommand';
 
 /** A shadow a box casts, as CSS `box-shadow` measures one: offset, blur, and how far it grows past the box. */
@@ -30,7 +30,7 @@ export function spreadRadius(radius: number, by: number): number {
  * ones whose overlap builds the falloff. No blur pass, so it costs a few fills.
  */
 export function dropShadowLayers(
-  box: { x: number; y: number; width: number; height: number },
+  box: Rect,
   radius: number,
   s: DropShadow,
 ): { paths: Path[]; alpha: number } {
@@ -56,7 +56,7 @@ export function dropShadowLayers(
 
 /** {@link dropShadowLayers} as a draw command, filled in `color`. */
 export function dropShadowCommand(
-  box: { x: number; y: number; width: number; height: number },
+  box: Rect,
   radius: number,
   s: DropShadow,
   color: string,

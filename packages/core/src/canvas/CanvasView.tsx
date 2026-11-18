@@ -6,39 +6,33 @@
  * surface's `views` prop, which renders one of these per descriptor.
  */
 import {
-  useCallback, useEffect, useImperativeHandle, useInsertionEffect, useLayoutEffect, useMemo, useRef,
+  useCallback, useEffect, useImperativeHandle, useInsertionEffect, useLayoutEffect, useMemo,
 } from 'react';
 import type { Dims, RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
 import { createViewportLayer } from 'domains/viewports/viewportLayer';
-import { createDispatcher } from '@weasel-js/routing';
-import type { IngestionDep, ViewApi } from 'interactions/actions/depSchema';
-import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
 import { NO_SELECTION } from 'core/selection/viewerSelection';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { useViewHelpers } from './useViewHelpers';
 import { useViewAim } from './useViewAim';
 import { hitAtOf } from './deps/dispatchSources';
-import { anchorStateFrom, buildAffordanceAt, buildClassifyTarget, layerAffordance } from './affordanceAt';
-import { pathFromPlane } from './planeClips';
+import { useViewPicking } from './useViewPicking';
+import { useViewOwnDeps } from './useViewOwnDeps';
+import { useViewDispatcher } from './useViewDispatcher';
 import { useOptionalDepRegistry } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
-import { useDeviceProfile } from 'core/device/useDeviceProfile';
-import {
-  createGestureSource,
-  createDispatcherPreviewSources,
-} from './SceneCanvas/dispatcherGestureBounds';
-import { useOptionalViewInputs, type SurfaceViewInputs, type ViewRuleInputs } from './viewInputs';
+import { useOptionalViewInputs, type SurfaceViewInputs } from './viewInputs';
 import type { CanvasViewProps, ViewRect } from './canvasViewProps';
 export type { CanvasViewProps, ViewRect } from './canvasViewProps';
-import { NO_RECT, sizeOf, useViewNesting } from './useViewNesting';
+import { NO_RECT, useViewNesting } from './useViewNesting';
 import { useViewClientMaps } from './useViewClientMaps';
 import {
   useOptionalViewRegistry,
   IDENTITY_VIEW,
   UNMEASURED_DIMS,
   type ViewRegistration,
+  type ViewRegistry,
 } from './viewRegistry';
 
 /** What a view builds its helpers from outside a surface: nothing but the
@@ -55,6 +49,53 @@ const ALWAYS_VISIBLE = (): boolean => true;
 
 const ALL_LAYERS = (s: readonly RenderLayer<unknown>[]): readonly RenderLayer<unknown>[] => s;
 
+
+/** The surface's bounds resolvers, asked for this view's camera. */
+function useCameraBounds(inputs: SurfaceViewInputs | null, camera: () => View) {
+  const surfaceBoundsOf = inputs?.boundsOf;
+  const boundsOf = useMemo(
+    () => (surfaceBoundsOf ? (id: string) => surfaceBoundsOf(id, camera()) : undefined),
+    [surfaceBoundsOf, camera],
+  );
+  const surfaceBoundsOfPose = inputs?.boundsOfPose;
+  const boundsOfPose = useMemo(
+    () => (surfaceBoundsOfPose
+      ? (id: string, pose: unknown) => surfaceBoundsOfPose(id, pose, camera())
+      : undefined),
+    [surfaceBoundsOfPose, camera],
+  );
+  return { boundsOf, boundsOfPose };
+}
+
+/** The viewport node that paints a view: what it draws, through its camera, in its rect. */
+function viewLayer({
+  id, label, parent, background, registry, drawnLayers, cameraAt, rectAt, frameIn, helpersRef,
+}: {
+  id: string;
+  label: string | undefined;
+  parent: string | undefined;
+  background: CanvasViewProps['background'];
+  registry: ViewRegistry | null;
+  drawnLayers: () => readonly RenderLayer<unknown>[];
+  cameraAt: (outer: View, dims: Dims) => View;
+  rectAt: (outer: View, dims: Dims) => ViewRect;
+  frameIn: (outer: View, dims: Dims) => { clip?: ViewRect } | null;
+  helpersRef: { readonly current: object };
+}) {
+  return createViewportLayer<unknown, unknown>({
+    id,
+    label: label ?? id,
+    source: () => [...drawnLayers(), ...(registry?.markerLayers(id) ?? [])],
+    view: cameraAt,
+    bounds: (outer, dims) => rectAt(outer, dims),
+    ...(parent !== undefined ? { clip: (outer: View, dims: Dims) => frameIn(outer, dims)?.clip ?? NO_RECT } : {}),
+    // The surface half of the envelope passes through; the view half is
+    // this view's, so its layers paint its chrome rather than the
+    // surface's.
+    data: (outer) => ({ ...(outer as object), ...helpersRef.current, viewId: id }),
+    ...(background !== undefined ? { background } : {}),
+  });
+}
 
 /**
  * One view on a shared canvas. Owns a camera, contributes the viewport node
@@ -106,63 +147,11 @@ export function CanvasView(props: CanvasViewProps): null {
   useEffect(() => clearSubscribers, [clearSubscribers]);
   useImperativeHandle(cameraRef, () => ({ getView: camera, setView, subscribeView }), [camera, setView, subscribeView]);
 
-  const viewApi = useMemo<ViewApi>(() => ({
-    get: camera,
-    set: setViewFromInput,
-    hostSize: () => sizeOf(rectNow()),
-    layerIsPainted,
-  }), [camera, rectNow, setViewFromInput, layerIsPainted]);
+  const { viewApi, ingestionApi } = useViewOwnDeps(camera, setViewFromInput, rectNow, layerIsPainted, depRegistryRef);
 
-  // Paste placement is a camera question, so it is this view's when the paste
-  // routed here. The rest of the dep — `resolveSrc`, `svg`, `clipboard`, `handlers` — is
-  // the surface's one wiring, read live off the canvas registry.
-  const ingestionApi = useMemo<IngestionDep>(() => {
-    const base = (): IngestionDep | undefined => depRegistryRef.current?.get('ingestion');
-    return {
-      viewportWorldRect: () => viewportWorldRect(camera(), sizeOf(rectNow())),
-      get resolveSrc() { return base()?.resolveSrc; },
-      get svg() { return base()?.svg; },
-      get clipboard() { return base()?.clipboard; }, get handlers() { return base()?.handlers; },
-    };
-  }, [camera, rectNow, depRegistryRef]);
-
-  // One dispatcher per view: in-flight handles are per-view state, and two
-  // views must not be able to see each other's.
-  const dispatcherRef = useRef<ReturnType<typeof createDispatcher> | null>(null);
-  if (!dispatcherRef.current) dispatcherRef.current = createDispatcher();
-
-  // This view's overlay-aware state. The scene half comes from the surface —
-  // same adapter, same tools — but everything gesture-shaped is read off this
-  // view's own dispatcher, which is where a gesture inside this view lands.
-  const rotationBadge = inputs?.rotationBadge ?? null;
-  const own = useMemo(() => ({
-    gestureSource: createGestureSource(() => dispatcherRef.current),
-    ...createDispatcherPreviewSources(() => dispatcherRef.current),
-  }), []);
-
+  const { dispatcher, own, ruleInputs } = useViewDispatcher(selectionNow, camera);
   const inputsRef = useLatest(inputs);
-
-  /** The chrome-caps context this view answers for: its selection, its camera,
-   *  its dispatcher's in-flight action. */
-  const ruleInputs = useCallback((): ViewRuleInputs => ({
-    selection: selectionNow().get(),
-    view: camera(),
-    action: dispatcherRef.current!.getActiveAction(),
-  }), [camera, selectionNow]);
-
-  // The surface's resolver, asked for this view's camera.
-  const surfaceBoundsOf = inputs?.boundsOf;
-  const boundsOf = useMemo(
-    () => (surfaceBoundsOf ? (id: string) => surfaceBoundsOf(id, camera()) : undefined),
-    [surfaceBoundsOf, camera],
-  );
-  const surfaceBoundsOfPose = inputs?.boundsOfPose;
-  const boundsOfPose = useMemo(
-    () => (surfaceBoundsOfPose
-      ? (id: string, pose: unknown) => surfaceBoundsOfPose(id, pose, camera())
-      : undefined),
-    [surfaceBoundsOfPose, camera],
-  );
+  const { boundsOf, boundsOfPose } = useCameraBounds(inputs, camera);
 
   const { helpers } = useViewHelpers<unknown>({
     ...(inputs ?? NO_INPUTS),
@@ -177,51 +166,9 @@ export function CanvasView(props: CanvasViewProps): null {
 
   const { toWorld: clientToWorldHere, toLocal: clientToLocalHere } = useViewClientMaps(registry, rectNow, camera);
 
-  // Anchors are hit in this view's camera world, where its plane draws them.
-  const getAnchorState = useMemo(() => anchorStateFrom(
-    () => depRegistryRef.current,
-    (id, path) => pathFromPlane(path, inputsRef.current?.planeOfNode?.(id, camera()) ?? null),
-  ), [camera, depRegistryRef, inputsRef]);
-
-  const { targetScale } = useDeviceProfile();
-
-  // Selection chrome hit-testing for this view: same construction the surface
-  // does for its own, against this view's chrome and camera.
-  const affordanceAt = useMemo(() => {
-    const inner = buildAffordanceAt({
-      getChromeState: () => helpersRef.current.getChromeState(),
-      getView: camera,
-      targetScale,
-      rotationBadge, handleHitRadius: inputs?.resizeHandles?.hitRadiusPx, edgeHandles: inputs?.resizeHandles?.edges, selectionChrome: inputs?.selectionChrome,
-      getAnchorState,
-      getIsVisible: () => helpersRef.current.getIsVisible(),
-    });
-    return (world: { x: number; y: number }) => {
-      // A registered layer this view paints gets first refusal, on this
-      // view's frame and envelope. One painted over the surface already had
-      // its chance: it occludes the view before routing reaches here.
-      const extra = registry?.surface()?.hitTestExtras(
-        world.x, world.y, camera(), sizeOf(rectNow()), helpersRef.current, drawnLayers(),
-      );
-      return extra ? layerAffordance(extra.layerId, extra.hit) : registry?.markerAt(id, world) ?? inner(world);
-    };
-  }, [id, getAnchorState, rectNow, registry, targetScale, camera, drawnLayers, rotationBadge, inputs?.resizeHandles, inputs?.selectionChrome, helpersRef]);
-
-  const classifyTarget = useMemo(() => buildClassifyTarget(
-    () => selectionNow().get(),
-    (world) => {
-      const i = inputsRef.current;
-      // This view's camera: the dispatcher converted with `clientToWorldHere`,
-      // and a screen-pixel tolerance needs the scale that produced it. The
-      // layer gate is this view's too, never the surface's.
-      const frame = { ...camera(), layerIsPainted, viewId: id };
-      if (i?.pickBest) return i.pickBest(world, frame);
-      const ids = i?.pickEvery?.(world, frame) ?? [];
-      return ids.length > 0 ? ids[ids.length - 1]! : null;
-    },
-    (id) => inputsRef.current?.kindOfNode?.(id),
-    (id) => inputsRef.current?.doubleClickNames?.(id) ?? id,
-  ), [id, camera, layerIsPainted, selectionNow, inputsRef]);
+  const { affordanceAt, classifyTarget } = useViewPicking({
+    id, registry, inputs, camera, rectNow, drawnLayers, layerIsPainted, selectionNow, helpersRef, depRegistryRef,
+  });
 
   const registration = useMemo<ViewRegistration>(() => ({
     id,
@@ -232,23 +179,13 @@ export function CanvasView(props: CanvasViewProps): null {
     held,
     aim,
     setAim,
-    layer: createViewportLayer<unknown, unknown>({
-      id,
-      label: label ?? id,
-      source: () => [...drawnLayers(), ...(registry?.markerLayers(id) ?? [])],
-      view: cameraAt,
-      bounds: (outer, dims) => rectAt(outer, dims),
-      ...(parent !== undefined ? { clip: (outer: View, dims: Dims) => frameIn(outer, dims)?.clip ?? NO_RECT } : {}),
-      // The surface half of the envelope passes through; the view half is
-      // this view's, so its layers paint its chrome rather than the
-      // surface's.
-      data: (outer) => ({ ...(outer as object), ...helpersRef.current, viewId: id }),
-      ...(background !== undefined ? { background } : {}),
+    layer: viewLayer({
+      id, label, parent, background, registry, drawnLayers, cameraAt, rectAt, frameIn, helpersRef,
     }),
     layerIsPainted,
     drawnLayers,
     target: {
-      dispatcher: dispatcherRef.current!,
+      dispatcher,
       affordanceAt,
       classifyTarget,
       clientToWorld: clientToWorldHere,
@@ -256,7 +193,7 @@ export function CanvasView(props: CanvasViewProps): null {
       deps: () => ({
         ...live.current.deps, view: viewApi, ingestion: ingestionApi, hitAt: hitAtOf(classifyTarget),
         // An Escape here cancels what is in flight here.
-        dispatcher: { cancelAll: (reason) => dispatcherRef.current!.cancelAll(reason) },
+        dispatcher: { cancelAll: (reason) => dispatcher.cancelAll(reason) },
       }),
       // Action eligibility is chrome-caps evaluated against this view, so a
       // rule that hides an action in one panel cannot decline a gesture in
@@ -265,7 +202,7 @@ export function CanvasView(props: CanvasViewProps): null {
     },
   }), [id, parent, order, interactive, paint, held, aim, setAim, label, background, rectAt, cameraAt, viewApi,
        affordanceAt, classifyTarget, clientToWorldHere, clientToLocalHere, ruleInputs, ingestionApi, drawnLayers,
-       layerIsPainted, inputsRef, helpersRef, frameIn, registry, live]);
+       layerIsPainted, inputsRef, helpersRef, frameIn, registry, live, dispatcher]);
 
   useEffect(() => {
     if (!registry) return;
@@ -274,7 +211,7 @@ export function CanvasView(props: CanvasViewProps): null {
 
   // Apart from the registration, which is replaced whenever a prop it reads
   // changes: only the view going away ends what is in flight over it.
-  useEffect(() => () => dispatcherRef.current?.cancelAll('cancel'), []);
+  useEffect(() => () => dispatcher.cancelAll('cancel'), [dispatcher]);
 
   // The surface paints this view from `live`, so any committed render of it —
   // a controlled camera, its bounds, its layer gate — needs a frame.

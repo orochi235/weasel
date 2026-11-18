@@ -1,7 +1,7 @@
 import { getOwn } from '@weasel-js/registry';
 import {
-  compressorNode, createFileSourceNode, createGainNode, createMixNode, createNoiseNode, createOscillatorNode,
-  createPanNode, delayNode, filterNode, reverbNode, type GraphNodeDef,
+  createCompressorNode, createFileSourceNode, createGainNode, createMixNode, createNoiseNode, createOscillatorNode,
+  createPanNode, createDelayNode, createFilterNode, createReverbNode, type GraphNodeDef,
 } from '@weasel-js/audio';
 
 /** What a run supplies to its source stages. */
@@ -45,10 +45,10 @@ export const audioStageNodes: AudioStageNodes = {
   'audio.noise': node(['color'], [], createNoiseNode),
   'audio.gain': node([], ['gain'], createGainNode),
   'audio.pan': node([], ['pan'], createPanNode),
-  'audio.filter': node(['type'], ['frequency', 'Q'], filterNode),
-  'audio.delay': node([], ['time', 'feedback', 'mix'], delayNode),
-  'audio.reverb': node(['seconds'], ['mix'], reverbNode),
-  'audio.compressor': node([], ['threshold', 'ratio'], compressorNode),
+  'audio.filter': node(['type'], ['frequency', 'Q'], createFilterNode),
+  'audio.delay': node([], ['time', 'feedback', 'mix'], createDelayNode),
+  'audio.reverb': node(['seconds'], ['mix'], createReverbNode),
+  'audio.compressor': node([], ['threshold', 'ratio'], createCompressorNode),
   'audio.mix': {
     settings: () => ({}),
     levels: ['a', 'b'],

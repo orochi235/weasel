@@ -31,12 +31,11 @@ export {
   starPath,
   linePath,
   boundsOfPath,
-  splitCubicAtT,
+  splitCubicPoints,
   fitCubicThroughDeletion,
   type Point,
-  pointInPath,
   strokeHitTest,
-  type PointInPathOptions,
+  type PathHitTestOptions,
   type StrokeHitTestOptions,
   pathContainsPoint,
   pathContainsRect,
@@ -67,7 +66,7 @@ export {
   puckerBloatPath,
   type PuckerBloatPathOptions,
   translatePath,
-  scalePathToBounds,
+  fitPathToRect,
   transformPath,
   flattenCubic,
   flattenQuadratic,
@@ -81,7 +80,7 @@ export {
   splitSubpaths,
   splitByClosure,
   hasOpenSubpath,
-  unionBoundsPath,
+  boundsOfPaths,
   pathSignedArea,
   reversePath,
   resolveCorners,
@@ -158,15 +157,15 @@ export {
   type SegmentHit,
 } from '@weasel-js/geom';
 export {
-  averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, simplifyAnchorsAt, simplifyPath,
+  averageAnchorsAt, nearestOpenEnds, joinAnchorsAt, joinSubpathEnds, simplifyAnchorsAt, simplifyPath,
   simplifySpan, simplifySubpath, subpathEndAt,
   type AverageAxis, type JoinOptions, type SimplifyPathOptions, type SubpathEnd,
 } from '@weasel-js/geom';
-export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from '@weasel-js/geom';
-export { poseRotationOf, rotatePathAround, type PoseRotation } from '@weasel-js/geom';
+export { pathInPoseBox, pathInWorld, worldEditToStorage, type PathInWorldPose } from '@weasel-js/geom';
+export { poseRotationOf, rotatePathAbout, type PoseRotation } from '@weasel-js/geom';
 export { poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type PoseLinear } from '@weasel-js/geom';
 export {
-  reachToMeet, kneadPath, type KneadPathOptions, intersectSegments, tugOpenEnd, openEndRay, openPathEnds, pathCrossings, pathSegments, snipPathAt,
+  reachToMeet, kneadPath, type KneadPathOptions, segmentCrossings, tugOpenEnd, openEndRay, openPathEnds, pathCrossings, pathSegments, snipPathAt,
   type ReachToMeetOptions, type OpenPathEnd, type PathCrossing, type PathSegment, type PathStop, type SegmentCrossing, type SnipPathOptions, type SnipResult,
 } from '@weasel-js/geom';
 export {

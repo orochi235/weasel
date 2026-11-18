@@ -24,10 +24,14 @@ export function atFront(): boolean {
   return window.location.hash.replace(/^#/, '') === FRONT_ID;
 }
 
-/** Go to the front page. It has no hash of its own, so the hash is dropped, not rewritten. */
-export function goFront(): void {
+/**
+ * Go to the front page. It has no hash of its own, so the hash is dropped, not rewritten. A link
+ * the reader followed pushes a history entry; a hash that named nothing is replaced.
+ */
+export function goFront(how: 'push' | 'replace'): void {
   const { pathname, search } = window.location;
-  window.history.replaceState(null, '', pathname + search);
-  // `replaceState` fires no event, and the app's root switches pages on this one.
+  if (how === 'push') window.history.pushState(null, '', pathname + search);
+  else window.history.replaceState(null, '', pathname + search);
+  // Neither fires an event, and the app's root switches pages on this one.
   window.dispatchEvent(new HashChangeEvent('hashchange'));
 }

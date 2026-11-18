@@ -8,7 +8,7 @@
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import {
-  type AnchorSet, type Path, type PolygonPath, type View, pathToAnchors, rectMarkerPath, viewRectToScreen, viewWorldToScreen,
+  type AnchorSet, type Path, type PolygonPath, type View, pathToAnchors, rectMarkerPath, viewRectToScreen, viewWorldToScreen, type Rect,
 } from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
 import { chromeStateFrom, previewSourcesFrom, isVisibleFrom } from 'canvas/drawEnvelope';
@@ -48,8 +48,8 @@ export interface CreatePathEditingOverlayLayerOptions {
    *  filled; unselected ones hollow. */
   getSelectedAnchors?(): ReadonlySet<number>;
   /** In-flight anchor-marquee rect in world coords, or null. Drawn as a
-   *  rubber band while `marqueeAnchorsAction` is dragging. */
-  getMarquee?(view: View): { x: number; y: number; width: number; height: number } | null;
+   *  rubber band while `areaSelectAnchorsAction` is dragging. */
+  getMarquee?(view: View): Rect | null;
   /** The edited node's committed pose and data, which extensions' marks read. */
   getNode?(id: string): { pose: unknown; data: unknown; layer?: string } | null;
   /** The path-edit extensions whose marks are drawn, in order. */

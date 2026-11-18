@@ -1,6 +1,7 @@
 import type { FaceMetrics, FaceRuleMetrics } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import type { PlacedGlyph } from './layoutRuns';
+import { createPart } from '@weasel-js/registry';
 
 /** The three text decoration rules, in the order every tier paints them. */
 export type DecorationKind = 'underline' | 'strikethrough' | 'overline';
@@ -22,7 +23,14 @@ export const DEFAULT_DECORATION_METRICS: Readonly<Record<DecorationKind, FaceRul
   overline: Object.freeze({ offset: -0.90, thickness: 0.05 }),
 });
 
-const resolved = new WeakMap<FaceMetrics, Readonly<Record<DecorationKind, FaceRuleMetrics>>>();
+const resolvedFor = createPart((face: FaceMetrics): Readonly<Record<DecorationKind, FaceRuleMetrics>> => {
+  const underline = face.underline ?? DEFAULT_DECORATION_METRICS.underline;
+  return Object.freeze({
+    underline,
+    strikethrough: face.strikethrough ?? DEFAULT_DECORATION_METRICS.strikethrough,
+    overline: Object.freeze({ offset: DEFAULT_DECORATION_METRICS.overline.offset, thickness: underline.thickness }),
+  });
+});
 
 /**
  * Where each rule sits for a face, in ems: the face's own underline and
@@ -35,17 +43,7 @@ const resolved = new WeakMap<FaceMetrics, Readonly<Record<DecorationKind, FaceRu
  */
 export function decorationMetrics(face?: FaceMetrics): Readonly<Record<DecorationKind, FaceRuleMetrics>> {
   if (!face) return DEFAULT_DECORATION_METRICS;
-  let out = resolved.get(face);
-  if (!out) {
-    const underline = face.underline ?? DEFAULT_DECORATION_METRICS.underline;
-    out = Object.freeze({
-      underline,
-      strikethrough: face.strikethrough ?? DEFAULT_DECORATION_METRICS.strikethrough,
-      overline: Object.freeze({ offset: DEFAULT_DECORATION_METRICS.overline.offset, thickness: underline.thickness }),
-    });
-    resolved.set(face, out);
-  }
-  return out;
+  return resolvedFor(face);
 }
 
 /**

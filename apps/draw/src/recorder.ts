@@ -103,7 +103,7 @@ export interface Recording {
   profile?: RecordingProfile;
   /** Viewport size at record time. Replay can sanity-check that coordinates
    *  are within plausible range against the current viewport. */
-  viewport: { w: number; h: number };
+  viewport: { width: number; height: number };
   /** Baseline scene captured at `start()`, for replay to restore before the first event.
    *  Null if the caller didn't pass a snapshot fn. */
   scene: SceneSnapshot | null;
@@ -148,7 +148,7 @@ export function createRecorder(opts: {
   /** `t` (ms since start) of each pointer's most recently captured pointermove. A pointer
    *  with none, as after its press, has its next move let through unconditionally. */
   const lastMoveT = new Map<number, number>();
-  let viewport = { w: 0, h: 0 };
+  let viewport = { width: 0, height: 0 };
   /** Pointer IDs with an active pointerdown that hasn't seen its matching
    *  up/cancel yet. Used to gate pointermove capture in `gesture-only`. */
   const activeDowns = new Set<number>();
@@ -273,8 +273,8 @@ export function createRecorder(opts: {
       throttleMs = startOpts?.throttleMs ?? 16;
       startedAt = new Date().toISOString();
       viewport = {
-        w: typeof window !== 'undefined' ? window.innerWidth : 0,
-        h: typeof window !== 'undefined' ? window.innerHeight : 0,
+        width: typeof window !== 'undefined' ? window.innerWidth : 0,
+        height: typeof window !== 'undefined' ? window.innerHeight : 0,
       };
       scene = startOpts?.snapshotScene?.() ?? null;
 

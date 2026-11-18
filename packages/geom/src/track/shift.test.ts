@@ -48,8 +48,8 @@ describe('shiftTrack', () => {
     // Out along the radius, so the nearest point is the same one.
     const n = inner.nearest({ x: center.x + (p.x - center.x) * 1.2, y: center.y + (p.y - center.y) * 1.2 });
     expect(n.f).toBeCloseTo(0.3, 6);
-    expect(n.dist).toBeCloseTo(10, 6);
-    expect(inner.nearest(p).dist).toBeCloseTo(0, 6);
+    expect(n.distance).toBeCloseTo(10, 6);
+    expect(inner.nearest(p).distance).toBeCloseTo(0, 6);
   });
 
   test('a shift that reaches the center of curvature folds the track, and gives null', () => {

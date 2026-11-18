@@ -1,3 +1,5 @@
+import { hasOwnKey } from '@weasel-js/registry';
+
 /** The constructor of each typed array of numbers, under the tag its type is written by. */
 export const TYPED_ARRAY_CONSTRUCTORS = {
   i8: Int8Array,
@@ -55,7 +57,7 @@ export function tagTypedArray(value: unknown): TaggedTypedArray | undefined {
 export function untagTypedArray(value: unknown): NumberTypedArray | undefined {
   if (value === null || typeof value !== 'object') return undefined;
   const { __ta: tag, data } = value as Partial<TaggedTypedArray>;
-  if (typeof tag !== 'string' || !Object.hasOwn(TYPED_ARRAY_CONSTRUCTORS, tag) || !Array.isArray(data)) return undefined;
+  if (typeof tag !== 'string' || !hasOwnKey(TYPED_ARRAY_CONSTRUCTORS, tag) || !Array.isArray(data)) return undefined;
   return TYPED_ARRAY_CONSTRUCTORS[tag].from(data.map((v) => namedNumber(v) ?? Number(v)));
 }
 

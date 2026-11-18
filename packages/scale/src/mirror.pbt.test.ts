@@ -34,7 +34,7 @@ describe('a scale turned round', () => {
       fc.pre(d0 !== d1 && Number.isFinite(d1 - d0));
       const a = linearScale({ domain: [d0, d1], range: [r0, r1] });
       const b = linearScale({ domain: [d1, d0], range: [r1, r0] });
-      if (Math.abs(v) <= Math.max(Math.abs(d0), Math.abs(d1))) expect(near(a.map(v), b.map(v), 1e-6)).toBe(true);
+      if (Math.abs(v) <= Math.max(Math.abs(d0), Math.abs(d1))) expect(near(a.position(v), b.position(v), 1e-6)).toBe(true);
       expect(b.ticks(n)).toEqual([...a.ticks(n)].reverse());
       seen.count('linear');
     }), runs(RUNS));
@@ -43,7 +43,7 @@ describe('a scale turned round', () => {
       const a = logScale({ domain: [d0, d1], range: [r0, r1] });
       const b = logScale({ domain: [d1, d0], range: [r1, r0] });
       const mid = Math.sqrt(d0) * Math.sqrt(d1);
-      expect(near(a.map(mid), b.map(mid), 1e-6)).toBe(true);
+      expect(near(a.position(mid), b.position(mid), 1e-6)).toBe(true);
       expect(b.ticks(n)).toEqual([...a.ticks(n)].reverse());
       seen.count('log');
     }), runs(RUNS));
@@ -91,7 +91,7 @@ describe('linearScale.spacedTicks', () => {
         }
         values.slice(1).forEach((v, i) => {
           expect(v).toBeGreaterThan(values[i]!);
-          expect(Math.abs(s.map(v) - s.map(values[i]!))).toBeGreaterThanOrEqual(minSpacing * (1 - 1e-6));
+          expect(Math.abs(s.position(v) - s.position(values[i]!))).toBeGreaterThanOrEqual(minSpacing * (1 - 1e-6));
         });
         const labels = values.map((v) => formatTick(v, { decimals, step }));
         expect(new Set(labels).size).toBe(labels.length);

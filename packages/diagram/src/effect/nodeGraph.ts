@@ -1,6 +1,6 @@
 import type { DiagramRouter } from '../dataTypes';
 import {
-  LOOK_THEME, boxNode, kindOf, sceneStyles, stageStyle, typeColors, uniqueGroups, uniqueStages, wireEdges,
+  LOOK_THEME, boxNode, kindOf, sceneStyles, stageStyle, typeColors, uniqueClusters, uniqueStages, wireEdges,
   type EffectLook, type LookThemeOptions, type RunRowOptions,
 } from './draw';
 import { branchNode, type BranchChoice } from './symbols';
@@ -32,7 +32,7 @@ export const nodeGraph: EffectLook<NodeGraphOptions> = (pipeline, options = {}) 
   const edges = wireEdges(pipeline, color);
 
   return {
-    data: { nodes, edges: edges.map((e) => e.edge), groups: uniqueGroups(pipeline) },
+    data: { nodes, edges: edges.map((e) => e.edge), clusters: uniqueClusters(pipeline) },
     scene: {
       layout: 'layered',
       layoutOptions: {

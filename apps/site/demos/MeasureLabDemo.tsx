@@ -1,7 +1,7 @@
 import { solid } from '@weasel-js/paint';
 import { asNodeId, createScene, type RectPose } from '@weasel-js/core';
 import {
-  createMeasurements, measureNode, measureEndSource, measurementsContribution, MeasureReadout, useMeasureTool,
+  createMeasurements, measureNode, measureEndSource, createMeasurementsContribution, MeasureReadout, useMeasureTool,
 } from '@weasel-js/measure';
 import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 import {
@@ -65,7 +65,7 @@ function MeasureTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const [measurements] = useState(() => createMeasurements({ layer: ANNOTATIONS }));
   const measure = useMeasureTool({ measurements, angleStep: angleStep * DEG_TO_RAD });
   const tools = useMemo(() => ({ measure }), [measure]);
-  const ambient = useMemo(() => [measurementsContribution(scene, measurements)], [scene, measurements]);
+  const ambient = useMemo(() => [createMeasurementsContribution(scene, measurements)], [scene, measurements]);
 
   // A measurement's ends snap a drawing within reach; past them it takes the grid.
   const snapTo = useMemo(

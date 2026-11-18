@@ -155,81 +155,81 @@ export class CustomNode<T> extends BaseNode<T> {
  * one is read and written at a dotted path. Distinct from `.section()`, which
  * puts a heading over sibling leaves and leaves their paths alone.
  */
-export class GroupNode<S extends ConfigShape> implements ConfigBranch<S> {
+export class ConfigGroup<S extends ConfigShape> implements ConfigBranch<S> {
   constructor(
     readonly children: S,
     readonly annotations: Readonly<BranchAnnotations> = {},
     readonly options: Readonly<BranchOptions> = {},
   ) {}
 
-  private with(annotations: BranchAnnotations, options: BranchOptions): GroupNode<S> {
-    return new GroupNode(this.children, annotations, options);
+  private with(annotations: BranchAnnotations, options: BranchOptions): ConfigGroup<S> {
+    return new ConfigGroup(this.children, annotations, options);
   }
 
   /** Heading for the group's rows. Defaults to the key, title-cased. */
-  label(name: string): GroupNode<S> {
+  label(name: string): ConfigGroup<S> {
     return this.with({ ...this.annotations, name }, this.options);
   }
 
   /** Longer help text. Carried on the resolved `PrefGroup`; both weasel-ui's
    *  `PrefsForm` and `ControlPanel` draw it under the heading. */
-  describe(description: string): GroupNode<S> {
+  describe(description: string): ConfigGroup<S> {
     return this.with({ ...this.annotations, description }, this.options);
   }
 
   /** How the group is drawn: a `tab` beside its neighbors, a bordered `panel`,
    *  a `section` heading over its rows, or a `page` of its own where the
    *  surface has pages. Carried on the resolved `PrefGroup`. */
-  as(kind: NonNullable<BranchAnnotations['as']>): GroupNode<S> {
+  as(kind: NonNullable<BranchAnnotations['as']>): ConfigGroup<S> {
     return this.with({ ...this.annotations, as: kind }, this.options);
   }
 
   /** Drawn `as('bar')`: what happens to the cells its line has no room for.
    *  `menu` opens them from a button at its end, where `scroll`, the default,
    *  keeps them all on it. Carried on the resolved `PrefGroup`. */
-  overflow(mode: NonNullable<BranchAnnotations['overflow']>): GroupNode<S> {
+  overflow(mode: NonNullable<BranchAnnotations['overflow']>): ConfigGroup<S> {
     return this.with({ ...this.annotations, overflow: mode }, this.options);
   }
 
   /** A glyph naming the group. A bar drawn with `.lead('icon')` starts its
    *  line with it; a menu row opening the group carries it beside its name. */
-  icon(icon: IconSpec): GroupNode<S> {
+  icon(icon: IconSpec): ConfigGroup<S> {
     return this.with({ ...this.annotations, icon }, this.options);
   }
 
   /** Drawn `as('bar')`: whether its line starts with its `icon` or its label.
    *  Unset, it starts with its first cell. Carried on the resolved `PrefGroup`. */
-  lead(lead: NonNullable<BranchAnnotations['lead']>): GroupNode<S> {
+  lead(lead: NonNullable<BranchAnnotations['lead']>): ConfigGroup<S> {
     return this.with({ ...this.annotations, lead }, this.options);
   }
 
   /** Render this whole group under a named section heading. An empty `label` is no section. */
-  section(label: string, opts: Omit<SectionOption, 'label'> = {}): GroupNode<S> {
+  section(label: string, opts: Omit<SectionOption, 'label'> = {}): ConfigGroup<S> {
     return this.with(this.annotations, { ...this.options, section: { label, ...opts } });
   }
 
   /** Show this group only while `when` holds, a condition or a function as on
    *  a leaf. Presentational — every value beneath it stays in config and the
    *  instrument still reads it. */
-  showIf(when: PrefCondition | ConfigPredicate): GroupNode<S> {
+  showIf(when: PrefCondition | ConfigPredicate): ConfigGroup<S> {
     return this.with(...conditioned(this.annotations, this.options, 'showIf', when));
   }
 
   /** Disable every row beneath this group while `when` does not hold. */
-  enableIf(when: PrefCondition | ConfigPredicate): GroupNode<S> {
+  enableIf(when: PrefCondition | ConfigPredicate): ConfigGroup<S> {
     return this.with(...conditioned(this.annotations, this.options, 'enableIf', when));
   }
 
   /** Put a button on the group's heading that returns every value beneath it
    *  to its default, leaving the rest of the config alone. */
-  resettable(): GroupNode<S> {
+  resettable(): ConfigGroup<S> {
     return this.with(this.annotations, { ...this.options, resettable: true });
   }
 
   /** Draw the group's card in a `MotifFrame` motif from `@weasel-js/ui`, as
    *  `.motif(stereo())`, in place of the panel's default frame. Has no effect on a
    *  group drawn `as` a tab, bar, section, or fragment. */
-  motif(motif: Motif): GroupNode<S> {
+  motif(motif: Motif): ConfigGroup<S> {
     return this.with(this.annotations, { ...this.options, motif });
   }
 }
@@ -315,7 +315,7 @@ export const f = {
   /** A branch: its children nest under this key, so `grid: f.group({ size })`
    *  puts the value at `config.grid.size` and addresses it as `'grid.size'`.
    *  Groups nest as deeply as the schema wants. */
-  group: <const S extends ConfigShape>(children: S): GroupNode<S> => new GroupNode(children),
+  group: <const S extends ConfigShape>(children: S): ConfigGroup<S> => new ConfigGroup(children),
 
   /** A leaf of a kind a lab supplies the control for, through `controls`. */
   custom: <T>(

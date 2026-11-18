@@ -83,7 +83,7 @@ export function dashPolylines(
  * The length a dash pattern runs along `path`, every subpath included: what a
  * writer handing the dash to another stroker passes to `dashPattern`.
  */
-export function dashLength(path: Path): number {
+export function dashRunLength(path: Path): number {
   return polylinesLength(extractPolylines(path));
 }
 

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { snapToContainer } from './snapToContainer';
 import type { GestureContext, GroupTransform, SnapTarget } from '@weasel-js/core/engine';
 import { moveEndForTests as moveEnd } from '@weasel-js/core/test-seams';
-import { createTransformOp } from '@weasel-js/core/engine';
+import { createSetPoseOp } from '@weasel-js/core/engine';
 
 const tt = (dx: number, dy: number): GroupTransform => ({ kind: 'translate', dx, dy });
 
@@ -27,7 +27,7 @@ function makeCtx(): GestureContext<Pose> {
  *  each node started to where the drag put it. */
 const translating = (ctx: GestureContext<Pose>) =>
   moveEnd((ids) => [...ids].map((id) =>
-    createTransformOp<Pose>({ id, from: ctx.origin.get(id)!, to: ctx.current.get(id)!, label: 'Move' })));
+    createSetPoseOp<Pose>({ id, from: ctx.origin.get(id)!, to: ctx.current.get(id)!, label: 'Move' })));
 
 describe('snapToContainer', () => {
   beforeEach(() => vi.useFakeTimers());

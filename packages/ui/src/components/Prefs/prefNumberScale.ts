@@ -1,5 +1,5 @@
 import type { PrefNumberScale } from '@weasel-js/prefs';
-import { isDev } from '@weasel-js/registry';
+import { createPart, isDev } from '@weasel-js/registry';
 import { linearScale, logScale, powScale, warpScale, type ContinuousScaleFactory } from '@weasel-js/scale';
 
 /** A log factory per caller, each warning once, under its caller's name, when its track does not lie above zero. */
@@ -24,7 +24,10 @@ function guardedLog(label: string): ContinuousScaleFactory {
 
 const SQRT: ContinuousScaleFactory = (opts) => powScale({ ...opts, exponent: 0.5 });
 
-const warps = new WeakMap<object, ContinuousScaleFactory>();
+const warps = createPart(
+  ({ to, from }: Exclude<PrefNumberScale, string>): ContinuousScaleFactory =>
+    (opts) => warpScale({ ...opts, to, from }),
+);
 
 /**
  * The scale a track is spaced by, or `undefined` for a linear one. Every surface drawing a prefs number as a
@@ -39,11 +42,5 @@ export function prefNumberScale(
   if (scale === 'log') return guardedLog(label);
   if (scale === 'sqrt') return SQRT;
   if (typeof scale === 'function') return scale;
-  let warp = warps.get(scale);
-  if (!warp) {
-    const { to, from } = scale;
-    warp = (opts) => warpScale({ ...opts, to, from });
-    warps.set(scale, warp);
-  }
-  return warp;
+  return warps(scale);
 }

@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { pointInPolygon } from '@weasel-js/geom';
+import { polygonContainsPoint } from '@weasel-js/geom';
 import { rotatePoint, type Vec2 } from '@weasel-js/core/math';
 import { outlinePolyline, portsOnOutline } from './onOutline';
 import { BPMN_OUTLINES } from './outlines/bpmn';
@@ -61,7 +61,7 @@ describe('portsOf', () => {
       expect(nonFinite(ports)).toEqual([]);
       const poly = outlinePolyline(outline, b);
       const center = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
-      const holds = pointInPolygon(poly.slice(0, -2), center.x, center.y);
+      const holds = polygonContainsPoint(poly.slice(0, -2), center.x, center.y);
       ports.forEach((p, i) => {
         if (p.normal !== null) expect(Math.abs(Math.hypot(p.normal.x, p.normal.y) - 1)).toBeLessThan(1e-12);
         const a = anchors[i]!;

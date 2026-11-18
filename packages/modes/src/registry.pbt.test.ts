@@ -3,15 +3,15 @@
  * subscribes and unsubscribes on the registry, a scoping dim, and a decoration set (the same listener on several
  * at once included), invalidations, and painter registrations and releases, against a model. Every step checks
  * the active mode, versions, which listeners heard what, tool and contribution eligibility, scoping answers,
- * the painted decorations, and that `getActiveModeFor` hands back the same object until the mode changes.
+ * the painted decorations, and that `createActiveModeReader` hands back the same object until the mode changes.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { IMPLICIT_TAGS } from './capabilities';
 import { createModeDecorations, type ModeDecorations } from './decorations';
-import { eligibleContribution, eligibleTool } from './eligibility';
+import { isContributionEligible, isToolEligible } from './eligibility';
 import type { ModeDefinition } from './modeDefinition';
-import { activeModeOf, createModeRegistry, getActiveModeFor, type ActiveMode, type ModeRegistry } from './registry';
+import { activeModeOf, createModeRegistry, createActiveModeReader, type ActiveMode, type ModeRegistry } from './registry';
 import { createScopingDim, OUT_OF_SCOPE_ALPHA, type ScopingDim } from './scopingLayer';
 import { MODE_IDS, modes, NODE_IDS, runs, TAGS, tally, timeoutFor } from './pbt.fixture';
 
@@ -61,7 +61,7 @@ function setup(ms: readonly ModeDefinition[], initial: string, dimAlpha: number 
   const decor = createModeDecorations({ registry: reg });
   const heard: number[] = [];
   const fns = Array.from({ length: LISTENERS }, (_, who) => () => { heard.push(who); });
-  const active = getActiveModeFor(reg);
+  const active = createActiveModeReader(reg);
   const real: Real = {
     reg, scope, decor, active, heard, fns, offs: [], releases: [], targets,
     last: { version: reg.getVersion(), scope: scope.getVersion(), decor: decor.getVersion(), active: active() },
@@ -106,8 +106,8 @@ function step(m: Model, r: Real, changed: readonly Surface[], act: () => void): 
   r.last = { version, scope: scopeVersion, decor: decorVersion, active };
   for (const tag of TAGS) {
     const ok = active.allowedCapabilities.has(tag);
-    expect(eligibleTool(r.reg, { id: 't', capabilities: [tag] })).toBe(ok);
-    expect(eligibleContribution(r.reg, { id: 'c', eligibility: { capabilities: ['navigation', tag] } })).toBe(ok);
+    expect(isToolEligible(r.reg, { id: 't', capabilities: [tag] })).toBe(ok);
+    expect(isContributionEligible(r.reg, { id: 'c', eligibility: { capabilities: ['navigation', tag] } })).toBe(ok);
   }
 
   for (const id of NODE_IDS) {

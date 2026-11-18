@@ -7,24 +7,24 @@ function candidate(c: Partial<RecordCandidate> & Pick<RecordCandidate, 'actionId
 }
 
 const escape = candidate({ actionId: 'escape', routes: ['[*:initial] keyDown(Escape)'], specificity: [0, 0, 1, 1] });
-const exitPathEdit = candidate({ actionId: 'exitPathEdit', routes: ['[*:*] keyDown(Escape)'], eligible: 'mode: path-edit' });
+const leavePathEdit = candidate({ actionId: 'leavePathEdit', routes: ['[*:*] keyDown(Escape)'], eligible: 'mode: path-edit' });
 const resetToDefault = candidate({ actionId: 'tool.resetToDefault', routes: ['[*:*] keyDown(Escape)'] });
 
 /** Escape while a path is being edited: the more specific `escape` declines,
- *  and `exitPathEdit` fires. */
+ *  and `leavePathEdit` fires. */
 export const escapeInPathEdit: DispatchRecord = {
   kind: 'dispatch',
   ts: 53527310,
   input: { eventKind: 'key', key: 'Escape', modifiers: NO_MODS, viewId: 'main', mode: 'path-edit' },
-  matched: [escape, exitPathEdit, resetToDefault],
+  matched: [escape, leavePathEdit, resetToDefault],
   dropped: [],
   ranked: [
     { candidate: escape, placedBy: { step: 'first' }, walk: { kind: 'declined', reason: 'not-applicable' } },
-    { candidate: exitPathEdit, placedBy: { step: 'specificity', part: 'phase' }, walk: { kind: 'fired' } },
+    { candidate: leavePathEdit, placedBy: { step: 'specificity', part: 'phase' }, walk: { kind: 'fired' } },
     { candidate: resetToDefault, placedBy: { step: 'context' }, walk: { kind: 'not-asked' } },
   ],
   predicted: false,
-  fired: 'exitPathEdit',
+  fired: 'leavePathEdit',
   outcome: 'handled',
 };
 
@@ -46,7 +46,7 @@ const ambientAreaSelect = candidate({
 const dragPan = candidate({ actionId: 'viewport.dragPan', routes: ['[*:*] drag'], ownerId: 'viewport.dragPanBinding' });
 
 /** A bare drag on empty canvas with the select tool, on a canvas that also
- *  opted into `areaSelectContribution` and `dragPanContribution`: the tool's
+ *  opted into `createAreaSelectContribution` and `createDragPanContribution`: the tool's
  *  marquee wins, and the contribution's binding of the same action is skipped
  *  as a duplicate. */
 export const bareDragSelect: DispatchRecord = {

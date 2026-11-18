@@ -7,7 +7,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import type { ResolveResult } from '@weasel-js/font';
 import { syntheticBoldGrowth } from '@weasel-js/font';
-import { boundsOfPath, pathFromD, pathSignedArea, pathToCubicContours, pointInPath, type PolygonPath } from '@weasel-js/geom';
+import { boundsOfPath, pathFromD, pathSignedArea, pathToCubicContours, pathContainsPoint, type PolygonPath } from '@weasel-js/geom';
 import { glyphTurn } from './glyphTurn';
 import { glyphOutlineAt } from './glyphOutlines';
 import { emboldenGlyph, syntheticBoldOffset } from './syntheticBold';
@@ -32,8 +32,8 @@ const unit = (min: number, max: number) => fc.oneof(
   // A coarse grid, so contours often share an edge or a corner.
   { weight: 3, arbitrary: fc.integer({ min: Math.ceil(min / 100), max: Math.floor(max / 100) }).map((k) => k * 100) },
 ).map((u) => u / 1000);
-const rect = fc.record({ x: unit(-200, 600), y: unit(-900, 200), w: unit(20, 600), h: unit(20, 900) });
-const rectD = ({ x, y, w, h }: { x: number; y: number; w: number; h: number }) => `M${x} ${y}L${x + w} ${y}L${x + w} ${y + h}L${x} ${y + h}Z`;
+const rect = fc.record({ x: unit(-200, 600), y: unit(-900, 200), width: unit(20, 600), height: unit(20, 900) });
+const rectD = ({ x, y, width: w, height: h }: { x: number; y: number; width: number; height: number }) => `M${x} ${y}L${x + w} ${y}L${x + w} ${y + h}L${x} ${y + h}Z`;
 
 function points(p: PolygonPath): [number, number][] {
   const out: [number, number][] = [];
@@ -59,7 +59,7 @@ function edgesInsideFill(p: PolygonPath, e: number): number {
       const dy = c[7] + c[5] - c[3] - c[1];
       const l = Math.hypot(dx, dy);
       if (l < 1e-9) continue;
-      const inside = (u: number, v: number) => pointInPath(p, u, v, { flattenTolerance: 1e-9 });
+      const inside = (u: number, v: number) => pathContainsPoint(p, u, v, { flattenTolerance: 1e-9 });
       if (inside(x + (dy / l) * e, y - (dx / l) * e) && inside(x - (dy / l) * e, y + (dx / l) * e)) n++;
     }
   }
@@ -117,12 +117,12 @@ describe('glyph geometry, property', () => {
   it('winds every placed outline positive, whichever way its data runs', () => {
     fc.assert(fc.property(rect, fc.boolean(), fc.boolean(), (r, reversed, italic) => {
       const d = reversed
-        ? `M${r.x} ${r.y}L${r.x} ${r.y + r.h}L${r.x + r.w} ${r.y + r.h}L${r.x + r.w} ${r.y}Z`
+        ? `M${r.x} ${r.y}L${r.x} ${r.y + r.height}L${r.x + r.width} ${r.y + r.height}L${r.x + r.width} ${r.y}Z`
         : rectD(r);
       const out = glyphOutlineAt(d, placed({ resolved: resolvedAs('outline', false, italic) }), 0, 0);
       expect(pathSignedArea(out)).toBeGreaterThan(0);
       // A shear keeps area: the outline covers the rectangle's area at the glyph's size.
-      expect(pathSignedArea(out)).toBeCloseTo(r.w * r.h * 40 * 40, 1);
+      expect(pathSignedArea(out)).toBeCloseTo(r.width * r.height * 40 * 40, 1);
     }), runs(RUNS));
   });
 
@@ -147,10 +147,10 @@ describe('glyph geometry, property', () => {
       // Grown outlines on the grid lie a multiple of 0.001 em apart, or touch: round joins cross nearly tangent.
       expect(edgesInsideFill(grown, 2e-4), `${source} ${d}`).toBe(0);
       if (rs.length > 1) t.count('overlapping');
-      const sides = (r: (typeof rs)[number]) => [r.x, r.x + r.w, r.y + 10, r.y + r.h + 10];
+      const sides = (r: (typeof rs)[number]) => [r.x, r.x + r.width, r.y + 10, r.y + r.height + 10];
       if (rs.some((a, i) => rs.slice(i + 1).some((b) => sides(a).some((v) => sides(b).includes(v))))) t.count('shared');
       if (rs.length === 1) {
-        const { w, h } = rs[0]!;
+        const { width: w, height: h } = rs[0]!;
         const corners = source === 'atlas' ? 4 * growth * growth : Math.PI * growth * growth;
         expect(Math.abs(pathSignedArea(grown) - (w * h + 2 * growth * (w + h) + corners))).toBeLessThan(2e-4);
         t.count(source);

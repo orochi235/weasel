@@ -13,7 +13,7 @@ import { asNodeId, AUTO_POSE_DESCRIPTOR, createEnteredGroup, visualBoundsViaDesc
 import { createGroupEntryContribution } from './groupEntry';
 import { useSelectTool } from './useSelectTool';
 import { adapterPointQuery } from './adapterPointQuery';
-import { escapeAction } from '@weasel-js/editing';
+import { deselectAction } from '@weasel-js/editing';
 import { useSelection } from '../../selection/useSelection';
 
 type Pose = { x: number; y: number; width: number; height: number };
@@ -32,7 +32,7 @@ const mark = (id: string, pose: Pose, parent?: string) => ({
 function harness(initial: UseSceneOptions<unknown, 'default', Pose>['initial']) {
   const { result } = renderHook(() => {
     const scene = useScene<unknown, 'default', Pose>({ systemLayers: [{ id: 'default' }], initial });
-    const sel = useSelection({ mode: 'multi' });
+    const sel = useSelection({ mode: 'multiple' });
     const adapter = sceneToAdapter(scene, { selection: sel });
     const pickEvery = ({ x, y }: { x: number; y: number }) =>
       pickWalk(scenePickSource(scene), adapterPointQuery(AUTO_POSE_DESCRIPTOR, false)(x, y, 0));
@@ -213,8 +213,8 @@ describe('bindings', () => {
 
   it('Escape ranks group.leave above the escape action: an entry\'s bindings assemble ahead of an action\'s own', () => {
     const h = harness([]);
-    const esc: ScopedBinding[] = actionBindings(escapeAction).map((binding) => ({
-      binding: { ...binding, actionId: 'escape' } as ScopedBinding['binding'], scope: 'ambient' as const, ownerId: 'edit',
+    const esc: ScopedBinding[] = actionBindings(deselectAction).map((binding) => ({
+      binding: { ...binding, actionId: 'deselect' } as ScopedBinding['binding'], scope: 'ambient' as const, ownerId: 'edit',
     }));
     const event = { kind: 'key' as const, key: 'Escape', altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
     const ranked = matchSorted(event as never, [...scoped(h), ...esc], true);

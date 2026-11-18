@@ -1,6 +1,6 @@
 /**
  * A diagram scene as the avoid router reads it: every participant, container,
- * pool, group box, and header as an obstacle, and every `avoid` connector not
+ * pool, cluster box, and header as an obstacle, and every `avoid` connector not
  * split across pages, with the ports each end may use and its label. A split
  * connector's label, on its first stub, is an obstacle of its own.
  */
@@ -14,7 +14,7 @@ import {
 import type { Vec2 } from '@weasel-js/core/math';
 import { diagramContainerOf, headerBox } from '../containers/trait';
 import { diagramEdgeOf } from '../edgeTrait';
-import { diagramGroupOf } from '../group';
+import { diagramClusterOf } from '../clusterBox';
 import { diagramLabelOf } from '../labelTrait';
 import { portSitesOf, portsOf, type PortsOptions } from '../ports';
 import { diagramNodeOf } from '../trait';
@@ -35,9 +35,9 @@ export const headerIdOf = (id: string): string => `${id}/header`;
 const facingPorts = (ports: readonly Port[]): AvoidPort[] =>
   ports.flatMap((p) => (p.normal === null ? [] : [{ point: p.point, normal: p.normal }]));
 
-/** Every id under `node`, at any depth: its children, or what a derived group box holds. */
+/** Every id under `node`, at any depth: its children, or what a derived cluster box holds. */
 function members(scene: AnyScene, node: SceneNode, into: Set<string>): Set<string> {
-  const under = Array.isArray(node.dependsOn) && diagramGroupOf(node) !== null ? node.dependsOn : scene.childrenOf(node.id as never);
+  const under = Array.isArray(node.dependsOn) && diagramClusterOf(node) !== null ? node.dependsOn : scene.childrenOf(node.id as never);
   for (const id of under) {
     if (into.has(id)) continue;
     into.add(id);
@@ -57,8 +57,8 @@ export function avoidSceneInput<TPose>(
   poseOf?: (id: string) => TPose | undefined,
 ): AvoidInput {
   const sc = scene as unknown as AnyScene;
-  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
-  const portOpts: PortsOptions<TPose> = { geometry, ...(opts.read ? { read: opts.read } : {}) };
+  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const portOpts: PortsOptions<TPose> = { poseDescriptor, ...(opts.read ? { read: opts.read } : {}) };
   const key = opts.routerKey ?? 'avoid';
   const poses = new Map<string, TPose>();
   const stored = worldPoses(sc, 'document');
@@ -86,7 +86,7 @@ export function avoidSceneInput<TPose>(
     const label = diagramLabelOf(node);
     if (label !== null) {
       const owner = Array.isArray(node.dependsOn) ? node.dependsOn[0] : undefined;
-      const { width, height } = geometry.getBounds(node.pose as TPose);
+      const { width, height } = poseDescriptor.getBounds(node.pose as TPose);
       if (owner !== undefined && !labels.has(owner)) {
         labels.set(owner, { id: node.id, placement: label, size: { width, height } });
         labelNodes.set(owner, node);
@@ -96,11 +96,11 @@ export function avoidSceneInput<TPose>(
     const container = diagramContainerOf(node);
     const isParticipant = diagramNodeOf(node as never, opts.read) !== null;
     if (!isParticipant && container?.role !== 'lane') continue;
-    const box = geometry.getBounds(pose(node));
+    const box = poseDescriptor.getBounds(pose(node));
     const header = container === null ? null : headerBox(box, container.header);
     if (header !== null) obstacles.push({ id: headerIdOf(node.id), kind: 'shape', box: header });
     if (container?.role === 'lane') continue;
-    const region = container !== null || diagramGroupOf(node) !== null;
+    const region = container !== null || diagramClusterOf(node) !== null;
     obstacles.push(region
       ? { id: node.id, kind: 'region', box, members: members(sc, node, new Set()) }
       : { id: node.id, kind: 'shape', box });
@@ -108,7 +108,7 @@ export function avoidSceneInput<TPose>(
 
   for (const id of split) {
     const node = labelNodes.get(id);
-    if (node !== undefined) obstacles.push({ id: node.id, kind: 'label', edge: id, box: geometry.getBounds(pose(node)) });
+    if (node !== undefined) obstacles.push({ id: node.id, kind: 'label', edge: id, box: poseDescriptor.getBounds(pose(node)) });
   }
 
   const edges: AvoidEdge[] = [];

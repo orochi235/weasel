@@ -11,7 +11,7 @@ export interface ToolLike {
 }
 
 /** True iff `tool` is usable in the registry's currently active mode. */
-export function eligibleTool(reg: ModeRegistry, tool: ToolLike): boolean {
+export function isToolEligible(reg: ModeRegistry, tool: ToolLike): boolean {
   return eligibleForMode(reg.current(), tool.capabilities ?? []);
 }
 
@@ -23,6 +23,6 @@ export interface ContributionLike {
 }
 
 /** True iff a contribution is usable in the registry's active mode. */
-export function eligibleContribution(reg: ModeRegistry, entry: ContributionLike): boolean {
+export function isContributionEligible(reg: ModeRegistry, entry: ContributionLike): boolean {
   return eligibleForMode(reg.current(), entry.eligibility?.capabilities ?? []);
 }

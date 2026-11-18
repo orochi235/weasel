@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from './scene';
-import { createTransformOp } from '../ops/transform';
+import { createSetPoseOp } from '../ops/setPose';
 import type { LayoutStrategy } from '../../layout/types';
 import { asNodeId, type NodeId, type RectPose } from './types';
 import type { PoseRemoval, PoseWrite } from './poseWrites';
@@ -31,7 +31,7 @@ describe('Scene.onPoseWrite', () => {
 
   it('reports applyBatch as ops under its label, and a batch as a call under its own', () => {
     const { scene, seen } = setup();
-    scene.applyBatch([createTransformOp<RectPose>({ id: A, from: at(0), to: at(7) })], 'Move', {
+    scene.applyBatch([createSetPoseOp<RectPose>({ id: A, from: at(0), to: at(7) })], 'Move', {
       setPose: (id: string, p: RectPose) => scene.setPose(asNodeId(id), p),
       getPose: (id: string) => scene.get(asNodeId(id))!.pose,
     });

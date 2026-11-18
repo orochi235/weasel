@@ -37,7 +37,7 @@ export function useScale(span: ReturnType<typeof useSpan>, strict: boolean, step
   const map = useMemo((): TrackMap => {
     if (even) return evenMap(stops);
     const unit = scale({ domain: [min, max], range: [0, 1] });
-    return { toFraction: (v) => clamp(unit.map(v), 0, 1), toValue: (f) => unit.invert(clamp(f, 0, 1)) };
+    return { toFraction: (v) => clamp(unit.position(v), 0, 1), toValue: (f) => unit.invert(clamp(f, 0, 1)) };
   }, [scale, even, stops, min, max]);
 
   const valueToFraction = useCallback((v: number): number => (max === min ? 0 : map.toFraction(v)), [map, min, max]);

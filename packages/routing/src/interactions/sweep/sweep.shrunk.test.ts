@@ -1,7 +1,7 @@
 /** Moves the sweep property test shrank to. */
 import { afterEach, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingInvoker } from '../actions/invoker';
-import { sweepAction } from './sweep';
+import { createSweepAction } from './sweep';
 
 afterEach(() => { delete (document as { elementFromPoint?: unknown }).elementFromPoint; });
 
@@ -16,7 +16,7 @@ function sweepRow(xs: number[]): { entered: string[]; hits: number[] } {
     return cells[Math.floor(x / 10)] ?? document.body;
   };
   const entered: string[] = [];
-  const invoker = sweepAction<string>({
+  const invoker = createSweepAction<string>({
     surface: () => host, keyOf: (el) => (el as HTMLElement).dataset.key,
     begin: () => ({ enter: (item) => { entered.push(item.key); } }),
   }).invoker as OngoingInvoker;

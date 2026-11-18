@@ -1,4 +1,4 @@
-import { createEmitter } from '@weasel-js/registry';
+import { createEmitter, createPart } from '@weasel-js/registry';
 import type { TrialClock } from './trialClock';
 
 /** What a clock's transports keep between them: the speed and direction a
@@ -18,13 +18,9 @@ export interface TransportHoldStore {
   subscribe(listener: () => void): () => void;
 }
 
-const stores = new WeakMap<TrialClock, TransportHoldStore>();
-
 /** The hold every transport over `clock` shares, opened on the rate the clock
  *  runs at, or at its `speed` forward for one that is paused. */
-export function transportHoldOf(clock: TrialClock): TransportHoldStore {
-  const kept = stores.get(clock);
-  if (kept) return kept;
+export const transportHoldOf = createPart((clock: TrialClock): TransportHoldStore => {
   let hold: TransportHold = {
     speed: Math.abs(clock.rate) || clock.speed,
     backward: clock.rate < 0,
@@ -46,6 +42,5 @@ export function transportHoldOf(clock: TrialClock): TransportHoldStore {
     },
     subscribe: changed.subscribe,
   };
-  stores.set(clock, store);
   return store;
-}
+});

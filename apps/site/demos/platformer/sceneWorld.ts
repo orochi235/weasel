@@ -3,7 +3,7 @@ import { solid } from '@weasel-js/paint';
 import { asNodeId } from '@weasel-js/core';
 import type { NodeId, RectPose, Scene, Fill } from '@weasel-js/core';
 import type { TextStyle, TextVerticalAlign } from '@weasel-js/text';
-import type { Pose } from '@weasel-js/animator';
+import type { SkeletonPose } from '@weasel-js/animator';
 import { boneLocalPoses } from './boneRig';
 import { COIN_R, ENEMY_H, ENEMY_W, type Coin, type Enemy } from './entities';
 import { BALL_R, flagY, POLE_WIDTH, type Flagpole } from './flagpole';
@@ -157,7 +157,7 @@ const OFFSCREEN: RectPose = { x: -1e5, y: -1e5, width: 0, height: 0 };
  * tree carrying a moving world — the caller wraps it in `scene.untracked`,
  * which applies it without recording and notifies once.
  */
-export function syncScene(scene: Scene<WorldData, WorldLayer, RectPose>, g: GameRefs, pose: Pose): void {
+export function syncScene(scene: Scene<WorldData, WorldLayer, RectPose>, g: GameRefs, pose: SkeletonPose): void {
   // Coins spin by narrowing: the ellipse collapses to a line at the quarter
   // points, which is the same read as the immediate-mode version.
   const spin = Math.abs(Math.cos(((g.elapsed % 1.2) / 1.2) * Math.PI * 2));
@@ -195,7 +195,7 @@ export function syncScene(scene: Scene<WorldData, WorldLayer, RectPose>, g: Game
 
   const locals = boneLocalPoses(
     pose,
-    { x: g.player.body.x, y: g.player.body.y + g.player.body.h / 2 },
+    { x: g.player.body.x, y: g.player.body.y + g.player.body.height / 2 },
     g.player.body.facing,
   );
   for (const [name, pose] of locals) {

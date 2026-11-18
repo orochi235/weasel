@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react';
-import type { Globals } from '../../protocol/messages';
+import type { StoryGlobals } from '../../protocol/messages';
 import type { ApiTable } from '../../story/api';
-import type { ComponentDeps, Decorator, LoadedStory } from '../../story/types';
+import type { ComponentNode, Decorator, LoadedStory } from '../../story/types';
 
 /** What every cell on an index page shares with the frame that hosts it. */
 export interface IndexEnv {
@@ -19,10 +19,10 @@ export interface IndexEnv {
   /** The ids of the stories tagged `lab`: whole screens, which the page links to but does not embed. */
   labs?: readonly string[];
   /** The component's place in the component graph; absent until the graph arrives, and for a gallery. */
-  dependencies?: ComponentDeps;
+  dependencies?: ComponentNode;
   /** The component's props and ref: null where forge found no component, absent where it read none or for a gallery. */
   api?: ApiTable | null;
-  globals: Globals;
+  globals: StoryGlobals;
   /** The frame config's, outermost. */
   decorators: readonly Decorator[];
   open: (id: string) => void;

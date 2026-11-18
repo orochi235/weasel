@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { createDelayEffect, createReverbEffect } from './effects';
-import { delayNode } from './graph/processors';
+import { createDelayNode } from './graph/processors';
 import { createFakeAudioContext } from './testing/fakeAudioContext';
 import { anyFinite, runs, tally } from './pbt.fixture';
 
@@ -45,7 +45,7 @@ describe('the delay insert', () => {
       };
       let fx: ReturnType<typeof createDelayEffect> | null = null;
       const refused = refusedOurs(() => {
-        if (asNode) delayNode(ctx as never, opts);
+        if (asNode) createDelayNode(ctx as never, opts);
         else fx = createDelayEffect(ctx as never, opts);
       });
       for (const s of made) {

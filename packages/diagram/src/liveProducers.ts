@@ -45,7 +45,7 @@ export function progress(frame: number, frames: number, easing: EasingFn): { t: 
 
 /** Options for {@link forceProducer}. */
 export interface ForceProducerOptions<TPose> extends ForceOptions {
-  geometry?: PoseDescriptor<TPose>;
+  poseDescriptor?: PoseDescriptor<TPose>;
   /** Alpha held while something is pinned, so the graph keeps answering a drag
    *  instead of freezing under it. Default 0.3. */
   dragAlpha?: number;
@@ -74,7 +74,7 @@ export function forceProducer<TPose>(
   graph: Graph,
   opts: ForceProducerOptions<TPose> = {},
 ): LiveLayoutProducer<TPose> {
-  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   const relaxation = forceRelaxation(graph, opts);
   const dragAlpha = opts.dragAlpha ?? 0.3;
   const restDistance = opts.restDistance ?? REST_DISTANCE;
@@ -90,7 +90,7 @@ export function forceProducer<TPose>(
       if (held !== undefined) {
         // A dragged node holds its neighbors while they relax, which is `fx` /
         // `fy` on the integrator rather than a correction applied afterward.
-        const bounds = geometry.getBounds(held);
+        const bounds = poseDescriptor.getBounds(held);
         body.fx = center(bounds, 'x');
         body.fy = center(bounds, 'y');
       } else if (!relaxation.pinned.has(node.id)) {

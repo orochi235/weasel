@@ -2,6 +2,7 @@ import type { Paint } from '@weasel-js/paint';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import type { GpuTexture } from '../gpu/types';
 import type { Mesh } from '@weasel-js/geom/tessellate';
+import type { ScreenBox } from '../paintedBounds';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
 import { setProjAndModel } from './uniforms';
@@ -10,8 +11,6 @@ import { BATCH_MODEL } from './flushBatch';
 import { bindPaintKind, paintDrawKind } from './paintBind';
 
 const UNBLENDED = { blend: null } as const;
-
-export interface ScreenRect { x0: number; y0: number; x1: number; y1: number }
 
 /** The unit square, stretched over the region a scratch paint covers. */
 const UNIT_QUAD: Mesh = {
@@ -41,7 +40,7 @@ interface ScratchPaint {
  * declines the paint — and the glyphs then draw nothing, as the outline tier
  * does for a paint no kind binds.
  */
-export function renderPaintToScratch(ctx: DrawContext, fill: Paint, rect: ScreenRect): ScratchPaint | null {
+export function renderPaintToScratch(ctx: DrawContext, fill: Paint, rect: ScreenBox): ScratchPaint | null {
   const scratch = ctx.paintScratch;
   if (!scratch || !paintDrawKind(fill.kind)?.bind) return null;
   const ratio = ctx.deviceWidth && ctx.widthCss > 0 ? ctx.deviceWidth / ctx.widthCss : 1;
@@ -50,11 +49,11 @@ export function renderPaintToScratch(ctx: DrawContext, fill: Paint, rect: Screen
   // The target's window: inside an effects buffer reaching past the drawing
   // buffer, glyphs there are drawn and need their paint too.
   const win = ctx.renderTarget?.window ?? { x: 0, y: 0, width: deviceW, height: deviceH };
-  const px0 = Math.max(win.x, Math.floor(rect.x0 * ratio));
-  const py0 = Math.max(win.y, Math.floor(rect.y0 * ratio));
+  const px0 = Math.max(win.x, Math.floor(rect.minX * ratio));
+  const py0 = Math.max(win.y, Math.floor(rect.minY * ratio));
   const maxSide = ctx.imageCache.maxTextureSide;
-  const pw = Math.min(maxSide, Math.min(win.x + win.width, Math.ceil(rect.x1 * ratio)) - px0);
-  const ph = Math.min(maxSide, Math.min(win.y + win.height, Math.ceil(rect.y1 * ratio)) - py0);
+  const pw = Math.min(maxSide, Math.min(win.x + win.width, Math.ceil(rect.maxX * ratio)) - px0);
+  const ph = Math.min(maxSide, Math.min(win.y + win.height, Math.ceil(rect.maxY * ratio)) - py0);
   if (!(pw > 0 && ph > 0)) return null;
 
   // The region in screen px, and the two matrices a kind's vertex stage

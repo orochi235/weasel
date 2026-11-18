@@ -44,7 +44,7 @@ const OPENING = { id: 'tab', anchors: [1, 2] };
 
 function SegmentTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const selection = useSelection({ mode: 'multi', scene, initial: [asNodeId('tab')] });
+  const selection = useSelection({ mode: 'multiple', scene, initial: [asNodeId('tab')] });
   const { shiftC } = ctx.config;
   const tune = useMemo<ActionTunings>(
     () => ({ convertSegments: { params: shiftC === 'flip' ? {} : { to: shiftC } } }),

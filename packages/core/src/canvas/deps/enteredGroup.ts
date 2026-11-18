@@ -7,7 +7,7 @@
  * parent, and an undo that brings it back lands on it again.
  */
 import { useEffect } from 'react';
-import { createEmitter } from '@weasel-js/registry';
+import { createEmitter, createPart } from '@weasel-js/registry';
 import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import type { NodeId } from 'core/scene/types';
 import type { AnyScene } from 'core/scene/anyScene';
@@ -95,15 +95,10 @@ export function createEnteredGroup(scene: Pick<AnyScene, 'get' | 'ancestorsOf' |
   };
 }
 
-const BY_SCENE = new WeakMap<object, EnteredGroupApi>();
-
 /** `scene`'s entered group: one store per scene, shared by every caller and by a `<SceneCanvas>`
  *  over it that is given no `enteredGroup`. `createEnteredGroup` makes a separate one. */
-export function useEnteredGroup(scene: Pick<AnyScene, 'get' | 'ancestorsOf' | 'subscribe'>): EnteredGroupApi {
-  let entered = BY_SCENE.get(scene);
-  if (!entered) BY_SCENE.set(scene, (entered = createEnteredGroup(scene)));
-  return entered;
-}
+export const useEnteredGroup: (scene: Pick<AnyScene, 'get' | 'ancestorsOf' | 'subscribe'>) => EnteredGroupApi =
+  createPart(createEnteredGroup);
 
 export function useEnteredGroupApiSource(dep: EnteredGroupApi): void {
   useDepSource('enteredGroup', () => dep);

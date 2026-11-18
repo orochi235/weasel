@@ -33,8 +33,8 @@ function ShieldComponent({ variant, focused, params }: {
   const cpY = lerp(sh, pd, Math.max(0.1, Math.min(cfg.curveTightness, 1)));
   // Aspect-aware top corner radii (so the rounded corners stay circular in CSS).
   const cornerCss = Math.max(0, Math.min(cfg.erosion, 1)) * 12;
-  const rxC = (cornerCss / box.w) * 100;
-  const ryC = (cornerCss / box.h) * 100;
+  const rxC = (cornerCss / box.width) * 100;
+  const ryC = (cornerCss / box.height) * 100;
   const d = [
     `M ${trimNumber(rxC, 3)} 0`,
     `L ${trimNumber(100 - rxC, 3)} 0`,

@@ -62,28 +62,31 @@ const under = (at: string, key: string): string => (at === '' ? key : `${at}.${k
  * object where none changed. `fn` is told the value path of the entry the node is drawn in, its step written `*`
  * (`'phases.*'`): the item's own for the item, and `undefined` outside every list and map.
  */
-function mapNodes<R extends SchemaRoot>(root: R, fn: (node: SchemaNode, entry: string | undefined) => SchemaNode): R {
+/** `fn` is told the entry a node sits in, if any, and the path of the group it is declared in. */
+function mapNodes<R extends SchemaRoot>(root: R, fn: (node: SchemaNode, entry: string | undefined, group: string) => SchemaNode): R {
   /** `at(key, kid)` is the value path of each kid. */
-  const each = <M extends ChildMap>(kids: M, at: (key: string, kid: SchemaNode) => string, entry: string | undefined): M => {
-    const mapped = Object.fromEntries(Object.entries(kids).map(([key, kid]) => [key, go(kid, at(key, kid), entry)]));
+  const each = <M extends ChildMap>(kids: M, at: (key: string, kid: SchemaNode) => string, entry: string | undefined, group: string): M => {
+    const mapped = Object.fromEntries(Object.entries(kids).map(([key, kid]) => [key, go(kid, at(key, kid), entry, group)]));
     return Object.keys(kids).every((key) => getOwn(mapped, key) === kids[key]) ? kids : (mapped as M);
   };
-  const go = (node: SchemaNode, at: string, entry: string | undefined): SchemaNode => {
-    let self = fn(node, entry);
+  const go = (node: SchemaNode, at: string, entry: string | undefined, group: string): SchemaNode => {
+    let self = fn(node, entry, group);
     const { item, variants } = innerOf(node);
     const itemAt = under(at, PREF_ENTRY);
-    const held = item && go(item, itemAt, itemAt);
+    const held = item && go(item, itemAt, itemAt, group);
     if (held !== item) self = { ...self, item: held } as SchemaNode;
     // A variant's fields are read at the union's own path.
-    const shapes = variants && each(variants, () => at, entry);
+    const shapes = variants && each(variants, () => at, entry, group);
     if (shapes !== variants) self = { ...self, variants: shapes } as SchemaNode;
     // An entry's fields were mapped with the entry.
     const kids = ownChildrenOf(node);
+    // A group's children are declared in it; anything else's sit in the group it does.
+    const inside = !isPrefLeaf(node) && !isPrefSection(node) ? at : group;
     // A section's key is a heading, and no part of the paths under it.
-    const mapped = kids && each(kids, (key, kid) => (isPrefSection(kid) ? at : under(at, key)), entry);
+    const mapped = kids && each(kids, (key, kid) => (isPrefSection(kid) ? at : under(at, key)), entry, inside);
     return mapped === kids ? self : withChildren(self, mapped!);
   };
-  return go(root, '', undefined) as R;
+  return go(root, '', undefined, '') as R;
 }
 
 /** `path` where `moves` leave it: a moved value path, or one under it, goes where that went. */
@@ -119,11 +122,19 @@ function rebasedLeaf(leaf: PrefLeaf, moves: readonly ValueMove[]): PrefLeaf {
 export function rebaseValuePaths<R extends SchemaRoot>(root: R, moves: ReadonlyArray<ValueMove | null>): R {
   const live = moves.filter((m): m is ValueMove => m !== null && m[0] !== m[1]);
   if (live.length === 0) return root;
-  return mapNodes(root, (node, entry) => {
+  return mapNodes(root, (node, entry, group) => {
     const inEntry = (path: string): string => {
       if (entry === undefined || path === '') return path;
       const base = rebased(entry, live);
       const to = rebased(`${entry}.${path}`, live);
+      return to.startsWith(`${base}.`) ? to.slice(base.length + 1) : path;
+    };
+    // A path read from the group follows a move inside the group, and nothing that leaves it: a move of the group
+    // itself carries the path with it.
+    const inGroup = (path: string): string => {
+      const base = rebased(group, live);
+      const to = rebased(under(group, path), live);
+      if (group === '') return to;
       return to.startsWith(`${base}.`) ? to.slice(base.length + 1) : path;
     };
     let next: SchemaNode = isPrefLeaf(node) ? rebasedLeaf(node, live) : node;
@@ -131,7 +142,7 @@ export function rebaseValuePaths<R extends SchemaRoot>(root: R, moves: ReadonlyA
       const held = (node as { [F in PrefConditionField]?: unknown })[field];
       // Anything else that sits where a condition goes is left for the check that reports it.
       if (!isPrefCondition(held)) continue;
-      const followed = mapPrefConditionPaths(held, (path, from) => (from === 'item' ? inEntry(path) : rebased(path, live)));
+      const followed = mapPrefConditionPaths(held, (path, from) => (from === 'item' ? inEntry(path) : from === 'group' ? inGroup(path) : rebased(path, live)));
       if (followed !== held) next = { ...next, [field]: followed } as SchemaNode;
     }
     return next;

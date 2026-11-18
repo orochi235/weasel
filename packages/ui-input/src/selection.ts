@@ -2,8 +2,8 @@
  * Selection: which of a run of items are on. One spec answers what each item
  * shows, what a click on it does, what the arrow keys do, and how a sweep
  * sets several at once, so a component taking it cannot get one of them
- * wrong. Build a model with {@link selection} (one value, or a list of them)
- * or {@link selectionOfEach} (items that each own a boolean); {@link selectionKeys}
+ * wrong. Build a model with {@link createSelectionModel} (one value, or a list of them)
+ * or {@link createEachSelectionModel} (items that each own a boolean); {@link selectionKeys}
  * says what the keyboard does with it.
  */
 
@@ -99,7 +99,7 @@ function startFrom<T>(from: SelectionEdit | undefined, mode: 'single' | 'multipl
 }
 
 /** `spec`'s selection over `values`, one per item in order. */
-export function selection<V>(spec: SelectionSpec<V>, values: readonly V[]): SelectionModel {
+export function createSelectionModel<V>(spec: SelectionSpec<V>, values: readonly V[]): SelectionModel {
   const mixed = spec.mixedValues ?? [];
   if (spec.mode === 'multiple') {
     const on = spec.value;
@@ -168,7 +168,7 @@ export function selection<V>(spec: SelectionSpec<V>, values: readonly V[]): Sele
 }
 
 /** The selection of items that each own their state: any number on, and nothing mixed. */
-export function selectionOfEach(items: readonly OwnSelection[]): SelectionModel {
+export function createEachSelectionModel(items: readonly OwnSelection[]): SelectionModel {
   return {
     mode: 'multiple',
     followsFocus: false,

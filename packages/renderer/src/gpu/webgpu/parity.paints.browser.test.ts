@@ -95,9 +95,9 @@ describe('WebGL and WebGPU sample and read back the same', () => {
     const b = await openBackends({ width: W, height: H, dpr: 1 });
     for (const r of [b.gl, b.gpu]) r.setImageMinification(mode);
     const commands = [GROUND,
-      { kind: 'image', image, x: 2, y: 2, w: 13, h: 11 },
-      { kind: 'image', image, x: 20, y: 4, w: 24, h: 24, opacity: 0.7 },
-      { kind: 'image', image, x: 48, y: 30, w: 9, h: 15, sampling: 'nearest' },
+      { kind: 'image', image, x: 2, y: 2, width: 13, height: 11 },
+      { kind: 'image', image, x: 20, y: 4, width: 24, height: 24, opacity: 0.7 },
+      { kind: 'image', image, x: 48, y: 30, width: 9, height: 15, sampling: 'nearest' },
     ] as DrawCommand[];
     // `auto` builds mipmaps once an image has been drawn shrunk: compare the frame after.
     await renderBoth(b, commands);
@@ -112,7 +112,7 @@ describe('WebGL and WebGPU sample and read back the same', () => {
       const tile = registerTexture(await bitmap(8, 8, translucent, options));
       registered.push(tile);
       return [GROUND,
-        { kind: 'image', image: await bitmap(8, 8, translucent, options), x: 2, y: 2, w: 28, h: 28 },
+        { kind: 'image', image: await bitmap(8, 8, translucent, options), x: 2, y: 2, width: 28, height: 28 },
         { kind: 'path', path: { kind: 'rect', x: 34, y: 2, width: 28, height: 44 }, fill: { paint: { kind: 'texture', texture: tile, width: 8, height: 8 } } },
       ] as DrawCommand[];
     };

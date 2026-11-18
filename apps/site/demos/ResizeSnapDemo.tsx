@@ -22,7 +22,7 @@ const INITIAL: Rect[] = [
   { id: 'a', x: 160, y: 100, width: 100, height: 60, rotation: Math.PI / 6, fill: { paint: solid('#7fb069') } },
 ];
 
-const SELECTED = { mode: 'multi', initial: [asNodeId('a')] } as const;
+const SELECTED = { mode: 'multiple', initial: [asNodeId('a')] } as const;
 
 export function ResizeSnapDemo() {
   const scene = useScene({ items: INITIAL });

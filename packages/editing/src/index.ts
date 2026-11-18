@@ -22,10 +22,10 @@ export {
 export { alignPreset, arrangePreset, distributePreset, flipPreset, reorderPreset } from './presets/arrange';
 export { pathfinderPreset } from './presets/pathfinder';
 export { booleansPreset } from './presets/booleans';
-export { selectToolKitPreset, selectToolsPreset, shapeToolKitPreset, shapeToolsPreset } from './presets/tools';
+export { selectToolsOfferedPreset, selectToolsPreset, shapeToolsOfferedPreset, shapeToolsPreset } from './presets/tools';
 import type {} from './tools/toolOptions';
 export {
-  BUILTIN_TOOL_GROUPS, BUILTIN_TOOL_IDS, BUILTIN_TOOLS, SELECT_TOOLS, SHAPE_TOOLS, TOOL_GROUP_ORDER, type KitToolId,
+  KIT_TOOL_GROUPS, KIT_TOOL_IDS, KIT_TOOLS, SELECT_TOOLS, SHAPE_TOOLS, TOOL_GROUP_ORDER, type KitToolId,
 } from './tools/toolSets';
 export {
   DEFAULT_SHAPE_PAINT, shapeToolOptions, styleOptionLeaves, toolOptionPaint, type ShapeToolOptionsSpec,
@@ -46,12 +46,12 @@ export { createLassoTool, useLassoTool, LASSO_TOOL_OPTIONS, type UseLassoToolOpt
 export { useImageTool, type UseImageToolOptions } from './tools/image';
 export { useEyedropperTool, type UseEyedropperToolOptions } from './tools/eyedropper';
 export {
-  createSelectTool, createSelectToolWith, useSelectTool, useSelectToolWith, type SelectAdapter, type UseSelectToolOptions,
+  createSelectTool, createPickerSelectTool, useSelectTool, usePickerSelectTool, type SelectAdapter, type UseSelectToolOptions,
 } from './tools/select/useSelectTool';
 export {
-  selectionMoveContribution, selectionMoveBindings, selectionTransformContribution, selectionTransformBindings,
-  selectionResizeContribution, selectionResizeBindings, selectionRotateContribution, selectionRotateBindings,
-  areaSelectContribution, onBody, onEmptyCanvas, AREA_SELECT_ID, SELECTION_MOVE_ID, SELECTION_TRANSFORM_ID,
+  createSelectionMoveContribution, selectionMoveBindings, createSelectionTransformContribution, selectionTransformBindings,
+  createSelectionResizeContribution, selectionResizeBindings, createSelectionRotateContribution, selectionRotateBindings,
+  createAreaSelectContribution, isBodyOffChrome, isEmptyOffChrome, AREA_SELECT_ID, SELECTION_MOVE_ID, SELECTION_TRANSFORM_ID,
   SELECTION_RESIZE_ID, SELECTION_ROTATE_ID, type SelectionMoveOptions, type SelectionTransformOptions,
   type SelectionRotateOptions,
 } from './tools/select/selectionContributions';
@@ -95,7 +95,7 @@ export { snapToContainer, snapBackOrDelete, clampMove, type ClampMoveOptions } f
 export { cloneAction } from './actions/clone/action';
 export { createResizeAction, resizeAction, type ResizeActionOptions } from './actions/resize/action';
 export { clampMinSize } from './actions/resize/behaviors';
-export { useResizePolicy, resizePolicyOptions, type UseResizePolicyOptions } from './deps/resizePolicy';
+export { useResizePolicyDepSource, resizePolicyOptions, type UseResizePolicyDepSourceOptions } from './deps/resizePolicy';
 export { rotateAction } from './actions/rotate/action';
 export { areaSelectAction } from './actions/select/areaSelect';
 export { clearSelectionAction } from './actions/select/clearSelection';
@@ -128,7 +128,7 @@ export type {
 
 export { ENGINE_STANDARD_ACTIONS } from './engineStandardActions';
 export { createSelection, useSelection, type UseSelectionOptions } from './selection/useSelection';
-export { escapeAction } from './actions/edit/escape';
+export { deselectAction } from './actions/edit/deselect';
 export { selectAllAction } from './actions/edit/selectAll';
 export { duplicateAction, duplicateSelection } from './actions/edit/duplicate';
 export { groupAction, ungroupAction } from './actions/edit/group';
@@ -142,7 +142,7 @@ export { setVertexColorAction } from './actions/edit/setVertexColor';
 export { ingestAction } from './actions/edit/ingest';
 export { transformAgainAction } from './actions/transformAgain/action';
 export { transformSelection, type SelectionTransform } from './actions/transformAgain/transformSelection';
-export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from './actions/clipboard/action';
+export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteCopiedAction } from './actions/clipboard/action';
 export {
   PATHFINDER_STROKES, pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction,
   pathfinderExcludeAction, pathfinderDivideAction, pathfinderCropAction, pathfinderTrimAction, pathfinderMergeAction,
@@ -155,7 +155,7 @@ export {
   type BooleanOpOptions, type BooleanStrokes, type BooleanSource, type BooleanOperands, type BooleanCommitPiece,
   type UseBooleansOptions, type UseBooleansReturn,
 } from './booleans';
-export { useBooleansAdapterSource } from './deps/booleans';
+export { useBooleansAdapterDepSource } from './deps/booleans';
 export {
   useClipboard, useClipboardOps, WEASEL_CLIPBOARD_MIME, WEASEL_CLIPBOARD_MIME_WEB, buildWeaselClipboardText,
   sniffWeaselClipboardText, parseWeaselClipboardText, embedWeaselMetadataInSvg, extractWeaselClipboardFromSvg,

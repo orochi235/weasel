@@ -17,7 +17,7 @@ interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 600, H = 400;
 
-interface Shape { x: number; y: number; w: number; h: number; color: string }
+interface Shape { x: number; y: number; width: number; height: number; color: string }
 
 // Each painter draws its shapes once, in the cell `[0, period)`.
 // `createTiledLayer` below is what repeats them: it redraws the painter per
@@ -29,7 +29,7 @@ function paintRects(id: string, shapes: Shape[]): RenderLayer<unknown> {
     draw: (): DrawCommand[] =>
       shapes.map((s) => ({
         kind: 'path',
-        path: { kind: 'rect', x: s.x, y: s.y, width: s.w, height: s.h },
+        path: { kind: 'rect', x: s.x, y: s.y, width: s.width, height: s.height },
         fill: { paint: { kind: 'solid', color: s.color } },
       })),
   };
@@ -43,10 +43,10 @@ function paintClouds(id: string, shapes: Shape[]): RenderLayer<unknown> {
     draw: (): DrawCommand[] =>
       shapes.flatMap((s) => {
         const puffs = [
-          { x: s.x,              y: s.y + s.h * 0.35, width: s.w * 0.45, height: s.h * 0.65 },
-          { x: s.x + s.w * 0.55, y: s.y + s.h * 0.30, width: s.w * 0.45, height: s.h * 0.70 },
-          { x: s.x + s.w * 0.25, y: s.y + s.h * 0.20, width: s.w * 0.50, height: s.h * 0.80 },
-          { x: s.x + s.w * 0.30, y: s.y,              width: s.w * 0.40, height: s.h * 0.55 },
+          { x: s.x,              y: s.y + s.height * 0.35, width: s.width * 0.45, height: s.height * 0.65 },
+          { x: s.x + s.width * 0.55, y: s.y + s.height * 0.30, width: s.width * 0.45, height: s.height * 0.70 },
+          { x: s.x + s.width * 0.25, y: s.y + s.height * 0.20, width: s.width * 0.50, height: s.height * 0.80 },
+          { x: s.x + s.width * 0.30, y: s.y,              width: s.width * 0.40, height: s.height * 0.55 },
         ];
         return puffs.map((b) => ({
           kind: 'path' as const,
@@ -58,15 +58,15 @@ function paintClouds(id: string, shapes: Shape[]): RenderLayer<unknown> {
 }
 
 const SKY: Shape[] = [
-  { x:  40, y:  30, w: 90, h: 40, color: '#c7e0f5' },
-  { x: 220, y:  60, w: 120, h: 35, color: '#c7e0f5' },
-  { x: 420, y:  20, w: 100, h: 45, color: '#c7e0f5' },
-  { x: 650, y:  50, w: 110, h: 38, color: '#c7e0f5' },
-  { x: 880, y:  35, w: 95, h: 42, color: '#c7e0f5' },
+  { x:  40, y:  30, width: 90, height: 40, color: '#c7e0f5' },
+  { x: 220, y:  60, width: 120, height: 35, color: '#c7e0f5' },
+  { x: 420, y:  20, width: 100, height: 45, color: '#c7e0f5' },
+  { x: 650, y:  50, width: 110, height: 38, color: '#c7e0f5' },
+  { x: 880, y:  35, width: 95, height: 42, color: '#c7e0f5' },
 ];
 
 const GROUND: Shape[] = [
-  { x: -200, y: 320, w: 1600, h: 80, color: '#a0875a' },
+  { x: -200, y: 320, width: 1600, height: 80, color: '#a0875a' },
 ];
 
 // Hills and trees are scene nodes on layers that carry `parallax`, so they
@@ -187,7 +187,7 @@ function ParallaxDemoInner() {
           view={view}
           onViewChange={setView}
           viewport={{ pan: { axis: 'x' } }}
-          selectionOptions={{ mode: 'multi' }}
+          selectionOptions={{ mode: 'multiple' }}
           layers={{
             paraSky: { layer: sky, before: 'scene:hills' },
             paraGround: { layer: ground, before: 'scene:trees' },

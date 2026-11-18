@@ -28,7 +28,8 @@ const Grid = defineInstrument<Record<string, never>, Record<string, never>>({
     </div>
   ),
   annotations: {
-    targets: () => cells.map((ref, i) => ({ id: `cell:${i}`, ref, content: { w: 20, h: 20 } })),
+    targets: () =>
+      cells.map((ref, i) => ({ id: `cell:${i}`, ref, content: { width: 20, height: 20 } })),
   },
 });
 
@@ -81,8 +82,8 @@ const Stacked = defineInstrument<Record<string, never>, Record<string, never>>({
   ),
   annotations: {
     targets: () => [
-      { id: 'upper', ref: upper, content: { w: 300, h: 150 } },
-      { id: 'lower', ref: lower, content: { w: 300, h: 150 } },
+      { id: 'upper', ref: upper, content: { width: 300, height: 150 } },
+      { id: 'lower', ref: lower, content: { width: 300, height: 150 } },
     ],
   },
 });

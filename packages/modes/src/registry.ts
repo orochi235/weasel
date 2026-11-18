@@ -75,7 +75,7 @@ export function activeModeOf(mode: ModeDefinition): ActiveMode {
 
 /** A reader for the registry's active mode, as `<SceneCanvas modes>` builds
  *  one. It returns the same object until the mode changes. */
-export function getActiveModeFor(registry: ModeRegistry): () => ActiveMode {
+export function createActiveModeReader(registry: ModeRegistry): () => ActiveMode {
   let cached: { version: number; value: ActiveMode } | null = null;
   return () => {
     const version = registry.getVersion();

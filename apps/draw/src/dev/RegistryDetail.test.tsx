@@ -134,3 +134,20 @@ describe('RouteBadge v3', () => {
     expect(cap?.textContent).toBe(keyLegendFromKey(' ').label);
   });
 });
+
+describe('op kind detail', () => {
+  it('names the factory that builds `transform`, not one named after the kind', () => {
+    const entry: TreeEntry = { kind: 'opKind', id: 'transform', label: 'transform' };
+    renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
+    expect(screen.getByText('createSetPoseOp')).toBeInTheDocument();
+    expect(screen.queryByText('createTransformOp')).toBeNull();
+    expect(screen.getByText('function')).toBeInTheDocument();
+  });
+
+  it('labels a shape kind\'s transform link with that factory', () => {
+    const entry: TreeEntry = { kind: 'shapeKind', id: 'rect', label: 'rect', trait: 'shape' };
+    renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
+    expect(screen.getByText('createSetPoseOp')).toBeInTheDocument();
+    expect(screen.queryByText('createTransformOp')).toBeNull();
+  });
+});

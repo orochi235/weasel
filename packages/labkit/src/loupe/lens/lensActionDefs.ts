@@ -10,11 +10,11 @@ import {
   type Action,
   ActionDisabledReason,
   createDeleteOp,
-  createTransformOp,
+  createKeymapContribution,
+  createSetPoseOp,
   held,
   type KeySpec,
   key,
-  keymapContribution,
   type NodeId,
   type Op,
 } from '@weasel-js/core';
@@ -319,7 +319,7 @@ function lensLifeActions<C>(api: LensActionApi<C>): Action[] {
     };
     const label = 'open quick lens';
     api.apply([
-      createTransformOp({ id: body.id, from: body.pose, to: patchAt(body.pose, 1, at), label }),
+      createSetPoseOp({ id: body.id, from: body.pose, to: patchAt(body.pose, 1, at), label }),
       ...setAimOps(scene, lensId, 'glass'),
     ]);
     return lensId;
@@ -375,7 +375,7 @@ export function createLoupeKeymap(actions: readonly Action[]): Contribution<neve
     const k = LENS_KEYS[a.id as LensActionId];
     if (k !== undefined) bindings.push({ spec: key(k), actionId: a.id, opts: { id: a.id } });
   }
-  return keymapContribution({
+  return createKeymapContribution({
     id: 'loupe',
     label: 'Loupe',
     leader: LOUPE_LEADER,

@@ -13,7 +13,7 @@ import {
   axesFor,
   extent,
   pinnedSet,
-  translated,
+  movesFrom,
   untilSettled,
   worldOf,
   type LayoutOptions,
@@ -28,7 +28,7 @@ import { holdPins } from './pins';
 import { turnOutward } from './inward';
 import { boxReach } from './reach';
 import { placeAcross } from './place';
-import { ranksByLength } from './rank';
+import { simplexRanks } from './rank';
 import { settlePlaces } from './places';
 import { layeredPorts } from '../route';
 
@@ -54,8 +54,8 @@ export interface LayeredPlan {
   /** Pinned nodes after the first that the layout could not be built
    *  around: covering one with its rank's band would bring that band nearer
    *  another pinned rank's than the bands between them allow with every gap
-   *  at a quarter of `rankGap` beyond its groups' insets, or would put a
-   *  group's box over a pin it does not hold. They stay put, and the rest is
+   *  at a quarter of `rankGap` beyond its clusters' insets, or would put a
+   *  cluster's box over a pin it does not hold. They stay put, and the rest is
    *  laid out around the slot each would have had. */
   unheld: ReadonlySet<string>;
 }
@@ -67,10 +67,10 @@ const MIN_GAP = 0.25;
 /** The layered layout, with the ranks and edge routes it settled on. */
 export function layeredPlan(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
   // A pass can leave nodes in an order the next seeded run reads differently: an
-  // outsider moved out of a group's column, or a node beside a second pin off its
+  // outsider moved out of a cluster's column, or a node beside a second pin off its
   // slot. Barycenter ordering reorders on every run, so it has no arrangement to
   // settle on.
-  if (opts.order === 'barycenter' || ((graph.groups?.length ?? 0) === 0 && pinnedSet(graph, opts).size < 2)) return planOnce(graph, opts);
+  if (opts.order === 'barycenter' || ((graph.clusters?.length ?? 0) === 0 && pinnedSet(graph, opts).size < 2)) return planOnce(graph, opts);
   // Each pass starts its placeholders on the routes the pass before laid out,
   // and the routes kept are the last pass's.
   let last: LayeredPlan | undefined;
@@ -94,15 +94,15 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
   const finding = opts.order === 'barycenter';
 
   const back = backEdges(graph);
-  const ranks = ranksByLength(graph, back);
+  const ranks = simplexRanks(graph, back);
   const expanded = expand(graph, ranks, back, { axes, nodeGap });
-  let rows = finding ? orderRows(expanded.rows, expanded.hops, { groups: graph.groups ?? [] }) : expanded.rows;
+  let rows = finding ? orderRows(expanded.rows, expanded.hops, { clusters: graph.clusters ?? [] }) : expanded.rows;
 
-  const grouped = (graph.groups?.length ?? 0) > 0;
+  const clustered = (graph.clusters?.length ?? 0) > 0;
   const pinned = pinnedSet(graph, opts);
   const across = () => {
     const preferred = placeAcross(rows, settlePlaces(rows, expanded.hops), axes.cross, nodeGap);
-    return grouped ? packClusters(graph, rows, preferred, axes, nodeGap) : preferred;
+    return clustered ? packClusters(graph, rows, preferred, axes, nodeGap) : preferred;
   };
   let packed = across();
   for (let turn = 0; turn < rows.length; turn++) {
@@ -111,8 +111,8 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
     rows = turned;
     packed = across();
   }
-  const spaced = grouped ? rankGaps(graph, rows, axes, rankGap) : rows.slice(1).map(() => rankGap);
-  // A gap keeps the room its groups' insets take on top of `rankGap`.
+  const spaced = clustered ? rankGaps(graph, rows, axes, rankGap) : rows.slice(1).map(() => rankGap);
+  // A gap keeps the room its clusters' insets take on top of `rankGap`.
   const minGaps = spaced.map((gap) => gap - rankGap + rankGap * MIN_GAP);
   // A label's row splits one gap between two ranks; each side keeps
   // `LABEL_GAP` of it, room for a wire to turn toward its label.
@@ -141,7 +141,7 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
     const slot = slots.get(node.id);
     if (slot !== undefined) placed.set(node.id, worldOf(slot, extent(node.bounds, axes.rank), axes));
   }
-  const moves = translated(graph, placed, pinned, opts.tolerance);
+  const moves = movesFrom(graph, placed, pinned, opts.tolerance);
   const offset = anchorOffset(graph, placed, pinned);
 
   // A pinned node stays where it is, not where its rank would put it, so
@@ -166,7 +166,7 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
     const points: Vec2[] = [];
     for (const id of chain.ids) {
       const cross = crossAt.get(id)! + (expanded.wires.get(id) ?? widthOf.get(id)! / 2);
-      // A wire passing a group's box enters and leaves level with its edge,
+      // A wire passing a cluster's box enters and leaves level with its edge,
       // so the turns either side of the run stay clear of the box.
       const r = rankOf.get(id)!;
       const [lo, hi] = [bands[r]![0] - reach.lo[r]!, bands[r]![1] + reach.hi[r]!];

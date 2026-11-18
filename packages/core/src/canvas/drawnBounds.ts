@@ -132,7 +132,7 @@ function membersExtents(
 }
 
 /** {@link drawnBoundsOf} as an axis-aligned box: what a turned node covers. */
-export function drawnAABBOf(
+export function drawnAabbOf(
   scene: DrawnBoundsScene,
   id: NodeId,
   pose: unknown,

@@ -8,13 +8,13 @@
 
 import type { SelectionApi } from '@weasel-js/routing';
 import type { View } from 'core/viewport/view';
-import type { FramedBox } from '@weasel-js/geom';
+import type { FramedRect } from '@weasel-js/geom';
 import type { PlaneMap } from 'core/viewport/parallax';
 import type { DecayLoopOptions } from 'core/viewport/useDecayLoop';
 import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
 import type { Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import type { GestureLifecycleOptions } from './gestureLifecycle';
+import type { RunLifecycleOptions } from './runLifecycle';
 import type { History } from '@weasel-js/history';
 import type { ActionsRegistry } from '@weasel-js/routing';
 import type { BoundsConstraint } from '../gestures/types';
@@ -25,7 +25,8 @@ import type { DebugSink, LongPressState } from '@weasel-js/routing';
 import type { SnapDep } from './snapDep';
 import type { EnteredGroupApi } from 'canvas/deps/enteredGroup';
 import type { TransformFollower, TransformPreviewNode } from './transformFinish';
-import type { ColorAtDep, HitTestView, NodeAtPointDep, AreaSelectDep, LassoSelectDep } from './regionSelectDeps';
+import type { ColorAtDep, NodeAtPointDep, AreaSelectDep, LassoSelectDep } from './regionSelectDeps';
+import type { PickingView } from 'core/adapters/types';
 import type { InsertDep, InsertEnds, InsertExtras, PathSymmetryDep, InsertIntoDep, InsertLive } from './insertDeps';
 import type { CommitSelection } from './defaultCommitAdapter';
 import type { LayoutDep, CanDropIntoDep } from './layoutDeps';
@@ -34,7 +35,7 @@ import type { OperandsDep } from './operands';
 
 export type { EnteredGroupApi, TransformFollower, TransformPreviewNode };
 export type { SnapDep, SnapGeometry } from './snapDep';
-export type { ColorAtDep, HitTestView, NodeAtPointDep, AreaSelectDep, LassoSelectDep };
+export type { ColorAtDep, PickingView, NodeAtPointDep, AreaSelectDep, LassoSelectDep };
 export type { InsertDep, InsertEnds, InsertExtras, CommitSelection, PathSymmetryDep, InsertIntoDep, InsertLive };
 export type { LayoutDep, CanDropIntoDep };
 export type { ClipboardDep, SliceDep };
@@ -60,7 +61,7 @@ export interface ViewApi {
   /** The world rect the scene's content covers, a gesture in flight
    *  included; `null` when nothing is drawn. When wired, `viewportZoomAction`'s
    *  `fit` branch (Cmd-Alt-0) fits the view to it. */
-  contentBounds?(): FramedBox | null;
+  contentBounds?(): FramedRect | null;
   /** Optional canvas-local host dimensions (CSS px). When wired,
    *  `viewportZoomAction`'s keyboard branches (Cmd+= / Cmd+-) anchor at the
    *  host center instead of the top-left origin. Null when the host isn't
@@ -93,7 +94,7 @@ export interface ViewApi {
  * The generic is erased to `unknown` at the schema entry; consumers cast at
  * the call site.
  */
-export interface ResizePolicy<TPose> extends GestureLifecycleOptions {
+export interface ResizePolicy<TPose> extends RunLifecycleOptions {
   /** Bounds-frame constraints. Constrained to `TPose extends Bounds` since
    *  constraints read/write `{x,y,width,height}`. For non-rect TPose pass `[]`. */
   constraints: TPose extends Bounds ? BoundsConstraint<TPose>[] : never[];
@@ -126,7 +127,7 @@ declare module '@weasel-js/routing' {
     enteredGroup?: EnteredGroupApi;
     /** What a range click covers, the way the select tool ranges, for an action that applies a
      *  click outside it. Sourced by `<SceneCanvas>`; absent, a range walks the selection's order. */
-    selectRange?: import('tools/builtin/select/selectRange').SelectRangeDep;
+    selectRange?: import('canvas/selectRange').SelectRangeDep;
     /** Current viewport — camera position + scale. */
     view: ViewApi;
     /**
@@ -155,7 +156,7 @@ declare module '@weasel-js/routing' {
      *  provide a typed node factory (e.g. with custom data payloads). */
     insert: InsertDep;
     /** Where `insertAction` keeps its gesture in flight, so
-     *  `insert.adjustRotation` reaches the one in its own input scope.
+     *  `insert.rotate` reaches the one in its own input scope.
      *  Sourced by `<SceneCanvas>`; without it the rotation does nothing. */
     insertLive?: InsertLive;
     /** The params an action starts with in this scope when its binding
@@ -193,7 +194,7 @@ declare module '@weasel-js/routing' {
      * Resize-policy dep — bounds constraints, point-snap behaviors and
      * group expansion for `resizeAction`. Optional: when omitted,
      * `resizeAction` falls back to identity defaults. Consumers wire via
-     * `useDepSource('resizePolicy', ...)` or the `useResizePolicy` helper.
+     * `useDepSource('resizePolicy', ...)` or the `useResizePolicyDepSource` helper.
      */
     resizePolicy?: ResizePolicy<unknown>;
     /**

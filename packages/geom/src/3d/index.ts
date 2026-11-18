@@ -20,7 +20,7 @@ export {
 } from './mat4';
 export {
   intersectRayAabb, intersectRayPlane, transformAabb, aabbAround,
-  pointOnRay, aabbOfPoints, closestPointOnLine, closestPointOnSegment, closestPointsRayLine,
+  pointOnRay, aabbOfPoints, nearestPointOnLine, nearestPointOnSegment, nearestPointsRayLine,
   type Ray, type Aabb,
 } from './ray3';
 export { PORT_REACH, portControls, portCurvePoints, cubicPointAt } from './portCurve3';

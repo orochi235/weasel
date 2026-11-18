@@ -10,21 +10,21 @@ import type {
 } from '../../widget';
 import { hudMeasureEnv } from '../../measureEnv';
 import { DEFAULT_FONT_FAMILY } from '../../fonts/registerDefaultFont';
-import { hudList, SWATCH_SIZE, type HudListRow } from './drawList';
+import { hudItemList, SWATCH_SIZE, type HudListRow } from './drawList';
 import { createListNav } from './listNav';
 
 /** Options for a list widget. */
 export interface ListOptions {
   id: string;
-  x: number; y: number; w: number;
+  x: number; y: number; width: number;
   /** Default: as tall as its rows, measured again whenever they or the theme change. */
-  h?: number;
+  height?: number;
   rows: readonly HudListRow[];
   /** Shown in place of the rows when there are none. */
   empty?: string;
   /** Whether rows are selectable, and how many at once. As with ui's `ItemList`, the list announces `selected`;
    *  what is selected stays with `onActivate`. */
-  selection?: 'single' | 'multi';
+  selectionMode?: 'single' | 'multiple';
   /** A row was pressed, or Enter or Space was pressed on it. */
   onActivate?(id: string, index: number): void;
   /** What assistive tech calls the list. */
@@ -56,10 +56,10 @@ function listTree(
   opts: ListOptions, mode: ListMode, rows: readonly HudListRow[], active: number | null,
 ): HudAccessibleNode {
   const roles = LIST_ROLES[mode];
-  const selects = opts.selection !== undefined && mode !== 'list';
+  const selects = opts.selectionMode !== undefined && mode !== 'list';
   return {
     role: roles.container, key: 'list', label: opts.accessibleName ?? opts.id,
-    ...(opts.selection === 'multi' && selects ? { multiselectable: true } : {}),
+    ...(opts.selectionMode === 'multiple' && selects ? { multiselectable: true } : {}),
     children: rows.map((r, i): HudAccessibleNode => ({
       role: roles.row, key: r.id, label: r.label,
       ...(i === active ? { active: true } : {}),
@@ -71,12 +71,12 @@ function listTree(
 export function createList(opts: ListOptions): ListWidget {
   const rev = createRevision(opts.onChange);
   let subs = createEmitter();
-  const mode = listMode({ selection: opts.selection, activatable: opts.onActivate !== undefined });
+  const mode = listMode({ selectionMode: opts.selectionMode, activatable: opts.onActivate !== undefined });
   let disposed = false;
   let hidden = false;
   let rows: readonly HudListRow[] = [];
   let lastCtx: Pick<HudDrawCtx, 'tokens' | 'defaultFont'> | null = null;
-  let bounds: WidgetBounds = { x: opts.x, y: opts.y, w: opts.w, h: opts.h ?? 0 };
+  let bounds: WidgetBounds = { x: opts.x, y: opts.y, width: opts.width, height: opts.height ?? 0 };
   const nav = createListNav(() => rows, mode, (i) => opts.onActivate?.(rows[i]!.id, i));
 
   const changed = () => { rev.changed(); subs.emit(); };
@@ -84,17 +84,17 @@ export function createList(opts: ListOptions): ListWidget {
   const measure = (): RowListLayout & { height: number } => {
     const ctx = lastCtx ?? { tokens: (builtIn ??= resolveTheme(weaselTheme)), defaultFont: DEFAULT_FONT_FAMILY };
     const m = measureRowList(
-      { rows, empty: opts.empty }, fixedWidth(bounds.w),
+      { rows, empty: opts.empty }, fixedWidth(bounds.width),
       hudMeasureEnv(ctx, opts.fontFamily),
     );
     return { ...m.layout, height: m.height };
   };
   /** Follow the rows' height, when the caller gave none. True when it moved. */
   const fit = (): boolean => {
-    if (opts.h !== undefined) return false;
+    if (opts.height !== undefined) return false;
     const h = measure().height;
-    if (h === bounds.h) return false;
-    bounds = { ...bounds, h };
+    if (h === bounds.height) return false;
+    bounds = { ...bounds, height: h };
     return true;
   };
   const setRowsInner = (next: readonly HudListRow[]) => {
@@ -104,7 +104,7 @@ export function createList(opts: ListOptions): ListWidget {
   };
   setRowsInner(opts.rows);
   const rowAt = (x: number, y: number): number | null =>
-    (x < bounds.x || x >= bounds.x + bounds.w ? null : rowAtY(measure(), y - bounds.y));
+    (x < bounds.x || x >= bounds.x + bounds.width ? null : rowAtY(measure(), y - bounds.y));
   const tree: HudAccessibleTree = {
     read: () => listTree(opts, mode, rows, nav.active),
     subscribe: (fn) => subs.subscribe(fn),
@@ -131,13 +131,13 @@ export function createList(opts: ListOptions): ListWidget {
         // A theme with taller rows: the new height lands on the next frame.
         if (fit()) changed();
       }
-      return hudList.draw(
+      return hudItemList.draw(
         { rows, empty: opts.empty, mode, active: nav.active, hover: nav.hover, ring: nav.ring },
         { bounds, ctx, fontFamily: opts.fontFamily },
       );
     },
     hitTest(x, y) {
-      return !hidden && x >= bounds.x && x < bounds.x + bounds.w && y >= bounds.y && y < bounds.y + bounds.h;
+      return !hidden && x >= bounds.x && x < bounds.x + bounds.width && y >= bounds.y && y < bounds.y + bounds.height;
     },
     cursorAt() { return 'default'; },
     onPointer(evt: HudPointerEvent) { if (nav.pointer(evt, rowAt)) changed(); },

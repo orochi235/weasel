@@ -9,11 +9,11 @@ import type { Stroke } from '@weasel-js/paint';
 import { ellipsePath, linePath } from '@weasel-js/geom';
 import { extractPolylines } from '@weasel-js/geom/tessellate';
 import { tessellateStroke } from './stroke';
-import { strokeSpaceOf } from './metric';
+import { strokeMetricOf } from './metric';
 
 /** World → screen: 4:1, the anisotropy the TODO entry measured. */
 const A = 4, D = 1;
-const { scale, metric } = strokeSpaceOf(A, 0, 0, D);
+const { scale, metric } = strokeMetricOf(A, 0, 0, D);
 const toScreen = (x: number, y: number): [number, number] => [A * x, D * y];
 
 /** The ribbon's vertices, on screen. */

@@ -9,7 +9,7 @@ import type { Stroke, Fill } from '@weasel-js/paint';
 
 import { loadFontOutlines, cachedFontVariant, type FontStyle } from '@weasel-js/font';
 import {
-  PATH_L, PATH_M, PATH_Z, coordsFrom, joinPaths, originFor, poseFrameOf, transformPath, type PathInWorldPose, type PolygonPath,
+  PATH_L, PATH_M, PATH_Z, coordsFrom, joinPaths, originFor, poseFrameOf, transformPath, type PathInWorldPose, type PolygonPath, type Rect,
 } from '@weasel-js/geom';
 import {
   assertOutlinable, colorGlyphError, paintsOf, placedGlyphOutline,
@@ -84,7 +84,7 @@ function facesOf(runs: readonly ResolvedRun[]): { family: string; weight: number
  *  face checked for outlines first. */
 export function outlineLayoutInput(
   data: TextOutlineSource,
-  box: { x: number; y: number; width: number; height: number },
+  box: Rect,
   opts: TextToPathOptions,
   caller: string,
 ): TextPoseLayoutInput {

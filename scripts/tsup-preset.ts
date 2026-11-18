@@ -5,9 +5,11 @@
  * NOT use this: esbuild can't handle Vite's `?url` suffix and treats CSS
  * Modules awkwardly, so those build with Vite library mode instead.
  *
- * Nothing here sets `noExternal`. Every `@weasel-js/*` dependency is declared
- * in the consuming package's `dependencies`, and tsup externalizes deps +
- * peerDeps by default for both the JS bundle and the .d.ts.
+ * Every `@weasel-js/*` dependency is declared in the consuming package's
+ * `dependencies`, and tsup externalizes deps + peerDeps by default for both the
+ * JS bundle and the .d.ts. The one exception is `inlineRegistry`, for a package
+ * that depends on no other weasel package: see "Bundling registry" in
+ * docs/conventions.md.
  */
 import { fileURLToPath } from 'node:url';
 import type { Options } from 'tsup';
@@ -20,13 +22,15 @@ export interface PackagePresetOptions {
   readonly entry: Options['entry'];
   /** Extra externals beyond deps/peerDeps and React. */
   readonly external?: readonly (string | RegExp)[];
+  /** Inline `@weasel-js/registry`, a `devDependency` of a package that depends on no other weasel package. */
+  readonly inlineRegistry?: boolean;
 }
 
 // Never inlined, declared or not: a package that bundles its own React calls
 // hooks on a copy the consumer's renderer never drives.
 const ALWAYS_EXTERNAL = ['react', 'react-dom'];
 
-export function packagePreset({ entry, external = [] }: PackagePresetOptions): Options {
+export function packagePreset({ entry, external = [], inlineRegistry = false }: PackagePresetOptions): Options {
   assertOwnInstall(fileURLToPath(new URL('..', import.meta.url)));
   return {
     entry,
@@ -40,6 +44,7 @@ export function packagePreset({ entry, external = [] }: PackagePresetOptions): O
     // becomes two distinct instances.
     splitting: true,
     external: [...ALWAYS_EXTERNAL, ...external],
+    ...(inlineRegistry ? { noExternal: ['@weasel-js/registry'] } : {}),
     esbuildPlugins: [weaselIcons.esbuild({ mode: 'library' })],
   };
 }

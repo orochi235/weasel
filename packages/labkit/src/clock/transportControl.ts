@@ -7,7 +7,7 @@ import type { TrialClock } from './trialClock';
  */
 export interface TransportControl {
   readonly playing: boolean;
-  /** Unsigned, one of the clock's `rates` or whatever it opened at. */
+  /** Unsigned, one of the clock's `speeds` or whatever it opened at. */
   readonly speed: number;
   readonly backward: boolean;
   /** Whether anyone has worked the clock from a transport. */
@@ -74,11 +74,11 @@ export function transportControl(
       if (playing) clock.rate = signed(speed, held.backward);
     },
     stepSpeed(direction) {
-      const rates = clock.rates;
+      const speeds = clock.speeds;
       const next =
         direction > 0
-          ? rates.find((r) => r > held.speed)
-          : [...rates].reverse().find((r) => r < held.speed);
+          ? speeds.find((r) => r > held.speed)
+          : [...speeds].reverse().find((r) => r < held.speed);
       if (next !== undefined) control.setSpeed(next);
     },
     setBackward(backward) {

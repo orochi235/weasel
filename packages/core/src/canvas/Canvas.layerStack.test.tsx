@@ -77,7 +77,7 @@ describe('<Canvas> layer stack', () => {
       <ViewRegistryProvider>
         {canvas}
         <ViewMarker id="m" source="pip" target={null} />
-        <CanvasView id="pip" bounds={{ x: 50, y: 50, w: 40, h: 30 }} defaultView={{ x: 0, y: 0, scale: { x: 0.25, y: 0.25 } }} />
+        <CanvasView id="pip" bounds={{ x: 50, y: 50, width: 40, height: 30 }} defaultView={{ x: 0, y: 0, scale: { x: 0.25, y: 0.25 } }} />
       </ViewRegistryProvider>
     ))).toEqual(['grid', 'view-marker:m', 'pip', 'painted-cursor']);
   });

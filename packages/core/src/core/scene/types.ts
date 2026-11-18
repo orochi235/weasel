@@ -21,7 +21,7 @@ import type { SceneArrivalHandler } from './arrivalTypes';
 import type { RegisteredOp } from './registeredOp';
 import type { SpecsFromSerializedOptions } from './serialization';
 import type { RectPose } from '../geometry/rectPose';
-import type { SceneRegistry } from './sceneRegistry';
+import type { NodeUpgrade, SavedNode, SceneRegistry } from './sceneRegistry';
 export type { RectPose, RegisteredOp, SceneArrivalHandler, SceneOptions, UseSceneOptions };
 export type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord };
 export type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports };
@@ -53,7 +53,7 @@ export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, Sh
 
 /** Opaque branded id. Treat as opaque outside the kit. */
 import type { NodeId } from '@weasel-js/routing';
-export type { NodeId, SceneRegistry };
+export type { NodeId, NodeUpgrade, SavedNode, SceneRegistry };
 
 /** Brand a string as a NodeId. */
 export const asNodeId = (s: string): NodeId => s as NodeId;

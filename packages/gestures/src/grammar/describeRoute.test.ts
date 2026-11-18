@@ -71,7 +71,7 @@ describe('describeRoute — modifiers', () => {
     expect(action('[initial] click => empty +mod +shift')).toBe(
       'the user holds Mod and Shift and clicks on empty canvas',
     );
-    expect(action('[initial] dblTap +mod +alt')).toBe('the user holds Mod and Alt and double-taps anywhere');
+    expect(action('[initial] doubleClick +mod +alt')).toBe('the user holds Mod and Alt and double-clicks anywhere');
     expect(action('[initial] pointerDown +shift +alt')).toBe('the user holds Shift and Alt and presses anywhere');
     expect(action('[initial] contextMenu +ctrl +meta')).toBe(
       'the user holds Ctrl and Meta and opens the context menu anywhere',

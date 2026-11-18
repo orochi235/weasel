@@ -1,0 +1,113 @@
+import { describe, expect, it } from 'vitest';
+import { chain } from './chain';
+import { rack } from './effect/rack';
+import { io, w } from './effect/skipFixture';
+import type { EffectPipeline } from './effect/types';
+import { diagramScene } from './fromData';
+import { boxOf, graphOf, overlaps, placed } from './clusterFixture';
+import type { LayoutResult } from './layout';
+import type { Rect } from '@weasel-js/geom';
+
+// `graphOf` seeds node i at (i, i), 100 by 40.
+const IDS = ['src', 'a', 'b', 'c', 'out', 'sa', 'sc'] as const;
+const EDGES = [['src', 'a'], ['a', 'b'], ['b', 'c'], ['c', 'out'], ['sa', 'a'], ['sc', 'c']] as const;
+const OPTS = { direction: 'right', chain: ['src', 'a', 'b', 'c', 'out'] } as const;
+const ALL: readonly string[] = [...IDS, 'ma'];
+const at = (result: LayoutResult, id: string) => result.get(id) ?? { x: ALL.indexOf(id), y: ALL.indexOf(id) };
+
+describe('chain with clusters', () => {
+  it('hangs a member on a line member of its own cluster', () => {
+    // sc hangs off c by breadth-first search, but c is outside g.
+    const r = chain(graphOf(IDS, EDGES, { g: ['b', 'sc'] }), OPTS);
+    expect(at(r, 'sc').x).toBe(at(r, 'b').x);
+  });
+
+  it('moves an outsider past the members hung in a cluster column', () => {
+    const r = chain(graphOf([...IDS, 'ma'], [...EDGES, ['ma', 'a']], { g: ['a', 'ma'] }), OPTS);
+    expect(at(r, 'sa').y).toBeGreaterThan(at(r, 'ma').y + 40);
+  });
+
+  it('hangs a cluster with no line member on the owner most of its members had', () => {
+    const ids = [...IDS, 'x', 'y'];
+    const r = chain(graphOf(ids, [...EDGES, ['x', 'c'], ['y', 'c'], ['sa', 'x']], { g: ['sa', 'x', 'y'] }), OPTS);
+    // c's column holds four hung nodes, so sa sits somewhere in it rather than under c.
+    expect(at(r, 'sa').x).toBeGreaterThan(at(r, 'b').x + 100);
+    expect(at(r, 'sa').x).toBeLessThan(at(r, 'out').x);
+  });
+
+  it('leaves room beside a cluster for its box', () => {
+    const plain = chain(graphOf(IDS, EDGES, {}), OPTS);
+    const clustered = chain(graphOf(IDS, EDGES, { g: ['b'] }, 12), OPTS);
+    const gap = (r: LayoutResult, l: string, rt: string) => at(r, rt).x - at(r, l).x;
+    expect(gap(clustered, 'a', 'b')).toBe(gap(plain, 'a', 'b') + 12);
+    expect(gap(clustered, 'b', 'c')).toBe(gap(plain, 'b', 'c') + 12);
+  });
+
+  it('leaves room for a box widened to its minWidth', () => {
+    const plain = chain(graphOf(IDS, EDGES, {}), OPTS);
+    const base = graphOf(IDS, EDGES, { g: ['b'] }, 12);
+    const wide = { ...base, clusters: base.clusters!.map((g) => ({ ...g, minWidth: 400 })) };
+    const clustered = chain(wide, OPTS);
+    const gap = (r: LayoutResult, l: string, rt: string) => at(r, rt).x - at(r, l).x;
+    // b's box is 100 + 2 * 12 = 124 wide, so it grows 138 on each side.
+    expect(gap(clustered, 'a', 'b')).toBe(gap(plain, 'a', 'b') + 12 + 138);
+    expect(gap(clustered, 'b', 'c')).toBe(gap(plain, 'b', 'c') + 12 + 138);
+  });
+
+  it('keeps an outsider clear of a cluster inset wider than the node gap', () => {
+    const graph = graphOf([...IDS, 'ma'], [...EDGES, ['ma', 'a']], { g: ['a', 'ma'] }, 30);
+    const at = placed(graph, chain, { ...OPTS, nodeGap: 8 });
+    const box = boxOf(at, ['a', 'ma'], 30);
+    expect(overlaps(box, at.get('sa')!)).toBe(false);
+    expect(at.get('sa')!.y - (box.y + box.height)).toBe(8);
+
+    const above = placed(graph, chain, { ...OPTS, nodeGap: 8, chainSide: 'before' });
+    const sa = above.get('sa')!;
+    expect(boxOf(above, ['a', 'ma'], 30).y - (sa.y + sa.height)).toBe(8);
+  });
+
+  it('leaves room beside a vertical line for a box widened to its minWidth', () => {
+    const base = graphOf([...IDS, 'sb'], [...EDGES, ['sb', 'b']], { g: ['b'] }, 12);
+    const wide = { ...base, clusters: base.clusters!.map((g) => ({ ...g, minWidth: 400 })) };
+    const at = placed(wide, chain, { ...OPTS, direction: 'down' });
+    const inner = boxOf(at, ['b'], 12);
+    // Widened evenly about what it holds, as the scene draws it.
+    const box = { ...inner, x: inner.x - (400 - inner.width) / 2, width: 400 };
+    expect(overlaps(box, at.get('sb')!)).toBe(false);
+  });
+
+  it('lays out a cluster whose line members a non-member splits', () => {
+    const graph = graphOf(IDS, EDGES, { g: ['a', 'c'] });
+    const r = chain(graph, OPTS);
+    const xs = OPTS.chain.map((id) => at(r, id).x);
+    expect(xs).toEqual([...xs].sort((p, q) => p - q));
+  });
+});
+
+describe('rack with clusters', () => {
+  // b's cluster holds kb, which feeds c: hung by distance alone it would sit under c.
+  const PIPELINE: EffectPipeline = {
+    types: { number: { control: true } },
+    stages: [
+      io('src', { inputs: [] }),
+      io('a', { inputs: [{ id: 'in', type: 'image' }, { id: 'k', type: 'number' }] }),
+      io('b', { inputs: [{ id: 'in', type: 'image' }, { id: 'k', type: 'number' }] }),
+      io('c', { inputs: [{ id: 'in', type: 'image' }, { id: 'k', type: 'number' }, { id: 'j', type: 'number' }] }),
+      io('out', { outputs: [] }),
+      ...['ka', 'kb', 'kc'].map((id) => ({ id, title: id, outputs: [{ id: 'value', type: 'number' }] })),
+    ],
+    wires: [
+      w(['src', 'out'], ['a', 'in']), w(['a', 'out'], ['b', 'in']), w(['b', 'out'], ['c', 'in']), w(['c', 'out'], ['out', 'in']),
+      w(['ka', 'value'], ['a', 'k']), w(['kb', 'value'], ['c', 'j']), w(['kc', 'value'], ['c', 'k']),
+    ],
+    clusters: [{ id: 'g', label: 'a much longer cluster title than its stages', members: ['a', 'b', 'ka', 'kb'] }],
+  };
+
+  it('draws no outsider inside a cluster box', () => {
+    const drawn = rack(PIPELINE);
+    const specs = diagramScene(drawn.data, drawn.scene);
+    const pose = (id: string) => specs.find((s) => s.id === id)!.pose as Rect;
+    const box = pose('g');
+    for (const id of ['src', 'c', 'out', 'kc']) expect(overlaps(box, pose(id)), id).toBe(false);
+  });
+});

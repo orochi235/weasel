@@ -9,7 +9,7 @@ import { createPointerStore, PointerContextProvider } from '@weasel-js/core';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { useState } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import type { ViewTransform } from '../instrument/types';
+import type { ViewTransform2D } from '../instrument/types';
 import { type CameraView, useCameraView } from './CameraInput';
 import { CanvasStack } from './CanvasStack';
 import { Stage } from './Stage';
@@ -45,8 +45,8 @@ function pointer(el: Element, type: string, x: number, y: number, buttons = 1) {
   );
 }
 
-function mountStage(initial: ViewTransform, opts: { minZoom?: number; maxZoom?: number } = {}) {
-  const seen: ViewTransform[] = [];
+function mountStage(initial: ViewTransform2D, opts: { minZoom?: number; maxZoom?: number } = {}) {
+  const seen: ViewTransform2D[] = [];
   function Host() {
     const [view, setView] = useState(initial);
     return (
@@ -121,10 +121,10 @@ describe('camera input', () => {
   });
 
   it('keeps a zoom placed after mount when the next drag pans', () => {
-    const seen: ViewTransform[] = [];
-    let place: (v: ViewTransform) => void = () => {};
+    const seen: ViewTransform2D[] = [];
+    let place: (v: ViewTransform2D) => void = () => {};
     function Host() {
-      const [view, setView] = useState<ViewTransform>({ zoom: 1, pan: { x: 0, y: 0 } });
+      const [view, setView] = useState<ViewTransform2D>({ zoom: 1, pan: { x: 0, y: 0 } });
       place = setView;
       return (
         <Stage
@@ -174,8 +174,8 @@ describe('camera input', () => {
     const committed = vi.fn();
     const abandoned = vi.fn();
     interface ProbeProps {
-      view: ViewTransform;
-      onViewChange: (v: ViewTransform) => void;
+      view: ViewTransform2D;
+      onViewChange: (v: ViewTransform2D) => void;
       maxZoom: number;
     }
     function Probe(props: ProbeProps) {

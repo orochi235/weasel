@@ -4,7 +4,7 @@ import type { Action } from '../interactions/actions/action';
 import { resolveBindingOverrides } from '../interactions/actions/bindingOverrides';
 import { dynamicActionId } from '../interactions/actions/actionIds';
 import { describeKeymap, keymapShortcuts } from './describeKeymap';
-import type { KeymapDef } from './keymapContribution';
+import type { KeymapDef } from './createKeymapContribution';
 import type { OpenKeymap } from './keymapStack';
 
 const actions: Action[] = [

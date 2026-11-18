@@ -9,7 +9,7 @@ import {
   derivedDepOf,
   derivedPartsOf,
   documentOf,
-  drawnAABBOf,
+  drawnAabbOf,
   drawnBoundsScene,
   effectivePose,
   findNodeShape,
@@ -35,6 +35,7 @@ import {
 } from './fromKit';
 import { svgFromPainter, warnOncePerCall } from './painterLeaf';
 import type { SvgNode } from './types';
+import type { Rect } from '@weasel-js/geom';
 
 /** Options for {@link regionSvgNodes}. */
 export interface RegionSvgNodesOptions {
@@ -47,10 +48,9 @@ export interface RegionSvgNodesOptions {
   onWarn?: (message: string) => void;
 }
 
-type Box = { x: number; y: number; width: number; height: number };
 type SceneNode = NonNullable<ReturnType<ExportScene['get']>>;
 
-const meets = (a: Box, b: Box): boolean =>
+const meets = (a: Rect, b: Rect): boolean =>
   Math.min(a.x + a.width, b.x + b.width) >= Math.max(a.x, b.x)
   && Math.min(a.y + a.height, b.y + b.height) >= Math.max(a.y, b.y);
 
@@ -140,7 +140,7 @@ export function regionSvgNodes(live: ExportScene, region: ExportRegion, opts: Re
     include(id) {
       const node = scene.get(id as never);
       if (!node || !shown.has(node.layer)) return false;
-      return meets(drawnAABBOf(drawn, id as NodeId, pose(node), { worldPoseOf }), region);
+      return meets(drawnAabbOf(drawn, id as NodeId, pose(node), { worldPoseOf }), region);
     },
     leaf(id, kit, inherited) {
       const node = scene.get(id as never)!;

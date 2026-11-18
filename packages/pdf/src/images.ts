@@ -7,6 +7,7 @@ import {
   getTexture,
   tileExtent,
 } from '@weasel-js/renderer';
+import { createPart } from '@weasel-js/registry';
 import { foldPixels } from './color';
 import { type DrawState, type PageCtx, pageFlip, skip } from './drawCommands';
 import { affinePlaces, ContentStream } from './content';
@@ -20,18 +21,18 @@ export type TextureFill = Extract<CommandPaint, { kind: 'texture' }>;
 type Source = ImageBitmap | HTMLImageElement;
 type Sampling = 'linear' | 'nearest' | undefined;
 
-const ids = new WeakMap<object, number>();
-const embedded = new WeakMap<object, Map<string, PdfRef>>();
 let nextId = 0;
+const idOf = createPart((_image: Source): number => ++nextId);
+const embeddedIn = createPart((_objects: object) => new Map<string, PdfRef>());
 
-function sizeOf(image: Source): { w: number; h: number } {
+function sizeOf(image: Source): { width: number; height: number } {
   const w = 'naturalWidth' in image ? image.naturalWidth : image.width;
   const h = 'naturalHeight' in image ? image.naturalHeight : image.height;
-  return { w: w || 1, h: h || 1 };
+  return { width: w || 1, height: h || 1 };
 }
 
 function defaultReadPixels(image: Source): RasterPixels {
-  const { w, h } = sizeOf(image);
+  const { width: w, height: h } = sizeOf(image);
   const ctx = new OffscreenCanvas(w, h).getContext('2d');
   if (!ctx) throw new Error('pdf: no 2D context to read image pixels with');
   ctx.drawImage(image, 0, 0);
@@ -46,15 +47,7 @@ export function fitsPixels(px: RasterPixels): boolean {
 
 /** A memo for this document: one entry per key, however many pages ask. */
 function memo(ctx: PageCtx): Map<string, PdfRef> {
-  let m = embedded.get(ctx.objects);
-  if (!m) embedded.set(ctx.objects, (m = new Map()));
-  return m;
-}
-
-function idOf(image: Source): number {
-  let id = ids.get(image);
-  if (id === undefined) ids.set(image, (id = ++nextId));
-  return id;
+  return embeddedIn(ctx.objects);
 }
 
 function imageObject(ctx: PageCtx, dict: PdfDict, data: Uint8Array): PdfRef {
@@ -125,8 +118,8 @@ export function writeRaster(ctx: PageCtx, raw: RasterPixels, rect: Rect, opacity
   place(ctx, pixelsXObject(ctx, raw, true), raw.width, raw.height, {
     x: rect.x,
     y: rect.y,
-    w: rect.width,
-    h: rect.height,
+    width: rect.width,
+    height: rect.height,
     opacity,
   });
 }
@@ -134,9 +127,9 @@ export function writeRaster(ctx: PageCtx, raw: RasterPixels, rect: Rect, opacity
 interface Place {
   x: number;
   y: number;
-  w: number;
-  h: number;
-  source?: { x: number; y: number; w: number; h: number };
+  width: number;
+  height: number;
+  source?: Rect;
   flipX?: boolean;
   flipY?: boolean;
   opacity: number;
@@ -144,16 +137,16 @@ interface Place {
 
 /** Draws one placement of `ref`, whose bitmap is `iw` by `ih` pixels, upright in the page's y-down frame. */
 function place(ctx: PageCtx, ref: PdfRef, iw: number, ih: number, p: Place): void {
-  const src = p.source ?? { x: 0, y: 0, w: iw, h: ih };
-  if (!(src.w > 0 && src.h > 0 && p.w !== 0 && p.h !== 0)) return;
+  const src = p.source ?? { x: 0, y: 0, width: iw, height: ih };
+  if (!(src.width > 0 && src.height > 0 && p.width !== 0 && p.height !== 0)) return;
   const { out } = ctx;
   // Where the whole bitmap lands so that `src` fills the rect.
-  const W = (iw * p.w) / src.w;
-  const H = (ih * p.h) / src.h;
-  const left = p.x - (src.x * p.w) / src.w;
-  const top = p.y - (src.y * p.h) / src.h;
-  const right = p.x + p.w + (src.x * p.w) / src.w;
-  const bottom = p.y + p.h + (src.y * p.h) / src.h;
+  const W = (iw * p.width) / src.width;
+  const H = (ih * p.height) / src.height;
+  const left = p.x - (src.x * p.width) / src.width;
+  const top = p.y - (src.y * p.height) / src.height;
+  const right = p.x + p.width + (src.x * p.width) / src.width;
+  const bottom = p.y + p.height + (src.y * p.height) / src.height;
   const a = p.flipX ? -W : W;
   const e = p.flipX ? right : left;
   const d = p.flipY ? H : -H;
@@ -161,14 +154,14 @@ function place(ctx: PageCtx, ref: PdfRef, iw: number, ih: number, p: Place): voi
 
   out.op('q');
   if (p.opacity < 1) out.op('gs', `/${ctx.resources.extGState(p.opacity, p.opacity)}`);
-  if (p.source) out.op('re', p.x, p.y, p.w, p.h).op('W').op('n');
+  if (p.source) out.op('re', p.x, p.y, p.width, p.height).op('W').op('n');
   out.op('cm', a, 0, 0, d, e, f);
   out.op('Do', `/${ctx.resources.xobject(ref)}`);
   out.op('Q');
 }
 
 export function writeImage(ctx: PageCtx, cmd: ImageDrawCommand | SpritesDrawCommand, state: DrawState): void {
-  const { w: iw, h: ih } = sizeOf(cmd.image);
+  const { width: iw, height: ih } = sizeOf(cmd.image);
   const ref = imageXObject(ctx, cmd.image, state, cmd.sampling);
   if (!ref) return;
   if (cmd.kind === 'image') {
@@ -181,9 +174,9 @@ export function writeImage(ctx: PageCtx, cmd: ImageDrawCommand | SpritesDrawComm
     place(ctx, ref, iw, ih, {
       x: dx,
       y: dy,
-      w: dw,
-      h: dh,
-      source: { x: sw < 0 ? sx + sw : sx, y: sh < 0 ? sy + sh : sy, w: Math.abs(sw), h: Math.abs(sh) },
+      width: dw,
+      height: dh,
+      source: { x: sw < 0 ? sx + sw : sx, y: sh < 0 ? sy + sh : sy, width: Math.abs(sw), height: Math.abs(sh) },
       flipX: sw < 0,
       flipY: sh < 0,
       opacity: opacity * state.alpha,

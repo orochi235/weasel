@@ -71,7 +71,7 @@ describe.each(LAYOUTS)('%s', (_name, layout, apart) => {
       const next = buildGraphOf([...bare.nodes], bare.edges.map((e) => {
         const w = routes.get(e.id);
         return w === undefined ? e : { ...e, waypoints: w };
-      }), [...(bare.groups ?? [])]);
+      }), [...(bare.clusters ?? [])]);
       const second = layout(next, opts);
       expect([...second].map(([id, p]) => [id, p, at(after, new Map(), id)])).toEqual([]);
     }), runs(RUNS));

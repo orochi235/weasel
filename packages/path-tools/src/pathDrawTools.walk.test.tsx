@@ -14,7 +14,7 @@ import { toolIdsOf } from '@weasel-js/routing';
 import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import { solid } from '@weasel-js/paint';
 import { asNodeId, createScene, SceneCanvas, type ToolsApi } from '@weasel-js/core';
-import { pathTools } from './presets';
+import { pathToolsPreset } from './presets';
 import { DRAW_TOOLS, PATH_EDIT_TOOLS, SLICE_TOOLS, usePathToolsTools } from './toolSets';
 import { drawPreset } from '@weasel-js/editing';
 
@@ -50,7 +50,7 @@ function mount() {
     const own = usePathToolsTools();
     return (
       <SceneCanvas
-        features={[drawPreset, pathTools]} scene={scene} width={400} height={400}
+        features={[drawPreset, pathToolsPreset]} scene={scene} width={400} height={400}
         defaultTools={['select', 'hand']} tools={own} defaultActiveTool="select"
         onToolsCreated={(t) => { tools.current = t; }}
       >

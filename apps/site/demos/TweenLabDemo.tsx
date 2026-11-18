@@ -1,4 +1,4 @@
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import { asNodeId, createScene, PATH_EFFECT_DERIVATIONS, pathEffectNode, pathNode, type RectPose, withPathEffectsRegistry } from '@weasel-js/core';
 import { pathEffectsPreset, pathsPreset, usePenTool } from '@weasel-js/path-tools';
 import {
@@ -49,11 +49,11 @@ const BLEND = asNodeId('tween');
 function createLabScene() {
   const from = pathNode('from', 'M120 90 L138 136 L188 140 L150 172 L162 222 L120 194 L78 222 L90 172 L52 140 L102 136 Z', {
     fill: { paint: solid('#e4572e') },
-    stroke: strokeOf('#7a2412', 2),
+    stroke: solidStroke('#7a2412', 2),
   });
   const to = pathNode('to', 'M440 110 L540 110 L540 250 L440 250 Z', {
     fill: { paint: solid('#2e86ab') },
-    stroke: strokeOf('#123f52', 6),
+    stroke: solidStroke('#123f52', 6),
   }, { rotation: Math.PI / 4 });
   const { spaceBy, steps, distance, autoAlign, startOffset, rotate, orient } = config.defaults();
   const tween = {

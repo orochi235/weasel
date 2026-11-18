@@ -1,10 +1,10 @@
 /**
  * Path edit and the commands on paths, as `<SceneCanvas features>` presets:
- * `pathsPreset` for all of them, or one at a time. `pathTools` includes it.
+ * `pathsPreset` for all of them, or one at a time. `pathToolsPreset` includes it.
  */
 import type { FeaturePreset } from '@weasel-js/core';
 import { anchorsTool } from './pathEdit/anchorsTool';
-import { cutPathAtAnchorAction, deleteAnchorsAction, marqueeAnchorsAction, selectAnchorAction } from './pathEdit/anchorEditing';
+import { cutPathAtAnchorAction, deleteAnchorsAction, areaSelectAnchorsAction, selectAnchorAction } from './pathEdit/anchorEditing';
 import {
   nudgeAnchorsDownAction, nudgeAnchorsLeftAction, nudgeAnchorsRightAction, nudgeAnchorsUpAction,
 } from './pathEdit/anchorNudge';
@@ -13,7 +13,7 @@ import { setAnchorFieldAction } from './pathEdit/anchorFields';
 import { averageAnchorsAction, joinAnchorsAction } from './pathEdit/anchorJoin';
 import { bendSegmentAction } from './pathEdit/bendSegment';
 import { enterPathEditAction } from './pathEdit/enterPathEdit';
-import { exitPathEditAction } from './pathEdit/exitPathEdit';
+import { leavePathEditAction } from './pathEdit/leavePathEdit';
 import { editAnchorsAction } from './pathEdit/editAnchors/editAnchors';
 import { insertPathAnchorAction } from './pathEdit/insertPathAnchor';
 import { createOutlinesAction } from './outlines/createOutlinesAction';
@@ -32,7 +32,7 @@ export const anchorKeysPreset: FeaturePreset = {
   refines: ['nudge', 'delete', 'escape'],
   actions: [
     nudgeAnchorsUpAction, nudgeAnchorsDownAction, nudgeAnchorsLeftAction, nudgeAnchorsRightAction,
-    deleteAnchorsAction, exitPathEditAction,
+    deleteAnchorsAction, leavePathEditAction,
   ],
 };
 
@@ -50,7 +50,7 @@ export const pathEditPreset: FeaturePreset = {
   actions: [
     editAnchorsAction, enterPathEditAction, insertPathAnchorAction, bendSegmentAction, cutPathAtAnchorAction,
     retractHandlesAction, makeHandlesSymmetricAction, averageAnchorsAction, joinAnchorsAction, setAnchorFieldAction,
-    marqueeAnchorsAction, selectAnchorAction,
+    areaSelectAnchorsAction, selectAnchorAction,
   ],
 };
 

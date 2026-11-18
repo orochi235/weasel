@@ -93,11 +93,11 @@ describe('number row chips', () => {
   it('step down over the minus chip, up over the plus chip, and neither elsewhere, alike at any panel width', () => {
     fc.assert(fc.property(menuTheme.map((t) => t.m), fc.integer({ min: 0, max: 600 }), fc.integer({ min: -50, max: 650 }), fc.integer({ min: -300, max: 300 }), (m, w, x, d) => {
       const { minus, value, plus, width } = numberChips(w, m);
-      expect(minus.x + minus.w).toBeLessThanOrEqual(value.x);
-      expect(value.x + value.w).toBeLessThanOrEqual(plus.x);
-      expect(plus.x + plus.w - minus.x).toBe(width);
-      expect(plus.x + plus.w).toBe(w - m.padX);
-      const want = x >= plus.x && x < plus.x + plus.w ? 1 : x >= minus.x && x < minus.x + minus.w ? -1 : null;
+      expect(minus.x + minus.width).toBeLessThanOrEqual(value.x);
+      expect(value.x + value.width).toBeLessThanOrEqual(plus.x);
+      expect(plus.x + plus.width - minus.x).toBe(width);
+      expect(plus.x + plus.width).toBe(w - m.padX);
+      const want = x >= plus.x && x < plus.x + plus.width ? 1 : x >= minus.x && x < minus.x + minus.width ? -1 : null;
       expect(chipAt(w, m, x)).toBe(want);
       expect(chipAt(w + d, m, x + d)).toBe(want);
     }), runs(RUNS));

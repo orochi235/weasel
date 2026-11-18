@@ -12,7 +12,7 @@ import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
 import { aimRectOf, isRectAim, rectAim, viewForAim, type AimRect, type ViewAim } from 'domains/viewports/aim';
 import { useCanvasView, type CanvasViewState } from './useCanvasView';
 import type { CanvasViewProps, ViewRect } from './canvasViewProps';
-import { sizeOf, type useViewNesting } from './useViewNesting';
+import type { useViewNesting } from './useViewNesting';
 import { IDENTITY_VIEW, UNMEASURED_DIMS, type ViewRegistry } from './viewRegistry';
 
 /** `held` carried by the camera move that turns the world rect `from` into `to`: panned and scaled
@@ -60,7 +60,7 @@ export function useViewAim(args: {
   /** The camera derived for a surface frame, or `undefined` for a camera the view keeps. */
   const derivedCamera = useCallback((outer: View, dims: Dims): View | undefined => {
     const rect = heldAt(outer, dims);
-    if (rect) return viewForAim(rect, sizeOf(rectAt(outer, dims)), 'contain');
+    if (rect) return viewForAim(rect, rectAt(outer, dims), 'contain');
     const v = live.current.view;
     return typeof v === 'function' ? normalizeView(derivedAt(v, outer, dims)) : undefined;
   }, [live, heldAt, rectAt, derivedAt]);
@@ -76,7 +76,7 @@ export function useViewAim(args: {
     const held = heldAt(...frame);
     const current = derivedCamera(...frame);
     if (!held || !current) return;
-    const size = sizeOf(rectAt(...frame));
+    const size = rectAt(...frame);
     live.current.onAimChange?.(carried(held, viewportWorldRect(current, size), aimRectOf(next, size)));
   }, [live, surfaceFrame, heldAt, derivedCamera, rectAt]);
 
@@ -87,7 +87,7 @@ export function useViewAim(args: {
       ? onAimChange && reportWrite
       : onViewChange,
     viewBounds,
-    dims: () => sizeOf(rectNow()),
+    dims: () => rectNow(),
     requestRedraw: () => registry?.surface()?.requestRedraw(),
     controlledBy: held === 'aim' ? 'aim' : 'view',
   });
@@ -97,7 +97,7 @@ export function useViewAim(args: {
 
   const aim = useCallback((): ViewAim => {
     const rect = heldAt(...surfaceFrame());
-    return rectAim(id, rect ?? aimRectOf(getView(), sizeOf(rectNow())));
+    return rectAim(id, rect ?? aimRectOf(getView(), rectNow()));
   }, [id, heldAt, surfaceFrame, getView, rectNow]);
 
   const setAim = useCallback((next: ViewAim): boolean => {
@@ -105,7 +105,7 @@ export function useViewAim(args: {
     const { view: v, onViewChange: onView, aimProp: a, onAimChange: report } = live.current;
     if (a === undefined) {
       if (v !== undefined && !onView) return false;
-      setViewFromInput(viewForAim(next.extent, sizeOf(rectNow()), 'exact'));
+      setViewFromInput(viewForAim(next.extent, rectNow(), 'exact'));
       return true;
     }
     report?.(next.extent);

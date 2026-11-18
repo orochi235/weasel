@@ -9,7 +9,7 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { DEFAULT_LAYOUT, type Globals, type Layout, type Viewport } from '../protocol/messages';
+import { DEFAULT_LAYOUT, type StoryGlobals, type StoryLayout, type StoryViewport } from '../protocol/messages';
 import { storyId, storyNameFromExport } from '../story/ids';
 import type { Decorator, LoadedStory, PlayContext, StoryContext } from '../story/types';
 import { type ArgsScope, ArgsContext, appliedLocal, coverOf, type LocalArgs } from './argsContext';
@@ -24,7 +24,7 @@ import { timelineOf } from '../timeline/declare';
 type Args = Record<string, unknown>;
 type CsfContext = {
   args: Args;
-  globals: Globals;
+  globals: StoryGlobals;
   parameters: Record<string, unknown>;
   title: string;
   name: string;
@@ -52,7 +52,7 @@ interface Annotations {
   excludeStories?: string[] | RegExp;
 }
 
-const LAYOUTS: readonly Layout[] = ['centered', 'padded', 'fullscreen'];
+const LAYOUTS: readonly StoryLayout[] = ['centered', 'padded', 'fullscreen'];
 
 const asArray = <T,>(value: T | T[] | undefined): T[] => (value === undefined ? [] : Array.isArray(value) ? value : [value]);
 
@@ -77,7 +77,7 @@ function combineParameters(...sources: (Record<string, unknown> | undefined)[]):
   return out;
 }
 
-function resolveViewport(parameters: Record<string, unknown>, globals: Record<string, unknown>): Viewport | null {
+function resolveViewport(parameters: Record<string, unknown>, globals: Record<string, unknown>): StoryViewport | null {
   const selected = globals.viewport as { value?: string; isRotated?: boolean } | undefined;
   const options = (parameters.viewport as { options?: Record<string, { styles?: { width?: string; height?: string } }> } | undefined)
     ?.options;
@@ -183,7 +183,7 @@ export function loadCsfModule(
       Object.fromEntries(
         Object.entries(withoutUndefined(config)).map(([key, value]) => [key, Object.hasOwn(args, key) ? withUnsent(value, args[key]) : value]),
       );
-    const csfContext = (config: unknown, globals: Globals, local: LocalArgs = {}): CsfContext => ({
+    const csfContext = (config: unknown, globals: StoryGlobals, local: LocalArgs = {}): CsfContext => ({
       args: withoutUndefined({ ...args, ...withArgs(config as Args), ...appliedLocal(local, config as Args) }),
       globals,
       parameters,
@@ -219,7 +219,7 @@ export function loadCsfModule(
           scoped(ctx, (context) => decorator(Story, context)),
         );
 
-    const layout = parameters.layout as Layout | undefined;
+    const layout = parameters.layout as StoryLayout | undefined;
     const forgeParams = parameters.forge as { isolate?: unknown; timeline?: unknown } | undefined;
     const isolate = forgeParams?.isolate;
     const play = spec.play ?? meta.play;

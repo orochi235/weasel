@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { placeMenu, placeMenuUnder, placeSubmenu } from './placement';
 
-const bounds = { x: 0, y: 0, w: 800, h: 600 };
-const size = { w: 200, h: 300 };
+const bounds = { x: 0, y: 0, width: 800, height: 600 };
+const size = { width: 200, height: 300 };
 
 describe('placeMenu', () => {
   it('opens down and right of the anchor when it fits', () => {
@@ -19,22 +19,22 @@ describe('placeMenu', () => {
     expect(placeMenu(size, { x: 100, y: 500 }, bounds)).toEqual({ x: 100, y: 200 });
   });
   it('shifts inside when neither side fits', () => {
-    expect(placeMenu({ w: 200, h: 500 }, { x: 100, y: 300 }, bounds)).toEqual({ x: 100, y: 100 });
+    expect(placeMenu({ width: 200, height: 500 }, { x: 100, y: 300 }, bounds)).toEqual({ x: 100, y: 100 });
   });
   it('pins to the near edge when the menu is larger than the bounds', () => {
-    expect(placeMenu({ w: 200, h: 900 }, { x: 100, y: 300 }, bounds)).toEqual({ x: 100, y: 0 });
+    expect(placeMenu({ width: 200, height: 900 }, { x: 100, y: 300 }, bounds)).toEqual({ x: 100, y: 0 });
   });
   it('stays inside when the anchor is past the far edge', () => {
     expect(placeMenu(size, { x: 1000, y: 700 }, bounds)).toEqual({ x: 600, y: 300 });
   });
   it('respects a bounds origin that is not zero', () => {
-    expect(placeMenu(size, { x: 950, y: 150 }, { x: 100, y: 100, w: 900, h: 600 }))
+    expect(placeMenu(size, { x: 950, y: 150 }, { x: 100, y: 100, width: 900, height: 600 }))
       .toEqual({ x: 750, y: 150 });
   });
 });
 
 describe('placeSubmenu', () => {
-  const row = { x: 100, y: 120, w: 200, h: 24 };
+  const row = { x: 100, y: 120, width: 200, height: 24 };
   it('opens to the right of its row, top-aligned', () => {
     expect(placeSubmenu(size, row, bounds)).toEqual({ x: 300, y: 120 });
   });
@@ -53,41 +53,41 @@ describe('placeSubmenu', () => {
 
 describe('placeMenuUnder', () => {
   it('opens below the rect, left-aligned', () => {
-    expect(placeMenuUnder(size, { x: 100, y: 20, w: 60, h: 24 }, bounds)).toEqual({ x: 100, y: 44 });
+    expect(placeMenuUnder(size, { x: 100, y: 20, width: 60, height: 24 }, bounds)).toEqual({ x: 100, y: 44 });
   });
   it('under rtl opens below the rect, right-aligned', () => {
-    expect(placeMenuUnder(size, { x: 300, y: 20, w: 60, h: 24 }, bounds, 'bottom', 'rtl')).toEqual({ x: 160, y: 44 });
-    expect(placeMenuUnder(size, { x: 20, y: 20, w: 60, h: 24 }, bounds, 'bottom', 'rtl')).toEqual({ x: 20, y: 44 });
+    expect(placeMenuUnder(size, { x: 300, y: 20, width: 60, height: 24 }, bounds, 'bottom', 'rtl')).toEqual({ x: 160, y: 44 });
+    expect(placeMenuUnder(size, { x: 20, y: 20, width: 60, height: 24 }, bounds, 'bottom', 'rtl')).toEqual({ x: 20, y: 44 });
   });
   it('flips above the rect when below does not fit', () => {
-    expect(placeMenuUnder(size, { x: 100, y: 560, w: 60, h: 24 }, bounds)).toEqual({ x: 100, y: 260 });
+    expect(placeMenuUnder(size, { x: 100, y: 560, width: 60, height: 24 }, bounds)).toEqual({ x: 100, y: 260 });
   });
   it('right-aligns to the rect when left-aligned would clip', () => {
-    expect(placeMenuUnder(size, { x: 700, y: 20, w: 60, h: 24 }, bounds)).toEqual({ x: 560, y: 44 });
+    expect(placeMenuUnder(size, { x: 700, y: 20, width: 60, height: 24 }, bounds)).toEqual({ x: 560, y: 44 });
   });
   it('shifts inside the bounds when neither side fits', () => {
-    expect(placeMenuUnder({ w: 200, h: 390 }, { x: 100, y: 180, w: 60, h: 24 }, { x: 0, y: 0, w: 800, h: 400 }))
+    expect(placeMenuUnder({ width: 200, height: 390 }, { x: 100, y: 180, width: 60, height: 24 }, { x: 0, y: 0, width: 800, height: 400 }))
       .toEqual({ x: 100, y: 10 });
   });
   it('opens above the rect when asked and the top fits', () => {
-    expect(placeMenuUnder({ w: 100, h: 50 }, { x: 10, y: 200, w: 40, h: 20 }, bounds, 'top')).toEqual({ x: 10, y: 150 });
+    expect(placeMenuUnder({ width: 100, height: 50 }, { x: 10, y: 200, width: 40, height: 20 }, bounds, 'top')).toEqual({ x: 10, y: 150 });
   });
   it('flips below when asked above with no room there', () => {
-    expect(placeMenuUnder({ w: 100, h: 50 }, { x: 10, y: 20, w: 40, h: 20 }, bounds, 'top')).toEqual({ x: 10, y: 40 });
+    expect(placeMenuUnder({ width: 100, height: 50 }, { x: 10, y: 20, width: 40, height: 20 }, bounds, 'top')).toEqual({ x: 10, y: 40 });
   });
   it('opens right of the rect, top-aligned, when asked', () => {
-    expect(placeMenuUnder({ w: 100, h: 50 }, { x: 10, y: 200, w: 40, h: 20 }, bounds, 'right')).toEqual({ x: 50, y: 200 });
+    expect(placeMenuUnder({ width: 100, height: 50 }, { x: 10, y: 200, width: 40, height: 20 }, bounds, 'right')).toEqual({ x: 50, y: 200 });
   });
   it('flips left when asked right with no room there', () => {
-    expect(placeMenuUnder({ w: 100, h: 50 }, { x: 740, y: 200, w: 40, h: 20 }, bounds, 'right')).toEqual({ x: 640, y: 200 });
+    expect(placeMenuUnder({ width: 100, height: 50 }, { x: 740, y: 200, width: 40, height: 20 }, bounds, 'right')).toEqual({ x: 640, y: 200 });
   });
   it('opens left of the rect when asked, shifted up to stay inside', () => {
-    expect(placeMenuUnder({ w: 100, h: 50 }, { x: 300, y: 580, w: 40, h: 20 }, bounds, 'left')).toEqual({ x: 200, y: 550 });
+    expect(placeMenuUnder({ width: 100, height: 50 }, { x: 300, y: 580, width: 40, height: 20 }, bounds, 'left')).toEqual({ x: 200, y: 550 });
   });
   it('flips right when asked left with no room there', () => {
-    expect(placeMenuUnder({ w: 100, h: 50 }, { x: 40, y: 200, w: 40, h: 20 }, bounds, 'left')).toEqual({ x: 80, y: 200 });
+    expect(placeMenuUnder({ width: 100, height: 50 }, { x: 40, y: 200, width: 40, height: 20 }, bounds, 'left')).toEqual({ x: 80, y: 200 });
   });
   it('stays below by default', () => {
-    expect(placeMenuUnder({ w: 100, h: 50 }, { x: 10, y: 200, w: 40, h: 20 }, bounds)).toEqual({ x: 10, y: 220 });
+    expect(placeMenuUnder({ width: 100, height: 50 }, { x: 10, y: 200, width: 40, height: 20 }, bounds)).toEqual({ x: 10, y: 220 });
   });
 });

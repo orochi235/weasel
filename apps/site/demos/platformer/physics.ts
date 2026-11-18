@@ -25,8 +25,8 @@ export interface Body {
   y: number;
   vx: number;
   vy: number;
-  w: number;
-  h: number;
+  width: number;
+  height: number;
   onGround: boolean;
   /** Last non-zero horizontal facing: 1 right, -1 left. */
   facing: 1 | -1;
@@ -53,7 +53,7 @@ export interface BodyState {
 
 export function createBodyState(at: Vec2): BodyState {
   return {
-    body: { x: at.x, y: at.y, vx: 0, vy: 0, w: BODY_W, h: BODY_H, onGround: false, facing: 1 },
+    body: { x: at.x, y: at.y, vx: 0, vy: 0, width: BODY_W, height: BODY_H, onGround: false, facing: 1 },
     coyote: 0,
     jumpBuffer: 0,
     jumped: false,
@@ -62,10 +62,10 @@ export function createBodyState(at: Vec2): BodyState {
   };
 }
 
-const left = (b: Body) => b.x - b.w / 2;
-const right = (b: Body) => b.x + b.w / 2;
-const top = (b: Body) => b.y - b.h / 2;
-const bottom = (b: Body) => b.y + b.h / 2;
+const left = (b: Body) => b.x - b.width / 2;
+const right = (b: Body) => b.x + b.width / 2;
+const top = (b: Body) => b.y - b.height / 2;
+const bottom = (b: Body) => b.y + b.height / 2;
 
 const blocksMotion = (t: number): boolean => t === SOLID || t === QUESTION;
 
@@ -77,14 +77,14 @@ function resolveX(b: Body, level: Level): void {
     if (b.vx > 0) {
       const cx = toCol(right(b) - 0.001);
       if (blocksMotion(tileAt(level, cx, cy))) {
-        b.x = cx * TILE - b.w / 2;
+        b.x = cx * TILE - b.width / 2;
         b.vx = 0;
         break;
       }
     } else if (b.vx < 0) {
       const cx = toCol(left(b));
       if (blocksMotion(tileAt(level, cx, cy))) {
-        b.x = (cx + 1) * TILE + b.w / 2;
+        b.x = (cx + 1) * TILE + b.width / 2;
         b.vx = 0;
         break;
       }
@@ -110,7 +110,7 @@ function resolveY(b: Body, level: Level, prevBottom: number): YHit | null {
       const t = tileAt(level, cx, cy);
       const blocks = blocksMotion(t) || (t === ONEWAY && prevBottom <= cy * TILE + 0.001);
       if (blocks) {
-        b.y = cy * TILE - b.h / 2;
+        b.y = cy * TILE - b.height / 2;
         b.vy = 0;
         return { kind: 'floor', cx, cy, tile: t };
       }
@@ -118,7 +118,7 @@ function resolveY(b: Body, level: Level, prevBottom: number): YHit | null {
       const cy = toRow(top(b));
       const t = tileAt(level, cx, cy);
       if (blocksMotion(t)) {
-        b.y = (cy + 1) * TILE + b.h / 2;
+        b.y = (cy + 1) * TILE + b.height / 2;
         b.vy = 0;
         return { kind: 'ceiling', cx, cy, tile: t };
       }

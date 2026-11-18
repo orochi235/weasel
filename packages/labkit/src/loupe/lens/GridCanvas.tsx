@@ -1,5 +1,6 @@
 import { FALLBACK_ACCENT, useDeviceProfile } from '@weasel-js/core';
 import { useLatest } from '@weasel-js/react';
+import { createPart } from '@weasel-js/registry';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type ThemeColorSpec, useThemeColors } from '../../canvas/useThemeColors';
 import type { LensCapture, LensSource, LensSourceRequest } from './lensSource';
@@ -17,15 +18,10 @@ interface Read {
   columns: number;
 }
 
-const masks = new WeakMap<ImageBitmap, { mask: Uint8Array; columns: number } | null>();
-
-function maskOf(bitmap: ImageBitmap): { mask: Uint8Array; columns: number } | null {
-  if (masks.has(bitmap)) return masks.get(bitmap) ?? null;
+const maskOf = createPart((bitmap: ImageBitmap): { mask: Uint8Array; columns: number } | null => {
   const img = readBitmap(bitmap);
-  const read = img ? { mask: softEdgeMask(img), columns: img.width } : null;
-  masks.set(bitmap, read);
-  return read;
-}
+  return img ? { mask: softEdgeMask(img), columns: img.width } : null;
+});
 
 /**
  * The Pixel grid over one cell of a Pixels lens: a line on every boundary

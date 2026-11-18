@@ -24,18 +24,18 @@ import {
   alignPlaneSource,
   boxSnapSource,
   collectOverlayBoxes,
-  createAreaSelect,
+  createAreaSelect3dDep,
   createAxisMove,
   createCamera,
-  createNodeAtPoint,
+  createNodeAtPoint3dDep,
   createPoseDescriptor,
-  createSnap,
+  createSnap3dDep,
   groundGridSource,
   projectSnapMarks,
   screenBoxOf,
   useOrbitTool,
-  orbitAction,
-  panAction,
+  cameraOrbitAction,
+  cameraPanAction,
   type AxisMove,
   type Camera3d,
   type ChromeBox,
@@ -50,7 +50,8 @@ import { useBoxTool } from './tools3d';
 import { useGroupEntry3d, type GroupEntry3d } from './groupEntry3d';
 import { useBoxInsert } from './insert3d';
 import { useSolidSelection } from './selection3d';
-import { useSelectToolWith, selectionMoveContribution, ENGINE_STANDARD_ACTIONS } from '@weasel-js/editing/engine';
+import { usePickerSelectTool, createSelectionMoveContribution, ENGINE_STANDARD_ACTIONS } from '@weasel-js/editing/engine';
+import type { Rect } from '@weasel-js/geom';
 
 interface SolidState {
   /** Kept only so labkit has something to persist; the scene itself is a ref. */
@@ -172,15 +173,15 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       const draws = drawsRef.current;
       applyFeedDelta(draws, feed.read());
 
-      sizeRef.current = { width: rect.w, height: rect.h };
+      sizeRef.current = { width: rect.width, height: rect.height };
       const paneRect = paneRef.current?.getBoundingClientRect();
       if (paneRect) originRef.current = { x: paneRect.left, y: paneRect.top };
       const css = toDeviceRect(rect, frame.size.height, frame.dpr);
       const device = {
         x: Math.round(css.x * frame.dpr),
         y: Math.round(css.y * frame.dpr),
-        w: Math.round(css.w * frame.dpr),
-        h: Math.round(css.h * frame.dpr),
+        width: Math.round(css.width * frame.dpr),
+        height: Math.round(css.height * frame.dpr),
       };
       const solids = solidsToDraw(scene, draws, new Set(selectionRef.current));
 
@@ -189,8 +190,8 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       // be hidden behind this tile.
       const viewport = {
         camera: cameraRef.current,
-        width: rect.w,
-        height: rect.h,
+        width: rect.width,
+        height: rect.height,
         originX: originRef.current.x,
         originY: originRef.current.y,
       };
@@ -215,13 +216,13 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       chrome.push(...collectOverlayBoxes(dispatcher.inFlight().values(), originRef.current));
 
       // Projected without the pane's origin, so they land in the tile as drawn.
-      const snap = projectSnapMarks(snapMarks.get(), { camera: cameraRef.current, width: rect.w, height: rect.h });
+      const snap = projectSnapMarks(snapMarks.get(), { camera: cameraRef.current, width: rect.width, height: rect.height });
 
-      const handles = axisMoveRef.current?.handles({ camera: cameraRef.current, width: rect.w, height: rect.h }) ?? [];
+      const handles = axisMoveRef.current?.handles({ camera: cameraRef.current, width: rect.width, height: rect.height }) ?? [];
 
       renderer.draw(solids, cameraRef.current, device, chrome, {
-        width: rect.w,
-        height: rect.h,
+        width: rect.width,
+        height: rect.height,
       }, snap, handles);
     });
 
@@ -236,14 +237,14 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   // ── Deps ───────────────────────────────────────────────────────────────
   // Every pick below goes through the entered group's scope: outside it,
   // nothing takes a hit and a press lands on empty canvas.
-  const worldPick = useMemo(() => createNodeAtPoint(world), [world]);
+  const worldPick = useMemo(() => createNodeAtPoint3dDep(world), [world]);
   const groupEntry = useGroupEntry3d(world, viewportSource, worldPick, repaint);
   useEffect(() => {
     groupEntryRef.current = groupEntry;
   }, [groupEntry]);
   const nodeAtPoint = groupEntry.pick;
   const areaSelect = useMemo(
-    () => createAreaSelect(world, selectionApi, null, { entered: groupEntry.entered }),
+    () => createAreaSelect3dDep(world, selectionApi, null, { entered: groupEntry.entered }),
     [world, selectionApi, groupEntry.entered],
   );
   const insert = useBoxInsert(scene, viewportSource);
@@ -255,7 +256,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   const poseDescriptor = useMemo(() => createPoseDescriptor(world), [world]);
   const kitSettings = useKitSettings();
   const snap = useMemo(
-    () => createSnap(world, {
+    () => createSnap3dDep(world, {
       sources: [boxSnapSource(world), alignPlaneSource(world), groundGridSource({ step: 1, world })],
       store: snapMarks,
       kitSettings,
@@ -282,8 +283,8 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   useDepSource('insert', () => insert);
   useDepSource('snap', () => snap);
   useDepSource('poseDescriptor', () => poseDescriptor as never);
-  useAction(orbitAction);
-  useAction(panAction);
+  useAction(cameraOrbitAction);
+  useAction(cameraPanAction);
 
   // ── Tools ──────────────────────────────────────────────────────────────
   const pickEvery = useCallback(
@@ -307,7 +308,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       getParent: (id: string) => scene.get(id as NodeId)?.parent ?? null,
       getChildren: (parentId: string | null): string[] =>
         (parentId === null ? [...scene.roots] : [...scene.childrenOf(parentId as NodeId)]),
-      hitTestArea: (rect: { x: number; y: number; width: number; height: number }) =>
+      hitTestArea: (rect: Rect) =>
         areaSelect.hitTestArea(rect) as string[],
       getSelection: () => [...selectionRef.current] as string[],
       setSelection: (ids: string[]) => setSelection(ids as NodeId[]),
@@ -315,12 +316,12 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     [scene, areaSelect, selectionRef, setSelection],
   );
 
-  const select = useSelectToolWith(selectAdapter, { pickEvery, pickBest, poseDescriptor });
+  const select = usePickerSelectTool(selectAdapter, { pickEvery, pickBest, poseDescriptor });
   const orbit = useOrbitTool() as Tool;
   const box = useBoxTool();
   // The select tool only picks; dragging a solid to move it is the
   // selection's own ambient binding, live under every tool here.
-  const selectionMove = useMemo(() => selectionMoveContribution() as Tool, []);
+  const selectionMove = useMemo(() => createSelectionMoveContribution() as Tool, []);
   const entriesById = useMemo(
     () =>
       new Map<string, Tool>([
@@ -362,9 +363,9 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   const classifyTarget = useCallback(
     (point: { x: number; y: number }) => {
       const id = nodeAtPoint(point);
-      if (!id) return { body: 'empty' as const };
+      if (!id) return { bodyTarget: 'empty' as const };
       return {
-        body: (selectionRef.current.includes(id) ? 'selected-body' : 'unselected-body') as
+        bodyTarget: (selectionRef.current.includes(id) ? 'selected-body' : 'unselected-body') as
           | 'selected-body'
           | 'unselected-body',
       };

@@ -11,7 +11,7 @@ import { IDENTITY_POSE_COMPOSITION,
 } from '@weasel-js/core';
 import { measureNode, type MeasureFrames } from '../measurement';
 import { createMeasurements, measureIds } from '../measurements';
-import { measurementsContribution } from '../measureContribution';
+import { createMeasurementsContribution } from '../measureContribution';
 import { MeasureReadout } from './MeasureReadout';
 import s from './MeasureReadout.module.css';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
@@ -32,7 +32,7 @@ function setup() {
   const ms = createMeasurements({ layer: 'notes' });
   const add = (id: string, a: { x: number; y: number }, b: { x: number; y: number }, frames?: MeasureFrames) =>
     act(() => { scene.add(measureNode(id as NodeId, 'notes', a, b, frames)); });
-  const actions = measurementsContribution(scene, ms).actions ?? [];
+  const actions = createMeasurementsContribution(scene, ms).actions ?? [];
   const view = (selected: string[]) => (
     <DepRegistryProvider>
       <ActionsProvider>

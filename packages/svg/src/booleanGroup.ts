@@ -7,6 +7,7 @@ import {
   booleanOpOf, boundsOfPath, derivedDepOf, documentOf, type BooleanShapeOp, type Path,
 } from '@weasel-js/core';
 import type { SvgGroupNode, SvgNode } from './types';
+import type { Rect } from '@weasel-js/geom';
 
 /** The attribute naming a boolean group's operation, on the `<g>` of its operands. */
 export const BOOLEAN_ATTR = 'data-weasel-boolean';
@@ -35,7 +36,7 @@ export function derivedPathIn(
 export function asBooleanLeaf<T extends { data: unknown; pose: unknown }>(
   node: T,
   path: Path | null,
-  place: (box: { x: number; y: number; width: number; height: number }) => T['pose'],
+  place: (box: Rect) => T['pose'],
 ): T {
   if (path === null || (path.kind === 'polygon' && path.commands.length === 0)) {
     return { ...node, data: { ...(node.data as object), path: undefined } };

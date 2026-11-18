@@ -53,7 +53,7 @@ function laneIndex(scene: ThemedScene, node: ThemedNode): number {
   return Math.max(0, lanes.indexOf(node.id));
 }
 
-/** The look a box takes from `theme`: a body its role's, a group or container the theme's
+/** The look a box takes from `theme`: a body its role's, a cluster or container the theme's
  *  container, a pool its lane header, a lane the lane bodies in turn. `null` for no box. */
 function boxLook(scene: ThemedScene, node: ThemedNode, theme: DiagramTheme): Look | null {
   const trait = traitOf(node.data);
@@ -66,7 +66,7 @@ function boxLook(scene: ThemedScene, node: ThemedNode, theme: DiagramTheme): Loo
     const bodies = theme.lane.bodies;
     return { style: bodies[laneIndex(scene, node) % bodies.length] ?? theme.container, own, ownSize };
   }
-  if (role !== null || 'group' in trait) return { style: theme.container, own, ownSize };
+  if (role !== null || 'cluster' in trait) return { style: theme.container, own, ownSize };
   return { style: roleStyle(theme, trait.style), own, ownSize };
 }
 
@@ -134,7 +134,7 @@ const ownerOf = (node: ThemedNode): string | null =>
 
 /**
  * The new `data` for every node `theme` recolors: shapes, their text rows,
- * groups and containers and their titles, connectors and their labels. Given
+ * clusters and containers and their titles, connectors and their labels. Given
  * `ids`, only those boxes and connectors, and the text that belongs to them.
  * Given `from`, the theme the scene was in, text moves by the step between the
  * two themes' sizes, except where its owner's author set the size. A node
@@ -185,7 +185,7 @@ export function themeWrites(scene: ThemedScene, theme: DiagramTheme, ids?: Reado
       if (ids === undefined || ids.has(node.id)) write(node.id, paintBox(data, look));
       continue;
     }
-    // A text row, a port label, or a group's title: colored as the box it belongs to.
+    // A text row, a port label, or a cluster's title: colored as the box it belongs to.
     const owner = ownerOf(node);
     const ownerLook = owner === null ? null : lookOf(owner);
     if (ownerLook === null || typeof data.text !== 'string' || (ids !== undefined && !ids.has(owner!))) continue;

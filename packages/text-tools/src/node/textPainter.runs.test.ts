@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { DrawCommand } from '@weasel-js/renderer';
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import { findNodeShape, type SceneNode as Node } from '@weasel-js/core';
 import { _resetShapePaintersForTests } from 'canvas/NodeShape';
 import { withTextPainter } from '../testing/textPainter';
@@ -113,8 +113,8 @@ describe('kit:text painter — rich runs', () => {
       expect(text.runs[0].stroke).toEqual(stroke);
     });
 
-    it('takes strokeOf() for the color-and-width case', () => {
-      const [cmd] = paintText({ text: 'hi', stroke: strokeOf('#f00') });
+    it('takes solidStroke() for the color-and-width case', () => {
+      const [cmd] = paintText({ text: 'hi', stroke: solidStroke('#f00') });
       const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
       expect(text.runs[0].stroke).toEqual({ paint: { color: '#f00' }, width: 1 });
     });
@@ -133,7 +133,7 @@ describe('kit:text painter — rich runs', () => {
       const explicit = { paint: { color: '#00f' }, width: 8, join: 'round' as const };
       const [cmd] = paintText({
         text: 'ab',
-        stroke: strokeOf('#f00', 3),
+        stroke: solidStroke('#f00', 3),
         runs: [{ text: 'a' }, { text: 'b', stroke: explicit }],
       });
       const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
@@ -142,7 +142,7 @@ describe('kit:text painter — rich runs', () => {
 
     it('reaches runs-form text too', () => {
       const [cmd] = paintText({
-        text: 'ab', stroke: strokeOf('#f00', 2), runs: [{ text: 'a' }, { text: 'b' }],
+        text: 'ab', stroke: solidStroke('#f00', 2), runs: [{ text: 'a' }, { text: 'b' }],
       });
       const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
       expect(text.runs.every((r) => r.stroke?.width === 2)).toBe(true);

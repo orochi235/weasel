@@ -3,4 +3,4 @@ packages/parallax/src/createParallaxPlane.ts
 packages/parallax/src/createTiledLayer.ts
 packages/parallax/src/index.ts
 packages/parallax/src/pbt.fixture.ts
-packages/parallax/src/tiledProject.ts
+packages/parallax/src/tileRange.ts

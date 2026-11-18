@@ -17,7 +17,7 @@ import type { Path } from '../path';
 /** Distance from (px, py) to the perimeter of an axis-aligned rectangle.
  *  Returns 0 if the point is on the perimeter; positive value outside or
  *  inside (distance to the nearest edge). */
-function pointToRectPerimeterDist(
+function pointToRectPerimeterDistance(
   px: number, py: number,
   rx: number, ry: number, rw: number, rh: number,
 ): number {
@@ -38,8 +38,8 @@ function pointToRectPerimeterDist(
  *  combine with `pathContainsPoint` at the call site. */
 export function pathDistanceToPoint(path: Path, px: number, py: number): number {
   if (path.kind === 'rect') {
-    return pointToRectPerimeterDist(px, py, path.x, path.y, path.width, path.height);
+    return pointToRectPerimeterDistance(px, py, path.x, path.y, path.width, path.height);
   }
   const drawn = resolveCorners(path);
-  return nearestOnPath(drawn.commands, worldCoords(drawn), px, py)?.dist ?? Infinity;
+  return nearestOnPath(drawn.commands, worldCoords(drawn), px, py)?.distance ?? Infinity;
 }

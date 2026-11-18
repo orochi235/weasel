@@ -11,10 +11,10 @@ import { usePathOverlays } from './usePathOverlays';
 beforeEach(() => act(() => drawPrefs().reset()));
 
 const TOGGLES = [
-  [showDirectionAction, PATH_DIRECTION_CHROME_ID, 'view.pathEditing.pathDirection', false],
-  [showCombAction, PATH_COMB_CHROME_ID, 'view.pathEditing.pathComb', false],
-  [showPoiseAction, PATH_POISE_CHROME_ID, 'view.pathEditing.pathPoise', false],
-  [showFilletsAction, PATH_FILLETS_CHROME_ID, 'view.pathEditing.pathFillets', true],
+  [showDirectionAction, PATH_DIRECTION_CHROME_ID, 'view.pathEditing.direction', false],
+  [showCombAction, PATH_COMB_CHROME_ID, 'view.pathEditing.comb', false],
+  [showPoiseAction, PATH_POISE_CHROME_ID, 'view.pathEditing.poise', false],
+  [showFilletsAction, PATH_FILLETS_CHROME_ID, 'view.pathEditing.fillets', true],
 ] as const;
 
 function setup() {

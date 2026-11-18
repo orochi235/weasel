@@ -41,35 +41,35 @@ describe('WeaselRenderer.render — kind: image, source rect and flip', () => {
   }
 
   it('samples the whole bitmap when no source rect is given', () => {
-    r.render([{ kind: 'image', image: bitmap(64, 32), x: 0, y: 0, w: 64, h: 32 }]);
+    r.render([{ kind: 'image', image: bitmap(64, 32), x: 0, y: 0, width: 64, height: 32 }]);
     expect(uvs()).toEqual([0, 0, 1, 1]);
   });
 
   it('normalizes a source rect by the bitmap dimensions', () => {
     r.render([{
-      kind: 'image', image: bitmap(64, 32), x: 0, y: 0, w: 16, h: 16,
-      source: { x: 16, y: 8, w: 16, h: 16 },
+      kind: 'image', image: bitmap(64, 32), x: 0, y: 0, width: 16, height: 16,
+      source: { x: 16, y: 8, width: 16, height: 16 },
     }]);
     expect(uvs()).toEqual([16 / 64, 8 / 32, 32 / 64, 24 / 32]);
   });
 
   it('swaps the horizontal UVs for flipX', () => {
     r.render([{
-      kind: 'image', image: bitmap(64, 32), x: 0, y: 0, w: 64, h: 32, flipX: true,
+      kind: 'image', image: bitmap(64, 32), x: 0, y: 0, width: 64, height: 32, flipX: true,
     }]);
     expect(uvs()).toEqual([1, 0, 0, 1]);
   });
 
   it('swaps the vertical UVs for flipY', () => {
     r.render([{
-      kind: 'image', image: bitmap(64, 32), x: 0, y: 0, w: 64, h: 32, flipY: true,
+      kind: 'image', image: bitmap(64, 32), x: 0, y: 0, width: 64, height: 32, flipY: true,
     }]);
     expect(uvs()).toEqual([0, 1, 1, 0]);
   });
 
   it('swaps both axes for flipX + flipY', () => {
     r.render([{
-      kind: 'image', image: bitmap(64, 32), x: 0, y: 0, w: 64, h: 32,
+      kind: 'image', image: bitmap(64, 32), x: 0, y: 0, width: 64, height: 32,
       flipX: true, flipY: true,
     }]);
     expect(uvs()).toEqual([1, 1, 0, 0]);
@@ -77,18 +77,18 @@ describe('WeaselRenderer.render — kind: image, source rect and flip', () => {
 
   it('mirrors within the source rect, not the whole bitmap', () => {
     r.render([{
-      kind: 'image', image: bitmap(64, 32), x: 0, y: 0, w: 16, h: 16,
-      source: { x: 16, y: 8, w: 16, h: 16 }, flipX: true,
+      kind: 'image', image: bitmap(64, 32), x: 0, y: 0, width: 16, height: 16,
+      source: { x: 16, y: 8, width: 16, height: 16 }, flipX: true,
     }]);
     expect(uvs()).toEqual([32 / 64, 8 / 32, 16 / 64, 24 / 32]);
   });
 
   it('leaves the destination quad alone when flipping', () => {
-    r.render([{ kind: 'image', image: bitmap(64, 32), x: 10, y: 20, w: 64, h: 32 }]);
+    r.render([{ kind: 'image', image: bitmap(64, 32), x: 10, y: 20, width: 64, height: 32 }]);
     const plain = imageQuad();
     recorder.reset();
     r.render([{
-      kind: 'image', image: bitmap(64, 32), x: 10, y: 20, w: 64, h: 32,
+      kind: 'image', image: bitmap(64, 32), x: 10, y: 20, width: 64, height: 32,
       flipX: true, flipY: true,
     }]);
     const flipped = imageQuad();
@@ -101,8 +101,8 @@ describe('WeaselRenderer.render — kind: image, source rect and flip', () => {
 
   it('passes a source rect past the bitmap edge through unclamped', () => {
     r.render([{
-      kind: 'image', image: bitmap(64, 32), x: 0, y: 0, w: 16, h: 16,
-      source: { x: 56, y: 24, w: 16, h: 16 },
+      kind: 'image', image: bitmap(64, 32), x: 0, y: 0, width: 16, height: 16,
+      source: { x: 56, y: 24, width: 16, height: 16 },
     }]);
     expect(uvs()).toEqual([56 / 64, 24 / 32, 72 / 64, 40 / 32]);
   });

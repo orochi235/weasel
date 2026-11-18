@@ -2,7 +2,7 @@ import { ActionDisabledReason, eligibleNow, type Action, type ActionDeps, type A
 import type { Scene } from '@weasel-js/core/engine';
 import { commitTransformOps, finishTransformOps } from '@weasel-js/core/engine';
 import { duplicateAction, duplicateSelection } from '../edit/duplicate';
-import { DUPLICATE_OFFSET, requiresContent, requiresSelection, lastTransform, recordTransform, type RepeatableTransform } from '@weasel-js/core';
+import { DUPLICATE_OFFSET, requiresContent, requiresOperands, lastTransform, recordTransform, type RepeatableTransform } from '@weasel-js/core';
 import { selectionTransformOps } from './transformSelection';
 import { icon } from '../../icons.gen';
 
@@ -64,7 +64,7 @@ export const transformAgainAction: Action & { requires: string[] } = {
     },
   },
   enabled: (deps) => {
-    const selected = requiresSelection(deps);
+    const selected = requiresOperands(deps);
     if (selected !== true || !deps?.scene) return selected;
     return canRepeat(deps, deps.scene, lastTransform(deps.scene) ?? FIRST);
   },

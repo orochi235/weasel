@@ -3,7 +3,7 @@
  * back a take-down that is safe to call twice.
  */
 import type { Action } from './action';
-import { evaluateEnabled } from './actionEnabled';
+import { checkEnabled } from './actionEnabled';
 import type { ActionDeps, WorldPoint } from './invoker';
 
 const NO_PREVIEW = (): void => {};
@@ -18,7 +18,7 @@ export function showPreview(
 ): () => void {
   if (!action?.preview) return NO_PREVIEW;
   const bag = depsOf(action);
-  if (!evaluateEnabled(action, bag, at, params).enabled) return NO_PREVIEW;
+  if (!checkEnabled(action, bag, at, params).enabled) return NO_PREVIEW;
   let stop: (() => void) | void;
   try {
     stop = action.preview(bag, params);

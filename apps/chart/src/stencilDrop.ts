@@ -1,5 +1,5 @@
 import { MOVE_NODES_REQUIRES, moveNodes, type ActionDeps, type Contribution, type RectPose } from '@weasel-js/core';
-import { itemDropContribution, stencilKind, type ItemDrop, type ParticipantSource } from '@weasel-js/diagram';
+import { createItemDropContribution, stencilKind, type ItemDrop, type ParticipantSource } from '@weasel-js/diagram';
 
 type Point = { x: number; y: number };
 
@@ -33,5 +33,5 @@ function dropStencil(drop: ItemDrop, deps: ActionDeps): void {
 /** Takes a stencil carried in from the Shapes panel, outlining what it would land in on the way. Its item is the
  *  stencil's id. */
 export function stencilDrop(participants: ParticipantSource<RectPose>): Contribution {
-  return itemDropContribution({ participants, requires: DROP_REQUIRES, report: dropStencil });
+  return createItemDropContribution({ participants, requires: DROP_REQUIRES, report: dropStencil });
 }

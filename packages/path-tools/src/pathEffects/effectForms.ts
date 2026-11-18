@@ -3,7 +3,7 @@
  * after it is made, and the section `editPathEffect`'s settings form shows for it. Each setting's default is
  * stated here once: the value a new effect is made with and the one an effect leaving it unset paints with.
  */
-import { pref, prefLeaves, type PrefGroup } from '@weasel-js/prefs';
+import { pref, prefLeaves, type PrefGroup } from '@weasel-js/prefs-schema';
 import type { PathEffect } from '@weasel-js/core';
 import { setOwn } from '@weasel-js/registry';
 

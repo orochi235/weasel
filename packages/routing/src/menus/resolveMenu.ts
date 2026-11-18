@@ -1,7 +1,7 @@
 import type { MenuEntry } from '@weasel-js/menu';
 import {
-  isBuiltinPref, isPrefLeaf, isPrefSection, PREF_STATUS, prefAliasedLeaf, prefAliasTarget, prefConditionHolds, prefLeafAt,
-  prefStatusIn, prefStatusUnder, prefValueAtPath,
+  isBuiltinPref, isPrefLeaf, isPrefSection, ROOT_PREF_STATUS, prefAliasedLeaf, prefAliasTarget, prefConditionHolds, prefLeafAt,
+  prefStatusIn, prefStatusUnder, prefValueAt, resolvePrefGroupConditions,
   type PrefConditionJudge, type PrefOwner,
   type PrefAction, type PrefBoolean, type PrefColor, type PrefConditionReader, type PrefEnum, type PrefGroup,
   type PrefField, type PrefGroupAs, type PrefLeaf, type PrefList, type PrefMap, type PrefNumber, type PrefObject,
@@ -11,7 +11,7 @@ import type { Action } from '../interactions/actions/action';
 import type { ActionDeps } from '../interactions/actions/invoker';
 import { actionItems, type ActionItem } from '../interactions/actions/actionItems';
 import { actionItemShortcuts, type ActionShortcut } from '../interactions/actions/actionShortcuts';
-import { evaluateActive, evaluateEnabled, type ActionEnabledResult } from '../interactions/actions/actionEnabled';
+import { checkActive, checkEnabled, type ActionEnabledResult } from '../interactions/actions/actionEnabled';
 import { actionSettingsParams, readActionSettings } from '../interactions/actions/actionSettings';
 import { isDev } from '@weasel-js/react';
 import { sep, tidy, withReason } from './separators';
@@ -72,7 +72,7 @@ function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boole
   const params = { ...ctx.params, ...it.params, ...(ctx.at ? { world: ctx.at } : {}) };
   const { enabled, reason }: ActionEnabledResult = ctx.src.eligible?.(it.action) === false
     ? { enabled: false }
-    : evaluateEnabled(it.action, deps, ctx.at, params);
+    : checkEnabled(it.action, deps, ctx.at, params);
   const why = !off && reason !== undefined ? { disabledReason: reason } : {};
   if (it.action.settings) return settingsOf(ctx, it, key, label, off || !enabled, why, access);
   return {
@@ -85,7 +85,7 @@ function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boole
     shortcut: shortcutOf(it),
     disabled: off || !enabled,
     ...why,
-    checked: evaluateActive(it.action, deps, params),
+    checked: checkActive(it.action, deps, params),
     run: () => { ctx.src.trigger(it.action.id, params); },
   };
 }
@@ -108,7 +108,7 @@ function settingsOf(
   const settings = it.action.settings!;
   const state = off ? null : readActionSettings(it.action, ctx.src.depsFor(it.action));
   const mixed = new Set(state?.mixed ?? []);
-  const values = (path: string): unknown => (mixed.has(path) ? undefined : prefValueAtPath(state?.values, path));
+  const values = (path: string): unknown => (mixed.has(path) ? undefined : prefValueAt(state?.values, path));
   const onChange = (path: string, value: unknown): void => {
     const params = actionSettingsParams(settings, path, value);
     if (params) ctx.src.trigger(it.action.id, { ...ctx.params, ...it.params, ...params });
@@ -119,7 +119,7 @@ function settingsOf(
     root: settings.schema,
     read: (path, from) => (from === 'item' ? undefined : values(path)),
   };
-  const entries = state ? tidy(groupRows(form, settings.schema.children, '', ROOT)) : [];
+  const entries = state ? tidy(groupRows(form, resolvePrefGroupConditions(settings.schema).children, '', ROOT)) : [];
   return {
     kind: 'submenu',
     key,
@@ -223,14 +223,14 @@ function drawIn(ctx: Ctx, values: (path: string) => unknown): MenuDraw {
     access: { values, ...(onChange ? { onChange } : {}) },
     leaf: (leaf, key, access, off, entry) => leafRows(through(ctx, access, entry), leaf, key, key, off),
     fields: (fields, prefix, access, off) => {
-      const status = { ...PREF_STATUS, enabled: !off };
+      const status = { ...ROOT_PREF_STATUS, enabled: !off };
       const inner = through(ctx, access);
       return tidy(groupRows(inner, fields, prefix, { node: {}, status, above: status, ...(inner.entry ? { entry: inner.entry } : {}) }));
     },
   };
 }
 
-const ROOT: PrefOwner = { node: {}, status: PREF_STATUS, above: PREF_STATUS };
+const ROOT: PrefOwner = { node: {}, status: ROOT_PREF_STATUS, above: ROOT_PREF_STATUS };
 
 function groupRows(ctx: Ctx, children: Children, prefix: string, owner: PrefOwner): MenuEntry[] {
   const { read } = ctx;
@@ -291,7 +291,7 @@ export function resolveSchemaMenu(
     at,
     params,
   };
-  return tidy(groupRows(ctx, schema.children, '', ROOT));
+  return tidy(groupRows(ctx, resolvePrefGroupConditions(schema).children, '', ROOT));
 }
 
 /** Turn a declared menu into model entries; see {@link resolveSchemaMenu}. */

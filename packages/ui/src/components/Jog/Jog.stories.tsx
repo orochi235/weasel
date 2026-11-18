@@ -20,9 +20,9 @@ function useLive(args: JogProps, scrub?: boolean): JogProps {
     ...args,
     index,
     playing,
-    onPlay: setPlaying,
+    onPlayingChange: setPlaying,
     onStep: (by) => setIndex((i) => Math.min(count - 1, Math.max(0, i + by))),
-    ...(scrub ? { onScrub: setIndex } : {}),
+    ...(scrub ? { onSeek: setIndex } : {}),
   };
 }
 
@@ -59,7 +59,7 @@ export const Long: Story = {
   args: { index: 2, count: 120, playing: false, caption },
   render: (args) => <Live args={args} scrub />,
 };
-/** No `onScrub`, so the buttons are the whole control. */
+/** No `onSeek`, so the buttons are the whole control. */
 export const NoScrubber: Story = {
   args: { index: 2, count: 9, playing: false, caption },
   render: (args) => <Live args={args} />,

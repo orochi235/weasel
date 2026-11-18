@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react';
-import { unionAABB } from 'core/geometry/unionBounds';
+import { unionAabb } from 'core/geometry/unionBounds';
 import type { Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { sceneContentBounds } from '../contentBounds';
@@ -49,6 +49,6 @@ export function useContentBounds<TPose>(args: {
       held = { scene, boundsOf, version, bounds };
       committed.current = held;
     }
-    return unionAABB([held.bounds, gestureBoundsOf(gestureSource, previewBoundsOf)]);
+    return unionAabb([held.bounds, gestureBoundsOf(gestureSource, previewBoundsOf)]);
   }, [scene, boundsOf, committedPoseOf, gestureSource, previewBoundsOf]);
 }

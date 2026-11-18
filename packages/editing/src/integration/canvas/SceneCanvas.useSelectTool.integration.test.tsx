@@ -14,7 +14,7 @@ import { SceneCanvas } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import type { Scene, NodeId, Contribution } from '@weasel-js/core';
 import type { ActionDisabledReason } from '@weasel-js/routing';
-import { drawPreset, pickPreset, areaSelectContribution } from '@weasel-js/editing';
+import { drawPreset, pickPreset, createAreaSelectContribution } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -196,8 +196,8 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
       expect(dragEmpty([])).not.toHaveBeenCalled();
     });
 
-    it('marquees when the canvas opts in with areaSelectContribution', () => {
-      expect(dragEmpty([areaSelectContribution()])).toHaveBeenCalledTimes(1);
+    it('marquees when the canvas opts in with createAreaSelectContribution', () => {
+      expect(dragEmpty([createAreaSelectContribution()])).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -232,17 +232,17 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
       expect(batchSpy.mock.calls.map(([, label]) => label)).toContain('Spin');
     });
 
-    it('fires onGestureStart with the rotated ids and onGestureEnd(true) once', () => {
+    it('fires onRunStart with the rotated ids and onRunEnd(true) once', () => {
       const scene = makeScene();
       const id = firstId(scene);
-      const onGestureStart = vi.fn();
-      const onGestureEnd = vi.fn();
-      const canvas = mount(scene, { onGestureStart, onGestureEnd }, [id]);
+      const onRunStart = vi.fn();
+      const onRunEnd = vi.fn();
+      const canvas = mount(scene, { onRunStart, onRunEnd }, [id]);
       act(() => gesture(canvas, quarterTurn));
-      expect(onGestureStart).toHaveBeenCalledTimes(1);
-      expect(onGestureStart).toHaveBeenCalledWith([id]);
-      expect(onGestureEnd).toHaveBeenCalledTimes(1);
-      expect(onGestureEnd).toHaveBeenCalledWith(true);
+      expect(onRunStart).toHaveBeenCalledTimes(1);
+      expect(onRunStart).toHaveBeenCalledWith([id]);
+      expect(onRunEnd).toHaveBeenCalledTimes(1);
+      expect(onRunEnd).toHaveBeenCalledWith(true);
     });
 
     it("runs behaviors, whose onMove pose sets the committed rotation", () => {

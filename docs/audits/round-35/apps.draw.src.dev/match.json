@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "The op-kind detail names `transform`'s factory `createTransformOp`, which no longer exists",
+  "The Assets page's bundles asset files editing's presets under `@weasel-js/core`",
+  "The Toolkit Builder accepts a tool preset as its base preset from the URL",
+  "The registry probe's re-render signature leaves out ambient tools, which the toolkit reflection includes"
+ ],
+ "b": [
+  "The `transform` op kind's detail page and the shape kind's op-factory links name `createTransformOp`, which no longer exists",
+  "The Assets page's asset set leaves out text-tools: no `text` node-properties dialog and no text preset in the bundles asset",
+  "The Toolkit Builder's URL parser accepts any kit preset as the base and as a tool preset",
+  "The ToolkitBuilder stylesheet's `.scene` rule lacks the aspect-ratio its own comment says prevents a squished first paint",
+  "An icon's \"file\" row can never render: the source index is keyed by export name, but it is searched with the qualified glyph ref"
+ ]
+}

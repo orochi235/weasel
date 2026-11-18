@@ -5,10 +5,10 @@ import { checkPrefConditions } from './conditionCheck';
 import { autoRecord, recordValue } from './stamp';
 import { prefCanAuto, prefStartsAuto } from './autoReset';
 import { prefHoldsValue, prefLeaves, VERSION_RECORD, isPrefScope, type PrefScope, type PrefSelection, type PrefWeights, type PrefValidator, type PrefGroup } from '@weasel-js/prefs-schema';
-import { assignPrefValueAtPath, setOwnPrefValue, selectionWeights } from '@weasel-js/prefs-schema/internal';
+import { assignPrefValueAt, setOwnPrefValue, selectionWeights } from '@weasel-js/prefs-schema/internal';
 import { createSnapshots, resolveHeld, selectionAt, weightsUnder, type SnapshotSource } from './snapshot';
-import { checkPrefSplits, prefSelectors, admittedSelectors } from './splitCheck';
-import type { PrefPath, PrefValueAt } from './paths';
+import { checkPrefScopes, prefSelectors, admittedSelectors } from './splitCheck';
+import type { PrefPath, PrefValueAt } from '@weasel-js/prefs-schema';
 import { prefWrites } from './storeWrites';
 
 /** One leaf changing, as a store subscriber hears it: the value readers now
@@ -132,7 +132,7 @@ export function createPrefsStore<S extends PrefGroup>(
   for (const { field, at, problem } of checkPrefConditions(schema)) {
     console.warn(`[prefs] ${field} of ${at === '' ? 'the schema' : `"${at}"`}: ${problem}`);
   }
-  for (const { at, problem } of checkPrefSplits(schema)) console.warn(`[prefs] ${at === '' ? 'the schema' : `scopes of "${at}"`}: ${problem}`);
+  for (const { at, problem } of checkPrefScopes(schema)) console.warn(`[prefs] ${at === '' ? 'the schema' : `scopes of "${at}"`}: ${problem}`);
   const source: SnapshotSource = { leaves, cache, selectors: prefSelectors(leaves), admitted: admittedSelectors(schema), validators, blends };
   const { current, peek, drop } = createSnapshots(source);
 
@@ -212,7 +212,7 @@ export function createPrefsStore<S extends PrefGroup>(
       const tree: Record<string, unknown> = {};
       for (const [path, leaf] of leaves) {
         const set = source.selectors.has(path) ? getOwn(selection, path) : resolveHeld(source, leaf, now.held.get(path), weights);
-        assignPrefValueAtPath(tree, path, set);
+        assignPrefValueAt(tree, path, set);
       }
       return tree;
     },

@@ -1,10 +1,9 @@
 import type {} from '@weasel-js/react';
-import { pref, PX_UNIT, type PrefNumber } from '@weasel-js/prefs';
+import { pref, PX_UNIT, type PrefNumber, type PrefValuesOf } from '@weasel-js/prefs';
 import { ANCHOR_SNAP_PX, CURVE_HIT_PX as FUNCTION_CURVE_HIT_PX } from './components/CurveEditor/createFunctionLayer';
 import { CURVE_HIT_PX, HANDLE_HIT_PX, KEY_HIT_PX } from './components/CurveEditor/createKeyframeLayer';
 import { REPEAT_DELAY_MS, REPEAT_EVERY_MS } from '@weasel-js/ui-input';
 import { PARAMS_SETTLES, PARAMS_TEXT_WAIT_MS, type ParamsSurface } from './components/Prefs/commitPolicy';
-import type { ParamsPolicy } from './components/Prefs/useParamsPolicy';
 import { FOCUS_DELAY, HELP_ICON } from './components/Properties/rowHelp';
 import { STOP_SNAP_PX } from './components/Slider/stops';
 import { DEFAULT_TTL_MS } from './components/Toast/queue';
@@ -17,28 +16,6 @@ import { SNAP_RADIUS_PX } from './snap';
 /** Edits this close together under one coalesce key undo as one, so typing a name is one step: what
  *  `history.coalesceMs` holds until an app sets it. */
 export const HISTORY_COALESCE_MS = 800;
-
-declare module '@weasel-js/react' {
-  interface KitSettings {
-    numberField: { repeatDelayMs: number; repeatEveryMs: number };
-    typing: { settleWhenIdle: boolean; idleMs: number };
-    params: Record<ParamsSurface, ParamsPolicy>;
-    tree: { typeaheadMs: number; hoverExpandMs: number; tipRestMs: number };
-    help: { focusDelayMs: number; icon: boolean };
-    toast: { ttlMs: number };
-    targets: KitTargetSettings;
-    history: { coalesceMs: number };
-  }
-  interface KitTargetSettings {
-    curveKeyHitPx: number;
-    curveHandleHitPx: number;
-    curveHitPx: number;
-    curveAnchorSnapPx: number;
-    functionCurveHitPx: number;
-    sliderStopSnapPx: number;
-    snapRadiusPx: number;
-  }
-}
 
 const ms = (name: string, def: number, max: number, description: string): PrefNumber =>
   pref.number(name, def, { description, min: 0, max, step: 10, unit: { scale: 1, suffix: 'ms' } });
@@ -103,3 +80,17 @@ export const uiKitSettingsSchema = pref.group('Components', {
     coalesceMs: ms('Coalesce', HISTORY_COALESCE_MS, 5000, 'Edits this close together undo as one step.'),
   }),
 });
+
+type UiKitSettings = PrefValuesOf<typeof uiKitSettingsSchema>;
+
+type UiKitAreas = Omit<UiKitSettings, 'targets'>;
+
+type UiKitTargets = UiKitSettings['targets'];
+
+declare module '@weasel-js/react' {
+  interface KitSettings extends UiKitAreas {
+    targets: KitTargetSettings;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  interface KitTargetSettings extends UiKitTargets {}
+}

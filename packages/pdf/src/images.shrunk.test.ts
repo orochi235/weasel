@@ -5,7 +5,7 @@ import { NO_FONTS } from './testing/noFonts';
 import type { RasterPixels } from './writePdf';
 import { writePdf } from './writePdf';
 
-const image: DrawCommand = { kind: 'image', image: { width: 2, height: 2 } as unknown as ImageBitmap, x: 10, y: 10, w: 20, h: 20 } as DrawCommand;
+const image: DrawCommand = { kind: 'image', image: { width: 2, height: 2 } as unknown as ImageBitmap, x: 10, y: 10, width: 20, height: 20 } as DrawCommand;
 const blurred: DrawCommand = {
   kind: 'group',
   effects: blur({ radius: 2 }),

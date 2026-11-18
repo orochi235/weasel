@@ -73,7 +73,7 @@ export function createWorkletVoices(
   );
   const buses = new Map<string, Bus>();
 
-  const busFor = (name: string): Bus => {
+  const ensureBus = (name: string): Bus => {
     let bus = buses.get(name);
     if (!bus) {
       const node = new AudioWorkletNode(ctx, VOICE_PROCESSOR, {
@@ -102,7 +102,7 @@ export function createWorkletVoices(
     return {
       ready: () => true,
       book(voice, at): Booking {
-        const bus = busFor(at.bus);
+        const bus = ensureBus(at.bus);
         post = (e) => { bus.node.port.postMessage(e); };
         post(event(voice, at.when / 1000, at.level, at.pan));
         source = workletSource(post, voice.id);

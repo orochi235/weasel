@@ -1,7 +1,7 @@
 import { type Action, defineAction, type MenuDef, useActionsRegistry, useMenuHost, useMenus } from '@weasel-js/core';
 import { type ConfigEntry, type ConfigSchema, isConfigBranch } from '@weasel-js/labkit/config';
 import { type LensActionApi, type LoupePoint, setLensOps } from '@weasel-js/labkit/loupe';
-import { type PrefGroup, type PrefLeaf, pref } from '@weasel-js/prefs';
+import { type PrefGroup, type PrefLeaf, pref } from '@weasel-js/prefs-schema';
 import { useEffect, useMemo } from 'react';
 import { type GlobalDeclarations, isForgePath } from '../globals';
 import type { ForgeComparison } from './conditions';

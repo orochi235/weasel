@@ -1,4 +1,4 @@
-import { pointInPath, rectContainsPointHalfOpen } from '@weasel-js/geom';
+import { pathContainsPoint, rectContainsPointHalfOpen, type Rect } from '@weasel-js/geom';
 import type { NodeId, Scene, StrategyView } from '@weasel-js/core';
 import { poseDescriptorForNode, toPlane, type PlaneMap, childFrameAt, composeWorldPose, sceneViewPoseAdapter, refusalOf, isPageStructure } from '@weasel-js/core/engine';
 import type { DropRegion, LayoutContainer, LayoutStrategy, LayoutDep } from '@weasel-js/core/engine';
@@ -7,17 +7,15 @@ import type { MoveSession } from '../session';
 import { carryDragged, type DraggedChild } from './dragged';
 import { boxOf, containerView, draggedInView } from './view';
 
-export interface Bounds4 { x: number; y: number; width: number; height: number }
-
 type Layout = LayoutStrategy<unknown>;
 export interface Candidate {
   id: NodeId;
   /** The container's body in world: what the pointer is tested against. */
-  bounds: Bounds4;
+  bounds: Rect;
   /** Its content's frame, `bounds` moved by its scroll offset, in `view`'s
    *  space: the `LayoutContainer.bounds` its strategy is handed, so the slots
    *  it places agree with its children as they are shown. */
-  content: Bounds4;
+  content: Rect;
   /** The container as its strategy sees it: upright, in its own frame. */
   view: StrategyView<unknown>;
   layout: LayoutStrategy<unknown>;
@@ -39,7 +37,7 @@ function regionContains(
   const local = { x: point.x - bounds.x, y: point.y - bounds.y };
   return typeof region === 'function'
     ? region(local)
-    : pointInPath(region, local.x, local.y);
+    : pathContainsPoint(region, local.x, local.y);
 }
 
 function chooseContainer(
@@ -86,7 +84,7 @@ export function pickContainer(
   const candidates: Candidate[] = [];
   const mode = layoutDep.dropTarget ?? 'innermost';
   const testInside = (
-    id: NodeId, cPose: unknown, aabb: Bounds4, layout: Layout, at: { x: number; y: number },
+    id: NodeId, cPose: unknown, aabb: Rect, layout: Layout, at: { x: number; y: number },
   ): boolean => {
     const region = layout.dropRegion?.({ id: id as string, bounds: aabb, node: scene.get(id) }) ?? null;
     if (region) return regionContains(region, aabb, at);
@@ -102,10 +100,10 @@ export function pickContainer(
     if (!node || isPageStructure(node)) return;
     const worldPose = composeWorldPose(poseAdapter, id as string, pc.compose);
     const g = poseDescriptorForNode(d, node);
-    const worldAABB = g.getBounds(worldPose);
+    const worldAabb = g.getBounds(worldPose);
     const plane = planeOf(session.view, node.layer);
     const at = plane ? toPlane(plane, center) : center;
-    if (!testInside(id, worldPose, worldAABB, layout, at)) return;
+    if (!testInside(id, worldPose, worldAabb, layout, at)) return;
     const verdict = session.verdict(id);
     if (verdict === false) return;
     const refused = refusalOf(verdict);
@@ -119,7 +117,7 @@ export function pickContainer(
     }
     candidates.push({
       id,
-      bounds: worldAABB,
+      bounds: worldAabb,
       content,
       view,
       layout,

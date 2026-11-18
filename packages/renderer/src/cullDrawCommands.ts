@@ -1,15 +1,8 @@
-import { mat3, type GlMat3 } from '@weasel-js/geom';
+import { mat3, type GlMat3, type Rect } from '@weasel-js/geom';
 import type { DrawCommand } from './DrawCommand';
 import { isOwnComposite } from './effects/compositeOp';
 import { commandBox, paintedBox, screenBox, type ScreenBox } from './paintedBounds';
-
-/** A screen-space rectangle, CSS pixels. */
-export interface CullRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+import { textLayerBox } from './textBounds';
 
 /** Screen pixels added to every bound: antialiasing, and the 1/8 px a `{ px }`
  *  stroke's width may drift through quantization. */
@@ -39,7 +32,7 @@ export const CULL_SLACK_PX = 1;
 export function cullDrawCommands(
   cmds: DrawCommand[],
   transform: GlMat3,
-  rect: CullRect,
+  rect: Rect,
   dpr: number,
 ): DrawCommand[] {
   return cullList(cmds, transform, slackBox(rect), dpr);
@@ -76,6 +69,8 @@ function cullOne(cmd: DrawCommand, m: GlMat3, box: Box, dpr: number): DrawComman
     case 'image':
     case 'sprites':
       return boxMisses(paintedBox(cmd, m), box) ? null : cmd;
+    case 'text-layer':
+      return boxMisses(textLayerBox(cmd, m), box) ? null : cmd;
     default:
       return cmd;
   }
@@ -87,9 +82,9 @@ function cullOne(cmd: DrawCommand, m: GlMat3, box: Box, dpr: number): DrawComman
  * rather than a command. Same slack, same NaN-keeps rule.
  */
 export function boundsMissRect(
-  bounds: { x: number; y: number; width: number; height: number },
+  bounds: Rect,
   transform: GlMat3,
-  rect: CullRect,
+  rect: Rect,
 ): boolean {
   const x0 = Math.min(bounds.x, bounds.x + bounds.width);
   const x1 = Math.max(bounds.x, bounds.x + bounds.width);
@@ -98,7 +93,7 @@ export function boundsMissRect(
   return boxMisses(screenBox(x0, y0, x1, y1, transform), slackBox(rect));
 }
 
-function slackBox(rect: CullRect): Box {
+function slackBox(rect: Rect): Box {
   return {
     minX: rect.x - CULL_SLACK_PX,
     minY: rect.y - CULL_SLACK_PX,

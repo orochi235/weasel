@@ -1,12 +1,12 @@
 /**
  * @weasel-js/prefs/edit — the model behind a schema editor, with no React and no DOM: edits to a preferences
  * schema's tree (add, move, rename, copy, alias), its keys and value paths, a leaf's kind and attributes, printing a
- * schema and diffing two, a workspace of schema, layout, actions, and bundle assets and its codec, drafts and their
+ * schema and diffing two, an asset set of schema, layout, actions, and bundle assets and its codec, drafts and their
  * history, and a condition's rows and flow. `@weasel-js/prefs-editor` draws an editor over it.
  *
  * @packageDocumentation
  */
-export { actionCatalog, dissolve, filed, firedBy, keyTails, NO_CATALOG } from './edit/actionCatalog';
+export { actionCatalog, dissolve, fileActions, firedBy, keyTails, NO_CATALOG } from './edit/actionCatalog';
 export { actionLeaf, actionLeafKey, deadActionPaths, type SchemaAction } from './edit/actionLeaves';
 export { exportOf, type AssetExport } from './edit/assetExport';
 export { pathsIn, scopedPath } from './edit/assetScope';
@@ -22,14 +22,14 @@ export {
 } from './edit/bundleTree';
 export {
   CONDITION_FLOW_END, CONDITION_FLOW_START, prefConditionFlow, type ConditionFlow, type ConditionFlowEdge,
-  type ConditionFlowGroup, type ConditionFlowNode, type ConditionFlowOptions,
+  type ConditionFlowCluster, type ConditionFlowNode, type ConditionFlowOptions,
 } from './edit/conditionFlow';
 export {
   EMPTY_HOLDS, groupCondition, groupOf, nestedQuantifier, QUANTIFIER_LABEL, rootCondition, rootGroup, rowCondition,
   testRowOf, type ConditionGroup, type Quantifier, type TestRow,
 } from './edit/conditionGroups';
 export { conditionLeafOf, conditionLeaves, leafKey, type ConditionLeaf } from './edit/conditionLeaves';
-export { conditionProblems, type ConditionMark } from './edit/conditionMarks';
+export { conditionGroupAt, conditionProblems, type ConditionMark } from './edit/conditionMarks';
 export {
   clauseChoices, clausesOf, COMPARISON_LABEL, comparisonsFor, openBound, operatorOf, printOperators, rowAt,
   withBound, withComparison, withoutClause, withValue, type Comparison, type Operator,
@@ -46,14 +46,14 @@ export {
   holdsPages, isLoose, looseKeys, looseTarget, mayUnplace, placedOnly, schemaTarget, topLevelAllows,
 } from './edit/loose';
 export { trackOrigins, type NodeOrigins } from './edit/nodeOrigins';
-export { asWorkspace, catalogIn, ONE, oneAssetCodec, sameSchema, schemaOf } from './edit/oneAsset';
-export { deadPointers, drawnLeaf, pointerAttributes, pointerTarget } from './edit/pointers';
+export { asAssetSet, catalogIn, LONE_SCHEMA_ID, oneAssetCodec, sameSchema, schemaOf } from './edit/oneAsset';
+export { deadAliases, drawnLeaf, aliasAttributes, aliasTargetIn } from './edit/aliases';
 export { type PresetDescription } from '@weasel-js/prefs-schema';
 export { type RegisteredAction } from './edit/registeredActionAttrs';
 export { schemaCodec } from './edit/schemaCodec';
 export { aliasNodes, aliasOf, canAlias, copyNodes, VALUE_LINKS, type LinkRule } from './edit/schemaCopy';
 export {
-  addNode, carried, moveNodes, rebasePaths, removeNode, removeNodes, renameKey, replaceNode, setAttribute,
+  addNode, outermostInOrder, moveNodes, rebasePaths, removeNode, removeNodes, renameKey, replaceNode, setAttribute,
 } from './edit/schemaEdit';
 export {
   baselinePaths, changedAttributes, changedPaths, containsCode, diffSchemas, formatChanges, KEEP, printSchema,
@@ -64,15 +64,15 @@ export {
   branchUnder, childrenOf, entryHolderAt, fitsUnder, isUnder, joinPath, keyOf, keysOf, nodeAt, ownChildrenOf,
   parentPath, pathOf, withinDepth, type ChildMap, type SchemaNode, type SchemaRoot, type SchemaTarget,
 } from './edit/schemaTree';
-export { pointable, pointedAt, pointersTo } from './edit/settingPointers';
+export { isAliasable, aliasedPaths, aliasesTo } from './edit/settingAliases';
 export { choiceOf, entryChoices, kindChoices, NO_TYPES, typeNamed, type KindChoice, type PrefTypes } from './edit/types';
 export { stillUnplaced, unplacedAt } from './edit/unplaced';
 export { valuePathOf, valuePathsAt, type ValueMove } from './edit/valuePaths';
 export {
-  assetOf, bundlesAsset, catalogOf, headingOf, isShown, overOf, sameRoots, shownAssets, withRoots, type ActionsAsset,
+  assetOf, bundlesAsset, catalogOf, headingOf, isTreeAsset, overOf, sameRoots, shownAssets, withRoots, type ActionsAsset,
   type Asset, type AssetBase, type AssetHeading, type BundlesAsset, type LayoutAsset, type ListedAsset, type SchemaAsset,
-  type ShownAsset, type Workspace,
-} from './edit/workspace';
-export { changedAsset, workspaceChanges, type AssetChanges } from './edit/workspaceChanges';
-export { workspaceCodec } from './edit/workspaceCodec';
-export { editAsset, moveInAsset, NO_MOVES, removeInAsset, renameInAsset } from './edit/workspaceEdit';
+  type ShownAsset, type AssetSet,
+} from './edit/assetSet';
+export { changedAsset, assetSetChanges, type AssetChanges } from './edit/assetSetChanges';
+export { assetSetCodec } from './edit/assetSetCodec';
+export { editAsset, moveInAsset, NO_MOVES, removeInAsset, renameInAsset } from './edit/assetSetEdit';

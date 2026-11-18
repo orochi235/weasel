@@ -5,7 +5,7 @@ import type { Action, BoundGesture, ImmediateInvoker } from '@weasel-js/routing'
 import { asNodeId, type NodeId } from '@weasel-js/core';
 import type { Op } from '@weasel-js/core';
 import { matchSpec } from '@weasel-js/gestures';
-import type { InputEvent, ModifiersEvent } from '@weasel-js/gestures';
+import type { InputEvent, EventModifiers } from '@weasel-js/gestures';
 
 // ---------------------------------------------------------------------------
 // Minimal Scene mock for the descriptor invoker
@@ -390,7 +390,7 @@ describe('reorder commit routing', () => {
  * the binding table to the shortcuts a user actually presses.
  */
 describe('reorder default bindings', () => {
-  const keyEvent = (key: string, mods: Partial<ModifiersEvent> = {}): InputEvent => ({
+  const keyEvent = (key: string, mods: Partial<EventModifiers> = {}): InputEvent => ({
     kind: 'key',
     key,
     altKey: false,

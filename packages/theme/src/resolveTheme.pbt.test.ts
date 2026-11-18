@@ -5,7 +5,7 @@
  */
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { enumerateSelections, fullSelection, isByAxis, mergeAxes, pick, selectionKey, type AxisDefs, type Selection } from './axes';
+import { enumerateAxisChoices, fullAxisChoice, isByAxis, mergeAxes, pick, axisChoiceKey, type AxisDefs, type AxisChoice } from './axes';
 import { serializeTokenValue } from './dtcg/value';
 import { axisDefs, chainTheme, outcome, rawToken, runs, tally, timeoutFor, tokenName, varying } from './pbt.fixture';
 import { resolveTheme, themeAxes } from './resolveTheme';
@@ -14,7 +14,7 @@ import type { Theme } from './theme';
 const RUNS = 300;
 
 /** A selection naming some axes of the pool, some with values no axis declares. */
-const selection: fc.Arbitrary<Selection> = fc.dictionary(
+const selection: fc.Arbitrary<AxisChoice> = fc.dictionary(
   fc.constantFrom('mode', 'density', 'contrast'),
   fc.constantFrom('dark', 'light', 'dim', 'compact', 'roomy', 'comfortable', 'nope'),
   { maxKeys: 3 },
@@ -23,24 +23,24 @@ const selection: fc.Arbitrary<Selection> = fc.dictionary(
 describe('axes', () => {
   it('a full selection names every axis at a value it declares, and is its own full selection', () => {
     fc.assert(fc.property(axisDefs, selection, (axes, sel) => {
-      const full = fullSelection(axes, sel);
+      const full = fullAxisChoice(axes, sel);
       expect(Object.keys(full)).toEqual(Object.keys(axes));
       for (const [a, v] of Object.entries(full)) {
         expect(Object.hasOwn(axes[a]!.values, v)).toBe(true);
         if (Object.hasOwn(axes[a]!.values, sel[a] ?? '')) expect(v).toBe(sel[a]);
       }
-      expect(fullSelection(axes, full)).toEqual(full);
-      expect(selectionKey(axes, sel)).toBe(selectionKey(axes, full));
+      expect(fullAxisChoice(axes, full)).toEqual(full);
+      expect(axisChoiceKey(axes, sel)).toBe(axisChoiceKey(axes, full));
     }), runs(RUNS));
   });
 
   it('enumerates each full selection once, as many as the product of the axes\' sizes', () => {
     fc.assert(fc.property(axisDefs, (axes) => {
-      const all = enumerateSelections(axes);
+      const all = enumerateAxisChoices(axes);
       const size = Object.values(axes).reduce((n, d) => n * Object.keys(d.values).length, 1);
       expect(all).toHaveLength(size);
-      expect(new Set(all.map((s) => selectionKey(axes, s))).size).toBe(size);
-      for (const s of all) expect(fullSelection(axes, s)).toEqual(s);
+      expect(new Set(all.map((s) => axisChoiceKey(axes, s))).size).toBe(size);
+      for (const s of all) expect(fullAxisChoice(axes, s)).toEqual(s);
     }), runs(RUNS));
   });
 
@@ -60,7 +60,7 @@ describe('axes', () => {
     const t = tally();
     const fixed: AxisDefs = { mode: { default: 'dark', values: { dark: {}, light: {} } }, density: { default: 'compact', values: { compact: {}, roomy: {} } } };
     const sel2 = fc.record({ mode: fc.constantFrom('dark', 'light', 'by'), density: fc.constantFrom('compact', 'roomy', 'nope') }, { requiredKeys: ['density'] });
-    fc.assert(fc.property(varying(fc.integer(), fixed, 2), sel2, (v, sel: Selection) => {
+    fc.assert(fc.property(varying(fc.integer(), fixed, 2), sel2, (v, sel: AxisChoice) => {
       let cur: unknown = v;
       while (isByAxis(cur) && Object.hasOwn(sel, cur.by) && sel[cur.by] !== 'by' && Object.hasOwn(cur, sel[cur.by]!)) cur = (cur as Record<string, unknown>)[sel[cur.by]!];
       const got = pick(v, sel);
@@ -78,7 +78,7 @@ describe('axes', () => {
 });
 
 /** Every full selection of `theme`'s axes, and one naming values nothing declares. */
-const selectionsOf = (theme: Theme): Selection[] => [...enumerateSelections(themeAxes(theme)), { mode: 'nope', density: 'nope' }];
+const selectionsOf = (theme: Theme): AxisChoice[] => [...enumerateAxisChoices(themeAxes(theme)), { mode: 'nope', density: 'nope' }];
 
 describe('resolveTheme', () => {
   it('a child that adds nothing resolves as the theme it extends', () => {
@@ -120,7 +120,7 @@ describe('resolveTheme', () => {
 
   it('a selection value no axis declares resolves as the axis default', () => {
     fc.assert(fc.property(chainTheme, selection, (theme, sel) => {
-      expect(outcome(() => resolveTheme(theme, sel))).toEqual(outcome(() => resolveTheme(theme, fullSelection(themeAxes(theme), sel))));
+      expect(outcome(() => resolveTheme(theme, sel))).toEqual(outcome(() => resolveTheme(theme, fullAxisChoice(themeAxes(theme), sel))));
     }), runs(RUNS));
   }, timeoutFor(RUNS, 5));
 });

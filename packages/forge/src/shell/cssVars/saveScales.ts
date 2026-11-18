@@ -1,7 +1,7 @@
 import type { TokenScaleRule } from '@weasel-js/labkit';
-import { isByAxis, type AxisDefs, type Selection, type ThemeDefinition } from '@weasel-js/theme';
+import { isByAxis, type AxisDefs, type AxisChoice, type ThemeDefinition } from '@weasel-js/theme';
 import { getOwn, setOwn } from '@weasel-js/registry';
-import type { Globals } from '../../protocol/messages';
+import type { StoryGlobals } from '../../protocol/messages';
 
 /** A scale as the panel left it: what a save writes into the definition. */
 export interface ScaleEdit {
@@ -30,7 +30,7 @@ const RULE_KEYS = { factors: 'factors', ratio: 'ratio', step: 'step' } as const;
  * axis no global names renders at its default. A global holding something the axis does not offer (`mode: 'auto'`)
  * leaves that axis out, because which value it resolved to is not known here.
  */
-export function selectionFor(axes: AxisDefs, globals: Globals): Selection {
+export function selectionFor(axes: AxisDefs, globals: StoryGlobals): AxisChoice {
   const out: Record<string, string> = {};
   for (const [axis, def] of Object.entries(axes)) {
     const value = getOwn(globals, axis);
@@ -46,7 +46,7 @@ export class EditError extends Error {}
 export const ownAt = (holder: Holder, key: string | number): unknown => (Object.hasOwn(holder, key) ? holder[key] : undefined);
 
 /** `holder[key]` followed through its per-axis branches to the one `selection` reads. */
-export function branchOf(holder: Holder, key: string | number, where: string, selection: Selection): Slot {
+export function requireBranch(holder: Holder, key: string | number, where: string, selection: AxisChoice): Slot {
   let slot: Slot = { holder, key, where };
   for (let value = ownAt(holder, key); isByAxis(value); value = ownAt(slot.holder, slot.key)) {
     const axis = value.by;
@@ -60,9 +60,9 @@ export function branchOf(holder: Holder, key: string | number, where: string, se
 }
 
 /** Follows a param through its per-axis branches and `{seeds.name}` references to the number that defines it. */
-function slotOf(root: ThemeDefinition, holder: Holder, key: string | number, where: string, selection: Selection, depth = 0): Slot {
+function requireSlot(root: ThemeDefinition, holder: Holder, key: string | number, where: string, selection: AxisChoice, depth = 0): Slot {
   if (depth > 16) throw new EditError(`${where} references itself`);
-  const slot = branchOf(holder, key, where, selection);
+  const slot = requireBranch(holder, key, where, selection);
   const { holder: h, key: k, where: w } = slot;
   const value = ownAt(h, k);
   if (typeof value === 'number') return slot;
@@ -72,14 +72,14 @@ function slotOf(root: ThemeDefinition, holder: Holder, key: string | number, whe
     const name = ref[1]!;
     const seeds = root.seeds as Holder | undefined;
     if (!seeds || !Object.hasOwn(seeds, name)) throw new EditError(`${w} names the seed "${name}", which this theme inherits rather than defines`);
-    return slotOf(root, seeds, name, `seeds.${name}`, selection, depth + 1);
+    return requireSlot(root, seeds, name, `seeds.${name}`, selection, depth + 1);
   }
   throw new EditError(`${w} is not a number`);
 }
 
 /** The factor list the selection reads, through any per-axis branches. */
-function factorsOf(holder: Holder, where: string, selection: Selection): { list: Holder; where: string } {
-  const slot = branchOf(holder, 'factors', `${where}.factors`, selection);
+function requireFactors(holder: Holder, where: string, selection: AxisChoice): { list: Holder; where: string } {
+  const slot = requireBranch(holder, 'factors', `${where}.factors`, selection);
   const value = ownAt(slot.holder, slot.key);
   if (!Array.isArray(value)) throw new EditError(`${slot.where} is not a list`);
   return { list: value as unknown as Holder, where: slot.where };
@@ -108,7 +108,7 @@ function swapRule(scale: Holder, from: string | null, to: string, value: unknown
 export function applyScaleEdits(
   definition: ThemeDefinition,
   edits: Readonly<Record<string, ScaleEdit>>,
-  selection: Selection,
+  selection: AxisChoice,
 ): ScaleEditResult {
   const root = structuredClone(definition) as ThemeDefinition & { scales?: Record<string, Holder> };
   const writes = new Map<Holder, Map<string | number, number>>();
@@ -126,7 +126,7 @@ export function applyScaleEdits(
       const scale = getOwn(scales, name);
       if (!scales || !scale) throw new EditError(`the theme defines no scale "${name}"`);
       const where = `scales.${name}`;
-      write(slotOf(root, scale, 'base', `${where}.base`, selection), edit.base);
+      write(requireSlot(root, scale, 'base', `${where}.base`, selection), edit.base);
 
       const { rule } = edit;
       const had = kindOf(scale);
@@ -140,14 +140,14 @@ export function applyScaleEdits(
         continue;
       }
       if (rule.kind === 'factors') {
-        const { list, where: at } = factorsOf(scale, where, selection);
+        const { list, where: at } = requireFactors(scale, where, selection);
         if ((list as unknown as unknown[]).length !== rule.factors.length) {
           throw new EditError(`${at} has ${(list as unknown as unknown[]).length} factors, and the edit ${rule.factors.length}`);
         }
-        rule.factors.forEach((factor, i) => write(slotOf(root, list, i, `${at}.${i}`, selection), factor));
+        rule.factors.forEach((factor, i) => write(requireSlot(root, list, i, `${at}.${i}`, selection), factor));
       } else {
         const key = RULE_KEYS[rule.kind];
-        write(slotOf(root, scale, key, `${where}.${key}`, selection), rule.kind === 'ratio' ? rule.ratio : rule.step);
+        write(requireSlot(root, scale, key, `${where}.${key}`, selection), rule.kind === 'ratio' ? rule.ratio : rule.step);
       }
     }
   } catch (e) {

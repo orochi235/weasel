@@ -1,4 +1,5 @@
-import { distance, pointSegmentDist } from '@weasel-js/geom';
+import type { Dims } from '@weasel-js/core';
+import { distance, pointSegmentDistance } from '@weasel-js/geom';
 import { MARK_COLOR, MARK_WIDTH } from '../paint';
 import type { Annotation } from '../types';
 import type { Box, Exercise, Guide, Pt } from './exercises';
@@ -27,29 +28,30 @@ export interface ExerciseScore {
   reason?: string;
 }
 
-type Size = { w: number; h: number };
-
 /** An error in content units as screen px, for a target drawn at `pxPerUnit` screen px per content unit. */
 export function toScreenPx(error: number, pxPerUnit: number): number {
   return error * pxPerUnit;
 }
 
-function markBox(m: Annotation, content: Size): Box {
+function markBox(m: Annotation, content: Dims): Box {
   return {
-    x: m.frac.x * content.w,
-    y: m.frac.y * content.h,
-    w: m.frac.w * content.w,
-    h: m.frac.h * content.h,
+    x: m.frac.x * content.width,
+    y: m.frac.y * content.height,
+    width: m.frac.width * content.width,
+    height: m.frac.height * content.height,
   };
 }
 
-function markPoints(m: Annotation, content: Size): Pt[] {
-  return (m.points ?? []).map((p) => ({ x: p.x * content.w, y: p.y * content.h }));
+function markPoints(m: Annotation, content: Dims): Pt[] {
+  return (m.points ?? []).map((p) => ({ x: p.x * content.width, y: p.y * content.height }));
 }
 
 function inBox(p: Pt, b: Box, slack = 0): boolean {
   return (
-    p.x >= b.x - slack && p.x <= b.x + b.w + slack && p.y >= b.y - slack && p.y <= b.y + b.h + slack
+    p.x >= b.x - slack &&
+    p.x <= b.x + b.width + slack &&
+    p.y >= b.y - slack &&
+    p.y <= b.y + b.height + slack
   );
 }
 
@@ -58,8 +60,8 @@ export function boxError(mark: Box, guide: Box): number {
   return Math.max(
     Math.abs(mark.x - guide.x),
     Math.abs(mark.y - guide.y),
-    Math.abs(mark.x + mark.w - (guide.x + guide.w)),
-    Math.abs(mark.y + mark.h - (guide.y + guide.h)),
+    Math.abs(mark.x + mark.width - (guide.x + guide.width)),
+    Math.abs(mark.y + mark.height - (guide.y + guide.height)),
   );
 }
 
@@ -75,7 +77,7 @@ export function distanceToCurve(p: Pt, curve: readonly Pt[]): number {
   for (let i = 1; i < curve.length; i++) {
     const a = curve[i - 1] as Pt;
     const b = curve[i] as Pt;
-    best = Math.min(best, pointSegmentDist(p.x, p.y, a.x, a.y, b.x, b.y));
+    best = Math.min(best, pointSegmentDistance(p.x, p.y, a.x, a.y, b.x, b.y));
   }
   return best;
 }
@@ -103,7 +105,7 @@ interface Geometry {
   reversed?: boolean;
 }
 
-function endsOf(m: Annotation, content: Size): [Pt, Pt] | null {
+function endsOf(m: Annotation, content: Dims): [Pt, Pt] | null {
   const pts = markPoints(m, content);
   return pts.length >= 2 ? [pts[0] as Pt, pts[pts.length - 1] as Pt] : null;
 }
@@ -112,7 +114,7 @@ function segmentGeometry(
   ex: Exercise,
   guide: Extract<Guide, { kind: 'segment' }>,
   m: Annotation,
-  content: Size,
+  content: Dims,
 ): Geometry | null {
   const ends = endsOf(m, content);
   if (!ends) return null;
@@ -124,7 +126,7 @@ function segmentGeometry(
 }
 
 /** The mark's geometric error against the exercise's guide, or null for a mark that has no geometry to compare. */
-function geometry(ex: Exercise, m: Annotation, content: Size): Geometry | null {
+function geometry(ex: Exercise, m: Annotation, content: Dims): Geometry | null {
   const g = ex.guide;
   if (g.kind === 'segment') return segmentGeometry(ex, g, m, content);
   if (g.kind === 'curve') {
@@ -141,10 +143,10 @@ function geometry(ex: Exercise, m: Annotation, content: Size): Geometry | null {
   return { error: boxError(box, g.box) };
 }
 
-const center = (b: Box): Pt => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
+const center = (b: Box): Pt => ({ x: b.x + b.width / 2, y: b.y + b.height / 2 });
 
 /** Whether a mark sits in the exercise's cell: its bounds' center does, or a text label's origin. */
-function inArea(ex: Exercise, m: Annotation, content: Size): boolean {
+function inArea(ex: Exercise, m: Annotation, content: Dims): boolean {
   const box = markBox(m, content);
   return inBox(ex.expect === 'text' ? box : center(box), ex.area);
 }
@@ -179,7 +181,7 @@ function styleChecks(ex: Exercise, m: Annotation): Pick<ExerciseScore, 'width' |
   return out;
 }
 
-function missing(ex: Exercise, marks: readonly Annotation[], content: Size): ExerciseScore {
+function missing(ex: Exercise, marks: readonly Annotation[], content: Dims): ExerciseScore {
   const other = marks.find((m) => m.kind !== ex.expect && inArea(ex, m, content));
   return {
     id: ex.id,
@@ -192,7 +194,7 @@ function missing(ex: Exercise, marks: readonly Annotation[], content: Size): Exe
 export function scoreExercise(
   ex: Exercise,
   marks: readonly Annotation[],
-  content: Size,
+  content: Dims,
   pxPerUnit: number,
 ): ExerciseScore {
   let best: { m: Annotation; g: Geometry } | null = null;
@@ -230,7 +232,7 @@ export function scoreExercise(
 export function scoreAll(
   exercises: readonly Exercise[],
   marks: readonly Annotation[],
-  content: Size,
+  content: Dims,
   pxPerUnit: number,
 ): ExerciseScore[] {
   return exercises.map((ex) => scoreExercise(ex, marks, content, pxPerUnit));

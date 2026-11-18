@@ -1,0 +1,61 @@
+{
+ "id": "apps.site.Packages",
+ "commit": "197362e015f1498c5cd6691c571634f8fb9575fb",
+ "date": "2026-11-17",
+ "files": [
+  "apps/site/Packages/Guides.tsx",
+  "apps/site/Packages/Loading.tsx",
+  "apps/site/Packages/Overview.tsx",
+  "apps/site/Packages/PackageDemos.tsx",
+  "apps/site/Packages/Packages.module.css",
+  "apps/site/Packages/Packages.tsx",
+  "apps/site/Packages/catalog.ts",
+  "apps/site/Packages/reference/Callable.tsx",
+  "apps/site/Packages/reference/ClassPage.tsx",
+  "apps/site/Packages/reference/CodeLine.tsx",
+  "apps/site/Packages/reference/FunctionPage.tsx",
+  "apps/site/Packages/reference/Members.tsx",
+  "apps/site/Packages/reference/ModuleIndex.tsx",
+  "apps/site/Packages/reference/Reference.module.css",
+  "apps/site/Packages/reference/Reference.tsx",
+  "apps/site/Packages/reference/ReferenceView.tsx",
+  "apps/site/Packages/reference/TypePage.tsx",
+  "apps/site/Packages/useLoaded.ts"
+ ],
+ "a": 3,
+ "b": 5,
+ "m": 2,
+ "distinct": 6,
+ "chapman": 7,
+ "unfound": 1,
+ "read": {
+  "A": 18,
+  "B": 18
+ },
+ "patches": 6,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.4,
+   "B": 2.4,
+   "match": 0.1,
+   "fix": 9.5
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "msb-uai"
+  },
+  "tokens": 7517304,
+  "costUsd": 4.17
+ },
+ "fixCommits": [
+  "2c17f2f6c2da8ef1712e6f18fff22185236c7041",
+  "ec9e1eb1bf5f1c4e28f538c3bd7d539162c8f54c",
+  "181f9a0b7fe4a68cf7333d2e441a75ed32df22ab",
+  "42b13ff6feff91fabcce5438fd27865df295e7b0",
+  "0ca07c7eb5fbe81c93c1e41a609072c98cbcd9b9",
+  "f8d30b1687d2d9490f6f5cffd30349e09e37b93f"
+ ]
+}

@@ -186,3 +186,21 @@ describe('an entry with a body', () => {
     expect((await screen.findByText('core only')).closest('.ckd-release-change')).toBeNull();
   });
 });
+
+describe('a version named in the URL', () => {
+  it('is scrolled to once, not again when a filter change remounts its section', async () => {
+    const scrolled: string[] = [];
+    vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(function (this: Element) {
+      scrolled.push(this.querySelector('h3')?.textContent ?? '');
+    });
+    window.history.replaceState(null, '', '/?v=1.5.0#__releases');
+    render(<Releases />);
+    await userEvent.click(chip('bidi'));
+    expect(versions()).toEqual(['Unreleased']);
+    await userEvent.click(chip('bidi'));
+    expect(versions()).toEqual(['Unreleased', '1.5.0']);
+    expect(scrolled).toEqual(['1.5.0']);
+    expect(screen.getByRole('heading', { level: 3, name: '1.5.0' }).closest('details')!.open).toBe(false);
+    vi.restoreAllMocks();
+  });
+});

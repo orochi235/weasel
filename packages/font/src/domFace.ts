@@ -13,7 +13,7 @@
 
 import type { FontStyle } from './fontStyle';
 import { cssFamilyName, cssString } from './cssFamily';
-import { resolveFontVariant } from './registerFont';
+import { resolveFontVariant } from './resolveFontVariant';
 import {
   hasFontOutlines, listFontOutlines, outlineCssSource, onOutlineBytes, type OutlineFaceInfo,
 } from './outline/outlineRegistry';

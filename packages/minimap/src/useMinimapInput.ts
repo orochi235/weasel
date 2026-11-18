@@ -4,7 +4,7 @@ import { useActionsRegistry, useDepSource, useGestureDispatcher } from '@weasel-
 import { useLatest } from '@weasel-js/react';
 import type { Tool } from '@weasel-js/routing';
 import { clientToCanvas, viewScreenToWorld, type View, type ViewApi, type ZoomClampOptions } from '@weasel-js/core';
-import { minimapBindings, minimapCenterAction, minimapPanAction, minimapPinchAction, minimapZoomAction } from './actions';
+import { minimapBindings, minimapCenterAction, minimapPanAction, minimapTouchZoomAction, minimapZoomAction } from './actions';
 
 // Unscoped: this dispatcher routes no views, so every input on it is the minimap's.
 const toolsById = (zoom: boolean): ReadonlyMap<string, Tool> =>
@@ -70,7 +70,7 @@ export function useMinimapInput(opts: MinimapInputOptions): (cx: number, cy: num
       const z = zoomRef.current;
       return typeof z === 'object' ? z : undefined;
     };
-    const off = [actions.register(minimapZoomAction(clamp)), actions.register(minimapPinchAction(clamp))];
+    const off = [actions.register(minimapZoomAction(clamp)), actions.register(minimapTouchZoomAction(clamp))];
     return () => { for (const u of off) u(); };
   }, [actions, zoomOn, zoomRef]);
 

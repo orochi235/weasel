@@ -32,7 +32,7 @@ function spriteBitmap(): Promise<ImageBitmap> {
 function cell(hud: Hud, col: number, row: number, caption: string) {
   const x = COL[col], y = ROW[row];
   return [
-    hud.rect({ id: `cell-${col}-${row}`, x, y, w: CELL_W, h: CELL_H, fill: 'rgba(128, 128, 128, 0.14)' }),
+    hud.rect({ id: `cell-${col}-${row}`, x, y, width: CELL_W, height: CELL_H, fill: 'rgba(128, 128, 128, 0.14)' }),
     hud.label({ id: `caption-${col}-${row}`, x: x + 10, y: y + CELL_H - 20, text: caption }),
   ];
 }
@@ -50,8 +50,8 @@ function Demo() {
     let canceled = false;
     const widgets: { dispose(): void }[] = [
       ...cell(hud, 0, 0, 'rect · fill'),
-      hud.rect({ id: 'swatch', x: COL[0] + 10, y: ROW[0] + 10, w: 72, h: 44, fill: '#3b82f6' }),
-      hud.rect({ id: 'swatch-2', x: COL[0] + 90, y: ROW[0] + 10, w: 72, h: 44, fill: 'hsl(150 60% 45%)' }),
+      hud.rect({ id: 'swatch', x: COL[0] + 10, y: ROW[0] + 10, width: 72, height: 44, fill: '#3b82f6' }),
+      hud.rect({ id: 'swatch-2', x: COL[0] + 90, y: ROW[0] + 10, width: 72, height: 44, fill: 'hsl(150 60% 45%)' }),
 
       ...cell(hud, 1, 0, 'text · fontSize, color'),
       hud.text({ id: 'text', x: COL[1] + 10, y: ROW[0] + 12, text: 'Aa 28px', fontSize: 28, color: '#e0603a' }),
@@ -68,14 +68,14 @@ function Demo() {
     spriteBitmap().then((bitmap) => {
       if (canceled) { bitmap.close(); return; }
       sprite = bitmap;
-      const size = { y: ROW[1] + 8, w: 56, h: 56 };
+      const size = { y: ROW[1] + 8, width: 56, height: 56 };
       const nearest = hud.image({ id: 'nearest', x: COL[0] + 10, ...size, image: bitmap, sampling: 'nearest' });
       const linear = hud.image({ id: 'linear', x: COL[1] + 10, ...size, image: bitmap, sampling: 'linear', flipX: true });
-      const top = hud.image({ id: 'source', x: COL[0] + 76, ...size, h: 22, image: bitmap, sampling: 'nearest', source: { x: 0, y: 0, w: 5, h: 2 } });
+      const top = hud.image({ id: 'source', x: COL[0] + 76, ...size, height: 22, image: bitmap, sampling: 'nearest', source: { x: 0, y: 0, width: 5, height: 2 } });
 
       let flipX = true;
-      const flip = hud.button({ id: 'flip', x: COL[2] + 10, y: ROW[1] + 16, w: 120, h: 34, label: 'Flip the F' });
-      flip.on('press', () => linear.setFlip({ x: (flipX = !flipX) }));
+      const flip = hud.button({ id: 'flip', x: COL[2] + 10, y: ROW[1] + 16, width: 120, height: 34, label: 'Flip the F' });
+      flip.subscribe('press', () => linear.setFlip({ x: (flipX = !flipX) }));
       widgets.push(nearest, linear, top, flip);
     });
 

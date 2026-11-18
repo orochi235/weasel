@@ -18,7 +18,7 @@ describe('useRulers', () => {
   it('shows rulers reading the document in points and inches once toggled on', () => {
     const { result } = renderHook(() => useRulers());
     act(() => result.current.commands.toggleRulers());
-    expect(drawPrefs().get('view.rulersVisible')).toBe(true);
+    expect(drawPrefs().get('view.rulers.visible')).toBe(true);
     expect(result.current.rulers?.get().frame.scopes).toEqual([DOCUMENT_SCOPE]);
   });
 });

@@ -8,9 +8,9 @@ import {
   createDeleteOp,
   createInsertOp,
   createSetDataOp,
-  createTransformOp,
+  createSetPoseOp,
   followerHome,
-  pageOfNode,
+  pageIdOf,
   placedPagesOf,
   type NodeId,
   type Op,
@@ -99,7 +99,7 @@ function tagOps(scene: AnyScene, edge: SceneNode, split: OffPageSplit | null, pa
       };
       ops.push(createSetDataOp({ id, from: tag.data, to: { ...(tag.data as object), ...offPageTagData(edge.id, end, text, kept) }, label: 'Off-page' }));
       const pose = tag.pose as Record<string, unknown>;
-      ops.push(createTransformOp({ id, from: tag.pose, to: { ...pose, ...offPageTagSize(text, kept) }, label: 'Off-page' }));
+      ops.push(createSetPoseOp({ id, from: tag.pose, to: { ...pose, ...offPageTagSize(text, kept) }, label: 'Off-page' }));
     }
   }
   return ops;
@@ -121,7 +121,7 @@ export function offPageOps<TPose>(
   const wanted = edges === 'all' ? null : new Set(edges);
   const pages = placedPagesOf(sc);
   const pageOf = (id: string | undefined): string | null | undefined =>
-    (id === undefined || sc.get(id as never) === undefined ? undefined : pageOfNode(sc, id as NodeId));
+    (id === undefined || sc.get(id as never) === undefined ? undefined : pageIdOf(sc, id as NodeId));
   const inputs: (OffPageEdgeInput & { node: SceneNode; trait: DiagramEdge })[] = [];
   const used: string[] = [];
   for (const node of sc.renderOrderNodes()) {

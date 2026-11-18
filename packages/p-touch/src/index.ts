@@ -16,7 +16,7 @@ export { labelGrid, labelRenderPlan, printableBand, renderLabel, type LabelGeome
 export { labelRaster, printLabel, sliceAtCuts, type PrintLabelOptions } from './print';
 export { lbxConfig, writeLbx, type LbxPage, type LbxResult, type LbxSkip, type WriteLbxOptions } from './lbx/writeLbx';
 export { sceneToLbx, type SceneToLbxArgs } from './lbx/sceneLbx';
-export { lbxObjects } from './lbx/carried';
+export { lbxObjectsCommand } from './lbx/carried';
 export type { BarcodeObject, LabelConfig, LabelObject } from 'bil-lbx';
 
 // The printer session and the types the functions above take, so a label app needs one import.
@@ -29,4 +29,4 @@ export type {
   Raster1bpp,
   RgbaImage,
 } from 'obwat';
-export type { DitherMethod, DitherOptions } from '@weasel-js/dither';
+export type { DitherMethod, DitherPixelsOptions } from '@weasel-js/dither';

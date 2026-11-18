@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { nestedHitTester } from './nestedHit';
+import { createNestedHitTester } from './nestedHit';
 import { composeRectPose } from 'core/scene/composePose';
 import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 
@@ -28,12 +28,12 @@ const adapter = {
   getParent: (id: string) => NODES.find((n) => n.id === id)?.parent ?? null,
 };
 
-const tester = nestedHitTester(adapter, {
+const tester = createNestedHitTester(adapter, {
   composePose: composeRectPose,
   isGroup: (_id, obj) => obj?.isGroup === true,
 });
 
-describe('nestedHitTester', () => {
+describe('createNestedHitTester', () => {
   it('pickOutermost returns outermost ancestor for a leaf hit', () => {
     expect(tester.pickOutermost({ x: 60, y: 60 })).toBe('g1'); // hits leaf 'a', resolves to g1
     expect(tester.pickOutermost({ x: 140, y: 100 })).toBe('g1'); // hits b1 → g1 (outermost)
@@ -77,7 +77,7 @@ describe('nestedHitTester', () => {
     const cnodes = [
       { id: 'c', parent: null, pose: circle(100, 100, 20) },
     ];
-    const t = nestedHitTester(
+    const t = createNestedHitTester(
       {
         getNode: (id) => cnodes.find((n) => n.id === id),
         getNodes: () => cnodes,

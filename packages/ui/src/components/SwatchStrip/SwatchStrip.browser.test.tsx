@@ -17,7 +17,7 @@ async function mount(align?: RunAlign) {
   store.record([...RECENT].reverse());
   render(
     <div style={{ width: 400 }}>
-      <SwatchStrip store={store} columns={10} align={align} onChange={() => {}} />
+      <SwatchStrip store={store} columns={10} align={align} onSelect={() => {}} />
     </div>,
   );
   const row = screen.getByRole('group', { name: 'Recent colors' });
@@ -52,7 +52,7 @@ test('an arrow down from a full row lands on the swatch beneath it in a shifted 
   const colors = Array.from({ length: 13 }, (_, i) => ({ value: `#${(i * 17).toString(16).padStart(2, '0')}0000ff` }));
   render(
     <div style={{ width: 400 }}>
-      <SwatchStrip palettes={[{ id: 'p', name: 'P', columns: 10, colors }]} align="end" onChange={() => {}} />
+      <SwatchStrip palettes={[{ id: 'p', name: 'P', columns: 10, colors }]} align="end" onSelect={() => {}} />
     </div>,
   );
   const grid = screen.getByRole('group', { name: 'P' });

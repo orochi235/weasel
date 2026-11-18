@@ -23,14 +23,14 @@ export function formatNumber(value: number, options?: Intl.NumberFormatOptions):
 
 /**
  * Formats a number the way a `compact` readout shows it: below 1,000 at
- * `decimals` places, from 1,000 up at three significant figures with a magnitude
+ * `places` places, from 1,000 up at three significant figures with a magnitude
  * suffix (`40.0K`, `294K`, `2.00M`), so the readout holds one width whatever the
  * value. The number is written in `locale` (`40,0K` in `de-DE`) and the suffix
  * stays the `K`/`M`/`B`/`T` that {@link parseNumber} reads in any locale, where
  * `Intl`'s own compact words (`2 Mio.`) would not read back.
  */
-export function formatCompact(value: number, decimals = 0, locale = defaultLocale()): string {
-  return formatCompactIn(value, decimals, locale);
+export function formatCompact(value: number, places = 0, locale = defaultLocale()): string {
+  return formatCompactIn(value, places, locale);
 }
 
 /**

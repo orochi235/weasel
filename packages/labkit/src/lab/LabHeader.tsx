@@ -1,3 +1,4 @@
+import { Button } from '@weasel-js/ui/components/Button';
 import { COLOR_MODE_OPTIONS, CycleButton } from '@weasel-js/ui/components/CycleButton';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { MenuButton } from '@weasel-js/ui/components/MenuButton';
@@ -20,14 +21,12 @@ export function LabHeader({ addTrial = true }: { addTrial?: boolean }) {
   return (
     <>
       {!addTrial ? null : only ? (
-        <button
-          type="button"
-          className="lk-lab-header__add"
+        <Button
+          leadingIcon={<Icon name={icon('ui:add')} size={16} />}
           onClick={() => lab.addTrial(only.name)}
         >
-          <Icon name={icon('ui:add')} size={16} />
-          <span>Add trial</span>
-        </button>
+          Add trial
+        </Button>
       ) : (
         <MenuButton
           aria-label="Add trial"

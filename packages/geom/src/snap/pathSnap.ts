@@ -5,14 +5,14 @@
 
 import type { Path } from '../path';
 import type { Point } from '../paths/cubicMath';
-import { evalSeg, type Seg } from '../booleans/contourSegments';
-import { nearestOnCubic, nearestOnLine, nearestOnQuadratic } from '../nearest';
+import { evalSeg, nearestOnSeg, type Seg } from '../booleans/contourSegments';
 import { pathCrossings } from '../intersect/pathCrossings';
-import { intersectSegments } from '../intersect/segmentIntersections';
+import { segmentCrossings } from '../intersect/segmentIntersections';
 import { pathSegments, type PathSegment } from '../intersect/pathSegments';
 import { perpendicularTsFrom, segmentExtremaT, segmentMidT, tangentTsFrom } from './segmentFeatures';
 import { createBvh, type Bvh } from '../bvh/bvh';
 import { maxOf, minOf } from '../scalar';
+import { createPart } from '@weasel-js/registry';
 
 /**
  * What a snap target is.
@@ -161,7 +161,7 @@ function quadrantPoints(segs: readonly PathSegment[]): Point[] {
     const across: Seg[] = [[{ x: x0 - 1, y: cy }, { x: x1 + 1, y: cy }], [{ x: cx, y: y0 - 1 }, { x: cx, y: y1 + 1 }]];
     for (const line of across) {
       for (const s of sub) {
-        for (const h of intersectSegments(s.pts, line)) {
+        for (const h of segmentCrossings(s.pts, line)) {
           if (!out.some((p) => Math.hypot(p.x - h.x, p.y - h.y) < 1e-6)) out.push({ x: h.x, y: h.y });
         }
       }
@@ -176,13 +176,7 @@ interface Spatial {
   segments?: { list: PathSnapIndex['segments']; tree: Bvh<number>; at: (readonly [number, number])[] };
 }
 
-const SPATIAL = new WeakMap<PathSnapIndex, Spatial>();
-
-function spatialOf(index: PathSnapIndex): Spatial {
-  let sp = SPATIAL.get(index);
-  if (!sp) SPATIAL.set(index, (sp = { targets: new Map() }));
-  return sp;
-}
+const spatialOf = createPart<PathSnapIndex, Spatial>(() => ({ targets: new Map() }));
 
 /** The indices of `kind`'s targets inside `box`, ascending, so a tie keeps the order a scan gives. */
 function targetsIn(index: PathSnapIndex, kind: StaticPathSnapKind, box: readonly number[]): number[] {
@@ -215,12 +209,6 @@ function segmentsIn(index: PathSnapIndex, box: readonly number[]): (readonly [nu
   const found: number[] = [];
   tree.queryBox(box, (i) => { found.push(i); });
   return found.sort((a, b) => a - b).map((i) => at[i]!);
-}
-
-function nearestOnSeg(s: Seg, p: Point): { x: number; y: number; dist: number } {
-  if (s.length === 2) return nearestOnLine(p.x, p.y, s[0].x, s[0].y, s[1].x, s[1].y);
-  if (s.length === 3) return nearestOnQuadratic(p.x, p.y, s[0].x, s[0].y, s[1].x, s[1].y, s[2].x, s[2].y);
-  return nearestOnCubic(p.x, p.y, s[0].x, s[0].y, s[1].x, s[1].y, s[2].x, s[2].y, s[3].x, s[3].y);
 }
 
 /**

@@ -1,4 +1,4 @@
-import { addOnPages, createPageRun, createScene, pageOfNode, type RectPose } from '@weasel-js/core';
+import { addOnPages, createPageRun, createScene, pageIdOf, type RectPose } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
 import { svgDraftSpecs } from './draftSpecs';
 import type { SvgKitLeafData } from './fromKit';
@@ -17,6 +17,6 @@ describe('svgDraftSpecs', () => {
     createPageRun(scene, [{ id: 'p1', width: 600, height: 800 }, { id: 'p2', width: 600, height: 800 }]);
     const drafts = svgNodesToKitDrafts(parseSvg(TEXT), () => scene.mintId());
     const ids = addOnPages(scene, svgDraftSpecs(drafts, { layer: 'main', composition: scene.composition }));
-    expect(ids.map((id) => pageOfNode(scene, id))).toEqual(['p1', 'p1', 'p2']);
+    expect(ids.map((id) => pageIdOf(scene, id))).toEqual(['p1', 'p1', 'p2']);
   });
 });

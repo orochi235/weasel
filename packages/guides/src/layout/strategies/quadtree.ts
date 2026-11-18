@@ -1,6 +1,6 @@
 import type { Rect } from '@weasel-js/geom';
 import {
-  createTransformOp,
+  createSetPoseOp,
   type ContainerBounds,
   type LayoutChild,
   type LayoutContainer,
@@ -173,7 +173,7 @@ export function quadtree<TPose>(opts: QuadtreeOptions<TPose> = {}): QuadtreeStra
     reflowPoses: () => new Map(),
 
     commitDrop: (_container, _children, dragged, target) => [
-      createTransformOp<TPose>({
+      createSetPoseOp<TPose>({
         id: dragged.id,
         from: dragged.originPose,
         to: target?.pose ?? dragged.pose,

@@ -1,2 +1,2 @@
 export * from './useHandTool';
-export * from './dragPanContribution';
+export * from './createDragPanContribution';

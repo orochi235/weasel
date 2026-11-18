@@ -1,6 +1,6 @@
 import { Lab } from '@weasel-js/labkit';
 import type { PrefGroup, PrefsStore } from '@weasel-js/prefs';
-import { usePrefsStore, usePrefsValues } from '@weasel-js/prefs/react';
+import { usePrefsStore, usePrefsState } from '@weasel-js/prefs/react';
 import { localStorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
 import {
   themeFromPrefs,
@@ -36,7 +36,7 @@ const PREFIX = 'theme-prefs.';
 export function ThemePrefs({ theme = weaselTheme, storage = localStorageAdapter }: ThemePrefsProps) {
   const schema = useMemo(() => themePrefsSchema(theme), [theme]);
   const store = usePrefsStore(schema, { storage, prefix: PREFIX }) as PrefsStore<PrefGroup>;
-  const { auto } = usePrefsValues(store);
+  const { auto } = usePrefsState(store);
   const { history, set, setAuto, reset, setAt } = usePrefsHistory(store);
   const { values, scopes } = themePrefsValues(store, theme);
   const { mode: _mode, ...selection } = themePrefsSelection(store);

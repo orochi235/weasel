@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import type { DrawCommand } from '@weasel-js/renderer';
-import { INHERIT, type Fill, type Stroke, solid, strokeOf } from '@weasel-js/paint';
+import { INHERIT, type Fill, type Stroke, solid, solidStroke } from '@weasel-js/paint';
 import { pathFromParts, type DerivedPart } from 'core/scene/derivedParts';
 import { DERIVED_PAINTER } from './derivedPainter';
 
 const RECT = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } as const;
 const NODE_FILL: Fill = { paint: solid('#ff0000') };
-const NODE_STROKE: Stroke = strokeOf('#0000ff', 2);
+const NODE_STROKE: Stroke = solidStroke('#0000ff', 2);
 
 function paintParts(parts: DerivedPart[]) {
   const node = { id: 'n', data: { fill: NODE_FILL, stroke: NODE_STROKE }, dependsOn: ['a'] };
@@ -40,7 +40,7 @@ describe('kit:derived — the drawn box of a path in parts', () => {
   );
 
   it("reaches as far as each part's own stroke", () => {
-    expect(box([{ path: RECT, stroke: strokeOf('#00ff00', 20) }], null)).toEqual({ x: -10, y: -10, width: 30, height: 30 });
+    expect(box([{ path: RECT, stroke: solidStroke('#00ff00', 20) }], null)).toEqual({ x: -10, y: -10, width: 30, height: 30 });
   });
 
   it("takes the node's stroke for a part that inherits it, and none for a part that has none", () => {

@@ -3,7 +3,7 @@ import type { AnchorSet } from './anchorEdits';
 import type { PenAnchor } from './anchors';
 import { anchorsUnderBrush } from './anchorBrush';
 import { cubicPointAt, type Point } from './cubicMath';
-import { nearestOnLine } from '../nearest';
+import { nearestOnSegment } from '../nearest';
 import { simplifyAnchorsAt } from './simplifyAnchors';
 
 /** Mulberry32: a seeded generator, so a failure names the case that made it. */
@@ -78,7 +78,7 @@ function farthestFrom(pts: readonly Point[], line: readonly Point[], reach: numb
       for (let dy = -1; dy <= 1; dy++) {
         for (const i of grid.get(key(cx + dx, cy + dy)) ?? []) {
           const a = line[i], b = line[i + 1];
-          best = Math.min(best, nearestOnLine(p.x, p.y, a.x, a.y, b.x, b.y).dist);
+          best = Math.min(best, nearestOnSegment(p.x, p.y, a.x, a.y, b.x, b.y).distance);
         }
       }
     }

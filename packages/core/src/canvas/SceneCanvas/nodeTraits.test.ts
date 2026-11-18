@@ -3,14 +3,14 @@ import { describe, expect, it } from 'vitest';
 import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
 import { inferredNodeRouting } from './defaultNodeRouting';
 import { inferredNodeProperties } from './defaultNodeProperties';
-import { nodeKindPreset, nodeTraitsOf } from './nodeTraits';
+import { createNodeKindPreset, nodeTraitsOf } from './nodeTraits';
 import type { FeaturePreset } from './features';
 import { insertsNothing } from './toolRegistry';
 import type { Tool } from 'tools/overlayBinding';
 
 const isGem = (d: unknown) => typeof d === 'object' && d !== null && 'gem' in d;
 const gemFactory = () => ({ data: { gem: {} } });
-const gem = nodeKindPreset({ id: 'gem', kind: 'gem', matches: isGem, insert: gemFactory, properties: { schema: { name: 'P', members: {} } } });
+const gem = createNodeKindPreset({ id: 'gem', kind: 'gem', matches: isGem, insert: gemFactory, properties: { schema: { name: 'P', members: {} } } });
 const names = (entries: readonly { name: string }[]) => entries.map((e) => e.name);
 
 describe('nodeTraitsOf', () => {
@@ -29,7 +29,7 @@ describe('nodeTraitsOf', () => {
   });
 
   it("replaces a default of the preset's name when the consumer gives no list", () => {
-    const text = nodeKindPreset({ id: 'my-text', kind: 'text', matches: () => false });
+    const text = createNodeKindPreset({ id: 'my-text', kind: 'text', matches: () => false });
     const routing = nodeTraitsOf([text]).routing;
     expect(routing.filter((e) => e.name === 'text')).toEqual(text.routing);
   });
@@ -41,10 +41,10 @@ describe('nodeTraitsOf', () => {
   });
 
   it('counts one value two presets share once, an included preset once, and throws on a different value', () => {
-    const again = nodeKindPreset({ id: 'gem-again', kind: 'gem', matches: isGem, insert: gemFactory });
+    const again = createNodeKindPreset({ id: 'gem-again', kind: 'gem', matches: isGem, insert: gemFactory });
     const bundle: FeaturePreset = { id: 'bundle', includes: [gem] };
     expect(names(nodeTraitsOf([gem, again, bundle]).routing).filter((n) => n === 'gem')).toHaveLength(1);
-    const clash = nodeKindPreset({ id: 'clash', kind: 'gem', matches: isGem, insert: () => null });
+    const clash = createNodeKindPreset({ id: 'clash', kind: 'gem', matches: isGem, insert: () => null });
     expect(() => nodeTraitsOf([gem, clash])).toThrow('presets "gem" and "clash" both give insert factory "gem"');
   });
 

@@ -4,7 +4,7 @@ import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
 import type { Target } from '@weasel-js/animator';
 import { resolveSkeleton } from '@weasel-js/animator';
-import type { Pose, Skeleton } from '@weasel-js/animator';
+import type { SkeletonPose, Skeleton } from '@weasel-js/animator';
 import type { Skin } from '@weasel-js/animator';
 import { createRigSeat, type RigBinding, type RigSeat } from './rigSeat';
 import { bindSkins, dataRestPath, type RestPath, type SkinScene } from './skinBinding';
@@ -60,12 +60,12 @@ export interface Rig {
   /**
    * The rig's pose as a value an animator moves. Its committed value starts as `{}`, the bind
    * pose, and each frame the rig is posed with what the target shows. A clip is a
-   * `SampledTrack<Pose>` given this as its `target`: clips on one rig crossfade by their
+   * `SampledTrack<SkeletonPose>` given this as its `target`: clips on one rig crossfade by their
    * `weight`s, weights short of 1 leave the rest to the committed pose, and a `spring` or
    * `tween` from a pose away from the committed one adds on top. `animator.hold` shows a pose made elsewhere the same way, an
    * IK solve included.
    */
-  readonly target: Target<Pose>;
+  readonly target: Target<SkeletonPose>;
   /**
    * Commit `pose` and move every bound node to what the target now shows, which is `pose`
    * unless something is animating the target; a hold on it weighs the new pose in when it is
@@ -73,7 +73,7 @@ export interface Rig {
    * no history entry, no document write, no version bump — and are committed. `root`, where
    * given, replaces the placement, as {@link Rig.place}.
    */
-  pose(pose: Pose, root?: GlMat3): void;
+  pose(pose: SkeletonPose, root?: GlMat3): void;
   /** Place the rig in the world by `root`, which may mirror it, and pose it there. It stays
    *  until placed again; with no `root`, the rig goes back to where its skeleton puts it. */
   place(root?: GlMat3): void;
@@ -101,7 +101,7 @@ export function rigidRigApply<TPose>(descriptor: PoseDescriptor<TPose>): RigAppl
     const b = descriptor.getBounds(rest);
     const cx = b.x + b.width / 2;
     const cy = b.y + b.height / 2;
-    const [nx, ny] = mat3.apply(fromRest, cx, cy);
+    const [nx, ny] = mat3.transformPoint(fromRest, cx, cy);
     const moved = descriptor.translate
       ? descriptor.translate(rest, nx - cx, ny - cy)
       : descriptor.remapBounds(rest, b, { ...b, x: b.x + nx - cx, y: b.y + ny - cy });
@@ -148,7 +148,7 @@ export function bindRigOn<TPose>(
   const apply = options.apply ?? rigidRigApply(descriptor);
   const restWorlds = resolveSkeleton(skeleton, {});
   const restInverses = new Map<string, GlMat3>();
-  const restInverseOf = (joint: string): GlMat3 => {
+  const requireRestInverse = (joint: string): GlMat3 => {
     let inverse = restInverses.get(joint);
     if (inverse) return inverse;
     const restWorld = restWorlds.get(joint);
@@ -160,11 +160,11 @@ export function bindRigOn<TPose>(
   };
 
   const skins = bindSkins(scene, options.skins ?? {}, options.restPath ?? dataRestPath, descriptor);
-  skins.joints.forEach(restInverseOf);
+  skins.joints.forEach(requireRestInverse);
 
   const bound: Bound<TPose>[] = [];
   for (const [joint, ids] of Object.entries(options.bindings ?? {})) {
-    restInverseOf(joint);
+    requireRestInverse(joint);
     const restWorld = restWorlds.get(joint)!;
     for (const node of typeof ids === 'string' ? [ids] : (ids as readonly NodeId[])) {
       if (options.skins && Object.hasOwn(options.skins, node)) {
@@ -190,7 +190,7 @@ export function bindRigOn<TPose>(
     drop();
   };
 
-  const show = (pose: Pose): void => {
+  const show = (pose: SkeletonPose): void => {
     const local = resolveSkeleton(skeleton, pose);
     const { root } = seat;
     if (root) for (const [name, m] of local) local.set(name, mat3.multiply(root, m));
@@ -199,7 +199,7 @@ export function bindRigOn<TPose>(
     const motionOf = (joint: string): GlMat3 => {
       let delta = fromRest.get(joint);
       if (!delta) {
-        delta = mat3.multiply(local.get(joint)!, restInverseOf(joint));
+        delta = mat3.multiply(local.get(joint)!, requireRestInverse(joint));
         fromRest.set(joint, delta);
       }
       return delta;

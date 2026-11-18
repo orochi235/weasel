@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { IDENTITY_POSE_COMPOSITION, createScene, type NodeId } from '@weasel-js/core';
 import { intersectRayAabb, normalize, quatFromAxisAngle, type Aabb, type Ray } from '@weasel-js/geom/3d';
 import { createCamera } from './camera';
-import { createAreaSelect, createNodeAtPoint, screenBoxOf } from './deps';
+import { createAreaSelect3dDep, createNodeAtPoint3dDep, screenBoxOf } from './deps';
 import { worldPickIndex } from './pickIndex';
 import { pose3, type Pose3 } from './pose3';
 import { rayAt, type Viewport3d } from './project';
-import type { ScreenBox } from './screen';
+import type { ScreenRect } from './screen';
 import { boundsOfTestNode, type TestData, type TestLayer, type TestNode, type TestScene } from './testScene';
 import type { World3d } from './world';
 
@@ -84,7 +84,7 @@ function randomViewport(r: Rand): Viewport3d {
 
 const randomPoint = (r: Rand) => ({ x: between(r, -100, WIDTH + 100), y: between(r, -100, HEIGHT + 100) });
 
-function randomRect(r: Rand): ScreenBox {
+function randomRect(r: Rand): ScreenRect {
   const x = between(r, -200, WIDTH);
   const y = between(r, -200, HEIGHT);
   const zero = r() < 0.05;
@@ -111,7 +111,7 @@ function scanNearest(world: World3d<TestData, TestLayer>, point: { x: number; y:
   return best;
 }
 
-function scanArea(world: World3d<TestData, TestLayer>, b: ScreenBox): NodeId[] {
+function scanArea(world: World3d<TestData, TestLayer>, b: ScreenRect): NodeId[] {
   const vp = world.viewport();
   const hits: NodeId[] = [];
   for (const node of world.scene.renderOrderNodes()) {
@@ -167,8 +167,8 @@ describe('worldPickIndex', () => {
       const scene = randomScene(r, 500);
       let vp = randomViewport(r);
       const world: World3d<TestData, TestLayer> = { scene, viewport: () => vp, bounds: fuzzBounds };
-      const atPoint = createNodeAtPoint(world);
-      const area = createAreaSelect(world, noSelection);
+      const atPoint = createNodeAtPoint3dDep(world);
+      const area = createAreaSelect3dDep(world, noSelection);
       const ids = [...scene.renderOrder()];
       let hits = 0;
       for (let q = 0; q < 200; q++) {
@@ -190,8 +190,8 @@ describe('worldPickIndex', () => {
     const scene = randomScene(r, 200);
     const vp = randomViewport(r);
     const world: World3d<TestData, TestLayer> = { scene, viewport: () => vp, bounds: fuzzBounds };
-    const atPoint = createNodeAtPoint(world);
-    const area = createAreaSelect(world, noSelection);
+    const atPoint = createNodeAtPoint3dDep(world);
+    const area = createAreaSelect3dDep(world, noSelection);
     for (let round = 0; round < 20; round++) {
       const ids = [...scene.renderOrder()];
       const id = ids[Math.floor(r() * ids.length)]!;
@@ -221,8 +221,8 @@ describe('worldPickIndex', () => {
     const world: World3d<TestData, TestLayer> = { scene, viewport: () => vp, bounds: boundsOfTestNode };
     const [first, second] = [...scene.renderOrder()];
     const center = { x: WIDTH / 2, y: HEIGHT / 2 };
-    expect(createNodeAtPoint(world)(center)).toBe(first);
-    expect(createNodeAtPoint(world)(center, [first!])).toBe(second);
+    expect(createNodeAtPoint3dDep(world)(center)).toBe(first);
+    expect(createNodeAtPoint3dDep(world)(center, [first!])).toBe(second);
   });
 
   it('takes a ray through a box edge, as the scan does', () => {
@@ -279,7 +279,7 @@ describe('worldPickIndex', () => {
     }
     let vp = randomViewport(r);
     const world: World3d<TestData, TestLayer> = { scene, viewport: () => vp, bounds: fuzzBounds };
-    const area = createAreaSelect(world, noSelection);
+    const area = createAreaSelect3dDep(world, noSelection);
     let hits = 0;
     for (let q = 0; q < 200; q++) {
       if (q % 20 === 0) {
@@ -319,7 +319,7 @@ describe('worldPickIndex', () => {
     const afterBuild = reads;
     expect(afterBuild).toBe(100);
     worldPickIndex(world).nearestOnRay(ray, null);
-    createNodeAtPoint(world)({ x: 10, y: 20 });
+    createNodeAtPoint3dDep(world)({ x: 10, y: 20 });
     expect(reads).toBe(afterBuild);
     expect(worldPickIndex(world)).toBe(index);
     const [id] = [...scene.renderOrder()];

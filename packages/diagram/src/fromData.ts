@@ -7,12 +7,12 @@
  * the same answer in node and in a browser.
  */
 import { RIGID_POSE_COMPOSITION, localizeWorldPoses, type RectPose } from '@weasel-js/core';
-import { DEFAULT_GROUP_INSET, expandGroupEdges } from './cluster';
+import { DEFAULT_CLUSTER_INSET, expandClusterEdges } from './cluster';
 import { placeContainers, containerSpecs } from './dataContainerPlace';
 import { containerLayoutNodes, resolveContainers, type ContainerLayout } from './dataContainers';
-import { groupSpecs, resolveGroups, type ResolvedGroup } from './dataGroups';
+import { clusterSpecs, resolveClusters, type ResolvedCluster } from './dataClusters';
 import { bodyLayoutOf } from './bodyRelayout';
-import { bodyTrait, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
+import { bodyTrait, measureBody, growToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { buildBody } from './buildBody';
 import { faceCapCenter } from './faceCapCenter';
 import { estimatedWidth } from './rowMeasure';
@@ -24,12 +24,12 @@ import { scenePageSplits } from './dataPages';
 import { edgeSpecs, wireLabels } from './dataEdges';
 import {
   DEFAULT_NODE_STYLE, NODE_STROKE_WIDTH,
-  type DataEdge, type DataGroup, type DataNode, type DiagramData, type DiagramSceneData, type DiagramSceneOptions, type DiagramSpec,
+  type DataEdge, type DataCluster, type DataNode, type DiagramData, type DiagramSceneData, type DiagramSceneOptions, type DiagramSpec,
   type NodeStyle,
 } from './dataTypes';
 import { DEFAULT_FONT, labelSize, labelStyleOf } from './edgeLabel';
 import { grownBy } from './footprint';
-import { graphOf, labelFollowsLayout, type EdgeLabelRoom, type GraphEdge, type GraphGroup, type GraphNode } from './graph';
+import { graphOf, labelFollowsLayout, type EdgeLabelRoom, type GraphEdge, type GraphCluster, type GraphNode } from './graph';
 import { LABEL_PLACEMENT } from './labelTrait';
 import { asideFace, rowTextStyle, textFace, type DiagramTextStyle } from './rowStyle';
 import { layoutOf } from './layoutAction';
@@ -44,14 +44,14 @@ import type { Rect } from '@weasel-js/geom';
 export type { DiagramTextStyle };
 export { DEFAULT_NODE_STYLE };
 export type {
-  DataEdge, DataGroup, DataNode, DiagramData, DiagramRouter, DiagramSceneData, DiagramSceneOptions, DiagramSpec, EdgeStyle, NodeStyle,
+  DataEdge, DataCluster, DataNode, DiagramData, DiagramRouter, DiagramSceneData, DiagramSceneOptions, DiagramSpec, EdgeStyle, NodeStyle,
 } from './dataTypes';
 
 /** The frame an empty slot with an id draws, in the unit square a mark is drawn in. */
 export const SLOT_FRAME = 'M0 0H1V1H0Z';
 
-/** What a group is drawn with when there is no theme and nothing says otherwise. */
-export const DEFAULT_GROUP_STYLE: NodeStyle = { fill: 'rgba(123, 167, 199, 0.08)', stroke: '#7ba7c7', text: '#9fbdd6', strokeWidth: 1, dash: [4, 3] };
+/** What a cluster is drawn with when there is no theme and nothing says otherwise. */
+export const DEFAULT_CLUSTER_STYLE: NodeStyle = { fill: 'rgba(123, 167, 199, 0.08)', stroke: '#7ba7c7', text: '#9fbdd6', strokeWidth: 1, dash: [4, 3] };
 export { LABEL_PLACEMENT };
 const LINE = 1.4;
 const MIN_WIDTH = 64;
@@ -100,7 +100,7 @@ function slotData(row: Extract<Row, { kind: 'slot' }>, style: NodeStyle): Diagra
 
 /** A node's box, its rows' text and slots, and its port labels, laid out in `box`. */
 function nodeSpecs(
-  n: DataNode, body: BodySpec, box: { x: number; y: number; width: number; height: number },
+  n: DataNode, body: BodySpec, box: Rect,
   look: { style: NodeStyle; text: (row: Row | undefined) => DiagramTextStyle; measure: MeasureRowText },
 ): DiagramSpec[] {
   const { style } = look;
@@ -130,10 +130,10 @@ function nodeSpecs(
 }
 
 /** Every spec carries an id — a node's own, `<id>/<k>` for its text,
- *  `<id>/mark:<i>` for its marks, `<edge id>/label`, a group's own and
- *  `<group id>/label`, a region's own and `<region id>/title` — so a later call's
+ *  `<id>/mark:<i>` for its marks, `<edge id>/label`, a cluster's own and
+ *  `<cluster id>/label`, a region's own and `<region id>/title` — so a later call's
  *  specs can be reconciled against this one's. Throws on a repeated id among
- *  nodes, groups, containers and lanes, which names two things as one, and on any
+ *  nodes, clusters, containers and lanes, which names two things as one, and on any
  *  other id two specs would share: an edge's `id` given to a different edge, or an
  *  item's id that another item's part is named (`a/1` beside a node `a`). An edge
  *  whose end is not a node is dropped, and so is a repeat of an earlier edge with
@@ -172,19 +172,19 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
     ids.add(n.id);
   }
   const nodeIds = new Set(ids);
-  const pad = opts.groupPadding ?? DEFAULT_GROUP_INSET;
+  const pad = opts.clusterPadding ?? DEFAULT_CLUSTER_INSET;
   const regions = resolveContainers(data.containers ?? [], ids, nodeIds);
-  // A region is a node's scene parent and a group only gathers it for layout and draws around it: a
+  // A region is a node's scene parent and a cluster only gathers it for layout and draws around it: a
   // node in both would have two owners whose boxes disagree, so the data is refused rather than guessed at.
-  for (const g of data.groups ?? []) {
+  for (const g of data.clusters ?? []) {
     for (const m of g.members) {
       const region = nodeIds.has(m) ? regions.parentOf.get(m) : undefined;
-      if (region !== undefined) throw new Error(`diagramScene: node "${m}" is in group "${g.id}" and in region "${region}"; a node may be in one or the other`);
+      if (region !== undefined) throw new Error(`diagramScene: node "${m}" is in cluster "${g.id}" and in region "${region}"; a node may be in one or the other`);
     }
   }
   const boxes = containerLayoutNodes(regions, { padding: pad, seed: (k) => ({ x: data.nodes.length + k, y: data.nodes.length + k }) });
   const titleStyle = { ...font, fontSize: font.fontSize - 1 };
-  const groups = resolveGroups(data.groups ?? [], ids, new Set([...nodeIds].filter((id) => !boxes.hidden.has(id))), {
+  const clusters = resolveClusters(data.clusters ?? [], ids, new Set([...nodeIds].filter((id) => !boxes.hidden.has(id))), {
     padding: pad,
     title: (text) => measure(text, titleStyle),
   });
@@ -217,7 +217,7 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
     // A collapsed node keeps the width its rows would give it open, so it does not jump on a toggle.
     const floor = measureBody(bodies[i]!, measure);
     const width = folded(n) ? Math.max(floor.minWidth, measureBody({ ...bodies[i]!, rows: n.rows! }, measure).minWidth) : floor.minWidth;
-    const pose = sizeToBody(
+    const pose = growToBody(
       { ...(n.at ?? { x: i, y: i }), width: n.width ?? opts.minWidth ?? MIN_WIDTH, height: folded(n) ? 0 : n.height ?? 0 },
       { minWidth: width, minHeight: floor.minHeight },
     );
@@ -225,7 +225,7 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
     return { id: n.id, bounds: pose, pinned: n.pinned === true, ...(ports !== undefined ? { ports } : {}),
       ...(outline !== undefined ? { outline } : {}), ...(margin !== undefined ? { margin } : {}) };
   });
-  const laid = layOut(seeds, edges, groups, boxes, opts, (e) => labelRoomOf(e, opts, labelFont, measure));
+  const laid = layOut(seeds, edges, clusters, boxes, opts, (e) => labelRoomOf(e, opts, labelFont, measure));
 
   const specs: DiagramSpec[] = [];
   const sizes = new Map(data.nodes.map((n, i) => [n.id, { ...seeds[i]!.bounds, ...(n.at ? { at: n.at } : {}),
@@ -235,11 +235,11 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
   const routes = laid.plan === null ? null
     : authoredOver(edges.filter((e) => !laid.remapped.has(e)).map((e) => ({ ...e, id: edgeIdOf(e) })), laid.plan);
   const edgeCtx = { idOf: edgeIdOf, font, labelFont, measure, labelPlacement: LABEL_PLACEMENT, routes, opts, ...(theme ? { theme } : {}) };
-  const groupLook = (g: DataGroup) => ({ style: opts.groupStyle?.(g) ?? theme?.container ?? DEFAULT_GROUP_STYLE, text: styleOf(titleStyle) });
+  const clusterLook = (g: DataCluster) => ({ style: opts.clusterStyle?.(g) ?? theme?.container ?? DEFAULT_CLUSTER_STYLE, text: styleOf(titleStyle) });
   const footprints = new Map([...placedAt, ...seeds.map((s) => [s.id, grownBy(placedAt.get(s.id)!, s.margin)] as const)]);
-  // Regions and group boxes first, so a box never paints over what it holds.
+  // Regions and cluster boxes first, so a box never paints over what it holds.
   specs.push(...containerSpecs(regions, placedAt, theme, font.fontFamily));
-  specs.push(...groupSpecs(groups, footprints, groupLook, wireLabels(edges, edgeCtx)));
+  specs.push(...clusterSpecs(clusters, footprints, clusterLook, wireLabels(edges, edgeCtx)));
   for (const [i, n] of data.nodes.entries()) {
     const seed = seeds[i]!.bounds;
     const at = placedAt.get(n.id)!;
@@ -264,33 +264,33 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
 
 /**
  * Lay out what layout sees: every node outside a boxed region, each outermost
- * boxed region as one node, and the groups and fitted containers around
+ * boxed region as one node, and the clusters and fitted containers around
  * them. An edge with an end inside a boxed region ranks against the
  * outermost one, and one with both ends inside the same one ranks nothing.
  */
 function layOut(
   seeds: readonly GraphNode[],
   edges: readonly DataEdge[],
-  groups: readonly ResolvedGroup[],
+  clusters: readonly ResolvedCluster[],
   boxes: ContainerLayout,
   opts: DiagramSceneOptions,
   room: (e: DataEdge) => EdgeLabelRoom | null,
 ): { placed: Map<string, Rect>; plan: LayoutPlan | null; remapped: ReadonlySet<DataEdge> } {
-  const graphGroups: GraphGroup[] = [...groups.map((g) => ({
-    id: g.group.id,
+  const graphClusters: GraphCluster[] = [...clusters.map((g) => ({
+    id: g.cluster.id,
     members: g.members,
     inset: g.inset,
     ...(g.minWidth !== undefined ? { minWidth: g.minWidth } : {}),
     ...(g.parent !== undefined ? { parent: g.parent } : {}),
-    ...(g.group.reorder !== undefined ? { ordered: g.direct } : {}),
-  })), ...boxes.groups];
+    ...(g.cluster.reorder !== undefined ? { ordered: g.direct } : {}),
+  })), ...boxes.clusters];
   const visible = [...seeds.filter((s) => !boxes.hidden.has(s.id)), ...boxes.nodes];
   const seedOf = new Map(visible.map((n) => [n.id, n]));
-  for (const [id, group] of boxes.groupOf) seedOf.get(id)!.group = group;
-  for (const g of groups) {
+  for (const [id, cluster] of boxes.clusterOf) seedOf.get(id)!.cluster = cluster;
+  for (const g of clusters) {
     for (const m of g.direct) {
       const seed = seedOf.get(m);
-      if (seed !== undefined) seed.group = g.group.id;
+      if (seed !== undefined) seed.cluster = g.cluster.id;
     }
   }
   const remapped = new Set<DataEdge>();
@@ -305,7 +305,7 @@ function layOut(
     return [{ ...rest, from, to, ...(from === e.from && e.fromPort ? { fromPort: e.fromPort } : {}),
       ...(to === e.to && e.toPort ? { toPort: e.toPort } : {}) }];
   });
-  const graph = graphOf(visible, expandGroupEdges(graphEdges, graphGroups), graphGroups);
+  const graph = graphOf(visible, expandClusterEdges(graphEdges, graphClusters), graphClusters);
   const layout: LayoutFn | null = typeof opts.layout === 'function' ? opts.layout
     : opts.layout === 'none' ? null
     : layoutOf(opts.layout ?? 'layered');

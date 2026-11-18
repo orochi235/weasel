@@ -1,10 +1,11 @@
+import type { Rect } from '@weasel-js/geom';
 import type { RefObject } from 'react';
-import type { ViewTransform } from '../instrument/types';
+import type { ViewTransform2D } from '../instrument/types';
 import type { TrialInfo } from '../state/types';
 import type { SerializedMarkHistory } from './history';
 import type { MarkStyle, PaintableMark } from './paint';
 import type { MarkScene } from './store';
-import type { ContentWindow } from './view';
+import type { ContentSize, ContentWindow } from './view';
 
 /** A point in fractions of a target's content box. */
 export interface FracPoint {
@@ -16,12 +17,7 @@ export interface FracPoint {
  *
  *  Fractions rather than pixels because a mark must survive a change of render
  *  resolution: the picture gets bigger, the mark stays on the same feature. */
-export interface FracRect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
+export type FracRect = Rect;
 
 /** What shape a mark is. The kinds map onto weasel's own tools; an arrow is a
  *  line carrying an end marker, not a separate geometry. A point is zero-size
@@ -150,7 +146,7 @@ export interface AnnotationTargetInfo {
   id: string;
   /** Intrinsic content size in CSS pixels at zoom 1 — the box fractions are
    *  fractions *of*, and the target's world. */
-  content: { w: number; h: number };
+  content: ContentSize;
   /** Config keys whose change means a stored position no longer refers to the
    *  same picture. labkit snapshots and compares them without knowing what any
    *  of them mean. */
@@ -169,7 +165,7 @@ export interface AnnotationTarget extends AnnotationTargetInfo {
   /** The element the overlay tracks and takes input from. */
   ref: RefObject<HTMLElement | null>;
   /** The pane's camera, mirrored so marks pan and zoom with what they mark. */
-  view?: ViewTransform;
+  view?: ViewTransform2D;
   /** For an element that scrolls its content, the part of the content box its
    *  own box shows, in content units: its scroll offset and its layout size.
    *  Ignored when `view` is given. Default: the whole content box. The overlay
@@ -183,8 +179,8 @@ export interface AnnotationTarget extends AnnotationTargetInfo {
  *  debounced by the time it arrives. A trial shows an empty body until `load`
  *  settles. */
 export interface AnnotationStorage {
-  load: () => Promise<SerializedAnnotations | null | undefined>;
-  save: (doc: SerializedAnnotations) => void;
+  load: () => Promise<SerializedMarkStore | null | undefined>;
+  save: (doc: SerializedMarkStore) => void;
 }
 
 /** The annotation tools a lab's rail can carry. */
@@ -229,7 +225,7 @@ export interface AnnotationsCapability<TS = unknown, TC = unknown> {
 /** A persisted mark set. Versioned by this arc rather than by labkit's
  *  document migrations, which only ever reach top-level document sections and
  *  never into a trial's state. */
-export interface SerializedAnnotations {
+export interface SerializedMarkStore {
   version: 1;
   /** One serialized scene per target that has ever held a mark. */
   scenes: Record<string, unknown>;
@@ -249,7 +245,7 @@ export interface AnnotationsApi {
   /** The scene a target's marks live in, created on first ask. One per target
    *  because a pane's hit-test, marquee and paint walk the whole scene they
    *  are given: a shared one would put a neighbour's marks under the pointer. */
-  sceneFor(target: string): MarkScene;
+  openScene(target: string): MarkScene;
   /** The targets the instrument declares, in declaration order. Chrome needs
    *  the list and cannot get it from the capability, which wants instrument
    *  state the chrome context does not carry. */
@@ -309,5 +305,5 @@ export interface AnnotationsApi {
   remove(id: string): void;
 
   /** A JSON-safe snapshot for `record.state`. */
-  toJSON(): SerializedAnnotations;
+  toJSON(): SerializedMarkStore;
 }

@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { batchCut, cutKeeps, ringPlanes, type BatchCut, type ClipRect } from './batchClip';
+import { batchCut, cutKeeps, ringPlanes, type BatchCut, type ClipBox } from './batchClip';
 import { BatchStage, FLOATS_PER_VERTEX as F } from './batchStage';
 import { runs, spread, tally, timeoutFor, type Pt } from './pbt.fixture';
 
@@ -55,7 +55,7 @@ const quad: fc.Arbitrary<Pt[]> = fc.oneof(
 );
 const mesh = fc.array(fc.tuple(pt, pt, pt), { minLength: 1, maxLength: 3 });
 
-const clipRect: fc.Arbitrary<ClipRect> = fc.tuple(spread(-300, 100), spread(-300, 100), spread(0, 600), spread(0, 600))
+const clipBox: fc.Arbitrary<ClipBox> = fc.tuple(spread(-300, 100), spread(-300, 100), spread(0, 600), spread(0, 600))
   .map(([x0, y0, w, h]) => ({ x0, y0, x1: x0 + w, y1: y0 + h }));
 
 /** A regular polygon's planes, at most eight edges. */
@@ -67,7 +67,7 @@ const convex = fc.record({ n: fc.integer({ min: 3, max: 8 }), r: spread(20, 500)
 
 const cut: fc.Arbitrary<BatchCut | null> = fc.oneof(
   { weight: 1, arbitrary: fc.constant(null) },
-  { weight: 4, arbitrary: fc.record({ rect: fc.option(clipRect, { nil: null }), planes: fc.array(convex, { maxLength: 2 }), slanted: fc.boolean() })
+  { weight: 4, arbitrary: fc.record({ rect: fc.option(clipBox, { nil: null }), planes: fc.array(convex, { maxLength: 2 }), slanted: fc.boolean() })
     .map(({ rect, planes, slanted }) => batchCut(rect, planes, slanted)) },
 );
 

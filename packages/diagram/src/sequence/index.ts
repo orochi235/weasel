@@ -17,7 +17,7 @@ export {
 } from './authorSteps';
 export {
   sequenceLayout, type SeqActivationPlace, type SeqBoxPlace, type SeqFragmentPlace, type SeqHeadPlace, type SeqLifelinePlace,
-  type SeqMessagePlace, type SeqNotePlace, type SeqRect, type SequenceLayout, type SequenceLayoutOptions, type SeqSlot,
+  type SeqMessagePlace, type SeqNotePlace, type SequenceLayout, type SequenceLayoutOptions, type SeqSlot,
 } from './layout';
 export { SEQUENCE_ROLES, sequenceSpecs, type SequenceSpecsOptions } from './specs';
 export {
@@ -29,7 +29,7 @@ export {
   type SequenceEditOptions,
 } from './commit';
 export { SEQUENCE_AFFORDANCE_KIND, SEQUENCE_LAYER_ID, sequenceScratchOf, type SequenceScratch } from './layer';
-export { GRAB_SEQUENCE_ACTION_ID, SEQUENCE_DRAG_ACTION_ID, createSequenceDragAction, diagramSequence } from './actions';
+export { GRAB_SEQUENCE_ACTION_ID, DRAG_SEQUENCE_ACTION_ID, createSequenceDragAction, createDiagramSequenceContribution } from './actions';
 export {
   ADD_MARK_ACTION_ID, ADD_NOTE_ACTION_ID, ADD_PARTICIPANT_ACTION_ID, NOTE_OVER_REACH, createAddMarkAction, createAddNoteAction,
   createAddParticipantAction,

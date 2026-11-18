@@ -1,5 +1,5 @@
 import {
-  boxToBox,
+  rectToRect,
   boundsOfPath,
   coordsFrom,
   lerp,
@@ -16,7 +16,7 @@ import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
  * on `Path` directly. `getBounds` defers to the same `boundsOfPath` kernel
  * the rest of the kit uses.
  *
- * `remapBounds` mirrors `scalePathToBounds` but takes `src` explicitly: the
+ * `remapBounds` mirrors `fitPathToRect` but takes `src` explicitly: the
  * resize hook knows the group's origin AABB and uses it for every leaf,
  * instead of each leaf scaling against its own AABB (which would ignore
  * group context).
@@ -25,7 +25,7 @@ export const pathPoseDescriptor: PoseDescriptor<Path> = {
   getBounds: (path) => boundsOfPath(path),
   remapBounds: (path, src, dst) => transformPath(
     path,
-    boxToBox(src.x, src.y, src.width, src.height, dst.x, dst.y, dst.width, dst.height),
+    rectToRect(src.x, src.y, src.width, src.height, dst.x, dst.y, dst.width, dst.height),
   ),
   fromBounds: (b) => ({ kind: 'rect', x: b.x, y: b.y, width: b.width, height: b.height }),
   translate: (path, dx, dy) => translatePath(path, dx, dy),

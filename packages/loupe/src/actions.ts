@@ -21,7 +21,7 @@ export const LOUPE_PICK_ID = 'loupe.pick';
 
 /** How fast the wheel walks the magnification. Gentler than the pan-zoom
  *  wheel: the lens' whole range is one order of magnitude. */
-export const WHEEL_RATE = 0.002;
+export const LOUPE_WHEEL_RATE = 0.002;
 
 /** What the aim actions do to a live loupe. Every member is read through the
  *  object on each invocation, so one stable instance serves the life of the

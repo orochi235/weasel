@@ -12,9 +12,9 @@ import { SceneCanvas } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import type { Scene } from '@weasel-js/core/engine';
 import { DEFAULT_SHAPE_PAINT } from './shared/styleOptions';
-import { shapeToolKitPreset } from '../presets/tools';
+import { shapeToolsOfferedPreset } from '../presets/tools';
 
-const KIT = [shapeToolKitPreset];
+const KIT = [shapeToolsOfferedPreset];
 
 type D = Record<string, unknown>;
 type L = 'main';

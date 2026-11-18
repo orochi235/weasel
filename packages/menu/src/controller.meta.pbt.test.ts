@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { createMenuController, SUBMENU_OPEN_MS, type MenuController, type MenuScheduler } from './controller';
+import { createMenuController, SUBMENU_OPEN_MS, type MenuController, type Scheduler } from './controller';
 import type { MenuEntry } from './entries';
 import { withLinks } from './links';
 import type { MenuDirection } from './placement';
@@ -36,7 +36,7 @@ interface Driven {
   advance(ms: number): void;
 }
 
-function fakeScheduler(): { s: MenuScheduler; advance(ms: number): void } {
+function fakeScheduler(): { s: Scheduler; advance(ms: number): void } {
   let now = 0;
   let timers: { at: number; fn: () => void }[] = [];
   return {

@@ -5,7 +5,7 @@
 import type { Bounds } from '@weasel-js/routing';
 import type { NodeId, Scene } from '../scene/types';
 import { pageAt, pageHolding, pageOfBounds, type PlacedPage } from './pages';
-import { pageNodeOf, pageOfNode, pageRunOf, placedPagesOf, type PageTreeReader } from './pageNodes';
+import { pageNodeOf, pageIdOf, pageRunOf, placedPagesOf, type PageTreeReader } from './pageNodes';
 import type { AnyScene } from 'core/scene/anyScene';
 
 /** Whether the scene's page run lets content sit outside every page. `false` in a scene without pages. */
@@ -29,7 +29,7 @@ export function isFollower(node: { readonly dependsOn?: unknown } | undefined): 
 export function followedPage(
   scene: PageTreeReader,
   node: { readonly dependsOn?: unknown } | undefined,
-  pageOf: (id: NodeId) => string | null = (id) => pageOfNode(scene, id),
+  pageOf: (id: NodeId) => string | null = (id) => pageIdOf(scene, id),
 ): string | null | undefined {
   if (!isFollower(node)) return undefined;
   const pages = new Set((node!.dependsOn as NodeId[]).map(pageOf));
@@ -86,7 +86,7 @@ export function followerLandings(
       if (landed.has(at)) return landed.get(at)!;
       if (byId.has(at)) return resolve(byId.get(at)!);
     }
-    return pageOfNode(scene, dep);
+    return pageIdOf(scene, dep);
   };
   const resolve = (f: FollowerOf): string | null => {
     if (out.has(f.id)) return out.get(f.id)!;
@@ -125,7 +125,7 @@ export function rehomedFollowers<TData, TLayer extends string, TPose>(
   };
   visit(run);
   for (const [id, page] of followerLandings(scene, landed, followers)) {
-    if (page === pageOfNode(scene, id as NodeId)) continue;
+    if (page === pageIdOf(scene, id as NodeId)) continue;
     const home = homeOfPage(scene, page);
     if (home !== null) out.set(id as NodeId, home);
   }

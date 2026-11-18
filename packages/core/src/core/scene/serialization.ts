@@ -3,7 +3,7 @@
  * two readers that turn one back into layer records and node specs.
  */
 import {
-  NODE_FN_FIELDS, fnKeysOf, type FnBearingNode, type NodeFnField,
+  NODE_FN_FIELDS, fnKeysOf, type FnBearingNode, type NodeFnField, type NodeFnFieldName,
 } from './nodeFnFields';
 import type { SerializedDoc } from './docValues';
 import { treePreorder } from './treeOrder';
@@ -14,6 +14,7 @@ import { withKitRegistry } from './kitRegistry';
 import { assertSnapshotShape, SnapshotKeyError } from './snapshotShape';
 import { detach } from './owned';
 import { statedFields } from './statedFields';
+import type { SavedNode } from './sceneRegistry';
 import type {
   AddNodeSpec, LayerRecord, Node, NodeId, SavedScene, SceneRegistry, SerializedLayer, SerializedNode, SerializedNodeV1,
   SerializedScene,
@@ -127,7 +128,7 @@ export interface SpecsFromSerializedOptions<TData, TLayer extends string, TPose>
  *  and the key. */
 export interface SkippedKey {
   id: NodeId;
-  field: keyof SceneRegistry<unknown>;
+  field: NodeFnFieldName;
   key: string;
 }
 
@@ -143,9 +144,23 @@ export function specsFromSerialized<TData, TLayer extends string, TPose>(
   opts: SpecsFromSerializedOptions<TData, TLayer, TPose> = {},
 ): AddNodeSpec<TData, TLayer, TPose>[] {
   assertSnapshotShape(json);
+  json = upgradedSave(json, registry);
   const specs = currentSpecs(json, withKitRegistry(registry), opts);
   if (json.version === 3) return specs;
   return localizeWorldPoses(specs, opts.composition ?? (RIGID_POSE_COMPOSITION as PoseComposition<TPose>));
+}
+
+/** `json` with each node passed through the registry's `upgrades`, in key order, and checked again. */
+function upgradedSave<TData, TLayer extends string, TPose>(
+  json: SavedScene<TData, TLayer, TPose>,
+  registry: Pick<SceneRegistry<TPose, TData, TLayer>, 'upgrades'>,
+): SavedScene<TData, TLayer, TPose> {
+  const upgrades = Object.values(registry.upgrades ?? {});
+  if (upgrades.length === 0) return json;
+  const nodes = (json.nodes as readonly SavedNode[]).map((n) => upgrades.reduce((node, up) => up(node), n));
+  const out = { ...json, nodes } as unknown as SavedScene<TData, TLayer, TPose>;
+  assertSnapshotShape(out);
+  return out;
 }
 
 /** `json`'s nodes as specs, with every pose as the save stored it. */
@@ -156,7 +171,7 @@ function currentSpecs<TData, TLayer extends string, TPose>(
 ): AddNodeSpec<TData, TLayer, TPose>[] {
   const entries = json.nodes.map((n) => ({
     n: n as Omit<SerializedNode<TData, TLayer, TPose>, 'kind'>,
-    kind: json.version === 1 ? nodeKindOf(1, n, opts.classifyV1) : nodeKindOf(2, n),
+    kind: json.version === 1 ? savedNodeKind(1, n, opts.classifyV1) : savedNodeKind(2, n),
   }));
   return entries.map(({ n, kind }) => {
     const spec: AddNodeSpec<TData, TLayer, TPose> = {
@@ -201,7 +216,7 @@ function clipsAsV1(version: 1 | 2 | 3, spec: { kind: string; clipFromPose?: unkn
 
 /** The kind a saved node loads as: its own from version 2; on version 1 a `leaf` is a
  *  mark and a `container` goes to `classify`, or is a group without one. */
-export function nodeKindOf<TData, TLayer extends string, TPose>(
+export function savedNodeKind<TData, TLayer extends string, TPose>(
   version: 1 | 2,
   n: SerializedNode<TData, TLayer, TPose> | SerializedNodeV1<TData, TLayer, TPose>,
   classify?: V1Classifier<TData, TLayer, TPose>,

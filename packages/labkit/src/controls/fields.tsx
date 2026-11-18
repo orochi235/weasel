@@ -1,10 +1,10 @@
-import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/paint';
+import { hexAlpha, toHex8, withAlpha01 } from '@weasel-js/paint';
 import {
   type PrefBoundReader,
   type PrefLeaf,
   type PrefNumber,
-  prefLeafValue,
-  prefNumberAt,
+  prefBoundedNumber,
+  prefValueOrDefault,
 } from '@weasel-js/prefs';
 import {
   type LiveControl,
@@ -15,7 +15,7 @@ import {
   withDrafts,
 } from '@weasel-js/ui/components/Prefs';
 import { PropertyControl, type PropertyControlProps } from '@weasel-js/ui/components/Properties';
-import { valueAtPath } from '../config/path';
+import { configValueAt } from '../config/path';
 import { useFieldChoices } from './fieldChoices';
 
 const unwritten = (): void => {};
@@ -46,9 +46,9 @@ export function extra<T>(leaf: PrefLeaf, key: LeafExtra): T | undefined {
   return (leaf as unknown as Record<string, T | undefined>)[key];
 }
 
-/** What the row of `leaf` at `path` shows of `config` ({@link prefLeafValue}). */
+/** What the row of `leaf` at `path` shows of `config` ({@link prefValueOrDefault}). */
 export function leafValueAt(config: unknown, path: string, leaf: PrefLeaf): unknown {
-  return prefLeafValue(leaf, valueAtPath(config, path));
+  return prefValueOrDefault(leaf, configValueAt(config, path));
 }
 
 /**
@@ -73,7 +73,8 @@ export function labField(
 ): PropertyControlProps | null {
   // `prefFieldProps` answers for the kinds ui draws that are no built-in of the schema's, the font pickers.
   if (given.kind === 'paint' || given.kind === 'object') return null;
-  const leaf = given.kind === 'number' && read ? prefNumberAt(given as PrefNumber, read) : given;
+  const leaf =
+    given.kind === 'number' && read ? prefBoundedNumber(given as PrefNumber, read) : given;
   const state = { value, setValue: write, fields, disabled };
   const settled = prefFieldProps(
     leaf,
@@ -139,7 +140,7 @@ export function BareControl({
       const keep =
         (send: (hex: string) => void) =>
         (rgb: string): void =>
-          send(field.alpha ? withAlpha01(rgb, getAlpha01(stored)) : rgb);
+          send(field.alpha ? withAlpha01(rgb, hexAlpha(stored)) : rgb);
       return (
         <PropertyControl
           {...field}

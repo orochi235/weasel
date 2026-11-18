@@ -1,4 +1,4 @@
-import type { MenuEntry, MenuSide, Rect } from '@weasel-js/menu';
+import type { MenuEntry, MenuSide, MenuRect } from '@weasel-js/menu';
 import { mergeMenuDefs, pickMenu } from './pickMenu';
 import { resolveMenu, type MenuSources } from './resolveMenu';
 import type { MenuDef, MenuHit, OwnedMenuDef } from './types';
@@ -12,7 +12,7 @@ export interface MenuOpenRequest {
   /** Viewport point the menu is placed at, unless `under` is set. */
   client: Point;
   /** Viewport rect of the button the menu hangs from: placed below it, or above when below does not fit. */
-  under?: Rect;
+  under?: MenuRect;
   /** With `under`: the side of the button it opens on when it fits there, flipping to the opposite side when it does not.
    *  Default below. The canvas HUD menu host places below only and ignores it. */
   side?: MenuSide;
@@ -27,7 +27,7 @@ export interface OpenMenu {
   seq: number;
   entries: readonly MenuEntry[];
   client: Point;
-  under?: Rect;
+  under?: MenuRect;
   /** `MenuOpenRequest.side`, carried to the renderer. */
   side?: MenuSide;
   world?: Point;

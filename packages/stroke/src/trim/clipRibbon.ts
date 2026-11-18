@@ -22,7 +22,7 @@ import type { Stroke } from '@weasel-js/paint';
 import { dashPolylines, type MeasuredPolyline, polylinesLength } from '../tessellate/dash';
 import { expandPolyline, type RibbonOut, type RibbonStyle } from '../tessellate/expandPolyline';
 import { untrimmedWorldLength } from '../tessellate/ribbonWindow';
-import { inkWidth, ribbonMesh, ribbonStyle, strokePolylines } from '../tessellate/stroke';
+import { widthHasInk, ribbonMesh, ribbonStyle, strokePolylines } from '../tessellate/stroke';
 import { coordsOutOfMetric, polylineIntoMetric, polylineOutOfMetric, type StrokeMetric } from '../tessellate/metric';
 import { opened } from './windowPolylines';
 
@@ -100,7 +100,7 @@ export function clipRibbon(
     trim: new Float32Array(0), subpaths: [], pieces: [], style, startInset: si, endInset: ei, margin: gap / 4,
     ...(opts.metric ? { metric: opts.metric } : {}),
   };
-  if (!inkWidth(style.width)) return ribbon;
+  if (!widthHasInk(style.width)) return ribbon;
   const metric = opts.metric;
   const strokeIn = strokePolylines(path, stroke, style.width, opts.flattenTolerance, metric);
   const polylines = strokeIn.polylines.map((pl) => (metric && !strokeIn.rectInMetric ? into(pl, metric) : pl));

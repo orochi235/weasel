@@ -3,7 +3,7 @@
  * one strip, a `panel` in a box, and the rest as rows under their headings.
  */
 import { Fragment, type ReactNode } from 'react';
-import { prefAsBox, prefTabRuns } from '@weasel-js/prefs';
+import { prefDrawsAsBox, prefTabRuns } from '@weasel-js/prefs';
 import { Bar } from '../Bar/Bar';
 import { BarItem } from '../Bar/barParts';
 import { MotifFrame } from '../MotifFrame';
@@ -230,7 +230,7 @@ function placed(items: ReadonlyArray<DrawnSection | DrawnRow | undefined>, marks
     const { section, content, hidden, off, framed } = step.item;
     const attrs = { ...(sectionNamed(section) ? selectionAttrs(section.key, selectedOnly(marks)) : {}), ...hiddenAttrs(hidden === true) };
     const key = `section:${section.key}`;
-    if (prefAsBox(section.as) && framed) {
+    if (prefDrawsAsBox(section.as) && framed) {
       out.push(
         <MotifFrame
           key={key}

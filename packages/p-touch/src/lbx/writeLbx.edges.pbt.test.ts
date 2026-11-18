@@ -14,7 +14,7 @@ import { sliceAtCuts } from '../print';
 import { TAPES } from '../tape';
 import { finiteDeep, objectCommand, runs, shape, tape, timeoutFor } from '../pbt.fixture';
 import { writeLbx } from './writeLbx';
-import { lbxObjects } from './carried';
+import { lbxObjectsCommand } from './carried';
 
 const edge = fc.oneof(
   fc.constantFrom(0, -0, 1e308, -1e308, 1e200, Number.MIN_VALUE, -5e-324, 2 ** 53 + 1, Number.NaN, Infinity, -Infinity),
@@ -22,16 +22,16 @@ const edge = fc.oneof(
 );
 const width = fc.oneof(fc.constantFrom(0, -1, 1e308, Infinity, Number.NaN, Number.MIN_VALUE), fc.double({ min: 0.01, max: 20, noNaN: true }));
 
-const edgeRect: fc.Arbitrary<DrawCommand> = fc.record({ x: edge, y: edge, w: edge, h: edge, stroke: fc.option(width, { nil: undefined }) })
-  .map(({ x, y, w, h, stroke }) => ({
+const edgeRect: fc.Arbitrary<DrawCommand> = fc.record({ x: edge, y: edge, width: edge, height: edge, stroke: fc.option(width, { nil: undefined }) })
+  .map(({ x, y, width: w, height: h, stroke }) => ({
     kind: 'path', path: { kind: 'rect', x, y, width: w, height: h }, fill: { paint: { color: '#000000' } },
     ...(stroke !== undefined ? { stroke: { paint: { color: '#000000' }, width: stroke } } : {}),
   }));
 const edgeGroup = (children: fc.Arbitrary<DrawCommand[]>): fc.Arbitrary<DrawCommand> =>
   fc.record({ s: fc.oneof(edge, fc.constant(1)), tx: edge, ty: edge, children })
     .map(({ s, tx, ty, children }) => ({ kind: 'group', transform: mat3.scaled(mat3.translated(mat3.identity(), tx, ty), s, s), children }));
-const carrier: fc.Arbitrary<DrawCommand> = fc.record({ x: edge, y: edge, w: edge, h: edge })
-  .map(({ x, y, w, h }) => lbxObjects([{
+const carrier: fc.Arbitrary<DrawCommand> = fc.record({ x: edge, y: edge, width: edge, height: edge })
+  .map(({ x, y, width: w, height: h }) => lbxObjectsCommand([{
     type: 'rect', shape: 'RECTANGLE', position: { x, y, width: w, height: h },
     pen: { style: 'NULL' }, brush: { style: 'SOLID', color: '#000000' },
   }]));

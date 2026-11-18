@@ -1,7 +1,7 @@
 import { getOwn, setOwn } from '@weasel-js/registry';
 import { mat3, wrapAngle, type GlMat3 } from '@weasel-js/geom';
 import { compose, resolveSkeleton, toMat3 } from './resolveSkeleton';
-import type { Joint, Pose, Skeleton } from './types';
+import type { Joint, SkeletonPose, Skeleton } from './types';
 
 const TAU = Math.PI * 2;
 
@@ -43,7 +43,7 @@ export interface SolveIkOptions {
 /** What {@link solveIk} returns. */
 export interface IkResult {
   /** The input pose with each chain joint's rotation replaced. */
-  pose: Pose;
+  pose: SkeletonPose;
   /** Tip-to-target distance the solve ended at. */
   distance: number;
   /** Whether `distance` is within the tolerance. False for a target out of
@@ -74,7 +74,7 @@ const cross = (ax: number, ay: number, bx: number, by: number) => ax * by - ay *
 
 /**
  * Rotate a joint chain so its tip reaches `target`, returning the result as an
- * ordinary {@link Pose}. Weighting the IK against an animated pose is
+ * ordinary {@link SkeletonPose}. Weighting the IK against an animated pose is
  * `animator.hold({ target: rig.target, value: solved, weight: w })` beside the
  * clip at weight `1 - w`; with `axes: jointAxes(skeleton, joints)` on both, the
  * rest of the body is left to whatever else holds it.
@@ -86,7 +86,7 @@ const cross = (ax: number, ay: number, bx: number, by: number) => ax * by - ay *
  * A target beyond the chain's reach straightens the chain toward it. Throws on a `target`,
  * `tip` or `pole` that is not finite.
  */
-export function solveIk(skeleton: Skeleton, pose: Pose, options: SolveIkOptions): IkResult {
+export function solveIk(skeleton: Skeleton, pose: SkeletonPose, options: SolveIkOptions): IkResult {
   const { tip, target, limits } = options;
   checkPoints(options);
   const maxIterations = options.iterations ?? 32;
@@ -122,8 +122,8 @@ export function solveIk(skeleton: Skeleton, pose: Pose, options: SolveIkOptions)
       worlds.push(parent);
     }
   };
-  const pivot = (i: number) => mat3.apply(worlds[i], 0, 0);
-  const tipWorld = () => mat3.apply(worlds[n - 1], tip.x, tip.y);
+  const pivot = (i: number) => mat3.transformPoint(worlds[i], 0, 0);
+  const tipWorld = () => mat3.transformPoint(worlds[n - 1], tip.x, tip.y);
   /** The point joint `i` swings: the next joint's pivot, or the tip. */
   const next = (i: number) => (i + 1 < n ? pivot(i + 1) : tipWorld());
 
@@ -132,9 +132,9 @@ export function solveIk(skeleton: Skeleton, pose: Pose, options: SolveIkOptions)
   const aim = (i: number, effector: [number, number], goal: IkPoint): boolean => {
     const inv = mat3.invert(i === 0 ? base : worlds[i - 1]);
     if (!inv) return false;
-    const [ox, oy] = mat3.apply(inv, ...pivot(i));
-    const [ex, ey] = mat3.apply(inv, ...effector);
-    const [gx, gy] = mat3.apply(inv, goal.x, goal.y);
+    const [ox, oy] = mat3.transformPoint(inv, ...pivot(i));
+    const [ex, ey] = mat3.transformPoint(inv, ...effector);
+    const [gx, gy] = mat3.transformPoint(inv, goal.x, goal.y);
     if (Math.hypot(ex - ox, ey - oy) < 1e-9 || Math.hypot(gx - ox, gy - oy) < 1e-9) return false;
     const want = wrapAngle(rot[i] + Math.atan2(gy - oy, gx - ox) - Math.atan2(ey - oy, ex - ox), 'min');
     rot[i] = clampAngle(want, limits && getOwn(limits, chain[i].name));
@@ -147,7 +147,7 @@ export function solveIk(skeleton: Skeleton, pose: Pose, options: SolveIkOptions)
     return Math.hypot(x - target.x, y - target.y);
   };
   const result = (iterations: number): IkResult => {
-    const out: Pose = { ...pose };
+    const out: SkeletonPose = { ...pose };
     chain.forEach((joint, i) => { setOwn(out, joint.name, { ...getOwn(pose, joint.name), rotation: rot[i] }); });
     const d = distance();
     return { pose: out, distance: d, reached: d <= tolerance, iterations };

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { solid } from '@weasel-js/paint';
-import { asNodeId, PointerContextProvider, SceneCanvas, dragPanContribution, useScene, viewPreset } from '@weasel-js/core';
+import { asNodeId, PointerContextProvider, SceneCanvas, createDragPanContribution, useScene, viewPreset } from '@weasel-js/core';
 import { MinimapCanvas, createMinimapContribution } from '@weasel-js/minimap';
 import type { CanvasSize, Fill, View } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -15,7 +15,7 @@ interface Pose { x: number; y: number; width: number; height: number }
 const MAIN_W = 600, MAIN_H = 400;
 const MINI_W = 200, MINI_H = 140;
 /** The in-surface minimap: a view in the main canvas's top-right corner. */
-const INSET = (_outer: View, dims: CanvasSize) => ({ x: dims.width - 168, y: 8, w: 160, h: 112 });
+const INSET = (_outer: View, dims: CanvasSize) => ({ x: dims.width - 168, y: 8, width: 160, height: 112 });
 
 const COLORS = ['#7fb069', '#a48bd4', '#f0e0a8', '#e07a7a', '#5fb0c2'];
 
@@ -49,7 +49,7 @@ export function MinimapDemo() {
   const [mainSize, setMainSize] = useState<CanvasSize>({ width: MAIN_W, height: MAIN_H });
   // Built once: the entry holds the state its layers read.
   const inset = useMemo(() => createMinimapContribution({ rect: INSET }), []);
-  const ambient = useMemo(() => [inset, dragPanContribution()], [inset]);
+  const ambient = useMemo(() => [inset, createDragPanContribution()], [inset]);
 
   return (
     <PointerContextProvider>

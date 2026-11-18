@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PathBuilder, polygonFromPoints, rectPath } from './builder';
 import { boundsOfPath } from './bounds';
-import { scalePathToBounds, translatePath } from './transform';
+import { fitPathToRect, translatePath } from './transform';
 
 describe('translatePath', () => {
   it('translates a RectPath without allocating coords', () => {
@@ -29,16 +29,16 @@ describe('translatePath', () => {
   });
 });
 
-describe('scalePathToBounds', () => {
+describe('fitPathToRect', () => {
   it('scales a RectPath to the target rect verbatim', () => {
     const r = rectPath(10, 20, 30, 40);
-    const t = scalePathToBounds(r, { kind: 'rect', x: 0, y: 0, width: 60, height: 80 });
+    const t = fitPathToRect(r, { kind: 'rect', x: 0, y: 0, width: 60, height: 80 });
     expect(t).toEqual({ kind: 'rect', x: 0, y: 0, width: 60, height: 80 });
   });
 
   it('scales a polygon\'s coords so its AABB matches the target', () => {
     const p = polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 50, y: 100 }]);
-    const t = scalePathToBounds(p, { kind: 'rect', x: 0, y: 0, width: 50, height: 200 });
+    const t = fitPathToRect(p, { kind: 'rect', x: 0, y: 0, width: 50, height: 200 });
     if (t.kind !== 'polygon') throw new Error('expected polygon');
     const b = boundsOfPath(t);
     expect(b.x).toBe(0);
@@ -51,7 +51,7 @@ describe('scalePathToBounds', () => {
 
   it('repositions the AABB origin', () => {
     const p = polygonFromPoints([{ x: 10, y: 10 }, { x: 20, y: 10 }, { x: 15, y: 20 }]);
-    const t = scalePathToBounds(p, { kind: 'rect', x: 100, y: 200, width: 10, height: 10 });
+    const t = fitPathToRect(p, { kind: 'rect', x: 100, y: 200, width: 10, height: 10 });
     if (t.kind !== 'polygon') throw new Error('expected polygon');
     const b = boundsOfPath(t);
     expect(b).toEqual({ kind: 'rect', x: 100, y: 200, width: 10, height: 10 });
@@ -61,7 +61,7 @@ describe('scalePathToBounds', () => {
     // A vertical line (width 0) scaled into a non-degenerate rect collapses
     // every x coord to the new x origin.
     const line = polygonFromPoints([{ x: 5, y: 0 }, { x: 5, y: 10 }]);
-    const t = scalePathToBounds(line, { kind: 'rect', x: 50, y: 0, width: 30, height: 20 });
+    const t = fitPathToRect(line, { kind: 'rect', x: 50, y: 0, width: 30, height: 20 });
     if (t.kind !== 'polygon') throw new Error('expected polygon');
     expect(t.coords[0]).toBe(50);
     expect(t.coords[2]).toBe(50);

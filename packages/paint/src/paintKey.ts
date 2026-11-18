@@ -7,6 +7,7 @@ import { tryParseColor } from './color';
 import { isSolidPaint } from './commandPaint';
 import { DEFAULT_MITER_LIMIT, type Fill, type Paint, type Stroke } from './paint';
 import { resolveFill, resolveStroke, type PaintedFill, type PaintedStroke } from './resolvePaint';
+import { createPart } from '@weasel-js/registry';
 
 /** `value` as JSON with every object's keys sorted and its `undefined`
  *  fields dropped, so field order and an explicit `undefined` cannot tell
@@ -20,8 +21,19 @@ function canonical(value: unknown): string {
   return `{${fields.join(',')}}`;
 }
 
-const structuralKeys = new WeakMap<object, string>();
-const strokeShapeKeys = new WeakMap<object, string>();
+const structuralKey = createPart((paint: object): string => canonical(paint));
+const strokeShapeKey = createPart((stroke: Stroke): string => {
+  const { paint: _paint, width, join, cap, miterLimit, align, dash, ...rest } = stroke;
+  return canonical({
+    ...rest,
+    width: width ?? 1,
+    join: join ?? 'miter',
+    cap: cap ?? 'butt',
+    miterLimit: miterLimit ?? DEFAULT_MITER_LIMIT,
+    align: align ?? 'center',
+    dash: dash ?? [],
+  });
+});
 
 /**
  * A key two paints share only if they draw the same. No paint at all is
@@ -36,12 +48,7 @@ const strokeShapeKeys = new WeakMap<object, string>();
 export function paintKey(paint: Paint | null | undefined): string {
   if (paint == null) return 'none';
   if (isSolidPaint(paint)) return `solid:${solidColorKey(paint.color, paint.opacity ?? 1)}`;
-  let key = structuralKeys.get(paint);
-  if (key === undefined) {
-    key = canonical(paint);
-    structuralKeys.set(paint, key);
-  }
-  return key;
+  return structuralKey(paint);
 }
 
 /** A solid's color by its channels with `opacity` folded into its alpha, as a renderer draws it, so `#fff` and
@@ -78,19 +85,5 @@ export function strokeHasInk(stroke: Stroke | null | undefined): stroke is Paint
  */
 export function strokeKey(stroke: Stroke | null | undefined): string {
   if (!strokeHasInk(stroke)) return 'none';
-  let shape = strokeShapeKeys.get(stroke);
-  if (shape === undefined) {
-    const { paint: _paint, width, join, cap, miterLimit, align, dash, ...rest } = stroke;
-    shape = canonical({
-      ...rest,
-      width: width ?? 1,
-      join: join ?? 'miter',
-      cap: cap ?? 'butt',
-      miterLimit: miterLimit ?? DEFAULT_MITER_LIMIT,
-      align: align ?? 'center',
-      dash: dash ?? [],
-    });
-    strokeShapeKeys.set(stroke, shape);
-  }
-  return `${shape}|${paintKey(stroke.paint)}`;
+  return `${strokeShapeKey(stroke)}|${paintKey(stroke.paint)}`;
 }

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { LabStore } from '../state/store';
 import { owningTrial } from './owningTrial';
 
@@ -36,4 +36,17 @@ export function useFocusPick(
       win?.removeEventListener('blur', onBlur);
     };
   }, [labBody, store, pick]);
+}
+
+/** The trial input last landed in while it is still one of `trialIds`, otherwise the first of them; and `focus`,
+ *  which moves it. */
+export function useFocusedTrial(
+  labBody: HTMLElement | null,
+  store: LabStore,
+  trialIds: readonly string[],
+): { focusedTrialId: string | null; focus: (trialId: string) => void } {
+  const [focusPick, setFocusPick] = useState<string | null>(null);
+  useFocusPick(labBody, store, setFocusPick);
+  const focusedTrialId = trialIds.find((id) => id === focusPick) ?? trialIds[0] ?? null;
+  return { focusedTrialId, focus: setFocusPick };
 }

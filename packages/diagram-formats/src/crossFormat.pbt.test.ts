@@ -7,7 +7,7 @@ import type { DiagramDocument, DiagramFormat, GraphPage } from './document';
 import { DIAGRAM_FORMATS, detectFormat } from './formats';
 import { DIAGRAM_JSON } from './jsonFormat';
 import { DIAGRAM_DOT } from './dot/format';
-import { DRAW_XML } from './drawXml/format';
+import { DIAGRAM_DRAW_XML } from './drawXml/format';
 import { DIAGRAM_MERMAID } from './mermaid/format';
 
 const RUNS = runs(100);
@@ -17,7 +17,7 @@ const readWith = async (format: DiagramFormat, text: string) => (await format.re
 const throughJson = (doc: DiagramDocument) => (DIAGRAM_JSON.read!(DIAGRAM_JSON.write!(doc).text) as { document: DiagramDocument }).document;
 
 const anyGraph = fc.boolean().chain((placed) => graphData({ placed, containers: true, endLabels: true, ports: true }));
-const TEXT_FORMATS = [DIAGRAM_DOT, DRAW_XML, DIAGRAM_MERMAID];
+const TEXT_FORMATS = [DIAGRAM_DOT, DIAGRAM_DRAW_XML, DIAGRAM_MERMAID];
 
 /** A node's text as both keep it: draw-style XML drops blank lines at either end, and reads a no-break space as a space. */
 function text(lines: readonly string[] | undefined): string[] {
@@ -44,7 +44,7 @@ describe('formats, across formats', () => {
   it('keeps ids, text, and edges from DOT to draw-style XML and back to DOT', async () => {
     await fc.assert(fc.asyncProperty(graphData({ placed: true }), async (data) => {
       const once = await readWith(DIAGRAM_DOT, DIAGRAM_DOT.write!(docOf(data)).text);
-      const xml = await readWith(DRAW_XML, DRAW_XML.write!(once).text);
+      const xml = await readWith(DIAGRAM_DRAW_XML, DIAGRAM_DRAW_XML.write!(once).text);
       const twice = await readWith(DIAGRAM_DOT, DIAGRAM_DOT.write!(xml).text);
       expect(shared(asGraph(twice.pages[0]!))).toEqual(shared(asGraph(once.pages[0]!)));
     }), RUNS);
@@ -61,7 +61,7 @@ describe('formats, across formats', () => {
           expect(format.write!(doc, { page: page.id }).text).toBe(format.write!({ pages: [page] }).text);
         });
       }
-      const xml = await readWith(DRAW_XML, DRAW_XML.write!(doc).text);
+      const xml = await readWith(DIAGRAM_DRAW_XML, DIAGRAM_DRAW_XML.write!(doc).text);
       expect(xml.pages.map((p) => [p.name, asGraph(p).data.nodes.map((n) => n.id)])).toEqual(
         doc.pages.map((p) => [p.name, asGraph(p).data.nodes.map((n) => n.id)]),
       );

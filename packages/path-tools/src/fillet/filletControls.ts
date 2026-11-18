@@ -13,7 +13,7 @@ import {
   type CornerShape,
   type PolygonPath, clamp,
 } from '@weasel-js/geom';
-import type { PrefGroup } from '@weasel-js/prefs';
+import type { PrefGroup } from '@weasel-js/prefs-schema';
 import { FILLET_SHAPE_OPTIONS } from './editFillet';
 
 /** How far the parameter slider reaches either side of the bevel; the

@@ -47,7 +47,7 @@ function sync(r: Real): void {
   expect(copy.toJSON()).toEqual(r.page.toJSON());
   expect(copy.renderOrderNodes().map((x) => x.id)).toEqual(r.page.renderOrderNodes().map((x) => x.id));
   const pageIds = scenePickIds(r.page), copyIds = scenePickIds(copy);
-  for (const x of r.page.renderOrderNodes()) expect(copyIds.idOf(x.id), x.id).toBe(pageIds.idOf(x.id));
+  for (const x of r.page.renderOrderNodes()) expect(copyIds.pickIdOf(x.id), x.id).toBe(pageIds.pickIdOf(x.id));
   for (const [px, py] of [[5.5, 5.5], [40.5, 20.5], [100.5, 60.5]] as const) {
     const q = pointPick(d, px, py, { x: 1, y: 1 });
     expect(pickWalk(scenePickSource(copy as never, { index: { descriptor: d } }), q))

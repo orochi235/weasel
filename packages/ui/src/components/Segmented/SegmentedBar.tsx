@@ -1,7 +1,7 @@
 import { type ReactElement, type ReactNode } from 'react';
 import {
-  selection,
-  selectionOfEach,
+  createSelectionModel,
+  createEachSelectionModel,
   soloFrom,
   stepsOf,
   type MultipleSelection,
@@ -106,7 +106,7 @@ interface Behavior {
   /** The ARIA a segment in `state` wears. */
   aria(state: SegmentState): Record<string, string | boolean | undefined>;
   press(index: number): void;
-  keys: Pick<UseRovingTabIndexOptions, 'tabStopIndex' | 'onNavigate' | 'onActivate'>;
+  keys: Pick<UseRovingTabIndexOptions, 'tabStopIndex' | 'onNavigate' | 'onAction'>;
   /** The selection, for a mode that has one. */
   model?: SelectionModel;
 }
@@ -123,9 +123,9 @@ function behaviorOf<V extends string | number>(
       if (item.onAction) item.onAction();
       else props.onAction?.(item.value);
     };
-    return { role: 'toolbar', aria: () => ({}), press: fire, keys: { onActivate: fire } };
+    return { role: 'toolbar', aria: () => ({}), press: fire, keys: { onAction: fire } };
   }
-  const model = props.mode === 'each' ? selectionOfEach(props.items) : selection<V>(props, items.map((it) => it.value));
+  const model = props.mode === 'each' ? createEachSelectionModel(props.items) : createSelectionModel<V>(props, items.map((it) => it.value));
   const keys = selectionRoving(model, items.length, usable);
   const press = (i: number): void => model.press(i);
   // Radios choose as the arrows move; segments that only take focus are toggle buttons.

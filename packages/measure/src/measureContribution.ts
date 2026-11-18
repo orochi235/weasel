@@ -2,8 +2,8 @@ import { ANY_MODS, hitPredicate } from '@weasel-js/gestures';
 import { nodeShapesOf, type Scene, type SurfaceContribution } from '@weasel-js/core';
 import type { Measurements } from './measurements';
 import { measureCommands } from './measureCommands';
-import { measureDragAction, measurePickAction } from './measureGestures';
-import { MEASURE_AFFORDANCE_KIND, measurementsLayer } from './measureLayer';
+import { measureDragAction, measurePickAction } from './measureActions';
+import { MEASURE_AFFORDANCE_KIND, createMeasureLayer } from './measureLayer';
 import { MEASURE_ACTION_IDS } from './actionIds';
 import { MEASURE_PAINTER } from './measurePainter';
 
@@ -16,11 +16,11 @@ const onMeasurement = hitPredicate((hit) => (hit as { kind?: string } | null | u
  * by, Delete, Clear — a readout binds buttons to. Install it with
  * `<SceneCanvas ambient={[…]}>`; `useMeasureTool` adds the measuring itself.
  */
-export function measurementsContribution(
+export function createMeasurementsContribution(
   scene: Scene<unknown, string, unknown>,
   ms: Measurements,
 ): SurfaceContribution {
-  const layer = measurementsLayer(scene, ms);
+  const layer = createMeasureLayer(scene, ms);
   return {
     id: 'weasel-measure',
     eligibility: { claimed: true },

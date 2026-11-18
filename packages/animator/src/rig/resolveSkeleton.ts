@@ -1,6 +1,6 @@
 import { getOwn } from '@weasel-js/registry';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
-import type { JointTransform, Pose, Skeleton } from './types';
+import type { JointTransform, SkeletonPose, Skeleton } from './types';
 
 /** bind + delta, field by field. Scale is multiplicative, the rest additive. */
 export function compose(bind: JointTransform, delta: Partial<JointTransform> | undefined): JointTransform {
@@ -34,7 +34,7 @@ export function toMat3(t: JointTransform): GlMat3 {
  * because that failure is otherwise invisible until a limb renders in the wrong
  * place.
  */
-export function resolveSkeleton(skeleton: Skeleton, pose: Pose): Map<string, GlMat3> {
+export function resolveSkeleton(skeleton: Skeleton, pose: SkeletonPose): Map<string, GlMat3> {
   const out = new Map<string, GlMat3>();
   for (const joint of skeleton.joints) {
     const local = toMat3(compose(joint.bind, getOwn(pose, joint.name)));

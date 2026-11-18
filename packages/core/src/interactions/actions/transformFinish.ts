@@ -64,7 +64,7 @@ export function commitTransformOps(deps: ActionDeps, ops: Op[], label: string): 
  *  when nothing finishes transforms, else a commit that finishes it first and
  *  returns whether it landed. A caller reads only `false` as refused, so a
  *  consumer `applyOps`, which returns nothing, is taken at its word. */
-export function transformApplyOps(deps: ActionDeps): ((ops: Op[], label: string) => boolean | void) | undefined {
+export function createTransformCommit(deps: ActionDeps): ((ops: Op[], label: string) => boolean | void) | undefined {
   if (!transformFinisher(deps)) return deps.applyOps;
   return (ops, label) => commitTransformOps(deps, ops, label);
 }

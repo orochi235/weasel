@@ -48,8 +48,8 @@ describe('openDrawPrefs', () => {
   it('reads a stored leaf by its path', () => {
     const backing = new Map<string, unknown>([[`${PREFS_PREFIX}view.gridDensity`, 40]]);
     const store = openDrawPrefs(createMemoryAdapter(backing));
-    expect(store.get('view.gridDensity')).toBe(40);
-    expect(store.get('view.gridVisible')).toBe(false);
+    expect(store.get('view.grid.spacing')).toBe(40);
+    expect(store.get('view.grid.visible')).toBe(false);
   });
 
   it('reads a stored surface map that is not a map as its default', () => {
@@ -85,9 +85,9 @@ describe('openDrawPrefs', () => {
       [`${PREFS_PREFIX}${VERSION_RECORD}`, 2],
     ]);
     const store = openDrawPrefs(createMemoryAdapter(backing));
-    expect(store.get('view.pathEditing.pathDirection')).toBe(true);
-    expect(store.get('view.pathEditing.pathFillets')).toBe(false);
-    expect(store.get('view.pathEditing.pathComb')).toBe(false);
+    expect(store.get('view.pathEditing.direction')).toBe(true);
+    expect(store.get('view.pathEditing.fillets')).toBe(false);
+    expect(store.get('view.pathEditing.comb')).toBe(false);
     await store.flush();
     expect([...backing.keys()].filter((k) => /^weaseldraw\.prefs\/(view\.path(Direction|Comb|Poise|Fillets|Balance|Corners)|ui\.leftSidebarWidth)$/.test(k))).toEqual([]);
   });
@@ -141,8 +141,8 @@ describe('openDrawPrefs', () => {
     setToolOption('pen', PEN_TOOL_OPTIONS, values, 'autoCommitOnClose', false);
     setToolOption('rect', RECT_TOOL_OPTIONS, values, 'fill', { kind: 'solid', color: '#123456ff' });
     await store.flush();
-    expect(backing.get(`${PREFS_PREFIX}tools.pen.autoCommitOnClose`)).toEqual({ $at: 6, value: false });
-    expect(backing.get(`${PREFS_PREFIX}tools.shared.fill`)).toEqual({ $at: 6, value: { kind: 'solid', color: '#123456ff' } });
+    expect(backing.get(`${PREFS_PREFIX}tools.pen.autoCommitOnClose`)).toEqual({ $at: 9, value: false });
+    expect(backing.get(`${PREFS_PREFIX}tools.shared.fill`)).toEqual({ $at: 9, value: { kind: 'solid', color: '#123456ff' } });
     expect(toolOptionParams('pen', PEN_TOOL_OPTIONS, values).fill).toEqual({ kind: 'solid', color: '#123456ff' });
   });
 
@@ -182,7 +182,7 @@ describe('importLegacyPrefs', () => {
     importLegacyPrefs(store, window.localStorage);
     await store.flush();
     const records = [...backing.keys()].filter((k) => k.startsWith(PREFS_PREFIX));
-    expect(records.sort()).toEqual([`${PREFS_PREFIX}$version`, `${PREFS_PREFIX}view.gridDensity`]);
+    expect(records.sort()).toEqual([`${PREFS_PREFIX}$version`, `${PREFS_PREFIX}view.grid.spacing`]);
   });
 
   it('copies every leaf of the v2 blob into the store', () => {
@@ -192,8 +192,23 @@ describe('importLegacyPrefs', () => {
     );
     const store = openDrawPrefs(createMemoryAdapter());
     importLegacyPrefs(store, window.localStorage);
-    expect(store.get('view.gridDensity')).toBe(40);
-    expect(store.get('view.gridVisible')).toBe(false);
+    expect(store.get('view.grid.spacing')).toBe(40);
+    expect(store.get('view.grid.visible')).toBe(false);
+  });
+
+  it('carries a v2 blob through every migration since, not just the grid', () => {
+    window.localStorage.setItem(LEGACY_PREFS_KEY, JSON.stringify({
+      version: 2,
+      ui: { panels: { layers: { collapsed: true } } },
+      view: { symmetry: true, symmetryAxis: 'both', rulersVisible: true, pathDirection: true, pathCorners: false },
+    }));
+    const store = openDrawPrefs(createMemoryAdapter());
+    importLegacyPrefs(store, window.localStorage);
+    expect(store.get('ui.surfaces')).toEqual({ layers: { collapsed: true } });
+    expect(store.get('view.symmetry.axis')).toBe('both');
+    expect(store.get('view.rulers.visible')).toBe(true);
+    expect(store.get('view.pathEditing.direction')).toBe(true);
+    expect(store.get('view.pathEditing.fillets')).toBe(false);
   });
 
   it('removes the blob only once the new records are on disk', async () => {
@@ -203,7 +218,7 @@ describe('importLegacyPrefs', () => {
     importLegacyPrefs(store, window.localStorage);
     expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).not.toBeNull();
     await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
-    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 6, value: 40 });
+    expect(backing.get(`${PREFS_PREFIX}view.grid.spacing`)).toEqual({ $at: 9, value: 40 });
   });
 
   it('leaves the blob in place when the store cannot persist', async () => {
@@ -215,7 +230,7 @@ describe('importLegacyPrefs', () => {
     await store.flush();
     await Promise.resolve();
     expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBe(blob);
-    expect(store.isSet('view.gridDensity')).toBe(false);
+    expect(store.isSet('view.grid.spacing')).toBe(false);
   });
 
   it('imports the blob when storage that was away at open comes back', async () => {
@@ -234,11 +249,11 @@ describe('importLegacyPrefs', () => {
     });
     expect(store.writable).toBe(false);
     importLegacyPrefs(store, window.localStorage);
-    expect(store.isSet('view.gridDensity')).toBe(false);
+    expect(store.isSet('view.grid.spacing')).toBe(false);
     away = false;
     await store.read();
     await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
-    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 6, value: 40 });
+    expect(backing.get(`${PREFS_PREFIX}view.grid.spacing`)).toEqual({ $at: 9, value: 40 });
     await store.close();
     warn.mockRestore();
   });
@@ -262,7 +277,7 @@ describe('importLegacyPrefs', () => {
     importLegacyPrefs(store, window.localStorage);
     await store.flush();
     await Promise.resolve();
-    expect(store.isSet('view.gridDensity')).toBe(false);
+    expect(store.isSet('view.grid.spacing')).toBe(false);
     expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBe(blob);
   });
 
@@ -270,7 +285,7 @@ describe('importLegacyPrefs', () => {
     window.localStorage.setItem(LEGACY_PREFS_KEY, JSON.stringify({ version: 2, view: { gridDensity: 40 } }));
     const store = openDrawPrefs(createMemoryAdapter(new Map([[`${PREFS_PREFIX}view.gridDensity`, 8]])));
     importLegacyPrefs(store, window.localStorage);
-    expect(store.get('view.gridDensity')).toBe(8);
+    expect(store.get('view.grid.spacing')).toBe(8);
   });
 
   it('drops a blob it cannot parse, storing nothing', async () => {
@@ -291,7 +306,7 @@ describe('draw validators', () => {
 
 describe('usePref', () => {
   it('binds a leaf of the app store', () => {
-    const { result } = renderHook(() => usePref('view.snapToGrid'));
+    const { result } = renderHook(() => usePref('view.grid.snap'));
     act(() => result.current[1](true));
     expect(result.current[0]).toBe(true);
   });

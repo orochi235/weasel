@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createScene } from './scene';
 import { asNodeId } from './types';
-import { createTransformOp } from 'core/ops/transform';
+import { createSetPoseOp } from 'core/ops/setPose';
 import type { Op } from 'core/ops/types';
 
 const POSE = { x: 0, y: 0, width: 10, height: 10 };
@@ -58,7 +58,7 @@ describe('Scene — a history step that throws', () => {
     add('b');
     scene.applyBatch([
       refusing(),
-      createTransformOp({ id: B, from: { ...POSE }, to: { ...POSE, x: 7 } }),
+      createSetPoseOp({ id: B, from: { ...POSE }, to: { ...POSE, x: 7 } }),
     ], 'move', adapter);
     armed.on = true;
     const versionBefore = scene.getVersion();

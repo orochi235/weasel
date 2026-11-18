@@ -1,5 +1,5 @@
 import { gatherSnapCandidates, resolveHolding, resolvedSnapMarks, snapSourcesFor, type GatheredCandidate, type SnapBegin, type SnapOutcome, type SnapOutcomeStore, type SnapProbeAt, type SnapSession, type SnapSource } from '@weasel-js/core/engine';
-import { closestOnFlat, resolveSnap, type Flat } from '@weasel-js/geom/nd';
+import { nearestOnFlat, resolveSnap, type Flat } from '@weasel-js/geom/nd';
 import {
   add, cross, dot, len, normalize, scale, sub, type Vec3,
 } from '@weasel-js/geom/3d';
@@ -85,7 +85,7 @@ export function createSession3d<TData, TLayer extends string>(inputs: Session3dI
       let held = false;
       let met: readonly { probe: string; locus: Flat }[] = [];
       if (mods.suspend) {
-        delta = vec3Of(closestOnFlat(input, tuple(delta0)));
+        delta = vec3Of(nearestOnFlat(input, tuple(delta0)));
         store.set([]);
       } else {
         const at = probes.map((q) => ({ id: q.id, at: tuple(q.at), role: q.role }));

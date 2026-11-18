@@ -20,6 +20,7 @@ import {
 } from './workerHealth';
 import { workerAnimator, type WorkerAnimator } from './workerAnimator';
 import { answerImage } from './workerImages';
+import type { Rect } from '@weasel-js/geom';
 
 /** What the worker's animator follows of a page clock: a `ClockHandle` from `@weasel-js/clock`. */
 export interface FollowedClock {
@@ -69,7 +70,7 @@ export interface SceneRenderWorker<TData, TLayer extends string, TPose> {
    *  top-left: `WeaselRenderer.renderIds` on that frame, a round trip away. `null` when there is
    *  no answer: before the first frame, once failed or disposed, after the timeout, or when an
    *  error in the worker lost it. */
-  readIds(rect: { x: number; y: number; width: number; height: number }, options?: CanvasIdReadOptions): Promise<IdBuffer | null>;
+  readIds(rect: Rect, options?: CanvasIdReadOptions): Promise<IdBuffer | null>;
   /** What the canvas shows now. `null` when it shows nothing yet, or there is no answer, as for
    *  `readIds`. */
   snapshot(): Promise<ImageBitmap | null>;

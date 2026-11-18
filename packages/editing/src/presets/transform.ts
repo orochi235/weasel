@@ -1,6 +1,6 @@
 import { PRESET_CHROME } from '@weasel-js/core';
 import type { FeaturePreset } from '@weasel-js/core';
-import { selectionMoveContribution, selectionResizeContribution, selectionRotateContribution } from '../tools/select/selectionContributions';
+import { createSelectionMoveContribution, createSelectionResizeContribution, createSelectionRotateContribution } from '../tools/select/selectionContributions';
 import { selectionPreset } from './selection';
 import { selectionChromePreset } from './selectionChrome';
 import { cloneAction } from '../actions/clone/action';
@@ -25,7 +25,7 @@ export const resizePreset: FeaturePreset = {
   refines: ['move'],
   actions: [resizeAction],
   components: [ResizePolicyDeps],
-  ambient: () => selectionResizeContribution(),
+  ambient: () => createSelectionResizeContribution(),
   chrome: PRESET_CHROME.resize,
   includes: [selectionChromePreset],
 };
@@ -36,7 +36,7 @@ export const rotatePreset: FeaturePreset = {
   label: 'Rotate',
   refines: ['move'],
   actions: [rotateAction],
-  ambient: ({ rotate }) => selectionRotateContribution({ rotate }),
+  ambient: ({ rotate }) => createSelectionRotateContribution({ rotate }),
   chrome: PRESET_CHROME.rotate,
   includes: [selectionChromePreset],
 };
@@ -47,6 +47,6 @@ export const movePreset: FeaturePreset = {
   id: 'move',
   label: 'Move',
   actions: [moveAction, cloneAction],
-  ambient: ({ move }) => selectionMoveContribution({ move }),
+  ambient: ({ move }) => createSelectionMoveContribution({ move }),
   includes: [selectionPreset],
 };

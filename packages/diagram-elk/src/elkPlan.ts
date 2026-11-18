@@ -13,7 +13,7 @@ import {
   DEFAULT_NODE_GAP,
   DEFAULT_RANK_GAP,
   pinnedSet,
-  translated,
+  movesFrom,
   type Bounds,
   type Graph,
   type LayoutDirection,
@@ -23,7 +23,7 @@ import {
   type LayoutPorts,
   type LayoutResult,
 } from '@weasel-js/diagram/layout';
-import { nearestOnLine } from '@weasel-js/geom';
+import { nearestOnSegment } from '@weasel-js/geom';
 import type { ELK } from 'elkjs/lib/elk-api.js';
 import { fromElk, type ElkPlacement } from './fromElk';
 import { drawnEdges, portPoints, toElk, type DrawnEdge } from './toElk';
@@ -41,14 +41,14 @@ export interface ElkLayoutOptions extends Omit<LayoutOptions, 'order' | 'chain' 
   /** ELK options for the root, applied over the ones this derives from the
    *  rest, under their full or `elk.`-prefixed ids. Default algorithm
    *  `elk.layered`, placing nodes by network simplex. */
-  layoutOptions?: Record<string, string>;
+  elkOptions?: Record<string, string>;
 }
 
 /** {@link elkPlan}'s answer: a layout plan, and what else ELK placed. */
 export interface ElkPlan extends LayoutPlan {
-  /** Each group's box, in world coordinates. The diagram derives a box from
+  /** Each cluster's box, in world coordinates. The diagram derives a box from
    *  its members, so nothing writes these; they are what ELK left room for. */
-  groups: ReadonlyMap<string, Bounds>;
+  clusters: ReadonlyMap<string, Bounds>;
   /** Each routed edge end to end, keyed by the edge as drawn. `waypoints` is
    *  the same route without its two ends. */
   routes: ReadonlyMap<string, readonly Vec2[]>;
@@ -59,8 +59,8 @@ export interface ElkPlan extends LayoutPlan {
 
 const DIRECTIONS: Record<LayoutDirection, string> = { down: 'DOWN', up: 'UP', right: 'RIGHT', left: 'LEFT' };
 
-/** The ELK options a run starts from, before `opts.layoutOptions`. */
-export function rootOptions(opts: ElkLayoutOptions = {}): Record<string, string> {
+/** The ELK options a run starts from, before `opts.elkOptions`. */
+export function elkRootOptions(opts: ElkLayoutOptions = {}): Record<string, string> {
   const spacing = String(opts.nodeGap ?? DEFAULT_NODE_GAP);
   return {
     'elk.algorithm': 'layered',
@@ -72,7 +72,7 @@ export function rootOptions(opts: ElkLayoutOptions = {}): Record<string, string>
     'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
     'elk.json.shapeCoords': 'ROOT',
     'elk.json.edgeCoords': 'ROOT',
-    ...shortIds(opts.layoutOptions ?? {}),
+    ...shortIds(opts.elkOptions ?? {}),
   };
 }
 
@@ -91,9 +91,9 @@ function defaultElk(): Promise<ElkRunner> {
 }
 
 /** Lay `graph` out with ELK: where each participant goes, each edge's route
- *  and the port at either end, each label's place, and each group's box. */
+ *  and the port at either end, each label's place, and each cluster's box. */
 export async function elkPlan(graph: Graph, opts: ElkLayoutOptions = {}): Promise<ElkPlan> {
-  const { root, index } = toElk(graph, rootOptions(opts));
+  const { root, index } = toElk(graph, elkRootOptions(opts));
   const elk = opts.elk ?? (await defaultElk());
   const placement = fromElk(await elk.layout(root), index);
   return planFrom(graph, placement, opts);
@@ -129,8 +129,8 @@ function planFrom(graph: Graph, placed: ElkPlacement, opts: ElkLayoutOptions): E
     if (Math.abs(to.x - node.bounds.x) > tolerance || Math.abs(to.y - node.bounds.y) > tolerance) unheld.add(node.id);
   }
 
-  const groups = new Map<string, Bounds>();
-  for (const [id, box] of placed.groups) groups.set(id, { ...box, ...shift(box) });
+  const clusters = new Map<string, Bounds>();
+  for (const [id, box] of placed.clusters) clusters.set(id, { ...box, ...shift(box) });
 
   const routes = new Map<string, Vec2[]>();
   const waypoints = new Map<string, Vec2[]>();
@@ -149,11 +149,11 @@ function planFrom(graph: Graph, placed: ElkPlacement, opts: ElkLayoutOptions): E
   }
 
   return {
-    moves: translated(graph, placed.nodes, pinned, tolerance),
+    moves: movesFrom(graph, placed.nodes, pinned, tolerance),
     waypoints,
     labels,
     ports,
-    groups,
+    clusters,
     routes,
     unheld,
   };
@@ -169,7 +169,7 @@ function drawnBySelfLoop(edge: DrawnEdge): boolean {
 /** The port an edge leaves and arrives by: the one it names, or else the
  *  declared port nearest where ELK met the node, among those on the face it
  *  met when there are any. Nearest overall can sit on another face of a wide
- *  box, and the wire then runs across the box to reach it. A group end has
+ *  box, and the wire then runs across the box to reach it. A cluster end has
  *  none. */
 function endPorts(
   graph: Graph,
@@ -216,8 +216,8 @@ function nearestOnRoute(route: readonly Vec2[], probe: Vec2): Vec2 {
   for (let i = 1; i < route.length; i++) {
     const a = route[i - 1]!;
     const b = route[i]!;
-    const hit = nearestOnLine(probe.x, probe.y, a.x, a.y, b.x, b.y);
-    if (hit.dist < bestDist) [best, bestDist] = [{ x: hit.x, y: hit.y }, hit.dist];
+    const hit = nearestOnSegment(probe.x, probe.y, a.x, a.y, b.x, b.y);
+    if (hit.distance < bestDist) [best, bestDist] = [{ x: hit.x, y: hit.y }, hit.distance];
   }
   return best;
 }

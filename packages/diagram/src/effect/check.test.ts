@@ -8,7 +8,7 @@ const OK: EffectPipeline = {
     { id: 'blur', title: 'Blur', inputs: [{ id: 'image', type: 'image' }, { id: 'radius', type: 'number' }], outputs: [{ id: 'out', type: 'image' }] },
   ],
   wires: [{ from: { stage: 'src', port: 'out' }, to: { stage: 'blur', port: 'image' } }],
-  groups: [{ id: 'g', members: ['blur'] }],
+  clusters: [{ id: 'g', members: ['blur'] }],
 };
 const kinds = (p: EffectPipeline) => checkPipeline(p).map((x) => x.kind);
 const wire = (from: [string, string], to: [string, string]) =>
@@ -39,12 +39,12 @@ describe('checkPipeline', () => {
     expect(kinds({ stages: [twice], wires: [] })).toEqual(['duplicate-port']);
   });
 
-  it('names a group member that does not exist', () => {
-    expect(kinds({ ...OK, groups: [{ id: 'g', members: ['blur', 'ghost'] }] })).toEqual(['missing-member']);
+  it('names a cluster member that does not exist', () => {
+    expect(kinds({ ...OK, clusters: [{ id: 'g', members: ['blur', 'ghost'] }] })).toEqual(['missing-member']);
   });
 
-  it('accepts a group that holds another group', () => {
-    expect(kinds({ ...OK, groups: [{ id: 'inner', members: ['blur'] }, { id: 'outer', members: ['inner'] }] })).toEqual([]);
+  it('accepts a cluster that holds another cluster', () => {
+    expect(kinds({ ...OK, clusters: [{ id: 'inner', members: ['blur'] }, { id: 'outer', members: ['inner'] }] })).toEqual([]);
   });
 
   it('names a split with a missing input, cuts out of order, or the wrong number of outputs', () => {
@@ -62,11 +62,11 @@ describe('checkPipeline', () => {
     expect(kinds({ stages: [split({ split: { input: 'x', at: [] } })], wires: [] })).toEqual(['bad-split']);
   });
 
-  it('names a group whose id repeats an earlier group\'s, or is a stage\'s', () => {
-    const again = checkPipeline({ ...OK, groups: [{ id: 'g', members: ['blur'] }, { id: 'g', members: ['src'] }] });
-    expect(again.map((x) => [x.kind, x.group])).toEqual([['duplicate-group', 'g']]);
-    const stage = checkPipeline({ ...OK, groups: [{ id: 'blur', members: ['src'] }] });
-    expect(stage.map((x) => [x.kind, x.group])).toEqual([['duplicate-group', 'blur']]);
+  it('names a cluster whose id repeats an earlier cluster\'s, or is a stage\'s', () => {
+    const again = checkPipeline({ ...OK, clusters: [{ id: 'g', members: ['blur'] }, { id: 'g', members: ['src'] }] });
+    expect(again.map((x) => [x.kind, x.cluster])).toEqual([['duplicate-cluster', 'g']]);
+    const stage = checkPipeline({ ...OK, clusters: [{ id: 'blur', members: ['src'] }] });
+    expect(stage.map((x) => [x.kind, x.cluster])).toEqual([['duplicate-cluster', 'blur']]);
   });
 
   it('names a cut that is not a finite number', () => {
@@ -80,7 +80,7 @@ describe('checkPipeline', () => {
     expect(kinds({ stages: [{ ...gate, split: { input: 'x', at: [Infinity] } }], wires: [] })).toEqual(['bad-split']);
   });
 
-  it('says which stage, port, wire or group each problem is about', () => {
+  it('says which stage, port, wire or cluster each problem is about', () => {
     const where = (p: EffectPipeline) => checkPipeline(p).map(({ message: _message, ...rest }) => rest);
     expect(where({ ...OK, wires: [wire(['nope', 'out'], ['blur', 'image'])] }))
       .toEqual([{ kind: 'missing-stage', wire: 0, stage: 'nope' }]);
@@ -94,25 +94,25 @@ describe('checkPipeline', () => {
       .toEqual([{ kind: 'duplicate-stage', stage: 'src' }]);
     const twice = { id: 'x', title: 'X', inputs: [{ id: 'a', type: 'image' }], outputs: [{ id: 'a', type: 'image' }] };
     expect(where({ stages: [twice], wires: [] })).toEqual([{ kind: 'duplicate-port', stage: 'x', port: 'a' }]);
-    expect(where({ ...OK, groups: [{ id: 'g', members: ['blur', 'ghost'] }] }))
-      .toEqual([{ kind: 'missing-member', group: 'g' }]);
-    expect(where({ ...OK, groups: [{ id: 'g', members: ['blur'] }, { id: 'g', members: ['src'] }] }))
-      .toEqual([{ kind: 'duplicate-group', group: 'g' }]);
+    expect(where({ ...OK, clusters: [{ id: 'g', members: ['blur', 'ghost'] }] }))
+      .toEqual([{ kind: 'missing-member', cluster: 'g' }]);
+    expect(where({ ...OK, clusters: [{ id: 'g', members: ['blur'] }, { id: 'g', members: ['src'] }] }))
+      .toEqual([{ kind: 'duplicate-cluster', cluster: 'g' }]);
     const gate = { id: 'gate', title: 'Gate', kind: 'decision', inputs: [{ id: 'x', type: 'number' }], split: { input: 'y', at: [0.5] } };
     expect(where({ stages: [gate], wires: [] })).toEqual([{ kind: 'bad-split', stage: 'gate' }]);
   });
 
-  it('names groups that hold each other in a loop, once per loop', () => {
-    const two = checkPipeline({ ...OK, groups: [{ id: 'A', members: ['B'] }, { id: 'B', members: ['A', 'blur'] }] });
-    expect(two).toEqual([{ kind: 'group-loop', group: 'A', groups: ['A', 'B'], message: 'Groups "A" and "B" hold each other in a loop.' }]);
+  it('names clusters that hold each other in a loop, once per loop', () => {
+    const two = checkPipeline({ ...OK, clusters: [{ id: 'A', members: ['B'] }, { id: 'B', members: ['A', 'blur'] }] });
+    expect(two).toEqual([{ kind: 'cluster-loop', cluster: 'A', clusters: ['A', 'B'], message: 'Groups "A" and "B" hold each other in a loop.' }]);
     const three = [{ id: 'A', members: ['B'] }, { id: 'B', members: ['C'] }, { id: 'C', members: ['A'] }, { id: 'D', members: ['A'] }];
-    expect(checkPipeline({ ...OK, groups: three }).map((x) => [x.kind, x.groups, x.message]))
-      .toEqual([['group-loop', ['A', 'B', 'C'], 'Groups "A", "B", and "C" hold each other in a loop.']]);
-    expect(checkPipeline({ ...OK, groups: [{ id: 'A', members: ['A'] }] }).map((x) => x.message)).toEqual(['Group "A" holds itself.']);
+    expect(checkPipeline({ ...OK, clusters: three }).map((x) => [x.kind, x.clusters, x.message]))
+      .toEqual([['cluster-loop', ['A', 'B', 'C'], 'Groups "A", "B", and "C" hold each other in a loop.']]);
+    expect(checkPipeline({ ...OK, clusters: [{ id: 'A', members: ['A'] }] }).map((x) => x.message)).toEqual(['Group "A" holds itself.']);
   });
 
-  it('finds no loop in nested groups', () => {
-    expect(checkPipeline({ ...OK, groups: [{ id: 'A', members: ['B', 'src'] }, { id: 'B', members: ['blur'] }] })).toEqual([]);
+  it('finds no loop in nested clusters', () => {
+    expect(checkPipeline({ ...OK, clusters: [{ id: 'A', members: ['B', 'src'] }, { id: 'B', members: ['blur'] }] })).toEqual([]);
   });
 
   it('does not throw on an empty pipeline', () => {

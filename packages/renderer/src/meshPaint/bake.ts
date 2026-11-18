@@ -10,6 +10,7 @@
 import { parseColor } from '@weasel-js/paint';
 import { lerpColorArray, type ColorSpace } from '@weasel-js/paint';
 import { evalPatch, isValidPatch, patchBounds, type MeshPatch } from './surface';
+import type { Rect } from '@weasel-js/geom';
 
 /** Texels on a side of a bake when the caller names no size. The renderer
  *  sizes each bake from how large the paint draws — see `meshBakeSize`. */
@@ -26,12 +27,7 @@ function gridFor(size: number): number {
 }
 
 /** The box a bake covers, in the paint's own space. */
-export interface MeshBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export type MeshRect = Rect;
 
 /** The bitmap `bakeMesh` produces, and the paint-space box it covers. */
 export interface BakedMesh {
@@ -41,11 +37,11 @@ export interface BakedMesh {
   size: number;
   /** Where the bitmap sits in paint space, which is what the shader maps a
    *  fragment through. */
-  box: MeshBox;
+  box: MeshRect;
 }
 
 /** The union of every patch's bounds, or `null` when nothing is drawable. */
-export function meshBounds(patches: readonly MeshPatch[]): MeshBox | null {
+export function meshBounds(patches: readonly MeshPatch[]): MeshRect | null {
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;

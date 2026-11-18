@@ -26,9 +26,10 @@ import {
   type PenAnchor,
 } from './anchors';
 import { editAnchorSetTracked } from './anchorOrigins';
-import { cubicPointAt, splitCubicAtT } from './cubicMath';
+import { cubicPointAt, splitCubicPoints } from './cubicMath';
 import { fitCubicThroughDeletion } from './spanFit';
 import { lerp } from '../scalar';
+import type { Rect } from '../box';
 
 /** Subpath-major anchor model — the decoded form of a `PolygonPath`. */
 export interface AnchorSet {
@@ -37,12 +38,7 @@ export interface AnchorSet {
 }
 
 /** A world-space rectangle, as produced by a drag-rect gesture. */
-export interface AnchorRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export type AnchorRect = Rect;
 
 /** Total anchors across every subpath. */
 export function anchorCount(set: AnchorSet): number {
@@ -172,7 +168,7 @@ export function insertAnchorOnSegment(
     return flatAnchorIndex(set, args.sub, at);
   }
   const p0 = a, p1 = a.outHandle ?? a, p2 = b.inHandle ?? b, p3 = b;
-  const { left, right } = splitCubicAtT(p0, p1, p2, p3, args.t);
+  const { left, right } = splitCubicPoints(p0, p1, p2, p3, args.t);
   a.outHandle = { x: left[1].x, y: left[1].y };
   b.inHandle = { x: right[2].x, y: right[2].y };
   set.anchors[args.sub].splice(at, 0, {

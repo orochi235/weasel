@@ -1,12 +1,12 @@
 import type { Action, ActionDeps, ImmediateParams, OngoingInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction, resolveParams } from '@weasel-js/routing';
-import { pref, PX_UNIT } from '@weasel-js/prefs';
+import { pref, PX_UNIT } from '@weasel-js/prefs-schema';
 import { meanScale, pathToAnchors, pxReach, type PolygonPath, type Point } from '@weasel-js/geom';
 import type { VertexWidth } from '@weasel-js/paint';
 import { commitOps, reshapeTo, type AnyScene } from '@weasel-js/core';
 import {
   anchorNormals, draggedWidth, gripAt, isWidthSet, movedSide, storedWith, widthEdgeAt, widthPointNear, widthsOf,
-  widthTargetAt, type WidthGrip, type WidthTarget,
+  widthTargetAt, type GirthGrip, type GirthTarget,
 } from './widthEdit';
 
 /** What the Girth tool's overlay shows, in world space: the anchors of the
@@ -81,7 +81,7 @@ const focusOf = (path: PolygonPath, widths: readonly VertexWidth[], fallback: nu
   ...(grab ? { grab } : {}),
 });
 
-const restingFocus = (target: WidthTarget): GirthFocus =>
+const restingFocus = (target: GirthTarget): GirthFocus =>
   focusOf(target.path, widthsOf(target, pathToAnchors(target.path).anchors.flat().length), target.fallback);
 
 /** The focus as it was, less its grab point. */
@@ -93,12 +93,12 @@ function dropGrab(env: GirthEnv): void {
   env.setFocus(rest);
 }
 
-function commit(deps: ActionDeps, grip: WidthGrip, widths: readonly VertexWidth[]): void {
+function commit(deps: ActionDeps, grip: GirthGrip, widths: readonly VertexWidth[]): void {
   const next = storedWith(grip, widths);
   if (next) commitOps(deps, reshapeTo(grip.target.node, next, LABEL), LABEL);
 }
 
-const edgeOf = (grip: WidthGrip, moved: number): Point => ({
+const edgeOf = (grip: GirthGrip, moved: number): Point => ({
   x: grip.at.x + grip.normal.x * moved * grip.factor,
   y: grip.at.y + grip.normal.y * moved * grip.factor,
 });
@@ -110,14 +110,14 @@ function reachOf(params: Readonly<GirthDragParams> | undefined, env: GirthEnv): 
 }
 
 /** The grip a press at `press` takes with `params`, read against the scene and view as they are now. */
-function gripFor(deps: ActionDeps, env: GirthEnv, press: Point, params: Readonly<GirthDragParams> | undefined): WidthGrip | null {
+function gripFor(deps: ActionDeps, env: GirthEnv, press: Point, params: Readonly<GirthDragParams> | undefined): GirthGrip | null {
   const at = found(deps, env, reachOf(params, env));
   const hit = at && widthEdgeAt(at.scene, press.x, press.y, at.scale, at.reach);
   return hit ? gripAt(hit) : null;
 }
 
 /** The widths `grip` leaves with the pointer at `p`, one-sided when `params` says so, Alt flipping that. */
-function widthsAt(grip: WidthGrip, press: Point, p: Point, alt: boolean, params: Readonly<GirthDragParams> | undefined) {
+function widthsAt(grip: GirthGrip, press: Point, p: Point, alt: boolean, params: Readonly<GirthDragParams> | undefined) {
   const moved = movedSide(grip, (p.x - press.x) * grip.normal.x + (p.y - press.y) * grip.normal.y);
   const widths = [...grip.widths];
   widths[grip.index] = draggedWidth(grip, moved, (params?.oneSided === true) !== alt);
@@ -127,7 +127,7 @@ function widthsAt(grip: WidthGrip, press: Point, p: Point, alt: boolean, params:
 /** The set width point a click at the press in `params` clears: its stroke, the stroke's widths, and its index. */
 function planClear(
   deps: ActionDeps, env: GirthEnv, params: Readonly<Pick<ImmediateParams, 'press'>> | undefined,
-): { target: WidthTarget; widths: VertexWidth[]; index: number } | null {
+): { target: GirthTarget; widths: VertexWidth[]; index: number } | null {
   const press = params?.press;
   const at = found(deps, env);
   if (!at || !press) return null;
@@ -221,7 +221,7 @@ export function createGirthActions(env: GirthEnv): Action[] {
           if (!plan) return;
           const { target, widths, index } = plan;
           widths[index] = NaN;
-          const grip: WidthGrip = {
+          const grip: GirthGrip = {
             target, path: target.path, widths, index, at: { x: 0, y: 0 }, inserted: false,
             side: 'right', normal: { x: 0, y: 1 }, start: { left: 0, right: 0 }, factor: 1,
           };

@@ -17,7 +17,7 @@ import { isPlaceholder, type Hop, type Rows } from './types';
 
 /** What {@link turnOutward} reads. */
 export interface OutwardInput {
-  graph: Pick<Graph, 'groups'>;
+  graph: Pick<Graph, 'clusters'>;
   rows: Rows;
   /** Each node's low corner across the rank, placeholders included. */
   crossAt: ReadonlyMap<string, number>;
@@ -35,10 +35,10 @@ const SLACK = 1;
 /**
  * `rows` with one rank turned on each side that needs it, or `undefined` when
  * none does. A rank needs it when its outer end is a run of placeholders that
- * all reach past the real nodes and group boxes; of those, the one turned is
+ * all reach past the real nodes and cluster boxes; of those, the one turned is
  * the rank whose outermost real node reaches furthest, which then moves beyond
- * the run. Only an ungrouped, unpinned node moves, and only past placeholders
- * outside every group. A run whose wire meets the node's in the next rank either
+ * the run. Only an unclustered, unpinned node moves, and only past placeholders
+ * outside every cluster. A run whose wire meets the node's in the next rank either
  * way is a wire going around its sibling, which reads best beside it, so that
  * rank stays as it is.
  */
@@ -49,7 +49,7 @@ export function turnOutward(input: OutwardInput): Rows | undefined {
   const hi = (n: GraphNode) => lo(n) + size(n);
   const hull = drawingSpan(input, size);
   if (hull === undefined) return undefined;
-  const free = (n: GraphNode) => n.group === undefined && !input.pinned.has(n.id);
+  const free = (n: GraphNode) => n.cluster === undefined && !input.pinned.has(n.id);
   const { up, down } = sidesOf(input.hops);
   const kin = (a: string, b: string) =>
     [up, down].some((side) => (side.get(a) ?? []).some((n) => (side.get(b) ?? []).includes(n)));
@@ -79,7 +79,7 @@ export function turnOutward(input: OutwardInput): Rows | undefined {
   return changed ? out : undefined;
 }
 
-/** How far the real nodes and group boxes reach across the rank. */
+/** How far the real nodes and cluster boxes reach across the rank. */
 function drawingSpan(input: OutwardInput, size: (n: GraphNode) => number): Span | undefined {
   let lo = Infinity;
   let hi = -Infinity;
@@ -90,24 +90,24 @@ function drawingSpan(input: OutwardInput, size: (n: GraphNode) => number): Span 
   for (const n of input.rows.flat()) {
     if (!isPlaceholder(n.id)) take([input.crossAt.get(n.id)!, input.crossAt.get(n.id)! + size(n)]);
   }
-  for (const box of groupBoxes(input, size).values()) take(box);
+  for (const box of clusterBoxes(input, size).values()) take(box);
   return lo <= hi ? [lo, hi] : undefined;
 }
 
-/** Each group's box across the rank: its members', nested boxes included,
+/** Each cluster's box across the rank: its members', nested boxes included,
  *  widened by its inset. */
-function groupBoxes(input: OutwardInput, size: (n: GraphNode) => number): Map<string, Span> {
-  const groups = input.graph.groups ?? [];
-  const byId = new Map(groups.map((g) => [g.id, g]));
+function clusterBoxes(input: OutwardInput, size: (n: GraphNode) => number): Map<string, Span> {
+  const clusters = input.graph.clusters ?? [];
+  const byId = new Map(clusters.map((g) => [g.id, g]));
   const inner = new Map<string, [number, number]>();
   const widen = (id: string, [a, b]: Span) => {
     const s = inner.get(id);
     inner.set(id, s === undefined ? [a, b] : [Math.min(s[0], a), Math.max(s[1], b)]);
   };
   for (const n of input.rows.flat()) {
-    if (n.group === undefined || isPlaceholder(n.id)) continue;
+    if (n.cluster === undefined || isPlaceholder(n.id)) continue;
     const at = input.crossAt.get(n.id)!;
-    for (let g = byId.get(n.group); g !== undefined; g = g.parent === undefined ? undefined : byId.get(g.parent)) widen(g.id, [at, at + size(n)]);
+    for (let g = byId.get(n.cluster); g !== undefined; g = g.parent === undefined ? undefined : byId.get(g.parent)) widen(g.id, [at, at + size(n)]);
   }
   const depth = (id: string): number => {
     const p = byId.get(id)?.parent;

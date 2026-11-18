@@ -1,7 +1,7 @@
 import type { LoupeMode, LoupePoint } from '@weasel-js/loupe';
 import type { ReactNode } from 'react';
 import type { ViewportSize } from '../canvas/worldSpec';
-import type { ViewTransform } from '../instrument/types';
+import type { ViewTransform2D } from '../instrument/types';
 import type { SceneViewSource } from './SceneLoupe';
 import type { LoupeSource } from './sourceLens';
 
@@ -10,7 +10,7 @@ import type { LoupeSource } from './sourceLens';
 export interface LoupeRenderArgs {
   /** The trial's own camera composed with the magnification, about the aimed
    *  point — so drawing the same content through it magnifies in place. */
-  view: ViewTransform;
+  view: ViewTransform2D;
   /** The magnification on its own, for whatever must not scale with the
    *  camera. */
   factor: number;

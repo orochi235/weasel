@@ -41,7 +41,7 @@ async function mount() {
     return null;
   }
   function Canvas() {
-    sel = useSelection({ mode: 'multi' });
+    sel = useSelection({ mode: 'multiple' });
     return (
       <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={300} height={100} selection={sel}
         ambient={[modeTriggers(registry, { enter })]} modes={registry}>

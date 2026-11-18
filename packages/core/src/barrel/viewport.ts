@@ -48,7 +48,7 @@ export {
   type DeviceProfileProviderProps,
   type DetectedDeviceFacts,
 } from '../core/device';
-export * from '../core/viewport/fitToBounds';
+export * from '../core/viewport/fitSize';
 export { fitViewToBounds, hasExtent } from '../core/viewport/fitViewToBounds';
 export { HOME_VIEW, resetView } from '../core/viewport/homeView';
 export type { Bounds, ViewportDims, FitViewToBoundsOptions } from '../core/viewport/fitViewToBounds';
@@ -61,7 +61,7 @@ export {
   setPages,
 } from '../core/pages/pageEdits';
 export type { PageEditOptions, PagesDoc } from '../core/pages/pageEdits';
-export { createPageRun, isPaged, pageNodeOf, pageOfNode, pageRunOf, type PageTreeReader } from '../core/pages/pageNodes';
+export { createPageRun, isPaged, pageNodeOf, pageIdOf, pageRunOf, type PageTreeReader } from '../core/pages/pageNodes';
 export type { CreatePageRunOptions, PageInfo, PageRunInfo } from '../core/pages/pageNodes';
 export { PAGE_RUN, pageRunLayout } from '../core/pages/pageRunLayout';
 export { PAGE_CLIP, pageClip } from '../core/pages/pageClip';
@@ -76,7 +76,7 @@ export { viewportWorldRect } from '../core/viewport/viewportWorldRect';
 export type { ClampBounds, CanvasSize } from '../core/viewport/clampView';
 export { sceneNodeClientRect } from '../core/viewport/sceneNodeClientRect';
 export type { SceneNodeClientRectOptions, NodeClientRect } from '../core/viewport/sceneNodeClientRect';
-export * from '../core/viewport/useAutoCenter';
+export * from '../core/viewport/useFitOnce';
 
 // ─── Scheduling: the visibility gate every weasel frame loop runs behind ────
 export { useVisibleRaf } from '@weasel-js/react';
@@ -113,7 +113,7 @@ export {
 export type {
   ViewMarkerProps, ViewMarkerStyle, ViewMarkerHost, AimSource, ViewMarkerGrab,
 } from '../domains/viewports/viewMarker';
-export { VIEW_MARKER_DRAG, viewMarkerDragAction, createViewMarkerContribution } from '../domains/viewports/viewMarkerDrag';
+export { VIEW_MARKER_DRAG, createViewMarkerDragAction, createViewMarkerContribution } from '../domains/viewports/viewMarkerDrag';
 
 // ─── Detached scene-view + minimap: read-only canvases with their own GL ─────
 // `<SceneViewCanvas>` is a pointer-inert read-only render of a scene at a
@@ -138,4 +138,4 @@ export { accentColorOf, chromeColorOf, FALLBACK_ACCENT, watchThemeOf } from '../
 export { gateLayer } from '../core/layers/gateLayer';
 export type { GateLayerOptions } from '../core/layers/gateLayer';
 export { useCanvasFocus } from '@weasel-js/react';
-export type { UseCanvasFocusOptions, CanvasFocusReturn } from '@weasel-js/react';
+export type { UseCanvasFocusOptions, UseCanvasFocusReturn } from '@weasel-js/react';

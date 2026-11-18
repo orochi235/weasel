@@ -1,4 +1,4 @@
-import { createTransformOp, rebaseLocalPose, type PoseAdapter, type PoseComposition } from '@weasel-js/core/engine';
+import { createSetPoseOp, rebaseLocalPose, type PoseAdapter, type PoseComposition } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
 
 /** A world-posed transform op as one in its node's stored frame: `from` under
@@ -16,7 +16,7 @@ export function rebaseTransformOp(
   const from = rebaseLocalPose(adapter, a.from, fromParent, pc.compose, pc.decompose);
   const to = rebaseLocalPose(adapter, a.to, toParent, pc.compose, pc.decompose);
   if (from === null || to === null) return null;
-  return createTransformOp<unknown>({
+  return createSetPoseOp<unknown>({
     id: a.id,
     from,
     to,

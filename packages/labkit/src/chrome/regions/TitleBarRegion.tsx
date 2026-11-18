@@ -1,6 +1,7 @@
 import { formatShortcut } from '@weasel-js/gestures';
+import { Button } from '@weasel-js/ui/components/Button';
 import { Icon } from '@weasel-js/ui/components/Icon';
-import type { ReactNode } from 'react';
+import type { MouseEvent, PointerEvent, ReactNode } from 'react';
 import type { TrialChromeContext, TrialContribution } from '../types';
 
 /** Which end of the title bar a `<TitleBarRegion>` lays out: `'lead'` renders
@@ -30,39 +31,36 @@ function renderEntry(c: TrialContribution, ctx: TrialChromeContext): ReactNode {
     showLabel,
     onActivate,
   } = c.item;
-  // Natively disabled, a button gets no hover, so its tooltip could not say why.
-  const explained = disabled && disabledReason !== undefined;
+  const glyph = <Icon name={icon} size={16} />;
   const keys = formatShortcut(shortcut);
-  const name = keys ? `${label} (${keys})` : label;
-  const className = [
-    'lk-titlebar-button',
-    danger && 'lk-titlebar-button--danger',
-    showLabel && 'lk-titlebar-button--label',
-  ]
-    .filter(Boolean)
-    .join(' ');
-  return (
-    <button
-      key={c.id}
-      type="button"
-      className={className}
-      disabled={disabled && !explained}
-      aria-disabled={explained || undefined}
-      aria-description={explained ? disabledReason : undefined}
-      aria-pressed={pressed}
-      aria-label={label}
-      title={explained ? `${label}: ${disabledReason}` : name}
-      onClick={explained ? undefined : () => onActivate(ctx)}
-      // The bar behind these buttons is the window drag surface, so a press
-      // that lands here must not also start a drag.
-      onPointerDown={(e) => e.stopPropagation()}
-      onMouseDown={(e) => e.stopPropagation()}
-    >
-      <Icon name={icon} size={16} />
-      {showLabel ? <span>{label}</span> : null}
-    </button>
+  const common = {
+    size: 'xs',
+    variant: 'ghost',
+    emphasis: 'low',
+    grade: danger ? 'danger' : undefined,
+    pressed,
+    disabled,
+    disabledReason,
+    shortcut: keys,
+    onClick: () => onActivate(ctx),
+  } as const;
+  return showLabel ? (
+    <Button key={c.id} {...common} leadingIcon={glyph}>
+      {label}
+    </Button>
+  ) : (
+    <Button key={c.id} {...common} iconOnly aria-label={label} tooltip={keys ? undefined : label}>
+      {glyph}
+    </Button>
   );
 }
+
+// The bar behind these buttons is the tile's drag surface, so a press that lands on them must not also start a
+// drag. Stopped here rather than on each button, since a button held for a reason drops its own press handlers.
+const keepPress = {
+  onPointerDown: (e: PointerEvent) => e.stopPropagation(),
+  onMouseDown: (e: MouseEvent) => e.stopPropagation(),
+};
 
 /** Lays a trial's `titlebar` contributions out at one end of the bar. */
 export function TitleBarRegion({ contributions, ctx, placement = 'actions' }: TitleBarRegionProps) {
@@ -70,7 +68,10 @@ export function TitleBarRegion({ contributions, ctx, placement = 'actions' }: Ti
   const mine = contributions.filter((c) => (c.end ?? false) === wanted);
   if (mine.length === 0) return null;
   return (
-    <span className={wanted ? 'lk-trial__titlebar-actions' : 'lk-trial__titlebar-lead'}>
+    <span
+      className={wanted ? 'lk-trial__titlebar-actions' : 'lk-trial__titlebar-lead'}
+      {...keepPress}
+    >
       {mine.map((c) => renderEntry(c, ctx))}
     </span>
   );

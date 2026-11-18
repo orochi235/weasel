@@ -1,6 +1,6 @@
 import { getOwn } from '@weasel-js/registry';
 import { useLayoutEffect } from 'react';
-import { resolveCursorTier, type CursorSink, type ResolvedCursor } from '@weasel-js/cursor';
+import { resolveCursor, type CursorSink, type ResolvedCursor } from '@weasel-js/cursor';
 import type { ToolsApi } from '../tools/overlayBinding';
 
 function resolveToolsCursor(tools: ToolsApi): ResolvedCursor | undefined {
@@ -8,9 +8,9 @@ function resolveToolsCursor(tools: ToolsApi): ResolvedCursor | undefined {
   const id = tools.routed;
   const tool = id === null ? undefined : getOwn(tools.registry, id);
   if (!tool?.cursor) return undefined;
-  if (typeof tool.cursor !== 'function') return resolveCursorTier(tool.cursor);
+  if (typeof tool.cursor !== 'function') return resolveCursor(tool.cursor);
   try {
-    return resolveCursorTier(tool.cursor());
+    return resolveCursor(tool.cursor());
   } catch (err) {
     if (!reported.has(tool)) {
       reported.add(tool);

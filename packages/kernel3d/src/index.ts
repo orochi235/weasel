@@ -19,15 +19,15 @@ export { POSE3_COMPOSITION } from './composePose3';
 export { pathMotion3, type PathMotion3, type PathMotion3Options } from './pathMotion3';
 export {
   screenToNdc, ndcToScreen, rayThroughScreenPoint, projectAabbToScreen,
-  type ChromeBox, type ScreenBox,
+  type ChromeBox, type ScreenRect,
 } from './screen';
 export {
-  screenBoxOf, createNodeAtPoint, createPickEvery, createAreaSelect, createSnap,
+  screenBoxOf, createNodeAtPoint3dDep, createPickNearest, createAreaSelect3dDep, createSnap3dDep,
   createPoseDescriptor, worldPoseOf,
   type AreaSelect3dOptions, type NodeBounds, type Node3d, type Scene3d, type Snap3dOptions, type Viewport3d,
   type ViewportSource, type World3d,
 } from './deps';
-export { createInsert, type Footprint, type InsertNode3d, type InsertOptions, type InsertSelection } from './insert';
+export { createInsert3dDep, type Footprint, type InsertNode3d, type InsertOptions, type InsertSelection } from './insert';
 export { projectPoint } from './project';
 export {
   aimOf3d, aimSpace3d, cameraOfAim3d, type Aim3d, type Aim3dOptions, type Frustum3d,
@@ -42,7 +42,7 @@ export {
   type AxisHandle, type AxisHandleOptions, type WorldAxis,
 } from './axisMove/handles';
 export {
-  AXIS_HANDLE_KIND, AXIS_MOVE_ACTION_ID, AXIS_MOVE_CONTRIBUTION_ID, axisOfHit, createAxisMove,
+  AXIS_HANDLE_KIND, MOVE_AXIS_ACTION_ID, AXIS_MOVE_CONTRIBUTION_ID, axisOfHit, createAxisMove,
   type AxisMove, type AxisMoveOptions,
 } from './axisMove/action';
 export { collectOverlayBoxes } from './overlays';
@@ -52,12 +52,12 @@ export {
 } from './lines/pack';
 export { createLinePass, type LineDrawOptions, type LinePass } from './lines/pass';
 export {
-  orbitAction, panAction, dollyAction, pinchDollyAction, homeAction, useOrbitTool,
+  cameraOrbitAction, cameraPanAction, cameraDollyAction, cameraPinchDollyAction, cameraHomeAction, useOrbitTool,
 } from './tools';
 export { KERNEL3D_TOOLS, useKernel3dTools, type Kernel3dToolId } from './toolSets';
 export type { Camera3dDep } from './cameraDep';
 export { createCameraDep, type CameraDepOptions } from './createCameraDep';
-export { cameraRig, cameraRigActions, type CameraRigGestures, type CameraRigOptions } from './cameraRig';
+export { cameraRig, createCameraRigActions, type CameraRigGestures, type CameraRigOptions } from './cameraRig';
 export { kernel3dKitSettingsSchema, type Orbit3dKitSettings } from './kitSettings';
 // Reaches the `declare module '@weasel-js/routing'` block that adds `camera3d` to
 // `DepSchema`. Type-only: the module has no runtime side effect, and a bare

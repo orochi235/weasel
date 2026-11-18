@@ -1,6 +1,6 @@
 import { createContext, useContext, useState } from 'react';
 import { openPrefsSync, type PrefGroup, type PrefsStore } from '@weasel-js/prefs';
-import { usePrefsValues, type PrefsFormBinding } from '@weasel-js/prefs/react';
+import { usePrefsState, type PrefsFormBinding } from '@weasel-js/prefs/react';
 import { PrefsDialog, type PrefsDialogProps } from '@weasel-js/ui/components/Prefs';
 
 /** What `openPrefsSync` takes besides the schema. */
@@ -40,7 +40,7 @@ export function useEditorPrefs<S extends PrefGroup = PrefGroup>(): PrefsStore<S>
 const NOTHING = (): void => {};
 
 /** Opens the `<EditorShell>`'s preferences dialog. Does nothing outside one, or when it was given no prefs. */
-export function useOpenPreferences(): () => void {
+export function useOpenPrefs(): () => void {
   return useContext(EditorPrefsContext)?.open ?? NOTHING;
 }
 
@@ -52,6 +52,6 @@ export function EditorPrefsDialog({ store, open, onOpenChange, dialog }: {
   onOpenChange: (open: boolean) => void;
   dialog?: EditorPrefsDialogProps;
 }) {
-  const { form } = usePrefsValues(store);
+  const { form } = usePrefsState(store);
   return <PrefsDialog layout="rail" {...dialog} {...form} open={open} onOpenChange={onOpenChange} />;
 }

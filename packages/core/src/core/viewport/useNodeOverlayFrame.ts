@@ -4,13 +4,13 @@
  * frame into overlay pixels, and the overlay's measured size.
  *
  * `toScreen` maps the node's **unrotated world box** frame, which is the
- * frame `fillInPoseFrame` resolves a `units: 'bounds'` paint into and the
- * one `pathInPoseFrame` projects geometry into. The pose's rotation and
+ * frame `paintToLocalUnits` resolves a `units: 'bounds'` paint into and the
+ * one `pathInPoseBox` projects geometry into. The pose's rotation and
  * `transform` live in this hook, not in those: a node's stored geometry is
  * in its box by definition.
  */
 import { useCallback, useInsertionEffect, useRef, type RefObject } from 'react';
-import { transformPoint, invert, multiply, poseFrameOf, type Affine } from '@weasel-js/geom';
+import { transformPoint, invert, multiply, poseFrameOf, type Affine, type Rect } from '@weasel-js/geom';
 import type { Node, RectPose, Scene } from '../scene/types';
 import { useCanvasSize } from './useCanvasSize';
 import type { View } from './view';
@@ -28,8 +28,8 @@ export interface OverlayPoint {
  *  frame yet — no node, or nothing measured to draw it on. */
 export interface NodeOverlayFrame {
   /** The node's composed world box, **unrotated**: the frame `toScreen` maps
-   *  from, and the box to hand `fillInPoseFrame` / `fillToBoundsFrame`. */
-  box: { x: number; y: number; width: number; height: number };
+   *  from, and the box to hand `paintToLocalUnits` / `paintToBoundsUnits`. */
+  box: Rect;
   /** Node box frame → overlay pixels: the pose's rotation and `transform`,
    *  then the view. */
   toScreen: (p: OverlayPoint) => OverlayPoint;

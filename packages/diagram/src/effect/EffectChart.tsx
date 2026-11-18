@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLatest, type Paint } from '@weasel-js/core';
+import { createPart } from '@weasel-js/registry';
 import { DiagramView } from '../DiagramView';
 import { diagramScene } from '../fromData';
 import { checkPipeline, type EffectProblem } from './check';
@@ -43,7 +44,7 @@ export interface EffectChartProps<TOptions = never> {
   /** A stage id, or null for none. */
   selected?: string | null;
   /** Hears each pick: a stage's id, or `null` for anything else. Only a
-   *  stage can be picked: a click on a group box or a lane lands on the
+   *  stage can be picked: a click on a cluster box or a lane lands on the
    *  canvas behind it. The canvas keeps its own highlight on the stage picked;
    *  only a change to `selected` moves it. */
   onSelect?: (stage: string | null) => void;
@@ -57,18 +58,10 @@ export interface EffectChartProps<TOptions = never> {
 /** `EffectChart`'s default `minScale`: the shipped looks' 12px titles at 6px, the smallest still legible. */
 export const EFFECT_MIN_SCALE = 0.5;
 
-const keys = new WeakMap<object, number>();
 let nextKey = 0;
 /** A React key that changes when the built scene does, so a new pipeline or
  *  look opens fitted and laid out afresh. */
-function keyOf(built: object): number {
-  let key = keys.get(built);
-  if (key === undefined) {
-    key = nextKey++;
-    keys.set(built, key);
-  }
-  return key;
-}
+const keyOf = createPart((_built: object): number => nextKey++);
 
 function contentOf(value: unknown): string | null {
   try {
@@ -106,7 +99,7 @@ export function EffectChart<TOptions = never>({
   const built = useMemo(() => {
     const drawn = ((look ?? nodeGraph) as EffectLook<TOptions>)(pipeline, options);
     // Only a stage is pickable: the canvas highlights whatever it picks, and
-    // a group box or a lane picked would stay lit while `onSelect` says none.
+    // a cluster box or a lane picked would stay lit while `onSelect` says none.
     const specs = diagramScene(drawn.data, drawn.scene)
       .map((s) => (s.pickable === false || stageIds.has(s.id as string) ? s : { ...s, pickable: false }));
     return { specs, color: drawn.color, exits: drawn.exits };
@@ -129,8 +122,8 @@ export function EffectChart<TOptions = never>({
       portOptions={portOptions}
       anchor="start"
       {...(background !== undefined ? { background } : {})}
-      {...(selected !== undefined ? { selected } : {})}
-      {...(onSelect ? { onSelect: (id: string | null) => onSelect(id !== null && stageIds.has(id) ? id : null) } : {})}
+      {...(selected !== undefined ? { selection: selected } : {})}
+      {...(onSelect ? { onSelectionChange: (id: string | null) => onSelect(id !== null && stageIds.has(id) ? id : null) } : {})}
       {...(className !== undefined ? { className } : {})}
     />
   );

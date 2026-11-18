@@ -6,7 +6,7 @@ import type { Path, PolygonPath } from '../path';
 import { area, circle, fine, hasCurves, mpArea, rect, rng, shape } from './curveShapes.fixtures';
 import { curveFaces, type CurveFaceSet } from './curveFaces';
 import { parseContours } from './contours';
-import { intersectSegments } from '../intersect/segmentIntersections';
+import { segmentCrossings } from '../intersect/segmentIntersections';
 import { DIGITS, glyphCell } from './glyphCell.fixture';
 
 /** One path drawing both of `a`'s and `b`'s contours. */
@@ -91,7 +91,7 @@ describe('polishing crossings onto the curves', () => {
   it('moves two circles\' crossings onto the curves\' own crossings', () => {
     const inputs = [circle(0, 0, 10), circle(12, 0, 8)];
     const [ca, cb] = inputs.map((p) => parseContours(p).flat());
-    const exact = ca.flatMap((s) => cb.flatMap((t) => intersectSegments(s, t)));
+    const exact = ca.flatMap((s) => cb.flatMap((t) => segmentCrossings(s, t)));
     expect(exact.length).toBe(2);
     const gap = (set: CurveFaceSet) => Math.max(...exact.map((h) =>
       Math.min(...set.faces[2].loops[0].map((s) => Math.hypot(s[0].x - h.x, s[0].y - h.y)))));

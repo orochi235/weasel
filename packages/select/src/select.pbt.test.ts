@@ -61,7 +61,7 @@ const t = tally();
 
 /** The selection a press makes, worked out from membership. */
 function model(w: World, s: Selection<string>, id: string, intent: SelectIntent): Selection<string> {
-  if (w.forced.has(id) || intent === 'single' || intent === 'replace') return { ids: [id], anchor: id };
+  if (w.forced.has(id) || intent === 'alone' || intent === 'replace') return { ids: [id], anchor: id };
   if (intent === 'toggle') {
     const kept = s.ids.filter((x) => !w.forced.has(x));
     return { ids: kept.includes(id) ? kept.filter((x) => x !== id) : [...kept, id], anchor: id };
@@ -79,7 +79,7 @@ const world = fc.record({
   grid: fc.boolean(),
 });
 const press = fc.tuple(fc.oneof({ weight: 6, arbitrary: fc.constantFrom(...IDS) }, { weight: 1, arbitrary: fc.constant(OUTSIDE) }),
-  fc.constantFrom<SelectIntent>('replace', 'toggle', 'toggle', 'range', 'range', 'single'));
+  fc.constantFrom<SelectIntent>('replace', 'toggle', 'toggle', 'range', 'range', 'alone'));
 
 describe('select, against a model', () => {
   it('presses of every intent leave the ids, their order, and the anchor the model says', () => {
@@ -116,7 +116,7 @@ describe('intentOf', () => {
     const t2 = tally();
     fc.assert(fc.property(
       fc.record({ shift: fc.boolean(), meta: fc.boolean(), ctrl: fc.boolean() }),
-      fc.constantFrom<'single' | 'multi'>('single', 'multi', 'multi'),
+      fc.constantFrom<'single' | 'multiple'>('single', 'multiple', 'multiple'),
       fc.option(fc.oneof(fc.constantFrom(...KEYS), fc.subarray([...KEYS])), { nil: undefined }),
       fc.option(fc.constantFrom(...KEYS), { nil: undefined }),
       (mods, mode, toggle, range) => {

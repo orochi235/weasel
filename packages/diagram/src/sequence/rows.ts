@@ -4,12 +4,12 @@
  * tracks what spans rows as it goes — open activations, heads created and
  * lifelines destroyed — and collects what each fragment's box must take in.
  */
-import { maxOf, minOf } from '@weasel-js/geom';
+import { maxOf, minOf, type Rect } from '@weasel-js/geom';
 import type { Columns } from './columns';
 import type {
   SeqActivationPlace, SeqFragmentPlace, SeqHeadPlace, SeqMessagePlace, SeqNotePlace, SeqSlot,
 } from './layout';
-import { SEQ, type SeqMeasure, type SeqRect } from './metrics';
+import { SEQ, type SeqMeasure } from './metrics';
 import type { SeqFragment, SeqMark, SeqMarkRef, SeqMessage, SeqNote, SeqStep, SequenceData, StepPlace } from './types';
 
 /** What {@link walkRows} places; a lifeline's `y1` is `null` when it runs to the foot. */
@@ -28,7 +28,7 @@ export interface Rows {
 /** A lifeline as the walk tracks it; `y1` is `null` while it runs to the foot. */
 type Lifeline = { id: string; x: number; y0: number; y1: number | null; destroyedBy?: StepPlace };
 
-const spanOf = (rects: readonly SeqRect[]) => {
+const spanOf = (rects: readonly Rect[]) => {
   const x0 = minOf(rects, (r) => r.x);
   return { x0, x1: maxOf(rects, (r) => r.x + r.width) };
 };
@@ -41,7 +41,7 @@ class RowWalk {
   readonly bars = new Map<string, { y: number; opener: SeqMarkRef }[]>();
   /** Lifelines a `destroy` ends at the next message to them, each with where it ends if none comes. */
   readonly destroying = new Map<string, number | null>();
-  readonly frames: SeqRect[][] = [];
+  readonly frames: Rect[][] = [];
   last: { y: number; ends: readonly string[] } | null = null;
   number: number | undefined;
   y: number;
@@ -59,7 +59,7 @@ class RowWalk {
 
   cx(id: string): number { return this.cols.x[this.index.get(id)!]!; }
 
-  headRect(id: string): SeqRect {
+  headRect(id: string): Rect {
     const size = this.cols.heads[this.index.get(id)!]!;
     return { x: this.cx(id) - size.width / 2, y: 0, width: size.width, height: 0 };
   }
@@ -74,7 +74,7 @@ class RowWalk {
   }
 
   /** Into every open fragment's reach. */
-  touch(rect: SeqRect): void {
+  touch(rect: Rect): void {
     for (const f of this.frames) f.push(rect);
   }
 
@@ -193,7 +193,7 @@ class RowWalk {
     const tab = tabText === null ? null : { width: tabText.width + SEQ.tabPad * 2, height: tabText.height + SEQ.tabPad };
     const labels = s.sections.map((sec) => ((sec.label ?? '') === '' ? null : this.m.text(sec.label!)));
     this.y += Math.max(tab?.height ?? 0, (labels[0]?.height ?? 0) + 4, 8);
-    const frame: SeqRect[] = [];
+    const frame: Rect[] = [];
     this.frames.push(frame);
     const sections: { y: number; height: number }[] = [];
     s.sections.forEach((sec, k) => {

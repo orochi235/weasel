@@ -17,7 +17,7 @@
  * a locked node is on screen and still out of reach.
  */
 
-import { invert, type Affine, type Path } from '@weasel-js/geom';
+import { invert, type Affine, type Path, type Rect } from '@weasel-js/geom';
 import { pathIntersect } from '@weasel-js/geom/booleans';
 import type { CopiesFromPoseFn } from 'core/scene/types';
 import { ownClipOf, type ClipBearing } from './ownClip';
@@ -92,7 +92,7 @@ export interface PickSource<TPose> {
 /** The box a query cannot hit outside of, for a source's index to look up. */
 export interface PickBroad {
   /** World box, already grown by the query's own slop. */
-  box: { x: number; y: number; width: number; height: number };
+  box: Rect;
   /** Screen px per world unit at the asking view (least axis); grows the box
    *  by the largest `outsetPx` the index holds. Omit for a query whose test
    *  reads no `outsetPx`. */
@@ -164,7 +164,7 @@ interface CommonMemo { path?: Path; next: Map<Path, CommonMemo> }
 
 /**
  * Collect every candidate the query hits, back-to-front — the last element is
- * the topmost, which is the order `pickTopMostHit` expects.
+ * the topmost, which is the order `topmostOf` expects.
  */
 export function pickWalk<TPose>(
   src: PickSource<TPose>,
@@ -287,10 +287,10 @@ export interface ViewPickGates {
 }
 
 /** The gates a bare adapter takes from its view, plus how that view's camera
- *  maps into each parallax layer — see `scenePlaneOf`. */
+ *  maps into each parallax layer — see `createLayerPlaneLookup`. */
 export interface AdapterPickGates extends ViewPickGates {
   planeOf?: (layer: string) => PlaneMap | null;
 }
 
-export { scenePickSource, scenePlaneOf, type ScenePickSourceOptions } from './scenePickSource';
+export { scenePickSource, createLayerPlaneLookup, type ScenePickSourceOptions } from './scenePickSource';
 export { adapterPickSource } from './adapterPickSource';

@@ -45,7 +45,7 @@ function visibleFieldsOf(leaf: PrefLeaf): PrefLeaf {
  * leaves out and keeps no path of another schema, so the leaves aliases show
  * are conditioned here, the first time one is asked for.
  */
-export function prefAliasTargets(
+export function createAliasTargets(
   over: PrefGroup | PrefSection,
   judge: (entry?: PrefEntry) => PrefConditionJudge,
   { showHidden = false, markHidden = false }: PrefAliasTargetsOptions = {},

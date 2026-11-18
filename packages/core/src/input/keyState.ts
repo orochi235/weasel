@@ -6,15 +6,7 @@
  */
 
 import { createEmitter } from '@weasel-js/registry';
-import { isEditableTarget } from '@weasel-js/routing';
-
-/** Which modifier keys are held, on either side of the keyboard. */
-export interface KeyModifiers {
-  shift: boolean;
-  ctrl: boolean;
-  alt: boolean;
-  meta: boolean;
-}
+import { isEditableTarget, type ModifierState } from '@weasel-js/routing';
 
 /** Options for {@link KeyState.attach}. */
 export interface KeyStateAttachOptions {
@@ -44,7 +36,7 @@ export interface KeyState {
   codes(): ReadonlySet<string>;
   /** The modifiers held. The same object until one changes, so it serves as
    *  a `useSyncExternalStore` snapshot. */
-  modifiers(): KeyModifiers;
+  modifiers(): ModifierState;
   /** Called on every change of what is down. Returns the unsubscribe. */
   subscribe(listener: () => void): () => void;
   /** Mark everything up and drop untaken presses. */
@@ -59,7 +51,7 @@ export interface KeyState {
   attach(target: Window | HTMLElement, options?: KeyStateAttachOptions): () => void;
 }
 
-const MODIFIER_CODES: Record<keyof KeyModifiers, readonly string[]> = {
+const MODIFIER_CODES: Record<keyof ModifierState, readonly string[]> = {
   shift: ['ShiftLeft', 'ShiftRight'],
   ctrl: ['ControlLeft', 'ControlRight'],
   alt: ['AltLeft', 'AltRight'],
@@ -77,8 +69,8 @@ export function createKeyState(): KeyState {
   const down = new Map<string, string>();
   const codeSet = new Set<string>();
   const presses = new Set<string>();
-  const mods: KeyModifiers = { shift: false, ctrl: false, alt: false, meta: false };
-  let held: KeyModifiers = { ...mods };
+  const mods: ModifierState = { shift: false, ctrl: false, alt: false, meta: false };
+  let held: ModifierState = { ...mods };
   const listeners = createEmitter();
   const notify = listeners.emit;
 
@@ -100,8 +92,8 @@ export function createKeyState(): KeyState {
   // the flags every event carries over the keys we saw go down.
   const reconcile = (e: KeyboardEvent): boolean => {
     let changed = false;
-    const flags: KeyModifiers = { shift: e.shiftKey, ctrl: e.ctrlKey, alt: e.altKey, meta: e.metaKey };
-    for (const m of Object.keys(MODIFIER_CODES) as Array<keyof KeyModifiers>) {
+    const flags: ModifierState = { shift: e.shiftKey, ctrl: e.ctrlKey, alt: e.altKey, meta: e.metaKey };
+    for (const m of Object.keys(MODIFIER_CODES) as Array<keyof ModifierState>) {
       if (mods[m] !== flags[m]) {
         mods[m] = flags[m];
         changed = true;

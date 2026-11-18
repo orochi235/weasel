@@ -5,10 +5,10 @@
 import {
   type ActionDeps, ActionDisabledReason, defineAction, type InvocationCtx, type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
-import { pref, PX_UNIT } from '@weasel-js/prefs';
-import { pxReach, kneadPath, type PolygonPath, type Point } from '@weasel-js/geom';
+import { pref, PX_UNIT } from '@weasel-js/prefs-schema';
+import { pxReach, kneadPath, type PolygonPath, type Point, type Rect } from '@weasel-js/geom';
 import { brushRing } from '@weasel-js/cursor';
-import { PATH_GROUP, commitOps, drawnAABBOf, reshapeOps, shownNodeOf, withPath, type PathNode, pathOperationTags } from '@weasel-js/core';
+import { PATH_GROUP, commitOps, drawnAabbOf, reshapeOps, shownNodeOf, withPath, type PathNode, pathOperationTags } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 import { kneadTargets } from './kneadTargets';
 import { outlineSession } from '../shared/outlineSession';
@@ -52,7 +52,7 @@ function strengthOf(params: KneadParams | undefined): number {
 }
 
 /** Whether the disc at `c` of radius `r` meets box `b`. */
-function discMeetsBox(c: Point, r: number, b: { x: number; y: number; width: number; height: number }): boolean {
+function discMeetsBox(c: Point, r: number, b: Rect): boolean {
   const dx = c.x - Math.max(b.x, Math.min(c.x, b.x + b.width));
   const dy = c.y - Math.max(b.y, Math.min(c.y, b.y + b.height));
   return dx * dx + dy * dy <= r * r;
@@ -84,7 +84,7 @@ function strokeFrom(deps: ActionDeps, start: Point) {
     dab({ to, scale }: Dab, params: KneadParams | undefined): void {
       const radius = worldRadius(scale, radiusOf(params));
       nodes.push(...text.convert((id, scene) =>
-        discMeetsBox(at, radius, drawnAABBOf(scene, id, shownNodeOf(scene, id)!.pose, scale ? { scale } : {}))));
+        discMeetsBox(at, radius, drawnAabbOf(scene, id, shownNodeOf(scene, id)!.pose, scale ? { scale } : {}))));
       for (const node of nodes) {
         const from = shapes.get(node.id)?.path ?? node.path;
         const next = kneadPath(from, {

@@ -2,16 +2,17 @@ import { describe, expect, it } from 'vitest';
 import type { DiagramSpec } from '../fromData';
 import { PROBLEM_COLOR } from './draw';
 import { SAMPLES } from './lab/samples';
-import { sequenceSlots } from '../reorder';
+import { slotsAlong } from '../reorder';
 import { LANE_INSET, laneId, laneTypeOf, lanes } from './lanes';
 import { paintRun } from './run';
-import { built, P, type Box } from './lanesFixture';
+import { built, P } from './lanesFixture';
 import { io, w } from './skipFixture';
 import type { EffectPipeline } from './types';
+import type { Rect } from '@weasel-js/geom';
 
 const strokeOpacity = (spec: DiagramSpec) => (spec.data as { stroke?: { paint?: { opacity?: number } } }).stroke?.paint?.opacity;
 const stageIds = (p: EffectPipeline) => p.stages.map((s) => s.id);
-const overlap = (a: Box, b: Box) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+const overlap = (a: Rect, b: Rect) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 
 describe('lanes', () => {
   it('draws one lane per value type, top to bottom in the order types first appear', () => {
@@ -46,7 +47,7 @@ describe('lanes', () => {
       expect(b.y + b.height, id).toBeLessThan(bottom);
       // More beside an edge wires run along: the top, here, which `q.no` takes past `blur`.
       expect(b.y - top, id).toBeGreaterThanOrEqual(LANE_INSET - 1e-6);
-      // `blur` stands in group `g`, whose box keeps the inset in its place.
+      // `blur` stands in cluster `g`, whose box keeps the inset in its place.
       const outer = id === 'blur' ? box('g') : b;
       expect(bottom - (outer.y + outer.height), id).toBeCloseTo(LANE_INSET, 6);
     }
@@ -77,7 +78,7 @@ describe('lanes', () => {
       const title = specs.find((s) => s.parent === 'src' && (s.data as { text?: string }).text === 'Source')!;
       // What the fallback measure makes of the title, in its face.
       const needs = 'Source'.length * title.data.style!.fontSize * 0.6;
-      expect((title.pose as Box).width, `${n} params`).toBeGreaterThanOrEqual(needs - 1e-9);
+      expect((title.pose as Rect).width, `${n} params`).toBeGreaterThanOrEqual(needs - 1e-9);
     }
   });
 
@@ -122,10 +123,10 @@ describe('lanes', () => {
     expect(at(['bool', 'image'])).toBe(0);
   });
 
-  it('draws a mismatched wire in the problem color and keeps groups', () => {
+  it('draws a mismatched wire in the problem color and keeps clusters', () => {
     const bad = lanes({ ...P, wires: [...P.wires, w(['cut', 'out'], ['blur', 'in'])] });
     expect(bad.scene.edgeStyle!(bad.data.edges[bad.data.edges.length - 1]!)!.stroke).toBe(PROBLEM_COLOR);
-    expect(bad.data.groups).toEqual(P.groups);
+    expect(bad.data.clusters).toEqual(P.clusters);
   });
 
   it('fades a decision\'s exit a run did not take', () => {
@@ -171,7 +172,7 @@ describe('lanes order', () => {
     expect(drawn.order!.axis).toBe('x');
     const ids = drawn.order!.items.map((i) => i.id);
     expect(ids).toEqual(['src', 'q', 'blur', 'mix', 'out']);
-    const { gaps } = sequenceSlots('x', ids.map((id) => ({ id, bounds: box(id) })));
+    const { gaps } = slotsAlong('x', ids.map((id) => ({ id, bounds: box(id) })));
     for (let k = 1; k < ids.length; k++) {
       expect(gaps[k]!.a.x).toBeGreaterThan(box(ids[k - 1]!).x + box(ids[k - 1]!).width);
       expect(gaps[k]!.a.x).toBeLessThan(box(ids[k]!).x);

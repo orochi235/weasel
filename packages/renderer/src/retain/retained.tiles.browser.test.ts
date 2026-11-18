@@ -167,7 +167,7 @@ describe('a retained surface drawn in tiles', () => {
   it('matches the surface drawn whole inside the buffer, and holds a scratch buffer no larger than a tile', () => {
     const p = pairOf();
     const shader: DrawCommand = {
-      kind: 'shader', bounds: { x: 2, y: 3, w: 40, h: 30 }, uniforms: {},
+      kind: 'shader', bounds: { x: 2, y: 3, width: 40, height: 30 }, uniforms: {},
       program: registerProgram('tiles-by-origin', { glsl: { frag: BY_ORIGIN } }),
     };
     const children = [...world(), shader];

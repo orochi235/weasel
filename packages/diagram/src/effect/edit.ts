@@ -1,7 +1,7 @@
 import type { Vec2 } from '@weasel-js/core/math';
 import { freshId, setOwn } from '@weasel-js/registry';
 import type { DiagramLabel } from '../labelTrait';
-import { pruneGroups } from './groupEdit';
+import { pruneClusters } from './clusterEdit';
 import { pruneLookRoutes } from './lookRoutes';
 import { formatParam } from './stageTypes';
 import type { EffectDoc, EffectParam, EffectParamControl, EffectPipeline, EffectStage, EffectWire } from './types';
@@ -27,26 +27,26 @@ export function addStage(doc: EffectDoc, stage: EffectStage, at?: Vec2): EffectD
   return at ? { ...next, places: { ...doc.places, [stage.id]: { x: at.x, y: at.y } } } : next;
 }
 
-/** Drops the stages with their wires, places, routes and group memberships,
- *  and any group that leaves empty, with its box. */
+/** Drops the stages with their wires, places, routes and cluster memberships,
+ *  and any cluster that leaves empty, with its box. */
 export function removeStages(doc: EffectDoc, ids: readonly string[]): EffectDoc {
   const gone = new Set(ids);
-  const { groups } = doc.pipeline;
+  const { clusters } = doc.pipeline;
   const wires = doc.pipeline.wires.filter((w) => !gone.has(w.from.stage) && !gone.has(w.to.stage));
-  const kept = groups ? pruneGroups(groups, gone) : undefined;
+  const kept = clusters ? pruneClusters(clusters, gone) : undefined;
   const left = new Set(kept?.map((g) => g.id));
-  const boxes = doc.groupBoxes === undefined ? undefined : Object.entries(doc.groupBoxes).filter(([id]) => left.has(id));
-  const { groupBoxes: _was, ...rest } = doc;
+  const boxes = doc.clusterBoxes === undefined ? undefined : Object.entries(doc.clusterBoxes).filter(([id]) => left.has(id));
+  const { clusterBoxes: _was, ...rest } = doc;
   return pruneRoutes({
     ...rest,
     pipeline: {
       ...doc.pipeline,
       stages: doc.pipeline.stages.filter((s) => !gone.has(s.id)),
       wires,
-      ...(kept ? { groups: kept } : {}),
+      ...(kept ? { clusters: kept } : {}),
     },
     places: Object.fromEntries(Object.entries(doc.places).filter(([id]) => !gone.has(id))),
-    ...(boxes !== undefined && boxes.length > 0 ? { groupBoxes: Object.fromEntries(boxes) } : {}),
+    ...(boxes !== undefined && boxes.length > 0 ? { clusterBoxes: Object.fromEntries(boxes) } : {}),
   });
 }
 

@@ -3,7 +3,7 @@ import { openPointerSession } from '../pointerSession';
 
 /**
  * A drag that does not start until the pointer has moved far enough to mean
- * it. Below the threshold the gesture is still a click; above it, `onActivate`
+ * it. Below the threshold the gesture is still a click; above it, `onStart`
  * fires once and every later move is a drag.
  *
  * The pointer lifecycle underneath — capture, pointer identity, lost-capture
@@ -19,9 +19,9 @@ export interface ThresholdDragOptions {
   /** When the origin captures the pointer: at the press (the default), or only once the press is a drag. Capture at
    *  the press retargets the release, so the click a press below the threshold means lands off what was pressed. */
   captureAt?: 'press' | 'threshold';
-  onActivate?: (e: PointerEvent) => void;
+  onStart?: (e: PointerEvent) => void;
   onMove: (e: PointerEvent) => void;
-  onCommit: (e: PointerEvent) => void;
+  onEnd: (e: PointerEvent) => void;
   /** Released below the threshold — the click the press turned out to be. */
   onClick?: (e: PointerEvent) => void;
   /** Ended without a release: pointercancel, lost capture, Escape during the drag, or `cancel()`. */
@@ -66,7 +66,7 @@ export function startThresholdDrag(
         /* a pointer already gone: nothing to retarget */
       }
     }
-    opts.onActivate?.(ev);
+    opts.onStart?.(ev);
   };
 
   const keys: EventTarget = origin.ownerDocument.defaultView ?? origin.ownerDocument;
@@ -88,7 +88,7 @@ export function startThresholdDrag(
     onEnd: (ev) => {
       unlisten();
       releaseLate();
-      if (activated) opts.onCommit(ev);
+      if (activated) opts.onEnd(ev);
       else opts.onClick?.(ev);
     },
     onCancel: () => {

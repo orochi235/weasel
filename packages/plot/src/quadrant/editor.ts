@@ -2,7 +2,7 @@
 import { withTitle } from '../chartTitle';
 import type { PlotEditor } from '../editing/editors';
 import { compileQuadrant, quadrantValueAt } from './compile';
-import { setQuadrantAxisLabel, setQuadrantLabel, setQuadrantPoint, setQuadrantPointName } from './edit';
+import { setQuadrantAxisLabel, setQuadrantLabel, setQuadrantPointAt, setQuadrantPointName } from './edit';
 import type { QuadrantData } from './types';
 
 const pointOf = (data: QuadrantData, datum: unknown): number | null => {
@@ -20,7 +20,7 @@ export const quadrantEditor: PlotEditor<QuadrantData> = {
     const point = pointOf(data, trait.datum);
     if (point === null) return null;
     const { layout } = compileQuadrant(data, size, theme, measure);
-    return (at) => setQuadrantPoint(data, point, quadrantValueAt(layout, at));
+    return (at) => setQuadrantPointAt(data, point, quadrantValueAt(layout, at));
   },
   text(data, datum, text) {
     const t = text.trim();

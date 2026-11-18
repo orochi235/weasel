@@ -33,15 +33,15 @@ export type AddPointMode = 'click-curve' | 'click-empty' | 'never';
  * index, its position in plot space (`cx`/`cy`), and the states that change
  * how it should look.
  */
-export interface AnchorRenderProps {
+export interface AnchorRenderCtx {
   point: ControlPoint;
   index: number;
   cx: number;
   cy: number;
-  isActive: boolean;
-  isLocked: boolean;
-  isPinnedEndpoint: boolean;
-  isEndpoint: boolean;
+  active: boolean;
+  locked: boolean;
+  pinned: boolean;
+  endpoint: boolean;
 }
 
 /**
@@ -70,7 +70,7 @@ export interface FunctionLayerOptions {
   curve?: CurveSettings | false | null;
   fill?: FillSettings | false | null;
   hideNonInteractive?: boolean;
-  renderAnchor?: (info: AnchorRenderProps) => ReactNode;
+  renderAnchor?: (info: AnchorRenderCtx) => ReactNode;
   /** When false, the layer renders the curve+fill but doesn't render
    *  anchors and doesn't accept pointer input. For derived read-only
    *  curves (e.g. plotting f'(x) alongside f(x)). Default true. */

@@ -15,7 +15,7 @@ vi.mock('@weasel-js/diagram/effect-audio', async (original) => ({
 const wire = (id: string, from: string, to: string) => ({ id, from: { stage: from, port: 'out' }, to: { stage: to, port: 'in' } });
 
 describe('splitDomains', () => {
-  it('puts each stage on the side of its domain, and each wire between two of them, and keeps types and groups on both', () => {
+  it('puts each stage on the side of its domain, and each wire between two of them, and keeps types and clusters on both', () => {
     const pipeline: EffectPipeline = {
       stages: [
         { id: 'src', title: 'Source', type: 'source' },
@@ -24,7 +24,7 @@ describe('splitDomains', () => {
         { id: 'gain', title: 'Gain', type: 'audio.gain' },
       ],
       wires: [wire('w1', 'src', 'blur'), wire('w2', 'osc', 'gain'), wire('w3', 'blur', 'gain')],
-      groups: [{ id: 'g', label: 'All', members: ['blur', 'gain'] }],
+      clusters: [{ id: 'g', label: 'All', members: ['blur', 'gain'] }],
       types: { number: { control: true } },
     };
     const { image, audio } = splitDomains(pipeline);
@@ -33,7 +33,7 @@ describe('splitDomains', () => {
     expect(image.wires.map((w) => w.id)).toEqual(['w1']);
     expect(audio.wires.map((w) => w.id)).toEqual(['w2']);
     for (const half of [image, audio]) {
-      expect(half.groups).toBe(pipeline.groups);
+      expect(half.clusters).toBe(pipeline.clusters);
       expect(half.types).toBe(pipeline.types);
     }
   });

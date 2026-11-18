@@ -85,13 +85,18 @@ export const renamePathTools: PrefsMigration = (records) => {
   const toolbars = records.get('ui.toolbars');
   if (isPlainObject(toolbars) && isPlainObject(toolbars.docks) && isPlainObject(toolbars.floating)) {
     const docks = Object.fromEntries(Object.entries(toolbars.docks).map(([id, rows]) => [id, Array.isArray(rows)
-      ? rows.map((row: unknown) => (Array.isArray(row) && row.includes('corners') && !row.includes('fillets')
-        ? row.map((bar: unknown) => (bar === 'corners' ? 'fillets' : bar))
-        : row))
+      ? rows.map((row: unknown) => (Array.isArray(row) ? renameBar(row, 'corners', 'fillets') : row))
       : rows]));
-    records.set('ui.toolbars', { ...toolbars, docks, floating: renameEntry(toolbars.floating, 'corners', 'fillets') });
+    const atEnd = Array.isArray(toolbars.atEnd) ? { atEnd: renameBar(toolbars.atEnd, 'corners', 'fillets') } : {};
+    records.set('ui.toolbars', { ...toolbars, docks, floating: renameEntry(toolbars.floating, 'corners', 'fillets'), ...atEnd });
   }
 };
+
+/** `bars` with `from` under `to`, or dropped where `to` is already there. */
+function renameBar(bars: readonly unknown[], from: string, to: string): unknown[] {
+  if (!bars.includes(from)) return [...bars];
+  return bars.includes(to) ? bars.filter((bar) => bar !== from) : bars.map((bar) => (bar === from ? to : bar));
+}
 
 /** `map` with its own `from` entry under `to`, or `map` itself where it holds none to move. */
 function renameEntry(map: Record<string, unknown>, from: string, to: string): Record<string, unknown> {
@@ -99,3 +104,46 @@ function renameEntry(map: Record<string, unknown>, from: string, to: string): Re
   const { [from]: moved, ...rest } = map;
   return Object.hasOwn(rest, to) ? rest : { ...rest, [to]: moved };
 }
+
+const GRID_LEAVES: readonly (readonly [string, string])[] = [
+  ['view.gridVisible', 'view.grid.visible'],
+  ['view.gridDensity', 'view.grid.spacing'],
+  ['view.snapToGrid', 'view.grid.snap'],
+];
+
+const FEATURE_LEAVES: readonly (readonly [string, string])[] = [
+  ['view.rulersVisible', 'view.rulers.visible'],
+  ['view.symmetryAxis', 'view.symmetry.axis'],
+  ['view.pathEditing.pathDirection', 'view.pathEditing.direction'],
+  ['view.pathEditing.pathComb', 'view.pathEditing.comb'],
+  ['view.pathEditing.pathPoise', 'view.pathEditing.poise'],
+  ['view.pathEditing.pathFillets', 'view.pathEditing.fillets'],
+];
+
+/** Version 7 to 8: the rulers, symmetry and path edit aids took the settings groups their packages declare, so
+ *  `view.symmetry` became a group whose switch is `on`. */
+export const featureSettingsToGroups: PrefsMigration = (records) => {
+  if (records.has('view.symmetry')) {
+    if (!records.has('view.symmetry.on')) records.set('view.symmetry.on', records.get('view.symmetry'));
+    records.delete('view.symmetry');
+  }
+  for (const [from, to] of FEATURE_LEAVES) {
+    if (!records.has(from)) continue;
+    if (!records.has(to)) records.set(to, records.get(from));
+    records.delete(from);
+  }
+};
+
+/** Version 6 to 7: the grid's leaves moved into the view's Grid group, which is `@weasel-js/editor`'s `pageGridSchema`. */
+export const gridToGroup: PrefsMigration = (records) => {
+  for (const [from, to] of GRID_LEAVES) {
+    if (!records.has(from)) continue;
+    if (!records.has(to)) records.set(to, records.get(from));
+    records.delete(from);
+  }
+};
+
+/** Version 8 to 9: Symmetry's switch became session state, so the `view.symmetry.on` it was stored at is dropped. */
+export const dropSymmetrySwitch: PrefsMigration = (records) => {
+  records.delete('view.symmetry.on');
+};

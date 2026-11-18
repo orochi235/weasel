@@ -48,7 +48,7 @@ const solid = (color: string) => ({ paint: { kind: 'solid' as const, color } });
  * `@weasel-js/ui-logic`, and a `draw` that lays the rows into `target.bounds` and paints them as `ItemList.module.css`
  * styles them: the selected row on `--wzl-border`, the hovered on `--wzl-surface`, the keyboard's row ringed.
  */
-export const hudList: HeadlessComponent<HudListState, RowListLayout, HudListTarget, DrawCommand[]> = {
+export const hudItemList: HeadlessComponent<HudListState, RowListLayout, HudListTarget, DrawCommand[]> = {
   measure: measureRowList,
   draw(state, target) {
     const { bounds: b, ctx } = target;
@@ -56,7 +56,7 @@ export const hudList: HeadlessComponent<HudListState, RowListLayout, HudListTarg
     const fg = t['--wzl-fg'];
     const subtle = resolveCurrentColor(t['--wzl-fg-subtle'], fg);
     const env = hudMeasureEnv(ctx, target.fontFamily);
-    const { layout } = measureRowList(state, exactly(b.w, b.h), env);
+    const { layout } = measureRowList(state, exactly(b.width, b.height), env);
     const font = { fontFamily: target.fontFamily ?? ctx.defaultFont, fontSize: layout.metrics.font.size };
     const text = (s: string, x: number, y: number, h: number, color: string): DrawCommand =>
       textCommandFromRuns(x, y, [{ text: s, fill: solid(color) }], font, undefined, h, 'center');

@@ -1,13 +1,11 @@
 import {
   isPrefLeaf,
   type PrefGroup,
-  type PrefLeaf,
   type PrefSection,
   type PrefsSource,
   pairRuns,
   prefTabRuns,
 } from '@weasel-js/prefs';
-import { getOwn } from '@weasel-js/registry';
 import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import { GroupTabs } from '@weasel-js/ui/components/Prefs';
 import {
@@ -18,22 +16,15 @@ import {
   type PropertyListPack,
   type PropertySpacing,
   PropertySpan,
-  Subpanel,
 } from '@weasel-js/ui/components/Properties';
-import { Fragment, type ReactNode } from 'react';
-import { drawsOwn } from '../config/drawsOwn';
-import { schemaNodeAtPath, valueAtPath } from '../config/path';
+import type { ReactNode } from 'react';
+import { schemaNodeAt } from '../config/path';
 import type { LeafRenderer, ResolvedConfig } from '../config/types';
-import { isLeafActive, isLeafEnabled, isLeafVisible } from '../config/visible';
-import { boundAction } from './boundAction';
-import { ControlBar } from './ControlBar';
-import { ControlRow } from './ControlRow';
+import { isRowActive, isRowEnabled, isRowVisible } from '../config/visible';
 import { type Rows, sectionRows } from './controlPack';
-import { extra, leafValueAt } from './fields';
-import { headingActions, liftedControl, sectionFrame, sectionKey } from './panelHeadings';
+import { liftedControl, sectionFrame, sectionKey } from './panelHeadings';
+import { nodeRow, type PanelDraw, type PanelScope, pairedRow } from './panelNode';
 import { drawsAnyAt, loosePathsIn, pairableAt } from './panelPaths';
-import { ResetGroup } from './ResetGroup';
-import { PairedRow } from './rows';
 
 /** What a heading's fold takes: the grid its rows pack into, and how it opens. */
 export interface FoldProps {
@@ -81,9 +72,9 @@ function conditionsAt<TC extends Record<string, unknown>>({
 }: PanelRowsSource<TC>) {
   const values = config as Record<string, unknown>;
   return {
-    enabled: (path: string): boolean => isLeafEnabled(resolved, path, values, over),
-    visible: (path: string): boolean => isLeafVisible(resolved, path, values, showHidden, over),
-    active: (path: string): boolean => isLeafActive(resolved, path, values, over),
+    enabled: (path: string): boolean => isRowEnabled(resolved, path, values, over),
+    visible: (path: string): boolean => isRowVisible(resolved, path, values, showHidden, over),
+    active: (path: string): boolean => isRowActive(resolved, path, values, over),
   };
 }
 
@@ -93,128 +84,24 @@ function conditionsAt<TC extends Record<string, unknown>>({
  * a run of tabs as one strip.
  */
 export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsSource<TC>) {
-  const {
-    resolved,
-    config,
-    shown,
-    setConfig,
-    draftConfig,
-    errors,
-    renderers,
-    over,
-    spacing,
-    align,
-    auto,
-    setRowAuto,
-    changed,
-    fold,
-  } = source;
-
-  const { enabled, visible, active } = conditionsAt(source);
-
-  const listOf = (rows: Rows, children: ReactNode): ReactNode => (
-    <PropertyList pack={rows.grid} spacing={spacing} align={align}>
-      {children}
-    </PropertyList>
-  );
+  const { resolved, renderers, spacing, align, fold } = source;
+  const scope: PanelScope<TC> = { ...source, ...conditionsAt(source) };
+  const { enabled, visible } = scope;
 
   const drawsAny = (path: string): boolean => drawsAnyAt(resolved, visible, path);
-  const loosePaths = (group: PrefGroup, at: string): string[] => loosePathsIn(resolved, group, at);
-
-  const lift = (heading: ReactNode, paths: readonly string[]) =>
-    liftedControl(heading, paths, { ...source, visible, enabled });
-
-  /** One node, which is either a group to recurse into or a row to draw. */
-  const node = (path: string, rows: Rows): ReactNode => {
-    const found = schemaNodeAtPath(resolved.group, path);
-    if (!found) return null;
-    if (!drawsAny(path)) return null;
-    if (isPrefLeaf(found)) {
-      return (
-        <ControlRow
-          key={path}
-          path={path}
-          leaf={found}
-          resolved={resolved}
-          config={config}
-          shown={shown}
-          setConfig={setConfig}
-          draftConfig={draftConfig}
-          error={errors && getOwn(errors, path)}
-          renderers={renderers}
-          pack={rows.pack}
-          layout={rows.layout}
-          auto={auto}
-          setRowAuto={setRowAuto}
-          changed={changed}
-          disabled={!enabled(path)}
-          over={over}
-        />
-      );
-    }
-    if (found.as === 'bar') {
-      return (
-        <ControlBar
-          key={path}
-          group={found}
-          path={path}
-          visible={visible}
-          enabled={enabled}
-          active={active}
-          value={(p, leaf) => leafValueAt(shown, p, leaf)}
-          read={(p) => valueAtPath(shown, p)}
-          write={setConfig}
-          bind={(leaf) => boundAction(leaf, config as Record<string, unknown>, setConfig)}
-          draft={draftConfig}
-          custom={(p, leaf) => drawsOwn(resolved, renderers, p, leaf)}
-          row={(p) => listOf(rows, node(p, rows))}
-          open={(inner, at) => listOf(rows, body(inner, at, rows))}
-        />
-      );
-    }
-    // A group with no name contributes its rows and no chrome (core's rule for an empty
-    // `PrefGroup.name`), and so does one named as the section it already sits under.
-    if (found.name === '' || found.as === 'fragment' || found.name === rows.heading)
-      return <Fragment key={path}>{body(found, path, rows)}</Fragment>;
-    const lifted = lift(found.name, loosePaths(found, path));
-    const reset = found.resettable ? (
-      <ResetGroup group={found} path={path} source={source.prefs} />
-    ) : undefined;
-    // `as: 'section'` is a heading over the rows, unframed: the panel's motif doesn't reach it.
-    if (found.as === 'section') {
-      const { pack: _pack, ...folds } = fold(path, undefined, rows.grid);
-      return (
-        <Subpanel
-          key={path}
-          title={found.name}
-          motif={resolved.motifs?.get(path)}
-          disabled={!enabled(path)}
-          {...folds}
-        >
-          {body(found, path, rows)}
-        </Subpanel>
-      );
-    }
-    return (
-      <PropertyGroup
-        key={path}
-        title={found.name}
-        description={found.description}
-        disabled={!enabled(path)}
-        // A nested group is a block of rows, not a control: half of a
-        // two-column grid leaves it laying its own rows out inside a cell,
-        // which overlaps them.
-        span
-        motif={resolved.motifs?.get(path) ?? source.motif}
-        actions={headingActions(lifted.control, reset)}
-        {...fold(path, undefined, rows.grid)}
-      >
-        {body(found, path, rows, lifted.path)}
-      </PropertyGroup>
-    );
-  };
-
   const pairable = (path: string) => pairableAt(resolved, renderers, visible, path);
+
+  const draw: PanelDraw = {
+    list: (rows, children) => (
+      <PropertyList pack={rows.grid} spacing={spacing} align={align}>
+        {children}
+      </PropertyList>
+    ),
+    node: (path, rows) => nodeRow(scope, draw, drawsAny, path, rows),
+    body: (group, at, rows, lifted) => body(group, at, rows, lifted),
+    lift: (heading, paths) => liftedControl(heading, paths, scope),
+    loosePaths: (group, at) => loosePathsIn(resolved, group, at),
+  };
 
   /** A run of sibling paths as rows, merging each leaf a `pair` names into
    *  the row of the leaf naming it, where they run adjacent. */
@@ -222,44 +109,22 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     const runs = pairRuns(paths, pairable);
     // A run of groups drawn as tabs shares one strip. A group is never paired, so each is a run of its own.
     const tabGroup = ({ items: [only], pair }: (typeof runs)[number]): boolean => {
-      const found = pair || only === undefined ? undefined : schemaNodeAtPath(resolved.group, only);
+      const found = pair || only === undefined ? undefined : schemaNodeAt(resolved.group, only);
       return found !== undefined && !isPrefLeaf(found) && found.as === 'tab';
     };
     const out: ReactNode[] = [];
     for (const step of prefTabRuns(runs, tabGroup, ({ items }) => items.some(drawsAny))) {
       if (step.tabs) {
         const tabs = step.tabs.flatMap((run) => run.items);
-        const group = (path: string) => schemaNodeAtPath(resolved.group, path) as PrefGroup;
-        const content = (found: PrefGroup, path: string) => listOf(rows, body(found, path, rows));
+        const group = (path: string) => schemaNodeAt(resolved.group, path) as PrefGroup;
+        const content = (found: PrefGroup, path: string) =>
+          draw.list(rows, body(found, path, rows));
         out.push(controlTabs(step.tabs[0]?.items[0], tabs, { group, enabled, content }));
         continue;
       }
       const { items, pair } = step.item;
-      if (!pair) {
-        for (const path of items) out.push(node(path, rows));
-        continue;
-      }
-      const cells = items.map((path) => ({
-        path,
-        leaf: schemaNodeAtPath(resolved.group, path) as PrefLeaf,
-        disabled: !enabled(path),
-      }));
-      out.push(
-        <PairedRow
-          key={items[0]}
-          label={pair.label}
-          cells={cells}
-          shown={shown}
-          setConfig={setConfig}
-          draftConfig={draftConfig}
-          errors={errors}
-          layout={rows.layout}
-          changed={items.some((path) => changed?.has(path) === true)}
-          // A segmented cell carries every choice at once, so a pair holding
-          // one needs the whole row the way a segmented row of its own does.
-          span={cells.some(({ leaf }) => extra<string>(leaf, 'control') === 'radio')}
-        />,
-      );
+      if (pair) out.push(pairedRow(scope, items, pair.label, rows));
+      else for (const path of items) out.push(draw.node(path, rows));
     }
     return out;
   };
@@ -271,13 +136,13 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     return (
       <>
         {rowsFor(
-          loosePaths(group, at).filter((p) => p !== lifted),
+          draw.loosePaths(group, at).filter((p) => p !== lifted),
           rows,
         )}
         {sections.map((section) => {
           if (!section.paths.some(drawsAny)) return null;
           const inner = sectionRows(section, rows);
-          const heading = lift(section.label, section.paths);
+          const heading = draw.lift(section.label, section.paths);
           return (
             <PropertyGroup
               key={sectionKey(section)}
@@ -296,7 +161,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     );
   };
 
-  return { body, lift, loosePaths };
+  return { body, lift: draw.lift, loosePaths: draw.loosePaths };
 }
 
 /** A run of groups drawn as tabs: one strip of their names, each dimmed while its group is disabled. */

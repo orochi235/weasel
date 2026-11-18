@@ -1,5 +1,5 @@
 /** The ongoing handles a dispatcher has in flight, keyed by gesture id. */
-import { resolveCursor, type CursorSpec } from '@weasel-js/cursor';
+import { cursorCss, type CursorSpec } from '@weasel-js/cursor';
 import { actionCursor, type Action } from '../actions/action';
 import type { OngoingHandle } from '../actions/invoker';
 import { isKeyHeldGestureId } from './gestureIds';
@@ -97,7 +97,7 @@ export function createInFlightGestures(changed: () => void = () => {}): InFlight
         const spec = handle.cursor?.() ?? action?.activeCursor ?? actionCursor(action);
         // The spec, not its CSS form: a painted glyph resolves to 'none', which
         // would tell the pump to hide the cursor and paint nothing.
-        if (spec !== undefined && resolveCursor(spec)) cursor = spec;
+        if (spec !== undefined && cursorCss(spec)) cursor = spec;
       }
       return cursor;
     },

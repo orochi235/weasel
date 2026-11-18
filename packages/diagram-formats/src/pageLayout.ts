@@ -12,11 +12,10 @@ import {
 import { getOwn } from '@weasel-js/registry';
 import type { GraphPage } from './document';
 import { shiftData } from './shiftData';
+import type { Rect } from '@weasel-js/geom';
 
 /** Room kept between a laid-out page's edges and what is on it. */
 export const PAGE_MARGIN = 40;
-
-type Rect = { x: number; y: number; width: number; height: number };
 
 /** A pool or an empty container with no box: only layout places it. A container that holds something fits it instead. */
 const unplacedRegion = (c: DataContainer): boolean => c.box === undefined && (c.role === 'pool' || (c.members ?? []).length === 0);

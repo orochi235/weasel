@@ -47,7 +47,7 @@ export function attachMenuHost(hud: Hud, host: MenuHost, options: AttachMenuHost
     const w = createMenuWidget({
       ...opts, open,
       close: () => { if (host.current() === open) host.close(); },
-      onChange: () => hud.markDirty(),
+      onChange: () => hud.requestRedraw(),
     });
     widget = w;
     hud.add(w);

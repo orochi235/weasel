@@ -4,7 +4,7 @@ import { act, renderHook } from '@testing-library/react';
 import { KitSettingsProvider } from '@weasel-js/react';
 import type { ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import {
-  createInsertOp, createScene, defaultCommitAdapter, commitSelectionOps,
+  createInsertOp, createScene, defaultCommitAdapter, createCommitSelectionOps,
   type InsertDep, type NodeId, type RectPose,
 } from '@weasel-js/core';
 import { useSpiroTool } from './useSpiroTool';
@@ -26,7 +26,7 @@ describe('useSpiroTool', () => {
       commit(bounds, extras, _ends, select) {
         const id = scene.mintId();
         const node = { id, kind: 'mark', layer: 'main', parent: null, data: extras, pose: bounds };
-        scene.applyBatch([createInsertOp({ node: node as never }), ...commitSelectionOps(select, id)], 'Insert', adapter);
+        scene.applyBatch([createInsertOp({ node: node as never }), ...createCommitSelectionOps(select, id)], 'Insert', adapter);
         return id;
       },
     };

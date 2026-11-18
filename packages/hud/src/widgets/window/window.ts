@@ -2,24 +2,24 @@ import { createRevision } from '../../widget';
 import type {
   Widget, WidgetBounds, HudDrawCtx, HudContentCtx, HudPointerEvent,
 } from '../../widget';
-import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
-import { pathFromD, parseColor, textCommandFromRuns } from '@weasel-js/core';
+import type { DrawCommand } from '@weasel-js/core/renderer';
 import { clampRectWithin } from '@weasel-js/geom';
-import { dashForStrokeStyle, mixOklab, type ColorSource } from '@weasel-js/paint';
-import { TINT_REF, type Emphasis, type Grade, type Stance } from '@weasel-js/theme';
-import { windowLook } from './windowLook';
+import type { ColorSource } from '@weasel-js/paint';
+import type { Emphasis, Grade, Stance } from '@weasel-js/theme';
+import { createWindowDrag, dragZoneFor } from './windowDrag';
+import { drawWindowFrame, type WindowAppearance, type WindowShape } from './windowFrame';
 import {
-  zoneAt, windowContentRect, applyWindowDrag, cursorForZone,
+  zoneAt, windowContentRect, cursorForZone,
   DEFAULT_WINDOW_METRICS, type WindowMetrics, type WindowZone,
 } from './zones';
 
 /** Options for a window widget. */
 export interface WindowOptions {
   id: string;
-  x: number; y: number; w: number; h: number;
+  x: number; y: number; width: number; height: number;
   title: string;
-  minW?: number;
-  minH?: number;
+  minWidth?: number;
+  minHeight?: number;
   /** Draw a titlebar with the title and a close box. Default `true`. When
    *  `false` the window is bare — and dragging its interior moves it, since
    *  there is no bar to grab. A bare window whose interior passes grows a
@@ -83,33 +83,6 @@ export interface WindowWidget extends Widget {
   dispose(): void;
 }
 
-/** `color-mix(in oklab, tint p, surface)`, for a canvas that has no cascade to ask. */
-function mixTint(tint: string, mix: string, surface: string): string {
-  const [r, g, b, a] = mixOklab(parseColor(tint), parseColor(surface), Number.parseFloat(mix) / 100);
-  return `rgba(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}, ${a})`;
-}
-
-function casedTitle(title: string, textCase: string): string {
-  if (textCase === 'uppercase') return title.toUpperCase();
-  if (textCase === 'lowercase') return title.toLowerCase();
-  return title;
-}
-
-/** `<DragGrip>`'s six dots turned on their side, centered on `(cx, cy)`. */
-function gripDots(cx: number, cy: number, color: string): PathDrawCommand {
-  const r = 1.1;
-  let d = '';
-  for (const dx of [-5, 0, 5]) {
-    for (const dy of [-2, 2]) {
-      const px = cx + dx - r, py = cy + dy;
-      d += `M ${px} ${py} A ${r} ${r} 0 1 0 ${px + 2 * r} ${py} A ${r} ${r} 0 1 0 ${px} ${py} Z `;
-    }
-  }
-  return { kind: 'path', path: pathFromD(d), fill: { paint: { kind: 'solid', color } } };
-}
-
-const sameBounds = (a: WidgetBounds, b: WidgetBounds) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
-
 export function createWindow(opts: WindowOptions): WindowWidget {
   const chrome = opts.titlebar ?? true;
   const passing = opts.interior === 'pass';
@@ -120,11 +93,12 @@ export function createWindow(opts: WindowOptions): WindowWidget {
   const gripped = !chrome && passing;
   const m: WindowMetrics = chrome ? configured
     : { ...configured, titleH: gripped ? configured.grip : configured.edge };
-  const minW = opts.minW ?? 80;
-  const minH = opts.minH ?? m.titleH + m.edge + 40;
+  const shape: WindowShape = { m, chrome, gripped };
+  const minW = opts.minWidth ?? 80;
+  const minH = opts.minHeight ?? m.titleH + m.edge + 40;
 
   const clampSize = (b: WidgetBounds): WidgetBounds => ({
-    x: b.x, y: b.y, w: Math.max(minW, b.w), h: Math.max(minH, b.h),
+    x: b.x, y: b.y, width: Math.max(minW, b.width), height: Math.max(minH, b.height),
   });
 
   // No host size until a draw supplies one, so a window never drawn is not
@@ -133,7 +107,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
   const clampOnHost = (b: WidgetBounds): WidgetBounds => {
     if (!hostDims) return b;
     const r = clampRectWithin(
-      { x: b.x, y: b.y, width: b.w, height: b.h },
+      b,
       { x: 0, y: 0, width: hostDims.width, height: hostDims.height },
     );
     return { ...b, x: r.x, y: r.y };
@@ -142,36 +116,28 @@ export function createWindow(opts: WindowOptions): WindowWidget {
   let disposed = false;
   const rev = createRevision(opts.onChange);
   let hidden = false;
-  let title = opts.title;
-  let stance = opts.stance;
-  let grade = opts.grade;
-  let emphasis = opts.emphasis;
-  let tint = opts.tint;
-  let bounds = clampSize({ x: opts.x, y: opts.y, w: opts.w, h: opts.h });
-  let dragZone: WindowZone | null = null;
-  let dragStart: WidgetBounds = bounds;
-  let dragOrigin = { x: 0, y: 0 };
-  let pressZone: WindowZone | null = null;
-  let pressMoved = false;
+  const appearance: WindowAppearance = {
+    title: opts.title, stance: opts.stance, grade: opts.grade, emphasis: opts.emphasis, tint: opts.tint,
+  };
+  let bounds = clampSize({ x: opts.x, y: opts.y, width: opts.width, height: opts.height });
 
   const assertNotDisposed = () => {
     if (disposed) throw new Error('weasel-hud: cannot mutate a disposed widget.');
   };
+  const asDrag = (z: WindowZone | null): WindowZone | null => dragZoneFor(z, chrome, passing);
 
-  // With no titlebar to grab, the interior is the move handle — it is inert
-  // otherwise, and a window you cannot move is worse than one you cannot
-  // click through.
-  const asDrag = (z: WindowZone | null): WindowZone | null => {
-    if (chrome) return z;
-    if (z === 'close') return 'title';
-    return !passing && z === 'content' ? 'title' : z;
-  };
-
-  const closeBox = (): WidgetBounds => ({
-    x: bounds.x + bounds.w - m.edge - m.closeSize,
-    y: bounds.y + (m.titleH - m.closeSize) / 2,
-    w: m.closeSize,
-    h: m.closeSize,
+  const drag = createWindowDrag({
+    bounds: () => bounds,
+    zoneAt: (x, y) => zoneAt(bounds, m, x, y),
+    dragZone: asDrag,
+    minW, minH, clampOnHost,
+    place(b, zone) {
+      bounds = b;
+      (zone === 'title' ? opts.onMove : opts.onResize)?.(bounds);
+      rev.changed();
+    },
+    close() { opts.onClose?.(); },
+    click(p) { opts.onContentClick?.(p); },
   });
 
   return {
@@ -186,82 +152,17 @@ export function createWindow(opts: WindowOptions): WindowWidget {
 
     // Ends any drag in flight: `dragStart` would otherwise still hold the
     // pre-call bounds, so the next move would rebase from stale origin.
-    setBounds(b) { assertNotDisposed(); bounds = clampOnHost(clampSize(b)); dragZone = null; pressZone = null; rev.changed(); },
+    setBounds(b) { assertNotDisposed(); bounds = clampOnHost(clampSize(b)); drag.end(); rev.changed(); },
     setHidden(h) { assertNotDisposed(); hidden = h; rev.changed(); },
-    setTitle(t) { assertNotDisposed(); title = t; rev.changed(); },
-    setStance(st) { assertNotDisposed(); stance = st; rev.changed(); },
-    setGrade(g) { assertNotDisposed(); grade = g; rev.changed(); },
-    setEmphasis(e) { assertNotDisposed(); emphasis = e; rev.changed(); },
-    setTint(t) { assertNotDisposed(); tint = t; rev.changed(); },
+    setTitle(t) { assertNotDisposed(); appearance.title = t; rev.changed(); },
+    setStance(st) { assertNotDisposed(); appearance.stance = st; rev.changed(); },
+    setGrade(g) { assertNotDisposed(); appearance.grade = g; rev.changed(); },
+    setEmphasis(e) { assertNotDisposed(); appearance.emphasis = e; rev.changed(); },
+    setTint(t) { assertNotDisposed(); appearance.tint = t; rev.changed(); },
 
     draw(ctx: HudDrawCtx): DrawCommand[] {
       hostDims = ctx.dims;
-      const { x, y, w, h } = bounds;
-      const out: DrawCommand[] = [];
-
-      // The grab bands sit outside contentRect, so nothing else paints them —
-      // without these the scene shows through the window's own border. The
-      // titlebar, when there is one, is the top band.
-      const look = windowLook(ctx.tokens, { stance, grade, emphasis });
-      const named = tint === undefined ? undefined : ctx.color(typeof tint === 'number' ? { ref: TINT_REF, index: tint } : tint);
-      const band = named === undefined && stance === undefined && grade === undefined
-        ? look.surface
-        : mixTint(named ?? look.tint, look['tint-mix'], look.surface);
-      const below = y + m.titleH;
-      const bandH = h - m.titleH;
-      const rects = [
-        { x, y, width: w, height: m.titleH },
-        { x, y: below, width: m.edge, height: bandH },
-        { x: x + w - m.edge, y: below, width: m.edge, height: bandH },
-        { x: x + m.edge, y: y + h - m.edge, width: w - m.edge * 2, height: m.edge },
-      ];
-      for (const r of rects) {
-        out.push({ kind: 'path', path: { kind: 'rect', ...r }, fill: { paint: { kind: 'solid', color: band } } });
-      }
-
-      // Border ring: a stroked rect, no fill, so the interior stays a hole
-      // for the content painter drawn beneath this widget.
-
-      const ringW = Number.parseFloat(look['border-width']) || 0;
-      if (ringW > 0) {
-        const style = look['border-style'] === 'dashed' || look['border-style'] === 'dotted' ? look['border-style'] : 'solid';
-        const dash = dashForStrokeStyle(style, ringW);
-        const ring: PathDrawCommand = {
-          kind: 'path',
-          path: { kind: 'rect', x, y, width: w, height: h },
-          stroke: { paint: { kind: 'solid', color: look['border-color'] }, width: ringW, ...(dash ? { dash } : {}) },
-        };
-        out.push(ring);
-      }
-
-      if (gripped) out.push(gripDots(x + w / 2, y + (m.edge + m.grip) / 2, look['title-color']));
-      if (!chrome) return out;
-
-      out.push(textCommandFromRuns(
-        x + m.edge + 2, y,
-        [{ text: casedTitle(title, look['title-case']), fill: { paint: { kind: 'solid', color: look['title-color'] } } }],
-        {
-          fontFamily: ctx.defaultFont,
-          fontSize: 12,
-        },
-        // Reserve the close box so a long title is ellipsized rather than
-        // running under the ✕.
-        w - m.edge * 2 - m.closeSize - 4,
-        m.titleH,
-        'center',
-      ));
-
-      const c = closeBox();
-      const inset = 3;
-      const x0 = c.x + inset, y0 = c.y + inset;
-      const x1 = c.x + c.w - inset, y1 = c.y + c.h - inset;
-      out.push({
-        kind: 'path',
-        path: pathFromD(`M ${x0} ${y0} L ${x1} ${y1} M ${x1} ${y0} L ${x0} ${y1}`),
-        stroke: { paint: { kind: 'solid', color: look['title-color'] }, width: 1.5, cap: 'round' },
-      });
-
-      return out;
+      return drawWindowFrame(ctx, bounds, shape, appearance);
     },
 
     hitTest(px, py) {
@@ -274,58 +175,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
       return passing && !hidden && zoneAt(bounds, m, px, py) === 'content';
     },
 
-    onPointer(evt: HudPointerEvent): void {
-      switch (evt.type) {
-        case 'down': {
-          pressZone = zoneAt(bounds, m, evt.x, evt.y);
-          pressMoved = false;
-          dragZone = asDrag(pressZone);
-          dragStart = bounds;
-          dragOrigin = { x: evt.x, y: evt.y };
-          break;
-        }
-        case 'move': {
-          if (!dragZone || !Number.isFinite(evt.x) || !Number.isFinite(evt.y)) break;
-          // The dispatcher sends a move only once the press crossed the `gestures.dragPx` kit setting.
-          pressMoved = true;
-          const dragged = applyWindowDrag(
-            dragStart, dragZone, evt.x - dragOrigin.x, evt.y - dragOrigin.y, minW, minH,
-          );
-          // Only 'title' translates without resizing (zones.ts), so it is the
-          // one drag where pulling the window back cannot fight the gesture.
-          const next = dragZone === 'title' ? clampOnHost(dragged) : dragged;
-          if (!sameBounds(next, bounds)) {
-            bounds = next;
-            (dragZone === 'title' ? opts.onMove : opts.onResize)?.(bounds);
-            rev.changed();
-          }
-          break;
-        }
-        case 'up': {
-          if (dragZone === 'close' && zoneAt(bounds, m, evt.x, evt.y) === 'close') {
-            opts.onClose?.();
-          } else if (pressZone === 'content' && !pressMoved && Number.isFinite(evt.x) && Number.isFinite(evt.y)) {
-            opts.onContentClick?.({ x: evt.x, y: evt.y });
-          }
-          dragZone = null;
-          pressZone = null;
-          break;
-        }
-        case 'cancel': {
-          if (dragZone && !sameBounds(bounds, dragStart)) {
-            bounds = dragStart;
-            (dragZone === 'title' ? opts.onMove : opts.onResize)?.(bounds);
-            rev.changed();
-          }
-          dragZone = null; pressZone = null;
-          break;
-        }
-        // The cursor is resolved per point via `cursorAt`, so hover carries no
-        // state and needs no redraw.
-        default:
-          break;
-      }
-    },
+    onPointer(evt: HudPointerEvent): void { drag.pointer(evt); },
 
     dispose() {
       if (disposed) return;

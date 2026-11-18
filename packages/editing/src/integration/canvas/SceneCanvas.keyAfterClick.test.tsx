@@ -29,7 +29,7 @@ beforeAll(() => {
   proto.releasePointerCapture = vi.fn();
 });
 
-function setup(mode: 'single' | 'multi') {
+function setup(mode: 'single' | 'multiple') {
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   let a = '' as NodeId;
   let b = '' as NodeId;
@@ -56,13 +56,13 @@ function setup(mode: 'single' | 'multi') {
 // if the selection is read where the press wrote it.
 describe('a key pressed straight after a click', () => {
   it('deletes nothing with nothing clicked', () => {
-    const { a, b, backspace, has } = setup('multi');
+    const { a, b, backspace, has } = setup('multiple');
     act(backspace);
     expect(has(a)).toBe(true);
     expect(has(b)).toBe(true);
   });
 
-  it.each(['single', 'multi'] as const)('acts on the node the click selected (%s)', (mode) => {
+  it.each(['single', 'multiple'] as const)('acts on the node the click selected (%s)', (mode) => {
     const { a, b, pointer, backspace, has } = setup(mode);
     act(() => {
       pointer('pointerdown', 140, 130);
@@ -74,7 +74,7 @@ describe('a key pressed straight after a click', () => {
   });
 
   it('acts on the node pressed, when it comes before the release', () => {
-    const { a, b, pointer, backspace, has } = setup('multi');
+    const { a, b, pointer, backspace, has } = setup('multiple');
     act(() => {
       pointer('pointerdown', 140, 130);
       backspace();
@@ -85,7 +85,7 @@ describe('a key pressed straight after a click', () => {
   });
 
   it('acts on the newly clicked node, not the one selected before', () => {
-    const { a, b, pointer, backspace, has } = setup('multi');
+    const { a, b, pointer, backspace, has } = setup('multiple');
     act(() => { pointer('pointerdown', 290, 280); pointer('pointerup', 290, 280); });
     act(() => {
       pointer('pointerdown', 140, 130);
@@ -97,7 +97,7 @@ describe('a key pressed straight after a click', () => {
   });
 
   it('acts on the one node a click inside a multi-selection collapses it to on release', () => {
-    const { a, b, pointer, backspace, has, scene } = setup('multi');
+    const { a, b, pointer, backspace, has, scene } = setup('multiple');
     act(() => { scene.setSelection([a, b]); });
     act(() => {
       pointer('pointerdown', 140, 130);

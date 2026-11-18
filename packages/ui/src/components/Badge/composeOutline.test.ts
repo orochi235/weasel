@@ -3,7 +3,7 @@ import { inwardReach } from './composeOutline';
 import { polygonSampler } from './bases/polygonSampler';
 
 describe('inwardReach', () => {
-  const BOX = { w: 80, h: 24 };
+  const BOX = { width: 80, height: 24 };
   const HELD = { left: 8, top: 4, right: 72, bottom: 20 };
   const square = polygonSampler([[0, 0], [100, 0], [100, 100], [0, 100]], 80, 24);
 
@@ -31,7 +31,7 @@ describe('inwardReach', () => {
   });
 
   describe('for a point moved outward across a notch narrower than it moves', () => {
-    const box = { w: 100, h: 100 };
+    const box = { width: 100, height: 100 };
     const notched = polygonSampler([[0, 0], [49, 0], [49, 50], [51, 50], [51, 0], [100, 0], [100, 100], [0, 100]], 100, 100);
 
     it('counts one that lands on the content', () => {

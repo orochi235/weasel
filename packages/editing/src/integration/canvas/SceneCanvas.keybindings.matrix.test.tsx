@@ -13,7 +13,7 @@ import { SceneCanvas } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import type { Scene } from '@weasel-js/core/engine';
 import { ActiveToolContextProvider, useActiveToolContext } from '@weasel-js/routing/react';
-import { drawPreset, BUILTIN_TOOL_IDS } from '@weasel-js/editing';
+import { drawPreset, KIT_TOOL_IDS } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -93,7 +93,7 @@ describe('default keybindings: tool activation', () => {
             layers={{}}
             width={64}
             height={64}
-            defaultTools={BUILTIN_TOOL_IDS}
+            defaultTools={KIT_TOOL_IDS}
           />
         </ActiveToolContextProvider>,
       );
@@ -125,7 +125,7 @@ const ACTION_KEY_MATRIX: readonly ActionKeyCase[] = [
   { actionId: 'duplicate', key: 'd', mods: { ctrlKey: true, shiftKey: true },  label: 'Cmd/Ctrl+Shift+D → duplicate' },
   { actionId: 'group',     key: 'g', mods: { ctrlKey: true },                  label: 'Cmd/Ctrl+G → group' },
   { actionId: 'ungroup',   key: 'g', mods: { ctrlKey: true, shiftKey: true },  label: 'Cmd/Ctrl+Shift+G → ungroup' },
-  { actionId: 'escape',    key: 'Escape',                                      label: 'Escape → escape' },
+  { actionId: 'deselect',  key: 'Escape',                                      label: 'Escape → deselect' },
 ];
 
 describe('default keybindings: action shortcuts', () => {

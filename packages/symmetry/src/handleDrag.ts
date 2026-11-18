@@ -16,7 +16,7 @@ export interface SymmetryHandleSnap {
 }
 
 /** The change one frame of a handle drag makes, from where the press began. */
-export function handleChange(
+export function symmetryHandleChange(
   press: SymmetryHandlePress,
   origin: { center: Point; spec: SymmetrySpec },
   from: Point,
@@ -58,7 +58,7 @@ function unmoved(handle: SymmetryHandlePress['handle'], origin: { center: Point;
  * Without a `snap` dep nothing snaps. The drag lands as one undo step, and
  * cancel puts the group back.
  */
-export function handleDragAction(ctrl: SymmetryController): Action & { requires: string[] } {
+export function createSymmetryHandleAction(ctrl: SymmetryController): Action & { requires: string[] } {
   return {
     id: SYMMETRY_HANDLE_ACTION_ID,
     label: 'Move symmetry guide',
@@ -86,7 +86,7 @@ export function handleDragAction(ctrl: SymmetryController): Action & { requires:
           kind: 'symmetry-guide',
           onMove(move: InvocationCtx): void {
             const mods = snapMods(move);
-            last = handleChange(press, origin, from, move.world, {
+            last = symmetryHandleChange(press, origin, from, move.world, {
               point: (p) => (session ? session.at(p, mods).point : p),
               angle: (theta) => (session ? session.angle(theta, mods).theta : theta),
             });

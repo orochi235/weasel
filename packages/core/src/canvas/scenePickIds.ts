@@ -2,6 +2,7 @@
  * The `pickId` each scene node's paint carries, so a pixel of an id frame
  * (`WeaselRenderer.renderIds`) names the node that painted it.
  */
+import { createPart } from '@weasel-js/registry';
 import { MAX_PICK_ID } from '@weasel-js/renderer';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { documentScene } from 'core/scene/editingSession';
@@ -10,10 +11,10 @@ import { documentScene } from 'core/scene/editingSession';
 export interface ScenePickIds {
   /** The number `id`'s paint carries, given on first ask and kept while the node is in the
    *  scene. Once every number has been given, a node removed since gives its number back. */
-  idOf(id: string): number;
+  pickIdOf(id: string): number;
   /** The node whose paint carries `pickId`; `null` for 0, a number this scene never gave,
    *  or one whose node has left the scene. */
-  nodeOf(pickId: number): NodeId | null;
+  idOfPickId(pickId: number): NodeId | null;
 }
 
 interface OwnPickIds extends ScenePickIds {
@@ -49,7 +50,7 @@ export function createScenePickIds(live: (id: string) => boolean, max = MAX_PICK
       byNode.set(id, n);
       byPick[n] = id;
     },
-    idOf(id) {
+    pickIdOf(id) {
       let n = byNode.get(id);
       if (n !== undefined) return n;
       if (byPick.length <= max) {
@@ -68,14 +69,14 @@ export function createScenePickIds(live: (id: string) => boolean, max = MAX_PICK
       byNode.set(id, n);
       return n;
     },
-    nodeOf(pickId) {
+    idOfPickId(pickId) {
       const id = pickId > 0 ? byPick[pickId] : undefined;
       return id && live(id) ? asNodeId(id) : null;
     },
   };
 }
 
-const BY_SCENE = new WeakMap<object, OwnPickIds>();
+const BY_SCENE = createPart((scene: object): OwnPickIds => createScenePickIds(liveIn(scene)));
 
 function liveIn(scene: object): (id: string) => boolean {
   const get = (scene as { get?: (id: NodeId) => unknown }).get;
@@ -83,10 +84,7 @@ function liveIn(scene: object): (id: string) => boolean {
 }
 
 function pickIdsOf(scene: object): OwnPickIds {
-  const key = documentScene(scene);
-  let ids = BY_SCENE.get(key);
-  if (!ids) BY_SCENE.set(key, (ids = createScenePickIds(liveIn(key))));
-  return ids;
+  return BY_SCENE(documentScene(scene));
 }
 
 /**

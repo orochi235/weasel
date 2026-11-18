@@ -5,7 +5,7 @@
  */
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { enumerateSelections, type Selection } from '../axes';
+import { enumerateAxisChoices, type AxisChoice } from '../axes';
 import { resolveTokens } from '../dtcg/resolve';
 import { outcome, runs, tally, timeoutFor } from '../pbt.fixture';
 import { AXES, deepFreeze, definition, DOCUMENTED_THROW } from './definition.fixture';
@@ -13,7 +13,7 @@ import { axisDependencies } from './deps';
 import { derive } from './derive';
 
 const RUNS = 300;
-const SELECTIONS = enumerateSelections(AXES);
+const SELECTIONS = enumerateAxisChoices(AXES);
 
 describe('derive', () => {
   it('derives any definition or throws for a cycle or a dangling reference, alike every time, writing nothing', () => {
@@ -43,7 +43,7 @@ describe('derive', () => {
 });
 
 /** The resolved tokens at `sel`, or null when derive or resolution throws there. */
-function resolvedAt(def: Parameters<typeof derive>[0], sel: Selection): Record<string, string> | null {
+function resolvedAt(def: Parameters<typeof derive>[0], sel: AxisChoice): Record<string, string> | null {
   try {
     return resolveTokens(derive(def, sel).tokens);
   } catch {

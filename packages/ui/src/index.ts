@@ -133,8 +133,8 @@ export * from './components/ZoomControl';
 export { byRank } from './byRank';
 export { MIXED_HINT } from './components/Field/mixedHint';
 export { dlog, isDebugEnabled } from './dlog';
-export { domFocusScope } from './domFocusScope';
-export { domMeasureEnv, type DomTarget } from './domMeasureEnv';
+export { createDomFocusScope } from './createDomFocusScope';
+export { createDomMeasureEnv, type DomTarget } from './createDomMeasureEnv';
 export { HANDLE_SIZE_TOKENS, handleHalf, handleSize } from './handles';
 export type { HandleSizeToken } from './handles';
 export { MARK_GROUP } from './icons.gen';
@@ -147,7 +147,7 @@ export { selectionRoving } from './selectionRoving';
 export { tiling, tilingRoving } from './tiling';
 export type { TileAttrs, TilingProps } from './tiling';
 export { useAsyncOptions } from './useAsyncOptions';
-export type { AsyncOption, AsyncOptionsResult, UseAsyncOptionsProps } from './useAsyncOptions';
+export type { AsyncOption, AsyncOptionsResult, UseAsyncOptionsOptions } from './useAsyncOptions';
 export { I18nProvider, useFieldLocale } from './useFieldLocale';
 export { IDLE_SETTLE_MS, useIdleSettle } from './useIdleSettle';
 export { heirOf, type FocusRow } from './useRemovedRowFocus';
@@ -158,7 +158,6 @@ export type {
   ReorderDragState,
   ReorderGhost,
   ReorderDragHandlers,
-  PressModifiers,
   ReorderLine,
 } from './useReorderDragList';
 export { rovingTarget, useRovingTabIndex } from './useRovingTabIndex';

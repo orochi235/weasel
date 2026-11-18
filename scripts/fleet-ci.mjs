@@ -24,7 +24,7 @@ const NVM = 'export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"; . "$NVM_DIR/nvm.sh"';
 
 const MODES = {
   postbuild: () => [{
-    label: 'post-build steps', tree: 'weasel-postbuild', kind: 'build', icon: 'hammer', task: 'postbuild', expect: '10m',
+    label: 'post-build steps', tree: 'weasel-postbuild', kind: 'build', icon: 'hammer', task: 'postbuild', expect: '5m',
     about: "Builds every package as ci.yml does and runs its post-build checks: manifests, tree-shaking, React-free subpaths, both consumer smokes, the site builds.",
     shell: `${NVM} && nvm use >/dev/null && exec node scripts/ci-run.mjs built`,
   }],

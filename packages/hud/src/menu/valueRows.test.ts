@@ -5,7 +5,7 @@ import { REPEAT_DELAY_MS, REPEAT_EVERY_MS } from '@weasel-js/ui-input';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { MenuEntry, MenuNumberEntry, MenuTextEntry } from '@weasel-js/menu';
 import type { HudDrawCtx, HudKeyEvent } from '../widget';
-import { drawPanel, OPENED_VALUES, panelSize } from './drawPanel';
+import { panelCommands, OPENED_VALUES, measurePanel } from './panelCommands';
 import { charEnv, menuTokens, THEME_METRICS as m } from './menu.fixture';
 import { createMenuWidget } from './menuWidget';
 import { caretAt, numberChips } from './valueRows';
@@ -20,7 +20,7 @@ const ctx = {
   color: () => undefined,
 } as never as HudDrawCtx;
 
-const b = { x: 100, y: 50, w: 240, h: 80 };
+const b = { x: 100, y: 50, width: 240, height: 80 };
 const measure = (t: string) => t.length * 7;
 const env = charEnv(7);
 /** A row's icon, gaps, and padding: everything but its label and its trailing column. */
@@ -35,26 +35,26 @@ const color: MenuEntry = { kind: 'color', key: 'color', label: 'Color', value: '
 const text: MenuTextEntry = { kind: 'text', key: 'name', label: 'Name', value: 'Layer 1', set: vi.fn() };
 const textRow = (extra: Partial<MenuTextEntry> = {}): MenuTextEntry => ({ ...text, set: vi.fn(), ...extra });
 
-describe('drawPanel: value rows', () => {
+describe('panelCommands: value rows', () => {
   it('draws a number row as its label, its value and unit, and a step chip either side', () => {
-    const cmds = drawPanel(ctx, b, [zoomRow()], null);
+    const cmds = panelCommands(ctx, b, [zoomRow()], null);
     expect(textOf(cmds)).toEqual(['Magnification', '8×']);
-    const chips = numberChips(b.w, m);
+    const chips = numberChips(b.width, m);
     // One mark per chip: the minus and the plus.
     const marks = cmds.filter((c) => c.kind === 'path' && c.stroke && !c.fill);
     expect(marks).toHaveLength(2);
-    expect(chips.minus.x + chips.minus.w).toBeLessThanOrEqual(chips.plus.x);
-    expect(chips.plus.x + chips.plus.w).toBe(b.w - m.padX);
+    expect(chips.minus.x + chips.minus.width).toBeLessThanOrEqual(chips.plus.x);
+    expect(chips.plus.x + chips.plus.width).toBe(b.width - m.padX);
   });
 
   it('draws what it is given to show over what the row opened with', () => {
-    expect(textOf(drawPanel(ctx, b, [zoomRow()], null, undefined, { ...OPENED_VALUES, number: () => 12 }))).toContain('12×');
-    expect(textOf(drawPanel(ctx, b, [zoomRow({ value: undefined })], null))).toContain('—');
-    expect(textOf(drawPanel(ctx, b, [zoomRow({ value: 0.5, suffix: undefined, display: percent() })], null))).toContain('50%');
+    expect(textOf(panelCommands(ctx, b, [zoomRow()], null, undefined, { ...OPENED_VALUES, number: () => 12 }))).toContain('12×');
+    expect(textOf(panelCommands(ctx, b, [zoomRow({ value: undefined })], null))).toContain('—');
+    expect(textOf(panelCommands(ctx, b, [zoomRow({ value: 0.5, suffix: undefined, display: percent() })], null))).toContain('50%');
   });
 
   it('draws infinity as its word with no unit, and keeps the step chip live at an endless end', () => {
-    const at = (value: number) => drawPanel(ctx, b, [zoomRow({ endless: 'max', infinity: 'never' })], null, undefined, { ...OPENED_VALUES, number: () => value });
+    const at = (value: number) => panelCommands(ctx, b, [zoomRow({ endless: 'max', infinity: 'never' })], null, undefined, { ...OPENED_VALUES, number: () => value });
     expect(textOf(at(Infinity))).toContain('never');
     const plusColor = (cmds: readonly DrawCommand[]) => JSON.stringify(cmds.filter((c) => c.kind === 'path' && c.stroke && !c.fill).at(-1));
     expect(plusColor(at(16))).toContain('#eee');
@@ -62,25 +62,25 @@ describe('drawPanel: value rows', () => {
   });
 
   it('draws a color row as its label, a swatch of the color in the icon column, and the hex, muted', () => {
-    const cmds = drawPanel(ctx, b, [color], null);
+    const cmds = panelCommands(ctx, b, [color], null);
     expect(textOf(cmds)).toEqual(['Color', '#336699']);
     expect(JSON.stringify(cmds)).toContain('"color":"#336699"');
     expect(JSON.stringify(cmds.filter((c) => c.kind === 'text')[0])).toContain('#888');
   });
 
   it('draws a text row as its label and its value, muted only while disabled, with room to type', () => {
-    const cmds = drawPanel(ctx, b, [text], null);
+    const cmds = panelCommands(ctx, b, [text], null);
     expect(textOf(cmds)).toEqual(['Name', 'Layer 1']);
     for (const c of cmds.filter((x) => x.kind === 'text')) expect(JSON.stringify(c)).toContain('#eee');
-    const off = drawPanel(ctx, b, [textRow({ disabled: true })], null);
+    const off = panelCommands(ctx, b, [textRow({ disabled: true })], null);
     for (const c of off.filter((x) => x.kind === 'text')) expect(JSON.stringify(c)).toContain('#888');
     const label = 'L'.repeat(30);
-    expect(panelSize([{ ...text, label } as MenuEntry], env).w).toBe(columns + label.length * 7 + m.font.size * 7);
+    expect(measurePanel([{ ...text, label } as MenuEntry], env).width).toBe(columns + label.length * 7 + m.font.size * 7);
   });
 
   it('draws what is typed into a text row, and a caret after it', () => {
-    const plain = drawPanel(ctx, b, [text], null);
-    const typing = drawPanel(ctx, b, [text], null, undefined, { ...OPENED_VALUES, editing: startEdit(text, 'Lay') });
+    const plain = panelCommands(ctx, b, [text], null);
+    const typing = panelCommands(ctx, b, [text], null, undefined, { ...OPENED_VALUES, editing: startEdit(text, 'Lay') });
     expect(textOf(typing)).toEqual(['Name', 'Lay']);
     expect(typing.filter((c) => c.kind === 'path').length).toBe(plain.filter((c) => c.kind === 'path').length + 1);
   });
@@ -88,8 +88,8 @@ describe('drawPanel: value rows', () => {
   it('widens the panel for a number row\'s chips and a color row\'s swatch and hex', () => {
     const label = 'L'.repeat(30);
     const chips = numberChips(0, m);
-    expect(panelSize([zoomRow({ label })], env).w).toBe(columns + label.length * 7 + chips.width);
-    expect(panelSize([{ ...color, label } as MenuEntry], env).w).toBe(columns + label.length * 7 + 7 * 7);
+    expect(measurePanel([zoomRow({ label })], env).width).toBe(columns + label.length * 7 + chips.width);
+    expect(measurePanel([{ ...color, label } as MenuEntry], env).width).toBe(columns + label.length * 7 + 7 * 7);
   });
 });
 
@@ -124,11 +124,11 @@ describe('createMenuWidget: value rows', () => {
     const row = zoomRow();
     const { w, close, click } = widget([row, color]);
     const p = w.bounds;
-    const chips = numberChips(p.w, m);
+    const chips = numberChips(p.width, m);
     const y = p.y + m.padY + m.rowHeight / 2;
-    click(p.x + chips.plus.x + chips.plus.w / 2, y);
-    click(p.x + chips.plus.x + chips.plus.w / 2, y);
-    click(p.x + chips.minus.x + chips.minus.w / 2, y);
+    click(p.x + chips.plus.x + chips.plus.width / 2, y);
+    click(p.x + chips.plus.x + chips.plus.width / 2, y);
+    click(p.x + chips.minus.x + chips.minus.width / 2, y);
     expect(vi.mocked(row.set).mock.calls).toEqual([[9], [10], [9]]);
     expect(textOf(w.draw(ctx) as DrawCommand[])).toContain('9×');
     click(p.x + 20, y);
@@ -143,9 +143,9 @@ describe('createMenuWidget: value rows', () => {
       const row = zoomRow();
       const { w } = widget([row]);
       const p = w.bounds;
-      const chips = numberChips(p.w, m);
+      const chips = numberChips(p.width, m);
       const y = p.y + m.padY + m.rowHeight / 2;
-      const plus = p.x + chips.plus.x + chips.plus.w / 2;
+      const plus = p.x + chips.plus.x + chips.plus.width / 2;
       w.onPointer({ type: 'down', x: plus, y, native: null });
       expect(row.set).toHaveBeenLastCalledWith(9);
       vi.advanceTimersByTime(REPEAT_DELAY_MS - 1);
@@ -172,9 +172,9 @@ describe('createMenuWidget: value rows', () => {
       const row = zoomRow({ value: 14 });
       const { w } = widget([row]);
       const p = w.bounds;
-      const chips = numberChips(p.w, m);
+      const chips = numberChips(p.width, m);
       const y = p.y + m.padY + m.rowHeight / 2;
-      w.onPointer({ type: 'down', x: p.x + chips.plus.x + chips.plus.w / 2, y, native: null });
+      w.onPointer({ type: 'down', x: p.x + chips.plus.x + chips.plus.width / 2, y, native: null });
       vi.advanceTimersByTime(REPEAT_DELAY_MS + REPEAT_EVERY_MS * 10);
       expect(vi.mocked(row.set).mock.calls).toEqual([[15], [16]]);
       expect(vi.getTimerCount()).toBe(0);
@@ -268,7 +268,7 @@ describe('createMenuWidget: value rows', () => {
     const p = w.bounds;
     const y = p.y + m.padY + m.rowHeight / 2;
     // Typed text is set right against p.w - padX - 3, 7px a character: offset i of n characters is here.
-    const xAt = (i: number, n: number) => p.x + p.w - m.padX - 3 - (n - i) * 7;
+    const xAt = (i: number, n: number) => p.x + p.width - m.padX - 3 - (n - i) * 7;
     click(xAt(5, 7) + 2, y);
     type(w, ['!']);
     click(xAt(1, 8) - 2, y);
@@ -287,11 +287,11 @@ describe('createMenuWidget: value rows', () => {
     expect(heard).toHaveBeenCalled();
     const p = w.bounds;
     expect(input.read()).toEqual({
-      rect: { x: p.x + p.w - m.padX - 2, y: p.y + m.padY, w: m.padX + 2, h: m.rowHeight }, label: 'Name',
+      rect: { x: p.x + p.width - m.padX - 2, y: p.y + m.padY, width: m.padX + 2, height: m.rowHeight }, label: 'Name',
     });
     input.compose('に');
     expect(textOf(w.draw(ctx) as DrawCommand[])).toContain('Layer 1に');
-    expect(input.read()!.rect.x).toBe(p.x + p.w - m.padX - 2);
+    expect(input.read()!.rect.x).toBe(p.x + p.width - m.padX - 2);
     input.insert('日本');
     type(w, ['Enter']);
     expect(row.set).toHaveBeenCalledExactlyOnceWith('Layer 1日本');

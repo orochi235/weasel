@@ -59,7 +59,7 @@ function declaration(rest: string, word: string, create: boolean, line: number):
 }
 
 /** One line's statement, or `null` for a blank or a comment. */
-function statementOf(text: string, line: number, dropped: string[]): SeqStmt | null {
+function readStatement(text: string, line: number, dropped: string[]): SeqStmt | null {
   // A line may end in a `;`, but not the one closing a `#quot;` or `&amp;` reference.
   const t = text.trim().replace(/(?<!(?:#|&#?)[\da-z]+);$/i, '').trim();
   if (t === '' || t.startsWith('%%')) {
@@ -137,14 +137,14 @@ export function parseSequence(text: string): ParsedSequence {
     if (!header) {
       const t = raw.trim();
       if (t === '' || t.startsWith('%%')) {
-        statementOf(t, line, dropped);
+        readStatement(t, line, dropped);
         return;
       }
       if (!/^sequenceDiagram\b/.test(t)) throw lineError('Mermaid', line, `expected "sequenceDiagram", found "${t}"`);
       header = true;
       return;
     }
-    const stmt = statementOf(raw, line, dropped);
+    const stmt = readStatement(raw, line, dropped);
     if (stmt !== null) stmts.push(stmt);
   });
   if (inDirective !== null) throw lineError('Mermaid', inDirective, 'a directive opened here is never closed');

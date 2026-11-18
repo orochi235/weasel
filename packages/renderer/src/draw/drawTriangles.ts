@@ -17,6 +17,9 @@ export interface DrawOptions {
    *  itself. Absent, an id frame decides from the paint's id. */
   readonly ids?: boolean;
   readonly firstIndex?: number;
+  /** Draw the geometry this many times, its instance buffers advancing once
+   *  each. Absent, once, with none. */
+  readonly instances?: number;
 }
 
 const NO_OPTIONS: DrawOptions = {};
@@ -38,6 +41,6 @@ export function drawTriangles(
   STATE.colorWrite = colorWrite;
   STATE.stencil = options.stencil ?? null;
   STATE.ids = options.ids ?? (ctx.ids !== undefined && colorWrite && idDrawn(ctx, ctx.ids, program));
-  ctx.gpu.draw(STATE, geometry, count, options.firstIndex);
+  ctx.gpu.draw(STATE, geometry, count, options.firstIndex, options.instances);
   if (ctx.stats) ctx.stats.drawCalls++;
 }

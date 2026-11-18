@@ -19,16 +19,26 @@ const UNRELEASED = 'Unreleased';
 /** Entries already fetched, so a release opened twice renders at once the second time. */
 const loaded = new WeakMap<ReleaseIndexEntry, ChangelogEntry[]>();
 
-/** A release's entries, fetched the first time it is open. */
+/**
+ * A release's entries, fetched the first time it is open. A failed fetch is thrown during render, so
+ * the page boundary shows it, and reloads once for a chunk a deploy removed.
+ */
 function useEntries(release: ReleaseIndexEntry, open: boolean): ChangelogEntry[] | null {
   const [entries, setEntries] = useState(() => loaded.get(release) ?? null);
+  const [failure, setFailure] = useState<{ error: unknown } | null>(null);
+  if (failure) throw failure.error;
   useEffect(() => {
     if (!open || entries) return;
     let live = true;
-    void release.load().then((list) => {
-      loaded.set(release, list);
-      if (live) setEntries(list);
-    });
+    release.load().then(
+      (list) => {
+        loaded.set(release, list);
+        if (live) setEntries(list);
+      },
+      (error: unknown) => {
+        if (live) setFailure({ error });
+      },
+    );
     return () => {
       live = false;
     };

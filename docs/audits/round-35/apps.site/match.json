@@ -1,0 +1,28 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "A release whose entries chunk fails to load shows \"Loading…\" forever and bypasses the stale-chunk reload",
+  "Five published packages have no release-chip badge, beyond the two the TODO already tracks",
+  "\"Demo updates\" sorts by raw ISO strings carrying per-commit UTC offsets, so close dates can sort out of order"
+ ],
+ "b": [
+  "A release whose entries fail to load shows \"Loading…\" forever, with an unhandled rejection",
+  "Seven shipping packages have no release-chip badge, and get the \"no longer ships\" fallback",
+  "The Releases deep link scrolls again every time a filter change remounts its section",
+  "The release filter and `?v=` stay in the URL after leaving Releases, and re-apply on the next visit",
+  "The sidebar's home link replaces the current page's history entry instead of pushing one",
+  "In light mode the sidebar's active site-page link is near-white text on a pale tint",
+  "On a narrow viewport a new page doesn't start at its top",
+  "`.ckd-demo`'s gap is declared twice with different values",
+  "The loupe-model description points to a demo by a title that doesn't exist"
+ ]
+}

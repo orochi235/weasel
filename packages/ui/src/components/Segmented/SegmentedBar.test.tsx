@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { act, render, fireEvent, screen } from '@testing-library/react';
-import { range, values } from '@weasel-js/ui-input';
+import { rangeSweep, valuesSweep } from '@weasel-js/ui-input';
 import { SegmentedBar } from './SegmentedBar';
 
 const items = [
@@ -316,7 +316,7 @@ describe('SegmentedBar skin', () => {
 describe('SegmentedBar segments from a Sweep', () => {
   it('draws one segment per step, labeled by the sweep, and chooses its value', () => {
     const onChange = vi.fn();
-    render(<SegmentedBar aria-label="Gap" steps={range({ from: 0, to: 8, step: 4, label: (n) => `${n}px` })} value={4} onChange={onChange} />);
+    render(<SegmentedBar aria-label="Gap" steps={rangeSweep({ from: 0, to: 8, step: 4, label: (n) => `${n}px` })} value={4} onChange={onChange} />);
     const radios = screen.getAllByRole('radio');
     expect(radios.map((r) => r.textContent)).toEqual(['0px', '4px', '8px']);
     expect(radios[1]!.getAttribute('aria-checked')).toBe('true');
@@ -326,7 +326,7 @@ describe('SegmentedBar segments from a Sweep', () => {
 
   it('fires the bar’s onAction with the step pressed, in momentary mode', () => {
     const onAction = vi.fn();
-    render(<SegmentedBar mode="momentary" aria-label="Zoom" steps={values([50, 100, 200])} onAction={onAction} />);
+    render(<SegmentedBar mode="momentary" aria-label="Zoom" steps={valuesSweep([50, 100, 200])} onAction={onAction} />);
     expect(screen.getByRole('toolbar', { name: 'Zoom' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '200' }));
     expect(onAction).toHaveBeenCalledWith(200);

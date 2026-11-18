@@ -81,7 +81,7 @@ enumerated values and no default.
 
 ## Deliberately not fixed
 
-- **`boxToBox` guards a degenerate source box with `sw === 0`**, so a 1e-18-wide
+- **`rectToRect` guards a degenerate source box with `sw === 0`**, so a 1e-18-wide
   box yields a scale of 1e20 rather than the identity the exact-zero case gets.
   This is the seam the polygon-resize rebase settled on and a relative guard
   changes which inputs count as degenerate; it wants its own change with the

@@ -4,18 +4,11 @@
  * have a matrix baked into their geometry the way a path can.
  */
 import type { Matrix } from './types';
-import { RAD_TO_DEG, invert } from '@weasel-js/geom';
+import { RAD_TO_DEG, invert, type Rect } from '@weasel-js/geom';
 import { poseFrameOf, poseLinearOf, type PoseLinear } from '@weasel-js/core';
 import { applyMatrix, decomposeRotation, formatMatrix, isIdentity, trimNumber } from './transform';
 
-export interface Box {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-export interface BoxPlacement extends Box {
+export interface BoxPlacement extends Rect {
   /** Radians, about the placed box's center. */
   rotation: number;
   /** The matrix's uniform scale, `sqrt(|det|)`: what a font size or stroke
@@ -38,7 +31,7 @@ const near = (v: number, target: number): boolean => Math.abs(v - target) <= 1e-
  * (an image), which leaves only a skew for the residual; without it the box
  * takes the uniform scale alone (text).
  */
-export function placeBox(box: Box, m: Matrix, stretch: boolean): BoxPlacement {
+export function placeBox(box: Rect, m: Matrix, stretch: boolean): BoxPlacement {
   const [a, b, c, d] = m;
   const scale = Math.sqrt(Math.abs(a * d - b * c));
   const eps = 1e-4 * Math.hypot(a, b, c, d);
@@ -95,7 +88,7 @@ export function placeBox(box: Box, m: Matrix, stretch: boolean): BoxPlacement {
  * Returns the uniform scale the caller owes the lengths inside the box.
  */
 export function placeNode(
-  node: Box & { rotation?: number; flipX?: boolean; flipY?: boolean; transform?: PoseLinear },
+  node: Rect & { rotation?: number; flipX?: boolean; flipY?: boolean; transform?: PoseLinear },
   tag: string,
   m: Matrix,
   stretch: boolean,
@@ -136,7 +129,7 @@ export function placeNode(
  * splits back into the same parts.
  */
 export function boxTransformAttr(
-  node: Box & { rotation?: number; transform?: PoseLinear },
+  node: Rect & { rotation?: number; transform?: PoseLinear },
 ): string | null {
   if (poseLinearOf(node)) {
     const frame = poseFrameOf(node);

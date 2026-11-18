@@ -22,15 +22,15 @@ export type BodyKind = string;
  */
 export interface BodyClassification {
   /** How the hit body relates to the current selection. */
-  body: BodyTarget;
+  bodyTarget: BodyTarget;
   /** Semantic kind of the hit body. Undefined on empty canvas, and undefined
    *  on a body whose kind the scene can't name — never guessed. */
-  kind?: BodyKind;
+  bodyKind?: BodyKind;
   /** The node classified. Matching ignores it. */
   id?: string;
   /** What a double-click at this point names, where that is not the body hit: the group a hit
    *  member belongs to. A double click's targets match against it. Absent, the hit is named. */
-  doubleClick?: { body: BodyTarget; kind?: BodyKind; id?: string };
+  doubleClick?: { bodyTarget: BodyTarget; bodyKind?: BodyKind; id?: string };
 }
 
 /** The body a double-click names, as a press carries it to the double click it composes. */

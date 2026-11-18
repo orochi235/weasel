@@ -1,4 +1,4 @@
-import { sceneBoxFrames, sceneUnitScopes, unitFrameAt, type NodeId, type UnitScope, type AnyScene } from '@weasel-js/core';
+import { sceneBoxFrames, sceneUnitScopes, createUnitFrameLookup, type NodeId, type UnitScope, type AnyScene } from '@weasel-js/core';
 import { transformPoint, type Point } from '@weasel-js/geom';
 
 /** The frame a ruler reads in: its unit scopes, and where it reads 0. */
@@ -19,13 +19,13 @@ export function documentRulerFrame(root: UnitScope, origin: Point = { x: 0, y: 0
 /**
  * Which frame a ruler reads in at a world point: built once over `scene` as
  * it stands, it gives the topmost node declaring a unit scope whose drawn box
- * holds the point (`unitFrameAt`), with its scope chain and its box's own
+ * holds the point (`createUnitFrameLookup`), with its scope chain and its box's own
  * origin, or the document's frame outside them all. The rulers run along the
  * view's axes, so a frame turned in the world is read along those axes from
  * its turned origin.
  */
-export function rulerFrameAt(scene: AnyScene, root: UnitScope, origin?: Point): (p: Point) => RulerFrame {
-  const frameAt = unitFrameAt(scene);
+export function createRulerFrameLookup(scene: AnyScene, root: UnitScope, origin?: Point): (p: Point) => RulerFrame {
+  const frameAt = createUnitFrameLookup(scene);
   const boxes = sceneBoxFrames(scene);
   const doc = documentRulerFrame(root, origin);
   return (p) => {

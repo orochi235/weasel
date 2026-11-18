@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { solid } from '@weasel-js/paint';
-import { IDENTITY_POSE_COMPOSITION, DEFAULT_HANDLE_SIZE, SceneCanvas, asPolygonPath, composePath, pathPoseDescriptor, PathBuilder, polygonFromPoints, useScene, asNodeId, translatePath, textCommandFromRuns } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, DEFAULT_HANDLE_SIZE, SceneCanvas, asPolygonPath, effectivePose, composePath, pathPoseDescriptor, PathBuilder, polygonFromPoints, useScene, asNodeId, translatePath, textCommandFromRuns } from '@weasel-js/core';
 import { joinPaths } from '@weasel-js/geom';
 import styles from './CompoundPathsDemo.module.css';
 import type { Fill, Path, Stroke } from '@weasel-js/core';
@@ -139,11 +139,13 @@ export function CompoundPathsDemo() {
   const toastTimer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
+  // A drag shows through pose overrides, which bump no scene version: follow them too.
+  useSyncExternalStore(scene.overrides.subscribe, scene.overrides.getGeneration);
   const honkBounds = () => {
     const g = scene.get(asNodeId('goose'));
     if (!g) return null;
-    const b = pathPoseDescriptor.getBounds(g.pose);
-    return { x: b.x + b.width / 2 - 18, y: b.y - 22, w: 36, h: 16 };
+    const b = pathPoseDescriptor.getBounds(effectivePose(scene, g));
+    return { x: b.x + b.width / 2 - 18, y: b.y - 22, width: 36, height: 16 };
   };
 
   return (
@@ -154,7 +156,7 @@ export function CompoundPathsDemo() {
             className="ckd-canvas"
             scene={scene}
             backgroundFill={{ color: '#87ceeb' }}
-            selectionOptions={{ mode: 'multi' }}
+            selectionOptions={{ mode: 'multiple' }}
             selectTool={{ handleHitRadius: HANDLE }}
             layers={{
               selectionOverlay: { handles: { size: HANDLE }, outline: { follow: 'shape' } },
@@ -249,7 +251,7 @@ export function CompoundPathsDemo() {
   );
 }
 
-function HonkButton({ getBounds, onHonk }: { getBounds: () => { x: number; y: number; w: number; h: number } | null; onHonk: () => void }) {
+function HonkButton({ getBounds, onHonk }: { getBounds: () => { x: number; y: number; width: number; height: number } | null; onHonk: () => void }) {
   const b = getBounds();
   if (!b) return null;
   return (
@@ -257,7 +259,7 @@ function HonkButton({ getBounds, onHonk }: { getBounds: () => { x: number; y: nu
       type="button"
       onClick={onHonk}
       className={styles.honk}
-      style={{ left: b.x, top: b.y, width: b.w, height: b.h }}
+      style={{ left: b.x, top: b.y, width: b.width, height: b.height }}
     >
       honk
     </button>

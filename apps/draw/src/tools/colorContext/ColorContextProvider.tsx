@@ -7,7 +7,8 @@
  */
 import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { DEFAULT_FILL, DEFAULT_STROKE, type ActivePaint } from '../../newShapePaint';
-import { solidColorOf, DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR, getAlpha01, mergeAlphaFromPrev, toHex8, withAlpha01 } from '@weasel-js/paint';
+import { paintAlpha, paintWithAlpha, paintWithColor } from '@weasel-js/paint';
+import { toolOptionPaint } from '@weasel-js/editing';
 import {
   createToolOptionValues,
   SHARED_TOOL_OPTIONS,
@@ -31,7 +32,8 @@ export interface ColorContextValue {
   setFocus: (which: 'fill' | 'stroke') => void;
   setFillColor: (color: string) => void;
   setStrokeColor: (color: string) => void;
-  setFocusedColor: (color: string) => void;
+  /** Sets the focused slot to `color`, as `setFillColor` does, and returns the paint it set. */
+  setFocusedColor: (color: string) => ActivePaint;
   focusedAlpha: number;
   setFocusedAlpha: (alpha01: number) => void;
   swap: () => void;
@@ -64,13 +66,15 @@ interface Paints {
 
 type PaintSlot = keyof Paints;
 
+/** `paint` in `toolOptionPaint`'s spelling, so an alpha in its hex reads as `opacity`. */
+const spelled = (paint: ActivePaint): ActivePaint => toolOptionPaint(paint);
+
 /**
- * `color` as the `slot` swatch takes it from a picker, normalized to `#rrggbbaa`: a 6-digit color
- * keeps the alpha `paint` already has, since the native picker has none, and an 8-digit one wins
- * outright.
+ * `paint` recolored to `color` from a picker: a 6-digit color keeps the alpha `paint` already has,
+ * since the native picker has none, and an 8-digit one wins outright. None takes the color opaque.
  */
-export function colorKeepingAlpha(slot: PaintSlot, paint: ActivePaint, color: string): string {
-  return mergeAlphaFromPrev(color, solidColorOf(paint) ?? (slot === 'fill' ? DEFAULT_FILL_COLOR : DEFAULT_STROKE_COLOR));
+function paintKeepingAlpha(paint: ActivePaint, color: string): ActivePaint {
+  return spelled(paintWithColor(spelled(paint) ?? undefined, color));
 }
 
 // ---------------------------------------------------------------------------
@@ -124,24 +128,26 @@ export function ColorContextProvider({
     else setPaints((cur) => ({ ...cur, stroke: p }));
   }, [focusedRef, setPaints]);
 
-  const setSlotColor = useCallback((slot: PaintSlot, color: string) => {
-    setPaints((cur) => ({ ...cur, [slot]: { kind: 'solid', color: colorKeepingAlpha(slot, cur[slot], color) } }));
+  const setSlotColor = useCallback((slot: PaintSlot, color: string): ActivePaint => {
+    let next: ActivePaint = null;
+    setPaints((cur) => {
+      next = paintKeepingAlpha(cur[slot], color);
+      return { ...cur, [slot]: next };
+    });
+    return next;
   }, [setPaints]);
   const setFillColor = useCallback((color: string) => setSlotColor('fill', color), [setSlotColor]);
   const setStrokeColor = useCallback((color: string) => setSlotColor('stroke', color), [setSlotColor]);
   const setFocusedColor = useCallback((color: string) => setSlotColor(focusedRef.current, color), [setSlotColor, focusedRef]);
 
   const focusedPaint = focused === 'fill' ? fill : stroke;
-  const focusedColor = solidColorOf(focusedPaint);
-  const focusedAlpha = focusedColor === undefined ? 1 : getAlpha01(focusedColor);
+  const focusedAlpha = paintAlpha(spelled(focusedPaint) ?? undefined);
   const setFocusedAlpha = useCallback((alpha01: number) => {
     setPaints((cur) => {
       const which = focusedRef.current;
-      const paint = which === 'fill' ? cur.fill : cur.stroke;
-      const color = solidColorOf(paint);
-      if (color === undefined) return cur;
-      const next: ActivePaint = { kind: 'solid', color: withAlpha01(toHex8(color), alpha01) };
-      return which === 'fill' ? { ...cur, fill: next } : { ...cur, stroke: next };
+      const paint = spelled(cur[which]);
+      if (paint === null) return cur;
+      return { ...cur, [which]: spelled(paintWithAlpha(paint, alpha01)) };
     });
   }, [focusedRef, setPaints]);
 

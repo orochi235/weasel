@@ -10,7 +10,7 @@
  * fails here.
  */
 import { describe, it, expect } from 'vitest';
-import { rotateAroundAABBCenter } from './poseRotation';
+import { rotateAboutAabbCenter } from './poseRotation';
 import { pathInWorld } from '@weasel-js/geom';
 import { poseRotationOf } from '@weasel-js/geom';
 import { poseContainsRotated } from './SceneCanvas/poseGeometry';
@@ -35,7 +35,7 @@ describe('rotation convention parity', () => {
   });
 
   it('render-tree wrap maps the TL corner to the canonical world point', () => {
-    const m = rotateAroundAABBCenter(pose.x, pose.y, pose.width, pose.height, pose.rotation);
+    const m = rotateAboutAabbCenter(pose.x, pose.y, pose.width, pose.height, pose.rotation);
     const w = applyMat(m, pose.x, pose.y);
     expect(w.x).toBeCloseTo(tl.x);
     expect(w.y).toBeCloseTo(tl.y);

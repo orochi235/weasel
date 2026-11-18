@@ -1,7 +1,7 @@
 /** What color a loupe is over: the source layers redrawn exactly where it can, the framebuffer elsewhere. */
 import { createLayerSampler, type RenderLayer } from '@weasel-js/core';
 import { createSampler, type LoupePoint } from '@weasel-js/loupe';
-import { rgbaHex } from '@weasel-js/paint';
+import { opaqueHexOfBytes } from '@weasel-js/paint';
 import type { HudContentCtx } from '../widget';
 
 /** Where {@link createLoupeColors} reads. */
@@ -34,7 +34,7 @@ export function createLoupeColors(sources: LoupeColorSources) {
       const px = layers && drawnIn
         ? exact.rgba({ layers, data: drawnIn.data, view: drawnIn.view, dims: drawnIn.dims, point: at })
         : null;
-      return px ? rgbaHex(px) : (framebuffer.sample(at) as string | null);
+      return px ? opaqueHexOfBytes(px) : (framebuffer.sample(at) as string | null);
     },
     dispose() {
       exact.dispose();

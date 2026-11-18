@@ -7,18 +7,20 @@ import { STICKY_TOOL_OPTIONS, TEXT_TOOL_OPTIONS } from '@weasel-js/text-tools';
 import { SAND_TOOL_OPTIONS, KNEAD_TOOL_OPTIONS } from '@weasel-js/path-tools';
 import { INITIAL_FILL, INITIAL_STROKE } from './newShapePaint';
 import {
-  flattenPrefValues,
   openPrefsSync,
   pref,
   type PrefBase,
   type PrefEnumControl,
   type PrefGroup,
+  type PrefGroupPath,
   type PrefPath,
   type PrefsStore,
   type PrefValidator,
   type PrefValueAt,
+  prefHoldsValue,
+  prefLeaves,
 } from '@weasel-js/prefs';
-import { usePref as usePrefOf } from '@weasel-js/prefs/react';
+import { usePref as usePrefOf, usePrefGroup as usePrefGroupOf } from '@weasel-js/prefs/react';
 import { pageLocalStorage } from '@weasel-js/react';
 import { localStorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
 import { LOUPE_FACTOR, LOUPE_MODE } from './loupePrefs';
@@ -27,8 +29,13 @@ import type { ToolbarLayout } from '@weasel-js/ui/components/ToolbarDock';
 import type { RecordingProfile } from './recorder';
 import type { RegistryEnumFilter } from './registry/types';
 import {
-  dropPathToolsChrome, fillRuleToToolOptions, panelsToSurfaces, pathAidsToGroup, renamePathAids, renamePathTools,
+  dropPathToolsChrome, dropSymmetrySwitch, fillRuleToToolOptions, gridToGroup, panelsToSurfaces, featureSettingsToGroups, pathAidsToGroup, renamePathAids, renamePathTools,
 } from './surfaces/prefsMigration';
+import { pageGridSchema } from '@weasel-js/editor';
+import { rulersSchema } from '@weasel-js/guides';
+import { pathEditAidsSchema } from '@weasel-js/path-tools';
+import { symmetrySchema } from '@weasel-js/symmetry';
+import { isPlainObject } from '@weasel-js/registry';
 import type { SurfacesValue } from './surfaces/types';
 import { ELLIPSE_TOOL_OPTIONS, LINE_TOOL_OPTIONS, POLYGON_TOOL_OPTIONS, RECT_TOOL_OPTIONS, STAR_TOOL_OPTIONS } from '@weasel-js/editing';
 
@@ -133,39 +140,13 @@ export const PREFS = {
       name: 'View',
       description: 'The canvas: grid, snapping, symmetry, and path editing aids.',
       children: {
-        gridVisible: {
-          kind: 'boolean',
-          name: 'Show grid',
-          description: 'Display the grid overlay on the canvas.',
-          default: false,
-        },
-        gridDensity: {
-          kind: 'number',
-          name: 'Grid density',
-          description: 'Spacing between grid lines, in document units (CSS pixels, 96 to the inch). Snap to grid uses the same spacing.',
-          default: 20,
-          min: 4,
-          max: 288,
-          step: 4,
-          control: 'slider',
-        },
-        rulersVisible: {
-          kind: 'boolean',
-          name: 'Show rulers',
-          description: 'Rulers along the top and left of the canvas, in the units of the frame under the pointer. Drag from one to place a guide.',
-          default: false,
-        },
+        grid: pageGridSchema,
+        rulers: rulersSchema,
         snapping: {
           kind: 'boolean',
           name: 'Snapping',
           description: 'Snap gestures to the grid, guides, other shapes and their anchors. Off, the pen and every other gesture place points where you put them. Hold Ctrl to suspend it for one drag.',
           default: true,
-        },
-        snapToGrid: {
-          kind: 'boolean',
-          name: 'Snap to grid',
-          description: 'Constrain move/resize gestures to grid intersections.',
-          default: false,
         },
         boundToContent: {
           kind: 'boolean',
@@ -173,56 +154,14 @@ export const PREFS = {
           description: 'Pan no further than the drawing and its pages, plus a margin. Dragging something to the edge of the canvas scrolls the view to make room for it.',
           default: true,
         },
-        symmetry: {
-          kind: 'boolean',
-          name: 'Symmetry',
-          description: 'Draw into a symmetry group, whose mirrored copies follow every edit to what is drawn in it, and the anchors you drag on a path that is already its own mirror image. Drag the handles on the axis to move or turn it. Turning it off stops drawing into the group; what is in it stays mirrored.',
-          default: false,
-        },
-        symmetryAxis: pref.enum('Symmetry axis', 'vertical', [
-          { value: 'vertical', label: 'Vertical (left and right)' },
-          { value: 'horizontal', label: 'Horizontal (top and bottom)' },
-          { value: 'both', label: 'Both' },
-        ], {
-          description: 'Which way the symmetry group mirrors: left and right, top and bottom, or into all four quarters.',
-          enableIf: { path: 'view.symmetry', is: true },
-        }),
+        symmetry: symmetrySchema,
         spacingHints: {
           kind: 'boolean',
           name: 'Spacing hints',
           description: 'While moving, snap to gaps that match the spacing between other shapes and mark them. Hold Alt (Option on a Mac) over a shape to measure its distance from the selection.',
           default: true,
         },
-        pathEditing: {
-          name: 'Path editing',
-          description: 'What path edit draws over the path it is editing.',
-          children: {
-            pathDirection: {
-              kind: 'boolean',
-              name: 'Show path direction',
-              description: 'While editing a path, draw an arrow on each segment the way the path runs, and a ring on its start.',
-              default: false,
-            },
-            pathComb: {
-              kind: 'boolean',
-              name: 'Show curvature comb',
-              description: 'While editing a path, draw its curvature comb: a tooth on each curve as long as the curve is tight there.',
-              default: false,
-            },
-            pathPoise: {
-              kind: 'boolean',
-              name: 'Show poise lines',
-              description: "While editing a path, draw a line between each curve's handle tips, with a grip that drags both handles at once.",
-              default: false,
-            },
-            pathFillets: {
-              kind: 'boolean',
-              name: 'Show fillet widgets',
-              description: 'While editing a path, draw a widget inside each corner that rounds it as you drag.',
-              default: true,
-            },
-          },
-        },
+        pathEditing: pathEditAidsSchema,
       },
     },
     text: {
@@ -303,7 +242,7 @@ const VALIDATORS: Record<string, PrefValidator> = {
 };
 
 /** `MIGRATIONS[i]` takes stored records from version `i` to `i + 1`. */
-const MIGRATIONS = [panelsToSurfaces, dropPathToolsChrome, pathAidsToGroup, fillRuleToToolOptions, renamePathAids, renamePathTools];
+const MIGRATIONS = [panelsToSurfaces, dropPathToolsChrome, pathAidsToGroup, fillRuleToToolOptions, renamePathAids, renamePathTools, gridToGroup, featureSettingsToGroups, dropSymmetrySwitch];
 
 /** The app's prefs over `storage`. Tests pass a memory adapter. */
 export function openDrawPrefs(storage: SyncStorageAdapter): PrefsStore<typeof PREFS> {
@@ -371,10 +310,18 @@ function foldLegacyPrefs(
     parsed = undefined;
   }
   if (parsed !== undefined && (parsed as { version?: unknown } | null)?.version !== 2) return;
-  const ui = (parsed as { ui?: { panels?: unknown; surfaces?: unknown } } | undefined)?.ui;
-  if (ui && typeof ui === 'object' && ui.panels !== undefined) ui.surfaces ??= ui.panels;
-  for (const [path, value] of flattenPrefValues(PREFS, parsed)) {
-    if (!target.isSet(path as DrawPrefPath)) target.set(path as DrawPrefPath, value as never);
+  // The blob predates every migration: it is read as records at every path it holds a value at, so each migration
+  // finds whichever it moves, and the leaves the schema has now are taken from what they leave.
+  const records = new Map<string, unknown>();
+  const collect = (value: unknown, at: string): void => {
+    if (at !== '') records.set(at, value);
+    if (isPlainObject(value)) for (const [key, held] of Object.entries(value)) collect(held, at === '' ? key : `${at}.${key}`);
+  };
+  collect(parsed, '');
+  for (const migrate of MIGRATIONS) migrate(records);
+  for (const [path, leaf] of prefLeaves(PREFS)) {
+    if (!prefHoldsValue(leaf) || !records.has(path) || target.isSet(path as DrawPrefPath)) continue;
+    target.set(path as DrawPrefPath, records.get(path) as never);
   }
   removeOnceStored(target, () => storage.removeItem(LEGACY_PREFS_KEY));
 }
@@ -382,4 +329,9 @@ function foldLegacyPrefs(
 /** One leaf of the app's prefs, as React state. */
 export function usePref<P extends DrawPrefPath>(path: P) {
   return usePrefOf(drawPrefs(), path);
+}
+
+/** One group of the app's prefs, as React state. */
+export function usePrefGroup<P extends PrefGroupPath<typeof PREFS>>(path: P) {
+  return usePrefGroupOf(drawPrefs(), path);
 }

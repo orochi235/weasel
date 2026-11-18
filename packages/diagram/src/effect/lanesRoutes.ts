@@ -1,21 +1,19 @@
 /** Routes for the `lanes` look: each wire kept clear of what the stages it
- *  passes draw and of the group boxes it neither leaves nor enters, each wire
+ *  passes draw and of the cluster boxes it neither leaves nor enters, each wire
  *  sharing a corridor on a track of its own, and each label set where it
  *  covers no stage. */
 import { IDENTITY_POSE_COMPOSITION, pointAlongPath, type Path } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
-import { rectsOverlap, worldCoords, maxOf, minOf } from '@weasel-js/geom';
+import { rectsOverlap, worldCoords, maxOf, minOf, type Rect } from '@weasel-js/geom';
 import type { MeasureRowText } from '../body';
 import { SIDE_TRACK_GAP } from '../chainRoutes';
 import { EDGE_DERIVE_PATH } from '../edge';
 import { edgeLabelIdOf } from '../edgeLabel';
 import { diagramScene, edgeIdOf, LABEL_PLACEMENT } from '../fromData';
-import { type DataEdge, type DataGroup, type DataNode, type DiagramData, type DiagramRouter, type DiagramSceneOptions, type DiagramSpec, type EdgeStyle } from '../dataTypes';
-import { nestGroups } from '../groupTree';
+import { type DataEdge, type DataCluster, type DataNode, type DiagramData, type DiagramRouter, type DiagramSceneOptions, type DiagramSpec, type EdgeStyle } from '../dataTypes';
+import { nestClusters } from '../clusterTree';
 import { labelCenter } from '../label';
 import { portSitesOf } from '../ports';
-
-export type Box = { x: number; y: number; width: number; height: number };
 
 /** Where a lanes chart's columns and lanes lie, and what stands in each column. */
 export interface LaneGrid {
@@ -24,7 +22,7 @@ export interface LaneGrid {
   /** Lane edges top down: the top of each lane, then the bottom of the last. */
   edges: readonly number[];
   /** What each column's stages draw: their boxes, and whatever they draw outside them. */
-  ink: readonly (readonly Box[])[];
+  ink: readonly (readonly Rect[])[];
 }
 
 /** One end of a wire: the column its stage stands in, and where its port is. */
@@ -53,7 +51,7 @@ export const TRACK_GAP = SIDE_TRACK_GAP;
 const CLEAR = 3;
 
 /** Whether a wire at `y`, or anywhere between `y` and `to`, comes within `CLEAR` of one of `boxes`. */
-const covers = (boxes: readonly Box[], y: number, to = y): boolean =>
+const covers = (boxes: readonly Rect[], y: number, to = y): boolean =>
   boxes.some((b) => b.y - CLEAR < Math.max(y, to) && Math.min(y, to) < b.y + b.height + CLEAR);
 
 /** A height a wire runs at through a column: its own, or a corridor along the lane edge numbered `edge`. */
@@ -213,8 +211,8 @@ export function routeOf(
  *  that allows, else on its right, else undefined. Answers the point to put
  *  it near, the side it takes as a signed offset, and the box it takes there. */
 export function clearLabel(
-  path: Path, size: { width: number; height: number }, offset: number, keepOut: readonly Box[],
-): { near: Vec2; offset: number; box: Box } | undefined {
+  path: Path, size: { width: number; height: number }, offset: number, keepOut: readonly Rect[],
+): { near: Vec2; offset: number; box: Rect } | undefined {
   for (const side of [offset, -offset]) {
     for (const t of [0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8, 0.1, 0.9]) {
       const near = pointAlongPath(path, t)?.point;
@@ -233,8 +231,8 @@ export const worldSpecs = (data: DiagramData, options: Omit<DiagramSceneOptions,
   diagramScene(data, { ...options, composition: IDENTITY_POSE_COMPOSITION });
 
 /** What a node draws, in specs from {@link worldSpecs}: its box, and each of its rows and marks, some of which sit outside it. */
-export const inkOf = (id: string, specs: readonly DiagramSpec[]): Box[] =>
-  specs.filter((s) => s.id === id || s.parent === id || String(s.id).startsWith(`${id}/mark:`)).map((s) => s.pose as Box);
+export const inkOf = (id: string, specs: readonly DiagramSpec[]): Rect[] =>
+  specs.filter((s) => s.id === id || s.parent === id || String(s.id).startsWith(`${id}/mark:`)).map((s) => s.pose as Rect);
 
 /** What `routeWires` reads of the laid-out chart. */
 export interface Laid {
@@ -242,12 +240,12 @@ export interface Laid {
   column: ReadonlyMap<string, number>;
   router: DiagramRouter;
   measure: MeasureRowText | undefined;
-  groups?: readonly DataGroup[];
+  clusters?: readonly DataCluster[];
 }
 
-/** A group's box as the scene draws it, the run of columns it stands over, and the stages it holds. */
+/** A cluster's box as the scene draws it, the run of columns it stands over, and the stages it holds. */
 interface Wall {
-  box: Box;
+  box: Rect;
   first: number;
   last: number;
   holds: ReadonlySet<string>;
@@ -275,7 +273,7 @@ function walledIn(grid: LaneGrid, walls: readonly Wall[]): LaneGrid {
 export function routeWires(
   wires: readonly { edge: DataEdge; style: EdgeStyle }[], nodes: readonly DataNode[], laid: Laid,
 ): { edges: { edge: DataEdge; style: EdgeStyle }[]; tracks: ReadonlyMap<number, number> } {
-  const specs = worldSpecs({ nodes, edges: wires.map((w) => w.edge), ...(laid.groups !== undefined ? { groups: laid.groups } : {}) }, {
+  const specs = worldSpecs({ nodes, edges: wires.map((w) => w.edge), ...(laid.clusters !== undefined ? { clusters: laid.clusters } : {}) }, {
     layout: 'none', router: laid.router, ...(laid.measure !== undefined ? { measure: laid.measure } : {}),
   });
   const spec = new Map(specs.map((s) => [s.id as string, s]));
@@ -286,8 +284,8 @@ export function routeWires(
     const [site, ...sites] = portSitesOf({ id: stage, data: s.data } as never, s.pose, port);
     return { column: laid.column.get(stage)!, point: site?.point ?? { x: 0, y: 0 }, normal: site?.normal ?? null, sites };
   };
-  const walls = nestGroups(laid.groups ?? [], (id) => ink.has(id)).flatMap((g): Wall[] => {
-    const box = spec.get(g.id)?.pose as Box | undefined;
+  const walls = nestClusters(laid.clusters ?? [], (id) => ink.has(id)).flatMap((g): Wall[] => {
+    const box = spec.get(g.id)?.pose as Rect | undefined;
     const at = g.members.flatMap((m) => (laid.column.has(m) ? [laid.column.get(m)!] : []));
     return box === undefined || at.length === 0 ? [] : [{ box, first: minOf(at), last: maxOf(at), holds: new Set(g.members) }];
   });
@@ -311,7 +309,7 @@ export function routeWires(
   // Each wire, as the boxes of its drawn segments, for the labels of the others to keep off.
   const segments = routes.map(({ path }) => {
     const c = path?.kind === 'polygon' ? worldCoords(path) : [];
-    return Array.from({ length: Math.max(0, c.length / 2 - 1) }, (_, i): Box => {
+    return Array.from({ length: Math.max(0, c.length / 2 - 1) }, (_, i): Rect => {
       const [x0, y0, x1, y1] = [c[2 * i]!, c[2 * i + 1]!, c[2 * i + 2]!, c[2 * i + 3]!];
       return { x: Math.min(x0, x1) - 1, y: Math.min(y0, y1) - 1, width: Math.abs(x1 - x0) + 2, height: Math.abs(y1 - y0) + 2 };
     });
@@ -319,7 +317,7 @@ export function routeWires(
   const edges = wires.map(({ edge, style }, w) => {
     const { waypoints, path } = routes[w]!;
     const routed: DataEdge = waypoints === undefined ? edge : { ...edge, routed: waypoints };
-    const label = spec.get(edgeLabelIdOf(edgeIdOf(edge)))?.pose as Box | undefined;
+    const label = spec.get(edgeLabelIdOf(edgeIdOf(edge)))?.pose as Rect | undefined;
     // Off the other wires too where there is room for that, else off the stages alone.
     const others = keepOut.concat(segments.flatMap((boxes, k) => (k === w ? [] : boxes)));
     const offset = LABEL_PLACEMENT.offset ?? 0;

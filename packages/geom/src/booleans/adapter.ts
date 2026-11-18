@@ -158,7 +158,7 @@ function ringBox(ring: Ring): RingBox {
 }
 
 /** Even-odd ray cast; used only to decide ring nesting, never to fill. */
-function pointInRing(ring: Ring, px: number, py: number): boolean {
+function ringContainsPoint(ring: Ring, px: number, py: number): boolean {
   let inside = false;
   for (let i = 0, n = ring.length - 1; i < n; i++) {
     const [ax, ay] = ring[i];
@@ -180,7 +180,7 @@ function ringContains(outer: Ring, outerBox: RingBox, inner: Ring, innerBox: Rin
   const n = inner.length - 1;
   let votes = 0;
   for (const k of [0, Math.floor(n / 3), Math.floor((2 * n) / 3)]) {
-    if (pointInRing(outer, inner[k][0], inner[k][1])) votes++;
+    if (ringContainsPoint(outer, inner[k][0], inner[k][1])) votes++;
   }
   return votes >= 2;
 }

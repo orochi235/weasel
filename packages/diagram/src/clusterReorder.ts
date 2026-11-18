@@ -1,0 +1,141 @@
+/**
+ * Reordering a cluster or container marked `reorder`: a member dragged along that axis among
+ * its siblings, which slide into the places they would take, or the selected
+ * one stepped with Alt and an arrow key. A container's member dragged out of its box goes to the move instead. Nothing is written: the host hears
+ * the new order, writes it to its data, and layout keeps it.
+ */
+import {
+  ActionDisabledReason,
+  BETWEEN_GESTURES,
+  bodyPredicate,
+  type Action,
+  type ActionDeps,
+  type Contribution,
+  type FeaturePreset,
+  type RectPose,
+  type Scene,
+  type Vec2,
+} from '@weasel-js/core';
+import { moveItems, nudgeGap } from '@weasel-js/ui-input';
+import { diagramContainerOf } from './containers/trait';
+import { worldRectOf } from './overlays';
+import type { DiagramSceneData } from './dataTypes';
+import { createReorderContribution, createReorderPreset, slotsAlong, type ReorderOptions, type ReorderSlots } from './reorder';
+import { carriedWith, reorderTargetOf, type ReorderTarget } from './reorderModel';
+
+/** Alt and an arrow key: the selected member one place along. */
+export const STEP_REORDER_ACTION_ID = 'diagram.stepReorder';
+
+/** A reorderable cluster's or container's members in their new order. */
+export interface ReorderChange {
+  /** The cluster's or the container's id. */
+  parent: string;
+  order: readonly string[];
+}
+
+type DiagramScene = Scene<DiagramSceneData, 'main', RectPose>;
+
+const sceneOf = (deps: ActionDeps | undefined) => deps?.scene as DiagramScene | undefined;
+
+function targetAt(deps: ActionDeps | undefined, id: string | null | undefined): ReorderTarget | null {
+  const scene = sceneOf(deps);
+  if (scene === undefined || id == null) return null;
+  return reorderTargetOf(scene as never, id, (m) => worldRectOf(scene, m));
+}
+
+/** The members of the reorderable cluster or container a press at `at` carries
+ *  one of, each with everything drawn with it, or `null` off any. */
+export function clusterReorderSlots(deps: ActionDeps, at: Vec2): ReorderSlots | null {
+  const scene = sceneOf(deps);
+  const target = targetAt(deps, deps.nodeAtPoint?.(at));
+  if (scene === undefined || target === null) return null;
+  return slotsAlong(target.axis, target.members.map((m) => ({
+    id: m,
+    bounds: worldRectOf(scene, m) ?? { x: 0, y: 0, width: 0, height: 0 },
+    carries: [...carriedWith(scene as never, m)],
+  })));
+}
+
+const STEPS: readonly { key: string; role: string; axis: 'x' | 'y'; step: -1 | 1 }[] = [
+  { key: 'ArrowUp', role: 'up', axis: 'y', step: -1 },
+  { key: 'ArrowDown', role: 'down', axis: 'y', step: 1 },
+  { key: 'ArrowLeft', role: 'left', axis: 'x', step: -1 },
+  { key: 'ArrowRight', role: 'right', axis: 'x', step: 1 },
+];
+
+/** The order a step along `params` leaves the selected node's cluster in, or `null` where it moves nothing: off any
+ *  reorderable cluster, along the other axis, or past either end. */
+function stepPlan(deps: ActionDeps | undefined, params: Readonly<Record<string, unknown>> | undefined): ReorderChange | null {
+  const target = targetAt(deps, deps?.operands?.get()[0]);
+  if (target === null || params?.axis !== target.axis) return null;
+  const { members, member } = target;
+  const at = members.indexOf(member);
+  const to = nudgeGap([at], params.step === -1 ? -1 : 1, members.length);
+  return to === null ? null : { parent: target.parent, order: moveItems(members, [at], to) };
+}
+
+/** Steps the selected node's member one place toward the start (`-1`) or the end (`1`). */
+export function createStepReorderAction(report: (change: ReorderChange) => void): Action {
+  return {
+    id: STEP_REORDER_ACTION_ID,
+    label: 'Move along',
+    group: 'diagram',
+    defaultBinding: STEPS.map(({ key, role, axis, step }) => ({
+      spec: { kind: 'key' as const, key, mods: { alt: true }, phase: BETWEEN_GESTURES },
+      opts: { id: `${STEP_REORDER_ACTION_ID}.${role}`, params: { axis, step } },
+    })),
+    requires: ['scene', 'operands'],
+    invoker: {
+      timing: 'immediate',
+      run(deps, params) {
+        const change = stepPlan(deps, params);
+        if (change !== null) report(change);
+      },
+    },
+    enabled: (deps, _at, _carried, params) => (stepPlan(deps, params) !== null ? true : ActionDisabledReason.NotApplicable),
+  };
+}
+
+/** The box of the container `member` stands in, which a drag of it leaves to be moved out; `null` for a cluster's
+ *  member, which has nowhere to go. */
+function containerRegion(deps: ActionDeps, member: string) {
+  const scene = sceneOf(deps);
+  const parent = targetAt(deps, member)?.parent;
+  const node = parent === undefined ? undefined : scene?.get(parent as never);
+  if (scene === undefined || node === undefined || diagramContainerOf(node)?.role !== 'container') return null;
+  return worldRectOf(scene, parent!);
+}
+
+const onBody = bodyPredicate((target) => target === 'selected-body' || target === 'unselected-body');
+
+/** The reorder drag's options for a reorderable cluster or container: sliding, pressed on a node's body, and a
+ *  container's member dragged out of the container's box handed to the move. */
+function clusterReorderOptions(report: (change: ReorderChange) => void): ReorderOptions & { on: typeof onBody } {
+  return {
+    slots: clusterReorderSlots,
+    requires: ['nodeAtPoint'],
+    show: 'slide',
+    on: onBody,
+    region: (deps, item) => containerRegion(deps, item.id),
+    commit: (move, ctx) => {
+      const parent = targetAt(ctx.deps, move.id)?.parent;
+      if (parent !== undefined) report({ parent, order: move.order });
+    },
+  };
+}
+
+/** The reorder drag and the step action, as an entry to pass in `ambient`. Beside the `move` feature the move takes
+ *  every press first; {@link createClusterReorderPreset} is the form that works beside it. */
+export function clusterReorderContribution(report: (change: ReorderChange) => void): Contribution {
+  const drag = createReorderContribution(clusterReorderOptions(report));
+  return { ...drag, id: 'weasel-diagram-reorder', actions: [...(drag.actions ?? []), createStepReorderAction(report)] };
+}
+
+/** Everything `DiagramView` installs for `onReorder`, as a preset to pass in `features`: the reorder drag, tried
+ *  ahead of the `move` feature's on the same press, and the step action. */
+export function createClusterReorderPreset(report: (change: ReorderChange) => void): FeaturePreset {
+  const id = 'weasel-diagram-reorder';
+  const drag = createReorderPreset(clusterReorderOptions(report));
+  const entry = { ...drag.ambient!({}), id };
+  return { ...drag, id, actions: [...(drag.actions ?? []), createStepReorderAction(report)], ambient: () => entry };
+}

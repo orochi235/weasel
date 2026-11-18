@@ -43,7 +43,7 @@ function Harness() {
 
 const panel: Widget = {
   id: 'panel',
-  bounds: { x: 10, y: 10, w: 60, h: 24 },
+  bounds: { x: 10, y: 10, width: 60, height: 24 },
   hidden: false,
   draw: () => [],
   hitTest: (x, y) => x >= 10 && x < 70 && y >= 10 && y < 34,

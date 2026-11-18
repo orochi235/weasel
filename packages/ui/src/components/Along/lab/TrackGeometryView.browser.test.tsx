@@ -65,7 +65,7 @@ test("a probe dragged on the canvas reads trackRun's nearest, closed and open", 
   expect(number('run-g-open')).toBeCloseTo(run.nearest(to, { open: true }).f, 3);
   // Below the arc's left end, so an open projection runs on past its start.
   expect(number('run-g-open')).toBeLessThan(0);
-  expect(number('dist')).toBeCloseTo(run.nearest(to).dist, 1);
+  expect(number('dist')).toBeCloseTo(run.nearest(to).distance, 1);
 });
 
 test("loading the bottom rim counterclockwise shows trackRun's flip and every tip angle it gives", async () => {

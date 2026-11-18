@@ -12,7 +12,7 @@ import { heldPathWarpOf } from './pathWarp';
 import {
   configureWarpAction, createAddPinAction, createRemovePinAction, createWarpDragAction, expandWarpAction, type WarpHandleScratch,
 } from './warpActions';
-import { buildDepsFromRequires, type Action } from '@weasel-js/routing';
+import { createActionDeps, type Action } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
 import { kneadAction } from '../knead/knead';
 import { freshWarpBox } from './warpTargets';
@@ -166,7 +166,7 @@ describe('the actions that read the selection through groups and text', () => {
     const registry = { get: (name: string) => (deps as Record<string, unknown>)[name] } as unknown as DepRegistry;
     const actions: Action[] = [createAddPinAction(), createRemovePinAction(), expandWarpAction, configureWarpAction, kneadAction];
     for (const action of actions) {
-      const declared = buildDepsFromRequires(action, registry);
+      const declared = createActionDeps(action, registry);
       expect(() => action.enabled?.(declared)).not.toThrow();
       if (action.invoker?.timing === 'immediate') expect(() => (action.invoker as ImmediateInvoker).run(declared, {})).not.toThrow();
     }

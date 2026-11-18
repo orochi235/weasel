@@ -9,7 +9,7 @@
  */
 import { afterEach, expect, it } from 'vitest';
 import { mat3, pathFromD, pointAlongPath, polylineFromPoints, type Affine, type Path } from '@weasel-js/geom';
-import { clipRibbon, clipWindow, strokeSpaceOf, tessellateStroke, type StrokeMetric } from '@weasel-js/stroke';
+import { clipRibbon, clipWindow, strokeMetricOf, tessellateStroke, type StrokeMetric } from '@weasel-js/stroke';
 import { quantizeStrokeScale } from '../cache/strokeMeshCache';
 import { stencilledEvenOdd } from './stencilledEvenOdd';
 import type { CommandPaint, CommandStroke, Stroke, StrokeTrim } from '@weasel-js/paint';
@@ -218,7 +218,7 @@ const STRETCH: Affine = [0.8, 0, 0.25, 0.95, 0, 0];
 /** One test per open shape, translucent and opaque, each against every trim, in a stretched view. */
 export function metricCases(antialias: boolean): void {
   const [a, b, c, d] = STRETCH;
-  const { scale, metric } = strokeSpaceOf(a, b, c, d);
+  const { scale, metric } = strokeMetricOf(a, b, c, d);
   const px = 9;
   const seam = 1 / Math.sqrt(Math.abs(a * d - b * c));
   for (const [name, path, curved] of SHAPES) {

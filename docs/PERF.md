@@ -38,6 +38,21 @@ When work merges, retire its entry here in the same change.
 
 ---
 
+## Measuring
+
+- **(P3) [maintainer] The GPU timer query misreads some draws under ANGLE's Metal backend.** On teitou
+  (Apple M5 Max, Chromium 158), `EXT_disjoint_timer_query_webgl2` read a text layer's one instanced
+  draw of 1.28M glyphs at 187 ms a frame while frames came every 16.8 ms, and a render followed by a
+  one-pixel readback took 41 ms (`text-wall.spec.ts`, 2026-11-18). The same draw read 7.9 ms when the
+  cell ran right after a plain-text one, with nothing else changed. So a `gpuP50` from the query is
+  not evidence on its own, and the specs that read it (`text-wall`, `hud-vs-dom`, `back-to-back`,
+  `retain-redraw`) may be quoting a misread. Whether it is the query's emulation over Metal command buffers or
+  the GPU clocking down under a light load is not known. `text-wall` now also reports `frameP50` and
+  `syncedP50`, which a misread query cannot move.
+  Closes when the cause is known and the specs quoting the query say which reading to trust.
+
+---
+
 ## Benchmarks in CI
 
 - **(P3) [maintainer] The pull request benchmark job has never run on GitHub.** All 46 `perf-pr.yml` runs from 2026-10-11

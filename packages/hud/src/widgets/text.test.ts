@@ -32,14 +32,14 @@ describe('text widget', () => {
     const t = createText({ id: 't', x: 0, y: 10, text: 'a', fontSize: 14, color: '#000' });
     const first = t.draw(ctx);
     expect(t.draw(ctx)).toBe(first);
-    t.setBounds({ x: 5, y: 20, w: 0, h: 14 });
+    t.setBounds({ x: 5, y: 20, width: 0, height: 14 });
     const moved = t.draw(ctx)[0] as TextDrawCommand;
     expect(moved).toMatchObject({ x: 5, y: 20 });
     expect(moved.runs).toBe((first[0] as TextDrawCommand).runs);
     t.setText('b');
     const rewritten = t.draw(ctx)[0] as TextDrawCommand;
     expect(rewritten).toMatchObject({ x: 5, y: 20, runs: [{ text: 'b' }] });
-    t.setBounds({ x: 0, y: 10, w: 0, h: 14 });
+    t.setBounds({ x: 0, y: 10, width: 0, height: 14 });
     expect(t.draw(ctx)[0]).toMatchObject({ x: 0, y: 10, runs: [{ text: 'b' }] });
   });
 

@@ -27,8 +27,8 @@ import { translatePath } from './transform';
 import { transformPath } from './transformPath';
 import { pathUnion } from '../booleans';
 import { pathToMultiPolygon } from '../booleans/adapter';
-import { pointInPath, polygonContainsPath, strokeHitTest } from '../pathHitTest';
-import { rotatePathAround } from '../poseRotation';
+import { pathContainsPoint, polygonContainsPath, strokeHitTest } from '../pathHitTest';
+import { rotatePathAbout } from '../poseRotation';
 import { pinWarpMesh } from '../warp/pinWarpMesh';
 import type { PolygonPath } from '../path';
 
@@ -43,8 +43,8 @@ const square = (dx = 0): PolygonPath => new PathBuilder().setOrigin(FAR, 0)
 describe('readers of a path measured from an origin', () => {
   it('hit-tests the path where its origin puts it', () => {
     const p = square();
-    expect(pointInPath(p, X + 0.01, 1.5)).toBe(true);
-    expect(pointInPath(p, X - 0.01, 1.5)).toBe(false);
+    expect(pathContainsPoint(p, X + 0.01, 1.5)).toBe(true);
+    expect(pathContainsPoint(p, X - 0.01, 1.5)).toBe(false);
     expect(strokeHitTest(p, X - 0.005, 1.5, 0.01)).toBe(true);
     expect(pathDistanceToPoint(p, X - 0.1, 1.5)).toBeCloseTo(0.1, 6);
     const lasso = [{ x: X - 0.01, y: 0.9 }, { x: X + 1.1, y: 0.9 }, { x: X + 1.1, y: 2.1 }, { x: X - 0.01, y: 2.1 }];
@@ -96,7 +96,7 @@ describe('readers of a path measured from an origin', () => {
     const moved = translatePath(p, 5, 6) as PolygonPath;
     expect(moved.origin).toEqual({ x: FAR + 5, y: 6 });
     expect(Array.from(moved.coords)).toEqual(Array.from(p.coords));
-    const turned = rotatePathAround(p, FAR, 0, Math.PI / 2);
+    const turned = rotatePathAbout(p, FAR, 0, Math.PI / 2);
     // A quarter turn about (FAR, 0) takes (FAR + 0.3, 1) to (FAR - 1, 0.3).
     expect(worldCoords(turned)[0]).toBeCloseTo(FAR - 1, 6);
     expect(worldCoords(turned)[1]).toBeCloseTo(0.3, 6);
@@ -170,7 +170,7 @@ describe('producers that pick an origin', () => {
     expect(m.at(0.5).point).toEqual({ x: expect.closeTo(X + 0.5, 6), y: 1 });
     const near = m.nearest({ x: X + 0.25, y: 0.5 });
     expect(near.s).toBeCloseTo(0.25, 6);
-    expect(near.dist).toBeCloseTo(0.5, 6);
+    expect(near.distance).toBeCloseTo(0.5, 6);
     expect(pointAlongPath(pathFromD('M20000 0 L20010 0'), 0)!.point).toEqual({ x: 20000, y: 0 });
     const table = pathLengthTable(p);
     expect(table.origin).toEqual(p.origin);

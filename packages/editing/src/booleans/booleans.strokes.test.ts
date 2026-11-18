@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { boundsOfPath, pathFromD, pointInPath, type Path } from '@weasel-js/geom';
+import { boundsOfPath, pathFromD, pathContainsPoint, type Path } from '@weasel-js/geom';
 import type { Paint } from '@weasel-js/paint';
 import type { PathPaint, NodeId } from '@weasel-js/core';
 import { applyBooleanOp, type BooleansAdapter } from './booleans';
@@ -42,7 +42,7 @@ describe('applyBooleanOp on stroked operands', () => {
   it('ignores strokes unless asked: an unfilled line cuts nothing out of a box', () => {
     const h = harness([box, line]);
     expect(applyBooleanOp(h.adapter, 'subtract').kind).toBe('applied');
-    expect(pointInPath(h.made[0]!.path, 50, 50)).toBe(true);
+    expect(pathContainsPoint(h.made[0]!.path, 50, 50)).toBe(true);
     expect(h.made[0]!.paint).toBeUndefined();
   });
 
@@ -51,9 +51,9 @@ describe('applyBooleanOp on stroked operands', () => {
       const h = harness([box, line]);
       expect(applyBooleanOp(h.adapter, 'subtract', { strokes }).kind).toBe('applied');
       const cut = h.made[0]!.path;
-      expect(pointInPath(cut, 50, 50)).toBe(false);
-      expect(pointInPath(cut, 50, 44)).toBe(true);
-      expect(pointInPath(cut, 50, 56)).toBe(true);
+      expect(pathContainsPoint(cut, 50, 50)).toBe(false);
+      expect(pathContainsPoint(cut, 50, 44)).toBe(true);
+      expect(pathContainsPoint(cut, 50, 56)).toBe(true);
     });
 
     it(`${strokes}: a result whose topmost source was a line is filled in the line's paint, unstroked`, () => {
@@ -68,28 +68,28 @@ describe('applyBooleanOp on stroked operands', () => {
     const blank: Source = { ...line, paint: { fill: {}, stroke: { paint: RED, width: 10 } } };
     const h = harness([box, blank]);
     applyBooleanOp(h.adapter, 'subtract', { strokes: 'unfilled' });
-    expect(pointInPath(h.made[0]!.path, 50, 50)).toBe(false);
+    expect(pathContainsPoint(h.made[0]!.path, 50, 50)).toBe(false);
   });
 
   it('unfilled: a filled operand gives its fill alone, and the result\'s paint is left to the adapter', () => {
     const h = harness([far, framed]);
     applyBooleanOp(h.adapter, 'union', { strokes: 'unfilled' });
-    expect(pointInPath(h.made[0]!.path, -3, 50)).toBe(false);
+    expect(pathContainsPoint(h.made[0]!.path, -3, 50)).toBe(false);
     expect(h.made[0]!.paint).toBeUndefined();
   });
 
   it('include: a filled operand gives its fill and its stroke, and the result keeps the fill without the stroke', () => {
     const h = harness([far, framed]);
     applyBooleanOp(h.adapter, 'union', { strokes: 'include' });
-    expect(pointInPath(h.made[0]!.path, -3, 50)).toBe(true);
-    expect(pointInPath(h.made[0]!.path, 50, 50)).toBe(true);
+    expect(pathContainsPoint(h.made[0]!.path, -3, 50)).toBe(true);
+    expect(pathContainsPoint(h.made[0]!.path, 50, 50)).toBe(true);
     expect(h.made[0]!.paint).toEqual({ fill: { paint: BLUE } });
   });
 
   it('include: a stroke folded in below the topmost source leaves the result\'s paint to the adapter', () => {
     const h = harness([framed, { ...far, path: { kind: 'rect', x: 90, y: 40, width: 40, height: 20 } }]);
     applyBooleanOp(h.adapter, 'union', { strokes: 'include' });
-    expect(pointInPath(h.made[0]!.path, -3, 50)).toBe(true);
+    expect(pathContainsPoint(h.made[0]!.path, -3, 50)).toBe(true);
     expect(h.made[0]!.paint).toBeUndefined();
   });
 
@@ -104,6 +104,6 @@ describe('applyBooleanOp on stroked operands', () => {
     const h = harness([box, line]);
     h.adapter.getPaint = () => undefined;
     applyBooleanOp(h.adapter, 'subtract', { strokes: 'include' });
-    expect(pointInPath(h.made[0]!.path, 50, 50)).toBe(true);
+    expect(pathContainsPoint(h.made[0]!.path, 50, 50)).toBe(true);
   });
 });

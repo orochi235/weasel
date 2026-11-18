@@ -1,5 +1,7 @@
 /** Folding a node's pose up its parent chain to world, and back down. */
 
+import { createPart } from '@weasel-js/registry';
+
 /** Minimal adapter needed by `composeWorldPose` and friends — pose lookup plus parent walk. */
 export interface PoseAdapter<TPose> {
   getPose(id: string): TPose;
@@ -170,7 +172,21 @@ export function frameAtOrAbove<TPose>(
 }
 
 type Compose = (parent: never, child: never) => unknown;
-const memoized = new WeakMap<Compose, Compose>();
+type Run = (parent: unknown, child: unknown) => unknown;
+const memoized = createPart((compose: Compose): Run => {
+  const run = compose as Run;
+  const byParent = new WeakMap<object, WeakMap<object, unknown>>();
+  return (parent, child) => {
+    if (typeof parent !== 'object' || parent === null || typeof child !== 'object' || child === null) {
+      return run(parent, child);
+    }
+    let byChild = byParent.get(parent);
+    if (byChild === undefined) byParent.set(parent, byChild = new WeakMap());
+    let pose = byChild.get(child);
+    if (pose === undefined) byChild.set(child, pose = run(parent, child));
+    return pose;
+  };
+});
 
 /**
  * `compose`, answering the same object for the same parent and child objects,
@@ -181,19 +197,5 @@ const memoized = new WeakMap<Compose, Compose>();
 export function memoizeCompose<TPose>(
   compose: (parent: TPose, child: TPose) => TPose,
 ): (parent: TPose, child: TPose) => TPose {
-  const held = memoized.get(compose as Compose);
-  if (held !== undefined) return held as (parent: TPose, child: TPose) => TPose;
-  const byParent = new WeakMap<object, WeakMap<object, TPose>>();
-  const out = (parent: TPose, child: TPose): TPose => {
-    if (typeof parent !== 'object' || parent === null || typeof child !== 'object' || child === null) {
-      return compose(parent, child);
-    }
-    let byChild = byParent.get(parent);
-    if (byChild === undefined) byParent.set(parent, byChild = new WeakMap());
-    let pose = byChild.get(child);
-    if (pose === undefined) byChild.set(child, pose = compose(parent, child));
-    return pose;
-  };
-  memoized.set(compose as Compose, out as Compose);
-  return out;
+  return memoized(compose as Compose) as (parent: TPose, child: TPose) => TPose;
 }

@@ -148,7 +148,7 @@ export function isCanvasFont(family: string): boolean {
  * Every family the dynamic canvas-SDF tier will serve *right now* — the
  * enumeration companion to `isCanvasFont`, which answers one family at a
  * time. Same "service, not membership" rule: an auto-enrolled family appears
- * only while the `'canvas'` policy is in force. `listFonts` reports the baked
+ * only while the `'canvas'` policy is in force. `listAtlasFonts` reports the baked
  * registry alone.
  *
  * `enrollment` distinguishes a consumer's explicit `registerCanvasFont` from

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { f, resolveConfigSchema, withValueAtPath } from '@weasel-js/labkit/config';
+import { f, resolveConfigSchema, withConfigValueAt } from '@weasel-js/labkit/config';
 import { ControlPanel } from '@weasel-js/labkit/controls';
 import { useState } from 'react';
 
@@ -39,7 +39,7 @@ export const Drafts: Story = {
           config={config}
           setConfig={(path, value) => {
             setWrites((n) => n + 1);
-            setConfig((prev) => withValueAtPath(prev, path, value));
+            setConfig((prev) => withConfigValueAt(prev, path, value));
           }}
           draftConfig={(path, value) => setDraft(`${path} = ${JSON.stringify(value)}`)}
         />
@@ -63,7 +63,7 @@ export const ErrorsAndChanges: Story = {
         {...args}
         schema={schema}
         config={config}
-        setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
+        setConfig={(path, value) => setConfig((prev) => withConfigValueAt(prev, path, value))}
         changed={changed}
         errors={speed > 8 ? { speed: 'Above 8 the simulation drops frames.' } : {}}
       />

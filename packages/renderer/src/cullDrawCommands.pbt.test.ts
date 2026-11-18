@@ -32,7 +32,7 @@ describe('cullDrawCommands, property', () => {
   it('drops an image exactly when boundsMissRect says its rect misses', () => {
     const t = tally();
     fc.assert(fc.property(fc.tuple(spread(-300, 300), spread(-300, 300), spread(-200, 200), spread(-200, 200)), near, view, ([x, y, w, h], m, rect) => {
-      const cmd: DrawCommand = { kind: 'image', image: IMAGE, x, y, w, h };
+      const cmd: DrawCommand = { kind: 'image', image: IMAGE, x, y, width: w, height: h };
       const miss = boundsMissRect({ x, y, width: w, height: h }, m, rect);
       t.count(miss ? 'miss' : 'meet');
       expect(cullDrawCommands([cmd], m, rect, 1).length).toBe(miss ? 0 : 1);

@@ -59,7 +59,7 @@ export function needsDefaultAttribute(program: WgpuProgram, geometry: WgpuGeomet
 
 /** The pipeline a draw of `program` is drawn with, or `null` where the GPU
  *  refused it: an invalid pipeline set on a pass voids the whole submit. */
-export function pipelineFor(
+export function ensurePipeline(
   device: GPUDevice, program: WgpuProgram, geometry: WgpuGeometry, target: PassAttachments, state: GpuDrawState,
 ): GPURenderPipeline | null {
   const key = `${geometry.layoutKey}|${target.key}|${stateKey(state)}`;
@@ -69,7 +69,7 @@ export function pipelineFor(
   const buffers: GPUVertexBufferLayout[] = [...geometry.layouts];
   if (missing.length > 0) {
     buffers.push({
-      arrayStride: 16, stepMode: 'instance',
+      arrayStride: 0, stepMode: 'instance',
       attributes: missing.map((shaderLocation) => ({ shaderLocation, offset: 0, format: 'float32x4' as const })),
     });
   }

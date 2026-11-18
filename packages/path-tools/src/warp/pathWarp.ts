@@ -13,7 +13,7 @@
  */
 import {
   boundsOfPath,
-  boxToBox,
+  rectToRect,
   fitAffine,
   identity,
   invert,
@@ -26,7 +26,7 @@ import {
 } from '@weasel-js/geom';
 import { applyPathWarp, type PathWarp } from '@weasel-js/geom/warp';
 import { classifyPathStorage, type EditableShape } from '@weasel-js/core';
-import { getOwn } from '@weasel-js/registry';
+import { createPart, getOwn } from '@weasel-js/registry';
 
 /** What `data.warp` holds. */
 export interface HeldPathWarp {
@@ -87,7 +87,8 @@ function isHeldWarp(v: unknown): v is HeldPathWarp {
 
 /** Each held warp saved under an old kind, as read under its new one: one copy per record, so the result cache and
  *  every reader keyed on identity see the same object. */
-const renamed = new WeakMap<HeldPathWarp, HeldPathWarp>();
+const renamedOf = createPart((w: HeldPathWarp): HeldPathWarp =>
+  ({ ...w, warp: { ...w.warp, kind: getOwn(RENAMED_KINDS, w.warp.kind) } as PathWarp }));
 
 /** The warp a node's `data` holds, whether or not it still matches. One saved under a kind's earlier name reads as
  *  that kind, and the next edit writes it under the new one. */
@@ -95,14 +96,8 @@ export function heldPathWarpOf(data: unknown): HeldPathWarp | null {
   const w = (data as { warp?: unknown } | null | undefined)?.warp;
   if (!isHeldWarp(w)) return null;
   const kind: string = w.warp.kind;
-  const now = getOwn(RENAMED_KINDS, kind);
-  if (now === undefined) return w;
-  let out = renamed.get(w);
-  if (!out) {
-    out = { ...w, warp: { ...w.warp, kind: now } as PathWarp };
-    renamed.set(w, out);
-  }
-  return out;
+  if (getOwn(RENAMED_KINDS, kind) === undefined) return w;
+  return renamedOf(w);
 }
 
 /** `data` without its warp: the shape as plain geometry. */
@@ -120,7 +115,7 @@ export function storedPathOf(node: EditableShape): { path: PolygonPath; toWorld:
   if (storage.kind === 'pose') return { path: node.pose as PolygonPath, toWorld: identity() };
   const { pose, data } = storage;
   const b = boundsOfPath(data.path);
-  const box = boxToBox(b.x, b.y, b.width, b.height, pose.x, pose.y, pose.width, pose.height);
+  const box = rectToRect(b.x, b.y, b.width, b.height, pose.x, pose.y, pose.width, pose.height);
   return { path: data.path, toWorld: multiply(poseFrameOf(pose) ?? identity(), box) };
 }
 

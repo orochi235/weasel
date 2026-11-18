@@ -15,7 +15,7 @@ type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };
 
 /** A 4× lens over the world origin, painted at canvas x ∈ [200, 300). */
-const LENS = { x: 200, y: 0, w: 100, h: 100 };
+const LENS = { x: 200, y: 0, width: 100, height: 100 };
 const LENS_VIEW: View = { x: 0, y: 0, scale: { x: 4, y: 4 } };
 
 /** Canvas (220, 20) is lens-local (20, 20), world (5, 5) through the lens —
@@ -180,7 +180,7 @@ describe('SceneCanvasApi.addView', () => {
     const outer: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
     const cmds = h.handle.draw({}, outer, { width: 400, height: 300, dpr: 1 });
     expect(cmds).toHaveLength(1);
-    expect(cmds[0]).toMatchObject({ kind: 'group', clip: { width: LENS.w, height: LENS.h } });
+    expect(cmds[0]).toMatchObject({ kind: 'group', clip: { width: LENS.width, height: LENS.height } });
     // Still routed: paint is the host's, input is the surface's.
     click(h.canvas, PRESS);
     expect(h.scene.getSelection()).toEqual([h.inLens]);

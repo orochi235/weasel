@@ -11,7 +11,7 @@ import { usePathToolsTools } from '@weasel-js/path-tools';
 import { appCommandsContribution, type AppCommands } from './appCommands';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { DRAW_FEATURES } from './drawFeatures';
-import { BUILTIN_TOOL_IDS } from '@weasel-js/editing';
+import { KIT_TOOL_IDS } from '@weasel-js/editing';
 
 beforeAll(() => {
   (HTMLCanvasElement.prototype as unknown as { getContext: () => null }).getContext = () => null;
@@ -36,7 +36,7 @@ it("registers every glyph a tool or action on draw's canvas names", () => {
     const pathToolsTools = usePathToolsTools();
     return (
       <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={DRAW_FEATURES}
-        scene={scene} layers={{}} width={64} height={64} defaultTools={BUILTIN_TOOL_IDS} tools={pathToolsTools}
+        scene={scene} layers={{}} width={64} height={64} defaultTools={KIT_TOOL_IDS} tools={pathToolsTools}
         onToolsCreated={(t) => { tools = t; }} ambient={[appCommandsContribution(() => commands)]} />
     );
   }

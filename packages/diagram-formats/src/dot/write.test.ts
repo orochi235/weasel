@@ -107,7 +107,7 @@ describe('writing DOT', () => {
     const data: DiagramData = {
       nodes: [{ id: 'a', ports: [{ id: 'out', at: { u: 1, v: 0.5 } }] }, { id: 'b', outline: { commands: [] } as never }],
       edges: [{ from: 'a', to: 'b', fromPort: 'out' }, { from: 'a', to: 'k' }],
-      groups: [{ id: 'g', members: ['a'] }],
+      clusters: [{ id: 'g', members: ['a'] }],
       containers: [{ id: 'k', role: 'container', members: ['b'] }],
     };
     expect(writeDot(pageOf(data)).warnings).toEqual([
@@ -223,7 +223,7 @@ describe('writing DOT', () => {
   });
 
   it('resets an outer cluster\'s stroke and font color in a group\'s cluster inside it', () => {
-    const doc = pageOf({ nodes: [{ id: 'a' }], edges: [], groups: [{ id: 'g', members: ['a'] }], containers: [
+    const doc = pageOf({ nodes: [{ id: 'a' }], edges: [], clusters: [{ id: 'g', members: ['a'] }], containers: [
       { id: 'c', role: 'container', label: 'C', colors: { stroke: '#ff0000', text: '#00ff00' }, members: ['g'] },
     ] });
     const g = back(doc).data.containers!.find((k) => k.id === 'g')!;

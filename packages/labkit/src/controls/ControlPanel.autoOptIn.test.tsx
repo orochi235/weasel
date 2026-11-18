@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { auto } from '../config/auto';
+import { AUTO } from '../config/auto';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
 import { ControlPanel } from './ControlPanel';
@@ -28,14 +28,14 @@ describe('<ControlPanel> auto is opt-in', () => {
     for (const name of ['On', 'Title', 'Size', 'Tint', 'Mode']) expect(pinToggle(name)).toBeNull();
   });
 
-  it('toggles a leaf that said .auto(), with or without a resolver, or .initial(auto)', () => {
+  it('toggles a leaf that said .auto(), with or without a resolver, or .initial(AUTO)', () => {
     const schema = f.schema({
       a: f.number(1).auto().label('Bare'),
       b: f
         .number(1)
         .auto(() => 2)
         .label('Resolved'),
-      c: f.string('x').initial(auto).label('Opened'),
+      c: f.string('x').initial(AUTO).label('Opened'),
     });
     render(
       <ControlPanel

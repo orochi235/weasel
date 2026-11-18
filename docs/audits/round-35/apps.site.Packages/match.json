@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   3
+  ]
+ ],
+ "a": [
+  "A reference fetch that answers non-OK is cached for the session as \"not built\", so a 5xx or a later `build:api` is never retried",
+  "The export index shows the first same-named declaration's summary and deprecation under every group that lists the name",
+  "Two destructured parameters in one signature get the same React key in CallDetails"
+ ],
+ "b": [
+  "A transient HTTP error on the reference fetch is cached for the session as \"has not been built\"",
+  "Guide body looked up through the prototype chain",
+  "Two guide files with the same slug show one guide's title over the other's body",
+  "A name that is both a type and a value gets the first declaration's summary and deprecation in every group",
+  "A root export named like one of the package's subpath entries has an unreachable page"
+ ]
+}

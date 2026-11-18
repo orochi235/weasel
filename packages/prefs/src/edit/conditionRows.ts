@@ -92,7 +92,7 @@ export function clauseChoices(leaf: PrefLeaf, clauses: readonly Comparison[], at
 const optionsOf = (leaf: PrefLeaf): readonly string[] => (leaf.kind === 'enum' ? (leaf as PrefEnum).options.map((o) => o.value) : []);
 
 /** What `test` reads, with no comparison: its path, and where the path is read from. */
-export const readOf = ({ path, from }: Pick<PrefTest, 'path' | 'from'>): PrefTest => (from === 'item' ? { from, path } : { path });
+export const readOf = ({ path, from }: Pick<PrefTest, 'path' | 'from'>): PrefTest => (from === undefined ? { path } : { from, path });
 
 const without = (test: PrefTest, op: Operator): PrefTest => {
   const { [op]: _dropped, ...rest } = test;

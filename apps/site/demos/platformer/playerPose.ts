@@ -1,6 +1,6 @@
 // apps/site/demos/platformer/playerPose.ts
 import { bindClip, createTarget, skeletonAxes } from '@weasel-js/animator';
-import type { Animator, ClipBinder, Pose, TimelineHandle } from '@weasel-js/animator';
+import type { Animator, ClipBinder, SkeletonPose, TimelineHandle } from '@weasel-js/animator';
 import { sceneClipTargets, type PoseTargetScene } from '@weasel-js/core';
 import type { AnimState } from './animState';
 import { CLIPS, FADE } from './clips';
@@ -9,7 +9,7 @@ import { PLAYER_SKELETON } from './skeleton';
 /** The player's pose as an animation target, and the clip playing on it. */
 export interface PlayerPose {
   /** The pose to draw. */
-  read(): Pose;
+  read(): SkeletonPose;
   /** Puts the simulation's animation state on the target: once a frame, after stepping. */
   sync(anim: AnimState): void;
   dispose(): void;
@@ -27,8 +27,8 @@ export interface PlayerPose {
  * airborne clips follow velocity — so each timeline is paused and seeked.
  */
 export function createPlayerPose<TPose>(animator: Animator, scene: PoseTargetScene<TPose>): PlayerPose {
-  let committed: Pose = {};
-  const target = createTarget<Pose>({
+  let committed: SkeletonPose = {};
+  const target = createTarget<SkeletonPose>({
     get: () => committed,
     set: (pose) => { committed = pose; },
     axes: skeletonAxes(PLAYER_SKELETON),

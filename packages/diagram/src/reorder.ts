@@ -1,6 +1,6 @@
 /**
  * Reorder: dragging one item of a drawn sequence — boxes in a row, rows in a
- * column, the members of a group — to another place in it. The item follows
+ * column, the members of a cluster — to another place in it. The item follows
  * the pointer along the sequence's axis and lands in the gap nearest its
  * middle. A `'bar'` drag marks that gap with an insertion bar; a `'slide'`
  * drag slides the other items into the places they would take. Either way
@@ -95,7 +95,7 @@ const END_GAP = 24;
  * each pair, its bar spanning both across the axis, and one beyond each end,
  * as far out as the nearest interior gap's half, or `END_GAP / 2` with none.
  */
-export function sequenceSlots(axis: 'x' | 'y', items: readonly ReorderItem[]): ReorderSlots {
+export function slotsAlong(axis: 'x' | 'y', items: readonly ReorderItem[]): ReorderSlots {
   const [along, across, size, depth] = axis === 'x' ? ['x', 'y', 'width', 'height'] as const : ['y', 'x', 'height', 'width'] as const;
   const lo = (b: Rect) => b[along];
   const hi = (b: Rect) => b[along] + b[size];
@@ -246,7 +246,7 @@ export function reorderBinding(actionId: string = REORDER_ACTION_ID, on: TargetP
 }
 
 /** The reorder action and its binding, to pass as `ambient`. */
-export function reorderContribution(opts: ReorderOptions & { on?: TargetPredicate }): Contribution {
+export function createReorderContribution(opts: ReorderOptions & { on?: TargetPredicate }): Contribution {
   const actionId = opts.id ?? REORDER_ACTION_ID;
   return {
     id: `weasel-diagram-reorder:${actionId}`,
@@ -263,7 +263,7 @@ export function reorderContribution(opts: ReorderOptions & { on?: TargetPredicat
  * to the move. Passed as `ambient` instead, the move takes every press first.
  */
 export function createReorderPreset(opts: ReorderOptions & { on?: TargetPredicate }): FeaturePreset {
-  const { actions = [], ...entry } = reorderContribution(opts);
+  const { actions = [], ...entry } = createReorderContribution(opts);
   return {
     id: entry.id,
     label: opts.label ?? 'Reorder',

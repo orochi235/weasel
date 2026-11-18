@@ -213,14 +213,14 @@ describe('devtools session', () => {
     t.scene.undo();
     t.flush();
     expect(t.heard.filter((m) => m.type === 'changed').at(-1)).toMatchObject({ areas: { history: 2 } });
-    const slice = t.result({ type: 'get-history', cursor: 0, checkpoints: true }) as {
+    const slice = t.result({ type: 'get-history', cursor: 0, historyEntries: true }) as {
       entries: { step: string; entries: { label: string; ops: { targets: string[] }[] }[] }[];
-      cursor: number; position: unknown; checkpoints: { label: string }[];
+      cursor: number; position: unknown; historyEntries: { label: string }[];
     };
     expect(slice.entries.map((r) => r.step)).toEqual(['push', 'undo']);
     expect(slice.entries[0]!.entries[0]!.ops[0]!.targets).toEqual([t.group]);
     expect(slice).toMatchObject({ cursor: 2, position: { index: 3, total: 4, canUndo: true, canRedo: true } });
-    expect(slice.checkpoints).toHaveLength(4);
+    expect(slice.historyEntries).toHaveLength(4);
     expect(t.result({ type: 'get-history', cursor: slice.cursor })).toMatchObject({ entries: [], cursor: 2 });
     t.panel.send({ type: 'bye', protocol: P });
     t.scene.redo();

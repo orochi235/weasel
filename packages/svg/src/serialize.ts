@@ -13,13 +13,14 @@ import type {
 } from './types';
 import { pathAsSvgDraws } from './openSubpathFill';
 import { formatMatrix, trimNumber } from './transform';
-import { PaintServerRegistry, WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
+import { WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
+import { PaintServerRegistry } from './paintServers';
 import { attrNames, fitLeafXml, groupPaintAttrs } from './groupPaintXml';
 
 const NOTHING_PAINTED: ReadonlySet<string> = new Set();
 import { boxTransformAttr } from './placeBox';
 import { exportedHref } from './bitmapHref';
-import { computeBounds, pathBounds } from './serializeBounds';
+import { svgBoundsOf, pathBounds } from './serializeBounds';
 import { paintAttrs, strokeAttrsFor, strokePaintAsFillAttrs, type Warn } from './strokeAttrs';
 import { withTrimsDrawn } from './trimmedStroke';
 import { withDashesResolved } from './resolvedDashes';
@@ -54,7 +55,7 @@ export function serializeSvg(given: SvgNode[], opts: SerializeOptions = {}): str
   const nodes = withTrimsDrawn(withDashesResolved(text.nodes));
   registerPaintServers(nodes, registry);
 
-  const bounds = opts.viewBox ?? computeBounds(given);
+  const bounds = opts.viewBox ?? svgBoundsOf(given);
   const vb = `${trimNumber(bounds.x)} ${trimNumber(bounds.y)} ${trimNumber(bounds.width)} ${trimNumber(bounds.height)}`;
   const namespaces = opts.namespaces ?? {};
   if (holdsNonXmlChar(stringsIn([given, opts.title, opts.documentMeta]))) {

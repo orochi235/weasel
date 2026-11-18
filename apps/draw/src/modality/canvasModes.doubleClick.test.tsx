@@ -67,7 +67,7 @@ function Harness({ machine, into }: { machine: ModeMachine; into: (entered: Ente
     member('deep', 'inner', AT.deep);
     return s as unknown as DrawScene;
   });
-  const selection = useSelection({ mode: 'multi', scene });
+  const selection = useSelection({ mode: 'multiple', scene });
   const [pathEdit] = useState(() => modePathEdit(machine, (id) => hasEditablePath(scene.get(asNodeId(id)))));
   const [dim] = useState(() => createScopingDim({
     registry: machine.registry,

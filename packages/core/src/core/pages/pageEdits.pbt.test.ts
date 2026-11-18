@@ -10,7 +10,7 @@ import { runs, tally, timeoutFor } from '../pbt.fixture';
 import { createScene } from '../scene/scene';
 import type { NodeId } from '../scene/types';
 import { addPage, movePage, nextPageId, pagesOf, placedPagesOf, removePage, renamePage, resizePage } from './pageEdits';
-import { createPageRun, pageNodeOf, pageOfNode } from './pageNodes';
+import { createPageRun, pageNodeOf, pageIdOf } from './pageNodes';
 import { layoutPages, type Page, type PageLayoutOptions } from './pages';
 
 type Pose = { x: number; y: number; width: number; height: number };
@@ -38,7 +38,7 @@ function read(r: Real, m: Model): State {
   const content = current(m).content
     .concat(m.entries.flatMap((e) => e.content))
     .filter((c, i, all) => all.findIndex((d) => d.id === c.id) === i && r.scene.get(c.id) !== undefined)
-    .map((c) => ({ id: c.id, page: pageOfNode(r.scene, c.id)!, pose: { ...r.scene.get(c.id)!.pose } }))
+    .map((c) => ({ id: c.id, page: pageIdOf(r.scene, c.id)!, pose: { ...r.scene.get(c.id)!.pose } }))
     .sort((a, b) => (a.id < b.id ? -1 : 1));
   return { pages, content };
 }

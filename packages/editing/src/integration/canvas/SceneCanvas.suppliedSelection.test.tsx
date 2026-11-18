@@ -28,7 +28,7 @@ function mount() {
   const b = add(100);
   let api!: SelectionApi;
   function App() {
-    api = useSelection({ mode: 'multi' });
+    api = useSelection({ mode: 'multiple' });
     return <SceneCanvas scene={scene} width={300} height={300} features={[drawPreset]} selection={api} />;
   }
   render(<App />);

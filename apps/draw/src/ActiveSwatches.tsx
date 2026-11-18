@@ -28,8 +28,8 @@ export function ActiveSwatches(): ReactElement {
       className="wd-active-swatches"
       fill={colors.fill}
       stroke={colors.stroke}
-      focused={colors.focused}
-      onFocusChange={colors.setFocus}
+      target={colors.focused}
+      onTargetChange={colors.setFocus}
       onInput={(slot, next) => {
         paint(slot, next);
         edits[slot].input({ paint: next });

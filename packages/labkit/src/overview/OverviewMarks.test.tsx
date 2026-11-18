@@ -58,7 +58,7 @@ async function mount() {
       overlay: () => <TrialOverview width={200} height={150} render={() => <div />} />,
     },
     annotations: {
-      targets: () => [{ id: 'pane', ref: pane, content: { w: 200, h: 100 } }],
+      targets: () => [{ id: 'pane', ref: pane, content: { width: 200, height: 100 } }],
     },
   });
   const original = HTMLElement.prototype.getBoundingClientRect;
@@ -86,7 +86,11 @@ describe('marks on the overview', () => {
   it("places a target's marks at the target's rect, through the fit", async () => {
     const h = await mount();
     await act(async () => {
-      h.api().add({ target: 'pane', kind: 'rect', frac: { x: 0.1, y: 0.1, w: 0.2, h: 0.2 } });
+      h.api().add({
+        target: 'pane',
+        kind: 'rect',
+        frac: { x: 0.1, y: 0.1, width: 0.2, height: 0.2 },
+      });
     });
     const marks = h.container.querySelector<HTMLElement>('.lk-overview__marks[data-target="pane"]');
     expect(marks).not.toBeNull();

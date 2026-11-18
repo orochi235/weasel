@@ -55,6 +55,7 @@
     }
   },
   "devDependencies": {
+    "@weasel-js/registry": "*",
     "earcut": "3.2.4",
     "polygon-clipping": "^0.15.7"
   },

@@ -4,12 +4,12 @@
  * builds their specs.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import type { GroupInset } from './cluster';
+import type { ClusterInset } from './cluster';
 import { CONTAINER_HEADER } from './containers/layouts';
 import { MIN_LANE_SIZE } from './containers/laneStack';
 import type { ContainerRole } from './containers/trait';
 import { DEFAULT_LANE_SIZE, DEFAULT_POOL_ACROSS, type DataContainer, type NodeStyle } from './dataTypes';
-import type { GraphGroup, GraphNode } from './graph';
+import type { GraphCluster, GraphNode } from './graph';
 import type { Rect } from '@weasel-js/geom';
 
 /** A container's size when it gives no box and holds nothing to fit. */
@@ -61,7 +61,7 @@ export function resolveContainers(
   const byId = new Map<string, DataRegion>();
   const parentOf = new Map<string, string>();
   const declare = (r: DataRegion) => {
-    if (ids.has(r.id)) throw new Error(`diagramScene: container id "${r.id}" is already a node, group, or container id`);
+    if (ids.has(r.id)) throw new Error(`diagramScene: container id "${r.id}" is already a node, cluster, or container id`);
     ids.add(r.id);
     byId.set(r.id, r);
   };
@@ -117,10 +117,10 @@ export function resolveContainers(
 export interface ContainerLayout {
   /** Each outermost boxed region, as one node at its box. */
   nodes: GraphNode[];
-  /** Each fitted container outside every boxed region, kept together as a group. */
-  groups: GraphGroup[];
+  /** Each fitted container outside every boxed region, kept together as a cluster. */
+  clusters: GraphCluster[];
   /** The fitted container each node layout sees is directly inside. */
-  groupOf: ReadonlyMap<string, string>;
+  clusterOf: ReadonlyMap<string, string>;
   /** Every node and region inside a boxed region, which layout does not see. */
   hidden: ReadonlySet<string>;
   /** The outermost boxed region holding `id` or being it, else `id`: what an edge's end ranks against. */
@@ -128,7 +128,7 @@ export interface ContainerLayout {
 }
 
 /** The inset a fitted container keeps around what it holds: its header, and `pad` all round. */
-export const fittedInset = (pad: number): GroupInset => ({ top: CONTAINER_HEADER.size + pad, right: pad, bottom: pad, left: pad });
+export const fittedInset = (pad: number): ClusterInset => ({ top: CONTAINER_HEADER.size + pad, right: pad, bottom: pad, left: pad });
 
 /** A pool's lane sizes along its stack, the lanes giving none sharing what the box leaves. */
 export function laneSizes(lanes: readonly DataRegion[], along: number | undefined): number[] {
@@ -153,7 +153,7 @@ function startBox(r: DataRegion, lanes: readonly DataRegion[], seed: Vec2): Rect
 
 /**
  * What layout sees of `regions`: an outermost boxed region is one node, a
- * fitted container outside every boxed region is a group around what it
+ * fitted container outside every boxed region is a cluster around what it
  * holds, and everything inside a boxed region is hidden. `seed` is where a
  * region giving no box starts, by its place among the regions.
  */
@@ -183,12 +183,12 @@ export function containerLayoutNodes(
   const seen = (id: string) => !hidden.has(id) && !(byId.get(id)?.fitted ?? false);
   const below = (r: DataRegion): string[] =>
     r.direct.flatMap((id) => (seen(id) ? [id] : byId.get(id)?.fitted === true && !hidden.has(id) ? below(byId.get(id)!) : []));
-  const groups: GraphGroup[] = [];
-  const groupOf = new Map<string, string>();
+  const clusters: GraphCluster[] = [];
+  const clusterOf = new Map<string, string>();
   for (const r of regions) {
     if (!r.fitted || hidden.has(r.id) || rootOf.has(r.id)) continue;
-    groups.push({ id: r.id, members: below(r), inset: fittedInset(opts.padding), ...(r.parent !== undefined ? { parent: r.parent } : {}) });
-    for (const id of r.direct) if (seen(id)) groupOf.set(id, r.id);
+    clusters.push({ id: r.id, members: below(r), inset: fittedInset(opts.padding), ...(r.parent !== undefined ? { parent: r.parent } : {}) });
+    for (const id of r.direct) if (seen(id)) clusterOf.set(id, r.id);
   }
-  return { nodes, groups, groupOf, hidden, endOf };
+  return { nodes, clusters, clusterOf, hidden, endOf };
 }

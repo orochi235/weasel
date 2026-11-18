@@ -63,7 +63,7 @@ describe('hover-cursor pump', () => {
   it('idle pointermove applies the predicted action cursor; pointerleave clears it', () => {
     const { container } = render(
       <Harness>
-        <Probe actionDef={panAction} classifyTarget={() => ({ body: 'empty' })} />
+        <Probe actionDef={panAction} classifyTarget={() => ({ bodyTarget: 'empty' })} />
       </Harness>,
     );
     const canvas = container.querySelector('canvas')!;
@@ -78,7 +78,7 @@ describe('hover-cursor pump', () => {
       <Harness>
         <Probe
           actionDef={panAction}
-          classifyTarget={() => ({ body: 'empty' })}
+          classifyTarget={() => ({ bodyTarget: 'empty' })}
           affordanceAt={() => ({ kind: 'handle:min-min', cursor: 'nwse-resize' })}
         />
       </Harness>,
@@ -92,7 +92,7 @@ describe('hover-cursor pump', () => {
     const grabbing: Action = { ...panAction, activeCursor: 'grabbing' };
     const { container } = render(
       <Harness>
-        <Probe actionDef={grabbing} classifyTarget={() => ({ body: 'empty' })} />
+        <Probe actionDef={grabbing} classifyTarget={() => ({ bodyTarget: 'empty' })} />
       </Harness>,
     );
     const canvas = container.querySelector('canvas')!;
@@ -107,7 +107,7 @@ describe('hover-cursor pump', () => {
   it('an in-flight action with no activeCursor holds its hover hint', () => {
     const { container } = render(
       <Harness>
-        <Probe actionDef={panAction} classifyTarget={() => ({ body: 'empty' })} />
+        <Probe actionDef={panAction} classifyTarget={() => ({ bodyTarget: 'empty' })} />
       </Harness>,
     );
     const canvas = container.querySelector('canvas')!;
@@ -122,7 +122,7 @@ describe('hover-cursor pump', () => {
     delete (noCursorAction as { cursor?: string }).cursor;
     const { container } = render(
       <Harness>
-        <Probe actionDef={noCursorAction} classifyTarget={() => ({ body: 'empty' })} />
+        <Probe actionDef={noCursorAction} classifyTarget={() => ({ bodyTarget: 'empty' })} />
       </Harness>,
     );
     const canvas = container.querySelector('canvas')!;

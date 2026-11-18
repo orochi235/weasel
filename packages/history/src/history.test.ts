@@ -12,11 +12,11 @@ function makeAdapter() {
   };
 }
 
-/** Local stand-in for core's `createTransformOp`, kept here so this package's
+/** Local stand-in for core's `createSetPoseOp`, kept here so this package's
  *  suite depends on nothing outside it. Mirrors the real op's contract: a
  *  `transform:${id}` coalesce key by default, and a `false` return when the
  *  pose didn't actually change (which history reads as "skip the entry"). */
-function createTransformOp<TPose>(args: {
+function createSetPoseOp<TPose>(args: {
   id: string; from: TPose; to: TPose; label?: string; coalesceKey?: string;
 }): Op {
   const { id, from, to, label, coalesceKey = `transform:${id}` } = args;
@@ -29,7 +29,7 @@ function createTransformOp<TPose>(args: {
       (adapter as { setPose: (id: string, p: TPose) => void }).setPose(id, to);
       return poseShallowEqual(from, to) ? false : undefined;
     },
-    invert: () => createTransformOp<TPose>({ id, from: to, to: from, label, coalesceKey }),
+    invert: () => createSetPoseOp<TPose>({ id, from: to, to: from, label, coalesceKey }),
   };
 }
 
@@ -46,7 +46,7 @@ function poseShallowEqual<TPose>(a: TPose, b: TPose): boolean {
 }
 
 /** A transform-shaped op with NO `coalesceKey`, to exercise the history's
- *  keyless path. Built by hand because `createTransformOp` now defaults a key;
+ *  keyless path. Built by hand because `createSetPoseOp` now defaults a key;
  *  real keyless ops still exist (e.g. `createSetDataOp`). */
 function keylessTransform(id: string, from: Pose, to: Pose): Op {
   return {
@@ -61,7 +61,7 @@ describe('createHistory', () => {
   it('applies a single op and pushes onto the undo stack', () => {
     const adapter = makeAdapter();
     const history = createHistory(adapter as any);
-    history.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
+    history.apply(createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
     expect(adapter.state.get('a')).toEqual({ x: 1, y: 1 });
     expect(history.canUndo()).toBe(true);
     expect(history.canRedo()).toBe(false);
@@ -70,7 +70,7 @@ describe('createHistory', () => {
   it('undo reverses the last op', () => {
     const adapter = makeAdapter();
     const history = createHistory(adapter as any);
-    history.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
+    history.apply(createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
     history.undo();
     expect(adapter.state.get('a')).toEqual({ x: 0, y: 0 });
     expect(history.canUndo()).toBe(false);
@@ -80,7 +80,7 @@ describe('createHistory', () => {
   it('redo re-applies the undone op', () => {
     const adapter = makeAdapter();
     const history = createHistory(adapter as any);
-    history.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
+    history.apply(createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
     history.undo();
     history.redo();
     expect(adapter.state.get('a')).toEqual({ x: 1, y: 1 });
@@ -91,8 +91,8 @@ describe('createHistory', () => {
     const history = createHistory(adapter as any);
     history.applyOps(
       [
-        createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }),
-        createTransformOp<Pose>({ id: 'b', from: { x: 0, y: 0 }, to: { x: 2, y: 2 } }),
+        createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }),
+        createSetPoseOp<Pose>({ id: 'b', from: { x: 0, y: 0 }, to: { x: 2, y: 2 } }),
       ],
       'Batch',
     );
@@ -106,9 +106,9 @@ describe('createHistory', () => {
   it('apply after undo discards the redo stack', () => {
     const adapter = makeAdapter();
     const history = createHistory(adapter as any);
-    history.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
+    history.apply(createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
     history.undo();
-    history.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 5, y: 5 } }));
+    history.apply(createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 5, y: 5 } }));
     expect(history.canRedo()).toBe(false);
   });
 });
@@ -118,7 +118,7 @@ describe('createHistory coalescing', () => {
     const adapter = makeAdapter();
     const history = createHistory(adapter as any);
     for (let i = 1; i <= 3; i++) {
-      history.apply(createTransformOp<Pose>({
+      history.apply(createSetPoseOp<Pose>({
         id: 'a', from: { x: i - 1, y: 0 }, to: { x: i, y: 0 }, coalesceKey: 'transform:a',
       }));
     }
@@ -136,15 +136,15 @@ describe('createHistory coalescing', () => {
     let t = 0;
     const adapter = makeAdapter();
     const history = createHistory(adapter as any, { coalesceWindowMs: 500, now: () => t });
-    history.apply(createTransformOp<Pose>({
+    history.apply(createSetPoseOp<Pose>({
       id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, coalesceKey: 'transform:a',
     }));
     t = 100;
-    history.apply(createTransformOp<Pose>({
+    history.apply(createSetPoseOp<Pose>({
       id: 'a', from: { x: 1, y: 0 }, to: { x: 2, y: 0 }, coalesceKey: 'transform:a',
     }));
     t = 200;
-    history.apply(createTransformOp<Pose>({
+    history.apply(createSetPoseOp<Pose>({
       id: 'a', from: { x: 2, y: 0 }, to: { x: 3, y: 0 }, coalesceKey: 'transform:a',
     }));
     expect(adapter.state.get('a')).toEqual({ x: 3, y: 0 });
@@ -157,11 +157,11 @@ describe('createHistory coalescing', () => {
     let t = 0;
     const adapter = makeAdapter();
     const history = createHistory(adapter as any, { coalesceWindowMs: 500, now: () => t });
-    history.apply(createTransformOp<Pose>({
+    history.apply(createSetPoseOp<Pose>({
       id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, coalesceKey: 'transform:a',
     }));
     t = 100;
-    history.apply(createTransformOp<Pose>({
+    history.apply(createSetPoseOp<Pose>({
       id: 'a', from: { x: 1, y: 0 }, to: { x: 5, y: 0 }, coalesceKey: 'transform:a',
     }));
     history.undo();
@@ -173,11 +173,11 @@ describe('createHistory coalescing', () => {
     let t = 0;
     const adapter = makeAdapter();
     const history = createHistory(adapter as any, { coalesceWindowMs: 500, now: () => t });
-    history.apply(createTransformOp<Pose>({
+    history.apply(createSetPoseOp<Pose>({
       id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, coalesceKey: 'transform:a',
     }));
     t = 600; // beyond the 500ms window
-    history.apply(createTransformOp<Pose>({
+    history.apply(createSetPoseOp<Pose>({
       id: 'a', from: { x: 1, y: 0 }, to: { x: 2, y: 0 }, coalesceKey: 'transform:a',
     }));
     history.undo();
@@ -190,13 +190,13 @@ describe('createHistory coalescing', () => {
     let t = 0;
     const adapter = makeAdapter();
     const history = createHistory(adapter as any, { coalesceWindowMs: 100, now: () => t });
-    history.apply(createTransformOp<Pose>({
+    history.apply(createSetPoseOp<Pose>({
       id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, coalesceKey: 'transform:a',
     }));
     // 80ms apart × 5 — each within 100ms of the last, but total span > 100ms.
     for (let i = 2; i <= 6; i++) {
       t += 80;
-      history.apply(createTransformOp<Pose>({
+      history.apply(createSetPoseOp<Pose>({
         id: 'a', from: { x: i - 1, y: 0 }, to: { x: i, y: 0 }, coalesceKey: 'transform:a',
       }));
     }
@@ -210,11 +210,11 @@ describe('createHistory coalescing', () => {
     let t = 0;
     const adapter = makeAdapter();
     const history = createHistory(adapter as any, { coalesceWindowMs: 500, now: () => t });
-    history.apply(createTransformOp<Pose>({
+    history.apply(createSetPoseOp<Pose>({
       id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, coalesceKey: 'transform:a',
     }));
     t = 100;
-    history.apply(createTransformOp<Pose>({
+    history.apply(createSetPoseOp<Pose>({
       id: 'b', from: { x: 0, y: 0 }, to: { x: 5, y: 0 }, coalesceKey: 'transform:b',
     }));
     history.undo();
@@ -226,7 +226,7 @@ describe('createHistory coalescing', () => {
     let t = 0;
     const adapter = makeAdapter();
     const history = createHistory(adapter as any, { coalesceWindowMs: 500, now: () => t });
-    history.apply(createTransformOp<Pose>({
+    history.apply(createSetPoseOp<Pose>({
       id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, coalesceKey: 'transform:a',
     }));
     t = 50;
@@ -241,14 +241,14 @@ describe('createHistory coalescing', () => {
     const adapter = makeAdapter();
     const history = createHistory(adapter as any, { coalesceWindowMs: 500, now: () => t });
     history.applyOps([
-      createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, coalesceKey: 'transform:a' }),
-      createTransformOp<Pose>({ id: 'b', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, coalesceKey: 'transform:b' }),
+      createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, coalesceKey: 'transform:a' }),
+      createSetPoseOp<Pose>({ id: 'b', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, coalesceKey: 'transform:b' }),
     ], 'Nudge');
     t = 100;
     history.applyOps([
       // Order swapped — multiset still matches.
-      createTransformOp<Pose>({ id: 'b', from: { x: 1, y: 0 }, to: { x: 5, y: 0 }, coalesceKey: 'transform:b' }),
-      createTransformOp<Pose>({ id: 'a', from: { x: 1, y: 0 }, to: { x: 5, y: 0 }, coalesceKey: 'transform:a' }),
+      createSetPoseOp<Pose>({ id: 'b', from: { x: 1, y: 0 }, to: { x: 5, y: 0 }, coalesceKey: 'transform:b' }),
+      createSetPoseOp<Pose>({ id: 'a', from: { x: 1, y: 0 }, to: { x: 5, y: 0 }, coalesceKey: 'transform:a' }),
     ], 'Nudge');
     expect(adapter.state.get('a')).toEqual({ x: 5, y: 0 });
     expect(adapter.state.get('b')).toEqual({ x: 5, y: 0 });
@@ -263,13 +263,13 @@ describe('createHistory coalescing', () => {
     const adapter = makeAdapter();
     const history = createHistory(adapter as any, { coalesceWindowMs: 500, now: () => t });
     history.applyOps([
-      createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, coalesceKey: 'transform:a' }),
-      createTransformOp<Pose>({ id: 'b', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, coalesceKey: 'transform:b' }),
+      createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, coalesceKey: 'transform:a' }),
+      createSetPoseOp<Pose>({ id: 'b', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, coalesceKey: 'transform:b' }),
     ], 'Move ab');
     t = 100;
     history.applyOps([
       // Only id=a this time.
-      createTransformOp<Pose>({ id: 'a', from: { x: 1, y: 0 }, to: { x: 5, y: 0 }, coalesceKey: 'transform:a' }),
+      createSetPoseOp<Pose>({ id: 'a', from: { x: 1, y: 0 }, to: { x: 5, y: 0 }, coalesceKey: 'transform:a' }),
     ], 'Move a');
     history.undo();
     expect(adapter.state.get('a')).toEqual({ x: 1, y: 0 });
@@ -281,9 +281,9 @@ describe('createHistory entries / goto / version / subscribe', () => {
   it('entries() exposes labels + stable ids on undo/redo stacks', () => {
     const adapter = makeAdapter();
     const history = createHistory(adapter as any);
-    history.applyOps([createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } })], 'A');
-    history.applyOps([createTransformOp<Pose>({ id: 'a', from: { x: 1, y: 0 }, to: { x: 2, y: 0 } })], 'B');
-    history.applyOps([createTransformOp<Pose>({ id: 'a', from: { x: 2, y: 0 }, to: { x: 3, y: 0 } })], 'C');
+    history.applyOps([createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } })], 'A');
+    history.applyOps([createSetPoseOp<Pose>({ id: 'a', from: { x: 1, y: 0 }, to: { x: 2, y: 0 } })], 'B');
+    history.applyOps([createSetPoseOp<Pose>({ id: 'a', from: { x: 2, y: 0 }, to: { x: 3, y: 0 } })], 'C');
     let snap = history.entries();
     expect(snap.undo.map((e) => e.label)).toEqual(['A', 'B', 'C']);
     expect(snap.redo).toEqual([]);
@@ -300,12 +300,12 @@ describe('createHistory entries / goto / version / subscribe', () => {
     let t = 0;
     const adapter = makeAdapter();
     const history = createHistory(adapter as any, { coalesceWindowMs: 500, now: () => t });
-    history.apply(createTransformOp<Pose>({
+    history.apply(createSetPoseOp<Pose>({
       id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, coalesceKey: 'transform:a',
     }));
     const idBefore = history.entries().undo[0].id;
     t = 100;
-    history.apply(createTransformOp<Pose>({
+    history.apply(createSetPoseOp<Pose>({
       id: 'a', from: { x: 1, y: 0 }, to: { x: 5, y: 0 }, coalesceKey: 'transform:a',
     }));
     const snap = history.entries();
@@ -316,9 +316,9 @@ describe('createHistory entries / goto / version / subscribe', () => {
   it('goto(n) walks the stacks until exactly n undo entries remain', () => {
     const adapter = makeAdapter();
     const history = createHistory(adapter as any);
-    history.applyOps([createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } })], 'A');
-    history.applyOps([createTransformOp<Pose>({ id: 'a', from: { x: 1, y: 0 }, to: { x: 2, y: 0 } })], 'B');
-    history.applyOps([createTransformOp<Pose>({ id: 'a', from: { x: 2, y: 0 }, to: { x: 3, y: 0 } })], 'C');
+    history.applyOps([createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } })], 'A');
+    history.applyOps([createSetPoseOp<Pose>({ id: 'a', from: { x: 1, y: 0 }, to: { x: 2, y: 0 } })], 'B');
+    history.applyOps([createSetPoseOp<Pose>({ id: 'a', from: { x: 2, y: 0 }, to: { x: 3, y: 0 } })], 'C');
     // Jump back to "before any edits".
     history.goto(0);
     expect(adapter.state.get('a')).toEqual({ x: 0, y: 0 });
@@ -334,7 +334,7 @@ describe('createHistory entries / goto / version / subscribe', () => {
   it('goto throws a RangeError for out-of-range targets and moves nothing', () => {
     const adapter = makeAdapter();
     const history = createHistory(adapter as any);
-    history.applyOps([createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } })], 'A');
+    history.applyOps([createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } })], 'A');
     expect(() => history.goto(-1)).toThrow(RangeError);
     expect(history.entries().undo).toHaveLength(1);
     expect(() => history.goto(99)).toThrow(/depth 99 is not a whole number from 0 to 1/);
@@ -347,7 +347,7 @@ describe('createHistory entries / goto / version / subscribe', () => {
     let calls = 0;
     const unsub = history.subscribe(() => { calls++; });
     const v0 = history.getVersion();
-    history.applyOps([createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } })], 'A');
+    history.applyOps([createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } })], 'A');
     expect(calls).toBe(1);
     history.undo();
     expect(calls).toBe(2);
@@ -357,7 +357,7 @@ describe('createHistory entries / goto / version / subscribe', () => {
     expect(calls).toBe(4);
     expect(history.getVersion()).toBeGreaterThan(v0);
     unsub();
-    history.applyOps([createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } })], 'A');
+    history.applyOps([createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } })], 'A');
     expect(calls).toBe(4); // unsubscribed
   });
 });
@@ -373,7 +373,7 @@ describe('createHistory — serialize / restore', () => {
       invert: () => ({ apply: () => {}, invert(): any { return this; } }),
     }], 'Custom');
     // And one normal op so something survives.
-    h1.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
+    h1.apply(createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
     const snap = h1.serialize();
     expect(snap.undoStack).toHaveLength(1);
     expect(snap.undoStack[0].label).toBe(''); // transform op's default label
@@ -386,7 +386,7 @@ describe('createHistory — serialize / restore', () => {
   it('cuts the snapshot at a nameless entry rather than keeping what lies beyond it', () => {
     const nameless = (): Op => ({ apply: () => {}, invert: () => nameless() });
     const step = (label: string) =>
-      createTransformOp<Pose>({ id: label, from: { x: 0, y: 0 }, to: { x: 1, y: 1 }, label });
+      createSetPoseOp<Pose>({ id: label, from: { x: 0, y: 0 }, to: { x: 1, y: 1 }, label });
     const h = createHistory(makeAdapter() as any);
     h.apply(step('A'));
     h.applyOps([nameless()], 'B');
@@ -407,7 +407,7 @@ describe('createHistory — serialize / restore', () => {
   it('drops a branch that forks from beneath an entry the snapshot cut', () => {
     const nameless = (): Op => ({ apply: () => {}, invert: () => nameless() });
     const step = (label: string) =>
-      createTransformOp<Pose>({ id: label, from: { x: 0, y: 0 }, to: { x: 1, y: 1 }, label });
+      createSetPoseOp<Pose>({ id: label, from: { x: 0, y: 0 }, to: { x: 1, y: 1 }, label });
     const h = createHistory(makeAdapter() as any, { branching: true });
     h.apply(step('A'));
     h.undo();
@@ -433,7 +433,7 @@ describe('createHistory — serialize / restore', () => {
   it('reports droppedEntries === 0 when nothing was dropped', () => {
     const a = makeAdapter();
     const h = createHistory(a as any);
-    h.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
+    h.apply(createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
     const snap = h.serialize();
     expect(snap.droppedEntries).toBe(0);
   });
@@ -441,7 +441,7 @@ describe('createHistory — serialize / restore', () => {
   it('refuses a snapshot naming an op it cannot rebuild, leaving the history as it was', () => {
     const a = makeAdapter();
     const h = createHistory(a as any);
-    h.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
+    h.apply(createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
     const fake: any = {
       version: 1,
       undoStack: [{ id: 1, label: 'Future feature', forwardOps: [{ name: 'futureOp', args: {} }], baseOps: [{ name: 'futureOp', args: {} }] }],
@@ -499,7 +499,7 @@ describe('createHistory — serialize / restore', () => {
       nextEntryId: 2,
       droppedEntries: 0,
     }, { recovery: 'best-effort' });
-    h.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
+    h.apply(createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
     expect(h.entries().undo.map((e) => e.id)).toEqual([9, 10]);
   });
 
@@ -513,7 +513,7 @@ describe('createHistory — serialize / restore', () => {
       nextEntryId: 2,
       droppedEntries: 0,
     }, { recovery: 'best-effort' });
-    h.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
+    h.apply(createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
     expect(h.entries().undo.map((e) => e.id)).toEqual([10]);
   });
 });

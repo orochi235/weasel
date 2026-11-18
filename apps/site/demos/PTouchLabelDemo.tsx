@@ -42,7 +42,7 @@ export function PTouchLabelDemo() {
       },
     ],
   });
-  const selection = useSelection({ scene, mode: 'multi' });
+  const selection = useSelection({ scene, mode: 'multiple' });
   const version = useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
   const preview = useRef<HTMLCanvasElement>(null);
   const [printer, setPrinter] = useState<BrotherPrinter | null>(null);

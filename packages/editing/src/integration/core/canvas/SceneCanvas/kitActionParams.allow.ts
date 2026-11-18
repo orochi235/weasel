@@ -45,15 +45,13 @@ export const ACTION_LITERALS: Readonly<Record<string, Readonly<Record<string, st
     0.05: 'view: the share of a pass an arrow key moves the playhead, which commits nothing to the history',
   },
   'packages/loupe/src/actions.ts': { 0.002: 'view: magnification per wheel delta' },
-  'packages/measure/src/measureGestures.ts': { 6: 'reach: how near a press must land to a measurement' },
+  'packages/measure/src/measureActions.ts': { 6: 'reach: how near a press must land to a measurement' },
   'packages/path-tools/src/pathEdit/editAnchors/editAnchors.ts': { 10: RADIX },
   'packages/path-tools/src/pathCommands/cutJoin.ts': {
     6: 'count: the coordinates a cubic command carries', 4: 'count: the coordinates a quadratic command carries',
   },
-  'packages/path-tools/src/pen/usePenTool.ts': { 3: 'count: the fewest anchors a closed subpath has' },
-  'packages/path-tools/src/slice/useSliceTool.ts': {
-    3: 'count: the fewest points a closed cut has', 8: 'reach: the `targets.sliceCloseHitPx` kit setting\'s default',
-  },
+  'packages/path-tools/src/pen/penActions.ts': { 3: 'count: the fewest anchors a closed subpath has' },
+  'packages/path-tools/src/slice/slicePendingCut.ts': { 3: 'count: the fewest points a closed cut has' },
   'packages/path-tools/src/poise/poiseHandles.ts': { 10: RADIX },
   'packages/path-tools/src/constraints/anchorConstraints.ts': {
     3: 'count: the anchors a two-segment constraint takes', 4: 'count: the anchors a two-segment constraint takes, unshared',

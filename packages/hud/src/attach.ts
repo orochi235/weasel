@@ -2,24 +2,21 @@ import type { Hud } from './hud';
 import type { HudHost } from './host';
 import { recordHudOn } from './loupe/loupeRoutes';
 import type { CanvasExtensionApi, RenderLayer, LayerHit, View } from '@weasel-js/core';
-import type { DrawCommand } from '@weasel-js/core/renderer';
-import { clientToCanvas, depsUnchanged, viewToTransform } from '@weasel-js/core';
+import { clientToCanvas, viewToTransform } from '@weasel-js/core';
 import { worldToScreen } from '@weasel-js/core';
 import {
   DEFAULT_FONT_FAMILY,
   registerDefaultFont,
   type FontAtlasUrls,
 } from './fonts/registerDefaultFont';
-import {
-  claimsOf, cursorOf, isFocusable,
-  type Widget, type HudDrawCtx, type HudKeyEvent, type HudPointerEvent,
-} from './widget';
+import { claimsOf, cursorOf, type Widget, type HudDrawCtx } from './widget';
 import type { HudHitPayload } from './tool';
 import { resolveTheme, weaselTheme, type ColorSourceContext, type ResolvedTheme } from '@weasel-js/theme';
 import { hudColor } from './colors';
-import { hideVisually, mirrorFocusedTree } from './accessibleMirror';
+import { wireFocus } from './domFocus';
+import { createHover } from './hover';
 import { createLayerDeps } from './layerDeps';
-import { wireTextInput } from './textInputHost';
+import { createLayerDraw } from './layerDraw';
 
 /** Options for `attachHud`. */
 export interface AttachHudOptions {
@@ -71,6 +68,21 @@ function loadDefaultFont(api: CanvasExtensionApi, urls: FontAtlasUrls | undefine
     });
 }
 
+/** The topmost widget that takes a press at `(sx, sy)`, or null where none does or one lets it pass. */
+function widgetAt(hud: Hud, sx: number, sy: number): Widget | null {
+  const list = hud.widgets();
+  for (let i = list.length - 1; i >= 0; i--) {
+    const w = list[i];
+    if (!w.hidden && w.passes?.(sx, sy)) return null;
+    // Decoration is skipped rather than downgraded: a hit at all would let
+    // `hud.press` consume the press, and the walk has to keep descending to
+    // whatever is beneath — another widget, or the scene.
+    if (claimsOf(w).length === 0) continue;
+    if (!w.hidden && w.hitTest(sx, sy)) return w;
+  }
+  return null;
+}
+
 function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): () => void {
   const theme = options.theme ?? resolveTheme(weaselTheme);
   const color = hudColor(options.tints ?? { theme: weaselTheme, resolved: theme });
@@ -86,26 +98,8 @@ function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): 
   let attached = true;
   if (typeof font !== 'string') loadDefaultFont(api, font, () => attached);
 
-  // Track the currently-hovered widget at the closure level.
-  let lastHovered: Widget | null = null;
-
-  const findTopmostHit = (sx: number, sy: number): Widget | null => {
-    const list = hud.widgets();
-    for (let i = list.length - 1; i >= 0; i--) {
-      const w = list[i];
-      if (!w.hidden && w.passes?.(sx, sy)) return null;
-      // Decoration is skipped rather than downgraded: a hit at all would let
-      // `hud.press` consume the press, and the walk has to keep descending to
-      // whatever is beneath — another widget, or the scene.
-      if (claimsOf(w).length === 0) continue;
-      if (!w.hidden && w.hitTest(sx, sy)) return w;
-    }
-    return null;
-  };
-
-  // Keyed weakly, so a widget removed from the HUD takes its entry with it.
-  const cache = new WeakMap<Widget, CachedFrame>();
-  const frameCommands = (w: Widget, ctx: HudDrawCtx, focus: number) => cachedCommands(cache, w, ctx, focus);
+  const hitAt = (sx: number, sy: number): Widget | null => widgetAt(hud, sx, sy);
+  const hover = createHover(() => api.requestRedraw());
 
   const layerDeps = createLayerDeps(hud);
   const depsCtx: HudDrawCtx = { dims: { width: 0, height: 0 }, defaultFont, tokens: theme, color };
@@ -114,41 +108,12 @@ function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): 
     label: 'HUD',
     space: 'screen',
     deps: (_data, _view, dims) => { depsCtx.dims = dims; return layerDeps(depsCtx); },
-    draw: (data, view, dims): DrawCommand[] => {
-      const ctx = { dims, defaultFont, tokens: theme, color };
-      const out: DrawCommand[] = [];
-      // Pass 1: interiors. All content precedes all frames so one window's
-      // content can never paint over another window's border.
-      for (const w of hud.widgets()) {
-        if (w.hidden || !w.content || !w.contentRect) continue;
-        const rect = w.contentRect;
-        if (rect.w <= 0 || rect.h <= 0) continue;
-        const children = w.content({
-          data, view, dims, rect, defaultFont, tokens: theme, color,
-        });
-        if (children.length === 0) continue;
-        out.push({
-          kind: 'group',
-          clip: { kind: 'rect', x: rect.x, y: rect.y, width: rect.w, height: rect.h },
-          children,
-        });
-      }
-      // Pass 2: frames.
-      const f = hud.focused;
-      for (const w of hud.widgets()) {
-        if (w.hidden) continue;
-        const focus = f !== w ? 0 : hud.focusVisible ? 2 : 1;
-        for (const cmd of frameCommands(w, ctx, focus)) out.push(cmd);
-      }
-      // Pass 3: the focus ring, over every frame so a neighbor can't hide it.
-      if (f && hud.focusVisible && !f.hidden && f.focusRing !== false) out.push(focusRing(f, theme['--wzl-focus-ring']));
-      return out;
-    },
+    draw: createLayerDraw(hud, { defaultFont, tokens: theme, color }),
     hitTest: (worldX, worldY, _data, view, _dims): LayerHit | null => {
       // Convert world to screen so we can hit-test widget bounds.
       const t = viewToTransform(view);
       const [sx, sy] = worldToScreen(worldX, worldY, t);
-      const hit = findTopmostHit(sx, sy);
+      const hit = hitAt(sx, sy);
       if (!hit) return null;
       const cursor = cursorOf(hit, sx, sy);
       // Report WHICH widget was hit and stop there. `<SceneCanvas>` folds this
@@ -166,28 +131,13 @@ function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): 
     onUncapturedMove: (worldX, worldY, evt, view: View) => {
       const t = viewToTransform(view);
       const [sx, sy] = worldToScreen(worldX, worldY, t);
-      const hit = findTopmostHit(sx, sy);
-      if (hit !== lastHovered) {
-        if (lastHovered) lastHovered.onPointer({ type: 'hoverleave', native: evt } satisfies HudPointerEvent);
-        lastHovered = hit;
-        api.requestRedraw();
-      }
-      // Every move inside the widget, not only the one that entered it: the
-      // event carries `x`/`y`, and a widget tracking hover position reads a
-      // frozen point otherwise.
-      if (hit) hit.onPointer({ type: 'hovermove', x: sx, y: sy, native: evt } satisfies HudPointerEvent);
+      hover.move(hitAt(sx, sy), sx, sy, evt);
     },
-    onUncapturedLeave: () => {
-      if (lastHovered) {
-        lastHovered.onPointer({ type: 'hoverleave', native: null } satisfies HudPointerEvent);
-        lastHovered = null;
-        api.requestRedraw();
-      }
-    },
+    onUncapturedLeave: () => { hover.leave(); },
   };
 
   const detachLayer = api.registerLayer(layer);
-  const detachFocus = api.element ? wireFocus(api.element, hud, findTopmostHit) : () => {};
+  const detachFocus = api.element ? wireFocus(api.element, hud, hitAt) : () => {};
 
   // registerLayer is a no-op: the HUD's one layer is registered on `api` above.
   hud.bind(canvasHost(api));
@@ -196,11 +146,8 @@ function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): 
     attached = false;
     // Widgets outlive the attachment. Leaving one believing the pointer is
     // still over it strands it painted as hovered, and a re-attach starts
-    // with an empty `lastHovered` so it never sees the leave.
-    if (lastHovered) {
-      lastHovered.onPointer({ type: 'hoverleave', native: null } satisfies HudPointerEvent);
-      lastHovered = null;
-    }
+    // with nothing hovered so it never sees the leave.
+    hover.clear();
     detachFocus();
     detachLayer();
     hud.unbind();
@@ -224,155 +171,4 @@ function canvasHost(api: CanvasExtensionApi): HudHost {
       return { width, height };
     },
   };
-}
-
-/** `w`'s commands, reused from `cache` while nothing they are drawn from changed. */
-function cachedCommands(
-  cache: WeakMap<Widget, CachedFrame>, w: Widget, ctx: HudDrawCtx, focus: number,
-): DrawCommand[] {
-  if (!w.deps) return w.draw(ctx);
-  const deps = w.deps(ctx);
-  const b = w.bounds;
-  const hit = cache.get(w);
-  if (hit && hit.focus === focus && hit.tokens === ctx.tokens && hit.font === ctx.defaultFont
-    && hit.width === ctx.dims.width && hit.height === ctx.dims.height
-    && hit.x === b.x && hit.y === b.y && hit.w === b.w && hit.h === b.h
-    && depsUnchanged(hit.deps, deps)) {
-    return hit.cmds;
-  }
-  const cmds = w.draw(ctx);
-  if (!hit) {
-    cache.set(w, {
-      deps, cmds, focus, tokens: ctx.tokens, font: ctx.defaultFont,
-      width: ctx.dims.width, height: ctx.dims.height, x: b.x, y: b.y, w: b.w, h: b.h,
-    });
-    return cmds;
-  }
-  // Refilled in place, so a widget redrawn every frame leaves no entry behind.
-  hit.deps = deps; hit.cmds = cmds; hit.focus = focus; hit.tokens = ctx.tokens; hit.font = ctx.defaultFont;
-  hit.width = ctx.dims.width; hit.height = ctx.dims.height; hit.x = b.x; hit.y = b.y; hit.w = b.w; hit.h = b.h;
-  return cmds;
-}
-
-/** One widget's last frame commands and every input they were built from. */
-interface CachedFrame {
-  deps: readonly unknown[];
-  cmds: DrawCommand[];
-  /** 0 unfocused, 1 focused, 2 focused with the ring showing. */
-  focus: number;
-  tokens: ResolvedTheme;
-  font: string;
-  width: number; height: number;
-  x: number; y: number; w: number; h: number;
-}
-
-const RING_WIDTH = 2;
-const RING_GAP = 2;
-
-/** A stroked rect just outside `w`'s bounds, so the ring never covers the
- *  widget's own edge. */
-function focusRing(w: Widget, color: string): DrawCommand {
-  const { x, y, w: bw, h } = w.bounds;
-  const out = RING_GAP + RING_WIDTH / 2;
-  return {
-    kind: 'path',
-    path: { kind: 'rect', x: x - out, y: y - out, width: bw + out * 2, height: h + out * 2 },
-    stroke: { paint: { kind: 'solid', color }, width: RING_WIDTH },
-  };
-}
-
-function keyEvent(e: KeyboardEvent, type: HudKeyEvent['type']): HudKeyEvent {
-  return {
-    type, key: e.key, code: e.code,
-    altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
-    repeat: e.repeat, native: e,
-  };
-}
-
-/**
- * The DOM half of HUD focus, on the element that holds the canvas's DOM
- * focus. Keys are heard there, at the target, which is ahead of the gesture
- * dispatcher's `window` listener: a key the focused widget handles is
- * `preventDefault`ed, and the dispatcher skips any key that arrives that way.
- */
-function wireFocus(
-  element: HTMLElement,
-  hud: Hud,
-  hitAt: (sx: number, sy: number) => Widget | null,
-): () => void {
-  const onPointerDown = (e: PointerEvent) => {
-    const hit = hitAt(...clientToCanvas(element, e.clientX, e.clientY));
-    hud.focus(hit && isFocusable(hit) ? hit : null, { visible: false });
-  };
-
-  const liveFocused = (): Widget | null => {
-    const f = hud.focused;
-    if (f && !isFocusable(f)) { hud.focus(null); return null; }
-    return f;
-  };
-
-  const onKeyDown = (e: KeyboardEvent) => {
-    if (e.defaultPrevented) return;
-    const f = liveFocused();
-    // Any key on a focused widget means the keyboard is in use: show the ring.
-    if (f && !hud.focusVisible) hud.focus(f, { visible: true });
-    if (f?.onKey?.(keyEvent(e, 'keydown'))) { e.preventDefault(); return; }
-    if (e.key !== 'Tab' || e.ctrlKey || e.metaKey || e.altKey) return;
-    const direction = e.shiftKey ? 'prev' : 'next';
-    // Backward from the canvas itself, and forward off the last widget, are
-    // the browser's: focus leaves the canvas. Backward off the first widget
-    // lands on the canvas, which is a stop of its own.
-    if (f === null && direction === 'prev') return;
-    const next = hud.moveFocus(direction);
-    if (next !== null || direction === 'prev') e.preventDefault();
-  };
-
-  const onKeyUp = (e: KeyboardEvent) => {
-    if (e.defaultPrevented) return;
-    if (liveFocused()?.onKey?.(keyEvent(e, 'keyup'))) e.preventDefault();
-  };
-
-  // Keys and DOM focus on the hidden input a widget's text edit types through count as the canvas's.
-  const text = wireTextInput(element, hud, { keydown: onKeyDown, keyup: onKeyUp, blur: () => { hud.focus(null); } });
-  const onBlur = (e: FocusEvent) => { if (e.relatedTarget !== text.input) hud.focus(null); };
-
-  const region = createLiveRegion(element.ownerDocument);
-  const announce = () => {
-    const name = hud.focused?.accessibleName ?? '';
-    if (region.textContent !== name) region.textContent = name;
-  };
-  const unsubscribe = hud.subscribeFocus((w) => {
-    region.textContent = w?.accessibleName ?? '';
-  });
-  // A widget's change, a button's new label among them, is drawn on the next frame; its name is read there too.
-  const unannounce = hud.subscribeFrame(announce);
-  const unmirror = mirrorFocusedTree(element, hud);
-
-  element.addEventListener('pointerdown', onPointerDown);
-  element.addEventListener('keydown', onKeyDown);
-  element.addEventListener('keyup', onKeyUp);
-  element.addEventListener('blur', onBlur);
-  return () => {
-    element.removeEventListener('pointerdown', onPointerDown);
-    element.removeEventListener('keydown', onKeyDown);
-    element.removeEventListener('keyup', onKeyUp);
-    element.removeEventListener('blur', onBlur);
-    unsubscribe();
-    unannounce();
-    unmirror();
-    text.detach();
-    region.remove();
-  };
-}
-
-/** A polite live region, visually hidden, that names the focused widget. A widget that has
- *  insides to show declares an `accessibleTree`, which `mirrorFocusedTree` puts in the DOM. */
-function createLiveRegion(doc: Document): HTMLElement {
-  const el = doc.createElement('div');
-  el.setAttribute('aria-live', 'polite');
-  el.setAttribute('aria-atomic', 'true');
-  el.dataset.weaselHud = 'focus';
-  hideVisually(el);
-  doc.body.appendChild(el);
-  return el;
 }

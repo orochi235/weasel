@@ -11,9 +11,9 @@ export type { MarkListProps } from './MarkList';
 export { MarkList } from './MarkList';
 export type { MarkStyle, PaintableMark } from './paint';
 export { markCommands } from './paint';
-export { isStale, seenFrom } from './staleness';
+export { isStale, seenValues } from './staleness';
 export type { AnnotationStoreOptions, CaptureDeps, MarkPose, MarkScene } from './store';
-export { annotationsFromJSON, createAnnotationScene, createAnnotationStore } from './store';
+export { annotationsFromJSON, createMarkScene, createMarkStore } from './store';
 export { markSvgNodes } from './svgNodes';
 export type {
   Annotation,
@@ -37,5 +37,5 @@ export type {
   FracPoint,
   FracRect,
   PaintedMark,
-  SerializedAnnotations,
+  SerializedMarkStore,
 } from './types';

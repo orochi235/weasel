@@ -9,7 +9,7 @@ import { unionRects } from '@weasel-js/geom';
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { isBodyOrRegion } from './bodyNode';
 import { diagramEdgeOf } from './edgeTrait';
-import { diagramGroupOf } from './group';
+import { diagramClusterOf } from './clusterBox';
 
 /** How `fitDiagram` frames a diagram in its box. */
 export interface DiagramFit {
@@ -28,10 +28,10 @@ export interface DiagramFit {
 /** The space a fit keeps clear around a diagram, in CSS pixels, and a bounded view's margin in world units. */
 export const DEFAULT_FIT_PADDING = 16;
 
-/** The world rect every node box, group box and route point takes, and `extra`, or `null` for none. */
+/** The world rect every node box, cluster box and route point takes, and `extra`, or `null` for none. */
 function diagramBounds(specs: readonly { id?: string; kind: string; pose: unknown; data: unknown; parent?: string | null }[], extra?: Bounds): Bounds | null {
   const world = worldPosesOf(specs as never, RIGID_POSE_COMPOSITION);
-  const boxes: Bounds[] = specs.filter((s) => isBodyOrRegion(s) || diagramGroupOf(s) !== null)
+  const boxes: Bounds[] = specs.filter((s) => isBodyOrRegion(s) || diagramClusterOf(s) !== null)
     .map((s) => (world.get((s as { id?: string }).id ?? '') ?? s.pose) as RectPose);
   for (const s of specs) {
     const edge = diagramEdgeOf(s);
@@ -41,7 +41,7 @@ function diagramBounds(specs: readonly { id?: string; kind: string; pose: unknow
   return unionRects(boxes);
 }
 
-/** The view `DiagramView` opens on: every node box and group box in view, never above
+/** The view `DiagramView` opens on: every node box and cluster box in view, never above
  *  `maxScale` (default 1) and never below `minScale`. `extra` is further bounds to take in, such as the
  *  pages'. Takes specs, or a scene's nodes at the poses they are drawn at. */
 export function fitDiagram(
@@ -64,7 +64,7 @@ export function fitDiagram(
   return fit.bounds === undefined ? view : clampView(view, fit.bounds, size);
 }
 
-/** The world rect a bounded diagram's view stays inside: every node box, group box and route
+/** The world rect a bounded diagram's view stays inside: every node box, cluster box and route
  *  point, and `extra`, with `padding` world units around them; `undefined` for an empty diagram. */
 export function diagramViewBounds(specs: readonly { id?: string; kind: string; pose: unknown; data: unknown; parent?: string | null }[], padding: number, extra?: Bounds): Bounds | undefined {
   const b = diagramBounds(specs, extra);

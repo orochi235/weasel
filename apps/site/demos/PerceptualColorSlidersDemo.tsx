@@ -93,8 +93,8 @@ function plotIn(size: Dims) {
   return {
     plotW,
     plotH,
-    xAt: linearScale({ domain: [0, 1], range: [DIAGRAM_PAD.l, DIAGRAM_PAD.l + plotW] }).map,
-    yAt: linearScale({ domain: [0, MAX_C], range: [DIAGRAM_PAD.t + plotH, DIAGRAM_PAD.t] }).map,
+    xAt: linearScale({ domain: [0, 1], range: [DIAGRAM_PAD.l, DIAGRAM_PAD.l + plotW] }).position,
+    yAt: linearScale({ domain: [0, MAX_C], range: [DIAGRAM_PAD.t + plotH, DIAGRAM_PAD.t] }).position,
   };
 }
 

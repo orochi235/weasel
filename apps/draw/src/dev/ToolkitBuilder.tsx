@@ -7,7 +7,7 @@
 import { solid } from '@weasel-js/paint';
 import { asNodeId, type FeaturePreset, type Fill, SceneCanvas, useScene } from '@weasel-js/core';
 import { FEATURE_NAMES, type FeatureName, namedFeatures } from '@weasel-js/editing';
-import { pathTools, usePathToolsTools } from '@weasel-js/path-tools';
+import { pathToolsPreset, usePathToolsTools } from '@weasel-js/path-tools';
 import { textToolsPreset } from '@weasel-js/text-tools';
 import { Select } from '@weasel-js/ui/components/Select';
 import { CheckboxGroup } from '@weasel-js/ui/components/CheckboxGroup';
@@ -26,7 +26,9 @@ import s from './ToolkitBuilder.module.css';
 
 const TOOL_PRESETS = FEATURE_NAMES.filter((f) => f.startsWith('tools:'));
 const BASES = FEATURE_NAMES.filter((f) => !f.startsWith('tools:'));
-const isFeature = (f: string): f is FeatureName => (FEATURE_NAMES as readonly string[]).includes(f);
+const isIn = (names: readonly FeatureName[]) => (f: string): f is FeatureName => (names as readonly string[]).includes(f);
+const isBase = isIn(BASES);
+const isToolPreset = isIn(TOOL_PRESETS);
 /** Every switch in the header: each tool preset, then path-tools' and text-tools' presets. */
 const SWITCHES = [...TOOL_PRESETS, 'path-tools', 'text-tools'] as const;
 type SwitchName = (typeof SWITCHES)[number];
@@ -42,8 +44,8 @@ function parseSetup(hash: string): Setup {
   const base = params.get('base') ?? '';
   const tools = params.get('tools');
   return {
-    base: isFeature(base) ? base : 'draw',
-    tools: tools === null ? ['tools:shape'] : tools.split(',').filter(isFeature),
+    base: isBase(base) ? base : 'draw',
+    tools: tools === null ? ['tools:shape'] : tools.split(',').filter(isToolPreset),
     paths: params.get('paths') !== '0',
     text: params.get('text') !== '0',
   };
@@ -75,7 +77,7 @@ function ToolkitForSetup({ base, tools, paths, text }: Setup): ReactElement {
   const actions = useRegisteredActions();
   const pathToolsTools = usePathToolsTools();
   const features: FeaturePreset[] = [
-    ...namedFeatures(base, ...tools), ...(paths ? [pathTools] : []), ...(text ? [textToolsPreset] : []),
+    ...namedFeatures(base, ...tools), ...(paths ? [pathToolsPreset] : []), ...(text ? [textToolsPreset] : []),
   ];
 
   return (

@@ -4,8 +4,8 @@ import { createEmitter } from '@weasel-js/registry';
 import { createGuidesLayer } from '../guides/layer';
 import type { GuideStore } from '../guides/ops';
 import type { Guide } from '../guides/types';
-import { rulersGuideAction, rulersPointerAction } from './actions';
-import { rulersHitLayer } from './hit';
+import { createRulersGuideAction, createRulersPointerAction } from './actions';
+import { createRulersHitLayer } from './hit';
 import { rulersLayout, type RulersLayout, type RulersState } from './layout';
 import { documentRulerFrame } from './reading';
 import type { Point } from '@weasel-js/geom';
@@ -94,8 +94,8 @@ export function createRulers(opts: RulersOptions): Rulers {
     newGuideId: opts.newGuideId ?? (() => `${id}-${Date.now().toString(36)}-${minted++}`),
     get: () => state, set,
   };
-  const pointer = rulersPointerAction(actx);
-  const guide = rulersGuideAction(actx);
+  const pointer = createRulersPointerAction(actx);
+  const guide = createRulersGuideAction(actx);
   const hitLayerId = `${id}-hit`;
   const onRuler = hitPredicate((hit) => (hit as { kind?: string } | null | undefined)?.kind === `layer:${hitLayerId}`);
   const bindings: GestureBinding[] = [
@@ -115,7 +115,7 @@ export function createRulers(opts: RulersOptions): Rulers {
     eligibility: { always: true },
     actions: [pointer, guide],
     bindings,
-    layers: [draftLayer, rulersHitLayer(hitLayerId, size, opts.guides.getGuides)],
+    layers: [draftLayer, createRulersHitLayer(hitLayerId, size, opts.guides.getGuides)],
     attach: (canvas) => {
       if (api !== null) throw new Error(`[guides] rulers '${id}' are attached to a canvas already; createRulers serves one canvas, so build one per canvas`);
       api = canvas;

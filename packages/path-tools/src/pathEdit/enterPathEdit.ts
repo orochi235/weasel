@@ -8,7 +8,7 @@
  * A selected path effect hiding its sources edits its path source.
  *
  * No-op when the selection contains no polygon. The companion
- * `exitPathEditAction` (Escape) clears edit mode.
+ * `leavePathEditAction` (Escape) clears edit mode.
  */
 
 import type { NodeId } from '@weasel-js/core';

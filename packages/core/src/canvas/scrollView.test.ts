@@ -22,7 +22,7 @@ import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { defaultDrawOne } from './defaultDrawOne';
 import { buildSceneViewCommands } from './sceneViewRender';
 import { scenePointQuery } from './SceneCanvas/scenePointQuery';
-import { hitTestArea } from './deps/hitTestArea';
+import { hitTestRect } from './deps/hitTestArea';
 
 const box = (x: number, y: number, w = 10, h = 10): RectPose => ({ x, y, width: w, height: h });
 
@@ -149,7 +149,7 @@ describe('a connector into a scrolled container', () => {
 
   it('takes a marquee over the painted end and none over the document end', () => {
     const { scene, edge } = connected();
-    const area = (x: number, y: number) => hitTestArea(scene as never, { x, y, width: 6, height: 10 });
+    const area = (x: number, y: number) => hitTestRect(scene as never, { x, y, width: 6, height: 10 });
     expect(area(104, 105)).toContain(edge);
     expect(area(107, 255)).not.toContain(edge);
   });

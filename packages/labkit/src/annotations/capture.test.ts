@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { capturePlan, composeCaptureSvg } from './capture';
-import { createAnnotationStore } from './store';
+import { createMarkStore } from './store';
 import type { AnnotationTargetInfo, CaptureSource } from './types';
 
 const SVG_BASE = '<svg viewBox="0 0 100 60"><rect width="100" height="60" fill="#f00"/></svg>';
@@ -9,26 +9,26 @@ function targets(): AnnotationTargetInfo[] {
   return [
     {
       id: 'flat',
-      content: { w: 100, h: 60 },
+      content: { width: 100, height: 60 },
       base: (): CaptureSource => ({ kind: 'svg', markup: SVG_BASE }),
     },
-    { id: 'bare', content: { w: 100, h: 60 } },
+    { id: 'bare', content: { width: 100, height: 60 } },
   ];
 }
 
 describe('a target that can be captured', () => {
   it('reports every target, in declaration order, base or no base', () => {
-    const store = createAnnotationStore({ targets });
+    const store = createMarkStore({ targets });
     expect(store.targets().map((t) => t.id)).toEqual(['flat', 'bare']);
     expect(store.targets()[1]?.base).toBeUndefined();
   });
 
   it('does not call a target base until a capture asks for it', () => {
     const base = vi.fn((): CaptureSource => ({ kind: 'svg', markup: SVG_BASE }));
-    const store = createAnnotationStore({
-      targets: () => [{ id: 'flat', content: { w: 100, h: 60 }, base }],
+    const store = createMarkStore({
+      targets: () => [{ id: 'flat', content: { width: 100, height: 60 }, base }],
     });
-    store.add({ target: 'flat', kind: 'rect', frac: { x: 0.1, y: 0.1, w: 0.2, h: 0.2 } });
+    store.add({ target: 'flat', kind: 'rect', frac: { x: 0.1, y: 0.1, width: 0.2, height: 0.2 } });
     store.query();
     store.targets();
     expect(base).not.toHaveBeenCalled();
@@ -62,12 +62,12 @@ describe('which route an export takes', () => {
 });
 
 describe('the composed document', () => {
-  const draw = { content: { w: 100, h: 60 }, config: {} };
+  const draw = { content: { width: 100, height: 60 }, config: {} };
 
   function sceneWithMark() {
-    const store = createAnnotationStore({ targets });
-    store.add({ target: 'flat', kind: 'rect', frac: { x: 0.1, y: 0.2, w: 0.3, h: 0.4 } });
-    return store.sceneFor('flat');
+    const store = createMarkStore({ targets });
+    store.add({ target: 'flat', kind: 'rect', frac: { x: 0.1, y: 0.2, width: 0.3, height: 0.4 } });
+    return store.openScene('flat');
   }
 
   it('frames the content box, and carries the scale as width and height', () => {
@@ -134,7 +134,7 @@ describe('the composed document', () => {
 
 describe('capturing through the store', () => {
   it('rejects a target the instrument does not declare', async () => {
-    const store = createAnnotationStore({ targets });
+    const store = createMarkStore({ targets });
     await expect(store.capture('nope')).rejects.toThrow(/no annotation target/);
   });
 });

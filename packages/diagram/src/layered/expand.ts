@@ -17,7 +17,7 @@ export interface Expanded {
   rows: Rows;
   hops: Hop[];
   /** `ends` is every node the edge starts or ends at: its two ends, or a
-   *  group end's members. */
+   *  cluster end's members. */
   chains: Map<string, { ids: string[]; back: boolean; ends: string[] }>;
   /** Indexes of the rows that hold labels rather than nodes. */
   labelRows: ReadonlySet<number>;
@@ -34,7 +34,7 @@ export interface ExpandOptions {
   nodeGap: number;
 }
 
-/** One drawn edge, its ends as drawn: a node or a group, either way round
+/** One drawn edge, its ends as drawn: a node or a cluster, either way round
  *  for an edge layout turned around. */
 interface Drawn {
   id: string;
@@ -117,15 +117,15 @@ function portOf(places: readonly number[], side: 'from' | 'to'): Partial<Hop> {
 /**
  * Rows in seeded order, hops between adjacent ranks, and placeholder chains.
  *
- * An edge to or from a group runs between the group's members in its first or
+ * An edge to or from a cluster runs between the cluster's members in its first or
  * last rank and the other end, with placeholders only in the ranks strictly
- * between the group's span and that end.
+ * between the cluster's span and that end.
  */
 export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, back: ReadonlySet<string>, opts: ExpandOptions): Expanded {
   const { axes } = opts;
-  const groups = new Map((graph.groups ?? []).map((g) => [g.id, g]));
+  const clusters = new Map((graph.clusters ?? []).map((g) => [g.id, g]));
   const spanIn = (id: string, ranks: ReadonlyMap<string, number>): [number, number] | null => {
-    const ids = groups.get(id)?.members ?? [id];
+    const ids = clusters.get(id)?.members ?? [id];
     const rs = ids.map((m) => ranks.get(m)).filter((r): r is number => r !== undefined);
     return rs.length === 0 ? null : [minOf(rs), maxOf(rs)];
   };
@@ -134,24 +134,24 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
   const ranks = labeled.rows;
   const span = (id: string) => spanIn(id, ranks);
   const inRank = (id: string, r: number): string[] =>
-    (groups.get(id)?.members ?? [id]).filter((m) => ranks.get(m) === r && graph.node(m) !== undefined);
+    (clusters.get(id)?.members ?? [id]).filter((m) => ranks.get(m) === r && graph.node(m) !== undefined);
   const ancestry = (id: string): string[] => {
     const out: string[] = [];
-    let at = groups.has(id) ? groups.get(id)!.parent : graph.node(id)?.group;
+    let at = clusters.has(id) ? clusters.get(id)!.parent : graph.node(id)?.cluster;
     while (at !== undefined) {
       out.push(at);
-      at = groups.get(at)?.parent;
+      at = clusters.get(at)?.parent;
     }
     return out;
   };
-  const sharedGroup = (a: string, b: string): string | undefined => {
+  const sharedCluster = (a: string, b: string): string | undefined => {
     const up = new Set(ancestry(b));
     return ancestry(a).find((g) => up.has(g));
   };
   const crossCenter = (id: string): number => {
     const node = graph.node(id);
     if (node !== undefined) return center(node.bounds, axes.cross);
-    const ms = (groups.get(id)?.members ?? []).map((m) => graph.node(m)).filter((n): n is GraphNode => n !== undefined);
+    const ms = (clusters.get(id)?.members ?? []).map((m) => graph.node(m)).filter((n): n is GraphNode => n !== undefined);
     return ms.length === 0 ? 0 : ms.reduce((s, n) => s + center(n.bounds, axes.cross), 0) / ms.length;
   };
 
@@ -166,7 +166,7 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
   for (const d of drawn) {
     const [from, to] = d.back ? [d.to, d.from] : [d.from, d.to];
     const [fromPort, toPort] = d.back ? [d.toPort, d.fromPort] : [d.fromPort, d.toPort];
-    // A group end's members have no port of the edge's own.
+    // A cluster end's members have no port of the edge's own.
     const leave = (id: string) => (id === from ? portOf(portPlaces(graph.node(id), fromPort, axes), 'from') : {});
     const arrive = (id: string) => (id === to ? portOf(portPlaces(graph.node(id), toPort, axes), 'to') : {});
     const a = span(from);
@@ -175,7 +175,7 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
     // Its route goes where its author put it, and no seed from it would
     // follow where this run puts the ranks it crosses.
     if (d.authored && b[0] - a[1] > 1) continue;
-    const group = sharedGroup(from, to);
+    const cluster = sharedCluster(from, to);
     const start = crossCenter(from);
     const end = crossCenter(to);
     const crossings = b[0] - a[1] - 1;
@@ -199,7 +199,7 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
       const bounds = axes.cross === 'x'
         ? { x: at, y: 0, width: room.size, height: room.depth }
         : { x: 0, y: at, width: room.depth, height: room.size };
-      add(r, { id, bounds, pinned: false, ...(group !== undefined ? { group } : {}) });
+      add(r, { id, bounds, pinned: false, ...(cluster !== undefined ? { cluster } : {}) });
       // A placeholder with no width, as a zero nodeGap gives, carries its wire through the middle.
       const toAt = room.size > 0 ? room.wire / room.size : 0.5;
       for (const p of prev) hops.push({ from: p, to: id, edge: d.id, ...(prevAt ?? leave(p)), toAt });
@@ -213,7 +213,7 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
     }
     for (const p of prev) for (const q of inRank(to, b[0])) hops.push({ from: p, to: q, edge: d.id, ...(prevAt ?? leave(p)), ...arrive(q) });
     if (chain.length > 0) {
-      const ends = [...(groups.get(from)?.members ?? [from]), ...(groups.get(to)?.members ?? [to])];
+      const ends = [...(clusters.get(from)?.members ?? [from]), ...(clusters.get(to)?.members ?? [to])];
       chains.set(d.id, { ids: d.back ? chain.reverse() : chain, back: d.back, ends });
     }
   }
@@ -229,8 +229,8 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
   return { rows, hops: dedupe(hops), chains, labelRows: new Set(labeled.labelRow.values()), labels, wires };
 }
 
-/** Each drawn edge once: the stand-ins `expandGroupEdges` made for one edge to
- *  or from a group fold back into it. Self-loops draw no hops. */
+/** Each drawn edge once: the stand-ins `expandClusterEdges` made for one edge to
+ *  or from a cluster fold back into it. Self-loops draw no hops. */
 function drawnEdges(edges: readonly GraphEdge[], back: ReadonlySet<string>): Drawn[] {
   const seen = new Map<string, Drawn>();
   for (const e of edges) {

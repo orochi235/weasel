@@ -4,11 +4,11 @@ import {
   findNodeShape,
   findShapeSilhouette,
   shapeCoversPoint,
-  getNodeShapes,
+  nodeShapeEntries,
   _resetShapePaintersForTests,
   type NodeShapeEntry,
 } from './NodeShape';
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import type { Node } from 'core/scene/types';
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -33,7 +33,7 @@ beforeEach(() => {
 
 describe('shape painter registry', () => {
   it('ships six built-ins in evaluation order: derived → path → shape → image → path-pose → rect-fallback', () => {
-    const ids = getNodeShapes().map((p) => p.id);
+    const ids = nodeShapeEntries().map((p) => p.id);
     expect(ids).toEqual(['kit:derived', 'kit:path', 'kit:shape', 'kit:image', 'kit:path-pose', 'kit:rect-fallback']);
   });
 
@@ -49,7 +49,7 @@ describe('shape painter registry', () => {
       paint: () => [],
     };
     registerNodeShape(custom);
-    const ids = getNodeShapes().map((p) => p.id);
+    const ids = nodeShapeEntries().map((p) => p.id);
     expect(ids).toEqual(['kit:derived', 'kit:path', 'kit:shape', 'kit:image', 'app:heart', 'kit:path-pose', 'kit:rect-fallback']);
     // The fallback matches every rect-posed node, so a painter behind it would never paint one.
     expect(findNodeShape(node({ heart: 'x' }))?.id).toBe('app:heart');
@@ -90,7 +90,7 @@ describe('shape painter registry', () => {
     const dispose = registerNodeShape(custom, { priority: 'high' });
     dispose();
     dispose();
-    expect(getNodeShapes().map((p) => p.id)).not.toContain('once');
+    expect(nodeShapeEntries().map((p) => p.id)).not.toContain('once');
   });
 
   it('a second dispose leaves another registration of the same painter in place', () => {
@@ -149,7 +149,7 @@ describe('shapeCoversPoint', () => {
     const filled = { ...node({ path, fill: { paint: solid('#f00') }, stroke: null }), pose };
     expect(shapeCoversPoint(filled, pose, 75, 25)).toBe(true);
     expect(shapeCoversPoint(filled, pose, 25, 75)).toBe(false);
-    const line = { ...node({ path, fill: null, stroke: strokeOf('#000', 2) }), pose };
+    const line = { ...node({ path, fill: null, stroke: solidStroke('#000', 2) }), pose };
     expect(shapeCoversPoint(line, pose, 75, 25)).toBe(false);
     expect(shapeCoversPoint(line, pose, 50, 0)).toBe(true);
   });

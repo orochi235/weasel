@@ -5,7 +5,7 @@
  */
 import {
   AUTO_POSE_DESCRIPTOR,
-  createTransformOp,
+  createSetPoseOp,
   type PoseDescriptor,
   type Scene,
   type TransformFollower,
@@ -18,14 +18,14 @@ import { diagramNodeOf } from './trait';
 import { posesMovedBy } from './waypointFollower';
 
 /** Each row node of every body `frame` resizes, at the pose the new size puts it in. */
-function restacked(sc: AnyScene, geometry: PoseDescriptor<unknown>, frame: ReadonlyMap<string, unknown>): TransformPreviewNode[] {
+function restacked(sc: AnyScene, poseDescriptor: PoseDescriptor<unknown>, frame: ReadonlyMap<string, unknown>): TransformPreviewNode[] {
   const out: TransformPreviewNode[] = [];
   for (const [id, pose] of frame) {
     const node = sc.get(id as never);
     const trait = node === undefined ? null : diagramNodeOf(node);
     if (node === undefined || trait?.body === undefined || trait.outline === undefined) continue;
-    const before = geometry.getBounds(node.pose);
-    const after = geometry.getBounds(pose);
+    const before = poseDescriptor.getBounds(node.pose);
+    const after = poseDescriptor.getBounds(pose);
     if (before.width === after.width && before.height === after.height) continue;
     // Rows are stored in the body's own frame.
     const boxes = recordedLayout(trait, { x: 0, y: 0, width: after.width, height: after.height });
@@ -44,21 +44,21 @@ function restacked(sc: AnyScene, geometry: PoseDescriptor<unknown>, frame: Reado
 /**
  * The transform follower that lays a resized body's rows out again, for the
  * `transformFollowers` dep (`useTransformFollower`). A body saved before its
- * row heights were recorded is left as it is. `geometry` reads a pose's
+ * row heights were recorded is left as it is. `poseDescriptor` reads a pose's
  * bounds; default `AUTO_POSE_DESCRIPTOR`.
  */
 export function bodyFollower<TPose>(
   scene: Scene<unknown, string, TPose>,
-  geometry: PoseDescriptor<TPose> = AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>,
+  poseDescriptor: PoseDescriptor<TPose> = AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>,
 ): TransformFollower {
   const sc = scene as unknown as AnyScene;
-  const geo = geometry as PoseDescriptor<unknown>;
+  const geo = poseDescriptor as PoseDescriptor<unknown>;
   return {
     preview: (frame) => restacked(sc, geo, frame),
     finish(ops, label) {
       const moved = posesMovedBy(sc, ops);
       if (moved === null || moved.size === 0) return [...ops];
-      const rows = restacked(sc, geo, moved).map((r) => createTransformOp({ id: r.id, from: sc.get(r.id as never)!.pose, to: r.pose, label }));
+      const rows = restacked(sc, geo, moved).map((r) => createSetPoseOp({ id: r.id, from: sc.get(r.id as never)!.pose, to: r.pose, label }));
       return [...ops, ...rows];
     },
   };

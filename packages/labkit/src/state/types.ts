@@ -23,7 +23,7 @@ export interface TrialRecord<TS = unknown, TC = unknown, TV = unknown> {
   config: TC;
   state: TS;
   /** The trial's camera, in the shape the instrument's camera keeps it — a 2D
-   *  `ViewTransform`, or an orbit's `Camera3d`. Persisted, copied by Clone and
+   *  `ViewTransform2D`, or an orbit's `Camera3d`. Persisted, copied by Clone and
    *  restored on Reset; `null` until a camera placed by its size is measured. */
   view: TV;
   /** The config `addTrial` opened this trial on, overlaid on the instrument's

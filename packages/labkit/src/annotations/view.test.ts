@@ -3,28 +3,35 @@ import { fitView, fromWeaselView, toWeaselView } from './view';
 
 describe('fitView', () => {
   it("scales a target's content box to the box it is drawn in", () => {
-    expect(fitView({ w: 256, h: 170 }, { w: 512, h: 340 })).toEqual({
+    expect(fitView({ width: 256, height: 170 }, { width: 512, height: 340 })).toEqual({
       zoom: 2,
       pan: { x: 0, y: 0 },
     });
   });
 
   it('takes the smaller axis, so nothing is drawn past the pane', () => {
-    expect(fitView({ w: 256, h: 170 }, { w: 512, h: 170 })).toEqual({
+    expect(fitView({ width: 256, height: 170 }, { width: 512, height: 170 })).toEqual({
       zoom: 1,
       pan: { x: 0, y: 0 },
     });
   });
 
   it('reads zoom 1 from a degenerate content box rather than Infinity', () => {
-    expect(fitView({ w: 0, h: 0 }, { w: 512, h: 340 })).toEqual({ zoom: 1, pan: { x: 0, y: 0 } });
+    expect(fitView({ width: 0, height: 0 }, { width: 512, height: 340 })).toEqual({
+      zoom: 1,
+      pan: { x: 0, y: 0 },
+    });
   });
 });
 
 describe('fitView over the part of the content a target shows', () => {
   it('fits that part to the pane and pans its corner to the origin', () => {
     expect(
-      fitView({ w: 300, h: 900 }, { w: 600, h: 400 }, { x: 0, y: 150, w: 300, h: 200 }),
+      fitView(
+        { width: 300, height: 900 },
+        { width: 600, height: 400 },
+        { x: 0, y: 150, width: 300, height: 200 },
+      ),
     ).toEqual({
       zoom: 2,
       pan: { x: 0, y: -300 },
@@ -32,9 +39,9 @@ describe('fitView over the part of the content a target shows', () => {
   });
 
   it('is the whole-box camera when that part is the whole box', () => {
-    const content = { w: 256, h: 170 };
-    expect(fitView(content, { w: 512, h: 340 }, { x: 0, y: 0, ...content })).toEqual(
-      fitView(content, { w: 512, h: 340 }),
+    const content = { width: 256, height: 170 };
+    expect(fitView(content, { width: 512, height: 340 }, { x: 0, y: 0, ...content })).toEqual(
+      fitView(content, { width: 512, height: 340 }),
     );
   });
 });

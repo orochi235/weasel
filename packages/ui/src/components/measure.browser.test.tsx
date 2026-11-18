@@ -6,7 +6,7 @@ import { ActionsProvider, useAction, useMenuHost, useMenus } from '@weasel-js/ro
 import type { MenuDef, MenuHost } from '@weasel-js/routing';
 import { fixedWidth, measureMenuPanel, MENU_CARET_SIZE, UNBOUNDED, type MenuRowFace } from '@weasel-js/ui-logic';
 import { ContextMenuHost } from '@weasel-js/ui/components/Menu';
-import { domMeasureEnv } from '@weasel-js/ui';
+import { createDomMeasureEnv } from '@weasel-js/ui';
 import { Button, domButton, type ButtonProps } from '@weasel-js/ui/components/Button';
 import { domItemList } from '@weasel-js/ui/components/ItemList';
 import s from './ItemList/ItemList.module.css';
@@ -33,11 +33,13 @@ describe('a DOM button is the box measureButton gives', () => {
     ['a small label', { children: 'Save', size: 'sm' }],
     ['icons either side', { children: 'Export', leadingIcon: ICON, trailingIcon: ICON }],
     ['an icon alone', { iconOnly: true, 'aria-label': 'Add', children: ICON }],
+    ['an xs label after an icon', { children: 'Pin', size: 'xs', leadingIcon: ICON }],
+    ['an xs icon alone', { iconOnly: true, 'aria-label': 'Add', size: 'xs', children: ICON }],
     ['a spinner', { children: 'Saving', loading: true }],
   ])('%s', (_, props) => {
     render(<div data-testid="host"><Button {...props} /></div>);
     const button = screen.getByRole('button');
-    const m = domButton.measure(props, UNBOUNDED, domMeasureEnv(button));
+    const m = domButton.measure(props, UNBOUNDED, createDomMeasureEnv(button));
     const box = button.getBoundingClientRect();
     near(box.width, m.width);
     near(box.height, m.height);
@@ -51,10 +53,29 @@ describe('a DOM button is the box measureButton gives', () => {
     });
   });
 
+  // A zero-height box in a baseline-aligned row has its bottom edge on the row's baseline.
+  test.each<[string, ButtonProps]>([
+    ['a label', { children: 'Save' }],
+    ['a label after an icon', { children: 'Add trial', leadingIcon: ICON }],
+    ['an xs label after an icon', { children: 'Pin', size: 'xs', leadingIcon: ICON }],
+    ['a label after a spinner', { children: 'Saving', loading: true }],
+  ])('%s hands its row the baseline measureButton gives', (_, props) => {
+    render(
+      <div style={{ display: 'flex', alignItems: 'baseline' }}>
+        <Button {...props} />
+        <span data-testid="probe" style={{ display: 'inline-block', width: 0, height: 0 }} />
+      </div>,
+    );
+    const button = screen.getByRole('button');
+    const m = domButton.measure(props, UNBOUNDED, createDomMeasureEnv(button));
+    const got = screen.getByTestId('probe').getBoundingClientRect().top - button.getBoundingClientRect().top;
+    expect(Math.abs(got - m.baseline)).toBeLessThanOrEqual(0.5);
+  });
+
   test('a full-width button centers its parts in the width it is given', () => {
     render(<div style={{ width: 300 }}><Button fullWidth>Go</Button></div>);
     const button = screen.getByRole('button');
-    const m = domButton.measure({ children: 'Go' }, fixedWidth(300), domMeasureEnv(button));
+    const m = domButton.measure({ children: 'Go' }, fixedWidth(300), createDomMeasureEnv(button));
     near(button.getBoundingClientRect().width, 300);
     near(boxIn(button.firstElementChild!, button).x, m.layout.parts[0]!.rect.x);
   });
@@ -76,7 +97,7 @@ describe('a DOM item list is the box measureRowList gives', () => {
     );
     const list = document.querySelector(`.${s.list}`)!;
     const slotWidth = (_: unknown, slot: 'leading' | 'trailing') => (slot === 'leading' ? 12 : list.querySelector(`.${s.trailing}:not(:empty)`)!.getBoundingClientRect().width);
-    const m = domItemList.measure({ props: { rows }, slotWidth }, fixedWidth(240), domMeasureEnv(list));
+    const m = domItemList.measure({ props: { rows }, slotWidth }, fixedWidth(240), createDomMeasureEnv(list));
     near(list.getBoundingClientRect().height, m.height);
     const rowEls = [...list.querySelectorAll(`.${s.row}`)];
     expect(rowEls).toHaveLength(3);
@@ -93,13 +114,13 @@ describe('a DOM item list is the box measureRowList gives', () => {
   test('the empty state', () => {
     render(<div style={{ width: 240 }}><ItemListHost rows={[]} /></div>);
     const list = document.querySelector(`.${s.list}`)!;
-    const m = domItemList.measure({ props: { rows: [] } }, fixedWidth(240), domMeasureEnv(list));
+    const m = domItemList.measure({ props: { rows: [] } }, fixedWidth(240), createDomMeasureEnv(list));
     near(list.getBoundingClientRect().height, m.height);
   });
 });
 
 function ItemListHost({ rows }: { rows: Parameters<typeof domItemList.draw>[0]['props']['rows'] }) {
-  return domItemList.draw({ props: { rows, onActivate: () => {} } }, {});
+  return domItemList.draw({ props: { rows, onAction: () => {} } }, {});
 }
 
 describe('a DOM menu panel is the box measureMenuPanel gives, as the HUD menu draws it', () => {
@@ -133,7 +154,7 @@ describe('a DOM menu panel is the box measureMenuPanel gives, as the HUD menu dr
       })),
     };
     expect(face.rows.map((r) => r.kind)).toEqual(['row', 'row', 'separator', 'row']);
-    const m = measureMenuPanel(face, UNBOUNDED, domMeasureEnv(panel));
+    const m = measureMenuPanel(face, UNBOUNDED, createDomMeasureEnv(panel));
     const box = panel.getBoundingClientRect();
     near(box.width, m.width);
     near(box.height, m.height);

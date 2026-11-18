@@ -17,7 +17,7 @@ import type { SurfaceClear, SurfaceHandle } from '../surface/useTiledSurface';
 import { useTiledSurface } from '../surface/useTiledSurface';
 import { insertedGeometry } from './AnnotationOverlay';
 import { AnnotationTargets } from './AnnotationTargets';
-import { createAnnotationStore } from './store';
+import { createMarkStore } from './store';
 import type { AnnotationsCapability, AnnotationTarget } from './types';
 
 function stubBox(el: HTMLElement, left: number, top: number, width: number, height: number): void {
@@ -70,13 +70,13 @@ function Harness({
         : tiled,
     [tiled, onRegisterClear],
   );
-  const annotations = useRef(createAnnotationStore({ targets: () => [] })).current;
+  const annotations = useRef(createMarkStore({ targets: () => [] })).current;
   onSurface?.(surface);
 
   const capability: AnnotationsCapability = {
     targets: (): AnnotationTarget[] => [
-      { id: 'pane:a', ref: a, content: { w: 200, h: 100 } },
-      { id: 'pane:b', ref: b, content: { w: 200, h: 100 } },
+      { id: 'pane:a', ref: a, content: { width: 200, height: 100 } },
+      { id: 'pane:b', ref: b, content: { width: 200, height: 100 } },
     ],
   };
 
@@ -283,9 +283,11 @@ function OneTrial({
   box: { left: number; top: number; width: number; height: number };
 }) {
   const pane = useRef<HTMLDivElement | null>(null);
-  const annotations = useRef(createAnnotationStore({ targets: () => [] })).current;
+  const annotations = useRef(createMarkStore({ targets: () => [] })).current;
   const capability: AnnotationsCapability = {
-    targets: (): AnnotationTarget[] => [{ id: 'pane:a', ref: pane, content: { w: 200, h: 100 } }],
+    targets: (): AnnotationTarget[] => [
+      { id: 'pane:a', ref: pane, content: { width: 200, height: 100 } },
+    ],
   };
   return (
     <TrialIdProvider trialId={trialId}>

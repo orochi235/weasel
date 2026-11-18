@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { pointInPath, type Path } from '@weasel-js/geom';
+import { pathContainsPoint, type Path } from '@weasel-js/geom';
 import type { BoxShadow } from '@weasel-js/theme';
 import { boxShadowCommands } from './boxShadow';
 import { runs, tally } from './pbt.fixture';
@@ -18,7 +18,7 @@ const layer: fc.Arbitrary<BoxShadow> = fc.record({
   blur: fc.integer({ min: 0, max: 20 }), spread: fc.integer({ min: -8, max: 12 }),
   color: fc.constantFrom('#000000', '#ff000080', 'currentColor', 'red'),
 });
-const box = fc.record({ x: fc.integer({ min: -50, max: 50 }), y: fc.integer({ min: -50, max: 50 }), w: fc.integer({ min: 1, max: 40 }), h: fc.integer({ min: 1, max: 40 }) });
+const box = fc.record({ x: fc.integer({ min: -50, max: 50 }), y: fc.integer({ min: -50, max: 50 }), width: fc.integer({ min: 1, max: 40 }), height: fc.integer({ min: 1, max: 40 }) });
 
 const numbers = (v: unknown): number[] => {
   const out: number[] = [];
@@ -44,10 +44,10 @@ describe('boxShadowCommands', () => {
     const seen = tally();
     fc.assert(fc.property(box, layer.map((s) => ({ ...s, inset: true })), fc.nat(), fc.nat(), (b, s, i, j) => {
       const [ring] = pathsOf(boxShadowCommands(b, 0, [s], 'black').over[0]);
-      const px = b.x + (i % b.w) + 0.5, py = b.y + (j % b.h) + 0.5;
-      const ix = b.x + s.x + s.spread, iy = b.y + s.y + s.spread, iw = b.w - 2 * s.spread, ih = b.h - 2 * s.spread;
+      const px = b.x + (i % b.width) + 0.5, py = b.y + (j % b.height) + 0.5;
+      const ix = b.x + s.x + s.spread, iy = b.y + s.y + s.spread, iw = b.width - 2 * s.spread, ih = b.height - 2 * s.spread;
       const inHole = iw > 0 && ih > 0 && px >= ix && px < ix + iw && py >= iy && py < iy + ih;
-      expect(pointInPath(ring!, px, py)).toBe(!inHole);
+      expect(pathContainsPoint(ring!, px, py)).toBe(!inHole);
       seen.hit(inHole ? 'clear' : 'shadowed');
     }), runs(RUNS * 3));
     seen.atLeast('clear', 50);
@@ -60,9 +60,9 @@ describe('boxShadowCommands', () => {
       (b, s, i, j) => {
         const paths = pathsOf(boxShadowCommands(b, 0, [s], 'black').under[0]);
         const px = b.x + i + 0.5, py = b.y + j + 0.5;
-        const ox = b.x + s.x - s.spread, oy = b.y + s.y - s.spread, ow = b.w + 2 * s.spread, oh = b.h + 2 * s.spread;
+        const ox = b.x + s.x - s.spread, oy = b.y + s.y - s.spread, ow = b.width + 2 * s.spread, oh = b.height + 2 * s.spread;
         const inShadow = ow > 0 && oh > 0 && px >= ox && px < ox + ow && py >= oy && py < oy + oh;
-        expect(paths.some((p) => pointInPath(p, px, py))).toBe(inShadow);
+        expect(paths.some((p) => pathContainsPoint(p, px, py))).toBe(inShadow);
         seen.hit(inShadow ? 'shadowed' : 'clear');
       }), runs(RUNS * 3));
     seen.atLeast('clear', 50);

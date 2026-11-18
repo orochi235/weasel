@@ -11,37 +11,37 @@ function type(overlay: HTMLElement, ch: string): void {
   act(() => { overlay.dispatchEvent(new Event('input', { bubbles: true })); });
 }
 
-describe('useTextEdit — onDraft', () => {
+describe('useTextEdit — onInput', () => {
   it("reports the overlay's text on each input, and writes nothing until the commit", () => {
     const h = makeHarness({ a: 'hi' });
-    const onDraft = vi.fn();
-    const { result } = renderHook(() => useTextEdit({ ...h.opts, onDraft }));
+    const onInput = vi.fn();
+    const { result } = renderHook(() => useTextEdit({ ...h.opts, onInput }));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
     type(overlay, '!');
     type(overlay, '?');
-    expect(onDraft.mock.calls).toEqual([['a', { text: 'hi!' }], ['a', { text: 'hi!?' }]]);
+    expect(onInput.mock.calls).toEqual([['a', { text: 'hi!' }], ['a', { text: 'hi!?' }]]);
     expect(h.commits).toEqual([]);
   });
 
   it('carries the runs when the node has some', () => {
     const h = makeRichHarness({ a: { text: 'a b', runs: [{ text: 'a ' }, { text: 'b', bold: true }] } });
-    const onDraft = vi.fn();
-    const { result } = renderHook(() => useTextEdit({ ...h.opts, onDraft }));
+    const onInput = vi.fn();
+    const { result } = renderHook(() => useTextEdit({ ...h.opts, onInput }));
     act(() => result.current.startEdit('a'));
     type(getOverlay(h.container)!, 'c');
-    expect(onDraft).toHaveBeenLastCalledWith('a', { text: 'a bc', runs: [{ text: 'a ' }, { text: 'bc', bold: true }] });
+    expect(onInput).toHaveBeenLastCalledWith('a', { text: 'a bc', runs: [{ text: 'a ' }, { text: 'bc', bold: true }] });
   });
 
   it('reports a restyled range with no keystroke', () => {
     const h = makeRichHarness({ a: { text: 'abcd', runs: [{ text: 'abcd' }] } });
-    const onDraft = vi.fn();
-    const { result } = renderHook(() => useTextEdit({ ...h.opts, onDraft }));
+    const onInput = vi.fn();
+    const { result } = renderHook(() => useTextEdit({ ...h.opts, onInput }));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
     selectChars(overlay, 0, 2);
     act(() => { pressKey(overlay, 'b', { meta: true }); });
-    expect(onDraft).toHaveBeenLastCalledWith('a', { text: 'abcd', runs: [{ text: 'ab', bold: true }, { text: 'cd' }] });
+    expect(onInput).toHaveBeenLastCalledWith('a', { text: 'abcd', runs: [{ text: 'ab', bold: true }, { text: 'cd' }] });
   });
 
   it("reports a rewritten node style with the runs, as a commit would write it", () => {
@@ -49,13 +49,13 @@ describe('useTextEdit — onDraft', () => {
     const h = makeRichHarness({ a: { text: 'one two', runs: [{ text: 'one two' }] } });
     h.opts.getStyle = (id) => styles[id];
     h.opts.setStyle = (id, style) => { styles[id] = style; };
-    const onDraft = vi.fn();
-    const { result } = renderHook(() => useTextEdit({ ...h.opts, onDraft }));
+    const onInput = vi.fn();
+    const { result } = renderHook(() => useTextEdit({ ...h.opts, onInput }));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
     selectChars(overlay, 4, 7);
     act(() => { pressKey(overlay, 'i', { meta: true }); });
-    expect(onDraft).toHaveBeenLastCalledWith('a', {
+    expect(onInput).toHaveBeenLastCalledWith('a', {
       text: 'one two',
       runs: [{ text: 'one ', italic: true }, { text: 'two' }],
       style: { fontSize: 16, fontStyle: 'normal' },
@@ -67,33 +67,33 @@ describe('useTextEdit — onDraft', () => {
     const h = makeRichHarness({ a: { text: 'one two', runs: [{ text: 'one two' }] } });
     h.opts.getStyle = (id) => styles[id];
     h.opts.setStyle = (id, style) => { styles[id] = style; };
-    const onDraft = vi.fn();
-    const { result } = renderHook(() => useTextEdit({ ...h.opts, onDraft }));
+    const onInput = vi.fn();
+    const { result } = renderHook(() => useTextEdit({ ...h.opts, onInput }));
     act(() => result.current.startEdit('a'));
     selectChars(getOverlay(h.container)!, 4, 7);
     act(() => result.current.applyStyleToSelection({ italic: false, underline: true }));
-    expect(onDraft).toHaveBeenCalledTimes(1);
-    expect(onDraft.mock.calls[0]![1].runs).toEqual([{ text: 'one ', italic: true }, { text: 'two', underline: true }]);
+    expect(onInput).toHaveBeenCalledTimes(1);
+    expect(onInput.mock.calls[0]![1].runs).toEqual([{ text: 'one ', italic: true }, { text: 'two', underline: true }]);
   });
 
   it('reports nothing for a restyle that changes nothing', () => {
     const h = makeRichHarness({ a: { text: 'abcd', runs: [{ text: 'ab', bold: true }, { text: 'cd' }] } });
-    const onDraft = vi.fn();
-    const { result } = renderHook(() => useTextEdit({ ...h.opts, onDraft }));
+    const onInput = vi.fn();
+    const { result } = renderHook(() => useTextEdit({ ...h.opts, onInput }));
     act(() => result.current.startEdit('a'));
     selectChars(getOverlay(h.container)!, 0, 2);
     act(() => result.current.applyStyleToSelection({ bold: true }));
-    expect(onDraft).not.toHaveBeenCalled();
+    expect(onInput).not.toHaveBeenCalled();
   });
 
   it('reports nothing for styling armed at a collapsed caret', () => {
     const h = makeRichHarness({ a: { text: 'abcd', runs: [{ text: 'abcd' }] } });
-    const onDraft = vi.fn();
-    const { result } = renderHook(() => useTextEdit({ ...h.opts, onDraft }));
+    const onInput = vi.fn();
+    const { result } = renderHook(() => useTextEdit({ ...h.opts, onInput }));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
     placeCaretAtChar(overlay, 2);
     act(() => { pressKey(overlay, 'b', { meta: true }); });
-    expect(onDraft).not.toHaveBeenCalled();
+    expect(onInput).not.toHaveBeenCalled();
   });
 });

@@ -8,7 +8,7 @@ import {
   displayKindOf,
   displayKindRegistry,
   duration,
-  endless,
+  withInfinity,
   fraction,
   fractionKind,
   integer,
@@ -374,7 +374,7 @@ describe('infinity', () => {
   });
 
   it("uses the display's own word, and drops the unit beside it", () => {
-    const d = endless(unit('ms'), 'never');
+    const d = withInfinity(unit('ms'), 'never');
     expect(qty(Infinity, d).text).toBe('never');
     expect(qty(Infinity, d).spoken).toBe('never');
     expect(qty(Infinity, d).parts).toEqual([{ type: 'infinity', value: 'never' }]);
@@ -383,14 +383,14 @@ describe('infinity', () => {
   });
 
   it('takes separate shown, spoken and negative words', () => {
-    const d = endless(decimal(), { text: 'no cap', spoken: 'uncapped', negative: 'none' });
+    const d = withInfinity(decimal(), { text: 'no cap', spoken: 'uncapped', negative: 'none' });
     expect(qty(Infinity, d).text).toBe('no cap');
     expect(qty(Infinity, d).spoken).toBe('uncapped');
     expect(qty(-Infinity, d).text).toBe('none');
   });
 
   it('reads its words and the usual spellings back', () => {
-    const d = endless(unit('ms'), { text: 'Never', negative: 'always' });
+    const d = withInfinity(unit('ms'), { text: 'Never', negative: 'always' });
     expect(parseAs('never', d)).toBe(Infinity);
     expect(parseAs(' NEVER ', d)).toBe(Infinity);
     expect(parseAs('always', d)).toBe(-Infinity);
@@ -402,7 +402,7 @@ describe('infinity', () => {
   });
 
   it('keeps the word through a tag', () => {
-    const q = tag(Infinity, endless(integer(), 'unlimited'));
+    const q = tag(Infinity, withInfinity(integer(), 'unlimited'));
     expect(qty(retag(q, Infinity)).text).toBe('unlimited');
   });
 });

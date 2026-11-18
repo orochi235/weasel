@@ -4,7 +4,7 @@
  * same center.
  */
 import type { Path } from '../path';
-import { pointInPath } from '../pathHitTest';
+import { pathContainsPoint } from '../pathHitTest';
 import { PathBuilder } from './builder';
 import type { CornerTrace } from './cornerRestore';
 import { withCorner } from './cornerSpec';
@@ -39,7 +39,7 @@ export function offsetCornerTraces(path: Path, distance: number): CornerTrace[] 
     // Just inside the wedge, between the anchor and its cut: filled only
     // where the corner turns away from the fill.
     const probe = Math.min(inLen, outLen) * 0.01;
-    const sign = pointInPath(drawn, v.x + b.x * probe, v.y + b.y * probe) ? -1 : 1;
+    const sign = pathContainsPoint(drawn, v.x + b.x * probe, v.y + b.y * probe) ? -1 : 1;
     const radius = spec.radius + (sign * distance) / Math.tan(half);
     if (!(radius > 0)) continue;
     const at = { x: v.x - (b.x * sign * distance) / Math.sin(half), y: v.y - (b.y * sign * distance) / Math.sin(half) };

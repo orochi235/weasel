@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { IconSpec } from '@weasel-js/icons';
-import type { MenuGrade } from '@weasel-js/menu';
+import type { Grade } from '@weasel-js/registry';
 import { useLatest, useStableByContent } from '@weasel-js/react';
 import { deepEqual, getOwn, isPlainObject } from '@weasel-js/registry';
 import type { ActionUnavailable } from './action';
@@ -29,7 +29,7 @@ export interface CommandOptions<P = Record<string, unknown>> {
   /** What it does, in a sentence: a tooltip or a hint. */
   description?: string;
   /** How serious running it is; `'danger'` for one that destroys something. */
-  grade?: MenuGrade;
+  grade?: Grade;
   /** The gestures that run it. The `{ spec, opts: { params } }` form gives one variant its own key. */
   keys?: BoundGesture<P> | readonly BoundGesture<P>[];
   /** Shown beside the label. */

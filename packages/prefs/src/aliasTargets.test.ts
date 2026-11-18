@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { type PrefAlias, type PrefGroup, prefJudge, prefReader, type PrefLeaf, type PrefObject } from '@weasel-js/prefs-schema';
-import { prefAliasTargets } from './aliasTargets';
+import { createAliasTargets } from './aliasTargets';
 
 const flag = (name: string, extra: Record<string, unknown> = {}): PrefLeaf =>
   ({ kind: 'boolean', name, description: 'About it.', default: true, ...extra }) as PrefLeaf;
@@ -26,10 +26,10 @@ const over: PrefGroup = {
   },
 };
 
-const targets = (values: unknown, options?: Parameters<typeof prefAliasTargets>[2]) =>
-  prefAliasTargets(over, (entry) => prefJudge(over, prefReader(over, values), entry), options);
+const targets = (values: unknown, options?: Parameters<typeof createAliasTargets>[2]) =>
+  createAliasTargets(over, (entry) => prefJudge(over, prefReader(over, values), entry), options);
 
-describe('prefAliasTargets', () => {
+describe('createAliasTargets', () => {
   it('shows an alias as the leaf at its path, at that path, under the leaf\'s name and description', () => {
     expect(targets({}).shown(pointer('view.grid'))).toEqual({ path: 'view.grid', leaf: flag('Show grid') });
   });
@@ -50,7 +50,7 @@ describe('prefAliasTargets', () => {
   });
 
   it('leaves out the fields of the leaf a `showIf` hides or `hidden` marks, unless the surface draws them', () => {
-    const fields = (values: unknown, options?: Parameters<typeof prefAliasTargets>[2]): string[] =>
+    const fields = (values: unknown, options?: Parameters<typeof createAliasTargets>[2]): string[] =>
       Object.keys((targets(values, options).shown(pointer('stroke'))!.leaf as PrefObject).children);
     expect(fields({})).toEqual(['width', 'cap']);
     expect(fields({ stroke: { width: 2 } })).toEqual(['width', 'dash', 'cap']);

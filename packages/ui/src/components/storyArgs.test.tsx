@@ -130,7 +130,7 @@ type Load = () => Promise<unknown>;
 
 describe('a story drawing several instances applies its args to each', { timeout: 30_000 }, () => {
   it.each<[string, string, Load, object, string, number]>([
-    ['Button', 'Matrix', () => import('./Button/Button.stories'), { 'data-arg': 'here' }, '[data-arg="here"]', 8],
+    ['Button', 'Matrix', () => import('./Button/Button.stories'), { 'data-arg': 'here' }, '[data-arg="here"]', 12],
     ['Code', 'Diff', () => import('./Code/Code.stories'), { className: 'arg-here' }, '.arg-here', 3],
     ['MotifFrame', 'Motifs', () => import('./MotifFrame/MotifFrame.stories'), { className: 'arg-here' }, '.arg-here', 6],
     ['ToolPalette', 'Split', () => import('./ToolPalette/ToolPalette.stories'), { className: 'arg-here' }, '.arg-here', 2],

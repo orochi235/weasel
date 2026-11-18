@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { prefIsEnabled, prefIsShown, prefNumberAt, type PrefBoolean, type PrefEnum, type PrefLeaf, type PrefNumber, type PrefSection, type PrefObject } from '@weasel-js/prefs-schema';
+import { prefIsEnabled, prefIsShown, prefBoundedNumber, type PrefBoolean, type PrefEnum, type PrefLeaf, type PrefNumber, type PrefSection, type PrefObject } from '@weasel-js/prefs-schema';
 import { defaultNodeProperties, inferredNodeProperties } from './defaultNodeProperties';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { getMarker, registerMarker } from '@weasel-js/stroke';
@@ -57,13 +57,13 @@ describe('the W and H leaves', () => {
 
   it('hold a node to its own data.minSize, as minSizeOf reads it', () => {
     const data = { minSize: { width: 40, height: 25 } };
-    expect(prefNumberAt(leaf('pose.width'), reading(data)).min).toBe(40);
-    expect(prefNumberAt(leaf('pose.height'), reading(data)).min).toBe(25);
+    expect(prefBoundedNumber(leaf('pose.width'), reading(data)).min).toBe(40);
+    expect(prefBoundedNumber(leaf('pose.height'), reading(data)).min).toBe(25);
   });
 
   it('hold a node with no minimum, or a side that is not a positive number, to zero', () => {
-    expect(prefNumberAt(leaf('pose.width'), reading({})).min).toBe(0);
-    expect(prefNumberAt(leaf('pose.height'), reading({ minSize: { width: 40, height: -3 } })).min).toBe(0);
+    expect(prefBoundedNumber(leaf('pose.width'), reading({})).min).toBe(0);
+    expect(prefBoundedNumber(leaf('pose.height'), reading({ minSize: { width: 40, height: -3 } })).min).toBe(0);
   });
 });
 

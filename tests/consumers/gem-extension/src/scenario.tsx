@@ -4,7 +4,7 @@
  * does not hold; `log` hears one line per step as it passes.
  */
 import { act } from 'react';
-import { buildSceneViewCommands, createScene, defaultDrawOne, findNodeShape, getNodeShapes, nodeShapesOf, sceneFromJSON, type FeaturePreset, type RectPose } from '@weasel-js/core';
+import { buildSceneViewCommands, createScene, defaultDrawOne, findNodeShape, nodeShapeEntries, nodeShapesOf, sceneFromJSON, type FeaturePreset, type RectPose } from '@weasel-js/core';
 import { GEM_BLUE, GEM_PALETTE, gemFeature, isGem, type GemData } from './index.js';
 import { GemHost, click, drag, fieldLabeled, mount, newProbe, settle, typeInto, type GemScene, type Probe } from './host.js';
 import { OneByOneGemCanvas } from './oneByOne.js';
@@ -26,8 +26,8 @@ const theGem = (scene: GemScene) => {
 const gemData = (scene: GemScene) => theGem(scene).data as GemData;
 const paints = (scene: GemScene, color: string) =>
   JSON.stringify(buildSceneViewCommands(scene, { x: 0, y: 0, scale: { x: 1, y: 1 } }, defaultDrawOne)).includes(color);
-const presetPainter = (scene: GemScene) => getNodeShapes(nodeShapesOf(scene)).some((e) => e.id === 'app:gem');
-const processPainter = () => getNodeShapes().some((e) => e.id === 'app:gem');
+const presetPainter = (scene: GemScene) => nodeShapeEntries(nodeShapesOf(scene)).some((e) => e.id === 'app:gem');
+const processPainter = () => nodeShapeEntries().some((e) => e.id === 'app:gem');
 const tools = (probe: Probe) => {
   check(probe.tools !== null, 'the canvas to have created its tools');
   return probe.tools;

@@ -1,37 +1,11 @@
 import {
-  type FeaturePreset,
-  type InsertNodeFactory,
   registerNodeShape,
   SceneCanvas,
-  type SceneCanvasApi,
   useActiveToolContext,
-  useLatest,
-  type View,
   WeaselProvider,
 } from '@weasel-js/core';
-import {
-  BUILTIN_TOOL_IDS,
-  editPreset,
-  type KitToolId,
-  movePreset,
-  pickPreset,
-  shapeToolKitPreset,
-  transformPreset,
-} from '@weasel-js/editing';
-import { usePencilTool } from '@weasel-js/path-tools';
-import type { ToolOptionValues } from '@weasel-js/routing';
-import { createTextTool, textPreset } from '@weasel-js/text-tools';
-import {
-  type CSSProperties,
-  useCallback,
-  useEffect,
-  useInsertionEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import { type CSSProperties, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import type { Rect } from '../surface/rect';
 import {
   useSurfaceCanvas,
   useSurfaceOptional,
@@ -39,23 +13,18 @@ import {
   useTileInScope,
 } from '../surface/useSurfaceTile';
 import { createMarkDrawOne } from './drawOne';
-import { boundsOf, roundPoints, toShape, type WorldRect } from './frac';
-import { markStyleFrom } from './options';
+import type { WorldRect } from './frac';
+import { useMarkTools } from './markTools';
+import { useOverlayCanvas } from './overlayCanvas';
+import { useOverlayPlacement, useOverlayView } from './overlayPlacement';
 import { useOverlayTile } from './overlayTile';
 import { POINT_MARK_SHAPE } from './paint';
-import { seenFrom } from './staleness';
 import type { MarkScene } from './store';
-import { ANNOTATION_WEASEL_TOOLS, annotationToolInfo, annotationToolOptions } from './toolMap';
-import type {
-  AnnotationData,
-  AnnotationKind,
-  AnnotationMeaning,
-  AnnotationTarget,
-  FracPoint,
-} from './types';
-import { useLabToolOptionValues } from './useLabToolOptions';
-import { fitView, toWeaselView } from './view';
+import { annotationToolInfo } from './toolMap';
+import type { AnnotationData, AnnotationMeaning, AnnotationTarget } from './types';
 import { useWheelHandOff } from './wheelScroll';
+
+export { insertedGeometry } from './markTools';
 
 /** Props for `<AnnotationOverlay>`. */
 export interface AnnotationOverlayProps {
@@ -71,18 +40,6 @@ export interface AnnotationOverlayProps {
   meaning?: AnnotationMeaning;
 }
 
-/** Where a target is on the surface, and the part of that which shows. */
-interface Placement {
-  rect: Rect;
-  visible: Rect;
-}
-
-const sameRect = (a: Rect, b: Rect): boolean =>
-  a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
-
-const samePlacement = (a: Placement | null, b: Placement): boolean =>
-  a !== null && sameRect(a.rect, b.rect) && sameRect(a.visible, b.visible);
-
 /** Pushes the trial's tool into the weasel scope this pane owns. Its own
  *  component because the context only exists below `<WeaselProvider>`. */
 function ToolBridge({ toolId }: { toolId: string }) {
@@ -92,102 +49,6 @@ function ToolBridge({ toolId }: { toolId: string }) {
     setActive(toolId);
   }, [toolId, setActive]);
   return null;
-}
-
-/** Every vertex the insert carried, in world units. */
-function verticesOf(extras: Record<string, unknown>): readonly FracPoint[] | undefined {
-  if (extras.kind === 'line') return [extras.a as FracPoint, extras.b as FracPoint];
-  if (extras.kind === 'pencil') {
-    const samples = extras.samples as FracPoint[];
-    return samples.length > 0 ? samples : undefined;
-  }
-  return undefined;
-}
-
-/** The pose and shape an insert's vertices make: the box that holds them, and
- *  the vertices stored against that very box. Undefined for an insert that
- *  carries no vertices, whose drag bounds are the whole geometry. */
-export function insertedGeometry(
-  extras: Record<string, unknown>,
-): { pose: WorldRect; shape: readonly FracPoint[] } | undefined {
-  const vertices = verticesOf(extras);
-  if (!vertices) return undefined;
-  const box = boundsOf(vertices);
-  if (!box) return undefined;
-  return {
-    pose: { x: box.x, y: box.y, width: box.w, height: box.h },
-    shape: roundPoints(toShape(vertices, box)),
-  };
-}
-
-/** The text tool, from text-tools; the pencil is mounted from path-tools, and editing's shape tools by id. */
-const ANNOTATION_TEXT: FeaturePreset = {
-  id: 'annotations:text',
-  tools: [createTextTool()],
-  includes: [textPreset],
-};
-const FEATURES = [
-  pickPreset,
-  movePreset,
-  transformPreset,
-  editPreset,
-  shapeToolKitPreset,
-  ANNOTATION_TEXT,
-];
-const BUILTIN_ANNOTATION_TOOLS = ANNOTATION_WEASEL_TOOLS.filter((t): t is KitToolId =>
-  (BUILTIN_TOOL_IDS as readonly string[]).includes(t),
-);
-
-/** One factory per weasel tool, each making the mark the rail's tool means. */
-function insertFactories(
-  target: AnnotationTarget,
-  toolRef: { readonly current: string | null },
-  configRef: { readonly current: unknown },
-  values: ToolOptionValues,
-): Record<string, InsertNodeFactory> {
-  const id = target.id;
-  const factories: Record<string, InsertNodeFactory> = {};
-  for (const weaselTool of ANNOTATION_WEASEL_TOOLS) {
-    factories[weaselTool] = (_bounds, extras) => {
-      const info = annotationToolInfo(toolRef.current);
-      const kind: AnnotationKind | undefined = info?.kind;
-      if (!kind) return null;
-      const seen = seenFrom(configRef.current, target.positionDependsOn ?? []);
-      const tool = toolRef.current ?? '';
-      const style = markStyleFrom(tool, annotationToolOptions(tool), values);
-      const geometry = insertedGeometry(extras as unknown as Record<string, unknown>);
-      if (!geometry) return { data: { target: id, kind, ...style, seen } satisfies AnnotationData };
-      const data: AnnotationData = { target: id, kind, shape: geometry.shape, ...style, seen };
-      return { data, pose: geometry.pose };
-    };
-  }
-  return factories;
-}
-
-/** The whole target's camera, shifted so the canvas starts at the part that shows. */
-/** What the pane's canvas mounts to make marks: the weasel tools the rail's tools drive, and an insert
- *  factory for each that reads the tool the pane holds now. */
-function useMarkTools(target: AnnotationTarget, activeToolId: string | null, config: unknown) {
-  // Read in the insert factory, which is built once and must see the tool the
-  // pane is holding now — `arrow` and `stroke` are indistinguishable from
-  // `line` and `pencil` at the weasel end.
-  const toolRef = useLatest(activeToolId);
-  const configRef = useLatest(config);
-  const optionValues = useLabToolOptionValues();
-  const pencil = usePencilTool();
-  return {
-    defaultTools: BUILTIN_ANNOTATION_TOOLS,
-    tools: { pencil },
-    insertNodeFactories: insertFactories(target, toolRef, configRef, optionValues),
-  };
-}
-
-function cameraFor(target: AnnotationTarget, { rect, visible }: Placement): View {
-  const whole = target.view ?? fitView(target.content, { w: rect.w, h: rect.h }, target.shown);
-  return toWeaselView({
-    zoom: whole.zoom,
-    pan: { x: whole.pan.x - (visible.x - rect.x), y: whole.pan.y - (visible.y - rect.y) },
-  });
 }
 
 /**
@@ -210,9 +71,7 @@ export function AnnotationOverlay({
 }: AnnotationOverlayProps) {
   const surface = useSurfaceOptional();
   const canvas = useSurfaceCanvas();
-  const [placement, setPlacement] = useState<Placement | null>(null);
   const [input, setInput] = useState<HTMLDivElement | null>(null);
-  const sceneCanvas = useRef<SceneCanvasApi | null>(null);
   useEffect(() => registerNodeShape(POINT_MARK_SHAPE, { priority: 'high' }), []);
 
   const markTools = useMarkTools(target, activeToolId, config);
@@ -226,68 +85,10 @@ export function AnnotationOverlay({
   // then, and its box would sit over the expanded one.
   const inScope = useTileInScope(tileId);
   useOverlayTile(surface, tileId, target.ref);
-
-  // Erases the whole shared buffer when the tiles move: a tile that moved took
-  // its scissor with it, and what it painted last frame stays where it was.
-  // Each renderer on the context re-applies its viewport and scissor per frame,
-  // so resetting them here is safe.
-  // Only once this pane has painted: a bare `getContext` on a buffer no
-  // renderer has opened creates the context without the stencil buffer marks
-  // need, and every later request gets that context back.
-  const painted = useRef(false);
-  const canvasRef = useLatest(canvas);
-  // A new buffer has not been painted into, whatever the old one had. Reset
-  // with the commit that brings it, ahead of any paint that commit triggers.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `canvas` is the signal, not a value this reads
-  useInsertionEffect(() => {
-    painted.current = false;
-  }, [canvas]);
-  const unsubscribeFrame = useRef<(() => void) | null>(null);
-  const attachSceneCanvas = useCallback((api: SceneCanvasApi | null) => {
-    sceneCanvas.current = api;
-    unsubscribeFrame.current?.();
-    unsubscribeFrame.current = api
-      ? api.subscribeFrame(() => {
-          painted.current = true;
-        })
-      : null;
-  }, []);
-  useEffect(() => {
-    if (!surface) return;
-    return surface.registerClear(tileId, (size, dpr) => {
-      if (!painted.current) return;
-      const gl = canvasRef.current?.getContext('webgl2');
-      if (!gl) return;
-      gl.disable(gl.SCISSOR_TEST);
-      gl.viewport(0, 0, Math.round(size.width * dpr), Math.round(size.height * dpr));
-      gl.clearColor(0, 0, 0, 0);
-      gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
-    });
-  }, [canvasRef, surface, tileId]);
-
+  const { attach, redraw } = useOverlayCanvas(surface, tileId, canvas);
   useWheelHandOff(input, target.ref);
-
-  useEffect(
-    () =>
-      surface?.registerPainter(tileId, (rect, frame) => {
-        const next: Placement = { rect, visible: frame.visible.get(tileId) ?? rect };
-        setPlacement((prev) => (samePlacement(prev, next) ? prev : next));
-        // After the surface commits the placement: the renderer reads its
-        // position from the last render, so a redraw landing first repaints the
-        // tile where it was — after this frame's clear, which leaves a ghost.
-        // The shared buffer was cleared if it resized this frame; this pane's
-        // own loop has no way to know that.
-        return () => sceneCanvas.current?.requestRedraw();
-      }),
-    [surface, tileId],
-  );
-
-  const view = placement ? cameraFor(target, placement) : null;
-  // A camera moving under a still tile (a scroll) gets no frame of its own.
-  const viewKey = view ? `${view.x},${view.y},${view.scale.x},${view.scale.y}` : '';
-  useLayoutEffect(() => {
-    if (viewKey) sceneCanvas.current?.requestRedraw();
-  }, [viewKey]);
+  const placement = useOverlayPlacement(surface, tileId, redraw);
+  const view = useOverlayView(target, placement, redraw);
 
   const container = surface?.getContainer() ?? null;
   if (!container || !placement || !view) return null;
@@ -305,8 +106,8 @@ export function AnnotationOverlay({
   const box = {
     ['--lk-anno-x' as string]: `${visible.x}px`,
     ['--lk-anno-y' as string]: `${visible.y}px`,
-    ['--lk-anno-w' as string]: `${visible.w}px`,
-    ['--lk-anno-h' as string]: `${visible.h}px`,
+    ['--lk-anno-w' as string]: `${visible.width}px`,
+    ['--lk-anno-h' as string]: `${visible.height}px`,
   } as CSSProperties;
 
   return createPortal(
@@ -318,7 +119,7 @@ export function AnnotationOverlay({
         // Pass-through while the rail holds a tool that makes no marks, so the
         // instrument under the overlay stays clickable.
         data-idle={annotationToolInfo(activeToolId) ? undefined : ''}
-        hidden={!inScope || !(visible.w > 0 && visible.h > 0)}
+        hidden={!inScope || !(visible.width > 0 && visible.height > 0)}
         role="application"
         aria-label={`Annotations on ${id}`}
         // biome-ignore lint/a11y/noNoninteractiveTabindex: role="application" IS the interactive case — a region with its own keymap. The rule's allowed-role list stops at the native widget roles and does not include it, and the gesture dispatcher listens on this element, so without focus no tool's keyboard binding ever fires.
@@ -330,11 +131,10 @@ export function AnnotationOverlay({
         <WeaselProvider isolate>
           <ToolBridge toolId={annotationToolInfo(activeToolId)?.weaselTool ?? 'select'} />
           <SceneCanvas<AnnotationData, 'marks', WorldRect>
-            features={FEATURES}
-            ref={attachSceneCanvas}
+            ref={attach}
             scene={scene}
-            width={visible.w}
-            height={visible.h}
+            width={visible.width}
+            height={visible.height}
             view={view}
             paintInto={{ canvas, x: visible.x, y: visible.y }}
             inputElement={input}

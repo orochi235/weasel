@@ -37,7 +37,7 @@ describe('icon set', () => {
     const { container: bare } = draw(<Icon name={icon('close')} />);
     expect(bare.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
 
-    const { container: named } = draw(<Icon name={icon('close')} label="Close trial" />);
+    const { container: named } = draw(<Icon name={icon('close')} aria-label="Close trial" />);
     const svg = named.querySelector('svg');
     expect(svg?.getAttribute('aria-hidden')).toBeNull();
     expect(svg?.getAttribute('aria-label')).toBe('Close trial');
@@ -179,7 +179,7 @@ describe('a marked glyph', () => {
 
 describe('the check glyph', () => {
   it('draws as one open stroke, in the State family', () => {
-    const { container } = draw(<Icon name={icon('check')} label="Handled" />);
+    const { container } = draw(<Icon name={icon('check')} aria-label="Handled" />);
     const svg = container.querySelector('svg');
     expect(svg?.getAttribute('aria-label')).toBe('Handled');
     expect(svg?.querySelector('path')?.getAttribute('d')).toBe(body('check').match(/d="([^"]+)"/)?.[1]);

@@ -9,12 +9,12 @@ import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it } from 'vitest';
 import { AnnotationsContext } from './AnnotationsContext';
 import { MarkList } from './MarkList';
-import { createAnnotationStore } from './store';
+import { createMarkStore } from './store';
 import type { AnnotationMeaning, AnnotationsApi, AnnotationTargetInfo } from './types';
 
 const TARGETS: AnnotationTargetInfo[] = [
-  { id: 'flat', content: { w: 200, h: 100 }, positionDependsOn: ['angle'] },
-  { id: 'shaded', content: { w: 200, h: 100 } },
+  { id: 'flat', content: { width: 200, height: 100 }, positionDependsOn: ['angle'] },
+  { id: 'shaded', content: { width: 200, height: 100 } },
 ];
 
 const MEANING: AnnotationMeaning = {
@@ -33,18 +33,21 @@ function mount(store: AnnotationsApi, meaning?: AnnotationMeaning, config: unkno
 }
 
 function seeded() {
-  const store = createAnnotationStore({ targets: () => TARGETS });
+  const store = createMarkStore({ targets: () => TARGETS });
   store.add(
     {
       target: 'flat',
       kind: 'rect',
-      frac: { x: 0.1, y: 0.1, w: 0.2, h: 0.2 },
+      frac: { x: 0.1, y: 0.1, width: 0.2, height: 0.2 },
       title: 'spurious ring',
       status: 'open',
     },
     { angle: 0 },
   );
-  store.add({ target: 'shaded', kind: 'line', frac: { x: 0.4, y: 0.4, w: 0.2, h: 0 } }, {});
+  store.add(
+    { target: 'shaded', kind: 'line', frac: { x: 0.4, y: 0.4, width: 0.2, height: 0 } },
+    {},
+  );
   return store;
 }
 
@@ -105,7 +108,7 @@ describe('<MarkList>', () => {
   });
 
   it('says so when there are none', () => {
-    mount(createAnnotationStore({ targets: () => TARGETS }), MEANING);
+    mount(createMarkStore({ targets: () => TARGETS }), MEANING);
     expect(screen.queryAllByRole('listitem')).toHaveLength(0);
     expect(screen.getByText(/no marks/i)).toBeTruthy();
   });

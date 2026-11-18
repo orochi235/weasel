@@ -4,7 +4,7 @@ import { createRef } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DiagramView, type DiagramViewApi, type DiagramViewProps } from './DiagramView';
 import { diagramScene } from './fromData';
-import type { ReorderChange } from './groupReorder';
+import type { ReorderChange } from './clusterReorder';
 import type { NodeMove } from './sceneSync';
 
 afterEach(() => { cleanup(); });

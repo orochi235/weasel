@@ -2,14 +2,14 @@ import { describe, it, expect, vi } from 'vitest';
 import { setStrokeOpacityAction } from './setStrokeOpacity';
 import type { NodeId, Op } from '@weasel-js/core';
 import type { Stroke } from '@weasel-js/paint';
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import { makeScene, makeCtx, ongoingInvoker } from './paintActionTestUtils';
 
 const getInvoker = () => ongoingInvoker(setStrokeOpacityAction);
 
 describe('setStrokeOpacityAction', () => {
   it('preserves the stroke, replaces its paint opacity on commit', () => {
-    const scene = makeScene({ a: { stroke: strokeOf('#aabbccff', 3) } });
+    const scene = makeScene({ a: { stroke: solidStroke('#aabbccff', 3) } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { alpha01: 0.5 } });
     const h = getInvoker().start(ctx, { params: { alpha01: 0.5 } });
     h.onEnd?.(ctx, 'commit');
@@ -19,7 +19,7 @@ describe('setStrokeOpacityAction', () => {
   });
 
   it('clamps alpha01 to [0, 1]', () => {
-    const scene = makeScene({ a: { stroke: strokeOf('#aabbccff', 3) } });
+    const scene = makeScene({ a: { stroke: solidStroke('#aabbccff', 3) } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { alpha01: 2 } });
     const h = getInvoker().start(ctx, { params: { alpha01: 2 } });
     h.onEnd?.(ctx, 'commit');
@@ -34,7 +34,7 @@ describe('setStrokeOpacityAction', () => {
   });
 
   it('previewData carries the updated alpha during onMove', () => {
-    const scene = makeScene({ a: { stroke: strokeOf('#aabbccff', 3) } });
+    const scene = makeScene({ a: { stroke: solidStroke('#aabbccff', 3) } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { alpha01: 1 } });
     const h = getInvoker().start(ctx, { params: { alpha01: 1 } });
     h.onMove?.({ ...ctx, params: { alpha01: 0.25 } });
@@ -43,7 +43,7 @@ describe('setStrokeOpacityAction', () => {
   });
 
   it('cancel does not write', () => {
-    const scene = makeScene({ a: { stroke: strokeOf('#aabbccff', 3) } });
+    const scene = makeScene({ a: { stroke: solidStroke('#aabbccff', 3) } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { alpha01: 0.5 } });
     const h = getInvoker().start(ctx, { params: { alpha01: 0.5 } });
     h.onEnd?.(ctx, 'cancel');
@@ -64,7 +64,7 @@ describe('setStrokeOpacityAction', () => {
   // -------------------------------------------------------------------------
 
   it('routes the commit through the consumer applyOps hook once with setData ops + "Set stroke opacity" label', () => {
-    const scene = makeScene({ a: { stroke: strokeOf('#aabbccff', 3) }, b: { stroke: strokeOf('#11223344', 3) } });
+    const scene = makeScene({ a: { stroke: solidStroke('#aabbccff', 3) }, b: { stroke: solidStroke('#11223344', 3) } });
     const applyOps = vi.fn<(ops: Op[], label: string) => void>();
     const ctx = makeCtx({ selectionIds: ['a', 'b'], scene, params: { alpha01: 1 }, applyOps });
     const h = getInvoker().start(ctx, { params: { alpha01: 1 } });
@@ -85,7 +85,7 @@ describe('setStrokeOpacityAction', () => {
     expect(args0.id).toBe('a');
     expect(args1.id).toBe('b');
     // `from` is the pre-commit data; `to` carries the opacity-replaced stroke.
-    expect(args0.from.stroke).toEqual(strokeOf('#aabbccff', 3));
+    expect(args0.from.stroke).toEqual(solidStroke('#aabbccff', 3));
     expect((args0.to as { stroke: Stroke }).stroke)
       .toEqual({ paint: { color: '#aabbcc', opacity: 0.5 }, width: 3 });
     expect(args1.from.stroke).toEqual({ paint: solid('#11223344'), width: 3 });
@@ -94,7 +94,7 @@ describe('setStrokeOpacityAction', () => {
   });
 
   it('with no applyOps, falls back to one scene.applyBatch labeled "Set stroke opacity"', () => {
-    const scene = makeScene({ a: { stroke: strokeOf('#aabbccff', 3) } });
+    const scene = makeScene({ a: { stroke: solidStroke('#aabbccff', 3) } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { alpha01: 0.5 } });
     const h = getInvoker().start(ctx, { params: { alpha01: 0.5 } });
     h.onEnd?.(ctx, 'commit');

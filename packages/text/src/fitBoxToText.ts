@@ -1,0 +1,49 @@
+/**
+ * Resize a text node's pose to fit its content.
+ *
+ *   - `axis: 'height'` (default): keep `pose.width`, recompute `height` as
+ *     the block height plus optional vertical padding — wrapped at the width
+ *     inside the horizontal padding when the style declares `wrap`.
+ *   - `axis: 'both'`: ignore wrapping; recompute both `width` (longest
+ *     `\n`-split line) and `height` (line count × line height) plus padding.
+ *
+ * `pose.x` / `pose.y` are preserved; for a different growth direction, adjust
+ * `x` / `y` after calling.
+ */
+
+import { layoutTextPose } from './layout/textPoseLayout';
+import type { TextPose } from './pose';
+
+/** Options for `fitBoxToText`. */
+export interface FitBoxToTextOptions {
+  /** Which axis (or axes) to recompute. Default: `'height'`. */
+  axis?: 'height' | 'both';
+  /** Padding (world units) added to all four sides. Default 0. */
+  padding?: number | { x?: number; y?: number };
+}
+
+/** Recompute a `TextPose`'s `width`/`height` to fit its content; pure helper, doesn't mutate scene state. */
+export function fitBoxToText(
+  pose: TextPose,
+  opts: FitBoxToTextOptions = {},
+): TextPose {
+  const axis = opts.axis ?? 'height';
+  const { padX, padY } = resolvePadding(opts.padding);
+  // The box follows the text at its own size; a fit would size the text to the box it is sizing.
+  const own: TextPose = { ...pose, fit: undefined };
+  const { bounds } = layoutTextPose(axis === 'height'
+    ? { ...own, width: pose.width - padX * 2 }
+    : { ...own, style: { ...pose.style, wrap: false } }).laid;
+  if (axis === 'height') return { ...pose, height: bounds.height + padY * 2 };
+  return {
+    ...pose,
+    width: bounds.width + padX * 2,
+    height: bounds.height + padY * 2,
+  };
+}
+
+function resolvePadding(p: FitBoxToTextOptions['padding']): { padX: number; padY: number } {
+  if (p == null) return { padX: 0, padY: 0 };
+  if (typeof p === 'number') return { padX: p, padY: p };
+  return { padX: p.x ?? 0, padY: p.y ?? 0 };
+}

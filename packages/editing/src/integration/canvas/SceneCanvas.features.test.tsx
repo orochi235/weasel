@@ -12,7 +12,7 @@ import { createScene } from '@weasel-js/core/engine';
 import { polygonFromPoints } from '@weasel-js/geom';
 import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import type { Action, SelectionApi } from '@weasel-js/routing';
-import { KIT_STANDARD_ACTION_IDS, insertPreset, drawPreset, editPreset, movePreset, outlinePreset, pickPreset, resizePreset, rotatePreset, selectPreset, transformPreset, shapeToolKitPreset } from '@weasel-js/editing';
+import { KIT_STANDARD_ACTION_IDS, insertPreset, drawPreset, editPreset, movePreset, outlinePreset, pickPreset, resizePreset, rotatePreset, selectPreset, transformPreset, shapeToolsOfferedPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -274,7 +274,7 @@ describe('<SceneCanvas features>', () => {
     const missing = KIT_STANDARD_ACTION_IDS.filter((i) => !seen.actionIds.includes(i));
     // The actions that belong to insert tools stay out, and so does
     // the paste `edit` binds, because `ingest` answers the same event.
-    expect(missing.sort()).toEqual(['clipboard.pasteEvent', 'insert', 'insert.adjustRotation', 'insert.reposition', 'place']);
+    expect(missing.sort()).toEqual(['clipboard.pasteEvent', 'insert', 'insert.reposition', 'insert.rotate', 'place']);
   });
 
   it("'edit' without 'ingest' registers the paste-event action in its place", () => {
@@ -284,12 +284,12 @@ describe('<SceneCanvas features>', () => {
   });
 
   it('registers the kit actions a registered tool binds', () => {
-    const { seen } = mount({ features: [shapeToolKitPreset], defaultTools: ['rect'] });
+    const { seen } = mount({ features: [shapeToolsOfferedPreset], defaultTools: ['rect'] });
     expect(seen.actionIds).toContain('insert');
   });
 
   it('defaultActiveTool overrides the select default', () => {
-    const { tools } = mount({ features: [pickPreset, shapeToolKitPreset], defaultTools: ['rect'], defaultActiveTool: 'rect' });
+    const { tools } = mount({ features: [pickPreset, shapeToolsOfferedPreset], defaultTools: ['rect'], defaultActiveTool: 'rect' });
     expect(tools().active).toBe('rect');
   });
 
@@ -297,7 +297,7 @@ describe('<SceneCanvas features>', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { tools, seen } = mount({ viewport: { pan: true } });
     expect(Object.keys(tools().registry)).toEqual([]);
-    for (const id of ['viewport.wheelPan', 'viewport.zoom', 'viewport.pinchZoom', 'viewport.dragPan']) expect(seen.actionIds).not.toContain(id);
+    for (const id of ['viewport.wheelPan', 'viewport.zoom', 'viewport.touchZoom', 'viewport.dragPan']) expect(seen.actionIds).not.toContain(id);
     expect(warn).toHaveBeenCalledWith(expect.stringMatching(/`viewport` configures viewPreset/));
     warn.mockRestore();
   });

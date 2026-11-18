@@ -1,29 +1,29 @@
 import { describe, expect, it } from 'vitest';
 import {
+  configValueAt,
   fillConfigDefaults,
   hasConfigPath,
-  schemaNodeAtPath,
-  valueAtPath,
-  withValueAtPath,
+  schemaNodeAt,
+  withConfigValueAt,
 } from './path';
 
-describe('valueAtPath', () => {
+describe('configValueAt', () => {
   it('reads a single segment', () => {
-    expect(valueAtPath({ a: 1 }, 'a')).toBe(1);
+    expect(configValueAt({ a: 1 }, 'a')).toBe(1);
   });
 
   it('reads down a nested path', () => {
-    expect(valueAtPath({ grid: { size: 20 } }, 'grid.size')).toBe(20);
+    expect(configValueAt({ grid: { size: 20 } }, 'grid.size')).toBe(20);
   });
 
   it('returns undefined for a missing segment', () => {
-    expect(valueAtPath({ grid: {} }, 'grid.size')).toBeUndefined();
-    expect(valueAtPath({}, 'grid.size')).toBeUndefined();
+    expect(configValueAt({ grid: {} }, 'grid.size')).toBeUndefined();
+    expect(configValueAt({}, 'grid.size')).toBeUndefined();
   });
 
   it('returns undefined when the walk hits a non-object', () => {
-    expect(valueAtPath({ grid: 3 }, 'grid.size')).toBeUndefined();
-    expect(valueAtPath(null, 'a')).toBeUndefined();
+    expect(configValueAt({ grid: 3 }, 'grid.size')).toBeUndefined();
+    expect(configValueAt(null, 'a')).toBeUndefined();
   });
 });
 
@@ -40,17 +40,17 @@ describe('hasConfigPath', () => {
   });
 });
 
-describe('withValueAtPath', () => {
+describe('withConfigValueAt', () => {
   it('writes a single segment without touching the input', () => {
     const before = { a: 1, b: 2 };
-    const after = withValueAtPath(before, 'a', 99);
+    const after = withConfigValueAt(before, 'a', 99);
     expect(after).toEqual({ a: 99, b: 2 });
     expect(before).toEqual({ a: 1, b: 2 });
   });
 
   it('copies every object on the way down', () => {
     const before = { grid: { size: 20, color: '#fff' }, other: { keep: true } };
-    const after = withValueAtPath(before, 'grid.size', 40);
+    const after = withConfigValueAt(before, 'grid.size', 40);
     expect(after.grid).toEqual({ size: 40, color: '#fff' });
     expect(before.grid.size).toBe(20);
     expect(after.grid).not.toBe(before.grid);
@@ -59,13 +59,13 @@ describe('withValueAtPath', () => {
   });
 
   it('creates a missing intermediate branch', () => {
-    expect(withValueAtPath({} as Record<string, unknown>, 'grid.size', 40)).toEqual({
+    expect(withConfigValueAt({} as Record<string, unknown>, 'grid.size', 40)).toEqual({
       grid: { size: 40 },
     });
   });
 
   it('replaces a non-object standing where a branch belongs', () => {
-    expect(withValueAtPath({ grid: 3 } as Record<string, unknown>, 'grid.size', 40)).toEqual({
+    expect(withConfigValueAt({ grid: 3 } as Record<string, unknown>, 'grid.size', 40)).toEqual({
       grid: { size: 40 },
     });
   });
@@ -116,14 +116,14 @@ describe('fillConfigDefaults', () => {
 
 describe('keys every object inherits', () => {
   it('reads a missing `constructor` or `toString` as absent, not as what Object.prototype holds', () => {
-    expect(valueAtPath({}, 'constructor')).toBeUndefined();
-    expect(valueAtPath({ grid: {} }, 'grid.toString')).toBeUndefined();
+    expect(configValueAt({}, 'constructor')).toBeUndefined();
+    expect(configValueAt({ grid: {} }, 'grid.toString')).toBeUndefined();
     expect(hasConfigPath({}, 'constructor')).toBe(false);
     expect(hasConfigPath({ grid: {} }, 'grid.valueOf')).toBe(false);
   });
 
   it('finds no schema node at a key the children only inherit', () => {
-    expect(schemaNodeAtPath({ name: 'G', children: {} }, 'constructor')).toBeUndefined();
+    expect(schemaNodeAt({ name: 'G', children: {} }, 'constructor')).toBeUndefined();
   });
 
   it('fills a `constructor` leaf from its default', () => {
@@ -134,7 +134,7 @@ describe('keys every object inherits', () => {
   });
 
   it('writes under a `constructor` branch the config does not hold', () => {
-    expect(withValueAtPath({} as Record<string, unknown>, 'constructor.size', 4)).toEqual({
+    expect(withConfigValueAt({} as Record<string, unknown>, 'constructor.size', 4)).toEqual({
       constructor: { size: 4 },
     });
   });

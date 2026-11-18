@@ -7,8 +7,8 @@ import { describe, expect, it } from 'vitest';
 import { IDENTITY_POSE_COMPOSITION, createScene, type ImmediateInvoker, type InvocationCtx, type NodeId, type OngoingInvoker } from '@weasel-js/core';
 import { add, type Vec3 } from '@weasel-js/geom/3d';
 import { createCamera } from '../camera';
-import { createPoseDescriptor, createSnap } from '../deps';
-import { createInsert, type Footprint } from '../insert';
+import { createPoseDescriptor, createSnap3dDep } from '../deps';
+import { createInsert3dDep, type Footprint } from '../insert';
 import { aabbOfPose, pose3, type Pose3 } from '../pose3';
 import { projectPoint, type Viewport3d } from '../project';
 import type { Scene3d, World3d } from '../world';
@@ -40,7 +40,7 @@ function moveBy(world: W, id: NodeId, by: Vec3): void {
     operands: { get: () => [id], set: () => {} },
     scene: world.scene,
     poseDescriptor: createPoseDescriptor(world),
-    snap: createSnap(world, { sources: [groundGridSource({ world, step: 0.5 })] }),
+    snap: createSnap3dDep(world, { sources: [groundGridSource({ world, step: 0.5 })] }),
   };
   const base = { world: press, screen: press, modifiers: KEYS, deps };
   const drag = { start: press, current: to, delta: { x: to.x - press.x, y: to.y - press.y } };
@@ -77,8 +77,8 @@ describe('a 3D insert snapped to the ground grid', () => {
     const vp = { ...world.viewport(), ...(up ? { up } : {}) };
     let minted: Footprint | null = null;
     const deps = {
-      insert: createInsert({ world, mint: (f) => ((minted = f), 'n' as NodeId) }),
-      snap: createSnap(world, { sources: [groundGridSource({ world, step: 0.5 })] }),
+      insert: createInsert3dDep({ world, mint: (f) => ((minted = f), 'n' as NodeId) }),
+      snap: createSnap3dDep(world, { sources: [groundGridSource({ world, step: 0.5 })] }),
     };
     const ctx = (p: Vec3): InvocationCtx => {
       const s = projectPoint(p, vp)!;
@@ -109,8 +109,8 @@ describe('a 3D insert snapped to the ground grid', () => {
     const vp = { ...world.viewport(), up: Z_UP };
     let minted: Footprint | null = null;
     const deps = {
-      insert: createInsert({ world, mint: (f) => ((minted = f), 'n' as NodeId) }),
-      snap: createSnap(world, { sources: [groundGridSource({ world, step: 0.5 })] }),
+      insert: createInsert3dDep({ world, mint: (f) => ((minted = f), 'n' as NodeId) }),
+      snap: createSnap3dDep(world, { sources: [groundGridSource({ world, step: 0.5 })] }),
     };
     const click = projectPoint({ x: 1.53, y: -0.48, z: 0 }, vp)!;
     (placeAction.invoker as ImmediateInvoker).run(deps as never, {

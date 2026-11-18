@@ -1,4 +1,4 @@
-import { createTransformOp } from 'core/ops/transform';
+import { createSetPoseOp } from 'core/ops/setPose';
 import type { Op } from 'core/ops/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
@@ -110,7 +110,7 @@ export function coastByWrite<TPose>(a: CoastArgs<TPose>): void {
       const fp = finalPositions.get(id) ?? { x: o.x + lastValue.x, y: o.y + lastValue.y };
       const finalPose = translatePoseViaDescriptor(start, fp.x - o.x, fp.y - o.y, d);
       const from = ctx.origin.get(id) ?? start;
-      ops.push(createTransformOp<TPose>({ id, from, to: finalPose, label: 'flick' }));
+      ops.push(createSetPoseOp<TPose>({ id, from, to: finalPose, label: 'flick' }));
     }
     // The document first, so the preview never gives way to the pre-drag pose.
     if (ops.length > 0) {

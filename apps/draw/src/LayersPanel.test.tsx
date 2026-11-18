@@ -1,11 +1,11 @@
 import { describe, expect, it, beforeAll, beforeEach } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 import { solid } from '@weasel-js/paint';
-import { asNodeId, createScene, rectPath } from '@weasel-js/core';
+import { asNodeId, createScene, rectPath, sampleGradientStops } from '@weasel-js/core';
 import { createMeasurements, measureNode } from '@weasel-js/measure';
 import { ANNOTATION_LAYER, DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { useState } from 'react';
-import { LayersContent, layerSwatch } from './LayersPanel';
+import { LayersContent, layerSwatch, paintChipColor } from './LayersPanel';
 import { drawPrefs } from './prefs';
 import { renderWithIcons } from './testIcons';
 import { useSelection } from '@weasel-js/editing';
@@ -37,7 +37,7 @@ function makeScene() {
 }
 
 function Host({ scene }: { scene: ReturnType<typeof makeScene> }) {
-  const selection = useSelection({ mode: 'multi', scene });
+  const selection = useSelection({ mode: 'multiple', scene });
   const measurements = useState(() => createMeasurements({ layer: ANNOTATION_LAYER }))[0];
   return (
     <LayersContent
@@ -134,6 +134,22 @@ describe('LayersPanel — one row at a time', () => {
   });
 });
 
+describe('LayersPanel — row names', () => {
+  beforeEach(() => {
+    drawPrefs().reset();
+    window.localStorage.clear();
+  });
+
+  it('names a node whose text or label is blank by its id, not by the blank', () => {
+    const scene = makeScene();
+    scene.add({ id: asNodeId('note-1'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { text: '' } });
+    scene.add({ id: asNodeId('note-2'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { text: ' \n', label: '' } });
+    renderWithIcons(<Host scene={scene} />);
+    expect(screen.getByText('note-1')).toBeTruthy();
+    expect(screen.getByText('note-2')).toBeTruthy();
+  });
+});
+
 describe('LayersPanel — path-effect rows', () => {
   beforeEach(() => {
     drawPrefs().reset();
@@ -162,5 +178,18 @@ describe('layerSwatch', () => {
     expect(layerSwatch({ text: 'hi' } as WeaselDrawData)).toBeUndefined();
     expect(layerSwatch({ path: rectPath(0, 0, 1, 1), fill: {} } as WeaselDrawData)).toBeUndefined();
     expect(layerSwatch({ text: 'hi', fill: { paint: solid('#123456') } } as WeaselDrawData)).toBe('#123456');
+  });
+
+  it('samples a gradient in its own blend space, as the canvas draws it', () => {
+    const stops = [{ offset: 0, color: '#0000ff' }, { offset: 1, color: '#ffff00' }];
+    const ramp = (interpolate?: 'oklch') => ({
+      kind: 'linear-gradient' as const, from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops, ...(interpolate ? { interpolate } : {}),
+    });
+    expect(paintChipColor(ramp('oklch'))).toBe(sampleGradientStops(stops, 0.5, 'oklch'));
+    expect(paintChipColor(ramp('oklch'))).not.toBe(paintChipColor(ramp()));
+  });
+
+  it('fades the chip by the paint\'s opacity', () => {
+    expect(paintChipColor({ ...solid('#123456'), opacity: 0.5 })).toBe('color-mix(in srgb, #123456 50%, transparent)');
   });
 });

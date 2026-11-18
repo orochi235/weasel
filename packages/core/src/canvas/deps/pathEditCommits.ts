@@ -5,7 +5,7 @@
  */
 import type { PointOrigin, PolygonPath } from '@weasel-js/geom';
 import type { Op } from 'core/ops/types';
-import { createTransformOp } from 'core/ops/transform';
+import { createSetPoseOp } from 'core/ops/setPose';
 import { createSetDataOp } from 'core/ops/setData';
 import { createDeleteOp } from 'core/ops/delete';
 import { writtenBy } from 'core/ops/writtenBy';
@@ -108,7 +108,7 @@ export function reshapeOps(
   if (frame?.inverts === false) return [];
   const next = storeEditablePath(shownIn(frame, node), worldPath, extensions);
   if (!next) return [];
-  const reshape = createTransformOp({ id, from: node.pose, to: frame ? frame.local(next.pose) : next.pose, label });
+  const reshape = createSetPoseOp({ id, from: node.pose, to: frame ? frame.local(next.pose) : next.pose, label });
   // A path edited by hand is no longer what its generator or warp makes: it becomes plain geometry.
   // Its skin and constraints stay, renumbered by the caller's patch where it has one, and the
   // form it was drawn from as storing it left it.

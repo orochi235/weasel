@@ -11,11 +11,11 @@ import {
 } from './frac';
 import type { FracRect } from './types';
 
-const CONTENT = { w: 256, h: 170 };
+const CONTENT = { width: 256, height: 170 };
 
 describe('fraction ↔ world', () => {
   it('scales a fraction onto the content box', () => {
-    expect(fracToWorld({ x: 0.25, y: 0.5, w: 0.5, h: 0.25 }, CONTENT)).toEqual({
+    expect(fracToWorld({ x: 0.25, y: 0.5, width: 0.5, height: 0.25 }, CONTENT)).toEqual({
       x: 64,
       y: 85,
       width: 128,
@@ -24,7 +24,7 @@ describe('fraction ↔ world', () => {
   });
 
   it('round-trips', () => {
-    const f: FracRect = { x: 0.3322, y: 0.3581, w: 0.02, h: 0.0861 };
+    const f: FracRect = { x: 0.3322, y: 0.3581, width: 0.02, height: 0.0861 };
     expect(roundFrac(worldToFrac(fracToWorld(f, CONTENT), CONTENT))).toEqual(f);
   });
 
@@ -32,23 +32,23 @@ describe('fraction ↔ world', () => {
     // A pane measured before layout is 0×0. NaN here would propagate silently
     // through every later comparison — a stale mark would neither hit-test nor
     // report itself as broken.
-    const got = worldToFrac({ x: 10, y: 10, width: 5, height: 5 }, { w: 0, h: 0 });
-    expect(got).toEqual({ x: 0, y: 0, w: 0, h: 0 });
+    const got = worldToFrac({ x: 10, y: 10, width: 5, height: 5 }, { width: 0, height: 0 });
+    expect(got).toEqual({ x: 0, y: 0, width: 0, height: 0 });
     for (const v of Object.values(got)) expect(Number.isFinite(v)).toBe(true);
   });
 
   it('rounds to 4dp, so a stored diff shows meaning and not float noise', () => {
-    expect(roundFrac({ x: 0.333333333, y: 0.1, w: 0.66666666, h: 0.2 })).toEqual({
+    expect(roundFrac({ x: 0.333333333, y: 0.1, width: 0.66666666, height: 0.2 })).toEqual({
       x: 0.3333,
       y: 0.1,
-      w: 0.6667,
-      h: 0.2,
+      width: 0.6667,
+      height: 0.2,
     });
   });
 });
 
 describe('fraction hit geometry', () => {
-  const box: FracRect = { x: 0.2, y: 0.2, w: 0.4, h: 0.4 };
+  const box: FracRect = { x: 0.2, y: 0.2, width: 0.4, height: 0.4 };
 
   it('contains a point inside and rejects one outside', () => {
     expect(fracContains(box, { x: 0.3, y: 0.3 })).toBe(true);
@@ -61,16 +61,16 @@ describe('fraction hit geometry', () => {
   });
 
   it('reaches a zero-size box through the tolerance alone', () => {
-    const dot: FracRect = { x: 0.25, y: 0.5, w: 0, h: 0 };
+    const dot: FracRect = { x: 0.25, y: 0.5, width: 0, height: 0 };
     expect(fracContains(dot, { x: 0.25, y: 0.5 })).toBe(true);
     expect(fracContains(dot, { x: 0.26, y: 0.51 })).toBe(false);
     expect(fracContains(dot, { x: 0.26, y: 0.51 }, 0.02)).toBe(true);
   });
 
   it('encloses only a box that lies wholly inside', () => {
-    expect(fracEncloses({ x: 0, y: 0, w: 1, h: 1 }, box)).toBe(true);
+    expect(fracEncloses({ x: 0, y: 0, width: 1, height: 1 }, box)).toBe(true);
     // Overlapping is not containing: a marquee takes what it encloses.
-    expect(fracEncloses({ x: 0.4, y: 0.4, w: 0.4, h: 0.4 }, box)).toBe(false);
+    expect(fracEncloses({ x: 0.4, y: 0.4, width: 0.4, height: 0.4 }, box)).toBe(false);
   });
 });
 

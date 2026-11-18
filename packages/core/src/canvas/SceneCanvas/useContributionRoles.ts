@@ -94,7 +94,7 @@ const NO_SURFACE: readonly SurfaceContribution[] = [];
 
 /**
  * `surface` is the canvas's own entries installed beside a takeover, which the
- * takeover's `ToolsApi` does not hold: their deps, `watch`, `attach`, frame
+ * takeover's `ToolsApi` does not hold: their deps, `watch`, `attach`, menus, frame
  * hooks and overlay install here, the overlay as a registered layer since no
  * tool set lists it. Their actions are the canvas's standard actions, so they
  * are not registered again.
@@ -132,11 +132,11 @@ export function useContributionRoles(
     for (const [id, entry] of Object.entries(toolRegistry)) {
       for (const def of (entry as SurfaceContribution).menus ?? []) releases.push(menuHost.define(def, id));
     }
-    for (const entry of ambient) {
+    for (const entry of [...ambient, ...surface]) {
       for (const def of (entry as SurfaceContribution).menus ?? []) releases.push(menuHost.define(def, null));
     }
     return () => { for (const r of releases) r(); };
-  }, [menuHost, toolRegistry, ambient]);
+  }, [menuHost, toolRegistry, ambient, surface]);
 
   const entries = [...contributionEntries(tools), ...surface];
   // Development only for a warning; a strict surface asked to be stopped, so

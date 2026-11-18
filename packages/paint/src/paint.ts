@@ -382,7 +382,7 @@ export function strokeDashStyleOf(
 export interface Region {
   x: number;
   y: number;
-  w: number;
-  h: number;
+  width: number;
+  height: number;
   shape: 'rectangle' | 'circle';
 }

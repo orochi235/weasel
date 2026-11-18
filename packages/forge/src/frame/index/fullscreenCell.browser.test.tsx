@@ -7,7 +7,7 @@ import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { meta, story } from '@weasel-js/forge';
 import { IndexPage, loadNativeModule, type IndexEnv } from '@weasel-js/forge/testing/frame';
-import type { Layout } from '../../protocol/messages';
+import type { StoryLayout } from '../../protocol/messages';
 
 // A cell's height is layout, which jsdom does not compute.
 
@@ -16,7 +16,7 @@ afterEach(cleanup);
 const TRIAL_HEIGHT = 600;
 
 /** An index page of one story, in a trial host as the workshop gives it. */
-async function indexOf(layout: Layout, body: () => ReactNode) {
+async function indexOf(layout: StoryLayout, body: () => ReactNode) {
   await page.viewport(1200, 900);
   const stories = loadNativeModule({ default: meta({ title: 'ui/Fit' }), Only: story({ layout, render: body }) }, 'ui/Fit');
   const env: IndexEnv = { title: 'ui/Fit', stories, descriptions: {}, globals: {}, decorators: [], open: () => {}, onError: () => {} };

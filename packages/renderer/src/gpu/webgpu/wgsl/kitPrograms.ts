@@ -1,4 +1,5 @@
 import { BATCH_BUILDS, BATCH_FILL_LOCATIONS, batchFillWgsl, type BatchBuild } from './batchFill';
+import { GLYPH_LAYER_WGSL_LOCATIONS, glyphLayerWgsl } from './glyphLayer';
 import { COMPOSITE_LOCATIONS, COMPOSITE_WGSL } from './composite';
 import { assembleEffectWgsl } from './effectPrelude';
 import { BLUR_EFFECT_WGSL, VIGNETTE_EFFECT_WGSL } from './effects';
@@ -52,5 +53,12 @@ export function batchFillProgram(build: BatchBuild): KitWgslProgram {
     BATCH_FILL_LOCATIONS);
 }
 
-/** Every module above and every batch build, for a test over them all. */
-export const KIT_WGSL_PROGRAMS: readonly KitWgslProgram[] = [...Object.values(KIT_WGSL), ...BATCH_BUILDS.map(batchFillProgram)];
+/** The text layer's program, the point build or the area build. */
+export function glyphLayerProgram(area: boolean): KitWgslProgram {
+  return kit(`glyphLayer(area=${area})`, glyphLayerWgsl(area), GLYPH_LAYER_WGSL_LOCATIONS);
+}
+
+/** Every module above, every batch build, and both text layer builds, for a test over them all. */
+export const KIT_WGSL_PROGRAMS: readonly KitWgslProgram[] = [
+  ...Object.values(KIT_WGSL), ...BATCH_BUILDS.map(batchFillProgram), glyphLayerProgram(false), glyphLayerProgram(true),
+];

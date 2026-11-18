@@ -1,6 +1,6 @@
 import type { SceneNode as Node, NodeId, Op } from '@weasel-js/core';
-import { createInsertOp, groupingSite, pageOfNode, translatePoseViaDescriptor, unionBounds, poseDescriptorOf, visualBoundsViaDescriptor, createTransformOp, scenePoseFrame, commitOps } from '@weasel-js/core/engine';
-import { createReparentOp, createDeleteOp, createSetDependsOnOp, selectedRoots, followerOpsFor, finiteThroughout, requiresContent, selectedContent, inPaintOrder, slotAbove } from '@weasel-js/core';
+import { createInsertOp, groupingSite, pageIdOf, translatePoseViaDescriptor, unionBounds, poseDescriptorOf, visualBoundsViaDescriptor, createSetPoseOp, scenePoseFrame, commitOps } from '@weasel-js/core/engine';
+import { createReparentOp, createDeleteOp, createSetDependsOnOp, rootsAmong, followerOpsFor, finiteThroughout, requiresContent, operandContent, inPaintOrder, slotAbove } from '@weasel-js/core';
 import { ActionDisabledReason, type Action, type ActionDeps, BETWEEN_GESTURES } from '@weasel-js/routing';
 import { icon } from '../../icons.gen';
 import type { AnyScene } from '@weasel-js/core/engine';
@@ -11,7 +11,7 @@ import type { AnyScene } from '@weasel-js/core/engine';
 function groupPlan(deps: ActionDeps) {
   const scene = deps.scene;
   if (!deps.operands || !scene) return null;
-  const ids = selectedRoots(scene, deps.operands.get() as readonly string[]);
+  const ids = rootsAmong(scene, deps.operands.get() as readonly string[]);
   const nodes = inPaintOrder(scene, ids
     .map((id) => scene.get(id as NodeId))
     .filter((n): n is NonNullable<typeof n> => n !== undefined));
@@ -43,7 +43,7 @@ function groupPlan(deps: ActionDeps) {
     if (local === null) return null;
     locals.set(id, local);
   }
-  const page = parent === null ? null : pageOfNode(scene, parent);
+  const page = parent === null ? null : pageIdOf(scene, parent);
   const followers = followerOpsFor(scene, new Map(nodes.map((n) => [n.id as string, page])), 'Group');
   if (followers === null) return null;
   return { scene, nodes, locals, parent, pose, followers };
@@ -102,7 +102,7 @@ export const groupAction: Action & { requires: string[] } = {
           toIndex: i,
           label: 'Group',
         }));
-        ops.push(createTransformOp<unknown>({ id: node.id as string, from: node.pose, to: locals.get(node.id), label: 'Group' }));
+        ops.push(createSetPoseOp<unknown>({ id: node.id as string, from: node.pose, to: locals.get(node.id), label: 'Group' }));
       });
       ops.push(...followers);
 
@@ -191,7 +191,7 @@ function ungroupOps(scene: AnyScene, plan: UngroupPlan): Op[] | null {
         toSlot: { index, before: containerId as string },
         label: 'Ungroup',
       }));
-      moves.push(createTransformOp<unknown>({
+      moves.push(createSetPoseOp<unknown>({
         id: childId as string,
         from: scene.get(childId)!.pose,
         to,
@@ -228,14 +228,14 @@ export const ungroupAction: Action & { requires: string[] } = {
     run: (deps) => {
       const scene = deps.scene;
       if (!deps.operands || !scene) return;
-      const plan = ungroupPlan(scene, selectedContent(deps));
+      const plan = ungroupPlan(scene, operandContent(deps));
       if (!plan || plan.locked) return;
       const ops = ungroupOps(scene, plan);
       if (ops !== null) commitOps(deps, ops, 'Ungroup', { select: plan.freed });
     },
   },
   enabled: (deps) => {
-    const plan = ungroupPlan(deps?.scene, selectedContent(deps));
+    const plan = ungroupPlan(deps?.scene, operandContent(deps));
     if (!plan) return ActionDisabledReason.NotApplicable;
     if (plan.locked) return ActionDisabledReason.Locked;
     return ungroupOps(deps!.scene!, plan) === null ? ActionDisabledReason.NotApplicable : true;

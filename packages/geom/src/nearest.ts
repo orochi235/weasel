@@ -15,7 +15,7 @@ export interface CurveNearest {
   /** Curve parameter of the point, in [0, 1]. */
   t: number;
   /** Euclidean distance from the probe. */
-  dist: number;
+  distance: number;
 }
 
 /** The point on a path nearest a probe, and the command whose segment holds it. */
@@ -26,14 +26,14 @@ export interface PathNearest extends CurveNearest {
   coordIndex: number;
 }
 
-/** Nearest point on segment (x0,y0)-(x1,y1) to (px,py). */
-export function nearestOnLine(
+/** Nearest point on the segment (x0,y0)-(x1,y1), clamped to its ends, to (px,py). */
+export function nearestOnSegment(
   px: number, py: number, x0: number, y0: number, x1: number, y1: number,
 ): CurveNearest {
   const t = segmentT(px, py, x0, y0, x1, y1);
   const x = t === 1 ? x1 : lerp(x0, x1, t);
   const y = t === 1 ? y1 : lerp(y0, y1, t);
-  return { x, y, t, dist: lengthOf(px - x, py - y) };
+  return { x, y, t, distance: lengthOf(px - x, py - y) };
 }
 
 /** Coarse samples per cubic. Each local minimum among them is refined, so this
@@ -118,7 +118,7 @@ export function nearestOnCubic(
   }
 
   const [x, y] = cubicEvalAt(x0, y0, x1, y1, x2, y2, x3, y3, bestT);
-  return { x, y, t: bestT, dist: Math.hypot(x - px, y - py) };
+  return { x, y, t: bestT, distance: Math.hypot(x - px, y - py) };
 }
 
 /** Nearest point on the quadratic (x0,y0)(x1,y1)(x2,y2) to (px,py). */
@@ -151,7 +151,7 @@ export function nearestOnPath(
       startX = coords[ci]; startY = coords[ci + 1];
       return;
     } else if (cmd === PATH_L) {
-      hit = nearestOnLine(px, py, x0, y0, coords[ci], coords[ci + 1]);
+      hit = nearestOnSegment(px, py, x0, y0, coords[ci], coords[ci + 1]);
     } else if (cmd === PATH_Q) {
       hit = nearestOnQuadratic(px, py, x0, y0, coords[ci], coords[ci + 1], coords[ci + 2], coords[ci + 3]);
     } else if (cmd === PATH_C) {
@@ -160,11 +160,11 @@ export function nearestOnPath(
         coords[ci], coords[ci + 1], coords[ci + 2], coords[ci + 3], coords[ci + 4], coords[ci + 5],
       );
     } else if (cmd === PATH_Z) {
-      hit = nearestOnLine(px, py, x0, y0, startX, startY);
+      hit = nearestOnSegment(px, py, x0, y0, startX, startY);
     } else {
       throw new Error(`nearestOnPath: unknown command code ${cmd}`);
     }
-    if (best === null || hit.dist < best.dist) best = { ...hit, commandIndex, coordIndex: ci };
+    if (best === null || hit.distance < best.distance) best = { ...hit, commandIndex, coordIndex: ci };
   });
   return best;
 }

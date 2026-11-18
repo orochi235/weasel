@@ -5,8 +5,8 @@ import {
   openPathEnds, pathDistanceToPoint, pathEndAnchorIndex, pathToAnchors,
   type AnchorSet, type ReachToMeetOptions, type OpenPathEnd, type PenAnchor, type PointOrigin, type PolygonPath,
 } from '@weasel-js/geom';
-import { pref } from '@weasel-js/prefs';
-import { PATH_GROUP, commitOps, type Op, type PathNode, reshapeOps, selectedPathNodes, pathOperationTags } from '@weasel-js/core';
+import { pref } from '@weasel-js/prefs-schema';
+import { PATH_GROUP, commitOps, type Op, type PathNode, reshapeOps, operandPathNodes, pathOperationTags } from '@weasel-js/core';
 import {
   pressOf, scenePathNodes, strokeReachPref, strokesBesides, type StrokePress, type StrokePressParams,
 } from '../shared/scenePaths';
@@ -32,7 +32,7 @@ export const REACH_TO_MEET_PARAMS = pref.group(REACH_LABEL, {
   ], { description: 'Ease a curved end out of its bend, or carry it straight on along its tangent.', control: 'radio' }),
   easeTurn: pref.number('Ease turn', 30 * DEG_TO_RAD, {
     description: 'How far an eased end keeps turning before it runs straight.',
-    min: 5 * DEG_TO_RAD, max: 90 * DEG_TO_RAD, step: DEG_TO_RAD, control: 'slider', unit: { scale: DEG_TO_RAD, suffix: '°', precision: 0 },
+    min: 5 * DEG_TO_RAD, max: 90 * DEG_TO_RAD, step: DEG_TO_RAD, control: 'slider', unit: { scale: DEG_TO_RAD, suffix: '°', places: 0 },
   }),
   radiusPx: strokeReachPref(),
 });
@@ -115,7 +115,7 @@ function planExtend(deps: ActionDeps | undefined, params?: Readonly<ReachToMeetP
   const opts = extendOptions(params);
   const subjects = press ? endNearPress(all, press) : editing
     ? all.filter((n) => n.id === editing).map((node) => ({ node, ends: endsAt(node.path, deps!.editAnchors!.selectedAnchors) }))
-    : selectedPathNodes(deps).map((node) => ({ node, ends: openPathEnds(node.path) }));
+    : operandPathNodes(deps).map((node) => ({ node, ends: openPathEnds(node.path) }));
   for (const { node, ends } of subjects) {
     if (node.path.kind !== 'polygon') continue;
     const selected = node.id === editing ? deps!.editAnchors!.selectedAnchors : new Set<number>();

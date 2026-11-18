@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { InvocationCtx } from '@weasel-js/core';
 import type { PendingEdge } from './connect';
-import { CONNECTOR_ACTION_ID, CONNECTOR_TOOL_ID, useConnectorTool } from './connectorTool';
+import { DRAW_CONNECTOR_ACTION_ID, CONNECTOR_TOOL_ID, useConnectorTool } from './connectorTool';
 import type { DiagramNodeLike } from './trait';
 
 interface Rect { x: number; y: number; width: number; height: number }
@@ -35,8 +35,8 @@ describe('useConnectorTool', () => {
     const { result } = renderHook(() => useConnectorTool<Rect>({ participants: PARTICIPANTS }));
     const tool = result.current;
     expect(tool.id).toBe(CONNECTOR_TOOL_ID);
-    expect(tool.bindings).toEqual([{ spec: { kind: 'drag' }, actionId: CONNECTOR_ACTION_ID, opts: { id: 'diagram.connector.drag' } }]);
-    expect(tool.actions?.map((a) => a.id)).toEqual([CONNECTOR_ACTION_ID]);
+    expect(tool.bindings).toEqual([{ spec: { kind: 'drag' }, actionId: DRAW_CONNECTOR_ACTION_ID, opts: { id: 'diagram.connector.drag' } }]);
+    expect(tool.actions?.map((a) => a.id)).toEqual([DRAW_CONNECTOR_ACTION_ID]);
     expect(tool.presentation?.icon).toBe('core:arrow');
   });
 

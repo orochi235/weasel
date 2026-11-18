@@ -35,7 +35,7 @@ describe('select over ids of any kind', () => {
   it('toggles, ranges, and replaces as membership says, and hands back the state when nothing changes', () => {
     const t = tally();
     const order = fc.uniqueArray(id, { minLength: 1, comparator: (a, b) => same(a, b) });
-    const presses = fc.array(fc.tuple(id, fc.constantFrom<SelectIntent>('replace', 'toggle', 'toggle', 'range', 'single')), { maxLength: 30 });
+    const presses = fc.array(fc.tuple(id, fc.constantFrom<SelectIntent>('replace', 'toggle', 'toggle', 'range', 'alone')), { maxLength: 30 });
     fc.assert(fc.property(order, presses, (ord, ps) => {
       let s: Selection<unknown> = { ids: [], anchor: null };
       for (const [at, intent] of ps) {

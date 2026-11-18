@@ -3,6 +3,7 @@
 import type { DepRegistry } from '@weasel-js/routing/react';
 import type { InsertExtras } from 'interactions/actions/depSchema';
 import type { SceneBatchOptions } from 'core/scene/recorder';
+import type { Rect } from '@weasel-js/geom';
 
 /**
  * Consumer-supplied node factory for one insert `kind`. Given the drag AABB
@@ -21,7 +22,7 @@ import type { SceneBatchOptions } from 'core/scene/recorder';
 export type InsertNodeFactory<E extends InsertExtras = InsertExtras> = {
   // Method syntax makes `extras` bivariant, so a factory typed for one kind's extras fits the map's string index.
   factory(
-    bounds: { x: number; y: number; width: number; height: number },
+    bounds: Rect,
     extras: E,
   ): InsertedNode | null;
 }['factory'];

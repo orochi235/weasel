@@ -12,6 +12,7 @@ export type {
   PathDrawCommand,
   GroupDrawCommand,
   TextDrawCommand,
+  TextLayerDrawCommand,
   ImageDrawCommand,
   SpritesDrawCommand,
   ShaderDrawCommand,
@@ -47,7 +48,7 @@ export { viewToMat3 } from '@weasel-js/renderer';
 
 // Drops the commands that cannot reach a screen rectangle — what the scene
 // slot's `cull` option runs, for a custom layer to run over its own output.
-export { cullDrawCommands, type CullRect } from '@weasel-js/renderer';
+export { cullDrawCommands } from '@weasel-js/renderer';
 
 // An id frame's read-back, and the coverage mask of some of its ids — what
 // `pickAt` and `RasterSession.renderIds` stand on.
@@ -117,7 +118,7 @@ export type { TextureHandle } from '@weasel-js/paint';
 // Named, not `export *` — a star re-export of an external package survives
 // typecheck and emits no binding in the bundle.
 export {
-  cursorFor, resolveCursor, resolveCursorTier, bakeCursor, CURSOR_ANGLE_STEPS, CURSOR_MAX_CSS_PX,
+  cursorFor, cursorCss, resolveCursor, bakeCursor, CURSOR_ANGLE_STEPS, CURSOR_MAX_CSS_PX,
 } from '@weasel-js/cursor';
 export type {
   CursorSpec,
@@ -151,10 +152,10 @@ export type { FeatureBindingOptions, FeaturePreset, PresetBuild, PresetComponent
 export type { CanvasPickers, PresetBuildContext } from '../canvas/SceneCanvas/presetBuild';
 export type { SceneCanvasToolOptions } from '../canvas/SceneCanvas/toolProps';
 export {
-  nodeKindPreset, nodeTraitsOf, type NodeKindPresetSpec, type NodeTraitBase, type NodeTraits,
+  createNodeKindPreset, nodeTraitsOf, type NodeKindPresetSpec, type NodeTraitBase, type NodeTraits,
 } from '../canvas/SceneCanvas/nodeTraits';
 export { describePresets, isAtom, type PresetDescription } from '../canvas/SceneCanvas/describePresets';
-export { rotateAroundAABBCenter, VIEW_TOOLS } from '../canvas/SceneCanvas';
+export { rotateAboutAabbCenter, VIEW_TOOLS } from '../canvas/SceneCanvas';
 export * from '../canvas/SceneCanvas/presets';
 export { KIT_SHAPE_KINDS, kitShapeKindsOf, SHAPE_KINDS } from '../core/shapeKinds';
 export type {
@@ -172,7 +173,7 @@ export type { ContributionDeps } from '@weasel-js/routing';
 export { assembleEntries, liveScope, scopeBindings, modeShortcuts, modeShortcutSpec } from '@weasel-js/routing';
 export type { AssemblyInputs } from '@weasel-js/routing';
 export type { ModeShortcutHandlers } from '@weasel-js/routing';
-export { captureGesture, captureKey, createKeymapStack, describeKeymap, KEYMAP_HOLD, keymapContribution, keymapLeaderBindingId, keymapLeaderId, keymapShortcuts } from '@weasel-js/routing';
+export { captureGesture, captureKey, createKeymapStack, describeKeymap, KEYMAP_HOLD, createKeymapContribution, keymapLeaderBindingId, keymapLeaderId, keymapShortcuts } from '@weasel-js/routing';
 export { holdPreview, holdPreviewId } from '@weasel-js/routing';
 export type { CaptureGestureOptions, CaptureKeyOptions, CaptureKind, CapturedSpec, DescribeKeymapOptions, KeymapDef, KeymapDescription, KeymapRow, KeymapStack, KeymapUnbound, KeymapVerdict, OpenKeymap } from '@weasel-js/routing';
 export { bindingSpec, held, key, keySpecRoute, unbound } from '@weasel-js/gestures';

@@ -13,7 +13,7 @@ export interface ResolveResult {
    * from the requested values when the resolver walked the fallback chain —
    * including `family`, when the cross-family policy substituted a default.
    *
-   * This is the atlas identity: pass all three to `getFont` /
+   * This is the atlas identity: pass all three to `getAtlasFont` /
    * `textureCacheKey` and the lookup hits. Keying a draw on the *requested*
    * family resolves to no atlas at all and paints nothing.
    *

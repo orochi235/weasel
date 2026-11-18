@@ -16,7 +16,7 @@ export interface DynamicPage {
   data: Uint8Array;
   /** Bumps on every write; each write appends a patch with seq = version. */
   version: number;
-  patches: { seq: number; x: number; y: number; w: number; h: number }[];
+  patches: { seq: number; x: number; y: number; width: number; height: number }[];
 }
 
 /** How one set of pages reaches a texture. */
@@ -51,7 +51,7 @@ class PageSet {
       page.data.set(bytes.subarray(row * w * n, (row + 1) * w * n), ((y + row) * PAGE_SIZE + x) * n);
     }
     page.version++;
-    page.patches.push({ seq: page.version, x, y, w, h });
+    page.patches.push({ seq: page.version, x, y, width: w, height: h });
   }
 
   /** Zero every page. One whole-page patch stands in for all the patches before it. */
@@ -59,7 +59,7 @@ class PageSet {
     for (const page of this.pages) {
       page.data.fill(0);
       page.version++;
-      page.patches = [{ seq: page.version, x: 0, y: 0, w: PAGE_SIZE, h: PAGE_SIZE }];
+      page.patches = [{ seq: page.version, x: 0, y: 0, width: PAGE_SIZE, height: PAGE_SIZE }];
     }
   }
 
@@ -84,12 +84,12 @@ class PageSet {
     if (last >= page.version) return true;
     for (const patch of page.patches) {
       if (patch.seq <= last) continue;
-      const tight = new Uint8Array(patch.w * patch.h * n);
-      for (let row = 0; row < patch.h; row++) {
+      const tight = new Uint8Array(patch.width * patch.height * n);
+      for (let row = 0; row < patch.height; row++) {
         const src = ((patch.y + row) * PAGE_SIZE + patch.x) * n;
-        tight.set(page.data.subarray(src, src + patch.w * n), row * patch.w * n);
+        tight.set(page.data.subarray(src, src + patch.width * n), row * patch.width * n);
       }
-      this.format.patch(cache, id, patch.x, patch.y, patch.w, patch.h, tight);
+      this.format.patch(cache, id, patch.x, patch.y, patch.width, patch.height, tight);
     }
     seen.set(pageIndex, page.version);
     return true;

@@ -19,7 +19,7 @@ export function diffPlans(prev: LivePlan, next: LivePlan, build: BuildNode): Gra
   const nextIds = Object.keys(next.nodes).sort();
   const gone = new Set<string>(); // removed, or removed to change type: their old edges are dropped
   const fresh = new Set<string>(); // gone, or newly added: every edge touching them in `next` is connected
-  const groups = {
+  const clusters = {
     disconnect: [] as GraphPatch[],
     remove: [] as GraphPatch[],
     add: [] as GraphPatch[],
@@ -33,7 +33,7 @@ export function diffPlans(prev: LivePlan, next: LivePlan, build: BuildNode): Gra
     if (now === undefined || now.type !== prev.nodes[id]!.type) {
       gone.add(id);
       fresh.add(id);
-      groups.remove.push({ kind: 'remove', id });
+      clusters.remove.push({ kind: 'remove', id });
     }
   }
   for (const id of nextIds) {
@@ -41,13 +41,13 @@ export function diffPlans(prev: LivePlan, next: LivePlan, build: BuildNode): Gra
     const was = getOwn(prev.nodes, id);
     if (was === undefined || gone.has(id)) {
       fresh.add(id);
-      groups.add.push({ kind: 'add', id, def: build(id, now) });
+      clusters.add.push({ kind: 'add', id, def: build(id, now) });
     } else if (!sameSettings(was.settings, now.settings)) {
-      groups.replace.push({ kind: 'replace', id, def: build(id, now) });
+      clusters.replace.push({ kind: 'replace', id, def: build(id, now) });
     } else {
       for (const param of Object.keys(now.levels).sort()) {
         const value = now.levels[param]!;
-        if (!Object.is(getOwn(was.levels, param), value)) groups.set.push({ kind: 'set', id, param, value });
+        if (!Object.is(getOwn(was.levels, param), value)) clusters.set.push({ kind: 'set', id, param, value });
       }
     }
   }
@@ -56,19 +56,19 @@ export function diffPlans(prev: LivePlan, next: LivePlan, build: BuildNode): Gra
   const prevKeys = new Set(prev.edges.map(edgeKey));
   for (const e of prev.edges) {
     if (!nextKeys.has(edgeKey(e)) && !touches(e, gone)) {
-      groups.disconnect.push({ kind: 'disconnect', from: e.from, to: e.to });
+      clusters.disconnect.push({ kind: 'disconnect', from: e.from, to: e.to });
     }
   }
   for (const e of next.edges) {
-    if (!prevKeys.has(edgeKey(e)) || touches(e, fresh)) groups.connect.push({ kind: 'connect', from: e.from, to: e.to });
+    if (!prevKeys.has(edgeKey(e)) || touches(e, fresh)) clusters.connect.push({ kind: 'connect', from: e.from, to: e.to });
   }
 
   return [
-    ...groups.disconnect,
-    ...groups.remove,
-    ...groups.add,
-    ...groups.replace,
-    ...groups.set,
-    ...groups.connect,
+    ...clusters.disconnect,
+    ...clusters.remove,
+    ...clusters.add,
+    ...clusters.replace,
+    ...clusters.set,
+    ...clusters.connect,
   ];
 }

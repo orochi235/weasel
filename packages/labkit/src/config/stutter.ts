@@ -1,4 +1,5 @@
 import { isDev } from '@weasel-js/react';
+import { createPart } from '@weasel-js/registry';
 import type { ResolvedConfig } from './types';
 
 /**
@@ -16,13 +17,12 @@ export function stutters(heading: string, label: string): boolean {
   return short.length >= 3 && long.startsWith(short);
 }
 
-const warned = new WeakMap<ResolvedConfig, Set<string>>();
+const warned = createPart((_resolved: ResolvedConfig) => new Set<string>());
 
 /** Warn of an authoring fault in `resolved` once per `key`, whichever surface meets it first. */
 export function warnOnce(resolved: ResolvedConfig, key: string, message: string): void {
   if (!isDev()) return;
-  const seen = warned.get(resolved) ?? new Set<string>();
-  warned.set(resolved, seen);
+  const seen = warned(resolved);
   if (seen.has(key)) return;
   seen.add(key);
   console.warn(`[labkit] ${message}`);

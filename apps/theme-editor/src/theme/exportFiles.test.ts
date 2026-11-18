@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { enumerateSelections, loadDTCG, resolveTheme, themeAxes } from '@weasel-js/theme';
+import { enumerateAxisChoices, fromDtcg, resolveTheme, themeAxes } from '@weasel-js/theme';
 import { exportFile } from './exportFiles';
 import { lookupOf, weasel } from './fixtures';
 import { runtimeTheme } from './model';
@@ -28,8 +28,8 @@ describe('exportFile', () => {
   });
 
   it('writes DTCG that loads back with every density, not just the default', () => {
-    const back = loadDTCG({ ...JSON.parse(exportFile('dtcg', weasel, lookup).text), extends: null });
+    const back = fromDtcg({ ...JSON.parse(exportFile('dtcg', weasel, lookup).text), extends: null });
     const theme = runtimeTheme(weasel, lookup);
-    for (const sel of enumerateSelections(themeAxes(theme))) expect(resolveTheme(back, sel)).toEqual(resolveTheme(theme, sel));
+    for (const sel of enumerateAxisChoices(themeAxes(theme))) expect(resolveTheme(back, sel)).toEqual(resolveTheme(theme, sel));
   });
 });

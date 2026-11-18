@@ -8,6 +8,7 @@ import { arrowMove } from '@weasel-js/quantity';
 import { LaneGraph } from './LaneGraph';
 import type { LaneRow } from './lanes';
 import { useKeyDrag } from './useKeyDrag';
+import { KeyGhost, KeyMarks, SegmentMarks, type MarkHold } from './LaneMarks';
 
 /** One arrow-key step, in ms; shift multiplies by ten. */
 const KEY_STEP_MS = 10;
@@ -32,19 +33,19 @@ export interface LaneProps {
   mode: 'dope' | 'graph';
   /** Index of the selected key on THIS row, or null. */
   selection: number | null;
-  onSelect: (keyIndex: number) => void;
+  onSelectionChange: (keyIndex: number) => void;
   /** Live during a dope-sheet drag. */
   onKeyInput: (keyIndex: number, toMs: number) => void;
   /** Once, at the end of a dope-sheet gesture. */
-  onKeyCommit: (keyIndex: number, toMs: number) => void;
+  onKeyChange: (keyIndex: number, toMs: number) => void;
   /** Live during a graph-mode key drag: the row's whole key list. */
   onKeysInput?: (keys: readonly Keyframe<number>[]) => void;
   /** Once per graph-mode edit: the row's whole key list. */
-  onKeysCommit?: (keys: readonly Keyframe<number>[]) => void;
+  onKeysChange?: (keys: readonly Keyframe<number>[]) => void;
   /** A drag in either mode was canceled, after its preview was put back. */
   onCancel?: () => void;
   onInsert: (atMs: number) => void;
-  onToggleExpand: () => void;
+  onExpandedChange: (next: boolean) => void;
   expanded: boolean;
   /** Times a dragged key snaps to. */
   snapTimes: readonly number[];
@@ -65,14 +66,14 @@ function entryTimes(row: LaneRow): number[] {
 
 export function Lane(props: LaneProps): ReactElement {
   const {
-    row, window: win, mode, selection, onKeyInput, onKeyCommit, onInsert, expanded, snapTimes,
+    row, window: win, mode, selection, onKeyInput, onKeyChange, onInsert, expanded, snapTimes,
     selectedSegment = null, onPressEmpty, hold = FREE,
   } = props;
-  const { onSelect, onSelectSegment, onToggleExpand, mark } = gated(props, hold);
+  const { onSelect, onSelectSegment, toggleExpanded, mark } = gated(props, hold);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const times = entryTimes(row);
   const { drag, msAt, onKeyPointerDown } = useKeyDrag({
-    trackRef, window: win, offset: row.offset, snapTimes, times, onSelect, onKeyInput, onKeyCommit, onCancel: props.onCancel, drags: hold.edits,
+    trackRef, window: win, offset: row.offset, snapTimes, times, onSelect, onKeyInput, onKeyChange, onCancel: props.onCancel, drags: hold.edits,
   });
   const pct = (ms: number): string => toPercent(win, ms + row.offset);
 
@@ -82,26 +83,11 @@ export function Lane(props: LaneProps): ReactElement {
 
   const { keyEls, refocus } = useFocusFollowsKey(selection);
 
-  const onKeyDown = markKeys({ edits: hold.edits, onKeyCommit, onSelect, refocus });
+  const onKeyDown = markKeys({ edits: hold.edits, onKeyChange, onSelect, refocus });
 
   return (
     <div className={s.lane} data-lane-key={row.key} data-depth={row.depth} data-mode={mode} data-graph={graph ? 'true' : undefined}>
-      <div className={s.laneLabel}>
-        {row.kind === 'timeline' ? (
-          <span
-            role="button"
-            {...mark}
-            aria-expanded={expanded}
-            data-testid="timeline-disclosure"
-            className={s.disclosure}
-            onClick={onToggleExpand}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleExpand(); } }}
-          >
-            <DisclosureMark open={expanded} />
-          </span>
-        ) : null}
-        {row.label}
-      </div>
+      <LaneLabel row={row} mark={mark} expanded={expanded} toggleExpanded={toggleExpanded} />
       <div
         className={s.laneTrack}
         ref={trackRef}
@@ -129,7 +115,7 @@ export function Lane(props: LaneProps): ReactElement {
             onSelect={onSelect}
             onSelectSegment={onSelectSegment}
             onKeysInput={hold.edits ? props.onKeysInput : undefined}
-            onKeysCommit={(keys) => { if (hold.edits) props.onKeysCommit?.(keys); }} onCancel={props.onCancel}
+            onKeysChange={(keys) => { if (hold.edits) props.onKeysChange?.(keys); }} onCancel={props.onCancel}
             edits={hold.edits}
           />
         ) : (
@@ -141,43 +127,17 @@ export function Lane(props: LaneProps): ReactElement {
                 style={{ left: pct(0), width: spanPercent(win, (row.track as TimelineTrack).timeline.duration ?? 0) }}
               />
             ) : null}
-            {row.kind === 'sampled' ? sampledKeys.slice(1).map((k, idx) => {
-              const i = idx + 1;
-              return (
-                <div
-                  key={`seg-${i}`}
-                  role="button"
-                  {...mark}
-                  aria-label={`${row.label} segment into ${Math.round(k.t)} ms`}
-                  aria-current={selectedSegment === i ? 'true' : undefined}
-                  data-testid="timeline-segment"
-                  data-segment-index={i}
-                  className={s.segment}
-                  style={{ left: pct(sampledKeys[i - 1].t), width: spanPercent(win, k.t - sampledKeys[i - 1].t) }}
-                  onClick={() => onSelectSegment?.(i)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectSegment?.(i); } }}
-                />
-              );
-            }) : null}
-            {times.map((t, i) => (
-              <div
-                key={i}
-                ref={(el) => { keyEls.current[i] = el; }}
-                role="button"
-                {...mark}
-                aria-label={`${row.label} key at ${Math.round(t)} ms`}
-                aria-current={selection === i ? 'true' : undefined}
-                data-testid={row.kind === 'event' ? 'timeline-event' : 'timeline-key'}
-                data-keyframe-index={i}
-                data-dragging={drag?.keyIndex === i ? 'true' : undefined}
-                data-past={t + row.offset > row.end ? 'true' : undefined}
-                className={row.kind === 'event' ? s.eventMark : s.key}
-                style={{ left: pct(t) }}
-                onPointerDown={onKeyPointerDown(i)}
-                onDoubleClick={(e) => e.stopPropagation()}
-                onKeyDown={onKeyDown(i, t)}
+            {row.kind === 'sampled' ? (
+              <SegmentMarks
+                keys={sampledKeys} label={row.label} win={win} pct={pct} mark={mark}
+                selectedSegment={selectedSegment} onSelectSegment={onSelectSegment}
               />
-            ))}
+            ) : null}
+            <KeyMarks
+              row={row} times={times} pct={pct} mark={mark} selection={selection} draggedIndex={drag?.keyIndex}
+              keyEls={keyEls} onKeyPointerDown={onKeyPointerDown} onKeyDown={onKeyDown}
+            />
+
             {drag ? <KeyGhost event={row.kind === 'event'} left={pct(drag.t)} /> : null}
           </>
         )}
@@ -191,17 +151,17 @@ const ignore = (): void => {};
 /** The lane's presses that only choose or look, refused while it is disabled, and what each mark carries of the hold. */
 function gated(props: LaneProps, hold: LaneHold) {
   return {
-    onSelect: hold.looks ? props.onSelect : ignore,
+    onSelect: hold.looks ? props.onSelectionChange : ignore,
     onSelectSegment: hold.looks ? props.onSelectSegment : undefined,
-    onToggleExpand: hold.looks ? props.onToggleExpand : ignore,
+    toggleExpanded: hold.looks ? () => props.onExpandedChange(!props.expanded) : ignore,
     mark: { tabIndex: hold.tabIndex, ...hold.focus },
   };
 }
 
 /** A key mark's keys: the arrows step it, unless the lane refuses edits, and Enter or Space selects it. */
-function markKeys({ edits, onKeyCommit, onSelect, refocus }: {
+function markKeys({ edits, onKeyChange, onSelect, refocus }: {
   edits: boolean;
-  onKeyCommit: LaneProps['onKeyCommit'];
+  onKeyChange: LaneProps['onKeyChange'];
   onSelect: (keyIndex: number) => void;
   refocus: { current: boolean };
 }) {
@@ -210,7 +170,7 @@ function markKeys({ edits, onKeyCommit, onSelect, refocus }: {
     if (dx !== 0 && edits) {
       e.preventDefault();
       refocus.current = true;
-      onKeyCommit(i, Math.max(0, t + dx * KEY_STEP_MS));
+      onKeyChange(i, Math.max(0, t + dx * KEY_STEP_MS));
     }
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(i); }
     // The timeline deletes the selected key as this bubbles up; focus goes to the key selected after it.
@@ -218,9 +178,31 @@ function markKeys({ edits, onKeyCommit, onSelect, refocus }: {
   };
 }
 
-/** Where a dragged key would land, drawn over the committed key it moves from. */
-function KeyGhost({ event, left }: { event: boolean; left: string }) {
-  return <div aria-hidden="true" data-testid="timeline-key-ghost" className={event ? s.eventGhost : s.keyGhost} style={{ left }} />;
+/** The row's name, and for a nested timeline the disclosure that folds it. */
+function LaneLabel({ row, mark, expanded, toggleExpanded }: {
+  row: LaneRow;
+  mark: MarkHold;
+  expanded: boolean;
+  toggleExpanded: () => void;
+}) {
+  return (
+    <div className={s.laneLabel}>
+      {row.kind === 'timeline' ? (
+        <span
+          role="button"
+          {...mark}
+          aria-expanded={expanded}
+          data-testid="timeline-disclosure"
+          className={s.disclosure}
+          onClick={toggleExpanded}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleExpanded(); } }}
+        >
+          <DisclosureMark open={expanded} />
+        </span>
+      ) : null}
+      {row.label}
+    </div>
+  );
 }
 
 /** The stretch of a lane past where its timelines stop playing it. */

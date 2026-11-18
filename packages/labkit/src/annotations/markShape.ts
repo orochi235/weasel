@@ -20,9 +20,9 @@ export type SerializedMarks = SerializedScene<AnnotationData, 'marks', WorldRect
  *  content box is known: against an empty one every vertex would read 0. */
 export function migrateLegacyPoints(
   raw: SerializedMarks,
-  content: { w: number; h: number },
+  content: { width: number; height: number },
 ): SerializedMarks {
-  if (content.w === 0 || content.h === 0) return raw;
+  if (content.width === 0 || content.height === 0) return raw;
   const nodes = raw.nodes.map((n) => {
     const { points, ...data } = n.data as AnnotationData & { points?: readonly FracPoint[] };
     if (!points || data.shape) return n;

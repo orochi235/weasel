@@ -1,6 +1,6 @@
 import { createClockRegistry } from '@weasel-js/clock';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createAnnotationStore } from './annotations/store';
+import { createMarkStore } from './annotations/store';
 import type { CameraView } from './canvas/CameraInput';
 import { createCameraRegistry } from './canvas/cameraRegistry';
 import { transportHoldOf } from './clock/transportHold';
@@ -61,11 +61,11 @@ describe('a subscriber that throws does not stop the ones after it', () => {
   });
 
   it('in an annotation store', () => {
-    const store = createAnnotationStore({
-      targets: () => [{ id: 't', content: { w: 10, h: 10 } }],
+    const store = createMarkStore({
+      targets: () => [{ id: 't', content: { width: 10, height: 10 } }],
     });
     afterAThrow(store.subscribe, () =>
-      store.add({ target: 't', kind: 'rect', frac: { x: 0, y: 0, w: 0.1, h: 0.1 } }),
+      store.add({ target: 't', kind: 'rect', frac: { x: 0, y: 0, width: 0.1, height: 0.1 } }),
     );
   });
 });

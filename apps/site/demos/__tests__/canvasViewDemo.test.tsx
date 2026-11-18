@@ -12,8 +12,8 @@ describe('CanvasViewDemo PiP', () => {
       const view = pipView(items);
       const r = {
         x0: view.x, y0: view.y,
-        x1: view.x + PIP.w / PIP.scale,
-        y1: view.y + PIP.h / PIP.scale,
+        x1: view.x + PIP.width / PIP.scale,
+        y1: view.y + PIP.height / PIP.scale,
       };
       const visible = items.filter(
         (n) =>
@@ -27,8 +27,8 @@ describe('CanvasViewDemo PiP', () => {
 
   it('lenses a 150x100 world slice', () => {
     const { scale } = pipView(makeRandomScene());
-    expect(PIP.w / scale.x).toBeCloseTo(150);
-    expect(PIP.h / scale.y).toBeCloseTo(100);
+    expect(PIP.width / scale.x).toBeCloseTo(150);
+    expect(PIP.height / scale.y).toBeCloseTo(100);
   });
 });
 

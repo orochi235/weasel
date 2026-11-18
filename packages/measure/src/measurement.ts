@@ -8,7 +8,7 @@ export type MeasurePoint = Point;
 
 /**
  * The frame each end of a measurement landed in: the node declaring a unit
- * scope it was placed inside (`unitFrameAt`), or `null` for the top of the
+ * scope it was placed inside (`createUnitFrameLookup`), or `null` for the top of the
  * tree. The measurement reads in the scope chain the two frames share, so ends
  * in one frame, or in frames declaring equal scopes, read that frame's
  * modeled length, and ends whose frames disagree read the innermost frame
@@ -69,7 +69,7 @@ export interface MeasureData {
   label?: string;
 }
 
-/** Where an end placed at a world point lands: what `unitFrameAt` builds. */
+/** Where an end placed at a world point lands: what a `createUnitFrameLookup` lookup answers. */
 export type MeasureFrameAt = (p: MeasurePoint) => NodeId | null;
 
 /** Which end of a measurement. */

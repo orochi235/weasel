@@ -1,3 +1,4 @@
+import { createPart } from '@weasel-js/registry';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
 import type { LayerCommandCache, RenderLayer } from './render';
@@ -26,29 +27,17 @@ export interface LayerRetainPolicy {
  *  (`tests/perf/recorded/retain-2026-11-03/`). */
 export const DEFAULT_LAYER_RETAIN: Required<LayerRetainPolicy> = { minCommands: 250, minCommandsWithEffects: 10 };
 
-const counts = new WeakMap<readonly DrawCommand[], number>();
-
 /** Drawing commands in a tree, groups left out. Memoized by array, which a
  *  layer's cache serves unchanged while its deps hold. */
-export function countDrawCommands(cmds: readonly DrawCommand[]): number {
-  const known = counts.get(cmds);
-  if (known !== undefined) return known;
+export const countDrawCommands = createPart((cmds: readonly DrawCommand[]): number => {
   let n = 0;
   for (const cmd of cmds) n += cmd.kind === 'group' ? countDrawCommands(cmd.children) : 1;
-  counts.set(cmds, n);
   return n;
-}
-
-const withEffects = new WeakMap<readonly DrawCommand[], boolean>();
+});
 
 /** Whether a tree holds a group with effects. Memoized by array. */
-function holdsEffects(cmds: readonly DrawCommand[]): boolean {
-  const known = withEffects.get(cmds);
-  if (known !== undefined) return known;
-  const found = cmds.some((cmd) => cmd.kind === 'group' && ((cmd.effects?.length ?? 0) > 0 || holdsEffects(cmd.children)));
-  withEffects.set(cmds, found);
-  return found;
-}
+const holdsEffects = createPart((cmds: readonly DrawCommand[]): boolean =>
+  cmds.some((cmd) => cmd.kind === 'group' && ((cmd.effects?.length ?? 0) > 0 || holdsEffects(cmd.children))));
 
 /** Whether the view held since the frame before, or only panned: a renderer
  *  can move a kept surface with a pan, and decides itself when it cannot. */

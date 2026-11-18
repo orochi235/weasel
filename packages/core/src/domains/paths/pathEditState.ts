@@ -10,14 +10,7 @@ import type { HandleLocks } from 'interactions/actions/edit-anchors/params';
 import type { PathEditExtension, PathEditMark } from './pathEditExtension';
 import type { NodeId, Scene } from 'core/scene/types';
 import { effectSourceFor } from 'domains/pathEffects/effectSources';
-
-/** A world-coord rect. */
-export interface AnchorMarquee {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+import type { Rect } from '@weasel-js/geom';
 
 /**
  * What decides whether a stored edit target is still one: its node exists and
@@ -49,7 +42,7 @@ export interface PathEditState {
    * The node whose anchors are editable now, or `''`: the stored id, or the
    * host's, while `PathEditSource` still lets it stand. Masked rather than
    * cleared: a host's mode machine can leave path-edit mode without running
-   * `exitPathEdit`, and nothing re-renders when it does, so there is no
+   * `leavePathEdit`, and nothing re-renders when it does, so there is no
    * moment to write the id back.
    */
   getEditingId(): string;
@@ -60,8 +53,8 @@ export interface PathEditState {
   getSelectedAnchors(): ReadonlySet<number>;
   setSelectedAnchors(next: ReadonlySet<number>): void;
   /** The in-flight anchor-marquee rect, in the edited path's world. */
-  getMarquee(): AnchorMarquee | null;
-  setMarquee(rect: AnchorMarquee | null): void;
+  getMarquee(): Rect | null;
+  setMarquee(rect: Rect | null): void;
   /** The extension mark selected in place of anchors, or null. */
   getSelectedMark(): PathEditMark | null;
   setSelectedMark(mark: PathEditMark | null): void;
@@ -97,7 +90,7 @@ export function isSelectedNode(
 export function createPathEditState(source: PathEditSource = {}): PathEditState {
   let ownId = '';
   let selectedAnchors = NO_ANCHORS;
-  let marquee: AnchorMarquee | null = null;
+  let marquee: Rect | null = null;
   let handleLocks: HandleLocks | null = null;
   let idSet = NO_IDS;
   let selectedMark: PathEditMark | null = null;

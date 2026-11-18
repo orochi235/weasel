@@ -14,9 +14,9 @@ const OPTIONS: SwatchGridOption[] = [
 
 function palette(wrapRun: (node: ReactElement) => ReactElement): HoldSubject {
   return (mount, own) => {
-    const onChange = vi.fn();
-    const onAltChange = vi.fn();
-    mount(wrapRun(<SwatchGrid aria-label="Colors" options={OPTIONS} value="#ff0000ff" onChange={onChange} onAltChange={onAltChange} {...own} />));
+    const onSelect = vi.fn();
+    const onAltSelect = vi.fn();
+    mount(wrapRun(<SwatchGrid aria-label="Colors" options={OPTIONS} value="#ff0000ff" onSelect={onSelect} onAltSelect={onAltSelect} {...own} />));
     const swatches = () => screen.getAllByRole('button');
     return {
       targets: swatches,
@@ -28,7 +28,7 @@ function palette(wrapRun: (node: ReactElement) => ReactElement): HoldSubject {
         fireEvent.contextMenu(green);
         fireEvent.keyDown(green, { key: 'Enter', shiftKey: true });
       },
-      changed: () => onChange.mock.calls.length + onAltChange.mock.calls.length > 0,
+      changed: () => onSelect.mock.calls.length + onAltSelect.mock.calls.length > 0,
     };
   };
 }
@@ -38,7 +38,7 @@ const ARC = arcShape({ center: { x: 200, y: 200 }, radius: 100, start: 270, end:
 describeHold('SwatchGrid on rings', palette((n) => <Along shape={ARC}>{n}</Along>));
 
 it('read-only, the arrows still move among the swatches', () => {
-  render(<ReadOnly><SwatchGrid aria-label="Colors" options={OPTIONS} onChange={() => {}} /></ReadOnly>);
+  render(<ReadOnly><SwatchGrid aria-label="Colors" options={OPTIONS} onSelect={() => {}} /></ReadOnly>);
   const [red, green] = screen.getAllByRole('button');
   red!.focus();
   fireEvent.keyDown(red!, { key: 'ArrowRight' });

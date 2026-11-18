@@ -17,18 +17,19 @@
  * transiently too.
  */
 
-import { gestureViewReader, pointerStateOf, applyOpsTo, reduceBehaviorEnd, runBehaviorCancel, runBehaviorSettled, hitTargets, selectionFromHits, finiteThroughout } from '@weasel-js/core';
+import { gestureViewReader, pointerStateOf, applyOpsTo, reduceBehaviorEnd, runBehaviorCancel, runBehaviorSettled, targetsOf, selectionFromHits, finiteThroughout } from '@weasel-js/core';
 import { defineAction, resolveParams, setScratch } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
 import type { LassoSelectDep, ViewApi, LassoHitMode, LassoSelectAdapter, GestureContext, LassoSelectBehavior, LassoSelectPose } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
 import { LASSO_VERTICES } from './behaviors/selectFromLasso';
 import type {} from '@weasel-js/core';
+import type { Rect } from '@weasel-js/geom';
 
 /** Compute AABB of a polygon (for fallback hit-test when hitTestLasso is absent). */
-function polygonAABB(
+function polygonAabb(
   pts: Point2[],
-): { x: number; y: number; width: number; height: number } | null {
+): Rect | null {
   if (pts.length === 0) return null;
   let minX = pts[0].x, minY = pts[0].y, maxX = pts[0].x, maxY = pts[0].y;
   for (const p of pts) {
@@ -49,9 +50,9 @@ function hitTestPolygon(
   mode: LassoHitMode,
   view: ViewApi | undefined,
 ): string[] {
-  if (dep.hitTestLasso) return hitTargets(dep.hitTestLasso(vertices, mode, view), dep.targetOf);
-  const aabb = polygonAABB(vertices as Point2[]);
-  return aabb ? hitTargets(dep.hitTestArea(aabb, view), dep.targetOf) : [];
+  if (dep.hitTestLasso) return targetsOf(dep.hitTestLasso(vertices, mode, view), dep.targetOf);
+  const aabb = polygonAabb(vertices as Point2[]);
+  return aabb ? targetsOf(dep.hitTestArea(aabb, view), dep.targetOf) : [];
 }
 
 /** The adapter a behavior sees: selection and hit-testing from the dep,
@@ -60,7 +61,7 @@ function behaviorAdapter(dep: LassoSelectDep, view: ViewApi | undefined): LassoS
   const adapter: LassoSelectAdapter = {
     getSelection: () => dep.getSelection(),
     setSelection: (ids) => dep.setSelection(ids),
-    hitTestArea: (rect) => hitTargets(dep.hitTestArea(rect, view), dep.targetOf),
+    hitTestArea: (rect) => targetsOf(dep.hitTestArea(rect, view), dep.targetOf),
     hitTestLasso: (polygon, mode) => hitTestPolygon(dep, polygon, mode, view),
     applyOps: (ops: Op[]) => applyOpsTo(adapter, ops),
   };

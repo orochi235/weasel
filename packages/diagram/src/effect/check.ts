@@ -1,17 +1,17 @@
-import type { EffectGroup, EffectPipeline, EffectStage } from './types';
+import type { EffectCluster, EffectPipeline, EffectStage } from './types';
 
 /** One thing wrong with a pipeline, and where. */
 export interface EffectProblem {
   kind: 'missing-stage' | 'missing-port' | 'wrong-direction' | 'type-mismatch'
-    | 'duplicate-stage' | 'duplicate-port' | 'duplicate-group' | 'missing-member' | 'group-loop' | 'bad-split';
+    | 'duplicate-stage' | 'duplicate-port' | 'duplicate-cluster' | 'missing-member' | 'cluster-loop' | 'bad-split';
   message: string;
   stage?: string;
   port?: string;
   /** Index into `pipeline.wires`. */
   wire?: number;
-  group?: string;
-  /** Every group in a `group-loop`, in pipeline order; `group` is the first. */
-  groups?: string[];
+  cluster?: string;
+  /** Every cluster in a `cluster-loop`, in pipeline order; `cluster` is the first. */
+  clusters?: string[];
 }
 
 /** What `split` gets wrong on `stage`, or null. */
@@ -70,34 +70,34 @@ export function checkPipeline(pipeline: EffectPipeline): EffectProblem[] {
     }
   });
 
-  const groupIds = new Set<string>();
-  const groups = (pipeline.groups ?? []).filter((group) => {
-    const repeat = groupIds.has(group.id);
-    if (repeat || stages.has(group.id)) {
+  const clusterIds = new Set<string>();
+  const clusters = (pipeline.clusters ?? []).filter((cluster) => {
+    const repeat = clusterIds.has(cluster.id);
+    if (repeat || stages.has(cluster.id)) {
       out.push({
-        kind: 'duplicate-group',
-        group: group.id,
-        message: repeat ? `Group "${group.id}" appears more than once.` : `Group "${group.id}" has the id of a stage.`,
+        kind: 'duplicate-cluster',
+        cluster: cluster.id,
+        message: repeat ? `Group "${cluster.id}" appears more than once.` : `Group "${cluster.id}" has the id of a stage.`,
       });
       return false;
     }
-    groupIds.add(group.id);
+    clusterIds.add(cluster.id);
     return true;
   });
-  for (const group of groups) {
-    for (const member of group.members) {
-      if (stages.has(member) || groupIds.has(member)) continue;
-      out.push({ kind: 'missing-member', group: group.id, message: `Group "${group.id}" names "${member}", which is neither a stage nor a group.` });
+  for (const cluster of clusters) {
+    for (const member of cluster.members) {
+      if (stages.has(member) || clusterIds.has(member)) continue;
+      out.push({ kind: 'missing-member', cluster: cluster.id, message: `Group "${cluster.id}" names "${member}", which is neither a stage nor a group.` });
     }
   }
-  out.push(...groupLoops(groups));
+  out.push(...clusterLoops(clusters));
   return out;
 }
 
-/** One `group-loop` per set of groups that hold each other, directly or through other groups. */
-function groupLoops(groups: readonly EffectGroup[]): EffectProblem[] {
-  const inner = new Map(groups.map((g) => [g.id, g.members]));
-  const reach = new Map(groups.map((g) => {
+/** One `cluster-loop` per set of clusters that hold each other, directly or through other clusters. */
+function clusterLoops(clusters: readonly EffectCluster[]): EffectProblem[] {
+  const inner = new Map(clusters.map((g) => [g.id, g.members]));
+  const reach = new Map(clusters.map((g) => {
     const seen = new Set<string>();
     const todo = [...g.members];
     for (let id = todo.pop(); id !== undefined; id = todo.pop()) {
@@ -110,15 +110,15 @@ function groupLoops(groups: readonly EffectGroup[]): EffectProblem[] {
   }));
   const reported = new Set<string>();
   const out: EffectProblem[] = [];
-  for (const g of groups) {
+  for (const g of clusters) {
     if (reported.has(g.id) || !reach.get(g.id)!.has(g.id)) continue;
-    const loop = groups.filter((h) => reach.get(g.id)!.has(h.id) && reach.get(h.id)!.has(g.id)).map((h) => h.id);
+    const loop = clusters.filter((h) => reach.get(g.id)!.has(h.id) && reach.get(h.id)!.has(g.id)).map((h) => h.id);
     for (const id of loop) reported.add(id);
     const named = loop.map((id) => `"${id}"`);
     const message = loop.length === 1
       ? `Group ${named[0]} holds itself.`
       : `Groups ${named.length === 2 ? named.join(' and ') : `${named.slice(0, -1).join(', ')}, and ${named.at(-1)}`} hold each other in a loop.`;
-    out.push({ kind: 'group-loop', group: loop[0]!, groups: loop, message });
+    out.push({ kind: 'cluster-loop', cluster: loop[0]!, clusters: loop, message });
   }
   return out;
 }

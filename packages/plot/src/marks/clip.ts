@@ -1,12 +1,12 @@
 /** Data geometry cut to a convex plot area at compile time, so nothing past the area is drawn by any renderer or export. */
 import type { PlotPoint } from './types';
-import { lerp } from '@weasel-js/geom';
+import { lerp, type Rect } from '@weasel-js/geom';
 
 /** A convex area as its corners, in order either way round. */
 export type ConvexArea = readonly PlotPoint[];
 
 /** A rect's corners. */
-export const rectArea = (r: { x: number; y: number; width: number; height: number }): ConvexArea => [
+export const rectArea = (r: Rect): ConvexArea => [
   { x: r.x, y: r.y }, { x: r.x + r.width, y: r.y }, { x: r.x + r.width, y: r.y + r.height }, { x: r.x, y: r.y + r.height },
 ];
 

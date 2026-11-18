@@ -1,7 +1,6 @@
-import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { MenuEntry, MenuGrade } from '@weasel-js/menu';
-import type { Grade } from '@weasel-js/theme';
+import type { MenuEntry } from '@weasel-js/menu';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { formatShortcut } from '@weasel-js/gestures';
 import { REST_MS } from '../Tree/useRowTip';
@@ -92,9 +91,5 @@ describe('a row hint and grade in a DOM menu', () => {
     ]);
     expect(screen.getByRole('menuitem', { name: /Delete/ })).toHaveAttribute('data-grade', 'danger');
     expect(screen.getByRole('menuitem', { name: /Cut/ })).not.toHaveAttribute('data-grade');
-  });
-
-  it('takes the grades the theme has, since the menu model cannot depend on it', () => {
-    expectTypeOf<MenuGrade>().toEqualTypeOf<Grade>();
   });
 });

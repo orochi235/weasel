@@ -4,29 +4,26 @@ import {
   useImperativeHandle,
   useMemo,
   useRef,
-  type KeyboardEvent,
   type ReactNode,
   type Ref,
 } from 'react';
-import { isInControlWithin } from '@weasel-js/gestures';
-import { intentOf, rangeOf, select as selectFrom, type SelectPolicy } from '@weasel-js/select';
-import { listKeys, modsOf, selectModifiers, type PressModifiers } from '../../useReorderDragList';
-import { useRowNavigation } from '../../useRowNavigation';
 import { useControlHold } from '../Disabled/controlHold';
 import { TreeDragGhost } from './TreeGhost';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './Tree.module.css';
-import { controlCellKey, enterControls, useUntabbedControls } from './treeGridKeys';
-import { handleMoveKey } from './treeKeyboardMove';
+import { useUntabbedControls } from './treeGridKeys';
+import { rowKeyDown, type TreeRowKeysHost } from './treeRowKeys';
 import { TreeRow } from './TreeRow';
 import type { TreeNode, TreeProps } from './treeTypes';
 import { nodeById } from './treeMoves';
-import { hasControls, idsWhere, textOf, useControlledSet, visibleRows } from './treeUtils';
+import { hasControls, useTreeFold, visibleRows } from './treeUtils';
+import { useTreeNav } from './useTreeNav';
 import { useRowTip } from './useRowTip';
-import { useTreeDrag } from './useTreeDrag';
+import { useTreeDrag, type TreeDragState } from './useTreeDrag';
+import { useTreeSelection } from './useTreeSelection';
+import { bindRowPointer, type TreeRowPointerHost } from './treeRowPointer';
 export type { TreeNode, TreeProps, TreeSelectionMode } from './treeTypes';
 
-const NO_MODS: PressModifiers = { shiftKey: false, ctrlKey: false, metaKey: false, altKey: false };
 
 /**
  * A hierarchy of rows that expand and collapse: a file tree, a registry
@@ -82,79 +79,24 @@ export const Tree = forwardRef(function Tree(
   }: TreeProps,
   ref: Ref<HTMLUListElement>,
 ) {
-  const [expanded, setExpanded] = useControlledSet(expandedIds, defaultExpandedIds, onExpandedChange);
-  const [selected, setSelected] = useControlledSet(selectedIds, defaultSelectedIds, onSelectionChange);
-  const selectable = selectionMode !== 'none';
+  const hold = useControlHold({ disabled: off, disabledReason, readOnly, readOnlyReason }, { readonlyRole: false });
+  const { expanded, setExpanded, toggle, expand } = useTreeFold(expandedIds, defaultExpandedIds, onExpandedChange, hold.disabled);
   const rowTip = useRowTip();
   const baseId = useId();
   const grid = useMemo(() => hasControls(nodes), [nodes]);
-  const hold = useControlHold({ disabled: off, disabledReason, readOnly, readOnlyReason }, { readonlyRole: false });
   const onMove = hold.refuses ? undefined : move;
-  const alone = useMemo(() => idsWhere(nodes, (n) => !!n.selectsAlone), [nodes]);
 
   const visible = useMemo(() => visibleRows(nodes, expanded), [nodes, expanded]);
   const indexOf = useMemo(() => new Map(visible.map((v, i) => [v.node.id, i])), [visible]);
-
   const nodeAt = (id: string) => visible[indexOf.get(id) ?? -1]?.node;
-  const toggle = (node: TreeNode): boolean => {
-    if (!node.children || node.disabled || hold.disabled) return false;
-    const next = new Set(expanded);
-    if (next.has(node.id)) next.delete(node.id);
-    else next.add(node.id);
-    setExpanded(next);
-    return true;
-  };
-
-  const order = () => visible.map((v) => v.node.id);
-  const disabled = (id: string) => hold.disabled || !!nodeAt(id)?.disabled;
-  // Neither joins a selection of more than one row.
-  const single = (id: string) => disabled(id) || alone.has(id);
-  const commitSelection = (ids: readonly string[]) => {
-    const next = new Set(ids);
-    if (next.size !== selected.size || [...next].some((x) => !selected.has(x))) setSelected(next);
-  };
-
-  const select = (id: string, mods: PressModifiers) => {
-    const policy: SelectPolicy = { mode: selectionMode === 'multiple' ? 'multi' : 'single', ...listKeys() };
-    const result = selectFrom({ ids: [...selected], anchor: anchor.current }, id, intentOf(selectModifiers(mods), policy), {
-      order: order(), forceSingle: single,
-    });
-    anchor.current = result.anchor;
-    commitSelection(result.ids);
-  };
-
-  const activate = (node: TreeNode, mods: PressModifiers) => {
-    if (node.disabled || hold.disabled) return;
-    if (pressFolds) toggle(node);
-    if (selectable) select(node.id, mods);
-    onAction?.(node.id, mods);
-  };
-
-  const nav = useRowNavigation<HTMLElement>({
-    rows: useMemo(() => visible.map((v) => ({ id: v.node.id, parentId: v.parentId })), [visible]),
-    isSelected: (id) => selectable && selected.has(id),
-    // Selection with focus, and Shift's range, pass over disabled rows: focus alone moves there.
-    onReach: (id) => {
-      if (selectable && selectionFollowsFocus && !disabled(id)) select(id, NO_MODS);
-    },
-    ...(selectionMode === 'multiple' ? {
-      onExtend: (id: string) => { if (!single(id)) select(id, { ...NO_MODS, shiftKey: true }); },
-      onSelectAll: () => {
-        if (hold.disabled) return;
-        const ids = order();
-        commitSelection(rangeOf(ids, ids[0]!, ids[ids.length - 1]!, single));
-      },
-    } : {}),
-    onActivate: (id, mods) => { const node = nodeAt(id); if (node) activate(node, mods); },
-    tree: {
-      isBranch: (id) => !!nodeAt(id)?.children,
-      isOpen: (id) => !!nodeAt(id)?.children && expanded.has(id),
-      toggle: (id) => { const node = nodeAt(id); return node ? toggle(node) : false; },
-    },
-    textOf: (id) => { const node = nodeAt(id); return node ? textOf(node) : ''; },
+  const selection = useTreeSelection({
+    nodes, visible, nodeAt, selectionMode, selectedIds, defaultSelectedIds, onSelectionChange, held: hold.disabled,
   });
-  const items = nav.els;
-  const anchor = nav.anchor;
+  const { selected, selectable } = selection;
+
+  const { nav, activate, rowBox } = useTreeNav({
+    visible, nodeAt, expanded, selection, selectionMode, selectionFollowsFocus, toggle, pressFolds, onAction, held: hold.disabled, grid,
+  });
 
   const treeEl = useRef<HTMLUListElement | null>(null);
   const isEmpty = nodes.length === 0;
@@ -162,8 +104,6 @@ export const Tree = forwardRef(function Tree(
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useImperativeHandle(ref, () => treeEl.current as HTMLUListElement, [isEmpty]);
   useUntabbedControls(grid, treeEl);
-  // A treegrid's focused element is the row box; a tree's is the `li` around it.
-  const rowBox = (id: string) => (grid ? items.current.get(id) : items.current.get(id)?.firstElementChild) as HTMLElement | undefined;
   const drag = useTreeDrag({
     enabled: !!onMove,
     onDragOutside, onDropOutside, externalDrag, dropRef,
@@ -171,26 +111,27 @@ export const Tree = forwardRef(function Tree(
     container: () => treeEl.current,
     rowEl: rowBox,
     canDrop, onMove, onCopy, onLink,
-    onPress: (id, mods) => { const v = visible[indexOf.get(id) ?? -1]; if (v) activate(v.node, mods); },
-    expand: (id) => { if (!expanded.has(id)) setExpanded(new Set(expanded).add(id)); },
+    onPress: (id, mods) => { const node = nodeAt(id); if (node) activate(node, mods); },
+    expand,
   });
 
   if (nodes.length === 0) {
     return <div className={[s.empty, className].filter(Boolean).join(' ')} data-held={hold.held}>{empty ?? '—'}</div>;
   }
 
-  const onKeyDown = (node: TreeNode) => (e: KeyboardEvent<HTMLElement>) => {
-    if (grid && controlCellKey(e, (delta, extend) => nav.go(node.id, (indexOf.get(node.id) ?? 0) + delta, extend))) return;
-    if (e.target !== e.currentTarget) return;
-    onRowKeyDown?.(node.id, e);
-    if (e.defaultPrevented) return;
-    if (onMove && handleMoveKey(e, node.id, { nodes, selected, expanded, setExpanded, canDrop, onMove, focusAfterMove: nav.focusLater })) return;
-    if (grid && enterControls(e, !!node.children && !expanded.has(node.id))) return;
-    nav.onKeyDown(node.id, e);
+  const keysHost: TreeRowKeysHost = {
+    grid, expanded, onRowKeyDown,
+    moves: onMove && { nodes, selected, expanded, setExpanded, canDrop, onMove, focusAfterMove: nav.focusLater },
+    step: (id, delta, extend) => nav.go(id, (indexOf.get(id) ?? 0) + delta, extend),
+    navKey: nav.onKeyDown,
   };
 
-  const tipNode = rowTip.tip && !drag.state.dragging ? visible[indexOf.get(rowTip.tip.id) ?? -1]?.node : undefined;
+  const tipNode = rowTip.tip && !drag.state.dragging ? nodeAt(rowTip.tip.id) : undefined;
 
+  const pointerHost: TreeRowPointerHost = {
+    rowTip, rowBox, focused: nav.onFocus, activate, toggle, onRowContextMenu,
+    drag: onMove ? drag.onPointerDown : undefined,
+  };
   let seq = 0;
   const renderLevel = (list: readonly TreeNode[], level: number): ReactNode =>
     list.map((node, pos) => {
@@ -208,23 +149,8 @@ export const Tree = forwardRef(function Tree(
           dragging={drag.state.effect === 'move' && !!drag.state.dragging?.includes(node.id)}
           drags={!!onMove}
           rowRef={nav.rowRef(node.id)}
-          onKeyDown={onKeyDown(node)}
-          onFocus={(e) => {
-            if (e.target !== e.currentTarget) return;
-            nav.onFocus(node.id);
-            // A press focuses the item too, and the pointer's own rest is what opens the tooltip then.
-            if (node.tooltip != null && e.currentTarget.matches(':focus-visible')) rowTip.rest(node.id, rowBox(node.id)!);
-          }}
-          onBlur={(e) => { if (e.target === e.currentTarget) rowTip.clear(); }}
-          onPress={(e) => { if (!isInControlWithin(e.target, e.currentTarget)) activate(node, modsOf(e)); }}
-          onToggle={() => toggle(node)}
-          onPointerEnter={node.tooltip != null ? (e) => rowTip.rest(node.id, e.currentTarget) : undefined}
-          onPointerLeave={node.tooltip != null ? rowTip.clear : undefined}
-          onPointerDown={(e) => {
-            rowTip.clear();
-            if (onMove) drag.onPointerDown(node.id, e);
-          }}
-          onContextMenu={onRowContextMenu ? (e) => onRowContextMenu(node.id, e) : undefined}
+          onKeyDown={(e) => rowKeyDown(node, e, keysHost)}
+          {...bindRowPointer(node, pointerHost)}
         >
           {open && node.children!.length > 0 && (
             <ul role={grid ? 'none' : 'group'} className={guides ? `${s.group} ${s.guide}` : s.group}>
@@ -253,16 +179,36 @@ export const Tree = forwardRef(function Tree(
       >
         {renderLevel(nodes, 1)}
       </ul>))}
-      {tipNode?.tooltip != null && (
-        // The trigger is the row, handed over by ref: the tooltip only reads its open state from the wrapper.
-        <TooltipTrigger open>
-          <Tooltip triggerRef={{ current: rowTip.tip!.el }} placement="right">{tipNode.tooltip}</Tooltip>
-        </TooltipTrigger>
-      )}
-      {ghost && treeEl.current && (
-        // Not the shown rows: a drag also carries selected rows folded away in a closed branch.
-        <TreeDragGhost state={drag.state} from={treeEl.current} labelOf={(id) => nodeById(nodes, id)?.label ?? id} render={renderGhost} />
-      )}
+      <TreeOverlays
+        tip={tipNode?.tooltip != null ? { el: rowTip.tip!.el, content: tipNode.tooltip } : null}
+        ghost={ghost ? treeEl.current : null} nodes={nodes} drag={drag.state} renderGhost={renderGhost}
+      />
     </>
   );
 });
+
+/**
+ * What a tree draws outside its list: the open tooltip beside its row, and the ghost of a drag drawn from the tree
+ * `ghost` names. The tooltip's trigger is the row, handed over by ref: it only reads its open state from the wrapper.
+ */
+function TreeOverlays({ tip, ghost, nodes, drag, renderGhost }: {
+  tip: { el: HTMLElement; content: ReactNode } | null;
+  ghost: HTMLElement | null;
+  nodes: readonly TreeNode[];
+  drag: TreeDragState;
+  renderGhost: TreeProps['renderGhost'];
+}) {
+  return (
+    <>
+      {tip && (
+        <TooltipTrigger open>
+          <Tooltip triggerRef={{ current: tip.el }} placement="right">{tip.content}</Tooltip>
+        </TooltipTrigger>
+      )}
+      {ghost && (
+        // Not the shown rows: a drag also carries selected rows folded away in a closed branch.
+        <TreeDragGhost state={drag} from={ghost} labelOf={(id) => nodeById(nodes, id)?.label ?? id} render={renderGhost} />
+      )}
+    </>
+  );
+}

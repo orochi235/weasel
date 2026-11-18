@@ -8,7 +8,7 @@ import { mat3 } from '@weasel-js/geom';
 import type { SampledTrack } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
 import { bindRig } from './bindRig';
-import type { Pose, Skeleton } from '@weasel-js/animator';
+import type { SkeletonPose, Skeleton } from '@weasel-js/animator';
 
 /** A two-bone arm: shoulder at (100, 100) pointing +x, elbow 50 along it. */
 const ARM: Skeleton = {
@@ -43,20 +43,20 @@ function rigged() {
     turn: () => where(upper).rotation ?? 0,
     /** How far joint `name` sits along x from where the bind pose puts it. */
     shift: (name: 'upper' | 'lower' = 'upper') =>
-      mat3.apply(rig.world().get(name)!, 0, 0)[0] - (name === 'upper' ? 100 : 150),
+      mat3.transformPoint(rig.world().get(name)!, 0, 0)[0] - (name === 'upper' ? 100 : 150),
   };
 }
 
 const TAU = Math.PI * 2;
 
-const clip = (to: Pose, more: Partial<SampledTrack<Pose>>): SampledTrack<Pose> =>
+const clip = (to: SkeletonPose, more: Partial<SampledTrack<SkeletonPose>>): SampledTrack<SkeletonPose> =>
   ({ kind: 'sampled', keys: [{ t: 0, value: {} }, { t: 100, value: to }], ...more });
 
 describe('a rig as an animation target', () => {
   it('starts committed at the bind pose, and commits what pose() is given', () => {
     const { rig, shift } = rigged();
     expect(rig.target.read()).toEqual({});
-    const p: Pose = { upper: { x: 7 } };
+    const p: SkeletonPose = { upper: { x: 7 } };
     rig.pose(p);
     expect(rig.target.read()).toBe(p);
     expect(shift()).toBeCloseTo(7, 6);
@@ -187,7 +187,7 @@ describe('a rig as an animation target', () => {
 
   it('plays a targeted pose track with no interpolate, the short way on rotation', () => {
     const { rig, animator, step, turn } = rigged();
-    const track: SampledTrack<Pose> = {
+    const track: SampledTrack<SkeletonPose> = {
       kind: 'sampled',
       keys: [{ t: 0, value: { upper: { rotation: 0.2 } } }, { t: 100, value: { upper: { rotation: TAU - 0.2 } } }],
       target: rig.target,

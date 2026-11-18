@@ -75,7 +75,7 @@ describe('createLoupeModel', () => {
     const seen = tally();
     fc.assert(fc.property(fc.boolean(), fc.option(factor, { nil: undefined }), bounds, fc.array(opArb, { minLength: 15, maxLength: 40 }),
       (framed, initial, range, ops) => {
-        const world: World = { hidden: false, gone: false, covered: null, palette: 0, lens: { x: 0, y: 0, w: 100, h: 100 } };
+        const world: World = { hidden: false, gone: false, covered: null, palette: 0, lens: { x: 0, y: 0, width: 100, height: 100 } };
         const frameFns = new Set<() => void>();
         const bad: LoupePoint[] = [];
         let redraws = 0;

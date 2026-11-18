@@ -1,23 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { pointInPath, strokeHitTest } from '../pathHitTest';
+import { pathContainsPoint, strokeHitTest } from '../pathHitTest';
 import { PathBuilder, polygonFromPoints, rectPath } from './builder';
 
-describe('pointInPath', () => {
+describe('pathContainsPoint', () => {
   describe('RectPath fast path', () => {
     const r = rectPath(10, 20, 30, 40); // (10,20)..(40,60)
 
     it('hits inside', () => {
-      expect(pointInPath(r, 25, 30)).toBe(true);
+      expect(pathContainsPoint(r, 25, 30)).toBe(true);
     });
 
     it('misses outside', () => {
-      expect(pointInPath(r, 5, 30)).toBe(false);
-      expect(pointInPath(r, 25, 100)).toBe(false);
+      expect(pathContainsPoint(r, 5, 30)).toBe(false);
+      expect(pathContainsPoint(r, 25, 100)).toBe(false);
     });
 
     it('treats edges as inside', () => {
-      expect(pointInPath(r, 10, 20)).toBe(true);
-      expect(pointInPath(r, 40, 60)).toBe(true);
+      expect(pathContainsPoint(r, 10, 20)).toBe(true);
+      expect(pathContainsPoint(r, 40, 60)).toBe(true);
     });
   });
 
@@ -27,19 +27,19 @@ describe('pointInPath', () => {
     ]);
 
     it('hits the interior', () => {
-      expect(pointInPath(triangle, 50, 30)).toBe(true);
+      expect(pathContainsPoint(triangle, 50, 30)).toBe(true);
     });
 
     it('misses well outside', () => {
-      expect(pointInPath(triangle, -10, 50)).toBe(false);
-      expect(pointInPath(triangle, 200, 50)).toBe(false);
-      expect(pointInPath(triangle, 50, -10)).toBe(false);
+      expect(pathContainsPoint(triangle, -10, 50)).toBe(false);
+      expect(pathContainsPoint(triangle, 200, 50)).toBe(false);
+      expect(pathContainsPoint(triangle, 50, -10)).toBe(false);
     });
 
     it('misses just outside the slanted edge', () => {
       // The right edge goes from (100,0) to (50,100). At y=50, edge x = 75.
-      expect(pointInPath(triangle, 80, 50)).toBe(false);
-      expect(pointInPath(triangle, 70, 50)).toBe(true);
+      expect(pathContainsPoint(triangle, 80, 50)).toBe(false);
+      expect(pathContainsPoint(triangle, 70, 50)).toBe(true);
     });
   });
 
@@ -52,16 +52,16 @@ describe('pointInPath', () => {
       .build();
 
     it('hits the outer ring', () => {
-      expect(pointInPath(donut, 10, 50)).toBe(true);
-      expect(pointInPath(donut, 90, 50)).toBe(true);
+      expect(pathContainsPoint(donut, 10, 50)).toBe(true);
+      expect(pathContainsPoint(donut, 90, 50)).toBe(true);
     });
 
     it('misses the inner hole', () => {
-      expect(pointInPath(donut, 50, 50)).toBe(false);
+      expect(pathContainsPoint(donut, 50, 50)).toBe(false);
     });
 
     it('misses far outside', () => {
-      expect(pointInPath(donut, -5, 50)).toBe(false);
+      expect(pathContainsPoint(donut, -5, 50)).toBe(false);
     });
   });
 
@@ -76,12 +76,12 @@ describe('pointInPath', () => {
 
     it('hits between the chord and the curve', () => {
       // At y = 30 the chord is at x = 30 and the arc at x = 79.5.
-      expect(pointInPath(arc, 70, 30)).toBe(true);
+      expect(pathContainsPoint(arc, 70, 30)).toBe(true);
     });
 
     it('misses between the curve and its control point', () => {
       // At y = 10 the arc is at x = 53.2.
-      expect(pointInPath(arc, 90, 10)).toBe(false);
+      expect(pathContainsPoint(arc, 90, 10)).toBe(false);
     });
   });
 });
@@ -95,7 +95,7 @@ describe('strokeHitTest', () => {
     expect(strokeHitTest(line, 50, 53, 5)).toBe(true);
   });
 
-  it('hits open polylines (which pointInPath cannot)', () => {
+  it('hits open polylines (which pathContainsPoint cannot)', () => {
     // S-curve with two cubic segments, NOT closed.
     const curve = new PathBuilder()
       .moveTo(0, 100)
@@ -108,8 +108,8 @@ describe('strokeHitTest', () => {
     expect(strokeHitTest(curve, 60, 22.5, 2)).toBe(true);
     // Far away misses.
     expect(strokeHitTest(curve, 1000, 1000, 8)).toBe(false);
-    // pointInPath returns false anywhere — open paths have no enclosed area.
-    expect(pointInPath(curve, 60, 22.5)).toBe(false);
+    // pathContainsPoint returns false anywhere — open paths have no enclosed area.
+    expect(pathContainsPoint(curve, 60, 22.5)).toBe(false);
   });
 
   it('hits the edge of a rect (not its interior)', () => {

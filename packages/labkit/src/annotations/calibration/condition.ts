@@ -1,5 +1,5 @@
 import { clamp } from '@weasel-js/geom';
-import type { ViewTransform } from '../../instrument/types';
+import type { ViewTransform2D } from '../../instrument/types';
 import { type Box, CONTENT, EXERCISES } from './exercises';
 
 export const SCALES = ['0.5', '1', '2'] as const;
@@ -33,24 +33,29 @@ export function pxPerUnit(c: CalibrationConfig): number {
 }
 
 /** The picture element's size on screen: the content at its scale. A zoom magnifies inside it. */
-export function pictureSize(c: CalibrationConfig): { w: number; h: number } {
+export function pictureSize(c: CalibrationConfig): { width: number; height: number } {
   const s = Number(c.scale);
-  return { w: CONTENT.w * s, h: CONTENT.h * s };
+  return { width: CONTENT.width * s, height: CONTENT.height * s };
 }
 
 /** The part of the content a zoom shows: `1 / zoom` of it, centered on the focused exercise and kept inside. */
 export function zoomWindow(c: CalibrationConfig): Box {
   const z = Number(c.zoom);
-  const w = CONTENT.w / z;
-  const h = CONTENT.h / z;
+  const w = CONTENT.width / z;
+  const h = CONTENT.height / z;
   const area = EXERCISES.find((e) => e.id === c.focus)?.area ?? { x: 0, y: 0, ...CONTENT };
-  const cx = area.x + area.w / 2;
-  const cy = area.y + area.h / 2;
-  return { x: clamp(cx - w / 2, 0, CONTENT.w - w), y: clamp(cy - h / 2, 0, CONTENT.h - h), w, h };
+  const cx = area.x + area.width / 2;
+  const cy = area.y + area.height / 2;
+  return {
+    x: clamp(cx - w / 2, 0, CONTENT.width - w),
+    y: clamp(cy - h / 2, 0, CONTENT.height - h),
+    width: w,
+    height: h,
+  };
 }
 
 /** The target's camera under a zoom, against its element's box; none at zoom 1, where labkit fits the content. */
-export function targetView(c: CalibrationConfig): ViewTransform | undefined {
+export function targetView(c: CalibrationConfig): ViewTransform2D | undefined {
   if (c.zoom === '1') return undefined;
   const k = pxPerUnit(c);
   const win = zoomWindow(c);

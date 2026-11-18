@@ -49,7 +49,7 @@ throws on a duplicate entry id, dep name, view id or marker id.
 ### Presets
 
 A package ships its behavior as a `FeaturePreset`, and an app turns it on by
-passing the object beside core's: `features={[drawPreset, pathTools]}`. An
+passing the object beside core's: `features={[drawPreset, pathToolsPreset]}`. An
 app that does not import a preset never loads its code.
 
 ```ts
@@ -90,7 +90,7 @@ maps core's names to the objects, at the cost of loading every core preset.
 
 A `ToolSet` names a group of tool ids, and other sets, as one unit: `defaultTools`,
 a preset's `tools`, and `ToolPalette`'s `include` each take one. Core ships `VIEW_TOOLS`,
-`@weasel-js/editing` `SELECT_TOOLS`, `SHAPE_TOOLS` and `BUILTIN_TOOLS` over the three, and a
+`@weasel-js/editing` `SELECT_TOOLS`, `SHAPE_TOOLS` and `KIT_TOOLS` over the three, and a
 package ships its own (`@weasel-js/path-tools`' `PATH_EDIT_TOOLS`, `DRAW_TOOLS`, `SLICE_TOOLS`,
 `RESHAPE_TOOLS`, …; `@weasel-js/text-tools`' `TEXT_TOOLS`); `withoutTools(set, ...omit)` leaves some
 out, so an app takes "everything but the warps" without
@@ -176,10 +176,10 @@ Those declare a different condition:
 - `always` — live whatever is focused.
 - `claimed` — live only for input that hit one of this entry's own
   affordances: a hit whose `owner` is the entry's id, or one of the ids a
-  `claimed: [ids]` list names (`diagramPorts` lists its port layer's). No
+  `claimed: [ids]` list names (`createDiagramPortsContribution` lists its port layer's). No
   keystroke reaches it.
 - `keymap` — live only while it is the innermost open keymap, at the hotkey
-  tier (open one with a leader, `keymapContribution`).
+  tier (open one with a leader, `createKeymapContribution`).
 - `capabilities` — a modality filter over whichever of the above holds.
 
 The conditions are a set, not a choice: the hand tool is palette-selectable
@@ -196,13 +196,13 @@ role:
 | Role | What it holds |
 |---|---|
 | `views` | The minimap: a view at `rect`, its camera a fit over the scene |
-| `actions` | `minimap.center`, `minimap.pan`, `minimap.zoom` and `minimap.pinch`, which move the main camera (the last two unless `zoom: false`) |
+| `actions` | `minimap.center`, `minimap.pan`, `minimap.zoom` and `minimap.touchZoom`, which move the main camera (the last two unless `zoom: false`) |
 | `bindings` | `pointerDown` → center, `drag` → pan, wheel, trackpad pinch and Safari's pinch → zoom, and a two-finger touch → pinch, all with `views: ['minimap']` |
 | `overlay` | The visible-rect indicator, and a crosshair where the pointer is in the other view |
 | `attach` | Subscribes to the pointer store and repaints while the crosshair shows |
 
 ```tsx
-const minimap = useMemo(() => createMinimapContribution({ rect: { x: 8, y: 8, w: 160, h: 110 } }), []);
+const minimap = useMemo(() => createMinimapContribution({ rect: { x: 8, y: 8, width: 160, height: 110 } }), []);
 <SceneCanvas ambient={[minimap]} … />
 ```
 
@@ -399,7 +399,7 @@ Each action pins the proposed/result shape; pick the matching alias
   paints at full opacity rather than as a ghost.
 - `onEnd` decides commit ops. First non-`undefined` return wins: `Op[]`
   commits, `null` aborts, `undefined` falls through to the next behavior
-  or the action's default ops (move emits one `createTransformOp` per id).
+  or the action's default ops (move emits one `createSetPoseOp` per id).
   Every behavior's `onEnd` runs, with `end.answered` true once an earlier one
   has answered or thrown; after a throw nothing commits, and the first error
   is rethrown once all have run.
@@ -415,7 +415,7 @@ Each action pins the proposed/result shape; pick the matching alias
   was canceled, aborted by a behavior, released with nothing to commit, or
   refused by a container its ops dropped something into, and true otherwise: the action or a behavior made the commit, a behavior
   claiming it with no ops included. For move, resize, and rotate it is the
-  value `onGestureEnd` receives. Move, resize, rotate, insert, and
+  value `onRunEnd` receives. Move, resize, rotate, insert, and
   lasso-select call it, and every behavior's runs even if another's throws.
 - `ctx.scratch` is a per-gesture mutable map, wiped on every `start`.
   Namespace by behavior id to avoid collisions:
@@ -542,19 +542,19 @@ center and Space to reposition. A painter runs after the built-ins that claim a
 node by its data (`text`, `path`, `shape`, `image`), so keep its `matches` off
 those fields, or register it with `{ priority: 'high' }`.
 
-`nodeKindPreset` packages them as one preset, each trait handed to its owner
+`createNodeKindPreset` packages them as one preset, each trait handed to its owner
 while the preset is on and released when it goes:
 
 <!-- snippet: tests/consumers/gem-extension/src/index.ts#gem-feature -->
 ```ts
-import { nodeKindPreset } from '@weasel-js/core';
+import { createNodeKindPreset } from '@weasel-js/core';
 import { insertPreset } from '@weasel-js/editing';
 import { GEM_BLUE, gemInsert, gemShape, gemTool, isGem } from './gem.js';
 import { tintTool } from './tint.js';
 
 /** The whole feature as one preset: the kind's routing, painter, insert factory, and properties, and its tools,
  *  with editing's `insertPreset`, whose `insert` action and dep the gem tool inserts through. */
-export const gemFeature = nodeKindPreset({
+export const gemFeature = createNodeKindPreset({
   id: 'app:gem',
   label: 'Gems',
   kind: 'gem',                      // routing kind, properties name, insert kind
@@ -733,7 +733,7 @@ import {
   createScene, linePath,
   type DerivePathFn, type RectPose,
 } from '@weasel-js/core';
-import { strokeOf } from '@weasel-js/paint';
+import { solidStroke } from '@weasel-js/paint';
 
 const center = (p: RectPose) => ({ x: p.x + p.width / 2, y: p.y + p.height / 2 });
 
@@ -754,7 +754,7 @@ scene.add({
   kind: 'mark',
   layer: 'main',
   pose: { x: 0, y: 0, width: 0, height: 0 },
-  data: { stroke: strokeOf('#1c1c1c', 2) },
+  data: { stroke: solidStroke('#1c1c1c', 2) },
   dependsOn: [a, b],
   derivePath: connectCenters,
 });
@@ -1031,9 +1031,9 @@ so that a tool hook stays callable from anywhere.
 
 **Add the selection's own bindings.** The select tool only chooses. Dragging
 the selection to move or clone it, and its resize and rotation handles, are the
-`always` entries `selectionMoveContribution()` and
-`selectionTransformContribution()` (or `selectionResizeContribution()` and
-`selectionRotateContribution()` for one handle without the other); put them in
+`always` entries `createSelectionMoveContribution()` and
+`createSelectionTransformContribution()` (or `createSelectionResizeContribution()` and
+`createSelectionRotateContribution()` for one handle without the other); put them in
 the dispatcher's `entriesById` beside your tools (handles first, since a handle
 sits over the body it resizes). The 3d lab (`packages/labkit/examples/3d-lab/SolidInstrument.tsx`)
 adds the move one.

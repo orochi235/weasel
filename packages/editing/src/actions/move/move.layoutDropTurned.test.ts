@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { moveAction } from './action';
-import { createScene, RIGID_POSE_COMPOSITION, createTransformOp, scenePoseFrame } from '@weasel-js/core/engine';
+import { createScene, RIGID_POSE_COMPOSITION, createSetPoseOp, scenePoseFrame } from '@weasel-js/core/engine';
 import { expectSamePoseForTests as expectSamePose } from '@weasel-js/core/test-seams';
 import type { NodeId, RectPose } from '@weasel-js/core';
 import type { ContainerBounds, LayoutChild, LayoutStrategy } from '@weasel-js/core/engine';
@@ -28,8 +28,8 @@ function rows(seen: { bounds: ContainerBounds[]; children: RectPose[] }) {
       new Map(children.filter((k) => k.id !== d.id).map((k) => [k.id, down(k.pose)])),
     commitDrop: (_c: unknown, children: LayoutChild<RectPose>[], d: { id: string; originPose: RectPose }, target: { pose: RectPose }) => [
       ...children.filter((k) => k.id !== d.id).map((k) =>
-        createTransformOp<RectPose>({ id: k.id, from: k.pose, to: down(k.pose), label: 'Shift' })),
-      createTransformOp<RectPose>({ id: d.id, from: d.originPose, to: target.pose, label: 'Drop' }),
+        createSetPoseOp<RectPose>({ id: k.id, from: k.pose, to: down(k.pose), label: 'Shift' })),
+      createSetPoseOp<RectPose>({ id: d.id, from: d.originPose, to: target.pose, label: 'Drop' }),
     ],
   } as unknown as LayoutStrategy<unknown>;
 }

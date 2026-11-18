@@ -115,7 +115,7 @@ export function TrackGeometryView({ config, onConfig }: { config: TrackGeometryC
     { id: 'shape-f-open', label: 'shape f, open', value: num(m.onShapeOpen.f, 7, 3) },
     { id: 'run-g', label: 'run g', value: num(m.onRun.f, 7, 3) },
     { id: 'run-g-open', label: 'run g, open', value: num(m.onRunOpen.f, 7, 3) },
-    { id: 'dist', label: 'distance', value: `${num(m.onShape.dist)} px` },
+    { id: 'dist', label: 'distance', value: `${num(m.onShape.distance)} px` },
   ];
   const tips: Readout[] = m.stations.map((st, i) => ({ id: `tip-${i}`, label: `g ${st.g.toFixed(2)}`, value: `${num(st.angle, 7, 1)}°` }));
 

@@ -13,7 +13,7 @@ import type { HoldProps } from '../Disabled';
 export type ThumbRenderCtx = {
   width: number;
   height: number;
-  isActive: boolean;
+  active: boolean;
 };
 
 /**
@@ -204,7 +204,7 @@ export type SliderProps<T extends Thumb<Quantity> = Thumb> = HoldProps & {
    *  (under `spacing: 'even'`, one stop beyond the first or last): a thumb
    *  there reports `Infinity` (`-Infinity` below `min`), and a thumb given
    *  ±Infinity sits there. Its readout and spoken text are `display`'s word
-   *  for infinity — `endless(unit('ms'), 'never')` — else `∞`. */
+   *  for infinity — `withInfinity(unit('ms'), 'never')` — else `∞`. */
   endless?: Endless;
   'aria-label'?: string;
   /** The element naming the slider. Inside a `Field`, with neither this nor `aria-label`, the field's label names it. */

@@ -64,8 +64,8 @@ describe('resolveSchemaMenu: number leaves', () => {
     expect(e).toMatchObject({ kind: 'number', display });
   });
 
-  it("shows a value at its unit's precision, trailing zeros included, where the leaf names no display", () => {
-    const leaf = pref.number('Length', 1, { unit: { suffix: 'in', scale: 1, precision: 2 } });
+  it("shows a value at its unit's places, trailing zeros included, where the leaf names no display", () => {
+    const leaf = pref.number('Length', 1, { unit: { suffix: 'in', scale: 1, places: 2 } });
     const e = only(resolveSchemaMenu(menu({ l: leaf }), valued({ l: 1.5 })));
     expect(e).toMatchObject({ kind: 'number', display: decimal({ places: 2, grouping: false }) });
   });

@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import { cleanup, fireEvent, screen } from '@testing-library/react';
-import { f, resolveConfigSchema, withValueAtPath } from '@weasel-js/labkit/config';
+import { f, resolveConfigSchema, withConfigValueAt } from '@weasel-js/labkit/config';
 import { ControlPanel } from '@weasel-js/labkit/controls';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { useState } from 'react';
@@ -32,7 +32,7 @@ function Panel() {
       <ControlPanel
         schema={resolved}
         config={config}
-        setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
+        setConfig={(path, value) => setConfig((prev) => withConfigValueAt(prev, path, value))}
       />
     </div>
   );

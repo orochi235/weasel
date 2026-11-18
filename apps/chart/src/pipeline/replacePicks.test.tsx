@@ -52,7 +52,7 @@ describe('replacing the pipeline', () => {
     expect(within(params()).getByText('Select a stage to edit its params.')).toBeTruthy();
   });
 
-  it('drops the picked group when a stage is added from the palette', async () => {
+  it('drops the picked cluster when a stage is added from the palette', async () => {
     render(<App />, { wrapper: withIcons });
     choose('Mode', 'Pipeline');
     act(() => { fireEvent.click(screen.getByRole('row', { name: 'Blur' })); });
@@ -62,7 +62,7 @@ describe('replacing the pipeline', () => {
     act(() => { fireEvent.click(screen.getByRole('row', { name: 'Blur' })); });
     act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'Arrange' })); });
     const open = screen.getAllByRole('menu').at(-1)!;
-    const ungroup = [...open.querySelectorAll<HTMLElement>('[role^="menuitem"]')].find((el) => el.textContent?.startsWith('Ungroup'));
-    expect(ungroup?.getAttribute('aria-disabled')).toBe('true');
+    const dissolveCluster = [...open.querySelectorAll<HTMLElement>('[role^="menuitem"]')].find((el) => el.textContent?.startsWith('Ungroup'));
+    expect(dissolveCluster?.getAttribute('aria-disabled')).toBe('true');
   });
 });

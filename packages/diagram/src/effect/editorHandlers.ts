@@ -10,12 +10,13 @@ import {
   addWire, canWire, ensureWireIds, reconnectWire, removeStages, removeWires, setWireLabel, setWireRoute,
 } from './edit';
 import type { EditorLook, EditorScene } from './editorMapping';
-import { dragEdit, type DragReports } from './groupHandlers';
+import { dragEdit, type DragReports } from './clusterHandlers';
 import { setLookRoute, wireEnds } from './lookRoutes';
-import type { EffectBox, EffectDoc, EffectPipeline, EffectWire } from './types';
+import type { EffectDoc, EffectPipeline, EffectWire } from './types';
+import type { Rect } from '@weasel-js/geom';
 
 type Ref = { stage: string; port: string };
-type Box = EffectBox;
+type Box = Rect;
 type Shown = readonly { id?: unknown; pose?: unknown }[];
 
 /** The wire `a`–`b` describes, output first whichever end the drag began on,
@@ -69,9 +70,9 @@ export interface EditorNow {
 
 /** DiagramView's edit callbacks, each turning a report into an edit of the
  *  latest doc. Nothing is read back out of the scene. A drag's moves and box
- *  edits come together through `onEdit`, as one edit. A double-click on a group's title
+ *  edits come together through `onEdit`, as one edit. A double-click on a cluster's title
  *  goes to `rename`. */
-export function editHandlers(now: () => EditorNow, unpick: () => void, rename: (group: string) => void = () => {}) {
+export function editHandlers(now: () => EditorNow, unpick: () => void, rename: (cluster: string) => void = () => {}) {
   const commit = (label: string, edit: (d: EffectDoc, b: EditorScene) => EffectDoc | null) => {
     const { doc, built, onChange } = now();
     const d = ensureWireIds(doc);
@@ -128,8 +129,8 @@ export function editHandlers(now: () => EditorNow, unpick: () => void, rename: (
     onEdit: (edit: DiagramEdit) => {
       for (const e of edit.containers) {
         if (e.kind !== 'title') continue;
-        const group = now().built.groupOf(e.id);
-        if (group !== undefined) rename(group);
+        const cluster = now().built.clusterOf(e.id);
+        if (cluster !== undefined) rename(cluster);
       }
       const reports: DragReports = { moves: [...edit.moves], boxes: edit.containers.filter((e) => e.kind === 'box') };
       if (reports.moves.length === 0 && reports.boxes.length === 0) return;

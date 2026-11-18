@@ -68,7 +68,7 @@ export function useDropMotion(form: RefObject<Element | null>, on: boolean, drop
     for (const e of el.querySelectorAll(MOVED)) {
       const above = e.parentElement!.closest(MOVED);
       const carried = (above && moved.get(above)) || ZERO;
-      const key = keyOf(e, drop, counts);
+      const key = claimKey(e, drop, counts);
       const scroller = e.parentElement!.closest('[data-pref-scroll]');
       const at = scrolledPlaceOf(e, scroller && el.contains(scroller) ? scroller : el);
       const under = slide(e);
@@ -100,8 +100,8 @@ export function useDropMotion(form: RefObject<Element | null>, on: boolean, drop
   });
 }
 
-/** What follows an element from one render to the next, or null for one that is not followed. */
-function keyOf(el: Element, drop: PrefDrop | null, counts: Map<string, number>): string | null {
+/** Claims the key that follows an element from one render to the next, counting it in `counts`, or null for one that is not followed. */
+function claimKey(el: Element, drop: PrefDrop | null, counts: Map<string, number>): string | null {
   const slot = el.getAttribute('data-drop-placeholder');
   const rail = el.getAttribute(RAIL_ATTR);
   // Inside a placeholder, and carried by it.

@@ -10,7 +10,7 @@ describe('animator public surface', () => {
     expect(typeof animator.solveIk).toBe('function');
     for (const name of [
       'addJoint', 'autoSkin', 'brushWeights', 'dropSkinJoints', 'jointAt', 'jointPositions', 'motionsFromRest',
-      'moveJoint', 'removeJoint', 'setWeights', 'skinnable', 'skinPath',
+      'moveJoint', 'removeJoint', 'setJointWeights', 'toSkinPolygon', 'skinPath',
     ] as const) {
       expect(typeof animator[name]).toBe('function');
     }

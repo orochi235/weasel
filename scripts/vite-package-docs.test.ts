@@ -74,3 +74,15 @@ describe('demosByPackage and packageDoc, over a workspace made for the test', ()
     expect(doc.guides.paths).toEqual([{ kind: 'code', code: 'line();', language: 'ts' }]);
   });
 });
+
+describe('guide files', () => {
+  const root = mkdtempSync(join(tmpdir(), 'package-docs-'));
+  afterAll(() => rmSync(root, { recursive: true, force: true }));
+
+  it('refuses two files that give one guide address, naming both', () => {
+    mkdirSync(join(root, 'packages/geom/docs/guides'), { recursive: true });
+    writeFileSync(join(root, 'packages/geom/docs/guides/1-setup.md'), '# Setup\n');
+    writeFileSync(join(root, 'packages/geom/docs/guides/setup.md'), '# Setup again\n');
+    expect(() => packageDoc(root, 'geom')).toThrow(/1-setup\.md.*setup\.md/);
+  });
+});

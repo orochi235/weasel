@@ -2,7 +2,7 @@
 '@weasel-js/plot': major
 ---
 
-`plotEditing` returns one entry for `ambient`, its handle layer inside, instead of a layer to register and a contribution.
+`createPlotEditingContribution` returns one entry for `ambient`, its handle layer inside, instead of a layer to register and a contribution.
 
 ```tsx
 // Before
@@ -11,7 +11,7 @@ useEffect(() => canvas?.registerLayer(layer), [canvas, layer]);
 <SceneCanvas ambient={[contribution]} />
 
 // After
-const editing = useMemo(() => plotEditing({ scene }), [scene]);
+const editing = useMemo(() => createPlotEditingContribution({ scene }), [scene]);
 <SceneCanvas ambient={[editing]} />
 ```
 

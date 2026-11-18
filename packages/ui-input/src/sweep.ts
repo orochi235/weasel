@@ -3,7 +3,7 @@ import { clamp01 } from '@weasel-js/geom';
 /**
  * A parameter's domain, apart from how it is walked. A scrubber reads it
  * continuously, one value at a time (`at`); a stepped sequence reads every
- * step at once (`walk`). Time is one domain among others (`frames`).
+ * step at once (`walk`). Time is one domain among others (`framesSweep`).
  */
 export interface Sweep<V> {
   /** The value `u` of the way along, 0 to 1, clamped: a scrubber's reading. A
@@ -42,10 +42,10 @@ const tidy = (n: number, scale = 0): number => {
 
 const plain = (n: number): string => String(shown(n));
 
-/** What {@link range} walks: its ends, and either a `step` or a `count`. */
+/** What {@link rangeSweep} walks: its ends, and either a `step` or a `count`. */
 export type RangeSpec = {
   from: number;
-  /** May be `Infinity`, for a walk that only `until` or a cap ends. */
+  /** May be `Infinity`, for a walk that only `sweepUntil` or a cap ends. */
   to: number;
   label?: (value: number) => string;
 } & ({ step: number; count?: never } | { count: number; step?: never });
@@ -55,7 +55,7 @@ export type RangeSpec = {
  * `to`) or `count` of them evenly spaced, both ends included. With `step`, `at`
  * snaps to a step; with `count` it is continuous, as the steps are only samples.
  */
-export function range(spec: RangeSpec): Sweep<number> {
+export function rangeSweep(spec: RangeSpec): Sweep<number> {
   const { from, to } = spec;
   if (!Number.isFinite(from) || Number.isNaN(to)) throw new RangeError(`a range runs from a finite number to a number, not ${from} to ${to}`);
   const span = to - from;
@@ -93,7 +93,7 @@ export function range(spec: RangeSpec): Sweep<number> {
 }
 
 /** The values of a list, in its order; `at` snaps to the nearest. */
-export function values<V>(list: readonly V[], label: (value: V) => string = String): Sweep<V> {
+export function valuesSweep<V>(list: readonly V[], label: (value: V) => string = String): Sweep<V> {
   if (list.length === 0) throw new RangeError('a sweep over values needs at least one');
   return {
     at: (u) => list[Math.round(clamp01(u) * (list.length - 1))]!,
@@ -102,7 +102,7 @@ export function values<V>(list: readonly V[], label: (value: V) => string = Stri
   };
 }
 
-/** What `frames` reads of a clock's declaration; a `ClockSpec` is one. */
+/** What `framesSweep` reads of a clock's declaration; a `ClockSpec` is one. */
 export interface FrameSpan {
   /** ms per pass; omitted, the run never ends. */
   duration?: number;
@@ -112,7 +112,7 @@ export interface FrameSpan {
   origin?: number;
 }
 
-/** How {@link frames} walks a clock's run. */
+/** How {@link framesSweep} walks a clock's run. */
 export interface FrameOptions {
   /** ms between frames. */
   every: number;
@@ -129,7 +129,7 @@ const ms = (t: number): string => `${shown(t)} ms`;
  * ends shows its last frame; a pass that loops back stops short of its end,
  * which is the next pass's start. `at` is continuous over the span walked.
  */
-export function frames(span: FrameSpan, options: FrameOptions): Sweep<number> {
+export function framesSweep(span: FrameSpan, options: FrameOptions): Sweep<number> {
   const { every } = options;
   if (!(every > 0)) throw new RangeError(`frames are a time above 0 apart, not ${every}`);
   const duration = span.duration ?? Infinity;
@@ -165,7 +165,7 @@ export function frames(span: FrameSpan, options: FrameOptions): Sweep<number> {
 
 /** `sweep` walked only as far as the step before the first one `done` accepts:
  *  "every frame until it repeats". `at` is the inner sweep's. */
-export function until<V>(sweep: Sweep<V>, done: (value: V, index: number) => boolean): Sweep<V> {
+export function sweepUntil<V>(sweep: Sweep<V>, done: (value: V, index: number) => boolean): Sweep<V> {
   return {
     at: sweep.at,
     *walk() {

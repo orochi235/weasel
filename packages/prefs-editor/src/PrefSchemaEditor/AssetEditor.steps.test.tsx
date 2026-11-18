@@ -1,15 +1,15 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent } from '@testing-library/react';
 import { asset, Live, pickRow, rekey, structure, tool } from './AssetEditor.fixture';
-import type { Workspace } from '@weasel-js/prefs/edit';
-import { CODE, WORKSPACE } from '@weasel-js/prefs/testing/editWorkspace';
+import type { AssetSet } from '@weasel-js/prefs/edit';
+import { CODE, ASSET_SET } from '@weasel-js/prefs/testing/editAssetSet';
 import { rowKey } from './treeRows.fixture';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 afterEach(cleanup);
 
 // The panel's pointers under a heading, which can be re-keyed as a pointer cannot.
-const START: Workspace = { assets: [WORKSPACE.assets[0]!, { ...WORKSPACE.assets[1]!, root: { name: 'Code', children: { rows: { name: 'Rows', as: 'section', children: CODE.children } } } }] };
+const START: AssetSet = { assets: [ASSET_SET.assets[0]!, { ...ASSET_SET.assets[1]!, root: { name: 'Code', children: { rows: { name: 'Rows', as: 'section', children: CODE.children } } } }] };
 
 /** The asset shown, and the keys of the rows selected in it. */
 const shown = () => ({

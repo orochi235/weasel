@@ -167,11 +167,11 @@ describe('diagramScene port labels', () => {
   });
 });
 
-describe('a group around a member with port labels', () => {
+describe('a cluster around a member with port labels', () => {
   const DATA: DiagramData = {
     nodes: [{ id: 'a', lines: ['a'], portLabels: { e: 'a long east label', s: 'south' } }, { id: 'b', lines: ['b'] }],
     edges: [{ from: 'a', to: 'b' }],
-    groups: [{ id: 'G', members: ['a'] }],
+    clusters: [{ id: 'G', members: ['a'] }],
   };
   const contains = (o: RectPose, i: RectPose) =>
     i.x >= o.x && i.y >= o.y && i.x + i.width <= o.x + o.width && i.y + i.height <= o.y + o.height;

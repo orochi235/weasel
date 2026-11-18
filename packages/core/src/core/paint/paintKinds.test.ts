@@ -15,7 +15,7 @@ import {
 import { asPaint, type PaintKindEntry } from '@weasel-js/paint-kinds';
 import { _resetPaintKindsForTests } from '@weasel-js/paint-kinds/test-seams';
 import { warmPaintKinds } from '@weasel-js/renderer';
-import { fillInPoseFrame, fillToBoundsFrame } from '@weasel-js/renderer';
+import { paintToLocalUnits, paintToBoundsUnits } from '@weasel-js/renderer';
 import { findNodeShape } from 'canvas/NodeShape';
 import { getProgramSource, registerProgram } from '@weasel-js/renderer';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
@@ -71,7 +71,7 @@ function washEntry(): PaintKindEntry {
     seed: (color) => asPaint<WashFill>({ kind: 'test-wash', origin: { x: 0.5, y: 0.5 }, color, units: 'bounds' }),
     colorOf: (paint) => (paint as unknown as WashFill).color,
     bind: () => ({ program: WASH_PROGRAM }),
-    inPoseFrame: (fill, box) => {
+    toLocalUnits: (fill, box) => {
       const f = fill as unknown as WashFill;
       if (f.units !== 'bounds') return fill;
       return asPaint<WashFill>({
@@ -80,7 +80,7 @@ function washEntry(): PaintKindEntry {
         units: 'local',
       });
     },
-    toBoundsFrame: (fill, box) => {
+    toBoundsUnits: (fill, box) => {
       const f = fill as unknown as WashFill;
       if (box.width === 0 || box.height === 0) return fill;
       return asPaint<WashFill>({
@@ -194,16 +194,16 @@ describe('paint-kind registry', () => {
   });
 
   it('refuses a kind that converts one frame direction but not the other', () => {
-    expect(() => registerPaintKind({ ...washEntry(), toBoundsFrame: undefined }))
-      .toThrow(/missing toBoundsFrame/);
-    expect(() => registerPaintKind({ ...washEntry(), inPoseFrame: undefined }))
-      .toThrow(/missing inPoseFrame/);
+    expect(() => registerPaintKind({ ...washEntry(), toBoundsUnits: undefined }))
+      .toThrow(/missing toBoundsUnits/);
+    expect(() => registerPaintKind({ ...washEntry(), toLocalUnits: undefined }))
+      .toThrow(/missing toLocalUnits/);
   });
 
   it('converts a registered kind bounds → pose frame', () => {
     dispose = registerPaintKind(washEntry());
     const box = { x: 10, y: 20, width: 200, height: 40 };
-    const out = fillInPoseFrame(WASH, box) as unknown as WashFill;
+    const out = paintToLocalUnits(WASH, box) as unknown as WashFill;
     expect(out.units).toBe('local');
     expect(out.origin).toEqual({ x: 10 + 0.25 * 200, y: 20 + 0.5 * 40 });
   });
@@ -214,7 +214,7 @@ describe('paint-kind registry', () => {
     // Start in the pose frame, so a no-op implementation cannot pass by
     // handing back the `bounds` value it was given.
     const posed = { ...(WASH as unknown as WashFill), origin: { x: 60, y: 40 }, units: 'local' as const };
-    const back = fillToBoundsFrame(asPaint<WashFill>(posed), box) as unknown as WashFill;
+    const back = paintToBoundsUnits(asPaint<WashFill>(posed), box) as unknown as WashFill;
     expect(back.units).toBe('bounds');
     expect(back.origin.x).toBeCloseTo(0.25);
     expect(back.origin.y).toBeCloseTo(0.5);
@@ -223,8 +223,8 @@ describe('paint-kind registry', () => {
   it('leaves an unregistered kind untouched rather than guessing a frame', () => {
     const alien = asPaint({ kind: 'not-registered', color: '#123456' });
     const box = { x: 10, y: 20, width: 200, height: 40 };
-    expect(fillInPoseFrame(alien, box)).toBe(alien);
-    expect(fillToBoundsFrame(alien, box)).toBe(alien);
+    expect(paintToLocalUnits(alien, box)).toBe(alien);
+    expect(paintToBoundsUnits(alien, box)).toBe(alien);
   });
 
   it('serializes a registered kind into <defs> behind its url(#id)', () => {
@@ -244,7 +244,7 @@ describe('paint-kind registry', () => {
   });
 
   it('repaints a node whose kind registers after it was first painted', () => {
-    // `NodeShape`'s paint slot memoizes per node and calls `fillInPoseFrame`
+    // `NodeShape`'s paint slot memoizes per node and calls `paintToLocalUnits`
     // inside it, so the registry is ambient state that memo cannot see change.
     const node = {
       id: 'a', kind: 'mark', layer: 'default',

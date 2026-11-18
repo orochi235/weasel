@@ -8,3 +8,6 @@ export function readCi(text: string): { env: Record<string, string>; steps: CiSt
 export function sourceChecks(steps: CiStep[]): string[][];
 export function builtSteps(steps: CiStep[]): CiStep[];
 export const CI_YML: URL;
+export function installStep(steps: CiStep[]): CiStep;
+export const WRITES: RegExp;
+export function stepGroups(runs: string[]): number[][];

@@ -7,14 +7,14 @@ import type { NodeId, Scene } from '@weasel-js/core';
 import { commitOps } from '@weasel-js/core';
 import type { RigNodeData } from '@weasel-js/core';
 import { jointAt } from '@weasel-js/animator';
-import { skinnable, type Skin } from '@weasel-js/animator';
+import { toSkinPolygon, type Skin } from '@weasel-js/animator';
 import { dataRestPath } from '@weasel-js/core';
-import { brushWeights, jointShares, setWeights } from '@weasel-js/animator';
+import { brushWeights, jointShares, setJointWeights } from '@weasel-js/animator';
 import { sceneReach, type PlacedRig } from '../bone/placedRig';
 import type { RigEditState } from '../bone/rigEditState';
 import { resolveParams } from '@weasel-js/routing';
 import type { WeightBrushParams } from '../actionParamSchema';
-import { pref, PX_UNIT } from '@weasel-js/prefs';
+import { pref, PX_UNIT } from '@weasel-js/prefs-schema';
 import { brushRing } from '@weasel-js/cursor';
 
 /** One path under the rig node, where it is drawn, with the weights now showing. */
@@ -50,7 +50,7 @@ export function weighedPaths(env: Pick<WeightEnv, 'scene' | 'placed' | 'painted'
       const rest = node && dataRestPath(node);
       if (node && rest) {
         const skin = painted.get(id) ?? (node.data as RigNodeData | null | undefined)?.skin ?? {};
-        out.push({ id, path: skinnable(rest), skin });
+        out.push({ id, path: toSkinPolygon(rest), skin });
       }
       walk(id);
     }
@@ -74,7 +74,7 @@ export const WEIGHT_BRUSH_PARAMS = pref.group('Weight brush', {
 /** The weight tool's options: its brush size, stepped by `[` `]` and Shift+wheel, which a drag and a click's dab
  *  both read. */
 export const WEIGHT_TOOL_OPTIONS = {
-  actionId: ['weight.paint', 'weight.click'],
+  actionId: ['weight.paint', 'weight.dab'],
   prefs: WEIGHT_BRUSH_PARAMS,
   size: { option: 'radiusPx', times: 1.25 },
 } as const;
@@ -100,7 +100,7 @@ function dab(
     const hits = brushWeights(worldCoords(path), x, y, radius, jointShares(skin, joint, count), mode);
     if (hits.size === 0) continue;
     next ??= new Map(env.painted());
-    next.set(id, setWeights(skin, count, joint, hits));
+    next.set(id, setJointWeights(skin, count, joint, hits));
   }
   return next;
 }
@@ -117,7 +117,7 @@ function commitPainted(env: WeightEnv, deps: ActionDeps): void {
   env.paint(null);
 }
 
-/** The weight tool's actions: `weight.paint` and `weight.click`. */
+/** The weight tool's actions: `weight.paint` and `weight.dab`. */
 export function createWeightActions(env: WeightEnv): Action[] {
   const editing = () => (env.placed() ? true : ActionDisabledReason.NotApplicable);
   return [
@@ -157,7 +157,7 @@ export function createWeightActions(env: WeightEnv): Action[] {
       },
     }),
     defineAction({
-      id: 'weight.click',
+      id: 'weight.dab',
       label: 'Weight — pick a joint, or dab its weight',
       eligible,
       requires: ['view', 'operands', 'applyOps'],

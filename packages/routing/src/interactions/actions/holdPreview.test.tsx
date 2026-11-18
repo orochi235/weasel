@@ -11,7 +11,7 @@ import { DepRegistryProvider, useDepRegistry } from './depRegistry';
 import { ActionDisabledReason, type Action } from './action';
 import { createDispatcher } from '../dispatcher/dispatcher';
 import { useGestureDispatcher } from '../dispatcher/useGestureDispatcher';
-import { keymapContribution } from '../../keymaps/keymapContribution';
+import { createKeymapContribution } from '../../keymaps/createKeymapContribution';
 import type { KeymapStack } from '../../keymaps/keymapStack';
 import { holdPreview, holdPreviewId } from './holdPreview';
 
@@ -32,14 +32,14 @@ function rig(opts: { enabled?: Action['enabled']; throws?: boolean } = {}) {
     },
     invoker: { timing: 'immediate', run: (deps, params) => run(params, deps) },
   };
-  // What core's cancelGesture is: Escape, live only while a gesture is in flight.
+  // What core's dispatch.cancelAll is: Escape, live only while a gesture is in flight.
   const cancel: Action = {
-    id: 'cancelGesture',
+    id: 'dispatch.cancelAll',
     label: 'Cancel gesture',
-    defaultBinding: [{ spec: { kind: 'key', key: 'Escape', phase: [{ channel: '*', phase: 'engaged' }] }, opts: { id: 'cancelGesture.key' } }],
+    defaultBinding: [{ spec: { kind: 'key', key: 'Escape', phase: [{ channel: '*', phase: 'engaged' }] }, opts: { id: 'dispatch.cancelAll.key' } }],
     invoker: { timing: 'immediate', run: () => dispatcher.cancelAll('cancel') },
   };
-  const entries = keymapContribution({
+  const entries = createKeymapContribution({
     id: 'paths',
     label: 'Paths',
     leader: key('p'),

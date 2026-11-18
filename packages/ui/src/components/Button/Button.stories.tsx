@@ -1,12 +1,11 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { ReactElement } from 'react';
-import { Button, type ButtonVariant, BUTTON_VARIANT_ICONS } from '@weasel-js/ui/components/Button';
-import type { ControlSize } from '@weasel-js/ui/components/ControlSize';
+import { Button, type ButtonSize, type ButtonVariant, BUTTON_VARIANT_ICONS } from '@weasel-js/ui/components/Button';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { EMPHASIS_ICONS, GRADE_ICONS } from '../appearanceIcons';
 import { EMPHASES, GRADES } from '@weasel-js/theme';
 import { BADGE_LOOKS, lookProps } from '../Badge/looks';
-import { Sequence, values } from '@weasel-js/ui/components/Sequence';
+import { Sequence, valuesSweep } from '@weasel-js/ui/components/Sequence';
 import s from './Button.stories.module.css';
 
 const meta: Meta<typeof Button> = {
@@ -205,12 +204,12 @@ export const FullWidth: Story = {
 };
 
 const VARIANTS: ButtonVariant[] = ['solid', 'ghost'];
-const SIZES: ControlSize[] = ['sm', 'md'];
+const SIZES: ButtonSize[] = ['xs', 'sm', 'md'];
 
 export const Matrix: Story = {
   tags: ['gallery'],
   render: (args) => (
-    <Sequence label="Size by variant" sweep={values(SIZES)} across={values(VARIANTS)}>
+    <Sequence aria-label="Size by variant" sweep={valuesSweep(SIZES)} across={valuesSweep(VARIANTS)}>
       {(sz, v) => (
         <div className={s.pair}>
           <Button {...args} variant={v} size={sz}>Button</Button>

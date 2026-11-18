@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AUTO, leafIsAtReset, prefNodeAt, resetPlan, resetPlanAt, type LeafReading } from './autoReset';
+import { AUTO, readingIsAtReset, prefNodeAt, resetPlan, resetPlans, type LeafReading } from './autoReset';
 import type { PrefGroup, PrefSection, PrefLeaf } from '@weasel-js/prefs-schema';
 
 const size = { kind: 'number', name: 'Size', description: '', default: 10, auto: { value: 40 } } as PrefLeaf;
@@ -12,24 +12,24 @@ const GROUP = { name: 'View', resettable: true, children: { size, gap, grid, sho
 
 const one = (value: unknown, auto?: boolean): LeafReading => ({ value, mixed: false, each: [value], auto });
 
-describe('leafIsAtReset', () => {
+describe('readingIsAtReset', () => {
   it('reads a mixed leaf as not at its reset, whatever value it shows', () => {
-    expect(leafIsAtReset(grid, { value: undefined, mixed: true, each: [true, false] })).toBe(false);
+    expect(readingIsAtReset(grid, { value: undefined, mixed: true, each: [true, false] })).toBe(false);
   });
 
   it('needs every target at its reset', () => {
-    expect(leafIsAtReset(grid, { value: true, mixed: false, each: [true, true] })).toBe(true);
-    expect(leafIsAtReset(grid, { value: undefined, mixed: false, each: [true, false] })).toBe(false);
+    expect(readingIsAtReset(grid, { value: true, mixed: false, each: [true, true] })).toBe(true);
+    expect(readingIsAtReset(grid, { value: undefined, mixed: false, each: [true, false] })).toBe(false);
   });
 
   it('reads a leaf that starts auto by its auto state where the surface keeps one, and by its default where not', () => {
-    expect(leafIsAtReset(gap, one(4, false))).toBe(false);
-    expect(leafIsAtReset(gap, one(undefined, true))).toBe(true);
-    expect(leafIsAtReset(gap, one(4))).toBe(true);
+    expect(readingIsAtReset(gap, one(4, false))).toBe(false);
+    expect(readingIsAtReset(gap, one(undefined, true))).toBe(true);
+    expect(readingIsAtReset(gap, one(4))).toBe(true);
   });
 
   it('always reads a readout as at its reset', () => {
-    expect(leafIsAtReset(shown, one(99))).toBe(true);
+    expect(readingIsAtReset(shown, one(99))).toBe(true);
   });
 });
 
@@ -43,7 +43,7 @@ describe('resetPlan', () => {
   };
 
   it('unpins a leaf that starts auto, pins the rest at what they store at their default, and skips readouts', () => {
-    expect(resetPlan(GROUP, 'view', (p) => values[p]).map(({ path, write }) => [path, write])).toEqual([
+    expect(resetPlan(GROUP, 'view', (p) => values[p]).map(({ path, value }) => [path, value])).toEqual([
       ['view.size', 10],
       ['view.gap', AUTO],
       ['view.grid', true],
@@ -60,7 +60,7 @@ describe('resetPlan', () => {
 
   it('finds a group or a leaf by its path, under a section by the leaf\'s own key', () => {
     const root = { name: '', children: { view: GROUP } } as PrefGroup;
-    expect(resetPlanAt(root, ['view'], (p) => values[p]).map((w) => w.path)).toEqual(['view.size', 'view.gap', 'view.grid', 'view.dash']);
+    expect(resetPlans(root, ['view'], (p) => values[p]).map((w) => w.path)).toEqual(['view.size', 'view.gap', 'view.grid', 'view.dash']);
     expect(prefNodeAt(root, 'view.gap')).toBe(gap);
     const section = { name: '', members: { 'pose.x': grid, inner: { name: 'In', members: { y: size } } } } as unknown as PrefSection;
     expect(prefNodeAt(section, 'pose.x')).toBe(grid);
@@ -68,6 +68,6 @@ describe('resetPlan', () => {
   });
 
   it('pins a leaf that starts auto at its default where the surface keeps no auto state', () => {
-    expect(resetPlan(gap, 'gap', () => one(7))).toEqual([{ path: 'gap', leaf: gap, write: 4 }]);
+    expect(resetPlan(gap, 'gap', () => one(7))).toEqual([{ path: 'gap', leaf: gap, value: 4 }]);
   });
 });

@@ -19,7 +19,8 @@ import type { OperandsDep } from 'interactions/actions/operands';
 import type { Op } from 'core/ops/types';
 import type { ClipboardIngestCtx, InsertDep, SnapDep, SvgIngestOptions } from 'interactions/actions/depSchema';
 import { admitIngestMime, type ActionDeps, type IngestItem } from '@weasel-js/routing';
-import { createReflectable, valuesOf, type Reflection } from '@weasel-js/registry';
+import { createReflectable, createValuesReader, type Reflection } from '@weasel-js/registry';
+import type { Rect } from '@weasel-js/geom';
 
 /** Context handed to every content handler for one ingest event. */
 export interface IngestCtx {
@@ -32,7 +33,7 @@ export interface IngestCtx {
    *  Absent reads as the items the handler was handed. */
   items?: readonly IngestItem[];
   /** Visible canvas area in world coordinates. */
-  viewportWorldRect(): { x: number; y: number; width: number; height: number };
+  viewportWorldRect(): Rect;
   /** The kit insert dep — id/layer/undoable-op supplied; the canonical way
    *  for a handler to mint a node (`insert.commit(bounds, { kind, ... })`). */
   insert: InsertDep;
@@ -101,7 +102,7 @@ const REGISTERED = new Set<() => void>();
  *  a time, registered once or more. */
 export const contentHandlerRegistry: Reflection<ContentHandlerEntry> = HANDLERS.reflection;
 
-const registered = valuesOf(HANDLERS);
+const registered = createValuesReader(HANDLERS);
 
 /** The exact MIMEs a handler names, for string flavors to be kept. A glob
  *  names no one flavor, and `application/octet-stream` is what an untyped

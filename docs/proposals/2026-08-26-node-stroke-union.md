@@ -9,7 +9,7 @@ what picking does with them, and what edits them.
 ## The rule
 
 ```ts
-data: { path, fill: solid('#7fb069'), stroke: strokeOf('#1c1c1c', 2) }
+data: { path, fill: solid('#7fb069'), stroke: solidStroke('#1c1c1c', 2) }
 ```
 
 `data.fill` is a `FillStyle` and `data.stroke` is a `Stroke` — paint, width,
@@ -17,7 +17,7 @@ cap, join, dash, miter limit, align. `null` and `undefined` on either both
 mean "no paint": a node paints only what it declares. (Until 2026-10-21 an
 undeclared fill painted `DEFAULT_SHAPE_FILL`, gray, which put a gray box behind
 every group.) A container paints nothing, a fill it declares included
-(2026-10-21): a group is SVG's `<g>`, not a box. `solid()` and `strokeOf()` are the
+(2026-10-21): a group is SVG's `<g>`, not a box. `solid()` and `solidStroke()` are the
 authoring helpers — `resolveNodeFill` and `resolveNodeStroke` in `NodeShape.ts`
 are the only readers.
 
@@ -29,7 +29,7 @@ cost.
 
 Two things fall out that are easy to miss:
 
-- **A stroke paint needs `fillInPoseFrame` too.** `kit:path` bakes the pose
+- **A stroke paint needs `paintToLocalUnits` too.** `kit:path` bakes the pose
   into the projected path rather than emitting a transform, so a bounds-relative
   gradient handed to the renderer unbaked refers to a frame that never exists.
   The stroke's paint takes the same route the fill does.
@@ -55,7 +55,7 @@ them scrub a gradient — splicing hex could only ever touch a solid.
 silhouette outline. One number could not say which side the ink lands on:
 `align: 'inner'` puts none outside the silhouette, `'outer'` none inside. `ink`
 takes an optional `NodeInkCtx` carrying the view scale, so a `{ px }` width
-resolves through `resolveStrokeWidth`; absent, scale is 1. `shapeCoversPoint`
+resolves through `resolveScreenLength`; absent, scale is 1. `shapeCoversPoint`
 then picks the reach by side, which costs one `pathContainsPoint` on unfilled
 shapes that would otherwise skip it.
 

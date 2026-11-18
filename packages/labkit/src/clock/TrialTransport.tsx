@@ -59,16 +59,18 @@ export function TrialTransport({
       className={className ? `lk-trial-transport ${className}` : 'lk-trial-transport'}
     >
       <Transport
-        paused={!control.playing}
+        playing={control.playing}
         loop={clock.loop}
         rate={control.speed}
-        rates={clock.rates}
+        rates={clock.speeds}
         {...(formatRate ? { formatRate } : {})}
         start={control.start}
         playhead={control.playhead}
         duration={control.length}
-        onPlay={control.play}
-        onPause={control.pause}
+        onPlayingChange={(next: boolean) => {
+          if (next) control.play();
+          else control.pause();
+        }}
         onLoopChange={(loop: boolean | number) => {
           control.touch();
           // eslint-disable-next-line react-hooks/immutability -- the clock's loop is set by assignment

@@ -7,27 +7,17 @@
  * something in 3D is the camera each dep already closes over.
  */
 
-import type { AreaSelectDep, HitTestView, NodeAtPointDep, PoseDescriptor, SnapDep, SnapOutcomeStore, SnapSource } from '@weasel-js/core/engine';
+import type { AreaSelectDep, PickingView, NodeAtPointDep, PoseDescriptor, SnapDep, SnapOutcomeStore, SnapSource } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/routing';
 import { DEFAULT_SNAP_PX, createSnapOutcomeStore, assertSnapSourceIds, createEnteredGroupScope, pressTarget, type EnteredGroupApi } from '@weasel-js/core/engine';
 import { isDev, type KitSettingsStore } from '@weasel-js/react';
-import {
-  aabbOfPoints,
-  add,
-  dot,
-  len,
-  quatIdentity,
-  scale as scaleBy,
-  sub,
-  type Aabb,
-  type Vec3,
-} from '@weasel-js/geom/3d';
-import { cameraBasis } from './camera';
+import type { Aabb, Vec3 } from '@weasel-js/geom/3d';
 import { aabbOfPose, type Pose3 } from './pose3';
-import { groundAxes, type Axis } from './ground';
-import { castOntoPlane, rayAt, rectOf, viewProjectionOf, type Viewport3d } from './project';
+import { groundAxes } from './ground';
+import { rayAt, rectOf, viewProjectionOf, type Viewport3d } from './project';
 import { worldPickIndex } from './pickIndex';
 import { projectAabbToScreen } from './screen';
+import { draggedOnLevel, poseFromBounds, remappedPose } from './screenPose';
 import { createSession3d } from './snap/session3d';
 import { landing3dOf, shiftedBy } from './snap/landing';
 
@@ -36,46 +26,6 @@ import { DEFAULT_UP, measuredBoxAt, viewportOf, type Node3d, type World3d } from
 export type { Viewport3d, ViewportSource } from './project';
 export type { NodeBounds, Node3d, Scene3d, World3d } from './world';
 export { worldPoseOf } from './world';
-
-/**
- * The plane through `p` that faces the camera.
- *
- * This is the depth choice the kit's reverse contracts need: a screen
- * rectangle names a pose only once something says how far away it is, and the
- * answer is "as far as it already was". Nothing resolved on this plane changes
- * depth, and one screen pixel is the same world distance everywhere on it.
- */
-function viewPlaneAt(vp: Viewport3d, p: Vec3): { normal: Vec3; offset: number } {
-  const normal = cameraBasis(vp.camera, vp.up).forward;
-  return { normal, offset: dot(normal, p) };
-}
-
-/** Where a screen point lands on `plane`, or `null` when it casts no ray. */
-function onPlane(
-  vp: Viewport3d,
-  plane: { normal: Vec3; offset: number },
-  point: { x: number; y: number },
-): Vec3 | null {
-  return castOntoPlane(vp, point, plane.normal, plane.offset);
-}
-
-/** `pose` moved by `delta`, kept at its own height along `upAxis`. */
-function movedOnLevel(pose: Pose3, delta: Vec3, upAxis: Axis): Pose3 {
-  const position = { ...add(pose.position, delta), [upAxis]: pose.position[upAxis] };
-  return { ...pose, position };
-}
-
-/** `pose` dragged `d` on screen from the middle of `box`, its screen box, across the plane through it normal to `up`. */
-function draggedOnLevel(
-  vp: Viewport3d, box: { x: number; y: number; width: number; height: number }, pose: Pose3,
-  d: { x: number; y: number }, up: Vec3, upAxis: Axis,
-): Pose3 {
-  const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-  const level = { normal: up, offset: dot(up, pose.position) };
-  const before = onPlane(vp, level, from);
-  const after = onPlane(vp, level, { x: from.x + d.x, y: from.y + d.y });
-  return before && after ? movedOnLevel(pose, sub(after, before), upAxis) : pose;
-}
 
 export { screenBoxOf } from './pickIndex';
 
@@ -88,7 +38,7 @@ const OFF_SCREEN = Object.freeze({ x: NaN, y: NaN, width: NaN, height: NaN });
  * that did, rather than snapping the node back. Mid-gesture means a preview is in flight; a call with none, as a
  * gesture's first frame and a nudge are, starts afresh, so no gesture moves through an earlier one's camera.
  */
-function castableViewportOf<TData, TLayer extends string>(
+function createCastableViewportReader<TData, TLayer extends string>(
   world: World3d<TData, TLayer>, viewId: string | null | undefined,
 ): () => Viewport3d | null {
   let lastCastable: Viewport3d | null = null;
@@ -111,7 +61,7 @@ function castableViewportOf<TData, TLayer extends string>(
  * 3D views gives each `<CanvasView deps>` its own. The same goes for every
  * factory here that takes one.
  */
-export function createNodeAtPoint<TData, TLayer extends string>(
+export function createNodeAtPoint3dDep<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
   viewId?: string | null,
 ): NodeAtPointDep {
@@ -136,18 +86,18 @@ function pickOnRay<TData, TLayer extends string>(
  * ray the point names, cast from the camera of the view the pick is asked for,
  * passing over the layers that view does not paint.
  */
-export function createPickEvery<TData, TLayer extends string>(
+export function createPickNearest<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
-): (point: { x: number; y: number }, view?: HitTestView) => NodeId | null {
+): (point: { x: number; y: number }, view?: PickingView) => NodeId | null {
   return (point, view) => pickOnRay(world, view?.viewId, point, undefined, layerGateOf(view));
 }
 
 /** The asking view's layer gate, called as a method so it keeps its receiver. */
-function layerGateOf(view: HitTestView | undefined): ((layer: string) => boolean) | undefined {
+function layerGateOf(view: PickingView | undefined): ((layer: string) => boolean) | undefined {
   return view?.layerIsPainted ? (layer) => view.layerIsPainted!(layer) : undefined;
 }
 
-/** Options for `createAreaSelect`. */
+/** Options for `createAreaSelect3dDep`. */
 export interface AreaSelect3dOptions {
   /** The entered group, as the canvas's `enteredGroup` dep has it. Given, a marquee reaches only what a press
    *  can and selects what a press on each hit selects: the outermost container above it that is not entered. */
@@ -156,7 +106,7 @@ export interface AreaSelect3dOptions {
 
 /** Marquee: the nodes whose projected box the screen rectangle touches, in render
  *  order, less those on a layer the view the marquee was drawn in does not paint. */
-export function createAreaSelect<TData, TLayer extends string>(
+export function createAreaSelect3dDep<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
   selection: { get(): readonly NodeId[]; set(ids: NodeId[]): void },
   viewId?: string | null,
@@ -180,7 +130,7 @@ export function createAreaSelect<TData, TLayer extends string>(
   };
 }
 
-/** Options for `createSnap`. */
+/** Options for `createSnap3dDep`. */
 export interface Snap3dOptions {
   /** What a gesture snaps to, in order: earlier wins a full tie. Two sharing
    *  an id throw. Default none, which leaves only the gesture's own constraint. */
@@ -205,7 +155,7 @@ function warnGestureSources(): void {
   warnedGestureSources = true;
   console.warn(
     '[kernel3d] a gesture passed snap `sources`, which are 2D and are not asked in a 3D host. ' +
-    'List 3D sources in createSnap({ sources }).',
+    'List 3D sources in createSnap3dDep({ sources }).',
   );
 }
 
@@ -215,9 +165,9 @@ function warnGestureSources(): void {
  * plane it already moves on, or along `along` when the gesture names one; an
  * insert snaps the pointer on the ground. Each answers with a screen point and,
  * as its `landing`, the exact world point (`Landing3d`) that `translate` and
- * `createInsert` store, so a snap to a grid line stores the line's own coordinate.
+ * `createInsert3dDep` store, so a snap to a grid line stores the line's own coordinate.
  */
-export function createSnap<TData, TLayer extends string>(
+export function createSnap3dDep<TData, TLayer extends string>(
   world: World3d<TData, TLayer>, opts: Snap3dOptions = {},
 ): SnapDep {
   const store = opts.store ?? createSnapOutcomeStore<Vec3>();
@@ -256,7 +206,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
   const upAxis = groundAxes(up).up;
   const specialized = new WeakMap<object, PoseDescriptor<Pose3, Node3d<TData, TLayer>>>();
 
-  const castableViewport = castableViewportOf(world, viewId);
+  const castableViewport = createCastableViewportReader(world, viewId);
 
   function build(worldBox: (pose: Pose3) => Aabb): PoseDescriptor<Pose3, Node3d<TData, TLayer>> {
     const boundsIn = (vp: Viewport3d, pose: Pose3) =>
@@ -280,86 +230,16 @@ export function createPoseDescriptor<TData, TLayer extends string>(
         return boundsOf(pose) ?? OFF_SCREEN;
       },
 
-      /**
-       * The src→dst screen map, applied at the pose's own depth: the node's
-       * screen anchor moves the way the rectangle does, and both ends of that
-       * move are read back off the plane through its position, so the world
-       * delta is exact rather than a scaled screen one.
-       *
-       * The scale is uniform. The rectangle names two extents and a pose has
-       * three, so there is no reading in which a screen box resizes a solid
-       * per-axis; the geometric mean is the one factor that agrees with both
-       * of the extents it does name.
-       */
       remapBounds(pose, src, dst) {
         const vp = castableViewport();
         if (!vp) return pose;
         const box = boundsIn(vp, pose);
-        if (!box) return pose;
-
-        const kx = src.width === 0 ? 1 : dst.width / src.width;
-        const ky = src.height === 0 ? 1 : dst.height / src.height;
-        const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-        const to = {
-          x: from.x + (dst.x - src.x) + (from.x - src.x) * (kx - 1),
-          y: from.y + (dst.y - src.y) + (from.y - src.y) * (ky - 1),
-        };
-
-        const plane = viewPlaneAt(vp, pose.position);
-        const before = onPlane(vp, plane, from);
-        const after = onPlane(vp, plane, to);
-        if (!before || !after) return pose;
-
-        const k = Math.sqrt(Math.abs(kx * ky));
-        return {
-          ...pose,
-          position: add(pose.position, sub(after, before)),
-          scale: scaleBy(pose.scale, k),
-        };
+        return box ? remappedPose(vp, box, pose, src, dst) : pose;
       },
 
-      /**
-       * The world box the rectangle covers at the template's depth, as a pose.
-       *
-       * The rectangle is flat and a box is not, so the third extent — the one
-       * no screen rectangle names — is the mean of the two it does. The result
-       * is world-axis-aligned and unrotated: the pose carries none of the
-       * template's shape, which is the contract, and it takes only its depth.
-       *
-       * Extents are written as `scale`, so this reads a pose as carrying a
-       * unit primitive — the same assumption `aabbOfPose` makes by default.
-       */
       fromBounds(bounds, template) {
         const vp = castableViewport();
-        if (!vp) return template;
-        const plane = viewPlaneAt(vp, template.position);
-
-        const corners: Vec3[] = [];
-        for (const [x, y] of [
-          [bounds.x, bounds.y],
-          [bounds.x + bounds.width, bounds.y],
-          [bounds.x, bounds.y + bounds.height],
-          [bounds.x + bounds.width, bounds.y + bounds.height],
-        ]) {
-          const corner = onPlane(vp, plane, { x, y });
-          if (!corner) return template;
-          corners.push(corner);
-        }
-
-        const width = len(sub(corners[1]!, corners[0]!));
-        const height = len(sub(corners[2]!, corners[0]!));
-        const half = Math.sqrt(width * height) / 2;
-        const box = aabbOfPoints(
-          corners.flatMap((c) => [
-            add(c, scaleBy(plane.normal, half)),
-            sub(c, scaleBy(plane.normal, half)),
-          ]),
-        )!;
-        return {
-          position: scaleBy(add(box.min, box.max), 0.5),
-          rotation: quatIdentity(),
-          scale: sub(box.max, box.min),
-        };
+        return vp ? poseFromBounds(vp, bounds, template) : template;
       },
 
       /**

@@ -12,12 +12,13 @@ import {
   type MarkerEntry,
   type MarkerPaint,
 } from '@weasel-js/core';
-import { DEG_TO_RAD, joinPaths, worldCoords } from '@weasel-js/geom';
+import { DEG_TO_RAD, joinPaths, worldCoords, type Rect } from '@weasel-js/geom';
 import { deepEqual } from '@weasel-js/registry';
 import type { Matrix, SvgNode, ScreenLength } from './types';
 import { multiply, parseTransform } from './transform';
 import { styleAt } from './styleAt';
-import { WEASEL_NS, WEASEL_NS_PREFIX, type GradientTable } from './gradients';
+import { WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
+import type { GradientTable } from './readGradients';
 import { deriveStyle, type StyleContext } from './cascade';
 import { readProperty } from './properties';
 import { SUPPORTED_LEAF_TAGS, IGNORED_TAGS, lowerLeaf } from './lowerLeaf';
@@ -184,7 +185,7 @@ function markerPaint(
 
 function asPolygon(path: Path): PolygonPath {
   if (path.kind === 'polygon') return path;
-  const { x, y, width: w, height: h } = path as { x: number; y: number; width: number; height: number };
+  const { x, y, width: w, height: h } = path as Rect;
   return {
     kind: 'polygon',
     commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),

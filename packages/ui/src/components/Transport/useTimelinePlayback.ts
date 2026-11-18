@@ -33,19 +33,22 @@ export function useTimelinePlayback(handle: TimelineHandle): Omit<TransportProps
 
   const duration = handle.duration();
   return {
-    paused: !isAdvancing(handle),
+    playing: isAdvancing(handle),
     loop: handle.loop(),
     rate: handle.timeScale(),
     playhead: handle.time(),
     duration,
-    onPlay: () => {
+    onPlayingChange: (next) => {
+      if (!next) {
+        handle.pause();
+        return;
+      }
       // `rearm` declines to revive a timeline at its duration, so resume
       // alone would do nothing. Play-at-end rewinds first.
       if (handle.time() >= handle.duration()) handle.seek(0);
       handle.resume();
       raf.request();
     },
-    onPause: () => { handle.pause(); },
     onLoopChange: (next) => { handle.setLoop(next); },
     onRateChange: (next) => { handle.setTimeScale(next); },
     onSeek: (t) => { handle.seek(t); },

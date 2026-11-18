@@ -55,7 +55,7 @@ function Mark() {
         const v = toDeviceRect(rect, frame.size.height, frame.dpr);
         const px = (n: number) => Math.round(n * frame.dpr);
         gl.enable(gl.SCISSOR_TEST);
-        gl.scissor(px(v.x), px(v.y), px(v.w), px(v.h));
+        gl.scissor(px(v.x), px(v.y), px(v.width), px(v.height));
         gl.clearColor(1, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.disable(gl.SCISSOR_TEST);

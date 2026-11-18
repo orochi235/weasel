@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
 import { deepEqual } from '@weasel-js/registry';
-import { actionSettingsParams, buildDepsFromRequires, dynamicActionId, readActionSettings, type ActionItem } from '@weasel-js/routing';
+import { actionSettingsParams, createActionDeps, dynamicActionId, readActionSettings, type ActionItem } from '@weasel-js/routing';
 import { useActionsRegistry, useOptionalDepRegistry } from '@weasel-js/routing/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 
@@ -29,7 +29,7 @@ export function useActionSettings(item: ActionItem | undefined): ActionSettingsF
   const last = useRef<ReturnType<typeof readActionSettings>>(null);
   const snapshot = (): ReturnType<typeof readActionSettings> => {
     if (!action || !settings) return null;
-    const deps = depReg ? buildDepsFromRequires(action, depReg) : undefined;
+    const deps = depReg ? createActionDeps(action, depReg) : undefined;
     const read = readActionSettings(action, deps);
     if (!deepEqual(read, last.current)) last.current = read;
     return last.current;

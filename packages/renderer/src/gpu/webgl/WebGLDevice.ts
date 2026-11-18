@@ -1,5 +1,6 @@
 /** The GPU layer over a WebGL2 context. */
 import { PREMULTIPLIED } from '../blend';
+import { createPart } from '@weasel-js/registry';
 import type {
   GpuBuffer, GpuBufferUsage, GpuDevice, GpuDrawState, GpuGeometry, GpuGeometryDesc, GpuLimits, GpuPassDesc,
   GpuProgram, GpuProgramOptions, GpuProgramSource, GpuRect, GpuSampling, GpuTarget, GpuTargetDesc, GpuTexture,
@@ -172,7 +173,7 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
     this.gl.clear(this.gl.STENCIL_BUFFER_BIT);
   }
 
-  draw(state: GpuDrawState, geometry: GpuGeometry, count: number, firstIndex = 0): void {
+  draw(state: GpuDrawState, geometry: GpuGeometry, count: number, firstIndex = 0, instances?: number): void {
     const gl = this.gl;
     const cache = this.cache;
     const program = state.program as GlProgram;
@@ -190,7 +191,9 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
     cache.bindVertexArray(geom.vao);
     cache.bindTextures(program.textures as readonly (res.GlTexture | null)[]);
     const type = res.indexType(gl, geom.indexFormat);
-    gl.drawElements(gl.TRIANGLES, count, type, firstIndex * (geom.indexFormat === 'uint16' ? 2 : 4));
+    const offset = firstIndex * (geom.indexFormat === 'uint16' ? 2 : 4);
+    if (instances === undefined) gl.drawElements(gl.TRIANGLES, count, type, offset);
+    else gl.drawElementsInstanced(gl.TRIANGLES, count, type, offset, instances);
   }
 
   resolve(source: GpuTarget, dest: GpuTarget, width: number, height: number, x: number, y: number): void {
@@ -217,15 +220,6 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
   };
 }
 
-const DEVICES = new WeakMap<WebGL2RenderingContext, WebGLDevice>();
-
 /** The one device over `gl`: renderers sharing a context share what it
  *  believes the context holds. */
-export function webglDevice(gl: WebGL2RenderingContext): WebGLDevice {
-  let device = DEVICES.get(gl);
-  if (!device) {
-    device = new WebGLDevice(gl);
-    DEVICES.set(gl, device);
-  }
-  return device;
-}
+export const webglDevice = createPart((gl: WebGL2RenderingContext): WebGLDevice => new WebGLDevice(gl));

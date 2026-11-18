@@ -10,7 +10,7 @@ import type {
 } from '../types';
 import { BufferUsage, ShaderStage } from './flags';
 import { Frame, UniformRing } from './wgpuFrame';
-import { DEFAULT_ATTRIBUTE, needsDefaultAttribute, pipelineFor } from './wgpuPipelines';
+import { DEFAULT_ATTRIBUTE, needsDefaultAttribute, ensurePipeline } from './wgpuPipelines';
 import { NDC_GROUP, WgpuProgram, type WgpuProgramHost } from './wgpuProgram';
 import * as res from './wgpuResources';
 import {
@@ -172,9 +172,9 @@ export class WebGPUDevice implements GpuDevice, WgpuProgramHost {
     this.frame.clearStencilBits(mask);
   }
 
-  draw(state: GpuDrawState, geometry: GpuGeometry, count: number, firstIndex = 0): void {
+  draw(state: GpuDrawState, geometry: GpuGeometry, count: number, firstIndex = 0, instances = 1): void {
     const frame = this.frame;
-    if (!frame.pass || frame.pass.skip || count === 0) return;
+    if (!frame.pass || frame.pass.skip || count === 0 || instances === 0) return;
     const program = state.program as WgpuProgram;
     if (program.refused) return;
     const geom = geometry as res.WgpuGeometry;
@@ -182,7 +182,7 @@ export class WebGPUDevice implements GpuDevice, WgpuProgramHost {
     this.uploadUniforms(program);
     const pass = frame.pass;
     const { target, encoder } = pass;
-    const pipeline = pipelineFor(this.device, program, geom, target, state);
+    const pipeline = ensurePipeline(this.device, program, geom, target, state);
     if (!pipeline) return;
     if (pass.pipeline !== pipeline) {
       encoder.setPipeline(pipeline);
@@ -203,7 +203,7 @@ export class WebGPUDevice implements GpuDevice, WgpuProgramHost {
     encoder.setIndexBuffer(geom.indexBuffer.gpu, geom.indexFormat);
     geom.indexBuffer.usedIn = serial;
     if (target.stencil) encoder.setStencilReference(state.stencil?.ref ?? 0);
-    encoder.drawIndexed(count, 1, firstIndex);
+    encoder.drawIndexed(count, instances, firstIndex);
   }
 
   /** Put the program's changed blocks, and the pass's viewport fold, in the

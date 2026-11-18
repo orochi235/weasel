@@ -1,6 +1,6 @@
 import type { TexturePaint } from '@weasel-js/paint';
 import type { Mesh } from '@weasel-js/geom/tessellate';
-import { mat3 } from '@weasel-js/geom';
+import { mat3, type Rect } from '@weasel-js/geom';
 import type { GradientUV } from '../drawBatch';
 import { PAINT_MODE_IMAGE, withMatrix } from '../shaders/batchFill';
 import { getTexture, type TextureEntry } from '../textures/registerTexture';
@@ -58,9 +58,9 @@ export function patternBatchPaint(
 /** Tile extent in paint-space units — one tile spans this many units of
  *  whatever space `units` names. A side the paint leaves out is the size the
  *  texture stands for, else its pixel size. */
-export function tileExtent(fill: TexturePaint, { source, size }: TextureEntry): [number, number] {
-  const w = fill.width ?? size?.width ?? ('naturalWidth' in source ? source.naturalWidth : source.width);
-  const h = fill.height ?? size?.height ?? ('naturalHeight' in source ? source.naturalHeight : source.height);
+export function tileExtent(paint: TexturePaint, { source, size }: TextureEntry): [number, number] {
+  const w = paint.width ?? size?.width ?? ('naturalWidth' in source ? source.naturalWidth : source.width);
+  const h = paint.height ?? size?.height ?? ('naturalHeight' in source ? source.naturalHeight : source.height);
   return [w > 0 ? w : 1, h > 0 ? h : 1];
 }
 
@@ -109,7 +109,7 @@ function nearTile(uv: GradientUV, x: number, y: number): GradientUV {
 
 export function pushPatternRect(
   ctx: DrawContext,
-  rect: { x: number; y: number; width: number; height: number },
+  rect: Rect,
   paint: PatternBatchPaint,
 ): void {
   const { slot, tint } = stagePattern(ctx, paint, 4);

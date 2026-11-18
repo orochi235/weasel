@@ -33,7 +33,7 @@ loop allocates nothing. The types that do exist are small:
 | `GlMat3` | nine-element `Float64Array` or `Float32Array` | The same affine laid out column-major for a WebGL `uniformMatrix3fv` upload. |
 | `Path` | `RectPath \| PolygonPath` | A shape. See below. |
 
-`translate`, `scale`, `rotate`, `rotateAboutPoint`, and `boxToBox` build a
+`translate`, `scale`, `rotate`, `rotateAboutPoint`, and `rectToRect` build a
 `Affine`. `multiply(m, n)` composes two, applying `n` first. `invert` returns
 `null` for a singular matrix, and `transformPoint` maps one point.
 
@@ -69,11 +69,11 @@ What operates on a path:
   `regularPolygonPath`, `starPath`, `linePath`, `circlePath`, and
   `roundRectPath` for common shapes; `pathFromD` to parse an SVG `d` string;
   `schneiderFit` to fit cubic curves through sampled points.
-- **Measuring.** `boundsOfPath`, `unionBoundsPath`, `pathSignedArea`,
+- **Measuring.** `boundsOfPath`, `boundsOfPaths`, `pathSignedArea`,
   `pointAlongPath`.
-- **Transforming.** `translatePath`, `transformPath`, `scalePathToBounds`,
+- **Transforming.** `translatePath`, `transformPath`, `fitPathToRect`,
   `reversePath`.
-- **Hit-testing.** `pointInPath` for the filled region, `strokeHitTest` for
+- **Hit-testing.** `pathContainsPoint` for the filled region, `strokeHitTest` for
   the outline, `pathContainsRect`, `pathIntersectsRect`, and the polygon
   variants for marquee and lasso selection, and `nearestOnPath` and
   `pathDistanceToPoint` for the closest point.
@@ -92,13 +92,13 @@ What operates on a path:
 
 ```ts
 import {
-  boundsOfPath, pathFromD, pointInPath, rotateAboutPoint, strokeHitTest, transformPath,
+  boundsOfPath, pathFromD, pathContainsPoint, rotateAboutPoint, strokeHitTest, transformPath,
 } from '@weasel-js/geom';
 
 const triangle = pathFromD('M0 0 L100 0 L50 80 Z');
 
 boundsOfPath(triangle);             // { kind: 'rect', x: 0, y: 0, width: 100, height: 80 }
-pointInPath(triangle, 50, 20);      // true: inside the fill
+pathContainsPoint(triangle, 50, 20);      // true: inside the fill
 strokeHitTest(triangle, 50, 3, 4);  // true: within 4 units of the outline
 
 const turned = transformPath(triangle, rotateAboutPoint(50, 40, Math.PI / 2));
