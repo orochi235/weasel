@@ -1,6 +1,6 @@
 /**
  * What the Mermaid and Graphviz DOT writers share: the page they write, its
- * regions and groups as one tree of clusters, each item's drawn style, and
+ * regions and clusters as one tree of boxes, each item's drawn style, and
  * the warnings for what neither format holds.
  */
 import {
@@ -13,11 +13,11 @@ import { requireGraphPage, writtenPage, type DiagramDocument, type GraphPage, ty
 import { Warnings } from './graphRead';
 import { rowLines } from './rowLines';
 
-/** A container, pool, lane, or group, as the one kind of box a graph format has. */
+/** A container, pool, lane, or cluster, as the one kind of box a graph format has. */
 export interface Cluster {
   id: string;
   label?: string;
-  /** Its drawn colors; `fill` unset for one that draws none. Unset for a group. */
+  /** Its drawn colors; `fill` unset for one that draws none. Unset for a diagram cluster. */
   style?: Partial<NodeStyle>;
   nodes: string[];
   clusters: Cluster[];

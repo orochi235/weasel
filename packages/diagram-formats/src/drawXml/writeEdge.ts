@@ -16,7 +16,7 @@ export interface EdgePage {
   theme: DiagramTheme;
   layer: string;
   nodes: ReadonlyMap<string, DataNode>;
-  /** The box of every shape, region, lane, and group, by id. */
+  /** The box of every shape, region, lane, and cluster, by id. */
   boxes: ReadonlyMap<string, Box>;
   /** The cell ids already written. An edge takes its own id, numbered on when another cell has it. */
   taken: Set<string>;

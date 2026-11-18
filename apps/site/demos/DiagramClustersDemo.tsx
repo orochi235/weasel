@@ -12,32 +12,32 @@ const EDGES: DataEdge[] = [
   { from: 'fetch', to: 'decode' }, { from: 'decode', to: 'cache' },
   { from: 'probe', to: 'score' }, { from: 'score', to: 'report' },
   { from: 'fetch', to: 'score' }, { from: 'probe', to: 'decode' },
-  // An edge naming a group meets its box, and ranks against its first stage.
+  // An edge naming a cluster meets its box, and ranks against its first stage.
   { from: 'clock', to: 'ingest' },
 ];
-const GROUPS: DataCluster[] = [
+const CLUSTERS: DataCluster[] = [
   { id: 'ingest', members: ['fetch', 'decode', 'cache'], label: 'ingest' },
   { id: 'health', members: ['probe', 'score', 'report'], label: 'health' },
 ];
 
 /** The nodes where the layered layout puts them. Laid out once: a layout in
- *  `groupSpecs` would run again on every drag and take the drag back. */
+ *  `clusterSpecs` would run again on every drag and take the drag back. */
 export const START: DataNode[] = (() => {
-  const laidOut = diagramScene({ nodes: NODES, edges: EDGES, clusters: GROUPS }, { font: FONT });
+  const laidOut = diagramScene({ nodes: NODES, edges: EDGES, clusters: CLUSTERS }, { font: FONT });
   return NODES.map((n) => {
     const { x, y } = laidOut.find((s) => s.id === n.id)!.pose;
     return { ...n, at: { x, y } };
   });
 })();
 
-export function groupSpecs(nodes: readonly DataNode[], edges: readonly DataEdge[] = EDGES) {
-  return diagramScene({ nodes: [...nodes], edges: [...edges], clusters: GROUPS }, { layout: 'none', font: FONT });
+export function clusterSpecs(nodes: readonly DataNode[], edges: readonly DataEdge[] = EDGES) {
+  return diagramScene({ nodes: [...nodes], edges: [...edges], clusters: CLUSTERS }, { layout: 'none', font: FONT });
 }
 
-export function DiagramGroupsDemo() {
+export function DiagramClustersDemo() {
   const [nodes, setNodes] = useState(START);
   const [edges, setEdges] = useState(EDGES);
-  const specs = useMemo(() => groupSpecs(nodes, edges), [nodes, edges]);
+  const specs = useMemo(() => clusterSpecs(nodes, edges), [nodes, edges]);
   const view = useRef<DiagramViewApi>(null);
   return (
     <div className="ckd-demo">

@@ -1,7 +1,7 @@
 /**
  * What `documentFromScene` reads off one scene node: a shape as a `DataNode`,
  * a connector as a `DataEdge`, a container or pool as a `DataContainer`, and a
- * group as a `DataCluster`, each in coordinates from its page's corner.
+ * cluster as a `DataCluster`, each in coordinates from its page's corner.
  */
 import type { RectPose } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
