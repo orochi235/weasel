@@ -8,6 +8,7 @@ import { arrowMove } from '@weasel-js/quantity';
 import { LaneGraph } from './LaneGraph';
 import type { LaneRow } from './lanes';
 import { useKeyDrag } from './useKeyDrag';
+import { KeyGhost, KeyMarks, SegmentMarks, type MarkHold } from './LaneMarks';
 
 /** One arrow-key step, in ms; shift multiplies by ten. */
 const KEY_STEP_MS = 10;
@@ -86,22 +87,7 @@ export function Lane(props: LaneProps): ReactElement {
 
   return (
     <div className={s.lane} data-lane-key={row.key} data-depth={row.depth} data-mode={mode} data-graph={graph ? 'true' : undefined}>
-      <div className={s.laneLabel}>
-        {row.kind === 'timeline' ? (
-          <span
-            role="button"
-            {...mark}
-            aria-expanded={expanded}
-            data-testid="timeline-disclosure"
-            className={s.disclosure}
-            onClick={toggleExpanded}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleExpanded(); } }}
-          >
-            <DisclosureMark open={expanded} />
-          </span>
-        ) : null}
-        {row.label}
-      </div>
+      <LaneLabel row={row} mark={mark} expanded={expanded} toggleExpanded={toggleExpanded} />
       <div
         className={s.laneTrack}
         ref={trackRef}
@@ -141,43 +127,17 @@ export function Lane(props: LaneProps): ReactElement {
                 style={{ left: pct(0), width: spanPercent(win, (row.track as TimelineTrack).timeline.duration ?? 0) }}
               />
             ) : null}
-            {row.kind === 'sampled' ? sampledKeys.slice(1).map((k, idx) => {
-              const i = idx + 1;
-              return (
-                <div
-                  key={`seg-${i}`}
-                  role="button"
-                  {...mark}
-                  aria-label={`${row.label} segment into ${Math.round(k.t)} ms`}
-                  aria-current={selectedSegment === i ? 'true' : undefined}
-                  data-testid="timeline-segment"
-                  data-segment-index={i}
-                  className={s.segment}
-                  style={{ left: pct(sampledKeys[i - 1].t), width: spanPercent(win, k.t - sampledKeys[i - 1].t) }}
-                  onClick={() => onSelectSegment?.(i)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectSegment?.(i); } }}
-                />
-              );
-            }) : null}
-            {times.map((t, i) => (
-              <div
-                key={i}
-                ref={(el) => { keyEls.current[i] = el; }}
-                role="button"
-                {...mark}
-                aria-label={`${row.label} key at ${Math.round(t)} ms`}
-                aria-current={selection === i ? 'true' : undefined}
-                data-testid={row.kind === 'event' ? 'timeline-event' : 'timeline-key'}
-                data-keyframe-index={i}
-                data-dragging={drag?.keyIndex === i ? 'true' : undefined}
-                data-past={t + row.offset > row.end ? 'true' : undefined}
-                className={row.kind === 'event' ? s.eventMark : s.key}
-                style={{ left: pct(t) }}
-                onPointerDown={onKeyPointerDown(i)}
-                onDoubleClick={(e) => e.stopPropagation()}
-                onKeyDown={onKeyDown(i, t)}
+            {row.kind === 'sampled' ? (
+              <SegmentMarks
+                keys={sampledKeys} label={row.label} win={win} pct={pct} mark={mark}
+                selectedSegment={selectedSegment} onSelectSegment={onSelectSegment}
               />
-            ))}
+            ) : null}
+            <KeyMarks
+              row={row} times={times} pct={pct} mark={mark} selection={selection} draggedIndex={drag?.keyIndex}
+              keyEls={keyEls} onKeyPointerDown={onKeyPointerDown} onKeyDown={onKeyDown}
+            />
+
             {drag ? <KeyGhost event={row.kind === 'event'} left={pct(drag.t)} /> : null}
           </>
         )}
@@ -218,9 +178,31 @@ function markKeys({ edits, onKeyChange, onSelect, refocus }: {
   };
 }
 
-/** Where a dragged key would land, drawn over the committed key it moves from. */
-function KeyGhost({ event, left }: { event: boolean; left: string }) {
-  return <div aria-hidden="true" data-testid="timeline-key-ghost" className={event ? s.eventGhost : s.keyGhost} style={{ left }} />;
+/** The row's name, and for a nested timeline the disclosure that folds it. */
+function LaneLabel({ row, mark, expanded, toggleExpanded }: {
+  row: LaneRow;
+  mark: MarkHold;
+  expanded: boolean;
+  toggleExpanded: () => void;
+}) {
+  return (
+    <div className={s.laneLabel}>
+      {row.kind === 'timeline' ? (
+        <span
+          role="button"
+          {...mark}
+          aria-expanded={expanded}
+          data-testid="timeline-disclosure"
+          className={s.disclosure}
+          onClick={toggleExpanded}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleExpanded(); } }}
+        >
+          <DisclosureMark open={expanded} />
+        </span>
+      ) : null}
+      {row.label}
+    </div>
+  );
 }
 
 /** The stretch of a lane past where its timelines stop playing it. */
