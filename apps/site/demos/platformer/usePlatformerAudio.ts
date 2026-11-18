@@ -68,6 +68,8 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
   // interval a given tick implies.
   const runScale = useRef(1);
   const stepStats = useRef({ count: 0, lastAt: 0, lastScale: 1, spread: 0 });
+  /** The pending restore after a music duck. */
+  const unduck = useRef<number | undefined>(undefined);
 
   // Built on the unlock gesture, not at mount: jsdom has no AudioContext, and a
   // context created before a gesture starts suspended anyway.
@@ -104,6 +106,7 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
   };
 
   useEffect(() => () => {
+    window.clearTimeout(unduck.current);
     audio.current?.engine.dispose();
     audio.current = null;
   }, []);
@@ -171,12 +174,14 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
     playSound(a.engine, name, { bus: 'sfx', gain, position });
   };
 
-  /** A hit drops the music under the hurt sound and brings it back. */
+  /** A hit drops the music under the hurt sound and brings it back, 260 ms
+   *  after the latest hit: a second hit inside that keeps it down. */
   const duckMusic = () => {
     const a = audio.current;
     if (!a) return;
     a.engine.bus(BED_BUS).setGain(MUSIC_GAIN * 0.3, 60);
-    window.setTimeout(() => {
+    window.clearTimeout(unduck.current);
+    unduck.current = window.setTimeout(() => {
       if (audio.current === a) a.engine.bus(BED_BUS).setGain(MUSIC_GAIN, 400);
     }, 260);
   };

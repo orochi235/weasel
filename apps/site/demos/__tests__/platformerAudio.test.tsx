@@ -2,19 +2,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { useAnimator } from '@weasel-js/animator/react';
 
-const engines: { disposed: boolean; resolveUnlock: () => void; gains: number[]; mutes: boolean[] }[] = [];
+const engines: { disposed: boolean; resolveUnlock: () => void; gains: number[]; allGains: number[]; mutes: boolean[] }[] = [];
 
 vi.mock('@weasel-js/audio', () => ({
   createAudioEngine: () => {
     let resolveUnlock!: () => void;
     const unlocked = new Promise<void>((r) => { resolveUnlock = r; });
-    const record = { disposed: false, resolveUnlock, gains: [] as number[], mutes: [] as boolean[] };
+    const record = { disposed: false, resolveUnlock, gains: [] as number[], allGains: [] as number[], mutes: [] as boolean[] };
     engines.push(record);
     return {
       state: () => (record.disposed ? 'closed' : 'running'),
       now: () => 0,
       unlock: () => unlocked,
-      bus: () => ({ setGain: (v: number) => { if (record.disposed) record.gains.push(v); }, mute: (m: boolean) => { record.mutes.push(m); } }),
+      bus: () => ({ setGain: (v: number) => { record.allGains.push(v); if (record.disposed) record.gains.push(v); }, mute: (m: boolean) => { record.mutes.push(m); } }),
       dispose: () => { record.disposed = true; },
       setListener: () => {},
       activeVoices: () => 0,
@@ -26,7 +26,7 @@ vi.mock('@weasel-js/audio', () => ({
   },
 }));
 
-const { usePlatformerAudio } = await import('../platformer/usePlatformerAudio');
+const { MUSIC_GAIN, usePlatformerAudio } = await import('../platformer/usePlatformerAudio');
 
 type Api = ReturnType<typeof usePlatformerAudio>;
 
@@ -85,5 +85,19 @@ describe('usePlatformerAudio', () => {
     await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
     expect(api().musicOn).toBe(false);
     expect(engines[0].mutes.at(-1)).toBe(true);
+  });
+
+  it('keeps the music down under a second hit inside the first one\'s duck', () => {
+    vi.useFakeTimers();
+    const { api } = mount();
+    act(() => api().enableAudio());
+    const gains = engines[0].allGains;
+    api().hooks.current.duck();
+    vi.advanceTimersByTime(200);
+    api().hooks.current.duck();
+    vi.advanceTimersByTime(100);
+    expect(gains.at(-1)).toBeLessThan(MUSIC_GAIN);
+    vi.advanceTimersByTime(200);
+    expect(gains.at(-1)).toBe(MUSIC_GAIN);
   });
 });
