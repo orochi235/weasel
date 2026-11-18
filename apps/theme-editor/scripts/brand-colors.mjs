@@ -37,7 +37,10 @@ function isNeutral(hex) {
   return Math.hypot(a, b) < 0.035 || L < 0.22 || L > 0.95;
 }
 
-/** Brickset's current-colours page to its solid chromatic rows, sorted by name. */
+/**
+ * Brickset's current-colours page to its solid chromatic rows, sorted by name.
+ * Every sort here names its locale, so the machine's own does not reorder the file.
+ */
 export function parseLego(html) {
   const rows = [];
   for (const block of html.split("<article class='set'>").slice(1)) {
@@ -52,7 +55,7 @@ export function parseLego(html) {
     if (rows.some((r) => r.name === name)) continue;
     rows.push({ name, hex });
   }
-  rows.sort((a, b) => a.name.localeCompare(b.name));
+  rows.sort((a, b) => a.name.localeCompare(b.name, 'en'));
   return rows;
 }
 
@@ -68,7 +71,7 @@ export function parseCopic(all) {
       if (!/^#[0-9a-f]{6}$/.test(hex)) throw new Error(`gen-brand-colors: Copic ${code}'s colour ${JSON.stringify(c.extractedColor)} is not a #rrggbb hex`);
       return { name: c.name, code, hex };
     })
-    .sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
+    .sort((a, b) => a.code.localeCompare(b.code, 'en', { numeric: true }));
 }
 
 /** Rows that came back empty mean the source changed shape, not that the range did. */
