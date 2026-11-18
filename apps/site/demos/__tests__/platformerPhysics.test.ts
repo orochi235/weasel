@@ -1,7 +1,7 @@
 // apps/site/demos/__tests__/platformerPhysics.test.ts
 import { describe, it, expect } from 'vitest';
 import { parseLevel, TILE } from '../platformer/level';
-import { COYOTE, JUMP_BUFFER, STEP, createBodyState, spikeOverlap, stepBody, type BodyState, type Input } from '../platformer/physics';
+import { BODY_H, COYOTE, JUMP_BUFFER, STEP, createBodyState, spikeOverlap, stepBody, type BodyState, type Input } from '../platformer/physics';
 
 const FLAT = parseLevel([
   '.....',
@@ -268,6 +268,15 @@ describe('? blocks and bonks', () => {
       if (s.bonk) bonked = s.bonk;
     }
     expect(bonked).toEqual({ cx: 2, cy: 0 });
+  });
+
+  it('bonks a `?` the head strikes beside a solid block', () => {
+    const STRADDLE = parseLevel(['.#?..', '.....', '.....', '.....', '#####']);
+    // Straddling columns 1 and 2, rising into both.
+    let s = createBodyState({ x: 2 * TILE, y: TILE + BODY_H / 2 + 1 });
+    s = { ...s, body: { ...s.body, vy: -400 } };
+    s = stepBody(s, STRADDLE, JUMP_HELD, STEP);
+    expect(s.bonk).toEqual({ cx: 2, cy: 0 });
   });
 
   it('never bonks while merely walking under the block', () => {

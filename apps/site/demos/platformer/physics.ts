@@ -126,24 +126,33 @@ interface YHit {
 function resolveY(b: Body, level: Level, prevBottom: number): YHit | null {
   const c0 = toCol(left(b));
   const c1 = toCol(right(b) - 0.001);
-  for (let cx = c0; cx <= c1; cx++) {
-    if (b.vy > 0) {
-      const cy = toRow(bottom(b) - 0.001);
+  if (b.vy > 0) {
+    const cy = toRow(bottom(b) - 0.001);
+    for (let cx = c0; cx <= c1; cx++) {
       const t = tileAt(level, cx, cy);
-      const blocks = blocksMotion(t) || (t === ONEWAY && prevBottom <= cy * TILE + 0.001);
-      if (blocks) {
+      if (blocksMotion(t) || (t === ONEWAY && prevBottom <= cy * TILE + 0.001)) {
         b.y = cy * TILE - b.height / 2;
         b.vy = 0;
         return { kind: 'floor', cx, cy, tile: t };
       }
-    } else if (b.vy < 0) {
-      const cy = toRow(top(b));
+    }
+  } else if (b.vy < 0) {
+    // A head under two blocks has struck both; a `?` among them is the hit
+    // that counts, whichever column comes first.
+    const cy = toRow(top(b));
+    let struck = -1;
+    for (let cx = c0; cx <= c1; cx++) {
       const t = tileAt(level, cx, cy);
-      if (blocksMotion(t)) {
-        b.y = (cy + 1) * TILE + b.height / 2;
-        b.vy = 0;
-        return { kind: 'ceiling', cx, cy, tile: t };
+      if (t === QUESTION) {
+        struck = cx;
+        break;
       }
+      if (struck < 0 && blocksMotion(t)) struck = cx;
+    }
+    if (struck >= 0) {
+      b.y = (cy + 1) * TILE + b.height / 2;
+      b.vy = 0;
+      return { kind: 'ceiling', cx: struck, cy, tile: tileAt(level, struck, cy) };
     }
   }
   return null;
