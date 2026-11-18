@@ -36,8 +36,8 @@ export interface GraphNode {
   bounds: Bounds;
   /** Layout must not move it. */
   pinned: boolean;
-  /** The innermost group it belongs to, when it belongs to one. */
-  group?: string;
+  /** The innermost cluster it belongs to, when it belongs to one. */
+  cluster?: string;
   /** Where its ports sit. Absent, the four compass midpoints
    *  (`DEFAULT_PORTS`). */
   ports?: readonly PortSpec[];
@@ -53,7 +53,7 @@ export interface GraphNode {
  *  leaves room for. */
 export interface GraphCluster {
   id: string;
-  /** Every participant inside, through any group nested in this one, in
+  /** Every participant inside, through any cluster nested in this one, in
    *  source order. */
   members: readonly string[];
   /** Room the box keeps around what it holds, in world units. */
@@ -61,10 +61,10 @@ export interface GraphCluster {
   /** The narrowest its box may be across the world x axis, which a layout
    *  leaves room for. */
   minWidth?: number;
-  /** The group this one is directly inside. */
+  /** The cluster this one is directly inside. */
   parent?: string;
-  /** Its direct members, nodes and groups, in the order a layered layout
-   *  keeps them across every rank: set for a group that reorders. */
+  /** Its direct members, nodes and clusters, in the order a layered layout
+   *  keeps them across every rank: set for a cluster that reorders. */
   ordered?: readonly string[];
 }
 
@@ -90,7 +90,7 @@ export interface GraphEdge {
    *  in the ranks it crosses. */
   authored?: boolean;
   /** The edge as drawn, when this one stands in for an edge to or from a
-   *  group (see `expandClusterEdges`). */
+   *  cluster (see `expandClusterEdges`). */
   origin?: { id: string; from: string; to: string };
 }
 
@@ -113,8 +113,8 @@ export interface EdgeLabelRoom {
 export interface Graph {
   readonly nodes: readonly GraphNode[];
   readonly edges: readonly GraphEdge[];
-  /** Absent or empty for a graph with no groups. */
-  readonly groups?: readonly GraphCluster[];
+  /** Absent or empty for a graph with no clusters. */
+  readonly clusters?: readonly GraphCluster[];
   node(id: string): GraphNode | undefined;
   /** Edges leaving `id`, in source order. */
   outgoing(id: string): readonly GraphEdge[];
@@ -133,11 +133,11 @@ export interface BuildGraphOptions<TPose> {
  * Read a graph out of a source of scene nodes.
  *
  * A node is an edge if it carries the edge trait and names exactly two
- * dependencies; a group if its trait carries `group`, with its dependencies as
- * its members, which may be groups themselves (see `nestClusters`); a participant if the reader hands back any other
+ * dependencies; a cluster if its trait carries `cluster`, with its dependencies as
+ * its members, which may be clusters themselves (see `nestClusters`); a participant if the reader hands back any other
  * `DiagramNode`; and otherwise not in the diagram at all. An edge whose
- * endpoints are not both participants or groups is dropped, and an edge to a
- * group ranks against its members (see `expandClusterEdges`).
+ * endpoints are not both participants or clusters is dropped, and an edge to a
+ * cluster ranks against its members (see `expandClusterEdges`).
  */
 export function buildGraph<TPose>(
   source: GraphSource<TPose>,
@@ -185,14 +185,14 @@ export function buildGraph<TPose>(
     }
     const trait = diagramNodeOf(node, opts.read);
     if (trait === null || outer.has(node.id)) continue;
-    if (trait.group !== undefined) {
+    if (trait.cluster !== undefined) {
       const deps = node.dependsOn;
       groupNodes.push({
         id: node.id,
         members: Array.isArray(deps) ? deps : [],
-        inset: insetOf(trait.group.inset),
-        ...(trait.group.minWidth !== undefined ? { minWidth: trait.group.minWidth } : {}),
-        ...(trait.group.reorder !== undefined ? { reorders: true } : {}),
+        inset: insetOf(trait.cluster.inset),
+        ...(trait.cluster.minWidth !== undefined ? { minWidth: trait.cluster.minWidth } : {}),
+        ...(trait.cluster.reorder !== undefined ? { reorders: true } : {}),
       });
       continue;
     }
@@ -212,7 +212,7 @@ export function buildGraph<TPose>(
   const live: GraphCluster[] = nestClusters(groupNodes, (id) => byId.has(id)).map((g) => {
     for (const id of g.direct) {
       const node = byId.get(id);
-      if (node !== undefined) node.group = g.id;
+      if (node !== undefined) node.cluster = g.id;
     }
     return {
       id: g.id,
@@ -255,8 +255,8 @@ function outermostRegions(items: readonly { node: GraphNodeLike }[]): Map<string
 
 const NONE: readonly GraphEdge[] = Object.freeze([]);
 
-/** The graph over `nodes`, `edges`, and `groups`, indexed for lookup. */
-export function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphCluster[] = []): Graph {
+/** The graph over `nodes`, `edges`, and `clusters`, indexed for lookup. */
+export function graphOf(nodes: GraphNode[], edges: GraphEdge[], clusters: GraphCluster[] = []): Graph {
   const byId = new Map(nodes.map((n) => [n.id, n]));
   const out = new Map<string, GraphEdge[]>();
   const into = new Map<string, GraphEdge[]>();
@@ -267,7 +267,7 @@ export function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphClu
   return {
     nodes,
     edges,
-    groups,
+    clusters,
     node: (id) => byId.get(id),
     outgoing: (id) => out.get(id) ?? NONE,
     incoming: (id) => into.get(id) ?? NONE,

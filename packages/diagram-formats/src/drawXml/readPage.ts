@@ -177,7 +177,7 @@ export function readPage(model: Element, src: PageSource, ids: IdSpace, warn: Wa
   const data: DiagramData = {
     nodes: of('shape').map((c) => readNode(reader, c)),
     edges: of('edge').map((c) => readEdge(reader, c, byCellId)).filter((e): e is DataEdge => e !== null),
-    ...(groups.length > 0 ? { groups } : {}),
+    ...(groups.length > 0 ? { clusters: groups } : {}),
     ...(containers.length > 0 ? { containers } : {}),
   };
   const fit = fitted(data, src);

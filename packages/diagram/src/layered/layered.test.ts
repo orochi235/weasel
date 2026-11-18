@@ -47,7 +47,7 @@ describe('layered inside a group', () => {
     const data = {
       nodes: ['a', 'b', 'c', 'd'].map((id) => ({ id, lines: [id] })),
       edges: [{ from: 'a', to: 'g' }, { from: 'b', to: 'c', label: 'inside' }, { from: 'g', to: 'd' }],
-      groups: [{ id: 'g', members: ['b', 'c'] }],
+      clusters: [{ id: 'g', members: ['b', 'c'] }],
     };
     const specs = diagramScene(data, { layoutOptions: { direction: 'down', nodeGap: 40, rankGap: 56 } });
     const center = (id: string) => { const p = specs.find((s) => s.id === id)!.pose; return p.x + p.width / 2; };
@@ -86,13 +86,13 @@ describe('layeredPlan', () => {
 function generatedFrom(ids: string[], pairs: [string, string][], groups: Record<string, string[]>): Graph {
   const nodes: GraphNode[] = ids.map((id, i) => ({ id, bounds: { x: i * 120, y: 0, width: 80, height: 30 }, pinned: false }));
   const gs: GraphCluster[] = Object.entries(groups).map(([id, members]) => ({ id, members, inset: insetOf(12) }));
-  for (const g of gs) for (const m of g.members) nodes.find((n) => n.id === m)!.group = g.id;
+  for (const g of gs) for (const m of g.members) nodes.find((n) => n.id === m)!.cluster = g.id;
   const edges = expandClusterEdges(pairs.map(([from, to], i) => ({ id: `e${i}`, from, to })), gs);
   const byId = new Map(nodes.map((n) => [n.id, n]));
   return {
     nodes,
     edges,
-    groups: gs,
+    clusters: gs,
     node: (id) => byId.get(id),
     outgoing: (id) => edges.filter((e) => e.from === id),
     incoming: (id) => edges.filter((e) => e.to === id),
@@ -142,14 +142,14 @@ function generated(seed: number, grouped: boolean): Graph {
     const start = 1 + Math.floor(rand() * (count - 4));
     const members = [`n${start}`, `n${start + 1}`, `n${start + 2}`];
     groups.push({ id: 'G', members, inset: insetOf(12) });
-    for (const m of members) nodes.find((n) => n.id === m)!.group = 'G';
+    for (const m of members) nodes.find((n) => n.id === m)!.cluster = 'G';
   }
   const edges = expandClusterEdges(pairs, groups);
   const byId = new Map(nodes.map((n) => [n.id, n]));
   return {
     nodes,
     edges,
-    groups,
+    clusters: groups,
     node: (id) => byId.get(id),
     outgoing: (id) => edges.filter((e) => e.from === id),
     incoming: (id) => edges.filter((e) => e.to === id),
@@ -224,7 +224,7 @@ describe('layered, over generated graphs', () => {
             expect(overlap(graph.nodes[i]!.bounds, graph.nodes[j]!.bounds), `${graph.nodes[i]!.id} / ${graph.nodes[j]!.id}`).toBe(false);
           }
         }
-        for (const g of graph.groups ?? []) {
+        for (const g of graph.clusters ?? []) {
           const box = boxOf(graph, g);
           for (const n of graph.nodes) {
             if (!g.members.includes(n.id)) expect(overlap(n.bounds, box), `${n.id} in ${g.id}`).toBe(false);
@@ -285,7 +285,7 @@ describe('layered, over generated graphs', () => {
       const plan = layeredPlan(dragged, { direction, pin: pins });
       if (plan.unheld.size > 0) continue;
       const next = after(dragged, plan.moves);
-      for (const g of next.groups ?? []) {
+      for (const g of next.clusters ?? []) {
         const box = boxOf(next, g);
         for (const n of next.nodes) {
           if (!g.members.includes(n.id)) expect(overlap(n.bounds, box), `${direction}: ${n.id} in ${g.id}`).toBe(false);
@@ -417,7 +417,7 @@ describe('layered, with pins that move the anchor\'s band or a group', () => {
     return {
       nodes,
       edges,
-      groups,
+      clusters: groups,
       node: (id) => byId.get(id),
       outgoing: (id) => edges.filter((e) => e.from === id),
       incoming: (id) => edges.filter((e) => e.to === id),
@@ -445,8 +445,8 @@ describe('layered, with pins that move the anchor\'s band or a group', () => {
     const groups: GraphCluster[] = [{ id: 'G', members: ['m1', 'm2'], inset: insetOf(12) }];
     const nodes: GraphNode[] = [
       { id: 'r', bounds: box(0), pinned: false },
-      { id: 'm1', bounds: box(0), pinned: false, group: 'G' },
-      { id: 'm2', bounds: box(0), pinned: false, group: 'G' },
+      { id: 'm1', bounds: box(0), pinned: false, cluster: 'G' },
+      { id: 'm2', bounds: box(0), pinned: false, cluster: 'G' },
       { id: 'o', bounds: box(0), pinned: false },
     ];
     const graph = graphOf(nodes, [['r', 'm1'], ['r', 'm2'], ['r', 'o'], ['m1', 'm2']], groups);

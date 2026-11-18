@@ -64,11 +64,11 @@ export interface DiagramNode {
    *  participant that already had a look of its own — a text block, an image,
    *  a path — which keeps whatever painter it already matched. */
   outline?: Outline;
-  /** Present on a group's box: a node drawn around the participants it
+  /** Present on a cluster's box: a node drawn around the participants it
    *  depends on, which layout keeps together and leaves room for. The box
    *  itself is never laid out — it derives its pose from its members — but an
    *  edge can attach to it like any participant. */
-  group?: DiagramCluster;
+  cluster?: DiagramCluster;
   /** Present on a container, a pool, or a lane: a `GroupNode` holding
    *  members (`containers/trait.ts`). */
   container?: DiagramContainer;
@@ -116,7 +116,7 @@ export interface BodyDivider {
   inset?: number;
 }
 
-/** The group half of a {@link DiagramNode}. */
+/** The cluster half of a {@link DiagramNode}. */
 export interface DiagramCluster {
   /** Room the box keeps around its members, in world units: one number for
    *  every side, or per side. Default 12 on each. */

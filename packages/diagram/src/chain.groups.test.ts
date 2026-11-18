@@ -45,7 +45,7 @@ describe('chain with groups', () => {
   it('leaves room for a box widened to its minWidth', () => {
     const plain = chain(graphOf(IDS, EDGES, {}), OPTS);
     const base = graphOf(IDS, EDGES, { g: ['b'] }, 12);
-    const wide = { ...base, groups: base.groups!.map((g) => ({ ...g, minWidth: 400 })) };
+    const wide = { ...base, clusters: base.clusters!.map((g) => ({ ...g, minWidth: 400 })) };
     const grouped = chain(wide, OPTS);
     const gap = (r: LayoutResult, l: string, rt: string) => at(r, rt).x - at(r, l).x;
     // b's box is 100 + 2 * 12 = 124 wide, so it grows 138 on each side.
@@ -67,7 +67,7 @@ describe('chain with groups', () => {
 
   it('leaves room beside a vertical line for a box widened to its minWidth', () => {
     const base = graphOf([...IDS, 'sb'], [...EDGES, ['sb', 'b']], { g: ['b'] }, 12);
-    const wide = { ...base, groups: base.groups!.map((g) => ({ ...g, minWidth: 400 })) };
+    const wide = { ...base, clusters: base.clusters!.map((g) => ({ ...g, minWidth: 400 })) };
     const at = placed(wide, chain, { ...OPTS, direction: 'down' });
     const inner = boxOf(at, ['b'], 12);
     // Widened evenly about what it holds, as the scene draws it.

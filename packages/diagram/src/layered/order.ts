@@ -84,8 +84,8 @@ export function crossings(rows: Rows, hops: readonly Hop[]): number {
 
 /** How {@link orderRows} keeps groups together and when it stops. */
 export interface OrderOptions {
-  /** Groups as the graph has them, for keeping members together. */
-  groups?: readonly GraphCluster[];
+  /** Clusters as the graph has them, for keeping members together. */
+  clusters?: readonly GraphCluster[];
   /** Sweeps in a row without improvement before stopping. Default 4. */
   patience?: number;
   /** Hard cap on sweeps. Default 24. */
@@ -143,7 +143,7 @@ function sortRank(
   row.forEach((n, i) => {
     const k = key(n, i);
     let at = root;
-    for (const g of chainOf(n.group)) {
+    for (const g of chainOf(n.cluster)) {
       let next = at.sub.get(g);
       if (next === undefined) {
         next = newBlock(i, g);
@@ -246,7 +246,7 @@ function transpose(work: Work): void {
       for (let i = 0; i + 1 < row.length; i++) {
         const u = row[i]!;
         const v = row[i + 1]!;
-        if (u.group !== v.group || (u.group !== undefined && work.places.has(u.group))) continue;
+        if (u.cluster !== v.cluster || (u.cluster !== undefined && work.places.has(u.cluster))) continue;
         const now = cost(u.id, v.id);
         pos.set(v.id, i);
         pos.set(u.id, i + 1);
@@ -275,8 +275,8 @@ function transpose(work: Work): void {
 export function orderRows(rows: Rows, hops: readonly Hop[], opts: OrderOptions = {}): Rows {
   const patience = opts.patience ?? 4;
   const maxSweeps = opts.maxSweeps ?? 24;
-  const chainOf = createChainReader(opts.groups ?? []);
-  const places = placesOf(opts.groups ?? []);
+  const chainOf = createChainReader(opts.clusters ?? []);
+  const places = placesOf(opts.clusters ?? []);
   const byRank = hopsByRank(rows, hops);
   const ups = new Map<string, Near[]>();
   const downs = new Map<string, Near[]>();

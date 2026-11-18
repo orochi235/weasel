@@ -15,7 +15,7 @@ export const THEMED: DiagramData = {
     { id: 'c', lines: ['c'] },
   ],
   edges: [{ from: 'a', to: 'b', label: 'yes' }, { from: 'b', to: 'c' }],
-  groups: [{ id: 'g', members: ['a', 'b'], label: 'Group' }],
+  clusters: [{ id: 'g', members: ['a', 'b'], label: 'Group' }],
 };
 
 type Data = Record<string, unknown> & { diagram?: Record<string, unknown> };

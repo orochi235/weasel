@@ -56,7 +56,7 @@ export function DiagramElkDemo() {
   const [nodes, setNodes] = useState(NODES);
   const [edges, setEdges] = useState(EDGES);
   const specs = useMemo(
-    () => diagramScene({ nodes, edges, groups: GROUPS }, { layout: 'none', font: FONT }),
+    () => diagramScene({ nodes, edges, clusters: GROUPS }, { layout: 'none', font: FONT }),
     [nodes, edges],
   );
   const view = useRef<DiagramViewApi>(null);

@@ -59,7 +59,7 @@ export function simplexRanks(graph: Graph, back: ReadonlySet<string>): Map<strin
   // A group spans the ranks from a node above all its members to one below
   // them, both standing in for the group's box and nothing else.
   let count = graph.nodes.length;
-  for (const group of graph.groups ?? []) {
+  for (const group of graph.clusters ?? []) {
     const members = [...new Set(group.members.map((id) => index.get(id)).filter((i): i is number => i !== undefined))];
     if (members.length < 2) continue;
     const [top, bottom] = [count, count + 1];

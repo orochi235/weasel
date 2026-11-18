@@ -127,7 +127,7 @@ describe('reading a file of pages', () => {
   });
 
   it('reads a group cell as a group of what it holds', () => {
-    expect(doc.pages.map(asGraph)[0]!.data.groups).toEqual([{ id: 'grp', members: ['g1', 'g2'] }]);
+    expect(doc.pages.map(asGraph)[0]!.data.clusters).toEqual([{ id: 'grp', members: ['g1', 'g2'] }]);
     expect(nodes(doc).get('g2')!.at).toEqual({ x: 560, y: 300 });
   });
 
@@ -231,7 +231,7 @@ describe('reading groups and connectors in a model', () => {
       <mxCell id="b" value="B" vertex="1" parent="g"><mxGeometry x="100" y="0" width="40" height="20" as="geometry"/></mxCell>
     </root></mxGraphModel>`);
     const page = document.pages.map(asGraph)[0]!;
-    expect(page.data.groups).toBeUndefined();
+    expect(page.data.clusters).toBeUndefined();
     expect(regions(document).get('c')!.members).toEqual(['a', 'b']);
     expect(warnings).toContain('Groups inside a container or lane were dropped; their shapes stay in it.');
     expect(() => documentSpecs(document)).not.toThrow();
@@ -246,7 +246,7 @@ describe('reading groups and connectors in a model', () => {
       <mxCell id="e" edge="1" parent="1" source="b" target="g2"><mxGeometry relative="1" as="geometry"/></mxCell>
     </root></mxGraphModel>`);
     const page = document.pages.map(asGraph)[0]!;
-    expect(page.data.groups).toEqual([{ id: 'g1', members: ['a'] }]);
+    expect(page.data.clusters).toEqual([{ id: 'g1', members: ['a'] }]);
     expect(page.data.edges).toEqual([]);
     expect(warnings).toContain('Connectors with a loose end, or with an end on another connector, were left out.');
   });

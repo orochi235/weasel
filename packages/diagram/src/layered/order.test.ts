@@ -4,7 +4,7 @@ import { crossings, orderRows } from './order';
 import { PLACEHOLDER, type Hop, type Rows } from './types';
 
 const node = (id: string, group?: string): GraphNode => ({
-  id, bounds: { x: 0, y: 0, width: 10, height: 10 }, pinned: false, ...(group === undefined ? {} : { group }),
+  id, bounds: { x: 0, y: 0, width: 10, height: 10 }, pinned: false, ...(group === undefined ? {} : { cluster: group }),
 });
 const rowsOf = (...ids: string[][]): Rows => ids.map((row) => row.map((id) => node(id)));
 const hopsOf = (...pairs: [string, string][]): Hop[] => pairs.map(([from, to], i) => ({ from, to, edge: `e${i}` }));
@@ -116,14 +116,14 @@ describe('orderRows', () => {
     ];
     // Pulls b between a and c, and y away from them, if groups were ignored.
     const hops = hopsOf(['a', 'x'], ['b', 'y'], ['c', 'z']);
-    const out = orderRows(rows, hops, { groups });
+    const out = orderRows(rows, hops, { clusters: groups });
     expect(contiguous(out, groups)).toBe(true);
   });
 
   it('makes a seed that splits a group contiguous', () => {
     const groups: GraphCluster[] = [{ id: 'g', members: ['a', 'c'], inset }];
     const rows: Rows = [[node('a', 'g'), node('b'), node('c', 'g')]];
-    expect(ids(orderRows(rows, [], { groups }))).toEqual([['a', 'c', 'b']]);
+    expect(ids(orderRows(rows, [], { clusters: groups }))).toEqual([['a', 'c', 'b']]);
   });
 
   it('keeps a nested group contiguous inside its parent', () => {
@@ -138,7 +138,7 @@ describe('orderRows', () => {
     // e's neighbor sits between inner's and the rest of outer's, which would
     // split outer if inner sorted as outer's sibling.
     const hops = hopsOf(['p', 'b'], ['p', 'd'], ['q', 'e'], ['r', 'a'], ['r', 'c']);
-    const out = orderRows(rows, hops, { groups });
+    const out = orderRows(rows, hops, { clusters: groups });
     expect(contiguous(out, groups)).toBe(true);
   });
 
@@ -151,7 +151,7 @@ describe('orderRows', () => {
     ];
     // Without the group, the seed already has no crossings and y stays between.
     const hops = hopsOf(['p', 'm'], ['q', 'y'], ['r', ph]);
-    const out = orderRows(rows, hops, { groups });
+    const out = orderRows(rows, hops, { clusters: groups });
     expect(ids(out)[1]).toEqual(['m', ph, 'y']);
   });
 

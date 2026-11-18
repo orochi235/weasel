@@ -8,10 +8,10 @@ type Sizes = Readonly<Record<string, readonly [number, number]>>;
 /** A graph of nodes sized as given, on the diagonal in order, each in the group `groupOf` names. */
 function graphOf(sizes: Sizes, groups: readonly GraphCluster[] = [], groupOf: Readonly<Record<string, string>> = {}, pinned: readonly string[] = []): Graph {
   const nodes: GraphNode[] = Object.entries(sizes).map(([id, [width, height]], i) => ({
-    id, bounds: { x: i, y: i, width, height }, pinned: pinned.includes(id), ...(Object.hasOwn(groupOf, id) ? { group: groupOf[id] } : {}),
+    id, bounds: { x: i, y: i, width, height }, pinned: pinned.includes(id), ...(Object.hasOwn(groupOf, id) ? { cluster: groupOf[id] } : {}),
   }));
   const byId = new Map(nodes.map((n) => [n.id, n]));
-  return { nodes, edges: [], groups, node: (id) => byId.get(id), outgoing: () => [], incoming: () => [] };
+  return { nodes, edges: [], clusters: groups, node: (id) => byId.get(id), outgoing: () => [], incoming: () => [] };
 }
 
 const inset = { top: 30, right: 10, bottom: 10, left: 10 };
@@ -35,7 +35,7 @@ describe('grid', () => {
 
   it('gives a group named for an Object.prototype member its default columns', () => {
     const group = (id: string): GraphCluster => ({ id, members: ['b', 'c'], inset });
-    const run = (id: string) => laid(graphOf({ a: [40, 20], b: [40, 20], c: [40, 20] }, [group(id)], { b: id, c: id }), of(2, { groupColumns: {} }));
+    const run = (id: string) => laid(graphOf({ a: [40, 20], b: [40, 20], c: [40, 20] }, [group(id)], { b: id, c: id }), of(2, { clusterColumns: {} }));
     expect(run('toString')).toEqual(run('g'));
   });
 
@@ -64,7 +64,7 @@ describe('grid', () => {
 
   it('lays a group out as a grid of its own in its cell, its inset kept around it', () => {
     const g: GraphCluster = { id: 'g', members: ['b', 'c'], inset };
-    const at = laid(graphOf({ a: [40, 20], b: [40, 20], c: [40, 20], d: [40, 20] }, [g], { b: 'g', c: 'g' }), of(3, { groupColumns: { g: 1 } }));
+    const at = laid(graphOf({ a: [40, 20], b: [40, 20], c: [40, 20], d: [40, 20] }, [g], { b: 'g', c: 'g' }), of(3, { clusterColumns: { g: 1 } }));
     // The group is 60 wide and 90 tall, so every column is 60 wide and the row 90 tall, a and d centered in theirs.
     expect(at.b).toEqual({ x: 70, y: -5 });
     expect(at.c).toEqual({ x: 70, y: 25 });
@@ -74,7 +74,7 @@ describe('grid', () => {
   it('nests a group inside another', () => {
     const outer: GraphCluster = { id: 'o', members: ['a', 'b', 'c'], inset };
     const inner: GraphCluster = { id: 'i', members: ['b', 'c'], inset, parent: 'o' };
-    const at = laid(graphOf({ a: [40, 20], b: [40, 20], c: [40, 20] }, [outer, inner], { a: 'o', b: 'i', c: 'i' }), of(1, { groupColumns: { o: 1, i: 2 } }));
+    const at = laid(graphOf({ a: [40, 20], b: [40, 20], c: [40, 20] }, [outer, inner], { a: 'o', b: 'i', c: 'i' }), of(1, { clusterColumns: { o: 1, i: 2 } }));
     expect(at.b!.y).toBe(at.c!.y);
     expect(at.b!.y).toBeGreaterThanOrEqual(20 + 10 + inset.top);
     expect(at.c!.x - at.b!.x).toBe(50);

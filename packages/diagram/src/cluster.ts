@@ -76,7 +76,7 @@ export function rankInset(inset: ClusterInset, axes: LayoutAxes): { lo: number; 
  * that ends, or starts, at the same rank. `rows` is the nodes of each rank.
  */
 export function rankGaps(
-  graph: Pick<Graph, 'groups'>,
+  graph: Pick<Graph, 'clusters'>,
   rows: readonly (readonly Pick<GraphNode, 'id'>[])[],
   axes: LayoutAxes,
   rankGap: number,
@@ -109,12 +109,12 @@ interface Span {
   children: Span[];
 }
 
-function groupSpans(graph: Pick<Graph, 'groups'>, rows: readonly (readonly Pick<GraphNode, 'id'>[])[]): Span[] {
+function groupSpans(graph: Pick<Graph, 'clusters'>, rows: readonly (readonly Pick<GraphNode, 'id'>[])[]): Span[] {
   const rankOf = new Map<string, number>();
   rows.forEach((row, i) => row.forEach((n) => rankOf.set(n.id, i)));
   const spans: Span[] = [];
   const byId = new Map<string, Span>();
-  for (const group of graph.groups ?? []) {
+  for (const group of graph.clusters ?? []) {
     const ranks = group.members.map((id) => rankOf.get(id)).filter((r): r is number => r !== undefined);
     if (ranks.length === 0) continue;
     const span: Span = { group, lo: minOf(ranks), hi: maxOf(ranks), children: [] };
@@ -158,7 +158,7 @@ export function packClusters(
 ): Map<string, number> {
   const spans = groupSpans(graph, rows);
   const spanById = new Map(spans.map((s) => [s.group.id, s]));
-  const spanOf = (n: GraphNode): Span | undefined => (n.group === undefined ? undefined : spanById.get(n.group));
+  const spanOf = (n: GraphNode): Span | undefined => (n.cluster === undefined ? undefined : spanById.get(n.cluster));
   const width = (n: GraphNode) => extent(n.bounds, axes.cross);
   const pref = (n: GraphNode) => preferred.get(n.id) ?? 0;
   const insets = new Map(spans.map((s) => [s, canonical(s.group.inset, axes)]));

@@ -57,7 +57,7 @@ const EPS = 1e-6;
  */
 export function settleAcross(input: AcrossInput): Map<string, number> | undefined {
   const { graph, rows, axes } = input;
-  const groups = new Map((graph.groups ?? []).map((g) => [g.id, g]));
+  const groups = new Map((graph.clusters ?? []).map((g) => [g.id, g]));
   const rankOf = new Map<string, number>();
   const sizes = new Map<string, number>();
   const chains = new Map<string, GraphCluster[]>();
@@ -66,7 +66,7 @@ export function settleAcross(input: AcrossInput): Map<string, number> | undefine
       rankOf.set(node.id, r);
       sizes.set(node.id, extent(node.bounds, axes.cross));
       const chain: GraphCluster[] = [];
-      for (let g = node.group === undefined ? undefined : groups.get(node.group); g !== undefined; g = g.parent === undefined ? undefined : groups.get(g.parent)) chain.unshift(g);
+      for (let g = node.cluster === undefined ? undefined : groups.get(node.cluster); g !== undefined; g = g.parent === undefined ? undefined : groups.get(g.parent)) chain.unshift(g);
       chains.set(node.id, chain);
     }
   }

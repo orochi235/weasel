@@ -76,7 +76,7 @@ export function routeEasings<TPose>(
   routes: LayoutRoutes,
 ): RouteEasing[] {
   const centerOf = (id: string): Vec2 | null => {
-    const ids = graph.node(id) !== undefined ? [id] : graph.groups?.find((g) => g.id === id)?.members ?? [];
+    const ids = graph.node(id) !== undefined ? [id] : graph.clusters?.find((g) => g.id === id)?.members ?? [];
     const boxes = ids.flatMap((m) => graph.node(m)?.bounds ?? []);
     if (boxes.length === 0) return null;
     const x0 = minOf(boxes, (b) => b.x);

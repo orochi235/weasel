@@ -52,7 +52,7 @@ shrunk — so resize, align, distribute, snapping and undo need no special case.
 A perimeter port can carry a `label`, or be named in `portLabels` (on a
 `BodySpec` or a `DataNode`) by port id, which labels the default compass ports
 without redeclaring them. The label is drawn outside the node beside the port's
-wire; layout lays the node out with room for it, and a group's box takes it in.
+wire; layout lays the node out with room for it, and a cluster's box takes it in.
 
 ### Making ports grabbable
 
@@ -202,7 +202,7 @@ What a connector routes around:
 | Thing | In the way when |
 |---|---|
 | A shape | always, beyond the stubs where a connector leaves or meets it |
-| A container, pool, or group box | neither end is inside it |
+| A container, pool, or cluster box | neither end is inside it |
 | A lane's body | never |
 | A lane's or pool's header | always |
 | An edge label | always, except to its own connector, 4 world units clear |
@@ -320,7 +320,7 @@ A data-backed diagram takes the same pages as `DiagramData.pages` (core's
 `Page`s), placed by `layoutPages` with `pageLayout`; `diagramPages(data)` gives
 them in world space. `diagramScene` splits each connector between pages and
 adds its two tags, lettered in the order the data lists the edges. An edge to a
-group or a container splits by that box's page, not a member's.
+cluster or a container splits by that box's page, not a member's.
 `dataOffPage(edges, pages, boxOf, look)` is the same step over plain boxes.
 
 `useOffPageMarkers(scene)` splits and joins connectors as edits move their
@@ -362,7 +362,7 @@ stubs and tags, use `exportPageSvg` and `exportPagePng` from
 
 ### Overlays and hover
 
-`overlays` holds DOM against a node, a group or an edge, and places it again
+`overlays` holds DOM against a node, a cluster or an edge, and places it again
 after every paint, so it follows pans, zooms, resizes and layout. A side
 placement uses geom's `placeRect` inside the view, flipping to the far side
 when the near one has no room; the default centers it on the target. An
@@ -380,7 +380,7 @@ edge's place is the midpoint along its route.
 />
 ```
 
-`onHover` reports the node, group or edge under the pointer, and `null` when
+`onHover` reports the node, cluster or edge under the pointer, and `null` when
 there is none or the pointer leaves the canvas, which it also does when the
 pointer moves onto an overlay. Edges answer only with `pickEdges`. For DOM
 the view does not hold, `rectOf(id)` on the ref gives a target's client rect
@@ -412,17 +412,17 @@ node goes back where it was.
 />
 ```
 
-### Reordering a group's or a container's members
+### Reordering a cluster's or a container's members
 
-A group with `reorder: 'x' | 'y'` lets `onReorder` drag any of its members
-along that axis; a member that is a group carries everything inside it. The
+A cluster with `reorder: 'x' | 'y'` lets `onReorder` drag any of its members
+along that axis; a member that is a cluster carries everything inside it. The
 other members slide into the places they would take, and the release reports
 the new order without moving anything. With a member picked, Alt and an arrow
-key steps it one place. `layered` keeps a reorderable group's members in the
+key steps it one place. `layered` keeps a reorderable cluster's members in the
 order given across every rank, so writing the order back is all it takes.
 
 ```tsx
-const data = { nodes, edges, groups: [...rows, { id: 'layers', members: order, reorder: 'y' }] };
+const data = { nodes, edges, clusters: [...rows, { id: 'layers', members: order, reorder: 'y' }] };
 <DiagramView specs={diagramScene(data)} onReorder={({ parent, order }) => setOrder(order)} />
 ```
 
@@ -647,12 +647,12 @@ one ranks against the outermost region holding it.
 The first pinned node anchors the layout. Under `layered`, every other pin
 keeps its place across its rank, with the rest of the rank moved clear of it,
 past it if there is no room beside it. A pin's rank band slides or deepens to
-cover it, the gaps toward other pinned ranks shrink to make room, and a group's
+cover it, the gaps toward other pinned ranks shrink to make room, and a cluster's
 column moves or widens to take in its pinned members, never over a node outside
-the group. A pin is left out only when no arrangement fits: its band would come
+the cluster. A pin is left out only when no arrangement fits: its band would come
 nearer another pinned rank's than the ranks between them allow with every gap
-at a quarter of `rankGap` (plus group insets), or a group's box would cover a
-pin outside the group. In practice that is a pin dragged level with, or past,
+at a quarter of `rankGap` (plus cluster insets), or a cluster's box would cover a
+pin outside the cluster. In practice that is a pin dragged level with, or past,
 the rank beside it. Such a pin stays put without the layout being built around
 it; `layeredPlan` names it in `unheld`.
 
@@ -662,8 +662,8 @@ relaxation seeded from the current positions, so re-running it keeps relaxing.
 `layered` turns around any edge that closes a cycle, then gives each node a
 rank that keeps the total edge length as short as it can (`simplexRanks`,
 network simplex), so a node with no inputs sits beside what it feeds rather
-than in the first rank. A group's members share one rank wherever the edges
-between them allow it, and a group's box closes any stretch none of its members
+than in the first rank. A cluster's members share one rank wherever the edges
+between them allow it, and a cluster's box closes any stretch none of its members
 covers to `nodeGap`, so the box holds no empty room. It lines each node up with its neighbors across the
 ranks (Brandes–Köpf), lining up the two ports an edge joins rather than the two
 centers. An edge that spans ranks stands in each rank it crosses, so placement
@@ -711,7 +711,7 @@ neighbors never share space, and the hung nodes stand in the order of the ports
 they connect to. An edge between a chain node and one hung beside it, both ends
 naming ports that face each other, runs on a track of its own in the gap
 between them, so a fan of them never crosses; the gap grows to keep tracks 12
-apart. A group's members hang in one stretch of columns that nothing else
+apart. A cluster's members hang in one stretch of columns that nothing else
 hangs among, with room left along the line for its box.
 
 `radial` is the mind-map layout. The first root `tree` would find sits in the middle, and its
@@ -719,16 +719,16 @@ children are dealt to its right and its left, in graph order, each to whichever 
 nodes so far. Each side grows away from the root as a horizontal `tree`, one band per depth
 `rankGap` apart, its subtrees packed as blocks `nodeGap` apart and centered on the root. Because
 sides are dealt in graph order and each side keeps the order its branches stand in, a second run
-moves nothing. Further trees lay out the same way, stacked below the first. `direction` and groups
+moves nothing. Further trees lay out the same way, stacked below the first. `direction` and clusters
 are ignored.
 
 `grid` stands nodes in rows of a fixed number of columns, left to right and top to bottom, as a
 block diagram does. Its `grid` option gives the top level's `columns` (unset, everything in one
-row), each group's own under `groupColumns`, how many columns an item `spans`, and how many empty
-cells it `skips` before it, all by id. Items fill their cells in graph order, a group where its
+row), each cluster's own under `clusterColumns`, how many columns an item `spans`, and how many empty
+cells it `skips` before it, all by id. Items fill their cells in graph order, a cluster where its
 first member would stand. Every column of one grid is as wide as its widest item needs, a spanning
 item sharing its width over its columns, and every row as tall as its tallest item; an item is
-centered in its cells. A group (or a container fitted to what it holds) is a grid of its own in
+centered in its cells. A cluster (or a container fitted to what it holds) is a grid of its own in
 its cells, its inset kept around it. Columns are `nodeGap` apart and rows `rankGap`, or `nodeGap`
 when `rankGap` is unset. Edges and `direction` are ignored, so a second run moves nothing.
 
@@ -743,7 +743,7 @@ return <DiagramView specs={specs} width={360} height={600} selection={id} onSele
 ```
 
 `onSelectionChange(id, ids)` reports the latest pick and every id picked. With
-`selectionMode="multiple"`, Cmd-click (Ctrl off macOS) adds a node, group or edge
+`selectionMode="multiple"`, Cmd-click (Ctrl off macOS) adds a node, cluster or edge
 to the pick or takes it out, and Shift-click picks everything between it and the last one clicked; `selection` takes one id or an array, and handing back the
 reported `id` leaves the rest picked.
 
@@ -834,26 +834,26 @@ of its own, or one at `'mid'`, sits in the room layout left it, placed with
 `at: { near }`, which stations a label where its route passes nearest a point,
 so a bend added or removed elsewhere leaves it where it was.
 
-`groups` draws a box around some nodes, with an optional `label` inside it:
+`clusters` draws a box around some nodes, with an optional `label` inside it:
 
 ```tsx
-diagramScene({ nodes, edges, groups: [{ id: 'ingest', members: ['fetch', 'decode'], label: 'ingest' }] });
+diagramScene({ nodes, edges, clusters: [{ id: 'ingest', members: ['fetch', 'decode'], label: 'ingest' }] });
 ```
 
-A group may be a member of another. `layered`, `tree`, `force` and `chain`
-keep a group's members together; `radial` ignores groups but still draws them. Under
-`layered` and `tree` each group gets a column on the cross axis that nothing
+A cluster may be a member of another. `layered`, `tree`, `force` and `chain`
+keep a cluster's members together; `radial` ignores clusters but still draws them. Under
+`layered` and `tree` each cluster gets a column on the cross axis that nothing
 else enters, in every rank from its first member's to its last, and rank gaps
-widen where a box needs the room; `force` pulls a group's members toward each
-other and pushes groups apart. The box is an ordinary scene node that depends
+widen where a box needs the room; `force` pulls a cluster's members toward each
+other and pushes clusters apart. The box is an ordinary scene node that depends
 on its members and derives its pose from theirs (`clusterDerivePose`), so
 dragging a member carries the box along. It also depends on the labels of the
 wires with both ends inside it, so a long label stays inside the box. It is
 never narrower than its label,
 and a layout running down or up leaves room for that width. An edge whose
-`from` or `to` names a group meets the box, and ranks against the group's first
+`from` or `to` names a cluster meets the box, and ranks against the cluster's first
 stage. A scene built
-any other way joins in with a node whose trait carries `group` and whose
+any other way joins in with a node whose trait carries `cluster` and whose
 `dependsOn` lists its members.
 
 `containers` draws the containers and pools of "Containers and pools" from data:
@@ -869,20 +869,20 @@ diagramScene({ nodes, edges, containers: [
 Each region is a scene container and its members are its children, so a
 region's id shares the node id namespace, and so does each lane's. A member
 already claimed by an earlier region, a pool, and a claim that would put a
-container inside itself are ignored. A node is in a group or in a region, never
-both: a region is its scene parent, and a group would draw a second box around
+container inside itself are ignored. A node is in a cluster or in a region, never
+both: a region is its scene parent, and a cluster would draw a second box around
 it that the region's does not hold, so `diagramScene` throws on a node that
-`groups` and `containers` both name. A container with a `box` is laid out as
+`clusters` and `containers` both name. A container with a `box` is laid out as
 one node of that size, and its members ride along with it, keeping where they
 stand in it; a member with no `at` is seeded inside its body, in rows. A
-container with no `box` is laid out as a group, and its box fits its members.
+container with no `box` is laid out as a cluster, and its box fits its members.
 A pool always has a box: 600 across and 120 along per lane when it gives none
 (`DEFAULT_POOL_ACROSS`, `DEFAULT_LANE_SIZE`). Its lanes stack along `axis`
 (`'y'`, rows, by default) at their `size`, and lanes giving none share what
 the pool's box leaves. An edge with an end inside a boxed region ranks against
 the outermost one holding it, and keeps none of layout's route. `pinned`
 leaves a box where it is. A container's `reorder` lets `onReorder` drag its
-members along that axis (see "Reordering a group's or a container's members"). Under `theme`, a region naming a `style` role takes
+members along that axis (see "Reordering a cluster's or a container's members"). Under `theme`, a region naming a `style` role takes
 that role's colors; otherwise a container takes the theme's `container`, a
 pool its `lane.header`, and lanes the `lane.bodies` in turn; titles are set in
 the diagram's face, the theme's when `font` is unset. `router="avoid"`
@@ -927,7 +927,7 @@ whose box is its own. Store them the same way and the next `diagramScene`
 leaves those nodes where they stand and lays out only the new ones, which keeps
 a diagram still while its data is edited.
 `onResize` gives a selected node resize handles (`diagramResizable`, so none on
-an edge, an edge label, a lane, or a group's box). The box resizes live under
+an edge, an edge label, a lane, or a cluster's box). The box resizes live under
 the drag; on release the view reports `{ id, x, y, width, height }` for each
 resized node and draws the new box only once the specs do. Store it as the
 node's `width`, `height`, and `at`, with `pinned: true`. The size is a minimum,

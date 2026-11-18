@@ -15,14 +15,14 @@ function graphOf(ids: string[], pairs: [string, string][], groups: GraphCluster[
   for (const g of groups) {
     for (const m of g.members) {
       const n = nodes.find((x) => x.id === m);
-      if (n !== undefined && n.group === undefined) n.group = g.id;
+      if (n !== undefined && n.cluster === undefined) n.cluster = g.id;
     }
   }
   const edges = expandClusterEdges(pairs.map(([from, to], i) => ({ id: `e${i}`, from, to })), groups);
   const byId = new Map(nodes.map((n) => [n.id, n]));
   const out = (id: string) => edges.filter((e: GraphEdge) => e.from === id);
   const inc = (id: string) => edges.filter((e: GraphEdge) => e.to === id);
-  return { nodes, edges, groups, node: (id) => byId.get(id), outgoing: out, incoming: inc };
+  return { nodes, edges, clusters: groups, node: (id) => byId.get(id), outgoing: out, incoming: inc };
 }
 
 const ranks = (r: Record<string, number>) => new Map(Object.entries(r));
@@ -101,8 +101,8 @@ describe('expand', () => {
     const g = graphOf(['p', 'q', 'r', 'o'], [['p', 'q'], ['q', 'r'], ['p', 'r'], ['p', 'o']], [G]);
     const { rows } = expand(g, ranks({ p: 0, q: 1, r: 2, o: 2 }), new Set(), { axes: AXES, nodeGap: 40 });
     const placeholders = rows.flat().filter((n) => isPlaceholder(n.id));
-    expect(placeholders.find((n) => n.id.includes('e2'))!.group).toBe('G');
-    expect(placeholders.find((n) => n.id.includes('e3'))!.group).toBeUndefined();
+    expect(placeholders.find((n) => n.id.includes('e2'))!.cluster).toBe('G');
+    expect(placeholders.find((n) => n.id.includes('e3'))!.cluster).toBeUndefined();
   });
 });
 

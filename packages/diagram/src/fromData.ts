@@ -172,11 +172,11 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
     ids.add(n.id);
   }
   const nodeIds = new Set(ids);
-  const pad = opts.groupPadding ?? DEFAULT_CLUSTER_INSET;
+  const pad = opts.clusterPadding ?? DEFAULT_CLUSTER_INSET;
   const regions = resolveContainers(data.containers ?? [], ids, nodeIds);
   // A region is a node's scene parent and a group only gathers it for layout and draws around it: a
   // node in both would have two owners whose boxes disagree, so the data is refused rather than guessed at.
-  for (const g of data.groups ?? []) {
+  for (const g of data.clusters ?? []) {
     for (const m of g.members) {
       const region = nodeIds.has(m) ? regions.parentOf.get(m) : undefined;
       if (region !== undefined) throw new Error(`diagramScene: node "${m}" is in group "${g.id}" and in region "${region}"; a node may be in one or the other`);
@@ -184,7 +184,7 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
   }
   const boxes = containerLayoutNodes(regions, { padding: pad, seed: (k) => ({ x: data.nodes.length + k, y: data.nodes.length + k }) });
   const titleStyle = { ...font, fontSize: font.fontSize - 1 };
-  const groups = resolveClusters(data.groups ?? [], ids, new Set([...nodeIds].filter((id) => !boxes.hidden.has(id))), {
+  const groups = resolveClusters(data.clusters ?? [], ids, new Set([...nodeIds].filter((id) => !boxes.hidden.has(id))), {
     padding: pad,
     title: (text) => measure(text, titleStyle),
   });
@@ -235,7 +235,7 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
   const routes = laid.plan === null ? null
     : authoredOver(edges.filter((e) => !laid.remapped.has(e)).map((e) => ({ ...e, id: edgeIdOf(e) })), laid.plan);
   const edgeCtx = { idOf: edgeIdOf, font, labelFont, measure, labelPlacement: LABEL_PLACEMENT, routes, opts, ...(theme ? { theme } : {}) };
-  const groupLook = (g: DataCluster) => ({ style: opts.groupStyle?.(g) ?? theme?.container ?? DEFAULT_CLUSTER_STYLE, text: styleOf(titleStyle) });
+  const groupLook = (g: DataCluster) => ({ style: opts.clusterStyle?.(g) ?? theme?.container ?? DEFAULT_CLUSTER_STYLE, text: styleOf(titleStyle) });
   const footprints = new Map([...placedAt, ...seeds.map((s) => [s.id, grownBy(placedAt.get(s.id)!, s.margin)] as const)]);
   // Regions and group boxes first, so a box never paints over what it holds.
   specs.push(...containerSpecs(regions, placedAt, theme, font.fontFamily));
@@ -283,14 +283,14 @@ function layOut(
     ...(g.minWidth !== undefined ? { minWidth: g.minWidth } : {}),
     ...(g.parent !== undefined ? { parent: g.parent } : {}),
     ...(g.group.reorder !== undefined ? { ordered: g.direct } : {}),
-  })), ...boxes.groups];
+  })), ...boxes.clusters];
   const visible = [...seeds.filter((s) => !boxes.hidden.has(s.id)), ...boxes.nodes];
   const seedOf = new Map(visible.map((n) => [n.id, n]));
-  for (const [id, group] of boxes.groupOf) seedOf.get(id)!.group = group;
+  for (const [id, group] of boxes.groupOf) seedOf.get(id)!.cluster = group;
   for (const g of groups) {
     for (const m of g.direct) {
       const seed = seedOf.get(m);
-      if (seed !== undefined) seed.group = g.group.id;
+      if (seed !== undefined) seed.cluster = g.group.id;
     }
   }
   const remapped = new Set<DataEdge>();

@@ -66,7 +66,7 @@ function boxLook(scene: ThemedScene, node: ThemedNode, theme: DiagramTheme): Loo
     const bodies = theme.lane.bodies;
     return { style: bodies[laneIndex(scene, node) % bodies.length] ?? theme.container, own, ownSize };
   }
-  if (role !== null || 'group' in trait) return { style: theme.container, own, ownSize };
+  if (role !== null || 'cluster' in trait) return { style: theme.container, own, ownSize };
   return { style: roleStyle(theme, trait.style), own, ownSize };
 }
 

@@ -174,13 +174,13 @@ describe('documentFromScene', () => {
           { id: 'e', lines: ['E'], at: { x: 1500, y: 400 }, width: 64 },
           { id: 'f', lines: ['F'], at: { x: 1500, y: 500 }, width: 64 },
         ],
-        groups: [{ id: 'G', members: ['e', 'f'] }],
+        clusters: [{ id: 'G', members: ['e', 'f'] }],
         edges: [...DOC_DATA.edges, { id: 'Gb', from: 'G', to: 'b', router: 'orthogonal', waypoints: [{ x: 500, y: 600 }] }],
       });
       dragBy(scene, ['e', 'f'], -1400);
       expect(scene.get('G' as never)!.parent).toBe('p1');
       expect((scene.get('G' as never)!.pose as { x: number }).x).toBeGreaterThan(1000);
-      expect(pageOf(scene, 'p1').data.groups?.map((g) => g.id)).toEqual(['G']);
+      expect(pageOf(scene, 'p1').data.clusters?.map((g) => g.id)).toEqual(['G']);
       expect(pageOf(scene, 'p1').data.edges.find((e) => e.id === 'Gb')?.waypoints).toBeDefined();
       expect(documentFromScene(scene).crossPageEdges?.map((e) => e.id)).not.toContain('Gb');
     });

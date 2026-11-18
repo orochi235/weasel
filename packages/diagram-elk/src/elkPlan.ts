@@ -46,9 +46,9 @@ export interface ElkLayoutOptions extends Omit<LayoutOptions, 'order' | 'chain' 
 
 /** {@link elkPlan}'s answer: a layout plan, and what else ELK placed. */
 export interface ElkPlan extends LayoutPlan {
-  /** Each group's box, in world coordinates. The diagram derives a box from
+  /** Each cluster's box, in world coordinates. The diagram derives a box from
    *  its members, so nothing writes these; they are what ELK left room for. */
-  groups: ReadonlyMap<string, Bounds>;
+  clusters: ReadonlyMap<string, Bounds>;
   /** Each routed edge end to end, keyed by the edge as drawn. `waypoints` is
    *  the same route without its two ends. */
   routes: ReadonlyMap<string, readonly Vec2[]>;
@@ -153,7 +153,7 @@ function planFrom(graph: Graph, placed: ElkPlacement, opts: ElkLayoutOptions): E
     waypoints,
     labels,
     ports,
-    groups,
+    clusters: groups,
     routes,
     unheld,
   };

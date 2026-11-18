@@ -162,10 +162,10 @@ function blockRoom(count: number, column: ReadonlyMap<string, number>, blocks: r
   const rows: { id: string }[][] = Array.from({ length: count + 2 }, () => []);
   for (const [id, c] of column) rows[c + 1]!.push({ id });
   const inside = (b: LaneBlock) => [...column].filter(([, c]) => c >= b.first && c <= b.last).map(([id]) => id);
-  const groups = blocks.map((b): GraphCluster => {
+  const clusters = blocks.map((b): GraphCluster => {
     const parent = blocks.find((p) => p.depth === b.depth - 1 && p.first <= b.first && b.last <= p.last);
     return { id: b.group, members: inside(b), inset: insetOf(DEFAULT_CLUSTER_INSET), ...(parent !== undefined ? { parent: parent.group } : {}) };
   });
-  const gaps = rankGaps({ groups }, rows, { rank: 'x', cross: 'y', sign: 1 }, gap);
+  const gaps = rankGaps({ clusters }, rows, { rank: 'x', cross: 'y', sign: 1 }, gap);
   return gaps.map((g, c) => (c === 0 || c === count ? g - gap : g));
 }

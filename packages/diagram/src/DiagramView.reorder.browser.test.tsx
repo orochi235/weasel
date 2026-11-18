@@ -11,7 +11,7 @@ const DATA: DiagramData = {
     { id: 'word', lines: ['word'] },
   ],
   edges: ['a', 'b', 'c'].flatMap((r) => [{ from: `${r}.patch`, to: `${r}.pool` }, { from: `${r}.pool`, to: 'word' }]),
-  groups: [
+  clusters: [
     ...['a', 'b', 'c'].map((r) => ({ id: r, members: [`${r}.patch`, `${r}.pool`] })),
     { id: 'layers', members: ['a', 'b', 'c'], reorder: 'y' as const },
   ],

@@ -69,7 +69,7 @@ export function bodyAt<TPose>(
     if (!offersPorts(participant, opts.view)) continue;
     if (diagramEdgeOf(node) !== null || diagramLabelOf(node) !== null || diagramClusterOf(node) !== null) continue;
     const trait = diagramNodeOf(node, opts.read);
-    if (trait === null || trait.group !== undefined) continue;
+    if (trait === null || trait.cluster !== undefined) continue;
     const bounds = poseDescriptor.getBounds(participant.pose);
     if (bounds.width <= 0 || bounds.height <= 0) continue;
     const rotation = poseDescriptor.getRotation?.(participant.pose) ?? 0;

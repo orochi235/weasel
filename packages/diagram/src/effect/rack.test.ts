@@ -101,12 +101,12 @@ describe('rack', () => {
 
   it('drops a collapsed decision from any group that named it', () => {
     const grouped = rack({ ...SKIP, groups: [{ id: 'g', members: ['q', 'blur'] }] });
-    expect(grouped.data.groups).toEqual([{ id: 'g', members: ['blur'] }]);
+    expect(grouped.data.clusters).toEqual([{ id: 'g', members: ['blur'] }]);
   });
 
   it('keeps the first of two groups sharing an id, and drops a group named like a stage', () => {
     const twice = rack({ ...SKIP, groups: [{ id: 'g', members: ['q', 'blur'] }, { id: 'g', members: ['mix'] }, { id: 'mix', members: ['osc'] }] });
-    expect(twice.data.groups).toEqual([{ id: 'g', members: ['blur'] }]);
+    expect(twice.data.clusters).toEqual([{ id: 'g', members: ['blur'] }]);
     expect(() => diagramScene(twice.data, twice.scene)).not.toThrow();
   });
 

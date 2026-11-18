@@ -23,7 +23,7 @@ export function graphOf(
   }));
   for (const [id, members] of Object.entries(groups)) {
     entries.push({
-      node: { id, kind: 'mark', data: { diagram: { group: { inset } } }, dependsOn: members },
+      node: { id, kind: 'mark', data: { diagram: { cluster: { inset } } }, dependsOn: members },
       pose: DEGENERATE,
     });
   }

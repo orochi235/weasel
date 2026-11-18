@@ -19,12 +19,12 @@ import { getOwn } from '@weasel-js/registry';
 import type { Graph, GraphCluster } from './graph';
 import { DEFAULT_NODE_GAP, graphOrder, pinnedSet, movesFrom, type LayoutFn } from './layout';
 
-/** How `grid` fills its cells. Ids are node and group ids. */
+/** How `grid` fills its cells. Ids are node and cluster ids. */
 export interface GridOptions {
   /** Columns at the top level. Unset, as many as it has items: one row. */
   columns?: number;
-  /** Columns inside each group, by its id. Unset, as many as the group has items. */
-  groupColumns?: Readonly<Record<string, number>>;
+  /** Columns inside each cluster, by its id. Unset, as many as the cluster has items. */
+  clusterColumns?: Readonly<Record<string, number>>;
   /** How many columns an item spans. Default 1; at most its grid's columns. */
   spans?: Readonly<Record<string, number>>;
   /** How many cells are left empty before an item. Default 0. */
@@ -42,7 +42,7 @@ interface Cells {
 /** The items at one level, in graph order: nodes directly there, and groups directly inside. */
 function levels(graph: Graph): Map<string | null, string[]> {
   const order = graphOrder(graph);
-  const groups = graph.groups ?? [];
+  const groups = graph.clusters ?? [];
   const first = new Map<string, number>(groups.map((g) => [g.id, minOf(g.members, order)]));
   const at = (id: string) => first.get(id) ?? order(id);
   const out = new Map<string | null, string[]>();
@@ -51,7 +51,7 @@ function levels(graph: Graph): Map<string | null, string[]> {
     if (ids) ids.push(id);
     else out.set(level, [id]);
   };
-  for (const n of graph.nodes) add(n.group ?? null, n.id);
+  for (const n of graph.nodes) add(n.cluster ?? null, n.id);
   for (const g of groups) add(g.parent ?? null, g.id);
   for (const ids of out.values()) ids.sort((a, b) => at(a) - at(b));
   return out;
@@ -103,7 +103,7 @@ export const grid: LayoutFn = (graph, opts = {}) => {
   const rowGap = opts.rankGap ?? gap;
   const spec = opts.grid ?? {};
   const byLevel = levels(graph);
-  const groups = new Map<string, GraphCluster>((graph.groups ?? []).map((g) => [g.id, g]));
+  const groups = new Map<string, GraphCluster>((graph.clusters ?? []).map((g) => [g.id, g]));
   // Each group's inner grid, laid out innermost first, relative to its box's corner.
   const inner = new Map<string, { at: Map<string, Vec2>; size: Size }>();
   const sizeOf = (id: string): Size => {
@@ -119,7 +119,7 @@ export const grid: LayoutFn = (graph, opts = {}) => {
     const done = level === null ? undefined : inner.get(level);
     if (done !== undefined) return done;
     const ids = byLevel.get(level) ?? [];
-    const columns = Math.max(1, Math.floor((level === null ? spec.columns : spec.groupColumns && getOwn(spec.groupColumns, level)) ?? ids.length));
+    const columns = Math.max(1, Math.floor((level === null ? spec.columns : spec.clusterColumns && getOwn(spec.clusterColumns, level)) ?? ids.length));
     const laid = place(deal(ids, sizeOf, columns, spec), gap, rowGap);
     if (level !== null) inner.set(level, laid);
     return laid;

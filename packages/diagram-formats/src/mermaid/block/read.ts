@@ -104,7 +104,7 @@ class BlockReader {
     const { columns, spans, skips } = this.grid;
     const grid: GridOptions = {
       ...(this.top !== undefined ? { columns: this.top } : {}),
-      ...(Object.keys(columns).length > 0 ? { groupColumns: columns } : {}),
+      ...(Object.keys(columns).length > 0 ? { clusterColumns: columns } : {}),
       ...(Object.keys(spans).length > 0 ? { spans } : {}),
       ...(Object.keys(skips).length > 0 ? { skips } : {}),
     };

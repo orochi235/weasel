@@ -17,7 +17,7 @@ export function warnUnknownRefs(data: DiagramData, ids: ReadonlySet<string>): vo
     check(e.from, `an edge from "${e.from}" to "${e.to}"`);
     check(e.to, `an edge from "${e.from}" to "${e.to}"`);
   }
-  for (const g of data.groups ?? []) for (const m of g.members) check(m, `group "${g.id}"`);
+  for (const g of data.clusters ?? []) for (const m of g.members) check(m, `group "${g.id}"`);
   for (const c of data.containers ?? []) {
     if (c.role === 'container') for (const m of c.members ?? []) check(m, `container "${c.id}"`);
     else for (const l of c.lanes ?? []) for (const m of l.members ?? []) check(m, `lane "${l.id}"`);

@@ -57,7 +57,7 @@ describe('diagramScene', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const specs = diagramScene({
       nodes: DATA.nodes, edges: [],
-      groups: [{ id: 'g', members: ['a', 'ghost-g'] }],
+      clusters: [{ id: 'g', members: ['a', 'ghost-g'] }],
       containers: [{ id: 'box', role: 'container', members: ['b', 'ghost-c'] }],
     });
     expect(specs.some((s) => s.id === 'ghost-g' || s.id === 'ghost-c')).toBe(false);
@@ -330,7 +330,7 @@ describe('diagramScene under a theme', () => {
   const data: DiagramData = {
     nodes: [{ id: 'a', lines: ['a'], style: 'warning' }, { id: 'b', lines: ['b'] }],
     edges: [{ from: 'a', to: 'b', label: 'go' }],
-    groups: [{ id: 'g', members: ['a'], label: 'G' }],
+    clusters: [{ id: 'g', members: ['a'], label: 'G' }],
   };
   type Painted = { fill?: { paint: { color: string } }; stroke?: { paint: { color: string } }; style?: { fontFamily: string }; diagram?: DiagramNode };
   const byId = (specs: ReturnType<typeof diagramScene>) => new Map(specs.map((s) => [s.id as string, s.data as Painted]));

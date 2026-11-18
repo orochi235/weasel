@@ -108,11 +108,11 @@ type Overhang = { left: number; top: number; right: number; bottom: number };
  *  insets of the group boxes around it, a title's included. And the width
  *  of each labeled group's title. */
 function sizesOf(nodes: readonly DataNode[], groups: readonly EffectGroup[], measure: MeasureRowText | undefined) {
-  const specs = worldSpecs({ nodes, edges: [], groups }, { layout: 'none', ...(measure !== undefined ? { measure } : {}) });
+  const specs = worldSpecs({ nodes, edges: [], clusters: groups }, { layout: 'none', ...(measure !== undefined ? { measure } : {}) });
   const pose = new Map(specs.map((s) => [s.id as string, s.pose as Box]));
   const spec = new Map(specs.map((s) => [s.id as string, s]));
   const nested = nestClusters(groups, (id) => nodes.some((n) => n.id === id))
-    .map((g) => ({ members: g.members, inset: insetOf(diagramNodeOf({ id: g.id, kind: 'mark', data: spec.get(g.id)?.data })?.group?.inset) }));
+    .map((g) => ({ members: g.members, inset: insetOf(diagramNodeOf({ id: g.id, kind: 'mark', data: spec.get(g.id)?.data })?.cluster?.inset) }));
   const boxed = (id: string, side: 'top' | 'bottom') => nested.reduce((sum, g) => sum + (g.members.includes(id) ? g.inset[side] : 0), 0);
   const titles = new Map(groups.flatMap((g) => {
     const title = pose.get(clusterLabelIdOf(g.id));

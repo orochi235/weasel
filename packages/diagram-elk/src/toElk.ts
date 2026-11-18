@@ -73,7 +73,7 @@ export function drawnEdges(graph: Graph): DrawnEdge[] {
 /** The ELK graph for `graph`, its root carrying `layoutOptions`. */
 export function toElk(graph: Graph, layoutOptions: Record<string, string>): { root: ElkNode; index: ElkIndex } {
   const index: ElkIndex = { nodes: new Map(), groups: new Map(), edges: new Map() };
-  const groups = graph.groups ?? [];
+  const groups = graph.clusters ?? [];
   const elkIdOf = new Map<string, string>();
   graph.nodes.forEach((n, i) => {
     elkIdOf.set(n.id, `n${i}`);
@@ -96,7 +96,7 @@ export function toElk(graph: Graph, layoutOptions: Record<string, string>): { ro
   const known = (group: string | undefined) => (group !== undefined && index.groups.has(elkIdOf.get(group) ?? '') ? group : undefined);
   const parentOf = groupParents(groups, known);
   for (const n of graph.nodes) {
-    pushTo(leaves, known(n.group), leafOf(n, elkIdOf.get(n.id)!, named.get(n.id)));
+    pushTo(leaves, known(n.cluster), leafOf(n, elkIdOf.get(n.id)!, named.get(n.id)));
   }
   const transposed = minimumTransposed(layoutOptions);
   const boxOf = (g: GraphCluster): ElkNode => {

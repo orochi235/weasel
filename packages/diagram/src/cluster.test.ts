@@ -70,9 +70,9 @@ describe.each([
 describe('groups in the graph', () => {
   it('lists a group with its members, and marks each member', () => {
     const graph = graphOf(['a', 'b', 'c'], [], { G: ['a', 'b'] });
-    expect(graph.groups).toEqual([{ id: 'G', members: ['a', 'b'], inset: insetOf(12) }]);
-    expect(graph.node('a')?.group).toBe('G');
-    expect(graph.node('c')?.group).toBeUndefined();
+    expect(graph.clusters).toEqual([{ id: 'G', members: ['a', 'b'], inset: insetOf(12) }]);
+    expect(graph.node('a')?.cluster).toBe('G');
+    expect(graph.node('c')?.cluster).toBeUndefined();
   });
 
   it('is not a participant itself', () => {
@@ -81,7 +81,7 @@ describe('groups in the graph', () => {
 
   it('keeps a node two groups name in the first one', () => {
     const graph = graphOf(['a', 'b'], [], { G: ['a'], H: ['a', 'b'] });
-    expect(graph.groups?.map((g) => g.members)).toEqual([['a'], ['b']]);
+    expect(graph.clusters?.map((g) => g.members)).toEqual([['a'], ['b']]);
   });
 });
 

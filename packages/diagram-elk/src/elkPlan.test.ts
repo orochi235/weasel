@@ -8,12 +8,12 @@ function node(id: string, extra: Partial<GraphNode> = {}): GraphNode {
   return { id, bounds: { x: 0, y: 0, width: 80, height: 40 }, pinned: false, ...extra };
 }
 
-function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphCluster[] = []): Graph {
+function graphOf(nodes: GraphNode[], edges: GraphEdge[], clusters: GraphCluster[] = []): Graph {
   const byId = new Map(nodes.map((n) => [n.id, n]));
   return {
     nodes,
     edges,
-    groups,
+    clusters,
     node: (id) => byId.get(id),
     outgoing: (id) => edges.filter((e) => e.from === id),
     incoming: (id) => edges.filter((e) => e.to === id),
@@ -31,9 +31,9 @@ function nested(): Graph {
   return graphOf(
     [
       node('a', { ports: [{ id: 'out', at: { u: 1, v: 0.5 } }] }),
-      node('b', { group: 'G' }),
-      node('c', { group: 'G' }),
-      node('d', { group: 'H' }),
+      node('b', { cluster: 'G' }),
+      node('c', { cluster: 'G' }),
+      node('d', { cluster: 'H' }),
     ],
     [
       { id: 'ab', from: 'a', to: 'b', fromPort: 'out', label: { width: 40, height: 16 } },
@@ -49,24 +49,24 @@ function nested(): Graph {
 
 describe('elkPlan', () => {
   it('lays out a node or group naming a group the graph does not hold at the top level', async () => {
-    const graph = graphOf([node('a'), node('b', { group: 'X' }), node('c', { group: 'G' })], [
+    const graph = graphOf([node('a'), node('b', { cluster: 'X' }), node('c', { cluster: 'G' })], [
       { id: 'ab', from: 'a', to: 'b' },
       { id: 'bc', from: 'b', to: 'c' },
     ], [{ id: 'G', members: ['c'], inset: INSET, parent: 'Y' }]);
     const plan = await elkPlan(graph);
     expect([...plan.routes.keys()].sort()).toEqual(['ab', 'bc']);
-    expect(plan.groups.has('G')).toBe(true);
+    expect(plan.clusters.has('G')).toBe(true);
   });
 
   it('lays out groups whose parents form a cycle, and what they hold, at the top level', async () => {
-    const graph = graphOf([node('a', { group: 'G' }), node('b')], [{ id: 'ab', from: 'a', to: 'b' }], [
+    const graph = graphOf([node('a', { cluster: 'G' }), node('b')], [{ id: 'ab', from: 'a', to: 'b' }], [
       { id: 'G', members: ['a'], inset: INSET, parent: 'H' },
       { id: 'H', members: ['a'], inset: INSET, parent: 'G' },
       { id: 'S', members: [], inset: INSET, parent: 'S' },
     ]);
     const plan = await elkPlan(graph);
     expect([...plan.routes.keys()]).toEqual(['ab']);
-    expect([...plan.groups.keys()].sort()).toEqual(['G', 'H', 'S']);
+    expect([...plan.clusters.keys()].sort()).toEqual(['G', 'H', 'S']);
   });
 
   it('ranks a chain down the page, each node below the last', async () => {
@@ -150,8 +150,8 @@ describe('elkPlan', () => {
     const graph = nested();
     const plan = await elkPlan(graph);
     const at = placed(graph, plan.moves);
-    const G = plan.groups.get('G')!;
-    const H = plan.groups.get('H')!;
+    const G = plan.clusters.get('G')!;
+    const H = plan.clusters.get('H')!;
     for (const id of ['b', 'c']) {
       const n = at.get(id)!;
       expect(n.x).toBeGreaterThanOrEqual(G.x + INSET.left - 1e-6);
@@ -170,15 +170,15 @@ describe('elkPlan', () => {
 
   // elkjs reads the minimum with its axes swapped when ranks run vertically.
   it.each(['down', 'up', 'right', 'left'] as const)('widens a group to its minWidth, laid out %s', async (direction) => {
-    const graph = graphOf([node('b', { group: 'G' })], [], [{ id: 'G', members: ['b'], inset: INSET, minWidth: 400 }]);
-    const G = (await elkPlan(graph, { direction })).groups.get('G')!;
+    const graph = graphOf([node('b', { cluster: 'G' })], [], [{ id: 'G', members: ['b'], inset: INSET, minWidth: 400 }]);
+    const G = (await elkPlan(graph, { direction })).clusters.get('G')!;
     expect(G.width).toBeGreaterThanOrEqual(400);
     expect(G.height).toBeLessThan(400);
   });
 
   it.each(['down', 'up', 'right', 'left'] as const)('widens a group holding nothing to its minWidth, laid out %s', async (direction) => {
     const graph = graphOf([node('a')], [], [{ id: 'G', members: [], inset: INSET, minWidth: 400 }]);
-    const G = (await elkPlan(graph, { direction })).groups.get('G')!;
+    const G = (await elkPlan(graph, { direction })).clusters.get('G')!;
     expect(G.width).toBeGreaterThanOrEqual(400);
     expect(G.height).toBeLessThan(400);
   });
@@ -209,7 +209,7 @@ describe('elkPlan', () => {
 
   it('routes an edge to a group once, under the edge as drawn', async () => {
     const graph = graphOf(
-      [node('a'), node('b', { group: 'G' }), node('c', { group: 'G' })],
+      [node('a'), node('b', { cluster: 'G' }), node('c', { cluster: 'G' })],
       [
         { id: 'aG#0', from: 'a', to: 'b', toPort: 'n', origin: { id: 'aG', from: 'a', to: 'G' } },
         { id: 'aG#1', from: 'a', to: 'c', toPort: 'n', origin: { id: 'aG', from: 'a', to: 'G' } },
@@ -218,7 +218,7 @@ describe('elkPlan', () => {
     );
     const plan = await elkPlan(graph);
     expect([...plan.routes.keys()]).toEqual(['aG']);
-    const G = plan.groups.get('G')!;
+    const G = plan.clusters.get('G')!;
     const end = plan.routes.get('aG')!.at(-1)!;
     expect(end.y).toBeCloseTo(G.y);
     expect(plan.ports!.get('aG')).toEqual({ from: 's' });
@@ -268,7 +268,7 @@ describe('elkPlan', () => {
         return { ...root, children: (root.children ?? []).map((c) => ({ ...c, x: 0, y: 0 })) };
       },
     };
-    const graph = graphOf([node('a', { group: 'G' })], [], [{ id: 'G', members: ['a'], inset: INSET, minWidth: 200 }]);
+    const graph = graphOf([node('a', { cluster: 'G' })], [], [{ id: 'G', members: ['a'], inset: INSET, minWidth: 200 }]);
     await elkPlan(graph, { elk: elk as never, direction: 'right', elkOptions: { 'org.eclipse.elk.direction': 'DOWN' } });
     const options = seen[0]!.layoutOptions!;
     expect(Object.entries(options).filter(([k]) => k.endsWith('.direction'))).toEqual([['elk.direction', 'DOWN']]);

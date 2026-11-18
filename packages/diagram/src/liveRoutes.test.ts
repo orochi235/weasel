@@ -86,7 +86,7 @@ describe('a live run\'s eased routes', () => {
     const c = s.add({ kind: 'mark', layer: 'main', pose: box(260, 200), data: { diagram: {} } });
     const g = s.add({
       kind: 'mark', layer: 'main', pose: box(0, 0, 0, 0),
-      data: { diagram: { group: { inset: 12 } } }, dependsOn: [b, c], derivePose: CLUSTER_DERIVE_POSE as never,
+      data: { diagram: { cluster: { inset: 12 } } }, dependsOn: [b, c], derivePose: CLUSTER_DERIVE_POSE as never,
     });
     const e = addEdge(s, a, g);
     const { clock, handle } = live(s, 'layered');

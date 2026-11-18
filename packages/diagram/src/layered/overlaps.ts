@@ -45,7 +45,7 @@ const inside = (p: Vec2, r: Rect, inset: number) =>
 export function wiresThroughBoxes(data: DiagramData, specs: readonly DiagramSpec[]): string[] {
   const byId = new Map(specs.map((s) => [s.id as string, s]));
   const boxOf = (id: string) => byId.get(id)?.pose as Rect | undefined;
-  const members = new Map((data.groups ?? []).map((g) => [g.id, new Set(membersOf(data, g.id))]));
+  const members = new Map((data.clusters ?? []).map((g) => [g.id, new Set(membersOf(data, g.id))]));
   const out: string[] = [];
   for (const wire of routedWires(specs)) {
     const obstacles: Rect[] = [];
@@ -93,7 +93,7 @@ const overlap = (a: Rect, b: Rect, inset: number) =>
   a.x + inset < b.x + b.width && b.x + inset < a.x + a.width && a.y + inset < b.y + b.height && b.y + inset < a.y + a.height;
 
 function membersOf(data: DiagramData, group: string): string[] {
-  const g = (data.groups ?? []).find((x) => x.id === group);
+  const g = (data.clusters ?? []).find((x) => x.id === group);
   if (g === undefined) return [];
   return g.members.flatMap((m) => [m, ...membersOf(data, m)]);
 }

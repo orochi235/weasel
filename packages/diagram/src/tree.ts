@@ -136,7 +136,7 @@ export function subtreeBlocks(
  *  rank per depth. A graph that is not a tree lays out as the forest
  *  {@link forestOf} reads from it. */
 export const tree: LayoutFn = (graph, opts = {}) =>
-  ((graph.groups?.length ?? 0) > 0 || pinnedSet(graph, opts).size > 1 ? untilSettled(treeOnce, graph, opts) : treeOnce(graph, opts));
+  ((graph.clusters?.length ?? 0) > 0 || pinnedSet(graph, opts).size > 1 ? untilSettled(treeOnce, graph, opts) : treeOnce(graph, opts));
 
 const treeOnce: LayoutFn = (graph, opts = {}) => {
   const axes = axesFor(opts.direction);
@@ -155,7 +155,7 @@ const treeOnce: LayoutFn = (graph, opts = {}) => {
   }
   const depths = [...bands.keys()].sort((a, b) => a - b);
   const rowsAt = depths.map((at) => rows.get(at)!);
-  const grouped = (graph.groups?.length ?? 0) > 0;
+  const grouped = (graph.clusters?.length ?? 0) > 0;
   const gaps = grouped ? rankGaps(graph, rowsAt, axes, rankGap) : depths.slice(1).map(() => rankGap);
   const bandStart = new Map<number, number>();
   let along = 0;

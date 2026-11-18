@@ -20,7 +20,7 @@ describe('reading a Mermaid block diagram', () => {
       name: 'grid',
       options: {
         nodeGap: 24, rankGap: 40,
-        grid: { columns: 3, groupColumns: { services: 2 }, spans: { services: 3, wide: 3 }, skips: { gateway: 1, cache: 2 } },
+        grid: { columns: 3, clusterColumns: { services: 2 }, spans: { services: 3, wide: 3 }, skips: { gateway: 1, cache: 2 } },
       },
     });
   });

@@ -26,6 +26,7 @@ import {
 } from '@weasel-js/core';
 import { getOwn } from '@weasel-js/registry';
 import { ANCHOR_DERIVE_POSE, DIAGRAM_ANCHOR, DIAGRAM_CLUSTER, CLUSTER_DERIVE_POSE } from './clusterBox';
+import { DIAGRAM_CLUSTER_UPGRADE, upgradeClusterNames } from './clusterUpgrade';
 import { CONTAINER_LAYOUTS } from './containers/layouts';
 import { DIAGRAM_LABEL, LABEL_DERIVE_POSE } from './label';
 import { DIAGRAM_OFF_PAGE_TAG, OFF_PAGE_TAG_DERIVE_POSE } from './offPage/tag';
@@ -235,7 +236,8 @@ export const DIAGRAM_EDGE = 'diagram:edge';
 export const EDGE_DERIVE_PATH = edgeDerivePath<unknown>();
 
 /** Merge this package's registry entries under a consumer's, so an edge
- *  round-trips through `toJSON` without the consumer wiring the key. */
+ *  round-trips through `toJSON` without the consumer wiring the key, and a
+ *  save written under this package's older names still loads. */
 export function withDiagramRegistry<TPose, TData = unknown, TLayer extends string = string>(
   registry: SceneRegistry<TPose, TData, TLayer> = {},
 ): SceneRegistry<TPose, TData, TLayer> {
@@ -256,5 +258,6 @@ export function withDiagramRegistry<TPose, TData = unknown, TLayer extends strin
       ...(CONTAINER_LAYOUTS as unknown as NonNullable<SceneRegistry<TPose, TData, TLayer>['layout']>),
       ...registry.layout,
     },
+    upgrades: { [DIAGRAM_CLUSTER_UPGRADE]: upgradeClusterNames, ...registry.upgrades },
   };
 }

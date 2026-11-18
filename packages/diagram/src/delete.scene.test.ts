@@ -45,7 +45,7 @@ describe("DiagramView's report-only delete", () => {
   const GROUPED: DiagramData = {
     nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }, { id: 'c', lines: ['c'] }],
     edges: [{ from: 'G', to: 'c' }, { from: 'a', to: 'b' }],
-    groups: [{ id: 'G', members: ['a', 'b'] }],
+    clusters: [{ id: 'G', members: ['a', 'b'] }],
   };
 
   function reportFor(selected: string[]) {

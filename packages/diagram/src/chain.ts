@@ -110,7 +110,7 @@ function chainPlan(graph: Graph, opts: LayoutOptions = {}): LayoutPlan {
   }
   for (const [id, column] of rows) if (column[1]) column[1] = inPortOrder(graph, id, column[1], axes);
   const before = opts.chainSide === 'before';
-  const grouped = (graph.groups?.length ?? 0) > 0;
+  const grouped = (graph.clusters?.length ?? 0) > 0;
   const across = (side: number) => {
     const base = Array.from(levelSize.slice(1), (_, k) => (k === 0 ? side : nodeGap));
     return grouped ? levelGaps(graph, hanging, levelSize, axes, before, base) : base;

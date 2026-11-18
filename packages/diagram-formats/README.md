@@ -266,7 +266,7 @@ naming the line on text it cannot read, and warns of what it drops.
 | Mermaid | Diagram |
 | --- | --- |
 | `a`, `a["text"]`, and the flowchart's other brackets | a node: its text (else its id) in the flowchart's outline for those brackets |
-| `columns 3` | the grid's `columns`, or a group's under `groupColumns`; `columns auto` leaves it unset |
+| `columns 3` | the grid's `columns`, or a group's under `clusterColumns`; `columns auto` leaves it unset |
 | `a:2`, `block:g:2` | `spans` |
 | `space`, `space:2` | `skips` on the next block; spaces after a level's last block are dropped, with a warning |
 | `block:g … end`, `block … end` | a container holding its blocks in order; an unnamed one is `block-1`, `block-2`, … |

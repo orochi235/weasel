@@ -41,7 +41,7 @@ function parentsOf(data: DiagramData, known: ReadonlySet<string>, warn: Warn): M
       for (const m of lane.members ?? []) claim(m, lane.id);
     }
   }
-  for (const g of data.groups ?? []) {
+  for (const g of data.clusters ?? []) {
     const held = new Set(g.members.map((m) => parent.get(m)));
     const region = held.size === 1 ? [...held][0] : undefined;
     if (region !== undefined && !parent.has(g.id) && !within(g.id, region)) {
@@ -69,7 +69,7 @@ function vertices(data: DiagramData, theme: DiagramTheme, headerOf: (id: string)
       out.push({ id: lane.id, value: regionLabel(lane), style: regionStyle({ ...lane, role: 'lane' }, headerOf(lane.id), theme, i) });
     });
   }
-  for (const g of data.groups ?? []) out.push({ id: g.id, value: '', style: GROUP_STYLE, group: true });
+  for (const g of data.clusters ?? []) out.push({ id: g.id, value: '', style: GROUP_STYLE, group: true });
   for (const n of data.nodes) out.push({ id: n.id, value: nodeLines(n, warn).join('\n'), style: nodeStyle(n, theme, warn) });
   return out;
 }

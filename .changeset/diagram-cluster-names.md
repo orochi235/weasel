@@ -6,7 +6,7 @@
 
 The box holds a `members` list, which in weasel is a cluster, never a group.
 
-The rest of the family follows: `GroupInset` → `ClusterInset`, `DEFAULT_GROUP_INSET` → `DEFAULT_CLUSTER_INSET`, `expandGroupEdges` → `expandClusterEdges`, `diagramGroupOf` → `diagramClusterOf`, `DIAGRAM_GROUP` → `DIAGRAM_CLUSTER`, `GROUP_DERIVE_POSE` → `CLUSTER_DERIVE_POSE`, `groupDerivePose` → `clusterDerivePose`, `GroupPoseOptions` → `ClusterPoseOptions`, `groupLabelIdOf` → `clusterLabelIdOf` and `DEFAULT_GROUP_STYLE` → `DEFAULT_CLUSTER_STYLE`. Data is unchanged: `DiagramData.groups`, the trait's `group` field and the `'diagram:group'` derivation key keep their names, so saved diagrams load as before.
+The rest of the family follows: `GroupInset` → `ClusterInset`, `DEFAULT_GROUP_INSET` → `DEFAULT_CLUSTER_INSET`, `expandGroupEdges` → `expandClusterEdges`, `diagramGroupOf` → `diagramClusterOf`, `DIAGRAM_GROUP` → `DIAGRAM_CLUSTER`, `GROUP_DERIVE_POSE` → `CLUSTER_DERIVE_POSE`, `groupDerivePose` → `clusterDerivePose`, `GroupPoseOptions` → `ClusterPoseOptions`, `groupLabelIdOf` → `clusterLabelIdOf` and `DEFAULT_GROUP_STYLE` → `DEFAULT_CLUSTER_STYLE`.
 
 ```ts
 // before

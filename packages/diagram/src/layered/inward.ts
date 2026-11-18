@@ -17,7 +17,7 @@ import { isPlaceholder, type Hop, type Rows } from './types';
 
 /** What {@link turnOutward} reads. */
 export interface OutwardInput {
-  graph: Pick<Graph, 'groups'>;
+  graph: Pick<Graph, 'clusters'>;
   rows: Rows;
   /** Each node's low corner across the rank, placeholders included. */
   crossAt: ReadonlyMap<string, number>;
@@ -49,7 +49,7 @@ export function turnOutward(input: OutwardInput): Rows | undefined {
   const hi = (n: GraphNode) => lo(n) + size(n);
   const hull = drawingSpan(input, size);
   if (hull === undefined) return undefined;
-  const free = (n: GraphNode) => n.group === undefined && !input.pinned.has(n.id);
+  const free = (n: GraphNode) => n.cluster === undefined && !input.pinned.has(n.id);
   const { up, down } = sidesOf(input.hops);
   const kin = (a: string, b: string) =>
     [up, down].some((side) => (side.get(a) ?? []).some((n) => (side.get(b) ?? []).includes(n)));
@@ -97,7 +97,7 @@ function drawingSpan(input: OutwardInput, size: (n: GraphNode) => number): Span 
 /** Each group's box across the rank: its members', nested boxes included,
  *  widened by its inset. */
 function groupBoxes(input: OutwardInput, size: (n: GraphNode) => number): Map<string, Span> {
-  const groups = input.graph.groups ?? [];
+  const groups = input.graph.clusters ?? [];
   const byId = new Map(groups.map((g) => [g.id, g]));
   const inner = new Map<string, [number, number]>();
   const widen = (id: string, [a, b]: Span) => {
@@ -105,9 +105,9 @@ function groupBoxes(input: OutwardInput, size: (n: GraphNode) => number): Map<st
     inner.set(id, s === undefined ? [a, b] : [Math.min(s[0], a), Math.max(s[1], b)]);
   };
   for (const n of input.rows.flat()) {
-    if (n.group === undefined || isPlaceholder(n.id)) continue;
+    if (n.cluster === undefined || isPlaceholder(n.id)) continue;
     const at = input.crossAt.get(n.id)!;
-    for (let g = byId.get(n.group); g !== undefined; g = g.parent === undefined ? undefined : byId.get(g.parent)) widen(g.id, [at, at + size(n)]);
+    for (let g = byId.get(n.cluster); g !== undefined; g = g.parent === undefined ? undefined : byId.get(g.parent)) widen(g.id, [at, at + size(n)]);
   }
   const depth = (id: string): number => {
     const p = byId.get(id)?.parent;

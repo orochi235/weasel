@@ -19,7 +19,7 @@ const MIXED: DiagramData = {
     { id: 'd', lines: ['in region'] },
   ],
   edges: [{ from: 'a', to: 'b', label: 'weight' }, { from: 'b', to: 'c' }, { from: 'c', to: 'd' }, { from: 'g', to: 'a' }],
-  groups: [{ id: 'g', members: ['b', 'c'], label: 'pair' }],
+  clusters: [{ id: 'g', members: ['b', 'c'], label: 'pair' }],
   containers: [{ id: 'r', role: 'container', label: 'region', members: ['d'] }],
 };
 
@@ -73,7 +73,7 @@ describe('diagramScene with pages', () => {
     const specs = diagramScene({
       ...TWO_PAGES,
       nodes: [node('a', 20), node('b', 170), node('c', 260), node('e', 330)],
-      groups: [{ id: 'g', members: ['b', 'c', 'e'] }],
+      clusters: [{ id: 'g', members: ['b', 'c', 'e'] }],
       edges: [{ from: 'a', to: 'g' }, { from: 'a', to: 'b' }],
     }, { layout: 'none' });
     expect(diagramEdgeOf(edgeOf(specs, 'edge:a->g'))!.offPage).toEqual({ ref: 'A', from: 'p1', to: 'p2' });

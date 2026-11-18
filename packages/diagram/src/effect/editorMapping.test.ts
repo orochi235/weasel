@@ -120,7 +120,7 @@ describe('editorScene', () => {
       groupBoxes: { g: { x: 0, y: 0, width: 400, height: 300 } },
     };
     const { data, groupOf } = editorScene(nested);
-    expect(data.groups ?? []).toEqual([]);
+    expect(data.clusters ?? []).toEqual([]);
     expect(data.containers).toEqual([
       { id: 'g', role: 'container', label: 'G', members: ['blur', 'h'], box: { x: 0, y: 0, width: 400, height: 300 }, pinned: true },
       { id: 'h', role: 'container', label: '', members: ['pick'] },
@@ -133,7 +133,7 @@ describe('editorScene', () => {
     for (const look of ['rack', 'lanes'] as const) {
       const { data, groupOf } = editorScene(doc, look);
       expect(data.containers ?? []).toEqual([]);
-      expect(data.groups?.map((g) => g.id)).toEqual(['g']);
+      expect(data.clusters?.map((g) => g.id)).toEqual(['g']);
       expect(groupOf('g')).toBe('g');
     }
   });

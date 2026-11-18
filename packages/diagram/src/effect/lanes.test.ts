@@ -125,7 +125,7 @@ describe('lanes', () => {
   it('draws a mismatched wire in the problem color and keeps groups', () => {
     const bad = lanes({ ...P, wires: [...P.wires, w(['cut', 'out'], ['blur', 'in'])] });
     expect(bad.scene.edgeStyle!(bad.data.edges[bad.data.edges.length - 1]!)!.stroke).toBe(PROBLEM_COLOR);
-    expect(bad.data.groups).toEqual(P.groups);
+    expect(bad.data.clusters).toEqual(P.groups);
   });
 
   it('fades a decision\'s exit a run did not take', () => {

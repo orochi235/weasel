@@ -220,6 +220,7 @@ export {
   diagramClusterOf,
   clusterDerivePose,
 } from './clusterBox';
+export { DIAGRAM_CLUSTER_UPGRADE, upgradeClusterNames } from './clusterUpgrade';
 export { clusterLabelIdOf } from './dataClusters';
 export type { DiagramAnchor, DiagramDerivePose, ClusterPoseOptions } from './clusterBox';
 export { DEFAULT_CLUSTER_STYLE, DEFAULT_NODE_STYLE, diagramScene, edgeIdOf } from './fromData';

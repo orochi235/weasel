@@ -85,7 +85,7 @@ describe('diagramScene with containers', () => {
       edges: [],
       containers: [{ id: 'k', role: 'container', label: 'K', members: ['a', 'b'] }],
     };
-    const specs = diagramScene(data, { layout: 'none', groupPadding: 10 });
+    const specs = diagramScene(data, { layout: 'none', clusterPadding: 10 });
     expect(boxOf(specs, 'k')).toEqual({ x: -10, y: -38, width: 280, height: 188 });
     expect(diagramContainerOf(specOf(specs, 'k'))?.fitted).toBe(true);
   });
@@ -159,7 +159,7 @@ describe('diagramScene with containers', () => {
     const data: DiagramData = {
       nodes: [node('a'), node('b')],
       edges: [],
-      groups: [{ id: 'g', members: ['a', 'b'] }],
+      clusters: [{ id: 'g', members: ['a', 'b'] }],
       containers: [{ id: 'k', role: 'container', members: ['a'], box: { x: 0, y: 0, width: 200, height: 100 } }],
     };
     expect(() => diagramScene(data)).toThrow(/"a".*group "g".*region "k"/);

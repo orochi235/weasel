@@ -8,7 +8,7 @@ import { moveAction } from '@weasel-js/editing';
 const DATA: DiagramData = {
   nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }, { id: 'x', lines: ['outside'] }],
   edges: [{ from: 'a', to: 'b' }, { from: 'x', to: 'G' }],
-  groups: [{ id: 'G', members: ['a', 'b'], label: 'the group' }],
+  clusters: [{ id: 'G', members: ['a', 'b'], label: 'the group' }],
 };
 
 function load(data: DiagramData = DATA) {
@@ -38,7 +38,7 @@ describe('a group in a scene', () => {
     const data: DiagramData = {
       nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }, { id: 'c', lines: ['c'] }],
       edges: [{ from: 'c', to: 'a' }, { from: 'c', to: 'b' }],
-      groups: [{ id: 'G', members: ['a'], label: 'a label much wider than its one member' }],
+      clusters: [{ id: 'G', members: ['a'], label: 'a label much wider than its one member' }],
     };
     const { specs, pose } = load(data);
     const title = pose('G/label');
@@ -111,7 +111,7 @@ describe('a group in a scene', () => {
   });
 
   it('is framed by fitDiagram', () => {
-    const { specs } = load({ ...DATA, groups: [{ id: 'G', members: ['a', 'b'], padding: 3000 }] });
+    const { specs } = load({ ...DATA, clusters: [{ id: 'G', members: ['a', 'b'], padding: 3000 }] });
     const view = fitDiagram(specs, { width: 1000, height: 1000 })!;
     const g = specs.find((s) => s.id === 'G')!.pose as RectPose;
     // The box is far bigger than the nodes, so framing only the nodes would leave it cut off.
@@ -120,11 +120,11 @@ describe('a group in a scene', () => {
   });
 
   it('throws on a group id that is already a node id', () => {
-    expect(() => diagramScene({ ...DATA, groups: [{ id: 'a', members: ['b'] }] })).toThrow(/already/);
+    expect(() => diagramScene({ ...DATA, clusters: [{ id: 'a', members: ['b'] }] })).toThrow(/already/);
   });
 
   it('draws nothing for a group with no real members', () => {
-    const specs = diagramScene({ ...DATA, groups: [{ id: 'G', members: ['nope'] }] });
+    const specs = diagramScene({ ...DATA, clusters: [{ id: 'G', members: ['nope'] }] });
     expect(specs.some((s) => s.id === 'G')).toBe(false);
   });
 
@@ -144,7 +144,7 @@ describe('a group inside a group, in a scene', () => {
       { id: 'x', lines: ['outside'] },
     ],
     edges: [{ from: 'a', to: 'b' }, { from: 'b', to: 'c' }, { from: 'x', to: 'a' }],
-    groups: [
+    clusters: [
       { id: 'Sys', members: ['Inner', 'c'], label: 'the system' },
       { id: 'Inner', members: ['a', 'b'], label: 'the part' },
     ],

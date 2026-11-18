@@ -43,7 +43,7 @@ const deepestFirst = (groups: readonly GraphCluster[]): GraphCluster[] => {
  * that group's deepest member, keeping its order.
  */
 export function groupHanging(graph: Graph, line: readonly GraphNode[], hanging: Hanging): Hanging {
-  const groups = graph.groups ?? [];
+  const groups = graph.clusters ?? [];
   if (groups.length === 0) return hanging;
   const index = new Map(line.map((n, i) => [n.id, i]));
   const byId = new Map(groups.map((g) => [g.id, g]));
@@ -53,7 +53,7 @@ export function groupHanging(graph: Graph, line: readonly GraphNode[], hanging: 
   for (const node of graph.nodes) {
     if (index.has(node.id)) continue;
     const first = index.get(hanging.owner.get(node.id)!)!;
-    for (let g = node.group === undefined ? undefined : byId.get(node.group); g !== undefined;
+    for (let g = node.cluster === undefined ? undefined : byId.get(node.cluster); g !== undefined;
       g = g.parent === undefined ? undefined : byId.get(g.parent)) {
       const members = onLine.get(g.id)!;
       if (members.length === 0) continue;
@@ -193,7 +193,7 @@ export function bandGaps(
 ): number[] {
   const insets = rankGaps(graph, bands, axes, 0);
   const out = gaps.map((gap, i) => gap + (insets[i] ?? 0));
-  const groups = graph.groups ?? [];
+  const groups = graph.clusters ?? [];
   if (axes.rank !== 'x' || !groups.some((g) => g.minWidth !== undefined)) return out;
 
   const bandOf = new Map<string, number>();

@@ -73,7 +73,7 @@ describe('compact', () => {
     const bad = compact({ ...P, wires: [...P.wires, w(['osc', 'value'], ['mix', 'over'])] });
     const edge = bad.data.edges.find((e) => e.from === 'osc' && e.to === 'mix')!;
     expect(bad.scene.edgeStyle!(edge)!.stroke).toBe(PROBLEM_COLOR);
-    expect(bad.data.groups).toEqual(P.groups);
+    expect(bad.data.clusters).toEqual(P.groups);
   });
 
   it('dashes a line only when every wire in it is a control wire', () => {

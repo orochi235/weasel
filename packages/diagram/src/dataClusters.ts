@@ -155,7 +155,7 @@ export function groupSpecs(
       data: {
         diagram: {
           outline: 'rect',
-          group: {
+          cluster: {
             inset: g.inset,
             ...(g.minWidth !== undefined ? { minWidth: g.minWidth } : {}),
             ...(g.group.reorder !== undefined ? { reorder: g.group.reorder } : {}),

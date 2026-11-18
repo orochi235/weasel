@@ -72,7 +72,7 @@ function clusterTree(page: GraphPage, theme: DiagramTheme, warnings: Warnings, f
       for (const m of lane.members ?? []) claim(m, lane.id);
     });
   }
-  for (const g of page.data.groups ?? []) {
+  for (const g of page.data.clusters ?? []) {
     warnings.add(`${format} has no groups; they were written as ${format === 'DOT' ? 'clusters' : 'subgraphs'}, which read back as containers.`);
     all.push({ id: g.id, ...(g.label !== undefined ? { label: g.label } : {}), nodes: [], clusters: [] });
     for (const m of g.members) claim(m, g.id);

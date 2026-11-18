@@ -38,10 +38,10 @@ const START: PrefCondition = {
 
 export function PrefConditionDiagramDemo() {
   const [condition, setCondition] = useState<PrefCondition | undefined>(START);
-  const specs = useMemo(
-    () => diagramScene(prefConditionFlow(condition, SCHEMA, { holds: 'shown' }), { font: FONT, layoutOptions: { direction: 'right' } }),
-    [condition],
-  );
+  const specs = useMemo(() => {
+    const { groups, ...flow } = prefConditionFlow(condition, SCHEMA, { holds: 'shown' });
+    return diagramScene({ ...flow, clusters: groups }, { font: FONT, layoutOptions: { direction: 'right' } });
+  }, [condition]);
   return (
     <div className={s.demo}>
       <PrefConditionEditor aria-label="Shown if" schema={SCHEMA} value={condition} onChange={setCondition} />

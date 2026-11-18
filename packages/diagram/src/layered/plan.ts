@@ -70,7 +70,7 @@ export function layeredPlan(graph: Graph, opts: LayoutOptions = {}): LayeredPlan
   // outsider moved out of a group's column, or a node beside a second pin off its
   // slot. Barycenter ordering reorders on every run, so it has no arrangement to
   // settle on.
-  if (opts.order === 'barycenter' || ((graph.groups?.length ?? 0) === 0 && pinnedSet(graph, opts).size < 2)) return planOnce(graph, opts);
+  if (opts.order === 'barycenter' || ((graph.clusters?.length ?? 0) === 0 && pinnedSet(graph, opts).size < 2)) return planOnce(graph, opts);
   // Each pass starts its placeholders on the routes the pass before laid out,
   // and the routes kept are the last pass's.
   let last: LayeredPlan | undefined;
@@ -96,9 +96,9 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
   const back = backEdges(graph);
   const ranks = simplexRanks(graph, back);
   const expanded = expand(graph, ranks, back, { axes, nodeGap });
-  let rows = finding ? orderRows(expanded.rows, expanded.hops, { groups: graph.groups ?? [] }) : expanded.rows;
+  let rows = finding ? orderRows(expanded.rows, expanded.hops, { clusters: graph.clusters ?? [] }) : expanded.rows;
 
-  const grouped = (graph.groups?.length ?? 0) > 0;
+  const grouped = (graph.clusters?.length ?? 0) > 0;
   const pinned = pinnedSet(graph, opts);
   const across = () => {
     const preferred = placeAcross(rows, settlePlaces(rows, expanded.hops), axes.cross, nodeGap);

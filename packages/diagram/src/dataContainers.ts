@@ -117,8 +117,8 @@ export function resolveContainers(
 export interface ContainerLayout {
   /** Each outermost boxed region, as one node at its box. */
   nodes: GraphNode[];
-  /** Each fitted container outside every boxed region, kept together as a group. */
-  groups: GraphCluster[];
+  /** Each fitted container outside every boxed region, kept together as a cluster. */
+  clusters: GraphCluster[];
   /** The fitted container each node layout sees is directly inside. */
   groupOf: ReadonlyMap<string, string>;
   /** Every node and region inside a boxed region, which layout does not see. */
@@ -183,12 +183,12 @@ export function containerLayoutNodes(
   const seen = (id: string) => !hidden.has(id) && !(byId.get(id)?.fitted ?? false);
   const below = (r: DataRegion): string[] =>
     r.direct.flatMap((id) => (seen(id) ? [id] : byId.get(id)?.fitted === true && !hidden.has(id) ? below(byId.get(id)!) : []));
-  const groups: GraphCluster[] = [];
+  const clusters: GraphCluster[] = [];
   const groupOf = new Map<string, string>();
   for (const r of regions) {
     if (!r.fitted || hidden.has(r.id) || rootOf.has(r.id)) continue;
-    groups.push({ id: r.id, members: below(r), inset: fittedInset(opts.padding), ...(r.parent !== undefined ? { parent: r.parent } : {}) });
+    clusters.push({ id: r.id, members: below(r), inset: fittedInset(opts.padding), ...(r.parent !== undefined ? { parent: r.parent } : {}) });
     for (const id of r.direct) if (seen(id)) groupOf.set(id, r.id);
   }
-  return { nodes, groups, groupOf, hidden, endOf };
+  return { nodes, clusters, groupOf, hidden, endOf };
 }

@@ -1,12 +1,12 @@
 /**
- * A group's box, and anything pinned to a point on another node.
+ * A cluster's box, and anything pinned to a point on another node.
  *
  * The box is an ordinary node that depends on its members and derives its pose
  * from theirs: their union, grown by the inset. Drag a member and the box
  * follows; lay the diagram out and the box lands around wherever the members
  * went. Nothing has to keep it in sync, because nothing stores it.
  *
- * An anchored node — a group's title is the first — derives its pose from one
+ * An anchored node — a cluster's title is the first — derives its pose from one
  * dependency's bounds the same way, so it travels with the box it labels.
  */
 import {
@@ -39,10 +39,10 @@ function traitOf(node: { data: unknown }): Record<string, unknown> | null {
   return trait !== null && typeof trait === 'object' ? (trait as Record<string, unknown>) : null;
 }
 
-/** The group trait on a node's data, or `null`. */
+/** The cluster trait on a node's data, or `null`. */
 export function diagramClusterOf(node: { data: unknown }): DiagramCluster | null {
-  const group = traitOf(node)?.group;
-  return group !== null && typeof group === 'object' ? (group as DiagramCluster) : null;
+  const cluster = traitOf(node)?.cluster;
+  return cluster !== null && typeof cluster === 'object' ? (cluster as DiagramCluster) : null;
 }
 
 /** The anchor trait on a node's data, or `null`. */
@@ -64,15 +64,15 @@ export type DiagramDerivePose<TPose> = (
 ) => TPose | null;
 
 /**
- * A `derivePose` that draws a group's box around its members: the union of
+ * A `derivePose` that draws a cluster's box around its members: the union of
  * what each takes up, its `margin` included, grown by the trait's inset. `null` — the authored pose stands — when the node
- * carries no group trait or every member is gone.
+ * carries no cluster trait or every member is gone.
  */
 export function clusterDerivePose<TPose>(opts: ClusterPoseOptions<TPose> = {}): DiagramDerivePose<TPose> {
   const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   return (node, deps) => {
-    const group = diagramClusterOf(node);
-    if (group === null) return null;
+    const cluster = diagramClusterOf(node);
+    if (cluster === null) return null;
     let x0 = Infinity;
     let y0 = Infinity;
     let x1 = -Infinity;
@@ -86,19 +86,19 @@ export function clusterDerivePose<TPose>(opts: ClusterPoseOptions<TPose> = {}): 
       y1 = Math.max(y1, b.y + b.height);
     }
     if (!Number.isFinite(x0)) return null;
-    return poseDescriptor.fromBounds(boxAround({ x: x0, y: y0, width: x1 - x0, height: y1 - y0 }, group), node.pose);
+    return poseDescriptor.fromBounds(boxAround({ x: x0, y: y0, width: x1 - x0, height: y1 - y0 }, cluster), node.pose);
   };
 }
 
-/** A group's box around the union of its members: grown by its inset, and
+/** A cluster's box around the union of its members: grown by its inset, and
  *  widened evenly to its `minWidth`. */
 export function boxAround(
   union: { x: number; y: number; width: number; height: number },
-  group: DiagramCluster,
+  cluster: DiagramCluster,
 ): { x: number; y: number; width: number; height: number } {
-  const inset = insetOf(group.inset);
+  const inset = insetOf(cluster.inset);
   const width = union.width + inset.left + inset.right;
-  const grow = Math.max(0, (group.minWidth ?? 0) - width);
+  const grow = Math.max(0, (cluster.minWidth ?? 0) - width);
   return {
     x: union.x - inset.left - grow / 2,
     y: union.y - inset.top,
@@ -127,11 +127,11 @@ export function anchorDerivePose<TPose>(opts: ClusterPoseOptions<TPose> = {}): D
 }
 
 /** Registry key for {@link CLUSTER_DERIVE_POSE}. */
-export const DIAGRAM_CLUSTER = 'diagram:group';
+export const DIAGRAM_CLUSTER = 'diagram:cluster';
 /** Registry key for {@link ANCHOR_DERIVE_POSE}. */
 export const DIAGRAM_ANCHOR = 'diagram:anchor';
 
-/** The default group derivation, a stable reference so `toJSON` can find its key. */
+/** The default cluster derivation, a stable reference so `toJSON` can find its key. */
 export const CLUSTER_DERIVE_POSE = clusterDerivePose<unknown>();
 /** The default anchor derivation, a stable reference for the same reason. */
 export const ANCHOR_DERIVE_POSE = anchorDerivePose<unknown>();

@@ -10,13 +10,13 @@ import type { LayoutAxes } from '../layout';
  *  boxes of the groups starting or ending there reach, nested boxes adding
  *  their insets to their parents'. */
 export function boxReach(
-  graph: Pick<Graph, 'groups'>,
+  graph: Pick<Graph, 'clusters'>,
   rows: readonly (readonly Pick<GraphNode, 'id'>[])[],
   axes: LayoutAxes,
 ): { lo: number[]; hi: number[] } {
   const lo = rows.map(() => 0);
   const hi = rows.map(() => 0);
-  const groups = graph.groups ?? [];
+  const groups = graph.clusters ?? [];
   const byId = new Map(groups.map((g) => [g.id, g]));
   const rowOf = new Map<string, number>();
   rows.forEach((row, r) => row.forEach((n) => rowOf.set(n.id, r)));

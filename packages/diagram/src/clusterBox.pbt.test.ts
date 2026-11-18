@@ -62,7 +62,7 @@ describe('clusterDerivePose', () => {
     fc.assert(fc.property(
       groupArb, fc.array(fc.option(fc.tuple(rect(gridCoord), marginArb), { freq: 4 }), { maxLength: 5 }), gridCoord, gridCoord,
       (group, deps, dx, dy) => {
-        const node = { pose: { x: 1, y: 2, width: 3, height: 4 }, data: { diagram: { group } } };
+        const node = { pose: { x: 1, y: 2, width: 3, height: 4 }, data: { diagram: { cluster: group } } };
         const live = deps.map((d) => (d === null ? undefined : member(d[0], d[1])));
         const box = derive(node, live as never);
         const there = deps.filter((d) => d !== null);
@@ -127,7 +127,7 @@ const dataArb: fc.Arbitrary<DiagramData> = fc.record({
 }).map(({ at, groups, labels }) => ({
   nodes: NODES.map((id, i) => ({ id, lines: [id], at: at[i]! })),
   edges: [],
-  groups: GROUPS.map((id, i) => ({ id, members: groups[i]!, ...(labels[i] !== undefined ? { label: labels[i] } : {}) })),
+  clusters: GROUPS.map((id, i) => ({ id, members: groups[i]!, ...(labels[i] !== undefined ? { label: labels[i] } : {}) })),
 }));
 
 type AnyScene = Scene<unknown, 'main', RectPose>;

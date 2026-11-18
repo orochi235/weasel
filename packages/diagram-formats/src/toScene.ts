@@ -46,12 +46,12 @@ function prepared(page: DocumentPage, draw: Draw): DocumentPage {
  * so the scene holds places and routes and no layout runs again.
  */
 function graphSpecs(pages: readonly { page: GraphPage; at: PlacedPage }[], crossPageEdges: readonly DataEdge[], draw: Draw): DiagramSpec[] {
-  const data: DiagramData = { nodes: [], edges: [], groups: [], containers: [] };
+  const data: DiagramData = { nodes: [], edges: [], clusters: [], containers: [] };
   for (const { page, at } of pages) {
     const shifted = shiftData(page.data, at);
     data.nodes = [...data.nodes, ...shifted.nodes];
     data.edges = [...data.edges, ...shifted.edges];
-    data.groups = [...data.groups!, ...(shifted.groups ?? [])];
+    data.clusters = [...data.clusters!, ...(shifted.clusters ?? [])];
     data.containers = [...data.containers!, ...(shifted.containers ?? [])];
   }
   data.edges = [...data.edges, ...crossPageEdges];

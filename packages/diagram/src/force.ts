@@ -216,7 +216,7 @@ export function forceRelaxation(graph: Graph, opts: ForceOptions = {}): ForceRel
     y: bodies.reduce((sum, b) => sum + b.y, 0) / bodies.length,
   };
 
-  const groups = graph.groups ?? [];
+  const groups = graph.clusters ?? [];
   const sim = createSimulation<ForceBody>({
     nodes: bodies,
     forces: [
