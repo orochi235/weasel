@@ -37,6 +37,8 @@ export function TimelineFramesDemo() {
   const abort = useRef<AbortController | null>(null);
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => () => { abort.current?.abort(); }, []);
+
   useEffect(() => {
     const target = scenePoseTarget(scene, BALL)!;
     const tl = animator.timeline({

@@ -31,4 +31,12 @@ describe('TimelineFramesDemo', () => {
     expect(await screen.findByText('canceled')).toBeTruthy();
   });
 
+  it('aborts a running save when the demo unmounts', () => {
+    runs.length = 0;
+    const { unmount } = render(<TimelineFramesDemo />);
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'save frames' })); });
+    expect(runs).toHaveLength(1);
+    unmount();
+    expect(runs[0]!.aborted).toBe(true);
+  });
 });
