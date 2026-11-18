@@ -1,5 +1,6 @@
 /** The chrome an in-flight gesture paints beside the scene. */
 import type { OngoingHandle } from './invoker';
+import type { Rect } from '@weasel-js/geom';
 
 /**
  * What a `polyline` overlay is, in a word — the narrowest thing an action can
@@ -90,12 +91,12 @@ export type OngoingOverlay =
        *  kinds are the ones it knows how to render; a consumer-defined kind
        *  is legal and simply gets no live preview. */
       shape: string;
-      bounds: { x: number; y: number; width: number; height: number };
+      bounds: Rect;
       extras: unknown;
       /** Where the shape will be stored once it lands, when that is not the box
        *  `bounds` and `extras` make: a scene's quantize rule moving it onto an
        *  output grid. The preview is drawn fitted to it. */
-      lands?: { x: number; y: number; width: number; height: number };
+      lands?: Rect;
       /** World-space point to paint a small "anchor" dot at, marking the
        *  click point — for radial shapes (polygon/star), where no vertex
        *  sits on it, and for any shape in center mode. */

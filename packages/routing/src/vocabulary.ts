@@ -8,7 +8,7 @@
  * these shapes is a change to core's contract that happens to be spelled here.
  */
 
-import type { FramedRect, View } from '@weasel-js/geom';
+import type { FramedRect, View, Rect } from '@weasel-js/geom';
 import type { SelectIntent, SelectionExtendKey, SelectionMode } from '@weasel-js/select';
 export type { SelectIntent, SelectionExtendKey, SelectionMode };
 
@@ -106,7 +106,7 @@ export type ViewportMoveKind = 'pan' | 'zoom';
 export interface DebugSink {
   recordHitbox(id: string, kind: 'body' | 'handle' | 'rotation' | 'anchor', shape: HitShape): void;
   recordHandle(id: string, position: { x: number; y: number }, kind: HandleKind): void;
-  recordBounds(id: string, bounds: { x: number; y: number; width: number; height: number }): void;
+  recordBounds(id: string, bounds: Rect): void;
   recordOrigin(id: string, point: { x: number; y: number }): void;
   recordSnapCandidate(point: { x: number; y: number }, accepted: boolean): void;
   recordLayer(id: string, label: string, space: 'world' | 'screen', index: number): void;
