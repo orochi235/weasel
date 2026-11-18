@@ -56,34 +56,35 @@ function extractRect(p: RectPath): Polyline {
   };
 }
 
-function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
-  const tolerance = opts.flattenTolerance ?? DEFAULT_FLATTEN_TOLERANCE;
-  const { commands, coords } = p;
-  const out: Polyline[] = [];
-  // Anchors are numbered globally (across all contours) in command-stream order.
-  let anchorCounter = 0;
 
-  // Builders for the current polyline.
+/** The polylines of one path as they are built: the contour being appended to, and its per-point anchors. */
+interface ContourBuilder {
+  /** Commit the open contour, if any, and open an empty one. */
+  begin(): void;
+  /** The open contour's interleaved points, for a flattener to append to. */
+  points(): number[];
+  /** Append a point sitting on `anchor`. */
+  pushAnchor(x: number, y: number, anchor: number): void;
+  /**
+   * Fill anchorA/B/T for each point a curve just appended from `segStart`: interior points
+   * interpolate (`from` → `to`), and the final point is pinned to `to` so the draw-time lerp
+   * returns anchor B's color exactly.
+   */
+  pushCurveAnchors(segStart: number, arcAccum: number[], total: number, from: number, to: number): void;
+  /** Mark the open contour closed, dropping a last point that repeats its first. */
+  close(): void;
+  /** Commit the open contour and answer every contour built. */
+  finish(): Polyline[];
+}
+
+function createContourBuilder(): ContourBuilder {
+  const out: Polyline[] = [];
   let pts: number[] | null = null;
   let aA: number[] | null = null;
   let aB: number[] | null = null;
   let aT: number[] | null = null;
   let current: Polyline | null = null;
-
-  let prevAnchor = -1;
   let dropped: number | undefined;
-  // The anchor a subpath opened by a bare drawing command starts from.
-  let startAnchor = 0;
-
-  const beginContour = (): Polyline => {
-    pts = [];
-    aA = [];
-    aB = [];
-    aT = [];
-    const next: Polyline = { points: pts, closed: false };
-    out.push(next);
-    return next;
-  };
 
   const commit = (target: Polyline): void => {
     if (!pts || !aA || !aB || !aT) return;
@@ -94,93 +95,114 @@ function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
     dropped = undefined;
   };
 
-  // Fill anchorA/B/T for each point a curve just appended: interior points
-  // interpolate (prevAnchor → target), and the final point is pinned to the
-  // target so the draw-time lerp returns anchor B's color exactly.
-  const pushCurveAnchors = (segStart: number, arcAccum: number[], total: number, target: number): void => {
-    for (let k = 0; k < arcAccum.length; k++) {
-      aA!.push(prevAnchor);
-      aB!.push(target);
-      aT!.push(total > 0 ? arcAccum[k] / total : 0);
-    }
-    const lastIdx = (segStart + arcAccum.length) - 1;
-    aA![lastIdx] = target;
-    aB![lastIdx] = target;
-    aT![lastIdx] = 0;
+  return {
+    begin() {
+      if (current) commit(current);
+      pts = [];
+      aA = [];
+      aB = [];
+      aT = [];
+      current = { points: pts, closed: false };
+      out.push(current);
+    },
+    points: () => pts!,
+    pushAnchor(x, y, anchor) {
+      pts!.push(x, y);
+      aA!.push(anchor);
+      aB!.push(anchor);
+      aT!.push(0);
+    },
+    pushCurveAnchors(segStart, arcAccum, total, from, to) {
+      for (let k = 0; k < arcAccum.length; k++) {
+        aA!.push(from);
+        aB!.push(to);
+        aT!.push(total > 0 ? arcAccum[k] / total : 0);
+      }
+      const lastIdx = (segStart + arcAccum.length) - 1;
+      aA![lastIdx] = to;
+      aB![lastIdx] = to;
+      aT![lastIdx] = 0;
+    },
+    close() {
+      if (!current) return;
+      current.closed = true;
+      if (pts && aA && aB && aT) dropped = dropDuplicateClosingPoint(pts, aA, aB, aT) ?? dropped;
+    },
+    finish() {
+      if (current) commit(current);
+      return out;
+    },
   };
+}
+
+function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
+  const tolerance = opts.flattenTolerance ?? DEFAULT_FLATTEN_TOLERANCE;
+  const { commands, coords } = p;
+  const b = createContourBuilder();
+  // Anchors are numbered globally (across all contours) in command-stream order.
+  let anchorCounter = 0;
+  let prevAnchor = -1;
+  // The anchor a subpath opened by a bare drawing command starts from.
+  let startAnchor = 0;
 
   forEachSegment(commands, coords, (cmd, coordIdx, prevX, prevY, _i, opensSubpath) => {
     if (opensSubpath) {
-      if (current) commit(current);
-      current = beginContour();
-      pts!.push(prevX, prevY);
-      aA!.push(startAnchor);
-      aB!.push(startAnchor);
-      aT!.push(0);
+      b.begin();
+      b.pushAnchor(prevX, prevY, startAnchor);
       prevAnchor = startAnchor;
     }
     switch (cmd) {
       case PATH_M:
       case PATH_L: {
         if (cmd === PATH_M) {
-          if (current) commit(current);
-          current = beginContour();
+          b.begin();
           startAnchor = anchorCounter;
         }
-        pts!.push(coords[coordIdx], coords[coordIdx + 1]);
-        aA!.push(anchorCounter);
-        aB!.push(anchorCounter);
-        aT!.push(0);
+        b.pushAnchor(coords[coordIdx], coords[coordIdx + 1], anchorCounter);
         prevAnchor = anchorCounter;
         anchorCounter++;
         break;
       }
       case PATH_Q: {
-        const target = anchorCounter;
-        const segStart = pts!.length / 2;
+        const segStart = b.points().length / 2;
         const arcAccum: number[] = [];
         const total = flattenQuadraticWithArcLen(
           prevX, prevY,
           coords[coordIdx], coords[coordIdx + 1],
           coords[coordIdx + 2], coords[coordIdx + 3],
-          tolerance, pts!, arcAccum, opts.offset,
+          tolerance, b.points(), arcAccum, opts.offset,
         );
-        pushCurveAnchors(segStart, arcAccum, total, target);
-        prevAnchor = target;
+        b.pushCurveAnchors(segStart, arcAccum, total, prevAnchor, anchorCounter);
+        prevAnchor = anchorCounter;
         anchorCounter++;
         break;
       }
       case PATH_C: {
-        const target = anchorCounter;
-        const segStart = pts!.length / 2;
+        const segStart = b.points().length / 2;
         const arcAccum: number[] = [];
         const total = flattenCubicWithArcLen(
           prevX, prevY,
           coords[coordIdx], coords[coordIdx + 1],
           coords[coordIdx + 2], coords[coordIdx + 3],
           coords[coordIdx + 4], coords[coordIdx + 5],
-          tolerance, pts!, arcAccum, opts.offset,
+          tolerance, b.points(), arcAccum, opts.offset,
         );
-        pushCurveAnchors(segStart, arcAccum, total, target);
-        prevAnchor = target;
+        b.pushCurveAnchors(segStart, arcAccum, total, prevAnchor, anchorCounter);
+        prevAnchor = anchorCounter;
         anchorCounter++;
         break;
       }
-      case PATH_Z: {
-        if (current) {
-          current.closed = true;
-          if (pts && aA && aB && aT) dropped = dropDuplicateClosingPoint(pts, aA, aB, aT) ?? dropped;
-        }
+      case PATH_Z:
+        b.close();
         break;
-      }
       default:
         throw new Error(`extractPolylines: unknown command code ${cmd}`);
     }
   });
 
-  if (current) commit(current);
-  return out;
+  return b.finish();
 }
+
 
 /**
  * A closed contour's last point repeating its first leaves a zero-length
