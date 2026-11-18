@@ -218,6 +218,9 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
       // The animator ticks the cycle independently of the world, so it has to
       // be stopped here or footsteps keep firing after a pause or a death.
       cycle.pause();
+      // The pause retracts what it unbooks first; after it, the next footfall
+      // pairs with none, or the jitter readout would measure the pause.
+      stepStats.current.lastAt = 0;
     }
   }, []);
 
