@@ -41,7 +41,7 @@ export function useSymmetry(scene: DrawScene, page: { id?: string; x?: number; y
   // Where the group drawn into stands, so the effect reruns when it goes (a delete, an undo) or a
   // document group comes back (an undo of that delete). Gone with nothing in the document, the effect
   // makes a fresh one, unless a redo is pending: then it waits, so undo can step past the group's
-  // making, and a redo that brings it back is drawn into again.
+  // making and making one never drops the redo (`docs/unruled.md`).
   const standingOf = useCallback(() => {
     if (!on) return 'off';
     if (group.current !== null && ctrl.read(group.current) !== null) return 'held';
@@ -56,7 +56,7 @@ export function useSymmetry(scene: DrawScene, page: { id?: string; x?: number; y
       return;
     }
     const found = (ctrl.read(group.current) ? group.current : null) ?? existingGroup(scene, ctrl);
-    if (found === null && group.current !== null && scene.canRedo()) {
+    if (found === null && scene.canRedo()) {
       ctrl.setActive(null);
       return;
     }
