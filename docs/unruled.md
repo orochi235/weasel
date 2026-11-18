@@ -2624,3 +2624,9 @@ Calls the lanes made without a ruling:
   except while a redo is pending: then nothing is drawn into, so undo can step past the group's making and a redo
   brings it back. A shape drawn in that wait is unmirrored, and the fresh group comes after it. Turning symmetry off
   when its group went was the alternative.
+
+## Audit round thirty-five (2026-11-17): the site's package pages
+
+- 2026-11-17 (the fixer's call): two guide files of one package that give the same address (`1-setup.md` and
+  `setup.md`) fail the site's build, naming both, rather than one shadowing the other's body. Keeping the first
+  file and warning was the alternative.
