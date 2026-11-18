@@ -87,6 +87,10 @@ function RectPathEditTrial({ ctx }: { ctx: RenderContext<State, unknown> }) {
   const scene = useTrialScene(ctx, createLabScene);
   // Held beside the trial so the panel can read which path is open.
   const [host] = useState(() => createPathEditHost({ id: FIRST }));
+  // Reset sends the stored scene back to null and reloads the fresh one into this trial, which stays mounted, so
+  // the host reopens what a fresh trial opens on.
+  const stored = ctx.state.scene;
+  useEffect(() => { if (stored === null) host.setEditingId(FIRST); }, [host, stored]);
   useSceneTick(scene, host);
   return (
     <div className={s.trial}>

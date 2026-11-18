@@ -1,5 +1,5 @@
 import { useState, useSyncExternalStore } from 'react';
-import { createReflectable, type Registrant } from '@weasel-js/registry';
+import { createReflectable, type Reflectable, type Registrant } from '@weasel-js/registry';
 import { Button } from '@weasel-js/ui/components/Button';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import s from './RegistryDemo.module.css';
@@ -18,13 +18,14 @@ const CURSORS: Record<Source, Record<Tool, string>> = {
   plugin: { pen: 'cell', hand: 'all-scroll', zoom: 'zoom-out' },
 };
 
-/** Each tool's CSS cursor, keyed by tool id. */
-const cursors = createReflectable<string>({ name: 'cursors' });
-const { reflection } = cursors;
-
 const sourceOf = (r: Registrant<string>) => (r.fallback ? `${r.source} (fallback)` : r.source);
 
-function Entry({ id, registrant, source }: { id: string; registrant: Registrant<string>; source?: boolean }) {
+function Entry({ cursors, id, registrant, source }: {
+  cursors: Reflectable<string>;
+  id: string;
+  registrant: Registrant<string>;
+  source?: boolean;
+}) {
   return (
     <span className={s.registrant}>
       <code>{registrant.value}</code>
@@ -36,6 +37,9 @@ function Entry({ id, registrant, source }: { id: string; registrant: Registrant<
 
 export function RegistryDemo() {
   const [tool, setTool] = useState<Tool>('pen');
+  // Each tool's CSS cursor, keyed by tool id: one registry per mount, so a revisit opens empty.
+  const [cursors] = useState(() => createReflectable<string>({ name: 'cursors' }));
+  const { reflection } = cursors;
   const version = useSyncExternalStore(reflection.subscribe, reflection.getVersion);
   const entries = reflection.entries();
   // The kit's cursors are defaults, so a plugin pushing over one is an override, not a clash.
@@ -64,11 +68,11 @@ export function RegistryDemo() {
           {entries.map((e) => (
             <tr key={e.key}>
               <th scope="row">{e.key}</th>
-              <td><Entry id={e.key} registrant={e.live} /></td>
+              <td><Entry cursors={cursors} id={e.key} registrant={e.live} /></td>
               <td>{sourceOf(e.live)}</td>
               <td>
                 <span className={s.stack}>
-                  {e.shadowed.map((r, i) => <Entry key={i} id={e.key} registrant={r} source />)}
+                  {e.shadowed.map((r, i) => <Entry key={i} cursors={cursors} id={e.key} registrant={r} source />)}
                 </span>
               </td>
             </tr>
