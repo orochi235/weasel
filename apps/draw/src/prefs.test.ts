@@ -196,6 +196,22 @@ describe('importLegacyPrefs', () => {
     expect(store.get('view.grid.visible')).toBe(false);
   });
 
+  it('carries a v2 blob through every migration since, not just the grid', () => {
+    window.localStorage.setItem(LEGACY_PREFS_KEY, JSON.stringify({
+      version: 2,
+      ui: { panels: { layers: { collapsed: true } } },
+      view: { symmetry: true, symmetryAxis: 'both', rulersVisible: true, pathDirection: true, pathCorners: false },
+    }));
+    const store = openDrawPrefs(createMemoryAdapter());
+    importLegacyPrefs(store, window.localStorage);
+    expect(store.get('ui.surfaces')).toEqual({ layers: { collapsed: true } });
+    expect(store.get('view.symmetry.on')).toBe(true);
+    expect(store.get('view.symmetry.axis')).toBe('both');
+    expect(store.get('view.rulers.visible')).toBe(true);
+    expect(store.get('view.pathEditing.direction')).toBe(true);
+    expect(store.get('view.pathEditing.fillets')).toBe(false);
+  });
+
   it('removes the blob only once the new records are on disk', async () => {
     window.localStorage.setItem(LEGACY_PREFS_KEY, JSON.stringify({ version: 2, view: { gridDensity: 40 } }));
     const backing = new Map<string, unknown>();

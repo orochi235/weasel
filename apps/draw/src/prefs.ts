@@ -7,7 +7,6 @@ import { STICKY_TOOL_OPTIONS, TEXT_TOOL_OPTIONS } from '@weasel-js/text-tools';
 import { SAND_TOOL_OPTIONS, KNEAD_TOOL_OPTIONS } from '@weasel-js/path-tools';
 import { INITIAL_FILL, INITIAL_STROKE } from './newShapePaint';
 import {
-  flattenPrefValues,
   openPrefsSync,
   pref,
   type PrefBase,
@@ -18,6 +17,8 @@ import {
   type PrefsStore,
   type PrefValidator,
   type PrefValueAt,
+  prefHoldsValue,
+  prefLeaves,
 } from '@weasel-js/prefs';
 import { usePref as usePrefOf, usePrefGroup as usePrefGroupOf } from '@weasel-js/prefs/react';
 import { pageLocalStorage } from '@weasel-js/react';
@@ -309,15 +310,18 @@ function foldLegacyPrefs(
     parsed = undefined;
   }
   if (parsed !== undefined && (parsed as { version?: unknown } | null)?.version !== 2) return;
-  const ui = (parsed as { ui?: { panels?: unknown; surfaces?: unknown } } | undefined)?.ui;
-  if (ui && typeof ui === 'object' && ui.panels !== undefined) ui.surfaces ??= ui.panels;
-  const view = (parsed as { view?: Record<string, unknown> } | undefined)?.view;
-  if (isPlainObject(view) && view.grid === undefined) {
-    const old = { visible: view.gridVisible, spacing: view.gridDensity, snap: view.snapToGrid };
-    view.grid = Object.fromEntries(Object.entries(old).filter(([, value]) => value !== undefined));
-  }
-  for (const [path, value] of flattenPrefValues(PREFS, parsed)) {
-    if (!target.isSet(path as DrawPrefPath)) target.set(path as DrawPrefPath, value as never);
+  // The blob predates every migration: it is read as records at every path it holds a value at, so each migration
+  // finds whichever it moves, and the leaves the schema has now are taken from what they leave.
+  const records = new Map<string, unknown>();
+  const collect = (value: unknown, at: string): void => {
+    if (at !== '') records.set(at, value);
+    if (isPlainObject(value)) for (const [key, held] of Object.entries(value)) collect(held, at === '' ? key : `${at}.${key}`);
+  };
+  collect(parsed, '');
+  for (const migrate of MIGRATIONS) migrate(records);
+  for (const [path, leaf] of prefLeaves(PREFS)) {
+    if (!prefHoldsValue(leaf) || !records.has(path) || target.isSet(path as DrawPrefPath)) continue;
+    target.set(path as DrawPrefPath, records.get(path) as never);
   }
   removeOnceStored(target, () => storage.removeItem(LEGACY_PREFS_KEY));
 }
