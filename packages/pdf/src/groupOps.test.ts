@@ -130,7 +130,7 @@ describe('writeGroup', () => {
 
   it('rasterizes shader commands', async () => {
     const rasterize = vi.fn(async () => pixels());
-    const shader = { kind: 'shader', program: {}, uniforms: {}, bounds: { x: 10, y: 20, w: 30, h: 40 } } as never;
+    const shader = { kind: 'shader', program: {}, uniforms: {}, bounds: { x: 10, y: 20, width: 30, height: 40 } } as never;
     const { skipped } = await render([shader], { rasterize });
     expect(skipped).toEqual([]);
     const [cmds, box] = rasterize.mock.calls[0] as unknown as [DrawCommand[], unknown];
@@ -217,7 +217,7 @@ describe('writeGroup', () => {
   it('skips and reports what needs a raster when no hook is given', async () => {
     const { skipped, content } = await render([
       { kind: 'group', effects: [{ kind: 'blur', radius: 2 } as never], children: [red] },
-      { kind: 'shader', program: {}, uniforms: {}, bounds: { x: 0, y: 0, w: 5, h: 5 } } as never,
+      { kind: 'shader', program: {}, uniforms: {}, bounds: { x: 0, y: 0, width: 5, height: 5 } } as never,
     ]);
     expect(skipped.map((k) => k.kind)).toEqual(['command', 'command']);
     expect(skipped[0].detail).toMatch(/effects/);
