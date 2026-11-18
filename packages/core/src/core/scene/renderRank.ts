@@ -1,18 +1,13 @@
 /** Paint-order comparison over a scene, at constant cost per comparison. */
+import { createPart } from '@weasel-js/registry';
 import type { Scene } from './types';
 
-const ranks = new WeakMap<readonly { id: string }[], Map<string, number>>();
-
 /** Each id's index in `order`, built once per cached render order. */
-function rankOf(order: readonly { id: string }[]): Map<string, number> {
-  let rank = ranks.get(order);
-  if (!rank) {
-    rank = new Map();
-    for (let i = 0; i < order.length; i++) rank.set(order[i]!.id, i);
-    ranks.set(order, rank);
-  }
+const rankOf = createPart((order: readonly { id: string }[]) => {
+  const rank = new Map<string, number>();
+  for (let i = 0; i < order.length; i++) rank.set(order[i]!.id, i);
   return rank;
-}
+});
 
 /**
  * A `compareZ` over `scene`'s paint order: negative when `a` paints below `b`.
