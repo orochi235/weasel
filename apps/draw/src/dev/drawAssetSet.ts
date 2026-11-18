@@ -1,7 +1,5 @@
-import { defaultNodeProperties, describePresets } from '@weasel-js/core';
-import { FEATURE_PRESETS } from '@weasel-js/editing';
+import { defaultNodeProperties } from '@weasel-js/core';
 import { EDITOR_CONTEXT_MENUS } from '@weasel-js/editor';
-import { pathToolsPreset } from '@weasel-js/path-tools';
 import type { PrefGroup, PrefGroupAs } from '@weasel-js/prefs';
 import { mergeMenuDefs } from '@weasel-js/routing';
 import { bundlesAsset, type Asset, type AssetSet } from '@weasel-js/prefs/edit';
@@ -9,6 +7,7 @@ import { DRAW_MENU_BAR } from '../menuBar';
 import { DRAW_MENUS } from '../menus';
 import { PREFS } from '../prefs';
 import { SURFACE_ASSETS } from '../surfaces/assets';
+import { DRAW_PRESETS } from './drawPresets';
 import type { SurfaceKind } from '../surfaces/types';
 import { getOwn } from '@weasel-js/registry';
 
@@ -51,10 +50,7 @@ const nodes: Asset[] = defaultNodeProperties.map((e) => ({
 }));
 
 // The guides package's presets are made by factories that need the app's options, so they are not listed.
-const bundles = bundlesAsset('bundles', 'Feature bundles', describePresets({
-  '@weasel-js/core': Object.values(FEATURE_PRESETS),
-  '@weasel-js/path-tools': [pathToolsPreset],
-}));
+const bundles = bundlesAsset('bundles', 'Feature bundles', DRAW_PRESETS);
 
 /**
  * Every schema WeaselDraw ships, as one asset set: its preferences and each node's properties as dialogs, its
