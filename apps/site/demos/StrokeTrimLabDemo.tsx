@@ -10,6 +10,7 @@ import {
   type StrokeAlign,
   viewPreset,
 } from '@weasel-js/core';
+import { pickPreset } from '@weasel-js/editing';
 import type { ExportScene } from '@weasel-js/export';
 import { asPolygonPath } from '@weasel-js/geom';
 import {
@@ -135,6 +136,9 @@ function PdfExport({ scene }: { scene: ExportScene }) {
   );
 }
 
+// The palette offers the hand and the select tool; each comes from a preset here.
+const FEATURES = [viewPreset, pickPreset] as const;
+
 function TrimTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene(ctx.config));
   // The strokes follow the panel, written inside its change's undo step.
@@ -147,7 +151,7 @@ function TrimTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   return (
     <div className={s.trial}>
       <div className={s.canvas}>
-        <TrialSceneCanvas scene={scene} trial={ctx.trial} features={[viewPreset]} defaultTools={['hand']} viewport={WHEEL_ZOOM} />
+        <TrialSceneCanvas scene={scene} trial={ctx.trial} features={FEATURES} defaultTools={['hand']} viewport={WHEEL_ZOOM} />
       </div>
       <aside className={s.exports} aria-label="Exports">
         <h3 className={s.heading}>Exported SVG</h3>
