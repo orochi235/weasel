@@ -1,7 +1,7 @@
 import { depthAt, timestampAt } from './stackTime';
 import type { Op } from './op';
 import { appliedHalves, createApplier, entryView, stepOf } from './entryOps';
-import { createWalk, type Walked } from './walk';
+import { createWalk } from './walk';
 import { createVersionClock } from './versionClock';
 import { createForks } from './forks';
 import { createRecorder } from './recording';
@@ -69,8 +69,8 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
 
   const applyAllOrNothing = createApplier(adapter, logger);
 
-  const { walkTo, readSelection } = createWalk({
-    undoStack, redoStack, selection, applyAllOrNothing, refuse: journals.refuse,
+  const { walkTo, walkOrReturn, readSelection } = createWalk({
+    undoStack, redoStack, selection, applyAllOrNothing, refuse: journals.refuse, logger,
   });
 
   const recorder = createRecorder({
@@ -121,22 +121,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     goto(n) {
       // Total length stays constant during this walk: entries only move between the two stacks.
       if (gotoDepth(n, undoStack.length + redoStack.length) === undoStack.length) return;
-      const start = undoStack.length;
-      let walked: Walked;
-      try {
-        walked = walkTo(n);
-      } catch (err) {
-        // Stop where the walk began rather than partway. A second throw on
-        // the way back is logged: the stacks still match the state, at
-        // whatever depth that walk reached.
-        try {
-          walkTo(start);
-        } catch (back) {
-          logger.warn(`goto: returning to depth ${start} threw: ${String(back)}`);
-        }
-        if (undoStack.length !== start) clock.bump();
-        throw err;
-      }
+      const walked = walkOrReturn(n, () => clock.bump());
       clock.bump(stepOf('goto', walked.walked, walked.applied));
     },
     timestampAt: (i) => timestampAt(undoStack, redoStack, i),
