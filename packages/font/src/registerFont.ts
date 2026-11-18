@@ -9,7 +9,8 @@ import { _clearHeldFontUrls, claimFontUrls, landFontUrls, releaseFontUrls } from
 import { createReflectable, type Reflection } from '@weasel-js/registry';
 import { normalizeVariant, type FontStyle, type FontVariant } from './fontStyle';
 import { notifyGlyphReady } from './glyphReady';
-import { parseBmFont, type BmFont } from './FontAtlas';
+import type { BmFont } from './FontAtlas';
+import { fetchAtlasFace } from './fetchAtlasFace';
 import type { GlyphTextureSink } from './textureSink';
 import { _clearFallbackWarnings } from './fallback';
 import { outlineFace, outlineStatus } from './outline/outlineRegistry';
@@ -20,8 +21,6 @@ export interface FontEntry {
   font: BmFont;
   bitmap: ImageBitmap;
 }
-
-
 
 /** One family's registered faces, keyed `${weight}|${style}`. */
 export type FontFamilyFaces = ReadonlyMap<string, FontEntry>;
@@ -187,30 +186,11 @@ async function fetchVariant(
   const tokens = inFlight.get(family) ?? new Set<object>();
   inFlight.set(family, tokens.add(token));
   try {
-    const [metricsRes, atlasRes] = await Promise.all([
-      fetch(metricsUrl),
-      fetch(atlasUrl),
-    ]);
-
-    if (!metricsRes.ok) {
-      throw new Error(`HTTP ${metricsRes.status} fetching metrics from ${metricsUrl}`);
-    }
-    if (!atlasRes.ok) {
-      throw new Error(`HTTP ${atlasRes.status} fetching atlas from ${atlasUrl}`);
-    }
-
-    const [rawJson, blob] = await Promise.all([
-      metricsRes.json(),
-      atlasRes.blob(),
-    ]);
-
-    const font = parseBmFont(rawJson);
-    const bitmap = await createImageBitmap(blob);
-
+    const face = await fetchAtlasFace(metricsUrl, atlasUrl);
     // Copy the family as it is now, not as it was before the await: another
     // variant of it may have landed meanwhile, and a stale copy would drop it.
     if (landFontUrls(family, key, metricsUrl, atlasUrl)) {
-      registry.set(family, new Map(registry.get(family)).set(key, { font, bitmap }));
+      registry.set(family, new Map(registry.get(family)).set(key, face));
     }
     settle(family, token);
     // Same meaning the lazy tiers give it: text that was painting from a
