@@ -45,7 +45,7 @@ const SCHEMA: PrefGroup = {
   },
 };
 
-const degrees = prefUnit(ANGLE_RADIANS, 'deg', { precision: 1, suffix: '°' });
+const degrees = prefUnit(ANGLE_RADIANS, 'deg', { places: 1, suffix: '°' });
 
 describe('filterPrefSubtree', () => {
   it('keeps only matching leaves and prunes the groups left empty', () => {
@@ -202,14 +202,14 @@ describe('prefDisplayBounds', () => {
     expect(prefDisplayBounds({ ...leaf, min: undefined, max: 10, endless: undefined })).toEqual({ min: 90, step: 1 });
   });
 
-  it('widens a step to the smallest one the shown precision can display, never below the declared step', () => {
+  it('widens a step to the smallest one the shown places can display, never below the declared step', () => {
     const num = (step: number, unit: PrefNumber['unit']): PrefNumber => ({ kind: 'number', name: 'N', description: '', default: 0, step, unit });
-    const cm = { scale: 10, suffix: 'cm', precision: 0 };
+    const cm = { scale: 10, suffix: 'cm', places: 0 };
     expect(prefDisplayBounds(num(1, cm)).step).toBe(1);
     expect(prefDisplayBounds(num(2, cm)).step).toBe(1);
-    expect(prefDisplayBounds(num(0.5, { scale: 96, suffix: 'in', precision: 2 })).step).toBe(0.01);
-    expect(prefDisplayBounds(num(0.15, { scale: 1, precision: 1 })).step).toBe(0.2);
-    expect(prefDisplayBounds(num(1.1, { scale: 1, precision: 1 })).step).toBe(1.1);
+    expect(prefDisplayBounds(num(0.5, { scale: 96, suffix: 'in', places: 2 })).step).toBe(0.01);
+    expect(prefDisplayBounds(num(0.15, { scale: 1, places: 1 })).step).toBe(0.2);
+    expect(prefDisplayBounds(num(1.1, { scale: 1, places: 1 })).step).toBe(1.1);
     expect(prefDisplayBounds(num(1, { scale: 3 })).step).toBeCloseTo(1 / 3, 12);
   });
 

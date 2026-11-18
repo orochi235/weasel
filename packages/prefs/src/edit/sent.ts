@@ -3,6 +3,7 @@ import { carry } from './carry';
 import { packDraft, unpackDraft, type DraftStorage } from './draft';
 import type { SchemaRoot } from './schemaEdit';
 import type { PrefTypes } from './types';
+import { upgradeStored } from './upgrade';
 
 const sentKey = (draftKey: string): string => `${draftKey}:sent`;
 const json = (packed: unknown): unknown => JSON.parse(JSON.stringify(packed));
@@ -20,7 +21,7 @@ export function saveSent(draftKey: string, sent: unknown, storage?: DraftStorage
 
 /** What was last submitted beside the draft under `draftKey`; `null` with none. */
 export function openSent(draftKey: string, storage?: DraftStorage): unknown {
-  return readLocal(sentKey(draftKey), storage) ?? null;
+  return upgradeStored(readLocal(sentKey(draftKey), storage) ?? null);
 }
 
 export function dropSent(draftKey: string, storage?: DraftStorage): void {

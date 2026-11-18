@@ -159,7 +159,7 @@ describe('summarizeValue', () => {
 });
 
 describe('summarizeLeaf', () => {
-  const deg = { scale: Math.PI / 180, precision: 0, suffix: '°' };
+  const deg = { scale: Math.PI / 180, places: 0, suffix: '°' };
   const angle = { kind: 'number', name: 'Angle', description: '', default: 0, unit: deg } as const;
   const plain = { kind: 'number', name: 'Count', description: '', default: 0 } as const;
 

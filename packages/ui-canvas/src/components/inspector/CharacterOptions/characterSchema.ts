@@ -7,7 +7,7 @@ import { icon } from '../../../icons.gen';
  *  as percentages. A tenth of a point shows because the field snaps the
  *  *displayed* value to its step, and a coarser one would render a
  *  superscript's 58.3% as 60% and commit that on the next edit. */
-const PERCENT = { scale: 0.01, precision: 1, suffix: '%' };
+const PERCENT = { scale: 0.01, places: 1, suffix: '%' };
 
 /** A run flag: on or off per character, drawn as one segment of a bar. */
 const flag = (name: string, glyph: IconRef) =>

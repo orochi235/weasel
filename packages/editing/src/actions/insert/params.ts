@@ -13,7 +13,7 @@ export const STAR_INSERT_PARAMS = pref.group('Star', {
   innerRadiusRatio: pref.number('Inner radius', SHAPE_DEFAULTS.innerRadiusRatio, {
     description: 'Inner radius as a fraction of the outer one.',
     min: STAR_RATIO_RANGE.min, max: STAR_RATIO_RANGE.max, step: 0.01, control: 'slider',
-    unit: { scale: 0.01, suffix: '%', precision: 0 },
+    unit: { scale: 0.01, suffix: '%', places: 0 },
   }),
 });
 

@@ -19,7 +19,7 @@ beforeAll(() => {
 const SCHEMA: PrefGroup = {
   name: 'Prefs',
   children: { view: { name: 'View', children: {
-    heat: { kind: 'number', name: 'Heat', description: '', default: 300, unit: { suffix: '°C', scale: 1, offset: 273.15, precision: 1, accepts: { K: { factor: 1, offset: -273.15 } } } },
+    heat: { kind: 'number', name: 'Heat', description: '', default: 300, unit: { suffix: '°C', scale: 1, offset: 273.15, places: 1, accepts: { K: { factor: 1, offset: -273.15 } } } },
   } } },
 };
 

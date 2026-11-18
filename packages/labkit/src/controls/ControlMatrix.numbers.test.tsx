@@ -11,7 +11,7 @@ const column = () => ({
   gap: f.number(0).suffix('px').label('Gap'),
   turn: f
     .number(0)
-    .unit({ scale: Math.PI / 180, precision: 0, suffix: '°' })
+    .unit({ scale: Math.PI / 180, places: 0, suffix: '°' })
     .label('Turn'),
 });
 const schema = resolveConfigSchema(f.schema({ a: f.group(column()) }), []);

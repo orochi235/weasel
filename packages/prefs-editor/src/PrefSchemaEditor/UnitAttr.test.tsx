@@ -46,7 +46,7 @@ describe('the unit attribute', () => {
     enter('Unit scale', '0.5');
     enter('Unit offset', '273.15');
     enter('Unit places', '1');
-    expect(seen.unit).toEqual({ suffix: '°C', scale: 0.5, offset: 273.15, precision: 1 });
+    expect(seen.unit).toEqual({ suffix: '°C', scale: 0.5, offset: 273.15, places: 1 });
   });
 
   it('refuses a scale of zero, text that is no number, and places that are no whole count', () => {
@@ -64,7 +64,7 @@ describe('the unit attribute', () => {
 
   it('removes the unit once nothing of it is left: no suffix, a scale of 1, nothing else', () => {
     const seen: Seen = {};
-    renderWithIcons(<Unit seen={seen} start={{ suffix: 'cm', scale: 10, offset: 2, precision: 1 }} />);
+    renderWithIcons(<Unit seen={seen} start={{ suffix: 'cm', scale: 10, offset: 2, places: 1 }} />);
     enter('Unit offset', '');
     enter('Unit places', '');
     expect(seen.unit).toEqual({ suffix: 'cm', scale: 10 });
