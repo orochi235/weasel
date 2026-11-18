@@ -103,4 +103,18 @@ describe('composeSnippet', () => {
     expect(label('R&D')).toBe('>{"R&D"}</Badge>');
     expect(label('PLAIN TEXT')).toBe('>PLAIN TEXT</Badge>');
   });
+
+  it("styles the label with the stage's offset and type settings, and leaves it bare at their defaults", () => {
+    const config = defaults();
+    const last = (c: ComposeConfig) => composeSnippet(c).split('\n').at(-1);
+    expect(last(config)).toBe('>COMPOSE</Badge>');
+    expect(last({
+      ...config,
+      look: { ...config.look, labelX: 2, labelY: -1 },
+      type: { ...config.type, font: 'system-ui, sans-serif', sizeDelta: 3, bold: true, italic: true, caps: 'small-caps' },
+    })).toBe(
+      '><span style={{ display: "inline-block", transform: "translate(2px, -1px)", fontFamily: "system-ui, sans-serif", '
+      + 'fontSize: "calc(1em + 3px)", fontWeight: 700, fontStyle: "italic", fontVariantCaps: "small-caps" }}>COMPOSE</span></Badge>',
+    );
+  });
 });
