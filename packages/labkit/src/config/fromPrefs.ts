@@ -5,6 +5,7 @@ import {
   type PrefObject,
   type PrefSection,
   prefConditionPaths,
+  resolvePrefGroupConditions,
 } from '@weasel-js/prefs';
 import { ownAt, setOwn, withConfigValueAt } from './path';
 import { isEncodedLeaf, storedDefault } from './storedDefault';
@@ -201,7 +202,8 @@ function shapeOf(
  * `group` is that group, its children keyed below it, and what that wrote
  * beside a node's or a section's prefs fields is its options again.
  */
-export function configFromPrefs(schema: PrefSection): ConfigSchema<Record<string, unknown>> {
+export function configFromPrefs(given: PrefSection): ConfigSchema<Record<string, unknown>> {
+  const schema = resolvePrefGroupConditions(given);
   const leaves: Array<[string, PrefLeaf]> = [];
   const nodes = shapeOf(schema.members, '', leaves);
   return {

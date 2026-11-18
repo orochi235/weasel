@@ -48,7 +48,7 @@ export const CONDITION_FLOW_END = 'end';
 
 /** A test's box: the pref by its name, and each comparison in the words a row's controls show. */
 function testLines({ test, negated }: TestRow, found: ConditionLeaf | undefined): string[] | undefined {
-  const where = test.from === 'item' ? 'this entry: ' : '';
+  const where = test.from === 'item' ? 'this entry: ' : test.from === 'group' ? 'this group: ' : '';
   if (!found) return negated ? undefined : [`${where}${test.path}`, printOperators(test)];
   const clauses = clausesOf({ test, negated }, found.leaf);
   if (!clauses) return negated ? undefined : [`${where}${found.leaf.name || test.path}`, printOperators(test)];

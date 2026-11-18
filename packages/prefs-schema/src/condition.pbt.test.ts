@@ -36,7 +36,7 @@ describe('prefs conditions, properties', () => {
     const t = tally();
     fc.assert(
       fc.property(condition, values, (c, { root, item }) => {
-        const read = (path: string, from?: 'item') => (from === 'item' ? item : root)[path];
+        const read = (path: string, from?: 'item' | 'group') => (from === 'item' ? item : root)[path];
         const holds = (x: PrefCondition): boolean => prefConditionHolds(x, read);
         expect(isPrefCondition(c)).toBe(true);
         t.count(holds(c) ? 'holds' : 'fails');

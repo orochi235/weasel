@@ -8,6 +8,7 @@ import type { PrefAlias } from './alias';
 import { type PrefCondition, prefConditionReadsItem } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
 import { isPrefLeaf, isPrefSection, setOwnPrefValue } from './helpers';
+import { resolvePrefGroupConditions } from './groupConditions';
 import { deferEntryConditions, type PrefConditionJudge } from './judge';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
@@ -167,8 +168,10 @@ function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds, answer
 export function applyPrefConditions<T extends PrefGroup | PrefSection>(
   schema: T,
   holds: PrefConditionJudge,
-  { keepEmpty = false, keepHidden = false, aliasOver, aliasHolds }: PrefConditionsOptions = {},
+  { keepEmpty = false, keepHidden = false, aliasOver: overGiven, aliasHolds }: PrefConditionsOptions = {},
 ): PrefConditionsApplied<T> {
+  schema = resolvePrefGroupConditions(schema);
+  const aliasOver = overGiven && resolvePrefGroupConditions(overGiven);
   const inItem = deferEntryConditions(holds);
   const answers = (condition: PrefCondition, by: PrefConditionJudge): boolean => by !== inItem || !prefConditionReadsItem(condition);
   const walk = leafWalk({ keepEmpty, keepHidden, inItem, aliasOver: aliasOver ?? schema, aliasHolds, answers });

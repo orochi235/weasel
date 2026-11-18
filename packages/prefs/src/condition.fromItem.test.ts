@@ -19,7 +19,7 @@ describe('a test that reads from the entry', () => {
 
   it('is read through the reader with where it reads from, and a root test with nothing', () => {
     const asked: Array<[string, string | undefined]> = [];
-    const read = (path: string, from?: 'item') => {
+    const read = (path: string, from?: 'item' | 'group') => {
       asked.push([path, from]);
       return from === 'item' ? 'hold' : 'on';
     };

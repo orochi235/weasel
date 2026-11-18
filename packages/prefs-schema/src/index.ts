@@ -26,15 +26,18 @@ export {
   isPrefCondition,
   mapPrefConditionPaths,
   prefConditionHolds,
+  prefConditionInGroup,
   prefConditionPaths,
   prefConditionReadsItem,
   prefIsEnabled,
   prefIsShown,
   type PrefCondition,
+  type PrefConditionFrom,
   type PrefConditionReader,
   type PrefConditionValue,
   type PrefTest,
 } from './condition';
+export { resolvePrefGroupConditions } from './groupConditions';
 export {
   applyPrefConditions,
   applyPrefEntryConditions,

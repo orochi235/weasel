@@ -4,6 +4,7 @@ import {
   prefHoldsValue,
   prefSchemaHolding,
   prefSectionLeaves,
+  type PrefConditionFrom,
   type PrefGroup,
   type PrefLeaf,
   type PrefList,
@@ -24,7 +25,7 @@ export interface ConditionLeaf {
 }
 
 /** What tells one {@link ConditionLeaf} from another: a field of the entry and a root pref may share a path. */
-export const leafKey = ({ path, from }: Pick<ConditionLeaf, 'path' | 'from'>): string => (from === 'item' ? `item\n${path}` : path);
+export const leafKey = ({ path, from }: { path: string; from?: PrefConditionFrom }): string => (from === undefined ? path : `${from}\n${path}`);
 
 /** The one of `leaves` that `test` reads. */
 export function conditionLeafOf(leaves: readonly ConditionLeaf[], test: PrefTest): ConditionLeaf | undefined {

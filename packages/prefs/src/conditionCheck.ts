@@ -1,7 +1,7 @@
 // What is wrong with a condition as one of a schema's: what a store warns of
 // and a schema editor marks.
 
-import { type PrefConditionValue, type PrefTest, type PrefGroup, type PrefSection, isPrefLeaf, isPrefSection, prefHoldsValue, prefSchemaHolding, PREF_CONDITION_FIELDS, type PrefConditionField, type PrefList, type PrefMap, isBuiltinPref, type PrefEnum, type PrefLeaf, type PrefObject, type PrefUnion } from '@weasel-js/prefs-schema';
+import { type PrefConditionValue, type PrefTest, type PrefGroup, type PrefSection, isPrefLeaf, isPrefSection, prefHoldsValue, prefSchemaHolding, resolvePrefGroupConditions, PREF_CONDITION_FIELDS, type PrefConditionField, type PrefList, type PrefMap, isBuiltinPref, type PrefEnum, type PrefLeaf, type PrefObject, type PrefUnion } from '@weasel-js/prefs-schema';
 import { formOf, ORDERINGS, partsOf, prefLeavesHolding, prefLeavesHoldingIn, UNSEEN } from '@weasel-js/prefs-schema/internal';
 
 /** One thing wrong with a condition: it is not one, it reads a path no leaf
@@ -143,9 +143,12 @@ type Conditioned = { [F in PrefConditionField]?: unknown };
 
 /** {@link checkPrefCondition} over every condition in `schema` (`PREF_CONDITION_FIELDS`), in schema order, each held to `over` as well. */
 export function checkPrefConditions(
-  schema: PrefGroup | PrefSection,
-  over?: PrefGroup | PrefSection,
+  given: PrefGroup | PrefSection,
+  overGiven?: PrefGroup | PrefSection,
 ): PrefSchemaConditionProblem[] {
+  // A test read from its group is checked at the root path it reads.
+  const schema = resolvePrefGroupConditions(given);
+  const over = overGiven && resolvePrefGroupConditions(overGiven);
   const out: PrefSchemaConditionProblem[] = [];
   const own = (node: Conditioned, at: string, within: PrefList | PrefMap | undefined, isItem = false): void => {
     for (const field of PREF_CONDITION_FIELDS) {
