@@ -112,6 +112,7 @@ export function stepWorld(g: GameRefs, step: Input, hooks: WorldHooks): void {
   g.invuln = Math.max(0, g.invuln - STEP);
   if (spikeOverlap(g.player.body, WORLD) && g.invuln <= 0) {
     g.invuln = INVULN;
+    g.lives--;
     g.player = { ...g.player, body: { ...g.player.body, vy: -300 } };
     hooks.sound('hurt');
     hooks.duck();

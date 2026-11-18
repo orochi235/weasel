@@ -70,6 +70,15 @@ describe('stepWorld — damage', () => {
     expect(ows(g)).toHaveLength(0);
   });
 
+  it('costs a life for landing in spikes', () => {
+    const g = freshGame();
+    // WORLD's first spikes are at columns 20 and 21 of row 14.
+    g.player = { ...g.player, body: { ...g.player.body, x: 20.5 * TILE, y: 14.5 * TILE } };
+    stepWorld(g, idle, NO_HOOKS);
+    expect(g.lives).toBe(2);
+    expect(ows(g)).toHaveLength(1);
+  });
+
   it('says ow when the player falls out of the level', () => {
     const g = freshGame();
     g.player = { ...g.player, body: { ...g.player.body, y: WORLD.heightPx + 200 } };
