@@ -6,7 +6,7 @@
  * each `Module` child of a package is one of its subpath entries.
  */
 import type { JSONOutput } from 'typedoc';
-import type { PackageReference, ReferenceModule, ReferenceSymbol } from '../../../apps/shared/reference.ts';
+import type { PackageReference, ReferenceModule, ReferenceSymbol, SymbolKind } from '../../../apps/shared/reference.ts';
 import { packageRoute, symbolRoute } from '../../../apps/shared/packageRoutes.ts';
 import type { Links } from './code.ts';
 import { docOf, summaryOf } from './comments.ts';
@@ -123,23 +123,23 @@ function idsUnder(value: unknown, ids: number[] = []): number[] {
 
 function readModule(source: ModuleSource, links: Links): ReferenceModule {
   const symbols: ReferenceSymbol[] = [];
-  const namesById = new Map<number, string[]>();
+  const exportsById = new Map<number, Export[]>();
   for (const { name, child } of source.listed) {
     const symbol = readSymbol(child, name, links);
     if (!symbol) continue;
     const owner = namespaceOf(source.container, child) ?? child;
-    namesById.set(owner.id, [...(namesById.get(owner.id) ?? []), name]);
+    exportsById.set(owner.id, [...(exportsById.get(owner.id) ?? []), { name, kind: symbol.kind }]);
     // A name that is both a type and a value is re-exported as two references to one page.
     if (symbol.kind === 'alias' && symbols.some((s) => s.kind === 'alias' && s.name === name && s.to === symbol.to)) continue;
     symbols.push(symbol);
   }
-  const groups = groupsOf(source.container, namesById);
+  const groups = groupsOf(source.container, exportsById);
   return {
     name: source.name,
     specifier: source.specifier,
     doc: source.name ? docOf(source.container.comment, links) : [],
     // TypeDoc writes no groups for a container it did not sort; list what there is under one heading.
-    groups: groups.length > 0 || symbols.length === 0 ? groups : [{ title: 'Exports', names: [...new Set(symbols.map((s) => s.name))] }],
+    groups: groups.length > 0 || symbols.length === 0 ? groups : [{ title: 'Exports', exports: merged(symbols) }],
     symbols,
   };
 }
@@ -152,12 +152,28 @@ function namespaceOf(container: Declaration, child: Child): Child | undefined {
 }
 
 /** The module's exports under its headings: its `@category` sections when it has them, TypeDoc's kind groups otherwise. */
-function groupsOf(container: Declaration, namesById: ReadonlyMap<number, string[]>): ReferenceModule['groups'] {
+function groupsOf(container: Declaration, exportsById: ReadonlyMap<number, Export[]>): ReferenceModule['groups'] {
   const sections = container.categories?.length ? container.categories : (container.groups ?? []);
   return sections
     .map((section) => ({
       title: section.title,
-      names: [...new Set((section.children ?? []).flatMap((id) => namesById.get(id) ?? []))],
+      exports: merged((section.children ?? []).flatMap((id) => exportsById.get(id) ?? [])),
     }))
-    .filter((group) => group.names.length > 0);
+    .filter((group) => group.exports.length > 0);
+}
+
+interface Export {
+  readonly name: string;
+  readonly kind: SymbolKind;
+}
+
+/** Each name once, in the order it first appears, with every kind it is declared as. */
+function merged(exports: readonly Export[]): ReferenceModule['groups'][number]['exports'] {
+  const kinds = new Map<string, SymbolKind[]>();
+  for (const { name, kind } of exports) {
+    const seen = kinds.get(name) ?? [];
+    if (!seen.includes(kind)) seen.push(kind);
+    kinds.set(name, seen);
+  }
+  return [...kinds].map(([name, of]) => ({ name, kinds: of }));
 }

@@ -28,7 +28,7 @@ describe('readProject', () => {
   });
 
   it('lists exports under the headings TypeDoc grouped them by, a namespace as its members', () => {
-    expect(root.groups).toEqual([
+    expect(root.groups.map((g) => ({ title: g.title, names: g.exports.map((e) => e.name) }))).toEqual([
       { title: 'Namespaces', names: ['Easing.LINEAR'] },
       { title: 'Enumerations', names: ['Fit'] },
       { title: 'Classes', names: ['Grid'] },
@@ -39,12 +39,17 @@ describe('readProject', () => {
     ]);
   });
 
+  it('says what each listed name is declared as', () => {
+    const kinds = Object.fromEntries(root.groups.flatMap((g) => g.exports).map((e) => [e.name, e.kinds]));
+    expect(kinds).toMatchObject({ 'Easing.LINEAR': ['variable'], Fit: ['enum'], Box: ['interface'], Point: ['type'], clamp: ['function'] });
+  });
+
   it('prefers a package\'s @category sections to its kind groups', () => {
     expect(core.modules[0].groups.map((g) => g.title)).toEqual(['Viewport', 'Geometry']);
   });
 
   it('puts a module with no groups under one heading', () => {
-    expect(geom.modules[1].groups).toEqual([{ title: 'Exports', names: ['unionBoxes'] }]);
+    expect(geom.modules[1].groups).toEqual([{ title: 'Exports', exports: [{ name: 'unionBoxes', kinds: ['function'] }] }]);
   });
 });
 
@@ -162,7 +167,7 @@ describe('across packages', () => {
 
   it('lists a name re-exported as both a type and a value once', () => {
     expect(core.modules[0].symbols.filter((s) => s.name === 'Box')).toHaveLength(1);
-    expect(core.modules[0].groups.find((g) => g.title === 'Geometry')?.names).toEqual(['Box']);
+    expect(core.modules[0].groups.find((g) => g.title === 'Geometry')?.exports).toEqual([{ name: 'Box', kinds: ['alias'] }]);
   });
 
   it('links a type TypeDoc left unresolved by its package and name', () => {
