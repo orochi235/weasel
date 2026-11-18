@@ -36,7 +36,7 @@ export function MenuBarTitle(props: {
       onClick={(e) => { if (e.detail === 0) props.onActivate(); }}
       onKeyDown={props.onKey}
     >
-      <AccessLabel label={props.name} access={props.access} />
+      <AccessLabel label={props.name} access={props.access} className={s.titleLabel} />
     </button>
   );
 }

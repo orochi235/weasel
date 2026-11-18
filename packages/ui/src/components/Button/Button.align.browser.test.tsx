@@ -4,6 +4,9 @@ import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, test } from 'vitest';
 import { Button } from '@weasel-js/ui/components/Button';
 import { MenuButton } from '@weasel-js/ui/components/MenuButton';
+import { MenuBar } from '@weasel-js/ui/components/MenuBar';
+import { ActionsProvider } from '@weasel-js/routing/react';
+import { pref } from '@weasel-js/prefs';
 
 // Where a face puts its capitals inside its line box is layout jsdom does not do. A button centers its glyphs and
 // sets its label by cap height and baseline, so both land on its middle in every face.
@@ -60,5 +63,13 @@ describe.each(FACES)('in %s', (face) => {
     const label = [...button.querySelectorAll('span')].find((s) => s.textContent === 'Add trial…')!;
     expect(Math.abs(offset(button.querySelector('svg')!, button))).toBeLessThanOrEqual(0.25);
     expect(Math.abs(capOffset(label, button))).toBeLessThanOrEqual(0.25);
+  });
+
+  test('a menu bar title sets its capitals on its middle', async () => {
+    const schema = pref.group('', { lab: pref.group('Lab', {}, { as: 'menu' }) });
+    const container = await mount(<ActionsProvider><MenuBar schema={schema} /></ActionsProvider>);
+    const title = container.querySelector('[role="menuitem"]')!;
+    const label = [...title.querySelectorAll('span')].find((s) => s.textContent === 'Lab')!;
+    expect(Math.abs(capOffset(label, title))).toBeLessThanOrEqual(0.25);
   });
 });
