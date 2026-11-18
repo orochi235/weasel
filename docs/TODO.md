@@ -274,15 +274,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P3) [agent] A labkit panel that shows scene data records the showing as undo steps.** `useTrialConfigChange`
-  puts a panel write's scene edits in its undo step, but the other direction has no surface: when a canvas edit
-  changes what the panel shows, the instrument can only `setConfig` it, which records a settings entry after the
-  scene's. In the symmetry lab (`apps/site/demos/SymmetryLabDemo.tsx`, `show`) dragging the group's center is two
-  steps, and picking a wallpaper group records each preset field it follows as a step of its own; the stroke-width
-  lab dropped its panel following the selection (2026-11-15) for the same reason. Wants a config write that follows
-  the scene, recording nothing and running no handler, or joining the scene edit's entry. Closes when the symmetry
-  lab's center drag is one Undo, panel and group together.
-
 - **(P3) [maintainer] Trials in one labkit workspace have no way to share params.** Each trial owns its own
   settings, so two trials meant to show one setting from different angles each get their own copy, and editing it
   in one leaves the other behind. Wants a way for trials to declare that a param is shared, and a decision on where

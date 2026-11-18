@@ -1,12 +1,12 @@
 import { solid } from '@weasel-js/paint';
-import { boundsOfPath, createScene, type Path, PathBuilder, pathInWorld, type RectPose, type RenderLayer, type Scene, type Stroke } from '@weasel-js/core';
+import { boundsOfPath, createScene, useLatest, type Path, PathBuilder, pathInWorld, type RectPose, type RenderLayer, type Scene, type Stroke } from '@weasel-js/core';
 import { useGirthTool, pathsPreset } from '@weasel-js/path-tools';
 import { strokeToPath } from '@weasel-js/stroke';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState, TrialSceneCanvas,
   useTrialConfigChange, useTrialScene,
 } from '@weasel-js/labkit';
-import { useMemo } from 'react';
+import { useLayoutEffect, useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
@@ -99,9 +99,38 @@ function fieldsFor(key: keyof Style, style: Style): Partial<Stroke> {
 
 const STYLE_KEYS = ['width', 'cap', 'join', 'nib', 'nibAngle', 'nibRatio'] as const satisfies readonly (keyof Style)[];
 
+/** The panel style `stroke` shows, over `style` for what it does not say: a width in screen pixels, a nib's angle
+ *  and ratio while it has none. */
+function styleOf(stroke: Stroke, style: Style): Style {
+  const { nib } = stroke;
+  return {
+    width: typeof stroke.width === 'number' ? stroke.width : style.width,
+    cap: stroke.cap ?? style.cap,
+    join: stroke.join ?? style.join,
+    nib: nib !== undefined,
+    nibAngle: nib ? Math.round((nib.angle / DEG_TO_RAD) * 1e6) / 1e6 : style.nibAngle,
+    nibRatio: nib ? nib.ratio : style.nibRatio,
+  };
+}
+
 /** Writes a change of the panel's style settings onto the selected strokes, inside the settings change's undo
- *  step: one Undo takes back the panel and the strokes together. */
-function useStyleControls(scene: Scene<Data, 'default', RectPose>): void {
+ *  step: one Undo takes back the panel and the strokes together. The panel shows the first selected stroke's
+ *  style, as the selection changes and as an edit or undo changes the stroke, without a step of its own. */
+function useStyleControls(scene: Scene<Data, 'default', RectPose>, ctx: RenderContext<State, Config>): void {
+  const { showConfig } = ctx;
+  const latest = useLatest(ctx.config);
+  useLayoutEffect(() => {
+    const show = () => {
+      const id = scene.getSelection().find((s) => scene.get(s)?.data?.stroke);
+      const stroke = id === undefined ? undefined : scene.get(id)?.data?.stroke;
+      if (!stroke) return;
+      const shown = styleOf(stroke, latest.current);
+      for (const k of STYLE_KEYS) showConfig(k, shown[k]);
+    };
+    show();
+    return scene.subscribe(show);
+  }, [scene, latest, showConfig]);
+
   useTrialConfigChange<Config>((config, prev) => {
     const changed = STYLE_KEYS.filter((k) => config[k] !== prev[k]);
     if (changed.length === 0) return;
@@ -121,7 +150,7 @@ function useStyleControls(scene: Scene<Data, 'default', RectPose>): void {
 
 function WidthTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, seed);
-  useStyleControls(scene);
+  useStyleControls(scene, ctx);
   const girthTool = useGirthTool({ reachPx: ctx.config.reach });
   const tools = useMemo(() => ({ girth: girthTool }), [girthTool]);
   const layers = useMemo(

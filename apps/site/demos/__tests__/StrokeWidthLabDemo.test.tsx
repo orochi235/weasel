@@ -99,4 +99,17 @@ describe('StrokeWidthLabDemo', () => {
     expect(strokes()[4]?.nib?.ratio).toBeCloseTo(0.5, 6);
     expect(Number(input().value)).toBeCloseTo(0.5, 6);
   });
+
+  it('shows the selected stroke in the panel without recording an undo step', async () => {
+    const { container } = await renderSettled(<StrokeWidthLabDemo />, { wrapper: withIcons });
+    const canvas = container.querySelector('.lk-trial-scene canvas');
+    if (!canvas) throw new Error('no scene canvas in the trial');
+    const width = () => Number((screen.getByRole('spinbutton', { name: /Base width/ }) as HTMLInputElement).value);
+    expect(width()).toBe(14);
+    await userEvent.click(screen.getByRole('button', { name: /^Select/ }));
+    drag(canvas, [60, 60], [60, 60]);
+    expect(width()).toBe(8);
+    expect(screen.getByRole('checkbox', { name: 'Nib' })).not.toBeChecked();
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
+  });
 });
