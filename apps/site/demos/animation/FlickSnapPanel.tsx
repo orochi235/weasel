@@ -81,7 +81,7 @@ function flickToGrid(args: {
         target.commit(from);
         ctx.adapter.applyOps?.([createSetPoseOp<Pose>({ id, from, to })], 'flick');
       };
-      const { vx, vy } = tracker.getVelocity();
+      const { vx, vy } = tracker.getVelocity(performance.now());
       handle = animator.physics<Pose>({
         target,
         from: release,

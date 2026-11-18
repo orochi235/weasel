@@ -175,4 +175,9 @@ describe('flick to grid', () => {
     // One move: the block is at x 80, nearest the cell at 60.
     expect(flick([[100, 16]])).toMatchObject({ x: 60, y: 60 });
   });
+
+  it('lands a block released after coming to rest where it was let go', () => {
+    // Fast to x 150, then a second still: the block rests at x 130, nearest the cell at 120.
+    expect(flick([[90, 16], [110, 16], [130, 16], [150, 16]], 1000)).toMatchObject({ x: 120, y: 60 });
+  });
 });
