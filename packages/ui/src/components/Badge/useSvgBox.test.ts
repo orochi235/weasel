@@ -17,5 +17,5 @@ it("sizes the SVG by its own layout box when an ancestor draws it at twice its s
   const { result } = renderHook(() => useSvgBox(ref));
   const entry = { target: svg, borderBoxSize: [{ inlineSize: 80, blockSize: 40 }] } as unknown as ResizeObserverEntry;
   act(() => report([entry], {} as ResizeObserver));
-  expect(result.current).toEqual({ w: 80, h: 40 });
+  expect(result.current).toEqual({ width: 80, height: 40 });
 });

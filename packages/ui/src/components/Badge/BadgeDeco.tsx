@@ -14,7 +14,7 @@ interface BadgeDecoProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- as the SHAPES registry types it.
   shapeModule: ShapeModule<any>;
   params: unknown;
-  box: { w: number; h: number };
+  box: { width: number; height: number };
   bloat: number;
   variant: BadgeVariant;
   focused: boolean;
@@ -24,7 +24,7 @@ interface BadgeDecoProps {
 /** The SVG behind a badge's label: a composed outline with its effect layers, or the shape's own drawing. */
 export function BadgeDeco({ svgRef, compose, shapeModule, params, box, bloat, variant, focused, phase }: BadgeDecoProps) {
   const bodyMaskId = `badge-mask-${useId().replace(/:/g, '')}`;
-  const sampler = compose.base ? compose.base.build(compose.baseParams, box.w, box.h) : null;
+  const sampler = compose.base ? compose.base.build(compose.baseParams, box.width, box.height) : null;
   const outline = sampler ? composeOutline(sampler, compose.effects, bloat, box, phase) : null;
   const ShapeBody = shapeModule.Component;
 
@@ -39,7 +39,7 @@ export function BadgeDeco({ svgRef, compose, shapeModule, params, box, bloat, va
       const EffComponent = mod?.Component;
       if (!EffComponent) return null;
       const effParams = { ...(mod.defaults ?? {}), ...(eff.params ?? {}) };
-      return <EffComponent key={`${eff.type as string}-${i}`} sampler={outline} boxW={box.w} boxH={box.h} variant={variant} params={effParams} phase={phase} />;
+      return <EffComponent key={`${eff.type as string}-${i}`} sampler={outline} boxW={box.width} boxH={box.height} variant={variant} params={effParams} phase={phase} />;
     };
     return (
       <svg ref={svgRef} className={s.deco} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
