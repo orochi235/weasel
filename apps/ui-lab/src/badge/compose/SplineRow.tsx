@@ -42,6 +42,7 @@ function SplineRow({ path, value, values, setValue, drafts, disabled }: RowConte
       <OctantSplineEditor
         anchors={anchors}
         mode={mode}
+        disabled={disabled}
         evalAtS={splineEvaluator(base, anchors)}
         onAnchorDraft={(idx, next) => draft(withAnchor(bag, idx, next))}
         onAnchorChange={(idx, next) => write(withAnchor(bag, idx, next))}

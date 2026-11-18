@@ -8,6 +8,10 @@
   touch-action: none;
 }
 
+.editor[data-disabled] .canvas { filter: var(--wzl-disabled-filter); }
+
+.editor[data-disabled] .dot { cursor: default; }
+
 .canvas {
   width: 100%;
   aspect-ratio: 1;

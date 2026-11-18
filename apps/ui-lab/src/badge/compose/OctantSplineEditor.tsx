@@ -107,9 +107,13 @@ function AnchorDot({ anchor, at, pinned, active }: { anchor: SplineAnchor; at: {
 }
 
 /** One octant (or quadrant) of a spline base, drawn in polar form with its anchors as dots its actions edit. */
-export function OctantSplineEditor({ anchors, mode, evalAtS, onAnchorDraft, onAnchorChange, onAnchorDelete, onAnchorAdd }: {
+export function OctantSplineEditor({
+  anchors, mode, evalAtS, disabled = false, onAnchorDraft, onAnchorChange, onAnchorDelete, onAnchorAdd,
+}: {
   anchors: SplineAnchor[];
   mode: SplineMode;
+  /** Shows the curve without taking any edit to it. */
+  disabled?: boolean;
   evalAtS: (s: number) => number;
   /** An anchor as a drag passes through it. */
   onAnchorDraft: (idx: number, next: SplineAnchor) => void;
@@ -123,12 +127,12 @@ export function OctantSplineEditor({ anchors, mode, evalAtS, onAnchorDraft, onAn
   const [active, setActive] = useState<number | null>(null);
   const samples = sampleCurve(mode, evalAtS);
   const input = useLatest<SplineEditorInput>({
-    mode, anchors, samples, setActive,
+    mode, anchors, samples, disabled, setActive,
     draft: onAnchorDraft, commit: onAnchorChange, remove: onAnchorDelete, insert: onAnchorAdd,
   });
   const last = anchors.length - 1;
   return (
-    <div className={s.editor}>
+    <div className={s.editor} data-disabled={disabled || undefined}>
       <SplineEditorInputs hostRef={hostRef} svgRef={svgRef} input={input} />
       <div ref={hostRef} className={s.host}>
         <svg
