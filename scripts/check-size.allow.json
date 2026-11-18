@@ -40,24 +40,6 @@
   "packages/font/src/registerFont.ts": {
     "lines": 681
   },
-  "packages/forge/src/frame/FrameController.tsx": {
-    "longestFunction": 135
-  },
-  "packages/forge/src/shell/cssVars/CssVarsPanel.tsx": {
-    "longestFunction": 145
-  },
-  "packages/forge/src/shell/tree/StoryTree.tsx": {
-    "longestFunction": 227
-  },
-  "packages/forge/src/shell/useStoryRegistry.ts": {
-    "longestFunction": 183
-  },
-  "packages/forge/src/vite/componentGraph.ts": {
-    "longestFunction": 176
-  },
-  "packages/forge/src/vite/plugin.ts": {
-    "longestFunction": 231
-  },
   "packages/geom/src/tessellate/polyline.ts": {
     "longestFunction": 125
   },
