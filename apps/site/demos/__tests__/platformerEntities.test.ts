@@ -6,12 +6,22 @@ import {
   ENEMY_H, ENEMY_W, createCoins, createEnemies, resolveContacts, stepEnemy,
 } from '../platformer/entities';
 
-const LEDGE = parseLevel([
+/** A geometry fixture: no spawn or goal needed. */
+const fixture = (rows: string[]) => parseLevel(rows, { markers: 'optional' });
+
+const LEDGE = fixture([
   '.......',
   '.......',
   '.#####.',
   '.......',
 ]);
+
+describe('createEnemies', () => {
+  it('stands each enemy on the floor under its tile', () => {
+    const [e] = createEnemies([{ x: 3.5 * TILE, y: 1.5 * TILE }]);
+    expect(e.y + ENEMY_H / 2).toBe(2 * TILE);
+  });
+});
 
 describe('stepEnemy', () => {
   it('walks along its platform', () => {
@@ -32,7 +42,7 @@ describe('stepEnemy', () => {
   });
 
   it('turns around at a wall', () => {
-    const BOXED = parseLevel(['.....', '#...#', '#####']);
+    const BOXED = fixture(['.....', '#...#', '#####']);
     let e = createEnemies([{ x: 2.5 * TILE, y: 1.5 * TILE }])[0];
     e = { ...e, vx: 40 };
     let reversed = false;
@@ -42,6 +52,25 @@ describe('stepEnemy', () => {
       if (Math.sign(e.vx) !== before) reversed = true;
     }
     expect(reversed).toBe(true);
+  });
+
+  it('walks along a one-way platform', () => {
+    const PLATFORM = fixture(['.......', '.......', '.=====.', '.......']);
+    let e = createEnemies([{ x: 3.5 * TILE, y: 1.5 * TILE }])[0];
+    const startX = e.x;
+    for (let i = 0; i < 30; i++) e = stepEnemy(e, PLATFORM, 1 / 60);
+    expect(e.x).not.toBeCloseTo(startX, 3);
+  });
+
+  it('turns around at a ? block, which stops the player too', () => {
+    const BOXED = fixture(['.....', '?...?', '#####']);
+    let e = createEnemies([{ x: 2.5 * TILE, y: 1.5 * TILE }])[0];
+    e = { ...e, vx: 40 };
+    for (let i = 0; i < 600; i++) {
+      e = stepEnemy(e, BOXED, 1 / 60);
+      expect(e.x + ENEMY_W / 2).toBeLessThanOrEqual(4 * TILE + 1);
+      expect(e.x - ENEMY_W / 2).toBeGreaterThanOrEqual(TILE - 1);
+    }
   });
 
   it('advances its animation phase', () => {
@@ -65,13 +94,13 @@ describe('resolveContacts', () => {
 
   it('reads a descending player above an enemy as a stomp', () => {
     const enemies = createEnemies([{ x: 100, y: 100 }]);
-    const body = { ...at(100, 100 - ENEMY_H / 2 - 6), vy: 200 };
+    const body = { ...at(100, enemies[0].y - ENEMY_H / 2 - 6), vy: 200 };
     expect(resolveContacts(body, enemies, [], 0)).toEqual([{ kind: 'stomp', index: 0 }]);
   });
 
   it('reads a side collision as a hurt', () => {
     const enemies = createEnemies([{ x: 100, y: 100 }]);
-    const body = { ...at(100 - ENEMY_W / 2 - 2, 100), vy: 0 };
+    const body = { ...at(100 - ENEMY_W / 2 - 2, enemies[0].y), vy: 0 };
     expect(resolveContacts(body, enemies, [], 0)).toEqual([{ kind: 'hurt', index: 0 }]);
   });
 

@@ -23,6 +23,9 @@ export const MUSIC_GAIN = 0.325;
 
 type Audio = { engine: AudioEngine; bed: PatternPlayer | null };
 
+const contextState = (engine: AudioEngine): 'suspended' | 'running' =>
+  engine.state() === 'running' ? 'running' : 'suspended';
+
 export interface PlatformerAudio {
   /** What the world calls for sound and impact. Read it through the ref from
    *  inside the frame loop; it is rebuilt every render so it is never stale. */
@@ -57,6 +60,9 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
   const audio = useRef<Audio | null>(null);
   const [audioState, setAudioState] = useState<'off' | 'suspended' | 'running'>('off');
   const [musicOn, setMusicOn] = useState(true);
+  // The switch as of now, for the unlock's callback: `musicOn` is the value of
+  // the render that clicked, and a toggle can land before the unlock resolves.
+  const musicOnNow = useRef(true);
 
   /** Frames left before the music stops; -1 once it has. */
   const cutMusicIn = useRef(-1);
@@ -65,6 +71,8 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
   // interval a given tick implies.
   const runScale = useRef(1);
   const stepStats = useRef({ count: 0, lastAt: 0, lastScale: 1, spread: 0 });
+  /** The pending restore after a music duck. */
+  const unduck = useRef<number | undefined>(undefined);
 
   // Built on the unlock gesture, not at mount: jsdom has no AudioContext, and a
   // context created before a gesture starts suspended anyway.
@@ -74,14 +82,19 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
       const engine = createAudioEngine({ buses: ['sfx', BED_BUS], voiceLimit: VOICE_LIMIT });
       engine.bus(BED_BUS).setGain(MUSIC_GAIN);
       audio.current = { engine, bed: null };
+      // A browser can suspend the context later (an interruption, a background
+      // tab); the readout and the enable button follow it there and back.
+      engine.context.addEventListener('statechange', () => {
+        if (audio.current?.engine === engine && audio.current.bed) setAudioState(contextState(engine));
+      });
     }
     const { engine } = audio.current;
     void engine.unlock().then(() => {
       const a = audio.current;
       if (a?.engine !== engine) return;
-      setAudioState(engine.state() === 'running' ? 'running' : 'suspended');
+      setAudioState(contextState(engine));
       if (!a.bed) {
-        engine.bus(BED_BUS).mute(!musicOn);
+        engine.bus(BED_BUS).mute(!musicOnNow.current);
         const bed = createPatternPlayer(engine, {
           tempo: BED_TEMPO, events: bedEvents(), length: BED_STEPS, detune: bedDetune,
         });
@@ -94,12 +107,14 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
   /** The bed is the only sound that runs on its own — everything else is a
    *  one-shot that stops when you do — so it gets a switch of its own. */
   const toggleMusic = () => {
-    const next = !musicOn;
+    const next = !musicOnNow.current;
+    musicOnNow.current = next;
     audio.current?.engine.bus(BED_BUS).mute(!next);
     setMusicOn(next);
   };
 
   useEffect(() => () => {
+    window.clearTimeout(unduck.current);
     audio.current?.engine.dispose();
     audio.current = null;
   }, []);
@@ -167,12 +182,14 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
     playSound(a.engine, name, { bus: 'sfx', gain, position });
   };
 
-  /** A hit drops the music under the hurt sound and brings it back. */
+  /** A hit drops the music under the hurt sound and brings it back, 260 ms
+   *  after the latest hit: a second hit inside that keeps it down. */
   const duckMusic = () => {
     const a = audio.current;
     if (!a) return;
     a.engine.bus(BED_BUS).setGain(MUSIC_GAIN * 0.3, 60);
-    window.setTimeout(() => {
+    window.clearTimeout(unduck.current);
+    unduck.current = window.setTimeout(() => {
       if (audio.current === a) a.engine.bus(BED_BUS).setGain(MUSIC_GAIN, 400);
     }, 260);
   };
@@ -209,6 +226,9 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
       // The animator ticks the cycle independently of the world, so it has to
       // be stopped here or footsteps keep firing after a pause or a death.
       cycle.pause();
+      // The pause retracts what it unbooks first; after it, the next footfall
+      // pairs with none, or the jitter readout would measure the pause.
+      stepStats.current.lastAt = 0;
     }
   }, []);
 

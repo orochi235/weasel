@@ -1,5 +1,5 @@
 // apps/site/demos/platformer/entities.ts
-import { SOLID, TILE, tileAt, toCol, toRow, type Level, type Vec2 } from './level';
+import { blocksMotion, standable, TILE, tileAt, toCol, toRow, type Level, type Vec2 } from './level';
 import type { Body } from './physics';
 
 export const ENEMY_W = 18;
@@ -29,8 +29,16 @@ export type Contact =
   | { kind: 'hurt'; index: number }
   | { kind: 'coin'; index: number };
 
+/** Each enemy stands on the bottom of the tile it was placed in, which is the
+ *  top of the floor under it; `at` is anywhere in that tile, usually its center. */
 export const createEnemies = (at: Vec2[]): Enemy[] =>
-  at.map((p, i) => ({ x: p.x, y: p.y, vx: i % 2 === 0 ? ENEMY_SPEED : -ENEMY_SPEED, alive: true, phase: i * 0.37 }));
+  at.map((p, i) => ({
+    x: p.x,
+    y: (toRow(p.y) + 1) * TILE - ENEMY_H / 2,
+    vx: i % 2 === 0 ? ENEMY_SPEED : -ENEMY_SPEED,
+    alive: true,
+    phase: i * 0.37,
+  }));
 
 export const createCoins = (at: Vec2[]): Coin[] => at.map((p) => ({ x: p.x, y: p.y, taken: false }));
 
@@ -42,8 +50,9 @@ export const createCoins = (at: Vec2[]): Coin[] => at.map((p) => ({ x: p.x, y: p
 export function stepEnemy(e: Enemy, level: Level, dt: number): Enemy {
   const nextX = e.x + e.vx * dt;
   const ahead = e.vx > 0 ? nextX + ENEMY_W / 2 : nextX - ENEMY_W / 2;
-  const wall = tileAt(level, toCol(ahead), toRow(e.y)) === SOLID;
-  const floorAhead = tileAt(level, toCol(ahead), toRow(e.y) + 1) === SOLID;
+  // The same tiles that stop and hold the player stop and hold a walker.
+  const wall = blocksMotion(tileAt(level, toCol(ahead), toRow(e.y)));
+  const floorAhead = standable(tileAt(level, toCol(ahead), toRow(e.y) + 1));
   if (wall || !floorAhead) {
     return { ...e, vx: -e.vx, phase: e.phase + dt };
   }

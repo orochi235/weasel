@@ -1,5 +1,5 @@
 // apps/site/demos/platformer/physics.ts
-import { ONEWAY, QUESTION, SOLID, SPIKE, TILE, tileAt, toCol, toRow, type Level, type Vec2 } from './level';
+import { blocksMotion, ONEWAY, QUESTION, SPIKE, TILE, tileAt, toCol, toRow, type Level, type Vec2 } from './level';
 
 /** Fixed simulation step, in seconds. The render loop accumulates into it. */
 export const STEP = 1 / 120;
@@ -49,6 +49,12 @@ export interface BodyState {
   landed: boolean;
   /** Set only on the step a ceiling hit lands on a `?` block. */
   bonk: { cx: number; cy: number } | null;
+  /** Seconds left during which `vx` is the body's own, set by {@link applyImpulse},
+   *  and input does not steer it. */
+  carry: number;
+  /** True while the body rises from a jump the player launched. Releasing jump
+   *  clips only that, never an impulse's rise. */
+  cuttable: boolean;
 }
 
 export function createBodyState(at: Vec2): BodyState {
@@ -59,6 +65,22 @@ export function createBodyState(at: Vec2): BodyState {
     jumped: false,
     landed: false,
     bonk: null,
+    carry: 0,
+    cuttable: false,
+  };
+}
+
+/**
+ * Velocity imposed on the body from outside: a knockback, a bounce. Input sets
+ * `vx` afresh every step, so a horizontal push lasts only if `carry` holds it,
+ * for that many seconds.
+ */
+export function applyImpulse(s: BodyState, v: { vx?: number; vy?: number }, carry = 0): BodyState {
+  return {
+    ...s,
+    body: { ...s.body, vx: v.vx ?? s.body.vx, vy: v.vy ?? s.body.vy },
+    carry: Math.max(s.carry, carry),
+    cuttable: v.vy === undefined && s.cuttable,
   };
 }
 
@@ -66,8 +88,6 @@ const left = (b: Body) => b.x - b.width / 2;
 const right = (b: Body) => b.x + b.width / 2;
 const top = (b: Body) => b.y - b.height / 2;
 const bottom = (b: Body) => b.y + b.height / 2;
-
-const blocksMotion = (t: number): boolean => t === SOLID || t === QUESTION;
 
 /** Push the body out of solid tiles along x. Mutates. */
 function resolveX(b: Body, level: Level): void {
@@ -104,24 +124,33 @@ interface YHit {
 function resolveY(b: Body, level: Level, prevBottom: number): YHit | null {
   const c0 = toCol(left(b));
   const c1 = toCol(right(b) - 0.001);
-  for (let cx = c0; cx <= c1; cx++) {
-    if (b.vy > 0) {
-      const cy = toRow(bottom(b) - 0.001);
+  if (b.vy > 0) {
+    const cy = toRow(bottom(b) - 0.001);
+    for (let cx = c0; cx <= c1; cx++) {
       const t = tileAt(level, cx, cy);
-      const blocks = blocksMotion(t) || (t === ONEWAY && prevBottom <= cy * TILE + 0.001);
-      if (blocks) {
+      if (blocksMotion(t) || (t === ONEWAY && prevBottom <= cy * TILE + 0.001)) {
         b.y = cy * TILE - b.height / 2;
         b.vy = 0;
         return { kind: 'floor', cx, cy, tile: t };
       }
-    } else if (b.vy < 0) {
-      const cy = toRow(top(b));
+    }
+  } else if (b.vy < 0) {
+    // A head under two blocks has struck both; a `?` among them is the hit
+    // that counts, whichever column comes first.
+    const cy = toRow(top(b));
+    let struck = -1;
+    for (let cx = c0; cx <= c1; cx++) {
       const t = tileAt(level, cx, cy);
-      if (blocksMotion(t)) {
-        b.y = (cy + 1) * TILE + b.height / 2;
-        b.vy = 0;
-        return { kind: 'ceiling', cx, cy, tile: t };
+      if (t === QUESTION) {
+        struck = cx;
+        break;
       }
+      if (struck < 0 && blocksMotion(t)) struck = cx;
+    }
+    if (struck >= 0) {
+      b.y = (cy + 1) * TILE + b.height / 2;
+      b.vy = 0;
+      return { kind: 'ceiling', cx: struck, cy, tile: tileAt(level, struck, cy) };
     }
   }
   return null;
@@ -132,19 +161,22 @@ export function stepBody(s: BodyState, level: Level, input: Input, dt: number): 
   let coyote = b.onGround ? COYOTE : Math.max(0, s.coyote - dt);
   let jumpBuffer = input.jumpPressed ? JUMP_BUFFER : Math.max(0, s.jumpBuffer - dt);
   let jumped = false;
+  let cuttable = s.cuttable;
 
   const dir = (input.right ? 1 : 0) - (input.left ? 1 : 0);
-  b.vx = dir * MOVE_SPEED;
+  if (s.carry <= 0) b.vx = dir * MOVE_SPEED;
+  const carry = Math.max(0, s.carry - dt);
   if (dir !== 0) b.facing = dir > 0 ? 1 : -1;
 
   if (jumpBuffer > 0 && coyote > 0) {
     b.vy = -JUMP_SPEED;
     jumped = true;
+    cuttable = true;
     jumpBuffer = 0;
     coyote = 0;
     b.onGround = false;
   }
-  if (!input.jumpHeld && b.vy < -JUMP_CUT) b.vy = -JUMP_CUT;
+  if (cuttable && !input.jumpHeld && b.vy < -JUMP_CUT) b.vy = -JUMP_CUT;
 
   b.vy = Math.min(b.vy + GRAVITY * dt, MAX_FALL);
 
@@ -158,7 +190,9 @@ export function stepBody(s: BodyState, level: Level, input: Input, dt: number): 
   b.onGround = hit?.kind === 'floor';
   const bonk = hit?.kind === 'ceiling' && hit.tile === QUESTION ? { cx: hit.cx, cy: hit.cy } : null;
 
-  return { body: b, coyote, jumpBuffer, jumped, landed: b.onGround && !wasOnGround, bonk };
+  return { body: b, coyote, jumpBuffer, jumped, landed: b.onGround && !wasOnGround, bonk, carry,
+    cuttable: cuttable && b.vy < 0,
+  };
 }
 
 export function spikeOverlap(b: Body, level: Level): boolean {

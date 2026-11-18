@@ -12,7 +12,9 @@ import {
 } from './entities';
 import { flagpoleAt, grabsPole, SLIDE_SPEED, type Flagpole } from './flagpole';
 import { TILE, type Vec2 } from './level';
-import { createBodyState, spikeOverlap, stepBody, BODY_H, STEP, type BodyState, type Input } from './physics';
+import {
+  applyImpulse, createBodyState, spikeOverlap, stepBody, BODY_H, STEP, type BodyState, type Input,
+} from './physics';
 import { createAnimState, nextAnimState, type AnimState } from './animState';
 import type { SoundName } from './sfx';
 import { WORLD } from './worldLevel';
@@ -21,6 +23,9 @@ import { WORLD } from './worldLevel';
 const OW_CALLOUT_TTL = 0.9;
 const COINS_PER_LIFE = 5;
 const HEALTHCARE_CALLOUT_TTL = 1.6;
+/** An enemy hit's push away from the enemy: its speed, and how long it holds. */
+const KNOCKBACK_SPEED = 120;
+const KNOCKBACK_CARRY = 0.2;
 /** Seconds of screen shake after a first or second bonk. */
 export const SHAKE_DURATION = 0.25;
 /** World units of camera jitter at the shake's peak. */
@@ -47,6 +52,11 @@ export interface GameRefs {
   /** Seconds since the run was decided. Its own clock: `elapsed` stops with the
    *  simulation, and the ending needs to keep fading after that. */
   ended: number;
+  /** Seconds of presentation time: it advances in `stepWorld` and `stepEnding`
+   *  alike, so what moves on it (callouts, the shake's jitter) keeps moving
+   *  after the run is decided, when `elapsed` stops. */
+  clock: number;
+  /** Born, aged and expired on `clock`. */
   callouts: Callout[];
 }
 
@@ -90,6 +100,7 @@ export const freshGame = (): GameRefs => ({
   shake: 0,
   slide: null,
   ended: 0,
+  clock: 0,
   callouts: [],
 });
 
@@ -99,7 +110,7 @@ function sayOw(g: GameRefs): void {
   g.callouts = pushCallout(g.callouts, {
     text: 'ow',
     anchor: { kind: 'world', at: { x, y: y - BODY_H / 2 } },
-    bornAt: g.elapsed,
+    bornAt: g.clock,
     ttl: OW_CALLOUT_TTL,
   });
 }
@@ -112,27 +123,32 @@ export function stepWorld(g: GameRefs, step: Input, hooks: WorldHooks): void {
   g.invuln = Math.max(0, g.invuln - STEP);
   if (spikeOverlap(g.player.body, WORLD) && g.invuln <= 0) {
     g.invuln = INVULN;
-    g.player = { ...g.player, body: { ...g.player.body, vy: -300 } };
+    g.lives--;
+    g.player = applyImpulse(g.player, { vy: -300 });
     hooks.sound('hurt');
     hooks.duck();
     sayOw(g);
   }
 
   g.elapsed += STEP;
+  g.clock += STEP;
   g.shake = Math.max(0, g.shake - STEP);
-  g.callouts = stepCallouts(g.callouts, g.elapsed);
+  g.callouts = stepCallouts(g.callouts, g.clock);
 
   // A bonk requires the ceiling branch of resolveY to have actually fired
-  // this step — walking under a `?` block never sets it.
+  // this step — walking under a `?` block never sets it. It always knocks, but
+  // like every other hit it costs a life only outside invulnerability.
   if (g.player.bonk && g.outcome === 'playing') {
     const at = { x: (g.player.bonk.cx + 0.5) * TILE, y: (g.player.bonk.cy + 0.5) * TILE };
-    sayOw(g);
     hooks.soundAt('hurt', at, 0.7);
     g.shake = SHAKE_DURATION;
-    g.lives--;
-    g.invuln = INVULN;
-    hooks.duck();
     hooks.bonk();
+    if (g.invuln <= 0) {
+      sayOw(g);
+      g.lives--;
+      g.invuln = INVULN;
+      hooks.duck();
+    }
   }
 
   g.enemies = g.enemies.map((e) => stepEnemy(e, WORLD, STEP));
@@ -147,22 +163,20 @@ export function stepWorld(g: GameRefs, step: Input, hooks: WorldHooks): void {
         g.callouts = pushCallout(g.callouts, {
           text: 'FREE HEALTHCARE',
           anchor: { kind: 'screen' },
-          bornAt: g.elapsed,
+          bornAt: g.clock,
           ttl: HEALTHCARE_CALLOUT_TTL,
         });
       }
     } else if (hit.kind === 'stomp') {
       const victim = g.enemies[hit.index];
       g.enemies[hit.index].alive = false;
-      g.player = { ...g.player, body: { ...g.player.body, vy: -300 } };
+      g.player = applyImpulse(g.player, { vy: -300 });
       hooks.soundAt('stomp', { x: victim.x, y: victim.y }, 0.7);
     } else {
       g.invuln = INVULN;
       g.lives--;
-      g.player = {
-        ...g.player,
-        body: { ...g.player.body, vy: -280, vx: g.player.body.facing * -120 },
-      };
+      const away = Math.sign(g.player.body.x - g.enemies[hit.index].x) || -g.player.body.facing;
+      g.player = applyImpulse(g.player, { vx: away * KNOCKBACK_SPEED, vy: -280 }, KNOCKBACK_CARRY);
       hooks.sound('hurt');
       hooks.duck();
       sayOw(g);
@@ -213,7 +227,9 @@ export const POLE: Flagpole = flagpoleAt(WORLD.goal);
  * `stepWorld` because it must keep running after the simulation stops.
  */
 export function stepEnding(g: GameRefs, dt: number, hooks: WorldHooks): void {
+  g.clock += dt;
   g.shake = Math.max(0, g.shake - dt);
+  g.callouts = stepCallouts(g.callouts, g.clock);
   if (!g.slide || g.slide.done) {
     // `ended` drives the ending card's fade, so it starts at the landing rather
     // than at the impact — the slide is the beat, and a card over it hides it.
@@ -236,7 +252,8 @@ export function stepEnding(g: GameRefs, dt: number, hooks: WorldHooks): void {
 /**
  * Consume `frame` seconds of real time as whole fixed steps. `nextInput` is
  * called once per step rather than once per frame, so a jump press is consumed
- * by exactly one step even when a slow frame runs several.
+ * by exactly one step even when a slow frame runs several. The step that decides
+ * the run is the last: the rest of the frame belongs to `stepEnding`.
  */
 export function advanceWorld(
   g: GameRefs,
@@ -245,8 +262,9 @@ export function advanceWorld(
   hooks: WorldHooks,
 ): void {
   g.accumulator += frame;
-  while (g.accumulator >= STEP) {
+  while (g.accumulator >= STEP && g.outcome === 'playing') {
     g.accumulator -= STEP;
     stepWorld(g, nextInput(), hooks);
   }
+  if (g.outcome !== 'playing') g.accumulator = 0;
 }

@@ -165,8 +165,8 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
       canvas.current?.setView(shake > 0
         ? {
             ...v,
-            x: v.x + Math.sin(g.elapsed * 53) * SHAKE_MAGNITUDE * (shake / SHAKE_DURATION),
-            y: v.y + Math.cos(g.elapsed * 47) * SHAKE_MAGNITUDE * (shake / SHAKE_DURATION),
+            x: v.x + Math.sin(g.clock * 53) * SHAKE_MAGNITUDE * (shake / SHAKE_DURATION),
+            y: v.y + Math.cos(g.clock * 47) * SHAKE_MAGNITUDE * (shake / SHAKE_DURATION),
           }
         : v);
     });
@@ -227,7 +227,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
       id: 'callouts',
       label: 'Callouts',
       space: 'screen',
-      draw: (_d, v, dims): DrawCommand[] => drawCallouts(game.current.callouts, v, dims, game.current.elapsed),
+      draw: (_d, v, dims): DrawCommand[] => drawCallouts(game.current.callouts, v, dims, game.current.clock),
     };
 
     const ending: RenderLayer<unknown> = {

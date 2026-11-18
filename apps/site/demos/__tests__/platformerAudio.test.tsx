@@ -1,38 +1,46 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { useAnimator } from '@weasel-js/animator/react';
+import type { Animator } from '@weasel-js/animator';
 
-const engines: { disposed: boolean; resolveUnlock: () => void; gains: number[] }[] = [];
+const engines: { disposed: boolean; suspended: boolean; context: EventTarget; resolveUnlock: () => void; gains: number[]; allGains: number[]; mutes: boolean[] }[] = [];
 
 vi.mock('@weasel-js/audio', () => ({
   createAudioEngine: () => {
     let resolveUnlock!: () => void;
     const unlocked = new Promise<void>((r) => { resolveUnlock = r; });
-    const record = { disposed: false, resolveUnlock, gains: [] as number[] };
+    const record = { disposed: false, suspended: false, context: new EventTarget(), resolveUnlock, gains: [] as number[], allGains: [] as number[], mutes: [] as boolean[] };
     engines.push(record);
     return {
-      state: () => (record.disposed ? 'closed' : 'running'),
+      context: record.context,
+      state: () => (record.disposed ? 'closed' : record.suspended ? 'suspended' : 'running'),
       now: () => 0,
       unlock: () => unlocked,
-      bus: () => ({ setGain: (v: number) => { if (record.disposed) record.gains.push(v); }, mute: () => {} }),
+      bus: () => ({ setGain: (v: number) => { record.allGains.push(v); if (record.disposed) record.gains.push(v); }, mute: (m: boolean) => { record.mutes.push(m); } }),
       dispose: () => { record.disposed = true; },
       setListener: () => {},
       activeVoices: () => 0,
+      playNote: () => ({ stop: () => {} }),
+      playNoise: () => ({ stop: () => {} }),
     };
   },
-  createPatternPlayer: () => {
-    throw new Error('a pattern player was built on a disposed engine');
+  createPatternPlayer: (engine: { state: () => string }) => {
+    if (engine.state() === 'closed') throw new Error('a pattern player was built on a disposed engine');
+    return { start: () => {}, stop: () => {} };
   },
 }));
 
-const { usePlatformerAudio } = await import('../platformer/usePlatformerAudio');
+const { MUSIC_GAIN, usePlatformerAudio } = await import('../platformer/usePlatformerAudio');
+const { CLIPS } = await import('../platformer/clips');
+const { freshGame } = await import('../platformer/world');
 
 type Api = ReturnType<typeof usePlatformerAudio>;
 
-function mount() {
+function mount(animator?: Animator) {
   let api!: Api;
   function Harness() {
-    api = usePlatformerAudio(useAnimator(), () => {});
+    const real = useAnimator();
+    api = usePlatformerAudio(animator ?? real, () => {});
     return null;
   }
   const view = render(<Harness />);
@@ -74,5 +82,81 @@ describe('usePlatformerAudio', () => {
     unmount();
     vi.advanceTimersByTime(1000);
     expect(engines[0].gains).toEqual([]);
+  });
+
+  it('keeps the music off when it is switched off before the unlock resolves', async () => {
+    const { api } = mount();
+    act(() => api().enableAudio());
+    act(() => api().toggleMusic());
+    engines[0].resolveUnlock();
+    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+    expect(api().musicOn).toBe(false);
+    expect(engines[0].mutes.at(-1)).toBe(true);
+  });
+
+  it('keeps the music down under a second hit inside the first one\'s duck', () => {
+    vi.useFakeTimers();
+    const { api } = mount();
+    act(() => api().enableAudio());
+    const gains = engines[0].allGains;
+    api().hooks.current.duck();
+    vi.advanceTimersByTime(200);
+    api().hooks.current.duck();
+    vi.advanceTimersByTime(100);
+    expect(gains.at(-1)).toBeLessThan(MUSIC_GAIN);
+    vi.advanceTimersByTime(200);
+    expect(gains.at(-1)).toBe(MUSIC_GAIN);
+  });
+
+  it('leaves a pause in running out of the jitter readout', () => {
+    // An animator whose run cycle the test plays by hand: it calls the step
+    // booking the hook hands the timeline, at times it chooses.
+    let book!: (when: number) => unknown;
+    let paused = true;
+    const findBook = (v: unknown): void => {
+      if (!v || typeof v !== 'object') return;
+      for (const [k, x] of Object.entries(v)) {
+        if (k === 'book' && typeof x === 'function') book = x as typeof book;
+        else findBook(x);
+      }
+    };
+    const animator = {
+      timeline: (opts: unknown) => {
+        findBook(opts);
+        return {
+          pause: () => { paused = true; },
+          resume: () => { paused = false; },
+          isPaused: () => paused,
+          setTimeScale: () => {},
+          cancel: () => {},
+        };
+      },
+    } as unknown as Animator;
+    const { api } = mount(animator);
+    act(() => api().enableAudio());
+    const g = freshGame();
+    g.player = { ...g.player, body: { ...g.player.body, onGround: true, vx: 170 } };
+    const half = CLIPS.run.duration / 2;
+    api().endFrame(g, true);
+    book(1000);
+    book(1000 + half);
+    expect(api().stats().spread).toBeCloseTo(0, 6);
+    api().endFrame(g, false);
+    api().endFrame(g, true);
+    book(5000);
+    expect(api().stats().spread).toBeCloseTo(0, 6);
+  });
+
+  it('follows the context when the browser suspends it after the unlock', async () => {
+    const { api } = mount();
+    act(() => api().enableAudio());
+    engines[0].resolveUnlock();
+    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+    expect(api().audioState).toBe('running');
+    act(() => {
+      engines[0].suspended = true;
+      engines[0].context.dispatchEvent(new Event('statechange'));
+    });
+    expect(api().audioState).toBe('suspended');
   });
 });

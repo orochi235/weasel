@@ -33,12 +33,19 @@ export interface Level {
 const GEOMETRY: Record<string, number> = { '#': SOLID, '=': ONEWAY, '^': SPIKE, '?': QUESTION };
 const ENTITIES = new Set(['S', 'G', 'o', 'e']);
 
+export interface ParseLevelOptions {
+  /** `'required'` (the default): a level has exactly one `S` and one `G`.
+   *  `'optional'`: at most one of each, the missing one at (0, 0) — for a
+   *  fixture that tests geometry alone. */
+  markers?: 'required' | 'optional';
+}
+
 /**
  * `#` solid, `=` one-way platform, `^` spike, `?` question block (solid, but
  * bonkable from below), `o` coin, `e` enemy, `S` spawn, `G` goal, `.` air.
  * Entity glyphs leave air behind in the tile grid.
  */
-export function parseLevel(lines: string[]): Level {
+export function parseLevel(lines: string[], options: ParseLevelOptions = {}): Level {
   const cols = lines[0]?.length ?? 0;
   if (lines.some((r) => r.length !== cols)) {
     throw new Error('parseLevel: ragged rows — every row must be the same length');
@@ -55,6 +62,8 @@ export function parseLevel(lines: string[]): Level {
     heightPx: lines.length * TILE,
   };
   const center = (cx: number, cy: number): Vec2 => ({ x: (cx + 0.5) * TILE, y: (cy + 0.5) * TILE });
+  // Where each marker was found, so a second one can name the first.
+  const seen: Record<'S' | 'G', [number, number] | null> = { S: null, G: null };
 
   lines.forEach((row, cy) => {
     for (let cx = 0; cx < cols; cx++) {
@@ -69,12 +78,27 @@ export function parseLevel(lines: string[]): Level {
       if (ch !== '.' && !ENTITIES.has(ch)) {
         throw new Error(`parseLevel: unknown glyph "${ch}" at column ${cx}, row ${cy}`);
       }
-      if (ch === 'S') level.spawn = center(cx, cy);
-      else if (ch === 'G') level.goal = center(cx, cy);
-      else if (ch === 'o') level.coins.push(center(cx, cy));
+      if (ch === 'S' || ch === 'G') {
+        const first = seen[ch];
+        if (first) {
+          throw new Error(
+            `parseLevel: a second "${ch}" at column ${cx}, row ${cy}; the first is at column ${first[0]}, row ${first[1]}`,
+          );
+        }
+        seen[ch] = [cx, cy];
+        if (ch === 'S') level.spawn = center(cx, cy);
+        else level.goal = center(cx, cy);
+      } else if (ch === 'o') level.coins.push(center(cx, cy));
       else if (ch === 'e') level.enemies.push(center(cx, cy));
     }
   });
+  // A level with no spawn starts the player half outside its corner, and no
+  // goal puts the flagpole at x = 0: both as invisible as a typo until played.
+  if ((options.markers ?? 'required') === 'required') {
+    for (const [ch, name] of [['S', 'spawn'], ['G', 'goal']] as const) {
+      if (!seen[ch]) throw new Error(`parseLevel: no "${ch}" (${name}) in the level`);
+    }
+  }
   return level;
 }
 
@@ -89,6 +113,12 @@ export function tileAt(level: Level, cx: number, cy: number): number {
   if (cx < 0 || cx >= level.cols) return SOLID;
   return level.tiles[cy * level.cols + cx];
 }
+
+/** A tile no body passes through, from any side. */
+export const blocksMotion = (t: number): boolean => t === SOLID || t === QUESTION;
+
+/** A tile a body can stand on: a blocking one or a one-way platform. */
+export const standable = (t: number): boolean => blocksMotion(t) || t === ONEWAY;
 
 /** World x/y → tile column/row. */
 export const toCol = (x: number): number => Math.floor(x / TILE);
