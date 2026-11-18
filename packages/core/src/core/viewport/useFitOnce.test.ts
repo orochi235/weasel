@@ -76,15 +76,15 @@ describe('useFitOnce', () => {
     const setZoom = vi.fn();
     const setPan = vi.fn();
     const { rerender } = renderHook(
-      ({ w, h }: { w: number; h: number }) => useFitOnce(w, h, 10, 10, setZoom, setPan),
-      { initialProps: { w: 0, h: 0 } },
+      ({ width: w, height: h }: { width: number; height: number }) => useFitOnce(w, h, 10, 10, setZoom, setPan),
+      { initialProps: { width: 0, height: 0 } },
     );
     expect(setZoom).not.toHaveBeenCalled();
-    rerender({ w: 200, h: 200 });
+    rerender({ width: 200, height: 200 });
     expect(setZoom).toHaveBeenCalledTimes(1);
     expect(setPan).toHaveBeenCalledTimes(1);
     // Subsequent size change does not re-center
-    rerender({ w: 400, h: 400 });
+    rerender({ width: 400, height: 400 });
     expect(setZoom).toHaveBeenCalledTimes(1);
     expect(setPan).toHaveBeenCalledTimes(1);
   });

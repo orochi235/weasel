@@ -25,7 +25,7 @@ export function useAddedViews(): {
     };
   }, [surfaceViewRegistry]);
   const viewAt = useCallback<SceneCanvasApi['viewAt']>((at, opts) => (
-    surfaceViewRegistry?.viewAt(at, opts) ?? { id: null, view: IDENTITY_VIEW, rect: { x: 0, y: 0, w: 0, h: 0 } }
+    surfaceViewRegistry?.viewAt(at, opts) ?? { id: null, view: IDENTITY_VIEW, rect: { x: 0, y: 0, width: 0, height: 0 } }
   ), [surfaceViewRegistry]);
   const aimOf = useCallback<SceneCanvasApi['aimOf']>(
     (id) => surfaceViewRegistry?.aimOf(id) ?? null, [surfaceViewRegistry]);

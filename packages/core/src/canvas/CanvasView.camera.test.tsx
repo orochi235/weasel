@@ -16,7 +16,7 @@ import type { ViewApi } from 'interactions/actions/depSchema';
 /** What a test sets on the camera-held view the harness mounts. */
 type HarnessProps = Partial<CanvasViewCommonProps> & CameraHeldViewProps;
 
-const PANEL = { x: 100, y: 0, w: 100, h: 100 };
+const PANEL = { x: 100, y: 0, width: 100, height: 100 };
 const at = (x: number, y = 0): View => ({ x, y, scale: { x: 1, y: 1 } });
 
 afterEach(() => { vi.restoreAllMocks(); });
@@ -103,7 +103,7 @@ describe('<CanvasView> camera', () => {
     act(() => { camera.setView(at(50)); });
     expect(camera.getView().x).toBe(50);
     // 140 wide shows [x, x + 140], which the 150-wide bounds hold only up to x = 10.
-    act(() => { rerender({ viewBounds, bounds: { ...PANEL, w: 140 } }); });
+    act(() => { rerender({ viewBounds, bounds: { ...PANEL, width: 140 } }); });
     expect(camera.getView().x).toBe(10);
   });
 

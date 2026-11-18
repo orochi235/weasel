@@ -11,7 +11,7 @@ import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from
 const LEFT = 10;
 const TOP = 20;
 /** The panel occupies x ∈ [100, 200) of the canvas, looking at world (1000, 0). */
-const PANEL = { x: 100, y: 0, w: 100, h: 100 };
+const PANEL = { x: 100, y: 0, width: 100, height: 100 };
 
 /** A 300×200 canvas at client (10, 20), drawn at double size by a CSS
  *  transform: two client pixels to each of its own. */

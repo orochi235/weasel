@@ -80,7 +80,7 @@ describe('an embedded SVG drawn far above its natural size', () => {
   it('would smear that edge across a texel if the natural-size raster were stretched', async () => {
     const natural = await rasterOf(NATURAL, () => {});
     expect(natural.width).toBe(NATURAL);
-    const stretched: DrawCommand[] = [{ kind: 'image', image: natural, x: 0, y: 0, w: NATURAL, h: NATURAL }];
+    const stretched: DrawCommand[] = [{ kind: 'image', image: natural, x: 0, y: 0, width: NATURAL, height: NATURAL }];
     expect(edgeWidth(stretched)).toBeGreaterThan(ZOOM / 2);
   });
 });

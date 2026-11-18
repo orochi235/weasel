@@ -15,7 +15,7 @@ import type { View } from 'core/viewport/view';
 /** What a test sets on the view the harness mounts: either side, the common props optional. */
 type HarnessProps = Partial<CanvasViewCommonProps> & (CameraHeldViewProps | AimHeldViewProps);
 
-const PANEL = { x: 0, y: 0, w: 200, h: 100 };
+const PANEL = { x: 0, y: 0, width: 200, height: 100 };
 const at = (x: number, y = 0): View => ({ x, y, scale: { x: 1, y: 1 } });
 
 afterEach(() => { vi.restoreAllMocks(); });

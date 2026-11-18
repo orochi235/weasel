@@ -24,10 +24,10 @@ type P = { x: number; y: number; width: number; height: number };
 const ROOT: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const DIMS = { width: 400, height: 300, dpr: 1 };
 const PIP: CanvasViewProps = {
-  id: 'pip', bounds: { x: 250, y: 180, w: 140, h: 105 }, defaultView: { x: 0, y: 0, scale: { x: 0.25, y: 0.25 } }, paint: false,
+  id: 'pip', bounds: { x: 250, y: 180, width: 140, height: 105 }, defaultView: { x: 0, y: 0, scale: { x: 0.25, y: 0.25 } }, paint: false,
 };
 const INNER: CanvasViewProps = {
-  id: 'inner', parent: 'pip', bounds: { x: 10, y: 10, w: 40, h: 30 }, defaultView: { x: 0, y: 0, scale: { x: 0.1, y: 0.1 } }, paint: false,
+  id: 'inner', parent: 'pip', bounds: { x: 10, y: 10, width: 40, height: 30 }, defaultView: { x: 0, y: 0, scale: { x: 0.1, y: 0.1 } }, paint: false,
 };
 const MARKER: ViewMarkerProps = { id: 'm', source: null, target: 'pip' };
 const PROBE_FILL: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 4, height: 4 }, fill: { paint: { kind: 'solid', color: '#123456' } } };

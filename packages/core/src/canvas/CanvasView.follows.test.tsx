@@ -19,8 +19,8 @@ beforeAll(() => {
   proto.getContext = vi.fn(() => null);
 });
 
-const PANEL = { x: 100, y: 0, w: 200, h: 200 };
-const LENS = { x: 10, y: 220, w: 60, h: 60 };
+const PANEL = { x: 100, y: 0, width: 200, height: 200 };
+const LENS = { x: 10, y: 220, width: 60, height: 60 };
 const LENS_VIEW: View = { x: 500, y: 500, scale: { x: 3, y: 3 } };
 
 function mount(follows: () => string | null, lensHides = false) {

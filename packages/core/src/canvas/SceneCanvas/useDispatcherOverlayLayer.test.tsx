@@ -227,7 +227,7 @@ describe('useDispatcherOverlayLayer', () => {
       const cmds = drawWith({ kind: 'image', src: 'photo.png' });
       const images = cmds.filter((c): c is ImageDrawCommand => c.kind === 'image');
       expect(images).toHaveLength(1);
-      expect(images[0]).toMatchObject({ image: bmp, x: 10, y: 20, w: 100, h: 60 });
+      expect(images[0]).toMatchObject({ image: bmp, x: 10, y: 20, width: 100, height: 60 });
       // Translucent — it is a preview, not the committed node.
       expect(images[0].opacity).toBeLessThan(1);
     });

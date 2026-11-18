@@ -11,7 +11,7 @@ import type { CanvasViewProps, ViewRect } from './canvasViewProps';
 import { createSceneLayerGate, viewPaintedLayers } from './sceneLayerPaint';
 import type { ViewRegistration, ViewRegistry } from './viewRegistry';
 
-export const NO_RECT: ViewRect = { x: 0, y: 0, w: 0, h: 0 };
+export const NO_RECT: ViewRect = { x: 0, y: 0, width: 0, height: 0 };
 
 /** What a view's `bounds` and `view` are measured against: the surface, or
  *  the view it is nested in. `origin` and `clip` are in canvas CSS px. */
@@ -22,9 +22,6 @@ export type ViewNestingInputs = Pick<CanvasViewProps, 'parent' | 'follows' | 'bo
   /** The surface's selection: its session's, which every view on it acts on. */
   shared: SelectionApi;
 };
-
-/** A view rect's size, as the `Dims` its camera looks through. */
-export const sizeOf = (rect: ViewRect): Dims => ({ width: rect.w, height: rect.h });
 
 export function useViewNesting(
   registry: ViewRegistry | null,
@@ -44,7 +41,7 @@ export function useViewNesting(
     try {
       const r = reg.layer.resolvable(outer, dims);
       return {
-        view: r.view, dims: sizeOf(r.rect), origin: { x: r.rect.x, y: r.rect.y }, clip: r.clip ?? r.rect,
+        view: r.view, dims: r.rect, origin: { x: r.rect.x, y: r.rect.y }, clip: r.clip ?? r.rect,
       };
     } finally {
       measuring.current = false;

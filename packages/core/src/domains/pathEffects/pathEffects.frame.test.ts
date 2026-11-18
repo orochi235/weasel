@@ -69,7 +69,7 @@ function paths(cmds: readonly DrawCommand[], m: Affine = identity()): Path[] {
 
 const middle = (path: Path) => {
   const b = boundsOfPath(path);
-  return { x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2), w: Math.round(b.width), h: Math.round(b.height) };
+  return { x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2), width: Math.round(b.width), height: Math.round(b.height) };
 };
 
 describe('a tween inside a container that composes frames', () => {
@@ -80,19 +80,19 @@ describe('a tween inside a container that composes frames', () => {
     // middle (50,50): (-40,-45) and (40,-5), turned a quarter: (45,-40) and
     // (5,40), so (295,110) and (255,190) on the page. Each source turns to
     // 10 wide by 20 tall.
-    expect(drawn).toContainEqual({ x: 295, y: 110, w: 10, h: 20 });
-    expect(drawn).toContainEqual({ x: 255, y: 190, w: 10, h: 20 });
+    expect(drawn).toContainEqual({ x: 295, y: 110, width: 10, height: 20 });
+    expect(drawn).toContainEqual({ x: 255, y: 190, width: 10, height: 20 });
     // The steps, a quarter of the way along apart.
-    expect(drawn).toContainEqual({ x: 285, y: 130, w: 10, h: 20 });
-    expect(drawn).toContainEqual({ x: 275, y: 150, w: 10, h: 20 });
-    expect(drawn).toContainEqual({ x: 265, y: 170, w: 10, h: 20 });
-    expect(drawn.filter((d) => d.w === 10 && d.h === 20)).toHaveLength(5);
+    expect(drawn).toContainEqual({ x: 285, y: 130, width: 10, height: 20 });
+    expect(drawn).toContainEqual({ x: 275, y: 150, width: 10, height: 20 });
+    expect(drawn).toContainEqual({ x: 265, y: 170, width: 10, height: 20 });
+    expect(drawn.filter((d) => d.width === 10 && d.height === 20)).toHaveLength(5);
   });
 
   it('is picked where it is painted', () => {
     const scene = framed();
     const picked = scenePickSource(scene).derivedPathOf!(scene.get(FX)! as never)!;
-    expect(middle(picked)).toEqual({ x: 275, y: 150, w: 30, h: 60 });
+    expect(middle(picked)).toEqual({ x: 275, y: 150, width: 30, height: 60 });
   });
 
   it('follows a source that is edited, and the container when it moves', () => {
@@ -100,17 +100,17 @@ describe('a tween inside a container that composes frames', () => {
     scene.setPose(B, { x: 80, y: 0, width: 20, height: 10 });
     let drawn = paths(buildSceneViewCommands(scene, VIEW, defaultDrawOne)).map(middle);
     // b's middle now local (90,5): (40,-45) turned is (45,40), so (295,190).
-    expect(drawn).toContainEqual({ x: 295, y: 150, w: 10, h: 20 });
+    expect(drawn).toContainEqual({ x: 295, y: 150, width: 10, height: 20 });
     scene.setPose(G, { x: 0, y: 100, width: 100, height: 100, rotation: Math.PI / 2 });
     drawn = paths(buildSceneViewCommands(scene, VIEW, defaultDrawOne)).map(middle);
-    expect(drawn).toContainEqual({ x: 95, y: 150, w: 10, h: 20 });
+    expect(drawn).toContainEqual({ x: 95, y: 150, width: 10, height: 20 });
   });
 
   it('boxes what it paints when it sits outside the container, as a root', () => {
     const scene = framed();
     scene.move(FX, null);
     const drawn = paths(buildSceneViewCommands(scene, VIEW, defaultDrawOne)).map(middle);
-    expect(drawn).toContainEqual({ x: 275, y: 150, w: 10, h: 20 });
+    expect(drawn).toContainEqual({ x: 275, y: 150, width: 10, height: 20 });
     // A root's pose is world: the steps run (260,120) to (290,180).
     expect(effectivePose(scene, scene.get(FX)!)).toMatchObject({ x: 260, y: 120, width: 30, height: 60 });
   });

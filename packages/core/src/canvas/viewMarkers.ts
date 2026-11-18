@@ -48,7 +48,7 @@ export function createViewMarkerRegistry(
     if (!surface) return null;
     if (target === null) return aimSpace2d(null, surface.view(), surface.dims());
     const v = deps.resolve(target, surface.view(), surface.dims());
-    return v ? aimSpace2d(target, v.view, { width: v.rect.w, height: v.rect.h }) : null;
+    return v ? aimSpace2d(target, v.view, v.rect) : null;
   };
   return {
     registerMarker: (props) => {

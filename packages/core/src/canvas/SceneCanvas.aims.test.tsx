@@ -42,7 +42,7 @@ beforeEach(() => {
   const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
   render(
     <SceneCanvas scene={scene} layers={{}} width={400} height={300} view={ROOT} onViewChange={onViewChange} ref={api}>
-      <CanvasView id="pip" bounds={{ x: 250, y: 180, w: 140, h: 105 }} defaultView={{ x: 0, y: 0, scale: { x: 0.25, y: 0.25 } }} />
+      <CanvasView id="pip" bounds={{ x: 250, y: 180, width: 140, height: 105 }} defaultView={{ x: 0, y: 0, scale: { x: 0.25, y: 0.25 } }} />
     </SceneCanvas>,
   );
 });
