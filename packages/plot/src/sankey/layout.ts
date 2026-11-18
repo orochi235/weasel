@@ -1,5 +1,5 @@
 /** Where a sankey's nodes and ribbons stand: columns by depth, heights by flow, ordered to cross less. */
-import { maxOf, minOf } from '@weasel-js/geom';
+import { maxOf, minOf, type Rect } from '@weasel-js/geom';
 import type { SankeyData } from './types';
 
 /** One node, placed. */
@@ -93,7 +93,7 @@ function orderColumns(
 }
 
 /** Lays `data` out in `box`: a column per depth, each node as tall as its flow, ribbons stacked within each node. */
-export function sankeyLayout(data: SankeyData, box: { x: number; y: number; width: number; height: number }): SankeyLayout {
+export function sankeyLayout(data: SankeyData, box: Rect): SankeyLayout {
   const labels = sankeyNodes(data);
   const index = new Map(labels.map((l, k) => [l, k]));
   const flows = data.links.map((l) => flowOf(l.value));

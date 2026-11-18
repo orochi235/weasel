@@ -1,5 +1,5 @@
 /** An xychart compiled to its scales and marks. */
-import { maxOf } from '@weasel-js/geom';
+import { maxOf, type Rect } from '@weasel-js/geom';
 import { axisMarks, axisRoom } from '../axes';
 import { barMark, pointMark } from '../marks/boxes';
 import { lineMark } from '../marks/paths';
@@ -17,7 +17,7 @@ import type { XyChartData } from './types';
 export interface XyLayout {
   orientation: 'vertical' | 'horizontal';
   /** The area the marks are drawn in, inside the axes. */
-  plot: { x: number; y: number; width: number; height: number };
+  plot: Rect;
   /** Values along y for a vertical chart, along x for a horizontal one. */
   value: LinearScale;
   /** Each value index's center along the category axis. */
