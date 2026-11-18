@@ -4,7 +4,7 @@
  * for geometry and paint.
  */
 
-import { identity, type Affine } from '@weasel-js/geom';
+import { identity, type Affine, type Rect } from '@weasel-js/geom';
 import type { SvgMediaEnvironment } from './media';
 import type {
   Path, Paint, MarkerEntry, MarkerRef, PoseLinear, ScreenLength, Stroke, StrokeAlign, Fill, StrokeNib, VertexWidth, BooleanShapeOp,
@@ -267,7 +267,7 @@ export interface SvgImageNode {
    *  width and height from its top-left. Omitted draws the whole bitmap.
    *  Fractions rather than bitmap pixels because this package never decodes
    *  the image, so it cannot know its size. */
-  source?: { x: number; y: number; width: number; height: number };
+  source?: Rect;
   /** Mirror the drawn region within the box, as `ImageDrawCommand` does. The
    *  box does not move. */
   flipX?: boolean;
@@ -330,7 +330,7 @@ export interface ParseResult {
   /** The root's namespaced attributes and children, for declared namespaces. */
   documentMeta?: NamespaceMeta;
   /** Root `viewBox` attribute, parsed from `"x y width height"`. */
-  viewBox?: { x: number; y: number; width: number; height: number };
+  viewBox?: Rect;
   /** Root `width` attribute in user units when present, an absolute CSS unit converted at 96 per inch. */
   width?: number;
   /** Root `height` attribute in user units when present, converted as `width` is. */
