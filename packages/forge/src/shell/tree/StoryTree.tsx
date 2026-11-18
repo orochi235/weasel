@@ -1,48 +1,27 @@
 import { type LabChromeContext, usePersistedState } from '@weasel-js/labkit';
-import { SegmentedBar, type SegmentedBarItem } from '@weasel-js/ui/components/Segmented';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { ToggleChips } from '@weasel-js/ui/components/ToggleChips';
-import { Tree, type TreeNode as UiTreeNode, type TreeProps } from '@weasel-js/ui/components/Tree';
-import { type ReactNode, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { Tree, type TreeProps } from '@weasel-js/ui/components/Tree';
+import { useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { getOwn } from '@weasel-js/registry';
-import { formatRoute } from '../../route/url';
 import { indexEntries } from '../../story/indexPages';
-import { isGallery, isLab } from '../../story/tags';
 import type { IndexEntry } from '../../story/types';
 import { revealTrial } from '../revealTrial';
 import { onRevealInTree } from '../treeReveal';
 import { useRoute } from '../useRoute';
-import { buildTree, filterTree, type TreeNode as StoryNode } from './buildTree';
-import { buildComponents, componentNodes, filterComponents, librariesIn } from './buildComponents';
+import { filterTree, type TreeNode as StoryNode } from './buildTree';
+import { componentNodes, filterComponents, librariesIn } from './buildComponents';
 import { LibrariesContext } from '../../story/library';
-import { LabBadge } from '../../frame/index/LabBadge';
-import { LibraryBadge as PackageBadge } from '../../frame/index/LibraryBadge';
-
-/** Which shape the sidebar lists the index in. */
-type View = 'tree' | 'components' | 'gallery';
-
-const VIEWS: readonly SegmentedBarItem<View>[] = [
-  { value: 'tree', label: 'Tree' },
-  { value: 'components', label: 'Components' },
-  { value: 'gallery', label: 'Gallery' },
-];
+import { revealedFolderIn, useRowScroll } from './folderReveal';
+import { useSidebarViews, type View, VIEWS } from './sidebarViews';
+import { keyOf, LibraryBadge, type StoryFolder, treeRowsFor } from './treeRows';
 
 export interface StoryTreeProps {
   ctx: LabChromeContext;
   index: readonly IndexEntry[];
 }
 
-type StoryFolder = Extract<StoryNode, { kind: 'folder' }>;
-
-const keyOf = (node: StoryNode): string => (node.kind === 'folder' ? `folder:${node.path}` : `story:${node.entry.id}`);
 const pathOf = (byId: ReadonlyMap<string, StoryNode>, id: string): string => (byId.get(id) as StoryFolder).path;
-
-/** `node`'s key, numbered past those `ids` holds: folders of two libraries can share a path in the components view. */
-function freshKey(node: StoryNode, ids: ReadonlyMap<string, unknown>): string {
-  let id = keyOf(node);
-  for (let n = 2; ids.has(id); n++) id = `${keyOf(node)}#${n}`;
-  return id;
-}
-const hrefOf = (entry: IndexEntry): string => formatRoute({ story: entry.id, params: {} });
 
 /** The folder paths above a story's component, and the component's own. */
 function ancestorsOf(entry: IndexEntry | undefined): Set<string> {
@@ -56,19 +35,28 @@ function ancestorsOf(entry: IndexEntry | undefined): Set<string> {
   return paths;
 }
 
-/** A component's package, as the sidebar tags its rows. */
-function LibraryBadge({ library }: { library: string }) {
-  return <PackageBadge library={library} className="fg-tree__tag" />;
+interface LibraryFilterProps {
+  readonly libraries: readonly string[];
+  readonly hidden: Readonly<Record<string, boolean>>;
+  readonly onHiddenChange: (hidden: Record<string, boolean>) => void;
 }
 
-/** What follows a row's label: a Lab badge on a whole screen, then the package. */
-function rowTags(lab: boolean, library: string | undefined): ReactNode {
-  if (!lab && !library) return undefined;
+/** The package chips, each turning its package's stories on or off. */
+function LibraryFilter({ libraries, hidden, onHiddenChange }: LibraryFilterProps) {
+  const librariesId = useId();
+  const chips = useMemo(() => libraries.map((library) => ({ value: library, label: <LibraryBadge library={library} /> })), [libraries]);
+  const on = libraries.filter((library) => !getOwn(hidden, library));
   return (
-    <>
-      {lab ? <LabBadge className="fg-tree__lab" /> : null}
-      {library ? <LibraryBadge library={library} /> : null}
-    </>
+    <div className="fg-tree__libraries">
+      <span id={librariesId} className="fg-tree__libraries-legend">Packages</span>
+      <ToggleChips
+        aria-labelledby={librariesId}
+        sweep
+        items={chips}
+        value={on}
+        onChange={(next) => onHiddenChange(Object.fromEntries(libraries.map((library) => [library, !next.includes(library)])))}
+      />
+    </div>
   );
 }
 
@@ -85,32 +73,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
 
   const table = useContext(LibrariesContext);
   const libraries = useMemo(() => librariesIn(index, table), [index, table]);
-  const libraryChips = useMemo(() => libraries.map((library) => ({ value: library, label: <LibraryBadge library={library} /> })), [libraries]);
-  const librariesOn = libraries.filter((library) => !getOwn(hidden, library));
-  const librariesId = useId();
-  // A view is grayed out by what the project has, not by the package filter,
-  // which would otherwise disable a view as a side effect of turning a package off.
-  const views = useMemo(() => {
-    const hasGallery = index.some(isGallery);
-    const hasOther = index.some((entry) => !isGallery(entry));
-    return VIEWS.map((item) => ({ ...item, disabled: item.value === 'gallery' ? !hasGallery : !hasOther }));
-  }, [index]);
-  // The stored choice is kept, so a view comes back once it has something in it.
-  const enabled = (value: View): boolean => views.some((item) => item.value === value && !item.disabled);
-  const view = [chosen, 'components' as const, 'gallery' as const].find(enabled) ?? chosen;
-  // The package filter runs on the index, so it means the same thing in both
-  // views rather than once per view's own grouping.
-  const kept = useMemo(() => index.filter((entry) => !getOwn(hidden, table.of(entry))), [index, hidden, table]);
-  // Galleries list only in their own view, grouped the way Components groups.
-  const [galleryEntries, rest] = useMemo(() => {
-    const yes: IndexEntry[] = [];
-    const no: IndexEntry[] = [];
-    for (const entry of kept) (isGallery(entry) ? yes : no).push(entry);
-    return [yes, no];
-  }, [kept]);
-  const tree = useMemo(() => buildTree(rest), [rest]);
-  const components = useMemo(() => buildComponents(rest, table), [rest, table]);
-  const galleries = useMemo(() => buildComponents(galleryEntries, table), [galleryEntries, table]);
+  const { views, view, enabled, tree, components, galleries, nodesOf } = useSidebarViews(index, table, hidden, chosen);
   const shown = useMemo(
     () =>
       view === 'tree'
@@ -125,36 +88,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
   const openKey = ctx.trials.map((trial) => trial.instrumentName).join('\n');
   const openIds = useMemo(() => new Set(openKey.split('\n')), [openKey]);
 
-  const { nodes, byId, folders: folderIds } = useMemo(() => {
-    const ids = new Map<string, StoryNode>();
-    const folders: string[] = [];
-    const convert = (list: readonly StoryNode[]): UiTreeNode[] =>
-      list.map((node) => {
-        const id = freshKey(node, ids);
-        ids.set(id, node);
-        if (node.kind === 'folder') {
-          folders.push(id);
-          return {
-            id,
-            label: node.label,
-            className: 'fg-tree__folder',
-            href: node.index ? hrefOf(node.index) : undefined,
-            current: !!node.index && openIds.has(node.index.id),
-            trailing: rowTags(!!node.index && isLab(node.index), node.tag),
-            children: convert(node.children),
-          };
-        }
-        return {
-          id,
-          label: node.label ?? node.entry.name,
-          className: 'fg-tree__story',
-          href: hrefOf(node.entry),
-          current: openIds.has(node.entry.id),
-          trailing: rowTags(isLab(node.entry), node.tag),
-        };
-      });
-    return { nodes: convert(shown), byId: ids, folders };
-  }, [shown, openIds]);
+  const { nodes, byId, folders: folderIds } = useMemo(() => treeRowsFor(shown, openIds), [shown, openIds]);
   const expanded = useMemo(
     () => new Set(folderIds.filter((id) => filtering || (getOwn(folds, pathOf(byId, id)) ?? routeAncestors.has(pathOf(byId, id))))),
     [folderIds, byId, filtering, folds, routeAncestors],
@@ -202,50 +136,21 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
   // A breadcrumb asks for a folder; it is shown the way clicking its row shows it, in the Tree view when the
   // current one has no such folder. The row scrolls itself into view once it has rendered.
   const treeEl = useRef<HTMLUListElement>(null);
-  const scrollTo = useRef<string | null>(null);
-  useEffect(() => {
-    const id = scrollTo.current;
-    if (id == null) return;
-    const row = [...(treeEl.current?.querySelectorAll<HTMLElement>('[data-tree-id]') ?? [])].find((el) => el.dataset.treeId === id);
-    if (!row) return;
-    scrollTo.current = null;
-    (row.firstElementChild as HTMLElement | null)?.scrollIntoView({ block: 'nearest' });
-  });
+  const scrollToRow = useRowScroll(treeEl);
   const reveal = (path: string): void => {
-    const find = (list: readonly StoryNode[], at: string): StoryFolder | undefined => {
-      for (const node of list) {
-        if (node.kind !== 'folder') continue;
-        if (node.path === at) return node;
-        const inner = find(node.children, at);
-        if (inner) return inner;
-      }
-      return undefined;
-    };
-    const nodesOf = (v: View): readonly StoryNode[] =>
-      v === 'tree' ? tree : componentNodes(v === 'gallery' ? galleries : components);
-    // The current view first; a folder only another view holds switches to it; failing all three, the nearest folder above.
+    // The current view first; a folder only another view holds switches to it.
     const order = [view, ...VIEWS.map((item) => item.value).filter((v) => v !== view && enabled(v))];
-    let node: StoryFolder | undefined;
-    let where: View = view;
-    for (let at = path; at && !node; at = at.includes('/') ? at.slice(0, at.lastIndexOf('/')) : '') {
-      for (const v of order) {
-        node = find(nodesOf(v), at);
-        if (node) {
-          where = v;
-          break;
-        }
-      }
-    }
-    const found = node;
+    const found = revealedFolderIn(path, order, nodesOf);
     if (!found) return;
-    if (where !== view) setView(where);
+    const { folder } = found;
+    if (found.view !== view) setView(found.view);
     setQuery('');
-    const segments = found.path.split('/');
+    const segments = folder.path.split('/');
     const above = segments.slice(0, -1).map((_, i) => segments.slice(0, i + 1).join('/'));
     setFolds((prev) => ({ ...prev, ...Object.fromEntries(above.map((p) => [p, true])) }));
-    scrollTo.current = keyOf(found);
-    if (found.index) openIndex(found.path, found.index, false);
-    else setFolds((prev) => ({ ...prev, [found.path]: true }));
+    scrollToRow(keyOf(folder));
+    if (folder.index) openIndex(folder.path, folder.index, false);
+    else setFolds((prev) => ({ ...prev, [folder.path]: true }));
   };
   // Resubscribed every commit, so the listener always reads this render's view and data.
   useEffect(() => onRevealInTree(reveal));
@@ -270,16 +175,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
           if (next) setView(next);
         }}
       />
-      <div className="fg-tree__libraries">
-        <span id={librariesId} className="fg-tree__libraries-legend">Packages</span>
-        <ToggleChips
-          aria-labelledby={librariesId}
-          sweep
-          items={libraryChips}
-          value={librariesOn}
-          onChange={(next) => setHidden((prev) => ({ ...prev, ...Object.fromEntries(libraries.map((library) => [library, !next.includes(library)])) }))}
-        />
-      </div>
+      <LibraryFilter libraries={libraries} hidden={hidden} onHiddenChange={(next) => setHidden((prev) => ({ ...prev, ...next }))} />
       <input
         type="search"
         className="fg-tree__filter"
