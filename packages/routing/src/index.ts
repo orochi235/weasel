@@ -139,6 +139,8 @@ export { actionsTagged, taggedActionItems, matchActionItem } from './interaction
 // Both a const table and the union of its values, under one name.
 export { actionCursor, ActionDisabledReason } from './interactions/actions/action';
 export type { ActionUnavailable } from './interactions/actions/action';
+export { subscribeRefusals } from './interactions/actions/refusal';
+export type { Refusal } from './interactions/actions/refusal';
 export { actionBindings, bindAction, bindingOptionsOf } from './interactions/actions/binding';
 export type { GestureBinding, BindingOf, BoundGesture, BindingSource } from './interactions/actions/binding';
 export { dynamicActionId } from './interactions/actions/actionIds';
