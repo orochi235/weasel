@@ -23,6 +23,9 @@ export const MUSIC_GAIN = 0.325;
 
 type Audio = { engine: AudioEngine; bed: PatternPlayer | null };
 
+const contextState = (engine: AudioEngine): 'suspended' | 'running' =>
+  engine.state() === 'running' ? 'running' : 'suspended';
+
 export interface PlatformerAudio {
   /** What the world calls for sound and impact. Read it through the ref from
    *  inside the frame loop; it is rebuilt every render so it is never stale. */
@@ -79,12 +82,17 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
       const engine = createAudioEngine({ buses: ['sfx', BED_BUS], voiceLimit: VOICE_LIMIT });
       engine.bus(BED_BUS).setGain(MUSIC_GAIN);
       audio.current = { engine, bed: null };
+      // A browser can suspend the context later (an interruption, a background
+      // tab); the readout and the enable button follow it there and back.
+      engine.context.addEventListener('statechange', () => {
+        if (audio.current?.engine === engine && audio.current.bed) setAudioState(contextState(engine));
+      });
     }
     const { engine } = audio.current;
     void engine.unlock().then(() => {
       const a = audio.current;
       if (a?.engine !== engine) return;
-      setAudioState(engine.state() === 'running' ? 'running' : 'suspended');
+      setAudioState(contextState(engine));
       if (!a.bed) {
         engine.bus(BED_BUS).mute(!musicOnNow.current);
         const bed = createPatternPlayer(engine, {

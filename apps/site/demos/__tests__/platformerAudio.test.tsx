@@ -3,16 +3,17 @@ import { act, render } from '@testing-library/react';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { Animator } from '@weasel-js/animator';
 
-const engines: { disposed: boolean; resolveUnlock: () => void; gains: number[]; allGains: number[]; mutes: boolean[] }[] = [];
+const engines: { disposed: boolean; suspended: boolean; context: EventTarget; resolveUnlock: () => void; gains: number[]; allGains: number[]; mutes: boolean[] }[] = [];
 
 vi.mock('@weasel-js/audio', () => ({
   createAudioEngine: () => {
     let resolveUnlock!: () => void;
     const unlocked = new Promise<void>((r) => { resolveUnlock = r; });
-    const record = { disposed: false, resolveUnlock, gains: [] as number[], allGains: [] as number[], mutes: [] as boolean[] };
+    const record = { disposed: false, suspended: false, context: new EventTarget(), resolveUnlock, gains: [] as number[], allGains: [] as number[], mutes: [] as boolean[] };
     engines.push(record);
     return {
-      state: () => (record.disposed ? 'closed' : 'running'),
+      context: record.context,
+      state: () => (record.disposed ? 'closed' : record.suspended ? 'suspended' : 'running'),
       now: () => 0,
       unlock: () => unlocked,
       bus: () => ({ setGain: (v: number) => { record.allGains.push(v); if (record.disposed) record.gains.push(v); }, mute: (m: boolean) => { record.mutes.push(m); } }),
@@ -144,5 +145,18 @@ describe('usePlatformerAudio', () => {
     api().endFrame(g, true);
     book(5000);
     expect(api().stats().spread).toBeCloseTo(0, 6);
+  });
+
+  it('follows the context when the browser suspends it after the unlock', async () => {
+    const { api } = mount();
+    act(() => api().enableAudio());
+    engines[0].resolveUnlock();
+    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+    expect(api().audioState).toBe('running');
+    act(() => {
+      engines[0].suspended = true;
+      engines[0].context.dispatchEvent(new Event('statechange'));
+    });
+    expect(api().audioState).toBe('suspended');
   });
 });
