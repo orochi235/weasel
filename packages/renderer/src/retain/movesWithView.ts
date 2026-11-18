@@ -34,6 +34,8 @@ function commandMoves(cmd: DrawCommand, hasViewMatrix: boolean): boolean {
       return paintMoves(cmd.fill?.paint, hasViewMatrix) && paintMoves(cmd.stroke?.paint, hasViewMatrix);
     case 'text':
       return cmd.runs.every((run) => paintMoves(run.fill?.paint, hasViewMatrix) && paintMoves(run.stroke?.paint, hasViewMatrix));
+    case 'text-layer':
+      return cmd.texts.every((text) => commandMoves(text, hasViewMatrix));
     case 'image':
     case 'sprites':
       return true;

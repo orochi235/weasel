@@ -9,6 +9,7 @@ import { drawGroupWithEffects } from './draw/groupEffects';
 import { drawRetainedGroup } from './draw/retained';
 import { drawPath } from './draw/pathPaint';
 import { drawText } from './draw/text';
+import { drawTextLayer } from './draw/textLayer';
 import { drawImage, drawSprites } from './draw/image';
 import { flushBatch } from './draw/flushBatch';
 
@@ -17,6 +18,7 @@ export function dispatch(ctx: DrawContext, cmd: DrawCommand): void {
     case 'group':  return drawGroup(ctx, cmd);
     case 'path':   return drawPath(ctx, cmd);
     case 'text':   return drawText(ctx, cmd);
+    case 'text-layer': return drawTextLayer(ctx, cmd);
     case 'image':  return drawImage(ctx, cmd);
     case 'sprites': return drawSprites(ctx, cmd);
     case 'shader': flushForOwnDraw(ctx); return drawShader(ctx, cmd);

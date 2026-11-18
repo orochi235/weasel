@@ -16,6 +16,7 @@ import type { PaintScratch } from '../paintScratch';
 import type { StagedBatchState } from './batchRun';
 import type { FlattenTolerance } from './flattenTolerance';
 import type { IdFrame } from './idFrame';
+import type { TextLayers } from './textLayer';
 import type { GpuBuffer, GpuDevice, GpuPassDesc, GpuTexture } from '../gpu/types';
 
 export interface DrawContext {
@@ -45,6 +46,10 @@ export interface DrawContext {
    *  first use. Absent without a renderer behind the context, and then such
    *  glyphs draw nothing. */
   glyphPaintProgram?(kind: GlyphPaintKind): ShaderProgram;
+  /** The text layer's program, built with the glyph taps for area coverage or without (`shaders/glyphLayer.ts`). */
+  glyphLayerProgram?(area: boolean): ShaderProgram;
+  /** The text layers this context keeps uploaded. Absent, a text layer draws text by text. */
+  textLayers?: TextLayers;
   /** The kit quad a shader command and an effect pass draw: `QUAD_VERTICES`
    *  and `QUAD_INDICES`. */
   quad: { readonly vertices: GpuBuffer; readonly indices: GpuBuffer } | null;

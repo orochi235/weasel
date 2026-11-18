@@ -29,6 +29,7 @@ export type {
   GroupDrawCommand,
   PathDrawCommand,
   TextDrawCommand,
+  TextLayerDrawCommand,
   ImageDrawCommand,
   SpritesDrawCommand,
   ShaderDrawCommand,

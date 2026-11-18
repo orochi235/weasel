@@ -7,7 +7,7 @@ import {
 } from './DrawCommand';
 import { effectsReach } from './effects/types';
 import { getProgramSource } from './shaders/registerProgram';
-import { textBox } from './textBounds';
+import { textBox, textLayerBox } from './textBounds';
 
 /** An axis-aligned box in screen space, CSS pixels. */
 export interface ScreenBox { minX: number; minY: number; maxX: number; maxY: number }
@@ -39,6 +39,8 @@ export function commandBox(cmd: DrawCommand, m: GlMat3, scale: number): ScreenBo
       return paintedBox(cmd, m) ?? ANYWHERE;
     case 'text':
       return textBox(cmd, m) ?? EMPTY;
+    case 'text-layer':
+      return textLayerBox(cmd, m) ?? EMPTY;
     case 'shader':
       return shaderBox(cmd) ?? ANYWHERE;
   }

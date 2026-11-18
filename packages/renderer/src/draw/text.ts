@@ -241,7 +241,7 @@ const glyphRgba: [number, number, number, number] = [0, 0, 0, 0];
 
 /** Which glyph-paint program `fill` needs, or `null` for a paint the batch
  *  draws as one color. */
-function glyphPaintKindOf(fill: Paint): GlyphPaintKind | null {
+export function glyphPaintKindOf(fill: Paint): GlyphPaintKind | null {
   const kind = fill.kind ?? 'solid';
   if (kind === 'texture') return 'pattern';
   if (kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'conic-gradient') {

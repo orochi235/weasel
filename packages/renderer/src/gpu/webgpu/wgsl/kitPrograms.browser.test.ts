@@ -19,6 +19,8 @@ async function requestTestDevice(): Promise<GPUDevice> {
 const ATTRIBUTE_FORMATS: Readonly<Record<string, GPUVertexFormat>> = {
   a_position: 'float32x2', a_uv: 'float32x2', a_vertexColor: 'float32x4', a_post: 'float32', a_texSlot: 'float32',
   a_trim: 'float32x4',
+  a_corner: 'float32', a_rect: 'float32x4', a_uvRect: 'float32x4', a_pen: 'float32x4', a_color: 'float32x4',
+  a_glyph: 'float32x4',
 };
 
 const FLOATS: Readonly<Record<string, number>> = { float32: 1, float32x2: 2, float32x4: 4 };
