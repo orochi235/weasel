@@ -584,6 +584,47 @@ The default sweep is 486 measurements and took 78 minutes on msb-uai.
 stages; it traces more categories, so its busy figures are not comparable with a
 run without it. `HVD_ALLOC=1` adds the allocation profile above.
 
+## A wall of static text
+
+`text-wall.spec.ts` fills a 1600x1000 viewport with unchanging text, the font shrinking as the
+glyph count grows, and times `render` on a rAF loop: CPU from `performance.now()` around the call,
+GPU from the timer query. The commands are built once, so a frame is only the renderer walking
+unchanged text. `line` is one command per 80-glyph line, and `block` is 64 commands of many lines
+each. `moving` zooms and pans the view every frame. It times a frame the way astv's stage bench
+does (`packages/bench` there), so the two can be read side by side.
+
+On msb-uai (Apple M3 Max, Metal ANGLE, headless Chromium 158) on 2026-11-17, at `0f939b37` plus
+this spec, one pass, run alone on the node (load average about 4 on 14 cores). Figures are ms a
+frame, p50 over 90 frames. Beside them is astv's stage at `b3d96993`, run the same hour on the
+same node: 64 cards of text under an orbiting 3D camera, which re-plans every frame. astv draws
+from glyph buffers it keeps on the GPU, and its CPU clock is coarsened to 0.1 ms.
+
+| Glyphs | weasel CPU, still | weasel CPU, moving | weasel GPU | astv CPU, still | astv CPU, moving | astv GPU, moving |
+|---:|---:|---:|---:|---:|---:|---:|
+|   3,520 |  1.13 |  0.83 |  0.89 | 0.20 | 1.00 | 1.38 |
+|  13,360 |  2.96 |  2.95 |  1.44 | 0.40 | 1.80 | 1.46 |
+|  44,080 |  4.31 |  4.41 |  3.17 | 0.40 | 1.90 | 2.54 |
+|  82,960 |  8.16 |  8.47 |  4.09 | 0.40 | 2.30 | 2.90 |
+| 114,400 | 11.01 | 10.79 |  5.37 | 0.40 | 1.80 | 3.77 |
+
+weasel's columns are `block`; `line` costs at most about 20% more, and the gap narrows as the count grows. The
+weasel run went on to 1.28M glyphs, where `block` costs 143 ms of CPU and 38 ms of GPU a frame.
+astv draws fewer glyphs than its generator asks for: 114k of a 1.28M request. Its counts above are
+the glyphs it drew, and weasel was run again at those counts.
+
+- **weasel's CPU grows with the glyph count, at about 0.1 µs a glyph a frame**, whether or not the
+  camera moves. The command count barely matters: 1,430 commands and 63 commands cost the same
+  for the same glyphs.
+- **astv's CPU stays flat.** It is 0.4 ms with the camera parked and about 2 ms while moving,
+  most of that its own re-plan. At 114k glyphs weasel spends 11 ms, which on its own takes most
+  of a 60 Hz frame.
+- **The GPU gap is smaller, under 1.5x**, and the two scenes do not cover the same pixels, so it
+  says less than the CPU gap.
+
+Every run is in `tests/perf/recorded/text-wall-2026-11-17/`: weasel's ladder, its rerun at astv's
+counts, and astv's own `bench.jsonl`. `WEASEL_PERF_GLYPHS`, `WEASEL_PERF_LAYOUTS` and
+`WEASEL_PERF_MOTIONS` narrow the sweep, which took 1.8 minutes.
+
 ## Element tweens on the compositor
 
 `compositor-handoff.spec.ts` animates `count` small elements with one weasel animator, either on the

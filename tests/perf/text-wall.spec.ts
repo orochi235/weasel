@@ -1,0 +1,246 @@
+/**
+ * A wall of static text under a still and a moving camera: what the renderer costs a frame as
+ * the glyph count grows, measured the way astv's stage bench measures its own (`packages/bench`
+ * there), so the two can be read against each other.
+ *
+ * Every rung fills one 1600x1000 viewport, the font shrinking as the count grows, so the painted
+ * area stays put and only the glyph count moves. The text is random printable ASCII with no
+ * spaces, so every character is a glyph. Two layouts:
+ *
+ *   - `line`  — one text command per 80-glyph line, as a code view would emit.
+ *   - `block` — 64 text commands, each a block of newline-separated lines, as astv's 64 cards.
+ *
+ * `moving` zooms and pans the view matrix every frame; the commands are built once and never
+ * change, so a frame is the renderer's walk of unchanged text and nothing a scene graph adds.
+ *
+ * A frame is timed as astv's are: CPU is `performance.now()` around `render`, on a
+ * requestAnimationFrame loop, and GPU is `EXT_disjoint_timer_query_webgl2` over the same window.
+ *
+ * Knobs: `WEASEL_PERF_GLYPHS` (the ladder), `WEASEL_PERF_LAYOUTS`, `WEASEL_PERF_MOTIONS`.
+ *
+ * This reports; it does not gate. See `tests/perf/README.md`.
+ */
+import { test, expect } from '@playwright/test';
+import { isolate } from './lib/isolate';
+import { metric, startRun } from './lib/result';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+
+const W = 1600;
+const H = 1000;
+const WARMUP = 20;
+const MEASURE = 90;
+/** A rung far past the frame budget can take seconds a frame; it stops here and reports what it got. */
+const MAX_MS = 20_000;
+
+const list = (raw: string | undefined): string[] | undefined =>
+  raw?.split(',').map((x) => x.trim()).filter(Boolean);
+
+const GLYPHS = list(process.env.WEASEL_PERF_GLYPHS)?.map(Number) ?? [5_000, 20_000, 80_000, 320_000, 1_280_000];
+const LAYOUTS = list(process.env.WEASEL_PERF_LAYOUTS) ?? ['line', 'block'];
+const MOTIONS = list(process.env.WEASEL_PERF_MOTIONS) ?? ['still', 'moving'];
+
+interface Cell { glyphs: number; layout: string; motion: string }
+interface Measured {
+  glyphs: number;
+  commands: number;
+  fontPx: number;
+  frames: number;
+  truncated: boolean;
+  cpu: number[];
+  gpu: number[];
+  paints: boolean;
+}
+
+test.setTimeout(1_800_000);
+
+test('text wall: frame cost of static text against glyph count', async ({ page, browser, browserName }) => {
+  const run = startRun('text-wall', {
+    viewport: `${W}x${H}`, dpr: 1, warmup: WARMUP, measure: MEASURE, maxMs: MAX_MS,
+    glyphs: GLYPHS, layouts: LAYOUTS, motions: MOTIONS,
+  });
+  const errors: string[] = [];
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
+  page.on('crash', () => errors.push('page crashed'));
+
+  await isolate(page);
+  await page.goto('/weasel/#animation');
+  await page.waitForSelector('canvas');
+
+  const { glRenderer, gpuTimer } = await page.evaluate(async ({ root, w, h }) => {
+    const { WeaselRenderer, registerFont, textCommandFromRuns } = await import(
+      /* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/index.ts`
+    );
+    await registerFont('sans-serif', { weight: 400, style: 'normal' }, '/weasel/inter/inter.json', '/weasel/inter/inter.png');
+
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true });
+    if (!gl) throw new Error('no WebGL2 context');
+    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    const glRenderer = String(dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
+    const timer = gl.getExtension('EXT_disjoint_timer_query_webgl2') as
+      { TIME_ELAPSED_EXT: number; GPU_DISJOINT_EXT: number } | null;
+    const renderer = new WeaselRenderer({ gl, canvas, width: w, height: h, dpr: 1 });
+
+    const COLS = 80;
+    const INK = { paint: { kind: 'solid' as const, color: '#e8e8e8' } };
+    const BLOCKS = 64;
+    let seed = 1;
+    const rand = () => ((seed = (seed * 1103515245 + 12345) >>> 0) / 2 ** 32);
+    const line = () => {
+      let s = '';
+      for (let i = 0; i < COLS; i++) s += String.fromCharCode(33 + Math.floor(rand() * 94));
+      return s;
+    };
+
+    /** Lines of `COLS` glyphs in columns across the viewport, sized so `n` of them fill it. */
+    function wall(n: number, layout: string) {
+      seed = 1;
+      const lines = Math.max(1, Math.round(n / COLS));
+      const fontPx = Math.sqrt((w * h) / (0.62 * 1.25 * lines * COLS));
+      const colW = COLS * 0.62 * fontPx + fontPx;
+      const cols = Math.max(1, Math.floor(w / colW));
+      const perCol = Math.ceil(lines / cols);
+      const lead = h / perCol;
+      const style = { fontSize: fontPx, fontFamily: 'sans-serif', lineHeight: lead / fontPx };
+      const commands: unknown[] = [];
+      if (layout === 'line') {
+        for (let i = 0; i < lines; i++) {
+          commands.push(textCommandFromRuns((i / perCol | 0) * colW, (i % perCol) * lead, [{ text: line(), fill: INK }], style));
+        }
+      } else {
+        // Contiguous runs of a column's lines, so a block is a card's worth of text.
+        const perBlock = Math.ceil(lines / BLOCKS);
+        for (let b = 0; b * perBlock < lines; b++) {
+          const first = b * perBlock;
+          const count = Math.min(perBlock, lines - first);
+          const rows: string[] = [];
+          for (let k = 0; k < count; k++) rows.push(line());
+          commands.push(textCommandFromRuns(
+            (first / perCol | 0) * colW, (first % perCol) * lead, [{ text: rows.join('\n'), fill: INK }], style,
+          ));
+        }
+      }
+      return { commands, glyphs: lines * COLS, fontPx };
+    }
+
+    const view = (f: number, moving: boolean) => {
+      if (!moving) return new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+      const t = f * 0.05;
+      const z = 1 + 0.1 * Math.sin(t);
+      const tx = (w / 2) * (1 - z) + 20 * Math.sin(t * 0.7);
+      const ty = (h / 2) * (1 - z) + 15 * Math.cos(t * 0.9);
+      return new Float32Array([z, 0, 0, 0, z, 0, tx, ty, 1]);
+    };
+
+    const px = new Uint8Array(w * h * 4);
+    const paints = () => {
+      gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      for (let p = 3; p < px.length; p += 4) if (px[p] !== 0) return true;
+      return false;
+    };
+
+    (globalThis as Record<string, unknown>).__textWall = async (
+      cell: { glyphs: number; layout: string; motion: string },
+      opts: { warmup: number; measure: number; maxMs: number },
+    ) => {
+      const { commands, glyphs, fontPx } = wall(cell.glyphs, cell.layout);
+      const moving = cell.motion === 'moving';
+      // The atlas page reaches the GPU a few frames after its first use.
+      let painted = false;
+      for (let k = 0; k < 60 && !painted; k++) {
+        renderer.render(commands, view(0, false));
+        painted = paints();
+        if (!painted) await new Promise((r) => setTimeout(r, 50));
+      }
+      const cpu: number[] = [];
+      const gpu: number[] = [];
+      const pending: { q: WebGLQuery; measured: boolean }[] = [];
+      const collect = () => {
+        while (pending.length) {
+          const { q, measured } = pending[0];
+          if (!gl.getQueryParameter(q, gl.QUERY_RESULT_AVAILABLE)) break;
+          pending.shift();
+          const disjoint = timer && gl.getParameter(timer.GPU_DISJOINT_EXT);
+          if (measured && !disjoint) gpu.push(Number(gl.getQueryParameter(q, gl.QUERY_RESULT)) / 1e6);
+          gl.deleteQuery(q);
+        }
+      };
+      const started = performance.now();
+      let f = 0;
+      await new Promise<void>((done) => {
+        const tick = () => {
+          const measured = f >= opts.warmup;
+          const q = timer ? gl.createQuery() : null;
+          if (q && timer) gl.beginQuery(timer.TIME_ELAPSED_EXT, q);
+          const t0 = performance.now();
+          renderer.render(commands, view(f, moving));
+          const t1 = performance.now();
+          if (q && timer) { gl.endQuery(timer.TIME_ELAPSED_EXT); pending.push({ q, measured }); }
+          if (measured) cpu.push(t1 - t0);
+          collect();
+          f += 1;
+          if (cpu.length >= opts.measure || performance.now() - started > opts.maxMs) { done(); return; }
+          requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      });
+      // The last queries land a frame or two late.
+      for (let k = 0; k < 10 && pending.length; k++) {
+        await new Promise((r) => requestAnimationFrame(r));
+        collect();
+      }
+      return {
+        glyphs, commands: commands.length, fontPx, frames: cpu.length,
+        truncated: cpu.length < opts.measure, cpu, gpu, paints: painted,
+      };
+    };
+    return { glRenderer, gpuTimer: !!timer };
+  }, { root: repoRoot, w: W, h: H });
+
+  console.log(`GL renderer: ${glRenderer}${gpuTimer ? '' : ' (no timer query: GPU column empty)'}`);
+  run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
+
+  const cells: Cell[] = GLYPHS.flatMap((glyphs) =>
+    LAYOUTS.flatMap((layout) => MOTIONS.map((motion) => ({ glyphs, layout, motion }))));
+  const q = (xs: number[], p: number) => {
+    const s = [...xs].sort((a, b) => a - b);
+    return s.length ? s[Math.min(s.length - 1, Math.floor(s.length * p))] : NaN;
+  };
+
+  let i = 0;
+  for (const cell of cells) {
+    i += 1;
+    const m = await page.evaluate(
+      ({ cell, opts }) => (globalThis as any).__textWall(cell, opts) as Promise<Measured>,
+      { cell, opts: { warmup: WARMUP, measure: MEASURE, maxMs: MAX_MS } },
+    );
+    expect(m.paints, `${cell.layout} n=${cell.glyphs} painted nothing`).toBe(true);
+    const cpu50 = q(m.cpu, 0.5);
+    const cpu95 = q(m.cpu, 0.95);
+    const gpu50 = q(m.gpu, 0.5);
+    const metrics: Record<string, ReturnType<typeof metric>> = {
+      cpuP50: metric(cpu50, 'ms', `p50 of ${m.frames} frames`, m.cpu),
+      cpuP95: metric(cpu95, 'ms', `p95 of ${m.frames} frames`),
+    };
+    if (m.gpu.length) metrics.gpuP50 = metric(gpu50, 'ms', `p50 of ${m.gpu.length} timer queries`, m.gpu);
+    run.item(`${cell.layout} ${cell.motion} n=${cell.glyphs}`, metrics, {
+      ...cell, drawnGlyphs: m.glyphs, commands: m.commands, fontPx: m.fontPx, truncated: m.truncated,
+    });
+    console.log(
+      `${String(i).padStart(2)}/${cells.length}  ${cell.layout.padEnd(5)} ${cell.motion.padEnd(6)} ` +
+      `glyphs ${String(m.glyphs).padStart(9)}  cmds ${String(m.commands).padStart(6)}  ` +
+      `cpu p50 ${cpu50.toFixed(2).padStart(8)}ms  p95 ${cpu95.toFixed(2).padStart(8)}ms  ` +
+      `gpu ${(m.gpu.length ? gpu50.toFixed(2) : '-').padStart(7)}ms` +
+      `${m.truncated ? `  (stopped at ${m.frames} frames)` : ''}`,
+    );
+  }
+
+  expect(errors).toEqual([]);
+  run.write();
+});

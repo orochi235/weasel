@@ -10,6 +10,18 @@ When work merges, retire its entry here in the same change.
 
 ## Renderer and the batch
 
+- **(P2) [maintainer] Unchanged text costs its full walk every frame.** `drawText` stages each
+  glyph's quad into the batch again on every frame, even when the text and its layout have not
+  changed. That costs about 0.1 µs a glyph: 11 ms of CPU at 114k glyphs, and 143 ms at 1.28M
+  (`tests/perf/README.md`, "A wall of static text", 2026-11-17). On the same node, astv's stage
+  draws the same 114k glyphs for 0.4 ms of CPU with the camera parked and about 2 ms while it
+  moves, because it keeps each card's glyph instances in a GPU buffer and rewrites only the cards
+  whose content changed. Adding a retained glyph layer to the renderer would make static text
+  under any camera cost a draw call instead of a walk. The design is open: what owns the buffer,
+  how a command says its text is unchanged, and how that combines with the clips and paints a text
+  group can carry. Closes when unchanged text stops being walked every frame, or when it is
+  decided that it should be.
+
 - **(P3) [waiting] Whether the batched path costs a co-tenant on the same page.** Reported, not measured
   here. A consumer benchmarking its wall against a canvas2d control found that at one rung the
   *canvas2d* side went from ~8.8 ms to 102-160 ms, and only when the page also held a build with
