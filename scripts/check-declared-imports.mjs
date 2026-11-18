@@ -173,8 +173,10 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
         }
         if (declared.has(pkg) || BUILTINS.has(pkg)) continue;
         // A type-only import leaves no specifier in the JavaScript, so a devDependency can meet it
-        // unless the type reaches the package's .d.ts; a sibling's always might, so it never may.
-        if (!runtime.has(written) && !siblings.has(pkg) && devDeclared.has(pkg)) continue;
+        // unless the type reaches the package's .d.ts, which check:idle-deps reads the build to catch.
+        if (!runtime.has(written) && devDeclared.has(pkg)) continue;
+        // The icons plugin replaces every icon() call in a library build, so icons.gen's scopedIcon never ships.
+        if (pkg === '@weasel-js/icons' && rel.endsWith('/icons.gen.ts') && devDeclared.has(pkg)) continue;
         if (aliases.some((alias) => specifier === alias || specifier.startsWith(`${alias}/`))) continue;
         if (!missing.has(pkg)) missing.set(pkg, rel);
       }

@@ -120,7 +120,6 @@
     "dev:3d": "LABKIT_EXAMPLE=3d-lab vite"
   },
   "peerDependencies": {
-    "@weasel-js/animator": "1.19.1",
     "@weasel-js/core": "1.19.1",
     "@weasel-js/text-tools": "1.19.1",
     "@weasel-js/theme": "1.19.1",
@@ -161,6 +160,7 @@
     "@msb235/blits": "1.2.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@types/three": "^0.187.0",
+    "@weasel-js/animator": "1.19.1",
     "@weasel-js/guides": "1.19.1",
     "less": "^4.2.0",
     "rollup-plugin-dts": "^6.4.1",

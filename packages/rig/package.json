@@ -50,12 +50,10 @@
   "dependencies": {
     "@weasel-js/animator": "1.19.1",
     "@weasel-js/cursor": "1.19.1",
-    "@weasel-js/history": "1.19.1",
     "@weasel-js/icons": "1.19.1",
     "@weasel-js/prefs-schema": "1.19.1",
     "@weasel-js/react": "1.19.1",
     "@weasel-js/registry": "1.19.1",
-    "@weasel-js/renderer": "1.19.1",
     "@weasel-js/routing": "1.19.1"
   },
   "peerDependencies": {
@@ -68,6 +66,8 @@
     "provenance": true
   },
   "devDependencies": {
-    "@weasel-js/editing": "1.19.1"
+    "@weasel-js/editing": "1.19.1",
+    "@weasel-js/history": "1.19.1",
+    "@weasel-js/renderer": "1.19.1"
   }
 }
