@@ -9,6 +9,9 @@ const entries = (params: Record<string, unknown>, color: (key: string) => boolea
     .map(([k, v]) => `${k}: ${color(k) ? `cssColorLiteral(${JSON.stringify(v)})` : literal(v)}`)
     .join(', ');
 
+/** `text` as JSX children: as it is, or as a string expression where JSX would read part of it as markup. */
+const jsxText = (text: string): string => (/[{}<>&\n]/.test(text) ? `{${JSON.stringify(text)}}` : text);
+
 /** The `<Badge>` JSX that reproduces the lab's badge. */
 export function composeSnippet({ shape, look, padding }: Pick<ComposeConfig, 'shape' | 'look' | 'padding'>): string {
   const lines: string[] = ['<Badge', `  base="${shape.base}"`];
@@ -28,6 +31,6 @@ export function composeSnippet({ shape, look, padding }: Pick<ComposeConfig, 'sh
   lines.push(`  padding="${composedPadding(padding)}"`);
   if (look.bloat !== 0) lines.push(`  bloat={${look.bloat}}`);
   if (look.crawl) lines.push(`  crawl={${look.crawlSpeed}}`);
-  lines.push(`>${look.label}</Badge>`);
+  lines.push(`>${jsxText(look.label)}</Badge>`);
   return lines.join('\n');
 }

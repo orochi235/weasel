@@ -94,4 +94,13 @@ describe('composeSnippet', () => {
     const text = composeSnippet({ ...config, padding: { ...config.padding, top: 10, linkX: false, right: 3 } });
     expect(text).toContain('  padding="10px 3px 10px 6px"');
   });
+
+  it('writes a label holding a JSX-special character as a string expression', () => {
+    const config = defaults();
+    const label = (text: string) => composeSnippet({ ...config, look: { ...config.look, label: text } }).split('\n').at(-1);
+    expect(label('a{b}')).toBe('>{"a{b}"}</Badge>');
+    expect(label('<NEW>')).toBe('>{"<NEW>"}</Badge>');
+    expect(label('R&D')).toBe('>{"R&D"}</Badge>');
+    expect(label('PLAIN TEXT')).toBe('>PLAIN TEXT</Badge>');
+  });
 });
