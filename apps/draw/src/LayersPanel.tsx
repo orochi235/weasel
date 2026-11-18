@@ -60,6 +60,11 @@ function faded(color: string, alpha: number): string {
   return alpha >= 1 ? color : `color-mix(in srgb, ${color} ${Number((Math.max(0, alpha) * 100).toFixed(1))}%, transparent)`;
 }
 
+/** `text` as a row's name, or undefined when it shows nothing: an empty sticky note's text, a cleared label. */
+function named(text: string | undefined): string | undefined {
+  return text === undefined || text.trim() === '' ? undefined : text;
+}
+
 /** Whether `id` is a fixed row of `items` (a page, the Background), which has no row menu. */
 function isFixedRow(items: readonly LayerListItem[], id: string): boolean {
   return items.some((it) => (it.id === id ? it.fixed === true : isFixedRow(it.children ?? [], id)));
@@ -91,10 +96,10 @@ export function LayersContent(props: LayersContentProps): ReactElement {
     selection,
     itemFor: (node) => {
       const m = measurementOf(node);
-      if (m) return { label: node.data.label ?? `Measurement ${qty(m.distance, AT).text}` };
+      if (m) return { label: named(node.data.label) ?? `Measurement ${qty(m.distance, AT).text}` };
       const data = node.data;
       const shown = withInheritedPaint(data, inheritedPaintIn(scene, node));
-      return { label: data.label ?? data.text ?? effectNodeName(data) ?? node.id, leading: <LayerSwatch color={layerSwatch(shown)} /> };
+      return { label: named(data.label) ?? named(data.text) ?? effectNodeName(data) ?? node.id, leading: <LayerSwatch color={layerSwatch(shown)} /> };
     },
     rename: (node, label) => ({ ...node.data, label }),
     ...(showAnnotations

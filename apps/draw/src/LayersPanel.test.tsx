@@ -134,6 +134,22 @@ describe('LayersPanel — one row at a time', () => {
   });
 });
 
+describe('LayersPanel — row names', () => {
+  beforeEach(() => {
+    drawPrefs().reset();
+    window.localStorage.clear();
+  });
+
+  it('names a node whose text or label is blank by its id, not by the blank', () => {
+    const scene = makeScene();
+    scene.add({ id: asNodeId('note-1'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { text: '' } });
+    scene.add({ id: asNodeId('note-2'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { text: ' \n', label: '' } });
+    renderWithIcons(<Host scene={scene} />);
+    expect(screen.getByText('note-1')).toBeTruthy();
+    expect(screen.getByText('note-2')).toBeTruthy();
+  });
+});
+
 describe('LayersPanel — path-effect rows', () => {
   beforeEach(() => {
     drawPrefs().reset();
