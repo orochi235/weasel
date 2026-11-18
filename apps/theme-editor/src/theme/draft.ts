@@ -11,6 +11,8 @@ export interface ModeView {
 }
 
 export interface DerivedDraft {
+  /** The draft this was derived from, which a later edit may have left behind. */
+  readonly definition: ThemeDefinition;
   readonly merged: ThemeDefinition;
   readonly axes: AxisDefs;
   readonly theme: Theme;
@@ -30,5 +32,5 @@ export function deriveDraft(def: ThemeDefinition, lookup: Lookup, axisValues: Ax
     return { mode, selection, result: derive(def, selection, lookup), resolved: resolveTheme(theme, selection) };
   });
   const primary = views.find((v) => v.mode === axes.mode?.default) ?? views[0];
-  return { merged, axes, theme, views, primary };
+  return { definition: def, merged, axes, theme, views, primary };
 }
