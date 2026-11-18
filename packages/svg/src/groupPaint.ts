@@ -8,7 +8,7 @@ import { setsOwn, type StyleContext } from './cascade';
 import { INHERITED_PROPERTIES } from './properties';
 import { paintThroughMatrix, strokeThroughMatrix } from './paintThroughMatrix';
 import { readPaint, readStroke } from './readPaint';
-import type { GradientTable } from './gradients';
+import type { GradientTable } from './readGradients';
 import type { Matrix, SvgGroupNode, SvgInherits } from './types';
 
 /** Whether the fill and the stroke in effect were set by an enclosing `<g>`. */

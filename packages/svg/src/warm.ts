@@ -3,7 +3,7 @@ import {
 } from '@weasel-js/core';
 import { loadTextOutlines } from '@weasel-js/text';
 import type { SerializeOptions, SvgNode, SvgTextNode } from './types';
-import { PaintServerRegistry } from './gradients';
+import { PaintServerRegistry } from './paintServers';
 import { registerPaintServers } from './serialize';
 import { scriptSizeFace } from './serializeText';
 import { requestedFaces } from './textModes';

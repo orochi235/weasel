@@ -9,7 +9,7 @@ import { type Moves, movesOf, NO_MOVES, raiseRuns, risesOver, TextMoves } from '
 import { collapseRunWhitespace, preservesSpace } from './textWhitespace';
 import { fontSizeOf } from './fontSize';
 import { ownLang } from './textLang';
-import type { GradientTable } from './gradients';
+import type { GradientTable } from './readGradients';
 import { deriveStyle, ownValue, setsOwn, type StyleContext } from './cascade';
 import { readStroke, isNonScalingStroke, ownStrokeStyle, coreStroke, coreTextFill } from './readPaint';
 import { withOutlinedStroke } from './strokeOutlineSvg';
