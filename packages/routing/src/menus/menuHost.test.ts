@@ -23,8 +23,8 @@ describe('createMenuHost', () => {
   it('keeps the rect a menu was opened under', () => {
     const h = host();
     h.define({ id: 'm', menu: pref.group('', { cut: pref.action('cut') }) });
-    h.open({ menu: 'm', client: { x: 1, y: 2 }, under: { x: 1, y: 2, w: 30, h: 10 } });
-    expect(h.current()?.under).toEqual({ x: 1, y: 2, w: 30, h: 10 });
+    h.open({ menu: 'm', client: { x: 1, y: 2 }, under: { x: 1, y: 2, width: 30, height: 10 } });
+    expect(h.current()?.under).toEqual({ x: 1, y: 2, width: 30, height: 10 });
   });
   it('opens a menu by id', () => {
     const h = host();
