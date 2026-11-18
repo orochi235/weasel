@@ -178,6 +178,21 @@ describe('sidebar navigation', () => {
   });
 });
 
+describe('leaving a page', () => {
+  it('adds a history entry for the sidebar wordmark, so Back returns to the page it left', async () => {
+    const [first, second] = DEMOS;
+    go(`#${first.id}`);
+    renderWithIcons(<App />);
+    await heading(first.title);
+    fireEvent.click(within(screen.getByRole('navigation')).getByRole('link', { name: second.title }));
+    await heading(second.title);
+    const before = window.history.length;
+    fireEvent.click(screen.getByRole('link', { name: 'weasel home' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'weasel' })).toBeTruthy();
+    expect(window.history.length).toBe(before + 1);
+  });
+});
+
 describe('the source panel', () => {
   it('opens each demo on its first tab, whichever tab the last one was left on', async () => {
     const [first, second] = DEMOS.filter((d) => d.sources.length > 1);

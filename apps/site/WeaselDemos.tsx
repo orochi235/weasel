@@ -66,7 +66,7 @@ export function WeaselDemos() {
 
   useEffect(() => {
     // A hash that named nothing: hand the page back to the front page.
-    if (activeId === FRONT_ID) goFront();
+    if (activeId === FRONT_ID) goFront('replace');
     else if (window.location.hash.replace(/^#/, '') !== activeId) {
       window.history.replaceState(null, '', `#${activeId}`);
     }
@@ -93,7 +93,7 @@ export function WeaselDemos() {
               href="./"
               className="ckd-sidebar-home"
               aria-label="weasel home"
-              onClick={(e) => { e.preventDefault(); goFront(); }}
+              onClick={(e) => { e.preventDefault(); goFront('push'); }}
             ><Wordmark /></a>
             <VersionPill className="ckd-sidebar-version" />
           </h1>
