@@ -42,4 +42,14 @@ describe('<SemanticDrawer>', () => {
     type('cubic-bezier(0.32, 0, 0.67, 0.1)');
     expect(onRule.mock.calls.at(-1)![0]).toEqual({ value: [0.32, 0, 0.67, 0.1], type: 'cubicBezier' });
   });
+
+  it('edits a branch of the rule again after Varies by is turned off and on', () => {
+    const comfortable = { value: 'a' } as SemanticRule;
+    const { onRule, rerender } = renderDrawer({ by: 'density', comfortable, compact: { value: 'b' } } as Varying<SemanticRule>);
+    rerender(comfortable);
+    rerender({ by: 'mode', dark: comfortable, light: comfortable } as Varying<SemanticRule>);
+    expect(screen.queryByText(/has no comfortable branch/)).not.toBeInTheDocument();
+    type('c');
+    expect(onRule.mock.calls.at(-1)![0]).toEqual({ by: 'mode', dark: { value: 'c' }, light: comfortable });
+  });
 });
