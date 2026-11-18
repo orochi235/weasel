@@ -1,0 +1,166 @@
+/**
+ * The parsing and rendering behind `gen-brand-colors.mjs`, kept apart from its
+ * fetches and writes so it can be tested on fixed input.
+ */
+import { join } from 'node:path';
+
+/** Where the tables go, from this file rather than the cwd, so the script runs from anywhere. */
+export const PALETTE_FILES = {
+  lego: join(import.meta.dirname, '../src/palette/legoColors.ts'),
+  copic: join(import.meta.dirname, '../src/palette/copicColors.ts'),
+};
+
+const hex2 = (n) => Number(n).toString(16).padStart(2, '0');
+
+/** sRGB hex to OKLab, so "how colourful is this" is one number. */
+function oklab(hex) {
+  const [r, g, b] = [1, 3, 5]
+    .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map((u) => (u <= 0.04045 ? u / 12.92 : ((u + 0.055) / 1.055) ** 2.4));
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+  ];
+}
+
+/**
+ * Near-neutral, by chroma rather than channel spread: LEGO's Black is a
+ * blue-black whose channels differ by 25 while its chroma is under 0.02, so a
+ * spread test keeps it.
+ */
+function isNeutral(hex) {
+  const [L, a, b] = oklab(hex);
+  return Math.hypot(a, b) < 0.035 || L < 0.22 || L > 0.95;
+}
+
+const NAMED = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: '\u00a0' };
+
+/**
+ * An HTML attribute's text with its character references decoded. A named
+ * reference outside the few HTML always uses throws, rather than reaching a
+ * swatch label as `&eacute;`.
+ */
+export function decodeEntities(text) {
+  return text.replace(/&(#x[0-9a-f]+|#\d+|[a-z][a-z0-9]*);/gi, (ref, body) => {
+    if (body[0] === '#') return String.fromCodePoint(body[1] === 'x' || body[1] === 'X' ? parseInt(body.slice(2), 16) : Number(body.slice(1)));
+    if (Object.hasOwn(NAMED, body)) return NAMED[body];
+    throw new Error(`gen-brand-colors: no decoding for ${ref} in ${JSON.stringify(text)}`);
+  });
+}
+
+/**
+ * Brickset's current-colours page to its solid chromatic rows, sorted by name.
+ * Every sort here names its locale, so the machine's own does not reorder the file.
+ */
+export function parseLego(html) {
+  const rows = [];
+  for (const block of html.split("<article class='set'>").slice(1)) {
+    const title = /title="([^"]+)"/.exec(block)?.[1];
+    const name = title && decodeEntities(title);
+    const rgb = /background-color:rgb\((\d+),\s*(\d+),\s*(\d+)\)/.exec(block);
+    // Solid only: a transparent, chrome, pearl or glitter piece is a surface,
+    // and one flat hex says nothing useful about it.
+    const solid = /\/colours\/type-Solid'/.test(block);
+    if (!name || !rgb || !solid) continue;
+    const hex = `#${hex2(rgb[1])}${hex2(rgb[2])}${hex2(rgb[3])}`;
+    if (isNeutral(hex)) continue;
+    if (rows.some((r) => r.name === name)) continue;
+    rows.push({ name, hex });
+  }
+  rows.sort((a, b) => a.name.localeCompare(b.name, 'en'));
+  return rows;
+}
+
+/** A code's tier within its family: `0000` < `000` < `00` < `0` < `01` < … < `10`. */
+function copicTier(digits) {
+  return /^0+$/.test(digits) ? -digits.length : Number(digits);
+}
+
+/**
+ * Copic's own order: by family, then palest first. A numeric compare reads
+ * `B0000`, `B000` and `B00` as the same number and breaks the tie however it
+ * likes; Copic puts more zeros paler, so the extra-pale tiers run 0000 first.
+ */
+export function copicCodeOrder(a, b) {
+  const [, fa, da] = /^(.*?)(\d*)$/.exec(a);
+  const [, fb, db] = /^(.*?)(\d*)$/.exec(b);
+  return fa.localeCompare(fb, 'en') || copicTier(da) - copicTier(db) || a.localeCompare(b, 'en');
+}
+
+/** meodai/copic-colors' `colors.json` to the marker rows, in code order. */
+export function parseCopic(all) {
+  return all
+    .filter((c) => c.extractedColor && c.number)
+    .map((c) => {
+      const code = String(c.number);
+      // A row the generated file's types reject is an upstream change to look at, not one to write.
+      if (typeof c.name !== 'string' || !c.name) throw new Error(`gen-brand-colors: Copic ${code} has no name`);
+      const hex = String(c.extractedColor).toLowerCase();
+      if (!/^#[0-9a-f]{6}$/.test(hex)) throw new Error(`gen-brand-colors: Copic ${code}'s colour ${JSON.stringify(c.extractedColor)} is not a #rrggbb hex`);
+      return { name: c.name, code, hex };
+    })
+    .sort((a, b) => copicCodeOrder(a.code, b.code));
+}
+
+/** Rows that came back empty mean the source changed shape, not that the range did. */
+function nonEmpty(rows, what) {
+  if (rows.length === 0) throw new Error(`gen-brand-colors: ${what} gave no rows; the source page or its markup changed`);
+  return rows;
+}
+
+/** The text of `legoColors.ts` for these rows. Throws on none. */
+export function renderLego(rows) {
+  nonEmpty(rows, 'LEGO');
+  return `// GENERATED by apps/theme-editor/scripts/gen-brand-colors.mjs
+// Source: https://brickset.com/colours/status-Current
+
+/** One LEGO colour: Brickset's name and the value it publishes. */
+export interface LegoColor {
+  readonly name: string;
+  readonly hex: string;
+}
+
+/**
+ * LEGO colours currently in production, solid and opaque, neutrals excluded.
+ *
+ * Brickset is the source because it carries the one field LDraw's LDConfig
+ * does not: production status. LDConfig would put Fabuland Orange and Maersk
+ * Blue in here beside Coral and Dark Azure with nothing to tell them apart.
+ */
+export const LEGO_COLORS: readonly LegoColor[] = [
+${rows.map((r) => `  { name: ${JSON.stringify(r.name)}, hex: '${r.hex}' },`).join('\n')}
+];
+`;
+}
+
+/** The text of `copicColors.ts` for these rows. Throws on none. */
+export function renderCopic(rows) {
+  nonEmpty(rows, 'Copic');
+  return `// GENERATED by apps/theme-editor/scripts/gen-brand-colors.mjs
+// Source: https://github.com/meodai/copic-colors (MIT), sampled from copic.jp
+
+/** One Copic marker: its code, its name, and the colour of its swatch. */
+export interface CopicColor {
+  readonly name: string;
+  readonly code: string;
+  readonly hex: string;
+}
+
+/**
+ * The Copic range.
+ *
+ * Values are the colour sampled from each marker's swatch image on copic.jp,
+ * not the tidied hex that dataset also carries — a marker's colour is a
+ * measurement, and the sample is the closer account of it. The grays are kept:
+ * the N, C, W and T families are a deliberate part of the system rather than
+ * the accident that a LEGO gray is.
+ */
+export const COPIC_COLORS: readonly CopicColor[] = [
+${rows.map((r) => `  { name: ${JSON.stringify(r.name)}, code: ${JSON.stringify(r.code)}, hex: '${r.hex}' },`).join('\n')}
+];
+`;
+}

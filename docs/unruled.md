@@ -2641,3 +2641,8 @@ Calls the lanes made without a ruling:
 - 2026-11-18 (the fixer's call): the platformer's `parseLevel` throws on a level with no `S` or no `G` unless passed
   `{ markers: 'optional' }`, which the geometry-only test fixtures use, and throws on a second `S` or `G` either way,
   naming both. Defaulting a missing marker to (0, 0), as before, was the alternative.
+## Audit round thirty-six (2026-11-18): the theme editor's brand-colour generator
+
+- 2026-11-18 (the fixer's call): `gen-brand-colors` throws, writing neither table, on a Copic marker with no name
+  or a sampled colour that is not `#rrggbb`, and on a LEGO name holding a named HTML reference other than `&amp;`,
+  `&lt;`, `&gt;`, `&quot;`, `&apos;` and `&nbsp;`. Skipping the row with a warning was the alternative.
