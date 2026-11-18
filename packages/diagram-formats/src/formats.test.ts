@@ -89,6 +89,6 @@ describe('the native JSON format', () => {
   });
 
   it('refuses a later version than it knows', () => {
-    expect(() => DIAGRAM_JSON.read!('{"format":"weasel-diagram","version":2,"pages":[]}')).toThrow(/version 2/);
+    expect(() => DIAGRAM_JSON.read!('{"format":"weasel-diagram","version":3,"pages":[]}')).toThrow(/version 3/);
   });
 });

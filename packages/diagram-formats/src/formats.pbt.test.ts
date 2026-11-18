@@ -38,12 +38,12 @@ describe('formats, property', () => {
     const tally = { read: 0, refused: 0 };
     const claim = fc.record({
       format: fc.constantFrom('weasel-diagram', 'weasel-diagram', 'other'),
-      version: fc.oneof(fc.constantFrom(0, 1, 2, -1, 1.5), fc.jsonValue()),
+      version: fc.oneof(fc.constantFrom(0, 1, 2, 3, -1, 1.5), fc.jsonValue()),
       pages: fc.oneof(fc.array(fc.oneof(fc.jsonValue(), fc.record({ id: fc.string(), kind: fc.constantFrom('graph', 'plot', 'x') }))), fc.jsonValue()),
     }, { requiredKeys: ['format'] });
     const readable = fc.record({
       format: fc.constant('weasel-diagram'),
-      version: fc.constantFrom(0, 1),
+      version: fc.constantFrom(0, 1, 2),
       pages: fc.array(fc.record({ id: fc.string(), kind: fc.constantFrom('graph', 'plot') }, { requiredKeys: ['id'] }), { maxLength: 3 }),
     });
     const text = fc.oneof(
