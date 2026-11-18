@@ -1,40 +1,21 @@
-import { useLatest } from '@weasel-js/core';
-import { getOwn, setOwn } from '@weasel-js/registry';
+import { Children, type ReactNode, useCallback, useMemo } from 'react';
+import { asNodeId, floatingStrategy, gridStrategy, type NodeId } from 'windease';
+import { Container, DragProvider, Provider, StrategyRegistryProvider } from 'windease/react';
+import { createTileChrome, FloatingPanels, type PanelDescriptor } from './tileChrome';
 import {
-  Children,
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-} from 'react';
-import { asNodeId, createNode, floatingStrategy, gridStrategy, type NodeId, Store } from 'windease';
-import {
-  type ChromeMap,
-  Container,
-  DragProvider,
-  Provider,
-  StrategyRegistryProvider,
-} from 'windease/react';
+  panelNodeId,
+  type TrialLayout,
+  useLayoutReport,
+  useSurfaceRetile,
+  useTileSync,
+  useWorkspaceStore,
+  ZONE_ID,
+} from './workspaceStore';
 
-import { Lightbox } from '../lightbox/Lightbox';
-import { useSurfaceOptional } from '../surface/useSurfaceTile';
-import { TrialDragContext } from '../trial/TrialDragContext';
-import { usePanelHosts } from './panelHost';
+export type { PanelDescriptor } from './tileChrome';
+export type { TrialLayout } from './workspaceStore';
 
-const ZONE_ID = asNodeId('lk-workspace');
 const STRATEGIES = { grid: gridStrategy as never, floating: floatingStrategy as never };
-const FLOAT_ZONE_ID = asNodeId('lk-workspace-floating');
-const PANEL_KIND = 'panel';
-const KIND = 'trial';
-
-/** A tile's persisted extent, keyed by the id its caller gave it. Grid resizes
- *  write `span`; `size` is here because a strategy swap would write that. */
-export type TrialLayout = Record<
-  string,
-  { size?: { w?: number; h?: number }; span?: { cols?: number; rows?: number } }
->;
 
 /** Props for `Workspace`. */
 export interface WorkspaceProps {
@@ -88,60 +69,6 @@ export interface WorkspaceProps {
   viewport?: { w: number; h: number };
 }
 
-/** The layout store a workspace keeps for its lifetime: the tile grid, and the zone floating panels live in. */
-function createWorkspaceStore(grid: { resizable: boolean; gap: number; padding: number }): Store {
-  const store = new Store();
-  store.registerNode(
-    createNode({
-      kind: 'zone',
-      id: ZONE_ID,
-      container: { strategyId: 'grid', config: grid },
-    }),
-  );
-  store.registerNode(
-    createNode({
-      kind: 'zone',
-      id: FLOAT_ZONE_ID,
-      container: { strategyId: 'floating', config: {} },
-    }),
-  );
-  return store;
-}
-
-function extentOf(store: Store, id: NodeId): TrialLayout[string] | null {
-  const p = store.getNode(id)?.membership?.placement as TrialLayout[string] | undefined;
-  if (!p) return null;
-  const out: TrialLayout[string] = {};
-  if (p.size) out.size = p.size;
-  if (p.span) out.span = p.span;
-  return Object.keys(out).length > 0 ? out : null;
-}
-
-/** The frame an undocked panel gets: a box, and the host element its trial
- *  portals into. The title and the dock control come through the portal with
- *  the body — the workspace knows a panel's key, not what is in it. */
-function PanelFrame({ panel, floating = false }: { panel: PanelDescriptor; floating?: boolean }) {
-  const hosts = usePanelHosts();
-  return (
-    <div
-      className={floating ? 'lk-panel-tile lk-panel-tile--floating' : 'lk-panel-tile'}
-      data-trial-id={panel.trialId}
-    >
-      <div className="lk-panel-tile__body" ref={(el) => hosts?.set(panel.key, el)} />
-    </div>
-  );
-}
-
-/** One undocked panel, as the workspace needs to know it. */
-export interface PanelDescriptor {
-  /** Stable key; also the portal host key the owning trial writes into. */
-  key: string;
-  title: string;
-  as: 'tile' | 'floating';
-  /** The trial the panel was torn out of, which keys pressed and presses in the panel go to. */
-  trialId?: string;
-}
-
 /**
  * Auto-balanced tiling of trials, `ceil(sqrt(n))` columns wide.
  *
@@ -173,120 +100,29 @@ export function Workspace({
   const tilePanels = useMemo(() => (panels ?? []).filter((p) => p.as === 'tile'), [panels]);
   const floatPanels = useMemo(() => (panels ?? []).filter((p) => p.as === 'floating'), [panels]);
   // Identity has to be stable while the id *contents* are unchanged: the sync
-  // effect below keys off it, and a fresh array every render would re-register
+  // effect keys off it, and a fresh array every render would re-register
   // every tile forever.
   const idKey = JSON.stringify([
     ...items.map((_, i) => ids?.[i] ?? `lk-ws-${i}`),
-    ...tilePanels.map((p) => `lk-panel-${p.key}`),
+    ...tilePanels.map((p) => panelNodeId(p.key)),
   ]);
   const nodeIds = useMemo(() => (JSON.parse(idKey) as string[]).map(asNodeId), [idKey]);
 
-  // Held in refs rather than depended on: a fresh object each render would
-  // re-run the sync effect, and only a newly registered tile reads `layout`.
-  const layoutRef = useLatest(layout);
-  const onLayoutChangeRef = useLatest(onLayoutChange);
-
-  // One store for the component's lifetime: a tile's dragged extent lives in
-  // its node, so rebuilding the store on every add or close would silently
-  // reset every pane.
-  const storeRef = useRef<Store | null>(null);
-  if (storeRef.current === null)
-    storeRef.current = createWorkspaceStore({ resizable, gap, padding });
-  const store = storeRef.current;
-
-  // A tile that only moves reports nothing to a ResizeObserver, and only this
-  // component knows the grid moved one. Optional: a lab may own no surface.
-  const surface = useSurfaceOptional();
-
-  useLayoutEffect(() => {
-    store.updateContainerConfig(ZONE_ID, { resizable, gap, padding });
-  }, [store, resizable, gap, padding]);
-
-  useLayoutEffect(() => {
-    const present = new Set(store.getContainerView(ZONE_ID)?.childOrder ?? []);
-    const wanted = new Set(nodeIds);
-    for (const id of present) {
-      if (!wanted.has(id)) store.unregisterNode(id);
-    }
-    for (const id of nodeIds) {
-      if (present.has(id)) continue;
-      const kind = String(id).startsWith('lk-panel-') ? PANEL_KIND : KIND;
-      store.registerNode(createNode({ kind, id, parentId: ZONE_ID, focus: true })); // eslint-disable-line weasel/effect-cleanup -- the store owns its tiles; this reconciles them with nodeIds
-      store.showNode(id);
-      const saved = layoutRef.current && getOwn(layoutRef.current, id);
-      if (saved) store.patchPlacement(id, saved);
-    }
-    store.setChildOrder(ZONE_ID, [...nodeIds]);
-  }, [store, nodeIds, layoutRef]);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: nodeIds is the signal that the tile set changed — a re-tile moves tiles without resizing any — not a value this reads
-  useEffect(() => {
-    if (!surface) return;
-    surface.invalidateRects();
-    return store.events.on('node.placementChanged', () => surface.invalidateRects());
-  }, [store, surface, nodeIds]);
-
-  useEffect(() => {
-    if (!onLayoutChange) return;
-    return store.events.on('node.placementChanged', () => {
-      const next: TrialLayout = {};
-      for (const child of store.getChildren(ZONE_ID)) {
-        const extent = extentOf(store, child.id);
-        if (extent) setOwn(next, child.id, extent);
-      }
-      onLayoutChangeRef.current?.(next);
-    });
-  }, [store, onLayoutChange, onLayoutChangeRef]);
+  const store = useWorkspaceStore(resizable, gap, padding);
+  useTileSync(store, nodeIds, layout);
+  useSurfaceRetile(store, nodeIds);
+  useLayoutReport(store, onLayoutChange);
 
   const commitOrder = useCallback(
     (nextIds: NodeId[]) => onReorder?.(nextIds.map(String)),
     [onReorder],
   );
 
-  const chrome = useMemo<ChromeMap>(() => {
-    const lightboxFor = typeof lightbox === 'function' ? lightbox : () => lightbox;
-    const doubleClickFor =
-      typeof expandOnDoubleClick === 'function' ? expandOnDoubleClick : () => expandOnDoubleClick;
-    const byId = new Map<string, ReactNode>(nodeIds.map((id, i) => [id, items[i]]));
-    const panelByNode = new Map<string, PanelDescriptor>(
-      tilePanels.map((p) => [`lk-panel-${p.key}`, p]),
-    );
-    return {
-      [PANEL_KIND]: ({ node }) => {
-        const panel = panelByNode.get(String(node.id));
-        if (!panel) return null;
-        return <PanelFrame panel={panel} />;
-      },
-      [KIND]: ({ node }) => {
-        const id = String(node.id);
-        const tile = (
-          // `disabled` rather than leaving the wrapper out, so turning the
-          // lightbox off cannot remount the tile.
-          <Lightbox
-            className="lk-trial-tile"
-            disabled={!lightboxFor(id)}
-            expandOnDoubleClick={doubleClickFor(id)}
-          >
-            {byId.get(node.id) ?? null}
-          </Lightbox>
-        );
-        if (!reorderable) return tile;
-        return (
-          // No grip strip: the tile's own `<TileGrip>` is the drag surface.
-          <TrialDragContext.Provider value={{ nodeId: node.id }}>{tile}</TrialDragContext.Provider>
-        );
-      },
-    };
-  }, [nodeIds, items, reorderable, tilePanels, lightbox, expandOnDoubleClick]);
-
-  const floatingLayer =
-    floatPanels.length === 0 ? null : (
-      <div className="lk-workspace__floating">
-        {floatPanels.map((p) => (
-          <PanelFrame key={p.key} panel={p} floating />
-        ))}
-      </div>
-    );
+  const chrome = useMemo(
+    () =>
+      createTileChrome({ nodeIds, items, tilePanels, reorderable, lightbox, expandOnDoubleClick }),
+    [nodeIds, items, reorderable, tilePanels, lightbox, expandOnDoubleClick],
+  );
 
   const grid = (
     <Container
@@ -307,7 +143,7 @@ export function Workspace({
             one it insets against the page and lands over the lab header. */}
         <div className="lk-workspace-host">
           {reorderable ? <DragProvider>{grid}</DragProvider> : grid}
-          {floatingLayer}
+          <FloatingPanels panels={floatPanels} />
         </div>
       </StrategyRegistryProvider>
     </Provider>
