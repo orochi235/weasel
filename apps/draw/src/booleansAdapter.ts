@@ -1,6 +1,6 @@
 import {
   asNodeId, AUTO_POSE_DESCRIPTOR, defaultCommitAdapter, drawnPose, type NodeId, type Path, pathInWorld, pathNode, type PathPaint,
-  pathPaintOf, type NodeOutline, sceneNodeOutline, scenePoseFrame, type Scene, type SelectionApi,
+  pathPaintOf, type NodeOutline, renderOrderCompare, sceneNodeOutline, scenePoseFrame, type Scene, type SelectionApi,
 } from '@weasel-js/core';
 import { carriedData, type DrawScene, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { type BooleansAdapter } from '@weasel-js/editing';
@@ -48,10 +48,7 @@ export function drawBooleansAdapter(
     getWorldPath: (id) => worldPathOf(scene, id),
     getPaint: (id) => pathPaintAt(scene, id),
     getOutline: (id) => outlineAt(scene, id),
-    compareZ: (x, y) => {
-      const order = [...scene.renderOrder()];
-      return order.indexOf(asNodeId(x)) - order.indexOf(asNodeId(y));
-    },
+    compareZ: renderOrderCompare(scene),
     createPathNode: (path, _op, sourceId, paint) => {
       // The result continues the source it stands in for: that node's paint, and
       // whatever else it carried.

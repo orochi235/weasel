@@ -7,7 +7,7 @@
  * which this one does not read; the newest registration wins, and a canvas
  * child registers after the presets' components.
  */
-import { sceneInheritedPaintOf, storesEdits, pathPaintOf, type PathPaint, drawnPose, leafPath, storePiece } from '@weasel-js/core';
+import { renderOrderCompare as compareZ, sceneInheritedPaintOf, storesEdits, pathPaintOf, type PathPaint, drawnPose, leafPath, storePiece } from '@weasel-js/core';
 import { useMemo } from 'react';
 import { useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
@@ -63,10 +63,7 @@ export function useBooleansAdapterDepSource(
           ? pathPaintOf(leaf.node.data as Parameters<typeof pathPaintOf>[0], sceneInheritedPaintOf(sceneRef.current)(leaf.node))
           : undefined;
       },
-      compareZ: (a, b) => {
-        const order = [...sceneRef.current.renderOrder()];
-        return order.indexOf(asNodeId(a)) - order.indexOf(asNodeId(b));
-      },
+      compareZ: (a, b) => compareZ(sceneRef.current)(a, b),
       createPathNode: (path, _op, sourceId, paint?: PathPaint) => {
         const leaf = leafOf(sourceId);
         if (!leaf) throw new Error(`[booleansAdapter] no path leaf behind source ${sourceId}`);
