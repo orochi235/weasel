@@ -109,10 +109,6 @@
   "packages/labkit/src/loupe/useLoupe.ts": {
     "longestFunction": 181
   },
-  "packages/labkit/src/specimen/Specimen.tsx": {
-    "lines": 795,
-    "longestFunction": 126
-  },
   "packages/labkit/src/state/bindLabStore.ts": {
     "longestFunction": 192
   },
