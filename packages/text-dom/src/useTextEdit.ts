@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useEffect, useRef } from 'react';
-import { useLatest, useVisibleRaf } from '@weasel-js/react';
+import { useLatest } from '@weasel-js/react';
 import {
   effectiveRangeStyle, resolveTextStyle, type RangeStyle, type RunStylePatch, type TextStyle,
 } from '@weasel-js/text';
@@ -17,6 +17,7 @@ import { useHeldNodeStyle } from './heldNodeStyle';
 import { writeEdit, type EditDraft } from './overlayDraft';
 import { createOverlayEdits } from './overlayEdits';
 import { overlayTop } from './overlayFrame';
+import { useOverlayFollow } from './overlayFollow';
 import type { OverlayHistory } from './overlayHistory';
 import { listenToOverlay } from './overlayListeners';
 import { usePublishedRange } from './publishedRange';
@@ -38,10 +39,7 @@ export function useTextEdit(
   const editingIdRef = useLatest(editingId);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const { nodeStyle, nodeStyleRef, baseRef, holdNodeStyle, styleOf, restyleNode } = useHeldNodeStyle(optsRef);
-  // The overlay-follow loop is built inside the editing effect; the gate's
-  // frame callback reaches it through this ref.
-  const tickRef = useRef<() => void>(() => {});
-  const frameLoop = useVisibleRaf(() => { tickRef.current(); });
+  const follow = useOverlayFollow();
   const initialCaretRef = useRef<number | 'all'>('all');
   const draftRef = useRef<EditDraft | null>(null);
   const { pendingStyle, pendingRef, pendingAtRef, armPending, dropPending } = usePendingStyle();
@@ -125,17 +123,10 @@ export function useTextEdit(
       optsRef, commit, cancel: cancelEdit, history, toggleStyle, typing, syncSelection,
     });
 
-    // Follows the node's screen pose every frame — behind the visibility gate,
-    // so an overlay left open in a background tab costs nothing.
-    tickRef.current = () => {
-      place();
-      frameLoop.request();
-    };
-    frameLoop.request();
+    const stopFollowing = follow(place);
 
     return () => {
-      frameLoop.cancel();
-      tickRef.current = () => {};
+      stopFollowing();
       stopListening();
       opened.remove();
       overlayRef.current = null;
@@ -144,7 +135,7 @@ export function useTextEdit(
       clearSelection();
     };
   }, [editingId, opts.container, optsRef, commit, cancelEdit, syncSelection, clearSelection,
-      frameLoop, toggleStyle, dropPending, publishRange, holdNodeStyle, sendDraft, restyleNode, pendingRef,
+      follow, toggleStyle, dropPending, publishRange, holdNodeStyle, sendDraft, restyleNode, pendingRef,
       selectionRef, baseRef, nodeStyleRef]);
 
   return {
