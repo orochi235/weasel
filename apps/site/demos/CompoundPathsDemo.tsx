@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { solid } from '@weasel-js/paint';
-import { IDENTITY_POSE_COMPOSITION, DEFAULT_HANDLE_SIZE, SceneCanvas, asPolygonPath, composePath, pathPoseDescriptor, PathBuilder, polygonFromPoints, useScene, asNodeId, translatePath, textCommandFromRuns } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, DEFAULT_HANDLE_SIZE, SceneCanvas, asPolygonPath, effectivePose, composePath, pathPoseDescriptor, PathBuilder, polygonFromPoints, useScene, asNodeId, translatePath, textCommandFromRuns } from '@weasel-js/core';
 import { joinPaths } from '@weasel-js/geom';
 import styles from './CompoundPathsDemo.module.css';
 import type { Fill, Path, Stroke } from '@weasel-js/core';
@@ -139,10 +139,12 @@ export function CompoundPathsDemo() {
   const toastTimer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
+  // A drag shows through pose overrides, which bump no scene version: follow them too.
+  useSyncExternalStore(scene.overrides.subscribe, scene.overrides.getGeneration);
   const honkBounds = () => {
     const g = scene.get(asNodeId('goose'));
     if (!g) return null;
-    const b = pathPoseDescriptor.getBounds(g.pose);
+    const b = pathPoseDescriptor.getBounds(effectivePose(scene, g));
     return { x: b.x + b.width / 2 - 18, y: b.y - 22, width: 36, height: 16 };
   };
 

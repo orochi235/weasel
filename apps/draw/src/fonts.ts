@@ -11,7 +11,7 @@
 
 import {
   registerCanvasFont, listCanvasFonts,
-  enableLocalFontOutlines, unregisterFontOutlines,
+  enableLocalFontOutlines, unregisterFontOutlines, listFontOutlines,
 } from '@weasel-js/font';
 
 /** A candidate family and the generic it falls back to if absent. */
@@ -124,13 +124,12 @@ export async function enableMachineFontOutlines(): Promise<readonly string[]> {
 }
 
 /** Drop the machine-font outline registrations, returning those families to
- *  the canvas-SDF tier. */
+ *  the canvas-SDF tier: every face the registry holds for an enrolled family,
+ *  at whatever weight the local-font indexer filed it (a Semilight face at 350,
+ *  say). */
 export function disableMachineFontOutlines(): void {
-  for (const { family } of listCanvasFonts()) {
-    for (const weight of [100, 200, 300, 400, 500, 600, 700, 800, 900]) {
-      for (const style of ['normal', 'italic'] as const) {
-        unregisterFontOutlines(family, { weight, style });
-      }
-    }
+  const enrolled = new Set(listCanvasFonts().map((f) => f.family));
+  for (const { family, weight, style } of listFontOutlines()) {
+    if (enrolled.has(family)) unregisterFontOutlines(family, { weight, style });
   }
 }

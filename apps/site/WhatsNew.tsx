@@ -17,6 +17,9 @@ function DateCell({ iso }: { iso: string | undefined }) {
   );
 }
 
+/** A git date's instant: its text carries the author's own offset, so it does not sort as a string. */
+const instant = (iso: string | undefined) => (iso ? Date.parse(iso) : undefined);
+
 /** Newest change first. */
 const BY_LAST_MODIFIED = { columnId: 'lastModified', direction: 'desc' } as const;
 
@@ -34,8 +37,13 @@ export function WhatsNew({ onSelect }: Props) {
       ),
     },
     { id: 'place', header: 'Filed under', accessor: placeOf },
-    { id: 'created', header: 'Created', render: (d) => <DateCell iso={d.created} /> },
-    { id: 'lastModified', header: 'Last modified', render: (d) => <DateCell iso={d.lastModified} /> },
+    { id: 'created', header: 'Created', accessor: (d) => instant(d.created), render: (d) => <DateCell iso={d.created} /> },
+    {
+      id: 'lastModified',
+      header: 'Last modified',
+      accessor: (d) => instant(d.lastModified),
+      render: (d) => <DateCell iso={d.lastModified} />,
+    },
   ], [onSelect]);
 
   return (

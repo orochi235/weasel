@@ -1,0 +1,11 @@
+{
+ "pairs": [],
+ "a": [
+  "Offset's distance is popover-local state, so it resets whenever the bar's popover closes or the asset changes surface",
+  "useEditorSurfaceHost's memo misses on every render, because setSimplifyTolerance is a new function each time"
+ ],
+ "b": [
+  "A command-row asset hidden from its panel's × has no View-menu toggle to bring it back",
+  "Version 5→6 migration carries Corner shape's toolbar place in `docks` and `floating` but not in `atEnd`"
+ ]
+}

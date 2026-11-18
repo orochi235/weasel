@@ -43,6 +43,14 @@ describe('path aid migrations', () => {
     });
   });
 
+  it("carries Corner shape's far-end place, and drops a stale corners beside fillets", () => {
+    const records = new Map<string, unknown>([
+      ['ui.toolbars', { docks: { strip: [['file', 'corners', 'fillets'], ['corners']] }, floating: {}, atEnd: ['corners'] }],
+    ]);
+    renamePathTools(records as never);
+    expect(records.get('ui.toolbars')).toEqual({ docks: { strip: [['file', 'fillets'], ['fillets']] }, floating: {}, atEnd: ['fillets'] });
+  });
+
   it('leaves a last tool and surfaces no rename touched as they are', () => {
     const surfaces = { layers: { hidden: true } };
     const records = new Map<string, unknown>([['tools.lastTool', 'pen'], ['ui.surfaces', surfaces]]);

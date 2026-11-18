@@ -1,0 +1,56 @@
+{
+ "id": "apps.draw.src.surfaces",
+ "commit": "197362e015f1498c5cd6691c571634f8fb9575fb",
+ "date": "2026-11-17",
+ "files": [
+  "apps/draw/src/surfaces/CommandSurfaces.tsx",
+  "apps/draw/src/surfaces/SchemaSurfaces.module.css",
+  "apps/draw/src/surfaces/SchemaSurfaces.tsx",
+  "apps/draw/src/surfaces/StripSurfaces.tsx",
+  "apps/draw/src/surfaces/appLeaves.tsx",
+  "apps/draw/src/surfaces/assets.tsx",
+  "apps/draw/src/surfaces/chrome.tsx",
+  "apps/draw/src/surfaces/hostContext.ts",
+  "apps/draw/src/surfaces/panelAssets.tsx",
+  "apps/draw/src/surfaces/pathCommandAssets.module.css",
+  "apps/draw/src/surfaces/pathCommandAssets.tsx",
+  "apps/draw/src/surfaces/prefsMigration.ts",
+  "apps/draw/src/surfaces/surfaceState.ts",
+  "apps/draw/src/surfaces/surfaceSwitch.tsx",
+  "apps/draw/src/surfaces/types.ts",
+  "apps/draw/src/surfaces/useEditorSurfaceHost.ts"
+ ],
+ "a": 2,
+ "b": 2,
+ "m": 0,
+ "distinct": 4,
+ "chapman": 8,
+ "unfound": 4,
+ "read": {
+  "A": 16,
+  "B": 16
+ },
+ "patches": 3,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.2,
+   "B": 4.6,
+   "match": 0.1,
+   "fix": 6.4
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "msb-uai",
+   "fix": "studio"
+  },
+  "tokens": 8683892,
+  "costUsd": 4.83
+ },
+ "fixCommits": [
+  "f6e53658d40e8ef1f40cc253aa4f3edcaa1d8cad",
+  "746481688ae3347ef5bfd711c59235c9d9e9f027",
+  "522138b5e246e470482e80a6210c8ce70c282805"
+ ]
+}

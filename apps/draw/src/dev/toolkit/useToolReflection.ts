@@ -17,6 +17,11 @@ export interface ToolReflection {
   activeToolId: string;
 }
 
+/** The ids `api` mounts in both slots, sorted, ambient ones marked `~`: what changes when its tool set does. */
+export function toolSlotsSignature(api: Pick<ToolsApi, 'registry' | 'ambient'>): string {
+  return [...Object.keys(api.registry), ...api.ambient.map((t) => `~${t.id}`)].sort().join(',');
+}
+
 /** What a canvas's live tool set declares: its defs, its routes, and where two of them tie. */
 export function useToolReflection(): ToolReflection {
   // `useTools` rebuilds the api literal each render — track only the structural signature
@@ -27,10 +32,7 @@ export function useToolReflection(): ToolReflection {
   const onToolsCreated = (api: ToolsApi) => {
     toolsRef.current = api;
     setActiveToolId(api.routed ?? api.active ?? '');
-    const sig = [
-      ...Object.keys(api.registry),
-      ...api.ambient.map((t) => `~${t.id}`),
-    ].sort().join(',');
+    const sig = toolSlotsSignature(api);
     setToolsSig((prev) => (prev === sig ? prev : sig));
   };
 

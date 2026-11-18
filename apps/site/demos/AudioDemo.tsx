@@ -146,6 +146,11 @@ export function AudioDemo() {
     setState(kit.engine.state());
     setVoices(kit.engine.activeVoices());
     setPatternStep(step.current);
+    // A busy bus can steal the looping source; then it is no longer playing.
+    if (sourceVoice.current && !sourceVoice.current.isPlaying()) {
+      sourceVoice.current = null;
+      setSourcePlaying(false);
+    }
   }), [animator, kit]);
 
   // A drag shows through pose overrides, which bump no scene version: follow them too.

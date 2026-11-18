@@ -88,6 +88,28 @@ describe('the package pages', () => {
     await waitFor(() => expect(main().getByRole('status').textContent).toMatch(/has not been built/), { timeout: 5000 });
   });
 
+  it('says a reference could not be loaded when the server fails, and fetches it again on return', async () => {
+    const fetch = vi.fn(async () => new Response('busy', { status: 503 }));
+    vi.stubGlobal('fetch', fetch);
+    go('#pkg/geom/reference');
+    renderWithIcons(<WeaselDemos />);
+    await waitFor(() => expect(main().getByRole('status').textContent).toMatch(/could not be loaded/), { timeout: 5000 });
+    cleanup();
+    renderWithIcons(<WeaselDemos />);
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2), { timeout: 5000 });
+  });
+
+  it('fetches a reference again once the page reopens after it was not built', async () => {
+    const fetch = vi.fn(async () => new Response('not built', { status: 404 }));
+    vi.stubGlobal('fetch', fetch);
+    go('#pkg/history/reference');
+    renderWithIcons(<WeaselDemos />);
+    await waitFor(() => expect(main().getByRole('status').textContent).toMatch(/has not been built/), { timeout: 5000 });
+    cleanup();
+    renderWithIcons(<WeaselDemos />);
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2), { timeout: 5000 });
+  });
+
   it('shows the front page for a package that does not exist', async () => {
     go('#pkg/no-such-package');
     renderWithIcons(<App />);

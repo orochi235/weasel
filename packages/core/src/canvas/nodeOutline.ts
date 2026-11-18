@@ -7,7 +7,8 @@
 import type { Path } from '@weasel-js/geom';
 import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
 import { inheritedPaintIn, type InheritedPaint } from 'core/scene/inheritedPaint';
-import type { Node } from 'core/scene/types';
+import type { Node, NodeId, Scene } from 'core/scene/types';
+import { scenePoseFrame } from 'interactions/actions/poseFrame';
 import { findNodeShape } from './NodeShape';
 import { evaluationOrder, nodeShapesOf, type NodeShapes } from './nodeShapeRegistry';
 
@@ -63,16 +64,18 @@ export function findNodeOutline<TData, TPose>(
   return findNodeShape(node, ctx.shapes)?.outline?.(node, pose, ctx) ?? undefined;
 }
 
-/** The outline of leaf `id` in `scene` at its own pose, its inherited paint resolved and the
- *  scene's painters asked: what an adapter's `getOutline` answers. */
+/** The outline of leaf `id` in `scene` where it is drawn, its stored pose folded through every
+ *  container frame above it, its inherited paint resolved and the scene's painters asked: what an
+ *  adapter's `getOutline` answers. */
 export function sceneNodeOutline<TData, TLayer extends string, TPose>(
-  scene: { get(id: never): Node<TData, TLayer, TPose> | undefined },
+  scene: Scene<TData, TLayer, TPose>,
   id: string,
 ): NodeOutline | undefined {
-  const node = scene.get(id as never);
+  const node = scene.get(id as NodeId);
   if (!node || node.kind !== 'mark') return undefined;
   const inherited = inheritedPaintIn(scene, node);
-  return findNodeOutline(node, node.pose, { shapes: nodeShapesOf(scene), ...(inherited ? { inherited } : {}) });
+  const world = scenePoseFrame(scene as unknown as Scene<unknown, string, unknown>).world(node.id) as TPose;
+  return findNodeOutline(node, world, { shapes: nodeShapesOf(scene), ...(inherited ? { inherited } : {}) });
 }
 
 /** The sum of every painter's `geometryGeneration` in `shapes`: a cache of outlines read through

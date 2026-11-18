@@ -1,7 +1,7 @@
 import * as Weasel from '@weasel-js/core';
-import { defaultNodeProperties, nodeTraitsOf, type NodePropertiesEntry } from '@weasel-js/core';
-import { DRAW_FEATURES } from '../drawFeatures';
-import { FEATURE_NAMES, FEATURE_PRESETS } from '@weasel-js/editing';
+import type { NodePropertiesEntry } from '@weasel-js/core';
+import { DRAW_NODE_PROPERTIES, DRAW_PRESETS } from './drawPresets';
+import { FEATURE_NAMES } from '@weasel-js/editing';
 import { parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@weasel-js/core/routing';
 import { type PrefObject, prefSectionLeaves } from '@weasel-js/prefs';
 import { iconSpecRefs, toIconRef } from '@weasel-js/icons';
@@ -68,8 +68,7 @@ export function collectIcons(actions: readonly ActionEntry[]): readonly IconEntr
 
 /** Core's named presets, in the order `FEATURE_NAMES` lists them, each with the tools its includes mount. */
 export function collectBundles(): readonly BundleEntry[] {
-  const described = Weasel.describePresets({ '@weasel-js/core': Object.values(FEATURE_PRESETS) });
-  const byId = new Map(described.map((d) => [d.id, d]));
+  const byId = new Map(DRAW_PRESETS.map((d) => [d.id, d]));
   const toolsOf = (id: string): string[] => {
     const d = byId.get(id)!;
     return [...new Set([...d.includes.flatMap(toolsOf), ...d.tools])];
@@ -200,9 +199,6 @@ function kindIcon(id: Weasel.ShapeKind): ReactNode {
 }
 
 /** The property kinds a draw canvas merges: core's defaults and what draw's presets add (text's). */
-export const DRAW_NODE_PROPERTIES: readonly NodePropertiesEntry[] =
-  nodeTraitsOf(DRAW_FEATURES, { properties: defaultNodeProperties }).properties;
-
 export function collectPropertiesTrait(
   source: readonly NodePropertiesEntry[] = DRAW_NODE_PROPERTIES,
 ): readonly PropertiesKindEntry[] {

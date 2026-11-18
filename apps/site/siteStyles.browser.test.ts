@@ -52,6 +52,17 @@ test('the active nav link sets its text in the color made for an accent fill', (
   expect(getComputedStyle(el.querySelector('a')!).color).toBe(getComputedStyle(probe).color);
 });
 
+test.each(['light', 'dark'])('in %s mode the active site-page link keeps the body text on its tint', (mode) => {
+  document.documentElement.setAttribute('data-wzl-mode', mode);
+  el = document.createElement('nav');
+  el.className = 'ckd-nav-section ckd-nav-whatsnew';
+  el.innerHTML = '<a class="active">Releases</a><span>probe</span>';
+  document.body.append(el);
+  const probe = el.querySelector('span')!;
+  probe.style.color = 'var(--wzl-fg)';
+  expect(getComputedStyle(el.querySelector('a')!).color).toBe(getComputedStyle(probe).color);
+});
+
 test('running text is set in the body face, and headings and chrome in Oswald', () => {
   el = document.createElement('div');
   el.innerHTML = '<aside class="ckd-sidebar"><a>Scene</a></aside>'

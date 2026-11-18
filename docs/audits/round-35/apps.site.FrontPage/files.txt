@@ -1,0 +1,10 @@
+apps/site/FrontPage/FrontPage.module.css
+apps/site/FrontPage/FrontPage.tsx
+apps/site/FrontPage/GetStarted.module.css
+apps/site/FrontPage/GetStarted.tsx
+apps/site/FrontPage/VersionPill.module.css
+apps/site/FrontPage/VersionPill.tsx
+apps/site/FrontPage/Wordmark.module.css
+apps/site/FrontPage/Wordmark.tsx
+apps/site/FrontPage/projectTheme.ts
+apps/site/FrontPage/tagline.ts

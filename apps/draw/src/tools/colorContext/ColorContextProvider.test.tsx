@@ -6,6 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { type ReactNode } from 'react';
+import { createToolOptionValues, SHARED_TOOL_OPTIONS } from '@weasel-js/core';
 import { ColorContextProvider, useColorContext } from './ColorContextProvider';
 
 function makeWrapper() {
@@ -41,8 +42,8 @@ describe('ColorContextProvider — state cluster', () => {
       result.current.setStrokeColor('#bbbbbbff');
       result.current.swap();
     });
-    expect(result.current.fill).toEqual({ kind: 'solid', color: '#bbbbbbff' });
-    expect(result.current.stroke).toEqual({ kind: 'solid', color: '#aaaaaaff' });
+    expect(result.current.fill).toEqual({ color: '#bbbbbb' });
+    expect(result.current.stroke).toEqual({ color: '#aaaaaa' });
   });
 
   it('swapFocus toggles focused side', () => {
@@ -81,6 +82,32 @@ describe('ColorContextProvider — state cluster', () => {
   it('normalizes an 8-digit color it is given, as it does a 6-digit one', () => {
     const { result } = renderHook(() => useColorContext(), { wrapper: makeWrapper() });
     act(() => { result.current.setFillColor('#FF8800CC'); });
-    expect(result.current.fill).toEqual({ kind: 'solid', color: '#ff8800cc' });
+    expect(result.current.fill).toEqual({ color: '#ff8800', opacity: 0.8 });
+  });
+
+  it("keeps a swatch's opacity when a 6-digit color replaces it, and reads it as the alpha", () => {
+    const values = createToolOptionValues();
+    values.set(SHARED_TOOL_OPTIONS, 'fill', { color: '#336699', opacity: 0.4 });
+    const { result } = renderHook(() => useColorContext(), {
+      wrapper: ({ children }: { children: ReactNode }) => <ColorContextProvider values={values}>{children}</ColorContextProvider>,
+    });
+    expect(result.current.focusedAlpha).toBeCloseTo(0.4, 5);
+    act(() => { result.current.setFocusedColor('#ff0000'); });
+    expect(result.current.fill).toEqual({ color: '#ff0000', opacity: 0.4 });
+    act(() => { result.current.setFocusedAlpha(0.5); });
+    expect(result.current.fill).toEqual({ color: '#ff0000', opacity: 0.5 });
+    act(() => { result.current.setFocusedAlpha(1); });
+    expect(result.current.fill).toEqual({ color: '#ff0000' });
+  });
+
+  it('reads an alpha held in the hex, and writes it back as opacity', () => {
+    const values = createToolOptionValues();
+    values.set(SHARED_TOOL_OPTIONS, 'fill', { kind: 'solid', color: '#33669980' });
+    const { result } = renderHook(() => useColorContext(), {
+      wrapper: ({ children }: { children: ReactNode }) => <ColorContextProvider values={values}>{children}</ColorContextProvider>,
+    });
+    expect(result.current.focusedAlpha).toBeCloseTo(128 / 255, 5);
+    act(() => { result.current.setFocusedColor('#ff0000'); });
+    expect(result.current.fill).toEqual({ color: '#ff0000', opacity: 128 / 255 });
   });
 });

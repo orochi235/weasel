@@ -143,4 +143,10 @@ describe('surface assets', () => {
     expect(names.indexOf('Average')).toBeGreaterThan(-1);
     expect(names.indexOf('Average')).toBeLessThan(names.indexOf('Join'));
   });
+
+  it('offer a hide button on a panel only where the View menu can show it again', () => {
+    drawPrefs().set('ui.surfaces', { ...drawPrefs().get('ui.surfaces'), path: { surface: 'panel' }, undo: { surface: 'panel' } });
+    renderWithIcons(<App />);
+    expect(sidebar().getAllByRole('button', { name: 'Hide panel' })).toHaveLength(1);
+  });
 });

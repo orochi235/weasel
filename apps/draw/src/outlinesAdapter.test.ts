@@ -66,3 +66,26 @@ describe('drawOutlinesAdapter', () => {
     for (const id of old) expect(dataOf(scene, id).label).toBe(id);
   });
 });
+
+describe('drawOutlinesAdapter in a frame', () => {
+  it('outlines a paged stroke where the page draws it, stored in the page\'s frame', () => {
+    const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });
+    scene.add({ id: asNodeId('page'), kind: 'group', layer: 'default', pose: { x: 100, y: 50, width: 200, height: 200 }, data: {} });
+    scene.add({
+      id: asNodeId('src'), kind: 'mark', layer: 'default', parent: asNodeId('page'),
+      pose: { x: 10, y: 10, width: 10, height: 10 },
+      data: { path: rectPath(0, 0, 10, 10), fill: null, stroke: solidStroke('#00f', 2) },
+    });
+    scene.setSelection([asNodeId('src')]);
+    const adapter = drawOutlinesAdapter(scene, {
+      getSelection: () => [...scene.getSelection()],
+      setSelection: (ids: NodeId[]) => scene.setSelection(ids),
+    });
+    const result = applyOutlineStroke(adapter);
+    const [made] = result.kind === 'applied' ? result.resultIds : [];
+    const node = scene.get(asNodeId(made!))!;
+    expect(node.parent).toBe('page');
+    // The 2-wide stroke reaches 1 past the 10-square on each side.
+    expect(node.pose).toMatchObject({ x: 9, y: 9, width: 12, height: 12 });
+  });
+});

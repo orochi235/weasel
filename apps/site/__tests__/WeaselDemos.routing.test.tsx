@@ -178,6 +178,47 @@ describe('sidebar navigation', () => {
   });
 });
 
+describe('leaving a page', () => {
+  it('adds a history entry for the sidebar wordmark, so Back returns to the page it left', async () => {
+    const [first, second] = DEMOS;
+    go(`#${first.id}`);
+    renderWithIcons(<App />);
+    await heading(first.title);
+    fireEvent.click(within(screen.getByRole('navigation')).getByRole('link', { name: second.title }));
+    await heading(second.title);
+    const before = window.history.length;
+    fireEvent.click(screen.getByRole('link', { name: 'weasel home' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'weasel' })).toBeTruthy();
+    expect(window.history.length).toBe(before + 1);
+  });
+
+  it("drops the releases filter and version link, and keeps the site's own query", async () => {
+    window.history.replaceState(null, '', '/?backend=webgpu&pkg=core&v=1.0.0#__releases');
+    renderWithIcons(<WeaselDemos />);
+    await heading('Releases');
+    fireEvent.click(within(screen.getByRole('navigation')).getByRole('link', { name: DEMOS[0].title }));
+    await heading(DEMOS[0].title);
+    expect(window.location.search).toBe('?backend=webgpu');
+  });
+});
+
+describe('a new page', () => {
+  // Stacked on a narrow viewport the app scrolls, not the main pane; wide, the main pane does.
+  it.each(['.ckd-app', '.ckd-main'])('starts at its top when %s is what scrolled', async (selector) => {
+    const [first, second] = DEMOS;
+    go(`#${first.id}`);
+    renderWithIcons(<WeaselDemos />);
+    await heading(first.title);
+    const pane = document.querySelector<HTMLElement>(selector)!;
+    let top = 0;
+    Object.defineProperty(pane, 'scrollTop', { get: () => top, set: (v: number) => { top = v; }, configurable: true });
+    top = 900;
+    fireEvent.click(within(screen.getByRole('navigation')).getByRole('link', { name: second.title }));
+    await heading(second.title);
+    expect(top).toBe(0);
+  });
+});
+
 describe('the source panel', () => {
   it('opens each demo on its first tab, whichever tab the last one was left on', async () => {
     const [first, second] = DEMOS.filter((d) => d.sources.length > 1);

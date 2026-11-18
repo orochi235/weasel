@@ -1,6 +1,6 @@
 import { defaultCommitAdapter, pathNode, type SelectionApi, UNION_OF_CHILDREN, unionOfChildren } from '@weasel-js/core';
 import { type CreateOutlinesAdapter } from '@weasel-js/path-tools';
-import { outlineAt, pathPaintAt, worldPathOf } from './booleansAdapter';
+import { inFrameOf, outlineAt, pathPaintAt, worldPathOf } from './booleansAdapter';
 import { carriedData, type DrawScene } from './drawDocument';
 
 /** The adapter the kit's `createOutlines` and `outlineStroke` actions convert
@@ -19,12 +19,15 @@ export function drawOutlinesAdapter(
       const source = scene.get(sourceId);
       // A path under the source's own parent stands in for the source; one
       // under a minted group is a part of it, and the group carries the data.
-      const standsIn = parent === (source?.parent ?? null);
-      return pathNode(
+      const home = source?.parent ?? null;
+      const standsIn = parent === home;
+      // A minted group is an envelope, which gives its members no frame of its
+      // own: they are stored in the frame the source was.
+      return inFrameOf(scene, home, pathNode(
         scene.mintId(), path,
         { ...(standsIn ? carriedData(source?.data) : {}), fill, ...(stroke !== undefined ? { stroke } : {}) },
         { layer: source?.layer ?? 'default', parent },
-      );
+      ));
     },
     // The kit `group` action's container: an envelope tracking its members.
     createContainerNode: (sourceId, { parent, bounds }) => ({

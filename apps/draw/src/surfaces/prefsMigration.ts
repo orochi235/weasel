@@ -85,13 +85,18 @@ export const renamePathTools: PrefsMigration = (records) => {
   const toolbars = records.get('ui.toolbars');
   if (isPlainObject(toolbars) && isPlainObject(toolbars.docks) && isPlainObject(toolbars.floating)) {
     const docks = Object.fromEntries(Object.entries(toolbars.docks).map(([id, rows]) => [id, Array.isArray(rows)
-      ? rows.map((row: unknown) => (Array.isArray(row) && row.includes('corners') && !row.includes('fillets')
-        ? row.map((bar: unknown) => (bar === 'corners' ? 'fillets' : bar))
-        : row))
+      ? rows.map((row: unknown) => (Array.isArray(row) ? renameBar(row, 'corners', 'fillets') : row))
       : rows]));
-    records.set('ui.toolbars', { ...toolbars, docks, floating: renameEntry(toolbars.floating, 'corners', 'fillets') });
+    const atEnd = Array.isArray(toolbars.atEnd) ? { atEnd: renameBar(toolbars.atEnd, 'corners', 'fillets') } : {};
+    records.set('ui.toolbars', { ...toolbars, docks, floating: renameEntry(toolbars.floating, 'corners', 'fillets'), ...atEnd });
   }
 };
+
+/** `bars` with `from` under `to`, or dropped where `to` is already there. */
+function renameBar(bars: readonly unknown[], from: string, to: string): unknown[] {
+  if (!bars.includes(from)) return [...bars];
+  return bars.includes(to) ? bars.filter((bar) => bar !== from) : bars.map((bar) => (bar === from ? to : bar));
+}
 
 /** `map` with its own `from` entry under `to`, or `map` itself where it holds none to move. */
 function renameEntry(map: Record<string, unknown>, from: string, to: string): Record<string, unknown> {

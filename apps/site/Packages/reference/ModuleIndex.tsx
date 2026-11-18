@@ -6,7 +6,6 @@ import s from './Reference.module.css';
 
 /** One entry of a package: what it is imported by, and its exports under their headings. */
 export function ModuleIndex({ reference, module }: { reference: PackageReference; module: ReferenceModule }) {
-  const byName = new Map(module.symbols.map((symbol) => [symbol.name, symbol] as const).reverse());
   return (
     <div className={s.module}>
       {reference.modules.length > 1 && (
@@ -29,16 +28,18 @@ export function ModuleIndex({ reference, module }: { reference: PackageReference
         <section key={group.title} className={s.group}>
           <h4 className={s.groupTitle}>{group.title}</h4>
           <ul className={s.exports}>
-            {group.names.map((name) => {
-              const symbol = byName.get(name);
+            {group.exports.map(({ name, kinds }) => {
+              const declared = module.symbols.filter((symbol) => symbol.name === name && kinds.includes(symbol.kind));
+              const summary = declared.find((symbol) => symbol.summary)?.summary;
+              const deprecated = declared.length > 0 && declared.every((symbol) => symbol.deprecated);
               return (
                 <li key={name}>
                   <a
-                    className={symbol?.deprecated ? `${s.exportName} ${s.struck}` : s.exportName}
+                    className={deprecated ? `${s.exportName} ${s.struck}` : s.exportName}
                     href={`#${symbolRoute(reference.package, module.name, name)}`}
                   >{name}</a>
                   <span className={s.exportAbout}>
-                    {symbol?.summary ? <InlineMarkdown text={symbol.summary} links="text" /> : null}
+                    {summary ? <InlineMarkdown text={summary} links="text" /> : null}
                   </span>
                 </li>
               );

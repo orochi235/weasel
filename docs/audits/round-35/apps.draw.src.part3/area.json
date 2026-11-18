@@ -1,0 +1,76 @@
+{
+ "id": "apps.draw.src.part3",
+ "commit": "197362e015f1498c5cd6691c571634f8fb9575fb",
+ "date": "2026-11-17",
+ "files": [
+  "apps/draw/src/svgNote.ts",
+  "apps/draw/src/svgObj.ts",
+  "apps/draw/src/svgPages.ts",
+  "apps/draw/src/testIcons.ts",
+  "apps/draw/src/testScenes.ts",
+  "apps/draw/src/theme.ts",
+  "apps/draw/src/toolOptions.ts",
+  "apps/draw/src/tools/colorContext/ColorContextProvider.tsx",
+  "apps/draw/src/tools/colorContext/actions.ts",
+  "apps/draw/src/tools/colorContext/contribution.ts",
+  "apps/draw/src/tools/colorContext/depSchemaAugmentation.ts",
+  "apps/draw/src/tools/colorContext/index.ts",
+  "apps/draw/src/ui/Fillet/Fillet.module.css",
+  "apps/draw/src/ui/Fillet/Fillet.tsx",
+  "apps/draw/src/ui/Fillet/index.ts",
+  "apps/draw/src/ui/LastOperation/LastOperation.module.css",
+  "apps/draw/src/ui/LastOperation/LastOperation.tsx",
+  "apps/draw/src/ui/LastOperation/index.ts",
+  "apps/draw/src/ui/PathCommands/PathCommands.module.css",
+  "apps/draw/src/ui/PathCommands/PathCommands.tsx",
+  "apps/draw/src/ui/PathCommands/index.ts",
+  "apps/draw/src/useDocumentState.ts",
+  "apps/draw/src/useEditorAmbient.ts",
+  "apps/draw/src/useGrid.ts",
+  "apps/draw/src/useHoldContentUnderChrome.ts",
+  "apps/draw/src/useLastTool.ts",
+  "apps/draw/src/useMachineFontOutlines.ts",
+  "apps/draw/src/usePathOverlays.ts",
+  "apps/draw/src/usePickColor.ts",
+  "apps/draw/src/useRightSidebarWidth.ts",
+  "apps/draw/src/useRulers.ts",
+  "apps/draw/src/useSessionPersistence.ts",
+  "apps/draw/src/useSpacingHints.ts",
+  "apps/draw/src/useSymmetry.ts",
+  "apps/draw/src/useTextEditSession.ts",
+  "apps/draw/src/useViewBounds.ts"
+ ],
+ "a": 2,
+ "b": 3,
+ "m": 0,
+ "distinct": 5,
+ "chapman": 11,
+ "unfound": 6,
+ "read": {
+  "A": 36,
+  "B": 36
+ },
+ "patches": 3,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.1,
+   "B": 7.5,
+   "match": 0.1,
+   "fix": 9.5
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "tokens": 13337735,
+  "costUsd": 6.48
+ },
+ "fixCommits": [
+  "eb68cc8a4a6cccf40000b4ece74b5111f49a3dc0",
+  "c0d930dc00e29d6cd5393182c280e1c08a3c2d93",
+  "b01c229a9d660047d6caff0cd34228a9f4833bd1"
+ ]
+}

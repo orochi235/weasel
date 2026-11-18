@@ -50,7 +50,12 @@ function dataOf(st: State): DiagramData {
 
 const canConnect: CanConnect = (from, to) =>
   from.nodeId === to.nodeId ? false : to.nodeId === 'source' ? { refuse: 'The source takes no inputs' } : true;
-const canReparent: CanReparent = (_ids, into) => (into === 'shelf' ? { refuse: 'The shelf is locked' } : true);
+/** A note is a node minted from the palette's `note`, whose id says so. */
+const isNote = (id: string) => id.startsWith('note-');
+const canReparent: CanReparent = (ids, into) =>
+  into === 'shelf' ? { refuse: 'The shelf is locked' }
+    : into === 'row' && ids.some(isNote) ? { refuse: 'Notes stay out of the row' }
+      : true;
 
 let made = 0;
 
