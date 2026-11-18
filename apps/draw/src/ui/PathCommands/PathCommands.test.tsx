@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
 
 const edits = vi.hoisted(() => new Map<string, { input: ReturnType<typeof vi.fn>; commit: ReturnType<typeof vi.fn>; cancel: ReturnType<typeof vi.fn> }>());
 
@@ -69,5 +69,12 @@ describe('the path command sliders', () => {
       fireEvent.keyDown(screen.getByRole('slider', { name: 'Simplify tolerance' }), { key: 'ArrowRight' });
     });
     expect(drawToolOptionValues().get('sand').tolerance).toBeCloseTo(1.1, 5);
+  });
+
+  it('hands back the same tolerance setter on every render', () => {
+    const { result, rerender } = renderHook(() => useSimplifyTolerance());
+    const first = result.current[1];
+    rerender();
+    expect(result.current[1]).toBe(first);
   });
 });

@@ -2632,3 +2632,9 @@ Calls the lanes made without a ruling:
   Symmetry then reads on and draws unmirrored until the redo is gone; the shape that clears it is unmirrored too.
   Making the group and dropping the redo, as before, was the alternative. The open P3 entry on Symmetry being a pref
   or document state (`docs/TODO.md`) covers the same wait.
+## Audit round thirty-five (2026-11-17): draw's surfaces
+
+- 2026-11-17 (the fixer's call): a command-row asset shown as a panel (Simplify and Offset, Fillet, Undo, and the
+  rest of the row) has no hide button, since the View menu lists none of the command row and only Preferences
+  could bring it back. Hiding one stays in Preferences. Listing the command row's assets in the View menu was the
+  alternative.
