@@ -25,11 +25,11 @@ describe('useSymmetry', () => {
   });
 
   it('turns on into a group at the page center, of the kind the axis preference names', () => {
-    act(() => drawPrefs().set('view.symmetryAxis', 'both'));
+    act(() => drawPrefs().set('view.symmetry.axis', 'both'));
     const scene = newScene();
     const { result } = renderHook(() => useSymmetry(scene, PAGE));
     act(() => result.current.commands.toggleSymmetry());
-    expect(drawPrefs().get('view.symmetry')).toBe(true);
+    expect(drawPrefs().get('view.symmetry.on')).toBe(true);
     const [group] = groups(scene);
     expect(insertInto(result)).toBe(group!.id);
     expect(symmetryOf(scene as never, group!.id)).toMatchObject({
@@ -38,10 +38,10 @@ describe('useSymmetry', () => {
   });
 
   it('turns the group it has when the axis preference changes, rather than making another', () => {
-    act(() => drawPrefs().set('view.symmetry', true));
+    act(() => drawPrefs().set('view.symmetry.on', true));
     const scene = newScene();
     renderHook(() => useSymmetry(scene, PAGE));
-    act(() => drawPrefs().set('view.symmetryAxis', 'horizontal'));
+    act(() => drawPrefs().set('view.symmetry.axis', 'horizontal'));
     expect(groups(scene)).toHaveLength(1);
     expect(symmetryOf(scene as never, groups(scene)[0]!.id)?.spec).toMatchObject({ kind: 'mirror', angle: HORIZONTAL_AXIS });
   });
@@ -49,14 +49,14 @@ describe('useSymmetry', () => {
   it('draws into the group a reopened document already has', () => {
     const scene = newScene();
     const saved = scene.add(symmetryGroupSpec({ layer: 'default', center: { x: 10, y: 20 }, symmetry: { angle: VERTICAL_AXIS } }) as never);
-    act(() => drawPrefs().set('view.symmetry', true));
+    act(() => drawPrefs().set('view.symmetry.on', true));
     const { result } = renderHook(() => useSymmetry(scene, PAGE));
     expect(groups(scene)).toHaveLength(1);
     expect(insertInto(result)).toBe(saved);
   });
 
   it('turns off, keeping the group but drawing into nothing', () => {
-    act(() => drawPrefs().set('view.symmetry', true));
+    act(() => drawPrefs().set('view.symmetry.on', true));
     const scene = newScene();
     const { result } = renderHook(() => useSymmetry(scene, PAGE));
     act(() => result.current.commands.toggleSymmetry());
@@ -65,7 +65,7 @@ describe('useSymmetry', () => {
   });
 
   it('makes the group on the shown page, at its center, and finds it there again', () => {
-    act(() => drawPrefs().set('view.symmetry', true));
+    act(() => drawPrefs().set('view.symmetry.on', true));
     const scene = newScene();
     createPageRun(scene, [{ id: 'p1', ...PAGE }, { id: 'p2', ...PAGE }]);
     const p2 = placedPagesOf(scene)[1]!;
@@ -83,7 +83,7 @@ describe('useSymmetry', () => {
   });
 
   it('draws into a group on the new document after New replaces the pages, and into the old one again on undo', () => {
-    act(() => drawPrefs().set('view.symmetry', true));
+    act(() => drawPrefs().set('view.symmetry.on', true));
     const scene = newScene();
     createPageRun(scene, [{ id: 'page-1', ...PAGE }]);
     const { result } = renderHook(() => useSymmetry(scene, placedPagesOf(scene)[0]!));
@@ -98,7 +98,7 @@ describe('useSymmetry', () => {
   });
 
   it('makes a fresh group when its group is deleted, and draws into the old one again when the delete is undone', () => {
-    act(() => drawPrefs().set('view.symmetry', true));
+    act(() => drawPrefs().set('view.symmetry.on', true));
     const scene = newScene();
     const { result } = renderHook(() => useSymmetry(scene, PAGE));
     const [old] = groups(scene);
@@ -113,7 +113,7 @@ describe('useSymmetry', () => {
   });
 
   it('waits while undo steps past its group\'s making, and draws into it again on redo', () => {
-    act(() => drawPrefs().set('view.symmetry', true));
+    act(() => drawPrefs().set('view.symmetry.on', true));
     const scene = newScene();
     const { result } = renderHook(() => useSymmetry(scene, PAGE));
     const [made] = groups(scene);

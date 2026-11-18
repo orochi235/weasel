@@ -106,6 +106,29 @@ const GRID_LEAVES: readonly (readonly [string, string])[] = [
   ['view.snapToGrid', 'view.grid.snap'],
 ];
 
+const FEATURE_LEAVES: readonly (readonly [string, string])[] = [
+  ['view.rulersVisible', 'view.rulers.visible'],
+  ['view.symmetryAxis', 'view.symmetry.axis'],
+  ['view.pathEditing.pathDirection', 'view.pathEditing.direction'],
+  ['view.pathEditing.pathComb', 'view.pathEditing.comb'],
+  ['view.pathEditing.pathPoise', 'view.pathEditing.poise'],
+  ['view.pathEditing.pathFillets', 'view.pathEditing.fillets'],
+];
+
+/** Version 7 to 8: the rulers, symmetry and path edit aids took the settings groups their packages declare, so
+ *  `view.symmetry` became a group whose switch is `on`. */
+export const featureSettingsToGroups: PrefsMigration = (records) => {
+  if (records.has('view.symmetry')) {
+    if (!records.has('view.symmetry.on')) records.set('view.symmetry.on', records.get('view.symmetry'));
+    records.delete('view.symmetry');
+  }
+  for (const [from, to] of FEATURE_LEAVES) {
+    if (!records.has(from)) continue;
+    if (!records.has(to)) records.set(to, records.get(from));
+    records.delete(from);
+  }
+};
+
 /** Version 6 to 7: the grid's leaves moved into the view's Grid group, which is `@weasel-js/editor`'s `pageGridSchema`. */
 export const gridToGroup: PrefsMigration = (records) => {
   for (const [from, to] of GRID_LEAVES) {

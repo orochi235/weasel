@@ -85,9 +85,9 @@ describe('openDrawPrefs', () => {
       [`${PREFS_PREFIX}${VERSION_RECORD}`, 2],
     ]);
     const store = openDrawPrefs(createMemoryAdapter(backing));
-    expect(store.get('view.pathEditing.pathDirection')).toBe(true);
-    expect(store.get('view.pathEditing.pathFillets')).toBe(false);
-    expect(store.get('view.pathEditing.pathComb')).toBe(false);
+    expect(store.get('view.pathEditing.direction')).toBe(true);
+    expect(store.get('view.pathEditing.fillets')).toBe(false);
+    expect(store.get('view.pathEditing.comb')).toBe(false);
     await store.flush();
     expect([...backing.keys()].filter((k) => /^weaseldraw\.prefs\/(view\.path(Direction|Comb|Poise|Fillets|Balance|Corners)|ui\.leftSidebarWidth)$/.test(k))).toEqual([]);
   });
@@ -141,8 +141,8 @@ describe('openDrawPrefs', () => {
     setToolOption('pen', PEN_TOOL_OPTIONS, values, 'autoCommitOnClose', false);
     setToolOption('rect', RECT_TOOL_OPTIONS, values, 'fill', { kind: 'solid', color: '#123456ff' });
     await store.flush();
-    expect(backing.get(`${PREFS_PREFIX}tools.pen.autoCommitOnClose`)).toEqual({ $at: 7, value: false });
-    expect(backing.get(`${PREFS_PREFIX}tools.shared.fill`)).toEqual({ $at: 7, value: { kind: 'solid', color: '#123456ff' } });
+    expect(backing.get(`${PREFS_PREFIX}tools.pen.autoCommitOnClose`)).toEqual({ $at: 8, value: false });
+    expect(backing.get(`${PREFS_PREFIX}tools.shared.fill`)).toEqual({ $at: 8, value: { kind: 'solid', color: '#123456ff' } });
     expect(toolOptionParams('pen', PEN_TOOL_OPTIONS, values).fill).toEqual({ kind: 'solid', color: '#123456ff' });
   });
 
@@ -203,7 +203,7 @@ describe('importLegacyPrefs', () => {
     importLegacyPrefs(store, window.localStorage);
     expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).not.toBeNull();
     await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
-    expect(backing.get(`${PREFS_PREFIX}view.grid.spacing`)).toEqual({ $at: 7, value: 40 });
+    expect(backing.get(`${PREFS_PREFIX}view.grid.spacing`)).toEqual({ $at: 8, value: 40 });
   });
 
   it('leaves the blob in place when the store cannot persist', async () => {
@@ -238,7 +238,7 @@ describe('importLegacyPrefs', () => {
     away = false;
     await store.read();
     await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
-    expect(backing.get(`${PREFS_PREFIX}view.grid.spacing`)).toEqual({ $at: 7, value: 40 });
+    expect(backing.get(`${PREFS_PREFIX}view.grid.spacing`)).toEqual({ $at: 8, value: 40 });
     await store.close();
     warn.mockRestore();
   });

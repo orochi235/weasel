@@ -2,7 +2,7 @@ import { createGuidesLayer, createRulers, guideSnapSource, useGuides } from '@we
 import { useMemo } from 'react';
 import type { AppCommands } from './appCommands';
 import { DOCUMENT_SCOPE, RULER_LENGTHS } from './documentUnits';
-import { usePref } from './prefs';
+import { usePrefGroup } from './prefs';
 
 /**
  * The rulers and the guides dragged off them, driven by the View preferences: the rulers while
@@ -10,7 +10,7 @@ import { usePref } from './prefs';
  * guides live for the session; the document does not save them.
  */
 export function useRulers() {
-  const [visible, setVisible] = usePref('view.rulersVisible');
+  const [{ visible }, setRulers] = usePrefGroup('view.rulers');
   const { addGuide, removeGuide, getGuides, subscribe } = useGuides();
   const rulers = useMemo(() => createRulers({ guides: { addGuide, removeGuide, getGuides }, root: DOCUMENT_SCOPE, lengths: RULER_LENGTHS }), [addGuide, removeGuide, getGuides]);
   const layer = useMemo(
@@ -21,7 +21,7 @@ export function useRulers() {
 
   const commands: Pick<AppCommands, 'rulersVisible' | 'toggleRulers'> = {
     rulersVisible: visible,
-    toggleRulers: () => setVisible(!visible),
+    toggleRulers: () => setRulers({ visible: !visible }),
   };
 
   return { commands, rulers: visible ? rulers : null, layer, snapSource };

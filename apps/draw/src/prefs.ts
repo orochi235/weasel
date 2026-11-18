@@ -28,9 +28,12 @@ import type { ToolbarLayout } from '@weasel-js/ui/components/ToolbarDock';
 import type { RecordingProfile } from './recorder';
 import type { RegistryEnumFilter } from './registry/types';
 import {
-  dropPathToolsChrome, fillRuleToToolOptions, gridToGroup, panelsToSurfaces, pathAidsToGroup, renamePathAids, renamePathTools,
+  dropPathToolsChrome, fillRuleToToolOptions, gridToGroup, panelsToSurfaces, featureSettingsToGroups, pathAidsToGroup, renamePathAids, renamePathTools,
 } from './surfaces/prefsMigration';
 import { pageGridSchema } from '@weasel-js/editor';
+import { rulersSchema } from '@weasel-js/guides';
+import { pathEditAidsSchema } from '@weasel-js/path-tools';
+import { createSymmetrySchema } from '@weasel-js/symmetry';
 import { isPlainObject } from '@weasel-js/registry';
 import type { SurfacesValue } from './surfaces/types';
 import { ELLIPSE_TOOL_OPTIONS, LINE_TOOL_OPTIONS, POLYGON_TOOL_OPTIONS, RECT_TOOL_OPTIONS, STAR_TOOL_OPTIONS } from '@weasel-js/editing';
@@ -137,12 +140,7 @@ export const PREFS = {
       description: 'The canvas: grid, snapping, symmetry, and path editing aids.',
       children: {
         grid: pageGridSchema,
-        rulersVisible: {
-          kind: 'boolean',
-          name: 'Show rulers',
-          description: 'Rulers along the top and left of the canvas, in the units of the frame under the pointer. Drag from one to place a guide.',
-          default: false,
-        },
+        rulers: rulersSchema,
         snapping: {
           kind: 'boolean',
           name: 'Snapping',
@@ -155,56 +153,14 @@ export const PREFS = {
           description: 'Pan no further than the drawing and its pages, plus a margin. Dragging something to the edge of the canvas scrolls the view to make room for it.',
           default: true,
         },
-        symmetry: {
-          kind: 'boolean',
-          name: 'Symmetry',
-          description: 'Draw into a symmetry group, whose mirrored copies follow every edit to what is drawn in it, and the anchors you drag on a path that is already its own mirror image. Drag the handles on the axis to move or turn it. Turning it off stops drawing into the group; what is in it stays mirrored.',
-          default: false,
-        },
-        symmetryAxis: pref.enum('Symmetry axis', 'vertical', [
-          { value: 'vertical', label: 'Vertical (left and right)' },
-          { value: 'horizontal', label: 'Horizontal (top and bottom)' },
-          { value: 'both', label: 'Both' },
-        ], {
-          description: 'Which way the symmetry group mirrors: left and right, top and bottom, or into all four quarters.',
-          enableIf: { path: 'view.symmetry', is: true },
-        }),
+        symmetry: createSymmetrySchema({ at: 'view.symmetry' }),
         spacingHints: {
           kind: 'boolean',
           name: 'Spacing hints',
           description: 'While moving, snap to gaps that match the spacing between other shapes and mark them. Hold Alt (Option on a Mac) over a shape to measure its distance from the selection.',
           default: true,
         },
-        pathEditing: {
-          name: 'Path editing',
-          description: 'What path edit draws over the path it is editing.',
-          children: {
-            pathDirection: {
-              kind: 'boolean',
-              name: 'Show path direction',
-              description: 'While editing a path, draw an arrow on each segment the way the path runs, and a ring on its start.',
-              default: false,
-            },
-            pathComb: {
-              kind: 'boolean',
-              name: 'Show curvature comb',
-              description: 'While editing a path, draw its curvature comb: a tooth on each curve as long as the curve is tight there.',
-              default: false,
-            },
-            pathPoise: {
-              kind: 'boolean',
-              name: 'Show poise lines',
-              description: "While editing a path, draw a line between each curve's handle tips, with a grip that drags both handles at once.",
-              default: false,
-            },
-            pathFillets: {
-              kind: 'boolean',
-              name: 'Show fillet widgets',
-              description: 'While editing a path, draw a widget inside each corner that rounds it as you drag.',
-              default: true,
-            },
-          },
-        },
+        pathEditing: pathEditAidsSchema,
       },
     },
     text: {
@@ -285,7 +241,7 @@ const VALIDATORS: Record<string, PrefValidator> = {
 };
 
 /** `MIGRATIONS[i]` takes stored records from version `i` to `i + 1`. */
-const MIGRATIONS = [panelsToSurfaces, dropPathToolsChrome, pathAidsToGroup, fillRuleToToolOptions, renamePathAids, renamePathTools, gridToGroup];
+const MIGRATIONS = [panelsToSurfaces, dropPathToolsChrome, pathAidsToGroup, fillRuleToToolOptions, renamePathAids, renamePathTools, gridToGroup, featureSettingsToGroups];
 
 /** The app's prefs over `storage`. Tests pass a memory adapter. */
 export function openDrawPrefs(storage: SyncStorageAdapter): PrefsStore<typeof PREFS> {

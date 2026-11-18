@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { gridToGroup, pathAidsToGroup, renamePathAids, renamePathTools } from './prefsMigration';
+import { featureSettingsToGroups, gridToGroup, pathAidsToGroup, renamePathAids, renamePathTools } from './prefsMigration';
 
 describe('path aid migrations', () => {
   it('carries a version 2 balance and corners toggle through to Poise and Fillet', () => {
@@ -62,5 +62,26 @@ describe('gridToGroup', () => {
     ]);
     gridToGroup(records as never);
     expect(Object.fromEntries(records)).toEqual({ 'view.grid.visible': true, 'view.grid.spacing': 40, 'view.grid.snap': false });
+  });
+});
+
+describe('featureSettingsToGroups', () => {
+  it("moves the rulers, symmetry and path edit aids into their packages' groups, keeping a value already there", () => {
+    const records = new Map<string, unknown>([
+      ['view.rulersVisible', true],
+      ['view.symmetry', true],
+      ['view.symmetryAxis', 'both'],
+      ['view.pathEditing.pathComb', true],
+      ['view.pathEditing.pathFillets', false],
+      ['view.pathEditing.fillets', true],
+    ]);
+    featureSettingsToGroups(records as never);
+    expect(Object.fromEntries(records)).toEqual({
+      'view.rulers.visible': true,
+      'view.symmetry.on': true,
+      'view.symmetry.axis': 'both',
+      'view.pathEditing.comb': true,
+      'view.pathEditing.fillets': true,
+    });
   });
 });

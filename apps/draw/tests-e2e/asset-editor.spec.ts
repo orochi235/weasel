@@ -140,7 +140,7 @@ test('dragging a row above another reorders the group, and Alt+Up moves the sele
   await expect.poll(async () => { const all = await ids(); return all.indexOf('view/grid/snap') < all.indexOf('view/grid/visible'); }).toBe(true);
   await row(page, /^Spacing hints/).click();
   await page.keyboard.press('Alt+ArrowUp');
-  await expect.poll(async () => { const all = await ids(); return all.indexOf('view/spacingHints') < all.indexOf('view/symmetryAxis'); }).toBe(true);
+  await expect.poll(async () => { const all = await ids(); return all.indexOf('view/spacingHints') < all.indexOf('view/symmetry'); }).toBe(true);
 });
 
 test('a Shown if condition hides the pref in the preview until it holds', async ({ page }) => {
