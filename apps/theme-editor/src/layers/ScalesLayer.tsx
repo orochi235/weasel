@@ -25,7 +25,7 @@ const PARAMS = [
 ] as const;
 
 const pxOf = (v: string | undefined): number | undefined => {
-  const m = v === undefined ? null : /^(-?\d*\.?\d+)px$/.exec(v);
+  const m = v === undefined ? null : /^(-?(?:\d+(?:\.\d+)?|\.\d+))px$/.exec(v);
   return m ? Number.parseFloat(m[1]) : undefined;
 };
 
