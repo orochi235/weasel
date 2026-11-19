@@ -1,5 +1,5 @@
-import { existsSync, readFileSync, statSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { existsSync, globSync, readFileSync, statSync } from 'node:fs';
+import { dirname, join, matchesGlob, resolve } from 'node:path';
 import { KIT_PATH_ROOT, KIT_PATHS } from './vite-aliases.ts';
 
 const SCRIPT = /\.(ts|tsx|js|jsx|mjs)$/;
@@ -21,6 +21,24 @@ export function pathImportsIn(code: string): string[] {
   return [...code.matchAll(IMPORT)].map((m) => (m[1] ?? m[2])!);
 }
 
+// `import.meta.glob('./x/*.ts')` or `import.meta.glob(['./a/*.ts', '!./a/b.ts'])`, its patterns written as literals.
+const GLOB = /\bimport\.meta\.glob(?:<[^>]*>)?\(\s*(\[[^\]]*\]|'[^']*')/g;
+
+/** The files the relative `import.meta.glob` patterns in a source file load, found from `fromDir`; a `!` pattern excludes. */
+export function globImportsIn(code: string, fromDir: string): string[] {
+  const out: string[] = [];
+  for (const m of code.matchAll(GLOB)) {
+    const patterns = [...m[1]!.matchAll(/'([^']*)'/g)].map((p) => p[1]!).filter((p) => p.replace(/^!/, '').startsWith('.'));
+    const include = patterns.filter((p) => !p.startsWith('!')).map((p) => join(fromDir, p));
+    const exclude = patterns.filter((p) => p.startsWith('!')).map((p) => join(fromDir, p.slice(1)));
+    if (include.length === 0) continue;
+    for (const path of globSync(include, { exclude: (name) => name === 'node_modules' })) {
+      if (!exclude.some((pattern) => matchesGlob(path, pattern))) out.push(path);
+    }
+  }
+  return out;
+}
+
 const isFile = (path: string) => existsSync(path) && statSync(path).isFile();
 
 /** The script a specifier by path names, as the dev server finds it; `undefined` for a stylesheet or asset. */
@@ -32,7 +50,7 @@ export function resolvePath(fromDir: string, specifier: string): string | undefi
   return undefined;
 }
 
-/** Every script `files` load by relative path, `files` included, read on through each reached file `follow` admits. */
+/** Every script `files` load by relative path or relative glob, `files` included, read on through each reached file `follow` admits. */
 export function reachByPath(files: Iterable<string>, follow: (file: string) => boolean = () => true): Set<string> {
   const seen = new Set<string>();
   const seeds = new Set(files);
@@ -48,6 +66,7 @@ export function reachByPath(files: Iterable<string>, follow: (file: string) => b
       const target = resolvePath(dirname(file), spec);
       if (target && !target.includes('/node_modules/')) queue.push(target);
     }
+    for (const target of globImportsIn(code, dirname(file))) if (SCRIPT.test(target)) queue.push(target);
   }
   return seen;
 }
