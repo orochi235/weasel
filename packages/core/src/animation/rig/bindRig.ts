@@ -205,6 +205,8 @@ export function bindRigOn<TPose>(
       return delta;
     };
     for (const b of bound) {
+      // A node deleted since binding has no override to show; one an undo brings back shows again.
+      if (!scene.get(b.node)) continue;
       const w = local.get(b.joint)!;
       b.entry.pose = apply(w, { joint: b.joint, node: b.node, rest: b.rest, restWorld: b.restWorld, fromRest: motionOf(b.joint) });
       // Checked every frame: the table drops a node's overrides when the node goes.
@@ -235,7 +237,9 @@ export function bindRigOn<TPose>(
     bake(label = 'Bake rig pose') {
       if (!installed) return;
       scene.batch(label, () => {
-        for (const b of bound) if (b.entry.pose !== undefined) scene.setPose(b.node, b.entry.pose);
+        for (const b of bound) {
+          if (b.entry.pose !== undefined && scene.get(b.node)) scene.setPose(b.node, b.entry.pose);
+        }
         skins.write();
       });
       release();
