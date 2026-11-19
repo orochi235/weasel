@@ -33,6 +33,9 @@ function isResettable(c: BidiClass): boolean {
 /**
  * Reorder `[start, end)` of an analysed paragraph.
  *
+ * Throws a `RangeError` unless `start` and `end` are integers with
+ * `0 <= start <= end <= ` the paragraph's length.
+ *
  * `original` must be the classes as they were *before* analysis: L1 is defined
  * against them, and by this point `resolved.classes` has rewritten the very
  * whitespace L1 is looking for.
@@ -44,6 +47,10 @@ export function reorderLine(
   end: number,
 ): ReorderedLine {
   const { levels: paraLevels, removed, paragraphLevel } = resolved;
+  const n = paraLevels.length;
+  if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || start > end || end > n) {
+    throw new RangeError(`reorder: the line [${start}, ${end}) is outside [0, ${n}] or reversed`);
+  }
 
   const levels = new Int16Array(end - start).fill(-1);
   const kept: number[] = [];

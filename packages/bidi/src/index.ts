@@ -40,7 +40,8 @@ export function analyze(
 }
 
 /** Order one line of an analyzed paragraph for display, left to right.
- *  `start` and `end` index the same code point array `analyze` was given. */
+ *  `start` and `end` index the same code point array `analyze` was given,
+ *  with `0 <= start <= end <=` its length; any other range throws a `RangeError`. */
 export function reorder(
   analysis: BidiAnalysis,
   start: number,
