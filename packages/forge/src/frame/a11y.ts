@@ -88,15 +88,18 @@ export const PAGE_RULES: readonly string[] = [
 export interface RunAxeOptions {
   /** Whether `element` stands for the whole page. False leaves `PAGE_RULES` out. Default true. */
   page?: boolean;
+  /** axe rule ids to leave out of the run. Default none. */
+  off?: readonly string[];
 }
 
 // axe refuses a run while another is under way in the same document, and the workshop page holds every story.
 let last: Promise<unknown> = Promise.resolve();
 
 /** Runs axe over `element` and reduces its answer to what crosses the frame's channel. A run waits for the one before it. */
-export async function runAxe(element: Element, { page = true }: RunAxeOptions = {}): Promise<A11yReport> {
+export async function runAxe(element: Element, { page = true, off = [] }: RunAxeOptions = {}): Promise<A11yReport> {
   const axe = await loadAxe();
-  const rules = page ? undefined : Object.fromEntries(PAGE_RULES.map((id) => [id, { enabled: false }]));
+  const skipped = page ? off : [...PAGE_RULES, ...off];
+  const rules = skipped.length === 0 ? undefined : Object.fromEntries(skipped.map((id) => [id, { enabled: false }]));
   const run = async () => recheckContrast(axe, element, await axe.run(element, { elementRef: true, ...(rules ? { rules } : {}) }));
   const running = last.then(run, run);
   last = running;

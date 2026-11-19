@@ -105,6 +105,20 @@ describe('runAxe', () => {
     }
   }, 20_000);
 
+  it('leaves out the rules named `off`, on a page or a part of one', async () => {
+    const host = document.createElement('div');
+    host.innerHTML = '<img src="cat.png" id="no-alt">';
+    document.body.append(host);
+    try {
+      for (const page of [true, false]) {
+        const report = await runAxe(host, { page, off: ['image-alt'] });
+        expect(report.violations.map((v) => v.id)).not.toContain('image-alt');
+      }
+    } finally {
+      host.remove();
+    }
+  }, 20_000);
+
   it('answers two audits started at once, since every story in the workshop page shares one axe', async () => {
     const one = document.createElement('div');
     one.innerHTML = '<img src="cat.png">';

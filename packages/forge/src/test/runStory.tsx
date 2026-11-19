@@ -2,6 +2,8 @@ import { withConfigValueAt } from '@weasel-js/labkit/config';
 import { type RefObject, useEffect, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import type { FrameSetup } from '../frame/FrameController';
+import type { StoryGlobals } from '../protocol/messages';
+import { StoryGlobalsContext } from '../shell/StoryGlobalsContext';
 import { StoryTrial } from '../shell/StoryTrial';
 import { loadStories } from '../story/load';
 import type { LoadedStory } from '../story/types';
@@ -47,6 +49,10 @@ function TestTrial({ story, setup, hostRef, onConfig, onRendered, onError }: Tes
 export interface RunStoryOptions {
   /** The frame config (`frameConfig`). */
   setup?: FrameSetup;
+  /** The globals the story renders and plays under, as the workshop's toolbar sets them. Default none. */
+  globals?: StoryGlobals;
+  /** Runs on the story host once the story has rendered and played, before it unmounts; a throw fails the run. */
+  check?: (host: HTMLElement) => unknown;
 }
 
 /** Stops the story a timed-out test left mounted. */
@@ -62,7 +68,7 @@ export async function runStory(
   file: string,
   /** The file's index entry title. */
   title: string,
-  { setup = {} }: RunStoryOptions = {},
+  { setup = {}, globals = {}, check }: RunStoryOptions = {},
 ): Promise<void> {
   leftover?.();
   let story: LoadedStory | undefined;
@@ -118,16 +124,18 @@ export async function runStory(
       await setup.prepare?.(story);
       root = createRoot(container, { onUncaughtError: fail });
       root.render(
-        <TestTrial
-          story={story}
-          setup={setup}
-          hostRef={hostRef}
-          onConfig={(next) => {
-            config = next;
-          }}
-          onRendered={markRendered}
-          onError={fail}
-        />,
+        <StoryGlobalsContext.Provider value={globals}>
+          <TestTrial
+            story={story}
+            setup={setup}
+            hostRef={hostRef}
+            onConfig={(next) => {
+              config = next;
+            }}
+            onRendered={markRendered}
+            onError={fail}
+          />
+        </StoryGlobalsContext.Provider>,
       );
     } catch (error) {
       throw phased('mount', error);
@@ -139,12 +147,19 @@ export async function runStory(
     if (!host) throw new Error('render fault: the story host never mounted');
     if (story.play) {
       try {
-        await story.play({ canvasElement: host, config, globals: {} });
+        await story.play({ canvasElement: host, config, globals });
       } catch (error) {
         throw phased('play', error);
       }
       await settle();
       checkRender();
+    }
+    if (check) {
+      try {
+        await check(host);
+      } catch (error) {
+        throw phased('check', error);
+      }
     }
   } catch (error) {
     failure = { error };
