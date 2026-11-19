@@ -308,6 +308,8 @@ export function installSweepKit(win) {
   const capture = (rootSel, id, ignore) => {
     const root = doc.querySelector(rootSel);
     if (!root) return { dom: {}, canvases: [] };
+    // Focusing a control can scroll the page; every capture sees the demo from the same place.
+    if (typeof root.scrollIntoView === 'function') root.scrollIntoView({ block: 'start' });
     const field = fieldById(rootSel, id);
     const exclude = field ? [field] : [];
     const vw = w.innerWidth;

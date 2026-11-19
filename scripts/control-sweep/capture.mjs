@@ -101,6 +101,11 @@ export const prepare = async (page, url, c, settleMs, tries) => {
     if (!pre) throw new Error(`the control it depends on, ${c.precondition.label}, is gone${await nearMisses(page, c.precondition)}`);
     await operate(page, pre);
     await settle(page, settleMs);
+    // A precondition that opens a popup (a chip's paint editor) hides the demo behind it; only its choice is wanted.
+    if ((await kit(page, 'capture', ROOT, null)).dom.popups !== '0') {
+      await page.keyboard.press('Escape');
+      await settle(page, settleMs);
+    }
   }
   const now = await locateSoon(page, c);
   if (!now) throw new Error(`control not found after reload${await nearMisses(page, c)}`);

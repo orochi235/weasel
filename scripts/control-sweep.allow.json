@@ -48,5 +48,15 @@
     "demo": "*",
     "control": "Theme: Auto — click for Light",
     "reason": "Under the headless browser's light color scheme, Auto already shows Light, so the first click changes nothing visible. Kit chrome is swept in whichever lab reaches it first, so a run of every demo may find this unused."
+  },
+  {
+    "demo": "*",
+    "control": "trial 1 › Copy settings as JSON",
+    "reason": "Writes the clipboard, which shows nothing on the page."
+  },
+  {
+    "demo": "*",
+    "control": "trial 1 › Reset trial",
+    "reason": "A trial opens at its defaults, so Reset has nothing to put back until a setting moves, which no probe of a button does first."
   }
 ]
