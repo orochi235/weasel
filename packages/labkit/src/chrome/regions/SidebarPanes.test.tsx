@@ -82,9 +82,7 @@ describe('<SidebarPanes>', () => {
     expect(onHeightsChange).toHaveBeenCalledWith({ a: 208 });
   });
 
-  // Fails until windease stops registering a Panel during render (docs/TODO.md, "A labkit sidebar section added").
-  // When this starts passing, drop `.fails`.
-  it.fails('mounts a new section without updating the stack while it renders', async () => {
+  it('mounts a new section without updating the stack while it renders', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     try {
       const { rerender } = await renderSettled(
