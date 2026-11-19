@@ -1,11 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { multiply, rotate, rotateAboutPoint, scale, translate, type Affine } from '@weasel-js/geom';
+import { multiply, rotate, rotateAboutPoint, scale, translate, type Affine, DEG_TO_RAD } from '@weasel-js/geom';
 import { formatMatrix, parseTransform } from './transform';
 import { IDENTITY_MATRIX } from './types';
 
 const RUNS = { numRuns: Number(globalThis.process?.env?.WEASEL_PBT_RUNS) || 300 };
-const DEG = Math.PI / 180;
 
 const num = fc.double({ min: -1000, max: 1000, noNaN: true, noDefaultInfinity: true });
 const angle = fc.double({ min: -360, max: 360, noNaN: true });
@@ -22,10 +21,10 @@ const fn: fc.Arbitrary<{ text: (sep: string) => string; m: Affine }> = fc.oneof(
   })),
   fc.tuple(angle, fc.option(fc.tuple(num, num), { nil: undefined })).map(([a, at]) => ({
     text: (sep: string) => `rotate(${at === undefined ? a : [a, ...at].join(sep)})`,
-    m: at === undefined ? rotate(a * DEG) : rotateAboutPoint(at[0], at[1], a * DEG),
+    m: at === undefined ? rotate(a * DEG_TO_RAD) : rotateAboutPoint(at[0], at[1], a * DEG_TO_RAD),
   })),
-  skew.map((a) => ({ text: () => `skewX(${a})`, m: [1, 0, Math.tan(a * DEG), 1, 0, 0] as Affine })),
-  skew.map((a) => ({ text: () => `skewY(${a})`, m: [1, Math.tan(a * DEG), 0, 1, 0, 0] as Affine })),
+  skew.map((a) => ({ text: () => `skewX(${a})`, m: [1, 0, Math.tan(a * DEG_TO_RAD), 1, 0, 0] as Affine })),
+  skew.map((a) => ({ text: () => `skewY(${a})`, m: [1, Math.tan(a * DEG_TO_RAD), 0, 1, 0, 0] as Affine })),
   fc.tuple(num, num, num, num, num, num).map((m) => ({ text: (sep: string) => `matrix(${m.join(sep)})`, m })),
 );
 
