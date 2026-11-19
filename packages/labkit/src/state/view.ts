@@ -1,7 +1,7 @@
 import { normalizeZoom } from '@weasel-js/core';
 import { type Camera3d, clampCamera, createCamera, type OrbitLimits } from '@weasel-js/kernel3d';
-import type { ViewTransform2D } from '../instrument/types';
 import { isFiniteNumber } from '@weasel-js/registry';
+import type { ViewTransform2D } from '../instrument/types';
 
 /** Zoom 1, no pan. */
 export const DEFAULT_VIEW: ViewTransform2D = { zoom: 1, pan: { x: 0, y: 0 } };
@@ -39,8 +39,20 @@ export function as3DView(view: unknown, limits?: Partial<OrbitLimits>): ViewTran
   if (typeof view !== 'object' || view === null) return null;
   const v = view as Partial<Record<keyof Camera3d, unknown>>;
   const t = v.target as Partial<Record<'x' | 'y' | 'z', unknown>> | undefined;
-  if (!isFiniteNumber(v.yaw) || !isFiniteNumber(v.pitch) || !isFiniteNumber(v.distance) || !(v.distance > 0)) return null;
-  if (typeof t !== 'object' || t === null || !isFiniteNumber(t.x) || !isFiniteNumber(t.y) || !isFiniteNumber(t.z)) {
+  if (
+    !isFiniteNumber(v.yaw) ||
+    !isFiniteNumber(v.pitch) ||
+    !isFiniteNumber(v.distance) ||
+    !(v.distance > 0)
+  )
+    return null;
+  if (
+    typeof t !== 'object' ||
+    t === null ||
+    !isFiniteNumber(t.x) ||
+    !isFiniteNumber(t.y) ||
+    !isFiniteNumber(t.z)
+  ) {
     return null;
   }
   const positive = (n: unknown): n is number => isFiniteNumber(n) && n > 0;

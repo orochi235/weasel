@@ -1,6 +1,6 @@
 import { isPlainObject } from '@weasel-js/core';
-import type { LabDocument, SavedSnapshot, SerializedTrial } from './types';
 import { isFiniteNumber } from '@weasel-js/registry';
+import type { LabDocument, SavedSnapshot, SerializedTrial } from './types';
 
 /** Every record of the lab stored under `storageKey` starts with this. The key
  *  is URI-encoded, so it holds no `:` and one lab's prefix can never reach into

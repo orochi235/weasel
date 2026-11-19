@@ -1,9 +1,9 @@
 import type { ClockRegistry } from '@weasel-js/clock';
+import { isFiniteNumber } from '@weasel-js/registry';
 import { useEffect, useSyncExternalStore } from 'react';
 import { transportControl } from '../clock/transportControl';
 import { transportHoldOf } from '../clock/transportHold';
 import type { TrialClockHandle } from '../clock/trialClock';
-import { isFiniteNumber } from '@weasel-js/registry';
 
 /**
  * What a host page posts to a presented lab's window to work its clock:
