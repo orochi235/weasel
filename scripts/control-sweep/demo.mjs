@@ -35,11 +35,11 @@ const attempt = async (page, c, { settleMs, events, shots }) => {
 
 /**
  * Whether a control that showed up after operating another is a new one to try under it: not the
- * operated control under a new label, not disabled, and not another copy of a control already there
+ * operated control under a new label, not disabled, not already the chosen one, and not another copy of a control already there
  * (a second trial's, an undocked panel's), which is the same control again.
  */
 const isNewControl = (d, keysBefore, operatedId) =>
-  d.id !== operatedId && !d.skip && !keysBefore.has(d.key) && !keysBefore.has(`${d.kind}:${d.name}`);
+  d.id !== operatedId && !d.skip && !d.selected && !keysBefore.has(d.key) && !keysBefore.has(`${d.kind}:${d.name}`);
 
 const record = (demo, c, fields) => ({
   demo: demo.id, path: demo.path, key: c.key, label: c.label, kind: c.kind,
