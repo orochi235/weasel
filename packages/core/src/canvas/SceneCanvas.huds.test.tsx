@@ -79,6 +79,35 @@ describe('<SceneCanvas> HUDs', () => {
   });
 });
 
+describe('<SceneCanvas> HUDs over a declared view', () => {
+  it("convert and pick through the view under the pointer, not the canvas's own camera", async () => {
+    const rect = vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      { x: 0, y: 0, left: 0, top: 0, right: 300, bottom: 200, width: 300, height: 200, toJSON: () => ({}) } as DOMRect,
+    );
+    const pickEvery = vi.fn((_world: WorldPoint): string[] => []);
+    const container = await mount(
+      <SceneCanvas
+        scene={makeScene()}
+        width={300}
+        height={200}
+        cursorCoordsHud
+        pickHud
+        geometry={{ pickEvery }}
+        views={[{ id: 'panel', bounds: { x: 100, y: 0, width: 100, height: 100 }, defaultView: { x: 1000, y: 0, scale: { x: 1, y: 1 } } }]}
+      />,
+    );
+    await act(async () => {
+      const ev = new Event('pointermove', { bubbles: true });
+      Object.defineProperties(ev, { clientX: { value: 150 }, clientY: { value: 50 } });
+      document.dispatchEvent(ev);
+    });
+    expect(pickEvery.mock.calls.at(-1)?.[0]).toEqual({ x: 1050, y: 50 });
+    expect((pickEvery.mock.calls.at(-1) as unknown[] | undefined)?.[1]).toMatchObject({ viewId: 'panel' });
+    expect(container.textContent).toContain('(1050.0, 50.0)');
+    rect.mockRestore();
+  });
+});
+
 describe('<SceneCanvas> HUDs when detached', () => {
   it('renders the cursor-coords HUD even with no canvas of its own', async () => {
     const shared = document.createElement('canvas');
