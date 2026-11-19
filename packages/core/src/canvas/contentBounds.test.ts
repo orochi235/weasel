@@ -60,4 +60,13 @@ describe('sceneContentBounds', () => {
     scene.add({ kind: 'mark', layer: 'main', pose: box(0, 0, 10, 10), data: {}, parent: g });
     expect(sceneContentBounds(scene, boxOf(scene), () => box(40, 0, 0, 0))).toEqual(box(0, 0, 50, 10));
   });
+  it('counts what a root on a hidden layer holds on a shown one, and a hidden-layer group\'s copies of it', () => {
+    const scene = createScene<unknown, 'main' | 'off', RectPose>({ systemLayers: [{ id: 'off', visible: false }, { id: 'main' }] });
+    const g = scene.add({ kind: 'group', layer: 'off', pose: BOX, data: {}, copiesFromPose: () => [translate(100, 0)] });
+    scene.add({ kind: 'mark', layer: 'main', pose: box(0, 0, 10, 10), data: {}, parent: g });
+    scene.add({ kind: 'mark', layer: 'off', pose: box(500, 500, 10, 10), data: {}, parent: g });
+    scene.add({ kind: 'mark', layer: 'off', pose: box(-500, 0, 10, 10), data: {} });
+    const of = boxOf(scene as never) as (id: NodeId) => RectPose | null;
+    expect(sceneContentBounds(scene, (id) => (scene.get(id)!.layer === 'off' && scene.get(id)!.kind === 'mark' ? null : of(id)))).toEqual(box(0, 0, 110, 10));
+  });
 });

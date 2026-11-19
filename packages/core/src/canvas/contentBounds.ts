@@ -22,14 +22,21 @@ export function sceneContentBounds<TData, TLayer extends string, TPose>(
   boxOf: (id: NodeId) => Bounds | null,
   poseOf: (node: Node<TData, TLayer, TPose>) => TPose = (node) => node.pose,
 ): Bounds | null {
+  // A hidden node prunes its subtree; a hidden layer takes out only the nodes on it, so under
+  // a root or a container on one, what its children draw still counts (`buildSceneTree` paints it).
+  const flags = nodeGates({ get: (id) => scene.get(id) });
   const gates = nodeGates(scene);
-  const parts: (Bounds | null)[] = [];
-  for (const id of scene.roots) if (!gates.hidden(id)) parts.push(boxOf(id));
+  const shown = (id: NodeId): (Bounds | null)[] => {
+    const node = scene.get(id);
+    if (node === undefined || flags.hidden(node)) return [];
+    return gates.hidden(node) ? scene.childrenOf(id).flatMap(shown) : [boxOf(id)];
+  };
+  const parts: (Bounds | null)[] = scene.roots.flatMap(shown);
   for (const node of scene.nodes.values()) {
-    if (!node.copiesFromPose || gates.hidden(node)) continue;
+    if (!node.copiesFromPose || flags.hidden(node)) continue;
     const copies = copiesWithin(scene, node.id, poseOf);
     if (copies.length === 0) continue;
-    const own = boxOf(node.id);
+    const own = gates.hidden(node) ? unionAabb(scene.childrenOf(node.id).flatMap(shown)) : boxOf(node.id);
     if (own) for (const m of copies) parts.push(carried(own, m));
   }
   return unionAabb(parts);
