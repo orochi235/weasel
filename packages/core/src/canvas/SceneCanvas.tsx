@@ -110,7 +110,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     slops: debug !== undefined && debug !== false && debug.slops === true,
     boundsIncludeStroke: props.geometry?.boundsIncludeStroke ?? true, selectTool: selectToolOpts, selectionChrome: enabled.selectionChrome,
   });
-  const workerSurface = useSceneWorkerSurface(props, scene as Scene<unknown, string, unknown>, previewIdsExtra);
+  const workerSurface = useSceneWorkerSurface(props, scene as Scene<unknown, string, unknown>, previewIdsExtra, layered.sceneSlot);
   const redrawOn = useSceneRedrawSources({ props, scene, heldModifiers, departures: layered.departures });
 
   const chrome = useSceneCanvasChrome({

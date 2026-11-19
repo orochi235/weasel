@@ -3,7 +3,8 @@ import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
 import { startSceneRenderWorker } from '../renderWorker/startSceneRenderWorker';
 import type { ToWorker } from '../renderWorker/protocol';
-import { workerInputs } from './useSceneWorkerSurface';
+import { renderHook } from '@testing-library/react';
+import { useSceneWorkerSurface, workerInputs } from './useSceneWorkerSurface';
 
 const scene = createScene({ systemLayers: [{ id: 'main' }] }) as unknown as Scene<unknown, string, unknown>;
 
@@ -42,5 +43,18 @@ describe('what a worker frame reads of a scene canvas', () => {
     expect(frameWith({ cull: true })).toMatchObject({ cull: true });
     expect(frameWith({})).toMatchObject({ cull: false });
     client.dispose();
+  });
+});
+
+describe('whether the worker paints the scene', () => {
+  const start = () => ({}) as Worker;
+  it("leaves the scene to the page when the resolved slot is a pre-built layer, the presets' included", () => {
+    const { result } = renderHook(() => useSceneWorkerSurface({ worker: start }, scene, () => null, { layer: { id: 'scene', draw: () => [] } }));
+    expect(result.current).toBeUndefined();
+  });
+
+  it('paints it for a slot config, and reads its cull', () => {
+    const { result } = renderHook(() => useSceneWorkerSurface({ worker: start }, scene, () => null, { cull: true }));
+    expect(result.current?.inputs().cull).toBe(true);
   });
 });

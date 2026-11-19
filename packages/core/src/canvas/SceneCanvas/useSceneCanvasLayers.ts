@@ -11,7 +11,7 @@ import { usePathEditOverlayLayer } from 'domains/paths/usePathEdit';
 import type { SelectionChrome } from '../selectionChrome';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { HierarchicalAdapter } from '../buildSceneTree';
-import { builtLayersOf, isCustomEntry, type CanvasLayers } from '../layerSlots';
+import { builtLayersOf, isCustomEntry, type CanvasLayers, type LayersMap } from '../layerSlots';
 import { createSlopsDebugLayer } from '../slopsDebugLayer';
 import { useTargetBasePx } from 'core/device/useTargetBasePx';
 import { targetSizesPx } from 'core/device/targets';
@@ -82,6 +82,8 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(
   args: SceneCanvasLayersArgs<TData, TLayer, TPose>,
 ): {
   layers: CanvasLayers;
+  /** The `scene` slot as resolved: the caller's over the presets', over the default. */
+  sceneSlot: LayersMap<Node<TData, TLayer, TPose>, TPose>['scene'];
   /** Where the selection overlay paints its rotate badge, or null. */
   rotationBadge: ReturnType<SelectionChrome['rotationBadgeOf']>;
   /** Which resize handles exist and their hit radius, for every hit-test of this canvas. */
@@ -175,5 +177,5 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(
   }), [merged, sceneLayers, selectionOverlayLayer, enteredFrameLayer, departureLayer, previewLayer, effectSourcesLayer, dispatcherOverlay, pathEditingOverlayLayer, overlaySlot, overlayAnchor, snapReadoutLayer, args.snapReadout, slops, slopsLayer,
   ]);
 
-  return { layers, rotationBadge, resizeHandles, chromeAffordancesRef, snapStore, departures, selectionChrome: args.selectionChrome };
+  return { layers, sceneSlot: merged.scene, rotationBadge, resizeHandles, chromeAffordancesRef, snapStore, departures, selectionChrome: args.selectionChrome };
 }
