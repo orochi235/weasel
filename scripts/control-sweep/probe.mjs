@@ -51,16 +51,25 @@ const dragRun = async (page, c, ctx, when, tool) => {
   return capture(page, live.id);
 };
 
+/** A probe run that cannot be set up (a tool's drag left its options closed) shows nothing, rather than failing the control. */
+const tryRun = async (run) => {
+  try {
+    return await run();
+  } catch {
+    return undefined;
+  }
+};
+
 const differs = (cmp) => cmp.domChanged > 0 || cmp.canvasChanged.length > 0;
 
 const TOOLS_TRIED = 4;
 
 /** Whether `c` operated `when` changes what a drag with `tool` (or the tool already chosen) does or leaves. */
 const differsUnder = async (page, c, ctx, when, tool) => {
-  const plain = await dragRun(page, c, ctx, undefined, tool);
+  const plain = await tryRun(() => dragRun(page, c, ctx, undefined, tool));
   // A second plain run says what differs from one load to the next (a seed, a clock), which proves nothing.
-  const again = plain && await dragRun(page, c, ctx, undefined, tool);
-  const probed = again && await dragRun(page, c, ctx, when, tool);
+  const again = plain && await tryRun(() => dragRun(page, c, ctx, undefined, tool));
+  const probed = again && await tryRun(() => dragRun(page, c, ctx, when, tool));
   return Boolean(probed && differs(compareCaptures(plain, again, probed)));
 };
 
@@ -109,8 +118,8 @@ export const probeButtons = async (page, c, ctx) => {
   if (c.kind === 'button' || c.kind === 'menuitem') return undefined;
   const buttons = (await discover(page)).filter((d) => (d.kind === 'button' || d.kind === 'toggle') && !d.skip && !d.chrome && !d.tool && d.key !== c.key).slice(0, BUTTONS_TRIED);
   for (const b of buttons) {
-    const plain = await pressRun(page, c, b, ctx, false);
-    const probed = plain && await pressRun(page, c, b, ctx, true);
+    const plain = await tryRun(() => pressRun(page, c, b, ctx, false));
+    const probed = plain && await tryRun(() => pressRun(page, c, b, ctx, true));
     if (!probed) continue;
     // A pause shows as an animation the button starts that, after the setting, holds still.
     if (differs(compareCaptures(plain.first, plain.second, probed.second))

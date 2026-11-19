@@ -119,16 +119,14 @@ const applyPrecondition = async (page, c, settleMs) => {
 };
 
 /**
- * Puts the page back where `c`'s precondition (if any) left it, with `c` found afresh. A precondition pressed
- * while the demo is still settling can be lost, so it is pressed again from a fresh load, a few times, until
- * `c` shows.
+ * Puts the page back where `c`'s precondition (if any) left it, with `c` found afresh. A lab that restores its
+ * state late (from storage, after it first draws) can undo a precondition pressed while it was still loading,
+ * so a control that has not shown is given its precondition again, in the page as it now stands.
  */
 export const prepare = async (page, url, c, settleMs, tries) => {
+  if (c.precondition) await load(page, url, { tries });
   for (let attempt = 1; ; attempt++) {
-    if (c.precondition) {
-      await load(page, url, { tries: attempt === 1 ? tries : STEADY_TRIES });
-      await applyPrecondition(page, c, settleMs);
-    }
+    if (c.precondition) await applyPrecondition(page, c, settleMs);
     const now = await locateSoon(page, c);
     if (now) return { ...c, ...now, precondition: c.precondition };
     if (!c.precondition || attempt === PRECONDITION_TRIES) {
