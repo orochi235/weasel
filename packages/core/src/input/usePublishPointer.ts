@@ -17,7 +17,8 @@ export type LocatePointer = (
  * `locate` places it. A pointer pressed on the element keeps publishing once
  * it leaves, so a drag that runs off the edge still reports where it is until
  * it is released. A pointer that leaves with nothing held, or is released
- * or canceled outside, clears the store, unless another view has published since. No-op with no provider in scope.
+ * or canceled outside (off the window included), clears the store, unless
+ * another view has published since. No-op with no provider in scope.
  *
  * `locate` is read on each event, so it need not be stable. The ref is read
  * after every render, so an element that mounts later or is swapped is followed.
@@ -42,30 +43,40 @@ export function usePublishPointer(
       const now = store.get();
       if (now && now.viewId === viewId) store.set(null);
     };
+    // Whether a held pointer has left the element since it last moved over it.
+    let outside = false;
+    const onMove = (e: PointerEvent): void => {
+      outside = false;
+      publish(e);
+    };
     const onLeave = (e: PointerEvent): void => {
-      if (held.count() > 0) publish(e);
-      else clear();
+      if (held.count() === 0) {
+        clear();
+        return;
+      }
+      outside = true;
+      publish(e);
     };
-    // A press that left the element is released, or canceled, with no leave to follow.
-    const onDocUp = (e: PointerEvent): void => {
-      if (held.count() === 0 && !el.contains(e.target as Node | null)) clear();
-    };
+    // A press that left the element ends with no leave to follow: released, canceled, or let go
+    // off the window, which the held set learns of from the next move with no button down.
+    const unheld = held.subscribe(() => {
+      if (held.count() > 0 || !outside) return;
+      outside = false;
+      clear();
+    });
     // The element's own listener has the moves that still target it.
     const onDocMove = (e: PointerEvent): void => {
       if (held.count() === 0 || el.contains(e.target as Node | null)) return;
       publish(e);
     };
-    el.addEventListener('pointermove', publish);
+    el.addEventListener('pointermove', onMove);
     el.addEventListener('pointerleave', onLeave);
     document.addEventListener('pointermove', onDocMove);
-    document.addEventListener('pointerup', onDocUp);
-    document.addEventListener('pointercancel', onDocUp);
     return () => {
-      el.removeEventListener('pointermove', publish);
+      el.removeEventListener('pointermove', onMove);
       el.removeEventListener('pointerleave', onLeave);
       document.removeEventListener('pointermove', onDocMove);
-      document.removeEventListener('pointerup', onDocUp);
-      document.removeEventListener('pointercancel', onDocUp);
+      unheld();
       held.release();
     };
   }, [store, locateRef]);

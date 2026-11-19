@@ -137,6 +137,16 @@ describe('bindRig with skins', () => {
     expect(scene.overrides.read(other)).toBeUndefined();
   });
 
+  it('skips a skinned node the scene has since lost, in what it shows and what it bakes', () => {
+    const { scene, sleeve } = sleeveScene();
+    const rig = bindRig({ scene, skeleton: ARM, skins: { [sleeve]: SLEEVE } });
+    rig.pose(BENT);
+    scene.remove(sleeve);
+    rig.pose({});
+    expect(scene.overrides.has(sleeve)).toBe(false);
+    expect(() => rig.bake()).not.toThrow();
+  });
+
   it('reads the rest path through `restPath` where the data keeps it elsewhere', () => {
     const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     const outline = polygonFromPoints([{ x: 100, y: 100 }, { x: 200, y: 100 }]);

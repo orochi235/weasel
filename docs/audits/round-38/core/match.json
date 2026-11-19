@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "composeAffordanceLayer paints a region whose own `chromeId` is hidden, while the hit test refuses it",
+  "Escape returns to a default tool the active mode forbids, though tool keys are gated on the mode",
+  "An annulus whose inner rect isn't centered on (cx, cy) is painted and floored around a different cutout than the one it hit-tests",
+  "Overlapping point regions are ranked by world distance, not screen distance, under non-uniform zoom"
+ ],
+ "b": [
+  "composeAffordanceLayer paints a region its own `chromeId` hides, while the hit walk skips it",
+  "Annulus paint's petals wind in opposite directions, so where two overlap the nonzero fill leaves a hole and a stroke draws a chord across the ring",
+  "Annulus paint assumes the inner rect is centered on (cx, cy); the hit test uses its real position",
+  "A KeyState attached to two targets loses its window-blur release when either detaches",
+  "usePublishPointer keeps a stale position when a drag ends off-window and the release is never seen",
+  "composeAffordanceLayer's hit drops the region's `hitKind`, so the documented \"Custom affordances\" example's `handle:` predicate never matches",
+  "useKeyState with a `target` ref never attaches if the element mounts after the hook's first effect"
+ ]
+}

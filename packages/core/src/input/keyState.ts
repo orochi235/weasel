@@ -165,19 +165,18 @@ export function createKeyState(): KeyState {
         if (!(next instanceof Node) || !(target as HTMLElement).contains(next)) release();
       };
 
-      target.addEventListener('keydown', onKeyDown);
-      target.addEventListener('keyup', onKeyUp);
-      window.addEventListener('blur', release);
-      document.addEventListener('visibilitychange', onVisibility);
-      const isElement = target !== window;
-      if (isElement) target.addEventListener('focusout', onFocusOut);
-
+      // A blur listener of its own: `addEventListener` folds one already added, so a shared
+      // `release` would leave with whichever attachment detached first.
+      const on: Array<[EventTarget, string, EventListener]> = [
+        [target, 'keydown', onKeyDown],
+        [target, 'keyup', onKeyUp],
+        [window, 'blur', () => release()],
+        [document, 'visibilitychange', onVisibility],
+        ...(target !== window ? [[target, 'focusout', onFocusOut] as [EventTarget, string, EventListener]] : []),
+      ];
+      for (const [t, type, fn] of on) t.addEventListener(type, fn);
       return () => {
-        target.removeEventListener('keydown', onKeyDown);
-        target.removeEventListener('keyup', onKeyUp);
-        window.removeEventListener('blur', release);
-        document.removeEventListener('visibilitychange', onVisibility);
-        if (isElement) target.removeEventListener('focusout', onFocusOut);
+        for (const [t, type, fn] of on) t.removeEventListener(type, fn);
         release();
       };
     },

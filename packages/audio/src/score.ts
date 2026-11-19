@@ -68,7 +68,6 @@ export function createScore(engine: AudioEngine, opts: ScoreOptions): Score {
   const eventsOf = (state: ScoreState) => scoreBar(state.params, state.cueBar, barOpts);
 
   let current = stateAt(0, null);
-  let next = current;
   /** The bar last reported in this run, -1 before its first. */
   let reported = -1;
   const write = (state: ScoreState): void => {
@@ -80,22 +79,17 @@ export function createScore(engine: AudioEngine, opts: ScoreOptions): Score {
     tempo: current.params.tempo,
     length: SCORE_BAR_STEPS,
     events: eventsOf(current),
-    onStep(step, when, count) {
+    // Before the step's events, so the first step booked in a bar plays that bar, whichever step a stall left it on.
+    beforeStep(_step, when, count) {
       // From the count, not the step: a stall can skip a bar's first or last steps, or whole bars.
       const bar = Math.floor(count / SCORE_BAR_STEPS);
-      if (bar > reported) {
-        if (next.bar === bar) current = next;
-        else {
-          // The bar before this one never reached its last step, so this one was never written.
-          current = next = stateAt(bar, reported < 0 ? null : current);
-          write(current);
-        }
-        reported = bar;
-        onBar?.(current, when);
+      if (bar <= reported) return;
+      if (reported >= 0) {
+        current = stateAt(bar, current);
+        write(current);
       }
-      if (step !== SCORE_BAR_STEPS - 1) return;
-      next = stateAt(current.bar + 1, current);
-      write(next);
+      reported = bar;
+      onBar?.(current, when);
     },
   });
 
@@ -103,7 +97,7 @@ export function createScore(engine: AudioEngine, opts: ScoreOptions): Score {
     start(when) {
       if (player.isPlaying()) return;
       reported = -1;
-      current = next = stateAt(0, null);
+      current = stateAt(0, null);
       write(current);
       player.start(when);
     },

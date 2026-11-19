@@ -1,6 +1,7 @@
 import { createPart } from '@weasel-js/registry';
 import { envelopeLevel, envelopePoints, resolveEnvelope, type Envelope, type ResolvedEnvelope } from './envelope';
 import { checkFinite, checkSpan } from './param';
+import { checkFilterType, checkNoiseColor, checkWave } from './patchCheck';
 import { toFrequency } from './pitch';
 import type { Inharmonic, NoiseColor, NoteOptions, SynthPartial, VoiceFilter, Waveform } from './types';
 
@@ -110,13 +111,14 @@ function checkEnvelope(what: string, env: Envelope | undefined): void {
   checkFinite(`${what} release`, env.release);
 }
 
-/** Throws on a number in a note's or noise's envelope, filter or duration that its nodes, or the
- *  voice processor, could not play: checked at the call rather than when it comes due. */
+/** Throws on a filter type, or a number in a note's or noise's envelope, filter or duration, that its
+ *  nodes, or the voice processor, could not play: checked at the call rather than when it comes due. */
 export function checkShaping(patch: { envelope?: Envelope; filter?: VoiceFilter; duration?: number }): void {
   checkSpan('voice duration', patch.duration);
   checkEnvelope('envelope', patch.envelope);
   const { filter } = patch;
   if (!filter) return;
+  if (filter.type !== undefined) checkFilterType(filter.type);
   checkFinite('filter frequency', filter.frequency);
   checkFinite('filter Q', filter.Q);
   checkFinite('filter gain', filter.gain);
@@ -124,11 +126,10 @@ export function checkShaping(patch: { envelope?: Envelope; filter?: VoiceFilter;
   checkEnvelope('filter envelope', filter.envelope);
 }
 
-function checkHarmonics(levels: readonly number[]): void {
-  if (levels.length === 0) {
-    throw new RangeError('@weasel-js/audio: a harmonic wave needs at least one level');
-  }
-  for (const level of levels) checkFinite('harmonic level', level);
+/** Throws on a noise voice's color, or a {@link checkShaping} number, that it could not play. */
+export function checkNoise(noise: { noise: NoiseColor; envelope?: Envelope; filter?: VoiceFilter; duration?: number }): void {
+  checkNoiseColor(noise.noise);
+  checkShaping(noise);
 }
 
 /** What of a note is checked where it was written, not when it comes due. */
@@ -146,7 +147,7 @@ export function resolveNote(
   checkShaping(note);
   checkSpan('glide', note.glide?.ms);
   const wave = note.wave ?? 'sine';
-  if (Array.isArray(wave)) checkHarmonics(wave);
+  checkWave(wave);
   return {
     from: toFrequency(note.pitch),
     glideTo: note.glide ? toFrequency(note.glide.to) : undefined,

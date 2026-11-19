@@ -1,4 +1,4 @@
-import { passesOf } from './place';
+import { passesOf, placeOf } from './place';
 import type { Clock, ClockHandle, ClockPosition } from './types';
 
 /** The time `clock` shows within its pass: its origin plus how far it stands into
@@ -11,7 +11,9 @@ export function shownInPass(clock: Pick<Clock, 'origin' | 'elapsed' | 'duration'
 
 /** A clock held at a time its span may not reach yet. */
 export interface PlayheadHold {
-  /** The held time while the clock stands elsewhere (clamped), else null. */
+  /** The time the hold waits for while the clock stands elsewhere, else null:
+   *  `holdAt`'s shown time as asked, unclamped, and `holdPosition`'s elapsed on
+   *  the clock's current span. */
   pending(): number | null;
   /** Stop holding. Idempotent. */
   release(): void;
@@ -76,7 +78,8 @@ function elapsedOn(clock: Clock, at: HeldPosition): [elapsed: number, line: Line
   // A position at the end of the clock's run is that run ended, the end of its last pass as `placeOf` reads it, not
   // the start of a pass past it; one beyond came from a run of more passes, and keeps its pass.
   const ended = at.elapsed === from * passes;
-  let pass = ended ? Math.ceil(passes) - 1 : Math.floor(at.elapsed / from);
+  // Split as the clock splits its own elapsed, so a quotient that rounds up a pass does not land a pass off.
+  let pass = ended ? Math.ceil(passes) - 1 : placeOf(at.elapsed, from, Number.POSITIVE_INFINITY, false).pass;
   let into = at.elapsed - pass * from;
   if (!ended && at.passEnd && into === 0 && pass > 0) {
     pass -= 1;

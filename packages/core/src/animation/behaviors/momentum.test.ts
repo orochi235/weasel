@@ -44,6 +44,14 @@ function makeCtx(initialPose: RectPose, setPose: (id: string, p: RectPose) => vo
 }
 
 describe('momentum', () => {
+  it('refuses a friction that would never bring a coast to rest, or is no multiplier', () => {
+    const animator = {} as never;
+    for (const friction of [1, 0, -0.5, 1.5, Number.NaN]) {
+      expect(() => momentum({ animator, friction })).toThrow(RangeError);
+    }
+    expect(() => momentum({ animator, friction: 0.5 })).not.toThrow();
+  });
+
   it('records pointer samples on each onMove', () => {
     const clock = makeClock();
     const { result } = renderHook(() => useAnimator(clock));

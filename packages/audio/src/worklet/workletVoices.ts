@@ -1,5 +1,5 @@
 import type { Booking, LiveVoice, SourceLike, Starter } from '../liveVoice';
-import { checkShaping, resolveNote } from '../synthVoice';
+import { checkNoise, resolveNote } from '../synthVoice';
 import type { NoiseOptions, NoteOptions } from '../types';
 import type { VoiceOut } from '../voiceChains';
 import { loadVoiceProcessor } from './loadVoiceProcessor';
@@ -134,7 +134,7 @@ export function createWorkletVoices(
       }));
     },
     noise(noise) {
-      checkShaping(noise);
+      checkNoise(noise);
       const patch = { noise: noise.noise, envelope: noise.envelope, filter: noise.filter, duration: noise.duration };
       return starter((voice, at, level, pan) => ({
         kind: 'noise', id: voice.id, at, level, pan, rate: voice.rate, detune: voice.detune, patch,

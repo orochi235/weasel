@@ -80,3 +80,15 @@ describe('a paragraph separator mid-text', () => {
     expect(a.levels[4]).toBe(1);
   });
 });
+
+describe('analyze on unmatched isolate initiators', () => {
+  // Pairing each initiator by scanning to the paragraph's end made this
+  // quadratic: 50k stray initiators took seconds.
+  it.each([['LRI', 0x2066], ['FSI', 0x2068]])('runs in linear time over 50k stray %s', (_, cp) => {
+    const text = new Array<number>(50_000).fill(cp);
+    const t = performance.now();
+    const a = analyze(text);
+    expect(performance.now() - t).toBeLessThan(1000);
+    expect(a.levels).toHaveLength(50_000);
+  });
+});

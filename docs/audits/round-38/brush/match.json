@@ -1,0 +1,14 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "README example builds a new share object every render, so the Sand tool is redefined on every render"
+ ],
+ "b": [
+  "README example builds a fresh `share` each render, so the brush tools are redefined every render"
+ ]
+}

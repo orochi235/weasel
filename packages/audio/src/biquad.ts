@@ -1,3 +1,5 @@
+import { checkFilterType } from './patchCheck';
+
 /** A biquad's coefficients, already divided by `a0`. */
 export interface BiquadCoefficients {
   b0: number;
@@ -15,6 +17,7 @@ const NODE_GAIN_DB = 40 * Math.log10(3.4028234663852886e38);
  * highpass and a plain quality factor for the rest, as it is on the node, and
  * `gain` is dB, read by the shelves and the peaking filter only. Pass `into`
  * to have them written to an object you keep, which allocates nothing.
+ * Throws a `RangeError` on a `type` the node does not have.
  */
 export function biquadCoefficients(
   type: BiquadFilterType,
@@ -64,13 +67,15 @@ export function biquadCoefficients(
     a0 = A + 1 - (A - 1) * cos + shelf;
     a1 = 2 * (A - 1 - (A + 1) * cos);
     a2 = A + 1 - (A - 1) * cos - shelf;
-  } else if (type !== 'lowpass') {
+  } else if (type === 'bandpass' || type === 'notch' || type === 'allpass') {
     // Bandpass, notch, and allpass share a denominator and differ above it.
     a0 = 1 + alphaQ;
     a2 = 1 - alphaQ;
     b0 = type === 'bandpass' ? alphaQ : type === 'notch' ? 1 : 1 - alphaQ;
     b1 = type === 'bandpass' ? 0 : -2 * cos;
     b2 = type === 'bandpass' ? -alphaQ : type === 'notch' ? 1 : 1 + alphaQ;
+  } else if (type !== 'lowpass') {
+    checkFilterType(type);
   }
   into.b0 = b0 / a0;
   into.b1 = b1 / a0;

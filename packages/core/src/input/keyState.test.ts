@@ -64,6 +64,19 @@ describe('createKeyState', () => {
       expect(keys.modifiers()).toEqual({ shift: false, ctrl: false, alt: false, meta: false });
     });
 
+    it('on window blur after another attachment of the same state detached', () => {
+      const keys = createKeyState();
+      const a = document.body.appendChild(document.createElement('div'));
+      const b = document.body.appendChild(document.createElement('div'));
+      const detachA = keys.attach(a);
+      detachers.push(keys.attach(b));
+      detachA();
+      fire('keydown', 'KeyA', {}, b);
+      expect(keys.isDown('KeyA')).toBe(true);
+      window.dispatchEvent(new Event('blur'));
+      expect(keys.isDown('KeyA')).toBe(false);
+    });
+
     it('when the document is hidden', () => {
       const keys = attached();
       fire('keydown', 'KeyA');

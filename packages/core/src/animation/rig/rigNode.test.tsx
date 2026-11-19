@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { act, render } from '@testing-library/react';
 import type { Path, PolygonPath } from '@weasel-js/geom';
 import { createScene } from '../../core/scene/scene';
@@ -117,5 +117,19 @@ describe('useRigNode', () => {
     expect(seen[seen.length - 1]).not.toBe(seen[0]);
     act(() => { scene.setPose(rig, { ...BOX, x: 300 }); });
     expect(seen[seen.length - 1].skeleton.joints[0].bind.x).toBe(300);
+  });
+  it('leaves out, with a warning, a node naming a joint the skeleton no longer has', () => {
+    const { scene, rig, sleeve, hand } = rigScene();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { seen } = mount(scene, rig);
+    const renamed: Skeleton = { joints: [ARM.joints[0], { ...ARM.joints[1], name: 'fore' }] };
+    act(() => { scene.update(rig, { data: { skeleton: renamed } }); });
+    const latest = seen[seen.length - 1];
+    expect(latest.skeleton.joints[1].name).toBe('fore');
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining(`${hand} → lower`));
+    // The sleeve bends by the joint it still names.
+    latest.pose({ upper: { rotation: Math.PI / 2 } });
+    expect(scene.overrides.read(sleeve)?.path).toBeDefined();
+    warn.mockRestore();
   });
 });

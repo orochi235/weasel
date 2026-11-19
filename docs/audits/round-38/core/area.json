@@ -1,0 +1,81 @@
+{
+ "id": "core",
+ "commit": "aac71b545ef36621a62610a7cc0bf3665162b2e5",
+ "date": "2026-11-18",
+ "files": [
+  "packages/core/src/WeaselProvider.tsx",
+  "packages/core/src/affordances/composeAffordanceLayer.ts",
+  "packages/core/src/affordances/hitAffordanceRegions.ts",
+  "packages/core/src/affordances/index.ts",
+  "packages/core/src/affordances/pathAnchors.ts",
+  "packages/core/src/affordances/types.ts",
+  "packages/core/src/icons.gen.ts",
+  "packages/core/src/icons.table.ts",
+  "packages/core/src/index.ts",
+  "packages/core/src/input/keyState.ts",
+  "packages/core/src/input/useKeyModifiers.ts",
+  "packages/core/src/input/useKeyState.ts",
+  "packages/core/src/input/usePublishPointer.ts",
+  "packages/core/src/kitSettings.ts",
+  "packages/core/src/kitSettingsSchema.ts",
+  "packages/core/src/layout/index.ts",
+  "packages/core/src/layout/types.ts",
+  "packages/core/src/test-hook/createTestHook.ts",
+  "packages/core/src/test-hook/install.ts",
+  "packages/core/src/test-hook/types.ts",
+  "packages/core/src/test-hook/useTestHook.ts",
+  "packages/core/src/testing/BareCanvas.tsx",
+  "packages/core/src/testing/canvas.ts",
+  "packages/core/src/testing/canvasPixels.ts",
+  "packages/core/src/testing/matchMedia.ts",
+  "packages/core/src/tools/builtin/hand/createDragPanContribution.ts",
+  "packages/core/src/tools/builtin/hand/index.ts",
+  "packages/core/src/tools/builtin/hand/useHandTool.ts",
+  "packages/core/src/tools/builtin/index.ts",
+  "packages/core/src/tools/builtin/marquee.ts",
+  "packages/core/src/tools/builtin/throughChrome.ts",
+  "packages/core/src/tools/index.ts",
+  "packages/core/src/tools/overlayBinding.ts",
+  "packages/core/src/tools/useKeybindings.ts",
+  "packages/core/src/version.ts"
+ ],
+ "a": 4,
+ "b": 7,
+ "m": 2,
+ "distinct": 9,
+ "chapman": 12.3,
+ "unfound": 3.3,
+ "read": {
+  "A": 35,
+  "B": 35
+ },
+ "patches": 9,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.7,
+   "B": 5.9,
+   "match": 0.1,
+   "fix": 14.4
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "teitou"
+  },
+  "tokens": 17901179,
+  "costUsd": 8.75
+ },
+ "fixCommits": [
+  "434e55b285e83843946e378bf7f7f29b92509854",
+  "6dc9a662cb1709426ae80c78baa937443be81822",
+  "112a34474e4e7c3801a845143e5d0f89d11ec23f",
+  "c49d6c9ec490ab2674e8c54e2a5429d7c134c71a",
+  "effe87990dfa2cd5d0e60b3c69cffa88cece54dd",
+  "aa1dfd3410a3f784c19cccdc74a09be0288fbf93",
+  "914ba9249567d83882b1ae57474b4ee0fa42d122",
+  "3705f65050249d21cc2b37aa1af19d4ffda2cb0d",
+  "2ac3a04759b8adf4f515e60d2289a17c75ff60f9"
+ ]
+}

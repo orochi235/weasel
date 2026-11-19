@@ -36,6 +36,12 @@ describe('shareBrushSize', () => {
     expect(shareBrushSize(inWorld({ unit: { scale: 1, suffix: 'px' } }))).toEqual({ radiusPx: BRUSH_SIZE_PX });
   });
 
+  it('returns the same share for the same size option and key, so a tool hook memoed on it holds across renders', () => {
+    expect(shareBrushSize(brush(400))).toBe(shareBrushSize(brush(30)));
+    expect(shareBrushSize(brush(400), 'other')).not.toBe(shareBrushSize(brush(400)));
+    expect(shareBrushSize({})).toBe(shareBrushSize({}, 'other'));
+  });
+
   it('gives brushes one size, held to each one’s bounds, and leaves their other options their own', () => {
     const big = shareToolOptions(brush(400), shareBrushSize(brush(400)));
     const small = shareToolOptions(brush(30), shareBrushSize(brush(30)));

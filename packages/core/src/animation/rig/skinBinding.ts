@@ -81,6 +81,8 @@ export function bindSkins<TPose>(
     joints: [...joints],
     show(motions) {
       for (const s of skinned) {
+        // A node deleted since binding has no override to show; one an undo brings back shows again.
+        if (!scene.get(s.node)) continue;
         const path = skinPath(s.rest, s.skin, motions);
         s.entry.path = path;
         s.entry.pose = descriptor.fromBounds(boundsOfPath(path), s.restPose);

@@ -1,0 +1,51 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   2,
+   4
+  ],
+  [
+   3,
+   3
+  ],
+  [
+   4,
+   2
+  ],
+  [
+   7,
+   1
+  ],
+  [
+   9,
+   6
+  ]
+ ],
+ "a": [
+  "A synth voice's duration, envelope, glide and filter numbers are never checked, so the worklet path mixes NaN into the bus forever where the node path drops the voice",
+  "A partial's non-finite gain passes `resolvePartials` and makes every partial NaN",
+  "`settled()` on an insert chain disposed mid-crossfade never resolves",
+  "A pattern event that `play`/`playNote` refuses kills the player silently while `isPlaying()` stays true",
+  "`setRate(0)` (or a negative rate) on a node note throws, and keeps throwing on every later `setDetune`; a buffer voice and a worklet note take it",
+  "A non-finite `lookahead`, `tickInterval` or `insertFadeMs` is taken unchecked; a NaN lookahead silences the engine with no error",
+  "`setMood` with a NaN axis is accepted, then throws at every bar line, freezing the score on its last bar",
+  "A worklet noise voice given a negative rate reads before its loop and mixes NaN into the bus",
+  "A wave name outside the four built-ins is looked up through the prototype chain, and in the worklet it kills the whole bus's processor",
+  "The per-context `PeriodicWave` cache has no bound: every distinct harmonic level array is kept for the context's life",
+  "An unknown filter `type` is a lowpass on nodes and an allpass in the worklet and kernel"
+ ],
+ "b": [
+  "A worklet synth voice with a non-finite envelope, duration or filter number mixes NaN into its whole bus and never ends",
+  "A negative `rate` on a worklet noise voice indexes the loop at negative positions and outputs NaN onto the bus",
+  "`setRate(0)` or a negative rate on a node `playNote` voice throws a TypeError from the handle, and drops the voice as `'failed'` at start",
+  "An event whose play throws stops a pattern for good while `isPlaying()` stays true",
+  "`inserts.settled()` never resolves when called after the bus graph is disposed mid-crossfade",
+  "An empty harmonic waveform throws on node voices when it comes due, but plays silence on worklet voices",
+  "The per-context PeriodicWave cache has no bound",
+  "A score bar entered after a stall reports its new state but plays the previous bar's events on its first booked step"
+ ]
+}

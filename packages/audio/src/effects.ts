@@ -1,5 +1,6 @@
 import type { InsertEffect } from './inserts';
 import { initParam, writeParam } from './param';
+import { checkFilterType } from './patchCheck';
 
 // Built-in insert effects. Each exposes its Web Audio nodes for anything its
 // options do not cover; times are ms, as everywhere else in the package.
@@ -20,8 +21,10 @@ export interface FilterEffect extends InsertEffect {
   readonly filter: BiquadFilterNode;
 }
 
-/** A `BiquadFilterNode`. Write its params through `filter` to sweep it. */
+/** A `BiquadFilterNode`. Write its params through `filter` to sweep it. Throws a
+ *  `RangeError` on a `type` the node does not have. */
 export function createFilterEffect(ctx: BaseAudioContext, opts: FilterEffectOptions = {}): FilterEffect {
+  if (opts.type !== undefined) checkFilterType(opts.type);
   const filter = ctx.createBiquadFilter();
   filter.type = opts.type ?? 'lowpass';
   if (opts.frequency !== undefined) initParam(ctx, filter.frequency, opts.frequency);

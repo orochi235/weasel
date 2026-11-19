@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { paragraphLevelOf, matchingPDI } from './paragraph';
+import { paragraphLevelOf, pairIsolates } from './paragraph';
 import type { BidiClass } from './types';
 
 const C = (s: string): BidiClass[] => s.split(' ') as BidiClass[];
@@ -43,18 +43,22 @@ describe('P2/P3 — paragraph embedding level', () => {
 
 describe('BD9 — matching PDI', () => {
   it('finds the PDI that closes an isolate initiator', () => {
-    expect(matchingPDI(C('LRI L PDI'), 0)).toBe(2);
+    expect(pairIsolates(C('LRI L PDI'))[0]).toBe(2);
   });
 
   it('skips a nested isolate', () => {
-    expect(matchingPDI(C('LRI RLI L PDI PDI'), 0)).toBe(4);
+    expect(Array.from(pairIsolates(C('LRI RLI L PDI PDI')))).toEqual([4, 3, -1, -1, -1]);
   });
 
   it('returns the length when there is no matching PDI', () => {
-    expect(matchingPDI(C('LRI L L'), 0)).toBe(3);
+    expect(pairIsolates(C('LRI L L'))[0]).toBe(3);
   });
 
   it('is not confused by a PDI that precedes the initiator', () => {
-    expect(matchingPDI(C('PDI LRI L PDI'), 1)).toBe(3);
+    expect(pairIsolates(C('PDI LRI L PDI'))[1]).toBe(3);
+  });
+
+  it('leaves an initiator unmatched past a paragraph separator', () => {
+    expect(Array.from(pairIsolates(C('LRI B PDI')))).toEqual([3, -1, -1]);
   });
 });
