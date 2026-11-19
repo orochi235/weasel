@@ -1,6 +1,7 @@
 import { createContext, useContext, useRef, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode } from 'react';
 import { useHandleDrag } from '@weasel-js/routing/react';
 import { arrowMove } from '@weasel-js/quantity';
+import { ARROW_KEYSHORTCUTS } from '../../handles';
 import s from './handleOverlay.module.css';
 
 /** The pieces every paint-geometry overlay draws with — `GradientHandles`
@@ -108,7 +109,7 @@ export function DragPoint({
       // it has no `aria-valuenow` to honor the role's contract with.
       role="button"
       aria-label={label}
-      aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight"
+      aria-keyshortcuts={ARROW_KEYSHORTCUTS}
       tabIndex={0}
       onKeyDown={onKeyDown}
       {...drag}

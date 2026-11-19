@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Keyframe } from '@weasel-js/animator';
+import { ARROW_KEYSHORTCUTS } from '../../handles';
 import { Diamond } from './Diamond';
 import s from './CurveEditor.module.css';
 import { pathThrough } from './layerMarks';
@@ -67,6 +68,7 @@ function bezierHandles(state: KeyframeLayerState, bezier: Bezier, ctx: LayerRend
           role="button"
           tabIndex={0}
           aria-label={`${names.label} bezier handle ${i + 1}`}
+          aria-keyshortcuts={ARROW_KEYSHORTCUTS}
           data-handle-index={i}
         />
       ))}
@@ -86,6 +88,7 @@ function keyMarks(state: KeyframeLayerState, ctx: LayerRenderCtx, names: Keyfram
       role="button"
       tabIndex={0}
       aria-label={`${names.label} key at ${names.formatX(k.t)}`}
+      aria-keyshortcuts={ARROW_KEYSHORTCUTS}
       aria-current={state.selectedKey === i ? 'true' : undefined}
       data-keyframe-index={i}
       data-dragging={dragIndex === i ? 'true' : undefined}
