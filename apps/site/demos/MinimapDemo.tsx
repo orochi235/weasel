@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { solid } from '@weasel-js/paint';
-import { asNodeId, PointerContextProvider, SceneCanvas, createDragPanContribution, useScene, viewPreset } from '@weasel-js/core';
+import { asNodeId, PointerContextProvider, SceneCanvas, createDragPanContribution, useScene } from '@weasel-js/core';
+import * as corePresets from '@weasel-js/core/presets';
 import { MinimapCanvas, createMinimapContribution } from '@weasel-js/minimap';
 import type { CanvasSize, Fill, View } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -62,7 +63,7 @@ export function MinimapDemo() {
         </div>
         <div className={styles.row}>
           <DemoStage width={MAIN_W} height={MAIN_H}>
-            <SceneCanvas features={[viewPreset]}
+            <SceneCanvas features={[corePresets.view]}
               className="ckd-canvas"
               scene={scene}
               selection={selection}

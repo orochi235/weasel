@@ -1,6 +1,7 @@
 import { solid } from '@weasel-js/paint';
 import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, ellipsePath, pathFromD, pathSnapSource } from '@weasel-js/core';
-import { pathsPreset, usePenTool } from '@weasel-js/path-tools';
+import { usePenTool } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import {
   type ConfigOf,
   defineInstrument,
@@ -12,12 +13,12 @@ import {
   useTrialScene,
 } from '@weasel-js/labkit';
 import { useMemo } from 'react';
-import { textPreset } from '@weasel-js/text-tools';
+import * as textTools from '@weasel-js/text-tools/presets';
 import { strokeNode } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const config = f.schema({
   kinds: f.group({
@@ -63,7 +64,7 @@ function PathSnapTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   );
   return (
     <TrialSceneCanvas
-      features={[drawPreset, pathsPreset, textPreset]}
+      features={[presets.draw, pathTools.paths, textTools.text]}
       defaultTools={['line']}
       tools={{ pen }}
       scene={scene}

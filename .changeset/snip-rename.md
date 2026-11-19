@@ -9,7 +9,7 @@ The Trim segment tool is now Snip, and every name it carried changes with it; th
 | Before | After |
 |---|---|
 | `useTrimTool`, `UseTrimToolOptions` | `useSnipTool`, `UseSnipToolOptions` |
-| `trimPreset`, preset id `'trim'` | `snipPreset`, `'snip'` |
+| `trimPreset`, preset id `'trim'` | `pathTools.snip`, `'snip'` |
 | tool id and `PathToolId` `'trim'`, bindings `trim.hover`, `trim.leave`, actions `trim.preview`, `trim.unpreview` | `'snip'`, `snip.hover`, `snip.leave`, `snip.preview`, `snip.unpreview` |
 | action `trimPath`, `trimPathAction`, `TRIM_PATH_PARAMS`, `planTrim` | `snipPath`, `snipPathAction`, `SNIP_PATH_PARAMS`, `planSnip` |
 | `trimPathAt`, `TrimPathOptions`, `TrimResult` (`@weasel-js/geom`, re-exported by core) | `snipPathAt`, `SnipPathOptions`, `SnipResult` |
@@ -23,7 +23,7 @@ const trim = useTrimTool();
 <SceneCanvas features={['draw', trimPreset]} tools={{ trim }} />
 // after
 const snip = useSnipTool();
-<SceneCanvas features={['draw', snipPreset]} tools={{ snip }} />
+<SceneCanvas features={['draw', pathTools.snip]} tools={{ snip }} />
 ```
 
 <!-- entry: rank=5 breaking api -->

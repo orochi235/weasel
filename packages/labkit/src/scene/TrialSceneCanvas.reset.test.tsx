@@ -1,7 +1,7 @@
 import { act, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { asNodeId, createScene, type PathEditHost, type PathEditOpening } from '@weasel-js/core';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
@@ -65,7 +65,7 @@ async function mount(host: PathEditHost, opening: PathEditOpening | undefined) {
     live = scene;
     return (
       <TrialSceneCanvas
-        features={[drawPreset]}
+        features={[presets.draw]}
         scene={scene}
         trial={ctx.trial}
         pathEdit={host}

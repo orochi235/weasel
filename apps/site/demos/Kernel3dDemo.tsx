@@ -12,7 +12,7 @@ import {
 import styles from './Kernel3dDemo.module.css';
 import { decimal, qty } from '@weasel-js/quantity';
 import { DemoStage } from './DemoStage';
-import { pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const W = 620, H = 400;
 const LIGHT: Vec3 = { x: 0.4, y: 0.8, z: 0.45 };
@@ -146,7 +146,7 @@ export function Kernel3dDemo() {
             className="ckd-canvas"
             backgroundFill={{ color: '#1e1610' }}
             scene={scene}
-            features={[pickPreset]}
+            features={[presets.pick]}
             tools={{ orbit }}
             ambient={[rig]}
             poseDescriptor={poseDescriptor}

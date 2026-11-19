@@ -6,7 +6,8 @@ import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Sequence, valuesSweep } from '@weasel-js/ui/components/Sequence';
 import { DemoStage, DemoStageGroup } from './DemoStage';
-import { pathfinderPreset, pickPreset, useSelection, PATHFINDER_GROUP } from '@weasel-js/editing';
+import { useSelection, PATHFINDER_GROUP } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const W = 240;
 const H = 200;
@@ -80,7 +81,7 @@ function InteractivePanel() {
         <Button className="ckd-boolops-reset" onClick={reset}>Reset</Button>
       </div>
       <DemoStage width={W} height={H}>
-        <SceneCanvas features={[pickPreset, pathfinderPreset]}
+        <SceneCanvas features={[presets.pick, presets.pathfinder]}
           className="ckd-canvas"
           scene={scene}
           selection={selection}

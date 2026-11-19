@@ -8,7 +8,7 @@ The Simplify brush is now Sand, and every name it carried changes with it; this 
 | Before | After |
 |---|---|
 | `useSimplifyBrushTool`, `UseSimplifyBrushToolOptions`, `SIMPLIFY_BRUSH_OPTIONS` | `useSandTool`, `UseSandToolOptions`, `SAND_TOOL_OPTIONS` |
-| `simplifyBrushPreset`, preset id `'simplifyBrush'` | `sandPreset`, `'sand'` |
+| `simplifyBrushPreset`, preset id `'simplifyBrush'` | `pathTools.sand`, `'sand'` |
 | tool id, action id, and `PathEditToolId` `'simplifyBrush'`, binding `simplifyBrush.drag` | `'sand'`, `sand.drag` |
 | `simplifyBrushAction`, `SIMPLIFY_BRUSH_PARAMS`, `SIMPLIFY_BRUSH_RADIUS_PX`, `SimplifyBrushParams` | `sandAction`, `SAND_PARAMS`, `SAND_RADIUS_PX`, `SandParams` |
 | icon `core:simplifyBrush` | `core:sand` |
@@ -21,7 +21,7 @@ const simplifyBrush = useSimplifyBrushTool();
 <SceneCanvas features={['paths', simplifyBrushPreset]} tools={{ simplifyBrush }} />
 // after
 const sand = useSandTool();
-<SceneCanvas features={['paths', sandPreset]} tools={{ sand }} />
+<SceneCanvas features={['paths', pathTools.sand]} tools={{ sand }} />
 ```
 
 <!-- entry: rank=5 breaking api -->

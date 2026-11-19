@@ -7,7 +7,7 @@ The Corner shape tool is now Fillet, and every name it carried changes with it; 
 
 | Before | After |
 |---|---|
-| `cornerShapePreset`, `createCornerShapePreset`, preset id `'cornerShape'` | `filletPreset`, `createFilletPreset`, `'fillet'` |
+| `cornerShapePreset`, `createCornerShapePreset`, preset id `'cornerShape'` | `pathTools.fillet`, `createFilletPreset`, `'fillet'` |
 | action `editCorner`, its binding `editCorner.drag`, `editCornerAction`, `EDIT_CORNER_PARAMS`, `EditCornerParams` | `editFillet`, `editFillet.drag`, `editFilletAction`, `EDIT_FILLET_PARAMS`, `EditFilletParams` |
 | action `setCorners`, `setCornersAction` | `setFillets`, `setFilletsAction` |
 | action `cycleCornerShape`, `cycleCornerShapeAction`, `CYCLE_CORNER_SHAPE_PARAMS`, `CycleCornerShapeParams` | `cycleFillet`, `cycleFilletAction`, `CYCLE_FILLET_PARAMS`, `CycleFilletParams` |
@@ -26,7 +26,7 @@ Core's CSS `corner-shape` model keeps its names: `CornerSpec`, a polygon's `corn
 // before
 <SceneCanvas features={['paths', cornerShapePreset]} tune={{ cycleCornerShape: { bindings: [{ kind: 'key', key: 'k' }] } }} />
 // after
-<SceneCanvas features={['paths', filletPreset]} tune={{ cycleFillet: { bindings: [{ kind: 'key', key: 'k' }] } }} />
+<SceneCanvas features={['paths', pathTools.fillet]} tune={{ cycleFillet: { bindings: [{ kind: 'key', key: 'k' }] } }} />
 ```
 
 <!-- entry: rank=5 breaking api -->

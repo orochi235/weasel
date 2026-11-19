@@ -6,7 +6,8 @@ import type { Fill, MenuDef, NodeId, Path, RectPose } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
 import { ContextMenuHost, useContextMenu } from '@weasel-js/ui/components/Menu';
 import { DemoStage } from './DemoStage';
-import { arrangePreset, editPreset, movePreset, pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 interface NodeData { path: Path; fill: Fill }
 
@@ -53,7 +54,7 @@ function Demo() {
       <ContextMenuHost />
       <DemoStage width={400} height={260}>
         <SceneCanvas
-          features={[pickPreset, movePreset, editPreset, arrangePreset]}
+          features={[presets.pick, presets.move, presets.edit, presets.arrange]}
           claimKeys
           className="ckd-canvas"
           scene={scene}

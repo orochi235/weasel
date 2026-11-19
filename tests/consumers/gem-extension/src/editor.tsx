@@ -4,9 +4,10 @@ import { SceneCanvas, type FeaturePreset, type RectPose, type Scene, type SceneC
 import { SelectionPanel } from '@weasel-js/ui-canvas';
 import { kitIcons } from '@weasel-js/ui-canvas/kit-icons';
 import { gemFeature } from './index.js';
-import { drawPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
-const FEATURES: readonly FeaturePreset[] = [drawPreset, gemFeature];
+const FEATURES: readonly FeaturePreset[] = [presets.draw, gemFeature];
 
 /** A canvas and a properties panel given the same presets, over one scene and one selection. */
 export function GemEditor({ scene, features = FEATURES, onToolsCreated, onClick }: {

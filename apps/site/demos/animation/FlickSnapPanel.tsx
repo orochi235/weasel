@@ -5,7 +5,8 @@ import { createGridLayer } from '@weasel-js/guides';
 import type { Dims, Fill, MoveBehavior, RectPose as Pose } from '@weasel-js/core';
 import type { Animator, PhysicsHandle } from '@weasel-js/animator';
 import { DemoStage } from '../DemoStage';
-import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 interface Vec2 { x: number; y: number }
 
@@ -137,7 +138,7 @@ export function FlickSnapPanel({ animator }: { animator: Animator }) {
   return (
     <WeaselProvider isolate>
       <DemoStage width={FLICK_W} height={FLICK_H}>
-        <SceneCanvas features={[pickPreset, movePreset]}
+        <SceneCanvas features={[presets.pick, presets.move]}
           className="ckd-canvas"
           onResize={(s) => { size.current = s; }}
           scene={scene}

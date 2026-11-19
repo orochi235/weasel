@@ -11,7 +11,7 @@ const gemFeature = createNodeKindPreset({
   id: 'app:gem', kind: 'gem', matches: isGem,
   shape: gemPainter, insert: gemFactory, properties: { schema: gemSchema }, tools: [gemTool],
 });
-<SceneCanvas scene={scene} features={[drawPreset, gemFeature]} />;
+<SceneCanvas scene={scene} features={[presets.draw, gemFeature]} />;
 ```
 
 <!-- entry: rank=10 new api -->

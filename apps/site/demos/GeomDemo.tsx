@@ -17,7 +17,7 @@ import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import s from './GeomDemo.module.css';
 import { DemoStage } from './DemoStage';
 import { decimal, qty } from '@weasel-js/quantity';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const W = 620, H = 360;
 const R = 7;
@@ -154,7 +154,7 @@ export function GeomDemo() {
     <div className={s.demo}>
       <DemoStage width={W} height={H}>
         <SceneCanvas
-          features={[pickPreset, movePreset]}
+          features={[presets.pick, presets.move]}
           className="ckd-canvas"
           backgroundFill={{ color: '#ffffff' }}
           scene={scene}

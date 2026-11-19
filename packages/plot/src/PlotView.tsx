@@ -7,7 +7,7 @@ import type { PlotMeasure } from './measure';
 import type { PlotData } from './plotData';
 import { plotRootOf, plotSpecs, replacePlotData, type PlotSceneData, type PlotSpec } from './plotScene';
 import { PLOT_THEME, type PlotTheme } from './theme';
-import { editPreset, pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 /** Props for {@link PlotView}. */
 export interface PlotViewProps {
@@ -26,7 +26,7 @@ export interface PlotViewProps {
 }
 
 const ROOT = 'plot';
-const FEATURES = [pickPreset, editPreset] as const;
+const FEATURES = [presets.pick, presets.edit] as const;
 
 /**
  * A chart on its own canvas, edited by dragging its marks (a bar's end, a

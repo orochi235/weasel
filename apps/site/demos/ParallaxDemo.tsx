@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { solid } from '@weasel-js/paint';
-import { SceneCanvas, WeaselProvider, asNodeId, useScene, ellipsePath, polygonFromPoints, rectPath, viewPreset } from '@weasel-js/core';
-import { pathsPreset } from '@weasel-js/path-tools';
+import { SceneCanvas, WeaselProvider, asNodeId, useScene, ellipsePath, polygonFromPoints, rectPath } from '@weasel-js/core';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import { useAnimator } from '@weasel-js/animator/react';
 import { createParallaxLayer, createParallaxPlane, createTiledLayer } from '@weasel-js/parallax';
 import type { DrawCommand } from '@weasel-js/core/renderer';
@@ -10,7 +10,7 @@ import { Button } from '@weasel-js/ui/components/Button';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { ZoomControl } from '@weasel-js/ui/components/ZoomControl';
 import { DemoStage } from './DemoStage';
-import { editPreset, movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 type NodeData = { path: Path; fill: Fill } | { fill: null };
 interface Pose { x: number; y: number; width: number; height: number }
@@ -186,7 +186,7 @@ function ParallaxDemoInner() {
       </div>
       <DemoStage width={W} height={H}>
         <SceneCanvas
-          features={[viewPreset, pickPreset, movePreset, transformPreset, editPreset, pathsPreset]}
+          features={[presets.view, presets.pick, presets.move, presets.transform, presets.edit, pathTools.paths]}
           className="ckd-canvas"
           scene={scene}
           view={view}

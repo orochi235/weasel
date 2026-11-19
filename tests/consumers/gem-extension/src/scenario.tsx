@@ -8,14 +8,14 @@ import { buildSceneViewCommands, createScene, defaultDrawOne, findNodeShape, nod
 import { GEM_BLUE, GEM_PALETTE, gemFeature, isGem, type GemData } from './index.js';
 import { GemHost, click, drag, fieldLabeled, mount, newProbe, settle, typeInto, type GemScene, type Probe } from './host.js';
 import { OneByOneGemCanvas } from './oneByOne.js';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 function check(holds: boolean, what: string): asserts holds {
   if (!holds) throw new Error(`gem scenario: expected ${what}`);
 }
 
-const ON: readonly FeaturePreset[] = [drawPreset, gemFeature];
-const OFF: readonly FeaturePreset[] = [drawPreset];
+const ON: readonly FeaturePreset[] = [presets.draw, gemFeature];
+const OFF: readonly FeaturePreset[] = [presets.draw];
 
 const newScene = (): GemScene => createScene<unknown, 'default', RectPose>({ systemLayers: [{ id: 'default' }] });
 const theGem = (scene: GemScene) => {

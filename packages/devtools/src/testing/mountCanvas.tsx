@@ -1,12 +1,12 @@
 /** A `<SceneCanvas>` in jsdom with a small scene, for the panel's tests: a group holding one leaf, and a second leaf. */
 import { vi } from 'vitest';
 import { SceneCanvas, useScene, type NodeId } from '@weasel-js/core';
-import { selectionPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 import { devtools, type DevtoolsRoot } from '../hook';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 // The panel's Select button writes the canvas's selection, which only an editing selection takes.
-const FEATURES = [selectionPreset];
+const FEATURES = [presets.selection];
 
 type Data = { label: string; paint?: () => void };
 type Pose = { x: number; y: number; width: number; height: number };

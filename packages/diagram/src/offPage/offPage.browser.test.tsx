@@ -9,10 +9,11 @@ import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { SceneCanvas, createPageRun, createScene, fitViewToPage, placeOnPages, placedPagesOf, type NodeId, type RectPose, type Scene, type SelectionApi, type View } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
-import { textPreset } from '@weasel-js/text-tools';
+import * as textTools from '@weasel-js/text-tools/presets';
 import { EDGE_DERIVE_PATH, withDiagramRegistry, registerDiagramShape, createDiagramOffPageContribution, installOffPageMarkers } from '@weasel-js/diagram';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
-import { drawPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 type OffPageScene = Scene<unknown, 'main', RectPose>;
 
@@ -52,7 +53,7 @@ function Stage({ scene }: { scene: OffPageScene }) {
   view = v;
   selection = useSelection({ scene, mode: 'single' });
   return createElement(SceneCanvas<unknown, 'main', RectPose>, {
-    scene, selection, features: [drawPreset, textPreset], width: W, height: H, view: v, onViewChange: setV,
+    scene, selection, features: [presets.draw, textTools.text], width: W, height: H, view: v, onViewChange: setV,
     backgroundFill: { color: '#000000' }, ambient: AMBIENT,
   });
 }

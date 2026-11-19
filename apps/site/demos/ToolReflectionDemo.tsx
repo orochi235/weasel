@@ -11,7 +11,8 @@ import {
 } from '@weasel-js/routing';
 import styles from './ToolReflectionDemo.module.css';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; fill: Fill }
 
@@ -46,7 +47,7 @@ function ToolReflectionDemoInner() {
           <h3 className={styles.panelTitle}>Canvas</h3>
           <DemoStage width={W} height={H}>
             <SceneCanvas
-              features={[pickPreset, movePreset]}
+              features={[presets.pick, presets.move]}
               defaultTools={['hand']}
               className="ckd-canvas"
               scene={scene}

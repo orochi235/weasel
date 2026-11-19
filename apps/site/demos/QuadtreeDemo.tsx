@@ -4,7 +4,7 @@ import { createGridLayer } from '@weasel-js/guides';
 import type { CanvasHelpers, Dims, Fill, RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 import { rectsOverlap } from '@weasel-js/geom';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; fill: Fill }
@@ -95,7 +95,7 @@ export function QuadtreeDemo() {
   return (
     <DemoStage width={W} height={H}>
       <SceneCanvas
-        features={[pickPreset, movePreset, transformPreset]}
+        features={[presets.pick, presets.move, presets.transform]}
         className="ckd-canvas"
         scene={scene}
         helpersRef={helpersRef}

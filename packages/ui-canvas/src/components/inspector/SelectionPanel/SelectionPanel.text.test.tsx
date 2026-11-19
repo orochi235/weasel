@@ -7,11 +7,11 @@ import {
   inferredNodeProperties,
   inferredNodeRouting,
 } from '@weasel-js/core';
-import { textPreset } from '@weasel-js/text-tools';
+import * as textTools from '@weasel-js/text-tools/presets';
 import { SelectionPanel } from './SelectionPanel';
 import { renderWithIcons } from '../../../testing/withIcons';
 
-// The text schema `textPreset` brings, in the panel apps/draw mounts it in — not
+// The text schema `textTools.text` brings, in the panel apps/draw mounts it in — not
 // a fixture standing in for it — so a regression in either shows here.
 
 interface TextData { text: string; style?: Record<string, unknown>; verticalAlign?: string }
@@ -33,7 +33,7 @@ function renderText(...styles: (Record<string, unknown> | undefined)[]) {
     <SelectionPanel
       scene={scene}
       selection={{ current: ids } as unknown as SelectionApi}
-      features={[textPreset]}
+      features={[textTools.text]}
       properties={inferredNodeProperties}
       routing={inferredNodeRouting}
     />,

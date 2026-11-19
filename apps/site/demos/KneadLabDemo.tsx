@@ -1,6 +1,7 @@
 import { solid } from '@weasel-js/paint';
 import { type ActionTunings, asNodeId, createScene, ellipsePath, polygonFromPoints, type PolygonPath, type RectPose, useLatest, pathNode } from '@weasel-js/core';
-import { kneadPreset, useKneadTool, pathsPreset } from '@weasel-js/path-tools';
+import { useKneadTool } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import {
   type ConfigOf,
   defineInstrument,
@@ -15,9 +16,9 @@ import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
-const FEATURES = [drawPreset, pathsPreset, kneadPreset] as const;
+const FEATURES = [presets.draw, pathTools.paths, pathTools.knead] as const;
 
 const config = f.schema({
   radiusPx: f.number(40).range(5, 150).step(1).suffix('px').label('Brush radius'),

@@ -17,7 +17,8 @@ import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { CheckboxGroup } from '@weasel-js/ui/components/CheckboxGroup';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 interface Dot { id: string; x: number; y: number; width: number; height: number; fill: Fill }
 
@@ -276,7 +277,7 @@ export function AudioDemo() {
       </div>
       <div className="ckd-row">
         <DemoStage width={W} height={H}>
-          <SceneCanvas features={[pickPreset, movePreset]}
+          <SceneCanvas features={[presets.pick, presets.move]}
             className="ckd-canvas"
             scene={scene}
             selection={selection}

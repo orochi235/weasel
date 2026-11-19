@@ -1,6 +1,7 @@
 import { solid, solidStroke } from '@weasel-js/paint';
 import { asNodeId, createScene, PATH_EFFECT_DERIVATIONS, pathEffectNode, pathNode, type RectPose, withPathEffectsRegistry } from '@weasel-js/core';
-import { pathEffectsPreset, pathsPreset, usePenTool } from '@weasel-js/path-tools';
+import { usePenTool } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import {
   type ConfigOf,
   defineInstrument,
@@ -15,9 +16,10 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { PathEffectFrame, usePathEffectProbe, usePathEffectSettings } from './pathEffectLab';
 import { icon } from '../icons.gen';
-import { drawPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
-const FEATURES = [drawPreset, pathsPreset, pathEffectsPreset] as const;
+const FEATURES = [presets.draw, pathTools.paths, pathTools.pathEffects] as const;
 
 const config = f.schema({
   spaceBy: f.enum('count', ['count', 'distance']).label('Space steps by'),

@@ -7,7 +7,8 @@
  */
 
 import { act } from '@testing-library/react';
-import { createScene, SceneCanvas, viewPreset } from '@weasel-js/core';
+import { createScene, SceneCanvas } from '@weasel-js/core';
+import * as corePresets from '@weasel-js/core/presets';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { useContext } from 'react';
@@ -80,7 +81,7 @@ function Body({ withCanvas }: { withCanvas: boolean }) {
         <div className="lk-test-diagram">
           <SceneCanvas
             scene={diagram}
-            features={[viewPreset]}
+            features={[corePresets.view]}
             viewport={{}}
             width={200}
             height={100}

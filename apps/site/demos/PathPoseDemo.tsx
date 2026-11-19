@@ -3,7 +3,8 @@ import { IDENTITY_POSE_COMPOSITION, asNodeId, polygonFromPoints, SceneCanvas, us
 import { gridSnapSource } from '@weasel-js/guides';
 import type { Fill, Path, Stroke } from '@weasel-js/core';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset, transformPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const W = 400, H = 300;
 const SNAP = { sources: [gridSnapSource({ spacing: 20 })] };
@@ -34,7 +35,7 @@ export function PathPoseDemo() {
   return (
     <DemoStage width={W} height={H}>
       <SceneCanvas
-        features={[pickPreset, movePreset, transformPreset]}
+        features={[presets.pick, presets.move, presets.transform]}
         className="ckd-canvas"
         scene={scene}
         selection={selection}

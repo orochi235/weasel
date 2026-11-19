@@ -1,6 +1,7 @@
 import { solid } from '@weasel-js/paint';
 import { asNodeId, createScene, ellipsePath, type Path, type RectPose } from '@weasel-js/core';
-import { useShapeBuilderTool, pathsPreset } from '@weasel-js/path-tools';
+import { useShapeBuilderTool } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import {
   type ConfigOf,
   defineInstrument,
@@ -15,7 +16,8 @@ import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { drawPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const config = f.schema({
   mode: f.enum('merge', [
@@ -59,7 +61,7 @@ function ShapeBuilderTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
 
   return (
     <TrialSceneCanvas
-      features={[drawPreset, pathsPreset]}
+      features={[presets.draw, pathTools.paths]}
       defaultTools={[]}
       tools={tools}
       scene={scene}

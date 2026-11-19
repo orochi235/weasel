@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
 import { solid, solidStroke } from '@weasel-js/paint';
 import { SceneCanvas, WeaselProvider, asNodeId, boundsOfPath, hexToRgba, pathFromD, polygonFromPoints, polylineFromPoints, pressureToWidth, regularPolygonPath, rgbaToHex, useActionsRegistry, vertexHalfWidths, useScene, type InsertNodeFactories, type InvokeParams, type Paint, type GradientPaint, type Path, type Scene, type Stroke, type View, type Fill, pathNode } from '@weasel-js/core';
-import { pathsPreset, usePencilTool } from '@weasel-js/path-tools';
+import { usePencilTool } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import { ColorField } from '@weasel-js/ui/components/ColorField';
 import { FillStrokeSwatch } from '@weasel-js/ui/components/FillStrokeSwatch';
 import type { PaintSlot } from '@weasel-js/paint';
@@ -12,7 +13,8 @@ import { useActionEdit } from '@weasel-js/ui/components/ActionEdit';
 import { PaintField } from '@weasel-js/ui/components/PaintField';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
-import { editPreset, pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const W = 600, H = 420;
 
@@ -145,7 +147,7 @@ function StrokeAndFill() {
         <div className="ckd-canvas-frame" ref={hostRef}>
           <DemoStage width={W} height={H}>
             <SceneCanvas
-              features={[pickPreset, editPreset, pathsPreset]}
+              features={[presets.pick, presets.edit, pathTools.paths]}
               className="ckd-canvas"
               scene={scene}
               selection={selection}

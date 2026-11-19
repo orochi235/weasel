@@ -15,9 +15,10 @@ import { createModeMachine, type ModeMachine } from './machine';
 import { modeScope } from './modeScope';
 import { modePathEdit } from './pathEditHost';
 import { useCanvasModes } from './useCanvasModes';
-import { pathsPreset } from '@weasel-js/path-tools';
-import { textPreset } from '@weasel-js/text-tools';
-import { drawPreset, useSelection } from '@weasel-js/editing';
+import * as pathTools from '@weasel-js/path-tools/presets';
+import * as textTools from '@weasel-js/text-tools/presets';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 beforeAll(() => {
   (HTMLCanvasElement.prototype as unknown as { getContext: () => null }).getContext = () => null;
@@ -77,7 +78,7 @@ function Harness({ machine, into }: { machine: ModeMachine; into: (entered: Ente
   into(entered);
   const modes = useCanvasModes(machine, scene, selection, pathEdit);
   return (
-    <SceneCanvas features={[drawPreset, pathsPreset, textPreset]} scene={scene} selection={selection} layers={{}} width={240} height={60}
+    <SceneCanvas features={[presets.draw, pathTools.paths, textTools.text]} scene={scene} selection={selection} layers={{}} width={240} height={60}
       ambient={modes.ambient}
       isPointerInteractive={dim.isPointerInteractive}
       enteredGroup={entered}

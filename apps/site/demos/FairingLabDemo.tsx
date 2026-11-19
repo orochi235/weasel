@@ -1,6 +1,6 @@
 import { ANCHORS_GROUP, type ActionTunings, editingAnchors, never } from '@weasel-js/core';
-import { pathsPreset } from '@weasel-js/path-tools';
-import { createCurvatureCombPreset, fairingPreset } from '@weasel-js/path-tools';
+import { createCurvatureCombPreset } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import {
   type ConfigOf,
   defineInstrument,
@@ -16,7 +16,7 @@ import s from './FairingLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const config = f.schema({
   comb: f.boolean(true).label('Show comb'),
@@ -38,7 +38,7 @@ function FairingTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
 
   const chromeVisibility = useMemo(() => ({ 'path-edit.comb': comb ? editingAnchors : never }), [comb]);
   const features = useMemo(() => [
-    pickPreset, movePreset, pathsPreset, fairingPreset, createCurvatureCombPreset(() => ({ scale })),
+    presets.pick, presets.move, pathTools.paths, pathTools.fairing, createCurvatureCombPreset(() => ({ scale })),
   ] as const, [scale]);
 
   return (

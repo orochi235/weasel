@@ -1,7 +1,8 @@
 import { solid } from '@weasel-js/paint';
 import { SceneCanvas, asNodeId, useScene, WeaselProvider } from '@weasel-js/core';
 import { usePencilTool } from '@weasel-js/path-tools';
-import { stickyData, whiteboardPreset } from '@weasel-js/text-tools';
+import { stickyData } from '@weasel-js/text-tools';
+import * as textTools from '@weasel-js/text-tools/presets';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
 import { useSelection } from '@weasel-js/editing';
@@ -36,7 +37,7 @@ export function WhiteboardDemo() {
             backgroundFill={{ color: '#f4f1ea' }}
             scene={scene}
             selection={selection}
-            features={[whiteboardPreset]}
+            features={[textTools.whiteboard]}
             tools={{ pencil }}
           />
         </DemoStage>

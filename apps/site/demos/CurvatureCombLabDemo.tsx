@@ -1,5 +1,5 @@
 import { editingAnchors, never } from '@weasel-js/core';
-import { pathsPreset } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import { createCurvatureCombPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -14,7 +14,7 @@ import { type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const config = f.schema({
   comb: f.boolean(true).label('Show comb'),
@@ -33,7 +33,7 @@ function CombTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
 
   const chromeVisibility = useMemo(() => ({ 'path-edit.comb': comb ? editingAnchors : never }), [comb]);
   const features = useMemo(() => [
-    pickPreset, movePreset, pathsPreset, createCurvatureCombPreset(() => ({ scale, samplesPerSegment: teeth })),
+    presets.pick, presets.move, pathTools.paths, createCurvatureCombPreset(() => ({ scale, samplesPerSegment: teeth })),
   ] as const, [scale, teeth]);
 
   return (

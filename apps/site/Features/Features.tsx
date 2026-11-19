@@ -57,7 +57,7 @@ export function Features() {
         <h2 className={s.heading}>Canvas features</h2>
         <p className="ckd-desc">
           What each of core's presets turns on. <code>{'<SceneCanvas features>'}</code> takes the preset objects
-          (<code>pickPreset</code>, <code>drawPreset</code>, …), and <code>namedFeatures</code> from{' '}
+          (<code>presets.pick</code>, <code>presets.draw</code>, …), and <code>namedFeatures</code> from{' '}
           <code>@weasel-js/editing</code> maps the names below to them. A canvas registers the actions, tools,
           and selection chrome of every preset it is given and every preset those include, and the actions its tools bind.
         </p>

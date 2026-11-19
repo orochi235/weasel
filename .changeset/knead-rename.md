@@ -9,7 +9,7 @@ The Smudge brush is now Knead, and every name it carried changes with it; this i
 | Before | After |
 |---|---|
 | `useSmudgeBrushTool`, `UseSmudgeBrushToolOptions`, `SMUDGE_BRUSH_OPTIONS` | `useKneadTool`, `UseKneadToolOptions`, `KNEAD_TOOL_OPTIONS` |
-| `smudgePreset`, preset id `'smudge'` | `kneadPreset`, `'knead'` |
+| `smudgePreset`, preset id `'smudge'` | `pathTools.knead`, `'knead'` |
 | tool id, action id, and `PathToolId` `'smudgeBrush'` | `'knead'` |
 | `smudgeBrushAction`, `SMUDGE_BRUSH_PARAMS`, `SmudgeBrushParams` | `kneadAction`, `KNEAD_PARAMS`, `KneadParams` |
 | `DEFAULT_SMUDGE_RADIUS_PX`, `DEFAULT_SMUDGE_STRENGTH` | `DEFAULT_KNEAD_RADIUS_PX`, `DEFAULT_KNEAD_STRENGTH` |
@@ -24,7 +24,7 @@ const smudgeBrush = useSmudgeBrushTool();
 <SceneCanvas features={['draw', smudgePreset]} tools={{ smudgeBrush }} />
 // after
 const knead = useKneadTool();
-<SceneCanvas features={['draw', kneadPreset]} tools={{ knead }} />
+<SceneCanvas features={['draw', pathTools.knead]} tools={{ knead }} />
 ```
 
 <!-- entry: rank=5 breaking api -->

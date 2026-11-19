@@ -11,14 +11,8 @@ import {
   viewWorldToScreen,
   WeaselProvider,
 } from '@weasel-js/core';
-import {
-  commitDeleteToScene,
-  createDeleteAction,
-  editPreset,
-  movePreset,
-  pickPreset,
-  transformPreset,
-} from '@weasel-js/editing';
+import { commitDeleteToScene, createDeleteAction } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 import type { Rect } from '@weasel-js/geom';
 import {
   type CSSProperties,
@@ -349,7 +343,7 @@ export function LensOverlay<C>({
         <WeaselProvider isolate>
           <ReticleFollower scene={scene} />
           <SceneCanvas<LensNodeData<C>, 'lenses', RectPose>
-            features={[pickPreset, movePreset, transformPreset, editPreset]}
+            features={[presets.pick, presets.move, presets.transform, presets.edit]}
             ref={attachSceneCanvas}
             scene={scene}
             width={size.width}
