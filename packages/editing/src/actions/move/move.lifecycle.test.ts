@@ -257,7 +257,7 @@ describe('moveAction — commit', () => {
     const fling = (behaviors: (animator: Animator) => MoveBehavior<unknown>[]) => {
       const { base } = setup();
       const decay = vi.fn(() => ({ cancel() {} }));
-      const animator = { decay } as unknown as Animator;
+      const animator = { decay, watch: () => () => {} } as unknown as Animator;
       drag(base, { behaviors: behaviors(animator) }, 5);
       return decay;
     };

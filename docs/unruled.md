@@ -2664,3 +2664,7 @@ Calls the lanes made without a ruling:
   alternative.
 - 2026-11-18 (the fixer's call): `animateOnSetPose` and `animateLifecycle` take round nineteen's reduced-motion call: with
   no `ms`, they take no time under `prefers-reduced-motion`. A `spring` option, which the caller names, still springs.
+- 2026-11-18 (the fixer's call): a `momentum` flick on pose targets that the animator cancels from outside (`cancelAll`,
+  an unmount) is recorded where it stopped, as one undo step, since each canceled decay has already written that pose
+  to the document. Putting the document back where the drag began was the alternative. Round six's line on the
+  `previewPoses` path, which records nothing, stands.
