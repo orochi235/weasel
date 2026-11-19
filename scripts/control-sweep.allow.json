@@ -5,11 +5,6 @@
     "reason": "A bus gain is heard, not seen: nothing on the page reads it, and the sweep plays no sound."
   },
   {
-    "demo": "audio",
-    "control": "music gain",
-    "reason": "A bus gain is heard, not seen: nothing on the page reads it, and the sweep plays no sound."
-  },
-  {
     "demo": "select",
     "control": "Key convention › ⇧ toggles",
     "reason": "Changes what a modified click does; the sweep's probes click and drag with no modifier held."
@@ -36,7 +31,17 @@
   },
   {
     "demo": "*",
-    "control": "Theme: Auto — click for Light",
-    "reason": "Under the headless browser's light color scheme, Auto already shows Light, so the first click changes nothing visible."
+    "control": "View › Actual size⌘0",
+    "reason": "A lab opens at 100%, so Actual size has nothing to undo until the view is zoomed, which no probe of a menu item does first."
+  },
+  {
+    "demo": "kit-settings",
+    "control": "Count",
+    "reason": "A specimen field showing the kit settings applied to a number field; its own value is all it holds."
+  },
+  {
+    "demo": "animator",
+    "control": "Time scale › ¼×",
+    "reason": "Changes how fast running animations go; a playing animation reads as moving at any speed, so the sweep cannot tell one speed from another."
   }
 ]

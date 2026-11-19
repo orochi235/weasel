@@ -5,7 +5,7 @@
  * from fresh loads three ways (plain, control first, control after) and compares what each leaves.
  */
 import { capture, discover, load, prepare, settle } from './capture.mjs';
-import { compareCaptures } from './judge.mjs';
+import { animationFlips, compareCaptures } from './judge.mjs';
 import { ROOT, kit, operate } from './operate.mjs';
 
 const DRAG_STEPS = 12;
@@ -111,7 +111,10 @@ export const probeButtons = async (page, c, ctx) => {
   for (const b of buttons) {
     const plain = await pressRun(page, c, b, ctx, false);
     const probed = plain && await pressRun(page, c, b, ctx, true);
-    if (probed && differs(compareCaptures(plain.first, plain.second, probed.second))) return b.label;
+    if (!probed) continue;
+    // A pause shows as an animation the button starts that, after the setting, holds still.
+    if (differs(compareCaptures(plain.first, plain.second, probed.second))
+      || animationFlips(plain.first, plain.second, probed.first, probed.second).length > 0) return b.label;
   }
   return undefined;
 };
