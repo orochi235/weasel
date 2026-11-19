@@ -8,8 +8,8 @@ import { activeModeOf, DEFAULT_MODES, type ActiveMode } from '@weasel-js/modes';
 import { specificity } from '@weasel-js/gestures';
 import { ALWAYS, ruleCanHoldIn, rulesExclusive, type Rule } from '../../../eligibility';
 import { buildRouteRegistry, type RegistryEntry, type GestureName } from './registry';
-import { argKeysOf, chordArgsOf, modifierTieKeys, objectId, phasesTie, PLATFORMS, sameOutcome, targetKey, viewsTie, type Platform } from './conflictKeys';
-import { compositeKey } from '@weasel-js/registry';
+import { argKeysOf, chordArgsOf, modifierTieKeys, phasesTie, PLATFORMS, sameOutcome, targetKey, viewsTie, type Platform } from './conflictKeys';
+import { compositeKey, identityKeyOf } from '@weasel-js/registry';
 
 /** Two or more bindings declare the same exact (phase, gesture, arg, target,
  *  modifiers) tuple, so slot order alone picks one. */
@@ -117,7 +117,7 @@ function findConflictsKeyed(
     // both platforms: one conflict per set of specs, each named by identity so
     // the key is the same in every pass `findScopedConflicts` makes over them. A pair meeting on
     // several args (a key and a code, two keys of a list) is one conflict too.
-    const key = compositeKey([first.gesture, targetKey(first), ...bucket.flatMap((e) => [objectId(e.spec), canonicalModifiers(e.modifiers)])]);
+    const key = compositeKey([first.gesture, targetKey(first), ...bucket.flatMap((e) => [identityKeyOf(e.spec), canonicalModifiers(e.modifiers)])]);
     const found = conflicts.get(key);
     if (found) { found.platforms.add(platform); continue; }
     conflicts.set(key, {

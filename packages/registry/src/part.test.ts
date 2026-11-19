@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createPart } from './part';
+import { createPart, identityKeyOf } from './part';
 
 describe('createPart', () => {
   it('makes each owner its part once', () => {
@@ -39,5 +39,16 @@ describe('createPart', () => {
     expect(() => partOf(a)).toThrow('not yet');
     fail = false;
     expect(partOf(a)).toBe(1);
+  });
+});
+
+describe('identityKeyOf', () => {
+  it('names an object by identity and a primitive by type and value', () => {
+    const a = {};
+    expect(identityKeyOf(a)).toBe(identityKeyOf(a));
+    expect(identityKeyOf(a)).not.toBe(identityKeyOf({}));
+    expect(identityKeyOf(1)).toBe(identityKeyOf(1));
+    expect(identityKeyOf(1)).not.toBe(identityKeyOf('1'));
+    expect(identityKeyOf(null)).not.toBe(identityKeyOf(undefined));
   });
 });

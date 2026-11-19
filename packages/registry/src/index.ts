@@ -22,7 +22,7 @@ export type {
 } from './reflectable';
 export { after, LONGEST_TIMER_MS } from './after';
 export { createLatest, type Latest } from './latest';
-export { createPart } from './part';
+export { createPart, identityKeyOf } from './part';
 export { MIXED } from './mixed';
 export type { Mixed } from './mixed';
 export { codePointFloor, isOneChar } from './codePoint';
