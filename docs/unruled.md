@@ -323,7 +323,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   inside `batch` or `untracked`.
 - 2026-10-12: A removal deselects its nodes. A replayed op whose node is gone is skipped. An
   adapter whose layer list changes must implement `subscribeLayers`. `/clone` exports types only.
-  New layouts: `slots`, `pack`, `quadtree`, and `perContainer`.
+  New layouts: `slots`, `pack`, `quadtree`, and `createPerContainerStrategy`.
 - 2026-10-13: `TargetTransform` is `{ identity, toWorld, toLocal }` and `annulusSemiAxes` takes
   one, so chrome follows a pose's `transform`. A pre-built `{ layer }` in `<SceneCanvas layers>`
   paints.
