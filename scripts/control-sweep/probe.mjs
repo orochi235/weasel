@@ -29,12 +29,15 @@ const dragRun = async (page, c, ctx, when) => {
     await operate(page, { ...c, ...(await prepare(page, ctx.url, { ...c, precondition: undefined }, ctx.settleMs, ctx.tries)) });
     await settle(page, ctx.settleMs);
   };
+  // Every run waits the same in each slot, so what time alone changes (a fade, inertia) reads the same.
   if (when === 'before') await act();
+  else await settle(page, ctx.settleMs);
   const rect = await kit(page, 'bigCanvas', ROOT);
   if (!rect) return undefined;
   await drag(page, rect);
   await settle(page, ctx.settleMs);
   if (when === 'after') await act();
+  else await settle(page, ctx.settleMs);
   return capture(page, live.id);
 };
 
