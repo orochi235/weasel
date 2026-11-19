@@ -210,9 +210,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   useDepSource('boundsIncludeStroke', () => boundsIncludeStroke);
   useDepSource('drawnBoxes', () => inkBoxes);
 
-  // Keyed on the set too: a re-registration of it would otherwise land over
-  // the overrides applied on top of it.
-  useActionsPropResolver(props.actions, standardActionsKey);
+  useActionsPropResolver(props.actions);
   useActionTunings(tune);
   useBindingOverrides(props.bindingOverrides);
 }
