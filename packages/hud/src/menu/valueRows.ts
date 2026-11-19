@@ -5,6 +5,7 @@ import type { WidgetBounds } from '../widget';
 import type { MenuPanelMetrics } from '@weasel-js/ui-logic';
 import { clusterStops, selectionOf, shownEdit, type HudTextEdit } from './textEdit';
 import { typedLine } from './typedLine';
+import { solidFill } from '@weasel-js/paint';
 
 /** A span across a panel, from its left edge. */
 export interface Span { x: number; width: number }
@@ -36,7 +37,6 @@ export function valueRowWidth(e: MenuEntry, m: MenuPanelMetrics, measure: (text:
   return undefined;
 }
 
-const solid = (color: string) => ({ paint: { kind: 'solid' as const, color } });
 const mark = (d: string, color: string): DrawCommand => ({
   kind: 'path', path: pathFromD(d), stroke: { paint: { kind: 'solid', color }, width: 1.5, cap: 'round' },
 });
@@ -58,7 +58,7 @@ export function numberCommands(
   return [
     mark(`M ${cx(minus) - 4} ${cy} L ${cx(minus) + 4} ${cy}`, color(!low)),
     textCommandFromRuns(
-      b.x + cell.x, b.y + r.y, [{ text: menuNumberText(value, e, locale), fill: solid(color(true)) }],
+      b.x + cell.x, b.y + r.y, [{ text: menuNumberText(value, e, locale), fill: solidFill(color(true)) }],
       { ...ink.font, align: 'center' }, undefined, r.height, 'center', undefined, cell.width,
     ),
     mark(`M ${cx(plus) - 4} ${cy} L ${cx(plus) + 4} ${cy} M ${cx(plus)} ${cy - 4} L ${cx(plus)} ${cy + 4}`, color(!high)),
@@ -71,7 +71,7 @@ export function textCommands(
   mode: 'off' | 'live' = 'live',
 ): DrawCommand[] {
   return [textCommandFromRuns(
-    b.x + m.padX, b.y + r.y, [{ text: value ?? '—', fill: solid(mode === 'off' ? ink.muted : ink.fg) }],
+    b.x + m.padX, b.y + r.y, [{ text: value ?? '—', fill: solidFill(mode === 'off' ? ink.muted : ink.fg) }],
     { ...ink.font, align: 'right' }, undefined, r.height, 'center', undefined, b.width - m.padX * 2,
   )];
 }
@@ -114,11 +114,11 @@ export function typingCommands(
   for (const [x0, x1] of from === to ? [] : line.spans(from, to)) {
     out.push({
       kind: 'path', path: { kind: 'rect', x: b.x + x0, y: cy - half, width: x1 - x0, height: half * 2 },
-      fill: solid(selection),
+      fill: solidFill(selection),
     });
   }
   out.push(textCommandFromRuns(
-    b.x + m.padX, b.y + r.y, [{ text: shown.draft, fill: solid(ink.fg) }],
+    b.x + m.padX, b.y + r.y, [{ text: shown.draft, fill: solidFill(ink.fg) }],
     { ...ink.font, align: 'right' }, undefined, r.height, 'center', undefined, right - b.x - m.padX,
   ));
   for (const [x0, x1] of preedit ? line.spans(preedit[0], preedit[1]) : []) {
@@ -138,7 +138,7 @@ export function swatchCommand(
   const y = b.y + r.y + (r.height - size) / 2;
   return {
     kind: 'path', path: { kind: 'rect', x, y, width: size, height: size },
-    fill: solid(color), stroke: { paint: { kind: 'solid', color: edge }, width },
+    fill: solidFill(color), stroke: { paint: { kind: 'solid', color: edge }, width },
   };
 }
 
@@ -148,7 +148,7 @@ export function colorCommands(
 ): DrawCommand[] {
   const out: DrawCommand[] = e.value === undefined ? [] : [swatchCommand(b, r, e.value, m, ink.border)];
   out.push(textCommandFromRuns(
-    b.x + m.padX, b.y + r.y, [{ text: e.value ?? '—', fill: solid(ink.muted) }],
+    b.x + m.padX, b.y + r.y, [{ text: e.value ?? '—', fill: solidFill(ink.muted) }],
     { ...ink.font, align: 'right' }, undefined, r.height, 'center', undefined, b.width - m.padX * 2,
   ));
   return out;

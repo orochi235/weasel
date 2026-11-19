@@ -4,6 +4,7 @@ import type { DrawCommand, TextDrawCommand } from '@weasel-js/core/renderer';
 import { evictRunsForRefill, evictRuns, type StyledRun, type TextStyle } from '@weasel-js/text';
 import type { Fill } from '@weasel-js/paint';
 import { textCommandFromRuns, textCommandFromRunsInto } from '@weasel-js/core';
+import { solidFill } from '@weasel-js/paint';
 
 /** The one run every text widget hands `textCommandFromRuns`, which keeps
  *  nothing of it: it resolves a run of its own from it. */
@@ -52,7 +53,7 @@ export function createText(opts: TextOptions): TextWidget {
   /** What `draw` returns, `[placed]`. */
   const out: DrawCommand[] = [];
   // Kept from one command to the next while their color and family hold.
-  let fill: Fill = { paint: { kind: 'solid', color: '' } };
+  let fill: Fill = solidFill('');
   let style: TextStyle = { fontFamily: '', fontSize: opts.fontSize };
 
   const assertNotDisposed = () => {
@@ -72,7 +73,7 @@ export function createText(opts: TextOptions): TextWidget {
       const color = opts.color ?? ctx.tokens['--wzl-fg'];
       const fontFamily = opts.fontFamily ?? ctx.defaultFont;
       if (placed === null || placedText !== text || placedColor !== color || placedFamily !== fontFamily) {
-        if (placed === null || placedColor !== color) fill = { paint: { kind: 'solid', color } };
+        if (placed === null || placedColor !== color) fill = solidFill(color);
         if (placed === null || placedFamily !== fontFamily) style = { fontFamily, fontSize: opts.fontSize };
         RUN.text = text;
         RUN.fill = fill;

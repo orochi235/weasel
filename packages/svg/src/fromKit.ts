@@ -8,6 +8,7 @@
 import {
   asPolygonPath, paintToLocalUnits, clipOutline, definesFrame, pathInPoseBox, pathThroughPoseFrame, poseFrameOf, poseLinearOf, resolveFill, resolveStroke, shapePathOf, type ImageNodeData, type NodeClip, type Path, type Stroke, type Fill, type Inherit, INHERIT, nodeShapesOf, type NodeShapes,
 } from '@weasel-js/core';
+import { solidFill } from '@weasel-js/paint';
 import { type StyledRun, type TextStyle, type TextVerticalAlign, type TextFit } from '@weasel-js/text';
 import { textFrameOf, type TextEdge, type TextShadow } from '@weasel-js/text-tools';
 import { groupPaintFromKit, markInherits, NO_UP_PAINT, resolvedData, type SvgKitInherited } from './kitInherits';
@@ -113,14 +114,13 @@ export function svgLeafFromKit(
     if (!resolveFill(data.background)) return clip.clip ? { kind: 'group', children: [text], ...clip } : text;
     const box = svgLeafFromKit({ path: boxPath, fill: data.background }, pose) as SvgPathNode;
     const frame = textFrameOf(data, pose);
-    const solid = (color: string) => ({ paint: { kind: 'solid' as const, color } });
     const under: SvgNode[] = frame.shadow ? [{
       kind: 'group',
       opacity: frame.shadow.opacity,
-      children: frame.shadow.paths.map((path) => svgLeafFromKit({ path, fill: solid(frame.shadow!.color) }, pose) as SvgPathNode),
+      children: frame.shadow.paths.map((path) => svgLeafFromKit({ path, fill: solidFill(frame.shadow!.color) }, pose) as SvgPathNode),
     }] : [];
     const over: SvgNode[] = frame.edge
-      ? [svgLeafFromKit({ path: frame.edge.path, fill: null, stroke: { ...solid(frame.edge.color), width: frame.edge.width } }, pose) as SvgPathNode]
+      ? [svgLeafFromKit({ path: frame.edge.path, fill: null, stroke: { paint: { kind: 'solid', color: frame.edge.color }, width: frame.edge.width } }, pose) as SvgPathNode]
       : [];
     const framed: SvgGroupNode = { kind: 'group', children: [box, ...over, text], ...clip };
     return under.length > 0 ? { kind: 'group', children: [...under, framed], textFrame: true } : { ...framed, textFrame: true };

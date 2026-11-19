@@ -4,6 +4,7 @@ import { registerPaintKindLoader } from '@weasel-js/paint-kinds';
 import { type Paint } from '@weasel-js/core';
 import { GREEN, plainScene, RED } from '@weasel-js/export/testing/plainScene';
 import { exportRegionSvg } from './regionSvg';
+import { solidFill } from '@weasel-js/paint';
 
 const drops: (() => void)[] = [];
 afterEach(() => drops.splice(0).forEach((d) => d()));
@@ -20,8 +21,6 @@ function heldKind(id: string) {
 }
 
 const tick = () => new Promise<void>((r) => setTimeout(r, 0));
-const solid = (color: string) => ({ paint: { kind: 'solid', color } });
-
 describe('exportRegionSvg across an edit', () => {
   it('writes the revision the edit made, with what the edit introduced', async () => {
     const { scene, pages } = plainScene();
@@ -29,9 +28,9 @@ describe('exportRegionSvg across an edit', () => {
     scene.add({ id: 'h', kind: 'mark', layer: 'main', parent: null, pose: { x: 150, y: 10, width: 20, height: 20 }, data: { shape: 'rect', fill: { paint: { kind: 'test:held' } } } } as never);
     const svg = exportRegionSvg(scene, pages[0]!);
     await tick();
-    scene.update('r' as never, { data: { shape: 'rect', fill: solid(GREEN) } });
+    scene.update('r' as never, { data: { shape: 'rect', fill: solidFill(GREEN) } });
     scene.remove('e' as never);
-    scene.add({ id: 'q', kind: 'mark', layer: 'main', parent: null, pose: { x: 10, y: 70, width: 20, height: 20 }, data: { shape: 'rect', fill: solid('#0000ff') } } as never);
+    scene.add({ id: 'q', kind: 'mark', layer: 'main', parent: null, pose: { x: 10, y: 70, width: 20, height: 20 }, data: { shape: 'rect', fill: solidFill('#0000ff') } } as never);
     kind.release();
     const doc = new DOMParser().parseFromString(await svg, 'image/svg+xml');
     const fills = [...doc.querySelectorAll('path, rect, ellipse')].map((p) => p.getAttribute('fill'));

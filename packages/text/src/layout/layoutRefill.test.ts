@@ -13,6 +13,7 @@ import { cachedPaintRuns } from './paintCache';
 import { entryOf } from './runsEntries';
 import { resolveRunsInto, type ResolvedRun } from '../runs/resolveRuns';
 import { resolveTextStyle } from '../textStyle';
+import { solidFill } from '@weasel-js/paint';
 
 beforeEach(async () => {
   _resetFontRegistryForTests();
@@ -26,8 +27,6 @@ beforeEach(async () => {
 const OPTS = { maxWidth: 400, lineHeight: 1.2, align: 'left' as const };
 const textOf = (runs: readonly ResolvedRun[]) =>
   cachedLayoutRuns(runs, OPTS, 'read').lines.flatMap((l) => l.cells.map((c) => String.fromCodePoint(c.cp))).join('');
-const solid = (color: string) => ({ paint: { kind: 'solid' as const, color } });
-
 describe('refilling a runs array in place', () => {
   it('lays out the new text, keeping the array filed under the same entry', () => {
     const runs = [RUN_PLAIN('AB 12')];
@@ -51,7 +50,7 @@ describe('refilling a runs array in place', () => {
   });
 
   it('paints other runs on a shared layout with their own fill, not the refilled one', () => {
-    const red = solid('#f00'), blue = solid('#00f');
+    const red = solidFill('#f00'), blue = solidFill('#00f');
     const a = [{ ...RUN_PLAIN('AB 12'), fill: red }];
     const b = [{ ...RUN_PLAIN('AB 12'), fill: blue }];
     const laidA = cachedLayoutRuns(a, OPTS, 'read');
@@ -70,9 +69,9 @@ describe('resolveRunsInto', () => {
   it('rewrites the runs it is handed when their fields match, and replaces them when not', () => {
     const out = resolveRunsInto([], [{ text: 'a' }], style);
     const first = out[0];
-    expect(resolveRunsInto(out, [{ text: 'b', fill: solid('#f00') }], style)).toBe(out);
+    expect(resolveRunsInto(out, [{ text: 'b', fill: solidFill('#f00') }], style)).toBe(out);
     expect(out[0]).toBe(first);
-    expect(out[0]).toMatchObject({ text: 'b', fill: solid('#f00'), fontFamily: 'inter', fontSize: 14 });
+    expect(out[0]).toMatchObject({ text: 'b', fill: solidFill('#f00'), fontFamily: 'inter', fontSize: 14 });
     resolveRunsInto(out, [{ text: 'c', rotate: 10 }], style);
     expect(out[0]).not.toBe(first);
     expect(out[0]).toMatchObject({ text: 'c', rotate: 10 });

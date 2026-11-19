@@ -11,6 +11,7 @@ import { createPixelReadback } from './pixelReadback';
 import { createVectorLens } from './vectorLens';
 import { registerLoupe } from './loupeRoutes';
 import type { Rect } from '@weasel-js/geom';
+import { solidFill } from '@weasel-js/paint';
 
 export type { LoupeMode };
 
@@ -100,7 +101,7 @@ export type LoupeOptions = LoupeBaseOptions & (
 const backdropOf = (ctx: HudContentCtx, color: string): DrawCommand => ({
   kind: 'path',
   path: { kind: 'rect', ...ctx.rect },
-  fill: { paint: { kind: 'solid', color } },
+  fill: solidFill(color),
 });
 
 /** What the loupe model reads of the window it magnifies into. `changed` hears that the model changed what the lens shows. */

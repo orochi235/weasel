@@ -3,8 +3,7 @@ import { pathFromD, roundRectPath } from '@weasel-js/geom';
 import { resolveCurrentColor, type BoxShadow } from '@weasel-js/theme';
 import type { WidgetBounds } from './widget';
 import { arcRectD } from './glyph';
-
-const solid = (color: string) => ({ paint: { kind: 'solid' as const, color } });
+import { solidFill } from '@weasel-js/paint';
 
 function roundRectD(x: number, y: number, w: number, h: number, r: number): string {
   const k = Math.max(0, Math.min(r, w / 2, h / 2));
@@ -28,7 +27,7 @@ function inset(b: WidgetBounds, radius: number, s: BoxShadow, color: string): Dr
   return {
     kind: 'group',
     clip: roundRectPath(b.x, b.y, b.width, b.height, radius),
-    children: [{ kind: 'path', path: ring.kind === 'polygon' ? { ...ring, fillRule: 'evenodd' } : ring, fill: solid(color) }],
+    children: [{ kind: 'path', path: ring.kind === 'polygon' ? { ...ring, fillRule: 'evenodd' } : ring, fill: solidFill(color) }],
   };
 }
 

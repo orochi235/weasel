@@ -48,6 +48,9 @@
   "peerDependencies": {
     "@weasel-js/core": "1.19.1"
   },
+  "devDependencies": {
+    "@weasel-js/paint": "1.19.1"
+  },
   "publishConfig": {
     "access": "public",
     "provenance": true

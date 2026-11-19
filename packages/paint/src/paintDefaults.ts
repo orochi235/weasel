@@ -9,7 +9,7 @@
  *  helpers (`toHex8`, `hexAlpha`) without ambiguity.
  */
 import { colorLiteralToHex, hexToColorLiteral, resolvePaletteColor, type ColorLiteral, type Palette } from './palette';
-import type { CommandStroke, SolidPaint } from './commandPaint';
+import type { CommandFill, CommandStroke, SolidPaint } from './commandPaint';
 import type { Paint, Stroke } from './paint';
 import { hexAlpha, toHex8 } from './hexAlpha';
 
@@ -67,6 +67,12 @@ export function solid(color: string): SolidPaint {
 /** Whether `color` is a hex color with an alpha channel: `#rgba` or `#rrggbbaa`. */
 function hasHexAlpha(color: string): boolean {
   return color.startsWith('#') && (color.length === 5 || color.length === 9) && toHex8(color).length === 9;
+}
+
+/** A fill of `color`, tagged `kind: 'solid'` and taken as given: an alpha
+ *  channel stays in the color string rather than moving to `opacity`. */
+export function solidFill(color: string): CommandFill & { paint: SolidPaint } {
+  return { paint: { kind: 'solid', color } };
 }
 
 /** A solid stroke of `color` at `width` world units. Authoring shorthand for

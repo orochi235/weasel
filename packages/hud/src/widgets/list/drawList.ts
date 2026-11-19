@@ -7,6 +7,7 @@ import { resolveCurrentColor } from '@weasel-js/theme';
 import { hudMeasureEnv } from '../../measureEnv';
 import type { HudDrawCtx, WidgetBounds } from '../../widget';
 import { textCommandFromRuns } from '@weasel-js/core';
+import { solidFill } from '@weasel-js/paint';
 
 /** One row of a HUD list. */
 export interface HudListRow extends RowFace {
@@ -41,8 +42,6 @@ export interface HudListTarget {
 export const SWATCH_SIZE = 12;
 const RING_WIDTH = 2;
 
-const solid = (color: string) => ({ paint: { kind: 'solid' as const, color } });
-
 /**
  * A row list on a HUD, on the contract ui's `ItemList` implements in the DOM: one `measure` from
  * `@weasel-js/ui-logic`, and a `draw` that lays the rows into `target.bounds` and paints them as `ItemList.module.css`
@@ -59,7 +58,7 @@ export const hudItemList: HeadlessComponent<HudListState, RowListLayout, HudList
     const { layout } = measureRowList(state, exactly(b.width, b.height), env);
     const font = { fontFamily: target.fontFamily ?? ctx.defaultFont, fontSize: layout.metrics.font.size };
     const text = (s: string, x: number, y: number, h: number, color: string): DrawCommand =>
-      textCommandFromRuns(x, y, [{ text: s, fill: solid(color) }], font, undefined, h, 'center');
+      textCommandFromRuns(x, y, [{ text: s, fill: solidFill(color) }], font, undefined, h, 'center');
     if (layout.empty) {
       const e = layout.empty;
       return [text(state.empty ?? '—', b.x + e.x, b.y + e.y, e.height, subtle)];
@@ -71,13 +70,13 @@ export const hudItemList: HeadlessComponent<HudListState, RowListLayout, HudList
       const r = box.rect;
       const x = b.x + r.x, y = b.y + r.y;
       const fill = row.selected ? t['--wzl-border'] : state.hover === i ? t['--wzl-surface'] : undefined;
-      if (fill) out.push({ kind: 'path', path: roundRectPath(x, y, r.width, r.height, radius), fill: solid(fill) });
+      if (fill) out.push({ kind: 'path', path: roundRectPath(x, y, r.width, r.height, radius), fill: solidFill(fill) });
       if (row.swatch && box.leading) {
         const l = box.leading;
         out.push({
           kind: 'path',
           path: { kind: 'rect', x: b.x + l.x, y: b.y + l.y + (l.height - SWATCH_SIZE) / 2, width: SWATCH_SIZE, height: SWATCH_SIZE },
-          fill: solid(row.swatch),
+          fill: solidFill(row.swatch),
           stroke: { paint: { kind: 'solid', color: t['--wzl-border'] }, width: 1 },
         });
       }

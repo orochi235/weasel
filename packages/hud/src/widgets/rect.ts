@@ -4,6 +4,7 @@ import type { Widget, HudDrawCtx, HudPointerEvent, WidgetBounds } from '../widge
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
 import type { RectPath } from '@weasel-js/core';
 import { rectContainsPointHalfOpen } from '@weasel-js/geom';
+import { solidFill } from '@weasel-js/paint';
 
 /** Options for a filled rectangle widget. */
 export interface RectOptions {
@@ -66,7 +67,7 @@ export function createRect(opts: RectOptions): RectWidget {
       const cmd: PathDrawCommand = {
         kind: 'path',
         path,
-        fill: { paint: { kind: 'solid', color: fill } },
+        fill: solidFill(fill),
       };
       return [cmd];
     },
