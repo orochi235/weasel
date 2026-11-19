@@ -64,6 +64,16 @@ describe('usePublishPointer', () => {
     expect(store.get()).toBeNull();
   });
 
+  it('clears once a press that left the element ends in a release the document never saw', () => {
+    const { store, a } = mount();
+    fireEvent.pointerDown(a, { pointerId: 1, buttons: 1 });
+    fireEvent.pointerLeave(a, { pointerId: 1, buttons: 1 });
+    moveAt(document.body, 300, 8, 1);
+    // Released off the window; the next move over the page has no button down.
+    moveAt(document.body, 280, 8, 0);
+    expect(store.get()).toBeNull();
+  });
+
   it('keeps the pointer of a press released over the element', () => {
     const { store, a } = mount();
     fireEvent.pointerDown(a, { pointerId: 1, buttons: 1 });
