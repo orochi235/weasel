@@ -22,6 +22,9 @@ export function toPercent(window: TimeWindow, ms: number): string {
   return `${spanFraction(window, ms) * 100}%`;
 }
 
+/** A time on the timeline as its keys and segments are named: `500 ms`. */
+export const msLabel = (ms: number): string => `${Math.round(ms)} ms`;
+
 /** A duration as a CSS percentage, for a width. */
 export function spanPercent(window: TimeWindow, ms: number): string {
   return `${spanShare(window, ms) * 100}%`;
