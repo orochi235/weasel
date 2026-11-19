@@ -48,12 +48,14 @@ export function buildSequences(r: ExplicitResult): IsolatingRunSequence[] {
     }
   }
 
-  // Level runs over the kept characters.
+  // Level runs over the kept characters. A paragraph separator closes its
+  // run: the text after it is another paragraph (P1), never the same sequence.
   interface Run { level: number; indices: number[] }
   const runs: Run[] = [];
   for (const i of kept) {
     const last = runs[runs.length - 1];
-    if (last && last.level === levels[i]) last.indices.push(i);
+    const afterB = last !== undefined && classes[last.indices[last.indices.length - 1]] === 'B';
+    if (last && !afterB && last.level === levels[i]) last.indices.push(i);
     else runs.push({ level: levels[i], indices: [i] });
   }
   const runStartingAt = new Map<number, number>();
@@ -87,15 +89,17 @@ export function buildSequences(r: ExplicitResult): IsolatingRunSequence[] {
     const start = indices[0];
     const end = indices[indices.length - 1];
 
+    // Neither boundary looks past a paragraph separator: the paragraph's own
+    // level stands in for what lies beyond it.
     let before: number = paragraphLevel;
     for (let i = start - 1; i >= 0; i--) {
-      if (!removed[i]) { before = levels[i]; break; }
+      if (!removed[i]) { if (classes[i] !== 'B') before = levels[i]; break; }
     }
 
     // An unmatched initiator ends its sequence against the paragraph rather
     // than against whatever text happens to follow it.
     let after: number = paragraphLevel;
-    if (!(isIsolateInitiator(classes[end]) && !pdiOf.has(end))) {
+    if (classes[end] !== 'B' && !(isIsolateInitiator(classes[end]) && !pdiOf.has(end))) {
       for (let i = end + 1; i < n; i++) {
         if (!removed[i]) { after = levels[i]; break; }
       }
