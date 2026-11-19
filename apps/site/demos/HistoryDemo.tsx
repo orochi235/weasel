@@ -142,6 +142,7 @@ export function HistoryDemo() {
             key={c.id}
             type="button"
             className={c.id === selected ? `${s.chip} ${s.selected}` : s.chip}
+            aria-current={c.id === selected ? 'true' : undefined}
             style={{ '--hue': c.hue } as CSSProperties}
             onClick={() => setSelected(c.id)}
           >
