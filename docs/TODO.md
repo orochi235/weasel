@@ -277,6 +277,14 @@ Owner tags, after the priority (2026-10-26):
   back to its id; labkit sets no title, so dragging a trial by its title bar shows a UUID in an unthemed blue chip
   (seen 2026-11-11). Closes when the ghost shows the trial's title, or labkit draws its own.
 
+- **(P3) [maintainer] labkit's `useUndoKeys` takes Mod+Z from every canvas on the page.** It listens on
+  `document`, which a bubbling keydown reaches before the dispatcher's keyboard channel on `window`, and it calls
+  `preventDefault` whenever the lab's history can step; the channel skips a prevented event
+  (`packages/routing/src/interactions/dispatcher/channels/keyboard.ts`), so a canvas in a lab built without
+  `<Lab>` never sees its own undo (read from the code, 2026-11-18; not reproduced). Moving it onto a dispatcher
+  needs an API call: a `<UndoKeys>` component that mounts the actions registry, or a provider-free hook binding a
+  key to a callback through a dispatcher. Closes when the lab's undo chord goes through a dispatcher binding.
+
 - **(P3) [agent] iconfab still mounts its annotation targets 12 at a time.** labkit's overlay died with "Maximum
   update depth exceeded" past about two dozen targets in one commit, because the surface committed each tile's
   placement in a `flushSync` of its own; it now commits a frame's tiles together, and
