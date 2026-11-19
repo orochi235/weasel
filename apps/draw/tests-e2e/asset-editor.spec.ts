@@ -146,7 +146,8 @@ test('dragging a row above another reorders the group, and Alt+Up moves the sele
 });
 
 test('a Shown if condition hides the pref in the preview until it holds', async ({ page }) => {
-  await row(page, /^Grid density/).click();
+  // Snap to grid rather than Grid density, which already carries a condition.
+  await row(page, /^Snap to grid/).click();
   await attrs(page).getByRole('button', { name: /Add a condition on/ }).first().click();
   await page.getByRole('listbox').getByRole('option', { name: /^Show grid/ }).first().click();
   await expect(attrs(page).getByRole('button', { name: /Condition 1 comparison/ })).toHaveText('is on');
