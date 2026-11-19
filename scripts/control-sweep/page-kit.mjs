@@ -131,13 +131,13 @@ export function installSweepKit(win) {
 
   /** Whether `el` is part of another control rather than one of its own. */
   const subordinate = (el, root) => {
-    if (el.closest('.ckd-demo-resize') || el.hasAttribute('data-wzl-subordinate')) return true;
+    if (el.closest('.ckd-demo-resize,[aria-hidden=true],[inert]') || el.hasAttribute('data-wzl-subordinate')) return true;
     const slot = el.getAttribute('slot');
     if (slot === 'increment' || slot === 'decrement') return true;
     return !root.contains(el);
   };
 
-  const describe = (el, all, root) => {
+  const describe = (el, all, root, chromeSel) => {
     const kind = kindOf(el);
     const field = fieldOf(el, all, root);
     const own = kind === 'select' || kind === 'number' || kind === 'slider' ? fieldLabelOf(el, field) : '';
@@ -145,7 +145,8 @@ export function installSweepKit(win) {
     const g = el.parentElement?.closest(GROUPS);
     const group = g && g !== root && root.contains(g) ? groupNameOf(g) : '';
     const label = group && group !== name ? `${group} › ${name}` : name;
-    const d = { id: idOf(el), kind, label, disabled: disabled(el) };
+    const d = { id: idOf(el), kind, name, label, disabled: disabled(el) };
+    if (chromeSel && el.closest(chromeSel)) d.chrome = true;
     if (el.tagName === 'SELECT') d.native = true;
     if (kind === 'download') d.skip = 'download link';
     else if (kind === 'file') d.skip = 'file picker';
@@ -158,8 +159,11 @@ export function installSweepKit(win) {
     return d;
   };
 
-  /** Every control in `root`, in document order, each with a key unique within the demo. */
-  const discover = (rootSel) => {
+  /**
+   * Every control in `root`, in document order, each with a key unique within the demo. One inside
+   * `chromeSel` is marked `chrome`: the same kit control in every demo that has it.
+   */
+  const discover = (rootSel, chromeSel) => {
     const root = doc.querySelector(rootSel);
     if (!root) return [];
     const found = [...root.querySelectorAll(CANDIDATES)].filter((el) => !subordinate(el, root));
@@ -168,7 +172,7 @@ export function installSweepKit(win) {
     const out = [];
     for (const el of all) {
       if (!visible(el)) continue;
-      const d = describe(el, all, root);
+      const d = describe(el, all, root, chromeSel);
       const base = `${d.kind}:${d.label}`;
       const n = (seen.get(base) ?? 0) + 1;
       seen.set(base, n);

@@ -50,7 +50,16 @@ describe('allowlist', () => {
     const allow = readAllow(join(dir, 'a.json'));
     expect(waiverFor(allow, 'share', 'Copy link')?.reason).toBe('writes the clipboard');
     expect(waiverFor(allow, 'share', 'copy link')).toBeUndefined();
-    expect(staleWaivers(allow, new Set(['share']), new Set(['share\u0000Copy link'])).map((e) => e.control)).toEqual(['Gone']);
+    const used = new Set([waiverFor(allow, 'share', 'Copy link')]);
+    expect(staleWaivers(allow, { swept: new Set(['share']), used, everyDemo: false }).map((e) => e.control)).toEqual(['Gone']);
+  });
+
+  it('waives a kit control in every demo with `*`, and judges that entry stale only on a run of every demo', () => {
+    writeFileSync(join(dir, 'a.json'), JSON.stringify([{ demo: '*', control: 'Zoom › Reset', reason: 'already at 100%' }]));
+    const allow = readAllow(join(dir, 'a.json'));
+    expect(waiverFor(allow, 'lab-tween', 'Zoom › Reset')).toBe(allow[0]);
+    expect(staleWaivers(allow, { swept: new Set(['x']), used: new Set(), everyDemo: false })).toEqual([]);
+    expect(staleWaivers(allow, { swept: new Set(['x']), used: new Set(), everyDemo: true })).toEqual(allow);
   });
 
   it('rejects an entry without a reason', () => {

@@ -5,7 +5,7 @@
  * field. Runs on a fleet node with a browser (`npm run sweep:controls` sends it there); never here.
  *
  *   node scripts/control-sweep.mjs [--only id,id] [--out dir] [--run name] [--url <site>/weasel/]
- *     [--skip-packages] [--no-build] [--concurrency N] [--settle ms] [--update-allow]
+ *     [--skip-packages] [--no-build] [--concurrency N] [--settle ms] [--demo-minutes N] [--update-allow] [--verbose]
  *
  * Writes `<out>/<run>/`: `controls.jsonl` (one record per control), `demos.jsonl`, `summary.json`,
  * and before/after screenshots of dead controls under `shots/`. Keeps the newest 7 runs in `<out>`.
@@ -37,9 +37,11 @@ export const parseArgs = (argv) => {
     url: value('--url'),
     build: !argv.includes('--no-build'),
     packages: !argv.includes('--skip-packages'),
-    concurrency: Math.max(1, Number(value('--concurrency', 3)) || 3),
+    concurrency: Math.max(1, Number(value('--concurrency', 5)) || 5),
     settleMs: Math.max(0, Number(value('--settle', 150)) || 0),
+    demoMs: Math.max(1, Number(value('--demo-minutes', 8)) || 8) * 60_000,
     updateAllow: argv.includes('--update-allow'),
+    verbose: argv.includes('--verbose'),
   };
 };
 
@@ -97,14 +99,20 @@ const main = async () => {
   say(`sweeping ${demos.length} demos at ${base} in Chromium ${browser.version()}, ${args.concurrency} at once`);
 
   const records = [];
+  const used = new Set();
   const demoRows = [];
   const onRecord = (rec) => {
     const waiver = rec.verdict === 'dead' ? waiverFor(allow, rec.demo, rec.label) : undefined;
-    if (waiver) Object.assign(rec, { verdict: 'waived', reason: waiver.reason });
+    if (waiver) {
+      Object.assign(rec, { verdict: 'waived', reason: waiver.reason });
+      used.add(waiver);
+    }
     records.push(rec);
     appendFileSync(join(runDir, 'controls.jsonl'), `${JSON.stringify(rec)}\n`);
+    if (args.verbose) say(`  ${rec.demo} ${rec.kind} "${rec.label}"${rec.precondition ? ` under "${rec.precondition}"` : ''}: ${rec.verdict}${rec.reason ? ` (${rec.reason})` : ''} ${rec.ms ?? 0}ms`);
   };
   let done = 0;
+  const chrome = new Map();
   const queue = [...demos];
   const worker = async () => {
     const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1, acceptDownloads: false });
@@ -114,7 +122,7 @@ const main = async () => {
     for (let demo = queue.shift(); demo; demo = queue.shift()) {
       let row;
       try {
-        const r = await sweepDemo(page, demo, { base, settleMs: args.settleMs, events, shotsDir, onRecord });
+        const r = await sweepDemo(page, demo, { base, settleMs: args.settleMs, demoMs: args.demoMs, events, shotsDir, onRecord, chrome });
         row = { demo: demo.id, controls: r.records.length, dead: count(r.records, 'dead'), steadyLoad: r.steadyLoad, ms: r.ms };
       } catch (error) {
         row = { demo: demo.id, error: String(error.message ?? error).split('\n')[0] };
@@ -135,8 +143,7 @@ const main = async () => {
 
   const dead = records.filter((r) => r.verdict === 'dead');
   const swept = new Set(demos.map((d) => d.id));
-  const waivedNow = new Set(records.filter((r) => r.verdict === 'waived').map((r) => `${r.demo}\u0000${r.label}`));
-  const stale = staleWaivers(allow, swept, waivedNow);
+  const stale = staleWaivers(allow, { swept, used, everyDemo: !args.only });
   const summary = {
     run: args.run, host: hostname(), started: new Date(started).toISOString(), minutes: Number(((Date.now() - started) / 60000).toFixed(1)),
     demos: demos.length, loadFailures: demoRows.filter((r) => r.error).length, controls: records.length,

@@ -144,7 +144,7 @@ export const menuItemsOf = async (page, c) => {
   const items = await openPopup(page, c.id, 'menu');
   await closePopup(page);
   return items.map((i) => ({
-    kind: 'menuitem', triggerId: c.id, triggerKey: c.key, item: i.label,
+    kind: 'menuitem', triggerId: c.id, triggerKey: c.key, item: i.label, name: i.label, chrome: c.chrome,
     key: `menuitem:${c.label} › ${i.label}`, label: `${c.label} › ${i.label}`,
     ...(i.disabled ? { skip: 'disabled' } : i.submenu ? { skip: 'opens a submenu' } : {}),
   }));

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { installSweepKit } from './page-kit.mjs';
 
 interface Kit {
-  discover(sel: string): Array<{ id: string; key: string; kind: string; label: string; skip?: string; selected?: boolean; restoreTo?: string; native?: boolean }>;
+  discover(sel: string, chrome?: string): Array<{ id: string; key: string; kind: string; label: string; skip?: string; selected?: boolean; restoreTo?: string; native?: boolean; chrome?: boolean }>;
   capture(sel: string, id: string | null): { dom: Record<string, string>; canvases: unknown[] };
 }
 const kit = () => (window as unknown as { __sweep: Kit }).__sweep;
@@ -63,7 +63,8 @@ describe('discover', () => {
       <div role="group"><input inputmode="decimal" aria-label="Width" value="4"><button slot="increment">▲</button><button data-wzl-subordinate>▼</button></div>
       <button disabled>Undo</button>
       <a download href="x.svg">Save</a>
-      <button data-test-zero>Hidden</button>`);
+      <button data-test-zero>Hidden</button>
+      <div aria-hidden="true"><select><option>a</option><option>b</option></select></div>`);
     const found = kit().discover('.ckd-demo-frame');
     expect(found.map((c) => [c.key, c.skip])).toEqual([
       ['number:Width', undefined], ['button:Undo', 'disabled'], ['download:Save', 'download link'],
@@ -75,6 +76,13 @@ describe('discover', () => {
     expect(kit().discover('.ckd-demo-frame')[0].key).toBe('select:Mode');
     document.getElementById('v')!.textContent = 'slow';
     expect(kit().discover('.ckd-demo-frame')[0].key).toBe('select:Mode');
+  });
+
+  it('marks controls inside the kit chrome', () => {
+    page('<header class="lk-shell-header"><button>Add trial</button></header><button>Play</button>');
+    expect(kit().discover('.ckd-demo-frame', '.lk-shell-header').map((c) => [c.label, Boolean(c.chrome)])).toEqual([
+      ['Add trial', true], ['Play', false],
+    ]);
   });
 });
 

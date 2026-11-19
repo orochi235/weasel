@@ -53,7 +53,10 @@ export const fingerprintOf = (capture, hash) => ({
   canvases: capture.canvases,
 });
 
-/** The allowlist: `[{ demo, control, reason }]`, `control` being a control's label as the sweep prints it. */
+/**
+ * The allowlist: `[{ demo, control, reason }]`, `control` being a control's label as the sweep prints it,
+ * and `demo` a demo's id or `*` for a kit control every demo that shows it shares.
+ */
 export const readAllow = (path) => {
   if (!existsSync(path)) return [];
   const list = JSON.parse(readFileSync(path, 'utf8'));
@@ -64,14 +67,14 @@ export const readAllow = (path) => {
   return list;
 };
 
-export const waiverFor = (allow, demo, label) => allow.find((e) => e.demo === demo && e.control === label);
+export const waiverFor = (allow, demo, label) => allow.find((e) => (e.demo === demo || e.demo === '*') && e.control === label);
 
 /**
- * Entries that waived nothing this run, among the demos it swept. The list only shrinks: these are
- * the ones to delete, and nothing ever adds one but a person.
+ * Entries that waived nothing this run, among the demos it swept (`*` entries only on a run of every
+ * demo). The list only shrinks: these are the ones to delete, and nothing ever adds one but a person.
  */
-export const staleWaivers = (allow, swept, deadLabels) =>
-  allow.filter((e) => swept.has(e.demo) && !deadLabels.has(`${e.demo}\u0000${e.control}`));
+export const staleWaivers = (allow, { swept, used, everyDemo }) =>
+  allow.filter((e) => !used.has(e) && (e.demo === '*' ? everyDemo : swept.has(e.demo)));
 
 export const writeAllow = (path, list) => writeFileSync(path, `${JSON.stringify(list, null, 2)}\n`);
 
