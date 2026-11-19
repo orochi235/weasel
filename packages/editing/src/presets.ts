@@ -16,24 +16,24 @@ export { viewPreset as view, viewToolsPreset as viewTools } from '@weasel-js/cor
 export {
   alignPreset as align, arrangePreset as arrange, distributePreset as distribute, flipPreset as flip,
   reorderPreset as reorder,
-} from './arrange';
-export { booleansPreset as booleans } from './booleans';
-export { drawPreset as draw, pickPreset as pick, transformPreset as transform } from './composites';
+} from './presets/arrange';
+export { booleansPreset as booleans } from './presets/booleans';
+export { drawPreset as draw, pickPreset as pick, transformPreset as transform } from './presets/composites';
 export {
   clipboardPreset as clipboard, contextMenuPreset as contextMenu, deletePreset as delete,
   duplicatePreset as duplicate, editPreset as edit, escapePreset as escape, groupPreset as group,
   nudgePreset as nudge, selectAllPreset as selectAll, stylePreset as style,
-} from './edit';
-export { ingestPreset as ingest } from './ingest';
-export { insertPreset as insert } from './insert';
-export { pathfinderPreset as pathfinder } from './pathfinder';
-export { selectPreset as select } from './select';
-export { selectionPreset as selection } from './selection';
-export { selectionChromePreset as selectionChrome } from './selectionChrome';
+} from './presets/edit';
+export { ingestPreset as ingest } from './presets/ingest';
+export { insertPreset as insert } from './presets/insert';
+export { pathfinderPreset as pathfinder } from './presets/pathfinder';
+export { selectPreset as select } from './presets/select';
+export { selectionPreset as selection } from './presets/selection';
+export { selectionChromePreset as selectionChrome } from './presets/selectionChrome';
 export {
   selectToolsOfferedPreset as selectToolsOffered, selectToolsPreset as selectTools,
   shapeToolsOfferedPreset as shapeToolsOffered, shapeToolsPreset as shapeTools,
-} from './tools';
+} from './presets/tools';
 export {
   movePreset as move, outlinePreset as outline, resizePreset as resize, rotatePreset as rotate,
-} from './transform';
+} from './presets/transform';

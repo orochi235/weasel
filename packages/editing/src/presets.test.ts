@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { FEATURE_PRESETS } from '../namedPresets';
-import * as presets from './index';
+import { FEATURE_PRESETS } from './namedPresets';
+import * as presets from './presets';
 
 describe('@weasel-js/editing/presets', () => {
   it('carries every named kit preset, as the same object', () => {
