@@ -31,9 +31,9 @@ export const sweepShell = (run, sweepArgs = []) => [
   'exit 0',
 ].join('\n');
 
-/** `onto do`'s arguments for one sweep, its output brought into `to`. */
-export const ontoArgs = ({ run, to, task, about, ref, node, sweepArgs = [] }) => [
-  'do', '--gui', '--kind', 'test', '--icon', 'slider.horizontal.3', '--in', SWEEP_TREE, '--force',
+/** `onto do`'s arguments for one sweep in node tree `tree`, its output brought into `to`. */
+export const ontoArgs = ({ run, to, task, about, ref, node, tree = SWEEP_TREE, sweepArgs = [] }) => [
+  'do', '--gui', '--kind', 'test', '--icon', 'slider.horizontal.3', '--in', tree, '--force',
   ...(ref ? ['--ref', ref] : []), ...(node ? ['--node', node] : []),
   '--task', task, '--about', about, '--expect', EXPECT, '--timeout', TIMEOUT,
   '--out', `${NODE_OUT}/${run}`, '--to', to,

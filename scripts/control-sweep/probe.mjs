@@ -4,7 +4,7 @@
  * only once a drag has moved or selected something. So the probe drags across the demo's largest canvas
  * from fresh loads three ways (plain, control first, control after) and compares what each leaves.
  */
-import { capture, discover, load, prepare, settle } from './capture.mjs';
+import { capture, discover, prepare, prepareFresh, settle } from './capture.mjs';
 import { animationFlips, compareCaptures } from './judge.mjs';
 import { ROOT, kit, operate } from './operate.mjs';
 
@@ -28,8 +28,7 @@ const drag = async (page, r) => {
  * ('before', 'after' or never): what the demo shows.
  */
 const dragRun = async (page, c, ctx, when, tool) => {
-  await load(page, ctx.url, { tries: ctx.tries });
-  const live = await prepare(page, ctx.url, c, ctx.settleMs, ctx.tries);
+  const live = await prepareFresh(page, ctx.url, c, ctx.settleMs, ctx.tries);
   if (tool) {
     const t = (await discover(page)).find((d) => d.key === tool.key);
     if (!t) return undefined;
@@ -85,7 +84,8 @@ export const probeGesture = async (page, c, ctx) => {
   for (const when of action ? ['before', 'after'] : ['before']) {
     if (await differsUnder(page, c, ctx, when, undefined)) return when;
   }
-  if (action || c.tool) return undefined;
+  // A tool's own option, revealed by choosing it, was just dragged with that tool; another tool would put it away.
+  if (action || c.tool || c.precondition?.tool) return undefined;
   const tools = (await discover(page)).filter((d) => d.tool && !d.selected && !d.skip).slice(0, TOOLS_TRIED);
   for (const tool of tools) {
     if (await differsUnder(page, c, ctx, 'before', tool)) return `before:${tool.label}`;
@@ -97,8 +97,7 @@ const BUTTONS_TRIED = 5;
 
 /** A fresh load and `c`'s precondition, `c` operated if `operated`, then `button` pressed: two captures a settle apart. */
 const pressRun = async (page, c, button, ctx, operated) => {
-  await load(page, ctx.url, { tries: ctx.tries });
-  const live = await prepare(page, ctx.url, c, ctx.settleMs, ctx.tries);
+  const live = await prepareFresh(page, ctx.url, c, ctx.settleMs, ctx.tries);
   if (operated) await operate(page, live);
   await settle(page, ctx.settleMs);
   const target = (await discover(page)).find((d) => d.key === button.key);

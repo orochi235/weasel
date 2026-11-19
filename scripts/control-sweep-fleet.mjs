@@ -2,11 +2,12 @@
 /**
  * `npm run sweep:controls`: runs the control sweep on a fleet node with a browser, against a commit.
  *
- *   npm run sweep:controls -- [--only id,id] [--out dir] [--ref <commit>] [--node <name>] [sweep flags…]
+ *   npm run sweep:controls -- [--only id,id] [--out dir] [--ref <commit>] [--node <name>] [--tree <name>] [sweep flags…]
  *
  * The commit (HEAD unless `--ref`) is checked out into a throwaway worktree and shipped from there, as
  * `test:fleet` does. The run comes back to `<out>/<run>` (`.control-sweep` by default), which keeps its
- * newest 7 runs. Exits with the sweep's code: 1 when a control is dead.
+ * newest 7 runs. `--tree` names the node tree it runs in, so a second sweep need not sync over a
+ * running one. Exits with the sweep's code: 1 when a control is dead.
  */
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -27,6 +28,7 @@ const take = (flag) => {
 const out = resolve(take('--out') ?? join(ROOT, '.control-sweep'));
 const ref = take('--ref') ?? 'HEAD';
 const node = take('--node');
+const nodeTree = take('--tree');
 const only = take('--only');
 const sweepArgs = [...(only ? ['--only', only] : []), ...argv];
 
@@ -37,7 +39,7 @@ try {
   const to = join(out, run);
   say(`${git('log', '-1', '--format=%h %s', commit)}${branch ? ` (${branch})` : ''}${only ? `, demos ${only}` : ', every demo'}`);
   const status = await ontoWhenFree(ontoArgs({
-    run, to, node, sweepArgs,
+    run, to, node, sweepArgs, ...(nodeTree ? { tree: nodeTree } : {}),
     ref: git('merge-base', commit, 'origin/main'),
     task: `control-sweep-${(branch || commit.slice(0, 9)).replace(/[^A-Za-z0-9.-]/g, '-')}`,
     about: `Operates every control in ${only ? `the demos ${only}` : 'every demo'} at ${commit.slice(0, 10)} in headless Chromium and reports each that changes nothing.`,

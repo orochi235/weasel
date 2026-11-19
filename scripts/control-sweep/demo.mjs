@@ -4,7 +4,7 @@
  */
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { RESTLESS_TRIES, STEADY_TRIES, capture, discover, hash, load, prepare, settle } from './capture.mjs';
+import { RESTLESS_TRIES, STEADY_TRIES, capture, discover, hash, load, prepare, prepareFresh, settle } from './capture.mjs';
 import { animationFlips, compareCaptures, fingerprintOf, sameSteadyState, slug, verdictOf } from './judge.mjs';
 import { ROOT, kit, menuItemsOf, operate } from './operate.mjs';
 import { probeButtons, probeGesture } from './probe.mjs';
@@ -53,10 +53,13 @@ const record = (demo, c, fields) => ({
   ...(c.precondition ? { precondition: c.precondition.label } : {}), ...fields,
 });
 
-/** Tries control `c`. Answers its record, whether the page must be reloaded, and any controls it revealed. */
-const trial = async (page, demo, c, ctx) => {
+/**
+ * Tries control `c`, from a fresh load if `stale`. Answers its record, whether the page must be reloaded,
+ * and any controls it revealed.
+ */
+const trial = async (page, demo, c, ctx, stale) => {
   const t0 = Date.now();
-  const live = await prepare(page, ctx.url, c, ctx.settleMs, ctx.tries);
+  const live = await (stale ? prepareFresh : prepare)(page, ctx.url, c, ctx.settleMs, ctx.tries);
   const keysBefore = new Set((await discover(page)).flatMap((d) => [d.key, `${d.kind}:${d.name}`]));
   const a = await attempt(page, live, { ...ctx, shots: false });
   if (a.left) return { rec: record(demo, c, { verdict: 'skipped', reason: a.left, ms: Date.now() - t0 }), reload: true, revealed: [] };
@@ -69,7 +72,7 @@ const trial = async (page, demo, c, ctx) => {
     if (flips.length > 0) ({ verdict, reason } = { verdict: 'alive', reason: `starts or stops canvas ${flips.join(', ')} animating` });
   }
   const revealed = c.precondition || c.kind === 'menuitem' ? []
-    : (await discover(page)).filter((d) => isNewControl(d, keysBefore, live.id)).map((d) => ({ ...d, precondition: { key: c.key, label: c.label, kind: c.kind, triggerKey: c.triggerKey, item: c.item } }));
+    : (await discover(page)).filter((d) => isNewControl(d, keysBefore, live.id)).map((d) => ({ ...d, precondition: { key: c.key, label: c.label, kind: c.kind, triggerKey: c.triggerKey, item: c.item, tool: c.tool } }));
   let reload = Boolean(c.precondition) || (!a.restore && verdict !== 'dead');
   if (!reload && a.restore && verdict !== 'dead') {
     try {
@@ -99,8 +102,7 @@ const trial = async (page, demo, c, ctx) => {
 
 /** Whether moving a slider one step, rather than to its far end, changes anything. */
 const nudged = async (page, c, ctx) => {
-  await load(page, ctx.url, { tries: ctx.tries });
-  const live = await prepare(page, ctx.url, c, ctx.settleMs, ctx.tries);
+  const live = await prepareFresh(page, ctx.url, c, ctx.settleMs, ctx.tries);
   const a = await attempt(page, { ...live, nudge: true }, { ...ctx, shots: false });
   return verdictOf(compareCaptures(a.before0, a.before1, a.after)).verdict === 'alive';
 };
@@ -108,8 +110,7 @@ const nudged = async (page, c, ctx) => {
 /** Whether a key shortcut the control declares (`aria-keyshortcuts`, as a drag handle's Alt+Arrow) changes anything. */
 const viaShortcut = async (page, c, ctx) => {
   for (const key of c.shortcuts ?? []) {
-    await load(page, ctx.url, { tries: ctx.tries });
-    const live = await prepare(page, ctx.url, c, ctx.settleMs, ctx.tries);
+    const live = await prepareFresh(page, ctx.url, c, ctx.settleMs, ctx.tries);
     const before0 = await capture(page, live.id);
     await settle(page, ctx.settleMs);
     const before1 = await capture(page, live.id);
@@ -126,8 +127,7 @@ const viaShortcut = async (page, c, ctx) => {
  * probe (and through its key shortcut, if it declares one). Dead to all of them is dead.
  */
 const confirm = async (page, demo, c, ctx) => {
-  await load(page, ctx.url, { tries: ctx.tries });
-  const live = await prepare(page, ctx.url, c, ctx.settleMs, ctx.tries);
+  const live = await prepareFresh(page, ctx.url, c, ctx.settleMs, ctx.tries);
   // The retry waits longer: an effect that runs through a promise (an export, a texture) lands late.
   const a = await attempt(page, live, { ...ctx, settleMs: Math.max(ctx.settleMs * 6, SLOW_SETTLE_MS), shots: true });
   const { verdict } = verdictOf(compareCaptures(a.before0, a.before1, a.after));
@@ -177,6 +177,8 @@ export const sweepDemo = async (page, demo, ctx) => {
   const tried = new Set();
   // A demo that never held still on its first load will not on a reload either; don't wait it out each time.
   const full = { ...ctx, url, tries: steadyLoad ? STEADY_TRIES : RESTLESS_TRIES };
+  // A reload is owed rather than done at once: the next control may load afresh for its precondition anyway.
+  let stale = false;
   for (let i = 0; i < queue.length; i++) {
     const c = queue[i];
     const id = `${c.precondition ? 'revealed' : 'shown'}\u0000${c.key}`;
@@ -190,15 +192,16 @@ export const sweepDemo = async (page, demo, ctx) => {
     else if (c.skip) out = { rec: record(demo, c, { verdict: 'skipped', reason: c.skip }), reload: false, revealed: [] };
     else {
       try {
-        out = await trial(page, demo, c, full);
+        out = await trial(page, demo, c, full, stale);
       } catch (error) {
         out = { rec: record(demo, c, { verdict: error.skip ? 'skipped' : 'error', reason: String(error.message ?? error).split('\n')[0] }), reload: true, revealed: [] };
       }
+      stale = false;
     }
     records.push(out.rec);
     ctx.onRecord(out.rec);
     queue.push(...out.revealed);
-    if (out.reload) await load(page, url, { tries: full.tries });
+    stale ||= out.reload;
   }
   return { records, steadyLoad, ms: Date.now() - t0 };
 };

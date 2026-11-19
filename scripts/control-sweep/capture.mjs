@@ -136,3 +136,9 @@ export const prepare = async (page, url, c, settleMs, tries) => {
     }
   }
 };
+
+/** `c` from a fresh load: `prepare` loads afresh itself when `c` has a precondition, so only one without is loaded first. */
+export const prepareFresh = async (page, url, c, settleMs, tries) => {
+  if (!c.precondition) await load(page, url, { tries });
+  return prepare(page, url, c, settleMs, tries);
+};
