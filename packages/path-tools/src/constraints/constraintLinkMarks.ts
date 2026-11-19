@@ -89,7 +89,7 @@ function linkMarksLayer(scene: AnyScene, style: ConstraintGlyphStyle): RenderLay
 /**
  * The layer that draws every broken link of the canvas's scene, as one
  * entry: install it with `<SceneCanvas ambient>` or a preset's
- * `contributions`. `constraintsPreset` carries it. One entry installed in
+ * `contributions`. `pathTools.constraints` carries it. One entry installed in
  * several canvases draws each its own scene's links.
  */
 export function createConstraintLinkMarks(style: ConstraintGlyphStyle): SurfaceContribution {

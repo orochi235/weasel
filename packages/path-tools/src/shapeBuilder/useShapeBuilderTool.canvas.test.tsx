@@ -6,7 +6,8 @@ import type { Path } from '@weasel-js/geom';
 import { createScene, SceneCanvas, type NodeId, type RenderLayer, type SelectionApi } from '@weasel-js/core';
 import { rootsTreeForTests as rootsTree } from '@weasel-js/core/test-seams';
 import { useShapeBuilderTool } from './useShapeBuilderTool';
-import { drawPreset, useSelection, useBooleansAdapter, type BooleansAdapter } from '@weasel-js/editing';
+import { useSelection, useBooleansAdapter, type BooleansAdapter } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 type P = { x: number; y: number; width: number; height: number };
 
@@ -59,7 +60,7 @@ function mount() {
     const shapeBuilder = useShapeBuilderTool();
     overlay = shapeBuilder.overlay as RenderLayer<unknown>;
     return (
-      <SceneCanvas features={[drawPreset]} scene={scene} selection={sel} layers={{}} width={400} height={400} tools={{ shapeBuilder }}>
+      <SceneCanvas features={[presets.draw]} scene={scene} selection={sel} layers={{}} width={400} height={400} tools={{ shapeBuilder }}>
         <Publish adapter={adapter} />
       </SceneCanvas>
     );

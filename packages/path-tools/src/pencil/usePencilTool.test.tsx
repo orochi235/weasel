@@ -3,7 +3,7 @@ import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { createScene, SceneCanvas } from '@weasel-js/core';
 import { usePencilTool } from './usePencilTool';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 type D = { kind: string };
 type L = 'main';
@@ -30,7 +30,7 @@ describe('usePencilTool through <SceneCanvas>', () => {
     function Harness() {
       const pencil = usePencilTool();
       return (
-        <SceneCanvas scene={scene} layers={{}} width={400} height={400} features={[drawPreset]}
+        <SceneCanvas scene={scene} layers={{}} width={400} height={400} features={[presets.draw]}
           defaultTools={['select']} tools={{ pencil }} defaultActiveTool="pencil" />
       );
     }
@@ -53,7 +53,7 @@ describe('usePencilTool through <SceneCanvas>', () => {
     function Harness() {
       const pencil = usePencilTool();
       return (
-        <SceneCanvas scene={scene} layers={{}} width={400} height={400} features={[drawPreset]}
+        <SceneCanvas scene={scene} layers={{}} width={400} height={400} features={[presets.draw]}
           defaultTools={['select']} tools={{ pencil }} defaultActiveTool="pencil" />
       );
     }

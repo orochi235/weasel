@@ -20,6 +20,10 @@
       "types": "./dist/icons.table.d.ts",
       "import": "./dist/icons.table.js"
     },
+    "./presets": {
+      "types": "./dist/presets.d.ts",
+      "import": "./dist/presets.js"
+    },
     "./package.json": "./package.json"
   },
   "weaselIcons": {

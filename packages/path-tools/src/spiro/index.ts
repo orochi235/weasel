@@ -5,7 +5,6 @@
  *
  * @packageDocumentation
  */
-export { spiroPreset } from './spiroPreset';
 export { useSpiroTool, type UseSpiroToolOptions } from './useSpiroTool';
 export { releaseSpiroAction, setSpiroKindAction } from './spiroCommands';
 export { spiroExtension, spiroRepresentation } from './spiroRepresentation';

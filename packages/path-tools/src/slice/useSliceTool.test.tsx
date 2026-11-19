@@ -9,7 +9,7 @@ import { reportRouteConflicts, type Action, type ActionDeps, type InvocationCtx 
 import type { RenderLayer } from '@weasel-js/core';
 import { createPointerStore, useDepSource } from '@weasel-js/routing/react';
 import { createScene, SceneCanvas } from '@weasel-js/core';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 type Pt = { x: number; y: number };
 
@@ -269,7 +269,7 @@ describe('useSliceTool — through <SceneCanvas>', () => {
       systemLayers: [{ id: 'main' }],
     });
     return (
-      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={400} height={400} tools={{ slice }}>
+      <SceneCanvas features={[presets.draw]} scene={scene} layers={{}} width={400} height={400} tools={{ slice }}>
         <SliceDep commit={commit} />
       </SceneCanvas>
     );

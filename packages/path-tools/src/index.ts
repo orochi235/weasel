@@ -1,7 +1,8 @@
 /**
  * `@weasel-js/path-tools` — path-editing tools for a weasel canvas, each
- * family a `FeaturePreset` an app turns on beside core's: `features={[drawPreset,
- * pathToolsPreset]}` for all of them, or one at a time.
+ * family a `FeaturePreset` an app turns on beside core's. The presets are on
+ * `@weasel-js/path-tools/presets`: `features={[presets.draw, pathTools.pathTools]}`
+ * for all of them, or one at a time.
  *
  * @packageDocumentation
  */
@@ -10,39 +11,12 @@
 import type {} from './actionParamSchema';
 
 export {
-  addExtremesPreset,
-  anchorSelectionPreset,
-  poisePreset,
-  bridgePreset,
-  constraintsPreset,
-  filletPreset,
-  createPoisePreset,
-  createConstraintsPreset,
-  createFilletPreset,
-  createCurvatureCombPreset,
-  createHandleSnapPreset,
-  createPathStructurePreset,
-  createDrapePreset,
-  curvatureCombPreset,
-  reachPreset,
-  handleLocksPreset,
-  handleSnapPreset,
-  tugPreset,
-  fairingPreset,
-  pathEffectsPreset,
-  pathStructurePreset,
-  pathToolsPreset,
-  segmentTypePreset,
-  resamplePreset,
-  sandPreset,
-  kneadPreset,
-  snipPreset,
-  warpPreset,
-} from './presets';
+  createConstraintsPreset, createCurvatureCombPreset, createDrapePreset, createFilletPreset, createHandleSnapPreset,
+  createPathStructurePreset, createPoisePreset,
+} from './featurePresets';
 export type {
   ActionParamSchema, EditPathEffectParams, OffsetPathParams, PathEffectParams, SetFilletsParams, TweenParams,
 } from './actionParamSchema';
-export { anchorKeysPreset, outlinesPreset, pathCommandsPreset, pathEditPreset, pathsPreset } from './pathsPreset';
 export { pathToolsKitSettingsSchema, type PathToolsKitTargetSettings } from './kitSettings';
 
 // ─── Path edit ─────────────────────────────────────────────────────────────
