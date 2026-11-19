@@ -47,3 +47,21 @@ describe('describePresets', () => {
     expect(out.filter((d) => d.id === 'shared').map((d) => d.package)).toEqual(['a']);
   });
 });
+
+describe('isAtom over the node-kind and tool-action roles', () => {
+  const roles: [string, Partial<FeaturePreset>][] = [
+    ['routing', { routing: [{ kind: 'k' } as never] }],
+    ['insertNodeFactories', { insertNodeFactories: { k: () => ({}) } as never }],
+    ['insertKinds', { insertKinds: ['k'] }],
+    ['shapes', { shapes: [{ kind: 'k' } as never] }],
+    ['properties', { properties: [{ kind: 'k' } as never] }],
+    ['toolActions', { toolActions: [{ id: 'a' } as never] }],
+  ];
+  it.each(roles)('a preset holding only %s is an atom', (_, role) => {
+    expect(isAtom({ id: 'p', ...role })).toBe(true);
+  });
+
+  it('a preset holding only actions, built-in tools, and includes is a bundle', () => {
+    expect(isAtom({ id: 'b', label: 'B', actions: [{ id: 'a' } as never], tools: ['rect'], includes: [{ id: 'x' }] })).toBe(false);
+  });
+});
