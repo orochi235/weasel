@@ -58,7 +58,7 @@ export function hitAffordanceRegions(
     let best: { region: AffordanceRegion; d2: number } | null = null;
     for (let j = 0; j < regions.length; j++) {
       const region = regions[j];
-      if (isVisible && region.chromeId && !isVisible(region.chromeId)) continue;
+      if (!regionShown(region, isVisible)) continue;
       const xf = transformOf(state, region.targetId);
       if (!hitRegion(region, wx, wy, xf, view)) continue;
       const d2 = regionDistance2(region, wx, wy, xf, view);
@@ -79,6 +79,11 @@ export function hitAffordanceRegions(
     }
   }
   return null;
+}
+
+/** Whether a region's own `chromeId` leaves it shown; paint and hit both ask. */
+export function regionShown(region: AffordanceRegion, isVisible: ((id: string) => boolean) | null | undefined): boolean {
+  return !isVisible || !region.chromeId || isVisible(region.chromeId);
 }
 
 /** Squared world distance from the point to a region's representative center,

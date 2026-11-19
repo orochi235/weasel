@@ -17,6 +17,7 @@ import {
   pointRegionFrame,
   pointRegionLive,
   pointRegionScreenQuad,
+  regionShown,
   transformOf,
   type TargetTransform,
 } from './hitAffordanceRegions';
@@ -65,6 +66,7 @@ export function composeAffordanceLayer(
       for (const a of affordances) {
         if (isVisible && !isVisible(a.id)) continue;
         for (const region of a.regions(state)) {
+          if (!regionShown(region, isVisible)) continue;
           const xf = transformOf(state, region.targetId);
           if (region.shape.kind === 'point' && !pointRegionLive(region.shape, xf, view)) continue;
           if (region.paint) paintRegion(region, xf, view, state, t, out);
