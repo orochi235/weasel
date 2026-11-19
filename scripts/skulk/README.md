@@ -50,15 +50,24 @@ Flags:
 (checkboxes, switches, sliders, number fields, radios and segmented controls, selects, menu items, toggles and
 buttons) and, for each, captures the demo, operates the control once, captures again, and puts it back. A
 capture is a hash of each canvas's pixels and a digest of every element's text and attributes, leaving out
-the control's own field (the box holding it, its label and its readout). Two captures a settle apart before
-operating tell what moves by itself, which is left out. A control that changes nothing steady is tried again
-from a fresh load with screenshots, and is **dead** if it changes nothing twice; one whose only possible
-effect is on an animating canvas is **unsure**. A control another control reveals is tried with that one
-operated first. Downloads, file pickers, native dialogs, new windows and disabled controls are **skipped**.
+the control's own field (the box holding it, its label and its readout), plus whether a popup is open. Two
+captures a settle apart before operating tell what moves by itself, which is left out.
 
-A control meant to change nothing visible is waived in `scripts/control-sweep.allow.json` (`demo`, `control`
-as the sweep labels it, `reason`). Only a person adds an entry; `--update-allow` removes the ones that waive
-nothing any more. The sweep exits 1 on any dead control that is not waived.
+| Verdict | When |
+|---|---|
+| alive | something steady changed, a popup opened, or a canvas started or stopped animating |
+| dead | nothing changed on two fresh loads, nor through its `aria-keyshortcuts`, nor in what a drag across the canvas does (or, for a button or menu item, in what a drag left: the gesture probe) |
+| unsure | only an animating canvas could have shown a change, or it was dead once and alive on the retry |
+| skipped | disabled, a download, a file picker, a native dialog, a new window, or kit chrome already swept |
+
+The chosen option of a radio group and a palette's active tool are tried after choosing another first, and
+a control another control reveals is tried with that one operated first. labkit's shell, trial title bars
+and sidebar section bars are the same in every lab, so they are swept in the first lab that shows them.
+
+A control meant to change nothing visible is waived in `scripts/control-sweep.allow.json` (`demo`, or `*` for
+a kit control in every demo; `control` as the sweep labels it; `reason`). Only a person adds an entry;
+`--update-allow` removes the ones that waive nothing any more. The sweep exits 1 on any dead control that
+is not waived.
 
     npm run sweep:controls -- --only lab-tween,scene     # on the fleet, at HEAD; records in .control-sweep/
 
