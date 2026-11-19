@@ -119,6 +119,40 @@ describe('engine.playNote', () => {
     expect(voice.isPlaying()).toBe(false);
   });
 
+  it('fades a releasing note out over fadeMs rather than cutting it, and again on a second fade', async () => {
+    const { ctx, engine, tick } = await harness();
+    const voice = engine.playNote({ pitch: 220, envelope: { attack: 0, release: 2000 } });
+    tick();
+    const osc = ctx._oscillators[0];
+    const { gain } = chainOf(osc);
+    ctx._advance(50);
+    voice.release();
+    voice.stop(100);
+    expect(gain.gain.ramps.at(-1)).toEqual({ value: 0, at: expect.closeTo(0.15, 9) });
+    expect(osc.stopped.at(-1)).toBeCloseTo(0.15, 9);
+    expect(voice.isPlaying()).toBe(true);
+    ctx._advance(20);
+    voice.stop(30);
+    expect(gain.gain.ramps.at(-1)).toEqual({ value: 0, at: expect.closeTo(0.1, 9) });
+    expect(osc.stopped.at(-1)).toBeCloseTo(0.1, 9);
+    expect(voice.isPlaying()).toBe(true);
+    ctx._advance(30);
+    expect(voice.isPlaying()).toBe(false);
+  });
+
+  it('keeps fading a note released mid-fade', async () => {
+    const { ctx, engine, tick } = await harness();
+    const voice = engine.playNote({ pitch: 220 });
+    tick();
+    const osc = ctx._oscillators[0];
+    voice.stop(100);
+    voice.release();
+    expect(osc.stopped).toEqual([expect.closeTo(0.1, 9)]);
+    expect(voice.isPlaying()).toBe(true);
+    ctx._advance(100);
+    expect(voice.isPlaying()).toBe(false);
+  });
+
   it('releases a gated note early, from wherever it has got to', async () => {
     const { ctx, engine, tick } = await harness();
     const voice = engine.playNote({

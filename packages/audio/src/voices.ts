@@ -151,7 +151,9 @@ function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): Vo
     stop(fadeMs) {
       checkFinite('voice fade', fadeMs);
       voice.catchUp?.();
-      if (fadeMs && fadeMs > 0 && voice.source && voice.out && !voice.canceled) {
+      // A releasing or fading voice is canceled but still sounding, so it fades from where it is.
+      const sounding = !voice.canceled || voice.releasing || voice.fading;
+      if (fadeMs && fadeMs > 0 && voice.source && voice.out && sounding) {
         // Canceled but not torn down: the fade is what ends this voice, and
         // stopping the source now would cut the ramp scheduled a line above
         // it — which is the click `fadeMs` exists to avoid. `onended` does
@@ -165,7 +167,8 @@ function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): Vo
       teardown(voice);
     },
     release() {
-      if (voice.releasing) return;
+      // A fade already ends it, and teardown would cut the fade.
+      if (voice.releasing || voice.fading) return;
       voice.catchUp?.();
       if (voice.release && voice.source && !voice.canceled) {
         // Like a fade: `onended` tears the voice down once the release is out.
