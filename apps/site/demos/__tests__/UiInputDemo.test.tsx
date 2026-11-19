@@ -21,4 +21,10 @@ describe('UiInputDemo', () => {
     fireEvent.keyDown(list, { key: 'a', timeStamp: 1100 });
     expect(highlighted()).toBe('carrot');
   });
+
+  it('hands a character outside the BMP to typeahead as one typed character', () => {
+    render(<UiInputDemo />);
+    fireEvent.keyDown(screen.getByRole('listbox'), { key: '🍎', timeStamp: 1000 });
+    expect(screen.getByText("typeaheadStep('🍎') → null")).toBeTruthy();
+  });
 });
