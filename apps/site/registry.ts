@@ -1568,6 +1568,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/AnimatorDemo').then((m) => m.AnimatorDemo),
     path: 'apps/site/demos/AnimatorDemo.tsx',
   },
+  {
+    id: 'storage',
+    title: 'Records kept across a reload',
+    package: 'storage',
+    description: "A count and a note kept in `localStorage` through a `RecordCache`. `openRecordsSync` opens every record under the demo's prefix from `localStorageAdapter` with no `await`, and the controls write with `cache.set` and `cache.delete`. The table shows each record as `cache.get()` reads it, beside what `localStorage` holds: a write lands in the cache at once and reaches storage on a debounce, and `cache.pending(name)` says yes until it has. Unmounting calls `cache.close()`, which sends any write still queued.",
+    hint: 'Press Add one a few times quickly and watch the localStorage column catch up. Reload the page: the count and note come back.',
+    load: () => import('./demos/StorageDemo').then((m) => m.StorageDemo),
+    path: 'apps/site/demos/StorageDemo.tsx',
+  },
 ];
 
 export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({
