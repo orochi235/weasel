@@ -4,7 +4,8 @@ import { MenuButton } from '@weasel-js/ui/components/MenuButton';
 export interface LabPage {
   /** The page's own URL, and how the switcher knows which page is open. A
    *  relative one resolves against the open page, as its link does. A
-   *  hash route (`#/dev/tools`) names a page on the current document. */
+   *  hash route (`#/dev/tools`) names a page on the current document. The
+   *  link drops a trailing `.html` (see `labRoutes` in `@weasel-js/labkit/vite`). */
   href: string;
   label: string;
 }
@@ -32,6 +33,22 @@ function locate(url: string): { doc: string; route: string } {
       .replace(/\/index$/, ''),
     route: hash < 0 ? '' : trim(url.slice(hash + 1)),
   };
+}
+
+/** The URL a page's link opens: `href` with a trailing `.html` dropped, and a
+ *  directory's `index.html` dropped whole (`fastmoney.html` → `fastmoney`,
+ *  `index.html` → `./`). Its query and hash are kept. An href naming another
+ *  origin or scheme is left as given, since its server may not answer the
+ *  shorter spelling. */
+export function extensionlessHref(href: string): string {
+  if (/^([a-z][a-z\d+.-]*:|\/\/)/i.test(href)) return href;
+  const cut = href.search(/[?#]/);
+  const path = cut < 0 ? href : href.slice(0, cut);
+  const rest = cut < 0 ? '' : href.slice(cut);
+  if (!path.endsWith('.html')) return href;
+  const dir = /(^|\/)index\.html$/.test(path);
+  const clean = dir ? path.slice(0, -'index.html'.length) : path.slice(0, -'.html'.length);
+  return (clean === '' ? './' : clean) + rest;
 }
 
 /** Which of `pages` a path is on, or -1.
@@ -105,7 +122,7 @@ export function LabSwitcher({ title, pages, path, className }: LabSwitcherProps)
         items={pages.map((page, i) => ({
           value: page.href,
           label: page.label,
-          href: page.href,
+          href: extensionlessHref(page.href),
           current: i === here,
         }))}
       />

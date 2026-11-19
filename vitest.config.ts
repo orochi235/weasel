@@ -78,6 +78,7 @@ const VITE_SERVER_TESTS = [
   'packages/forge/src/vite/plugin.test.ts',
   'packages/forge/src/vite/replacedFile.test.ts',
   'packages/forge/src/vite/watchRecovery.test.ts',
+  'packages/labkit/src/vite/labRoutes.vite.test.ts',
   'packages/prefs/src/vite.test.ts',
   'scripts/vite-prebundle.vite.test.ts',
   'scripts/vite-runner-lazy.vite.test.ts',
@@ -210,7 +211,7 @@ export default defineConfig({
           // A test that mounts a whole lab takes up to ~0.5 s alone and blows the 5 s default under a full fleet run.
           testTimeout: 20_000,
           include: ['packages/labkit/{src,scripts,examples}/**/*.{test,spec}.{ts,tsx}'],
-          exclude: ['**/*.browser.test.{ts,tsx}', '**/node_modules/**'],
+          exclude: [...VITE_SERVER_TESTS, '**/*.browser.test.{ts,tsx}', '**/node_modules/**'],
         },
       },
       {

@@ -96,6 +96,13 @@ marking the open one by the location, or by `path` when given; picking another
 opens it. Keep the list in one module every page imports, so no page lacks one
 the others offer.
 
+The menu's links leave out `.html`: `snap.html` links to `snap`, and
+`index.html` to `./`. Add `labRoutes()` to the Vite config so the dev and
+preview servers answer those URLs with the page; without it, a module whose
+name matches the page's (`snap.tsx` beside `snap.html`) answers instead. A
+static host serving the build has to map `/snap` to `snap.html` too, as GitHub
+Pages and Netlify do.
+
 ```tsx
 const PAGES = [
   { href: './', label: 'Segmento' },
@@ -103,6 +110,13 @@ const PAGES = [
 ];
 
 <Lab instruments={[snap]} title="segmento snap" pages={PAGES} />;
+```
+
+```ts
+// vite.config.ts
+import { labRoutes } from '@weasel-js/labkit/vite';
+
+export default defineConfig({ plugins: [react(), labRoutes()] });
 ```
 
 ### Presenting a lab
@@ -698,7 +712,7 @@ directly. Several expose more than the root does, `/state` most of all.
 
 | Subpath | |
 | --- | --- |
-| `@weasel-js/labkit` | Everything but `/loupe`, `/overview`, `/dragdrop`, and `/weasel-canvas` |
+| `@weasel-js/labkit` | Everything but `/loupe`, `/overview`, `/dragdrop`, `/weasel-canvas`, and `/vite` |
 | `/styles.css` | The one stylesheet |
 | `/primitives` | PersistedFloatingPanel, Split, JobProgress |
 | `/chrome` | Regions, contribution types, built-in contributions |
@@ -715,6 +729,7 @@ directly. Several expose more than the root does, `/state` most of all.
 | `/undo` | The `undo` capability's type |
 | `/dragdrop` | `<Palette>`, `<DragGhost>`, `useDragDrop`. Not in the root barrel |
 | `/weasel-canvas` | Scene-view and minimap passthroughs from `@weasel-js/core` and `@weasel-js/minimap`. Not in the root barrel |
+| `/vite` | `labRoutes()`, the Vite plugin serving each page at its URL without `.html`. Node only, and needs `vite` installed |
 
 ## Development
 

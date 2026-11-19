@@ -53,6 +53,7 @@ const entries: Record<string, string> = {
   'surface/index': 'src/surface/index.ts',
   'job/index': 'src/job/index.ts',
   'overview/index': 'src/overview/index.ts',
+  'vite/index': 'src/vite/index.ts',
 };
 
 const input = Object.fromEntries(

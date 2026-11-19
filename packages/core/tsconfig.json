@@ -121,6 +121,7 @@
       "@weasel-js/labkit/weasel-canvas": ["../labkit/src/passthrough/weasel-canvas.ts"],
       "@weasel-js/labkit/styles.css": ["../labkit/src/styles.dev.ts"],
       "@weasel-js/labkit/loupe": ["../labkit/src/loupe/index.ts"],
+      "@weasel-js/labkit/vite": ["../labkit/src/vite/index.ts"],
       "@weasel-js/labkit/testing/*": ["../labkit/src/testing/*"],
       "@weasel-js/loupe": ["../loupe/src/index.ts"],
       "@weasel-js/measure": ["../measure/src/index.ts"],

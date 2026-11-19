@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { LabShell } from './LabShell';
-import { currentPage, LabSwitcher } from './LabSwitcher';
+import { currentPage, extensionlessHref, LabSwitcher } from './LabSwitcher';
 
 const PAGES = [
   { href: '/corpus', label: 'Wall' },
@@ -184,5 +184,48 @@ describe('<LabShell> with pages', () => {
     render(<LabShell title="corpus stats">body</LabShell>);
     expect(screen.getByRole('heading', { name: 'corpus stats' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /corpus stats/ })).toBeNull();
+  });
+});
+
+describe('extensionlessHref', () => {
+  it('drops a trailing .html, keeping the query and hash', () => {
+    expect(extensionlessHref('fastmoney.html')).toBe('fastmoney');
+    expect(extensionlessHref('./lab/snap.html')).toBe('./lab/snap');
+    expect(extensionlessHref('/stats.html?kind=base#top')).toBe('/stats?kind=base#top');
+  });
+
+  it('turns an index.html into its directory', () => {
+    expect(extensionlessHref('index.html')).toBe('./');
+    expect(extensionlessHref('./index.html')).toBe('./');
+    expect(extensionlessHref('../index.html?x=1')).toBe('../?x=1');
+    expect(extensionlessHref('/lab/index.html')).toBe('/lab/');
+    expect(extensionlessHref('/reindex.html')).toBe('/reindex');
+  });
+
+  it('leaves alone an href with no .html, a hash route, and another origin', () => {
+    for (const href of [
+      './',
+      'snap',
+      '/corpus',
+      '#/dev/tools',
+      'notes.html.txt',
+      'https://elsewhere.invalid/a.html',
+      '//elsewhere.invalid/a.html',
+    ]) {
+      expect(extensionlessHref(href)).toBe(href);
+    }
+  });
+
+  it('is what the switcher links to, while the open page still matches', () => {
+    const pages = [
+      { href: './', label: 'Board' },
+      { href: 'fastmoney.html', label: 'Fast money' },
+    ];
+    render(<LabSwitcher title="gg" pages={pages} path="/fastmoney" />);
+    fireEvent.click(screen.getByRole('button', { name: /gg/ }));
+    const fast = screen.getByRole('menuitem', { name: 'Fast money' });
+    expect(fast).toHaveAttribute('href', 'fastmoney');
+    expect(fast).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('menuitem', { name: 'Board' })).toHaveAttribute('href', './');
   });
 });
