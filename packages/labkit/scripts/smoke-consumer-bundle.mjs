@@ -198,29 +198,44 @@ await writeFile(
   ),
 );
 
-const consumerEntry = join(workDir, 'consumer.mjs');
-await writeFile(
-  consumerEntry,
-  jsEntries
-    .map(
-      (sub, i) => `import * as e${i} from '@weasel-js/labkit${sub === '.' ? '' : sub.slice(1)}';`,
-    )
-    .join('\n') +
-    `\n const all = [${jsEntries.map((_, i) => `e${i}`).join(', ')}];\n` +
-    `if (all.some((m) => !m || typeof m !== 'object')) throw new Error('empty namespace');\n`,
-);
+// Entries a build tool loads in Node rather than an app ships to a browser: they import Node's builtins.
+const NODE_ENTRIES = new Set(['./vite']);
 
-try {
+async function bundleConsumer(name, subpaths, platform) {
+  const entry = join(workDir, `${name}.mjs`);
+  await writeFile(
+    entry,
+    subpaths
+      .map(
+        (sub, i) => `import * as e${i} from '@weasel-js/labkit${sub === '.' ? '' : sub.slice(1)}';`,
+      )
+      .join('\n') +
+      `\n const all = [${subpaths.map((_, i) => `e${i}`).join(', ')}];\n` +
+      `if (all.some((m) => !m || typeof m !== 'object')) throw new Error('empty namespace');\n`,
+  );
   await build({
-    entryPoints: [consumerEntry],
+    entryPoints: [entry],
     bundle: true,
     write: false,
     format: 'esm',
-    platform: 'browser',
+    platform,
     absWorkingDir: workDir,
     logLevel: 'silent',
     external: externals,
   });
+}
+
+try {
+  await bundleConsumer(
+    'consumer',
+    jsEntries.filter((sub) => !NODE_ENTRIES.has(sub)),
+    'browser',
+  );
+  await bundleConsumer(
+    'node-consumer',
+    jsEntries.filter((sub) => NODE_ENTRIES.has(sub)),
+    'node',
+  );
 } catch (err) {
   console.error('[smoke] consumer bundle FAILED — dist emits unresolved specifiers:\n');
   console.error(err.message ?? err);
