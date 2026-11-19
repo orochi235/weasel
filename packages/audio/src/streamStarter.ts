@@ -1,5 +1,6 @@
 import { atAudioTime, type Timers } from './audioTime';
-import type { SourceLike, Starter } from './liveVoice';
+import type { SourceLike, Starter, VoiceOptions } from './liveVoice';
+import { checkSpan } from './param';
 import type { StreamOptions, VoiceHandle } from './types';
 
 /** How `stream` makes its source, and which voice holds each element. */
@@ -88,4 +89,23 @@ export function createStreamStarters(ctx: AudioContext, timers: Timers): StreamS
     },
     streaming: new WeakMap(),
   };
+}
+
+/** `engine.stream`: `media` as a new voice through `launch`, which then stops whatever voice was
+ *  streaming the element. */
+export function restream(
+  streams: StreamStarters,
+  launch: (opts: VoiceOptions, starter: Starter) => VoiceHandle,
+  media: HTMLMediaElement | string,
+  opts: StreamOptions,
+): VoiceHandle {
+  checkSpan('stream offset', opts.offset);
+  const el = streams.element(media, opts);
+  // Launched before the earlier stream stops, so one that throws or drops leaves it playing.
+  // The scheduler starts the new one a microtask later at the soonest, after this stop.
+  const handle = launch(opts, streams.starter(el, opts));
+  if (!handle.isPlaying()) return handle;
+  streams.streaming.get(el)?.stop();
+  streams.streaming.set(el, handle);
+  return handle;
 }

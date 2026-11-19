@@ -115,6 +115,36 @@ describe('engine.stream', () => {
     expect(sources).toHaveLength(1);
   });
 
+  it('keeps the earlier stream playing when a restream names an unknown bus', async () => {
+    const { engine, tick } = await harness();
+    const el = createFakeMediaElement();
+    const first = engine.stream(el as never);
+    tick();
+    expect(() => engine.stream(el as never, { bus: 'musc' })).toThrow(/unknown bus/);
+    tick();
+    expect(first.isPlaying()).toBe(true);
+    expect(el.paused).toBe(false);
+  });
+
+  it('keeps the earlier stream playing when a restream is dropped, and stops it with stop()', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { ctx, engine, tick } = await harness();
+    const el = createFakeMediaElement();
+    const first = engine.stream(el as never);
+    tick();
+    ctx.state = 'suspended';
+    expect(engine.stream(el as never).isPlaying()).toBe(false);
+    ctx.state = 'running';
+    tick();
+    expect(first.isPlaying()).toBe(true);
+    const second = engine.stream(el as never);
+    tick();
+    expect(first.isPlaying()).toBe(false);
+    expect(second.isPlaying()).toBe(true);
+    expect(el.paused).toBe(false);
+    warn.mockRestore();
+  });
+
   it('pauses and unwires on stop', async () => {
     const { engine, sources, tick } = await harness();
     const el = createFakeMediaElement();

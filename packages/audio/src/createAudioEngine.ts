@@ -9,7 +9,7 @@ import { createResumeWatch } from './resumeWatch';
 import { createScheduler } from './scheduler';
 import { createSoundCache, type SoundCache, type SoundHandle } from './soundCache';
 import { checkListener, type SpatialOptions, type SpatialPoint } from './spatialize';
-import { createStreamStarters } from './streamStarter';
+import { createStreamStarters, restream } from './streamStarter';
 import { createSynthStarters } from './synthStarters';
 import { createWorkletVoices } from './worklet/workletVoices';
 import { createTickTimer } from './tickTimer';
@@ -19,7 +19,7 @@ import type {
 import { createChainPool } from './voiceChains';
 import { createDropWarnings, type DropWarnings } from './voiceDrops';
 import { createVoicePool } from './voicePool';
-import { checkVoice, createVoices } from './voices';
+import { createVoices } from './voices';
 
 /** A sound engine: named mix buses, a per-bus voice pool, lookahead
  *  scheduling and 2D or 3D spatialization over one `AudioContext`. Times are engine
@@ -258,16 +258,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       voices.launch(playOpts, bufferStarter(ctx, sounds, warn, sound, playOpts.loop ?? false)),
     playNote: (note) => voices.launch(note, synth.note(note)),
     playNoise: (noise) => voices.launch(noise, synth.noise(noise)),
-    stream(media, streamOpts = {}) {
-      // `launch` reads numbers an untyped caller passed; check them before the earlier stream stops.
-      checkVoice(streamOpts);
-      checkSpan('stream offset', streamOpts.offset);
-      const el = streams.element(media, streamOpts);
-      streams.streaming.get(el)?.stop();
-      const handle = voices.launch(streamOpts, streams.starter(el, streamOpts));
-      streams.streaming.set(el, handle);
-      return handle;
-    },
+    stream: (media, streamOpts = {}) => restream(streams, voices.launch, media, streamOpts),
     schedule(when, fire, key) {
       if (disposed) return;
       scheduler.schedule(when, fire, key);
