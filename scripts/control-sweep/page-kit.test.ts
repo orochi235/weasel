@@ -134,6 +134,21 @@ describe('capture', () => {
     expect(kit().capture('.ckd-demo-frame', slider.id).dom).toEqual(before);
   });
 
+  it('counts a slider’s own number field, its reset button, and Undo lighting up as nothing', () => {
+    page(`
+      <div class="row"><span>Distance</span><input type="range" aria-label="Distance" value="3"><input inputmode="decimal" aria-label="Distance" value="3"><span role="button" aria-label="Reset Distance" hidden></span></div>
+      <div class="row"><input type="range" aria-label="Steps" value="5"></div>
+      <button aria-label="Undo" disabled>↶</button><canvas></canvas>`);
+    const [slider] = kit().discover('.ckd-demo-frame');
+    const before = kit().capture('.ckd-demo-frame', slider.id).dom;
+    (document.querySelectorAll('input')[1] as HTMLInputElement).value = '9';
+    document.querySelector('[aria-label="Reset Distance"]')!.removeAttribute('hidden');
+    document.querySelector('[aria-label=Undo]')!.removeAttribute('disabled');
+    expect(kit().capture('.ckd-demo-frame', slider.id).dom).toEqual(before);
+    (document.querySelectorAll('input')[2] as HTMLInputElement).value = '9';
+    expect(kit().capture('.ckd-demo-frame', slider.id).dom).not.toEqual(before);
+  });
+
   it('normalizes whitespace in text', () => {
     page('<p>a   b</p><canvas></canvas>');
     const before = kit().capture('.ckd-demo-frame', null).dom;

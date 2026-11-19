@@ -19,6 +19,8 @@ export function installSweepKit(win) {
   const MENU_ITEMS = '[role=menuitem],[role=menuitemradio],[role=menuitemcheckbox]';
   const IGNORED_ATTR = /^(data-sweep-[\w-]+|data-(hovered|focused|focus-visible|focus-within|pressed)|tabindex)$/;
   const STATUS = '[aria-live]:not([aria-live=off]),[role=status],[role=log]';
+  // Undo and Redo light up after any edit, a dead one included, so their state says nothing.
+  const HISTORY = '[aria-label=Undo],[aria-label=Redo]';
   const POPUPS = '[role=dialog],[role=alertdialog],[role=menu],[role=listbox],[popover]';
   let nextId = 1;
 
@@ -111,8 +113,19 @@ export function installSweepKit(win) {
    * The box holding the control, its label and its own readout: the highest ancestor holding no other
    * control, no canvas and no status line. Its changes are the control's own and do not count.
    */
+  /** Controls named for the same setting: a slider and its number field, "Distance" and "Reset Distance". */
+  const sameSetting = (el, all) => {
+    const name = nameOf(el).toLowerCase();
+    if (name.length < 3) return [];
+    return all.filter((c) => {
+      if (c === el) return false;
+      const other = nameOf(c).toLowerCase();
+      return other.length >= 3 && (other.includes(name) || name.includes(other));
+    });
+  };
+
   const fieldOf = (el, all, root) => {
-    const peers = new Set(peersOf(el, all));
+    const peers = new Set([...peersOf(el, all), ...sameSetting(el, all)]);
     const g = el.closest(PEER_GROUPS);
     let field = g && root.contains(g) && g !== root ? g : el;
     while (field.parentElement && field.parentElement !== root && root.contains(field.parentElement)) {
@@ -215,7 +228,7 @@ export function installSweepKit(win) {
   const digest = (root, exclude) => {
     const out = {};
     const walk = (el, path) => {
-      if (exclude.includes(el)) return;
+      if (exclude.includes(el) || el.matches(HISTORY)) return;
       const attrs = [...el.attributes].filter((a) => !IGNORED_ATTR.test(a.name)).map((a) => `${a.name}=${a.value}`).sort();
       let s = `${el.tagName}[${attrs.join(' ')}]`;
       for (const n of el.childNodes) {
