@@ -2,6 +2,7 @@ import { boundsOfPath, type Path } from '@weasel-js/geom';
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
 import { isPathLike, isRectPose } from 'core/geometry/autoPoseDescriptor';
+import { unionBounds } from 'core/geometry/unionBounds';
 import { nodeMemo } from 'core/scene/nodeMemo';
 import { PAINT_SLOT } from './memo';
 import { inkReach, inkStroke, pathCommand, pathPaintOf, withAnimatedTrim, withAnimatedVertexColors } from './nodePaint';
@@ -32,8 +33,11 @@ export const PATH_POSE_PAINTER: NodeShapeEntry<unknown, Path> = {
     return { filled: true, ...inkReach(stroke ?? null, ctx?.scale), ...inkStroke(stroke ?? null) };
   },
   bounds: (node, pose, ctx) => poseBoxBounds(boundsOfPath(pose), paintOf(node, ctx?.inherited).stroke ?? null, ctx),
+  // The outline's own box is kept under the stroke's: a trim, a dash or an inner stroke draws less than the outline.
   drawnBounds: (node, pose, ctx) => {
+    const own = boundsOfPath(pose);
     const stroke = paintOf(node, ctx?.inherited).stroke;
-    return stroke ? strokedBounds(pose, stroke, ctx?.scale ?? 1, ctx?.screen) ?? boundsOfPath(pose) : boundsOfPath(pose);
+    const stroked = stroke ? strokedBounds(pose, stroke, ctx?.scale ?? 1, ctx?.screen) : null;
+    return stroked === null ? own : unionBounds([own, stroked]) ?? own;
   },
 };
