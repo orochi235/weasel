@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { createRef } from 'react';
-import type { SceneCanvasApi } from '../../../canvas/SceneCanvas';
+import type { SceneCanvasApi } from '../../../canvas/canvasExtension';
 import { SceneCanvas } from '../../../canvas/SceneCanvas';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
