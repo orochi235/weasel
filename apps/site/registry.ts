@@ -1622,6 +1622,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/TextDomDemo').then((m) => m.TextDomDemo),
     path: 'apps/site/demos/TextDomDemo.tsx',
   },
+  {
+    id: 'text-shaping',
+    title: 'Shaping with HarfBuzz',
+    package: 'text-shaping',
+    description: 'One short word, set twice from the same face: the top line shapes each character on its own, the bottom line shapes the whole word with `loadShaper()`\'s `shape(face, text)`. Each glyph is drawn from `glyphD(face, gid, dx, dy)` as a path on a `<DrawCanvas>`, laid along its `advance` and right to left where the glyph says `rtl`. In कि the vowel sign moves in front of its consonant, क्ष becomes one conjunct glyph, and the Arabic words take their joining forms. The faces are subsets of Noto Sans, fetched as bytes; the counts beside the lines are how many glyphs each holds (Noto draws a dotted Arabic letter as its body and its dots).',
+    hint: 'Switch between the samples and compare the two lines: क्ष shapes to a single glyph, and سلام joins into one word.',
+    load: () => import('./demos/TextShapingDemo').then((m) => m.TextShapingDemo),
+    path: 'apps/site/demos/TextShapingDemo.tsx',
+  },
 ];
 
 export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({
