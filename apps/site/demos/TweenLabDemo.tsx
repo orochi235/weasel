@@ -21,8 +21,8 @@ const FEATURES = [drawPreset, pathsPreset, pathEffectsPreset] as const;
 
 const config = f.schema({
   spaceBy: f.enum('count', ['count', 'distance']).label('Space steps by'),
-  steps: f.number(5).range(0, 24).step(1).label('Steps'),
-  distance: f.number(40).range(4, 200).step(1).label('Distance'),
+  steps: f.number(5).range(0, 24).step(1).label('Steps').showIf({ path: 'spaceBy', is: 'count' }),
+  distance: f.number(40).range(4, 200).step(1).label('Distance').showIf({ path: 'spaceBy', is: 'distance' }),
   autoAlign: f.boolean(true).label('Match start points'),
   startOffset: f.number(0).range(-8, 8).step(1).label('Start offset'),
   direction: f.enum('auto', ['auto', 'forward', 'backward']).label('Second shape runs'),
