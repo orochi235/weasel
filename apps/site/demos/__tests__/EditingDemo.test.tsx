@@ -20,7 +20,7 @@ function click(canvas: Element, x: number, y: number): void {
 }
 
 describe('EditingDemo', () => {
-  it('names a part for each preset drawPreset includes', () => {
+  it('names a part for each preset presets.draw includes', () => {
     render(<EditingDemo />);
     for (const label of ['View', 'Select', 'Move', 'Edit', 'Arrange', 'Pathfinder', 'Ingest']) {
       expect(screen.getByText(label, { selector: 'dt' })).toBeTruthy();

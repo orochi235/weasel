@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { SceneCanvas } from '@weasel-js/core';
 import { DevtoolsPanel, createInPagePanelTransport } from '@weasel-js/devtools';
 import { devtools } from '@weasel-js/devtools/hook';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 import { DemoStage } from './DemoStage';
 import s from './DevtoolsDemo.module.css';
 
@@ -28,7 +28,7 @@ export function DevtoolsDemo() {
           className="ckd-canvas"
           aria-label="Devtools demo canvas"
           scene={SCENE}
-          features={[pickPreset, movePreset]}
+          features={[presets.pick, presets.move]}
           ambient={AMBIENT}
         />
       </DemoStage>

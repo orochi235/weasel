@@ -3,7 +3,8 @@ import { type Fill, pathNode, SceneCanvas, type Stroke, useScene } from '@weasel
 import type { ExportRegion, ExportScene } from '@weasel-js/export';
 import { solid } from '@weasel-js/paint';
 import { exportRegionsPdf } from '@weasel-js/pdf/export';
-import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
 import { DownloadLink } from './DownloadLink';
@@ -64,7 +65,7 @@ export function PdfDemo() {
           backgroundFill={{ color: '#ffffff' }}
           scene={scene}
           selection={selection}
-          features={[pickPreset, movePreset]}
+          features={[presets.pick, presets.move]}
         />
       </DemoStage>
     </div>

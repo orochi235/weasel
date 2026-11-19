@@ -1,6 +1,8 @@
 import { pathNode, SceneCanvas, useScene, WeaselProvider } from '@weasel-js/core';
 import { solid } from '@weasel-js/paint';
-import { drawPreset, EDIT_GROUP, KIT_TOOL_IDS, PATHFINDER_GROUP, useSelection } from '@weasel-js/editing';
+import { KIT_TOOL_IDS, useSelection } from '@weasel-js/editing';
+import * as groups from '@weasel-js/editing/groups';
+import * as presets from '@weasel-js/editing/presets';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
@@ -14,7 +16,7 @@ const SHAPES = [
   pathNode('c', 'M400 60 L480 230 H320 Z', { fill: { paint: solid('#a48bd4') } }),
 ];
 
-/** What each preset `drawPreset` includes adds, by its id. */
+/** What each preset `presets.draw` includes adds, by its id. */
 const PARTS: Record<string, string> = {
   view: 'pans and zooms the view: the hand tool, a middle-button drag, and a pinch.',
   select: 'click, marquee, or lasso to select; a double-click enters a group.',
@@ -39,8 +41,8 @@ export function EditingDemo() {
         <div className="ckd-toolbar">
           <ToolPalette orientation="horizontal" />
           <ActionBar group="history" />
-          <ActionBar group={EDIT_GROUP} />
-          <ActionBar group={PATHFINDER_GROUP} />
+          <ActionBar group={groups.edit} />
+          <ActionBar group={groups.pathfinder} />
         </div>
         <DemoStage width={W} height={H}>
           <SceneCanvas
@@ -48,12 +50,12 @@ export function EditingDemo() {
             backgroundFill={{ color: '#ffffff' }}
             scene={scene}
             selection={selection}
-            features={[drawPreset]}
+            features={[presets.draw]}
             defaultTools={KIT_TOOL_IDS}
           />
         </DemoStage>
         <dl className={s.parts}>
-          {drawPreset.includes?.map((p) => (
+          {presets.draw.includes?.map((p) => (
             <div key={p.id} className={s.part}>
               <dt>{p.label}</dt>
               <dd>{PARTS[p.id]}</dd>

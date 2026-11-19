@@ -5,7 +5,8 @@ import { exportFormatRegistry, exportFormats, exportRegions, selectionRegion, ty
 import { registerSvgExport } from '@weasel-js/svg';
 import { Button } from '@weasel-js/ui/components/Button';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
-import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 import { DemoStage } from './DemoStage';
 import { DownloadLink } from './DownloadLink';
 import s from './ExportDemo.module.css';
@@ -74,7 +75,7 @@ export function ExportDemo() {
           backgroundFill={{ color: '#ffffff' }}
           scene={scene}
           selection={selection}
-          features={[pickPreset, movePreset]}
+          features={[presets.pick, presets.move]}
         />
       </DemoStage>
     </div>
