@@ -1,3 +1,4 @@
+import { passesOf, placeOf } from './place';
 import type { Clock, ClockHandle, ClockPosition } from './types';
 
 /** The time `clock` shows within its pass: its origin plus how far it stands into
@@ -10,7 +11,9 @@ export function shownInPass(clock: Pick<Clock, 'origin' | 'elapsed' | 'duration'
 
 /** A clock held at a time its span may not reach yet. */
 export interface PlayheadHold {
-  /** The held time while the clock stands elsewhere (clamped), else null. */
+  /** The time the hold waits for while the clock stands elsewhere, else null:
+   *  `holdAt`'s shown time as asked, unclamped, and `holdPosition`'s elapsed on
+   *  the clock's current span. */
   pending(): number | null;
   /** Stop holding. Idempotent. */
   release(): void;
@@ -20,7 +23,7 @@ export interface PlayheadHold {
  * Pauses `handle`'s clock at `shown`, a time shown within a pass (`null`: the
  * span's start), placed in the first pass, and keeps seeking there as `declare`
  * or a `duration` write moves the span. A time past the pass's end waits at it.
- * Any other change (a rate, a seek of someone else's) releases the hold. A
+ * Any other change (a rate, a ramp, a seek of someone else's) releases the hold. A
  * clock that is not seekable is never held.
  */
 export function holdAt(handle: ClockHandle, shown: number | null): PlayheadHold {
@@ -63,9 +66,13 @@ function elapsedOn(clock: Clock, at: HeldPosition): [elapsed: number, line: Line
   if (from === clock.duration && origin === clock.origin) return [at.elapsed, line];
   if (!Number.isFinite(from) || !Number.isFinite(clock.duration))
     return [at.elapsed + origin - clock.origin, line];
-  let pass = Math.floor(at.elapsed / from);
+  // Split as the clock splits its own elapsed, so a quotient that rounds up a pass does not land a pass off.
+  let { pass } = placeOf(at.elapsed, from, Number.POSITIVE_INFINITY, false);
   let into = at.elapsed - pass * from;
-  if (at.passEnd && into === 0 && pass > 0) {
+  // A record of an ended run carries no `passEnd`: the clock reads the run's end as the end of its last pass.
+  const passes = passesOf(clock.loop);
+  const ended = Number.isFinite(passes) && at.elapsed === from * passes;
+  if ((at.passEnd || ended) && into === 0 && pass > 0) {
     pass -= 1;
     into = from;
   }
@@ -84,7 +91,7 @@ function holdWhere(
   const { clock } = handle;
   let released = false;
   let busy = false;
-  let unsub: (() => void) | null = null;
+  let unsubs: (() => void)[] = [];
   let duration = clock.duration;
   let origin = clock.origin;
   let loop = clock.loop;
@@ -92,8 +99,8 @@ function holdWhere(
 
   const release = (): void => {
     released = true;
-    unsub?.();
-    unsub = null;
+    for (const off of unsubs) off();
+    unsubs = [];
   };
 
   const place = (): void => {
@@ -114,12 +121,18 @@ function holdWhere(
   } else {
     clock.rate = 0;
     place();
-    unsub = clock.subscribe(() => {
-      if (busy || released) return;
-      if (clock.rate !== 0) release();
-      else if (clock.duration !== duration || clock.origin !== origin || clock.loop !== loop) place();
-      else if (clock.elapsed !== set) release();
-    });
+    unsubs = [
+      clock.subscribe(() => {
+        if (busy || released) return;
+        if (clock.rate !== 0) release();
+        else if (clock.duration !== duration || clock.origin !== origin || clock.loop !== loop) place();
+        else if (clock.elapsed !== set) release();
+      }),
+      // A ramp off 0 notifies with the rate still 0 and moves the clock only in frames, which notify nothing.
+      handle.onFrame(() => {
+        if (!released && clock.elapsed !== set) release();
+      }),
+    ];
   }
 
   return {

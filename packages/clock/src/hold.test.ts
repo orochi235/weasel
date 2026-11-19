@@ -34,6 +34,18 @@ describe('holdAt', () => {
     h.declare({ duration: 3000 });
     expect(h.clock.elapsed).toBe(1000);
   });
+  it('releases on a ramp off 0, so a later declare does not snap the playing clock back', () => {
+    const h = createClock({ duration: 1000 });
+    const hold = holdAt(h, 500);
+    h.clock.ramp(1, 400);
+    h.clock.sync(0);
+    h.clock.sync(100);
+    expect(h.clock.elapsed).toBeGreaterThan(500);
+    expect(hold.pending()).toBeNull();
+    const at = h.clock.elapsed;
+    h.declare({ duration: 1000 });
+    expect(h.clock.elapsed).toBe(at);
+  });
   it('releases on a seek by someone else', () => {
     const h = createClock({ duration: 1000 });
     const hold = holdAt(h, 2500);
@@ -139,6 +151,25 @@ describe('holdPosition', () => {
     h.declare({ duration: 1000, loop: 3 });
     expect([h.clock.elapsed, h.clock.pass]).toEqual([2500, 2]);
     expect(hold.pending()).toBeNull();
+  });
+  it('splits a recorded position into its pass as the clock does, where the quotient rounds up a pass', () => {
+    // 54.91…/0.8448… rounds to 65, though 65 passes of 0.8448… run past 54.91…: it stands near the end of pass 64.
+    const from = 0.8448756034500764;
+    const h = createClock({ duration: 2 * from, loop: true });
+    holdPosition(h, { elapsed: 54.91691422425496, duration: from, origin: 0.5 });
+    expect(h.clock.pass).toBe(64);
+    expect(h.clock.elapsed).toBeCloseTo(64 * 2 * from + 0.5 + from, 9);
+  });
+  it('reads a recorded ended run as the end of its last pass under another span', () => {
+    const once = createClock({ duration: 2000 });
+    holdPosition(once, { elapsed: 1000, duration: 1000 });
+    expect([once.clock.elapsed, once.clock.pass, once.clock.phase]).toEqual([1000, 0, 0.5]);
+    const twice = createClock({ duration: 2000, loop: 2 });
+    holdPosition(twice, { elapsed: 2000, duration: 1000 });
+    expect([twice.clock.elapsed, twice.clock.pass]).toEqual([3000, 1]);
+    const moved = createClock({ duration: 1000, origin: 0 });
+    holdPosition(moved, { elapsed: 1000, origin: 200 });
+    expect(moved.clock.elapsed).toBe(1000);
   });
   it('converts a position recorded under another span, keeping its pass', () => {
     const h = createClock({ duration: 2000, loop: 3 });

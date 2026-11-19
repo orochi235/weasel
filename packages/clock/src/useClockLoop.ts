@@ -123,10 +123,13 @@ export function useClockLoop(
     const attach = (): void => {
       for (const off of unwakes) off();
       unwakes = [];
+      const before = new Set(entries.current.map((e) => e.handle));
       entries.current = entriesOf(registry);
       syncObserved(entries.current, observer.current, seen.current, named.current);
       for (const { handle } of entries.current) {
         const { clock } = handle;
+        // Unsynced while it was away, so the time since its last sync does not count.
+        if (!before.has(handle)) clock.rebase();
         unwakes.push(clock.onWake(() => loop.request()));
         if (!clock.inert) loop.request();
       }

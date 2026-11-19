@@ -11,7 +11,10 @@ export interface ClockSpec {
   /** The rate it opens at; `0`, the default, opens paused. */
   rate?: number;
   /** Where a new run opens, in ms, clamped to the run; `'end'` is the end of
-   *  its last pass. Default `0`. A reopened run opens where it stood. */
+   *  its last pass. Default `0`. A reopened run opens where it stood. `'end'`
+   *  needs a run that ends: opening such a clock endless, or a `duration`,
+   *  `loop`, `declare` or `override` that would make it endless, throws a
+   *  `RangeError`. */
   start?: number | 'end';
   /** The time `elapsed` 0 is shown as, in ms. Display only: nothing in the
    *  run moves with it. Default `0`. */

@@ -2670,3 +2670,13 @@ Calls the lanes made without a ruling:
   call) throws a `RangeError` otherwise, on both voice paths. A buffer or noise voice still takes 0 and a negative
   rate, which a buffer source plays as held or backwards, and a worklet noise voice now plays backwards too. Reading a
   note's 0 as silence, as the kernel did, was the alternative.
+## Audit round thirty-eight (2026-11-18): clock
+
+- 2026-11-18 (the fixer's call): a clock declared `start: 'end'` refuses, with a `RangeError`, any change that would
+  make its run endless — a `duration` or `loop` write, `declare`, `override` — and opening such a clock endless
+  from a recorded position throws as creating one does. `reset` could not place it otherwise. labkit's transport
+  loop toggle on such a trial now throws from its handler where `reset` threw later. Letting the write through and
+  having `reset` open an endless `'end'` run at 0 was the alternative.
+- 2026-11-18 (the fixer's call): a clock registration another under its id shadows is still held: the registry's
+  `all()` and `targets()` list it, so `useClockLoop` keeps driving and gating it and a lab's still holds it.
+  Freezing a shadowed clock until it comes back, and rebasing it then, was the alternative.
