@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
+import { createRef } from 'react';
+import type { SceneCanvasApi } from '../../../canvas/SceneCanvas';
 import { SceneCanvas } from '../../../canvas/SceneCanvas';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
@@ -26,15 +28,20 @@ interface DragOptions {
   features?: readonly FeaturePreset[];
   /** `PointerEvent.button` of the press. */
   button?: number;
+  /** Hold Shift through the drag. */
+  shift?: boolean;
+  /** Register chrome that claims every press exclusively. */
+  claim?: boolean;
 }
 
 /** Mount a canvas, drag 30px right and 20px down, and return the last view it
  *  reported and whether the press was default-prevented. */
-function drag(ambient: Contribution[], { features = [viewPreset], button = 0 }: DragOptions = {}): { view: View; prevented: boolean } {
+function drag(ambient: Contribution[], { features = [viewPreset], button = 0, shift = false, claim = false }: DragOptions = {}): { view: View; prevented: boolean } {
   const scene = createScene<unknown, 'main', { x: number; y: number }>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   let last = START;
+  const ref = createRef<SceneCanvasApi>();
   const { container } = render(
-    <SceneCanvas features={features}
+    <SceneCanvas features={features} ref={ref}
       scene={scene}
       layers={{}}
       width={200}
@@ -44,11 +51,18 @@ function drag(ambient: Contribution[], { features = [viewPreset], button = 0 }: 
       ambient={ambient}
     />,
   );
+  if (claim) {
+    act(() => {
+      ref.current!.registerLayer({
+        id: 'chrome', label: 'chrome', space: 'screen', draw: () => [], hitTest: () => ({ strength: 'exclusive' }),
+      });
+    });
+  }
   const canvas = container.querySelector('canvas')!;
   const fire = (type: string, x: number, y: number) => {
     const ev = new PointerEvent(type, {
       bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 1, isPrimary: true,
-      button: type === 'pointermove' ? -1 : button,
+      button: type === 'pointermove' ? -1 : button, shiftKey: shift,
     });
     canvas.dispatchEvent(ev);
     return ev;
@@ -96,6 +110,16 @@ describe('middle-button drag', () => {
 
   it('does not take a primary drag', () => {
     expect(drag([]).view).toEqual(START);
+  });
+
+  it('pans with a modifier held, as the hand tool does', () => {
+    const { view } = drag([], { button: 1, shift: true });
+    expect([view.x, view.y]).toEqual([-30, -20]);
+  });
+
+  it('pans over chrome that claims the press exclusively', () => {
+    const { view } = drag([], { button: 1, claim: true });
+    expect([view.x, view.y]).toEqual([-30, -20]);
   });
 
   it('leaves the right button alone', () => {
