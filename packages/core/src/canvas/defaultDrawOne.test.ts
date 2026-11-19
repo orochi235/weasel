@@ -137,4 +137,11 @@ describe('defaultDrawOne', () => {
     const cmds = defaultDrawOne(n, POSE, undefined, { resolveImage: () => bmp });
     expect(cmds[0]).toMatchObject({ kind: 'image', image: bmp });
   });
+  it('anchors the label on the bounds of a polygon pose, and draws none on a pose with no place', () => {
+    const polygon = { kind: 'polygon' as const, commands: [0, 1, 1, 4], coords: [30, 40, 90, 40, 60, 80] };
+    const cmds = defaultDrawOne(node({ label: 'P' }), polygon as never);
+    const label = cmds.find((c) => c.kind === 'text') as TextDrawCommand;
+    expect([label.x, label.y]).toEqual([36, 54]);
+    expect(defaultDrawOne(node({ label: 'P' }), { a: 1 } as never).some((c) => c.kind === 'text')).toBe(false);
+  });
 });

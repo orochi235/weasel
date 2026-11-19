@@ -14,7 +14,8 @@ import { findNodeShape, findShapeBounds, type NodePaintCtx } from './NodeShape';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { overChildren } from './overChildren';
 import { INHERIT } from '@weasel-js/paint';
-import { poseFrameOf } from '@weasel-js/geom';
+import { boundsOfPath, poseFrameOf } from '@weasel-js/geom';
+import { isPathLike } from 'core/geometry/autoPoseDescriptor';
 import { pixelScaleCtx } from './pixelScale';
 import { groupBoxBounds, paintGroupBox } from './nodeShapes/groupBoxPainter';
 
@@ -41,15 +42,16 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
 
   // Label overlay — skipped for text nodes (their content is the label).
   const data = node.data as { label?: string; text?: string } | null;
-  if (data?.label && data.text == null) {
-    const p = pose as unknown as { x: number; y: number };
+  const text = data?.label && data.text == null ? data.label : undefined;
+  const p = text ? labelAnchorOf(pose) : null;
+  if (text && p !== null) {
     // Copy rather than `push`. A painter's return value is not ours to grow:
     // one that memoizes its command list — which is the point of caching
     // `paint` — would gain another label command on every frame, forever.
     const label = textCommandFromRuns(
       p.x + 6,
       p.y + 14,
-      [{ text: data.label, fill: { paint: { kind: 'solid', color: 'rgba(0,0,0,0.7)' } } }],
+      [{ text, fill: { paint: { kind: 'solid', color: 'rgba(0,0,0,0.7)' } } }],
       { fontFamily: 'sans-serif', fontSize: 11 },
     );
     // A container's children would cover a label drawn with the container.
@@ -60,6 +62,14 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
   // the scene walks and the preview-ghost layer, so that consumer-supplied painters get
   // them too.
   return primary;
+}
+
+/** Where a label's box starts: the pose's own `x`/`y`, or a `Path` pose's bounds' corner.
+ *  `null` for a pose with neither, which gets no label rather than one at NaN. */
+function labelAnchorOf(pose: unknown): { x: number; y: number } | null {
+  const r = pose as { x?: unknown; y?: unknown } | null;
+  if (r && typeof r === 'object' && typeof r.x === 'number' && typeof r.y === 'number') return { x: r.x, y: r.y };
+  return isPathLike(pose) ? boundsOfPath(pose) : null;
 }
 
 /**
