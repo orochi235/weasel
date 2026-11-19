@@ -114,7 +114,8 @@ export interface FeaturePreset {
   /** The selection chrome that is drawn, and can be grabbed, only while it is on. */
   readonly chrome?: readonly ChromeId[];
   /** Default chrome-caps rules for chrome of its own, under the consumer's
-   *  `chromeVisibility`: a mark it draws only on request, say. */
+   *  `chromeVisibility`: a mark it draws only on request, say. Of two presets giving one chrome id different
+   *  rules, the one refining the other wins; two where neither refines the other throw. */
   readonly chromeRules?: VisibilityRules;
   /** What it adds to path edit: marks, grabbable parts, what an edit keeps
    *  true. Consulted in preset order. */
@@ -374,10 +375,13 @@ export function presetContributions(enabled: EnabledPresets): SurfaceContributio
 
 /** The enabled presets' own `chromeRules`, then rules hiding each chrome id
  *  in `owned` that no enabled preset turns on. `never` also takes a handle out
- *  of hit-testing, so a hidden one cannot be grabbed. */
+ *  of hit-testing, so a hidden one cannot be grabbed. Of two presets giving one
+ *  chrome id different rules, the one refining the other wins; two where neither
+ *  refines the other throw. */
 export function presetChromeRules(enabled: EnabledPresets, owned: readonly ChromeId[]): VisibilityRules {
   const on = new Set(enabled.presets.flatMap((p) => p.chrome ?? []));
-  const rules: VisibilityRules = Object.assign({}, ...enabled.presets.map((p) => p.chromeRules ?? {}));
+  const rules: VisibilityRules = mergeByKey(
+    enabled.presets.map((p) => ({ preset: p.id, values: p.chromeRules })), enabled.refines, 'a chrome rule for');
   for (const id of owned) if (!on.has(id)) rules[id] = never;
   return rules;
 }
