@@ -56,6 +56,13 @@ describe("synthVoices: 'worklet'", () => {
     }]);
   });
 
+  it("refuses a note's rate that is not above 0, as a note on nodes does", async () => {
+    const { engine, posted } = await harness();
+    const v = engine.playNote({ pitch: 'A4' });
+    expect(() => v.setRate(0)).toThrow(RangeError);
+    expect(posted('retune')).toHaveLength(0);
+  });
+
   it('runs one processor per bus, wired into that bus', async () => {
     const { engine, worklet } = await harness();
     engine.playNote({ pitch: 440 });

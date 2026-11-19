@@ -1,4 +1,5 @@
 import type { Booking, LiveVoice, SourceLike, Starter } from '../liveVoice';
+import { checkNoteRate } from '../patchCheck';
 import { checkNoise, resolveNote } from '../synthVoice';
 import type { NoiseOptions, NoteOptions } from '../types';
 import type { VoiceOut } from '../voiceChains';
@@ -96,11 +97,13 @@ export function createWorkletVoices(
    *  source when the scheduler fires. */
   const starter = (
     event: (voice: LiveVoice, at: number, level: number, pan: number) => ToProcessor,
+    checkRate?: (rate: number) => void,
   ): Starter => {
     let source: WorkletSource | null = null;
     let post: (e: ToProcessor) => void = () => {};
     return {
       ready: () => true,
+      checkRate,
       book(voice, at): Booking {
         const bus = ensureBus(at.bus);
         post = (e) => { bus.node.port.postMessage(e); };
@@ -131,7 +134,7 @@ export function createWorkletVoices(
       };
       return starter((voice, at, level, pan) => ({
         kind: 'note', id: voice.id, at, level, pan, rate: voice.rate, detune: voice.detune, patch,
-      }));
+      }), checkNoteRate);
     },
     noise(noise) {
       checkNoise(noise);

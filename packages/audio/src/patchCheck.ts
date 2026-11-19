@@ -72,3 +72,8 @@ const NOISE_COLORS = new Set<string>(['white', 'pink', 'brown']);
 export function checkNoiseColor(color: NoiseColor): void {
   if (!NOISE_COLORS.has(color)) fail(`"${color}" is not a noise color: one of white, pink, brown`);
 }
+
+/** Throws on a note's rate that is not above 0: its pitch is multiplied by it. */
+export function checkNoteRate(rate: number): void {
+  if (!(rate > 0)) fail(`a note's rate is above 0, not ${rate}`);
+}

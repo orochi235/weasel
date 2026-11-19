@@ -2663,3 +2663,7 @@ Calls the lanes made without a ruling:
   `playNote`/`playNoise` (and the kernels) throw a `RangeError`; an envelope's or filter's number that is not finite
   throws too. A negative envelope time or an out-of-range sustain is still clamped. Clamping a negative duration to 0
   was the alternative.
+- 2026-11-18 (the fixer's call): a `playNote` voice's rate must be above 0: `setRate` (and an untyped `rate` at the
+  call) throws a `RangeError` otherwise, on both voice paths. A buffer or noise voice still takes 0 and a negative
+  rate, which a buffer source plays as held or backwards, and a worklet noise voice now plays backwards too. Reading a
+  note's 0 as silence, as the kernel did, was the alternative.

@@ -55,7 +55,8 @@ export interface VoiceHandle {
   release(): void;
   /** Throws a `RangeError` on a value or ramp that is not finite. */
   setGain(value: number, rampMs?: number): void;
-  /** Playback rate. Applies to a voice booked for a future `when` too. */
+  /** Playback rate. Applies to a voice booked for a future `when` too. Throws a
+   *  `RangeError` on a value that is not finite, or not above 0 for a `playNote` voice. */
   setRate(value: number): void;
   /** Detune in cents. Applies to a voice booked for a future `when` too. */
   setDetune(cents: number): void;
