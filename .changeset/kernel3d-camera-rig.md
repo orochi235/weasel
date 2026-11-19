@@ -2,7 +2,7 @@
 '@weasel-js/kernel3d': minor
 ---
 
-`createCameraRigContribution(camera3d)` puts an orbit camera on a `<SceneCanvas>` as one ambient entry, with its wheel dolly, pinch, and double-click home.
+`createCameraRigContribution(camera3d)` puts an orbit camera on a `<SceneCanvas>` as one ambient entry, with dolly, pinch and home.
 
 ```tsx
 const rig = useMemo(() => createCameraRigContribution(createCameraDep(world, { set: setCamera })), [world]);

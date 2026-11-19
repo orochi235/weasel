@@ -2,7 +2,7 @@
 '@weasel-js/minimap': major
 ---
 
-The minimap's action factories are `createMinimapCenterAction`, `createMinimapPanAction` and `createMinimapZoomAction`, spelled like the other action factories.
+The minimap's action factories are `createMinimapCenterAction`, `createMinimapPanAction` and `createMinimapZoomAction`.
 
 This is a breaking rename: `minimapCenterAction`, `minimapPanAction` and `minimapZoomAction` are gone, with no alias. Their arguments and the action ids they register are unchanged.
 

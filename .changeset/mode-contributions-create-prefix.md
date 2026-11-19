@@ -3,7 +3,7 @@
 '@weasel-js/routing': major
 ---
 
-The mode contribution factories are `createModeTriggersContribution` and `createModeShortcutsContribution`, spelled like the other contribution factories.
+The mode contribution factories are `createModeTriggersContribution` and `createModeShortcutsContribution`.
 
 This is a breaking rename: `modeTriggers` (core) and `modeShortcuts` (routing, re-exported by core) are gone, with no alias. Their arguments are unchanged.
 
