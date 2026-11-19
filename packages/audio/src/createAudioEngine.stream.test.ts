@@ -102,6 +102,19 @@ describe('engine.stream', () => {
     expect(el.paused).toBe(false);
   });
 
+  it('refuses an offset that is negative or not finite, and keeps the earlier stream playing', async () => {
+    const { engine, sources, tick } = await harness();
+    const el = createFakeMediaElement();
+    const first = engine.stream(el as never);
+    tick();
+    for (const offset of [Number.NaN, Number.POSITIVE_INFINITY, -1]) {
+      expect(() => engine.stream(el as never, { offset })).toThrow(RangeError);
+    }
+    tick();
+    expect(first.isPlaying()).toBe(true);
+    expect(sources).toHaveLength(1);
+  });
+
   it('pauses and unwires on stop', async () => {
     const { engine, sources, tick } = await harness();
     const el = createFakeMediaElement();

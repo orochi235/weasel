@@ -173,7 +173,8 @@ export interface NoiseOptions extends NoisePatch, Omit<PlayOptions, 'loop'> {
  *   voice — give music a bus of its own.
  */
 export interface StreamOptions extends Omit<PlayOptions, 'when' | 'detune'> {
-  /** Where to start, in ms into the media. Default: wherever the element is. */
+  /** Where to start, in ms into the media. Default: wherever the element is. Throws on one that
+   *  is negative or not finite. */
   offset?: number;
   /** Set on an element made from a URL. A cross-origin URL needs CORS and
    *  `'anonymous'`, or the graph receives silence. */

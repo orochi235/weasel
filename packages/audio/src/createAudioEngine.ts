@@ -4,6 +4,7 @@ import { createBusGraph, type BusHandle } from './buses';
 import { createAudioGraph, disposeNow } from './graph/createAudioGraph';
 import type { AudioGraph, AudioGraphOptions } from './graph/types';
 import type { Slots, Starter } from './liveVoice';
+import { checkSpan } from './param';
 import { createResumeWatch } from './resumeWatch';
 import { createScheduler } from './scheduler';
 import { createSoundCache, type SoundCache, type SoundHandle } from './soundCache';
@@ -260,6 +261,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     stream(media, streamOpts = {}) {
       // `launch` reads numbers an untyped caller passed; check them before the earlier stream stops.
       checkVoice(streamOpts);
+      checkSpan('stream offset', streamOpts.offset);
       const el = streams.element(media, streamOpts);
       streams.streaming.get(el)?.stop();
       const handle = voices.launch(streamOpts, streams.starter(el, streamOpts));
