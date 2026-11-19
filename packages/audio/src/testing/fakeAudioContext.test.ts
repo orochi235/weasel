@@ -9,6 +9,18 @@ describe('createFakeAudioContext', () => {
     expect(ctx.state).toBe('running');
   });
 
+  it('rejects resume, suspend and close once closed, and stays closed', async () => {
+    const ctx = createFakeAudioContext();
+    await ctx.close();
+    const seen = vi.fn();
+    ctx.addEventListener('statechange', seen);
+    await expect(ctx.resume()).rejects.toThrow(/InvalidStateError/);
+    await expect(ctx.suspend()).rejects.toThrow(/InvalidStateError/);
+    await expect(ctx.close()).rejects.toThrow(/InvalidStateError/);
+    expect(ctx.state).toBe('closed');
+    expect(seen).not.toHaveBeenCalled();
+  });
+
   it('advances the clock in seconds when told milliseconds', () => {
     const ctx = createFakeAudioContext();
     ctx._advance(500);
@@ -55,6 +67,42 @@ describe('createFakeAudioContext', () => {
     expect(a.connectedFrom).toEqual([]);
   });
 
+  it('ignores a second connection between the same pair, as the specification does', () => {
+    const ctx = createFakeAudioContext();
+    const a = ctx.createGain();
+    const b = ctx.createGain();
+    a.connect(b);
+    a.connect(b);
+    expect(a.connectedTo).toEqual([b]);
+    expect(b.connectedFrom).toEqual([a]);
+    a.disconnect(b);
+    expect(a.connectedTo).toEqual([]);
+    expect(b.connectedFrom).toEqual([]);
+  });
+
+  it('leaves the disconnected flag down when a targeted disconnect throws', () => {
+    const ctx = createFakeAudioContext();
+    const a = ctx.createGain();
+    expect(() => a.disconnect(ctx.createGain())).toThrow(/InvalidAccessError/);
+    expect(a.disconnected).toBe(false);
+  });
+
+  it('throws for a channel a buffer does not have, as the specification does', () => {
+    const ctx = createFakeAudioContext();
+    const b = ctx.createBuffer(1, 10, 48000);
+    expect(b.getChannelData(0)).toHaveLength(10);
+    expect(() => b.getChannelData(1)).toThrow(/IndexSizeError/);
+    expect(() => b.getChannelData(-1)).toThrow(/IndexSizeError/);
+  });
+
+  it('refuses a buffer sample rate that is not positive and finite', () => {
+    const ctx = createFakeAudioContext();
+    expect(() => ctx.createBuffer(1, 10, 0)).toThrow(/NotSupportedError/);
+    expect(() => ctx.createBuffer(1, 10, -1)).toThrow(/NotSupportedError/);
+    expect(() => ctx.createBuffer(1, 10, Infinity)).toThrow(/NotSupportedError/);
+    expect(ctx.createBuffer(1, 100, 100).duration).toBe(1);
+  });
+
   it('records source start times and collects every source', () => {
     const ctx = createFakeAudioContext();
     const s = ctx.createBufferSource();
@@ -87,6 +135,44 @@ describe('createFakeAudioContext', () => {
     expect(done).not.toHaveBeenCalled();
     ctx._advance(200);
     expect(done).toHaveBeenCalledTimes(1);
+  });
+
+  it('ends a buffer started at an offset when what is left of it has played', () => {
+    const ctx = createFakeAudioContext();
+    const s = ctx.createBufferSource();
+    const done = vi.fn();
+    s.buffer = { duration: 1 };
+    s.onended = done;
+    s.start(0, 0.9);
+    ctx._advance(90);
+    expect(done).not.toHaveBeenCalled();
+    ctx._advance(20);
+    expect(done).toHaveBeenCalledTimes(1);
+  });
+
+  it('ends a buffer sooner at a faster playback rate or a higher detune', () => {
+    const ctx = createFakeAudioContext();
+    const fast = ctx.createBufferSource();
+    const sharp = ctx.createBufferSource();
+    for (const s of [fast, sharp]) s.buffer = { duration: 1 };
+    fast.playbackRate.value = 2;
+    sharp.detune.value = 1200;
+    fast.start(0);
+    sharp.start(0);
+    ctx._advance(490);
+    expect([fast.ended, sharp.ended]).toEqual([false, false]);
+    ctx._advance(20);
+    expect([fast.ended, sharp.ended]).toEqual([true, true]);
+  });
+
+  it('never ends a buffer played at rate 0 on its own', () => {
+    const ctx = createFakeAudioContext();
+    const s = ctx.createBufferSource();
+    s.buffer = { duration: 0.1 };
+    s.playbackRate.value = 0;
+    s.start(0);
+    ctx._advance(10_000);
+    expect(s.ended).toBe(false);
   });
 
   it('never ends a looping source on its own', () => {
@@ -151,12 +237,22 @@ describe('createFakeAudioContext', () => {
   it('writes index-dependent and length-dependent analyser data', () => {
     const ctx = createFakeAudioContext();
     const a = ctx.createAnalyser();
+    a.fftSize = 8;
     const small = new Uint8Array(4);
     a.getByteFrequencyData(small);
     expect([...small]).toEqual([0, 64, 128, 191]);
     const big = new Uint8Array(8);
     a.getByteTimeDomainData(big);
     expect([...big]).toEqual([0, 32, 64, 96, 128, 159, 191, 223]);
+  });
+
+  it('gives a bin the same value whatever the length of the array read into', () => {
+    const ctx = createFakeAudioContext();
+    const a = ctx.createAnalyser();
+    a.fftSize = 8;
+    const short = new Uint8Array(2);
+    a.getByteFrequencyData(short);
+    expect([...short]).toEqual([0, 64]);
   });
 
   it('never writes past the bin count into an oversized array', () => {

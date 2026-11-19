@@ -1,15 +1,13 @@
 import type { FromProcessor, ToProcessor } from '../worklet/protocol';
 import type { FakeAudioContext } from './fakeAudioContext';
+import { node, type FakeNode } from './fakeNode';
 
-/** An `AudioWorkletNode` that records what is posted to it. */
-export interface FakeWorkletNode {
+/** An `AudioWorkletNode` that records what is posted to it. Its edges are a
+ *  `FakeNode`'s, so a graph walk and a disconnect treat it as any other node. */
+export interface FakeWorkletNode extends FakeNode {
   name: string;
   posted: ToProcessor[];
-  connectedTo: unknown[];
-  disconnected: boolean;
   port: { postMessage(message: ToProcessor): void; onmessage: ((e: { data: FromProcessor }) => void) | null };
-  connect(target: unknown): void;
-  disconnect(): void;
   /** Test hook: the processor reports voice `id` ended. */
   _ended(id: number): void;
 }
@@ -29,20 +27,28 @@ export function installFakeWorklet(ctx: FakeAudioContext): FakeWorklet {
   const pending = new Promise<void>((resolve, reject) => {
     settle = (error) => (error ? reject(error) : resolve());
   });
+  // Failed before anything asked for it, the promise has no handler yet; this
+  // one keeps that from reading as an unhandled rejection. Every caller of
+  // `addModule` still sees the failure.
+  pending.catch(() => {});
   (ctx as unknown as { audioWorklet: unknown }).audioWorklet = { addModule: () => pending };
 
-  class FakeAudioWorkletNode implements FakeWorkletNode {
-    posted: ToProcessor[] = [];
-    connectedTo: unknown[] = [];
-    disconnected = false;
-    port: FakeWorkletNode['port'];
-    constructor(_ctx: unknown, readonly name: string) {
-      this.port = { postMessage: (m) => { this.posted.push(m); }, onmessage: null };
-      nodes.push(this);
+  class FakeAudioWorkletNode {
+    // A constructor returning an object makes `new` yield it, so the node a
+    // target's `connectedFrom` holds is the very one the code under test has.
+    constructor(_ctx: unknown, name: string) {
+      const n: FakeWorkletNode = node('worklet', {
+        name,
+        posted: [] as ToProcessor[],
+        port: {
+          postMessage: (m: ToProcessor) => { n.posted.push(m); },
+          onmessage: null as FakeWorkletNode['port']['onmessage'],
+        },
+        _ended(id: number) { n.port.onmessage?.({ data: { kind: 'ended', id } }); },
+      });
+      nodes.push(n);
+      return n;
     }
-    connect(target: unknown) { this.connectedTo.push(target); }
-    disconnect() { this.disconnected = true; }
-    _ended(id: number) { this.port.onmessage?.({ data: { kind: 'ended', id } }); }
   }
 
   const g = globalThis as unknown as Record<string, unknown>;
