@@ -7,6 +7,8 @@
  * tables are dropped, since a CID-keyed font is addressed by glyph id alone.
  */
 
+import { maxOf } from '@weasel-js/geom';
+
 const KEPT = ['cvt ', 'fpgm', 'glyf', 'head', 'hhea', 'hmtx', 'loca', 'maxp', 'prep'];
 const REQUIRED = ['glyf', 'head', 'hhea', 'hmtx', 'loca', 'maxp'];
 
@@ -168,7 +170,7 @@ export function subsetTrueType(sfnt: ArrayBuffer, used: Iterable<number>): Uint8
   const glyf = t.get('glyf')!;
   const ranges = glyphRanges(t, numGlyphs);
   const keep = closure(used, glyf, ranges);
-  const count = Math.max(...keep) + 1;
+  const count = maxOf(keep) + 1;
 
   let glyfBytes = 0;
   for (const gid of keep) glyfBytes += pad4(ranges[gid]![1] - ranges[gid]![0]);

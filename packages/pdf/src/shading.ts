@@ -1,4 +1,4 @@
-import { boundsOfPath, lerp, type GlMat3, mat3, type Path } from '@weasel-js/geom';
+import { maxOf, minOf, boundsOfPath, lerp, type GlMat3, mat3, type Path } from '@weasel-js/geom';
 import {
   type CommandPaint,
   type CommandPaintUnits,
@@ -83,7 +83,7 @@ function paintBox(path: Path, toPaint: GlMat3): Box {
   ];
   const xs = corners.map((c) => c[0]);
   const ys = corners.map((c) => c[1]);
-  return { x0: Math.min(...xs) - 1, y0: Math.min(...ys) - 1, x1: Math.max(...xs) + 1, y1: Math.max(...ys) + 1 };
+  return { x0: minOf(xs) - 1, y0: minOf(ys) - 1, x1: maxOf(xs) + 1, y1: maxOf(ys) + 1 };
 }
 
 function stopsOf(paint: Gradient, state: DrawState): Stop[] {
@@ -158,9 +158,7 @@ function geometryOf(paint: Gradient, box: Box, places: number): Geometry {
     const r = Math.max(radius, 1e-4);
     return { dict: { ShadingType: 3, Coords: fine([center.x, center.y, 0, center.x, center.y, r]), Extend: extend } };
   }
-  const reach = Math.max(
-    ...[box.x0, box.x1].flatMap((x) => [box.y0, box.y1].map((y) => Math.hypot(x - center.x, y - center.y))),
-  );
+  const reach = maxOf([box.x0, box.x1].flatMap((x) => [box.y0, box.y1].map((y) => Math.hypot(x - center.x, y - center.y))));
   return conicMesh(center, angle, reach * 1.01 + 1, places);
 }
 
