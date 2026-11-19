@@ -26,4 +26,13 @@ describe('installFakeWorklet', () => {
     expect(allPaths(n as never, ctx.destination)).toHaveLength(0);
     expect(gain.connectedFrom).not.toContain(n);
   });
+
+  it('fails addModule without an unhandled rejection when nothing has asked for it yet', async () => {
+    const ctx = createFakeAudioContext();
+    worklet = installFakeWorklet(ctx);
+    worklet._load(new Error('csp'));
+    await new Promise((r) => setTimeout(r, 0));
+    const addModule = (ctx as unknown as { audioWorklet: { addModule(): Promise<void> } }).audioWorklet.addModule;
+    await expect(addModule()).rejects.toThrow('csp');
+  });
 });

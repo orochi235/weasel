@@ -27,6 +27,10 @@ export function installFakeWorklet(ctx: FakeAudioContext): FakeWorklet {
   const pending = new Promise<void>((resolve, reject) => {
     settle = (error) => (error ? reject(error) : resolve());
   });
+  // Failed before anything asked for it, the promise has no handler yet; this
+  // one keeps that from reading as an unhandled rejection. Every caller of
+  // `addModule` still sees the failure.
+  pending.catch(() => {});
   (ctx as unknown as { audioWorklet: unknown }).audioWorklet = { addModule: () => pending };
 
   class FakeAudioWorkletNode {
