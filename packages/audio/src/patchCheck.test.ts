@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { biquadCoefficients } from './biquad';
+import { createFilterEffect } from './effects';
 import { createSynthStarters } from './synthStarters';
 import { createNoiseKernel, createNoteKernel } from './voiceKernel';
 import type { NoiseOptions, NoteOptions } from './types';
@@ -59,6 +61,15 @@ describe('synth patch checks', () => {
     refusesNote({ pitch: 'A4', wave: [] });
     refusesNote({ pitch: 'A4', wave: [1, NaN] });
     refusesNote({ pitch: 'A4', wave: [Infinity] });
+  });
+
+  it('refuses a filter type the node does not have, wherever a filter is built', () => {
+    const type = 'low-pass' as BiquadFilterType;
+    refusesNote({ pitch: 'A4', filter: { type, frequency: 800 } });
+    refusesNoise({ noise: 'white', filter: { type, frequency: 800 } });
+    expect(() => biquadCoefficients(type, 800, 48000)).toThrow(RangeError);
+    expect(() => createFilterEffect({} as BaseAudioContext, { type })).toThrow(RangeError);
+    expect(() => biquadCoefficients('allpass', 800, 48000)).not.toThrow();
   });
 
   it('takes a patch whose numbers are all finite', () => {

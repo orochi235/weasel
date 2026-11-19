@@ -23,6 +23,15 @@ export function checkWave(wave: Waveform): void {
   }
 }
 
+const FILTER_TYPES = new Set<string>([
+  'lowpass', 'highpass', 'bandpass', 'lowshelf', 'highshelf', 'peaking', 'notch', 'allpass',
+]);
+
+/** Throws on a filter type a `BiquadFilterNode` would ignore and the kernel would run as something else. */
+export function checkFilterType(type: string): void {
+  if (!FILTER_TYPES.has(type)) fail(`"${type}" is not a filter type`);
+}
+
 export function checkEnvelope(what: string, env: Envelope | undefined): void {
   if (!env) return;
   finite(`${what} attack`, env.attack);
@@ -33,6 +42,7 @@ export function checkEnvelope(what: string, env: Envelope | undefined): void {
 
 function checkFilter(filter: VoiceFilter | undefined): void {
   if (!filter) return;
+  if (filter.type !== undefined) checkFilterType(filter.type);
   if (!Number.isFinite(filter.frequency)) fail(`a voice filter's frequency is finite, not ${filter.frequency}`);
   finite("voice filter's Q", filter.Q);
   finite("voice filter's gain", filter.gain);
