@@ -1,14 +1,20 @@
 import { createAudioEngine } from '../createAudioEngine';
 import { createFakeAudioContext } from './fakeAudioContext';
+import { fakeTimers } from './fakeTimers';
+
+/** The scheduler's pass length, in ms. */
+const PASS_MS = 25;
 
 /** An unlocked engine on a fake context whose clock only `run` advances. */
 export async function engineHarness() {
   const ctx = createFakeAudioContext();
-  let pass: (() => void) | null = null;
+  // The scheduler, insert fades, stream starts and patch transitions all share
+  // this pair, so each timer keeps a handle of its own.
+  const timers = fakeTimers();
   const engine = createAudioEngine({
     context: ctx as never,
-    setTimer: (cb) => { pass = cb; return 1; },
-    clearTimer: () => { pass = null; },
+    setTimer: timers.setTimer,
+    clearTimer: timers.clearTimer,
     fetchFn: (async () => ({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) })) as never,
   });
   await engine.unlock();
@@ -16,13 +22,13 @@ export async function engineHarness() {
   /** Advance the audio clock in scheduler-sized passes. */
   const run = async (ms: number) => {
     await flush();
-    for (let t = 0; t < ms; t += 25) {
-      ctx._advance(25);
-      pass?.();
+    for (let t = 0; t < ms; t += PASS_MS) {
+      ctx._advance(PASS_MS);
+      timers.fire();
       await flush();
     }
   };
   /** When each oscillator starts, in ms. */
   const starts = () => ctx._oscillators.map((o) => Math.round(o.started[0] * 1000));
-  return { ctx, engine, run, flush, starts };
+  return { ctx, engine, run, flush, starts, timers };
 }
