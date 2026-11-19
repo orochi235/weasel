@@ -120,12 +120,13 @@ interface Declared {
 /** A runtime replacement for the declared `duration` and `origin`; see `ClockHandle.override`. */
 type SpanOverride = { duration?: number; origin?: number } | null;
 
-function declaredOf(run: Run, spec: ClockSpec): Declared {
+function declaredOf(spec: ClockSpec): Declared {
   return {
     duration: spec.duration ?? Number.POSITIVE_INFINITY,
     origin: spec.origin ?? 0,
     loop: spec.loop ?? false,
-    speed: spec.speed ?? restingSpeed(run.rate),
+    // The spec's rate, as `createClock` reads it: the rate the clock plays at now is a transport's, not the spec's.
+    speed: spec.speed ?? restingSpeed(spec.rate ?? 0),
   };
 }
 
@@ -358,7 +359,7 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
     },
     // `applyRun` checks before it writes, so a declaration or override it refuses is not kept either.
     declare(next) {
-      const taken = declaredOf(run, next);
+      const taken = declaredOf(next);
       // Checked under an override too, which would otherwise hand a bad duration to the call that lifts it.
       checkDuration(taken.duration);
       checkOrigin(taken.origin);
