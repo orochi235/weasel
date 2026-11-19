@@ -2,9 +2,17 @@ import { describe, expect, it } from 'vitest';
 import type { FakeGain, FakeNode } from '../testing/fakeAudioContext';
 import { edgeCount, FADE, harness, testNode } from '../testing/graphHarness';
 import { allPaths, reachesCycle } from '../testing/graphWalk';
-import { disposeNow } from './createAudioGraph';
+import { createFakeAudioContext } from '../testing/fakeAudioContext';
+import { createAudioGraph, disposeNow } from './createAudioGraph';
 
 describe('createAudioGraph wiring', () => {
+  it('refuses a fade that is not a finite number of ms, 0 or more', () => {
+    const ctx = createFakeAudioContext();
+    for (const fadeMs of [Number.NaN, -1]) {
+      expect(() => createAudioGraph(ctx as never, ctx.destination as never, { fadeMs })).toThrow(RangeError);
+    }
+  });
+
   it('wires a node to the output through a fader that opens', () => {
     const { ctx, graph, dest } = harness();
     const a = testNode(ctx, []);

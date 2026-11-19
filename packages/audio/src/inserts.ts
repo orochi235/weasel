@@ -1,5 +1,6 @@
 import { defaultTimers, type Timers } from './audioTime';
 import { nextStep } from './insertPlan';
+import { checkMsOption } from './param';
 import { createInsertPump } from './insertPump';
 import { createInsertRoute } from './insertRoute';
 import { retireSlot, writeBypass, type Slot } from './insertSlot';
@@ -83,6 +84,7 @@ export function createInsertChain(
   tail: AudioNode,
   opts: InsertChainOptions = {},
 ): OwnedInsertChain {
+  checkMsOption('an insert fade', opts.fadeMs);
   const fadeMs = opts.fadeMs ?? 15;
   const timers: Timers = {
     setTimer: opts.setTimer ?? defaultTimers.setTimer,
