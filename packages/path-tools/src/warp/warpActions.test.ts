@@ -9,7 +9,6 @@ import {
   asNodeId,
   commitOps,
   createScene,
-  createSetPoseOp,
   type RectPose,
   resolveEditablePathOf,
   operandPathNodes,
@@ -21,6 +20,7 @@ import { readWarpSettings, warpSettingsParams } from './warpSettingsForm';
 import {
   configureWarpAction, createAddPinAction, createWarpDragAction, expandWarpAction, type WarpHandleScratch,
 } from './warpActions';
+import * as ops from '@weasel-js/core/ops';
 
 type S = AnyScene;
 
@@ -98,7 +98,7 @@ describe('plane', () => {
     dragControl(scene, 'plane', { warpId: null, index: 2 }, { x: 100, y: 100 }, { x: 120, y: 110 });
     const node = scene.get(asNodeId('a'))!;
     const moved = { ...(node.pose as RectPose), x: (node.pose as RectPose).x + 200 };
-    commitOps(depsOf(scene), [createSetPoseOp({ id: node.id, from: node.pose, to: moved, label: 'Move' })], 'Move');
+    commitOps(depsOf(scene), [ops.setPose({ id: node.id, from: node.pose, to: moved, label: 'Move' })], 'Move');
     const resolved = resolvePathWarp(scene.get(asNodeId('a')));
     expect(resolved).not.toBeNull();
     const id = resolved!.held.id;
@@ -111,7 +111,7 @@ describe('plane', () => {
     dragControl(scene, 'plane', { warpId: null, index: 2 }, { x: 100, y: 100 }, { x: 125, y: 110 });
     const node = scene.get(asNodeId('a'))!;
     const turned = { ...(node.pose as RectPose), rotation: 1.2 };
-    commitOps(depsOf(scene), [createSetPoseOp({ id: node.id, from: node.pose, to: turned, label: 'Rotate' })], 'Rotate');
+    commitOps(depsOf(scene), [ops.setPose({ id: node.id, from: node.pose, to: turned, label: 'Rotate' })], 'Rotate');
     const resolved = resolvePathWarp(scene.get(asNodeId('a')))!;
     expect(resolved).not.toBeNull();
     const { corners } = resolved.held.warp as PlaneWarp;
@@ -136,7 +136,7 @@ describe('plane', () => {
     dragControl(scene, 'plane', { warpId: null, index: 2 }, { x: 100, y: 100 }, { x: 125, y: 110 });
     const node = scene.get(asNodeId('a'))!;
     const turned = transformPath(node.pose as PolygonPath, rotateAboutPoint(50, 50, 0.7));
-    commitOps(depsOf(scene), [createSetPoseOp({ id: node.id, from: node.pose, to: turned, label: 'Rotate' })], 'Rotate');
+    commitOps(depsOf(scene), [ops.setPose({ id: node.id, from: node.pose, to: turned, label: 'Rotate' })], 'Rotate');
     const resolved = resolvePathWarp(scene.get(asNodeId('a')))!;
     expect(resolved).not.toBeNull();
     const { corners } = resolved.held.warp as PlaneWarp;
@@ -244,7 +244,7 @@ describe('paths warped together', () => {
 
     const a = scene.get(asNodeId('a'))!;
     const moved = { ...(a.pose as RectPose), y: (a.pose as RectPose).y + 300 };
-    commitOps(pairDeps(scene), [createSetPoseOp({ id: a.id, from: a.pose, to: moved, label: 'Move' })], 'Move');
+    commitOps(pairDeps(scene), [ops.setPose({ id: a.id, from: a.pose, to: moved, label: 'Move' })], 'Move');
 
     const { held } = splitByWarp(operandPathNodes(pairDeps(scene)), 'plane');
     const ids = new Map(held.map((t) => [String(t.node.id), t.held.id]));

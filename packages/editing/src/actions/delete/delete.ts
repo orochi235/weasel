@@ -1,6 +1,5 @@
 import type { SceneNode as Node, NodeId, Scene } from '@weasel-js/core';
 import type { Op } from '@weasel-js/core';
-import { createDeleteOp } from '@weasel-js/core';
 import { commitOps } from '@weasel-js/core/engine';
 import { ActionDisabledReason, type Action, type ActionDeps } from '@weasel-js/routing';
 import { requiresContent } from '@weasel-js/core';
@@ -10,6 +9,7 @@ import { hiddenSourcesTakenWith } from '@weasel-js/core';
 import { withoutPageStructure } from '@weasel-js/core/engine';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
 import { EDIT_GROUP } from '../../actionGroups';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** `id`'s slot among the scene roots or its parent's children, or `-1`. */
 function hostIndex(scene: Scene<unknown, string, unknown>, id: NodeId): number {
@@ -72,7 +72,7 @@ export function buildDeleteOps(
     if (!node) continue;
     if (covered.has(id)) continue;
     for (const taken of scene.removalClosure([id as NodeId])) covered.add(taken);
-    ops.push(createDeleteOp<Node<unknown, string, unknown>>({
+    ops.push(coreOps.delete<Node<unknown, string, unknown>>({
       node,
       index: hostIndex(scene, id as NodeId),
       label,

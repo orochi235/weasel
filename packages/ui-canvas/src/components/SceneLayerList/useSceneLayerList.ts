@@ -1,5 +1,5 @@
 import {
-  asNodeId, createDeleteOp, createMoveToIndexOp, createReparentOp, createSetDataOp, createSetHiddenOp, createSetLockedOp,
+  asNodeId,
   defaultCommitAdapter, dispatchApplyBatch, isAnnotationLayer, pageName, pageIdOf, pageRunOf, placedPagesOf,
   withoutPageStructure,
 } from '@weasel-js/core';
@@ -7,6 +7,7 @@ import type { NodeId, SelectionApi } from '@weasel-js/routing';
 import type { Op } from '@weasel-js/history';
 import type { Scene, SceneNode } from '@weasel-js/core';
 import type { LayerListItem, LayerListProps } from '@weasel-js/ui/components/LayerList';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** The id prefix of an annotation layer's own row, which holds its nodes. */
 export const ANNOTATION_LAYER_ROW = 'annotation-layer:';
@@ -201,18 +202,18 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
       // A node from another container joins this one first, back to front as the scene orders children.
       const joining = [...ids].reverse().flatMap((id) => {
         const from = scene.get(asNodeId(id))?.parent ?? null;
-        return from === parent ? [] : [createReparentOp({ id, fromParentId: from, toParentId: parent })];
+        return from === parent ? [] : [coreOps.reparent({ id, fromParentId: from, toParentId: parent })];
       });
-      commit([...joining, createMoveToIndexOp({ ids, parentId: parent, index: to })], label);
+      commit([...joining, coreOps.moveToIndex({ ids, parentId: parent, index: to })], label);
     },
     onVisibilityChange: (changes) => commitToggle(commit, changes, (layer: TLayer, on) => scene.setLayerVisible(layer, on),
-      (id, on) => createSetHiddenOp({ id, from: scene.get(asNodeId(id))?.hidden === true, to: !on }), ['Show', 'Hide', 'Show Only']),
+      (id, on) => coreOps.setHidden({ id, from: scene.get(asNodeId(id))?.hidden === true, to: !on }), ['Show', 'Hide', 'Show Only']),
     onLockChange: (changes) => commitToggle(commit, changes, (layer: TLayer, on) => scene.setLayerLocked(layer, on),
-      (id, on) => createSetLockedOp({ id, from: scene.get(asNodeId(id))?.locked === true, to: on }), ['Lock', 'Unlock', 'Lock Only']),
+      (id, on) => coreOps.setLocked({ id, from: scene.get(asNodeId(id))?.locked === true, to: on }), ['Lock', 'Unlock', 'Lock Only']),
     ...(rename ? {
       onRename: (id: string, to: string) => {
         const node = scene.get(asNodeId(id));
-        if (node) commit([createSetDataOp({ id, from: node.data, to: rename(node, to) })], 'Rename');
+        if (node) commit([coreOps.setData({ id, from: node.data, to: rename(node, to) })], 'Rename');
       },
     } : {}),
     ...(annotations ? {
@@ -220,7 +221,7 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
         const node = scene.get(asNodeId(id));
         if (!node || !isAnnotation(id)) return;
         const siblings = node.parent === null ? scene.roots : scene.childrenOf(node.parent);
-        commit([createDeleteOp({ node, index: siblings.indexOf(node.id), label: 'Delete' })], 'Delete');
+        commit([coreOps.delete({ node, index: siblings.indexOf(node.id), label: 'Delete' })], 'Delete');
         if (annotations.picked === id) annotations.pick(null);
       },
     } : {}),

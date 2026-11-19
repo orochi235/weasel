@@ -1,10 +1,11 @@
 /** A copy keeps the stacking of what it copied, whatever order the selection was made in. */
 import { describe, expect, it } from 'vitest';
-import { createScene, createInsertOp, defaultCommitAdapter } from '@weasel-js/core/engine';
+import { createScene, defaultCommitAdapter } from '@weasel-js/core/engine';
 import type { RectPose } from '@weasel-js/core/engine';
 import type { SelectionApi } from '@weasel-js/routing';
 import { sceneToAdapter } from '@weasel-js/core';
 import { duplicateSelection } from '@weasel-js/editing';
+import * as ops from '@weasel-js/core/ops';
 
 type D = { label: string };
 
@@ -32,7 +33,7 @@ describe('stacking of a copy', () => {
     const { scene, bottom, top } = stacked();
     const adapter = sceneToAdapter(scene);
     const created = adapter.commitPaste(adapter.snapshotSelection([top, bottom]), { dx: 12, dy: 12 });
-    scene.applyBatch(created.map((node) => createInsertOp({ node })), 'Paste', defaultCommitAdapter(scene as never));
+    scene.applyBatch(created.map((node) => ops.insert({ node })), 'Paste', defaultCommitAdapter(scene as never));
     expect(labels(scene)).toEqual(['bottom', 'top', 'bottom', 'top']);
   });
 });

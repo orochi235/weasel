@@ -399,7 +399,7 @@ Each action pins the proposed/result shape; pick the matching alias
   paints at full opacity rather than as a ghost.
 - `onEnd` decides commit ops. First non-`undefined` return wins: `Op[]`
   commits, `null` aborts, `undefined` falls through to the next behavior
-  or the action's default ops (move emits one `createSetPoseOp` per id).
+  or the action's default ops (move emits one `ops.setPose` per id).
   Every behavior's `onEnd` runs, with `end.answered` true once an earlier one
   has answered or thrown; after a throw nothing commits, and the first error
   is rethrown once all have run.
@@ -892,8 +892,9 @@ previewing as it goes:
 
 <!-- snippet: tests/consumers/gem-extension/src/tint.ts#tint-action -->
 ```ts
-import { commitOps, createSetDataOp, defineAction, defineTool, resolveParams } from '@weasel-js/core';
+import { commitOps, defineAction, defineTool, resolveParams } from '@weasel-js/core';
 import { isGem, type GemData } from './gem.js';
+import * as ops from '@weasel-js/core/ops';
 
 declare module '@weasel-js/routing' {
   interface ActionParamSchema {
@@ -938,10 +939,10 @@ export const tintAction = defineAction({
         },
         onEnd: (_end, reason) => {
           if (reason === 'cancel' || steps === 0) return;
-          const ops = [...gems].map(([id, from]) => createSetDataOp({ id, from, to: tinted(from) }));
+          const tints = [...gems].map(([id, from]) => ops.setData({ id, from, to: tinted(from) }));
           // The standard commit, through the deps `start` was given: `onMove` and `onEnd` get an empty bag.
           // It goes to the host's `applyOps` when there is one, else straight to the scene.
-          commitOps(ctx.deps, ops, 'Tint gem');
+          commitOps(ctx.deps, tints, 'Tint gem');
         },
       };
     },

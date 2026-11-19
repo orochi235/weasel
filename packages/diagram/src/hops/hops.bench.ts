@@ -6,12 +6,13 @@
  * of it.
  */
 import { it } from 'vitest';
-import { createScene, createSetPoseOp, type RectPose, type Scene } from '@weasel-js/core';
+import { createScene, type RectPose, type Scene } from '@weasel-js/core';
 import { seeded } from '../avoid/avoidFixture';
 import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
 import { DIAGRAM_PASS_ORDER } from '../passOrder';
 import { installHops } from './install';
 import { HOPS_DOC_KEY } from './types';
+import * as coreOps from '@weasel-js/core/ops';
 
 type BenchScene = Scene<unknown, 'main', RectPose>;
 
@@ -73,7 +74,7 @@ function commits(): void {
     const ids = new Set(Array.from({ length: 6 }, (_, i) => `s${(c * 17 + i * 31) % SHAPES}`));
     const ops = [...ids].map((id) => {
       const from = scene.get(id as never)!.pose;
-      return createSetPoseOp({ id, from, to: { ...from, x: from.x + 23, y: from.y + 11 } });
+      return coreOps.setPose({ id, from, to: { ...from, x: from.x + 23, y: from.y + 11 } });
     });
     scene.applyBatch(ops, 'Move', adapter);
     times.push(watch.last());

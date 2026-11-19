@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { solid } from '@weasel-js/paint';
-import { type Action, commitOps, createDeleteOp, createInsertOp, createToolOptionValues, defineAction, defineTool, ellipsePath, type InvocationCtx, type RectPose, resolveParams, SceneCanvas, shareToolOptions, type Tool, type ToolOptionsSpec, type ToolOptionShare, useScene, WeaselProvider } from '@weasel-js/core';
+import { type Action, commitOps, createToolOptionValues, defineAction, defineTool, ellipsePath, type InvocationCtx, type RectPose, resolveParams, SceneCanvas, shareToolOptions, type Tool, type ToolOptionsSpec, type ToolOptionShare, useScene, WeaselProvider } from '@weasel-js/core';
 import { pxReach } from '@weasel-js/geom';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { brushRing } from '@weasel-js/cursor';
@@ -10,6 +10,7 @@ import { ActiveToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { DemoStage } from './DemoStage';
 import { useSelection } from '@weasel-js/editing';
+import * as coreOps from '@weasel-js/core/ops';
 
 type Point = { x: number; y: number };
 const DOT = '#5b7bd5';
@@ -59,7 +60,7 @@ const dots: Act = ({ deps }, trail, r) => {
     last = p;
     const pose = { x: p.x - r, y: p.y - r, width: 2 * r, height: 2 * r };
     const node = { id: scene.mintId(), kind: 'mark', layer: 'default', parent: null, pose, data: { path: ellipsePath(pose), fill: { paint: solid(DOT) } } };
-    ops.push(createInsertOp({ node, label: 'Dots' }));
+    ops.push(coreOps.insert({ node, label: 'Dots' }));
   }
   commitOps(deps, ops, 'Dots');
 };
@@ -72,7 +73,7 @@ const erase: Act = ({ deps }, trail, r) => {
     const c = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
     return trail.some((p) => Math.hypot(p.x - c.x, p.y - c.y) <= r);
   });
-  commitOps(deps, hit.map((node) => createDeleteOp({ node, label: 'Erase' })), 'Erase');
+  commitOps(deps, hit.map((node) => coreOps.delete({ node, label: 'Erase' })), 'Erase');
 };
 
 /** Both brushes, their sizes shared or each its own. */

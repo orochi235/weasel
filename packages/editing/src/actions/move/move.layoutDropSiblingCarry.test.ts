@@ -3,12 +3,13 @@
  * own children move with it, in the drag's preview and in its commit, carried
  * by its frame.
  */
-import { scenePoseFrame, createScene, createSetPoseOp } from '@weasel-js/core/engine';
+import { scenePoseFrame, createScene } from '@weasel-js/core/engine';
 import { describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { moveAction } from './action';
 import type { NodeId } from '@weasel-js/core';
 import type { LayoutStrategy } from '@weasel-js/core/engine';
+import * as ops from '@weasel-js/core/ops';
 
 interface P { x: number; y: number; width: number; height: number }
 
@@ -27,8 +28,8 @@ describe('moveAction — layout drop shifting a sibling container', () => {
       getDropTargets: () => [{ pose: slot, origin: { x: slot.x, y: slot.y } }],
       reflowPoses: () => new Map([[sibling as string, shifted]]),
       commitDrop: (_c: unknown, _k: unknown, d: { id: string; originPose: P }, target: { pose: P }) => [
-        createSetPoseOp<P>({ id: sibling as string, from: slot, to: shifted, label: 'Shift' }),
-        createSetPoseOp<P>({ id: d.id, from: d.originPose, to: target.pose, label: 'Drop' }),
+        ops.setPose<P>({ id: sibling as string, from: slot, to: shifted, label: 'Shift' }),
+        ops.setPose<P>({ id: d.id, from: d.originPose, to: target.pose, label: 'Drop' }),
       ],
     } as unknown as LayoutStrategy<unknown>;
 

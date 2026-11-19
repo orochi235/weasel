@@ -81,6 +81,10 @@
       "types": "./dist/groups.d.ts",
       "import": "./dist/groups.js"
     },
+    "./ops": {
+      "types": "./dist/ops.d.ts",
+      "import": "./dist/ops.js"
+    },
     "./render-worker": {
       "types": "./dist/render-worker.d.ts",
       "import": "./dist/render-worker.js"

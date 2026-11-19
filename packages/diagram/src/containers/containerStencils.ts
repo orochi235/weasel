@@ -3,7 +3,7 @@
  * and the edits on one: adding a lane to a pool, and releasing a container's
  * members.
  */
-import { RIGID_POSE_COMPOSITION, createInsertOp, localizeWorldPoses, reachesLocked, scenePoseFrame, type NodeId, type Op, type PoseComposition, type RectPose, type AnyScene } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, localizeWorldPoses, reachesLocked, scenePoseFrame, type NodeId, type Op, type PoseComposition, type RectPose, type AnyScene } from '@weasel-js/core';
 import type { IconSpec } from '@weasel-js/icons';
 import type { NodeStyle } from '../dataTypes';
 import { diagramThemeOf } from '../theme/resolve';
@@ -12,6 +12,7 @@ import { DIAGRAM_THEME_KEY } from '../theme/types';
 import { firstLanes, regionSpecs, type ContainerBuildOptions } from './regionSpecs';
 import { diagramContainerOf, titleIdOf, type DiagramContainer } from './trait';
 import type { Rect } from '@weasel-js/geom';
+import * as ops from '@weasel-js/core/ops';
 
 export type { ContainerBuildOptions };
 
@@ -65,7 +66,7 @@ export function containerBuild<TLayer extends string>(
   const label = `Insert ${stencil.label}`;
   // Built in one frame; each lane and title is stored in its container's.
   const stored = localizeWorldPoses(specs, RIGID_POSE_COMPOSITION);
-  return { id, ops: stored.map((node) => createInsertOp({ node, label })) };
+  return { id, ops: stored.map((node) => ops.insert({ node, label })) };
 }
 
 /** The axis a pool stacks its lanes along, read off its header. */

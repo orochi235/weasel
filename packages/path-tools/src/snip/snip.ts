@@ -1,12 +1,13 @@
 /** Snip: cut a stroke back to the crossings on either side of a click. */
 import { type ActionDeps, ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import { snipPathAt, type SnipResult } from '@weasel-js/geom';
-import { commitOps, createDeleteNodeOp, reshapeOps, type PathNode, pathOperationTags } from '@weasel-js/core';
+import { commitOps, reshapeOps, type PathNode, pathOperationTags } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs-schema';
 import { pressOf, scenePathNodes, strokeReachPref, strokesBesides, type StrokePressParams } from '../shared/scenePaths';
 import { icon } from '../icons.gen';
 import type {} from '../actionParamSchema';
 import * as groups from '@weasel-js/core/groups';
+import * as coreOps from '@weasel-js/core/ops';
 
 const SNIP_LABEL = 'Snip';
 
@@ -58,7 +59,7 @@ export const snipPathAction = defineAction({
       const { target, result } = plan;
       const gone = result.path.commands.length === 0;
       const ops = gone
-        ? [createDeleteNodeOp(deps.scene as never, target.node, SNIP_LABEL)]
+        ? [coreOps.deleteNode(deps.scene as never, target.node, SNIP_LABEL)]
         : reshapeOps(target, result.path, SNIP_LABEL);
       commitOps(deps, ops, SNIP_LABEL, gone ? { select: (deps.operands?.get() ?? []).filter((id) => id !== target.id) } : {});
     },

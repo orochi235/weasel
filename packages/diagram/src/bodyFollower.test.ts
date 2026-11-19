@@ -1,9 +1,10 @@
-import { createScene, createSetPoseOp, type RectPose } from '@weasel-js/core';
+import { createScene, type RectPose } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
 import { DIVIDER_HEIGHT } from './body';
 import { bodyFollower } from './bodyFollower';
 import { withDiagramRegistry } from './edge';
 import { diagramScene, type DiagramData } from './fromData';
+import * as coreOps from '@weasel-js/core/ops';
 
 type Box = { x: number; y: number; width: number; height: number };
 
@@ -29,7 +30,7 @@ describe('bodyFollower', () => {
     const { scene, box, name, x } = setup();
     const from = box('c');
     const to = { ...from, width: from.width + 60, height: from.height + 40 };
-    const ops = bodyFollower(scene).finish([createSetPoseOp({ id: 'c', from, to })], 'Resize');
+    const ops = bodyFollower(scene).finish([coreOps.setPose({ id: 'c', from, to })], 'Resize');
     scene.applyBatch(ops!, 'Resize', scene);
     expect(box(name)).toMatchObject({ x: 8, width: to.width - 16, y: 8 + 20 });
     expect(box(x).y).toBe(8 + 20 + 17 + 4 + DIVIDER_HEIGHT + 4);
@@ -46,7 +47,7 @@ describe('bodyFollower', () => {
   it('leaves a body that only moved to the move', () => {
     const { scene, box } = setup();
     const from = box('c');
-    const op = createSetPoseOp({ id: 'c', from, to: { ...from, x: 50 } });
+    const op = coreOps.setPose({ id: 'c', from, to: { ...from, x: 50 } });
     expect(bodyFollower(scene).finish([op], 'Move')).toEqual([op]);
   });
 });

@@ -10,8 +10,8 @@ import fc from 'fast-check';
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import type { NodeId } from '@weasel-js/core';
 import type { RectPose } from '@weasel-js/core/engine';
-import { createInsertOp, defaultCommitAdapter } from '@weasel-js/core/engine';
-import { createReparentOp, createSetHiddenOp, createSetLockedOp, hitTestRect } from '@weasel-js/core';
+import { defaultCommitAdapter } from '@weasel-js/core/engine';
+import { hitTestRect } from '@weasel-js/core';
 import { depsOfForTests as depsOf, makeSceneForTests as makeScene, runsForTests as runs, tallyForTests as tally, timeoutForForTests as timeoutFor, type TestSceneForTests as TestScene, assertFiniteForTests as assertFinite, driveForTests as drive, type PtForTests as Pt } from '@weasel-js/core/test-seams';
 import { rectPose } from './pbt.fixture';
 import { alignCenterXAction, alignLeftAction, distributeHorizontalAction, reorderForwardAction, flipAction, nudgeRightAction, duplicateAction, groupAction, ungroupAction, deleteAction } from '@weasel-js/editing';
@@ -20,6 +20,7 @@ import { areaSelectAction } from '../../../actions/select/areaSelect';
 import { resizeAction } from '../../../actions/resize/action';
 import { rotateAction } from '../../../actions/rotate/action';
 import { cloneAction } from '../../../actions/clone/action';
+import * as ops from '@weasel-js/core/ops';
 
 interface Real { scene: TestScene }
 interface Model { states: unknown[]; cursor: number }
@@ -141,19 +142,19 @@ class Setup implements fc.Command<Model, Real> {
         case 1: {
           const parent = this.other === null ? null : pickFrom(groups(r.scene), this.other) ?? null;
           const kind = this.which % 5 === 1 && this.flag ? 'group' : 'mark';
-          r.scene.applyBatch([createInsertOp({ node: { id: r.scene.mintId(), kind, layer: 'main', pose: this.pose, data: {}, parent } })], 'Insert', adapter);
+          r.scene.applyBatch([ops.insert({ node: { id: r.scene.mintId(), kind, layer: 'main', pose: this.pose, data: {}, parent } })], 'Insert', adapter);
           break;
         }
         case 2:
-          if (node) r.scene.applyBatch([createSetLockedOp({ id: id!, from: node.locked === true, to: this.flag })], 'Lock', adapter);
+          if (node) r.scene.applyBatch([ops.setLocked({ id: id!, from: node.locked === true, to: this.flag })], 'Lock', adapter);
           break;
         case 3:
-          if (node) r.scene.applyBatch([createSetHiddenOp({ id: id!, from: node.hidden === true, to: this.flag })], 'Hide', adapter);
+          if (node) r.scene.applyBatch([ops.setHidden({ id: id!, from: node.hidden === true, to: this.flag })], 'Hide', adapter);
           break;
         default: {
           if (!node) break;
           const to = this.other === null ? null : pickFrom(groups(r.scene), this.other) ?? null;
-          r.scene.applyBatch([createReparentOp({ id: id!, fromParentId: node.parent ?? null, toParentId: to })], 'Reparent', adapter);
+          r.scene.applyBatch([ops.reparent({ id: id!, fromParentId: node.parent ?? null, toParentId: to })], 'Reparent', adapter);
         }
       }
     } catch {

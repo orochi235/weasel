@@ -6,7 +6,6 @@
  */
 import {
   AUTO_POSE_DESCRIPTOR,
-  createSetDataOp,
   type Op,
   type PoseDescriptor,
   type Scene,
@@ -21,6 +20,7 @@ import { DIAGRAM_PASS_ORDER } from '../passOrder';
 import { createAvoidRouter, type AvoidRouter, type AvoidRoutes } from './router';
 import { avoidSceneInput, type AvoidSceneOptions } from './sceneInput';
 import type { AvoidInput, AvoidOptions } from './types';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** Options for {@link installAvoidRouting} and `useAvoidRouting`. */
 export interface AvoidRoutingOptions<TPose> extends AvoidSceneOptions<TPose>, AvoidOptions {
@@ -55,7 +55,7 @@ export function routeDataOps(scene: AnyScene, routes: AvoidRoutes): Op[] {
     if (node === undefined || edge === null || scene.isLocked(id as never)) continue;
     const had = edge.route;
     if (route === null ? had === undefined : had !== undefined && samePoints(had, route)) continue;
-    ops.push(createSetDataOp({ id, from: node.data, to: withRoute(node.data, edge, route), label: 'Route' }));
+    ops.push(coreOps.setData({ id, from: node.data, to: withRoute(node.data, edge, route), label: 'Route' }));
   }
   return ops;
 }

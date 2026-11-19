@@ -12,7 +12,7 @@ import { createEmitter } from '@weasel-js/registry';
 import { transformPoint, invert, type Point } from '@weasel-js/geom';
 import { moveWarpControl, pathWarpMap, unwarpPoint, warpControls } from '@weasel-js/geom/warp';
 import {
-  commitOps, createSetDataOp, type Op, quantizedShape, reshapeTo, pathOperationTags, type AnyScene,
+  commitOps, type Op, quantizedShape, reshapeTo, pathOperationTags, type AnyScene,
 } from '@weasel-js/core';
 import { heldPathWarpOf, resolvePathWarp, withoutPathWarp } from './pathWarp';
 import {
@@ -25,6 +25,7 @@ import { warpSettingsForm } from './warpSettingsForm';
 import { configureWarpParams, settingsOfWarp, warpDragParams } from './warpParams';
 import type {} from '../actionParamSchema';
 import * as groups from '@weasel-js/core/groups';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** What a press on a warp control hands the drag that follows. */
 export interface WarpHandleScratch {
@@ -300,7 +301,7 @@ export const expandWarpAction: Action = {
       const ops: Op[] = [];
       for (const { node } of selectedWarpPaths(deps)) {
         if (!heldPathWarpOf(node.data)) continue;
-        ops.push(createSetDataOp({ id: node.id, from: node.data, to: withoutPathWarp(node.data), label: 'Expand Warp' }));
+        ops.push(coreOps.setData({ id: node.id, from: node.data, to: withoutPathWarp(node.data), label: 'Expand Warp' }));
       }
       commitOps(deps, ops, 'Expand Warp');
     },

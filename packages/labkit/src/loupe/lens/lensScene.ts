@@ -1,10 +1,6 @@
 import {
   asNodeId,
-  createInsertOp,
   createScene,
-  createSetDataOp,
-  createSetDependsOnOp,
-  createSetPoseOp,
   type DerivePathFn,
   type DerivePoseFn,
   effectivePose,
@@ -12,6 +8,7 @@ import {
   type RectPose,
   sceneToAdapter,
 } from '@weasel-js/core';
+import * as coreOps from '@weasel-js/core/ops';
 import { linePath } from '@weasel-js/geom';
 import {
   BODY_SIZE,
@@ -113,7 +110,7 @@ export function addLensOps<C>(
   const base = { layer: 'lenses', kind: 'mark' } as const;
   const body = patchAt({ x: 0, y: 0, width: BODY_SIZE, height: BODY_SIZE }, 1, at.body);
   return [
-    createInsertOp({
+    coreOps.insert({
       label,
       node: {
         ...base,
@@ -122,7 +119,7 @@ export function addLensOps<C>(
         data: { ...merged, role: 'lens-body', lensId } satisfies LensBodyData<C>,
       },
     }),
-    createInsertOp({
+    coreOps.insert({
       label,
       node: {
         ...base,
@@ -133,7 +130,7 @@ export function addLensOps<C>(
         ...(merged.aim === 'glass' ? { dependsOn: [ids.body] } : {}),
       },
     }),
-    createInsertOp({
+    coreOps.insert({
       label,
       node: {
         ...base,
@@ -226,7 +223,7 @@ export function keepHeldOps<C>(scene: LensScene<C>, nodeId: string, label: strin
   const node = scene.get(nodeId as never);
   const held = scene.overrides.read(nodeId as never)?.pose;
   return node && held
-    ? [createSetPoseOp({ id: node.id, from: node.pose, to: { ...held }, label })]
+    ? [coreOps.setPose({ id: node.id, from: node.pose, to: { ...held }, label })]
     : [];
 }
 
@@ -252,7 +249,7 @@ export function setLensOps<C>(
   const label = 'set lens';
   const coalesceKey = `lens:${lensId}:${keys}`;
   const ops: Op[] = [
-    createSetDataOp<LensNodeData<C>>({
+    coreOps.setData<LensNodeData<C>>({
       id: ids.body,
       from,
       to: { ...from, ...patch },
@@ -265,7 +262,7 @@ export function setLensOps<C>(
   const factor = patch.factor ?? from.factor;
   if (factor !== from.factor && from.aim !== 'glass' && body && reticle) {
     const to = patchAt(body.pose, factor, center(reticle.pose));
-    ops.push(createSetPoseOp({ id: ids.reticle, from: reticle.pose, to, label, coalesceKey }));
+    ops.push(coreOps.setPose({ id: ids.reticle, from: reticle.pose, to, label, coalesceKey }));
   }
   return ops;
 }
@@ -282,15 +279,15 @@ export function setAimOps<C>(scene: LensScene<C>, lensId: string, to: LensAim): 
   const label = 'set lens aim';
   const ids = idsFor(lensId);
   const ops: Op[] = [
-    createSetDataOp<LensNodeData<C>>({ id: ids.body, from, to: { ...from, aim: to }, label }),
+    coreOps.setData<LensNodeData<C>>({ id: ids.body, from, to: { ...from, aim: to }, label }),
   ];
   if (to === 'glass') {
-    ops.push(createSetDependsOnOp({ id: ids.reticle, from: undefined, to: [ids.body], label }));
+    ops.push(coreOps.setDependsOn({ id: ids.reticle, from: undefined, to: [ids.body], label }));
   } else if (from.aim === 'glass') {
     const reticle = scene.get(ids.reticle);
     if (reticle !== undefined) {
       ops.push(
-        createSetPoseOp({
+        coreOps.setPose({
           id: ids.reticle,
           from: reticle.pose,
           to: effectivePose(scene, reticle),
@@ -298,7 +295,7 @@ export function setAimOps<C>(scene: LensScene<C>, lensId: string, to: LensAim): 
         }),
       );
     }
-    ops.push(createSetDependsOnOp({ id: ids.reticle, from: [ids.body], to: undefined, label }));
+    ops.push(coreOps.setDependsOn({ id: ids.reticle, from: [ids.body], to: undefined, label }));
   }
   return ops;
 }

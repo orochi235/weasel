@@ -9,10 +9,10 @@
  * (`dispatchApplyBatch` vs `IngestCtx.applyOps`) and any post-paste
  * bookkeeping (the hook's cascade re-snapshot, the handler's selection set).
  */
-import { createInsertOp, createSetSelectionOp } from '@weasel-js/core/engine';
 import type { Op, NodeId } from '@weasel-js/core';
 import type { WorldPoint } from '@weasel-js/routing';
 import type { ClipboardSnapshot, InsertAdapter, PasteCtx, PasteOmission } from '@weasel-js/core/engine';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** Shared paste materialization: offset policy → commitPaste → the op batch
  *  both the in-memory paste and the OS-paste handler dispatch. Returns null
@@ -43,8 +43,8 @@ export function materializePaste<TNode extends { id: string }>(
   if (created.length === 0) return null;
   const newIds = created.map((o) => o.id);
   const ops: Op[] = [
-    ...created.map((o) => createInsertOp({ node: o })),
-    createSetSelectionOp({ from: opts.currentSelection as NodeId[], to: newIds as NodeId[] }),
+    ...created.map((o) => coreOps.insert({ node: o })),
+    coreOps.setSelection({ from: opts.currentSelection as NodeId[], to: newIds as NodeId[] }),
   ];
   return { ops, newIds, created };
 }

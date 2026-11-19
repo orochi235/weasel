@@ -1,7 +1,8 @@
-import { createHistory, type SerializedHistory, type SwapArgs, createSwapOp, useLatest } from '@weasel-js/core';
+import { createHistory, type SerializedHistory, type SwapArgs, useLatest } from '@weasel-js/core';
 import { type TokenScale, usePersistedState, useTrialId } from '@weasel-js/labkit';
 import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import type { CssOverrides } from './overrides';
+import * as ops from '@weasel-js/core/ops';
 
 /** What an edit in the panel changes: the trial's overrides, and the scale each group's were generated from. */
 export interface VarsState {
@@ -48,7 +49,7 @@ export function useVarsHistory(state: VarsState, apply: (from: VarsState, to: Va
     latestApply.current(from, to);
   };
   const swap = (before: VarsState, after: VarsState, coalesceKey?: string) =>
-    createSwapOp({ name: SWAP, label: 'edit vars', before, after, emit, ...(coalesceKey !== undefined ? { coalesceKey } : {}) });
+    ops.swap({ name: SWAP, label: 'edit vars', before, after, emit, ...(coalesceKey !== undefined ? { coalesceKey } : {}) });
 
   const history = useMemo(() => {
     const opened = createHistory(null, {

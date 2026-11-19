@@ -21,7 +21,7 @@ export interface SvgDraftSpecsOptions<TLayer extends string> {
  * `svgNodesToKitDrafts`'s drafts as the node specs a scene adds, parent before child: each
  * pose made local to the frame it is stored in, a boolean draft given `booleanGroupFields()` and
  * its operation as `data.boolean`, and `clip` and `hidden` carried over. Hand each to
- * `scene.add` or `createInsertOp`, in order.
+ * `scene.add` or `ops.insert` (`@weasel-js/core/ops`), in order.
  */
 export function svgDraftSpecs<TData, TLayer extends string>(
   drafts: readonly SvgSceneDraft<TData>[],

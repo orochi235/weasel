@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, createSetPoseOp, renamePage, type RectPose, type Scene } from '@weasel-js/core';
+import { createScene, renamePage, type RectPose, type Scene } from '@weasel-js/core';
 import { installAvoidRouting } from './avoid/install';
 import { EDGE_DERIVE_PATH, withDiagramRegistry } from './edge';
 import { edgeLabelSpec } from './edgeLabel';
@@ -10,6 +10,7 @@ import { diagramLabelOf } from './labelTrait';
 import { installLabelPlacement } from './labels/install';
 import { installOffPageMarkers } from './offPage/install';
 import { dragTo, pagedScene } from './offPage/pagedFixture';
+import * as ops from '@weasel-js/core/ops';
 
 type TwoLayers = Scene<unknown, string, RectPose>;
 
@@ -41,7 +42,7 @@ function load(extra: Partial<DiagramEdge> = {}, doc?: Record<string, unknown>, w
 function coverWire(scene: TwoLayers): void {
   const adapter = { setPose: (id: string, pose: RectPose) => scene.setPose(id as never, pose) };
   const from = scene.get('c' as never)!.pose;
-  scene.applyBatch([createSetPoseOp({ id: 'c', from, to: { x: 230, y: -10, width: 40, height: 24 } })], 'Move', adapter);
+  scene.applyBatch([ops.setPose({ id: 'c', from, to: { x: 230, y: -10, width: 40, height: 24 } })], 'Move', adapter);
 }
 
 const trait = (scene: TwoLayers, id = 'ab') => (scene.get(id as never)!.data as { diagram: DiagramEdge }).diagram;
@@ -73,9 +74,9 @@ describe('the diagram edit passes beside a locked connector', () => {
     // Drawn above `cd`, the locked `ab` is the one that would hop where they cross.
     const adapter = { setPose: (id: string, pose: RectPose) => scene.setPose(id as never, pose) };
     const from = scene.get('d' as never)!.pose;
-    expect(() => scene.applyBatch([createSetPoseOp({ id: 'd', from, to: { ...from, x: 230, y: 300 } })], 'Move', adapter)).not.toThrow();
+    expect(() => scene.applyBatch([ops.setPose({ id: 'd', from, to: { ...from, x: 230, y: 300 } })], 'Move', adapter)).not.toThrow();
     const c = scene.get('c' as never)!.pose;
-    expect(() => scene.applyBatch([createSetPoseOp({ id: 'c', from: c, to: { ...c, x: 230, y: -300 } })], 'Move', adapter)).not.toThrow();
+    expect(() => scene.applyBatch([ops.setPose({ id: 'c', from: c, to: { ...c, x: 230, y: -300 } })], 'Move', adapter)).not.toThrow();
     expect(scene.get('c' as never)!.pose.y).toBe(-300);
     expect(trait(scene).hops).toBeUndefined();
   });
@@ -95,7 +96,7 @@ describe('the diagram edit passes beside a locked connector', () => {
     const adapter = { setPose: (id: string, pose: RectPose) => scene.setPose(id as never, pose) };
     const move = (id: string, x: number, y: number) => {
       const from = scene.get(id as never)!.pose;
-      scene.applyBatch([createSetPoseOp({ id, from, to: { ...from, x, y } })], 'Move', adapter);
+      scene.applyBatch([ops.setPose({ id, from, to: { ...from, x, y } })], 'Move', adapter);
     };
     scene.setLayerLocked('wires', true);
     move('b', 400, 0);

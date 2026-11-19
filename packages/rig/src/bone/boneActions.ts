@@ -1,7 +1,6 @@
 import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import type { Op } from '@weasel-js/history';
-import { createSetDataOp } from '@weasel-js/core';
 import type { NodeId, Scene } from '@weasel-js/core';
 import { commitOps } from '@weasel-js/core';
 import { unplaceSkeleton, type RigNodeData } from '@weasel-js/core';
@@ -10,6 +9,7 @@ import type { Skeleton } from '@weasel-js/animator';
 import { sceneReach, type PlacedRig } from './placedRig';
 import type { RigEditState } from './rigEditState';
 import type {} from '../actionParamSchema';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** What the bone tool's actions read and write, all of it the tool's own. */
 export interface BoneEnv {
@@ -45,14 +45,14 @@ function commitSkeleton(
 ): void {
   const node = scene.get(id);
   if (!node) return;
-  const ops: Op[] = [createSetDataOp({
+  const ops: Op[] = [coreOps.setData({
     id, from: node.data, to: { ...(node.data as object), skeleton: unplaceSkeleton(next, node.pose) }, label,
   })];
   const strip = (parent: NodeId): void => {
     for (const child of scene.childrenOf(parent)) {
       const data = scene.get(child)?.data as RigNodeData | null | undefined;
       const kept = data?.skin && dropSkinJoints(data.skin, removed);
-      if (kept && kept !== data.skin) ops.push(createSetDataOp({ id: child, from: data, to: { ...data, skin: kept }, label }));
+      if (kept && kept !== data.skin) ops.push(coreOps.setData({ id: child, from: data, to: { ...data, skin: kept }, label }));
       strip(child);
     }
   };

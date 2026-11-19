@@ -8,7 +8,6 @@
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import {
   commitOps,
-  createSetDependsOnOp,
   type NodeId,
   type Op,
   pathEffectOf,
@@ -20,6 +19,7 @@ import { PATH_EFFECTS_GROUP } from './actions';
 import { releasedOps, takenOps } from './hiding';
 import { closesLoop } from './retarget';
 import { icon } from '../icons.gen';
+import * as coreOps from '@weasel-js/core/ops';
 
 const isTween = (node: AnyNode | undefined): node is AnyNode =>
   node !== undefined && pathEffectOf(node)?.kind === 'tween' && sourcesOf(node).length >= 2;
@@ -59,7 +59,7 @@ export const setTweenSpineAction: Action & { requires: string[] } = {
       const { tween, spine } = target;
       const [a, b, old] = sourcesOf(tween);
       commitOps(deps, [
-        createSetDependsOnOp({ id: tween.id, from: tween.dependsOn, to: [a!, b!, spine.id], label: SET_LABEL }),
+        coreOps.setDependsOn({ id: tween.id, from: tween.dependsOn, to: [a!, b!, spine.id], label: SET_LABEL }),
         ...(old !== undefined ? releasedOps(scene, old, [tween], SET_LABEL) : []),
         ...takenOps(scene, tween, 2, spine.id, SET_LABEL),
       ], SET_LABEL, { select: [tween.id] });
@@ -100,7 +100,7 @@ export const releaseTweenSpineAction: Action & { requires: string[] } = {
       const bySpine = new Map<NodeId, AnyNode[]>();
       for (const tween of tweensWithSpines(deps)) {
         const [a, b, spine] = sourcesOf(tween);
-        ops.push(createSetDependsOnOp({ id: tween.id, from: tween.dependsOn, to: [a!, b!], label: RELEASE_LABEL }));
+        ops.push(coreOps.setDependsOn({ id: tween.id, from: tween.dependsOn, to: [a!, b!], label: RELEASE_LABEL }));
         bySpine.set(spine!, [...(bySpine.get(spine!) ?? []), tween]);
       }
       if (ops.length === 0) return;

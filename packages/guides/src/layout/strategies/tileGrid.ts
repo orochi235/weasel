@@ -1,5 +1,4 @@
 import {
-  createSetPoseOp,
   type Op,
   type DropTarget,
   type LayoutArrival,
@@ -16,6 +15,7 @@ import {
   linesFor, nearestFreeCell, packTiles, tileGridOf, tileIndexOf, tileMetaOf,
   type TileGrid, type TileMeta, type TileShape,
 } from './tileCells';
+import * as coreOps from '@weasel-js/core/ops';
 
 /**
  * What a `tileGrid` does with a child past its `cols × rows` cells.
@@ -165,7 +165,7 @@ function dropOps<TPose>(
     const swap = swapFor();
     if (swap !== null) {
       ops.push(
-        createSetPoseOp<TPose>({
+        coreOps.setPose<TPose>({
           id: swap.occupant,
           from: swap.from,
           to: swap.newPose,
@@ -175,7 +175,7 @@ function dropOps<TPose>(
     }
   }
   ops.push(
-    createSetPoseOp<TPose>({
+    coreOps.setPose<TPose>({
       id: dragged.id,
       from: dragged.originPose,
       to: droppedPose,

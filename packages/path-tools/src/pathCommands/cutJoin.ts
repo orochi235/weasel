@@ -4,7 +4,7 @@
  * spans it some other way.
  */
 import {
-  commitOps, createDeleteNodeOp, createInsertNodeOp, pathCopy, type PathNode, pathOperationTags, reshapeOps,
+  commitOps, pathCopy, type PathNode, pathOperationTags, reshapeOps,
   operandPathNodes, slotOf,
 } from '@weasel-js/core';
 import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
@@ -20,6 +20,7 @@ import { joinedAnchorData } from './joinAnchorData';
 import { icon } from '../icons.gen';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
 import * as groups from '@weasel-js/core/groups';
+import * as coreOps from '@weasel-js/core/ops';
 
 const CUT_LABEL = 'Cut at Crossings';
 
@@ -59,9 +60,9 @@ export const snipAtCrossingsAction: Action & { requires: string[] } = {
       const ops: Op[] = [];
       const made = new Map<string, string[]>();
       for (const { node, pieces: runs, at } of cut) {
-        ops.push(createDeleteNodeOp(scene, node.node, CUT_LABEL));
+        ops.push(coreOps.deleteNode(scene, node.node, CUT_LABEL));
         const copies = runs.flatMap((p) => pathCopy(scene, node, p, pieceOrigins(node.path, p)) ?? []);
-        copies.forEach((copy, k) => ops.push(createInsertNodeOp(copy, at < 0 ? at : at + k, CUT_LABEL)));
+        copies.forEach((copy, k) => ops.push(coreOps.insertNode(copy, at < 0 ? at : at + k, CUT_LABEL)));
         made.set(node.id, copies.map((c) => c.id));
       }
       const selected = deps.operands?.get() ?? [];
@@ -164,7 +165,7 @@ export function createJoinPathsAction(
         const made = plan(deps, params);
         if (!scene || !made) return;
         const ops = reshapeOps(made.keep, made.path, base.label, made.anchorData);
-        if (made.drop) ops.push(createDeleteNodeOp(scene, made.drop.node, base.label));
+        if (made.drop) ops.push(coreOps.deleteNode(scene, made.drop.node, base.label));
         commitOps(deps, ops, base.label, { select: [made.keep.id] });
       },
     } satisfies ImmediateInvoker,

@@ -13,7 +13,7 @@ import { useLatest } from '@weasel-js/react';
 import type { InsertDep, InsertEnds, InsertExtras, InsertLive, ShapeGenerator } from '@weasel-js/core/engine';
 import { paletteColorAt, solid, solidStroke, strokeWith } from '@weasel-js/paint';
 import { insertSite, minSizeOf } from '@weasel-js/core';
-import { poseDescriptorOf, createInsertOp, createCommitSelectionOps, insertPreviewExtent } from '@weasel-js/core/engine';
+import { poseDescriptorOf, createCommitSelectionOps, insertPreviewExtent } from '@weasel-js/core/engine';
 import type { Scene, NodeId, OpsApplier, Op, InsertNodeFactories, InsertedNode } from '@weasel-js/core';
 import {
   rectPath,
@@ -28,6 +28,7 @@ import {
 } from '@weasel-js/geom';
 import type { Stroke, Fill } from '@weasel-js/paint';
 import { DEFAULT_STROKE_WIDTH, type InsertStyle } from '../actions/insert/style';
+import * as ops from '@weasel-js/core/ops';
 
 type Hooks = Pick<InsertedNode, 'batch' | 'inserted'>;
 
@@ -212,7 +213,7 @@ export function useInsertDepSource(
       const id = sc.mintId();
       return {
         id, batch, inserted,
-        ops: [createInsertOp({ node: { id, kind: 'mark', ...node } as unknown as { id: string }, label: `Insert ${extras.kind}` })],
+        ops: [ops.insert({ node: { id, kind: 'mark', ...node } as unknown as { id: string }, label: `Insert ${extras.kind}` })],
       };
     };
     const build: NonNullable<InsertDep['build']> = (...args) => {

@@ -1,4 +1,3 @@
-import { createSetSelectionOp } from '@weasel-js/core/engine';
 import type { Op, NodeId } from '@weasel-js/core';
 import type {
   LassoHitMode,
@@ -7,6 +6,7 @@ import type {
 import type { LassoSelectBehavior } from '@weasel-js/core/engine';
 import { scratchKey, getScratch } from '@weasel-js/routing';
 import { selectionFromHits } from '@weasel-js/core';
+import * as ops from '@weasel-js/core/ops';
 
 /** Typed scratch slot the lasso tool's gesture writes into for this behavior
  *  to consume. Shared identity: tools producing the polygon for a lasso
@@ -43,13 +43,13 @@ export function selectFromLasso(opts?: SelectFromLassoOptions): LassoSelectBehav
       const tiny = vertices.length < 3 || polygonAabbArea(vertices) < MIN_AREA;
       if (tiny) {
         const to = shiftHeld ? from : [];
-        const op: Op = createSetSelectionOp({ from: from as NodeId[], to: to as NodeId[] });
+        const op: Op = ops.setSelection({ from: from as NodeId[], to: to as NodeId[] });
         return [op];
       }
 
       const hits = adapter.hitTestLasso(vertices, mode);
       const to = selectionFromHits(from, hits, shiftHeld);
-      const op: Op = createSetSelectionOp({ from: from as NodeId[], to: to as NodeId[] });
+      const op: Op = ops.setSelection({ from: from as NodeId[], to: to as NodeId[] });
       return [op];
     },
   };
