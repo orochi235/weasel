@@ -10,6 +10,7 @@ import {
 } from 'interactions/actions/defaults/toolActivate';
 import { createToolResetToDefaultAction } from 'interactions/actions/defaults/toolResetToDefault';
 import type { ToolsApi } from './overlayBinding';
+import { getOwn } from '@weasel-js/registry';
 import type {} from '../interactions/actions/actionParamSchema';
 
 /** Options for `useKeybindings`. */
@@ -69,7 +70,7 @@ export function useKeybindings(
     const allowed = (toolId: string): boolean => {
       const modes = optionsRef.current.modes;
       if (!modes) return true;
-      const tags = toolsRef.current.registry[toolId]?.eligibility.capabilities;
+      const tags = getOwn(toolsRef.current.registry, toolId)?.eligibility.capabilities;
       return eligibleForMode(modes.current(), tags ?? []);
     };
 
