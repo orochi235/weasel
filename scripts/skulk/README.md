@@ -56,8 +56,8 @@ captures a settle apart before operating tell what moves by itself, which is lef
 | Verdict | When |
 |---|---|
 | alive | something steady changed, a popup opened, or a canvas started or stopped animating |
-| dead | nothing changed on two fresh loads, nor through its `aria-keyshortcuts`, nor in what a drag across the canvas does (or, for a button or menu item, in what a drag left: the gesture probe) |
-| unsure | only an animating canvas could have shown a change, or it was dead once and alive on the retry |
+| dead | the first try changed nothing, and the probes then found nothing either: not a second fresh load given a longer wait; nor, for a slider, one step from its start; nor through its `aria-keyshortcuts`; nor in what a drag and a wheel turn on the demo's largest canvas or SVG do afterward, with the tool already chosen or with each of the palette's tools (for a button or menu item, also in what the drag left); nor, for a setting, in what each of the demo's buttons then does |
+| unsure | only an animating canvas could have shown a change |
 | skipped | disabled, a download, a file picker, a native dialog, a new window, or kit chrome already swept |
 
 The chosen option of a radio group and a palette's active tool are tried after choosing another first, and
