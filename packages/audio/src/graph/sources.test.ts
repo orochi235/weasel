@@ -160,6 +160,13 @@ describe('file source', () => {
 });
 
 describe('oscillator', () => {
+  it('refuses a frequency that is not finite when it is made', () => {
+    const ctx = createFakeAudioContext();
+    for (const frequency of [NaN, Infinity]) {
+      expect(() => createOscillatorNode(ctx as never, { frequency })).toThrow(RangeError);
+    }
+  });
+
   it('takes its wave and frequency', () => {
     const ctx = setup();
     const node = createOscillatorNode(ctx as never, { wave: 'square', frequency: 220 });

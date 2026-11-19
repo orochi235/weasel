@@ -1,5 +1,5 @@
 import { periodicWave } from '../periodicWave';
-import { initParam, writeParam } from '../param';
+import { checkFinite, initParam, writeParam } from '../param';
 import { noiseBuffer } from '../synthVoice';
 import type { Inharmonic, NoiseColor, Waveform } from '../types';
 import { createPlayhead } from './playhead';
@@ -116,6 +116,7 @@ export interface OscillatorNodeOptions {
 
 /** A tone. Params: `frequency`, `detune`, `level`. */
 export function createOscillatorNode(ctx: BaseAudioContext, opts: OscillatorNodeOptions): GraphNodeDef {
+  checkFinite('frequency', opts.frequency);
   const wave = opts.wave ?? 'sine';
   let frequency = opts.frequency ?? 440;
   let detune = 0;
