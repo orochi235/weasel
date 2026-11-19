@@ -187,7 +187,7 @@ export const sweepDemo = async (page, demo, ctx) => {
       try {
         out = await trial(page, demo, c, full);
       } catch (error) {
-        out = { rec: record(demo, c, { verdict: 'error', reason: String(error.message ?? error).split('\n')[0] }), reload: true, revealed: [] };
+        out = { rec: record(demo, c, { verdict: error.skip ? 'skipped' : 'error', reason: String(error.message ?? error).split('\n')[0] }), reload: true, revealed: [] };
       }
     }
     records.push(out.rec);

@@ -6,6 +6,9 @@ const ROOT = '.ckd-demo-frame';
 const POPUP_WAIT_MS = 1500;
 const MAX_PRESSES = 120;
 
+/** A select with nothing else to pick: nothing to judge, so the control is skipped, not an error. */
+const onlyOption = () => Object.assign(new Error('it has no other option to choose'), { skip: true });
+
 const kit = (page, method, ...args) => page.evaluate(([m, a]) => window.__sweep[m](...a), [method, args]);
 const sel = (id) => `[data-sweep-id="${id}"]`;
 
@@ -86,7 +89,7 @@ const operateColor = async (page, c) => {
 const operateNativeSelect = async (page, c) => {
   const s = await kit(page, 'state', c.id);
   const next = s?.options?.find((v) => v !== s.value);
-  if (next === undefined) throw new Error('select has no other option');
+  if (next === undefined) throw onlyOption();
   await page.locator(sel(c.id)).first().selectOption(next, { timeout: 3000 });
   return () => page.locator(sel(c.id)).first().selectOption(s.value, { timeout: 3000 });
 };
@@ -117,7 +120,7 @@ const choose = async (page, items, pick) => {
 const operateListSelect = async (page, c) => {
   const items = await openPopup(page, c.id, 'listbox');
   const was = items.find((i) => i.selected)?.label;
-  if (!await choose(page, items, (i) => !i.selected && !i.disabled)) throw new Error('select has no other option');
+  if (!await choose(page, items, (i) => !i.selected && !i.disabled)) throw onlyOption();
   if (was === undefined) return undefined;
   return async () => {
     const again = await openPopup(page, c.id, 'listbox');

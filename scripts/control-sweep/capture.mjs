@@ -74,16 +74,35 @@ export const locate = async (page, c) => {
   return trigger && { ...c, triggerId: trigger.id };
 };
 
+const FIND_WAIT_MS = 2000;
+
+/** `locate`, asked again for a while: what a control reveals can arrive a few frames after it. */
+const locateSoon = async (page, c) => {
+  const deadline = Date.now() + FIND_WAIT_MS;
+  for (;;) {
+    const found = await locate(page, c);
+    if (found || Date.now() > deadline) return found;
+    await page.waitForTimeout(100);
+  }
+};
+
+/** The keys on the page now that share `c`'s name, for an error that says what was there instead. */
+const nearMisses = async (page, c) => {
+  const name = (c.name ?? c.label).toLowerCase();
+  const keys = (await discover(page)).map((d) => d.key).filter((k) => k.toLowerCase().includes(name));
+  return keys.length ? `; the page has ${keys.slice(0, 4).join(', ')}` : '';
+};
+
 /** Puts the page back where `pre` (if any) left it, with `c` found afresh. */
 export const prepare = async (page, url, c, settleMs, tries) => {
   if (c.precondition) {
     await load(page, url, { tries });
-    const pre = await locate(page, c.precondition);
-    if (!pre) throw new Error(`the control it depends on, ${c.precondition.label}, is gone`);
+    const pre = await locateSoon(page, c.precondition);
+    if (!pre) throw new Error(`the control it depends on, ${c.precondition.label}, is gone${await nearMisses(page, c.precondition)}`);
     await operate(page, pre);
     await settle(page, settleMs);
   }
-  const now = await locate(page, c);
-  if (!now) throw new Error('control not found after reload');
+  const now = await locateSoon(page, c);
+  if (!now) throw new Error(`control not found after reload${await nearMisses(page, c)}`);
   return { ...c, ...now, precondition: c.precondition };
 };
