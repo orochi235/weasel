@@ -126,6 +126,14 @@ describe('capture', () => {
     expect(kit().capture('.ckd-demo-frame', b.id).dom).toEqual(before);
   });
 
+  it('keeps the field it first found when operating the control adds a neighbor to its row', () => {
+    page('<div class="row"><label>Distance</label><input type="range" aria-label="Distance" value="3"></div><p>steps: 4</p><canvas></canvas>');
+    const [slider] = kit().discover('.ckd-demo-frame');
+    const before = kit().capture('.ckd-demo-frame', slider.id).dom;
+    document.querySelector('.row')!.insertAdjacentHTML('beforeend', '<button>Reset Distance</button>');
+    expect(kit().capture('.ckd-demo-frame', slider.id).dom).toEqual(before);
+  });
+
   it('normalizes whitespace in text', () => {
     page('<p>a   b</p><canvas></canvas>');
     const before = kit().capture('.ckd-demo-frame', null).dom;

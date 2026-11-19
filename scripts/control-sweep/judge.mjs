@@ -58,6 +58,7 @@ export const fingerprintOf = (capture, hash) => ({
   dom: hash(Object.entries(capture.dom).sort(([a], [b]) => (a < b ? -1 : 1)).map(([k, v]) => `${k}:${v}`).join('\n')),
   elements: Object.keys(capture.dom).length,
   canvases: capture.canvases,
+  canvasNames: capture.names,
 });
 
 /**

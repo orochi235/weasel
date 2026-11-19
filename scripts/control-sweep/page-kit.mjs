@@ -201,8 +201,14 @@ export function installSweepKit(win) {
     const root = doc.querySelector(rootSel);
     const el = id && byId(id);
     if (!root || !el) return null;
+    // Pinned at the first capture: operating a control can add a neighbor (a reset button) that would
+    // shrink a field computed afresh, and the row it gave up would read as the control's effect.
+    const pinned = doc.querySelector(`[data-sweep-field="${id}"]`);
+    if (pinned) return pinned;
     const all = [...root.querySelectorAll(CANDIDATES)].filter((c) => !subordinate(c, root));
-    return fieldOf(el, all, root);
+    const field = fieldOf(el, all, root);
+    field.dataset.sweepField = id;
+    return field;
   };
 
   /** Per element of `root` outside `exclude`, by its child-index path: a hash of tag, attributes, text and value. */
@@ -235,18 +241,22 @@ export function installSweepKit(win) {
     const exclude = field ? [field] : [];
     const vw = w.innerWidth;
     const vh = w.innerHeight;
+    const names = [];
     const canvases = [...root.querySelectorAll('canvas')].filter((c) => !exclude.some((x) => x.contains(c))).flatMap((c) => {
       const r = c.getBoundingClientRect();
       const x = Math.max(0, r.left);
       const y = Math.max(0, r.top);
       const width = Math.min(vw, r.right) - x;
       const height = Math.min(vh, r.bottom) - y;
-      return width >= 1 && height >= 1 ? [{ x, y, width, height }] : [];
+      if (width < 1 || height < 1) return [];
+      const named = c.closest('[aria-label],[class]');
+      names.push(`${squash(c.getAttribute('aria-label') ?? named?.getAttribute('aria-label') ?? String(named?.className ?? '').split(' ')[0])} ${Math.round(r.width)}×${Math.round(r.height)}`);
+      return [{ x, y, width, height }];
     });
     const dom = digest(root, exclude);
     // A popup the control opens lives outside the frame; that it is open is the change.
     dom.popups = String([...doc.querySelectorAll(POPUPS)].filter((p) => !root.contains(p) && visible(p)).length);
-    return { dom, canvases };
+    return { dom, canvases, names };
   };
 
   /** What a control holds now: a slider's or field's value and range, a checkbox's state. */
