@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SnapDep } from 'interactions/actions/snapDep';
 import { createSnapOutcomeStore } from './outcomeStore';
-import { spanSnap } from './spanSnap';
+import { createSpanSnap } from './spanSnap';
 import { sceneOfPaths, sessionDep } from './testing/sessionDep';
 import type { SnapSource } from './types';
 
@@ -17,10 +17,10 @@ const dot: SnapSource = {
   },
 };
 
-describe('spanSnap', () => {
+describe('createSpanSnap', () => {
   it('keeps the start\'s point mark drawn once the start has snapped to it', () => {
     const store = createSnapOutcomeStore();
-    const span = spanSnap(sessionDep(sceneOfPaths([]), [dot], 1, store));
+    const span = createSpanSnap(sessionDep(sceneOfPaths([]), [dot], 1, store));
     const landed = span.start({ x: 12, y: 11 }, FREE);
     expect(landed.point).toEqual({ x: 10, y: 10 });
     expect(store.get()).toEqual([{ kind: 'point', at: { x: 10, y: 10 }, glyph: 'anchor' }]);
@@ -32,7 +32,7 @@ describe('spanSnap', () => {
   });
 });
 
-describe('spanSnap.landingAt', () => {
+describe('createSpanSnap.landingAt', () => {
   /** Rounds each point to the integer grid, reporting the point it rounded to as its landing. */
   const grid: SnapDep = {
     begin: () => ({
@@ -46,7 +46,7 @@ describe('spanSnap.landingAt', () => {
   };
 
   it('answers the landing of the end a point is where it snapped to, and none for another point', () => {
-    const span = spanSnap(grid);
+    const span = createSpanSnap(grid);
     span.start({ x: 1.2, y: 2.1 }, FREE);
     span.end({ x: 4.8, y: 6.3 }, FREE);
     expect(span.landingAt({ x: 1, y: 2 })).toEqual({ exact: { x: 1, y: 2 } });
@@ -55,7 +55,7 @@ describe('spanSnap.landingAt', () => {
   });
 
   it('drops the start\'s landing once something else places the start', () => {
-    const span = spanSnap(grid);
+    const span = createSpanSnap(grid);
     span.start({ x: 1.2, y: 2.1 }, FREE);
     span.anchor({ x: 3, y: 3 });
     expect(span.landingAt({ x: 1, y: 2 })).toBeUndefined();

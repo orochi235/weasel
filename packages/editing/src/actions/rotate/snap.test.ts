@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingHandle, OngoingInvoker, SelectionApi } from '@weasel-js/routing';
 import { IDENTITY_POSE_COMPOSITION, createScene, asNodeId, createSnapOutcomeStore, drawnBoxes } from '@weasel-js/core/engine';
-import { rotationSnapSource, sceneSession2d } from '@weasel-js/core';
+import { rotationSnapSource, createSceneSession2d } from '@weasel-js/core';
 import type { SnapDep, AnyScene } from '@weasel-js/core/engine';
 import { rotateAction } from './action';
 import type { Point } from '@weasel-js/geom';
@@ -30,7 +30,7 @@ function rig(opts: { rotation?: number; others?: readonly number[]; selected?: r
   }
   const store = createSnapOutcomeStore();
   const snap: SnapDep = {
-    begin: (req) => sceneSession2d({
+    begin: (req) => createSceneSession2d({
       req, scene, boxes: drawnBoxes({ scene }), sources: [rotationSnapSource()], view: () => VIEW, reachPx: 8, store,
     }),
   };

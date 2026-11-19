@@ -3,7 +3,7 @@ import { operandMethods, SNAP_ANGLE_STEP, snapMods } from '@weasel-js/core/engin
 import type { OperandsDep, GestureContext, InsertBehavior, InsertPoint, InsertDep, CommitSelection } from '@weasel-js/core/engine';
 import { resolveParams } from '@weasel-js/routing';
 import type { InsertParams, Op, NodeId, Scene } from '@weasel-js/core';
-import { spanSnap, type SpanSnap, pointerStateOf, gestureReaders, type GestureReaders, insertParent } from '@weasel-js/core';
+import { createSpanSnap, type SpanSnap, pointerStateOf, gestureReaders, type GestureReaders, insertParent } from '@weasel-js/core';
 import { moveGestureAdapter } from '../move/gestureAdapter';
 import { insertKind } from './shape';
 
@@ -84,7 +84,7 @@ export function beginInsert(
 
   const parent = insertParent(ctx.deps.scene, ctx.deps.insertInto?.get(), ctx.deps.canDropInto, ctx.world);
   const constrain = () => (insertKind(resolveParams(opts?.params)) === 'line' ? { step: SNAP_ANGLE_STEP } : undefined);
-  const snap = spanSnap(ctx.deps.snap, constrain, parent === null ? {} : { parent });
+  const snap = createSpanSnap(ctx.deps.snap, constrain, parent === null ? {} : { parent });
   const behaviors = (opts?.behaviors ?? []) as InsertBehavior<unknown>[];
   const readers = gestureReaders(ctx.deps);
   const origin = snap.start({ x: ctx.world.x, y: ctx.world.y }, snapMods(ctx)).point;

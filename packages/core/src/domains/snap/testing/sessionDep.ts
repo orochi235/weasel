@@ -4,7 +4,7 @@ import { createScene } from 'core/scene/scene';
 import { drawnBoxes } from 'interactions/actions/drawnBoxes';
 import type { SnapDep } from 'interactions/actions/snapDep';
 import { createSnapOutcomeStore } from '../outcomeStore';
-import { sceneSession2d } from '../sceneSession2d';
+import { createSceneSession2d } from '../sceneSession2d';
 import type { SnapSource } from '../types';
 import type { AnyScene } from 'core/scene/anyScene';
 
@@ -47,6 +47,6 @@ export function sessionDep(
 ): SnapDep {
   const view = { ...VIEW, scale: { x: scale, y: scale } };
   return {
-    begin: (req) => sceneSession2d({ req, scene, boxes: drawnBoxes({ scene }), sources, view: () => view, reachPx: 8, store }),
+    begin: (req) => createSceneSession2d({ req, scene, boxes: drawnBoxes({ scene }), sources, view: () => view, reachPx: 8, store }),
   };
 }
