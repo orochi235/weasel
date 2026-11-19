@@ -19,8 +19,6 @@ export function installSweepKit(win) {
   const MENU_ITEMS = '[role=menuitem],[role=menuitemradio],[role=menuitemcheckbox]';
   const IGNORED_ATTR = /^(data-sweep-[\w-]+|data-(hovered|focused|focus-visible|focus-within|pressed)|tabindex)$/;
   const STATUS = '[aria-live]:not([aria-live=off]),[role=status],[role=log]';
-  // Undo and Redo light up after any edit, a dead one included, so their state says nothing.
-  const HISTORY = '[aria-label=Undo],[aria-label=Redo]';
   const POPUPS = '[role=dialog],[role=alertdialog],[role=menu],[role=listbox],[popover]';
   let nextId = 1;
 
@@ -224,11 +222,11 @@ export function installSweepKit(win) {
     return field;
   };
 
-  /** Per element of `root` outside `exclude`, by its child-index path: a hash of tag, attributes, text and value. */
-  const digest = (root, exclude) => {
+  /** Per element of `root` outside `exclude` and not matching `ignore`, by its child-index path: a hash of tag, attributes, text and value. */
+  const digest = (root, exclude, ignore) => {
     const out = {};
     const walk = (el, path) => {
-      if (exclude.includes(el) || el.matches(HISTORY)) return;
+      if (exclude.includes(el) || (ignore && el.matches(ignore))) return;
       const attrs = [...el.attributes].filter((a) => !IGNORED_ATTR.test(a.name)).map((a) => `${a.name}=${a.value}`).sort();
       let s = `${el.tagName}[${attrs.join(' ')}]`;
       for (const n of el.childNodes) {
@@ -246,8 +244,8 @@ export function installSweepKit(win) {
     return out;
   };
 
-  /** The demo's DOM digest and the on-screen rect of each canvas, both without the field of control `id`. */
-  const capture = (rootSel, id) => {
+  /** The demo's DOM digest and the on-screen rect of each canvas, both without the field of control `id`; the digest also without what matches `ignore`. */
+  const capture = (rootSel, id, ignore) => {
     const root = doc.querySelector(rootSel);
     if (!root) return { dom: {}, canvases: [] };
     const field = fieldById(rootSel, id);
@@ -266,7 +264,7 @@ export function installSweepKit(win) {
       names.push(`${squash(c.getAttribute('aria-label') ?? named?.getAttribute('aria-label') ?? String(named?.className ?? '').split(' ')[0])} ${Math.round(r.width)}×${Math.round(r.height)}`);
       return [{ x, y, width, height }];
     });
-    const dom = digest(root, exclude);
+    const dom = digest(root, exclude, ignore);
     // A popup the control opens lives outside the frame; that it is open is the change.
     dom.popups = String([...doc.querySelectorAll(POPUPS)].filter((p) => !root.contains(p) && visible(p)).length);
     return { dom, canvases, names };

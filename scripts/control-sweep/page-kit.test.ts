@@ -3,7 +3,7 @@ import { installSweepKit } from './page-kit.mjs';
 
 interface Kit {
   discover(sel: string, chrome?: string): Array<{ id: string; key: string; kind: string; label: string; skip?: string; selected?: boolean; restoreTo?: string; alternate?: string; native?: boolean; chrome?: boolean }>;
-  capture(sel: string, id: string | null): { dom: Record<string, string>; canvases: unknown[] };
+  capture(sel: string, id: string | null, ignore?: string): { dom: Record<string, string>; canvases: unknown[] };
 }
 const kit = () => (window as unknown as { __sweep: Kit }).__sweep;
 
@@ -134,19 +134,20 @@ describe('capture', () => {
     expect(kit().capture('.ckd-demo-frame', slider.id).dom).toEqual(before);
   });
 
-  it('counts a slider’s own number field, its reset button, and Undo lighting up as nothing', () => {
+  it('counts a slider’s own number field and its reset button as the slider, and ignores what `ignore` names', () => {
     page(`
       <div class="row"><span>Distance</span><input type="range" aria-label="Distance" value="3"><input inputmode="decimal" aria-label="Distance" value="3"><span role="button" aria-label="Reset Distance" hidden></span></div>
       <div class="row"><input type="range" aria-label="Steps" value="5"></div>
       <button aria-label="Undo" disabled>↶</button><canvas></canvas>`);
     const [slider] = kit().discover('.ckd-demo-frame');
-    const before = kit().capture('.ckd-demo-frame', slider.id).dom;
+    const capture = () => kit().capture('.ckd-demo-frame', slider.id, '[aria-label=Undo]').dom;
+    const before = capture();
     (document.querySelectorAll('input')[1] as HTMLInputElement).value = '9';
     document.querySelector('[aria-label="Reset Distance"]')!.removeAttribute('hidden');
     document.querySelector('[aria-label=Undo]')!.removeAttribute('disabled');
-    expect(kit().capture('.ckd-demo-frame', slider.id).dom).toEqual(before);
+    expect(capture()).toEqual(before);
     (document.querySelectorAll('input')[2] as HTMLInputElement).value = '9';
-    expect(kit().capture('.ckd-demo-frame', slider.id).dom).not.toEqual(before);
+    expect(capture()).not.toEqual(before);
   });
 
   it('normalizes whitespace in text', () => {
