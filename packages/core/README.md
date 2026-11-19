@@ -36,33 +36,34 @@ import '@weasel-js/core/style.css';
 
 `useScene` holds the scene: a tree of leaf and container nodes, each carrying your data and a pose. Every change to it is an **op**, which is what makes it undoable. `<SceneCanvas>` renders a scene and routes input to it.
 
-A bare `<SceneCanvas>` only renders. It keeps a selection that nothing sets from input, routes any bindings you add, and undoes and redoes whatever changed its scene (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z), but it has no tools, no other standard actions and no selection chrome. Behavior comes from the preset objects passed in `features`, each independent of the others, and only the presets you import reach your bundle:
+A bare `<SceneCanvas>` only renders. It keeps a selection that nothing sets from input, routes any bindings you add, and undoes and redoes whatever changed its scene (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z), but it has no tools, no other standard actions and no selection chrome. Behavior comes from the preset objects passed in `features`, each independent of the others, and only the presets you import reach your bundle. `@weasel-js/editing/presets` holds them all, `import * as presets from '@weasel-js/editing/presets'`; core's own view presets are also on `@weasel-js/core/presets`:
 
 | Preset | Turns on |
 |---|---|
-| `viewPreset` | wheel pan and zoom, pinch, the zoom keys, edge pan, the hand tool (H, or hold Space). The only way to navigate: `viewport` configures it and turns nothing on. |
-| `selectPreset` | the select tool, active from the start: click to pick, drag on empty to marquee, click on empty to clear |
-| `outlinePreset` | the selection outline, whichever tool sets the selection |
-| `pickPreset` | `selectPreset` and `outlinePreset` |
-| `movePreset` | drag a body to move it, Alt-drag to clone — under any tool that leaves the drag unclaimed |
-| `resizePreset` | resize handles |
-| `rotatePreset` | the rotation handle |
-| `transformPreset` | `resizePreset` and `rotatePreset` |
-| `editPreset` | delete, duplicate, group/ungroup, nudge, select-all, Escape, the context menu, cut/copy/paste, fill and stroke, and their keys; Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
-| `arrangePreset` | align, distribute, reorder, flip |
-| `pathfinderPreset` | the pathfinder booleans and the live boolean group |
-| `ingestPreset` | dropped and pasted content: images, SVG, files, and consumer content handlers, on Cmd/Ctrl+V or an OS drop |
-| `drawPreset` | every preset above |
+| `presets.view` | wheel pan and zoom, pinch, the zoom keys, edge pan, the hand tool (H, or hold Space). The only way to navigate: `viewport` configures it and turns nothing on. |
+| `presets.select` | the select tool, active from the start: click to pick, drag on empty to marquee, click on empty to clear |
+| `presets.outline` | the selection outline, whichever tool sets the selection |
+| `presets.pick` | `presets.select` and `presets.outline` |
+| `presets.move` | drag a body to move it, Alt-drag to clone — under any tool that leaves the drag unclaimed |
+| `presets.resize` | resize handles |
+| `presets.rotate` | the rotation handle |
+| `presets.transform` | `presets.resize` and `presets.rotate` |
+| `presets.edit` | delete, duplicate, group/ungroup, nudge, select-all, Escape, the context menu, cut/copy/paste, fill and stroke, and their keys; Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
+| `presets.arrange` | align, distribute, reorder, flip |
+| `presets.pathfinder` | the pathfinder booleans and the live boolean group |
+| `presets.ingest` | dropped and pasted content: images, SVG, files, and consumer content handlers, on Cmd/Ctrl+V or an OS drop |
+| `presets.draw` | every preset above |
 
-Path editing, the pen, pencil and knife, the path commands and Create Outlines are `@weasel-js/path-tools`': `features={[drawPreset, pathToolsPreset]}` with `tools={usePathToolsTools()}`.
+Path editing, the pen, pencil and knife, the path commands and Create Outlines are `@weasel-js/path-tools`': `features={[presets.draw, pathTools.pathTools]}` with `tools={usePathToolsTools()}`.
 
-`defaultTools` mounts tools by id on top, and each brings the actions it binds: `defaultTools={['hand']}` drags the view without `viewPreset`, and `defaultTools={['rect']}` brings `insert` wherever a preset offers the rect (editing's `drawPreset` or `shapeToolsOfferedPreset`).
+`defaultTools` mounts tools by id on top, and each brings the actions it binds: `defaultTools={['hand']}` drags the view without `presets.view`, and `defaultTools={['rect']}` brings `insert` wherever a preset offers the rect (editing's `presets.draw` or `presets.shapeToolsOffered`).
 
 Interactions are **actions** — descriptors registered into an actions registry — reached by **gesture bindings**. A tool is a list of `{ spec, actionId }` pairs and nothing more; the kit's own select, shape and viewport tools are built that way.
 
 ```tsx
 import { SceneCanvas, useScene } from '@weasel-js/core';
-import { KIT_TOOL_IDS, drawPreset, useSelection } from '@weasel-js/editing';
+import { KIT_TOOL_IDS, useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 import { createGridPreset } from '@weasel-js/guides';
 
 const grid = createGridPreset({ spacing: 20 });
@@ -80,7 +81,7 @@ export function Editor() {
       height={600}
       scene={scene}
       selection={selection}
-      features={[drawPreset, grid]}
+      features={[presets.draw, grid]}
       defaultTools={KIT_TOOL_IDS}
     />
   );
@@ -99,7 +100,7 @@ Lower-level surfaces take a narrow **adapter** instead of a scene — a few meth
 
 An `Action` is a named operation — `delete`, `duplicate`, `group`, `insert`, `viewport.dragPan` — paired with the input that triggers it. `<ActionsProvider>` holds the registered descriptors, and the gesture dispatcher matches live input against each one's `defaultBinding` and the active tool's bindings. Keystrokes and pointer gestures take the same path, so a keyboard shortcut and a drag are two bindings on one action rather than two mechanisms.
 
-`<SceneCanvas>` mounts a provider when none is above it and registers undo and redo, and the kit-standard actions its `features` presets carry — under `drawPreset`, all of them: escape, select-all, delete, duplicate, group and ungroup, flip, nudge, reorder, align, distribute, the pathfinder booleans, fill and stroke, clipboard, and the pointer-driven move, resize, rotate, clone, area-select and lasso. `BASELINE_ACTION_IDS` lists the ones every canvas registers. A preset can include others: `editPreset` is `clipboardPreset`, `nudgePreset`, `groupPreset`, and the rest, each of which can be passed alone, and `pickPreset`, `transformPreset`, and `drawPreset` are presets of that kind. `insert` comes with the shape tools that bind it, which `shapeToolsPreset` mounts. `features` takes a package's preset object the same way. Where presets are picked by name, `namedFeatures('pick', 'move')` from `@weasel-js/editing` returns the objects, `FEATURE_NAMES` lists the names, and `FEATURE_ACTION_IDS` says which preset registers which action; that entry loads every core preset.
+`<SceneCanvas>` mounts a provider when none is above it and registers undo and redo, and the kit-standard actions its `features` presets carry — under `presets.draw`, all of them: escape, select-all, delete, duplicate, group and ungroup, flip, nudge, reorder, align, distribute, the pathfinder booleans, fill and stroke, clipboard, and the pointer-driven move, resize, rotate, clone, area-select and lasso. `BASELINE_ACTION_IDS` lists the ones every canvas registers. A preset can include others: `presets.edit` is `presets.clipboard`, `presets.nudge`, `presets.group`, and the rest, each of which can be passed alone, and `presets.pick`, `presets.transform`, and `presets.draw` are presets of that kind. `insert` comes with the shape tools that bind it, which `presets.shapeTools` mounts. `features` takes a package's preset object the same way. Where presets are picked by name, `namedFeatures('pick', 'move')` from `@weasel-js/editing` returns the objects, `FEATURE_NAMES` lists the names, and `FEATURE_ACTION_IDS` says which preset registers which action; that entry loads every core preset.
 
 ### Tuning an action
 
@@ -115,7 +116,7 @@ A tuning applies to whichever descriptor holds the id, whether a preset or a too
 ```tsx
 import { useMemo, useRef } from 'react';
 import { SceneCanvas, type ActionTunings } from '@weasel-js/core';
-import { filletPreset, pathsPreset, sandPreset } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 
 const radius = useRef(8);
 const tune = useMemo<ActionTunings>(() => ({
@@ -123,7 +124,7 @@ const tune = useMemo<ActionTunings>(() => ({
   cycleFillet: { bindings: [{ kind: 'key', key: 'k' }] },
 }), []);
 
-<SceneCanvas scene={scene} features={[pathsPreset, sandPreset, filletPreset]} tune={tune} />
+<SceneCanvas scene={scene} features={[pathTools.paths, pathTools.sand, pathTools.fillet]} tune={tune} />
 ```
 
 `ActionParamSchema` types `params` for the kit actions that read them (`flip`, `align.*`, `insert`, `move`, `viewport.dragPan`, `editAnchors` and the rest), here and in bindings, `trigger` and `defineAction`; an id it does not name takes none except as `dynamicActionId(id)`. `editAnchors` takes `handleLock` (`'angle'` or `'length'`, held without the Shift or Mod modifier). An action of your own declares its params the way `DepSchema` takes deps, against `@weasel-js/routing`, the package that declares both:
@@ -144,7 +145,7 @@ Pass `tune` a stable object — a module constant or a `useMemo` — since a new
   height={H}
   scene={scene}
   selection={selection}
-  features={[drawPreset]}
+  features={[presets.draw]}
   actions={{
     duplicate: null,                  // drop the default
     'app.publish': {                  // add your own
@@ -185,7 +186,7 @@ A render layer can draw with its own fragment shader. Register the program once,
 
 ```tsx
 import { registerProgram } from '@weasel-js/core/renderer';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const stripes = registerProgram('stripes', { glsl: { frag: `#version 300 es
 precision highp float;

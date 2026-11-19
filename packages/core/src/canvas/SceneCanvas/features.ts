@@ -7,7 +7,7 @@
  * chrome, and contributions one behavior brings, and the presets it includes.
  * One that holds only actions, tools, and includes is a bundle, pure grouping;
  * one with any other role is an atom, whose parts only work together. Core's
- * own are exported objects (`selectPreset`, `drawPreset`), a package ships its
+ * own are exported objects (`presets.select`, `presets.draw`), a package ships its
  * own the same way, and an app passes the objects it imports. Nothing here
  * imports an action, so a canvas reaches only the presets it is handed.
  *
@@ -210,7 +210,7 @@ export interface EnabledPresets {
  * The presets a canvas runs with: `includes` pulled in, each preset once, and
  * every one placed ahead of the presets it `refines` and what those include.
  * Ties keep the order given. Nothing is implied: a `viewport` config without
- * `viewPreset` turns no navigation on.
+ * `corePresets.view` turns no navigation on.
  *
  * `selectRotates: false` is `selectTool.rotate === false`: every preset keeps
  * its actions, but loses its ambient `rotate` bindings and the rotation handle
