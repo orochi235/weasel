@@ -1,8 +1,20 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import { mat3 } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { createScene } from 'core/scene/scene';
-import { planLayerSample } from './layerSample';
+import { createLayerSampler, planLayerSample } from './layerSample';
+
+const raster = vi.hoisted(() => ({ calls: [] as { view?: import('@weasel-js/geom').GlMat3 }[] }));
+vi.mock('./renderSceneToPixels', () => ({
+  createRasterSession: () => ({
+    renderCommands: (_c: unknown, size: { width: number; height: number }, options: { view?: import('@weasel-js/geom').GlMat3 }) => {
+      raster.calls.push(options);
+      return { width: size.width, height: size.height, data: new Uint8ClampedArray(size.width * size.height * 4) };
+    },
+    dispose: () => undefined,
+  }),
+}));
 import { documentLayersOf } from './SceneCanvas/useSceneColorAt';
 
 const rect = (x: number, y: number, w: number, h: number): DrawCommand => ({
@@ -43,6 +55,18 @@ describe('planLayerSample', () => {
     expect(planLayerSample({ layers, ...at(-1, 5) })).toBeNull();
     expect(planLayerSample({ layers, ...at(100, 5) })).toBeNull();
     expect(planLayerSample({ layers, ...at(Number.NaN, 5) })).toBeNull();
+  });
+});
+
+describe('createLayerSampler', () => {
+  it("hands the renderer the view in the raster's pixels, so 'world'-unit paint lands where the canvas puts it", () => {
+    const sampler = createLayerSampler();
+    // View: world (5, 6) at the canvas's corner, two CSS px per world unit; dpr 2.
+    sampler.rgba({ layers: [screenLayer([])], view: { x: 5, y: 6, scale: { x: 2, y: 2 } }, dims: at(10, 20).dims, point: { x: 10, y: 20 } });
+    const { view } = raster.calls[0]!;
+    // World (10, 15) is CSS (10, 18), device (20, 36); the raster's corner is device (19, 39).
+    expect(view && mat3.transformPoint(view, 10, 15)).toEqual([20 - 19, 36 - 39]);
+    sampler.dispose();
   });
 });
 

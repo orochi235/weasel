@@ -182,12 +182,14 @@ export interface RasterSession {
    * Draw `commands` with no scene in between, into a `width × height` raster
    * whose pixels they are already placed in: a frame the caller built itself,
    * such as a stack of layers sampled at one point. `screen` is where
-   * `'screen'`-unit paint is measured, as on `render`. Throws once disposed.
+   * `'screen'`-unit paint is measured, as on `render`, and `view` (world →
+   * raster pixels) where `'world'`-unit paint is; without it that paint is
+   * measured in screen space. Throws once disposed.
    */
   renderCommands(
     commands: DrawCommand[],
     size: { width: number; height: number },
-    options?: { screen?: GlMat3; flattenTolerancePx?: number },
+    options?: { screen?: GlMat3; view?: GlMat3; flattenTolerancePx?: number },
   ): RasterImage;
   /** Free every GL resource the session created — programs, geometry, and
    *  the texture and mesh caches — and drop its own canvas. A caller-owned
@@ -301,7 +303,7 @@ export function createRasterSession(options: RasterSessionOptions = {}): RasterS
     },
     renderCommands(commands, { width, height }, options = {}) {
       const { ctx, renderer: r } = sized('renderCommands', width, height, options.flattenTolerancePx);
-      return drawAndRead('renderCommands', ctx, () => r.render(commands, undefined, { screen: options.screen }), width, height);
+      return drawAndRead('renderCommands', ctx, () => r.render(commands, options.view, { screen: options.screen }), width, height);
     },
     renderIds(args, options) {
       const { plan, ctx, renderer: r } = prepare('renderIds', args);
