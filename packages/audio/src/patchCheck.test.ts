@@ -44,6 +44,11 @@ describe('synth patch checks', () => {
     refusesNote({ pitch: 'A4', glide: { to: 'C5', ms: -5 } });
   });
 
+  it('refuses a partial gain that is not finite', () => {
+    refusesNote({ pitch: 'A4', wave: { partials: [{ ratio: 1, gain: NaN }, { ratio: 2 }] } });
+    refusesNote({ pitch: 'A4', wave: { partials: [{ ratio: 1, gain: Infinity }] } });
+  });
+
   it('takes a patch whose numbers are all finite', () => {
     const note: NoteOptions = {
       pitch: 'A4', duration: 0, glide: { to: 'C5', ms: 0 },

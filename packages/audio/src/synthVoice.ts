@@ -92,6 +92,9 @@ export function resolvePartials(wave: Inharmonic): (SynthPartial & { gain: numbe
     if (p.decay !== undefined && !(p.decay > 0)) {
       throw new RangeError(`@weasel-js/audio: partial decay must be a positive number of ms, got ${p.decay}`);
     }
+    if (p.gain !== undefined && !Number.isFinite(p.gain)) {
+      throw new RangeError(`@weasel-js/audio: partial gain must be finite, got ${p.gain}`);
+    }
     total += Math.abs(p.gain ?? 1);
   }
   return wave.partials.map((p) => ({
