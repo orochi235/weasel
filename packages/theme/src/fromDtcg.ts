@@ -78,7 +78,7 @@ function readTints(raw: unknown): SerializableColorList | undefined {
  * Ramps and tints come from `com.weasel.ramps` and `com.weasel.tints`.
  */
 export function fromDtcg(doc: DtcgDocument): Theme {
-  if (!isRecord(doc) || typeof doc.name !== 'string' || doc.name === '') {
+  if (!isRecord(doc as unknown) || typeof doc.name !== 'string' || doc.name === '') {
     throw new Error('DTCG document needs a string "name"');
   }
   const base = doc.extends === undefined ? weaselTheme : doc.extends;
