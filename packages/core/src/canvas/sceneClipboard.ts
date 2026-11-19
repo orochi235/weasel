@@ -63,7 +63,10 @@ export function snapshotSceneSelection<TData, TLayer extends string, TPose>(
 ): ClipboardSnapshot {
   const { scene } = env;
   const fnFields = createNodeFnFields<TPose>(scene.registry as never);
-  const idSet = new Set(ids);
+  // An id an ancestor holds comes with that ancestor's subtree walk. A page
+  // or the run is never copied, whatever selection named it.
+  const roots = copiedRoots(scene as never, ids);
+  const idSet = new Set<string>(roots);
   const taken = new Set<string>();
   const items: Node<TData, TLayer, TPose>[] = [];
   // A stored pose is relative to its frame, and a node whose frame is not
@@ -117,9 +120,7 @@ export function snapshotSceneSelection<TData, TLayer extends string, TPose>(
     }
     if (hasChildren(n)) for (const cid of scene.childrenOf(asNodeId(id))) carrySources(cid);
   };
-  // An id an ancestor holds comes with that ancestor's subtree walk. A page
-  // or the run is never copied, whatever selection named it.
-  for (const id of copiedRoots(scene as never, ids)) {
+  for (const id of roots) {
     carrySources(id);
     capture(id, true);
   }
