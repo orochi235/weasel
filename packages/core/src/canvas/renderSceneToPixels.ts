@@ -24,7 +24,7 @@
  *   output px).
  */
 import { WeaselRenderer } from '@weasel-js/renderer';
-import { viewToMat3 } from '@weasel-js/geom';
+import { mat3, viewToMat3 } from '@weasel-js/geom';
 import type { DrawCommand, IdBuffer } from '@weasel-js/renderer';
 import type { GlMat3 } from '@weasel-js/geom';
 import type { View } from '../core/viewport/view';
@@ -76,16 +76,27 @@ export function planPixelRender<TData, TLayer extends string, TPose>(
       fill: { paint: { kind: 'solid', color: args.background } },
     });
   }
-  commands.push(...buildSceneViewCommands(
-    // `scale` is already output pixels per world unit: one output pixel per "CSS" pixel.
-    args.scene, view, drawOne, undefined, args.alphaFor, drawnLayers(args), args, undefined, 1, args.camera ?? null,
-  ));
+  // The walk sees CSS pixels, so a `{ px }` length is `pixelRatio` output pixels, as on a canvas at that density.
+  const ratio = pixelRatioOf(args);
+  const css: View = ratio === 1 ? view : { ...view, scale: { x: view.scale.x / ratio, y: view.scale.y / ratio } };
+  const scene = buildSceneViewCommands(
+    args.scene, css, drawOne, undefined, args.alphaFor, drawnLayers(args), args, undefined, ratio, args.camera ?? null,
+  );
+  commands.push(...(ratio === 1 ? scene : [{ kind: 'group' as const, transform: mat3.scaled(mat3.identity(), ratio, ratio), children: scene }]));
   if (args.overlay) commands.push(...args.overlay);
-  return { width, height, view, commands };
+  return { width, height, view, commands, ...(ratio === 1 ? {} : { screen: mat3.scaled(mat3.identity(), ratio, ratio) }) };
 }
 
 /** The scene layers a headless render leaves out: annotation layers unless
  *  `annotations` asks for them, and those `layers` does not name. */
+function pixelRatioOf(args: { pixelRatio?: number }): number {
+  const ratio = args.pixelRatio ?? 1;
+  if (!(ratio > 0 && Number.isFinite(ratio))) {
+    throw new RangeError(`renderSceneToPixels: pixelRatio must be a positive finite number, got ${ratio}`);
+  }
+  return ratio;
+}
+
 function drawnLayers(
   args: Pick<RenderSceneToPixelsArgs<unknown, string, unknown>, 'scene' | 'annotations' | 'layers'>,
 ): { layerVisibility: Record<string, boolean> } | undefined {
@@ -182,12 +193,14 @@ export interface RasterSession {
    * Draw `commands` with no scene in between, into a `width × height` raster
    * whose pixels they are already placed in: a frame the caller built itself,
    * such as a stack of layers sampled at one point. `screen` is where
-   * `'screen'`-unit paint is measured, as on `render`. Throws once disposed.
+   * `'screen'`-unit paint is measured, as on `render`, and `view` (world →
+   * raster pixels) where `'world'`-unit paint is; without it that paint is
+   * measured in screen space. Throws once disposed.
    */
   renderCommands(
     commands: DrawCommand[],
     size: { width: number; height: number },
-    options?: { screen?: GlMat3; flattenTolerancePx?: number },
+    options?: { screen?: GlMat3; view?: GlMat3; flattenTolerancePx?: number },
   ): RasterImage;
   /** Free every GL resource the session created — programs, geometry, and
    *  the texture and mesh caches — and drop its own canvas. A caller-owned
@@ -292,16 +305,16 @@ export function createRasterSession(options: RasterSessionOptions = {}): RasterS
   return {
     render(args) {
       const { plan, ctx, renderer: r } = prepare('render', args);
-      const draw = () => r.render(plan.commands, viewToMat3(plan.view), { screen: args.screen });
+      const draw = () => r.render(plan.commands, viewToMat3(plan.view), { screen: args.screen ?? plan.screen });
       return drawAndRead('render', ctx, draw, plan.width, plan.height);
     },
     renderPlan(plan, { screen, flattenTolerancePx } = {}) {
       const { ctx, renderer: r } = sized('renderPlan', plan.width, plan.height, flattenTolerancePx);
-      return drawAndRead('renderPlan', ctx, () => r.render(plan.commands, viewToMat3(plan.view), { screen }), plan.width, plan.height);
+      return drawAndRead('renderPlan', ctx, () => r.render(plan.commands, viewToMat3(plan.view), { screen: screen ?? plan.screen }), plan.width, plan.height);
     },
     renderCommands(commands, { width, height }, options = {}) {
       const { ctx, renderer: r } = sized('renderCommands', width, height, options.flattenTolerancePx);
-      return drawAndRead('renderCommands', ctx, () => r.render(commands, undefined, { screen: options.screen }), width, height);
+      return drawAndRead('renderCommands', ctx, () => r.render(commands, options.view, { screen: options.screen }), width, height);
     },
     renderIds(args, options) {
       const { plan, ctx, renderer: r } = prepare('renderIds', args);

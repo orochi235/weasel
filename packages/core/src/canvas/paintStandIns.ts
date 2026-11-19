@@ -4,7 +4,7 @@
  * element it is mounted in; every canvas of that scene inside that element paints the node it shows through
  * the stand-in's `keep`.
  */
-import { useMemo, useSyncExternalStore, type MutableRefObject } from 'react';
+import { useLayoutEffect, useMemo, useReducer, useSyncExternalStore, type MutableRefObject } from 'react';
 import { createEmitter } from '@weasel-js/registry';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { Node } from 'core/scene/types';
@@ -71,13 +71,21 @@ export function useStandInLayers<TData, TLayer extends string, TPose>(
   layers: SceneCanvasLayers<Node<TData, TLayer, TPose>, TPose> | undefined,
 ): SceneCanvasLayers<Node<TData, TLayer, TPose>, TPose> | undefined {
   const at = useSyncExternalStore(subscribe, snapshot, snapshot);
-  return useMemo(() => {
+  // The ref fills at commit, after the render that read it: once it is attached or replaced, read again if that
+  // read could have answered differently.
+  const [attached, reread] = useReducer((n: number) => n + 1, 0);
+  const read = useMemo(() => {
     const el = elementRef.current;
     const standIns = el ? paintStandInsOver(el, scene) : new Map<string, KeepPaint>();
-    return layersStandingIn(layers, standIns);
+    return { el, any: standIns.size > 0, layers: layersStandingIn(layers, standIns) };
     // `at` is the registry's version: a stand-in shown or hidden is a change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layers, scene, elementRef, at]);
+  }, [layers, scene, elementRef, at, attached]);
+  useLayoutEffect(() => {
+    const el = elementRef.current;
+    if (el !== read.el && (read.any || (el && paintStandInsOver(el, scene).size > 0))) reread();
+  });
+  return read.layers;
 }
 
 /** `layers` with each node `standIns` names painted through its `keep`. */

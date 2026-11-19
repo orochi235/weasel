@@ -63,7 +63,10 @@ export function snapshotSceneSelection<TData, TLayer extends string, TPose>(
 ): ClipboardSnapshot {
   const { scene } = env;
   const fnFields = createNodeFnFields<TPose>(scene.registry as never);
-  const idSet = new Set(ids);
+  // An id an ancestor holds comes with that ancestor's subtree walk. A page
+  // or the run is never copied, whatever selection named it.
+  const roots = copiedRoots(scene as never, ids);
+  const idSet = new Set<string>(roots);
   const taken = new Set<string>();
   const items: Node<TData, TLayer, TPose>[] = [];
   // A stored pose is relative to its frame, and a node whose frame is not
@@ -117,9 +120,7 @@ export function snapshotSceneSelection<TData, TLayer extends string, TPose>(
     }
     if (hasChildren(n)) for (const cid of scene.childrenOf(asNodeId(id))) carrySources(cid);
   };
-  // An id an ancestor holds comes with that ancestor's subtree walk. A page
-  // or the run is never copied, whatever selection named it.
-  for (const id of copiedRoots(scene as never, ids)) {
+  for (const id of roots) {
     carrySources(id);
     capture(id, true);
   }
@@ -232,11 +233,17 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
   let dy = offset.dy;
   if (ctx?.dropPoint) {
     // Drop-point policy: land the cluster origin (min corner of the root
-    // items' bounds) on the drop point; `offset` is ignored.
+    // items' bounds) on the drop point; `offset` is ignored. A root deriving
+    // only its path keeps a placeholder pose its path does not follow.
+    const pathOnly = (item: Item<TData, TLayer, TPose>): boolean => {
+      const fn = fns.get(item.id)!;
+      return sourcesOf(item).length > 0 && fn.derivePath !== undefined && fn.derivePose === undefined;
+    };
+    const roots = src.filter(isRoot);
+    const placing = roots.some((item) => !pathOnly(item)) ? roots.filter((item) => !pathOnly(item)) : roots;
     let minX = Infinity;
     let minY = Infinity;
-    for (const item of src) {
-      if (!isRoot(item)) continue;
+    for (const item of placing) {
       const b = env.poseBounds(item.pose, item);
       if (b.x < minX) minX = b.x;
       if (b.y < minY) minY = b.y;

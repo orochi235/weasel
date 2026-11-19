@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { rememberBackend } from '@weasel-js/core/testing/canvas';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { createHud, type Hud } from '../hud';
 import { createLoupe } from './createLoupe';
@@ -150,6 +151,7 @@ describe('createLoupe', () => {
     const frame = bindHost(hud);
     const el = makeElement();
     let reads = 0;
+    rememberBackend(el, 'webgl2');
     vi.spyOn(el, 'getContext').mockReturnValue({
       RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
       readPixels: (
@@ -176,6 +178,7 @@ describe('createLoupe', () => {
     const hud = createHud();
     const frame = bindHost(hud);
     const el = makeElement();
+    rememberBackend(el, 'webgl2');
     vi.spyOn(el, 'getContext').mockReturnValue({
       RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
       readPixels: (_x: number, _y: number, _w: number, _h: number, _f: number, _t: number, buf: Uint8Array) => { buf.fill(0); },
@@ -195,6 +198,7 @@ describe('createLoupe', () => {
       { left: 0, top: 0, width: 820, height: 400, right: 820, bottom: 400, x: 0, y: 0, toJSON: () => ({}) } as DOMRect,
     );
     const reads: { x: number; y: number; width: number; height: number }[] = [];
+    rememberBackend(el, 'webgl2');
     vi.spyOn(el, 'getContext').mockReturnValue({
       RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
       readPixels: (x: number, y: number, w: number, h: number) => { reads.push({ x, y, width: w, height: h }); },
@@ -235,6 +239,7 @@ describe('createLoupe', () => {
       { left: 0, top: 0, width: 820, height: 400, right: 820, bottom: 400, x: 0, y: 0, toJSON: () => ({}) } as DOMRect,
     );
     const reads: { x: number; y: number }[] = [];
+    rememberBackend(el, 'webgl2');
     vi.spyOn(el, 'getContext').mockReturnValue({
       RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
       readPixels: (x: number, y: number) => { reads.push({ x, y }); },
@@ -271,6 +276,7 @@ describe('createLoupe', () => {
     const frame = bindHost(hud);
     const el = makeElement();
     const reads: { x: number; y: number }[] = [];
+    rememberBackend(el, 'webgl2');
     vi.spyOn(el, 'getContext').mockReturnValue({
       RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
       readPixels: (
@@ -304,6 +310,7 @@ describe('createLoupe', () => {
     const frame = bindHost(hud);
     const el = makeElement();
     const reads: { x: number; y: number }[] = [];
+    rememberBackend(el, 'webgl2');
     vi.spyOn(el, 'getContext').mockReturnValue({
       RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
       readPixels: (x: number, y: number) => { reads.push({ x, y }); },
@@ -320,6 +327,7 @@ describe('createLoupe', () => {
     const hud = createHud();
     const frame = bindHost(hud);
     const el = makeElement();
+    rememberBackend(el, 'webgl2');
     vi.spyOn(el, 'getContext').mockReturnValue({
       RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
       readPixels: (_x: number, _y: number, _w: number, _h: number, _f: number, _t: number, buf: Uint8Array) => {
@@ -361,6 +369,7 @@ describe('createLoupe', () => {
     const hud = createHud();
     const frame = bindHost(hud);
     const el = makeElement();
+    rememberBackend(el, 'webgl2');
     vi.spyOn(el, 'getContext').mockReturnValue({
       RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
       readPixels: () => {},
@@ -386,6 +395,7 @@ describe('createLoupe', () => {
     const frame = bindHost(hud);
     const el = makeElement();
     const reads: number[] = [];
+    rememberBackend(el, 'webgl2');
     vi.spyOn(el, 'getContext').mockReturnValue({
       RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
       readPixels: (_x: number, y: number) => { reads.push(y); },
@@ -437,6 +447,7 @@ describe('createLoupe', () => {
     const hud = createHud();
     const frame = bindHost(hud);
     const el = makeElement();
+    rememberBackend(el, 'webgl2');
     vi.spyOn(el, 'getContext').mockReturnValue({
       RGBA: 0x1908, UNSIGNED_BYTE: 0x1401, readPixels: () => {},
     } as unknown as WebGL2RenderingContext);

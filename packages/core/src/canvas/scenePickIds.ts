@@ -57,6 +57,9 @@ export function createScenePickIds(live: (id: string) => boolean, max = MAX_PICK
         n = byPick.length;
         byPick.push(id);
       } else {
+        // A freed number a live node adopted since is not free.
+        const taken = (k: number): boolean => { const held = byPick[k]; return !!held && live(held); };
+        while (next < free.length && taken(free[next]!)) next++;
         if (next >= free.length) reclaim();
         if (next >= free.length) {
           throw new RangeError(`scenePickIds: a scene can name ${max} nodes in an id frame`);

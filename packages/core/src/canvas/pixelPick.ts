@@ -38,7 +38,10 @@ export function pixelPickEvery(
   const found: string[] = [];
   for (let pass = 0; pass < MAX_PIXEL_PICK_PASSES; pass++) {
     const buf = readIds(rect, exclude.size > 0 ? { exclude } : undefined);
-    if (!buf || buf.width === 0 || buf.height === 0) return pass === 0 ? null : found;
+    if (!buf || buf.width === 0 || buf.height === 0) {
+      if (pass === 0) return null;
+      break;
+    }
     let fresh = false;
     for (const pickId of buf.data) {
       if (pickId === 0 || exclude.has(pickId)) continue;

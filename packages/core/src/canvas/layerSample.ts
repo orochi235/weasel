@@ -4,7 +4,7 @@
  * pixel ratio the canvas paints them at. Nothing the canvas draws over those
  * layers — selection handles, guides, a loupe's own window — is in it.
  */
-import { mat3, type GlMat3 } from '@weasel-js/geom';
+import { mat3, viewToMat3, type GlMat3 } from '@weasel-js/geom';
 import { opaqueHexOfBytes } from '@weasel-js/paint';
 import { cullDrawCommands, type DrawCommand } from '@weasel-js/renderer';
 import { drawOneLayer, type LayerDims, type RenderLayer } from 'core/layers/render';
@@ -36,6 +36,8 @@ export interface LayerSamplePlan {
   height: number;
   /** Canvas CSS px → raster pixels, which is also where `'screen'`-unit paint is measured. */
   screen: GlMat3;
+  /** World → raster pixels: the canvas's view, in the raster's frame. */
+  view: GlMat3;
   center: { x: number; y: number };
 }
 
@@ -64,6 +66,7 @@ export function planLayerSample(args: LayerSampleArgs): LayerSamplePlan | null {
     width: SPAN,
     height: SPAN,
     screen,
+    view: mat3.multiply(screen, viewToMat3(view)),
     center: { x: half, y: half },
   };
 }
@@ -92,7 +95,7 @@ export function createLayerSampler(options: RasterSessionOptions = {}): LayerSam
     session ??= createRasterSession(options);
     let image;
     try {
-      image = session.renderCommands(plan.commands, plan, { screen: plan.screen });
+      image = session.renderCommands(plan.commands, plan, { screen: plan.screen, view: plan.view });
     } catch {
       // No WebGL2 here, or a context lost: there is nothing to read.
       session.dispose();
