@@ -9,7 +9,7 @@ export interface PlayOptions {
   bus?: string;
   /** 0..1, default 1. Multiplied by any spatialized gain. */
   gain?: number;
-  /** Playback rate, default 1. */
+  /** Playback rate, default 1. Throws on one that is not a positive finite number. */
   rate?: number;
   /** Detune in cents, default 0. */
   detune?: number;
@@ -55,7 +55,8 @@ export interface VoiceHandle {
   release(): void;
   /** Throws a `RangeError` on a value or ramp that is not finite. */
   setGain(value: number, rampMs?: number): void;
-  /** Playback rate. Applies to a voice booked for a future `when` too. */
+  /** Playback rate. Applies to a voice booked for a future `when` too. Throws a `RangeError` on
+   *  one that is not a positive finite number. */
   setRate(value: number): void;
   /** Detune in cents. Applies to a voice booked for a future `when` too. */
   setDetune(cents: number): void;

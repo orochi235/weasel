@@ -83,3 +83,30 @@ describe('a harmonic wave is refused at the call when it is empty or holds a lev
     expect(installed!.nodes.flatMap((n) => n.posted)).toEqual([]);
   });
 });
+
+describe('a voice rate of 0 or below is refused', () => {
+  it('at the call and from a handle, on nodes, keeping the rate it had', async () => {
+    const { engine, ctx, run } = await engineHarness();
+    const sound = await engine.load('/a.wav');
+    expect(() => engine.play(sound, { rate: 0 })).toThrow(RangeError);
+    expect(() => engine.playNoise({ noise: 'white', rate: -1 })).toThrow(RangeError);
+    const note = engine.playNote({ pitch: 'A4' });
+    await run(25);
+    expect(() => note.setRate(0)).toThrow(RangeError);
+    expect(() => note.setRate(-1)).toThrow(RangeError);
+    note.setDetune(100);
+    expect(ctx._oscillators[0].detune.value).toBe(100);
+  });
+
+  it("under synthVoices: 'worklet', posts nothing", async () => {
+    const engine = await workletEngine();
+    expect(() => engine.playNoise({ noise: 'white', rate: -1 })).toThrow(RangeError);
+    expect(installed!.nodes.flatMap((n) => n.posted)).toEqual([]);
+  });
+
+  it('in a kernel built outside an engine, and in its retune', () => {
+    expect(() => createNoiseKernel({ noise: 'white', rate: -1 }, 48000)).toThrow(RangeError);
+    const kernel = createNoiseKernel({ noise: 'white' }, 48000);
+    expect(() => kernel.retune(0, 0)).toThrow(RangeError);
+  });
+});

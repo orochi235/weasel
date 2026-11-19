@@ -1,4 +1,4 @@
-import { checkFinite, checkGain, checkPoint } from './param';
+import { checkFinite, checkGain, checkPoint, checkRate } from './param';
 import type { Scheduler } from './scheduler';
 import { spatialize, type SpatialOptions, type SpatialPoint } from './spatialize';
 import type { VoiceDropReason, VoiceHandle } from './types';
@@ -46,7 +46,7 @@ const dropped = (id: number): VoiceHandle => ({
   stop: (fadeMs) => checkFinite('voice fade', fadeMs),
   release: () => {},
   setGain: (value, rampMs) => checkGain('voice', value, rampMs),
-  setRate: (value) => checkFinite('voice rate', value),
+  setRate: (value) => checkRate('voice rate', value),
   setDetune: (cents) => checkFinite('voice detune', cents),
   setPan: (value) => checkFinite('voice pan', value),
   setPosition: (p) => checkPoint('voice position', p),
@@ -185,7 +185,7 @@ function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): Vo
       poolGain(voice);
     },
     setRate(value) {
-      checkFinite('voice rate', value);
+      checkRate('voice rate', value);
       voice.rate = value;
       voice.retune?.();
     },
@@ -212,7 +212,7 @@ function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): Vo
 export function checkVoice(common: VoiceOptions): void {
   checkWhen(common.when);
   if (common.gain !== undefined) checkGain('voice', common.gain);
-  checkFinite('voice rate', common.rate);
+  checkRate('voice rate', common.rate);
   checkFinite('voice detune', common.detune);
   checkFinite('voice pan', common.pan);
   checkPoint('voice position', common.position);

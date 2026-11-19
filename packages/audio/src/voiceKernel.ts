@@ -7,6 +7,7 @@
 import { biquadCoefficients } from './biquad';
 import { envelopeLevel, resolveEnvelope, type Envelope } from './envelope';
 import { lerp } from './lerp';
+import { checkFinite, checkRate } from './param';
 import { sineShape, waveShape } from './oscillator';
 import { NOISE_SECONDS, checkShaping, isInharmonic, noiseSamples, resolveNote } from './synthVoice';
 import type { NoiseColor, NoiseOptions, NoteOptions, VoiceFilter } from './types';
@@ -46,7 +47,11 @@ interface Shaping {
   detune?: number;
 }
 
-const tuning = (rate: number, detune: number): number => rate * 2 ** (detune / 1200);
+const tuning = (rate: number, detune: number): number => {
+  checkRate('voice rate', rate);
+  checkFinite('voice detune', detune);
+  return rate * 2 ** (detune / 1200);
+};
 
 /** A voice filter as a function of one sample, its cutoff following its envelope. */
 function filterStage(
