@@ -20,8 +20,8 @@ describe('paintWithColor', () => {
 });
 
 describe('solidFill', () => {
-  it('wraps the color in a tagged solid paint, alpha channel and all', () => {
+  it('wraps the color in a tagged solid paint, moving a hex alpha channel to opacity', () => {
     expect(solidFill('#f00')).toEqual({ paint: { kind: 'solid', color: '#f00' } });
-    expect(solidFill('#ff000080')).toEqual({ paint: { kind: 'solid', color: '#ff000080' } });
+    expect(solidFill('#ff000080')).toEqual({ paint: { kind: 'solid', color: '#ff0000', opacity: 0x80 / 255 } });
   });
 });

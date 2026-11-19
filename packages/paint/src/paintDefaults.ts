@@ -69,10 +69,10 @@ function hasHexAlpha(color: string): boolean {
   return color.startsWith('#') && (color.length === 5 || color.length === 9) && toHex8(color).length === 9;
 }
 
-/** A fill of `color`, tagged `kind: 'solid'` and taken as given: an alpha
- *  channel stays in the color string rather than moving to `opacity`. */
+/** A fill of `color`, tagged `kind: 'solid'`; an alpha channel moves to
+ *  `opacity`, as {@link solid} moves it. */
 export function solidFill(color: string): CommandFill & { paint: SolidPaint } {
-  return { paint: { kind: 'solid', color } };
+  return { paint: { kind: 'solid', ...solid(color) } };
 }
 
 /** A solid stroke of `color` at `width` world units. Authoring shorthand for
