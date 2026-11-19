@@ -54,7 +54,7 @@ export function createEdits(deps: EditsDeps) {
   const wire = (e: Edge): void => {
     e.state = 'open';
     e.fader = createFader(ctx, timers, e.from.out, e.to ? e.to.ins.get(e.port)! : output);
-    e.fader.open(fade());
+    e.fader.open(fade(), deps.onSettle);
   };
 
   /** Wire what is no longer blocked, release what nothing touches, then wake `settled`. */
@@ -91,9 +91,9 @@ export function createEdits(deps: EditsDeps) {
     allNodes: () => [...nodes.values(), ...leaving],
     /** The live nodes and the edges a caller can see, by id, for `validatePatches`. */
     view: (): GraphView => viewOf(nodes, edges),
-    /** An edge is fading out or waiting to be wired, or a replaced def is fading out. */
+    /** An edge is fading in or out or waiting to be wired, or a replaced def is fading out. */
     busy: () =>
-      edges.some((e) => e.state !== 'open') ||
+      edges.some((e) => e.state !== 'open' || e.fader!.opening()) ||
       [...nodes.values(), ...leaving].some((w) => w.outgoing.size > 0),
     add(id: string, def: GraphNodeDef): void {
       if (nodes.has(id)) throw duplicateNode(id);

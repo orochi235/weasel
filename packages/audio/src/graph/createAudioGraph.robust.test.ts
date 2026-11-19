@@ -66,3 +66,29 @@ describe('createAudioGraph sources whose start throws', () => {
     expect(graph.ids()).toEqual(['bad', 'next']);
   });
 });
+
+const tick = () => new Promise((r) => setTimeout(r, 0));
+
+describe('createAudioGraph settling on a connection', () => {
+  it('settled waits for a new connection to finish fading in', async () => {
+    const { ctx, graph, step } = harness();
+    graph.add('a', testNode(ctx, []).def);
+    graph.connect('a', { output: true });
+    let done = false;
+    void graph.settled().then(() => { done = true; });
+    await tick();
+    expect(done).toBe(false);
+    step();
+    await tick();
+    expect(done).toBe(true);
+  });
+
+  it('a connection closed while it fades in settles once the close lands', async () => {
+    const { ctx, graph, settle } = harness();
+    graph.add('a', testNode(ctx, []).def);
+    graph.connect('a', { output: true });
+    graph.disconnect('a', { output: true });
+    settle();
+    await expect(graph.settled()).resolves.toBeUndefined();
+  });
+});
