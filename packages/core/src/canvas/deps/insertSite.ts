@@ -64,15 +64,16 @@ export interface InsertSiteOptions {
 /**
  * Where an insert lands ({@link siteIn}): the container `into` names, when it
  * admits the insert; else, in a paged scene, the page for `at`
- * (`insertParent`); else the top of the tree. A node landing on a page with
- * the pasteboard off is moved so part of it is on the page.
+ * (`insertParent`); else the top of the tree. A node landing on a page, or in
+ * a container on one, with the pasteboard off is moved so part of it is on the page.
  */
 export function insertSite(
   sc: AnyScene,
   { at, into, canDropInto, descriptor = AUTO_POSE_DESCRIPTOR }: InsertSiteOptions = {},
 ): InsertSite {
   const site = siteIn(sc, insertParent(sc, into, canDropInto, at));
-  const pageId = site.parent === null || pasteboardOn(sc) || sc.get(site.parent)?.page === undefined ? null : pageIdOf(sc, site.parent);
+  // The parent's page, or the page of the nearest ancestor that is one: a group on a page is on it.
+  const pageId = site.parent === null || pasteboardOn(sc) ? null : pageIdOf(sc, site.parent);
   const page = pageId === null ? null : placedPage(sc, pageId);
   return page === null ? site : { ...site, local: (p) => site.local(ontoPage(page, p, descriptor)) };
 }
