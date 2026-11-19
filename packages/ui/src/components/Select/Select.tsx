@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode, type Ref } from 'react';
+import { createContext, useContext, useRef, useState, type ReactNode, type Ref } from 'react';
 import { useObjectRef } from 'react-aria';
 import {
   Select as RACSelect,
@@ -159,15 +159,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   const placeholder = mixed ? MIXED_HINT : placeholderProp;
   const triggerRef = useObjectRef(ref);
   const pressRef = useRef<Press | null>(null);
-  const { probe, pick } = useHeldPick(SelectStateContext);
-  // The closed trigger's last key, read when React Aria changes the value from it: only an arrow steps past a held row.
-  const lastKey = useRef('');
-  useEffect(() => {
-    const el = triggerRef.current;
-    const note = (e: KeyboardEvent): void => { lastKey.current = e.key; };
-    el?.addEventListener('keydown', note, true);
-    return () => el?.removeEventListener('keydown', note, true);
-  }, [triggerRef]);
+  const { probe, pick } = useHeldPick(SelectStateContext, triggerRef);
   const [nudge, setNudge] = useState(NO_NUDGE);
   const sized = useFieldSizeClass(size, className);
   const { id: triggerId, ...field } = useRacField({ id, 'aria-label': rest['aria-label'], 'aria-labelledby': rest['aria-labelledby'], 'aria-describedby': racHeld['aria-describedby'], invalid, required, labeled: label !== undefined });
@@ -180,9 +172,8 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
       {...(held ? { isOpen: false, onOpenChange: undefined } : open !== undefined ? { isOpen: open } : {})}
       selectedKey={mixed ? null : shownKey}
       onSelectionChange={(picked) => {
-        const step = lastKey.current === 'ArrowLeft' || lastKey.current === 'ArrowRight';
         // A mixed select hands React Aria no value, so its arrows step from there.
-        const k = held ? undefined : pick(mixed ? null : shownKey, picked, step);
+        const k = held ? undefined : pick(mixed ? null : shownKey, picked);
         if (k === undefined) return;
         if (selectedKey === undefined) setOwnKey(k as T | null);
         onSelectionChange?.(k as T);

@@ -1,4 +1,4 @@
-import { createElement, useCallback, useContext, useLayoutEffect, useRef, type Context, type ReactElement, type RefCallback, type RefObject } from 'react';
+import { createElement, useCallback, useContext, useEffect, useLayoutEffect, useRef, type Context, type ReactElement, type RefCallback, type RefObject } from 'react';
 import type { Key } from 'react-aria-components';
 
 /**
@@ -78,18 +78,27 @@ export function StateProbe<S>({ context, intoRef }: { context: Context<S | null>
 }
 
 /** A probe to render under a React Aria select-like `context`, and what a pick of `picked` from `from` comes to there:
- *  itself; when it is held, the first free row past it the way it was going if the pick was an arrow `step`
- *  ({@link pastHeld}); or `undefined` for none, as for a held row typeahead lands on. */
-export function useHeldPick<S extends { collection: Walkable }>(context: Context<S | null>): {
+ *  itself; when it is held, the first free row past it the way it was going if an arrow key on `trigger` made the
+ *  pick ({@link pastHeld}); or `undefined` for none, as for a held row typeahead lands on. */
+export function useHeldPick<S extends { collection: Walkable }>(context: Context<S | null>, trigger: RefObject<HTMLElement | null>): {
   probe: ReactElement;
-  pick(from: Key | null, picked: Key | null, step: boolean): Key | null | undefined;
+  pick(from: Key | null, picked: Key | null): Key | null | undefined;
 } {
   const stateRef = useRef<S | null>(null);
+  const lastKey = useRef('');
+  useEffect(() => {
+    const el = trigger.current;
+    const note = (e: KeyboardEvent): void => { lastKey.current = e.key; };
+    // Capturing, so the key is noted before React Aria changes the value from it.
+    el?.addEventListener('keydown', note, true);
+    return () => el?.removeEventListener('keydown', note, true);
+  }, [trigger]);
   return {
     probe: createElement(StateProbe<S>, { context, intoRef: stateRef }),
-    pick(from, picked, step) {
+    pick(from, picked) {
       const coll = stateRef.current?.collection;
       if (picked === null || !coll || !isHeldKey(coll, picked)) return picked;
+      const step = lastKey.current === 'ArrowLeft' || lastKey.current === 'ArrowRight';
       return step ? (pastHeld(coll, from, picked) ?? undefined) : undefined;
     },
   };
