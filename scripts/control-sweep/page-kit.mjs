@@ -169,6 +169,8 @@ export function installSweepKit(win) {
     const peers = new Set([...peersOf(el, all), ...sameSetting(el, all)]);
     const g = el.closest(PEER_GROUPS);
     let field = g && root.contains(g) && g !== root ? g : el;
+    // A disclosure's field is itself: what it shows or hides sits beside it, and is the whole of its effect.
+    if (el.hasAttribute('aria-expanded') && !el.hasAttribute('aria-haspopup')) return el;
     while (field.parentElement && field.parentElement !== root && root.contains(field.parentElement)) {
       const p = field.parentElement;
       if (p.querySelector('canvas') || p.querySelector(STATUS) || showsSomething(p, field)) break;

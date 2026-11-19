@@ -158,6 +158,14 @@ describe('capture', () => {
     expect(kit().capture('.ckd-demo-frame', slider.id).dom).not.toEqual(before);
   });
 
+  it('counts what a disclosure hides as its effect, not its field', () => {
+    page('<div class="node"><button aria-expanded="true">scale</button><div class="kids"><span>x: 1</span></div></div><canvas></canvas>');
+    const [toggle] = kit().discover('.ckd-demo-frame');
+    const before = kit().capture('.ckd-demo-frame', toggle.id).dom;
+    document.querySelector('.kids')!.remove();
+    expect(kit().capture('.ckd-demo-frame', toggle.id).dom).not.toEqual(before);
+  });
+
   it('normalizes whitespace in text', () => {
     page('<p>a   b</p><canvas></canvas>');
     const before = kit().capture('.ckd-demo-frame', null).dom;
