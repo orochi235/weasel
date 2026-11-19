@@ -4,7 +4,7 @@
 
 The diagram trait's `group` field is `cluster`, and its box's derive key is `'diagram:cluster'`, which was `'diagram:group'`.
 
-A scene saved under the old names still loads: `withDiagramRegistry` carries `upgradeClusterNames`, a core `NodeUpgrade` under `DIAGRAM_CLUSTER_UPGRADE`, which rewrites each old node as `sceneFromJSON` or `loadState` reads it. A registry built without `withDiagramRegistry` adds it to its `upgrades` to do the same.
+A scene saved under the old names still loads: `withDiagramRegistry` carries `upgradeClusterNames`, a core `NodeUpgrade` under `DIAGRAM_CLUSTER_UPGRADE`, which rewrites each old node as `loadScene` or `loadState` reads it. A registry built without `withDiagramRegistry` adds it to its `upgrades` to do the same.
 
 ```ts
 // before

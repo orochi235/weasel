@@ -1,4 +1,4 @@
-export { createScene, sceneFromJSON, type SceneFromJSONOptions } from './scene';
+export { createScene, loadScene, type LoadSceneOptions } from './scene';
 export { sceneHistorySelection } from './sceneSelection';
 export { useScene } from './useScene';
 export { createEditingSession, isEditingSession, type EditingSession } from './editingSession';

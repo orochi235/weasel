@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SceneCanvas, WeaselProvider, sceneFromJSON } from '@weasel-js/core';
+import { SceneCanvas, WeaselProvider, loadScene, HISTORY_GROUP } from '@weasel-js/core';
 import type { SerializedScene, Fill, RectPose } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import sceneJson from './data/scene.scene.json';
@@ -14,13 +14,13 @@ export function SceneDemo() {
 
 function SceneFromJson() {
   const [scene] = useState(() =>
-    sceneFromJSON(sceneJson as unknown as SerializedScene<NodeData, string, RectPose>, {}),
+    loadScene(sceneJson as unknown as SerializedScene<NodeData, string, RectPose>, {}),
   );
   const selection = useSelection({ scene });
 
   return (
     <div>
-      <ActionBar group="history" />
+      <ActionBar group={HISTORY_GROUP} />
       <DemoStage width={480} height={320}>
         <SceneCanvas
           features={[pickPreset, movePreset, editPreset]}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sceneFromJSON } from '@weasel-js/core';
+import { loadScene } from '@weasel-js/core';
 import { quatFromAxisAngle } from '@weasel-js/geom/3d';
 import { aabbOfPose, pose3, UNIT_CUBE, type Pose3 } from './pose3';
 import { createTestScene, type TestData, type TestLayer } from './testScene';
@@ -60,7 +60,7 @@ describe('a quaternion pose in core Scene', () => {
    * `setPose` and undo. Serialization is where a pose is most likely to be
    * special-cased, and nothing asserted this until now.
    */
-  it('survives toJSON and sceneFromJSON with its quaternion intact', () => {
+  it('survives toJSON and loadScene with its quaternion intact', () => {
     const scene = createTestScene();
     const id = [...scene.renderOrder()][0];
     const turned = pose3(
@@ -71,7 +71,7 @@ describe('a quaternion pose in core Scene', () => {
     scene.setPose(id, turned);
 
     const json = JSON.parse(JSON.stringify(scene.toJSON()));
-    const reloaded = sceneFromJSON<TestData, TestLayer, Pose3>(json);
+    const reloaded = loadScene<TestData, TestLayer, Pose3>(json);
     const pose = reloaded.get([...reloaded.renderOrder()][0])!.pose;
 
     expect(pose.position).toEqual(turned.position);

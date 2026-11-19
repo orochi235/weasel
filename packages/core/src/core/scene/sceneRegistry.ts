@@ -14,7 +14,7 @@ export type SavedNode = SerializedNode<unknown, string, unknown> | SerializedNod
 export type NodeUpgrade = (node: SavedNode) => SavedNode;
 
 /** Per-scene registry mapping string keys to live function references.
- *  Passed to `createScene({ ..., registry })` and `sceneFromJSON(json, { registry })`.
+ *  Passed to `createScene({ ..., registry })` and `loadScene(json, { registry })`.
  *  Each function-field type has its own keyed map. */
 export interface SceneRegistry<TPose, TData = unknown, TLayer extends string = string> {
   /** Maps registry keys to `clipFromPose` factory functions for nodes. */

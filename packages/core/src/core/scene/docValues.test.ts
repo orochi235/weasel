@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createScene, sceneFromJSON } from './scene';
+import { createScene, loadScene } from './scene';
 import { POSE, makeScene, type Data, type Layer } from './testing/makeScene';
 
 const LAYERS = [{ id: 'background' }, { id: 'structures' }, { id: 'plantings' }] as const;
@@ -63,14 +63,14 @@ describe('scene document values', () => {
     expect(s.nodes.size).toBe(0);
   });
 
-  it('round-trips through toJSON, sceneFromJSON, and loadState', () => {
+  it('round-trips through toJSON, loadScene, and loadState', () => {
     const s = makeScene();
     expect(s.toJSON()).not.toHaveProperty('doc');
     s.doc.set('test:sheets', { pages: [] });
     const json = JSON.parse(JSON.stringify(s.toJSON()));
     expect(json.doc).toEqual({ 'test:sheets': { pages: [] } });
 
-    expect(sceneFromJSON<Data, Layer, typeof POSE>(json).doc.get('test:sheets')).toEqual({ pages: [] });
+    expect(loadScene<Data, Layer, typeof POSE>(json).doc.get('test:sheets')).toEqual({ pages: [] });
 
     const other = makeScene();
     other.doc.set('stale', true);

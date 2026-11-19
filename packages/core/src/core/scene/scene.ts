@@ -218,9 +218,9 @@ function buildScene<TData, TLayer extends string, TPose>(
   return scene;
 }
 
-/** Options for {@link sceneFromJSON}: the scene settings a snapshot does not
+/** Options for {@link loadScene}: the scene settings a snapshot does not
  *  carry, and how its nodes are read back. */
-export type SceneFromJSONOptions<TData, TLayer extends string, TPose> = Pick<
+export type LoadSceneOptions<TData, TLayer extends string, TPose> = Pick<
   SceneOptions<TData, TLayer, TPose>,
   'registry' | 'opRegistry' | 'historyLimit' | 'coalesceWindowMs' | 'generateId' | 'ops' | 'composition' | 'layoutFrame' | 'quantize'
 > & SpecsFromSerializedOptions<TData, TLayer, TPose>;
@@ -230,9 +230,9 @@ export type SceneFromJSONOptions<TData, TLayer extends string, TPose> = Pick<
  *  registry passed in `options`. Throws on unknown version, unknown registry
  *  keys, or invalid scene shape (cross-layer subtrees, unknown layer ids).
  *  The scene starts with empty history. */
-export function sceneFromJSON<TData, TLayer extends string, TPose>(
+export function loadScene<TData, TLayer extends string, TPose>(
   json: SavedScene<TData, TLayer, TPose>,
-  options: SceneFromJSONOptions<TData, TLayer, TPose> = {},
+  options: LoadSceneOptions<TData, TLayer, TPose> = {},
 ): Scene<TData, TLayer, TPose> {
   assertSnapshotShape(json);
   return buildScene(

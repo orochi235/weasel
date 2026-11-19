@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { boundsOfPath, rectPath } from '@weasel-js/geom';
 import type { ImmediateInvoker, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
-import { asNodeId, createScene, derivedDepOf, derivedPartsOf, effectivePose, RIGID_POSE_COMPOSITION, type NodeId, PATH_EFFECT_DERIVATIONS, pathEffectOf, pathEffectParts, type RectPose, resolveFill, type Scene, sceneFromJSON, withPathEffectsRegistry } from '@weasel-js/core';
+import { asNodeId, createScene, derivedDepOf, derivedPartsOf, effectivePose, RIGID_POSE_COMPOSITION, type NodeId, PATH_EFFECT_DERIVATIONS, pathEffectOf, pathEffectParts, type RectPose, resolveFill, type Scene, loadScene, withPathEffectsRegistry } from '@weasel-js/core';
 import { tweenAction, bendAlongAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction } from './actions';
 import { pathEffectSettingsParams, readPathEffectSettings } from './settingsForm';
 import { moveAction } from '@weasel-js/editing';
@@ -91,7 +91,7 @@ describe('tween', () => {
   it('survives a save and load', () => {
     const { scene, deps, selected } = setup(['a', 'b']);
     run(tweenAction, deps, { steps: 2 });
-    const loaded = sceneFromJSON<unknown, 'default', RectPose>(scene.toJSON(), { registry: withPathEffectsRegistry() });
+    const loaded = loadScene<unknown, 'default', RectPose>(scene.toJSON(), { registry: withPathEffectsRegistry() });
     const node = loaded.get(selected()[0] as NodeId)!;
     expect(node.derivePath).toBe(PATH_EFFECT_DERIVATIONS.derivePath);
     expect(partsOf(loaded as TestScene, node.id)).toHaveLength(2);

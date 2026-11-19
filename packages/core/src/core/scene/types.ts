@@ -333,9 +333,9 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
    *  scene's registry; throws if any function field has no matching key. */
   toJSON(): SerializedScene<TData, TLayer, TPose>;
   /** Replace this scene's entire node + layer state in place from a snapshot
-   *  produced by `toJSON()`. Unlike `sceneFromJSON`, the existing Scene
+   *  produced by `toJSON()`. Unlike `loadScene`, the existing Scene
    *  instance is preserved — holders such as `<SceneCanvas>` keep their
-   *  reference. History (undo/redo) is cleared, matching `sceneFromJSON`.
+   *  reference. History (undo/redo) is cleared, matching `loadScene`.
    *  Bumps `getVersion()` and notifies subscribers exactly once. Selected
    *  ids the snapshot does not hold leave the selection, and every pose
    *  override is cleared.

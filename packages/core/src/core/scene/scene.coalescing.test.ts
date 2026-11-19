@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createScene, sceneFromJSON } from './scene';
+import { createScene, loadScene } from './scene';
 import { POSE, type Data, type Layer } from './testing/makeScene';
 
 describe('coalescing (coalesceWindowMs)', () => {
@@ -120,7 +120,7 @@ describe('coalescing (coalesceWindowMs)', () => {
     expect(cell.y).toBe(0);
   });
 
-  it('sceneFromJSON forwards coalesceWindowMs', () => {
+  it('loadScene forwards coalesceWindowMs', () => {
     const src = createScene<Data, Layer>({
       systemLayers: [
         { id: 'background' },
@@ -128,7 +128,7 @@ describe('coalescing (coalesceWindowMs)', () => {
         { id: 'plantings' },
       ],
     });
-    const restored = sceneFromJSON(src.toJSON(), { coalesceWindowMs: 500 });
+    const restored = loadScene(src.toJSON(), { coalesceWindowMs: 500 });
     const id = restored.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     const before = restored.historyEntries().length;
     restored.setPose(id, { x: 1, y: 0, width: 10, height: 10 });

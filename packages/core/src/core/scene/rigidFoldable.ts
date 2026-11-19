@@ -22,9 +22,9 @@ export function foldable<T extends { id?: NodeId; parent?: NodeId | null; pose: 
     const bad = !isRect(s.pose) ? s.id : !isRect(poses.get(s.parent)) ? s.parent : undefined;
     if (bad === undefined) continue;
     throw new Error(
-      `sceneFromJSON: node "${String(bad)}" is in a container, and its pose is not a rect, which the default `
+      `loadScene: node "${String(bad)}" is in a container, and its pose is not a rect, which the default `
       + 'composition (RIGID_POSE_COMPOSITION) cannot fold. Pass the composition the scene was made with: '
-      + 'sceneFromJSON(json, { composition }), or <SceneCanvas composition> beside a serialized `scene`.',
+      + 'loadScene(json, { composition }), or <SceneCanvas composition> beside a serialized `scene`.',
     );
   }
   return specs;

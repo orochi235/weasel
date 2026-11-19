@@ -8,7 +8,7 @@ Core encodes and decodes snapshots as JSON, typed-array path geometry included, 
 
 ```ts
 localStorage.setItem('myapp:scene', stringifySnapshot(scene.toJSON()));
-const loaded = sceneFromJSON(parseSnapshot(localStorage.getItem('myapp:scene')!));
+const loaded = loadScene(parseSnapshot(localStorage.getItem('myapp:scene')!));
 ```
 
 <!-- entry: rank=10 new api -->

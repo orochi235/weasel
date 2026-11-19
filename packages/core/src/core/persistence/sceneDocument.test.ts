@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { asPolygonPath, rectPath } from '@weasel-js/geom';
-import { createScene, sceneFromJSON } from '../scene';
+import { createScene, loadScene } from '../scene';
 import { SnapshotShapeError } from '../scene/snapshotShape';
 import { SCENE_HISTORY_FORM } from '../scene/historyForm';
 import { encodeSnapshot } from './codec';
@@ -26,7 +26,7 @@ describe('the scene document', () => {
     const { scene, id } = drawn();
     const file = viaText(encodeSceneDocument(scene));
     const doc = decodeSceneDocument<Record<string, unknown>, 'main', Pose>(file);
-    const loaded = sceneFromJSON(doc.scene);
+    const loaded = loadScene(doc.scene);
     expect(restorePairedHistory(loaded, doc.history)).toMatchObject({ status: 'restored' });
     expect(loaded.history.canUndo()).toBe(true);
     loaded.history.undo();
@@ -50,14 +50,14 @@ describe('the scene document', () => {
   it('refuses a history once the loaded content has changed, as by an application migration', () => {
     const { scene, id } = drawn();
     const doc = decodeSceneDocument<Record<string, unknown>, 'main', Pose>(viaText(encodeSceneDocument(scene)));
-    const loaded = sceneFromJSON(doc.scene);
+    const loaded = loadScene(doc.scene);
     loaded.untracked(() => loaded.update(id, { data: { migrated: true } }));
     expect(restorePairedHistory(loaded, doc.history)).toEqual({ status: 'mismatched' });
   });
 
   it('reads a history saved without a pairing as unpaired', () => {
     const { scene } = drawn();
-    const fresh = sceneFromJSON(scene.toJSON());
+    const fresh = loadScene(scene.toJSON());
     expect(restorePairedHistory(fresh, encodeSnapshot(scene.serializeHistory()))).toEqual({ status: 'unpaired' });
     expect(restorePairedHistory(fresh, null)).toEqual({ status: 'unpaired' });
   });
@@ -66,12 +66,12 @@ describe('the scene document', () => {
     const { scene } = drawn();
     const paired = pairHistory(scene);
     const old = { ...paired, history: { ...(paired.history as object), form: SCENE_HISTORY_FORM - 1 } };
-    expect(restorePairedHistory(sceneFromJSON(scene.toJSON()), old)).toEqual({ status: 'stale' });
+    expect(restorePairedHistory(loadScene(scene.toJSON()), old)).toEqual({ status: 'stale' });
   });
 
   it('fingerprints state, not identity', () => {
     const { scene } = drawn();
-    expect(sceneFingerprint(sceneFromJSON(scene.toJSON()).toJSON())).toBe(sceneFingerprint(scene.toJSON()));
+    expect(sceneFingerprint(loadScene(scene.toJSON()).toJSON())).toBe(sceneFingerprint(scene.toJSON()));
   });
 
   it('refuses a value that is not an envelope, or a malformed scene in one', () => {

@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { createScene, pathFromD, planPixelRender, sceneFromJSON, type RectPose, type SavedScene } from '@weasel-js/core';
+import { createScene, pathFromD, planPixelRender, loadScene, type RectPose, type SavedScene } from '@weasel-js/core';
 import { tagTypedArrays } from '@weasel-js/geom';
 import { readPageRequest, sceneFromWire, sceneToWire } from './protocol';
 
@@ -53,7 +53,7 @@ describe('a scene sent to the page', () => {
       const scene = sceneOf(marks);
       const before = JSON.stringify(sceneToWire(scene));
       const wire = JSON.parse(before) as object;
-      const revived = sceneFromJSON(sceneFromWire(wire) as SavedScene<unknown, string, unknown>);
+      const revived = loadScene(sceneFromWire(wire) as SavedScene<unknown, string, unknown>);
       // As JSON, where a pose's `-0`, which a snapshot sends as `0`, plans the same pixels.
       const plan = (s: typeof scene) => JSON.stringify(tagTypedArrays(planPixelRender({ scene: s, ...rect })));
       const own = plan(scene);

@@ -801,7 +801,7 @@ that reads neither.
 **Serialization carries a registry key, never the function.** `SceneRegistry`
 does for `derivePath` what it already does for `clipFromPose`: `toJSON` looks
 the function up in `registry.derivePath` and writes `derivePathKey`, throwing if
-it has no key, and `sceneFromJSON` resolves the key back — **throwing** on a key
+it has no key, and `loadScene` resolves the key back — **throwing** on a key
 the registry does not hold, so a document never loads half-derived. Replaying a
 persisted *history* is the lenient path: `kit:add` warns and restores the node
 without its `derivePath`, keeping `dependsOn`, so it paints its authored

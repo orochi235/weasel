@@ -9,7 +9,7 @@ A scene document envelope saves a scene with its undo history, and the history r
 ```ts
 const file = JSON.stringify(encodeSceneDocument(scene));
 const doc = decodeSceneDocument(JSON.parse(file));
-const loaded = sceneFromJSON(doc.scene, { registry });
+const loaded = loadScene(doc.scene, { registry });
 restorePairedHistory(loaded, doc.history);
 ```
 

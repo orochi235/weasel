@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { asPolygonPath, rectPath } from '@weasel-js/geom';
-import { createScene, sceneFromJSON, SnapshotShapeError } from '../scene';
+import { createScene, loadScene, SnapshotShapeError } from '../scene';
 import { decodeSnapshot, encodeSnapshot, parseSnapshot, stringifySnapshot } from './codec';
 
 type Pose = { x: number; y: number; width: number; height: number };
@@ -21,7 +21,7 @@ describe('the snapshot codec', () => {
     expect(ArrayBuffer.isView((plain.nodes[0]!.data as { path: { coords: unknown } }).path.coords)).toBe(false);
     const back = parseSnapshot(stringifySnapshot(scene.toJSON()));
     expect(back).toEqual(scene.toJSON());
-    const loaded = sceneFromJSON(back);
+    const loaded = loadScene(back);
     const coords = (loaded.toJSON().nodes[0]!.data as { path: { coords: Float32Array } }).path.coords;
     expect(coords).toBeInstanceOf(Float32Array);
   });

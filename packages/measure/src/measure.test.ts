@@ -3,7 +3,7 @@ import type { Action, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@w
 import { ActionDisabledReason, checkEnabled } from '@weasel-js/routing';
 import {
   type AnyScene, createScene, inkBoxes, isAnnotationLayer, isAnnotationNode, lastTransform, type NodeId,
-  type RectPose, sceneFromJSON, type SelectionApi, type SnapCollect,
+  type RectPose, loadScene, type SelectionApi, type SnapCollect,
 } from '@weasel-js/core';
 import { MEASURE_ACTION_IDS } from './actionIds';
 import { measureBetween, measurementOf, measureEndsOf } from './measurement';
@@ -352,7 +352,7 @@ describe('measurements in the document', () => {
     rig.measure({ x: 0, y: 0 }, { x: 30, y: 40 });
     const json = rig.scene.toJSON();
     expect(json.systemLayers.find((l) => l.id === 'notes')).toMatchObject({ annotation: true });
-    const back = sceneFromJSON(json);
+    const back = loadScene(json);
     expect(isAnnotationLayer(back.layers.find((l) => l.id === 'notes'))).toBe(true);
     const [id] = measureIds(back as unknown as AnyScene, rig.ms);
     expect(measurementOf(back.get(id!))).toMatchObject({ dx: 30, dy: 40 });

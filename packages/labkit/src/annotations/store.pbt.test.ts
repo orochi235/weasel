@@ -8,7 +8,7 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { own, runs, tally, timeoutFor } from '../pbt.fixture';
 import { fracToWorld, roundFrac } from './frac';
-import { annotationsFromJSON, createMarkStore } from './store';
+import { createMarkStore, loadAnnotations } from './store';
 import type {
   AnnotationKind,
   AnnotationsApi,
@@ -226,7 +226,7 @@ function makeCommands(t: ReturnType<typeof tally>) {
       run(model: Model, real: Real) {
         const saved = real.store.toJSON();
         const copy = viaJson ? JSON.parse(JSON.stringify(saved)) : structuredClone(saved);
-        real.store = annotationsFromJSON(copy, targets);
+        real.store = loadAnnotations(copy, targets);
         t.count('reload');
         check(model, real);
       },
@@ -301,8 +301,8 @@ describe('a mark set saved before vertices followed the bounds', () => {
             ),
           );
           const legacy = JSON.parse(JSON.stringify({ version: 1, scenes }));
-          const first = annotationsFromJSON(legacy, targets);
-          const again = annotationsFromJSON(JSON.parse(JSON.stringify(first.toJSON())), targets);
+          const first = loadAnnotations(legacy, targets);
+          const again = loadAnnotations(JSON.parse(JSON.stringify(first.toJSON())), targets);
           for (const store of [first, again]) {
             marks.forEach((m, i) => {
               const got = store.get(`${m.on}/n${i}`);

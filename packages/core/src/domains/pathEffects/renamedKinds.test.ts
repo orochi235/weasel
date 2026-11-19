@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { rectPath } from '@weasel-js/geom';
 import { effectivePose } from 'core/scene/effectivePose';
 import { pathEffectNode, pathEffectOf } from 'core/scene/pathEffects/derive';
-import { createScene, sceneFromJSON } from 'core/scene/scene';
+import { createScene, loadScene } from 'core/scene/scene';
 import { asNodeId, type AddNodeSpec, type RectPose } from 'core/scene/types';
 import { PATH_EFFECT_DERIVATIONS, withPathEffectsRegistry } from './index';
 
@@ -41,7 +41,7 @@ describe('a path effect saved under a kind it was renamed from', () => {
     const json = JSON.parse(JSON.stringify(now.toJSON())) as ReturnType<typeof now.toJSON>;
     const saved = json.nodes.find((n) => n.id === FX)!;
     (saved.data as { pathEffect: { kind: string } }).pathEffect.kind = 'blend';
-    const loaded = sceneFromJSON(json, { registry: withPathEffectsRegistry() });
+    const loaded = loadScene(json, { registry: withPathEffectsRegistry() });
     expect(effectivePose(loaded, loaded.get(FX)!)).toEqual(effectivePose(now, now.get(FX)!));
   });
 });

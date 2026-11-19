@@ -2,7 +2,7 @@
  * The worker's half of the scene copy: a real `Scene`, brought to each delta the page sends,
  * so the worker walks and paints it exactly as the page would.
  */
-import { sceneFromJSON } from '../../core/scene/scene';
+import { loadScene } from '../../core/scene/scene';
 import { reconcileSpecs } from '../../core/scene/reconcileSpecs';
 import { specsFromSerialized } from '../../core/scene/serialization';
 import { adoptScenePickIds } from '../scenePickIds';
@@ -14,7 +14,7 @@ type AnySpec = AddNodeSpec<unknown, string, unknown>;
 
 /** What a worker's scene is built with beyond its saved form: the registry its node
  *  functions resolve against, and how poses compose. Match the page's scene. */
-export type SceneMirrorOptions = NonNullable<Parameters<typeof sceneFromJSON<unknown, string, unknown>>[1]>;
+export type SceneMirrorOptions = NonNullable<Parameters<typeof loadScene<unknown, string, unknown>>[1]>;
 
 export interface SceneMirror {
   /** The copy, or `null` before the first reset. */
@@ -38,7 +38,7 @@ export function createSceneMirror(options: SceneMirrorOptions = {}): SceneMirror
   const reset = (json: SerializedScene<unknown, string, unknown>): void => {
     layers = json.systemLayers;
     if (scene) scene.loadState(json);
-    else scene = sceneFromJSON(json, options);
+    else scene = loadScene(json, options);
     nodes = new Map(json.nodes.map((n) => [n.id, n]));
     order = json.nodes.map((n) => n.id);
     specList = specsOf(json.nodes);

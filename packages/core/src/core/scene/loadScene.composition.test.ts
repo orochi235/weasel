@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { IDENTITY_POSE_COMPOSITION } from './composeFrame';
-import { createScene, sceneFromJSON } from './scene';
+import { createScene, loadScene } from './scene';
 import type { NodeId } from './types';
 
 /** A pose the rigid default cannot fold: a 3D one, as kernel3d's `Pose3` is. */
@@ -19,9 +19,9 @@ function saved(nested: boolean) {
   }).toJSON();
 }
 
-describe('sceneFromJSON without a composition', () => {
+describe('loadScene without a composition', () => {
   it('refuses a nested pose the default composition cannot fold, and says to pass one', () => {
-    expect(() => sceneFromJSON(saved(true))).toThrow(/node "c".*not a rect.*composition/s);
+    expect(() => loadScene(saved(true))).toThrow(/node "c".*not a rect.*composition/s);
   });
 
   it('is refused by loadState into a scene on the default composition, which is left as it was', () => {
@@ -31,12 +31,12 @@ describe('sceneFromJSON without a composition', () => {
   });
 
   it('loads it once told the composition', () => {
-    const scene = sceneFromJSON(saved(true), { composition: IDENTITY_POSE_COMPOSITION });
+    const scene = loadScene(saved(true), { composition: IDENTITY_POSE_COMPOSITION });
     expect(scene.get('c' as NodeId)!.pose).toEqual(solid(2));
   });
 
   it('loads such poses at the top of the tree, where nothing composes them', () => {
-    expect(sceneFromJSON(saved(false)).get('c' as NodeId)!.pose).toEqual(solid(2));
+    expect(loadScene(saved(false)).get('c' as NodeId)!.pose).toEqual(solid(2));
   });
 
   it('loads a nested rect scene as before', () => {
@@ -48,6 +48,6 @@ describe('sceneFromJSON without a composition', () => {
         { id: 'c' as NodeId, kind: 'mark', layer: 'a', parent: g, pose: { x: 1, y: 1, width: 2, height: 2 }, data: {} },
       ],
     }).toJSON();
-    expect(sceneFromJSON(json).get('c' as NodeId)!.pose).toEqual({ x: 1, y: 1, width: 2, height: 2 });
+    expect(loadScene(json).get('c' as NodeId)!.pose).toEqual({ x: 1, y: 1, width: 2, height: 2 });
   });
 });

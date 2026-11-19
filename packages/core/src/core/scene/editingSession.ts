@@ -92,7 +92,7 @@ function sessionMembers(scene: Scene<unknown, string, unknown>, state: SessionSt
  * The scene holds it weakly: drop every reference and it is gone, with
  * nothing to close.
  *
- * Throws for an object `createScene`, `sceneFromJSON` or `useScene` did not
+ * Throws for an object `createScene`, `loadScene` or `useScene` did not
  * build, and for a `documentOf` reading, which holds no session state.
  */
 export function createEditingSession<TData, TLayer extends string, TPose>(
@@ -101,7 +101,7 @@ export function createEditingSession<TData, TLayer extends string, TPose>(
   const document = isEditingSession(scene) ? scene.document : scene;
   if (isDocument(document)) throw new Error('createEditingSession: a documentOf reading holds no session state');
   const host: SessionHost | undefined = sessionHostOf(document);
-  if (host === undefined) throw new Error('createEditingSession: not a scene createScene, sceneFromJSON or useScene built');
+  if (host === undefined) throw new Error('createEditingSession: not a scene createScene, loadScene or useScene built');
   const state = host.open();
   const run = <R>(fn: () => R): R => host.actingAs(state, fn);
   const doc = document as Scene<unknown, string, unknown>;

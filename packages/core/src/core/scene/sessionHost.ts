@@ -62,7 +62,7 @@ function createSessionState(env: SessionStateEnv, announce?: (emit: () => void) 
 
 const hosts = new WeakMap<object, SessionHost>();
 
-/** The sessions over `scene`, for a scene `createScene` or `sceneFromJSON` built. */
+/** The sessions over `scene`, for a scene `createScene` or `loadScene` built. */
 export function sessionHostOf(scene: object): SessionHost | undefined {
   return hosts.get(scene);
 }

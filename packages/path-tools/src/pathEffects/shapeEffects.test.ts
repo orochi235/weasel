@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { boundsOfPath, pathToAnchors, rectPath, type PolygonPath } from '@weasel-js/geom';
 import type { ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
 import {
-  createScene, derivedDepOf, type NodeId, pathEffectOf, pathEffectParts, type RectPose, type Scene, sceneFromJSON,
+  createScene, derivedDepOf, type NodeId, pathEffectOf, pathEffectParts, type RectPose, type Scene, loadScene,
   withPathEffectsRegistry,
 } from '@weasel-js/core';
 import { editPathEffectAction, expandPathEffectAction, puckerBloatAction, roughenAction, zigzagAction } from './actions';
@@ -83,7 +83,7 @@ describe('the shape effects', () => {
     const { scene, deps, selected } = setup(['a']);
     run(roughenAction, deps, { size: 6, seed: 3 });
     const id = selected()[0]!;
-    const loaded = sceneFromJSON<unknown, 'default', RectPose>(scene.toJSON(), { registry: withPathEffectsRegistry() });
+    const loaded = loadScene<unknown, 'default', RectPose>(scene.toJSON(), { registry: withPathEffectsRegistry() });
     const coords = (s: TestScene) => Array.from((partsOf(s, id)[0]!.path as PolygonPath).coords);
     expect(coords(loaded as TestScene)).toEqual(coords(scene));
   });

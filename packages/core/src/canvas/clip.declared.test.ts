@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { boundsOfPath, pathContainsPoint, type Path } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
-import { createScene, sceneFromJSON } from 'core/scene/scene';
+import { createScene, loadScene } from 'core/scene/scene';
 import { reconcileSpecs } from 'core/scene/reconcileSpecs';
 import { CLIP_NOTHING, clipNothing } from 'core/scene/clipNothing';
 import { asNodeId } from 'core/scene/types';
@@ -94,7 +94,7 @@ describe('a node clips its children only when it declares a clip', () => {
     const json = sceneOf({ kind: 'group', clip: 'outline' }).toJSON();
     expect(json.nodes.find((n) => n.id === 'p')).toMatchObject({ clip: 'outline' });
     expect(json.nodes.find((n) => n.id === 'kid')).not.toHaveProperty('clip');
-    expect(sceneFromJSON(json).get(asNodeId('p'))?.clip).toBe('outline');
+    expect(loadScene(json).get(asNodeId('p'))?.clip).toBe('outline');
   });
 
   it('carries the declared clip through remove and undo', () => {
@@ -161,35 +161,35 @@ describe('a version 1 save draws as version 1 drew it', () => {
   ]) as never;
 
   it('clips a container\'s children to the outline its painter draws', () => {
-    const clip = childClip(sceneFromJSON(saved(OUTLINED)) as never);
+    const clip = childClip(loadScene(saved(OUTLINED)) as never);
     expect(clip && boundsOfPath(clip)).toMatchObject({ x: 0, y: 0, width: 10, height: 10 });
   });
 
   it('clips them to its box under a container no painter claimed', () => {
-    expect(childClip(sceneFromJSON(saved({})) as never)).toEqual({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 });
+    expect(childClip(loadScene(saved({})) as never)).toEqual({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 });
   });
 
   it('gives a container a classifier makes a mark no implicit clip', () => {
-    const scene = sceneFromJSON(saved(OUTLINED), { classifyV1: () => 'mark' });
+    const scene = loadScene(saved(OUTLINED), { classifyV1: () => 'mark' });
     expect(scene.get(asNodeId('p'))?.clip).toBeUndefined();
     expect(childClip(scene as never)).toBeUndefined();
   });
 
   it('loads a container naming `clipNothing` with that function, clipping nothing', () => {
-    const scene = sceneFromJSON(saved(OUTLINED, { clipFromPoseKey: CLIP_NOTHING }));
+    const scene = loadScene(saved(OUTLINED, { clipFromPoseKey: CLIP_NOTHING }));
     expect(scene.get(asNodeId('p'))?.clipFromPose).toBe(clipNothing);
     expect(childClip(scene as never)).toBeUndefined();
   });
 
   it('reports a clip key it skips, and clips as version 1 did without one', () => {
     const skipped: unknown[] = [];
-    const scene = sceneFromJSON(saved(OUTLINED, { clipFromPoseKey: 'gone' }), {
+    const scene = loadScene(saved(OUTLINED, { clipFromPoseKey: 'gone' }), {
       unknownKeys: 'skip', onSkip: (s) => skipped.push(s),
     });
     expect(skipped).toEqual([{ id: 'p', field: 'clipFromPose', key: 'gone' }]);
     const clip = childClip(scene as never);
     expect(clip && boundsOfPath(clip)).toMatchObject({ x: 0, y: 0, width: 10, height: 10 });
-    const asMark = sceneFromJSON(saved(OUTLINED, { clipFromPoseKey: 'gone' }), {
+    const asMark = loadScene(saved(OUTLINED, { clipFromPoseKey: 'gone' }), {
       unknownKeys: 'skip', classifyV1: () => 'mark',
     });
     expect(asMark.get(asNodeId('p'))?.clip).toBeUndefined();
@@ -203,7 +203,7 @@ describe('loading with unknown registry keys', () => {
   };
 
   it('throws by default', () => {
-    expect(() => sceneFromJSON(v2 as never)).toThrow(/unknown layout key 'gone'/);
+    expect(() => loadScene(v2 as never)).toThrow(/unknown layout key 'gone'/);
   });
 
   it('skips and reports one in loadState when asked', () => {

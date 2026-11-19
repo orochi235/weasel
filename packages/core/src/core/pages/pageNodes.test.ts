@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, sceneFromJSON } from '../scene/scene';
+import { createScene, loadScene } from '../scene/scene';
 import { composeWorldPose } from '../scene/composePose';
 import { scenePoseAdapter } from '../scene/scenePoseAdapter';
 import type { NodeId } from '../scene/types';
@@ -79,7 +79,7 @@ describe('page nodes', () => {
 
   it('saves and loads as page nodes, laid out by the same run', () => {
     const { scene, child } = setup();
-    const loaded = sceneFromJSON(JSON.parse(JSON.stringify(scene.toJSON())) as ReturnType<typeof scene.toJSON>);
+    const loaded = loadScene(JSON.parse(JSON.stringify(scene.toJSON())) as ReturnType<typeof scene.toJSON>);
     expect(loaded.get(pageRunOf(scene)!)!.pageRun).toEqual({ direction: 'row', gap: 10 });
     expect(loaded.get('b' as NodeId)!.page).toEqual({});
     resizePage(loaded, 'a', { width: 200, height: 50 });

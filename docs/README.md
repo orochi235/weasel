@@ -36,7 +36,7 @@ Read in roughly this order:
   and what each editing session over it owns: selection, previews, scroll, and
   whose selection an undo restores.
 - [scene-serialization.md](./scene-serialization.md) — `scene.toJSON()` and
-  `sceneFromJSON()`: snapshot + restore a scene, the JSON shape, the function
+  `loadScene()`: snapshot + restore a scene, the JSON shape, the function
   registry for `clipFromPose`, and loading static `*.scene.json` files.
 
 [releasing.md](./releasing.md) is the maintainer runbook — the changeset flow,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createScene, sceneFromJSON } from './scene';
+import { createScene, loadScene } from './scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from './types';
 import { nodeMemo } from './nodeMemo';
 import { PATH_L, PATH_M, type PolygonPath } from '@weasel-js/geom';
@@ -67,8 +67,8 @@ describe('derived geometry — serialization', () => {
     expect(node.dependsOn).toEqual([a, b]);
     expect(node.derivePathKey).toBe('test:connect');
 
-    // sceneFromJSON reads systemLayers out of the JSON — it takes no such option.
-    const restored = sceneFromJSON(json, { registry });
+    // loadScene reads systemLayers out of the JSON — it takes no such option.
+    const restored = loadScene(json, { registry });
     const live = restored.get(asNodeId(edge))!;
     expect(live.dependsOn).toEqual([a, b]);
     expect(live.derivePath).toBe(connectCenters);

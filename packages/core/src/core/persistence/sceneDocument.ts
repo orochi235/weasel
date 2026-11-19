@@ -101,7 +101,7 @@ const isPaired = (v: unknown): v is PairedHistory => isPlainObject(v) && typeof 
 
 /** The document `value` encodes, as `JSON.parse` reads an envelope's text. Throws a `SnapshotShapeError` on a value
  *  that is not an envelope of this version, or whose scene is malformed; a `history` that is not a paired one is
- *  left out. The scene's own older versions are read as `sceneFromJSON` reads them. */
+ *  left out. The scene's own older versions are read as `loadScene` reads them. */
 export function decodeSceneDocument<TData, TLayer extends string, TPose>(
   value: unknown,
 ): SceneDocument<TData, TLayer, TPose> {

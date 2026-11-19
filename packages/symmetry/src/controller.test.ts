@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  asNodeId, composeWorldPose, createScene, findShapeSilhouette, RECT_POSE_COMPOSITION, scenePoseAdapter, sceneFromJSON, type NodeId, type RectPose, type RenderLayer,
+  asNodeId, composeWorldPose, createScene, findShapeSilhouette, RECT_POSE_COMPOSITION, scenePoseAdapter, loadScene, type NodeId, type RectPose, type RenderLayer,
 } from '@weasel-js/core';
 import { transformPoint, boundsOfPath, rectPath } from '@weasel-js/geom';
 import { createSymmetry } from './controller';
@@ -87,7 +87,7 @@ describe('createSymmetry', () => {
 
   it('round-trips a group through JSON with its registry', () => {
     const { scene, group } = setup();
-    const back = sceneFromJSON(scene.toJSON(), { registry: symmetryRegistry });
+    const back = loadScene(scene.toJSON(), { registry: symmetryRegistry });
     const node = back.get(group)!;
     expect(node.kind === 'group' && node.copiesFromPose).toBe(symmetryCopies);
     expect(isSymmetryGroup(back as never, group)).toBe(true);

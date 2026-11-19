@@ -1,6 +1,6 @@
 /**
  * Loads a scene saved before the diagram trait's `group` became `cluster`: a
- * `NodeUpgrade` `withDiagramRegistry` registers, so `sceneFromJSON` and
+ * `NodeUpgrade` `withDiagramRegistry` registers, so `loadScene` and
  * `loadState` rewrite the old names before anything reads them.
  */
 import type { NodeUpgrade } from '@weasel-js/core';

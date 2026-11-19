@@ -116,13 +116,13 @@ export type {
   WorldRect,
 } from './annotations';
 export {
-  annotationsFromJSON,
   createMarkScene,
   createMarkStore,
   fracContains,
   fracEncloses,
   fracToWorld,
   isStale,
+  loadAnnotations,
   roundFrac,
   seenValues,
   worldToFrac,

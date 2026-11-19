@@ -3,7 +3,7 @@ import { createEmitter, deepEqual } from '@weasel-js/registry';
 import { onLeave } from '@weasel-js/storage';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useRegisterTrialMarks } from '../annotations/labMarkStores';
-import { annotationsFromJSON } from '../annotations/store';
+import { loadAnnotations } from '../annotations/store';
 import type {
   AnnotationsApi,
   AnnotationsCapability,
@@ -11,7 +11,7 @@ import type {
 } from '../annotations/types';
 import type { TrialRecord } from '../state/types';
 
-type MarkStore = ReturnType<typeof annotationsFromJSON>;
+type MarkStore = ReturnType<typeof loadAnnotations>;
 
 /** What `useTrialMarks` takes. */
 export interface TrialMarksOptions {
@@ -63,7 +63,7 @@ export function useTrialMarks({
   // The instrument can be swapped under a live trial, so the capability is read at use too.
   const capRef = useLatest(annotationsCap);
   const build = (doc: unknown): MarkStore =>
-    annotationsFromJSON(doc, () => targetsRef.current(), {
+    loadAnnotations(doc, () => targetsRef.current(), {
       meaning: () => capRef.current?.meaning,
       config: () => configRef.current,
       onCapture: (result) => capRef.current?.onCapture?.(result),

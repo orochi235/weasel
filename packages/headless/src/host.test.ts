@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Browser } from 'playwright-core';
-import { planPixelRender, sceneFromJSON, type SavedScene } from '@weasel-js/core';
+import { planPixelRender, loadScene, type SavedScene } from '@weasel-js/core';
 import { regionRenderArgs } from '@weasel-js/export';
 import { createNodeRasterHost, type NodeRenderArgs } from './host';
 import { sceneFromWire, sceneToWire } from './protocol';
@@ -10,9 +10,9 @@ describe('node raster host', () => {
   it('sends a scene the page reads back into the same draw commands', () => {
     const scene = fixtureScene();
     const wire = JSON.parse(JSON.stringify(sceneToWire(scene))) as object;
-    const plan = (s: typeof scene | ReturnType<typeof sceneFromJSON>) =>
+    const plan = (s: typeof scene | ReturnType<typeof loadScene>) =>
       planPixelRender({ scene: s, ...FIXTURE_RENDER, background: '#ffffff' });
-    expect(JSON.parse(JSON.stringify(plan(sceneFromJSON(sceneFromWire(wire) as SavedScene<unknown, string, unknown>))))).toEqual(JSON.parse(JSON.stringify(plan(scene))));
+    expect(JSON.parse(JSON.stringify(plan(loadScene(sceneFromWire(wire) as SavedScene<unknown, string, unknown>))))).toEqual(JSON.parse(JSON.stringify(plan(scene))));
   });
 
   it("takes core's regionRenderArgs as they are, and draws the same region from them", () => {
@@ -21,7 +21,7 @@ describe('node raster host', () => {
     const args: NodeRenderArgs = regionRenderArgs(scene, region, { scale: 2, background: '#ffffff' });
     const rest = { sourceRect: args.sourceRect, scale: args.scale, background: args.background! };
     const wire = JSON.parse(JSON.stringify(sceneToWire(scene))) as object;
-    const read = sceneFromJSON(sceneFromWire(wire) as SavedScene<unknown, string, unknown>);
+    const read = loadScene(sceneFromWire(wire) as SavedScene<unknown, string, unknown>);
     expect(JSON.parse(JSON.stringify(planPixelRender({ scene: read, ...rest }))))
       .toEqual(JSON.parse(JSON.stringify(planPixelRender({ scene, ...rest }))));
   });

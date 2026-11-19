@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { commitOps, createScene, scenePoseFrame, sceneFromJSON, type ActionDeps, type InvocationCtx, type NodeId, type OngoingHandle, type OngoingInvoker, type RectPose } from '@weasel-js/core';
+import { commitOps, createScene, scenePoseFrame, loadScene, type ActionDeps, type InvocationCtx, type NodeId, type OngoingHandle, type OngoingInvoker, type RectPose } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
 import type { DiagramEdge } from '../edgeTrait';
@@ -227,7 +227,7 @@ describe('pools in a scene', () => {
   it('round-trip through toJSON with their layouts', () => {
     const scene = makeScene();
     const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
-    const back = sceneFromJSON(JSON.parse(JSON.stringify(scene.toJSON())), { registry: withDiagramRegistry() });
+    const back = loadScene(JSON.parse(JSON.stringify(scene.toJSON())), { registry: withDiagramRegistry() });
     expect(back.layoutOf(pool as NodeId)).toBe(scene.layoutOf(pool as NodeId));
   });
 });

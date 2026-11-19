@@ -13,7 +13,7 @@ export interface SerializedLayer<TLayer extends string>
 }
 
 /** JSON-serializable shape of a Scene's current state. Produced by
- *  `scene.toJSON()`; consumed by `sceneFromJSON()`. Function fields
+ *  `scene.toJSON()`; consumed by `loadScene()`. Function fields
  *  (e.g., `clipFromPose`) appear as string keys (`clipFromPoseKey`) and
  *  are resolved through `SceneRegistry` at load time. */
 export interface SerializedScene<TData, TLayer extends string, TPose> {

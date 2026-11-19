@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MarkHistory, withoutMarkHistory } from './history';
-import { annotationsFromJSON, createMarkStore } from './store';
+import { createMarkStore, loadAnnotations } from './store';
 
 const targets = () => [
   { id: 'a', ref: { current: null }, content: { width: 100, height: 100 } },
@@ -16,7 +16,7 @@ describe('a mark set saved with its history', () => {
     first.add({ target: 'a', kind: 'rect', frac: { ...FRAC, x: 0.5 } });
     first.undo();
 
-    const again = annotationsFromJSON(JSON.parse(JSON.stringify(first.toJSON())), targets);
+    const again = loadAnnotations(JSON.parse(JSON.stringify(first.toJSON())), targets);
     expect(again.query()).toHaveLength(2);
     again.undo();
     expect(again.query({ target: 'b' })).toHaveLength(0);
@@ -32,7 +32,7 @@ describe('a mark set saved with its history', () => {
   it('opens with nothing to undo where it was saved without one', () => {
     const first = createMarkStore({ targets });
     first.add({ target: 'a', kind: 'rect', frac: FRAC });
-    const again = annotationsFromJSON(withoutMarkHistory(first.toJSON()), targets);
+    const again = loadAnnotations(withoutMarkHistory(first.toJSON()), targets);
     expect(again.query()).toHaveLength(1);
     expect(again.canUndo()).toBe(false);
   });

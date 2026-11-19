@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { runs, tally, timeoutFor } from '../pbt.fixture';
-import { createScene, sceneFromJSON } from './scene';
+import { createScene, loadScene } from './scene';
 import { isSerializedScene } from './serialization';
 import { replaceDoc } from './docValues';
 import type { NodeId, Scene } from './types';
@@ -93,7 +93,7 @@ describe('scene snapshot round trip', () => {
     fc.assert(fc.property(sceneArb, (scene) => {
       const snap = json(scene);
       expect(isSerializedScene(snap)).toBe(true);
-      const back = sceneFromJSON(snap as never) as S;
+      const back = loadScene(snap as never) as S;
       expect(json(back)).toEqual(snap);
       checkTree(back);
       expect([...back.nodes.keys()].sort()).toEqual([...scene.nodes.keys()].sort());
@@ -144,7 +144,7 @@ describe('document values', () => {
         scene.undo();
         expect(json(scene)).toEqual(was);
       }
-      const back = sceneFromJSON(json(scene) as never) as S;
+      const back = loadScene(json(scene) as never) as S;
       expect(json(back)).toEqual(json(scene));
       if (changed && a.some(([k]) => ['constructor', 'toString', 'valueOf'].includes(k))) t.count('prototype key dropped');
     }), runs(N));
@@ -213,7 +213,7 @@ describe('reading a broken snapshot', () => {
       const broken = BREAKERS[how]!(json(from) as Record<string, any>, k);
       let read: S | null = null;
       try {
-        read = sceneFromJSON(broken as never) as S;
+        read = loadScene(broken as never) as S;
       } catch (e) {
         expectOnPurpose(e, how);
         t.count(`refused:${how}`);
@@ -221,13 +221,13 @@ describe('reading a broken snapshot', () => {
       if (read) {
         t.count(`read:${how}`);
         checkTree(read);
-        expect(json(sceneFromJSON(json(read) as never) as S)).toEqual(json(read));
+        expect(json(loadScene(json(read) as never) as S)).toEqual(json(read));
       }
       const was = json(target);
       const index = target.historyIndex();
       try {
         target.loadState(broken as never);
-        expect(read, `${how}: loadState agrees with sceneFromJSON`).not.toBeNull();
+        expect(read, `${how}: loadState agrees with loadScene`).not.toBeNull();
         checkTree(target);
       } catch (e) {
         expectOnPurpose(e, `${how} (loadState)`);

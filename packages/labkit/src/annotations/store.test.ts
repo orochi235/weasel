@@ -1,7 +1,7 @@
 import { asNodeId } from '@weasel-js/core';
 import { describe, expect, it, vi } from 'vitest';
 import { markCommands } from './paint';
-import { annotationsFromJSON, createMarkStore } from './store';
+import { createMarkStore, loadAnnotations } from './store';
 import type { AnnotationInit, AnnotationsApi, AnnotationTargetInfo, FracPoint } from './types';
 
 const TARGETS: AnnotationTargetInfo[] = [
@@ -333,7 +333,7 @@ describe('the annotation store', () => {
     // One scene per target, and only the ones that hold a mark.
     expect(Object.keys(out.scenes)).toEqual(['naive']);
 
-    const revived = annotationsFromJSON(JSON.parse(JSON.stringify(out)), () => TARGETS);
+    const revived = loadAnnotations(JSON.parse(JSON.stringify(out)), () => TARGETS);
     expect(revived.get(id)).toEqual(store.get(id));
     expect(revived.query()).toHaveLength(1);
   });
@@ -352,7 +352,7 @@ describe('the annotation store', () => {
       points: [{ x: 0.25, y: 0.5 }],
     });
 
-    const revived = annotationsFromJSON(JSON.parse(JSON.stringify(store.toJSON())), () => TARGETS);
+    const revived = loadAnnotations(JSON.parse(JSON.stringify(store.toJSON())), () => TARGETS);
     expect(revived.get(id)).toEqual(store.get(id));
   });
 
@@ -371,7 +371,7 @@ describe('the annotation store', () => {
 
   it('reads a meaning passed as a thunk at each capture', async () => {
     let color = '#111111';
-    const store = annotationsFromJSON(null, () => TARGETS, {
+    const store = loadAnnotations(null, () => TARGETS, {
       meaning: () => ({ statuses: [{ id: 'open', label: 'Open', color }] }),
     });
     store.add(RING, { angle: 'iso', shading: 'outline' });
@@ -513,7 +513,7 @@ describe('a moved mark', () => {
         },
       },
     };
-    const store = annotationsFromJSON(legacy, () => TARGETS);
+    const store = loadAnnotations(legacy, () => TARGETS);
     expectNear(drawn(store), LINE.points ?? []);
     expect(store.get('naive/n1')?.points).toEqual(LINE.points);
   });
@@ -537,7 +537,7 @@ describe('a moved mark', () => {
         },
       },
     };
-    const store = annotationsFromJSON(legacy, () => []);
+    const store = loadAnnotations(legacy, () => []);
     store.openScene('naive');
     const [node] = (store.toJSON().scenes.naive as { nodes: { data: unknown }[] }).nodes;
     expect(node?.data).toEqual({ target: 'naive', kind: 'line', points: LINE.points });

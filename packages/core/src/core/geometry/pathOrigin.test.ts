@@ -6,7 +6,7 @@ import { parseSnapshot, stringifySnapshot } from 'core/persistence/codec';
 import { regionTakes, polygonRegion, rectRegion } from './regionHit';
 import { pathPoseDescriptor } from './pathPoseDescriptor';
 import { pathFromParts } from 'core/scene/derivedParts';
-import { createScene, sceneFromJSON } from 'core/scene/scene';
+import { createScene, loadScene } from 'core/scene/scene';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import type { SavedScene } from 'core/scene/types';
 
@@ -55,7 +55,7 @@ describe('core readers of a path measured from an origin', () => {
     const scene = createScene<unknown, 'main', PolygonPath>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
     const id = scene.add({ kind: 'mark', layer: 'main', pose: square(), data: null });
     const saved: SavedScene<unknown, 'main', PolygonPath> = parseSnapshot(stringifySnapshot(scene.toJSON()));
-    const loaded = sceneFromJSON(saved);
+    const loaded = loadScene(saved);
     const node = loaded.get(id)!;
     expect(node.pose.origin).toEqual({ x: FAR, y: 0 });
     expect(worldCoords(node.pose)[0]).toBeCloseTo(X, 6);

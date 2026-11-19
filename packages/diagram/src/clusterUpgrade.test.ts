@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, sceneFromJSON, type RectPose, type SerializedScene } from '@weasel-js/core';
+import { createScene, loadScene, type RectPose, type SerializedScene } from '@weasel-js/core';
 import { DIAGRAM_CLUSTER } from './clusterBox';
 import { upgradeClusterNames } from './clusterUpgrade';
 import { withDiagramRegistry } from './edge';
@@ -35,7 +35,7 @@ function oldSave(save: Save): Save {
   return { ...save, nodes };
 }
 
-const load = (save: Save) => sceneFromJSON<unknown, 'main', RectPose>(save, { registry: withDiagramRegistry() }).toJSON();
+const load = (save: Save) => loadScene<unknown, 'main', RectPose>(save, { registry: withDiagramRegistry() }).toJSON();
 
 describe('loading a diagram saved under the old cluster names', () => {
   it('gives the scene a new save of it gives', () => {

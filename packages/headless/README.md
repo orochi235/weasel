@@ -72,7 +72,7 @@ registerFont(/* … */);
 serveHeadlessPage({ scene: { registry, composition, quantize } });
 ```
 
-`scene` takes what `sceneFromJSON` does: the `registry` your nodes' `clipFromPose`, `derivePath`,
+`scene` takes what `loadScene` does: the `registry` your nodes' `clipFromPose`, `derivePath`,
 `derivePose`, `copiesFromPose` and `layout` keys resolve against, and the `composition`,
 `layoutFrame` and `quantize` rule your scenes were made with. A snapshot carries none of them, so
 they must match the scenes the host sends. A scene naming a registry key the page lacks is refused

@@ -10,7 +10,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { runs, tally, timeoutFor } from '../pbt.fixture';
-import { createScene, sceneFromJSON } from './scene';
+import { createScene, loadScene } from './scene';
 import { asNodeId, type NodeId, type Scene } from './types';
 import { addPage, movePage, nextPageId, pagesOf, removePage } from '../pages/pageEdits';
 
@@ -51,9 +51,9 @@ function checkTree(s: S): void {
 /** The snapshot reads back to itself, and a snapshot of what it read back reads back to that. */
 function checkFixedPoint(s: S): void {
   const once = json(s);
-  const back = json(sceneFromJSON(once as never) as S);
+  const back = json(loadScene(once as never) as S);
   expect(back, 'a snapshot reads back to itself').toEqual(once);
-  expect(json(sceneFromJSON(back as never) as S)).toEqual(back);
+  expect(json(loadScene(back as never) as S)).toEqual(back);
 }
 
 abstract class Edit implements fc.Command<Model, Real> {

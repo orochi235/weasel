@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { boundsOfPath, pathContainsPoint, type Path } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
-import { createScene, sceneFromJSON } from 'core/scene/scene';
+import { createScene, loadScene } from 'core/scene/scene';
 import { booleanGroupFields } from 'core/scene/booleanGroup';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
@@ -149,7 +149,7 @@ describe('a boolean group', () => {
     const { scene, group } = makeScene('intersect');
     const json = scene.toJSON();
     expect(json.nodes.find((n) => n.id === group)).toMatchObject({ consumesChildren: true, derivePathKey: 'kit:booleanOfChildren' });
-    const loaded = sceneFromJSON<Data, 'main', RectPose>(json);
+    const loaded = loadScene<Data, 'main', RectPose>(json);
     const node = loaded.get(asNodeId(group))!;
     expect(node.consumesChildren).toBe(true);
     expect(covers(pathOf(loaded, group), 75, 75)).toBe(true);

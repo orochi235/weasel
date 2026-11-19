@@ -193,7 +193,7 @@ export function createMarkStore(opts: AnnotationStoreOptions): AnnotationsApi {
 /** Rebuild a store from what `toJSON` wrote. Unknown or future versions give
  *  an empty store rather than throwing: a lab that cannot read its marks
  *  should still open. */
-export function annotationsFromJSON(
+export function loadAnnotations(
   raw: unknown,
   targets: () => readonly AnnotationTargetInfo[],
   rest: Omit<AnnotationStoreOptions, 'targets' | 'restore' | 'history'> = {},
