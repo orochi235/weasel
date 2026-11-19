@@ -1,1 +1,37 @@
-[]
+[
+  {
+    "demo": "audio",
+    "control": "sfx gain",
+    "reason": "A bus gain is heard, not seen: nothing on the page reads it, and the sweep plays no sound."
+  },
+  {
+    "demo": "audio",
+    "control": "music gain",
+    "reason": "A bus gain is heard, not seen: nothing on the page reads it, and the sweep plays no sound."
+  },
+  {
+    "demo": "select",
+    "control": "Key convention › ⇧ toggles",
+    "reason": "Changes what a modified click does; the sweep's probes click and drag with no modifier held."
+  },
+  {
+    "demo": "select",
+    "control": "Key convention › list: ⌘ toggles, ⇧ ranges",
+    "reason": "Changes what a modified click does; the sweep's probes click and drag with no modifier held."
+  },
+  {
+    "demo": "easings",
+    "control": "duration",
+    "reason": "Sets how long the next play-through takes; every capture of a playing animation is already moving, so the sweep cannot tell one length from another."
+  },
+  {
+    "demo": "routing",
+    "control": "Locked mode",
+    "reason": "Gates the bindings for a click or drag on a box and the Delete key; the gesture probe's drag lands on empty stage, which no gated binding takes."
+  },
+  {
+    "demo": "*",
+    "control": "mode › Trial theme: Auto — click for Light",
+    "reason": "Under the headless browser's light color scheme, Auto already shows Light, so the first click changes nothing visible."
+  }
+]
