@@ -183,7 +183,7 @@ describe('createReverbNode', () => {
 
   it('uses a given impulse as is, and maps mix', () => {
     const ctx = setup();
-    const impulse = ctx.createBuffer(1, 100, 100);
+    const impulse = ctx.createBuffer(1, 100 * 480, 48000);
     const r = createReverbNode(ctx, { impulse: impulse as never, mix: 0 });
     expect(convolverOf(r).buffer).toBe(impulse);
     const input = r.inputs.in as never as FakeNode;

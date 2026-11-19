@@ -81,13 +81,21 @@ function createFakeBuffer(channels: number, length: number, sampleRate: number):
   if (channels < 1 || length < 1) {
     throw new Error('NotSupportedError: createBuffer needs a channel and a frame');
   }
+  // The specification's floor and ceiling; NaN fails both comparisons.
+  if (!(sampleRate >= 3000 && sampleRate <= 768_000)) {
+    throw new Error(`NotSupportedError: createBuffer's sample rate ${sampleRate} is outside 3000-768000`);
+  }
   const data = Array.from({ length: channels }, () => new Float32Array(length));
   return {
     duration: length / sampleRate,
     length,
     numberOfChannels: channels,
     sampleRate,
-    getChannelData: (channel) => data[channel],
+    getChannelData: (channel) => {
+      const out = data[channel];
+      if (!out) throw new Error(`IndexSizeError: the buffer has no channel ${channel}`);
+      return out;
+    },
   };
 }
 

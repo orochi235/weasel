@@ -181,6 +181,22 @@ describe('createFakeAudioContext', () => {
     expect(done).toHaveBeenCalledTimes(1);
   });
 
+  it('refuses a buffer at a sample rate no context supports', () => {
+    const ctx = createFakeAudioContext();
+    for (const rate of [0, -1, Number.NaN, Infinity, 2999, 768_001]) {
+      expect(() => ctx.createBuffer(1, 10, rate)).toThrow(/NotSupportedError/);
+    }
+    expect(ctx.createBuffer(1, 10, 3000).duration).toBeCloseTo(10 / 3000);
+  });
+
+  it('throws for a channel a buffer does not have', () => {
+    const ctx = createFakeAudioContext();
+    const b = ctx.createBuffer(1, 10, 48000);
+    expect(b.getChannelData(0)).toHaveLength(10);
+    expect(() => b.getChannelData(1)).toThrow(/IndexSizeError/);
+    expect(() => b.getChannelData(-1)).toThrow(/IndexSizeError/);
+  });
+
   it('records ramps, holds and cancels on a param', () => {
     const ctx = createFakeAudioContext();
     const g = ctx.createGain();
