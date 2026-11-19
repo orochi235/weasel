@@ -5,6 +5,7 @@ import { createKitSettingsStore, type KitSettingsStore } from '@weasel-js/react'
 import { useEditAnchorsDepSource } from './editAnchors';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from '@weasel-js/routing';
+import { createPathEditState } from 'domains/paths/pathEditState';
 
 function Capture({ onR }: { onR: (r: DepRegistry) => void }) {
   const r = useDepRegistry();
@@ -217,5 +218,46 @@ describe('useEditAnchorsDepSource', () => {
       const kit = createKitSettingsStore({ targets: { anchorClickPx: 45 } });
       expect(openTriangle({ scale: 8, kit }).dep().anchorUnder({ x: 15, y: 0 })).toBe(1);
     });
+  });
+
+  it('reads the edit as it stands when a held dep sets anchors or switches the edited node', () => {
+    const scene = {
+      layers: [{ id: 'default' }],
+      renderOrder: () => [] as NodeId[],
+      get: () => undefined,
+      update: () => {},
+    } as unknown as Scene<unknown, string, unknown>;
+    const sel = { current: [] as NodeId[], set: () => {} } as unknown as SelectionApi;
+    const state = createPathEditState();
+    let reg!: DepRegistry;
+    function Wire() {
+      useEditAnchorsDepSource(scene, sel, { applyOps: () => {} }, state);
+      return null;
+    }
+    render(
+      <DepRegistryProvider>
+        <Wire />
+        <Capture onR={(r) => { reg = r; }} />
+      </DepRegistryProvider>,
+    );
+    // Held from a read with nothing edited: entering an edit lets the same dep select anchors.
+    const held = (reg.get as any)('editAnchors');
+    held.setEditingId('a');
+    held.setSelectedAnchors([0]);
+    expect([...state.getSelectedAnchors()]).toEqual([0]);
+    held.setMarquee({ x: 0, y: 0, width: 1, height: 1 });
+    expect(state.getMarquee()).not.toBeNull();
+    // Held from a read while editing 'a', after the edit moved to 'b': going back to 'a' clears b's anchors.
+    const heldOnA = (reg.get as any)('editAnchors');
+    state.setEditingId('b');
+    state.setSelectedAnchors(new Set([3]));
+    heldOnA.setEditingId('a');
+    expect(state.getEditingId()).toBe('a');
+    expect([...state.getSelectedAnchors()]).toEqual([]);
+    expect(state.getMarquee()).toBeNull();
+    // Held from a read while editing, after the edit ended: anchors are not written.
+    state.setEditingId(null);
+    heldOnA.setSelectedAnchors([1]);
+    expect([...state.getSelectedAnchors()]).toEqual([]);
   });
 });

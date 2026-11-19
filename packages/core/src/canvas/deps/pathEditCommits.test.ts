@@ -6,7 +6,7 @@ import { createSetPoseOp } from 'core/ops/setPose';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
 import type { Scene } from 'core/scene/types';
 import type { PathEditExtension, PathTransformFinishCtx } from 'domains/paths/pathEditExtension';
-import { transformOps } from './pathEditCommits';
+import { createTransformPreview, transformOps } from './pathEditCommits';
 
 const poly = (...pts: [number, number][]) => polygonFromPoints(pts.map(([x, y]) => ({ x, y }))) as PolygonPath;
 
@@ -49,5 +49,25 @@ describe('transformOps', () => {
     const op = createSetPoseOp({ id: a, from: scene.get(a)!.pose, to: poly([1, 1], [2, 1], [2, 2]), label: 'Move' });
     expect(transformOps(scene, [{ id: 'no', finishTransform: () => null }], [op], 'Move')).toBeNull();
     expect(transformOps(scene, [{ id: 'none' }], [op], 'Move')).toEqual([op]);
+  });
+});
+
+describe('createTransformPreview', () => {
+  it('previews each other node as transformOps commits it, data and all', () => {
+    const { scene, a, b } = setup();
+    const c = scene.add({ kind: 'mark', layer: 'main', pose: poly([40, 0], [50, 0], [50, 10]), data: { kept: 1 } } as never);
+    const moved = poly([5, 5], [15, 5], [15, 15]);
+    const cPath = poly([41, 1], [51, 1], [51, 11]);
+    const ext: PathEditExtension = {
+      id: 'follow',
+      finishTransform: () => [{ id: b, data: { followed: true } }, { id: c, path: cPath, data: { renumbered: true } }],
+    };
+    const preview = createTransformPreview(scene, [ext], new Map([[a, moved]]));
+    const op = createSetPoseOp({ id: a, from: scene.get(a)!.pose, to: moved, label: 'Move' });
+    scene.applyBatch(transformOps(scene, [ext], [op], 'Move')!, 'Move', defaultCommitAdapter(scene));
+    const byId = new Map(preview.map((n) => [n.id, n]));
+    expect(byId.get(b)).toEqual({ id: b, pose: scene.get(b)!.pose, data: scene.get(b)!.data });
+    expect(byId.get(c)).toEqual({ id: c, pose: scene.get(c)!.pose, data: scene.get(c)!.data });
+    expect(scene.get(c)!.data).toEqual({ kept: 1, renumbered: true });
   });
 });
