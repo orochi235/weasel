@@ -6,7 +6,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
 import { asPolygonPath, rectPath } from '@weasel-js/geom';
-import { createScene, sceneFromJSON } from '@weasel-js/core/engine';
+import { createScene, loadScene } from '@weasel-js/core/engine';
 import { sceneToAdapter, type IngestCtx, type NodeId } from '@weasel-js/core';
 import { junk, mutate, mutated, prototypePolluted } from '@weasel-js/registry/testing/hostile.fixture';
 import { buildWeaselClipboardText, parseWeaselClipboardText } from '../clipboard/wireFormat';
@@ -53,7 +53,7 @@ function paste(text: string) {
 function pastes(text: string): 'pasted' | 'declined' {
   const scene = paste(text);
   expect(prototypePolluted()).toBe(false);
-  sceneFromJSON(JSON.parse(JSON.stringify(scene.toJSON())));
+  loadScene(JSON.parse(JSON.stringify(scene.toJSON())));
   return scene.nodes.size > 0 ? 'pasted' : 'declined';
 }
 

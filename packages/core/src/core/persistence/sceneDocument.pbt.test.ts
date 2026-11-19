@@ -8,7 +8,7 @@ import fc from 'fast-check';
 import { asPolygonPath, rectPath } from '@weasel-js/geom';
 import { HistoryRestoreError } from '@weasel-js/history';
 import { runs, tally, timeoutFor } from '../pbt.fixture';
-import { createScene, sceneFromJSON } from '../scene';
+import { createScene, loadScene } from '../scene';
 import { SnapshotKeyError, SnapshotShapeError } from '../scene/snapshotShape';
 import { decodeSnapshot, parseSnapshot } from './codec';
 import { decodeSceneDocument, encodeSceneDocument, restorePairedHistory } from './sceneDocument';
@@ -35,7 +35,7 @@ type ErrorClass = abstract new (...a: never[]) => Error;
 /** What the engine throws when code reads a value it never checked: never a refusal. */
 const ENGINE_ERRORS: readonly ErrorClass[] = [TypeError, RangeError, ReferenceError, SyntaxError];
 
-/** Runs `read`; a throw it documents is a refusal, anything else fails the property. `sceneFromJSON` documents an
+/** Runs `read`; a throw it documents is a refusal, anything else fails the property. `loadScene` documents an
  *  error naming the scene for one it cannot build (a cross-layer subtree, a colliding id, a pose it cannot fold). */
 function readOrRefuse(read: () => void, documented: readonly ErrorClass[]): 'read' | 'refused' {
   try {
@@ -43,7 +43,7 @@ function readOrRefuse(read: () => void, documented: readonly ErrorClass[]): 'rea
     return 'read';
   } catch (err) {
     if (documented.some((E) => err instanceof E)) return 'refused';
-    if (documented === LOAD && err instanceof Error && !ENGINE_ERRORS.some((E) => err instanceof E) && /^(sceneFromJSON|Scene)\b/.test(err.message)) return 'refused';
+    if (documented === LOAD && err instanceof Error && !ENGINE_ERRORS.some((E) => err instanceof E) && /^(loadScene|Scene)\b/.test(err.message)) return 'refused';
     throw err;
   }
 }
@@ -53,7 +53,7 @@ const LOAD: readonly ErrorClass[] = [SnapshotShapeError, SnapshotKeyError];
 
 function load(value: unknown): void {
   const doc = decodeSceneDocument<Record<string, unknown>, string, Pose>(value);
-  const scene = sceneFromJSON(doc.scene);
+  const scene = loadScene(doc.scene);
   readOrRefuse(() => restorePairedHistory(scene, doc.history), [HistoryRestoreError]);
 }
 
@@ -99,7 +99,7 @@ describe('the scene document, shrunk counterexamples', () => {
   it('refuses a paired history whose entry lost its baseOps with a HistoryRestoreError, not a TypeError', () => {
     const doc = mutate(VALID, ['history', 'history', 'undoStack', 0, 'baseOps'], { op: 'drop' });
     const { scene, history } = decodeSceneDocument<Record<string, unknown>, string, Pose>(doc);
-    const loaded = sceneFromJSON(scene);
+    const loaded = loadScene(scene);
     expect(() => restorePairedHistory(loaded, history)).toThrow(HistoryRestoreError);
     expect(restorePairedHistory(loaded, history, { recovery: 'best-effort' }))
       .toEqual({ status: 'restored', report: { restored: false, unresolved: [] } });
