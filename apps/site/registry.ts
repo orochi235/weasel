@@ -1613,6 +1613,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/PaintKindsDemo').then((m) => m.PaintKindsDemo),
     path: 'apps/site/demos/PaintKindsDemo.tsx',
   },
+  {
+    id: 'text-dom',
+    title: 'Editing canvas text in place',
+    package: 'text-dom',
+    description: 'One line of styled runs drawn on a `<DrawCanvas>` with `textCommandFromRuns`, and `useTextEdit` from `@weasel-js/text-dom` editing it with no scene behind it. A double-click or Edit calls `startEdit`, which lays a contenteditable overlay over the line at the pose `getScreenPose` gives, seeded from `getRuns` as one styled span per run, while the canvas leaves the line undrawn. Enter or a click away commits: `onChange` hands back the text and the runs read from the overlay\'s DOM, and the list under the canvas shows them. Escape drops the edit.',
+    hint: 'Double-click the line, select a word and press <kbd>Mod+B</kbd> or <kbd>Mod+I</kbd>, then <kbd>Enter</kbd>: the run list splits where the styling changed.',
+    load: () => import('./demos/TextDomDemo').then((m) => m.TextDomDemo),
+    path: 'apps/site/demos/TextDomDemo.tsx',
+  },
 ];
 
 export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({
