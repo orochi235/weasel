@@ -47,6 +47,13 @@ describe('the canvas features page', () => {
     expect(within(shape).getAllByRole('cell')[1]!.textContent).toContain('rect');
   });
 
+  it("credits the presets to editing, which ships them, not to core", () => {
+    render(<Features />);
+    const intro = screen.getByRole('heading', { name: 'Canvas features' }).closest('header')!.textContent!;
+    expect(intro).not.toMatch(/core's presets/);
+    expect(intro).toContain('@weasel-js/editing/presets');
+  });
+
   it('is a page the site routes to', () => {
     expect(routeOf(`#${FEATURES_ID}`, () => false)).toBe(FEATURES_ID);
   });

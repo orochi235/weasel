@@ -47,7 +47,7 @@ function PresetRow({ name, actions, tools = [], chrome = [], includes = [] }: {
   );
 }
 
-/** What each of core's presets turns on, read from the presets themselves. */
+/** What each of editing's feature presets turns on, read from the presets themselves. */
 export function Features() {
   return (
     <article className={s.page}>
@@ -55,9 +55,10 @@ export function Features() {
         <div className="ckd-eyebrow">Guide</div>
         <h2 className={s.heading}>Canvas features</h2>
         <p className="ckd-desc">
-          What each of core's presets turns on. <code>{'<SceneCanvas features>'}</code> takes the preset objects
-          (<code>presets.pick</code>, <code>presets.draw</code>, …), and <code>namedFeatures</code> from{' '}
-          <code>@weasel-js/editing</code> maps the names below to them. A canvas registers the actions, tools,
+          What each feature preset turns on. <code>{'<SceneCanvas features>'}</code> takes the preset objects
+          (<code>presets.pick</code>, <code>presets.draw</code>, … from <code>@weasel-js/editing/presets</code>), and{' '}
+          <code>namedFeatures</code> from <code>@weasel-js/editing</code> maps the names below to them. Core supplies
+          only what every canvas has. A canvas registers the actions, tools,
           and selection chrome of every preset it is given and every preset those include, and the actions its tools bind.
         </p>
       </header>
