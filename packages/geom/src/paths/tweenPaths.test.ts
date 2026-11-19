@@ -67,3 +67,19 @@ describe('tweenPaths', () => {
     expect(pathToD(tween.at(1))).not.toMatch(/Z$/);
   });
 });
+
+describe('tweenPaths with near-equal segments', () => {
+  it('changes steadily as a turned box is stretched, whichever side float rounding leaves longer', () => {
+    const star = pathFromD('M120 90 L138 136 L188 140 L150 172 L162 222 L120 194 L78 222 L90 172 L52 140 L102 136 Z') as PolygonPath;
+    // A 100 × 140 box turned 45° and skewed a little more each step, as a resize of it leaves it.
+    const box = (k: number) => {
+      const at = (x: number, y: number) => {
+        const sx = x + k * y;
+        return { x: 490 + (sx - y) * Math.SQRT1_2, y: 180 + (sx + y) * Math.SQRT1_2 };
+      };
+      return polygonFromPoints([at(-50, -70), at(50, -70), at(50, 70), at(-50, 70)]);
+    };
+    const lefts = Array.from({ length: 40 }, (_, i) => boundsOfPath(tweenPaths(star, box(0.002 * i), 1 / 3)).x);
+    for (let i = 1; i < lefts.length; i++) expect(Math.abs(lefts[i]! - lefts[i - 1]!)).toBeLessThan(1);
+  });
+});
