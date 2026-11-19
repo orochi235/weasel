@@ -58,4 +58,14 @@ describe('a Select with a disabled option', () => {
     key(trigger, 'ArrowLeft');
     expect(trigger).toHaveTextContent('Red');
   });
+
+  it('changes nothing when typeahead on the closed trigger lands on it', () => {
+    const onChange = vi.fn();
+    render(<Select aria-label="Color" options={OPTIONS} defaultSelectedKey="r" onSelectionChange={onChange} />);
+    const trigger = screen.getByRole('button', { name: /Color/ });
+    act(() => trigger.focus());
+    key(trigger, 'g');
+    expect(trigger).toHaveTextContent('Red');
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });

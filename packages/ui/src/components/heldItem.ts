@@ -72,19 +72,19 @@ export function StateProbe<S>({ context, intoRef }: { context: Context<S | null>
 }
 
 /** A probe to render under a React Aria select-like `context`, and what a pick of `picked` from `from` comes to there:
- *  itself, the first free row past it the way it was going when it is held ({@link pastHeld}), or `undefined` for
- *  none. */
+ *  itself; when it is held, the first free row past it the way it was going if the pick was an arrow `step`
+ *  ({@link pastHeld}); or `undefined` for none, as for a held row typeahead lands on. */
 export function useHeldPick<S extends { collection: Walkable }>(context: Context<S | null>): {
   probe: ReactElement;
-  pick(from: Key | null, picked: Key | null): Key | null | undefined;
+  pick(from: Key | null, picked: Key | null, step: boolean): Key | null | undefined;
 } {
   const stateRef = useRef<S | null>(null);
   return {
     probe: createElement(StateProbe<S>, { context, intoRef: stateRef }),
-    pick(from, picked) {
+    pick(from, picked, step) {
       const coll = stateRef.current?.collection;
       if (picked === null || !coll || !isHeldKey(coll, picked)) return picked;
-      return pastHeld(coll, from, picked) ?? undefined;
+      return step ? (pastHeld(coll, from, picked) ?? undefined) : undefined;
     },
   };
 }
