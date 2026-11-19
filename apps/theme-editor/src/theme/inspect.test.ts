@@ -30,4 +30,14 @@ describe('tokensReadAt', () => {
     const pane = document.querySelector('.pane')!;
     expect(tokensReadAt(target, pane, documentSheets())).toEqual(['fg', 'accent', 'space-md']);
   });
+
+  it('follows a private custom property a real declaration reads to the tokens it holds', () => {
+    document.head.innerHTML = `<style>
+      .btn { --btn-radius: var(--wzl-button-radius); --btn-unused: var(--wzl-danger); border-radius: var(--btn-radius); }
+      .pane .btn { --wzl-fg-muted: var(--wzl-fg-muted-on-accent); color: var(--wzl-fg-muted); }
+    </style>`;
+    document.body.innerHTML = '<div class="pane"><button class="btn" id="t">x</button></div>';
+    const target = document.getElementById('t')!;
+    expect(tokensReadAt(target, document.querySelector('.pane')!, documentSheets())).toEqual(['button-radius', 'fg-muted', 'fg-muted-on-accent']);
+  });
 });
