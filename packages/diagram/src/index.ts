@@ -243,7 +243,7 @@ export type {
 } from './fromData';
 export { diagramMarkOf, markShape, registerMarkShape, type MarkShapeOptions } from './marks';
 export type { DataMark, DiagramMark } from './marks';
-export { force, forceRelaxation } from './force';
+export { force, createForceRelaxation } from './force';
 export type { ForceBody, ForceOptions, ForceRelaxation } from './force';
 export { EASED_LAYOUTS, easedProducer, forceProducer, useLiveLayout } from './live';
 export type {
