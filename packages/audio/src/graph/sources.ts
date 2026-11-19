@@ -1,6 +1,6 @@
 import { periodicWave } from '../periodicWave';
 import { initParam, writeParam } from '../param';
-import { checkWave } from '../patchCheck';
+import { checkNoiseColor, checkWave } from '../patchCheck';
 import { noiseBuffer } from '../synthVoice';
 import type { Inharmonic, NoiseColor, Waveform } from '../types';
 import { createPlayhead } from './playhead';
@@ -161,6 +161,7 @@ export interface NoiseNodeOptions {
 
 /** A loop of the shared noise buffer for its color. Param: `level`. */
 export function createNoiseNode(ctx: BaseAudioContext, opts: NoiseNodeOptions): GraphNodeDef {
+  checkNoiseColor(opts.color);
   const shell = sourceShell(ctx, () => ctx.createBufferSource());
   return {
     inputs: {},

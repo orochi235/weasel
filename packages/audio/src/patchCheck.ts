@@ -1,5 +1,5 @@
 import type { Envelope } from './envelope';
-import type { VoiceFilter, Waveform } from './types';
+import type { NoiseColor, VoiceFilter, Waveform } from './types';
 
 const fail = (message: string): never => {
   throw new RangeError(`@weasel-js/audio: ${message}`);
@@ -65,4 +65,10 @@ export function checkGlideMs(ms: number | undefined): void {
   if (ms !== undefined && !(ms >= 0 && Number.isFinite(ms))) {
     fail(`a glide takes a finite number of ms, 0 or more, not ${ms}`);
   }
+}
+
+const NOISE_COLORS = new Set<string>(['white', 'pink', 'brown']);
+
+export function checkNoiseColor(color: NoiseColor): void {
+  if (!NOISE_COLORS.has(color)) fail(`"${color}" is not a noise color: one of white, pink, brown`);
 }

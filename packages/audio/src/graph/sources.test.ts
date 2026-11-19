@@ -246,3 +246,9 @@ describe('createOscillatorNode wave checks', () => {
     }
   });
 });
+
+describe('createNoiseNode color check', () => {
+  it('refuses a color outside white, pink, and brown', () => {
+    expect(() => createNoiseNode({} as BaseAudioContext, { color: 'blue' as never })).toThrow(RangeError);
+  });
+});

@@ -11,7 +11,7 @@ export interface SynthStarters {
   /** Throws on a bad pitch, wave, partial, glide, envelope, filter, or duration, at
    *  the call rather than when it comes due. */
   note(note: NoteOptions): Starter;
-  /** Throws on a bad envelope, filter, or duration, at the call. */
+  /** Throws on a bad color, envelope, filter, or duration, at the call. */
   noise(noise: NoiseOptions): Starter;
 }
 

@@ -1,6 +1,6 @@
 import { createPart } from '@weasel-js/registry';
 import { envelopeLevel, envelopePoints, resolveEnvelope, type ResolvedEnvelope } from './envelope';
-import { checkGlideMs, checkShaping, checkWave } from './patchCheck';
+import { checkGlideMs, checkNoiseColor, checkShaping, checkWave } from './patchCheck';
 import { toFrequency } from './pitch';
 import type { Inharmonic, NoiseColor, NoiseOptions, NoteOptions, SynthPartial, VoiceFilter, Waveform } from './types';
 
@@ -127,8 +127,9 @@ export function resolveNote(
   };
 }
 
-/** Throws on a noise voice's envelope, filter, or duration that it could not play. */
+/** Throws on a noise voice's color, envelope, filter, or duration that it could not play. */
 export function checkNoise(noise: Pick<NoiseOptions, 'noise' | 'envelope' | 'filter' | 'duration'>): void {
+  checkNoiseColor(noise.noise);
   checkShaping(noise);
 }
 

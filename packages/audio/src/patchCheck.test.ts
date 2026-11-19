@@ -72,6 +72,10 @@ describe('synth patch checks', () => {
     expect(() => biquadCoefficients('allpass', 800, 48000)).not.toThrow();
   });
 
+  it('refuses a noise color outside white, pink, and brown', () => {
+    refusesNoise({ noise: 'blue' as NoiseOptions['noise'] });
+  });
+
   it('takes a patch whose numbers are all finite', () => {
     const note: NoteOptions = {
       pitch: 'A4', duration: 0, glide: { to: 'C5', ms: 0 },
