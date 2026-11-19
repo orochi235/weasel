@@ -101,6 +101,47 @@ describe('createFakeAudioContext', () => {
     expect(done).not.toHaveBeenCalled();
   });
 
+  it('ends a buffer source after what is left past its offset, at its playback rate', () => {
+    const ctx = createFakeAudioContext();
+    const offset = ctx.createBufferSource();
+    const fast = ctx.createBufferSource();
+    const ends: string[] = [];
+    offset.buffer = { duration: 1 };
+    fast.buffer = { duration: 1 };
+    fast.playbackRate.value = 2;
+    offset.onended = () => ends.push('offset');
+    fast.onended = () => ends.push('fast');
+    offset.start(0, 0.6);
+    fast.start(0);
+    ctx._advance(390);
+    expect(ends).toEqual([]);
+    ctx._advance(20);
+    expect(ends).toEqual(['offset']);
+    ctx._advance(100);
+    expect(ends).toEqual(['offset', 'fast']);
+  });
+
+  it('ends a buffer source after the duration given to start, looping or not', () => {
+    const ctx = createFakeAudioContext();
+    const s = ctx.createBufferSource();
+    const done = vi.fn();
+    s.buffer = { duration: 0.5 };
+    s.loop = true;
+    s.onended = done;
+    s.start(0, 0, 2);
+    expect(s.durations).toEqual([2]);
+    ctx._advance(1990);
+    expect(done).not.toHaveBeenCalled();
+    ctx._advance(20);
+    expect(done).toHaveBeenCalledTimes(1);
+  });
+
+  it('throws on a negative offset or duration, as the specification requires', () => {
+    const ctx = createFakeAudioContext();
+    expect(() => ctx.createBufferSource().start(0, -1)).toThrow(RangeError);
+    expect(() => ctx.createBufferSource().start(0, 0, -1)).toThrow(RangeError);
+  });
+
   it('fires onended at a scheduled stop time, before the buffer runs out', () => {
     const ctx = createFakeAudioContext();
     const s = ctx.createBufferSource();
