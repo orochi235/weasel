@@ -98,8 +98,8 @@ export { useViewAnimation, useViewAnimationOn, viewAxes, VIEW_ANIMATION_KEY } fr
 
 // ─── Second view on an existing canvas ──────────────────────────────────────
 // `<CanvasView>` is a camera over a rect of a `<SceneCanvas>`'s surface, with
-// input routed to it — one GL context, N views. Contrast the detached
-// canvases below, which each own their own context.
+// input routed to it — one GL context, N views. Contrast `<SceneViewCanvas>`
+// below, which owns its own context.
 export { CanvasView } from '../canvas/CanvasView';
 export type {
   CanvasViewProps, CanvasViewCommonProps, CameraHeldViewProps, AimHeldViewProps, ViewRect,
@@ -115,9 +115,9 @@ export type {
 } from '../domains/viewports/viewMarker';
 export { VIEW_MARKER_DRAG, createViewMarkerDragAction, createViewMarkerContribution } from '../domains/viewports/viewMarkerDrag';
 
-// ─── Detached scene-view + minimap: read-only canvases with their own GL ─────
+// ─── Detached scene-view: a read-only canvas with its own GL ────────────────
 // `<SceneViewCanvas>` is a pointer-inert read-only render of a scene at a
-// given view; `<MinimapCanvas>` is the opinionated minimap built on top.
+// given view; `@weasel-js/minimap`'s `<MinimapCanvas>` is built on top of it.
 export { SceneViewCanvas } from '../canvas/SceneViewCanvas';
 export type { PagePaintedView, SceneViewCanvasCommon, SceneViewCanvasProps, WorkerPaintedView } from '../canvas/SceneViewCanvas';
 // A scene view a worker paints: `<SceneViewCanvas worker>`, or the client under it for a host of its own.
