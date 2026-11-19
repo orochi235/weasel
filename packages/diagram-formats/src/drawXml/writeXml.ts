@@ -1,10 +1,10 @@
 /** The XML elements draw-style cells are written as. */
 import type { Vec2 } from '@weasel-js/core/math';
 import { escapeAttr } from '@weasel-js/registry';
-import type { Rect } from '@weasel-js/geom';
+import { trimNumber, type Rect } from '@weasel-js/geom';
 
 /** A coordinate to four places, which is as fine as anything here is drawn. */
-export const num = (n: number): string => String(Math.round(n * 10000) / 10000);
+export const num = (n: number): string => trimNumber(n, 4);
 
 /** Attributes, in order, leaving out those with no value. */
 export function attrs(pairs: readonly (readonly [string, string | number | undefined])[]): string {
