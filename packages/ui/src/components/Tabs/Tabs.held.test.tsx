@@ -141,9 +141,30 @@ describe('a disabled Tab', () => {
     expect(onSelectionChange).not.toHaveBeenCalled();
   });
 
-  it('shows a disabled tab a controlled selectedKey names', () => {
+  it('shows a disabled tab a controlled selectedKey names, and warns once', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const tabs = (key: string) => (
+      <Tabs selectedKey={key}>
+        <TabList aria-label="Sections">
+          <Tab id="a">A</Tab>
+          <Tab id="b" disabled>B</Tab>
+        </TabList>
+        <TabPanel id="a">panel-a</TabPanel>
+        <TabPanel id="b">panel-b</TabPanel>
+      </Tabs>
+    );
+    const { rerender } = render(tabs('b'));
+    rerender(tabs('b'));
+    expect(screen.getByText('panel-b')).toBeTruthy();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]?.[0])).toContain('allowDisabledSelected');
+    warn.mockRestore();
+  });
+
+  it('shows it without a warning under allowDisabledSelected', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     render(
-      <Tabs selectedKey="b">
+      <Tabs selectedKey="b" allowDisabledSelected>
         <TabList aria-label="Sections">
           <Tab id="a">A</Tab>
           <Tab id="b" disabled>B</Tab>
@@ -153,5 +174,7 @@ describe('a disabled Tab', () => {
       </Tabs>,
     );
     expect(screen.getByText('panel-b')).toBeTruthy();
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 });
