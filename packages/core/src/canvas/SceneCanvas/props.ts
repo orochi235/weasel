@@ -74,7 +74,7 @@ export type { SceneCanvasHit };
 export type SceneCanvasProps<TData, TLayer extends string, TPose> =
   Omit<
     CanvasProps<TPose>,
-    | 'adapter' | 'boundsOf' | 'selection' | 'tools'
+    | 'adapter' | 'boundsOf' | 'boundsOfPose' | 'selection' | 'tools' | 'gestureSource' | 'previewPoseExtra' // wired from its own
     | 'viewState'       // SceneCanvas makes the camera from the view props below
     | 'layers'          // stripped so we can re-add as optional below
     | 'getIsVisible'    // SceneCanvas synthesizes this from chromeVisibility
