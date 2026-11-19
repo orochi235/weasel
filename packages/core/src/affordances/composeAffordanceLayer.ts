@@ -6,8 +6,8 @@ import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { isRigid, pxExtentIn, targetCorners } from 'core/geometry/targetFrame';
 import type { DebugSink } from '../debug/types';
-import type { CommandFill, CommandStroke } from '@weasel-js/paint';
-import { boundsOfPath, PATH_M, PATH_L, PATH_Z, lerp, type Rect } from '@weasel-js/geom';
+import { boundsOfPath, PATH_M, PATH_L, PATH_Z, type Rect } from '@weasel-js/geom';
+import { annulusCommands } from './annulusPaint';
 import {
   angleOf,
   annulusSemiAxes,
@@ -225,8 +225,13 @@ function paintRegion(
     const insetLocal = pxExtentIn(paint.insetPx ?? 0, view.scale, xf);
     // Same `minBandPx` clamp the hit-test applies, so the ring you can see is
     // the ring you can grab.
-    const cmd = annulusCommand(s, annulusSemiAxes(s, view, xf), insetLocal, xf, viewT, paint.fill, paint.stroke);
-    if (cmd) out.push(cmd);
+    const toScreen = (x: number, y: number) => {
+      const w = localToWorld(xf, x, y);
+      return worldToScreen(w.x, w.y, viewT);
+    };
+    for (const cmd of annulusCommands(s, annulusSemiAxes(s, view, xf), insetLocal, toScreen, paint.fill, paint.stroke)) {
+      out.push(cmd);
+    }
     return;
   }
   if (paint.kind === 'custom') {
@@ -239,89 +244,6 @@ function paintRegion(
     for (const cmd of paint.draw(ctx)) out.push(cmd);
     return;
   }
-}
-
-/** Build a screen-space DrawCommand for an annulus region: the area
- *  inside the (contracted) outer ellipse but outside the (expanded)
- *  inner rect, wherever that rect sits. Renders as up to four cap
- *  subpaths, one past each rect edge, whose union is `ellipse \ rect`.
- *  Every cap is traced the same way round, so where two overlap (a rect
- *  corner inside the ellipse) nonzero fills the overlap rather than
- *  cancelling it. Returns null when no cap is left. */
-function annulusCommand(
-  shape: Extract<AffordanceRegion['shape'], { kind: 'annulus' }>,
-  semiAxes: { rx: number; ry: number },
-  insetLocal: { x: number; y: number },
-  xf: TargetTransform,
-  viewT: ReturnType<typeof viewToTransform>,
-  fill: CommandFill | undefined,
-  stroke: CommandStroke | undefined,
-): DrawCommand | null {
-  const rx = semiAxes.rx - insetLocal.x;
-  const ry = semiAxes.ry - insetLocal.y;
-  if (rx <= 0 || ry <= 0) return null;
-  const cx = shape.cx;
-  const cy = shape.cy;
-  // The expanded inner rect's edges, relative to the ellipse center.
-  const left = shape.innerX - insetLocal.x - cx;
-  const right = shape.innerX + shape.innerWidth + insetLocal.x - cx;
-  const top = shape.innerY - insetLocal.y - cy;
-  const bottom = shape.innerY + shape.innerHeight + insetLocal.y - cy;
-
-  // Line segments per cap arc; 24 is smooth at typical zooms.
-  const SAMPLES = 24;
-  const cmds: number[] = [];
-  const localPts: { x: number; y: number }[] = [];
-
-  // Traces `t0 → t1` (t1 > t0) along the ellipse; PATH_Z closes along the
-  // rect edge, since both endpoints share that edge's coordinate.
-  function appendCap(t0: number, t1: number): void {
-    cmds.push(PATH_M);
-    localPts.push({ x: cx + rx * Math.cos(t0), y: cy + ry * Math.sin(t0) });
-    for (let i = 1; i <= SAMPLES; i++) {
-      const t = lerp(t0, t1, i / SAMPLES);
-      cmds.push(PATH_L);
-      localPts.push({ x: cx + rx * Math.cos(t), y: cy + ry * Math.sin(t) });
-    }
-    cmds.push(PATH_Z);
-  }
-  const clamp1 = (v: number) => Math.max(-1, Math.min(1, v));
-
-  // Above the rect: sin t < top / ry.
-  if (top > -ry) {
-    const p = Math.asin(clamp1(top / ry));
-    appendCap(-Math.PI - p, p);
-  }
-  // Below it: sin t > bottom / ry.
-  if (bottom < ry) {
-    const p = Math.asin(clamp1(bottom / ry));
-    appendCap(p, Math.PI - p);
-  }
-  // Right of it: cos t > right / rx.
-  if (right < rx) {
-    const q = Math.acos(clamp1(right / rx));
-    appendCap(-q, q);
-  }
-  // Left of it: cos t < left / rx.
-  if (left > -rx) {
-    const q = Math.acos(clamp1(left / rx));
-    appendCap(q, 2 * Math.PI - q);
-  }
-  if (cmds.length === 0) return null;
-
-  const coords = new Float32Array(localPts.length * 2);
-  for (let i = 0; i < localPts.length; i++) {
-    const w = localToWorld(xf, localPts[i].x, localPts[i].y);
-    const [sx, sy] = worldToScreen(w.x, w.y, viewT);
-    coords[i * 2] = sx;
-    coords[i * 2 + 1] = sy;
-  }
-  return {
-    kind: 'path',
-    path: { kind: 'polygon', commands: new Uint8Array(cmds), coords, fillRule: 'nonzero' },
-    ...(fill ? { fill } : {}),
-    ...(stroke ? { stroke } : {}),
-  };
 }
 
 function worldOf(region: AffordanceRegion, xf: TargetTransform, view: View): CustomPaintContext['world'] {

@@ -14,7 +14,11 @@ import type { Rect } from '@weasel-js/geom';
 export interface MomentumOptions {
   /** Required: the per-Canvas animator that will own the decay. */
   animator: Animator;
-  friction?: number;     // default 0.92 (per second)
+  /**
+   * The share of its speed a coast keeps each second, in (0, 1). Default 0.92. 1, which would
+   * never slow, is refused, as are 0 and anything outside the range.
+   */
+  friction?: number;
   threshold?: number;    // default 200 world units/sec; the slowest release that coasts
   /** Sample window in ms for velocity computation. Default 80ms. */
   velocitySampleMs?: number;
@@ -62,6 +66,9 @@ const SAMPLES = scratchKey<PointerSample[]>('momentum.samples');
  */
 export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
   const friction = opts.friction ?? 0.92;
+  if (!(friction > 0 && friction < 1)) {
+    throw new RangeError(`momentum: friction is the share of speed a coast keeps a second, in (0, 1), not ${friction}`);
+  }
   const threshold = opts.threshold ?? 200;
   const sampleMs = opts.velocitySampleMs ?? 80;
   const now = opts.now ?? (() => Date.now());

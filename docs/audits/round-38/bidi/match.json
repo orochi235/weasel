@@ -1,0 +1,10 @@
+{
+ "pairs": [],
+ "a": [
+  "`bidiClassOf`'s docstring misstates what unassigned code points resolve to"
+ ],
+ "b": [
+  "A long level run throws RangeError: `indices.push(...run.indices)` spreads the whole run as call arguments",
+  "Unmatched isolate initiators make analysis quadratic"
+ ]
+}

@@ -140,6 +140,14 @@ describe('holdPosition', () => {
     expect([h.clock.elapsed, h.clock.pass]).toEqual([2500, 2]);
     expect(hold.pending()).toBeNull();
   });
+  it('splits a recorded position into its pass as the clock does, where the quotient rounds up a pass', () => {
+    // 54.91…/0.8448… rounds to 65, though 65 passes of 0.8448… run past 54.91…: it stands near the end of pass 64.
+    const from = 0.8448756034500764;
+    const h = createClock({ duration: 2 * from, loop: true });
+    holdPosition(h, { elapsed: 54.91691422425496, duration: from, origin: 0.5 });
+    expect(h.clock.pass).toBe(64);
+    expect(h.clock.elapsed).toBeCloseTo(64 * 2 * from + 0.5 + from, 9);
+  });
   it('converts a position recorded under another span, keeping its pass', () => {
     const h = createClock({ duration: 2000, loop: 3 });
     const hold = holdPosition(h, { elapsed: 2500, duration: 1000 });

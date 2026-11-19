@@ -4,6 +4,8 @@ import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import { asNodeId } from 'core/scene/types';
 import type { RenderLayer } from 'core/layers/render';
+import type { DrawCommand } from '@weasel-js/renderer';
+import { PATH_L, PATH_M, pathContainsPoint } from '@weasel-js/geom';
 
 const NO_MOD = { alt: false, shift: false, meta: false, ctrl: false };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -370,5 +372,63 @@ describe('composeAffordanceLayer — bounds of a ring on a turned target', () =>
     expect(boxes[0]!.x).toBeCloseTo(10);
     expect(boxes[0]!.width).toBeCloseTo(80);
     expect(boxes[0]!.height).toBeCloseTo(80);
+  });
+});
+
+describe('composeAffordanceLayer — annulus paint is the ring the hit test takes', () => {
+  type PathCmd = { path: Parameters<typeof pathContainsPoint>[0]; fill?: unknown; stroke?: unknown };
+  const ringAt = (
+    shape: Extract<AffordanceRegion['shape'], { kind: 'annulus' }>,
+    paint: Extract<AffordanceRegion['paint'], { kind: 'annulus' }>,
+  ) => composeAffordanceLayer('x', 'X', [{
+    id: 'ring',
+    regions: () => [{ id: 'r', targetId: null, shape, paint, bind: () => ({}) }],
+  }]);
+  const filled = (cmds: DrawCommand[], x: number, y: number) =>
+    cmds.some((c) => (c as PathCmd).fill && pathContainsPoint((c as PathCmd).path, x, y));
+
+  it('cuts the rect out where innerX and innerY put it, not centered on the ellipse', () => {
+    const shape = { kind: 'annulus' as const, cx: 0, cy: 0, rx: 200, ry: 200, innerX: 0, innerY: -20, innerWidth: 100, innerHeight: 40 };
+    const layer = ringAt(shape, { kind: 'annulus', fill: { paint: { color: 'red' } } });
+    const out = layer.draw(makeState(), VIEW, DIMS);
+    for (const [x, y] of [[-25, 0], [75, 0], [150, 0], [0, 100]] as const) {
+      expect(filled(out, x, y)).toBe(layer.hitTest(x, y, makeState(), VIEW, DIMS) !== null);
+    }
+  });
+
+  it('fills the corner wedges when the rect corners sit inside the ellipse', () => {
+    // A 20 px box with a 24 px band and no inset: the corners are well inside the ellipse.
+    const shape = { kind: 'annulus' as const, cx: 0, cy: 0, rx: 14, ry: 14, innerX: -10, innerY: -10, innerWidth: 20, innerHeight: 20, minBandPx: 24 };
+    const layer = ringAt(shape, { kind: 'annulus', fill: { paint: { color: 'red' } } });
+    const out = layer.draw(makeState(), VIEW, DIMS);
+    for (const [x, y] of [[20, -20], [-20, 20], [20, 20], [-20, -20], [25, 0], [0, 0]] as const) {
+      expect(filled(out, x, y)).toBe(layer.hitTest(x, y, makeState(), VIEW, DIMS) !== null);
+    }
+  });
+
+  it('strokes only the ring outline, never a chord across the band', () => {
+    const shape = { kind: 'annulus' as const, cx: 0, cy: 0, rx: 14, ry: 14, innerX: -10, innerY: -10, innerWidth: 20, innerHeight: 20, minBandPx: 24 };
+    const out = ringAt(shape, { kind: 'annulus', stroke: { paint: { color: 'black' }, width: 1 } })
+      .draw(makeState(), VIEW, DIMS);
+    const strokes = out.filter((c) => (c as PathCmd).stroke);
+    expect(strokes).toHaveLength(1);
+    const path = (strokes[0] as { path: { coords: Float32Array; commands: Uint8Array } }).path;
+    const onOutline = (x: number, y: number) => {
+      const box = Math.max(Math.abs(x), Math.abs(y));
+      return Math.abs(Math.hypot(x, y) - 34) < 0.5 || Math.abs(box - 10) < 1e-3;
+    };
+    // Every segment, the closing ones included, is on the ellipse or on the rect.
+    let start = 0, prev = 0;
+    const segment = (i: number, j: number) => {
+      for (const t of [0.25, 0.5, 0.75]) {
+        const x = path.coords[i * 2] + (path.coords[j * 2] - path.coords[i * 2]) * t;
+        const y = path.coords[i * 2 + 1] + (path.coords[j * 2 + 1] - path.coords[i * 2 + 1]) * t;
+        expect(onOutline(x, y), `segment ${i}→${j} at (${x}, ${y})`).toBe(true);
+      }
+    };
+    let v = 0;
+    for (const cmd of path.commands) {
+      if (cmd === PATH_M) { start = v; prev = v++; } else if (cmd === PATH_L) { segment(prev, v); prev = v++; } else segment(prev, start);
+    }
   });
 });

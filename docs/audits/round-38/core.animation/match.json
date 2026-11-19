@@ -1,0 +1,22 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "scenePoseTarget answers a stale target for a node deleted at rest, and its cache keeps one per such node forever",
+  "A coast on pose targets canceled from outside moves the document with no undo entry and stays in the behavior's coast set",
+  "rewindingTween ends a redo or undo leg early and jumps when the easing overshoots",
+  "rigFromNode writes skins by plain assignment, so a node id of `__proto__` loses its skin"
+ ],
+ "b": [
+  "scenePoseTarget keeps, and keeps returning, the target of a node deleted while at rest",
+  "A coast canceled from outside leaves its preview on screen and records nothing, though the drag's own commit was suppressed",
+  "`boundary: 'stop'` stops each node at its own edge on a pose target, but only once every node is at an edge when written",
+  "useRigNode throws during render when a node under the rig names a joint the skeleton no longer has",
+  "Rig.bake throws when a bound or skinned node was deleted (or locked) after binding, and show keeps re-installing its override every frame",
+  "momentum({ friction: 1 }) throws at release over a scene adapter and coasts forever over any other"
+ ]
+}

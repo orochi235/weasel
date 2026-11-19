@@ -14,26 +14,31 @@ export function isIsolateInitiator(c: BidiClass): boolean {
 }
 
 /**
- * BD9 — the index of the PDI matching the initiator at `start`, or `end` when
- * it has none.
+ * BD9 — for each isolate initiator, the index of its matching PDI, or
+ * `classes.length` when it has none; `-1` at every other index.
  *
- * Depth-counted rather than nearest-match: a nested isolate consumes its own
- * PDI, so the first PDI encountered is usually not the answer. A paragraph
- * separator ends the search unmatched: no isolate outlives its paragraph.
+ * One stack pass: a PDI closes the innermost open initiator, and one with
+ * nothing open matches nothing. A paragraph separator ends every open initiator
+ * unmatched: no isolate outlives its paragraph.
  */
-export function matchingPDI(
-  classes: readonly BidiClass[],
-  start: number,
-  end: number = classes.length,
-): number {
-  let depth = 1;
-  for (let i = start + 1; i < end; i++) {
+export function pairIsolates(classes: readonly BidiClass[]): Int32Array {
+  const n = classes.length;
+  const out = new Int32Array(n).fill(-1);
+  const open: number[] = [];
+  const closeAll = () => {
+    for (const i of open) out[i] = n;
+    open.length = 0;
+  };
+  for (let i = 0; i < n; i++) {
     const c = classes[i];
-    if (isIsolateInitiator(c)) depth++;
-    else if (c === 'PDI' && --depth === 0) return i;
-    else if (c === 'B') return end;
+    if (isIsolateInitiator(c)) open.push(i);
+    else if (c === 'PDI') {
+      const j = open.pop();
+      if (j !== undefined) out[j] = i;
+    } else if (c === 'B') closeAll();
   }
-  return end;
+  closeAll();
+  return out;
 }
 
 /**
@@ -46,16 +51,18 @@ export function matchingPDI(
  * which is why an all-RTL text opening with a stray `LRI` still reports 0 —
  * no strong character was ever reached, and P3's default is 0. The search
  * stops at a paragraph separator, which ends the paragraph it is reading.
+ * `pdiOf` is `pairIsolates(classes)`, for a caller that already has it.
  */
 export function paragraphLevelOf(
   classes: readonly BidiClass[],
   start = 0,
   end: number = classes.length,
+  pdiOf: Int32Array = pairIsolates(classes),
 ): 0 | 1 {
   for (let i = start; i < end; i++) {
     const c = classes[i];
     if (isIsolateInitiator(c)) {
-      i = matchingPDI(classes, i, end);
+      i = Math.min(pdiOf[i], end);
       continue;
     }
     if (c === 'L') return 0;

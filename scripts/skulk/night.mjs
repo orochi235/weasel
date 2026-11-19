@@ -15,7 +15,7 @@ import {
 } from './config.mjs';
 import { createSlots, unavailableNodes } from './jobs.mjs';
 import { partitionAt } from './partition.mjs';
-import { AUDITS_DIR, HARDENING, gitTouched, nextRound, pickAreas, readPasses } from './rounds.mjs';
+import { AUDITS_DIR, HARDENING, areasInFlight, gitTouched, nextRound, pickAreas, readPasses } from './rounds.mjs';
 import { SWEEP_ID, fixSweep, runControlSweep, sweepLine } from './sweep.mjs';
 import { mayStartArea } from './usage.mjs';
 
@@ -26,6 +26,24 @@ const UNAVAILABLE_TTL_MS = 5 * 60_000;
 export const STOP_FILE = join(STATE_DIR, 'stop');
 export const CURRENT_FILE = join(STATE_DIR, 'current.json');
 export const LAST_FILE = join(STATE_DIR, 'last.json');
+
+/** The night another process is running, as its status file reads, or `null` when none is. */
+export const nightRunning = () => {
+  let current;
+  try {
+    current = JSON.parse(readFileSync(CURRENT_FILE, 'utf8'));
+  } catch {
+    return null;
+  }
+  const pid = current?.pid;
+  if (!Number.isInteger(pid) || pid === process.pid) return null;
+  try {
+    process.kill(pid, 0);
+  } catch (error) {
+    if (error.code !== 'EPERM') return null;
+  }
+  return current;
+};
 
 const usd = (n) => `$${n.toFixed(2)}`;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -103,13 +121,20 @@ const plan = (root, args) => {
   const round = nextRound({ roundDirs, hardening: readFileSync(join(root, HARDENING), 'utf8'), branches });
   const areas = partitionAt(root, commit);
   const passes = readPasses(root);
+  const running = nightRunning();
   const byId = new Map(areas.map((a) => [a.id, a]));
   const unknown = (args.only ?? []).filter((id) => !byId.has(id));
   if (unknown.length > 0) throw new Error(`no area named ${unknown.join(', ')}; see docs/audits/partition.json`);
   const picked = args.only
     ? args.only.slice(0, args.areas)
-    : pickAreas({ areas, passes, touched: gitTouched(git), count: args.areas }).picked;
-  return { commit, round, picked: picked.map((id) => byId.get(id)), passes };
+    : pickAreas({
+      areas, passes, touched: gitTouched(git), count: args.areas,
+      inFlight: new Set([
+        ...areasInFlight(git('for-each-ref', '--no-merged=main', '--format=%(refname:short)', 'refs/heads').split('\n')),
+        ...(running?.areas ?? []),
+      ]),
+    }).picked;
+  return { commit, round: running ? Math.max(round, running.round + 1) : round, picked: picked.map((id) => byId.get(id)), passes, running };
 };
 
 const printPlan = (p, args, say) => {
@@ -241,7 +266,9 @@ export const runNight = async (argv = process.argv.slice(2), say = (line) => con
   const git = gitIn(root);
   const p = plan(root, args);
   printPlan(p, args, say);
+  if (p.running) say(`round ${p.running.round} is running (pid ${p.running.pid}, step ${p.running.step}); its areas are left out above`);
   if (args.dry || p.picked.length === 0) return { round: p.round, dry: true };
+  if (p.running) throw new Error(`round ${p.running.round} is still running (pid ${p.running.pid}); wait for it, or stop it first`);
 
   mkdirSync(STATE_DIR, { recursive: true });
   rmSync(STOP_FILE, { force: true });

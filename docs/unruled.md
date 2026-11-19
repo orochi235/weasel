@@ -2721,3 +2721,14 @@ Calls the lanes made without a ruling:
   the whole snapshot with `SnapshotShapeError` was the alternative.
 - 2026-11-18 (the fixer's call): `resolveUnitExpr` refuses an expression nesting parentheses or signs past 1000 levels
   with its own `unitExpr:` error.
+
+## Audit round thirty-eight (2026-11-18): core's animation
+
+- 2026-11-18 (the fixer's call): `rigFromNode` and `useRigNode` leave out a joint the rig node's skeleton lacks, one
+  renamed or removed while nodes under it still name it: a node bound to it is not bound, and a skin weighing it bends
+  by its other joints. `useRigNode` warns, naming each such node and joint, once per change in that list. `bindRig`,
+  whose caller passes the bindings, still throws on one. Throwing from `useRigNode`'s render, as before, was the
+  alternative.
+- 2026-11-18 (the fixer's call): `momentum()` throws a `RangeError` on a `friction` outside (0, 1). 1 threw at release
+  over a scene adapter and coasted forever over any other; refusing it when the behavior is made gives one answer for
+  both. Allowing 1 over an adapter without pose targets, stopped only by `bounds`, was the alternative.

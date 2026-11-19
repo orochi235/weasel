@@ -61,7 +61,10 @@ export async function renderEngineStereo(
   const atHold = later !== undefined && worklet && later.at * rate < QUANTUM;
   // Held rather than `void`ed: a pause that fails fails the render with it.
   const laterDone = later && !atHold
-    ? ctx.suspend(later.at).then(async () => { later.run(engine); await pause(); })
+    ? ctx.suspend(later.at).then(async () => {
+      // Resumed even when `run` throws, or the render never finishes and its error never arrives.
+      try { later.run(engine); } finally { await pause(); }
+    })
       .then(() => null, (error: unknown) => ({ error }))
     : null;
   let out: AudioBuffer;

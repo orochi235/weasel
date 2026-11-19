@@ -69,14 +69,23 @@ export const isSettled = (area, passes, touched) => {
 };
 
 /**
- * Tonight's areas: never audited first, in partition order, then the longest since their last pass;
- * settled areas are skipped. Answers `{ picked, settled }`, each a list of ids.
+ * The areas an earlier round is still holding: each `audit<N>-<area>` branch not yet merged into `main`.
+ * Their passes are recorded only on that round's batch branch, so `readPasses` cannot see them.
  */
-export const pickAreas = ({ areas, passes, touched, count }) => {
+export const areasInFlight = (unmergedBranches) =>
+  new Set(unmergedBranches.flatMap((b) => /^audit\d+-(.+)$/.exec(b)?.[1] ?? []));
+
+/**
+ * Tonight's areas: never audited first, in partition order, then the longest since their last pass;
+ * settled areas, and areas an unlanded round still holds (`inFlight`), are skipped. Answers
+ * `{ picked, settled }`, each a list of ids.
+ */
+export const pickAreas = ({ areas, passes, touched, count, inFlight = new Set() }) => {
   const settled = [];
   const fresh = [];
   const seen = [];
   for (const area of areas) {
+    if (inFlight.has(area.id)) continue;
     const history = passes.get(area.id) ?? [];
     if (history.length === 0) {
       fresh.push(area.id);
