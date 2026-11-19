@@ -1,5 +1,3 @@
-import { vi } from 'vitest';
-
 /** A dedicated-Worker double. Nothing runs in it: a test reads what was posted
  *  and delivers the worker's replies by hand. */
 export class FakeWorker {
@@ -60,8 +58,14 @@ export function stubWorkerGlobals() {
     }
   }
 
-  vi.stubGlobal('Worker', FakeWorker);
-  vi.stubGlobal('Blob', RecordingBlob);
+  // Only these two are put back, so a global the test stubbed itself survives.
+  const g = globalThis as Record<string, unknown>;
+  const saved = (['Worker', 'Blob'] as const).map((key) => [key, Object.getOwnPropertyDescriptor(g, key)] as const);
+  const install = (key: string, value: unknown): void => {
+    Object.defineProperty(g, key, { value, writable: true, configurable: true, enumerable: false });
+  };
+  install('Worker', FakeWorker);
+  install('Blob', RecordingBlob);
   URL.createObjectURL = (() => `blob:fake/${scripts.length}`) as typeof URL.createObjectURL;
   URL.revokeObjectURL = ((url: string) => { revoked.push(url); }) as typeof URL.revokeObjectURL;
 
@@ -70,7 +74,10 @@ export function stubWorkerGlobals() {
     scripts,
     revoked,
     restore() {
-      vi.unstubAllGlobals();
+      for (const [key, descriptor] of saved) {
+        if (descriptor) Object.defineProperty(g, key, descriptor);
+        else delete g[key];
+      }
       URL.createObjectURL = create;
       URL.revokeObjectURL = revoke;
     },
