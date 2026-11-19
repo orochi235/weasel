@@ -92,8 +92,9 @@ export function bindSkins<TPose>(
       for (const s of skinned) {
         const { path, pose } = s.entry;
         if (path === undefined || pose === undefined) continue;
-        const data = scene.get(s.node)?.data;
-        scene.update(s.node, { data: { ...(data as object), path } as never });
+        const node = scene.get(s.node);
+        if (!node) continue;
+        scene.update(s.node, { data: { ...(node.data as object), path } as never });
         scene.setPose(s.node, pose);
       }
     },
