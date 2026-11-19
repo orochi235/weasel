@@ -145,6 +145,13 @@ describe('hitAffordanceRegions', () => {
     const SQUISHED = { ...VIEW, scale: { x: 4, y: 1 } };
     const a = affordance('a', [pointRegion('r', 0, 0, 8)]);
 
+    it('ranks overlapping point regions by their distance on screen', () => {
+      const view = { x: 0, y: 0, scale: { x: 1, y: 8 } };
+      // 3 px away on screen along x, against 8 px along y.
+      const a = affordance('aff', [pointRegion('near-on-screen', 3, 0, 10), pointRegion('near-in-world', 0, 1, 10)]);
+      expect(hitAffordanceRegions([a], 0, 0, state(), view)?.regionId).toBe('near-on-screen');
+    });
+
     it('stops accepting a point that is beyond the handle on the tight axis', () => {
       expect(hitAffordanceRegions([a], 3, 0, state(), SQUISHED)).toBeNull();
       expect(hitAffordanceRegions([a], 2, 0, state(), SQUISHED)).not.toBeNull();
