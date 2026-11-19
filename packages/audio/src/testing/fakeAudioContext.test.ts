@@ -9,6 +9,18 @@ describe('createFakeAudioContext', () => {
     expect(ctx.state).toBe('running');
   });
 
+  it('rejects resume, suspend and close once closed, and stays closed', async () => {
+    const ctx = createFakeAudioContext();
+    await ctx.close();
+    const seen = vi.fn();
+    ctx.addEventListener('statechange', seen);
+    await expect(ctx.resume()).rejects.toThrow(/InvalidStateError/);
+    await expect(ctx.suspend()).rejects.toThrow(/InvalidStateError/);
+    await expect(ctx.close()).rejects.toThrow(/InvalidStateError/);
+    expect(ctx.state).toBe('closed');
+    expect(seen).not.toHaveBeenCalled();
+  });
+
   it('advances the clock in seconds when told milliseconds', () => {
     const ctx = createFakeAudioContext();
     ctx._advance(500);

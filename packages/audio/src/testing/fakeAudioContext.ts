@@ -109,15 +109,20 @@ export function createFakeAudioContext(): FakeAudioContext {
   const listeners = new Set<() => void>();
   const routed = new WeakSet<FakeMediaElement>();
   const now = (): number => ctx.currentTime;
+  const refuseClosed = (call: string): void => {
+    if (ctx.state === 'closed') throw new Error(`InvalidStateError: ${call} on a closed context`);
+  };
 
   const ctx: FakeAudioContext = {
     state: 'suspended',
     currentTime: 0,
     sampleRate: 48000,
     destination: node('destination'),
-    async resume() { ctx._setState('running'); },
-    async suspend() { ctx._setState('suspended'); },
-    async close() { ctx._setState('closed'); },
+    // A closed context rejects all three and stays closed; `_setState` is the
+    // test hook that can still move it.
+    async resume() { refuseClosed('resume'); ctx._setState('running'); },
+    async suspend() { refuseClosed('suspend'); ctx._setState('suspended'); },
+    async close() { refuseClosed('close'); ctx._setState('closed'); },
     addEventListener(_type, fn) { listeners.add(fn); },
     removeEventListener(_type, fn) { listeners.delete(fn); },
     createGain: () => node('gain', { gain: param(1) }),
