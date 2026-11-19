@@ -2,6 +2,8 @@
 '@weasel-js/core': patch
 ---
 
-A `<SceneCanvas>` that mounts while a paint stand-in is already shown over it, such as a second view opened during a text edit, paints the node through the stand-in instead of in full beneath it.
+A `<SceneCanvas>` mounting under a paint stand-in already shown paints the node through it, not in full beneath it.
+
+This covers a second view opened during a text edit.
 
 <!-- entry: fix visual -->
