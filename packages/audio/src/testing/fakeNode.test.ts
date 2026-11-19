@@ -14,4 +14,12 @@ describe('fake node', () => {
     expect(b.connectedFrom).toEqual([]);
   });
 
+  it('leaves a node unchanged by a targeted disconnect that throws', () => {
+    const a = node('a');
+    const b = node('b');
+    a.connect(b);
+    expect(() => a.disconnect(node('c'))).toThrow(/InvalidAccessError/);
+    expect(a.disconnected).toBe(false);
+    expect(a.connectedTo).toEqual([b]);
+  });
 });
