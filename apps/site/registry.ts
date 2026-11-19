@@ -1595,6 +1595,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/ExportDemo').then((m) => m.ExportDemo),
     path: 'apps/site/demos/ExportDemo.tsx',
   },
+  {
+    id: 'editing',
+    title: 'Editing with drawPreset',
+    package: 'editing',
+    description: 'A `<SceneCanvas features={[drawPreset]}>` with `defaultTools={KIT_TOOL_IDS}` and nothing else wired: `drawPreset` is editing\'s whole kit in one preset, and the list under the canvas names each preset it includes, by its own `label`, with what it adds. The bar above holds a `<ToolPalette>` of the tools the canvas mounted and three `<ActionBar>`s: history, `EDIT_GROUP`, and `PATHFINDER_GROUP`, each enabled once a selection gives it something to act on.',
+    hint: 'Click a shape to select it, drag it, and turn it by its handle. Select two overlapping shapes and press a pathfinder button. Draw a new shape with a tool from the palette, then <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/EditingDemo').then((m) => m.EditingDemo),
+    path: 'apps/site/demos/EditingDemo.tsx',
+  },
 ];
 
 export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({
