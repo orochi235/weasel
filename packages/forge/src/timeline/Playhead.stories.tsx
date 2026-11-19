@@ -1,4 +1,5 @@
 import { f, meta, story, usePlayhead, useTimeline } from '@weasel-js/forge';
+import { wrapPositive } from '@weasel-js/geom';
 
 /** A story that declares a timeline: forge puts a transport under its trial and hands it the playhead. */
 export default meta({});
@@ -8,7 +9,7 @@ const R = 12;
 
 function Ball({ period }: { period: number }) {
   const t = usePlayhead();
-  const phase = (((t % period) + period) % period) / period;
+  const phase = wrapPositive(t, period) / period;
   const x = R + (WIDTH - 2 * R) * (0.5 - 0.5 * Math.cos(phase * 2 * Math.PI));
   return (
     <svg width={WIDTH} height={R * 2} role="img" aria-label="A ball swinging with the playhead">

@@ -1,4 +1,4 @@
-import { trimNumber } from '@weasel-js/geom';
+import { trimNumber, wrapPositive } from '@weasel-js/geom';
 import type { BaseSampler } from './bases/types';
 import { EFFECTS, type BadgeEffectSpec } from './effects';
 
@@ -82,13 +82,13 @@ export function composeOutline(
   const sy = 100 / box.height;
   const totalCss = base.totalCss;
   const warpedXY = (sCss: number) => {
-    const { pt, dx, dy } = moved(((sCss % totalCss) + totalCss) % totalCss);
+    const { pt, dx, dy } = moved(wrapPositive(sCss, totalCss));
     return { x: pt.x + dx * sx, y: pt.y + dy * sy };
   };
   // The normal is recomputed from the warped tangent, so decorations follow the
   // actual bumpy outline.
   const perimeterAt = (s: number) => {
-    const sm = ((s % totalCss) + totalCss) % totalCss;
+    const sm = wrapPositive(s, totalCss);
     const pt = warpedXY(sm);
     const eps = totalCss / (SAMPLES * 2);
     const wA = warpedXY(sm - eps);

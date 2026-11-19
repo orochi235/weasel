@@ -1,3 +1,4 @@
+import { wrapPositive } from '@weasel-js/geom';
 /** The bump of an evenly spaced run around a closed outline that lies nearest a sample. */
 export interface NearestBump {
   /** Which bump, in `[0, count)`: the same bump on both sides of the outline's start. */
@@ -15,10 +16,10 @@ export interface NearestBump {
 export function nearestBump(s: number, totalCss: number, count: number, phase: number): NearestBump {
   const step = totalCss / count;
   const phaseOffset = phase * step;
-  const sm = ((s % totalCss) + totalCss) % totalCss;
+  const sm = wrapPositive(s, totalCss);
   const k = Math.round((sm - phaseOffset) / step);
-  const index = ((k % count) + count) % count;
-  const center = ((k * step + phaseOffset) % totalCss + totalCss) % totalCss;
+  const index = wrapPositive(k, count);
+  const center = wrapPositive(k * step + phaseOffset, totalCss);
   let offset = sm - center;
   if (offset > totalCss / 2) offset -= totalCss;
   if (offset < -totalCss / 2) offset += totalCss;

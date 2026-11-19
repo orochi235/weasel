@@ -1,6 +1,6 @@
 import { resolveEdge, type EdgeCap, type EdgePoint } from './edgeProfiles';
 import type { BaseModule, BaseSampler, PerimeterPoint } from './types';
-import { lerp, trimNumber } from '@weasel-js/geom';
+import { lerp, trimNumber, wrapPositive } from '@weasel-js/geom';
 
 /** What `baseParams` takes on a badge whose `base` is `powerline`. */
 export interface BadgePowerlineBaseParams {
@@ -67,7 +67,7 @@ const Powerline: BaseModule<BadgePowerlineBaseParams> = {
     const totalCss = cum[cum.length - 1] + closeLen;
 
     const perimeterAt = (s: number): PerimeterPoint => {
-      const sm = ((s % totalCss) + totalCss) % totalCss;
+      const sm = wrapPositive(s, totalCss);
       for (let i = 1; i < pts.length; i++) {
         if (sm <= cum[i]) {
           const segLen = cum[i] - cum[i - 1];

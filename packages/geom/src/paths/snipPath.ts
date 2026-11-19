@@ -10,6 +10,7 @@ import { parseSubpaths } from '../booleans/contours';
 import { crossingStops } from '../intersect/pathCrossings';
 import { writeSubpaths, type SegmentRun } from '../intersect/writeSubpaths';
 import { keepCorners } from './cornerRestore';
+import { wrapPositive } from '../angle';
 
 /** Options for {@link snipPathAt}. */
 export interface SnipPathOptions {
@@ -34,7 +35,7 @@ function stretch(segs: readonly Seg[], a: number, b: number): Seg[] {
   const n = segs.length;
   const out: Seg[] = [];
   for (let k = Math.floor(a); k < b; k++) {
-    const s = segs[((k % n) + n) % n];
+    const s = segs[wrapPositive(k, n)];
     const t0 = Math.max(0, a - k), t1 = Math.min(1, b - k);
     if (t1 - t0 <= EDGE) continue;
     const piece = subSeg(s, t0, t1, evalSeg(s, t0), evalSeg(s, t1));
