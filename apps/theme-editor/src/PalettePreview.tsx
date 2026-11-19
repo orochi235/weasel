@@ -4,7 +4,8 @@ import { useFlash } from './useFlash';
 import { Button } from '@weasel-js/ui/components/Button';
 import styles from './PaletteLab.module.css';
 import { PinIcon } from './PinIcon';
-import { toLch, type Palette } from '@weasel-js/theme/engine';
+import { toLch, type Constraints, type Palette } from '@weasel-js/theme/engine';
+import { gateVerdict } from './palette/unmetGates';
 
 type Point = readonly [x: number, y: number];
 
@@ -83,7 +84,8 @@ function Marks({ palette, background }: { palette: Palette; background: string }
   );
 }
 
-export function PalettePreview({ palette, surface }: { palette: Palette; surface: string }) {
+export function PalettePreview({ palette, constraints }: { palette: Palette; constraints: Constraints }) {
+  const { surface } = constraints;
   const [copied, flashCopied] = useFlash(false, 1400);
   const { stats, swatches } = palette;
   const hexes = swatches.map((s) => s.hex).join(' ');
@@ -106,19 +108,19 @@ export function PalettePreview({ palette, surface }: { palette: Palette; surface
         <Stat
           label="min contrast"
           value={stats.minContrast.toFixed(2)}
-          verdict={stats.minContrast >= 3 ? 'ok' : 'bad'}
+          verdict={gateVerdict(constraints, stats, 'minContrast')}
           note="WCAG, lightness only"
         />
         <Stat
           label="min distance"
           value={stats.minDistance.toFixed(3)}
-          verdict={stats.minDistance >= 0.22 ? 'ok' : 'bad'}
+          verdict={gateVerdict(constraints, stats, 'minDistance')}
           note="0.22 reads as two colors"
         />
         <Stat
           label="from surface"
           value={stats.minSurfaceDistance.toFixed(3)}
-          verdict={stats.minSurfaceDistance >= 0.25 ? 'ok' : 'bad'}
+          verdict={gateVerdict(constraints, stats, 'minSurfaceDistance')}
         />
       </div>
 
