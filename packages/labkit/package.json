@@ -167,8 +167,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.4",
-    "@msb235/blits": "1.2.0",
-    "@testing-library/jest-dom": "^7.0.1",
+    "@msb235/blits": "1.4.0",
+    "@testing-library/jest-dom": "^8.0.0",
     "@types/three": "^0.187.0",
     "@weasel-js/animator": "1.19.1",
     "@weasel-js/guides": "1.19.1",

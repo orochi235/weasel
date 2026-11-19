@@ -144,7 +144,7 @@
     "2d"
   ],
   "devDependencies": {
-    "@msb235/blits": "1.2.0",
+    "@msb235/blits": "1.4.0",
     "@weasel-js/icons-plugin": "1.19.1",
     "@weasel-js/modes": "1.19.1",
     "@weasel-js/text": "1.19.1",
