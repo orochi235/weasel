@@ -1604,6 +1604,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/ThemeDemo').then((m) => m.ThemeDemo),
     path: 'apps/site/demos/ThemeDemo.tsx',
   },
+  {
+    id: 'react-visible-frames',
+    title: 'Frames only while seen',
+    package: 'react',
+    description: "`useElapsed` from `@weasel-js/react`: the milliseconds a component has been on screen, held as state and counted on `useVisibleRaf`, the frame loop every weasel loop runs behind. Nothing runs while the document is hidden, and a loop given a `target` element also stops while that element is out of the viewport, then drops the time it spent away rather than arriving with it as one long frame. The counter at the top has no target, so only hiding the tab stops it. Each box in the pane names itself as its target.",
+    hint: 'Scroll the pane: the box you scroll away stops counting, and picks up where it stopped when it comes back. Switch tabs and every counter waits.',
+    load: () => import('./demos/ReactDemo').then((m) => m.ReactDemo),
+    path: 'apps/site/demos/ReactDemo.tsx',
+  },
 ];
 
 export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({
