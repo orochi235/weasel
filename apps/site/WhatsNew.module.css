@@ -2,6 +2,11 @@
   margin-top: var(--wzl-space-6);
 }
 
+/* The column headers are chrome, set in the UI face with the sidebar and the release filter. */
+.grid th {
+  font-family: var(--wzl-font-ui);
+}
+
 .link {
   color: var(--wzl-fg);
   font-weight: 600;
