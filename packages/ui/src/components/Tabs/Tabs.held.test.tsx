@@ -31,7 +31,6 @@ describe('a disabled Tab', () => {
   it('takes the arrow keys, reads as disabled and says why, and keeps the chosen tab', () => {
     const onSelectionChange = vi.fn();
     render(<Sample onSelectionChange={onSelectionChange} />);
-    onSelectionChange.mockClear();
     act(() => tab('A').focus());
     arrow(tab('A'));
     expect(document.activeElement).toBe(tab('B'));
@@ -56,5 +55,95 @@ describe('a disabled Tab', () => {
     render(<Sample first />);
     expect(screen.getByText('panel-a')).toBeTruthy();
     expect(screen.queryByText('panel-z')).toBeNull();
+  });
+
+  it('opens on the first tab that can be chosen without calling onSelectionChange', () => {
+    const onSelectionChange = vi.fn();
+    render(<Sample first onSelectionChange={onSelectionChange} />);
+    expect(screen.getByText('panel-a')).toBeTruthy();
+    expect(onSelectionChange).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the first tab that can be chosen when the chosen tab is removed', () => {
+    const onSelectionChange = vi.fn();
+    const set = (withC: boolean) => (
+      <Tabs onSelectionChange={onSelectionChange}>
+        <TabList aria-label="Sections">
+          <Tab id="z" disabled>Z</Tab>
+          <Tab id="a">A</Tab>
+          {withC && <Tab id="c">C</Tab>}
+        </TabList>
+        <TabPanel id="z">panel-z</TabPanel>
+        <TabPanel id="a">panel-a</TabPanel>
+        {withC && <TabPanel id="c">panel-c</TabPanel>}
+      </Tabs>
+    );
+    const { rerender } = render(set(true));
+    fireEvent.click(tab('C'));
+    expect(screen.getByText('panel-c')).toBeTruthy();
+    rerender(set(false));
+    expect(screen.getByText('panel-a')).toBeTruthy();
+    expect(onSelectionChange).toHaveBeenLastCalledWith('a');
+  });
+
+  it('chooses nothing, quietly, when every tab is disabled', () => {
+    const onSelectionChange = vi.fn();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { rerender } = render(
+      <Tabs onSelectionChange={onSelectionChange}>
+        <TabList aria-label="Sections">
+          <Tab id="a" disabled>A</Tab>
+          <Tab id="b" disabled>B</Tab>
+        </TabList>
+        <TabPanel id="a">panel-a</TabPanel>
+        <TabPanel id="b">panel-b</TabPanel>
+      </Tabs>,
+    );
+    rerender(
+      <Tabs onSelectionChange={onSelectionChange}>
+        <TabList aria-label="Sections">
+          <Tab id="a" disabled>A</Tab>
+          <Tab id="b" disabled>B</Tab>
+        </TabList>
+        <TabPanel id="a">panel-a</TabPanel>
+        <TabPanel id="b">panel-b</TabPanel>
+      </Tabs>,
+    );
+    expect(screen.queryByText('panel-a')).toBeNull();
+    expect(screen.queryByText('panel-b')).toBeNull();
+    expect(onSelectionChange).not.toHaveBeenCalled();
+    expect(tab('A')).not.toHaveAttribute('aria-selected', 'true');
+    warn.mockRestore();
+  });
+
+  it('opens on the first tab that can be chosen when defaultSelectedKey names a disabled one', () => {
+    const onSelectionChange = vi.fn();
+    render(
+      <Tabs defaultSelectedKey="b" onSelectionChange={onSelectionChange}>
+        <TabList aria-label="Sections">
+          <Tab id="a">A</Tab>
+          <Tab id="b" disabled>B</Tab>
+        </TabList>
+        <TabPanel id="a">panel-a</TabPanel>
+        <TabPanel id="b">panel-b</TabPanel>
+      </Tabs>,
+    );
+    expect(screen.getByText('panel-a')).toBeTruthy();
+    expect(screen.queryByText('panel-b')).toBeNull();
+    expect(onSelectionChange).not.toHaveBeenCalled();
+  });
+
+  it('shows a disabled tab a controlled selectedKey names', () => {
+    render(
+      <Tabs selectedKey="b">
+        <TabList aria-label="Sections">
+          <Tab id="a">A</Tab>
+          <Tab id="b" disabled>B</Tab>
+        </TabList>
+        <TabPanel id="a">panel-a</TabPanel>
+        <TabPanel id="b">panel-b</TabPanel>
+      </Tabs>,
+    );
+    expect(screen.getByText('panel-b')).toBeTruthy();
   });
 });
