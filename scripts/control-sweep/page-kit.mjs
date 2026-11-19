@@ -158,13 +158,20 @@ export function installSweepKit(win) {
     });
   };
 
+  /** Whether `p` holds, beside `field`, a picture big enough to be what a control drives: a chart's SVG, an image. */
+  const showsSomething = (p, field) => [...p.querySelectorAll('svg,img,[role=img]')].some((v) => {
+    if (field.contains(v)) return false;
+    const r = v.getBoundingClientRect();
+    return r.width >= 64 && r.height >= 64;
+  });
+
   const fieldOf = (el, all, root) => {
     const peers = new Set([...peersOf(el, all), ...sameSetting(el, all)]);
     const g = el.closest(PEER_GROUPS);
     let field = g && root.contains(g) && g !== root ? g : el;
     while (field.parentElement && field.parentElement !== root && root.contains(field.parentElement)) {
       const p = field.parentElement;
-      if (p.querySelector('canvas') || p.querySelector(STATUS)) break;
+      if (p.querySelector('canvas') || p.querySelector(STATUS) || showsSomething(p, field)) break;
       if (all.some((c) => c !== el && !peers.has(c) && p.contains(c))) break;
       field = p;
     }

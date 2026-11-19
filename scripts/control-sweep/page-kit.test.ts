@@ -10,7 +10,7 @@ const kit = () => (window as unknown as { __sweep: Kit }).__sweep;
 beforeEach(() => {
   // jsdom lays nothing out; give every element a box unless it is marked as showing nothing.
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
-    const size = this.hasAttribute('data-test-zero') ? 0 : this.hasAttribute('data-test-tiny') ? 1 : 20;
+    const size = this.hasAttribute('data-test-zero') ? 0 : this.hasAttribute('data-test-tiny') ? 1 : this.hasAttribute('data-test-big') ? 200 : 20;
     return { x: 0, y: 0, left: 0, top: 0, right: size, bottom: size, width: size, height: size, toJSON: () => ({}) } as DOMRect;
   });
   delete (window as unknown as { __sweep?: Kit }).__sweep;
@@ -148,6 +148,14 @@ describe('capture', () => {
     expect(capture()).toEqual(before);
     (document.querySelectorAll('input')[2] as HTMLInputElement).value = '9';
     expect(capture()).not.toEqual(before);
+  });
+
+  it('stops a lone control’s field short of a chart it drives', () => {
+    page('<div class="demo"><div class="field"><label>value</label><input type="range" aria-label="value" value="1"></div><svg data-test-big role="img"><text>1</text></svg></div>');
+    const [slider] = kit().discover('.ckd-demo-frame');
+    const before = kit().capture('.ckd-demo-frame', slider.id).dom;
+    document.querySelector('text')!.textContent = '9';
+    expect(kit().capture('.ckd-demo-frame', slider.id).dom).not.toEqual(before);
   });
 
   it('normalizes whitespace in text', () => {
