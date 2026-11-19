@@ -1499,9 +1499,11 @@ Calls the round made:
   name (`InertiaConfig`, `ActionDisabledReason`): removing them breaks consumers in a patch release.
 - `withAlpha01(c, NaN)` writes `'#rrggbbNaN'` and `paintWithAlpha(p, NaN)` sets opacity NaN. Left as is:
   NaN could leave the color unchanged, mean 0, or mean 1.
-- A flick's coast canceled from outside (`cancelAll`, or the animator going away) over an adapter with
-  `previewPoses` and no pose targets leaves its last frame as a preview and records nothing, as the code
-  says it means to. Left as is: it could record where the coast stopped, or clear the preview.
+- A flick's coast canceled from outside (`cancelAll`, `cancelKey`, or the animator going away) records the
+  flick where the coast stopped and clears its preview, as a new drag of the node does; on 2026-11-18 (the
+  fixer's call, audit round thirty-eight) for every adapter, since over pose targets the cancel had already
+  written the stopped pose into the document outside history. Clearing the preview and restoring the
+  pre-drag pose was the alternative.
 
 ## Audit round seven (2026-11-08)
 

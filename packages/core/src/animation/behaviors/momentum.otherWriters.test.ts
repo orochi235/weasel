@@ -103,4 +103,14 @@ describe('momentum — a coast gives way to another writer', () => {
     expect(poses.has('a')).toBe(false);
     expect(opIds()).toEqual(['b']);
   });
+  it('records the flick where it stopped when the animator cancels it from outside', () => {
+    const { clock, animator, poses, applyOps, opIds } = flick(['a']);
+    clock.advance(16);
+    const stood = poses.get('a')!.x;
+    expect(stood).toBeGreaterThan(20);
+    animator.cancelAll();
+    expect(opIds()).toEqual(['a']);
+    expect(applyOps.mock.calls[0]![1]).toBe('flick');
+    expect((applyOps.mock.calls[0]![0][0]!.args as { to: { x: number } }).to.x).toBeCloseTo(stood);
+  });
 });

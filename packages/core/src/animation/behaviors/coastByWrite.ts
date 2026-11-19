@@ -39,16 +39,16 @@ export function coastByWrite<TPose>(a: CoastArgs<TPose>): void {
   const coast: Coast = {
     ids: ctx.draggedIds.slice(),
     stop: (): void => {
-      // Canceled from outside (cancelAll, unmount), it stopped long ago and somewhere else.
-      if (!animator.isActive(cancelKey)) {
-        coasts.delete(coast);
-        return;
-      }
       decayHandle.cancel();
       commitFlick();
     },
   };
   coasts.add(coast);
+  // A decay canceled from outside (`cancelAll`, `cancelKey`, the animator unmounting) skips
+  // `onDone`: the coast has stopped where it last showed the nodes, and is recorded there.
+  const unwatch = animator.watch((event) => {
+    if (event.type === 'cancel' && event.animation.key === cancelKey) commitFlick();
+  });
   // Held from the release itself, so no frame paints the pre-drag pose
   // between the drag's preview going away and the first coast frame.
   show(new Map([...riding].flatMap((id) => {
@@ -85,6 +85,7 @@ export function coastByWrite<TPose>(a: CoastArgs<TPose>): void {
       for (const id of riding) lastSeen.set(id, d.getBounds(adapter.getPose(id)));
       if (riding.size === 0) {
         coasts.delete(coast);
+        unwatch();
         decayHandle.cancel();
         return;
       }
@@ -99,6 +100,7 @@ export function coastByWrite<TPose>(a: CoastArgs<TPose>): void {
 
   function commitFlick(): void {
     if (!coasts.delete(coast)) return;
+    unwatch();
     const ops: Op[] = [];
     const shown = new Map<string, TPose | null>();
     for (const id of riding) {
