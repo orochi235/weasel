@@ -16,7 +16,7 @@ import { Popover } from '../Popover';
 import { FieldFoot, fieldRootClass, type FieldSlotProps, type FieldStateProps } from '../Field/fieldSlots';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { Caret } from '../Caret';
-import { optionLabels, withIcon } from '../Select/optionLabels';
+import { FitSizer, withIcon } from '../Select/optionLabels';
 import type { HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
 import type { ListOption } from '../listOption';
@@ -154,14 +154,7 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
         revertingRef={revertingRef}
         onCommitText={onCommit && rest.allowsCustomValue ? (text) => onCommit({ source: 'text', text }) : undefined}
       >
-        {width === 'fit' && (
-          <span className={s.sizer} aria-hidden="true">
-            {placeholder !== undefined && <span>{placeholder}</span>}
-            {optionLabels(options, children).map((l, i) => (
-              <span key={i}>{l}</span>
-            ))}
-          </span>
-        )}
+        {width === 'fit' && <FitSizer className={s.sizer} placeholder={placeholder} options={options}>{children}</FitSizer>}
       </ComboBoxFrame>
       <FieldFoot description={description} errorMessage={errorMessage} />
       {ready && provide(

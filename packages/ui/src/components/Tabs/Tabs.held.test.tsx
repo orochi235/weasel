@@ -1,8 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { REST_MS } from '../Tree/useRowTip';
 import { Tabs, TabList, Tab, TabPanel } from './Tabs';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 function Sample({ first = false, onSelectionChange }: { first?: boolean; onSelectionChange?: (k: unknown) => void }) {
   return (
@@ -28,16 +32,19 @@ const arrow = (from: HTMLElement, key = 'ArrowRight') => {
 };
 
 describe('a disabled Tab', () => {
-  it('takes the arrow keys, reads as disabled and says why, and keeps the chosen tab', () => {
+  it('takes the arrow keys, reads as disabled and says why once focus rests, and keeps the chosen tab', () => {
+    vi.useFakeTimers();
     const onSelectionChange = vi.fn();
     render(<Sample onSelectionChange={onSelectionChange} />);
-    onSelectionChange.mockClear();
     act(() => tab('A').focus());
     arrow(tab('A'));
     expect(document.activeElement).toBe(tab('B'));
     expect(tab('B')).toHaveAttribute('aria-disabled', 'true');
+    expect(tab('B')).toHaveAttribute('data-disabled');
     expect(tab('B')).toHaveAttribute('aria-description', 'Add a layer first');
-    expect(screen.getByRole('tooltip').textContent).toContain('Add a layer first');
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    act(() => { vi.advanceTimersByTime(REST_MS); });
+    expect(screen.getByRole('tooltip').textContent).toBe('B: Add a layer first');
     expect(screen.getByText('panel-a')).toBeTruthy();
     expect(screen.queryByText('panel-b')).toBeNull();
     expect(onSelectionChange).not.toHaveBeenCalled();
@@ -56,5 +63,118 @@ describe('a disabled Tab', () => {
     render(<Sample first />);
     expect(screen.getByText('panel-a')).toBeTruthy();
     expect(screen.queryByText('panel-z')).toBeNull();
+  });
+
+  it('opens on the first tab that can be chosen without calling onSelectionChange', () => {
+    const onSelectionChange = vi.fn();
+    render(<Sample first onSelectionChange={onSelectionChange} />);
+    expect(screen.getByText('panel-a')).toBeTruthy();
+    expect(onSelectionChange).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the first tab that can be chosen when the chosen tab is removed', () => {
+    const onSelectionChange = vi.fn();
+    const set = (withC: boolean) => (
+      <Tabs onSelectionChange={onSelectionChange}>
+        <TabList aria-label="Sections">
+          <Tab id="z" disabled>Z</Tab>
+          <Tab id="a">A</Tab>
+          {withC && <Tab id="c">C</Tab>}
+        </TabList>
+        <TabPanel id="z">panel-z</TabPanel>
+        <TabPanel id="a">panel-a</TabPanel>
+        {withC && <TabPanel id="c">panel-c</TabPanel>}
+      </Tabs>
+    );
+    const { rerender } = render(set(true));
+    fireEvent.click(tab('C'));
+    expect(screen.getByText('panel-c')).toBeTruthy();
+    rerender(set(false));
+    expect(screen.getByText('panel-a')).toBeTruthy();
+    expect(onSelectionChange).toHaveBeenLastCalledWith('a');
+  });
+
+  it('chooses nothing, quietly, when every tab is disabled', () => {
+    const onSelectionChange = vi.fn();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { rerender } = render(
+      <Tabs onSelectionChange={onSelectionChange}>
+        <TabList aria-label="Sections">
+          <Tab id="a" disabled>A</Tab>
+          <Tab id="b" disabled>B</Tab>
+        </TabList>
+        <TabPanel id="a">panel-a</TabPanel>
+        <TabPanel id="b">panel-b</TabPanel>
+      </Tabs>,
+    );
+    rerender(
+      <Tabs onSelectionChange={onSelectionChange}>
+        <TabList aria-label="Sections">
+          <Tab id="a" disabled>A</Tab>
+          <Tab id="b" disabled>B</Tab>
+        </TabList>
+        <TabPanel id="a">panel-a</TabPanel>
+        <TabPanel id="b">panel-b</TabPanel>
+      </Tabs>,
+    );
+    expect(screen.queryByText('panel-a')).toBeNull();
+    expect(screen.queryByText('panel-b')).toBeNull();
+    expect(onSelectionChange).not.toHaveBeenCalled();
+    expect(tab('A')).not.toHaveAttribute('aria-selected', 'true');
+    warn.mockRestore();
+  });
+
+  it('opens on the first tab that can be chosen when defaultSelectedKey names a disabled one', () => {
+    const onSelectionChange = vi.fn();
+    render(
+      <Tabs defaultSelectedKey="b" onSelectionChange={onSelectionChange}>
+        <TabList aria-label="Sections">
+          <Tab id="a">A</Tab>
+          <Tab id="b" disabled>B</Tab>
+        </TabList>
+        <TabPanel id="a">panel-a</TabPanel>
+        <TabPanel id="b">panel-b</TabPanel>
+      </Tabs>,
+    );
+    expect(screen.getByText('panel-a')).toBeTruthy();
+    expect(screen.queryByText('panel-b')).toBeNull();
+    expect(onSelectionChange).not.toHaveBeenCalled();
+  });
+
+  it('shows a disabled tab a controlled selectedKey names, and warns once', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const tabs = (key: string) => (
+      <Tabs selectedKey={key}>
+        <TabList aria-label="Sections">
+          <Tab id="a">A</Tab>
+          <Tab id="b" disabled>B</Tab>
+        </TabList>
+        <TabPanel id="a">panel-a</TabPanel>
+        <TabPanel id="b">panel-b</TabPanel>
+      </Tabs>
+    );
+    const { rerender } = render(tabs('b'));
+    rerender(tabs('b'));
+    expect(screen.getByText('panel-b')).toBeTruthy();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]?.[0])).toContain('allowDisabledSelected');
+    warn.mockRestore();
+  });
+
+  it('shows it without a warning under allowDisabledSelected', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    render(
+      <Tabs selectedKey="b" allowDisabledSelected>
+        <TabList aria-label="Sections">
+          <Tab id="a">A</Tab>
+          <Tab id="b" disabled>B</Tab>
+        </TabList>
+        <TabPanel id="a">panel-a</TabPanel>
+        <TabPanel id="b">panel-b</TabPanel>
+      </Tabs>,
+    );
+    expect(screen.getByText('panel-b')).toBeTruthy();
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 });

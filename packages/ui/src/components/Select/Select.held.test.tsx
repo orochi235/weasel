@@ -32,6 +32,7 @@ describe('a Select with a disabled option', () => {
     const green = screen.getByRole('option', { name: 'Green' });
     expect(document.activeElement).toBe(green);
     expect(green).toHaveAttribute('aria-disabled', 'true');
+    expect(green).toHaveAttribute('data-disabled');
     expect(green).toHaveAccessibleDescription('Out of stock');
     key(green, 'ArrowDown');
     expect(document.activeElement).toBe(screen.getByRole('option', { name: 'Blue' }));
@@ -57,5 +58,32 @@ describe('a Select with a disabled option', () => {
     expect(onChange).toHaveBeenCalledWith('b');
     key(trigger, 'ArrowLeft');
     expect(trigger).toHaveTextContent('Red');
+  });
+
+  it('changes nothing when typeahead on the closed trigger lands on it', () => {
+    const onChange = vi.fn();
+    render(<Select aria-label="Color" options={OPTIONS} defaultSelectedKey="r" onSelectionChange={onChange} />);
+    const trigger = screen.getByRole('button', { name: /Color/ });
+    act(() => trigger.focus());
+    key(trigger, 'g');
+    expect(trigger).toHaveTextContent('Red');
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("steps from no value on a mixed select's closed trigger, past a disabled first option", () => {
+    const onChange = vi.fn();
+    const options = [
+      { value: 'g', label: 'Green', disabled: true },
+      { value: 'r', label: 'Red' },
+      { value: 'b', label: 'Blue' },
+    ];
+    render(<Select aria-label="Color" options={options} mixed selectedKey="b" onSelectionChange={onChange} />);
+    const trigger = screen.getByRole('button', { name: /Color/ });
+    act(() => trigger.focus());
+    key(trigger, 'ArrowRight');
+    expect(onChange).toHaveBeenLastCalledWith('r');
+    key(trigger, 'ArrowLeft');
+    expect(onChange).toHaveBeenCalledTimes(2);
+    expect(onChange).toHaveBeenLastCalledWith('r');
   });
 });

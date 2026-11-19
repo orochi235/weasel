@@ -41,3 +41,21 @@ export function withIcon(icon: ReactNode, label: ReactNode): ReactNode {
     </>
   );
 }
+
+/** The labels a `width='fit'` control sizes itself against, hidden in a `className` box its stylesheet places. */
+export function FitSizer({ className, placeholder, options, children, section }: {
+  className: string;
+  placeholder?: ReactNode;
+  options: ReadonlyArray<LabeledOption | OptionGroup> | undefined;
+  children: ReactNode;
+  section?: unknown;
+}) {
+  return (
+    <span className={className} aria-hidden="true">
+      {placeholder !== undefined && <span>{placeholder}</span>}
+      {optionLabels(options, children, section).map((l, i) => (
+        <span key={i}>{l}</span>
+      ))}
+    </span>
+  );
+}

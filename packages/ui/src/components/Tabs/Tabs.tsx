@@ -1,5 +1,5 @@
 import {
-  createContext, forwardRef, useContext, useMemo, useRef, useState, type ContextType, type ReactElement, type ReactNode,
+  createContext, forwardRef, useContext, useId, useLayoutEffect, useMemo, useRef, useState, type ContextType, type ReactElement, type ReactNode,
   type Ref, type RefAttributes,
 } from 'react';
 import {
@@ -16,7 +16,8 @@ import {
   type TabRenderProps,
 } from 'react-aria-components';
 import { freeKeyFrom, isHeldKey, StateProbe, useHeldAriaRef } from '../heldItem';
-import { Tooltip, TooltipTrigger } from '../Tooltip';
+import { RowTip } from '../Tree/RowTip';
+import { tooltipContent } from '../Tooltip/buttonTooltip';
 import { useRun } from '../Run';
 import { createRunSlots, slotClass, useRunSlot, type RunSlots } from '../Along/runSlots';
 import { TabListAlong } from './TabListAlong';
@@ -32,38 +33,79 @@ export type TabsProps = Omit<RACTabsProps, 'className' | 'children' | 'isDisable
   className?: string;
   /** No tab can be chosen. */
   disabled?: boolean;
+  /** A controlled `selectedKey` may name a disabled tab without a warning. */
+  allowDisabledSelected?: boolean;
 };
 
 /**
  * Tab set wrapping React Aria's Tabs, skinned against the `--wzl-*` tokens.
  * Holds a {@link TabList} and one {@link TabPanel} per tab. Tabs move between views rather than set a value, so a
  * `Disabled` scope around them leaves them usable, and every panel can still be read. The arrow keys land on a
- * disabled {@link Tab}, which shows its reason, and it is never chosen.
+ * disabled {@link Tab}, which shows its reason, and the user never chooses it.
  */
-export function Tabs({ children, className, disabled, selectedKey, defaultSelectedKey, onSelectionChange, ...rest }: TabsProps) {
+export function Tabs({ children, className, disabled, allowDisabledSelected, selectedKey, defaultSelectedKey, onSelectionChange, ...rest }: TabsProps) {
   const outer = useContext(TabSlotsContext);
   const own = useMemo(() => createRunSlots(), []);
   // Held here, so a disabled tab focus lands on is refused rather than chosen: React Aria selects on focus.
   const [ownKey, setOwnKey] = useState<Key | null>(defaultSelectedKey ?? null);
-  // Null until a tab is chosen, which React Aria reads as controlled and fills with its first tab, though its type
-  // leaves null out.
-  const shown = (selectedKey === undefined ? ownKey : selectedKey) as Key;
+  const uncontrolled = selectedKey === undefined;
+  // Uncontrolled, React Aria is never handed null, which it fills with its first tab after paint, disabled or not,
+  // and reports as a choice; `KeepChosen` picks the tab instead.
+  const shown = (uncontrolled ? (ownKey ?? NO_TAB) : selectedKey) as Key;
   const stateRef = useRef<ContextType<typeof TabListStateContext>>(null);
   const choose = (k: Key): void => {
     const coll = stateRef.current?.collection;
-    const to = coll && isHeldKey(coll, k) ? (shown == null ? freeKeyFrom(coll, coll.getFirstKey(), 1) : null) : k;
+    if (!coll) return;
+    const to = isHeldKey(coll, k) ? (shown == null ? freeKeyFrom(coll, coll.getFirstKey(), 1) : null) : k;
     if (to === null) return;
-    if (selectedKey === undefined) setOwnKey(to);
+    if (uncontrolled) setOwnKey(to);
     onSelectionChange?.(to);
   };
   return (
     <TabSlotsContext.Provider value={outer?.held ? outer : own}>
       <RACTabs {...rest} selectedKey={shown} onSelectionChange={choose} isDisabled={disabled} className={[s.tabs, className].filter(Boolean).join(' ')}>
         <StateProbe context={TabListStateContext} intoRef={stateRef} />
+        {uncontrolled && <KeepChosen chosen={ownKey} onFall={(k, moved) => {
+          setOwnKey(k);
+          if (moved) onSelectionChange?.(k);
+        }} />}
+        {!uncontrolled && !allowDisabledSelected && <WarnHeldShown shown={selectedKey} />}
         {children}
       </RACTabs>
     </TabSlotsContext.Provider>
   );
+}
+
+/** The key an uncontrolled {@link Tabs} hands React Aria before any tab can be chosen, which names no tab. */
+const NO_TAB = '\u0000weasel-no-tab';
+
+/** Keeps an uncontrolled tab set on a tab that can be chosen, before paint: `onFall` gets the first one when `chosen`
+ *  is unset, held or gone, `moved` false until a tab has been chosen, so opening is not reported as a change. */
+function KeepChosen({ chosen, onFall }: { chosen: Key | null; onFall(k: Key, moved: boolean): void }): null {
+  const coll = useContext(TabListStateContext)?.collection;
+  const settled = useRef(false);
+  useLayoutEffect(() => {
+    if (!coll) return;
+    if (chosen !== null && coll.getItem(chosen) && !isHeldKey(coll, chosen)) {
+      settled.current = true;
+      return;
+    }
+    const free = freeKeyFrom(coll, coll.getFirstKey(), 1);
+    if (free !== null && free !== chosen) onFall(free, settled.current);
+  });
+  return null;
+}
+
+/** Warns once per key when a controlled tab set shows a disabled tab, which the user could not have chosen. */
+function WarnHeldShown({ shown }: { shown: Key | null }): null {
+  const coll = useContext(TabListStateContext)?.collection;
+  const warned = useRef<Key | null>(null);
+  useLayoutEffect(() => {
+    if (!coll || shown === null || warned.current === shown || !coll.getItem(shown) || !isHeldKey(coll, shown)) return;
+    warned.current = shown;
+    console.warn(`weasel: Tabs' controlled selectedKey is "${String(shown)}", a disabled tab the user could not choose. Choose a tab that can be chosen, or pass \`allowDisabledSelected\` if showing it is meant.`);
+  });
+  return null;
 }
 
 /** Props for {@link TabList}, on top of React Aria's `TabList` props. */
@@ -97,7 +139,7 @@ export type TabProps = Omit<RACTabProps, 'className' | 'children' | 'isDisabled'
   className?: string;
   /** The tab cannot be chosen. Arrow keys still land on it, as on a menu's or a listbox's disabled row. */
   disabled?: boolean;
-  /** Why it cannot be chosen, shown while it has keyboard focus or the pointer is over it. */
+  /** Why it cannot be chosen, shown after its name once keyboard focus or the pointer rests on it. */
   disabledReason?: string;
 };
 
@@ -107,14 +149,14 @@ export function Tab({ children, className, disabled, disabledReason, ...rest }: 
   const el = useRef<HTMLElement | null>(null);
   // React Aria disables a tab only by passing over it; this marks it held, read back by `isHeldKey`.
   const held = { ...(disabled ? { 'aria-disabled': true } : {}), ref: useHeldAriaRef(disabled, disabledReason, el) };
+  const tipId = useId();
+  const tip = disabled && disabledReason
+    ? tooltipContent({ label: children, ariaLabel: rest['aria-label'], reason: disabledReason })
+    : undefined;
   const body = ({ isFocusVisible, isHovered }: TabRenderProps): ReactNode => (
     <>
       {children}
-      {disabled && disabledReason && (isFocusVisible || isHovered) && (
-        <TooltipTrigger open>
-          <Tooltip triggerRef={el}>{disabledReason}</Tooltip>
-        </TooltipTrigger>
-      )}
+      <RowTip rowId={tipId} why={isFocusVisible || isHovered ? tip : undefined} el={el} placement="top" />
     </>
   );
   if (slot === undefined) {

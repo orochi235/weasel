@@ -1,4 +1,4 @@
-import { createElement, useCallback, useContext, useLayoutEffect, useRef, type Context, type ReactElement, type RefCallback, type RefObject } from 'react';
+import { createElement, useCallback, useContext, useEffect, useLayoutEffect, useRef, type Context, type ReactElement, type RefCallback, type RefObject } from 'react';
 import type { Key } from 'react-aria-components';
 
 /**
@@ -10,8 +10,9 @@ export function heldItemProps(disabled: boolean | undefined): { isDisabled?: boo
   return disabled ? ({ isDisabled: true, disabledBehavior: 'selection' } as { isDisabled?: boolean }) : {};
 }
 
-/** A ref that marks its element `aria-disabled` while `held`, with `reason` as its `aria-description`, and keeps it
- *  on `intoRef`: React Aria writes neither on a row or tab it lets focus land on, and passes neither through as a prop.
+/** A ref that marks its element `aria-disabled` and `data-disabled`, the kit's styling hook, while `held`, with
+ *  `reason` as its `aria-description`, and keeps it on `intoRef`: React Aria writes none of them on a row or tab it
+ *  lets focus land on, and passes none through as a prop.
  *  A callback, since React Aria renders a collection's element after the item component that declared it, and the
  *  same one while `held` and `reason` stay, since React Aria rebuilds its press handling on a new ref. */
 export function useHeldAriaRef(
@@ -21,9 +22,14 @@ export function useHeldAriaRef(
     if (intoRef) intoRef.current = el;
     if (!el || !held) return;
     el.setAttribute('aria-disabled', 'true');
+    const ownMark = !el.hasAttribute('data-disabled');
+    el.setAttribute('data-disabled', '');
     if (reason) el.setAttribute('aria-description', reason);
+    // A ref returning a cleanup is never called with null, so the cleanup lets go of `el` itself.
     return () => {
+      if (intoRef?.current === el) intoRef.current = null;
       el.removeAttribute('aria-disabled');
+      if (ownMark) el.removeAttribute('data-disabled');
       el.removeAttribute('aria-description');
     };
   }, [held, reason, intoRef]);
@@ -72,19 +78,28 @@ export function StateProbe<S>({ context, intoRef }: { context: Context<S | null>
 }
 
 /** A probe to render under a React Aria select-like `context`, and what a pick of `picked` from `from` comes to there:
- *  itself, the first free row past it the way it was going when it is held ({@link pastHeld}), or `undefined` for
- *  none. */
-export function useHeldPick<S extends { collection: Walkable }>(context: Context<S | null>): {
+ *  itself; when it is held, the first free row past it the way it was going if an arrow key on `trigger` made the
+ *  pick ({@link pastHeld}); or `undefined` for none, as for a held row typeahead lands on. */
+export function useHeldPick<S extends { collection: Walkable }>(context: Context<S | null>, trigger: RefObject<HTMLElement | null>): {
   probe: ReactElement;
   pick(from: Key | null, picked: Key | null): Key | null | undefined;
 } {
   const stateRef = useRef<S | null>(null);
+  const lastKey = useRef('');
+  useEffect(() => {
+    const el = trigger.current;
+    const note = (e: KeyboardEvent): void => { lastKey.current = e.key; };
+    // Capturing, so the key is noted before React Aria changes the value from it.
+    el?.addEventListener('keydown', note, true);
+    return () => el?.removeEventListener('keydown', note, true);
+  }, [trigger]);
   return {
     probe: createElement(StateProbe<S>, { context, intoRef: stateRef }),
     pick(from, picked) {
       const coll = stateRef.current?.collection;
       if (picked === null || !coll || !isHeldKey(coll, picked)) return picked;
-      return pastHeld(coll, from, picked) ?? undefined;
+      const step = lastKey.current === 'ArrowLeft' || lastKey.current === 'ArrowRight';
+      return step ? (pastHeld(coll, from, picked) ?? undefined) : undefined;
     },
   };
 }

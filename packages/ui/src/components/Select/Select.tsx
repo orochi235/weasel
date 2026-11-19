@@ -30,7 +30,7 @@ import type { ControlSizeProps } from '../ControlSize';
 import { useFieldSizeClass } from '../Field/fieldSize';
 import type { ListOption } from '../listOption';
 import { Caret } from '../Caret';
-import { optionLabels, withIcon } from './optionLabels';
+import { FitSizer, withIcon } from './optionLabels';
 import { MIXED_HINT } from '../Field/mixedHint';
 import type { OptionKey } from '../../optionKey';
 
@@ -159,7 +159,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   const placeholder = mixed ? MIXED_HINT : placeholderProp;
   const triggerRef = useObjectRef(ref);
   const pressRef = useRef<Press | null>(null);
-  const { probe, pick } = useHeldPick(SelectStateContext);
+  const { probe, pick } = useHeldPick(SelectStateContext, triggerRef);
   const [nudge, setNudge] = useState(NO_NUDGE);
   const sized = useFieldSizeClass(size, className);
   const { id: triggerId, ...field } = useRacField({ id, 'aria-label': rest['aria-label'], 'aria-labelledby': rest['aria-labelledby'], 'aria-describedby': racHeld['aria-describedby'], invalid, required, labeled: label !== undefined });
@@ -172,7 +172,8 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
       {...(held ? { isOpen: false, onOpenChange: undefined } : open !== undefined ? { isOpen: open } : {})}
       selectedKey={mixed ? null : shownKey}
       onSelectionChange={(picked) => {
-        const k = held ? undefined : pick(shownKey, picked);
+        // A mixed select hands React Aria no value, so its arrows step from there.
+        const k = held ? undefined : pick(mixed ? null : shownKey, picked);
         if (k === undefined) return;
         if (selectedKey === undefined) setOwnKey(k as T | null);
         onSelectionChange?.(k as T);
@@ -198,7 +199,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
               isPlaceholder ? (placeholder ?? defaultChildren) : <InTrigger.Provider value>{defaultChildren}</InTrigger.Provider>
             }
           </SelectValue>
-          {width === 'fit' && <FitSizer placeholder={placeholder} options={options}>{children}</FitSizer>}
+          {width === 'fit' && <FitSizer className={s.sizer} placeholder={placeholder} options={options} section={SelectSection}>{children}</FitSizer>}
           {indicator === 'chevron' && <Caret className={s.chevron} />}
         </RACButton>
       </TriggerTooltip>
@@ -250,18 +251,6 @@ function selectClass({ orientation, width, variant, indicator, className }: Pick
       .filter(Boolean)
       .join(' '),
   });
-}
-
-/** The labels a `width='fit'` trigger sizes itself against, hidden. */
-function FitSizer<T extends OptionKey>({ placeholder, options, children }: { placeholder?: ReactNode } & Pick<SelectProps<T>, 'options' | 'children'>) {
-  return (
-    <span className={s.sizer} aria-hidden="true">
-      {placeholder !== undefined && <span>{placeholder}</span>}
-      {optionLabels(options, children, SelectSection).map((l, i) => (
-        <span key={i}>{l}</span>
-      ))}
-    </span>
-  );
 }
 
 /** A select's list: its `options`, or else its `children`. */

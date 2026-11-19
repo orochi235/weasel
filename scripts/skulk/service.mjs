@@ -48,7 +48,7 @@ const running = () => {
 
 const start = (args) => {
   lastStarted = new Date();
-  child = spawn(process.execPath, [NIGHT, ...args], { cwd: ROOT, env: { ...process.env, WEASEL_ROOT: ROOT }, stdio: ['ignore', 'pipe', 'pipe'] });
+  child = spawn('node', [NIGHT, ...args], { cwd: ROOT, env: { ...process.env, WEASEL_ROOT: ROOT }, stdio: ['ignore', 'pipe', 'pipe'] });
   log(`night started: node ${NIGHT} ${args.join(' ')} (pid ${child.pid})`);
   for (const stream of [child.stdout, child.stderr]) {
     createInterface({ input: stream }).on('line', (line) => {
@@ -79,7 +79,7 @@ const deps = {
   }),
   plan: () =>
     new Promise((done) => {
-      execFile(process.execPath, [NIGHT, '--dry'], { cwd: ROOT, env: { ...process.env, WEASEL_ROOT: ROOT } }, (error, stdout, stderr) => {
+      execFile('node', [NIGHT, '--dry'], { cwd: ROOT, env: { ...process.env, WEASEL_ROOT: ROOT } }, (error, stdout, stderr) => {
         done((error ? `${stdout}${stderr}` : stdout).trim().split('\n'));
       });
     }),
