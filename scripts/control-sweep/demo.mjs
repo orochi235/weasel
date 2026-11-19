@@ -5,11 +5,15 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { RESTLESS_TRIES, STEADY_TRIES, capture, discover, hash, load, prepare, settle } from './capture.mjs';
-import { compareCaptures, fingerprintOf, sameSteadyState, slug, verdictOf } from './judge.mjs';
+import { animationFlips, compareCaptures, fingerprintOf, sameSteadyState, slug, verdictOf } from './judge.mjs';
 import { menuItemsOf, operate } from './operate.mjs';
 import { probeGesture } from './probe.mjs';
 
-const frameShot = (page) => page.screenshot({ animations: 'disabled', caret: 'hide' });
+/** The demo's box as a JPEG: evidence for a person, so small beats exact. */
+const frameShot = async (page) => {
+  const clip = await page.locator('.ckd-canvas-wrap').first().boundingBox();
+  return page.screenshot({ ...(clip ? { clip } : {}), type: 'jpeg', quality: 70, animations: 'disabled', caret: 'hide' });
+};
 
 /** Captures before, operates, captures after. Answers the comparison, what the page did, and the restore. */
 const attempt = async (page, c, { settleMs, events, shots }) => {
@@ -51,6 +55,11 @@ const trial = async (page, demo, c, ctx) => {
   if (a.left) return { rec: record(demo, c, { verdict: 'skipped', reason: a.left, ms: Date.now() - t0 }), reload: true, revealed: [] };
   const cmp = compareCaptures(a.before0, a.before1, a.after);
   let { verdict, reason } = verdictOf(cmp);
+  if (verdict === 'unsure') {
+    await settle(page, ctx.settleMs);
+    const flips = animationFlips(a.before0, a.before1, a.after, await capture(page, live.id));
+    if (flips.length > 0) ({ verdict, reason } = { verdict: 'alive', reason: `starts or stops canvas ${flips.join(', ')} animating` });
+  }
   const revealed = c.precondition || c.kind === 'menuitem' ? []
     : (await discover(page)).filter((d) => isNewControl(d, keysBefore, live.id)).map((d) => ({ ...d, precondition: { key: c.key, label: c.label, kind: c.kind, triggerKey: c.triggerKey, item: c.item } }));
   let reload = Boolean(c.precondition) || (!a.restore && verdict !== 'dead');
@@ -75,9 +84,25 @@ const trial = async (page, demo, c, ctx) => {
   };
 };
 
+/** Whether a key shortcut the control declares (`aria-keyshortcuts`, as a drag handle's Alt+Arrow) changes anything. */
+const viaShortcut = async (page, c, ctx) => {
+  for (const key of c.shortcuts ?? []) {
+    await load(page, ctx.url, { reload: true, tries: ctx.tries });
+    const live = await prepare(page, ctx.url, c, ctx.settleMs, ctx.tries);
+    const before0 = await capture(page, live.id);
+    await settle(page, ctx.settleMs);
+    const before1 = await capture(page, live.id);
+    await page.locator(`[data-sweep-id="${live.id}"]`).first().focus({ timeout: 3000 });
+    await page.keyboard.press(key);
+    await settle(page, ctx.settleMs);
+    if (verdictOf(compareCaptures(before0, before1, await capture(page, live.id))).verdict === 'alive') return true;
+  }
+  return false;
+};
+
 /**
  * A control judged dead is tried once more from a fresh load, with screenshots, and then by the gesture
- * probe. Dead on both tries and to the probe is dead.
+ * probe (and through its key shortcut, if it declares one). Dead to all of them is dead.
  */
 const confirm = async (page, demo, c, ctx) => {
   await load(page, ctx.url, { reload: true, tries: ctx.tries });
@@ -85,9 +110,11 @@ const confirm = async (page, demo, c, ctx) => {
   const a = await attempt(page, live, { ...ctx, shots: true });
   const { verdict } = verdictOf(compareCaptures(a.before0, a.before1, a.after));
   if (verdict !== 'dead') return { verdict: 'unsure', reason: `dead once, ${verdict} on the retry` };
-  if (await probeGesture(page, c, ctx)) return { verdict: 'alive', reason: 'changes what a drag on the canvas does' };
+  if (await viaShortcut(page, c, ctx)) return { verdict: 'alive', reason: 'acts through its key shortcut' };
+  const probed = await probeGesture(page, c, ctx);
+  if (probed) return { verdict: 'alive', reason: probed === 'before' ? 'changes what a drag on the canvas does' : 'acts on what a drag on the canvas left' };
   const base = `${demo.id}--${slug(c.label)}`;
-  const shots = [`${base}-before.png`, `${base}-after.png`];
+  const shots = [`${base}-before.jpg`, `${base}-after.jpg`];
   writeFileSync(join(ctx.shotsDir, shots[0]), a.shotBefore);
   writeFileSync(join(ctx.shotsDir, shots[1]), a.shotAfter);
   return { verdict: 'dead', shots: shots.map((s) => `shots/${s}`) };

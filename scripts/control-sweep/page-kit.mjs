@@ -19,6 +19,7 @@ export function installSweepKit(win) {
   const MENU_ITEMS = '[role=menuitem],[role=menuitemradio],[role=menuitemcheckbox]';
   const IGNORED_ATTR = /^(data-sweep-[\w-]+|data-(hovered|focused|focus-visible|focus-within|pressed)|tabindex)$/;
   const STATUS = '[aria-live]:not([aria-live=off]),[role=status],[role=log]';
+  const POPUPS = '[role=dialog],[role=alertdialog],[role=menu],[role=listbox],[popover]';
   let nextId = 1;
 
   const squash = (s) => String(s ?? '').replace(/\s+/g, ' ').trim();
@@ -147,6 +148,8 @@ export function installSweepKit(win) {
     const label = group && group !== name ? `${group} › ${name}` : name;
     const d = { id: idOf(el), kind, name, label, disabled: disabled(el) };
     if (chromeSel && el.closest(chromeSel)) d.chrome = true;
+    const keys = el.getAttribute('aria-keyshortcuts');
+    if (keys) d.shortcuts = keys.split(/\s+/).filter(Boolean);
     if (el.tagName === 'SELECT') d.native = true;
     if (kind === 'download') d.skip = 'download link';
     else if (kind === 'file') d.skip = 'file picker';
@@ -240,7 +243,10 @@ export function installSweepKit(win) {
       const height = Math.min(vh, r.bottom) - y;
       return width >= 1 && height >= 1 ? [{ x, y, width, height }] : [];
     });
-    return { dom: digest(root, exclude), canvases };
+    const dom = digest(root, exclude);
+    // A popup the control opens lives outside the frame; that it is open is the change.
+    dom.popups = String([...doc.querySelectorAll(POPUPS)].filter((p) => !root.contains(p) && visible(p)).length);
+    return { dom, canvases };
   };
 
   /** What a control holds now: a slider's or field's value and range, a checkbox's state. */

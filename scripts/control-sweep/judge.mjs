@@ -40,6 +40,13 @@ export const verdictOf = (cmp) => {
   return { verdict: 'dead' };
 };
 
+/** The canvases that animated before and hold still after, or the other way round. */
+export const animationFlips = (before0, before1, after0, after1) => {
+  const moving = (a, b, i) => a.canvases[i] !== b.canvases[i];
+  const count = Math.max(before1.canvases.length, after1.canvases.length);
+  return Array.from({ length: count }, (_, i) => i).filter((i) => moving(before0, before1, i) !== moving(after0, after1, i));
+};
+
 /** Whether two captures agree on everything that holds still, as `before0`/`before1` tell it. */
 export const sameSteadyState = (before0, before1, other) => {
   const cmp = compareCaptures(before0, before1, other);

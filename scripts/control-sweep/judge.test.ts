@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { compareCaptures, deadTable, demosIn, pruneRuns, readAllow, staleWaivers, verdictOf, waiverFor } from './judge.mjs';
+import { animationFlips, compareCaptures, deadTable, demosIn, pruneRuns, readAllow, staleWaivers, verdictOf, waiverFor } from './judge.mjs';
 
 const cap = (dom: Record<string, string>, canvases: string[] = []) => ({ dom, canvases });
 
@@ -35,6 +35,13 @@ describe('judging', () => {
     expect(cmp).toMatchObject({ domChanged: 0, canvasChanged: [], animated: [1] });
     expect(verdictOf(cmp).verdict).toBe('unsure');
   });
+});
+
+it('animationFlips names a canvas that stops or starts moving', () => {
+  const still = cap({}, ['s', 'm1']);
+  const moved = cap({}, ['s', 'm2']);
+  expect(animationFlips(still, moved, cap({}, ['s', 'm3']), cap({}, ['s', 'm3']))).toEqual([1]);
+  expect(animationFlips(still, moved, cap({}, ['s', 'm3']), cap({}, ['s', 'm4']))).toEqual([]);
 });
 
 describe('allowlist', () => {

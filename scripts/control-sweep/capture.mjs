@@ -27,7 +27,7 @@ export const settle = async (page, ms) => {
 export const capture = async (page, id) => {
   const snap = await kit(page, 'capture', ROOT, id ?? null);
   const canvases = [];
-  for (const clip of snap.canvases) canvases.push(hash(await page.screenshot({ clip, animations: 'disabled', caret: 'hide' })));
+  for (const clip of snap.canvases) canvases.push(hash(await page.screenshot({ clip, caret: 'hide' })));
   return { dom: snap.dom, canvases };
 };
 

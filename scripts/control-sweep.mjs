@@ -115,7 +115,7 @@ const main = async () => {
   const chrome = new Map();
   const queue = [...demos];
   const worker = async () => {
-    const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1, acceptDownloads: false });
+    const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1, acceptDownloads: true });
     await context.addInitScript(installSweepKit);
     const page = await context.newPage();
     const events = watchEvents(context, page);

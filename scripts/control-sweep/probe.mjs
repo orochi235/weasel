@@ -1,8 +1,8 @@
 /**
- * The gesture probe, for a control that changed nothing when operated: many (a tool, a lasso mode, a
- * snap setting) only change what the next drag on the canvas does. It drags across the demo's largest
- * canvas from a fresh load (twice), then from a fresh load with the control operated first, and compares
- * the results.
+ * The gesture probe, for a control that changed nothing when operated. Many only act through the
+ * canvas: a tool, a lasso mode or a lock changes what the next drag does, and a reset or a delete acts
+ * only once a drag has moved or selected something. So the probe drags across the demo's largest canvas
+ * from fresh loads three ways (plain, control first, control after) and compares what each leaves.
  */
 import { capture, load, prepare, settle } from './capture.mjs';
 import { compareCaptures } from './judge.mjs';
@@ -21,29 +21,37 @@ const drag = async (page, r) => {
   await page.mouse.up();
 };
 
-/** After a fresh load and `c`'s precondition, optionally `c` operated, then the drag: what the demo shows. */
-const dragFrom = async (page, c, ctx, operated) => {
+/** A fresh load and `c`'s precondition, then the drag with `c` operated `when` ('before', 'after' or never): what the demo shows. */
+const dragRun = async (page, c, ctx, when) => {
   await load(page, ctx.url, { reload: true, tries: ctx.tries });
   const live = await prepare(page, ctx.url, c, ctx.settleMs, ctx.tries);
-  if (operated) {
-    await operate(page, live);
+  const act = async () => {
+    await operate(page, { ...c, ...(await prepare(page, ctx.url, { ...c, precondition: undefined }, ctx.settleMs, ctx.tries)) });
     await settle(page, ctx.settleMs);
-  }
+  };
+  if (when === 'before') await act();
   const rect = await kit(page, 'bigCanvas', ROOT);
   if (!rect) return undefined;
   await drag(page, rect);
   await settle(page, ctx.settleMs);
+  if (when === 'after') await act();
   return capture(page, live.id);
 };
 
-/** Whether operating `c` changes what a drag on the canvas does. Undefined when the demo has no canvas to drag on. */
+const differs = (cmp) => cmp.domChanged > 0 || cmp.canvasChanged.length > 0;
+
+/**
+ * Whether operating `c` changes what a drag on the canvas does, or what a drag left behind: 'before',
+ * 'after', or undefined for neither (and when the demo has no canvas to drag on).
+ */
 export const probeGesture = async (page, c, ctx) => {
-  const plain = await dragFrom(page, c, ctx, false);
+  const plain = await dragRun(page, c, ctx, undefined);
   if (!plain) return undefined;
   // A second plain run says what differs from one load to the next (a seed, a clock), which proves nothing.
-  const again = await dragFrom(page, c, ctx, false);
-  const probed = await dragFrom(page, c, ctx, true);
-  if (!again || !probed) return undefined;
-  const cmp = compareCaptures(plain, again, probed);
-  return cmp.domChanged > 0 || cmp.canvasChanged.length > 0;
+  const again = await dragRun(page, c, ctx, undefined);
+  for (const when of ['before', 'after']) {
+    const probed = await dragRun(page, c, ctx, when);
+    if (probed && differs(compareCaptures(plain, again, probed))) return when;
+  }
+  return undefined;
 };
