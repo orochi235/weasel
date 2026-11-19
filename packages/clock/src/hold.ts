@@ -1,3 +1,4 @@
+import { passesOf } from './place';
 import type { Clock, ClockHandle, ClockPosition } from './types';
 
 /** The time `clock` shows within its pass: its origin plus how far it stands into
@@ -63,9 +64,13 @@ function elapsedOn(clock: Clock, at: HeldPosition): [elapsed: number, line: Line
   if (from === clock.duration && origin === clock.origin) return [at.elapsed, line];
   if (!Number.isFinite(from) || !Number.isFinite(clock.duration))
     return [at.elapsed + origin - clock.origin, line];
-  let pass = Math.floor(at.elapsed / from);
+  const passes = passesOf(clock.loop);
+  // A position at the end of the clock's run is that run ended, the end of its last pass as `placeOf` reads it, not
+  // the start of a pass past it; one beyond came from a run of more passes, and keeps its pass.
+  const ended = at.elapsed === from * passes;
+  let pass = ended ? Math.ceil(passes) - 1 : Math.floor(at.elapsed / from);
   let into = at.elapsed - pass * from;
-  if (at.passEnd && into === 0 && pass > 0) {
+  if (!ended && at.passEnd && into === 0 && pass > 0) {
     pass -= 1;
     into = from;
   }

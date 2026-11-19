@@ -189,3 +189,25 @@ describe('a hold and a ramp', () => {
     expect(h.clock.ramping).toBe(false);
   });
 });
+
+describe('holdPosition at an ended run', () => {
+  it('reads it as the end of the last pass, as declare does', () => {
+    const h = createClock({ duration: 100 });
+    holdPosition(h, { elapsed: 100, origin: -10 });
+    expect([h.clock.elapsed, shownInPass(h.clock)]).toEqual([90, 90]);
+    const d = createClock({ duration: 100, start: 'end' });
+    d.declare({ duration: 100, origin: 10 });
+    const e = createClock({ duration: 100, origin: 10 });
+    holdPosition(e, { elapsed: 100, origin: 0 });
+    expect([e.clock.elapsed, shownInPass(e.clock)]).toEqual([d.clock.elapsed, 100]);
+  });
+  it('keeps the time shown in the last pass across a duration change', () => {
+    const h = createClock({ duration: 200 });
+    const hold = holdPosition(h, { elapsed: 100, duration: 100 });
+    expect([h.clock.elapsed, h.clock.ended]).toEqual([100, false]);
+    expect(hold.pending()).toBeNull();
+    const l = createClock({ duration: 200, loop: 2 });
+    holdPosition(l, { elapsed: 200, duration: 100 });
+    expect([l.clock.elapsed, l.clock.pass]).toEqual([300, 1]);
+  });
+});
