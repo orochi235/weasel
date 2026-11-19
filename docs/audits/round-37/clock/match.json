@@ -1,0 +1,36 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   5,
+   4
+  ]
+ ],
+ "a": [
+  "A hold is not released by `clock.ramp(...)`: the clock plays away from the held time while the hold stays live",
+  "`holdPosition` puts an ended integer-loop position in a pass that does not exist, so a changed origin lands it at the end instead of at the same shown time",
+  "`declare` re-derives the default `speed` from the clock's current rate instead of the declared rate, so re-declaring the same spec changes `speed`",
+  "`holdAt` and `holdPosition` give `pending()` two different answers for a time past the pass's end",
+  "A clock that a second registration under its id shadows stops being synced, and jumps forward by the whole shadowed time when it comes back",
+  "`reset()` throws on a clock opened at `start: 'end'` once a `declare` has made its run endless"
+ ],
+ "b": [
+  "`declare` defaults an omitted `speed` from the clock's current rate, so a paused clock redeclared loses its speed",
+  "`holdPosition` reads a finished run's position as the start of a pass that does not exist, while `declare` reads it as the end of the last pass",
+  "A ramp started from a paused, held clock does not release the hold, which keeps reporting `pending` and seeking it back",
+  "`setDuration` between endless and finite keeps a stale `edge`, where `applyRun` clears it",
+  "`reset()` throws on a clock declared `start: 'end'` once its loop is made endless",
+  "`holdAt.pending` compares a float round trip, not the elapsed it sought, so it can report a hold already met"
+ ]
+}

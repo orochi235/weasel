@@ -1,0 +1,40 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   6
+  ],
+  [
+   3,
+   3
+  ],
+  [
+   4,
+   7
+  ]
+ ],
+ "a": [
+  "Synth patch numbers aren't checked when `playNote`/`playNoise` is called: node voices throw when they start, worklet voices fill their bus with NaN",
+  "A negative or zero `setRate` on a synth voice: node notes throw a TypeError from the handle, worklet noise fills the bus with NaN",
+  "An empty harmonic `wave` isn't checked when the call is made: node voices throw at start, worklet voices are silent",
+  "`stream()` stops the element's current stream before the new call is known to start",
+  "A NaN axis in a `ScoreMood` throws a TypeError from `readScoreCue`, and a running score then fails on every step",
+  "`lookahead`, `tickInterval` and `insertFadeMs` are not validated",
+  "`StreamOptions.offset` isn't checked; a NaN offset throws from the scheduler"
+ ],
+ "b": [
+  "A note's or noise's `duration` is never checked: a negative one drives the envelope gain negative, and a NaN one throws only when the voice comes due",
+  "A rate of 0 or below passes the voice checks, then throws for a node note and mixes NaN into the bus for a worklet noise",
+  "The media-element source cache is per engine, so a second engine on the same context cannot stream an element the first one streamed",
+  "`stream()` stops the element's current stream before checking the bus, so a call with an unknown bus silences the music and then throws",
+  "A non-finite `insertFadeMs` / `fadeMs` throws out of `InsertChain.add` halfway through a splice, leaving the dry route permanently wired beside the effect",
+  "`stop(fadeMs)` on a voice that is releasing cuts it dead instead of fading it",
+  "A harmonic `wave` array and a partial's `gain` are never checked: `[]` or a NaN entry fails at come-due on nodes and plays silence (or NaN) in the worklet",
+  "A NaN in a score mood throws a TypeError from `readScoreCue`, and through `setMood` freezes the running score on its old bar",
+  "One event that throws at its play call stops the pattern player for good while `isPlaying()` stays true"
+ ]
+}

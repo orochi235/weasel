@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   0,
+   3
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "A non-finite `fadeMs` is accepted, then every edit on a running context throws partway and leaves stuck state",
+  "`replace(id, def)` with the def already live (or an A→B→A swap while A is still fading out) disposes the live def",
+  "A non-looping file stopped after it played out, but before its `ended` event arrived, comes back silent on the next start"
+ ],
+ "b": [
+  "A def whose `start` throws leaves the graph playing with later sources never started, and `start()` cannot be retried",
+  "`settled()` resolves while a new connection is still fading in",
+  "A non-looping file source stopped at a future `when` past its end comes back silent, not from the top",
+  "`fadeMs` is never checked, so a non-finite value breaks every edit once the context runs"
+ ]
+}

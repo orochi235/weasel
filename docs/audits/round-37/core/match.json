@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   2
+  ]
+ ],
+ "a": [
+  "Paint ignores `region.chromeId`, so a region hidden by chrome-caps is still drawn while it cannot be hit",
+  "Annulus paint centers the inner cutout on (cx, cy); hit-test uses innerX/innerY",
+  "Escape-returns-to-default bypasses the mode gate that tool keys obey",
+  "`useKeyState({ target })` never attaches when the element mounts after the effect, or re-attaches when it changes"
+ ],
+ "b": [
+  "composeAffordanceLayer draws a region whose `chromeId` is hidden, but its hit-test skips that region",
+  "Regions are hit-tested in screen space but ranked by world distance, so non-uniform zoom picks the wrong \"nearest\" region",
+  "The annulus fill assumes the inner rect is centered on `(cx, cy)`, but the hit-test uses `innerX/innerY`",
+  "The middle-button pan doesn't pan with a modifier held, or over chrome that claims the press exclusively"
+ ]
+}

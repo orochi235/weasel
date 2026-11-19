@@ -1,0 +1,10 @@
+{
+ "pairs": [],
+ "a": [
+  "`ReorderedLine.levels` is documented as indexed by original index, but is indexed relative to the line's start",
+  "`reorder` accepts a range outside the analysis and returns indices of characters that do not exist"
+ ],
+ "b": [
+  "The W, N and BD16 rules read across a mid-text paragraph separator, so the text after a `B` resolves against the paragraph before it"
+ ]
+}
