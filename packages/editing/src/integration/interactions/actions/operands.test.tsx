@@ -7,7 +7,7 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useActionsRegistry, useDepSource } from '@weasel-js/routing/react';
 import type { ActionsRegistry, ImmediateInvoker } from '@weasel-js/routing';
-import { createScene, operandList, type OperandsDep } from '@weasel-js/core/engine';
+import { createScene, createOperandList, type OperandsDep } from '@weasel-js/core/engine';
 import { asNodeId, type NodeId, SceneCanvas } from '@weasel-js/core';
 import { drawPreset, nudgeRightAction, deleteAction } from '@weasel-js/editing';
 
@@ -55,7 +55,7 @@ describe('the operands dep', () => {
   });
 
   it('is what a canvas edits when a host sources its own, the selection untouched', () => {
-    const operands = operandList([B]);
+    const operands = createOperandList([B]);
     const { scene, trigger } = mount(operands);
     trigger('nudge.right');
     expect(scene.get(B)!.pose).toMatchObject({ x: 51 });
@@ -69,7 +69,7 @@ describe('the operands dep', () => {
 
   it('reaches an action run with no canvas, as a plain list', () => {
     const scene = twoBoxes();
-    const operands = operandList([A, B]);
+    const operands = createOperandList([A, B]);
     (nudgeRightAction.invoker as ImmediateInvoker).run({ scene, operands } as never, { magnitude: 'small' } as never);
     expect([A, B].map((id) => (scene.get(id)!.pose as P).x)).toEqual([1, 51]);
     (deleteAction.invoker as ImmediateInvoker).run({ scene, operands } as never, undefined as never);

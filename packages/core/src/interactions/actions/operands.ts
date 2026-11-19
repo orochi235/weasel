@@ -17,7 +17,7 @@ export interface OperandsDep {
 
 /** Operands held in a list of their own, starting at `ids`: an edit acts on them, and what it hands back
  *  replaces them. For acting on nodes no selection names. */
-export function operandList(ids: readonly NodeId[] = []): OperandsDep {
+export function createOperandList(ids: readonly NodeId[] = []): OperandsDep {
   let held: readonly NodeId[] = [...ids];
   return {
     get: () => held,

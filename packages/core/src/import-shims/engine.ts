@@ -184,7 +184,7 @@ export { PATH_GEOMETRY_PROJECTION, createGeometryDataOp } from '../interactions/
 export type { GeometryProjection, PoseChange } from '../interactions/actions/geometryProjection';
 export type { InsertDep, InsertEnds, InsertExtras, InsertIntoDep, InsertLive, PathSymmetryDep } from '../interactions/actions/insertDeps';
 export type { CanDropIntoDep, LayoutDep } from '../interactions/actions/layoutDeps';
-export { operandList } from '../interactions/actions/operands';
+export { createOperandList } from '../interactions/actions/operands';
 export type { OperandsDep } from '../interactions/actions/operands';
 export { boundsOffset, nodeDescriptors, poseDescriptorOf } from '../interactions/actions/poseDescriptorDep';
 export { poseFrame, sceneBoxFrames, scenePoseFrame, worldPoseOf, worldPoses } from '../interactions/actions/poseFrame';

@@ -53,7 +53,7 @@ canvas answers it with its selection; a host points edits elsewhere by sourcing
 its own:
 
 ```tsx
-import { operandList } from '@weasel-js/core';
+import { createOperandList } from '@weasel-js/core';
 
-useDepSource('operands', () => operandList([a, b]));
+useDepSource('operands', () => createOperandList([a, b]));
 ```
