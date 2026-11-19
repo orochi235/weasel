@@ -1,12 +1,22 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: var(--wzl-space-6);
+  gap: var(--wzl-space-4);
   width: min-content;
 }
 
-.skipped,
-.error {
+/* The fold between the two pages, at world x = 280. */
+.stage::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 280px;
+  border-inline-start: 1px dashed var(--wzl-border-strong);
+  pointer-events: none;
+}
+
+.notes {
+  margin: 0;
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-danger);
 }

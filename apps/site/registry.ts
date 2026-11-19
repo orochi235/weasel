@@ -1579,10 +1579,10 @@ const DEMO_META: DemoMeta[] = [
   },
   {
     id: 'pdf',
-    title: 'PDF from draw commands',
+    title: 'A scene as a multi-page PDF',
     package: 'pdf',
-    description: 'One list of draw commands, a solid rect, an ellipse under a linear gradient, and a stroked curve, painted on a `<DrawCanvas>` and written to a one-page PDF by `writePdf([{ width, height, commands, label }], { fonts: registryFontSource, title })`. Write PDF runs it and offers the bytes as a download link; nothing saves on its own. Each shape is written as a vector, the gradient as a PDF shading, and anything the writer had to leave out comes back in `skipped` and shows beside the link.',
-    hint: 'Press Write PDF, download the file, and open it: zoom in on the curve and it stays sharp.',
+    description: 'Three shapes on a `<SceneCanvas>`, a solid square, a disc under a linear gradient, and a stroked curve, written to one PDF by `@weasel-js/pdf/export`\'s `exportRegionsPdf(scene, regions, { title, background })`. Each half of the canvas, either side of the dashed fold, is a region and so a page, labeled with its region\'s `name`. Write PDF offers the `Blob` as a download link and saves nothing on its own; the shapes are written as vectors and the gradient as a PDF shading, and anything the writer had to leave out reaches `onDiagnostic` and shows under the bar.',
+    hint: 'Drag the disc across the fold, press Write PDF, and open the file: the disc is cut between the pages Left and Right, and stays sharp at any zoom.',
     load: () => import('./demos/PdfDemo').then((m) => m.PdfDemo),
     path: 'apps/site/demos/PdfDemo.tsx',
   },

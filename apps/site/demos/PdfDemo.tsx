@@ -1,54 +1,50 @@
 import { useState } from 'react';
-import { DrawCanvas } from '@weasel-js/core';
-import { ellipsePath, pathFromD } from '@weasel-js/geom';
-import type { DrawCommand } from '@weasel-js/renderer';
-import { registryFontSource, writePdf, type PdfResult } from '@weasel-js/pdf';
+import { pathNode, SceneCanvas, useScene } from '@weasel-js/core';
+import type { ExportRegion, ExportScene } from '@weasel-js/export';
+import { solid } from '@weasel-js/paint';
+import { exportRegionsPdf } from '@weasel-js/pdf/export';
+import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
 import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
 import { DownloadLink } from './DownloadLink';
 import s from './PdfDemo.module.css';
 
-const W = 360, H = 240;
+const W = 560, H = 260;
 
-/** One list of draw commands, painted on the canvas and written to the PDF alike. */
-const COMMANDS: DrawCommand[] = [
-  {
-    kind: 'path',
-    path: { kind: 'rect', x: 24, y: 24, width: 140, height: 100 },
-    fill: { paint: { color: '#7fb069' } },
-  },
-  {
-    kind: 'path',
-    path: ellipsePath({ x: 180, y: 40, width: 150, height: 150 }),
-    fill: { paint: {
-      kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 1 },
-      stops: [{ offset: 0, color: '#d4a574' }, { offset: 1, color: '#a48bd4' }],
-      units: 'bounds',
-    } },
-  },
-  {
-    kind: 'path',
-    path: pathFromD('M 32 200 C 90 140 150 240 220 190 S 320 160 340 210'),
-    stroke: { paint: { color: '#3a2e22' }, width: 4 },
-  },
+/** Each half of the canvas is a page of the PDF, labeled with its region's `name`. */
+const PAGES: ExportRegion[] = [
+  { x: 0, y: 0, width: W / 2, height: H, name: 'Left' },
+  { x: W / 2, y: 0, width: W / 2, height: H, name: 'Right' },
+];
+
+const SHAPES = [
+  pathNode('square', 'M40 60 H180 V200 H40 Z', { fill: { paint: solid('#7fb069') } }),
+  pathNode('disc', 'M310 130 C310 70 450 70 450 130 C450 190 310 190 310 130 Z', { fill: { paint: {
+    kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 1 },
+    stops: [{ offset: 0, color: '#d4a574' }, { offset: 1, color: '#a48bd4' }],
+    units: 'bounds',
+  } } }),
+  pathNode('curve', 'M60 230 C160 170 300 260 520 220', { stroke: { paint: solid('#3a2e22'), width: 4 } }),
 ];
 
 export function PdfDemo() {
-  const [result, setResult] = useState<{ blob: Blob; pdf: PdfResult } | null>(null);
+  const scene = useScene({ systemLayers: [{ id: 'default' }], initial: SHAPES });
+  const selection = useSelection({ scene, mode: 'multiple' });
+  const [file, setFile] = useState<Blob | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [notes, setNotes] = useState<string[]>([]);
 
   const write = async () => {
     setBusy(true);
-    setError(null);
+    const heard: string[] = [];
     try {
-      const pdf = await writePdf([{ width: W, height: H, commands: COMMANDS, label: 'Shapes' }], {
-        fonts: registryFontSource, title: 'Shapes',
-      });
-      setResult({ blob: new Blob([pdf.bytes as BlobPart], { type: 'application/pdf' }), pdf });
+      setFile(await exportRegionsPdf(scene as unknown as ExportScene, PAGES, {
+        title: 'Shapes', background: '#ffffff', onDiagnostic: (d) => heard.push(d.message),
+      }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      heard.push(e instanceof Error ? e.message : String(e));
     } finally {
+      setNotes(heard);
       setBusy(false);
     }
   };
@@ -57,14 +53,17 @@ export function PdfDemo() {
     <div className={s.demo}>
       <div className="ckd-toolbar">
         <Button onClick={write} loading={busy} disabled={busy}>Write PDF</Button>
-        {result && <DownloadLink blob={result.blob} filename="shapes.pdf" />}
-        {error && <span role="alert" className={s.error}>{error}</span>}
-        {result && result.pdf.skipped.length > 0 && (
-          <span className={s.skipped}>{result.pdf.skipped.length} left out</span>
-        )}
+        {file && <DownloadLink blob={file} filename="shapes.pdf" />}
       </div>
-      <DemoStage width={W} height={H}>
-        <DrawCanvas className="ckd-canvas" background={{ kind: 'solid', color: '#ffffff' }} draw={COMMANDS} />
+      {notes.length > 0 && <ul role="alert" className={s.notes}>{notes.map((n, i) => <li key={i}>{n}</li>)}</ul>}
+      <DemoStage width={W} height={H} className={s.stage}>
+        <SceneCanvas
+          className="ckd-canvas"
+          backgroundFill={{ color: '#ffffff' }}
+          scene={scene}
+          selection={selection}
+          features={[pickPreset, movePreset]}
+        />
       </DemoStage>
     </div>
   );
