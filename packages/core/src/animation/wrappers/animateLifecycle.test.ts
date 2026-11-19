@@ -141,6 +141,36 @@ describe('animateLifecycle.remove', () => {
   });
 });
 
+describe('animateLifecycle when the tween cannot run', () => {
+  const SHRINK = (p: RectPose) => ({ ...p, width: 0, height: 0 });
+  const NO_LERP = {
+    getBounds: (p: RectPose) => p, remapBounds: (p: RectPose) => p, fromBounds: (b: RectPose) => b,
+  };
+
+  it('can remove a node again after a removal whose tween threw', () => {
+    const clock = makeClock();
+    const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 20, height: 20 }]]);
+    const { base, removeNode } = makeAdapter(initial);
+    const { result } = renderHook(() => useAnimator(clock));
+    const geometry = { ...NO_LERP } as never;
+    const wrapped = animateLifecycle(base, result.current, { exitTo: SHRINK, ms: 100, geometry });
+    expect(() => wrapped.removeNode('a')).toThrow(/lerp/);
+    expect(() => wrapped.removeNode('a')).toThrow(/lerp/);
+    expect(removeNode).not.toHaveBeenCalled();
+  });
+
+  it('leaves a node at the pose it was inserted with when its enter tween throws', () => {
+    const clock = makeClock();
+    const initial = new Map<string, RectPose>();
+    const { base } = makeAdapter(initial);
+    const { result } = renderHook(() => useAnimator(clock));
+    const geometry = { ...NO_LERP } as never;
+    const wrapped = animateLifecycle(base, result.current, { enterFrom: SHRINK, ms: 100, geometry });
+    expect(() => wrapped.insertNode({ id: 'a', pose: { x: 0, y: 0, width: 20, height: 20 } })).toThrow(/lerp/);
+    expect(initial.get('a')).toEqual({ x: 0, y: 0, width: 20, height: 20 });
+  });
+});
+
 describe('animateLifecycle over animateOnSetPose', () => {
   it('enters from the start pose without gliding there or recording an op', () => {
     const clock = makeClock();

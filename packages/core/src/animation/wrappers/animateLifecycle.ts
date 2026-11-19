@@ -1,7 +1,7 @@
 import { tweenPose, type PoseAnimationAdapter } from '../poseHelpers';
 import { setPoseInstant } from './instantPose';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
-import type { Animator, EasingSpec } from '@weasel-js/animator';
+import type { AnimationHandle, Animator, EasingSpec } from '@weasel-js/animator';
 
 /** How nodes enter and leave. `enterFrom` derives the pose a new node starts
  *  at, given where it belongs; `exitTo` derives the pose a departing node
@@ -47,16 +47,22 @@ export function animateLifecycle<
       const final = adapter.getPose(object.id);
       const start = opts.enterFrom(final);
       // A pose target shows the start pose itself; without one it has to be written.
-      if (!adapter.poseTarget?.(object.id, opts.geometry)) setPoseInstant(adapter, object.id, start);
-      tweenPose(animator, adapter, {
-        id: object.id,
-        from: start,
-        to: final,
-        ms,
-        easing: opts.easing,
-        geometry: opts.geometry,
-        recordOp: false,
-      });
+      const written = !adapter.poseTarget?.(object.id, opts.geometry);
+      if (written) setPoseInstant(adapter, object.id, start);
+      try {
+        tweenPose(animator, adapter, {
+          id: object.id,
+          from: start,
+          to: final,
+          ms,
+          easing: opts.easing,
+          geometry: opts.geometry,
+          recordOp: false,
+        });
+      } catch (error) {
+        if (written) setPoseInstant(adapter, object.id, final);
+        throw error;
+      }
     },
     removeNode(id: string): void {
       if (!opts.exitTo) {
@@ -77,15 +83,21 @@ export function animateLifecycle<
         else setPoseInstant(adapter, id, current);
         adapter.removeNode(id);
       };
-      const handle = tweenPose(animator, adapter, {
-        id,
-        to: opts.exitTo(current),
-        ms,
-        easing: opts.easing,
-        geometry: opts.geometry,
-        recordOp: false,
-        onDone: remove,
-      });
+      let handle: AnimationHandle;
+      try {
+        handle = tweenPose(animator, adapter, {
+          id,
+          to: opts.exitTo(current),
+          ms,
+          easing: opts.easing,
+          geometry: opts.geometry,
+          recordOp: false,
+          onDone: remove,
+        });
+      } catch (error) {
+        leaving.delete(id);
+        throw error;
+      }
       // A canceled tween never calls onDone, and the node still has to go.
       unwatch = animator.watch((event) => {
         if ((event.type === 'cancel' || event.type === 'interrupt') && event.animation.id === handle.id) remove();

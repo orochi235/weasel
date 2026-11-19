@@ -2656,3 +2656,9 @@ Calls the lanes made without a ruling:
 - 2026-11-18 (the fixer's call): `gen-brand-colors` throws, writing neither table, on a Copic marker with no name
   or a sampled colour that is not `#rrggbb`, and on a LEGO name holding a named HTML reference other than `&amp;`,
   `&lt;`, `&gt;`, `&quot;`, `&apos;` and `&nbsp;`. Skipping the row with a warning was the alternative.
+## Audit round thirty-seven (2026-11-18): core's animation
+
+- 2026-11-18 (the fixer's call): an `animateLifecycle` insert or removal whose tween cannot run (no pose target and a
+  geometry with no `lerp`) throws as `tweenPose` does, leaving the inserted node at its own pose and the node to be
+  removed in place and removable again. Falling back to an instant insert or removal without throwing was the
+  alternative.
