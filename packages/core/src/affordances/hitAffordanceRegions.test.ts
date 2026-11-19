@@ -219,6 +219,13 @@ describe('annulusSemiAxes', () => {
     expect(annulusSemiAxes({ ...base, minBandPx: 24 }, VIEW)).toEqual({ rx: 74, ry: 74 });
   });
 
+  it('measures the band from the cutout edge farther from the center', () => {
+    // The cutout spans x 20..120 and y 30..130 around a center at (50, 50): its far edges are
+    // 70 and 80 from the center.
+    const offset = { ...base, innerX: 20, innerY: 30, minBandPx: 24 };
+    expect(annulusSemiAxes(offset, VIEW)).toEqual({ rx: 94, ry: 104 });
+  });
+
   it('leaves a naturally larger ellipse alone', () => {
     const big = { ...base, rx: 200, ry: 200, minBandPx: 24 };
     expect(annulusSemiAxes(big, VIEW)).toEqual({ rx: 200, ry: 200 });

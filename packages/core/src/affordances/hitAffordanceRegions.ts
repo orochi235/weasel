@@ -205,9 +205,12 @@ export function annulusSemiAxes(
   const bandPx = shape.minBandPx ?? 0;
   if (bandPx === 0) return { rx: shape.rx, ry: shape.ry };
   const band = pxExtentIn(bandPx, view.scale, xf);
+  // Past the cutout edge farther from the center, which need not be centered on it.
+  const reachX = Math.max(Math.abs(shape.innerX - shape.cx), Math.abs(shape.innerX + shape.innerWidth - shape.cx));
+  const reachY = Math.max(Math.abs(shape.innerY - shape.cy), Math.abs(shape.innerY + shape.innerHeight - shape.cy));
   return {
-    rx: Math.max(shape.rx, shape.innerWidth / 2 + band.x),
-    ry: Math.max(shape.ry, shape.innerHeight / 2 + band.y),
+    rx: Math.max(shape.rx, reachX + band.x),
+    ry: Math.max(shape.ry, reachY + band.y),
   };
 }
 
