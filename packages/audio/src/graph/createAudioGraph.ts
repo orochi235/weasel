@@ -29,6 +29,9 @@ export function createAudioGraph(
 ): AudioGraph {
   checkSpan('graph fade', opts.fadeMs);
   const fadeMs = opts.fadeMs ?? 15;
+  if (!Number.isFinite(fadeMs) || fadeMs < 0) {
+    throw new RangeError(`@weasel-js/audio: a graph's fadeMs is finite and at least 0, not ${fadeMs}`);
+  }
   const timers: Timers = {
     setTimer: opts.setTimer ?? defaultTimers.setTimer,
     clearTimer: opts.clearTimer ?? defaultTimers.clearTimer,
@@ -74,19 +77,17 @@ export function createAudioGraph(
       validatePatches(edits.view(), patches);
       let failed: { error: unknown } | null = null;
       for (const p of patches) {
-        switch (p.kind) {
-          case 'add': graph.add(p.id, p.def); break;
-          case 'remove': graph.remove(p.id); break;
-          case 'replace': graph.replace(p.id, p.def); break;
-          case 'connect': graph.connect(p.from, p.to); break;
-          case 'disconnect': graph.disconnect(p.from, p.to); break;
-          case 'set':
-            try {
-              graph.set(p.id, p.param, p.value, p.rampMs);
-            } catch (error) {
-              failed ??= { error };
-            }
-            break;
+        try {
+          switch (p.kind) {
+            case 'add': graph.add(p.id, p.def); break;
+            case 'remove': graph.remove(p.id); break;
+            case 'replace': graph.replace(p.id, p.def); break;
+            case 'connect': graph.connect(p.from, p.to); break;
+            case 'disconnect': graph.disconnect(p.from, p.to); break;
+            case 'set': graph.set(p.id, p.param, p.value, p.rampMs); break;
+          }
+        } catch (error) {
+          failed ??= { error };
         }
       }
       if (failed) throw failed.error;

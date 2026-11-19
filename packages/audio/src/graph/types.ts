@@ -30,23 +30,24 @@ export type GraphPatch =
 
 /** Options for `AudioGraph`: the crossfade length (`fadeMs`) and any timer overrides. */
 export interface AudioGraphOptions extends Partial<Timers> {
-  /** Crossfade for every structural edit, and the default ramp for `set`, in ms. Default 15. */
+  /** Crossfade for every structural edit, and the default ramp for `set`, in ms. Default 15; finite and at least 0, or the graph throws `RangeError`. */
   fadeMs?: number;
 }
 
 /** A patchable graph of nodes that can be added, wired and set while it plays. */
 export interface AudioGraph {
-  add(id: string, def: GraphNodeDef): void; // throws on a live duplicate id
+  add(id: string, def: GraphNodeDef): void; // throws on a live duplicate id or a def the graph holds; added even when its start throws
   remove(id: string): void; // no-op on an unknown id
-  replace(id: string, def: GraphNodeDef): void; // keeps connections and taps; throws on unknown id
+  replace(id: string, def: GraphNodeDef): void; // keeps connections and taps; throws on unknown id or a def the graph holds
   connect(from: string, to: GraphTarget): void; // idempotent; throws on unknown id/port or a cycle
   disconnect(from: string, to: GraphTarget): void; // no-op when not connected
   set(id: string, param: string, value: number, rampMs?: number): void; // throws on unknown id/param
   /** Applies in order; each patch calls the method of the same name.
    *  A structural error anywhere in the list throws before anything changes.
-   *  A param write that throws is skipped; the rest apply, then its error is rethrown. */
+   *  A param write or a source's start that throws is skipped; the rest apply, then the first error is rethrown. */
   apply(patches: readonly GraphPatch[]): void;
-  /** Start every source now, and every source added later, until `stop`. */
+  /** Start every source now, and every source added later, until `stop`. A source whose start
+   *  throws is left stopped while the rest start, and the first error is rethrown. */
   start(): void;
   /** Fade the graph's output to silence over `fadeMs`, then stop every source. */
   stop(): void;
