@@ -1330,6 +1330,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Open (dither second pass, 2026-11-11): `dither()` takes an output grid whose pitch is 0, `NaN`, or infinite, as
   `deviceGrid` gives for a view scaled to 0, and passes it to the shader, which divides by it. No ruling on whether
   it throws, draws nothing, or falls back to the screen grid.
+- 2026-11-18 (my call, audit round 38): `createAudioGraph` throws a `RangeError` for a `fadeMs` that is negative as
+  well as for a non-finite one. A negative fade used to act as 0; a caller who wants no fade passes 0.
 
 ## draw
 
