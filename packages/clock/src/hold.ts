@@ -11,7 +11,9 @@ export function shownInPass(clock: Pick<Clock, 'origin' | 'elapsed' | 'duration'
 
 /** A clock held at a time its span may not reach yet. */
 export interface PlayheadHold {
-  /** The held time while the clock stands elsewhere (clamped), else null. */
+  /** The time the hold waits for while the clock stands elsewhere, else null:
+   *  `holdAt`'s shown time as asked, unclamped, and `holdPosition`'s elapsed on
+   *  the clock's current span. */
   pending(): number | null;
   /** Stop holding. Idempotent. */
   release(): void;
