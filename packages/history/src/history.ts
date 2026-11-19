@@ -10,7 +10,8 @@ import {
   snapshot,
   type Entry, type HistoryLogger, type SerializedHistory,
 } from './serialized';
-import { rebuilt, type HistoryRestoreReport, type RestoreOptions } from './restore';
+import { HistoryRestoreError, rebuilt, type HistoryRestoreReport, type RestoreOptions } from './restore';
+import { snapshotFault } from './snapshotShape';
 import type { CreateHistoryOptions, History, RecordEntryOptions } from './historyTypes';
 
 export { touchedIdsOf } from './serialized';
@@ -138,6 +139,14 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     activeJournal: journals.active,
     resumeJournal: (journal) => journals.resume(history, journal),
     restore(serialized: SerializedHistory, restoreOptions: RestoreOptions = {}): HistoryRestoreReport {
+      const fault = snapshotFault(serialized);
+      if (fault) {
+        const report = { restored: false, unresolved: [] };
+        const message = `History.restore: malformed snapshot: ${fault}`;
+        if ((restoreOptions.recovery ?? 'strict') === 'strict') throw new HistoryRestoreError(report, message);
+        logger.warn(`${message} — dropped`);
+        return report;
+      }
       const { stacks: next, unresolved } = rebuilt(serialized, customRebuild, restoreOptions, logger);
       undoStack.splice(0, undoStack.length, ...next.undoStack);
       redoStack.splice(0, redoStack.length, ...next.redoStack);
