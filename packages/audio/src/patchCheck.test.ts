@@ -49,6 +49,12 @@ describe('synth patch checks', () => {
     refusesNote({ pitch: 'A4', wave: { partials: [{ ratio: 1, gain: Infinity }] } });
   });
 
+  it('refuses a wave name outside the four built-ins, an inherited key included', () => {
+    for (const wave of ['Sine', 'custom', 'toString', '__proto__']) {
+      refusesNote({ pitch: 'A4', wave: wave as NoteOptions['wave'] });
+    }
+  });
+
   it('takes a patch whose numbers are all finite', () => {
     const note: NoteOptions = {
       pitch: 'A4', duration: 0, glide: { to: 'C5', ms: 0 },

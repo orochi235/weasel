@@ -1,6 +1,6 @@
 import { createPart } from '@weasel-js/registry';
 import { envelopeLevel, envelopePoints, resolveEnvelope, type ResolvedEnvelope } from './envelope';
-import { checkGlideMs, checkShaping } from './patchCheck';
+import { checkGlideMs, checkShaping, checkWave } from './patchCheck';
 import { toFrequency } from './pitch';
 import type { Inharmonic, NoiseColor, NoiseOptions, NoteOptions, SynthPartial, VoiceFilter, Waveform } from './types';
 
@@ -111,12 +111,13 @@ export interface ResolvedNote {
   partials: (SynthPartial & { gain: number })[] | null;
 }
 
-/** A note's pitch, glide target and partials. Throws on a bad pitch, partial,
- *  glide, envelope, filter, or duration. */
+/** A note's pitch, glide target and partials. Throws on a bad pitch, wave,
+ *  partial, glide, envelope, filter, or duration. */
 export function resolveNote(
   note: Pick<NoteOptions, 'pitch' | 'glide' | 'wave' | 'envelope' | 'filter' | 'duration'>,
 ): ResolvedNote {
   const wave = note.wave ?? 'sine';
+  checkWave(wave);
   checkShaping(note);
   checkGlideMs(note.glide?.ms);
   return {

@@ -1,5 +1,5 @@
 import type { Envelope } from './envelope';
-import type { VoiceFilter } from './types';
+import type { VoiceFilter, Waveform } from './types';
 
 const fail = (message: string): never => {
   throw new RangeError(`@weasel-js/audio: ${message}`);
@@ -8,6 +8,16 @@ const fail = (message: string): never => {
 const finite = (what: string, value: number | undefined): void => {
   if (value !== undefined && !Number.isFinite(value)) fail(`a ${what} is finite, not ${value}`);
 };
+
+const WAVE_NAMES = new Set<string>(['sine', 'square', 'sawtooth', 'triangle']);
+
+/** Throws on a named wave neither voice path could play. Harmonic levels and
+ *  inharmonic partials are checked apart. */
+export function checkWave(wave: Waveform): void {
+  if (typeof wave === 'string' && !WAVE_NAMES.has(wave)) {
+    fail(`"${wave}" is not a wave: one of sine, square, sawtooth, triangle`);
+  }
+}
 
 export function checkEnvelope(what: string, env: Envelope | undefined): void {
   if (!env) return;

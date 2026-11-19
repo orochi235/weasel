@@ -8,7 +8,7 @@ import type { Inharmonic, NoiseOptions, NoteOptions, VoiceFilter, Waveform } fro
 
 /** How `playNote` and `playNoise` make their nodes. */
 export interface SynthStarters {
-  /** Throws on a bad pitch, partial, glide, envelope, filter, or duration, at
+  /** Throws on a bad pitch, wave, partial, glide, envelope, filter, or duration, at
    *  the call rather than when it comes due. */
   note(note: NoteOptions): Starter;
   /** Throws on a bad envelope, filter, or duration, at the call. */
