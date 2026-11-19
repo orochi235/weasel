@@ -121,6 +121,7 @@ export type { SkippedKey, SpecsFromSerializedOptions, V1Classifier } from '../co
 export type { SavedScene, SerializedLayer, SerializedNode, SerializedNodeV1, SerializedScene, SerializedSceneV1, SerializedSceneV2 } from '../core/scene/serializedTypes';
 export { SnapshotKeyError } from '../core/scene/snapshotShape';
 export { SnapshotShapeError } from '../core/scene/snapshotShapeError';
+export { SceneMembershipError } from '../core/scene/staleReplay';
 export { statedFields } from '../core/scene/statedFields';
 export type { StatedNodeFields } from '../core/scene/statedFields';
 export { strategyView } from '../core/scene/strategyView';
