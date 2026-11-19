@@ -1604,6 +1604,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/EditingDemo').then((m) => m.EditingDemo),
     path: 'apps/site/demos/EditingDemo.tsx',
   },
+  {
+    id: 'paint-kinds',
+    title: 'The paint kind registry',
+    package: 'paint-kinds',
+    description: 'The kind menu lists every registered paint kind through `usePaintKinds()`, by each entry\'s `label`. The chosen entry, read with `usePaintKind(kind)`, builds a paint from the seed color with `entry.seed(color)`, and a `<DrawCanvas>` fills a square and a star with it through the draw slots the entry registered with the renderer. Below are the entry\'s family, whether it is a gradient (it carries `stopsOf` and `fromStops`), and the color `colorOf` reads back. The mesh gradient is registered behind a loader: Load mesh gradient calls `getPaintKind(\'mesh-gradient\')`, which starts the load, and the menu gains it when it lands.',
+    hint: 'Pick a gradient, then a tile pattern, and change the seed color. Press Load mesh gradient and find it at the end of the menu.',
+    load: () => import('./demos/PaintKindsDemo').then((m) => m.PaintKindsDemo),
+    path: 'apps/site/demos/PaintKindsDemo.tsx',
+  },
 ];
 
 export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({
