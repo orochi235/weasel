@@ -148,7 +148,7 @@ export function selectionTransformBindings<TPose>(
 }
 
 /** An always-live entry carrying {@link selectionMoveBindings}. Add it to a
- *  canvas's ambient list; `<SceneCanvas features={[movePreset]}>` does. */
+ *  canvas's ambient list; `<SceneCanvas features={[presets.move]}>` does. */
 export function createSelectionMoveContribution<TPose>(
   options: SelectionMoveOptions<TPose> = {},
 ): Contribution {
@@ -160,7 +160,7 @@ export function createSelectionMoveContribution<TPose>(
 }
 
 /** An always-live entry carrying {@link selectionTransformBindings}: resize
- *  and rotate in one entry, what `<SceneCanvas features={[transformPreset]}>`
+ *  and rotate in one entry, what `<SceneCanvas features={[presets.transform]}>`
  *  turns on. */
 export function createSelectionTransformContribution<TPose>(
   options: SelectionTransformOptions<TPose> = {},
@@ -173,7 +173,7 @@ export function createSelectionTransformContribution<TPose>(
 }
 
 /** An always-live entry carrying {@link selectionResizeBindings}. Add it to a
- *  canvas's ambient list; `<SceneCanvas features={[resizePreset]}>` does. */
+ *  canvas's ambient list; `<SceneCanvas features={[presets.resize]}>` does. */
 export function createSelectionResizeContribution(): Contribution {
   return {
     id: SELECTION_RESIZE_ID,
@@ -183,7 +183,7 @@ export function createSelectionResizeContribution(): Contribution {
 }
 
 /** An always-live entry carrying {@link selectionRotateBindings}. Add it to a
- *  canvas's ambient list; `<SceneCanvas features={[rotatePreset]}>` does. */
+ *  canvas's ambient list; `<SceneCanvas features={[presets.rotate]}>` does. */
 export function createSelectionRotateContribution<TPose>(
   options: SelectionRotateOptions<TPose> = {},
 ): Contribution {

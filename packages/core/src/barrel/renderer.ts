@@ -156,7 +156,7 @@ export {
 } from '../canvas/SceneCanvas/nodeTraits';
 export { describePresets, isAtom, type PresetDescription } from '../canvas/SceneCanvas/describePresets';
 export { rotateAboutAabbCenter, VIEW_TOOLS } from '../canvas/SceneCanvas';
-export * from '../canvas/SceneCanvas/presets';
+export { BASELINE_ACTIONS, BASELINE_ACTION_IDS, PRESET_CHROME, PRESET_OWNED_CHROME } from '../canvas/SceneCanvas/presets';
 export { KIT_SHAPE_KINDS, kitShapeKindsOf, SHAPE_KINDS } from '../core/shapeKinds';
 export type {
   BuiltinShapeToolId, KitInsertShape, ShapeKind, ShapeKindDescriptor, ShapeKindsWhere,

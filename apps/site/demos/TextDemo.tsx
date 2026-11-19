@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { solid } from '@weasel-js/paint';
-import { SceneCanvas, asNodeId, useScene, viewPreset } from '@weasel-js/core';
-import { textPreset, useSceneTextEdit } from '@weasel-js/text-tools';
+import { SceneCanvas, asNodeId, useScene } from '@weasel-js/core';
+import { useSceneTextEdit } from '@weasel-js/text-tools';
+import * as textTools from '@weasel-js/text-tools/presets';
 import type { Fill, RectPose } from '@weasel-js/core';
 import { gridSnapSource } from '@weasel-js/guides';
 import type { StyledRun, TextStyle, TextVerticalAlign } from '@weasel-js/text';
 import { CharacterOptions, isCharacterChrome } from '@weasel-js/ui-canvas/components/inspector/CharacterOptions';
 import { DemoStage } from './DemoStage';
-import { editPreset, movePreset, pickPreset, resizePreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const W = 600;
 const H = 400;
@@ -128,7 +129,7 @@ export function TextDemo() {
             backgroundFill={{ color: '#ffffff' }}
             scene={scene}
             snap={SNAP}
-            features={[viewPreset, pickPreset, movePreset, resizePreset, editPreset, textPreset]}
+            features={[presets.view, presets.pick, presets.move, presets.resize, presets.edit, textTools.text]}
           />
         </DemoStage>
       </div>

@@ -17,9 +17,10 @@ import { canvasAlphaFor, useDrawEnteredGroup, useEnteredGroupLabel, type DrawEnt
 import { useCanvasModes } from './useCanvasModes';
 import { useModality, type UseModalityReturn } from './useModality';
 import { useModeId } from './useModeId';
-import { pathsPreset } from '@weasel-js/path-tools';
-import { textPreset } from '@weasel-js/text-tools';
-import { drawPreset, useSelection } from '@weasel-js/editing';
+import * as pathTools from '@weasel-js/path-tools/presets';
+import * as textTools from '@weasel-js/text-tools/presets';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -76,7 +77,7 @@ function Harness({ into }: { into: (live: Live) => void }): ReactElement {
         mode={machine.registry.byId(modeId)} targetLabel={null}
         group={groupLabel === null ? null : { label: groupLabel, onExit: group.entered.leaveAll }}
         onExit={() => machine.exitMode()} onCommit={() => machine.commitMode()} onCancel={() => machine.cancelMode()} />
-      <SceneCanvas features={[drawPreset, pathsPreset, textPreset]} scene={scene} selection={selection} layers={{}} width={200} height={40}
+      <SceneCanvas features={[presets.draw, pathTools.paths, textTools.text]} scene={scene} selection={selection} layers={{}} width={200} height={40}
         ambient={modes.ambient} modes={machine.registry} pathEdit={modes.pathEdit}
         alphaFor={alphaFor} redrawOn={[modality.scopingDim, group.scope]}
         isPointerInteractive={modality.scopingDim.isPointerInteractive}

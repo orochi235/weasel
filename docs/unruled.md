@@ -787,7 +787,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   frame an extension refuses previews the transform alone. A resize's frame is read from poses
   only, so a `data.path` node it scales previews its links from the unscaled path; the commit
   reads the scaled one.
-- 2026-10-19: A broken constraint link is drawn on every canvas with `constraintsPreset`, in or out
+- 2026-10-19: A broken constraint link is drawn on every canvas with `pathTools.constraints`, in or out
   of path edit, by a screen-space layer of its own (`createConstraintLinkMarks`): the link's
   constraint mark by the anchor it holds and a dashed line to where the link wants that anchor,
   both in the conflict red. A link that holds draws nothing there. The layer reads the committed

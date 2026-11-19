@@ -2,7 +2,8 @@
  * @weasel-js/editing — editing for a weasel canvas, as presets an app opts
  * into. `@weasel-js/core` draws, pans and zooms a scene; the presets here add
  * selecting and acting on what is selected: moving, resizing and rotating,
- * the edit, arrange and Pathfinder commands, and paste and drop.
+ * the edit, arrange and Pathfinder commands, and paste and drop. The presets
+ * themselves are on `@weasel-js/editing/presets`.
  *
  * @packageDocumentation
  */
@@ -16,17 +17,6 @@ export {
   ALIGN_GROUP, CLIPBOARD_GROUP, DISTRIBUTE_GROUP, EDIT_GROUP, FLIP_GROUP, INSERT_GROUP, NUDGE_GROUP, PATHFINDER_GROUP,
   REORDER_GROUP, STRUCTURE_GROUP,
 } from './actionGroups';
-export { selectPreset } from './presets/select';
-export { selectionPreset } from './presets/selection';
-export { movePreset, outlinePreset, resizePreset, rotatePreset } from './presets/transform';
-export {
-  clipboardPreset, contextMenuPreset, deletePreset, duplicatePreset, editPreset, escapePreset, groupPreset,
-  nudgePreset, selectAllPreset, stylePreset,
-} from './presets/edit';
-export { alignPreset, arrangePreset, distributePreset, flipPreset, reorderPreset } from './presets/arrange';
-export { pathfinderPreset } from './presets/pathfinder';
-export { booleansPreset } from './presets/booleans';
-export { selectToolsOfferedPreset, selectToolsPreset, shapeToolsOfferedPreset, shapeToolsPreset } from './presets/tools';
 import type {} from './tools/toolOptions';
 export {
   KIT_TOOL_GROUPS, KIT_TOOL_IDS, KIT_TOOLS, SELECT_TOOLS, SHAPE_TOOLS, TOOL_GROUP_ORDER, type KitToolId,
@@ -68,11 +58,7 @@ export {
 export {
   createEnterGroupAction, createLeaveGroupAction, type EnterGroupOptions, type LeaveGroupOptions,
 } from './actions/group/enterGroup';
-export { drawPreset, pickPreset, transformPreset } from './presets/composites';
-export { ingestPreset } from './presets/ingest';
 export { KIT_CONTENT_HANDLERS } from './ingest/kitHandlers';
-export { insertPreset } from './presets/insert';
-export { selectionChromePreset } from './presets/selectionChrome';
 export { SELECTION_CHROME } from './chrome/selectionChrome';
 export {
   composeSelectionPose, createSelectionHandlesLayer, createSelectionOutlineLayer, createSelectionOverlayLayer,

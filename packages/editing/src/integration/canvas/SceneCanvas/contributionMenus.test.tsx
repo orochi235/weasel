@@ -8,7 +8,8 @@ import type { MenuHost } from '@weasel-js/routing';
 import { SceneCanvas } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import type { SurfaceContribution } from '@weasel-js/core';
-import { editPreset, pickPreset } from '@weasel-js/editing';
+import { pickPreset } from '../../../presets/composites';
+import { editPreset } from '../../../presets/edit';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };

@@ -1,6 +1,7 @@
 import { solid } from '@weasel-js/paint';
 import { ANCHORS_GROUP, PATH_GROUP, type ActionTunings, asNodeId, createScene, PathBuilder, type PolygonPath, type RectPose, pathNode } from '@weasel-js/core';
-import { bridgePreset, DEFAULT_BRIDGE_TENSION, pathsPreset, usePenTool } from '@weasel-js/path-tools';
+import { DEFAULT_BRIDGE_TENSION, usePenTool } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import {
   type ConfigOf,
   defineInstrument,
@@ -17,9 +18,9 @@ import { PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
-const FEATURES = [drawPreset, pathsPreset, bridgePreset] as const;
+const FEATURES = [presets.draw, pathTools.paths, pathTools.bridge] as const;
 
 const config = f.schema({
   tension: f.number(DEFAULT_BRIDGE_TENSION).range(0, 1.5).step(0.05).label('Tension'),

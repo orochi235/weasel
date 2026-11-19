@@ -11,7 +11,7 @@ import { renderWithIcons } from '../testIcons';
 import { CHROME_ITEMS, ShowChrome } from './chrome';
 import { StripDock } from './StripSurfaces';
 import { useChromeCommands } from './surfaceState';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
@@ -52,7 +52,7 @@ function App() {
       <div data-testid="strip"><StripDock /></div>
       <div data-testid="sidebar"><RightSidebar /></div>
       <ShowChrome id="statusBar"><div role="status">status</div></ShowChrome>
-      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64} ambient={ambient} />
+      <SceneCanvas features={[presets.draw]} scene={scene} layers={{}} width={64} height={64} ambient={ambient} />
     </>
   );
 }

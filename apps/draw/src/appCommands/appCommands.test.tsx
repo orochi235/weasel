@@ -10,7 +10,7 @@ import { ActionsProvider, DepRegistryProvider, SceneCanvas, createScene } from '
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { appCommandsContribution, type AppCommands } from './index';
 import { withIcons } from '../testIcons';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
@@ -48,7 +48,7 @@ function setup(over: Partial<AppCommands> = {}) {
         <ActionBar group="view" />
         <ActionBar group="compound" />
         <ActionBar group="app" />
-        <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}
+        <SceneCanvas features={[presets.draw]} scene={scene} layers={{}} width={64} height={64}
           ambient={[appCommandsContribution(() => commands)]} />
       </ActionsProvider>
     </DepRegistryProvider>,

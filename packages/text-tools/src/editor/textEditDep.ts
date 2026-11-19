@@ -5,7 +5,7 @@
 import type { Point2 } from '@weasel-js/routing';
 
 /**
- * Dep for `enterTextEditAction`. `textPreset` answers it with the canvas's own
+ * Dep for `enterTextEditAction`. `textTools.text` answers it with the canvas's own
  * editor (`createTextPreset`'s `editor`), or with the editor of a host's
  * `useSceneTextEdit` whose container holds the canvas. A host whose editor's
  * container does not hold the canvas publishes it from inside `<SceneCanvas>`:
@@ -40,7 +40,7 @@ export interface TextEditDep {
 declare module '@weasel-js/routing' {
   interface DepSchema {
     /**
-     * Text-edit dep — activates the in-place text editing overlay. `textPreset`
+     * Text-edit dep — activates the in-place text editing overlay. `textTools.text`
      * publishes the canvas's own editor, or a host's `useSceneTextEdit`.
      *
      * The optional `isTextNode` predicate guards against entering edit mode on

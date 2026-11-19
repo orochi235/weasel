@@ -9,7 +9,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { createModeRegistry, type ModeDefinition, type ModeRegistry } from '@weasel-js/modes';
 import { SceneCanvas, useScene, defineTool, useTools } from '@weasel-js/core';
 import { WeaselProvider } from '@weasel-js/core/engine';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

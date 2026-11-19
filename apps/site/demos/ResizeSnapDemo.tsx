@@ -3,7 +3,7 @@ import { asNodeId, SceneCanvas, useScene, ROTATED_POSE_DESCRIPTOR } from '@wease
 import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 import type { Fill, RotatedPose, PoseDescriptor } from '@weasel-js/core';
 import { DemoStage } from './DemoStage';
-import { resizePreset, selectPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 interface Rect extends RotatedPose {
   id: string;
@@ -30,7 +30,7 @@ export function ResizeSnapDemo() {
   return (
     <DemoStage width={W} height={H}>
       <SceneCanvas
-        features={[selectPreset, resizePreset]}
+        features={[presets.select, presets.resize]}
         className="ckd-canvas"
         scene={scene}
         selectionOptions={SELECTED}

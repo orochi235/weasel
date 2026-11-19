@@ -1,8 +1,9 @@
 import { solid } from '@weasel-js/paint';
 import { SceneCanvas, useScene, pathNode } from '@weasel-js/core';
-import { pathsPreset } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const W = 480, H = 300;
 
@@ -20,7 +21,7 @@ export function PathAnchorEditDemo() {
 
   return (
     <DemoStage width={W} height={H}>
-      <SceneCanvas features={[pickPreset, movePreset, pathsPreset]}
+      <SceneCanvas features={[presets.pick, presets.move, pathTools.paths]}
         className="ckd-canvas"
         scene={scene}
         selection={selection}

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { solid } from '@weasel-js/paint';
-import { SceneCanvas, asNodeId, useScene, viewPreset } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, useScene } from '@weasel-js/core';
+import * as corePresets from '@weasel-js/core/presets';
 import type { RectPose } from '@weasel-js/core';
 import { createTextPreset, type TextNodeData } from '@weasel-js/text-tools';
 import { useColorHex } from '@weasel-js/theme/react';
@@ -79,7 +80,7 @@ export function ViewportDemo() {
         <SceneCanvas
           scene={scene}
           backgroundFill={backgroundFill}
-          features={[viewPreset, TEXT]}
+          features={[corePresets.view, TEXT]}
           viewport={{
             inertia: inertiaConfig,
             touchZoom: true,

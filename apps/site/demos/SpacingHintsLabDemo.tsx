@@ -15,7 +15,8 @@ import { useMemo } from 'react';
 import { icon } from '../icons.gen';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { drawPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const config = f.schema({
   spacing: f.boolean(true).label('Equal-spacing snap'),
@@ -62,7 +63,7 @@ function SpacingTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
 
   return (
     <TrialSceneCanvas
-      features={[drawPreset, spacingHints]}
+      features={[presets.draw, spacingHints]}
       defaultTools={['rect']}
       scene={scene}
       selection={selection}

@@ -6,7 +6,7 @@ import type { Path } from '@weasel-js/geom';
 import { SceneCanvas, type SelectionApi } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import { PATHFINDER_KEYMAP } from './keymap';
-import { drawPreset } from '../../index';
+import { drawPreset } from '../../presets/composites';
 import { useSelection } from '../../selection/useSelection';
 
 type P = { x: number; y: number; width: number; height: number };

@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { solid } from '@weasel-js/paint';
-import { asNodeId, RIGID_POSE_COMPOSITION, SceneCanvas, useScene, type Fill, type GroupBoxData, type RectPose, type Stroke, type UnitScope, viewPreset } from '@weasel-js/core';
+import { asNodeId, RIGID_POSE_COMPOSITION, SceneCanvas, useScene, type Fill, type GroupBoxData, type RectPose, type Stroke, type UnitScope } from '@weasel-js/core';
 import { createGridLayer, gridSnapSource, sceneGridRegions, type GridScopes } from '@weasel-js/guides';
 import { DemoStage } from './DemoStage';
-import { movePreset, selectPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 interface Data extends GroupBoxData { fill?: Fill; stroke?: Stroke }
 
@@ -38,7 +38,7 @@ export function ScopedGridDemo() {
   return (
     <DemoStage width={W} height={H}>
       <SceneCanvas
-        features={[selectPreset, movePreset, viewPreset]}
+        features={[presets.select, presets.move, presets.view]}
         className="ckd-canvas"
         scene={scene}
         snap={snap}

@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { type FeaturePreset } from '@weasel-js/core';
-import { textToolsPreset } from '@weasel-js/text-tools';
+import * as textTools from '@weasel-js/text-tools/presets';
 import { chartPrefs } from './prefs';
 import { useChartSnap } from './useChartSnap';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 afterEach(() => {
   // The store caches what it read, so clearing storage alone would leak prefs into the next test.
@@ -14,7 +14,7 @@ afterEach(() => {
 
 const PAGE = { x: 0, y: 0, width: 1056, height: 816 };
 
-const presetOf = (features: readonly FeaturePreset[]) => features.find((f) => f !== drawPreset && f !== textToolsPreset);
+const presetOf = (features: readonly FeaturePreset[]) => features.find((f) => f !== presets.draw && f !== textTools.textTools);
 const sourceIds = (preset: FeaturePreset | undefined) => (preset?.snapSources ?? []).map((s) => s.id).sort();
 
 describe('useChartSnap', () => {
@@ -22,7 +22,7 @@ describe('useChartSnap', () => {
     const { result } = renderHook(() => useChartSnap(PAGE, '#ffffff'));
     expect(result.current.gridLayer).toBeUndefined();
     expect(result.current.snap.sources ?? []).toEqual([]);
-    expect(result.current.features.slice(0, 2)).toEqual([drawPreset, textToolsPreset]);
+    expect(result.current.features.slice(0, 2)).toEqual([presets.draw, textTools.textTools]);
     expect(sourceIds(presetOf(result.current.features))).toEqual(['alignment', 'spacing']);
   });
 
@@ -41,7 +41,7 @@ describe('useChartSnap', () => {
     expect(sourceIds(presetOf(result.current.features))).toEqual(['alignment']);
     expect(presetOf(result.current.features)?.contributions ?? []).toEqual([]);
     act(() => { chartPrefs().set('view.alignmentSnap', false); });
-    expect(result.current.features).toEqual([drawPreset, textToolsPreset]);
+    expect(result.current.features).toEqual([presets.draw, textTools.textTools]);
   });
 
   it('keeps every value by identity across renders until its prefs change', () => {

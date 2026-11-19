@@ -10,14 +10,15 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { createPathEditHost, FILLET_CONTROLS, filletPreset, pathsPreset, usePenTool } from '@weasel-js/path-tools';
+import { createPathEditHost, FILLET_CONTROLS, usePenTool } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import { useMemo, useState } from 'react';
 import { FilletPanel } from './FilletPanel';
 import s from './FilletLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 // The fillet controls read the selection, so they sit over the canvas
 // rather than in the trial's config.
@@ -58,7 +59,7 @@ const createLabScene = () =>
     ],
   });
 
-const FEATURES = [drawPreset, pathsPreset, filletPreset] as const;
+const FEATURES = [presets.draw, pathTools.paths, pathTools.fillet] as const;
 const TUNE: ActionTunings = { cycleFillet: { bindings: [{ kind: 'key', key: 'k' }] } };
 
 function FilletsTrial({ ctx }: { ctx: RenderContext<State, Config> }) {

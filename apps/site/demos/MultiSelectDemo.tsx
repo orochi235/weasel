@@ -1,7 +1,7 @@
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { Fill } from '@weasel-js/core';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; fill: Fill }
 
@@ -20,7 +20,7 @@ export function MultiSelectDemo() {
   return (
     <DemoStage width={W} height={H}>
       <SceneCanvas
-        features={[pickPreset, movePreset, transformPreset]}
+        features={[presets.pick, presets.move, presets.transform]}
         className="ckd-canvas"
         scene={scene}
         selectionOptions={{ mode: 'multiple' }}

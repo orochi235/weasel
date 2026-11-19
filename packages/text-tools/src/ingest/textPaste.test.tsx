@@ -1,4 +1,4 @@
-/** Plain-text paste on a canvas given `textPreset`: a text node, and only for text no other handler claims. */
+/** Plain-text paste on a canvas given `textTools.text`: a text node, and only for text no other handler claims. */
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { act } from '@testing-library/react';
 import { createRef } from 'react';
@@ -9,8 +9,9 @@ import {
   __setImageMeasureForTests, __setFileToDataUriForTests, _resetImageHandlerSeamsForTests,
 } from '@weasel-js/editing/test-seams';
 import { __setSvgMeasureForTests, _resetSvgHandlerSeamsForTests } from '@weasel-js/editing/test-seams';
-import { textPreset } from '../presets';
-import { ingestPreset, buildWeaselClipboardText } from '@weasel-js/editing';
+import { textPreset } from '../featurePresets';
+import { buildWeaselClipboardText } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 type D = { text?: string; image?: { src: string } };
 type L = 'main';
@@ -64,7 +65,7 @@ function paste(data: { text?: string; files?: File[] }): void {
 
 describe('plain-text paste with textPreset', () => {
   it('turns pasted plain text into a text node, and leaves node payloads and SVG alone', async () => {
-    const { scene } = mount([ingestPreset, textPreset]);
+    const { scene } = mount([presets.ingest, textPreset]);
     paste({ text: 'hello\nworld' });
     await vi.waitFor(() => expect(textNodesOf(scene)).toHaveLength(1));
     expect(textNodesOf(scene)[0]!.data.text).toBe('hello\nworld');
@@ -78,7 +79,7 @@ describe('plain-text paste with textPreset', () => {
   });
 
   it('inserts a pasted file once, without a text node for the name riding beside it', async () => {
-    const { scene } = mount([ingestPreset, textPreset]);
+    const { scene } = mount([presets.ingest, textPreset]);
     paste({ files: [pngFile()], text: 'a.png' });
     await vi.waitFor(() => expect(scene.roots).toHaveLength(1));
     await settle();
@@ -89,10 +90,10 @@ describe('plain-text paste with textPreset', () => {
   it('is a canvas’s own: one without textPreset takes no plain text, while another with it does', async () => {
     const quiet = makeScene();
     const ref = createRef<SceneCanvasApi>();
-    render(<SceneCanvas features={[ingestPreset]} scene={quiet} layers={{}} width={64} height={64} ref={ref} />);
+    render(<SceneCanvas features={[presets.ingest]} scene={quiet} layers={{}} width={64} height={64} ref={ref} />);
     const other = makeScene();
     const otherRef = createRef<SceneCanvasApi>();
-    render(<SceneCanvas features={[ingestPreset, textPreset]} scene={other} layers={{}} width={64} height={64} ref={otherRef} />);
+    render(<SceneCanvas features={[presets.ingest, textPreset]} scene={other} layers={{}} width={64} height={64} ref={otherRef} />);
 
     act(() => { ref.current!.ingest([{ kind: 'string', mime: 'text/plain', text: 'words' }]); });
     act(() => { otherRef.current!.ingest([{ kind: 'string', mime: 'text/plain', text: 'words' }]); });

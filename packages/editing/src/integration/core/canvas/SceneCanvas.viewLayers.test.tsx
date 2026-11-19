@@ -19,7 +19,8 @@ import { useOptionalViewRegistryForTests as useOptionalViewRegistry, type ViewRe
 import { SceneCanvas } from '@weasel-js/core';
 import type { SceneCanvasApi } from '@weasel-js/core';
 import type { CanvasHelpers } from '@weasel-js/core';
-import { drawPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import { drawPreset } from '../../../presets/composites';
 
 const painted = vi.hoisted(() => new Map<unknown, readonly unknown[]>());
 

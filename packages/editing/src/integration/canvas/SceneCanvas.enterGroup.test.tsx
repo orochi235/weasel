@@ -11,7 +11,8 @@ import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import { createModeTriggersContribution, SceneCanvas } from '@weasel-js/core';
 import { createScene, asNodeId, createEnteredGroup, useEnteredGroup, type EnteredGroupApi } from '@weasel-js/core/engine';
 import type { SelectionApi, BindingOverrides } from '@weasel-js/routing';
-import { drawPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

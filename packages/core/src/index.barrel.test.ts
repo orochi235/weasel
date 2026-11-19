@@ -66,11 +66,13 @@ describe('kit barrel parity', () => {
   // same (canvas) layer, so it's in lockstep by construction — no cross-layer
   // parity test needed (the two no longer straddle a boundary).
 
-  // Names, and the editing presets, live in `@weasel-js/editing`; the root barrel ships the
-  // view presets and nothing that resolves a name.
-  it('exports the view presets and describePresets, and no preset names', () => {
-    expect([Barrel.viewPreset.id, Barrel.viewToolsPreset.id]).toEqual(['view', 'tools:view']);
-    for (const gone of ['SCENE_CANVAS_FEATURES', 'FEATURE_ACTION_IDS', 'FEATURE_PRESETS', 'namedFeatures', 'LeanSceneCanvas']) {
+  // Names, and the editing presets, live in `@weasel-js/editing`; the view presets are on
+  // `@weasel-js/core/presets`, and the root barrel ships nothing that resolves a name.
+  it('exports describePresets, and no presets or preset names', () => {
+    for (const gone of [
+      'SCENE_CANVAS_FEATURES', 'FEATURE_ACTION_IDS', 'FEATURE_PRESETS', 'namedFeatures', 'LeanSceneCanvas', 'viewPreset',
+      'viewToolsPreset',
+    ]) {
       expect(gone in Barrel, gone).toBe(false);
     }
     expect(Barrel.describePresets).toBeTypeOf('function');

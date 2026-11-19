@@ -2,8 +2,8 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas, useScene, type ToolsApi } from '@weasel-js/core';
-import { textToolsPreset } from './presets';
-import { drawPreset } from '@weasel-js/editing';
+import { textToolsPreset } from './featurePresets';
+import * as presets from '@weasel-js/editing/presets';
 
 type P = { x: number; y: number; width: number; height: number };
 
@@ -18,7 +18,7 @@ describe('the text tools on a canvas', () => {
     function Harness() {
       const scene = useScene<Record<string, unknown>, 'main', P>({ systemLayers: [{ id: 'main' }], initial: [] });
       return (
-        <SceneCanvas features={[drawPreset, textToolsPreset]} scene={scene} layers={{}} width={64} height={64}
+        <SceneCanvas features={[presets.draw, textToolsPreset]} scene={scene} layers={{}} width={64} height={64}
           onToolsCreated={(t) => { api.tools = t; }} />
       );
     }

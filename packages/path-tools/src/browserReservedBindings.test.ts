@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { actionBindings, browserReservedChord } from '@weasel-js/routing';
-import { pathToolsPreset } from './presets';
+import { pathToolsPreset } from './featurePresets';
 
 describe('path-tools key bindings a browser reserves', () => {
   it('binds no chord a browser takes first', () => {

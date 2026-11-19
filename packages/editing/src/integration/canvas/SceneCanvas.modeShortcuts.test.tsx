@@ -11,7 +11,7 @@ import { isApplePlatform } from '@weasel-js/gestures';
 import { SceneCanvas } from '@weasel-js/core';
 import type { ToolsApi } from '@weasel-js/core';
 import { createScene, asNodeId } from '@weasel-js/core/engine';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 type D = { kind: 'rect' };
 type L = 'main';

@@ -1,6 +1,7 @@
 import { solid } from '@weasel-js/paint';
 import { asNodeId, boundsOfPath, createScene, ellipsePath, pathFromD, type NodeId, type RectPose, pathNode } from '@weasel-js/core';
-import { pathsPreset, usePenTool, usePencilTool } from '@weasel-js/path-tools';
+import { usePenTool, usePencilTool } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState, TrialSceneCanvas,
   useTrialConfigChange, useTrialScene,
@@ -14,7 +15,7 @@ import { useLayoutEffect, useMemo, useRef } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 export const GROUP_ID = 'symmetry';
 /** A leaf symmetric about the kaleidoscope's first mirror, open in path edit. */
@@ -171,7 +172,7 @@ function SymmetryTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
 
   return (
     <TrialSceneCanvas
-      features={[drawPreset, pathsPreset]}
+      features={[presets.draw, pathTools.paths]}
       defaultTools={['rect', 'ellipse']}
       tools={{ pen, pencil }}
       scene={scene}

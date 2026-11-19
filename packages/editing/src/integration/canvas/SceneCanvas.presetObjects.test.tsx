@@ -10,7 +10,9 @@ import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import { IDENTITY_POSE_COMPOSITION, createScene } from '@weasel-js/core/engine';
 import type { ToolsApi, FeaturePreset } from '@weasel-js/core';
 import { SceneCanvas, BASELINE_ACTIONS } from '@weasel-js/core';
-import { KIT_STANDARD_ACTION_IDS, pickPreset, selectPreset } from '@weasel-js/editing';
+import { KIT_STANDARD_ACTION_IDS } from '@weasel-js/editing';
+import { pickPreset } from '../../presets/composites';
+import { selectPreset } from '../../presets/select';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };

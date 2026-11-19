@@ -4,7 +4,8 @@ import { PathBuilder, SceneCanvas, WeaselProvider, asNodeId, createScene } from 
 import type { Path, RectPose, SceneCanvasApi, View, Fill } from '@weasel-js/core';
 import { createLoupe } from '@weasel-js/hud';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
-import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 interface NodeData { fill: Fill; path?: Path }
 
@@ -106,7 +107,7 @@ function Pane({
       {surface && input && (
         // Isolated so each pane keeps its own selection.
         <WeaselProvider isolate>
-          <SceneCanvas features={[pickPreset, movePreset]}
+          <SceneCanvas features={[presets.pick, presets.move]}
             ref={apiRef}
             width={PANE_W}
             height={PANE_H}

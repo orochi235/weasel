@@ -10,8 +10,8 @@ export type TextToolId = 'text' | 'sticky';
 export const TEXT_TOOLS: ToolSet<TextToolId> = toolSet('text', ['text', 'sticky'], { label: 'Text' });
 
 /**
- * Every tool in {@link TEXT_TOOLS}, keyed by id, for `<SceneCanvas tools>` beside `textPreset`, whose actions
- * they bind. `textToolsPreset` mounts the same tools without a hook.
+ * Every tool in {@link TEXT_TOOLS}, keyed by id, for `<SceneCanvas tools>` beside `textTools.text`, whose actions
+ * they bind. `textTools.textTools` mounts the same tools without a hook.
  */
 export function useTextToolsTools(options: UseStickyToolOptions = {}): Record<TextToolId, Tool> {
   const text = useTextTool({ behaviors: options.behaviors, share: options.share });

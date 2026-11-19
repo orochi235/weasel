@@ -9,7 +9,7 @@ import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import { createScene } from '@weasel-js/core/engine';
 import type { SceneCanvasSnap, SnapReadoutDep } from '@weasel-js/core/engine';
 import { SceneCanvas } from '@weasel-js/core';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 const painted = vi.hoisted(() => ({ commands: [] as readonly unknown[] }));
 

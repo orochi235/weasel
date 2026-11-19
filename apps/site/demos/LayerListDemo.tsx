@@ -5,7 +5,8 @@ import { LayerList } from '@weasel-js/ui/components/LayerList';
 import type { CSSProperties } from 'react';
 import { DemoStage } from './DemoStage';
 import s from './LayerListDemo.module.css';
-import { pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; fill: { paint: SolidPaint } }
 
@@ -37,7 +38,7 @@ export function LayerListDemo() {
   return (
     <div className={s.demo}>
       <DemoStage width={W} height={H}>
-        <SceneCanvas features={[pickPreset]}
+        <SceneCanvas features={[presets.pick]}
           className="ckd-canvas"
           scene={scene}
           selection={selection}

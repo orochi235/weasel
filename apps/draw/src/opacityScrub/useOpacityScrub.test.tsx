@@ -11,7 +11,8 @@ import { SelectionPanel } from '@weasel-js/ui-canvas/components/inspector/Select
 import { WD_RENDERERS } from '../paintRenderers';
 import { useOpacityScrub } from './useOpacityScrub';
 import { withIcons } from '../testIcons';
-import { drawPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 type D = { fill?: Fill | null; text?: string };
 type L = 'main';
@@ -71,7 +72,7 @@ function setup({ selected = true, data = { fill: { paint: solid('#ff0000') } } a
         routing={PANEL_ROUTING}
         renderers={WD_RENDERERS}
       />
-      <SceneCanvas features={[drawPreset]}
+      <SceneCanvas features={[presets.draw]}
         scene={scene}
         selection={selection}
         width={200} height={200}

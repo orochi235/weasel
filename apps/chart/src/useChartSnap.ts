@@ -1,11 +1,11 @@
 import { type FeaturePreset, type RenderLayer, type SceneCanvasSnap, type SceneNode } from '@weasel-js/core';
 import { diagramEdgeOf, diagramLabelOf } from '@weasel-js/diagram';
 import { createSpacingHintsPreset } from '@weasel-js/guides';
-import { textToolsPreset } from '@weasel-js/text-tools';
+import * as textTools from '@weasel-js/text-tools/presets';
 import { usePageGrid, type PageSize } from '@weasel-js/editor';
 import { useMemo } from 'react';
 import { useChartPref } from './prefs';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 /** A heavier line every inch at the default 12 per line. */
 const ACCENT_EVERY = 8;
@@ -36,8 +36,8 @@ export function useChartSnap(page: PageSize & { x: number; y: number }, backgrou
   const snap = useMemo<SceneCanvasSnap>(() => ({ sources: source ? [source] : [] }), [source]);
 
   const features = useMemo<readonly FeaturePreset[]>(() => {
-    if (!align && !spacingSnap) return [drawPreset, textToolsPreset];
-    return [drawPreset, textToolsPreset, createSpacingHintsPreset({ spacing: spacingSnap, align, filter: isBody, ...(spacingSnap ? {} : { readout: false }) })];
+    if (!align && !spacingSnap) return [presets.draw, textTools.textTools];
+    return [presets.draw, textTools.textTools, createSpacingHintsPreset({ spacing: spacingSnap, align, filter: isBody, ...(spacingSnap ? {} : { readout: false }) })];
   }, [align, spacingSnap]);
 
   return { gridLayer: grid.layer, snap, features };

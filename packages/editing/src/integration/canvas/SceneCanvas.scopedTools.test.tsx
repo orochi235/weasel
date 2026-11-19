@@ -5,7 +5,7 @@ import { useScopedTools } from '@weasel-js/routing/react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import { WeaselProvider } from '@weasel-js/core/engine';
 import type { ToolsApi } from '@weasel-js/core';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };

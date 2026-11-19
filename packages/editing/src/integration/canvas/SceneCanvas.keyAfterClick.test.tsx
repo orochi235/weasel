@@ -3,7 +3,9 @@ import { render, act } from '@testing-library/react';
 import { SceneCanvas } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import type { NodeId, Scene } from '@weasel-js/core';
-import { deletePreset, selectPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import { deletePreset } from '../../presets/edit';
+import { selectPreset } from '../../presets/select';
 
 type D = { kind: string };
 type L = 'main';

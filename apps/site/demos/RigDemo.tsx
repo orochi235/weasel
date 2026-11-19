@@ -23,7 +23,7 @@ import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const W = 600, H = 340;
 const TEXT = createTextPreset({ editor: false });
@@ -265,7 +265,7 @@ export function RigDemo() {
         <SceneCanvas
           className="ckd-canvas"
           scene={scene}
-          features={[pickPreset, movePreset, TEXT]}
+          features={[presets.pick, presets.move, TEXT]}
           animator={animator}
           layers={{ selectionOverlay: null }}
         />

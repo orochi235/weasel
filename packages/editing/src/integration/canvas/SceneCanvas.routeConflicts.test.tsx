@@ -14,7 +14,11 @@ import { render } from '@testing-library/react';
 import { SceneCanvas, useScene, useSceneAdapter, useTools } from '@weasel-js/core';
 import { asNodeId, WeaselProvider } from '@weasel-js/core/engine';
 import type { FeaturePreset } from '@weasel-js/core';
-import { arrangePreset, drawPreset, editPreset, movePreset, pickPreset, transformPreset, KIT_TOOL_IDS, type KitToolId, useSelectTool, useSelection } from '@weasel-js/editing';
+import { KIT_TOOL_IDS, type KitToolId, useSelectTool, useSelection } from '@weasel-js/editing';
+import { arrangePreset } from '../../presets/arrange';
+import { drawPreset, pickPreset, transformPreset } from '../../presets/composites';
+import { editPreset } from '../../presets/edit';
+import { movePreset } from '../../presets/transform';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {

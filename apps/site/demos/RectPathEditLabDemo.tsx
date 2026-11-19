@@ -9,14 +9,15 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { createPathEditHost, pathsPreset, usePenTool } from '@weasel-js/path-tools';
+import { createPathEditHost, usePenTool } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import { Button } from '@weasel-js/ui/components/Button';
 import { useEffect, useReducer, useState } from 'react';
 import s from './RectPathEditLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 type Data = { path?: { kind: string }; fill?: unknown };
 type State = SceneTrialState<Data, 'default', RectPose>;
@@ -95,7 +96,7 @@ function RectPathEditTrial({ ctx }: { ctx: RenderContext<State, unknown> }) {
   return (
     <div className={s.trial}>
       <TrialSceneCanvas
-        features={[drawPreset, pathsPreset]}
+        features={[presets.draw, pathTools.paths]}
         defaultTools={['rect']}
         tools={{ pen }}
         scene={scene}

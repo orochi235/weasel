@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { solid } from '@weasel-js/paint';
-import { asNodeId, SceneCanvas, useScene, HOME_VIEW, fitViewToBounds, viewPreset } from '@weasel-js/core';
+import { asNodeId, SceneCanvas, useScene, HOME_VIEW, fitViewToBounds } from '@weasel-js/core';
+import * as corePresets from '@weasel-js/core/presets';
 import type { Fill, Stroke, View } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Field } from '@weasel-js/ui/components/Field';
@@ -63,7 +64,7 @@ export function PerAxisZoomDemo() {
       </div>
       <DemoStage width={W} height={H}>
         <SceneCanvas
-          features={[viewPreset]}
+          features={[corePresets.view]}
           className="ckd-canvas"
           scene={scene}
           view={view}

@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { SceneCanvas, WeaselProvider, createScene } from '@weasel-js/core';
 import { renderWithIcons } from '../../testing/withIcons';
 import { ToolPalette } from './ToolPalette';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -17,7 +17,7 @@ describe('ToolPalette with no tools prop', () => {
     renderWithIcons(
       <WeaselProvider>
         <ToolPalette />
-        <SceneCanvas features={[drawPreset]} scene={scene} width={64} height={64} defaultTools={['select', 'rect']} />
+        <SceneCanvas features={[presets.draw]} scene={scene} width={64} height={64} defaultTools={['select', 'rect']} />
       </WeaselProvider>,
     );
     expect(screen.getByRole('button', { name: /^Select/ })).toHaveAttribute('aria-current', 'true');

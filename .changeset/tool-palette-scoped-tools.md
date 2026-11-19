@@ -9,7 +9,7 @@ A palette beside a canvas no longer needs `onToolsCreated` and state to hold the
 ```tsx
 <WeaselProvider>
   <ToolPalette orientation="horizontal" />
-  <SceneCanvas scene={scene} features={[drawPreset]} />
+  <SceneCanvas scene={scene} features={[presets.draw]} />
 </WeaselProvider>
 ```
 

@@ -12,7 +12,7 @@ import { createScene } from '@weasel-js/core/engine';
 import type { Scene, InsertDep } from '@weasel-js/core/engine';
 import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import type { Action } from '@weasel-js/routing';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 type D = { kind: 'rect' };
 type L = 'main';

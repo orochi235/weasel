@@ -3,7 +3,7 @@ import { SceneCanvas, useScene } from '@weasel-js/core';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import type { ButtonWidget } from '@weasel-js/hud';
 import { DemoStage } from './DemoStage';
-import { pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const W = 600, H = 400;
 
@@ -46,7 +46,7 @@ export function HudDemo() {
   return (
     <div className="ckd-demo">
       <DemoStage width={W} height={H}>
-        <SceneCanvas features={[pickPreset]}
+        <SceneCanvas features={[presets.pick]}
           className="ckd-canvas"
           scene={scene}
           ambient={[hudEntry]}

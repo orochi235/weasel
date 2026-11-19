@@ -6,12 +6,12 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas, asNodeId, createScene, createToolOptionValues, pathFromD, pathInWorld, type PolygonPath, type ToolsApi, useActionsRegistry, type ActionsRegistry } from '@weasel-js/core';
-import { pathsPreset } from '@weasel-js/path-tools';
+import { pathsPreset } from './pathsPreset';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import { pathToAnchors } from '@weasel-js/geom';
-import { anchorSelectionPreset, tugPreset, sandPreset } from './presets';
+import { anchorSelectionPreset, tugPreset, sandPreset } from './featurePresets';
 import { usePathEditTools } from './toolSets';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 beforeAll(() => {
   (HTMLCanvasElement.prototype as unknown as { getContext: () => null }).getContext = () => null;
@@ -19,7 +19,7 @@ beforeAll(() => {
 afterEach(() => cleanup());
 
 const A = asNodeId('a');
-const FEATURES = [drawPreset, pathsPreset, tugPreset, sandPreset, anchorSelectionPreset] as const;
+const FEATURES = [presets.draw, pathsPreset, tugPreset, sandPreset, anchorSelectionPreset] as const;
 type Pose = { x: number; y: number; width: number; height: number };
 
 function setup(d: string, width: number, height: number) {

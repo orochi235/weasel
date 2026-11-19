@@ -13,7 +13,8 @@ import { projectPoint, type Viewport3d } from './project';
 import { boundsOfTestNode, createNestedTestScene, createTestScene, type TestScene } from './testScene';
 import type { World3d } from './world';
 import type { TestData, TestLayer } from './testScene';
-import { movePreset, pickPreset, selectPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -57,7 +58,7 @@ function setup(scene: TestScene, aim: Record<ViewName, NodeId>) {
   function Canvas() {
     sel = useSelection({ mode: 'multiple' });
     return (
-      <SceneCanvas scene={scene} layers={{}} width={W} height={H} selection={sel} features={[pickPreset, selectPreset, movePreset]}
+      <SceneCanvas scene={scene} layers={{}} width={W} height={H} selection={sel} features={[presets.pick, presets.select, presets.move]}
         enteredGroup={entered} onHover={(id) => hovered.push(id)}
         poseDescriptor={createPoseDescriptor(world)} geometry={{ pickEvery: createPickNearest(world) }}
         views={[viewProps('left'), viewProps('right')]} />

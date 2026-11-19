@@ -83,28 +83,28 @@ those on too; any of them can also be passed alone:
 
 | Preset | Registers |
 |---|---|
-| `viewPreset` | wheel pan and zoom, pinch, the zoom keys, edge pan; a middle-button drag pans under any tool; the hand tool (`viewToolsPreset`), held on Space |
-| `selectPreset` | the select and lasso tools (`selectToolsPreset`), the select tool as the initial active tool and Escape's return target |
-| `outlinePreset` | the selection outline, whichever tool sets the selection |
-| `pickPreset` | `selectPreset` and `outlinePreset` |
-| `movePreset` | ambient drag-to-move and Alt-drag-to-clone bindings |
-| `resizePreset` | the resize handles, drawn and bound |
-| `rotatePreset` | the rotation handle, drawn and bound |
-| `transformPreset` | `resizePreset` and `rotatePreset` |
-| `editPreset` | `escapePreset` (Escape, cancel-gesture), `contextMenuPreset`, `selectAllPreset`, `duplicatePreset` (with transform-again), `deletePreset`, `groupPreset`, `nudgePreset`, `stylePreset` (fill and stroke), `clipboardPreset`; Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
-| `arrangePreset` | `flipPreset`, `reorderPreset`, `alignPreset`, `distributePreset` |
-| `pathfinderPreset` | the pathfinder booleans and the live boolean group |
-| `ingestPreset` | dropped and pasted content: images, SVG, files, and consumer content handlers, on Cmd/Ctrl+V or an OS drop |
-| `drawPreset` | every preset above but `pickPreset` and `transformPreset`, whose parts it includes itself |
-| `shapeToolsPreset` | the tools that make things: the shapes |
+| `presets.view` | wheel pan and zoom, pinch, the zoom keys, edge pan; a middle-button drag pans under any tool; the hand tool (`presets.viewTools`), held on Space |
+| `presets.select` | the select and lasso tools (`presets.selectTools`), the select tool as the initial active tool and Escape's return target |
+| `presets.outline` | the selection outline, whichever tool sets the selection |
+| `presets.pick` | `presets.select` and `presets.outline` |
+| `presets.move` | ambient drag-to-move and Alt-drag-to-clone bindings |
+| `presets.resize` | the resize handles, drawn and bound |
+| `presets.rotate` | the rotation handle, drawn and bound |
+| `presets.transform` | `presets.resize` and `presets.rotate` |
+| `presets.edit` | `presets.escape` (Escape, cancel-gesture), `presets.contextMenu`, `presets.selectAll`, `presets.duplicate` (with transform-again), `presets.delete`, `presets.group`, `presets.nudge`, `presets.style` (fill and stroke), `presets.clipboard`; Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
+| `presets.arrange` | `presets.flip`, `presets.reorder`, `presets.align`, `presets.distribute` |
+| `presets.pathfinder` | the pathfinder booleans and the live boolean group |
+| `presets.ingest` | dropped and pasted content: images, SVG, files, and consumer content handlers, on Cmd/Ctrl+V or an OS drop |
+| `presets.draw` | every preset above but `presets.pick` and `presets.transform`, whose parts it includes itself |
+| `presets.shapeTools` | the tools that make things: the shapes |
 
 Path edit, the pen, the pencil, the knife, the path commands and Create Outlines are
-`@weasel-js/path-tools`': its `pathsPreset` (`anchorKeysPreset`, `outlinesPreset`, `pathEditPreset`,
-`pathCommandsPreset`), which `pathToolsPreset` includes, and the tools `usePathToolsTools` builds.
+`@weasel-js/path-tools`': its `pathTools.paths` (`pathTools.anchorKeys`, `pathTools.outlines`, `pathTools.pathEdit`,
+`pathTools.pathCommands`), which `pathTools.pathTools` includes, and the tools `usePathToolsTools` builds.
 
-Text is a package of its own, `@weasel-js/text-tools`: `textPreset` teaches a canvas the text node
+Text is a package of its own, `@weasel-js/text-tools`: `textTools.text` teaches a canvas the text node
 kind (its painter, routing, properties, inserts, in-place editor, a double-click opening it, and
-plain-text paste), `textToolsPreset` adds the text and sticky-note tools, and `whiteboardPreset` is
+plain-text paste), `textTools.textTools` adds the text and sticky-note tools, and `textTools.whiteboard` is
 text and the sticky note with view, pick, move, resize, and edit.
 
 A preset holding only actions, tools, and includes is a bundle; one with any
@@ -112,13 +112,13 @@ other role (an ambient binding, chrome, an ordering rule) is an atom, whose
 parts only work together. `describePresets` gives every preset as data. A
 package's preset goes beside core's the same way; `docs/extending.md`
 ("Presets") has the shape. A canvas supplying its own select tool passes
-`outlinePreset` rather than `pickPreset`, so the built-in one is not mounted
+`presets.outline` rather than `presets.pick`, so the built-in one is not mounted
 beside it. Only the presets an app imports reach its bundle.
 
-**Navigation comes from `viewPreset` and nothing else.** Without it (or a
-preset including it: `drawPreset`, text-tools' `whiteboardPreset`) the canvas does not
+**Navigation comes from `presets.view` and nothing else.** Without it (or a
+preset including it: `presets.draw`, text-tools' `textTools.whiteboard`) the canvas does not
 wheel, pinch, edge-pan, or answer the zoom keys. `viewport` configures what
-`viewPreset` turns on and implies nothing; a development build warns when it is
+`presets.view` turns on and implies nothing; a development build warns when it is
 passed alone. A tool brings the kit actions it binds, so
 `defaultTools={['rect']}` registers `insert` and `defaultTools={['hand']}`
 drags the view under any preset, and `actions` adds, overrides or removes on
@@ -126,7 +126,7 @@ top of all of it.
 
 **Names are an optional entry.** `@weasel-js/editing` maps core's
 preset names to the objects: `namedFeatures('pick', 'move')` is
-`[pickPreset, movePreset]` and means exactly that, with nothing implied.
+`[presets.pick, presets.move]` and means exactly that, with nothing implied.
 `FEATURE_NAMES` lists every name, `FEATURE_PRESETS` keys each object by it, and
 `FEATURE_ACTION_IDS` is the table of which kit action each preset registers
 itself. For a page that picks presets by name (a URL, a settings file); importing
@@ -913,7 +913,7 @@ selection, one per package.
 Click policy belongs to the selection, not the canvas: editing's
 `useSelection({ mode })`, or `<SceneCanvas selectionOptions={{ mode }}>` for
 the selection a canvas's presets build when it is not handed one. Every editing
-preset that writes the selection includes `selectionPreset`, whose factory
+preset that writes the selection includes `presets.selection`, whose factory
 (`createSelection`) builds it; a canvas with none of them keeps a selection
 nothing it runs writes (`viewerSelection`), which the app, undo and redo still
 move.
@@ -975,7 +975,8 @@ and run on ambient bindings alone.
 ```tsx
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
-import { drawPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 type Swatch = { color: string };
 
@@ -995,7 +996,7 @@ function Editor() {
     <SceneCanvas
       width={W} height={H}
       scene={scene}
-      features={[drawPreset]}
+      features={[presets.draw]}
       selectionOptions={{ mode: 'multiple' }}
       layers={{
         scene: {

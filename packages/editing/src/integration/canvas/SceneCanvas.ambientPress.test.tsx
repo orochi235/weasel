@@ -10,7 +10,8 @@ import type { Action, SelectionApi } from '@weasel-js/routing';
 import { SceneCanvas } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import type { Scene, NodeId, Contribution } from '@weasel-js/core';
-import { drawPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 type D = { kind: 'rect' };
 type L = 'main';

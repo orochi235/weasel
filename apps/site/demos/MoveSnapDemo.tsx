@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import { solid } from '@weasel-js/paint';
 import { asNodeId, SceneCanvas, useDepSource, useScene, type Fill } from '@weasel-js/core';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset, useSelection, snapToContainer, snapBackOrDelete } from '@weasel-js/editing';
+import { useSelection, snapToContainer, snapBackOrDelete } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 import { rectContainsPoint } from '@weasel-js/geom';
 
 /** The kit's default painter fills a rect-posed node with its `data.fill`. */
@@ -45,7 +46,7 @@ export function MoveSnapDemo() {
 
   return (
     <DemoStage width={W} height={H}>
-      <SceneCanvas features={[pickPreset, movePreset]}
+      <SceneCanvas features={[presets.pick, presets.move]}
         className="ckd-canvas"
         scene={scene}
         selection={selection}

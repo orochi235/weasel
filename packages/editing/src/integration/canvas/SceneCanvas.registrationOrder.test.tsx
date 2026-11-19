@@ -13,7 +13,7 @@ import { SceneCanvas } from '@weasel-js/core';
 import { createScene, poseBoxes, type DrawnBoxesSource } from '@weasel-js/core/engine';
 import type { SurfaceContribution } from '@weasel-js/core';
 import type { InsertDep, SnapDep } from '@weasel-js/core/engine';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };

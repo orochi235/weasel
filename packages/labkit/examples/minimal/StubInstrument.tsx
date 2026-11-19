@@ -11,7 +11,7 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 interface NodeData {
   fill: Fill;
@@ -58,7 +58,7 @@ function Body({ ctx }: { ctx: RenderContext<StubState, StubConfig> }) {
 
   return (
     <TrialSceneCanvas
-      features={[pickPreset, movePreset, transformPreset]}
+      features={[presets.pick, presets.move, presets.transform]}
       scene={scene}
       trial={ctx.trial}
       layers={layers}

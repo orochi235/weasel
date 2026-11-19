@@ -9,7 +9,7 @@ import { useDepRegistry } from '@weasel-js/routing/react';
 import { SceneCanvas } from '@weasel-js/core';
 import { createScene, createEditingSession, asNodeId, type Scene } from '@weasel-js/core/engine';
 import type { SelectionApi } from '@weasel-js/routing';
-import { selectionPreset } from '@weasel-js/editing';
+import { selectionPreset } from '../../presets/selection';
 
 type D = { kind: 'rect' };
 type L = 'main';

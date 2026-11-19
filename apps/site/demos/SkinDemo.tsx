@@ -9,7 +9,7 @@ import { Field } from '@weasel-js/ui/components/Field';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
-import { pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const W = 600, H = 300;
 const BONE = 110, HALF = 16, Y = 230;
@@ -111,7 +111,7 @@ export function SkinDemo() {
         <SceneCanvas
           className="ckd-canvas"
           scene={scene}
-          features={[pickPreset]}
+          features={[presets.pick]}
           animator={animator}
         />
       </DemoStage>

@@ -5,7 +5,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { asNodeId, createScene, SceneCanvas, type RectPose } from '@weasel-js/core';
 import { createSpacingHintsPreset } from './preset';
 import type { DistanceReadoutContribution } from './distanceReadout';
-import { pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -33,7 +33,7 @@ describe('distanceReadout on a SceneCanvas', () => {
     const preset = createSpacingHintsPreset();
     const readout = preset.contributions!.find((c) => c.id === 'distanceReadout') as DistanceReadoutContribution;
     const { container } = render(
-      <SceneCanvas features={[pickPreset, preset]} width={300} height={200} scene={scene}
+      <SceneCanvas features={[presets.pick, preset]} width={300} height={200} scene={scene}
         selectionOptions={{ mode: 'multiple', initial: [asNodeId('a')] }} />,
     );
     const canvas = container.querySelector('canvas')!;

@@ -1,10 +1,10 @@
 import { useState, useSyncExternalStore, type ReactNode } from 'react';
-import { CanvasView, SceneCanvas, useEditingSession, useScene, viewPreset } from '@weasel-js/core';
+import { CanvasView, SceneCanvas, useEditingSession, useScene } from '@weasel-js/core';
 import type { Scene } from '@weasel-js/core';
 import { DemoStage, DemoStageGroup } from './DemoStage';
 import { makeRandomScene, pipView, PIP } from './CanvasViewDemo';
 import styles from './EditingSessionsDemo.module.css';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 type LayerId = 'default';
 type Item = ReturnType<typeof makeRandomScene>[number];
@@ -24,7 +24,7 @@ function SessionCanvas({ session, children }: { session: DocScene; children?: Re
   return (
     <div className={styles.column}>
       <DemoStage width={W} height={H}>
-        <SceneCanvas features={[viewPreset, pickPreset, movePreset]} className="ckd-canvas" scene={session}
+        <SceneCanvas features={[presets.view, presets.pick, presets.move]} className="ckd-canvas" scene={session}
           selectionOptions={{ mode: 'multiple' }}>
           {children}
         </SceneCanvas>

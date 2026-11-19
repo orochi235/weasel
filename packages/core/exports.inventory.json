@@ -2480,12 +2480,10 @@
     "viewCamera": "function",
     "viewForAim": "function",
     "viewPoseAdapter": "function",
-    "viewPreset": "const",
     "viewRectToScreen": "function",
     "viewScreenToWorld": "function",
     "viewToMat3": "function",
     "viewToTransform": "function",
-    "viewToolsPreset": "const",
     "viewWorldToScreen": "function",
     "viewZoom": "function",
     "viewerSelection": "const",
@@ -3226,6 +3224,10 @@
     "hatch": "function",
     "tileGeometry": "function",
     "tileSize": "function"
+  },
+  "./presets": {
+    "view": "const",
+    "viewTools": "const"
   },
   "./render-worker": {
     "RenderPort": "type",

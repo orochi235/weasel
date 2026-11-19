@@ -4,7 +4,8 @@ import { asNodeId, createToolOptionValues, rectPath, SceneCanvas, useScene, type
 import { ActiveToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
 import { DemoStage } from './DemoStage';
 import s from './LassoDemo.module.css';
-import { pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const W = 480, H = 320;
 
@@ -49,7 +50,7 @@ export function LassoDemo() {
           className="ckd-canvas"
           scene={scene}
           selection={selection}
-          features={[pickPreset]}
+          features={[presets.pick]}
           defaultTools={['lasso']}
           defaultActiveTool="lasso"
           toolOptionValues={values}

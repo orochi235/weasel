@@ -6,7 +6,7 @@ import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { recordingContribution } from './contribution';
 import type { RecordingSession } from './session';
 import { withIcons } from '../testIcons';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
@@ -30,7 +30,7 @@ function setup(state: { recording?: boolean; playing?: boolean } = {}) {
     <DepRegistryProvider>
       <ActionsProvider>
         <ActionBar group="record" />
-        <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}
+        <SceneCanvas features={[presets.draw]} scene={scene} layers={{}} width={64} height={64}
           ambient={[recordingContribution(session)]} />
       </ActionsProvider>
     </DepRegistryProvider>,
