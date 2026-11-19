@@ -1613,6 +1613,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/ReactDemo').then((m) => m.ReactDemo),
     path: 'apps/site/demos/ReactDemo.tsx',
   },
+  {
+    id: 'ui-input-roving',
+    title: 'Keys as pure functions',
+    package: 'ui-input',
+    description: "A list drawn by hand, whose keys are answered by two pure functions from `@weasel-js/ui-input`. `rovingKey(items, at, key, shape)` moves the highlight on the arrows, Home and End, and `typeaheadStep` finds a row from the letters typed, keeping a buffer that starts over after a pause. A `ListShape` says which items the highlight may land on (`canStop`), so it steps over the headings and wraps at the ends. Neither function touches React or the DOM, which is why ui's `ItemList` and `Tree`, the menu model, and the canvas-drawn HUD widgets all run on them; the line under the list shows each call's result.",
+    hint: 'Focus the list and press the arrows, Home and End. Type <kbd>c</kbd> repeatedly to cycle through the c rows, or <kbd>c</kbd><kbd>e</kbd> quickly for celery.',
+    load: () => import('./demos/UiInputDemo').then((m) => m.UiInputDemo),
+    path: 'apps/site/demos/UiInputDemo.tsx',
+  },
 ];
 
 export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({
