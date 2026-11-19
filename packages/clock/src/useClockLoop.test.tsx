@@ -109,6 +109,23 @@ describe('useClockLoop visibility', () => {
     expect(clock.elapsed).toBe(32);
   });
 
+  it('resumes a clock released and registered again without a jump', () => {
+    const frames = makeFrames();
+    const registry = createClockRegistry();
+    const h = createClock({ rate: 1 });
+    const release = registry.register('t1', h);
+    mount(registry, frames);
+    frames.flushAt(0);
+    frames.flushAt(16);
+    act(() => release());
+    for (let t = 32; t <= 2000; t += 16) frames.flushAt(t);
+    expect(h.clock.elapsed).toBe(16);
+    act(() => void registry.register('t1', h));
+    frames.flushAt(2016);
+    frames.flushAt(2032);
+    expect(h.clock.elapsed).toBe(32);
+  });
+
   it('never gates the shared clock', () => {
     const frames = makeFrames();
     const shared = createClock({ rate: 1 });
