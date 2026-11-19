@@ -40,7 +40,7 @@ export interface FakeNode {
   kind: string;
   connectedTo: FakeNode[];
   connectedFrom: FakeNode[];
-  /** True once `disconnect` has been called on this node in any form. */
+  /** True once `disconnect` has succeeded on this node in any form. */
   disconnected: boolean;
   connect(target: FakeNode): FakeNode;
   disconnect(target?: FakeNode): void;
@@ -61,12 +61,12 @@ export function node<E extends Record<string, unknown>>(kind: string, extra?: E)
       return target;
     },
     disconnect(target?: FakeNode) {
-      n.disconnected = true;
       if (target && !n.connectedTo.includes(target)) {
         // The bare form is a no-op when there is nothing to cut; the targeted
-        // form is not, and a real implementation throws.
+        // form is not, and a real implementation throws without cutting.
         throw new Error('InvalidAccessError: the given node is not connected');
       }
+      n.disconnected = true;
       for (const t of target ? [target] : [...n.connectedTo]) {
         const out = n.connectedTo.indexOf(t);
         if (out >= 0) n.connectedTo.splice(out, 1);

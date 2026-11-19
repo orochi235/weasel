@@ -68,6 +68,13 @@ describe('createFakeAudioContext', () => {
     expect(b.connectedFrom).toEqual([]);
   });
 
+  it('leaves the disconnected flag down when a targeted disconnect throws', () => {
+    const ctx = createFakeAudioContext();
+    const a = ctx.createGain();
+    expect(() => a.disconnect(ctx.createGain())).toThrow(/InvalidAccessError/);
+    expect(a.disconnected).toBe(false);
+  });
+
   it('records source start times and collects every source', () => {
     const ctx = createFakeAudioContext();
     const s = ctx.createBufferSource();
