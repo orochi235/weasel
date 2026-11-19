@@ -85,6 +85,7 @@ export const PAGE_RULES: readonly string[] = [
   'region',
 ];
 
+/** Options for {@link runAxe}. */
 export interface RunAxeOptions {
   /** Whether `element` stands for the whole page. False leaves `PAGE_RULES` out. Default true. */
   page?: boolean;
