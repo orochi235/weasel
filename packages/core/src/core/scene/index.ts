@@ -12,6 +12,7 @@ export { localizeInScene, localizeWorldPoses, worldPosesOf, type PlacedSpec } fr
 export type { SkippedKey, SpecsFromSerializedOptions, V1Classifier } from './serialization';
 export type { NodeFnFieldName } from './nodeFnFields';
 export { RestoredOpError } from './boundOps';
+export { SceneMembershipError } from './staleReplay';
 export { SCENE_HISTORY_FORM } from './historyForm';
 export type { SerializedSceneHistory } from './historyForm';
 export type {

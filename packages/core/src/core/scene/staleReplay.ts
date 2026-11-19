@@ -12,7 +12,9 @@ import { hasChildren } from './treeShape';
 import type { Node, NodeId } from './types';
 
 /** A scene edit named a node the scene does not hold, or one it already does. */
-export class SceneMembershipError extends Error {}
+export class SceneMembershipError extends Error {
+  override name = 'SceneMembershipError';
+}
 
 export interface StaleReplay {
   /** Run a step that replays recorded ops. */

@@ -15,7 +15,7 @@ export {
 } from '../interactions/gestures/shared';
 export type { OriginProjection } from '../interactions/gestures/shared';
 
-// ─── Drag-action hooks: move / resize / rotate / insert / area-select / etc. ─
+// ─── Transform options and geometry: the actions are in @weasel-js/editing ───
 export type { MoveOptions } from '../interactions/actions/moveOptions';
 export type { ResizeOptions } from '../interactions/actions/resizeOptions';
 export type { RotateOptions } from '../interactions/actions/rotateOptions';
