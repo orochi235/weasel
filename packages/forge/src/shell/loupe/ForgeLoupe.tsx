@@ -8,16 +8,16 @@ import {
   type LensDescribeContext,
   LensOverlay,
   type LensSources,
-  type LoupePoint,
   lensClient,
   resolveSource,
   settingsOf,
   useFrameSchedule,
+  useLabBody,
   useLensFocus,
   useLensRemeasure,
 } from '@weasel-js/labkit/loupe';
 import { KeymapHint } from '@weasel-js/ui/components/KeymapHint';
-import { useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useContext, useMemo, useReducer, useState, useSyncExternalStore } from 'react';
 import type { GlobalDeclarations } from '../globals';
 import { StoryGlobalsContext } from '../StoryGlobalsContext';
 import { CompareMenu, type CompareMenuRequest, compareChoices } from './CompareMenu';
@@ -47,9 +47,7 @@ export function ForgeLoupe({ declarations, modeGlobal }: ForgeLoupeProps) {
   const labValues = useContext(StoryGlobalsContext);
   const { mode, trials, instruments } = useLabContext();
   const [scene] = useState(createLensScene<ForgeComparison>);
-  const [body, setBody] = useState<HTMLElement | null>(null);
-  const bodyRef = useRef<HTMLElement | null>(null);
-  const pointer = useRef<LoupePoint | null>(null);
+  const { body, bodyRef, pointer, attachMarker } = useLabBody();
   const { focus, onFocusLens } = useLensFocus();
   const conditions = useLatest<LabConditions>({ labValues, mode, declarations, modeGlobal });
   const onFrame = useFrameSchedule();
@@ -101,21 +99,6 @@ export function ForgeLoupe({ declarations, modeGlobal }: ForgeLoupeProps) {
   useSyncExternalStore(scene.overrides.subscribe, scene.overrides.getGeneration);
   useLensRemeasure(remeasured, body, rerender, labValues);
 
-  useEffect(() => {
-    if (!body) return;
-    const track = (e: PointerEvent) => {
-      pointer.current = { x: e.clientX, y: e.clientY };
-    };
-    body.addEventListener('pointermove', track, { passive: true });
-    return () => body.removeEventListener('pointermove', track);
-  }, [body]);
-
-  // An overlay contribution renders inside the lab body, which is what this finds; the marker itself shows nothing.
-  const attachMarker = useCallback((el: HTMLElement | null) => {
-    const found = el?.closest<HTMLElement>('.lk-lab__body') ?? null;
-    bodyRef.current = found;
-    setBody(found);
-  }, []);
   const opposite = useCallback(() => OPPOSITE, []);
 
   return (
