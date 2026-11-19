@@ -89,15 +89,25 @@ export function presetInsertFactories(
 const asInstall = (s: NodeShapeEntry<never, never> | PresetNodeShape): PresetNodeShape =>
   'painter' in s ? s : { painter: s };
 
-/** The shape painters the presets install, in preset order, each painter once. */
+/** The tier a painter installs in, `'normal'` when none is named. */
+const tierOf = (s: PresetNodeShape): 'high' | 'normal' => s.priority ?? 'normal';
+
+/** The shape painters the presets install, in preset order, each painter once. Throws when two
+ *  presets install one painter at different priorities. */
 export function presetShapes(presets: readonly FeaturePreset[]): PresetNodeShape[] {
-  const seen = new Set<object>();
+  const seen = new Map<object, { install: PresetNodeShape; preset: string }>();
   const out: PresetNodeShape[] = [];
   for (const p of presets) {
     for (const s of p.shapes ?? []) {
       const install = asInstall(s);
-      if (seen.has(install.painter)) continue;
-      seen.add(install.painter);
+      const held = seen.get(install.painter);
+      if (held) {
+        if (tierOf(held.install) !== tierOf(install)) {
+          throw new Error(`[SceneCanvas] presets "${held.preset}" and "${p.id}" both install a shape painter, at priorities "${tierOf(held.install)}" and "${tierOf(install)}"`);
+        }
+        continue;
+      }
+      seen.set(install.painter, { install, preset: p.id });
       out.push(install);
     }
   }

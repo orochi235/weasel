@@ -139,6 +139,8 @@ export interface FeaturePreset {
   /** Insert kinds its `insert` dep builds with no factory: a tool inserting only kinds no factory and no
    *  preset builds is left off the canvas. */
   readonly insertKinds?: readonly string[];
+  /** Shape painters it installs in the scene's registry while the canvas runs it. Two presets may install one
+   *  painter; at different priorities they throw. */
   readonly shapes?: readonly (NodeShapeEntry<never, never> | PresetNodeShape)[];
   readonly properties?: readonly NodePropertiesEntry[];
   /** Entries installed beside `<SceneCanvas ambient>`, with every role they
