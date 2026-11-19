@@ -91,8 +91,9 @@ export type ToWorker =
 export type FromWorker =
   /** The worker took the canvas and can paint. */
   | { type: 'ready' }
-  /** Frame `id` landed, or failed to paint. */
-  | { type: 'drawn'; id: number }
+  /** Frame `id` landed, or failed to paint. `lost`: some of what it carried failed to land, so
+   *  the page sends everything next. */
+  | { type: 'drawn'; id: number; lost?: true }
   | { type: 'pong'; id: number }
   /** Something the worker owns changed its pixels: an image or glyph landed, or a lost context
    *  came back. The page schedules a frame. */

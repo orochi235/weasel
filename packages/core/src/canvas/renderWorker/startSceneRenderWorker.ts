@@ -177,7 +177,12 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
   worker.addEventListener('message', (event: MessageEvent<FromWorker>) => {
     if (stopped) return;
     const msg = event.data;
-    if (msg.type === 'drawn') frameAcks.settle(msg.id, true);
+    if (msg.type === 'drawn') {
+      // Settled as landed, not lost: the worker asks for its own retry, and a frame refused
+      // every time must not resend the whole scene each frame.
+      if (msg.lost) frames.lost();
+      frameAcks.settle(msg.id, true);
+    }
     else if (msg.type === 'dirty') due.emit();
     else if (msg.type === 'snapshot') snapshots.settle(msg.id, msg.bitmap);
     else if (msg.type === 'ids') idReads.settle(msg.id, msg.ids);

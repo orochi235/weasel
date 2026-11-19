@@ -132,4 +132,24 @@ describe('hostSceneRender', () => {
     off();
     expect(out.filter((m) => m.type === 'dirty').length).toBe(before + 2);
   });
+
+  it('answers a frame whose scene delta threw as lost, still takes the rest of it, and asks for one retry', () => {
+    const resize = vi.spyOn(WeaselRenderer.prototype, 'resize');
+    const played = vi.fn();
+    const { send, frame, out } = host({ glow: () => { played(); } });
+    frame();
+    const bad = (id: number) => send({
+      type: 'frame', id, at: { time: 0 },
+      scene: { nodes: [{ id: 'b', kind: 'mark', layer: 'nowhere', pose: {}, data: {} } as never], order: ['a', 'b'] },
+      view: VIEW, size: { width: 30, height: 30, dpr: 1 }, animations: [{ op: 'play', id, key: 'glow' }],
+    });
+    bad(2);
+    expect(out).toContainEqual({ type: 'drawn', id: 2, lost: true });
+    expect(out.filter((m) => m.type === 'error')).toHaveLength(1);
+    expect(resize).toHaveBeenCalledWith({ width: 30, height: 30, dpr: 1 });
+    expect(played).toHaveBeenCalledTimes(1);
+    expect(out.filter((m) => m.type === 'dirty')).toHaveLength(1);
+    bad(3);
+    expect(out.filter((m) => m.type === 'dirty')).toHaveLength(1);
+  });
 });

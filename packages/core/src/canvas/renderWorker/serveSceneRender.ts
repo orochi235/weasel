@@ -122,27 +122,40 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
   const alphaFor = (id: string): number => alphas.get(id) ?? 1;
   /** Whether the last paint that threw has had its retry. */
   let retried = false;
+  /** Whether the last frame whose inputs failed to land has had its retry. */
+  let refusedRetried = false;
 
-  const frame = (msg: Extract<ToWorker, { type: 'frame' }>): void => {
-    if (!painting) return;
+  /** Take in what `msg` carries and paint it. `false` when an input failed to land, so the page
+   *  counts the frame lost and sends everything next. */
+  const frame = (msg: Extract<ToWorker, { type: 'frame' }>): boolean => {
+    if (!painting) return true;
+    const p = painting;
+    const errors: unknown[] = [];
+    const step = (fn: () => void) => {
+      try { fn(); } catch (e) { errors.push(e); }
+    };
     if (msg.scene) {
-      if (msg.scene.reset) alphas.clear();
-      mirror.apply(msg.scene);
+      const delta = msg.scene;
+      if (delta.reset) alphas.clear();
+      step(() => mirror.apply(delta));
     }
-    if (msg.overrides) mirror.setOverrides(msg.overrides);
-    if (msg.scroll) mirror.setScroll(msg.scroll);
+    if (msg.overrides) step(() => mirror.setOverrides(msg.overrides!));
+    if (msg.scroll) step(() => mirror.setScroll(msg.scroll!));
     for (const [id, a] of msg.alpha ?? []) {
       if (a === 1) alphas.delete(id);
       else alphas.set(id, a);
     }
-    if (msg.view) painting.view = msg.view;
-    if (msg.layers) painting.inputs.layers = msg.layers;
-    if (msg.cull !== undefined) painting.inputs.cull = msg.cull;
-    if (msg.extraCommands !== undefined) painting.inputs.extraCommands = msg.extraCommands;
+    if (msg.view) p.view = msg.view;
+    if (msg.layers) p.inputs.layers = msg.layers;
+    if (msg.cull !== undefined) p.inputs.cull = msg.cull;
+    if (msg.extraCommands !== undefined) p.inputs.extraCommands = msg.extraCommands;
     if (msg.size) {
-      painting.size = msg.size;
-      painting.renderer.resize(msg.size);
+      p.size = msg.size;
+      step(() => p.renderer.resize(msg.size!));
     }
+    const landed = errors.length === 0;
+    if (landed) refusedRetried = false;
+    else if (!refusedRetried) { refusedRetried = true; dirty(); }
     const { scene } = mirror;
     animations.at(msg.at, msg.resumed === true);
     const failed = scene && msg.animations ? animations.run(msg.animations, scene) : [];
@@ -154,10 +167,11 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
       // As the page's frame loop does: the page sends a frame only when something changes, so a
       // failed paint would otherwise stand until then. One retry, so a paint that always throws doesn't spin.
       if (!retried) { retried = true; dirty(); }
-      throw e;
+      errors.push(e);
     } finally {
-      for (const e of failed) report(e);
+      for (const e of [...errors, ...failed]) report(e);
     }
+    return landed;
   };
 
   const paint = (scene: SceneMirror['scene']): void => {
@@ -180,8 +194,7 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
         painting = openPainting(msg, options, post, dirty);
         return;
       case 'frame':
-        frame(msg);
-        post({ type: 'drawn', id: msg.id });
+        post(frame(msg) ? { type: 'drawn', id: msg.id } : { type: 'drawn', id: msg.id, lost: true });
         return;
       case 'ping':
         post({ type: 'pong', id: msg.id });
@@ -206,7 +219,7 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
       receive(msg);
     } catch (e) {
       // The page waits on these answers.
-      if (msg.type === 'frame') post({ type: 'drawn', id: msg.id });
+      if (msg.type === 'frame') post({ type: 'drawn', id: msg.id, lost: true });
       else if (msg.type === 'readIds') post({ type: 'ids', id: msg.id, ids: null });
       report(e);
     }
