@@ -113,6 +113,9 @@ export interface ViewRegistration {
   /** The layers this view draws, in order — what a view nested in it paints
    *  from. */
   drawnLayers(): readonly RenderLayer<unknown>[];
+  /** Where a point of this view's world sits on the canvas, in its CSS px from the top-left: where the DOM
+   *  half of an overlay a gesture here posts (`<GestureReason>`) goes. */
+  worldToCanvas(x: number, y: number): { x: number; y: number };
   /** Whether the view keeps its camera or its aim; the other is derived. */
   held: 'camera' | 'aim';
   /** What the view shows: the aim it holds, or its camera's. */

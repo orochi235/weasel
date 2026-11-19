@@ -4,12 +4,16 @@
  * the DOM half of the `reason` overlay, which the canvas layers cannot paint
  * as text.
  */
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type RefObject } from 'react';
 import { canvasToClient, overlaysOf, type Dispatcher } from '@weasel-js/routing';
 import { viewToTransform, type View } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { resolveOverlays } from 'interactions/actions/resolveOverlays';
+import { useOptionalViewRegistry } from './viewRegistry';
 import s from './GestureReason.module.css';
+
+const NO_SUBSCRIBE = () => () => {};
+const NO_VERSION = () => 0;
 
 /** How far below and right of the pointer the reason sits, in CSS pixels. */
 const OFFSET = 14;
@@ -25,31 +29,49 @@ export interface GestureReasonProps {
 /** The pointer's client point, and what to say there. */
 interface Shown { x: number; y: number; text: string }
 
-/** The first `reason` overlay of the dispatcher's in-flight gestures, shown beside the pointer. */
+/** Where one dispatcher's gestures are, on the canvas: a world point in the canvas's CSS px. */
+interface Source { dispatcher: Dispatcher; toCanvas: (x: number, y: number) => { x: number; y: number } }
+
+/** The first `reason` overlay of the in-flight gestures, shown beside the pointer: the surface's, then each
+ *  `<CanvasView>`'s, each placed through the camera of the view it runs in. */
 export function GestureReason({ dispatcher, canvasRef, viewRef }: GestureReasonProps) {
   const [shown, setShown] = useState<Shown | null>(null);
+  const registry = useOptionalViewRegistry();
+  const views = useSyncExternalStore(registry?.subscribe ?? NO_SUBSCRIBE, registry?.getVersion ?? NO_VERSION);
   useEffect(() => {
-    if (!dispatcher) return;
+    const sources: Source[] = [];
+    if (dispatcher) {
+      sources.push({ dispatcher, toCanvas: (x, y) => {
+        const [sx, sy] = worldToScreen(x, y, viewToTransform(viewRef.current));
+        return { x: sx, y: sy };
+      } });
+    }
+    for (const r of registry?.list() ?? []) sources.push({ dispatcher: r.target.dispatcher, toCanvas: r.worldToCanvas });
+    if (sources.length === 0) return;
     const read = () => {
-      const all = [...dispatcher.inFlight().values()].flatMap((h) => [...overlaysOf(h)]);
-      const reason = resolveOverlays(all).find((o) => o.kind === 'reason');
       const canvas = canvasRef.current;
-      const view = viewRef.current;
-      if (reason?.kind !== 'reason' || !canvas || !view) {
+      if (!canvas || !viewRef.current) {
         setShown(null);
         return;
       }
-      const [sx, sy] = worldToScreen(reason.at.x, reason.at.y, viewToTransform(view));
-      const [x, y] = canvasToClient(canvas, sx, sy);
-      setShown({ x, y, text: reason.text });
-    };
-    read();
-    const off = dispatcher.subscribe(read);
-    return () => {
-      off();
+      for (const source of sources) {
+        const all = [...source.dispatcher.inFlight().values()].flatMap((h) => [...overlaysOf(h)]);
+        const reason = resolveOverlays(all).find((o) => o.kind === 'reason');
+        if (reason?.kind !== 'reason') continue;
+        const at = source.toCanvas(reason.at.x, reason.at.y);
+        const [x, y] = canvasToClient(canvas, at.x, at.y);
+        setShown({ x, y, text: reason.text });
+        return;
+      }
       setShown(null);
     };
-  }, [dispatcher, canvasRef, viewRef]);
+    read();
+    const offs = sources.map((source) => source.dispatcher.subscribe(read));
+    return () => {
+      for (const off of offs) off();
+      setShown(null);
+    };
+  }, [dispatcher, canvasRef, viewRef, registry, views]);
   const tagRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     if (tagRef.current && shown) placeFixedAt(tagRef.current, shown.x, shown.y);

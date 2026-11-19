@@ -62,4 +62,8 @@ describe('a view on a surface with a clientToWorld override', () => {
     const toWorld = mount().list()[0]!.target.clientToWorld!;
     expect(toWorld(...CLIENT)).toEqual({ x: 1050, y: 50 });
   });
+
+  it("places a point of the view's world on the canvas, the inverse of its client map less the canvas's own", () => {
+    expect(mount().list()[0]!.worldToCanvas(1050, 50)).toEqual({ x: 150, y: 50 });
+  });
 });
