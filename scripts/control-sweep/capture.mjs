@@ -118,6 +118,10 @@ export const prepare = async (page, url, c, settleMs, tries) => {
     }
   }
   const now = await locateSoon(page, c);
-  if (!now) throw new Error(`control not found after reload${await nearMisses(page, c)}`);
+  if (!now) {
+    const pre = c.precondition && await locate(page, c.precondition);
+    const after = pre ? `; ${c.precondition.label} is ${pre.selected ? 'chosen' : 'not chosen'}` : '';
+    throw new Error(`control not found after reload${after}${await nearMisses(page, c)}`);
+  }
   return { ...c, ...now, precondition: c.precondition };
 };
