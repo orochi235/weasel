@@ -1,8 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactElement, type ReactNode, type RefObject } from 'react';
 import { Tooltip } from '../Tooltip';
+import { TOOLTIP_DELAY_MS } from '../Tooltip/Tooltip';
 import { useUntoldReason } from './Disabled';
-
-const OPEN_DELAY = 600;
 
 /** What {@link useHoldReason} gives a control held for a reason. */
 export interface HoldReasonParts {
@@ -33,7 +32,7 @@ export function useHoldReason(held: string | undefined): HoldReasonParts {
     const show = (now: boolean) => () => {
       clearTimeout(timer);
       if (now) setOpen(true);
-      else timer = setTimeout(() => setOpen(true), OPEN_DELAY);
+      else timer = setTimeout(() => setOpen(true), TOOLTIP_DELAY_MS);
     };
     const leave = (e: Event) => {
       if (el.contains((e as PointerEvent | FocusEvent).relatedTarget as Node | null)) return;
