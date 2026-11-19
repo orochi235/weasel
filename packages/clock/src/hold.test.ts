@@ -160,6 +160,17 @@ describe('holdPosition', () => {
     expect(h.clock.pass).toBe(64);
     expect(h.clock.elapsed).toBeCloseTo(64 * 2 * from + 0.5 + from, 9);
   });
+  it('reads a recorded ended run as the end of its last pass under another span', () => {
+    const once = createClock({ duration: 2000 });
+    holdPosition(once, { elapsed: 1000, duration: 1000 });
+    expect([once.clock.elapsed, once.clock.pass, once.clock.phase]).toEqual([1000, 0, 0.5]);
+    const twice = createClock({ duration: 2000, loop: 2 });
+    holdPosition(twice, { elapsed: 2000, duration: 1000 });
+    expect([twice.clock.elapsed, twice.clock.pass]).toEqual([3000, 1]);
+    const moved = createClock({ duration: 1000, origin: 0 });
+    holdPosition(moved, { elapsed: 1000, origin: 200 });
+    expect(moved.clock.elapsed).toBe(1000);
+  });
   it('converts a position recorded under another span, keeping its pass', () => {
     const h = createClock({ duration: 2000, loop: 3 });
     const hold = holdPosition(h, { elapsed: 2500, duration: 1000 });
