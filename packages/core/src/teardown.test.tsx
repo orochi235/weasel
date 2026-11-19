@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { asNodeId } from 'core/scene/types';
 import { act, fireEvent, render } from '@testing-library/react';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { grownSince, installLeakProbe, type LeakProbe } from '@weasel-js/react/testing/leakProbe';
@@ -57,7 +58,7 @@ const cases: [string, () => ReactElement][] = [
   ['usePointerStylus', hook((el) => { usePointerStylus(el); })],
   ['useHoverTracking', () => {
     function Host(): ReactElement {
-      const { canvasRef } = useHoverTracking({ nodeAtClientPoint: () => ({ id: 'a' }) });
+      const { canvasRef } = useHoverTracking({ nodeAtClientPoint: () => ({ id: asNodeId('a') }) });
       return <div ref={canvasRef} />;
     }
     return <Host />;
