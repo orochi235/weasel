@@ -165,31 +165,31 @@ export function transformOps(
 
 /**
  * The other nodes `extensions` change along with a transform frame that
- * poses the nodes in `poses` as given, each as it would be stored — what
- * {@link transformOps} would commit for that frame, read the same way. Empty
- * when nothing changes with it, or an extension refuses it.
+ * poses the nodes in `poses` as given, each as it would be stored: what
+ * {@link transformOps} would commit for that frame, read off the same
+ * {@link otherOps}. `data` holds what earlier followers previewed, by id.
+ * Empty when nothing changes with it, or an extension refuses it; a node an
+ * extension removes is not in it.
  */
 export function createTransformPreview(
   sc: AnyScene,
   extensions: readonly PathEditExtension[],
   poses: ReadonlyMap<string, unknown>,
+  data: ReadonlyMap<string, unknown> = new Map(),
 ): TransformPreviewNode[] {
   if (poses.size === 0 || !extensions.some((e) => e.finishTransform)) return [];
   const after = new Map<string, EditableNode>();
   for (const [id, pose] of poses) {
     const node = sc.get(id as NodeId);
-    if (node) after.set(id, { pose, data: node.data });
+    if (node) after.set(id, { pose, data: data.has(id) ? data.get(id) : node.data });
   }
   const others = transformOthers(sc, extensions, after);
-  return [...(others?.values() ?? [])].flatMap((o) => {
-    const node = sc.get(o.id as NodeId);
-    const frame = node ? nodeFrameOf(sc, node) : null;
-    const stored = node && o.path && !o.remove && frame?.inverts !== false
-      ? storeEditablePath(shownIn(frame, node), o.path, extensions)
-      : null;
-    if (!node || !stored) return [];
-    const pose = frame ? frame.local(stored.pose) : stored.pose;
-    return [stored.data === node.data ? { id: o.id, pose } : { id: o.id, pose, data: stored.data }];
+  if (!others || others.size === 0) return [];
+  const written = writtenBy(sc, otherOps(sc, others, 'preview', extensions));
+  return [...(written ?? [])].flatMap(([id, w]) => {
+    const node = sc.get(id as NodeId);
+    if (!node) return [];
+    return [w.data === node.data ? { id, pose: w.pose } : { id, pose: w.pose, data: w.data }];
   });
 }
 
@@ -200,6 +200,6 @@ export function pathEditFollower(sc: AnyScene, extensions: readonly PathEditExte
   if (!extensions.some((e) => e.finishTransform)) return null;
   return {
     finish: (ops, label) => transformOps(sc, extensions, ops, label),
-    preview: (poses) => createTransformPreview(sc, extensions, poses),
+    preview: (poses, data) => createTransformPreview(sc, extensions, poses, data),
   };
 }
