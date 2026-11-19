@@ -103,6 +103,12 @@ a:hover { text-decoration: underline; }
   text-decoration: underline;
 }
 
+/* The heading of the package whose page is open. It stays inline, so it takes the accent as text, not as a fill. */
+.ckd-nav-section .ckd-nav-package h3 a.active {
+  background: none;
+  color: var(--wzl-accent-fg);
+}
+
 .ckd-nav-section ul {
   list-style: none;
   padding: 0;

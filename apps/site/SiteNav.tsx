@@ -1,4 +1,4 @@
-import { PACKAGES_ID, packageRoute } from '@shared/packageRoutes';
+import { PACKAGES_ID, packageRoute, parsePackageRoute } from '@shared/packageRoutes';
 import { PACKAGES_BY_NAME } from './Packages/catalog';
 import { CATEGORIES, DEMOS, type DemoEntry } from './registry';
 import { FEATURES_ID, GET_STARTED_ID, RELEASES_ID, WHATS_NEW_ID } from './routes';
@@ -23,6 +23,7 @@ const NAV_PACKAGES = [...new Set([...PACKAGES_BY_NAME.keys(), ...DEMOS.flatMap((
 
 /** The sidebar's links: the site's pages, each demo under its section, and each package with the demos filed under it. */
 export function SiteNav({ activeId, onPick }: NavProps) {
+  const activePackage = parsePackageRoute(activeId)?.package;
   return (
     <nav className="ckd-nav">
       <section className="ckd-nav-section ckd-nav-whatsnew">
@@ -47,6 +48,7 @@ export function SiteNav({ activeId, onPick }: NavProps) {
                 {PACKAGES_BY_NAME.has(pkg) ? (
                   <a
                     href={`#${packageRoute(pkg)}`}
+                    className={pkg === activePackage ? 'active' : ''}
                     onClick={(e) => { e.preventDefault(); onPick(packageRoute(pkg)); }}
                   >{pkg}</a>
                 ) : pkg}
