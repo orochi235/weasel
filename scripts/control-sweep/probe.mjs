@@ -52,7 +52,9 @@ export const probeGesture = async (page, c, ctx) => {
   if (!plain) return undefined;
   // A second plain run says what differs from one load to the next (a seed, a clock), which proves nothing.
   const again = await dragRun(page, c, ctx, undefined);
-  for (const when of ['before', 'after']) {
+  // A setting changes what the next drag does; only an action (a button, a menu item) can act on what a drag left.
+  const action = c.kind === 'button' || c.kind === 'menuitem';
+  for (const when of action ? ['before', 'after'] : ['before']) {
     const probed = await dragRun(page, c, ctx, when);
     if (probed && differs(compareCaptures(plain, again, probed))) return when;
   }

@@ -41,8 +41,9 @@ const steady = (a, b) => sameSteadyState(a, a, b);
 
 /** Loads (or reloads) the demo and waits until it holds still, or until it plainly never will. */
 export const load = async (page, url, { reload = false, tries = STEADY_TRIES } = {}) => {
-  if (reload) await page.reload({ waitUntil: 'load' });
-  else await page.goto(url, { waitUntil: 'load' });
+  // Not 'load': a demo still fetching something (a font, a worker) holds that back, and the frame is what counts.
+  if (reload) await page.reload({ waitUntil: 'domcontentloaded' });
+  else await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector(ROOT, { timeout: LOAD_TIMEOUT_MS });
   await page.evaluate((s) => document.querySelector(s)?.scrollIntoView({ block: 'start' }), ROOT);
   let last = await capture(page);
