@@ -37,8 +37,13 @@ const operateSlider = async (page, c) => {
   const s = await kit(page, 'state', c.id);
   const start = Number(s?.value);
   await focus(page, c.id);
-  await page.keyboard.press(Number.isFinite(s?.max) && start >= s.max ? 'Home' : 'End');
-  if (await sliderValue(page, c.id) === start) await page.keyboard.press('Home');
+  const atMax = Number.isFinite(s?.max) && start >= s.max;
+  // `nudge` moves one step, for a setting whose extreme happens to look like its start (an offset of a full turn).
+  if (c.nudge) await page.keyboard.press(atMax ? 'ArrowLeft' : 'ArrowRight');
+  else {
+    await page.keyboard.press(atMax ? 'Home' : 'End');
+    if (await sliderValue(page, c.id) === start) await page.keyboard.press('Home');
+  }
   return Number.isFinite(start) ? () => walkSlider(page, c.id, start) : undefined;
 };
 

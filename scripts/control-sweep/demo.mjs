@@ -85,6 +85,14 @@ const trial = async (page, demo, c, ctx) => {
   };
 };
 
+/** Whether moving a slider one step, rather than to its far end, changes anything. */
+const nudged = async (page, c, ctx) => {
+  await load(page, ctx.url, { reload: true, tries: ctx.tries });
+  const live = await prepare(page, ctx.url, c, ctx.settleMs, ctx.tries);
+  const a = await attempt(page, { ...live, nudge: true }, { ...ctx, shots: false });
+  return verdictOf(compareCaptures(a.before0, a.before1, a.after)).verdict === 'alive';
+};
+
 /** Whether a key shortcut the control declares (`aria-keyshortcuts`, as a drag handle's Alt+Arrow) changes anything. */
 const viaShortcut = async (page, c, ctx) => {
   for (const key of c.shortcuts ?? []) {
@@ -111,6 +119,7 @@ const confirm = async (page, demo, c, ctx) => {
   const a = await attempt(page, live, { ...ctx, shots: true });
   const { verdict } = verdictOf(compareCaptures(a.before0, a.before1, a.after));
   if (verdict !== 'dead') return { verdict: 'unsure', reason: `dead once, ${verdict} on the retry` };
+  if (c.kind === 'slider' && await nudged(page, c, ctx)) return { verdict: 'alive', reason: 'one step changes it; its far end looks like its start' };
   if (await viaShortcut(page, c, ctx)) return { verdict: 'alive', reason: 'acts through its key shortcut' };
   const probed = await probeGesture(page, c, ctx);
   if (probed) return { verdict: 'alive', reason: probed === 'before' ? 'changes what a drag on the canvas does' : 'acts on what a drag on the canvas left' };
