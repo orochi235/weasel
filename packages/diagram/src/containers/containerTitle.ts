@@ -13,6 +13,7 @@ import {
 } from '@weasel-js/core';
 import { diagramContainerOf, headerBox } from './trait';
 import type {} from '../actionParamSchema';
+import { rectContainsPoint } from '@weasel-js/geom';
 
 /** The action a double-click on a region's header runs. */
 export const EDIT_CONTAINER_TITLE_ACTION_ID = 'diagram.editContainerTitle';
@@ -26,7 +27,7 @@ export function regionHeaderAt(deps: ActionDeps | undefined, at: { x: number; y:
     const trait = node === undefined ? null : diagramContainerOf(node);
     if (node === undefined || trait === null) continue;
     const h = headerBox(node.pose as RectPose, trait.header);
-    if (h !== null && at.x >= h.x && at.x <= h.x + h.width && at.y >= h.y && at.y <= h.y + h.height) return id as string;
+    if (h !== null && rectContainsPoint(h, at.x, at.y)) return id as string;
   }
   return null;
 }

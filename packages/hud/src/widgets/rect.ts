@@ -3,6 +3,7 @@ import type { ClaimableGesture } from '@weasel-js/core';
 import type { Widget, HudDrawCtx, HudPointerEvent, WidgetBounds } from '../widget';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
 import type { RectPath } from '@weasel-js/core';
+import { rectContainsPointHalfOpen } from '@weasel-js/geom';
 
 /** Options for a filled rectangle widget. */
 export interface RectOptions {
@@ -71,7 +72,7 @@ export function createRect(opts: RectOptions): RectWidget {
     },
     hitTest(px: number, py: number): boolean {
       if (hidden) return false;
-      return px >= bounds.x && px < bounds.x + bounds.width && py >= bounds.y && py < bounds.y + bounds.height;
+      return rectContainsPointHalfOpen(bounds, px, py);
     },
     get claims() { return claims; },
     setClaims(c) { assertNotDisposed(); claims = c; rev.changed(); },

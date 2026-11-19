@@ -6,6 +6,7 @@
  */
 import { SpatialHash } from './hash';
 import { blocks, inflate, type AvoidObstacle, type BlockedEdge, type Box } from './types';
+import { rectsIntersect } from '@weasel-js/geom';
 
 /** An obstacle grown by the clearance. */
 export interface Inflated {
@@ -14,9 +15,6 @@ export interface Inflated {
 }
 
 const EPS = 1e-7;
-
-const touches = (a: Box, b: Box): boolean =>
-  a.x <= b.x + b.width && b.x <= a.x + a.width && a.y <= b.y + b.height && b.y <= a.y + a.height;
 
 /** Every obstacle, inflated, filed in a spatial hash: a label by
  *  `labelClearance`, anything else by `clearance`. */
@@ -52,7 +50,7 @@ export class ObstacleIndex {
     this.hash.query(box, out);
     // The hash answers whole cells, which fall differently as a scene moves; a search must not see that.
     let k = start;
-    for (let i = start; i < out.length; i++) if (touches(out[i]!.box, box)) out[k++] = out[i]!;
+    for (let i = start; i < out.length; i++) if (rectsIntersect(out[i]!.box, box)) out[k++] = out[i]!;
     out.length = k;
     return out;
   }

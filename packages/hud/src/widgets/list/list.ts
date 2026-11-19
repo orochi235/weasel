@@ -12,6 +12,7 @@ import { hudMeasureEnv } from '../../measureEnv';
 import { DEFAULT_FONT_FAMILY } from '../../fonts/registerDefaultFont';
 import { hudItemList, SWATCH_SIZE, type HudListRow } from './drawList';
 import { createListNav } from './listNav';
+import { rectContainsPointHalfOpen } from '@weasel-js/geom';
 
 /** Options for a list widget. */
 export interface ListOptions {
@@ -137,7 +138,7 @@ export function createList(opts: ListOptions): ListWidget {
       );
     },
     hitTest(x, y) {
-      return !hidden && x >= bounds.x && x < bounds.x + bounds.width && y >= bounds.y && y < bounds.y + bounds.height;
+      return !hidden && rectContainsPointHalfOpen(bounds, x, y);
     },
     cursorAt() { return 'default'; },
     onPointer(evt: HudPointerEvent) { if (nav.pointer(evt, rowAt)) changed(); },
