@@ -1,10 +1,11 @@
 import { useState, useSyncExternalStore } from 'react';
-import { scopedIcon, splitIconRef, type IconRef, type IconTable } from '@weasel-js/icons';
+import { splitIconRef, type IconRef, type IconTable } from '@weasel-js/icons';
 import { IconRegistryProvider, useIconRegistry } from '@weasel-js/icons/react';
 import { icons as shapeIcons } from '@weasel-js/icons/shapes';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { Icon } from '@weasel-js/ui/components/Icon';
+import { icon } from '../icons.gen';
 import s from './IconsDemo.module.css';
 
 /** A table of the demo's own, published under a namespace of its own. */
@@ -18,13 +19,10 @@ const DEMO_ICONS: IconTable = {
 
 const TABLES = [shapeIcons, DEMO_ICONS];
 
-/** How the demo's code names a glyph: a bare name is its own, a qualified one any package's. */
-const icon = scopedIcon<'spark'>('demo');
-
 function Gallery() {
   const registry = useIconRegistry()!;
   useSyncExternalStore(registry.subscribe, registry.getVersion);
-  const [picked, setPicked] = useState<IconRef>(icon('spark'));
+  const [picked, setPicked] = useState<IconRef>(icon('shape:diamond'));
   const [filled, setFilled] = useState(false);
   const parts = splitIconRef(picked)!;
 

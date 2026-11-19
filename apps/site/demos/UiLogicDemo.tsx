@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { scopedIcon } from '@weasel-js/icons';
 import { expandVars } from '@weasel-js/theme';
 import { useTints } from '@weasel-js/theme/react';
 import { measureButton, UNBOUNDED, type ButtonSize, type FontSpec, type MeasureEnv } from '@weasel-js/ui-logic';
@@ -10,6 +9,7 @@ import { Icon } from '@weasel-js/ui/components/Icon';
 import { Input } from '@weasel-js/ui/components/Input';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { Slider } from '@weasel-js/ui/components/Slider';
+import { icon } from '../icons.gen';
 import s from './UiLogicDemo.module.css';
 
 const SIZES: { value: ButtonSize; label: string }[] = [
@@ -18,7 +18,7 @@ const SIZES: { value: ButtonSize; label: string }[] = [
   { value: 'md', label: 'md' },
 ];
 
-const STAR = scopedIcon('shape')('shape:star');
+const STAR = icon('shape:star');
 
 const SCALE = 2;
 const PAD = 8;
