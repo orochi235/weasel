@@ -6,8 +6,8 @@ import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { isRigid, pxExtentIn, targetCorners } from 'core/geometry/targetFrame';
 import type { DebugSink } from '../debug/types';
-import type { CommandFill, CommandStroke } from '@weasel-js/paint';
-import { boundsOfPath, PATH_M, PATH_L, PATH_Z, lerp, type Rect } from '@weasel-js/geom';
+import { boundsOfPath, PATH_M, PATH_L, PATH_Z, type Rect } from '@weasel-js/geom';
+import { annulusCommands } from './annulusPaint';
 import {
   angleOf,
   annulusSemiAxes,
@@ -225,8 +225,13 @@ function paintRegion(
     const insetLocal = pxExtentIn(paint.insetPx ?? 0, view.scale, xf);
     // Same `minBandPx` clamp the hit-test applies, so the ring you can see is
     // the ring you can grab.
-    const cmd = annulusCommand(s, annulusSemiAxes(s, view, xf), insetLocal, xf, viewT, paint.fill, paint.stroke);
-    if (cmd) out.push(cmd);
+    const toScreen = (x: number, y: number) => {
+      const w = localToWorld(xf, x, y);
+      return worldToScreen(w.x, w.y, viewT);
+    };
+    for (const cmd of annulusCommands(s, annulusSemiAxes(s, view, xf), insetLocal, toScreen, paint.fill, paint.stroke)) {
+      out.push(cmd);
+    }
     return;
   }
   if (paint.kind === 'custom') {
@@ -239,98 +244,6 @@ function paintRegion(
     for (const cmd of paint.draw(ctx)) out.push(cmd);
     return;
   }
-}
-
-/** Build a screen-space DrawCommand for an annulus region: the area
- *  inside the (contracted) outer ellipse but outside the (expanded)
- *  inner rect. Renders as four disjoint petal subpaths — one per rect
- *  edge — so the visible fill is true `ellipse \ rect`. A naive
- *  ellipse + rect even-odd path would also fill the rect's corner
- *  triangles where they poke past the contracted ellipse. Returns null
- *  when the band collapses on both axes. */
-function annulusCommand(
-  shape: Extract<AffordanceRegion['shape'], { kind: 'annulus' }>,
-  semiAxes: { rx: number; ry: number },
-  insetLocal: { x: number; y: number },
-  xf: TargetTransform,
-  viewT: ReturnType<typeof viewToTransform>,
-  fill: CommandFill | undefined,
-  stroke: CommandStroke | undefined,
-): DrawCommand | null {
-  const rx = semiAxes.rx - insetLocal.x;
-  const ry = semiAxes.ry - insetLocal.y;
-  if (rx <= 0 || ry <= 0) return null;
-  const cx = shape.cx;
-  const cy = shape.cy;
-  // Expanded inner rect (still in target-local coords).
-  const rectHW = shape.innerWidth / 2 + insetLocal.x;
-  const rectHH = shape.innerHeight / 2 + insetLocal.y;
-  // A petal exists only when its rect edge intersects the ellipse interior — otherwise the
-  // rect already extends past the ellipse on that axis.
-  const haveTopBottom = rectHH < ry;
-  const haveLeftRight = rectHW < rx;
-  if (!haveTopBottom && !haveLeftRight) return null;
-  const xT = haveTopBottom ? rx * Math.sqrt(1 - (rectHH / ry) ** 2) : 0;
-  const yR = haveLeftRight ? ry * Math.sqrt(1 - (rectHW / rx) ** 2) : 0;
-
-  // Line segments per petal arc; 24 is smooth at typical zooms.
-  const SAMPLES = 24;
-  const cmds: number[] = [];
-  const localPts: { x: number; y: number }[] = [];
-
-  function appendPetal(t0: number, t1: number): void {
-    cmds.push(PATH_M);
-    localPts.push({ x: cx + rx * Math.cos(t0), y: cy + ry * Math.sin(t0) });
-    for (let i = 1; i <= SAMPLES; i++) {
-      const t = lerp(t0, t1, i / SAMPLES);
-      cmds.push(PATH_L);
-      localPts.push({ x: cx + rx * Math.cos(t), y: cy + ry * Math.sin(t) });
-    }
-    // PATH_Z closes along the rect edge: both endpoints share the rect-edge coord by
-    // construction, so the closing segment IS the chord.
-    cmds.push(PATH_Z);
-  }
-
-  if (haveTopBottom) {
-    // Top petal: y < cy. Arc from right endpoint over t = -π/2 to left.
-    appendPetal(
-      Math.atan2(-rectHH / ry, xT / rx),   // in (-π/2, 0)
-      Math.atan2(-rectHH / ry, -xT / rx),  // in (-π, -π/2), decreasing through -π/2
-    );
-    // Bottom petal: y > cy. Arc through t = +π/2.
-    appendPetal(
-      Math.atan2(rectHH / ry, xT / rx),    // in (0, π/2)
-      Math.atan2(rectHH / ry, -xT / rx),   // in (π/2, π), increasing through π/2
-    );
-  }
-  if (haveLeftRight) {
-    // Right petal: x > cx. Arc through t = 0.
-    appendPetal(
-      Math.atan2(-yR / ry, rectHW / rx),   // in (-π/2, 0)
-      Math.atan2(yR / ry, rectHW / rx),    // in (0, π/2)
-    );
-    // Left petal: x < cx. Arc through t = ±π. Shift the end angle by
-    // -2π so the parametric trace passes through the leftmost point
-    // monotonically instead of crossing the right side.
-    appendPetal(
-      Math.atan2(-yR / ry, -rectHW / rx),                  // in (-π, -π/2)
-      Math.atan2(yR / ry, -rectHW / rx) - 2 * Math.PI,     // in (-3π/2, -π), decreasing through -π
-    );
-  }
-
-  const coords = new Float32Array(localPts.length * 2);
-  for (let i = 0; i < localPts.length; i++) {
-    const w = localToWorld(xf, localPts[i].x, localPts[i].y);
-    const [sx, sy] = worldToScreen(w.x, w.y, viewT);
-    coords[i * 2] = sx;
-    coords[i * 2 + 1] = sy;
-  }
-  return {
-    kind: 'path',
-    path: { kind: 'polygon', commands: new Uint8Array(cmds), coords, fillRule: 'nonzero' },
-    ...(fill ? { fill } : {}),
-    ...(stroke ? { stroke } : {}),
-  };
 }
 
 function worldOf(region: AffordanceRegion, xf: TargetTransform, view: View): CustomPaintContext['world'] {
