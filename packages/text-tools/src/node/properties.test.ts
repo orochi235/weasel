@@ -1,4 +1,4 @@
-/** The `text` kind's properties, `TEXT_PROPERTIES`: what a `SelectionPanel` given `textPreset` offers for a text node. */
+/** The `text` kind's properties, `TEXT_PROPERTIES`: what a `SelectionPanel` given `textTools.text` offers for a text node. */
 import { describe, it, expect } from 'vitest';
 import { prefSectionLeaves, type PrefBoolean, type PrefEnum, type PrefLeaf, type PrefNumber, type PrefSection, type PrefObject } from '@weasel-js/prefs-schema';
 import { qty } from '@weasel-js/quantity';

@@ -21,7 +21,7 @@ import {
   type PolygonPath,
 } from '@weasel-js/geom';
 import { editingLayer, inPlane, pathOperationTags, type EditAnchorsDep } from '@weasel-js/core';
-import { pathEditPreview } from '../pathEdit/editAnchors/preview';
+import { createPathEditPreview } from '../pathEdit/editAnchors/preview';
 import { icon } from '../icons.gen';
 import type {} from '../actionParamSchema';
 
@@ -125,7 +125,7 @@ export const editFilletAction = inPlane(defineAction({
       let current: PolygonPath = origin;
       let trim = pressed.trim;
       let active = false;
-      const preview = pathEditPreview(dep, dep.editingId, () => (active ? { path: current } : null));
+      const preview = createPathEditPreview(dep, dep.editingId, () => (active ? { path: current } : null));
       if (!preview) return {};
       const id = dep.editingId;
       return {

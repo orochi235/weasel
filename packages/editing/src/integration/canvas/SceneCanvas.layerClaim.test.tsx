@@ -9,7 +9,7 @@ import { render, act } from '@testing-library/react';
 import React from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { SceneCanvasApi, RenderLayer } from '@weasel-js/core';
-import { shapeToolsOfferedPreset } from '@weasel-js/editing';
+import { shapeToolsOfferedPreset } from '../../presets/tools';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

@@ -1,6 +1,6 @@
 import { defineAction, type Action } from '@weasel-js/routing';
 import type { InvocationCtx } from '@weasel-js/routing';
-import { transformPreview, finiteFrame, closeRun, runBehaviorCancel, inPlane, selectionLayer, recordTransform } from '@weasel-js/core';
+import { createTransformPreview, finiteFrame, closeRun, runBehaviorCancel, inPlane, selectionLayer, recordTransform } from '@weasel-js/core';
 import { commitRotate } from './commit';
 import { nextFrame } from './frame';
 import { beginRotate, type RotateFrame } from './session';
@@ -35,7 +35,7 @@ export const rotateAction: Action = inPlane(defineAction({
       const { session, readers } = begun;
       const subject = [...(ctx.deps.operands?.get() ?? [])] as string[];
       const hold = session.scene.overrides.hold();
-      const preview = transformPreview(ctx.deps, session.scene, () => frame.previews);
+      const preview = createTransformPreview(ctx.deps, session.scene, () => frame.previews);
       let frame: RotateFrame = { swept: 0, delta: 0, previews: new Map() };
       let pointer = ctx.world;
       session.lifecycle.start(session.gestureCtx.draggedIds);

@@ -3,6 +3,7 @@ import { createAudioGraph } from '../graph/createAudioGraph';
 import type { AudioGraph, GraphNodeDef } from '../graph/types';
 import { writeParam } from '../param';
 import { createFakeAudioContext, type FakeAudioContext, type FakeGain, type FakeNode } from './fakeAudioContext';
+import { fakeTimers } from './fakeTimers';
 
 export const FADE = 20;
 
@@ -45,18 +46,16 @@ export function testNode(ctx: FakeAudioContext, ports: string[] = ['in'], source
 export function harness({ running = true } = {}) {
   const ctx = createFakeAudioContext();
   if (running) ctx.state = 'running';
-  const timers = new Map<number, () => void>();
-  let nextId = 0;
+  const fake = fakeTimers();
+  const timers = fake.armed;
   const graph: AudioGraph = createAudioGraph(ctx as never, ctx.destination as never, {
     fadeMs: FADE,
-    setTimer: (cb) => { nextId += 1; timers.set(nextId, cb); return nextId; },
-    clearTimer: (h) => { timers.delete(h as number); },
+    setTimer: fake.setTimer,
+    clearTimer: fake.clearTimer,
   });
   const step = (): void => {
     ctx._advance(FADE);
-    const due = [...timers.values()];
-    timers.clear();
-    for (const f of due) f();
+    fake.fire();
   };
   const settle = (): void => {
     for (let i = 0; i < 100 && timers.size > 0; i += 1) step();

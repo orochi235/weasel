@@ -60,9 +60,9 @@ function lineMark(g: Guide, extent: [number, number], color: string | undefined)
 /**
  * The edges and centers of the subject's siblings, and optionally a page, as
  * snap targets: each is a line a box or pointer probe may land on. A move's
- * left, center and right (top, center, bottom) all try every line, as Figma's
- * smart guides do. When the result meets a line, its mark runs from the
- * subject's box to the farthest sibling on that line.
+ * left, center and right (top, center, bottom) all try every line. When the
+ * result meets a line, its mark runs from the subject's box to the farthest
+ * sibling on that line.
  */
 export function alignmentSnapSource(opts: AlignmentSnapSourceOptions = {}): SnapSource {
   const page = () => (typeof opts.page === 'function' ? opts.page() : opts.page) ?? undefined;

@@ -9,7 +9,8 @@ import { useDepRegistry } from '@weasel-js/routing/react';
 import { createScene } from '@weasel-js/core/engine';
 import type { SelectionApi } from '@weasel-js/routing';
 import type { SelectRangeDep } from '@weasel-js/core/engine';
-import { pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import { pickPreset } from '../../presets/composites';
 
 type P = { x: number; y: number; width: number; height: number };
 

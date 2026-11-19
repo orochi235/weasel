@@ -20,15 +20,15 @@ rig like any other node data.
 
 ```tsx
 import { SceneCanvas, useRigNode } from '@weasel-js/core';
-import { pathsPreset } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import { createRigEditState, useRigTools } from '@weasel-js/rig';
-import { pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const state = useMemo(() => createRigEditState(), []);
 const tools = useRigTools({ scene, state });
 useRigNode({ scene, node: arm, painting: state });
 
-<SceneCanvas scene={scene} features={[pickPreset, pathsPreset]} tools={tools} />;
+<SceneCanvas scene={scene} features={[presets.pick, pathTools.paths]} tools={tools} />;
 ```
 
 `useRigTools` builds every tool in `RIG_TOOLS`, keyed by id:

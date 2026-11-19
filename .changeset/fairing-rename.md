@@ -8,7 +8,7 @@ Harmonize curvature is now Fairing, and every name it carried changes with it; t
 
 | Before | After |
 |---|---|
-| `harmonizePreset`, preset id `'harmonize'` | `fairingPreset`, `'fairing'` |
+| `harmonizePreset`, preset id `'harmonize'` | `pathTools.fairing`, `'fairing'` |
 | action `harmonizeAnchors`, `harmonizeAnchorsAction` | `fairAnchors`, `fairAnchorsAction` |
 | `harmonizeAnchors` (`@weasel-js/geom`) | `fairAnchors` |
 | icon `core:harmonize` | `core:fairing` |
@@ -17,7 +17,7 @@ Harmonize curvature is now Fairing, and every name it carried changes with it; t
 // before
 <SceneCanvas features={['paths', harmonizePreset]} tune={{ harmonizeAnchors: { bindings: [{ kind: 'key', key: 'h' }] } }} />
 // after
-<SceneCanvas features={['paths', fairingPreset]} tune={{ fairAnchors: { bindings: [{ kind: 'key', key: 'h' }] } }} />
+<SceneCanvas features={['paths', pathTools.fairing]} tune={{ fairAnchors: { bindings: [{ kind: 'key', key: 'h' }] } }} />
 ```
 
 <!-- entry: rank=5 breaking api -->

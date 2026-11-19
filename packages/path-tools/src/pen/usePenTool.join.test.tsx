@@ -2,10 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { type PolygonPath, pathFromD } from '@weasel-js/geom';
 import { pathToAnchors } from '@weasel-js/geom';
-import {
-  hitTestRectForTests as hitTestRect, useEditAnchorsDepSourceForTests as useEditAnchorsDepSource,
-} from '@weasel-js/core/test-seams';
-import { asNodeId, createScene, defaultCommitAdapter, type RectPose, resolveEditablePathOf } from '@weasel-js/core';
+import { useEditAnchorsDepSourceForTests as useEditAnchorsDepSource } from '@weasel-js/core/test-seams';
+import { asNodeId, createScene, defaultCommitAdapter, hitTestRect, type RectPose, resolveEditablePathOf } from '@weasel-js/core';
 import type { Scene, SelectionApi } from '@weasel-js/core';
 import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import { setup } from './testing/penHarness';

@@ -1,0 +1,42 @@
+{
+ "id": "brush",
+ "commit": "c612cad371d9093df82913a3e49045e0f89422ea",
+ "date": "2026-11-18",
+ "files": [
+  "packages/brush/src/brushSize.ts",
+  "packages/brush/src/index.ts"
+ ],
+ "a": 1,
+ "b": 2,
+ "m": 0,
+ "distinct": 3,
+ "chapman": 5,
+ "unfound": 2,
+ "read": {
+  "A": 2,
+  "B": 2
+ },
+ "patches": 3,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 1.2,
+   "B": 1.6,
+   "match": 0.1,
+   "fix": 7.9
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "msb-uai"
+  },
+  "tokens": 5186828,
+  "costUsd": 3.07
+ },
+ "fixCommits": [
+  "7a75fd121e5cba92f8c767bc89515814dd96c895",
+  "6a9b37e38a2b9ce73d72dd6bdb60d335f7b030fa",
+  "e2a8a1b0b7c568bff068e250a5efea798b37dabd"
+ ]
+}

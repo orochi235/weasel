@@ -7,6 +7,7 @@
  *
  * `typeof` references are not counted: a consumer never names the value
  * behind them. Wildcard subpaths are skipped; their barrels re-export from the root.
+ * `test-seams`, `internal` and `testing/` subpaths are neither read nor counted as exporting.
  *
  * Types already unnameable are recorded per package in
  * `check-unnameable-types.allow.json`. The list only shrinks: a new name
@@ -33,10 +34,14 @@ const OPTIONS = {
   types: [],
 };
 
-/** The `.d.ts` file behind each non-wildcard export of a package. */
+/** A subpath that is not public API: exporting a type there does not make it nameable. */
+const NOT_PUBLIC = /^\.\/(test-seams|internal|testing\/)/;
+
+/** The `.d.ts` file behind each non-wildcard public export of a package. */
 function typedEntries(dir, manifest) {
   const entries = [];
-  for (const target of Object.values(manifest.exports ?? {})) {
+  for (const [key, target] of Object.entries(manifest.exports ?? {})) {
+    if (NOT_PUBLIC.test(key)) continue;
     if (target && typeof target === 'object' && typeof target.types === 'string' && !target.types.includes('*')) {
       entries.push(join(dir, target.types));
     }

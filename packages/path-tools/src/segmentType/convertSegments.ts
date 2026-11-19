@@ -5,10 +5,11 @@
  */
 import { ActionDisabledReason, BETWEEN_GESTURES, defineAction } from '@weasel-js/routing';
 import { convertSegments, editAnchorSetTracked, segmentsBetweenAnchors, type SegmentType } from '@weasel-js/geom';
-import { ANCHORS_GROUP, editingLayer, inPlane, pathOperationTags, segmentUnder } from '@weasel-js/core';
+import { editingLayer, inPlane, pathOperationTags, segmentUnder } from '@weasel-js/core';
 import { anchorEditWouldChange, commitAnchorEdit, openPathEditOf } from '../pathEdit/anchorEditing';
 import { icon } from '../icons.gen';
 import type {} from '../actionParamSchema';
+import * as groups from '@weasel-js/core/groups';
 
 const LABEL = 'Convert segments';
 
@@ -27,7 +28,7 @@ export const convertSegmentsAction = defineAction({
   icon: icon('convertSegment'),
   label: LABEL,
   tags: pathOperationTags('command'),
-  group: ANCHORS_GROUP,
+  group: groups.anchors,
   variants: [
     { key: 'line', label: 'Make segments straight', icon: icon('straightenSegment'), params: { to: 'line' } },
     { key: 'curve', label: 'Make segments curved', icon: icon('curveSegment'), params: { to: 'curve' } },

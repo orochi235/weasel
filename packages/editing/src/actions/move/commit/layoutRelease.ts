@@ -1,5 +1,5 @@
-import { createReparentOp, asNodeId, type NodeId, followerOpsFor } from '@weasel-js/core';
-import { createSetPoseOp, composeChildFrame, composeWorldPose, rebaseLocalPose, type PoseAdapter, sceneViewPoseAdapter, poseDescriptorForNode, pageIdOf } from '@weasel-js/core/engine';
+import { asNodeId, type NodeId, followerOpsFor } from '@weasel-js/core';
+import { composeChildFrame, composeWorldPose, rebaseLocalPose, type PoseAdapter, sceneViewPoseAdapter, poseDescriptorForNode, pageIdOf } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
 import type { LayoutChild, LayoutContainer } from '@weasel-js/core/engine';
 import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
@@ -9,6 +9,7 @@ import type { MoveSession } from '../session';
 import { translateOps, unreleasedIds } from '../translate';
 import { rebaseTransformOp } from './rebase';
 import { boxOf, containerView, draggedInView, opInWorld } from '../layout/view';
+import * as coreOps from '@weasel-js/core/ops';
 
 function releaseFrom(
   session: MoveSession,
@@ -115,13 +116,13 @@ export function layoutReleaseOps(
       const world = draggedWorldPose(session, grabbedPoseAdapter(session, commitAdapter), id, { dx, dy });
       const to = rebaseLocalPose(commitAdapter, world, toParent as string | null, pc.compose, pc.decompose);
       if (to === null) return null;
-      exitOps.push(createReparentOp({
+      exitOps.push(coreOps.reparent({
         id: id as string,
         fromParentId: node.parent as string | null,
         toParentId: toParent as string | null,
         label: 'Reparent',
       }));
-      exitOps.push(createSetPoseOp<unknown>({
+      exitOps.push(coreOps.setPose<unknown>({
         id: id as string,
         from: node.pose,
         to,

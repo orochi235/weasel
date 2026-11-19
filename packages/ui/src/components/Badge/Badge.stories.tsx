@@ -83,7 +83,7 @@ export const LookVariantMatrix: Story = {
       <table className={st.matrix}>
         <thead>
           <tr>
-            <th></th>
+            <td />
             {VARIANTS.map((v) => <th key={v} className={st.matrixHead}>{v}</th>)}
           </tr>
         </thead>

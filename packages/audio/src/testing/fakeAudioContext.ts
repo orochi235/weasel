@@ -81,13 +81,23 @@ function createFakeBuffer(channels: number, length: number, sampleRate: number):
   if (channels < 1 || length < 1) {
     throw new Error('NotSupportedError: createBuffer needs a channel and a frame');
   }
+  // A real implementation also refuses rates outside 3000–768000 Hz; the fake
+  // takes any positive rate, so a test can make a second 100 frames long.
+  if (!(sampleRate > 0 && Number.isFinite(sampleRate))) {
+    throw new Error(`NotSupportedError: createBuffer cannot take a sample rate of ${sampleRate}`);
+  }
   const data = Array.from({ length: channels }, () => new Float32Array(length));
   return {
     duration: length / sampleRate,
     length,
     numberOfChannels: channels,
     sampleRate,
-    getChannelData: (channel) => data[channel],
+    getChannelData(channel) {
+      if (!Number.isInteger(channel) || channel < 0 || channel >= channels) {
+        throw new Error(`IndexSizeError: the buffer has no channel ${channel}`);
+      }
+      return data[channel];
+    },
   };
 }
 
@@ -99,15 +109,20 @@ export function createFakeAudioContext(): FakeAudioContext {
   const listeners = new Set<() => void>();
   const routed = new WeakSet<FakeMediaElement>();
   const now = (): number => ctx.currentTime;
+  const refuseClosed = (call: string): void => {
+    if (ctx.state === 'closed') throw new Error(`InvalidStateError: ${call} on a closed context`);
+  };
 
   const ctx: FakeAudioContext = {
     state: 'suspended',
     currentTime: 0,
     sampleRate: 48000,
     destination: node('destination'),
-    async resume() { ctx._setState('running'); },
-    async suspend() { ctx._setState('suspended'); },
-    async close() { ctx._setState('closed'); },
+    // A closed context rejects all three and stays closed; `_setState` is the
+    // test hook that can still move it.
+    async resume() { refuseClosed('resume'); ctx._setState('running'); },
+    async suspend() { refuseClosed('suspend'); ctx._setState('suspended'); },
+    async close() { refuseClosed('close'); ctx._setState('closed'); },
     addEventListener(_type, fn) { listeners.add(fn); },
     removeEventListener(_type, fn) { listeners.delete(fn); },
     createGain: () => node('gain', { gain: param(1) }),

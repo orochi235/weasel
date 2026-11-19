@@ -36,7 +36,7 @@ export {
 } from './edit/conditionRows';
 export { SWAP, swapOp, type DocumentCodec, type DraftStorage, type OpenedDocument } from './edit/document';
 export { draftChangedAssets } from './edit/draftChangedAssets';
-export { foldablePaths, foldsUnder, openAfterStep, type Folds } from './edit/folds';
+export { foldablePaths, createFolds, openAfterStep, type Folds } from './edit/folds';
 export { CONDITION_KIND, type CustomKinds, type KindAttr, type KindAttrs } from './edit/kindAttrTable';
 export {
   attributeSchema, blankGroup, blankLeaf, blankSection, BUILTIN_KINDS, changeKind, convertLeaf, entryOf, leafOf,

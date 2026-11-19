@@ -1,6 +1,7 @@
 import { solid } from '@weasel-js/paint';
 import { asNodeId, createScene, type RectPose } from '@weasel-js/core';
-import { usePinWarpTool, warpPreset, withPathWarp, pathsPreset } from '@weasel-js/path-tools';
+import { usePinWarpTool, withPathWarp } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import {
   type ConfigOf,
   defineInstrument,
@@ -21,9 +22,10 @@ import { pathLeaf } from './warpLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { drawPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
-const FEATURES = [drawPreset, pathsPreset, warpPreset] as const;
+const FEATURES = [presets.draw, pathTools.paths, pathTools.warp] as const;
 
 const config = f.schema({
   preset: f.enum<PresetId>('disc', (Object.keys(PRESETS) as PresetId[]).map((value) => ({ value, label: PRESETS[value].label })))

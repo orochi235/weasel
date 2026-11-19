@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { LayoutStrategy } from '@weasel-js/core';
-import { perContainer } from './perContainer';
+import { createPerContainerStrategy } from './perContainer';
 import { nearestSnap } from './snaps';
 import { freeform } from './strategies/freeform';
 
@@ -23,10 +23,10 @@ function counting(): LayoutStrategy<P> & { runs: number } {
   return self;
 }
 
-describe('perContainer', () => {
+describe('createPerContainerStrategy', () => {
   it('builds one strategy per container and keeps its state apart', () => {
     const factory = vi.fn((_container: { id: string }) => counting());
-    const layout = perContainer<P>(factory, { snap: nearestSnap() });
+    const layout = createPerContainerStrategy<P>(factory, { snap: nearestSnap() });
     const kids = [{ id: 'k', pose: { x: 0, y: 0 } }];
     layout.childPoses(box('A'), kids);
     layout.childPoses(box('A'), kids);
@@ -37,7 +37,7 @@ describe('perContainer', () => {
   });
 
   it('starts a container over once it is forgotten', () => {
-    const layout = perContainer<P>(() => counting(), { snap: nearestSnap() });
+    const layout = createPerContainerStrategy<P>(() => counting(), { snap: nearestSnap() });
     const kids = [{ id: 'k', pose: { x: 0, y: 0 } }];
     layout.childPoses(box('A'), kids);
     layout.forget('A');
@@ -46,7 +46,7 @@ describe('perContainer', () => {
 
   it('drops the container used longest ago past max', () => {
     const factory = vi.fn(() => counting());
-    const layout = perContainer<P>(factory, { snap: nearestSnap(), max: 2 });
+    const layout = createPerContainerStrategy<P>(factory, { snap: nearestSnap(), max: 2 });
     layout.childPoses(box('A'), []);
     layout.childPoses(box('B'), []);
     layout.childPoses(box('A'), []);
@@ -58,7 +58,7 @@ describe('perContainer', () => {
   });
 
   it('answers for a method the built strategy leaves out the way its absence would', () => {
-    const layout = perContainer<P>(() => counting(), { snap: nearestSnap() });
+    const layout = createPerContainerStrategy<P>(() => counting(), { snap: nearestSnap() });
     const kids = [{ id: 'k', pose: { x: 0, y: 0 } }];
     expect(layout.arrive!(box('A'), kids, new Set(['k']))).toEqual({ poses: new Map([['k', { x: 1, y: 0 }]]) });
     expect(layout.depart!(box('A'), kids, new Set(['gone'])).poses.get('k')).toEqual({ x: 2, y: 0 });
@@ -69,7 +69,7 @@ describe('perContainer', () => {
   });
 
   it('passes the optional methods a built strategy has through to it', () => {
-    const layout = perContainer<P>(
+    const layout = createPerContainerStrategy<P>(
       (container) => ({ ...freeform<P>(), acceptsDrop: () => container.id === 'open', arrive: () => null }),
       { snap: nearestSnap() },
     );

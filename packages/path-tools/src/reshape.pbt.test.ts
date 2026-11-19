@@ -11,12 +11,13 @@ import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { deleteAnchorsAction } from './pathEdit/anchorEditing';
 import { nudgeAnchorsLeftAction, nudgeAnchorsUpAction } from './pathEdit/anchorNudge';
 import {
-  ANCHOR_SELECTION_GROUP, addExtremeAnchorsAction, bridgeAnchorsAction, FILLET_SHAPE_OPTIONS, constrainAnchorsAction, convertSegmentsAction, cycleFilletAction,
+  addExtremeAnchorsAction, bridgeAnchorsAction, FILLET_SHAPE_OPTIONS, constrainAnchorsAction, convertSegmentsAction, cycleFilletAction,
   growAnchorSelectionAction, handleLockAngleAction, handleLockLengthAction, fairAnchorsAction,
   invertAnchorSelectionAction, resamplePathAction, reversePathAction, selectCornerAnchorsAction,
   selectEveryNthAnchorAction, selectSmoothAnchorsAction, setFilletsAction, setPathStartAction,
   shrinkAnchorSelectionAction, unconstrainAnchorsAction,
 } from './index';
+import { ANCHOR_SELECTION_GROUP } from './anchorSelect/anchorSelect';
 import { editHarness as harness, type EditHarness } from './shared/testing/editHarness';
 import { checkPath, penPath as path, snap } from './pbt.fixture';
 

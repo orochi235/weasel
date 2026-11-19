@@ -5,10 +5,11 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
-import { createScene, createSetPoseOp, asNodeId, type RectPose } from '@weasel-js/core/engine';
+import { createScene, asNodeId, type RectPose } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
 import type { LayoutStrategy, ReflowTransition, MoveBehavior } from '@weasel-js/core/engine';
 import { moveAction } from './action';
+import * as coreOps from '@weasel-js/core/ops';
 
 const T = asNodeId('target');
 const KID = asNodeId('kid');
@@ -73,7 +74,7 @@ function recorder() {
 
 describe('moveAction — a layout drop behind the binding\'s behaviors', () => {
   it('leaves the commit to a binding behavior that answers at end, and still settles its glides', () => {
-    const commitDrop = vi.fn((): Op[] => [createSetPoseOp<RectPose>({ id: KID, from: HOME, to: SLOT, label: 'Drop' })]);
+    const commitDrop = vi.fn((): Op[] => [coreOps.setPose<RectPose>({ id: KID, from: HOME, to: SLOT, label: 'Drop' })]);
     const { calls, reflow } = recorder();
     const claims: MoveBehavior<unknown> = { onEnd: () => [] };
     const { scene, handle, dragTo, onRunEnd } = fixture({ commitDrop }, { behaviors: [claims], reflow });

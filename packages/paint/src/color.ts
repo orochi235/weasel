@@ -175,7 +175,7 @@ function splitChannels(body: string): { rgb: [string, string, string]; alpha: st
   return { rgb: [parts[0], parts[1], parts[2]], alpha };
 }
 
-const CSS_NUMBER = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/;
+const CSS_NUMBER = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/;
 
 /** A CSS `<number>` token, or null: `Number` alone reads `''` as 0 and accepts `0x10`. */
 function cssNumber(tok: string): number | null {

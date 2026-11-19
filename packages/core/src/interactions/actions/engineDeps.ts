@@ -119,7 +119,7 @@ declare module '@weasel-js/routing' {
     selection: SelectionApi;
     /** The ids an edit acts on, and where it hands back what it leaves: every editing action reads this,
      *  not `selection`. `useStandardDeps` answers it with the `selection` dep unless a host sources its own
-     *  (`operandList`, or anything else holding ids). */
+     *  (`createOperandList`, or anything else holding ids). */
     operands: OperandsDep;
     /** The group the user has entered, or null — session state beside the
      *  selection, not scene data and not undoable. Optional: absent means

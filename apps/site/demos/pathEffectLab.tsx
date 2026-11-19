@@ -4,12 +4,12 @@
  * panel's settings to the lab's live effects.
  */
 import { type ActionParamSchema, type ActionTunings, boundsOfPath, derivedDepOf, type NodeId, pathEffectOf, pathEffectParts, type RectPose, type Scene, useActionsRegistry, useLatest } from '@weasel-js/core';
-import { PATH_EFFECTS_GROUP } from '@weasel-js/path-tools';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { useTrialConfigChange } from '@weasel-js/labkit';
 import { deepEqual } from '@weasel-js/registry';
 import { type ReactNode, useEffect, useMemo } from 'react';
 import s from './pathEffectLab.module.css';
+import * as pathToolsGroups from '@weasel-js/path-tools/groups';
 
 type LabScene = Scene<unknown, 'default', RectPose>;
 
@@ -71,7 +71,7 @@ export function PathEffectFrame({ children }: { children: ReactNode }) {
   return (
     <div className={s.frame}>
       {children}
-      <ActionBar group={PATH_EFFECTS_GROUP} className={s.bar} />
+      <ActionBar group={pathToolsGroups.pathEffects} className={s.bar} />
     </div>
   );
 }

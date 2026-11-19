@@ -153,4 +153,17 @@ describe('momentum over a scene', () => {
     expect(scene.get(a)!.pose.x).toBeCloseTo(stood);
     expect(scene.historyEntries().length).toBe(entries + 1);
   });
+
+  it('records where it stopped when the animator cancels it from outside, so undo takes the node back', () => {
+    const { clock, animator, scene, a, shown, entries } = flick();
+    clock.advance(16);
+    clock.advance(16);
+    animator.cancelAll();
+    const stood = scene.get(a)!.pose.x;
+    expect(stood).toBeGreaterThan(20);
+    expect(shown().x).toBe(stood);
+    expect(scene.historyEntries().length).toBe(entries + 1);
+    scene.undo();
+    expect(scene.get(a)!.pose.x).toBe(0);
+  });
 });

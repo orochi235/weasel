@@ -1,0 +1,51 @@
+{
+ "id": "bidi",
+ "commit": "c612cad371d9093df82913a3e49045e0f89422ea",
+ "date": "2026-11-18",
+ "files": [
+  "packages/bidi/src/__fixtures__/parseConformance.ts",
+  "packages/bidi/src/explicit.ts",
+  "packages/bidi/src/implicit.ts",
+  "packages/bidi/src/index.ts",
+  "packages/bidi/src/paragraph.ts",
+  "packages/bidi/src/pbt.fixture.ts",
+  "packages/bidi/src/reorder.ts",
+  "packages/bidi/src/resolve.ts",
+  "packages/bidi/src/sequences.ts",
+  "packages/bidi/src/tables.ts",
+  "packages/bidi/src/types.ts"
+ ],
+ "a": 2,
+ "b": 1,
+ "m": 0,
+ "distinct": 3,
+ "chapman": 5,
+ "unfound": 2,
+ "read": {
+  "A": 11,
+  "B": 11
+ },
+ "patches": 3,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.8,
+   "B": 4.2,
+   "match": 0.1,
+   "fix": 5.6
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "tokens": 3643360,
+  "costUsd": 3.66
+ },
+ "fixCommits": [
+  "fe6c2d25fcbf1cfc9e36306fb75a595403b5ae79",
+  "2cff4aca77bf3e76cd5ef27a05866653b7d35fa0",
+  "7e53cbc81606f08f20c153aa6e824bd0ddaf5676"
+ ]
+}

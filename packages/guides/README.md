@@ -28,11 +28,11 @@ A grid you can see and snap to:
 ```tsx
 import { SceneCanvas } from '@weasel-js/core';
 import { createGridPreset } from '@weasel-js/guides';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const grid = createGridPreset({ spacing: 20 });
 
-<SceneCanvas /* … */ features={[drawPreset, grid]} />;
+<SceneCanvas /* … */ features={[presets.draw, grid]} />;
 ```
 
 The preset draws the grid in the `grid` slot and snaps every snapping gesture
@@ -65,8 +65,8 @@ points sits on its crossings.
 | Rulers | `createRulers` (below), `rulersSchema`, `rulerTicks`, `createRulerFrameLookup`, `rulersLayout`; `<Rulers>` in `@weasel-js/ui` draws them |
 | Guides | `useGuides`, `createGuidesLayer`, `createAddGuideOp`, `createRemoveGuideOp`, `createReplaceGuideOp`, `deriveAlignmentGuides`, `matchSpacing`, `measureGaps`, `siblingBounds`, `worldBoundsOf`, `worldUnionOf` |
 | Snap sources | `gridSnapSource`, `guideSnapSource`, `alignmentSnapSource`, `spacingSnapSource`, for `<SceneCanvas snap={{ sources }}>` or a preset's `snapSources` |
-| Spacing hints | `createSpacingHintsPreset` (below), `distanceReadout`, `measureDistances` |
-| Layout | `freeform`, `tileGrid`, `snapPoint`, `slots` (with the `rowSlots`, `gridSlots`, and `ringSlots` arrangements), `pack`, `quadtree`, `perContainer` for a strategy that keeps state, and the drop-target pickers `noSnap`, `nearestSnap`, `nearestWithin`, `containedThenNearest`, `cellThenNearest` |
+| Spacing hints | `createSpacingHintsPreset` (below), `createDistanceReadoutContribution`, `measureDistances` |
+| Layout | `freeform`, `tileGrid`, `snapPoint`, `slots` (with the `rowSlots`, `gridSlots`, and `ringSlots` arrangements), `pack`, `quadtree`, `createPerContainerStrategy` for a strategy that keeps state, and the drop-target pickers `noSnap`, `nearestSnap`, `nearestWithin`, `containedThenNearest`, `cellThenNearest` |
 
 Rulers run along the top and left of a 2D view. `createRulers` returns a
 contribution for `<SceneCanvas ambient>`, which follows the view and the
@@ -108,7 +108,7 @@ Alt over a shape measures its distance from the selection. It lives in
 ```tsx
 const spacingHints = useMemo(() => createSpacingHintsPreset({ color: '#e0397f' }), []);
 
-<SceneCanvas /* … */ features={[drawPreset, spacingHints]} />;
+<SceneCanvas /* … */ features={[presets.draw, spacingHints]} />;
 ```
 
 ## License

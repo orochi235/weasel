@@ -59,7 +59,7 @@ import {
 } from '@weasel-js/geom';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { HANDLE_LOCK_ROLES, lockHandle, locksInForce, type HandlePress } from './handleDrag';
-import { finishPathEditFrame, pathEditPreview } from './preview';
+import { finishPathEditFrame, createPathEditPreview } from './preview';
 import {
   claimWheel, dragWeights, endExtensionDrags, extensionOverlays, placeHandle, startExtensionDrags, translateWeighted,
 } from './extensionDrags';
@@ -309,7 +309,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
       if (anchorInfo.part === 'controlOut' && !origin.outHandle) return {};
 
       let active = false;
-      const preview = pathEditPreview(
+      const preview = createPathEditPreview(
         dep, editingId, () => (active ? { path: scratch.currentPose } : null), () => (active ? scratch.others : []),
       );
       if (!preview) return {};

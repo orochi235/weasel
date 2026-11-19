@@ -41,7 +41,7 @@ export interface SceneSessionInputs {
 }
 
 /** A 2D session whose probes are the subject's, read from the scene at press. */
-export function sceneSession2d(i: SceneSessionInputs): SnapSession {
+export function createSceneSession2d(i: SceneSessionInputs): SnapSession {
   const geometryAt = i.geometryAt ?? (snapSourcesFor(i.sources, i.req.gesture).some((s) => s.roles.includes('geometry'))
     ? (press: WorldPoint, ids: readonly string[]) => ownGeometryAt(i.scene, press, ids, i.view()?.scale ?? { x: 1, y: 1 }, i.reachPx)
     : undefined);
@@ -150,7 +150,7 @@ export function createSnapSession2d(opts: SnapSession2dOptions): SnapSession {
     ...(opts.also ? { also: opts.also } : {}),
     ...(opts.plane ? { plane: () => opts.plane ?? null } : {}),
   };
-  return sceneSession2d({
+  return createSceneSession2d({
     req,
     scene: opts.scene,
     boxes: (opts.drawnBoxes ?? inkBoxes)({

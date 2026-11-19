@@ -20,7 +20,7 @@ import 'windease/styles.css';
 import s from './MeasureLabDemo.module.css';
 import { icon } from '../icons.gen';
 import { DEG_TO_RAD } from '@weasel-js/geom';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const config = f.schema({
   snap: f.boolean(true).label('Snap to grid'),
@@ -87,7 +87,7 @@ function MeasureTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   return (
     <div className={s.stage}>
       <TrialSceneCanvas
-        features={[drawPreset]}
+        features={[presets.draw]}
         defaultTools={['rect']}
         tools={tools}
         ambient={ambient}

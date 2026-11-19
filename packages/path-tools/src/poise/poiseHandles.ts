@@ -37,7 +37,7 @@ import { type EditAnchorsDep, editingLayer, inPlane, pathOperationTags } from '@
 import { commitAnchorEdit } from '../pathEdit/anchorEditing';
 import { editedPathSymmetries } from '../pathEdit/editAnchors/symmetry';
 import { HANDLE_LOCK_ROLES, locksInForce } from '../pathEdit/editAnchors/handleDrag';
-import { pathEditPreview } from '../pathEdit/editAnchors/preview';
+import { createPathEditPreview } from '../pathEdit/editAnchors/preview';
 import { icon } from '../icons.gen';
 import type {} from '../actionParamSchema';
 
@@ -90,7 +90,7 @@ export const poiseHandlesAction: Action & { requires: string[] } = inPlane({
       const press = { x: ctx.world.x, y: ctx.world.y };
       const pressFactor = poiseFactorToward(origin, sub, segIdx, press);
       let current: { path: PolygonPath; origins?: readonly (PointOrigin | null)[] } | null = null;
-      const preview = pathEditPreview(dep, id, () => current);
+      const preview = createPathEditPreview(dep, id, () => current);
       if (!preview) return {};
 
       return {

@@ -51,7 +51,7 @@ export function roundWhole(n: number): number {
 /** One unsigned number in the text `readNumber` sees: digits, with an optional `.` fraction. */
 const TERM_NUMBER = String.raw`\d+(?:\.\d+)?|\.\d+`;
 
-const DECIMAL_NUMBER = /^[-+]?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?$/i;
+const DECIMAL_NUMBER = /^[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?$/i;
 
 /** Powers of ten a typed magnitude suffix stands for. */
 const EXPONENTS: Record<string, number> = { k: 3, m: 6, b: 9, t: 12 };

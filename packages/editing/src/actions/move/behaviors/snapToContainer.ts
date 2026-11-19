@@ -1,10 +1,10 @@
-import { createSetPoseOp, definesFrame } from '@weasel-js/core/engine';
-import { createReparentOp } from '@weasel-js/core';
+import { definesFrame } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
 import type { SnapTarget, BehaviorResult, CloneBehavior, MoveBehavior, MoveEnd, GestureContext } from '@weasel-js/core/engine';
 import { scratchKey, getScratch, setScratch } from '@weasel-js/routing';
 import { holderOf } from '@weasel-js/select';
 import { after } from '@weasel-js/registry';
+import * as coreOps from '@weasel-js/core/ops';
 
 interface SnapState<TPose> {
   pendingTargetId: string | null;
@@ -176,7 +176,7 @@ function plantOps<TPose>(
     const oldParent = ctx.adapter.getParent(id);
     if (oldParent !== snap.parentId) {
       landed.set(id, snap.parentId);
-      ops.push(createReparentOp({
+      ops.push(coreOps.reparent({
         id,
         fromParentId: oldParent,
         toParentId: snap.parentId,
@@ -187,7 +187,7 @@ function plantOps<TPose>(
   for (const [id, slot] of slots) {
     const to = ctx.frames ? ctx.frames.toLocalUnder(snap.parentId, slot) : slot;
     if (to === null) return null;
-    ops.push(createSetPoseOp<TPose>({ id, from: ctx.origin.get(id)!, to, label: moveLabel }));
+    ops.push(coreOps.setPose<TPose>({ id, from: ctx.origin.get(id)!, to, label: moveLabel }));
     reparent(id);
   }
   // A node with no slot of its own lands where the preview drew it.
@@ -231,7 +231,7 @@ function keptInPlace<TPose>(
     const from = translated.get(at) ?? ctx.adapter.getPose(at);
     const to = frames.toLocalUnder(parentId, frames.toWorld(at, from));
     if (to === null) return false;
-    ops.push(createSetPoseOp<TPose>({ id: at, from, to, label }));
+    ops.push(coreOps.setPose<TPose>({ id: at, from, to, label }));
     const node = ctx.adapter.getNode(at) as { dependsOn?: unknown; derivePose?: unknown } | undefined;
     if (node === undefined || definesFrame(node)) return true;
     for (const child of ctx.adapter.getNodes()) {

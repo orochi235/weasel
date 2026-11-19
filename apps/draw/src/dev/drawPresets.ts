@@ -1,7 +1,8 @@
-import { defaultNodeProperties, describePresets, nodeTraitsOf, viewPreset, viewToolsPreset, type NodePropertiesEntry } from '@weasel-js/core';
+import { defaultNodeProperties, describePresets, nodeTraitsOf, type NodePropertiesEntry } from '@weasel-js/core';
+import * as corePresets from '@weasel-js/core/presets';
 import { FEATURE_PRESETS } from '@weasel-js/editing';
-import { pathToolsPreset } from '@weasel-js/path-tools';
-import { textPreset } from '@weasel-js/text-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
+import * as textTools from '@weasel-js/text-tools/presets';
 import { DRAW_FEATURES } from '../drawFeatures';
 
 /**
@@ -9,10 +10,10 @@ import { DRAW_FEATURES } from '../drawFeatures';
  * re-exports them, and a preset reached from two packages is the first's.
  */
 export const DRAW_PRESETS = describePresets({
-  '@weasel-js/core': [viewPreset, viewToolsPreset],
+  '@weasel-js/core': [corePresets.view, corePresets.viewTools],
   '@weasel-js/editing': Object.values(FEATURE_PRESETS),
-  '@weasel-js/path-tools': [pathToolsPreset],
-  '@weasel-js/text-tools': [textPreset],
+  '@weasel-js/path-tools': [pathTools.pathTools],
+  '@weasel-js/text-tools': [textTools.text],
 });
 
 /** The properties of every node kind a WeaselDraw canvas mounts: core's defaults and each feature's own. */

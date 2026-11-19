@@ -7,13 +7,15 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, pathFromD, pathInWorld, useActionsRegistry, type PolygonPath, type ToolsApi } from '@weasel-js/core';
-import { pathsPreset, tugPreset, usePathEditTools } from '@weasel-js/path-tools';
+import { usePathEditTools } from '@weasel-js/path-tools';
+import * as pathToolsPresets from '@weasel-js/path-tools/presets';
 import { useMemo } from 'react';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 import { LastOperation } from '../ui/LastOperation';
 import { createModeMachine } from './machine';
 import { modePathEdit } from './pathEditHost';
-import { drawPreset, usePolygonTool } from '@weasel-js/editing';
+import { usePolygonTool } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 beforeAll(() => {
   (HTMLCanvasElement.prototype as unknown as { getContext: () => null }).getContext = () => null;
@@ -21,7 +23,7 @@ beforeAll(() => {
 afterEach(() => cleanup());
 
 const A = asNodeId('a');
-const FEATURES = [drawPreset, pathsPreset, tugPreset] as const;
+const FEATURES = [presets.draw, pathToolsPresets.paths, pathToolsPresets.tug] as const;
 type Pose = { x: number; y: number; width: number; height: number };
 
 function setup() {

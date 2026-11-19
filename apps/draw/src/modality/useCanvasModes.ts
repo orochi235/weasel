@@ -2,7 +2,7 @@ import {
   asNodeId,
   effectSourceFor,
   hasEditablePath,
-  modeTriggers,
+  createModeTriggersContribution,
   type Contribution,
   type PathEditHost,
   type SelectionApi,
@@ -50,7 +50,7 @@ export function useCanvasModes(
     selection: () => entry.current.selection(),
   }), [machine, entry]);
 
-  const triggers = useMemo(() => modeTriggers(machine.registry, {
+  const triggers = useMemo(() => createModeTriggersContribution(machine.registry, {
     canEnter: (id, target) => !(id === 'path-edit' && hasEditablePath(scene.get(asNodeId(target)))),
     enter: (id, target) => enterModeOn(machine, id, target),
   }), [machine, scene]);

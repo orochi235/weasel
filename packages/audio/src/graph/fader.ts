@@ -3,8 +3,10 @@ import { initParam, writeParam } from '../param';
 
 export interface Fader {
   readonly gain: GainNode;
-  /** Ramp to 1 over `ms`. */
-  open(ms: number): void;
+  /** Ramp to 1 over `ms`, then call `done`, unless a close or cut comes first. */
+  open(ms: number, done?: () => void): void;
+  /** An open's ramp is still in flight. */
+  opening(): boolean;
   /** Ramp to 0 over `ms`, then disconnect both ends and call `done`. A close already
    *  under way keeps its length, and each distinct `done` runs once when it lands. */
   close(ms: number, done?: () => void): void;
@@ -25,12 +27,18 @@ export function createFader(
   gain.connect(to);
 
   let cancel: (() => void) | null = null;
+  let cancelOpen: (() => void) | null = null;
   let closing = false;
   let closed = false;
   let cutDone = false;
   const dones = new Set<() => void>();
 
+  const stopOpening = (): void => {
+    cancelOpen?.();
+    cancelOpen = null;
+  };
   const cut = (): void => {
+    stopOpening();
     cancel?.();
     cancel = null;
     if (cutDone) return;
@@ -41,15 +49,25 @@ export function createFader(
 
   return {
     gain,
-    open(ms) {
+    open(ms, done) {
       writeParam(ctx, gain.gain, 1, ms);
+      stopOpening();
+      let pending = true;
+      const c = atAudioTime(ctx, timers, ctx.currentTime + ms / 1000, () => {
+        pending = false;
+        cancelOpen = null;
+        done?.();
+      });
+      if (pending) cancelOpen = c;
     },
+    opening: () => cancelOpen !== null,
     close(ms, done) {
       if (closed) done?.();
       if (closed || cutDone) return;
       if (done) dones.add(done);
       if (closing) return;
       closing = true;
+      stopOpening();
       const length = ctx.state === 'running' ? ms : 0;
       writeParam(ctx, gain.gain, 0, length);
       cancel = atAudioTime(ctx, timers, ctx.currentTime + length / 1000, () => {

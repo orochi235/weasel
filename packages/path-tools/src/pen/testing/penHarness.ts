@@ -7,10 +7,10 @@ import { createPenPreviewLayer } from '../penPreviewLayer';
 import { worldCoords, type PolygonPath, type Rect } from '@weasel-js/geom';
 import type { Action, ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { CommitSelection, InsertExtras, ModifierState, Op, SnapSource } from '@weasel-js/core';
-import { createInsertOp } from '@weasel-js/core';
 import {
   rootsTreeForTests as rootsTree, sceneOfPathsForTests as sceneOfPaths, snapSessionDepForTests as sessionDep,
 } from '@weasel-js/core/test-seams';
+import * as coreOps from '@weasel-js/core/ops';
 
 // `setup` reads the pen's state off the preview layer's recorded calls, so a
 // test file calling it must mock '../penPreviewLayer' (from its own folder, './penPreviewLayer') with the real
@@ -53,7 +53,7 @@ export function penDeps(a: ReturnType<typeof makeAdapter>, noBuild = false) {
       ...(noBuild ? {} : {
         build: (_bounds: unknown, extras: InsertExtras) => {
           const node = a.makeNode(poseOf(extras));
-          return { id: node.id, ops: [createInsertOp({ node })] };
+          return { id: node.id, ops: [coreOps.insert({ node })] };
         },
       }),
     },

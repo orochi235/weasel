@@ -8,7 +8,7 @@ import { createScene } from '@weasel-js/core/engine';
 import { useDepRegistry } from '@weasel-js/routing/react';
 import type { SelectionApi } from '@weasel-js/routing';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
-import { pickPreset } from '@weasel-js/editing';
+import { pickPreset } from '../../presets/composites';
 
 type P = { x: number; y: number; width: number; height: number };
 

@@ -4,7 +4,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import type { ActionTunings } from '@weasel-js/routing';
 import { SceneCanvas } from '@weasel-js/core';
 import { createScene, asNodeId } from '@weasel-js/core/engine';
-import { arrangePreset } from '@weasel-js/editing';
+import { arrangePreset } from '../../presets/arrange';
 
 type P = { x: number; y: number; width: number; height: number };
 

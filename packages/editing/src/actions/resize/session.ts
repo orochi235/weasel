@@ -4,7 +4,8 @@ import type { CommitSelectionMethods, GeometryProjection, PoseDescriptor, InkExt
 import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { transformFinisher, type TransformFinisher, gestureReaders, type GestureReaders, readRunLifecycle, type RunLifecycle, localToWorld, outsetBox } from '@weasel-js/core';
 import type { Op, NodeId, Scene, Bounds, BoundsConstraint, GestureContext, ResizeAnchor, MinSize } from '@weasel-js/core';
-import { buildGestureContext, captureBox, captureStarts, captureTargets, resolvePolicy } from './capture';
+import { buildGestureContext, captureBox, captureStarts, captureTargets, resolvePolicy, type ResizeStarts } from './capture';
+import { derivedBoxOwner } from '../derivedBox';
 import { boxMinimum } from './minimum';
 import { boxFrame } from './boxFrame';
 import { captureHeld, type HeldNode } from './held';
@@ -120,7 +121,8 @@ export function captureResize(
   // A resize rewrites what it holds as well as what it writes: one that would rewrite a locked node does not
   // start (ruled 2026-11-09 for the commands, 2026-11-11 for the drag).
   if ([...written, ...held.keys()].some((id) => scene.isLocked?.(id) === true)) return null;
-  const { box, ruleOrigin } = captureBox(starts, writeIds, isGroupPath, anchor, geometry, geometryOf);
+  const { box, ruleOrigin } = captureBox(boxStarts(scene, ids, isGroupPath, starts, (owner) =>
+    captureStarts(scene, [owner], geometryOf, poseFrame, view, boxes)), writeIds, isGroupPath, anchor, geometry, geometryOf);
   const sharedBox = isGroupPath || writeIds.length > 1;
   return {
     place: {
@@ -142,12 +144,32 @@ export function captureResize(
   };
 }
 
-/** The drag's snap session, over the box as drawn in its own frame. */
-function beginSnap(ctx: InvocationCtx, ids: readonly NodeId[], press: { x: number; y: number }, box: ResizeBox): SnapSession {
+/** What the box is measured from: the derived node's own start when one stands for what is written
+ *  (`derivedBoxOwner`) and has an area, else the written ids'. */
+function boxStarts(
+  scene: Scene<unknown, string, unknown>,
+  ids: readonly NodeId[],
+  isGroupPath: boolean,
+  written: ResizeStarts,
+  startsOf: (owner: NodeId) => ResizeStarts,
+): ResizeStarts {
+  const owner = isGroupPath ? derivedBoxOwner(scene, ids) : null;
+  if (owner === null) return written;
+  const own = startsOf(owner);
+  const b = own.leafBounds[0];
+  return b !== undefined && b.width > 0 && b.height > 0 ? own : written;
+}
+
+/** The drag's snap session, over the box as drawn in its own frame. Neither the selection nor what the drag
+ *  writes offers targets: those move with it. */
+function beginSnap(
+  ctx: InvocationCtx, ids: readonly NodeId[], writeIds: readonly NodeId[], press: { x: number; y: number }, box: ResizeBox,
+): SnapSession {
   const frame = boxFrame(box, box.bounds);
   const req: SnapBegin = {
     gesture: 'resize',
     ids,
+    exclude: [...new Set<string>([...ids, ...writeIds])],
     press,
     handle: box.anchor,
     constrain: 'aspect',
@@ -190,7 +212,7 @@ export function beginResize(
     geometryProjection: ctx.deps.geometryProjection,
     selectionMethods: operandMethods(selection),
     lifecycle: readRunLifecycle(policy, 'Resize', constraints),
-    snap: beginSnap(ctx, ids, startWorld, place.box),
+    snap: beginSnap(ctx, ids, place.writeIds, startWorld, place.box),
   };
   return { session, readers };
 }

@@ -2,7 +2,7 @@ import { asNodeId, key, createKeymapContribution, SceneCanvas } from '@weasel-js
 import { KeymapHint } from '@weasel-js/ui/components/KeymapHint';
 import { DemoStage } from './DemoStage';
 import s from './KeymapDemo.module.css';
-import { arrangePreset, movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const W = 420, H = 300;
 
@@ -44,7 +44,7 @@ export function KeymapDemo() {
       <SceneCanvas
         className="ckd-canvas"
         scene={SCENE}
-        features={[pickPreset, movePreset, transformPreset, arrangePreset]}
+        features={[presets.pick, presets.move, presets.transform, presets.arrange]}
         ambient={ARRANGE}
         claimKeys
         selectionOptions={{ mode: 'multiple', initial: RECTS.map((r) => asNodeId(r.id)) }}

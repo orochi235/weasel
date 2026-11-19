@@ -5,9 +5,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import { act } from '@testing-library/react';
-import { createInsertOp, createReparentOp, createScene, defaultCommitAdapter, type InvocationCtx, type LayoutDep, type NodeId, type OngoingHandle, type OngoingInvoker, type RectPose } from '@weasel-js/core';
+import { createScene, defaultCommitAdapter, type InvocationCtx, type LayoutDep, type NodeId, type OngoingHandle, type OngoingInvoker, type RectPose } from '@weasel-js/core';
 import { tileGrid, type TileGridOptions } from './tileGrid';
 import { moveAction } from '@weasel-js/editing';
+import * as ops from '@weasel-js/core/ops';
 
 const rect = (x: number, y: number, width = 50, height = 50): RectPose => ({ x, y, width, height });
 
@@ -29,11 +30,11 @@ function setup(opts: Partial<TileGridOptions<RectPose>>, held = 4) {
   const adapter = defaultCommitAdapter(scene as never);
   const layout: LayoutDep = { getLayout: (id) => (id === 'G' ? (grid as never) : null) };
 
-  const insert = () => scene.applyBatch([createInsertOp({
+  const insert = () => scene.applyBatch([ops.insert({
     node: { kind: 'mark', id: 'n' as NodeId, layer: 'main', data: {}, pose: rect(20, 20), parent: G },
   })], 'Insert', adapter);
   const reparent = () => scene.applyBatch(
-    [createReparentOp({ id: 'x', fromParentId: null, toParentId: 'G' })], 'Reparent', adapter,
+    [ops.reparent({ id: 'x', fromParentId: null, toParentId: 'G' })], 'Reparent', adapter,
   );
   /** Drag `x` so its center lands on `to`. `reparentOnDrop` also offers the
    *  grid as a plain parent, the path taken when its layout finds no target. */
@@ -158,7 +159,7 @@ describe('tileGrid overflow — grow', () => {
     const s = setup({ overflow: 'grow', gap: 10 }, 0);
     // 2×2 over 100×100 with a 10 gap → 45×45 cells at 0 and 55.
     for (let i = 0; i < 4; i++) {
-      s.scene.applyBatch([createInsertOp({
+      s.scene.applyBatch([ops.insert({
         node: { kind: 'mark', id: `g${i}` as NodeId, layer: 'main', data: {}, pose: rect(0, 0), parent: 'G' as NodeId },
       })], 'Insert', defaultCommitAdapter(s.scene as never));
     }
@@ -193,7 +194,7 @@ describe('tileGrid overflow — grow', () => {
     const s = setup({ overflow: 'grow', gap: 10 }, 0);
     // 2×2 over 100×100 with a 10 gap: 45×45 cells, grown to three rows.
     for (let i = 0; i < 5; i++) {
-      s.scene.applyBatch([createInsertOp({
+      s.scene.applyBatch([ops.insert({
         node: { kind: 'mark', id: `g${i}` as NodeId, layer: 'main', data: {}, pose: rect(0, 0), parent: 'G' as NodeId },
       })], 'Insert', defaultCommitAdapter(s.scene as never));
     }

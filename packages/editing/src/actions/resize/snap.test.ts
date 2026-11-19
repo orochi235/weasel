@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingHandle, OngoingInvoker, ResizeAnchor, SelectionApi } from '@weasel-js/routing';
 import { createScene, createSnapOutcomeStore, drawnBoxes } from '@weasel-js/core/engine';
-import { asNodeId, type NodeId, sceneSession2d, rotatePoint } from '@weasel-js/core';
+import { asNodeId, type NodeId, createSceneSession2d, rotatePoint } from '@weasel-js/core';
 import type { Bounds } from '@weasel-js/core';
 import type { SnapSource, SnapDep, AnyScene } from '@weasel-js/core/engine';
 import { heldPoseForTests as heldPose } from '@weasel-js/core/test-seams';
@@ -63,7 +63,7 @@ function rig(sources: readonly SnapSource[], poses: readonly Pose[], extra: Reco
   const ids = poses.map((pose) => scene.add({ kind: 'mark', layer: 'main', data: {}, pose }) as string);
   const store = createSnapOutcomeStore();
   const snap: SnapDep = {
-    begin: (req) => sceneSession2d({ req, scene, boxes: drawnBoxes({ scene }), sources, view: () => VIEW, reachPx: 8, store }),
+    begin: (req) => createSceneSession2d({ req, scene, boxes: drawnBoxes({ scene }), sources, view: () => VIEW, reachPx: 8, store }),
   };
   const deps = { scene, operands: { get: () => [ids[0]], set: () => {} } as unknown as SelectionApi, snap, ...extra };
   let from: Point = { x: 0, y: 0 };

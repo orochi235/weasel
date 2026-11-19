@@ -5,7 +5,7 @@ import { SceneCanvas } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import { sceneToAdapter } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/renderer';
-import { drawPreset, pickPreset } from '@weasel-js/editing';
+import { drawPreset, pickPreset } from '../../../presets/composites';
 
 const POSE = { x: 0, y: 0, width: 10, height: 10 };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };

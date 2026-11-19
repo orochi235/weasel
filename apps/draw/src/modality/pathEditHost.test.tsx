@@ -7,12 +7,12 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, hasEditablePath, pathFromD, rectPath, useActionsRegistry, useDepRegistry, type Path, type PolygonPath } from '@weasel-js/core';
-import { pathsPreset } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import { useMemo } from 'react';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 import { createModeMachine } from './machine';
 import { modePathEdit } from './pathEditHost';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 beforeAll(() => {
   (HTMLCanvasElement.prototype as unknown as { getContext: () => null }).getContext = () => null;
@@ -54,7 +54,7 @@ function setup(pathOfA: Path = pathFromD('M 0 0 L 10 0 L 10 10') as PolygonPath)
     grabbed.editAnchors = () => (deps.get as (k: string) => EditAnchors)('editAnchors');
     const pathEdit = useMemo(() => modePathEdit(machine, (id) => hasEditablePath(scene.get(asNodeId(id)))), []);
     return (
-      <SceneCanvas features={[drawPreset, pathsPreset]} scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={[presets.draw, pathTools.paths]} scene={scene} layers={{}} width={64} height={64}
         modes={machine.registry} pathEdit={pathEdit} />
     );
   }

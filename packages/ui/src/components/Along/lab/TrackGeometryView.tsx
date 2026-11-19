@@ -7,7 +7,7 @@ import { readLocal, writeLocal } from '@weasel-js/storage';
 import { drawHandle, drawTrack } from './trackDraw';
 import { HANDLE, HANDLE_IDS, handleNode, handlesFor, measureTrack, readingWords, specFromHandles, type HandleId, type HandleNode, type HandlePoints } from './trackGeometry';
 import s from './lab.stories.module.css';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 export const STAGE = { width: 560, height: 460 };
 const CENTER = { x: 280, y: 236 };
@@ -124,7 +124,7 @@ export function TrackGeometryView({ config, onConfig }: { config: TrackGeometryC
       <div className={`${s.stack} ${s.main}`}>
         <div className={s.stage}>
           <SceneCanvas
-            features={[pickPreset, movePreset]}
+            features={[presets.pick, presets.move]}
             scene={scene}
             helpersRef={helpersRef}
             width={STAGE.width}

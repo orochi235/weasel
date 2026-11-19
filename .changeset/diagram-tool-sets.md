@@ -6,7 +6,7 @@
 
 That is the connector, a tool per stencil and the sequence tools; `STENCIL_TOOLS` holds one set per stencil group.
 
-`stencilTools(stencils)` keys a tool per stencil by its insert kind, and `stencilToolSet(group)` names a group's.
+`createStencilTools(stencils)` keys a tool per stencil by its insert kind, and `stencilToolSet(group)` names a group's.
 
 ```tsx
 const tools = useDiagramTools({ connector: { participants }, sequence: { commit } });

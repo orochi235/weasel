@@ -6,10 +6,10 @@ import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { NodeId } from '@weasel-js/core';
 import type { RectPose } from '@weasel-js/core/engine';
-import { createSetLockedOp } from '@weasel-js/core';
 import { defaultCommitAdapter } from '@weasel-js/core/engine';
 import { depsOfForTests as depsOf, makeSceneForTests as makeScene, type TestSceneForTests as TestScene } from '@weasel-js/core/test-seams';
 import { alignCenterXAction, alignLeftAction, distributeVerticalAction, distributeHorizontalAction, flipAction, reorderForwardAction, duplicateAction, nudgeRightAction, groupAction } from '@weasel-js/editing';
+import * as ops from '@weasel-js/core/ops';
 
 function add(scene: TestScene, pose: RectPose, kind: 'mark' | 'group' = 'mark', parent: NodeId | null = null): NodeId {
   const id = scene.mintId();
@@ -99,7 +99,7 @@ describe('locks', () => {
     const scene = makeScene();
     const a = add(scene, unit);
     const b = add(scene, unit);
-    scene.applyBatch([createSetLockedOp({ id: b, from: false, to: true })], 'Lock', defaultCommitAdapter(scene));
+    scene.applyBatch([ops.setLocked({ id: b, from: false, to: true })], 'Lock', defaultCommitAdapter(scene));
     scene.setSelection([a]);
     expect(enabled(reorderForwardAction, scene, { distance: 'adjacent' })).toBe(ActionDisabledReason.Locked);
     const at = scene.historyIndex();
@@ -113,7 +113,7 @@ describe('locks', () => {
     const outer = add(scene, unit, 'group');
     const inner = add(scene, unit, 'group', outer);
     add(scene, unit, 'mark', inner);
-    scene.applyBatch([createSetLockedOp({ id: inner, from: false, to: true })], 'Lock', defaultCommitAdapter(scene));
+    scene.applyBatch([ops.setLocked({ id: inner, from: false, to: true })], 'Lock', defaultCommitAdapter(scene));
     scene.setSelection([outer]);
     expect(() => run(duplicateAction, scene)).not.toThrow();
     const [copy] = scene.getSelection();

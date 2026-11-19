@@ -9,7 +9,7 @@ export interface PlayOptions {
   bus?: string;
   /** 0..1, default 1. Multiplied by any spatialized gain. */
   gain?: number;
-  /** Playback rate, default 1. */
+  /** Playback rate, default 1. Throws on one that is not a positive finite number. */
   rate?: number;
   /** Detune in cents, default 0. */
   detune?: number;
@@ -55,7 +55,8 @@ export interface VoiceHandle {
   release(): void;
   /** Throws a `RangeError` on a value or ramp that is not finite. */
   setGain(value: number, rampMs?: number): void;
-  /** Playback rate. Applies to a voice booked for a future `when` too. */
+  /** Playback rate. Applies to a voice booked for a future `when` too. Throws a `RangeError` on
+   *  one that is not a positive finite number. */
   setRate(value: number): void;
   /** Detune in cents. Applies to a voice booked for a future `when` too. */
   setDetune(cents: number): void;
@@ -172,7 +173,8 @@ export interface NoiseOptions extends NoisePatch, Omit<PlayOptions, 'loop'> {
  *   voice — give music a bus of its own.
  */
 export interface StreamOptions extends Omit<PlayOptions, 'when' | 'detune'> {
-  /** Where to start, in ms into the media. Default: wherever the element is. */
+  /** Where to start, in ms into the media. Default: wherever the element is. Throws on one that
+   *  is negative or not finite. */
   offset?: number;
   /** Set on an element made from a URL. A cross-origin URL needs CORS and
    *  `'anonymous'`, or the graph receives silence. */
@@ -183,9 +185,10 @@ export interface StreamOptions extends Omit<PlayOptions, 'when' | 'detune'> {
 export interface AudioEngineOptions {
   /** Injectable for tests and for consumers that own the context. */
   context?: AudioContext;
-  /** Scheduling window in ms. Default 100. */
+  /** Scheduling window in ms. Default 100. Throws on one that is negative or not finite. */
   lookahead?: number;
-  /** Scheduler pass interval in ms. Default 25. */
+  /** Scheduler pass interval in ms. Default 25. Throws on one that is not above 0 and at most
+   *  2^31 − 1. */
   tickInterval?: number;
   /** Default ['sfx', 'music', 'ui']. */
   buses?: string[];
@@ -204,7 +207,8 @@ export interface AudioEngineOptions {
    *  the lookahead covers, and the voice sounded late by that much. A
    *  `synthVoices: 'worklet'` voice is never reported: it was not late. */
   onLate?: (lateMs: number, when: number) => void;
-  /** Crossfade for every insert-chain edit and bypass, in ms. Default 15. */
+  /** Crossfade for every insert-chain edit and bypass, in ms. Default 15. Throws on one that is
+   *  negative or not finite. */
   insertFadeMs?: number;
   /** Uniform in [0, 1), for where in its loop a noise voice starts. Default `Math.random`. */
   random?: () => number;

@@ -7,7 +7,7 @@ import type { Action } from '@weasel-js/routing';
 import { createScene } from '@weasel-js/core/engine';
 import type { Scene } from '@weasel-js/core/engine';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
-import { drawPreset, pickPreset } from '@weasel-js/editing';
+import { drawPreset, pickPreset } from '../../presets/composites';
 
 type D = { kind: 'rect' };
 type L = 'main';

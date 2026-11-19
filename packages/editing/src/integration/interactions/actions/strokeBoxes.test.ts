@@ -87,7 +87,7 @@ describe('stroke-inclusive boxes', () => {
       a: { pose: { x: 0, y: 0, width: 50, height: 50 }, stroke: true },
       b: { pose: { x: 100, y: 0, width: 50, height: 50 } },
     });
-    const t = captureTurn(scene, [asNodeId('a'), asNodeId('b')] as NodeId[], { drawnBoxes: inkBoxes }, 'union');
+    const t = captureTurn(scene, ['a', 'b'], [asNodeId('a'), asNodeId('b')] as NodeId[], { drawnBoxes: inkBoxes }, 'union');
     expect(t!.turn.pivot).toEqual({ x: 70, y: 25 });
   });
 });

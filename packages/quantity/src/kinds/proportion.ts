@@ -39,8 +39,13 @@ export const percentKind: DisplayKind<PercentDisplay> = {
  * in bidi marks.
  */
 function withoutPercentSign(text: string, locale: string): string {
-  const m = /^\s*([-+\u2212]?)\s*[%٪]?\s*(.*?)\s*[%٪]?\s*$/su.exec(latinDigits(text, locale));
-  return m ? m[1] + m[2] : text;
+  // Trimmed piece by piece: a pattern of optional parts between `\s*`s backtracks in time quadratic in a run of spaces.
+  let t = latinDigits(text, locale).trim();
+  const sign = /^[-+\u2212]/.test(t) ? t[0]! : '';
+  t = t.slice(sign.length).trimStart();
+  if (/^[%٪]/.test(t)) t = t.slice(1).trimStart();
+  if (/[%٪]$/.test(t)) t = t.slice(0, -1).trimEnd();
+  return sign + t;
 }
 
 /**
@@ -162,8 +167,10 @@ function fractionPieces(value: number, d: FractionDisplay) {
 /** A fraction typed inline (`1 1/2`) or diagonally (`1¹⁄₂`), else a plain number in `locale`'s form. */
 function parseFraction(typed: string, locale: string): number {
   const text = latinDigits(typed, locale);
-  const inline = /^\s*([-−+]?)\s*(?:(\d+)\s+)?(\d+)\s*[/⁄]\s*(\d+)\s*$/.exec(text);
-  const diagonal = /^\s*([-−+]?)\s*(\d+)?\s*([⁰¹²³⁴⁵⁶⁷⁸⁹]+)\s*[/⁄]\s*([₀₁₂₃₄₅₆₇₈₉]+)\s*$/.exec(text);
+  // Matched on trimmed text: a `\s*` either side of an optional sign backtracks in time quadratic in a run of spaces.
+  const trimmed = text.trim();
+  const inline = /^([-−+]?)\s*(?:(\d+)\s+)?(\d+)\s*[/⁄]\s*(\d+)$/.exec(trimmed);
+  const diagonal = /^([-−+]?)\s*(\d+)?\s*([⁰¹²³⁴⁵⁶⁷⁸⁹]+)\s*[/⁄]\s*([₀₁₂₃₄₅₆₇₈₉]+)$/.exec(trimmed);
   let magnitude: number;
   if (inline) magnitude = Number(inline[2] ?? 0) + Number(inline[3]) / Number(inline[4]);
   else if (diagonal) {
@@ -275,9 +282,11 @@ export const ratioKind: DisplayKind<RatioDisplay> = {
     return spokenSign(`${signed(String(n))} to ${den}`);
   },
   parse: (text, _d, ctx) => {
-    const m = /^\s*(.+?)\s*:\s*(.+?)\s*$/.exec(text);
     const read = (t: string) => parseNumberIn(t, undefined, ctx.locale);
-    return m ? read(m[1]!) / read(m[2]!) : read(text);
+    // Split at the first colon after the first character, not by a lazy pattern, which backtracks quadratically.
+    const at = text.trim().indexOf(':', 1);
+    const [a, b] = [text.trim().slice(0, at), text.trim().slice(at + 1)];
+    return at > 0 && b.trim() !== '' ? read(a) / read(b) : read(text);
   },
 };
 

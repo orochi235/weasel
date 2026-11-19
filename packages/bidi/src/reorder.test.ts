@@ -67,3 +67,28 @@ describe('L1 — resetting to the paragraph level', () => {
     expect(line('R B', 'ltr').levels[1]).toBe(0);
   });
 });
+
+describe('the line range', () => {
+  it('indexes levels by line position, index - start', () => {
+    const r = line('L L R R', 'ltr', 2, 4);
+    expect(r.order).toEqual([3, 2]);
+    expect([...r.levels]).toEqual([1, 1]);
+    expect(r.levels[r.order[0] - 2]).toBe(1);
+  });
+
+  it('accepts an empty line at either end', () => {
+    expect(line('L L', 'ltr', 0, 0).order).toEqual([]);
+    expect(line('L L', 'ltr', 2, 2).order).toEqual([]);
+  });
+
+  it('refuses a range reaching past the paragraph', () => {
+    expect(() => line('L L', 'ltr', 0, 4)).toThrow(RangeError);
+    expect(() => line('L L', 'ltr', 0, 4)).toThrow(/\[0, 4\) is outside \[0, 2\]/);
+    expect(() => line('L L', 'ltr', -1, 1)).toThrow(RangeError);
+  });
+
+  it('refuses a reversed or fractional range', () => {
+    expect(() => line('L L', 'ltr', 2, 1)).toThrow(/\[2, 1\)/);
+    expect(() => line('L L', 'ltr', 0.5, 1)).toThrow(RangeError);
+  });
+});

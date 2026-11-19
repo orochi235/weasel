@@ -35,6 +35,8 @@ export function coastByWrite<TPose>(a: CoastArgs<TPose>): void {
   };
   // Where each node was last put, which under bounds is not its start plus the decay's travel.
   const finalPositions = new Map<string, Delta>();
+  /** Under 'stop', the nodes that have met an edge and stay where they met it. */
+  const stopped = new Set<string>();
   const cancelKey = coastKey();
   const coast: Coast = {
     ids: ctx.draggedIds.slice(),
@@ -65,7 +67,6 @@ export function coastByWrite<TPose>(a: CoastArgs<TPose>): void {
     magnitude: (v) => Math.hypot(v.x, v.y),
     onTick: (delta) => {
       lastValue = delta;
-      let allHit = bounds !== undefined;
       const frame = new Map<string, TPose | null>();
       for (const id of [...riding]) {
         if (!stillOurs(id)) {
@@ -76,8 +77,11 @@ export function coastByWrite<TPose>(a: CoastArgs<TPose>): void {
         const start = startPoses.get(id);
         if (!start) continue;
         const o = d.getBounds(start);
-        const { nx, ny, hitX, hitY } = clampCorner(bounds, o.x + delta.x, o.y + delta.y);
-        if (!hitX && !hitY) allHit = false;
+        const held = stopped.has(id) ? finalPositions.get(id) : undefined;
+        const { nx, ny, hitX, hitY } = held
+          ? { nx: held.x, ny: held.y, hitX: false, hitY: false }
+          : clampCorner(bounds, o.x + delta.x, o.y + delta.y);
+        if (a.boundary === 'stop' && (hitX || hitY)) stopped.add(id);
         finalPositions.set(id, { x: nx, y: ny });
         frame.set(id, translatePoseViaDescriptor(start, nx - o.x, ny - o.y, d));
       }
@@ -88,9 +92,8 @@ export function coastByWrite<TPose>(a: CoastArgs<TPose>): void {
         decayHandle.cancel();
         return;
       }
-      // Under 'stop', once every node is at the boundary the coast ends
-      // there instead of drifting along the edge as friction wears off.
-      if (a.boundary === 'stop' && allHit) coast.stop();
+      // Under 'stop', a node stays where it met an edge, and the coast ends once every node has.
+      if (a.boundary === 'stop' && [...riding].every((id) => stopped.has(id))) coast.stop();
     },
     onDone: () => {
       commitFlick();

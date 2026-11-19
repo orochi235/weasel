@@ -1,0 +1,66 @@
+{
+ "id": "audio.testing",
+ "commit": "c612cad371d9093df82913a3e49045e0f89422ea",
+ "date": "2026-11-18",
+ "files": [
+  "packages/audio/src/testing/engineHarness.ts",
+  "packages/audio/src/testing/fakeAnalyser.ts",
+  "packages/audio/src/testing/fakeAudioContext.ts",
+  "packages/audio/src/testing/fakeMediaElement.ts",
+  "packages/audio/src/testing/fakeNode.ts",
+  "packages/audio/src/testing/fakeSources.ts",
+  "packages/audio/src/testing/fakeWorker.ts",
+  "packages/audio/src/testing/fakeWorklet.ts",
+  "packages/audio/src/testing/graphHarness.ts",
+  "packages/audio/src/testing/graphWalk.ts",
+  "packages/audio/src/testing/renderEngine.ts",
+  "packages/audio/src/testing/spectrum.ts",
+  "packages/audio/src/testing/worklet.ts"
+ ],
+ "a": 8,
+ "b": 12,
+ "m": 5,
+ "distinct": 15,
+ "chapman": 18.5,
+ "unfound": 3.5,
+ "read": {
+  "A": 13,
+  "B": 13
+ },
+ "patches": 16,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.3,
+   "B": 3.1,
+   "match": 0.2,
+   "fix": 19.3
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "tokens": 7459514,
+  "costUsd": 4.53
+ },
+ "fixCommits": [
+  "79dbaef57e306122a5411248621abb42122ea4eb",
+  "ac5f69123313ecb7b4d6bd3292b3b1c4b73a089a",
+  "94a847ae3509dcd76608598f6e73baf2224d16aa",
+  "716578ac5ebe7dbd818b96f8acfe41d964e15c3d",
+  "bf1261459b36c684bcf04cbb154361a0483ec528",
+  "06b7cd29f099e4f69eca0d3b5e08b6428f97e5cb",
+  "930199dcfbdb530f784685f9af666f1a01341e30",
+  "23d53635e7f93f893de777f955018b558278fffd",
+  "458c8df8d057233136f05f38b8aa95a6b09bf560",
+  "cf551e7d1408f99b4d5d3bac4960259b448f6563",
+  "834da15f8d712eb033490267a4114ac98314134d",
+  "339821f5227c7ac0336eb0b1bd123220907515d4",
+  "ff709fde296a10cc8e044c991953f84441c02638",
+  "15723f2d2a7de0e23d8e98f77fe80ceae972f501",
+  "c539512bbd76406259e1bcc7f2c66c96f052b7dd",
+  "fdef82f1bc7a3f4b23b130baef8cc03db96f326a"
+ ]
+}

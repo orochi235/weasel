@@ -1,6 +1,6 @@
 import { solid } from '@weasel-js/paint';
 import { asNodeId, createScene, type RectPose, pathNode } from '@weasel-js/core';
-import { pathsPreset } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import {
   type ConfigOf,
   defineInstrument,
@@ -16,7 +16,8 @@ import { AnchorFields } from '@weasel-js/ui-canvas/components/inspector/AnchorFi
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 /** Document units: points, 72 to the inch. */
 const UNITS = { pt: 1, in: 72, mm: 72 / 25.4 };
@@ -47,7 +48,7 @@ function FieldsTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   return (
     <>
       <TrialSceneCanvas
-        features={[pickPreset, movePreset, pathsPreset]}
+        features={[presets.pick, presets.move, pathTools.paths]}
         scene={scene}
         selection={selection}
         trial={ctx.trial}

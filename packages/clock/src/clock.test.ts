@@ -534,3 +534,42 @@ describe('a subscriber that throws', () => {
     logged.mockRestore();
   });
 });
+
+describe('duration writes through an endless pass', () => {
+  it('drop the pass end a seek left, as a declare does', () => {
+    const h = createClock({ duration: 100, loop: 3 });
+    h.clock.seek(100, 'end');
+    expect([h.clock.pass, h.clock.phase]).toEqual([0, 1]);
+    h.clock.duration = Number.POSITIVE_INFINITY;
+    h.clock.duration = 50;
+    expect([h.clock.pass, h.clock.phase]).toEqual([2, 0]);
+  });
+});
+
+describe("Reset on a clock that opens at its 'end'", () => {
+  it('goes to the declared end once a loop toggle makes the run endless', () => {
+    const h = createClock({ duration: 1000, start: 'end' });
+    h.clock.loop = true;
+    h.clock.seek(300);
+    h.reset();
+    expect([h.clock.elapsed, h.clock.pass, h.clock.phase]).toEqual([1000, 0, 1]);
+  });
+  it('goes to the declared end under an endless duration write or override', () => {
+    const h = createClock({ duration: 1000, loop: 2, start: 'end' });
+    h.clock.duration = Number.POSITIVE_INFINITY;
+    h.reset();
+    expect(h.clock.elapsed).toBe(2000);
+    h.clock.duration = 1000;
+    h.override({ duration: Number.POSITIVE_INFINITY });
+    h.reset();
+    expect(h.clock.elapsed).toBe(2000);
+  });
+  it('refuses a declaration that leaves it no end, and keeps the last one', () => {
+    const h = createClock({ duration: 1000, start: 'end' });
+    expect(() => h.declare({})).toThrow(RangeError);
+    expect(() => h.declare({ duration: 1000, loop: true })).toThrow(RangeError);
+    expect(h.clock.duration).toBe(1000);
+    h.reset();
+    expect(h.clock.elapsed).toBe(1000);
+  });
+});

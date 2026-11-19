@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { createNodeRouting, inferredNodeRouting } from '@weasel-js/core';
-import { textNodeRouting } from './presets';
+import { textNodeRouting } from './featurePresets';
 
-/** The routing a canvas given `textPreset` classifies by: text ahead of the canvas's own. */
+/** The routing a canvas given `textTools.text` classifies by: text ahead of the canvas's own. */
 function classify(data: unknown, node?: { kind: string; children?: string[] }): string {
   const r = createNodeRouting();
   for (const k of [textNodeRouting, ...inferredNodeRouting]) r.register(k);

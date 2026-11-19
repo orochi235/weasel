@@ -1,4 +1,5 @@
 import { clamp, runPlaceAt, type TrackRun } from '@weasel-js/geom';
+import { pathThrough } from '../../pathThrough';
 
 /** Which way a run bends at `g`: `1` toward its items' up, `-1` away from it, `0` where it runs straight. */
 export function bendAt(run: TrackRun, g: number): -1 | 0 | 1 {
@@ -24,12 +25,7 @@ export function insideOf(run: TrackRun, g: number): 'top' | 'bottom' {
  *  every 4 px or so, since a stretch moved off a curve is no longer the curve's own kind. */
 export function runStretchD(run: TrackRun, from: number, to: number, shift = 0): string {
   const steps = Math.max(1, Math.ceil(Math.abs(to - from) / 4));
-  const parts: string[] = [];
-  for (let i = 0; i <= steps; i++) {
-    const { point } = runPlaceAt(run, from + ((to - from) * i) / steps, shift, 'follow');
-    parts.push(`${i === 0 ? 'M' : 'L'} ${round(point.x)} ${round(point.y)}`);
-  }
-  return parts.join(' ');
+  const points = [];
+  for (let i = 0; i <= steps; i++) points.push(runPlaceAt(run, from + ((to - from) * i) / steps, shift, 'follow').point);
+  return pathThrough(points);
 }
-
-const round = (v: number): number => Math.round(v * 100) / 100;

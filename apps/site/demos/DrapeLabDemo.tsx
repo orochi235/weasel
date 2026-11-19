@@ -1,6 +1,6 @@
 import { useLatest } from '@weasel-js/core';
 import { clamp } from '@weasel-js/geom';
-import { pathsPreset } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import { type ConfigOf, defineInstrument, f, Lab, type RenderContext, TrialSceneCanvas } from '@weasel-js/labkit';
 import { createDrapePreset } from '@weasel-js/path-tools';
 import { useMemo } from 'react';
@@ -8,7 +8,7 @@ import { icon } from '../icons.gen';
 import { type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const RADIUS_MIN = 10, RADIUS_MAX = 600;
 
@@ -34,7 +34,7 @@ const WAVE = (() => {
 function DrapeTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
   const { scene, selection, pathEdit } = usePathEditTrial(ctx, WAVE, { color: '#3478f6' });
   const live = useLatest(ctx);
-  const features = useMemo(() => [pickPreset, movePreset, pathsPreset, createDrapePreset(() => {
+  const features = useMemo(() => [presets.pick, presets.move, pathTools.paths, createDrapePreset(() => {
     const { drape, radius, falloff } = live.current.config;
     return drape
       ? { radiusPx: radius, falloff, onRadius: (px: number) => live.current.setConfig('radius', scrubbedRadius(px)) }

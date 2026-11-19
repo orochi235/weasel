@@ -16,7 +16,8 @@ import { downloadBlob } from '@weasel-js/storage';
 import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
 import s from './PTouchLabelDemo.module.css';
-import { movePreset, pickPreset, transformPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const TAPE = tapeForWidthMm(24)!;
 const LENGTH = 288;
@@ -91,7 +92,7 @@ export function PTouchLabelDemo() {
   return (
     <div className="ckd-demo">
       <DemoStage width={LENGTH} height={TAPE.widthPt}>
-        <SceneCanvas features={[pickPreset, movePreset, transformPreset, TEXT]} className="ckd-canvas" backgroundFill={{ color: '#ffffff' }} scene={scene} selection={selection} />
+        <SceneCanvas features={[presets.pick, presets.move, presets.transform, TEXT]} className="ckd-canvas" backgroundFill={{ color: '#ffffff' }} scene={scene} selection={selection} />
       </DemoStage>
       <canvas ref={preview} className={s.preview} aria-label="Print preview at the printer's dot pitch" />
       <div className="ckd-row">

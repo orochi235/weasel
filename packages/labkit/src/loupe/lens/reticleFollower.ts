@@ -1,10 +1,10 @@
 import {
-  createSetPoseOp,
   type RectPose,
   type TransformFollower,
   type TransformPreviewNode,
   writtenBy,
 } from '@weasel-js/core';
+import * as coreOps from '@weasel-js/core/ops';
 import { lensIdsOf, patchAt } from './lensScene';
 import type { LensScene } from './lensTypes';
 
@@ -43,7 +43,7 @@ export function reticleFollower<C>(scene: LensScene<C>): TransformFollower {
       if (written === null) return [...ops];
       const poses = new Map([...written].map(([id, w]) => [id, w.pose]));
       const follow = resized(scene, poses).map((r) =>
-        createSetPoseOp({
+        coreOps.setPose({
           id: r.id,
           from: poses.get(r.id) ?? scene.get(r.id as never)?.pose,
           to: r.pose,

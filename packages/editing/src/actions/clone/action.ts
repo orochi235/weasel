@@ -9,11 +9,12 @@
 import type { Action, BindingOptions, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { OperandsDep, CloneEnd } from '@weasel-js/core/engine';
 import type { Scene, NodeId, Op } from '@weasel-js/core';
-import { defaultCommitAdapter, operandMethods, createSetSelectionOp, nodeDescriptors, poseDescriptorOf, translatePoseViaDescriptor, type PoseDescriptor, scenePoseFrame, type PoseFrame, SNAP_ROLES } from '@weasel-js/core/engine';
+import { defaultCommitAdapter, operandMethods, nodeDescriptors, poseDescriptorOf, translatePoseViaDescriptor, type PoseDescriptor, scenePoseFrame, type PoseFrame, SNAP_ROLES } from '@weasel-js/core/engine';
 import { runBehaviorCancel, runBehaviorSettled, copyOps, rootsAmong, translateTargets, carryPose, invertPlane, inPlane, planeOf, selectionLayer, recordTransform, finiteFrame, quantizedPreview } from '@weasel-js/core';
 import { startCloneBehaviors, type CloneBehaviors } from './behaviors';
 import { beginDragSnap, snappedDelta } from '../move/dragSnap';
 import { createEmitter } from '@weasel-js/registry';
+import * as coreOps from '@weasel-js/core/ops';
 
 interface CloneScratch {
   /** The selected ids a copy starts from; each brings its subtree. */
@@ -84,7 +85,7 @@ function placedCopyOps(scratch: CloneScratch, selection: OperandsDep, placement?
   );
   if (refused) return null;
   if (ops.length === 0) return [];
-  return [...ops, createSetSelectionOp({ from: selection.get(), to: copies, label: 'Clone' })];
+  return [...ops, coreOps.setSelection({ from: selection.get(), to: copies, label: 'Clone' })];
 }
 
 /** Commit the drag: a behavior's ops when one claims it, else the copies,

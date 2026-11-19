@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { solid } from '@weasel-js/paint';
-import { asNodeId, SceneCanvas, useScene, viewPreset } from '@weasel-js/core';
+import { asNodeId, SceneCanvas, useScene } from '@weasel-js/core';
+import * as corePresets from '@weasel-js/core/presets';
 import type { Fill, Stroke, View } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -44,7 +45,7 @@ export function PanZoomDemo() {
         </span>
       </div>
       <DemoStage width={W} height={H}>
-        <SceneCanvas features={[viewPreset]}
+        <SceneCanvas features={[corePresets.view]}
           className="ckd-canvas"
           scene={scene}
           selection={selection}

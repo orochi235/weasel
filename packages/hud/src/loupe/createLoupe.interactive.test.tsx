@@ -14,7 +14,7 @@ import { useHud, useHudContribution } from '../react';
 import type { Hud } from '../hud';
 import { createLoupe, type LoupeHandle } from './createLoupe';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 type Pose = { x: number; y: number; width: number; height: number };
 type Data = { kind: 'rect' };
@@ -81,7 +81,7 @@ async function mount(opts: { panel?: boolean; panelHides?: boolean } = {}): Prom
       ],
     });
     return (
-      <SceneCanvas features={[drawPreset]} ref={ref} scene={scene} layers={{}} width={400} height={400} ambient={[contribution]}>
+      <SceneCanvas features={[presets.draw]} ref={ref} scene={scene} layers={{}} width={400} height={400} ambient={[contribution]}>
         {opts.panel ? (
           <CanvasView id="panel" bounds={PANEL} defaultView={PANEL_VIEW}
             {...(opts.panelHides ? { layerVisibility: { 'scene:default': false } } : {})} />

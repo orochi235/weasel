@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import type { IconSpec } from '@weasel-js/icons';
 import { dynamicActionId, bindingOptionsOf, type Action, type GestureBinding, type ToolKeybinding } from '@weasel-js/routing';
-import { PATH_GROUP, defineTool, type RenderLayer, type Tool } from '@weasel-js/core';
+import { defineTool, type RenderLayer, type Tool } from '@weasel-js/core';
+import * as groups from '@weasel-js/core/groups';
 
 /** Options for a tool that acts on the stroke under a click. */
 export interface StrokeClickToolOptions {
@@ -53,7 +54,7 @@ export function useStrokeClickTool(
       capabilities: ['creates-shapes'],
       hookName,
       cursor: 'crosshair',
-      presentation: { label, ...(description ? { description } : {}), group: PATH_GROUP, icon },
+      presentation: { label, ...(description ? { description } : {}), group: groups.path, icon },
       ...(extras.actions ? { actions: extras.actions } : {}),
       ...(extras.overlay ? { overlay: extras.overlay } : {}),
       ...(extras.onDeactivate ? { onDeactivate: extras.onDeactivate } : {}),

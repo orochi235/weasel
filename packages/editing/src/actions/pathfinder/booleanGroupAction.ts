@@ -1,10 +1,11 @@
 import type { BooleanShapeOp, AnyScene } from '@weasel-js/core/engine';
-import { booleanGroupFields, followerMoveOps, followerMoves, createReparentOp, requiresContent, rootsAmong, inPaintOrder, slotAbove } from '@weasel-js/core';
-import { groupingSite, pageIdOf, commitOps, defaultCommitAdapter, createInsertOp, createSetPoseOp, AUTO_POSE_DESCRIPTOR, unionBounds, scenePoseFrame } from '@weasel-js/core/engine';
+import { booleanGroupFields, followerMoveOps, followerMoves, requiresContent, rootsAmong, inPaintOrder, slotAbove } from '@weasel-js/core';
+import { groupingSite, pageIdOf, commitOps, defaultCommitAdapter, AUTO_POSE_DESCRIPTOR, unionBounds, scenePoseFrame } from '@weasel-js/core/engine';
 import type { Op, SceneNode as Node, NodeId } from '@weasel-js/core';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { icon } from '../../icons.gen';
 import { PATHFINDER_GROUP } from '../../actionGroups';
+import * as coreOps from '@weasel-js/core/ops';
 
 const PAINT_KEYS = ['fill', 'stroke'] as const;
 
@@ -48,16 +49,16 @@ export function booleanGroupOps(
   if (followers === null) return null;
   const group = scene.mintId();
   const ops: Op[] = [
-    createInsertOp({
+    coreOps.insert({
       node: { ...booleanGroupFields(), id: group, layer: front.layer, pose: front.pose, data, parent } as Node<unknown, string, unknown>,
       ...(index !== undefined ? { index } : {}),
       label,
     }),
   ];
   nodes.forEach((n, i) => {
-    ops.push(createReparentOp({ id: n.id, fromParentId: n.parent ?? null, toParentId: group, toIndex: i, label }));
+    ops.push(coreOps.reparent({ id: n.id, fromParentId: n.parent ?? null, toParentId: group, toIndex: i, label }));
     // The group derives its pose from its members, so it is no frame: they keep the frame it sits in.
-    ops.push(createSetPoseOp<unknown>({ id: n.id, from: n.pose, to: locals.get(n.id), label }));
+    ops.push(coreOps.setPose<unknown>({ id: n.id, from: n.pose, to: locals.get(n.id), label }));
   });
   ops.push(...followerMoveOps(followers, label));
   return { ops, group };

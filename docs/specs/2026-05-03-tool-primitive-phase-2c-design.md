@@ -83,7 +83,7 @@ interface RenderLayer<TData> {
 drawOne: (ctx: CanvasRenderingContext2D, obj: T, pose: Pose, view: View) => void;
 ```
 
-Bare positional `view` arg, not a wrapper context object. Reasoning: the first arg is already the rendering context; piling more "context" on top creates a naming collision. Positional matches `draw` and stays cheap. Consumers pick stroke policy: `ctx.lineWidth = 2 / view.scale` for screen-px strokes, plain `ctx.lineWidth = 2` for world-px (Illustrator-style scale-with-zoom).
+Bare positional `view` arg, not a wrapper context object. Reasoning: the first arg is already the rendering context; piling more "context" on top creates a naming collision. Positional matches `draw` and stays cheap. Consumers pick stroke policy: `ctx.lineWidth = 2 / view.scale` for screen-px strokes, plain `ctx.lineWidth = 2` for world-px (strokes that scale with zoom).
 
 ### Chrome flips to `space: 'screen'`
 

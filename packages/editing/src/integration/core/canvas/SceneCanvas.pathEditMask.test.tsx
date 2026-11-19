@@ -18,7 +18,7 @@ import { editingAnchors } from '@weasel-js/core';
 import { SceneCanvas } from '@weasel-js/core';
 import { useOptionalViewInputsForTests as useOptionalViewInputs, type SurfaceViewInputsForTests as SurfaceViewInputs } from '@weasel-js/core/test-seams';
 import { useOptionalViewRegistryForTests as useOptionalViewRegistry, type ViewRegistryForTests as ViewRegistry } from '@weasel-js/core/test-seams';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../../presets/composites';
 
 type P = { x: number; y: number; width: number; height: number };
 type D = { path: Path; fill: string };

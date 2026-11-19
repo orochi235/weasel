@@ -1,0 +1,22 @@
+.demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-6);
+  width: 960px;
+}
+
+/* The editor fills its container: a tree, the attributes, and a live preview side by side. */
+.editor {
+  block-size: 520px;
+}
+
+.leaves {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wzl-space-2) var(--wzl-space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  color: var(--wzl-fg-muted);
+}

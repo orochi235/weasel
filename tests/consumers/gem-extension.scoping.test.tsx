@@ -8,7 +8,7 @@ import { act, cleanup, render, screen } from '@testing-library/react';
 import { SceneCanvas, asNodeId, buildSceneViewCommands, createScene, defaultDrawOne, nodeShapeEntries, findNodeShape, createNodeKindPreset, nodeShapesOf, type FeaturePreset, type RectPose, type Scene, type SceneCanvasHit, type ToolsApi } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui-canvas';
 import { GEM_BLUE, gemFeature, gemInsert, gemTool, isGem } from './gem-extension/src/index.js';
-import { selectPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -82,7 +82,7 @@ describe('a custom node feature installed as one preset', () => {
   it('inserts, paints, picks, routes and edits on two canvases, and leaves each other when removed', async () => {
     const a = surface();
     const b = surface();
-    const on = [selectPreset, gemFeature];
+    const on = [presets.select, gemFeature];
     const view = render(<Host a={a} b={b} featuresA={on} featuresB={on} />);
     await act(async () => {});
     expect(gemPainters(a)).toBe(1);
@@ -118,7 +118,7 @@ describe('a custom node feature installed as one preset', () => {
     panel.unmount();
 
     // Off canvas A: its tool, insert and routing go; B's installation, painter included, stays.
-    view.rerender(<Host a={a} b={b} featuresA={[selectPreset]} featuresB={on} />);
+    view.rerender(<Host a={a} b={b} featuresA={[presets.select]} featuresB={on} />);
     await act(async () => {});
     expect(a.tools().has('gem')).toBe(false);
     expect(b.tools().has('gem')).toBe(true);
@@ -131,7 +131,7 @@ describe('a custom node feature installed as one preset', () => {
     click('b', [50, 50]);
     expect(b.clicks.at(-1)).toMatchObject({ kind: 'gem' });
 
-    view.rerender(<Host a={a} b={b} featuresA={[selectPreset]} featuresB={[selectPreset]} />);
+    view.rerender(<Host a={a} b={b} featuresA={[presets.select]} featuresB={[presets.select]} />);
     await act(async () => {});
     expect(gemPainters(b)).toBe(0);
     expect(findNodeShape(node, nodeShapesOf(a.scene))?.id).not.toBe('app:gem');
@@ -143,7 +143,7 @@ describe('a custom node feature installed as one preset', () => {
     const gem = { kind: 'mark' as const, layer: 'default' as const, pose: { x: 0, y: 0, width: 100, height: 100 }, data: { gem: { color: GEM_BLUE, facets: 4 } } };
     a.scene.add({ id: asNodeId('g'), ...gem });
     b.scene.add({ id: asNodeId('g'), ...gem });
-    render(<Host a={a} b={b} featuresA={[selectPreset, gemFeature]} featuresB={[selectPreset]} />);
+    render(<Host a={a} b={b} featuresA={[presets.select, gemFeature]} featuresB={[presets.select]} />);
     await act(async () => {});
 
     expect(paintsGem(a)).toBe(true);
@@ -162,11 +162,11 @@ describe('a custom node feature installed as one preset', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const a = surface();
     const b = surface();
-    const view = render(<Host a={a} b={b} featuresA={[selectPreset, tool, factory]} featuresB={[selectPreset]} />);
+    const view = render(<Host a={a} b={b} featuresA={[presets.select, tool, factory]} featuresB={[presets.select]} />);
     await act(async () => {});
     expect(a.tools().has('gem')).toBe(true);
 
-    view.rerender(<Host a={a} b={b} featuresA={[selectPreset, tool]} featuresB={[selectPreset]} />);
+    view.rerender(<Host a={a} b={b} featuresA={[presets.select, tool]} featuresB={[presets.select]} />);
     await act(async () => {});
     expect(a.tools().has('gem')).toBe(false);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('tool "gem" is left out'));

@@ -8,12 +8,15 @@ import {
 import { pref, PX_UNIT } from '@weasel-js/prefs-schema';
 import { pxReach, kneadPath, type PolygonPath, type Point, type Rect } from '@weasel-js/geom';
 import { brushRing } from '@weasel-js/cursor';
-import { PATH_GROUP, commitOps, drawnAabbOf, reshapeOps, shownNodeOf, withPath, type PathNode, pathOperationTags } from '@weasel-js/core';
+import {
+  commitOps, drawnAabbOf, reshapeOps, shownNodeOf, withPath, type PathNode, pathOperationTags,
+} from '@weasel-js/core';
 import { icon } from '../icons.gen';
 import { kneadTargets } from './kneadTargets';
 import { outlineSession } from '../shared/outlineSession';
 import type {} from '../actionParamSchema';
 import { isFiniteNumber } from '@weasel-js/registry';
+import * as groups from '@weasel-js/core/groups';
 
 /** The brush's radius in screen px when no param gives one. */
 export const DEFAULT_KNEAD_RADIUS_PX = 40;
@@ -124,7 +127,7 @@ export const kneadAction = defineAction({
   label: LABEL,
   icon: icon('knead'),
   tags: pathOperationTags('brush'),
-  group: PATH_GROUP,
+  group: groups.path,
   eligible: { capability: 'creates-shapes' },
   cursor: (params) => brushRing(radiusOf(params)),
   requires: ['operands', 'scene', 'view', 'applyOps', 'history', 'createOutlinesAdapter', 'notices'],

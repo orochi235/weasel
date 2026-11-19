@@ -183,32 +183,32 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * selection chrome. The dispatcher is still mounted, so bindings a
      * consumer adds work. A preset the app does not import is not in its bundle.
      *
-     * - `viewPreset` — wheel pan and zoom, pinch, the zoom keys, edge pan, and
+     * - `corePresets.view` — wheel pan and zoom, pinch, the zoom keys, edge pan, and
      *   the hand tool (H, or hold Space). The only thing that turns navigation
      *   on: `viewport` configures it and implies nothing.
-     * - `selectPreset` — the select tool, as the initial active tool and
+     * - `presets.select` — the select tool, as the initial active tool and
      *   Escape's return target: click to pick, drag on empty to marquee, click
      *   on empty to clear.
-     * - `outlinePreset` — the selection outline; `pickPreset` is it and `selectPreset`.
-     * - `movePreset` — drag a body to move it, Alt-drag to clone it. Ambient,
+     * - `presets.outline` — the selection outline; `presets.pick` is it and `presets.select`.
+     * - `presets.move` — drag a body to move it, Alt-drag to clone it. Ambient,
      *   so it runs under any tool that does not claim the drag.
-     * - `resizePreset`, `rotatePreset` — the resize and rotation handles,
-     *   drawn and bound; `transformPreset` is both.
-     * - `editPreset` — delete, duplicate, group/ungroup, nudge, select-all,
+     * - `presets.resize`, `presets.rotate` — the resize and rotation handles,
+     *   drawn and bound; `presets.transform` is both.
+     * - `presets.edit` — delete, duplicate, group/ungroup, nudge, select-all,
      *   Escape, cut/copy/paste of kit nodes, fill and stroke, and their keys.
-     * - `arrangePreset` — align, distribute, reorder, flip.
-     * - `pathfinderPreset` — the pathfinder booleans and the live boolean group.
-     * - `ingestPreset` — dropped and pasted content: images, SVG, files, and
+     * - `presets.arrange` — align, distribute, reorder, flip.
+     * - `presets.pathfinder` — the pathfinder booleans and the live boolean group.
+     * - `presets.ingest` — dropped and pasted content: images, SVG, files, and
      *   whatever `ingestion.handlers` accept, on Cmd/Ctrl+V or an OS drop.
-     * - `drawPreset` — all of the above.
-     * - `selectToolsPreset`, `viewToolsPreset`, `shapeToolsPreset` — a
+     * - `presets.draw` — all of the above.
+     * - `presets.selectTools`, `corePresets.viewTools`, `presets.shapeTools` — a
      *   built-in tool set and nothing else.
      *
      * Path edit, the pen, pencil and knife, and the path commands are
-     * `@weasel-js/path-tools`' `pathToolsPreset` and its tools.
+     * `@weasel-js/path-tools`' `pathTools.pathTools` and its tools.
      *
-     * The parts of `editPreset` and `arrangePreset` are presets
-     * of their own (`nudgePreset`, `alignPreset`, …), and a package's preset
+     * The parts of `presets.edit` and `presets.arrange` are presets
+     * of their own (`presets.nudge`, `presets.align`, …), and a package's preset
      * goes beside them. Undo and redo are always on. Tools add the actions
      * they bind (a shape tool `insert`, the hand tool drag-pan), and `actions`
      * adds, overrides or removes on top. `namedFeatures` in
@@ -261,7 +261,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  feedback shown while it is held. */
     longPress?: SceneCanvasLongPress;
 
-    /** Configures what `viewPreset` turns on, and turns nothing on itself.
+    /** Configures what `corePresets.view` turns on, and turns nothing on itself.
      *  See {@link SceneCanvasViewport}. */
     viewport?: SceneCanvasViewport;
 

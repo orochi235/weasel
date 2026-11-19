@@ -8,7 +8,7 @@ import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import sceneJson from './data/layout.scene.json';
 import { DemoStage } from './DemoStage';
 import s from './LayoutDemo.module.css';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 type P = { x: number; y: number; width: number; height: number };
 type Data = { fill: Fill; stroke?: Stroke; isContainer: boolean };
@@ -74,7 +74,7 @@ export function LayoutDemo() {
   return (
     <div className="ckd-demo">
       <DemoStage width={620} height={260}>
-        <SceneCanvas features={[pickPreset, movePreset]}
+        <SceneCanvas features={[presets.pick, presets.move]}
           scene={scene}
           reflowTransition={reflow}
         >

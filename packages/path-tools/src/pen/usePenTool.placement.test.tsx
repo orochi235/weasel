@@ -104,7 +104,7 @@ describe('usePenTool', () => {
     expect(p.scratch.current!.anchors).toHaveLength(2);
   });
 
-  describe('segment control points (Illustrator/Figma)', () => {
+  describe('segment control points', () => {
     // A dragged anchor's out-handle is the drag vector and its in-handle the
     // mirror of it; segment A→B is C(A.out ?? A, B.in ?? B, B).
     const segs = (path: PolygonPath): string[] => {

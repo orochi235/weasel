@@ -7,8 +7,8 @@ import {
   LASSO_VERTICES,
   selectFromLasso,
 } from './behaviors/selectFromLasso';
-import { createSetSelectionOp } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/core';
+import * as coreOps from '@weasel-js/core/ops';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -328,7 +328,7 @@ describe('lassoSelectAction behaviors', () => {
 
   it('commits the ops a behavior returns in place of the default selection', () => {
     const dep = makeLassoSelectDep(['hit']);
-    drive(dep, [{ onEnd: () => [createSetSelectionOp({ from: [], to: ['chosen' as NodeId] })] }]);
+    drive(dep, [{ onEnd: () => [coreOps.setSelection({ from: [], to: ['chosen' as NodeId] })] }]);
     expect(dep.calls.setSelection).toEqual([['chosen']]);
     expect(dep.calls.hitTestLasso).toEqual([]);
   });

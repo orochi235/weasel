@@ -1,3 +1,5 @@
+import { DOUBLE_CLICK_MAX_MS } from '@weasel-js/gestures';
+import { useKitSetting } from '@weasel-js/react';
 import { movedIndex, nudgeOf } from '@weasel-js/ui-input';
 import { useCallback, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactElement } from 'react';
 import type { Key } from 'react-aria-components';
@@ -10,8 +12,6 @@ import type { PageTabItem, PageTabsProps } from './PageTabs';
 import { RenameField } from './RenameField';
 import s from './PageTabs.module.css';
 
-/** Two presses on one tab this close together are a double press. */
-const DOUBLE_PRESS_MS = 500;
 /** Lit when no page is current: a key no tab has, so React Aria does not light the first. */
 const isActivation = (e: KeyboardEvent): boolean =>
   (e.key === 'Enter' || e.key === ' ') && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey;
@@ -45,6 +45,7 @@ export function usePageTabs<P extends PageTabItem>(props: PageTabsProps<P>, line
   const { labelOf } = props;
   const [editing, setEditing] = useState<string | null>(null);
   const lastPress = useRef<{ id: string; at: number } | null>(null);
+  const doubleMs = useKitSetting('gestures.doubleClickMs') ?? DOUBLE_CLICK_MAX_MS;
   /** The tab React Aria selected during the press under way, which the press must not report again. */
   const selectedByPress = useRef<string | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -54,14 +55,14 @@ export function usePageTabs<P extends PageTabItem>(props: PageTabsProps<P>, line
     const prev = lastPress.current;
     const now = performance.now();
     lastPress.current = { id, at: now };
-    if (onRename && prev?.id === id && now - prev.at < DOUBLE_PRESS_MS) {
+    if (onRename && prev?.id === id && now - prev.at < doubleMs) {
       lastPress.current = null;
       setEditing(id);
       return;
     }
     if (selectedByPress.current !== id) onSelect(id);
     selectedByPress.current = null;
-  }, [onRename, onSelect]);
+  }, [onRename, onSelect, doubleMs]);
 
   const items = pages.map((p, i) => ({ id: p.id, label: labelOf(p, i) }));
   const drag = useReorderDragList({

@@ -1,4 +1,4 @@
-import { createReorderOp, defaultCommitAdapter, operandMethods, bringForward, bringToFront, sendBackward, sendToBack, requiresOperands } from '@weasel-js/core';
+import { defaultCommitAdapter, operandMethods, bringForward, bringToFront, sendBackward, sendToBack, requiresOperands } from '@weasel-js/core';
 import type { OperandsDep, NodeId, Scene, Op } from '@weasel-js/core';
 import type { ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction, BETWEEN_GESTURES } from '@weasel-js/routing';
@@ -6,6 +6,7 @@ import type { ReorderParams } from '../../actionParamSchema';
 import { sameList } from '@weasel-js/registry';
 import { icon } from '../../icons.gen';
 import { REORDER_GROUP } from '../../actionGroups';
+import * as ops from '@weasel-js/core/ops';
 
 // ---------------------------------------------------------------------------
 // Shared helper
@@ -16,7 +17,7 @@ type ReorderDistance = NonNullable<ReorderParams['distance']>;
 /**
  * Execute a directional reorder on the current selection. Translates
  * `direction` + `distance` into the four-way `ReorderDirection` understood by
- * `createReorderOp`, then routes the single reorder op through the consumer
+ * `ops.reorder`, then routes the single reorder op through the consumer
  * `applyOps` commit hook (consumer history) when present, falling back to
  * `scene.applyBatch` against the shared `defaultCommitAdapter`. Either way the
  * whole reorder lands as one undo entry labelled `'Reorder'`.
@@ -34,10 +35,10 @@ function reorderSelection(
   const reorderDir = reorderDirection(direction, distance);
   if (reorderPlan(scene, ids, reorderDir) !== 'moves') return;
 
-  // `createReorderOp` partitions `ids` by their current parent and rewrites
+  // `ops.reorder` partitions `ids` by their current parent and rewrites
   // each affected parent's child order via the adapter's `getChildren` /
   // `setChildOrder` (and `getParent`) — all carried by `defaultCommitAdapter`.
-  const op = createReorderOp({ ids, direction: reorderDir, label: 'Reorder' });
+  const op = ops.reorder({ ids, direction: reorderDir, label: 'Reorder' });
 
   if (applyOps) applyOps([op], 'Reorder');
   else scene.applyBatch([op], 'Reorder', defaultCommitAdapter(scene, operandMethods(selection)));
@@ -45,7 +46,7 @@ function reorderSelection(
 
 const ORDER_FNS = { forward: bringForward, backward: sendBackward, front: bringToFront, back: sendToBack } as const;
 
-/** What a reorder of `ids` would do, as `createReorderOp` partitions them by parent: nothing, or change some
+/** What a reorder of `ids` would do, as `ops.reorder` partitions them by parent: nothing, or change some
  *  child order; `'locked'` when that shifts a locked node, which keeps its place in the stack (my call,
  *  2026-11-10, after the 2026-11-09 locked ruling). */
 function reorderPlan(scene: Scene<unknown, string, unknown>, ids: readonly string[], direction: keyof typeof ORDER_FNS): 'none' | 'moves' | 'locked' {

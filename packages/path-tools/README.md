@@ -19,40 +19,41 @@ the knife, and the tools below.
 
 ```tsx
 import { SceneCanvas } from '@weasel-js/core';
-import { pathToolsPreset, usePathToolsTools } from '@weasel-js/path-tools';
-import { drawPreset } from '@weasel-js/editing';
+import { usePathToolsTools } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
+import * as presets from '@weasel-js/editing/presets';
 
 const tools = usePathToolsTools();
-<SceneCanvas scene={scene} features={[drawPreset, pathToolsPreset]} tools={tools} />;
+<SceneCanvas scene={scene} features={[presets.draw, pathTools.pathTools]} tools={tools} />;
 ```
 
-`pathToolsPreset` turns every family on but Drape and handle snapping, which
+`pathTools.pathTools` turns every family on but Drape and handle snapping, which
 change what every anchor or handle drag does. Each is also a preset of its own,
 and an app that imports only some never loads the others:
 
 | Preset | What it adds |
 |---|---|
-| `pathsPreset` | Path edit (`pathEditPreset`: double-click a path to open it, the `anchors` tool, anchor and handle editing, bending a segment), its keys (`anchorKeysPreset`), the path commands (`pathCommandsPreset`: Simplify, Offset, Cut at crossings, Join), and Create Outlines and Outline Stroke (`outlinesPreset`). Every other preset here assumes it |
-| `sandPreset` | `sand`, which `useSandTool` binds: Sand, a path-edit tool that refits the curve it passes over |
-| `handleLocksPreset` | The `handleLock.angle` and `handleLock.length` toggles |
-| `createDrapePreset` | Drape: dragging anchors also moves the anchors near them along the path, by a falloff over a radius in screen pixels that the wheel scrubs mid-drag; the reach is drawn as a band. Not in `pathToolsPreset` |
-| `handleSnapPreset`, `createHandleSnapPreset` | Handle snapping: a dragged handle's angle snaps to steps and to the line through its anchor's other handle, through a snap session whose angles `handleSnapSource` offers. Not in `pathToolsPreset` |
-| `bridgePreset` | Bridge: join open ends with a curve along each end's heading, on paths or on two anchors |
-| `spiroPreset` | Spiro curves: path edit edits a spiro node's points and solves the curve again through them, `setSpiroKind` sets the kind of the selected points, and `releaseSpiro` converts a spiro curve to an ordinary path; `useSpiroTool` (Shift+P) draws them |
-| `tugPreset` | `tugPath`, which `useTugTool` binds: Tug, a path-edit tool whose drag on an open end grows the path along its end tangent or curvature, or trims it back |
-| `snipPreset`, `reachPreset`, `kneadPreset` | The actions `useSnipTool`, `useReachTool`, and `useKneadTool` bind |
-| `fairingPreset` | Fairing (`fairAnchors`), which makes smooth anchors curvature-continuous by their handle lengths |
-| `anchorSelectionPreset` | Grow and shrink the anchor selection along the path, or select every Nth anchor, the corners, the smooth anchors, or the rest |
-| `resamplePreset` | Resample: anchors spread evenly by arc length, adjusted afterward in the last-operation panel |
-| `addExtremesPreset` | Add extremes: an anchor at each curve's leftmost, rightmost, top, and bottom |
-| `curvatureCombPreset` | The curvature comb over the open path, under chrome id `path-edit.comb` |
-| `poisePreset` | Poise and Equalize, from grips under chrome id `path-edit.poise` |
-| `constraintsPreset` | Path constraints: the actions, their marks, and every edit finished so they hold |
-| `pathStructurePreset` | Make start point and Reverse path direction, and arrows showing which way the open path runs, under chrome id `path-edit.direction` |
-| `segmentTypePreset` | Turn segments straight or curved, from the selection (Shift+C) or under a Shift+double-click |
-| `filletPreset` | Fillet: a widget in each corner anchor whose drag sets its radius (`editFillet`), and `setFillets` and `cycleFillet` on the selected corners; `FILLET_CONTROLS` and `useFilletControls` are a panel over them |
-| `pathEffectsPreset` | Tween, Bend along, Repeat along, Text along, Roughen, Zigzag, and Pucker & Bloat, and the actions that edit, release and expand them |
-| `warpPreset` | Expand and configure a held warp; `usePlaneWarpTool`, `useClothWarpTool`, and `usePinWarpTool` bring their own drags |
+| `pathTools.paths` | Path edit (`pathTools.pathEdit`: double-click a path to open it, the `anchors` tool, anchor and handle editing, bending a segment), its keys (`pathTools.anchorKeys`), the path commands (`pathTools.pathCommands`: Simplify, Offset, Cut at crossings, Join), and Create Outlines and Outline Stroke (`pathTools.outlines`). Every other preset here assumes it |
+| `pathTools.sand` | `sand`, which `useSandTool` binds: Sand, a path-edit tool that refits the curve it passes over |
+| `pathTools.handleLocks` | The `handleLock.angle` and `handleLock.length` toggles |
+| `createDrapePreset` | Drape: dragging anchors also moves the anchors near them along the path, by a falloff over a radius in screen pixels that the wheel scrubs mid-drag; the reach is drawn as a band. Not in `pathTools.pathTools` |
+| `pathTools.handleSnap`, `createHandleSnapPreset` | Handle snapping: a dragged handle's angle snaps to steps and to the line through its anchor's other handle, through a snap session whose angles `handleSnapSource` offers. Not in `pathTools.pathTools` |
+| `pathTools.bridge` | Bridge: join open ends with a curve along each end's heading, on paths or on two anchors |
+| `pathTools.spiro` | Spiro curves: path edit edits a spiro node's points and solves the curve again through them, `setSpiroKind` sets the kind of the selected points, and `releaseSpiro` converts a spiro curve to an ordinary path; `useSpiroTool` (Shift+P) draws them |
+| `pathTools.tug` | `tugPath`, which `useTugTool` binds: Tug, a path-edit tool whose drag on an open end grows the path along its end tangent or curvature, or trims it back |
+| `pathTools.snip`, `pathTools.reach`, `pathTools.knead` | The actions `useSnipTool`, `useReachTool`, and `useKneadTool` bind |
+| `pathTools.fairing` | Fairing (`fairAnchors`), which makes smooth anchors curvature-continuous by their handle lengths |
+| `pathTools.anchorSelection` | Grow and shrink the anchor selection along the path, or select every Nth anchor, the corners, the smooth anchors, or the rest |
+| `pathTools.resample` | Resample: anchors spread evenly by arc length, adjusted afterward in the last-operation panel |
+| `pathTools.addExtremes` | Add extremes: an anchor at each curve's leftmost, rightmost, top, and bottom |
+| `pathTools.curvatureComb` | The curvature comb over the open path, under chrome id `path-edit.comb` |
+| `pathTools.poise` | Poise and Equalize, from grips under chrome id `path-edit.poise` |
+| `pathTools.constraints` | Path constraints: the actions, their marks, and every edit finished so they hold |
+| `pathTools.pathStructure` | Make start point and Reverse path direction, and arrows showing which way the open path runs, under chrome id `path-edit.direction` |
+| `pathTools.segmentType` | Turn segments straight or curved, from the selection (Shift+C) or under a Shift+double-click |
+| `pathTools.fillet` | Fillet: a widget in each corner anchor whose drag sets its radius (`editFillet`), and `setFillets` and `cycleFillet` on the selected corners; `FILLET_CONTROLS` and `useFilletControls` are a panel over them |
+| `pathTools.pathEffects` | Tween, Bend along, Repeat along, Text along, Roughen, Zigzag, and Pucker & Bloat, and the actions that edit, release and expand them |
+| `pathTools.warp` | Expand and configure a held warp; `usePlaneWarpTool`, `useClothWarpTool`, and `usePinWarpTool` bring their own drags |
 
 `PATH_EDIT_TOOLS` names the path-edit tools, the anchors tool, Sand and Tug, and `usePathEditTools` builds them,
 beside `DRAW_TOOLS` (the pen, pencil and spiro pen), `SLICE_TOOLS` (the knife), `RESHAPE_TOOLS` and `usePathToolsTools`.
@@ -112,4 +113,4 @@ own actions and need no preset:
 | Tool | What it does |
 |---|---|
 | `useGirthTool` (Shift+W) | Shapes a stroke's `vertexWidths` by dragging its edges |
-| `useShapeBuilderTool` (Shift+M) | With two or more paths selected, a drag unites the faces their outlines cut each other into, and an Alt-drag deletes them; it reads the `booleansAdapter` dep, which `@weasel-js/editing`'s `booleansPreset` publishes over the canvas's path leaves (`pathToolsPreset` and `pathfinderPreset` include it). `planShapeBuilder` is the engine under it |
+| `useShapeBuilderTool` (Shift+M) | With two or more paths selected, a drag unites the faces their outlines cut each other into, and an Alt-drag deletes them; it reads the `booleansAdapter` dep, which `@weasel-js/editing`'s `presets.booleans` publishes over the canvas's path leaves (`pathTools.pathTools` and `presets.pathfinder` include it). `planShapeBuilder` is the engine under it |

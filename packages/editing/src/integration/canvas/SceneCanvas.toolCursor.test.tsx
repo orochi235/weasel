@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 import type { RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import { SceneCanvas, useScene, defineTool } from '@weasel-js/core';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 type D = { color: string };
 type L = 'main';

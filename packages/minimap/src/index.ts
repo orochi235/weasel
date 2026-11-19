@@ -5,7 +5,7 @@ export {
   type LinkedCursorOptions,
 } from './createMinimapContribution';
 export {
-  minimapCenterAction, minimapPanAction, minimapZoomAction, minimapTouchZoomAction, centerRootOn,
+  createMinimapCenterAction, createMinimapPanAction, createMinimapZoomAction, createMinimapTouchZoomAction, centerRootOn,
   MINIMAP_CENTER_ACTION_ID, MINIMAP_PAN_ACTION_ID, MINIMAP_ZOOM_ACTION_ID, MINIMAP_TOUCH_ZOOM_ACTION_ID,
   type MinimapZoomClamp,
 } from './actions';

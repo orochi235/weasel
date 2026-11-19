@@ -12,11 +12,11 @@ This document captures a brainstorm from 2026-05-24. It is **not** an active pla
 - Check whether the Canvas/SceneCanvas seam refactor has landed (`2026-05-24-canvas-scenecanvas-seam` (plan, deleted at merge)). The hit-testing notes below assume `Hit.kind` from `getNodeAtPoint` as the kind transport.
 - The "Reassessment checklist" at the bottom of this doc is for v2 (heavyweight) reassessment specifically; the bullets above are for v1 reassessment when picking the lightweight primitive up off the shelf.
 
-Design for a lightweight symbol/instance primitive in weasel, with extension hooks for a future heavyweight (Figma-style components) mode without reshaping the data model. Brainstormed 2026-05-24.
+Design for a lightweight symbol/instance primitive in weasel, with extension hooks for a future heavyweight (components with per-instance overrides) mode without reshaping the data model. Brainstormed 2026-05-24.
 
 ## Motivation
 
-A general 2D scene-graph kit benefits from a way to define a subtree once and place it many times (icons, repeated decorations, library elements, reusable masked groups). The lightweight model — instances carry only a pose, edits to the definition propagate live, divergences require explicit detach — is enough to unlock those workflows and is strictly contained by any future heavyweight component model. Starting lightweight avoids painting weasel into Figma's specific UX choices while keeping forward compatibility.
+A general 2D scene-graph kit benefits from a way to define a subtree once and place it many times (icons, repeated decorations, library elements, reusable masked groups). The lightweight model — instances carry only a pose, edits to the definition propagate live, divergences require explicit detach — is enough to unlock those workflows and is strictly contained by any future heavyweight component model. Starting lightweight avoids painting weasel into one heavyweight model's UX choices while keeping forward compatibility.
 
 ## Scope
 

@@ -11,7 +11,7 @@ import type React from 'react';
 import { SceneCanvas, never } from '@weasel-js/core';
 import type { SceneCanvasProps, CanvasHelpers, Scene, NodeId, VisibilityRules } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 type D = { kind: string };
 type L = 'main';

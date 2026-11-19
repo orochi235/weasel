@@ -42,24 +42,33 @@ export function assertSnapshotShape(json: unknown): void {
   if (!Array.isArray(nodes)) refuse('`nodes` is not an array');
   if (doc !== undefined && !isPlainObject(doc)) refuse('`doc` is not an object');
   // Version 1 reads any kind but `leaf` as a group, or as its classifier says, so only later versions name theirs.
-  const kinds = version === 1 ? null : ['mark', 'group'];
+  const kinds = version === 1 ? null : NODE_KINDS;
   (nodes as unknown[]).forEach((n, i) => {
-    if (!isPlainObject(n)) return refuse(`node ${i} is not an object`);
-    if (typeof n.id !== 'string') refuse(`node ${i} has no string \`id\``);
-    const at = `node "${n.id as string}"`;
-    if (kinds && !kinds.includes(n.kind as string)) refuse(`${at} has kind ${JSON.stringify(n.kind)}; expected ${kinds.join(' or ')}`);
-    if (typeof n.layer !== 'string') refuse(`${at} has no string \`layer\``);
-    if (n.pose === undefined || n.pose === null) refuse(`${at} has no \`pose\``);
-    if (n.parent !== undefined && n.parent !== null && typeof n.parent !== 'string') refuse(`${at} has a \`parent\` that is not an id`);
-    const deps = n.dependsOn;
-    if (deps !== undefined && deps !== 'children' && !(Array.isArray(deps) && deps.every((d) => typeof d === 'string'))) {
-      refuse(`${at} has a \`dependsOn\` that is neither 'children' nor a list of ids`);
-    }
-    for (const flag of ['pickable', 'hidden', 'locked', 'consumesChildren'] as const) {
-      if (n[flag] !== undefined && typeof n[flag] !== 'boolean') refuse(`${at} has a \`${flag}\` that is not a boolean`);
-    }
-    for (const { jsonKey } of NODE_FN_FIELDS) {
-      if (n[jsonKey] !== undefined && typeof n[jsonKey] !== 'string') refuse(`${at} has a \`${jsonKey}\` that is not a string`);
-    }
+    const fault = nodeShapeFault(n, kinds);
+    if (fault) refuse(isPlainObject(n) && typeof n.id === 'string' ? `node "${n.id}" ${fault}` : `node ${i} ${fault}`);
   });
+}
+
+const NODE_KINDS: readonly string[] = ['mark', 'group'];
+
+/** What is wrong with `n` as a saved node, as a phrase after its name, or `null` when every reader of one can read it.
+ *  `kinds` are the kinds it may have; `null` takes any. A clipboard item is a saved node too. */
+export function nodeShapeFault(n: unknown, kinds: readonly string[] | null = NODE_KINDS): string | null {
+  if (!isPlainObject(n)) return 'is not an object';
+  if (typeof n.id !== 'string') return 'has no string `id`';
+  if (kinds && !kinds.includes(n.kind as string)) return `has kind ${JSON.stringify(n.kind)}; expected ${kinds.join(' or ')}`;
+  if (typeof n.layer !== 'string') return 'has no string `layer`';
+  if (n.pose === undefined || n.pose === null) return 'has no `pose`';
+  if (n.parent !== undefined && n.parent !== null && typeof n.parent !== 'string') return 'has a `parent` that is not an id';
+  const deps = n.dependsOn;
+  if (deps !== undefined && deps !== 'children' && !(Array.isArray(deps) && deps.every((d) => typeof d === 'string'))) {
+    return "has a `dependsOn` that is neither 'children' nor a list of ids";
+  }
+  for (const flag of ['pickable', 'hidden', 'locked', 'consumesChildren'] as const) {
+    if (n[flag] !== undefined && typeof n[flag] !== 'boolean') return `has a \`${flag}\` that is not a boolean`;
+  }
+  for (const { jsonKey } of NODE_FN_FIELDS) {
+    if (n[jsonKey] !== undefined && typeof n[jsonKey] !== 'string') return `has a \`${jsonKey}\` that is not a string`;
+  }
+  return null;
 }

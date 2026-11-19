@@ -22,7 +22,7 @@ the same `IngestItem`. Handlers never branch on where content came from.
 
 ## Handlers
 
-The kit's handlers live in `@weasel-js/editing` (`packages/editing/src/ingest/`), and its `ingestPreset` brings
+The kit's handlers live in `@weasel-js/editing` (`packages/editing/src/ingest/`), and its `presets.ingest` brings
 them to a canvas; this directory holds the mechanism that routes an item to one.
 
 | Handler | Claims |
@@ -35,7 +35,7 @@ Priority decides who is asked first, not registration order: the kit's JSON
 handler (-50) is what makes an internal copy/paste preserve everything rather
 than degrading to an image, so it sits above the SVG (-90) and image (-100)
 handlers, and every consumer handler (default 0) sits above them all. Plain text
-is `@weasel-js/text-tools`' handler, which its `textPreset` brings.
+is `@weasel-js/text-tools`' handler, which its `textTools.text` brings.
 
 A drag still in flight shows its MIMEs and no contents, so the canvas cannot put
 it to a predicate `match`. It asks `couldClaim` instead, which reads globs and a

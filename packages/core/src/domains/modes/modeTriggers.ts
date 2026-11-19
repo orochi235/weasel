@@ -21,7 +21,7 @@ export interface ModeTriggerHandlers {
  * The registry's double-click entries as an always-on contribution: for each mode whose
  * `entry.trigger` is `'double-click-target'`, one action bound to a double-click on each routing
  * kind its `entry.targets` names, entering the mode on the node double-clicked. Install it with
- * `<SceneCanvas ambient>`, beside `modeShortcuts`.
+ * `<SceneCanvas ambient>`, beside `createModeShortcutsContribution`.
  *
  * The target is the node the dispatcher classified the double-click on (the `hitAt` dep's
  * `doubleClick`, else its hit), the one the binding's `kind:` target matched: a double-click on
@@ -32,7 +32,7 @@ export interface ModeTriggerHandlers {
  * The bindings ride the ambient tier: a tool that claims the double-click itself, the pen
  * finishing a stroke, keeps it.
  */
-export function modeTriggers(registry: ModeRegistry, handlers: ModeTriggerHandlers): Contribution<never> {
+export function createModeTriggersContribution(registry: ModeRegistry, handlers: ModeTriggerHandlers): Contribution<never> {
   const actions: Action[] = [];
   const { enter } = handlers;
   if (enter) {

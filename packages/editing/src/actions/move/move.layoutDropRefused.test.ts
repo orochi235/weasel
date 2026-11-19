@@ -4,9 +4,10 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import type { InvocationCtx } from '@weasel-js/routing';
-import { createScene, createSetPoseOp, asNodeId, type RectPose } from '@weasel-js/core/engine';
+import { createScene, asNodeId, type RectPose } from '@weasel-js/core/engine';
 import type { LayoutStrategy } from '@weasel-js/core/engine';
 import { moveAction } from './action';
+import * as ops from '@weasel-js/core/ops';
 
 const A = asNodeId('a');
 const T = asNodeId('target');
@@ -21,7 +22,7 @@ const refusing = {
   getDropTargets: () => [{ pose: SLOT, origin: { x: SLOT.x, y: SLOT.y } }],
   reflowPoses: () => new Map(),
   commitDrop: (_c: unknown, _k: unknown, dragged: { id: string; originPose: RectPose }, target: { pose: RectPose }) =>
-    [createSetPoseOp<RectPose>({ id: dragged.id, from: dragged.originPose, to: target.pose, label: 'Drop' })],
+    [ops.setPose<RectPose>({ id: dragged.id, from: dragged.originPose, to: target.pose, label: 'Drop' })],
   arrive: () => null,
 } as unknown as LayoutStrategy<RectPose>;
 

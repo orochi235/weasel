@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingInvoker, SelectionApi } from '@weasel-js/routing';
 import type { Point } from '@weasel-js/geom';
 import { IDENTITY_POSE_COMPOSITION, createScene, asNodeId, createSnapOutcomeStore, drawnBoxes } from '@weasel-js/core/engine';
-import { sceneSession2d, lastTransform } from '@weasel-js/core';
+import { createSceneSession2d, lastTransform } from '@weasel-js/core';
 import type { SnapSource, SnapBegin, SnapDep, AnyScene } from '@weasel-js/core/engine';
 import { cloneAction } from './action';
 
@@ -29,7 +29,7 @@ function rig(sources: readonly SnapSource[]) {
   const snap: SnapDep = {
     begin: (req) => {
       begun.push(req);
-      return sceneSession2d({ req, scene, boxes: drawnBoxes({ scene }), sources, view: () => VIEW, reachPx: 8, store });
+      return createSceneSession2d({ req, scene, boxes: drawnBoxes({ scene }), sources, view: () => VIEW, reachPx: 8, store });
     },
   };
   let selected: string[] = [id];

@@ -14,7 +14,8 @@ import { SceneCanvas, CanvasView, ViewMarker, useSceneAdapter, useTools, type To
 import { createScene, WeaselProvider } from '@weasel-js/core/engine';
 import type { SelectionApi } from '@weasel-js/routing';
 import type { SceneCanvasProps, CanvasViewCamera, SceneCanvasApi, View, NodeId, ViewMarkerProps } from '@weasel-js/core';
-import { drawPreset, useSelectTool, useSelection } from '@weasel-js/editing';
+import { useSelectTool, useSelection } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };

@@ -47,7 +47,7 @@ export interface RestoreOptions {
   onSkip?: (skip: UnresolvedOp) => void;
 }
 
-/** A strict restore that met ops it could not rebuild. The history was left as it was. */
+/** A strict restore that met ops it could not rebuild, or a snapshot of the wrong shape. The history was left as it was. */
 export class HistoryRestoreError extends Error {
   constructor(readonly report: HistoryRestoreReport, message?: string) {
     const listed = report.unresolved.slice(0, 3).map((u) => `"${u.name}" (${u.reason}) in entry ${u.entryId} "${u.label}"`);

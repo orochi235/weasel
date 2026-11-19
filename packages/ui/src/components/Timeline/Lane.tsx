@@ -1,4 +1,4 @@
-import { useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type ReactElement } from 'react';
+import { useEffect, useId, useRef, type KeyboardEvent as ReactKeyboardEvent, type ReactElement } from 'react';
 import { type EventTrack, type Keyframe, type SampledTrack, type TimelineTrack } from '@weasel-js/animator';
 import { DisclosureMark } from '../Disclosure';
 import type { FocusHoldAttrs } from '../Disabled/controlHold';
@@ -185,12 +185,14 @@ function LaneLabel({ row, mark, expanded, toggleExpanded }: {
   expanded: boolean;
   toggleExpanded: () => void;
 }) {
+  const labelId = useId();
   return (
     <div className={s.laneLabel}>
       {row.kind === 'timeline' ? (
         <span
           role="button"
           {...mark}
+          aria-labelledby={labelId}
           aria-expanded={expanded}
           data-testid="timeline-disclosure"
           className={s.disclosure}
@@ -200,7 +202,7 @@ function LaneLabel({ row, mark, expanded, toggleExpanded }: {
           <DisclosureMark open={expanded} />
         </span>
       ) : null}
-      {row.label}
+      <span id={labelId} className={s.laneName}>{row.label}</span>
     </div>
   );
 }

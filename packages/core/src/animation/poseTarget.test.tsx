@@ -117,6 +117,15 @@ describe('scenePoseTarget', () => {
     expect(scene.historyEntries().length).toBe(entries);
   });
 
+  it('has none for a node deleted after its animation came to rest', () => {
+    const { animator, frame, scene, a } = setup();
+    act(() => { animator().tween({ target: scenePoseTarget(scene, a)!, to: at(100), ms: 100, easing: linear }); });
+    frame(0);
+    frame(100);
+    scene.remove(a);
+    expect(scenePoseTarget(scene, a)).toBeUndefined();
+  });
+
   it('has none for a node that is not there, or whose pose has no axes', () => {
     const { scene } = setup();
     expect(scenePoseTarget(scene, 'nope')).toBeUndefined();

@@ -17,33 +17,26 @@ npm install @weasel-js/editing
 
 ```tsx
 import { SceneCanvas } from '@weasel-js/core';
-import { drawPreset } from '@weasel-js/editing';
-
-<SceneCanvas scene={scene} features={[drawPreset]} />
-```
-
-`drawPreset` is every preset at once. Each part can be passed alone:
-`pickPreset` (select and the selection's outline), `transformPreset` (resize
-and rotate handles), `movePreset`, `editPreset` (escape, select all, delete,
-duplicate, group, nudge, style and the clipboard, each also a preset of its
-own), `arrangePreset` (flip, reorder, align, distribute), `pathfinderPreset`,
-`ingestPreset`, and the tool presets `selectToolsPreset` and
-`shapeToolsPreset`. Core's `viewPreset` pans and zooms; a canvas given only it
-is a viewer, whose selection nothing it runs writes.
-
-`@weasel-js/editing/presets` names each of these by its short name, core's
-`view` and `viewTools` among them:
-
-```tsx
 import * as presets from '@weasel-js/editing/presets';
 
-<SceneCanvas scene={scene} features={[presets.view, presets.pick, presets.move]} />
+<SceneCanvas scene={scene} features={[presets.draw]} />
 ```
 
-The tools are editing's, offered to a canvas by id: `selectToolsOfferedPreset`
-offers the select tool and the lasso, `shapeToolsOfferedPreset` the rect, ellipse,
+`presets.draw` is every preset at once. Each part can be passed alone:
+`presets.pick` (select and the selection's outline), `presets.transform` (resize
+and rotate handles), `presets.move`, `presets.edit` (escape, select all, delete,
+duplicate, group, nudge, style and the clipboard, each also a preset of its
+own), `presets.arrange` (flip, reorder, align, distribute), `presets.pathfinder`,
+`presets.ingest`, and the tool presets `presets.selectTools` and
+`presets.shapeTools`. Core's `presets.view` pans and zooms; a canvas given only it
+is a viewer, whose selection nothing it runs writes. The presets are on
+`@weasel-js/editing/presets` only, never the main entry; core's `view` and
+`viewTools` are there too, the same objects `@weasel-js/core/presets` exports.
+
+The tools are editing's, offered to a canvas by id: `presets.selectToolsOffered`
+offers the select tool and the lasso, `presets.shapeToolsOffered` the rect, ellipse,
 line, polygon and star, and `defaultTools={['rect']}` mounts one wherever a
-preset offers it (`drawPreset` offers them all). `selectionPreset`, which every
+preset offers it (`presets.draw` offers them all). `presets.selection`, which every
 editing preset includes, builds the canvas's selection; `useSelection` is the
 same selection as a hook, for a panel or a host that keeps its own. A host of
 another dimension takes `usePickerSelectTool`, `createSelectionMoveContribution`,
@@ -62,7 +55,7 @@ canvas answers it with its selection; a host points edits elsewhere by sourcing
 its own:
 
 ```tsx
-import { operandList } from '@weasel-js/core';
+import { createOperandList } from '@weasel-js/core';
 
-useDepSource('operands', () => operandList([a, b]));
+useDepSource('operands', () => createOperandList([a, b]));
 ```

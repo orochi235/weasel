@@ -1,6 +1,6 @@
 import type { Action, ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { NodeId } from '@weasel-js/core';
-import { transformPreview, finiteFrame, closeRun, runBehaviorCancel, inPlane, selectionLayer, recordTransform } from '@weasel-js/core';
+import { createTransformPreview, finiteFrame, closeRun, runBehaviorCancel, inPlane, selectionLayer, recordTransform } from '@weasel-js/core';
 import { commitResize } from './commit';
 import { nextFrame } from './frame';
 import { beginResize, type ResizeFrame } from './session';
@@ -47,7 +47,7 @@ export function createResizeAction(opts: ResizeActionOptions = {}): Action & { r
         const { session, readers } = begun;
         const subject = [...(ctx.deps.operands?.get() ?? [])] as string[];
         const hold = session.scene.overrides.hold();
-        const preview = transformPreview(ctx.deps, session.scene, () => frame.previews);
+        const preview = createTransformPreview(ctx.deps, session.scene, () => frame.previews);
         let frame: ResizeFrame = { previews: new Map() };
         session.lifecycle.start(session.writeIds as readonly string[]);
         return {

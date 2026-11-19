@@ -7,7 +7,7 @@ import { SceneCanvas } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import type { Scene, NodeId } from '@weasel-js/core';
 import { useActionsRegistry, ActionsProvider } from '@weasel-js/routing/react';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 type D = { kind: string };
 type L = 'main';

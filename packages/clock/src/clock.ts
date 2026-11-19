@@ -104,6 +104,7 @@ function setDuration(run: Run, hub: Hub, next: number): void {
     run.duration = next;
     run.span = run.duration * passesOf(run.loop);
     run.elapsed = clamp(run, run.elapsed);
+    run.edge = false;
   }
   change(run, hub);
   hub.subs.emit();
@@ -120,12 +121,12 @@ interface Declared {
 /** A runtime replacement for the declared `duration` and `origin`; see `ClockHandle.override`. */
 type SpanOverride = { duration?: number; origin?: number } | null;
 
-function declaredOf(run: Run, spec: ClockSpec): Declared {
+function declaredOf(spec: ClockSpec): Declared {
   return {
     duration: spec.duration ?? Number.POSITIVE_INFINITY,
     origin: spec.origin ?? 0,
     loop: spec.loop ?? false,
-    speed: spec.speed ?? restingSpeed(run.rate),
+    speed: spec.speed ?? restingSpeed(spec.rate ?? 0),
   };
 }
 
@@ -249,6 +250,9 @@ function createClockView(run: Run, hub: Hub, seekable: boolean, speeds: readonly
       change(run, hub);
       hub.subs.emit();
     },
+    get ramping() {
+      return run.ramp !== null;
+    },
     ramp(to, over) {
       checkRate(to, seekable);
       checkRampTime(over);
@@ -315,11 +319,14 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
     slept: false,
     wakeFired: false,
   };
+  // The end of the declared run, where a run made endless since (a loop toggle, a duration write, an override)
+  // opens at `'end'`; `declare` refuses a declaration that has none.
+  let declaredEnd = (spec.duration ?? Number.POSITIVE_INFINITY) * passesOf(loop);
   const opening = (): number => {
     if (spec.start !== 'end') return clamp(run, spec.start ?? 0);
-    if (!Number.isFinite(run.span))
-      throw new RangeError("a run that never ends has no 'end' to start at");
-    return run.span;
+    const end = Number.isFinite(run.span) ? run.span : declaredEnd;
+    if (!Number.isFinite(end)) throw new RangeError("a run that never ends has no 'end' to start at");
+    return end;
   };
   run.elapsed = at ? clamp(run, at.elapsed) : opening();
   if (!Number.isFinite(run.elapsed))
@@ -350,7 +357,8 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
     step: spec.step,
     reset() {
       run.elapsed = hub.opening();
-      run.edge = false;
+      // An end on a pass line of a run made endless is that pass's end, not the next one's start.
+      run.edge = spec.start === 'end' && run.elapsed > 0;
       run.rate = openRate;
       run.ramp = null;
       change(run, hub);
@@ -358,13 +366,17 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
     },
     // `applyRun` checks before it writes, so a declaration or override it refuses is not kept either.
     declare(next) {
-      const taken = declaredOf(run, next);
+      const taken = declaredOf(next);
       // Checked under an override too, which would otherwise hand a bad duration to the call that lifts it.
       checkDuration(taken.duration);
       checkOrigin(taken.origin);
+      const end = taken.duration * passesOf(taken.loop);
+      if (spec.start === 'end' && !Number.isFinite(end))
+        throw new RangeError("a clock that opens at its 'end' is declared a run that ends");
       // A declaration that keeps its loop leaves one set since, as a transport's toggle.
       applyRun(run, hub, { ...taken, loop: taken.loop !== declared.loop ? taken.loop : run.loop }, override);
       declared = taken;
+      declaredEnd = end;
     },
     override(next) {
       const taken = next ? { ...next } : null;

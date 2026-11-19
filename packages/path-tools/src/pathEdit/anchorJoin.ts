@@ -2,13 +2,14 @@
  * Average and Join on the anchors selected in path edit.
  */
 
-import { ANCHORS_GROUP, pathOperationTags } from '@weasel-js/core';
+import { pathOperationTags } from '@weasel-js/core';
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { averageAnchorsAt, joinAnchorsAt, type AnchorSet, type AverageAxis, type JoinOptions } from '@weasel-js/geom';
 import { anchorEditWouldChange, commitAnchorEdit, openPathEditOf } from './anchorEditing';
 import { icon } from '../icons.gen';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
+import * as groups from '@weasel-js/core/groups';
 
 /** An edit of an anchor set at its selected anchors, answering whether it changed anything. */
 export type AnchorEdit = (set: AnchorSet, selected: number[]) => boolean;
@@ -28,13 +29,13 @@ export const averageAnchorsAction: Action & { requires: string[] } = {
   label: 'Average anchors',
   icon: icon('core:averageAnchors'),
   tags: pathOperationTags('command'),
-  group: ANCHORS_GROUP,
+  group: groups.anchors,
   variants: [
     { key: 'both', label: 'Average anchors', params: { axis: 'both' } },
     { key: 'x', label: 'Line anchors up vertically', params: { axis: 'x' } },
     { key: 'y', label: 'Line anchors up horizontally', params: { axis: 'y' } },
   ],
-  // Illustrator's Mod+Alt+J is Chrome's console. `code` too: with Alt held on
+  // Shift, since Mod+Alt+J is Chrome's console. `code` too: with Alt held on
   // a Mac the key reads as another glyph.
   defaultBinding: [{
     spec: { kind: 'key', key: 'j', code: 'KeyJ', mods: { mod: true, alt: true, shift: true }, phase: BETWEEN_GESTURES },
@@ -77,7 +78,7 @@ export const joinAnchorsAction: Action & { requires: string[] } = {
   label: 'Join anchors',
   icon: icon('core:join'),
   tags: pathOperationTags('command'),
-  group: ANCHORS_GROUP,
+  group: groups.anchors,
   defaultBinding: [{ spec: { kind: 'key', key: 'j', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'joinAnchors.key' } }],
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],

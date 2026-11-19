@@ -49,7 +49,7 @@ throws on a duplicate entry id, dep name, view id or marker id.
 ### Presets
 
 A package ships its behavior as a `FeaturePreset`, and an app turns it on by
-passing the object beside core's: `features={[drawPreset, pathToolsPreset]}`. An
+passing the object beside core's: `features={[presets.draw, pathTools.pathTools]}`. An
 app that does not import a preset never loads its code.
 
 ```ts
@@ -83,7 +83,7 @@ grouping; one with any other role is an atom, whose parts only work together.
 `describePresets` reports both as data (each one's own action and tool ids,
 its includes, and whether it is an atom) for a tool that lists or rearranges
 them, such as the asset editor's Bundles asset. Core's own presets are exported the
-same way (`selectPreset`, `editPreset`, `pathfinderPreset`, …), and `<SceneCanvas>`
+same way (`presets.select`, `presets.edit`, `presets.pathfinder`, …), and `<SceneCanvas>`
 resolves no names, so a bundle holds just the presets it was handed. Where
 presets are picked by name, `namedFeatures` in `@weasel-js/editing`
 maps core's names to the objects, at the cost of loading every core preset.
@@ -399,7 +399,7 @@ Each action pins the proposed/result shape; pick the matching alias
   paints at full opacity rather than as a ghost.
 - `onEnd` decides commit ops. First non-`undefined` return wins: `Op[]`
   commits, `null` aborts, `undefined` falls through to the next behavior
-  or the action's default ops (move emits one `createSetPoseOp` per id).
+  or the action's default ops (move emits one `ops.setPose` per id).
   Every behavior's `onEnd` runs, with `end.answered` true once an earlier one
   has answered or thrown; after a throw nothing commits, and the first error
   is rethrown once all have run.
@@ -548,12 +548,12 @@ while the preset is on and released when it goes:
 <!-- snippet: tests/consumers/gem-extension/src/index.ts#gem-feature -->
 ```ts
 import { createNodeKindPreset } from '@weasel-js/core';
-import { insertPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 import { GEM_BLUE, gemInsert, gemShape, gemTool, isGem } from './gem.js';
 import { tintTool } from './tint.js';
 
 /** The whole feature as one preset: the kind's routing, painter, insert factory, and properties, and its tools,
- *  with editing's `insertPreset`, whose `insert` action and dep the gem tool inserts through. */
+ *  with editing's `presets.insert`, whose `insert` action and dep the gem tool inserts through. */
 export const gemFeature = createNodeKindPreset({
   id: 'app:gem',
   label: 'Gems',
@@ -576,7 +576,7 @@ export const gemFeature = createNodeKindPreset({
     },
   },
   tools: [gemTool, tintTool],
-  includes: [insertPreset],
+  includes: [presets.insert],
 });
 ```
 
@@ -590,9 +590,10 @@ import { SceneCanvas, type FeaturePreset, type RectPose, type Scene, type SceneC
 import { SelectionPanel } from '@weasel-js/ui-canvas';
 import { kitIcons } from '@weasel-js/ui-canvas/kit-icons';
 import { gemFeature } from './index.js';
-import { drawPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
-const FEATURES: readonly FeaturePreset[] = [drawPreset, gemFeature];
+const FEATURES: readonly FeaturePreset[] = [presets.draw, gemFeature];
 
 /** A canvas and a properties panel given the same presets, over one scene and one selection. */
 export function GemEditor({ scene, features = FEATURES, onToolsCreated, onClick }: {
@@ -631,9 +632,9 @@ registers a painter releases it:
 import { useEffect } from 'react';
 import { SceneCanvas, registerNodeShape, type RectPose, type Scene, type ToolsApi } from '@weasel-js/core';
 import { gemInsert, gemShape, gemTool } from './gem.js';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
-const FEATURES = [drawPreset];
+const FEATURES = [presets.draw];
 const TOOLS = { gem: gemTool };
 const FACTORIES = { gem: gemInsert };
 
@@ -892,8 +893,9 @@ previewing as it goes:
 
 <!-- snippet: tests/consumers/gem-extension/src/tint.ts#tint-action -->
 ```ts
-import { commitOps, createSetDataOp, defineAction, defineTool, resolveParams } from '@weasel-js/core';
+import { commitOps, defineAction, defineTool, resolveParams } from '@weasel-js/core';
 import { isGem, type GemData } from './gem.js';
+import * as ops from '@weasel-js/core/ops';
 
 declare module '@weasel-js/routing' {
   interface ActionParamSchema {
@@ -938,10 +940,10 @@ export const tintAction = defineAction({
         },
         onEnd: (_end, reason) => {
           if (reason === 'cancel' || steps === 0) return;
-          const ops = [...gems].map(([id, from]) => createSetDataOp({ id, from, to: tinted(from) }));
+          const tints = [...gems].map(([id, from]) => ops.setData({ id, from, to: tinted(from) }));
           // The standard commit, through the deps `start` was given: `onMove` and `onEnd` get an empty bag.
           // It goes to the host's `applyOps` when there is one, else straight to the scene.
-          commitOps(ctx.deps, ops, 'Tint gem');
+          commitOps(ctx.deps, tints, 'Tint gem');
         },
       };
     },
@@ -1005,7 +1007,6 @@ mounts. Write that walk yourself:
 
 ```tsx
 import { useActionsRegistry } from '@weasel-js/core';
-import { drawPreset, drawPreset } from '@weasel-js/editing';
 
 const registry = useActionsRegistry();
 useEffect(() => {

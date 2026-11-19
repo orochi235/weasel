@@ -1,0 +1,9 @@
+.link {
+  color: var(--wzl-accent-fg);
+  font-size: var(--wzl-font-size-sm);
+}
+
+.size {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  color: var(--wzl-fg-subtle);
+}

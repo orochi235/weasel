@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { devtools } from './hook';
 import { DEV_DEVTOOLS, devtoolsOff, lazyDevtools, ShellDevtools, shellDevtools } from './mount';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 beforeAll(() => {
   const recorder = createGLRecorder();
@@ -22,7 +22,7 @@ type Box = { x: number; y: number; width: number; height: number };
 
 function Board({ label }: { label: string }) {
   const scene = useScene<null, 'main', Box>({ systemLayers: [{ id: 'main' }] });
-  return <SceneCanvas features={[drawPreset]} scene={scene} width={100} height={100} aria-label={label} />;
+  return <SceneCanvas features={[presets.draw]} scene={scene} width={100} height={100} aria-label={label} />;
 }
 
 const labels = (): string[] => window.__weaselDevtools__?.roots().map((r) => r.label) ?? [];

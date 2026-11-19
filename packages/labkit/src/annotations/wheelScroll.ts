@@ -20,9 +20,7 @@ function scrolls(el: Element, axis: 'x' | 'y', delta: number): boolean {
 /** The deepest element of `el`'s subtree whose box holds the point, by geometry alone: hit testing skips a subtree
  *  with `pointer-events: none`, which a target can wear while it still shows nothing. Later siblings paint on top. */
 function deepestAt(el: Element, x: number, y: number): Element {
-  const children = Array.from(el.children);
-  for (let i = children.length - 1; i >= 0; i--) {
-    const child = children[i]!;
+  for (const child of Array.from(el.children).reverse()) {
     const r = child.getBoundingClientRect();
     if (x >= r.left && x < r.right && y >= r.top && y < r.bottom) return deepestAt(child, x, y);
   }

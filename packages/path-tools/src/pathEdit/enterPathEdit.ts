@@ -40,8 +40,7 @@ function pathEditTarget(deps: ActionDeps | undefined, world: { x: number; y: num
 export const enterPathEditAction = defineAction({
   id: 'enterPathEdit',
   label: 'Edit path anchors',
-  // Double-click on a polygon body (selected OR unselected) — matches the
-  // Figma/Illustrator convention where double-clicking a path enters edit
+  // Double-click on a polygon body (selected OR unselected) enters edit
   // mode regardless of prior selection state. The `kindOf` predicate fires
   // on either body class but not on empty space, so a double-click on
   // empty canvas doesn't accidentally enter edit mode.

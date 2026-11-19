@@ -14,7 +14,7 @@ export interface EditorCommandOptions extends Pick<CommandOptions, 'icon' | 'gro
 /** `editor.preferences`'s key unless `keys` says otherwise: Mod+,. */
 export const EDITOR_PREFS_KEY: KeySpec = { kind: 'key', key: ',', mods: { mod: true } };
 
-/** The key that turns snapping off and on: Mod+Shift+;, Photoshop's View › Snap. Shift turns ; into :, and
+/** The key that turns snapping off and on: Mod+Shift+;. Shift turns ; into :, and
  *  `code` holds it to the key US layouts put ; on, whatever another layout types there. */
 export const SNAPPING_KEY: KeySpec = { kind: 'key', key: [';', ':'], code: 'Semicolon', mods: { mod: true, shift: true } };
 

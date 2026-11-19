@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { solid } from '@weasel-js/paint';
-import { DEFAULT_HANDLE_SIZE, rasterToPng, debugSnapshotArgs, renderDebugSnapshot, SceneCanvas, useScene, warmRender, viewPreset } from '@weasel-js/core';
+import { DEFAULT_HANDLE_SIZE, rasterToPng, debugSnapshotArgs, renderDebugSnapshot, SceneCanvas, useScene, warmRender } from '@weasel-js/core';
 import { gridSnapSource } from '@weasel-js/guides';
 import type {
   DebugFlags,
@@ -12,7 +12,7 @@ import type {
 import { Button } from '@weasel-js/ui/components/Button';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 interface Box { id: string; x: number; y: number; width: number; height: number; fill: Fill }
 
@@ -101,7 +101,7 @@ export function DebugOverlayDemo() {
         <Button onClick={snapshot} disabled={!debug}>snapshot</Button>
       </div>
       <DemoStage width={W} height={H}>
-        <SceneCanvas features={[viewPreset, pickPreset, movePreset, transformPreset]}
+        <SceneCanvas features={[presets.view, presets.pick, presets.move, presets.transform]}
           ref={canvasRef}
           className="ckd-canvas"
           onResize={setSize}

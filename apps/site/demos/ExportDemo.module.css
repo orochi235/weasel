@@ -1,0 +1,15 @@
+.demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-4);
+  width: min-content;
+}
+
+.result {
+  min-height: 1.5em;
+}
+
+.error {
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-danger);
+}

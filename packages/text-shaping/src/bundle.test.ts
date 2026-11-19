@@ -3,8 +3,9 @@ import { describe, it, expect } from 'vitest';
 import { build } from 'esbuild';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { wasmUrlPlugin } from '../wasmUrl.esbuild';
 
-/** A consumer importing this package, bundled the way an app targeting older browsers bundles it. */
+/** A consumer importing this package as the build ships it, bundled the way an app targeting older browsers bundles it. */
 describe('bundling @weasel-js/text-shaping', () => {
   it.each(['browser', 'node'] as const)('builds for ES2020 on platform %s, with no top-level await', async (platform) => {
     const result = await build({
@@ -14,6 +15,7 @@ describe('bundling @weasel-js/text-shaping', () => {
         loader: 'ts',
       },
       bundle: true,
+      plugins: [wasmUrlPlugin],
       write: false,
       format: 'esm',
       target: 'es2020',

@@ -14,7 +14,7 @@ tool *does* without running it.
 
 The immediate need that surfaced this exploration: text-edit-on-dblclick
 naturally belongs to multiple tools (select tool when active, text tool
-when active, both per Illustrator/Figma convention). A single composable
+when active, both). A single composable
 piece of logic should drive both. The deeper question — whether the kit
 should *encode* this composability into its tool grammar — is what this
 proposal is about.
@@ -453,7 +453,7 @@ const PenTool = defineTool<{ anchors: Point[] }>({
 });
 ```
 
-### Text (context-aware Illustrator-style)
+### Text (context-aware)
 
 ```ts
 const TextTool = defineTool({

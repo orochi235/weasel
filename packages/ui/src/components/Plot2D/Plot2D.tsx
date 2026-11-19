@@ -89,6 +89,7 @@ export interface Plot2DProps {
   /** Default `'img'`. A plot holding focusable marks must not be an image,
    *  whose children are presentational to assistive technology. */
   role?: string;
+  /** The plot's name. An `img` plot needs one, as an `<img>` needs its `alt`. */
   'aria-label'?: string;
   /** Forwarded to the svg, for a plot whose marks are held: `aria-disabled` covers every mark inside it. */
   'aria-disabled'?: boolean;

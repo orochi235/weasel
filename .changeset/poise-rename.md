@@ -8,7 +8,7 @@ Balance handles is now Poise, and every name it carried changes with it; this is
 
 | Before | After |
 |---|---|
-| `balancePreset`, `createBalancePreset`, preset id `'balance'` | `poisePreset`, `createPoisePreset`, `'poise'` |
+| `balancePreset`, `createBalancePreset`, preset id `'balance'` | `pathTools.poise`, `createPoisePreset`, `'poise'` |
 | action `balanceHandles`, its binding `balanceHandles.drag`, `balanceHandlesAction` | `poiseHandles`, `poiseHandles.drag`, `poiseHandlesAction` |
 | chrome id `path-edit.balance`, `PATH_BALANCE_CHROME_ID` | `path-edit.poise`, `PATH_POISE_CHROME_ID` |
 | toggle `pathEdit.show.balance`, `showBalanceAction` | `pathEdit.show.poise`, `showPoiseAction` |

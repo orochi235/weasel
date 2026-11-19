@@ -11,7 +11,8 @@ import styles from './AnimationDemo.module.css';
 import { AnimatorWatch } from './animation/AnimatorWatch';
 import { FlickSnapPanel } from './animation/FlickSnapPanel';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 import { maxOf } from '@weasel-js/geom';
 
 interface Card { id: string; x: number; y: number; width: number; height: number; color: string }
@@ -187,7 +188,7 @@ export function AnimationCards({ animator }: { animator: Animator }) {
         <span className="ckd-toolbar-note">Select one card to see the breathing pulse.</span>
       </div>
       <DemoStage width={W} height={H}>
-        <SceneCanvas features={[pickPreset, movePreset]}
+        <SceneCanvas features={[presets.pick, presets.move]}
           className="ckd-canvas"
           onResize={setSize}
           scene={scene}

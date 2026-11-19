@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import { always, never, type ChromeRulesDep, type VisibilityRules } from '@weasel-js/core';
-import { curvatureCombPreset, filletPreset } from '../presets';
+import { curvatureCombPreset, filletPreset } from '../featurePresets';
 import { showCombAction, showFilletsAction } from './showOverlay';
 
 function rules(initial: VisibilityRules): ChromeRulesDep & { all: VisibilityRules } {

@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createScene, createSnapOutcomeStore, type ActionDeps, type CanvasExtensionApi, type NodeId } from '@weasel-js/core';
-import { distanceReadout } from './distanceReadout';
+import { createDistanceReadoutContribution } from './distanceReadout';
 
 type Pose = { x: number; y: number; width: number; height: number };
 
-function fixture(opts?: Parameters<typeof distanceReadout>[0], drawnAt?: number) {
+function fixture(opts?: Parameters<typeof createDistanceReadoutContribution>[0], drawnAt?: number) {
   const scene = createScene<object, 'main', Pose>({ systemLayers: [{ id: 'main', visible: true, locked: false }] });
   const frame = drawnAt === undefined ? undefined : scene.add({
     kind: 'group', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
@@ -29,7 +29,7 @@ function fixture(opts?: Parameters<typeof distanceReadout>[0], drawnAt?: number)
     nodeAtPoint,
     selection: { get: () => selected },
   } as unknown as ActionDeps;
-  const r = distanceReadout(opts);
+  const r = createDistanceReadoutContribution(opts);
   const heard = vi.fn();
   store.subscribe(heard);
   const el = document.createElement('div');
@@ -39,7 +39,7 @@ function fixture(opts?: Parameters<typeof distanceReadout>[0], drawnAt?: number)
   return { r, run, store, heard, el, detach, select: (ids: NodeId[]) => { selected = ids; }, a, b };
 }
 
-describe('distanceReadout', () => {
+describe('createDistanceReadoutContribution', () => {
   it('shows the distance from the selection to the shape under the pointer while the modifier is held', () => {
     const { r, run, store, heard } = fixture();
     run({ show: true, world: { x: 35, y: 5 } });

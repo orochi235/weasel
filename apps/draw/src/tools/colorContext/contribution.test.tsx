@@ -8,7 +8,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas, createScene } from '@weasel-js/core';
 import { colorContribution } from './contribution';
 import type { ColorContextValue } from './ColorContextProvider';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
@@ -22,7 +22,7 @@ function setup() {
     { systemLayers: [{ id: 'main' }] },
   );
   const ambient = [colorContribution(() => color as unknown as ColorContextValue)];
-  render(<SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64} ambient={ambient} />);
+  render(<SceneCanvas features={[presets.draw]} scene={scene} layers={{}} width={64} height={64} ambient={ambient} />);
   const key = (key: string, init: KeyboardEventInit = {}) => act(() => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ...init }));
   });

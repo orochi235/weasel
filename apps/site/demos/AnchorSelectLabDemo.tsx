@@ -1,5 +1,5 @@
 import { type ActionTunings, PathBuilder } from '@weasel-js/core';
-import { ANCHOR_SELECTION_GROUP, anchorSelectionPreset, pathsPreset } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import {
   type ConfigOf,
   defineInstrument,
@@ -15,7 +15,8 @@ import { OpeningSteps, PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
+import * as pathToolsGroups from '@weasel-js/path-tools/groups';
 
 const config = f.schema({
   n: f.number(4).range(2, 8).step(1).label('Every Nth: N'),
@@ -45,14 +46,14 @@ function flower() {
 }
 
 const FLOWER = flower();
-const features = [drawPreset, pathsPreset, anchorSelectionPreset] as const;
+const features = [presets.draw, pathTools.paths, pathTools.anchorSelection] as const;
 
 function AnchorSelectTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
   const { scene, selection, pathEdit } = usePathEditTrial(ctx, FLOWER, { fill: '#f2c6de' });
   const { n } = ctx.config;
   const tune = useMemo<ActionTunings>(() => ({ selectEveryNthAnchor: { params: { n } } }), [n]);
   return (
-    <PathLabStage bar={<ActionBar group={ANCHOR_SELECTION_GROUP} />}>
+    <PathLabStage bar={<ActionBar group={pathToolsGroups.anchorSelection} />}>
       <TrialSceneCanvas
         features={features}
         scene={scene}

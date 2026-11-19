@@ -57,6 +57,13 @@ const mod = {
       if (box.style.width || box.style.height !== '100vh') throw new Error(`the story's box is ${box.style.width} by ${box.style.height}`);
     },
   }),
+  Moded: story({
+    render: ({ globals }) => createElement('p', null, String(globals.mode)),
+    play: async ({ canvasElement, globals }) => {
+      if (globals.mode !== 'dark') throw new Error(`play saw mode ${String(globals.mode)}`);
+      if (canvasElement.textContent !== 'dark') throw new Error(`the story rendered "${canvasElement.textContent}"`);
+    },
+  }),
   Throwing: story({
     render: () => {
       throw new Error('render broke');
@@ -144,6 +151,24 @@ describe('runStory', () => {
     expect(error).toBeInstanceOf(Error);
     expect((error as Error).message).toBe('play fault: button missing');
     expect((error as Error).stack).toContain('boom');
+    expect(document.body.children).toHaveLength(0);
+  });
+
+  it('renders and plays the story under the globals it is given', async () => {
+    await expect(runStory(mod, 'Moded', FILE, AUTO_TITLE, { globals: { mode: 'dark' } })).resolves.toBeUndefined();
+  });
+
+  it('runs check on the host after play, before unmounting, and names the check phase when it throws', async () => {
+    const seen: string[] = [];
+    const check = (host: HTMLElement) => {
+      seen.push(`${host.isConnected} ${host.querySelector('button')?.textContent}`);
+    };
+    await runStory(mod, 'Seen', FILE, AUTO_TITLE, { check });
+    expect(seen).toEqual(['true renamed']);
+    const failing = () => {
+      throw new Error('3 violations');
+    };
+    await expect(runStory(mod, 'Plain', FILE, AUTO_TITLE, { check: failing })).rejects.toThrow('check fault: 3 violations');
     expect(document.body.children).toHaveLength(0);
   });
 });

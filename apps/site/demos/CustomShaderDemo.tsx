@@ -13,7 +13,8 @@ import weaselMarkUrl from '../assets/weasel-mark.png';
 import { PLASMA_PROGRAM, RIPPLE_PROGRAM, RIPPLE_SECONDS, SHADERS, VORONOI_PROGRAM } from './customShaderPrograms';
 import { DemoStage } from './DemoStage';
 import s from './CustomShaderDemo.module.css';
-import { movePreset, pickPreset, clampMove } from '@weasel-js/editing';
+import { clampMove } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 declare module '@weasel-js/routing' {
   interface ActionParamSchema {
@@ -167,7 +168,7 @@ function Panel({
 
 type SeedScene = Scene<unknown, 'default', RectPose>;
 const SEED_R = 6;
-const SEED_FEATURES: FeaturePreset[] = [pickPreset, movePreset];
+const SEED_FEATURES: FeaturePreset[] = [presets.pick, presets.move];
 
 const SEED_DATA = { shape: 'ellipse', fill: { paint: solid('#fff') }, stroke: { paint: solid('#222'), width: 2 } };
 

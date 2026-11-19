@@ -1,0 +1,39 @@
+.demo {
+  display: grid;
+  grid-template-columns: 320px 200px;
+  gap: var(--wzl-space-8);
+  align-items: start;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(8, max-content);
+  gap: var(--wzl-space-2);
+}
+
+.detail {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: var(--wzl-space-4);
+}
+
+.ref {
+  font-size: 13px;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: var(--wzl-space-2) var(--wzl-space-6);
+  margin: 0;
+  font-size: 12px;
+}
+
+.facts dt {
+  color: var(--wzl-fg-subtle);
+}
+
+.facts dd {
+  margin: 0;
+}

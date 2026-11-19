@@ -141,8 +141,8 @@ export function pathFaceArrangement(paths: readonly Path[], options: FaceArrange
 /**
  * Fracture N paths along every intersection into the maximal set of
  * non-overlapping regions. Returns one piece per set of inputs covering some
- * region, naming them. For N=2 these are the three Illustrator "Divide"
- * outputs (A−B, B−A, A∩B). Pieces with fewer sources come first.
+ * region, naming them. For N=2 these are A−B, B−A, and A∩B. Pieces with
+ * fewer sources come first.
  */
 export function pathDividePieces(...paths: Path[]): BooleanPiece[] {
   if (paths.length === 0) return [];
@@ -169,7 +169,7 @@ export function pathFacePieces(...paths: Path[]): BooleanPiece[] {
 }
 
 /**
- * Remove from each path what the paths after it cover (Illustrator "Trim"):
+ * Remove from each path what the paths after it cover:
  * given back to front, every piece is the part of its input left showing.
  * One piece per input in input order, less the inputs wholly hidden.
  */
@@ -190,7 +190,7 @@ export function pathTrim(...paths: Path[]): BooleanPiece[] {
 
 /**
  * {@link pathTrim}, then unite the pieces of the inputs `keyOf` gives the same
- * key (Illustrator "Merge", keyed by paint). Keys compare with `===`. A piece
+ * key, such as their paint. Keys compare with `===`. A piece
  * names every input left showing in it, and the pieces are ordered by their
  * topmost one. Pieces that share a key and do not touch come back as one path
  * of several contours.
@@ -215,7 +215,7 @@ export function pathMerge(paths: readonly Path[], keyOf: (index: number) => unkn
 }
 
 /**
- * Clip each non-topmost path to the topmost path (Illustrator "Crop"), which
+ * Clip each non-topmost path to the topmost path, which
  * acts purely as the mask and is discarded. Returns up to `N - 1` pieces in
  * input order, each naming the one input it was clipped from; a source
  * entirely outside the mask is dropped.

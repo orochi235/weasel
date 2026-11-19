@@ -11,7 +11,7 @@ import type {} from '../../interactions/actions/actionParamSchema';
 const NONE: readonly ContentHandlerEntry[] = [];
 
 /** `<SceneCanvas ingestion={{ kitHandlers }}>`: which of the kit's content handlers (those with a `kit:` id, which
- *  `@weasel-js/editing`'s `ingestPreset` brings) the canvas keeps. `true` (the default) keeps every one, `false`
+ *  `@weasel-js/editing`'s `presets.ingest` brings) the canvas keeps. `true` (the default) keeps every one, `false`
  *  none, and `{ omit }` all but the ids named (`'kit:image'`, `'kit:svg'`, `'kit:weasel-json'`). */
 export type KitHandlersOption = boolean | { omit: readonly string[] };
 

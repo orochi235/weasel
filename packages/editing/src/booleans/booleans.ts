@@ -13,7 +13,7 @@ import { commitPieces } from './commit';
 
 declare module '@weasel-js/routing' {
   interface DepSchema {
-    /** What the Pathfinder actions and the shape builder read and mint paths through. `booleansPreset` publishes
+    /** What the Pathfinder actions and the shape builder read and mint paths through. `presets.booleans` publishes
      *  one over the canvas's path leaves; a consumer replaces it with `useBooleansAdapter`. */
     booleansAdapter?: BooleansAdapter;
   }

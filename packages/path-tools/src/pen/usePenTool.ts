@@ -102,7 +102,7 @@ export interface UsePenToolOptions {
 }
 
 /**
- * Active-slot Tool: click + drag to build a `PolygonPath` Illustrator-style.
+ * Active-slot Tool: click + drag to build a `PolygonPath` anchor by anchor.
  *
  * Click places a corner anchor; click-drag places an anchor with an
  * outgoing bezier handle; click-the-first-anchor closes the subpath; Enter

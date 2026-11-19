@@ -1,6 +1,7 @@
 import { solid } from '@weasel-js/paint';
 import { boundsOfPath, createScene, useLatest, type Path, PathBuilder, pathInWorld, type RectPose, type RenderLayer, type Scene, type Stroke } from '@weasel-js/core';
-import { useGirthTool, pathsPreset } from '@weasel-js/path-tools';
+import { useGirthTool } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import { strokeToPath } from '@weasel-js/stroke';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState, TrialSceneCanvas,
@@ -11,7 +12,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 import { DEG_TO_RAD } from '@weasel-js/geom';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const config = f.schema({
   width: f.number(14).range(1, 40).step(1).suffix('px').label('Base width'),
@@ -158,7 +159,7 @@ function WidthTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
     [ctx.config.outline, scene],
   );
   return (
-    <TrialSceneCanvas features={[drawPreset, pathsPreset]} scene={scene} trial={ctx.trial} tools={tools} layers={layers} />
+    <TrialSceneCanvas features={[presets.draw, pathTools.paths]} scene={scene} trial={ctx.trial} tools={tools} layers={layers} />
   );
 }
 

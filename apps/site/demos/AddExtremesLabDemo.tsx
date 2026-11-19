@@ -1,5 +1,4 @@
-import { ANCHORS_GROUP } from '@weasel-js/core';
-import { addExtremesPreset, anchorSelectionPreset, pathsPreset } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import {
   type ConfigOf,
   defineInstrument,
@@ -15,7 +14,8 @@ import { OpeningSteps, PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
+import * as groups from '@weasel-js/editing/groups';
 
 const config = f.schema({});
 type Config = ConfigOf<typeof config>;
@@ -24,12 +24,12 @@ type Config = ConfigOf<typeof config>;
 const BLOB = 'M 180 240 C 190 170 250 100 320 80 C 460 40 560 220 460 340 C 380 436 160 380 180 240 Z';
 
 // Anchor selection is what seeds the opening selection.
-const features = [drawPreset, pathsPreset, addExtremesPreset, anchorSelectionPreset] as const;
+const features = [presets.draw, pathTools.paths, pathTools.addExtremes, pathTools.anchorSelection] as const;
 
 function AddExtremesTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
   const { scene, selection, pathEdit } = usePathEditTrial(ctx, BLOB, { fill: '#bfe3c0' });
   return (
-    <PathLabStage bar={<><ActionBar group={ANCHORS_GROUP} /><LastOperationPanel /></>}>
+    <PathLabStage bar={<><ActionBar group={groups.anchors} /><LastOperationPanel /></>}>
       <TrialSceneCanvas
         features={features}
         scene={scene}

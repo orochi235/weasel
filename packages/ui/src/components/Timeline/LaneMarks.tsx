@@ -2,7 +2,7 @@ import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerE
 import type { Keyframe } from '@weasel-js/animator';
 import type { FocusHoldAttrs } from '../Disabled/controlHold';
 import s from './Timeline.module.css';
-import { spanPercent, type TimeWindow } from './timeScale';
+import { msLabel, spanPercent, type TimeWindow } from './timeScale';
 import type { LaneRow } from './lanes';
 
 /** What every mark on a lane carries of the timeline's hold. */
@@ -27,7 +27,7 @@ export function SegmentMarks({ keys, label, win, pct, mark, selectedSegment, onS
             key={`seg-${i}`}
             role="button"
             {...mark}
-            aria-label={`${label} segment into ${Math.round(k.t)} ms`}
+            aria-label={`${label} segment into ${msLabel(k.t)}`}
             aria-current={selectedSegment === i ? 'true' : undefined}
             data-testid="timeline-segment"
             data-segment-index={i}
@@ -63,7 +63,7 @@ export function KeyMarks({ row, times, pct, mark, selection, draggedIndex, keyEl
           ref={(el) => { keyEls.current[i] = el; }}
           role="button"
           {...mark}
-          aria-label={`${row.label} key at ${Math.round(t)} ms`}
+          aria-label={`${row.label} key at ${msLabel(t)}`}
           aria-current={selection === i ? 'true' : undefined}
           data-testid={event ? 'timeline-event' : 'timeline-key'}
           data-keyframe-index={i}

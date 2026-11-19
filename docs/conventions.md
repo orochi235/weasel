@@ -66,7 +66,7 @@ relative, smooth-curve reflection, arc→cubic), lowering it to the stored
 
 **Ratified rule: kit APIs speak `Path`; `pathFromD` is the only string
 doorway.** Every path-bearing kit parameter takes the typed `Path`
-(`PolygonPath | RectPath`) — `createSetPathOp`, the boolean ops,
+(`PolygonPath | RectPath`) — `ops.setPath`, the boolean ops,
 `PathBuilder.fromPath`, `createPathLayer`, the hit-tests, the geometry slot
 in a node's `data`. **Do not introduce a `string | Path` (`PathLike`) union
 into those signatures.** A `d` string is converted exactly once, at the
@@ -197,10 +197,14 @@ it changed is named for what it does to it (`gateLayer`,
 
 ## Preset names
 
-A ready-made `FeaturePreset` is a constant named `xPreset` (`reorderPreset`,
-`poisePreset`); a function that builds one from options is `createXPreset`
-(`createPoisePreset`, `createGridPreset`). A package's factory never takes a
-name core already gives a constant, so the two can be imported side by side.
+A ready-made `FeaturePreset` is a constant named `xPreset` inside its package
+(`reorderPreset`, `poisePreset`), published under its short name on the package's
+`/presets` entry, never on its main one: `@weasel-js/editing/presets` exports
+`reorder`, `@weasel-js/path-tools/presets` exports `poise`, and a consumer reads them
+through a namespace (`import * as presets from '@weasel-js/editing/presets'`, then
+`presets.reorder`; another package's namespace is named for it, as `pathTools.poise`).
+A function that builds one from options is `createXPreset` (`createPoisePreset`,
+`createGridPreset`) and stays on the main entry.
 
 ## Stores notify through `createEmitter`
 

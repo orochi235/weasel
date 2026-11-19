@@ -1,4 +1,4 @@
-/** `booleansPreset`'s `booleansAdapter`: a Pathfinder action over a scene's path leaves, with nothing published by the consumer. */
+/** `presets.booleans`'s `booleansAdapter`: a Pathfinder action over a scene's path leaves, with nothing published by the consumer. */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';

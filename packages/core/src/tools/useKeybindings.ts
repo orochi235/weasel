@@ -10,6 +10,7 @@ import {
 } from 'interactions/actions/defaults/toolActivate';
 import { createToolResetToDefaultAction } from 'interactions/actions/defaults/toolResetToDefault';
 import type { ToolsApi } from './overlayBinding';
+import { getOwn } from '@weasel-js/registry';
 import type {} from '../interactions/actions/actionParamSchema';
 
 /** Options for `useKeybindings`. */
@@ -65,6 +66,14 @@ export function useKeybindings(
     // No tools, no tool keys: nothing to activate and nothing to return to.
     if (Object.keys(toolsRef.current.registry).length === 0) return;
 
+    // What the palette greys out by: both the tool keys and Escape ask it.
+    const allowed = (toolId: string): boolean => {
+      const modes = optionsRef.current.modes;
+      if (!modes) return true;
+      const tags = getOwn(toolsRef.current.registry, toolId)?.eligibility.capabilities;
+      return eligibleForMode(modes.current(), tags ?? []);
+    };
+
     const specs: ToolActivateBindingSpec[] = [];
 
     const allTools = toolsRef.current.registry;
@@ -88,10 +97,7 @@ export function useKeybindings(
         (toolId) => {
           // `setActive` refuses an id it does not hold; a trigger with one is refused too.
           if (!Object.hasOwn(toolsRef.current.registry, toolId)) return false;
-          const modes = optionsRef.current.modes;
-          if (!modes) return true;
-          const tags = toolsRef.current.registry[toolId]?.eligibility.capabilities;
-          return eligibleForMode(modes.current(), tags ?? []);
+          return allowed(toolId);
         },
       )));
     }
@@ -107,7 +113,7 @@ export function useKeybindings(
       const target = opt ?? initialActiveRef.current;
       if (!target) return null;
       const api = toolsRef.current;
-      if (!api.has(target) || api.active === target) return null;
+      if (!api.has(target) || api.active === target || !allowed(target)) return null;
       return target;
     })));
 

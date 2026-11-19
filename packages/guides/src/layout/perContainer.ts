@@ -1,6 +1,6 @@
 import type { LayoutContainer, LayoutSnap, LayoutStrategy } from '@weasel-js/core';
 
-/** Options for `perContainer`. */
+/** Options for `createPerContainerStrategy`. */
 export interface PerContainerOptions<TPose> {
   /** The snap every container shares: a strategy's `snap` is read with no
    *  container in hand, so it cannot come from the one the factory builds. */
@@ -12,7 +12,7 @@ export interface PerContainerOptions<TPose> {
   max?: number;
 }
 
-/** A strategy `perContainer` built, and the way to drop one container's state. */
+/** A strategy `createPerContainerStrategy` built, and the way to drop one container's state. */
 export type PerContainerStrategy<TPose> = LayoutStrategy<TPose> & {
   /** Drop what was built for `containerId`: for a container that is gone, or
    *  whose cached state no longer describes it. */
@@ -28,7 +28,7 @@ export type PerContainerStrategy<TPose> = LayoutStrategy<TPose> & {
  * Declare the result on as many containers as you like. A method the built
  * strategy leaves out behaves as its absence would.
  */
-export function perContainer<TPose>(
+export function createPerContainerStrategy<TPose>(
   factory: (container: LayoutContainer) => LayoutStrategy<TPose>,
   opts: PerContainerOptions<TPose>,
 ): PerContainerStrategy<TPose> {

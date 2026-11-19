@@ -19,7 +19,7 @@ export function effectiveOriginMode(
  *  - `'corner'` (default): bounds = drag rect (top-left → bottom-right of cursor sweep).
  *  - `'center'`: bounds = symmetric AABB anchored on the start point.
  *    Used when the tool's Alt-modifier binding passes
- *    `originMode: 'center'` (Illustrator/Figma convention). */
+ *    `originMode: 'center'`. */
 export function insertRectFor(
   startX: number, startY: number,
   currentX: number, currentY: number,

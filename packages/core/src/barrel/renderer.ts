@@ -156,7 +156,7 @@ export {
 } from '../canvas/SceneCanvas/nodeTraits';
 export { describePresets, isAtom, type PresetDescription } from '../canvas/SceneCanvas/describePresets';
 export { rotateAboutAabbCenter, VIEW_TOOLS } from '../canvas/SceneCanvas';
-export * from '../canvas/SceneCanvas/presets';
+export { BASELINE_ACTIONS, BASELINE_ACTION_IDS, PRESET_CHROME, PRESET_OWNED_CHROME } from '../canvas/SceneCanvas/presets';
 export { KIT_SHAPE_KINDS, kitShapeKindsOf, SHAPE_KINDS } from '../core/shapeKinds';
 export type {
   BuiltinShapeToolId, KitInsertShape, ShapeKind, ShapeKindDescriptor, ShapeKindsWhere,
@@ -170,7 +170,7 @@ export type {
 export type { ContributionRouting, Eligibility, EligibilityState, HotkeyTrigger, OverlayPosition, ToolPresentation } from '@weasel-js/routing';
 export type { Contribution, ContributionChrome } from '../tools/overlayBinding';
 export type { ContributionDeps } from '@weasel-js/routing';
-export { assembleEntries, liveScope, scopeBindings, modeShortcuts, modeShortcutSpec } from '@weasel-js/routing';
+export { assembleEntries, liveScope, scopeBindings, createModeShortcutsContribution, modeShortcutSpec } from '@weasel-js/routing';
 export type { AssemblyInputs } from '@weasel-js/routing';
 export type { ModeShortcutHandlers } from '@weasel-js/routing';
 export { captureGesture, captureKey, createKeymapStack, describeKeymap, KEYMAP_HOLD, createKeymapContribution, keymapLeaderBindingId, keymapLeaderId, keymapShortcuts } from '@weasel-js/routing';

@@ -21,13 +21,14 @@ import {
   type Point,
 } from '@weasel-js/geom';
 import {
-  annotationLayerIds, commitOps, createInsertOp, pathEditPathOf, pathOperationTags, type EditAnchorsDep, type NodeId,
+  annotationLayerIds, commitOps, pathEditPathOf, pathOperationTags, type EditAnchorsDep, type NodeId,
   type SceneNode, type AnyScene,
 } from '@weasel-js/core';
 import { editAnchorsAction } from '../pathEdit/editAnchors/editAnchors';
 import { pref, PX_UNIT } from '@weasel-js/prefs-schema';
 import { constraintLinkNode, constraintLinkOf } from './constraintLinks';
 import type {} from '../actionParamSchema';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** Params for `linkAnchor`. */
 export type LinkAnchorParams = {
@@ -150,7 +151,7 @@ function linkOps(deps: ActionDeps, path: PolygonPath, anchor: number, target: Li
     constraint: linkConstraint(anchor, pathAnchorPoints(finalPath).length, target),
   });
   const node = { ...spec, id: scene.mintId(), parent: null } as SceneNode<unknown, string, unknown>;
-  return [...edit, createInsertOp({ node, label })];
+  return [...edit, coreOps.insert({ node, label })];
 }
 
 /**

@@ -103,7 +103,7 @@ describe('useCanvasIngestion: handlers', () => {
   const entry = { id: 'app:x', match: 'application/x', handle: () => {} };
   const ids = (handlers: readonly { id: string }[]) => handlers.map((h) => h.id);
 
-  // What presets bring, as `ingestPreset` brings the kit's and a text preset its own.
+  // What presets bring, as `presets.ingest` brings the kit's and a text preset its own.
   const handler = (id: string): ContentHandlerEntry => ({ id, match: 'application/x', handle: () => {} });
   const PRESETS = [handler('kit:image'), handler('kit:svg'), handler('kit:weasel-json'), handler('text:x')];
 

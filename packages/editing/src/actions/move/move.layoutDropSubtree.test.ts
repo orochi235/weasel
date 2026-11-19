@@ -6,9 +6,10 @@
 import { describe, expect, it } from 'vitest';
 import type { InvocationCtx } from '@weasel-js/routing';
 import { moveAction } from './action';
-import { createScene, createSetPoseOp } from '@weasel-js/core/engine';
+import { createScene } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/core';
 import type { LayoutStrategy } from '@weasel-js/core/engine';
+import * as ops from '@weasel-js/core/ops';
 
 interface P { x: number; y: number; width: number; height: number }
 
@@ -25,7 +26,7 @@ describe('moveAction — layout drop of a container', () => {
       getDropTargets: () => [{ pose: slot, origin: { x: slot.x, y: slot.y } }],
       reflowPoses: () => new Map(),
       commitDrop: (_c: unknown, _k: unknown, dragged: { id: string; originPose: P }, target: { pose: P }) =>
-        [createSetPoseOp<P>({ id: dragged.id, from: dragged.originPose, to: target.pose, label: 'Drop' })],
+        [ops.setPose<P>({ id: dragged.id, from: dragged.originPose, to: target.pose, label: 'Drop' })],
     } as unknown as LayoutStrategy<unknown>;
 
     const invoker = moveAction.invoker;

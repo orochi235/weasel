@@ -1,5 +1,5 @@
 /**
- * `<SceneCanvas features={[editPreset]}>` answering a real `ClipboardEvent` whose
+ * `<SceneCanvas features={[presets.edit]}>` answering a real `ClipboardEvent` whose
  * `clipboardData` is a real `DataTransfer` — the two objects jsdom lacks. The
  * event is still constructed here, not produced by Cmd/Ctrl+V against the OS
  * clipboard, so this covers the event's shape and not the browser's choice of
@@ -13,7 +13,8 @@ import { SceneCanvas, createScene } from '@weasel-js/core';
 import type { FeaturePreset } from '@weasel-js/core';
 import type { Scene } from '@weasel-js/core/engine';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
-import { editPreset, buildWeaselClipboardText } from '@weasel-js/editing';
+import { buildWeaselClipboardText } from '@weasel-js/editing';
+import { editPreset } from '../../../presets/edit';
 
 type P = { x: number; y: number; width: number; height: number };
 type S = Scene<object, 'main', P>;

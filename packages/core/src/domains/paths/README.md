@@ -124,13 +124,13 @@ contour parser, the renderer's `drawPath`, and `pathToD` — call it
 first. A spec rides on its anchor through the anchor model (`PenAnchor.corner`),
 so an insert or delete keeps each corner on its anchor. The widgets and
 commands that edit corners in path edit are `@weasel-js/path-tools`'
-`filletPreset`.
+`pathTools.fillet`.
 
 ## Constraints
 
 A node's `data.constraints` is a list of `PathConstraint`s (`@weasel-js/geom`),
 numbered by flat anchor index. Core stores them and holds no rule about them:
-`@weasel-js/path-tools`' `constraintsPreset` makes them hold, through a path
+`@weasel-js/path-tools`' `pathTools.constraints` makes them hold, through a path
 edit extension whose `finishEdit` runs `constrainPathEdit` on every edit and
 renumbers the list through the edit's origins, so a delete or an insert keeps
 each constraint on the anchors it named. The `editAnchors` dep finishes every
@@ -182,4 +182,4 @@ stored path alone, so the warp stays valid without being rewritten; anything
 that rewrites the path drops the warp, as it drops a generator, and a warp whose
 result no longer matches the path is ignored (`GEOMETRY_BOUND_DATA` names
 `warp` among the data a path writer drops). The warp tools, actions, and
-`warpPreset` are `@weasel-js/path-tools`' (`src/warp/`).
+`pathTools.warp` are `@weasel-js/path-tools`' (`src/warp/`).

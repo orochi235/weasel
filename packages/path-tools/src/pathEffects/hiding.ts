@@ -5,8 +5,6 @@
  * hid it stays hidden.
  */
 import {
-  createSetDataOp,
-  createSetHiddenOp,
   type NodeId,
   type Op,
   pathEffectOf,
@@ -15,6 +13,7 @@ import {
   sourcesHiddenBy,
   type AnyScene,
 } from '@weasel-js/core';
+import * as ops from '@weasel-js/core/ops';
 
 /** Whether an effect other than those `leaving` holds `source` hidden. */
 export function hiddenByOthers(scene: AnyScene, source: NodeId, leaving: ReadonlySet<NodeId> = new Set()): boolean {
@@ -28,7 +27,7 @@ export const hiddenOnItsOwn = (scene: AnyScene, source: NodeId, leaving?: Readon
 /** The op setting `id`'s own `hidden` flag to `to`, or none where it has it already. */
 export function hiddenOps(scene: AnyScene, id: NodeId, to: boolean, label: string): Op[] {
   const from = scene.get(id)?.hidden === true;
-  return from === to ? [] : [createSetHiddenOp({ id, from, to, label })];
+  return from === to ? [] : [ops.setHidden({ id, from, to, label })];
 }
 
 /** The ops showing `source` as `leaving` stop reading it: shown where one of
@@ -51,5 +50,5 @@ export function takenOps(scene: AnyScene, effect: AnyNode, at: number, source: N
   if (record?.hideSources !== true) return [];
   if (!hiddenOnItsOwn(scene, source, new Set([effect.id]))) return hiddenOps(scene, source, true, label);
   const pathEffect: PathEffect = { ...record, foundHidden: [...(record.foundHidden ?? []).filter((i) => i !== at), at] };
-  return [createSetDataOp({ id: effect.id, from: effect.data, to: { ...(effect.data as object), pathEffect }, label })];
+  return [ops.setData({ id: effect.id, from: effect.data, to: { ...(effect.data as object), pathEffect }, label })];
 }

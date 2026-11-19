@@ -12,6 +12,7 @@ interface DemoProps {
 function Demo(props: DemoProps) {
   return (
     <Plot2D
+      aria-label="Empty plot"
       width={props.width}
       height={props.height}
       grid={props.showGrid ? { divisions: props.gridDivisions } : false}
@@ -50,6 +51,7 @@ function WithChildren(props: DemoProps & { points: { x: number; y: number }[] })
   const size = { width: props.width, height: props.height };
   return (
     <Plot2D
+      aria-label="Plot with marks"
       width={props.width}
       height={props.height}
       grid={props.showGrid ? { divisions: props.gridDivisions } : false}
@@ -82,6 +84,7 @@ export const WithChildMarks: StoryObj<typeof WithChildren> = {
 function WithTicks(props: { width: number; height: number; yMin: number; yMax: number; labels: 'inside' | 'outside' }) {
   return (
     <Plot2D
+      aria-label="Plot with ticks"
       width={props.width}
       height={props.height}
       xRange={[0, 2000]}

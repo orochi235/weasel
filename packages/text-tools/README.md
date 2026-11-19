@@ -12,25 +12,25 @@ npm install @weasel-js/text-tools
 ```
 
 Core knows no text. A canvas whose scene holds text nodes (data with a string
-`text`) turns them on with `textPreset`:
+`text`) turns them on with `textTools.text`:
 
 ```tsx
 import { SceneCanvas } from '@weasel-js/core';
-import { textPreset, textToolsPreset } from '@weasel-js/text-tools';
-import { drawPreset } from '@weasel-js/editing';
+import * as textTools from '@weasel-js/text-tools/presets';
+import * as presets from '@weasel-js/editing/presets';
 
-<SceneCanvas scene={scene} features={[drawPreset, textToolsPreset]} />;
+<SceneCanvas scene={scene} features={[presets.draw, textTools.textTools]} />;
 ```
 
 | Preset | What it adds |
 |---|---|
-| `textPreset` | the `kit:text` painter, whose glyphs are its outline for booleans and Create Outlines; `'text'` routing and properties; the `text` and `sticky` inserts; the canvas's own editor and the `textEdit` dep; `enterTextEdit`, a double-click opening text in place, and a click opening a path effect's hidden text; plain-text paste |
+| `textTools.text` | the `kit:text` painter, whose glyphs are its outline for booleans and Create Outlines; `'text'` routing and properties; the `text` and `sticky` inserts; the canvas's own editor and the `textEdit` dep; `enterTextEdit`, a double-click opening text in place, and a click opening a path effect's hidden text; plain-text paste |
 | `createTextPreset({ editor })` | the same, with the editor configured by `useSceneTextEdit`'s options, or `editor: false` for none |
-| `textToolsPreset` | the text and sticky-note tools, with `textPreset` |
-| `whiteboardPreset` | the pencil, text and the sticky note on an open canvas, with view, pick, move, resize and edit |
+| `textTools.textTools` | the text and sticky-note tools, with `textTools.text` |
+| `textTools.whiteboard` | the pencil, text and the sticky note on an open canvas, with view, pick, move, resize and edit |
 
 A canvas taking its tools through `<SceneCanvas tools>` gets the same two from
-`useTextToolsTools()`, beside `textPreset`. A scene drawn with no canvas
+`useTextToolsTools()`, beside `textTools.text`. A scene drawn with no canvas
 (`renderSceneToPixels`, an export) paints text once `TEXT_PAINTER` is
 registered for it: `nodeShapesOf(scene).register(TEXT_PAINTER)`.
 

@@ -9,7 +9,9 @@
  * `./vendor/harfbuzzjs` because its published module instantiates with a
  * top-level `await`, which a bundle targeting below ES2022 cannot hold.
  */
+/// <reference path="./wasm-url.d.ts" />
 import { scriptPieces, type ScriptPiece } from './scripts';
+import wasmUrl from 'harfbuzzjs/dist/harfbuzz.wasm?url';
 
 type HarfBuzz = typeof import('./vendor/harfbuzzjs/index');
 type HbFont = InstanceType<HarfBuzz['Font']>;
@@ -237,11 +239,10 @@ export function loadShaper(): Promise<TextShaper> {
 
 /**
  * Where the WebAssembly is read from. Node reads harfbuzzjs's own copy; anywhere
- * else it is fetched from beside this package's built JavaScript, where the
- * build copies it, so a bundler finds it from the `new URL(…, import.meta.url)`
- * the glue writes.
+ * else it is fetched from `wasmUrl`, which vite resolves from source and the
+ * package build points at the copy it writes beside the built JavaScript.
  */
-function wasmLocation(): { locateFile?: () => string } {
+function wasmLocation(): { locateFile: () => string } {
   const isNode = typeof process === 'object' && !!process.versions?.node;
-  return isNode ? { locateFile: () => import.meta.resolve('harfbuzzjs/dist/harfbuzz.wasm') } : {};
+  return { locateFile: () => (isNode ? import.meta.resolve('harfbuzzjs/dist/harfbuzz.wasm') : wasmUrl) };
 }

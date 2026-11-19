@@ -9,7 +9,7 @@ import { PathBuilder } from '@weasel-js/geom';
 import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { createHistory } from '@weasel-js/history';
 import type { Op, NodeId } from '@weasel-js/core';
-import { createScene, IDENTITY_POSE_COMPOSITION, defaultCommitAdapter, createInsertOp } from '@weasel-js/core/engine';
+import { createScene, IDENTITY_POSE_COMPOSITION, defaultCommitAdapter } from '@weasel-js/core/engine';
 import { duplicateSelection, groupAction, deleteAction } from '@weasel-js/editing';
 import { cloneAction } from '../../../actions/clone/action';
 import { createElement } from 'react';
@@ -19,6 +19,7 @@ import { useInsertDepSource } from '../../../deps/insert';
 import type { InsertDep, InsertBehavior } from '@weasel-js/core/engine';
 import { insertAction } from '../../../actions/insert/action';
 import { placeAction } from '../../../actions/insert/placeAction';
+import * as coreOps from '@weasel-js/core/ops';
 
 type AnyScene = ReturnType<typeof createScene<object, 'main', unknown>>;
 
@@ -157,7 +158,7 @@ describe('undo restores the selection an action started from', () => {
     const { deps: base, history } = consumerDeps(scene, selection);
     const deps = { ...base, insert: kitInsert(scene, (ops, label) => history.applyOps(ops, label)) } as unknown as ActionDeps;
     const own: InsertBehavior<unknown> = {
-      onEnd: () => [createInsertOp({ node: { id: 'own', kind: 'mark', layer: 'main', data: {}, pose: line(0, 0, 1, 1) } as never })],
+      onEnd: () => [coreOps.insert({ node: { id: 'own', kind: 'mark', layer: 'main', data: {}, pose: line(0, 0, 1, 1) } as never })],
     };
     const handle = (insertAction.invoker as OngoingInvoker).start(dragCtx(100, 100, deps), { params: { kind: 'rect' }, behaviors: [own] });
     handle.onMove!(dragCtx(140, 140, deps));

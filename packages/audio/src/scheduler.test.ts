@@ -351,3 +351,16 @@ describe('createScheduler', () => {
     expect(h.armCount()).toBe(2);
   });
 });
+
+describe('createScheduler timing', () => {
+  it('refuses a lookahead or interval it could not run with', () => {
+    const base = { now: () => 0, setTimer: () => 1, clearTimer: () => {} };
+    for (const bad of [
+      { lookahead: Number.NaN }, { lookahead: -1 }, { interval: 0 }, { interval: Number.NaN },
+      { interval: Number.POSITIVE_INFINITY }, { interval: 2 ** 31 },
+    ]) {
+      expect(() => createScheduler({ ...base, ...bad })).toThrow(RangeError);
+    }
+    expect(() => createScheduler({ ...base, lookahead: 0, interval: 2 ** 31 - 1 })).not.toThrow();
+  });
+});

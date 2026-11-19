@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { describePresets, type PresetDescription, viewPreset, viewToolsPreset } from '@weasel-js/core';
+import { describePresets, type PresetDescription } from '@weasel-js/core';
+import * as corePresets from '@weasel-js/core/presets';
 import { FEATURE_PRESETS } from '@weasel-js/editing';
 import { aliasNodes, BUNDLE_LINKS, bundleLoads, bundleProblems, bundleTree, copyNodes } from '@weasel-js/prefs/edit';
 
@@ -8,7 +9,7 @@ const d = (id: string, more: Partial<PresetDescription> = {}): PresetDescription
 
 describe('bundleProblems', () => {
   it("finds nothing wrong with the kit's presets as they stand", () => {
-    const kit = describePresets({ '@weasel-js/core': [viewPreset, viewToolsPreset], '@weasel-js/editing': Object.values(FEATURE_PRESETS) });
+    const kit = describePresets({ '@weasel-js/core': [corePresets.view, corePresets.viewTools], '@weasel-js/editing': Object.values(FEATURE_PRESETS) });
     expect(bundleProblems(bundleTree(kit))).toEqual(new Map());
   });
 

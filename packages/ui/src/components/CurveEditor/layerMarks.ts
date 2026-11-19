@@ -1,10 +1,4 @@
-import { trimNumber } from '@weasel-js/geom';
-import type { PlotPoint } from './layerTypes';
-
-/** An SVG path through `pts`, as straight segments. */
-export function pathThrough(pts: readonly PlotPoint[]): string {
-  return pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${trimNumber(p.x, 2)},${trimNumber(p.y, 2)}`).join('');
-}
+export { pathThrough } from '../../pathThrough';
 
 /**
  * The element a key event targets, when it sits inside the group of the layer `id`; else null. Every layer's

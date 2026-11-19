@@ -1,5 +1,5 @@
 /**
- * The canvas's own text editor, as `textPreset` mounts it: a placed text node
+ * The canvas's own text editor, as `textTools.text` mounts it: a placed text node
  * can be typed into with no host wiring, and the editor stands down for a
  * host's own.
  */
@@ -11,7 +11,7 @@ import { useSceneTextEdit } from './useSceneTextEdit';
 import type { CanvasTextEditorOptions } from './canvasEditor';
 import { asNodeId, createScene, SceneCanvas, type FeaturePreset } from '@weasel-js/core';
 import { paintStandInsOver } from 'canvas/paintStandIns';
-import { createTextPreset, textPreset } from '../presets';
+import { createTextPreset, textPreset } from '../featurePresets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

@@ -7,8 +7,9 @@ import { act, cleanup, render } from '@testing-library/react';
 import { useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import type { ActionDeps } from '@weasel-js/routing';
 import { SceneCanvas, asNodeId, createScene } from '@weasel-js/core';
-import { textPreset } from '../presets';
-import { editPreset, placeAction } from '@weasel-js/editing';
+import { textPreset } from '../featurePresets';
+import { placeAction } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -28,7 +29,7 @@ function mount() {
   }
   const frame = render(
     <div data-testid="frame">
-      <SceneCanvas scene={scene} width={300} height={200} features={[editPreset, textPreset]}>
+      <SceneCanvas scene={scene} width={300} height={200} features={[presets.edit, textPreset]}>
         <Capture />
       </SceneCanvas>
     </div>,

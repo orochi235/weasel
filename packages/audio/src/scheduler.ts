@@ -1,3 +1,6 @@
+import { LONGEST_TIMER_MS } from '@weasel-js/registry';
+import { checkSpan } from './param';
+
 /** Clock and timer for `createScheduler`. */
 export interface SchedulerOptions {
   /** Engine time in ms. Backed by `AudioContext.currentTime * 1000` in production. */
@@ -6,9 +9,10 @@ export interface SchedulerOptions {
    *  leave every previous timer running. */
   setTimer: (cb: () => void, ms: number) => unknown;
   clearTimer: (handle: unknown) => void;
-  /** How far ahead to book events, in ms. Default 100. */
+  /** How far ahead to book events, in ms. Default 100. Throws on one that is negative or not finite. */
   lookahead?: number;
-  /** Time between passes, in ms. Default 25. */
+  /** Time between passes, in ms. Default 25. Throws on one that is not above 0 and at most
+   *  2^31 − 1, the longest a timer waits. */
   interval?: number;
   /** An event fired `lateMs` after its time `when`: the passes that should
    *  have reached it inside the lookahead stalled, and whatever it starts will
@@ -48,6 +52,15 @@ export interface Scheduler {
   pending(): number;
 }
 
+/** Throws on a lookahead or pass interval {@link createScheduler} could not run with. */
+export function checkSchedulerTiming(opts: Pick<SchedulerOptions, 'lookahead' | 'interval'>): void {
+  checkSpan('scheduler lookahead', opts.lookahead);
+  const { interval } = opts;
+  if (interval !== undefined && !(interval > 0 && interval <= LONGEST_TIMER_MS)) {
+    throw new RangeError(`@weasel-js/audio: a scheduler interval is above 0 and at most ${LONGEST_TIMER_MS} ms, not ${interval}`);
+  }
+}
+
 /**
  * Lookahead scheduler. Each pass fires everything due within `lookahead` ms,
  * in time order, handing each callback its own scheduled time. An event
@@ -61,6 +74,7 @@ export interface Scheduler {
  * passes `createTickTimer` instead.
  */
 export function createScheduler(opts: SchedulerOptions): Scheduler {
+  checkSchedulerTiming(opts);
   const lookahead = opts.lookahead ?? 100;
   const interval = opts.interval ?? 25;
   let queue: Entry[] = [];

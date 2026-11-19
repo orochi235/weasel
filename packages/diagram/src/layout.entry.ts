@@ -40,7 +40,7 @@ export { PORT_LABEL_GAP, marginOf, portLabelBox } from './portLabels';
 export type { PerimeterPortLabelBox } from './portLabels';
 export { footprintNode } from './footprint';
 export type { ForceBody, ForceOptions, ForceRelaxation } from './force';
-export { force, forceRelaxation } from './force';
+export { force, createForceRelaxation } from './force';
 export type { EdgeLabelRoom, Graph, GraphEdge, GraphCluster, GraphNode } from './graph';
 export { chain } from './chain';
 export { AVOID_DEFAULTS, createAvoidRouter, routeHolds } from './avoid';

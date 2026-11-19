@@ -7,7 +7,7 @@ import {
   type Action, type ActionDeps, ActionDisabledReason, type ActionParamsOf, BETWEEN_GESTURES, defineAction, type ImmediateInvoker,
 } from '@weasel-js/routing';
 import { maxOf, worldEditToStorage } from '@weasel-js/geom';
-import { commitOps, createSetDataOp, createDeleteNodeOp, derivedDepOf, documentOf, createInsertNodeOp, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, resolvePartPaint, registeredPathEffects, type AnyNode, slotOf, pathOperationTags, type AnyScene } from '@weasel-js/core';
+import { commitOps, derivedDepOf, documentOf, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, resolvePartPaint, registeredPathEffects, type AnyNode, slotOf, pathOperationTags, type AnyScene } from '@weasel-js/core';
 import { isTextData } from '@weasel-js/text';
 import { newEffect, withEffectSettings } from './params';
 import { hiddenOnItsOwn, hiddenOps } from './hiding';
@@ -17,6 +17,7 @@ import { PATH_EFFECT_PARAMS } from './effectForms';
 import type {} from '../actionParamSchema';
 import { getOwn } from '@weasel-js/registry';
 import { hiddenSourceDeleteOps } from '@weasel-js/editing';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** The `group` every path-effect action is in, for an `<ActionBar>`. */
 export const PATH_EFFECTS_GROUP = 'pathEffects';
@@ -123,7 +124,7 @@ function createEffectAction<const Id extends CreateId>(spec: CreateSpec<Id>) {
           } as unknown as AnyNode;
           // Hiding a source after the insert, so undo shows it before the effect goes.
           const hide = effect.hideSources === true ? sources.flatMap((id) => hiddenOps(scene, id, true, spec.label)) : [];
-          ops.push(createInsertNodeOp(node, index, spec.label), ...hide);
+          ops.push(coreOps.insertNode(node, index, spec.label), ...hide);
           made.push(node.id);
         }
         commitOps(deps, ops, spec.label, { select: made });
@@ -237,7 +238,7 @@ export const editPathEffectAction = defineAction({
         const effect = pathEffectOf(node)!;
         const next = withEffectSettings(effect, p);
         if (sameEffect(effect, next)) continue;
-        ops.push(createSetDataOp({
+        ops.push(coreOps.setData({
           id: node.id,
           from: node.data,
           to: { ...(node.data as object), pathEffect: next },
@@ -288,13 +289,13 @@ export const expandPathEffectAction: Action & { requires: string[] } = {
       for (const { node, at } of effects) {
         const sources = (Array.isArray(node.dependsOn) ? node.dependsOn : []).map((id) => derivedDepOf(documentOf(scene), id, node));
         const parts = pathEffectParts(node, sources) ?? [];
-        ops.push(createDeleteNodeOp(scene, node, EXPAND_LABEL));
+        ops.push(coreOps.deleteNode(scene, node, EXPAND_LABEL));
         parts.forEach((part, k) => {
           const { pose, path } = worldEditToStorage({ x: 0, y: 0, width: 0, height: 0 }, part.path);
           const { fill, stroke } = resolvePartPaint(part, node.data as Parameters<typeof resolvePartPaint>[1]);
           const data = { path, ...(fill ? { fill } : {}), ...(stroke ? { stroke } : {}) };
           const copy = { id: scene.mintId(), kind: 'mark', layer: node.layer, parent: node.parent, pose, data } as AnyNode;
-          ops.push(createInsertNodeOp(copy, at < 0 ? at : at + k, EXPAND_LABEL));
+          ops.push(coreOps.insertNode(copy, at < 0 ? at : at + k, EXPAND_LABEL));
           made.push(copy.id);
         });
       }

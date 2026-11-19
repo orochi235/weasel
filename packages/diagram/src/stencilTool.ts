@@ -15,7 +15,7 @@ import { INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING } from '@weasel-js/editing'
 import type { Rect } from '@weasel-js/geom';
 
 /** The tool that draws `stencil`, a shape's or a container's: its id is the stencil's insert kind. */
-export function stencilTool(stencil: Pick<DiagramStencil, 'id' | 'label' | 'description' | 'icon'>): Tool {
+export function createStencilTool(stencil: Pick<DiagramStencil, 'id' | 'label' | 'description' | 'icon'>): Tool {
   return defineTool({
     id: stencilKind(stencil.id),
     hookName: 'useStencilTool',
@@ -31,9 +31,9 @@ export function stencilTool(stencil: Pick<DiagramStencil, 'id' | 'label' | 'desc
   });
 }
 
-/** {@link stencilTool}, rebuilt only when the stencil changes. */
+/** {@link createStencilTool}, rebuilt only when the stencil changes. */
 export function useStencilTool(stencil: Pick<DiagramStencil, 'id' | 'label' | 'description' | 'icon'>): Tool {
-  return useMemo(() => stencilTool(stencil), [stencil]);
+  return useMemo(() => createStencilTool(stencil), [stencil]);
 }
 
 /** Options for {@link useStencilInsert}. */

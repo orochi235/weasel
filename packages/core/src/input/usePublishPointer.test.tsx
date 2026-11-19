@@ -79,4 +79,17 @@ describe('usePublishPointer', () => {
     fireEvent.pointerLeave(a);
     expect(store.get()).toEqual({ world: { x: 3, y: 3 }, viewId: 'b' });
   });
+
+  it('publishes from an element that mounts after the hook first ran', () => {
+    const store = createPointerStore();
+    function Late({ show }: { show: boolean }) {
+      const ref = useRef<HTMLDivElement>(null);
+      usePublishPointer(ref, (_id, x, y) => ({ world: { x, y }, viewId: 'late' }));
+      return show ? <div ref={ref} data-testid="late" /> : null;
+    }
+    const r = render(<PointerContextProvider store={store}><Late show={false} /></PointerContextProvider>);
+    r.rerender(<PointerContextProvider store={store}><Late show /></PointerContextProvider>);
+    moveAt(r.getByTestId('late'), 4, 6);
+    expect(store.get()).toEqual({ world: { x: 4, y: 6 }, viewId: 'late' });
+  });
 });

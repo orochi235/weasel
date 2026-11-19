@@ -17,6 +17,7 @@ import {
   pointRegionFrame,
   pointRegionLive,
   pointRegionScreenQuad,
+  regionShown,
   transformOf,
   type TargetTransform,
 } from './hitAffordanceRegions';
@@ -65,6 +66,7 @@ export function composeAffordanceLayer(
       for (const a of affordances) {
         if (isVisible && !isVisible(a.id)) continue;
         for (const region of a.regions(state)) {
+          if (!regionShown(region, isVisible)) continue;
           const xf = transformOf(state, region.targetId);
           if (region.shape.kind === 'point' && !pointRegionLive(region.shape, xf, view)) continue;
           if (region.paint) paintRegion(region, xf, view, state, t, out);
@@ -241,11 +243,11 @@ function paintRegion(
 
 /** Build a screen-space DrawCommand for an annulus region: the area
  *  inside the (contracted) outer ellipse but outside the (expanded)
- *  inner rect. Renders as four disjoint petal subpaths — one per rect
- *  edge — so the visible fill is true `ellipse \ rect`. A naive
- *  ellipse + rect even-odd path would also fill the rect's corner
- *  triangles where they poke past the contracted ellipse. Returns null
- *  when the band collapses on both axes. */
+ *  inner rect, wherever that rect sits. Renders as up to four cap
+ *  subpaths, one past each rect edge, whose union is `ellipse \ rect`.
+ *  Every cap is traced the same way round, so where two overlap (a rect
+ *  corner inside the ellipse) nonzero fills the overlap rather than
+ *  cancelling it. Returns null when no cap is left. */
 function annulusCommand(
   shape: Extract<AffordanceRegion['shape'], { kind: 'annulus' }>,
   semiAxes: { rx: number; ry: number },
@@ -260,23 +262,20 @@ function annulusCommand(
   if (rx <= 0 || ry <= 0) return null;
   const cx = shape.cx;
   const cy = shape.cy;
-  // Expanded inner rect (still in target-local coords).
-  const rectHW = shape.innerWidth / 2 + insetLocal.x;
-  const rectHH = shape.innerHeight / 2 + insetLocal.y;
-  // A petal exists only when its rect edge intersects the ellipse interior — otherwise the
-  // rect already extends past the ellipse on that axis.
-  const haveTopBottom = rectHH < ry;
-  const haveLeftRight = rectHW < rx;
-  if (!haveTopBottom && !haveLeftRight) return null;
-  const xT = haveTopBottom ? rx * Math.sqrt(1 - (rectHH / ry) ** 2) : 0;
-  const yR = haveLeftRight ? ry * Math.sqrt(1 - (rectHW / rx) ** 2) : 0;
+  // The expanded inner rect's edges, relative to the ellipse center.
+  const left = shape.innerX - insetLocal.x - cx;
+  const right = shape.innerX + shape.innerWidth + insetLocal.x - cx;
+  const top = shape.innerY - insetLocal.y - cy;
+  const bottom = shape.innerY + shape.innerHeight + insetLocal.y - cy;
 
-  // Line segments per petal arc; 24 is smooth at typical zooms.
+  // Line segments per cap arc; 24 is smooth at typical zooms.
   const SAMPLES = 24;
   const cmds: number[] = [];
   const localPts: { x: number; y: number }[] = [];
 
-  function appendPetal(t0: number, t1: number): void {
+  // Traces `t0 → t1` (t1 > t0) along the ellipse; PATH_Z closes along the
+  // rect edge, since both endpoints share that edge's coordinate.
+  function appendCap(t0: number, t1: number): void {
     cmds.push(PATH_M);
     localPts.push({ x: cx + rx * Math.cos(t0), y: cy + ry * Math.sin(t0) });
     for (let i = 1; i <= SAMPLES; i++) {
@@ -284,37 +283,31 @@ function annulusCommand(
       cmds.push(PATH_L);
       localPts.push({ x: cx + rx * Math.cos(t), y: cy + ry * Math.sin(t) });
     }
-    // PATH_Z closes along the rect edge: both endpoints share the rect-edge coord by
-    // construction, so the closing segment IS the chord.
     cmds.push(PATH_Z);
   }
+  const clamp1 = (v: number) => Math.max(-1, Math.min(1, v));
 
-  if (haveTopBottom) {
-    // Top petal: y < cy. Arc from right endpoint over t = -π/2 to left.
-    appendPetal(
-      Math.atan2(-rectHH / ry, xT / rx),   // in (-π/2, 0)
-      Math.atan2(-rectHH / ry, -xT / rx),  // in (-π, -π/2), decreasing through -π/2
-    );
-    // Bottom petal: y > cy. Arc through t = +π/2.
-    appendPetal(
-      Math.atan2(rectHH / ry, xT / rx),    // in (0, π/2)
-      Math.atan2(rectHH / ry, -xT / rx),   // in (π/2, π), increasing through π/2
-    );
+  // Above the rect: sin t < top / ry.
+  if (top > -ry) {
+    const p = Math.asin(clamp1(top / ry));
+    appendCap(-Math.PI - p, p);
   }
-  if (haveLeftRight) {
-    // Right petal: x > cx. Arc through t = 0.
-    appendPetal(
-      Math.atan2(-yR / ry, rectHW / rx),   // in (-π/2, 0)
-      Math.atan2(yR / ry, rectHW / rx),    // in (0, π/2)
-    );
-    // Left petal: x < cx. Arc through t = ±π. Shift the end angle by
-    // -2π so the parametric trace passes through the leftmost point
-    // monotonically instead of crossing the right side.
-    appendPetal(
-      Math.atan2(-yR / ry, -rectHW / rx),                  // in (-π, -π/2)
-      Math.atan2(yR / ry, -rectHW / rx) - 2 * Math.PI,     // in (-3π/2, -π), decreasing through -π
-    );
+  // Below it: sin t > bottom / ry.
+  if (bottom < ry) {
+    const p = Math.asin(clamp1(bottom / ry));
+    appendCap(p, Math.PI - p);
   }
+  // Right of it: cos t > right / rx.
+  if (right < rx) {
+    const q = Math.acos(clamp1(right / rx));
+    appendCap(-q, q);
+  }
+  // Left of it: cos t < left / rx.
+  if (left > -rx) {
+    const q = Math.acos(clamp1(left / rx));
+    appendCap(q, 2 * Math.PI - q);
+  }
+  if (cmds.length === 0) return null;
 
   const coords = new Float32Array(localPts.length * 2);
   for (let i = 0; i < localPts.length; i++) {

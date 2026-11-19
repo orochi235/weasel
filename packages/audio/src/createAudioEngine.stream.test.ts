@@ -102,6 +102,65 @@ describe('engine.stream', () => {
     expect(el.paused).toBe(false);
   });
 
+  it('refuses an offset that is negative or not finite, and keeps the earlier stream playing', async () => {
+    const { engine, sources, tick } = await harness();
+    const el = createFakeMediaElement();
+    const first = engine.stream(el as never);
+    tick();
+    for (const offset of [Number.NaN, Number.POSITIVE_INFINITY, -1]) {
+      expect(() => engine.stream(el as never, { offset })).toThrow(RangeError);
+    }
+    tick();
+    expect(first.isPlaying()).toBe(true);
+    expect(sources).toHaveLength(1);
+  });
+
+  it('keeps the earlier stream playing when a restream names an unknown bus', async () => {
+    const { engine, tick } = await harness();
+    const el = createFakeMediaElement();
+    const first = engine.stream(el as never);
+    tick();
+    expect(() => engine.stream(el as never, { bus: 'musc' })).toThrow(/unknown bus/);
+    tick();
+    expect(first.isPlaying()).toBe(true);
+    expect(el.paused).toBe(false);
+  });
+
+  it('keeps the earlier stream playing when a restream is dropped, and stops it with stop()', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { ctx, engine, tick } = await harness();
+    const el = createFakeMediaElement();
+    const first = engine.stream(el as never);
+    tick();
+    ctx.state = 'suspended';
+    expect(engine.stream(el as never).isPlaying()).toBe(false);
+    ctx.state = 'running';
+    tick();
+    expect(first.isPlaying()).toBe(true);
+    const second = engine.stream(el as never);
+    tick();
+    expect(first.isPlaying()).toBe(false);
+    expect(second.isPlaying()).toBe(true);
+    expect(el.paused).toBe(false);
+    warn.mockRestore();
+  });
+
+  it('streams an element again from a second engine on the same context', async () => {
+    const { ctx, engine, sources, tick } = await harness();
+    const el = createFakeMediaElement();
+    const first = engine.stream(el as never);
+    tick();
+    engine.dispose();
+    const next = createAudioEngine({ context: ctx as never, setTimer: () => 1, clearTimer: () => {} });
+    const second = next.stream(el as never);
+    await flush();
+    expect(sources).toHaveLength(1);
+    expect(first.isPlaying()).toBe(false);
+    expect(second.isPlaying()).toBe(true);
+    expect(el.paused).toBe(false);
+    next.dispose();
+  });
+
   it('pauses and unwires on stop', async () => {
     const { engine, sources, tick } = await harness();
     const el = createFakeMediaElement();

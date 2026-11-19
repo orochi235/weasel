@@ -61,7 +61,9 @@ function syncObserved(
  * The one frame loop for every clock in a registry: syncs each clock that is not
  * inert, and sleeps once every clock is, until one wakes. A clock registered with
  * a target is skipped, and rebased, while every target of it is out of the
- * viewport. Shaped like a blits `ticker`, so one could take its place.
+ * viewport. A clock counts no time from before it joins the loop, as when a
+ * registration that shadowed its id is released. Shaped like a blits `ticker`,
+ * so one could take its place.
  *
  * `options` supplies the frame clock, for tests.
  */
@@ -123,10 +125,13 @@ export function useClockLoop(
     const attach = (): void => {
       for (const off of unwakes) off();
       unwakes = [];
+      const before = new Set(entries.current.map((entry) => entry.handle));
       entries.current = entriesOf(registry);
       syncObserved(entries.current, observer.current, seen.current, named.current);
       for (const { handle } of entries.current) {
         const { clock } = handle;
+        // A clock joining the loop, or back from under a registration that shadowed its id, owes no time from before.
+        if (!before.has(handle)) clock.rebase();
         unwakes.push(clock.onWake(() => loop.request()));
         if (!clock.inert) loop.request();
       }

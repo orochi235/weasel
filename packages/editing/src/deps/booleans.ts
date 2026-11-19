@@ -2,7 +2,7 @@
  * The kit `booleansAdapter` dep: what the Pathfinder actions, and any tool
  * reading the dep, work on over a canvas's own path leaves.
  *
- * `booleansPreset` publishes it over the canvas's scene. A consumer replaces it
+ * `presets.booleans` publishes it over the canvas's scene. A consumer replaces it
  * with `useBooleansAdapter` from under the canvas — for text operands, say,
  * which this one does not read; the newest registration wins, and a canvas
  * child registers after the presets' components.

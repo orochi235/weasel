@@ -398,6 +398,18 @@ describe('useKeybindings', () => {
       expect(ran).toHaveBeenCalledTimes(1);
     });
 
+    it('refuses Escape a default tool the mode bars, as it refuses that tool\'s key', () => {
+      const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
+      const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' }, capabilities: ['creates-paths'] });
+      const { result } = renderHook(() => {
+        const tools = useTools({ active: 'select', registry: { select, pen } });
+        useKeybindings(tools, { modes: modesAllowing([]), defaultTool: 'pen' });
+        return tools;
+      }, { wrapper: makeWrapper('select', true) });
+      act(() => press('Escape'));
+      expect(result.current.active).toBe('select');
+    });
+
     it('reads the mode at the keypress, not at mount', () => {
       const modes = createModeRegistry({
         modes: [mode('look', []), mode('draw', ['creates-paths'])], initial: 'look',

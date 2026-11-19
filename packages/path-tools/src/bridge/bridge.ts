@@ -4,7 +4,7 @@
  * selected in path edit.
  */
 import { type Action, ActionDisabledReason, BETWEEN_GESTURES, defineAction } from '@weasel-js/routing';
-import { ANCHORS_GROUP, pathOperationTags } from '@weasel-js/core';
+import { pathOperationTags } from '@weasel-js/core';
 import { anchorEditWouldChange, commitAnchorEdit, openPathEditOf } from '../pathEdit/anchorEditing';
 import { createJoinPathsAction } from '../pathCommands/cutJoin';
 import { joinSelectedAnchors } from '../pathEdit/anchorJoin';
@@ -12,6 +12,7 @@ import { pref } from '@weasel-js/prefs-schema';
 import { icon } from '../icons.gen';
 import type {} from '../actionParamSchema';
 import { isFiniteNumber } from '@weasel-js/registry';
+import * as groups from '@weasel-js/core/groups';
 
 /** How long Bridge makes each handle, as a fraction of the gap, when its
  *  params name no `tension`. */
@@ -65,7 +66,7 @@ export const bridgeAnchorsAction = defineAction({
   label: 'Bridge anchors',
   tags: pathOperationTags('command'),
   icon: icon('core:bridge'),
-  group: ANCHORS_GROUP,
+  group: groups.anchors,
   params: BRIDGE_PARAMS,
   defaultBinding: [{ spec: { kind: 'key', key: 'j', code: 'KeyJ', mods: { alt: true }, phase: BETWEEN_GESTURES }, opts: { id: 'bridgeAnchors.key' } }],
   eligible: { capability: 'edits-anchors' },

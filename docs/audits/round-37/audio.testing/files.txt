@@ -1,0 +1,13 @@
+packages/audio/src/testing/engineHarness.ts
+packages/audio/src/testing/fakeAnalyser.ts
+packages/audio/src/testing/fakeAudioContext.ts
+packages/audio/src/testing/fakeMediaElement.ts
+packages/audio/src/testing/fakeNode.ts
+packages/audio/src/testing/fakeSources.ts
+packages/audio/src/testing/fakeWorker.ts
+packages/audio/src/testing/fakeWorklet.ts
+packages/audio/src/testing/graphHarness.ts
+packages/audio/src/testing/graphWalk.ts
+packages/audio/src/testing/renderEngine.ts
+packages/audio/src/testing/spectrum.ts
+packages/audio/src/testing/worklet.ts

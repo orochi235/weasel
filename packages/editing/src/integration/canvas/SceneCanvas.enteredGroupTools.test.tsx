@@ -12,7 +12,8 @@ import type { ActionsRegistry, SelectionApi } from '@weasel-js/routing';
 import { useSceneAdapter, asNodeId, type NodeId, SceneCanvas } from '@weasel-js/core';
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import { createScene, createEnteredGroup } from '@weasel-js/core/engine';
-import { drawPreset, useSelection, useClipboardOps } from '@weasel-js/editing';
+import { useSelection, useClipboardOps } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

@@ -1,6 +1,6 @@
 /**
  * The `text/plain` content handler: a pasted or dropped string becomes a text
- * node. `textPreset` brings it to the canvas's ingestion, after the kit's own.
+ * node. `textTools.text` brings it to the canvas's ingestion, after the kit's own.
  *
  * Strings that arrive beside a file are passed over: there they describe the
  * file (its name, a URL to it), as when a browser drags an image or the OS

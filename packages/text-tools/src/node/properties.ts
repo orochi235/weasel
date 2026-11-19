@@ -111,7 +111,7 @@ const TYPOGRAPHY: PrefSection = {
   },
 };
 
-/** The `text` kind's properties, for a `SelectionPanel` given `textPreset`. */
+/** The `text` kind's properties, for a `SelectionPanel` given `textTools.text`. */
 export const TEXT_PROPERTIES: NodePropertiesEntry = {
   name: 'text',
   schema: shapePropertiesSchema({

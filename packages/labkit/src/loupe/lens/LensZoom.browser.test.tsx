@@ -4,7 +4,8 @@ import 'windease/styles.css';
 import '../../styles.less';
 import './LensOverlay.browser.test.less';
 import { cleanup, screen, waitFor } from '@testing-library/react';
-import { createSetPoseOp, effectivePose, type RectPose, sceneToAdapter } from '@weasel-js/core';
+import { effectivePose, type RectPose, sceneToAdapter } from '@weasel-js/core';
+import * as ops from '@weasel-js/core/ops';
 import { defineInstrument, Lab } from '@weasel-js/labkit';
 import {
   addLensOps,
@@ -199,7 +200,7 @@ test('a body stretched into an ellipse gets an elliptical track', async () => {
   const from = pose('a:body');
   const to = { ...from, x: from.x - 60, width: from.width + 120 };
   sceneToAdapter(scene).applyOps(
-    [createSetPoseOp({ id: 'a:body' as never, from, to, label: 'stretch' })],
+    [ops.setPose({ id: 'a:body' as never, from, to, label: 'stretch' })],
     'stretch',
   );
   const zoom = await mount();

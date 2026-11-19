@@ -3,7 +3,7 @@ import {
 } from '@weasel-js/core';
 import {
   STENCIL_GROUPS, bodyFollower, createDiagramSequenceContribution, diagramCanDropInto, diagramTypeEdgeStroke, isContainerStencil, createDiagramContainersContribution, createDiagramEdgeEndsContribution,
-  diagramLabels, createDiagramOffPageContribution, createDiagramPortsContribution, createDiagramWaypointsContribution, createEditEdgeLabelAction, editEdgeLabelBinding,
+  createDiagramLabelsContribution, createDiagramOffPageContribution, createDiagramPortsContribution, createDiagramWaypointsContribution, createEditEdgeLabelAction, editEdgeLabelBinding,
   registerDiagramShape, roleStyle, sceneParticipants, themeFont,
   themeLabelStyle, useAvoidRouting, useFaceRemeasure, useHops, useLabelPlacement, rendererMeasure, useDiagramTools, useOffPageMarkers,
   useStencilInsert, waypointFollower, type DiagramStencil, type DiagramTheme, type DiagramType,
@@ -73,7 +73,7 @@ export function useChartDiagram(
   );
   const route = useMemo(() => createDiagramWaypointsContribution<ChartPose>({ selected, participants }), [selected, participants]);
   const containers = useMemo(() => createDiagramContainersContribution({ scene: scene as never, selected }), [scene, selected]);
-  const labelDrag = useMemo(() => diagramLabels({ scene: scene as never, selected }), [scene, selected]);
+  const labelDrag = useMemo(() => createDiagramLabelsContribution({ scene: scene as never, selected }), [scene, selected]);
   const label = useMemo(() => edgeLabel(theme), [theme]);
   const drop = useMemo(() => stencilDrop(participants), [participants]);
   const sequenceEdit = useMemo(() => createDiagramSequenceContribution({ scene: scene as never, measure: rendererMeasure }), [scene]);

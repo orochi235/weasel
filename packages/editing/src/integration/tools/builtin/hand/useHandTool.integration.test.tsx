@@ -10,10 +10,11 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useRef } from 'react';
 import { ActionsProvider, useActionsRegistry, DepRegistryProvider, useDepSource, ActiveToolContextProvider, useActiveToolContext, type ActiveToolContextValue, useGestureDispatcher } from '@weasel-js/routing/react';
 import '@weasel-js/core';
-import { defineTool, useTools, useHandTool, SceneCanvas, useScene, viewPreset } from '@weasel-js/core';
+import { defineTool, useTools, useHandTool, SceneCanvas, useScene } from '@weasel-js/core';
+import * as corePresets from '@weasel-js/core/presets';
 import type { ToolsApi, View } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../../../presets/composites';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -85,7 +86,7 @@ describe('useHandTool held-key engagement in a bare <SceneCanvas>', () => {
           scene={scene}
           width={100} height={100}
           layers={{}}
-          features={[viewPreset]}
+          features={[corePresets.view]}
           viewport={{ touchZoom: true }}
           onToolsCreated={(t) => { tools = t; }}
         />

@@ -142,7 +142,7 @@ function spiroActions(host: SpiroActionsHost): Action[] {
  *
  * The curve is inserted through the `insert` dep as a `'path'`, its spiro
  * form beside it on `data.representation`, so a consumer shapes the node by
- * overriding that dep. With `spiroPreset` on, path edit then edits its points
+ * overriding that dep. With `pathTools.spiro` on, path edit then edits its points
  * (`spiroRepresentation`).
  */
 export function useSpiroTool(options: UseSpiroToolOptions = {}): Tool {

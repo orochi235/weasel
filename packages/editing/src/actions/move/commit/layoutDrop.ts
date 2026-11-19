@@ -1,10 +1,11 @@
-import { createReparentOp, followerOpsFor } from '@weasel-js/core';
-import { createSetPoseOp, asNodeId, rebaseLocalPose, sceneViewPoseAdapter, pageIdOf } from '@weasel-js/core/engine';
+import { followerOpsFor } from '@weasel-js/core';
+import { asNodeId, rebaseLocalPose, sceneViewPoseAdapter, pageIdOf } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
 import type { LayoutPass } from '../layout/types';
 import type { MoveSession } from '../session';
 import { rebaseTransformOp } from './rebase';
 import { opInWorld } from '../layout/view';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** The ops of a drop a layout container accepted: reparents, then each
  *  placement's `commitDrop`, then the source containers' reflow, then the
@@ -37,7 +38,7 @@ export function layoutDropOps(session: MoveSession, pass: LayoutPass): Op[] | nu
   for (const placement of lp.placements) {
     if (placement.dragged.sourceContainerId !== destId) {
       landed.set(placement.dragged.id, page);
-      reparentOps.push(createReparentOp({
+      reparentOps.push(coreOps.reparent({
         id: placement.dragged.id,
         fromParentId: placement.dragged.sourceContainerId,
         toParentId: destId,
@@ -66,7 +67,7 @@ export function layoutDropOps(session: MoveSession, pass: LayoutPass): Op[] | nu
     // `from` comes from a world `commitDrop` op and so does rebase.
     const to = rebaseLocalPose(commitAdapter, worldPose, parent, pc.compose, pc.decompose);
     if (to === null) return null;
-    reflowOps.push(createSetPoseOp<unknown>({
+    reflowOps.push(coreOps.setPose<unknown>({
       id: cid,
       from: session.scene.get(asNodeId(cid))!.pose,
       to,

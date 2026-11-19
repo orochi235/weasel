@@ -17,7 +17,7 @@ export function rotateSelectionOps(
 ): Op[] {
   const ids = shapeSources(scene, selected) as NodeId[];
   if (ids.length === 0 || angle === 0) return [];
-  const captured = captureTurn(scene, ids, deps, pivot);
+  const captured = captureTurn(scene, selected, ids, deps, pivot);
   if (!captured) return [];
   const { turn, originPoses, poseFrame } = captured;
   const previews = storedPreviews({ scene, turn, poseFrame, view: deps.view }, angle);

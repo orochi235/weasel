@@ -1,7 +1,7 @@
 /**
  * The canvas's own text editor: the one `enterTextEdit` reaches, from a text
  * or sticky tool or a double-click on a text node, when the host has wired
- * none of its own. `textPreset` mounts it inside the canvas. It stands down for
+ * none of its own. `textTools.text` mounts it inside the canvas. It stands down for
  * a host editor: a `useSceneTextEdit` whose container holds the canvas, which
  * the `textEdit` dep then answers with, or a `textEdit` dep registered over it.
  */

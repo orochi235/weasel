@@ -8,7 +8,10 @@ import type { TreeNode } from './treeTypes';
 /** One row as `Tree` has worked it out: its place, its state, and its handlers. */
 export interface TreeRowProps {
   node: TreeNode;
-  /** The tree is a treegrid: the row's box is the row, and the `li` around it is no part of the structure. */
+  /**
+   * The tree is a treegrid: the row's box is the row, and the div around it is no part of the structure. A div, since
+   * a list's `li` can't take a treegrid's roles.
+   */
   grid: boolean;
   level: number;
   setSize: number;
@@ -72,8 +75,9 @@ export function TreeRow(p: TreeRowProps) {
       {trailingId && <span id={trailingId} className={s.trailing}>{node.trailing}</span>}
     </>
   );
+  const Item = grid ? 'div' : 'li';
   return (
-    <li
+    <Item
       {...(grid ? { role: 'none' } : row)}
       className={[s.item, node.className].filter(Boolean).join(' ')}
       data-tree-id={node.id}
@@ -99,6 +103,6 @@ export function TreeRow(p: TreeRowProps) {
         ) : lead}
       </TreeRowBox>
       {p.children}
-    </li>
+    </Item>
   );
 }

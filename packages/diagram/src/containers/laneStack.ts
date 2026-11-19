@@ -7,7 +7,6 @@
  * its name, and which nodes a pool admits (lanes) is `diagramCanDropInto`'s call.
  */
 import {
-  createSetPoseOp,
   type ContainerBounds,
   type LayoutArrival,
   type LayoutChild,
@@ -18,6 +17,7 @@ import {
 } from '@weasel-js/core';
 import { titlePose } from './titlePose';
 import { bodyBox, titleIdOf, type ContainerHeader } from './trait';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** Options for {@link laneStackLayout}. */
 export interface LaneStackOptions {
@@ -130,10 +130,10 @@ export function laneStackLayout(opts: LaneStackOptions): LayoutStrategy<RectPose
       for (const c of children) {
         const to = poses.get(c.id);
         if (to !== undefined && (to.x !== c.pose.x || to.y !== c.pose.y)) {
-          ops.push(createSetPoseOp<RectPose>({ id: c.id, from: c.pose, to, label: 'Shift lane' }));
+          ops.push(coreOps.setPose<RectPose>({ id: c.id, from: c.pose, to, label: 'Shift lane' }));
         }
       }
-      ops.push(createSetPoseOp<RectPose>({
+      ops.push(coreOps.setPose<RectPose>({
         id: dragged.id, from: dragged.originPose, to: target?.pose ?? dragged.pose, label: 'Move lane',
       }));
       return ops;

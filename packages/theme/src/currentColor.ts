@@ -1,6 +1,6 @@
 import { atAlpha, withAlpha } from './dtcg/color.ts';
 
-const NUMBER = String.raw`(\d*\.?\d+)(%?)`;
+const NUMBER = String.raw`(\d+(?:\.\d+)?|\.\d+)(%?)`;
 const RELATIVE = new RegExp(String.raw`^rgb\(\s*from\s+currentcolor\s+r\s+g\s+b\s*/\s*${NUMBER}\s*\)$`, 'i');
 const MIX = new RegExp(String.raw`^color-mix\(\s*in\s+[\w-]+\s*,\s*currentcolor\s+${NUMBER}\s*,\s*transparent\s*\)$`, 'i');
 

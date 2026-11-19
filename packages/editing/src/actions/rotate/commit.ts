@@ -1,8 +1,9 @@
 import type { Op, NodeId } from '@weasel-js/core';
-import { createSetPoseOp, defaultCommitAdapter } from '@weasel-js/core/engine';
+import { defaultCommitAdapter } from '@weasel-js/core/engine';
 import { commitRunOps, reduceBehaviorEnd } from '@weasel-js/core';
 import { syncGestureCurrent } from './frame';
 import type { RotateFrame, RotateSession } from './session';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** One transform op per rotated node: `from` the pose stored at press, `to`
  *  its preview. */
@@ -18,7 +19,7 @@ export function rotateOps(
     if (next === undefined) continue;
     const from = originPoses.get(id);
     if (from === undefined) continue;
-    ops.push(createSetPoseOp<unknown>({ id: id as string, from, to: next, label }));
+    ops.push(coreOps.setPose<unknown>({ id: id as string, from, to: next, label }));
   }
   return ops;
 }

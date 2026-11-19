@@ -61,7 +61,7 @@ export function modeShortcutSpec(shortcut: string): KeySpec {
  * `cancel`, pressed while a tool other than its `defaultTool` is active,
  * return to that tool instead (`returnToModeDefault`), so the next press leaves.
  */
-export function modeShortcuts(
+export function createModeShortcutsContribution(
   registry: ModeRegistry,
   handlers: ModeShortcutHandlers,
 ): Contribution<never> {

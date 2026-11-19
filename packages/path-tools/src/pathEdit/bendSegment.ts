@@ -19,7 +19,7 @@ import { bendSegment, editAnchorSetTracked, type PointOrigin, type PolygonPath }
 import {
   editingLayer, inPlane, pathOperationTags, type PathRepresentation, representationOf, segmentUnder,
 } from '@weasel-js/core';
-import { pathEditPreview } from './editAnchors/preview';
+import { createPathEditPreview } from './editAnchors/preview';
 import { icon } from '../icons.gen';
 
 const BEND_CURSOR: CursorSpec = 'grab';
@@ -53,7 +53,7 @@ export const bendSegmentAction: Action & { requires: string[] } = inPlane({
       const id = dep.editingId;
       const press = { x: ctx.world.x, y: ctx.world.y };
       let current: { path: PolygonPath; origins?: readonly (PointOrigin | null)[] } | null = null;
-      const preview = pathEditPreview(dep, id, () => current);
+      const preview = createPathEditPreview(dep, id, () => current);
       if (!preview) return {};
 
       return {

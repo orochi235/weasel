@@ -41,7 +41,7 @@ export interface Folds {
  * `localStorage` wherever the draft itself is: how a tree is folded is one reader's view of it. With no key they
  * last as long as what this returns.
  */
-export function foldsUnder(draftKey: string | undefined): Folds {
+export function createFolds(draftKey: string | undefined): Folds {
   if (draftKey === undefined) {
     const held = new Map<string, readonly string[]>();
     return {

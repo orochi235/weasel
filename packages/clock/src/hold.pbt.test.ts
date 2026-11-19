@@ -45,7 +45,8 @@ describe('holdAt', () => {
           const c = h.clock;
           expect(near(c.elapsed, heldAt(h, shown), c.duration)).toBe(true);
           if (Number.isFinite(c.duration)) expect(c.pass).toBe(0);
-          const reached = shown === null || c.origin + c.elapsed === shown;
+          // Reached once the clock stands at the elapsed that shows it, unclamped by the span.
+          const reached = shown === null || c.elapsed === shown - c.origin;
           expect(hold.pending()).toBe(reached ? null : shown);
           t.count(reached ? 'reached' : 'pending');
         }

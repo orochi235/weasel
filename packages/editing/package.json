@@ -24,6 +24,10 @@
       "types": "./dist/presets.d.ts",
       "import": "./dist/presets.js"
     },
+    "./groups": {
+      "types": "./dist/groups.d.ts",
+      "import": "./dist/groups.js"
+    },
     "./test-seams": {
       "types": "./dist/test-seams.d.ts",
       "import": "./dist/test-seams.js"

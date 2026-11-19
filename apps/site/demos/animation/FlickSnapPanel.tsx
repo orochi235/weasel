@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { solid } from '@weasel-js/paint';
-import { asNodeId, createSetPoseOp, SceneCanvas, WeaselProvider, useScene, useVelocityTracker } from '@weasel-js/core';
+import { asNodeId, SceneCanvas, WeaselProvider, useScene, useVelocityTracker } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
 import type { Dims, Fill, MoveBehavior, RectPose as Pose } from '@weasel-js/core';
 import type { Animator, PhysicsHandle } from '@weasel-js/animator';
 import { DemoStage } from '../DemoStage';
-import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
+import * as ops from '@weasel-js/core/ops';
 
 interface Vec2 { x: number; y: number }
 
@@ -79,7 +81,7 @@ function flickToGrid(args: {
           // The target committed the landing untracked; put the document back so the op records the move.
           : target.committed();
         target.commit(from);
-        ctx.adapter.applyOps?.([createSetPoseOp<Pose>({ id, from, to })], 'flick');
+        ctx.adapter.applyOps?.([ops.setPose<Pose>({ id, from, to })], 'flick');
       };
       const { vx, vy } = tracker.getVelocity(performance.now());
       handle = animator.physics<Pose>({
@@ -137,7 +139,7 @@ export function FlickSnapPanel({ animator }: { animator: Animator }) {
   return (
     <WeaselProvider isolate>
       <DemoStage width={FLICK_W} height={FLICK_H}>
-        <SceneCanvas features={[pickPreset, movePreset]}
+        <SceneCanvas features={[presets.pick, presets.move]}
           className="ckd-canvas"
           onResize={(s) => { size.current = s; }}
           scene={scene}

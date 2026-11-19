@@ -3,7 +3,7 @@ import { createScene, type ActionDeps, type RectPose } from '@weasel-js/core';
 import { createReportDeleteAction } from './diagramEditing';
 import { withDiagramRegistry } from './edge';
 import { diagramScene, edgeIdOf, type DiagramData } from './fromData';
-import { deletePreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const DATA: DiagramData = {
   nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }],
@@ -28,7 +28,7 @@ describe("core's delete on a diagram", () => {
       set: vi.fn((next: string[]) => { ids = next; }),
       adapterMethods: { getSelection: () => ids, setSelection: (next: string[]) => { ids = next; } },
     };
-    const action = deletePreset.actions!.find((a) => a.id === 'delete')!;
+    const action = presets.delete.actions!.find((a) => a.id === 'delete')!;
     const invoker = action.invoker as { run: (deps: ActionDeps) => void };
     invoker.run({ scene, operands: selection } as unknown as ActionDeps);
 

@@ -111,7 +111,7 @@ export interface TransformPreview {
  * handle; readers resolve it with `effectivePose`. Each frame is read once,
  * keyed on the map.
  */
-export function transformPreview(
+export function createTransformPreview(
   deps: ActionDeps | undefined,
   scene: { get(id: NodeId): { pose: unknown } | undefined },
   previews: () => ReadonlyMap<NodeId, unknown>,

@@ -1,5 +1,5 @@
 import { useLatest } from '@weasel-js/core';
-import { pathsPreset } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import { DEG_TO_RAD } from '@weasel-js/geom';
 import { type ConfigOf, defineInstrument, f, Lab, type RenderContext, TrialSceneCanvas } from '@weasel-js/labkit';
 import { createHandleSnapPreset } from '@weasel-js/path-tools';
@@ -8,7 +8,7 @@ import { icon } from '../icons.gen';
 import { BLOB, type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const config = f.schema({
   snap: f.boolean(true).label('Snap handle angle'),
@@ -21,7 +21,7 @@ type Config = ConfigOf<typeof config>;
 function HandleSnapTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
   const { scene, selection, pathEdit } = usePathEditTrial(ctx, BLOB, { color: '#d4a574' });
   const live = useLatest(ctx.config);
-  const features = useMemo(() => [pickPreset, movePreset, pathsPreset, createHandleSnapPreset(() => {
+  const features = useMemo(() => [presets.pick, presets.move, pathTools.paths, createHandleSnapPreset(() => {
     const { snap, step, tolerance, opposite } = live.current;
     return snap ? { angleStep: Number(step) * DEG_TO_RAD, reachRad: tolerance * DEG_TO_RAD, opposite } : null;
   })] as const, [live]);

@@ -145,7 +145,7 @@ function selectLabelEdgeAction(): Action {
  * label's edge, and a double-click that edits the label's text through
  * `EDIT_EDGE_LABEL_ACTION_ID`, which the host registers.
  */
-export function diagramLabels(
+export function createDiagramLabelsContribution(
   opts: MoveLabelOptions & { scene: AnyScene; selected: () => readonly string[]; cursor?: CursorSpec },
 ): SurfaceContribution {
   const actionId = opts.id ?? MOVE_LABEL_ACTION_ID;

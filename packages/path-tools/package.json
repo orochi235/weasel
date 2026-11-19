@@ -16,9 +16,17 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./groups": {
+      "types": "./dist/groups.d.ts",
+      "import": "./dist/groups.js"
+    },
     "./icons": {
       "types": "./dist/icons.table.d.ts",
       "import": "./dist/icons.table.js"
+    },
+    "./presets": {
+      "types": "./dist/presets.d.ts",
+      "import": "./dist/presets.js"
     },
     "./package.json": "./package.json"
   },

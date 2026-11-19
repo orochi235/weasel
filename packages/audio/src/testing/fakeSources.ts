@@ -89,6 +89,21 @@ export function createFakeOscillator(now: () => number): FakeOscillator {
 }
 
 /**
+ * When a non-looping buffer source runs out, in context seconds: what is left
+ * of its buffer after the start offset (clamped to the buffer, as the
+ * specification clamps it), at the computed rate `playbackRate · 2^(detune/1200)`.
+ * A rate of 0 never runs out; a negative one plays back to the buffer's start.
+ */
+function bufferEnd(s: FakeSource): number {
+  const duration = (s.buffer as { duration?: number } | null)?.duration;
+  if (s.loop || duration == null) return Infinity;
+  const offset = Math.min(Math.max(s.offsets[0] ?? 0, 0), duration);
+  const rate = s.playbackRate.value * 2 ** (s.detune.value / 1200);
+  if (rate === 0) return Infinity;
+  return s.started[0] + (rate > 0 ? duration - offset : offset) / Math.abs(rate);
+}
+
+/**
  * Whether a started source has reached its end by `now`: its last `stop` (the
  * specification lets a later call replace an earlier one), or the end of a
  * non-looping buffer.
@@ -96,7 +111,6 @@ export function createFakeOscillator(now: () => number): FakeOscillator {
 export function dueToEnd(s: FakeSource | FakeOscillator, now: number): boolean {
   if (s.ended || s.started.length === 0) return false;
   const stopAt = s.stopped.length > 0 ? s.stopped[s.stopped.length - 1] : Infinity;
-  const duration = 'buffer' in s ? (s.buffer as { duration?: number } | null)?.duration : undefined;
-  const endsAt = 'buffer' in s && !s.loop && duration != null ? s.started[0] + duration : Infinity;
+  const endsAt = 'buffer' in s ? bufferEnd(s) : Infinity;
   return now + 1e-9 >= Math.min(stopAt, endsAt);
 }

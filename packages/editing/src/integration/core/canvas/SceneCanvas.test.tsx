@@ -8,7 +8,8 @@ import { DEFAULT_HANDLE_SIZE, defaultDrawOne } from '@weasel-js/core';
 import { mergeLayersWithDefaultsForTests as mergeLayersWithDefaults } from '@weasel-js/core/test-seams';
 import { defaultPaintBounds } from '@weasel-js/core';
 import { layersOverPresetsForTests as layersOverPresets } from '@weasel-js/core/test-seams';
-import { pickPreset, resizePreset } from '@weasel-js/editing';
+import { pickPreset } from '../../../presets/composites';
+import { resizePreset } from '../../../presets/transform';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
 beforeAll(() => {

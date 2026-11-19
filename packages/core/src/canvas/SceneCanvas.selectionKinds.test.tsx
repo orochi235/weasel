@@ -83,7 +83,7 @@ function answers(props: {
 }
 
 describe('the published selection kinds on one canvas', () => {
-  it('are the routing kinds, with an unrouted node (text, on a canvas without textPreset) left unlabeled', () => {
+  it('are the routing kinds, with an unrouted node (text, on a canvas without textTools.text) left unlabeled', () => {
     expect(answers().table).toEqual({
       pathData: { label: 'path', routing: 'path' },
       pathPose: { label: undefined, routing: 'unknown' },

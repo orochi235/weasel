@@ -1,0 +1,48 @@
+{
+ "pairs": [
+  [
+   0,
+   9
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   1
+  ],
+  [
+   6,
+   11
+  ],
+  [
+   7,
+   2
+  ]
+ ],
+ "a": [
+  "engineHarness keeps one timer slot, so any non-scheduler timer replaces (or clears) the scheduler's pass",
+  "dueToEnd ignores a buffer source's start offset and playback rate",
+  "FakeNode.connect records a duplicate connection, and one disconnect leaves it connected",
+  "renderEngineStereo's `later` suspend collides with the worklet hold for an early `later.at`, and its failure is dropped",
+  "engineHarness.run overshoots durations that aren't multiples of 25 ms",
+  "rmsEnvelope hangs on a window of 0 (or below)",
+  "FakeBuffer.getChannelData returns undefined for an out-of-range channel instead of throwing",
+  "FakeNode.disconnect sets `disconnected` even when the targeted form throws"
+ ],
+ "b": [
+  "A buffer source's end ignores its start offset and playback rate, so a resumed clip ends late in the fake",
+  "Connecting the same pair twice records two edges; Web Audio ignores the repeat",
+  "A targeted disconnect that throws still marks the node disconnected",
+  "resume/suspend on a closed fake context succeed and reopen it",
+  "The analyser's function spec gets the read length, not the bin count, so a bin's value depends on the array size",
+  "stubWorkerGlobals' restore unstubs every global in the test, not just its own",
+  "FakeWorker._fail fires error listeners on a terminated worker; _reply does not",
+  "The fake worklet node's disconnect leaves its edges in place, answering \"is it connected\" differently from FakeNode",
+  "Failing the fake addModule before anything awaits it raises an unhandled rejection",
+  "engineHarness's clearTimer clears whatever is armed, regardless of handle",
+  "powerSpectrum accepts a non-power-of-two size and returns garbage",
+  "createFakeBuffer.getChannelData returns undefined for an out-of-range channel"
+ ]
+}

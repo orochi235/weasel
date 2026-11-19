@@ -4,7 +4,7 @@ import { SceneCanvas, asNodeId, createScene, RIGID_POSE_COMPOSITION } from '@wea
 import type { Fill, GroupBoxData, RectPose, Stroke } from '@weasel-js/core';
 import { tileGrid } from '@weasel-js/guides';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 type Data = GroupBoxData & { fill?: Fill; stroke?: Stroke };
 
@@ -40,7 +40,7 @@ export function ScrollingGridDemo() {
   const [scene] = useState(buildScene);
   return (
     <DemoStage width={420} height={260}>
-      <SceneCanvas features={[pickPreset, movePreset]} scene={scene} />
+      <SceneCanvas features={[presets.pick, presets.move]} scene={scene} />
     </DemoStage>
   );
 }

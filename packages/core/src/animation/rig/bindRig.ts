@@ -235,7 +235,7 @@ export function bindRigOn<TPose>(
     bake(label = 'Bake rig pose') {
       if (!installed) return;
       scene.batch(label, () => {
-        for (const b of bound) if (b.entry.pose !== undefined) scene.setPose(b.node, b.entry.pose);
+        for (const b of bound) if (b.entry.pose !== undefined && scene.get(b.node)) scene.setPose(b.node, b.entry.pose);
         skins.write();
       });
       release();

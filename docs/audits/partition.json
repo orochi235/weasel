@@ -876,6 +876,8 @@
   "id": "apps.theme-editor",
   "files": [
    "apps/theme-editor/icons/index.mjs",
+   "apps/theme-editor/scripts/brand-colors.d.mts",
+   "apps/theme-editor/scripts/brand-colors.mjs",
    "apps/theme-editor/scripts/gen-brand-colors.mjs",
    "apps/theme-editor/vite.config.ts"
   ]
@@ -4272,13 +4274,13 @@
    "packages/labkit/src/lightbox/modal.ts",
    "packages/labkit/src/lightbox/useLightboxModal.ts",
    "packages/labkit/src/lightbox/useLightboxState.ts",
-   "packages/labkit/src/overview/OverviewMarks.tsx"
+   "packages/labkit/src/overview/OverviewMarks.tsx",
+   "packages/labkit/src/overview/TrialOverview.less"
   ]
  },
  {
   "id": "labkit.part2",
   "files": [
-   "packages/labkit/src/overview/TrialOverview.less",
    "packages/labkit/src/overview/TrialOverview.stories.tsx",
    "packages/labkit/src/overview/TrialOverview.tsx",
    "packages/labkit/src/overview/index.ts",
@@ -4287,6 +4289,7 @@
    "packages/labkit/src/scene/TrialSceneCanvas.less",
    "packages/labkit/src/scene/TrialSceneCanvas.tsx",
    "packages/labkit/src/scene/index.ts",
+   "packages/labkit/src/scene/sceneResets.ts",
    "packages/labkit/src/scene/sceneTrialHistory.ts",
    "packages/labkit/src/scene/useSceneCamera.ts",
    "packages/labkit/src/scene/useSceneToolSlot.ts",
@@ -5286,6 +5289,7 @@
    "packages/renderer/src/draw/scratchPass.ts",
    "packages/renderer/src/draw/stencil.ts",
    "packages/renderer/src/draw/text.ts",
+   "packages/renderer/src/draw/textLayer.ts",
    "packages/renderer/src/draw/triangleCut.ts",
    "packages/renderer/src/draw/uniforms.ts",
    "packages/renderer/src/draw/vertexColors.ts"
@@ -5323,6 +5327,7 @@
    "packages/renderer/src/gpu/webgpu/wgsl/effectPrelude.ts",
    "packages/renderer/src/gpu/webgpu/wgsl/effects.ts",
    "packages/renderer/src/gpu/webgpu/wgsl/glyphCell.ts",
+   "packages/renderer/src/gpu/webgpu/wgsl/glyphLayer.ts",
    "packages/renderer/src/gpu/webgpu/wgsl/glyphPaint.ts",
    "packages/renderer/src/gpu/webgpu/wgsl/gradFill.ts",
    "packages/renderer/src/gpu/webgpu/wgsl/hullCoverage.ts",
@@ -5436,6 +5441,7 @@
    "packages/renderer/src/shaders/extractUniformNames.ts",
    "packages/renderer/src/shaders/glslSource.ts",
    "packages/renderer/src/shaders/glyphCell.ts",
+   "packages/renderer/src/shaders/glyphLayer.ts",
    "packages/renderer/src/shaders/glyphPaint.ts",
    "packages/renderer/src/shaders/gradFill.ts",
    "packages/renderer/src/shaders/hullCoverage.ts",
@@ -5568,6 +5574,7 @@
    "packages/routing/src/interactions/actions/lastOperation.ts",
    "packages/routing/src/interactions/actions/modifierRoles.ts",
    "packages/routing/src/interactions/actions/overlay.ts",
+   "packages/routing/src/interactions/actions/refusal.ts",
    "packages/routing/src/interactions/actions/registry.ts",
    "packages/routing/src/interactions/actions/scopeNode.ts",
    "packages/routing/src/interactions/actions/showPreview.ts",
@@ -6088,6 +6095,7 @@
    "packages/theme/src/axes.ts",
    "packages/theme/src/blendTheme.ts",
    "packages/theme/src/boxShadow.ts",
+   "packages/theme/src/capText.module.css",
    "packages/theme/src/chainTokens.ts",
    "packages/theme/src/colorList.ts",
    "packages/theme/src/colorListItems.ts",
@@ -7138,13 +7146,13 @@
    "packages/ui/src/components/ColorField/ColorField.module.css",
    "packages/ui/src/components/ColorField/ColorField.stories.tsx",
    "packages/ui/src/components/ColorField/ColorField.tsx",
-   "packages/ui/src/components/ColorField/index.ts"
+   "packages/ui/src/components/ColorField/index.ts",
+   "packages/ui/src/components/ColorField/usePickerClose.ts"
   ]
  },
  {
   "id": "ui.components.part2",
   "files": [
-   "packages/ui/src/components/ColorField/usePickerClose.ts",
    "packages/ui/src/components/ColorModeControl/ColorModeControl.stories.module.css",
    "packages/ui/src/components/ColorModeControl/ColorModeControl.stories.tsx",
    "packages/ui/src/components/ColorModeControl/ColorModeControl.tsx",
@@ -7192,14 +7200,14 @@
    "packages/ui/src/components/Disabled/HoldReason.tsx",
    "packages/ui/src/components/Disabled/controlHold.tsx",
    "packages/ui/src/components/Disabled/index.ts",
-   "packages/ui/src/components/Disabled/nativeHold.ts"
+   "packages/ui/src/components/Disabled/nativeHold.ts",
+   "packages/ui/src/components/Disabled/racHold.ts",
+   "packages/ui/src/components/Disabled/testing/holdCases.fixtures.tsx"
   ]
  },
  {
   "id": "ui.components.part3",
   "files": [
-   "packages/ui/src/components/Disabled/racHold.ts",
-   "packages/ui/src/components/Disabled/testing/holdCases.fixtures.tsx",
    "packages/ui/src/components/Disclosure/Disclosure.module.css",
    "packages/ui/src/components/Disclosure/Disclosure.stories.module.css",
    "packages/ui/src/components/Disclosure/Disclosure.stories.tsx",
@@ -7246,15 +7254,15 @@
    "packages/ui/src/components/Foundations/Foundations.module.css",
    "packages/ui/src/components/Foundations/Foundations.stories.tsx",
    "packages/ui/src/components/FpsMeter/FpsMeter.module.css",
-   "packages/ui/src/components/FpsMeter/FpsMeter.stories.tsx"
+   "packages/ui/src/components/FpsMeter/FpsMeter.stories.tsx",
+   "packages/ui/src/components/FpsMeter/FpsMeter.tsx",
+   "packages/ui/src/components/FpsMeter/fpsAverage.ts",
+   "packages/ui/src/components/FpsMeter/index.ts"
   ]
  },
  {
   "id": "ui.components.part4",
   "files": [
-   "packages/ui/src/components/FpsMeter/FpsMeter.tsx",
-   "packages/ui/src/components/FpsMeter/fpsAverage.ts",
-   "packages/ui/src/components/FpsMeter/index.ts",
    "packages/ui/src/components/HistoryList/HistoryList.module.css",
    "packages/ui/src/components/HistoryList/HistoryList.stories.tsx",
    "packages/ui/src/components/HistoryList/HistoryList.tsx",
@@ -7300,16 +7308,16 @@
    "packages/ui/src/components/KeymapHint/KeymapHint.module.css",
    "packages/ui/src/components/KeymapHint/KeymapHint.stories.tsx",
    "packages/ui/src/components/KeymapHint/KeymapHint.tsx",
-   "packages/ui/src/components/KeymapHint/index.ts"
+   "packages/ui/src/components/KeymapHint/index.ts",
+   "packages/ui/src/components/LastOperationPanel/LastOperationPanel.module.css",
+   "packages/ui/src/components/LastOperationPanel/LastOperationPanel.stories.tsx",
+   "packages/ui/src/components/LastOperationPanel/LastOperationPanel.tsx",
+   "packages/ui/src/components/LastOperationPanel/index.ts"
   ]
  },
  {
   "id": "ui.components.part5",
   "files": [
-   "packages/ui/src/components/LastOperationPanel/LastOperationPanel.module.css",
-   "packages/ui/src/components/LastOperationPanel/LastOperationPanel.stories.tsx",
-   "packages/ui/src/components/LastOperationPanel/LastOperationPanel.tsx",
-   "packages/ui/src/components/LastOperationPanel/index.ts",
    "packages/ui/src/components/Legend/Legend.module.css",
    "packages/ui/src/components/Legend/Legend.stories.tsx",
    "packages/ui/src/components/Legend/Legend.tsx",
@@ -7354,17 +7362,17 @@
    "packages/ui/src/components/PaintInput/PaintInput.module.css",
    "packages/ui/src/components/PaintInput/PaintInput.stories.tsx",
    "packages/ui/src/components/PaintInput/PaintInput.tsx",
-   "packages/ui/src/components/PaintInput/index.ts"
+   "packages/ui/src/components/PaintInput/index.ts",
+   "packages/ui/src/components/PaintInput/paintKindEditor.tsx",
+   "packages/ui/src/components/PatternPicker/PatternPicker.module.css",
+   "packages/ui/src/components/PatternPicker/PatternPicker.stories.tsx",
+   "packages/ui/src/components/PatternPicker/PatternPicker.tsx",
+   "packages/ui/src/components/PatternPicker/index.ts"
   ]
  },
  {
   "id": "ui.components.part6",
   "files": [
-   "packages/ui/src/components/PaintInput/paintKindEditor.tsx",
-   "packages/ui/src/components/PatternPicker/PatternPicker.module.css",
-   "packages/ui/src/components/PatternPicker/PatternPicker.stories.tsx",
-   "packages/ui/src/components/PatternPicker/PatternPicker.tsx",
-   "packages/ui/src/components/PatternPicker/index.ts",
    "packages/ui/src/components/PatternPicker/readImageFile.ts",
    "packages/ui/src/components/Plot2D/Plot2D.module.css",
    "packages/ui/src/components/Plot2D/Plot2D.stories.tsx",
@@ -7408,18 +7416,18 @@
    "packages/ui/src/components/RadioGroup/RadioGroup.tsx",
    "packages/ui/src/components/RadioGroup/RadioGroupAlong.tsx",
    "packages/ui/src/components/RadioGroup/index.ts",
-   "packages/ui/src/components/RadioGroup/lab/RadioArc.stories.module.css"
-  ]
- },
- {
-  "id": "ui.components.part7",
-  "files": [
+   "packages/ui/src/components/RadioGroup/lab/RadioArc.stories.module.css",
    "packages/ui/src/components/RadioGroup/lab/RadioArc.stories.tsx",
    "packages/ui/src/components/RadioGroup/lab/RadioArcView.tsx",
    "packages/ui/src/components/RailList/RailList.module.css",
    "packages/ui/src/components/RailList/RailList.stories.module.css",
    "packages/ui/src/components/RailList/RailList.stories.tsx",
-   "packages/ui/src/components/RailList/RailList.tsx",
+   "packages/ui/src/components/RailList/RailList.tsx"
+  ]
+ },
+ {
+  "id": "ui.components.part7",
+  "files": [
    "packages/ui/src/components/RailList/RailListBox.tsx",
    "packages/ui/src/components/RailList/index.ts",
    "packages/ui/src/components/RailList/railClass.ts",
@@ -7462,19 +7470,19 @@
    "packages/ui/src/components/Sidebar/Sidebar.tsx",
    "packages/ui/src/components/Sidebar/index.ts",
    "packages/ui/src/components/SidebarPanel/SidebarPanel.module.css",
-   "packages/ui/src/components/SidebarPanel/SidebarPanel.stories.module.css"
-  ]
- },
- {
-  "id": "ui.components.part8",
-  "files": [
+   "packages/ui/src/components/SidebarPanel/SidebarPanel.stories.module.css",
    "packages/ui/src/components/SidebarPanel/SidebarPanel.stories.tsx",
    "packages/ui/src/components/SidebarPanel/SidebarPanel.tsx",
    "packages/ui/src/components/SidebarPanel/index.ts",
    "packages/ui/src/components/SwatchGrid/SwatchButton.tsx",
    "packages/ui/src/components/SwatchGrid/SwatchGrid.module.css",
    "packages/ui/src/components/SwatchGrid/SwatchGrid.stories.tsx",
-   "packages/ui/src/components/SwatchGrid/SwatchGrid.tsx",
+   "packages/ui/src/components/SwatchGrid/SwatchGrid.tsx"
+  ]
+ },
+ {
+  "id": "ui.components.part8",
+  "files": [
    "packages/ui/src/components/SwatchGrid/SwatchRings.tsx",
    "packages/ui/src/components/SwatchGrid/index.ts",
    "packages/ui/src/components/SwatchGrid/ringPlan.ts",
@@ -7501,6 +7509,7 @@
    "packages/ui/src/components/Toast/Toast.tsx",
    "packages/ui/src/components/Toast/index.ts",
    "packages/ui/src/components/Toast/queue.ts",
+   "packages/ui/src/components/Toast/refusals.ts",
    "packages/ui/src/components/Toast/toastViewTransitions.css",
    "packages/ui/src/components/ToggleChips/ToggleChips.module.css",
    "packages/ui/src/components/ToggleChips/ToggleChips.stories.module.css",
@@ -7516,19 +7525,19 @@
    "packages/ui/src/components/TokenField/tokenDrag.ts",
    "packages/ui/src/components/TokenField/tokenFocus.ts",
    "packages/ui/src/components/ToolGroup/ToolGroup.module.css",
-   "packages/ui/src/components/ToolGroup/ToolGroup.stories.tsx"
-  ]
- },
- {
-  "id": "ui.components.part9",
-  "files": [
+   "packages/ui/src/components/ToolGroup/ToolGroup.stories.tsx",
    "packages/ui/src/components/ToolGroup/ToolGroup.tsx",
    "packages/ui/src/components/ToolGroup/index.ts",
    "packages/ui/src/components/ToolOptionsBar/ActiveToolOptionsBar.stories.tsx",
    "packages/ui/src/components/ToolOptionsBar/ActiveToolOptionsBar.tsx",
    "packages/ui/src/components/ToolOptionsBar/ToolOptionsBar.module.css",
    "packages/ui/src/components/ToolOptionsBar/ToolOptionsBar.stories.module.css",
-   "packages/ui/src/components/ToolOptionsBar/ToolOptionsBar.stories.tsx",
+   "packages/ui/src/components/ToolOptionsBar/ToolOptionsBar.stories.tsx"
+  ]
+ },
+ {
+  "id": "ui.components.part9",
+  "files": [
    "packages/ui/src/components/ToolOptionsBar/ToolOptionsBar.tsx",
    "packages/ui/src/components/ToolOptionsBar/index.ts",
    "packages/ui/src/components/ToolPalette/ToolPalette.module.css",
@@ -7567,6 +7576,7 @@
    "packages/ui/src/components/appearance.ts",
    "packages/ui/src/components/appearanceIcons.ts",
    "packages/ui/src/components/checker.module.css",
+   "packages/ui/src/components/heldItem.ts",
    "packages/ui/src/components/listOption.ts",
    "packages/ui/src/components/toggleLabel.module.css",
    "packages/ui/src/components/toggleModifiers.ts"

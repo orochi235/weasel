@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { SceneCanvas, WeaselProvider, loadScene, HISTORY_GROUP } from '@weasel-js/core';
+import { SceneCanvas, WeaselProvider, loadScene } from '@weasel-js/core';
 import type { SerializedScene, Fill, RectPose } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import sceneJson from './data/scene.scene.json';
 import { DemoStage } from './DemoStage';
-import { editPreset, movePreset, pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
+import * as groups from '@weasel-js/editing/groups';
 
 interface NodeData { fill?: Fill; label?: string }
 
@@ -20,10 +22,10 @@ function SceneFromJson() {
 
   return (
     <div>
-      <ActionBar group={HISTORY_GROUP} />
+      <ActionBar group={groups.history} />
       <DemoStage width={480} height={320}>
         <SceneCanvas
-          features={[pickPreset, movePreset, editPreset]}
+          features={[presets.pick, presets.move, presets.edit]}
           className="ckd-canvas"
           scene={scene}
           selection={selection}
