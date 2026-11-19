@@ -1,4 +1,8 @@
-/** Part of the `@weasel-js/core` barrel. The scene, its ops, history, groups, and adapters. */
+/**
+ * Part of the `@weasel-js/core` barrel. The scene, its ops, history, groups, and adapters.
+ *
+ * @packageDocumentation
+ */
 
 // ─── Op model: every scene mutation routes through here ─────────────────────
 export { applyOpsTo, dispatchApplyBatch } from '../core/applyOps';
