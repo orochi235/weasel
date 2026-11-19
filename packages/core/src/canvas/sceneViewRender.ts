@@ -18,7 +18,7 @@ import { sceneToAdapter } from './sceneAdapter';
 import { withInheritedPaintBounds, withInheritedPaints } from './inheritedPaints';
 import { withSceneShapes } from './sceneShapes';
 import { nodeShapesOf } from './nodeShapeRegistry';
-import { withDerivedPaths, sceneDerivedPathOf } from './derivedPath';
+import { withDerivedPaths, withOverridePathBounds, sceneDerivedPathOf } from './derivedPath';
 import { withPaintOverrides, type PaintOverrides } from './paintOverrides';
 import type { SceneViewDrawOne } from './NodeShape';
 import { paintedSceneLayers } from './sceneLayerPaint';
@@ -179,7 +179,7 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
 
   const cullRect = cull ? { x: 0, y: 0, width: cull.width, height: cull.height } : undefined;
   const culled = cullRect && cull?.paintBounds
-    ? paintMissesView(withShownNode(scene.overrides, withSceneShapes(scene, withInheritedPaintBounds(shown, cull.paintBounds))), view, cullRect)
+    ? paintMissesView(withShownNode(scene.overrides, withSceneShapes(scene, withOverridePathBounds(scene.overrides, withInheritedPaintBounds(shown, cull.paintBounds)))), view, cullRect)
     : undefined;
   const tree: DrawCommand[] = buildSceneTree(
     hierarchy as Parameters<typeof buildSceneTree>[0],
