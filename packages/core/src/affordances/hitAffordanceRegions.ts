@@ -86,7 +86,7 @@ export function regionShown(region: AffordanceRegion, isVisible: ((id: string) =
   return !isVisible || !region.chromeId || isVisible(region.chromeId);
 }
 
-/** Squared world distance from the point to a region's representative center,
+/** Squared screen distance from the point to a region's representative center,
  *  used only to rank regions that all already contain the point. */
 function regionDistance2(
   region: AffordanceRegion,
@@ -102,9 +102,9 @@ function regionDistance2(
     : s.kind === 'annulus'
       ? localToWorld(xf, s.cx, s.cy)
       : localToWorld(xf, s.x + s.width / 2, s.y + s.height / 2);
-  const dx = w.x - wx;
-  const dy = w.y - wy;
-  return dx * dx + dy * dy;
+  // On screen, as the hit squares are tested: a world distance misranks under non-uniform zoom.
+  const d = scaleDelta(w.x - wx, w.y - wy, view.scale);
+  return d.x * d.x + d.y * d.y;
 }
 
 // ─── Transform helpers ──────────────────────────────────────────────────────

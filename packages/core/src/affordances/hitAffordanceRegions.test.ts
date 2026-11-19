@@ -38,6 +38,13 @@ function affordance(id: string, regions: AffordanceRegion[]): Affordance {
 }
 
 describe('hitAffordanceRegions', () => {
+  it('ranks overlapping regions by their distance on screen, under a non-uniform zoom', () => {
+    // At 10× on x, A sits 7 px from the press and B 3 px: B is the nearer handle.
+    const a = affordance('a', [pointRegion('B', 0, 3), pointRegion('A', 0.7, 0)]);
+    const view = { x: 0, y: 0, scale: { x: 10, y: 1 } };
+    expect(hitAffordanceRegions([a], 0, 0, state(), view)?.regionId).toBe('B');
+  });
+
   it('returns null when nothing contains the point', () => {
     const a = affordance('a', [pointRegion('p', 100, 100)]);
     expect(hitAffordanceRegions([a], 0, 0, state(), VIEW)).toBeNull();
