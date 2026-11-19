@@ -218,15 +218,21 @@ describe('createFakeAudioContext', () => {
     expect(a.frequencyBinCount).toBe(256);
   });
 
-  it('writes index-dependent and length-dependent analyser data', () => {
+  it('writes data that depends on bin index and window length, not on the array', () => {
     const ctx = createFakeAudioContext();
     const a = ctx.createAnalyser();
-    const small = new Uint8Array(4);
-    a.getByteFrequencyData(small);
-    expect([...small]).toEqual([0, 64, 128, 191]);
-    const big = new Uint8Array(8);
-    a.getByteTimeDomainData(big);
-    expect([...big]).toEqual([0, 32, 64, 96, 128, 159, 191, 223]);
+    a.fftSize = 32;
+    const freq = new Uint8Array(4);
+    a.getByteFrequencyData(freq);
+    expect([...freq]).toEqual([0, 16, 32, 48]);
+    const wave = new Uint8Array(4);
+    a.getByteTimeDomainData(wave);
+    expect([...wave]).toEqual([0, 8, 16, 24]);
+    // A bin reads the same into a longer array.
+    const longer = new Uint8Array(16);
+    a.getByteFrequencyData(longer);
+    expect([...longer.slice(0, 4)]).toEqual([0, 16, 32, 48]);
+    expect(longer[15]).toBe(239);
   });
 
   it('never writes past the bin count into an oversized array', () => {
