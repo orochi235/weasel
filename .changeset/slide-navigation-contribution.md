@@ -11,6 +11,6 @@ const ambient = useMemo(() => [createPresentationContribution({ wrap: true, onPa
 <SceneCanvas scene={scene} ambient={ambient} />
 ```
 
-Options: `pages`, `wrap`, `animate` (default on), `fit` (as `fitViewToBounds` takes it), `keys` (default on), and `onPage`. A host stepping the canvas from outside it, such as a presentation runtime with keys of its own, passes `keys: false` and calls `stepPresentation(canvasCamera(api), pages, { by: 1 })` on the canvas handle.
+Options: `pages`, `wrap`, `animate` (default on), `fit` (as `fitViewToBounds` takes it), `keys` (default on), and `onPage`. A host stepping the canvas from outside it, such as a presentation runtime with keys of its own, passes `keys: false` and calls `stepPresentation(createCanvasCamera(api), pages, { by: 1 })` on the canvas handle.
 
 <!-- entry: rank=10 new api -->
