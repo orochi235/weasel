@@ -150,6 +150,12 @@ export type {
 export { pointerDownEvent } from './recognizer/samples';
 export type { PointerSample, PressSample } from './recognizer/samples';
 export type { HeldPress, RecognizerClock } from './recognizer/longPressHold';
+export { createLongPressStore } from './longPress/pressState';
+export type { LongPressState, LongPressStore, PendingLongPress } from './longPress/pressState';
+export {
+  PRESS_RING_DELAY_MS, PRESS_RING_RADIUS, PRESS_RING_WIDTH, pressRingAt, pressRingWaitAt, ringArcPoints,
+} from './longPress/pressRing';
+export type { PressRing, PressRingOptions } from './longPress/pressRing';
 export type { ClickMemory, ClickObserver, ReleaseOutcome } from './recognizer/click';
 export { multiTouchGeometry, type MultiTouchGeometry, type Point } from './recognizer/multiTouch';
 export { clickEvents, longPressEvents } from './recognizer/pressFacts';

@@ -34,8 +34,14 @@ export { useKeyModifiers } from '../input/useKeyModifiers';
 export type { UseKeyStateOptions } from '../input/useKeyState';
 
 // ─── Long-press feedback: the pending press as state, and the default ring ──
-export { createLongPressStore, LONG_PRESS_MS } from '@weasel-js/routing';
-export type { PendingLongPress, LongPressState, LongPressStore, LongPressOptions } from '@weasel-js/routing';
+export {
+  createLongPressStore, LONG_PRESS_MS, PRESS_RING_DELAY_MS, PRESS_RING_RADIUS, PRESS_RING_WIDTH, pressRingAt,
+  pressRingWaitAt, ringArcPoints,
+} from '@weasel-js/gestures';
+export type {
+  PendingLongPress, LongPressState, LongPressStore, PressRing, PressRingOptions,
+} from '@weasel-js/gestures';
+export type { LongPressOptions } from '@weasel-js/routing';
 export {
   createLongPressFeedbackContribution, LONG_PRESS_FEEDBACK_ID,
 } from '../domains/longPress/longPressFeedback';

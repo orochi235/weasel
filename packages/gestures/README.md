@@ -71,6 +71,16 @@ The thresholds it uses are exported as constants: `DRAG_THRESHOLD_PX`,
 `LONG_PRESS_MS`, `DOUBLE_CLICK_MAX_MS`, `DOUBLE_CLICK_MAX_PX`, and
 `TAP_THRESHOLD_PX`.
 
+### Showing a long-press as it is held
+
+`createLongPressStore` holds the press being timed toward a long-press: where
+it landed, when the hold started, how far through it is, and whether any
+binding would fire on it. A dispatcher writes it, and feedback reads it.
+`pressRingAt(state, now)` gives the ring that feedback draws at a moment, as a
+center, radius, width, and how much of it is filled, or `null` before the
+delay or for a press that will fire nothing. `ringArcPoints` turns the filled
+part into points for whatever draws it.
+
 ### How they fit together
 
 | From | Through | To |

@@ -190,10 +190,9 @@ export type {
 export * from './interactions/dispatcher/dispatchRecord';
 export * from './interactions/dispatcher/matcher';
 export * from './interactions/dispatcher/predicates';
-export { createLongPressStore, LONG_PRESS_MS } from './interactions/dispatcher/longPressState';
-export type {
-  PendingLongPress, LongPressState, LongPressStore, LongPressOptions,
-} from './interactions/dispatcher/longPressState';
+export { createLongPressStore, LONG_PRESS_MS } from '@weasel-js/gestures';
+export type { PendingLongPress, LongPressState, LongPressStore } from '@weasel-js/gestures';
+export type { LongPressOptions } from './interactions/dispatcher/longPressState';
 export {
   ANY_MODS, DRAG_THRESHOLD_PX, pastDragThreshold, CONTROL_SELECTOR, isInControlWithin, isPrimaryPress,
 } from '@weasel-js/gestures';
