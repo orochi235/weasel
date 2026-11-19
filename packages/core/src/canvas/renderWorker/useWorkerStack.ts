@@ -94,17 +94,26 @@ export function useWorkerStack(
     if (!current) return;
     const { viewRef, dims, requestRedraw } = frameRef.current;
     const held: { release: () => void; off: () => void }[] = [];
+    let spent = false;
     runsRef.current.forEach((run, i) => {
-      if (run.by !== 'worker') return;
+      if (run.by !== 'worker' || spent) return;
       const canvas = canvases.current.get(i);
       if (!canvas) return;
       const options = current.timeout === undefined ? undefined : { timeout: current.timeout };
       const hold = holdRenderWorker(canvas, current.start, { ...current.inputs(), view: viewRef.current, ...dims() }, options);
+      if (!hold) { spent = true; return; }
       clients.current.set(i, hold.client);
       const offDue = hold.client.subscribe(requestRedraw);
       const offStatus = relay.follow(hold.client);
       held.push({ release: hold.release, off: () => { offDue(); offStatus(); } });
     });
+    if (spent) {
+      // A canvas the stack kept went with its worker; new ones take every run.
+      for (const h of held) { h.off(); h.release(); }
+      clients.current.clear();
+      setGeneration((g) => g + 1);
+      return;
+    }
     relay.changed();
     requestRedraw();
     const clientMap = clients.current, leaseMap = leases.current, frameMap = frames.current, offMap = restoredOff.current;

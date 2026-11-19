@@ -51,7 +51,7 @@ describe('holdRenderWorker, when setup throws', () => {
     const canvas = fakeCanvas();
     const error = new DOMException('blocked', 'SecurityError');
     expect(() => holdRenderWorker(canvas, () => { throw error; }, inputs)).toThrow(error);
-    const held = holdRenderWorker(canvas, () => worker, inputs);
+    const held = holdRenderWorker(canvas, () => worker, inputs)!;
     expect(held.client.sync()).toBe(true);
     held.client.dispose();
   });
