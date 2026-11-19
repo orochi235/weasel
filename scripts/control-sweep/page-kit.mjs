@@ -9,6 +9,31 @@ export function installSweepKit(win) {
   const doc = w.document;
   if (w.__sweep) return;
 
+  /**
+   * Notes on each canvas which kind of context the page made for it (`2d`, `webgl2`, …), or
+   * `offscreen` when it handed its drawing to a worker. Asking a canvas for a context to find out would
+   * make one, and a canvas given the wrong kind first can never get the right one.
+   */
+  function watchCanvasContexts() {
+    const proto = w.HTMLCanvasElement?.prototype;
+    if (!proto || proto.__sweepWatched) return;
+    proto.__sweepWatched = true;
+    const getContext = proto.getContext;
+    proto.getContext = function (type, ...rest) {
+      const ctx = getContext.call(this, type, ...rest);
+      if (ctx && !this.__sweepContext) this.__sweepContext = type;
+      return ctx;
+    };
+    const transfer = proto.transferControlToOffscreen;
+    if (transfer) {
+      proto.transferControlToOffscreen = function (...args) {
+        this.__sweepContext = 'offscreen';
+        return transfer.apply(this, args);
+      };
+    }
+  }
+  watchCanvasContexts();
+
   const CANDIDATES = [
     'input[type=checkbox]', 'input[type=radio]', 'input[type=range]', 'input[type=number]', 'input[type=color]',
     'input[type=file]', 'input[inputmode=decimal]', 'input[inputmode=numeric]', 'select', 'button', 'a[download]',
@@ -244,6 +269,19 @@ export function installSweepKit(win) {
     return out;
   };
 
+  /** A 2D canvas's own pixels, hashed, so nothing drawn over or under it counts; undefined when it cannot be read. */
+  const pixelHash = (c) => {
+    try {
+      const data = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+      const words = new Uint32Array(data.buffer, data.byteOffset, data.byteLength >> 2);
+      let h = 0x811c9dc5;
+      for (let i = 0; i < words.length; i++) h = Math.imul(h ^ words[i], 0x01000193);
+      return `${c.width}x${c.height}:${(h >>> 0).toString(16)}`;
+    } catch {
+      return undefined;
+    }
+  };
+
   /** The demo's DOM digest and the on-screen rect of each canvas, both without the field of control `id`; the digest also without what matches `ignore`. */
   const capture = (rootSel, id, ignore) => {
     const root = doc.querySelector(rootSel);
@@ -260,9 +298,12 @@ export function installSweepKit(win) {
       const width = Math.min(vw, r.right) - x;
       const height = Math.min(vh, r.bottom) - y;
       if (width < 1 || height < 1) return [];
+      // A canvas no one ever drew on (an idle buffer) shows only what lies under it.
+      if (!c.__sweepContext) return [];
       const named = c.closest('[aria-label],[class]');
-      names.push(`${squash(c.getAttribute('aria-label') ?? named?.getAttribute('aria-label') ?? String(named?.className ?? '').split(' ')[0])} ${Math.round(r.width)}×${Math.round(r.height)}`);
-      return [{ x, y, width, height }];
+      names.push(`${squash(c.getAttribute('aria-label') ?? named?.getAttribute('aria-label') ?? String(named?.className ?? '').split(' ')[0])} ${c.__sweepContext} ${Math.round(r.width)}×${Math.round(r.height)}`);
+      const pixels = c.__sweepContext === '2d' ? pixelHash(c) : undefined;
+      return [pixels ? { pixels } : { x, y, width, height }];
     });
     const dom = digest(root, exclude, ignore);
     // A popup the control opens lives outside the frame; that it is open is the change.

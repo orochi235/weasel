@@ -30,9 +30,10 @@ export const settle = async (page, ms) => {
 export const capture = async (page, id) => {
   const snap = await kit(page, 'capture', ROOT, id ?? null, HISTORY);
   const canvases = [];
-  // A clip shows whatever is on screen there, so a canvas under the control would show its thumb move;
+  // A 2D canvas comes back as its own pixels. Any other is a clip of the screen, which shows whatever is
+  // there, so a canvas under the control would show its thumb move unless the field is masked.
   const mask = [page.locator(HISTORY), ...(id ? [page.locator(`[data-sweep-field="${id}"]`)] : [])];
-  for (const clip of snap.canvases) canvases.push(hash(await page.screenshot({ clip, mask, caret: 'hide' })));
+  for (const c of snap.canvases) canvases.push(c.pixels ?? hash(await page.screenshot({ clip: c, mask, caret: 'hide' })));
   return { dom: snap.dom, canvases, names: snap.names };
 };
 
