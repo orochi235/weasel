@@ -219,4 +219,18 @@ describe('pending', () => {
     expect(h.clock.elapsed).toBe(3.1 - 0.7);
     expect(hold.pending()).toBeNull();
   });
+  it('reads a holdPosition past its pass end as waiting, as holdAt does', () => {
+    const a = createClock({ duration: 1000 });
+    const at = holdAt(a, 1500);
+    const p = createClock({ duration: 1000 });
+    const position = holdPosition(p, { elapsed: 500, origin: 1000 });
+    expect([a.clock.elapsed, p.clock.elapsed]).toEqual([1000, 1000]);
+    expect(at.pending()).toBe(1500);
+    expect(position.pending()).toBe(1500);
+    p.clock.duration = 2000;
+    expect(p.clock.elapsed).toBe(1500);
+    expect(position.pending()).toBeNull();
+    const before = createClock({ duration: 1000, origin: 100 });
+    expect(holdPosition(before, { elapsed: 50, origin: 0 }).pending()).toBe(-50);
+  });
 });

@@ -44,27 +44,34 @@ export type HeldPosition = Pick<ClockPosition, 'elapsed' | 'passEnd' | 'duration
  * clock of several passes comes back in the pass it stood in. A position
  * recorded under another `duration` or `origin` keeps its pass and the time it
  * showed within it. `pending` reports the `elapsed` it holds for, on the
- * clock's current span.
+ * clock's current span, unclamped: a time past its pass's end waits there, as
+ * {@link holdAt}'s does.
  */
 export function holdPosition(handle: ClockHandle, at: HeldPosition): PlayheadHold {
   return holdWhere(
     handle,
-    (clock) => elapsedOn(clock, at),
     (clock) => {
-      const [target] = elapsedOn(clock, at);
-      return clock.elapsed === target ? null : target;
+      const [elapsed, line] = elapsedOn(clock, at);
+      return [elapsed, line];
+    },
+    (clock) => {
+      const [target, , wanted] = elapsedOn(clock, at);
+      return clock.elapsed === target && target === wanted ? null : wanted;
     },
   );
 }
 
-/** Where `at` stands on `clock`'s span: the same pass, and the same time shown in it. */
-function elapsedOn(clock: Clock, at: HeldPosition): [elapsed: number, line: Line] {
+/** Where `at` stands on `clock`'s span: the same pass, and the same time shown in it, clamped to the pass; and
+ *  where it would stand unclamped, which a pass too short or starting too late does not reach yet. */
+function elapsedOn(clock: Clock, at: HeldPosition): [elapsed: number, line: Line, wanted: number] {
   const line: Line = at.passEnd ? 'end' : 'start';
   const from = at.duration ?? clock.duration;
   const origin = at.origin ?? clock.origin;
-  if (from === clock.duration && origin === clock.origin) return [at.elapsed, line];
-  if (!Number.isFinite(from) || !Number.isFinite(clock.duration))
-    return [at.elapsed + origin - clock.origin, line];
+  if (from === clock.duration && origin === clock.origin) return [at.elapsed, line, at.elapsed];
+  if (!Number.isFinite(from) || !Number.isFinite(clock.duration)) {
+    const elapsed = at.elapsed + origin - clock.origin;
+    return [elapsed, line, elapsed];
+  }
   const passes = passesOf(clock.loop);
   // A position at the end of the clock's run is that run ended, the end of its last pass as `placeOf` reads it, not
   // the start of a pass past it; one beyond came from a run of more passes, and keeps its pass.
@@ -75,9 +82,11 @@ function elapsedOn(clock: Clock, at: HeldPosition): [elapsed: number, line: Line
     pass -= 1;
     into = from;
   }
-  const within = Math.min(Math.max(0, origin + into - clock.origin), clock.duration);
+  const shown = origin + into - clock.origin;
+  const within = Math.min(Math.max(0, shown), clock.duration);
   const end = within > 0 && within === clock.duration;
-  return [pass * clock.duration + within, end ? 'end' : 'start'];
+  const elapsed = pass * clock.duration + within;
+  return [elapsed, end ? 'end' : 'start', within === shown ? elapsed : pass * clock.duration + shown];
 }
 
 type Line = 'start' | 'end';
