@@ -11,52 +11,21 @@
  */
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { stableScopedName } from '../../scripts/vite-css-modules.ts';
+import { componentEntries } from '../../scripts/vite-component-entries.ts';
 import { weaselIcons } from '../icons-plugin/src/index.ts';
 import { assertPackageBuild } from '../../scripts/lib/own-install.mjs';
 import { installedExternal } from '../../scripts/lib/installed-external.mjs';
 
 assertPackageBuild(import.meta.dirname);
 
-/**
- * One entry per component directory and per catalog inside one, plus the barrel, backing the
- * `./components/*` subpath in `exports`. The keys are written to mirror the
- * source tree, which is also where `tsc --emitDeclarationOnly` puts the
- * matching `index.d.ts` — so one `*` wildcard in `exports` lines up the JS
- * and the types by construction, and a component added later is reachable
- * with no change here or in package.json.
- *
- * A lowercase directory (`inspector`) groups components, each reached as
- * `./components/<group>/<Name>`.
- */
-const componentsDir = resolve(import.meta.dirname, 'src/components');
+/** The barrel and the package's other subpath entries, then one per component (see `componentEntries`). */
 const entries: Record<string, string> = {
   index: resolve(import.meta.dirname, 'src/index.ts'),
   kitIcons: resolve(import.meta.dirname, 'src/kitIcons.ts'),
+  ...componentEntries(import.meta.dirname),
 };
-function addComponents(rel: string): void {
-  for (const dirent of readdirSync(resolve(componentsDir, rel), { withFileTypes: true })) {
-    if (!dirent.isDirectory()) continue;
-    const name = rel ? `${rel}/${dirent.name}` : dirent.name;
-    const dir = resolve(componentsDir, name);
-    if (readdirSync(dir).includes('index.ts')) {
-      entries[`components/${name}/index`] = resolve(dir, 'index.ts');
-      addCatalogs(name);
-    } else if (!rel && /^[a-z]/.test(dirent.name)) addComponents(name);
-  }
-}
-/** A component's subdirectories with an `index.ts` of their own (Badge's `shapes`): the `./components/*`
- *  wildcard reaches their declarations, so each gets JS beside them. */
-function addCatalogs(component: string): void {
-  for (const dirent of readdirSync(resolve(componentsDir, component), { withFileTypes: true })) {
-    const dir = resolve(componentsDir, component, dirent.name);
-    if (dirent.isDirectory() && readdirSync(dir).includes('index.ts')) entries[`components/${component}/${dirent.name}/index`] = resolve(dir, 'index.ts');
-  }
-}
-addComponents('');
-
 
 export default defineConfig({
   plugins: [react(), weaselIcons.vite({ mode: 'library' })],
