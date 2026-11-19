@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type CSSProperties, type ReactElement } from 'react';
+import { useId, useMemo, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import { arcShape, type TrackShape } from '@weasel-js/geom';
 import { Along, arcInBox } from '@weasel-js/ui/components/Along';
 import { Slider, type SliderProps, type Thumb } from '@weasel-js/ui/components/Slider';
@@ -59,21 +59,22 @@ export function SliderArcView({ config, onPreset }: { config: SliderArcConfig; o
 
   const addRemove = (twin: Twin): Partial<SliderProps> =>
     config.behavior.addRemove ? { onAddThumb: (value) => ({ value, shape: config.look.thumbShape }), onRemoveThumb: () => of(twin).length > 1 } : {};
+  const ids = useId();
   const vars = { '--box': `${size}px`, '--run': `${Math.round(shape.length)}px` } as CSSProperties;
 
   return (
     <div className={lab.lab}>
       <div className={`${lab.stack} ${lab.main}`} style={vars}>
-        <section className={lab.section} aria-label="Curved">
-          <h3 className={lab.sectionTitle}>Along the arc</h3>
+        <section className={lab.section} aria-labelledby={`${ids}-curved`}>
+          <h3 id={`${ids}-curved`} className={lab.sectionTitle}>Along the arc</h3>
           <div ref={curvedRoot} className={s.box} data-twin="curved">
             <Along arc={arc}>
               <Slider {...props} {...addRemove('curved')} aria-label="Curved" thumbs={of('curved')} onInput={set('curved')} />
             </Along>
           </div>
         </section>
-        <section className={lab.section} aria-label="Straight">
-          <h3 className={lab.sectionTitle}>Straight, as long as the arc</h3>
+        <section className={lab.section} aria-labelledby={`${ids}-straight`}>
+          <h3 id={`${ids}-straight`} className={lab.sectionTitle}>Straight, as long as the arc</h3>
           <div ref={straightRoot} className={s.line} data-twin="straight">
             <Slider {...props} {...addRemove('straight')} aria-label="Straight" thumbs={of('straight')} onInput={set('straight')} />
           </div>

@@ -199,6 +199,12 @@ describe('DataGrid row hooks', () => {
 describe('DataGrid detail rows', () => {
   const detail = (r: Row) => <span>detail {r.id}</span>;
 
+  it('names the disclosure column in text, as it names the handle column of a reorderable grid', () => {
+    render(<DataGrid<Row> rows={ROWS} columns={COLUMNS} renderDetail={detail} onReorder={() => {}} />);
+    const names = screen.getAllByRole('columnheader').map((th) => th.textContent);
+    expect(names.slice(0, 2)).toEqual(['Reorder', 'Details']);
+  });
+
   it('expands a full-width detail row under its row from the disclosure', () => {
     const { container } = render(<DataGrid<Row> rows={ROWS} columns={COLUMNS} renderDetail={detail} />);
     const toggle = screen.getAllByRole('button', { name: 'Show details' })[1]!;

@@ -53,6 +53,7 @@ export function EditorsAndPlots() {
     <Section title="Editors & plots">
       <Cell label="Plot2D">
         <Plot2D
+          aria-label="Plot2D"
           width={260}
           height={130}
           grid={{ divisions: 3 }}

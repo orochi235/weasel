@@ -17,8 +17,8 @@ export function DataGridHead<Row>({ columns, sort, onSort, dragEnabled, detailEn
   return (
     <thead>
       <tr>
-        {dragEnabled && <th className={s.handleCol} aria-label="drag" />}
-        {detailEnabled && <th className={s.detailCol} aria-label="details" />}
+        {dragEnabled && <th className={s.handleCol}><span className={s.colName}>Reorder</span></th>}
+        {detailEnabled && <th className={s.detailCol}><span className={s.colName}>Details</span></th>}
         {columns.map((col) => {
           const sortable = col.sortable !== false;
           const active = sort?.columnId === col.id;
