@@ -113,7 +113,7 @@ function read<TPose>(
       const data = n.data as RigNodeData | null | undefined;
       const skin = painted.get(child) ?? data?.skin;
       out.refs.push(child, n.pose, n.data, skin);
-      if (skin) out.skins[child] = skin;
+      if (skin) setOwn(out.skins, child, skin);
       else if (data?.joint !== undefined) {
         const bound = getOwn(out.bindings, data.joint);
         if (bound) bound.push(child);

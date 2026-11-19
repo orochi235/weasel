@@ -61,6 +61,20 @@ describe('rigFromNode', () => {
     expect(parts.bindings).toEqual({ lower: [hand, cuff] });
   });
 
+  it('keeps the skin of a node whose id is `__proto__` as its own entry', () => {
+    const nodes = new Map<string, { pose: RectPose; data?: unknown }>([
+      ['rig', { pose: BOX, data: { skeleton: ARM } }],
+      ['__proto__', { pose: BOX, data: { skin: SLEEVE } }],
+    ]);
+    const source = {
+      get: (id: string) => nodes.get(id),
+      childrenOf: (id: string) => (id === 'rig' ? ['__proto__'] : []),
+    };
+    const { skins } = rigFromNode<RectPose>(source as never, 'rig' as never);
+    expect(Object.hasOwn(skins, '__proto__')).toBe(true);
+    expect(Object.entries(skins)).toEqual([['__proto__', SLEEVE]]);
+  });
+
   it('throws on a node with no skeleton', () => {
     const { scene, sleeve } = rigScene();
     expect(() => rigFromNode(scene, sleeve)).toThrow(/has no skeleton/);
