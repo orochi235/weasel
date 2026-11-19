@@ -56,9 +56,9 @@ export interface EffectSource {
   /**
    * The same outline before its pose turns it, with the turn: what lets a
    * tween interpolate rotation as a rotation rather than squash a turned
-   * shape through its neighbors. Absent where the outline comes from
-   * somewhere other than the pose — a drag's override, a derivation — or the
-   * pose holds a skew a turn cannot say.
+   * shape through its neighbors. A pose's `transform` (a stretch or skew) is
+   * part of the unturned outline. Absent where the outline comes from
+   * somewhere other than the pose — an override's path, a derivation.
    */
   framed?: { path: Path; cx: number; cy: number; rotation: number };
   /** The paint it shows, resolved as its painter resolves it, so `null` is

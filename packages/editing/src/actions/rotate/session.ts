@@ -5,6 +5,7 @@ import { pointerStateOf, transformFinisher, type TransformFinisher, sceneGesture
 import { resolveParams } from '@weasel-js/routing';
 import type { RotateParams, Op, NodeId, Scene, Bounds } from '@weasel-js/core';
 import { moveGestureAdapter } from '../move/gestureAdapter';
+import { derivedBoxOwner } from '../derivedBox';
 
 /** One rotated node as the press found it, in the plane the pointer's angle
  *  is read in. */
@@ -119,10 +120,11 @@ function buildGestureContext(
   };
 }
 
-/** What turning `ids` (already resolved to shape sources) is computed from,
+/** What turning `ids`, the shape sources of `selected`, is computed from,
  *  with each one's pose as stored. Null when none of them can turn. */
 export function captureTurn(
   scene: Scene<unknown, string, unknown>,
+  selected: readonly string[],
   ids: readonly NodeId[],
   deps: Pick<ActionDeps, 'view' | 'poseDescriptor' | 'boundsIncludeStroke' | 'drawnBoxes'>,
   pivot: 'union' | 'each',
@@ -137,7 +139,11 @@ export function captureTurn(
   const boxes = drawnBoxes({ ...deps, scene }, poseFrame);
   const { originPoses, origins, visual } = captureOrigins(view, scene, ids, descriptorOf, poseFrame, boxes);
   if (originPoses.size === 0) return null;
-  const union = unionAabb(visual)!;
+  // A derived node's chrome draws its own box, not its sources' union.
+  const owner = derivedBoxOwner(scene, selected);
+  const union = owner === null
+    ? unionAabb(visual)!
+    : boxes.aabb(owner, carryPose(descriptorOf(owner), poseFrame.world(owner), invertPlane(planeOf(view, scene.get(owner)!.layer))));
   return {
     turn: {
       origins,
@@ -176,7 +182,7 @@ export function beginRotate(
   const ids = shapeSources(scene, selection.get()) as NodeId[];
   if (ids.length === 0) return null;
 
-  const captured = captureTurn(scene, ids, ctx.deps, params?.pivot === 'each' ? 'each' : 'union');
+  const captured = captureTurn(scene, selection.get(), ids, ctx.deps, params?.pivot === 'each' ? 'each' : 'union');
   if (!captured) return null;
   const { turn, originPoses, poseFrame } = captured;
   const { origins, pivot } = turn;
