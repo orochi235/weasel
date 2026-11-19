@@ -170,7 +170,7 @@ export type { WeaselProviderProps } from '../WeaselProvider';
 export * from '../core/layers/render';
 export { createWorkspaceTintLayer, createModeDecorationLayer } from '../domains/modes/modeLayers';
 export type { WorkspaceTintLayerOptions } from '../domains/modes/modeLayers';
-export { modeTriggers } from '../domains/modes/modeTriggers';
+export { createModeTriggersContribution } from '../domains/modes/modeTriggers';
 export type { ModeTriggerHandlers, ModeTriggerParams } from '../domains/modes/modeTriggers';
 export { createChildrenLayer } from '../core/layers/children';
 export type { CreateChildrenLayerOptions } from '../core/layers/children';

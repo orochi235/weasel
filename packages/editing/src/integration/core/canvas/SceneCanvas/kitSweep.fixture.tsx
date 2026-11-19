@@ -26,7 +26,7 @@ import * as coreTools from 'tools/builtin';
 import * as editing from '@weasel-js/editing';
 
 const builtins = { ...coreTools, ...editing };
-import { modeTriggers } from 'domains/modes/modeTriggers';
+import { createModeTriggersContribution } from 'domains/modes/modeTriggers';
 import { buildToolActivateBindings, createToolActivateAction } from 'interactions/actions/defaults/toolActivate';
 import { createToolResetToDefaultAction } from 'interactions/actions/defaults/toolResetToDefault';
 
@@ -167,8 +167,8 @@ function coreFactories(s: Sweep): void {
     ] as never,
   });
   const run = (): void => {};
-  s.value(modeTriggers(modes, { enter: run }), 'modeTriggers');
-  s.value(routing.modeShortcuts(modes, { enter: run, exit: run, discard: run, commit: run, cancel: run }), 'modeShortcuts');
+  s.value(createModeTriggersContribution(modes, { enter: run }), 'createModeTriggersContribution');
+  s.value(routing.createModeShortcutsContribution(modes, { enter: run, exit: run, discard: run, commit: run, cancel: run }), 'createModeShortcutsContribution');
 }
 
 /** Other packages' hooks and factories. */
@@ -178,7 +178,7 @@ function packageFactories(s: Sweep, scene: never): void {
   s.hook(() => ({ bone: rig.useBoneTool({} as never), weight: rig.useWeightTool({} as never) }), 'rig tools');
   s.hook(() => ({ orbit: kernel3d.useOrbitTool() }), 'kernel3d tools');
   s.value(guides.createSpacingHintsPreset(), 'guides.createSpacingHintsPreset');
-  s.value(guides.distanceReadout(), 'guides.distanceReadout');
+  s.value(guides.createDistanceReadoutContribution(), 'guides.createDistanceReadoutContribution');
   s.value(hud.createHudContribution(), 'hud.createHudContribution');
   s.value(minimap.createMinimapContribution({} as never), 'minimap.createMinimapContribution');
   s.value(minimap.createLinkedCursorContribution(), 'minimap.createLinkedCursorContribution');
@@ -188,16 +188,16 @@ function packageFactories(s: Sweep, scene: never): void {
   s.value(measure.createMeasurementsContribution(scene, measurements), 'measure.createMeasurementsContribution');
   s.value(diagram.createDiagramPortsContribution({ participants: () => [] } as never), 'diagram.createDiagramPortsContribution');
   s.value(diagram.createDiagramWaypointsContribution({} as never), 'diagram.createDiagramWaypointsContribution');
-  s.value(diagram.diagramLabels({} as never), 'diagram.diagramLabels');
+  s.value(diagram.createDiagramLabelsContribution({} as never), 'diagram.createDiagramLabelsContribution');
   s.value(diagram.createDiagramEdgeEndsContribution({} as never), 'diagram.createDiagramEdgeEndsContribution');
   s.value(diagram.createReorderContribution({} as never), 'diagram.createReorderContribution');
-  s.value(diagram.clusterReorderContribution(() => {}), 'diagram.clusterReorderContribution');
+  s.value(diagram.createClusterReorderContribution(() => {}), 'diagram.createClusterReorderContribution');
   s.value(diagram.createReorderPreset({} as never), 'diagram.createReorderPreset');
   s.value(diagram.createClusterReorderPreset(() => {}), 'diagram.createClusterReorderPreset');
   s.value(diagram.createDiagramContainersContribution({} as never), 'diagram.createDiagramContainersContribution');
   s.value(diagram.createDiagramOffPageContribution(), 'diagram.createDiagramOffPageContribution');
-  s.value(diagram.connectorTool({} as never), 'diagram.connectorTool');
-  s.value(diagram.stencilTool({ id: 'box', label: 'Box' }), 'diagram.stencilTool');
+  s.value(diagram.createConnectorTool({} as never), 'diagram.createConnectorTool');
+  s.value(diagram.createStencilTool({ id: 'box', label: 'Box' }), 'diagram.createStencilTool');
   s.value({ id: 'diagram bindings', bindings: [diagram.editEdgeLabelBinding(), diagram.editContainerTitleBinding()] }, 'diagram');
 }
 

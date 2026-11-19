@@ -9,7 +9,7 @@ import {
 } from '@weasel-js/geom';
 import { type EditAnchorsDep, editingLayer, inPlane, pathOperationTags } from '@weasel-js/core';
 import { openPathEditOf } from '../pathEdit/anchorEditing';
-import { pathEditPreview } from '../pathEdit/editAnchors/preview';
+import { createPathEditPreview } from '../pathEdit/editAnchors/preview';
 import type {} from '../actionParamSchema';
 
 /** Params `tugPath` reads on every move. */
@@ -103,7 +103,7 @@ export const tugPathAction = inPlane(defineAction({
       const moves: { toward: { x: number; y: number }; flip: boolean }[] = [];
       let distance = 0;
       let current: { path: PolygonPath; origins?: readonly (PointOrigin | null)[] } | null = null;
-      const preview = pathEditPreview(dep, id, () => current);
+      const preview = createPathEditPreview(dep, id, () => current);
       if (!preview) return {};
       const step = (params: Readonly<TugPathParams> | undefined, toward: { x: number; y: number }, flip: boolean) => {
         const mode = modeOf(params, flip);

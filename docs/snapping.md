@@ -226,7 +226,7 @@ source sharing an id with one still asked throws, as two canvas sources do.
 Every `<SceneCanvas>` mounts one screen-space readout layer that draws the marks of the snap in
 flight: point glyphs with labels, alignment lines, equal-gap marks, and distances. Sessions write
 them to the canvas's outcome store, which the `snapReadout` dep also exposes, so the Alt-hover
-`distanceReadout` writes its distances into the same store. A mark's `color` overrides the
+`createDistanceReadoutContribution` writes its distances into the same store. A mark's `color` overrides the
 readout's; `snap={{ readout: false }}` hides the layer and `readoutStyle` sets its defaults.
 
 The debug overlay's `snap` feature (`?debug=snap`) draws every candidate the resolver weighed in

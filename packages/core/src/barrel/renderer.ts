@@ -170,7 +170,7 @@ export type {
 export type { ContributionRouting, Eligibility, EligibilityState, HotkeyTrigger, OverlayPosition, ToolPresentation } from '@weasel-js/routing';
 export type { Contribution, ContributionChrome } from '../tools/overlayBinding';
 export type { ContributionDeps } from '@weasel-js/routing';
-export { assembleEntries, liveScope, scopeBindings, modeShortcuts, modeShortcutSpec } from '@weasel-js/routing';
+export { assembleEntries, liveScope, scopeBindings, createModeShortcutsContribution, modeShortcutSpec } from '@weasel-js/routing';
 export type { AssemblyInputs } from '@weasel-js/routing';
 export type { ModeShortcutHandlers } from '@weasel-js/routing';
 export { captureGesture, captureKey, createKeymapStack, describeKeymap, KEYMAP_HOLD, createKeymapContribution, keymapLeaderBindingId, keymapLeaderId, keymapShortcuts } from '@weasel-js/routing';

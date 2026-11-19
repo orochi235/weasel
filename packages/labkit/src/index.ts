@@ -328,7 +328,7 @@ export {
   useTrialId,
 } from './state/context';
 export { CURRENT_DOCUMENT_VERSION, labDocumentKey, quarantineKey } from './state/document';
-export { indexedDbAdapter } from './state/labStorage';
+export { labIndexedDbAdapter } from './state/labStorage';
 export { type OpenedLabStore, type OpenLabStoreOptions, openLabStore } from './state/openLabStore';
 export { Persistence, type PersistenceProps } from './state/Persistence';
 export type { SavedTrialUndo } from './state/savedUndo';

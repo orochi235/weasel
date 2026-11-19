@@ -9,12 +9,12 @@ import { CONNECTOR_TOOL_ID, useConnectorTool } from './connectorTool';
 import { STENCIL_GROUPS } from './diagramTypes/catalog';
 import type { StencilGroup } from './diagramTypes/types';
 import { stencilKind, type DiagramStencil } from './stencil';
-import { stencilTool } from './stencilTool';
+import { createStencilTool } from './stencilTool';
 import { SEQUENCE_TOOLS, useSequenceTools, type SequenceToolsOptions } from './sequence/tools';
 
 /** Each stencil's tool, keyed by its id (the stencil's insert kind). */
-export function stencilTools(stencils: readonly Pick<DiagramStencil, 'id' | 'label' | 'description' | 'icon'>[]): Record<string, Tool> {
-  return Object.fromEntries(stencils.map((s) => [stencilKind(s.id), stencilTool(s)]));
+export function createStencilTools(stencils: readonly Pick<DiagramStencil, 'id' | 'label' | 'description' | 'icon'>[]): Record<string, Tool> {
+  return Object.fromEntries(stencils.map((s) => [stencilKind(s.id), createStencilTool(s)]));
 }
 
 /** The tools of `group`'s stencils, as a set named for the group. */
@@ -49,6 +49,6 @@ export function useDiagramTools<TPose>(options: UseDiagramToolsOptions<TPose>): 
   const { stencils = SHIPPED_STENCILS } = options;
   const connector = useConnectorTool(options.connector);
   const sequence = useSequenceTools(options.sequence);
-  const shapes = useMemo(() => stencilTools(stencils), [stencils]);
+  const shapes = useMemo(() => createStencilTools(stencils), [stencils]);
   return useMemo(() => ({ [CONNECTOR_TOOL_ID]: connector, ...shapes, ...sequence }), [connector, shapes, sequence]);
 }

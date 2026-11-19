@@ -96,7 +96,7 @@ export function viewCamera(view: ViewApi): PresentationCamera {
   };
 }
 
-/** What {@link canvasCamera} reads off a canvas handle; `SceneCanvasApi` has every member. */
+/** What {@link createCanvasCamera} reads off a canvas handle; `SceneCanvasApi` has every member. */
 export interface PresentationCanvas {
   getView(): View;
   getSurfaceRect(): { width: number; height: number };
@@ -107,7 +107,7 @@ export interface PresentationCanvas {
 
 /** A `<SceneCanvas>` handle as a {@link PresentationCamera}, for a host stepping pages from outside the canvas:
  *  a presentation runtime seeking to a step. */
-export function canvasCamera(canvas: PresentationCanvas): PresentationCamera {
+export function createCanvasCamera(canvas: PresentationCanvas): PresentationCamera {
   let heading: View | null = null;
   return {
     get: () => canvas.getView(),

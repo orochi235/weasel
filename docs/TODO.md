@@ -240,6 +240,13 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
+- **(P3) [agent] Put labkit's camera math on core's.** labkit exports its own `worldToScreen`,
+  `screenToWorld` and `zoomAt` (`labkit/src/canvas/canvasCoords.ts`, `camera.ts`) over a
+  `ViewTransform2D` plus a `WorldFrame`, beside core's functions of the same names over core's view: one
+  question with two answers, and a consumer importing both packages gets either by accident. Closes when
+  labkit's are written over core's (or core's take a frame) and the two packages export one function per
+  name (2026-11-18, export audit).
+
 ### Extension authoring and published consumers
 
 ---

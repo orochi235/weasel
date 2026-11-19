@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { createScene, declaredToolShortcuts, type Tool, type ToolsApi } from '@weasel-js/core';
-import { CONTAINER_STENCILS, DIAGRAM_TYPE_DOC_KEY, FLOWCHART_STENCILS, STENCIL_GROUPS, stencilTool } from '@weasel-js/diagram';
+import { CONTAINER_STENCILS, DIAGRAM_TYPE_DOC_KEY, FLOWCHART_STENCILS, STENCIL_GROUPS, createStencilTool } from '@weasel-js/diagram';
 import { toIconRef, type IconSpec } from '@weasel-js/icons';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { CHART_LAYERS, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose } from './chartDocument';
@@ -12,7 +12,7 @@ import { chartThemeOf } from './theme/themeCommands';
 afterEach(cleanup);
 
 function chartTools(active: string | null = null): ToolsApi {
-  const list: Tool[] = [{ id: 'select', presentation: { label: 'Select' } } as Tool, ...[...FLOWCHART_STENCILS, ...CONTAINER_STENCILS].map(stencilTool)];
+  const list: Tool[] = [{ id: 'select', presentation: { label: 'Select' } } as Tool, ...[...FLOWCHART_STENCILS, ...CONTAINER_STENCILS].map(createStencilTool)];
   // The palette reads only these four.
   const registry = Object.fromEntries(list.map((t) => [t.id, t]));
   return { active, setActive: vi.fn(), registry, shortcuts: declaredToolShortcuts(registry) } as unknown as ToolsApi;

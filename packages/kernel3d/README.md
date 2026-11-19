@@ -30,7 +30,7 @@ const poseDescriptor = createPoseDescriptor(world);
 ## On a `<SceneCanvas>`
 
 The deps go where the canvas reads them: `poseDescriptor` and `geometry.pickEvery` as props, the
-camera through `cameraRig`'s ambient entry, and the insert and the snap as another entry's deps.
+camera through `createCameraRigContribution`'s ambient entry, and the insert and the snap as another entry's deps.
 `features={[pickPreset, movePreset]}` turns on the select tool's click and drag; the layers are yours to draw.
 
 ```tsx
@@ -41,7 +41,7 @@ const insert = createInsert3dDep({
 });
 // The orbit tool carries orbit and pan; the rig adds the wheel, the pinch and the double-click home.
 // `createCameraDep` reads the camera, the pane and the up from `world`, as every other dep does.
-const rig = cameraRig(createCameraDep(world, { set: setCamera }));
+const rig = createCameraRigContribution(createCameraDep(world, { set: setCamera }));
 const editing: SurfaceContribution = {
   id: 'editing',
   eligibility: { always: true },

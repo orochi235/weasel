@@ -13,7 +13,7 @@ import {
 } from '@weasel-js/modes';
 import { isApplePlatform } from '@weasel-js/gestures';
 import type { Fill } from '@weasel-js/core';
-import { modeShortcuts } from '@weasel-js/routing';
+import { createModeShortcutsContribution } from '@weasel-js/routing';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import styles from './ModesDemo.module.css';
@@ -93,7 +93,7 @@ export function ModesDemo() {
   }, [registry, scene, scoping]);
 
   const shortcuts = useMemo(
-    () => [modeShortcuts(registry, { enter, exit: () => registry.setMode('draw') })],
+    () => [createModeShortcutsContribution(registry, { enter, exit: () => registry.setMode('draw') })],
     [registry, enter],
   );
 

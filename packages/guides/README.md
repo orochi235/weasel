@@ -65,8 +65,8 @@ points sits on its crossings.
 | Rulers | `createRulers` (below), `rulersSchema`, `rulerTicks`, `createRulerFrameLookup`, `rulersLayout`; `<Rulers>` in `@weasel-js/ui` draws them |
 | Guides | `useGuides`, `createGuidesLayer`, `createAddGuideOp`, `createRemoveGuideOp`, `createReplaceGuideOp`, `deriveAlignmentGuides`, `matchSpacing`, `measureGaps`, `siblingBounds`, `worldBoundsOf`, `worldUnionOf` |
 | Snap sources | `gridSnapSource`, `guideSnapSource`, `alignmentSnapSource`, `spacingSnapSource`, for `<SceneCanvas snap={{ sources }}>` or a preset's `snapSources` |
-| Spacing hints | `createSpacingHintsPreset` (below), `distanceReadout`, `measureDistances` |
-| Layout | `freeform`, `tileGrid`, `snapPoint`, `slots` (with the `rowSlots`, `gridSlots`, and `ringSlots` arrangements), `pack`, `quadtree`, `perContainer` for a strategy that keeps state, and the drop-target pickers `noSnap`, `nearestSnap`, `nearestWithin`, `containedThenNearest`, `cellThenNearest` |
+| Spacing hints | `createSpacingHintsPreset` (below), `createDistanceReadoutContribution`, `measureDistances` |
+| Layout | `freeform`, `tileGrid`, `snapPoint`, `slots` (with the `rowSlots`, `gridSlots`, and `ringSlots` arrangements), `pack`, `quadtree`, `createPerContainerStrategy` for a strategy that keeps state, and the drop-target pickers `noSnap`, `nearestSnap`, `nearestWithin`, `containedThenNearest`, `cellThenNearest` |
 
 Rulers run along the top and left of a 2D view. `createRulers` returns a
 contribution for `<SceneCanvas ambient>`, which follows the view and the

@@ -7,7 +7,7 @@ import { createDragPanContribution, useLatest, type Action, type ActionsProp, ty
 import { useMemo } from 'react';
 import { isBodyEnd } from './connectTargets';
 import { diagramContainerOf, titleIdOf } from './containers/trait';
-import { diagramLabels, createDiagramPortsContribution, createDiagramWaypointsContribution } from './contribution';
+import { createDiagramLabelsContribution, createDiagramPortsContribution, createDiagramWaypointsContribution } from './contribution';
 import { createEditEdgeLabelAction, editEdgeLabelBinding } from './edgeLabel';
 import { diagramEdgeOf } from './edgeTrait';
 import type { DiagramSpec } from './dataTypes';
@@ -204,7 +204,7 @@ export function useDiagramEditing(
       })
     : null, [routes, source, selected, report]);
   const labelDrag = useMemo(() => labelMoves
-    ? diagramLabels({
+    ? createDiagramLabelsContribution({
         scene,
         selected,
         commit: ({ edgeId, placement }) => report.current.onMoveLabel?.({ edge: edgeId, placement }),

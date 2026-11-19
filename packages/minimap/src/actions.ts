@@ -10,13 +10,13 @@ import {
 } from '@weasel-js/core';
 import type {} from './actionParamSchema';
 
-/** Action id for `minimapCenterAction`. */
+/** Action id for `createMinimapCenterAction`. */
 export const MINIMAP_CENTER_ACTION_ID = 'minimap.center';
-/** Action id for `minimapPanAction`. */
+/** Action id for `createMinimapPanAction`. */
 export const MINIMAP_PAN_ACTION_ID = 'minimap.pan';
-/** Action id for `minimapZoomAction`. */
+/** Action id for `createMinimapZoomAction`. */
 export const MINIMAP_ZOOM_ACTION_ID = 'minimap.zoom';
-/** Action id for `minimapTouchZoomAction`. */
+/** Action id for `createMinimapTouchZoomAction`. */
 export const MINIMAP_TOUCH_ZOOM_ACTION_ID = 'minimap.touchZoom';
 
 /** The main view's zoom limits, as an action takes them: fixed, read on each sample, or the kit defaults. */
@@ -51,7 +51,7 @@ function rootOf(deps: InvocationCtx['deps']): ViewApi | undefined {
 }
 
 /** Recenter the main camera on the pressed world point. */
-export function minimapCenterAction(): Action {
+export function createMinimapCenterAction(): Action {
   return defineAction({
     id: MINIMAP_CENTER_ACTION_ID,
     label: 'Minimap — center the view here',
@@ -72,7 +72,7 @@ export function minimapCenterAction(): Action {
  *  Pair it with `minimap.center` on `pointerDown`, which handles the press.
  *  A recenter lands the moment it is computed, so there is nothing to commit
  *  and a cancel ends where a release does. */
-export function minimapPanAction(): Action {
+export function createMinimapPanAction(): Action {
   return {
     id: MINIMAP_PAN_ACTION_ID,
     label: 'Minimap — pan the view',
@@ -122,7 +122,7 @@ function centerOf(root: ViewApi): { x: number; y: number } | null {
  *  under the cursor, which keeps its place in the main view. `clamp` is the
  *  main view's zoom limits, or a getter read on each sample; omitted, the kit
  *  defaults `viewport.zoom` also uses. */
-export function minimapZoomAction(clamp?: MinimapZoomClamp): Action {
+export function createMinimapZoomAction(clamp?: MinimapZoomClamp): Action {
   return defineAction({
     id: MINIMAP_ZOOM_ACTION_ID,
     label: 'Minimap — zoom the view',
@@ -144,8 +144,8 @@ export function minimapZoomAction(clamp?: MinimapZoomClamp): Action {
 
 /** Zoom the main camera with a two-finger touch pinch, by the ratio of the fingers' spread, about the world point
  *  between them, read through the minimap's own camera (`view`). That point keeps its place in the main view as
- *  the fingers move, so the main view follows them as a one-finger pan does. `clamp` is as `minimapZoomAction`'s. */
-export function minimapTouchZoomAction(clamp?: MinimapZoomClamp): Action {
+ *  the fingers move, so the main view follows them as a one-finger pan does. `clamp` is as `createMinimapZoomAction`'s. */
+export function createMinimapTouchZoomAction(clamp?: MinimapZoomClamp): Action {
   return {
     id: MINIMAP_TOUCH_ZOOM_ACTION_ID,
     label: 'Minimap — pinch to zoom the view',

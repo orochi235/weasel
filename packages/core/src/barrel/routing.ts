@@ -84,7 +84,7 @@ export {
   type TouchZoomOptions,
 } from '../interactions/actions/defaults/touchZoom';
 export type { SliceDep, ClipboardDep, OperandsDep } from '../interactions/actions/depSchema';
-export { operandList } from '../interactions/actions/operands';
+export { createOperandList } from '../interactions/actions/operands';
 export { useActionSet, useStandardDeps } from '../interactions/actions/useActionSet';
 export type { StandardDeps } from '../interactions/actions/useActionSet';
 // Scene-backed op applier for the consumer `applyOps` commit hook — applies a

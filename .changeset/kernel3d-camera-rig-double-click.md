@@ -6,9 +6,9 @@
 
 ```ts
 // before
-cameraRig(camera3d, { home: false });
+createCameraRigContribution(camera3d, { home: false });
 // after
-cameraRig(camera3d, { doubleClick: false });
+createCameraRigContribution(camera3d, { doubleClick: false });
 ```
 
 <!-- entry: breaking api -->

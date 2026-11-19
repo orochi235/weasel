@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import {
-  assetOf, changedAsset, foldablePaths, foldsUnder, isTreeAsset, openAfterStep, pathsIn, type SchemaRoot, scopedPath,
+  assetOf, changedAsset, foldablePaths, createFolds, isTreeAsset, openAfterStep, pathsIn, type SchemaRoot, scopedPath,
   type ShownAsset, shownAssets, type AssetSet,
 } from '@weasel-js/prefs/edit';
 import { useEditorSelection, type EditorSelection } from './useEditorSelection';
@@ -37,7 +37,7 @@ export function useAssetView(assetSet: AssetSet, opened: AssetSet | undefined, d
   const asset = shown(assetId) ?? shownAssets(assetSet)[0]!;
   const schema = asset.root;
   // Every row starts open but the ones the reader folded last time.
-  const folds = useMemo(() => foldsUnder(draftKey), [draftKey]);
+  const folds = useMemo(() => createFolds(draftKey), [draftKey]);
   const startOpen = (id: string, root: SchemaRoot): Set<string> => {
     const folded = new Set(folds.open(id));
     return new Set(foldablePaths(root).filter((path) => !folded.has(path)));

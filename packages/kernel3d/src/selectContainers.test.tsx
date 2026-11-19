@@ -9,7 +9,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas, createEnteredGroup, type EnteredGroupApi, type SelectionApi } from '@weasel-js/core';
 import { createCamera, type Camera3d } from './camera';
 import type { Camera3dDep } from './cameraDep';
-import { cameraRig } from './cameraRig';
+import { createCameraRigContribution } from './cameraRig';
 import { createNodeAtPoint3dDep, createPoseDescriptor, worldPoseOf } from './deps';
 import { aabbOfPose } from './pose3';
 import { projectPoint, type Viewport3d } from './project';
@@ -49,7 +49,7 @@ function setup() {
     size: () => ({ width: W, height: H }),
     home: () => home,
   };
-  const rig = cameraRig(camera3d);
+  const rig = createCameraRigContribution(camera3d);
   let sel!: SelectionApi;
   function Canvas() {
     sel = useSelection({ mode: 'multiple' });

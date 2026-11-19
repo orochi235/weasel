@@ -7,7 +7,7 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { type Contribution, SceneCanvas, createScene, modeTriggers, useCommand } from '@weasel-js/core';
+import { type Contribution, SceneCanvas, createScene, createModeTriggersContribution, useCommand } from '@weasel-js/core';
 import { createMeasurements, createMeasurementsContribution, useMeasureTool } from '@weasel-js/measure';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 import { useHudContribution } from '@weasel-js/hud/react';
@@ -78,7 +78,7 @@ function Draw({ planted = [] }: { planted?: readonly Contribution[] }) {
   const ambient = useMemo(() => [
     hud,
     modalityShortcuts(machine, { pathToEdit: () => null, selection: () => [] }),
-    modeTriggers(machine.registry, { enter: noop }),
+    createModeTriggersContribution(machine.registry, { enter: noop }),
     colorContribution(() => ({}) as ColorContextValue),
     appCommandsContribution(() => ({}) as AppCommands),
     ...PATHFINDER_KEYMAP,

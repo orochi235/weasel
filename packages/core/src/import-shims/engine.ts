@@ -184,7 +184,7 @@ export { PATH_GEOMETRY_PROJECTION, createGeometryDataOp } from '../interactions/
 export type { GeometryProjection, PoseChange } from '../interactions/actions/geometryProjection';
 export type { InsertDep, InsertEnds, InsertExtras, InsertIntoDep, InsertLive, PathSymmetryDep } from '../interactions/actions/insertDeps';
 export type { CanDropIntoDep, LayoutDep } from '../interactions/actions/layoutDeps';
-export { operandList } from '../interactions/actions/operands';
+export { createOperandList } from '../interactions/actions/operands';
 export type { OperandsDep } from '../interactions/actions/operands';
 export { boundsOffset, nodeDescriptors, poseDescriptorOf } from '../interactions/actions/poseDescriptorDep';
 export { poseFrame, sceneBoxFrames, scenePoseFrame, worldPoseOf, worldPoses } from '../interactions/actions/poseFrame';
@@ -195,7 +195,7 @@ export type { OverlayVisibilityId, ResolvedOverlay } from '../interactions/actio
 export { closeRun, commitRunOps, readRunLifecycle, reduceBehaviorEnd, runBehaviorCancel, runBehaviorSettled, runLifecycleParams } from '../interactions/actions/runLifecycle';
 export type { ClosingRun, OwnEndFields, RunLifecycle, RunLifecycleOptions } from '../interactions/actions/runLifecycle';
 export type { SnapBegin, SnapConstrain, SnapDep, SnapGeometry, SnapMods, SnapOutcome, SnapResizeBox, SnapSession } from '../interactions/actions/snapDep';
-export { commitTransformOps, createTransformCommit, finishTransformOps, transformFinisher, transformPreview } from '../interactions/actions/transformFinish';
+export { commitTransformOps, createTransformCommit, createTransformPreview, finishTransformOps, transformFinisher } from '../interactions/actions/transformFinish';
 export type { TransformFinisher, TransformFollower, TransformPreview, TransformPreviewNode } from '../interactions/actions/transformFinish';
 export { useActionSet, useStandardDeps } from '../interactions/actions/useActionSet';
 export type { StandardDeps } from '../interactions/actions/useActionSet';

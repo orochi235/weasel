@@ -10,7 +10,7 @@ import {
   type PolygonPath, type SpiroContour,
 } from '@weasel-js/geom';
 import { type EditAnchorsDep } from '@weasel-js/core';
-import { pathEditPreview } from '../pathEdit/editAnchors/preview';
+import { createPathEditPreview } from '../pathEdit/editAnchors/preview';
 import { spiroContours, spiroOf } from './spiroShape';
 
 /** Screen-px reach of the curve, as the segment affordance's. */
@@ -64,7 +64,7 @@ function spiroInsertDrag(insert: SpiroInsertAt): OngoingHandle {
     points: [...c.points.slice(0, slot), { x, y, kind: 'smooth' }, ...c.points.slice(slot)],
   })));
   let current: PolygonPath | null = null;
-  const preview = pathEditPreview(dep, id, () => current && { path: current });
+  const preview = createPathEditPreview(dep, id, () => current && { path: current });
   if (!preview) return {};
   const before = [...dep.selectedAnchors];
   dep.setSelectedAnchors([flat]);

@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { findConflicts, findScopedConflicts, formatConflict, reportRouteConflicts } from './conflicts';
 import type { Tool } from '../../types';
 import { activeModeOf, createModeRegistry, type ModeDefinition } from '@weasel-js/modes';
-import { modeShortcuts } from '../../../contributions/modeShortcuts';
+import { createModeShortcutsContribution } from '../../../contributions/modeShortcuts';
 import { rulesExclusive } from '../../../eligibility';
 import { hitPredicate } from '@weasel-js/gestures';
 
@@ -337,7 +337,7 @@ describe('findScopedConflicts — mutually exclusive eligibility', () => {
       modes: [{ id: 'draw', kind: 'soft', allows: [], scoping: false }, exitable('focus'), exitable('review')],
       initial: 'draw',
     });
-    const { actions } = modeShortcuts(registry, { exit: () => {} });
+    const { actions } = createModeShortcutsContribution(registry, { exit: () => {} });
     expect(findScopedConflicts({ registry: [], actions })).toEqual([]);
   });
 
@@ -536,12 +536,12 @@ describe('findScopedConflicts — a mode entry key another mode commits on', () 
   const active = modes.map(activeModeOf);
 
   it('is not flagged when the host says when a mode can be entered', () => {
-    const { actions } = modeShortcuts(registry(), { enter: () => {}, commit: () => {}, canEnter: () => true });
+    const { actions } = createModeShortcutsContribution(registry(), { enter: () => {}, commit: () => {}, canEnter: () => true });
     expect(findScopedConflicts({ registry: [], actions, modes: active })).toEqual([]);
   });
 
   it('is flagged when nothing keeps the entry key out of the other mode', () => {
-    const { actions } = modeShortcuts(registry(), { enter: () => {}, commit: () => {} });
+    const { actions } = createModeShortcutsContribution(registry(), { enter: () => {}, commit: () => {} });
     expect(findScopedConflicts({ registry: [], actions, modes: active })).toHaveLength(1);
   });
 });

@@ -1,13 +1,13 @@
 /**
  * A mode's declared double-click trigger reaches the canvas's dispatcher as a binding on the
- * routing kinds the mode names, installed by the `modeTriggers` contribution.
+ * routing kinds the mode names, installed by the `createModeTriggersContribution` contribution.
  */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { createModeRegistry, DEFAULT_MODES, type ModeDefinition } from '@weasel-js/modes';
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
-import { SceneCanvas, modeTriggers, type ModeTriggerHandlers } from '@weasel-js/core';
+import { SceneCanvas, createModeTriggersContribution, type ModeTriggerHandlers } from '@weasel-js/core';
 import { createScene, asNodeId, createEnteredGroup } from '@weasel-js/core/engine';
 import { drawPreset } from '@weasel-js/editing';
 
@@ -29,10 +29,10 @@ const NOTE: ModeDefinition = {
 };
 const UNTARGETED: ModeDefinition = { id: 'loose', kind: 'soft', allows: [], scoping: false, entry: { trigger: 'double-click-target' } };
 
-describe('modeTriggers', () => {
+describe('createModeTriggersContribution', () => {
   it('binds a double-click on each kind a mode targets, and nothing for a mode with no targets', () => {
     const registry = createModeRegistry({ modes: [DEFAULT_MODES[0]!, NOTE, UNTARGETED], initial: 'normal' });
-    const entry = modeTriggers(registry, { enter: () => {} });
+    const entry = createModeTriggersContribution(registry, { enter: () => {} });
     expect(entry.actions!.map((a) => a.id)).toEqual(['mode.note.trigger']);
     expect(entry.actions![0]!.defaultBinding).toEqual([
       { spec: { kind: 'doubleClick', target: 'kind:text' }, opts: { id: 'mode.note.trigger.doubleClick.text' } },
@@ -42,7 +42,7 @@ describe('modeTriggers', () => {
 
   it('binds nothing without an `enter` to run', () => {
     const registry = createModeRegistry({ modes: [DEFAULT_MODES[0]!, NOTE], initial: 'normal' });
-    expect(modeTriggers(registry, {}).actions).toEqual([]);
+    expect(createModeTriggersContribution(registry, {}).actions).toEqual([]);
   });
 });
 
@@ -67,7 +67,7 @@ function setup(handlers: ModeTriggerHandlers, enteredId?: string) {
   if (enteredId) entered.enter(asNodeId(enteredId));
   const { container } = render(
     <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={200} height={40}
-      ambient={[modeTriggers(registry, handlers)]} modes={registry}
+      ambient={[createModeTriggersContribution(registry, handlers)]} modes={registry}
       enteredGroup={entered} />,
   );
   const canvas = container.querySelector('canvas')!;
@@ -79,7 +79,7 @@ function setup(handlers: ModeTriggerHandlers, enteredId?: string) {
   return { doubleClick, entered };
 }
 
-describe('modeTriggers on a canvas', () => {
+describe('createModeTriggersContribution on a canvas', () => {
   it('enters the mode targeting the kind under a double-click, on the node there', () => {
     const enter = vi.fn();
     setup({ enter }).doubleClick(15);

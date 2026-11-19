@@ -86,7 +86,7 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   but does not flip through it. Retract and Symmetric have no default shortcut.
 - 2026-10-18: `ModeDefinition.entry.targets` names the routing kinds a `'double-click-target'`
   entry takes (`PATH_EDIT` `['path']`, `TEXT_EDIT` none), and core's
-  `modeTriggers(registry, { enter, canEnter })` binds them: ambient tier, so a tool that binds the
+  `createModeTriggersContribution(registry, { enter, canEnter })` binds them: ambient tier, so a tool that binds the
   double-click itself (pen, spiro, slice finishing) now wins where draw's `onDoubleClick` observer
   used to enter path-edit alongside it.
 - 2026-10-18: `<SceneCanvas isPointerInteractive>` now gates every point hit, not only the
@@ -323,7 +323,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   inside `batch` or `untracked`.
 - 2026-10-12: A removal deselects its nodes. A replayed op whose node is gone is skipped. An
   adapter whose layer list changes must implement `subscribeLayers`. `/clone` exports types only.
-  New layouts: `slots`, `pack`, `quadtree`, and `perContainer`.
+  New layouts: `slots`, `pack`, `quadtree`, and `createPerContainerStrategy`.
 - 2026-10-13: `TargetTransform` is `{ identity, toWorld, toLocal }` and `annulusSemiAxes` takes
   one, so chrome follows a pose's `transform`. A pre-built `{ layer }` in `<SceneCanvas layers>`
   paints.

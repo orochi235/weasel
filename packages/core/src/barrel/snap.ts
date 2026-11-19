@@ -7,7 +7,7 @@ export type {
   SnapAnchors, SnapMarks, SnapProbeAt, SnapReadoutStyle, SnapSide, SnapSource, SourceCandidate,
 } from '../domains/snap/types';
 export { SNAP_ANGLE_STEP, SNAP_AXIS_STEP, SNAP_ROLE_MODS, SNAP_ROLES, snapMods } from '../domains/snap/roles';
-export { spanSnap, type SpanSnap } from '../domains/snap/spanSnap';
+export { createSpanSnap, type SpanSnap } from '../domains/snap/spanSnap';
 export { createSnapOutcomeStore, type SnapOutcomeStore } from '../domains/snap/outcomeStore';
 export {
   assertSnapSourceIds, gatherSnapCandidates, resolveHolding, resolvedSnapMarks, snapSourcesFor,

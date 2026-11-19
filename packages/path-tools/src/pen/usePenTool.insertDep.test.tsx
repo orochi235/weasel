@@ -4,11 +4,9 @@ import { usePenTool } from './usePenTool';
 import type { RectPose, Scene, SelectionApi, Tool } from '@weasel-js/core';
 import { DepRegistryProvider, useDepRegistry, useDepSource, type DepRegistry } from '@weasel-js/routing/react';
 import { createActionDeps } from '@weasel-js/routing';
-import {
-  hitTestRectForTests as hitTestRect, useEditAnchorsDepSourceForTests as useEditAnchorsDepSource,
-} from '@weasel-js/core/test-seams';
+import { useEditAnchorsDepSourceForTests as useEditAnchorsDepSource } from '@weasel-js/core/test-seams';
 import { useInsertDepSource } from '@weasel-js/editing';
-import { createScene, defaultCommitAdapter } from '@weasel-js/core';
+import { createScene, defaultCommitAdapter, hitTestRect } from '@weasel-js/core';
 
 describe('usePenTool — through the kit insert dep', () => {
   it('inserts a finished path and selects it as one undo step, reading only deps it declares', () => {

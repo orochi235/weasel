@@ -10,7 +10,7 @@ import {
 } from '@weasel-js/core';
 import type { EasingFn } from '@weasel-js/animator';
 import { easeInOutQuad, lerp } from '@weasel-js/geom';
-import { forceRelaxation, type ForceOptions } from './force';
+import { createForceRelaxation, type ForceOptions } from './force';
 import type { Graph } from './graph';
 import { center, type LayoutFn, type LayoutOptions, type LayoutResult } from './layout';
 
@@ -75,7 +75,7 @@ export function forceProducer<TPose>(
   opts: ForceProducerOptions<TPose> = {},
 ): LiveLayoutProducer<TPose> {
   const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
-  const relaxation = forceRelaxation(graph, opts);
+  const relaxation = createForceRelaxation(graph, opts);
   const dragAlpha = opts.dragAlpha ?? 0.3;
   const restDistance = opts.restDistance ?? REST_DISTANCE;
   const restTicks = opts.restTicks ?? REST_TICKS;

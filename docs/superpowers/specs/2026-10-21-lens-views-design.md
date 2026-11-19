@@ -17,7 +17,7 @@ weasel has four things that each show part of something, somewhere else:
 | The hud loupe (`createLoupe`) | `packages/hud/src/loupe` | `SceneCanvasApi.addView` plus a viewport layer, camera derived from the pointer |
 | Parked lenses (forge's workshop) | `packages/labkit/src/loupe/lens`, `packages/forge/src/shell/loupe` | a scene of body, reticle and leader nodes painted into labkit's surface `top` buffer, showing DOM through sources |
 | Picture-in-picture | core's `<CanvasView>` | a viewport node with its own camera, optionally nested (`parent`) with a derived camera |
-| The minimap | `packages/minimap` | a view through a fit camera, an indicator layer, and `minimapPanAction` |
+| The minimap | `packages/minimap` | a view through a fit camera, an indicator layer, and `createMinimapPanAction` |
 
 Each answers the same questions — what it looks at, where it shows it, and how the two are linked on
 screen — in its own way, so nothing one learns (multiple instances, undo, split/compare, a draggable
@@ -153,7 +153,7 @@ arc's plan names a change.
 | PiP | the `<CanvasView>` rect | its camera | camera | optional: its aim in the root view |
 | minimap | its rect | everything, fitted | aim (fit) | the root view's aim inside it, draggable |
 
-- **Minimap:** the indicator layer and `minimapPanAction` give way to an interactive `ViewMarker`
+- **Minimap:** the indicator layer and `createMinimapPanAction` give way to an interactive `ViewMarker`
   (or a contribution's `markers`) of the root view's aim; `computeFitView` becomes the minimap's aim.
   `<MinimapCanvas>` on a second canvas element keeps working, drawing the main view's aim from an
   `AimSource` fed the main camera through props and the `rootView` dep. Having no view registry, it grabs

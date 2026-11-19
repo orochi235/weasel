@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { CURRENT_DOCUMENT_VERSION } from '../state/document';
 import { labPrefix } from '../state/labRecords';
-import { indexedDbAdapter, resetDefaultStorage } from '../state/labStorage';
+import { labIndexedDbAdapter, resetDefaultStorage } from '../state/labStorage';
 import { Lab } from './Lab';
 import { LabContext, type LabContextValue } from './LabContext';
 
@@ -96,7 +96,7 @@ describe('<Lab> with a storageKey', () => {
     act(() => labRef?.setMode('light'));
     view.unmount();
     await waitFor(async () => {
-      const records = new Map(await indexedDbAdapter.list(labPrefix('idb-lab')));
+      const records = new Map(await labIndexedDbAdapter.list(labPrefix('idb-lab')));
       expect(records.get(`${labPrefix('idb-lab')}meta`)).toMatchObject({ mode: 'light' });
     });
   });

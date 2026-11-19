@@ -10,7 +10,7 @@ import { useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
-import { SceneCanvas, modeTriggers, createScene, asNodeId, type SelectionApi } from '@weasel-js/core';
+import { SceneCanvas, createModeTriggersContribution, createScene, asNodeId, type SelectionApi } from '@weasel-js/core';
 import { drawPreset } from '@weasel-js/editing';
 import { useSelection } from '../../selection/useSelection';
 
@@ -44,7 +44,7 @@ async function mount() {
     sel = useSelection({ mode: 'multiple' });
     return (
       <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={300} height={100} selection={sel}
-        ambient={[modeTriggers(registry, { enter })]} modes={registry}>
+        ambient={[createModeTriggersContribution(registry, { enter })]} modes={registry}>
         <Probe />
       </SceneCanvas>
     );

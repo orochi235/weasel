@@ -52,7 +52,7 @@ export function finishPathEditFrame(
  * so a path drawn from a form is drawn again from the edited form on every
  * move.
  */
-export function pathEditPreview(
+export function createPathEditPreview(
   dep: EditAnchorsDep,
   id: string,
   current: () => PathEditFrame | null,
