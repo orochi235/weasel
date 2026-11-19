@@ -55,6 +55,14 @@ async function mount() {
   return canvas;
 }
 
+/** Glide rows shows only on a wallpaper whose glide is on. */
+async function showGlideRows() {
+  act(() => { fireEvent.click(screen.getByRole('button', { name: /Kind$/ })); });
+  act(() => { fireEvent.click(screen.getByRole('option', { name: 'Wallpaper' })); });
+  const glide = screen.getByRole('checkbox', { name: 'Glide' });
+  if (!(glide as HTMLInputElement).checked) await userEvent.click(glide);
+}
+
 describe('SymmetryLabDemo', () => {
   it('keeps the petal its own mirror image when its tip handle is dragged', async () => {
     const canvas = await mount();
@@ -92,6 +100,8 @@ describe('SymmetryLabDemo', () => {
 
   it('turns the glide onto rows and back from its checkbox', async () => {
     await mount();
+    expect(screen.queryByRole('checkbox', { name: 'Glide rows' })).toBeNull();
+    await showGlideRows();
     const rows = screen.getByRole('checkbox', { name: 'Glide rows' });
     expect(rows).not.toBeChecked();
     await userEvent.click(rows);
@@ -103,6 +113,7 @@ describe('SymmetryLabDemo', () => {
   it('takes back a panel edit, panel and group together, in one Undo', async () => {
     const errors = vi.spyOn(console, 'error');
     await mount();
+    await showGlideRows();
     await userEvent.click(screen.getByRole('checkbox', { name: 'Glide rows' }));
     await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(screen.getByRole('checkbox', { name: 'Glide rows' })).not.toBeChecked();
