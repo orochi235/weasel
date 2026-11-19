@@ -35,7 +35,7 @@ export const averageAnchorsAction: Action & { requires: string[] } = {
     { key: 'x', label: 'Line anchors up vertically', params: { axis: 'x' } },
     { key: 'y', label: 'Line anchors up horizontally', params: { axis: 'y' } },
   ],
-  // Illustrator's Mod+Alt+J is Chrome's console. `code` too: with Alt held on
+  // Shift, since Mod+Alt+J is Chrome's console. `code` too: with Alt held on
   // a Mac the key reads as another glyph.
   defaultBinding: [{
     spec: { kind: 'key', key: 'j', code: 'KeyJ', mods: { mod: true, alt: true, shift: true }, phase: BETWEEN_GESTURES },

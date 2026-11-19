@@ -93,7 +93,7 @@ function readPattern(el: Element, onWarn?: (m: string) => void): Paint | null {
   const image = raw ? null : readImagePattern(el);
   if (image) return image;
   if (!raw) {
-    // A hand-authored pattern (Illustrator, Inkscape) holds arbitrary
+    // A hand-authored or exported pattern holds arbitrary
     // geometry no `TilePatternSpec` can express.
     onWarn?.(`<pattern id="${el.getAttribute('id')}"> has no data-weasel-tile — unsupported pattern, dropped`);
     return null;

@@ -167,7 +167,7 @@ export const PAINT_KINDS = {
       + `<path d="M${mid(7)} ${mid(7)}H${mid(11)}V${mid(11)}H${mid(7)}Z" stroke-linejoin="miter"/>`;
   })(),
 
-  // Illustrator's convention, and the one glyph in the set that is an empty
+  // A box crossed by a slash, the one glyph in the set that is an empty
   // box rather than a mass of ink — the absence of paint should not look like
   // one of the paints. The slash is the theme's danger red rather than
   // `currentColor`: it stays red on a selected segment, which is what makes

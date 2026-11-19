@@ -201,7 +201,7 @@ export function referenceGaps(bounds: Bounds, measured: readonly MeasuredGap[]):
 }
 
 /**
- * Match a box against the gaps between `targets`, Figma's "equal spacing":
+ * Match a box against the gaps between `targets` for equal spacing:
  * on each axis, find where the box's gap to a neighbor equals a gap that
  * already exists between two other boxes, or where it sits centered between
  * its two neighbors. `moving` says which edges move on each axis — `'both'`

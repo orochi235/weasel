@@ -57,7 +57,7 @@ Two distinct roles for modifier keys:
 - **Tool-internal modifiers** (shift constrains marquee to square; alt resizes from center; shift snaps pen to angle): always available as flags via `ctx.modifiers.shift / .alt / .ctrl / .meta`. The active tool reads them and changes behavior. Never trigger a tool switch.
 - **Modifier-slot triggers** (space → hand): only engage when **no gesture is active**. Mid-gesture, the modifier-slot key is ignored as a trigger; if the active tool wants to read it, it can, but the modifier-slot tool stays dormant.
 
-Once a gesture starts, modifiers from that point on are flags only. This matches Photoshop/Illustrator behavior and keeps drags un-interruptible by stray key presses.
+Once a gesture starts, modifiers from that point on are flags only. This keeps drags un-interruptible by stray key presses.
 
 ### Gesture interruption
 

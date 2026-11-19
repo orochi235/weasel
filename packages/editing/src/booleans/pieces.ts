@@ -33,7 +33,7 @@ export function booleanPieces(op: BooleanOp, paths: Path[], mergeKey: (index: nu
     case 'exclude':
     case 'subtract':  pieces = whole(booleanOfPaths(op, paths)); break;
     case 'divide':    pieces = bySource(pathDividePieces(...paths)); break;
-    // Illustrator "Crop": every source below the topmost, clipped to it; the
+    // Crop: every source below the topmost, clipped to it; the
     // topmost is consumed as the mask.
     case 'crop':      pieces = bySource(pathCropPieces(...paths)); break;
     case 'trim':      pieces = bySource(pathTrim(...paths)); break;

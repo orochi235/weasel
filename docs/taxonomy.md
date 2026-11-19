@@ -1055,7 +1055,7 @@ A document is in one of two **modes**, read from its scene's structure, never st
 
 | Mode | The scene | Prior art |
 |---|---|---|
-| **Continuous** | No page run. An infinite plane, or a kernel3d scene's space. | Figma's canvas, a whiteboard |
+| **Continuous** | No page run. An infinite plane, or a kernel3d scene's space. | an infinite design canvas, a whiteboard |
 | **Pages** | A page run among its roots. | Word (a column), a PDF scrolled sideways (a row) |
 
 **Pages are containers** (decided 2026-11-02). The **page run** is a root group with a `pageRun` field, laid out
@@ -1099,8 +1099,8 @@ run, moves each root into the page holding it in that page's frame, and drops th
 a second call does nothing. Draw and chart sessions saved that way load without their undo history.
 
 Rejected, so nobody re-proposes them: keeping the `core:pages` value beside page nodes (two models of a page);
-a mode that only the editor shell knows. **Positionable artboards** (pages placed and sized freely, as in
-Illustrator) are deferred (2026-11-02); they would be another layout policy on the same run, not a new model.
+a mode that only the editor shell knows. **Positionable artboards** (pages placed and sized freely) are
+deferred (2026-11-02); they would be another layout policy on the same run, not a new model.
 
 ### View / ViewTransform
 

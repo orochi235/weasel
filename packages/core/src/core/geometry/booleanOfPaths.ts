@@ -6,8 +6,8 @@ import type { Path, PolygonPath } from '@weasel-js/geom';
 export type BooleanShapeOp = 'union' | 'intersect' | 'subtract' | 'exclude';
 
 /**
- * `op` over `paths`, given back to front, as one path. Subtract is
- * Illustrator's "Minus Front": the backmost less everything in front of it.
+ * `op` over `paths`, given back to front, as one path. Subtract takes the
+ * backmost less everything in front of it.
  * Curves are kept where an operand has them.
  */
 export function booleanOfPaths(op: BooleanShapeOp, paths: readonly Path[]): PolygonPath {

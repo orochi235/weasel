@@ -59,7 +59,7 @@ Roles are explicit, not order-dependent. Tools see two distinct hit regions. Ser
 Rejected alternatives:
 
 - **A. Function on a container** (extend `clipFromPose`). Doesn't generalize — most interesting masks (alpha gradients, image masks, scene-subtree masks) aren't pose-derivable.
-- **B. Flagged child node** (Figma's `isMask: true`, Illustrator's "topmost child"). Role-by-convention; reorder accidents. Conflates structural position with semantic role.
+- **B. Flagged child node** (an `isMask: true` flag, or "the topmost child is the mask"). Role-by-convention; reorder accidents. Conflates structural position with semantic role.
 - **C. Referenced node** (SVG `<mask>` referenced from elsewhere). Breaks the tree invariant. Mask reuse is real but better solved by a general symbol/instance primitive.
 
 ## Container fields
@@ -80,7 +80,7 @@ interface MaskedGroup<TData, TLayer, TPose> extends ContainerNode<...> {
 
 Two supported:
 
-- **`alpha`** (default) — read the mask subtree's rendered alpha channel. Opaque pixels in the mask reveal the content; transparent pixels hide it. Modern intuitive default. Matches Photoshop layer masks, Figma masks, modern SVG `<mask>` with `mask-type="alpha"`.
+- **`alpha`** (default) — read the mask subtree's rendered alpha channel. Opaque pixels in the mask reveal the content; transparent pixels hide it. Modern intuitive default. Matches SVG `<mask>` with `mask-type="alpha"`.
 - **`luminance`** — read the mask subtree's rendered grayscale (luminance), treating brightness as alpha. SVG's historical default, useful for grayscale-image masks.
 
 No third "coverage" option. Hard-coverage clipping is the stencil-based `clipFromPose` path; using `MaskedGroup` for binary clipping is fine but wasteful unless the renderer optimizer recognizes the case (see Optimizer note).
@@ -147,7 +147,7 @@ Inside `mask-edit`, the `mask` subtree becomes hit-testable; the `content` subtr
 
 ## Creation UX
 
-- **"Make Mask" command** (layer-list right-click, `Object > Mask > Make` menu, or a keybinding). With ≥2 selected nodes: the topmost becomes the `mask`, the rest become `content`, wrapped in a new `MaskedGroup`. Mirrors Illustrator's `Object > Clipping Mask > Make`.
+- **"Make Mask" command** (layer-list right-click, `Object > Mask > Make` menu, or a keybinding). With ≥2 selected nodes: the topmost becomes the `mask`, the rest become `content`, wrapped in a new `MaskedGroup`.
 - **"Release Mask"** unwraps a `MaskedGroup`: the `mask` and `content` subtrees become children of the `MaskedGroup`'s parent, with the mask placed topmost. Inverse of Make.
 - Drag-into-slot in the layer list (drop a node onto the `mask` row vs. the `content` row of a `MaskedGroup`) is a later affordance.
 

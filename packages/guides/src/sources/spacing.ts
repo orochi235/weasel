@@ -51,7 +51,7 @@ function gapMark(g: SpacingGap, color: string | undefined, magnification: number
 }
 
 /**
- * Equal spacing as snap targets, Figma's: on each axis, the positions of the
+ * Equal spacing as snap targets: on each axis, the positions of the
  * subject's box that make its gap to a neighbor equal one already between
  * two siblings, or center it between its two neighbors. A resize moves only
  * the sides it drags; on a turned or skewed box, the sides of its
