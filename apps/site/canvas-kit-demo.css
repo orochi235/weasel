@@ -437,8 +437,7 @@ a:hover { text-decoration: underline; }
 
 .ckd-source {
   padding: var(--wzl-space-6) var(--wzl-space-7);
-  overflow: auto;
-  max-height: 60vh;
+  overflow-x: auto;
 }
 
 .ckd-source-loading {
@@ -611,9 +610,6 @@ a:hover { text-decoration: underline; }
   .ckd-main {
     padding: 20px var(--wzl-space-8) 32px;
     overflow-y: visible;
-  }
-  .ckd-source {
-    max-height: 50vh;
   }
 }
 

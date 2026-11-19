@@ -79,3 +79,10 @@ test('running text is set in the body face, and headings and chrome in Oswald', 
   expect(face('.ckd-canvas-wrap button')).toBe('Oswald');
   expect(face('.ckd-canvas-wrap select')).toBe('Oswald');
 });
+
+test('a long code listing grows to its full height, so only the page scrolls', () => {
+  const source = styled('ckd-source');
+  el?.append(Object.assign(document.createElement('pre'), { textContent: 'line\n'.repeat(400) }));
+  expect(source.maxHeight).toBe('none');
+  expect(el?.scrollHeight).toBe(el?.clientHeight);
+});
