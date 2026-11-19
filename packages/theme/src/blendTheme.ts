@@ -1,5 +1,5 @@
 import { mixRgbaWeighted, parseColor, rgbaToHex } from '@weasel-js/paint';
-import { trimNumber } from '@weasel-js/geom';
+import { maxOf, minOf, trimNumber } from '@weasel-js/geom';
 import { getOwn, setOwn } from '@weasel-js/registry';
 import { fullAxisChoice, type AxisChoice } from './axes.ts';
 import { readCssNumber } from './cssNumber.ts';
@@ -29,7 +29,7 @@ function blendNumbers(members: readonly Weighted[]): string | undefined {
   // Shares, not raw weights: a weighted sum of two lengths near the double range's end overflows.
   const mean = reads.reduce((sum, r) => sum + r.value * (r.weight / total), 0);
   const values = reads.map((r) => r.value);
-  return `${trimNumber(Math.min(Math.max(...values), Math.max(Math.min(...values), mean)), 4)}${unit}`;
+  return `${trimNumber(Math.min(maxOf(values), Math.max(minOf(values), mean)), 4)}${unit}`;
 }
 
 function blendColors(members: readonly Weighted[]): string | undefined {
@@ -66,7 +66,7 @@ export function blendTheme(theme: Theme, weights: AxisWeights, selection: AxisCh
     const infinite = positive.filter(([, share]) => share === Infinity);
     const given = infinite.length > 0 ? infinite.map(([value]) => [value, 1] as const) : positive;
     // Normalized per axis, so shares near the double range's ends neither overflow their sum nor underflow their product.
-    const most = Math.max(...given.map(([, share]) => share));
+    const most = maxOf<readonly [string, number]>(given, ([, share]) => share);
     const total = given.reduce((t, [, share]) => t + share / most, 0);
     at = at.flatMap((one) => given.map(([value, share]) => ({ selection: { ...one.selection, [axis]: value }, weight: one.weight * (share / most / total) })));
   }

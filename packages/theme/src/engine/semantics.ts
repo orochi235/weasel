@@ -6,6 +6,7 @@ import type { RawToken, TokenValue } from '../dtcg/types.ts';
 import { contrast, toLch } from './color/oklch.ts';
 import { checkProblem, ruleProblem } from './ruleShape.ts';
 import type { Issue } from './types.ts';
+import { maxOf, minOf } from '@weasel-js/geom';
 
 const HEX = /^#[0-9a-f]{6}$/i;
 const MAX_DEPTH = 32;
@@ -189,9 +190,9 @@ function deriveOne(name: string, r: SemanticRule, ctx: SemanticContext, env: Env
     const meanL = surfaces.reduce((sum, l) => sum + l, 0) / surfaces.length;
     const last = steps.length - 1;
     const sign = Math.abs(L[last] - meanL) >= Math.abs(L[0] - meanL) ? 1 : -1;
-    const lo = Math.min(...surfaces);
-    const hi = Math.max(...surfaces);
-    const worst = (i: number) => Math.min(...against.map((hex) => contrast(colors[i]!, hex!)));
+    const lo = minOf(surfaces);
+    const hi = maxOf(surfaces);
+    const worst = (i: number) => minOf(against, (hex) => contrast(colors[i]!, hex!));
     /** From the first step past every surface toward one ramp end, to that end. */
     const walk = (toLast: boolean) => {
       const order = steps.map((_, i) => (toLast ? i : last - i));
