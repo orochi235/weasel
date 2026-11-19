@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import type { LoupePoint } from './lensTypes';
 
 /** What {@link useLabBody} gives a loupe mounted as a lab contribution. */

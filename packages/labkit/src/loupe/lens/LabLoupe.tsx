@@ -37,7 +37,6 @@ export function LabLoupe() {
   const remeasured = useMemo(() => [live], [live]);
   useLensRemeasure(remeasured, body, rerender);
 
-
   return (
     <>
       <span hidden ref={attachMarker} />
