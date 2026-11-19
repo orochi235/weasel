@@ -1,6 +1,6 @@
 /**
  * Hostile input for the readers of saved data: JSON-ish junk, and a valid value with one field dropped,
- * duplicated or retyped. Test-only: nothing in the package imports it.
+ * duplicated or retyped. Test-only: no package source imports it.
  */
 import fc from 'fast-check';
 

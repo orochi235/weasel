@@ -12,7 +12,7 @@ import { createScene, sceneFromJSON } from '../scene';
 import { SnapshotKeyError, SnapshotShapeError } from '../scene/snapshotShape';
 import { decodeSnapshot, parseSnapshot } from './codec';
 import { decodeSceneDocument, encodeSceneDocument, restorePairedHistory } from './sceneDocument';
-import { junk, mutate, mutated, prototypePolluted } from './hostile.fixture';
+import { junk, mutate, mutated, prototypePolluted } from '@weasel-js/registry/testing/hostile.fixture';
 
 const RUNS = 200;
 
