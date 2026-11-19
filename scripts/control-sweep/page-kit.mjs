@@ -259,6 +259,18 @@ export function installSweepKit(win) {
     return { dom, canvases, names };
   };
 
+  /** A short description of the element at each digest path, for a person reading what changed. */
+  const describePaths = (rootSel, paths) => {
+    const root = doc.querySelector(rootSel);
+    return paths.map((path) => {
+      let el = root;
+      for (const i of path.split('.').slice(1)) el = el?.children[Number(i)];
+      if (!el) return `${path}: gone`;
+      const cls = String(el.className?.baseVal ?? el.className ?? '').split(' ').filter(Boolean)[0];
+      return `${el.tagName.toLowerCase()}${cls ? `.${cls}` : ''}${el.getAttribute('aria-label') ? `[${el.getAttribute('aria-label')}]` : ''} "${text(el).slice(0, 30)}"`;
+    });
+  };
+
   /** What a control holds now: a slider's or field's value and range, a checkbox's state. */
   const state = (id) => {
     const el = byId(id);
@@ -306,5 +318,5 @@ export function installSweepKit(win) {
     }));
   };
 
-  w.__sweep = { discover, capture, digest, state, markHit, popupItems, fieldById, bigCanvas };
+  w.__sweep = { discover, capture, digest, state, markHit, popupItems, fieldById, bigCanvas, describePaths };
 }

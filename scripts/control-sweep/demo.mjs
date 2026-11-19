@@ -6,7 +6,7 @@ import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { RESTLESS_TRIES, STEADY_TRIES, capture, discover, hash, load, prepare, settle } from './capture.mjs';
 import { animationFlips, compareCaptures, fingerprintOf, sameSteadyState, slug, verdictOf } from './judge.mjs';
-import { menuItemsOf, operate } from './operate.mjs';
+import { ROOT, kit, menuItemsOf, operate } from './operate.mjs';
 import { probeGesture } from './probe.mjs';
 
 /** The demo's box as a JPEG: evidence for a person, so small beats exact. */
@@ -55,6 +55,7 @@ const trial = async (page, demo, c, ctx) => {
   if (a.left) return { rec: record(demo, c, { verdict: 'skipped', reason: a.left, ms: Date.now() - t0 }), reload: true, revealed: [] };
   const cmp = compareCaptures(a.before0, a.before1, a.after);
   let { verdict, reason } = verdictOf(cmp);
+  const domChanges = cmp.domPaths.length ? await kit(page, 'describePaths', ROOT, cmp.domPaths.filter((p) => p !== 'popups')) : [];
   if (verdict === 'unsure') {
     await settle(page, ctx.settleMs);
     const flips = animationFlips(a.before0, a.before1, a.after, await capture(page, live.id));
@@ -76,7 +77,7 @@ const trial = async (page, demo, c, ctx) => {
   const fp = (x) => fingerprintOf(x, hash);
   return {
     rec: record(demo, c, {
-      verdict, ...(reason ? { reason } : {}), compared: cmp,
+      verdict, ...(reason ? { reason } : {}), compared: cmp, ...(domChanges.length ? { domChanges } : {}),
       fingerprints: { before: fp(a.before1), after: fp(a.after) },
       ms: Date.now() - t0, operateMs: a.operateMs, ...(shots ? { shots } : {}),
     }),

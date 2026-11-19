@@ -27,7 +27,9 @@ export const settle = async (page, ms) => {
 export const capture = async (page, id) => {
   const snap = await kit(page, 'capture', ROOT, id ?? null);
   const canvases = [];
-  for (const clip of snap.canvases) canvases.push(hash(await page.screenshot({ clip, caret: 'hide' })));
+  // A clip shows whatever is on screen there, so a canvas under the control would show its thumb move.
+  const mask = id ? [page.locator(`[data-sweep-field="${id}"]`)] : [];
+  for (const clip of snap.canvases) canvases.push(hash(await page.screenshot({ clip, mask, caret: 'hide' })));
   return { dom: snap.dom, canvases, names: snap.names };
 };
 

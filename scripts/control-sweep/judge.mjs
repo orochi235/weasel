@@ -30,7 +30,7 @@ export const compareCaptures = (before0, before1, after) => {
     if (before0.canvases[i] !== before1.canvases[i]) animated.push(i);
     else if (before1.canvases[i] !== after.canvases[i]) canvasChanged.push(i);
   }
-  return { domChanged: domChanged.length, canvasChanged, animated, volatile: volatile.size };
+  return { domChanged: domChanged.length, domPaths: domChanged.slice(0, 8), canvasChanged, animated, volatile: volatile.size };
 };
 
 /** `alive` when anything steady changed, `unsure` when only an animating canvas could have shown it, else `dead`. */
