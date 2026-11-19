@@ -10,7 +10,7 @@ export function useViewportWithoutView(viewport: SceneCanvasViewport | undefined
     && Object.entries(viewport).some(([key, value]) => key !== 'recenter' && value !== undefined);
   useEffect(() => {
     if (unread && isDev()) {
-      console.warn('[SceneCanvas] `viewport` configures viewPreset, which is not in `features`: wheel, pinch, and the zoom keys do nothing.');
+      console.warn('[SceneCanvas] `viewport` configures the view preset (`view`, from @weasel-js/core/presets), which is not in `features`: wheel, pinch, and the zoom keys do nothing.');
     }
   }, [unread]);
 }

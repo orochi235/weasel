@@ -305,14 +305,14 @@ describe('<SceneCanvas features>', () => {
     const { tools, seen } = mount({ viewport: { pan: true } });
     expect(Object.keys(tools().registry)).toEqual([]);
     for (const id of ['viewport.wheelPan', 'viewport.zoom', 'viewport.touchZoom', 'viewport.dragPan']) expect(seen.actionIds).not.toContain(id);
-    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/`viewport` configures corePresets.view/));
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/`viewport` configures the view preset/));
     warn.mockRestore();
   });
 
   it('a viewport holding only recenter does not warn: the view dep carries it without corePresets.view', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     mount({ viewport: { recenter: () => undefined } });
-    expect(warn).not.toHaveBeenCalledWith(expect.stringMatching(/`viewport` configures corePresets.view/));
+    expect(warn).not.toHaveBeenCalledWith(expect.stringMatching(/`viewport` configures the view preset/));
     warn.mockRestore();
   });
 
