@@ -1577,6 +1577,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/ScaleDemo').then((m) => m.ScaleDemo),
     path: 'apps/site/demos/ScaleDemo.tsx',
   },
+  {
+    id: 'pdf',
+    title: 'PDF from draw commands',
+    package: 'pdf',
+    description: 'One list of draw commands, a solid rect, an ellipse under a linear gradient, and a stroked curve, painted on a `<DrawCanvas>` and written to a one-page PDF by `writePdf([{ width, height, commands, label }], { fonts: registryFontSource, title })`. Write PDF runs it and offers the bytes as a download link; nothing saves on its own. Each shape is written as a vector, the gradient as a PDF shading, and anything the writer had to leave out comes back in `skipped` and shows beside the link.',
+    hint: 'Press Write PDF, download the file, and open it: zoom in on the curve and it stays sharp.',
+    load: () => import('./demos/PdfDemo').then((m) => m.PdfDemo),
+    path: 'apps/site/demos/PdfDemo.tsx',
+  },
 ];
 
 export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({
