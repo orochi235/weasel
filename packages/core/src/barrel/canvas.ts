@@ -122,8 +122,8 @@ export type { CanvasHelpers, CanvasViewHelpers, CanvasSurfaceHelpers } from '../
 export type { StandardSlotName, CustomLayerEntry } from '../canvas/layerSlots';
 export type { CanvasExtensionApi, CanvasIdReadOptions, CanvasViewHandle, SceneCanvasApi, ViewAt } from '../canvas/canvasExtension';
 // The in-flight gesture seam behind `CanvasHelpers.getGestureBounds()` /
-// `subscribeGestures()`. `<SceneCanvas>` wires it from its dispatcher; bare
-// `<Canvas>` consumers can supply their own.
+// `subscribeGestures()`. `<SceneCanvas>` wires it from its dispatcher; the types
+// are exported because `CanvasProps.gestureSource` names them.
 export type { GestureSource, GesturePreviewSource } from '../canvas/gestureBounds';
 export { resolvePreviews, flattenPreviews } from '../interactions/actions/resolvePreviews';
 export type { PreviewNode } from '../interactions/actions/resolvePreviews';
