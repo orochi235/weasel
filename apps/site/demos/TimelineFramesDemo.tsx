@@ -71,7 +71,10 @@ export function TimelineFramesDemo() {
       });
       for await (const frame of frames) {
         if (frame.index > 0) await new Promise((resolve) => setTimeout(resolve, DOWNLOAD_GAP_MS));
-        downloadBlob(await rasterToPng(frame.image), `frame-${String(frame.index).padStart(3, '0')}.png`);
+        const png = await rasterToPng(frame.image);
+        // Cancel can land during either wait; the generator only sees it at its next pull.
+        ac.signal.throwIfAborted();
+        downloadBlob(png, `frame-${String(frame.index).padStart(3, '0')}.png`);
       }
       setStatus('saved');
     } catch (e) {
