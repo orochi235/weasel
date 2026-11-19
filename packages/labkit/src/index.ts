@@ -174,12 +174,12 @@ export type {
   CanvasStackContextValue,
   CanvasStackProps,
   CanvasStackSurface,
+  LabZoomAtOptions,
   OrbitProps,
   StageProps,
   ViewportSize,
   WorldFrame,
   WorldSpec,
-  ZoomAtOptions,
   ZoomRange,
 } from './canvas';
 export {
@@ -195,13 +195,13 @@ export {
   createCameraRegistry,
   DEFAULT_FRAME,
   fitStage,
+  labScreenToWorld,
+  labWorldToScreen,
+  labZoomAt,
   Orbit,
   resolveFrame,
   Stage,
-  screenToWorld,
   usePublishCamera,
-  worldToScreen,
-  zoomAt,
 } from './canvas';
 export * from './chrome';
 export * from './clock';

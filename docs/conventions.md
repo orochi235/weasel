@@ -105,7 +105,7 @@ walk, because a bare-adapter consumer has no selection parent-folding to fold
 them back in.
 
 In labkit, modes, d3, paint, and ui:
-labkit's camera (`worldToScreen`, `zoomAt`, `centerOn`, `clampZoomAbout`) is a
+labkit's camera (`labWorldToScreen`, `labZoomAt`, `centerOn`, `clampZoomAbout`) is a
 pan/zoom/`yDir` view model, not affine kernel math. labkit's `fitView` anchors at
 the origin where `TrialOverview`'s `fitRect` centers with padding. `toShape`
 collapses a zero-size axis to 0 where `rectToRect` keeps scale 1, and Plot2D's

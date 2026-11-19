@@ -6,7 +6,7 @@ import {
   type PixelSource,
 } from '@weasel-js/loupe';
 import { centerOn } from '../canvas/camera';
-import { screenToWorld } from '../canvas/canvasCoords';
+import { labScreenToWorld } from '../canvas/canvasCoords';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { DEFAULT_FRAME, resolveFrame, type WorldFrame, type WorldSpec } from '../canvas/worldSpec';
 import type { ViewTransform2D } from '../instrument/types';
@@ -36,7 +36,7 @@ export function lensCamera(
 ): LensCamera {
   const extent = loupeExtent(size);
   const frame = resolveFrame(worldSpec, extent);
-  const world = screenToWorld(aim, outer, outerFrame);
+  const world = labScreenToWorld(aim, outer, outerFrame);
   return { view: centerOn(world, outer.zoom * factor, extent, frame), frame };
 }
 

@@ -1,30 +1,27 @@
+import { viewScreenToWorld, viewWorldToScreen } from '@weasel-js/core';
 import type { Point, ViewTransform2D } from '../instrument/types';
+import { frameLocalToWorld, toCameraView } from './cameraView';
 import { DEFAULT_FRAME, type WorldFrame } from './worldSpec';
 
-/** Project a world point into screen coordinates under a view.
+/** Project a world point into screen coordinates under a labkit view: core's
+ *  `viewWorldToScreen` through {@link toCameraView}.
  *
  *  `frame` is the instrument's declared coordinate system, resolved against the
  *  viewport; omitting it gives labkit's original one — origin at the top-left,
  *  y downward. */
-export function worldToScreen(
+export function labWorldToScreen(
   world: Point,
   view: ViewTransform2D,
   frame: WorldFrame = DEFAULT_FRAME,
 ): Point {
-  return {
-    x: frame.originPx.x + view.pan.x + world.x * view.zoom,
-    y: frame.originPx.y + view.pan.y + world.y * view.zoom * frame.yDir,
-  };
+  return viewWorldToScreen(toCameraView(view, frame), frameLocalToWorld(world, frame));
 }
 
-/** Unproject a screen point back to world coordinates under a view. */
-export function screenToWorld(
+/** Unproject a screen point back to world coordinates under a labkit view. */
+export function labScreenToWorld(
   screen: Point,
   view: ViewTransform2D,
   frame: WorldFrame = DEFAULT_FRAME,
 ): Point {
-  return {
-    x: (screen.x - frame.originPx.x - view.pan.x) / view.zoom,
-    y: (screen.y - frame.originPx.y - view.pan.y) / (view.zoom * frame.yDir),
-  };
+  return frameLocalToWorld(viewScreenToWorld(toCameraView(view, frame), screen), frame);
 }

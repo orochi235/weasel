@@ -39,7 +39,7 @@ export function resolveFrame(spec: WorldSpec | undefined, size: ViewportSize): W
 }
 
 /** Put a 2D context into the instrument's world coordinates, so a layer's
- *  `draw` works in them. Must stay the exact inverse of `screenToWorld`. */
+ *  `draw` works in them. Must stay the exact inverse of `labScreenToWorld`. */
 export function applyCamera(
   ctx: CanvasRenderingContext2D,
   view: ViewTransform2D,

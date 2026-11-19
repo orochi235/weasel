@@ -6,7 +6,7 @@
 import { deepEqual } from '@weasel-js/registry';
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { worldToScreen } from '../canvas/canvasCoords';
+import { labWorldToScreen } from '../canvas/canvasCoords';
 import { configValueAt, hasConfigPath, withConfigValueAt } from '../config/path';
 import { configTree, leafValue, path, runs, tally, timeoutFor } from '../pbt.fixture';
 import {
@@ -233,8 +233,8 @@ describe('the fitted camera', () => {
           const part = shown ?? { x: 0, y: 0, width: c.width, height: c.height };
           if (!(part.width > 0 && part.height > 0 && pane.width > 0 && pane.height > 0)) return;
           t.count('fits');
-          const lo = worldToScreen({ x: part.x, y: part.y }, view);
-          const hi = worldToScreen({ x: part.x + part.width, y: part.y + part.height }, view);
+          const lo = labWorldToScreen({ x: part.x, y: part.y }, view);
+          const hi = labWorldToScreen({ x: part.x + part.width, y: part.y + part.height }, view);
           const slack =
             1e-9 *
             Math.max(

@@ -20,8 +20,8 @@ schedules its own layers; a foreign renderer wants rects and dirtiness only.
 | `cameraRegistry.ts` | Cameras by trial id, so chrome outside a trial (the lab header's zoom) can drive the focused one, 2D or orbit |
 | `cameraView.ts` | The camera as a weasel `View` over frame-local coordinates, and the anchored zoom clamp |
 | `LinkedCursor.tsx` | The crosshair on the camera's element while the pointer is over another view |
-| `camera.ts` | `zoomAt` (fixed-point zoom) and `centerOn` (put a world point at a viewport's middle) |
-| `canvasCoords.ts` | Pure `screenToWorld` / `worldToScreen` helpers |
+| `camera.ts` | `labZoomAt` (fixed-point zoom) and `centerOn` (put a world point at a viewport's middle) |
+| `canvasCoords.ts` | `labScreenToWorld` / `labWorldToScreen`, core's `View` maps through the frame |
 | `worldSpec.ts` | The instrument's declared coordinate system, and the camera derived from it |
 | `CanvasStack.less` | Container + canvas + overlay positioning |
 
@@ -99,7 +99,7 @@ actually consumes. `CanvasStack` owns the measurement, so it owns the frame and
 hands it to the camera (`useCameraView`), to the scheduler, and to every `render`.
 
 **Every world↔screen path must go through the frame.** There are four, and each
-one is a silent wrong answer if it is missed: `worldToScreen` / `screenToWorld`,
+one is a silent wrong answer if it is missed: `labWorldToScreen` / `labScreenToWorld`,
 the camera (`applyCamera`), the camera as a weasel `View` (`cameraView.ts`), and
 every action on the camera's dispatcher that reads a world point — the tap, and
 `DragDropRuntime`'s palette drop — through `frameLocalToWorld`. A miss produces geometry that is off by a
@@ -107,9 +107,9 @@ constant, or a wheel that drifts — never an error.
 
 ## Coordinate conversions
 
-- `screenToWorld({x, y}, view, frame?)` → world coords given a CSS-pixel offset relative to the container's top-left
-- `worldToScreen({x, y}, view, frame?)` → inverse
-- `applyCamera(ctx, view, frame?)` → puts a 2D context into world coordinates; the exact inverse of `screenToWorld`
+- `labScreenToWorld({x, y}, view, frame?)` → world coords given a CSS-pixel offset relative to the container's top-left
+- `labWorldToScreen({x, y}, view, frame?)` → inverse
+- `applyCamera(ctx, view, frame?)` → puts a 2D context into world coordinates; the exact inverse of `labScreenToWorld`
 
 All pure, and all default to `DEFAULT_FRAME` (top-left, y down).
 
@@ -117,17 +117,15 @@ All pure, and all default to `DEFAULT_FRAME` (top-left, y down).
 
 Routed through the dispatcher by `<CameraInput>`. Mouse-wheel zoom is anchored at the cursor; primary-button drag pans.
 
-The anchor is taken **in frame space** (`cursor - frame.originPx`), because
-`pan` is measured from the frame's origin. Anchoring at the raw cursor instead
-drifts by `(1 - ratio) * originPx` on every wheel step for any frame that moves
-the origin — around 180x110 px per step on a centred 1430x870 canvas, with no
-error raised. The anchoring itself is `zoomAt` in `camera.ts`, which the loupe's wheel also
-uses — one fixed-point zoom rather than a copy per caller. Do not reach for
-`zoomAt` from `@weasel-js/core` instead: that one clamps
-`min(max, max(min, scale * factor))` per axis with positive defaults, so a y-up
-view (`scale.y` negative) comes back at `+0.1` — flipped and collapsed. labkit's
-holds one scalar zoom and keeps the y direction in the frame, so it has no such
-axis to invert.
+`pan` is measured from the frame's origin, so the camera's math runs on the
+weasel `View` that `toCameraView` builds from the view and the frame: the
+wheel and `labZoomAt` (which the loupe's wheel uses) both call core's `zoomAt`
+on it, and `labWorldToScreen` / `labScreenToWorld` call core's `View` maps.
+Anchoring at the raw cursor on `pan` instead drifts by `(1 - ratio) * originPx`
+on every wheel step for any frame that moves the origin — around 180x110 px per
+step on a centered 1430x870 canvas, with no error raised. `labZoomAt` passes
+`min: 0, max: Infinity` unless told otherwise; core's own defaults would clamp
+the zoom.
 
 `CanvasCapability.initialView` may be a function of the viewport size instead of
 a literal. labkit then leaves the trial's view `null` until the canvas is first

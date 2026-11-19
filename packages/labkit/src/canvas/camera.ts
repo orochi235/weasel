@@ -1,9 +1,10 @@
-import { normalizeZoom } from '@weasel-js/core';
+import { normalizeZoom, zoomAt } from '@weasel-js/core';
 import type { Point, ViewTransform2D } from '../instrument/types';
+import { fromCameraView, toCameraView } from './cameraView';
 import { DEFAULT_FRAME, type ViewportSize, type WorldFrame } from './worldSpec';
 
-/** Bounds and coordinate system a {@link zoomAt} works in. */
-export interface ZoomAtOptions {
+/** Bounds and coordinate system a {@link labZoomAt} works in. */
+export interface LabZoomAtOptions {
   /** The instrument's coordinate system, resolved against the viewport.
    *  Omitted, `at` is measured from the element's top-left. */
   frame?: WorldFrame;
@@ -12,38 +13,24 @@ export interface ZoomAtOptions {
 }
 
 /**
- * Zoom a view by `factor` about a fixed point, so whatever world coordinate
- * `at` was over stays under it.
+ * Zoom a labkit view by `factor` about a fixed point, so whatever world
+ * coordinate `at` was over stays under it: core's `zoomAt` through
+ * {@link toCameraView}, unbounded unless `min` / `max` say otherwise.
  *
- * `at` is in the element's own pixels — a cursor position, or the centre of a
+ * `at` is in the element's own pixels — a cursor position, or the center of a
  * lens. The clamp is applied before the pan is solved, so a zoom that hits a
  * bound still anchors on the zoom it actually reached.
  */
-export function zoomAt(
+export function labZoomAt(
   view: ViewTransform2D,
   factor: number,
   at: Point,
-  { frame = DEFAULT_FRAME, min, max }: ZoomAtOptions = {},
+  { frame = DEFAULT_FRAME, min = 0, max = Number.POSITIVE_INFINITY }: LabZoomAtOptions = {},
 ): ViewTransform2D {
-  // `pan` is measured from the frame's origin, so anchoring at the raw point
-  // drifts by `(1 - ratio) * originPx` per step on any frame that moves it.
-  const anchorX = at.x - frame.originPx.x;
-  const anchorY = at.y - frame.originPx.y;
-  const current = normalizeZoom(view.zoom);
-  const zoom = normalizeZoom(
-    Math.min(max ?? Number.POSITIVE_INFINITY, Math.max(min ?? 0, current * factor)),
-  );
-  const ratio = zoom / current;
-  return {
-    zoom,
-    pan: {
-      x: anchorX - (anchorX - view.pan.x) * ratio,
-      y: anchorY - (anchorY - view.pan.y) * ratio,
-    },
-  };
+  return fromCameraView(zoomAt(toCameraView(view, frame), at, factor, { min, max }), frame);
 }
 
-/** The view that puts a world point at the centre of a `size` viewport, at
+/** The view that puts a world point at the center of a `size` viewport, at
  *  `zoom`. What a lens showing a region around one point renders through. */
 export function centerOn(
   world: Point,

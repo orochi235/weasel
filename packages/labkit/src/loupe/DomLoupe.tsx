@@ -1,6 +1,6 @@
 import { type LoupeMode, type LoupePoint, type LoupeSize, loupeExtent } from '@weasel-js/loupe';
 import type { CSSProperties } from 'react';
-import { zoomAt } from '../canvas/camera';
+import { labZoomAt } from '../canvas/camera';
 import type { ViewportSize, WorldFrame } from '../canvas/worldSpec';
 import type { ViewTransform2D } from '../instrument/types';
 import type { LoupeRenderArgs } from './types';
@@ -48,7 +48,7 @@ export function DomLoupe({
   return (
     <div className="lk-loupe__stage" style={style}>
       {render({
-        view: zoomAt(view, factor, aim, { frame }),
+        view: labZoomAt(view, factor, aim, { frame }),
         factor,
         mode,
         size,

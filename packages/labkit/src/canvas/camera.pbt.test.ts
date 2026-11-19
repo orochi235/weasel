@@ -8,9 +8,9 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import type { Point, ViewTransform2D } from '../instrument/types';
 import { runs, tally, timeoutFor } from '../pbt.fixture';
-import { centerOn, zoomAt } from './camera';
+import { centerOn, labZoomAt } from './camera';
 import { clampZoomAbout, frameLocalToWorld, fromCameraView, toCameraView } from './cameraView';
-import { screenToWorld, worldToScreen } from './canvasCoords';
+import { labScreenToWorld, labWorldToScreen } from './canvasCoords';
 import { clientToHost, type HostBox, hostToClient } from './hostBox';
 import type { WorldFrame } from './worldSpec';
 
@@ -39,7 +39,7 @@ describe('the 2D camera', () => {
     () => {
       fc.assert(
         fc.property(pt, view, frame, (world, v, fr) => {
-          const back = screenToWorld(worldToScreen(world, v, fr), v, fr);
+          const back = labScreenToWorld(labWorldToScreen(world, v, fr), v, fr);
           const reach = [
             v.pan.x / v.zoom,
             v.pan.y / v.zoom,
@@ -70,15 +70,15 @@ describe('the 2D camera', () => {
             const [min, max] = bounds
               ? [Math.min(...bounds), Math.max(...bounds)]
               : [undefined, undefined];
-            const next = zoomAt(v, factor, at, { frame: fr, min, max });
+            const next = labZoomAt(v, factor, at, { frame: fr, min, max });
             expect(Number.isFinite(next.zoom) && next.zoom > 0).toBe(true);
             if (min !== undefined && max !== undefined) {
               expect(next.zoom).toBeGreaterThanOrEqual(min);
               expect(next.zoom).toBeLessThanOrEqual(max);
               if (v.zoom * factor < min || v.zoom * factor > max) t.count('clamped');
             }
-            const before = screenToWorld(at, v, fr);
-            const after = screenToWorld(at, next, fr);
+            const before = labScreenToWorld(at, v, fr);
+            const after = labScreenToWorld(at, next, fr);
             const reach = [at.x, at.y, v.pan.x, v.pan.y, fr.originPx.x, fr.originPx.y].map(
               (n) => n / Math.min(v.zoom, next.zoom),
             );
@@ -104,7 +104,7 @@ describe('the 2D camera', () => {
           fc.record({ width: fc.nat(4000), height: fc.nat(4000) }),
           frame,
           (world, z, size, fr) => {
-            const s = worldToScreen(world, centerOn(world, z, size, fr), fr);
+            const s = labWorldToScreen(world, centerOn(world, z, size, fr), fr);
             const reach = [
               world.x * z,
               world.y * z,
@@ -130,7 +130,7 @@ describe('the 2D camera', () => {
         fc.property(pt, view, frame, (world, v, fr) => {
           const wv = toCameraView(v, fr);
           const local = frameLocalToWorld(world, fr);
-          const labkit = worldToScreen(world, v, fr);
+          const labkit = labWorldToScreen(world, v, fr);
           const weasel = { x: (local.x - wv.x) * wv.scale.x, y: (local.y - wv.y) * wv.scale.y };
           const reach = [
             world.x * v.zoom,
@@ -172,7 +172,7 @@ describe('the 2D camera', () => {
             const prev = weaselView(s, x, y);
             const s1 = s * factor;
             if (s1 === s) return;
-            // The step `zoomAt` would take: the world under `anchor` stays under it.
+            // The step `labZoomAt` would take: the world under `anchor` stays under it.
             const wx = x + anchor.x / s;
             const wy = y + anchor.y / s;
             const next = weaselView(s1, wx - anchor.x / s1, wy - anchor.y / s1);

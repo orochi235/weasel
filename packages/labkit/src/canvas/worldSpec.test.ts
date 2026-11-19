@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { worldToScreen } from './canvasCoords';
+import { labWorldToScreen } from './canvasCoords';
 import { applyCamera, DEFAULT_FRAME, resolveFrame } from './worldSpec';
 
 const SIZE = { width: 800, height: 600 };
@@ -21,7 +21,7 @@ describe('resolveFrame', () => {
 });
 
 /** Records the transform calls and reports where a world point lands, so the
- *  camera can be checked against `worldToScreen` without a real 2D context. */
+ *  camera can be checked against `labWorldToScreen` without a real 2D context. */
 function recordingCtx() {
   let m = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
   return {
@@ -42,21 +42,21 @@ describe('applyCamera', () => {
   const view = { zoom: 1.5, pan: { x: 7, y: -3 } };
   const world = { x: 12, y: 34 };
 
-  it('lands a world point where worldToScreen says, with no frame', () => {
+  it('lands a world point where labWorldToScreen says, with no frame', () => {
     const ctx = recordingCtx();
     applyCamera(ctx as unknown as CanvasRenderingContext2D, view);
     const got = ctx.project(world);
-    const want = worldToScreen(world, view);
+    const want = labWorldToScreen(world, view);
     expect(got.x).toBeCloseTo(want.x, 10);
     expect(got.y).toBeCloseTo(want.y, 10);
   });
 
-  it('lands a world point where worldToScreen says, in a centred y-up frame', () => {
+  it('lands a world point where labWorldToScreen says, in a centred y-up frame', () => {
     const frame = resolveFrame({ origin: { x: 0.5, y: 0.5 }, yAxis: 'up' }, size);
     const ctx = recordingCtx();
     applyCamera(ctx as unknown as CanvasRenderingContext2D, view, frame);
     const got = ctx.project(world);
-    const want = worldToScreen(world, view, frame);
+    const want = labWorldToScreen(world, view, frame);
     expect(got.x).toBeCloseTo(want.x, 10);
     expect(got.y).toBeCloseTo(want.y, 10);
   });

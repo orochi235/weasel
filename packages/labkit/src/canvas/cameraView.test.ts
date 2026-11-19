@@ -1,7 +1,7 @@
 import type { View } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
 import { clampZoomAbout, frameLocalToWorld, fromCameraView, toCameraView } from './cameraView';
-import { worldToScreen } from './canvasCoords';
+import { labWorldToScreen } from './canvasCoords';
 import type { WorldFrame } from './worldSpec';
 
 const UP: WorldFrame = { originPx: { x: 200, y: 150 }, yDir: -1 };
@@ -26,7 +26,7 @@ describe('camera as a weasel View', () => {
     ]) {
       const local = frameLocalToWorld(w, frame);
       const a = project(v, local);
-      const b = worldToScreen(w, vt, frame);
+      const b = labWorldToScreen(w, vt, frame);
       expect(a.x).toBeCloseTo(b.x);
       expect(a.y).toBeCloseTo(b.y);
     }

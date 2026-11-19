@@ -18,8 +18,8 @@ export type { CanvasStackProps } from './CanvasStack';
 export { CanvasStack } from './CanvasStack';
 export type { CanvasStackContextValue, CanvasStackSurface } from './CanvasStackContext';
 export { CanvasStackContext } from './CanvasStackContext';
-export type { ZoomAtOptions } from './camera';
-export { centerOn, zoomAt } from './camera';
+export type { LabZoomAtOptions } from './camera';
+export { centerOn, labZoomAt } from './camera';
 export type { CameraGestures } from './cameraGestures';
 export type { CameraRegistry } from './cameraRegistry';
 export {
@@ -29,7 +29,7 @@ export {
   usePublishCamera,
 } from './cameraRegistry';
 export { clampZoomAbout, frameLocalToWorld, fromCameraView, toCameraView } from './cameraView';
-export { screenToWorld, worldToScreen } from './canvasCoords';
+export { labScreenToWorld, labWorldToScreen } from './canvasCoords';
 export { LinkedCursor } from './LinkedCursor';
 export type { OrbitProps } from './Orbit';
 export { Orbit } from './Orbit';

@@ -1,6 +1,6 @@
 import { createSampler } from '@weasel-js/loupe';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { worldToScreen } from '../canvas/canvasCoords';
+import { labWorldToScreen } from '../canvas/canvasCoords';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { DEFAULT_FRAME, resolveFrame } from '../canvas/worldSpec';
 import { drawCanvasLens, lensCamera, lensSourceRect, stackSources } from './canvasLens';
@@ -20,7 +20,7 @@ describe('lensCamera', () => {
       x: (aim.x - outer.pan.x) / outer.zoom,
       y: (aim.y - outer.pan.y) / outer.zoom,
     };
-    const p = worldToScreen(world, lens.view, lens.frame);
+    const p = labWorldToScreen(world, lens.view, lens.frame);
     expect(p.x).toBeCloseTo(100, 8);
     expect(p.y).toBeCloseTo(100, 8);
   });
@@ -42,7 +42,7 @@ describe('lensCamera', () => {
       x: (aim.x - stackFrame.originPx.x - outer.pan.x) / outer.zoom,
       y: (aim.y - stackFrame.originPx.y - outer.pan.y) / (outer.zoom * stackFrame.yDir),
     };
-    const p = worldToScreen(world, lens.view, lens.frame);
+    const p = labWorldToScreen(world, lens.view, lens.frame);
     expect(p.x).toBeCloseTo(100, 8);
     expect(p.y).toBeCloseTo(100, 8);
   });
