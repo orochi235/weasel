@@ -10,6 +10,7 @@ package to harden. Add a row whenever a pass merges.
 |---|---|---|
 | Property tests (fast-check): round-trips, laws, metamorphic rules | locally, replaying one seed (`scripts/vitest-pbt-seed.setup.ts`) so tally guards pass or fail alike every run; deep runs (10,000+, `WEASEL_PBT_RUNS`) on the fleet, with fresh seeds | `*.pbt.test.ts` beside the code |
 | Stateful model tests (`fc.commands`): random op sequences checked after every step | same | `*.pbt.test.ts` |
+| Hostile input for parsers: JSON junk with prototype keys, a valid document with one field dropped, duplicated or retyped, and 20,000-character text under a time budget | same | `*.pbt.test.ts` beside the parser, built from `@weasel-js/registry/testing/hostile.fixture` |
 | Unicode conformance files | locally | `packages/bidi`, `packages/text` |
 | Audit rounds: agent review lanes, one per area | agents | `node scripts/audit-yield.mjs` counts fix commits per round and lane, from `audit<N>-<lane>` branches and from branches merged into `batch/<date>-audit<N>`; a round merged under any other batch name is not counted (round 25, `batch/2026-11-15`) |
 | Design review: an audit round reading how an area is organized (duplicated decisions, state with two owners, options dropped on one path, teardown, layering) rather than driving inputs | agents | round 15, `audit15-<lane>` branches |
