@@ -20,7 +20,7 @@ export interface PlayheadHold {
  * Pauses `handle`'s clock at `shown`, a time shown within a pass (`null`: the
  * span's start), placed in the first pass, and keeps seeking there as `declare`
  * or a `duration` write moves the span. A time past the pass's end waits at it.
- * Any other change (a rate, a seek of someone else's) releases the hold. A
+ * Any other change (a rate, a ramp, a seek of someone else's) releases the hold. A
  * clock that is not seekable is never held.
  */
 export function holdAt(handle: ClockHandle, shown: number | null): PlayheadHold {
@@ -116,7 +116,7 @@ function holdWhere(
     place();
     unsub = clock.subscribe(() => {
       if (busy || released) return;
-      if (clock.rate !== 0) release();
+      if (clock.rate !== 0 || clock.ramping) release();
       else if (clock.duration !== duration || clock.origin !== origin || clock.loop !== loop) place();
       else if (clock.elapsed !== set) release();
     });

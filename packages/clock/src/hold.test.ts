@@ -167,3 +167,25 @@ describe('holdPosition', () => {
     expect([h.clock.elapsed, h.clock.pass]).toEqual([2000, 2]);
   });
 });
+
+describe('a hold and a ramp', () => {
+  it('releases when a ramp starts the held clock', () => {
+    const h = createClock({ duration: 1000 });
+    const hold = holdAt(h, 500);
+    expect(h.clock.ramping).toBe(false);
+    h.clock.ramp(1, 300);
+    expect(h.clock.ramping).toBe(true);
+    // A declaration before the first frame of the ramp, which a hold still in place would answer with a seek.
+    h.declare({ duration: 1000, origin: 100 });
+    expect(h.clock.elapsed).toBe(400);
+    h.clock.sync(0);
+    h.clock.sync(100);
+    const moved = h.clock.elapsed;
+    expect(moved).toBeGreaterThan(400);
+    expect(hold.pending()).toBeNull();
+    h.declare({ duration: 2000, origin: 100 });
+    expect(h.clock.elapsed).toBe(moved);
+    h.clock.sync(400);
+    expect(h.clock.ramping).toBe(false);
+  });
+});

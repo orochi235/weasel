@@ -250,6 +250,9 @@ function createClockView(run: Run, hub: Hub, seekable: boolean, speeds: readonly
       change(run, hub);
       hub.subs.emit();
     },
+    get ramping() {
+      return run.ramp !== null;
+    },
     ramp(to, over) {
       checkRate(to, seekable);
       checkRampTime(over);
