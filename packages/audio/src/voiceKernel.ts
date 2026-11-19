@@ -168,7 +168,9 @@ export function createNoiseKernel(
     const i = Math.floor(at);
     const a = loop[i];
     const sample = lerp(a, loop[(i + 1) % loop.length], at - i);
+    // A negative rate plays the loop backwards, as a buffer source does; `%` keeps the sign.
     at = (at + tune) % loop.length;
+    if (at < 0) at += loop.length;
     return sample;
   });
 }
