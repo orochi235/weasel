@@ -83,6 +83,10 @@ export interface RenderSceneToPixelsArgs<TData, TLayer extends string, TPose> ex
   /** Screen space → output pixels, which `'screen'`-unit paint is measured in. Default: output pixels. A
    *  raster standing in for part of a larger surface, such as an export's page, names the whole here. */
   screen?: GlMat3;
+  /** Output pixels per CSS pixel: a `{ px }` length is this many output pixels, and `'screen'` units
+   *  (unless `screen` is given) are CSS pixels, as on a canvas painting at this density. `scale` stays
+   *  output pixels per scene unit. Default 1. */
+  pixelRatio?: number;
 }
 
 /** The result of planning a headless render: how big the output is, the view
@@ -92,4 +96,6 @@ export interface PixelRenderPlan {
   height: number;
   view: View;
   commands: DrawCommand[];
+  /** Screen space → output pixels the commands were made for, at a `pixelRatio` other than 1. */
+  screen?: GlMat3;
 }

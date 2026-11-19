@@ -430,6 +430,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   Today it costs the frame, on the page and in the render worker alike (each retries once, then waits for a change),
   while a contribution's `beforePaint`/`afterPaint`, an outline glyph, and an ingest handler each cost only
   themselves. Isolating it means a try in the command build, which every `drawOne` call site in core shares.
+- 2026-11-19 (my call, audit round 39): `renderSceneToPixels`'s `pixelRatio` makes a `{ px }` length that many output
+  pixels and measures `'screen'` units in CSS pixels unless `screen` is given, as a canvas at that density does; a
+  pixel ratio that is not a positive finite number throws. `renderDebugSnapshot` passes its own through, so a
+  snapshot at `devicePixelRatio` 2 draws a 1px hairline 2 output pixels wide.
 - 2026-11-11 (my call, core canvas second pass): `reconcileSpecs` puts a group's member back on its own layer after
   the group's spec changes layer and the member's does not, wherever the group's new layer allows; `setLayer` alone
   still carries the whole subtree (fef31b751). The member's spec says where it stands, which is what the render
