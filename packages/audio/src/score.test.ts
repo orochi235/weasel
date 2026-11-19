@@ -101,4 +101,14 @@ describe('createScore', () => {
     expect(ctx._oscillators.map((o) => o.frequency.holds[0].value))
       .toEqual([38, 39, 44].map(midiToFrequency));
   });
+
+  it('refuses a mood with a NaN axis, keeping the mood it had', async () => {
+    const { engine } = await engineHarness();
+    const bad = { valence: Number.NaN, tension: 0.5, urgency: 0.5 };
+    expect(() => createScore(engine, { mood: bad })).toThrow(RangeError);
+    const score = createScore(engine, { mood: home('wonder') });
+    expect(() => score.setMood(bad)).toThrow(RangeError);
+    expect(score.mood()).toEqual(home('wonder'));
+    expect(() => score.setMood({ valence: Number.POSITIVE_INFINITY, tension: 0, urgency: 0 })).not.toThrow();
+  });
 });

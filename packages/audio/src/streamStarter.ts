@@ -1,5 +1,7 @@
+import { createPart } from '@weasel-js/registry';
 import { atAudioTime, type Timers } from './audioTime';
-import type { SourceLike, Starter } from './liveVoice';
+import type { SourceLike, Starter, VoiceOptions } from './liveVoice';
+import { checkSpan } from './param';
 import type { StreamOptions, VoiceHandle } from './types';
 
 /** How `stream` makes its source, and which voice holds each element. */
@@ -8,7 +10,7 @@ export interface StreamStarters {
   element(media: HTMLMediaElement | string, opts: StreamOptions): HTMLMediaElement;
   starter(el: HTMLMediaElement, opts: StreamOptions): Starter;
   /** An element has one playhead: the voice streaming it now, to stop before
-   *  another starts. */
+   *  another starts. Shared by every engine on the context. */
   streaming: WeakMap<HTMLMediaElement, VoiceHandle>;
 }
 
@@ -54,10 +56,15 @@ function mediaSource(
   return shim;
 }
 
+// An element can be routed into a context once, ever: the node is kept for the element's lifetime
+// and handed from voice to voice, across every engine on that context.
+const routedIn = createPart((_ctx: BaseAudioContext) => ({
+  mediaSources: new WeakMap<HTMLMediaElement, MediaElementAudioSourceNode>(),
+  streaming: new WeakMap<HTMLMediaElement, VoiceHandle>(),
+}));
+
 export function createStreamStarters(ctx: AudioContext, timers: Timers): StreamStarters {
-  // An element can be routed into a graph once, ever: the node is kept for the
-  // element's lifetime and handed from voice to voice.
-  const mediaSources = new WeakMap<HTMLMediaElement, MediaElementAudioSourceNode>();
+  const { mediaSources, streaming } = routedIn(ctx);
   return {
     element(media, opts) {
       if (typeof media !== 'string') return media;
@@ -86,6 +93,25 @@ export function createStreamStarters(ctx: AudioContext, timers: Timers): StreamS
         },
       };
     },
-    streaming: new WeakMap(),
+    streaming,
   };
+}
+
+/** `engine.stream`: `media` as a new voice through `launch`, which then stops whatever voice was
+ *  streaming the element. */
+export function restream(
+  streams: StreamStarters,
+  launch: (opts: VoiceOptions, starter: Starter) => VoiceHandle,
+  media: HTMLMediaElement | string,
+  opts: StreamOptions,
+): VoiceHandle {
+  checkSpan('stream offset', opts.offset);
+  const el = streams.element(media, opts);
+  // Launched before the earlier stream stops, so one that throws or drops leaves it playing.
+  // The scheduler starts the new one a microtask later at the soonest, after this stop.
+  const handle = launch(opts, streams.starter(el, opts));
+  if (!handle.isPlaying()) return handle;
+  streams.streaming.get(el)?.stop();
+  streams.streaming.set(el, handle);
+  return handle;
 }

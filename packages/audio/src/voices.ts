@@ -1,4 +1,4 @@
-import { checkFinite, checkGain, checkPoint } from './param';
+import { checkFinite, checkGain, checkPoint, checkRate } from './param';
 import type { Scheduler } from './scheduler';
 import { spatialize, type SpatialOptions, type SpatialPoint } from './spatialize';
 import type { VoiceDropReason, VoiceHandle } from './types';
@@ -46,7 +46,7 @@ const dropped = (id: number): VoiceHandle => ({
   stop: (fadeMs) => checkFinite('voice fade', fadeMs),
   release: () => {},
   setGain: (value, rampMs) => checkGain('voice', value, rampMs),
-  setRate: (value) => checkFinite('voice rate', value),
+  setRate: (value) => checkRate('voice rate', value),
   setDetune: (cents) => checkFinite('voice detune', cents),
   setPan: (value) => checkFinite('voice pan', value),
   setPosition: (p) => checkPoint('voice position', p),
@@ -151,7 +151,9 @@ function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): Vo
     stop(fadeMs) {
       checkFinite('voice fade', fadeMs);
       voice.catchUp?.();
-      if (fadeMs && fadeMs > 0 && voice.source && voice.out && !voice.canceled) {
+      // A releasing or fading voice is canceled but still sounding, so it fades from where it is.
+      const sounding = !voice.canceled || voice.releasing || voice.fading;
+      if (fadeMs && fadeMs > 0 && voice.source && voice.out && sounding) {
         // Canceled but not torn down: the fade is what ends this voice, and
         // stopping the source now would cut the ramp scheduled a line above
         // it — which is the click `fadeMs` exists to avoid. `onended` does
@@ -165,7 +167,8 @@ function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): Vo
       teardown(voice);
     },
     release() {
-      if (voice.releasing) return;
+      // A fade already ends it, and teardown would cut the fade.
+      if (voice.releasing || voice.fading) return;
       voice.catchUp?.();
       if (voice.release && voice.source && !voice.canceled) {
         // Like a fade: `onended` tears the voice down once the release is out.
@@ -185,7 +188,7 @@ function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): Vo
       poolGain(voice);
     },
     setRate(value) {
-      checkFinite('voice rate', value);
+      checkRate('voice rate', value);
       voice.rate = value;
       voice.retune?.();
     },
@@ -212,7 +215,7 @@ function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): Vo
 export function checkVoice(common: VoiceOptions): void {
   checkWhen(common.when);
   if (common.gain !== undefined) checkGain('voice', common.gain);
-  checkFinite('voice rate', common.rate);
+  checkRate('voice rate', common.rate);
   checkFinite('voice detune', common.detune);
   checkFinite('voice pan', common.pan);
   checkPoint('voice position', common.position);

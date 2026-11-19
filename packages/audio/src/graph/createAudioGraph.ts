@@ -1,6 +1,6 @@
 import type { AnalyserTap, AnalyserTapOptions } from '../analyser';
 import { defaultTimers, type Timers } from '../audioTime';
-import { initParam } from '../param';
+import { checkSpan, initParam } from '../param';
 import { createEdits } from './edits';
 import { graphError } from './errors';
 import { createTransport } from './transport';
@@ -27,6 +27,7 @@ export function createAudioGraph(
   destination: AudioNode,
   opts: AudioGraphOptions = {},
 ): AudioGraph {
+  checkSpan('graph fade', opts.fadeMs);
   const fadeMs = opts.fadeMs ?? 15;
   const timers: Timers = {
     setTimer: opts.setTimer ?? defaultTimers.setTimer,

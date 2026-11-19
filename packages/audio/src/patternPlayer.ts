@@ -92,6 +92,20 @@ export const checkTempo = (bpm: number): void => {
   }
 };
 
+/** Play one event at `at`, gated for its length in steps of `stepMs`. */
+function playEvent(engine: AudioEngine, e: PatternEvent, at: number, detune: number, stepMs: number): VoiceHandle {
+  if ('sound' in e) {
+    const { step: _s, sound, ...play } = e;
+    return engine.play(sound, { ...play, detune, when: at });
+  }
+  if ('noise' in e) {
+    const { step: _s, length: steps = 1, ...noise } = e;
+    return engine.playNoise({ ...noise, detune, when: at, duration: steps * stepMs });
+  }
+  const { step: _s, length: steps = 1, ...note } = e;
+  return engine.playNote({ ...note, detune, when: at, duration: steps * stepMs });
+}
+
 /**
  * A step sequencer over `engine`. Each step is one `engine.schedule` booking;
  * when it fires, it books that step's events at the step's exact time and then
@@ -156,18 +170,15 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
     }
     const step = count % length;
     for (const v of voices) if (!v.isPlaying()) voices.delete(v);
+    // Every event is tried, and the next step booked, before the first throw is passed on:
+    // otherwise one bad event would silence the rest of its step and every step after it.
+    let failure: { err: unknown } | null = null;
     for (const e of byStep.get(step) ?? []) {
-      const at = when + (e.step - step) * stepMs();
-      const detune = (e.detune ?? 0) + (typeof drift === 'function' ? drift(e.step) : drift);
-      if ('sound' in e) {
-        const { step: _s, sound, ...play } = e;
-        voices.add(engine.play(sound, { ...play, detune, when: at }));
-      } else if ('noise' in e) {
-        const { step: _s, length: steps = 1, ...noise } = e;
-        voices.add(engine.playNoise({ ...noise, detune, when: at, duration: steps * stepMs() }));
-      } else {
-        const { step: _s, length: steps = 1, ...note } = e;
-        voices.add(engine.playNote({ ...note, detune, when: at, duration: steps * stepMs() }));
+      try {
+        const detune = (e.detune ?? 0) + (typeof drift === 'function' ? drift(e.step) : drift);
+        voices.add(playEvent(engine, e, when + (e.step - step) * stepMs(), detune, stepMs()));
+      } catch (err) {
+        failure ??= { err };
       }
     }
     // Read before `onStep`: a tempo set there starts with the next step, and
@@ -187,6 +198,7 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
         book();
       }
     }
+    if (failure) throw failure.err;
   };
 
   return {

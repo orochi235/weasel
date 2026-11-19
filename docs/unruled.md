@@ -1149,6 +1149,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   node and timed out Prefs' Rail Filterable. `viewport` is gone from `RunStoryOptions` in
   `@weasel-js/forge/test`, and inside a story with a viewport `window.innerWidth` and media queries
   see the test page's default 414×896.
+- 2026-11-18 (my call, audit round 37): a voice's `rate` (`play`, `playNote`, `playNoise`, `stream`, `setRate`, and
+  the voice kernels) is a positive finite number, and 0 or below throws `RangeError`. A note's nodes retune by its
+  logarithm, and the voice processor read a noise loop backward into NaN. A buffer voice played both, frozen at 0
+  and backward below it, and is held to the same rule so that `setRate` means one thing on every handle.
+
 - 2026-10-11: Diagram groups nest and their boxes take presses; the `orthogonal` router turns at
   once after a waypoint where it would double back. Audio has `onDrop`.
 - 2026-10-12: labkit's `isConfigNodeShown` takes the resolved schema; `DragState` carries `from`; a
