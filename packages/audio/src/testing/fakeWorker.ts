@@ -37,6 +37,7 @@ export class FakeWorker {
 
   /** Test hook: the worker failed — a CSP refusal arrives this way. */
   _fail(): void {
+    if (this.terminated) return;
     for (const fn of [...(this.listeners.get('error') ?? [])]) fn({ type: 'error' });
   }
 }

@@ -22,3 +22,18 @@ describe('stubWorkerGlobals', () => {
     expect('Worker' in globalThis).toBe(before.has);
   });
 });
+
+describe('FakeWorker', () => {
+  it('delivers neither a reply nor a failure once terminated', () => {
+    const w = new FakeWorker('blob:x');
+    const message = vi.fn();
+    const error = vi.fn();
+    w.addEventListener('message', message);
+    w.addEventListener('error', error);
+    w.terminate();
+    w._reply('late');
+    w._fail();
+    expect(message).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
+  });
+});
