@@ -108,6 +108,7 @@ export function DragPoint({
       // it has no `aria-valuenow` to honor the role's contract with.
       role="button"
       aria-label={label}
+      aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight"
       tabIndex={0}
       onKeyDown={onKeyDown}
       {...drag}
