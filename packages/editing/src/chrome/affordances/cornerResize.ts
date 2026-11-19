@@ -9,6 +9,7 @@ import { localToWorld, transformOf, type TargetTransform } from '@weasel-js/core
 import type { View } from '@weasel-js/core';
 import { HANDLE_BASE_PX } from '@weasel-js/core';
 import type { CursorSpec } from '@weasel-js/cursor';
+import { HANDLE_FILL_COLOR, HANDLE_OUTLINE_COLOR } from '../handleCommands';
 
 /** Options for `createCornerResizeAffordance` — the size and appearance of
  *  the resize handles, and whether the edge midpoints get one. */
@@ -39,8 +40,6 @@ export interface CornerResizeScratch extends CommonAffordanceScratch {
   fixedPoint: { x: number; y: number };
 }
 
-const DEFAULT_FILL = '#d4c4a8';
-const DEFAULT_STROKE = '#1a130d';
 
 /**
  * Resize-handle affordance for the active selection (single member in
@@ -58,8 +57,8 @@ export function createCornerResizeAffordance(
   const {
     handleHitRadius = HANDLE_BASE_PX,
     handleSize = HANDLE_BASE_PX,
-    fill = DEFAULT_FILL,
-    stroke = DEFAULT_STROKE,
+    fill = HANDLE_FILL_COLOR,
+    stroke = HANDLE_OUTLINE_COLOR,
     edges = true,
   } = opts;
   const entries = edges ? RESIZE_HANDLE_ANCHORS : RESIZE_HANDLE_ANCHORS.filter(isCornerHandle);

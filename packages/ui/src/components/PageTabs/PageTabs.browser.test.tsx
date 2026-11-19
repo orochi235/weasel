@@ -1,5 +1,6 @@
 import '@weasel-js/theme/tokens.css';
 import { pageName } from '@weasel-js/core';
+import { DOUBLE_CLICK_MAX_MS } from '@weasel-js/gestures';
 import { cleanup, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, expect, test, vi } from 'vitest';
@@ -39,7 +40,7 @@ test('a click on a tab selects it once and lights it, and a later click on the l
   expect(onSelect.mock.calls).toEqual([['b']]);
   expect(screen.getByRole('tab', { name: 'Two' }).getAttribute('aria-selected')).toBe('true');
   // Any sooner and the second click is a double press, which renames.
-  await new Promise((r) => setTimeout(r, 600));
+  await new Promise((r) => setTimeout(r, DOUBLE_CLICK_MAX_MS + 100));
   await userEvent.click(screen.getByRole('tab', { name: 'Two' }));
   expect(onSelect.mock.calls).toEqual([['b'], ['b']]);
 });

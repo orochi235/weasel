@@ -23,6 +23,9 @@ import {
 import { InlineMarkdown } from '../InlineMarkdown';
 import s from './Tooltip.module.css';
 
+/** How long the pointer rests on a trigger before its tooltip opens, in ms. */
+export const TOOLTIP_DELAY_MS = 600;
+
 /** Props for {@link TooltipTrigger}: React Aria's `TooltipTrigger` props, with `open` for its `isOpen`, and `keepEscape`. */
 export type TooltipTriggerProps = Omit<TooltipTriggerComponentProps, 'isOpen'> & {
   /** Whether the tooltip is open, controlled; pairs with `defaultOpen` and `onOpenChange`. */
@@ -33,7 +36,7 @@ export type TooltipTriggerProps = Omit<TooltipTriggerComponentProps, 'isOpen'> &
 };
 
 /**
- * TooltipTrigger with kit defaults: ~600 ms open delay, instant close.
+ * TooltipTrigger with kit defaults: a {@link TOOLTIP_DELAY_MS} open delay, instant close.
  * Wrap a focusable trigger plus a `<Tooltip>`. Non-RAC triggers (plain
  * `<button>`, a `Badge` etc.) must be wrapped in `Focusable` so
  * hover/focus props reach the DOM node.
@@ -43,7 +46,7 @@ export type TooltipTriggerProps = Omit<TooltipTriggerComponentProps, 'isOpen'> &
  * whatever it was pressed in.
  */
 export function TooltipTrigger(props: TooltipTriggerProps) {
-  const { delay = 600, closeDelay = 0, onOpenChange, keepEscape = false, open: controlled, ...rest } = props;
+  const { delay = TOOLTIP_DELAY_MS, closeDelay = 0, onOpenChange, keepEscape = false, open: controlled, ...rest } = props;
   const [open, setOpen] = useState(false);
   useEscapePassesThrough(!keepEscape && (controlled ?? open));
   const changed = useCallback((next: boolean) => {

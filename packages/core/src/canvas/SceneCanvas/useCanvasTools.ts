@@ -1,4 +1,4 @@
-import { createPart } from '@weasel-js/registry';
+import { identityKeyOf } from '@weasel-js/registry';
 import { useEffect, useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { Action } from '@weasel-js/routing';
@@ -29,21 +29,13 @@ export function isToolsApi(tools: ToolsApi | ToolsPatch): tools is ToolsApi {
   return typeof (tools as ToolsApi).setActive === 'function';
 }
 
-let nextSerial = 0;
-const presetSerials = createPart((_e: object) => nextSerial++);
-const entryKey = (e: FeaturePreset): string => {
-  // A name from untyped code reaches `resolveFeatures`, which says what to pass instead.
-  if (typeof e !== 'object') return String(e);
-  return `#${presetSerials(e)}`;
-};
-
 /** The presets a canvas runs with. Keyed on the entries, not the array, so
  *  an inline `features={[drawPreset, pathToolsPreset]}` does not re-derive every render. */
 export function useEnabledFeatures(
   features: readonly FeaturePreset[] | undefined,
   selectRotates: boolean,
 ): EnabledPresets {
-  const featuresKey = (features ?? []).map(entryKey).join('|');
+  const featuresKey = (features ?? []).map(identityKeyOf).join('|');
   return useMemo(
     () => resolveFeatures(features, { selectRotates }),
     // eslint-disable-next-line react-hooks/exhaustive-deps

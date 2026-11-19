@@ -1,14 +1,6 @@
 import { useLatest } from '@weasel-js/react';
 import { KeymapHint } from '@weasel-js/ui/components/KeymapHint';
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useReducer,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from 'react';
+import { useMemo, useReducer, useState, useSyncExternalStore } from 'react';
 import type { LabContribution } from '../../chrome/labTypes';
 import { createCloneSource } from './cloneSource';
 import { LensActions } from './LensActions';
@@ -16,8 +8,8 @@ import { LensOverlay } from './LensOverlay';
 import { createLensApi, useLensFocus } from './lensApi';
 import { createLensScene } from './lensScene';
 import type { LensSources } from './lensSource';
-import type { LoupePoint } from './lensTypes';
 import { useFrameSchedule } from './useFrameSchedule';
+import { useLabBody } from './useLabBody';
 import { useLensRemeasure } from './useLensRemeasure';
 
 /** A plain lab compares nothing, so the opposite preset clears a lens's comparison. */
@@ -30,9 +22,7 @@ const NO_COMPARISON = () => null;
  */
 export function LabLoupe() {
   const [scene] = useState(createLensScene<null>);
-  const [body, setBody] = useState<HTMLElement | null>(null);
-  const bodyRef = useRef<HTMLElement | null>(null);
-  const pointer = useRef<LoupePoint | null>(null);
+  const { body, bodyRef, pointer, attachMarker } = useLabBody();
   const { focus, onFocusLens } = useLensFocus();
   const onFrame = useFrameSchedule();
   const [live] = useState(() => createCloneSource<null>({ onFrame }));
@@ -47,21 +37,6 @@ export function LabLoupe() {
   const remeasured = useMemo(() => [live], [live]);
   useLensRemeasure(remeasured, body, rerender);
 
-  useEffect(() => {
-    if (!body) return;
-    const track = (e: PointerEvent) => {
-      pointer.current = { x: e.clientX, y: e.clientY };
-    };
-    body.addEventListener('pointermove', track, { passive: true });
-    return () => body.removeEventListener('pointermove', track);
-  }, [body]);
-
-  // An overlay contribution renders inside the lab body, which is what this finds; the marker itself shows nothing.
-  const attachMarker = useCallback((el: HTMLElement | null) => {
-    const found = el?.closest<HTMLElement>('.lk-lab__body') ?? null;
-    bodyRef.current = found;
-    setBody(found);
-  }, []);
 
   return (
     <>

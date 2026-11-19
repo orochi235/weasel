@@ -19,9 +19,13 @@ import {
 
 export type { ResizeHandleLayout };
 
-const DEFAULT_HANDLE_FILL: CommandFill = { paint: { kind: 'solid', color: '#d4c4a8' } };
+/** The colors a resize handle is filled and outlined in when its style names none. */
+export const HANDLE_FILL_COLOR = '#d4c4a8';
+export const HANDLE_OUTLINE_COLOR = '#1a130d';
+
+const DEFAULT_HANDLE_FILL: CommandFill = { paint: { kind: 'solid', color: HANDLE_FILL_COLOR } };
 const DEFAULT_HANDLE_OUTLINE: CommandStroke = {
-  paint: { kind: 'solid', color: '#1a130d' },
+  paint: { kind: 'solid', color: HANDLE_OUTLINE_COLOR },
   width: 1,
 };
 const DEFAULT_HANDLE_SIZE = HANDLE_BASE_PX;

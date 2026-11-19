@@ -18,3 +18,13 @@ export function createPart<O extends object, P>(make: (owner: O) => P): (owner: 
     return part;
   };
 }
+
+let nextSerial = 0;
+const serialOf = createPart((_owner: object): number => nextSerial++);
+
+/** A string naming `v` for a cache or memo key: its type and value when primitive, and a serial of its own when an
+ *  object or function, so two values share a key only when they are equal primitives or the same object. */
+export function identityKeyOf(v: unknown): string {
+  if ((typeof v !== 'object' && typeof v !== 'function') || v === null) return `${typeof v}:${String(v)}`;
+  return `#${serialOf(v)}`;
+}

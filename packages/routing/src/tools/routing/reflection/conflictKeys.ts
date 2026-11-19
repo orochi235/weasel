@@ -1,5 +1,5 @@
 import { CHORD_MODIFIERS, chordCodesFor, matchPhase, type PhaseSpec } from '@weasel-js/gestures';
-import { createPart, getOwn } from '@weasel-js/registry';
+import { getOwn, identityKeyOf } from '@weasel-js/registry';
 import type { ParsedModifiers } from '../routeGrammar';
 import { VALID_MOD_NAMES } from '../routeGrammar';
 import { PREDICATE_TARGET, type RegistryEntry } from './registry';
@@ -112,9 +112,5 @@ export function targetKey(entry: RegistryEntry): string {
   const spec = entry.spec as { target?: unknown };
   const pred = spec.target;
   if (typeof pred !== 'object' || pred === null) return PREDICATE_TARGET;
-  return `${PREDICATE_TARGET}#${objectId(pred)}`;
+  return `${PREDICATE_TARGET}${identityKeyOf(pred)}`;
 }
-
-/** A stable number for an object, so a bucket key can name it by identity. */
-export const objectId = createPart((_obj: object): number => nextObjectId++);
-let nextObjectId = 0;
