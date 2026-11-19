@@ -21,12 +21,14 @@ const held = (m: unknown): number => {
   const x = m as {
     chains: Store;
     lastPoses: Store;
-    named: Store;
+    // Since blits 1.4 the voices naming each subject are filed in a `Filed`, per subject in `lists` and `seen`.
+    named: { lists: Store; seen: Store };
     strays: Store;
     cued: { parted: Map<unknown, unknown> | null }[];
   };
   const size = (s: Store) => s.strong.size + (s.oneValue === undefined ? 0 : 1);
-  const stores = size(x.chains) + size(x.lastPoses) + size(x.named) + size(x.strays);
+  const stores =
+    size(x.chains) + size(x.lastPoses) + size(x.named.lists) + size(x.named.seen) + size(x.strays);
   return stores + x.cued.reduce((n, v) => n + (v.parted?.size ?? 0), 0);
 };
 
