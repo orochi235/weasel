@@ -87,47 +87,54 @@ export function useEditAnchorsDepSource(
     const access = pathAccess(sc, ad, state.getExtensions());
     return {
       editingId: effectiveId,
+      // Every setter reads the state as it is when called, not as it was when the dep
+      // resolved: a drag holds the dep from its press, and the edit can change under it.
       setEditingId(id: string | null) {
+        const live = stateRef.current;
+        const was = live.getEditingId();
         const next = id ?? '';
-        if (effectiveId !== next) {
+        if (was !== next) {
           registry.get('dispatchTrace')?.recordModeSwitch(
             'editAnchors.editingId',
-            effectiveId || null,
+            was || null,
             next || null,
             next ? 'enter' : 'exit',
           );
           // Anchor indices only mean something relative to one path.
-          state.setSelectedAnchors(EMPTY_ANCHOR_SELECTION);
-          state.setSelectedMark(null);
-          state.setMarquee(null);
+          live.setSelectedAnchors(EMPTY_ANCHOR_SELECTION);
+          live.setSelectedMark(null);
+          live.setMarquee(null);
         }
-        stateRef.current.setEditingId(id);
+        live.setEditingId(id);
       },
       selectedAnchors,
       setSelectedAnchors(next: Iterable<number>) {
-        if (!effectiveId) return;
+        const live = stateRef.current;
+        if (!live.getEditingId()) return;
         const set = new Set(next);
-        if (set.size > 0) state.setSelectedMark(null);
-        state.setSelectedAnchors(set);
+        if (set.size > 0) live.setSelectedMark(null);
+        live.setSelectedAnchors(set);
       },
       selectedMark: effectiveId ? state.getSelectedMark() : null,
       setSelectedMark(mark) {
-        if (!effectiveId) return;
-        if (mark !== null) state.setSelectedAnchors(EMPTY_ANCHOR_SELECTION);
-        state.setSelectedMark(mark);
+        const live = stateRef.current;
+        if (!live.getEditingId()) return;
+        if (mark !== null) live.setSelectedAnchors(EMPTY_ANCHOR_SELECTION);
+        live.setSelectedMark(mark);
       },
       extensions: state.getExtensions(),
       marquee,
       setMarquee(rect) {
-        if (!effectiveId) return;
-        state.setMarquee(rect);
+        const live = stateRef.current;
+        if (!live.getEditingId()) return;
+        live.setMarquee(rect);
       },
-      // A getter: a drag holds the dep from its press, and the moves bring none.
+      // A getter, for the same reason.
       get handleLocks() {
         return stateRef.current.getHandleLocks() ?? locksOf(tunedHandleLock(tuneRef.current));
       },
       setHandleLocks(next) {
-        state.setHandleLocks(next);
+        stateRef.current.setHandleLocks(next);
         registry.changed?.();
       },
       anchorUnder(world) {
