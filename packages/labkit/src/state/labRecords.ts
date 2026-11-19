@@ -1,4 +1,5 @@
 import { isPlainObject } from '@weasel-js/core';
+import { isFiniteNumber } from '@weasel-js/registry';
 import type { LabDocument, SavedSnapshot, SerializedTrial } from './types';
 
 /** Every record of the lab stored under `storageKey` starts with this. The key
@@ -114,7 +115,7 @@ export function documentOfRecords(
           const { order, ...rest } = value;
           trials.push({
             trial: { ...rest, id: parsed.id } as SerializedTrial,
-            order: typeof order === 'number' && Number.isFinite(order) ? order : Infinity,
+            order: isFiniteNumber(order) ? order : Infinity,
           });
         }
         break;

@@ -12,6 +12,7 @@ import {
 } from '../shared/scenePaths';
 import { icon } from '../icons.gen';
 import type {} from '../actionParamSchema';
+import { isFiniteNumber } from '@weasel-js/registry';
 
 const REACH_LABEL = 'Reach';
 
@@ -41,7 +42,7 @@ export const REACH_TO_MEET_PARAMS = pref.group(REACH_LABEL, {
 function extendOptions(p: Readonly<ReachToMeetParams> = {}): ReachToMeetOptions {
   if (p.shape === 'straight') return { mode: 'tangent' };
   const turn = p.easeTurn;
-  return typeof turn === 'number' && Number.isFinite(turn) && turn > 0 ? { mode: 'eased', easeTurn: turn } : { mode: 'eased' };
+  return isFiniteNumber(turn) && turn > 0 ? { mode: 'eased', easeTurn: turn } : { mode: 'eased' };
 }
 
 /** The open ends of `path` whose anchors are in `anchors`, flat-indexed;

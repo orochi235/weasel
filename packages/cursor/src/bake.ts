@@ -2,6 +2,7 @@ import { cursorPaintOps } from './paint';
 import type { CursorPaintOp } from './paint';
 import { CURSOR_ANGLE_STEPS, CURSOR_MAX_CSS_PX } from './types';
 import type { CursorGlyph } from './types';
+import { wrapPositive } from '@weasel-js/geom';
 
 /** How {@link bakeCursor} renders a glyph. */
 export interface BakeOptions {
@@ -38,7 +39,7 @@ export function quantizeCursorAngle(angle: number): number {
   if (!Number.isFinite(angle)) return 0;
   // Within a turn first, or an angle near the double range overflows on the way to its step.
   const i = Math.round(((angle % (Math.PI * 2)) / (Math.PI * 2)) * CURSOR_ANGLE_STEPS);
-  return ((i % CURSOR_ANGLE_STEPS) + CURSOR_ANGLE_STEPS) % CURSOR_ANGLE_STEPS;
+  return wrapPositive(i, CURSOR_ANGLE_STEPS);
 }
 
 /** One paint op as an SVG element. */

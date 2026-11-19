@@ -15,6 +15,7 @@ import { measurePath, type PathMeasure } from './pathMeasure';
 import { worldCoords } from './pathOrigin';
 import { schneiderFit } from './schneiderFit';
 import { clamp } from '../scalar';
+import { wrapPositive } from '../angle';
 
 /** How a shape is laid along its spine. */
 export interface BendAlongPathOptions {
@@ -75,7 +76,7 @@ export function bendAlongPath(shape: Path, spine: Path, opts: BendAlongPathOptio
 function stationOff(measure: PathMeasure, s: number, v: number): Point {
   const L = measure.length;
   let at = s;
-  if (measure.closed) at = ((s % L) + L) % L;
+  if (measure.closed) at = wrapPositive(s, L);
   const clamped = clamp(at, 0, L);
   const { point, tangent } = measure.at(clamped, true);
   const run = at - clamped;

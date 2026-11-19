@@ -1,12 +1,11 @@
-import { isPlainObject } from '@weasel-js/registry';
+import { isPlainObject, isFiniteNumber } from '@weasel-js/registry';
 import { isByAxis } from '../axes.ts';
 
 const DIRS = ['lighter', 'darker', 'away'];
 
 const isString = (x: unknown): x is string => typeof x === 'string';
-const isNumber = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x);
 const isNames = (x: unknown): x is string[] => Array.isArray(x) && x.every(isString);
-const isTokenValue = (x: unknown) => isString(x) || isNumber(x) || (Array.isArray(x) && x.every((v) => isString(v) || isNumber(v)));
+const isTokenValue = (x: unknown) => isString(x) || isFiniteNumber(x) || (Array.isArray(x) && x.every((v) => isString(v) || isFiniteNumber(v)));
 
 /** Whether every leaf of a possibly `by`-varying value passes `ok`. */
 function everyLeaf(v: unknown, ok: (leaf: unknown) => boolean): boolean {
@@ -16,7 +15,7 @@ function everyLeaf(v: unknown, ok: (leaf: unknown) => boolean): boolean {
 /** Why `check` cannot be read, or undefined when it is absent or well formed. */
 export function checkProblem(check: unknown): string | undefined {
   if (check === undefined) return undefined;
-  if (!isPlainObject(check) || !isNumber(check.contrast) || !isNames(check.against)) return 'check needs a number contrast and a list of names against';
+  if (!isPlainObject(check) || !isFiniteNumber(check.contrast) || !isNames(check.against)) return 'check needs a number contrast and a list of names against';
   return undefined;
 }
 
@@ -29,16 +28,16 @@ export function ruleProblem(r: Readonly<Record<string, unknown>>): string | unde
   if ('value' in r) return isTokenValue(r.value) ? undefined : 'value must be a string, a number, or a list of those';
   if ('ref' in r) {
     if (!isString(r.ref)) return 'ref must name a token';
-    return r.alpha === undefined || isNumber(r.alpha) ? undefined : 'alpha must be a number';
+    return r.alpha === undefined || isFiniteNumber(r.alpha) ? undefined : 'alpha must be a number';
   }
   if ('step' in r) return isString(r.ramp) && everyLeaf(r.step, isString) ? undefined : 'a step rule needs a ramp name and a step name';
   if ('from' in r) {
-    if (!isString(r.from) || !isNumber(r.offset) || !DIRS.includes(r.dir as string)) return `an offset rule needs a name from, a number offset, and a dir of ${DIRS.join(', ')}`;
+    if (!isString(r.from) || !isFiniteNumber(r.offset) || !DIRS.includes(r.dir as string)) return `an offset rule needs a name from, a number offset, and a dir of ${DIRS.join(', ')}`;
     return undefined;
   }
   if ('contrast' in r) {
     const c = r.contrast;
-    if (!isString(r.ramp) || !isPlainObject(c) || !isNumber(c.min) || !isNames(c.against)) return 'a contrast rule needs a ramp name, a number min, and a list of names against';
+    if (!isString(r.ramp) || !isPlainObject(c) || !isFiniteNumber(c.min) || !isNames(c.against)) return 'a contrast rule needs a ramp name, a number min, and a list of names against';
     return undefined;
   }
   return 'unrecognized rule';

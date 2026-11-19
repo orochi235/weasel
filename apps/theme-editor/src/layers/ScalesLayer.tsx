@@ -9,6 +9,7 @@ import type { DerivedDraft } from '../theme/draft';
 import { issuesAt } from '../theme/issues';
 import { setScale } from '../theme/model';
 import { scaleTable } from '../theme/scales';
+import { maxOf } from '@weasel-js/geom';
 
 export interface ScalesLayerProps {
   readonly draft: ThemeDefinition;
@@ -48,7 +49,7 @@ function ScaleSection({
     }
   }, [draft, derived, lookup, name]);
   const own = Object.hasOwn(draft.scales ?? {}, name);
-  const widest = Math.max(1, ...table.columns.flatMap((c) => Object.values(c.values).flatMap((v) => pxOf(v) ?? [])));
+  const widest = Math.max(1, maxOf(table.columns.flatMap((c) => Object.values(c.values).flatMap((v) => pxOf(v) ?? []))));
   return (
     <section className={styles.ramp} aria-label={`${name} scale`}>
       <header className={styles.rampHeader}>

@@ -1,4 +1,5 @@
 import { THEMES, type ResolvedTheme } from '@weasel-js/theme';
+import { wrapPositive } from '@weasel-js/geom';
 
 /** The face a chart's text is set in. */
 export interface PlotFont {
@@ -43,4 +44,4 @@ export const PLOT_THEME: PlotTheme = plotThemeFrom(THEMES.weasel.selections['mod
 
 /** The `i`th series' color, wrapping. */
 export const seriesColor = (theme: PlotTheme, i: number): string =>
-  theme.series[((i % theme.series.length) + theme.series.length) % theme.series.length] ?? theme.text;
+  theme.series[wrapPositive(i, theme.series.length)] ?? theme.text;

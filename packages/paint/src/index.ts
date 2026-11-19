@@ -146,6 +146,7 @@ export {
   paletteColorAt,
   GHOST_STROKE_COLOR,
   solid,
+  solidFill,
   solidStroke,
   strokeWith,
   paintAlpha,

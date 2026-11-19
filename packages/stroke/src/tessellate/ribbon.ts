@@ -4,7 +4,7 @@
  * those edges.
  */
 
-import { DEG_TO_RAD } from '@weasel-js/geom';
+import { maxOf, minOf, DEG_TO_RAD } from '@weasel-js/geom';
 
 export type Cap = 'butt' | 'round' | 'square';
 export type Join = 'miter' | 'round' | 'bevel';
@@ -168,8 +168,8 @@ export function emitJoin(
   const outerA = onPositive ? [a.negA, a.negB] : [a.posA, a.posB];
   const outerB = onPositive ? [b.negA, b.negB] : [b.posA, b.posB];
   const halfAtCorner = outerA[1];
-  const taperA = Math.max(...outerA) / Math.max(1e-9, Math.min(...outerA));
-  const taperB = Math.max(...outerB) / Math.max(1e-9, Math.min(...outerB));
+  const taperA = maxOf(outerA) / Math.max(1e-9, minOf(outerA));
+  const taperB = maxOf(outerB) / Math.max(1e-9, minOf(outerB));
   const forceBevelForVarying = taperA > varyingThreshold || taperB > varyingThreshold;
 
   if (join === 'bevel' || forceBevelForVarying) {

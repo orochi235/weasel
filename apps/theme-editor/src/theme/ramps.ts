@@ -1,6 +1,7 @@
 import { getOwn } from '@weasel-js/registry';
 import { isByAxis, type ResolvedTheme } from '@weasel-js/theme';
 import { declaredSteps, toLch, type DeriveResult, type LightnessRampDef, type RampDef } from '@weasel-js/theme/engine';
+import { maxOf, minOf } from '@weasel-js/geom';
 
 export interface StepView {
   readonly step: string;
@@ -32,7 +33,7 @@ const deltas = (Ls: readonly number[]) => Ls.slice(1).map((L, i) => Math.abs(L -
 
 function spreadOf(ds: readonly number[]): number | null {
   const usable = ds.filter((d) => Number.isFinite(d) && d > 0);
-  return usable.length < 2 ? null : Math.max(...usable) / Math.min(...usable);
+  return usable.length < 2 ? null : maxOf(usable) / minOf(usable);
 }
 
 export function rampView(name: string, entry: RampDef, result: DeriveResult, resolved: ResolvedTheme): RampView {

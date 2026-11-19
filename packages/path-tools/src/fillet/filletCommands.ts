@@ -19,6 +19,7 @@ import { openPathEditOf, requiresAnchorSelection } from '../pathEdit/anchorEditi
 import { DEFAULT_FILLET_SHAPE, editedPath } from './editFillet';
 import { icon } from '../icons.gen';
 import type { SetFilletsParams } from '../actionParamSchema';
+import { isFiniteNumber } from '@weasel-js/registry';
 
 /** The share of a corner's room that a shape given to a sharp corner cuts. */
 export const DEFAULT_FILLET_TRIM_SHARE = 0.25;
@@ -41,7 +42,7 @@ export const CYCLE_FILLET_PARAMS = pref.group(CYCLE_LABEL, {
 
 const shareOf = (params: Readonly<CycleFilletParams> | undefined): number => {
   const v = params?.share;
-  return typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.min(v, 1) : DEFAULT_FILLET_TRIM_SHARE;
+  return isFiniteNumber(v) && v > 0 ? Math.min(v, 1) : DEFAULT_FILLET_TRIM_SHARE;
 };
 
 /** The selected anchors of the edited path that can take a corner. */

@@ -7,6 +7,7 @@ import { clampView } from 'core/viewport/clampView';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
+import { growRect } from '@weasel-js/geom';
 
 /** `<SceneCanvas viewport={{ edgePan }}>`: how a drag near the edge scrolls the view. */
 export interface EdgePanOptions {
@@ -159,6 +160,5 @@ function autoPanning(dispatcher: Dispatcher): boolean {
 export function limitRect(limit: Bounds | { past: number }, content: Bounds | null): Bounds | null {
   if (!('past' in limit)) return limit;
   if (!content) return null;
-  const d = limit.past;
-  return { x: content.x - d, y: content.y - d, width: content.width + 2 * d, height: content.height + 2 * d };
+  return growRect(content, limit.past);
 }

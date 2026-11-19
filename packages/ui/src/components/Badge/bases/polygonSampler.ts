@@ -1,5 +1,5 @@
 import type { BaseSampler, PerimeterPoint } from './types';
-import { lerp } from '@weasel-js/geom';
+import { lerp, wrapPositive } from '@weasel-js/geom';
 
 /** Build a BaseSampler from a clockwise polygon's vertex list (viewBox 0..100). */
 export function polygonSampler(verts: [number, number][], boxW: number, boxH: number): BaseSampler {
@@ -20,7 +20,7 @@ export function polygonSampler(verts: [number, number][], boxW: number, boxH: nu
   const bodyPath = `M ${verts[0][0]} ${verts[0][1]} ` +
     verts.slice(1).map(([x, y]) => `L ${x} ${y}`).join(' ') + ' Z';
   const perimeterAt = (s: number): PerimeterPoint => {
-    const sm = ((s % totalCss) + totalCss) % totalCss;
+    const sm = wrapPositive(s, totalCss);
     for (let i = 0; i < cssLens.length; i++) {
       const segStart = cumulative[i];
       const segEnd = cumulative[i + 1];

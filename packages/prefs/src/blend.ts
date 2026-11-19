@@ -2,7 +2,7 @@
 
 import { hexToRgba, mixRgbaWeighted, rgbaToHex } from '@weasel-js/paint';
 import type { PrefWeighted, PrefLeaf } from '@weasel-js/prefs-schema';
-import { getOwn } from '@weasel-js/registry';
+import { getOwn, isFiniteNumber } from '@weasel-js/registry';
 
 /**
  * Folds a split value's alternatives into the one value read. `members` holds
@@ -19,7 +19,7 @@ const blendNumber: PrefBlend = (members, leaf) => {
   let lo = Infinity;
   let hi = -Infinity;
   for (const { value, weight } of members) {
-    if (typeof value !== 'number' || !Number.isFinite(value)) return heaviest(members, leaf);
+    if (!isFiniteNumber(value)) return heaviest(members, leaf);
     most = Math.max(most, weight);
     lo = Math.min(lo, value);
     hi = Math.max(hi, value);

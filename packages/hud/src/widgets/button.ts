@@ -2,13 +2,14 @@ import { createKeyedEmitter } from '@weasel-js/registry';
 import { createRevision } from '../widget';
 import type { Widget, WidgetBounds, HudDrawCtx, HudKeyEvent, HudPointerEvent } from '../widget';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { roundRectPath } from '@weasel-js/geom';
+import { roundRectPath, rectContainsPointHalfOpen } from '@weasel-js/geom';
 import { IDLE_PRESS, isPressKey, pressStep, type PressInput, type PressState } from '@weasel-js/ui-input';
 import {
   envPx, exactly, measureButton, type ButtonFace, type ButtonLayout, type ButtonSize, type HeadlessComponent,
 } from '@weasel-js/ui-logic';
 import { hudMeasureEnv } from '../measureEnv';
 import { textCommandFromRuns } from '@weasel-js/core';
+import { solidFill } from '@weasel-js/paint';
 
 /** The events a button reports through `subscribe`. */
 export type ButtonEvent = 'press' | 'hover' | 'leave';
@@ -92,13 +93,13 @@ export const hudButton: HeadlessComponent<HudButtonState, ButtonLayout, HudButto
     // ui's Button.module.css: `--wzl-button-radius`, else a tenth of the height.
     const radius = envPx(env, '--wzl-button-radius', b.height * 0.1);
     const out: DrawCommand[] = [{
-      kind: 'path', path: roundRectPath(b.x, b.y, b.width, b.height, radius), fill: { paint: { kind: 'solid', color } },
+      kind: 'path', path: roundRectPath(b.x, b.y, b.width, b.height, radius), fill: solidFill(color),
     }];
     for (const { part, rect } of layout.parts) {
       if (part !== 'label') continue;
       out.push(textCommandFromRuns(
         b.x + rect.x, b.y,
-        [{ text: state.label ?? '', fill: { paint: { kind: 'solid', color: target.textColor ?? t['--wzl-fg'] } } }],
+        [{ text: state.label ?? '', fill: solidFill(target.textColor ?? t['--wzl-fg']) }],
         { fontFamily: target.fontFamily ?? ctx.defaultFont, fontSize: layout.metrics.font.size },
         undefined, b.height, 'center',
       ));
@@ -134,8 +135,7 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
   const reports = createKeyedEmitter<ButtonEvent>();
   const emit = (e: ButtonEvent) => { reports.emit(e); };
 
-  const isInside = (x: number, y: number) =>
-    x >= bounds.x && x < bounds.x + bounds.width && y >= bounds.y && y < bounds.y + bounds.height;
+  const isInside = (x: number, y: number) => rectContainsPointHalfOpen(bounds, x, y);
 
   const assertNotDisposed = () => {
     if (disposed) throw new Error('weasel-hud: cannot mutate a disposed widget.');

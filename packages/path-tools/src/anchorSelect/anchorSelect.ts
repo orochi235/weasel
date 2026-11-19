@@ -14,6 +14,7 @@ import { pathOperationTags, type EditAnchorsDep, type KeySpec } from '@weasel-js
 import { openPathEditOf, requiresAnchorSelection } from '../pathEdit/anchorEditing';
 import { icon, type PathToolsIconName } from '../icons.gen';
 import { pref, type PrefGroup } from '@weasel-js/prefs-schema';
+import { isFiniteNumber } from '@weasel-js/registry';
 
 /** The group every action here is in, which an `ActionBar` can show. */
 export const ANCHOR_SELECTION_GROUP = 'anchorSelection';
@@ -70,7 +71,7 @@ export const SELECT_EVERY_NTH_ANCHOR_PARAMS = pref.group('Select every Nth ancho
 /** The count `params.n` asks for, the form's default when it names none. */
 const stepOf = (params: Readonly<{ n?: number }> | undefined): number => {
   const n = params?.n;
-  return typeof n === 'number' && Number.isFinite(n) && n >= 1 ? Math.floor(n) : SELECT_EVERY_NTH_ANCHOR_PARAMS.children.n.default;
+  return isFiniteNumber(n) && n >= 1 ? Math.floor(n) : SELECT_EVERY_NTH_ANCHOR_PARAMS.children.n.default;
 };
 
 /** Add each selected anchor's neighbors along the path. `]`. */

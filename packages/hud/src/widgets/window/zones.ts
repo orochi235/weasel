@@ -1,4 +1,5 @@
 import type { WidgetBounds } from '../../widget';
+import { rectContainsPointHalfOpen } from '@weasel-js/geom';
 
 /** What part of a window a point falls in — which decides what a drag
  *  starting there does and which cursor to show. */
@@ -30,7 +31,7 @@ export function zoneAt(
   x: number,
   y: number,
 ): WindowZone | null {
-  if (!(x >= b.x && x < b.x + b.width && y >= b.y && y < b.y + b.height)) return null;
+  if (!rectContainsPointHalfOpen(b, x, y)) return null;
 
   const west  = x < b.x + m.edge;
   const east  = x >= b.x + b.width - m.edge;

@@ -2,12 +2,13 @@
 import { withTitle } from '../chartTitle';
 import type { PlotData } from '../plotData';
 import type { PlotField, PlotValue } from './schemaTypes';
+import { isFiniteNumber } from '@weasel-js/registry';
 
 /** `v` as text, or `undefined` for anything else. */
 export const textOf = (v: PlotValue): string | undefined => (typeof v === 'string' ? v : undefined);
 
 /** `v` as a finite number, or `undefined` for anything else. */
-export const numberOf = (v: PlotValue): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
+export const numberOf = (v: PlotValue): number | undefined => (isFiniteNumber(v) ? v : undefined);
 
 /** `v` as a whole number, or `undefined` for anything else. */
 export const integerOf = (v: PlotValue): number | undefined => {

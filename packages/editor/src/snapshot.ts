@@ -8,7 +8,7 @@ import type {
 import {
   PAGES_DOC_KEY, adoptLegacyPages, asNodeId, createScene, sceneFromJSON, setPages, specsFromSerialized,
 } from '@weasel-js/core';
-import { freshId } from '@weasel-js/registry';
+import { freshId, isFiniteNumber } from '@weasel-js/registry';
 
 /** How a snapshot is read: `specsFromSerialized`'s options; the pose descriptor that measures each root
  *  when a snapshot's roots are placed on their pages (default core's `placeOnPages` default); and the pages
@@ -72,7 +72,7 @@ function checkPagesDoc(value: unknown): void {
     if (p === null || typeof p !== 'object') fail(`has page ${i} that is not an object`);
     const { id, width, height } = p as { id?: unknown; width?: unknown; height?: unknown };
     if (typeof id !== 'string') fail(`has page ${i} without a string id`);
-    if (![width, height].every((n) => typeof n === 'number' && Number.isFinite(n) && n >= 0)) fail(`has page "${String(id)}" without a finite size`);
+    if (![width, height].every((n) => isFiniteNumber(n) && n >= 0)) fail(`has page "${String(id)}" without a finite size`);
   });
   if (layout !== undefined && (layout === null || typeof layout !== 'object' || Array.isArray(layout))) fail('has a layout that is not an object');
 }

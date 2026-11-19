@@ -8,7 +8,8 @@ import { MinHeap } from './heap';
 import { ObstacleIndex, type EdgeObstacles } from './obstacles';
 import { legEnds, searchLeg, type LegSource, type LegTarget } from './search';
 import { DX, DY, dirOf, type Dir } from './turns';
-import { blocks, inflate, type AvoidObstacle, type Box } from './types';
+import { blocks, type AvoidObstacle, type Box } from './types';
+import { growRect } from '@weasel-js/geom';
 
 const a = rectShape('a', 0, 0);
 const b = rectShape('b', 400, 0);
@@ -28,7 +29,7 @@ describe('routeEdge', () => {
     const wall = rectShape('wall', 200, -100, 60, 260);
     const route = routeEdge(edgeBetween('e', a, b, 'e', 'w'), routeContext([a, b, wall]))!;
     expect(isOrthogonal(route)).toBe(true);
-    const grown = inflate(wall.box, 10);
+    const grown = growRect(wall.box, 10);
     route.slice(1).forEach((p, i) => expect(entersBox(route[i]!, p, grown)).toBe(false));
     expect(route[0]).toEqual({ x: 100, y: 30 });
     expect(route[route.length - 1]).toEqual({ x: 400, y: 30 });
@@ -107,7 +108,7 @@ describe('routeEdge', () => {
     const ctx = { ...routeContext([a, b]), index: new ObstacleIndex([a, b, label], 10, 4) };
     const route = routeEdge(edgeBetween('e', a, b, 'e', 'w'), ctx)!;
     expect(route.length).toBeGreaterThan(2);
-    const grown = inflate(label.box, 4);
+    const grown = growRect(label.box, 4);
     route.slice(1).forEach((p, i) => expect(entersBox(route[i]!, p, grown)).toBe(false));
   });
 
@@ -128,7 +129,7 @@ describe('routeEdge', () => {
         expect(isOrthogonal(route!)).toBe(true);
         for (const shape of shapes) {
           if (!blocks(shape, edge)) continue;
-          const grown = inflate(shape.box, 10);
+          const grown = growRect(shape.box, 10);
           route!.slice(1).forEach((p, i) => {
             expect(entersBox(route![i]!, p, shape.box), `seed ${seed} ${edge.id} through ${shape.id}`).toBe(false);
             const stub = i === 0 || i === route!.length - 2;

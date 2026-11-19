@@ -1,4 +1,4 @@
-import { unionRects, maxOf } from '@weasel-js/geom';
+import { unionRects, maxOf, wrapPositive } from '@weasel-js/geom';
 import type { Bounds } from '@weasel-js/routing';
 
 /** One page of a document: a sheet of a fixed size, in world units. */
@@ -142,7 +142,7 @@ export function adjacentPage(
   const at = pages.findIndex((p) => p.id === current);
   if (at < 0) return pages[step < 0 ? n - 1 : 0] ?? null;
   const to = at + step;
-  return pages[options.wrap ? ((to % n) + n) % n : to] ?? null;
+  return pages[options.wrap ? wrapPositive(to, n) : to] ?? null;
 }
 
 /** The box around every page, or `null` for a document with none. */

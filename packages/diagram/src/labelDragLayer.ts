@@ -23,6 +23,7 @@ import { boxIndex, boxesMeeting, keyedIndex, type BoxIndex } from './keyedIndex'
 import { diagramLabelOf, type DiagramLabel } from './labelTrait';
 import type { Bounds } from './outline';
 import { payloadOf } from './payload';
+import { rectContainsPoint } from '@weasel-js/geom';
 
 /** The layer id the label regions are composed into. */
 export const LABEL_DRAG_LAYER_ID = 'diagram-edge-labels';
@@ -90,8 +91,6 @@ export function* draggableLabels(scene: AnyScene): Iterable<DraggableLabel> {
   }
 }
 
-const holds = (b: Bounds, at: Vec2) => at.x >= b.x && at.x <= b.x + b.width && at.y >= b.y && at.y <= b.y + b.height;
-
 /** Each scene's draggable labels, boxed. Read at document poses, so the scene's version is the whole key. */
 const labelIndexOf = createPart((scene: AnyScene): () => { labels: DraggableLabel[]; boxes: BoxIndex } | null =>
   keyedIndex(
@@ -120,7 +119,7 @@ function labelsAt(scene: AnyScene, at: Vec2): Iterable<DraggableLabel> {
 export function labelUnder(scene: AnyScene, at: Vec2): LabelScratch | null {
   let found: LabelScratch | null = null;
   for (const { labelId, edgeId, box } of labelsAt(scene, at)) {
-    if (holds(box, at)) found = { targetId: labelId, labelId, edgeId };
+    if (rectContainsPoint(box, at.x, at.y)) found = { targetId: labelId, labelId, edgeId };
   }
   return found;
 }

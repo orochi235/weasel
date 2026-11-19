@@ -1,5 +1,6 @@
 import { clamp } from '../scalar';
 import type { TrackPlace, TrackRun } from './run';
+import { wrapPositive } from '../angle';
 
 /** Where a sequence sits along a run: against its reading start, its middle, or its reading end. */
 export type RunAlign = 'start' | 'center' | 'end';
@@ -112,7 +113,7 @@ export function placeAlongRun(run: TrackRun, lengths: readonly number[], options
     const clipped = lap ? clipOf(spot.center - half, spot.center + half, lap.start, lap.end, lap.hair) : spot.clipped;
     let distance = spot.center;
     if (past === 'hold' && clipped === 'past') distance = clamp(distance, lap?.start ?? 0, lap?.end ?? length);
-    if (lap && length > 0) distance = ((distance % length) + length) % length;
+    if (lap && length > 0) distance = wrapPositive(distance, length);
     return { ...runPlaceAt(run, mirror ? length - distance : distance, shift, past === 'extend' ? 'extend' : 'follow'), center: spot.center, clipped };
   });
 }

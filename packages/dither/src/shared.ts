@@ -1,4 +1,5 @@
 import type { Rgb } from './types';
+import { wrapPositive } from '@weasel-js/geom';
 
 /** The classic 4×4 Bayer index matrix, row-major. The GPU shader embeds this
  *  same array, so the two paths cannot drift. */
@@ -20,6 +21,6 @@ export function checkImageSize(caller: string, width: number, height: number): v
 
 /** The gray an ordered dither compares against at dot (x, y): below it is ink. */
 export function bayerCutoff(x: number, y: number, threshold: number): number {
-  const m = BAYER_4X4[(((y % 4) + 4) % 4) * 4 + (((x % 4) + 4) % 4)]!;
+  const m = BAYER_4X4[wrapPositive(y, 4) * 4 + wrapPositive(x, 4)]!;
   return (m + 0.5) * 16 + (threshold - DEFAULT_THRESHOLD);
 }

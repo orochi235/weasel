@@ -12,6 +12,7 @@ import { AnimatorWatch } from './animation/AnimatorWatch';
 import { FlickSnapPanel } from './animation/FlickSnapPanel';
 import { DemoStage } from './DemoStage';
 import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
+import { maxOf } from '@weasel-js/geom';
 
 interface Card { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -33,8 +34,8 @@ const ADDED = { width: 60, height: 60 };
  *  makes, and every card stays whole on the canvas. */
 export function flingBounds(size: Dims) {
   const cards = [...INITIAL, ADDED];
-  const width = Math.max(...cards.map((c) => c.width));
-  const height = Math.max(...cards.map((c) => c.height));
+  const width = maxOf(cards, (c) => c.width);
+  const height = maxOf(cards, (c) => c.height);
   return { x: 0, y: 0, width: size.width - width, height: size.height - height };
 }
 

@@ -11,6 +11,7 @@ import { joinSelectedAnchors } from '../pathEdit/anchorJoin';
 import { pref } from '@weasel-js/prefs-schema';
 import { icon } from '../icons.gen';
 import type {} from '../actionParamSchema';
+import { isFiniteNumber } from '@weasel-js/registry';
 
 /** How long Bridge makes each handle, as a fraction of the gap, when its
  *  params name no `tension`. */
@@ -26,7 +27,7 @@ export const BRIDGE_PARAMS = pref.group('Bridge', {
 /** A bridge's `params.tension`, or the default. Negative reads as `0`. */
 export function bridgeTensionOf(params: Readonly<Record<string, unknown>> | undefined): number {
   const t = params?.tension;
-  return typeof t === 'number' && Number.isFinite(t) ? Math.max(0, t) : DEFAULT_BRIDGE_TENSION;
+  return isFiniteNumber(t) ? Math.max(0, t) : DEFAULT_BRIDGE_TENSION;
 }
 
 /**

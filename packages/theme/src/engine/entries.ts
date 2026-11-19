@@ -1,5 +1,5 @@
 /** Settling a definition entry's `by`s and seeds, and reading a ramp or scale entry into the values `derive` makes tokens of. */
-import { hasOwnKey, isPlainObject, setOwn } from '@weasel-js/registry';
+import { hasOwnKey, isPlainObject, setOwn, isFiniteNumber } from '@weasel-js/registry';
 import { isByAxis, pick, type AxisChoice } from '../axes.ts';
 import { DEFAULT_CONSTRAINTS, type Anchor, type Constraints } from './color/generate.ts';
 import { categoricalRamp, lightnessRamp } from './ramps.ts';
@@ -77,7 +77,7 @@ class Reader {
   }
 
   num(x: unknown, path: string): number {
-    if (typeof x === 'number' && Number.isFinite(x)) return x;
+    if (isFiniteNumber(x)) return x;
     this.fail(path, 'expected a number');
     return Number.NaN;
   }

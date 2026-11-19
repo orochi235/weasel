@@ -22,6 +22,7 @@ import { useFieldControl, type FieldControlAttrs } from '../Field/fieldSemantics
 import { trackPlace } from './sliderScale';
 import { keyLanding, useTrackStops } from './sliderStops';
 import { attachesUnit, UnitSuffix } from './unitSuffix';
+import { maxOf } from '@weasel-js/geom';
 
 /** A slider's props with a commit-only caller's drag drawn locally, so the controlled track follows the pointer. */
 function useSliderDraft(p: PropertyNumberFieldProps): PropertyNumberFieldProps {
@@ -294,7 +295,7 @@ function EditableReadout({ named, value, min, max, step, reach, settle, toTrack,
   const displayValue = draft !== null ? draft : text(value);
   // The widest value the range can show, which the stylesheet widens the box to
   // fit: each end of the track, and the stop inside it where the end is infinity's.
-  const widest = Math.max(...[min, min + step, max - step, max].map((at) => text(settle(at)).length));
+  const widest = maxOf([min, min + step, max - step, max], (at) => text(settle(at)).length);
   const fit = { '--wzl-property-readout-fit': `${widest}ch` };
 
   // Escape and Enter both leave by blurring, and that blur runs the handler of

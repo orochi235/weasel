@@ -3,6 +3,7 @@ import { clientScaleOf } from '@weasel-js/core';
 import { PrefsForm, type PrefsFormProps } from '@weasel-js/ui';
 import s from './PrefSchemaEditor.module.css';
 import { watchResize } from '@weasel-js/react';
+import { maxOf } from '@weasel-js/geom';
 
 /** The rows the glyph stands beside, by the path a form marks each with. */
 const BESIDE = ['name', 'description'];
@@ -22,7 +23,7 @@ export function IdentityForm({ icon, ...form }: PrefsFormProps & { icon: ReactNo
       if (rows.length === 0) return setBox(null);
       const at = el.getBoundingClientRect();
       const scale = clientScaleOf(el, at);
-      const bottom = Math.max(...rows.map((r) => (r.firstElementChild ?? r).getBoundingClientRect().bottom));
+      const bottom = maxOf(rows, (r) => (r.firstElementChild ?? r).getBoundingClientRect().bottom);
       // Where a slot's content ends, inside the inset the form gives it: the edge every other row's control ends at.
       const slot = rows[0]!;
       const right = slot.getBoundingClientRect().right - parseFloat(getComputedStyle(slot).paddingInlineEnd) * scale.x;

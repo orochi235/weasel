@@ -1,6 +1,7 @@
 import { contrast, CHROMA_WEIGHT, deltaE, hueGap, toLab, toLch } from './oklch.ts';
 import { place, toHexPreview } from './placement.ts';
 import type { Constraints } from './generate.ts';
+import { wrapPositive } from '@weasel-js/geom';
 
 type Lab = readonly [number, number, number];
 
@@ -57,7 +58,7 @@ function measure(hex: string, surface: string): Placed {
 function createPlacer(c: Constraints): (H: number) => Placed {
   const placed = new Map<number, Placed>();
   return (H) => {
-    const key = ((Math.round(H) % 360) + 360) % 360;
+    const key = wrapPositive(Math.round(H), 360);
     let v = placed.get(key);
     if (!v) {
       v = measure(place(key, c), c.surface);
@@ -159,7 +160,7 @@ function seedRings(freeCount: number, anchorHues: readonly number[], minGapDeg: 
       for (const divisor of [Math.max(1, freeCount - 1), freeCount]) {
         seeds.push(
           Array.from({ length: freeCount }, (_, i) =>
-            Math.round((((base + minGapDeg + jitter + (i * span) / divisor) % 360) + 360) % 360),
+            Math.round(wrapPositive(base + minGapDeg + jitter + (i * span) / divisor, 360)),
           ),
         );
       }
@@ -191,7 +192,7 @@ function descend(
       const beforeP = penaltyAt(meta, slot, g);
       const beforeC = meta[slot].chroma;
       for (const delta of STEPS) {
-        const next = (((current[i] + delta) % 360) + 360) % 360;
+        const next = wrapPositive(current[i] + delta, 360);
         if (next === current[i]) continue;
         const candidate = at(next);
         const trialMeta = meta.slice();

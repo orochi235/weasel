@@ -6,6 +6,7 @@ import {
   stepPresentation, viewCamera, type PageRequest, type PresentationStepOptions,
 } from './presentationStep';
 import type {} from '../../interactions/actions/actionParamSchema';
+import { isFiniteNumber } from '@weasel-js/registry';
 
 /** The entry {@link createPresentationContribution} builds. */
 export const PRESENTATION_ID = 'weasel-presentation';
@@ -45,7 +46,7 @@ function requestOf(params: Readonly<Record<string, unknown>> | undefined, go: bo
   const to = params?.to;
   if (typeof to === 'string' || typeof to === 'number') return go || to === 'first' || to === 'last' ? { to } : null;
   const by = params?.by;
-  return !go && typeof by === 'number' && Number.isFinite(by) ? { by } : null;
+  return !go && isFiniteNumber(by) ? { by } : null;
 }
 
 function presentationAction(id: string, label: string, go: boolean, opts: PresentationOptions): Action {

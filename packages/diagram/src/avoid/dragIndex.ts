@@ -6,10 +6,10 @@
  * already reads everything.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import { unionRects } from '@weasel-js/geom';
+import { unionRects, growRect } from '@weasel-js/geom';
 import { ObstacleIndex } from './obstacles';
 import { SegmentIndex } from './segments';
-import { inflate, type AvoidInput, type AvoidObstacle, type Box } from './types';
+import { type AvoidInput, type AvoidObstacle, type Box } from './types';
 
 const sameBox = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 
@@ -79,8 +79,8 @@ export class DragIndex {
     let limit = this.limit;
     for (const [id, o] of this.displaced) {
       for (const e of this.attached.get(id) ?? []) first.add(e);
-      this.segments.edgesMeeting(inflate(this.committed.get(id)!.box, this.clearance), meeting);
-      this.segments.edgesMeeting(inflate(o.box, this.clearance), meeting);
+      this.segments.edgesMeeting(growRect(this.committed.get(id)!.box, this.clearance), meeting);
+      this.segments.edgesMeeting(growRect(o.box, this.clearance), meeting);
       limit = unionRects([limit, o.box])!;
     }
     return { index: this.index, dirty: [...first, ...[...meeting].filter((e) => !first.has(e))], limit };

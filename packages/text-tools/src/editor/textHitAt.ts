@@ -1,4 +1,4 @@
-import { boundsOfPath, pathContainsPoint, type Path } from '@weasel-js/geom';
+import { boundsOfPath, pathContainsPoint, type Path, rectContainsPoint } from '@weasel-js/geom';
 import { caretIndexAt, textPoseContainsPoint, type StyledRun, type TextFit, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
 import { textBoxOf, textLayoutScale } from '../node/textPainter';
 import { AUTO_POSE_DESCRIPTOR, derivedPartsOf, effectSourceFor, indexedCandidates, nodesAsShown, sceneDerivedPathOf, scenePaintedPoseOf, shownLookup, targetTransformOf, worldToLocal, type RectPose, type Scene } from '@weasel-js/core';
@@ -100,6 +100,6 @@ function onAGlyph(path: Path, x: number, y: number): boolean {
   if (parts === undefined) return pathContainsPoint(path, x, y);
   return parts.some(({ path: part }) => {
     const b = boundsOfPath(part);
-    return x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height;
+    return rectContainsPoint(b, x, y);
   });
 }

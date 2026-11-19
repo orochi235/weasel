@@ -3,6 +3,7 @@ import { solid } from '@weasel-js/paint';
 import { asNodeId, SceneCanvas, useDepSource, useScene, type Fill } from '@weasel-js/core';
 import { DemoStage } from './DemoStage';
 import { movePreset, pickPreset, useSelection, snapToContainer, snapBackOrDelete } from '@weasel-js/editing';
+import { rectContainsPoint } from '@weasel-js/geom';
 
 /** The kit's default painter fills a rect-posed node with its `data.fill`. */
 interface NodeData { fill: Fill }
@@ -12,9 +13,6 @@ interface Pose { x: number; y: number; width: number; height: number }
 const W = 460, H = 320;
 const BIN_A = { x: 40, y: 200, width: 160, height: 90 };
 const BIN_B = { x: 260, y: 200, width: 160, height: 90 };
-const inside = (b: { x: number; y: number; width: number; height: number }, wx: number, wy: number) =>
-  wx >= b.x && wx <= b.x + b.width && wy >= b.y && wy <= b.y + b.height;
-
 /** The bins are marks, so a drop lands in one only because this says it may. */
 function BinsTakeDrops(): null {
   useDepSource('canDropInto', () => (parent) => parent === 'binA' || parent === 'binB');
@@ -37,8 +35,8 @@ export function MoveSnapDemo() {
     snapToContainer<Pose>({
       dwellMs: 250,
       findTarget: (_id, wx, wy) => {
-        if (inside(BIN_A, wx, wy)) return { parentId: 'binA', slotPose: { x: BIN_A.x + 20, y: BIN_A.y + 25, width: 40, height: 40 } };
-        if (inside(BIN_B, wx, wy)) return { parentId: 'binB', slotPose: { x: BIN_B.x + 20, y: BIN_B.y + 25, width: 40, height: 40 } };
+        if (rectContainsPoint(BIN_A, wx, wy)) return { parentId: 'binA', slotPose: { x: BIN_A.x + 20, y: BIN_A.y + 25, width: 40, height: 40 } };
+        if (rectContainsPoint(BIN_B, wx, wy)) return { parentId: 'binB', slotPose: { x: BIN_B.x + 20, y: BIN_B.y + 25, width: 40, height: 40 } };
         return null;
       },
     }),

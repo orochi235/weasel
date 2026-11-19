@@ -5,6 +5,7 @@ import type { CanvasHelpers, Dims, Fill, RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { DemoStage } from './DemoStage';
 import { movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
+import { rectsOverlap } from '@weasel-js/geom';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; fill: Fill }
 
@@ -28,7 +29,7 @@ interface QuadNode { x: number; y: number; width: number; height: number; depth:
 const MAX_DEPTH = 5;
 
 function aabbIntersects(n: QuadNode, r: { x: number; y: number; width: number; height: number }): boolean {
-  return r.x < n.x + n.width && r.x + r.width > n.x && r.y < n.y + n.height && r.y + r.height > n.y;
+  return rectsOverlap(r, n);
 }
 
 function buildTree(bounds: { x: number; y: number; width: number; height: number }, rects: Rect[]): QuadNode {

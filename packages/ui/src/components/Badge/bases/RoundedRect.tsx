@@ -1,5 +1,5 @@
 import type { BaseModule, BaseSampler, PerimeterPoint } from './types';
-import { lerp, trimNumber } from '@weasel-js/geom';
+import { lerp, trimNumber, wrapPositive } from '@weasel-js/geom';
 
 /** What `baseParams` takes on a badge whose `base` is `rounded-rect`. */
 export interface BadgeRoundedRectBaseParams {
@@ -101,7 +101,7 @@ function roundedRectOutline({ rx, ry, sx, sy }: Corners): Outline {
   const totalCss = cum[cum.length - 1];
 
   const perimeterAt = (s: number): PerimeterPoint => {
-    const sm = ((s % totalCss) + totalCss) % totalCss;
+    const sm = wrapPositive(s, totalCss);
     let segIdx = 0;
     while (segIdx < segments.length - 1 && sm > cum[segIdx + 1]) segIdx++;
     const local = sm - cum[segIdx];
@@ -166,7 +166,7 @@ function pinchedSampler({ perimeterAt, totalCss }: Outline, pinch: number, { sx,
     '') + ' Z';
 
   const pinchedAt = (s: number): PerimeterPoint => {
-    const sm = ((s % totalCss) + totalCss) % totalCss;
+    const sm = wrapPositive(s, totalCss);
     const pt = perimeterAt(sm);
     const x = pt.x;
     const y = pinchY(pt.x, pt.y);

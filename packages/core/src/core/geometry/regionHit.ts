@@ -14,7 +14,7 @@ import {
   rectBetween,
   polygonIntersectsPath,
   type Path,
-  type PolygonPath,
+  type PolygonPath, rectsOverlap,
 } from '@weasel-js/geom';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { LassoHitMode } from 'core/adapters/types';
@@ -173,10 +173,7 @@ export function regionTakes(
   if (!filled()) return polygonIntersectsPath(region.verts, drawn, { filled: false });
   // Two axis-aligned rects meet exactly when their boxes overlap.
   if (drawn.kind === 'rect' && region.isRect) {
-    return (
-      drawn.x < ab.x + ab.width && drawn.x + drawn.width > ab.x &&
-      drawn.y < ab.y + ab.height && drawn.y + drawn.height > ab.y
-    );
+    return rectsOverlap(drawn, ab);
   }
   return polygonIntersectsPath(region.verts, drawn);
 }

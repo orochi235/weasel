@@ -1,7 +1,7 @@
 import { proportion, tickStep } from './linear';
 import { replacedFormat } from './replacedFormat';
 import type { ContinuousScale } from './types';
-import { lerp } from '@weasel-js/geom';
+import { lerp, wrapPositive } from '@weasel-js/geom';
 
 /** Options for {@link timeScale}. */
 export interface TimeScaleOptions {
@@ -52,7 +52,7 @@ function intervalFor(span: number, count: number): Interval {
  *  1900 to 1999. */
 function monthStart(month: number): number {
   const at = new Date(0);
-  at.setUTCFullYear(Math.floor(month / 12), ((month % 12) + 12) % 12, 1);
+  at.setUTCFullYear(Math.floor(month / 12), wrapPositive(month, 12), 1);
   return at.getTime();
 }
 

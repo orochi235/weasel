@@ -13,6 +13,7 @@ import { icon } from '../icons.gen';
 import { kneadTargets } from './kneadTargets';
 import { outlineSession } from '../shared/outlineSession';
 import type {} from '../actionParamSchema';
+import { isFiniteNumber } from '@weasel-js/registry';
 
 /** The brush's radius in screen px when no param gives one. */
 export const DEFAULT_KNEAD_RADIUS_PX = 40;
@@ -41,7 +42,7 @@ export type KneadParams = {
   strength?: number;
 };
 
-const num = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+const num = (v: unknown, d: number) => (isFiniteNumber(v) ? v : d);
 
 function radiusOf(params: KneadParams | undefined): number {
   return Math.max(1, num(params?.radiusPx, DEFAULT_KNEAD_RADIUS_PX));

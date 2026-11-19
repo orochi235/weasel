@@ -99,10 +99,6 @@ export const AVOID_DEFAULTS: ResolvedAvoidOptions = Object.freeze({
   labelClearance: 4,
 });
 
-/** `box` grown by `by` on every side. */
-export const inflate = (box: Box, by: number): Box =>
-  ({ x: box.x - by, y: box.y - by, width: box.width + 2 * by, height: box.height + 2 * by });
-
 /** A connector as {@link blocks} reads it: its id and the shapes it joins. */
 export interface BlockedEdge {
   id: string;

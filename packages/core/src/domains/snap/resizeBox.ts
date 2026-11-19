@@ -4,6 +4,7 @@ import { fixedCornerOf, movedEdges, movingPoint } from 'interactions/gestures/re
 import type { SnapResizeBox } from 'interactions/actions/snapDep';
 import type { SnapProbeAt, SnapSide } from './types';
 import type { Point } from '@weasel-js/geom';
+import { maxOf, minOf } from '@weasel-js/geom';
 
 export const EPS = 1e-9;
 
@@ -77,9 +78,9 @@ export function resizedBox(s: ResizeSubject, delta: Point): Bounds {
   const corners = cornersAt(s, delta);
   const xs = corners.map((c) => c.x);
   const ys = corners.map((c) => c.y);
-  const x = Math.min(...xs);
-  const y = Math.min(...ys);
-  return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
+  const x = minOf(xs);
+  const y = minOf(ys);
+  return { x, y, width: maxOf(xs) - x, height: maxOf(ys) - y };
 }
 
 const near = (a: number, b: number, scale: number): boolean => Math.abs(a - b) <= 1e-9 * Math.max(1, scale);
@@ -95,9 +96,9 @@ export function resizeSides(s: ResizeSubject, delta: Point): SnapSide[] {
   const out: SnapSide[] = [];
   for (const axis of ['x', 'y'] as const) {
     const vs = now.map((c) => c[axis]);
-    const span = Math.max(...vs) - Math.min(...vs);
+    const span = maxOf(vs) - minOf(vs);
     for (const side of ['min', 'max'] as const) {
-      const edge = side === 'min' ? Math.min(...vs) : Math.max(...vs);
+      const edge = side === 'min' ? minOf(vs) : maxOf(vs);
       const rates = now.flatMap((c, i) => (near(c[axis], edge, span)
         ? [{ x: stepX[i]![axis] - c[axis], y: stepY[i]![axis] - c[axis] }]
         : []));

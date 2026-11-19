@@ -51,6 +51,8 @@ cursors.get('pen'); // 'crosshair'
   not stop the rest.
 - `isPlainObject(value)` and `isPlainPrototype(proto)` — plain-object tests
   that hold for objects from another realm.
+- `isFiniteNumber(value)` — whether `value` is a finite number, as a type guard
+  that `Number.isFinite` is not.
 - `deepEqual(a, b, { undefinedAsAbsent })` — structural equality over arrays
   and plain objects; anything else equals only itself.
 - `sameList(a, b, same)` — equal elements in the same order.

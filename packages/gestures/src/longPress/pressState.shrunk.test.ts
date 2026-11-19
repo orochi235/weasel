@@ -1,6 +1,6 @@
 /** Clock readings the long-press progress property test shrank to. */
 import { expect, it } from 'vitest';
-import { createLongPressStore } from './longPressState';
+import { createLongPressStore } from './pressState';
 
 it('reads progress at a clock of NaN as not begun, rather than as NaN', () => {
   const store = createLongPressStore();

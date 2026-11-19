@@ -7,7 +7,7 @@ import {
   PATH_M,
   PATH_Z,
   type PolygonPath,
-  pathFromD,
+  pathFromD, DEG_TO_RAD,
 } from '@weasel-js/geom';
 import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { NO_MODS, setup } from './testing/penHarness';
@@ -19,7 +19,6 @@ vi.mock('./penPreviewLayer', async (importOriginal) => {
   return { ...actual, createPenPreviewLayer: vi.fn(actual.createPenPreviewLayer) };
 });
 
-const DEG = Math.PI / 180;
 
 describe('usePenTool', () => {
   it('click on empty space (Idle) → places a corner anchor and enters Drawing', () => {
@@ -70,9 +69,9 @@ describe('usePenTool', () => {
   it('Shift puts a handle dragged at 40° on the 45° line, at the nearest point to the pointer', () => {
     const p = setup();
     const r = 100;
-    p.drag({ x: 0, y: 0 }, { x: r * Math.cos(40 * DEG), y: r * Math.sin(40 * DEG) }, { shift: true });
+    p.drag({ x: 0, y: 0 }, { x: r * Math.cos(40 * DEG_TO_RAD), y: r * Math.sin(40 * DEG_TO_RAD) }, { shift: true });
     const out = p.scratch.current!.anchors[0].outHandle!;
-    const along = r * Math.cos(5 * DEG) / Math.SQRT2;
+    const along = r * Math.cos(5 * DEG_TO_RAD) / Math.SQRT2;
     expect(out.x).toBeCloseTo(along, 9);
     expect(out.y).toBeCloseTo(along, 9);
   });

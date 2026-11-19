@@ -2,6 +2,7 @@ import type { ConfigSchema } from '@weasel-js/labkit/config';
 import type { StoryGlobals } from '../../protocol/messages';
 import { formatRoute, knobsToParams, pinParams } from '../../route/url';
 import { ISSUES_PATH, type IssueRepo, type IssuesAnswer, issueLabel } from '../../vite/issues/answer';
+import { maxOf } from '@weasel-js/geom';
 
 /** What the Report form hands its host. */
 export interface IssueReport {
@@ -41,7 +42,7 @@ export interface ReportContext {
 
 /** `text` as a Markdown code span: fenced past its longest run of backticks, padded where an edge would join the fence. */
 function code(text: string): string {
-  const fence = '`'.repeat(Math.max(0, ...(text.match(/`+/g) ?? []).map((run) => run.length)) + 1);
+  const fence = '`'.repeat(Math.max(0, maxOf(text.match(/`+/g) ?? [], (run) => run.length)) + 1);
   const pad = /^`|`$/.test(text) || /^ [^]*[^ ][^]* $/.test(text) ? ' ' : '';
   return `${fence}${pad}${text}${pad}${fence}`;
 }

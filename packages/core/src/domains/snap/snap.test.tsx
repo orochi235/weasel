@@ -6,7 +6,7 @@ import { useDepRegistry } from '@weasel-js/routing/react';
 import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react';
 import { SceneCanvas } from 'canvas/SceneCanvas';
 import type { FeaturePreset } from 'canvas/SceneCanvas/features';
-import { pathFromD } from '@weasel-js/geom';
+import { pathFromD, DEG_TO_RAD } from '@weasel-js/geom';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'core/scene/types';
 import type { SnapDep } from 'interactions/actions/snapDep';
@@ -104,16 +104,15 @@ describe('<SceneCanvas snap>', () => {
   });
 
   describe('default sources', () => {
-    const DEG = Math.PI / 180;
     const rotate = (snap: SnapDep) =>
       snap.begin({ gesture: 'rotate', press: { x: 100, y: 0 }, pivot: { x: 0, y: 0 } });
     const fortyFive: SnapSource = {
       id: 'rotation', roles: [], gestures: ['rotate'], collect: () => [],
-      *angles() { yield { angle: 45 * DEG }; },
+      *angles() { yield { angle: 45 * DEG_TO_RAD }; },
     };
 
     it('snaps a rotate to a quarter turn with no source named', () => {
-      expect(rotate(mount(null, {})).angle(88 * DEG, FREE).theta).toBeCloseTo(90 * DEG, 9);
+      expect(rotate(mount(null, {})).angle(88 * DEG_TO_RAD, FREE).theta).toBeCloseTo(90 * DEG_TO_RAD, 9);
     });
 
     it("lands a pen click on another path's anchor within 8px, unless `omit` names 'path-snap'", () => {
@@ -125,18 +124,18 @@ describe('<SceneCanvas snap>', () => {
 
     it('leaves out a default source `omit` names', () => {
       const snap = mount(null, { snap: { omit: ['rotation'] } });
-      expect(rotate(snap).angle(88 * DEG, FREE).theta).toBeCloseTo(88 * DEG, 9);
+      expect(rotate(snap).angle(88 * DEG_TO_RAD, FREE).theta).toBeCloseTo(88 * DEG_TO_RAD, 9);
     });
 
     it('replaces a default source with a consumer source of the same id', () => {
       const s = rotate(mount(null, { snap: { sources: [fortyFive] } }));
-      expect(s.angle(88 * DEG, FREE).theta).toBeCloseTo(88 * DEG, 9);
-      expect(s.angle(44 * DEG, FREE).theta).toBeCloseTo(45 * DEG, 9);
+      expect(s.angle(88 * DEG_TO_RAD, FREE).theta).toBeCloseTo(88 * DEG_TO_RAD, 9);
+      expect(s.angle(44 * DEG_TO_RAD, FREE).theta).toBeCloseTo(45 * DEG_TO_RAD, 9);
     });
 
     it('replaces a default source with one useSnapSource adds', () => {
       const s = rotate(mount(<Contribute source={fortyFive} />, {}));
-      expect(s.angle(88 * DEG, FREE).theta).toBeCloseTo(88 * DEG, 9);
+      expect(s.angle(88 * DEG_TO_RAD, FREE).theta).toBeCloseTo(88 * DEG_TO_RAD, 9);
     });
   });
 });

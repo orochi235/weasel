@@ -287,7 +287,7 @@ describe('a loupe that paints through a view but takes no input', () => {
     const rect = loupe.window.contentRect;
     const cmds = loupe.window.content!({
       data: {}, view: { x: 0, y: 0, scale: { x: 1, y: 1 } }, dims: { width: 400, height: 400, dpr: 1 },
-      rect, defaultFont: 'D', color: () => '#000000', tokens: {} as never,
+      rect, defaultFont: 'D', color: () => '#000000', tokens: { '--wzl-surface': '#ffffff' } as never,
     });
     // The backdrop, then the view's clipped group.
     expect(cmds.map((c) => c.kind)).toEqual(['path', 'group']);

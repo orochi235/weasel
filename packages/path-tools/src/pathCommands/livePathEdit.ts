@@ -4,7 +4,7 @@ import type { PolygonPath } from '@weasel-js/geom';
 import type { PrefGroup, PrefNumber } from '@weasel-js/prefs-schema';
 import type { Op } from '@weasel-js/core';
 import { commitOps, type PathNode, pathOperationTags, operandPathNodes, withPath } from '@weasel-js/core';
-import { getOwn } from '@weasel-js/registry';
+import { getOwn, isFiniteNumber } from '@weasel-js/registry';
 
 /** What one live path command does with its parameter, reading params `P`. */
 export interface LivePathEditSpec<P = Record<string, unknown>> {
@@ -61,7 +61,7 @@ export function createLivePathEditAction<P = Record<string, unknown>>(spec: Live
         if (nodes.length === 0) return {};
         const read = (params: Readonly<Partial<P>> | undefined): number | null => {
           const v = params?.[spec.param];
-          return typeof v === 'number' && Number.isFinite(v) ? v : null;
+          return isFiniteNumber(v) ? v : null;
         };
         const given = resolveParams(opts?.params);
         const none: Partial<P> = {};

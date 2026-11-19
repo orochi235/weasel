@@ -12,7 +12,7 @@ import {
 } from '@weasel-js/core';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { SNAPSHOT_SHORTCUT } from '../chrome/trialActions';
-import { REDO_SHORTCUT, UNDO_SHORTCUT } from '../undo/useUndoKeys';
+import { REDO_BINDINGS, UNDO_BINDINGS } from '../undo/useUndoKeys';
 import { createKeyClaims, type KeyClaims, useClaimed } from './keyClaims';
 import { owningTrial, useOwnsTrial } from './owningTrial';
 
@@ -85,11 +85,8 @@ export function useLabChordActions(
       invoker: { timing: 'immediate', run: () => target()?.run(chord) },
     });
     const actions: Action[] = [
-      immediate('lab.undo', 'Undo', 'undo', [{ spec: keySpec(UNDO_SHORTCUT) }]),
-      immediate('lab.redo', 'Redo', 'redo', [
-        { spec: keySpec(REDO_SHORTCUT) },
-        { spec: keySpec({ key: 'y' }) },
-      ]),
+      immediate('lab.undo', 'Undo', 'undo', [...UNDO_BINDINGS]),
+      immediate('lab.redo', 'Redo', 'redo', [...REDO_BINDINGS]),
       {
         id: 'lab.snapshot',
         label: 'Save snapshot',

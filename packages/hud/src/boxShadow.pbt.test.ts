@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { pathContainsPoint, type Path } from '@weasel-js/geom';
+import { solid } from '@weasel-js/paint';
 import type { BoxShadow } from '@weasel-js/theme';
 import { boxShadowCommands } from './boxShadow';
 import { runs, tally } from './pbt.fixture';
@@ -25,7 +26,11 @@ const numbers = (v: unknown): number[] => {
   JSON.stringify(v, (_k, x) => { if (typeof x === 'number') out.push(x); return x; });
   return out;
 };
-const colorOf = (cmd: unknown): string => (cmd as { children: { fill: { paint: { color: string } } }[] }).children[0]!.fill.paint.color;
+const paintOf = (cmd: unknown): { color: string; opacity?: number } => {
+  const { kind: _kind, ...paint } = (cmd as { children: { fill: { paint: { kind: string; color: string; opacity?: number } } }[] })
+    .children[0]!.fill.paint;
+  return paint;
+};
 const pathsOf = (cmd: unknown): Path[] => (cmd as { children: { path: Path }[] }).children.map((c) => c.path);
 
 describe('boxShadowCommands', () => {
@@ -33,9 +38,9 @@ describe('boxShadowCommands', () => {
     fc.assert(fc.property(box, fc.integer({ min: 0, max: 12 }), fc.array(layer, { maxLength: 5 }), (b, radius, layers) => {
       const { under, over } = boxShadowCommands(b, radius, layers, '#123456');
       const want = (inset: boolean) => [...layers].reverse().filter((s) => s.inset === inset)
-        .map((s) => (s.color === 'currentColor' ? '#123456' : s.color));
+        .map((s) => solid(s.color === 'currentColor' ? '#123456' : s.color));
       expect(under).toHaveLength(want(false).length);
-      expect(over.map(colorOf)).toEqual(want(true));
+      expect(over.map(paintOf)).toEqual(want(true));
       expect(numbers([under, over]).every(Number.isFinite)).toBe(true);
     }), runs(RUNS));
   });

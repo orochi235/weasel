@@ -1,4 +1,5 @@
 /** A git graph's commands replayed into its history: the commits each made, and the branches they sit on. */
+import { freshId } from '@weasel-js/registry';
 import type { GitCommand, GitCommitType, GitGraphData } from './types';
 
 /** One commit, as the replay made it. */
@@ -51,9 +52,7 @@ const headOf = (s: ReplayState, branch: string): string | undefined => {
 function add(s: ReplayState, command: number, id: string | undefined, rest: Omit<GitCommit, 'command' | 'id' | 'branch' | 'seq'>): string | null {
   const seq = s.history.commits.length;
   // A commit given no id takes the first `#n` from its place on that no commit holds.
-  let n = seq;
-  while (id === undefined && s.byId.has(`#${n}`)) n++;
-  const name = id ?? `#${n}`;
+  const name = id ?? freshId('#', s.byId, { sep: '', from: seq });
   if (s.byId.has(name)) return `a commit "${name}" already exists`;
   const commit: GitCommit = { command, id: name, branch: s.current, seq, ...rest };
   s.history.commits.push(commit);

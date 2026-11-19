@@ -1,6 +1,6 @@
 import { resolveEdge, type EdgeCap, type EdgePoint } from './edgeProfiles';
 import type { BaseModule, BaseSampler, PerimeterPoint } from './types';
-import { lerp, trimNumber } from '@weasel-js/geom';
+import { maxOf, lerp, trimNumber, wrapPositive } from '@weasel-js/geom';
 
 /** What `baseParams` takes on a badge whose `base` is `powerline`. */
 export interface BadgePowerlineBaseParams {
@@ -67,7 +67,7 @@ const Powerline: BaseModule<BadgePowerlineBaseParams> = {
     const totalCss = cum[cum.length - 1] + closeLen;
 
     const perimeterAt = (s: number): PerimeterPoint => {
-      const sm = ((s % totalCss) + totalCss) % totalCss;
+      const sm = wrapPositive(s, totalCss);
       for (let i = 1; i < pts.length; i++) {
         if (sm <= cum[i]) {
           const segLen = cum[i] - cum[i - 1];
@@ -124,8 +124,8 @@ const Powerline: BaseModule<BadgePowerlineBaseParams> = {
     };
     const avgLeft = avgOffset(left);
     const avgRight = avgOffset(right);
-    const maxLeftInward = Math.max(0, ...left.map((p) => p.x));
-    const maxRightInward = Math.max(0, ...right.map((p) => -p.x));
+    const maxLeftInward = Math.max(0, maxOf(left, (p) => p.x));
+    const maxRightInward = Math.max(0, maxOf(right, (p) => -p.x));
     // Desired asymmetry: padLeft - padRight = avgLeft + avgRight (so the text
     // centroid sits at the silhouette's centroid). Hold padLeft + padRight = 2 * depth.
     const shift = (avgLeft + avgRight) / 2;

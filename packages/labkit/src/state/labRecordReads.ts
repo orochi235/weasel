@@ -1,4 +1,5 @@
 import { isPlainObject } from '@weasel-js/core';
+import { isFiniteNumber } from '@weasel-js/registry';
 import type { OwnedRecordCache, RecordCache, RecordChange } from '@weasel-js/storage';
 import { isColorModePreference } from '@weasel-js/theme';
 import { CURRENT_DOCUMENT_VERSION } from './document';
@@ -32,10 +33,7 @@ function remoteTrial(
     return trials.filter((t) => t.id !== id);
   }
   const { order, ...rest } = value as SerializedTrial & { order?: unknown };
-  orderOf.set(
-    id,
-    typeof order === 'number' && Number.isFinite(order) ? order : nextOrderIn(orderOf),
-  );
+  orderOf.set(id, isFiniteNumber(order) ? order : nextOrderIn(orderOf));
   const [replacement] = hydrateTrials([{ ...rest, id }], hooks.serializers, hooks, failed);
   // Kept, the stale trial's next edit would write over a record this tab cannot read.
   if (!replacement) return trials.filter((t) => t.id !== id);

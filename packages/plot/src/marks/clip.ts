@@ -1,6 +1,6 @@
 /** Data geometry cut to a convex plot area at compile time, so nothing past the area is drawn by any renderer or export. */
 import type { PlotPoint } from './types';
-import { lerp, type Rect } from '@weasel-js/geom';
+import { maxOf, minOf, lerp, type Rect } from '@weasel-js/geom';
 
 /** A convex area as its corners, in order either way round. */
 export type ConvexArea = readonly PlotPoint[];
@@ -47,7 +47,7 @@ function sidesOf(area: ConvexArea): Sides {
   const n = area.length;
   const xs = area.map((p) => p.x);
   const ys = area.map((p) => p.y);
-  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const [x0, x1, y0, y1] = [minOf(xs), maxOf(xs), minOf(ys), maxOf(ys)];
   const bounds = [(p: PlotPoint) => p.x - x0, (p: PlotPoint) => x1 - p.x, (p: PlotPoint) => p.y - y0, (p: PlotPoint) => y1 - p.y];
   return {
     count: twice === 0 ? n + bounds.length : n,
@@ -106,7 +106,7 @@ function crossing(p: PlotPoint, q: PlotPoint, sp: number, sq: number): PlotPoint
 function reachOf(area: ConvexArea): number {
   const xs = area.map((p) => p.x);
   const ys = area.map((p) => p.y);
-  return 4 * Math.hypot(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) + 1;
+  return 4 * Math.hypot(maxOf(xs) - minOf(xs), maxOf(ys) - minOf(ys)) + 1;
 }
 
 /** `p`→`q` with each end past `reach` of the point on its line nearest `area`'s first corner moved in, along the line. */

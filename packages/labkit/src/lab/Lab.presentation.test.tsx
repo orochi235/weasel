@@ -135,6 +135,17 @@ describe('usePresentation', () => {
     expect(root(container).classList.contains('lk-lab--present')).toBe(false);
   });
 
+  it('stays presenting on an Escape a focused widget took', async () => {
+    const { container } = await mountLab();
+    await act(async () => presentation?.enter());
+    const widget = document.createElement('div');
+    widget.addEventListener('keydown', (e) => e.preventDefault());
+    document.body.append(widget);
+    await act(async () => fireEvent.keyDown(widget, { key: 'Escape' }));
+    expect(presented(container)).toHaveLength(1);
+    widget.remove();
+  });
+
   it('throws outside <Lab>', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(() => renderWithIcons(<Capture />)).toThrow(/inside <Lab>/);

@@ -6,12 +6,12 @@ import { rotationSnapSource, sceneSession2d } from '@weasel-js/core';
 import type { SnapDep, AnyScene } from '@weasel-js/core/engine';
 import { rotateAction } from './action';
 import type { Point } from '@weasel-js/geom';
+import { DEG_TO_RAD } from '@weasel-js/geom';
 
 type Pose = { x: number; y: number; width: number; height: number; rotation: number };
 
 const KEYS = { alt: false, ctrl: false, meta: false, shift: false };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const DEG = Math.PI / 180;
 /** The subject's center, and the press radius from it in screen px. */
 const PIVOT = { x: 50, y: 50 };
 const RADIUS = 50;
@@ -45,16 +45,16 @@ function rig(opts: { rotation?: number; others?: readonly number[]; selected?: r
     (rotateAction.invoker as OngoingInvoker).start(at({ x: PIVOT.x + RADIUS, y: PIVOT.y }), {});
   /** The pointer turned `deg` degrees about the pivot from the press. */
   const turnedTo = (deg: number, mods: Partial<typeof KEYS> = {}) =>
-    at({ x: PIVOT.x + RADIUS * Math.cos(deg * DEG), y: PIVOT.y + RADIUS * Math.sin(deg * DEG) }, mods);
+    at({ x: PIVOT.x + RADIUS * Math.cos(deg * DEG_TO_RAD), y: PIVOT.y + RADIUS * Math.sin(deg * DEG_TO_RAD) }, mods);
   /** Turn by `deg`, release, and read the committed rotation in degrees. */
   const turn = (deg: number, mods: Partial<typeof KEYS> = {}) => {
     const h = press();
     const ctx = turnedTo(deg, mods);
     h.onMove!(ctx);
     h.onEnd!(ctx, 'commit');
-    return ((scene.get(asNodeId(id))!.pose as Pose).rotation) / DEG;
+    return ((scene.get(asNodeId(id))!.pose as Pose).rotation) / DEG_TO_RAD;
   };
-  const rotationOf = (i: number) => (scene.get(asNodeId(ids[i]))!.pose as Pose).rotation / DEG;
+  const rotationOf = (i: number) => (scene.get(asNodeId(ids[i]))!.pose as Pose).rotation / DEG_TO_RAD;
   return { scene, store, press, turnedTo, turn, rotationOf };
 }
 
@@ -72,15 +72,15 @@ describe('rotate snapping', () => {
   });
 
   it("snaps 31° to another node's 30°", () => {
-    expect(rig({ others: [30 * DEG] }).turn(31)).toBeCloseTo(30, 6);
+    expect(rig({ others: [30 * DEG_TO_RAD] }).turn(31)).toBeCloseTo(30, 6);
   });
 
   it('snaps the angle the node ends at, not the amount turned', () => {
-    expect(rig({ rotation: 10 * DEG }).turn(22, { shift: true })).toBeCloseTo(30, 6);
+    expect(rig({ rotation: 10 * DEG_TO_RAD }).turn(22, { shift: true })).toBeCloseTo(30, 6);
   });
 
   it('steps the first node of a selection and turns the rest by as much', () => {
-    const r = rig({ selected: [5 * DEG] });
+    const r = rig({ selected: [5 * DEG_TO_RAD] });
     expect(r.turn(22, { shift: true })).toBeCloseTo(15, 6);
     expect(r.rotationOf(1)).toBeCloseTo(20, 6);
   });
@@ -90,15 +90,15 @@ describe('rotate snapping', () => {
   });
 
   it('keeps the Shift step while Ctrl suspends the targets', () => {
-    expect(rig({ others: [50 * DEG] }).turn(50, { shift: true, ctrl: true })).toBeCloseTo(45, 6);
+    expect(rig({ others: [50 * DEG_TO_RAD] }).turn(50, { shift: true, ctrl: true })).toBeCloseTo(45, 6);
   });
 
   it('compares angles round the circle: 359° lands on 360°', () => {
-    expect(rig({ rotation: 300 * DEG }).turn(59)).toBeCloseTo(360, 6);
+    expect(rig({ rotation: 300 * DEG_TO_RAD }).turn(59)).toBeCloseTo(360, 6);
   });
 
   it("catches a node's angle a whole turn away", () => {
-    expect(rig({ others: [(30 - 360) * DEG] }).turn(31)).toBeCloseTo(30, 6);
+    expect(rig({ others: [(30 - 360) * DEG_TO_RAD] }).turn(31)).toBeCloseTo(30, 6);
   });
 
   it('draws a mark while held and clears it on release', () => {

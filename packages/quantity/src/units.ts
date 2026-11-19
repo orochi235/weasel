@@ -1,4 +1,5 @@
 import type { Quantity } from './quantity';
+import { DEG_TO_RAD } from '@weasel-js/geom';
 
 /**
  * Units — a tiny customizable unit system.
@@ -179,7 +180,7 @@ export const METRIC_MM: UnitSystem = {
 /** Angle unit system with base 'rad'. */
 export const ANGLE_RADIANS: UnitSystem = {
   base: 'rad',
-  units: { rad: 1, deg: Math.PI / 180, turn: Math.PI * 2 },
+  units: { rad: 1, deg: DEG_TO_RAD, turn: Math.PI * 2 },
 };
 
 /** Pixel unit system — sole unit is the base. */

@@ -4,17 +4,17 @@ import { arcShape, type ArcTrackSpec } from './arc';
 import { ellipseShape } from './ellipse';
 import { trackShapeD } from './pathData';
 import { trackRun } from './run';
+import { DEG_TO_RAD } from '../angle';
 
 const close = (p: Point, q: Point, digits = 6) => {
   expect(p.x).toBeCloseTo(q.x, digits);
   expect(p.y).toBeCloseTo(q.y, digits);
 };
 const C = { x: 0, y: 0 };
-const RAD = Math.PI / 180;
 /** The point on an `a` by `b` ellipse about C seen from it at `deg` clockwise from 12 o'clock. */
 const seen = (deg: number, a: number, b: number): Point => {
-  const s = Math.sin(deg * RAD);
-  const c = Math.cos(deg * RAD);
+  const s = Math.sin(deg * DEG_TO_RAD);
+  const c = Math.cos(deg * DEG_TO_RAD);
   const k = 1 / Math.hypot(s / a, c / b);
   return { x: k * s, y: -k * c };
 };

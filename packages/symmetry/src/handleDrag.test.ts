@@ -4,7 +4,7 @@ import {
   type InvocationCtx, type OngoingInvoker, type RectPose, type SnapDep,
 } from '@weasel-js/core';
 import { createSnapSession2dForTests } from '@weasel-js/core/test-seams';
-import { rectPath } from '@weasel-js/geom';
+import { rectPath, DEG_TO_RAD } from '@weasel-js/geom';
 import { createSymmetry } from './controller';
 import { symmetryRegistry } from './group';
 import type { SymmetryHandlePress } from './guide';
@@ -15,7 +15,6 @@ type Point = { x: number; y: number };
 type Mods = Partial<typeof KEYS>;
 
 const KEYS = { alt: false, ctrl: false, meta: false, shift: false };
-const DEG = Math.PI / 180;
 const CENTER = { x: 100, y: 0 };
 
 function rig() {
@@ -57,7 +56,7 @@ function rig() {
   const dragCenter = (to: Point, mods: Mods = {}) => drag('center', CENTER, to, mods).center;
   /** Drag the axis knob, pressed 50 below the center, to `deg` degrees about it. */
   const turnKnob = (deg: number, mods: Mods = {}) => drag('angle', { x: CENTER.x, y: CENTER.y + 50 }, {
-    x: CENTER.x + 50 * Math.cos(deg * DEG), y: CENTER.y + 50 * Math.sin(deg * DEG),
+    x: CENTER.x + 50 * Math.cos(deg * DEG_TO_RAD), y: CENTER.y + 50 * Math.sin(deg * DEG_TO_RAD),
   }, mods);
   return { dragCenter, turnKnob };
 }
@@ -77,16 +76,16 @@ describe('the symmetry center drag', () => {
 describe('the symmetry axis drag', () => {
   it('holds the axis to 15° steps under Shift, and draws a readout', () => {
     const out = rig().turnKnob(52, { shift: true });
-    expect(out.spec.angle).toBeCloseTo(45 * DEG, 9);
+    expect(out.spec.angle).toBeCloseTo(45 * DEG_TO_RAD, 9);
     expect(out.seen).toContainEqual(expect.objectContaining({ kind: 'point', label: '45°' }));
   });
 
   it('meets a quarter turn within reach, and turns freely past it', () => {
-    expect(rig().turnKnob(92).spec.angle).toBeCloseTo(90 * DEG, 9);
-    expect(rig().turnKnob(110).spec.angle).toBeCloseTo(110 * DEG, 9);
+    expect(rig().turnKnob(92).spec.angle).toBeCloseTo(90 * DEG_TO_RAD, 9);
+    expect(rig().turnKnob(110).spec.angle).toBeCloseTo(110 * DEG_TO_RAD, 9);
   });
 
   it('leaves the axis on the pointer while Ctrl suspends snapping', () => {
-    expect(rig().turnKnob(92, { ctrl: true }).spec.angle).toBeCloseTo(92 * DEG, 9);
+    expect(rig().turnKnob(92, { ctrl: true }).spec.angle).toBeCloseTo(92 * DEG_TO_RAD, 9);
   });
 });

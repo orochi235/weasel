@@ -10,6 +10,7 @@
  * @packageDocumentation
  */
 export { useGestureDispatcher } from './interactions/dispatcher/useGestureDispatcher';
+export { usePageActions } from './interactions/dispatcher/usePageActions';
 export type {
   UseGestureDispatcherOptions, DispatcherChannels, HeldPointerFeed,
 } from './interactions/dispatcher/useGestureDispatcher';

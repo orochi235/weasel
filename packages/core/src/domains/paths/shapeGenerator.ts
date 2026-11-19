@@ -23,7 +23,7 @@ import {
   type PathInWorldPose,
   type PolygonPath,
 } from '@weasel-js/geom';
-import { deepEqual } from '@weasel-js/registry';
+import { deepEqual, isFiniteNumber } from '@weasel-js/registry';
 
 /** A regular polygon's parameters. `rotation` is the angle of its first
  *  vertex, in radians, inside the pose's own rotation. */
@@ -55,15 +55,13 @@ export const STAR_RATIO_RANGE = { min: 0.01, max: 1 } as const;
 /** What a polygon or star is drawn with where its data names no count or ratio: the insert params form's defaults. */
 export const SHAPE_DEFAULTS = { sides: 6, points: 5, innerRadiusRatio: 0.5 } as const;
 
-const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
-
 /** Whether `v` is a well-formed {@link ShapeGenerator}. */
 export function isShapeGenerator(v: unknown): v is ShapeGenerator {
   if (v === null || typeof v !== 'object') return false;
   const g = v as Record<string, unknown>;
-  if (!finite(g.rotation)) return false;
-  if (g.kind === 'polygon') return finite(g.sides);
-  if (g.kind === 'star') return finite(g.points) && finite(g.innerRadiusRatio);
+  if (!isFiniteNumber(g.rotation)) return false;
+  if (g.kind === 'polygon') return isFiniteNumber(g.sides);
+  if (g.kind === 'star') return isFiniteNumber(g.points) && isFiniteNumber(g.innerRadiusRatio);
   return false;
 }
 

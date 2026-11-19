@@ -1,3 +1,4 @@
+import { isFiniteNumber } from '@weasel-js/registry';
 /** What `topmostOf` ranks a hit list by: the tree, and a z signal where
  *  the adapter has one. */
 export interface TopmostTree {
@@ -81,5 +82,5 @@ function pickHighestZ(
 
 function zOf(getZIndex: (id: string) => number | null | undefined, id: string): number {
   const z = getZIndex(id);
-  return typeof z === 'number' && Number.isFinite(z) ? z : -Infinity;
+  return isFiniteNumber(z) ? z : -Infinity;
 }

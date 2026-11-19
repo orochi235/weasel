@@ -18,6 +18,7 @@ import { textWidth } from './textWidth';
 import { menuMeasureEnv } from './menuEnv';
 import type { HudTextEdit } from './textEdit';
 import { getOwn } from '@weasel-js/registry';
+import { solidFill } from '@weasel-js/paint';
 
 /** A row's shortcut as the DOM menu prints it, or undefined. */
 const shortcutOf = (e: MenuEntry): string | undefined => {
@@ -47,9 +48,8 @@ export function measurePanel(
   return measureMenuPanel(menuFace(entries, m, (t) => env.text(t, m.font).width), c, env);
 }
 
-const solid = (color: string) => ({ paint: { kind: 'solid' as const, color } });
 const rect = (x: number, y: number, width: number, height: number, color: string): DrawCommand => ({
-  kind: 'path', path: { kind: 'rect', x, y, width, height }, fill: solid(color),
+  kind: 'path', path: { kind: 'rect', x, y, width, height }, fill: solidFill(color),
 });
 
 /** A right-pointing chevron centered on (cx, cy). The bundled atlas has no `›` glyph. */
@@ -115,7 +115,7 @@ export function panelCommands(
   const out: DrawCommand[] = [...shadow.under, {
     kind: 'path',
     path: roundRectPath(b.x, b.y, b.width, b.height, radius),
-    fill: solid(t['--wzl-surface-popover']),
+    fill: solidFill(t['--wzl-surface-popover']),
     stroke: { paint: { kind: 'solid', color: t['--wzl-border'] }, width: 1 },
   }, ...shadow.over];
   const selection = t['--wzl-accent-soft'] ?? t['--wzl-surface-pressed'] ?? muted;
@@ -130,14 +130,14 @@ export function panelCommands(
     if (i === highlight) {
       out.push({
         kind: 'path', path: roundRectPath(b.x + r.x, b.y + r.y, r.width, r.height, rowRadius),
-        fill: solid(t['--wzl-surface-hover']),
+        fill: solidFill(t['--wzl-surface-hover']),
       });
     }
     // A color row left a color row is one nothing writes (the widget makes the rest pickers), so it reads as disabled.
     const color = e.disabled || e.kind === 'color' ? muted : gradedInk(e, t) ?? fg;
     out.push(textCommandFromRuns(
       b.x + box.label.x, b.y + r.y,
-      [{ text: e.label, fill: solid(color) }],
+      [{ text: e.label, fill: solidFill(color) }],
       font, undefined, r.height, 'center',
     ));
     const iconX = b.x + box.icon.x + box.icon.width / 2;
@@ -152,7 +152,7 @@ export function panelCommands(
     const chip = shortcutOf(e);
     if (chip) {
       out.push(textCommandFromRuns(
-        b.x + m.padX, b.y + r.y, [{ text: chip, fill: solid(muted) }],
+        b.x + m.padX, b.y + r.y, [{ text: chip, fill: solidFill(muted) }],
         { ...font, align: 'right' }, undefined, r.height, 'center', undefined, b.width - m.padX * 2,
       ));
     }

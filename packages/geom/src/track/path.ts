@@ -3,6 +3,7 @@ import type { Point } from '../paths/cubicMath';
 import { measurePath } from '../paths/pathMeasure';
 import { clamp } from '../scalar';
 import type { TrackShape } from './shape';
+import { wrapPositive } from '../angle';
 
 /** A track shape that remembers the path it was built from, so path data can be drawn as the path itself. */
 export type PathTrackShape = TrackShape & { readonly path: Path };
@@ -22,7 +23,7 @@ export function pathShape(path: Path, options: { flattenTolerance?: number } = {
     closed,
     at(f, options) {
       const open = options?.open === true && (f < 0 || f > 1);
-      const g = open && closed ? ((f % 1) + 1) % 1 : clamp(f, 0, 1);
+      const g = open && closed ? wrapPositive(f, 1) : clamp(f, 0, 1);
       const { point, tangent } = measure.at(g * length, true);
       // An open path past an end carries on straight along it.
       const past = open && !closed ? (f - g) * length : 0;

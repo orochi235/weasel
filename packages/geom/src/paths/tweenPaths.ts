@@ -13,6 +13,7 @@ import {
   type CubicContour, type CubicSegment,
 } from './cubicContours';
 import { lerp } from '../scalar';
+import { wrapPositive } from '../angle';
 
 /** How a tween matches the second shape's anchors to the first's. */
 export interface TweenPathsOptions {
@@ -120,7 +121,7 @@ function matchContours(a: CubicContour, b: CubicContour, opts: TweenPathsOptions
 function rotate(contour: CubicContour, k: number): CubicContour {
   const n = contour.segs.length;
   if (!contour.closed || n === 0) return contour;
-  const s = ((k % n) + n) % n;
+  const s = wrapPositive(k, n);
   if (s === 0) return contour;
   return { closed: true, segs: [...contour.segs.slice(s), ...contour.segs.slice(0, s)] };
 }

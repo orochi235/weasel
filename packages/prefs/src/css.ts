@@ -6,7 +6,7 @@ import { trimNumber } from '@weasel-js/geom';
 import { type PrefGroup, prefHoldsValue, prefLeaves, prefValueAt, isPrefScope, type PrefScope, type PrefOverridesLookup, type PrefSelection, type PrefEnum, type PrefLeaf, type PrefNumber, resolvePrefUnit } from '@weasel-js/prefs-schema';
 import { prefScopeOptionValue, prefOverridesLookup } from '@weasel-js/prefs-schema/internal';
 import { prefSelectors } from './splitCheck';
-import { compositeKey } from '@weasel-js/registry';
+import { compositeKey, isFiniteNumber } from '@weasel-js/registry';
 
 /** How {@link prefsCss} names and writes things. */
 export interface PrefsCssOptions {
@@ -42,7 +42,7 @@ const quoted = (text: string): string => `'${text.replace(/[\\']/g, '\\$&').repl
 function cssValue(leaf: PrefLeaf, value: unknown): string | null {
   switch (leaf.kind) {
     case 'number': {
-      if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+      if (!isFiniteNumber(value)) return null;
       const { unit } = leaf as PrefNumber;
       const resolved = unit ? resolvePrefUnit(unit) : undefined;
       const shown = resolved ? resolved.toDisplay(value) : value;

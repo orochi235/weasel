@@ -12,7 +12,7 @@
 
 import { polygonContainsPoint, segmentsCross } from './polyline';
 import { pointSegmentDistance2 } from './points2';
-import { rectsIntersect, type Rect } from './box';
+import { rectsIntersect, type Rect, rectContainsPoint } from './box';
 import type { Path } from './path';
 import type { CurveSpan } from './along/curvePosition';
 import { closedSubpaths, regionSubpaths } from './pathSubpaths';
@@ -62,7 +62,7 @@ export function pathContainsPoint(
   opts: PathHitTestOptions = {},
 ): boolean {
   if (path.kind === 'rect') {
-    return x >= path.x && x <= path.x + path.width && y >= path.y && y <= path.y + path.height;
+    return rectContainsPoint(path, x, y);
   }
   let crossings = 0;
   let winding = 0;
@@ -208,7 +208,7 @@ function anyVertexInRect(subpaths: readonly (readonly number[])[], r: Rect): boo
   for (const sub of subpaths) {
     for (let i = 0; i < sub.length; i += 2) {
       const x = sub[i], y = sub[i + 1];
-      if (x >= r.x && x <= r.x + r.width && y >= r.y && y <= r.y + r.height) return true;
+      if (rectContainsPoint(r, x, y)) return true;
     }
   }
   return false;

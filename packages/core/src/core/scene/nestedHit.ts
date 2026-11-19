@@ -2,6 +2,7 @@ import { worldPoseLookup } from 'core/scene/composePose';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { WorldPoint } from '@weasel-js/routing';
+import { rectContainsPoint } from '@weasel-js/geom';
 
 /** Options for `createNestedHitTester`. */
 export interface NestedHitOptions<TNode extends { id: string }, TPose> {
@@ -67,7 +68,7 @@ export function createNestedHitTester<TNode extends { id: string }, TPose>(
       const w = worldOf(o.id);
       if (!w) continue;
       const b = poseDescriptorForNode(d, o).getBounds(w);
-      if (wx >= b.x && wx <= b.x + b.width && wy >= b.y && wy <= b.y + b.height) {
+      if (rectContainsPoint(b, wx, wy)) {
         return o.id;
       }
     }

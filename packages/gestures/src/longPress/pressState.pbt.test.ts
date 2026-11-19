@@ -4,8 +4,8 @@
  */
 import { expect, it } from 'vitest';
 import fc from 'fast-check';
-import { runs } from '../../pbt.fixture';
-import { createLongPressStore, type PendingLongPress } from './longPressState';
+import { runs } from '../pbt.fixture';
+import { createLongPressStore, type PendingLongPress } from './pressState';
 
 const time = fc.oneof(fc.double(), fc.constantFrom(0, -0, 1e-310, 1e300, NaN, Infinity, -Infinity));
 const pending = (startedAt: number, duration: number): PendingLongPress => ({

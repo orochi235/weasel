@@ -10,6 +10,7 @@ import {
 import { clientToCanvas } from '@weasel-js/routing';
 import s from './LoupeModelDemo.module.css';
 import { decimal, qty } from '@weasel-js/quantity';
+import { rectContainsPointHalfOpen } from '@weasel-js/geom';
 
 const CELL = 8, COLS = 48, ROWS = 32;
 const GRID_W = CELL * COLS, GRID_H = CELL * ROWS;
@@ -23,8 +24,7 @@ const CELLS = Array.from({ length: COLS * ROWS }, (_, i) => {
   return { x: col * CELL, y: row * CELL, color: colorAt(col, row) };
 });
 
-const within = (p: LoupePoint, r: LoupeRect) =>
-  p.x >= r.x && p.x < r.x + r.width && p.y >= r.y && p.y < r.y + r.height;
+const within = (p: LoupePoint, r: LoupeRect) => rectContainsPointHalfOpen(r, p.x, p.y);
 
 /** The whole painter contract, answered from plain data: the colors are known,
  *  so nothing is read back from pixels. */

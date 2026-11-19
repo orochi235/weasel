@@ -19,7 +19,12 @@ import { LabShell } from './LabShell';
 import { useLabChromeAll } from './labChromeAll';
 import type { LabBaseProps, LabProps } from './labProps';
 import { type OpenedLab, openStoredLab, openUnstoredLab, presentStorageKey } from './openLab';
-import { type PresentationStart, presentationStart, useLabPresentation } from './presentation';
+import {
+  PresentationCommands,
+  type PresentationStart,
+  presentationStart,
+  useLabPresentation,
+} from './presentation';
 import { useStoreCommands } from './storeCommands';
 import { TriallessPage } from './TriallessPage';
 import { TrialWorkspace } from './TrialWorkspace';
@@ -176,6 +181,7 @@ function LabRuntime({
   return (
     <LabProviders store={store} commands={commands} contextMenus={contextMenus} over={over}>
       <LabCommands contributions={chromeAll.all} addTrial={addsTrial} />
+      <PresentationCommands presentation={presentation} />
       <LabRuntimeContexts
         records={opened.records}
         marks={opened.marks}

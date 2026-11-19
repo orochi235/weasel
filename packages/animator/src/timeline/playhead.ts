@@ -1,3 +1,4 @@
+import { wrapPositive } from '@weasel-js/geom';
 const finite = (t: number): number => {
   if (!Number.isFinite(t)) throw new RangeError(`a timeline seeks to a finite time, not ${t}`);
   return t;
@@ -6,16 +7,13 @@ const finite = (t: number): number => {
 /** The laps a loop policy allows past the pass it starts on: a count is passes, as a clock's is. */
 const lapsOf = (loop: boolean | number): number => (loop === true ? Infinity : loop === false ? 0 : Math.max(1, loop) - 1);
 
-/** Where `t` stands in its lap of `duration`. */
-const inLap = (t: number, duration: number): number => ((t % duration) + duration) % duration;
-
 /** `t` less `laps` laps of `duration`. Where the laps alone pass the double range, near
  *  `Number.MAX_VALUE`, where the animator's clock stops, that is where `t` stands in its lap. */
 function lessLaps(t: number, laps: number, duration: number): number {
   // No laps of an endless duration are none, not `NaN`.
   if (laps === 0) return t;
   const span = laps * duration;
-  return Number.isFinite(span) ? t - span : inLap(t, duration);
+  return Number.isFinite(span) ? t - span : wrapPositive(t, duration);
 }
 
 /** The playhead and its offset from the entry's clock, which stands at `now`, `laps` laps back.
@@ -24,7 +22,7 @@ function lapBack(playhead: number, offset: number, now: number, laps: number, du
   const span = laps * duration;
   const kept = offset - span;
   if (Number.isFinite(span) && Number.isFinite(kept)) return [playhead - span, kept];
-  const next = inLap(playhead, duration);
+  const next = wrapPositive(playhead, duration);
   return [next, next - now];
 }
 

@@ -146,7 +146,7 @@ export function ellipseShape(spec: EllipseTrackSpec): EllipseTrackShape {
   const { length, lengthTo, offsetAt } = lengthTable(e, sweep);
   /** The offset `f` of the length along, `f` outside 0..1: a whole ellipse wraps; an arc carries on round its ellipse. */
   const offsetPast = (f: number): number => {
-    if (raw === 0) return offsetAt(((f % 1) + 1) % 1);
+    if (raw === 0) return offsetAt(wrapPositive(f, 1));
     let u = f * sweep;
     for (let i = 0; i < 8; i++) {
       const v = speed(e, u);

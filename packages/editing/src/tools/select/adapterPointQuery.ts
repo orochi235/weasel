@@ -1,4 +1,4 @@
-import { transformPoint, boundsOfPath, meanScale, pathContainsPoint } from '@weasel-js/geom';
+import { transformPoint, boundsOfPath, meanScale, pathContainsPoint, rectContainsPoint } from '@weasel-js/geom';
 import { shapeCoversPoint, ownClipOf } from '@weasel-js/core';
 import type { PickQuery } from '@weasel-js/core';
 import { poseDescriptorForNode, type PoseDescriptor, toPlane } from '@weasel-js/core/engine';
@@ -39,9 +39,7 @@ export function adapterPointQuery<TPose>(
       // A group paints nothing and is hit across its box, within its own clip
       // when it declares one, since only what shows there is its. Ancestor
       // clips are the walk's business.
-      const inAabb = px >= b.x && px <= b.x + b.width
-        && py >= b.y && py <= b.y + b.height;
-      if (!inAabb) return false;
+      if (!rectContainsPoint(b, px, py)) return false;
       const own = ownClipOf(node, pose, () => derived, shapes);
       return own === null || pathContainsPoint(own, px, py);
     },
