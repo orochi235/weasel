@@ -58,7 +58,7 @@ export function hitAffordanceRegions(
     let best: { region: AffordanceRegion; d2: number } | null = null;
     for (let j = 0; j < regions.length; j++) {
       const region = regions[j];
-      if (isVisible && region.chromeId && !isVisible(region.chromeId)) continue;
+      if (!regionShown(region, isVisible)) continue;
       const xf = transformOf(state, region.targetId);
       if (!hitRegion(region, wx, wy, xf, view)) continue;
       const d2 = regionDistance2(region, wx, wy, xf, view);
@@ -79,6 +79,12 @@ export function hitAffordanceRegions(
     }
   }
   return null;
+}
+
+/** Whether chrome caps leave a region of a shown affordance shown: its own `chromeId`, when it
+ *  has one, must be visible too. Paint and the hit walk both ask this. */
+export function regionShown(region: AffordanceRegion, isVisible?: ((id: string) => boolean) | null): boolean {
+  return !isVisible || !region.chromeId || isVisible(region.chromeId);
 }
 
 /** Squared world distance from the point to a region's representative center,
