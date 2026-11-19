@@ -164,7 +164,7 @@ export type {
   OpenFilePickerOptions,
 } from '../domains/ingestion';
 
-// ─── WeaselProvider: mounts all five kit-root contexts in one wrap ──────────
+// ─── WeaselProvider: mounts every kit-root context in one wrap ──────────────
 export { WeaselProvider } from '../WeaselProvider';
 export type { WeaselProviderProps } from '../WeaselProvider';
 
