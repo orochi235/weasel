@@ -1586,6 +1586,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/ClockDemo').then((m) => m.ClockDemo),
     path: 'apps/site/demos/ClockDemo.tsx',
   },
+  {
+    id: 'icons',
+    title: 'Icon names and tables',
+    package: 'icons',
+    description: "Every glyph an `IconRegistryProvider` holds, here two `IconTable`s: the plain shapes from `@weasel-js/icons/shapes`, published under the `shape` namespace, and a one-glyph table of the demo's own under `demo`. A glyph is named `namespace:name`. The demo's code names its own with `icon('spark')`, the function `scopedIcon('demo')` builds, which qualifies a bare name with its namespace and leaves a qualified one alone, so `icon('shape:diamond')` reaches the shapes. The grid comes from the registry's `entries()`, each drawn by ui's `<Icon name>`; picking one shows its ref split by `splitIconRef` and the package that owns its namespace, from `registry.owner`.",
+    hint: 'Pick a glyph to read its name and owner. Turn on filled: glyphs with an enclosed region shade it.',
+    load: () => import('./demos/IconsDemo').then((m) => m.IconsDemo),
+    path: 'apps/site/demos/IconsDemo.tsx',
+  },
 ];
 
 export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({
