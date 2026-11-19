@@ -73,7 +73,7 @@ export function buildSequences(r: ExplicitResult): IsolatingRunSequence[] {
     let cur = k;
     for (;;) {
       consumed[cur] = true;
-      indices.push(...runs[cur].indices);
+      for (const i of runs[cur].indices) indices.push(i);
       const lastIdx = runs[cur].indices[runs[cur].indices.length - 1];
       if (!isIsolateInitiator(classes[lastIdx])) break;
       const pdi = pdiOf.get(lastIdx);
