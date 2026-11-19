@@ -1586,6 +1586,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/PdfDemo').then((m) => m.PdfDemo),
     path: 'apps/site/demos/PdfDemo.tsx',
   },
+  {
+    id: 'export',
+    title: 'Exporting a region',
+    package: 'export',
+    description: 'Three shapes on a `<SceneCanvas>`, written to a file by `exportRegions(scene, [region], format, { background })`. The format buttons list `exportFormats()`, read through `exportFormatRegistry`: the package registers `png` itself, and the demo adds `svg` with `@weasel-js/svg`\'s `registerSvgExport()` as it mounts. Page exports a fixed world rect; Selection exports `selectionRegion(scene, ids)`, the box the selected shapes draw. Export offers the `Blob` as a download link and saves nothing on its own.',
+    hint: 'Export the page as PNG, then select a shape or two, choose Selection, and export again as SVG. Move a shape and the next export follows it.',
+    load: () => import('./demos/ExportDemo').then((m) => m.ExportDemo),
+    path: 'apps/site/demos/ExportDemo.tsx',
+  },
 ];
 
 export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({
