@@ -149,4 +149,13 @@ describe('clock origin, speed and declare', () => {
     h.declare({ duration: 1000, origin: -200 });
     expect([h.clock.origin, h.clock.elapsed]).toEqual([-200, 0]);
   });
+  it('defaults an omitted speed from the declared rate, not the rate the clock plays at', () => {
+    const h = createClock({ duration: 1000, rate: 2 });
+    h.clock.rate = 0;
+    h.declare({ duration: 2000, rate: 2 });
+    expect(h.clock.speed).toBe(2);
+    h.clock.rate = -0.5;
+    h.declare({ duration: 2000 });
+    expect(h.clock.speed).toBe(1);
+  });
 });
