@@ -2721,3 +2721,9 @@ Calls the lanes made without a ruling:
   the whole snapshot with `SnapshotShapeError` was the alternative.
 - 2026-11-18 (the fixer's call): `resolveUnitExpr` refuses an expression nesting parentheses or signs past 1000 levels
   with its own `unitExpr:` error.
+
+## Audit round thirty-nine (2026-11-19): SceneCanvas, part two
+
+- 2026-11-19 (the fixer's call): a `<SceneCanvas scene>` that changes from a live `Scene` to serialized JSON keeps
+  the last live scene and warns once, as a later change to a serialized `scene` is ignored. Baking the new JSON on
+  that change was the alternative.

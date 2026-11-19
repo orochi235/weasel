@@ -37,16 +37,17 @@ interface WorkerSurfaceProps {
   workerTimeout?: number | undefined;
   clock?: FollowedClock | undefined;
   alphaFor?: ((id: string) => number) | undefined;
-  layers?: { scene?: unknown } | undefined;
 }
 
-/** @param previewIds Ids an in-flight gesture is ghosting. */
+/**
+ * @param previewIds Ids an in-flight gesture is ghosting.
+ * @param sceneSlot The `scene` slot the page resolved, presets' layers and defaults included.
+ */
 export function useSceneWorkerSurface(
   props: WorkerSurfaceProps, scene: Scene<unknown, string, unknown>, previewIds: () => Iterable<string> | null,
+  sceneSlot: unknown,
 ): CanvasWorkerSurface | undefined {
-  const args = {
-    worker: props.worker, clock: props.clock, alphaFor: props.alphaFor, sceneSlot: props.layers?.scene, scene, previewIds,
-  };
+  const args = { worker: props.worker, clock: props.clock, alphaFor: props.alphaFor, sceneSlot, scene, previewIds };
   const latest = useLatest(args);
   const on = args.worker !== undefined;
   // A pre-built scene layer is the page's, and an empty slot has nothing to paint.

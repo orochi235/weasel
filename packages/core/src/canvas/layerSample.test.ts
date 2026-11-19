@@ -55,4 +55,12 @@ describe('documentLayersOf', () => {
     expect(documentLayersOf(slot, scene, { 'scene:off': false }).map((l) => l.id)).toEqual(['scene:art']);
     expect(documentLayersOf(null, scene, undefined)).toEqual([]);
   });
+
+  it('keeps only the layers layerOrder names, in its order', () => {
+    const scene = createScene({ systemLayers: [{ id: 'a' }, { id: 'b' }, { id: 'c' }] });
+    const layer = (key: string): { key: string; layer: RenderLayer<unknown> } =>
+      ({ key, layer: { id: key, label: key, draw: () => [] } });
+    const slot = { layers: [layer('scene:a'), layer('scene:b'), layer('scene:c')] };
+    expect(documentLayersOf(slot, scene, undefined, ['grid', 'scene:c', 'scene:a']).map((l) => l.id)).toEqual(['scene:c', 'scene:a']);
+  });
 });

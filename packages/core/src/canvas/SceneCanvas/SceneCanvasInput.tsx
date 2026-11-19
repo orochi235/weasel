@@ -49,7 +49,7 @@ export type SceneCanvasInputOptions = StandardActionsProps & Pick<
   Props,
   | 'selectTool' | 'geometryProjection' | 'enableGestureDispatcher' | 'enableKeybindings'
   | 'claimKeys' | 'longPress' | 'modes' | 'versionCheck' | 'onClick' | 'onDoubleClick' | 'routing'
-  | 'sampleLayers' | 'layerVisibility' | 'dpr' | 'toolOptionValues'
+  | 'sampleLayers' | 'layerVisibility' | 'layerOrder' | 'dpr' | 'toolOptionValues'
 >;
 
 /** What the content's bounds are read from, and the camera's ref they are published to. */
@@ -148,7 +148,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     snap: { sources: [...(props.snap?.sources ?? []), ...p.snapSources], registry: snapRegistry, store: p.snapStore },
   });
   useSceneColorAt({
-    sampleLayers: props.sampleLayers, sceneSlot: overlay.layers.scene, scene, layerVisibility: props.layerVisibility,
+    sampleLayers: props.sampleLayers, sceneSlot: overlay.layers.scene, scene, layerVisibility: props.layerVisibility, layerOrder: props.layerOrder,
     viewRef: viewState.viewRef, apiRef: canvas.apiRef, dpr: props.dpr,
   });
 

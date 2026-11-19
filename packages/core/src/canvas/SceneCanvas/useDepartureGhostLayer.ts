@@ -10,6 +10,7 @@ import type { RenderLayer } from 'core/layers/render';
 import { composeChildFrame, composesFrames, type PoseAdapter } from 'core/scene/composePose';
 import { viewPoseAdapter } from 'core/scene/scrollOffsets';
 import { definesFrame, effectivePose } from 'core/scene/effectivePose';
+import { hidesSubtree } from 'core/scene/nodeGates';
 import type { RemovedNode } from 'core/scene/poseWrites';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { deriveParallaxView, type PlaneMap } from 'core/viewport/parallax';
@@ -46,7 +47,8 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
         getPose: (id: string) => effectivePose(sc, sc.get(id as NodeId)!),
         definesFrame: (id: string) => definesFrame(sc.get(id as NodeId)!),
       } as PoseAdapter<TPose>);
-      // As the scene paints it: a node on a hidden layer is not drawn, and one
+      // As the scene paints it: a hidden node and its subtree are not drawn, nor a
+      // node on a hidden layer; a node is drawn at the slot's drawn pose; one
       // on a parallax layer is drawn through its plane's view and carried
       // into its parent's world.
       const planeOf = createLayerPlaneLookup(sc.layers, view);
@@ -58,11 +60,13 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
       const draw = (
         r: RemovedNode<TPose, Node<TData, TLayer, TPose>>, pose: TPose, parentPlane: PlaneMap | null, out: DrawCommand[],
       ): void => {
+        if (hidesSubtree(r.node)) return;
         const layer = r.node.layer;
         const plane = planeOf?.(layer) ?? null;
         const v = viewOf(layer);
+        const drawn = shown.has(layer) && slot.drawnPose ? slot.drawnPose(r.node, pose) : pose;
         const children: DrawCommand[] = shown.has(layer)
-          ? wrapWithPoseRotation(drawOne(r.node, pose, v, pixelScaleCtx(v, dims.dpr)), pose) : [];
+          ? wrapWithPoseRotation(drawOne(r.node, drawn, v, pixelScaleCtx(v, dims.dpr)), drawn) : [];
         for (const c of r.children) draw(c, composes ? compose(pose, c.pose) : c.pose, plane, children);
         const transform = planeTransform(plane, parentPlane);
         out.push(transform ? { kind: 'group', transform, children } : { kind: 'group', children });

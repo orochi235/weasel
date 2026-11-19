@@ -30,10 +30,9 @@ export function useSceneHover(args: {
   /** The surface's own camera, for a point no declared view claims. */
   viewRef: { readonly current: View };
   nodeAtPointRef: { readonly current: BestHitPicker | undefined };
-  enabled: boolean;
   onChange?: (id: NodeId | null) => void;
 }): HoverTracking {
-  const { canvasApiRef, viewRef, nodeAtPointRef, enabled, onChange } = args;
+  const { canvasApiRef, viewRef, nodeAtPointRef, onChange } = args;
   const surfaceViewRegistry = useOptionalViewRegistry();
   return useHoverTracking({
     nodeAtClientPoint: (clientX, clientY) => {
@@ -51,7 +50,6 @@ export function useSceneHover(args: {
       );
       return hit ? { id: hit.id as NodeId } : null;
     },
-    enabled,
     ...(onChange ? { onChange } : {}),
   });
 }
@@ -128,15 +126,14 @@ export function useSurfaceChromeCaps(args: {
 export function useSceneCanvasChrome(args: {
   source: Omit<ChromeCapsSource, 'rules' | 'getHover'>;
   rules: Parameters<typeof useChromeRules>[0];
-  hover: Omit<Parameters<typeof useSceneHover>[0], 'enabled' | 'viewRef'>;
+  hover: Omit<Parameters<typeof useSceneHover>[0], 'viewRef'>;
   selection: readonly NodeId[];
   viewRef: { readonly current: View };
   dispatcher: Pick<Dispatcher, 'getActiveAction'>;
 }) {
   const { rules, viewRef } = args;
-  const { getHover, canvasRef: trackHoverOn } = useSceneHover({
-    ...args.hover, viewRef, enabled: rules.chromeVisibility !== undefined || args.hover.onChange !== undefined,
-  });
+  // Always on: a rule the `chromeRules` dep sets and a binding's `hovering` gate read it too.
+  const { getHover, canvasRef: trackHoverOn } = useSceneHover({ ...args.hover, viewRef });
   const chromeRules = useChromeRulesDep(useChromeRules(rules));
   const caps = useSurfaceChromeCaps({
     source: { rules: chromeRules.rules, getHover, ...args.source },
