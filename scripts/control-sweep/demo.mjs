@@ -10,6 +10,8 @@ import { ROOT, kit, menuItemsOf, operate } from './operate.mjs';
 import { probeGesture } from './probe.mjs';
 
 /** The demo's box as a JPEG: evidence for a person, so small beats exact. */
+const SLOW_SETTLE_MS = 1000;
+
 const frameShot = async (page) => {
   const clip = await page.locator('.ckd-canvas-wrap').first().boundingBox();
   return page.screenshot({ ...(clip ? { clip } : {}), type: 'jpeg', quality: 70, animations: 'disabled', caret: 'hide' });
@@ -116,9 +118,11 @@ const viaShortcut = async (page, c, ctx) => {
 const confirm = async (page, demo, c, ctx) => {
   await load(page, ctx.url, { reload: true, tries: ctx.tries });
   const live = await prepare(page, ctx.url, c, ctx.settleMs, ctx.tries);
-  const a = await attempt(page, live, { ...ctx, shots: true });
+  // The retry waits longer: an effect that runs through a promise (an export, a texture) lands late.
+  const a = await attempt(page, live, { ...ctx, settleMs: Math.max(ctx.settleMs * 6, SLOW_SETTLE_MS), shots: true });
   const { verdict } = verdictOf(compareCaptures(a.before0, a.before1, a.after));
-  if (verdict !== 'dead') return { verdict: 'unsure', reason: `dead once, ${verdict} on the retry` };
+  if (verdict === 'alive') return { verdict, reason: 'changes something, given a longer wait' };
+  if (verdict !== 'dead') return { verdict, reason: `dead once, ${verdict} on the slower retry` };
   if (c.kind === 'slider' && await nudged(page, c, ctx)) return { verdict: 'alive', reason: 'one step changes it; its far end looks like its start' };
   if (await viaShortcut(page, c, ctx)) return { verdict: 'alive', reason: 'acts through its key shortcut' };
   const probed = await probeGesture(page, c, ctx);
