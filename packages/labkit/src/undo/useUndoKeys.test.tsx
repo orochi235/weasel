@@ -41,6 +41,19 @@ describe('useUndoKeys', () => {
     expect(t.undo).toHaveBeenCalledTimes(1);
   });
 
+  it('leaves the chord to an open menu', () => {
+    const t = target();
+    renderHook(() => useUndoKeys(t));
+    const menu = document.createElement('div');
+    menu.setAttribute('role', 'menu');
+    const item = document.createElement('div');
+    item.setAttribute('role', 'menuitem');
+    menu.append(item);
+    document.body.append(menu);
+    expect(fireEvent.keyDown(item, { key: 'z', ctrlKey: true })).toBe(true);
+    expect(t.undo).not.toHaveBeenCalled();
+  });
+
   it('leaves a chord with nothing to step to the browser', () => {
     const t = target({ undo: false, redo: true });
     renderHook(() => useUndoKeys(t));

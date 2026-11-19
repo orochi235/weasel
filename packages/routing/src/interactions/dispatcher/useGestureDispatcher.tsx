@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { isApplePlatform, type ClickMemory } from '@weasel-js/gestures';
 import { useKitSettings, useLatest } from '@weasel-js/react';
-import { useActiveToolContext } from '../actions/activeToolContext';
+import { type ActiveToolContextValue, useActiveToolContext } from '../actions/activeToolContext';
 import { actionsNodeOf } from '../actions/ActionsProvider';
 import type { ActionsRegistry } from '../actions/registry';
 import type { ActionSource } from '../actions/action';
@@ -43,6 +43,14 @@ function usePublishRuleCtx(depRegistry: DepRegistry, getRuleCtx: (() => RuleCtx 
  * mounted inside `<SceneCanvas>`'s providers.
  */
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
+  useDispatcherIn(opts, useActiveToolContext(), useDepRegistry());
+}
+
+/** The tool state a dispatcher reads. */
+export type DispatcherTools = Pick<ActiveToolContextValue, 'active' | 'hotkeyStack'>;
+
+/** {@link useGestureDispatcher} over the tools and deps given, rather than the providers in scope. */
+export function useDispatcherIn(opts: UseGestureDispatcherOptions, activeTool: DispatcherTools, depRegistry: DepRegistry): void {
   const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, trace: traceOpt, clientToWorld, clientToLocal, requestRedraw, paintedCursor, cursorSink, getRuleCtx, onClick, onDoubleClick, views, channels, longPress, claimKeys = false, hears = 'scope', yieldKeys = false, controls = 'leave' } = opts;
   // Read out as booleans, not the object: the attach effect depends on
   // them, and an inline `channels={{...}}` would re-bind every listener on
@@ -57,8 +65,6 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const onClickRef = useLatest(onClick);
   const heldPointerRef = useLatest(opts.heldPointer);
   const onDoubleClickRef = useLatest(onDoubleClick);
-  const activeTool = useActiveToolContext();
-  const depRegistry = useDepRegistry();
   const [apple] = useState(isApplePlatform);
 
   const [keymaps] = useState(createKeymapStack);

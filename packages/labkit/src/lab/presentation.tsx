@@ -1,9 +1,9 @@
 import type { ClockRegistry } from '@weasel-js/clock';
+import { ActionDisabledReason, useCommand } from '@weasel-js/core';
 import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useLayoutEffect,
   useMemo,
   useState,
@@ -26,6 +26,8 @@ export interface Presentation {
 interface PresentationContextValue extends Presentation {
   /** The trial being presented, while one is. */
   trialId: string | null;
+  /** Whether there is a workspace to go back to: the lab was asked to present since it mounted. */
+  returns: boolean;
   /** A presented trial's play controls, when it shows them. */
   transport: PresentedTransportOptions | null;
   /** Whether a lab held still has been painted; `null` for any other lab. */
@@ -107,29 +109,31 @@ export function useLabPresentation(
     typeof options.messages === 'object' ? options.messages : NO_OPTIONS,
   );
 
-  // Only a lab asked to present has a workspace to go back to.
-  useEffect(() => {
-    if (presentedBy !== 'enter' || !labBody) return;
-    const doc = labBody.ownerDocument;
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key !== 'Escape' || event.defaultPrevented) return;
-      setPresentedBy(null);
-    };
-    doc.addEventListener('keydown', onKeyDown);
-    return () => doc.removeEventListener('keydown', onKeyDown);
-  }, [presentedBy, labBody]);
-
   return useMemo(
     () => ({
       active: presenting,
       enter: () => setPresentedBy((by) => by ?? 'enter'),
       exit: () => setPresentedBy(null),
       trialId: presenting ? focusedTrialId : null,
+      returns: presentedBy === 'enter',
       transport: minWidth === null ? null : { minWidth, ...(formatRate ? { formatRate } : {}) },
       still,
     }),
-    [presenting, focusedTrialId, minWidth, formatRate, still],
+    [presenting, presentedBy, focusedTrialId, minWidth, formatRate, still],
   );
+}
+
+/** The id of the action that leaves a presentation the lab was asked into, bound to Escape. */
+export const EXIT_PRESENTATION_ID = 'lab.presentation.exit';
+
+/** Registers {@link EXIT_PRESENTATION_ID} on the lab's actions registry: Escape returns to the workspace, and
+ *  passes on while there is none to return to. */
+export function PresentationCommands({ presentation }: { presentation: PresentationContextValue }) {
+  useCommand(EXIT_PRESENTATION_ID, 'Exit presentation', presentation.exit, {
+    keys: { spec: { kind: 'key', key: 'Escape' }, opts: { id: `${EXIT_PRESENTATION_ID}.key` } },
+    enabled: () => (presentation.returns ? true : ActionDisabledReason.NotApplicable),
+  });
+  return null;
 }
 
 /** The presentation mode of the `<Lab>` around the caller. */
