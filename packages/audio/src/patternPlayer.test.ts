@@ -41,6 +41,15 @@ describe('createPatternPlayer', () => {
     error.mockRestore();
   });
 
+  it('refuses an event whose step is not finite, keeping the events it had', async () => {
+    const { engine, run, starts } = await harness();
+    const player = createPatternPlayer(engine, { tempo: 120, length: 4, events: [{ step: 0, pitch: 'C4' }] });
+    expect(() => player.setEvents([{ step: Number.NaN, pitch: 'C4' }])).toThrow(RangeError);
+    player.start(0);
+    await run(100);
+    expect(starts()).toEqual([0]);
+  });
+
   it('gates a note for its length in steps', async () => {
     const { ctx, engine, run } = await harness();
     createPatternPlayer(engine, {

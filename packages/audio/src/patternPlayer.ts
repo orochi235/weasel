@@ -66,7 +66,8 @@ export interface PatternPlayer {
   setTempo(bpm: number): void;
   /** Takes effect from the next step not yet booked. */
   setDetune(detune: PatternDetune): void;
-  /** Takes effect from the next step not yet booked. */
+  /** Takes effect from the next step not yet booked. Throws a `RangeError` on an
+   *  event whose step is not finite, keeping the events it had. */
   setEvents(events: readonly PatternEvent[], length?: number): void;
 }
 
@@ -116,6 +117,9 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
   let byStep = new Map<number, PatternEvent[]>();
   const setEvents = (events: readonly PatternEvent[], len?: number): void => {
     if (len !== undefined) checkSteps('length', len);
+    for (const e of events) {
+      if (!Number.isFinite(e.step)) throw new RangeError(`@weasel-js/audio: a pattern event's step is finite, not ${e.step}`);
+    }
     byStep = new Map();
     for (const e of events) {
       const step = Math.floor(e.step);
