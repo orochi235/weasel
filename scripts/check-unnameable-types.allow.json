@@ -1,1 +1,6 @@
-{}
+{
+  "@weasel-js/routing": [
+    "DispatcherViewTarget",
+    "ViewIdResolver"
+  ]
+}
