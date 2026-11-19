@@ -72,4 +72,10 @@ describe('X10 — sos and eos', () => {
     const r = seqs('L RLI R R');
     expect(r.find((s) => s.level === 1)!.eos).toBe('R');
   });
+
+  it('builds a sequence from a level run of a million characters', () => {
+    const r = buildSequences(resolveExplicit(new Array<BidiClass>(1_000_000).fill('L'), 0));
+    expect(r).toHaveLength(1);
+    expect(r[0].indices).toHaveLength(1_000_000);
+  });
 });

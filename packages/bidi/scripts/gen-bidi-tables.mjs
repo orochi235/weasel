@@ -226,8 +226,9 @@ let mirrors: Map<number, number> | null = null;
 /**
  * The \`Bidi_Class\` of a code point.
  *
- * Unassigned code points resolve to the default their block declares, which is
- * \`R\` or \`AL\` inside the right-to-left blocks and \`L\` elsewhere.
+ * Unassigned code points resolve to the default UCD declares for their range:
+ * \`R\` or \`AL\` in the right-to-left blocks, \`ET\` in Currency Symbols, \`BN\` for
+ * noncharacters and default-ignorable code points, and \`L\` elsewhere.
  */
 export function bidiClassOf(cp: number): BidiClass {
   if (!Number.isInteger(cp) || cp < 0 || cp > 0x10ffff) return 'L';
