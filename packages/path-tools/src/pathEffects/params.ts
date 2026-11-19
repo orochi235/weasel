@@ -7,11 +7,11 @@ import type {
   BendAlongEffect, TweenEffect, PathEffect, PuckerBloatEffect, RepeatAlongEffect, RoughenEffect, TextAlongEffect, ZigzagEffect,
 } from '@weasel-js/core';
 import { effectSettingDefaults } from './effectForms';
-import { getOwn } from '@weasel-js/registry';
+import { getOwn, isFiniteNumber } from '@weasel-js/registry';
 
 type Params = Record<string, unknown> | undefined;
 
-const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
+const num = (v: unknown): number | undefined => (isFiniteNumber(v) ? v : undefined);
 const bool = (v: unknown): boolean | undefined => (typeof v === 'boolean' ? v : undefined);
 const oneOf = <T extends string>(v: unknown, options: readonly T[]): T | undefined =>
   (typeof v === 'string' && (options as readonly string[]).includes(v) ? (v as T) : undefined);

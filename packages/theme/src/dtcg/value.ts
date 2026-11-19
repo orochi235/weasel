@@ -1,6 +1,6 @@
 import { cssColorNotation, rgbaToHex } from '@weasel-js/paint';
 import type { TokenValue } from './types.ts';
-import { isPlainObject } from '@weasel-js/registry';
+import { isPlainObject, isFiniteNumber } from '@weasel-js/registry';
 
 /**
  * Quote family names containing whitespace; leave everything else bare.
@@ -53,7 +53,7 @@ export function parseTokenValue(type: string, text: string): TokenValue {
 function colorObject(v: Record<string, unknown>): string | undefined {
   const { colorSpace: space, components, alpha = 1 } = v;
   if (typeof space !== 'string' || !Array.isArray(components) || components.length !== 3) return undefined;
-  if (!components.every((c) => (typeof c === 'number' && Number.isFinite(c)) || c === 'none')) return undefined;
+  if (!components.every((c) => isFiniteNumber(c) || c === 'none')) return undefined;
   if (typeof alpha !== 'number' || !(alpha >= 0 && alpha <= 1)) return undefined;
   const [r, g, b] = components as unknown[];
   if (space === 'srgb' && [r, g, b].every((c) => typeof c === 'number' && c >= 0 && c <= 1)) {

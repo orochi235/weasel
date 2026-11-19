@@ -2,6 +2,7 @@ import { DEFAULT_CONSTRAINTS, type Anchor, type Constraints } from '@weasel-js/t
 import { readStored, writeSession } from '@weasel-js/editor';
 import { readLocal, writeLocal } from '@weasel-js/storage';
 import { type LabHistoryStore, localHistoryStore } from './historyStorage';
+import { isFiniteNumber } from '@weasel-js/registry';
 
 export type SurfaceKey = 'dark' | 'light';
 
@@ -77,13 +78,11 @@ function constraintsOf(stored: unknown): Constraints {
     const value = from[key];
     const fits = Array.isArray(fallback)
       ? Array.isArray(value)
-      : typeof value === typeof fallback && (typeof value !== 'number' || finite(value));
+      : typeof value === typeof fallback && (typeof value !== 'number' || isFiniteNumber(value));
     if (fits) out[key] = value;
   }
   return out as unknown as Constraints;
 }
-
-const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
 
 /** Each stored anchor with a name, a finite hue and lightness, and a chroma that is finite or absent. */
 function anchorsOf(stored: unknown): Anchor[] {
@@ -91,9 +90,9 @@ function anchorsOf(stored: unknown): Anchor[] {
   return stored.flatMap((a: unknown): Anchor[] => {
     if (typeof a !== 'object' || a === null) return [];
     const { name, hue, lightness, chroma } = a as Record<string, unknown>;
-    if (typeof name !== 'string' || !finite(hue) || !finite(lightness)) return [];
+    if (typeof name !== 'string' || !isFiniteNumber(hue) || !isFiniteNumber(lightness)) return [];
     if (chroma === undefined) return [{ name, hue, lightness }];
-    return finite(chroma) ? [{ name, hue, lightness, chroma }] : [];
+    return isFiniteNumber(chroma) ? [{ name, hue, lightness, chroma }] : [];
   });
 }
 

@@ -14,6 +14,7 @@ import type {
   UnreadableRecord,
 } from './types';
 import type { UndockedPanels } from './undock';
+import { isFiniteNumber } from '@weasel-js/registry';
 
 /**
  * `trials` with the record another tab wrote for trial `id`: replaced, added, or gone. The trial
@@ -34,7 +35,7 @@ function remoteTrial(
   const { order, ...rest } = value as SerializedTrial & { order?: unknown };
   orderOf.set(
     id,
-    typeof order === 'number' && Number.isFinite(order) ? order : nextOrderIn(orderOf),
+    isFiniteNumber(order) ? order : nextOrderIn(orderOf),
   );
   const [replacement] = hydrateTrials([{ ...rest, id }], hooks.serializers, hooks, failed);
   // Kept, the stale trial's next edit would write over a record this tab cannot read.

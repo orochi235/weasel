@@ -16,6 +16,7 @@ import { resolveParams } from '@weasel-js/routing';
 import type { WeightBrushParams } from '../actionParamSchema';
 import { pref, PX_UNIT } from '@weasel-js/prefs-schema';
 import { brushRing } from '@weasel-js/cursor';
+import { isFiniteNumber } from '@weasel-js/registry';
 
 /** One path under the rig node, where it is drawn, with the weights now showing. */
 export interface WeighedPath {
@@ -81,7 +82,7 @@ export const WEIGHT_TOOL_OPTIONS = {
 
 const radiusOf = (params: Readonly<WeightBrushParams> | undefined): number => {
   const r = params?.radiusPx;
-  return typeof r === 'number' && Number.isFinite(r) && r > 0 ? r : DEFAULT_WEIGHT_RADIUS_PX;
+  return isFiniteNumber(r) && r > 0 ? r : DEFAULT_WEIGHT_RADIUS_PX;
 };
 
 const activeJoint = (env: WeightEnv): string | null => {

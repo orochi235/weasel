@@ -6,6 +6,7 @@ import type { RecordCache } from '@weasel-js/storage';
 import { useEffect, useRef } from 'react';
 import { readSlot, sessionSlots } from './sessionStore';
 import { useAutosave } from './useAutosave';
+import { isFiniteNumber } from '@weasel-js/registry';
 
 /** Where `useSessionPersistence` keeps a scene and its undo stack, and what it reports after a save. */
 export interface SessionPersistenceOptions {
@@ -37,7 +38,7 @@ export interface SessionPersistenceOptions {
 export function savedAtOf(value: unknown): number | undefined {
   if (value === null || typeof value !== 'object') return undefined;
   const at = (value as { savedAt?: unknown }).savedAt;
-  return typeof at === 'number' && Number.isFinite(at) ? at : undefined;
+  return isFiniteNumber(at) ? at : undefined;
 }
 
 /**

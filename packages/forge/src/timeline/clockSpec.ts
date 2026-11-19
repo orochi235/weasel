@@ -1,12 +1,13 @@
 import type { ClockSpec } from '@weasel-js/clock';
 import type { SpanOverride, TimelineSpec } from './types';
+import { isFiniteNumber } from '@weasel-js/registry';
 
-const positive = (n: number | undefined): n is number => typeof n === 'number' && Number.isFinite(n) && n > 0;
+const positive = (n: number | undefined): n is number => isFiniteNumber(n) && n > 0;
 
 /** A span's length, in ms: anything not a positive finite number stands as 1 ms, so a timeline can never throw. */
 const lengthOf = (duration: number): number => (positive(duration) ? duration : 1);
 
-const startOf = (start: number | undefined): number => (typeof start === 'number' && Number.isFinite(start) ? start : 0);
+const startOf = (start: number | undefined): number => (isFiniteNumber(start) ? start : 0);
 
 /** The clock a story's timeline declares. It opens paused at the span's start, and loops unless told not to. */
 export function clockSpecOf(spec: TimelineSpec): ClockSpec {

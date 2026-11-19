@@ -5,6 +5,7 @@ export { createEmitter, createKeyedEmitter, type Emitter, type KeyedEmitter } fr
 export { createValueStore, type ValueStore } from './valueStore';
 export { isDev } from './isDev';
 export { isPlainObject, isPlainPrototype } from './isPlainObject';
+export { isFiniteNumber } from './isFiniteNumber';
 export { deepEqual, type DeepEqualOptions } from './deepEqual';
 export { sameList } from './sameList';
 export { setOwn } from './setOwn';

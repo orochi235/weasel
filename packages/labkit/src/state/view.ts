@@ -1,6 +1,7 @@
 import { normalizeZoom } from '@weasel-js/core';
 import { type Camera3d, clampCamera, createCamera, type OrbitLimits } from '@weasel-js/kernel3d';
 import type { ViewTransform2D } from '../instrument/types';
+import { isFiniteNumber } from '@weasel-js/registry';
 
 /** Zoom 1, no pan. */
 export const DEFAULT_VIEW: ViewTransform2D = { zoom: 1, pan: { x: 0, y: 0 } };
@@ -30,8 +31,6 @@ export function normalize2DView(view: ViewTransform2D): ViewTransform2D {
 /** An orbit trial's view: kernel3d's camera, held as plain numbers. */
 export type ViewTransform3D = Camera3d;
 
-const finite = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
-
 /** The 3D counterpart of `as2DView`: the view as an orbit camera, or `null`
  *  when it is not one. A lens field that is missing or unusable gets its
  *  default, and pitch and distance come back inside `limits`. Returns `view`
@@ -40,11 +39,11 @@ export function as3DView(view: unknown, limits?: Partial<OrbitLimits>): ViewTran
   if (typeof view !== 'object' || view === null) return null;
   const v = view as Partial<Record<keyof Camera3d, unknown>>;
   const t = v.target as Partial<Record<'x' | 'y' | 'z', unknown>> | undefined;
-  if (!finite(v.yaw) || !finite(v.pitch) || !finite(v.distance) || !(v.distance > 0)) return null;
-  if (typeof t !== 'object' || t === null || !finite(t.x) || !finite(t.y) || !finite(t.z)) {
+  if (!isFiniteNumber(v.yaw) || !isFiniteNumber(v.pitch) || !isFiniteNumber(v.distance) || !(v.distance > 0)) return null;
+  if (typeof t !== 'object' || t === null || !isFiniteNumber(t.x) || !isFiniteNumber(t.y) || !isFiniteNumber(t.z)) {
     return null;
   }
-  const positive = (n: unknown): n is number => finite(n) && n > 0;
+  const positive = (n: unknown): n is number => isFiniteNumber(n) && n > 0;
   const whole = positive(v.fov) && positive(v.near) && positive(v.far);
   const camera = whole
     ? (view as Camera3d)
