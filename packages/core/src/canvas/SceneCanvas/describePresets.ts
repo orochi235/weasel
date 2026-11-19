@@ -3,10 +3,19 @@ import { namesBuiltins, presetToolIds, type FeaturePreset } from './features';
 
 export type { PresetDescription };
 
-const ATOM_ROLES = [
-  'ambient', 'moveBehaviors', 'snapSources', 'layers', 'chrome', 'chromeRules', 'pathEdit', 'contributions', 'refines',
-  'components', 'contentHandlers', 'build', 'selection', 'selectionChrome',
-] as const satisfies readonly (keyof FeaturePreset)[];
+/**
+ * What each key of a preset is: its name, a grouping role a bundle may hold, or a role that makes it an atom. A
+ * record over every key, so a role added to `FeaturePreset` fails to compile until it is classed here.
+ */
+const ROLE_KINDS: Record<keyof FeaturePreset, 'name' | 'bundle' | 'atom'> = {
+  id: 'name', label: 'name',
+  actions: 'bundle', tools: 'bundle', includes: 'bundle',
+  toolActions: 'atom', ambient: 'atom', moveBehaviors: 'atom', snapSources: 'atom', layers: 'atom', chrome: 'atom',
+  chromeRules: 'atom', pathEdit: 'atom', routing: 'atom', insertNodeFactories: 'atom', insertKinds: 'atom',
+  shapes: 'atom', properties: 'atom', contributions: 'atom', components: 'atom', contentHandlers: 'atom',
+  build: 'atom', selection: 'atom', selectionChrome: 'atom', refines: 'atom',
+};
+const ATOM_ROLES = (Object.keys(ROLE_KINDS) as (keyof FeaturePreset)[]).filter((k) => ROLE_KINDS[k] === 'atom');
 
 const filled = (v: unknown): boolean =>
   v !== undefined && (typeof v !== 'object' || v === null || (Array.isArray(v) ? v.length > 0 : Object.keys(v).length > 0));

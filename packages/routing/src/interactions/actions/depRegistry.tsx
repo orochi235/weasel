@@ -1,14 +1,14 @@
 /** The React seam over the dep registry in `./depNode`: its provider and hooks. */
 import {
-  createContext, useContext, useEffect, useState,
+  createContext, useContext, useEffect, useMemo, useState,
   type ReactNode,
 } from 'react';
 import type { DepSchema, DepName } from '../../index';
-import { createDepRegistry, type DepRegistry, type DepSource } from './depNode';
+import { createDepRegistry, rankedDepRegistry, type DepRegistry, type DepRegisterOptions, type DepSource } from './depNode';
 import { useLatest } from '@weasel-js/react';
 
-export type { DepSchema, DepName, DepRegistry, DepSource };
-export { DepNode, depNodeOf, createDepRegistry } from './depNode';
+export type { DepSchema, DepName, DepRegistry, DepRegisterOptions, DepSource };
+export { DepNode, depNodeOf, createDepRegistry, rankedDepRegistry } from './depNode';
 
 /** @internal The context `<InputScope>` provides a scope's dep registry through. */
 export const DepRegistryContext = createContext<DepRegistry | null>(null);
@@ -47,4 +47,12 @@ export function useDepSource<K extends DepName>(name: K, source: DepSource<K>) {
   useEffect(() => {
     return registry.register(name, (below) => sourceRef.current(below));
   }, [name, registry, sourceRef]);
+}
+
+/** Every dep source registered beneath it joins the registry in scope at `rank` (see
+ *  {@link DepRegisterOptions.rank}), unless a nearer `<DepRank>` or the registration names another. */
+export function DepRank({ rank, children }: { rank: number; children: ReactNode }) {
+  const registry = useDepRegistry();
+  const ranked = useMemo(() => rankedDepRegistry(registry, rank), [registry, rank]);
+  return <DepRegistryContext.Provider value={ranked}>{children}</DepRegistryContext.Provider>;
 }

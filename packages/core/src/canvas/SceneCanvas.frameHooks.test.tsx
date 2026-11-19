@@ -164,6 +164,19 @@ describe('contribution frame hooks cost nothing unused', () => {
     expect(api.subscribeBeforePaint).not.toHaveBeenCalled();
     expect(api.subscribeFrame).toHaveBeenCalledTimes(1);
   });
+
+  it('asks for a frame when a hook arrives on a phase already subscribed, and not when none does', () => {
+    const api = fakeApi();
+    const e = (id: string): SurfaceContribution => ({ id, eligibility: { always: true }, beforePaint: () => {} });
+    const x = e('x');
+    const { rerender } = renderHook(({ list }) => useContributionFrameHooks(list, api, reader), { initialProps: { list: [x] } });
+    const before = vi.mocked(api.requestRedraw).mock.calls.length;
+    rerender({ list: [x] });
+    expect(api.requestRedraw).toHaveBeenCalledTimes(before);
+    rerender({ list: [x, e('y')] });
+    expect(api.requestRedraw).toHaveBeenCalledTimes(before + 1);
+    expect(api.subscribeBeforePaint).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('requires', () => {

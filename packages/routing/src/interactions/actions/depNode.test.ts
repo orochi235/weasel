@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createDepRegistry, type DepName } from '../../index';
-import { DepNode } from './depNode';
+import { DepNode, depNodeOf, rankedDepRegistry } from './depNode';
 
 // The stock registry, from the React-free entry, for a dispatcher driven
 // without a provider tree.
@@ -121,5 +121,28 @@ describe('dep registry reflection', () => {
     expect(reflection.get('gate')).toBe(base);
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
+  });
+});
+
+describe('ranked registrations', () => {
+  const name = 'selection' as DepName;
+  it('keep a higher rank live over a lower one registered after it, and read the lower through below', () => {
+    const deps = createDepRegistry();
+    deps.register(name, ((below: () => unknown) => `high>${String(below())}`) as never, { rank: 2 });
+    const off = deps.register(name, (() => 'low') as never, { rank: 1 });
+    expect(deps.get(name)).toBe('high>low');
+    off();
+    expect(deps.get(name)).toBe('high>undefined');
+  });
+
+  it('give a ranked view the rank, its own node, and a registration its own rank over the view\'s', () => {
+    const deps = createDepRegistry();
+    const low = rankedDepRegistry(deps, -1);
+    expect(depNodeOf(low)).toBe(depNodeOf(deps));
+    deps.register(name, (() => 'plain') as never);
+    low.register(name, (() => 'ranked') as never);
+    expect(deps.get(name)).toBe('plain');
+    low.register(name, (() => 'own') as never, { rank: 5 });
+    expect(low.get(name)).toBe('own');
   });
 });

@@ -26,7 +26,7 @@ export { useOngoingAction } from './interactions/actions/useOngoingAction';
 export { useOpenKeymap } from './keymaps/useOpenKeymap';
 export type { OngoingAction } from './interactions/actions/useOngoingAction';
 export {
-  DepRegistryProvider, useDepRegistry, useOptionalDepRegistry, useDepSource,
+  DepRank, DepRegistryProvider, useDepRegistry, useOptionalDepRegistry, useDepSource,
 } from './interactions/actions/depRegistry';
 export type { DepRegistry } from './interactions/actions/depRegistry';
 export type { ScopeNode, ScopeTree } from './interactions/actions/scopeNode';

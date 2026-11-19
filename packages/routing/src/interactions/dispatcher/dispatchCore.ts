@@ -242,7 +242,7 @@ export function withViewDeps(
   overlay: () => Partial<DepSchema> | undefined,
 ): DepRegistry {
   return {
-    register: (name, source) => base().register(name, source),
+    register: (name, source, options) => base().register(name, source, options),
     get: <K extends DepName>(name: K): DepSchema[K] | undefined => {
       const own = overlay()?.[name];
       if (own !== undefined) return own as DepSchema[K];

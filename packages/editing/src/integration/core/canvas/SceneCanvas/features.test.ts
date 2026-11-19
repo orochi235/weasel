@@ -107,6 +107,12 @@ describe('resolveFeatures', () => {
     expect(ids([{ id: 'edit' }, { id: 'arrange' }, anchor])).toEqual(['anchor', 'edit', 'arrange']);
   });
 
+  it('keeps what a refining preset includes ahead of it', () => {
+    const inner: FeaturePreset = { id: 'inner' };
+    const refiner: FeaturePreset = { id: 'refiner', includes: [inner], refines: ['base'] };
+    expect(ids([{ id: 'base' }, refiner])).toEqual(['inner', 'refiner', 'base']);
+  });
+
   it('places a preset refining a bundle ahead of everything that bundle includes', () => {
     const widgets: FeaturePreset = { id: 'widgets', refines: ['edit'] };
     const order = ids(['edit', widgets]);

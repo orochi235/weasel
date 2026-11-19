@@ -11,10 +11,10 @@ import { ScopeNode } from './scopeNode';
  *  Sources are thunks, read at invocation time, so an action never captures
  *  stale state. */
 export interface DepRegistry {
-  /** Adds a live source for `name` over any already there. `below` answers
-   *  what the registry would without this source, so one can handle part of
-   *  a dep and hand the rest to the default it displaced. */
-  register<K extends DepName>(name: K, source: DepSource<K>): () => void;
+  /** Adds a live source for `name` over any already there of its rank or lower, and under any ranked higher.
+   *  `below` answers what the registry would without this source, so one can handle part of a dep and hand the
+   *  rest to the default it displaced. */
+  register<K extends DepName>(name: K, source: DepSource<K>, options?: DepRegisterOptions): () => void;
   get<K extends DepName>(name: K): DepSchema[K] | undefined;
   /** Hear that what the registry answers may have changed: a source was
    *  registered or released anywhere in its tree, or an owner called
@@ -31,6 +31,13 @@ export interface DepRegistry {
   /** The sources registered at this registry itself, none from the scopes above it. A hand-built
    *  registry may leave it out. */
   readonly reflection?: Reflection<DepSource<DepName>>;
+}
+
+/** Options for {@link DepRegistry.register}. */
+export interface DepRegisterOptions {
+  /** The tier the source joins, default 0. Sources under one name in one scope stack by rank, then by age, so
+   *  a tier stays over the ones below it whatever order they mounted in. */
+  rank?: number;
 }
 
 /** A live source for dep `K`: a thunk read at invocation time. `below` reads
@@ -53,8 +60,8 @@ export class DepNode extends ScopeNode<DepNode> {
   private readonly sources = createReflectable<DepSource<DepName>>({ name: 'dep sources', layered: true });
 
   readonly registry: DepRegistry = {
-    register: <K extends DepName>(name: K, source: DepSource<K>) =>
-      this.sources.push(name as string, source as unknown as DepSource<DepName>),
+    register: <K extends DepName>(name: K, source: DepSource<K>, options?: DepRegisterOptions) =>
+      this.sources.push(name as string, source as unknown as DepSource<DepName>, options?.rank === undefined ? undefined : { rank: options.rank }),
     get: <K extends DepName>(name: K) => {
       const stacks = [...this.start().chain()].map((n) => n.sources.stack(name as string));
       return readFrom(stacks, 0, (stacks[0]?.length ?? 0) - 1) as DepSchema[K] | undefined;
@@ -97,6 +104,20 @@ const NODES = new WeakMap<DepRegistry, DepNode>();
 /** The tree node behind `registry`, when it is one of ours. */
 export function depNodeOf(registry: DepRegistry | null): DepNode | null {
   return registry ? (NODES.get(registry) ?? null) : null;
+}
+
+/**
+ * `registry` with every registration made through it joining at `rank`, unless it names its own. It reads, lists
+ * and nests as `registry` does: a scope mounted under it hangs on the same node.
+ */
+export function rankedDepRegistry(registry: DepRegistry, rank: number): DepRegistry {
+  const ranked: DepRegistry = {
+    ...registry,
+    register: (name, source, options) => registry.register(name, source, { rank, ...options }),
+  };
+  const node = NODES.get(registry);
+  if (node) NODES.set(ranked, node);
+  return ranked;
 }
 
 /**

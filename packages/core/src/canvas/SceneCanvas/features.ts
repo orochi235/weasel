@@ -252,6 +252,8 @@ export function resolveFeatures(
   const place = (p: FeaturePreset): void => {
     if (placed.has(p.id)) return;
     placed.add(p.id);
+    // What it includes goes ahead of it, even when a preset it refines placed it early.
+    for (const inner of p.includes ?? []) place(inner);
     const names = namesFor(p.id);
     for (const r of listed) {
       if (!r.refines?.some((id) => names.has(id))) continue;

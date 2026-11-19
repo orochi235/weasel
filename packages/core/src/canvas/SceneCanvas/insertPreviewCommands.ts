@@ -1,6 +1,6 @@
 import {
-  ellipsePath, invert, linePath, mat3, multiply, rectPath, regularPolygonPath, starPath, polylineFromPoints, transformPath,
-  type Affine,
+  boundsOfPath, ellipsePath, invert, linePath, mat3, multiply, rectPath, regularPolygonPath, starPath, polylineFromPoints, transformPath,
+  type Affine, type Path,
 } from '@weasel-js/geom';
 import { getImageBitmap, type DrawCommand, type PathDrawCommand } from '@weasel-js/renderer';
 import { viewToTransform, type View } from 'core/viewport/view';
@@ -28,77 +28,53 @@ export function insertPreviewCommands(
   cfg: InsertPreviewStyle,
 ): DrawCommand[] {
   const t = viewToTransform(view);
+  // World to screen. Every outline is built in world and carried through it, so a flipped or stretched view
+  // draws the preview as it draws the node the drag inserts.
+  const toScreen: Affine = [view.scale.x, 0, 0, view.scale.y, t.panX, t.panY];
   const out: DrawCommand[] = [];
   const b = ov.bounds;
-  const projectPoint = (wx: number, wy: number): { x: number; y: number } => {
-    const [sx, sy] = worldToScreen(wx, wy, t);
-    return { x: sx, y: sy };
-  };
-  const projectPoints = (
-    pts: ReadonlyArray<{ x: number; y: number }>,
-  ): { x: number; y: number }[] => pts.map((p) => projectPoint(p.x, p.y));
-  // Radial shapes inscribe in a square, so a single screen-space
-  // radius needs one scale factor; average the axes.
-  const radialScale = (view.scale.x + view.scale.y) / 2;
 
-  let pathCmd: PathDrawCommand['path'] | null = null;
+  let world: Path | null = null;
   const geom = ov.geometry;
   switch (geom.kind) {
-    case 'box': {
-      const [sx, sy] = worldToScreen(b.x, b.y, t);
-      const sw = b.width * view.scale.x;
-      const sh = b.height * view.scale.y;
-      if (ov.shape === 'image') {
-        const e = ov.extras as Partial<{ src: string; preview: string }>;
-        // The bitmap when it has decoded, the bare outline until then
-        // (or when the tool opted out) — the outline is drawn either
-        // way, so the drag always has an edge to read.
-        const bmp = e.preview === 'outline' || !e.src
-          ? undefined
-          : getImageBitmap(e.src);
-        if (bmp) {
-          out.push({
-            kind: 'image',
-            image: bmp,
-            x: sx, y: sy, width: sw, height: sh,
-            opacity: PREVIEW_CONTENT_OPACITY,
-          });
-        }
-      }
-      pathCmd = ov.shape === 'ellipse'
-        ? ellipsePath({ x: sx, y: sy, width: sw, height: sh })
-        : rectPath(sx, sy, sw, sh);
+    case 'box':
+      world = ov.shape === 'ellipse' ? ellipsePath(b) : rectPath(b.x, b.y, b.width, b.height);
       break;
-    }
     case 'line':
-      pathCmd = linePath(projectPoint(geom.a.x, geom.a.y), projectPoint(geom.b.x, geom.b.y));
+      world = linePath(geom.a, geom.b);
       break;
     case 'polygon':
-      pathCmd = regularPolygonPath(
-        projectPoint(geom.center.x, geom.center.y),
-        geom.radius * radialScale,
-        geom.sides,
-        geom.rotation,
-      );
+      world = regularPolygonPath(geom.center, geom.radius, geom.sides, geom.rotation);
       break;
     case 'star':
-      pathCmd = starPath(
-        projectPoint(geom.center.x, geom.center.y),
-        geom.outerRadius * radialScale,
-        geom.points,
-        geom.innerRadius * radialScale,
-        geom.rotation,
-      );
+      world = starPath(geom.center, geom.outerRadius, geom.points, geom.innerRadius, geom.rotation);
       break;
     case 'path':
-      pathCmd = transformPath(geom.path, [view.scale.x, 0, 0, view.scale.y, t.panX, t.panY]);
+      world = geom.path;
       break;
     case 'pencil':
       // Genuinely open: `polygonFromPoints` closes the path, and the
       // closing edge from the last sample back to the first reads as
       // a marquee rather than as the stroke being drawn.
-      pathCmd = polylineFromPoints(projectPoints(geom.samples));
+      world = polylineFromPoints(geom.samples);
       break;
+  }
+  const pathCmd = world && transformPath(world, toScreen);
+  if (pathCmd && geom.kind === 'box' && ov.shape === 'image') {
+    const e = ov.extras as Partial<{ src: string; preview: string }>;
+    // The bitmap when it has decoded, the bare outline until then
+    // (or when the tool opted out) — the outline is drawn either
+    // way, so the drag always has an edge to read.
+    const bmp = e.preview === 'outline' || !e.src ? undefined : getImageBitmap(e.src);
+    const r = boundsOfPath(pathCmd);
+    if (bmp) {
+      out.push({
+        kind: 'image',
+        image: bmp,
+        x: r.x, y: r.y, width: r.width, height: r.height,
+        opacity: PREVIEW_CONTENT_OPACITY,
+      });
+    }
   }
 
   if (!pathCmd) return out;
@@ -113,7 +89,6 @@ export function insertPreviewCommands(
   out.push(cmd);
   // Each copy the shape will be drawn in, carried into screen space.
   if (ov.copies && ov.copies.length > 0) {
-    const toScreen: Affine = [view.scale.x, 0, 0, view.scale.y, t.panX, t.panY];
     const toWorld = invert(toScreen);
     for (const m of ov.copies) {
       if (!toWorld) break;
@@ -125,7 +100,8 @@ export function insertPreviewCommands(
   // vertex sits at the AABB corner, and in center mode the dot marks
   // the growth axis.
   if (ov.anchorPoint) {
-    const anchorScreen = projectPoint(ov.anchorPoint.x, ov.anchorPoint.y);
+    const [ax, ay] = worldToScreen(ov.anchorPoint.x, ov.anchorPoint.y, t);
+    const anchorScreen = { x: ax, y: ay };
     out.push({
       kind: 'path',
       path: ellipsePath({

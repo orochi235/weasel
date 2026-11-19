@@ -60,9 +60,17 @@ export function useContributionFrameHooks(
     };
     const offBefore = hasBefore ? api.subscribeBeforePaint(run('beforePaint')) : undefined;
     const offAfter = hasAfter ? api.subscribeFrame(run('afterPaint')) : undefined;
-    // A hook arriving after the last paint would otherwise wait for an
-    // unrelated redraw to run for the first time.
-    api.requestRedraw();
     return () => { offBefore?.(); offAfter?.(); };
   }, [api, hasBefore, hasAfter, entriesRef, depsRef, reported]);
+
+  // A hook arriving after the last paint would otherwise wait for an unrelated
+  // redraw to run for the first time, whether or not its phase was already
+  // subscribed. A new api has run none of them.
+  const ran = useRef<{ api: CanvasExtensionApi | null; hooks: ReadonlySet<unknown> }>({ api: null, hooks: new Set() });
+  useEffect(() => {
+    const hooks = new Set<unknown>(entries.flatMap((e) => [e.beforePaint, e.afterPaint]).filter(Boolean));
+    const seen = ran.current.api === api ? ran.current.hooks : new Set<unknown>();
+    ran.current = { api, hooks };
+    if (api && [...hooks].some((h) => !seen.has(h))) api.requestRedraw();
+  }, [api, entries]);
 }

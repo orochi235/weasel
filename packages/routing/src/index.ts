@@ -152,8 +152,8 @@ export type { ActionOf, ActionSettingsOf, ActionVariantOf } from './interactions
 export { checkActive, checkEnabled } from './interactions/actions/actionEnabled';
 export type { ActionEnabledResult } from './interactions/actions/actionEnabled';
 export { createActionDeps } from './interactions/actions/buildDeps';
-export { createDepRegistry } from './interactions/actions/depNode';
-export type { DepRegistry, DepListing, DepSource } from './interactions/actions/depNode';
+export { createDepRegistry, rankedDepRegistry } from './interactions/actions/depNode';
+export type { DepRegistry, DepListing, DepRegisterOptions, DepSource } from './interactions/actions/depNode';
 export { validateActionId, validateActionDefaultBinding } from './interactions/actions/registry';
 export type { ActionsRegistry, ActionEntry, ActionsProp, ActionTuningOf } from './interactions/actions/registry';
 export { resolveParams } from './interactions/actions/invoker';

@@ -8,7 +8,7 @@
  */
 import { createActiveModeReader } from '@weasel-js/modes';
 import { useLatest } from '@weasel-js/react';
-import { InputScope, useActionsRegistry } from '@weasel-js/routing/react';
+import { DepRank, InputScope, useActionsRegistry } from '@weasel-js/routing/react';
 import type { NodeId, Scene } from 'core/scene/types';
 import { useCanvasCamera } from './SceneCanvas/useCanvasCamera';
 import { useHeldModifiers } from './SceneCanvas/useHeldModifiers';
@@ -47,7 +47,7 @@ import { useNodeKinds } from './SceneCanvas/useNodeKinds';
 import { usePresetTraits } from './SceneCanvas/usePresetTraits';
 import { useMagnificationCheck } from './SceneCanvas/useMagnificationCheck';
 import { useStandInLayers } from './paintStandIns';
-import { PresetComponents } from './SceneCanvas/PresetComponents';
+import { CHILD_DEP_RANK, PresetComponents } from './SceneCanvas/PresetComponents';
 import { useSurfaceViewInputs } from './SceneCanvas/useSurfaceViewInputs';
 import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
 import { ViewRegistryProvider } from './viewRegistry';
@@ -172,7 +172,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       />
       <SurfaceDeclarations views={props.views} entries={contributionEntries(tools.tools)} added={addedViews} />
       <PresetComponents parts={enabled.components} scene={scene as Scene<unknown, string, unknown>} canvasRef={internalCanvasRef} paintsInto={!!props.paintInto} canvas={tools.buildCtx} />
-      {props.children}
+      <DepRank rank={CHILD_DEP_RANK}>{props.children}</DepRank>
     </CanvasKitProviders>
   );
 }
