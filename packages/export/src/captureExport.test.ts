@@ -13,6 +13,7 @@ import { captureExport, EXPORT_CAPTURE_ATTEMPTS, ExportRevisionError } from './c
 import { capturePngRegion } from './regionPng';
 import { pageRegion } from './exportPages';
 import { selectionRegion } from './selectionRegion';
+import { solidFill } from '@weasel-js/paint';
 
 const bitmap = (src: string) => ({ width: 4, height: 4, src, close() {} }) as unknown as ImageBitmap;
 const tick = () => new Promise<void>((r) => setTimeout(r, 0));
@@ -37,8 +38,6 @@ function drawn(commands: readonly DrawCommand[], out: string[] = []): string[] {
   return out;
 }
 
-const solid = (color: string) => ({ paint: { kind: 'solid', color } });
-
 beforeEach(() => _resetImageCacheForTests());
 afterEach(() => _resetImageCacheForTests());
 
@@ -49,7 +48,7 @@ describe('captureExport', () => {
     scene.add({ id: 'i', kind: 'mark', layer: 'main', parent: null, pose: { x: 150, y: 10, width: 20, height: 20 }, data: { image: { src: 'slow' } } } as never);
     const plan = capturePngRegion(scene, pageRegion(pages[0]!), { scale: 1 });
     await tick();
-    scene.update(asNodeId('r'), { data: { shape: 'rect', fill: solid(GREEN) } });
+    scene.update(asNodeId('r'), { data: { shape: 'rect', fill: solidFill(GREEN) } });
     scene.remove(asNodeId('e'));
     scene.add({ id: 'j', kind: 'mark', layer: 'main', parent: null, pose: { x: 10, y: 70, width: 20, height: 20 }, data: { image: { src: 'new' } } } as never);
     loads.release('slow');
@@ -80,8 +79,8 @@ describe('captureExport', () => {
       return dep ? { kind: 'rect', x: dep.pose.x, y: dep.pose.y + 50, width: 5, height: 5 } : null;
     };
     const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: { derivePath: { follow } } });
-    const a = scene.add({ id: 'a', kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { shape: 'rect', fill: solid(RED) } } as never);
-    scene.add({ id: 'l', kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: { fill: solid(GREEN) }, dependsOn: [a], derivePath: follow } as never);
+    const a = scene.add({ id: 'a', kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { shape: 'rect', fill: solidFill(RED) } } as never);
+    scene.add({ id: 'l', kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: { fill: solidFill(GREEN) }, dependsOn: [a], derivePath: follow } as never);
     let moved = false;
     const plan = captureExport(scene, [{ x: 0, y: 0, width: 200, height: 100 }], {
       warm: async () => { await tick(); if (!moved) { moved = true; scene.setPose(a, { x: 40, y: 0, width: 10, height: 10 }); } },

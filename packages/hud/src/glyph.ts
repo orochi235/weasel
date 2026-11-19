@@ -4,6 +4,7 @@ import {
 } from '@weasel-js/geom';
 import { ICON_FRAME, iconParts, layerMarkup, markLayers, type IconGlyph, type IconRegistry, type IconSpec } from '@weasel-js/icons';
 import { setOwn } from '@weasel-js/registry';
+import { solidFill } from '@weasel-js/paint';
 
 /** The attributes a glyph's elements inherit, as `<Icon>`'s root `<svg>` sets them. */
 const ROOT: Readonly<Record<string, string>> = {
@@ -97,7 +98,7 @@ function shapeCommands(path: Path, a: Readonly<Record<string, string>>, color: s
   const fill = paintOf(a.fill, color);
   if (fill) {
     const p = path.kind === 'polygon' && a['fill-rule'] === 'evenodd' ? { ...path, fillRule: 'evenodd' as const } : path;
-    const cmd: DrawCommand = { kind: 'path', path: p, fill: { paint: { kind: 'solid', color: fill } } };
+    const cmd: DrawCommand = { kind: 'path', path: p, fill: solidFill(fill) };
     const alpha = num(a['fill-opacity'], 1);
     out.push(alpha < 1 ? { kind: 'group', alpha, children: [cmd] } : cmd);
   }

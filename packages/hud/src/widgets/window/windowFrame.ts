@@ -1,6 +1,6 @@
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
 import { pathFromD, parseColor, textCommandFromRuns } from '@weasel-js/core';
-import { dashForStrokeStyle, mixOklab, type ColorSource } from '@weasel-js/paint';
+import { dashForStrokeStyle, mixOklab, type ColorSource, solidFill } from '@weasel-js/paint';
 import { TINT_REF, type Emphasis, type Grade, type Stance } from '@weasel-js/theme';
 import type { HudDrawCtx, WidgetBounds } from '../../widget';
 import { windowLook } from './windowLook';
@@ -44,7 +44,7 @@ function gripDots(cx: number, cy: number, color: string): PathDrawCommand {
       d += `M ${px} ${py} A ${r} ${r} 0 1 0 ${px + 2 * r} ${py} A ${r} ${r} 0 1 0 ${px} ${py} Z `;
     }
   }
-  return { kind: 'path', path: pathFromD(d), fill: { paint: { kind: 'solid', color } } };
+  return { kind: 'path', path: pathFromD(d), fill: solidFill(color) };
 }
 
 /** The close box of a window at `bounds`. */
@@ -83,7 +83,7 @@ export function drawWindowFrame(
     { x: x + m.edge, y: y + h - m.edge, width: w - m.edge * 2, height: m.edge },
   ];
   for (const r of rects) {
-    out.push({ kind: 'path', path: { kind: 'rect', ...r }, fill: { paint: { kind: 'solid', color: band } } });
+    out.push({ kind: 'path', path: { kind: 'rect', ...r }, fill: solidFill(band) });
   }
 
   // Border ring: a stroked rect, no fill, so the interior stays a hole
@@ -106,7 +106,7 @@ export function drawWindowFrame(
 
   out.push(textCommandFromRuns(
     x + m.edge + 2, y,
-    [{ text: casedTitle(a.title, look['title-case']), fill: { paint: { kind: 'solid', color: look['title-color'] } } }],
+    [{ text: casedTitle(a.title, look['title-case']), fill: solidFill(look['title-color']) }],
     {
       fontFamily: ctx.defaultFont,
       fontSize: 12,

@@ -11,6 +11,7 @@ import { Input } from '@weasel-js/ui/components/Input';
 import { Slider } from '@weasel-js/ui/components/Slider';
 import { SwatchGrid, type SwatchGridOption } from '@weasel-js/ui/components/SwatchGrid';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
+import { maxOf, minOf } from '@weasel-js/geom';
 
 const HEX6 = /^#[0-9a-f]{6}$/i;
 const FULL = 'Every slot is pinned — raise the color count to add more.';
@@ -51,8 +52,8 @@ function ordered(swatches: readonly Swatch[], bands: number): Swatch[] {
   }
   // Band edges span the set's own chroma range, so the slider divides what is
   // actually there rather than a fixed 0-to-max that most sets never fill.
-  const lo = Math.min(...measured.map((m) => m.C));
-  const hi = Math.max(...measured.map((m) => m.C));
+  const lo = minOf(measured, (m) => m.C);
+  const hi = maxOf(measured, (m) => m.C);
   const width = (hi - lo) / bands || 1;
   return measured
     .map((m) => ({ ...m, band: Math.min(bands - 1, Math.floor((m.C - lo) / width)) }))

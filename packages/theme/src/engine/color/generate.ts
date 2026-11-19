@@ -1,4 +1,4 @@
-import { lerp } from '@weasel-js/geom';
+import { minOf, lerp } from '@weasel-js/geom';
 import { hueName, uniqueNames } from './hueNames.ts';
 import { searchHues } from './hueSearch.ts';
 import { chromaCap, contrast, hueGap, toHex, toLch, type Lch } from './oklch.ts';
@@ -153,7 +153,7 @@ function farthestFirst(hues: number[]): number[] {
     let bestGap = -1;
     for (let i = 0; i < hues.length; i += 1) {
       if (order.includes(i)) continue;
-      const gap = Math.min(...order.map((j) => hueGap(hues[i], hues[j])));
+      const gap = minOf(order, (j) => hueGap(hues[i], hues[j]));
       if (gap > bestGap) {
         bestGap = gap;
         best = i;

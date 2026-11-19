@@ -6,7 +6,7 @@
 import {
   type Action, type ActionDeps, ActionDisabledReason, type ActionParamsOf, BETWEEN_GESTURES, defineAction, type ImmediateInvoker,
 } from '@weasel-js/routing';
-import { worldEditToStorage } from '@weasel-js/geom';
+import { maxOf, worldEditToStorage } from '@weasel-js/geom';
 import { commitOps, createSetDataOp, createDeleteNodeOp, derivedDepOf, documentOf, createInsertNodeOp, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, resolvePartPaint, registeredPathEffects, type AnyNode, slotOf, pathOperationTags, type AnyScene } from '@weasel-js/core';
 import { isTextData } from '@weasel-js/text';
 import { newEffect, withEffectSettings } from './params';
@@ -115,7 +115,7 @@ function createEffectAction<const Id extends CreateId>(spec: CreateSpec<Id>) {
           const sameParent = first.parent === second.parent;
           const slots = [slotOf(scene, first.id), slotOf(scene, second.id)];
           // Inserting at the upper source's slot puts the steps just under it.
-          const index = !sameParent ? -1 : spec.between ? Math.max(...slots) : Math.max(...slots) + 1;
+          const index = !sameParent ? -1 : spec.between ? maxOf(slots) : maxOf(slots) + 1;
           const node = {
             ...pathEffectNode(effect, sources, first.layer, derivations),
             id: scene.mintId(),

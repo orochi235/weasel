@@ -11,7 +11,7 @@ import { edgeBetween, entersBox, isOrthogonal, rectShape } from './avoidFixture'
 import { routeHolds } from './holds';
 import type { AvoidRoutes } from './router';
 import { AVOID_DEFAULTS, blocks, type AvoidEdge, type AvoidInput, type AvoidObstacle, type AvoidPort } from './types';
-import { growRect } from '@weasel-js/geom';
+import { maxOf, minOf, growRect } from '@weasel-js/geom';
 
 export const PITCH = 180;
 export const COLS = 3;
@@ -60,8 +60,8 @@ export function build(spec: SceneSpec, region = true): AvoidInput {
   const obstacles = [...shapes];
   if (region && spec.region !== null) {
     const inside = spec.region.map((k) => shapes[k]!);
-    const [x0, y0] = [Math.min(...inside.map((o) => o.box.x)) - 15, Math.min(...inside.map((o) => o.box.y)) - 15];
-    const [x1, y1] = [Math.max(...inside.map((o) => o.box.x + o.box.width)) + 15, Math.max(...inside.map((o) => o.box.y + o.box.height)) + 15];
+    const [x0, y0] = [minOf(inside, (o) => o.box.x) - 15, minOf(inside, (o) => o.box.y) - 15];
+    const [x1, y1] = [maxOf(inside, (o) => o.box.x + o.box.width) + 15, maxOf(inside, (o) => o.box.y + o.box.height) + 15];
     const box = { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
     // A shape outside the region but under it, or within its clearance, has ports no route can leave cleanly.
     const clear = shapes.every((o) => inside.includes(o) || !touches(growRect(o.box, AVOID_DEFAULTS.clearance + 1), box));

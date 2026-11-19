@@ -1,6 +1,7 @@
 import type { SnapCandidate, SnapResolution, Vec } from '@weasel-js/geom/nd';
 import { distinct } from './marks';
 import type { SnapCollect, SnapGesture, SnapMark, SnapProbeAt, SnapSource, SourceCandidate } from './types';
+import { maxOf } from '@weasel-js/geom';
 
 const DEFAULT_GESTURES: readonly SnapGesture[] = ['point', 'move', 'resize'];
 
@@ -101,7 +102,7 @@ export function resolveHolding<P>(
 }
 
 function same(a: Vec, b: Vec): boolean {
-  const eps = ORIGIN_EPS * Math.max(1, ...b.map(Math.abs));
+  const eps = ORIGIN_EPS * Math.max(1, maxOf(b, Math.abs));
   return a.every((v, i) => Math.abs(v - b[i]) <= eps);
 }
 

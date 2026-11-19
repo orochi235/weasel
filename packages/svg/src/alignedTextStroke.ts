@@ -21,10 +21,11 @@ import { textXml } from './serializeText';
 import type { Warn } from './strokeAttrs';
 import { trimNumber } from './transform';
 import type { SvgTextNode } from './types';
+import { solidFill } from '@weasel-js/paint';
 
 type Align = 'inner' | 'outer';
 const ROLE = `${WEASEL_NS_PREFIX}:role`;
-const BLACK = { paint: { kind: 'solid' as const, color: '#000000' } };
+const BLACK = solidFill('#000000');
 const WHITE_FILL = 'fill="#ffffff"';
 
 const alignOf = (s: Stroke | undefined): Align | null =>

@@ -153,7 +153,7 @@ function slotsFor(
   let cursor = 0;
   line.forEach((node, i) => {
     const column = rows.get(node.id)!;
-    const span = Math.max(extent(node.bounds, axes.rank), ...Array.from(column, (row) => (row ? rowSpan(row) : 0)));
+    const span = Math.max(extent(node.bounds, axes.rank), maxOf(column, (row) => (row ? rowSpan(row) : 0)));
     slots.set(node.id, {
       cross: (levelSize[0]! - extent(node.bounds, axes.cross)) / 2,
       rank: cursor + (span - extent(node.bounds, axes.rank)) / 2,

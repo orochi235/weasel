@@ -1,5 +1,5 @@
 /** An xychart compiled to its scales and marks. */
-import { maxOf, type Rect } from '@weasel-js/geom';
+import { minOf, maxOf, type Rect } from '@weasel-js/geom';
 import { axisMarks, axisRoom } from '../axes';
 import { barMark, pointMark } from '../marks/boxes';
 import { lineMark } from '../marks/paths';
@@ -107,7 +107,7 @@ function seriesMarks(data: XyChartData, layout: XyLayout, theme: PlotTheme): Plo
   const { value, slots, slotWidth } = layout;
   const vertical = layout.orientation === 'vertical';
   // Data is cut to the plot area here, so no renderer or export draws past it.
-  const [lo, hi] = [Math.min(...value.range), Math.max(...value.range)];
+  const [lo, hi] = [minOf(value.range), maxOf(value.range)];
   const { plot } = layout;
   const area = rectArea(vertical ? { x: plot.x, y: lo, width: plot.width, height: hi - lo } : { x: lo, y: plot.y, width: hi - lo, height: plot.height });
   const place = (v: number) => Math.min(hi, Math.max(lo, value.position(v)));

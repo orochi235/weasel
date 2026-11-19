@@ -1,5 +1,6 @@
 import { contrast, deltaE, hueGap } from './oklch.ts';
 import type { Stats, Swatch } from './generate.ts';
+import { maxOf, minOf } from '@weasel-js/geom';
 
 /** Closest any two colors in the set look. */
 function pairwiseMin(hexes: string[]): number {
@@ -23,12 +24,12 @@ export function summarize(swatches: Swatch[], surface: string): Stats {
   }
   return {
     meanChroma: cs.reduce((a, b) => a + b, 0) / (cs.length || 1),
-    chromaSpread: Math.max(...cs) - Math.min(...cs),
-    lightnessSpread: Math.max(...ls) - Math.min(...ls),
+    chromaSpread: maxOf(cs) - minOf(cs),
+    lightnessSpread: maxOf(ls) - minOf(ls),
     minHueGap: swatches.length > 1 ? gap : 360,
     hueFloorShare: swatches.length > 1 ? (gap * swatches.length) / 360 : 1,
-    minContrast: Math.min(...swatches.map((s) => contrast(s.hex, surface))),
-    minSurfaceDistance: Math.min(...swatches.map((s) => deltaE(s.hex, surface))),
+    minContrast: minOf(swatches, (s) => contrast(s.hex, surface)),
+    minSurfaceDistance: minOf(swatches, (s) => deltaE(s.hex, surface)),
     minDistance: pairwiseMin(swatches.map((s) => s.hex)),
   };
 }

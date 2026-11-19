@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { paintWithColor, solid } from './paintDefaults';
+import { paintWithColor, solid, solidFill } from './paintDefaults';
 
 describe('solid', () => {
   it('moves a short hex alpha channel to opacity', () => {
@@ -16,5 +16,12 @@ describe('solid', () => {
 describe('paintWithColor', () => {
   it("lets a short hex alpha channel win over the paint's opacity", () => {
     expect(paintWithColor({ color: '#000', opacity: 0.5 }, '#f008')).toEqual({ color: '#ff0000', opacity: 0x88 / 255 });
+  });
+});
+
+describe('solidFill', () => {
+  it('wraps the color in a tagged solid paint, moving a hex alpha channel to opacity', () => {
+    expect(solidFill('#f00')).toEqual({ paint: { kind: 'solid', color: '#f00' } });
+    expect(solidFill('#ff000080')).toEqual({ paint: { kind: 'solid', color: '#ff0000', opacity: 0x80 / 255 } });
   });
 });
