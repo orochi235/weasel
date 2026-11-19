@@ -20,6 +20,10 @@
       "types": "./dist/engine.d.ts",
       "import": "./dist/engine.js"
     },
+    "./presets": {
+      "types": "./dist/presets.d.ts",
+      "import": "./dist/presets.js"
+    },
     "./test-seams": {
       "types": "./dist/test-seams.d.ts",
       "import": "./dist/test-seams.js"

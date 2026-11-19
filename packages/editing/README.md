@@ -31,6 +31,15 @@ own), `arrangePreset` (flip, reorder, align, distribute), `pathfinderPreset`,
 `shapeToolsPreset`. Core's `viewPreset` pans and zooms; a canvas given only it
 is a viewer, whose selection nothing it runs writes.
 
+`@weasel-js/editing/presets` names each of these by its short name, core's
+`view` and `viewTools` among them:
+
+```tsx
+import * as presets from '@weasel-js/editing/presets';
+
+<SceneCanvas scene={scene} features={[presets.view, presets.pick, presets.move]} />
+```
+
 The tools are editing's, offered to a canvas by id: `selectToolsOfferedPreset`
 offers the select tool and the lasso, `shapeToolsOfferedPreset` the rect, ellipse,
 line, polygon and star, and `defaultTools={['rect']}` mounts one wherever a
