@@ -73,3 +73,19 @@ describe('X10 — sos and eos', () => {
     expect(r.find((s) => s.level === 1)!.eos).toBe('R');
   });
 });
+
+describe('P1 — a paragraph separator ends its sequences', () => {
+  it('starts a new sequence after a B, against the paragraph level', () => {
+    // Every character sits at level 1, so one level run would cross the B.
+    const r = seqs('R B ON R', 1);
+    expect(r.map((s) => s.indices)).toEqual([[0, 1], [2, 3]]);
+    expect(r[0].eos).toBe('R');
+    expect(r[1].sos).toBe('R');
+  });
+
+  it('takes sos from the paragraph, not from an embedding before the B', () => {
+    const r = seqs('RLE L B L', 0);
+    const after = r.find((s) => s.indices[0] === 3)!;
+    expect(after.sos).toBe('L');
+  });
+});

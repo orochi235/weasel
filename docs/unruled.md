@@ -707,6 +707,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   as the end of its paragraph: X8 closes every embedding and isolate there, BD9 pairs no `PDI` past it, and `'auto'`
   takes its direction from before it, so `'\nא'` reads left to right where it read right to left. text's layout cuts
   paragraphs before calling it, so only a separator text does not cut at (U+001C–U+001E) meets this (f533898fb).
+- Ruled 2026-11-18 (audit 37, the lane's call): bidi's `reorder` and `reorderLine` throw a `RangeError` for a line that is
+  not integers with `0 <= start <= end <=` the paragraph's length, where one past the end returned indices of characters
+  that do not exist. There is no override: no such range names a line.
 - Ruled 2026-11-16 (audit 29): the edit overlay writes a `selectionBackground` or `selectionColor`,
   default included, into its `::selection` rule only when `parsesAsColor` (`@weasel-js/paint`) reads it as a CSS
   color; any other value is left out with a warning, and the rule is not written when neither is one. There is no
