@@ -3,6 +3,7 @@
 
 import { maxOf } from '../scalar';
 
+/** A point or a direction, as its coordinates in any dimension. */
 export type Vec = readonly number[];
 
 /** The affine subspace `at + span(dirs)`. `dirs` need not be orthonormal or
