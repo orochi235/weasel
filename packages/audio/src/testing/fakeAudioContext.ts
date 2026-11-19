@@ -81,6 +81,11 @@ function createFakeBuffer(channels: number, length: number, sampleRate: number):
   if (channels < 1 || length < 1) {
     throw new Error('NotSupportedError: createBuffer needs a channel and a frame');
   }
+  // A real implementation also refuses rates outside 3000–768000 Hz; the fake
+  // takes any positive rate, so a test can make a second 100 frames long.
+  if (!(sampleRate > 0 && Number.isFinite(sampleRate))) {
+    throw new Error(`NotSupportedError: createBuffer cannot take a sample rate of ${sampleRate}`);
+  }
   const data = Array.from({ length: channels }, () => new Float32Array(length));
   return {
     duration: length / sampleRate,

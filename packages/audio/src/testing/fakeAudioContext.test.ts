@@ -83,6 +83,14 @@ describe('createFakeAudioContext', () => {
     expect(() => b.getChannelData(-1)).toThrow(/IndexSizeError/);
   });
 
+  it('refuses a buffer sample rate that is not positive and finite', () => {
+    const ctx = createFakeAudioContext();
+    expect(() => ctx.createBuffer(1, 10, 0)).toThrow(/NotSupportedError/);
+    expect(() => ctx.createBuffer(1, 10, -1)).toThrow(/NotSupportedError/);
+    expect(() => ctx.createBuffer(1, 10, Infinity)).toThrow(/NotSupportedError/);
+    expect(ctx.createBuffer(1, 100, 100).duration).toBe(1);
+  });
+
   it('records source start times and collects every source', () => {
     const ctx = createFakeAudioContext();
     const s = ctx.createBufferSource();
