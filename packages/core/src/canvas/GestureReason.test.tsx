@@ -1,9 +1,10 @@
 import { act, render } from '@testing-library/react';
-import { createRef } from 'react';
+import { createRef, useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 import type { Dispatcher, OngoingOverlay } from '@weasel-js/routing';
 import type { View } from 'core/viewport/view';
 import { GestureReason } from './GestureReason';
+import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistration } from './viewRegistry';
 
 function fakeDispatcher(overlays: () => readonly OngoingOverlay[]) {
   const subs = new Set<() => void>();
@@ -43,5 +44,34 @@ describe('GestureReason', () => {
     overlays = [{ kind: 'polyline', points: [{ x: 0, y: 0 }, { x: 1, y: 1 }], role: 'refused' }];
     act(pump);
     expect(queryByRole('status')).toBeNull();
+  });
+  it("shows a reason a gesture inside a view posts, placed through that view's map", () => {
+    const canvas = document.createElement('canvas');
+    canvas.getBoundingClientRect = () => ({ left: 100, top: 50, right: 500, bottom: 350, width: 400, height: 300, x: 100, y: 50, toJSON: () => ({}) });
+    const viewRef = { current: { x: 0, y: 0, scale: { x: 1, y: 1 } } as View };
+    const surface = fakeDispatcher(() => []);
+    let overlays: readonly OngoingOverlay[] = [];
+    const inView = fakeDispatcher(() => overlays);
+    const reg = {
+      id: 'pip', order: 0, target: { dispatcher: inView.dispatcher },
+      worldToCanvas: (x: number, y: number) => ({ x: 200 + x / 2, y: 100 + y / 2 }),
+    } as unknown as ViewRegistration;
+    function Register() {
+      const registry = useOptionalViewRegistry()!;
+      useEffect(() => registry.register(reg), [registry]);
+      return null;
+    }
+    const { queryByRole } = render(
+      <ViewRegistryProvider>
+        <Register />
+        <GestureReason dispatcher={surface.dispatcher} canvasRef={{ current: canvas }} viewRef={viewRef} />
+      </ViewRegistryProvider>,
+    );
+    overlays = [{ kind: 'reason', at: { x: 20, y: 40 }, text: 'Not here' }];
+    act(inView.pump);
+    const tag = queryByRole('status')!;
+    expect(tag.textContent).toBe('Not here');
+    expect(tag.style.left).toBe(`${100 + 210 + 14}px`);
+    expect(tag.style.top).toBe(`${50 + 120 + 14}px`);
   });
 });

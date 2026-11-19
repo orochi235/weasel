@@ -164,7 +164,7 @@ export function CanvasView(props: CanvasViewProps): null {
   });
   const helpersRef = useLatest(helpers);
 
-  const { toWorld: clientToWorldHere, toLocal: clientToLocalHere } = useViewClientMaps(registry, rectNow, camera);
+  const { toWorld: clientToWorldHere, toLocal: clientToLocalHere, toCanvas } = useViewClientMaps(registry, rectNow, camera);
 
   const { affordanceAt, classifyTarget } = useViewPicking({
     id, registry, inputs, camera, rectNow, drawnLayers, layerIsPainted, selectionNow, helpersRef, depRegistryRef,
@@ -184,6 +184,7 @@ export function CanvasView(props: CanvasViewProps): null {
     }),
     layerIsPainted,
     drawnLayers,
+    worldToCanvas: toCanvas,
     target: {
       dispatcher,
       affordanceAt,
@@ -202,7 +203,7 @@ export function CanvasView(props: CanvasViewProps): null {
     },
   }), [id, parent, order, interactive, paint, held, aim, setAim, label, background, rectAt, cameraAt, viewApi,
        affordanceAt, classifyTarget, clientToWorldHere, clientToLocalHere, ruleInputs, ingestionApi, drawnLayers,
-       layerIsPainted, inputsRef, helpersRef, frameIn, registry, live, dispatcher]);
+       layerIsPainted, inputsRef, helpersRef, frameIn, registry, live, dispatcher, toCanvas]);
 
   useEffect(() => {
     if (!registry) return;
