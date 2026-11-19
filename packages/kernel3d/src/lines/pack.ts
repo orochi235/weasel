@@ -4,7 +4,7 @@
  * once the camera is known.
  */
 
-import { curveSpan, lengthTable, type CurveSpan } from '@weasel-js/geom';
+import { curveSpan, lengthTable, type CurveSpan, wrapPositive } from '@weasel-js/geom';
 import { lerpPoint, transformPoint, type Mat4, type Vec3 } from '@weasel-js/geom/3d';
 import type { StrokeTrim } from '@weasel-js/paint';
 import { resolveTrim } from '@weasel-js/stroke';
@@ -130,7 +130,7 @@ function packRun(
 ): void {
   const n = world.length;
   const segments = run.closed ? n : n - 1;
-  const at = (i: number) => world[((i % n) + n) % n];
+  const at = (i: number) => world[wrapPositive(i, n)];
   const along = [0];
   for (let i = 0; i < segments; i++) along.push(along[i] + dist(run.points[i], run.points[(i + 1) % n]));
   const total = along[segments];

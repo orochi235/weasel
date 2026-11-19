@@ -1,5 +1,5 @@
 import type { View } from 'core/viewport/view';
-import { type Rect, viewScreenToWorld } from '@weasel-js/geom';
+import { type Rect, viewScreenToWorld, rectContainsPointHalfOpen } from '@weasel-js/geom';
 
 /** A rect on the surface, in CSS pixels from the canvas top-left. */
 export type ViewRect = Rect;
@@ -21,12 +21,9 @@ export interface ResolvableView {
 
 /** Right and bottom edges are exclusive, so neighboring views never both
  *  claim a pixel. */
-const inside = (r: ViewRect, x: number, y: number): boolean =>
-  x >= r.x && x < r.x + r.width && y >= r.y && y < r.y + r.height;
-
 /** Whether `v` takes a canvas-local point: inside its rect and its clip. */
 export function viewContains(v: ResolvableView, x: number, y: number): boolean {
-  return inside(v.rect, x, y) && (v.clip === undefined || inside(v.clip, x, y));
+  return rectContainsPointHalfOpen(v.rect, x, y) && (v.clip === undefined || rectContainsPointHalfOpen(v.clip, x, y));
 }
 
 /**

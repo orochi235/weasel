@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 import type { Vec2 } from '@weasel-js/core/math';
 import { edgeBetween, entersBox, rectShape } from './avoidFixture';
 import { createAvoidRouter, type AvoidRoutes } from './router';
-import { inflate, type AvoidEdge, type AvoidInput, type AvoidObstacle } from './types';
+import { type AvoidEdge, type AvoidInput, type AvoidObstacle } from './types';
+import { growRect } from '@weasel-js/geom';
 
 function stored(input: AvoidInput, routes: AvoidRoutes): AvoidInput {
   return {
@@ -21,7 +22,7 @@ const label = (id: string) => ({ label: { id: `${id}/label`, placement: { at: 'm
 
 /** Whether `full` comes within the default clearance, 10, of `box` past its first and last segments. */
 const grazes = (full: readonly Vec2[], box: AvoidObstacle['box']) =>
-  full.slice(2, -1).some((p, i) => entersBox(full[i + 1]!, p, inflate(box, 10 - 1e-6)));
+  full.slice(2, -1).some((p, i) => entersBox(full[i + 1]!, p, growRect(box, 10 - 1e-6)));
 
 describe('createAvoidRouter, shrunk', () => {
   it('spreads two runs sharing a channel without taking either into a shape\'s clearance', () => {

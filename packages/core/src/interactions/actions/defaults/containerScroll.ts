@@ -4,7 +4,7 @@
  * says how far; the offset goes to `scene.scroll`, which moves what the view
  * shows and leaves the document where it is.
  */
-import { clamp, type Rect } from '@weasel-js/geom';
+import { clamp, type Rect, rectContainsPoint } from '@weasel-js/geom';
 import { defineAction, type ActionDeps } from '@weasel-js/routing';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { targetTransformOf, worldToLocal } from 'core/geometry/targetFrame';
@@ -68,7 +68,7 @@ const isBox = (p: unknown): p is Rect => {
 function shownAt(pose: unknown, at: { x: number; y: number }, bounds: () => Rect): boolean {
   const b = isBox(pose) ? pose : bounds();
   const p = isBox(pose) ? worldToLocal(targetTransformOf(pose), at.x, at.y) : at;
-  return p !== null && p.x >= b.x && p.x <= b.x + b.width && p.y >= b.y && p.y <= b.y + b.height;
+  return p !== null && rectContainsPoint(b, p.x, p.y);
 }
 
 /** A container whose content can scroll, with how far. */

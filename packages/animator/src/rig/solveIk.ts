@@ -1,5 +1,5 @@
 import { getOwn, setOwn } from '@weasel-js/registry';
-import { mat3, wrapAngle, type GlMat3 } from '@weasel-js/geom';
+import { cross, mat3, wrapAngle, type GlMat3 } from '@weasel-js/geom';
 import { compose, resolveSkeleton, toMat3 } from './resolveSkeleton';
 import type { Joint, SkeletonPose, Skeleton } from './types';
 
@@ -69,8 +69,6 @@ function checkPoints({ target, tip, pole }: SolveIkOptions): void {
     }
   }
 }
-
-const cross = (ax: number, ay: number, bx: number, by: number) => ax * by - ay * bx;
 
 /**
  * Rotate a joint chain so its tip reaches `target`, returning the result as an

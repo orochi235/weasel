@@ -1,6 +1,6 @@
 import type { BaseModule } from './types';
 import { polygonSampler } from './polygonSampler';
-import { DEG_TO_RAD } from '@weasel-js/geom';
+import { DEG_TO_RAD, wrapPositive } from '@weasel-js/geom';
 
 /**
  * Symmetric polar-spline base. The silhouette comes from a single curve r(s) over
@@ -198,7 +198,7 @@ export function splineVertices(
     const θRel = θ - rot;
     let s: number;
     if (cfg.mode === 'quadrant') {
-      const θQ = ((θRel % HALF_PI) + HALF_PI) % HALF_PI;
+      const θQ = wrapPositive(θRel, HALF_PI);
       s = θQ / HALF_PI;
     } else {
       s = Math.abs(Math.sin(2 * θRel));

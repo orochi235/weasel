@@ -1,3 +1,4 @@
+import { isFiniteNumber } from '@weasel-js/registry';
 /**
  * The line, decoration and script metrics a font states for itself, in the
  * kit's units: em fractions, with a rule's `offset` measured *down* from the
@@ -66,8 +67,6 @@ export interface FaceMetricTables {
   };
 }
 
-const finite = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
-
 /** `OS/2.fsSelection` bit 7: the font asks to be set by its typo metrics. */
 const USE_TYPO_METRICS = 1 << 7;
 
@@ -86,18 +85,18 @@ const USE_TYPO_METRICS = 1 << 7;
  */
 export function verticalMetricsFromTables(t: FaceMetricTables): { ascent: number; descent: number } | undefined {
   const upem = t.unitsPerEm;
-  if (!finite(upem) || upem <= 0) return undefined;
+  if (!isFiniteNumber(upem) || upem <= 0) return undefined;
   const os2 = t.os2;
   const pair = (a: unknown, d: unknown, down: boolean) => {
-    if (!finite(a) || !finite(d)) return undefined;
+    if (!isFiniteNumber(a) || !isFiniteNumber(d)) return undefined;
     const ascent = a / upem;
     const descent = (down ? d : -d) / upem;
-    return finite(ascent) && finite(descent) && ascent + descent > 0 ? { ascent, descent } : undefined;
+    return isFiniteNumber(ascent) && isFiniteNumber(descent) && ascent + descent > 0 ? { ascent, descent } : undefined;
   };
   const typo = pair(os2?.sTypoAscender, os2?.sTypoDescender, false);
   const hhea = pair(t.hhea?.ascender, t.hhea?.descender, false);
   const win = pair(os2?.usWinAscent, os2?.usWinDescent, true);
-  const useTypo = finite(os2?.fsSelection) && (os2.fsSelection & USE_TYPO_METRICS) !== 0;
+  const useTypo = isFiniteNumber(os2?.fsSelection) && (os2.fsSelection & USE_TYPO_METRICS) !== 0;
   return (useTypo ? typo : undefined) ?? hhea ?? typo ?? win;
 }
 
@@ -112,7 +111,7 @@ export function verticalMetricsFromTables(t: FaceMetricTables): { ascent: number
  */
 export function faceMetricsFromTables(t: FaceMetricTables): FaceMetrics | undefined {
   const upem = t.unitsPerEm;
-  if (!finite(upem) || upem <= 0) return undefined;
+  if (!isFiniteNumber(upem) || upem <= 0) return undefined;
   const out: {
     ascent?: number; descent?: number;
     underline?: FaceRuleMetrics; strikethrough?: FaceRuleMetrics;
@@ -121,7 +120,7 @@ export function faceMetricsFromTables(t: FaceMetricTables): FaceMetrics | undefi
   } = {};
   // Checked as em fractions, not as table values: at a magnitude no 16-bit field holds, the division alone can
   // overflow to Infinity or underflow to 0.
-  const em = (n: unknown): number | undefined => (finite(n) && finite(n / upem) ? n / upem : undefined);
+  const em = (n: unknown): number | undefined => (isFiniteNumber(n) && isFiniteNumber(n / upem) ? n / upem : undefined);
   const rule = (position: unknown, thickness: unknown): FaceRuleMetrics | undefined => {
     const offset = em(position), weight = em(thickness);
     return offset !== undefined && weight !== undefined && weight > 0 ? { offset: -offset, thickness: weight } : undefined;
@@ -134,7 +133,7 @@ export function faceMetricsFromTables(t: FaceMetricTables): FaceMetrics | undefi
   const strikethrough = rule(t.os2?.yStrikeoutPosition, t.os2?.yStrikeoutSize);
   const superscript = script(t.os2?.ySuperscriptYSize, t.os2?.ySuperscriptYOffset);
   const sub = t.os2?.ySubscriptYOffset;
-  const subscript = script(t.os2?.ySubscriptYSize, finite(sub) ? -sub : sub);
+  const subscript = script(t.os2?.ySubscriptYSize, isFiniteNumber(sub) ? -sub : sub);
   const vertical = verticalMetricsFromTables(t);
   if (vertical) { out.ascent = vertical.ascent; out.descent = vertical.descent; }
   if (underline) out.underline = underline;
@@ -159,7 +158,7 @@ export function parseFaceMetrics(raw: unknown): FaceMetrics | undefined {
   const r = raw as Record<string, unknown>;
   const out: Record<string, FaceRuleMetrics | FaceScriptMetrics | number> = {};
   if (r.ascent !== undefined || r.descent !== undefined) {
-    if (!finite(r.ascent) || !finite(r.descent) || r.ascent + r.descent <= 0) {
+    if (!isFiniteNumber(r.ascent) || !isFiniteNumber(r.descent) || r.ascent + r.descent <= 0) {
       throw new Error('parseBmFont: malformed faceMetrics.ascent/descent');
     }
     out.ascent = r.ascent;
@@ -170,7 +169,7 @@ export function parseFaceMetrics(raw: unknown): FaceMetrics | undefined {
     const v = r[key];
     if (v === undefined) return;
     const e = v as Record<string, unknown> | null;
-    if (typeof e !== 'object' || e === null || !finite(e[a]) || !finite(e[b]) || (e[positive] as number) <= 0) {
+    if (typeof e !== 'object' || e === null || !isFiniteNumber(e[a]) || !isFiniteNumber(e[b]) || (e[positive] as number) <= 0) {
       throw new Error(`parseBmFont: malformed faceMetrics.${key}`);
     }
     out[key] = { [a]: e[a], [b]: e[b] } as unknown as FaceRuleMetrics | FaceScriptMetrics;
@@ -182,7 +181,7 @@ export function parseFaceMetrics(raw: unknown): FaceMetrics | undefined {
   for (const key of ['xHeight', 'capHeight'] as const) {
     const v = r[key];
     if (v === undefined) continue;
-    if (!finite(v) || v <= 0) throw new Error(`parseBmFont: malformed faceMetrics.${key}`);
+    if (!isFiniteNumber(v) || v <= 0) throw new Error(`parseBmFont: malformed faceMetrics.${key}`);
     out[key] = v;
   }
   return Object.keys(out).length > 0 ? (out as FaceMetrics) : undefined;

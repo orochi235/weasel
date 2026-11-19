@@ -6,6 +6,7 @@
 import type { Vec2 } from '@weasel-js/core/math';
 import { SpatialHash } from './hash';
 import type { Box } from './types';
+import { rectsIntersect } from '@weasel-js/geom';
 
 /** One segment of one connector's route. */
 export interface RouteSegment {
@@ -25,7 +26,7 @@ const boxOf = (s: RouteSegment): Box => ({
 /** Whether segment `s` shares a point with the inside or edge of `box`. */
 function touches(s: RouteSegment, box: Box): boolean {
   const b = boxOf(s);
-  return b.x <= box.x + box.width && box.x <= b.x + b.width && b.y <= box.y + box.height && box.y <= b.y + b.height;
+  return rectsIntersect(b, box);
 }
 
 export class SegmentIndex {

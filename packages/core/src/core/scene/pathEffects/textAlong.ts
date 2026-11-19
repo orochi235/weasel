@@ -4,7 +4,7 @@
  */
 import {
   DEG_TO_RAD, boundsOfPath, clamp01, multiply, pathShape, placeAlongRun, rotate, runLength, trackRun, transformPath, translate,
-  type Affine, type Path, type RunAlign, type RunPlace, type TrackSide,
+  type Affine, type Path, type RunAlign, type RunPlace, type TrackSide, wrapPositive,
 } from '@weasel-js/geom';
 import type { DerivedPart } from '../derivedParts';
 import type { EffectItem, EffectSource, PathEffectOptions } from './source';
@@ -49,7 +49,7 @@ export function textAlongParts(effect: TextAlongEffect, items: readonly EffectIt
   const gap = effect.overflow === 'fit' ? fitGap(lengths, roomAt(at, L, k, closed)) : 0;
   const total = runLength(lengths, gap);
   const c = at + (0.5 - k) * total;
-  const about = closed ? ((c / L) % 1 + 1) % 1 : unit(c / L);
+  const about = closed ? wrapPositive(c / L, 1) : unit(c / L);
   const run = trackRun(shape, 0, 1, { side: effect.side ?? 'auto', about });
   const shift = finiteOr(effect.shift, 0);
   const places = placeAlongRun(run, lengths, { gap, align: 'center', at: run.reversed ? L - c : c, shift, wrap: closed });

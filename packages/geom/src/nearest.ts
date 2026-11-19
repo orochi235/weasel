@@ -4,7 +4,7 @@
  */
 import { cubicEvalAt, elevateQuadraticToCubic } from './curve';
 import { lengthOf, segmentT } from './points2';
-import { lerp } from './scalar';
+import { dot, lerp } from './scalar';
 import { polynomialRoots01 } from './polyRoots';
 import { forEachSegment, PATH_M, PATH_L, PATH_Q, PATH_C, PATH_Z } from './commands';
 
@@ -100,7 +100,6 @@ export function nearestOnCubic(
   // Two minima closer than a sample's spacing (either side of a fold) share one sampled basin, so every
   // critical point competes too: the roots of g, a quintic.
   const dx0 = x0 - px, dy0 = y0 - py;
-  const dot = (ux: number, uy: number, vx: number, vy: number) => ux * vx + uy * vy;
   const aa = dot(ax, ay, ax, ay), ab = dot(ax, ay, bx, by), ac = dot(ax, ay, cx, cy), bb = dot(bx, by, bx, by);
   const g = [
     dot(cx, cy, dx0, dy0),

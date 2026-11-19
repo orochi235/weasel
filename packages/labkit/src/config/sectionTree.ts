@@ -1,4 +1,5 @@
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
+import { freshId } from '@weasel-js/registry';
 import { headingLeaf } from './headingLeaf';
 import { configValueAt, ownAt, setOwn } from './path';
 import { bareGroup, type ConfigVerdict, configVerdict } from './railConditions';
@@ -59,8 +60,7 @@ function slugOf(label: string, taken: ReadonlySet<string>): string {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '') || 'section';
-  if (!taken.has(base)) return base;
-  for (let n = 2; ; n += 1) if (!taken.has(`${base}-${n}`)) return `${base}-${n}`;
+  return freshId(base, taken, { from: 2, bare: true });
 }
 
 /** A subtree with everything `showIf` or `hidden` rules out cut away, or null

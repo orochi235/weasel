@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { OngoingOverlay } from '@weasel-js/routing';
 import { resolveOverlays, type ResolvedOverlay } from './resolveOverlays';
+import { DEG_TO_RAD } from '@weasel-js/geom';
 
 function only(overlays: OngoingOverlay[]): ResolvedOverlay | undefined {
   const out = resolveOverlays(overlays);
@@ -96,11 +97,10 @@ describe('resolveOverlays — insertPreview', () => {
     });
     // The pentagon's own box, first point on +x: not the square around its circle.
     const { bounds } = resolved as { bounds: { x: number; y: number; width: number; height: number } };
-    const deg = Math.PI / 180;
-    expect(bounds.x).toBeCloseTo(10 - 14 * Math.cos(36 * deg), 4);
-    expect(bounds.width).toBeCloseTo(14 + 14 * Math.cos(36 * deg), 4);
-    expect(bounds.y).toBeCloseTo(10 - 14 * Math.sin(72 * deg), 4);
-    expect(bounds.height).toBeCloseTo(28 * Math.sin(72 * deg), 4);
+    expect(bounds.x).toBeCloseTo(10 - 14 * Math.cos(36 * DEG_TO_RAD), 4);
+    expect(bounds.width).toBeCloseTo(14 + 14 * Math.cos(36 * DEG_TO_RAD), 4);
+    expect(bounds.y).toBeCloseTo(10 - 14 * Math.sin(72 * DEG_TO_RAD), 4);
+    expect(bounds.height).toBeCloseTo(28 * Math.sin(72 * DEG_TO_RAD), 4);
   });
 
   it('drops a zero-area insert for a non-pencil shape', () => {

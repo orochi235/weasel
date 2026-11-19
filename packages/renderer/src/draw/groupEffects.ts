@@ -13,6 +13,7 @@ import type { DrawOptions } from './drawTriangles';
 import { flushForOwnDraw } from './clip';
 import { flushBatch } from './flushBatch';
 import { compositeIds } from './idComposite';
+import { growRect } from '@weasel-js/geom';
 
 type Dispatch = (ctx: DrawContext, cmd: DrawCommand) => void;
 
@@ -42,8 +43,7 @@ export function effectsWindow(
   const reach = cmd.effects && cmd.effects.length > 0 ? effectsReach(cmd.effects) : 0;
   if (!Number.isFinite(reach)) return { x: 0, y: 0, width, height };
   if (isOwnComposite(cmd.composite) && !leavesUncovered(cmd.composite!)) return window;
-  const r = Math.ceil(reach);
-  const read = { x: window.x - r, y: window.y - r, width: window.width + 2 * r, height: window.height + 2 * r };
+  const read = growRect(window, Math.ceil(reach));
   const box = contentBox([{ ...cmd, clip: undefined }], transform, [], scale);
   const rect = boxWithin(box, read);
   if (rect.width === 0 || rect.height === 0) return null;

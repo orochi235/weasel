@@ -3,6 +3,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { transportControl } from '../clock/transportControl';
 import { transportHoldOf } from '../clock/transportHold';
 import type { TrialClockHandle } from '../clock/trialClock';
+import { isFiniteNumber } from '@weasel-js/registry';
 
 /**
  * What a host page posts to a presented lab's window to work its clock:
@@ -62,7 +63,7 @@ export function presentationCommand(
   const { type, lab, time } = data as Record<string, unknown>;
   if (typeof type !== 'string' || !TYPES.has(type)) return null;
   if (lab !== undefined && lab !== name) return null;
-  if (type === 'labkit:seek' && !(typeof time === 'number' && Number.isFinite(time))) return null;
+  if (type === 'labkit:seek' && !isFiniteNumber(time)) return null;
   return data as PresentationCommand;
 }
 

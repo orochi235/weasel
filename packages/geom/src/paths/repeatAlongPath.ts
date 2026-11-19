@@ -10,6 +10,7 @@ import { trackRun } from '../track/run';
 import { boundsOfPath } from './bounds';
 import type { Point } from './cubicMath';
 import { transformPath } from './transformPath';
+import { wrapPositive } from '../angle';
 
 /** How copies are laid along a path. Each copy is an item as long, along the
  *  path, as the shape is wide. */
@@ -59,7 +60,7 @@ export function stationsAlongPath(path: Path, opts: RepeatAlongPathOptions = {},
   return places.filter((p) => p.clipped !== 'past').map(({ point, tangent, center }) => ({
     point,
     angle: Math.atan2(tangent.y, tangent.x),
-    distance: closed && L > 0 ? ((center % L) + L) % L : center,
+    distance: closed && L > 0 ? wrapPositive(center, L) : center,
   }));
 }
 

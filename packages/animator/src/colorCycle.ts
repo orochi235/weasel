@@ -1,4 +1,4 @@
-import { resolveEasing } from '@weasel-js/geom';
+import { resolveEasing, wrapPositive } from '@weasel-js/geom';
 import type { ColorSpace } from '@weasel-js/paint';
 import type { Animator, EasingSpec } from './types';
 import type { VertexColorChannel } from './colorRegistry';
@@ -56,7 +56,7 @@ export function cycleVertexColors(
     const cycleFrac = cycles - Math.floor(cycles);
     const easedFrac = easing(cycleFrac);
     const easedRaw = (Math.floor(cycles) + easedFrac) * n;
-    const phase = ((easedRaw % n) + n) % n;
+    const phase = wrapPositive(easedRaw, n);
     const phaseInt = Math.floor(phase);
     const phaseFrac = phase - phaseInt;
 

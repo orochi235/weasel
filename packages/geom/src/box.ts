@@ -60,6 +60,11 @@ export function rectBetween(ax: number, ay: number, bx: number, by: number): Rec
   return { x: Math.min(ax, bx), y: Math.min(ay, by), width: Math.abs(bx - ax), height: Math.abs(by - ay) };
 }
 
+/** `r` grown by `by` on every side, about the same center; a negative `by` shrinks it. */
+export function growRect(r: Readonly<Rect>, by: number): Rect {
+  return { x: r.x - by, y: r.y - by, width: r.width + 2 * by, height: r.height + 2 * by };
+}
+
 /** Whether `a` and `b` share interior: rects that only touch along an edge or
  *  at a corner answer false. */
 export function rectsOverlap(a: Readonly<Rect>, b: Readonly<Rect>): boolean {

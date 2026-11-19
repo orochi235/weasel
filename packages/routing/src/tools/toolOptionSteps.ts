@@ -4,7 +4,7 @@
  * Shift+wheel moves the size.
  */
 import type { PrefNumber } from '@weasel-js/prefs-schema';
-import { getOwn } from '@weasel-js/registry';
+import { getOwn, isFiniteNumber } from '@weasel-js/registry';
 import type { KeySpec } from '@weasel-js/gestures';
 import { ActionDisabledReason, type Action } from '../interactions/actions/action';
 import type { ActionDeps, ImmediateInvoker } from '../interactions/actions/invoker';
@@ -70,7 +70,7 @@ export const WHEEL_SIZE_MAX_STEPS = 1_000;
 /** How long the wheel rests, in ms, before its next event starts a new burst. */
 export const WHEEL_SIZE_BURST_MS = 150;
 
-const finite = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+const finite = (v: unknown): number => (isFiniteNumber(v) ? v : 0);
 
 /**
  * The size, stepped by the wheel: up grows it, down shrinks it. The first event

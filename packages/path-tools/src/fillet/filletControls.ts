@@ -15,6 +15,7 @@ import {
 } from '@weasel-js/geom';
 import type { PrefGroup } from '@weasel-js/prefs-schema';
 import { FILLET_SHAPE_OPTIONS } from './editFillet';
+import { isFiniteNumber } from '@weasel-js/registry';
 
 /** How far the parameter slider reaches either side of the bevel; the
  *  `square` and `notch` keywords stand for the two infinities beyond it. */
@@ -105,7 +106,7 @@ const clampK = (k: number): number => clamp(k, -FILLET_K_SLIDER_RANGE, FILLET_K_
  *  a field that sets nothing. */
 export function filletControlsParams(field: string, value: unknown): { shape: CornerShape } | { radius: number } | null {
   if (field === 'shape' && CORNER_KEYWORDS.includes(value as CornerKeyword)) return { shape: value as CornerKeyword };
-  if (field === 'k' && typeof value === 'number' && Number.isFinite(value)) return { shape: value };
-  if (field === 'radius' && typeof value === 'number' && Number.isFinite(value)) return { radius: value };
+  if (field === 'k' && isFiniteNumber(value)) return { shape: value };
+  if (field === 'radius' && isFiniteNumber(value)) return { radius: value };
   return null;
 }

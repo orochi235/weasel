@@ -3,6 +3,7 @@ import { menuNumberCanStep, type MenuController, type MenuNumberEntry, type Menu
 import type { MenuPanelMetrics } from '@weasel-js/ui-logic';
 import { rowAt } from './panelCommands';
 import { chipAt } from './valueRows';
+import { rectContainsPointHalfOpen } from '@weasel-js/geom';
 
 /** A number row's step chip: the row, and which way it steps. */
 export interface MenuChip { entry: MenuNumberEntry; dir: 1 | -1 }
@@ -11,7 +12,7 @@ export interface MenuChip { entry: MenuNumberEntry; dir: 1 | -1 }
 export function levelAt(panels: readonly MenuRect[], x: number, y: number): number {
   for (let i = panels.length - 1; i >= 0; i--) {
     const p = panels[i]!;
-    if (x >= p.x && x < p.x + p.width && y >= p.y && y < p.y + p.height) return i;
+    if (rectContainsPointHalfOpen(p, x, y)) return i;
   }
   return -1;
 }

@@ -2,7 +2,7 @@ import { createKeyedEmitter } from '@weasel-js/registry';
 import { createRevision } from '../widget';
 import type { Widget, WidgetBounds, HudDrawCtx, HudKeyEvent, HudPointerEvent } from '../widget';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { roundRectPath } from '@weasel-js/geom';
+import { roundRectPath, rectContainsPointHalfOpen } from '@weasel-js/geom';
 import { IDLE_PRESS, isPressKey, pressStep, type PressInput, type PressState } from '@weasel-js/ui-input';
 import {
   envPx, exactly, measureButton, type ButtonFace, type ButtonLayout, type ButtonSize, type HeadlessComponent,
@@ -134,8 +134,7 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
   const reports = createKeyedEmitter<ButtonEvent>();
   const emit = (e: ButtonEvent) => { reports.emit(e); };
 
-  const isInside = (x: number, y: number) =>
-    x >= bounds.x && x < bounds.x + bounds.width && y >= bounds.y && y < bounds.y + bounds.height;
+  const isInside = (x: number, y: number) => rectContainsPointHalfOpen(bounds, x, y);
 
   const assertNotDisposed = () => {
     if (disposed) throw new Error('weasel-hud: cannot mutate a disposed widget.');

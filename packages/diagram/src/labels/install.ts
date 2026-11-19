@@ -27,7 +27,7 @@ import { diagramNodeOf, type DiagramNodeReader } from '../trait';
 import { labelFitOps } from './fit';
 import { placeLabels, type PlaceLabel, type PlaceLabelsOptions, type PlaceRoute } from './place';
 import { labelCenter } from './station';
-import { pathPoint } from '@weasel-js/geom';
+import { pathPoint, rectsIntersect, growRect } from '@weasel-js/geom';
 
 /** Options for {@link installLabelPlacement} and `useLabelPlacement`. */
 export interface LabelPlacementOptions<TPose> extends PlaceLabelsOptions {
@@ -90,8 +90,6 @@ function read(
   return out;
 }
 
-const grow = (b: Bounds, by: number): Bounds => ({ x: b.x - by, y: b.y - by, width: b.width + 2 * by, height: b.height + 2 * by });
-const meets = (a: Bounds, b: Bounds) => a.x <= b.x + b.width && b.x <= a.x + a.width && a.y <= b.y + b.height && b.y <= a.y + a.height;
 
 /** Whether any segment of `points` comes within `box`. */
 function routeMeets(points: readonly Vec2[], box: Bounds): boolean {
@@ -99,7 +97,7 @@ function routeMeets(points: readonly Vec2[], box: Bounds): boolean {
     const a = points[i]!;
     const b = points[i + 1]!;
     const seg = { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), width: Math.abs(a.x - b.x), height: Math.abs(a.y - b.y) };
-    if (meets(seg, box)) return true;
+    if (rectsIntersect(seg, box)) return true;
   }
   return false;
 }
@@ -148,7 +146,7 @@ function boxesOf(scene: Reading, label: PlaceLabel, gap: number): Bounds[] {
   const out: Bounds[] = [];
   for (const placement of placed === undefined ? [preferred] : [label.placement, preferred]) {
     const c = labelCenter(route.path, placement, label.size);
-    if (c !== null) out.push(grow({ x: c.x - label.size.width / 2, y: c.y - label.size.height / 2, ...label.size }, gap));
+    if (c !== null) out.push(growRect({ x: c.x - label.size.width / 2, y: c.y - label.size.height / 2, ...label.size }, gap));
   }
   return out;
 }
@@ -163,14 +161,14 @@ function movingOf(scene: Reading, summary: SceneEditSummary, seen: Seen, gap: nu
   const first = new Set<string>();
   for (const l of scene.labels) {
     const own = boxes.get(l.id)!;
-    const hit = own.some((box) => changed.shapes.some((s) => meets(s, box)) || changed.routes.some((r) => routeMeets(r, box)));
+    const hit = own.some((box) => changed.shapes.some((s) => rectsIntersect(s, box)) || changed.routes.some((r) => routeMeets(r, box)));
     if (changed.edges.has(l.edge) || changed.touched(l.id) || hit) first.add(l.id);
   }
   const moving = new Set(first);
   for (const l of scene.labels) {
     if (moving.has(l.id)) continue;
     const own = boxes.get(l.id)!;
-    for (const id of first) if (boxes.get(id)!.some((b) => own.some((o) => meets(b, o)))) moving.add(l.id);
+    for (const id of first) if (boxes.get(id)!.some((b) => own.some((o) => rectsIntersect(b, o)))) moving.add(l.id);
   }
   return moving;
 }

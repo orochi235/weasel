@@ -8,6 +8,7 @@ import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import { commitOps, pathOperationTags, reshapeOps, operandPathNodes } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 import type {} from '../actionParamSchema';
+import { isFiniteNumber } from '@weasel-js/registry';
 
 const LABEL = 'Resample';
 
@@ -33,7 +34,7 @@ export const RESAMPLE_PARAMS = pref.group(LABEL, {
   }),
 });
 
-const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
+const num = (v: unknown): number | undefined => (isFiniteNumber(v) ? v : undefined);
 
 /** `params` as `resamplePath` options. */
 function resampleOptions(params: Readonly<ResamplePathParams>): ResamplePathOptions {

@@ -1,8 +1,8 @@
 /** Test fixtures for the avoid router: rect shapes with compass ports, and seeded random layouts. */
 import type { Vec2 } from '@weasel-js/core/math';
 import { ObstacleIndex } from './obstacles';
-import { AVOID_DEFAULTS, inflate, type AvoidEdge, type AvoidObstacle, type AvoidPort, type Box } from './types';
-import { clamp } from '@weasel-js/geom';
+import { AVOID_DEFAULTS, type AvoidEdge, type AvoidObstacle, type AvoidPort, type Box } from './types';
+import { clamp, growRect } from '@weasel-js/geom';
 
 export const rectShape = (id: string, x: number, y: number, width = 100, height = 60): AvoidObstacle =>
   ({ id, kind: 'shape', box: { x, y, width, height } });
@@ -84,7 +84,7 @@ export function nearEdges(rand: () => number, shapes: readonly AvoidObstacle[], 
 /** The context `routeEdge` reads for `obstacles`, with the defaults. */
 export function routeContext(obstacles: readonly AvoidObstacle[]) {
   const index = new ObstacleIndex(obstacles, AVOID_DEFAULTS.clearance);
-  const limit = inflate({ x: -1000, y: -1000, width: 6000, height: 6000 }, 0);
+  const limit = growRect({ x: -1000, y: -1000, width: 6000, height: 6000 }, 0);
   return { index, options: AVOID_DEFAULTS, limit };
 }
 

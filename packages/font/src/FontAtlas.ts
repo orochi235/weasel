@@ -5,6 +5,7 @@
  */
 
 import { parseFaceMetrics, type FaceMetrics } from './faceMetrics';
+import { isFiniteNumber } from '@weasel-js/registry';
 
 /** The face an atlas was generated from, and the size in pixels it was generated at. */
 export interface BmFontInfo {
@@ -90,7 +91,7 @@ function checkFinite(name: string, entry: unknown, fields: readonly NumericField
   if (typeof entry !== 'object' || entry === null) throw new Error(`parseBmFont: ${name} must be an object`);
   for (const f of fields) {
     const v = (entry as Record<string, unknown>)[f];
-    if (typeof v !== 'number' || !Number.isFinite(v)) throw new Error(`parseBmFont: ${name}.${f} must be a finite number`);
+    if (!isFiniteNumber(v)) throw new Error(`parseBmFont: ${name}.${f} must be a finite number`);
   }
 }
 
@@ -115,7 +116,7 @@ export function parseBmFont(raw: unknown): BmFont {
       throw new Error(`parseBmFont: ${name} must be a positive number`);
     }
   }
-  if (typeof common.base !== 'number' || !Number.isFinite(common.base)) {
+  if (!isFiniteNumber(common.base)) {
     throw new Error('parseBmFont: common.base must be a number');
   }
   const chars = r.chars as BmFontChar[];

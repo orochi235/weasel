@@ -4,6 +4,7 @@ import { copyOps, requiresContent, storedDelta, recordTransform, DUPLICATE_OFFSE
 import { icon } from '../../icons.gen';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
 import { pref } from '@weasel-js/prefs-schema';
+import { isFiniteNumber } from '@weasel-js/registry';
 
 
 const offsetLeaf = (name: string, axis: string) => pref.number(name, DUPLICATE_OFFSET, {
@@ -16,7 +17,7 @@ export const DUPLICATE_PARAMS = pref.group('Duplicate', {
   dy: offsetLeaf('Vertical offset', 'down'),
 });
 
-const offsetOf = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : DUPLICATE_OFFSET);
+const offsetOf = (v: unknown): number => (isFiniteNumber(v) ? v : DUPLICATE_OFFSET);
 
 /**
  * Copy each selected node, with its subtree, offset by `(dx, dy)` in world

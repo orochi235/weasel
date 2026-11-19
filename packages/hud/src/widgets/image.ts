@@ -3,6 +3,7 @@ import type { ClaimableGesture } from '@weasel-js/core';
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent } from '../widget';
 import type { DrawCommand, ImageDrawCommand } from '@weasel-js/core/renderer';
 import type { Rect } from '@weasel-js/geom';
+import { rectContainsPointHalfOpen } from '@weasel-js/geom';
 
 /** Options for an image widget. */
 export interface ImageOptions {
@@ -92,7 +93,7 @@ export function createImage(opts: ImageOptions): ImageWidget {
     },
     hitTest(x, y) {
       if (hidden) return false;
-      return x >= bounds.x && x < bounds.x + bounds.width && y >= bounds.y && y < bounds.y + bounds.height;
+      return rectContainsPointHalfOpen(bounds, x, y);
     },
     get claims() { return claims; },
     setClaims(c) { assertNotDisposed(); claims = c; rev.changed(); },

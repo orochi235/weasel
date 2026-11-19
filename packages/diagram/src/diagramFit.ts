@@ -5,7 +5,7 @@
  * except `fit()`, which takes the view back.
  */
 import { RIGID_POSE_COMPOSITION, worldPosesOf, clampView, fitViewToBounds, useLatest, viewportWorldRect, type Bounds, type RectPose, type SceneCanvasApi, type View } from '@weasel-js/core';
-import { unionRects } from '@weasel-js/geom';
+import { unionRects, growRect } from '@weasel-js/geom';
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { isBodyOrRegion } from './bodyNode';
 import { diagramEdgeOf } from './edgeTrait';
@@ -68,7 +68,7 @@ export function fitDiagram(
  *  point, and `extra`, with `padding` world units around them; `undefined` for an empty diagram. */
 export function diagramViewBounds(specs: readonly { id?: string; kind: string; pose: unknown; data: unknown; parent?: string | null }[], padding: number, extra?: Bounds): Bounds | undefined {
   const b = diagramBounds(specs, extra);
-  return b === null ? undefined : { x: b.x - padding, y: b.y - padding, width: b.width + 2 * padding, height: b.height + 2 * padding };
+  return b === null ? undefined : growRect(b, padding);
 }
 
 const IDENTITY: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };

@@ -4,7 +4,7 @@
  */
 
 import type { View } from 'core/viewport/view';
-import { multiply, scale, scaleDelta, screenAngleOf, standoff, strokeHitTest } from '@weasel-js/geom';
+import { multiply, scale, scaleDelta, screenAngleOf, standoff, strokeHitTest, rectContainsPoint } from '@weasel-js/geom';
 import type { ChromeState } from 'core/selection/chromeState';
 import {
   angleOf, IDENTITY_TARGET, localToWorld, normalToWorld, pxExtentIn, targetTransformOf, worldToLocal,
@@ -251,6 +251,5 @@ function hitRegion(
   }
   // rect: axis-aligned in local frame.
   const r = region.shape;
-  return local.x >= r.x && local.x <= r.x + r.width
-      && local.y >= r.y && local.y <= r.y + r.height;
+  return rectContainsPoint(r, local.x, local.y);
 }
