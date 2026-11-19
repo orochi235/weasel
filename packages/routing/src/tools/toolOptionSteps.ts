@@ -32,13 +32,15 @@ const STEPS: readonly StepSpec[] = [
   { name: 'lower', which: 'strength', dir: -1, label: (t, o) => `Lower ${t} ${o}` },
 ];
 
-/** Move `toolId`'s `step` option one step in `dir`, in `values`. */
+/** Move `toolId`'s `step` option one step in `dir`, in `values`. A step its bounds stop writes nothing, so a shared
+ *  value it reads clamped stays as another tool set it. */
 function stepOption(
   toolId: string, options: ToolOptionsSpec, values: ToolOptionValues, step: ToolOptionStep, leaf: PrefNumber, dir: 1 | -1,
 ): void {
   const held = getOwn(toolOptionParams(toolId, options, values), step.option);
   const current = typeof held === 'number' ? held : leaf.default ?? 0;
-  setToolOption(toolId, options, values, step.option, steppedOption(leaf, current, step, dir));
+  const next = steppedOption(leaf, current, step, dir);
+  if (!Object.is(next, current)) setToolOption(toolId, options, values, step.option, next);
 }
 
 const enabledFor = (toolId: string) => (deps?: ActionDeps) =>

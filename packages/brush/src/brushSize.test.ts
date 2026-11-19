@@ -39,8 +39,21 @@ describe('shareBrushSize', () => {
     const big = shareToolOptions(brush(400), shareBrushSize(brush(400)));
     const small = shareToolOptions(brush(30), shareBrushSize(brush(30)));
     const values = createToolOptionValues();
-    const grow = toolOptionSteps('small', 'Small', small).actions.find((a) => a.id === 'small.grow')!;
-    (grow.invoker as ImmediateInvoker).run({ activeTool: { active: 'small' }, toolOptionValues: values } as never, undefined);
-    expect(toolOptionParams('knead', big, values).radiusPx).toBe(30);
+    const shrink = toolOptionSteps('small', 'Small', small).actions.find((a) => a.id === 'small.shrink')!;
+    (shrink.invoker as ImmediateInvoker).run({ activeTool: { active: 'small' }, toolOptionValues: values } as never, undefined);
+    expect(toolOptionParams('knead', big, values).radiusPx).toBe(24);
+  });
+
+  it('leaves the shared size alone when a step cannot move a brush held at its own bound', () => {
+    const big = shareToolOptions(brush(400), shareBrushSize(brush(400)));
+    const small = shareToolOptions(brush(30), shareBrushSize(brush(30)));
+    const values = createToolOptionValues();
+    setToolOption('knead', big, values, 'radiusPx', 120);
+    const steps = toolOptionSteps('small', 'Small', small).actions;
+    const deps = { activeTool: { active: 'small' }, toolOptionValues: values } as never;
+    (steps.find((a) => a.id === 'small.grow')!.invoker as ImmediateInvoker).run(deps, undefined);
+    (steps.find((a) => a.id === 'small.wheelSize')!.invoker as ImmediateInvoker).run(deps, { deltaY: -100 });
+    expect(values.get(SHARED_TOOL_OPTIONS)).toEqual({ [BRUSH_SIZE_PX]: 120 });
+    expect(toolOptionParams('knead', big, values).radiusPx).toBe(120);
   });
 });
