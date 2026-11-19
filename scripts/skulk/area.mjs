@@ -6,7 +6,7 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { JOB_IN, JOB_OUT } from './config.mjs';
-import { citedPaths, firstJson, matchPrompt, parseFilesRead, parseFindings, validPairs } from './findings.mjs';
+import { citedPaths, firstJson, isFinished, matchPrompt, parseFilesRead, parseFindings, reviewText, validPairs } from './findings.mjs';
 import { fixShell, jobDir, matchShell, reviewShell, runJob } from './jobs.mjs';
 import { chapman } from './rounds.mjs';
 import { parseEnvelope, totals } from './usage.mjs';
@@ -65,7 +65,7 @@ const review = async (ctx, area, side) => {
     task: `audit${ctx.round}-${area.id}-${side}`, logPath: join(to, '..', `${side}.log`),
     about: `Blind reviewer ${side} for audit round ${ctx.round}, area ${area.id}: reads its files and lists defects without fixing.`,
   });
-  const text = readIf(join(to, 'findings.md')) || run.reply;
+  const text = reviewText(readIf(join(to, 'findings.md')), run.reply);
   const findings = parseFindings(text);
   const read = parseFilesRead(text).filter((f) => area.files.includes(f)).length;
   if (!run.launched) ctx.say(`review ${area.id} ${side}: never launched; the area is recorded incomplete`);
@@ -141,8 +141,8 @@ export const runArea = async (ctx, area, { previous, changedSince }) => {
   writeFileSync(join(dir, 'match.json'), `${JSON.stringify({ pairs: matched.pairs, a: claims(a.findings), b: claims(b.findings) }, null, 1)}\n`);
   const [na, nb, m] = [a.findings.length, b.findings.length, matched.pairs.length];
   const distinct = na + nb - m;
-  // A side that never ran found nothing because it looked at nothing; an estimate from it would be invented.
-  const incomplete = [a, b].flatMap((r, i) => (r.launched ? [] : [i === 0 ? 'A' : 'B']));
+  // A side that never ran, or stopped before its report's done line, looked at too little for an estimate.
+  const incomplete = [a, b].flatMap((r, i) => (r.launched && isFinished(r.text) ? [] : [i === 0 ? 'A' : 'B']));
   const estimate = incomplete.length ? undefined : chapman(na, nb, m);
   const fixed = distinct > 0 ? await fix(ctx, area) : undefined;
   if (fixed?.report) writeFileSync(join(dir, 'fix.md'), fixed.report);

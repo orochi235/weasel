@@ -18,6 +18,22 @@ export const parseFilesRead = (text) => {
   return m[1].split('\n').map((line) => line.replace(/^[-*]\s*/, '').replace(/`/g, '').trim()).filter(Boolean);
 };
 
+const DONE = /<!--\s*done:/i;
+
+/** Whether a reviewer's report reached the brief's closing `done` line. */
+export const isFinished = (text) => DONE.test(text);
+
+/**
+ * A reviewer's report: its findings file once that ends in the brief's `done` line, else whichever of the
+ * file and the reply holds more `##` sections. A reviewer can write the file early and finish only in the reply, and the file then
+ * holds part of the pass.
+ */
+export const reviewText = (file, reply = '') => {
+  if (DONE.test(file)) return file;
+  const sections = (text) => text.match(/^## /gm)?.length ?? 0;
+  return sections(reply) > sections(file) ? reply : file || reply;
+};
+
 /** The repo paths a finding's `where` line cites. */
 export const citedPaths = (finding) => [...finding.where.matchAll(/((?:packages|apps)\/[\w./@-]+\.\w+)/g)].map((m) => m[1]);
 

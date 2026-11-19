@@ -58,8 +58,6 @@
  "b": 10,
  "m": 3,
  "distinct": 12,
- "chapman": 15.5,
- "unfound": 3.5,
  "read": {
   "A": 0,
   "B": 49
@@ -95,5 +93,8 @@
   "dbf9f3ba91189fb510ccdee30a6d735146ba582f",
   "b8c66f56a503f1ad384227f3a0ca126021bde80c",
   "08f4c1e51d337f88e98111dd01d70738f3a1e728"
+ ],
+ "incomplete": [
+  "A"
  ]
 }

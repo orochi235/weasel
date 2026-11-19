@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { citedPaths, firstJson, parseFilesRead, parseFindings, validPairs } from './findings.mjs';
+import { citedPaths, firstJson, isFinished, parseFilesRead, parseFindings, reviewText, validPairs } from './findings.mjs';
 import { appendRecordRow } from './record.mjs';
 import { mayStartArea, parseEnvelope } from './usage.mjs';
 
@@ -76,5 +76,26 @@ describe('appendRecordRow', () => {
   it('adds the row after the last row of the Record table', () => {
     const doc = '# H\n\n## Record\n\n| a |\n|---|\n| 1 |\n\nAfter.\n';
     expect(appendRecordRow(doc, '| 2 |')).toBe('# H\n\n## Record\n\n| a |\n|---|\n| 1 |\n| 2 |\n\nAfter.\n');
+  });
+});
+
+describe('reviewText', () => {
+  it('counts a report as finished only once it has the done line', () => {
+    expect(isFinished('## a')).toBe(false);
+    expect(isFinished('## a\n<!-- done: 1 findings, files read: 3 -->')).toBe(true);
+  });
+
+  const done = '## a\n\n## Files read\n- x.ts\n\n<!-- done: 1 findings, files read: 1 -->';
+  it('takes the reply when the file was written before the reviewer finished', () => {
+    expect(reviewText('## a (early)', done)).toBe(done);
+  });
+  it('takes a finished file over the reply that only echoes its done line', () => {
+    expect(reviewText(done, '<!-- done: 1 findings, files read: 1 -->')).toBe(done);
+  });
+  it('keeps an unfinished file over a reply holding only the done line', () => {
+    expect(reviewText('## a\n## b', '<!-- done: 2 findings -->')).toBe('## a\n## b');
+  });
+  it('takes the reply when there is no file', () => {
+    expect(reviewText('', 'partial reply')).toBe('partial reply');
   });
 });

@@ -4,7 +4,7 @@ const num = (n, width = 5) => (n === undefined ? '-' : n.toFixed(1)).padStart(wi
 const mtok = (n) => `${(n / 1e6).toFixed(2)}M`;
 const usd = (n) => `$${n.toFixed(2)}`;
 const ceiling = (s) => (s.budgetHit?.length ? `; ${s.budgetHit.join(', ')} stopped at its dollar ceiling` : '');
-const unrun = (s) => (s.incomplete?.length ? `; reviewer ${s.incomplete.join(' and ')} never ran, so no estimate` : '');
+const unrun = (s) => (s.incomplete?.length ? `; reviewer ${s.incomplete.join(' and ')} never ran or never finished its report, so no estimate` : '');
 
 /** The README of round `round`, from each area's summary (`area.json`) and what became of its branch. */
 export const roundReadme = ({ round, commit, date, areas, sweep, outcomes }) => {

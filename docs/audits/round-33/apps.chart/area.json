@@ -11,8 +11,6 @@
  "b": 0,
  "m": 0,
  "distinct": 0,
- "chapman": 0,
- "unfound": 0,
  "read": {
   "A": 3,
   "B": 0
@@ -34,5 +32,8 @@
   "tokens": 543250,
   "costUsd": 0.62
  },
- "fixCommits": []
+ "fixCommits": [],
+ "incomplete": [
+  "B"
+ ]
 }
