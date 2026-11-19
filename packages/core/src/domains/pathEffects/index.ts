@@ -17,7 +17,7 @@ export const PATH_EFFECT_DERIVATIONS: PathEffectDerivations = createPathEffectDe
 
 /**
  * `registry` with the path-effect derivations under `kit:pathEffect`, for
- * `createScene({ registry })` or `sceneFromJSON(json, { registry })`. A scene
+ * `createScene({ registry })` or `loadScene(json, { registry })`. A scene
  * built without them cannot hold a path effect: the actions that make one are
  * disabled there, and a saved one does not load.
  */

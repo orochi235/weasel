@@ -7,7 +7,7 @@
  * missing test; it is the reason the collapse is worth keeping.
  */
 import { describe, it, expect } from 'vitest';
-import { createScene, sceneFromJSON } from 'core/scene/scene';
+import { createScene, loadScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import { documentOf } from 'core/scene/documentOf';
 import { pickWalk, scenePickSource, type ScenePickSourceOptions } from './pickWalk';
@@ -101,7 +101,7 @@ describe('pickWalk — pickable', () => {
     expect(json.nodes.find((n) => n.id === 'label')?.pickable).toBe(false);
     expect(json.nodes.find((n) => n.id === 'a')?.pickable).toBeUndefined();
 
-    const restored = sceneFromJSON(json, {});
+    const restored = loadScene(json, {});
     expect(restored.get(asNodeId('label'))!.pickable).toBe(false);
     expect(pickAt(restored as never, 8, 8)).toEqual(['a']);
   });

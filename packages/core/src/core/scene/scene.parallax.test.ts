@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createScene, sceneFromJSON } from './scene';
+import { createScene, loadScene } from './scene';
 
 type L = 'sky' | 'main' | 'fg';
 
@@ -51,7 +51,7 @@ describe('scene layer parallax', () => {
     scene.addLayer({ id: 'fg', name: 'Foreground', parallax: { pan: 1.3 } });
     const json = scene.toJSON();
     expect(json.systemLayers[1].parallax).toBeUndefined();
-    const back = sceneFromJSON(json);
+    const back = loadScene(json);
     expect(back.layers.map((l) => l.parallax)).toEqual([{ pan: 0.2 }, undefined, { pan: 1.3 }]);
   });
 });

@@ -12,6 +12,7 @@ import type { ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction, BETWEEN_GESTURES } from '@weasel-js/routing';
 import type { FlipParams } from '../../actionParamSchema';
 import { icon } from '../../icons.gen';
+import { FLIP_GROUP } from '../../actionGroups';
 
 /**
  * The world mirror about `axis` through the center of `pivotWorld`, written in
@@ -157,7 +158,7 @@ function flipOpsFor(deps: ActionDeps, selection: Pick<OperandsDep, 'get'>, scene
 export const flipAction = defineAction({
   id: 'flip',
   label: 'Flip',
-  group: 'flip',
+  group: FLIP_GROUP,
   tags: ['mirror'],
   variants: [
     { key: 'x', label: 'Flip Horizontal', icon: icon('flipX'), params: { axis: 'x' } },

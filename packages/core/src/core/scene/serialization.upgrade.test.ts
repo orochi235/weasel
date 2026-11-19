@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, sceneFromJSON } from './scene';
+import { createScene, loadScene } from './scene';
 import { specsFromSerialized } from './serialization';
 import type { NodeUpgrade, RectPose, SceneRegistry, SerializedScene } from './types';
 
@@ -37,11 +37,11 @@ const oldSave = (): Json => ({
 
 describe('SceneRegistry.upgrades', () => {
   it('loads an old save to the scene a new save of it gives', () => {
-    const scene = sceneFromJSON<Data, 'main', RectPose>(oldSave(), { registry });
+    const scene = loadScene<Data, 'main', RectPose>(oldSave(), { registry });
     const saved = scene.toJSON();
     expect(saved.nodes.find((n) => n.id === 'a')!.data).toEqual({ tag: 'x' });
     expect(saved.nodes.find((n) => n.id === 'b')!.derivePoseKey).toBe('new:follow');
-    expect(sceneFromJSON<Data, 'main', RectPose>(saved, { registry }).toJSON()).toEqual(saved);
+    expect(loadScene<Data, 'main', RectPose>(saved, { registry }).toJSON()).toEqual(saved);
   });
 
   it('leaves the save it was handed as it was', () => {
@@ -69,6 +69,6 @@ describe('SceneRegistry.upgrades', () => {
   });
 
   it('without the upgrade, the old key is unknown', () => {
-    expect(() => sceneFromJSON<Data, 'main', RectPose>(oldSave(), { registry: { derivePose: registry.derivePose } })).toThrow("'old:follow'");
+    expect(() => loadScene<Data, 'main', RectPose>(oldSave(), { registry: { derivePose: registry.derivePose } })).toThrow("'old:follow'");
   });
 });

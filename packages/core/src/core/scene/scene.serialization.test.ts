@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { IDENTITY_POSE_COMPOSITION } from './composeFrame';
-import { createScene, sceneFromJSON } from './scene';
+import { createScene, loadScene } from './scene';
 import { asNodeId } from './types';
 import type { NodeId, SerializedScene, SystemLayerSpec } from './types';
 import { POSE, makeScene, type Data } from './testing/makeScene';
@@ -121,13 +121,13 @@ describe('scene.toJSON', () => {
   });
 });
 
-describe('sceneFromJSON', () => {
+describe('loadScene', () => {
   it('reconstructs a flat scene from JSON', () => {
     const original = makeScene();
     const a = original.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
     original.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'b' } });
     const json = original.toJSON();
-    const restored = sceneFromJSON(json, {});
+    const restored = loadScene(json, {});
     expect([...restored.roots]).toContain(asNodeId(a));
     expect(restored.get(asNodeId(a))?.data.label).toBe('a');
   });
@@ -137,7 +137,7 @@ describe('sceneFromJSON', () => {
     const bed = original.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' } });
     const plant = original.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'p' }, parent: bed });
     const json = original.toJSON();
-    const restored = sceneFromJSON(json, {});
+    const restored = loadScene(json, {});
     expect(restored.get(asNodeId(plant))?.parent).toBe(asNodeId(bed));
     expect([...restored.childrenOf(asNodeId(bed))]).toEqual([asNodeId(plant)]);
   });
@@ -147,7 +147,7 @@ describe('sceneFromJSON', () => {
     original.setLayerVisible('structures', false);
     original.setLayerLocked('plantings', true);
     const json = original.toJSON();
-    const restored = sceneFromJSON(json, {});
+    const restored = loadScene(json, {});
     const structures = restored.layers.find((l) => l.id === 'structures')!;
     const plantings = restored.layers.find((l) => l.id === 'plantings')!;
     expect(structures.visible).toBe(false);
@@ -165,7 +165,7 @@ describe('sceneFromJSON', () => {
       clipFromPose: factory,
     });
     const json = original.toJSON();
-    const restored = sceneFromJSON(json, {
+    const restored = loadScene(json, {
       registry: { clipFromPose: { 'ellipse': factory } },
     });
     const restoredBed = restored.get(asNodeId(bed));
@@ -187,7 +187,7 @@ describe('sceneFromJSON', () => {
         clipFromPoseKey: 'ellipse',
       }],
     };
-    const scene = sceneFromJSON(json, { registry: { clipFromPose: { 'ellipse': factory } } });
+    const scene = loadScene(json, { registry: { clipFromPose: { 'ellipse': factory } } });
     scene.remove(asNodeId('bed'));
     expect(scene.get(asNodeId('bed'))).toBeUndefined();
     scene.undo();
@@ -197,13 +197,13 @@ describe('sceneFromJSON', () => {
 
   it('throws on unknown version', () => {
     const json = { version: 4, systemLayers: [{ id: 'structures' as const }], nodes: [] };
-    expect(() => sceneFromJSON(json as never, {})).toThrow(/unsupported version/);
-    expect(() => sceneFromJSON(json as never, {})).toThrow(SnapshotShapeError);
+    expect(() => loadScene(json as never, {})).toThrow(/unsupported version/);
+    expect(() => loadScene(json as never, {})).toThrow(SnapshotShapeError);
   });
 
   it('refuses a later version for its version, before reading kinds it may name differently', () => {
     const json = { version: 4, systemLayers: [{ id: 'structures' }], nodes: [{ id: 'a', kind: 'leaf', layer: 'structures', pose: POSE }] };
-    expect(() => sceneFromJSON(json as never, {})).toThrow(/unsupported version 4/);
+    expect(() => loadScene(json as never, {})).toThrow(/unsupported version 4/);
   });
 
   it('throws on unknown clipFromPoseKey', () => {
@@ -219,9 +219,9 @@ describe('sceneFromJSON', () => {
         clipFromPoseKey: 'nonexistent',
       }],
     };
-    expect(() => sceneFromJSON(json, { registry: {} })).toThrow(/unknown clipFromPose key 'nonexistent'/);
+    expect(() => loadScene(json, { registry: {} })).toThrow(/unknown clipFromPose key 'nonexistent'/);
     try {
-      sceneFromJSON(json, { registry: {} });
+      loadScene(json, { registry: {} });
     } catch (e) {
       expect(e).toBeInstanceOf(SnapshotKeyError);
       expect(e).toMatchObject({ id: 'bed', field: 'clipFromPose', key: 'nonexistent' });
@@ -234,7 +234,7 @@ describe('sceneFromJSON', () => {
       systemLayers: [{ id: 'structures' }],
       nodes: [{ id: 'bed', kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' }, clipFromPoseKey: 'toString' }],
     };
-    expect(() => sceneFromJSON(json, { registry: { clipFromPose: {} } })).toThrow(/unknown clipFromPose key 'toString'/);
+    expect(() => loadScene(json, { registry: { clipFromPose: {} } })).toThrow(/unknown clipFromPose key 'toString'/);
   });
 
   it('resolves the kit\'s own keys through specsFromSerialized, whatever registry it is handed', () => {
@@ -260,18 +260,18 @@ describe('sceneFromJSON', () => {
         { id: 'plant', kind: 'mark', layer: 'plantings', pose: POSE, data: { label: 'p' }, parent: 'bed' },
       ],
     };
-    const scene = sceneFromJSON(json, {});
+    const scene = loadScene(json, {});
     expect(scene.get('plant' as never)?.layer).toBe('plantings');
   });
 
-  it('full round-trip: toJSON → sceneFromJSON → toJSON produces equivalent output', () => {
+  it('full round-trip: toJSON → loadScene → toJSON produces equivalent output', () => {
     const original = makeScene();
     const bed = original.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' } });
     original.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'p1' }, parent: bed });
     original.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'p2' }, parent: bed });
     original.setLayerVisible('plantings', false);
     const json1 = original.toJSON();
-    const restored = sceneFromJSON(json1, {});
+    const restored = loadScene(json1, {});
     const json2 = restored.toJSON();
     expect(json2).toEqual(json1);
   });
@@ -381,9 +381,9 @@ describe('user layers survive a round-trip', () => {
     expect(fx.locked).toBe(true);
   });
 
-  it('sceneFromJSON restores a user layer as a user layer, with its name', () => {
+  it('loadScene restores a user layer as a user layer, with its name', () => {
     const json = withUserLayer().toJSON();
-    const loaded = sceneFromJSON<{ v: number }, 'base' | 'fx', { x: number }>(json, {});
+    const loaded = loadScene<{ v: number }, 'base' | 'fx', { x: number }>(json, {});
     const fx = loaded.layers.find((l) => l.id === 'fx')!;
     expect(fx.kind).toBe('user');
     expect(fx.kind === 'user' && fx.name).toBe('Effects');
@@ -417,7 +417,7 @@ describe('a node\'s stated fields through a snapshot', () => {
       units: { system: { base: 'mm', units: { mm: 1 } }, scale: 1 },
     });
     scene.setLocked(g, true);
-    const reloaded = sceneFromJSON(JSON.parse(JSON.stringify(scene.toJSON())) as never);
+    const reloaded = loadScene(JSON.parse(JSON.stringify(scene.toJSON())) as never);
     for (const id of scene.toJSON().nodes.map((n) => n.id as NodeId)) {
       expect(statedFields(reloaded.get(id)!), id).toEqual(statedFields(scene.get(id)!));
     }

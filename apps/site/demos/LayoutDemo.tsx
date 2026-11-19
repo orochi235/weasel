@@ -1,5 +1,5 @@
 import { useState, useSyncExternalStore } from 'react';
-import { SceneCanvas, worldPoseOf, asNodeId, easeOutCubic, sceneFromJSON, useAnimatedReflow, useDepSource } from '@weasel-js/core';
+import { SceneCanvas, worldPoseOf, asNodeId, easeOutCubic, loadScene, useAnimatedReflow, useDepSource } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import { freeform, snapPoint, tileGrid } from '@weasel-js/guides';
 import type { Fill, Scene, SerializedScene, Stroke } from '@weasel-js/core';
@@ -24,7 +24,7 @@ const TILE_COLORS = ['#f5e3a3', '#e3a3f5', '#a3e3f5'];
 
 export function LayoutDemo() {
   const [scene] = useState(() =>
-    sceneFromJSON(
+    loadScene(
       sceneJson as unknown as SerializedScene<Data, 'default', P>,
       {
         registry: {

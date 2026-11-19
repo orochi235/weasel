@@ -132,7 +132,7 @@ export interface SkippedKey {
   key: string;
 }
 
-/** Map a `SerializedScene` to construction specs. Shared by `sceneFromJSON`
+/** Map a `SerializedScene` to construction specs. Shared by `loadScene`
  *  (new instance) and `Scene.loadState` (in-place). Validates version and
  *  resolves every `NODE_FN_FIELDS` key → function via the registry, with the
  *  kit's own entries under it as every scene has them;

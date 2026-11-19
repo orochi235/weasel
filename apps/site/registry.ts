@@ -53,7 +53,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'scene',
     title: 'Scene primitive',
     category: 'Foundations',
-    description: 'A kit-owned scene graph loaded from JSON with `sceneFromJSON` and drawn by `<SceneCanvas>`. It has five system layers (garden, blueprint, zones, structures, and plantings), and two plants and their soil are parented under a planter group. Every move records on the scene\'s own undo stack. The bar above the canvas is `<ActionBar group="history" />`: the kit\'s Undo and Redo actions, the same ones Cmd/Ctrl+Z and Shift+Cmd/Ctrl+Z run, reached through a `<WeaselProvider>` shared with the canvas.',
+    description: 'A kit-owned scene graph loaded from JSON with `loadScene` and drawn by `<SceneCanvas>`. It has five system layers (garden, blueprint, zones, structures, and plantings), and two plants and their soil are parented under a planter group. Every move records on the scene\'s own undo stack. The bar above the canvas is `<ActionBar group="history" />`: the kit\'s Undo and Redo actions, the same ones Cmd/Ctrl+Z and Shift+Cmd/Ctrl+Z run, reached through a `<WeaselProvider>` shared with the canvas.',
     hint: 'Drag rectangles to move them, then undo with the bar or <kbd>Mod+Z</kbd>.',
     load: () => import('./demos/SceneDemo').then((m) => m.SceneDemo),
     path: 'apps/site/demos/SceneDemo.tsx',

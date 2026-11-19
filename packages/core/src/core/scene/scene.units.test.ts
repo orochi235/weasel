@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { resolveScoped, type UnitScope } from '@weasel-js/quantity';
-import { createScene, sceneFromJSON } from './scene';
+import { createScene, loadScene } from './scene';
 import { reconcileSpecs } from './reconcileSpecs';
 import { sceneMutators } from './sceneMutators';
 import { sceneMagnification, sceneSharedUnitScopes, sceneUnitScopes } from './unitScopes';
@@ -35,7 +35,7 @@ describe('Scene — a container declares its unit scope', () => {
   it('keeps it through construction, a snapshot, and a removal undone', () => {
     const scene = sceneOf([spec('g', { kind: 'group', units: MM })]);
     expect(unitsOf(scene)).toEqual(MM);
-    expect(unitsOf(sceneFromJSON(JSON.parse(JSON.stringify(scene.toJSON()))))).toEqual(MM);
+    expect(unitsOf(loadScene(JSON.parse(JSON.stringify(scene.toJSON()))))).toEqual(MM);
     scene.remove(G);
     scene.undo();
     expect(unitsOf(scene)).toEqual(MM);

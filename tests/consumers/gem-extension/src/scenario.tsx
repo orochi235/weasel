@@ -4,7 +4,7 @@
  * does not hold; `log` hears one line per step as it passes.
  */
 import { act } from 'react';
-import { buildSceneViewCommands, createScene, defaultDrawOne, findNodeShape, nodeShapeEntries, nodeShapesOf, sceneFromJSON, type FeaturePreset, type RectPose } from '@weasel-js/core';
+import { buildSceneViewCommands, createScene, defaultDrawOne, findNodeShape, nodeShapeEntries, nodeShapesOf, loadScene, type FeaturePreset, type RectPose } from '@weasel-js/core';
 import { GEM_BLUE, GEM_PALETTE, gemFeature, isGem, type GemData } from './index.js';
 import { GemHost, click, drag, fieldLabeled, mount, newProbe, settle, typeInto, type GemScene, type Probe } from './host.js';
 import { OneByOneGemCanvas } from './oneByOne.js';
@@ -97,7 +97,7 @@ export async function runGemScenario(log: (line: string) => void = () => {}): Pr
   const loadedProbe = newProbe();
   step('saves, loads, and goes on editing the loaded scene', async () => {
     const saved: string = JSON.stringify(scene.toJSON());
-    loaded = sceneFromJSON<unknown, 'default', RectPose>(JSON.parse(saved));
+    loaded = loadScene<unknown, 'default', RectPose>(JSON.parse(saved));
     app.unmount();
     app = mount(<GemHost scene={loaded} features={ON} probe={loadedProbe} />);
     await settle();

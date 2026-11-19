@@ -1,6 +1,6 @@
 /** Shrunk counterexamples from `store.pbt.test.ts`, kept as plain examples. */
 import { describe, expect, it } from 'vitest';
-import { annotationsFromJSON, createMarkStore } from './store';
+import { createMarkStore, loadAnnotations } from './store';
 
 const targets = () => [
   { id: '__proto__', content: { width: 50, height: 80 } },
@@ -11,7 +11,7 @@ const FRAC = { x: 0, y: 0, width: 0.0625, height: 0.0625 };
 describe('a target named like a key every object inherits', () => {
   it('takes a new mark in a store read back from a save that holds none of its own', () => {
     const saved = createMarkStore({ targets }).toJSON();
-    const store = annotationsFromJSON(structuredClone(saved), targets);
+    const store = loadAnnotations(structuredClone(saved), targets);
     for (const target of ['__proto__', 'constructor']) {
       const id = store.add({ target, kind: 'rect', frac: FRAC });
       expect(store.get(id)?.frac).toEqual(FRAC);
@@ -21,7 +21,7 @@ describe('a target named like a key every object inherits', () => {
   it('keeps its marks and their undo through a save', () => {
     const store = createMarkStore({ targets });
     store.add({ target: '__proto__', kind: 'rect', frac: FRAC });
-    const again = annotationsFromJSON(JSON.parse(JSON.stringify(store.toJSON())), targets);
+    const again = loadAnnotations(JSON.parse(JSON.stringify(store.toJSON())), targets);
     expect(again.query({ target: '__proto__' })).toHaveLength(1);
     expect(again.undo()).toBe(true);
     expect(again.query()).toHaveLength(0);

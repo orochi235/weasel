@@ -10,6 +10,7 @@ import type { Action, ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import type { AlignParams } from '../../actionParamSchema';
 import { icon } from '../../icons.gen';
+import { ALIGN_GROUP } from '../../actionGroups';
 const ID_FOR = {
   'left': 'align.left',
   'right': 'align.right',
@@ -79,7 +80,7 @@ function makeAlignAction(edge: AlignEdge): Action {
     id: ID_FOR[edge],
     label: LABEL_FOR[edge],
     icon: ICON_FOR[edge],
-    group: 'align',
+    group: ALIGN_GROUP,
     eligible: { capability: 'transforms-selection' },
     requires: ['operands', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'pointer', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'transformFollowers'],
     // No default keybindings — six edges/centers don't fit a clean default

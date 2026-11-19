@@ -16,6 +16,7 @@ import { wheelPan } from 'core/viewport/wheelHandler';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import type { AnyScene } from 'core/scene/anyScene';
 import type {} from '../actionParamSchema';
+import { VIEWPORT_GROUP } from '../actionGroups';
 
 /** How far a container's content can scroll on each axis, in its own units:
  *  `[min, max]`, zero included, so an unscrolled container is in range. */
@@ -131,7 +132,7 @@ function sceneOf(deps: ActionDeps | undefined): AnyScene | undefined {
 export const containerScrollAction = defineAction({
   id: 'container.scroll',
   label: 'Scroll container (wheel)',
-  group: 'viewport',
+  group: VIEWPORT_GROUP,
   defaultBinding: [
     { spec: { kind: 'wheel' }, opts: { id: 'container.scroll.wheel', yields: true } },
     {

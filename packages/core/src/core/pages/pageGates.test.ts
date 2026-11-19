@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { boundsOfPath, pathContainsPoint, type Path } from '@weasel-js/geom';
-import { sceneFromJSON } from '../scene/scene';
+import { loadScene } from '../scene/scene';
 import { asNodeId, type RectPose } from '../scene/types';
 import { nodeGates } from '../scene/nodeGates';
 import { buildSceneTree } from '../../canvas/buildSceneTree';
@@ -66,7 +66,7 @@ describe('a page clips what is on it', () => {
     const { scene } = pagedScene();
     const json = JSON.parse(JSON.stringify(scene.toJSON()));
     expect(json.nodes.find((n: { id: string }) => n.id === A).clipFromPoseKey).toBe(PAGE_CLIP);
-    const reloaded = sceneFromJSON<object, 'paper' | 'ink', RectPose>(json, {});
+    const reloaded = loadScene<object, 'paper' | 'ink', RectPose>(json, {});
     expect(reloaded.get(A)!.clipFromPose).toBe(scene.get(A)!.clipFromPose);
     expect(reloaded.get(A)!.pickable).toBe(false);
   });

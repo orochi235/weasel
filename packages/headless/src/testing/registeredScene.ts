@@ -1,6 +1,6 @@
 import {
   IDENTITY_POSE_COMPOSITION, OUTPUT_GRID_KEY, createScene,
-  type PoseComposition, type RectPose, type Scene, type SceneFromJSONOptions,
+  type PoseComposition, type RectPose, type Scene, type LoadSceneOptions,
 } from '@weasel-js/core';
 import type { Path } from '@weasel-js/geom';
 
@@ -22,7 +22,7 @@ export const REGISTERED_SCENE_OPTIONS = {
   registry: { clipFromPose: { leftHalf }, derivePose: { below } },
   composition: IDENTITY_POSE_COMPOSITION as PoseComposition<RectPose>,
   quantize: { drawn: shifted },
-} satisfies SceneFromJSONOptions<unknown, string, RectPose>;
+} satisfies LoadSceneOptions<unknown, string, RectPose>;
 
 /** A group clipped through the registry over a red rect that spans it, every pose world (identity
  *  composition), a bar deriving its pose from the rect, and a document grid the drawn rule reads. */

@@ -4,7 +4,7 @@
 
 Scenes with registered clips, derivations, compositions or quantize rules render from Node, given to the page with `serveHeadlessPage`.
 
-`@weasel-js/headless/page` no longer starts serving when imported. A custom page script registers what it needs, then calls `serveHeadlessPage` once; `scene` takes `sceneFromJSON`'s options and must match the scenes the host sends:
+`@weasel-js/headless/page` no longer starts serving when imported. A custom page script registers what it needs, then calls `serveHeadlessPage` once; `scene` takes `loadScene`'s options and must match the scenes the host sends:
 
 ```ts
 // before

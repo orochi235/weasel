@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createScene, sceneFromJSON } from './scene';
+import { createScene, loadScene } from './scene';
 import { RIGID_POSE_COMPOSITION, composeWorldPose } from './composePose';
 import { scenePoseAdapter } from './scenePoseAdapter';
 import { asNodeId } from './types';
@@ -362,7 +362,7 @@ describe('scene container layout', () => {
     });
     const json = scene.toJSON();
     expect(json.nodes[0].layoutKey).toBe('stack');
-    const back = sceneFromJSON(json, { registry: { layout: { stack: layout } } });
+    const back = loadScene(json, { registry: { layout: { stack: layout } } });
     expect(back.layoutOf(C)).toBe(layout);
   });
 
@@ -379,7 +379,7 @@ describe('scene container layout', () => {
     scene.remove(asNodeId('a'));
     const saved = JSON.parse(JSON.stringify({ doc: scene.toJSON(), history: scene.serializeHistory() }));
 
-    const back = sceneFromJSON(saved.doc, { registry });
+    const back = loadScene(saved.doc, { registry });
     back.restoreHistory(saved.history);
     const childPoses = vi.spyOn(layout, 'childPoses');
     back.undo();
@@ -486,7 +486,7 @@ describe('scene container layout', () => {
       expect(scene.layoutOf(C)).toBe(second);
       const saved = JSON.parse(JSON.stringify({ doc: scene.toJSON(), history: scene.serializeHistory() }));
 
-      const back = sceneFromJSON(saved.doc, { registry });
+      const back = loadScene(saved.doc, { registry });
       back.restoreHistory(saved.history);
       expect(back.layoutOf(C)).toBe(second);
       back.undo();
@@ -588,7 +588,7 @@ describe('scene container layout', () => {
         scene.applyBatch([createSetLayoutOp({ id: C as string, from: null, to: 'stack' })], 'Lay out', adapterOf(scene));
         const saved = JSON.parse(JSON.stringify({ doc: scene.toJSON(), history: scene.serializeHistory() }));
 
-        const back = sceneFromJSON<null, 'l', RectPose>(saved.doc, { registry });
+        const back = loadScene<null, 'l', RectPose>(saved.doc, { registry });
         back.setHistoryAdapter(() => adapterOf(back));
         back.restoreHistory(saved.history);
         expect(posOf(back, 'b')).toEqual([100, 110]);

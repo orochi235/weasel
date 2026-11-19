@@ -7,6 +7,7 @@ import { ANY_MODS } from '@weasel-js/gestures';
 import { icon } from '../../icons.gen';
 import type {} from '@weasel-js/core';
 import { commitDeleteToScene, deleteEnabled } from '../delete/delete';
+import { CLIPBOARD_GROUP } from '../../actionGroups';
 
 /**
  * Static descriptor for the `clipboard.copy` Action (Cmd/Ctrl+C).
@@ -15,7 +16,7 @@ export const clipboardCopyAction: Action & { requires: string[] } = {
   id: 'clipboard.copy',
   label: 'Copy',
   icon: icon('core:copy'),
-  group: 'clipboard',
+  group: CLIPBOARD_GROUP,
   defaultBinding: [{ spec: { kind: 'key', key: 'c', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'clipboard.copy.key' } }],
   // Same gate as `duplicate`: a mode that can neither edit the page nor own a
   // selection has nothing to copy. Notably excludes `text-edit`, where Cmd+C
@@ -42,7 +43,7 @@ export const clipboardCutAction: Action & { requires: string[] } = {
   id: 'clipboard.cut',
   label: 'Cut',
   icon: icon('core:cut'),
-  group: 'clipboard',
+  group: CLIPBOARD_GROUP,
   defaultBinding: [{
     spec: { kind: 'key', key: 'x', mods: { mod: true }, phase: BETWEEN_GESTURES },
     opts: { id: 'clipboard.cut.key' },
@@ -74,7 +75,7 @@ export const clipboardPasteAction = defineAction({
   id: 'clipboard.paste',
   label: 'Paste',
   icon: icon('core:paste'),
-  group: 'clipboard',
+  group: CLIPBOARD_GROUP,
   eligible: { capability: 'edits-page' },
   requires: ['clipboard'],
   invoker: {

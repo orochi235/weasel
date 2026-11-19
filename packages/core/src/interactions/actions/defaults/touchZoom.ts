@@ -5,6 +5,7 @@ import { axisZoomFactor, zoomAt, type ZoomAxis } from 'core/viewport/zoomAt';
 import { viewToTransform } from 'core/viewport/view';
 import { screenToWorld } from 'core/viewport/viewTransform';
 import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from 'core/viewport/zoomBounds';
+import { VIEWPORT_GROUP } from '../actionGroups';
 
 interface PinchScratch {
   view: ViewApi;
@@ -38,7 +39,7 @@ export function createTouchZoomAction(
   return {
     id: 'viewport.touchZoom',
     label: 'Touch Zoom',
-    group: 'viewport',
+    group: VIEWPORT_GROUP,
     defaultBinding: [{ spec: { kind: 'multiTouch', fingers: 2 }, opts: { id: 'viewport.touchZoom.multiTouch' } }],
     requires: ['view', 'debug'],
     invoker: {

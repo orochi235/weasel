@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, sceneFromJSON } from './scene';
+import { createScene, loadScene } from './scene';
 import { effectivePose } from './effectivePose';
 import { UNION_OF_CHILDREN } from './kitRegistry';
 import type { RectPose, SerializedScene, SerializedSceneV1 } from './types';
@@ -32,13 +32,13 @@ describe('save format version 3', () => {
 
   it('throws on a version it does not know', () => {
     const json = { ...v1([]), version: 4 } as unknown as SerializedScene<object, 'main', RectPose>;
-    expect(() => sceneFromJSON<object, 'main', RectPose>(json, {})).toThrow('unsupported version 4');
+    expect(() => loadScene<object, 'main', RectPose>(json, {})).toThrow('unsupported version 4');
   });
 });
 
 describe('reading a version 1 save', () => {
   it('loads leaf as mark and container as group, with the child intact', () => {
-    const scene = sceneFromJSON<object, 'main', RectPose>(v1(V1_NODES), {});
+    const scene = loadScene<object, 'main', RectPose>(v1(V1_NODES), {});
     expect(scene.get('l' as never)!.kind).toBe('mark');
     expect(scene.get('c' as never)!.kind).toBe('group');
     expect(scene.get('k' as never)!.parent).toBe('c');
@@ -46,13 +46,13 @@ describe('reading a version 1 save', () => {
   });
 
   it('lets classifyV1 turn a container into a mark that keeps its children', () => {
-    const scene = sceneFromJSON<object, 'main', RectPose>(v1(V1_NODES), { classifyV1: () => 'mark' });
+    const scene = loadScene<object, 'main', RectPose>(v1(V1_NODES), { classifyV1: () => 'mark' });
     expect(scene.get('c' as never)!.kind).toBe('mark');
     expect(scene.childrenOf('c' as never)).toEqual(['k']);
   });
 
   it('loads an envelope as a group whose pose still derives from its children', () => {
-    const scene = sceneFromJSON<object, 'main', RectPose>(v1([
+    const scene = loadScene<object, 'main', RectPose>(v1([
       { id: 'g', kind: 'container', layer: 'main', pose: box(0, 0, 0, 0), data: {},
         dependsOn: 'children', derivePoseKey: UNION_OF_CHILDREN },
       { id: 'a', kind: 'leaf', parent: 'g', layer: 'main', pose: box(0, 0), data: {} },
@@ -69,7 +69,7 @@ describe('reading a save whose poses are world', () => {
     ({ version: 2 as const, systemLayers: [{ id: 'main' as const }], nodes });
 
   it('stores a version 2 child in its container\'s frame, where it drew before', () => {
-    const scene = sceneFromJSON<object, 'main', RectPose>(v2([
+    const scene = loadScene<object, 'main', RectPose>(v2([
       { id: 'c', kind: 'group', layer: 'main', pose: box(100, 50, 200, 200), data: {} },
       { id: 'k', kind: 'mark', parent: 'c', layer: 'main', pose: box(130, 70), data: {} },
       { id: 'n', kind: 'mark', parent: 'k', layer: 'main', pose: box(135, 75), data: {} },
@@ -80,7 +80,7 @@ describe('reading a save whose poses are world', () => {
   });
 
   it('undoes a turned container\'s frame too', () => {
-    const scene = sceneFromJSON<object, 'main', RectPose>(v2([
+    const scene = loadScene<object, 'main', RectPose>(v2([
       { id: 'c', kind: 'group', layer: 'main', pose: turned, data: {} },
       { id: 'k', kind: 'mark', parent: 'c', layer: 'main', pose: { ...box(65, 15, 20, 10), rotation: Math.PI / 2 }, data: {} },
     ]), {});
@@ -91,7 +91,7 @@ describe('reading a save whose poses are world', () => {
   });
 
   it('leaves a child of an envelope in the frame above it', () => {
-    const scene = sceneFromJSON<object, 'main', RectPose>(v2([
+    const scene = loadScene<object, 'main', RectPose>(v2([
       { id: 'f', kind: 'group', layer: 'main', pose: box(100, 100, 300, 300), data: {} },
       { id: 'g', kind: 'group', parent: 'f', layer: 'main', pose: box(0, 0, 0, 0), data: {},
         dependsOn: 'children', derivePoseKey: UNION_OF_CHILDREN },
@@ -101,12 +101,12 @@ describe('reading a save whose poses are world', () => {
   });
 
   it('reads a version 1 save the same way', () => {
-    const scene = sceneFromJSON<object, 'main', RectPose>(v1(V1_NODES), {});
+    const scene = loadScene<object, 'main', RectPose>(v1(V1_NODES), {});
     expect(scene.get('k' as never)!.pose).toEqual(box(0, 0));
   });
 
   it('keeps a version 3 child as stored', () => {
-    const scene = sceneFromJSON<object, 'main', RectPose>({ ...v2([
+    const scene = loadScene<object, 'main', RectPose>({ ...v2([
       { id: 'c', kind: 'group', layer: 'main', pose: box(100, 50, 200, 200), data: {} },
       { id: 'k', kind: 'mark', parent: 'c', layer: 'main', pose: box(30, 20), data: {} },
     ]), version: 3 }, {});

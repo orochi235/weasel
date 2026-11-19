@@ -142,8 +142,8 @@ the marquee, snap targets and what a move drags. A renderer does the same with
 `node.pose` draws a nested node at its container-relative position.
 
 A saved scene comes back under the composition it was made with: `scene.loadState(json)` keeps the
-live scene's, and `sceneFromJSON(json, { composition: POSE3_COMPOSITION })` has to be told it. Left
-out, `sceneFromJSON` throws on a scene with a nested `Pose3`, which the 2D default cannot fold.
+live scene's, and `loadScene(json, { composition: POSE3_COMPOSITION })` has to be told it. Left
+out, `loadScene` throws on a scene with a nested `Pose3`, which the 2D default cannot fold.
 
 A `kind: 'group'` container selects as it does in 2D: a click on a nested node
 selects its outermost container, a double-click enters it, and a click inside

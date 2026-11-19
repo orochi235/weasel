@@ -1,6 +1,7 @@
 import { heldKeySpec, type Action, type GestureBinding } from '@weasel-js/routing';
 import type { InsertLiveGesture } from './live';
 import type {} from '@weasel-js/core';
+import { INSERT_GROUP } from '../../actionGroups';
 
 /**
  * Companion to `insertAction`: while its key is held, dragging moves the
@@ -10,7 +11,7 @@ import type {} from '@weasel-js/core';
 export const insertRepositionAction: Action = {
   id: 'insert.reposition',
   label: 'Insert — reposition',
-  group: 'insert',
+  group: INSERT_GROUP,
   eligible: { capability: 'creates-shapes' },
   invoker: {
     timing: 'ongoing',

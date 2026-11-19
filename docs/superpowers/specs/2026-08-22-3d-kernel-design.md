@@ -97,7 +97,7 @@ became a default (`useSelectToolWith` takes none), and the dep schema split into
 about 127 of the engine's internal symbols, which a package would have to make public.
 Pages and the `RectPose` default stay in the engine files (2026-11-03). Page fields and
 `setPage`/`setPageRun` are scene structure, so cutting them would mean a second `Scene` type,
-or a 2D twin of every scene factory (`createScene`, `sceneFromJSON`, `useScene`), or 2D callers
+or a 2D twin of every scene factory (`createScene`, `loadScene`, `useScene`), or 2D callers
 opting into pages; the 2D parts (page-run layout, page clip) are registry functions that run
 only for nodes declaring them.
 
@@ -116,7 +116,7 @@ to transform — a sphere's box is the same under every rotation, and no transfo
 of a local box reproduces that.
 
 One measurement gap closed on the way: nothing had asserted that a quaternion
-pose survives `toJSON`/`sceneFromJSON`. It does.
+pose survives `toJSON`/`loadScene`. It does.
 
 `kitRegistry.ts` registers `unionOfChildren` into every scene. It reads only rect poses and returns `null` for
 any other, so a 3D container that opts into it via `derivePoseKey` keeps its authored pose rather than deriving

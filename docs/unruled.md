@@ -280,7 +280,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `{ "__raw": … }` wrapper, which the reader takes off and reads nothing into. Those had come back as typed arrays.
 - Ruled 2026-11-10 (my call, overnight sweep): a save whose node is not an object, or has no string `id` or
   `layer`, or (from version 2) a `kind` other than `mark` or `group`, is refused by `specsFromSerialized` with an
-  error naming the node; `sceneFromJSON` refuses `systemLayers` that are not a list of layers with string ids, and
+  error naming the node; `loadScene` refuses `systemLayers` that are not a list of layers with string ids, and
   the editor's `adoptSnapshotPages` a `core:pages` value that is not a `PagesDoc`. Each had failed with a
   `TypeError`. A pose's shape is still not checked: it is the app's pose descriptor's to read.
 - 2026-11-11 (my call, editor second property pass): the editor's `docFromSnapshot` and `nodeSpecsFromSnapshot`

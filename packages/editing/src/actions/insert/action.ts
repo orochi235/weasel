@@ -11,6 +11,7 @@ import { beginInsert } from './session';
 import { insertKind, insertShape } from './shape';
 import { insertLanding } from './lands';
 import type {} from '@weasel-js/core';
+import { INSERT_GROUP } from '../../actionGroups';
 
 /** How far, in CSS pixels, a drag travels before it draws a shape: past the wobble of a click, so a
  *  press that drifts a few pixels draws nothing rather than a shape a few pixels wide. */
@@ -42,7 +43,7 @@ export const INSERT_DRAG_MODS: ModSpec = { ...SNAP_ROLE_MODS, alt: 'optional' };
 export const insertAction: Action = inPlane(defineAction({
   id: 'insert',
   label: 'Insert',
-  group: 'insert',
+  group: INSERT_GROUP,
   eligible: { capability: 'creates-shapes' },
   modifierRoles: SNAP_ROLES,
   requires: ['insert', 'insertLive', 'insertInto', 'canDropInto', 'operands', 'snap', 'scene', 'applyOps', 'view', 'kitSettings'],

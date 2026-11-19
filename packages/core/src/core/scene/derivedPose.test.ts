@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { IDENTITY_POSE_COMPOSITION } from './composeFrame';
-import { createScene, sceneFromJSON } from './scene';
+import { createScene, loadScene } from './scene';
 import { documentPose, effectivePose } from './effectivePose';
 import { UNION_OF_CHILDREN, unionOfChildren } from './kitRegistry';
 import { asNodeId, type NodeId, type RectPose } from './types';
@@ -197,7 +197,7 @@ describe('derived pose — serialization', () => {
     expect(node.dependsOn).toBe('children');
     expect(node.derivePoseKey).toBe(UNION_OF_CHILDREN);
 
-    const reloaded = sceneFromJSON<object, 'main', RectPose>(json, {});
+    const reloaded = loadScene<object, 'main', RectPose>(json, {});
     expect(poseOf(reloaded as S, g)).toEqual(box(0, 0, 100, 50));
   });
 

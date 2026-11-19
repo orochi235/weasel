@@ -1,4 +1,4 @@
-import { createScene, type Scene, sceneFromJSON } from '@weasel-js/core';
+import { createScene, loadScene, type Scene } from '@weasel-js/core';
 import { ownAt } from '../config/path';
 import type { WorldRect } from './frac';
 import { type MarkHistory, restoreSceneHistory } from './history';
@@ -100,7 +100,7 @@ export function createMarkScenes(opts: MarkScenesOptions): MarkScenes {
     if (known) return known;
     const raw = restore ? ownAt(restore, target) : undefined;
     const scene = raw
-      ? sceneFromJSON<AnnotationData, 'marks', MarkPose>(
+      ? loadScene<AnnotationData, 'marks', MarkPose>(
           migrateLegacyPoints(raw as SerializedMarks, contentOf(target)),
           {},
         )

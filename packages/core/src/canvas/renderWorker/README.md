@@ -82,7 +82,7 @@ and the painting to the worker, and a frame where one node moved sends that node
 worker's scene resolves the key against the same registry, given to `serveSceneRender`. A node
 whose function has no key fails `toJSON` on the page, as it fails a save.
 
-**The worker holds a real `Scene`.** It is built with `sceneFromJSON` and brought to each delta
+**The worker holds a real `Scene`.** It is built with `loadScene` and brought to each delta
 with `reconcileSpecs`, so the worker walks it with `buildSceneViewCommands` exactly as
 `<SceneViewCanvas>` does on the page: inherited paints, derived paths, container clips, layout.
 

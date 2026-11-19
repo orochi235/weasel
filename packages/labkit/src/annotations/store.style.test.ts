@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { annotationsFromJSON, createMarkStore } from './store';
+import { createMarkStore, loadAnnotations } from './store';
 import type { AnnotationTargetInfo } from './types';
 
 const TARGETS: AnnotationTargetInfo[] = [{ id: 't', content: { width: 200, height: 100 } }];
@@ -12,7 +12,7 @@ describe("a mark's style in the store", () => {
     expect(store.get(id)).toMatchObject({ width: 6, color: '#0090ff' });
     store.update(id, { width: 10, fontSize: 20 });
     expect(store.get(id)).toMatchObject({ width: 10, color: '#0090ff', fontSize: 20, frac: BOX });
-    const back = annotationsFromJSON(store.toJSON(), () => TARGETS);
+    const back = loadAnnotations(store.toJSON(), () => TARGETS);
     expect(back.get(id)).toMatchObject({ width: 10, color: '#0090ff', fontSize: 20 });
   });
 

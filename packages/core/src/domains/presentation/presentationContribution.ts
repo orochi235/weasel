@@ -7,6 +7,7 @@ import {
 } from './presentationStep';
 import type {} from '../../interactions/actions/actionParamSchema';
 import { isFiniteNumber } from '@weasel-js/registry';
+import { PRESENTATION_GROUP } from '../../interactions/actions/actionGroups';
 
 /** The entry {@link createPresentationContribution} builds. */
 export const PRESENTATION_ID = 'weasel-presentation';
@@ -58,7 +59,7 @@ function presentationAction(id: string, label: string, go: boolean, opts: Presen
   return {
     id,
     label,
-    group: 'presentation',
+    group: PRESENTATION_GROUP,
     ...(go ? {} : { variants: STEP_VARIANTS.map((v) => ({ ...v, params: { ...v.params } })) }),
     requires: ['view', 'scene'],
     // A canvas with no pages leaves the keys to whatever else binds them.

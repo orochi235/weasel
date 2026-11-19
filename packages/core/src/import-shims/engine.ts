@@ -110,8 +110,8 @@ export type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseRep
 export type { SceneBatchOptions } from '../core/scene/recorder';
 export type { RegisteredOp } from '../core/scene/registeredOp';
 export { sameValue } from '../core/scene/sameValue';
-export { createScene, sceneFromJSON } from '../core/scene/scene';
-export type { SceneFromJSONOptions } from '../core/scene/scene';
+export { createScene, loadScene } from '../core/scene/scene';
+export type { LoadSceneOptions } from '../core/scene/scene';
 export type { SceneChanges } from '../core/scene/sceneChanges';
 export { sceneMutators } from '../core/scene/sceneMutators';
 export type { SceneMutators } from '../core/scene/sceneMutators';

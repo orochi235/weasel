@@ -18,7 +18,7 @@ export interface SceneCanvasSceneProps<TData, TLayer extends string, TPose> {
     | SerializedScene<TData, TLayer, TPose>
     | { version: number; systemLayers?: ReadonlyArray<{ id: string }>; nodes: ReadonlyArray<unknown> };
 
-  /** The composition a serialized `scene` is baked with, as `sceneFromJSON(json, { composition })`
+  /** The composition a serialized `scene` is baked with, as `loadScene(json, { composition })`
    *  takes it: a scene whose poses are not rects needs its own to nest (kernel3d's
    *  `POSE3_COMPOSITION`). Read once, with the JSON; a live `Scene` keeps the one it was made with. */
   composition?: PoseComposition<TPose>;

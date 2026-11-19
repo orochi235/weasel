@@ -6,7 +6,7 @@ import type {
   UseSceneOptions,
 } from '@weasel-js/core';
 import {
-  PAGES_DOC_KEY, adoptLegacyPages, asNodeId, createScene, sceneFromJSON, setPages, specsFromSerialized,
+  PAGES_DOC_KEY, adoptLegacyPages, asNodeId, createScene, loadScene, setPages, specsFromSerialized,
 } from '@weasel-js/core';
 import { freshId, isFiniteNumber } from '@weasel-js/registry';
 
@@ -56,7 +56,7 @@ export function adoptSnapshotPages<TData, TLayer extends string, TPose>(
     taken.add(id);
     return asNodeId(id);
   };
-  const scene = sceneFromJSON(json, { registry, unknownKeys: 'skip', generateId, ...read });
+  const scene = loadScene(json, { registry, unknownKeys: 'skip', generateId, ...read });
   const place = descriptor ? { descriptor } : {};
   if (!adoptLegacyPages(scene, place)) scene.untracked(() => setPages(scene, pages!, { ...place, label: 'Adopt pages' }));
   return scene.toJSON();

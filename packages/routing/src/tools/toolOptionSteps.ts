@@ -14,6 +14,9 @@ import {
   type ToolOptionsSpec, type ToolOptionStep, type ToolOptionValues,
 } from './toolOptions';
 
+/** The `group` of the actions that step a tool's options, for an `<ActionBar group>` or a menu. */
+export const TOOL_GROUP = 'tool';
+
 /** The keys each step action is bound to while its tool is active. */
 type StepName = 'grow' | 'shrink' | 'raise' | 'lower';
 const STEP_KEYS: Record<StepName, KeySpec> = {
@@ -53,7 +56,7 @@ function stepAction(toolId: string, toolLabel: string, options: ToolOptionsSpec,
   return {
     id: `${toolId}.${spec.name}`,
     label: spec.label(toolLabel, leaf.name.toLowerCase()),
-    group: 'tool',
+    group: TOOL_GROUP,
     requires: ['activeTool', 'toolOptionValues'],
     invoker: {
       timing: 'immediate',
@@ -90,7 +93,7 @@ function wheelSizeAction(toolId: string, toolLabel: string, options: ToolOptions
   return {
     id: `${toolId}.wheelSize`,
     label: `Resize ${toolLabel} with the wheel`,
-    group: 'tool',
+    group: TOOL_GROUP,
     requires: ['activeTool', 'toolOptionValues'],
     invoker: {
       timing: 'immediate',
