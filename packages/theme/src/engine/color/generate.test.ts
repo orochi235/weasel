@@ -85,6 +85,17 @@ describe('generate', () => {
     expect(gapAcross(3)).toBeGreaterThan(60);
   });
 
+  it('names a generated swatch apart from every anchor, even one named for another hue', () => {
+    const anchors: Anchor[] = [
+      { name: 'teal', hue: 30, lightness: 0.6 },
+      { name: 'blue', hue: 60, lightness: 0.7 },
+      { name: 'blue', hue: 90, lightness: 0.8 },
+    ];
+    const names = generate(withC({ count: 14, hueFloor: 0, anchors })).swatches.map((s) => s.name);
+    expect(new Set(names).size).toBe(names.length);
+    expect(names).toEqual(expect.arrayContaining(['teal', 'blue', 'blue-2']));
+  });
+
   it('gives every swatch a distinct name', () => {
     const names = generate(withC({ count: 12, hueFloor: (28 * 12) / 360 })).swatches.map((s) => s.name);
     expect(new Set(names).size).toBe(names.length);

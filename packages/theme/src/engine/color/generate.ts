@@ -191,9 +191,12 @@ export function generate(c: Constraints): Palette {
       ? farthestFirst(hues)
       : [...hues.keys()].sort((a, b) => hues[a] - hues[b]);
 
-  const names = uniqueNames(order.map((i) => toLch(hexes[i]).H));
+  const names = uniqueNames(
+    order.map((i) => toLch(hexes[i]).H),
+    order.map((i) => c.anchors[i]?.name),
+  );
   const swatches: Swatch[] = order.map((i, position) => ({
-    name: c.anchors[i]?.name ?? names[position],
+    name: names[position],
     hex: hexes[i],
     lch: toLch(hexes[i]),
     anchored: anchoredFlags[i],

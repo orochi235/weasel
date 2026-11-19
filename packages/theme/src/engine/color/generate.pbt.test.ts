@@ -30,13 +30,15 @@ const constraints: fc.Arbitrary<Constraints> = fc.record({
 }).map((c) => ({ ...DEFAULT_CONSTRAINTS, ...c }));
 
 describe('generate', () => {
-  it('holds a swatch per color asked for, each anchor as previewed under its own name', () => {
+  it('holds a swatch per color asked for, each anchor as previewed under its own name, every name distinct', () => {
     fc.assert(fc.property(constraints, (c) => {
       const { swatches } = generate(c);
       expect(swatches).toHaveLength(Math.max(c.count, c.anchors.length));
       for (const s of swatches) expect(s.hex).toMatch(/^#[0-9a-f]{6}$/i);
       const anchored = swatches.filter((s) => s.anchored);
-      expect(anchored.map((s) => s.name).sort()).toEqual(c.anchors.map((a) => a.name).sort());
+      expect(new Set(swatches.map((s) => s.name)).size).toBe(swatches.length);
+      const own = c.anchors.map((a) => a.name);
+      if (new Set(own).size === own.length) expect(anchored.map((s) => s.name).sort()).toEqual(own.sort());
       expect(anchored.map((s) => s.hex).sort()).toEqual(c.anchors.map(toHexPreview).sort());
     }), runs(RUNS));
   }, timeoutFor(RUNS, 400));
