@@ -105,4 +105,9 @@ describe('the scene document, shrunk counterexamples', () => {
       .toEqual({ status: 'restored', report: { restored: false, unresolved: [] } });
     expect(loaded.history.canUndo()).toBe(false);
   });
+
+  it('reads an object inside a tagged typed array as NaN rather than throwing a TypeError', () => {
+    const got = decodeSnapshot(JSON.parse('{"__ta":"f32","data":[{"toString":0,"valueOf":0}, 1]}')) as Float32Array;
+    expect(Array.from(got)).toEqual([Number.NaN, 1]);
+  });
 });
