@@ -1,7 +1,8 @@
 import { createPart } from '@weasel-js/registry';
 import { envelopeLevel, envelopePoints, resolveEnvelope, type ResolvedEnvelope } from './envelope';
+import { checkGlideMs, checkShaping } from './patchCheck';
 import { toFrequency } from './pitch';
-import type { Inharmonic, NoiseColor, NoteOptions, SynthPartial, VoiceFilter, Waveform } from './types';
+import type { Inharmonic, NoiseColor, NoiseOptions, NoteOptions, SynthPartial, VoiceFilter, Waveform } from './types';
 
 /** Seconds of noise in each cached loop: long enough that the repeat is not
  *  heard as a pitch. */
@@ -107,14 +108,24 @@ export interface ResolvedNote {
   partials: (SynthPartial & { gain: number })[] | null;
 }
 
-/** A note's pitch, glide target and partials. Throws on a bad pitch or partial. */
-export function resolveNote(note: Pick<NoteOptions, 'pitch' | 'glide' | 'wave'>): ResolvedNote {
+/** A note's pitch, glide target and partials. Throws on a bad pitch, partial,
+ *  glide, envelope, filter, or duration. */
+export function resolveNote(
+  note: Pick<NoteOptions, 'pitch' | 'glide' | 'wave' | 'envelope' | 'filter' | 'duration'>,
+): ResolvedNote {
   const wave = note.wave ?? 'sine';
+  checkShaping(note);
+  checkGlideMs(note.glide?.ms);
   return {
     from: toFrequency(note.pitch),
     glideTo: note.glide ? toFrequency(note.glide.to) : undefined,
     partials: isInharmonic(wave) ? resolvePartials(wave) : null,
   };
+}
+
+/** Throws on a noise voice's envelope, filter, or duration that it could not play. */
+export function checkNoise(noise: Pick<NoiseOptions, 'noise' | 'envelope' | 'filter' | 'duration'>): void {
+  checkShaping(noise);
 }
 
 /** An envelope written onto a param from `t0` (seconds), mapped through `map`,

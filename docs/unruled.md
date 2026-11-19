@@ -2656,3 +2656,10 @@ Calls the lanes made without a ruling:
 - 2026-11-18 (the fixer's call): `gen-brand-colors` throws, writing neither table, on a Copic marker with no name
   or a sampled colour that is not `#rrggbb`, and on a LEGO name holding a named HTML reference other than `&amp;`,
   `&lt;`, `&gt;`, `&quot;`, `&apos;` and `&nbsp;`. Skipping the row with a warning was the alternative.
+
+## Audit round thirty-eight (2026-11-18): audio
+
+- 2026-11-18 (the fixer's call): a synth voice's `duration` and a glide's `ms` must be finite and 0 or more, or
+  `playNote`/`playNoise` (and the kernels) throw a `RangeError`; an envelope's or filter's number that is not finite
+  throws too. A negative envelope time or an out-of-range sustain is still clamped. Clamping a negative duration to 0
+  was the alternative.
