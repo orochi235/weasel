@@ -34,6 +34,16 @@ describe('kit:path-pose', () => {
     expect(b.x + b.width).toBeGreaterThan(100);
   });
 
+  it('keeps the whole outline in its drawn box under a stroke that draws only part of it', () => {
+    const stroke = { ...solidStroke('#000', 2), trim: { start: 0, end: 0.1 } };
+    const n = node({ fill: { paint: solid('#7fb069') }, stroke });
+    const b = findNodeShape(n)!.drawnBounds!(n, TRIANGLE, { scale: 1 })!;
+    expect(b.x).toBeLessThanOrEqual(0);
+    expect(b.y).toBeLessThanOrEqual(0);
+    expect(b.x + b.width).toBeGreaterThanOrEqual(100);
+    expect(b.y + b.height).toBeGreaterThanOrEqual(80);
+  });
+
   it('paints nothing for a node with no data, and leaves groups alone', () => {
     expect(findNodeShape(node(null))!.paint(node(null), TRIANGLE)).toEqual([{ kind: 'path', path: TRIANGLE }]);
     expect(findNodeShape({ ...node({}), kind: 'group' } as never)).toBeUndefined();

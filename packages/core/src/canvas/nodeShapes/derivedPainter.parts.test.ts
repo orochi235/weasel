@@ -47,4 +47,21 @@ describe('kit:derived — the drawn box of a path in parts', () => {
     expect(box([{ path: RECT, stroke: INHERIT }])).toEqual({ x: -1, y: -1, width: 12, height: 12 });
     expect(box([{ path: RECT, stroke: null }])).toBeNull();
   });
+
+  it("keeps a filled part's whole outline, under a stroke that draws only part of it or none", () => {
+    const fill = { paint: solid('#00ff00') };
+    expect(box([{ path: RECT, fill, stroke: null }], null)).toEqual({ x: 0, y: 0, width: 10, height: 10 });
+    const trimmed = { ...solidStroke('#000', 2), trim: { start: 0, end: 0.1 } };
+    const b = box([{ path: RECT, fill, stroke: trimmed }], null)!;
+    expect([b.x <= 0, b.y <= 0, b.x + b.width >= 10, b.y + b.height >= 10]).toEqual([true, true, true, true]);
+  });
+
+  it('keeps a fill-only path whole', () => {
+    const b = DERIVED_PAINTER.drawnBounds!(
+      { id: 'n', data: { fill: NODE_FILL, stroke: null }, dependsOn: ['a'] } as never,
+      { x: 0, y: 0, width: 0, height: 0 } as never,
+      { derivedPath: RECT },
+    );
+    expect(b).toEqual({ x: 0, y: 0, width: 10, height: 10 });
+  });
 });

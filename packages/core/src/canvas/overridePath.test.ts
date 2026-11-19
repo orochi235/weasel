@@ -9,10 +9,11 @@ import type { DrawCommand } from '@weasel-js/renderer';
 import { createScene } from 'core/scene/scene';
 import type { Node, RectPose } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
-import { defaultDrawOne } from './defaultDrawOne';
+import { defaultDrawOne, defaultPaintBounds } from './defaultDrawOne';
 import { sceneDepLookup, sceneDerivedPathOf, withDerivedPaths } from './derivedPath';
 import { findShapeSilhouette, shapeCoversPoint, type NodePaintCtx } from './NodeShape';
 import { pickWalk, scenePickSource } from './pickWalk';
+import { buildSceneViewCommands } from './sceneViewRender';
 import { wireSceneSlotToScene } from './sceneSlotWiring';
 
 type Data = { path?: Path; fill?: Fill };
@@ -171,5 +172,20 @@ describe('a slot with its own toPose', () => {
     const dep = sceneDepLookup(scene, stretched)(id)!;
     expect(dep.pose).toEqual(CARRIED);
     expect(boundsOfPath(dep.path!)).toMatchObject(CARRIED);
+  });
+
+  it('is painted where it is on screen, wherever the stored pose is', () => {
+    const { scene, id } = makeScene();
+    scene.setPose(id, { x: 1000, y: 0, width: 100, height: 20 });
+    scene.overrides.set(id, { path: polygonFromPoints([{ x: 0, y: 0 }, { x: 50, y: 0 }, { x: 50, y: 20 }]) });
+    const drawn: string[] = [];
+    const drawOne: typeof defaultDrawOne = (node, pose, view, ctx) => {
+      drawn.push(node.id);
+      return defaultDrawOne(node, pose, view, ctx);
+    };
+    buildSceneViewCommands(scene, VIEW, drawOne, undefined, undefined, undefined, undefined, {
+      width: 100, height: 100, dpr: 1, paintBounds: defaultPaintBounds,
+    });
+    expect(drawn).toContain(id);
   });
 });

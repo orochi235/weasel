@@ -73,14 +73,14 @@ export function defaultPaintBounds<TData, TLayer extends string, TPose>(
   node: Node<TData, TLayer, TPose>,
   pose: TPose,
   view: View,
-  ctx?: Pick<NodePaintCtx, 'inherited' | 'shapes'>,
+  ctx?: Pick<NodePaintCtx, 'inherited' | 'shapes' | 'derivedPath'>,
 ): Bounds | null {
   const data = node.data as { label?: string; text?: string; stroke?: unknown } | null;
   if (data?.label && data.text == null) return null;
   const inherited = ctx?.inherited;
   if (node.kind === 'group') return groupBoxBounds(node.data, pose, screenScalesOf(view, pose));
   if (data?.stroke === INHERIT && inherited === undefined) return null;
-  return findShapeBounds(node, pose, { ...screenScalesOf(view, pose), inherited, shapes: ctx?.shapes });
+  return findShapeBounds(node, pose, { ...screenScalesOf(view, pose), inherited, shapes: ctx?.shapes, derivedPath: ctx?.derivedPath });
 }
 
 /** How the view, after the pose's own frame, scales the frame the painter draws in: the geometric mean of its

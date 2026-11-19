@@ -5,7 +5,8 @@ import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
 import { nodeMemo } from 'core/scene/nodeMemo';
 import type { RectPose } from 'core/scene/types';
-import { pathInPoseBox } from '@weasel-js/geom';
+import { boundsOfPath, pathInPoseBox } from '@weasel-js/geom';
+import { derivedPartsOf } from 'core/scene/derivedParts';
 import { DERIVED_PAINTER, derivedDrawnBounds } from './derivedPainter';
 import { PAINT_SLOT } from './memo';
 import { inkReach, inkStroke, pathCommand, pathPaintOf, withAnimatedTrim, withAnimatedVertexColors } from './nodePaint';
@@ -45,9 +46,12 @@ export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     const { fill, stroke } = pathPaintOf(node.data as PathData, ctx?.inherited);
     return { filled: fill !== null, ...inkReach(stroke ?? null, ctx?.scale), ...inkStroke(stroke ?? null) };
   },
-  // `pathInPoseBox` fits the path's own bounds to the pose box.
-  bounds: (node, pose, ctx) =>
-    poseBoxBounds(pose, resolveStroke((node.data as PathData).stroke, ctx?.inherited?.stroke), ctx),
+  // `pathInPoseBox` fits the path's own bounds to the pose box; a path in parts strokes each part its own way.
+  bounds: (node, pose, ctx) => {
+    const stroke = resolveStroke((node.data as PathData).stroke, ctx?.inherited?.stroke);
+    if (ctx?.derivedPath == null) return poseBoxBounds(pose, stroke, ctx);
+    return derivedPartsOf(ctx.derivedPath) === undefined ? poseBoxBounds(boundsOfPath(ctx.derivedPath), stroke, ctx) : null;
+  },
   drawnBounds: (node, pose, ctx) => {
     if (ctx?.derivedPath != null) return derivedDrawnBounds(node, ctx);
     const d = node.data as PathData & { path: Path };

@@ -19,6 +19,7 @@ import { inheritedPaintIn, type InheritedPaint } from 'core/scene/inheritedPaint
 import { createNodeMemoScope, type NodeMemoScope } from 'core/scene/nodeMemo';
 import { carryBoxPath, carryPathBy, pathAsPainted } from 'core/scene/depFrame';
 import type { SceneViewDrawOne } from './NodeShape';
+import type { PaintBoundsFn } from './paintCull';
 import type { DrawnBoundsScene } from './drawnBounds';
 import { nodeAsShown, shownLookup } from 'core/scene/nodeAsShown';
 
@@ -233,6 +234,18 @@ export function withDerivedPaths<TData, TLayer extends string, TPose>(
       path = withoutInheritedFrame(path, pose, ownPoseOf(node));
     }
     return drawOne(node, pose, view, { ...ctx, derivedPath: path });
+  };
+}
+
+/** {@link withDerivedPaths} for a cull's `paintBounds`: a node shown by a pose override's path is measured
+ *  by that path, which can reach past the pose box. */
+export function withOverridePathBounds<TNode extends { id: NodeId }, TPose>(
+  overrides: { read(id: NodeId): { path?: Path } | undefined },
+  paintBounds: PaintBoundsFn<TNode, TPose>,
+): PaintBoundsFn<TNode, TPose> {
+  return (node, pose, view, ctx) => {
+    const path = overrides.read(node.id)?.path;
+    return paintBounds(node, pose, view, path === undefined ? ctx : { ...ctx, derivedPath: path });
   };
 }
 

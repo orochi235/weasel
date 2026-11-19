@@ -1,4 +1,4 @@
-import { pathThroughPoseFrame, poseFrameOf, type Path } from '@weasel-js/geom';
+import { boundsOfPath, pathThroughPoseFrame, poseFrameOf, type Path } from '@weasel-js/geom';
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import type { NodeInkCtx, NodeShapeEntry } from 'canvas/NodeShape';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -41,17 +41,26 @@ export function _framedPartOutlineForTests(path: Path): TrimmedOutline | undefin
 
 type PaintData = { fill?: Fill | Inherit | null; stroke?: Stroke | Inherit | null; vertexColors?: number[] };
 
-/** The stroked box of the path on `ctx`, each of its parts in its own stroke, or `null` with no
- *  path or no stroke. */
+/** The box the path on `ctx` paints, each of its parts in its own fill and stroke, or `null` with no path or
+ *  no paint. A painted outline's own box is kept under its stroke's: a trim, a dash or an inner stroke draws
+ *  less than the outline. */
 export function derivedDrawnBounds(node: { data?: unknown }, ctx: NodeInkCtx | undefined): Bounds | null {
   const path = ctx?.derivedPath;
   if (path == null) return null;
   const d = node.data as PaintData | null;
-  const stroked = (p: Path, stroke: Stroke | null) =>
-    stroke === null ? null : strokedBounds(p, stroke, ctx?.scale ?? 1, ctx?.screen);
+  const painted = (p: Path, fill: Fill | null, stroke: Stroke | null): Bounds[] => {
+    if (fill === null && stroke === null) return [];
+    const stroked = stroke === null ? null : strokedBounds(p, stroke, ctx?.scale ?? 1, ctx?.screen);
+    return stroked === null ? [boundsOfPath(p)] : [boundsOfPath(p), stroked];
+  };
   const parts = derivedPartsOf(path);
-  if (parts === undefined) return stroked(path, resolveStroke(d?.stroke, ctx?.inherited?.stroke));
-  return unionBounds(parts.flatMap((part) => stroked(part.path, resolvePartPaint(part, d, ctx?.inherited).stroke) ?? []));
+  if (parts === undefined) {
+    return unionBounds(painted(path, resolveFill(d?.fill, ctx?.inherited?.fill), resolveStroke(d?.stroke, ctx?.inherited?.stroke)));
+  }
+  return unionBounds(parts.flatMap((part) => {
+    const { fill, stroke } = resolvePartPaint(part, d, ctx?.inherited);
+    return painted(part.path, fill, stroke);
+  }));
 }
 
 /** One part's command, in its own paint; `INHERIT` takes the node's. */

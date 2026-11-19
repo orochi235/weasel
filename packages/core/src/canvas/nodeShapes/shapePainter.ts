@@ -106,13 +106,13 @@ export function pathForShape(
     case 'polygon': {
       const cx = p.x + p.width / 2;
       const cy = p.y + p.height / 2;
-      const r = Math.min(p.width, p.height) / 2;
+      const r = Math.min(Math.abs(p.width), Math.abs(p.height)) / 2;
       return regularPolygonPath({ x: cx, y: cy }, r, d.sides ?? SHAPE_DEFAULTS.sides);
     }
     case 'star': {
       const cx = p.x + p.width / 2;
       const cy = p.y + p.height / 2;
-      const r = Math.min(p.width, p.height) / 2;
+      const r = Math.min(Math.abs(p.width), Math.abs(p.height)) / 2;
       return starPath({ x: cx, y: cy }, r, d.points ?? SHAPE_DEFAULTS.points);
     }
     case 'rect':
