@@ -284,6 +284,16 @@ describe('insert chain transitions', () => {
     expect(settled).toBe(true);
   });
 
+  it('resolves a settled() asked for after the chain was disposed mid-transition', async () => {
+    const h = harness();
+    h.chain.add(h.fx('A'));
+    h.graph.dispose();
+    let settled = false;
+    void h.chain.settled().then(() => { settled = true; });
+    for (let i = 0; i < 5; i++) await Promise.resolve();
+    expect(settled).toBe(true);
+  });
+
   it('takes every effect out and disposes it once on dispose, whatever it was doing', () => {
     const h = harness();
     const routed = vi.fn();
