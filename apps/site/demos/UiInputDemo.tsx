@@ -1,4 +1,5 @@
 import { useId, useState, type KeyboardEvent } from 'react';
+import { isOneChar } from '@weasel-js/registry';
 import { EMPTY_TYPEAHEAD, rovingKey, typeaheadStep, type ListShape, type TypeaheadShape } from '@weasel-js/ui-input';
 import s from './UiInputDemo.module.css';
 
@@ -29,7 +30,7 @@ export function UiInputDemo() {
       setLast(`rovingKey('${e.key}') → ${roved.at}`);
       return;
     }
-    if (e.key.length !== 1 || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (!isOneChar(e.key) || e.metaKey || e.ctrlKey || e.altKey) return;
     e.preventDefault();
     const t = typeaheadStep(ROWS, at, typed, e.key, e.timeStamp, SHAPE);
     setTyped(t.buffer);

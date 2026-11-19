@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { solid } from '@weasel-js/paint';
-import { PathBuilder, SceneCanvas, WeaselProvider, asNodeId, createScene } from '@weasel-js/core';
+import { PathBuilder, SceneCanvas, WeaselProvider, asNodeId, createScene, watchDevicePixelRatio } from '@weasel-js/core';
 import type { Path, RectPose, SceneCanvasApi, View, Fill } from '@weasel-js/core';
 import { createLoupe } from '@weasel-js/hud';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
@@ -126,22 +126,29 @@ function Pane({
   );
 }
 
+function sizeSurface(c: HTMLCanvasElement): void {
+  const dpr = window.devicePixelRatio || 1;
+  c.width = Math.round(SURFACE_W * dpr);
+  c.height = Math.round(SURFACE_H * dpr);
+  c.style.width = `${SURFACE_W}px`;
+  c.style.height = `${SURFACE_H}px`;
+}
+
 export function TiledSurfaceDemo() {
   const surfaceRef = useRef<HTMLCanvasElement | null>(null);
   const [surface, setSurface] = useState<HTMLCanvasElement | null>(null);
   const [color, setColor] = useState<string | null>(null);
 
   // The shared buffer is the host's to size. Each pane's renderer is handed
-  // `gl` only — given the element it would resize it to its own pane.
+  // `gl` only — given the element it would resize it to its own pane. The panes
+  // read the density at every paint and repaint when it changes, so the buffer
+  // follows it too, or a pane lands outside it.
   useLayoutEffect(() => {
     const c = surfaceRef.current;
     if (!c) return;
-    const dpr = window.devicePixelRatio || 1;
-    c.width = Math.round(SURFACE_W * dpr);
-    c.height = Math.round(SURFACE_H * dpr);
-    c.style.width = `${SURFACE_W}px`;
-    c.style.height = `${SURFACE_H}px`;
+    sizeSurface(c);
     setSurface(c);
+    return watchDevicePixelRatio(() => { sizeSurface(c); });
   }, []);
 
   return (

@@ -102,14 +102,17 @@ fn fragment(in: Varyings) -> vec4f {
 }`;
 
 const VORONOI_WGSL = /* wgsl */ `
-struct Params { u_seeds: array<vec2f, 8>, u_time: f32, u_seedCount: f32 }
+// Two seeds to a vec4f: a uniform array of vec2f has an 8-byte stride, which a browser without
+// uniform_buffer_standard_layout refuses. The flat \`[x, y, x, y, …]\` list fills it unchanged.
+struct Params { u_seeds: array<vec4f, 4>, u_time: f32, u_seedCount: f32 }
 @group(1) @binding(0) var<uniform> params: Params;
 fn fragment(in: Varyings) -> vec4f {
   var bestD = 1e9;
   var bestI = 0;
   for (var i = 0; i < 8; i++) {
     if (f32(i) >= params.u_seedCount) { break; }
-    let d = distance(in.uv, params.u_seeds[i]);
+    let pair = params.u_seeds[i / 2];
+    let d = distance(in.uv, select(pair.zw, pair.xy, i % 2 == 0));
     if (d < bestD) { bestD = d; bestI = i; }
   }
   let h = f32(bestI) / max(1.0, params.u_seedCount) + params.u_time * 0.05;
