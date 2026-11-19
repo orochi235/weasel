@@ -97,7 +97,8 @@ export function ShortcutSheet({
         autoComplete="off"
         autoFocus
       />
-      <div className={styles.parts}>
+      {/* Focusable, so a keyboard can scroll a list that holds nothing focusable. */}
+      <div className={styles.parts} role="region" aria-label="Shortcuts" tabIndex={0}>
         {parts.length === 0 && <div className={styles.empty}>No matching shortcuts.</div>}
         {parts.map((p) => (
           <section key={p.id} className={styles.part} aria-label={p.label}>

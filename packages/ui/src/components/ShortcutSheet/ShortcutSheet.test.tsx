@@ -54,6 +54,11 @@ const row = (name: RegExp) => screen.getAllByRole('listitem').find((li) => name.
 const search = (text: string) => fireEvent.change(screen.getByRole('searchbox', { name: 'Search shortcuts' }), { target: { value: text } });
 
 describe('ShortcutSheet', () => {
+  it('lets Tab reach the list, which holds nothing focusable, so a keyboard can scroll it', () => {
+    setup();
+    expect(screen.getByRole('region', { name: 'Shortcuts' })).toHaveAttribute('tabindex', '0');
+  });
+
   it('lists every tool in a tool set under the set\'s label', () => {
     setup();
     const shapes = within(group('Shapes'));
