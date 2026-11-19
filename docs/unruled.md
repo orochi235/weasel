@@ -2701,3 +2701,16 @@ Calls the lanes made without a ruling:
   an unmount) is recorded where it stopped, as one undo step, since each canceled decay has already written that pose
   to the document. Putting the document back where the drag began was the alternative. Round six's line on the
   `previewPoses` path, which records nothing, stands.
+## Parser fuzzing (2026-11-18)
+
+- 2026-11-18 (the fixer's call): a weasel clipboard paste with any malformed item (not a node, a duplicate id, a layer
+  the scene lacks, a pose with no finite bounds, a parent loop) pastes nothing, with a debug warning. Pasting the
+  well-formed items and reporting the rest through `onOmit` was the alternative; it needs a new `PasteOmission` reason.
+- 2026-11-18 (the fixer's call): `History.restore` refuses a snapshot of the wrong shape whole, throwing
+  `HistoryRestoreError` when strict and warning with `restored: false` when best-effort, as `Scene.restoreHistory`
+  already did for a snapshot of the wrong form. Dropping only the malformed entries under best-effort was the
+  alternative.
+- 2026-11-18 (the fixer's call): a tagged typed array whose data holds an object decodes that entry as `NaN`. Refusing
+  the whole snapshot with `SnapshotShapeError` was the alternative.
+- 2026-11-18 (the fixer's call): `resolveUnitExpr` refuses an expression nesting parentheses or signs past 1000 levels
+  with its own `unitExpr:` error.
