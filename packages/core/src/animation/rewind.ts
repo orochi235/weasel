@@ -67,8 +67,9 @@ export function rewindingTween<TPose>(
     const done = ms > 0 ? ease(at / ms) : 1;
     const span = forward ? ms - at : at;
     const dest = forward ? o.to : o.start;
-    // Nothing of the move lies that way: the pose is at that end already.
-    if (!first && (span < 1 || (forward ? done >= 1 : done <= 0))) {
+    // Nothing of the move lies that way. An easing that overshoots passes its end before the time
+    // runs out, so only time says so; a pose exactly at that end has no share left to travel by.
+    if (!first && (span < 1 || done === (forward ? 1 : 0))) {
       target.stop({ commit: false });
       if (forward) o.onDone?.();
       return;
