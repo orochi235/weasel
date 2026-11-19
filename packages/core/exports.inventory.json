@@ -2433,6 +2433,7 @@
     "useOpenKeymap": "function",
     "useOptionalActiveToolContext": "function",
     "useOptionalDepRegistry": "function",
+    "usePageActions": "function",
     "usePointerContext": "function",
     "usePointerPosition": "function",
     "usePointerStylus": "function",
