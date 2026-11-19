@@ -185,9 +185,10 @@ export interface StreamOptions extends Omit<PlayOptions, 'when' | 'detune'> {
 export interface AudioEngineOptions {
   /** Injectable for tests and for consumers that own the context. */
   context?: AudioContext;
-  /** Scheduling window in ms. Default 100. */
+  /** Scheduling window in ms. Default 100. Throws on one that is negative or not finite. */
   lookahead?: number;
-  /** Scheduler pass interval in ms. Default 25. */
+  /** Scheduler pass interval in ms. Default 25. Throws on one that is not above 0 and at most
+   *  2^31 − 1. */
   tickInterval?: number;
   /** Default ['sfx', 'music', 'ui']. */
   buses?: string[];
@@ -206,7 +207,8 @@ export interface AudioEngineOptions {
    *  the lookahead covers, and the voice sounded late by that much. A
    *  `synthVoices: 'worklet'` voice is never reported: it was not late. */
   onLate?: (lateMs: number, when: number) => void;
-  /** Crossfade for every insert-chain edit and bypass, in ms. Default 15. */
+  /** Crossfade for every insert-chain edit and bypass, in ms. Default 15. Throws on one that is
+   *  negative or not finite. */
   insertFadeMs?: number;
   /** Uniform in [0, 1), for where in its loop a noise voice starts. Default `Math.random`. */
   random?: () => number;

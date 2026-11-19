@@ -6,7 +6,7 @@ import type { AudioGraph, AudioGraphOptions } from './graph/types';
 import type { Slots, Starter } from './liveVoice';
 import { checkSpan } from './param';
 import { createResumeWatch } from './resumeWatch';
-import { createScheduler } from './scheduler';
+import { checkSchedulerTiming, createScheduler } from './scheduler';
 import { createSoundCache, type SoundCache, type SoundHandle } from './soundCache';
 import { checkListener, type SpatialOptions, type SpatialPoint } from './spatialize';
 import { createStreamStarters, restream } from './streamStarter';
@@ -205,6 +205,9 @@ function engineClock(ctx: BaseAudioContext, opts: AudioEngineOptions) {
  * `dispose()` when done.
  */
 export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
+  // Before anything is made: the tick timer's worker and a context of the engine's own would leak.
+  checkSchedulerTiming({ lookahead: opts.lookahead, interval: opts.tickInterval });
+  checkSpan('insert fade', opts.insertFadeMs);
   const ctx = opts.context ?? new AudioContext();
   // A context the engine made is a context the engine closes; a consumer's is
   // theirs to keep.
