@@ -1595,6 +1595,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/IconsDemo').then((m) => m.IconsDemo),
     path: 'apps/site/demos/IconsDemo.tsx',
   },
+  {
+    id: 'theme',
+    title: 'A custom theme',
+    package: 'theme',
+    description: "A theme of one pin, `defineTheme({ pins: { 'accent-base': … } })`, which layers onto the built-in theme, so it names only what it changes. The color field sets that pin; every alias that reads it, `--wzl-accent` among them, follows. `<ThemeProvider theme selection={{ mode }}>` applies the theme to the panel below and nothing outside it, and the mode buttons switch its `mode` axis. Inside, kit controls draw from the tokens, and the table reads four of them from `useTheme().resolved`, the record a canvas or WebGL surface reads in place of computed styles.",
+    hint: 'Pick an accent and watch the solid button and the checkbox follow. Switch to dark and the table changes with them.',
+    load: () => import('./demos/ThemeDemo').then((m) => m.ThemeDemo),
+    path: 'apps/site/demos/ThemeDemo.tsx',
+  },
 ];
 
 export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({
