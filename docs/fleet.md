@@ -69,6 +69,10 @@ teitou on 2026-10-29 the two programs took 36 s together with no build info and 
 with nothing changed, and 94 s after one export was added to `@weasel-js/core`'s index with 7–13 of
 its cores busy (`scripts/bench-typecheck.runs.jsonl`). `npm run typecheck` runs the two at once.
 
+**`npm run sweep:controls -- [--only id,id]` runs the control sweep on a node with a browser** (`onto do --gui`,
+tree `weasel-control-sweep`): it operates every demo control and lists each that changes nothing. The nightly
+audit runs it too; how it judges a control is in `scripts/skulk/README.md`, "The control sweep".
+
 **The gate stops at ci.yml's first build; `npm run test:fleet:postbuild -- <ref>` runs the rest.**
 From a clean `npm ci` it runs that build and every ci.yml step after it — the manifest, tree-shake
 and React-free checks, both consumer smokes, the site builds, draw's e2e suite — reading the list from ci.yml through

@@ -17,6 +17,7 @@ completes (`review 3/16 …`).
 |---|---|
 | plan | Areas come from the partition (below). The round number is one past the highest used by a `docs/audits/round-<N>/` directory, `docs/hardening.md`, or a branch named `audit<N>-…`. |
 | freeze | A detached worktree at `main`'s tip, `.worktrees/audit<N>-frozen-night`. That sha is the round's commit. |
+| sweep | The control sweep (below) at the frozen commit, one `onto do --gui` job. Its dead controls go to one fixer, which runs beside the reviews. |
 | review | Per area, two reviewer jobs, each `onto do` from the frozen tree with the brief in `briefs/reviewer.md` and the area's file list. Reviewers may read, search, and run `git log/show/diff/blame`, and write only `.skulk/out/`. Each lists the files it read. |
 | match | One haiku job per area pairs the two lists (`briefs/matcher.md`); the script keeps only one-to-one pairs and computes the estimate. |
 | fix | Per area with findings, one fixer job (`briefs/fixer.md`), permissions bypassed, in the node's own synced tree. It first commits the synced tree and checks it hashes to the frozen commit's tree, installs if the lockfile changed, then hands back its commits as an mbox. |
@@ -38,8 +39,31 @@ Flags:
 | `--nodes a,b` | | only these nodes (onto's own quiet hours still apply) |
 | `--dry` | | print the plan (round, nodes, areas and their files, jobs) and stop |
 | `--no-merge` | | leave `main` alone even when the batch is green; the batch and branches are kept |
+| `--no-sweep` | | skip the control sweep |
 | `--cap-usd N` | 80 | list-price dollars the night may spend, summed from each job's cost |
 | `--budget-review USD`, `--budget-match USD`, `--budget-fix USD` | 8, 1, 15 | each job's `--max-budget-usd` |
+
+## The control sweep
+
+`scripts/control-sweep.mjs` builds the demo site, serves it from its own process, and loads every demo in
+`apps/site/registry.ts` in headless Chromium at 1280×1400. In each demo's frame it finds the controls by role
+(checkboxes, switches, sliders, number fields, radios and segmented controls, selects, menu items, toggles and
+buttons) and, for each, captures the demo, operates the control once, captures again, and puts it back. A
+capture is a hash of each canvas's pixels and a digest of every element's text and attributes, leaving out
+the control's own field (the box holding it, its label and its readout). Two captures a settle apart before
+operating tell what moves by itself, which is left out. A control that changes nothing steady is tried again
+from a fresh load with screenshots, and is **dead** if it changes nothing twice; one whose only possible
+effect is on an animating canvas is **unsure**. A control another control reveals is tried with that one
+operated first. Downloads, file pickers, native dialogs, new windows and disabled controls are **skipped**.
+
+A control meant to change nothing visible is waived in `scripts/control-sweep.allow.json` (`demo`, `control`
+as the sweep labels it, `reason`). Only a person adds an entry; `--update-allow` removes the ones that waive
+nothing any more. The sweep exits 1 on any dead control that is not waived.
+
+    npm run sweep:controls -- --only lab-tween,scene     # on the fleet, at HEAD; records in .control-sweep/
+
+In a night it is the sweep step; its findings, the fixer's report and the run's summary land in
+`docs/audits/round-<N>/control-sweep/`, and the round's README lists the dead controls.
 
 ## Which areas, and when
 
@@ -107,3 +131,4 @@ line, each echoing its `id`:
 | The service's own log | onto's log for the service (`onto logs <job>`) | onto's |
 | Worktrees | `.worktrees/audit<N>-frozen-night`, `skulk-am-<area>`, `batch-<date>-audit<N>` | removed when the night ends, except a red batch's, which the report names |
 | Node trees | `weasel-skulk-r<k>`, `weasel-skulk-f<k>` on each node | a fixed set; each job clears its own output |
+| Control sweep runs | `.control-sweep/<run>/` in the node tree `weasel-control-sweep` and wherever `--out` points here; the night's in its directory | the newest 7 runs per directory; screenshots only for dead controls |
