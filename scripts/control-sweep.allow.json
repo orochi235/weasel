@@ -43,5 +43,10 @@
     "demo": "animator",
     "control": "Time scale › ¼×",
     "reason": "Changes how fast running animations go; a playing animation reads as moving at any speed, so the sweep cannot tell one speed from another."
+  },
+  {
+    "demo": "*",
+    "control": "Theme: Auto — click for Light",
+    "reason": "Under the headless browser's light color scheme, Auto already shows Light, so the first click changes nothing visible. Kit chrome is swept in whichever lab reaches it first, so a run of every demo may find this unused."
   }
 ]
