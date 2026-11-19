@@ -2656,3 +2656,10 @@ Calls the lanes made without a ruling:
 - 2026-11-18 (the fixer's call): `gen-brand-colors` throws, writing neither table, on a Copic marker with no name
   or a sampled colour that is not `#rrggbb`, and on a LEGO name holding a named HTML reference other than `&amp;`,
   `&lt;`, `&gt;`, `&quot;`, `&apos;` and `&nbsp;`. Skipping the row with a warning was the alternative.
+
+## Audit round thirty-seven (2026-11-18): brush
+
+- 2026-11-18 (the fixer's call): `shareBrushSize` throws on an empty key, and on a size leaf with a `measure` or a
+  `unit` other than plain `px` under `BRUSH_SIZE_PX`; a size in world units passes a key of its own, which is the
+  override. A leaf naming neither a unit nor a measure passes, since it says nothing. Warning and sharing anyway
+  was the alternative.

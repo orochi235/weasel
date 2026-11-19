@@ -24,6 +24,18 @@ describe('shareBrushSize', () => {
     expect(shareBrushSize({}, 'other')).toEqual({});
   });
 
+  it('refuses an empty key, and a size in world units under the screen-pixel key', () => {
+    const inWorld = (extra: object) => {
+      const opts = brush(400);
+      return { ...opts, prefs: { ...opts.prefs, children: { ...opts.prefs.children, radiusPx: { ...opts.prefs.children.radiusPx, ...extra } } } } as ToolOptionsSpec;
+    };
+    expect(() => shareBrushSize(brush(400), '')).toThrow(/key/);
+    expect(() => shareBrushSize(inWorld({ measure: 'length' }))).toThrow(/screen pixels/);
+    expect(() => shareBrushSize(inWorld({ unit: { scale: 1, suffix: 'mm' } }))).toThrow(/screen pixels/);
+    expect(shareBrushSize(inWorld({ measure: 'length' }), 'brushSizeWorld')).toEqual({ radiusPx: 'brushSizeWorld' });
+    expect(shareBrushSize(inWorld({ unit: { scale: 1, suffix: 'px' } }))).toEqual({ radiusPx: BRUSH_SIZE_PX });
+  });
+
   it('gives brushes one size, held to each one’s bounds, and leaves their other options their own', () => {
     const big = shareToolOptions(brush(400), shareBrushSize(brush(400)));
     const small = shareToolOptions(brush(30), shareBrushSize(brush(30)));
