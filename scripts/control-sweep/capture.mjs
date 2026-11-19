@@ -27,13 +27,22 @@ export const settle = async (page, ms) => {
   await page.waitForTimeout(ms);
 };
 
+/** A clip of the screen, hashed; a clip the browser refuses (it fell off the page) reads the same every time. */
+const clipHash = async (page, clip, mask) => {
+  try {
+    return hash(await page.screenshot({ clip, mask, caret: 'hide' }));
+  } catch {
+    return 'unreadable';
+  }
+};
+
 export const capture = async (page, id) => {
   const snap = await kit(page, 'capture', ROOT, id ?? null, HISTORY);
   const canvases = [];
   // A 2D canvas comes back as its own pixels. Any other is a clip of the screen, which shows whatever is
   // there, so a canvas under the control would show its thumb move unless the field is masked.
   const mask = [page.locator(HISTORY), ...(id ? [page.locator(`[data-sweep-field="${id}"]`)] : [])];
-  for (const c of snap.canvases) canvases.push(c.pixels ?? hash(await page.screenshot({ clip: c, mask, caret: 'hide' })));
+  for (const c of snap.canvases) canvases.push(c.pixels ?? await clipHash(page, c, mask));
   return { dom: snap.dom, canvases, names: snap.names };
 };
 
