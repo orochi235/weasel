@@ -247,7 +247,7 @@ function GlassView(): ReactElement {
       <div className={s.glassStage}>
         <div className={s.glassPanel} />
       </div>
-      <pre className={s.codeSample}>{`background: color-mix(in srgb, var(--wzl-glass-tint) 78%, transparent);
+      <pre className={s.codeSample} tabIndex={0}>{`background: color-mix(in srgb, var(--wzl-glass-tint) 78%, transparent);
 backdrop-filter: blur(3px);`}</pre>
     </Section>
   );
