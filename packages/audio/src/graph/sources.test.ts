@@ -237,3 +237,12 @@ describe('every source', () => {
     }
   });
 });
+
+describe('createOscillatorNode wave checks', () => {
+  it('refuses a wave name outside the four built-ins, an empty harmonic wave, and partials', () => {
+    const ctx = {} as BaseAudioContext;
+    for (const wave of ['Sine', 'toString', [], [NaN], { partials: [{ ratio: 1.5 }] }]) {
+      expect(() => createOscillatorNode(ctx, { wave: wave as never })).toThrow(RangeError);
+    }
+  });
+});
