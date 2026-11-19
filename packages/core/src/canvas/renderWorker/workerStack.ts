@@ -3,7 +3,7 @@
  * drawn through a renderer of its own, each worker run handed its layers and the frame's view.
  */
 import { viewToMat3, type DrawCommand, type IdBuffer, type WeaselRenderer } from '@weasel-js/renderer';
-import { drawLayers, type LayerCommandCache, type LayerRetainPolicy, type RenderLayer } from '../../core/layers/render';
+import { drawLayers, isLayerVisible, type LayerCommandCache, type LayerRetainPolicy, type RenderLayer } from '../../core/layers/render';
 import type { LayerGroup } from '../../core/layers/layerGroup';
 import type { View } from '../../core/viewport/view';
 import type { CanvasIdReadOptions } from '../canvasExtension';
@@ -87,15 +87,21 @@ export function paintPageRun(
   frames.set(index, { renderer, commands, view: frame.view });
 }
 
-/** Hand one worker run its frame and ask for it. */
+/** Hand one worker run its frame and ask for it. Each of its layers shows as the page would show
+ *  it (`isLayerVisible`); a whole `scene` layer the page hides paints nothing. */
 export function paintWorkerRun(client: AnyRenderWorker, run: LayerRun, frame: StackFrame): void {
+  const shown = (id: string): boolean => {
+    const layer = frame.layers?.find((l) => l.id === id);
+    if (layer) return isLayerVisible(layer, frame.visibility);
+    return Object.hasOwn(frame.visibility, id) ? frame.visibility[id]! : true;
+  };
   const whole = run.ids.length === 1 && run.ids[0] === 'scene';
   const layerVisibility: Record<string, boolean> = {};
-  for (const id of run.ids) if (Object.hasOwn(frame.visibility, id)) setOwn(layerVisibility, id, frame.visibility[id]!);
+  if (!whole) for (const id of run.ids) setOwn(layerVisibility, id, shown(id));
   client.update({
     ...frame.inputs,
     view: frame.view, width: frame.dims.width, height: frame.dims.height, dpr: frame.dims.dpr,
-    layerOrder: whole ? undefined : run.ids, layerVisibility,
+    layerOrder: whole ? (shown('scene') ? undefined : []) : run.ids, layerVisibility,
   });
   client.sync();
 }

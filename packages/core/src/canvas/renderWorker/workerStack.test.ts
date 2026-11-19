@@ -32,7 +32,27 @@ describe('paintWorkerRun', () => {
     paintWorkerRun(client, { by: 'worker', ids: ['__proto__', 'a', 'constructor'] }, frame);
     const shown = sent!.layerVisibility as Record<string, boolean>;
     expect(Object.getPrototypeOf(shown)).toBe(Object.prototype);
-    expect(Object.entries(shown)).toEqual([['__proto__', false], ['a', true]]);
+    expect(Object.entries(shown)).toEqual([['__proto__', false], ['a', true], ['constructor', true]]);
+  });
+
+  const sentFor = (ids: string[], layers: object[], visibility: Record<string, boolean>) => {
+    let sent: Record<string, unknown> | undefined;
+    const client = { update: (u: Record<string, unknown>) => { sent = u; }, sync: () => {} } as unknown as AnyRenderWorker;
+    const frame = { inputs: {}, view: { x: 0, y: 0, scale: 1 }, dims: { width: 1, height: 1, dpr: 1 }, visibility, layers } as unknown as StackFrame;
+    paintWorkerRun(client, { by: 'worker', ids }, frame);
+    return sent!;
+  };
+
+  it('shows each layer as the page would: alwaysOn over an entry, an entry over defaultVisible', () => {
+    const sent = sentFor(['scene:a', 'scene:b'], [
+      { id: 'scene:a', alwaysOn: true }, { id: 'scene:b', defaultVisible: false },
+    ], { 'scene:a': false });
+    expect(sent.layerVisibility).toEqual({ 'scene:a': true, 'scene:b': false });
+  });
+
+  it('paints nothing of a whole scene layer the page hides', () => {
+    expect(sentFor(['scene'], [{ id: 'scene' }], { scene: false }).layerOrder).toEqual([]);
+    expect(sentFor(['scene'], [{ id: 'scene' }], {}).layerOrder).toBeUndefined();
   });
 });
 
