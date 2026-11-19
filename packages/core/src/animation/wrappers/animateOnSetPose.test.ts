@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { stubReducedMotion } from '@weasel-js/react/testing/stubMatchMedia';
 import { renderHook, act } from '@testing-library/react';
 import { useAnimator } from '@weasel-js/animator/react';
 import { animateOnSetPose } from './animateOnSetPose';
@@ -160,5 +161,22 @@ describe('animateOnSetPose', () => {
     });
     expect(setPose).toHaveBeenCalledWith('a', { x: 7, y: 0, width: 10, height: 10 });
     expect(applyOps).not.toHaveBeenCalled();
+  });
+});
+
+describe('animateOnSetPose under prefers-reduced-motion', () => {
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  it('writes the pose at once in place of the default glide', () => {
+    stubReducedMotion(true);
+    const clock = makeClock();
+    const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 10, height: 10 }]]);
+    const { base } = makeAdapter(initial);
+    const { result } = renderHook(() => useAnimator(clock));
+    const wrapped = animateOnSetPose(base, result.current);
+    act(() => { wrapped.setPose('a', { x: 100, y: 0, width: 10, height: 10 }); });
+    act(() => clock.advance(0));
+    act(() => clock.advance(16));
+    expect(initial.get('a')!.x).toBe(100);
   });
 });

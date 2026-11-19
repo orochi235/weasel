@@ -1,11 +1,12 @@
 import { poseKey, tweenPose, springPose, type PoseAnimationAdapter } from '../poseHelpers';
+import { defaultMotionMs } from '../motionMs';
 import { instantPoseWrite } from './instantPose';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Animator, EasingSpec, SpringPresetName } from '@weasel-js/animator';
 
 /** Options for `animateOnSetPose`. */
 export interface AnimateOnSetPoseOptions<TPose> {
-  /** Default: 200ms tween with easeOutQuad. */
+  /** Default: a 200ms tween with easeOutQuad, or none under `prefers-reduced-motion`. */
   ms?: number;
   easing?: EasingSpec;
   /** Use a spring instead of a duration tween. Mutually exclusive with ms/easing. */
@@ -47,7 +48,6 @@ export function animateOnSetPose<TPose, A extends PoseAnimationAdapter<TPose> = 
   animator: Animator,
   opts: AnimateOnSetPoseOptions<TPose> = {},
 ): A {
-  const ms = opts.ms ?? 200;
   const skipPredicate = (id: string, from: TPose, to: TPose): boolean => {
     if (opts.shouldAnimate) return !opts.shouldAnimate(id, from, to);
     if (opts.skipDuringGesture && opts.gestureScope?.has(id)) return true;
@@ -91,7 +91,7 @@ export function animateOnSetPose<TPose, A extends PoseAnimationAdapter<TPose> = 
         tweenPose(animator, adapter, {
           id,
           to: pose,
-          ms,
+          ms: opts.ms ?? defaultMotionMs(),
           easing: opts.easing,
           geometry: opts.geometry,
           opLabel: opts.opLabel,

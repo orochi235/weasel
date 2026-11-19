@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { linear } from '@weasel-js/geom';
+import { easeInBack, easeOutBack, linear } from '@weasel-js/geom';
 import { createScene } from '../core/scene/scene';
 import { effectivePose } from '../core/scene/effectivePose';
 import type { RectPose } from '../core/scene/types';
@@ -57,6 +57,44 @@ describe('tweenPose with `rewind`', () => {
     expect(scene.overrides.has(a)).toBe(false);
     expect(scene.historyEntries().length).toBe(entries);
     expect(done).toBe(0);
+  });
+
+  it('travels the rest of a redone move under an easing that overshoots, rather than snapping', () => {
+    const { animator, frame, scene, a, adapter, shown } = setup();
+    let done = 0;
+    act(() => {
+      tweenPose(animator(), adapter, { id: a, to: at(100), ms: 100, easing: easeOutBack, rewind: true, onDone: () => { done += 1; } });
+    });
+    frame(0);
+    frame(70);
+    act(() => { scene.undo(); });
+    frame(80);
+    frame(90);
+    act(() => { scene.redo(); });
+    // The back leg had run 20 ms when the redo turned it, so the move stands 60 ms along.
+    frame(100);
+    expect(animator().isActive(`pose:${a}`)).toBe(true);
+    expect(shown().x).toBeCloseTo(100 * easeOutBack(0.6));
+    expect(done).toBe(0);
+    frame(140);
+    frame(156);
+    expect(shown().x).toBe(100);
+    expect(done).toBe(1);
+  });
+
+  it('travels the rest of an undone move under an easing that undershoots, rather than snapping', () => {
+    const { animator, frame, scene, a, adapter, shown } = setup();
+    act(() => {
+      tweenPose(animator(), adapter, { id: a, to: at(100), ms: 100, easing: easeInBack, rewind: true });
+    });
+    frame(0);
+    frame(20);
+    act(() => { scene.undo(); });
+    frame(30);
+    expect(animator().isActive(`pose:${a}`)).toBe(true);
+    expect(shown().x).toBeCloseTo(100 * easeInBack(0.3));
+    frame(40);
+    expect(shown().x).toBeCloseTo(100 * easeInBack(0.2));
   });
 
   it('turns forward again when the undo is redone, and is done once it arrives', () => {

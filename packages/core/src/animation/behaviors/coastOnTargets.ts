@@ -34,6 +34,31 @@ function poseVelocity<TPose>(
   return ax.from(base.map((b, i) => vx * (alongX[i]! - b) + vy * (alongY[i]! - b)));
 }
 
+/** Ends `r`'s running decay as the coast's own doing, which the coast's cancel watch lets pass. */
+function endOwn<TPose>(r: Rider<TPose>): void {
+  const h = r.handle;
+  r.handle = null;
+  h?.cancel();
+}
+
+/** The flick's one transform per node still the coast's, each node's document put back where the drag began. */
+function flickOps<TPose>(
+  riders: Iterable<Rider<TPose>>,
+  origin: ReadonlyMap<string, TPose>,
+  ours: (r: Rider<TPose>) => boolean,
+): Op[] {
+  const ops: Op[] = [];
+  for (const r of riders) {
+    if (!ours(r)) continue;
+    const from = origin.get(r.id) ?? r.seen;
+    const to = r.target.committed();
+    // A scene records the write it sees, not an op's `from`, so the document goes back first.
+    r.target.commit(from);
+    ops.push(createSetPoseOp<TPose>({ id: r.id, from, to, label: 'flick' }));
+  }
+  return ops;
+}
+
 /**
  * A coast on each node's own pose target: a decay per node, so anything else animating the
  * node adds to it. The document keeps the pre-drag pose while the node travels, takes the
@@ -86,7 +111,7 @@ export function coastOnTargets<TPose>(a: CoastArgs<TPose>, targets: ReadonlyMap<
   const drop = (r: Rider<TPose>, own: TPose): void => {
     const left = r.target.committed();
     riders.delete(r.id);
-    r.handle?.cancel();
+    endOwn(r);
     r.target.commit(left);
     if (r.target.active && adapter.getNode(r.id) !== undefined) {
       const moved = d.getBounds(left);
@@ -114,7 +139,7 @@ export function coastOnTargets<TPose>(a: CoastArgs<TPose>, targets: ReadonlyMap<
     const vx = hitX ? 0 : r.vx - drag * (corner.x - r.startX);
     const vy = hitY ? 0 : r.vy - drag * (corner.y - r.startY);
     // Canceled, it commits the pose it reached; the edge is where it belongs.
-    r.handle?.cancel();
+    endOwn(r);
     r.target.commit(translatePoseViaDescriptor(r.target.committed(), nx - corner.x, ny - corner.y, d));
     r.seen = r.target.committed();
     if (a.boundary === 'continue' && Math.hypot(vx, vy) > 0) launch(r, undefined, vx, vy);
@@ -127,29 +152,28 @@ export function coastOnTargets<TPose>(a: CoastArgs<TPose>, targets: ReadonlyMap<
       // Canceled from outside (cancelAll, unmount), it stopped long ago and somewhere else.
       if (!animator.isActive(cancelKey)) {
         coasts.delete(coast);
+        unwatch();
         return;
       }
       for (const r of riders.values()) {
-        r.handle?.cancel();
-        r.handle = null;
+        endOwn(r);
         r.seen = r.target.committed();
       }
       commitFlick();
     },
   };
   coasts.add(coast);
+  // A decay canceled from outside (cancelAll, an unmount) has committed the pose it reached to the
+  // document, so the node halts there and the flick is recorded as for any other stop.
+  const unwatch = animator.watch((event) => {
+    if (event.type !== 'cancel' && event.type !== 'interrupt') return;
+    for (const r of riders.values()) if (r.handle?.id === event.animation.id) halted(r);
+  });
 
   function commitFlick(): void {
+    unwatch();
     if (!coasts.delete(coast) || !adapter.applyOps) return;
-    const ops: Op[] = [];
-    for (const r of riders.values()) {
-      if (!ours(r)) continue;
-      const from = ctx.origin.get(r.id) ?? r.seen;
-      const to = r.target.committed();
-      // A scene records the write it sees, not an op's `from`, so the document goes back first.
-      r.target.commit(from);
-      ops.push(createSetPoseOp<TPose>({ id: r.id, from, to, label: 'flick' }));
-    }
+    const ops = flickOps(riders.values(), ctx.origin, ours);
     if (ops.length > 0) adapter.applyOps(ops, 'flick');
   }
 

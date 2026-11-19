@@ -2689,3 +2689,15 @@ Calls the lanes made without a ruling:
   `duration = Infinity`, an override) resets to the end of its declared run, standing at that pass's end, and
   `declare` throws a `RangeError` on a declaration whose run never ends for such a clock, keeping the last one.
   Resetting to 0 there, or letting `declare` through and throwing at Reset as before, were the alternatives.
+## Audit round thirty-seven (2026-11-18): core's animation
+
+- 2026-11-18 (the fixer's call): an `animateLifecycle` insert or removal whose tween cannot run (no pose target and a
+  geometry with no `lerp`) throws as `tweenPose` does, leaving the inserted node at its own pose and the node to be
+  removed in place and removable again. Falling back to an instant insert or removal without throwing was the
+  alternative.
+- 2026-11-18 (the fixer's call): `animateOnSetPose` and `animateLifecycle` take round nineteen's reduced-motion call: with
+  no `ms`, they take no time under `prefers-reduced-motion`. A `spring` option, which the caller names, still springs.
+- 2026-11-18 (the fixer's call): a `momentum` flick on pose targets that the animator cancels from outside (`cancelAll`,
+  an unmount) is recorded where it stopped, as one undo step, since each canceled decay has already written that pose
+  to the document. Putting the document back where the drag began was the alternative. Round six's line on the
+  `previewPoses` path, which records nothing, stands.
