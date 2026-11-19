@@ -28,10 +28,7 @@ export {
 export {
   gridSource as gridSnapSourceForTests, sceneOfPaths as sceneOfPathsForTests, sessionDep as snapSessionDepForTests,
 } from 'domains/snap/testing/sessionDep';
-export {
-  hitTestRect as hitTestRectForTests, type RegionQueryOptions,
-} from 'canvas/deps/hitTestArea';
-export type { ScenePickSourceOptions, ViewPickGates } from 'canvas/pickWalk';
+export { hitTestRect as hitTestRectForTests } from 'canvas/deps/hitTestArea';
 
 export { FRAME_FIXTURE_IDS as FRAME_FIXTURE_IDSForTests, FRAME_FIXTURE_LOCAL as FRAME_FIXTURE_LOCALForTests, expectSamePose as expectSamePoseForTests, makeFrameFixture as makeFrameFixtureForTests } from '../core/scene/frameFixture';
 
