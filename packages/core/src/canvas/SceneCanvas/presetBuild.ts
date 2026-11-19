@@ -11,7 +11,7 @@ import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Tool } from 'tools/overlayBinding';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
 import type { SurfaceContribution } from '../surfaceContribution';
-import type { EnabledPresets } from './features';
+import { presetOwnToolPools, type EnabledPresets } from './features';
 import { mergeByKey } from './presetMerge';
 import type { SceneCanvasSelectTool } from './selectToolProps';
 import type { SceneCanvasToolOptions } from './toolProps';
@@ -78,9 +78,10 @@ export interface PresetBuildSource {
 }
 
 /** What every enabled preset's `build` makes on this canvas: the tools offered by id, a refining preset's winning
- *  an id two offer, and the contributions in preset order. The context is stable while the tool options are. */
+ *  an id two offer, and the contributions in preset order. A preset's own tools are weighed with the offered ones,
+ *  so `tools` holds the winner of each id either gives. The context is stable while the tool options are. */
 export function usePresetBuilds(
-  enabled: Pick<EnabledPresets, 'builds' | 'buildOwners' | 'refines'>,
+  enabled: Pick<EnabledPresets, 'presets' | 'builds' | 'buildOwners' | 'refines'>,
   source: PresetBuildSource,
 ): { tools: Readonly<Record<string, Tool>>; contributions: readonly SurfaceContribution[]; ctx: PresetBuildContext } {
   const live = useLatest(source);
@@ -109,7 +110,7 @@ export function usePresetBuilds(
       },
     },
   }), [toolOptions, live]);
-  const { builds, buildOwners, refines } = enabled;
+  const { presets, builds, buildOwners, refines } = enabled;
   return useMemo(() => {
     const offered: { preset: string; values: Readonly<Record<string, Tool>> | undefined }[] = [];
     const contributions: SurfaceContribution[] = [];
@@ -118,8 +119,8 @@ export function usePresetBuilds(
       offered.push({ preset: buildOwners[i]!, values: out.tools });
       contributions.push(...(out.contributions ?? []));
     });
-    return { tools: mergeByKey(offered, refines, 'tool'), contributions, ctx };
-  }, [builds, buildOwners, refines, ctx]);
+    return { tools: mergeByKey([...offered, ...presetOwnToolPools(presets)], refines, 'tool'), contributions, ctx };
+  }, [presets, builds, buildOwners, refines, ctx]);
 }
 
 /** `options`, kept while every entry's fields are the same values: an inline `toolOptions={{ lasso: { mode } }}`

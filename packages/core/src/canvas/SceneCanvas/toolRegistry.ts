@@ -16,7 +16,8 @@ export type BuiltinTools = Record<BuiltinToolId, Tool>;
 
 export interface ResolveToolRegistryArgs {
   builtins: BuiltinTools;
-  /** Tools the enabled presets' `build`s offer by id, over `builtins`. */
+  /** Tools the enabled presets' `build`s offer by id, over `builtins`. Where it holds the id of a preset's own
+   *  tool, it holds the winner of the two (`usePresetBuilds`), which is mounted in the own tool's place. */
   offered?: Readonly<Record<string, Tool>>;
   /** Built-ins asked for, by id or by set. */
   defaultTools?: readonly ToolEntry<string>[];
@@ -54,8 +55,9 @@ export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<strin
     const asked = patched === true || defaultTools.includes(id) || preset.has(id);
     if (asked) setOwn(registry, id, offered[id]);
   }
-  for (const [id, tool] of Object.entries(presetOwnTools(enabled))) {
+  for (const [id, own] of Object.entries(presetOwnTools(enabled))) {
     if (patch && getOwn(patch, id) === false) continue;
+    const tool = args.offered && Object.hasOwn(args.offered, id) ? args.offered[id]! : own;
     if (args.insertBuilds && insertsNothing(tool, args.insertBuilds)) {
       if (dev && !warnedUnbuildable.has(tool)) {
         warnedUnbuildable.add(tool);

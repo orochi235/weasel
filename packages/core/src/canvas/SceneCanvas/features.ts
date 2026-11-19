@@ -62,7 +62,7 @@ export interface PresetBuild {
    * Tools it offers, by id. One is mounted when a preset's `tools` names its id (alone or in a set), when
    * `<SceneCanvas defaultTools>` does, or when a `tools` patch sets it `true`; a tool offered and named by nobody
    * is not. Of two presets offering one id different tools, the one refining the other wins; two where neither
-   * refines the other throw.
+   * refines the other throw. A tool another preset lists in its own `tools` is weighed the same way.
    */
   readonly tools?: Readonly<Record<string, Tool>>;
   /** Entries installed as {@link FeaturePreset.contributions} are, after them. */
@@ -350,13 +350,17 @@ export function presetBuiltinTools(enabled: EnabledPresets): Set<string> {
   return ids;
 }
 
-/** The tools of their own the given presets mount, by id. */
-export function presetOwnTools(enabled: EnabledPresets): Record<string, Tool> {
-  const given = enabled.presets.map((p) => ({
+/** Each preset's tools of its own, by id, in preset order: what {@link mergeByKey} takes. */
+export function presetOwnToolPools(presets: readonly FeaturePreset[]): { preset: string; values: Record<string, Tool> }[] {
+  return presets.map((p) => ({
     preset: p.id,
     values: Object.fromEntries((p.tools ?? []).filter((t): t is Tool => !namesBuiltins(t)).map((t) => [t.id, t])),
   }));
-  return mergeByKey(given, enabled.refines, 'tool');
+}
+
+/** The tools of their own the given presets mount, by id. */
+export function presetOwnTools(enabled: EnabledPresets): Record<string, Tool> {
+  return mergeByKey(presetOwnToolPools(enabled.presets), enabled.refines, 'tool');
 }
 
 /** The given presets' ambient entries and contributions, in the order they are
