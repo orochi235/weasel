@@ -534,3 +534,14 @@ describe('a subscriber that throws', () => {
     logged.mockRestore();
   });
 });
+
+describe('duration writes through an endless pass', () => {
+  it('drop the pass end a seek left, as a declare does', () => {
+    const h = createClock({ duration: 100, loop: 3 });
+    h.clock.seek(100, 'end');
+    expect([h.clock.pass, h.clock.phase]).toEqual([0, 1]);
+    h.clock.duration = Number.POSITIVE_INFINITY;
+    h.clock.duration = 50;
+    expect([h.clock.pass, h.clock.phase]).toEqual([2, 0]);
+  });
+});

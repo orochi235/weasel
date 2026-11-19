@@ -104,6 +104,7 @@ function setDuration(run: Run, hub: Hub, next: number): void {
     run.duration = next;
     run.span = run.duration * passesOf(run.loop);
     run.elapsed = clamp(run, run.elapsed);
+    run.edge = false;
   }
   change(run, hub);
   hub.subs.emit();
