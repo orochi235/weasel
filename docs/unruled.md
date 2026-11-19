@@ -2677,3 +2677,9 @@ Calls the lanes made without a ruling:
   node's live def, one a `replace` is fading out, or a removed node's still fading — and `apply` refuses one before
   changing anything. `replace` with the node's own def, to retrigger its crossfade, is refused too; skipping it as a
   no-op was the alternative.
+## Audit round thirty-seven (2026-11-18): brush
+
+- 2026-11-18 (the fixer's call): `shareBrushSize` throws on an empty key, and on a size leaf with a `measure` or a
+  `unit` other than plain `px` under `BRUSH_SIZE_PX`; a size in world units passes a key of its own, which is the
+  override. A leaf naming neither a unit nor a measure passes, since it says nothing. Warning and sharing anyway
+  was the alternative.

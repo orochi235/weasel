@@ -15,6 +15,6 @@ const sand = useSandTool({ share: shareBrushSize(SAND_TOOL_OPTIONS) });
 A shared option is an ordinary tool option kept under a shared key (`ToolOptionsSpec.share`), so the tunings, the step
 keys, the last-operation panel, and an options row all read the one size. Each tool reads it held to its own
 bounds; every other option stays its own. `BRUSH_SIZE_PX` is the key for a size in screen pixels; a brush sized in
-world units needs a key of its own.
+world units needs a key of its own, and `shareBrushSize` throws for a size leaf in another unit under it.
 
 The ring cursor a brush shows is `brushRing` in `@weasel-js/cursor`.

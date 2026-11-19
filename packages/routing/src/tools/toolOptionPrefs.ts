@@ -2,7 +2,7 @@
  * Tool options kept in a prefs store: the schema a host's prefs hold them
  * under, and the `toolOptionValues` that reads and writes them there.
  */
-import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs-schema';
+import type { PrefGroup, PrefLeaf, PrefNumber } from '@weasel-js/prefs-schema';
 import { deepEqual, getOwn, setOwn } from '@weasel-js/registry';
 import { SHARED_TOOL_OPTIONS, toolOptionSlot, type ToolOptionsSpec, type ToolOptionValues } from './toolOptions';
 
@@ -28,11 +28,32 @@ export interface ToolOptionsPrefsSpec {
   shared?: Readonly<Record<string, unknown>>;
 }
 
+const isNumber = (leaf: PrefLeaf | PrefGroup): leaf is PrefNumber => 'kind' in leaf && leaf.kind === 'number';
+
+const endsOf = (e: PrefNumber['endless']) => ({ lo: e === 'min' || e === 'both', hi: e === 'max' || e === 'both' });
+
+/** `held` widened to take every value `next` does, so a store repairing against it keeps what any tool may write. */
+function widened(held: PrefLeaf | PrefGroup, next: PrefLeaf | PrefGroup): PrefLeaf | PrefGroup {
+  if (!isNumber(held) || !isNumber(next)) return held;
+  const { min: _min, max: _max, endless: _endless, ...rest } = held;
+  const min = held.min === undefined || next.min === undefined ? undefined : Math.min(held.min, next.min);
+  const max = held.max === undefined || next.max === undefined ? undefined : Math.max(held.max, next.max);
+  const a = endsOf(held.endless);
+  const b = endsOf(next.endless);
+  const lo = a.lo || b.lo;
+  const hi = a.hi || b.hi;
+  const endless = lo && hi ? 'both' : lo ? 'min' : hi ? 'max' : undefined;
+  return {
+    ...rest, ...(min === undefined ? {} : { min }), ...(max === undefined ? {} : { max }), ...(endless ? { endless } : {}),
+  } as PrefNumber;
+}
+
 /**
  * The prefs group `tools`' options are kept in: a group per tool holding its
  * own options, and a {@link SHARED_TOOL_OPTIONS} group holding each shared
  * key once, as the first tool naming it declares it, with the default the host
- * gives it. A tool with no options of its own has no group.
+ * gives it. A shared number takes the widest bounds of the tools naming it, and
+ * each tool reads it held to its own. A tool with no options of its own has no group.
  */
 export function toolOptionsPrefs(tools: Iterable<OptionedTool>, spec: ToolOptionsPrefsSpec = {}): PrefGroup {
   const children: Record<string, PrefLeaf | PrefGroup> = {};
@@ -44,7 +65,7 @@ export function toolOptionsPrefs(tools: Iterable<OptionedTool>, spec: ToolOption
     for (const [key, leaf] of Object.entries(options.prefs.children)) {
       const slot = toolOptionSlot(tool.id, options, key);
       if (slot.owner === tool.id) setOwn(own, key, leaf);
-      else if (!Object.hasOwn(shared, slot.key)) setOwn(shared, slot.key, leaf);
+      else setOwn(shared, slot.key, Object.hasOwn(shared, slot.key) ? widened(getOwn(shared, slot.key)!, leaf) : leaf);
     }
     if (Object.keys(own).length > 0) setOwn(children, tool.id, { ...options.prefs, children: own });
   }
