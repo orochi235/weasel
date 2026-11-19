@@ -34,6 +34,17 @@ export function installSweepKit(win) {
   }
   watchCanvasContexts();
 
+  // Every load draws the same "random" scene, so two loads differ only by what the sweep did to one.
+  if (w.Math.random.name === 'random') {
+    let seed = 0x9e3779b9;
+    w.Math.random = function seeded() {
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
   const CANDIDATES = [
     'input[type=checkbox]', 'input[type=radio]', 'input[type=range]', 'input[type=number]', 'input[type=color]',
     'input[type=file]', 'input[inputmode=decimal]', 'input[inputmode=numeric]', 'select', 'button', 'a[download]',
