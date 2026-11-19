@@ -151,10 +151,21 @@ export function installSweepKit(win) {
     if (kind === 'download') d.skip = 'download link';
     else if (kind === 'file') d.skip = 'file picker';
     else if (d.disabled) d.skip = 'disabled';
+    const chosen = (e) => e.getAttribute('aria-checked') === 'true' || e.getAttribute('aria-selected') === 'true' || e.checked === true;
     if (kind === 'radio' || kind === 'tab') {
-      d.selected = el.getAttribute('aria-checked') === 'true' || el.getAttribute('aria-selected') === 'true' || el.checked === true;
-      const chosen = peersOf(el, all).find((p) => p.getAttribute('aria-checked') === 'true' || p.getAttribute('aria-selected') === 'true' || p.checked === true);
-      if (chosen) d.restoreTo = idOf(chosen);
+      d.selected = chosen(el);
+      const peers = peersOf(el, all);
+      const current = peers.find(chosen);
+      if (current) d.restoreTo = idOf(current);
+      const other = peers.find((p) => !chosen(p) && !disabled(p));
+      if (d.selected && other) d.alternate = idOf(other);
+    }
+    // A palette's active tool: choosing it again does nothing, so it is tried after choosing another.
+    if (kind === 'button' && el.getAttribute('aria-current') === 'true') {
+      d.selected = true;
+      const box = el.parentElement?.closest(GROUPS) ?? el.parentElement;
+      const other = all.find((c) => c !== el && box?.contains(c) && c.hasAttribute('aria-current') === false && kindOf(c) === 'button' && !disabled(c));
+      if (other) d.alternate = idOf(other);
     }
     return d;
   };
@@ -246,6 +257,14 @@ export function installSweepKit(win) {
     };
   };
 
+  /** The rect of the demo's largest canvas on screen, for a probing drag. */
+  const bigCanvas = (rootSel) => {
+    const root = doc.querySelector(rootSel);
+    const rects = root ? [...root.querySelectorAll('canvas')].map((c) => c.getBoundingClientRect()).filter((r) => r.width >= 100 && r.height >= 100) : [];
+    const r = rects.sort((a, b) => b.width * b.height - a.width * a.height)[0];
+    return r ? { x: r.left, y: r.top, width: r.width, height: r.height } : null;
+  };
+
   /** Marks the element a click on control `id` should land on, and answers its selector. */
   const markHit = (id) => {
     const el = byId(id);
@@ -271,5 +290,5 @@ export function installSweepKit(win) {
     }));
   };
 
-  w.__sweep = { discover, capture, digest, state, markHit, popupItems, fieldById };
+  w.__sweep = { discover, capture, digest, state, markHit, popupItems, fieldById, bigCanvas };
 }

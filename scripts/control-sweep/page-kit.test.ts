@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { installSweepKit } from './page-kit.mjs';
 
 interface Kit {
-  discover(sel: string, chrome?: string): Array<{ id: string; key: string; kind: string; label: string; skip?: string; selected?: boolean; restoreTo?: string; native?: boolean; chrome?: boolean }>;
+  discover(sel: string, chrome?: string): Array<{ id: string; key: string; kind: string; label: string; skip?: string; selected?: boolean; restoreTo?: string; alternate?: string; native?: boolean; chrome?: boolean }>;
   capture(sel: string, id: string | null): { dom: Record<string, string>; canvases: unknown[] };
 }
 const kit = () => (window as unknown as { __sweep: Kit }).__sweep;
@@ -76,6 +76,17 @@ describe('discover', () => {
     expect(kit().discover('.ckd-demo-frame')[0].key).toBe('select:Mode');
     document.getElementById('v')!.textContent = 'slow';
     expect(kit().discover('.ckd-demo-frame')[0].key).toBe('select:Mode');
+  });
+
+  it('gives the chosen radio and the active tool another control to choose first', () => {
+    page(`
+      <div role="radiogroup" aria-label="Mode"><div role="radio" aria-checked="true">a</div><div role="radio" aria-checked="false">b</div></div>
+      <div role="toolbar" aria-label="Tools"><button aria-current="true">Select</button><button>Pen</button></div>`);
+    const [a, b, select, pen] = kit().discover('.ckd-demo-frame');
+    expect(a.alternate).toBe(b.id);
+    expect(b.alternate).toBeUndefined();
+    expect(select.alternate).toBe(pen.id);
+    expect(pen.alternate).toBeUndefined();
   });
 
   it('marks controls inside the kit chrome', () => {
