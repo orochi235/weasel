@@ -4,13 +4,14 @@ import { installSweepKit } from './page-kit.mjs';
 interface Kit {
   discover(sel: string, chrome?: string): Array<{ id: string; key: string; kind: string; label: string; skip?: string; selected?: boolean; restoreTo?: string; alternate?: string; native?: boolean; chrome?: boolean }>;
   capture(sel: string, id: string | null, ignore?: string): { dom: Record<string, string>; canvases: unknown[] };
+  bigCanvas(sel: string): { x: number; y: number; width: number; height: number } | null;
 }
 const kit = () => (window as unknown as { __sweep: Kit }).__sweep;
 
 beforeEach(() => {
   // jsdom lays nothing out; give every element a box unless it is marked as showing nothing.
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
-    const size = this.hasAttribute('data-test-zero') ? 0 : this.hasAttribute('data-test-tiny') ? 1 : this.hasAttribute('data-test-big') ? 200 : 20;
+    const size = this.hasAttribute('data-test-size') ? Number(this.getAttribute('data-test-size')) : this.hasAttribute('data-test-zero') ? 0 : this.hasAttribute('data-test-tiny') ? 1 : this.hasAttribute('data-test-big') ? 200 : 20;
     return { x: 0, y: 0, left: 0, top: 0, right: size, bottom: size, width: size, height: size, toJSON: () => ({}) } as DOMRect;
   });
   delete (window as unknown as { __sweep?: Kit }).__sweep;
@@ -171,5 +172,24 @@ describe('capture', () => {
     const before = kit().capture('.ckd-demo-frame', null).dom;
     document.querySelector('p')!.textContent = ' a b\n';
     expect(kit().capture('.ckd-demo-frame', null).dom).toEqual(before);
+  });
+});
+
+describe('bigCanvas', () => {
+  it('drags on the largest surface that takes a press, passing over an inert buffer that spans the lab', () => {
+    page(`
+      <div style="pointer-events: none"><canvas data-test-size="800"></canvas></div>
+      <svg data-test-size="300"></svg>
+      <div role="application" aria-label="Annotations on pane" data-test-size="400"></div>
+      <canvas data-test-size="500" style="pointer-events: none"></canvas>`);
+    expect(kit().bigCanvas('.ckd-demo-frame')?.width).toBe(400);
+  });
+
+  it('falls back to the largest surface when none takes a press', () => {
+    page(`
+      <canvas data-test-size="300" style="pointer-events: none"></canvas>
+      <canvas data-test-size="500" style="pointer-events: none"></canvas>
+      <canvas data-test-size="20"></canvas>`);
+    expect(kit().bigCanvas('.ckd-demo-frame')?.width).toBe(500);
   });
 });

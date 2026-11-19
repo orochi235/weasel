@@ -361,11 +361,18 @@ export function installSweepKit(win) {
     };
   };
 
-  /** The rect of the demo's largest canvas or SVG surface on screen, for a probing drag. */
+  /**
+   * The rect of the demo's largest drawing surface on screen that takes a press, for a probing drag: a
+   * canvas, an SVG, or a region with its own pointer handling (`role=application`, as labkit's annotation
+   * input). A lab's shared buffers span its whole body and take no input, so a drag placed by them lands
+   * wherever the body happens to be; only when no surface takes a press does the largest of all stand in.
+   */
   const bigCanvas = (rootSel) => {
     const root = doc.querySelector(rootSel);
-    const rects = root ? [...root.querySelectorAll('canvas,svg')].map((c) => c.getBoundingClientRect()).filter((r) => r.width >= 100 && r.height >= 100) : [];
-    const r = rects.sort((a, b) => b.width * b.height - a.width * a.height)[0];
+    const big = root ? [...root.querySelectorAll('canvas,svg,[role=application]')]
+      .map((el) => ({ el, r: el.getBoundingClientRect() })).filter(({ r }) => r.width >= 100 && r.height >= 100) : [];
+    const pressable = big.filter(({ el }) => w.getComputedStyle(el).pointerEvents !== 'none');
+    const r = (pressable.length ? pressable : big).sort((a, b) => b.r.width * b.r.height - a.r.width * a.r.height)[0]?.r;
     return r ? { x: r.left, y: r.top, width: r.width, height: r.height } : null;
   };
 
