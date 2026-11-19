@@ -33,6 +33,8 @@ export type TabsProps = Omit<RACTabsProps, 'className' | 'children' | 'isDisable
   className?: string;
   /** No tab can be chosen. */
   disabled?: boolean;
+  /** A controlled `selectedKey` may name a disabled tab without a warning. */
+  allowDisabledSelected?: boolean;
 };
 
 /**
@@ -41,7 +43,7 @@ export type TabsProps = Omit<RACTabsProps, 'className' | 'children' | 'isDisable
  * `Disabled` scope around them leaves them usable, and every panel can still be read. The arrow keys land on a
  * disabled {@link Tab}, which shows its reason, and the user never chooses it.
  */
-export function Tabs({ children, className, disabled, selectedKey, defaultSelectedKey, onSelectionChange, ...rest }: TabsProps) {
+export function Tabs({ children, className, disabled, allowDisabledSelected, selectedKey, defaultSelectedKey, onSelectionChange, ...rest }: TabsProps) {
   const outer = useContext(TabSlotsContext);
   const own = useMemo(() => createRunSlots(), []);
   // Held here, so a disabled tab focus lands on is refused rather than chosen: React Aria selects on focus.
@@ -67,6 +69,7 @@ export function Tabs({ children, className, disabled, selectedKey, defaultSelect
           setOwnKey(k);
           if (moved) onSelectionChange?.(k);
         }} />}
+        {!uncontrolled && !allowDisabledSelected && <WarnHeldShown shown={selectedKey} />}
         {children}
       </RACTabs>
     </TabSlotsContext.Provider>
@@ -89,6 +92,18 @@ function KeepChosen({ chosen, onFall }: { chosen: Key | null; onFall(k: Key, mov
     }
     const free = freeKeyFrom(coll, coll.getFirstKey(), 1);
     if (free !== null && free !== chosen) onFall(free, settled.current);
+  });
+  return null;
+}
+
+/** Warns once per key when a controlled tab set shows a disabled tab, which the user could not have chosen. */
+function WarnHeldShown({ shown }: { shown: Key | null }): null {
+  const coll = useContext(TabListStateContext)?.collection;
+  const warned = useRef<Key | null>(null);
+  useLayoutEffect(() => {
+    if (!coll || shown === null || warned.current === shown || !coll.getItem(shown) || !isHeldKey(coll, shown)) return;
+    warned.current = shown;
+    console.warn(`weasel: Tabs' controlled selectedKey is "${String(shown)}", a disabled tab the user could not choose. Choose a tab that can be chosen, or pass \`allowDisabledSelected\` if showing it is meant.`);
   });
   return null;
 }
