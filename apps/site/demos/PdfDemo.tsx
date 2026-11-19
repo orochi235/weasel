@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { pathNode, SceneCanvas, useScene } from '@weasel-js/core';
+import { type Fill, pathNode, SceneCanvas, type Stroke, useScene } from '@weasel-js/core';
 import type { ExportRegion, ExportScene } from '@weasel-js/export';
 import { solid } from '@weasel-js/paint';
 import { exportRegionsPdf } from '@weasel-js/pdf/export';
@@ -17,14 +17,16 @@ const PAGES: ExportRegion[] = [
   { x: W / 2, y: 0, width: W / 2, height: H, name: 'Right' },
 ];
 
+interface Data { fill?: Fill; stroke?: Stroke }
+
 const SHAPES = [
-  pathNode('square', 'M40 60 H180 V200 H40 Z', { fill: { paint: solid('#7fb069') } }),
-  pathNode('disc', 'M310 130 C310 70 450 70 450 130 C450 190 310 190 310 130 Z', { fill: { paint: {
+  pathNode<Data>('square', 'M40 60 H180 V200 H40 Z', { fill: { paint: solid('#7fb069') } }),
+  pathNode<Data>('disc', 'M310 130 C310 70 450 70 450 130 C450 190 310 190 310 130 Z', { fill: { paint: {
     kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 1 },
     stops: [{ offset: 0, color: '#d4a574' }, { offset: 1, color: '#a48bd4' }],
     units: 'bounds',
   } } }),
-  pathNode('curve', 'M60 230 C160 170 300 260 520 220', { stroke: { paint: solid('#3a2e22'), width: 4 } }),
+  pathNode<Data>('curve', 'M60 230 C160 170 300 260 520 220', { stroke: { paint: solid('#3a2e22'), width: 4 } }),
 ];
 
 export function PdfDemo() {

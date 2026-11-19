@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { DrawCanvas } from '@weasel-js/core';
 import { starPath } from '@weasel-js/geom';
+import { commandPaint, type DrawCommand } from '@weasel-js/renderer';
+import type { Paint } from '@weasel-js/paint';
 import { getPaintKind } from '@weasel-js/paint-kinds';
 import { usePaintKind, usePaintKinds } from '@weasel-js/paint-kinds/react';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -11,6 +13,18 @@ import s from './PaintKindsDemo.module.css';
 
 const W = 480, H = 260;
 const MESH = 'mesh-gradient';
+const SQUARE = { x: 32, y: 30, width: 200, height: 200 };
+const STAR_BOX = { x: 256, y: 26, width: 208, height: 208 };
+
+/** A square and a star, each filled with `paint` laid over its own box. */
+function swatches(paint: Paint): DrawCommand[] {
+  const fill = (box: typeof SQUARE) => commandPaint(paint, box) ?? undefined;
+  return [
+    { kind: 'path', path: { kind: 'rect', ...SQUARE }, fill: { paint: fill(SQUARE) } },
+    { kind: 'path', path: starPath({ x: 360, y: 130 }, 104, 5, 46, -Math.PI / 2), fill: { paint: fill(STAR_BOX) } },
+  ];
+}
+
 const COLORS = ['#3a7bd5', '#c0392b', '#7fb069'].map((c) => ({ value: c, label: c }));
 
 export function PaintKindsDemo() {
@@ -36,10 +50,7 @@ export function PaintKindsDemo() {
         <DrawCanvas
           className="ckd-canvas"
           background={{ kind: 'solid', color: '#ffffff' }}
-          draw={paint ? [
-            { kind: 'path', path: { kind: 'rect', x: 32, y: 30, width: 200, height: 200 }, fill: { paint } },
-            { kind: 'path', path: starPath({ x: 360, y: 130 }, 104, 5, 46, -Math.PI / 2), fill: { paint } },
-          ] : []}
+          draw={paint ? swatches(paint) : []}
         />
       </DemoStage>
       {entry && paint && (
