@@ -1568,6 +1568,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/AnimatorDemo').then((m) => m.AnimatorDemo),
     path: 'apps/site/demos/AnimatorDemo.tsx',
   },
+  {
+    id: 'scale',
+    title: 'Linear and log scales',
+    package: 'scale',
+    description: 'One value placed on two axes over the same domain, 1 to 1000, and the same range. The top axis is a `linearScale` and the bottom a `logScale`; each draws its marks from `ticks()`, labels them through `tickFormat()`, and puts the marker at `position(value)`, whose number shows beside the axis. The slider above is the kit\'s `Slider` handed `scale={logScale}`, so its track reads the same way the bottom axis does.',
+    hint: 'Drag the slider from 1 to 1000: the log marker moves evenly while the linear one stays near the left until the last decade.',
+    load: () => import('./demos/ScaleDemo').then((m) => m.ScaleDemo),
+    path: 'apps/site/demos/ScaleDemo.tsx',
+  },
 ];
 
 export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({
