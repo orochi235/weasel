@@ -87,7 +87,12 @@ function createFakeBuffer(channels: number, length: number, sampleRate: number):
     length,
     numberOfChannels: channels,
     sampleRate,
-    getChannelData: (channel) => data[channel],
+    getChannelData(channel) {
+      if (!Number.isInteger(channel) || channel < 0 || channel >= channels) {
+        throw new Error(`IndexSizeError: the buffer has no channel ${channel}`);
+      }
+      return data[channel];
+    },
   };
 }
 

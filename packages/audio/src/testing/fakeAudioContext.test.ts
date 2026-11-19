@@ -75,6 +75,14 @@ describe('createFakeAudioContext', () => {
     expect(a.disconnected).toBe(false);
   });
 
+  it('throws for a channel a buffer does not have, as the specification does', () => {
+    const ctx = createFakeAudioContext();
+    const b = ctx.createBuffer(1, 10, 48000);
+    expect(b.getChannelData(0)).toHaveLength(10);
+    expect(() => b.getChannelData(1)).toThrow(/IndexSizeError/);
+    expect(() => b.getChannelData(-1)).toThrow(/IndexSizeError/);
+  });
+
   it('records source start times and collects every source', () => {
     const ctx = createFakeAudioContext();
     const s = ctx.createBufferSource();
