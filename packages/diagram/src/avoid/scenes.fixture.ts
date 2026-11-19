@@ -10,7 +10,8 @@ import { nonFinite, type tally } from '../pbt.fixture';
 import { edgeBetween, entersBox, isOrthogonal, rectShape } from './avoidFixture';
 import { routeHolds } from './holds';
 import type { AvoidRoutes } from './router';
-import { AVOID_DEFAULTS, blocks, inflate, type AvoidEdge, type AvoidInput, type AvoidObstacle, type AvoidPort } from './types';
+import { AVOID_DEFAULTS, blocks, type AvoidEdge, type AvoidInput, type AvoidObstacle, type AvoidPort } from './types';
+import { growRect } from '@weasel-js/geom';
 
 export const PITCH = 180;
 export const COLS = 3;
@@ -63,7 +64,7 @@ export function build(spec: SceneSpec, region = true): AvoidInput {
     const [x1, y1] = [Math.max(...inside.map((o) => o.box.x + o.box.width)) + 15, Math.max(...inside.map((o) => o.box.y + o.box.height)) + 15];
     const box = { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
     // A shape outside the region but under it, or within its clearance, has ports no route can leave cleanly.
-    const clear = shapes.every((o) => inside.includes(o) || !touches(inflate(o.box, AVOID_DEFAULTS.clearance + 1), box));
+    const clear = shapes.every((o) => inside.includes(o) || !touches(growRect(o.box, AVOID_DEFAULTS.clearance + 1), box));
     if (clear) obstacles.push({ id: 'region', kind: 'region', box, members: new Set(inside.map((o) => o.id)) });
   }
   return {
@@ -110,7 +111,7 @@ function past(a: Vec2, b: Vec2, by: number): Vec2 {
 }
 
 /** Whether the segment `a`–`b` comes within `by` of `box`'s interior. */
-const near = (a: Vec2, b: Vec2, box: AvoidObstacle['box'], by: number) => entersBox(a, b, inflate(box, by - EPS));
+const near = (a: Vec2, b: Vec2, box: AvoidObstacle['box'], by: number) => entersBox(a, b, growRect(box, by - EPS));
 
 /** Check every route `routes` answers, or with `all`, that it answers one for each of `input`'s connectors. */
 export function checkRoutes(input: AvoidInput, routes: AvoidRoutes, seen: ReturnType<typeof tally>, all = true): void {

@@ -4,7 +4,7 @@
  * reaches hit-test, marquee, and bounds extraction alike.
  */
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { transformPoint, pathContainsPoint, strokeHitTest, type Affine } from '@weasel-js/geom';
+import { transformPoint, pathContainsPoint, strokeHitTest, type Affine, growRect } from '@weasel-js/geom';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { framedBounds } from 'core/geometry/poseDescriptor';
 import { positiveBox } from 'core/geometry/unionBounds';
@@ -110,10 +110,7 @@ function containsInFrame<TPose>(
   // refinement follows: the stroke's outward reach, which this function
   // cannot see. Grown square, so it contains the round band the refinement
   // tests.
-  const grown = {
-    kind: 'rect' as const,
-    x: b.x - reach, y: b.y - reach, width: b.width + 2 * reach, height: b.height + 2 * reach,
-  };
+  const grown = { kind: 'rect' as const, ...growRect(b, reach) };
   if (pathContainsPoint(grown, x, y)) return true;
   return hasSlop(screen) && strokeHitTest(grown, x, y, 0, opts);
 }

@@ -6,7 +6,8 @@
  */
 import type { Vec2 } from '@weasel-js/core/math';
 import { SegmentIndex } from './segments';
-import { inflate, type AvoidEdge, type AvoidObstacle, type AvoidPort, type Box } from './types';
+import { type AvoidEdge, type AvoidObstacle, type AvoidPort, type Box } from './types';
+import { growRect } from '@weasel-js/geom';
 
 const sameBox = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 
@@ -99,7 +100,7 @@ export function dirtyEdges(
   if (changed.boxes.length > 0) {
     const index = new SegmentIndex();
     for (const e of edges) for (const r of routes(e)) index.add(e.id, r);
-    for (const box of changed.boxes) index.edgesMeeting(inflate(box, clearance), meeting);
+    for (const box of changed.boxes) index.edgesMeeting(growRect(box, clearance), meeting);
   }
   const rest: AvoidEdge[] = [];
   for (const e of edges) {

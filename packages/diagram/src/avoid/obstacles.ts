@@ -5,8 +5,8 @@
  * inflated edge.
  */
 import { SpatialHash } from './hash';
-import { blocks, inflate, type AvoidObstacle, type BlockedEdge, type Box } from './types';
-import { rectsIntersect } from '@weasel-js/geom';
+import { blocks, type AvoidObstacle, type BlockedEdge, type Box } from './types';
+import { rectsIntersect, growRect } from '@weasel-js/geom';
 
 /** An obstacle grown by the clearance. */
 export interface Inflated {
@@ -27,7 +27,7 @@ export class ObstacleIndex {
   }
 
   private file(obstacle: AvoidObstacle): void {
-    const item = { obstacle, box: inflate(obstacle.box, obstacle.kind === 'label' ? this.labelClearance : this.clearance) };
+    const item = { obstacle, box: growRect(obstacle.box, obstacle.kind === 'label' ? this.labelClearance : this.clearance) };
     this.byId.set(obstacle.id, item);
     this.hash.insert(item, item.box);
   }

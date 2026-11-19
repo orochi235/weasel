@@ -27,7 +27,7 @@ import { diagramNodeOf, type DiagramNodeReader } from '../trait';
 import { labelFitOps } from './fit';
 import { placeLabels, type PlaceLabel, type PlaceLabelsOptions, type PlaceRoute } from './place';
 import { labelCenter } from './station';
-import { pathPoint, rectsIntersect } from '@weasel-js/geom';
+import { pathPoint, rectsIntersect, growRect } from '@weasel-js/geom';
 
 /** Options for {@link installLabelPlacement} and `useLabelPlacement`. */
 export interface LabelPlacementOptions<TPose> extends PlaceLabelsOptions {
@@ -90,7 +90,6 @@ function read(
   return out;
 }
 
-const grow = (b: Bounds, by: number): Bounds => ({ x: b.x - by, y: b.y - by, width: b.width + 2 * by, height: b.height + 2 * by });
 
 /** Whether any segment of `points` comes within `box`. */
 function routeMeets(points: readonly Vec2[], box: Bounds): boolean {
@@ -147,7 +146,7 @@ function boxesOf(scene: Reading, label: PlaceLabel, gap: number): Bounds[] {
   const out: Bounds[] = [];
   for (const placement of placed === undefined ? [preferred] : [label.placement, preferred]) {
     const c = labelCenter(route.path, placement, label.size);
-    if (c !== null) out.push(grow({ x: c.x - label.size.width / 2, y: c.y - label.size.height / 2, ...label.size }, gap));
+    if (c !== null) out.push(growRect({ x: c.x - label.size.width / 2, y: c.y - label.size.height / 2, ...label.size }, gap));
   }
   return out;
 }

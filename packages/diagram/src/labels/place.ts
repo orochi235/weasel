@@ -5,7 +5,7 @@
  * clear spot.
  */
 import { polylineFromPoints, type Path, type Vec2 } from '@weasel-js/core/math';
-import { nearestOnSegment, rectBetween } from '@weasel-js/geom';
+import { nearestOnSegment, rectBetween, growRect } from '@weasel-js/geom';
 import { SpatialHash } from '../avoid/hash';
 import type { DiagramLabel, LabelSpot } from '../labelTrait';
 import type { Bounds } from '../outline';
@@ -81,7 +81,6 @@ interface Field {
   gap: number;
 }
 
-const grow = (b: Bounds, by: number): Bounds => ({ x: b.x - by, y: b.y - by, width: b.width + 2 * by, height: b.height + 2 * by });
 
 function overlapArea(a: Bounds, b: Bounds): number {
   const w = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
@@ -156,7 +155,7 @@ const boxAround = (c: Vec2, size: { width: number; height: number }): Bounds =>
 /** What a label standing on `box` costs: area over shapes, then over other
  *  labels, then the other routes it covers. */
 function costOf(box: Bounds, edge: string, field: Field): number {
-  const probe = grow(box, field.gap);
+  const probe = growRect(box, field.gap);
   let cost = 0;
   for (const s of field.shapes.query(probe)) cost += 1000 * overlapArea(probe, s);
   for (const l of field.labels.query(probe)) cost += 100 * overlapArea(probe, l);

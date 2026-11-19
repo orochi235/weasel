@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   boundsOfCoords, unionBox, boxContainsPoint, boxContainsBox, boxesIntersect, rectToContour,
-  rectsOverlap, rectsIntersect, rectContainsPoint, rectContainsPointHalfOpen, rectBetween, unionRects, type Box,
+  rectsOverlap, rectsIntersect, rectContainsPoint, rectContainsPointHalfOpen, rectBetween, growRect, unionRects, type Box,
 } from './box';
 
 describe('box', () => {
@@ -85,6 +85,15 @@ describe('rect (object form)', () => {
 
   it('unionRects lets NaN through', () => {
     expect(unionRects([a, { x: NaN, y: 0, width: 1, height: 1 }])!.x).toBeNaN();
+  });
+});
+
+describe('growRect', () => {
+  it('moves every edge out by the amount, keeping the center', () => {
+    expect(growRect({ x: 10, y: 20, width: 30, height: 40 }, 5)).toEqual({ x: 5, y: 15, width: 40, height: 50 });
+  });
+  it('shrinks for a negative amount', () => {
+    expect(growRect({ x: 10, y: 20, width: 30, height: 40 }, -5)).toEqual({ x: 15, y: 25, width: 20, height: 30 });
   });
 });
 
