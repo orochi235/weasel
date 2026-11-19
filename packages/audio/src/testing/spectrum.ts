@@ -107,8 +107,11 @@ export function rms(x: ArrayLike<number>, from = 0, to = x.length): number {
   return to > from ? Math.sqrt(sq / (to - from)) : 0;
 }
 
-/** RMS over consecutive windows of `window` samples. */
+/** RMS over consecutive windows of `window` samples, a positive whole number. */
 export function rmsEnvelope(x: ArrayLike<number>, window: number): number[] {
+  if (!Number.isInteger(window) || window < 1) {
+    throw new RangeError(`rmsEnvelope: window must be a positive whole number of samples (got ${window})`);
+  }
   const out: number[] = [];
   for (let i = 0; i + window <= x.length; i += window) out.push(rms(x, i, i + window));
   return out;
