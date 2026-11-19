@@ -21,7 +21,7 @@ export interface CameraRigGestures {
   doubleClick?: boolean;
 }
 
-/** Options for {@link cameraRig}. */
+/** Options for {@link createCameraRigContribution}. */
 export interface CameraRigOptions extends CameraRigGestures {
   /** The entry's id among the surface's contributions. Default `'camera3d'`. */
   id?: string;
@@ -34,7 +34,7 @@ function bind(action: Action, bindings: readonly (BoundGesture | false)[]): Acti
 
 /**
  * kernel3d's camera actions, each carrying the default bindings `gestures` turns on, for any registry a
- * dispatcher reads: `cameraRig`'s ambient entry, or an `ActionsRegistry` under a `useGestureDispatcher` of
+ * dispatcher reads: `createCameraRigContribution`'s ambient entry, or an `ActionsRegistry` under a `useGestureDispatcher` of
  * the host's own. An action none of whose gestures is on is left out. Every action reads the `camera3d` dep.
  */
 export function createCameraRigActions(gestures: CameraRigGestures = {}): Action[] {
@@ -60,11 +60,11 @@ export function createCameraRigActions(gestures: CameraRigGestures = {}): Action
  * the dep has no `home`.
  *
  * ```tsx
- * const rig = useMemo(() => cameraRig(createCameraDep(world, { set: setCamera })), [world]);
+ * const rig = useMemo(() => createCameraRigContribution(createCameraDep(world, { set: setCamera })), [world]);
  * <SceneCanvas tools={{ orbit: useOrbitTool() }} ambient={[rig]} … />
  * ```
  */
-export function cameraRig(camera3d: Camera3dDep, opts: CameraRigOptions = {}): SurfaceContribution {
+export function createCameraRigContribution(camera3d: Camera3dDep, opts: CameraRigOptions = {}): SurfaceContribution {
   const { id = 'camera3d', ...gestures } = opts;
   return {
     id,
