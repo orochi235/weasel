@@ -1,4 +1,4 @@
-import { modeShortcuts, type Contribution } from '@weasel-js/core';
+import { createModeShortcutsContribution, type Contribution } from '@weasel-js/core';
 import type { ModeMachine } from './machine';
 
 /** What entering a mode from the keyboard needs from the app. */
@@ -31,7 +31,7 @@ function entryTarget(id: string, entry: ModeEntry): string | null | undefined {
 export function modalityShortcuts(machine: ModeMachine, entry?: ModeEntry): Contribution {
   const target = (id: string): string | null | undefined =>
     entry && machine.registry.current().id === 'normal' ? entryTarget(id, entry) : undefined;
-  return modeShortcuts(machine.registry, {
+  return createModeShortcutsContribution(machine.registry, {
     ...(entry ? {
       canEnter: (id: string) => target(id) !== undefined,
       enter: (id: string) => {

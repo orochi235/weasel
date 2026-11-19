@@ -7,7 +7,7 @@ export type { EligibilityState } from './eligibility';
 export { assembleEntries, scopeBindings } from './assemble';
 export type { AssemblyInputs } from './assemble';
 export { mergeContributions } from './merge';
-export { modeShortcuts, modeShortcutSpec } from './modeShortcuts';
+export { createModeShortcutsContribution, modeShortcutSpec } from './modeShortcuts';
 export type { ModeShortcutHandlers } from './modeShortcuts';
 export { useContributions } from './useContributions';
 export type { ContributionsApi, UseContributionsOptions } from './useContributions';

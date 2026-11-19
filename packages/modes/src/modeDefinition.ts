@@ -22,7 +22,7 @@ export function shortcutOn(shortcut: ModeShortcut | undefined, apple: boolean): 
 export interface ModeEntry {
   shortcut?: ModeShortcut;
   /** `'double-click-target'`: double-clicking a node enters the mode on that node. Which nodes is
-   *  `targets`; `modeTriggers` in `@weasel-js/core` turns the pair into a canvas binding. */
+   *  `targets`; `createModeTriggersContribution` in `@weasel-js/core` turns the pair into a canvas binding. */
   trigger?: 'double-click-target';
   /** The routing kinds a double-click enters this mode on — the `Hit.kind` vocabulary a
    *  binding's `kind:<k>` target reads, so `'path'` or an app's own `'group'`. A trigger with no
@@ -42,7 +42,7 @@ export interface ModeEntry {
  * undoable step and leaving requires an explicit `commit` or `cancel`.
  *
  * The shortcut fields (`entry`, `exit`, `discard`, `commit`, `cancel`) are {@link ModeShortcut}s that
- * `modeShortcuts` in `@weasel-js/routing` turns into dispatcher bindings,
+ * `createModeShortcutsContribution` in `@weasel-js/routing` turns into dispatcher bindings,
  * each live only while the mode it acts on is (or, for `entry`, is not).
  */
 export interface ModeDefinition {

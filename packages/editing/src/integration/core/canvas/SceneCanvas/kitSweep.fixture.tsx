@@ -26,7 +26,7 @@ import * as coreTools from 'tools/builtin';
 import * as editing from '@weasel-js/editing';
 
 const builtins = { ...coreTools, ...editing };
-import { modeTriggers } from 'domains/modes/modeTriggers';
+import { createModeTriggersContribution } from 'domains/modes/modeTriggers';
 import { buildToolActivateBindings, createToolActivateAction } from 'interactions/actions/defaults/toolActivate';
 import { createToolResetToDefaultAction } from 'interactions/actions/defaults/toolResetToDefault';
 
@@ -167,8 +167,8 @@ function coreFactories(s: Sweep): void {
     ] as never,
   });
   const run = (): void => {};
-  s.value(modeTriggers(modes, { enter: run }), 'modeTriggers');
-  s.value(routing.modeShortcuts(modes, { enter: run, exit: run, discard: run, commit: run, cancel: run }), 'modeShortcuts');
+  s.value(createModeTriggersContribution(modes, { enter: run }), 'createModeTriggersContribution');
+  s.value(routing.createModeShortcutsContribution(modes, { enter: run, exit: run, discard: run, commit: run, cancel: run }), 'createModeShortcutsContribution');
 }
 
 /** Other packages' hooks and factories. */
