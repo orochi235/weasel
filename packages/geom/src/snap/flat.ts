@@ -1,6 +1,8 @@
 /** Affine subspaces ("flats") over plain number arrays, in any dimension:
  *  the points, lines and planes a snap resolves against. */
 
+import { maxOf } from '../scalar';
+
 export type Vec = readonly number[];
 
 /** The affine subspace `at + span(dirs)`. `dirs` need not be orthonormal or
@@ -42,7 +44,7 @@ export function orthonormalize(vecs: readonly Vec[], start: readonly Vec[] = [])
     let n0 = normv(v);
     if (!(n0 > 1e-150 && n0 < 1e150)) {
       // The square under- or overflows; only the direction counts, so bring it into range first.
-      const m = Math.max(...v.map(Math.abs));
+      const m = maxOf(v, Math.abs);
       if (!(m > 0)) continue;
       v = v.map((x) => x / m);
       n0 = normv(v);
@@ -96,7 +98,7 @@ export function solveLeastSquares(given: readonly Vec[], rhs: Vec): number[] {
   const scales = given.map((c) => {
     const n = normv(c);
     if (n > 1e-150 && n < 1e150) return 1;
-    const m = Math.max(...c.map(Math.abs));
+    const m = maxOf(c, Math.abs);
     return m > 0 && m < Infinity ? m : 1;
   });
   const cols = given.map((c, j) => (scales[j] === 1 ? c : c.map((v) => v / scales[j]!)));

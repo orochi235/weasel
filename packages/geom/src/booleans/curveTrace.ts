@@ -3,6 +3,7 @@
 import type { Point } from '../paths/cubicMath';
 import { type Seg, evalSeg, subSeg } from './contourSegments';
 import type { Edge } from './curveEdges';
+import { minOf } from '../scalar';
 
 const TAU = Math.PI * 2;
 /** Directions closer than this (radians) are a tie, settled a little way along the curves. */
@@ -58,7 +59,7 @@ function nextEdge(e: Edge, out: readonly Edge[][]): number {
   };
   let t = turns(leaving);
   if (tied(t)) {
-    const dist = 1e-3 * Math.min(chordLength(e.seg), ...cands.map((c) => chordLength(c.seg)));
+    const dist = 1e-3 * Math.min(chordLength(e.seg), minOf(cands, (c) => chordLength(c.seg)));
     t = turns((s) => along(s, dist));
     if (tied(t)) return -1;
   }
