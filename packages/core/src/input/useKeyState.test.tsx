@@ -39,4 +39,25 @@ describe('useKeyState', () => {
     press(host, 'KeyB');
     expect(keys.isDown('KeyB')).toBe(true);
   });
+
+  it('attaches to the element its ref holds once one mounts, and follows a swap', () => {
+    let keys!: KeyState;
+    let host!: HTMLDivElement;
+    function Probe({ show, k }: { show: boolean; k: string }) {
+      const ref = useRef<HTMLDivElement>(null);
+      keys = useKeyState({ target: ref });
+      return show ? <div key={k} ref={(el) => { ref.current = el; if (el) host = el; }} /> : null;
+    }
+    const { rerender } = render(<Probe show={false} k="a" />);
+    rerender(<Probe show k="a" />);
+    const first = host;
+    press(first, 'KeyA');
+    expect(keys.isDown('KeyA')).toBe(true);
+    rerender(<Probe show k="b" />);
+    expect(host).not.toBe(first);
+    press(first, 'KeyB');
+    expect(keys.isDown('KeyB')).toBe(false);
+    press(host, 'KeyC');
+    expect(keys.isDown('KeyC')).toBe(true);
+  });
 });

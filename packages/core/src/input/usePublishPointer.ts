@@ -1,7 +1,8 @@
-import { useEffect, type RefObject } from 'react';
+import type { RefObject } from 'react';
 import { heldPointers } from '@weasel-js/gestures';
 import { useLatest } from '@weasel-js/react';
 import { usePointerContext, type PointerWorldPos } from '@weasel-js/routing/react';
+import { useElementEffect } from './useElementEffect';
 
 /** Where a client point is in the world and which view it is over, or `null`
  *  when there is no answer yet (the surface has not mounted its camera). */
@@ -18,7 +19,8 @@ export type LocatePointer = (
  * it is released. A pointer that leaves with nothing held, or is released
  * or canceled outside, clears the store, unless another view has published since. No-op with no provider in scope.
  *
- * `locate` is read on each event, so it need not be stable.
+ * `locate` is read on each event, so it need not be stable. The ref is read
+ * after every render, so an element that mounts later or is swapped is followed.
  */
 export function usePublishPointer(
   elementRef: RefObject<HTMLElement | null>,
@@ -26,9 +28,8 @@ export function usePublishPointer(
 ): void {
   const store = usePointerContext();
   const locateRef = useLatest(locate);
-  useEffect(() => {
-    const el = elementRef.current;
-    if (!el || !store) return;
+  useElementEffect(() => (store ? elementRef.current : null), (el) => {
+    if (!store) return;
     let viewId: string | null = null;
     const publish = (e: PointerEvent): void => {
       const at = locateRef.current(e.pointerId, e.clientX, e.clientY);
@@ -67,5 +68,5 @@ export function usePublishPointer(
       document.removeEventListener('pointercancel', onDocUp);
       held.release();
     };
-  }, [elementRef, store, locateRef]);
+  }, [store, locateRef]);
 }
