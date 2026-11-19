@@ -2658,3 +2658,10 @@ Calls the lanes made without a ruling:
 - 2026-11-18 (the fixer's call): `gen-brand-colors` throws, writing neither table, on a Copic marker with no name
   or a sampled colour that is not `#rrggbb`, and on a LEGO name holding a named HTML reference other than `&amp;`,
   `&lt;`, `&gt;`, `&quot;`, `&apos;` and `&nbsp;`. Skipping the row with a warning was the alternative.
+## Audit round thirty-eight (2026-11-18): core's animation
+
+- 2026-11-18 (the fixer's call): `rigFromNode` and `useRigNode` leave out a joint the rig node's skeleton lacks, one
+  renamed or removed while nodes under it still name it: a node bound to it is not bound, and a skin weighing it bends
+  by its other joints. `useRigNode` warns, naming each such node and joint, once per change in that list. `bindRig`,
+  whose caller passes the bindings, still throws on one. Throwing from `useRigNode`'s render, as before, was the
+  alternative.
