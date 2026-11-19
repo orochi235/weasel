@@ -12,7 +12,8 @@ import type { NodeId } from '@weasel-js/core';
 import { useDepRegistry } from '@weasel-js/routing/react';
 import type { SelectionApi } from '@weasel-js/routing';
 import { useOptionalViewRegistryForTests as useOptionalViewRegistry, type ViewRegistryForTests as ViewRegistry } from '@weasel-js/core/test-seams';
-import { movePreset, pickPreset, resizePreset } from '@weasel-js/editing';
+import { pickPreset } from '../../../presets/composites';
+import { movePreset, resizePreset } from '../../../presets/transform';
 
 type D = { kind: 'rect' };
 type L = 'main';

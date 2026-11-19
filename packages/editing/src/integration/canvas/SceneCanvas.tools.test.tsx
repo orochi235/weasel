@@ -3,7 +3,8 @@ import { createEvent, act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas, useScene, useTools, defineTool } from '@weasel-js/core';
 import { asNodeId, WeaselProvider } from '@weasel-js/core/engine';
-import { drawPreset, KIT_TOOL_IDS } from '@weasel-js/editing';
+import { KIT_TOOL_IDS } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
 beforeAll(() => {

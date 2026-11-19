@@ -9,7 +9,7 @@ import { SceneCanvas, CanvasView, screenTolerance } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import type { Scene, NodeId, View, RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import type { MoveBehavior } from '@weasel-js/core/engine';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };

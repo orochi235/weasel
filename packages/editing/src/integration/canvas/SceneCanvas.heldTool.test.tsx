@@ -10,7 +10,7 @@ import { SceneCanvas, useScene, defineTool, type useTools } from '@weasel-js/cor
 import type { Action } from '@weasel-js/routing';
 import type { View } from '@weasel-js/core';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 type D = { color: string };
 type L = 'main';

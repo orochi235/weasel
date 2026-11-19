@@ -12,7 +12,7 @@ import { createScene } from '@weasel-js/core/engine';
 import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import { isRotateHandle } from '@weasel-js/routing';
 import type { SelectionApi } from '@weasel-js/routing';
-import { pickPreset, transformPreset } from '@weasel-js/editing';
+import { pickPreset, transformPreset } from '../../presets/composites';
 
 type D = { kind: 'rect' };
 type L = 'main';

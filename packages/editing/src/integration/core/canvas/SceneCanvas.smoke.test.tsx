@@ -16,7 +16,8 @@ import type { Scene, NodeId } from '@weasel-js/core';
 import type { ActionDisabledReason } from '@weasel-js/routing';
 import { defaultNodeRouting } from '@weasel-js/core';
 import type { NodeRoutingEntry } from '@weasel-js/core';
-import { drawPreset, KIT_TOOL_IDS } from '@weasel-js/editing';
+import { KIT_TOOL_IDS } from '@weasel-js/editing';
+import { drawPreset } from '../../../presets/composites';
 
 type D = { kind: string; path?: unknown; fill?: string };
 type L = 'main';

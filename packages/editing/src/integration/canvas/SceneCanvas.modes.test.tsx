@@ -7,7 +7,7 @@ import { render, cleanup } from '@testing-library/react';
 import { createModeRegistry, type ModeDefinition } from '@weasel-js/modes';
 import { SceneCanvas } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 type D = { kind: 'rect' };
 type L = 'main';

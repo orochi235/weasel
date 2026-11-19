@@ -6,13 +6,20 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { useEffect } from 'react';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { SceneCanvas, viewPreset } from '@weasel-js/core';
+import { SceneCanvas } from '@weasel-js/core';
+import * as corePresets from '@weasel-js/core/presets';
 import type { FeaturePreset, CanvasHelpers, Scene, NodeId, ToolsApi } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import { polygonFromPoints } from '@weasel-js/geom';
 import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import type { Action, SelectionApi } from '@weasel-js/routing';
-import { KIT_STANDARD_ACTION_IDS, insertPreset, drawPreset, editPreset, movePreset, outlinePreset, pickPreset, resizePreset, rotatePreset, selectPreset, transformPreset, shapeToolsOfferedPreset } from '@weasel-js/editing';
+import { KIT_STANDARD_ACTION_IDS } from '@weasel-js/editing';
+import { drawPreset, pickPreset, transformPreset } from '../../presets/composites';
+import { editPreset } from '../../presets/edit';
+import { insertPreset } from '../../presets/insert';
+import { selectPreset } from '../../presets/select';
+import { shapeToolsOfferedPreset } from '../../presets/tools';
+import { movePreset, outlinePreset, resizePreset, rotatePreset } from '../../presets/transform';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -298,26 +305,26 @@ describe('<SceneCanvas features>', () => {
     const { tools, seen } = mount({ viewport: { pan: true } });
     expect(Object.keys(tools().registry)).toEqual([]);
     for (const id of ['viewport.wheelPan', 'viewport.zoom', 'viewport.touchZoom', 'viewport.dragPan']) expect(seen.actionIds).not.toContain(id);
-    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/`viewport` configures viewPreset/));
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/`viewport` configures corePresets.view/));
     warn.mockRestore();
   });
 
-  it('a viewport holding only recenter does not warn: the view dep carries it without viewPreset', () => {
+  it('a viewport holding only recenter does not warn: the view dep carries it without corePresets.view', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     mount({ viewport: { recenter: () => undefined } });
-    expect(warn).not.toHaveBeenCalledWith(expect.stringMatching(/`viewport` configures viewPreset/));
+    expect(warn).not.toHaveBeenCalledWith(expect.stringMatching(/`viewport` configures corePresets.view/));
     warn.mockRestore();
   });
 
   it('viewPreset turns navigation on, and viewport configures it', () => {
-    const { tools, seen } = mount({ features: [viewPreset], viewport: { zoom: false } });
+    const { tools, seen } = mount({ features: [corePresets.view], viewport: { zoom: false } });
     expect(Object.keys(tools().registry)).toEqual(['hand']);
     expect(seen.actionIds).toContain('viewport.wheelPan');
     expect(seen.actionIds).toContain('viewport.dragPan');
     expect(seen.actionIds).not.toContain('viewport.zoom');
   });
 
-  it('a hand tool without viewPreset drags the view, and nothing else navigates', () => {
+  it('a hand tool without corePresets.view drags the view, and nothing else navigates', () => {
     const { seen } = mount({ defaultTools: ['hand'] });
     expect(seen.actionIds).toContain('viewport.dragPan');
     expect(seen.actionIds).not.toContain('viewport.wheelPan');

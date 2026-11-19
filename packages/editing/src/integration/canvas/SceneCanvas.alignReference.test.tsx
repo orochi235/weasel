@@ -5,7 +5,7 @@ import { SceneCanvas } from '@weasel-js/core';
 import { createScene, asNodeId } from '@weasel-js/core/engine';
 import { PointerContextProvider, createPointerStore } from '@weasel-js/routing/react';
 import type { BoundGesture } from '@weasel-js/routing';
-import { arrangePreset } from '@weasel-js/editing';
+import { arrangePreset } from '../../presets/arrange';
 
 type P = { x: number; y: number; width: number; height: number };
 

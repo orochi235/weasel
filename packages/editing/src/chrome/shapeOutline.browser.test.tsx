@@ -9,7 +9,8 @@ import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { SceneCanvas, createScene, asNodeId, type RectPose } from '@weasel-js/core';
-import { outlinePreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import { outlinePreset } from '../presets/transform';
 
 const W = 340;
 const H = 200;

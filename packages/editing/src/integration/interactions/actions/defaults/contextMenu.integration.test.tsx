@@ -7,7 +7,9 @@ import type { MenuHost, SelectionApi } from '@weasel-js/routing';
 import { SceneCanvas } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/core';
-import { editPreset, pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import { pickPreset } from '../../../../presets/composites';
+import { editPreset } from '../../../../presets/edit';
 
 type D = { kind: string };
 type P = { x: number; y: number; width: number; height: number };

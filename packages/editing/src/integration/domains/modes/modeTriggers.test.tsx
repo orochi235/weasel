@@ -9,7 +9,7 @@ import { createModeRegistry, DEFAULT_MODES, type ModeDefinition } from '@weasel-
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import { SceneCanvas, modeTriggers, type ModeTriggerHandlers } from '@weasel-js/core';
 import { createScene, asNodeId, createEnteredGroup } from '@weasel-js/core/engine';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../../presets/composites';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {

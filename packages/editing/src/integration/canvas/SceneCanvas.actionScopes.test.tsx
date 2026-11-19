@@ -14,7 +14,7 @@ import { SceneCanvas } from '@weasel-js/core';
 import { WeaselProvider, createScene } from '@weasel-js/core/engine';
 import { ActionsProvider, useOptionalDepRegistry } from '@weasel-js/routing/react';
 import type { View } from '@weasel-js/core';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 type D = { kind: 'rect' };
 type L = 'main';

@@ -9,7 +9,8 @@ import { useActionsRegistry, useDepSource } from '@weasel-js/routing/react';
 import type { ActionsRegistry, ImmediateInvoker } from '@weasel-js/routing';
 import { createScene, operandList, type OperandsDep } from '@weasel-js/core/engine';
 import { asNodeId, type NodeId, SceneCanvas } from '@weasel-js/core';
-import { drawPreset, nudgeRightAction, deleteAction } from '@weasel-js/editing';
+import { nudgeRightAction, deleteAction } from '@weasel-js/editing';
+import { drawPreset } from '../../../presets/composites';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

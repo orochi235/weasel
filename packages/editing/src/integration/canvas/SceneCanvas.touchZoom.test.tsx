@@ -9,10 +9,11 @@
 
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
-import { SceneCanvas, viewPreset } from '@weasel-js/core';
+import { SceneCanvas } from '@weasel-js/core';
+import * as corePresets from '@weasel-js/core/presets';
 import { createScene } from '@weasel-js/core/engine';
 import type { View, FeaturePreset } from '@weasel-js/core';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -41,7 +42,7 @@ function mountAndPinch(
 ): View[] {
   const emitted: View[] = [];
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-  const canvasWith = (features: readonly FeaturePreset[] = [viewPreset]) => (
+  const canvasWith = (features: readonly FeaturePreset[] = [corePresets.view]) => (
     <SceneCanvas
       scene={scene}
       layers={{}}

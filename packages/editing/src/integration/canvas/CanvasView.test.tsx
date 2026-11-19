@@ -21,7 +21,7 @@ import { ViewInputsProviderForTests as ViewInputsProvider } from '@weasel-js/cor
 import { AUTO_POSE_DESCRIPTOR } from '@weasel-js/core/engine';
 import { DeviceProfileProvider } from '@weasel-js/core';
 import type { DeviceProfile } from '@weasel-js/core';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 import { SELECTION_CHROME } from '../../chrome/selectionChrome';
 
 type D = { kind: 'rect' };
