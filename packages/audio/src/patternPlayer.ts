@@ -96,6 +96,44 @@ export const checkTempo = (bpm: number): void => {
   }
 };
 
+/** `events` under the step each starts in. Throws on an event whose step is not finite. */
+function eventsByStep(events: readonly PatternEvent[]): Map<number, PatternEvent[]> {
+  for (const e of events) {
+    if (!Number.isFinite(e.step)) throw new RangeError(`@weasel-js/audio: a pattern event's step is finite, not ${e.step}`);
+  }
+  const byStep = new Map<number, PatternEvent[]>();
+  for (const e of events) {
+    const step = Math.floor(e.step);
+    const list = byStep.get(step);
+    if (list) list.push(e);
+    else byStep.set(step, [e]);
+  }
+  return byStep;
+}
+
+/** Play every event of the step at `when` into `voices`, each on its own: the first that throws is returned, not
+ *  thrown, so one bad event costs neither the rest of its step nor the step after it. */
+function playStep(
+  engine: AudioEngine,
+  events: readonly PatternEvent[],
+  step: number,
+  when: number,
+  drift: PatternDetune,
+  stepMs: number,
+  voices: Set<VoiceHandle>,
+): { err: unknown } | null {
+  let failure: { err: unknown } | null = null;
+  for (const e of events) {
+    try {
+      const detune = (e.detune ?? 0) + (typeof drift === 'function' ? drift(e.step) : drift);
+      voices.add(playEvent(engine, e, when + (e.step - step) * stepMs, detune, stepMs));
+    } catch (err) {
+      failure ??= { err };
+    }
+  }
+  return failure;
+}
+
 /** Play one event at `at`, gated for its length in steps of `stepMs`. */
 function playEvent(engine: AudioEngine, e: PatternEvent, at: number, detune: number, stepMs: number): VoiceHandle {
   if ('sound' in e) {
@@ -134,16 +172,7 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
   let byStep = new Map<number, PatternEvent[]>();
   const setEvents = (events: readonly PatternEvent[], len?: number): void => {
     if (len !== undefined) checkSteps('length', len);
-    for (const e of events) {
-      if (!Number.isFinite(e.step)) throw new RangeError(`@weasel-js/audio: a pattern event's step is finite, not ${e.step}`);
-    }
-    byStep = new Map();
-    for (const e of events) {
-      const step = Math.floor(e.step);
-      const list = byStep.get(step);
-      if (list) list.push(e);
-      else byStep.set(step, [e]);
-    }
+    byStep = eventsByStep(events);
     length = len ?? patternLength(events, stepsPerBeat);
   };
   setEvents(opts.events ?? [], opts.length);
@@ -193,14 +222,8 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
       return;
     }
     for (const v of voices) if (!v.isPlaying()) voices.delete(v);
-    for (const e of byStep.get(step) ?? []) {
-      try {
-        const detune = (e.detune ?? 0) + (typeof drift === 'function' ? drift(e.step) : drift);
-        voices.add(playEvent(engine, e, when + (e.step - step) * stepMs(), detune, stepMs()));
-      } catch (err) {
-        failure ??= { err };
-      }
-    }
+    const played = playStep(engine, byStep.get(step) ?? [], step, when, drift, stepMs(), voices);
+    failure ??= played;
     // Read before `onStep`: a tempo set there starts with the next step, and
     // this one keeps the length its events were gated by.
     const ms = stepMs();
