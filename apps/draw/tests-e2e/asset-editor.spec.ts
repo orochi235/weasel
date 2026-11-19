@@ -28,14 +28,15 @@ test.afterEach(() => {
 });
 
 test('renaming a pref updates the tree, the preview and the literal, and undoes in one step', async ({ page }) => {
-  await row(page, /^Grid density/).click();
+  // Show grid rather than Grid density: the preview shows Grid density only while the grid shows or snaps.
+  await row(page, /^Show grid/).click();
   const name = attrs(page).getByRole('textbox', { name: 'Name', exact: true });
-  await name.fill('Grid spacing');
-  await expect(row(page, /^Grid spacing/)).toBeVisible();
-  await expect(preview(page).getByText('Grid spacing', { exact: false }).first()).toBeVisible();
-  await expect(page.getByText("name: 'Grid spacing'")).toBeVisible();
+  await name.fill('Draw the grid');
+  await expect(row(page, /^Draw the grid/)).toBeVisible();
+  await expect(preview(page).getByText('Draw the grid', { exact: false }).first()).toBeVisible();
+  await expect(page.getByText("name: 'Draw the grid'")).toBeVisible();
   await tool(page, 'Undo').click();
-  await expect(name).toHaveValue('Grid density');
+  await expect(name).toHaveValue('Show grid');
 });
 
 test('Add pref asks for a name, a key and a kind, and lands the pref after the selection', async ({ page }) => {

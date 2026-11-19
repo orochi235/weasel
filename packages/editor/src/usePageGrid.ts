@@ -10,9 +10,11 @@ export const pageGridSchema = pref.group('Grid', {
   spacing: pref.number('Grid density', 20, {
     description: 'Spacing between grid lines, in document units (CSS pixels, 96 to the inch). Snap to grid uses the same spacing.',
     min: 4, max: 288, step: 4, control: 'slider',
+    showIf: { any: [{ from: 'group', path: 'visible' }, { from: 'group', path: 'snap' }] },
   }),
   accentEvery: pref.number('Accent every', 5, {
     description: 'Every this many lines, one is drawn darker.', min: 1, max: 20, step: 1,
+    showIf: { from: 'group', path: 'visible' },
   }),
   snap: pref.boolean('Snap to grid', false, { description: 'Constrain move/resize gestures to grid intersections.' }),
 });
