@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { unionAabb } from 'core/geometry/unionBounds';
 import type { Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -12,8 +12,9 @@ import { adapterWorldPoseOf, type ViewPoseAdapter } from '../useViewHelpers';
  * picker boxes it, every copy a group draws (`sceneContentBounds`), and
  * whatever an in-flight gesture proposes, such as a node being dragged, where
  * it is shown, or a shape drawn before it exists. `null`
- * when nothing is drawn. Read live: the scene's part is kept until its version
- * or its bounds source moves, and the gesture's part is read fresh.
+ * when nothing is drawn. Read live: the scene's part is kept until its version,
+ * its pose overrides, its scroll or its bounds source moves, none of which the
+ * version alone covers, and the gesture's part is read fresh.
  */
 export function useContentBounds<TPose>(args: {
   scene: Scene<unknown, string, TPose>;
@@ -41,6 +42,12 @@ export function useContentBounds<TPose>(args: {
   });
 
   const committed = useRef<{ scene: unknown; boundsOf: unknown; version: number; bounds: Bounds | null } | null>(null);
+  useEffect(() => {
+    const stale = () => { committed.current = null; };
+    const offOverrides = scene.overrides.subscribe(stale);
+    const offScroll = scene.scroll?.subscribe(stale);
+    return () => { offOverrides(); offScroll?.(); };
+  }, [scene]);
   return useCallback((): Bounds | null => {
     const version = scene.getVersion();
     let held = committed.current;

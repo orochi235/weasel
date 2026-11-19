@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { translate } from '@weasel-js/geom';
 import { createScene } from 'core/scene/scene';
+import { effectivePose } from 'core/scene/effectivePose';
 import type { RectPose } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { useContentBounds } from './useContentBounds';
@@ -34,5 +35,19 @@ describe('useContentBounds', () => {
       gestureSource: undefined, previewPoseExtra: undefined,
     }));
     expect(result.current()).toEqual({ x: 0, y: 0, width: 110, height: 10 });
+  });
+
+  it('boxes the content again when a pose override moves a node, which leaves the version alone', () => {
+    const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const id = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: null });
+    const { result } = renderHook(() => useContentBounds<RectPose>({
+      scene: scene as never, boundsOf: (n) => effectivePose(scene, scene.get(n as never)!), boundsOfPose: () => null,
+      adapter: { getPose: (n) => effectivePose(scene, scene.get(n as never)!) },
+      gestureSource: undefined, previewPoseExtra: undefined,
+    }));
+    expect(result.current()?.x).toBe(0);
+    scene.overrides.set(id, { pose: { x: 5000, y: 0, width: 10, height: 10 } });
+    scene.overrides.commit();
+    expect(result.current()?.x).toBe(5000);
   });
 });
