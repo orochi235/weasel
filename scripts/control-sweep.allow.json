@@ -33,5 +33,10 @@
     "demo": "*",
     "control": "mode › Trial theme: Auto — click for Light",
     "reason": "Under the headless browser's light color scheme, Auto already shows Light, so the first click changes nothing visible."
+  },
+  {
+    "demo": "*",
+    "control": "Theme: Auto — click for Light",
+    "reason": "Under the headless browser's light color scheme, Auto already shows Light, so the first click changes nothing visible."
   }
 ]
