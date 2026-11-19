@@ -31,7 +31,8 @@ export function holdAt(handle: ClockHandle, shown: number | null): PlayheadHold 
       const within = Math.min(shown === null ? 0 : shown - clock.origin, clock.duration);
       return [within, within > 0 && within === clock.duration ? 'end' : 'start'];
     },
-    (clock) => (shown === null || clock.origin + clock.elapsed === shown ? null : shown),
+    // Against the elapsed it seeks, not `origin + elapsed`, which can round an ulp off `shown`.
+    (clock) => (shown === null || clock.elapsed === shown - clock.origin ? null : shown),
   );
 }
 

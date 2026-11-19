@@ -211,3 +211,12 @@ describe('holdPosition at an ended run', () => {
     expect([l.clock.elapsed, l.clock.pass]).toEqual([300, 1]);
   });
 });
+
+describe('pending', () => {
+  it('reads a holdAt met when the clock stands where the hold sought, whatever the float round trip', () => {
+    const h = createClock({ duration: 1000, origin: 0.7 });
+    const hold = holdAt(h, 3.1);
+    expect(h.clock.elapsed).toBe(3.1 - 0.7);
+    expect(hold.pending()).toBeNull();
+  });
+});
