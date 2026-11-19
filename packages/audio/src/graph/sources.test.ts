@@ -49,6 +49,18 @@ describe('file source', () => {
     expect(ctx._sources[1].offsets[0]).toBe(0);
   });
 
+  it('rewinds a non-looping file stopped after its end but before its ended event', () => {
+    const ctx = setup();
+    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 100, 100) as never, loop: false });
+    node.start!(0);
+    ctx.currentTime += 1.5;
+    node.stop!(ctx.currentTime);
+    ctx._advance(0);
+    node.start!(ctx.currentTime);
+    expect(ctx._sources).toHaveLength(2);
+    expect(ctx._sources[1].offsets[0]).toBe(0);
+  });
+
   it('a stopped node ending late does not rewind the one after it', () => {
     const ctx = setup();
     const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 200, 100) as never, loop: false });
