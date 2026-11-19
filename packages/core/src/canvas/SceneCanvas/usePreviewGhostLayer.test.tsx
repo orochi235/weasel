@@ -45,4 +45,11 @@ describe('usePreviewGhostLayer', () => {
     const { result } = renderHook(() => usePreviewGhostLayer({ scene, sceneSlot: { drawOne } }));
     expect(rectsIn(result.current.draw(previewing([g]), VIEW, DIMS) as DrawCommand[]).sort()).toEqual([100, 101]);
   });
+
+  it("ghosts a node at the slot's drawn pose", () => {
+    const { scene, g } = sceneWithGroup();
+    const drawnPose = (_n: N, pose: RectPose): RectPose => ({ ...pose, x: pose.x + 1000 });
+    const { result } = renderHook(() => usePreviewGhostLayer({ scene, sceneSlot: { drawOne, drawnPose } }));
+    expect(rectsIn(result.current.draw(previewing([g]), VIEW, DIMS) as DrawCommand[])).toEqual([1100]);
+  });
 });

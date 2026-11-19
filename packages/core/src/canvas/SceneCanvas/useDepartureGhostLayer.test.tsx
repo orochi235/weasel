@@ -97,6 +97,16 @@ describe('useDepartureGhostLayer', () => {
     expect(rectsIn(result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 }) as DrawCommand[])).toEqual([30]);
   });
 
+  it("draws a ghost at the slot's drawn pose", () => {
+    const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const g = { id: asNodeId('g'), kind: 'mark', layer: 'main', pose: at(0), data: null, parent: null } as unknown as N;
+    const drawnPose = (_n: N, pose: RectPose): RectPose => ({ ...pose, x: pose.x + 1000 });
+    const { result } = renderHook(() => useDepartureGhostLayer({
+      scene, sceneSlot: { drawOne, drawnPose }, departures: departing([{ removal: removal(g, at(30)), pose: at(30), alpha: 1 }]),
+    }));
+    expect(rectsIn(result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 }) as DrawCommand[])).toEqual([1030]);
+  });
+
   it('draws nothing with no ghost leaving', () => {
     const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     const { result } = renderHook(() => useDepartureGhostLayer({ scene, sceneSlot: { drawOne }, departures: departing([]) }));

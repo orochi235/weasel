@@ -102,7 +102,8 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
         const scaled = pixelScaleCtx(v, dims.dpr);
         const ctx = sceneShapesCtx(sc, inheritsPaint(effNode) ? { ...scaled, inherited: inheritedPaintOf(effNode, above()) } : scaled);
         const painted = shown.has(entry.node.layer);
-        const self = painted ? drawOne(effNode, entry.pose, v, ctx) : [];
+        const drawn = painted && slot.drawnPose ? slot.drawnPose(effNode, entry.pose) : entry.pose;
+        const self = painted ? drawOne(effNode, drawn, v, ctx) : [];
         const kids: DrawCommand[] = [];
         for (const child of entry.children) {
           for (const cmd of drawEntry(child, plane, () => [effNode, ...above()])) kids.push(cmd);
@@ -111,7 +112,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
         const clip = kids.length > 0
           ? ownClipOf(effNode, entry.pose, () => slot.derivedPathOf?.(effNode, entry.pose), nodeShapesOf(sc), scaled.scale) : null;
         const children: DrawCommand[] = [
-          ...wrapWithPoseRotation(self, entry.pose as unknown),
+          ...wrapWithPoseRotation(self, drawn as unknown),
           ...(clip ? [{ kind: 'group', clip, children: kids } as GroupDrawCommand] : kids),
         ];
         const transform = planeTransform(plane, parentPlane);

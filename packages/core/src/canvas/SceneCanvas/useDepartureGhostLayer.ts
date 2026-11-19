@@ -48,7 +48,7 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
         definesFrame: (id: string) => definesFrame(sc.get(id as NodeId)!),
       } as PoseAdapter<TPose>);
       // As the scene paints it: a hidden node and its subtree are not drawn, nor a
-      // node on a hidden layer; one
+      // node on a hidden layer; a node is drawn at the slot's drawn pose; one
       // on a parallax layer is drawn through its plane's view and carried
       // into its parent's world.
       const planeOf = createLayerPlaneLookup(sc.layers, view);
@@ -64,8 +64,9 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
         const layer = r.node.layer;
         const plane = planeOf?.(layer) ?? null;
         const v = viewOf(layer);
+        const drawn = shown.has(layer) && slot.drawnPose ? slot.drawnPose(r.node, pose) : pose;
         const children: DrawCommand[] = shown.has(layer)
-          ? wrapWithPoseRotation(drawOne(r.node, pose, v, pixelScaleCtx(v, dims.dpr)), pose) : [];
+          ? wrapWithPoseRotation(drawOne(r.node, drawn, v, pixelScaleCtx(v, dims.dpr)), drawn) : [];
         for (const c of r.children) draw(c, composes ? compose(pose, c.pose) : c.pose, plane, children);
         const transform = planeTransform(plane, parentPlane);
         out.push(transform ? { kind: 'group', transform, children } : { kind: 'group', children });
