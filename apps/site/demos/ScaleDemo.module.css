@@ -1,0 +1,50 @@
+.demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-6);
+  width: 560px;
+}
+
+.field {
+  width: 100%;
+}
+
+.axis {
+  margin: 0;
+}
+
+.caption {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--wzl-fg-subtle);
+}
+
+.readout {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  display: inline-block;
+  min-width: 6ch;
+  text-align: end;
+  color: var(--wzl-fg);
+}
+
+.svg {
+  display: block;
+}
+
+.rule,
+.tick {
+  stroke: var(--wzl-border-strong);
+  stroke-width: 1;
+}
+
+.label {
+  fill: var(--wzl-fg-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-anchor: middle;
+}
+
+.marker {
+  fill: var(--wzl-accent);
+}

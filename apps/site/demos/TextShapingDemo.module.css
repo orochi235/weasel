@@ -1,0 +1,34 @@
+.demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-4);
+  width: min-content;
+}
+
+.stage {
+  display: flex;
+  gap: var(--wzl-space-6);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  margin: 0;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
+}
+
+.rows dd {
+  margin: 0;
+}
+
+.count {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  color: var(--wzl-fg);
+}
+
+.error {
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-danger);
+}

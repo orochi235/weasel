@@ -1,0 +1,22 @@
+.demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-4);
+  width: min-content;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--wzl-space-1) var(--wzl-space-4);
+  margin: 0;
+  font-size: var(--wzl-font-size-sm);
+}
+
+.facts dt {
+  color: var(--wzl-fg-subtle);
+}
+
+.facts dd {
+  margin: 0;
+}
