@@ -1,0 +1,28 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   4
+  ]
+ ],
+ "a": [
+  "A polygon or star on a flipped pose takes a negative radius from the signed box, and overflows its box",
+  "`hasStroke` reports no stroke for a painted stroke with its width omitted, which every painter draws 1 unit wide",
+  "`kit:path`'s cull bounds ignore a pose override's path, which its paint, silhouette and drawnBounds all use"
+ ],
+ "b": [
+  "A mirrored pose makes a polygon or star overshoot its box: the radius is min(width, height)/2 with signed sides",
+  "hasStroke calls a stroke with paint and no width \"no stroke\", but every painter draws it 1 unit wide",
+  "kit:path-pose drawnBounds drops the fill whenever the stroke ribbon doesn't run the whole outline (trim, dash, or inner stroke with markers)",
+  "kit:derived drawnBounds ignores the fill, so a fill-only, inner-stroked or trimmed derived path puts its chrome on the placeholder pose",
+  "kit:path's cull bounds ignore ctx.derivedPath, while its paint, silhouette, and drawnBounds draw that path"
+ ]
+}

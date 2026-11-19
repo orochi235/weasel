@@ -1,0 +1,17 @@
+{
+ "pairs": [
+  [
+   1,
+   2
+  ]
+ ],
+ "a": [
+  "A transform's preview of the other nodes extensions change differs from what its commit writes",
+  "The `editAnchors` dep's setters gate on, and compare against, the editing id captured when the dep was read"
+ ],
+ "b": [
+  "insertSite keeps a node on its page only when the parent is the page node itself, not a container on the page",
+  "The `kindOfNode` dep is documented as absent under `routing={[]}` but is always registered",
+  "A held `editAnchors` dep checks and compares against the editing id it captured when it resolved"
+ ]
+}

@@ -1,0 +1,54 @@
+{
+ "id": "core.canvas.nodeShapes",
+ "commit": "3afc6d3062dd11bd780f0bb0c8f6a478125ecb60",
+ "date": "2026-11-19",
+ "files": [
+  "packages/core/src/canvas/nodeShapes/derivedPainter.ts",
+  "packages/core/src/canvas/nodeShapes/groupBoxPainter.ts",
+  "packages/core/src/canvas/nodeShapes/imagePainter.ts",
+  "packages/core/src/canvas/nodeShapes/memo.ts",
+  "packages/core/src/canvas/nodeShapes/nodePaint.ts",
+  "packages/core/src/canvas/nodeShapes/pathPainter.ts",
+  "packages/core/src/canvas/nodeShapes/pathPosePainter.ts",
+  "packages/core/src/canvas/nodeShapes/pickOutline.ts",
+  "packages/core/src/canvas/nodeShapes/poseBox.ts",
+  "packages/core/src/canvas/nodeShapes/rectFallbackPainter.ts",
+  "packages/core/src/canvas/nodeShapes/shapePainter.ts",
+  "packages/core/src/canvas/nodeShapes/strokedBounds.ts"
+ ],
+ "a": 3,
+ "b": 5,
+ "m": 3,
+ "distinct": 5,
+ "chapman": 5,
+ "unfound": 0,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "patches": 5,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.2,
+   "B": 7,
+   "match": 0.1,
+   "fix": 12.3
+  },
+  "nodes": {
+   "A": "orochi",
+   "B": "orochi",
+   "fix": "teitou"
+  },
+  "tokens": 9849663,
+  "costUsd": 5.56
+ },
+ "fixCommits": [
+  "50900c318c841b81edec0d2c3fad441df520e53e",
+  "42f11238e1012c80f2acebb152eb01598d8a32a0",
+  "c0555fb8b73fec989a7445fa431215e10cf3eb24",
+  "319879ebd8a2a79b7cd132cc3d2d3bfd9433a38e",
+  "0bb71da60750e8f7a9e6dead8151e7b3c902331e"
+ ]
+}

@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ]
+ ],
+ "a": [
+  "`sceneContentBounds` drops the visible subtree of a root that sits on a hidden layer",
+  "A gesture refused inside a `<CanvasView>` never shows its reason",
+  "`~*` / `~x` / `~` limit a requirement to `<1.0.0` instead of matching any version",
+  "`inkBoxes` measures group members at their shown (overridden) poses, while everything else comes from the document",
+  "`defaultDrawOne` places a label at (NaN, NaN) on a node whose pose has no `x`/`y`"
+ ],
+ "b": [
+  "A refused gesture's reason text never shows for a gesture inside a `<CanvasView>`"
+ ]
+}

@@ -1,0 +1,72 @@
+{
+ "id": "core.canvas.deps",
+ "commit": "3afc6d3062dd11bd780f0bb0c8f6a478125ecb60",
+ "date": "2026-11-19",
+ "files": [
+  "packages/core/src/canvas/deps/changes.ts",
+  "packages/core/src/canvas/deps/chromeRules.ts",
+  "packages/core/src/canvas/deps/colorAt.ts",
+  "packages/core/src/canvas/deps/debug.ts",
+  "packages/core/src/canvas/deps/dispatchSources.ts",
+  "packages/core/src/canvas/deps/dispatcher.ts",
+  "packages/core/src/canvas/deps/editAnchors.ts",
+  "packages/core/src/canvas/deps/enteredGroup.ts",
+  "packages/core/src/canvas/deps/geometryProjection.ts",
+  "packages/core/src/canvas/deps/hitTestArea.ts",
+  "packages/core/src/canvas/deps/index.ts",
+  "packages/core/src/canvas/deps/ingestion.ts",
+  "packages/core/src/canvas/deps/insertFactories.ts",
+  "packages/core/src/canvas/deps/insertParent.ts",
+  "packages/core/src/canvas/deps/insertSite.ts",
+  "packages/core/src/canvas/deps/inspection.ts",
+  "packages/core/src/canvas/deps/kitSettings.ts",
+  "packages/core/src/canvas/deps/layout.ts",
+  "packages/core/src/canvas/deps/modeDefaultTool.ts",
+  "packages/core/src/canvas/deps/nodeAtPoint.ts",
+  "packages/core/src/canvas/deps/operands.ts",
+  "packages/core/src/canvas/deps/pathEditCommits.ts",
+  "packages/core/src/canvas/deps/pathLeaf.ts",
+  "packages/core/src/canvas/deps/poseDescriptor.ts",
+  "packages/core/src/canvas/deps/previewPaths.ts",
+  "packages/core/src/canvas/deps/selectionSnapshot.ts",
+  "packages/core/src/canvas/deps/slice.ts",
+  "packages/core/src/canvas/deps/snap.ts",
+  "packages/core/src/canvas/deps/surface.ts",
+  "packages/core/src/canvas/deps/transformFollowers.ts",
+  "packages/core/src/canvas/deps/view.ts"
+ ],
+ "a": 2,
+ "b": 3,
+ "m": 1,
+ "distinct": 4,
+ "chapman": 5,
+ "unfound": 1,
+ "read": {
+  "A": 31,
+  "B": 31
+ },
+ "patches": 4,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.3,
+   "B": 7.1,
+   "match": 0.1,
+   "fix": 6.4
+  },
+  "nodes": {
+   "A": "orochi",
+   "B": "orochi",
+   "fix": "studio"
+  },
+  "tokens": 7172578,
+  "costUsd": 4.6
+ },
+ "fixCommits": [
+  "29f3da25f044d71942f48f858404aa6ffe90cbc5",
+  "df9a774924cc3a0c209431ed54bf99c377ffff47",
+  "d061e7967d76b6ccc96e025bc27b45e707eb1a4a",
+  "10e17bb7b02054570e0fddce4ebdad2155618cdb"
+ ]
+}

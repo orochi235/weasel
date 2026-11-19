@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   2,
+   0
+  ]
+ ],
+ "a": [
+  "Insert preview of a polygon or star collapses under a flipped view, and has the wrong shape under a stretched one",
+  "A preset component mounted after the canvas puts its deps over the children's, and toggling a preset remounts every component after it",
+  "`isAtom` ignores the node-kind and tool-action roles, so a node-kind preset is reported as a bundle",
+  "A refining preset's `includes` end up after it, contradicting \"ahead of its own place\"",
+  "A frame hook added once the phase is already subscribed waits for an unrelated redraw"
+ ],
+ "b": [
+  "isAtom ignores the node-kind roles, so a preset carrying only routing, shapes, properties or insert factories is described as a bundle"
+ ]
+}

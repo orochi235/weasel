@@ -1,0 +1,12 @@
+packages/core/src/canvas/nodeShapes/derivedPainter.ts
+packages/core/src/canvas/nodeShapes/groupBoxPainter.ts
+packages/core/src/canvas/nodeShapes/imagePainter.ts
+packages/core/src/canvas/nodeShapes/memo.ts
+packages/core/src/canvas/nodeShapes/nodePaint.ts
+packages/core/src/canvas/nodeShapes/pathPainter.ts
+packages/core/src/canvas/nodeShapes/pathPosePainter.ts
+packages/core/src/canvas/nodeShapes/pickOutline.ts
+packages/core/src/canvas/nodeShapes/poseBox.ts
+packages/core/src/canvas/nodeShapes/rectFallbackPainter.ts
+packages/core/src/canvas/nodeShapes/shapePainter.ts
+packages/core/src/canvas/nodeShapes/strokedBounds.ts

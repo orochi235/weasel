@@ -1,0 +1,11 @@
+{
+ "pairs": [],
+ "a": [
+  "TiledSurfaceDemo sizes the shared surface for one devicePixelRatio, but the panes' renderers read the ratio on every paint",
+  "UiInputDemo checks for a single character with `e.key.length !== 1`, where ui-input uses `isOneChar`",
+  "TimelineFramesDemo still downloads the frame being encoded after Cancel"
+ ],
+ "b": [
+  "The Voronoi demo's WGSL program is refused on every WebGPU browser lacking `uniform_buffer_standard_layout`"
+ ]
+}

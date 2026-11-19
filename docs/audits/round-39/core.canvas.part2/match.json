@@ -1,0 +1,31 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   3
+  ]
+ ],
+ "a": [
+  "pixelPickEvery returns its hits unsorted when a later pass cannot read",
+  "createCanvasReader claims an unrendered canvas for WebGL2 by asking it for a context",
+  "useStandInLayers reads the canvas ref during render, so a canvas mounting under an already-shown stand-in never applies it",
+  "The layer sampler renders with no view matrix, so a `units: 'world'` gradient is sampled in screen space",
+  "renderDebugSnapshot at `pixelRatio` > 1 draws every `{ px }` length at a fraction of its on-screen size",
+  "After pick ids run out, an adopted number still on the free list goes to a second node while its own is live"
+ ],
+ "b": [
+  "pixelPickEvery returns its hits unsorted when a later pass cannot read",
+  "createCanvasReader creates a WebGL2 context on a canvas whose backend is not chosen yet",
+  "A copy with a page selected drops the hidden sources of a derived node on that page, and the paste then omits the node",
+  "A SceneCanvas that mounts while a paint stand-in is already shown paints the node in full under it",
+  "A paste at a drop point measures the cluster's origin from derived nodes' placeholder poses"
+ ]
+}

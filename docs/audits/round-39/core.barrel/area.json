@@ -1,0 +1,58 @@
+{
+ "id": "core.barrel",
+ "commit": "3afc6d3062dd11bd780f0bb0c8f6a478125ecb60",
+ "date": "2026-11-19",
+ "files": [
+  "packages/core/src/barrel/canvas.ts",
+  "packages/core/src/barrel/chrome.ts",
+  "packages/core/src/barrel/editingSeams.ts",
+  "packages/core/src/barrel/icons.ts",
+  "packages/core/src/barrel/input.ts",
+  "packages/core/src/barrel/interactions.ts",
+  "packages/core/src/barrel/outlines.ts",
+  "packages/core/src/barrel/paint.ts",
+  "packages/core/src/barrel/paths.ts",
+  "packages/core/src/barrel/persistence.ts",
+  "packages/core/src/barrel/renderer.ts",
+  "packages/core/src/barrel/routing.ts",
+  "packages/core/src/barrel/scene.ts",
+  "packages/core/src/barrel/snap.ts",
+  "packages/core/src/barrel/viewport.ts"
+ ],
+ "a": 5,
+ "b": 3,
+ "m": 1,
+ "distinct": 7,
+ "chapman": 11,
+ "unfound": 4,
+ "read": {
+  "A": 15,
+  "B": 15
+ },
+ "patches": 6,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.8,
+   "B": 6.2,
+   "match": 0.2,
+   "fix": 5.9
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "tokens": 9878608,
+  "costUsd": 5.2
+ },
+ "fixCommits": [
+  "ab56471fac779d32cdac109b25e1e3e61acc94a5",
+  "11f5c61976d8765b1c176ba588f96c3473adbbbe",
+  "e886153d2d0dadd6faed083ea0b4f8439f1487a6",
+  "e7af1aa8f0449d71562c5163b9d230fe9b783956",
+  "afad63ddcd436fcaeb55a7db83bd274fc91ffbe0",
+  "d2ce386d670702654731b31e5423de6a91a8ca19"
+ ]
+}

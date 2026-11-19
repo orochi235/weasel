@@ -1,0 +1,20 @@
+{
+ "pairs": [
+  [
+   3,
+   2
+  ]
+ ],
+ "a": [
+  "Ingestion comment calls `getContentHandlers` \"deliberately not exported\", but it doesn't exist",
+  "GestureSource comment tells \"bare `<Canvas>` consumers\" to supply their own, but `Canvas` is not exported",
+  "WeaselProvider heading says it mounts \"all five kit-root contexts\"; it mounts seven",
+  "Viewport barrel lists `<MinimapCanvas>` among \"the detached canvases below\", but it is not exported here",
+  "\"Drag-action hooks: move / resize / rotate / insert / area-select\" heading sits over a block with none of them"
+ ],
+ "b": [
+  "The main entry still hands out the full content-handler list the canvas barrel says it deliberately withholds",
+  "`SceneMembershipError` is thrown by public scene calls but is exported from no entry, though its sibling scene errors are",
+  "The viewport barrel's comment says `<MinimapCanvas>` is exported here, but it lives in `@weasel-js/minimap`"
+ ]
+}

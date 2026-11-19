@@ -1,0 +1,38 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   2
+  ],
+  [
+   5,
+   4
+  ],
+  [
+   6,
+   6
+  ]
+ ],
+ "a": [
+  "Preview ghost paints hidden nodes and nodes on hidden layers while their container is dragged",
+  "Departure ghost paints a removed `hidden` node (and its subtree)",
+  "Worker decides \"page builds the scene\" from the raw `layers.scene` prop, not the slot after presets",
+  "A runtime change to `viewport.pan`/`zoom`/`touchZoom` re-registers the action over the `actions` prop's merge, which is not re-applied",
+  "Content bounds are cached on `scene.getVersion()`, which pose overrides and scroll offsets do not bump",
+  "`colorAt` samples scene layers `layerOrder` leaves out, and in the slot's order rather than the painted one",
+  "`useBakedScene` hands a later `SerializedScene` prop through as if it were a live `Scene`"
+ ],
+ "b": [
+  "Preview ghost paints descendants the scene does not draw: hidden nodes and nodes on hidden layers",
+  "Preview and departure ghosts paint at the world pose, ignoring the scene slot's `drawnPose` (the quantize rule's drawn half)",
+  "Departure ghost fades out nodes the scene never painted: `hidden` nodes and hidden members of a removed group",
+  "The `actions` prop never reaches tool- and contribution-owned actions: they register after its resolver runs",
+  "The `colorAt` dep ignores `layerOrder`: it samples scene layers the canvas does not draw, stacked in the wrong order",
+  "Hover is only tracked when the `chromeVisibility` prop or `onHoverChange` is given, so `hovering` rules set any other way never match",
+  "`useBakedScene` hands a later `SerializedScene` prop through as a live `Scene`"
+ ]
+}
