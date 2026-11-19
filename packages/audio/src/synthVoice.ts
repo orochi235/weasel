@@ -1,5 +1,6 @@
 import { createPart } from '@weasel-js/registry';
-import { envelopeLevel, envelopePoints, resolveEnvelope, type ResolvedEnvelope } from './envelope';
+import { envelopeLevel, envelopePoints, resolveEnvelope, type Envelope, type ResolvedEnvelope } from './envelope';
+import { checkFinite, checkSpan } from './param';
 import { toFrequency } from './pitch';
 import type { Inharmonic, NoiseColor, NoteOptions, SynthPartial, VoiceFilter, Waveform } from './types';
 
@@ -88,9 +89,10 @@ export function resolvePartials(wave: Inharmonic): (SynthPartial & { gain: numbe
     if (!(p.ratio > 0) || !Number.isFinite(p.ratio)) {
       throw new RangeError(`@weasel-js/audio: partial ratio must be a positive number, got ${p.ratio}`);
     }
-    if (p.decay !== undefined && !(p.decay > 0)) {
+    if (p.decay !== undefined && !(p.decay > 0 && p.decay < Infinity)) {
       throw new RangeError(`@weasel-js/audio: partial decay must be a positive number of ms, got ${p.decay}`);
     }
+    checkFinite('partial gain', p.gain);
     total += Math.abs(p.gain ?? 1);
   }
   return wave.partials.map((p) => ({
@@ -100,6 +102,28 @@ export function resolvePartials(wave: Inharmonic): (SynthPartial & { gain: numbe
   }));
 }
 
+function checkEnvelope(what: string, env: Envelope | undefined): void {
+  if (!env) return;
+  checkFinite(`${what} attack`, env.attack);
+  checkFinite(`${what} decay`, env.decay);
+  checkFinite(`${what} sustain`, env.sustain);
+  checkFinite(`${what} release`, env.release);
+}
+
+/** Throws on a number in a note's or noise's envelope, filter or duration that its nodes, or the
+ *  voice processor, could not play: checked at the call rather than when it comes due. */
+export function checkShaping(patch: { envelope?: Envelope; filter?: VoiceFilter; duration?: number }): void {
+  checkSpan('voice duration', patch.duration);
+  checkEnvelope('envelope', patch.envelope);
+  const { filter } = patch;
+  if (!filter) return;
+  checkFinite('filter frequency', filter.frequency);
+  checkFinite('filter Q', filter.Q);
+  checkFinite('filter gain', filter.gain);
+  checkFinite('filter amount', filter.amount);
+  checkEnvelope('filter envelope', filter.envelope);
+}
+
 /** What of a note is checked where it was written, not when it comes due. */
 export interface ResolvedNote {
   from: number;
@@ -107,8 +131,13 @@ export interface ResolvedNote {
   partials: (SynthPartial & { gain: number })[] | null;
 }
 
-/** A note's pitch, glide target and partials. Throws on a bad pitch or partial. */
-export function resolveNote(note: Pick<NoteOptions, 'pitch' | 'glide' | 'wave'>): ResolvedNote {
+/** A note's pitch, glide target and partials. Throws on a bad pitch, partial, glide or
+ *  {@link checkShaping} number. */
+export function resolveNote(
+  note: Pick<NoteOptions, 'pitch' | 'glide' | 'wave' | 'envelope' | 'filter' | 'duration'>,
+): ResolvedNote {
+  checkShaping(note);
+  checkSpan('glide', note.glide?.ms);
   const wave = note.wave ?? 'sine';
   return {
     from: toFrequency(note.pitch),

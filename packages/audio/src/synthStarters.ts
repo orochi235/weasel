@@ -2,14 +2,16 @@ import { resolveEnvelope, type Envelope } from './envelope';
 import { periodicWave } from './periodicWave';
 import { sourceGroup, type LiveVoice, type SourceLike, type Starter } from './liveVoice';
 import {
-  envelopeOnParam, noiseBuffer, resolveNote, voiceFilter, type ResolvedNote,
+  checkShaping, envelopeOnParam, noiseBuffer, resolveNote, voiceFilter, type ResolvedNote,
 } from './synthVoice';
 import type { Inharmonic, NoiseOptions, NoteOptions, VoiceFilter, Waveform } from './types';
 
 /** How `playNote` and `playNoise` make their nodes. */
 export interface SynthStarters {
-  /** Throws on a bad pitch or partial, at the call rather than when it comes due. */
+  /** Throws on a bad pitch, partial, glide, envelope, filter or duration, at the call rather
+   *  than when it comes due. */
   note(note: NoteOptions): Starter;
+  /** Throws on a bad envelope, filter or duration, as `note` does. */
   noise(noise: NoiseOptions): Starter;
 }
 
@@ -124,6 +126,7 @@ export function createSynthStarters(ctx: BaseAudioContext, random: () => number)
     },
 
     noise(noise) {
+      checkShaping(noise);
       return {
         ready: () => true,
         start: (voice, whenMs) => synthStart(ctx, voice, whenMs, noise, (t0, into) => {

@@ -8,7 +8,7 @@ import { biquadCoefficients } from './biquad';
 import { envelopeLevel, resolveEnvelope, type Envelope } from './envelope';
 import { lerp } from './lerp';
 import { sineShape, waveShape } from './oscillator';
-import { NOISE_SECONDS, isInharmonic, noiseSamples, resolveNote } from './synthVoice';
+import { NOISE_SECONDS, checkShaping, isInharmonic, noiseSamples, resolveNote } from './synthVoice';
 import type { NoiseColor, NoiseOptions, NoteOptions, VoiceFilter } from './types';
 
 /** What of a `playNote` call shapes its samples. Routing, position, and timing
@@ -154,12 +154,14 @@ function noiseLoop(color: NoiseColor, sampleRate: number): Float32Array {
   return loop;
 }
 
-/** A `playNoise` voice. `random` picks where in the loop it starts. */
+/** A `playNoise` voice. `random` picks where in the loop it starts. Throws on a bad envelope,
+ *  filter or duration, as `playNoise` does. */
 export function createNoiseKernel(
   noise: KernelNoise,
   sampleRate: number,
   random: () => number = Math.random,
 ): VoiceKernel {
+  checkShaping(noise);
   const loop = noiseLoop(noise.noise, sampleRate);
   // On a whole sample: between two, white noise is their average, and quieter for it.
   let at = Math.floor(random() * loop.length);

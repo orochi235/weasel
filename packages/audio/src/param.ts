@@ -48,6 +48,13 @@ export function checkFinite(what: string, value: number | undefined): void {
   }
 }
 
+/** Throws on a length of time, in ms, that is negative or not finite. */
+export function checkSpan(what: string, ms: number | undefined): void {
+  if (ms !== undefined && !(ms >= 0 && ms < Infinity)) {
+    throw new RangeError(`@weasel-js/audio: a ${what} is a finite number of ms, 0 or more, not ${ms}`);
+  }
+}
+
 /** {@link checkFinite} on each of a point's coordinates. */
 export function checkPoint(what: string, p: { x: number; y: number; z?: number } | undefined): void {
   if (!p) return;
