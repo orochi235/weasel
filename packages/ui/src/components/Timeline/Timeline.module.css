@@ -30,6 +30,12 @@
   white-space: nowrap;
 }
 
+.laneName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .lane[data-depth='1'] .laneLabel { --depth: 1; }
 .lane[data-depth='2'] .laneLabel { --depth: 2; }
 .lane[data-depth='3'] .laneLabel { --depth: 3; }
