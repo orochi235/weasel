@@ -22,7 +22,9 @@ export function useHeldAriaRef(
     if (!el || !held) return;
     el.setAttribute('aria-disabled', 'true');
     if (reason) el.setAttribute('aria-description', reason);
+    // A ref returning a cleanup is never called with null, so the cleanup lets go of `el` itself.
     return () => {
+      if (intoRef?.current === el) intoRef.current = null;
       el.removeAttribute('aria-disabled');
       el.removeAttribute('aria-description');
     };
