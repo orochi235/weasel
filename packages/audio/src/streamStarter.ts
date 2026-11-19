@@ -1,3 +1,4 @@
+import { createPart } from '@weasel-js/registry';
 import { atAudioTime, type Timers } from './audioTime';
 import type { SourceLike, Starter, VoiceOptions } from './liveVoice';
 import { checkSpan } from './param';
@@ -9,7 +10,7 @@ export interface StreamStarters {
   element(media: HTMLMediaElement | string, opts: StreamOptions): HTMLMediaElement;
   starter(el: HTMLMediaElement, opts: StreamOptions): Starter;
   /** An element has one playhead: the voice streaming it now, to stop before
-   *  another starts. */
+   *  another starts. Shared by every engine on the context. */
   streaming: WeakMap<HTMLMediaElement, VoiceHandle>;
 }
 
@@ -55,10 +56,15 @@ function mediaSource(
   return shim;
 }
 
+// An element can be routed into a context once, ever: the node is kept for the element's lifetime
+// and handed from voice to voice, across every engine on that context.
+const routedIn = createPart((_ctx: BaseAudioContext) => ({
+  mediaSources: new WeakMap<HTMLMediaElement, MediaElementAudioSourceNode>(),
+  streaming: new WeakMap<HTMLMediaElement, VoiceHandle>(),
+}));
+
 export function createStreamStarters(ctx: AudioContext, timers: Timers): StreamStarters {
-  // An element can be routed into a graph once, ever: the node is kept for the
-  // element's lifetime and handed from voice to voice.
-  const mediaSources = new WeakMap<HTMLMediaElement, MediaElementAudioSourceNode>();
+  const { mediaSources, streaming } = routedIn(ctx);
   return {
     element(media, opts) {
       if (typeof media !== 'string') return media;
@@ -87,7 +93,7 @@ export function createStreamStarters(ctx: AudioContext, timers: Timers): StreamS
         },
       };
     },
-    streaming: new WeakMap(),
+    streaming,
   };
 }
 

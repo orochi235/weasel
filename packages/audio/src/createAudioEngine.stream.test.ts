@@ -145,6 +145,22 @@ describe('engine.stream', () => {
     warn.mockRestore();
   });
 
+  it('streams an element again from a second engine on the same context', async () => {
+    const { ctx, engine, sources, tick } = await harness();
+    const el = createFakeMediaElement();
+    const first = engine.stream(el as never);
+    tick();
+    engine.dispose();
+    const next = createAudioEngine({ context: ctx as never, setTimer: () => 1, clearTimer: () => {} });
+    const second = next.stream(el as never);
+    await flush();
+    expect(sources).toHaveLength(1);
+    expect(first.isPlaying()).toBe(false);
+    expect(second.isPlaying()).toBe(true);
+    expect(el.paused).toBe(false);
+    next.dispose();
+  });
+
   it('pauses and unwires on stop', async () => {
     const { engine, sources, tick } = await harness();
     const el = createFakeMediaElement();
