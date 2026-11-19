@@ -92,15 +92,24 @@ const match = async (ctx, area, a, b) => {
   return { pairs, ...run };
 };
 
-const fix = async (ctx, area) => {
+/** What the fixer is told its findings are: two blind reviews of an area, unless `source` says otherwise. */
+const reviewedSource = (ctx, id) => fill(
+  'Two blind reviewers read this area at the frozen commit {{commit}} and reported without fixing. Their\n'
+  + 'reports are `{{reportA}}` and `{{reportB}}`. Some findings appear in both under different words; treat\n'
+  + 'those as one.',
+  { commit: ctx.commit, reportA: `${JOB_IN}/${id}/A.md`, reportB: `${JOB_IN}/${id}/B.md` },
+);
+
+/** One fixer job on `area`'s findings, which are already in `.skulk/in/<area>/` in the frozen tree. */
+export const fix = async (ctx, area, source = reviewedSource(ctx, area.id)) => {
   const to = jobDir(ctx.nightDir, area.id, 'fix');
-  const vars = { round: ctx.round, area: area.id, commit: ctx.commit, reportA: `${JOB_IN}/${area.id}/A.md`, reportB: `${JOB_IN}/${area.id}/B.md` };
+  const vars = { round: ctx.round, area: area.id, commit: ctx.commit, source };
   writeFileSync(join(ctx.frozen, JOB_IN, area.id, 'fix.md'), fill(brief('fixer.md'), vars));
   const run = await dispatch(ctx, area, 'fix', {
     kind: 'fix', expectMin: 40, shell: fixShell(area.id, ctx.budget.fix), to,
     env: { FROZEN_TREE: ctx.frozenTree, ...ctx.identity },
     task: `audit${ctx.round}-${area.id}-fix`, logPath: join(to, '..', 'fix.log'),
-    about: `Fixer for audit round ${ctx.round}, area ${area.id}: verifies, tests and fixes what the two reviewers found.`,
+    about: `Fixer for audit round ${ctx.round}, area ${area.id}: verifies, tests and fixes its findings.`,
   });
   const mbox = join(to, 'fix.mbox');
   const patches = existsSync(mbox) ? (readFileSync(mbox, 'utf8').match(/^From [0-9a-f]{40} /gm) ?? []).length : 0;

@@ -7,7 +7,7 @@ const ceiling = (s) => (s.budgetHit?.length ? `; ${s.budgetHit.join(', ')} stopp
 const unrun = (s) => (s.incomplete?.length ? `; reviewer ${s.incomplete.join(' and ')} never ran, so no estimate` : '');
 
 /** The README of round `round`, from each area's summary (`area.json`) and what became of its branch. */
-export const roundReadme = ({ round, commit, date, areas, outcomes }) => {
+export const roundReadme = ({ round, commit, date, areas, sweep, outcomes }) => {
   const rows = areas.map((s) => {
     const fate = outcomes[s.id] ?? '';
     const prev = s.previous ? `${num(s.previous.unfound)} (r${s.previous.round})` : '-';
@@ -36,7 +36,24 @@ export const roundReadme = ({ round, commit, date, areas, outcomes }) => {
     `Totals: ${total('distinct')} distinct findings, ${total('patches')} fix commits, ${total('questions')} questions, `
       + `${mtok(areas.reduce((s, a) => s + a.jobs.tokens, 0))} tokens, ${usd(areas.reduce((s, a) => s + a.jobs.costUsd, 0))}.`,
     '',
+    ...(sweep ? sweepSection(sweep, outcomes['control-sweep']) : []),
   ].join('\n');
+};
+
+/** The README's control-sweep section: the run's counts and its dead controls. */
+export const sweepSection = (sweep, outcome) => {
+  if (!sweep.ran) return ['## Control sweep', '', `The control sweep ${sweep.skipped ?? `did not run: ${sweep.why}`}.`, ''];
+  const s = sweep.summary;
+  const rows = s.deadControls.map((d) => `| \`${d.demo}\` | ${d.label} | ${d.kind} | ${d.precondition ?? ''} |`);
+  return [
+    '## Control sweep',
+    '',
+    `\`scripts/control-sweep.mjs\` at the same commit operated ${s.controls} controls in ${s.demos} demos in ${sweep.minutes.toFixed(1)} min: `
+      + `${s.dead} dead, ${s.unsure} unsure, ${s.skipped} skipped, ${s.waived} waived, ${s.error} errors; ${s.loadFailures} demos did not load. `
+      + `The dead controls went to one fixer${outcome ? ` (${outcome})` : ''}; its report and the run's summary are in \`control-sweep/\`.`,
+    ...(rows.length ? ['', '| Demo | Dead control | Kind | Under |', '|---|---|---|---|', ...rows] : []),
+    '',
+  ];
 };
 
 /** The record row for `docs/hardening.md`. */

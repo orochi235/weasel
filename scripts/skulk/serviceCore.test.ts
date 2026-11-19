@@ -31,9 +31,9 @@ describe('handle', () => {
 
   it('starts a night with the request\'s limits, and refuses a second while one runs', async () => {
     const d = deps();
-    const reply = await handle(JSON.stringify({ id: 1, start: true, areas: 1, nodes: ['studio'], capUsd: 40, budget: { fix: 5 }, merge: false }), d);
+    const reply = await handle(JSON.stringify({ id: 1, start: true, areas: 1, nodes: ['studio'], capUsd: 40, budget: { fix: 5 }, merge: false, sweep: false }), d);
     expect(reply).toMatchObject({ id: 1, started: true });
-    expect(d.calls).toEqual([['--areas', '1', '--nodes', 'studio', '--cap-usd', '40', '--budget-fix', '5', '--no-merge']]);
+    expect(d.calls).toEqual([['--areas', '1', '--nodes', 'studio', '--cap-usd', '40', '--budget-fix', '5', '--no-merge', '--no-sweep']]);
     expect(await handle('{"id":2,"start":true}', deps(true))).toMatchObject({ id: 2, error: 'a night is already running' });
     expect(await handle('{"id":3,"start":true,"budget":{"lunch":1}}', d)).toMatchObject({ error: 'budget has no role lunch' });
   });
