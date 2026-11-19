@@ -1,4 +1,3 @@
-import { isFiniteNumber } from '@weasel-js/registry';
 /**
  * The line, decoration and script metrics a font states for itself, in the
  * kit's units: em fractions, with a rule's `offset` measured *down* from the
@@ -66,6 +65,9 @@ export interface FaceMetricTables {
     sCapHeight?: number;
   };
 }
+
+// Not registry's isFiniteNumber: `npm run gen:font` runs this file under plain node, which would load registry's dist.
+const isFiniteNumber = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
 
 /** `OS/2.fsSelection` bit 7: the font asks to be set by its typo metrics. */
 const USE_TYPO_METRICS = 1 << 7;
