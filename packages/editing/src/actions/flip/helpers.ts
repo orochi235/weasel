@@ -16,7 +16,7 @@ export type FlipAxis = 'x' | 'y';
  *  - `'each'` — every pose mirrors about its own AABB; spatial layout of the
  *    selection is unchanged, individual items are reflected in place.
  *  - `'union'` — every pose mirrors about the selection's union AABB; items
- *    swap sides as well as reflect, matching Illustrator/Figma defaults.
+ *    swap sides as well as reflect.
  *  - a {@link SpatialReference} — every pose mirrors about the center of the
  *    bounds it names: the pointer, a world point or rect, or a key node. */
 export type FlipPivot = 'each' | 'union' | SpatialReference;
