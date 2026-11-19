@@ -1,11 +1,11 @@
 /**
- * The default "press is registering" feedback for a touch or pen long-press: a
- * ring around the press point that fills over the hold. It reads the `longPress`
- * dep the gesture dispatcher publishes, so it shows only for a press some
- * binding would fire on, and disappears when the press fires, moves past the
- * drag threshold, lifts, or is canceled.
+ * The default long-press feedback on a canvas: the ring `@weasel-js/gestures`'
+ * `pressRingAt` describes, drawn as a screen-space layer from the `longPress`
+ * dep the gesture dispatcher publishes, colored by the theme's accent.
  */
-import type { LongPressState } from '@weasel-js/routing';
+import {
+  type LongPressState, type PressRing, type PressRingOptions, pressRingAt, pressRingWaitAt, ringArcPoints,
+} from '@weasel-js/gestures';
 import { prefersReducedMotion } from '@weasel-js/react';
 import { after } from '@weasel-js/registry';
 import type { RenderLayer } from 'core/layers/render';
@@ -18,27 +18,20 @@ import { accentColorOf } from '../../canvas/accentColor';
 /** Entry and layer id of the default feedback, so a host can find or order it. */
 export const LONG_PRESS_FEEDBACK_ID = 'long-press-feedback';
 
-/** Options for {@link createLongPressFeedbackContribution}. */
-export interface LongPressFeedbackOptions {
+/** Options for {@link createLongPressFeedbackContribution}: the ring's look and timing, plus how it is colored
+ *  and whether it fills. */
+export interface LongPressFeedbackOptions extends PressRingOptions {
   /** Entry and layer id. Default {@link LONG_PRESS_FEEDBACK_ID}. */
   id?: string;
-  /** Ring radius in CSS pixels. Default 22 — clear of a fingertip. */
-  radius?: number;
-  /** Ring stroke width in CSS pixels. Default 3. */
-  width?: number;
   /** Ring color. Default the theme's `--wzl-accent`, read off the canvas
    *  element when each press starts. */
   color?: string | (() => string);
-  /** How long a press is held before the ring appears, in ms, so an ordinary
-   *  tap shows nothing. Default 120. */
-  delay?: number;
   /** `true` shows a static full ring instead of one that fills, and runs no
    *  frame loop. Default `'auto'`: follow `prefers-reduced-motion`, read when
    *  each press starts. */
   reducedMotion?: boolean | 'auto';
 }
 
-const RING_SEGMENTS = 64;
 const TRACK_OPACITY = 0.3;
 
 const nowMs = (): number => performance.now();
@@ -48,19 +41,22 @@ interface Look {
   reduced: boolean;
 }
 
-/** An open arc from 12 o'clock, clockwise on a y-down screen, through `t` of a turn. */
-function arcPath(cx: number, cy: number, r: number, t: number): Path {
-  const n = Math.max(1, Math.ceil(RING_SEGMENTS * t));
-  const pts: { x: number; y: number }[] = [];
-  for (let i = 0; i <= n; i++) {
-    const a = (i / n) * t * Math.PI * 2;
-    pts.push({ x: cx + r * Math.sin(a), y: cy - r * Math.cos(a) });
-  }
-  return polylineFromPoints(pts);
+function circlePath(r: Pick<PressRing, 'x' | 'y' | 'radius'>): Path {
+  return ellipsePath({ x: r.x - r.radius, y: r.y - r.radius, width: 2 * r.radius, height: 2 * r.radius });
 }
 
-function circlePath(cx: number, cy: number, r: number): Path {
-  return ellipsePath({ x: cx - r, y: cy - r, width: 2 * r, height: 2 * r });
+/** The commands that draw `ring` in `color`: a faint track under the filled arc, or one full ring when static. */
+function ringCommands(ring: PressRing, color: string): DrawCommand[] {
+  const stroke = (opacity?: number) => ({
+    paint: { color, ...(opacity !== undefined ? { opacity } : {}) },
+    width: { px: ring.width },
+    cap: 'round' as const,
+  });
+  if (ring.fill === 'full') return [{ kind: 'path', path: circlePath(ring), stroke: stroke() }];
+  return [
+    { kind: 'path', path: circlePath(ring), stroke: stroke(TRACK_OPACITY) },
+    { kind: 'path', path: polylineFromPoints(ringArcPoints(ring, ring.fill)), stroke: stroke() },
+  ];
 }
 
 const viewIdOf = (data: unknown): string | null =>
@@ -75,9 +71,11 @@ export function createLongPressFeedbackContribution(
   opts: LongPressFeedbackOptions = {},
 ): SurfaceContribution {
   const id = opts.id ?? LONG_PRESS_FEEDBACK_ID;
-  const radius = opts.radius ?? 22;
-  const width = opts.width ?? 3;
-  const delay = opts.delay ?? 120;
+  const ringOpts: PressRingOptions = {
+    ...(opts.radius !== undefined ? { radius: opts.radius } : {}),
+    ...(opts.width !== undefined ? { width: opts.width } : {}),
+    ...(opts.delay !== undefined ? { delay: opts.delay } : {}),
+  };
 
   /** How each attached canvas draws its press, read when the press starts.
    *  Keyed by the canvas's store: one entry may be installed on several. */
@@ -88,23 +86,11 @@ export function createLongPressFeedbackContribution(
     label: 'Long-press feedback',
     space: 'screen',
     draw: (data): DrawCommand[] => {
-      const p = store.get();
       // Screen space is the whole canvas, so the root pass draws the ring
       // wherever the press routed; a view pass drawing it too would double it.
-      if (!p || !p.armed || viewIdOf(data) !== null) return [];
-      const now = nowMs();
-      if (now - p.startedAt < delay) return [];
-      const { x, y } = p.local;
-      const stroke = (opacity?: number) => ({
-        paint: { color: look.color, ...(opacity !== undefined ? { opacity } : {}) },
-        width: { px: width },
-        cap: 'round' as const,
-      });
-      if (look.reduced) return [{ kind: 'path', path: circlePath(x, y, radius), stroke: stroke() }];
-      return [
-        { kind: 'path', path: circlePath(x, y, radius), stroke: stroke(TRACK_OPACITY) },
-        { kind: 'path', path: arcPath(x, y, radius, store.progress(now)), stroke: stroke() },
-      ];
+      if (viewIdOf(data) !== null) return [];
+      const ring = pressRingAt(store, nowMs(), { ...ringOpts, still: look.reduced });
+      return ring ? ringCommands(ring, look.color) : [];
     },
   });
 
@@ -125,7 +111,7 @@ export function createLongPressFeedbackContribution(
           ? prefersReducedMotion()
           : opts.reducedMotion;
         // A static ring changes once, when it appears; nothing needs frames.
-        const wait = delay - (nowMs() - p.startedAt);
+        const wait = pressRingWaitAt(store, nowMs(), opts.delay) ?? 0;
         if (look.reduced && wait > 0) cancelAppear = after(wait, () => { api.requestRedraw(); });
       }
       api.requestRedraw();

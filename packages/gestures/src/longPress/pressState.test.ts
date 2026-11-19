@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createLongPressStore, type PendingLongPress } from './longPressState';
+import { createLongPressStore, type PendingLongPress } from './pressState';
 
 const pending = (over: Partial<PendingLongPress> = {}): PendingLongPress => ({
   pointerId: 1,

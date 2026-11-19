@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createPointerStore } from './ambient/PointerContext';
-import { createLongPressStore, type PendingLongPress } from './interactions/dispatcher/longPressState';
+import { createLongPressStore, type PendingLongPress } from '@weasel-js/gestures';
 import { createDepRegistry } from './index';
 
 afterEach(() => vi.restoreAllMocks());

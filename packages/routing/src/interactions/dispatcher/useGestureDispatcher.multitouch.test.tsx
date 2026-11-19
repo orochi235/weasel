@@ -6,7 +6,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { useRef, type ReactNode } from 'react';
 import { useGestureDispatcher } from './useGestureDispatcher';
-import { LONG_PRESS_MS } from './longPressState';
+import { LONG_PRESS_MS } from '@weasel-js/gestures';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
 import { DepRegistryProvider } from '../actions/depRegistry';
 import { ActionsProvider, useAction, useActionsRegistry } from '../actions/ActionsProvider';
