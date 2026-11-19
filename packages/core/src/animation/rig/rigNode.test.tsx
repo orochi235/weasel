@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { act, render } from '@testing-library/react';
 import type { Path, PolygonPath } from '@weasel-js/geom';
 import { createScene } from '../../core/scene/scene';
-import type { RectPose } from '../../core/scene/types';
+import type { NodeId, RectPose } from '../../core/scene/types';
 import type { Rig } from './bindRig';
 import { placeSkeleton, rigFromNode, unplaceSkeleton, useRigNode } from './rigNode';
 import type { Skin } from '@weasel-js/animator';
@@ -59,6 +59,17 @@ describe('rigFromNode', () => {
     const parts = rigFromNode(scene, rig);
     expect(parts.skins).toEqual({ [sleeve]: SLEEVE });
     expect(parts.bindings).toEqual({ lower: [hand, cuff] });
+  });
+
+  it('gathers the skin of a node whose id is `__proto__` as its own entry', () => {
+    const { scene, rig } = rigScene();
+    scene.add({
+      id: '__proto__' as NodeId, kind: 'mark', layer: 'main', parent: rig, pose: { x: 100, y: 95, width: 100, height: 10 },
+      data: { path: { kind: 'rect', x: 100, y: 95, width: 100, height: 10 }, skin: SLEEVE },
+    });
+    const { skins } = rigFromNode(scene, rig);
+    expect(Object.hasOwn(skins, '__proto__')).toBe(true);
+    expect(Object.getPrototypeOf(skins)).toBe(Object.prototype);
   });
 
   it('throws on a node with no skeleton', () => {
