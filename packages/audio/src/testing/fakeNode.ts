@@ -53,6 +53,9 @@ export function node<E extends Record<string, unknown>>(kind: string, extra?: E)
     connectedFrom: [] as FakeNode[],
     disconnected: false,
     connect(target: FakeNode) {
+      // A second identical connection is ignored, as the specification says:
+      // one disconnect then cuts the edge.
+      if (n.connectedTo.includes(target)) return target;
       n.connectedTo.push(target);
       target.connectedFrom.push(n);
       return target;
