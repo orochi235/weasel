@@ -60,6 +60,17 @@
 
 /* Drag-handle column. */
 .handleCol { width: 14px; }
+.handleCol,
+.detailCol { position: relative; }
+/* A header with nothing to show still names its column to a screen reader. */
+.colName {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 .handleCell { width: 14px; }
 /* A cell's height is a minimum, and naming one is what lets the button's 100% resolve. */
 .table .handleCell { padding: 0; height: 1px; }
