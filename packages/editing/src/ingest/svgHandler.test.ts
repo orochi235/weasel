@@ -149,7 +149,7 @@ describe('sniffSvgText', () => {
     expect(sniffSvgText('<?xml version="1.0"?>\n<!-- exported -->\n<svg>')).toBe(true);
   });
 
-  it('accepts the canonical Illustrator-style DOCTYPE preamble; rejects HTML doctypes', () => {
+  it('accepts the SVG 1.1 DOCTYPE preamble editors export; rejects HTML doctypes', () => {
     expect(sniffSvgText(
       '<?xml version="1.0" encoding="utf-8"?>\n'
       + '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">\n'

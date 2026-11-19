@@ -58,7 +58,7 @@ export function selectionMoveBindings<TPose>(
   });
 
   return [
-    // Alt-drag on a body → clone (Illustrator convention).
+    // Alt-drag on a body → clone.
     // Listed BEFORE bare move so the strict-modifier dispatcher
     // picks this when Alt is held; bare move matches no-mod drags.
     // Both selected and unselected bodies are valid clone targets — the

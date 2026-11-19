@@ -18,7 +18,7 @@ export type PolygonPoint = WorldPoint;
 export interface UsePolygonToolOptions extends InsertToolOptions {
   label?: string;
   /** The side count before its user changes it, the `sides` option's
-   *  default. It persists across gestures (Illustrator convention) and is
+   *  default. It persists across gestures and is
    *  adjustable mid-drag via ArrowUp/Down or wheel (range 3–32). */
   sides?: number;
 }

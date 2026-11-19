@@ -153,7 +153,7 @@ describe('App', () => {
     expect(chartPrefs().get('view.gridVisible')).toBe(false);
   });
 
-  it("flips the grid prefs from Photoshop's keys, Mod+' and Mod+Shift+;, and shows them in View", () => {
+  it("flips the grid prefs from Mod+' and Mod+Shift+;, and shows them in View", () => {
     mount();
     // jsdom is not an Apple platform, so mod is Ctrl. Shift makes the ; key type ':'.
     const press = (init: KeyboardEventInit) => {

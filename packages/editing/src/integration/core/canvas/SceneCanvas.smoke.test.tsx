@@ -312,8 +312,7 @@ describe('clone smoke (alt-drag via select tool)', () => {
     batchSpy.mockRestore();
   });
 
-  // Illustrator behavior: alt-drag on a node clones it whether or not it was
-  // pre-selected.
+  // Alt-drag on a node clones it whether or not it was pre-selected.
   it('alt-drag on UNSELECTED body fires cloneAction → scene.applyBatch("Clone")', () => {
     const scene = makeScene();
     const countBefore = nodeCount(scene);

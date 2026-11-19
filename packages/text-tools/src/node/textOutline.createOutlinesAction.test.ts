@@ -55,7 +55,7 @@ describe('createOutlinesAction', () => {
       .toBe(ActionDisabledReason.SelectionRequired);
   });
 
-  it("binds Affinity's Mod+Enter", () => {
+  it('binds Mod+Enter', () => {
     expect(createOutlinesAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'Enter', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'createOutlines.key' } }]);
   });
 });
