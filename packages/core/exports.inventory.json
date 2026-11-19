@@ -3414,7 +3414,6 @@
     "gridSourceForTests": "function",
     "handleAffordanceForTests": "function",
     "heldPoseForTests": "function",
-    "iconsForTests": "const",
     "layersOverPresetsForTests": "function",
     "legalSelectionForTests": "function",
     "lineSourceForTests": "function",

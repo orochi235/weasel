@@ -78,7 +78,6 @@ export { siteIn as siteInForTests } from '../canvas/deps/insertSite';
 export { useOptionalViewInputs as useOptionalViewInputsForTests } from '../canvas/viewInputs';
 export type { SurfaceViewInputs as SurfaceViewInputsForTests } from '../canvas/viewInputs';
 export { legalSelection as legalSelectionForTests, settleSelection as settleSelectionForTests } from '../core/selection/legalSelection';
-export { icons as iconsForTests } from '../icons.table';
 
 export type { BuildAffordanceAtOptions, ChromeAffordanceOptions } from '../canvas/affordanceAt';
 export type { ChromeCaps, ViewRuleInputs } from '../domains/chrome-caps/useChromeCaps';
