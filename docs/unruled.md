@@ -2683,3 +2683,9 @@ Calls the lanes made without a ruling:
   `unit` other than plain `px` under `BRUSH_SIZE_PX`; a size in world units passes a key of its own, which is the
   override. A leaf naming neither a unit nor a measure passes, since it says nothing. Warning and sharing anyway
   was the alternative.
+## Audit round thirty-seven (2026-11-18): clock
+
+- 2026-11-18 (the fixer's call): a clock declared `start: 'end'` whose run is made endless at runtime (a loop toggle,
+  `duration = Infinity`, an override) resets to the end of its declared run, standing at that pass's end, and
+  `declare` throws a `RangeError` on a declaration whose run never ends for such a clock, keeping the last one.
+  Resetting to 0 there, or letting `declare` through and throwing at Reset as before, were the alternatives.

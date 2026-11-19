@@ -236,3 +236,26 @@ describe('useClockLoop per frame', () => {
     expect(late.clock.elapsed).toBe(16);
   });
 });
+
+describe('useClockLoop and a shadowed registration', () => {
+  it('does not count the time a clock spent shadowed under its id', () => {
+    const frames = makeFrames();
+    const registry = createClockRegistry();
+    const a = createClock({ rate: 1 });
+    registry.register('x', a);
+    mount(registry, frames);
+    frames.flushAt(0);
+    frames.flushAt(16);
+    expect(a.clock.elapsed).toBe(16);
+    let releaseB = () => {};
+    act(() => {
+      releaseB = registry.register('x', createClock({ rate: 1 }));
+    });
+    for (let t = 32; t <= 2000; t += 16) frames.flushAt(t);
+    expect(a.clock.elapsed).toBe(16);
+    act(() => releaseB());
+    frames.flushAt(2016);
+    frames.flushAt(2032);
+    expect(a.clock.elapsed).toBe(32);
+  });
+});

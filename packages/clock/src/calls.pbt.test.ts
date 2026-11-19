@@ -200,7 +200,9 @@ describe('wakes, frames, and notices — model', () => {
         t.count(o.kind);
       }
     }), runs(RUNS));
-    for (const k of ['rate', 'seek', 'declare', 'override', 'inert sync', 'quiet']) t.atLeast(k, RUNS / 10);
+    for (const k of ['rate', 'seek', 'declare', 'override', 'inert sync']) t.atLeast(k, RUNS / 10);
+    // A call that changes nothing comes up about 15 times in 200 runs, and as few as 10.
+    t.atLeast('quiet', RUNS / 40);
   }, timeoutFor(RUNS, 3));
 });
 
@@ -251,7 +253,8 @@ describe('holdAt under overrides, loops, and frames', () => {
         const want = Math.min(Math.max(0, Math.min(shown === null ? 0 : shown - c.origin, c.duration)), span);
         expect(near(c.elapsed, want, c.duration)).toBe(true);
         if (Number.isFinite(c.duration)) expect(c.pass).toBe(0);
-        const reached = shown === null || c.origin + c.elapsed === shown;
+        // Reached once the clock stands at the elapsed that shows it, unclamped by the span.
+        const reached = shown === null || c.elapsed === shown - c.origin;
         expect(hold.pending()).toBe(reached ? null : shown);
         t.count(mv.kind);
       }

@@ -167,3 +167,70 @@ describe('holdPosition', () => {
     expect([h.clock.elapsed, h.clock.pass]).toEqual([2000, 2]);
   });
 });
+
+describe('a hold and a ramp', () => {
+  it('releases when a ramp starts the held clock', () => {
+    const h = createClock({ duration: 1000 });
+    const hold = holdAt(h, 500);
+    expect(h.clock.ramping).toBe(false);
+    h.clock.ramp(1, 300);
+    expect(h.clock.ramping).toBe(true);
+    // A declaration before the first frame of the ramp, which a hold still in place would answer with a seek.
+    h.declare({ duration: 1000, origin: 100 });
+    expect(h.clock.elapsed).toBe(400);
+    h.clock.sync(0);
+    h.clock.sync(100);
+    const moved = h.clock.elapsed;
+    expect(moved).toBeGreaterThan(400);
+    expect(hold.pending()).toBeNull();
+    h.declare({ duration: 2000, origin: 100 });
+    expect(h.clock.elapsed).toBe(moved);
+    h.clock.sync(400);
+    expect(h.clock.ramping).toBe(false);
+  });
+});
+
+describe('holdPosition at an ended run', () => {
+  it('reads it as the end of the last pass, as declare does', () => {
+    const h = createClock({ duration: 100 });
+    holdPosition(h, { elapsed: 100, origin: -10 });
+    expect([h.clock.elapsed, shownInPass(h.clock)]).toEqual([90, 90]);
+    const d = createClock({ duration: 100, start: 'end' });
+    d.declare({ duration: 100, origin: 10 });
+    const e = createClock({ duration: 100, origin: 10 });
+    holdPosition(e, { elapsed: 100, origin: 0 });
+    expect([e.clock.elapsed, shownInPass(e.clock)]).toEqual([d.clock.elapsed, 100]);
+  });
+  it('keeps the time shown in the last pass across a duration change', () => {
+    const h = createClock({ duration: 200 });
+    const hold = holdPosition(h, { elapsed: 100, duration: 100 });
+    expect([h.clock.elapsed, h.clock.ended]).toEqual([100, false]);
+    expect(hold.pending()).toBeNull();
+    const l = createClock({ duration: 200, loop: 2 });
+    holdPosition(l, { elapsed: 200, duration: 100 });
+    expect([l.clock.elapsed, l.clock.pass]).toEqual([300, 1]);
+  });
+});
+
+describe('pending', () => {
+  it('reads a holdAt met when the clock stands where the hold sought, whatever the float round trip', () => {
+    const h = createClock({ duration: 1000, origin: 0.7 });
+    const hold = holdAt(h, 3.1);
+    expect(h.clock.elapsed).toBe(3.1 - 0.7);
+    expect(hold.pending()).toBeNull();
+  });
+  it('reads a holdPosition past its pass end as waiting, as holdAt does', () => {
+    const a = createClock({ duration: 1000 });
+    const at = holdAt(a, 1500);
+    const p = createClock({ duration: 1000 });
+    const position = holdPosition(p, { elapsed: 500, origin: 1000 });
+    expect([a.clock.elapsed, p.clock.elapsed]).toEqual([1000, 1000]);
+    expect(at.pending()).toBe(1500);
+    expect(position.pending()).toBe(1500);
+    p.clock.duration = 2000;
+    expect(p.clock.elapsed).toBe(1500);
+    expect(position.pending()).toBeNull();
+    const before = createClock({ duration: 1000, origin: 100 });
+    expect(holdPosition(before, { elapsed: 50, origin: 0 }).pending()).toBe(-50);
+  });
+});
