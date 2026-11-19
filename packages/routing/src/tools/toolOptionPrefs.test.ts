@@ -64,6 +64,33 @@ describe('toolOptionsPrefs', () => {
   });
 });
 
+describe('toolOptionsPrefs: a shared number', () => {
+  const sized = (id: string, max: number, min = 2) => ({
+    id,
+    options: {
+      actionId: 'paint',
+      prefs: { name: 'Brush', children: { radiusPx: { kind: 'number', name: 'Size', description: '', default: 20, min, max } } },
+      share: { radiusPx: 'size' },
+    } satisfies ToolOptionsSpec,
+  });
+  const sharedLeaf = (schema: ReturnType<typeof toolOptionsPrefs>) =>
+    (schema.children[SHARED_TOOL_OPTIONS] as { children: Record<string, { min?: number; max?: number; default?: unknown }> })
+      .children.size;
+
+  it('holds the widest bounds of every tool naming it, so each tool clamps it alone', () => {
+    for (const tools of [[sized('small', 30), sized('big', 400, 5)], [sized('big', 400, 5), sized('small', 30)]]) {
+      const leaf = sharedLeaf(toolOptionsPrefs(tools));
+      expect([leaf.min, leaf.max]).toEqual([2, 400]);
+    }
+  });
+
+  it('is unbounded at an end any tool leaves open', () => {
+    const open = sized('open', 30);
+    delete (open.options.prefs.children.radiusPx as { max?: number }).max;
+    expect(sharedLeaf(toolOptionsPrefs([sized('big', 400), open])).max).toBeUndefined();
+  });
+});
+
 describe('prefsToolOptionValues', () => {
   const open = () => {
     const store = fakeStore();
