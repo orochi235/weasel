@@ -80,6 +80,16 @@ describe('kit barrel parity', () => {
     }
     expect(Barrel.describePresets).toBeTypeOf('function');
   });
+
+  // A consumer catching what a public call throws needs the class for `instanceof`, so every
+  // error class core declares is on the main entry.
+  it('exports every error class core declares', () => {
+    const src = walkTs(ROOT).filter((f) => !f.includes('/test-hook/') && !f.includes('/testing/'));
+    const errors = findExportedNames(src, /^export\s+class\s+([A-Za-z0-9_]+)\s+extends\s+\w*Error\b/gm);
+    expect(errors.size).toBeGreaterThan(0);
+    const missing = [...errors].filter((name) => !(name in Barrel));
+    expect(missing, `error classes not on @weasel-js/core: ${missing.join(', ')}`).toEqual([]);
+  });
 });
 
 // Checked by the typecheck, not at runtime: a consumer can annotate a
