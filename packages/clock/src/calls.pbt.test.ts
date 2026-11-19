@@ -200,7 +200,9 @@ describe('wakes, frames, and notices — model', () => {
         t.count(o.kind);
       }
     }), runs(RUNS));
-    for (const k of ['rate', 'seek', 'declare', 'override', 'inert sync', 'quiet']) t.atLeast(k, RUNS / 10);
+    for (const k of ['rate', 'seek', 'declare', 'override', 'inert sync']) t.atLeast(k, RUNS / 10);
+    // A call that changes nothing comes up about 15 times in 200 runs, and as few as 10.
+    t.atLeast('quiet', RUNS / 40);
   }, timeoutFor(RUNS, 3));
 });
 
