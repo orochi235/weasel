@@ -167,6 +167,7 @@
       "@weasel-js/react/test-seams": ["./packages/react/src/test-seams.ts"],
       "@weasel-js/react/testing/*": ["./packages/react/src/testing/*"],
       "@weasel-js/registry": ["./packages/registry/src/index.ts"],
+      "@weasel-js/registry/testing/*": ["./packages/registry/src/testing/*"],
       "@weasel-js/renderer": ["./packages/renderer/src/index.ts"],
       "@weasel-js/renderer/mesh": ["./packages/renderer/src/mesh.ts"],
       "@weasel-js/renderer/patterns-builtin": ["./packages/renderer/src/patterns-builtin.ts"],

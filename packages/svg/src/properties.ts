@@ -33,7 +33,7 @@ interface PropertyDef<T> {
 /** `text-transform` keywords the runs model carries. */
 const TEXT_TRANSFORMS: ReadonlySet<string> = new Set(['none', 'uppercase', 'lowercase', 'capitalize']);
 
-const DIMENSION = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)([a-z%]*)$/i;
+const DIMENSION = /^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)([a-z%]*)$/i;
 
 function dimension(v: string): { n: number; unit: string } | undefined {
   const m = DIMENSION.exec(v);

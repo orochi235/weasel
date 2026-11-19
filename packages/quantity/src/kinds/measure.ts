@@ -182,12 +182,13 @@ export const durationKind: DisplayKind<DurationDisplay> = {
   },
   parse: (text, _d, ctx) => {
     const d = escapeClass(decimalOf(ctx.locale));
-    const clock = new RegExp(String.raw`^\s*([-−+]?)\s*(?:(\d+):)?(\d+):(\d+)(?:[.${d}](\d+))?\s*$`);
-    const latin = latinDigits(text, ctx.locale);
+    // Matched on trimmed text: a `\s*` either side of an optional sign backtracks in time quadratic in a run of spaces.
+    const clock = new RegExp(String.raw`^([-−+]?)\s*(?:(\d+):)?(\d+):(\d+)(?:[.${d}](\d+))?$`);
+    const latin = latinDigits(text, ctx.locale).trim();
     const m = clock.exec(latin);
     if (m) return signedSeconds(m[1]!, m[2], m[3], `${m[4]}.${m[5] ?? 0}`);
     // The units form's seconds carry a decimal in either mark, as the clock's do: `0.010s` is never ten seconds.
-    const units = new RegExp(String.raw`^\s*([-−+]?)\s*(?:(\d+)\s*h\s*)?(?:(\d+)\s*m\s*)?(\d+)[.${d}](\d+)\s*s\s*$`).exec(latin);
+    const units = new RegExp(String.raw`^([-−+]?)\s*(?:(\d+)\s*h\s*)?(?:(\d+)\s*m\s*)?(\d+)[.${d}](\d+)\s*s$`).exec(latin);
     if (units) return signedSeconds(units[1]!, units[2], units[3], `${units[4]}.${units[5]}`);
     return parseNumberIn(text, DURATION_UNITS, ctx.locale);
   },
