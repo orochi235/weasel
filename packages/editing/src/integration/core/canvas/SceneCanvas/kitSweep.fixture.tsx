@@ -178,7 +178,7 @@ function packageFactories(s: Sweep, scene: never): void {
   s.hook(() => ({ bone: rig.useBoneTool({} as never), weight: rig.useWeightTool({} as never) }), 'rig tools');
   s.hook(() => ({ orbit: kernel3d.useOrbitTool() }), 'kernel3d tools');
   s.value(guides.createSpacingHintsPreset(), 'guides.createSpacingHintsPreset');
-  s.value(guides.distanceReadout(), 'guides.distanceReadout');
+  s.value(guides.createDistanceReadoutContribution(), 'guides.createDistanceReadoutContribution');
   s.value(hud.createHudContribution(), 'hud.createHudContribution');
   s.value(minimap.createMinimapContribution({} as never), 'minimap.createMinimapContribution');
   s.value(minimap.createLinkedCursorContribution(), 'minimap.createLinkedCursorContribution');

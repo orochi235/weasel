@@ -4,7 +4,7 @@ import { worldBoundsOf, worldUnionOf } from '../guides/alignment/sceneBounds';
 import type { ImmediateParams, AnyScene } from '@weasel-js/core';
 
 
-/** Options for `distanceReadout`. */
+/** Options for `createDistanceReadoutContribution`. */
 export interface DistanceReadoutOptions {
   /** The key held to show the readout. Default `'alt'`. */
   modifier?: 'alt' | 'ctrl' | 'meta' | 'shift';
@@ -34,7 +34,7 @@ function marksOf(r: DistanceReadout, color: string | undefined, magnification: n
   ];
 }
 
-/** What `distanceReadout` returns: a surface contribution, plus a read of
+/** What `createDistanceReadoutContribution` returns: a surface contribution, plus a read of
  *  what it is showing. */
 export interface DistanceReadoutContribution extends SurfaceContribution {
   /** The distances on screen now; empty while hidden. */
@@ -68,7 +68,7 @@ function subtreeOf(scene: AnyScene, ids: readonly NodeId[]): Set<NodeId> {
  * input, and it reads the canvas's `selection`, `scene`, `nodeAtPoint`,
  * `poseDescriptor`, and `snapReadout` deps. A press hides it.
  */
-export function distanceReadout(opts: DistanceReadoutOptions = {}): DistanceReadoutContribution {
+export function createDistanceReadoutContribution(opts: DistanceReadoutOptions = {}): DistanceReadoutContribution {
   const id = opts.id ?? 'distanceReadout';
   const modifier = opts.modifier ?? 'alt';
   let shown: DistanceReadout = EMPTY;
