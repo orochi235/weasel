@@ -32,6 +32,7 @@ describe('a Select with a disabled option', () => {
     const green = screen.getByRole('option', { name: 'Green' });
     expect(document.activeElement).toBe(green);
     expect(green).toHaveAttribute('aria-disabled', 'true');
+    expect(green).toHaveAttribute('data-disabled');
     expect(green).toHaveAccessibleDescription('Out of stock');
     key(green, 'ArrowDown');
     expect(document.activeElement).toBe(screen.getByRole('option', { name: 'Blue' }));

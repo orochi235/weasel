@@ -10,8 +10,9 @@ export function heldItemProps(disabled: boolean | undefined): { isDisabled?: boo
   return disabled ? ({ isDisabled: true, disabledBehavior: 'selection' } as { isDisabled?: boolean }) : {};
 }
 
-/** A ref that marks its element `aria-disabled` while `held`, with `reason` as its `aria-description`, and keeps it
- *  on `intoRef`: React Aria writes neither on a row or tab it lets focus land on, and passes neither through as a prop.
+/** A ref that marks its element `aria-disabled` and `data-disabled`, the kit's styling hook, while `held`, with
+ *  `reason` as its `aria-description`, and keeps it on `intoRef`: React Aria writes none of them on a row or tab it
+ *  lets focus land on, and passes none through as a prop.
  *  A callback, since React Aria renders a collection's element after the item component that declared it, and the
  *  same one while `held` and `reason` stay, since React Aria rebuilds its press handling on a new ref. */
 export function useHeldAriaRef(
@@ -21,11 +22,14 @@ export function useHeldAriaRef(
     if (intoRef) intoRef.current = el;
     if (!el || !held) return;
     el.setAttribute('aria-disabled', 'true');
+    const ownMark = !el.hasAttribute('data-disabled');
+    el.setAttribute('data-disabled', '');
     if (reason) el.setAttribute('aria-description', reason);
     // A ref returning a cleanup is never called with null, so the cleanup lets go of `el` itself.
     return () => {
       if (intoRef?.current === el) intoRef.current = null;
       el.removeAttribute('aria-disabled');
+      if (ownMark) el.removeAttribute('data-disabled');
       el.removeAttribute('aria-description');
     };
   }, [held, reason, intoRef]);

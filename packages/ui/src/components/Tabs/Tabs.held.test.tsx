@@ -35,6 +35,7 @@ describe('a disabled Tab', () => {
     arrow(tab('A'));
     expect(document.activeElement).toBe(tab('B'));
     expect(tab('B')).toHaveAttribute('aria-disabled', 'true');
+    expect(tab('B')).toHaveAttribute('data-disabled');
     expect(tab('B')).toHaveAttribute('aria-description', 'Add a layer first');
     expect(screen.getByRole('tooltip').textContent).toContain('Add a layer first');
     expect(screen.getByText('panel-a')).toBeTruthy();
