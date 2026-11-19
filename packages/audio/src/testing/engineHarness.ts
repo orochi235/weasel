@@ -19,11 +19,12 @@ export async function engineHarness() {
   });
   await engine.unlock();
   const flush = async () => { for (let i = 0; i < 5; i++) await Promise.resolve(); };
-  /** Advance the audio clock in scheduler-sized passes. */
+  /** Advance the audio clock by `ms`, in scheduler-sized passes; the last pass
+   *  is whatever is left, so the clock lands on `ms` exactly. */
   const run = async (ms: number) => {
     await flush();
     for (let t = 0; t < ms; t += PASS_MS) {
-      ctx._advance(PASS_MS);
+      ctx._advance(Math.min(PASS_MS, ms - t));
       timers.fire();
       await flush();
     }

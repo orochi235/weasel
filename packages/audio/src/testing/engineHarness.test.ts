@@ -14,6 +14,14 @@ describe('engineHarness', () => {
     expect(ctx._oscillators).toHaveLength(1);
     expect(starts()).toEqual([500]);
   });
+
+  it('advances the clock by exactly the time asked for', async () => {
+    const { ctx, run } = await engineHarness();
+    await run(10);
+    expect(ctx.currentTime).toBeCloseTo(0.01, 9);
+    await run(30);
+    expect(ctx.currentTime).toBeCloseTo(0.04, 9);
+  });
 });
 
 describe('fakeTimers', () => {
