@@ -14,7 +14,7 @@
  */
 
 import type { BidiClass } from './types';
-import { paragraphLevelOf, matchingPDI } from './paragraph';
+import { paragraphLevelOf, pairIsolates } from './paragraph';
 
 /** BD2 — the deepest embedding level the algorithm tracks. */
 export const MAX_DEPTH = 125;
@@ -52,6 +52,7 @@ export function resolveExplicit(
   const classes = input.slice();
   const levels = new Uint8Array(n);
   const removed = new Array<boolean>(n).fill(false);
+  const pdiOf = pairIsolates(input);
 
   // X1.
   const stack: StackEntry[] = [
@@ -88,7 +89,7 @@ export function resolveExplicit(
         let rtl = c === 'RLI';
         if (c === 'FSI') {
           // X5c — first-strong over the contents, which is P2/P3 again.
-          rtl = paragraphLevelOf(classes, i + 1, matchingPDI(classes, i, n)) === 1;
+          rtl = paragraphLevelOf(input, i + 1, pdiOf[i], pdiOf) === 1;
         }
         levels[i] = top().level;
         if (top().override !== 'neutral') classes[i] = top().override as BidiClass;

@@ -10,7 +10,7 @@
  */
 
 import { keptIndices, type ExplicitResult } from './explicit';
-import { isIsolateInitiator, matchingPDI } from './paragraph';
+import { isIsolateInitiator, pairIsolates } from './paragraph';
 
 /** Direction a boundary is treated as having, per X10. */
 export type Boundary = 'L' | 'R';
@@ -37,12 +37,12 @@ export function buildSequences(r: ExplicitResult): IsolatingRunSequence[] {
 
   // Match initiators to their PDIs once, over the original text — the pairing
   // is positional and does not care which characters X9 dropped.
+  const paired = pairIsolates(classes);
   const pdiOf = new Map<number, number>();
   const initiatorOf = new Map<number, number>();
   for (let i = 0; i < n; i++) {
-    if (!isIsolateInitiator(classes[i])) continue;
-    const m = matchingPDI(classes, i, n);
-    if (m < n) {
+    const m = paired[i];
+    if (m >= 0 && m < n) {
       pdiOf.set(i, m);
       initiatorOf.set(m, i);
     }
