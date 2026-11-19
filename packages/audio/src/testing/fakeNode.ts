@@ -52,7 +52,10 @@ export function node<E extends Record<string, unknown>>(kind: string, extra?: E)
     connectedTo: [] as FakeNode[],
     connectedFrom: [] as FakeNode[],
     disconnected: false,
+    // A second connection between the same pair is ignored, as the
+    // specification ignores it, so one `disconnect(target)` cuts it.
     connect(target: FakeNode) {
+      if (n.connectedTo.includes(target)) return target;
       n.connectedTo.push(target);
       target.connectedFrom.push(n);
       return target;

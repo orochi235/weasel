@@ -55,6 +55,19 @@ describe('createFakeAudioContext', () => {
     expect(a.connectedFrom).toEqual([]);
   });
 
+  it('ignores a second connection between the same pair, as the specification does', () => {
+    const ctx = createFakeAudioContext();
+    const a = ctx.createGain();
+    const b = ctx.createGain();
+    a.connect(b);
+    a.connect(b);
+    expect(a.connectedTo).toEqual([b]);
+    expect(b.connectedFrom).toEqual([a]);
+    a.disconnect(b);
+    expect(a.connectedTo).toEqual([]);
+    expect(b.connectedFrom).toEqual([]);
+  });
+
   it('records source start times and collects every source', () => {
     const ctx = createFakeAudioContext();
     const s = ctx.createBufferSource();
