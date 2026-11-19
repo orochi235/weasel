@@ -38,3 +38,18 @@ describe('copying with a page selected', () => {
     expect(byLabel.has('edge')).toBe(true);
   });
 });
+
+describe('pasting at a drop point', () => {
+  it('lands the cluster by the nodes it places, not an edge whose stored pose its path does not follow', () => {
+    const scene: S = createScene<D, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: rect(500, 500), data: { label: 'a' } });
+    const b = scene.add({ kind: 'mark', layer: 'main', pose: rect(700, 500), data: { label: 'b' } });
+    const edge = scene.add({
+      kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: { label: 'edge' },
+      dependsOn: [a, b], derivePath: between,
+    });
+    const { byLabel } = paste(scene, [a, b, edge], { dropPoint: { x: 100, y: 100 } });
+    expect(byLabel.get('a')!.pose).toMatchObject({ x: 100, y: 100 });
+    expect(byLabel.get('b')!.pose).toMatchObject({ x: 300, y: 100 });
+  });
+});

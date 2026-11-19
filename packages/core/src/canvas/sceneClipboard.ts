@@ -233,11 +233,17 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
   let dy = offset.dy;
   if (ctx?.dropPoint) {
     // Drop-point policy: land the cluster origin (min corner of the root
-    // items' bounds) on the drop point; `offset` is ignored.
+    // items' bounds) on the drop point; `offset` is ignored. A root deriving
+    // only its path keeps a placeholder pose its path does not follow.
+    const pathOnly = (item: Item<TData, TLayer, TPose>): boolean => {
+      const fn = fns.get(item.id)!;
+      return sourcesOf(item).length > 0 && fn.derivePath !== undefined && fn.derivePose === undefined;
+    };
+    const roots = src.filter(isRoot);
+    const placing = roots.some((item) => !pathOnly(item)) ? roots.filter((item) => !pathOnly(item)) : roots;
     let minX = Infinity;
     let minY = Infinity;
-    for (const item of src) {
-      if (!isRoot(item)) continue;
+    for (const item of placing) {
       const b = env.poseBounds(item.pose, item);
       if (b.x < minX) minX = b.x;
       if (b.y < minY) minY = b.y;
