@@ -2662,3 +2662,5 @@ Calls the lanes made without a ruling:
   geometry with no `lerp`) throws as `tweenPose` does, leaving the inserted node at its own pose and the node to be
   removed in place and removable again. Falling back to an instant insert or removal without throwing was the
   alternative.
+- 2026-11-18 (the fixer's call): `animateOnSetPose` and `animateLifecycle` take round nineteen's reduced-motion call: with
+  no `ms`, they take no time under `prefers-reduced-motion`. A `spring` option, which the caller names, still springs.

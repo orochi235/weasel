@@ -1,4 +1,5 @@
 import { tweenPose, type PoseAnimationAdapter } from '../poseHelpers';
+import { defaultMotionMs } from '../motionMs';
 import { setPoseInstant } from './instantPose';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { AnimationHandle, Animator, EasingSpec } from '@weasel-js/animator';
@@ -12,6 +13,7 @@ export interface LifecycleAnimation<TPose> {
   enterFrom?: (final: TPose) => TPose;
   /** Pose to animate the existing object TO at remove. */
   exitTo?: (current: TPose) => TPose;
+  /** Default: 200ms, or none under `prefers-reduced-motion`. */
   ms?: number;
   easing?: EasingSpec;
   geometry?: PoseDescriptor<TPose>;
@@ -36,7 +38,6 @@ export function animateLifecycle<
   animator: Animator,
   opts: LifecycleAnimation<TPose>,
 ): A {
-  const ms = opts.ms ?? 200;
   /** Each node whose exit is running, with what calls that exit off. */
   const leaving = new Map<string, () => void>();
 
@@ -57,7 +58,7 @@ export function animateLifecycle<
           id: object.id,
           from: start,
           to: final,
-          ms,
+          ms: opts.ms ?? defaultMotionMs(),
           easing: opts.easing,
           geometry: opts.geometry,
           recordOp: false,
@@ -104,7 +105,7 @@ export function animateLifecycle<
         handle = tweenPose(animator, adapter, {
           id,
           to: opts.exitTo(current),
-          ms,
+          ms: opts.ms ?? defaultMotionMs(),
           easing: opts.easing,
           geometry: opts.geometry,
           recordOp: false,

@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { stubReducedMotion } from '@weasel-js/react/testing/stubMatchMedia';
 import { renderHook, act } from '@testing-library/react';
 import { useAnimator } from '@weasel-js/animator/react';
 import { animateLifecycle } from './animateLifecycle';
@@ -210,5 +211,27 @@ describe('animateLifecycle over animateOnSetPose', () => {
     act(() => clock.advance(100));
     expect(initial.get('a')).toEqual({ x: 10, y: 10, width: 20, height: 20 });
     expect(applyOps).not.toHaveBeenCalled();
+  });
+});
+
+describe('animateLifecycle under prefers-reduced-motion', () => {
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  it('enters and leaves at once in place of the default duration', () => {
+    stubReducedMotion(true);
+    const clock = makeClock();
+    const initial = new Map<string, RectPose>();
+    const { base, removeNode } = makeAdapter(initial);
+    const { result } = renderHook(() => useAnimator(clock));
+    const SHRINK = (p: RectPose) => ({ ...p, width: 0, height: 0 });
+    const wrapped = animateLifecycle(base, result.current, { enterFrom: SHRINK, exitTo: SHRINK });
+    act(() => { wrapped.insertNode({ id: 'a', pose: { x: 0, y: 0, width: 20, height: 20 } }); });
+    act(() => clock.advance(0));
+    act(() => clock.advance(16));
+    expect(initial.get('a')!.width).toBe(20);
+    act(() => { wrapped.removeNode('a'); });
+    act(() => clock.advance(16));
+    act(() => clock.advance(16));
+    expect(removeNode).toHaveBeenCalledWith('a');
   });
 });
