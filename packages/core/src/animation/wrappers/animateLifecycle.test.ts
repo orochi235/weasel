@@ -141,11 +141,28 @@ describe('animateLifecycle.remove', () => {
   });
 });
 
-describe('animateLifecycle when the tween cannot run', () => {
+describe('animateLifecycle when the node comes back or the tween cannot run', () => {
   const SHRINK = (p: RectPose) => ({ ...p, width: 0, height: 0 });
   const NO_LERP = {
     getBounds: (p: RectPose) => p, remapBounds: (p: RectPose) => p, fromBounds: (b: RectPose) => b,
   };
+
+  it('keeps a node inserted again while its exit runs, at the pose it was inserted with', () => {
+    for (const enterFrom of [undefined, SHRINK]) {
+      const clock = makeClock();
+      const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 20, height: 20 }]]);
+      const { base, removeNode } = makeAdapter(initial);
+      const { result } = renderHook(() => useAnimator(clock));
+      const wrapped = animateLifecycle(base, result.current, { exitTo: SHRINK, enterFrom, ms: 100 });
+      act(() => { wrapped.removeNode('a'); });
+      act(() => clock.advance(50));
+      act(() => { wrapped.insertNode({ id: 'a', pose: { x: 5, y: 5, width: 30, height: 30 } }); });
+      act(() => clock.advance(100));
+      act(() => clock.advance(100));
+      expect(removeNode).not.toHaveBeenCalled();
+      expect(initial.get('a')).toEqual({ x: 5, y: 5, width: 30, height: 30 });
+    }
+  });
 
   it('can remove a node again after a removal whose tween threw', () => {
     const clock = makeClock();

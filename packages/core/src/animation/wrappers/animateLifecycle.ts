@@ -37,11 +37,14 @@ export function animateLifecycle<
   opts: LifecycleAnimation<TPose>,
 ): A {
   const ms = opts.ms ?? 200;
-  const leaving = new Set<string>();
+  /** Each node whose exit is running, with what calls that exit off. */
+  const leaving = new Map<string, () => void>();
 
   return {
     ...adapter,
     insertNode(object: TNode, index?: number): void {
+      // A node back before its exit ended stays: the pending removal is dropped.
+      leaving.get(object.id)?.();
       adapter.insertNode(object, index);
       if (!opts.enterFrom) return;
       const final = adapter.getPose(object.id);
@@ -70,20 +73,33 @@ export function animateLifecycle<
         return;
       }
       if (leaving.has(id)) return;
-      leaving.add(id);
       let unwatch = (): void => {};
+      let handle: AnimationHandle | undefined;
       const target = adapter.poseTarget?.(id, opts.geometry);
       const home = target?.committed();
       const current = adapter.getPose(id);
-      const remove = (): void => {
-        if (!leaving.delete(id)) return;
-        unwatch();
-        // The exit pose was only for show: the node is removed as it stood, so undo restores that.
+      const restore = (): void => {
         if (target) target.commit(home as TPose);
         else setPoseInstant(adapter, id, current);
+      };
+      const end = (): boolean => {
+        if (leaving.get(id) !== callOff) return false;
+        leaving.delete(id);
+        unwatch();
+        return true;
+      };
+      const callOff = (): void => {
+        if (!end()) return;
+        handle?.cancel();
+        restore();
+      };
+      const remove = (): void => {
+        if (!end()) return;
+        // The exit pose was only for show: the node is removed as it stood, so undo restores that.
+        restore();
         adapter.removeNode(id);
       };
-      let handle: AnimationHandle;
+      leaving.set(id, callOff);
       try {
         handle = tweenPose(animator, adapter, {
           id,
@@ -98,9 +114,10 @@ export function animateLifecycle<
         leaving.delete(id);
         throw error;
       }
+      const exit = handle;
       // A canceled tween never calls onDone, and the node still has to go.
       unwatch = animator.watch((event) => {
-        if ((event.type === 'cancel' || event.type === 'interrupt') && event.animation.id === handle.id) remove();
+        if ((event.type === 'cancel' || event.type === 'interrupt') && event.animation.id === exit.id) remove();
       });
     },
   } as A;
