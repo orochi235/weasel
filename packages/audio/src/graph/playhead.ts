@@ -3,7 +3,8 @@
  * started and stopped and the playback rate it followed, ramps included.
  */
 export interface Playhead {
-  /** A node starts at `when`, or at `now` if that is later. Returns its offset. */
+  /** A node starts at `when`, or at `now` if that is later. Returns its offset: 0 for a
+   *  non-looping buffer that reached its end, whether or not its end was reported. */
   start(when: number, now: number): number;
   /** The node stops at `when`, or at `now` if that is later. */
   stop(when: number, now: number): void;
@@ -47,6 +48,7 @@ export function createPlayhead(duration: number, loop: boolean, initialRate: num
   return {
     start(when, now) {
       pos = at(until);
+      if (!loop && pos >= duration) pos = 0;
       from = Math.max(when, now);
       until = Infinity;
       hold(now, r1);
