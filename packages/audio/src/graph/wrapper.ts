@@ -65,13 +65,32 @@ export function tapWrapper(ctx: BaseAudioContext, w: NodeWrapper, opts?: Analyse
   return t;
 }
 
-export function startWrapper(w: NodeWrapper, when: number): void {
-  const { def } = w;
-  if (w.running || !def.start) return;
-  w.running = true;
+/** Start `def` as `w`'s def, whether or not it is `w.def` yet. Whether it started;
+ *  a `def.start` that throws leaves nothing marked running. */
+export function startDef(w: NodeWrapper, def: GraphNodeDef, when: number): boolean {
+  if (!def.start) return false;
   def.start(when, () => {
     if (w.def === def) w.running = false;
   });
+  return true;
+}
+
+export function startWrapper(w: NodeWrapper, when: number): void {
+  if (w.running) return;
+  w.running = startDef(w, w.def, when);
+}
+
+/** Undo `startWrapper` on a def that has just started: stop it alone. */
+export function unstartWrapper(w: NodeWrapper, when: number): void {
+  if (!w.running) return;
+  w.running = false;
+  w.def.stop?.(when);
+}
+
+/** Cut a wrapper that never joined the graph, leaving its def to the caller undisposed. */
+export function abandonWrapper(w: NodeWrapper): void {
+  for (const f of w.inFaders.values()) f.cut();
+  w.outFader.cut();
 }
 
 /** Stops the def and any a `replace` is still fading out. */

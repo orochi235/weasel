@@ -6,7 +6,7 @@ import { replaceDef } from './replace';
 import type { GraphNodeDef, GraphTarget } from './types';
 import { closesCycle, duplicateNode, noNode, noParam, noPort } from './errors';
 import type { GraphView } from './validate';
-import { createWrapper, releaseWrapper, type NodeWrapper } from './wrapper';
+import { abandonWrapper, createWrapper, releaseWrapper, type NodeWrapper } from './wrapper';
 
 export interface EditsDeps {
   ctx: BaseAudioContext;
@@ -98,8 +98,13 @@ export function createEdits(deps: EditsDeps) {
     add(id: string, def: GraphNodeDef): void {
       if (nodes.has(id)) throw duplicateNode(id);
       const w = createWrapper(ctx, timers, id, def);
+      try {
+        deps.onAdd(w);
+      } catch (error) {
+        abandonWrapper(w);
+        throw error;
+      }
       nodes.set(id, w);
-      deps.onAdd(w);
     },
     remove(id: string): void {
       const w = nodes.get(id);

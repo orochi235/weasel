@@ -1,7 +1,7 @@
 import type { Timers } from '../audioTime';
 import { createFader, type Fader } from './fader';
 import type { GraphNodeDef } from './types';
-import { releaseOutgoing, startWrapper, type NodeWrapper, type Outgoing } from './wrapper';
+import { releaseOutgoing, startDef, type NodeWrapper, type Outgoing } from './wrapper';
 
 export interface ReplaceHooks {
   /** Close every edge into `w.ins.get(port)`; called before the port is dropped. */
@@ -25,6 +25,7 @@ export function replaceDef(
   playing: boolean,
   hooks: ReplaceHooks,
 ): void {
+  const started = playing && startDef(w, next, ctx.currentTime);
   const old: Outgoing = {
     def: w.def,
     faders: [...w.inFaders.values(), w.outFader],
@@ -45,8 +46,7 @@ export function replaceDef(
   }
   w.outFader = openFader(ctx, timers, next.output, w.out, ms);
   w.def = next;
-  w.running = false;
-  if (playing) startWrapper(w, ctx.currentTime);
+  w.running = started;
 
   let open = old.faders.length;
   for (const f of old.faders) {
