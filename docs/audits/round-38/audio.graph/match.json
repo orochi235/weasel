@@ -1,0 +1,29 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   4
+  ],
+  [
+   2,
+   3
+  ]
+ ],
+ "a": [
+  "A non-finite `fadeMs` is accepted at construction and throws from the middle of later edits, leaving the graph half-changed",
+  "`replace(id, def)` with the def already in place, or one def added under two ids, disposes a def that is still live, and the later cut throws",
+  "`settled()` resolves while a connect's or a replace's fade-in is still ramping",
+  "A non-looping file stopped between its natural end and its `onended` never rewinds, so the next start plays nothing"
+ ],
+ "b": [
+  "A non-finite `fadeMs` is accepted, then every fade throws partway through an edit and leaves state behind",
+  "A source whose `start` throws stays marked running, so the graph never starts it again, and the edit is left half done",
+  "`createOscillatorNode` accepts a non-finite `frequency` and throws only at the next start",
+  "`settled()` resolves while a new connection is still fading in",
+  "`replace(id, def)` with the def already in that node disposes the live def"
+ ]
+}

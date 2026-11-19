@@ -1,0 +1,55 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   2
+  ],
+  [
+   2,
+   3
+  ],
+  [
+   3,
+   1
+  ],
+  [
+   5,
+   5
+  ],
+  [
+   7,
+   7
+  ],
+  [
+   9,
+   4
+  ]
+ ],
+ "a": [
+  "engineHarness keeps one timer slot, so any second engine timer replaces or cancels the scheduler's pass",
+  "A buffer source's end time ignores the start offset and the playback rate",
+  "resume() and suspend() on a closed fake context reopen it",
+  "connect() records a duplicate edge for a repeated connection, and a targeted disconnect removes only one copy",
+  "renderEngineStereo hangs forever when `later.run` throws, and leaks an unhandled rejection when `later.at` is out of range",
+  "A targeted disconnect that throws still marks the node disconnected",
+  "stubWorkerGlobals' restore unstubs every global in the test, not just its own",
+  "FakeWorker._fail fires error listeners after terminate, unlike _reply",
+  "The fake analyser's canned bytes depend on the caller's array length, not the bin count",
+  "createBuffer accepts any sample rate, and getChannelData returns undefined for a missing channel",
+  "engineHarness.run overshoots a duration that is not a multiple of 25 ms"
+ ],
+ "b": [
+  "engineHarness keeps one timer slot for every timer the engine sets, so a fade or stream timer can replace the scheduler's pass",
+  "Fake `connect` records a repeated connection twice, and `disconnect(target)` removes only one copy",
+  "`dueToEnd` ignores the start offset and the playback rate, so a buffer source ends late",
+  "Fake context's `resume`/`suspend` on a closed context succeed and reopen it instead of rejecting",
+  "Fake `getChannelData` returns `undefined` for an out-of-range channel instead of throwing",
+  "Fake `disconnect(target)` marks the node disconnected even when it throws",
+  "renderEngineStereo's `later` suspend can reject with no handler, so `later.run` never runs",
+  "FakeWorker `_fail` still fires after `terminate`, while `_reply` does not"
+ ]
+}

@@ -1,0 +1,58 @@
+{
+ "id": "clock",
+ "commit": "aac71b545ef36621a62610a7cc0bf3665162b2e5",
+ "date": "2026-11-18",
+ "files": [
+  "packages/clock/src/clock.ts",
+  "packages/clock/src/hold.ts",
+  "packages/clock/src/index.ts",
+  "packages/clock/src/mixFollow.ts",
+  "packages/clock/src/pbt.fixture.ts",
+  "packages/clock/src/place.ts",
+  "packages/clock/src/ramp.ts",
+  "packages/clock/src/react.ts",
+  "packages/clock/src/registry.ts",
+  "packages/clock/src/speeds.ts",
+  "packages/clock/src/types.ts",
+  "packages/clock/src/useClockLoop.ts",
+  "packages/clock/src/validate.ts"
+ ],
+ "a": 4,
+ "b": 6,
+ "m": 3,
+ "distinct": 7,
+ "chapman": 7.8,
+ "unfound": 0.8,
+ "read": {
+  "A": 13,
+  "B": 13
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 1.9,
+   "B": 2.5,
+   "match": 0.2,
+   "fix": 12.9
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "tokens": 4882042,
+  "costUsd": 3.55
+ },
+ "fixCommits": [
+  "af888339f1ad9615b240799f21f95cc77f6ef05f",
+  "e90d9cea54df6647b205bd3c85a62fef14bef8ad",
+  "1ec8e42cf5a0c878708f6b078f763b5ce231eccd",
+  "b68c9a218a1da63a1dc7dd76d1efdb8929341cd1",
+  "f88b38b8e138c37f1d1bfa6422d9bb5bcfb254ee",
+  "5bc70328430fa2170d71624824141034994e8e5c",
+  "b90239c70dd60ee0f1c8a6c4d73e7b82ff13b115",
+  "2d38bda3d6144578fc9c58e9bafcaad3eef1212d"
+ ]
+}

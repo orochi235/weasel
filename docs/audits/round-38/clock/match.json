@@ -1,0 +1,30 @@
+{
+ "pairs": [
+  [
+   0,
+   5
+  ],
+  [
+   1,
+   2
+  ],
+  [
+   2,
+   3
+  ]
+ ],
+ "a": [
+  "holdPosition maps an ended run's position into a pass past the run, so under a new duration or origin it lands at the new run's end",
+  "declare() without `speed` resolves the default from the clock's current rate, not the spec's, so re-declaring the same spec changes `speed`",
+  "reset() throws on a `start: 'end'` clock whose duration later became endless",
+  "PlayheadHold.pending documents a clamped time, but holdAt returns the raw `shown`"
+ ],
+ "b": [
+  "A hold is not released by a ramp, and later snaps a playing clock back to the held time",
+  "A clock shadowed in the registry stops being synced, then jumps by the whole shadowed time when it comes back",
+  "`declare` defaults `speed` from the live rate, `createClock` from the declared rate",
+  "`reset()` throws on a `start: 'end'` clock once its run has become endless",
+  "`holdPosition`'s `elapsedOn` splits a pass with a bare floor/remainder, unlike the clock's own `placeOf`",
+  "`holdPosition` clamps a pass beyond the current loop to the run's end instead of the last pass, unlike `loop`/`declare`"
+ ]
+}
