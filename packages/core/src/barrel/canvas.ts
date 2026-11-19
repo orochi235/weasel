@@ -146,9 +146,11 @@ export type {
 
 // ─── External-content ingestion ──────────────────────────────────────────────
 // OS file drop / clipboard paste / file picker → content-handler registry.
-// `getContentHandlers` is deliberately NOT exported — consumers reach the
-// pipeline via `<SceneCanvas ingestion={…}>` and `SceneCanvasApi.ingest`; the
-// kit's handlers come with `@weasel-js/editing`'s `presets.ingest`.
+// A canvas routes arrivals through `<SceneCanvas ingestion={…}>` and
+// `SceneCanvasApi.ingest`; the kit's handlers come with `@weasel-js/editing`'s
+// `presets.ingest`. `contentHandlerRegistry` lists and watches what is
+// registered. The pipeline itself (`runIngest`, `handlersFor`, `couldClaim`) is
+// on this entry too, from `editingSeams`, for actions that route an arrival.
 export {
   registerContentHandler,
   contentHandlerRegistry,
