@@ -89,6 +89,44 @@ describe('createFakeAudioContext', () => {
     expect(done).toHaveBeenCalledTimes(1);
   });
 
+  it('ends a buffer started at an offset when what is left of it has played', () => {
+    const ctx = createFakeAudioContext();
+    const s = ctx.createBufferSource();
+    const done = vi.fn();
+    s.buffer = { duration: 1 };
+    s.onended = done;
+    s.start(0, 0.9);
+    ctx._advance(90);
+    expect(done).not.toHaveBeenCalled();
+    ctx._advance(20);
+    expect(done).toHaveBeenCalledTimes(1);
+  });
+
+  it('ends a buffer sooner at a faster playback rate or a higher detune', () => {
+    const ctx = createFakeAudioContext();
+    const fast = ctx.createBufferSource();
+    const sharp = ctx.createBufferSource();
+    for (const s of [fast, sharp]) s.buffer = { duration: 1 };
+    fast.playbackRate.value = 2;
+    sharp.detune.value = 1200;
+    fast.start(0);
+    sharp.start(0);
+    ctx._advance(490);
+    expect([fast.ended, sharp.ended]).toEqual([false, false]);
+    ctx._advance(20);
+    expect([fast.ended, sharp.ended]).toEqual([true, true]);
+  });
+
+  it('never ends a buffer played at rate 0 on its own', () => {
+    const ctx = createFakeAudioContext();
+    const s = ctx.createBufferSource();
+    s.buffer = { duration: 0.1 };
+    s.playbackRate.value = 0;
+    s.start(0);
+    ctx._advance(10_000);
+    expect(s.ended).toBe(false);
+  });
+
   it('never ends a looping source on its own', () => {
     const ctx = createFakeAudioContext();
     const s = ctx.createBufferSource();
