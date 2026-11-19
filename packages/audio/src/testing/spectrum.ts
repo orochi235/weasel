@@ -39,8 +39,12 @@ export interface Spectrum {
   binHz: number;
 }
 
-/** Welch's method: Hann-windowed frames of `size`, half overlapped, averaged. */
+/** Welch's method: Hann-windowed frames of `size`, half overlapped, averaged.
+ *  `size` is a power of two, at least 2: the transform is radix-2. */
 export function powerSpectrum(x: ArrayLike<number>, rate: number, size = 2048): Spectrum {
+  if (!Number.isInteger(size) || size < 2 || (size & (size - 1)) !== 0) {
+    throw new RangeError(`powerSpectrum: size must be a power of two, at least 2 (got ${size})`);
+  }
   const power = new Float64Array(size / 2);
   const re = new Float64Array(size);
   const im = new Float64Array(size);
