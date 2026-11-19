@@ -48,6 +48,9 @@ export interface PatternPlayerOptions {
    *  with its index in the pattern, its engine time in ms, and how many steps
    *  since `start` it is, counting any a stall skipped. */
   onStep?: (step: number, when: number, count: number) => void;
+  /** Called with `onStep`'s arguments before the step's events are booked, so
+   *  events and a tempo set here apply to this step. */
+  beforeStep?: (step: number, when: number, count: number) => void;
 }
 
 /** See `PatternPlayerOptions.detune`. */
@@ -173,9 +176,21 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
       return;
     }
     const step = count % length;
+    const ran = run;
+    let refused: { err: unknown } | null = null;
+    inStep = true;
+    try {
+      opts.beforeStep?.(step, when, count);
+    } catch (err) {
+      refused = { err };
+    }
+    inStep = false;
+    if (!running || run !== ran) {
+      if (refused) throw refused.err;
+      return;
+    }
     for (const v of voices) if (!v.isPlaying()) voices.delete(v);
     // Each event on its own: one the engine refuses must not cost the rest of the step, or the next one.
-    let refused: { err: unknown } | null = null;
     for (const e of byStep.get(step) ?? []) {
       try {
         voices.add(playEvent(e, when + (e.step - step) * stepMs()));
@@ -186,7 +201,6 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
     // Read before `onStep`: a tempo set there starts with the next step, and
     // this one keeps the length its events were gated by.
     const ms = stepMs();
-    const ran = run;
     inStep = true;
     try {
       opts.onStep?.(step, when, count);
