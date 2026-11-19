@@ -55,7 +55,8 @@ export interface VoiceHandle {
   release(): void;
   /** Throws a `RangeError` on a value or ramp that is not finite. */
   setGain(value: number, rampMs?: number): void;
-  /** Playback rate. Applies to a voice booked for a future `when` too. */
+  /** Playback rate. Applies to a voice booked for a future `when` too. Throws a
+   *  `RangeError` on a value that is not finite, or not above 0 for a `playNote` voice. */
   setRate(value: number): void;
   /** Detune in cents. Applies to a voice booked for a future `when` too. */
   setDetune(cents: number): void;
@@ -183,9 +184,9 @@ export interface StreamOptions extends Omit<PlayOptions, 'when' | 'detune'> {
 export interface AudioEngineOptions {
   /** Injectable for tests and for consumers that own the context. */
   context?: AudioContext;
-  /** Scheduling window in ms. Default 100. */
+  /** Scheduling window in ms, finite and 0 or more. Default 100. */
   lookahead?: number;
-  /** Scheduler pass interval in ms. Default 25. */
+  /** Scheduler pass interval in ms, finite and above 0. Default 25. */
   tickInterval?: number;
   /** Default ['sfx', 'music', 'ui']. */
   buses?: string[];
@@ -204,7 +205,7 @@ export interface AudioEngineOptions {
    *  the lookahead covers, and the voice sounded late by that much. A
    *  `synthVoices: 'worklet'` voice is never reported: it was not late. */
   onLate?: (lateMs: number, when: number) => void;
-  /** Crossfade for every insert-chain edit and bypass, in ms. Default 15. */
+  /** Crossfade for every insert-chain edit and bypass, in ms, finite and 0 or more. Default 15. */
   insertFadeMs?: number;
   /** Uniform in [0, 1), for where in its loop a noise voice starts. Default `Math.random`. */
   random?: () => number;

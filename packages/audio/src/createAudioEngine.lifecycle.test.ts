@@ -17,6 +17,18 @@ function engineHarness(over: Record<string, unknown> = {}) {
 
 const flush = (): Promise<void> => new Promise((resolve) => { setTimeout(resolve, 0); });
 
+describe('createAudioEngine time options', () => {
+  it('refuses a lookahead, tick interval, or insert fade that is not a usable number of ms', () => {
+    for (const over of [
+      { lookahead: Number.NaN }, { lookahead: -1 }, { tickInterval: Infinity }, { tickInterval: 0 },
+      { insertFadeMs: Number.NaN },
+    ]) {
+      expect(() => engineHarness(over)).toThrow(RangeError);
+    }
+    expect(() => engineHarness({ lookahead: 0, insertFadeMs: 0 })).not.toThrow();
+  });
+});
+
 describe('createAudioEngine disposal', () => {
   it('drops a play after dispose instead of building a silent zombie', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});

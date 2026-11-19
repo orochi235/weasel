@@ -41,12 +41,15 @@ interface VoiceOps {
 }
 
 /** A handle for a voice that never started: its setters do nothing, but refuse what a live one refuses. */
-const dropped = (id: number): VoiceHandle => ({
+const dropped = (id: number, checkRate?: (rate: number) => void): VoiceHandle => ({
   id,
   stop: (fadeMs) => checkFinite('voice fade', fadeMs),
   release: () => {},
   setGain: (value, rampMs) => checkGain('voice', value, rampMs),
-  setRate: (value) => checkFinite('voice rate', value),
+  setRate: (value) => {
+    checkFinite('voice rate', value);
+    checkRate?.(value);
+  },
   setDetune: (cents) => checkFinite('voice detune', cents),
   setPan: (value) => checkFinite('voice pan', value),
   setPosition: (p) => checkPoint('voice position', p),
@@ -186,6 +189,7 @@ function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): Vo
     },
     setRate(value) {
       checkFinite('voice rate', value);
+      voice.checkRate?.(value);
       voice.rate = value;
       voice.retune?.();
     },
@@ -261,17 +265,18 @@ export function createVoices(deps: VoicesDeps): Voices {
   return {
     launch(common, starter) {
       checkVoice(common);
+      starter.checkRate?.(common.rate ?? 1);
       const id = nextVoiceId++;
 
       if (deps.disposed()) {
         warn.disposed();
         reportDrop(common.onDrop, 'disposed');
-        return dropped(id);
+        return dropped(id, starter.checkRate);
       }
       if (ctx.state !== 'running') {
         warn.locked();
         reportDrop(common.onDrop, 'locked');
-        return dropped(id);
+        return dropped(id, starter.checkRate);
       }
 
       const busName = common.bus ?? deps.defaultBus;
@@ -287,7 +292,7 @@ export function createVoices(deps: VoicesDeps): Voices {
         source: null, env: null, retune: null, release: null, releasing: false,
         out: null, unbook: null, catchUp: null,
         baseGain, spatialGain: spatial.gain,
-        rate: common.rate ?? 1, detune: common.detune ?? 0,
+        rate: common.rate ?? 1, checkRate: starter.checkRate, detune: common.detune ?? 0,
         position: common.position,
         playing: true, canceled: false, fading: false, rampEnd: 0,
       };

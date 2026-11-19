@@ -1,5 +1,6 @@
 import { periodicWave } from '../periodicWave';
 import { initParam, writeParam } from '../param';
+import { checkNoiseColor, checkWave } from '../patchCheck';
 import { noiseBuffer } from '../synthVoice';
 import type { Inharmonic, NoiseColor, Waveform } from '../types';
 import { createPlayhead } from './playhead';
@@ -114,9 +115,13 @@ export interface OscillatorNodeOptions {
   frequency?: number;
 }
 
-/** A tone. Params: `frequency`, `detune`, `level`. */
+/** A tone. Params: `frequency`, `detune`, `level`. Throws a `RangeError` on a wave it cannot play. */
 export function createOscillatorNode(ctx: BaseAudioContext, opts: OscillatorNodeOptions): GraphNodeDef {
   const wave = opts.wave ?? 'sine';
+  if (typeof wave !== 'string' && !Array.isArray(wave)) {
+    throw new RangeError('@weasel-js/audio: an oscillator node plays a named or harmonic wave, not partials');
+  }
+  checkWave(wave);
   let frequency = opts.frequency ?? 440;
   let detune = 0;
   const shell = sourceShell(ctx, () => ctx.createOscillator());
@@ -156,6 +161,7 @@ export interface NoiseNodeOptions {
 
 /** A loop of the shared noise buffer for its color. Param: `level`. */
 export function createNoiseNode(ctx: BaseAudioContext, opts: NoiseNodeOptions): GraphNodeDef {
+  checkNoiseColor(opts.color);
   const shell = sourceShell(ctx, () => ctx.createBufferSource());
   return {
     inputs: {},

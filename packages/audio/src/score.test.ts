@@ -11,6 +11,18 @@ const unique = (xs: number[]) => [...new Set(xs)];
 const URGENT_BAR = 12000 / 7;
 
 describe('createScore', () => {
+  it('refuses a mood with a NaN axis, at construction and at setMood, and keeps playing the last one', async () => {
+    const { engine, run, starts } = await engineHarness();
+    const bad = { ...home('dread'), valence: Number.NaN };
+    expect(() => createScore(engine, { mood: bad })).toThrow(RangeError);
+    const score = createScore(engine, { mood: home('dread') });
+    expect(() => score.setMood(bad)).toThrow(RangeError);
+    expect(score.mood()).toEqual(home('dread'));
+    score.start(0);
+    await run(4100);
+    expect(starts()).toEqual([0, 0, 0, 4000, 4000, 4000]);
+  });
+
   it('plays its mood through the engine, a bar at a time', async () => {
     const { ctx, engine, run, starts } = await engineHarness();
     createScore(engine, { mood: home('dread') }).start(0);
@@ -60,6 +72,20 @@ describe('createScore', () => {
     expect(times.filter((t) => t >= 1714)).toEqual([1714, 5714]);
     expect(seen.map((s) => s.cue.name)).toEqual(['urgency', 'dread', 'dread']);
     expect(score.state().params.tempo).toBe(60);
+  });
+
+  it("plays a bar's own events from the first step booked in it, when a stall skipped the bar line", async () => {
+    const { ctx, engine, run, starts } = await engineHarness();
+    const score = createScore(engine, { mood: home('urgency') });
+    score.start(0);
+    await run(1475);
+    const before = starts().length;
+    score.setMood(home('dread'));
+    // Past bar 0's last step unbooked: the next pass lands on bar 1's fifth step, which dread leaves empty.
+    ctx._advance(600);
+    await run(1000);
+    expect(score.state().cue.name).toBe('dread');
+    expect(starts().slice(before)).toEqual([]);
   });
 
   it('starts a new cue from its first layer, and keeps building one it stays in', async () => {

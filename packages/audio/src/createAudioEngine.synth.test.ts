@@ -51,6 +51,16 @@ describe('engine.playNote', () => {
     expect(chainOf(ctx._oscillators[0]).bus).toBe(sourceBus);
   });
 
+  it('refuses a rate that is not above 0, at the call and at setRate, and keeps the last good one', async () => {
+    const { ctx, engine, tick } = await harness();
+    expect(() => engine.playNote({ pitch: 'A4', rate: 0 } as never)).toThrow(RangeError);
+    const v = engine.playNote({ pitch: 'A4' });
+    tick();
+    for (const rate of [0, -1]) expect(() => v.setRate(rate)).toThrow(RangeError);
+    expect(() => v.setDetune(100)).not.toThrow();
+    expect(ctx._oscillators[0].detune.value).toBe(100);
+  });
+
   it('uses a built-in wave by name', async () => {
     const { ctx, engine, tick } = await harness();
     engine.playNote({ pitch: 220, wave: 'square' });

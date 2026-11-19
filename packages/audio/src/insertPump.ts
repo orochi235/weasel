@@ -6,7 +6,7 @@ export interface InsertPump {
   /** Start every step there is, up to the first that has to wait out a fade. */
   pump(): void;
   settled(): Promise<void>;
-  /** Cancel the fade in flight and stop for good. */
+  /** Cancel the fade in flight and stop for good: `settled()` resolves at once from here. */
   stop(): void;
   /** Resolve every `settled()` waiting. */
   release(): void;
@@ -57,11 +57,12 @@ export function createInsertPump(
   return {
     pump,
     settled() {
-      if (!busy && next() === null) return Promise.resolve();
+      if (stopped || (!busy && next() === null)) return Promise.resolve();
       return new Promise((resolve) => { waiters.push(resolve); });
     },
     stop() {
       stopped = true;
+      busy = false;
       cancel?.();
       cancel = null;
     },

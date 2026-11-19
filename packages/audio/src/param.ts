@@ -48,6 +48,14 @@ export function checkFinite(what: string, value: number | undefined): void {
   }
 }
 
+/** Throws on a time option, in ms, that is not finite, or below 0 (or 0 itself, when `positive`). */
+export function checkMsOption(what: string, value: number | undefined, positive = false): void {
+  if (value === undefined) return;
+  if (!Number.isFinite(value) || value < 0 || (positive && value === 0)) {
+    throw new RangeError(`@weasel-js/audio: ${what} is a finite number of ms, ${positive ? 'above 0' : '0 or more'}, not ${value}`);
+  }
+}
+
 /** {@link checkFinite} on each of a point's coordinates. */
 export function checkPoint(what: string, p: { x: number; y: number; z?: number } | undefined): void {
   if (!p) return;

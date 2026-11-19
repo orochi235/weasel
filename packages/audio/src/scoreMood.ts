@@ -53,11 +53,24 @@ export interface ScoreCueReading {
 
 const clamp = (value: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, value));
 
-const inRange = (mood: ScoreMood): ScoreMood => ({
-  valence: clamp(mood.valence, -1, 1),
-  tension: clamp(mood.tension, 0, 1),
-  urgency: clamp(mood.urgency, 0, 1),
-});
+/** Throws a `RangeError` on a mood axis that is not a number. Out of range is
+ *  fine: it reads as the nearest end. */
+export function checkScoreMood(mood: ScoreMood): void {
+  for (const axis of ['valence', 'tension', 'urgency'] as const) {
+    if (typeof mood[axis] !== 'number' || Number.isNaN(mood[axis])) {
+      throw new RangeError(`@weasel-js/audio: a score mood's ${axis} is a number, not ${mood[axis]}`);
+    }
+  }
+}
+
+const inRange = (mood: ScoreMood): ScoreMood => {
+  checkScoreMood(mood);
+  return {
+    valence: clamp(mood.valence, -1, 1),
+    tension: clamp(mood.tension, 0, 1),
+    urgency: clamp(mood.urgency, 0, 1),
+  };
+};
 
 /** Name the cue a mood is applying, and weigh the others against it by
  *  inverse squared distance. */

@@ -1,3 +1,5 @@
+import { checkMsOption } from './param';
+
 /** Clock and timer for `createScheduler`. */
 export interface SchedulerOptions {
   /** Engine time in ms. Backed by `AudioContext.currentTime * 1000` in production. */
@@ -61,6 +63,8 @@ export interface Scheduler {
  * passes `createTickTimer` instead.
  */
 export function createScheduler(opts: SchedulerOptions): Scheduler {
+  checkMsOption('a scheduler lookahead', opts.lookahead);
+  checkMsOption('a scheduler interval', opts.interval, true);
   const lookahead = opts.lookahead ?? 100;
   const interval = opts.interval ?? 25;
   let queue: Entry[] = [];

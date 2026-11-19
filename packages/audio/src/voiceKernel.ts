@@ -8,7 +8,7 @@ import { biquadCoefficients } from './biquad';
 import { envelopeLevel, resolveEnvelope, type Envelope } from './envelope';
 import { lerp } from './lerp';
 import { sineShape, waveShape } from './oscillator';
-import { NOISE_SECONDS, isInharmonic, noiseSamples, resolveNote } from './synthVoice';
+import { NOISE_SECONDS, checkNoise, isInharmonic, noiseSamples, resolveNote } from './synthVoice';
 import type { NoiseColor, NoiseOptions, NoteOptions, VoiceFilter } from './types';
 
 /** What of a `playNote` call shapes its samples. Routing, position, and timing
@@ -111,7 +111,7 @@ function createKernel(patch: Shaping, sampleRate: number, source: Source): Voice
   };
 }
 
-/** A `playNote` voice. Throws on a bad pitch or partial, as `playNote` does. */
+/** A `playNote` voice. Throws on what `playNote` throws on. */
 export function createNoteKernel(note: KernelNote, sampleRate: number): VoiceKernel {
   const { from, glideTo, partials } = resolveNote(note);
   const glideMs = note.glide?.ms ?? note.duration ?? 100;
@@ -160,6 +160,7 @@ export function createNoiseKernel(
   sampleRate: number,
   random: () => number = Math.random,
 ): VoiceKernel {
+  checkNoise(noise);
   const loop = noiseLoop(noise.noise, sampleRate);
   // On a whole sample: between two, white noise is their average, and quieter for it.
   let at = Math.floor(random() * loop.length);
@@ -167,7 +168,9 @@ export function createNoiseKernel(
     const i = Math.floor(at);
     const a = loop[i];
     const sample = lerp(a, loop[(i + 1) % loop.length], at - i);
+    // A negative rate plays the loop backwards, as a buffer source does; `%` keeps the sign.
     at = (at + tune) % loop.length;
+    if (at < 0) at += loop.length;
     return sample;
   });
 }

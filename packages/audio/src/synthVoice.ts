@@ -1,7 +1,8 @@
 import { createPart } from '@weasel-js/registry';
 import { envelopeLevel, envelopePoints, resolveEnvelope, type ResolvedEnvelope } from './envelope';
+import { checkGlideMs, checkNoiseColor, checkShaping, checkWave } from './patchCheck';
 import { toFrequency } from './pitch';
-import type { Inharmonic, NoiseColor, NoteOptions, SynthPartial, VoiceFilter, Waveform } from './types';
+import type { Inharmonic, NoiseColor, NoiseOptions, NoteOptions, SynthPartial, VoiceFilter, Waveform } from './types';
 
 /** Seconds of noise in each cached loop: long enough that the repeat is not
  *  heard as a pitch. */
@@ -91,6 +92,9 @@ export function resolvePartials(wave: Inharmonic): (SynthPartial & { gain: numbe
     if (p.decay !== undefined && !(p.decay > 0)) {
       throw new RangeError(`@weasel-js/audio: partial decay must be a positive number of ms, got ${p.decay}`);
     }
+    if (p.gain !== undefined && !Number.isFinite(p.gain)) {
+      throw new RangeError(`@weasel-js/audio: partial gain must be finite, got ${p.gain}`);
+    }
     total += Math.abs(p.gain ?? 1);
   }
   return wave.partials.map((p) => ({
@@ -107,14 +111,26 @@ export interface ResolvedNote {
   partials: (SynthPartial & { gain: number })[] | null;
 }
 
-/** A note's pitch, glide target and partials. Throws on a bad pitch or partial. */
-export function resolveNote(note: Pick<NoteOptions, 'pitch' | 'glide' | 'wave'>): ResolvedNote {
+/** A note's pitch, glide target and partials. Throws on a bad pitch, wave,
+ *  partial, glide, envelope, filter, or duration. */
+export function resolveNote(
+  note: Pick<NoteOptions, 'pitch' | 'glide' | 'wave' | 'envelope' | 'filter' | 'duration'>,
+): ResolvedNote {
   const wave = note.wave ?? 'sine';
+  checkWave(wave);
+  checkShaping(note);
+  checkGlideMs(note.glide?.ms);
   return {
     from: toFrequency(note.pitch),
     glideTo: note.glide ? toFrequency(note.glide.to) : undefined,
     partials: isInharmonic(wave) ? resolvePartials(wave) : null,
   };
+}
+
+/** Throws on a noise voice's color, envelope, filter, or duration that it could not play. */
+export function checkNoise(noise: Pick<NoiseOptions, 'noise' | 'envelope' | 'filter' | 'duration'>): void {
+  checkNoiseColor(noise.noise);
+  checkShaping(noise);
 }
 
 /** An envelope written onto a param from `t0` (seconds), mapped through `map`,
