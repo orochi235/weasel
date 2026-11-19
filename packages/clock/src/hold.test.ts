@@ -34,6 +34,18 @@ describe('holdAt', () => {
     h.declare({ duration: 3000 });
     expect(h.clock.elapsed).toBe(1000);
   });
+  it('releases on a ramp off 0, so a later declare does not snap the playing clock back', () => {
+    const h = createClock({ duration: 1000 });
+    const hold = holdAt(h, 500);
+    h.clock.ramp(1, 400);
+    h.clock.sync(0);
+    h.clock.sync(100);
+    expect(h.clock.elapsed).toBeGreaterThan(500);
+    expect(hold.pending()).toBeNull();
+    const at = h.clock.elapsed;
+    h.declare({ duration: 1000 });
+    expect(h.clock.elapsed).toBe(at);
+  });
   it('releases on a seek by someone else', () => {
     const h = createClock({ duration: 1000 });
     const hold = holdAt(h, 2500);

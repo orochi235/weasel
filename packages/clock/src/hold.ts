@@ -20,7 +20,7 @@ export interface PlayheadHold {
  * Pauses `handle`'s clock at `shown`, a time shown within a pass (`null`: the
  * span's start), placed in the first pass, and keeps seeking there as `declare`
  * or a `duration` write moves the span. A time past the pass's end waits at it.
- * Any other change (a rate, a seek of someone else's) releases the hold. A
+ * Any other change (a rate, a ramp, a seek of someone else's) releases the hold. A
  * clock that is not seekable is never held.
  */
 export function holdAt(handle: ClockHandle, shown: number | null): PlayheadHold {
@@ -84,7 +84,7 @@ function holdWhere(
   const { clock } = handle;
   let released = false;
   let busy = false;
-  let unsub: (() => void) | null = null;
+  let unsubs: (() => void)[] = [];
   let duration = clock.duration;
   let origin = clock.origin;
   let loop = clock.loop;
@@ -92,8 +92,8 @@ function holdWhere(
 
   const release = (): void => {
     released = true;
-    unsub?.();
-    unsub = null;
+    for (const off of unsubs) off();
+    unsubs = [];
   };
 
   const place = (): void => {
@@ -114,12 +114,18 @@ function holdWhere(
   } else {
     clock.rate = 0;
     place();
-    unsub = clock.subscribe(() => {
-      if (busy || released) return;
-      if (clock.rate !== 0) release();
-      else if (clock.duration !== duration || clock.origin !== origin || clock.loop !== loop) place();
-      else if (clock.elapsed !== set) release();
-    });
+    unsubs = [
+      clock.subscribe(() => {
+        if (busy || released) return;
+        if (clock.rate !== 0) release();
+        else if (clock.duration !== duration || clock.origin !== origin || clock.loop !== loop) place();
+        else if (clock.elapsed !== set) release();
+      }),
+      // A ramp off 0 notifies with the rate still 0 and moves the clock only in frames, which notify nothing.
+      handle.onFrame(() => {
+        if (!released && clock.elapsed !== set) release();
+      }),
+    ];
   }
 
   return {
