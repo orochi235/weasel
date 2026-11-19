@@ -1649,6 +1649,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/PrefsSchemaDemo').then((m) => m.PrefsSchemaDemo),
     path: 'apps/site/demos/PrefsSchemaDemo.tsx',
   },
+  {
+    id: 'prefs-editor',
+    title: 'Schema editor',
+    package: 'prefs-editor',
+    description: "`<PrefSchemaEditor schema onChange>` from `@weasel-js/prefs-editor` editing a small preferences schema held in the demo's state. The tree on the left is the schema's groups and leaves; picking one shows its attributes (key, name, description, default, kind, bounds, conditions), and the preview draws the form the schema makes as it stands. Every edit hands `onChange` a whole new schema, as plain data the app keeps or exports, and the list under the editor reads it back through `prefLeaves`.",
+    hint: 'Pick Grid gap in the tree and rename it, or change its max: the preview and the list follow.',
+    load: () => import('./demos/PrefsEditorDemo').then((m) => m.PrefsEditorDemo),
+    path: 'apps/site/demos/PrefsEditorDemo.tsx',
+  },
 ];
 
 export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({
