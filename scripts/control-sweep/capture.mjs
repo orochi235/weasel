@@ -103,25 +103,38 @@ const nearMisses = async (page, c) => {
   return keys.length ? `; the page has ${keys.slice(0, 4).join(', ')}` : `; the page has ${all.length} controls, none named for it`;
 };
 
-/** Puts the page back where `pre` (if any) left it, with `c` found afresh. */
-export const prepare = async (page, url, c, settleMs, tries) => {
-  if (c.precondition) {
-    await load(page, url, { tries });
-    const pre = await locateSoon(page, c.precondition);
-    if (!pre) throw new Error(`the control it depends on, ${c.precondition.label}, is gone${await nearMisses(page, c.precondition)}`);
-    await operate(page, pre);
+const PRECONDITION_TRIES = 3;
+
+/** Operates the control `c` depends on, closing any popup that opens with it. */
+const applyPrecondition = async (page, c, settleMs) => {
+  const pre = await locateSoon(page, c.precondition);
+  if (!pre) throw new Error(`the control it depends on, ${c.precondition.label}, is gone${await nearMisses(page, c.precondition)}`);
+  await operate(page, pre);
+  await settle(page, settleMs);
+  // A precondition that opens a popup (a chip's paint editor) hides the demo behind it; only its choice is wanted.
+  if ((await kit(page, 'capture', ROOT, null)).dom.popups !== '0') {
+    await page.keyboard.press('Escape');
     await settle(page, settleMs);
-    // A precondition that opens a popup (a chip's paint editor) hides the demo behind it; only its choice is wanted.
-    if ((await kit(page, 'capture', ROOT, null)).dom.popups !== '0') {
-      await page.keyboard.press('Escape');
-      await settle(page, settleMs);
+  }
+};
+
+/**
+ * Puts the page back where `c`'s precondition (if any) left it, with `c` found afresh. A precondition pressed
+ * while the demo is still settling can be lost, so it is pressed again from a fresh load, a few times, until
+ * `c` shows.
+ */
+export const prepare = async (page, url, c, settleMs, tries) => {
+  for (let attempt = 1; ; attempt++) {
+    if (c.precondition) {
+      await load(page, url, { tries: attempt === 1 ? tries : STEADY_TRIES });
+      await applyPrecondition(page, c, settleMs);
+    }
+    const now = await locateSoon(page, c);
+    if (now) return { ...c, ...now, precondition: c.precondition };
+    if (!c.precondition || attempt === PRECONDITION_TRIES) {
+      const pre = c.precondition && await locate(page, c.precondition);
+      const after = pre ? `; ${c.precondition.label} is ${pre.selected ? 'chosen' : 'not chosen'}` : '';
+      throw new Error(`control not found after reload${after}${await nearMisses(page, c)}`);
     }
   }
-  const now = await locateSoon(page, c);
-  if (!now) {
-    const pre = c.precondition && await locate(page, c.precondition);
-    const after = pre ? `; ${c.precondition.label} is ${pre.selected ? 'chosen' : 'not chosen'}` : '';
-    throw new Error(`control not found after reload${after}${await nearMisses(page, c)}`);
-  }
-  return { ...c, ...now, precondition: c.precondition };
 };
