@@ -30,6 +30,7 @@ import { copiesAbove } from '../copiesAbove';
 import { scenePaintedPoseOf } from '../derivedPath';
 import { inheritedPaintOf, inheritsPaint, sceneAncestors } from 'core/scene/inheritedPaint';
 import { withShownData } from 'core/scene/nodeAsShown';
+import { hidesSubtree } from 'core/scene/nodeGates';
 import { pixelScaleCtx } from '../pixelScale';
 
 const GHOST_ALPHA = 0.85;
@@ -80,25 +81,28 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
       // the plane's view, inside a group carrying it into its parent's world.
       const planeOf = createLayerPlaneLookup(sc.layers, view);
       const mapOf = (layer: string): PlaneMap | null => planeOf?.(layer) ?? null;
+      const shown = new Set(sc.layers.filter((l) => l.visible).map((l) => l.id as string));
       const viewOf = (layer: string) => {
         const parallax = planeOf ? sc.layers.find((l) => l.id === layer)?.parallax : undefined;
         return parallax ? deriveParallaxView(view, parallax) : view;
       };
 
-      // Mirrors buildSceneTree's structure, but drawn from the previewed pose
-      // and data, so children are clipped to the shape the node is taking and
+      // Mirrors buildSceneTree's structure and gates, but drawn from the previewed
+      // pose and data, so children are clipped to the shape the node is taking and
       // inherit the paint it is taking. `above` is its containers, innermost first.
       const drawEntry = (
         entry: PreviewNode<TData, TLayer, TPose>,
         parentPlane: PlaneMap | null,
         above: () => Iterable<{ kind?: string; data?: unknown }>,
       ): DrawCommand[] => {
+        if (hidesSubtree(entry.node)) return [];
         const effNode = entry.data === entry.node.data ? entry.node : withShownData(entry.node, entry.data);
         const plane = mapOf(entry.node.layer);
         const v = viewOf(entry.node.layer);
         const scaled = pixelScaleCtx(v, dims.dpr);
         const ctx = sceneShapesCtx(sc, inheritsPaint(effNode) ? { ...scaled, inherited: inheritedPaintOf(effNode, above()) } : scaled);
-        const self = drawOne(effNode, entry.pose, v, ctx);
+        const painted = shown.has(entry.node.layer);
+        const self = painted ? drawOne(effNode, entry.pose, v, ctx) : [];
         const kids: DrawCommand[] = [];
         for (const child of entry.children) {
           for (const cmd of drawEntry(child, plane, () => [effNode, ...above()])) kids.push(cmd);
