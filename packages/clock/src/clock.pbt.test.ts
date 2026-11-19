@@ -140,6 +140,23 @@ const commands = fc.commands([
     },
     toString: () => `seek(${to}, ${line})`,
   })),
+  // A target drawn at random seldom falls on a pass line, so one command aims at one.
+  fc.integer({ min: 1, max: 3 }).map((k): Cmd => ({
+    check: () => true,
+    run(m, r) {
+      const c = r.handle.clock;
+      const span = spanOf(r.handle);
+      const target = k * c.duration;
+      if (!Number.isFinite(target) || target >= span) return;
+      c.seek(target, 'end');
+      m.elapsed = target;
+      check(m, r);
+      expect(c.phase).toBe(1);
+      expect(c.pass).toBe(k - 1);
+      t.count('seek:line');
+    },
+    toString: () => `seek(${k} passes, end)`,
+  })),
   duration.map((d): Cmd => ({
     check: () => true,
     run(m, r) {
