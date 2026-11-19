@@ -1577,6 +1577,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/StorageDemo').then((m) => m.StorageDemo),
     path: 'apps/site/demos/StorageDemo.tsx',
   },
+  {
+    id: 'clock',
+    title: 'Clock',
+    package: 'clock',
+    description: 'One looping clock of 3-second passes from `createClock`, registered in a `createClockRegistry` and run by `useClockLoop`, the one frame loop that syncs a registry\'s clocks. The rate buttons write `clock.rate`, which is signed: 0 pauses and -1 plays backward. Ease to a stop calls `clock.ramp(0, 1000)`, moving the rate to 0 over a second while the position stays continuous. The slider shows `clock.phase` and seeks with `clock.seek`; the readout under it counts `clock.pass`. The clock is registered with the slider as its target, so the loop stops advancing it while that is scrolled out of view, and rebases it on return.',
+    hint: 'Play at 2×, then press Ease to a stop. Drag the slider while it plays, or set -1× and watch the pass count go down.',
+    load: () => import('./demos/ClockDemo').then((m) => m.ClockDemo),
+    path: 'apps/site/demos/ClockDemo.tsx',
+  },
 ];
 
 export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({
