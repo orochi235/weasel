@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { IdBuffer } from '@weasel-js/renderer';
 import type { AnyRenderWorker } from './liveClients';
-import { paintWorkerRun, readStackIds, type StackFrame, type StackSurface } from './workerStack';
+import { paintWorkerRun, readStackIds, snapshotStack, type StackFrame, type StackSurface } from './workerStack';
 import { combinedStatus, type RenderWorkerStatus } from './workerHealth';
 
 const RECT = { x: 0, y: 0, width: 1, height: 1 };
@@ -53,6 +53,30 @@ describe('paintWorkerRun', () => {
   it('paints nothing of a whole scene layer the page hides', () => {
     expect(sentFor(['scene'], [{ id: 'scene' }], { scene: false }).layerOrder).toEqual([]);
     expect(sentFor(['scene'], [{ id: 'scene' }], {}).layerOrder).toBeUndefined();
+  });
+});
+
+describe('snapshotStack', () => {
+  it('closes every bitmap a worker answered with, drawn or not', async () => {
+    const close = vi.fn();
+    const bitmap = (width: number) => ({ width, height: width, close }) as unknown as ImageBitmap;
+    const surface = (b: ImageBitmap): StackSurface => ({
+      by: 'worker', run: { by: 'worker', ids: ['scene'] },
+      client: { snapshot: () => Promise.resolve(b) } as unknown as AnyRenderWorker,
+    });
+    const drawImage = vi.fn();
+    vi.stubGlobal('OffscreenCanvas', class {
+      constructor(public width: number, public height: number) {}
+      getContext() { return { drawImage }; }
+      transferToImageBitmap() { return 'composed'; }
+    });
+    try {
+      expect(await snapshotStack([surface(bitmap(4)), surface(bitmap(0))], 4, 4)).toBe('composed');
+      expect(drawImage).toHaveBeenCalledTimes(1);
+      expect(close).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
 

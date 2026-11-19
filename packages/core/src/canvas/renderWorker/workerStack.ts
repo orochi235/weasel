@@ -144,11 +144,15 @@ export async function snapshotStack(
 ): Promise<ImageBitmap | null> {
   const layers = await Promise.all(surfaces.map((s) =>
     s.by === 'worker' ? (s.client?.snapshot() ?? Promise.resolve(null)) : Promise.resolve(s.canvas)));
-  const sized = layers.find((l) => l !== null && l.width > 0);
-  if (!sized) return null;
-  const out = new OffscreenCanvas(sized.width || width, sized.height || height);
-  const c = out.getContext('2d');
-  if (!c) return null;
-  for (const l of layers) if (l && l.width > 0) c.drawImage(l, 0, 0, out.width, out.height);
-  return out.transferToImageBitmap();
+  try {
+    const sized = layers.find((l) => l !== null && l.width > 0);
+    if (!sized) return null;
+    const out = new OffscreenCanvas(sized.width || width, sized.height || height);
+    const c = out.getContext('2d');
+    if (!c) return null;
+    for (const l of layers) if (l && l.width > 0) c.drawImage(l, 0, 0, out.width, out.height);
+    return out.transferToImageBitmap();
+  } finally {
+    for (const l of layers) if (l && 'close' in l) l.close();
+  }
 }
