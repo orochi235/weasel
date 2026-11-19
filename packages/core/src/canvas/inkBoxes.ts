@@ -14,13 +14,14 @@ const NO_SCENE: DrawnBoundsScene = { get: () => undefined };
  *  deps' scene, each shape's ink included unless the canvas opted out. */
 export const inkBoxes: DrawnBoxesSource = (deps, frame) => {
   // A command measures what the document holds, not what an open gesture or edit is showing.
-  const scene: DrawnBoundsScene = deps.scene ? drawnBoundsScene(documentOf(deps.scene)) : NO_SCENE;
+  const doc = deps.scene ? documentOf(deps.scene) : undefined;
+  const scene: DrawnBoundsScene = doc ? drawnBoundsScene(doc) : NO_SCENE;
   const descriptor = poseDescriptorOf(deps.poseDescriptor);
   const view = deps.view?.get();
   let worlds = frame;
   const opts: DrawnBoundsOptions = {
     descriptor,
-    worldPoseOf: (id) => (worlds ??= scenePoseFrame(deps.scene!)).world(id),
+    worldPoseOf: (id) => (worlds ??= scenePoseFrame(doc!)).world(id),
     includeStroke: deps.boundsIncludeStroke ?? true,
     ...(view ? { scale: view.scale } : {}),
   };
