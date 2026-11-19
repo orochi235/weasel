@@ -12,7 +12,7 @@ Generalize the remaining domain-coupled interaction modules (`useMoveInteraction
 
 The kit is omakase by design: it ships gesture protocols, op vocabulary, history, and behavior plugins. Consumers bring their own data model, renderers, and store. The kit does not own scene state — apps keep their existing stores and integrate via adapters.
 
-The reference is Illustrator: the framework owns the editing experience; the consumer brings the document.
+The framework owns the editing experience; the consumer brings the document.
 
 ## Architecture
 

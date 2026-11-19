@@ -65,13 +65,13 @@ export interface UseZoomInteractionOptions {
   sources?: {
     wheel?: boolean;       // default true
     keys?: boolean;        // default true ('+' / '-' / '=' / '_')
-    doubleClick?: boolean; // default false  (Photoshop-ish, not Figma)
+    doubleClick?: boolean; // default false
     pinch?: boolean;       // default true   (where supported — see §Pinch)
   };
 
   /** When false (default), all wheel events zoom. When true, wheel only
    *  zooms while ctrlKey or metaKey is held — bare wheel is left to the
-   *  caller (typical Figma/Sketch trackpad-pan idiom). Pinch (`wheel +
+   *  caller (the trackpad-pan idiom). Pinch (`wheel +
    *  ctrlKey` synthesised by macOS trackpad) ALWAYS zooms regardless. */
   wheelRequiresModifier?: boolean;
 }
@@ -176,7 +176,7 @@ expectations — wheel and keys on, pinch on, double-click off:
 | `wheel`       | `true`  | The default zoom gesture in nearly every desktop editor.     |
 | `keys`        | `true`  | `+` / `-` is the universal keyboard zoom in editors.         |
 | `pinch`       | `true`  | macOS trackpad pinch is "wheel + ctrlKey"; almost always wanted. |
-| `doubleClick` | `false` | Photoshop-style ("eyedrop" / "tool action"), not Figma's "fit-to" — turning on by default would break too many existing behaviors. |
+| `doubleClick` | `false` | Double-click stays the tool's own action (an eyedrop, say), not zoom-to-fit — turning on by default would break too many existing behaviors. |
 
 A consumer can enable just keyboard zoom and a custom focal:
 
@@ -206,9 +206,9 @@ zoom the whole page (Safari's default behavior).
 
 Two operating idioms exist:
 
-1. **All-wheel-zooms** (Photoshop, Inkscape). `wheelRequiresModifier = false`
+1. **All-wheel-zooms**. `wheelRequiresModifier = false`
    (default). Every wheel event zooms.
-2. **Modifier-required-zoom** (Figma, Sketch). `wheelRequiresModifier = true`.
+2. **Modifier-required-zoom**. `wheelRequiresModifier = true`.
    Bare wheel pans (the consumer handles bare wheel themselves —
    `onWheel` returns without calling `setZoom`/`setPan`); only
    `ctrlKey` or `metaKey` + wheel zooms.
@@ -244,8 +244,7 @@ Off by default. When `sources.doubleClick === true`:
 
 - Plain dbl-click → `zoomBy(keyStep, focal)` — zoom in, focal at click point.
 - `Shift`-dbl-click → `zoomBy(1 / keyStep, focal)` — zoom out, same focal.
-- `Alt`-dbl-click → `reset()` (escape hatch when zoomed deep, mirrors
-  Photoshop's Alt-double-click-tool reset).
+- `Alt`-dbl-click → `reset()` (escape hatch when zoomed deep).
 
 ## `reset()`
 

@@ -113,7 +113,7 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   which no theme sets.
 - 2026-10-18: Whether a single click on a grouped member selects the group is still open. A single
   click is unchanged and picks the member.
-- 2026-10-18: Create Outlines moved from Mod+Shift+O to Mod+Enter (Affinity's Convert to Curves)
+- 2026-10-18: Create Outlines moved from Mod+Shift+O to Mod+Enter
   and Average Anchors from Mod+Alt+J to Mod+Alt+Shift+J, off chords Chrome takes first.
 - 2026-10-19: Bridge and Bridge anchors moved from Mod+Shift+J, Firefox's Browser Console, to
   Alt+J, beside the Alt-letter anchor selections.
