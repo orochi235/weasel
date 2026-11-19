@@ -52,7 +52,7 @@ export const DEFAULT_MEDIA_ENVIRONMENT: SvgMediaEnvironment = {
 
 /** An absolute SVG length in px, or undefined for a percentage, a relative unit, or garbage. */
 function absoluteLength(raw: string | null): number | undefined {
-  const m = raw == null ? null : /^\s*([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)\s*([a-z]*)\s*$/i.exec(raw);
+  const m = raw == null ? null : /^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)\s*([a-z]*)$/i.exec(raw.trim());
   if (!m) return undefined;
   const scale = absolutePx(m[2].toLowerCase() || 'px');
   const n = parseFloat(m[1]) * (scale ?? NaN);
@@ -95,7 +95,7 @@ type Tok =
   | { readonly k: ':' }
   | { readonly k: '/' };
 
-const TOKEN = /\s*(?:([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)([a-z%]*)|(-?[a-z_][\w-]*)|(<=|>=|<|>|=)|(:)|(\/))/iy;
+const TOKEN = /\s*(?:([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)([a-z%]*)|(-?[a-z_][\w-]*)|(<=|>=|<|>|=)|(:)|(\/))/iy;
 
 function tokenize(s: string): Tok[] | null {
   const out: Tok[] = [];
