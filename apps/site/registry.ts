@@ -1622,6 +1622,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/UiInputDemo').then((m) => m.UiInputDemo),
     path: 'apps/site/demos/UiInputDemo.tsx',
   },
+  {
+    id: 'ui-logic-measure',
+    title: 'One measure, any target',
+    package: 'ui-logic',
+    description: "`measureButton(face, constraints, env)` from `@weasel-js/ui-logic`: a button's box, its first baseline, and where each of its parts sits, from what it shows and a `MeasureEnv`, which answers the theme's tokens and measures text. The drawing is a target with no CSS, as a canvas is: its env reads tokens from the theme's resolved record (`useTints().resolved`) and text from a 2D context, and it outlines each part `measureButton` placed. Under it is ui's DOM `Button` with the same face, which implements the same contract and lays itself out by CSS from the same tokens, so the two agree. A max width below the button's own makes the label give up width first; the DOM button is not held to it.",
+    hint: 'Edit the label, switch sizes, and toggle the icon or the spinner: the drawing and the DOM button change together. Drag max width down to squeeze the label.',
+    load: () => import('./demos/UiLogicDemo').then((m) => m.UiLogicDemo),
+    path: 'apps/site/demos/UiLogicDemo.tsx',
+  },
 ];
 
 export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({
