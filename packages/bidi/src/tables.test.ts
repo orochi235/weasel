@@ -54,6 +54,12 @@ describe('bidiClassOf', () => {
     expect(bidiClassOf(0x1ee04)).toBe('AL'); // unassigned, Arabic Mathematical
   });
 
+  it('gives unassigned currency and ignorable code points ET and BN, not L', () => {
+    expect(bidiClassOf(0x20cf)).toBe('ET'); // unassigned, Currency Symbols
+    expect(bidiClassOf(0xfdd0)).toBe('BN'); // noncharacter
+    expect(bidiClassOf(0xe0080)).toBe('BN'); // unassigned, default ignorable
+  });
+
   it('falls back to L outside the code space', () => {
     expect(bidiClassOf(-1)).toBe('L');
     expect(bidiClassOf(0x110000)).toBe('L');
