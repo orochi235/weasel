@@ -9,6 +9,7 @@
  * `./vendor/harfbuzzjs` because its published module instantiates with a
  * top-level `await`, which a bundle targeting below ES2022 cannot hold.
  */
+/// <reference path="./wasm-url.d.ts" />
 import { scriptPieces, type ScriptPiece } from './scripts';
 import wasmUrl from 'harfbuzzjs/dist/harfbuzz.wasm?url';
 
