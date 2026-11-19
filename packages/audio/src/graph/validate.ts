@@ -1,5 +1,5 @@
 import { hasOwnKey } from '@weasel-js/registry';
-import { closesCycle, duplicateNode, noNode, noParam, noPort } from './errors';
+import { closesCycle, defInUse, duplicateNode, noNode, noParam, noPort } from './errors';
 import { reaches } from './edges';
 import type { GraphNodeDef, GraphPatch, GraphTarget } from './types';
 
@@ -18,6 +18,8 @@ export interface ViewEdge {
 
 export interface GraphView {
   readonly nodes: ReadonlyMap<string, ViewNode>;
+  /** Every def a wrapper holds, live, leaving or fading out from a replace. */
+  readonly defs: ReadonlySet<GraphNodeDef>;
   readonly edges: readonly ViewEdge[];
 }
 
@@ -36,6 +38,11 @@ const toPort = (to: GraphTarget): string => ('output' in to ? '' : to.port);
 export function validatePatches(view: GraphView, patches: readonly GraphPatch[]): void {
   const nodes = new Map(view.nodes);
   let edges = [...view.edges];
+  const defs = new Set(view.defs);
+  const take = (id: string, def: GraphNodeDef): void => {
+    if (defs.has(def)) throw defInUse(id);
+    defs.add(def);
+  };
   const live = (id: string): ViewNode => {
     const n = nodes.get(id);
     if (!n) throw noNode(id);
@@ -48,6 +55,7 @@ export function validatePatches(view: GraphView, patches: readonly GraphPatch[])
     switch (p.kind) {
       case 'add':
         if (nodes.has(p.id)) throw duplicateNode(p.id);
+        take(p.id, p.def);
         nodes.set(p.id, viewNode(p.def));
         break;
       case 'remove':
@@ -55,6 +63,7 @@ export function validatePatches(view: GraphView, patches: readonly GraphPatch[])
         break;
       case 'replace': {
         live(p.id);
+        take(p.id, p.def);
         const n = viewNode(p.def);
         nodes.set(p.id, n);
         edges = edges.filter((e) => e.to !== p.id || n.ports.has(e.port));

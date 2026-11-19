@@ -92,3 +92,33 @@ describe('createAudioGraph settling on a connection', () => {
     await expect(graph.settled()).resolves.toBeUndefined();
   });
 });
+
+describe('createAudioGraph a def held twice', () => {
+  it('replace refuses the def the node already plays, or one it is still fading out', () => {
+    const { ctx, graph, settle } = harness();
+    const a = testNode(ctx, [], true);
+    const b = testNode(ctx, [], true);
+    graph.add('n', a.def);
+    graph.start();
+    expect(() => graph.replace('n', a.def)).toThrow(/already in the graph/);
+    graph.replace('n', b.def);
+    expect(() => graph.replace('n', a.def)).toThrow(/already in the graph/);
+    settle();
+    expect(a.dispose).toHaveBeenCalledTimes(1);
+    expect(b.dispose).not.toHaveBeenCalled();
+    graph.replace('n', a.def);
+  });
+
+  it('add refuses a def another node holds, and apply refuses it before changing anything', () => {
+    const { ctx, graph } = harness();
+    const a = testNode(ctx);
+    graph.add('a', a.def);
+    expect(() => graph.add('b', a.def)).toThrow(/already in the graph/);
+    const c = testNode(ctx).def;
+    expect(() => graph.apply([
+      { kind: 'add', id: 'c', def: c },
+      { kind: 'add', id: 'd', def: c },
+    ])).toThrow(/already in the graph/);
+    expect(graph.ids()).toEqual(['a']);
+  });
+});

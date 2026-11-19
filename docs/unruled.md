@@ -2665,3 +2665,7 @@ Calls the lanes made without a ruling:
   starts the rest and rethrows the first error, an `add` or `replace` while playing keeps the new def and rethrows,
   and `apply` treats it as it treats a throwing `set`: the rest apply, then the first error is rethrown. Removing the
   node again on a failed `add` was the alternative.
+- 2026-11-18 (the fixer's call): an audio graph's `add` and `replace` throw on a def the graph still holds — any
+  node's live def, one a `replace` is fading out, or a removed node's still fading — and `apply` refuses one before
+  changing anything. `replace` with the node's own def, to retrigger its crossfade, is refused too; skipping it as a
+  no-op was the alternative.

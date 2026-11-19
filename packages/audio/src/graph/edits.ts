@@ -4,7 +4,7 @@ import { blocked, drop, findLive, logical, reaches, touches, type Edge } from '.
 import { createFader } from './fader';
 import { replaceDef } from './replace';
 import type { GraphNodeDef, GraphTarget } from './types';
-import { closesCycle, duplicateNode, noNode, noParam, noPort } from './errors';
+import { closesCycle, defInUse, duplicateNode, noNode, noParam, noPort } from './errors';
 import type { GraphView } from './validate';
 import { createWrapper, releaseWrapper, type NodeWrapper } from './wrapper';
 
@@ -29,8 +29,23 @@ function target(live: (id: string) => NodeWrapper, to: GraphTarget): [NodeWrappe
   return [w, to.port];
 }
 
-function viewOf(nodes: ReadonlyMap<string, NodeWrapper>, edges: readonly Edge[]): GraphView {
+/** Every def `ws` hold: each one's live def and those a replace is fading out. */
+function heldDefs(ws: Iterable<NodeWrapper>): Set<GraphNodeDef> {
+  const defs = new Set<GraphNodeDef>();
+  for (const w of ws) {
+    defs.add(w.def);
+    for (const o of w.outgoing) defs.add(o.def);
+  }
+  return defs;
+}
+
+function checkFree(id: string, def: GraphNodeDef, ws: Iterable<NodeWrapper>): void {
+  if (heldDefs(ws).has(def)) throw defInUse(id);
+}
+
+function viewOf(nodes: ReadonlyMap<string, NodeWrapper>, leaving: ReadonlySet<NodeWrapper>, edges: readonly Edge[]): GraphView {
   return {
+    defs: heldDefs([...nodes.values(), ...leaving]),
     nodes: new Map([...nodes].map(([id, w]) => [id, { ports: new Set(w.ins.keys()), params: w.def.params }])),
     edges: edges.filter(logical).map((e) => ({ from: e.from.id, to: e.to?.id ?? null, port: e.port })),
   };
@@ -90,13 +105,14 @@ export function createEdits(deps: EditsDeps) {
     /** Live and leaving: every wrapper whose def has not been released. */
     allNodes: () => [...nodes.values(), ...leaving],
     /** The live nodes and the edges a caller can see, by id, for `validatePatches`. */
-    view: (): GraphView => viewOf(nodes, edges),
+    view: (): GraphView => viewOf(nodes, leaving, edges),
     /** An edge is fading in or out or waiting to be wired, or a replaced def is fading out. */
     busy: () =>
       edges.some((e) => e.state !== 'open' || e.fader!.opening()) ||
       [...nodes.values(), ...leaving].some((w) => w.outgoing.size > 0),
     add(id: string, def: GraphNodeDef): void {
       if (nodes.has(id)) throw duplicateNode(id);
+      checkFree(id, def, [...nodes.values(), ...leaving]);
       const w = createWrapper(ctx, timers, id, def);
       nodes.set(id, w);
       deps.onAdd(w);
@@ -112,6 +128,7 @@ export function createEdits(deps: EditsDeps) {
     /** Crossfade `id` into `def`; edges into a port `def` lacks close with it. */
     replace(id: string, def: GraphNodeDef, playing: boolean): void {
       const w = live(id);
+      checkFree(id, def, [...nodes.values(), ...leaving]);
       replaceDef(ctx, timers, w, def, fade(), playing, {
         closePort: (port) => {
           for (const e of edges.filter((x) => x.to === w && x.port === port)) close(e);
