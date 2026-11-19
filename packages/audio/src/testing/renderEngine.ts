@@ -22,10 +22,16 @@ export async function renderEngine(
   return (await renderEngineStereo(seconds, play, rate, opts))[0];
 }
 
+/** An offline render pauses only on a render quantum's boundary. */
+const QUANTUM = 128;
+
 /** `renderEngine`, both channels. With worklet voices it waits for the
  *  processor to load, and holds the render at its first frame until the
  *  processor has had its messages: an offline render does not wait for them.
- *  `later.run` is called with the render paused at `later.at` seconds. */
+ *  `later.run` is called with the render paused at `later.at` seconds, which
+ *  must fall inside the render; with worklet voices, a `later.at` inside the
+ *  first render quantum runs during that first hold, since a render cannot
+ *  pause twice in one quantum. */
 export async function renderEngineStereo(
   seconds: number,
   play: (engine: AudioEngine) => void,
@@ -33,6 +39,9 @@ export async function renderEngineStereo(
   opts: Omit<AudioEngineOptions, 'context' | 'setTimer' | 'clearTimer'> = {},
   later?: { at: number; run: (engine: AudioEngine) => void },
 ): Promise<[Float32Array, Float32Array]> {
+  if (later && !(later.at >= 0 && later.at < seconds)) {
+    throw new RangeError(`renderEngineStereo: later.at must fall inside the ${seconds} s render (got ${later.at})`);
+  }
   const ctx = new OfflineAudioContext(2, Math.round(seconds * rate), rate);
   Object.defineProperty(ctx, 'state', { configurable: true, get: () => 'running' });
   const engine = createAudioEngine({
@@ -41,27 +50,33 @@ export async function renderEngineStereo(
     setTimer: (cb, ms) => setTimeout(cb, ms),
     clearTimer: (h) => clearTimeout(h as ReturnType<typeof setTimeout>),
   });
-  if (opts.synthVoices === 'worklet') await engine.unlock();
+  const worklet = opts.synthVoices === 'worklet';
+  if (worklet) await engine.unlock();
   play(engine);
   await new Promise((r) => setTimeout(r, 0));
-  if (later) {
-    void ctx.suspend(later.at).then(async () => {
-      later.run(engine);
-      await new Promise((r) => setTimeout(r, 50));
-      await ctx.resume();
-    });
-  }
+  const pause = async (): Promise<void> => {
+    await new Promise((r) => setTimeout(r, 50));
+    await ctx.resume();
+  };
+  const atHold = later !== undefined && worklet && later.at * rate < QUANTUM;
+  // Held rather than `void`ed: a pause that fails fails the render with it.
+  const laterDone = later && !atHold
+    ? ctx.suspend(later.at).then(async () => { later.run(engine); await pause(); })
+      .then(() => null, (error: unknown) => ({ error }))
+    : null;
   let out: AudioBuffer;
-  if (opts.synthVoices === 'worklet') {
+  if (worklet) {
     const held = ctx.suspend(0);
     const rendering = ctx.startRendering();
     await held;
-    await new Promise((r) => setTimeout(r, 50));
-    await ctx.resume();
+    if (atHold) later.run(engine);
+    await pause();
     out = await rendering;
   } else {
     out = await ctx.startRendering();
   }
+  const failed = await laterDone;
   engine.dispose();
+  if (failed) throw failed.error;
   return [out.getChannelData(0), out.getChannelData(1)];
 }
