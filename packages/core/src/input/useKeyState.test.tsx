@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { act, render } from '@testing-library/react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useKeyState } from './useKeyState';
 import type { KeyState } from './keyState';
 
@@ -38,5 +38,21 @@ describe('useKeyState', () => {
     expect(keys.isDown('KeyA')).toBe(false);
     press(host, 'KeyB');
     expect(keys.isDown('KeyB')).toBe(true);
+  });
+
+  it('attaches to a target element that mounts after the hook first ran', () => {
+    let keys!: KeyState;
+    let show!: () => void;
+    function Probe() {
+      const ref = useRef<HTMLDivElement>(null);
+      const [ready, setReady] = useState(false);
+      show = () => setReady(true);
+      keys = useKeyState({ target: ref });
+      return ready ? <div ref={ref} data-testid="late" /> : null;
+    }
+    const { getByTestId } = render(<Probe />);
+    act(() => show());
+    press(getByTestId('late'), 'KeyC');
+    expect(keys.isDown('KeyC')).toBe(true);
   });
 });
