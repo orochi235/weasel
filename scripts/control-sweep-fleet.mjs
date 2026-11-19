@@ -32,6 +32,9 @@ const nodeTree = take('--tree');
 const only = take('--only');
 const sweepArgs = [...(only ? ['--only', only] : []), ...argv];
 
+// onto caps --about at 400 characters, which a long --only list runs past.
+const ids = only?.split(',') ?? [];
+const demosNamed = !only ? 'every demo' : ids.length <= 4 ? `the demos ${only}` : `${ids.length} demos (${ids.slice(0, 3).join(', ')}, …)`;
 const { commit, branch, tree, drop, git } = openCommitTree(ROOT, ref, 'control-sweep-');
 let code = 2;
 try {
@@ -42,7 +45,7 @@ try {
     run, to, node, sweepArgs, ...(nodeTree ? { tree: nodeTree } : {}),
     ref: git('merge-base', commit, 'origin/main'),
     task: `control-sweep-${(branch || commit.slice(0, 9)).replace(/[^A-Za-z0-9.-]/g, '-')}`,
-    about: `Operates every control in ${only ? `the demos ${only}` : 'every demo'} at ${commit.slice(0, 10)} in headless Chromium and reports each that changes nothing.`,
+    about: `Operates every control in ${demosNamed} at ${commit.slice(0, 10)} in headless Chromium and reports each that changes nothing.`,
   }), { cwd: tree, say });
   const { exit, summary } = readRun(to);
   if (exit === undefined) say(`the sweep did not run (onto exited ${status})`);
