@@ -339,10 +339,10 @@ export function installSweepKit(win) {
     };
   };
 
-  /** The rect of the demo's largest canvas on screen, for a probing drag. */
+  /** The rect of the demo's largest canvas or SVG surface on screen, for a probing drag. */
   const bigCanvas = (rootSel) => {
     const root = doc.querySelector(rootSel);
-    const rects = root ? [...root.querySelectorAll('canvas')].map((c) => c.getBoundingClientRect()).filter((r) => r.width >= 100 && r.height >= 100) : [];
+    const rects = root ? [...root.querySelectorAll('canvas,svg')].map((c) => c.getBoundingClientRect()).filter((r) => r.width >= 100 && r.height >= 100) : [];
     const r = rects.sort((a, b) => b.width * b.height - a.width * a.height)[0];
     return r ? { x: r.left, y: r.top, width: r.width, height: r.height } : null;
   };
