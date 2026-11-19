@@ -16,8 +16,9 @@ export const setPieLabel = (data: PieData, slice: number, label: string): PieDat
 
 /** A value as typed into the legend, its brackets optional: a non-negative number, else `null`. */
 export function pieValueOf(text: string): number | null {
-  const bare = text.trim().replace(/^\[\s*(.*?)\s*\]$/, '$1');
-  if (!/^\+?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i.test(bare)) return null;
+  const trimmed = text.trim();
+  const bare = trimmed.startsWith('[') && trimmed.endsWith(']') ? trimmed.slice(1, -1).trim() : trimmed;
+  if (!/^\+?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(bare)) return null;
   const value = Number(bare);
   return Number.isFinite(value) ? value : null;
 }
