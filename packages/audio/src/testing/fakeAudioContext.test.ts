@@ -237,12 +237,22 @@ describe('createFakeAudioContext', () => {
   it('writes index-dependent and length-dependent analyser data', () => {
     const ctx = createFakeAudioContext();
     const a = ctx.createAnalyser();
+    a.fftSize = 8;
     const small = new Uint8Array(4);
     a.getByteFrequencyData(small);
     expect([...small]).toEqual([0, 64, 128, 191]);
     const big = new Uint8Array(8);
     a.getByteTimeDomainData(big);
     expect([...big]).toEqual([0, 32, 64, 96, 128, 159, 191, 223]);
+  });
+
+  it('gives a bin the same value whatever the length of the array read into', () => {
+    const ctx = createFakeAudioContext();
+    const a = ctx.createAnalyser();
+    a.fftSize = 8;
+    const short = new Uint8Array(2);
+    a.getByteFrequencyData(short);
+    expect([...short]).toEqual([0, 64]);
   });
 
   it('never writes past the bin count into an oversized array', () => {
