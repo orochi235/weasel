@@ -1,8 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { REST_MS } from '../Tree/useRowTip';
 import { Tabs, TabList, Tab, TabPanel } from './Tabs';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 function Sample({ first = false, onSelectionChange }: { first?: boolean; onSelectionChange?: (k: unknown) => void }) {
   return (
@@ -28,7 +32,8 @@ const arrow = (from: HTMLElement, key = 'ArrowRight') => {
 };
 
 describe('a disabled Tab', () => {
-  it('takes the arrow keys, reads as disabled and says why, and keeps the chosen tab', () => {
+  it('takes the arrow keys, reads as disabled and says why once focus rests, and keeps the chosen tab', () => {
+    vi.useFakeTimers();
     const onSelectionChange = vi.fn();
     render(<Sample onSelectionChange={onSelectionChange} />);
     act(() => tab('A').focus());
@@ -37,7 +42,9 @@ describe('a disabled Tab', () => {
     expect(tab('B')).toHaveAttribute('aria-disabled', 'true');
     expect(tab('B')).toHaveAttribute('data-disabled');
     expect(tab('B')).toHaveAttribute('aria-description', 'Add a layer first');
-    expect(screen.getByRole('tooltip').textContent).toContain('Add a layer first');
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    act(() => { vi.advanceTimersByTime(REST_MS); });
+    expect(screen.getByRole('tooltip').textContent).toBe('B: Add a layer first');
     expect(screen.getByText('panel-a')).toBeTruthy();
     expect(screen.queryByText('panel-b')).toBeNull();
     expect(onSelectionChange).not.toHaveBeenCalled();

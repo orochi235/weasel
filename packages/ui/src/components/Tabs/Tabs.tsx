@@ -1,5 +1,5 @@
 import {
-  createContext, forwardRef, useContext, useLayoutEffect, useMemo, useRef, useState, type ContextType, type ReactElement, type ReactNode,
+  createContext, forwardRef, useContext, useId, useLayoutEffect, useMemo, useRef, useState, type ContextType, type ReactElement, type ReactNode,
   type Ref, type RefAttributes,
 } from 'react';
 import {
@@ -16,7 +16,8 @@ import {
   type TabRenderProps,
 } from 'react-aria-components';
 import { freeKeyFrom, isHeldKey, StateProbe, useHeldAriaRef } from '../heldItem';
-import { Tooltip, TooltipTrigger } from '../Tooltip';
+import { RowTip } from '../Tree/RowTip';
+import { tooltipContent } from '../Tooltip/buttonTooltip';
 import { useRun } from '../Run';
 import { createRunSlots, slotClass, useRunSlot, type RunSlots } from '../Along/runSlots';
 import { TabListAlong } from './TabListAlong';
@@ -123,7 +124,7 @@ export type TabProps = Omit<RACTabProps, 'className' | 'children' | 'isDisabled'
   className?: string;
   /** The tab cannot be chosen. Arrow keys still land on it, as on a menu's or a listbox's disabled row. */
   disabled?: boolean;
-  /** Why it cannot be chosen, shown while it has keyboard focus or the pointer is over it. */
+  /** Why it cannot be chosen, shown after its name once keyboard focus or the pointer rests on it. */
   disabledReason?: string;
 };
 
@@ -133,14 +134,14 @@ export function Tab({ children, className, disabled, disabledReason, ...rest }: 
   const el = useRef<HTMLElement | null>(null);
   // React Aria disables a tab only by passing over it; this marks it held, read back by `isHeldKey`.
   const held = { ...(disabled ? { 'aria-disabled': true } : {}), ref: useHeldAriaRef(disabled, disabledReason, el) };
+  const tipId = useId();
+  const tip = disabled && disabledReason
+    ? tooltipContent({ label: children, ariaLabel: rest['aria-label'], reason: disabledReason })
+    : undefined;
   const body = ({ isFocusVisible, isHovered }: TabRenderProps): ReactNode => (
     <>
       {children}
-      {disabled && disabledReason && (isFocusVisible || isHovered) && (
-        <TooltipTrigger open>
-          <Tooltip triggerRef={el}>{disabledReason}</Tooltip>
-        </TooltipTrigger>
-      )}
+      <RowTip rowId={tipId} why={isFocusVisible || isHovered ? tip : undefined} el={el} placement="top" />
     </>
   );
   if (slot === undefined) {
