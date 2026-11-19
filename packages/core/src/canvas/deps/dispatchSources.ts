@@ -46,5 +46,6 @@ export function useDispatchDepSources(
 ): void {
   useDepSource('longPress', () => longPress);
   useDepSource('hitAt', () => classifyTarget && hitAtOf(classifyTarget));
-  useDepSource('kindOfNode', () => (id) => kindOfNode.current?.(id));
+  // Read when the dep is, so a canvas with no routing kinds publishes none, as documented.
+  useDepSource('kindOfNode', () => kindOfNode.current && ((id) => kindOfNode.current?.(id)));
 }
