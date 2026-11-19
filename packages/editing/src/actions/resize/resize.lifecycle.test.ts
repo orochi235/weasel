@@ -1,9 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { InvocationCtx } from '@weasel-js/routing';
 import { resizeAction } from './action';
-import { createScene, createSetPoseOp } from '@weasel-js/core/engine';
+import { createScene } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/core';
 import type { ResizePolicy } from '@weasel-js/core/engine';
+import * as coreOps from '@weasel-js/core/ops';
 
 type Pose = { x: number; y: number; width: number; height: number };
 
@@ -99,7 +100,7 @@ describe('resizeAction — lifecycle via the resizePolicy dep', () => {
 
   it('a behavior onEnd returning ops commits those in place of the resize', () => {
     const marker: Pose = { x: 7, y: 7, width: 11, height: 11 };
-    const onEnd = () => [createSetPoseOp<Pose>({ id: s.a, from: s.scene.get(s.a)!.pose, to: marker, label: 'Marker' })];
+    const onEnd = () => [coreOps.setPose<Pose>({ id: s.a, from: s.scene.get(s.a)!.pose, to: marker, label: 'Marker' })];
     const s = setup({ constraints: [{ onEnd }] as never });
     resize(s);
     expect(s.scene.get(s.a)!.pose).toEqual(marker);

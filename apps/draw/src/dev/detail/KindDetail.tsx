@@ -40,7 +40,7 @@ export function ShapeKindDetail({
         {opTargets.length > 0 && (
           <DetailRow label="op factories">
             {opTargets.map((f) => (
-              <EntryLink key={f} kind="opKind" id={f} label={opFactoryNameFor(f)} onNavigate={onNavigate} />
+              <EntryLink key={f} kind="opKind" id={f} label={`ops.${opFactoryNameFor(f)}`} onNavigate={onNavigate} />
             ))}
           </DetailRow>
         )}

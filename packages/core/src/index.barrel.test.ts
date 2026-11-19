@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import * as Barrel from './index';
+import * as Ops from './import-shims/ops';
 import { SHAPE_KINDS, shapeKindsWhere } from './core/shapeKinds';
 
 const ROOT = __dirname;
@@ -32,7 +33,7 @@ function findExportedNames(files: string[], pattern: RegExp): Set<string> {
 }
 
 describe('kit barrel parity', () => {
-  it('re-exports every create*Op factory from src/core/ops/', () => {
+  it('exports every create*Op factory from src/core/ops/ on the ops entry, by its short name, and not on the barrel', () => {
     const opFiles = walkTs(join(ROOT, 'core', 'ops'));
     // `export function createFooOp(...)` or `export const createFooOp = ...`
     const factories = findExportedNames(
@@ -42,12 +43,14 @@ describe('kit barrel parity', () => {
 
     expect(factories.size).toBeGreaterThan(0);
     const missing: string[] = [];
+    const onBarrel: string[] = [];
     for (const name of factories) {
-      if (typeof (Barrel as Record<string, unknown>)[name] !== 'function') {
-        missing.push(name);
-      }
+      const short = name[6]!.toLowerCase() + name.slice(7, -2);
+      if (typeof (Ops as Record<string, unknown>)[short] !== 'function') missing.push(name);
+      if (name in Barrel) onBarrel.push(name);
     }
-    expect(missing, `Op factories defined in src/core/ops/ but not re-exported from src/index.ts: ${missing.join(', ')}`).toEqual([]);
+    expect(missing, `Op factories defined in src/core/ops/ but not exported by @weasel-js/core/ops: ${missing.join(', ')}`).toEqual([]);
+    expect(onBarrel, `Op factories still on the main entry: ${onBarrel.join(', ')}`).toEqual([]);
   });
 
   // The Bundle Inspector (`apps/draw/src/dev/registryData.ts`) reads the

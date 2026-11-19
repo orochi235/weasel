@@ -2,7 +2,6 @@ import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import { worldCoords, type PolygonPath } from '@weasel-js/geom';
 import type { Op } from '@weasel-js/history';
-import { createSetDataOp } from '@weasel-js/core';
 import type { NodeId, Scene } from '@weasel-js/core';
 import { commitOps } from '@weasel-js/core';
 import type { RigNodeData } from '@weasel-js/core';
@@ -17,6 +16,7 @@ import type { WeightBrushParams } from '../actionParamSchema';
 import { pref, PX_UNIT } from '@weasel-js/prefs-schema';
 import { brushRing } from '@weasel-js/cursor';
 import { isFiniteNumber } from '@weasel-js/registry';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** One path under the rig node, where it is drawn, with the weights now showing. */
 export interface WeighedPath {
@@ -112,7 +112,7 @@ function commitPainted(env: WeightEnv, deps: ActionDeps): void {
   const ops: Op[] = [];
   for (const [id, skin] of env.painted()) {
     const data = scene.get(id)?.data;
-    if (data !== undefined) ops.push(createSetDataOp({ id, from: data, to: { ...(data as object), skin }, label: 'Paint weights' }));
+    if (data !== undefined) ops.push(coreOps.setData({ id, from: data, to: { ...(data as object), skin }, label: 'Paint weights' }));
   }
   commitOps({ ...deps, scene }, ops, 'Paint weights');
   env.paint(null);

@@ -2,7 +2,7 @@
  * Stencils: the shapes a palette offers, as data, and what one becomes when it
  * is drawn — a `buildBody` body whose rows are ordinary text nodes.
  */
-import { RIGID_POSE_COMPOSITION, createInsertOp, localizeWorldPoses, type Op, type RectPose } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, localizeWorldPoses, type Op, type RectPose } from '@weasel-js/core';
 import type { BodySpec, MeasureRowText, Row } from './body';
 import { buildBody } from './buildBody';
 import { bodyLayoutOf } from './bodyRelayout';
@@ -14,6 +14,7 @@ import { asideFace, rowTextStyle } from './rowStyle';
 import type { IconSpec } from '@weasel-js/icons';
 import type { Outline } from './outline';
 import type { Rect } from '@weasel-js/geom';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** One shape a palette offers. `size` is what a click places; `rows` default
  *  to one empty label, so the body has a text node to type into. `icon` is its
@@ -111,7 +112,7 @@ export function stencilInsertOps<TLayer extends string>(
   );
   // Built in one frame; each row is stored in the body's.
   const specs = localizeWorldPoses(built.specs.map((spec, k) => ({ ...spec, id: spec.id ?? `${id}/${k}` })), RIGID_POSE_COMPOSITION);
-  const ops = specs.map((spec) => createInsertOp({
+  const ops = specs.map((spec) => coreOps.insert({
     node: { ...spec, parent: spec.parent ?? opts.parent ?? null },
     label: `Insert ${stencil.label}`,
   }));

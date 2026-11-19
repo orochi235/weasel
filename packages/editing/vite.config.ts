@@ -24,6 +24,7 @@ export default defineConfig({
         index: resolve(import.meta.dirname, 'src/index.ts'),
         engine: resolve(import.meta.dirname, 'src/engine.ts'),
         presets: resolve(import.meta.dirname, 'src/presets.ts'),
+        groups: resolve(import.meta.dirname, 'src/groups.ts'),
         'test-seams': resolve(import.meta.dirname, 'src/test-seams.ts'),
         'icons.table': resolve(import.meta.dirname, 'src/icons.table.ts'),
       },

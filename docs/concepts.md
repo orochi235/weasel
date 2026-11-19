@@ -605,9 +605,9 @@ interface Op {
 }
 ```
 
-Constructors live under `packages/core/src/core/ops/`: `createSetPoseOp`,
-`createInsertOp`, `createDeleteOp`, `createSetSelectionOp`,
-`createReorderOp`, etc. Every gesture and action hook produces ops on
+Constructors are exported by `@weasel-js/core/ops` (`import * as ops from '@weasel-js/core/ops'`):
+`ops.setPose`, `ops.insert`, `ops.delete`, `ops.setSelection`,
+`ops.reorder`, etc. Every gesture and action hook produces ops on
 commit; `dispatchApplyBatch(adapter, ops, label)` calls
 `adapter.applyOps?.(ops, label)` if available, otherwise applies each op
 directly against the adapter.

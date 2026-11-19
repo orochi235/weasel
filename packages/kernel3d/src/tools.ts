@@ -15,7 +15,7 @@ import { DOLLY_PINCH, DOLLY_TRACKPAD_PINCH, DOLLY_WHEEL, HOME_DOUBLE_CLICK, PINC
 import { dollyToward, orbitBy, panBy, type Camera3d } from './camera';
 import type { Camera3dDep } from './cameraDep';
 import { icon } from './icons.gen';
-import { VIEWPORT_GROUP } from '@weasel-js/core';
+import * as groups from '@weasel-js/core/groups';
 
 /** Radians per CSS pixel of drag. A full pane width is a bit over half a turn. */
 export const ORBIT_RATE = 0.006;
@@ -97,7 +97,7 @@ export const cameraOrbitAction: Action = {
   id: 'camera.orbit',
   label: 'Orbit',
   icon: icon('orbit'),
-  group: VIEWPORT_GROUP,
+  group: groups.viewport,
   cursor: 'grab',
   activeCursor: 'grabbing',
   requires: ['camera3d', 'kitSettings'],
@@ -116,7 +116,7 @@ export const cameraOrbitAction: Action = {
 export const cameraPanAction: Action = {
   id: 'camera.pan',
   label: 'Pan',
-  group: VIEWPORT_GROUP,
+  group: groups.viewport,
   cursor: 'move',
   requires: ['camera3d'],
   invoker: {
@@ -157,7 +157,7 @@ export const cameraDollyAction: Action = defineAction({
   id: 'camera.dolly',
   label: 'Dolly',
   icon: icon('dollyIn'),
-  group: VIEWPORT_GROUP,
+  group: groups.viewport,
   defaultBinding: [DOLLY_WHEEL, DOLLY_TRACKPAD_PINCH, DOLLY_PINCH],
   requires: ['camera3d', 'kitSettings'],
   invoker: {
@@ -184,7 +184,7 @@ export const cameraDollyAction: Action = defineAction({
 export const cameraPinchDollyAction: Action = {
   id: 'camera.pinchDolly',
   label: 'Pinch Dolly',
-  group: VIEWPORT_GROUP,
+  group: groups.viewport,
   defaultBinding: [PINCH_DOLLY_TOUCH],
   requires: ['camera3d'],
   invoker: {
@@ -216,7 +216,7 @@ export const cameraHomeAction: Action = {
   id: 'camera.home',
   label: 'Reset Camera',
   icon: icon('home'),
-  group: VIEWPORT_GROUP,
+  group: groups.viewport,
   defaultBinding: [HOME_DOUBLE_CLICK],
   requires: ['camera3d'],
   invoker: {

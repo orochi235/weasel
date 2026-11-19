@@ -4,9 +4,10 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
-import { createScene, createSetPoseOp, asNodeId, type RectPose } from '@weasel-js/core/engine';
+import { createScene, asNodeId, type RectPose } from '@weasel-js/core/engine';
 import type { LayoutStrategy, MoveBehavior } from '@weasel-js/core/engine';
 import { moveAction } from './action';
+import * as ops from '@weasel-js/core/ops';
 
 const A = asNodeId('a');
 const T = asNodeId('target');
@@ -59,7 +60,7 @@ describe('moveAction — reparent-on-drop behind the other behaviors', () => {
       childPoses: () => new Map(),
       getDropTargets: () => [{ pose: SLOT, origin: { x: SLOT.x, y: SLOT.y } }],
       reflowPoses: () => new Map(),
-      commitDrop: () => [createSetPoseOp<RectPose>({ id: A, from: HOME, to: SLOT, label: 'Drop' })],
+      commitDrop: () => [ops.setPose<RectPose>({ id: A, from: HOME, to: SLOT, label: 'Drop' })],
     } as unknown as LayoutStrategy<unknown>;
     const { scene, nodeAtPoint } = drop(195, { deps: { layout: { getLayout: (id: string) => (id === T ? layout : null) } } });
     expect(nodeAtPoint).not.toHaveBeenCalled();

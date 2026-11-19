@@ -6,10 +6,11 @@
  * A strategy sees ids and poses, never data, so it cannot tell a lane from a
  * shape. Which nodes a container admits is `diagramCanDropInto`'s call.
  */
-import { createSetPoseOp, type LayoutStrategy, type RectPose } from '@weasel-js/core';
+import { type LayoutStrategy, type RectPose } from '@weasel-js/core';
 import { titlePose } from './titlePose';
 import { bodyBox, titleIdOf, type ContainerHeader } from './trait';
 import type { Rect } from '@weasel-js/geom';
+import * as ops from '@weasel-js/core/ops';
 
 /** Options for {@link diagramContainerLayout}. */
 export interface ContainerLayoutOptions {
@@ -39,7 +40,7 @@ export function diagramContainerLayout(opts: ContainerLayoutOptions = {}): Layou
     childPoses: (container, children) => titlePoses(container, children, header),
     getDropTargets: (_container, _children, dragged) => [{ pose: dragged.pose, origin: center(dragged.pose) }],
     reflowPoses: () => new Map(),
-    commitDrop: (_container, _children, dragged, target) => [createSetPoseOp<RectPose>({
+    commitDrop: (_container, _children, dragged, target) => [ops.setPose<RectPose>({
       id: dragged.id, from: dragged.originPose, to: target?.pose ?? dragged.pose, label: 'Drop',
     })],
     dropRegion(container) {

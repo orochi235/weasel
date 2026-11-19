@@ -5,12 +5,13 @@
 import { ActionDisabledReason, defineAction, type Action, type ActionDeps, type ImmediateInvoker } from '@weasel-js/routing';
 import { SPIRO_KINDS, isSpiroKind, type SpiroKind } from '@weasel-js/geom';
 import {
-  commitOps, createSetDataOp, pathOperationTags, reshapeTo, resolveEditablePathOf, storeEditablePath,
+  commitOps, pathOperationTags, reshapeTo, resolveEditablePathOf, storeEditablePath,
   type AnyNode, type NodeId, type Op,
 } from '@weasel-js/core';
 import { respiroWithKind, spiroOf, withoutSpiro } from './spiroShape';
 import { icon, type PathToolsIconName } from '../icons.gen';
 import type {} from '../actionParamSchema';
+import * as coreOps from '@weasel-js/core/ops';
 
 const KIND_ICONS: Record<SpiroKind, PathToolsIconName> = {
   smooth: 'spiroSmooth', g4: 'spiroG4', corner: 'spiroCorner', left: 'spiroLeft', right: 'spiroRight',
@@ -106,7 +107,7 @@ export const releaseSpiroAction: Action & { requires: string[] } = {
     run: (deps) => {
       const nodes = spiroTargets(deps);
       if (nodes.length === 0) return;
-      commitOps(deps, nodes.map((node) => createSetDataOp({
+      commitOps(deps, nodes.map((node) => coreOps.setData({
         id: node.id, from: node.data, to: withoutSpiro(node.data), label: RELEASE_LABEL,
       })), RELEASE_LABEL);
       if (deps.editAnchors?.editingId) deps.editAnchors.setSelectedAnchors([]);

@@ -7,7 +7,8 @@
  *   contract, everything `SEEDS` reaches — with type imports included, since
  *   their declarations are the entry's;
  * - the entry (`import-shims/engine.ts`), value imports only: the actions and
- *   tools it adds may name a 2D type, but must not load 2D code.
+ *   tools it adds may name a 2D type, but must not load 2D code. `import-shims/ops.ts`
+ *   is walked the same way, since an engine host builds its ops from it.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
@@ -16,6 +17,8 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const SRC = join(ROOT, 'packages/core/src');
 export const ENTRY = 'import-shims/engine.ts';
+/** `@weasel-js/core/ops`, which a host on the engine entry builds its ops from. */
+const OPS_ENTRY = 'import-shims/ops.ts';
 
 export const SEEDS = [
   'core/scene/scene.ts',
@@ -85,7 +88,11 @@ function walk(starts, { values }) {
 export const engineFiles = () => walk(SEEDS, { values: false }).files;
 
 function main() {
-  const walks = [['the engine files', walk(SEEDS, { values: false })], [ENTRY, walk([ENTRY], { values: true })]];
+  const walks = [
+    ['the engine files', walk(SEEDS, { values: false })],
+    [ENTRY, walk([ENTRY], { values: true })],
+    [OPS_ENTRY, walk([OPS_ENTRY], { values: true })],
+  ];
   const failures = walks.flatMap(([from, { found }]) => [...found].map(([pkg, chain]) => ({ from, pkg, chain })));
   for (const { from, pkg, chain } of failures) {
     console.error(`[engine-boundary] ${pkg} is reachable from ${from}:\n  ${chain.join('\n  -> ')}`);

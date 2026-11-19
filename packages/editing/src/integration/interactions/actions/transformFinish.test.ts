@@ -1,11 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingHandle, OngoingInvoker, SelectionApi } from '@weasel-js/routing';
-import { createScene, createSetDataOp, commitTransformOps, type TransformFollower, createInsertOp } from '@weasel-js/core/engine';
+import { createScene, commitTransformOps, type TransformFollower } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
 import type { RectPose } from '@weasel-js/core/engine';
 import { lastTransform } from '@weasel-js/core';
 import { alignRightAction, nudgeRightAction } from '@weasel-js/editing';
 import { moveAction } from '../../../actions/move/action';
+import * as coreOps from '@weasel-js/core/ops';
 
 const box = (x: number, y: number): RectPose => ({ x, y, width: 10, height: 10 });
 
@@ -14,7 +15,7 @@ function fixture(answer: 'follow' | 'refuse') {
   const a = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(0, 0) });
   const b = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(50, 0) });
   const transformOps = vi.fn((ops: readonly Op[], label: string) => (answer === 'refuse' ? null : [
-    ...ops, createSetDataOp({ id: b, from: {}, to: { followed: label }, label }),
+    ...ops, coreOps.setData({ id: b, from: {}, to: { followed: label }, label }),
   ]));
   const deps = {
     operands: { get: () => [a], adapterMethods: undefined } as unknown as SelectionApi,
@@ -114,7 +115,7 @@ describe('whole-node transforms finish through the transformFollowers dep', () =
     const c = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(90, 0) });
     const first = (deps as unknown as { transformFollowers: TransformFollower[] }).transformFollowers[0]!;
     const second: TransformFollower = {
-      finish: (ops, label) => [...ops, createSetDataOp({ id: c, from: {}, to: { after: ops.length, label }, label })],
+      finish: (ops, label) => [...ops, coreOps.setData({ id: c, from: {}, to: { after: ops.length, label }, label })],
       preview: (frame) => (frame.has(b) ? [{ id: c, pose: box(90, 90) }] : []),
     };
     const both = { ...deps, transformFollowers: [first, second] } as unknown as ActionDeps;
@@ -154,7 +155,7 @@ describe('whole-node transforms finish through the transformFollowers dep', () =
     const scene = createScene<Record<string, unknown>, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     const g = scene.add({ kind: 'group', layer: 'main', data: {}, pose: box(0, 0) });
     scene.setArrivalHandler(() => null);
-    const op = createInsertOp({ node: { id: 'n', kind: 'mark', layer: 'main', parent: g, data: {}, pose: box(0, 0) }, label: 'Add' });
+    const op = coreOps.insert({ node: { id: 'n', kind: 'mark', layer: 'main', parent: g, data: {}, pose: box(0, 0) }, label: 'Add' });
     expect(commitTransformOps({ scene } as unknown as ActionDeps, [op], 'Add')).toBe(false);
     expect(scene.childrenOf(g)).toEqual([]);
   });

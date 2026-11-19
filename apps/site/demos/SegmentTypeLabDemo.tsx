@@ -1,5 +1,5 @@
 import { solid } from '@weasel-js/paint';
-import { ANCHORS_GROUP, type ActionTunings, asNodeId, createScene, type RectPose, pathNode } from '@weasel-js/core';
+import { type ActionTunings, asNodeId, createScene, type RectPose, pathNode } from '@weasel-js/core';
 import * as pathTools from '@weasel-js/path-tools/presets';
 import {
   type ConfigOf,
@@ -19,6 +19,7 @@ import 'windease/styles.css';
 import { icon } from '../icons.gen';
 import { useSelection } from '@weasel-js/editing';
 import * as presets from '@weasel-js/editing/presets';
+import * as groups from '@weasel-js/editing/groups';
 
 const config = f.schema({
   shiftC: f.enum<'flip' | 'line' | 'curve'>('flip', [
@@ -62,7 +63,7 @@ function SegmentTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         tune={tune}
       />
       <FloatingPanel anchor="top-right">
-        <ActionBar group={ANCHORS_GROUP} only={['convertSegments']} />
+        <ActionBar group={groups.anchors} only={['convertSegments']} />
       </FloatingPanel>
     </>
   );

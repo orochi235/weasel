@@ -6,11 +6,12 @@ import { parseSvg } from './parse';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
 import { svgNodesToKitDrafts } from './unpack';
 import {
-  arrivalBounds, createInsertOp, dwarn, unionAabb, type IngestCtx, type Op, type PoseComposition, type Stroke,
+  arrivalBounds, dwarn, unionAabb, type IngestCtx, type Op, type PoseComposition, type Stroke,
 } from '@weasel-js/core';
 import { type StyledRun, type TextStyle } from '@weasel-js/text';
 import type { SvgDraftPose } from './draftPose';
 import { svgDraftSpecs } from './draftSpecs';
+import * as coreOps from '@weasel-js/core/ops';
 
 const VIEWPORT_FIT = 0.9;
 
@@ -105,7 +106,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
         ...d, pose: place(d.pose), ...(d.kind === 'mark' ? { data: scaleLeafData(d.data, scale) } : {}),
       }) as typeof d);
       const specs = svgDraftSpecs(placed, { layer, composition: ctx.scene.composition as PoseComposition<SvgDraftPose> });
-      const ops: Op[] = specs.map((node) => createInsertOp({ node: node as unknown as { id: string }, label: 'Insert SVG' }));
+      const ops: Op[] = specs.map((node) => coreOps.insert({ node: node as unknown as { id: string }, label: 'Insert SVG' }));
       ctx.applyOps(ops, 'Insert SVG');
       index++;
     } catch (err) {

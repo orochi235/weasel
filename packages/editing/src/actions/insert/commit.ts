@@ -1,9 +1,10 @@
 import type { DragSample } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
-import { defaultCommitAdapter, operandMethods, createSetSelectionOp } from '@weasel-js/core/engine';
+import { defaultCommitAdapter, operandMethods } from '@weasel-js/core/engine';
 import { commitRunOps, readRunLifecycle, reduceBehaviorEnd, runBehaviorCancel } from '@weasel-js/core';
 import { clearedSelection, type InsertFrame, type InsertSession } from './session';
 import { insertShape, isCommittableExtent } from './shape';
+import * as ops from '@weasel-js/core/ops';
 
 /** Put back the selection the press cleared, for a draw that ends without
  *  committing. */
@@ -61,5 +62,5 @@ export function commitInsert(
 /** The press's selection clear, as ops for a behavior's batch. */
 function selectionOps(session: Pick<InsertSession, 'priorSelection'>) {
   const prior = session.priorSelection;
-  return prior.length > 0 ? [createSetSelectionOp({ from: prior, to: [], label: 'Insert' })] : [];
+  return prior.length > 0 ? [ops.setSelection({ from: prior, to: [], label: 'Insert' })] : [];
 }

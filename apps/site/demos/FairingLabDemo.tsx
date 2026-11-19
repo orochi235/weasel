@@ -1,4 +1,4 @@
-import { ANCHORS_GROUP, type ActionTunings, editingAnchors, never } from '@weasel-js/core';
+import { type ActionTunings, editingAnchors, never } from '@weasel-js/core';
 import { createCurvatureCombPreset } from '@weasel-js/path-tools';
 import * as pathTools from '@weasel-js/path-tools/presets';
 import {
@@ -17,6 +17,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 import * as presets from '@weasel-js/editing/presets';
+import * as groups from '@weasel-js/editing/groups';
 
 const config = f.schema({
   comb: f.boolean(true).label('Show comb'),
@@ -44,7 +45,7 @@ function FairingTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
   return (
     <div className={s.trial}>
       <div className={s.bar}>
-        <ActionBar group={ANCHORS_GROUP} />
+        <ActionBar group={groups.anchors} />
       </div>
       <TrialSceneCanvas
         features={features}

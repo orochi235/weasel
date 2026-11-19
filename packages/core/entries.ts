@@ -9,6 +9,8 @@ const shims = [
   'routing',
   'engine',
   'presets',
+  'groups',
+  'ops',
   'test-seams',
   'render-worker',
 ] as const;

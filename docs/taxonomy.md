@@ -275,17 +275,17 @@ implementing the slices its readers take. See
 ### Op
 
 An invertible, adapter-agnostic mutation: `{ apply(adapter), invert(): Op, label?, coalesceKey? }`.
-Op constructors live in `packages/core/src/core/ops/`: `createSetPoseOp`, `createInsertOp`,
-`createDeleteOp`, `createSetSelectionOp`, `createSetTextOp`, `createReorderOp`,
-`createSetPathOp`, etc. `dispatchApplyBatch(adapter, ops, label)` applies them in
+Op constructors are exported by `@weasel-js/core/ops` (`import * as ops from '@weasel-js/core/ops'`): `ops.setPose`,
+`ops.insert`, `ops.delete`, `ops.setSelection`, `ops.setText`, `ops.reorder`,
+`ops.setPath`, etc. `dispatchApplyBatch(adapter, ops, label)` applies them in
 order (or hands them to `adapter.applyBatch` for history integration).
 
 Ops are the *infrastructure layer* of state mutation — atoms of history-bearing
 change. [Actions](#action) at the application layer produce op batches to express
 user-intent operations; the action↔op mapping is many-to-many:
 
-- **1 action → 1 op**: `delete` → `createDeleteOp`.
-- **1 action → N ops**: `align left` → N `createSetPoseOp`s (one per selected item).
+- **1 action → 1 op**: `delete` → `ops.delete`.
+- **1 action → N ops**: `align left` → N `ops.setPose` ops (one per selected item).
 - **0 ops for an action**: `zoom in`, `deselect`, `toggle grid` — non-undoable state
   changes bypass the op pipeline.
 - **Ops without an action**: a gesture commit can emit ops directly

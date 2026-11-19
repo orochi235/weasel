@@ -4,11 +4,12 @@
  * it where the effect hides its sources, and undoes as one step.
  */
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
-import { commitOps, createSetDependsOnOp, createDeleteNodeOp, hiddenSourcesTakenWith, type NodeId, type Op, pathEffectOf, type AnyNode, sourcesOf, type AnyScene } from '@weasel-js/core';
+import { commitOps, hiddenSourcesTakenWith, type NodeId, type Op, pathEffectOf, type AnyNode, sourcesOf, type AnyScene } from '@weasel-js/core';
 import { isTextData } from '@weasel-js/text';
 import { PATH_EFFECTS_GROUP, selectedEffects } from './actions';
 import { releasedOps, takenOps } from './hiding';
 import { hiddenSourceDeleteOps } from '@weasel-js/editing';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** Whether `effect` reading `target` would loop: `target` is already one of
  *  its sources, or derives from it. */
@@ -60,7 +61,7 @@ export const setEffectPathAction: Action & { requires: string[] } = {
       const { effect, path } = target;
       const [shape, old] = sourcesOf(effect) as [NodeId, NodeId];
       commitOps(deps, [
-        createSetDependsOnOp({ id: effect.id, from: effect.dependsOn, to: [shape, path.id], label: SET_LABEL }),
+        coreOps.setDependsOn({ id: effect.id, from: effect.dependsOn, to: [shape, path.id], label: SET_LABEL }),
         ...releasedOps(scene, old, [effect], SET_LABEL),
         ...takenOps(scene, effect, 1, path.id, SET_LABEL),
       ], SET_LABEL, { select: [effect.id] });
@@ -107,7 +108,7 @@ export const releasePathEffectAction: Action & { requires: string[] } = {
           if (show.length > 0) shown.add(source);
           ops.push(...show);
         }
-        ops.push(createDeleteNodeOp(scene, effect, RELEASE_LABEL));
+        ops.push(coreOps.deleteNode(scene, effect, RELEASE_LABEL));
       }
       ops.push(...hiddenSourceDeleteOps(scene, [...leaving], RELEASE_LABEL, shown));
       // What the batch removes, worked out before it runs: the effects and the hidden sources they take.

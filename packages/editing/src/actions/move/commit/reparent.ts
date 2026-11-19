@@ -1,11 +1,12 @@
-import { createReparentOp, createSetLayerOp, followerOpsFor, carryPose, planeOf, translateNodeOps } from '@weasel-js/core';
-import { createSetPoseOp, isPageStructure, pageIdOf, planeToPlane, rebaseLocalPose, sceneViewPoseAdapter, refusalOf } from '@weasel-js/core/engine';
+import { followerOpsFor, carryPose, planeOf, translateNodeOps } from '@weasel-js/core';
+import { isPageStructure, pageIdOf, planeToPlane, rebaseLocalPose, sceneViewPoseAdapter, refusalOf } from '@weasel-js/core/engine';
 import type { Op, NodeId, ReparentOnDrop } from '@weasel-js/core';
 import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
 import type { MoveSession } from '../session';
 import { translateOps } from '../translate';
 import { outermost } from '@weasel-js/select';
 import { worldBoundsOf, type MoveRefusal } from '../refusal';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** Resolved drop target — the new parent + layer + (for `'above'` mode)
  *  the hit sibling whose z-order position the moved node should land
@@ -135,14 +136,14 @@ export function landOps(
   if (node.layer !== layer) {
     // The scene refuses a layer change on a node whose parent is on another layer.
     if (from !== null) {
-      ops.push(createReparentOp({
+      ops.push(coreOps.reparent({
         id: id as string, fromParentId: from, toParentId: null, label, coalesceKey: `reparent:${id}:orphan`,
       }));
       from = null;
     }
-    ops.push(createSetLayerOp({ id: id as string, from: node.layer, to: layer, label }));
+    ops.push(coreOps.setLayer({ id: id as string, from: node.layer, to: layer, label }));
   }
-  ops.push(createReparentOp({ id: id as string, fromParentId: from, toParentId: to as string | null, toIndex, label }));
+  ops.push(coreOps.reparent({ id: id as string, fromParentId: from, toParentId: to as string | null, toIndex, label }));
   return ops;
 }
 
@@ -171,7 +172,7 @@ export function reparentOps(
     if (to === null) return null;
     const toIndex = landAbove(siblings, id, mode === 'above' ? target.hitSibling : null);
     ops.push(...landOps(session, id, target.newParent, toIndex, target.newLayer));
-    ops.push(createSetPoseOp<unknown>({ id: id as string, from: node.pose, to, label }));
+    ops.push(coreOps.setPose<unknown>({ id: id as string, from: node.pose, to, label }));
   }
   const riders = [...new Set([...session.ids.filter((id) => !roots.has(id)), ...session.cascadeIds])];
   const page = target.newParent === null ? null : pageIdOf(scene, target.newParent);

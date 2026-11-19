@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, createSetPoseOp, derivedDepOf, documentPose, type InvocationCtx, type RectPose, type Scene } from '@weasel-js/core';
+import { createScene, derivedDepOf, documentPose, type InvocationCtx, type RectPose, type Scene } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
 import { edgeLabelSpec } from '../edgeLabel';
@@ -9,6 +9,7 @@ import { pinSegment } from '../waypoints';
 import { waypointFollower } from '../waypointFollower';
 import { entersBox } from './avoidFixture';
 import { installAvoidRouting } from './install';
+import * as ops from '@weasel-js/core/ops';
 
 type AvoidScene = Scene<unknown, 'main', RectPose>;
 
@@ -69,7 +70,7 @@ describe('avoid routing in a scene', () => {
     scene.add(box('wall', 200, 300, 60, 260) as never);
     const before = routeOf(scene);
     const depth = scene.historyEntries().length;
-    scene.applyBatch([createSetPoseOp({ id: 'wall', from: scene.get('wall' as never)!.pose, to: { x: 200, y: -100, width: 60, height: 260 } })], 'Move', adapter);
+    scene.applyBatch([ops.setPose({ id: 'wall', from: scene.get('wall' as never)!.pose, to: { x: 200, y: -100, width: 60, height: 260 } })], 'Move', adapter);
     expect(routeOf(scene)).not.toEqual(before);
     expect(scene.historyEntries().length).toBe(depth + 1);
     scene.undo();

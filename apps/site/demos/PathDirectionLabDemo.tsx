@@ -1,5 +1,5 @@
 import { solid } from '@weasel-js/paint';
-import { ANCHORS_GROUP, PATH_GROUP, always, asNodeId, createScene, never, type RectPose, pathNode } from '@weasel-js/core';
+import { always, asNodeId, createScene, never, type RectPose, pathNode } from '@weasel-js/core';
 import { PATH_DIRECTION_CHROME_ID } from '@weasel-js/path-tools';
 import * as pathTools from '@weasel-js/path-tools/presets';
 import {
@@ -20,6 +20,7 @@ import 'windease/styles.css';
 import { icon } from '../icons.gen';
 import { useSelection } from '@weasel-js/editing';
 import * as presets from '@weasel-js/editing/presets';
+import * as groups from '@weasel-js/editing/groups';
 
 const config = f.schema({
   arrows: f.boolean(true).label('Direction arrows'),
@@ -72,8 +73,8 @@ function DirectionTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         chromeVisibility={chromeVisibility}
       />
       <FloatingPanel anchor="top-right">
-        <ActionBar group={ANCHORS_GROUP} only={['setPathStart']} />
-        <ActionBar group={PATH_GROUP} only={['reversePath']} />
+        <ActionBar group={groups.anchors} only={['setPathStart']} />
+        <ActionBar group={groups.path} only={['reversePath']} />
       </FloatingPanel>
     </>
   );

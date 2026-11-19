@@ -6,7 +6,6 @@
  */
 import {
   AUTO_POSE_DESCRIPTOR,
-  createSetDataOp,
   writtenBy,
   type PoseDescriptor,
   type Scene,
@@ -17,6 +16,7 @@ import {
 import type { Vec2 } from '@weasel-js/core/math';
 import { diagramEdgeOf, samePoints, type DiagramEdge } from './edgeTrait';
 import { worldWith } from './worldWith';
+import * as coreOps from '@weasel-js/core/ops';
 
 const EPS = 1e-6;
 
@@ -81,7 +81,7 @@ export function waypointFollower<TPose>(
     finish(ops, label) {
       const moved = posesMovedBy(sc, ops);
       if (moved === null || moved.size === 0) return [...ops];
-      const changes = followers(sc, geo, moved).map((c) => createSetDataOp({
+      const changes = followers(sc, geo, moved).map((c) => coreOps.setData({
         id: c.id, from: sc.get(c.id as never)!.data, to: c.data, label,
       }));
       return [...ops, ...changes];

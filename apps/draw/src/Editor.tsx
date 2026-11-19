@@ -2,7 +2,7 @@ import { placedPagesOf, type SceneCanvasApi, type SelectionApi, VIEW_TOOLS, type
 import { createMeasurements } from '@weasel-js/measure';
 import type { ModeRegistry } from '@weasel-js/modes';
 import {
-  DRAW_TOOLS, PATH_EDIT_TOOLS, PATH_OVERLAYS_GROUP, PATH_TOOLS_TOOLS, RESHAPE_TOOLS, SLICE_TOOLS, WARP_TOOLS,
+  DRAW_TOOLS, PATH_EDIT_TOOLS, PATH_TOOLS_TOOLS, RESHAPE_TOOLS, SLICE_TOOLS, WARP_TOOLS,
 } from '@weasel-js/path-tools';
 import { TEXT_TOOLS } from '@weasel-js/text-tools';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
@@ -45,6 +45,7 @@ import { useTextEditSession } from './useTextEditSession';
 import { Workspace } from './Workspace';
 import { SELECT_TOOLS, SHAPE_TOOLS } from '@weasel-js/editing';
 import { getOwn } from '@weasel-js/registry';
+import * as pathToolsGroups from '@weasel-js/path-tools/groups';
 
 /** Core's tool sets and path-tools' path-edit, drawing, and knife sets, in palette order. */
 const TOOL_SETS = [SELECT_TOOLS, PATH_EDIT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, DRAW_TOOLS, TEXT_TOOLS, SLICE_TOOLS];
@@ -155,7 +156,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
                     <ShowChrome id={FIXED_CHROME.tools.id}>
                       <Sidebar side="left" className="wd-sidebar left" aria-label={FIXED_CHROME.tools.label}>
                         {tools && <DrawToolPalette tools={tools} modeRegistry={modality.machine.registry} />}
-                        {inPathEdit && <ActionBar group={PATH_OVERLAYS_GROUP} orientation="vertical" className="wd-path-overlays" />}
+                        {inPathEdit && <ActionBar group={pathToolsGroups.pathOverlays} orientation="vertical" className="wd-path-overlays" />}
                         <ActiveSwatches />
                       </Sidebar>
                     </ShowChrome>

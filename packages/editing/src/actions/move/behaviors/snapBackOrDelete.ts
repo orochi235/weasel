@@ -1,4 +1,3 @@
-import { createDeleteOp } from '@weasel-js/core';
 import type { Op } from '@weasel-js/core';
 import type { MoveBehavior } from '@weasel-js/core/engine';
 import {
@@ -6,6 +5,7 @@ import {
   type OriginProjection,
 } from '@weasel-js/core/engine';
 import { scratchKey, getScratch, setScratch } from '@weasel-js/routing';
+import * as ops from '@weasel-js/core/ops';
 
 const SNAPSHOTS = scratchKey<Map<string, { id: string }>>('snapBackOrDelete.snapshots');
 const INDEXES = scratchKey<Map<string, number>>('snapBackOrDelete.indexes');
@@ -79,7 +79,7 @@ export function snapBackOrDelete<TPose>(args: {
         // Topmost first, so an undo, which replays in reverse, restores each index in turn.
         return [...ctx.draggedIds]
           .sort((p, q) => indexOf(q) - indexOf(p))
-          .map((dragged): Op => createDeleteOp({
+          .map((dragged): Op => ops.delete({
             node: snapshots?.get(dragged) ?? { id: dragged },
             label: deleteLabel,
             index: indexOf(dragged),

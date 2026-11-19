@@ -66,7 +66,7 @@ relative, smooth-curve reflection, arc→cubic), lowering it to the stored
 
 **Ratified rule: kit APIs speak `Path`; `pathFromD` is the only string
 doorway.** Every path-bearing kit parameter takes the typed `Path`
-(`PolygonPath | RectPath`) — `createSetPathOp`, the boolean ops,
+(`PolygonPath | RectPath`) — `ops.setPath`, the boolean ops,
 `PathBuilder.fromPath`, `createPathLayer`, the hit-tests, the geometry slot
 in a node's `data`. **Do not introduce a `string | Path` (`PathLike`) union
 into those signatures.** A `d` string is converted exactly once, at the

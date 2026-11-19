@@ -1,8 +1,9 @@
 import type { Action, InvocationCtx } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction, resolveParams } from '@weasel-js/routing';
 import type { Scene, NodeId, Op } from '@weasel-js/core';
-import { createSetDataOp, commitOps, paintInheritors } from '@weasel-js/core/engine';
+import { commitOps, paintInheritors } from '@weasel-js/core/engine';
 import { deepEqual } from '@weasel-js/registry';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** The node data one paint action reads and writes: its own key, nothing else. */
 type PaintData<K extends string, TValue> = { [P in K]?: TValue | null };
@@ -131,7 +132,7 @@ export function createPaintAction<TState, TValue, K extends string, P>(
               if (!nodeNow || unchanged(start, merged)) continue;
               const from = { ...(nodeNow.data as object) } as Data;
               const to = { ...from, [spec.dataKey]: merged } as Data;
-              ops.push(createSetDataOp<Data>({ id: id as string, from, to }));
+              ops.push(coreOps.setData<Data>({ id: id as string, from, to }));
             }
             commitOps(ctx.deps, ops, spec.label);
             scratch.previews.clear();

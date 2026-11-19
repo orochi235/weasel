@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import type { BindingOptions, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import { createScene, createSetSelectionOp, createSetPoseOp } from '@weasel-js/core/engine';
+import { createScene } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/core';
 import { moveAction } from '../../../actions/move/action';
 import { resizeAction } from '../../../actions/resize/action';
@@ -13,6 +13,7 @@ import { insertAction } from '../../../actions/insert/action';
 import { lassoSelectAction } from '../../../actions/lassoSelect/action';
 import type { InsertDep, LassoSelectDep } from '@weasel-js/core/engine';
 import { runBehaviorSettled } from '@weasel-js/core';
+import * as coreOps from '@weasel-js/core/ops';
 
 type Pose = { x: number; y: number; width: number; height: number; rotation?: number };
 type Reason = 'commit' | 'cancel';
@@ -270,7 +271,7 @@ describe('insertAction — onSettled', () => {
     const from = scene.get(a)!.pose;
     const log: string[] = [];
     const behavior = {
-      onEnd: () => [createSetPoseOp<Pose>({ id: a, from, to: { ...from, x: 7 }, label: 'Place' })],
+      onEnd: () => [coreOps.setPose<Pose>({ id: a, from, to: { ...from, x: 7 }, label: 'Place' })],
       onSettled: (_ctx: unknown, committed: boolean) => { log.push(`settled:${committed}:${scene.get(a)!.pose.x}`); },
     };
     draw(behavior, minted, 'commit', 40, { scene });
@@ -340,7 +341,7 @@ describe('lassoSelectAction — onSettled', () => {
     const { selected, lasso } = setup();
     const log: string[] = [];
     const behavior = {
-      onEnd: () => [createSetSelectionOp({ from: [], to: ['picked' as NodeId] })],
+      onEnd: () => [coreOps.setSelection({ from: [], to: ['picked' as NodeId] })],
       onSettled: (_ctx: unknown, committed: boolean) => { log.push(`settled:${committed}:${JSON.stringify(selected)}`); },
     };
     lasso(behavior, TRIANGLE);

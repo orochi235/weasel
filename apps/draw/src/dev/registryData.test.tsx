@@ -70,18 +70,18 @@ describe('registryData static collectors', () => {
     expect(ids).toEqual(expected);
   });
 
-  it('collectOpFactories returns named op factories from the kit barrel', () => {
-    const ops = collectOpFactories();
-    const ids = ops.map((o) => o.id);
-    expect(ids).toContain('createInsertOp');
-    expect(ids).toContain('createDeleteOp');
-    expect(ids).toContain('createSetPoseOp');
+  it('collectOpFactories returns the op factories @weasel-js/core/ops names', () => {
+    const factories = collectOpFactories();
+    const ids = factories.map((o) => o.id);
+    expect(ids).toContain('insert');
+    expect(ids).toContain('delete');
+    expect(ids).toContain('setPose');
   });
 
   it('collectExports lists every core entry point with the names the barrel ships', () => {
     const byId = new Map(collectExports().map((e) => [e.id, e]));
     expect(byId.get('.')?.label).toBe('@weasel-js/core');
-    expect(byId.get('.')?.names.createInsertOp).toBe('function');
+    expect(byId.get('./ops')?.names.insert).toBe('function');
     expect(byId.get('./math')?.label).toBe('@weasel-js/core/math');
   });
 

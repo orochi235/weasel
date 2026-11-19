@@ -1,4 +1,4 @@
-import { HISTORY_GROUP } from '@weasel-js/core';
+import * as groups from '@weasel-js/core/groups';
 import { useMemo } from 'react';
 import type { LabContribution } from '../chrome/labTypes';
 import { icon } from '../icons.gen';
@@ -36,7 +36,7 @@ function historyItems(
     {
       id: 'lab.undo',
       region: 'header',
-      group: HISTORY_GROUP,
+      group: groups.history,
       item: {
         icon: icon('core:undo'),
         label: 'Undo',
@@ -48,7 +48,7 @@ function historyItems(
     {
       id: 'lab.redo',
       region: 'header',
-      group: HISTORY_GROUP,
+      group: groups.history,
       item: {
         icon: icon('core:redo'),
         label: 'Redo',

@@ -1,7 +1,7 @@
 /** The `insert` dep over a 3D world: a drag becomes a footprint on the ground. */
 
 import type { InsertDep, InsertEnds, InsertExtras, CommitSelection } from '@weasel-js/core/engine';
-import { createCommitSelectionOps, createInsertOp, defaultCommitAdapter } from '@weasel-js/core/engine';
+import { createCommitSelectionOps, defaultCommitAdapter } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/routing';
 import { scale as scaleBy, sub, type Vec3 } from '@weasel-js/geom/3d';
 import { groundAxes, groundHit } from './ground';
@@ -9,6 +9,7 @@ import type { Pose3 } from './pose3';
 import { landing3dOf } from './snap/landing';
 import { DEFAULT_UP, type Scene3d, type World3d } from './world';
 import type { Rect } from '@weasel-js/geom';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** The ground-plane rectangle a drag swept out, in world units. */
 export interface Footprint {
@@ -102,7 +103,7 @@ export interface InsertSelection {
   set(ids: NodeId[]): void;
 }
 
-type Built = { id: NodeId; ops: ReturnType<typeof createInsertOp>[] };
+type Built = { id: NodeId; ops: ReturnType<typeof coreOps.insert>[] };
 
 /** `node`'s answer as the ops that insert it into `scene` (`build`), and committed there as one entry with
  *  `select`'s change, on `selection` or else the scene's own (`mint`). */
@@ -118,7 +119,7 @@ function nodeMinter<TData, TLayer extends string>(
     const id = scene.mintId();
     const layer = made.layer ?? scene.layers[0]?.id;
     const inserted = { id, kind: 'mark' as const, layer, parent: made.parent ?? null, data: made.data, pose: made.pose };
-    return { id, ops: [createInsertOp({ node: inserted, label: `Insert ${extras.kind}` })] };
+    return { id, ops: [coreOps.insert({ node: inserted, label: `Insert ${extras.kind}` })] };
   };
   return {
     build,

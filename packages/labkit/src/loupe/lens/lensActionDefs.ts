@@ -9,15 +9,14 @@
 import {
   type Action,
   ActionDisabledReason,
-  createDeleteOp,
   createKeymapContribution,
-  createSetPoseOp,
   held,
   type KeySpec,
   key,
   type NodeId,
   type Op,
 } from '@weasel-js/core';
+import * as coreOps from '@weasel-js/core/ops';
 import { deepEqual, sameList } from '@weasel-js/registry';
 import type { Contribution, GestureBinding } from '@weasel-js/routing';
 import { ANY_MODS, defineAction } from '@weasel-js/routing';
@@ -248,7 +247,7 @@ export function closeLens<C>(api: LensActionApi<C>, lensId: string): void {
   // Leader first: it depends on both of the others.
   const ids = lensClosure(scene, [`${lensId}:body`]).reverse();
   const nodes = ids.flatMap((id) => scene.get(id as NodeId) ?? []);
-  api.apply(nodes.map((node) => createDeleteOp({ node, label: 'close lens' })));
+  api.apply(nodes.map((node) => coreOps.delete({ node, label: 'close lens' })));
   // A Follow reticle's held pose would otherwise outlive the node.
   if (s?.aim === 'follow') api.unfollow(lensId);
 }
@@ -319,7 +318,7 @@ function lensLifeActions<C>(api: LensActionApi<C>): Action[] {
     };
     const label = 'open quick lens';
     api.apply([
-      createSetPoseOp({ id: body.id, from: body.pose, to: patchAt(body.pose, 1, at), label }),
+      coreOps.setPose({ id: body.id, from: body.pose, to: patchAt(body.pose, 1, at), label }),
       ...setAimOps(scene, lensId, 'glass'),
     ]);
     return lensId;

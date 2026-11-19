@@ -1,10 +1,11 @@
-import { createSetPoseOp, pageAt, pageOfBounds, type PlacedPage, pageNodeOf, pageIdOf, placedPagesOf, refusalOf, sceneViewPoseAdapter } from '@weasel-js/core/engine';
+import { pageAt, pageOfBounds, type PlacedPage, pageNodeOf, pageIdOf, placedPagesOf, refusalOf, sceneViewPoseAdapter } from '@weasel-js/core/engine';
 import type { Op, NodeId } from '@weasel-js/core';
 import { isFollower, keepOnPage, pasteboardOn, placedPage, rehomedFollowers, followerMove, followerMoveOps } from '@weasel-js/core';
 import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
 import type { MoveSession } from '../session';
 import { rootTranslateOps, translateOps } from '../translate';
 import { landAbove, landedCascadeOps, landedLocalPose, landOps, resolveDrop } from './reparent';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** What a release does with one dragged root: add `shift` to the drag and, when `into` is given, move it into
  *  that container (a page, a group on one, or `null` for the top of the tree), just above `above` and onto
@@ -155,7 +156,7 @@ export function pageDropOps(
     const cascade = landedCascadeOps(session, below.get(id) ?? [], drop.into, d, layer);
     if (to === null || cascade === null) return null;
     ops.push(...landOps(session, id, drop.into, toIndex, layer));
-    ops.push(createSetPoseOp<unknown>({ id: id as string, from: node.pose, to, label }));
+    ops.push(coreOps.setPose<unknown>({ id: id as string, from: node.pose, to, label }));
     ops.push(...cascade);
   }
   return ops;

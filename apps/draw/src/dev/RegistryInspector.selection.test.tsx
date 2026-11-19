@@ -50,7 +50,7 @@ describe('RegistryInspector selection', () => {
   it("navigates from a shape kind's op factories to the op kinds they create", async () => {
     window.history.replaceState(null, '', '/#/dev/registry?kind=shapeKind&id=rect');
     renderWithIcons(<RegistryInspector />);
-    fireEvent.click(screen.getByRole('button', { name: 'createInsertOp' }));
+    fireEvent.click(screen.getByRole('button', { name: 'ops.insert' }));
     await waitFor(() => expect(window.location.hash).toBe('#/dev/registry?kind=opKind&id=insert'));
     expect(screen.getByRole('heading', { level: 2, name: 'insert' })).toBeTruthy();
   });

@@ -14,12 +14,13 @@ import {
   type PolygonPath,
 } from '@weasel-js/geom';
 import { pref } from '@weasel-js/prefs-schema';
-import { ANCHORS_GROUP, pathOperationTags, type EditAnchorsDep } from '@weasel-js/core';
+import { pathOperationTags, type EditAnchorsDep } from '@weasel-js/core';
 import { openPathEditOf, requiresAnchorSelection } from '../pathEdit/anchorEditing';
 import { DEFAULT_FILLET_SHAPE, editedPath } from './editFillet';
 import { icon } from '../icons.gen';
 import type { SetFilletsParams } from '../actionParamSchema';
 import { isFiniteNumber } from '@weasel-js/registry';
+import * as groups from '@weasel-js/core/groups';
 
 /** The share of a corner's room that a shape given to a sharp corner cuts. */
 export const DEFAULT_FILLET_TRIM_SHARE = 0.25;
@@ -157,7 +158,7 @@ export const cycleFilletAction = defineAction({
   icon: icon('fillet'),
   label: CYCLE_LABEL,
   tags: pathOperationTags('command'),
-  group: ANCHORS_GROUP,
+  group: groups.anchors,
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   params: CYCLE_FILLET_PARAMS,

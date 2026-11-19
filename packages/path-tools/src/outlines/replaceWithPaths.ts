@@ -1,9 +1,10 @@
 import { boundsOfPath } from '@weasel-js/geom';
 import type { NodeId, Op, PaintedPath } from '@weasel-js/core';
 import {
-  createDeleteOp, createInsertOp, createSetSelectionOp, dispatchApplyBatch, locateChild, unionBounds,
+  dispatchApplyBatch, locateChild, unionBounds,
 } from '@weasel-js/core';
 import type { CreateOutlinesAdapter, OutlinePathSpec } from './createOutlines';
+import * as coreOps from '@weasel-js/core/ops';
 
 /**
  * Replace each node in `converted` with its `paths`, back to front, as one
@@ -28,8 +29,8 @@ export function replaceWithPaths(
     const index = at?.index ?? -1;
     const parent = at?.parentId ?? adapter.getParent(id);
     const place = (created: { id: string }, i: number) =>
-      createInsertOp(index >= 0 ? { node: created, index: index + i } : { node: created });
-    ops.push(createDeleteOp({ node, index }));
+      coreOps.insert(index >= 0 ? { node: created, index: index + i } : { node: created });
+    ops.push(coreOps.delete({ node, index }));
 
     const container = paths.length > 1
       ? adapter.createContainerNode?.(id, { parent, bounds: unionBounds(paths.map((p) => boundsOfPath(p.path)))! })
@@ -37,7 +38,7 @@ export function replaceWithPaths(
     if (container) {
       ops.push(place(container, 0));
       for (const p of paths) {
-        ops.push(createInsertOp({ node: adapter.createPathNode(p.path, id, specOf(p, container.id)) }));
+        ops.push(coreOps.insert({ node: adapter.createPathNode(p.path, id, specOf(p, container.id)) }));
       }
       replaced.set(id, [container.id]);
     } else {
@@ -46,7 +47,7 @@ export function replaceWithPaths(
       replaced.set(id, created.map((n) => n.id));
     }
   }
-  ops.push(createSetSelectionOp({
+  ops.push(coreOps.setSelection({
     from: [...sel],
     to: sel.flatMap((id) => (replaced.get(id) ?? [id]) as NodeId[]),
   }));

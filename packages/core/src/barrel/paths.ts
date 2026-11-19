@@ -219,15 +219,13 @@ export type { AnchorField, AnchorFieldValues, NumberEntry } from '@weasel-js/geo
 
 // ─── Building path commands and path-edit features on core ─────────────────
 export { commitOps, createCommitSelectionOps, commitSelectionFrom } from '../interactions/actions/defaultCommitAdapter';
+export { slotOf } from '../core/ops/nodeOps';
 export {
-  createDeleteNodeOp,
-  createInsertNodeOp,
   pathCopy,
   pathNodesOf,
   reshapeOps,
   reshapeTo,
   operandPathNodes,
-  slotOf,
   withPath,
   withShownPath,
   type PathNode,

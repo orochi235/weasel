@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { createScene } from '@weasel-js/core/engine';
-import { asNodeId, type NodeId, createDeleteOp } from '@weasel-js/core';
+import { asNodeId, type NodeId } from '@weasel-js/core';
 import { moveGestureAdapter } from './gestureAdapter';
 import { moveAction } from './action';
 import type { InvocationCtx } from '@weasel-js/routing';
 import type { Affine } from '@weasel-js/geom';
+import * as ops from '@weasel-js/core/ops';
 
 interface D { color: string }
 type L = 'main';
@@ -115,7 +116,7 @@ describe('moveAction — a behavior that deletes the dragged node', () => {
     const inv = moveAction.invoker;
     if (!inv || inv.timing !== 'ongoing') throw new Error('expected ongoing invoker');
     const handle = inv.start(base as unknown as InvocationCtx, {
-      behaviors: [{ onEnd: () => [createDeleteOp({ node: scene.get(leaf)! })] }],
+      behaviors: [{ onEnd: () => [ops.delete({ node: scene.get(leaf)! })] }],
     });
     const moved = {
       ...base,
@@ -141,7 +142,7 @@ describe('moveGestureAdapter sibling order', () => {
     const a = moveGestureAdapter<P>(scene);
     const middle = a.getNode(ids[1] as string)!;
 
-    scene.applyBatch([createDeleteOp({ node: middle })], 'Delete', a);
+    scene.applyBatch([ops.delete({ node: middle })], 'Delete', a);
     expect(scene.roots).toEqual([ids[0], ids[2]]);
 
     expect(scene.undo()).toBe(true);

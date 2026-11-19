@@ -1,4 +1,5 @@
 import * as Weasel from '@weasel-js/core';
+import * as ops from '@weasel-js/core/ops';
 import type { NodePropertiesEntry } from '@weasel-js/core';
 import { DRAW_NODE_PROPERTIES, DRAW_PRESETS } from './drawPresets';
 import { FEATURE_NAMES } from '@weasel-js/editing';
@@ -80,21 +81,32 @@ export function collectBundles(): readonly BundleEntry[] {
 }
 
 /** Op kinds whose factory is not named after them: `transform` keeps its recorded name, so saved histories replay. */
-const FACTORY_NAMES: Readonly<Record<string, string>> = { transform: 'createSetPoseOp' };
+const FACTORY_NAMES: Readonly<Record<string, string>> = { transform: 'setPose' };
 
-/** The barrel export that builds op kind `kind`: `create<Kind>Op`, but for {@link FACTORY_NAMES}. */
+/** The `@weasel-js/core/ops` export that builds op kind `kind`: the kind's own name, but for {@link FACTORY_NAMES}. */
 export function opFactoryNameFor(kind: string): string {
-  return getOwn(FACTORY_NAMES, kind) ?? `create${kind[0]!.toUpperCase()}${kind.slice(1)}Op`;
+  return getOwn(FACTORY_NAMES, kind) ?? kind;
 }
 
-/** The `createXOp` barrel export behind each registered op kind, so the registry drives this list;
+/** The name `@weasel-js/core/ops`'s `name` is declared under in core's source, `create<Name>Op`, which the source
+ *  index and the trait schemas key by. */
+export function opFactorySourceNameFor(name: string): string {
+  return `create${name[0]!.toUpperCase()}${name.slice(1)}Op`;
+}
+
+/** What `@weasel-js/core/ops` exports as `name`. */
+export function opFactoryFor(name: string): unknown {
+  return getOwn(ops as unknown as Record<string, unknown>, name);
+}
+
+/** The `@weasel-js/core/ops` export behind each registered op kind, so the registry drives this list;
  *  the `typeof` guard turns a missing factory into a missing row rather than a crash, and
  *  `registryData.test.ts` fails when one goes missing. */
 export function collectOpFactories(): readonly OpFactoryEntry[] {
   return Weasel.defaultOpRegistry.entries().map((e) => e.key)
     .map(opFactoryNameFor)
-    .filter((name) => typeof getOwn(Weasel as unknown as Record<string, unknown>, name) === 'function')
-    .map((id) => ({ kind: 'opFactory', id, label: id }));
+    .filter((name) => typeof opFactoryFor(name) === 'function')
+    .map((id) => ({ kind: 'opFactory', id, label: `ops.${id}` }));
 }
 
 /** Every built-in shape kind, those with no auto-mounted tool (`image`) included. */

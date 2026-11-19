@@ -5,10 +5,6 @@
  * edit that caused it.
  */
 import {
-  createDeleteOp,
-  createInsertOp,
-  createSetDataOp,
-  createSetPoseOp,
   followerHome,
   pageIdOf,
   placedPagesOf,
@@ -26,6 +22,7 @@ import type { DiagramTheme } from '../theme/types';
 import { offPageSplits, type OffPageEdgeInput } from './split';
 import { offPageFarText, offPageTagData, offPageTagLook, offPageTagSize, offPageTagSpec, type OffPageTagLook } from './tag';
 import { offPageTagId, type OffPageSplit } from './trait';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** Options for {@link installOffPageMarkers} and `useOffPageMarkers`. */
 export interface OffPageMarkerOptions {
@@ -80,13 +77,13 @@ function tagOps(scene: AnyScene, edge: SceneNode, split: OffPageSplit | null, pa
     const id = offPageTagId(edge.id, end);
     const tag = scene.get(id as never);
     if (split === null) {
-      if (tag !== undefined) ops.push(createDeleteOp({ node: tag as never, label: 'Off-page' }));
+      if (tag !== undefined) ops.push(coreOps.delete({ node: tag as never, label: 'Off-page' }));
       continue;
     }
     const text = offPageFarText(pages, split, end);
     if (tag === undefined) {
       const spec = offPageTagSpec(edge.id, end, text, { ...lookOf(), layer: edge.layer });
-      ops.push(createInsertOp({ node: { ...spec, parent: followerHome(scene, spec) } as never, label: 'Off-page' }));
+      ops.push(coreOps.insert({ node: { ...spec, parent: followerHome(scene, spec) } as never, label: 'Off-page' }));
     } else if ((tag.data as { text?: unknown }).text !== text) {
       const old = tag.data as { style?: OffPageTagLook['style']; fill?: { paint?: { color?: string } }; background?: { paint?: { color?: string } }; padding?: number };
       // Keeps the tag's own colors and face, which a theme or the author may have set since.
@@ -97,9 +94,9 @@ function tagOps(scene: AnyScene, edge: SceneNode, split: OffPageSplit | null, pa
         ...(old.background?.paint?.color ? { background: old.background.paint.color } : {}),
         ...(old.padding !== undefined ? { padding: old.padding } : {}),
       };
-      ops.push(createSetDataOp({ id, from: tag.data, to: { ...(tag.data as object), ...offPageTagData(edge.id, end, text, kept) }, label: 'Off-page' }));
+      ops.push(coreOps.setData({ id, from: tag.data, to: { ...(tag.data as object), ...offPageTagData(edge.id, end, text, kept) }, label: 'Off-page' }));
       const pose = tag.pose as Record<string, unknown>;
-      ops.push(createSetPoseOp({ id, from: tag.pose, to: { ...pose, ...offPageTagSize(text, kept) }, label: 'Off-page' }));
+      ops.push(coreOps.setPose({ id, from: tag.pose, to: { ...pose, ...offPageTagSize(text, kept) }, label: 'Off-page' }));
     }
   }
   return ops;
@@ -143,7 +140,7 @@ export function offPageOps<TPose>(
   for (const edge of inputs) {
     const split = splits.get(edge.id) ?? null;
     if (!sameSplit(edge.trait.offPage, split)) {
-      ops.push(createSetDataOp({ id: edge.id, from: edge.node.data, to: withSplit(edge.node.data, edge.trait, split), label: 'Off-page' }));
+      ops.push(coreOps.setData({ id: edge.id, from: edge.node.data, to: withSplit(edge.node.data, edge.trait, split), label: 'Off-page' }));
     }
     ops.push(...tagOps(sc, edge.node, split, pages, look));
   }
