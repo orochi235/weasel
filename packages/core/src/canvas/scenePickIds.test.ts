@@ -66,6 +66,20 @@ describe('createScenePickIds once every number is given', () => {
     expect(ids.pickIdOf('b')).toBe(2);
   });
 
+  it('does not hand out a freed number a live node has since adopted', () => {
+    const live = new Set(['a', 'b', 'c']);
+    const ids = createScenePickIds((id) => live.has(id), 3);
+    ['a', 'b', 'c'].forEach(ids.pickIdOf);
+    live.delete('a');
+    live.delete('b');
+    live.add('d').add('e').add('f');
+    ids.pickIdOf('d');
+    // 2 is still on the free list when 'e' takes it, as a worker copy numbering like its original would.
+    ids.adopt('e', 2);
+    expect(() => ids.pickIdOf('f')).toThrow(RangeError);
+    expect([ids.idOfPickId(1), ids.idOfPickId(2), ids.pickIdOf('e')]).toEqual(['d', 'e', 2]);
+  });
+
   it('throws when every number is held by a node still in the scene', () => {
     const ids = createScenePickIds(() => true, 2);
     ids.pickIdOf('a');
