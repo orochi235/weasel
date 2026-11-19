@@ -89,8 +89,9 @@ const locateSoon = async (page, c) => {
 /** The keys on the page now that share `c`'s name, for an error that says what was there instead. */
 const nearMisses = async (page, c) => {
   const name = (c.name ?? c.label).toLowerCase();
-  const keys = (await discover(page)).map((d) => d.key).filter((k) => k.toLowerCase().includes(name));
-  return keys.length ? `; the page has ${keys.slice(0, 4).join(', ')}` : '';
+  const all = (await discover(page)).map((d) => d.key);
+  const keys = all.filter((k) => k.toLowerCase().includes(name));
+  return keys.length ? `; the page has ${keys.slice(0, 4).join(', ')}` : `; the page has ${all.length} controls, none named for it`;
 };
 
 /** Puts the page back where `pre` (if any) left it, with `c` found afresh. */
