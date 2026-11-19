@@ -145,6 +145,13 @@ describe('hitAffordanceRegions', () => {
     const SQUISHED = { ...VIEW, scale: { x: 4, y: 1 } };
     const a = affordance('a', [pointRegion('r', 0, 0, 8)]);
 
+    it('ranks overlapping point regions by their distance on screen', () => {
+      const view = { x: 0, y: 0, scale: { x: 1, y: 8 } };
+      // 3 px away on screen along x, against 8 px along y.
+      const a = affordance('aff', [pointRegion('near-on-screen', 3, 0, 10), pointRegion('near-in-world', 0, 1, 10)]);
+      expect(hitAffordanceRegions([a], 0, 0, state(), view)?.regionId).toBe('near-on-screen');
+    });
+
     it('stops accepting a point that is beyond the handle on the tight axis', () => {
       expect(hitAffordanceRegions([a], 3, 0, state(), SQUISHED)).toBeNull();
       expect(hitAffordanceRegions([a], 2, 0, state(), SQUISHED)).not.toBeNull();
@@ -210,6 +217,13 @@ describe('annulusSemiAxes', () => {
 
   it('widens to the inner half-extent plus the band', () => {
     expect(annulusSemiAxes({ ...base, minBandPx: 24 }, VIEW)).toEqual({ rx: 74, ry: 74 });
+  });
+
+  it('measures the band from the cutout edge farther from the center', () => {
+    // The cutout spans x 20..120 and y 30..130 around a center at (50, 50): its far edges are
+    // 70 and 80 from the center.
+    const offset = { ...base, innerX: 20, innerY: 30, minBandPx: 24 };
+    expect(annulusSemiAxes(offset, VIEW)).toEqual({ rx: 94, ry: 104 });
   });
 
   it('leaves a naturally larger ellipse alone', () => {

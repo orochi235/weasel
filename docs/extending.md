@@ -301,9 +301,11 @@ const overlay = composeAffordanceLayer(
 );
 
 // 3. Plug it into your tool's overlay field, and bind the gestures that
-//    should reach your actions when a press lands on that chrome.
+//    should reach your actions when a press lands on that chrome. A press on a
+//    registered layer reports the layer as its kind, `layer:<id>`; which corner
+//    it hit rides in the hit's `payload`, the region's `initialScratch`.
 const isMyHandle = hitPredicate((hit) =>
-  (hit as { kind?: string } | null)?.kind?.startsWith('handle:') ?? false);
+  (hit as { kind?: string } | null)?.kind === 'layer:my-tool-overlay');
 const myTool = defineTool({
   id: 'my-tool',
   overlay,

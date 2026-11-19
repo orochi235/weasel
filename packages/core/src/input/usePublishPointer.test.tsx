@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { useRef } from 'react';
-import { createEvent, fireEvent, render } from '@testing-library/react';
+import { useRef, useState } from 'react';
+import { act, createEvent, fireEvent, render } from '@testing-library/react';
 import { PointerContextProvider, createPointerStore } from '@weasel-js/routing/react';
 import { usePublishPointer } from './usePublishPointer';
 
@@ -64,6 +64,16 @@ describe('usePublishPointer', () => {
     expect(store.get()).toBeNull();
   });
 
+  it('clears once a press that left the element ends in a release the document never saw', () => {
+    const { store, a } = mount();
+    fireEvent.pointerDown(a, { pointerId: 1, buttons: 1 });
+    fireEvent.pointerLeave(a, { pointerId: 1, buttons: 1 });
+    moveAt(document.body, 300, 8, 1);
+    // Released off the window; the next move over the page has no button down.
+    moveAt(document.body, 280, 8, 0);
+    expect(store.get()).toBeNull();
+  });
+
   it('keeps the pointer of a press released over the element', () => {
     const { store, a } = mount();
     fireEvent.pointerDown(a, { pointerId: 1, buttons: 1 });
@@ -78,5 +88,21 @@ describe('usePublishPointer', () => {
     moveAt(b, 6, 6);
     fireEvent.pointerLeave(a);
     expect(store.get()).toEqual({ world: { x: 3, y: 3 }, viewId: 'b' });
+  });
+
+  it('publishes over an element that mounts after the hook first ran', () => {
+    const store = createPointerStore();
+    let show!: () => void;
+    function Late() {
+      const ref = useRef<HTMLDivElement>(null);
+      const [ready, setReady] = useState(false);
+      show = () => setReady(true);
+      usePublishPointer(ref, (_id, x, y) => ({ world: { x, y }, viewId: 'late' }));
+      return ready ? <div ref={ref} data-testid="late" /> : null;
+    }
+    const r = render(<PointerContextProvider store={store}><Late /></PointerContextProvider>);
+    act(() => show());
+    moveAt(r.getByTestId('late'), 4, 6);
+    expect(store.get()).toEqual({ world: { x: 4, y: 6 }, viewId: 'late' });
   });
 });

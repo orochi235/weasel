@@ -18,7 +18,8 @@ export interface UseKeybindingsOptions {
   enabled?: boolean;
   /** Tool id Escape switches to. When omitted, defaults to whatever
    *  `tools.active` was when the hook first ran (i.e. the initial active
-   *  tool). Pass `null` to disable Escape-returns-to-default behavior. */
+   *  tool). Pass `null` to disable Escape-returns-to-default behavior.
+   *  Escape passes through while `modes` bars this tool. */
   defaultTool?: string | null;
   /**
    * The modes that gate keyboard tool activation: a key is refused when the
@@ -79,6 +80,14 @@ export function useKeybindings(
       }
     }
 
+    // The one gate on a key reaching a tool, shared by the tool keys and Escape.
+    const eligible = (toolId: string): boolean => {
+      const modes = optionsRef.current.modes;
+      if (!modes) return true;
+      const tags = toolsRef.current.registry[toolId]?.eligibility.capabilities;
+      return eligibleForMode(modes.current(), tags ?? []);
+    };
+
     const unregisters: Array<() => void> = [];
 
     if (specs.length > 0) {
@@ -87,11 +96,7 @@ export function useKeybindings(
         bindings,
         (toolId) => {
           // `setActive` refuses an id it does not hold; a trigger with one is refused too.
-          if (!Object.hasOwn(toolsRef.current.registry, toolId)) return false;
-          const modes = optionsRef.current.modes;
-          if (!modes) return true;
-          const tags = toolsRef.current.registry[toolId]?.eligibility.capabilities;
-          return eligibleForMode(modes.current(), tags ?? []);
+          return Object.hasOwn(toolsRef.current.registry, toolId) && eligible(toolId);
         },
       )));
     }
@@ -107,7 +112,7 @@ export function useKeybindings(
       const target = opt ?? initialActiveRef.current;
       if (!target) return null;
       const api = toolsRef.current;
-      if (!api.has(target) || api.active === target) return null;
+      if (!api.has(target) || api.active === target || !eligible(target)) return null;
       return target;
     })));
 
