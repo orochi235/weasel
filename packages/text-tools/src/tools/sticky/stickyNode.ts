@@ -74,7 +74,7 @@ export function stickyData(look: StickyLook & { text?: string }): TextNodeData &
   };
 }
 
-/** The `sticky` insert as an `InsertNodeFactory`: what `textPreset` installs, for a canvas that wraps it — to tag
+/** The `sticky` insert as an `InsertNodeFactory`: what `textTools.text` installs, for a canvas that wraps it — to tag
  *  the data with a `kind`, say — under `insertNodeFactories`. An empty note opens for typing, as text does. */
 export const stickyNodeFactory: InsertNodeFactory = (_bounds, extras) =>
   typeIn(stickyData(extras as StickyLook & { text?: string }));

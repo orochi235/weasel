@@ -1,4 +1,4 @@
-/** `kit:text` in the default painters for the tests of one file: what a canvas running `textPreset` paints with. */
+/** `kit:text` in the default painters for the tests of one file: what a canvas running `textTools.text` paints with. */
 import { afterEach, beforeEach } from 'vitest';
 import { registerNodeShape } from '@weasel-js/core';
 import { TEXT_PAINTER } from '../node/textPainter';
