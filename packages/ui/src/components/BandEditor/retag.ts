@@ -29,9 +29,10 @@ export function bandName<T, F extends Quantity>(
   to: number,
   display: Display,
   locale: string,
+  label = `Band ${index + 1}`,
 ): string {
   const band = bands[index]!;
   const next = bands[index + 1];
   const range = presentRange(retag(band.from, from), next ? retag(next.from, to) : to, display, { locale }).spoken;
-  return `Band ${index + 1}, ${range}${band.locked ? ', locked' : ''}`;
+  return `${label}, ${range}${band.locked ? ', locked' : ''}`;
 }

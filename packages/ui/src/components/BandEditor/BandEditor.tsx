@@ -61,6 +61,8 @@ export interface BandEditorProps<T, F extends Quantity = number> extends HoldPro
   /** Snap a dragged seam to a tick within ~6px. Default true; `alt` defeats it per-drag. */
   snap?: boolean;
   renderBand?: (band: Band<T, F>, index: number) => ReactNode;
+  /** A band's name, ahead of its range in what a screen reader announces. Start it with the text `renderBand` shows, so a voice user can say what they see. Default `Band N`. */
+  bandLabel?: (band: Band<T, F>, index: number) => string;
   selectedIndex?: number | null;
   onSelectionChange?: (index: number) => void;
   /** Payload for a band split off an existing one. Default duplicates `from`. */
@@ -108,6 +110,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
     scale,
     ticks,
     renderBand,
+    bandLabel,
     selectedIndex,
     onSelectionChange,
     label,
@@ -200,6 +203,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
           display={display}
           selectedIndex={selectedIndex}
           renderBand={renderBand}
+          bandLabel={bandLabel}
           onBandPointerDown={onBandPointerDown}
           onBandFocus={onBandFocus}
           onBandContextMenu={onBandContextMenu}

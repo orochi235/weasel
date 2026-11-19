@@ -92,6 +92,14 @@ describe('BandEditor rendering', () => {
     expect(getByText('C')).toBeInTheDocument();
   });
 
+  it('leads a band’s name with bandLabel, and with its number without one', () => {
+    const named = setup({ renderBand: (band) => band.data, bandLabel: (band) => band.data });
+    expect(named.bodies()[1]).toHaveAccessibleName(/^b, /);
+    named.unmount();
+    const { bodies } = setup();
+    expect(bodies()[1]).toHaveAccessibleName(/^Band 2, /);
+  });
+
   it('positions bands and seams through the scale', () => {
     const { bodies, seams } = setup();
     expect(from(bodies()[1])).toBe('20%');

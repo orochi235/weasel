@@ -34,6 +34,7 @@ export interface BandStripProps<T, F extends Quantity> {
   display: Display;
   selectedIndex: number | null | undefined;
   renderBand: ((band: Band<T, F>, index: number) => ReactNode) | undefined;
+  bandLabel: ((band: Band<T, F>, index: number) => string) | undefined;
   onBandPointerDown: (index: number) => (e: ReactPointerEvent<HTMLButtonElement>) => void;
   onBandFocus: (index: number) => () => void;
   onBandContextMenu: (index: number) => (e: ReactMouseEvent<HTMLButtonElement>) => void;
@@ -74,7 +75,7 @@ export function BandStrip<T, F extends Quantity>(props: BandStripProps<T, F>): R
       <button
         type="button"
         className={[s.band, isSelected && s.selected, bands[i]!.locked && s.locked, pinned && s.pinned].filter(Boolean).join(' ')}
-        aria-label={bandName(shown, i, from, to, display, locale)}
+        aria-label={bandName(shown, i, from, to, display, locale, props.bandLabel?.(shown[i]!, i))}
         aria-pressed={isSelected}
         data-band-index={i}
         tabIndex={hold.tabIndex(0)}

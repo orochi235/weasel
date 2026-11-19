@@ -68,6 +68,7 @@ function Wrapper({ initial, selectedIndex, ...rest }: WrapperProps) {
   return (
     <BandEditor<Slice>
       renderBand={(band) => band.data.name}
+      bandLabel={(band) => band.data.name}
       {...rest}
       value={value}
       onChange={setValue}
@@ -135,6 +136,7 @@ function RangeWrapper({ initial, selectedIndex, min, max, ...rest }: WrapperProp
   return (
     <BandEditor<Slice>
       renderBand={(band) => band.data.name}
+      bandLabel={(band) => band.data.name}
       {...rest}
       value={value}
       min={from}

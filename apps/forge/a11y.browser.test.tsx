@@ -13,7 +13,12 @@ const modules = import.meta.glob(['../../packages/ui/src/**/*.stories.{ts,tsx}',
 const OFF: Readonly<Record<string, string>> = {
   'heading-order': 'a story is a fragment with no page outline around it to place its headings in',
   'label-content-name-mismatch':
-    "flags controls showing a value, a count or a shortcut beside a name taken from what they edit, which WCAG 2.5.3 leaves alone; BandEditor's band is the real case (docs/TODO.md)",
+    'flags controls showing a value, a count or a shortcut beside a name taken from what they edit, which WCAG 2.5.3 leaves alone',
+};
+
+/** Rules from {@link OFF} a story file is still judged on, by story file under `packages/`. */
+const JUDGED: Readonly<Record<string, readonly string[]>> = {
+  'ui/src/components/BandEditor/BandEditor.stories.tsx': ['label-content-name-mismatch'],
 };
 
 const MODES = ['light', 'dark'] as const;
@@ -117,6 +122,8 @@ async function unringed(host: HTMLElement, max = 40): Promise<string[]> {
 
 describe.each(Object.keys(modules).sort())('%s', (path) => {
   const known = KNOWN[path.replace('../../packages/', '')] ?? {};
+  const judged = JUDGED[path.replace('../../packages/', '')] ?? [];
+  const off = Object.keys(OFF).filter((rule) => !judged.includes(rule));
   const seen = new Set<string>();
   let runs = 0;
 
@@ -132,7 +139,7 @@ describe.each(Object.keys(modules).sort())('%s', (path) => {
         check: async (host) => {
           await settled(host);
           expect(host.closest('[data-wzl-mode]')?.getAttribute('data-wzl-mode')).toBe(mode);
-          const report = await runAxe(host, { page: false, off: Object.keys(OFF) });
+          const report = await runAxe(host, { page: false, off });
           for (const v of report.violations) {
             if (Object.hasOwn(known, v.id)) {
               seen.add(v.id);
