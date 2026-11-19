@@ -28,6 +28,9 @@ export function createAudioGraph(
   opts: AudioGraphOptions = {},
 ): AudioGraph {
   const fadeMs = opts.fadeMs ?? 15;
+  if (!Number.isFinite(fadeMs) || fadeMs < 0) {
+    throw new RangeError(`@weasel-js/audio: a graph's fadeMs is finite and at least 0, not ${fadeMs}`);
+  }
   const timers: Timers = {
     setTimer: opts.setTimer ?? defaultTimers.setTimer,
     clearTimer: opts.clearTimer ?? defaultTimers.clearTimer,

@@ -30,7 +30,7 @@ export type GraphPatch =
 
 /** Options for `AudioGraph`: the crossfade length (`fadeMs`) and any timer overrides. */
 export interface AudioGraphOptions extends Partial<Timers> {
-  /** Crossfade for every structural edit, and the default ramp for `set`, in ms. Default 15. */
+  /** Crossfade for every structural edit, and the default ramp for `set`, in ms. Default 15; finite and at least 0, or the graph throws `RangeError`. */
   fadeMs?: number;
 }
 
