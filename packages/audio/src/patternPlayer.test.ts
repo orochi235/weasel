@@ -27,6 +27,20 @@ describe('createPatternPlayer', () => {
     expect(starts()).toEqual([0]);
   });
 
+  it('plays the rest of a step and books the next when the engine refuses one event', async () => {
+    const { engine, run, starts } = await harness();
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const player = createPatternPlayer(engine, {
+      tempo: 120, length: 2,
+      events: [{ step: 0, pitch: 'H4' }, { step: 0, pitch: 'C4' }, { step: 1, pitch: 'E4', bus: 'nope' }],
+    });
+    player.start(0);
+    await run(300);
+    expect(starts()).toEqual([0, 250]);
+    expect(player.isPlaying()).toBe(true);
+    error.mockRestore();
+  });
+
   it('gates a note for its length in steps', async () => {
     const { ctx, engine, run } = await harness();
     createPatternPlayer(engine, {

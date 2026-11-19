@@ -141,6 +141,20 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
 
   const book = (): void => { engine.schedule(nextAt, fire, key); };
 
+  const playEvent = (e: PatternEvent, at: number): VoiceHandle => {
+    const detune = (e.detune ?? 0) + (typeof drift === 'function' ? drift(e.step) : drift);
+    if ('sound' in e) {
+      const { step: _s, sound, ...play } = e;
+      return engine.play(sound, { ...play, detune, when: at });
+    }
+    if ('noise' in e) {
+      const { step: _s, length: steps = 1, ...noise } = e;
+      return engine.playNoise({ ...noise, detune, when: at, duration: steps * stepMs() });
+    }
+    const { step: _s, length: steps = 1, ...note } = e;
+    return engine.playNote({ ...note, detune, when: at, duration: steps * stepMs() });
+  };
+
   const fire = (scheduled: number): void => {
     if (!running) return;
     let when = scheduled;
@@ -156,18 +170,13 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
     }
     const step = count % length;
     for (const v of voices) if (!v.isPlaying()) voices.delete(v);
+    // Each event on its own: one the engine refuses must not cost the rest of the step, or the next one.
+    let refused: { err: unknown } | null = null;
     for (const e of byStep.get(step) ?? []) {
-      const at = when + (e.step - step) * stepMs();
-      const detune = (e.detune ?? 0) + (typeof drift === 'function' ? drift(e.step) : drift);
-      if ('sound' in e) {
-        const { step: _s, sound, ...play } = e;
-        voices.add(engine.play(sound, { ...play, detune, when: at }));
-      } else if ('noise' in e) {
-        const { step: _s, length: steps = 1, ...noise } = e;
-        voices.add(engine.playNoise({ ...noise, detune, when: at, duration: steps * stepMs() }));
-      } else {
-        const { step: _s, length: steps = 1, ...note } = e;
-        voices.add(engine.playNote({ ...note, detune, when: at, duration: steps * stepMs() }));
+      try {
+        voices.add(playEvent(e, when + (e.step - step) * stepMs()));
+      } catch (err) {
+        refused ??= { err };
       }
     }
     // Read before `onStep`: a tempo set there starts with the next step, and
@@ -187,6 +196,7 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
         book();
       }
     }
+    if (refused) throw refused.err;
   };
 
   return {
