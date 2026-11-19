@@ -11,11 +11,13 @@ export const ACTIONS = {
   // Two shapes of different heights, centered on the guide that runs through both. Its dashes are whole pixels at 1x.
   snapShapes: box(1, 2, 6, 12) + box(9, 5, 14, 9)
     + `<path d="M0 ${n(px(7))}H20" stroke-dasharray="1.25 1.25" stroke-linecap="butt"/>`,
-  // Three shapes, their two gaps measured alike beneath them.
-  snapGaps: box(0, 1, 3, 10) + box(6, 1, 9, 10) + box(12, 1, 15, 10)
+  // Three shapes, their two gaps measured alike beneath them. The outer two sit a pixel in, so a 1.5 stroke on
+  // their outer edges inks inside the viewBox rather than past it.
+  snapGaps: box(1, 1, 3, 10) + box(6, 1, 9, 10) + box(12, 1, 14, 10)
     + path(H(3, 6, 13) + V(3, 12, 14) + V(6, 12, 14))
     + path(H(9, 12, 13) + V(9, 12, 14) + V(12, 12, 14)),
-  // A tree laid out: a root over two children, joined by a bus.
-  autoLayout: box(5, 0, 9, 3) + box(0, 11, 4, 15) + box(10, 11, 14, 15)
-    + path(V(7, 3, 7) + H(2, 12, 7) + V(2, 7, 11) + V(12, 7, 11)),
+  // A tree laid out: a root over two children, joined by a bus. Pixels 1 to 14 only, so no edge inks past the
+  // viewBox.
+  autoLayout: box(5, 1, 9, 4) + box(1, 11, 5, 14) + box(9, 11, 13, 14)
+    + path(V(7, 4, 7) + H(3, 11, 7) + V(3, 7, 11) + V(11, 7, 11)),
 };
