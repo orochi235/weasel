@@ -1,0 +1,62 @@
+[
+  {
+    "demo": "audio",
+    "control": "sfx gain",
+    "reason": "A bus gain is heard, not seen: nothing on the page reads it, and the sweep plays no sound."
+  },
+  {
+    "demo": "select",
+    "control": "Key convention › ⇧ toggles",
+    "reason": "Changes what a modified click does; the sweep's probes click and drag with no modifier held."
+  },
+  {
+    "demo": "select",
+    "control": "Key convention › list: ⌘ toggles, ⇧ ranges",
+    "reason": "Changes what a modified click does; the sweep's probes click and drag with no modifier held."
+  },
+  {
+    "demo": "easings",
+    "control": "duration",
+    "reason": "Sets how long the next play-through takes; every capture of a playing animation is already moving, so the sweep cannot tell one length from another."
+  },
+  {
+    "demo": "routing",
+    "control": "Locked mode",
+    "reason": "Gates the bindings for a click or drag on a box and the Delete key; the gesture probe's drag lands on empty stage, which no gated binding takes."
+  },
+  {
+    "demo": "*",
+    "control": "mode › Trial theme: Auto — click for Light",
+    "reason": "Under the headless browser's light color scheme, Auto already shows Light, so the first click changes nothing visible."
+  },
+  {
+    "demo": "*",
+    "control": "View › Actual size⌘0",
+    "reason": "A lab opens at 100%, so Actual size has nothing to undo until the view is zoomed, which no probe of a menu item does first."
+  },
+  {
+    "demo": "kit-settings",
+    "control": "Count",
+    "reason": "A specimen field showing the kit settings applied to a number field; its own value is all it holds."
+  },
+  {
+    "demo": "animator",
+    "control": "Time scale › ¼×",
+    "reason": "Changes how fast running animations go; a playing animation reads as moving at any speed, so the sweep cannot tell one speed from another."
+  },
+  {
+    "demo": "*",
+    "control": "Theme: Auto — click for Light",
+    "reason": "Under the headless browser's light color scheme, Auto already shows Light, so the first click changes nothing visible. Kit chrome is swept in whichever lab reaches it first, so a run of every demo may find this unused."
+  },
+  {
+    "demo": "*",
+    "control": "trial 1 › Copy settings as JSON",
+    "reason": "Writes the clipboard, which shows nothing on the page."
+  },
+  {
+    "demo": "*",
+    "control": "trial 1 › Reset trial",
+    "reason": "A trial opens at its defaults, so Reset has nothing to put back until a setting moves, which no probe of a button does first."
+  }
+]

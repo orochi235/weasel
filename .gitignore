@@ -6,6 +6,7 @@ dist-demo
 dist-draw
 dist-chart
 dist-forge
+.control-sweep
 coverage
 .DS_Store
 *.tsbuildinfo

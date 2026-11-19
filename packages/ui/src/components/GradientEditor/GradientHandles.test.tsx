@@ -144,6 +144,7 @@ describe('GradientHandles', () => {
     const onChange = vi.fn();
     render(<GradientHandles value={linear} toScreen={toScreen} toLocal={toLocal} onChange={onChange} width={400} height={300} />);
     const handle = screen.getByLabelText('Gradient start');
+    expect(handle).toHaveAttribute('aria-keyshortcuts', 'ArrowUp ArrowDown ArrowLeft ArrowRight');
     fireEvent.keyDown(handle, { key: 'ArrowRight' });
     // One overlay pixel right, mapped back through the 2× transform.
     expect(onChange.mock.calls[0][0]).toMatchObject({ from: { x: 0.5, y: 0 } });

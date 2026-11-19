@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { decimal, present } from '@weasel-js/quantity';
+import { ARROW_KEYSHORTCUTS } from '../../handles';
 import { Diamond } from './Diamond';
 import { isHiddenAnchor, isPinnedEndpointAt } from './anchorRules';
 import s from './CurveEditor.module.css';
@@ -64,7 +65,7 @@ function anchorMarks(state: FunctionLayerState, ctx: LayerRenderCtx, look: Ancho
     const active = activeIndex === i;
     const isEndpoint = curveVisible && (i === 0 || i === points.length - 1);
     const focus = !locked && !(endpoints === 'pinned-both' && pinned)
-      ? { tabIndex: 0 }
+      ? { tabIndex: 0, 'aria-keyshortcuts': ARROW_KEYSHORTCUTS }
       : {};
     const a11y = {
       ...focus,

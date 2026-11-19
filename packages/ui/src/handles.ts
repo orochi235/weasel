@@ -30,3 +30,6 @@ export function handleSize(token: HandleSizeToken, resolved?: ResolvedTheme): nu
 export function handleHalf(token: HandleSizeToken, resolved?: ResolvedTheme): number {
   return handleSize(token, resolved) / 2;
 }
+
+/** What a handle the arrow keys move declares in `aria-keyshortcuts`: the four arrows, as `arrowMove` reads them. */
+export const ARROW_KEYSHORTCUTS = 'ArrowUp ArrowDown ArrowLeft ArrowRight';

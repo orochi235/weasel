@@ -3,7 +3,7 @@
  * One night of blind-pair audit rounds. README.md beside this file is its documentation.
  *
  *   node scripts/skulk/night.mjs [--areas K] [--only <id>,…] [--nodes <a>,…] [--dry] [--no-merge]
- *     [--cap-usd N] [--budget-review USD] [--budget-match USD] [--budget-fix USD]
+ *     [--cap-usd N] [--budget-review USD] [--budget-match USD] [--budget-fix USD] [--no-sweep]
  */
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -16,6 +16,7 @@ import {
 import { createSlots, unavailableNodes } from './jobs.mjs';
 import { partitionAt } from './partition.mjs';
 import { AUDITS_DIR, HARDENING, areasInFlight, gitTouched, nextRound, pickAreas, readPasses } from './rounds.mjs';
+import { SWEEP_ID, fixSweep, runControlSweep, sweepLine } from './sweep.mjs';
 import { mayStartArea } from './usage.mjs';
 
 const CO_AUTHOR = 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>';
@@ -75,6 +76,7 @@ export const parseArgs = (argv) => {
     nodes: value('--nodes')?.split(',').filter(Boolean),
     dry: argv.includes('--dry'),
     merge: !argv.includes('--no-merge'),
+    sweep: !argv.includes('--no-sweep'),
     capUsd: number('--cap-usd', NIGHT_USD_CAP),
     budget: {
       review: number('--budget-review', JOB_BUDGET_USD.review),
@@ -143,6 +145,7 @@ const printPlan = (p, args, say) => {
     say(`  ${area.id}: ${area.files.length} files${last ? `, last pass round ${last.round} (${last.distinct} distinct, ~${last.unfound} left)` : ', never audited'}`);
     say(`    ${area.files.slice(0, 4).join(' ')}${area.files.length > 4 ? ' …' : ''}`);
   }
+  say(args.sweep ? 'control sweep: one browser job at the frozen commit before the reviews, and a fixer for what it finds dead' : 'control sweep: off (--no-sweep)');
   say(`jobs: ${p.picked.length * 2} reviews, up to ${p.picked.length} matches and ${p.picked.length} fixes; then batch/${localDate()}-audit${p.round}`);
 };
 
@@ -192,20 +195,43 @@ const patchAreas = ({ root, round, commit, nightDir, results, outcomes, say }) =
   return branches;
 };
 
+/** The sweep fixer's mbox onto `audit<N>-control-sweep`, added to `branches`. Answers its commits and patches. */
+const patchSweep = ({ root, round, commit, fixed, branches, outcomes, say }) => {
+  if (!fixed.mbox) {
+    outcomes[SWEEP_ID] = 'no commits';
+    return { patches: 0, commits: [], report: fixed.report };
+  }
+  const applied = applyFix(root, { round, area: SWEEP_ID, commit, mbox: fixed.mbox });
+  if (applied.error) {
+    outcomes[SWEEP_ID] = 'patches did not apply';
+    say(`patch ${SWEEP_ID}: did not apply: ${applied.error}`);
+    return { patches: fixed.patches, commits: [], report: fixed.report };
+  }
+  branches.push(applied.branch);
+  say(`patch ${SWEEP_ID}: ${applied.commits.length} commits on ${applied.branch}`);
+  return { patches: fixed.patches, commits: applied.commits, report: fixed.report, costUsd: fixed.usage?.costUsd };
+};
+
+/** The sweep's part of the night's summary. */
+const sweepSummary = (sweep, outcomes) => (sweep.ran
+  ? { ...sweep.summary, minutes: Number(sweep.minutes.toFixed(1)), exit: sweep.exit, fixCommits: sweep.fix?.commits.length ?? 0, outcome: outcomes[SWEEP_ID] }
+  : { skipped: sweep.skipped ?? `did not run: ${sweep.why}` });
+
 /** How many times a green batch merges a moved main in and tests again before leaving the fast-forward to fail. */
 const MAIN_CATCH_UPS = 2;
 
 /** Merges the branches into the batch, records the round there, runs the fleet on its tip, and merges if green. */
-const batchAndTest = async ({ root, git, round, commit, date, nightDir, branches, results, outcomes, merge, say, setStep }) => {
+const batchAndTest = async ({ root, git, round, commit, date, nightDir, branches, results, sweep, outcomes, merge, say, setStep }) => {
   const batch = makeBatch(root, { round, date, commit, branches });
   const idOf = (branch) => branch.replace(`audit${round}-`, '');
   for (const branch of batch.merged) outcomes[idOf(branch)] = `\`${branch}\``;
   for (const branch of batch.conflicted) {
     outcomes[idOf(branch)] = `\`${branch}\`, left out: merge conflict`;
-    results.find((s) => s.id === idOf(branch)).fixCommits = [];
+    const area = results.find((s) => s.id === idOf(branch));
+    if (area) area.fixCommits = [];
     say(`batch: ${branch} conflicts; left out`);
   }
-  const recorded = commitRecord(batch.tree, { round, commit, date, nightDir, areas: results, outcomes, coAuthor: CO_AUTHOR });
+  const recorded = commitRecord(batch.tree, { round, commit, date, nightDir, areas: results, sweep, outcomes, coAuthor: CO_AUTHOR });
   say(`record: docs/audits/round-${round}/ committed on ${batch.name} at ${recorded.slice(0, 10)}`);
 
   setStep('fleet');
@@ -300,22 +326,38 @@ export const runNight = async (argv = process.argv.slice(2), say = (line) => con
   const results = [];
   const outcomes = {};
   let report = '';
+  let sweep = { skipped: 'off (--no-sweep)' };
   try {
-    setStep('review');
     mkdirSync(join(frozen, JOB_IN), { recursive: true });
+    let sweepFix;
+    if (args.sweep) {
+      setStep('sweep');
+      sweep = await runControlSweep(ctx);
+      say(sweepLine(sweep));
+      if (sweep.dead?.length) {
+        ctx.total.fix += 1;
+        sweepFix = fixSweep(ctx, sweep.dead).catch((error) => {
+          say(`fix ${SWEEP_ID} failed: ${error.stack ?? error}`);
+          return undefined;
+        });
+      }
+    }
+    setStep('review');
     await reviewAreas({ ctx, git, picked: p.picked, passes: p.passes, args, status, deadline, results });
-    if (results.length === 0) throw new Error('no area finished');
+    const sweepFixed = await sweepFix;
+    if (results.length === 0 && !sweepFixed?.mbox) throw new Error('no area finished');
     results.sort((a, b) => (a.id < b.id ? -1 : 1));
     setStep('patch');
     const branches = patchAreas({ root, round: p.round, commit: p.commit, nightDir, results, outcomes, say });
+    if (sweepFixed) sweep.fix = patchSweep({ root, round: p.round, commit: p.commit, fixed: sweepFixed, branches, outcomes, say });
     setStep('batch');
-    report = await batchAndTest({ root, git, round: p.round, commit: p.commit, date, nightDir, branches, results, outcomes, merge: args.merge, say, setStep });
+    report = await batchAndTest({ root, git, round: p.round, commit: p.commit, date, nightDir, branches, results, sweep, outcomes, merge: args.merge, say, setStep });
     say(`night: ${report}`);
   } finally {
     removeWorktree(root, frozen);
     const summary = {
       round: p.round, commit: p.commit, started: started.toISOString(), ended: new Date().toISOString(), report,
-      tokens: status.tokens, costUsd: status.costUsd, capUsd: args.capUsd,
+      tokens: status.tokens, costUsd: status.costUsd, capUsd: args.capUsd, sweep: sweepSummary(sweep, outcomes),
       areas: results.map((s) => ({ id: s.id, a: s.a, b: s.b, m: s.m, distinct: s.distinct, chapman: s.chapman, patches: s.patches, outcome: outcomes[s.id], minutes: s.jobs.minutes, tokens: s.jobs.tokens, costUsd: s.jobs.costUsd, budgetHit: s.budgetHit })),
     };
     writeFileSync(join(nightDir, 'summary.json'), `${JSON.stringify(summary, null, 1)}\n`);

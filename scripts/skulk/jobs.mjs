@@ -12,9 +12,9 @@ import {
 } from './config.mjs';
 
 const NVM = 'export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"; . "$NVM_DIR/nvm.sh" >/dev/null; nvm use >/dev/null';
-const BUSY = /working tree .* is busy/;
+export const BUSY = /working tree .* is busy/;
 const REFUSED = /\bquiet\b|refuses|is offline|not reachable|unavailable/i;
-const BUSY_WAIT_MS = 30_000;
+export const BUSY_WAIT_MS = 30_000;
 
 const q = (s) => `'${String(s).replace(/'/g, `'\\''`)}'`;
 
@@ -84,7 +84,7 @@ export const createSlots = (pinned) => {
   return { take, refuse, inUse: () => busy.size };
 };
 
-const ontoOnce = (args, cwd, log) =>
+export const ontoOnce = (args, cwd, log) =>
   new Promise((done) => {
     const child = spawn('onto', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
     let stderr = '';

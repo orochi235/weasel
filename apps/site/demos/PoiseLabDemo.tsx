@@ -19,7 +19,7 @@ import * as presets from '@weasel-js/editing/presets';
 const config = f.schema({
   poise: f.boolean(true).label('Show poise lines'),
   comb: f.boolean(false).label('Show comb'),
-  scale: f.number(3000).range(200, 12000).step(100).label('Comb scale'),
+  scale: f.number(3000).range(200, 12000).step(100).label('Comb scale').showIf({ path: 'comb' }),
 });
 type Config = ConfigOf<typeof config>;
 

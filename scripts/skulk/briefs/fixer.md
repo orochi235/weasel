@@ -1,8 +1,6 @@
 # Audit round {{round}}: fixer brief, area `{{area}}`
 
-Two blind reviewers read this area at the frozen commit {{commit}} and reported without fixing. Their
-reports are `{{reportA}}` and `{{reportB}}`. Some findings appear in both under different words; treat
-those as one.
+{{source}}
 
 ## Where you work
 
@@ -40,6 +38,6 @@ those as one.
 ## Report (your final reply, nothing else)
 
 One line per distinct finding: `fixed <sha> | not a defect (why) | question (what) | duplicate of <other>`,
-each line led by the finding's claim in a few words and which reviewer(s) found it (A, B, or A+B). Then any
+each line led by the finding's claim in a few words and where it came from (A, B, A+B, or sweep). Then any
 extra defects you found while fixing, the same way. Then the checks you ran and their results, verbatim
 pass/fail.

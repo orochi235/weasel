@@ -76,7 +76,7 @@ export const makeBatch = (root, { round, date, commit, branches }) => {
 };
 
 /** Writes the round's raw lists, README, partition and hardening row into the batch, and commits them. */
-export const commitRecord = (tree, { round, commit, date, nightDir, areas, outcomes, coAuthor }) => {
+export const commitRecord = (tree, { round, commit, date, nightDir, areas, sweep, outcomes, coAuthor }) => {
   const dir = join(tree, AUDITS_DIR, `round-${round}`);
   mkdirSync(dir, { recursive: true });
   for (const area of areas) {
@@ -89,7 +89,14 @@ export const commitRecord = (tree, { round, commit, date, nightDir, areas, outco
     writeFileSync(join(to, 'area.json'), `${JSON.stringify(area, null, 1)}\n`);
   }
   if (existsSync(join(nightDir, 'usage.jsonl'))) cpSync(join(nightDir, 'usage.jsonl'), join(dir, 'usage.jsonl'));
-  writeFileSync(join(dir, 'README.md'), roundReadme({ round, commit, date, areas, outcomes }));
+  if (sweep?.ran) {
+    const to = join(dir, 'control-sweep');
+    mkdirSync(to, { recursive: true });
+    for (const [from, name] of [['run/summary.json', 'summary.json'], ['findings.md', 'findings.md'], ['fix.md', 'fix.md']]) {
+      if (existsSync(join(nightDir, 'control-sweep', from))) cpSync(join(nightDir, 'control-sweep', from), join(to, name));
+    }
+  }
+  writeFileSync(join(dir, 'README.md'), roundReadme({ round, commit, date, areas, sweep, outcomes }));
   writePartition(tree, partitionAt(tree, commit));
   const hardening = join(tree, HARDENING);
   writeFileSync(hardening, appendRecordRow(readFileSync(hardening, 'utf8'), hardeningRow({ round, date, areas })));

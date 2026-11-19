@@ -28,7 +28,7 @@ const list = (v) => (Array.isArray(v) ? v.join(',') : String(v));
 
 /** `night.mjs`'s arguments for a `start` request's fields. Throws on a field it does not know. */
 export const startArgs = (req) => {
-  const known = new Set(['id', 'start', 'areas', 'only', 'nodes', 'capUsd', 'budget', 'merge']);
+  const known = new Set(['id', 'start', 'areas', 'only', 'nodes', 'capUsd', 'budget', 'merge', 'sweep']);
   const unknown = Object.keys(req).filter((k) => !known.has(k));
   if (unknown.length > 0) throw new Error(`start does not take ${unknown.join(', ')}`);
   const args = [];
@@ -41,6 +41,7 @@ export const startArgs = (req) => {
     args.push(`--budget-${role}`, String(usd));
   }
   if (req.merge === false) args.push('--no-merge');
+  if (req.sweep === false) args.push('--no-sweep');
   return args;
 };
 

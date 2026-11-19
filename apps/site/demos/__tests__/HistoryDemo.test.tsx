@@ -33,4 +33,12 @@ describe('HistoryDemo', () => {
     expect(screen.queryByText('c5', { selector: 'button' })).toBeNull();
     expect(screen.getByRole('option', { name: 'Add c6' })).toHaveAttribute('aria-selected', 'false');
   });
+
+  it('marks the chip the slider edits as the current one', () => {
+    render(<HistoryDemo />);
+    expect(screen.getByRole('button', { name: 'c1' })).toHaveAttribute('aria-current', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'c2' }));
+    expect(screen.getByRole('button', { name: 'c2' })).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('button', { name: 'c1' })).not.toHaveAttribute('aria-current');
+  });
 });

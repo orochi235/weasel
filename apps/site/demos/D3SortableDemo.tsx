@@ -28,9 +28,10 @@ interface BarData { fill: Fill; stroke: Stroke; value: number }
 
 const BAR_STROKE: Stroke = { paint: solid('#222'), width: 1.5 };
 
+// Out of order, or "index" and "asc" would be the same order; 7 is coprime to 12, so each of 1–12 appears once.
 export const INITIAL: Item[] = Array.from({ length: 12 }, (_, i) => ({
   id: `bar-${i}`,
-  value: i + 1,
+  value: ((i * 7) % 12) + 1,
   color: `hsl(${(i * 360) / 12}, 65%, 60%)`,
 }));
 

@@ -41,22 +41,28 @@ const CELLS: { value: WallpaperCell; label: string }[] = [
 ];
 const GROUPS = (Object.keys(WALLPAPER_GROUPS) as WallpaperGroup[]).map((g) => ({ value: g, label: g }));
 
+const WALLPAPER = { path: 'kind', is: 'wallpaper' } as const;
+const RADIAL_CELL = { all: [WALLPAPER, { path: 'cell', in: ['radial', 'kaleidoscope'] }] } as const;
+
+// Each kind reads only some of these fields (`SymmetrySpec`), so each shows only under the kinds that read it.
 const config = f.schema({
   kind: f.enum<SymmetryKind>('kaleidoscope', KINDS).label('Kind'),
-  angle: f.number(0).range(-180, 180).step(1).suffix('°').label('Angle'),
-  count: f.number(6).range(1, 24).step(1).label('Count'),
+  angle: f.number(0).range(-180, 180).step(1).suffix('°').label('Angle').showIf({ path: 'kind', isNot: 'point' }),
+  count: f.number(6).range(1, 24).step(1).label('Count')
+    .showIf({ any: [{ path: 'kind', in: ['radial', 'kaleidoscope', 'repeat'] }, RADIAL_CELL] }),
   centerX: f.number(CENTER.x).step(1).label('Center x'),
   centerY: f.number(CENTER.y).step(1).label('Center y'),
-  spacing: f.number(120).range(10, 400).step(1).suffix('px').label('Repeat spacing'),
-  glide: f.boolean(false).label('Glide'),
-  glideRows: f.boolean(false).label('Glide rows'),
-  pattern: f.enum<WallpaperGroup>('p4m', GROUPS).label('Wallpaper group'),
-  cell: f.enum<WallpaperCell>('kaleidoscope', CELLS).label('Cell'),
-  cellAngle: f.number(0).range(-180, 180).step(1).suffix('°').label('Cell angle'),
-  rowAngle: f.number(90).range(1, 179).step(1).suffix('°').label('Row angle'),
-  rowSpacing: f.number(120).range(10, 400).step(1).suffix('px').label('Row spacing'),
-  extentWidth: f.number(640).range(0, 2000).step(10).suffix('px').label('Extent width'),
-  extentHeight: f.number(480).range(0, 2000).step(10).suffix('px').label('Extent height'),
+  spacing: f.number(120).range(10, 400).step(1).suffix('px').label('Repeat spacing').showIf({ path: 'kind', in: ['repeat', 'wallpaper'] }),
+  glide: f.boolean(false).label('Glide').showIf({ path: 'kind', in: ['repeat', 'wallpaper'] }),
+  glideRows: f.boolean(false).label('Glide rows').showIf({ all: [WALLPAPER, { path: 'glide' }] }),
+  pattern: f.enum<WallpaperGroup>('p4m', GROUPS).label('Wallpaper group').showIf(WALLPAPER),
+  cell: f.enum<WallpaperCell>('kaleidoscope', CELLS).label('Cell').showIf(WALLPAPER),
+  cellAngle: f.number(0).range(-180, 180).step(1).suffix('°').label('Cell angle')
+    .showIf({ all: [WALLPAPER, { path: 'cell', in: ['mirror', 'both', 'radial', 'kaleidoscope'] }] }),
+  rowAngle: f.number(90).range(1, 179).step(1).suffix('°').label('Row angle').showIf(WALLPAPER),
+  rowSpacing: f.number(120).range(10, 400).step(1).suffix('px').label('Row spacing').showIf(WALLPAPER),
+  extentWidth: f.number(640).range(0, 2000).step(10).suffix('px').label('Extent width').showIf(WALLPAPER),
+  extentHeight: f.number(480).range(0, 2000).step(10).suffix('px').label('Extent height').showIf(WALLPAPER),
   drawInto: f.boolean(true).label('Draw into the group'),
 });
 type Config = ConfigOf<typeof config>;

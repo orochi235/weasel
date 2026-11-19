@@ -28,14 +28,15 @@ test.afterEach(() => {
 });
 
 test('renaming a pref updates the tree, the preview and the literal, and undoes in one step', async ({ page }) => {
-  await row(page, /^Grid density/).click();
+  // Show grid rather than Grid density: the preview shows Grid density only while the grid shows or snaps.
+  await row(page, /^Show grid/).click();
   const name = attrs(page).getByRole('textbox', { name: 'Name', exact: true });
-  await name.fill('Grid spacing');
-  await expect(row(page, /^Grid spacing/)).toBeVisible();
-  await expect(preview(page).getByText('Grid spacing', { exact: false }).first()).toBeVisible();
-  await expect(page.getByText("name: 'Grid spacing'")).toBeVisible();
+  await name.fill('Draw the grid');
+  await expect(row(page, /^Draw the grid/)).toBeVisible();
+  await expect(preview(page).getByText('Draw the grid', { exact: false }).first()).toBeVisible();
+  await expect(page.getByText("name: 'Draw the grid'")).toBeVisible();
   await tool(page, 'Undo').click();
-  await expect(name).toHaveValue('Grid density');
+  await expect(name).toHaveValue('Show grid');
 });
 
 test('Add pref asks for a name, a key and a kind, and lands the pref after the selection', async ({ page }) => {
@@ -145,9 +146,13 @@ test('dragging a row above another reorders the group, and Alt+Up moves the sele
 });
 
 test('a Shown if condition hides the pref in the preview until it holds', async ({ page }) => {
-  await row(page, /^Grid density/).click();
+  // Snap to grid rather than Grid density, which already carries a condition and, with the grid off, is hidden already.
+  await row(page, /^Snap to grid/).click();
+  await expect(preview(page).getByText('Snap to grid').first()).toBeVisible();
+  const hidden = preview(page).getByText(/^hidden$/i);
+  const before = await hidden.count();
   await attrs(page).getByRole('button', { name: /Add a condition on/ }).first().click();
   await page.getByRole('listbox').getByRole('option', { name: /^Show grid/ }).first().click();
   await expect(attrs(page).getByRole('button', { name: /Condition 1 comparison/ })).toHaveText('is on');
-  await expect(preview(page).getByText(/^hidden$/i)).toBeVisible();
+  await expect(hidden).toHaveCount(before + 1);
 });
