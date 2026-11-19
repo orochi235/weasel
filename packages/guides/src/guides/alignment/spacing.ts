@@ -2,6 +2,7 @@ import type { Bounds } from '@weasel-js/core';
 import type { SpacingGap } from '../types';
 import { isFiniteBox } from './finite';
 import type { SpacingEdge, SpacingMatchResult } from './types';
+import { maxOf, minOf } from '@weasel-js/geom';
 
 const EPS = 1e-6;
 type Axis = 'x' | 'y';
@@ -178,8 +179,8 @@ function ownGaps(b: Bounds, axis: Axis, targets: readonly Bounds[]): SpacingGap[
   const beside = targets.filter((t) => t !== b && overlap(t, b, c) !== null);
   const before = beside.filter((t) => hi(t, axis) <= lo(b, axis) - EPS);
   const after = beside.filter((t) => lo(t, axis) >= hi(b, axis) + EPS);
-  const L = Math.max(...before.map((t) => hi(t, axis)));
-  const R = Math.min(...after.map((t) => lo(t, axis)));
+  const L = maxOf(before, (t) => hi(t, axis));
+  const R = minOf(after, (t) => lo(t, axis));
   const pairs: [Bounds, Bounds][] = [
     ...before.filter((t) => hi(t, axis) === L).map((t): [Bounds, Bounds] => [t, b]),
     ...after.filter((t) => lo(t, axis) === R).map((t): [Bounds, Bounds] => [b, t]),

@@ -1,5 +1,5 @@
 /** Test fixture: a clustered graph, and where a layout leaves its boxes. */
-import { rectsOverlap, type Rect } from '@weasel-js/geom';
+import { maxOf, minOf, rectsOverlap, type Rect } from '@weasel-js/geom';
 import { getOwn } from '@weasel-js/registry';
 import { buildGraph, type Graph, type GraphNodeLike } from './graph';
 import type { LayoutOptions, LayoutResult } from './layout';
@@ -45,13 +45,13 @@ export function placed<O extends LayoutOptions>(
 /** A cluster's box the way the scene derives it: its members' union, grown by the inset. */
 export function boxOf(at: Map<string, Rect>, members: readonly string[], inset: number): Rect {
   const rs = members.map((m) => at.get(m)!);
-  const x = Math.min(...rs.map((r) => r.x)) - inset;
-  const y = Math.min(...rs.map((r) => r.y)) - inset;
+  const x = minOf(rs, (r) => r.x) - inset;
+  const y = minOf(rs, (r) => r.y) - inset;
   return {
     x,
     y,
-    width: Math.max(...rs.map((r) => r.x + r.width)) + inset - x,
-    height: Math.max(...rs.map((r) => r.y + r.height)) + inset - y,
+    width: maxOf(rs, (r) => r.x + r.width) + inset - x,
+    height: maxOf(rs, (r) => r.y + r.height) + inset - y,
   };
 }
 
@@ -66,13 +66,13 @@ export function nestedBoxOf(
   inset: number,
 ): Rect {
   const rs = getOwn(clusters, id)!.map((m) => (Object.hasOwn(clusters, m) ? nestedBoxOf(at, clusters, m, inset) : at.get(m)!));
-  const x = Math.min(...rs.map((r) => r.x)) - inset;
-  const y = Math.min(...rs.map((r) => r.y)) - inset;
+  const x = minOf(rs, (r) => r.x) - inset;
+  const y = minOf(rs, (r) => r.y) - inset;
   return {
     x,
     y,
-    width: Math.max(...rs.map((r) => r.x + r.width)) + inset - x,
-    height: Math.max(...rs.map((r) => r.y + r.height)) + inset - y,
+    width: maxOf(rs, (r) => r.x + r.width) + inset - x,
+    height: maxOf(rs, (r) => r.y + r.height) + inset - y,
   };
 }
 

@@ -1,4 +1,5 @@
 import type { SymmetrySpec, WallpaperCell } from './kinds';
+import { maxOf, minOf } from '@weasel-js/geom';
 
 /** The most copies a wallpaper draws. Past it, the lattice points nearest the
  *  center are kept, so a lattice finer than its extent warrants still draws. */
@@ -43,8 +44,8 @@ export function latticePoints(spec: SymmetrySpec, limit = MAX_WALLPAPER_COPIES +
   const corners = [[x, y], [x + width, y], [x, y + height], [x + width, y + height]]
     .map(([px, py]) => [(px * vy - py * vx) / cross / spec.spacing, (ux * py - uy * px) / cross / spec.rowSpacing]);
   const range = (k: 0 | 1): [number, number] => [
-    Math.max(-SEARCH, Math.floor(Math.min(...corners.map((c) => c[k])))),
-    Math.min(SEARCH, Math.ceil(Math.max(...corners.map((c) => c[k])))),
+    Math.max(-SEARCH, Math.floor(minOf(corners, (c) => c[k]))),
+    Math.min(SEARCH, Math.ceil(maxOf(corners, (c) => c[k]))),
   ];
   const [i0, i1] = range(0);
   const [j0, j1] = range(1);
