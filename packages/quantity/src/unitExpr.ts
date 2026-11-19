@@ -24,12 +24,16 @@ type Token = { kind: 'value'; value: number; unit?: Unit } | { kind: 'op'; op: s
 const TOKEN = /\s*(?:(\d+(?:\.\d+)?|\.\d+)\s*([^\s\d.+\-−*×/÷()]+)?|([+\-−*×/÷()]))/y;
 const OPS: Record<string, string> = { [MINUS_SIGN]: '-', '×': '*', '÷': '/' };
 
+/** How deeply an expression may nest parentheses and signs: far past any typed one, and short of the call stack. */
+const MAX_DEPTH = 1000;
+
 const hasUnit = (t: Token | undefined): boolean => t?.kind === 'value' && t.unit !== undefined;
 
 function tokenize(text: string): Token[] {
   const tokens: Token[] = [];
   let at = 0;
-  while (text.slice(at).trim() !== '') {
+  const end = text.trimEnd().length;
+  while (at < end) {
     TOKEN.lastIndex = at;
     const m = TOKEN.exec(text);
     if (!m) throw new Error(`unitExpr: cannot read '${text.slice(at).trim()}' in '${text}'`);
@@ -63,6 +67,16 @@ export function parseUnitExpr(text: string): UnitExpr {
   const fail = (): never => {
     throw new Error(`unitExpr: '${text}' is not a complete expression`);
   };
+  // Each parenthesis and sign is a level of the parser's recursion and of the resolver's after it.
+  let depth = 0;
+  const deeper = <T>(read: () => T): T => {
+    if (++depth > MAX_DEPTH) throw new Error(`unitExpr: '${text.slice(0, 40)}…' nests more than ${MAX_DEPTH} levels deep`);
+    try {
+      return read();
+    } finally {
+      depth--;
+    }
+  };
 
   const sum = (): UnitExpr => {
     let left = product();
@@ -85,18 +99,18 @@ export function parseUnitExpr(text: string): UnitExpr {
   const unary = (): UnitExpr => {
     if (isOp('+')) {
       i++;
-      return unary();
+      return deeper(unary);
     }
     if (!isOp('-')) return primary();
     i++;
-    const of = unary();
+    const of = deeper(unary);
     // Folded into the literal so an offset unit keeps its meaning: −10degC is 263.15K.
     return of.op === 'value' ? { ...of, value: -of.value } : { op: 'neg', of };
   };
   const primary = (): UnitExpr => {
     if (isOp('(')) {
       i++;
-      const inner = sum();
+      const inner = deeper(sum);
       if (!isOp(')')) fail();
       i++;
       return inner;

@@ -8,7 +8,7 @@ or removes one.
 **Status:** *main* is merged; *landing* is adopted and on its way through its own branch;
 *audition* is a lab on an unmerged branch (see the audition branches in `docs/TODO.md`), not yet
 adopted. **Package:** *core* is in `@weasel-js/core`; *path-tools* is in `@weasel-js/path-tools`, registered
-by its family's preset (path edit and the path commands by `pathsPreset`; see that package's README).
+by its family's preset (path edit and the path commands by `pathTools.paths`; see that package's README).
 
 **Tags:** every operation listed here carries the tag `path` and its section's tag, from
 `PATH_GESTURE_TAGS` in `@weasel-js/core`, so `actionsTagged(actions, 'path-click')` gathers a
@@ -22,12 +22,12 @@ Tag: `path-drag`
 | Operation | Action id | What the drag does | Default binding | Status | Package |
 |---|---|---|---|---|---|
 | Edit anchors | `editAnchors` | Moves anchors and handles | Drag on an anchor or handle | main | path-tools |
-| Bend segment | `bendSegment` | Reshapes a segment by its middle; on a spiro curve, with `spiroPreset` on, adds a smooth point there and drags it | Drag on a segment | main | path-tools |
+| Bend segment | `bendSegment` | Reshapes a segment by its middle; on a spiro curve, with `pathTools.spiro` on, adds a smooth point there and drags it | Drag on a segment | main | path-tools |
 | Marquee-select anchors | `areaSelectAnchors` | Selects anchors in a box | Drag on empty canvas | main | path-tools |
 | Handle locks | `handleLock.angle`, `handleLock.length` | Hold a handle's angle or length during a drag | Toggles; Mod while dragging holds length | main | path-tools |
 | Poise | `poiseHandles` | Scales a segment's two handles together from a grip on its poise line; a length lock holds it still | Drag a poise grip, shown under `path-edit.poise` | main | path-tools |
 | Path constraints | `constrainAnchors`, `unconstrainAnchors` | Keep geometric relations (parallel, level, fixed) during any anchor drag | C / Shift+C in its lab; Alt+Shift and a letter, and a Constraints menu, in WeaselDraw | main | path-tools |
-| Link anchor | `linkAnchor` | Moves an anchor, and released on another shape's anchor or segment ties it there with a constraint link, which every later edit or whole-shape transform of either keeps | Alt-drag an anchor, under `constraintsPreset` | main | path-tools |
+| Link anchor | `linkAnchor` | Moves an anchor, and released on another shape's anchor or segment ties it there with a constraint link, which every later edit or whole-shape transform of either keeps | Alt-drag an anchor, under `pathTools.constraints` | main | path-tools |
 | Fillet | `editFillet` | Sets a corner anchor's radius, or every selected corner's, from the widget inside it | Drag a fillet widget, shown under `path-edit.fillets` | main | path-tools |
 | Path snapping | — | Locks a dragged anchor to other shapes' anchors, crossings, tangent and perpendicular points, midpoints, extremes, and strokes, and to the parts of its own path the drag leaves still; the pen, the insert tools, and a move snap the same way | Any anchor drag: other shapes' anchors by default, every kind with a `pathSnapSource` in `<SceneCanvas snap>` | main | core |
 | Drape | — | Moves nearby anchors with falling weight; the wheel scrubs the radius mid-drag | Any anchor drag, under `createDrapePreset` | main | path-tools |

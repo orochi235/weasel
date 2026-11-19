@@ -5,7 +5,7 @@ import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingInvoker, Sele
 import { pathFromD, type Point } from '@weasel-js/geom';
 import { IDENTITY_POSE_COMPOSITION, createScene, asNodeId, createSnapOutcomeStore, drawnBoxes } from '@weasel-js/core/engine';
 import type { SnapTarget, SnapSource, SnapBegin, SnapDep, GroupTransform, MoveBehavior, AnyScene } from '@weasel-js/core/engine';
-import { sceneSession2d, ownGeometryAt, pathSnapSource } from '@weasel-js/core';
+import { createSceneSession2d, ownGeometryAt, pathSnapSource } from '@weasel-js/core';
 import { snapToContainer } from './behaviors/snapToContainer';
 import { moveAction } from './action';
 
@@ -45,7 +45,7 @@ function rig(sources: readonly SnapSource[], build: (scene: AnyScene) => string[
   const snap: SnapDep = {
     begin: (req) => {
       begun.push(req);
-      return sceneSession2d({
+      return createSceneSession2d({
         req, scene, boxes: drawnBoxes({ scene }), sources, view: () => VIEW, reachPx: 8, store,
         geometryAt: (press, own) => ownGeometryAt(scene, press, own, VIEW.scale),
       });

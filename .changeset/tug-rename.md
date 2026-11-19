@@ -9,7 +9,7 @@ The Lengthen tool is now Tug, and every name it carried changes with it; this is
 | Before | After |
 |---|---|
 | `useLengthenTool` | `useTugTool` |
-| `lengthenPreset`, preset id `'lengthen'` | `tugPreset`, `'tug'` |
+| `lengthenPreset`, preset id `'lengthen'` | `pathTools.tug`, `'tug'` |
 | tool id and `PathEditToolId` `'lengthen'`, binding `lengthenPath.drag` | `'tug'`, `tug.drag` |
 | action `lengthenPath`, `lengthenPathAction`, `LENGTHEN_PATH_PARAMS`, `LengthenPathParams` | `tugPath`, `tugPathAction`, `TUG_PATH_PARAMS`, `TugPathParams` |
 | `lengthenPathEnd`, `lengthenOpenEnd`, `LengthenMode` (`@weasel-js/geom`; core re-exports `lengthenOpenEnd`) | `tugPathEnd`, `tugOpenEnd`, `TugMode` |
@@ -21,7 +21,7 @@ A saved binding override keyed `lengthenPath.drag` moves to `tug.drag`. The tool
 // before
 <SceneCanvas features={['paths', lengthenPreset]} tools={{ lengthen: useLengthenTool() }} tune={{ lengthenPath: { params: { mode: 'curvature' } } }} />
 // after
-<SceneCanvas features={['paths', tugPreset]} tools={{ tug: useTugTool() }} tune={{ tugPath: { params: { mode: 'curvature' } } }} />
+<SceneCanvas features={['paths', pathTools.tug]} tools={{ tug: useTugTool() }} tune={{ tugPath: { params: { mode: 'curvature' } } }} />
 ```
 
 <!-- entry: rank=5 breaking api -->

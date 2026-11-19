@@ -8,9 +8,8 @@ import {
   type RectPose,
   type Stroke,
   type StrokeAlign,
-  viewPreset,
 } from '@weasel-js/core';
-import { pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 import type { ExportScene } from '@weasel-js/export';
 import { asPolygonPath } from '@weasel-js/geom';
 import {
@@ -137,7 +136,7 @@ function PdfExport({ scene }: { scene: ExportScene }) {
 }
 
 // The palette offers the hand and the select tool; each comes from a preset here.
-const FEATURES = [viewPreset, pickPreset] as const;
+const FEATURES = [presets.view, presets.pick] as const;
 
 function TrimTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene(ctx.config));

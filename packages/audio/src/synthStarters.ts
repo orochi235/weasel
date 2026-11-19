@@ -1,5 +1,4 @@
 import { resolveEnvelope, type Envelope } from './envelope';
-import { checkNoteRate } from './patchCheck';
 import { periodicWave } from './periodicWave';
 import { sourceGroup, type LiveVoice, type SourceLike, type Starter } from './liveVoice';
 import {
@@ -9,10 +8,10 @@ import type { Inharmonic, NoiseOptions, NoteOptions, VoiceFilter, Waveform } fro
 
 /** How `playNote` and `playNoise` make their nodes. */
 export interface SynthStarters {
-  /** Throws on a bad pitch, wave, partial, glide, envelope, filter, or duration, at
-   *  the call rather than when it comes due. */
+  /** Throws on a bad pitch, wave, partial, glide, envelope, filter or duration, at the call rather
+   *  than when it comes due. */
   note(note: NoteOptions): Starter;
-  /** Throws on a bad color, envelope, filter, or duration, at the call. */
+  /** Throws on a bad color, envelope, filter or duration, as `note` does. */
   noise(noise: NoiseOptions): Starter;
 }
 
@@ -114,7 +113,6 @@ export function createSynthStarters(ctx: BaseAudioContext, random: () => number)
       const resolved = resolveNote(note);
       return {
         ready: () => true,
-        checkRate: checkNoteRate,
         start: (voice, whenMs) => synthStart(ctx, voice, whenMs, note, (t0, into) => {
           const oscs = noteOscillators(ctx, note, resolved, applyWave, t0, into);
           return {

@@ -28,6 +28,8 @@ import { isFollower } from 'core/pages/pagePlacement';
 import type { CanDropIntoDep } from 'interactions/actions/layoutDeps';
 import { pasteOnPages, type PageLanding } from './pasteOnPages';
 import { getOwn } from '@weasel-js/registry';
+import { dwarn } from '../debug/flag';
+import { clipboardFault } from './pasteShape';
 
 /** What the seam needs from the adapter it serves. */
 export interface SceneClipboardEnv<TData, TLayer extends string, TPose> {
@@ -194,6 +196,11 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
   offset: { dx: number; dy: number },
   ctx?: PasteCtx,
 ): Node<TData, TLayer, TPose>[] {
+  const fault = clipboardFault(clipboard.items, new Set(env.scene.layers.map((l) => l.id)), env.poseBounds as never);
+  if (fault) {
+    dwarn('clipboard', `paste: the clipboard is malformed, so nothing is pasted: ${fault}`);
+    return [];
+  }
   const all = clipboard.items as Item<TData, TLayer, TPose>[];
   if (all.length === 0) return [];
   const fns = new Map(all.map((item) => [item.id as string, restoredFnFields(env.scene, item)]));

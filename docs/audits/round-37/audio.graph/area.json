@@ -1,0 +1,55 @@
+{
+ "id": "audio.graph",
+ "commit": "c612cad371d9093df82913a3e49045e0f89422ea",
+ "date": "2026-11-18",
+ "files": [
+  "packages/audio/src/graph/createAudioGraph.ts",
+  "packages/audio/src/graph/edges.ts",
+  "packages/audio/src/graph/edits.ts",
+  "packages/audio/src/graph/errors.ts",
+  "packages/audio/src/graph/fader.ts",
+  "packages/audio/src/graph/playhead.ts",
+  "packages/audio/src/graph/processors.ts",
+  "packages/audio/src/graph/replace.ts",
+  "packages/audio/src/graph/sources.ts",
+  "packages/audio/src/graph/transport.ts",
+  "packages/audio/src/graph/types.ts",
+  "packages/audio/src/graph/validate.ts",
+  "packages/audio/src/graph/wrapper.ts"
+ ],
+ "a": 3,
+ "b": 4,
+ "m": 2,
+ "distinct": 5,
+ "chapman": 5.7,
+ "unfound": 0.7,
+ "read": {
+  "A": 13,
+  "B": 13
+ },
+ "patches": 5,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.5,
+   "B": 6.3,
+   "match": 0.1,
+   "fix": 10.1
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "tokens": 6746295,
+  "costUsd": 4.9
+ },
+ "fixCommits": [
+  "67c3b2cb9c0dc155be251920a2a98f1facf7bf59",
+  "ecf98ab91c2dcf01c19491bfa466ad3149845e9f",
+  "193c9dc165839ddfdcef59f0a857088a47f97109",
+  "daccd3cb20cd218f2b0ee72c11825b20c6282bcb",
+  "aca518c62de86f1b64f286b6e32a4e83deacc2d0"
+ ]
+}

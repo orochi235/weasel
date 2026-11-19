@@ -58,8 +58,13 @@ export function untagTypedArray(value: unknown): NumberTypedArray | undefined {
   if (value === null || typeof value !== 'object') return undefined;
   const { __ta: tag, data } = value as Partial<TaggedTypedArray>;
   if (typeof tag !== 'string' || !hasOwnKey(TYPED_ARRAY_CONSTRUCTORS, tag) || !Array.isArray(data)) return undefined;
-  return TYPED_ARRAY_CONSTRUCTORS[tag].from(data.map((v) => namedNumber(v) ?? Number(v)));
+  return TYPED_ARRAY_CONSTRUCTORS[tag].from(data.map(entryNumber));
 }
+
+/** A tagged array's entry as a number: an object, which no writer puts there, is `NaN` rather than coerced, since
+ *  coercing one runs whatever `valueOf` and `toString` it holds and throws when neither is a function. */
+const entryNumber = (v: unknown): number =>
+  namedNumber(v) ?? (v !== null && typeof v === 'object' ? Number.NaN : Number(v));
 
 const isPlain = (value: unknown): value is Record<string, unknown> => classOf(value) === 'Object';
 

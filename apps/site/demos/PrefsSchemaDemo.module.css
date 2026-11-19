@@ -1,0 +1,40 @@
+.demo {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+  width: 760px;
+  align-items: start;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-6);
+}
+
+.table {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.table th,
+.table td {
+  padding: 3px var(--wzl-space-4);
+  text-align: start;
+}
+
+.table thead th {
+  font-weight: 500;
+  color: var(--wzl-fg-muted);
+}
+
+.table tbody th {
+  font-weight: 400;
+  color: var(--wzl-fg-muted);
+}
+
+.actions {
+  display: flex;
+  gap: var(--wzl-space-4);
+}

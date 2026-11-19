@@ -5,14 +5,14 @@ import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { RAD_TO_DEG, wrapAngle } from '@weasel-js/geom';
 import { dot, multiply, quatFromAxisAngle, sub, transformPoint4, type Mat4, type Vec3 } from '@weasel-js/geom/3d';
 import {
-  cameraEye, cameraRig, cameraViewProjection, createCamera, createCameraDep, createPickNearest, createPoseDescriptor,
+  cameraEye, createCameraRigContribution, cameraViewProjection, createCamera, createCameraDep, createPickNearest, createPoseDescriptor,
   ndcToScreen, pose3, poseMatrix, useOrbitTool, worldPoseOf,
   type Camera3d, type Pose3, type Scene3d, type Viewport3d,
 } from '@weasel-js/kernel3d';
 import styles from './Kernel3dDemo.module.css';
 import { decimal, qty } from '@weasel-js/quantity';
 import { DemoStage } from './DemoStage';
-import { pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const W = 620, H = 400;
 const LIGHT: Vec3 = { x: 0.4, y: 0.8, z: 0.45 };
@@ -127,7 +127,7 @@ export function Kernel3dDemo() {
   const poseDescriptor = useMemo(() => createPoseDescriptor(world), [world]);
   const pickEvery = useMemo(() => createPickNearest(world), [world]);
 
-  const rig = useMemo(() => cameraRig(createCameraDep(world, { set: setCamera })), [world]);
+  const rig = useMemo(() => createCameraRigContribution(createCameraDep(world, { set: setCamera })), [world]);
   const orbit = useOrbitTool();
 
   const layer = useMemo(() => solidsLayer(camera, scene), [camera, scene]);
@@ -146,7 +146,7 @@ export function Kernel3dDemo() {
             className="ckd-canvas"
             backgroundFill={{ color: '#1e1610' }}
             scene={scene}
-            features={[pickPreset]}
+            features={[presets.pick]}
             tools={{ orbit }}
             ambient={[rig]}
             poseDescriptor={poseDescriptor}

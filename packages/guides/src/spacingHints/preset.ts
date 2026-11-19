@@ -2,7 +2,7 @@ import type { FeaturePreset, SnapSource, SurfaceContribution } from '@weasel-js/
 import type { TargetFilter } from '../sources/targets';
 import { alignmentSnapSource } from '../sources/alignment';
 import { spacingSnapSource } from '../sources/spacing';
-import { distanceReadout, type DistanceReadoutOptions } from './distanceReadout';
+import { createDistanceReadoutContribution, type DistanceReadoutOptions } from './distanceReadout';
 
 /** Options for `createSpacingHintsPreset`. */
 export interface SpacingHintsOptions {
@@ -48,6 +48,6 @@ export function createSpacingHintsPreset(opts: SpacingHintsOptions = {}): Featur
     ...((opts.align ?? false) ? [alignmentSnapSource({ ...own, ...sourceId(opts.id, 'alignment') })] : []),
   ];
   const contributions: SurfaceContribution[] = [];
-  if (opts.readout !== false) contributions.push(distanceReadout({ ...opts.readout, ...color }));
+  if (opts.readout !== false) contributions.push(createDistanceReadoutContribution({ ...opts.readout, ...color }));
   return { id, snapSources, contributions };
 }

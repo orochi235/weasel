@@ -81,9 +81,10 @@ function createFakeBuffer(channels: number, length: number, sampleRate: number):
   if (channels < 1 || length < 1) {
     throw new Error('NotSupportedError: createBuffer needs a channel and a frame');
   }
-  // The specification's floor and ceiling; NaN fails both comparisons.
-  if (!(sampleRate >= 3000 && sampleRate <= 768_000)) {
-    throw new Error(`NotSupportedError: createBuffer's sample rate ${sampleRate} is outside 3000-768000`);
+  // A real implementation also refuses rates outside 3000–768000 Hz; the fake
+  // takes any positive rate, so a test can make a second 100 frames long.
+  if (!(sampleRate > 0 && Number.isFinite(sampleRate))) {
+    throw new Error(`NotSupportedError: createBuffer cannot take a sample rate of ${sampleRate}`);
   }
   const data = Array.from({ length: channels }, () => new Float32Array(length));
   return {
@@ -91,10 +92,11 @@ function createFakeBuffer(channels: number, length: number, sampleRate: number):
     length,
     numberOfChannels: channels,
     sampleRate,
-    getChannelData: (channel) => {
-      const out = data[channel];
-      if (!out) throw new Error(`IndexSizeError: the buffer has no channel ${channel}`);
-      return out;
+    getChannelData(channel) {
+      if (!Number.isInteger(channel) || channel < 0 || channel >= channels) {
+        throw new Error(`IndexSizeError: the buffer has no channel ${channel}`);
+      }
+      return data[channel];
     },
   };
 }
@@ -107,9 +109,8 @@ export function createFakeAudioContext(): FakeAudioContext {
   const listeners = new Set<() => void>();
   const routed = new WeakSet<FakeMediaElement>();
   const now = (): number => ctx.currentTime;
-  // A closed context rejects every state change: it cannot be reopened.
-  const requireOpen = (call: string): void => {
-    if (ctx.state === 'closed') throw new Error(`InvalidStateError: ${call} on a closed AudioContext`);
+  const refuseClosed = (call: string): void => {
+    if (ctx.state === 'closed') throw new Error(`InvalidStateError: ${call} on a closed context`);
   };
 
   const ctx: FakeAudioContext = {
@@ -117,9 +118,11 @@ export function createFakeAudioContext(): FakeAudioContext {
     currentTime: 0,
     sampleRate: 48000,
     destination: node('destination'),
-    async resume() { requireOpen('resume'); ctx._setState('running'); },
-    async suspend() { requireOpen('suspend'); ctx._setState('suspended'); },
-    async close() { requireOpen('close'); ctx._setState('closed'); },
+    // A closed context rejects all three and stays closed; `_setState` is the
+    // test hook that can still move it.
+    async resume() { refuseClosed('resume'); ctx._setState('running'); },
+    async suspend() { refuseClosed('suspend'); ctx._setState('suspended'); },
+    async close() { refuseClosed('close'); ctx._setState('closed'); },
     addEventListener(_type, fn) { listeners.add(fn); },
     removeEventListener(_type, fn) { listeners.delete(fn); },
     createGain: () => node('gain', { gain: param(1) }),

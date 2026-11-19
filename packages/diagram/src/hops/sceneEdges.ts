@@ -2,12 +2,13 @@
  * A scene's connectors as line jumps read them: each one's route before any
  * hop, and the data write that stores its hops.
  */
-import { AUTO_POSE_DESCRIPTOR, createSetDataOp, documentPose, type DerivedDep, type Op, type AnyScene } from '@weasel-js/core';
+import { AUTO_POSE_DESCRIPTOR, documentPose, type DerivedDep, type Op, type AnyScene } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { edgeRouter, type EdgeRouteOptions } from '../edge';
 import { diagramEdgeOf, type DiagramEdge } from '../edgeTrait';
 import type { EdgeHop } from './types';
 import { sameList } from '@weasel-js/registry';
+import * as coreOps from '@weasel-js/core/ops';
 
 export type { AnyScene };
 export type SceneNode = ReturnType<AnyScene['renderOrderNodes']>[number];
@@ -74,7 +75,7 @@ export function hopDataOps(scene: AnyScene, hops: ReadonlyMap<string, readonly E
     if (node === undefined || trait === null || scene.isLocked(id as never)) continue;
     const had = trait.hops ?? [];
     if (had.length === list.length && had.every((h, i) => sameHop(h, list[i]!))) continue;
-    ops.push(createSetDataOp({ id, from: node.data, to: withHopsData(node.data, trait, list), label: 'Line jumps' }));
+    ops.push(coreOps.setData({ id, from: node.data, to: withHopsData(node.data, trait, list), label: 'Line jumps' }));
   }
   return ops;
 }

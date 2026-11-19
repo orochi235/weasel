@@ -15,12 +15,10 @@ export interface ClockRegistry {
   get(id: string): ClockHandle | null;
   /** The clock shared among the runs, when the host declares one. */
   readonly shared: ClockHandle | null;
-  /** The elements showing `handle`, one per registration, shadowed ones
-   *  included. Empty when any registration named none, since that one may be
-   *  seen anywhere. */
+  /** The elements showing `handle`, one per registration. Empty when any
+   *  registration named none, since that one may be seen anywhere. */
   targets(handle: ClockHandle): readonly ClockTarget[];
-  /** Every clock once, however many ids hold it, a registration another under
-   *  its id shadows included. */
+  /** Every clock once, however many ids hold it. */
   all(): Iterable<ClockHandle>;
   /** Fires after any register or release. Shaped for `useSyncExternalStore`. */
   subscribe(listener: () => void): () => void;
@@ -37,15 +35,12 @@ export interface ClockEntry {
 /** An in-memory `ClockRegistry`, holding the shared clock when given one. */
 export function createClockRegistry(shared: ClockHandle | null = null): ClockRegistry {
   const entries = createReflectable<ClockEntry>({ name: 'clocks' });
-  // Every registration held, shadowed ones included: a clock a second one under its id displaced still plays.
-  const held = (): ClockEntry[] =>
-    entries.entries().flatMap((e) => [...e.shadowed.map((r) => r.value), e.value]);
   return {
     register: (id, handle, target) => entries.push(id, { handle, target }),
     get: (id) => entries.get(id)?.handle ?? null,
     targets(handle) {
       const found: ClockTarget[] = [];
-      for (const value of held()) {
+      for (const { value } of entries.entries()) {
         if (value.handle !== handle) continue;
         if (!value.target) return [];
         found.push(value.target);
@@ -53,7 +48,7 @@ export function createClockRegistry(shared: ClockHandle | null = null): ClockReg
       return found;
     },
     shared,
-    all: () => new Set([...(shared ? [shared] : []), ...held().map((e) => e.handle)]),
+    all: () => new Set([...(shared ? [shared] : []), ...entries.entries().map((e) => e.value.handle)]),
     subscribe: entries.subscribe,
     reflection: entries.reflection,
   };

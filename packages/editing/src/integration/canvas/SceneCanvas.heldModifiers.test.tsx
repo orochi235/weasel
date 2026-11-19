@@ -9,7 +9,7 @@ import { render, act } from '@testing-library/react';
 import { SceneCanvas } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import type { NodeId, Scene } from '@weasel-js/core';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 type P = { x: number; y: number; width: number; height: number; rotation?: number };
 

@@ -7,8 +7,9 @@
 import { solid } from '@weasel-js/paint';
 import { asNodeId, type FeaturePreset, type Fill, SceneCanvas, useScene } from '@weasel-js/core';
 import { FEATURE_NAMES, type FeatureName, namedFeatures } from '@weasel-js/editing';
-import { pathToolsPreset, usePathToolsTools } from '@weasel-js/path-tools';
-import { textToolsPreset } from '@weasel-js/text-tools';
+import { usePathToolsTools } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
+import * as textTools from '@weasel-js/text-tools/presets';
 import { Select } from '@weasel-js/ui/components/Select';
 import { CheckboxGroup } from '@weasel-js/ui/components/CheckboxGroup';
 import { useRegisteredActions } from '@weasel-js/ui/components/Prefs';
@@ -77,7 +78,7 @@ function ToolkitForSetup({ base, tools, paths, text }: Setup): ReactElement {
   const actions = useRegisteredActions();
   const pathToolsTools = usePathToolsTools();
   const features: FeaturePreset[] = [
-    ...namedFeatures(base, ...tools), ...(paths ? [pathToolsPreset] : []), ...(text ? [textToolsPreset] : []),
+    ...namedFeatures(base, ...tools), ...(paths ? [pathTools.pathTools] : []), ...(text ? [textTools.textTools] : []),
   ];
 
   return (

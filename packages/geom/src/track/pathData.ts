@@ -4,14 +4,12 @@ import type { ArcTrackShape } from './arc';
 import type { EllipseTrackShape } from './ellipse';
 import type { PathTrackShape } from './path';
 import { pathToD } from '../paths/pathToD';
+import { trimNumber } from '../scalar';
 import type { TrackShape } from './shape';
 
 const SAMPLES = 64;
 
-const num = (v: number): string => {
-  const r = Math.round(v * 1e4) / 1e4;
-  return String(r === 0 ? 0 : r);
-};
+const num = (v: number): string => trimNumber(v, 4);
 const pt = (p: Point): string => `${num(p.x)} ${num(p.y)}`;
 const isArc = (s: TrackShape): s is ArcTrackShape => s.kind === 'arc' && 'arc' in s;
 const isPath = (s: TrackShape): s is PathTrackShape => s.kind === 'path' && 'path' in s;

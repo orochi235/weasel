@@ -11,18 +11,6 @@ const unique = (xs: number[]) => [...new Set(xs)];
 const URGENT_BAR = 12000 / 7;
 
 describe('createScore', () => {
-  it('refuses a mood with a NaN axis, at construction and at setMood, and keeps playing the last one', async () => {
-    const { engine, run, starts } = await engineHarness();
-    const bad = { ...home('dread'), valence: Number.NaN };
-    expect(() => createScore(engine, { mood: bad })).toThrow(RangeError);
-    const score = createScore(engine, { mood: home('dread') });
-    expect(() => score.setMood(bad)).toThrow(RangeError);
-    expect(score.mood()).toEqual(home('dread'));
-    score.start(0);
-    await run(4100);
-    expect(starts()).toEqual([0, 0, 0, 4000, 4000, 4000]);
-  });
-
   it('plays its mood through the engine, a bar at a time', async () => {
     const { ctx, engine, run, starts } = await engineHarness();
     createScore(engine, { mood: home('dread') }).start(0);
@@ -126,5 +114,15 @@ describe('createScore', () => {
     await run(100);
     expect(ctx._oscillators.map((o) => o.frequency.holds[0].value))
       .toEqual([38, 39, 44].map(midiToFrequency));
+  });
+
+  it('refuses a mood with a NaN axis, keeping the mood it had', async () => {
+    const { engine } = await engineHarness();
+    const bad = { valence: Number.NaN, tension: 0.5, urgency: 0.5 };
+    expect(() => createScore(engine, { mood: bad })).toThrow(RangeError);
+    const score = createScore(engine, { mood: home('wonder') });
+    expect(() => score.setMood(bad)).toThrow(RangeError);
+    expect(score.mood()).toEqual(home('wonder'));
+    expect(() => score.setMood({ valence: Number.POSITIVE_INFINITY, tension: 0, urgency: 0 })).not.toThrow();
   });
 });

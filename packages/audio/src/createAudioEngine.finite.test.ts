@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { createAudioEngine } from './createAudioEngine';
+import { createAudioGraph } from './graph/createAudioGraph';
+import { createInsertChain } from './inserts';
 import { engineHarness } from './testing/engineHarness';
+import { createFakeAudioContext } from './testing/fakeAudioContext';
 
 describe('createAudioEngine refuses a voice number that is not finite', () => {
   it('refuses a play whose gain, rate, detune, pan or position is not finite, and books nothing', async () => {
@@ -64,5 +68,27 @@ describe('createAudioEngine refuses a voice number that is not finite', () => {
     voice.stop(10);
     await run(50);
     expect(voice.isPlaying()).toBe(false);
+  });
+
+  it('refuses a lookahead, tick interval or insert fade it could not run with, before making anything', () => {
+    for (const bad of [
+      { lookahead: Number.NaN }, { lookahead: -1 }, { tickInterval: Number.POSITIVE_INFINITY },
+      { tickInterval: 0 }, { tickInterval: 2 ** 31 }, { insertFadeMs: Number.NaN }, { insertFadeMs: -5 },
+    ]) {
+      const ctx = createFakeAudioContext();
+      let armed = 0;
+      expect(() => createAudioEngine({
+        context: ctx as never, setTimer: () => { armed += 1; return 1; }, clearTimer: () => {}, ...bad,
+      })).toThrow(RangeError);
+      expect(armed).toBe(0);
+    }
+  });
+
+  it('refuses a fade an insert chain or patch graph could not run with', () => {
+    const ctx = createFakeAudioContext();
+    const a = ctx.createGain() as never;
+    const b = ctx.createGain() as never;
+    expect(() => createInsertChain(ctx as never, a, b, { fadeMs: Number.NaN })).toThrow(RangeError);
+    expect(() => createAudioGraph(ctx as never, b, { fadeMs: Number.POSITIVE_INFINITY })).toThrow(RangeError);
   });
 });

@@ -1,16 +1,10 @@
 import { type FeaturePreset, type InsertNodeFactory, useLatest } from '@weasel-js/core';
-import {
-  editPreset,
-  KIT_TOOL_IDS,
-  type KitToolId,
-  movePreset,
-  pickPreset,
-  shapeToolsOfferedPreset,
-  transformPreset,
-} from '@weasel-js/editing';
+import { KIT_TOOL_IDS, type KitToolId } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 import { usePencilTool } from '@weasel-js/path-tools';
 import type { ToolOptionValues } from '@weasel-js/routing';
-import { createTextTool, textPreset } from '@weasel-js/text-tools';
+import { createTextTool } from '@weasel-js/text-tools';
+import * as textTools from '@weasel-js/text-tools/presets';
 import { boundsOf, roundPoints, toShape, type WorldRect } from './frac';
 import { markStyleFrom } from './options';
 import { seenValues } from './staleness';
@@ -48,14 +42,14 @@ export function insertedGeometry(
 const ANNOTATION_TEXT: FeaturePreset = {
   id: 'annotations:text',
   tools: [createTextTool()],
-  includes: [textPreset],
+  includes: [textTools.text],
 };
 const FEATURES = [
-  pickPreset,
-  movePreset,
-  transformPreset,
-  editPreset,
-  shapeToolsOfferedPreset,
+  presets.pick,
+  presets.move,
+  presets.transform,
+  presets.edit,
+  presets.shapeToolsOffered,
   ANNOTATION_TEXT,
 ];
 const BUILTIN_ANNOTATION_TOOLS = ANNOTATION_WEASEL_TOOLS.filter((t): t is KitToolId =>

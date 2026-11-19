@@ -205,7 +205,7 @@ function SceneCanvasWrapper<TData, TLayer extends string, TPose>(
  *
  * Mounted bare it renders the scene, keeps a selection no input sets, and
  * runs a gesture dispatcher for whatever bindings the consumer adds. The
- * `features` presets turn the kit's behavior on — `features={[drawPreset]}`
+ * `features` presets turn the kit's behavior on — `features={[presets.draw]}`
  * is the whole editor: navigation, tools, standard actions and their keys,
  * selection chrome. Only the presets it is handed reach its bundle. This is
  * the intended entry point; the lower-level primitives it composes are not

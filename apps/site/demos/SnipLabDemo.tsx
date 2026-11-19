@@ -1,5 +1,6 @@
 import { IDENTITY_POSE_COMPOSITION, createScene, ellipsePath, pathFromD } from '@weasel-js/core';
-import { snipPreset, useSnipTool, pathsPreset } from '@weasel-js/path-tools';
+import { useSnipTool } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import {
   type ConfigOf,
   defineInstrument,
@@ -15,9 +16,9 @@ import { strokeNode } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
-const FEATURES = [drawPreset, pathsPreset, snipPreset] as const;
+const FEATURES = [presets.draw, pathTools.paths, pathTools.snip] as const;
 
 const config = f.schema({
   reach: f.number(6).range(2, 20).step(1).suffix('px').label('Click reach'),

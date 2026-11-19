@@ -7,6 +7,7 @@
 import { biquadCoefficients } from './biquad';
 import { envelopeLevel, resolveEnvelope, type Envelope } from './envelope';
 import { lerp } from './lerp';
+import { checkFinite, checkRate } from './param';
 import { sineShape, waveShape } from './oscillator';
 import { NOISE_SECONDS, checkNoise, isInharmonic, noiseSamples, resolveNote } from './synthVoice';
 import type { NoiseColor, NoiseOptions, NoteOptions, VoiceFilter } from './types';
@@ -46,7 +47,11 @@ interface Shaping {
   detune?: number;
 }
 
-const tuning = (rate: number, detune: number): number => rate * 2 ** (detune / 1200);
+const tuning = (rate: number, detune: number): number => {
+  checkRate('voice rate', rate);
+  checkFinite('voice detune', detune);
+  return rate * 2 ** (detune / 1200);
+};
 
 /** A voice filter as a function of one sample, its cutoff following its envelope. */
 function filterStage(
@@ -111,7 +116,7 @@ function createKernel(patch: Shaping, sampleRate: number, source: Source): Voice
   };
 }
 
-/** A `playNote` voice. Throws on what `playNote` throws on. */
+/** A `playNote` voice. Throws on a bad pitch or partial, as `playNote` does. */
 export function createNoteKernel(note: KernelNote, sampleRate: number): VoiceKernel {
   const { from, glideTo, partials } = resolveNote(note);
   const glideMs = note.glide?.ms ?? note.duration ?? 100;
@@ -154,7 +159,8 @@ function noiseLoop(color: NoiseColor, sampleRate: number): Float32Array {
   return loop;
 }
 
-/** A `playNoise` voice. `random` picks where in the loop it starts. */
+/** A `playNoise` voice. `random` picks where in the loop it starts. Throws on a bad color, envelope,
+ *  filter or duration, as `playNoise` does. */
 export function createNoiseKernel(
   noise: KernelNoise,
   sampleRate: number,
@@ -168,9 +174,7 @@ export function createNoiseKernel(
     const i = Math.floor(at);
     const a = loop[i];
     const sample = lerp(a, loop[(i + 1) % loop.length], at - i);
-    // A negative rate plays the loop backwards, as a buffer source does; `%` keeps the sign.
     at = (at + tune) % loop.length;
-    if (at < 0) at += loop.length;
     return sample;
   });
 }

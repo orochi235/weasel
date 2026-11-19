@@ -99,6 +99,17 @@ describe('bindRig', () => {
     close(where(scene, lower), { x: 150, y: 115, width: 50, height: 10 });
   });
 
+  it('bakes the nodes still in the scene when a bound node has been deleted', () => {
+    const { scene, upper, lower } = armScene();
+    const rig = bindRig({ scene, skeleton: ARM, bindings: { upper, lower } });
+    rig.pose({ upper: { y: 20 } });
+    scene.remove(upper);
+    rig.pose({ upper: { y: 20 } });
+    rig.bake();
+    close(scene.get(lower)!.pose, { x: 150, y: 115, width: 50, height: 10 });
+    expect(scene.overrides.has(lower)).toBe(false);
+  });
+
   it('shows a bound node again on the next frame after the table drops its overrides', () => {
     const { scene, upper } = armScene();
     const rig = bindRig({ scene, skeleton: ARM, bindings: { upper } });

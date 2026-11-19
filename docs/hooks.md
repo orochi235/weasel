@@ -21,7 +21,7 @@ registry of its own under whichever are in scope, then registers the standard
 actions its `features` presets carry
 (`FEATURE_ACTION_IDS` in `@weasel-js/editing` lists core's) and the
 kit actions its tools bind — only undo and redo on
-a bare canvas, all of core's under `features={[drawPreset]}`. `useStandardActions`
+a bare canvas, all of core's under `features={[presets.draw]}`. `useStandardActions`
 does the same for a host of your own, taking any action list. A
 descriptor declares *what* it does (`invoker.run`), *what it needs*
 (`requires`, resolved from the dep registry at dispatch time), *when it's
@@ -76,7 +76,7 @@ would — so there is one code path, not two.
 ### Kit-standard actions
 
 Registered by `useStandardActions`, and the path-edit, path-command and outline
-actions by `@weasel-js/path-tools`' `pathsPreset` (marked *path-tools* below).
+actions by `@weasel-js/path-tools`' `pathTools.paths` (marked *path-tools* below).
 "Default binding" is what the action answers to with no tool involvement;
 actions with no default binding fire only via a tool's `bindings` or a `trigger` call.
 
@@ -221,7 +221,7 @@ at the glyph there. A node is text when `options.isText(data)` says so
 same question by id. The two answer `TextEditDep.textAt` and
 `TextEditDep.isTextNode`.
 
-A canvas running `@weasel-js/text-tools`' `textPreset` mounts one of these itself, so it needs
+A canvas running `@weasel-js/text-tools`' `textTools.text` mounts one of these itself, so it needs
 no wiring for the text and sticky tools to open an edit, nor for a double-click to: `enterTextEditAt`
 is bound to it, opens what `textAt` names, and declines where the double-click names a group,
 whose own double-click enters it. `createTextPreset({ editor })` takes the same options, or

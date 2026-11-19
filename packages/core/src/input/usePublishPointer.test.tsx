@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { useRef, useState } from 'react';
-import { act, createEvent, fireEvent, render } from '@testing-library/react';
+import { useRef } from 'react';
+import { createEvent, fireEvent, render } from '@testing-library/react';
 import { PointerContextProvider, createPointerStore } from '@weasel-js/routing/react';
 import { usePublishPointer } from './usePublishPointer';
 
@@ -90,18 +90,15 @@ describe('usePublishPointer', () => {
     expect(store.get()).toEqual({ world: { x: 3, y: 3 }, viewId: 'b' });
   });
 
-  it('publishes over an element that mounts after the hook first ran', () => {
+  it('publishes from an element that mounts after the hook first ran', () => {
     const store = createPointerStore();
-    let show!: () => void;
-    function Late() {
+    function Late({ show }: { show: boolean }) {
       const ref = useRef<HTMLDivElement>(null);
-      const [ready, setReady] = useState(false);
-      show = () => setReady(true);
       usePublishPointer(ref, (_id, x, y) => ({ world: { x, y }, viewId: 'late' }));
-      return ready ? <div ref={ref} data-testid="late" /> : null;
+      return show ? <div ref={ref} data-testid="late" /> : null;
     }
-    const r = render(<PointerContextProvider store={store}><Late /></PointerContextProvider>);
-    act(() => show());
+    const r = render(<PointerContextProvider store={store}><Late show={false} /></PointerContextProvider>);
+    r.rerender(<PointerContextProvider store={store}><Late show /></PointerContextProvider>);
     moveAt(r.getByTestId('late'), 4, 6);
     expect(store.get()).toEqual({ world: { x: 4, y: 6 }, viewId: 'late' });
   });

@@ -14,7 +14,7 @@ import {
 import { editingLayer, inPlane, pathOperationTags } from '@weasel-js/core';
 import { DEFAULT_SIMPLIFY_TOLERANCE, SIMPLIFY_PATH_PARAMS } from '../pathCommands/simplifyOffset';
 import { openPathEditOf } from '../pathEdit/anchorEditing';
-import { pathEditPreview } from '../pathEdit/editAnchors/preview';
+import { createPathEditPreview } from '../pathEdit/editAnchors/preview';
 import type {} from '../actionParamSchema';
 
 /** The brush's radius on screen when no param names one. */
@@ -114,7 +114,7 @@ export const sandAction = inPlane(defineAction({
         dep.setSelectedAnchors([]);
       };
 
-      const preview = pathEditPreview(dep, id, () => current);
+      const preview = createPathEditPreview(dep, id, () => current);
       if (!preview) return {};
       sweepTo(ctx.world);
 

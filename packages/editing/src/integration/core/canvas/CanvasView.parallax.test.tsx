@@ -12,7 +12,7 @@ import type { RenderLayer } from '@weasel-js/core';
 import { useOptionalViewRegistryForTests as useOptionalViewRegistry, type ViewRegistryForTests as ViewRegistry } from '@weasel-js/core/test-seams';
 import type { NodeId } from '@weasel-js/core';
 import type { Bounds } from '@weasel-js/core';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../../presets/composites';
 
 type P = { x: number; y: number; width: number; height: number };
 

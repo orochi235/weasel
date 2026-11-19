@@ -1932,7 +1932,6 @@
  {
   "id": "core.interactions.actions.part1",
   "files": [
-   "packages/core/src/interactions/actions/actionGroups.ts",
    "packages/core/src/interactions/actions/actionParamSchema.ts",
    "packages/core/src/interactions/actions/actionParams.extension.fixture.ts",
    "packages/core/src/interactions/actions/actionParams.typetest.ts",
@@ -1957,15 +1956,16 @@
    "packages/core/src/interactions/actions/insertDeps.ts",
    "packages/core/src/interactions/actions/layoutDeps.ts",
    "packages/core/src/interactions/actions/magnification.ts",
-   "packages/core/src/interactions/actions/moveNodes.ts"
+   "packages/core/src/interactions/actions/moveNodes.ts",
+   "packages/core/src/interactions/actions/moveOptions.ts"
   ]
  },
  {
   "id": "core.interactions.actions.part2",
   "files": [
-   "packages/core/src/interactions/actions/moveOptions.ts",
    "packages/core/src/interactions/actions/notices.ts",
    "packages/core/src/interactions/actions/operands.ts",
+   "packages/core/src/interactions/actions/pathActionGroups.ts",
    "packages/core/src/interactions/actions/pathCommands/pathNodes.ts",
    "packages/core/src/interactions/actions/pathGestureTags.ts",
    "packages/core/src/interactions/actions/pbt.fixture.ts",
@@ -2696,7 +2696,6 @@
  {
   "id": "editing",
   "files": [
-   "packages/editing/src/actionGroups.ts",
    "packages/editing/src/actionParamSchema.ts",
    "packages/editing/src/booleans/booleans.ts",
    "packages/editing/src/booleans/commit.ts",
@@ -2733,7 +2732,6 @@
    "packages/editing/src/integration/core/canvas/SceneCanvas/kitSweep.fixture.tsx",
    "packages/editing/src/integration/interactions/actions/pbt.fixture.ts",
    "packages/editing/src/namedPresets.ts",
-   "packages/editing/src/presets.ts",
    "packages/editing/src/selection/useSelection.ts",
    "packages/editing/src/test-seams.ts",
    "packages/editing/src/useStandardActions.ts"
@@ -3607,8 +3605,6 @@
    "packages/gestures/src/grammar/routeToSpec.ts",
    "packages/gestures/src/grammar/specKinds.ts",
    "packages/gestures/src/index.ts",
-   "packages/gestures/src/longPress/pressRing.ts",
-   "packages/gestures/src/longPress/pressState.ts",
    "packages/gestures/src/pbt.fixture.ts",
    "packages/gestures/src/recognizer/click.ts",
    "packages/gestures/src/recognizer/longPressHold.ts",
@@ -5230,7 +5226,6 @@
    "packages/registry/src/grade.ts",
    "packages/registry/src/index.ts",
    "packages/registry/src/isDev.ts",
-   "packages/registry/src/isFiniteNumber.ts",
    "packages/registry/src/isPlainObject.ts",
    "packages/registry/src/latest.ts",
    "packages/registry/src/match.ts",
@@ -5636,7 +5631,6 @@
    "packages/routing/src/interactions/dispatcher/underPointer.ts",
    "packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx",
    "packages/routing/src/interactions/dispatcher/useKeyLease.ts",
-   "packages/routing/src/interactions/dispatcher/usePageActions.ts",
    "packages/routing/src/interactions/dispatcher/walk.ts"
   ]
  },
@@ -6658,6 +6652,7 @@
    "packages/ui/src/components/Menu/MenuColorValue.tsx",
    "packages/ui/src/components/Menu/MenuPanel.tsx",
    "packages/ui/src/components/Menu/MenuRow.tsx",
+   "packages/ui/src/components/Menu/MenuRowTip.tsx",
    "packages/ui/src/components/Menu/MenuValue.tsx",
    "packages/ui/src/components/Menu/index.ts",
    "packages/ui/src/components/Menu/menuParts.ts",
@@ -7073,7 +7068,6 @@
  {
   "id": "ui.components.Tree",
   "files": [
-   "packages/ui/src/components/Tree/RowTip.tsx",
    "packages/ui/src/components/Tree/Tree.fixtures.ts",
    "packages/ui/src/components/Tree/Tree.module.css",
    "packages/ui/src/components/Tree/Tree.stories.module.css",

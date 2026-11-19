@@ -17,7 +17,7 @@ import type { CanvasViewCamera, SceneCanvasApi } from '@weasel-js/core';
 import type { AimHeldViewProps, CameraHeldViewProps } from '@weasel-js/core';
 import { ViewMarker } from '@weasel-js/core';
 import { useOptionalViewRegistryForTests as useOptionalViewRegistry, type ViewRegistryForTests as ViewRegistry } from '@weasel-js/core/test-seams';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../../presets/composites';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };

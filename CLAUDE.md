@@ -142,7 +142,7 @@ When building new tools, read these first:
 - **`packages/editing/src/tools/rect/useRectTool.ts`** — canonical pattern for tools that create scene objects. A tool is a *declarative shell*: it declares `bindings` (`{ kind: 'drag' } → actionId: 'insert'`) and nothing else. The dispatcher owns the gesture, `insertAction` owns the live preview and the commit, and the `insert` dep mints the node. Consumers wanting a custom node factory override the dep (`useDepSource('insert', …)` or `<SceneCanvas insertNodeFactories>`), **not** the tool.
 - **`packages/editing/src/tools/polygon/usePolygonTool.tsx`** — the same, plus the two things a tool with its own state needs: thunked binding params (so mid-gesture changes reach both the preview and the commit) and `ToolDef.actions` for actions the tool owns. Declare those on the def; a tool hook must not call `useAction` itself, because it may run above the `<ActionsProvider>` and the registration will silently no-op.
 
-Do **not** write a tool that runs its own gesture (`useDragRect`) and commits with `ctx.applyBatch([createInsertOp(...)])`. That was the previous guidance here, and the code it pointed at had been dead for some time — see the 2026-07-27 layer-audit handoff.
+Do **not** write a tool that runs its own gesture (`useDragRect`) and commits with `ctx.applyBatch([ops.insert(...)])`. That was the previous guidance here, and the code it pointed at had been dead for some time — see the 2026-07-27 layer-audit handoff.
 
 ## Module shape
 
@@ -349,6 +349,6 @@ hands the drag to the next candidate rather than taking it.
 ## Key concepts
 
 - **Tools** declare bindings from a gesture to an action and handle nothing themselves. The action reads its `InvocationCtx` (world and screen point, modifiers, deps) and either moves the viewport or writes to the scene with ops.
-- **Ops** are the scene-mutation primitive (`createInsertOp`, `createDeleteOp`, `createSetPoseOp`, etc.). Always prefer ops over direct adapter calls so changes are undoable.
+- **Ops** are the scene-mutation primitive, built by `@weasel-js/core/ops` (`ops.insert`, `ops.delete`, `ops.setPose`, etc.). Always prefer ops over direct adapter calls so changes are undoable.
 - **`useDragRect`** is a spatial input primitive (user draws a rectangle). It is not an insert mechanism — tools decide what to do with the bounds.
 - **Scene vs adapter**: `Scene<TData, TLayer, TPose>` is the kit-owned tree. `adapter` is the low-level contract actions use for mutation. `SceneCanvas` synthesizes an adapter from the scene so you rarely touch the adapter directly.

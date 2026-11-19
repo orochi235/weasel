@@ -22,7 +22,7 @@ export const TEXT_TOOL_OPTIONS = shareToolOptions(shapeToolOptions({
  *  mode via the `enterTextEdit` action.
  *
  *  Its actions, the `text` insert and the `textEdit` dep come with
- *  `textPreset`. Custom node factories and hit gating belong on those deps,
+ *  `textTools.text`. Custom node factories and hit gating belong on those deps,
  *  not on the tool. */
 export function createTextTool(options: InsertToolOptions = {}): Tool {
   const { behaviors, share } = options;

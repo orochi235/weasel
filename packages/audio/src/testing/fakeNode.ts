@@ -52,9 +52,9 @@ export function node<E extends Record<string, unknown>>(kind: string, extra?: E)
     connectedTo: [] as FakeNode[],
     connectedFrom: [] as FakeNode[],
     disconnected: false,
+    // A second connection between the same pair is ignored, as the
+    // specification ignores it, so one `disconnect(target)` cuts it.
     connect(target: FakeNode) {
-      // A second identical connection is ignored, as the specification says:
-      // one disconnect then cuts the edge.
       if (n.connectedTo.includes(target)) return target;
       n.connectedTo.push(target);
       target.connectedFrom.push(n);
@@ -63,7 +63,7 @@ export function node<E extends Record<string, unknown>>(kind: string, extra?: E)
     disconnect(target?: FakeNode) {
       if (target && !n.connectedTo.includes(target)) {
         // The bare form is a no-op when there is nothing to cut; the targeted
-        // form is not, and a real implementation throws, changing nothing.
+        // form is not, and a real implementation throws without cutting.
         throw new Error('InvalidAccessError: the given node is not connected');
       }
       n.disconnected = true;

@@ -50,10 +50,6 @@ export function stubWorkerGlobals() {
   const revoked: string[] = [];
   const create = URL.createObjectURL;
   const revoke = URL.revokeObjectURL;
-  // Put back only what this installs: `vi.unstubAllGlobals` would also undo
-  // globals the test stubbed itself.
-  const g = globalThis as Record<string, unknown>;
-  const saved = (['Worker', 'Blob'] as const).map((name) => [name, Object.getOwnPropertyDescriptor(g, name)] as const);
 
   class RecordingBlob {
     readonly type: string;
@@ -63,8 +59,11 @@ export function stubWorkerGlobals() {
     }
   }
 
-  const install = (name: string, value: unknown) => {
-    Object.defineProperty(g, name, { value, configurable: true, writable: true, enumerable: true });
+  // Only these two are put back, so a global the test stubbed itself survives.
+  const g = globalThis as Record<string, unknown>;
+  const saved = (['Worker', 'Blob'] as const).map((key) => [key, Object.getOwnPropertyDescriptor(g, key)] as const);
+  const install = (key: string, value: unknown): void => {
+    Object.defineProperty(g, key, { value, writable: true, configurable: true, enumerable: false });
   };
   install('Worker', FakeWorker);
   install('Blob', RecordingBlob);
@@ -76,9 +75,9 @@ export function stubWorkerGlobals() {
     scripts,
     revoked,
     restore() {
-      for (const [name, desc] of saved) {
-        if (desc) Object.defineProperty(g, name, desc);
-        else delete g[name];
+      for (const [key, descriptor] of saved) {
+        if (descriptor) Object.defineProperty(g, key, descriptor);
+        else delete g[key];
       }
       URL.createObjectURL = create;
       URL.revokeObjectURL = revoke;

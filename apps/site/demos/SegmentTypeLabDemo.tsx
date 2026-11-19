@@ -1,6 +1,6 @@
 import { solid } from '@weasel-js/paint';
-import { ANCHORS_GROUP, type ActionTunings, asNodeId, createScene, type RectPose, pathNode } from '@weasel-js/core';
-import { pathsPreset, segmentTypePreset } from '@weasel-js/path-tools';
+import { type ActionTunings, asNodeId, createScene, type RectPose, pathNode } from '@weasel-js/core';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import {
   type ConfigOf,
   defineInstrument,
@@ -17,7 +17,9 @@ import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
+import * as groups from '@weasel-js/editing/groups';
 
 const config = f.schema({
   shiftC: f.enum<'flip' | 'line' | 'curve'>('flip', [
@@ -37,7 +39,7 @@ const createLabScene = () => createScene<unknown, 'default', RectPose>({
   initial: [pathNode('tab', TAB, { fill: { paint: solid('#9cc5e8') }, stroke: { paint: solid('#2d5f8a'), width: 2 } })],
 });
 
-const FEATURES = [pickPreset, movePreset, pathsPreset, segmentTypePreset] as const;
+const FEATURES = [presets.pick, presets.move, pathTools.paths, pathTools.segmentType] as const;
 
 /** Opens in path edit with the top edge's two anchors selected, so Shift+C has a segment to convert. */
 const OPENING = { id: 'tab', anchors: [1, 2] };
@@ -61,7 +63,7 @@ function SegmentTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         tune={tune}
       />
       <FloatingPanel anchor="top-right">
-        <ActionBar group={ANCHORS_GROUP} only={['convertSegments']} />
+        <ActionBar group={groups.anchors} only={['convertSegments']} />
       </FloatingPanel>
     </>
   );

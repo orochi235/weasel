@@ -7,7 +7,8 @@ import { attachMenuHost } from '@weasel-js/hud';
 import { pref } from '@weasel-js/prefs';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import { DemoStage } from './DemoStage';
-import { arrangePreset, editPreset, movePreset, pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 interface NodeData { path: Path; fill: Fill }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -57,7 +58,7 @@ function Demo() {
   return (
     <DemoStage width={W} height={H}>
       <SceneCanvas
-        features={[pickPreset, movePreset, editPreset, arrangePreset]}
+        features={[presets.pick, presets.move, presets.edit, presets.arrange]}
         claimKeys
         className="ckd-canvas"
         scene={scene}

@@ -7,7 +7,7 @@
 ## Goal
 
 Ship `useUserPenTool` — an active-slot Tool that lets a user build a new
-`PolygonPath` from scratch, click-by-click, with Illustrator-style
+`PolygonPath` from scratch, click-by-click, with
 click-vs-drag (corner anchor vs smooth anchor with control handles).
 Becomes the fifth tool in WeaselDraw and the first non-trivial
 content-creation tool in the kit.
@@ -268,9 +268,9 @@ Tracked in `docs/TODO.md` under "Tool primitive follow-ups":
 - **Compound-path with open middle subpath.** Currently open subpath
   must be the last; multi-contour with mixed open/closed in arbitrary
   order would need a third Enter meaning (or a separate keybind).
-- **Double-click last anchor to open-finish** (Illustrator convention).
+- **Double-click last anchor to open-finish**.
   v1 uses Enter only.
-- **Cmd+click-off to open-finish** (Illustrator convention). v1 uses
+- **Cmd+click-off to open-finish**. v1 uses
   Enter only.
 - **Click-on-existing-anchor-to-edit during creation** — same scope as
   mid-creation editing, deferred together.

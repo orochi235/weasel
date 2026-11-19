@@ -1,9 +1,10 @@
 /**
  * `@weasel-js/text-tools` — text for a weasel canvas: the text node kind, its
  * in-place editor, and the text and sticky-note tools, as presets an app turns
- * on beside core's: `features={[drawPreset, textPreset]}` for text nodes that
- * paint, pick and edit, `textToolsPreset` for the tools that make them. The text
- * engine itself (layout, fonts, runs) is `@weasel-js/text`.
+ * on beside core's, from `@weasel-js/text-tools/presets`: `features={[presets.draw,
+ * textTools.text]}` for text nodes that paint, pick and edit, `textTools.textTools`
+ * for the tools that make them. The text engine itself (layout, fonts, runs) is
+ * `@weasel-js/text`.
  *
  * @packageDocumentation
  */
@@ -14,9 +15,9 @@ import type {} from './editor/textEditDep';
 
 // ─── Presets ───────────────────────────────────────────────────────────────
 export {
-  createTextPreset, createTextToolsPreset, textNodeRouting, textPreset, textToolsPreset, whiteboardPreset,
+  createTextPreset, createTextToolsPreset, textNodeRouting,
   type TextPresetOptions, type TextToolsPresetOptions,
-} from './presets';
+} from './featurePresets';
 export { TEXT_TOOLS, useTextToolsTools, type TextToolId } from './toolSets';
 
 // ─── The text node kind ────────────────────────────────────────────────────

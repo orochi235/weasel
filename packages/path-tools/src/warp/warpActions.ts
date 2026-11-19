@@ -2,7 +2,7 @@
  * The warp actions. A warp tool binds the per-kind ones (`<kind>.drag`,
  * `pin.addPin`, `pin.removePin`) and owns them; `expandWarp` and
  * `configureWarp` work on whatever warp the selection holds and ship with
- * `warpPreset`.
+ * `pathTools.warp`.
  */
 import {
   type Action, type ActionDeps, ActionDisabledReason, defineAction, type ImmediateInvoker, type ImmediateParams, type OngoingHandle,
@@ -11,7 +11,9 @@ import {
 import { createEmitter } from '@weasel-js/registry';
 import { transformPoint, invert, type Point } from '@weasel-js/geom';
 import { moveWarpControl, pathWarpMap, unwarpPoint, warpControls } from '@weasel-js/geom/warp';
-import { PATH_GROUP, commitOps, createSetDataOp, type Op, quantizedShape, reshapeTo, pathOperationTags, type AnyScene } from '@weasel-js/core';
+import {
+  commitOps, type Op, quantizedShape, reshapeTo, pathOperationTags, type AnyScene,
+} from '@weasel-js/core';
 import { heldPathWarpOf, resolvePathWarp, withoutPathWarp } from './pathWarp';
 import {
   freshWarpBox, storeWarp, WARP_LABELS, warpTargets, withWarpSettings, type WarpKind, type WarpSettings, type WarpTarget,
@@ -22,6 +24,8 @@ import { icon } from '../icons.gen';
 import { warpSettingsForm } from './warpSettingsForm';
 import { configureWarpParams, settingsOfWarp, warpDragParams } from './warpParams';
 import type {} from '../actionParamSchema';
+import * as groups from '@weasel-js/core/groups';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** What a press on a warp control hands the drag that follows. */
 export interface WarpHandleScratch {
@@ -289,7 +293,7 @@ export const expandWarpAction: Action = {
   label: 'Expand Warp',
   icon: icon('expand'),
   tags: pathOperationTags('command'),
-  group: PATH_GROUP,
+  group: groups.path,
   requires: REQUIRES,
   invoker: {
     timing: 'immediate',
@@ -297,7 +301,7 @@ export const expandWarpAction: Action = {
       const ops: Op[] = [];
       for (const { node } of selectedWarpPaths(deps)) {
         if (!heldPathWarpOf(node.data)) continue;
-        ops.push(createSetDataOp({ id: node.id, from: node.data, to: withoutPathWarp(node.data), label: 'Expand Warp' }));
+        ops.push(coreOps.setData({ id: node.id, from: node.data, to: withoutPathWarp(node.data), label: 'Expand Warp' }));
       }
       commitOps(deps, ops, 'Expand Warp');
     },
@@ -318,7 +322,7 @@ export const configureWarpAction = defineAction({
   label: 'Warp Settings',
   icon: icon('core:tune'),
   tags: pathOperationTags('command'),
-  group: PATH_GROUP,
+  group: groups.path,
   requires: REQUIRES,
   settings: warpSettingsForm,
   params: configureWarpParams,

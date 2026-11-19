@@ -1,9 +1,9 @@
 import type { Path } from '@weasel-js/geom';
-import { createInsertOp, createSetSelectionOp } from '@weasel-js/core/engine';
-import { createDeleteOp, locateChild, dispatchApplyBatch } from '@weasel-js/core';
+import { locateChild, dispatchApplyBatch } from '@weasel-js/core';
 import type { Op, NodeId } from '@weasel-js/core';
 import type { BooleanEntry, BooleanOp, BooleansAdapter, BooleanZOrder } from './booleans';
 import { placementOps } from './placement';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** One path to mint: the index of the source it stands in for, and the op it
  *  is recorded as made by. */
@@ -44,10 +44,10 @@ export function commitPieces(
   // re-inserts ASC — each splice lands on a correctly-sized array
   // instead of clamping high indices to a still-growing length.
   captured.sort((a, b) => b.index - a.index);
-  for (const { node, index } of captured) ops.push(createDeleteOp({ node, index }));
-  for (const n of newNodes) ops.push(createInsertOp({ node: n }));
+  for (const { node, index } of captured) ops.push(coreOps.delete({ node, index }));
+  for (const n of newNodes) ops.push(coreOps.insert({ node: n }));
   ops.push(...placementOps(made.map((m) => ({ id: m.node.id, slot: m.slot })), slots));
-  ops.push(createSetSelectionOp({ from: sel, to: newNodes.map((n) => n.id as NodeId) }));
+  ops.push(coreOps.setSelection({ from: sel, to: newNodes.map((n) => n.id as NodeId) }));
   dispatchApplyBatch(adapter, ops, label);
   return newNodes.map((n) => n.id);
 }

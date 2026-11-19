@@ -53,7 +53,7 @@ export const createOutlinesAction: Action = {
   label: 'Create Outlines',
   icon: icon('core:createOutlines'),
   group: 'text',
-  // Affinity's Convert to Curves; Illustrator's Mod+Shift+O is Chrome's bookmark manager.
+  // Mod+Enter, since Mod+Shift+O is Chrome's bookmark manager.
   defaultBinding: [{ spec: { kind: 'key', key: 'Enter', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'createOutlines.key' } }],
   eligible: { capability: 'creates-shapes' },
   requires: ['operands', 'createOutlinesAdapter', 'notices'],

@@ -7,7 +7,7 @@ import { act, render } from '@testing-library/react';
 import { createScene, asNodeId, type SceneNode as Node, type Scene } from '@weasel-js/core/engine';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import { SceneCanvas } from '@weasel-js/core';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 const painted = vi.hoisted(() => ({ commands: [] as readonly unknown[] }));
 

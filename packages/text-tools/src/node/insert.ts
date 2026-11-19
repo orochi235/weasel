@@ -1,4 +1,4 @@
-/** How a text node is inserted: what `textPreset` gives the canvas's `insert` dep for `text`, and the hooks a node
+/** How a text node is inserted: what `textTools.text` gives the canvas's `insert` dep for `text`, and the hooks a node
  *  made to be typed into commits with. */
 import { DEFAULT_TEXT_FILL } from '@weasel-js/text';
 import type { InsertedNode, InsertNodeFactory } from '@weasel-js/core';

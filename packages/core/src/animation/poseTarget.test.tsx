@@ -117,14 +117,6 @@ describe('scenePoseTarget', () => {
     expect(scene.historyEntries().length).toBe(entries);
   });
 
-  it('has none for a node that is not there, or whose pose has no axes', () => {
-    const { scene } = setup();
-    expect(scenePoseTarget(scene, 'nope')).toBeUndefined();
-    const paths = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
-    const p = paths.add({ kind: 'mark', layer: 'main', pose: { kind: 'polygon', points: [] }, data: {} });
-    expect(scenePoseTarget(paths, p)).toBeUndefined();
-  });
-
   it('has none for a node deleted after its animation came to rest', () => {
     const { animator, frame, scene, a } = setup();
     act(() => { animator().tween({ target: scenePoseTarget(scene, a)!, to: at(100), ms: 100, easing: linear }); });
@@ -132,6 +124,14 @@ describe('scenePoseTarget', () => {
     frame(100);
     scene.remove(a);
     expect(scenePoseTarget(scene, a)).toBeUndefined();
+  });
+
+  it('has none for a node that is not there, or whose pose has no axes', () => {
+    const { scene } = setup();
+    expect(scenePoseTarget(scene, 'nope')).toBeUndefined();
+    const paths = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
+    const p = paths.add({ kind: 'mark', layer: 'main', pose: { kind: 'polygon', points: [] }, data: {} });
+    expect(scenePoseTarget(paths, p)).toBeUndefined();
   });
 
   it('keeps the fields of the pose it does not move as they are in the document', () => {

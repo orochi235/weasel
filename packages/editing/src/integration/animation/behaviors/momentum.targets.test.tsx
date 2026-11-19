@@ -153,28 +153,17 @@ describe('momentum over a scene', () => {
     expect(scene.get(a)!.pose.x).toBeCloseTo(stood);
     expect(scene.historyEntries().length).toBe(entries + 1);
   });
-  it('records the flick where it stopped when the animator cancels it from outside', () => {
+
+  it('records where it stopped when the animator cancels it from outside, so undo takes the node back', () => {
     const { clock, animator, scene, a, shown, entries } = flick();
     clock.advance(16);
     clock.advance(16);
-    const stood = shown().x;
-    expect(stood).toBeGreaterThan(20);
     animator.cancelAll();
-    expect(scene.get(a)!.pose.x).toBeCloseTo(stood);
+    const stood = scene.get(a)!.pose.x;
+    expect(stood).toBeGreaterThan(20);
+    expect(shown().x).toBe(stood);
     expect(scene.historyEntries().length).toBe(entries + 1);
     scene.undo();
     expect(scene.get(a)!.pose.x).toBe(0);
-  });
-
-  it('records the flick where it stopped when its cancel key is canceled', () => {
-    const { clock, animator, scene, a, shown, entries } = flick();
-    clock.advance(16);
-    clock.advance(16);
-    const stood = shown().x;
-    const key = animator.live().find((r) => r.key?.startsWith('momentum:'))?.key;
-    expect(key).toBeDefined();
-    animator.cancelKey(key!);
-    expect(scene.get(a)!.pose.x).toBeCloseTo(stood);
-    expect(scene.historyEntries().length).toBe(entries + 1);
   });
 });

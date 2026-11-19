@@ -2,7 +2,7 @@ import type { RefObject } from 'react';
 import { heldPointers } from '@weasel-js/gestures';
 import { useLatest } from '@weasel-js/react';
 import { usePointerContext, type PointerWorldPos } from '@weasel-js/routing/react';
-import { useAttach } from './useAttach';
+import { useElementEffect } from './useElementEffect';
 
 /** Where a client point is in the world and which view it is over, or `null`
  *  when there is no answer yet (the surface has not mounted its camera). */
@@ -20,8 +20,8 @@ export type LocatePointer = (
  * or canceled outside (off the window included), clears the store, unless
  * another view has published since. No-op with no provider in scope.
  *
- * `locate` is read on each event, so it need not be stable. `elementRef` is
- * read after each commit, so an element that mounts later is published over.
+ * `locate` is read on each event, so it need not be stable. The ref is read
+ * after every render, so an element that mounts later or is swapped is followed.
  */
 export function usePublishPointer(
   elementRef: RefObject<HTMLElement | null>,
@@ -29,8 +29,8 @@ export function usePublishPointer(
 ): void {
   const store = usePointerContext();
   const locateRef = useLatest(locate);
-  useAttach((): HTMLElement | null => (store ? elementRef.current : null), (el) => {
-    if (!store) return () => {};
+  useElementEffect(() => (store ? elementRef.current : null), (el) => {
+    if (!store) return;
     let viewId: string | null = null;
     const publish = (e: PointerEvent): void => {
       const at = locateRef.current(e.pointerId, e.clientX, e.clientY);

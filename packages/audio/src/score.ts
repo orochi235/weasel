@@ -36,7 +36,7 @@ export interface Score {
   isPlaying(): boolean;
   /** The mood last set, which the next bar will take. */
   mood(): ScoreMood;
-  /** Takes effect at the next bar line. Throws a `RangeError` on an axis that is `NaN`. */
+  /** Takes effect at the next bar line. */
   setMood(mood: ScoreMood): void;
   /** The bar most recently booked. */
   state(): ScoreState;

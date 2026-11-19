@@ -6,10 +6,11 @@
 import { describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { moveAction } from './action';
-import { createScene, RIGID_POSE_COMPOSITION, createSetPoseOp, scenePoseFrame } from '@weasel-js/core/engine';
+import { createScene, RIGID_POSE_COMPOSITION, scenePoseFrame } from '@weasel-js/core/engine';
 import { expectSamePoseForTests as expectSamePose } from '@weasel-js/core/test-seams';
 import type { NodeId, RectPose } from '@weasel-js/core';
 import type { ContainerBounds, LayoutChild, LayoutStrategy } from '@weasel-js/core/engine';
+import * as ops from '@weasel-js/core/ops';
 
 /** Rows 10 tall down the container from its top: the drop takes the first,
  *  and the children already there shift down a row. */
@@ -28,8 +29,8 @@ function rows(seen: { bounds: ContainerBounds[]; children: RectPose[] }) {
       new Map(children.filter((k) => k.id !== d.id).map((k) => [k.id, down(k.pose)])),
     commitDrop: (_c: unknown, children: LayoutChild<RectPose>[], d: { id: string; originPose: RectPose }, target: { pose: RectPose }) => [
       ...children.filter((k) => k.id !== d.id).map((k) =>
-        createSetPoseOp<RectPose>({ id: k.id, from: k.pose, to: down(k.pose), label: 'Shift' })),
-      createSetPoseOp<RectPose>({ id: d.id, from: d.originPose, to: target.pose, label: 'Drop' }),
+        ops.setPose<RectPose>({ id: k.id, from: k.pose, to: down(k.pose), label: 'Shift' })),
+      ops.setPose<RectPose>({ id: d.id, from: d.originPose, to: target.pose, label: 'Drop' }),
     ],
   } as unknown as LayoutStrategy<unknown>;
 }

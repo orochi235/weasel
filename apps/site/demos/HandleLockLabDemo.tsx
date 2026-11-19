@@ -1,5 +1,4 @@
 import { defineInstrument, Lab, type RenderContext, TrialSceneCanvas } from '@weasel-js/labkit';
-import { handleLocksPreset } from '@weasel-js/path-tools';
 import { pref } from '@weasel-js/prefs';
 import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
 import s from './HandleLockLabDemo.module.css';
@@ -7,10 +6,10 @@ import { BLOB, type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { pathsPreset } from '@weasel-js/path-tools';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import * as pathTools from '@weasel-js/path-tools/presets';
+import * as presets from '@weasel-js/editing/presets';
 
-const FEATURES = [pickPreset, movePreset, pathsPreset, handleLocksPreset] as const;
+const FEATURES = [presets.pick, presets.move, pathTools.paths, pathTools.handleLocks] as const;
 
 /** The two handle-lock toggles, drawn from the actions registry. */
 const LOCK_BAR = pref.group('', {

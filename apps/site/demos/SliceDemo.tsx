@@ -3,7 +3,8 @@ import { ellipsePath, rectPath, SceneCanvas, starPath, useScene, WeaselProvider,
 import { useSliceTool } from '@weasel-js/path-tools';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
-import { editPreset, movePreset, pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const W = 480, H = 320;
 
@@ -33,7 +34,7 @@ export function SliceDemo() {
             className="ckd-canvas"
             scene={scene}
             selection={selection}
-            features={[pickPreset, movePreset, editPreset]}
+            features={[presets.pick, presets.move, presets.edit]}
             tools={{ slice }}
             defaultActiveTool="slice"
           />

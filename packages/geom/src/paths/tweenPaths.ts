@@ -108,7 +108,7 @@ function matchContours(a: CubicContour, b: CubicContour, opts: TweenPathsOptions
     for (let k = 0; k < turns; k++) {
       const [ma, mb] = equalize(a, rotate(run, k));
       const score = auto ? correspondence(ma, mb) : 0;
-      if (best === null || score < best.score - 1e-9) best = { score, a: ma, b: mb, reversed, turn: k };
+      if (best === null || score < best.score * (1 - TIE) - 1e-9) best = { score, a: ma, b: mb, reversed, turn: k };
     }
   }
   const chosen = best!;
@@ -140,16 +140,18 @@ function subdivideTo(segs: readonly CubicSegment[], n: number): CubicSegment[] {
   const out = segs.slice();
   if (out.length === 0) return out;
   while (out.length < n) {
-    let longest = 0;
-    let longestLen = -1;
-    for (let i = 0; i < out.length; i++) {
-      const len = hullLength(out[i]!);
-      if (len > longestLen) { longest = i; longestLen = len; }
-    }
+    const lengths = out.map(hullLength);
+    const most = Math.max(...lengths);
+    const longest = lengths.findIndex((len) => len >= most * (1 - TIE));
     out.splice(longest, 1, ...splitSegment(out[longest]!, 0.5));
   }
   return out;
 }
+
+/** How near, as a fraction, two measures are taken as equal when choosing between them. Paths store float32,
+ *  so a rectangle's opposite sides come back a few parts in 10^8 apart, and which of them is longer flips as
+ *  the shape is scaled: decided on that, the choice jumps from one step of a drag to the next. */
+const TIE = 1e-6;
 
 /** A segment's length estimate: the mean of its chord and control polygon. */
 function hullLength({ c }: CubicSegment): number {

@@ -398,24 +398,16 @@ describe('useKeybindings', () => {
       expect(ran).toHaveBeenCalledTimes(1);
     });
 
-    it('Escape does not return to a default tool the active mode bars', () => {
-      const modes = createModeRegistry({
-        modes: [mode('look', []), mode('draw', ['creates-paths'])], initial: 'draw',
-      });
-      const pen  = defineTool({ id: 'pen',  keybinding: { key: 'p' }, capabilities: ['creates-paths'] });
-      const hand = defineTool({ id: 'hand', keybinding: { key: 'h' } });
+    it('refuses Escape a default tool the mode bars, as it refuses that tool\'s key', () => {
+      const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
+      const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' }, capabilities: ['creates-paths'] });
       const { result } = renderHook(() => {
-        const tools = useTools({ active: 'pen', registry: { pen, hand } });
-        useKeybindings(tools, { modes });
+        const tools = useTools({ active: 'select', registry: { select, pen } });
+        useKeybindings(tools, { modes: modesAllowing([]), defaultTool: 'pen' });
         return tools;
-      }, { wrapper: makeWrapper('pen', true) });
-      act(() => press('h'));
-      act(() => { modes.setMode('look'); });
+      }, { wrapper: makeWrapper('select', true) });
       act(() => press('Escape'));
-      expect(result.current.active).toBe('hand');
-      act(() => { modes.setMode('draw'); });
-      act(() => press('Escape'));
-      expect(result.current.active).toBe('pen');
+      expect(result.current.active).toBe('select');
     });
 
     it('reads the mode at the keypress, not at mount', () => {

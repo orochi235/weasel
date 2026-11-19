@@ -1,11 +1,12 @@
 /** The pen finishing a path by joining it onto another open subpath's end. */
-import { commitOps, createDeleteOp, resolveEditablePathOf, type Op } from '@weasel-js/core';
+import { commitOps, resolveEditablePathOf, type Op } from '@weasel-js/core';
 import type { ActionDeps } from '@weasel-js/routing';
 import { anchorsToPath, boundsOfPath, editAnchorSetTracked, pathToAnchors, reverseAnchors, type PathAnchorHit, type PolygonPath } from '@weasel-js/geom';
 import type { PenCommitSettings } from './penCommit';
 import { penOptionValues } from './penOptions';
 import { buildPath, resetScratch } from './penScratch';
 import type { PenScratch } from './usePenTool';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** Whether an anchor about to land on `hit` finishes the path by joining
  *  onto another open subpath. Its own continued subpath never counts —
@@ -75,7 +76,7 @@ export function commitJoin(
     ops.push(...built.ops);
     keptId = built.id;
   }
-  if (!sameNode) ops.push(createDeleteOp({ node: scene!.get(hit.id as never) as { id: string } }));
+  if (!sameNode) ops.push(coreOps.delete({ node: scene!.get(hit.id as never) as { id: string } }));
 
   commitOps(deps, ops, label, settings.autoSelect ? { select: [keptId] } : {});
   resetScratch(s);

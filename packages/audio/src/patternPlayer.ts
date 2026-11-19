@@ -96,32 +96,7 @@ export const checkTempo = (bpm: number): void => {
   }
 };
 
-/** Events by the whole step they are booked with. Throws on a step that is not finite. */
-function indexByStep(events: readonly PatternEvent[]): Map<number, PatternEvent[]> {
-  for (const e of events) {
-    if (!Number.isFinite(e.step)) throw new RangeError(`@weasel-js/audio: a pattern event's step is finite, not ${e.step}`);
-  }
-  const byStep = new Map<number, PatternEvent[]>();
-  for (const e of events) {
-    const step = Math.floor(e.step);
-    const list = byStep.get(step);
-    if (list) list.push(e);
-    else byStep.set(step, [e]);
-  }
-  return byStep;
-}
-
-/** What `f` threw, if it threw. */
-function attempt(f: () => void): { err: unknown } | null {
-  try {
-    f();
-    return null;
-  } catch (err) {
-    return { err };
-  }
-}
-
-/** Play one event at `at`, engine ms, its gate counted in steps of `stepMs`. */
+/** Play one event at `at`, gated for its length in steps of `stepMs`. */
 function playEvent(engine: AudioEngine, e: PatternEvent, at: number, detune: number, stepMs: number): VoiceHandle {
   if ('sound' in e) {
     const { step: _s, sound, ...play } = e;
@@ -159,7 +134,16 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
   let byStep = new Map<number, PatternEvent[]>();
   const setEvents = (events: readonly PatternEvent[], len?: number): void => {
     if (len !== undefined) checkSteps('length', len);
-    byStep = indexByStep(events);
+    for (const e of events) {
+      if (!Number.isFinite(e.step)) throw new RangeError(`@weasel-js/audio: a pattern event's step is finite, not ${e.step}`);
+    }
+    byStep = new Map();
+    for (const e of events) {
+      const step = Math.floor(e.step);
+      const list = byStep.get(step);
+      if (list) list.push(e);
+      else byStep.set(step, [e]);
+    }
     length = len ?? patternLength(events, stepsPerBeat);
   };
   setEvents(opts.events ?? [], opts.length);
@@ -193,21 +177,28 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
     }
     const step = count % length;
     const ran = run;
+    // Every event is tried, and the next step booked, before the first throw is passed on:
+    // otherwise one bad event would silence the rest of its step and every step after it.
+    let failure: { err: unknown } | null = null;
     inStep = true;
-    let refused = attempt(() => opts.beforeStep?.(step, when, count));
-    inStep = false;
+    try {
+      opts.beforeStep?.(step, when, count);
+    } catch (err) {
+      failure = { err };
+    } finally {
+      inStep = false;
+    }
     if (!running || run !== ran) {
-      if (refused) throw refused.err;
+      if (failure) throw failure.err;
       return;
     }
     for (const v of voices) if (!v.isPlaying()) voices.delete(v);
-    // Each event on its own: one the engine refuses must not cost the rest of the step, or the next one.
     for (const e of byStep.get(step) ?? []) {
       try {
         const detune = (e.detune ?? 0) + (typeof drift === 'function' ? drift(e.step) : drift);
         voices.add(playEvent(engine, e, when + (e.step - step) * stepMs(), detune, stepMs()));
       } catch (err) {
-        refused ??= { err };
+        failure ??= { err };
       }
     }
     // Read before `onStep`: a tempo set there starts with the next step, and
@@ -226,7 +217,7 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
         book();
       }
     }
-    if (refused) throw refused.err;
+    if (failure) throw failure.err;
   };
 
   return {

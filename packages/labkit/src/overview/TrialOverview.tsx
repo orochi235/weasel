@@ -25,11 +25,11 @@ import {
 } from '@weasel-js/core';
 import type { Rect } from '@weasel-js/geom';
 import {
+  createMinimapCenterAction,
+  createMinimapPanAction,
   crosshairRects,
   MINIMAP_CENTER_ACTION_ID,
   MINIMAP_PAN_ACTION_ID,
-  minimapCenterAction,
-  minimapPanAction,
 } from '@weasel-js/minimap';
 import {
   type CSSProperties,
@@ -335,7 +335,10 @@ function OverviewDispatch({
 
   useEffect(() => {
     if (!registry) return;
-    const offs = [registry.register(minimapCenterAction()), registry.register(minimapPanAction())];
+    const offs = [
+      registry.register(createMinimapCenterAction()),
+      registry.register(createMinimapPanAction()),
+    ];
     return () => {
       for (const off of offs) off();
     };

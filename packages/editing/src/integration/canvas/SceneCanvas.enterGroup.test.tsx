@@ -8,10 +8,11 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
-import { modeTriggers, SceneCanvas } from '@weasel-js/core';
+import { createModeTriggersContribution, SceneCanvas } from '@weasel-js/core';
 import { createScene, asNodeId, createEnteredGroup, useEnteredGroup, type EnteredGroupApi } from '@weasel-js/core/engine';
 import type { SelectionApi, BindingOverrides } from '@weasel-js/routing';
-import { drawPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -40,7 +41,7 @@ function setup(opts: { entered?: (scene: never) => EnteredGroupApi; overrides?: 
     sel = useSelection({ mode: 'multiple' });
     return (
       <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={300} height={40} selection={sel}
-        ambient={[modeTriggers(registry, { enter })]} modes={registry}
+        ambient={[createModeTriggersContribution(registry, { enter })]} modes={registry}
         {...(entered ? { enteredGroup: entered } : {})}
         {...(opts.overrides ? { bindingOverrides: opts.overrides } : {})} />
     );

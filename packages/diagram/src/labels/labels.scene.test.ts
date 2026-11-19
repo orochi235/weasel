@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, createSetPoseOp, documentPose, type RectPose, type Scene } from '@weasel-js/core';
+import { createScene, documentPose, type RectPose, type Scene } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
 import type { RowTextStyle } from '../body';
 import { edgeLabelSpec, labelSize } from '../edgeLabel';
 import { diagramLabelOf, type DiagramLabel } from '../labelTrait';
 import { installLabelPlacement } from './install';
+import * as ops from '@weasel-js/core/ops';
 
 type LabelScene = Scene<unknown, 'main', RectPose>;
 
@@ -33,7 +34,7 @@ function load(label: DiagramLabel = { at: 'mid', offset: 9 }) {
   const placement = installLabelPlacement(scene);
   const adapter = { setPose: (id: string, pose: RectPose) => scene.setPose(id as never, pose) };
   const move = (id: string, to: RectPose) =>
-    scene.applyBatch([createSetPoseOp({ id, from: scene.get(id as never)!.pose, to })], 'Move', adapter);
+    scene.applyBatch([ops.setPose({ id, from: scene.get(id as never)!.pose, to })], 'Move', adapter);
   return { scene, placement, move };
 }
 

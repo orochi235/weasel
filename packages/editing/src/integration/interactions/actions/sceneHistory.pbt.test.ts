@@ -7,11 +7,12 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import type { ImmediateInvoker } from '@weasel-js/routing';
-import { createScene, createInsertOp, createSetPoseOp, defaultCommitAdapter } from '@weasel-js/core/engine';
+import { createScene, defaultCommitAdapter } from '@weasel-js/core/engine';
 import type { NodeId, Scene, Op } from '@weasel-js/core';
 import type { RectPose } from '@weasel-js/core/engine';
-import { createDeleteOp, createReparentOp, createMoveToIndexOp, createReorderOp, type ReorderDirection, createSetLayerOp, createSetHiddenOp, createSetLockedOp, createSetDependsOnOp } from '@weasel-js/core';
+import { type ReorderDirection } from '@weasel-js/core';
 import { groupAction, ungroupAction } from '@weasel-js/editing';
+import * as coreOps from '@weasel-js/core/ops';
 
 type S = Scene<Record<string, never>, 'main' | 'top', RectPose>;
 interface Real { scene: S; adapter: ReturnType<typeof defaultCommitAdapter<RectPose>> }
@@ -102,7 +103,7 @@ class Insert extends Edit {
     const node = {
       id: r.scene.mintId(), kind: this.group ? 'group' : 'mark', layer: 'main', pose: this.pose, data: {}, parent,
     };
-    commit(r, [createInsertOp({ node, index: this.index })], 'Insert');
+    commit(r, [coreOps.insert({ node, index: this.index })], 'Insert');
   }
   toString(): string { return `Insert(${this.group ? 'group' : 'mark'}, parent ${this.parent}, @${this.index})`; }
 }
@@ -111,7 +112,7 @@ class Delete extends Edit {
   constructor(readonly pick: number) { super(); }
   edit(r: Real): void {
     const id = pickFrom(ids(r.scene), this.pick);
-    if (id) commit(r, [createDeleteOp({ node: r.scene.get(id)! })], 'Delete');
+    if (id) commit(r, [coreOps.delete({ node: r.scene.get(id)! })], 'Delete');
   }
   toString(): string { return `Delete(${this.pick})`; }
 }
@@ -120,7 +121,7 @@ class SetPose extends Edit {
   constructor(readonly pick: number, readonly pose: RectPose) { super(); }
   edit(r: Real): void {
     const id = pickFrom(ids(r.scene), this.pick);
-    if (id) commit(r, [createSetPoseOp({ id, from: r.scene.get(id)!.pose, to: this.pose })], 'Move');
+    if (id) commit(r, [coreOps.setPose({ id, from: r.scene.get(id)!.pose, to: this.pose })], 'Move');
   }
   toString(): string { return `SetPose(${this.pick}, ${JSON.stringify(this.pose)})`; }
 }
@@ -131,7 +132,7 @@ class Reparent extends Edit {
     const id = pickFrom(ids(r.scene), this.pick);
     if (!id) return;
     const to = this.to === null ? null : pickFrom(groups(r.scene), this.to) ?? null;
-    commit(r, [createReparentOp({
+    commit(r, [coreOps.reparent({
       id, fromParentId: r.scene.get(id)!.parent ?? null, toParentId: to,
       ...(this.index !== undefined ? { toIndex: this.index } : {}),
     })], 'Reparent');
@@ -149,15 +150,15 @@ class Other extends Edit {
     const node = r.scene.get(id)!;
     const directions: ReorderDirection[] = ['forward', 'backward', 'front', 'back'];
     switch (this.which % 6) {
-      case 0: commit(r, [createReorderOp({ ids: [id, pickFrom(all, this.other)!], direction: directions[this.other % 4]! })], 'Reorder'); break;
-      case 1: commit(r, [createMoveToIndexOp({ ids: [id], parentId: node.parent ?? null, index: this.other % 4 })], 'MoveToIndex'); break;
-      case 2: commit(r, [createSetLayerOp({ id, from: node.layer, to: this.flag ? 'top' : 'main' })], 'SetLayer'); break;
-      case 3: commit(r, [createSetHiddenOp({ id, from: node.hidden === true, to: this.flag })], 'SetHidden'); break;
-      case 4: commit(r, [createSetLockedOp({ id, from: node.locked === true, to: this.flag })], 'SetLocked'); break;
+      case 0: commit(r, [coreOps.reorder({ ids: [id, pickFrom(all, this.other)!], direction: directions[this.other % 4]! })], 'Reorder'); break;
+      case 1: commit(r, [coreOps.moveToIndex({ ids: [id], parentId: node.parent ?? null, index: this.other % 4 })], 'MoveToIndex'); break;
+      case 2: commit(r, [coreOps.setLayer({ id, from: node.layer, to: this.flag ? 'top' : 'main' })], 'SetLayer'); break;
+      case 3: commit(r, [coreOps.setHidden({ id, from: node.hidden === true, to: this.flag })], 'SetHidden'); break;
+      case 4: commit(r, [coreOps.setLocked({ id, from: node.locked === true, to: this.flag })], 'SetLocked'); break;
       default: {
         const source = pickFrom(all, this.other)!;
         const from = node.dependsOn as readonly string[] | 'children' | undefined;
-        commit(r, [createSetDependsOnOp({ id, from, to: this.flag && source !== id ? [source] : undefined })], 'SetDependsOn');
+        commit(r, [coreOps.setDependsOn({ id, from, to: this.flag && source !== id ? [source] : undefined })], 'SetDependsOn');
       }
     }
   }
@@ -275,14 +276,14 @@ class OpThenInverse implements fc.Command<Model, Real> {
     const all = ids(r.scene);
     const id = pickFrom(all, this.pick);
     switch (this.which % 4) {
-      case 0: return createInsertOp({ node: { id: r.scene.mintId(), kind: 'mark', layer: id ? r.scene.get(id)!.layer : 'main', pose: this.pose, data: {}, parent: id ?? null }, index: this.pick % 3 });
-      case 1: return id ? createDeleteOp({ node: r.scene.get(id)! }) : null;
-      case 2: return id ? createSetPoseOp({ id, from: r.scene.get(id)!.pose, to: this.pose }) : null;
+      case 0: return coreOps.insert({ node: { id: r.scene.mintId(), kind: 'mark', layer: id ? r.scene.get(id)!.layer : 'main', pose: this.pose, data: {}, parent: id ?? null }, index: this.pick % 3 });
+      case 1: return id ? coreOps.delete({ node: r.scene.get(id)! }) : null;
+      case 2: return id ? coreOps.setPose({ id, from: r.scene.get(id)!.pose, to: this.pose }) : null;
       default: {
         if (!id) return null;
         const to = this.to === null ? null : pickFrom(groups(r.scene), this.to) ?? null;
         if (to !== null && (to === id || r.scene.ancestorsOf(to).includes(id))) return null;
-        return createReparentOp({ id, fromParentId: r.scene.get(id)!.parent ?? null, toParentId: to, toIndex: this.pick % 3 });
+        return coreOps.reparent({ id, fromParentId: r.scene.get(id)!.parent ?? null, toParentId: to, toIndex: this.pick % 3 });
       }
     }
   }

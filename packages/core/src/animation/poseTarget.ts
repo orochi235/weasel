@@ -146,16 +146,22 @@ export function createPoseTarget<TPose>(opts: PoseTargetOptions<TPose>): Target<
   return target;
 }
 
-/** Each scene's pose targets by node id, and the size at which the next one made sweeps them. */
-const sceneTargets = createPart((_overrides: object) => ({ byId: new Map<string, Target<unknown>>(), sweepAt: 64 }));
+interface SceneTargets {
+  readonly targets: Map<string, Target<unknown>>;
+  /** The size at which the next lookup drops the targets of nodes deleted while at rest. */
+  sweepAt: number;
+}
 
-/**
- * Drops the targets of nodes gone from the scene while at rest, which nothing asks for again.
- * Run as the table doubles, so a session that animates and deletes nodes keeps no target per id.
- */
-function sweepTargets(scene: PoseSource<unknown>, made: { byId: Map<string, Target<unknown>>; sweepAt: number }): void {
-  for (const [id, t] of made.byId) if (!t.active && !scene.get(id as NodeId)) made.byId.delete(id);
-  made.sweepAt = Math.max(64, made.byId.size * 2);
+const SWEEP_FLOOR = 64;
+const sceneTargets = createPart((_overrides: object): SceneTargets => ({ targets: new Map(), sweepAt: SWEEP_FLOOR }));
+
+/** Drop the at-rest targets of nodes the scene no longer holds, at most once per doubling of the table. */
+function sweep(table: SceneTargets, scene: PoseSource<unknown>): void {
+  if (table.targets.size < table.sweepAt) return;
+  for (const [id, target] of table.targets) {
+    if (!target.active && !scene.get(id as NodeId)) table.targets.delete(id);
+  }
+  table.sweepAt = Math.max(SWEEP_FLOOR, table.targets.size * 2);
 }
 
 /** Whether two poses hold the same fields, compared without allocating: a running target asks on every publish. */
@@ -188,21 +194,20 @@ export function scenePoseTarget<TPose>(
   descriptor?: PoseDescriptor<TPose>,
 ): Target<TPose> | undefined {
   const table = sceneTargets(scene.overrides);
-  const made = table.byId;
+  const made = table.targets;
   const nid = id as NodeId;
   const node = scene.get(nid);
   const by = descriptor ?? (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>);
   const held = made.get(id) as Target<TPose> | undefined;
-  // A node removed mid-flight keeps its target until the flight ends; one removed at rest has none.
-  if (held && !node && !held.active) {
-    made.delete(id);
+  // A node removed mid-flight keeps its target until the flight rests; one removed at rest has none.
+  if (held?.active) return held;
+  if (!node) {
+    if (held) made.delete(id);
     return undefined;
   }
   // A pose that has changed shape at rest, a polygon given more points, needs axes made for it.
-  const fits = !held || held.active || !node
-    || poseAxes(by, documentPose(scene, node))?.count === held.axisCount;
-  if (held && fits) return held;
-  if (!node) return undefined;
+  if (held && poseAxes(by, documentPose(scene, node))?.count === held.axisCount) return held;
+  sweep(table, scene as PoseSource<unknown>);
   // A node removed mid-flight keeps answering with the last pose it had.
   let last = documentPose(scene, node);
   /** The node's pose as an animation last left it, or as it was when the first one started. */
@@ -241,7 +246,6 @@ export function scenePoseTarget<TPose>(
     return !!n && mine !== undefined && !samePoseShallow(n.pose, mine);
   });
   if (!target) return undefined;
-  if (made.size >= table.sweepAt) sweepTargets(scene as PoseSource<unknown>, table);
   made.set(id, target as Target<unknown>);
   return target;
 }

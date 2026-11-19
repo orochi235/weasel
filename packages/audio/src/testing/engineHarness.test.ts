@@ -1,36 +1,47 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import { createFilterEffect } from '../effects';
 import { engineHarness } from './engineHarness';
-import { createFakeMediaElement } from './fakeAudioContext';
+import { fakeTimers } from './fakeTimers';
 
 describe('engineHarness', () => {
-  it('keeps the scheduler running beside another engine timer', async () => {
-    const { engine, run } = await engineHarness();
-    const fire = vi.fn();
-    engine.schedule(1000, fire);
-    const voice = engine.stream(createFakeMediaElement() as never);
-    await run(100);
-    // A fading stop waits on a timer of its own beside the scheduler's pass.
-    voice.stop(300);
-    await run(1100);
-    expect(fire).toHaveBeenCalledTimes(1);
-  });
-
-  it('keeps the scheduler running when another engine timer is cancelled', async () => {
-    const { engine, run } = await engineHarness();
-    const fire = vi.fn();
-    engine.schedule(1000, fire);
-    const voice = engine.stream(createFakeMediaElement() as never);
-    await run(100);
-    voice.stop(300);
-    await run(50);
-    voice.stop(0);
-    await run(1100);
-    expect(fire).toHaveBeenCalledTimes(1);
+  it('keeps the scheduler running beside another timer the engine arms', async () => {
+    const { ctx, engine, run, starts } = await engineHarness();
+    // An insert's fade waits through its own timer, beside the scheduler's pass.
+    engine.bus('sfx').inserts.add(createFilterEffect(engine.context, { frequency: 800 }));
+    await run(200);
+    engine.playNote({ pitch: 220, when: engine.now() + 300 });
+    await run(400);
+    expect(ctx._oscillators).toHaveLength(1);
+    expect(starts()).toEqual([500]);
   });
 
   it('advances the clock by exactly the time asked for', async () => {
     const { ctx, run } = await engineHarness();
+    await run(10);
+    expect(ctx.currentTime).toBeCloseTo(0.01, 9);
     await run(30);
-    expect(ctx.currentTime).toBeCloseTo(0.03, 9);
+    expect(ctx.currentTime).toBeCloseTo(0.04, 9);
+  });
+});
+
+describe('fakeTimers', () => {
+  it('clears only the timer whose handle it is given', () => {
+    const t = fakeTimers();
+    const ran: string[] = [];
+    const a = t.setTimer(() => ran.push('a'));
+    t.setTimer(() => ran.push('b'));
+    t.clearTimer(a);
+    t.fire();
+    expect(ran).toEqual(['b']);
+  });
+
+  it('runs a timer armed by a callback on the next fire, not this one', () => {
+    const t = fakeTimers();
+    const ran: string[] = [];
+    t.setTimer(() => { ran.push('a'); t.setTimer(() => ran.push('b')); });
+    t.fire();
+    expect(ran).toEqual(['a']);
+    t.fire();
+    expect(ran).toEqual(['a', 'b']);
   });
 });

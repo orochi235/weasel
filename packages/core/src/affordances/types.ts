@@ -96,9 +96,9 @@ export interface AffordanceRegion<TScratch = unknown> {
          *  selection's AABB. */
         innerX: number; innerY: number; innerWidth: number; innerHeight: number;
         /** Minimum band thickness outside the inner rect, in **screen**
-         *  pixels. The framework widens `rx`/`ry` on each axis to at least
-         *  `pxExtent(minBandPx, view.scale)` past the cutout edge farther
-         *  from (`cx`, `cy`), for both paint and hit-test.
+         *  pixels. The framework widens `rx`/`ry` to at least
+         *  `innerHalfExtent + pxExtent(minBandPx, view.scale)` on each axis
+         *  for both paint and hit-test.
          *
          *  In screen pixels because the clamp has to know the view and the affordance
          *  doesn't: `ChromeState` carries no scale. */

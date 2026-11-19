@@ -18,49 +18,11 @@ const refusesNoise = (noise: NoiseOptions): void => {
   expect(() => createNoiseKernel(noise, 48000)).toThrow(RangeError);
 };
 
-describe('synth patch checks', () => {
-  it('refuses a duration that is not a finite number of ms, 0 or more', () => {
-    for (const duration of [NaN, Infinity, -1]) {
-      refusesNote({ pitch: 'A4', duration });
-      refusesNoise({ noise: 'white', duration });
-    }
-  });
-
-  it('refuses an envelope time or sustain that is not finite', () => {
-    for (const key of ['attack', 'decay', 'sustain', 'release'] as const) {
-      refusesNote({ pitch: 'A4', duration: 100, envelope: { [key]: NaN } });
-      refusesNoise({ noise: 'pink', duration: 100, envelope: { [key]: Infinity } });
-    }
-  });
-
-  it('refuses a filter number that is not finite, its envelope included', () => {
-    refusesNote({ pitch: 'A4', filter: { frequency: NaN } });
-    refusesNote({ pitch: 'A4', filter: { frequency: 800, Q: Infinity } });
-    refusesNote({ pitch: 'A4', filter: { frequency: 800, gain: NaN } });
-    refusesNote({ pitch: 'A4', filter: { frequency: 800, amount: NaN, envelope: {} } });
-    refusesNoise({ noise: 'white', filter: { frequency: 800, amount: 100, envelope: { decay: NaN } } });
-  });
-
-  it('refuses a glide time that is not a finite number of ms', () => {
-    refusesNote({ pitch: 'A4', glide: { to: 'C5', ms: NaN } });
-    refusesNote({ pitch: 'A4', glide: { to: 'C5', ms: -5 } });
-  });
-
-  it('refuses a partial gain that is not finite', () => {
-    refusesNote({ pitch: 'A4', wave: { partials: [{ ratio: 1, gain: NaN }, { ratio: 2 }] } });
-    refusesNote({ pitch: 'A4', wave: { partials: [{ ratio: 1, gain: Infinity }] } });
-  });
-
+describe('synth patch name checks', () => {
   it('refuses a wave name outside the four built-ins, an inherited key included', () => {
     for (const wave of ['Sine', 'custom', 'toString', '__proto__']) {
       refusesNote({ pitch: 'A4', wave: wave as NoteOptions['wave'] });
     }
-  });
-
-  it('refuses a harmonic wave with no levels, or a level that is not finite', () => {
-    refusesNote({ pitch: 'A4', wave: [] });
-    refusesNote({ pitch: 'A4', wave: [1, NaN] });
-    refusesNote({ pitch: 'A4', wave: [Infinity] });
   });
 
   it('refuses a filter type the node does not have, wherever a filter is built', () => {

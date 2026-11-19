@@ -12,7 +12,9 @@ import { useDepRegistry } from '@weasel-js/routing/react';
 import { createScene } from '@weasel-js/core/engine';
 import { asNodeId, type Scene } from '@weasel-js/core/engine';
 import type { SelectionApi } from '@weasel-js/routing';
-import { pickPreset, useSelection, selectionPreset } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import { pickPreset } from '../../../presets/composites';
+import { selectionPreset } from '../../../presets/selection';
 
 type D = { kind: 'rect' };
 type L = 'main';

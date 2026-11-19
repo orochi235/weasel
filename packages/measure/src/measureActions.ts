@@ -1,7 +1,7 @@
 import type { Action, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { defineAction, resolveParams } from '@weasel-js/routing';
 import {
-  type AnyScene, commitOps, type NodeId, SNAP_ANGLE_STEP, SNAP_ROLES, snapMods, spanSnap, createUnitFrameLookup,
+  type AnyScene, commitOps, type NodeId, SNAP_ANGLE_STEP, SNAP_ROLES, snapMods, createSpanSnap, createUnitFrameLookup,
 } from '@weasel-js/core';
 import {
   measureBetween, measureEndsOf, withMeasureEnd,
@@ -45,7 +45,7 @@ export function measureCreateAction(ms: Measurements): Action {
       start(ctx, opts) {
         const deps = ctx.deps;
         // Read on every event, so a step changed mid-drag reaches it.
-        const snap = spanSnap(deps.snap, () => {
+        const snap = createSpanSnap(deps.snap, () => {
           return { step: resolveParams(opts?.params)?.angleStep ?? SNAP_ANGLE_STEP };
         });
         const scene = deps.scene as AnyScene | undefined;

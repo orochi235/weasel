@@ -7,7 +7,8 @@ import { waypointFollower } from '../waypointFollower';
 import { diagramCanDropInto } from './canDropInto';
 import { CONTAINER_STENCILS, addLane, containerBuild, lanesOf, releaseMembers } from './containerStencils';
 import { titleIdOf } from './trait';
-import { nudgePreset, moveAction, resizeAction } from '@weasel-js/editing';
+import { moveAction, resizeAction } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 type Scene = ReturnType<typeof makeScene>;
 
@@ -195,7 +196,7 @@ describe('pools in a scene', () => {
     const [first] = lanesOf(scene as never, pool);
     shape(scene, 's', { x: 100, y: 30, width: 40, height: 20 }, first);
     const entries = scene.historyIndex();
-    const nudge = nudgePreset.actions!.find((a) => a.id === 'nudge.down')!.invoker as { run: (d: never, p?: never) => void };
+    const nudge = presets.nudge.actions!.find((a) => a.id === 'nudge.down')!.invoker as { run: (d: never, p?: never) => void };
     nudge.run({ scene, operands: { get: () => [first!] } } as never, { magnitude: 'large' } as never);
     expect(pose(scene, first!)).toEqual({ x: 32, y: 0, width: 448, height: 120 });
     expect(pose(scene, 's')).toMatchObject({ y: 30 });

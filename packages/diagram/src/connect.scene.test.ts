@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createScene, pageRunOf, type InvocationCtx, type Scene } from '@weasel-js/core';
 import { commitEdgeToScene, DEFAULT_EDGE_STROKE } from './connect';
-import { connectorTool } from './connectorTool';
+import { createConnectorTool } from './connectorTool';
 import { DIAGRAM_EDGE, EDGE_DERIVE_PATH, withDiagramRegistry } from './edge';
 import { diagramEdgeOf } from './edgeTrait';
 import { pagedScene } from './offPage/pagedFixture';
@@ -142,7 +142,7 @@ describe('the connect action\'s edgeStroke option', () => {
     const scene = sceneWithTwo();
     const participants = () => (['a', 'b'] as const).map((id) => ({ node: scene.get(id as never)!, pose: scene.get(id as never)!.pose }));
     const stroke = { paint: { color: '#333' }, width: 2 };
-    const invoker = connectorTool<Rect>({ participants, edgeStroke: stroke }).actions![0]!.invoker!;
+    const invoker = createConnectorTool<Rect>({ participants, edgeStroke: stroke }).actions![0]!.invoker!;
     if (invoker.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
     const ctx = (x: number) => ({
       world: { x, y: 20 }, screen: { x, y: 20 }, modifiers: { alt: false, shift: false, meta: false, ctrl: false },

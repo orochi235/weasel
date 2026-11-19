@@ -8,12 +8,10 @@ export interface FakeSource extends FakeNode {
   started: number[];
   /** The `offset` of each `start`, 0 when none was given. */
   offsets: number[];
-  /** The `duration` of each `start`, in buffer seconds; Infinity when none was given. */
-  durations: number[];
   stopped: number[];
   ended: boolean;
   onended: (() => void) | null;
-  start(when?: number, offset?: number, duration?: number): void;
+  start(when?: number, offset?: number): void;
   stop(when?: number): void;
 }
 
@@ -33,10 +31,6 @@ export interface FakeOscillator extends FakeNode {
   stop(when?: number): void;
 }
 
-const requireStartTime = (when: number): void => {
-  if (when < 0) throw new RangeError(`start time ${when} is negative`);
-};
-
 /** A buffer source whose `start` and `stop` default to `now()`. */
 export function createFakeBufferSource(now: () => number): FakeSource {
   const s: FakeSource = node('source', {
@@ -46,20 +40,15 @@ export function createFakeBufferSource(now: () => number): FakeSource {
     detune: param(0),
     started: [] as number[],
     offsets: [] as number[],
-    durations: [] as number[],
     stopped: [] as number[],
     ended: false,
     onended: null as (() => void) | null,
-    start(when = now(), offset = 0, duration = Infinity) {
+    start(when = now(), offset = 0) {
       if (s.started.length > 0) {
         throw new Error('InvalidStateError: start may only be called once');
       }
-      requireStartTime(when);
-      if (offset < 0) throw new RangeError(`start offset ${offset} is negative`);
-      if (duration < 0) throw new RangeError(`start duration ${duration} is negative`);
       s.started.push(when);
       s.offsets.push(offset);
-      s.durations.push(duration);
     },
     stop(when = now()) {
       if (s.started.length === 0) {
@@ -87,7 +76,6 @@ export function createFakeOscillator(now: () => number): FakeOscillator {
       if (o.started.length > 0) {
         throw new Error('InvalidStateError: start may only be called once');
       }
-      requireStartTime(when);
       o.started.push(when);
     },
     stop(when = now()) {
@@ -100,26 +88,29 @@ export function createFakeOscillator(now: () => number): FakeOscillator {
   return o;
 }
 
-/** When a buffer source runs out on its own: the buffer left past its offset
- *  (unless it loops), or the `duration` given to `start`, whichever is shorter,
- *  played at the current playback rate. A rate of 0 or less never runs out. */
-function runsOutAt(s: FakeSource): number {
-  const length = (s.buffer as { duration?: number } | null)?.duration;
-  const left = s.loop || length == null ? Infinity : Math.max(0, length - s.offsets[0]);
-  const content = Math.min(left, s.durations[0]);
-  const rate = s.playbackRate.value;
-  if (content === Infinity || rate <= 0) return Infinity;
-  return s.started[0] + content / rate;
+/**
+ * When a non-looping buffer source runs out, in context seconds: what is left
+ * of its buffer after the start offset (clamped to the buffer, as the
+ * specification clamps it), at the computed rate `playbackRate · 2^(detune/1200)`.
+ * A rate of 0 never runs out; a negative one plays back to the buffer's start.
+ */
+function bufferEnd(s: FakeSource): number {
+  const duration = (s.buffer as { duration?: number } | null)?.duration;
+  if (s.loop || duration == null) return Infinity;
+  const offset = Math.min(Math.max(s.offsets[0] ?? 0, 0), duration);
+  const rate = s.playbackRate.value * 2 ** (s.detune.value / 1200);
+  if (rate === 0) return Infinity;
+  return s.started[0] + (rate > 0 ? duration - offset : offset) / Math.abs(rate);
 }
 
 /**
  * Whether a started source has reached its end by `now`: its last `stop` (the
- * specification lets a later call replace an earlier one), or the end of what
- * a buffer source was given to play.
+ * specification lets a later call replace an earlier one), or the end of a
+ * non-looping buffer.
  */
 export function dueToEnd(s: FakeSource | FakeOscillator, now: number): boolean {
   if (s.ended || s.started.length === 0) return false;
   const stopAt = s.stopped.length > 0 ? s.stopped[s.stopped.length - 1] : Infinity;
-  const endsAt = 'buffer' in s ? runsOutAt(s) : Infinity;
+  const endsAt = 'buffer' in s ? bufferEnd(s) : Infinity;
   return now + 1e-9 >= Math.min(stopAt, endsAt);
 }

@@ -9,7 +9,7 @@ import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { DEVTOOLS_PROTOCOL, type PageMessage, type PanelMessage } from './protocol';
 import { createInPageTransports } from './transport';
 import { devtools } from './attach';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 type D = { color: string };
 type L = 'main';
@@ -46,7 +46,7 @@ function mount() {
       initial: [{ id: 'a' as NodeId, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { color: 'red' } }],
     });
     scene = s;
-    return <SceneCanvas features={[drawPreset]} scene={s} width={200} height={200} aria-label="board">{child && <ExtraDep />}</SceneCanvas>;
+    return <SceneCanvas features={[presets.draw]} scene={s} width={200} height={200} aria-label="board">{child && <ExtraDep />}</SceneCanvas>;
   }
   render(<WithDevtools><Harness /></WithDevtools>);
   const hook = window.__weaselDevtools__!;

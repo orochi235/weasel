@@ -1,11 +1,12 @@
-/** The shape builder over a scene's path leaves, through the `booleansAdapter` `drawPreset` brings, with nothing published by the consumer. */
+/** The shape builder over a scene's path leaves, through the `booleansAdapter` `presets.draw` brings, with nothing published by the consumer. */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { boundsOfPath, type Path } from '@weasel-js/geom';
 import { createScene, SceneCanvas, type NodeId, type SelectionApi } from '@weasel-js/core';
 import { useShapeBuilderTool } from './useShapeBuilderTool';
-import { drawPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 type P = { x: number; y: number; width: number; height: number };
 type D = { path: Path; fill: { paint: { color: string } } };
@@ -32,7 +33,7 @@ function mount() {
     const sel = useSelection({ scene, mode: 'multiple' });
     selection = sel;
     const shapeBuilder = useShapeBuilderTool();
-    return <SceneCanvas features={[drawPreset]} scene={scene} selection={sel} layers={{}} width={400} height={400} tools={{ shapeBuilder }} />;
+    return <SceneCanvas features={[presets.draw]} scene={scene} selection={sel} layers={{}} width={400} height={400} tools={{ shapeBuilder }} />;
   }
   const { container } = render(<Harness />);
   const canvas = container.querySelector('canvas')!;

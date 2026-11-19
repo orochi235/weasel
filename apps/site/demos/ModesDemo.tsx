@@ -13,12 +13,12 @@ import {
 } from '@weasel-js/modes';
 import { isApplePlatform } from '@weasel-js/gestures';
 import type { Fill } from '@weasel-js/core';
-import { modeShortcuts } from '@weasel-js/routing';
+import { createModeShortcutsContribution } from '@weasel-js/routing';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import styles from './ModesDemo.module.css';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset, transformPreset, shapeToolsOfferedPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const W = 620, H = 340;
 
@@ -93,7 +93,7 @@ export function ModesDemo() {
   }, [registry, scene, scoping]);
 
   const shortcuts = useMemo(
-    () => [modeShortcuts(registry, { enter, exit: () => registry.setMode('draw') })],
+    () => [createModeShortcutsContribution(registry, { enter, exit: () => registry.setMode('draw') })],
     [registry, enter],
   );
 
@@ -151,7 +151,7 @@ export function ModesDemo() {
             backgroundFill={{ color: '#ffffff' }}
             scene={scene}
             selectionOptions={{ mode: 'multiple' }}
-            features={[pickPreset, movePreset, transformPreset, shapeToolsOfferedPreset]}
+            features={[presets.pick, presets.move, presets.transform, presets.shapeToolsOffered]}
             defaultTools={['select', 'hand', 'rect', 'ellipse']}
             modes={registry}
             ambient={shortcuts}

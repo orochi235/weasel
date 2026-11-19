@@ -240,6 +240,13 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
+- **(P3) [agent] Put labkit's camera math on core's.** labkit exports its own `worldToScreen`,
+  `screenToWorld` and `zoomAt` (`labkit/src/canvas/canvasCoords.ts`, `camera.ts`) over a
+  `ViewTransform2D` plus a `WorldFrame`, beside core's functions of the same names over core's view: one
+  question with two answers, and a consumer importing both packages gets either by accident. Closes when
+  labkit's are written over core's (or core's take a frame) and the two packages export one function per
+  name (2026-11-18, export audit).
+
 ### Extension authoring and published consumers
 
 ---
@@ -265,6 +272,13 @@ Owner tags, after the priority (2026-10-26):
 ---
 
 ## Selection, actions & UI panels
+
+- **(P3) [agent] A `BandEditor` band's name leaves out the text it shows.** A band is a button named
+  "Band 1, 1 over 64 to 1 over 24" whose visible text, from `renderBand`, is "Icon", so a voice user saying "click
+  Icon" reaches nothing (WCAG 2.5.3; axe's `label-content-name-mismatch`, found 2026-11-18 by the story sweep in
+  `apps/forge/a11y.browser.test.tsx`). Too big for the sweep's pass: `renderBand` may hold its own inputs, so the
+  band's visible text can't simply join its name, and which part names it is a design call. Closes when a band's
+  name starts with its shown label and `BandEditor.stories.tsx` passes that rule.
 
 - **(P3) [maintainer] Trials in one labkit workspace have no way to share params.** Each trial owns its own
   settings, so two trials meant to show one setting from different angles each get their own copy, and editing it

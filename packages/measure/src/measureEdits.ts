@@ -1,10 +1,11 @@
 import {
-  type AnyNode, type AnyScene, createSetDataOp, createSetPoseOp, createDeleteNodeOp, createInsertNodeOp, type NodeId, type Op,
+  type AnyNode, type AnyScene, type NodeId, type Op,
 } from '@weasel-js/core';
 import {
   measureEndsOf, measureNode, measurePose, withMeasureEnd,
   type MeasureData, type MeasureEnd, type MeasureFrameAt, type MeasureFrames, type MeasurePoint,
 } from './measurement';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** The labels measurement edits land in history under. */
 export const MEASURE_LABELS = {
@@ -25,14 +26,14 @@ export function addMeasureOp(
   frames?: MeasureFrames,
 ): { id: NodeId; op: Op } {
   const id = scene.mintId();
-  return { id, op: createInsertNodeOp(measureNode(id, layer, start, end, frames), -1, MEASURE_LABELS.add) };
+  return { id, op: coreOps.insertNode(measureNode(id, layer, start, end, frames), -1, MEASURE_LABELS.add) };
 }
 
 /** `node` as it reads after `next`: what an edit writes and its preview shows. */
 function changeOps(node: AnyNode, next: { data: MeasureData; pose: unknown }, label: string): Op[] {
   return [
-    createSetPoseOp({ id: node.id, from: node.pose, to: next.pose, label }),
-    createSetDataOp({ id: node.id, from: node.data, to: next.data, label }),
+    coreOps.setPose({ id: node.id, from: node.pose, to: next.pose, label }),
+    coreOps.setData({ id: node.id, from: node.data, to: next.data, label }),
   ];
 }
 
@@ -70,7 +71,7 @@ export function deleteMeasureOps(scene: AnyScene, ids: readonly NodeId[], label:
   const ops: Op[] = [];
   for (const id of ids) {
     const node = scene.get(id);
-    if (node) ops.push(createDeleteNodeOp(scene, node, label));
+    if (node) ops.push(coreOps.deleteNode(scene, node, label));
   }
   return ops;
 }

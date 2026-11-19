@@ -15,26 +15,12 @@ import { entries } from './entries.ts';
 import { weaselIcons } from '../icons-plugin/src/index.ts';
 import { stableScopedName } from '../../scripts/vite-css-modules.ts';
 import { assertPackageBuild } from '../../scripts/lib/own-install.mjs';
+import { installedExternal } from '../../scripts/lib/installed-external.mjs';
 
 assertPackageBuild(import.meta.dirname);
 
-const pkg = JSON.parse(readFileSync(resolve(import.meta.dirname, 'package.json'), 'utf8')) as {
-  version: string;
-  dependencies?: Record<string, string>;
-  peerDependencies?: Record<string, string>;
-};
-
-// Everything a consumer installs stays external, subpaths included, so each
-// resolves to one copy. Every @weasel-js specifier does too, declared or not:
-// an undeclared one then reaches the smoke test's audit instead of being
-// silently inlined through the tsconfig paths.
-const installed = [
-  ...Object.keys(pkg.dependencies ?? {}),
-  ...Object.keys(pkg.peerDependencies ?? {}),
-  'react-dom',
-];
-const external = (id: string) =>
-  id.startsWith('@weasel-js/') || installed.some((d) => id === d || id.startsWith(`${d}/`));
+const pkg = JSON.parse(readFileSync(resolve(import.meta.dirname, 'package.json'), 'utf8')) as { version: string };
+const external = installedExternal(import.meta.dirname);
 
 export default defineConfig({
   plugins: [react(), weaselIcons.vite({ mode: 'library' })],

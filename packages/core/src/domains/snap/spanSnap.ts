@@ -31,7 +31,7 @@ export interface SpanSnap {
  * sessions, only `constrain` applies. `common` goes into every session's
  * request.
  */
-export function spanSnap(
+export function createSpanSnap(
   dep: SnapDep | undefined,
   constrain: () => SnapConstrain | undefined = () => undefined,
   common: Pick<SnapBegin, 'parent'> = {},

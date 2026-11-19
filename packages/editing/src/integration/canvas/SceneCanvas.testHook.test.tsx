@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeAll, afterAll, afterEach } from 'vitest
 import { render, act, cleanup } from '@testing-library/react';
 import { SceneCanvas, useScene, defineTool, type useTools } from '@weasel-js/core';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 type D = { color: string };
 type L = 'main';

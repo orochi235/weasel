@@ -1,0 +1,27 @@
+.demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-4);
+  width: min-content;
+}
+
+.parts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--wzl-space-1) var(--wzl-space-4);
+  margin: 0;
+  font-size: var(--wzl-font-size-sm);
+}
+
+.part {
+  display: contents;
+}
+
+.part dt {
+  color: var(--wzl-fg);
+}
+
+.part dd {
+  margin: 0;
+  color: var(--wzl-fg-muted);
+}

@@ -13,7 +13,7 @@ const setup = () => {
 describe('file source', () => {
   it('loops by default and restarts on each start', () => {
     const ctx = setup();
-    const buffer = ctx.createBuffer(1, 100 * 480, 48000);
+    const buffer = ctx.createBuffer(1, 100, 100);
     const node = createFileSourceNode(ctx as never, { buffer: buffer as never });
     node.start!(0);
     node.stop!(1);
@@ -28,7 +28,7 @@ describe('file source', () => {
 
   it('resumes where it stopped', () => {
     const ctx = setup();
-    const buffer = ctx.createBuffer(1, 200 * 480, 48000);
+    const buffer = ctx.createBuffer(1, 200, 100);
     const node = createFileSourceNode(ctx as never, { buffer: buffer as never });
     node.start!(0);
     ctx._advance(500);
@@ -39,7 +39,7 @@ describe('file source', () => {
 
   it('rewinds a non-looping file that played to its end', () => {
     const ctx = setup();
-    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 100 * 480, 48000) as never, loop: false });
+    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 100, 100) as never, loop: false });
     node.start!(0);
     ctx._advance(1500);
     expect(ctx._sources[0].ended).toBe(true);
@@ -49,9 +49,21 @@ describe('file source', () => {
     expect(ctx._sources[1].offsets[0]).toBe(0);
   });
 
+  it('restarts a non-looping file from the top when its stop fell after its end', () => {
+    const ctx = setup();
+    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 200, 100) as never, loop: false });
+    node.start!(0);
+    ctx._advance(1000);
+    node.stop!(5);
+    ctx._advance(5000);
+    node.start!(ctx.currentTime);
+    expect(ctx._sources).toHaveLength(2);
+    expect(ctx._sources[1].offsets[0]).toBe(0);
+  });
+
   it('a stopped node ending late does not rewind the one after it', () => {
     const ctx = setup();
-    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 200 * 480, 48000) as never, loop: false });
+    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 200, 100) as never, loop: false });
     node.start!(0);
     ctx._advance(500);
     node.stop!(ctx.currentTime);
@@ -65,7 +77,7 @@ describe('file source', () => {
 
   it('retunes the playing source with rate, and the next start uses it', () => {
     const ctx = setup();
-    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 100 * 480, 48000) as never });
+    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 100, 100) as never });
     node.start!(0);
     node.params.rate(1.5, 0);
     expect(ctx._sources[0].playbackRate.value).toBe(1.5);
@@ -76,7 +88,7 @@ describe('file source', () => {
 
   it('counts the resume offset from a start dated in the future', () => {
     const ctx = setup();
-    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 300 * 480, 48000) as never });
+    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 300, 100) as never });
     node.start!(1);
     ctx._advance(1500);
     node.stop!(ctx.currentTime);
@@ -86,7 +98,7 @@ describe('file source', () => {
 
   it('counts the resume offset from now for a start dated in the past', () => {
     const ctx = setup();
-    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 300 * 480, 48000) as never });
+    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 300, 100) as never });
     ctx._advance(1000);
     node.start!(0);
     ctx._advance(500);
@@ -97,7 +109,7 @@ describe('file source', () => {
 
   it('a rate write before a future start counts only from the start', () => {
     const ctx = setup();
-    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 400 * 480, 48000) as never });
+    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 400, 100) as never });
     node.start!(1);
     node.params.rate(2, 0);
     ctx._advance(1500);
@@ -108,7 +120,7 @@ describe('file source', () => {
 
   it('a rate write after a later stop retunes the node still sounding', () => {
     const ctx = setup();
-    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 400 * 480, 48000) as never });
+    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 400, 100) as never });
     node.start!(0);
     ctx._advance(500);
     node.stop!(1);
@@ -121,7 +133,7 @@ describe('file source', () => {
 
   it('counts a ramped rate by its ramp, not as a step', () => {
     const ctx = setup();
-    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 400 * 480, 48000) as never });
+    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 400, 100) as never });
     node.start!(0);
     node.params.rate(3, 1000);
     ctx._advance(1000);
@@ -132,7 +144,7 @@ describe('file source', () => {
 
   it('reports a non-looping file that plays to its end', () => {
     const ctx = setup();
-    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 100 * 480, 48000) as never, loop: false });
+    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 100, 100) as never, loop: false });
     const ended = vi.fn();
     node.start!(0, ended);
     ctx._advance(1500);
@@ -144,14 +156,14 @@ describe('file source', () => {
 
   it('does not loop when asked not to', () => {
     const ctx = setup();
-    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 100 * 480, 48000) as never, loop: false });
+    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 100, 100) as never, loop: false });
     node.start!(0);
     expect(ctx._sources[0].loop).toBe(false);
   });
 
   it('disposes the live source and the output', () => {
     const ctx = setup();
-    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 100 * 480, 48000) as never });
+    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 100, 100) as never });
     node.start!(0);
     node.dispose!();
     expect(ctx._sources[0].stopped).toHaveLength(1);
@@ -230,7 +242,7 @@ describe('every source', () => {
     for (const node of [
       createNoiseNode(ctx as never, { color: 'white' }),
       createOscillatorNode(ctx as never, {}),
-      createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 48000, 48000) as never }),
+      createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 10, 10) as never }),
     ]) {
       expect(node.inputs).toEqual({});
       expect(() => node.stop!(0)).not.toThrow();

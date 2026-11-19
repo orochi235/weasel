@@ -46,9 +46,9 @@ describe('RegistryDetail', () => {
   });
 
   it('renders an OpFactory entry with id', () => {
-    const entry: TreeEntry = { kind: 'opFactory', id: 'createInsertOp', label: 'createInsertOp' };
+    const entry: TreeEntry = { kind: 'opFactory', id: 'insert', label: 'ops.insert' };
     renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
-    expect(screen.getByText('createInsertOp')).toBeTruthy();
+    expect(screen.getByText('ops.insert')).toBeTruthy();
   });
 
   // `ingest` binds drop and paste with every modifier `'optional'`. A
@@ -139,15 +139,15 @@ describe('op kind detail', () => {
   it('names the factory that builds `transform`, not one named after the kind', () => {
     const entry: TreeEntry = { kind: 'opKind', id: 'transform', label: 'transform' };
     renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
-    expect(screen.getByText('createSetPoseOp')).toBeInTheDocument();
-    expect(screen.queryByText('createTransformOp')).toBeNull();
+    expect(screen.getByText('ops.setPose')).toBeInTheDocument();
+    expect(screen.queryByText('ops.transform')).toBeNull();
     expect(screen.getByText('function')).toBeInTheDocument();
   });
 
   it('labels a shape kind\'s transform link with that factory', () => {
     const entry: TreeEntry = { kind: 'shapeKind', id: 'rect', label: 'rect', trait: 'shape' };
     renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
-    expect(screen.getByText('createSetPoseOp')).toBeInTheDocument();
-    expect(screen.queryByText('createTransformOp')).toBeNull();
+    expect(screen.getByText('ops.setPose')).toBeInTheDocument();
+    expect(screen.queryByText('ops.transform')).toBeNull();
   });
 });

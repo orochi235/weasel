@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { linear } from '@weasel-js/geom';
+import { easeInBack, easeOutBack, linear } from '@weasel-js/geom';
 import { createScene } from '../core/scene/scene';
 import { effectivePose } from '../core/scene/effectivePose';
 import type { RectPose } from '../core/scene/types';
@@ -59,31 +59,42 @@ describe('tweenPose with `rewind`', () => {
     expect(done).toBe(0);
   });
 
-  it('turns forward again through an easing\'s overshoot, and ends only once its time is up', () => {
+  it('travels the rest of a redone move under an easing that overshoots, rather than snapping', () => {
     const { animator, frame, scene, a, adapter, shown } = setup();
-    // Up to 1.2 by halfway, then back down to 1.
-    const overshoot = (t: number): number => (t < 0.5 ? 2.4 * t : 1.2 - 0.4 * (t - 0.5));
     let done = 0;
     act(() => {
-      tweenPose(animator(), adapter, { id: a, to: at(100), ms: 100, easing: overshoot, rewind: true, onDone: () => { done += 1; } });
+      tweenPose(animator(), adapter, { id: a, to: at(100), ms: 100, easing: easeOutBack, rewind: true, onDone: () => { done += 1; } });
     });
     frame(0);
-    frame(60);
-    expect(shown().x).toBeCloseTo(116);
-    act(() => { scene.undo(); });
     frame(70);
+    act(() => { scene.undo(); });
     frame(80);
-    act(() => { scene.redo(); });
     frame(90);
-    // Turned forward where the eased value is past 1: still in the overshoot, not snapped to 100.
-    expect(shown().x).toBeGreaterThan(110);
-    expect(done).toBe(0);
+    act(() => { scene.redo(); });
+    // The back leg had run 20 ms when the redo turned it, so the move stands 60 ms along.
     frame(100);
-    expect(shown().x).toBeGreaterThan(105);
+    expect(animator().isActive(`pose:${a}`)).toBe(true);
+    expect(shown().x).toBeCloseTo(100 * easeOutBack(0.6));
     expect(done).toBe(0);
-    for (let t = 110; t <= 200; t += 10) frame(t);
+    frame(140);
+    frame(156);
     expect(shown().x).toBe(100);
     expect(done).toBe(1);
+  });
+
+  it('travels the rest of an undone move under an easing that undershoots, rather than snapping', () => {
+    const { animator, frame, scene, a, adapter, shown } = setup();
+    act(() => {
+      tweenPose(animator(), adapter, { id: a, to: at(100), ms: 100, easing: easeInBack, rewind: true });
+    });
+    frame(0);
+    frame(20);
+    act(() => { scene.undo(); });
+    frame(30);
+    expect(animator().isActive(`pose:${a}`)).toBe(true);
+    expect(shown().x).toBeCloseTo(100 * easeInBack(0.3));
+    frame(40);
+    expect(shown().x).toBeCloseTo(100 * easeInBack(0.2));
   });
 
   it('turns forward again when the undo is redone, and is done once it arrives', () => {

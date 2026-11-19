@@ -1,7 +1,7 @@
 import { asNodeId, SceneCanvas } from '@weasel-js/core';
 import type { ActionParamSchema, ActionTunings, TunedBinding } from '@weasel-js/core';
 import { DemoStage } from './DemoStage';
-import { arrangePreset, movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const W = 400, H = 300;
 
@@ -46,7 +46,7 @@ export function AlignDemo() {
       <SceneCanvas
         className="ckd-canvas"
         scene={SCENE}
-        features={[pickPreset, movePreset, transformPreset, arrangePreset]}
+        features={[presets.pick, presets.move, presets.transform, presets.arrange]}
         tune={TUNE}
         claimKeys
         selectionOptions={{ mode: 'multiple', initial: RECTS.map((r) => asNodeId(r.id)) }}

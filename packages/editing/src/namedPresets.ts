@@ -17,7 +17,8 @@ import { booleansPreset } from './presets/booleans';
 import { pathfinderPreset } from './presets/pathfinder';
 import { selectPreset } from './presets/select';
 import { selectionPreset } from './presets/selection';
-import { viewToolsPreset, BASELINE_ACTIONS, viewPreset } from '@weasel-js/core';
+import { BASELINE_ACTIONS } from '@weasel-js/core';
+import * as corePresets from '@weasel-js/core/presets';
 import { insertPreset } from './presets/insert';
 import { selectionChromePreset } from './presets/selectionChrome';
 import { selectToolsOfferedPreset, selectToolsPreset, shapeToolsOfferedPreset, shapeToolsPreset } from './presets/tools';
@@ -31,9 +32,9 @@ export const FEATURE_PRESETS = {
   'toolkit:select': selectToolsOfferedPreset,
   'toolkit:shape': shapeToolsOfferedPreset,
   'tools:select': selectToolsPreset,
-  'tools:view': viewToolsPreset,
+  'tools:view': corePresets.viewTools,
   'tools:shape': shapeToolsPreset,
-  view: viewPreset,
+  view: corePresets.view,
   select: selectPreset,
   outline: outlinePreset,
   pick: pickPreset,
@@ -71,7 +72,7 @@ const FEATURES = FEATURE_NAMES;
 
 /**
  * The kit's presets for the given names, in order: `namedFeatures('pick', 'move')`
- * is `[pickPreset, movePreset]`, and means exactly what passing those objects
+ * is `[presets.pick, presets.move]`, and means exactly what passing those objects
  * means. It resolves names only; nothing else is implied, so a canvas that
  * pans and zooms names `'view'` (or `'draw'`, which includes it). Importing it
  * puts every kit preset in the bundle; import the objects to carry only those.

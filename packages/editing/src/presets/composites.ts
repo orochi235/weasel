@@ -6,7 +6,7 @@ import { pathfinderPreset } from './pathfinder';
 import { selectPreset } from './select';
 import { selectToolsOfferedPreset, shapeToolsOfferedPreset } from './tools';
 import { movePreset, outlinePreset, resizePreset, rotatePreset } from './transform';
-import { viewPreset } from '@weasel-js/core';
+import * as corePresets from '@weasel-js/core/presets';
 
 /** Select, and the selection's outline. */
 export const pickPreset: FeaturePreset = { id: 'pick', label: 'Pick', includes: [selectPreset, outlinePreset] };
@@ -21,7 +21,7 @@ export const drawPreset: FeaturePreset = {
   id: 'draw',
   label: 'Draw',
   includes: [
-    viewPreset, selectPreset, outlinePreset, resizePreset, rotatePreset, movePreset, editPreset, arrangePreset,
+    corePresets.view, selectPreset, outlinePreset, resizePreset, rotatePreset, movePreset, editPreset, arrangePreset,
     pathfinderPreset, ingestPreset, selectToolsOfferedPreset, shapeToolsOfferedPreset,
   ],
 };

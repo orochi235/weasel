@@ -5,10 +5,11 @@
  */
 import { describe, it, expect } from 'vitest';
 import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
-import { createScene, createSetPoseOp } from '@weasel-js/core/engine';
+import { createScene } from '@weasel-js/core/engine';
 import { asNodeId, type NodeId, type RectPose } from '@weasel-js/core';
 import type { LayoutStrategy } from '@weasel-js/core/engine';
 import { moveAction } from './action';
+import * as ops from '@weasel-js/core/ops';
 
 const A = asNodeId('a');
 const OUTER = asNodeId('outer');
@@ -64,7 +65,7 @@ describe('moveAction — canDropInto', () => {
       getDropTargets: (_c: unknown, _k: unknown, d: { pose: RectPose }) => [{ pose: d.pose, origin: { x: d.pose.x, y: d.pose.y } }],
       reflowPoses: () => new Map(),
       commitDrop: (_c: unknown, _k: unknown, d: { id: string; originPose: RectPose; pose: RectPose }) =>
-        [createSetPoseOp<RectPose>({ id: d.id, from: d.originPose, to: d.pose, label: 'Drop' })],
+        [ops.setPose<RectPose>({ id: d.id, from: d.originPose, to: d.pose, label: 'Drop' })],
     } as unknown as LayoutStrategy<unknown>;
     const asked: [string, readonly string[]][] = [];
     const canDropInto = (parent: string, ids: readonly string[]) => {

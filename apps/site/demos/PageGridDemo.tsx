@@ -1,5 +1,5 @@
-import { SceneCanvas, useScene, viewPreset, type Fill, type PlacedPage } from '@weasel-js/core';
-import { movePreset, selectPreset } from '@weasel-js/editing';
+import { SceneCanvas, useScene, type Fill, type PlacedPage } from '@weasel-js/core';
+import * as presets from '@weasel-js/editing/presets';
 import { pageGridSchema, usePageGrid, usePaperLayer } from '@weasel-js/editor';
 import { pref } from '@weasel-js/prefs';
 import { usePrefGroup, usePrefsStore, usePrefsState } from '@weasel-js/prefs/react';
@@ -31,7 +31,7 @@ export function PageGridDemo() {
     <div className={s.demo}>
       <PrefsForm layout="list" {...form} />
       <SceneCanvas
-        features={[selectPreset, movePreset, viewPreset]}
+        features={[presets.select, presets.move, presets.view]}
         width={PAGE.width}
         height={PAGE.height}
         className="ckd-canvas"

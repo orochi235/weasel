@@ -1,5 +1,5 @@
 import { useActionsRegistry } from '@weasel-js/core';
-import { resamplePreset, pathsPreset } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import {
   type ConfigOf,
   defineInstrument,
@@ -15,7 +15,7 @@ import { PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 // Resample's params are in the last-operation panel, once it has run.
 const config = f.schema({});
@@ -25,7 +25,7 @@ type Config = ConfigOf<typeof config>;
 const WAVE = 'M 80 300 C 120 120 160 120 200 220 C 220 270 300 300 320 180 L 380 120 '
   + 'C 420 60 470 80 520 180 C 540 220 600 260 660 200';
 
-const features = [drawPreset, pathsPreset, resamplePreset] as const;
+const features = [presets.draw, pathTools.paths, pathTools.resample] as const;
 
 function ResampleTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
   const { scene, selection, pathEdit } = usePathEditTrial(ctx, WAVE);

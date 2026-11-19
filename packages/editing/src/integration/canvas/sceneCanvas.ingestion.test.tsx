@@ -25,7 +25,10 @@ import {
   __setSvgMeasureForTests,
   _resetSvgHandlerSeamsForTests,
 } from '../../ingest/svgHandler';
-import { drawPreset, editPreset, ingestPreset, buildWeaselClipboardText } from '@weasel-js/editing';
+import { buildWeaselClipboardText } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
+import { editPreset } from '../../presets/edit';
+import { ingestPreset } from '../../presets/ingest';
 
 type D = { image?: { src: string } };
 type L = 'main';

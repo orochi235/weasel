@@ -169,7 +169,7 @@ export function transformOps(
  * {@link transformOps} would commit for that frame, read the same way. Empty
  * when nothing changes with it, or an extension refuses it.
  */
-export function transformPreview(
+export function createTransformPreview(
   sc: AnyScene,
   extensions: readonly PathEditExtension[],
   poses: ReadonlyMap<string, unknown>,
@@ -194,12 +194,12 @@ export function transformPreview(
 }
 
 /** The transform follower `extensions` make: each one's `finishTransform`, as
- *  {@link transformOps} and {@link transformPreview} read it. Null when none
+ *  {@link transformOps} and {@link createTransformPreview} read it. Null when none
  *  has one, so a transform runs no follower for them. */
 export function pathEditFollower(sc: AnyScene, extensions: readonly PathEditExtension[]): TransformFollower | null {
   if (!extensions.some((e) => e.finishTransform)) return null;
   return {
     finish: (ops, label) => transformOps(sc, extensions, ops, label),
-    preview: (poses) => transformPreview(sc, extensions, poses),
+    preview: (poses) => createTransformPreview(sc, extensions, poses),
   };
 }

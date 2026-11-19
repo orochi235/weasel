@@ -223,7 +223,7 @@ describe('applyBooleanOp — operation-specific behavior', () => {
 });
 
 // Z-order-aware harness: the adapter's tree lists the paths, so the kit emits
-// a `createMoveToIndexOp` after the inserts to drop results into the topmost
+// an `ops.moveToIndex` after the inserts to drop results into the topmost
 // source's z-slot.
 function makeZOrderedAdapter(initialOrder: { id: string; path: Path }[]) {
   // A single ordered list under parentId=null. Newly-inserted nodes append

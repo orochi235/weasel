@@ -10,7 +10,7 @@ import { createScene, normalizeView, RECT_POSE_DESCRIPTOR, viewportWorldRect, ty
 import { viewScreenToWorld, viewWorldToScreen } from '@weasel-js/core';
 import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { computeFitView, computeIndicatorCommand, FALLBACK_FIT_VIEW } from './minimapMath';
-import { minimapCenterAction, minimapPanAction, minimapTouchZoomAction, minimapZoomAction } from './actions';
+import { createMinimapCenterAction, createMinimapPanAction, createMinimapTouchZoomAction, createMinimapZoomAction } from './actions';
 import { runs, tally, timeoutFor } from './pbt.fixture';
 
 interface Pose { x: number; y: number; width: number; height: number }
@@ -169,7 +169,7 @@ describe('minimap actions, property', () => {
         const world = viewScreenToWorld(fit, s);
         let main = start;
         const root = rootOf(() => main, (v) => { main = v; }, host);
-        const action = minimapCenterAction();
+        const action = createMinimapCenterAction();
         if (action.invoker?.timing !== 'immediate') throw new Error('not immediate');
         action.invoker.run({ rootView: root } as unknown as ActionDeps, { world });
         expect(main.scale).toEqual(start.scale);
@@ -193,7 +193,7 @@ describe('minimap actions, property', () => {
       let main = start;
       const root = rootOf(() => main, (v) => { main = v; }, host);
       const deps = { rootView: root } as unknown as ActionDeps;
-      const inv = minimapPanAction().invoker;
+      const inv = createMinimapPanAction().invoker;
       if (inv?.timing !== 'ongoing') throw new Error('not ongoing');
       const at = (p: { x: number; y: number }): InvocationCtx => ({
         world: p, screen: p, modifiers: MODS, deps, drag: { start: moves[0]!, current: p, delta: { x: 0, y: 0 } },
@@ -218,7 +218,7 @@ describe('minimap actions, property', () => {
       fc.oneof(fc.double({ min: -500, max: 500, noNaN: true }), fc.constantFrom(-1e308, 1e308, 1, -1)), (start, host, world, deltaY) => {
         let main = start;
         const root = rootOf(() => main, (v) => { main = v; }, host);
-        const inv = minimapZoomAction().invoker;
+        const inv = createMinimapZoomAction().invoker;
         if (inv?.timing !== 'immediate') throw new Error('not immediate');
         const before = viewWorldToScreen(main, world);
         inv.run({ rootView: root } as unknown as ActionDeps, { world, deltaY });
@@ -245,7 +245,7 @@ describe('minimap actions, property', () => {
         const root = rootOf(() => main, (v) => { main = v; }, host);
         const camera = rootOf(() => minimap, () => {}, host);
         const deps = { rootView: root, view: camera } as unknown as ActionDeps;
-        const inv = minimapTouchZoomAction({ min: 0.01, max: 100 }).invoker;
+        const inv = createMinimapTouchZoomAction({ min: 0.01, max: 100 }).invoker;
         if (inv?.timing !== 'ongoing') throw new Error('not ongoing');
         const at = (s: { spread: number; x: number; y: number }, pinch: boolean): InvocationCtx => ({
           world: { x: 0, y: 0 }, modifiers: MODS, deps,

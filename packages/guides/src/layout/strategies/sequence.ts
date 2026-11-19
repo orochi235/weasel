@@ -1,5 +1,4 @@
 import {
-  createSetPoseOp,
   type ContainerBounds,
   type LayoutArrival,
   type LayoutChild,
@@ -9,6 +8,7 @@ import {
   type LayoutStrategy,
   type Op,
 } from '@weasel-js/core';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** What makes a sequence layout a row of slots or a shelf-packed flow. */
 export interface Sequencer<TPose> {
@@ -147,12 +147,12 @@ export function sequenceLayout<TPose>(seq: Sequencer<TPose>): LayoutStrategy<TPo
         for (const c of children) {
           const to = poses.get(c.id);
           if (to !== undefined && moved(c.pose, to)) {
-            ops.push(createSetPoseOp<TPose>({ id: c.id, from: c.pose, to, label: seq.labels.shift }));
+            ops.push(coreOps.setPose<TPose>({ id: c.id, from: c.pose, to, label: seq.labels.shift }));
           }
         }
       }
       ops.push(
-        createSetPoseOp<TPose>({
+        coreOps.setPose<TPose>({
           id: dragged.id,
           from: dragged.originPose,
           to: target?.pose ?? dragged.pose,

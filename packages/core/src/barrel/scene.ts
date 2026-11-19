@@ -1,7 +1,31 @@
-/** Part of the `@weasel-js/core` barrel. The scene, its ops, history, groups, and adapters. */
+/**
+ * Part of the `@weasel-js/core` barrel. The scene, its ops, history, groups, and adapters.
+ *
+ * @packageDocumentation
+ */
 
 // ─── Op model: every scene mutation routes through here ─────────────────────
-export * from '../core/ops';
+export { applyOpsTo, dispatchApplyBatch } from '../core/applyOps';
+export type { SetPoseArgs } from '../core/ops/setPose';
+export type { ArrangeArgs, ArrangedPose } from '../core/ops/arrange';
+export type { ReparentArgs } from '../core/ops/reparent';
+export type { InsertOp, InsertArgs } from '../core/ops/create';
+export type { DeleteArgs, PlacedNode } from '../core/ops/delete';
+export type { SetSelectionArgs } from '../core/ops/select';
+export type { SetTextArgs } from '../core/ops/setText';
+export type { SetDataArgs } from '../core/ops/setData';
+export type { SetLayerArgs } from '../core/ops/setLayer';
+export type { SetDependsOnArgs } from '../core/ops/setDependsOn';
+export type { NodeFlagArgs } from '../core/ops/nodeFlags';
+export type { SetLayoutArgs, LayoutRef } from '../core/ops/setLayout';
+export type {
+  ReorderDirection, ReorderArgs, MoveToIndexArgs, ReorderRestoreEntry, ChildOrder, SetChildOrderArgs,
+} from '../core/ops/reorder';
+export type { SetPathFields, SetPathArgs } from '../core/ops/setPath';
+export { writtenBy, type WrittenNode } from '../core/ops/writtenBy';
+export { locateChild, type ChildPosition, type ParentedReader, type SiblingSlot } from '../core/ops/slot';
+export { createOpRegistry, defaultOpRegistry, registerOpFactory } from '../core/ops/registry';
+export type { CreateOpRegistryOptions, OpFactory, OpRegistry } from '../core/ops/registry';
 
 // ─── Mixed sentinel: cross-cutting "these values disagree" marker ──────────
 export { MIXED } from '@weasel-js/registry';
@@ -76,7 +100,6 @@ export type {
   SwapArgs,
   SwapOpOptions,
 } from '@weasel-js/history';
-export { createSwapOp } from '@weasel-js/history';
 
 // ─── Adapters: the contracts the interaction layer reads ────────────────────
 export * from '../core/adapters/types';
@@ -164,12 +187,9 @@ export type { ShownOverride } from '../core/scene/poseOverrideTypes';
 
 // ─── Reorder: ops ───────────────────────────────────────────────────────────
 export {
-  createReorderOp,
-  createMoveToIndexOp,
   canBringForward,
   canSendBackward,
 } from '../core/ops/reorder';
-export type { ReorderDirection } from '../core/ops/reorder';
 
 // ─── Annotation layers, and the measurements kept on them ───────────────────
 export { isAnnotationLayer, isAnnotationNode, annotationLayerIds, type AnnotationFlag } from 'core/scene/annotation';

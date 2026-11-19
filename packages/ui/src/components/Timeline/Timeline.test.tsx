@@ -432,6 +432,11 @@ describe('Timeline', () => {
     expect(screen.getAllByTestId('timeline-lane-track')).toHaveLength(2);
   });
 
+  it("names a nested timeline's disclosure by its row's label", () => {
+    renderWithIcons(<Timeline {...base} tracks={nestedTracks()} />);
+    expect(screen.getByRole('button', { name: 'blink', expanded: false })).toBe(screen.getByTestId('timeline-disclosure'));
+  });
+
   it('drags a key inside an expanded nested timeline', () => {
     const onChange = vi.fn();
     renderWithIcons(<Timeline {...base} tracks={nestedTracks()} onChange={onChange} />);

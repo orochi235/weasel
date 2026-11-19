@@ -9,7 +9,8 @@ import type { ReactNode } from 'react';
 import { SceneCanvas } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import type { NodeId, SceneCanvasApi, SceneCanvasViewport } from '@weasel-js/core';
-import { drawPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 type D = { kind: 'rect' };
 type L = 'main';

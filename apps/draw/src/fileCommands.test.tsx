@@ -15,7 +15,7 @@ import { registerSvgExport } from '@weasel-js/svg';
 import { backgroundOf, setBackground } from './docBackground';
 import { withIcons } from './testIcons';
 import { drawScene } from './testScenes';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 vi.mock('./saveSvg', () => ({ saveSvgFile: vi.fn(async () => {}) }));
 vi.mock('./exportPage', () => ({ exportPagesFile: vi.fn(async () => {}), exportSelectionFile: vi.fn(async () => {}) }));
@@ -65,7 +65,7 @@ function setup() {
     <DepRegistryProvider>
       <ActionsProvider>
         <Probe t={t} />
-        <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64} />
+        <SceneCanvas features={[presets.draw]} scene={scene} layers={{}} width={64} height={64} />
       </ActionsProvider>
     </DepRegistryProvider>
   );

@@ -32,7 +32,7 @@ export const STICKY_TOOL_OPTIONS: ToolOptionsSpec = {
  * note's caret. Neither makes a note smaller than `minSize`, and the note
  * keeps it as the floor a resize stops at. A click on a selected note edits it.
  *
- * The note is minted by the `insert` dep's `sticky` kind (`textPreset`'s
+ * The note is minted by the `insert` dep's `sticky` kind (`textTools.text`'s
  * `stickyNodeFactory`), as a text node with a `background` (see `stickyData`); the look rides on the bindings' params
  * as that insert's extras, and its paper and ink are the tool's options
  * (`background` and `fill` set their defaults). A consumer wanting its own node overrides the dep

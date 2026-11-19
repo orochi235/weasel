@@ -2,7 +2,6 @@
 import { useEffect, useRef } from 'react';
 import { useActionsRegistry } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
-import { getOwn } from '@weasel-js/registry';
 import { eligibleForMode, type ModeRegistry } from '@weasel-js/modes';
 import {
   createToolActivateAction,
@@ -11,6 +10,7 @@ import {
 } from 'interactions/actions/defaults/toolActivate';
 import { createToolResetToDefaultAction } from 'interactions/actions/defaults/toolResetToDefault';
 import type { ToolsApi } from './overlayBinding';
+import { getOwn } from '@weasel-js/registry';
 import type {} from '../interactions/actions/actionParamSchema';
 
 /** Options for `useKeybindings`. */
@@ -19,8 +19,7 @@ export interface UseKeybindingsOptions {
   enabled?: boolean;
   /** Tool id Escape switches to. When omitted, defaults to whatever
    *  `tools.active` was when the hook first ran (i.e. the initial active
-   *  tool). Pass `null` to disable Escape-returns-to-default behavior.
-   *  Escape passes through while `modes` bars this tool. */
+   *  tool). Pass `null` to disable Escape-returns-to-default behavior. */
   defaultTool?: string | null;
   /**
    * The modes that gate keyboard tool activation: a key is refused when the
@@ -67,6 +66,14 @@ export function useKeybindings(
     // No tools, no tool keys: nothing to activate and nothing to return to.
     if (Object.keys(toolsRef.current.registry).length === 0) return;
 
+    // What the palette greys out by: both the tool keys and Escape ask it.
+    const allowed = (toolId: string): boolean => {
+      const modes = optionsRef.current.modes;
+      if (!modes) return true;
+      const tags = getOwn(toolsRef.current.registry, toolId)?.eligibility.capabilities;
+      return eligibleForMode(modes.current(), tags ?? []);
+    };
+
     const specs: ToolActivateBindingSpec[] = [];
 
     const allTools = toolsRef.current.registry;
@@ -81,14 +88,6 @@ export function useKeybindings(
       }
     }
 
-    // The one gate on a key reaching a tool, shared by the tool keys and Escape.
-    const eligible = (toolId: string): boolean => {
-      const modes = optionsRef.current.modes;
-      if (!modes) return true;
-      const tags = getOwn(toolsRef.current.registry, toolId)?.eligibility.capabilities;
-      return eligibleForMode(modes.current(), tags ?? []);
-    };
-
     const unregisters: Array<() => void> = [];
 
     if (specs.length > 0) {
@@ -97,7 +96,8 @@ export function useKeybindings(
         bindings,
         (toolId) => {
           // `setActive` refuses an id it does not hold; a trigger with one is refused too.
-          return Object.hasOwn(toolsRef.current.registry, toolId) && eligible(toolId);
+          if (!Object.hasOwn(toolsRef.current.registry, toolId)) return false;
+          return allowed(toolId);
         },
       )));
     }
@@ -113,7 +113,7 @@ export function useKeybindings(
       const target = opt ?? initialActiveRef.current;
       if (!target) return null;
       const api = toolsRef.current;
-      if (!api.has(target) || api.active === target || !eligible(target)) return null;
+      if (!api.has(target) || api.active === target || !allowed(target)) return null;
       return target;
     })));
 

@@ -47,7 +47,7 @@ const at = (el: Element): Point => {
   return { x: Number.parseFloat(style.getPropertyValue('--at-x')), y: Number.parseFloat(style.getPropertyValue('--at-y')) };
 };
 const tabs = () => screen.getAllByRole('tab');
-const pathPoints = (d: string): Point[] => [...d.matchAll(/[ML] (-?[\d.]+) (-?[\d.]+)/g)].map((m) => ({ x: Number(m[1]), y: Number(m[2]) }));
+const pathPoints = (d: string): Point[] => [...d.matchAll(/[ML](-?[\d.]+),(-?[\d.]+)/g)].map((m) => ({ x: Number(m[1]), y: Number(m[2]) }));
 const rule = () => document.querySelector('[data-tab-rule]')!;
 const marker = () => document.querySelector('[data-tab-marker]');
 

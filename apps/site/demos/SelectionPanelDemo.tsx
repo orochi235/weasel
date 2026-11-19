@@ -3,7 +3,8 @@ import { SceneCanvas, useScene, defaultNodeRouting, defaultNodeProperties, asNod
 import type { Stroke, Fill, RectPose } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui-canvas/components/inspector/SelectionPanel';
 import { DemoStage } from './DemoStage';
-import { editPreset, pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 /** `kind` routes the node to its properties; `shape` is what the kit's shape painter draws. */
 interface NodeData { kind: string; shape: string; fill: Fill; stroke?: Stroke }
@@ -26,7 +27,7 @@ export function SelectionPanelDemo() {
     <div className="ckd-row">
       <DemoStage width={W} height={H}>
         <SceneCanvas
-          features={[pickPreset, editPreset]}
+          features={[presets.pick, presets.edit]}
           className="ckd-canvas"
           scene={scene}
           selection={selection}

@@ -9,7 +9,8 @@ import { SceneCanvas, WeaselProvider, createScene, type ToolsApi } from '@weasel
 import { renderWithIcons } from '../../testing/withIcons';
 import { ShortcutSheet } from './ShortcutSheet';
 import { useShortcutSheetCommand } from './shortcutSheetCommand';
-import { drawPreset, SELECT_TOOLS, SHAPE_TOOLS } from '@weasel-js/editing';
+import { SELECT_TOOLS, SHAPE_TOOLS } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -39,7 +40,7 @@ function setup(initial: BindingOverrides = {}, initiallyOpen = true) {
       <WeaselProvider>
         <Commands open={() => setOpen(true)} />
         <ShortcutSheet open={open} onOpenChange={setOpen} tools={tools} toolSets={[SELECT_TOOLS, SHAPE_TOOLS]} apple={false} />
-        <SceneCanvas features={[drawPreset]} scene={scene} width={64} height={64} defaultTools={[SELECT_TOOLS, SHAPE_TOOLS]}
+        <SceneCanvas features={[presets.draw]} scene={scene} width={64} height={64} defaultTools={[SELECT_TOOLS, SHAPE_TOOLS]}
           bindingOverrides={overrides} onToolsCreated={setTools} />
       </WeaselProvider>
     );
@@ -54,6 +55,11 @@ const row = (name: RegExp) => screen.getAllByRole('listitem').find((li) => name.
 const search = (text: string) => fireEvent.change(screen.getByRole('searchbox', { name: 'Search shortcuts' }), { target: { value: text } });
 
 describe('ShortcutSheet', () => {
+  it('lets Tab reach the list, which holds nothing focusable, so a keyboard can scroll it', () => {
+    setup();
+    expect(screen.getByRole('region', { name: 'Shortcuts' })).toHaveAttribute('tabindex', '0');
+  });
+
   it('lists every tool in a tool set under the set\'s label', () => {
     setup();
     const shapes = within(group('Shapes'));

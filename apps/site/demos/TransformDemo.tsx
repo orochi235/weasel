@@ -3,7 +3,7 @@ import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 import type { PoseDescriptor, RotatedPose, UnitSystem } from '@weasel-js/core';
 import sceneJson from './data/transform.scene.json';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const W = 400, H = 300;
 // Demo unit system: base is the pixel, but the demo speaks in "tiles" worth 20px.
@@ -18,7 +18,7 @@ export function TransformDemo() {
       <SceneCanvas
         className="ckd-canvas"
         scene={sceneJson}
-        features={[pickPreset, movePreset, transformPreset]}
+        features={[presets.pick, presets.move, presets.transform]}
         poseDescriptor={ROTATED_POSE_DESCRIPTOR as PoseDescriptor<RotatedPose>}
         snap={SNAP}
         selectionOptions={{ mode: 'multiple', initial: [asNodeId('b')] }}

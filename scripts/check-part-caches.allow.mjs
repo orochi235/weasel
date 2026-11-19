@@ -61,6 +61,7 @@ export const PART_CACHE_ALLOWED = new Map([
   ['packages/labkit/src/state/trialRestarts.ts', 'the emit reads it without making it'],
   ['packages/labkit/src/trial/watch3d.ts', 'iterated through a read that makes nothing'],
   ['packages/prefs/src/usePrefsStore.ts', 'read without being made'],
+  ['packages/react/src/testing/leakProbe.ts', 'set from the registration\'s target, and read without being made'],
   ['packages/routing/src/interactions/actions/ActionsProvider.tsx', 'set from a constructor and read elsewhere as a lookup'],
   ['packages/routing/src/interactions/actions/depNode.ts', 'set from a constructor and read elsewhere as a lookup'],
   ['packages/routing/src/interactions/actions/modifierRoles.ts', 'set from another value, and read with a fallback'],

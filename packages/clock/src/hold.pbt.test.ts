@@ -45,7 +45,8 @@ describe('holdAt', () => {
           const c = h.clock;
           expect(near(c.elapsed, heldAt(h, shown), c.duration)).toBe(true);
           if (Number.isFinite(c.duration)) expect(c.pass).toBe(0);
-          const reached = shown === null || c.origin + c.elapsed === shown;
+          // Reached once the clock stands at the elapsed that shows it, unclamped by the span.
+          const reached = shown === null || c.elapsed === shown - c.origin;
           expect(hold.pending()).toBe(reached ? null : shown);
           t.count(reached ? 'reached' : 'pending');
         }
@@ -99,19 +100,18 @@ describe('createClockRegistry — stateful model', () => {
   const ids = fc.constantFrom('a', 'b', '__proto__', 'constructor');
   type Cmd = fc.Command<Model, Real>;
 
-  // Every registration held, shadowed ones first in each id's stack, as `all()` and `targets()` list them.
-  const heldOf = (m: Model): Entry[] => [...m.stacks.values()].flat();
+  const liveOf = (m: Model): Entry[] => [...m.stacks.values()].map((stack) => stack.at(-1)!);
 
   const check = (m: Model, r: Real): void => {
     for (const id of ['a', 'b', '__proto__', 'constructor']) {
       const e = m.stacks.get(id)?.at(-1);
       expect(r.reg.get(id)).toBe(e ? r.handles[e.handle] : null);
     }
-    const all = new Set<ClockHandle>([...(r.shared ? [r.shared] : []), ...heldOf(m).map((e) => r.handles[e.handle]!)]);
+    const all = new Set<ClockHandle>([...(r.shared ? [r.shared] : []), ...liveOf(m).map((e) => r.handles[e.handle]!)]);
     expect(new Set(r.reg.all())).toEqual(all);
     expect([...r.reg.all()].length).toBe(all.size);
     r.handles.forEach((h, i) => {
-      const mine = heldOf(m).filter((e) => e.handle === i);
+      const mine = liveOf(m).filter((e) => e.handle === i);
       const want = mine.some((e) => e.target === null) ? [] : mine.map((e) => r.targets[e.target!]);
       expect(r.reg.targets(h)).toEqual(want);
     });
@@ -148,7 +148,7 @@ describe('createClockRegistry — stateful model', () => {
     })),
   ], { maxCommands: 25 });
 
-  it('shows each id\'s newest registration until its own release, holds every one, and reports every change', () => {
+  it('holds each id\'s newest registration until its own release, and reports every change', () => {
     // Registrations under one id stack on purpose; the registry's clash warning is tested in @weasel-js/registry.
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     onTestFinished(() => warn.mockRestore());

@@ -51,16 +51,6 @@ describe('engine.playNote', () => {
     expect(chainOf(ctx._oscillators[0]).bus).toBe(sourceBus);
   });
 
-  it('refuses a rate that is not above 0, at the call and at setRate, and keeps the last good one', async () => {
-    const { ctx, engine, tick } = await harness();
-    expect(() => engine.playNote({ pitch: 'A4', rate: 0 } as never)).toThrow(RangeError);
-    const v = engine.playNote({ pitch: 'A4' });
-    tick();
-    for (const rate of [0, -1]) expect(() => v.setRate(rate)).toThrow(RangeError);
-    expect(() => v.setDetune(100)).not.toThrow();
-    expect(ctx._oscillators[0].detune.value).toBe(100);
-  });
-
   it('uses a built-in wave by name', async () => {
     const { ctx, engine, tick } = await harness();
     engine.playNote({ pitch: 220, wave: 'square' });
@@ -126,6 +116,40 @@ describe('engine.playNote', () => {
     expect(osc.stopped.at(-1)).toBeCloseTo(0.09, 9);
     expect(voice.isPlaying()).toBe(true);
     ctx._advance(50);
+    expect(voice.isPlaying()).toBe(false);
+  });
+
+  it('fades a releasing note out over fadeMs rather than cutting it, and again on a second fade', async () => {
+    const { ctx, engine, tick } = await harness();
+    const voice = engine.playNote({ pitch: 220, envelope: { attack: 0, release: 2000 } });
+    tick();
+    const osc = ctx._oscillators[0];
+    const { gain } = chainOf(osc);
+    ctx._advance(50);
+    voice.release();
+    voice.stop(100);
+    expect(gain.gain.ramps.at(-1)).toEqual({ value: 0, at: expect.closeTo(0.15, 9) });
+    expect(osc.stopped.at(-1)).toBeCloseTo(0.15, 9);
+    expect(voice.isPlaying()).toBe(true);
+    ctx._advance(20);
+    voice.stop(30);
+    expect(gain.gain.ramps.at(-1)).toEqual({ value: 0, at: expect.closeTo(0.1, 9) });
+    expect(osc.stopped.at(-1)).toBeCloseTo(0.1, 9);
+    expect(voice.isPlaying()).toBe(true);
+    ctx._advance(30);
+    expect(voice.isPlaying()).toBe(false);
+  });
+
+  it('keeps fading a note released mid-fade', async () => {
+    const { ctx, engine, tick } = await harness();
+    const voice = engine.playNote({ pitch: 220 });
+    tick();
+    const osc = ctx._oscillators[0];
+    voice.stop(100);
+    voice.release();
+    expect(osc.stopped).toEqual([expect.closeTo(0.1, 9)]);
+    expect(voice.isPlaying()).toBe(true);
+    ctx._advance(100);
     expect(voice.isPlaying()).toBe(false);
   });
 

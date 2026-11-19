@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render } from '@testing-library/react';
 import { SceneCanvas, useScene, type SceneCanvasProps } from '@weasel-js/core';
-import { createTextToolsPreset } from '../../presets';
+import { createTextToolsPreset } from '../../featurePresets';
 import { STICKY_DEFAULTS } from './stickyNode';
-import { pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 type D = Record<string, unknown>;
 type L = 'main';
@@ -21,7 +21,7 @@ describe('createTextToolsPreset', () => {
     function Harness() {
       const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
       return (
-        <SceneCanvas features={[pickPreset, createTextToolsPreset({ sticky: { padding: 4, size } })]}
+        <SceneCanvas features={[presets.pick, createTextToolsPreset({ sticky: { padding: 4, size } })]}
           scene={scene} width={100} height={100} layers={{}}
           onToolsCreated={(t) => { captured = t; }}
         />

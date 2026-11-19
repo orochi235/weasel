@@ -4,11 +4,6 @@ import { readScoreCue, SCORE_CUES, resolveScoreMood, type ScoreMood } from './sc
 const home = (name: string): ScoreMood => SCORE_CUES.find((c) => c.name === name)!.mood;
 
 describe('readScoreCue', () => {
-  it('refuses a NaN axis, which no end is nearest to', () => {
-    expect(() => readScoreCue({ valence: 0, tension: Number.NaN, urgency: 0 })).toThrow(RangeError);
-    expect(() => resolveScoreMood({ valence: 0, tension: 0, urgency: Number.NaN })).toThrow(RangeError);
-  });
-
   it('names each cue at its own home, with the whole weight', () => {
     for (const cue of SCORE_CUES) {
       const reading = readScoreCue(cue.mood);

@@ -2,6 +2,8 @@
 '@weasel-js/clock': patch
 ---
 
-`useClockLoop` resumes a playing clock that is released and registered again from where it stood, without jumping by the time it was away.
+A clock back in `useClockLoop` from under a registration that shadowed its id no longer jumps by the time it spent shadowed.
+
+Any clock the loop starts syncing counts no time from before it joined.
 
 <!-- entry: fix -->

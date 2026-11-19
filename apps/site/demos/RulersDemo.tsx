@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import { solid } from '@weasel-js/paint';
-import { asNodeId, RIGID_POSE_COMPOSITION, SceneCanvas, useScene, type Fill, type GroupBoxData, type RectPose, type Stroke, type UnitScope, viewPreset } from '@weasel-js/core';
+import { asNodeId, RIGID_POSE_COMPOSITION, SceneCanvas, useScene, type Fill, type GroupBoxData, type RectPose, type Stroke, type UnitScope } from '@weasel-js/core';
 import { createGuidesLayer, createRulers, guideSnapSource, useGuides } from '@weasel-js/guides';
 import { METRIC_MM } from '@weasel-js/quantity';
 import { Rulers } from '@weasel-js/ui-canvas/components/Rulers';
 import { DemoStage } from './DemoStage';
-import { movePreset, selectPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 interface Data extends GroupBoxData { fill?: Fill; stroke?: Stroke }
 
@@ -42,7 +42,7 @@ export function RulersDemo() {
   return (
     <DemoStage width={W} height={H}>
       <SceneCanvas
-        features={[selectPreset, movePreset, viewPreset]}
+        features={[presets.select, presets.move, presets.view]}
         className="ckd-canvas"
         scene={scene}
         ambient={ambient}

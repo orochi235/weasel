@@ -9,7 +9,7 @@ import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { SceneCanvas, type SceneCanvasProps, never } from '@weasel-js/core';
 import type { CanvasHelpers, Scene, NodeId } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 type D = { kind: string };
 type L = 'main';

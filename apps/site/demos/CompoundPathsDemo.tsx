@@ -5,7 +5,7 @@ import { joinPaths } from '@weasel-js/geom';
 import styles from './CompoundPathsDemo.module.css';
 import type { Fill, Path, Stroke } from '@weasel-js/core';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 interface Shape { id: string; pose: Path; fill: string; stroke: string }
 interface ShapeData { fill: Fill; stroke: Stroke }
@@ -152,7 +152,7 @@ export function CompoundPathsDemo() {
     <div className={styles.demo}>
       <div className={styles.stage}>
         <DemoStage width={W} height={H}>
-          <SceneCanvas features={[pickPreset, movePreset, transformPreset]}
+          <SceneCanvas features={[presets.pick, presets.move, presets.transform]}
             className="ckd-canvas"
             scene={scene}
             backgroundFill={{ color: '#87ceeb' }}

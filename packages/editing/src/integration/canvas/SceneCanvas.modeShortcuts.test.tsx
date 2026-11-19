@@ -1,17 +1,17 @@
 /**
  * A mode's declared shortcuts reach the canvas's dispatcher as bindings gated
- * on the active mode, installed by the `modeShortcuts` contribution.
+ * on the active mode, installed by the `createModeShortcutsContribution` contribution.
  */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { createModeRegistry, DEFAULT_MODES, NORMAL, type ModeDefinition, type ModeRegistry } from '@weasel-js/modes';
-import { modeShortcuts, type ModeShortcutHandlers } from '@weasel-js/routing';
+import { createModeShortcutsContribution, type ModeShortcutHandlers } from '@weasel-js/routing';
 import { isApplePlatform } from '@weasel-js/gestures';
 import { SceneCanvas } from '@weasel-js/core';
 import type { ToolsApi } from '@weasel-js/core';
 import { createScene, asNodeId } from '@weasel-js/core/engine';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -43,7 +43,7 @@ function setup(initial: string, handlers: ModeShortcutHandlers, { wireMode = tru
   const tools: { current?: ToolsApi } = {};
   const { container } = render(
     <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}
-      ambient={[modeShortcuts(registry, handlers)]} onToolsCreated={(t) => { tools.current = t; }}
+      ambient={[createModeShortcutsContribution(registry, handlers)]} onToolsCreated={(t) => { tools.current = t; }}
       {...(wireMode ? { modes: registry } : {})} />,
   );
   const key = (key: string, init: KeyboardEventInit = {}) => act(() => {

@@ -4,10 +4,11 @@ import { act, renderHook } from '@testing-library/react';
 import { KitSettingsProvider } from '@weasel-js/react';
 import type { ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import {
-  createInsertOp, createScene, defaultCommitAdapter, createCommitSelectionOps,
+  createScene, defaultCommitAdapter, createCommitSelectionOps,
   type InsertDep, type NodeId, type RectPose,
 } from '@weasel-js/core';
 import { useSpiroTool } from './useSpiroTool';
+import * as ops from '@weasel-js/core/ops';
 
 describe('useSpiroTool', () => {
   it('selects the curve it inserts in the insert’s own undo entry', () => {
@@ -26,7 +27,7 @@ describe('useSpiroTool', () => {
       commit(bounds, extras, _ends, select) {
         const id = scene.mintId();
         const node = { id, kind: 'mark', layer: 'main', parent: null, data: extras, pose: bounds };
-        scene.applyBatch([createInsertOp({ node: node as never }), ...createCommitSelectionOps(select, id)], 'Insert', adapter);
+        scene.applyBatch([ops.insert({ node: node as never }), ...createCommitSelectionOps(select, id)], 'Insert', adapter);
         return id;
       },
     };

@@ -1,6 +1,7 @@
 import { solid } from '@weasel-js/paint';
 import { createScene, type RectPose } from '@weasel-js/core';
-import { pathsPreset, usePenTool } from '@weasel-js/path-tools';
+import { usePenTool } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 import {
   type ConfigOf,
@@ -16,7 +17,7 @@ import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const config = f.schema({
   snap: f.boolean(true).label('Snap to grid'),
@@ -62,7 +63,7 @@ function SceneTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
 
   return (
     <TrialSceneCanvas
-      features={[drawPreset, pathsPreset]}
+      features={[presets.draw, pathTools.paths]}
       defaultTools={['rect']}
       tools={{ pen }}
       scene={scene}

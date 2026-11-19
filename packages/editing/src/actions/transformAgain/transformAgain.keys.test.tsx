@@ -7,7 +7,7 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas, recordTransform } from '@weasel-js/core';
 import { createScene, asNodeId } from '@weasel-js/core/engine';
-import { drawPreset } from '../../index';
+import { drawPreset } from '../../presets/composites';
 
 type P = { x: number; y: number; width: number; height: number };
 

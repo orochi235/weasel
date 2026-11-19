@@ -2,6 +2,8 @@
 '@weasel-js/clock': patch
 ---
 
-`holdPosition` at a recorded run's end, under another `duration` or `origin`, stands at the end of the same pass, not at the end of the new run.
+`holdPosition` at a position recorded from an ended run lands on the shown time it recorded, at the end of the last pass, as `declare` does.
+
+That holds for a position recorded under another `duration` or `origin`.
 
 <!-- entry: fix -->

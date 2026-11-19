@@ -11,7 +11,7 @@ import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { SegmentedBar, type SegmentedBarItem } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
 import s from './LoupeDemo.module.css';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const W = 600, H = 400;
 const MODES: SegmentedBarItem<LoupeMode>[] = [{ value: 'vector', label: 'vector' }, { value: 'pixel', label: 'pixel' }];
@@ -164,7 +164,7 @@ function Demo() {
         <span className="ckd-hint">clicked: {picked ?? '—'}</span>
       </div>
       <DemoStage width={W} height={H}>
-        <SceneCanvas features={[pickPreset, movePreset]}
+        <SceneCanvas features={[presets.pick, presets.move]}
           ref={ref}
           className="ckd-canvas"
           scene={scene}

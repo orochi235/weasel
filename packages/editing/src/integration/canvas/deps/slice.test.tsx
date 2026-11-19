@@ -11,7 +11,8 @@ import { SceneCanvas, asNodeId, type NodeId, type RectPose, type Scene } from '@
 import { createScene, RECT_POSE_COMPOSITION, RIGID_POSE_COMPOSITION } from '@weasel-js/core/engine';
 import type { SelectionApi } from '@weasel-js/routing';
 import type { SliceDep, PoseDescriptor } from '@weasel-js/core/engine';
-import { drawPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import { drawPreset } from '../../../presets/composites';
 
 afterEach(() => { cleanup(); });
 

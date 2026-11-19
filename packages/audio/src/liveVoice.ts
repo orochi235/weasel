@@ -44,8 +44,6 @@ export interface Starter {
    * what cancels it if it is torn down before it starts.
    */
   book?(voice: LiveVoice, at: { bus: string; when: number; level: number; pan: number }): Booking;
-  /** Throws on a finite rate this kind of voice cannot play, at the call and at `setRate`. */
-  checkRate?(rate: number): void;
 }
 
 /** What `Starter.book` returns. */
@@ -82,8 +80,6 @@ export interface LiveVoice {
   baseGain: number;
   spatialGain: number;
   rate: number;
-  /** The starter's `checkRate`, for `setRate`. */
-  checkRate?: (rate: number) => void;
   detune: number;
   /** Kept so `setListener` can re-spatialize a voice that is already playing. */
   position?: SpatialPoint;

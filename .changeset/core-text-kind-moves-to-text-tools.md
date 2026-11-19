@@ -3,14 +3,15 @@
 '@weasel-js/text-tools': minor
 ---
 
-Core no longer paints, routes, inserts or edits text; a canvas turns text on with `@weasel-js/text-tools`' `textPreset`.
+Core no longer paints, routes, inserts or edits text; a canvas turns text on with `@weasel-js/text-tools`' `textTools.text`.
 
-This is breaking. `kit:text` is no longer a built-in painter, `inferredNodeRouting` has no `'text'`, `defaultNodeProperties` and `inferredNodeProperties` carry no text kind, the `insert` dep builds no `text` or `sticky` node, and no canvas mounts a text editor of its own. `textPreset` brings all of them back, with `enterTextEdit`, `enterTextEditAt` (a double-click opening text in place) and `editEffectText`. A scene drawn with no canvas paints text once its painter is registered.
+This is breaking. `kit:text` is no longer a built-in painter, `inferredNodeRouting` has no `'text'`, `defaultNodeProperties` and `inferredNodeProperties` carry no text kind, the `insert` dep builds no `text` or `sticky` node, and no canvas mounts a text editor of its own. `textTools.text` brings all of them back, with `enterTextEdit`, `enterTextEditAt` (a double-click opening text in place) and `editEffectText`. A scene drawn with no canvas paints text once its painter is registered.
 
 ```tsx
-import { textPreset, TEXT_PAINTER } from '@weasel-js/text-tools';
+import { TEXT_PAINTER } from '@weasel-js/text-tools';
+import * as textTools from '@weasel-js/text-tools/presets';
 
-<SceneCanvas features={[drawPreset, textPreset]} scene={scene} />;
+<SceneCanvas features={[presets.draw, textTools.text]} scene={scene} />;
 nodeShapesOf(scene).register(TEXT_PAINTER); // for renderSceneToPixels, an export
 ```
 

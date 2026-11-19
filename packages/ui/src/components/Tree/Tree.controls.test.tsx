@@ -21,8 +21,9 @@ describe('Tree with row controls', () => {
     }
     expect(row('Group')).toHaveAttribute('aria-expanded', 'true');
     expect(row('Ex')).toHaveAttribute('aria-level', '2');
-    expect(row('Ex').closest('li')).toHaveAttribute('role', 'none');
-    expect(row('Ex').closest('ul')).toHaveAttribute('role', 'none');
+    expect(screen.getByRole('treegrid').querySelector('ul, li')).toBeNull();
+    expect(row('Ex').parentElement).toHaveAttribute('role', 'none');
+    expect(row('Ex').parentElement?.parentElement).toHaveAttribute('role', 'none');
     expect(screen.getByLabelText('Hide Zed')).toHaveAttribute('tabindex', '-1');
     expect(screen.getAllByRole('row').filter((r) => r.tabIndex === 0)).toEqual([row('Group')]);
   });

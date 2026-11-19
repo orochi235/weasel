@@ -1,6 +1,6 @@
 import { editingAnchors, never } from '@weasel-js/core';
-import { pathsPreset } from '@weasel-js/path-tools';
-import { poisePreset, createCurvatureCombPreset } from '@weasel-js/path-tools';
+import { createCurvatureCombPreset } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import {
   type ConfigOf,
   defineInstrument,
@@ -14,7 +14,7 @@ import { type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const config = f.schema({
   poise: f.boolean(true).label('Show poise lines'),
@@ -35,7 +35,7 @@ function PoiseTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
     'path-edit.comb': comb ? editingAnchors : never,
   }), [poise, comb]);
   const features = useMemo(() => [
-    pickPreset, movePreset, pathsPreset, poisePreset, createCurvatureCombPreset(() => ({ scale })),
+    presets.pick, presets.move, pathTools.paths, pathTools.poise, createCurvatureCombPreset(() => ({ scale })),
   ] as const, [scale]);
 
   return (

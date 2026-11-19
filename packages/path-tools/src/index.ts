@@ -1,7 +1,8 @@
 /**
  * `@weasel-js/path-tools` — path-editing tools for a weasel canvas, each
- * family a `FeaturePreset` an app turns on beside core's: `features={[drawPreset,
- * pathToolsPreset]}` for all of them, or one at a time.
+ * family a `FeaturePreset` an app turns on beside core's. The presets are on
+ * `@weasel-js/path-tools/presets`: `features={[presets.draw, pathTools.pathTools]}`
+ * for all of them, or one at a time.
  *
  * @packageDocumentation
  */
@@ -10,39 +11,12 @@
 import type {} from './actionParamSchema';
 
 export {
-  addExtremesPreset,
-  anchorSelectionPreset,
-  poisePreset,
-  bridgePreset,
-  constraintsPreset,
-  filletPreset,
-  createPoisePreset,
-  createConstraintsPreset,
-  createFilletPreset,
-  createCurvatureCombPreset,
-  createHandleSnapPreset,
-  createPathStructurePreset,
-  createDrapePreset,
-  curvatureCombPreset,
-  reachPreset,
-  handleLocksPreset,
-  handleSnapPreset,
-  tugPreset,
-  fairingPreset,
-  pathEffectsPreset,
-  pathStructurePreset,
-  pathToolsPreset,
-  segmentTypePreset,
-  resamplePreset,
-  sandPreset,
-  kneadPreset,
-  snipPreset,
-  warpPreset,
-} from './presets';
+  createConstraintsPreset, createCurvatureCombPreset, createDrapePreset, createFilletPreset, createHandleSnapPreset,
+  createPathStructurePreset, createPoisePreset,
+} from './featurePresets';
 export type {
   ActionParamSchema, EditPathEffectParams, OffsetPathParams, PathEffectParams, SetFilletsParams, TweenParams,
 } from './actionParamSchema';
-export { anchorKeysPreset, outlinesPreset, pathCommandsPreset, pathEditPreset, pathsPreset } from './pathsPreset';
 export { pathToolsKitSettingsSchema, type PathToolsKitTargetSettings } from './kitSettings';
 
 // ─── Path edit ─────────────────────────────────────────────────────────────
@@ -50,7 +24,7 @@ export { ANCHORS_TOOL_ID, anchorsTool } from './pathEdit/anchorsTool';
 export { editAnchorsAction } from './pathEdit/editAnchors/editAnchors';
 export { hitAnchor, type AnchorHit } from './pathEdit/editAnchors/handles';
 export {
-  finishPathEditFrame, pathEditPreview, type PathEditFrame, type PathEditPreview, type PathStorageKind,
+  finishPathEditFrame, createPathEditPreview, type PathEditFrame, type PathEditPreview, type PathStorageKind,
 } from './pathEdit/editAnchors/preview';
 export { editedPathSymmetries } from './pathEdit/editAnchors/symmetry';
 export { HANDLE_LOCK_ROLES, locksInForce } from './pathEdit/editAnchors/handleDrag';
@@ -101,7 +75,7 @@ export { REACH_TO_MEET_PARAMS, reachToMeetAction, type ReachToMeetParams } from 
 export { TUG_PATH_PARAMS, tugPathAction, type TugPathParams } from './tug/tugPath';
 export { useTugTool } from './tug/useTugTool';
 export {
-  overlayShown, PATH_OVERLAYS_GROUP, showPoiseAction, showCombAction, showFilletsAction, showDirectionAction,
+  overlayShown, showPoiseAction, showCombAction, showFilletsAction, showDirectionAction,
   createOverlayToggleAction,
 } from './overlays/showOverlay';
 export {
@@ -111,7 +85,7 @@ export { fairAnchorsAction } from './fairing/fairing';
 export { reversePathAction, setPathStartAction } from './pathStructure/pathStructure';
 export { convertSegmentAtAction, convertSegmentsAction } from './segmentType/convertSegments';
 export {
-  ANCHOR_SELECTION_GROUP, growAnchorSelectionAction, invertAnchorSelectionAction, SELECT_EVERY_NTH_ANCHOR_PARAMS, selectCornerAnchorsAction,
+  growAnchorSelectionAction, invertAnchorSelectionAction, SELECT_EVERY_NTH_ANCHOR_PARAMS, selectCornerAnchorsAction,
   selectEveryNthAnchorAction, selectSmoothAnchorsAction, shrinkAnchorSelectionAction,
 } from './anchorSelect/anchorSelect';
 export { RESAMPLE_PARAMS, resamplePathAction, type ResamplePathParams } from './resample/resample';
@@ -124,7 +98,6 @@ export {
 export {
   bendAlongAction, tweenAction, editPathEffectAction, expandPathEffectAction, puckerBloatAction, repeatAlongAction,
   roughenAction, textAlongAction, zigzagAction,
-  PATH_EFFECTS_GROUP,
 } from './pathEffects/actions';
 export { releasePathEffectAction, setEffectPathAction } from './pathEffects/retarget';
 export { releaseTweenSpineAction, setTweenSpineAction } from './pathEffects/spine';

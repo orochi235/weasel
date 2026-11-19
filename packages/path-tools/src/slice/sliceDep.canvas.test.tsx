@@ -5,7 +5,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { rectPath, type Path } from '@weasel-js/geom';
 import { asNodeId, createScene, SceneCanvas, type RectPose } from '@weasel-js/core';
 import { useSliceTool } from './useSliceTool';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 afterEach(() => { cleanup(); });
 
@@ -21,7 +21,7 @@ describe('the slice tool on a canvas', () => {
     });
     function Harness() {
       const slice = useSliceTool();
-      return <SceneCanvas<Data, 'main', RectPose> features={[drawPreset]} scene={scene} layers={{}} width={400} height={400} tools={{ slice }} />;
+      return <SceneCanvas<Data, 'main', RectPose> features={[presets.draw]} scene={scene} layers={{}} width={400} height={400} tools={{ slice }} />;
     }
     const { container } = render(<Harness />);
     const canvas = container.querySelector('canvas')!;

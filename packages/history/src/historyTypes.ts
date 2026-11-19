@@ -158,7 +158,10 @@ export interface History {
    *  nothing rebuilds makes a strict restore (the default) throw
    *  `HistoryRestoreError`, leaving the history as it was; a best-effort one
    *  puts a placeholder that changes nothing in its place and lists it in the
-   *  report. Bumps `version` and notifies subscribers exactly once. */
+   *  report. A snapshot of the wrong shape (one storage corrupted) is refused
+   *  whole: a strict restore throws `HistoryRestoreError`, a best-effort one
+   *  warns and reports `restored: false`. Bumps `version` and notifies
+   *  subscribers exactly once. */
   restore(snapshot: SerializedHistory, options?: RestoreOptions): HistoryRestoreReport;
   /** Push an entry whose ops have already been applied to the adapter.
    *  Unlike `applyOps`, does NOT call `op.apply()`. Used by Journal.commit

@@ -27,20 +27,6 @@ describe('createPatternPlayer', () => {
     expect(starts()).toEqual([0]);
   });
 
-  it('plays the rest of a step and books the next when the engine refuses one event', async () => {
-    const { engine, run, starts } = await harness();
-    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const player = createPatternPlayer(engine, {
-      tempo: 120, length: 2,
-      events: [{ step: 0, pitch: 'H4' }, { step: 0, pitch: 'C4' }, { step: 1, pitch: 'E4', bus: 'nope' }],
-    });
-    player.start(0);
-    await run(300);
-    expect(starts()).toEqual([0, 250]);
-    expect(player.isPlaying()).toBe(true);
-    error.mockRestore();
-  });
-
   it('refuses an event whose step is not finite, keeping the events it had', async () => {
     const { engine, run, starts } = await harness();
     const player = createPatternPlayer(engine, { tempo: 120, length: 4, events: [{ step: 0, pitch: 'C4' }] });
@@ -102,6 +88,21 @@ describe('createPatternPlayer', () => {
     await run(400);
     expect(player.isPlaying()).toBe(true);
     expect(seen).toEqual([0, 1, 2, 3, 4]);
+    error.mockRestore();
+  });
+
+  it('plays the rest of a step, and books on, past an event that throws at its play call', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { engine, run, starts } = await harness();
+    const player = createPatternPlayer(engine, {
+      tempo: 120, length: 4,
+      events: [{ step: 0, pitch: 'H4' }, { step: 0, pitch: 'C4' }, { step: 2, pitch: 'E4' }],
+    });
+    player.start(0);
+    await run(800);
+    expect(player.isPlaying()).toBe(true);
+    expect(starts()).toEqual([0, 250, 500, 750]);
+    expect(error).toHaveBeenCalled();
     error.mockRestore();
   });
 

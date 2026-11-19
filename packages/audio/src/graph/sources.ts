@@ -1,5 +1,5 @@
 import { periodicWave } from '../periodicWave';
-import { initParam, writeParam } from '../param';
+import { checkFinite, initParam, writeParam } from '../param';
 import { checkNoiseColor, checkWave } from '../patchCheck';
 import { noiseBuffer } from '../synthVoice';
 import type { Inharmonic, NoiseColor, Waveform } from '../types';
@@ -123,6 +123,7 @@ export function createOscillatorNode(ctx: BaseAudioContext, opts: OscillatorNode
   }
   checkWave(wave);
   let frequency = opts.frequency ?? 440;
+  checkFinite('graph oscillator frequency', frequency);
   let detune = 0;
   const shell = sourceShell(ctx, () => ctx.createOscillator());
 

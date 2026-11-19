@@ -116,7 +116,7 @@ describe('usePenTool', () => {
     expect(p.adapter.setSelection).not.toHaveBeenCalled();
   });
 
-  describe('⌘-click open-finish (Illustrator convention)', () => {
+  describe('⌘-click open-finish', () => {
     it('⌘-click after ≥2 anchors commits the path open and clears it', () => {
       const p = setup();
       p.click(0, 0); p.click(50, 0); p.click(50, 50);
@@ -149,7 +149,7 @@ describe('usePenTool', () => {
     });
   });
 
-  describe('double-click open-finish (Illustrator convention)', () => {
+  describe('double-click open-finish', () => {
     it('double-clicking the last anchor commits the path open, without a duplicate anchor', () => {
       // `doubleclick` is synthesized AFTER both clicks, so the second click
       // has already placed an anchor on top of the first's. The action drops

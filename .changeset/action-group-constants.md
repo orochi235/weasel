@@ -1,11 +1,16 @@
 ---
 '@weasel-js/core': minor
 '@weasel-js/editing': minor
-'@weasel-js/routing': minor
 ---
 
-The kit's action groups are named constants, for `<ActionBar group>` and anything else that gathers actions by group
+`@weasel-js/core/groups` and `@weasel-js/editing/groups` name the kit's action groups, for `<ActionBar group>`
 
-Core exports `HISTORY_GROUP`, `VIEWPORT_GROUP` and `PRESENTATION_GROUP` beside its `ANCHORS_GROUP` and `PATH_GROUP`, and re-exports routing's new `TOOL_GROUP`. Editing exports `CLIPBOARD_GROUP`, `EDIT_GROUP`, `STRUCTURE_GROUP`, `NUDGE_GROUP`, `INSERT_GROUP`, `ALIGN_GROUP`, `DISTRIBUTE_GROUP`, `FLIP_GROUP`, `REORDER_GROUP` and `PATHFINDER_GROUP`. Each is the string its actions already carried, so `<ActionBar group="history" />` still works; `<ActionBar group={HISTORY_GROUP} />` says where it comes from.
+```tsx
+import * as groups from '@weasel-js/editing/groups';
+<ActionBar group={groups.history} />
+<ActionBar group={groups.align} />
+```
+
+Core's entry has `history`, `viewport`, `presentation`, `anchors`, `path` and `tool`. Editing's re-exports those beside its own `clipboard`, `edit`, `structure`, `nudge`, `insert`, `align`, `distribute`, `flip`, `reorder` and `pathfinder`; a package that does not use editing imports `@weasel-js/core/groups`. Each is the string its actions already carried, so `<ActionBar group="history" />` still works.
 
 <!-- entry: api -->

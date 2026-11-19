@@ -36,11 +36,11 @@ const MESH_REGISTRATION = /label:\s*(`Mesh`|"Mesh")/;
 
 // A canvas handed one preset object carries that preset's actions, the undo and redo every canvas has, and the
 // actions the built-in tools bind; no other preset's: not the named presets, and none of the heavy action families.
-const CANVAS_PROBE = 'SceneCanvas, selectPreset';
-const CANVAS_FROM = { SceneCanvas: '@weasel-js/core', selectPreset: '@weasel-js/editing' };
+const CANVAS_PROBE = 'SceneCanvas, select';
+const CANVAS_FROM = { SceneCanvas: '@weasel-js/core', select: '@weasel-js/editing/presets' };
 const UNASKED_PRESET = new RegExp([
   /core\/dist\/(canvas\/SceneCanvas\/presets\/(?!view|chrome|toolDriven|baseline|index)|interactions\/actions\/(booleans|outlines|pathCommands|pathEffects)\/)/.source,
-  // selectPreset's own: the area and lasso selects, clearing, and entering a group.
+  // the select preset's own: the area and lasso selects, clearing, and entering a group.
   /editing\/dist\/(namedPresets|presets\/(?!select|tools|index)|actions\/(?!select\/|lassoSelect\/|group\/enterGroup))/.source,
 ].join('|'));
 
@@ -191,7 +191,7 @@ for (const bundler of Object.keys(BUNDLERS)) {
     line(bundler, CANVAS_PROBE, bytes, unasked.length ? 'OTHER PRESETS' : 'ok, its preset only');
     if (unasked.length) {
       failures.push(
-        `${bundler}: a SceneCanvas handed only selectPreset carries modules no preset it\n` +
+        `${bundler}: a SceneCanvas handed only the select preset carries modules no preset it\n` +
           `was handed needs:\n  ${unasked.slice(0, 8).join('\n  ')}\n` +
           'Something it imports reaches core\'s named presets or another preset\'s actions.',
       );

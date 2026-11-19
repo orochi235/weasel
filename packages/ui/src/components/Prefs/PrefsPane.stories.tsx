@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useRef, useState } from 'react';
-import { openPrefsSync, type PrefGroup } from '@weasel-js/prefs';
-import { usePrefsState } from '@weasel-js/prefs/react';
+import { type PrefGroup } from '@weasel-js/prefs';
+import { usePrefsState, usePrefsStore } from '@weasel-js/prefs/react';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import { PrefsPane } from '@weasel-js/ui/components/Prefs';
 import { useValuesSource } from '@weasel-js/ui/components/PrefsSource';
@@ -40,7 +40,8 @@ type Story = StoryObj<typeof PrefsPane>;
 /** One rail page: its heading and description, its leaves, a nested group as a section, and sibling `tab` groups as one strip. */
 export const Default: Story = {
   render: (args) => {
-    const [store] = useState(() => openPrefsSync(PAGE, { storage: createMemoryAdapter(), prefix: 'story.' }));
+    const [storage] = useState(() => createMemoryAdapter());
+    const store = usePrefsStore(PAGE, { storage, prefix: 'story.' });
     const { values, set: onChange } = usePrefsState(store);
     const scrollRef = useRef<HTMLDivElement | null>(null);
     const source = useValuesSource(PAGE, values, onChange);

@@ -28,10 +28,6 @@ export {
 export {
   gridSource as gridSnapSourceForTests, sceneOfPaths as sceneOfPathsForTests, sessionDep as snapSessionDepForTests,
 } from 'domains/snap/testing/sessionDep';
-export {
-  hitTestRect as hitTestRectForTests, type RegionQueryOptions,
-} from 'canvas/deps/hitTestArea';
-export type { ScenePickSourceOptions, ViewPickGates } from 'canvas/pickWalk';
 
 export { FRAME_FIXTURE_IDS as FRAME_FIXTURE_IDSForTests, FRAME_FIXTURE_LOCAL as FRAME_FIXTURE_LOCALForTests, expectSamePose as expectSamePoseForTests, makeFrameFixture as makeFrameFixtureForTests } from '../core/scene/frameFixture';
 
@@ -82,7 +78,6 @@ export { siteIn as siteInForTests } from '../canvas/deps/insertSite';
 export { useOptionalViewInputs as useOptionalViewInputsForTests } from '../canvas/viewInputs';
 export type { SurfaceViewInputs as SurfaceViewInputsForTests } from '../canvas/viewInputs';
 export { legalSelection as legalSelectionForTests, settleSelection as settleSelectionForTests } from '../core/selection/legalSelection';
-export { icons as iconsForTests } from '../icons.table';
 
 export type { BuildAffordanceAtOptions, ChromeAffordanceOptions } from '../canvas/affordanceAt';
 export type { ChromeCaps, ViewRuleInputs } from '../domains/chrome-caps/useChromeCaps';

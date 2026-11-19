@@ -1,6 +1,5 @@
 import type { Rect } from '@weasel-js/geom';
 import {
-  createSetPoseOp,
   type ContainerBounds,
   type LayoutChild,
   type LayoutContainer,
@@ -9,6 +8,7 @@ import {
 } from '@weasel-js/core';
 import { containedThenNearest } from '../snaps';
 import { defaultCenterOf } from './sequence';
+import * as ops from '@weasel-js/core/ops';
 
 
 /** Options for `quadtree`. */
@@ -173,7 +173,7 @@ export function quadtree<TPose>(opts: QuadtreeOptions<TPose> = {}): QuadtreeStra
     reflowPoses: () => new Map(),
 
     commitDrop: (_container, _children, dragged, target) => [
-      createSetPoseOp<TPose>({
+      ops.setPose<TPose>({
         id: dragged.id,
         from: dragged.originPose,
         to: target?.pose ?? dragged.pose,

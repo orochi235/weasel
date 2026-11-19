@@ -125,6 +125,18 @@ describe('bindRig with skins', () => {
     expect(shown(scene, sleeve)).toEqual([100, 95, 155, 150, 145, 150, 100, 105]);
   });
 
+  it('bakes the other nodes when a skinned node has been deleted', () => {
+    const { scene, sleeve } = sleeveScene();
+    const other = scene.add({ kind: 'mark', layer: 'main', pose: BOX, data: { path: { kind: 'rect', ...BOX } } });
+    const rig = bindRig({ scene, skeleton: ARM, skins: { [sleeve]: SLEEVE, [other]: SLEEVE } });
+    rig.pose(BENT);
+    scene.remove(sleeve);
+    rig.pose(BENT);
+    rig.bake();
+    expect(scene.get(other)!.pose).toEqual({ x: 100, y: 95, width: 55, height: 55 });
+    expect(scene.overrides.read(other)).toBeUndefined();
+  });
+
   it('skips a skinned node the scene has since lost, in what it shows and what it bakes', () => {
     const { scene, sleeve } = sleeveScene();
     const rig = bindRig({ scene, skeleton: ARM, skins: { [sleeve]: SLEEVE } });

@@ -59,8 +59,8 @@ export interface ActionPresentation {
   /** The action's icon, by qualified name: `icon('group')` in the package that draws it. */
   icon?: IconSpec;
   /** The one group the action sits in, which an `<ActionBar group>`, a menu or a palette gathers it by. Free-form;
-   *  the kit's own are named constants: core's `HISTORY_GROUP`, `VIEWPORT_GROUP` and the rest, editing's
-   *  `CLIPBOARD_GROUP`, `ALIGN_GROUP` and the rest, and routing's `TOOL_GROUP`. */
+   *  the kit's own are named in `@weasel-js/core/groups` (`groups.history`, `groups.viewport`, …),
+   *  `@weasel-js/editing/groups` (core's plus `groups.clipboard`, `groups.align`, …) and `@weasel-js/path-tools/groups`. */
   group?: string;
   /** Words the action is also found by and gathered under. Where `group` is
    *  the one place an action sits, an action carries any number of tags: a

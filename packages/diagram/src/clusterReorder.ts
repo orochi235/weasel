@@ -126,7 +126,7 @@ function clusterReorderOptions(report: (change: ReorderChange) => void): Reorder
 
 /** The reorder drag and the step action, as an entry to pass in `ambient`. Beside the `move` feature the move takes
  *  every press first; {@link createClusterReorderPreset} is the form that works beside it. */
-export function clusterReorderContribution(report: (change: ReorderChange) => void): Contribution {
+export function createClusterReorderContribution(report: (change: ReorderChange) => void): Contribution {
   const drag = createReorderContribution(clusterReorderOptions(report));
   return { ...drag, id: 'weasel-diagram-reorder', actions: [...(drag.actions ?? []), createStepReorderAction(report)] };
 }

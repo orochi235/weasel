@@ -26,7 +26,7 @@ import {
   type LayoutResult,
 } from './layout';
 
-/** Options for {@link force} and {@link forceRelaxation}. `direction` is
+/** Options for {@link force} and {@link createForceRelaxation}. `direction` is
  *  ignored. */
 export interface ForceOptions extends LayoutOptions {
   /** Ticks to run. Default 300 — one full cooling schedule. */
@@ -181,7 +181,7 @@ export interface ForceRelaxation {
 /** Wind up a relaxation of `graph` without ticking it: bodies seeded from
  *  where the nodes are, pins held fixed. Tick `sim` yourself and read the
  *  top-lefts from `placed()`. */
-export function forceRelaxation(graph: Graph, opts: ForceOptions = {}): ForceRelaxation {
+export function createForceRelaxation(graph: Graph, opts: ForceOptions = {}): ForceRelaxation {
   const {
     linkDistance = DEFAULTS.linkDistance,
     linkStrength = DEFAULTS.linkStrength,
@@ -254,7 +254,7 @@ export function forceRelaxation(graph: Graph, opts: ForceOptions = {}): ForceRel
  *  diagram still. */
 export const force = (graph: Graph, opts: ForceOptions = {}): LayoutResult => {
   if (graph.nodes.length === 0) return new Map();
-  const relaxation = forceRelaxation(graph, opts);
+  const relaxation = createForceRelaxation(graph, opts);
   relaxation.sim.tick(opts.iterations ?? DEFAULTS.iterations);
   return movesFrom(graph, relaxation.placed(), relaxation.pinned, opts.tolerance);
 };

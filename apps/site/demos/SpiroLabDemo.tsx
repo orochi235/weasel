@@ -1,7 +1,8 @@
 import { solid } from '@weasel-js/paint';
 import { type ActionTunings, asNodeId, createScene, type RectPose, pathNode } from '@weasel-js/core';
 import { SPIRO_KINDS, type SpiroContour, type SpiroKind } from '@weasel-js/geom';
-import { spiroNodeData, spiroPreset, useSpiroTool, pathsPreset } from '@weasel-js/path-tools';
+import { spiroNodeData, useSpiroTool } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import {
   type ConfigOf,
   defineInstrument,
@@ -18,7 +19,7 @@ import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const config = f.schema({
   pointKind: f.enum<SpiroKind>('smooth', SPIRO_KINDS).toggle().label('New point kind'),
@@ -29,7 +30,7 @@ type State = SceneTrialState<unknown, 'default', RectPose>;
 /** The curve the lab opens on, in path edit. */
 export const SEEDED_SPIRO = 'wave';
 
-const FEATURES = [drawPreset, pathsPreset, spiroPreset] as const;
+const FEATURES = [presets.draw, pathTools.paths, pathTools.spiro] as const;
 const OPENING = { id: SEEDED_SPIRO };
 
 function spiroNode(id: string, contour: SpiroContour, color: string) {

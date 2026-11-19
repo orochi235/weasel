@@ -1,4 +1,4 @@
-import { createPart } from '@weasel-js/registry';
+import { identityKeyOf } from '@weasel-js/registry';
 import { useMemo, type RefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { SelectionApi, WorldPoint } from '@weasel-js/routing';
@@ -122,14 +122,6 @@ export function usePresetBuilds(
   }, [builds, buildOwners, refines, ctx]);
 }
 
-let nextSerial = 0;
-const serials = createPart((_v: object) => nextSerial++);
-/** A key naming `v`: its value when primitive, a serial per identity otherwise. */
-function keyOf(v: unknown): string {
-  if ((typeof v !== 'object' && typeof v !== 'function') || v === null) return `${typeof v}:${String(v)}`;
-  return `#${serials(v)}`;
-}
-
 /** `options`, kept while every entry's fields are the same values: an inline `toolOptions={{ lasso: { mode } }}`
  *  does not rebuild the tools. */
 function useStableToolOptions(options: SceneCanvasToolOptions | undefined): SceneCanvasToolOptions {
@@ -137,8 +129,8 @@ function useStableToolOptions(options: SceneCanvasToolOptions | undefined): Scen
   for (const [tool, entry] of Object.entries(options ?? {}).sort(([a], [b]) => (a < b ? -1 : 1))) {
     parts.push(tool);
     if (entry && typeof entry === 'object') {
-      for (const [k, v] of Object.entries(entry).sort(([a], [b]) => (a < b ? -1 : 1))) parts.push(k, keyOf(v));
-    } else parts.push(keyOf(entry));
+      for (const [k, v] of Object.entries(entry).sort(([a], [b]) => (a < b ? -1 : 1))) parts.push(k, identityKeyOf(v));
+    } else parts.push(identityKeyOf(entry));
   }
   const key = parts.join('|');
   // eslint-disable-next-line react-hooks/exhaustive-deps

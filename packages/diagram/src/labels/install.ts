@@ -5,7 +5,6 @@
  */
 import {
   AUTO_POSE_DESCRIPTOR,
-  createSetDataOp,
   documentDepOf,
   documentPose,
   type NodeId,
@@ -28,6 +27,7 @@ import { labelFitOps } from './fit';
 import { placeLabels, type PlaceLabel, type PlaceLabelsOptions, type PlaceRoute } from './place';
 import { labelCenter } from './station';
 import { pathPoint, rectsIntersect, growRect } from '@weasel-js/geom';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** Options for {@link installLabelPlacement} and `useLabelPlacement`. */
 export interface LabelPlacementOptions<TPose> extends PlaceLabelsOptions {
@@ -207,7 +207,7 @@ function placementOps<TPose>(
     if (!placed.has(l.id)) continue;
     const spot = placed.get(l.id) ?? undefined;
     if (sameSpot(l.placement.placed, spot)) continue;
-    ops.push(createSetDataOp({ id: l.id, from: l.node.data, to: withSpot(l.node.data, l.placement, spot), label: 'Place label' }));
+    ops.push(coreOps.setData({ id: l.id, from: l.node.data, to: withSpot(l.node.data, l.placement, spot), label: 'Place label' }));
   }
   return ops;
 }

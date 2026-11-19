@@ -1,12 +1,13 @@
 import { type RefObject, useState } from 'react';
-import { useAttach } from './useAttach';
 import { createKeyState, type KeyState, type KeyStateAttachOptions } from './keyState';
+import { useElementEffect } from './useElementEffect';
 
 /** Options for {@link useKeyState}. */
 export interface UseKeyStateOptions extends KeyStateAttachOptions {
   /** Scope the poll to keys typed while focus is inside this element — a
-   *  canvas host, say. Omit it to poll the whole window. Read after each
-   *  commit, so an element that mounts later is attached when it does. */
+   *  canvas host, say. Omit it to poll the whole window. The ref is read
+   *  after every render of the calling component, so an element that mounts
+   *  later or is swapped for another is picked up then. */
   target?: RefObject<HTMLElement | null>;
 }
 
@@ -17,7 +18,7 @@ export function useKeyState(options: UseKeyStateOptions = {}): KeyState {
   const { target, skipInEditable, preventDefault } = options;
   const owned = preventDefault?.join('\n');
 
-  useAttach<Window | HTMLElement>(
+  useElementEffect<HTMLElement | Window>(
     () => (target ? target.current : window),
     (el) => keys.attach(el, {
       ...(skipInEditable !== undefined ? { skipInEditable } : {}),

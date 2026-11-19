@@ -1,7 +1,10 @@
-import { createHistory, type SerializedHistory, type SwapArgs, createSwapOp, useLatest } from '@weasel-js/core';
+import { createHistory, type SerializedHistory, type SwapArgs, useLatest } from '@weasel-js/core';
 import { type TokenScale, usePersistedState, useTrialId } from '@weasel-js/labkit';
+import { useKitSetting } from '@weasel-js/react';
+import { HISTORY_COALESCE_MS } from '@weasel-js/ui/kit-settings';
 import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import type { CssOverrides } from './overrides';
+import * as ops from '@weasel-js/core/ops';
 
 /** What an edit in the panel changes: the trial's overrides, and the scale each group's were generated from. */
 export interface VarsState {
@@ -10,8 +13,6 @@ export interface VarsState {
 }
 
 const SWAP = 'fg.vars.swap';
-/** Edits this close together under one key undo as one, so typing a value is one step. */
-const COALESCE_MS = 800;
 /** The history is kept with the trial, so it is held to a count. */
 const LIMIT = 100;
 
@@ -35,6 +36,7 @@ export function useVarsHistory(state: VarsState, apply: (from: VarsState, to: Va
   const trialId = useTrialId();
   const [stored, setStored] = usePersistedState<SerializedHistory | null>('fg-css-vars-history', null, { scope: 'trial' });
   const rendered = useLatest(state);
+  const coalesceMs = useLatest(useKitSetting('history.coalesceMs') ?? HISTORY_COALESCE_MS);
   // What an edit left, until the render that shows it: a second edit in the same tick starts from here.
   const ahead = useRef<VarsState | null>(null);
   useEffect(() => {
@@ -48,11 +50,11 @@ export function useVarsHistory(state: VarsState, apply: (from: VarsState, to: Va
     latestApply.current(from, to);
   };
   const swap = (before: VarsState, after: VarsState, coalesceKey?: string) =>
-    createSwapOp({ name: SWAP, label: 'edit vars', before, after, emit, ...(coalesceKey !== undefined ? { coalesceKey } : {}) });
+    ops.swap({ name: SWAP, label: 'edit vars', before, after, emit, ...(coalesceKey !== undefined ? { coalesceKey } : {}) });
 
   const history = useMemo(() => {
     const opened = createHistory(null, {
-      coalesceWindowMs: COALESCE_MS,
+      coalesceWindowMs: () => coalesceMs.current,
       historyLimit: LIMIT,
       rebuildOp: (name, args) => {
         const { before, after } = args as SwapArgs<VarsState>;

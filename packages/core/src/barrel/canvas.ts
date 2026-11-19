@@ -148,7 +148,7 @@ export type {
 // OS file drop / clipboard paste / file picker → content-handler registry.
 // `getContentHandlers` is deliberately NOT exported — consumers reach the
 // pipeline via `<SceneCanvas ingestion={…}>` and `SceneCanvasApi.ingest`; the
-// kit's handlers come with `@weasel-js/editing`'s `ingestPreset`.
+// kit's handlers come with `@weasel-js/editing`'s `presets.ingest`.
 export {
   registerContentHandler,
   contentHandlerRegistry,
@@ -170,7 +170,7 @@ export type { WeaselProviderProps } from '../WeaselProvider';
 export * from '../core/layers/render';
 export { createWorkspaceTintLayer, createModeDecorationLayer } from '../domains/modes/modeLayers';
 export type { WorkspaceTintLayerOptions } from '../domains/modes/modeLayers';
-export { modeTriggers } from '../domains/modes/modeTriggers';
+export { createModeTriggersContribution } from '../domains/modes/modeTriggers';
 export type { ModeTriggerHandlers, ModeTriggerParams } from '../domains/modes/modeTriggers';
 export { createChildrenLayer } from '../core/layers/children';
 export type { CreateChildrenLayerOptions } from '../core/layers/children';

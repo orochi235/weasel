@@ -8,7 +8,8 @@ import type { SceneCanvasApi, SurfaceContribution } from '@weasel-js/core';
 import { useHud, useHudContribution } from './react';
 import type { Widget } from './widget';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
-import { editPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 interface Empty { id: string }
 
@@ -34,7 +35,7 @@ function Harness() {
   return (
     <ActionsProvider>
       <SceneCanvas
-        ref={ref} width={200} height={200} scene={scene} selection={selection} layers={{}} features={[editPreset]}
+        ref={ref} width={200} height={200} scene={scene} selection={selection} layers={{}} features={[presets.edit]}
         ambient={[hudTool, probe]}
       />
     </ActionsProvider>

@@ -48,11 +48,18 @@ export function checkFinite(what: string, value: number | undefined): void {
   }
 }
 
-/** Throws on a time option, in ms, that is not finite, or below 0 (or 0 itself, when `positive`). */
-export function checkMsOption(what: string, value: number | undefined, positive = false): void {
-  if (value === undefined) return;
-  if (!Number.isFinite(value) || value < 0 || (positive && value === 0)) {
-    throw new RangeError(`@weasel-js/audio: ${what} is a finite number of ms, ${positive ? 'above 0' : '0 or more'}, not ${value}`);
+/** Throws on a playback rate that is not a positive finite number: a note's nodes retune by its
+ *  logarithm, and the voice processor reads a noise loop backward into NaN. */
+export function checkRate(what: string, value: number | undefined): void {
+  if (value !== undefined && !(value > 0 && value < Infinity)) {
+    throw new RangeError(`@weasel-js/audio: a ${what} is a positive finite number, not ${value}`);
+  }
+}
+
+/** Throws on a length of time, in ms, that is negative or not finite. */
+export function checkSpan(what: string, ms: number | undefined): void {
+  if (ms !== undefined && !(ms >= 0 && ms < Infinity)) {
+    throw new RangeError(`@weasel-js/audio: a ${what} is a finite number of ms, 0 or more, not ${ms}`);
   }
 }
 

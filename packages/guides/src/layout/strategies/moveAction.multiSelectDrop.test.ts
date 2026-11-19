@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { type InvocationCtx, createSetPoseOp } from '@weasel-js/core';
+import { type InvocationCtx } from '@weasel-js/core';
 import { tileGrid } from './tileGrid';
 import {
   type P,
@@ -8,6 +8,7 @@ import {
   heldPose,
 } from './testing/moveLayoutStubs';
 import { moveAction } from '@weasel-js/editing';
+import * as coreOps from '@weasel-js/core/ops';
 
 describe('moveAction multi-select layout drop', () => {
   /** Source C (tileGrid 3×1) holds a, b, e; destination D (tileGrid 2×1) is
@@ -233,7 +234,7 @@ describe('moveAction multi-select layout drop', () => {
         dragged: { id: string; originPose: P; pose: P },
       ) => {
         released.push(`${container.id}:${dragged.id}:${children.map((c) => c.id).join('+')}`);
-        return [createSetPoseOp<P>({
+        return [coreOps.setPose<P>({
           id: dragged.id, from: dragged.pose, to: dragged.originPose, label: 'Release',
         })];
       },

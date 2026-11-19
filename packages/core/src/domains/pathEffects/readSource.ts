@@ -47,10 +47,13 @@ function readShape(
   if (local === null) return null;
   const world = pathThroughPoseFrame(local, dep.pose);
   const pose = dep.pose;
-  if (!isRectPose(pose) || poseLinearOf(pose) !== null) return { world, ...paint };
+  if (!isRectPose(pose)) return { world, ...paint };
+  const rotation = pose.rotation ?? 0;
+  // A pose's frame is its turn after its `transform`, so the transform stays in the unturned outline.
+  const unturned = poseLinearOf(pose) === null ? local : pathThroughPoseFrame(local, { ...pose, rotation: 0 });
   return {
     world,
-    framed: { path: local, cx: pose.x + pose.width / 2, cy: pose.y + pose.height / 2, rotation: pose.rotation ?? 0 },
+    framed: { path: unturned, cx: pose.x + pose.width / 2, cy: pose.y + pose.height / 2, rotation },
     ...paint,
   };
 }

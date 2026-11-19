@@ -209,14 +209,6 @@ describe('renderNoise', () => {
 });
 
 describe('createNoiseKernel', () => {
-  it('plays a negative rate backwards through the loop, never past its start', () => {
-    const kernel = createNoiseKernel({ noise: 'white', rate: -1.5, envelope: FLAT }, RATE, () => 0.001);
-    const out = new Float32Array(ms(50));
-    kernel.render(out);
-    expect(out.every(Number.isFinite)).toBe(true);
-    expect(rms(out)).toBeGreaterThan(0.1);
-  });
-
   it('releases like a note', () => {
     const voice = createNoiseKernel({ noise: 'pink', envelope: { ...FLAT, release: 20 } }, RATE, () => 0);
     expect(voice.render(new Float32Array(ms(100)))).toBe(true);

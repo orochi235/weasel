@@ -14,7 +14,8 @@ import { SceneCanvas } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import type { Scene, NodeId, Contribution } from '@weasel-js/core';
 import type { ActionDisabledReason } from '@weasel-js/routing';
-import { drawPreset, pickPreset, createAreaSelectContribution } from '@weasel-js/editing';
+import { createAreaSelectContribution } from '@weasel-js/editing';
+import { drawPreset, pickPreset } from '../../presets/composites';
 
 type D = { kind: 'rect' };
 type L = 'main';

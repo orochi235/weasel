@@ -1,0 +1,78 @@
+{
+ "id": "core",
+ "commit": "c612cad371d9093df82913a3e49045e0f89422ea",
+ "date": "2026-11-18",
+ "files": [
+  "packages/core/src/WeaselProvider.tsx",
+  "packages/core/src/affordances/composeAffordanceLayer.ts",
+  "packages/core/src/affordances/hitAffordanceRegions.ts",
+  "packages/core/src/affordances/index.ts",
+  "packages/core/src/affordances/pathAnchors.ts",
+  "packages/core/src/affordances/types.ts",
+  "packages/core/src/icons.gen.ts",
+  "packages/core/src/icons.table.ts",
+  "packages/core/src/index.ts",
+  "packages/core/src/input/keyState.ts",
+  "packages/core/src/input/useKeyModifiers.ts",
+  "packages/core/src/input/useKeyState.ts",
+  "packages/core/src/input/usePublishPointer.ts",
+  "packages/core/src/kitSettings.ts",
+  "packages/core/src/kitSettingsSchema.ts",
+  "packages/core/src/layout/index.ts",
+  "packages/core/src/layout/types.ts",
+  "packages/core/src/test-hook/createTestHook.ts",
+  "packages/core/src/test-hook/install.ts",
+  "packages/core/src/test-hook/types.ts",
+  "packages/core/src/test-hook/useTestHook.ts",
+  "packages/core/src/testing/BareCanvas.tsx",
+  "packages/core/src/testing/canvas.ts",
+  "packages/core/src/testing/canvasPixels.ts",
+  "packages/core/src/testing/matchMedia.ts",
+  "packages/core/src/tools/builtin/hand/createDragPanContribution.ts",
+  "packages/core/src/tools/builtin/hand/index.ts",
+  "packages/core/src/tools/builtin/hand/useHandTool.ts",
+  "packages/core/src/tools/builtin/index.ts",
+  "packages/core/src/tools/builtin/marquee.ts",
+  "packages/core/src/tools/builtin/throughChrome.ts",
+  "packages/core/src/tools/index.ts",
+  "packages/core/src/tools/overlayBinding.ts",
+  "packages/core/src/tools/useKeybindings.ts",
+  "packages/core/src/version.ts"
+ ],
+ "a": 4,
+ "b": 4,
+ "m": 2,
+ "distinct": 6,
+ "chapman": 7.3,
+ "unfound": 1.3,
+ "read": {
+  "A": 35,
+  "B": 33
+ },
+ "patches": 6,
+ "questions": 1,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.7,
+   "B": 4.1,
+   "match": 0.1,
+   "fix": 13.6
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "msb-uai"
+  },
+  "tokens": 12189510,
+  "costUsd": 6.31
+ },
+ "fixCommits": [
+  "06303a3aab0af7c21e1072012bbe3ea563cd771f",
+  "1b27b2fbb72d507e400daf06f6ffc8ee3c187e21",
+  "8278212fa513e3e58d7ed8798e4b22709d828ced",
+  "37baa8c97a3b6bd4e90822962c1dd602a377533d",
+  "b05583afc970930739825d8670c0aeff2e267d6d",
+  "c30911d8532dce6e4c7cdf00ca5aac9d9967ea8e"
+ ]
+}

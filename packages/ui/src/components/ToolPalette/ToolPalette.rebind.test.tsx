@@ -7,7 +7,7 @@ import { SceneCanvas, createScene, type ToolsApi } from '@weasel-js/core';
 import { formatShortcut, key } from '@weasel-js/gestures';
 import { renderWithIcons } from '../../testing/withIcons';
 import { ToolPalette } from './ToolPalette';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -31,7 +31,7 @@ function setup(initial: BindingOverrides) {
     return (
       <>
         {tools && <ToolPalette tools={tools} stacks={[['ellipse', 'polygon']]} />}
-        <SceneCanvas features={[drawPreset]} scene={scene} width={64} height={64} defaultTools={TOOLS}
+        <SceneCanvas features={[presets.draw]} scene={scene} width={64} height={64} defaultTools={TOOLS}
           bindingOverrides={overrides} onToolsCreated={setTools} />
       </>
     );

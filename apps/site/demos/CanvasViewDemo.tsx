@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { solid } from '@weasel-js/paint';
-import { asNodeId, CanvasView, PointerContextProvider, SceneCanvas, usePointerPosition, useScene, viewPreset } from '@weasel-js/core';
+import { asNodeId, CanvasView, PointerContextProvider, SceneCanvas, usePointerPosition, useScene } from '@weasel-js/core';
 import type { Fill, RectPose, View } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
 import styles from './CanvasViewDemo.module.css';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 interface NodeData { fill: Fill }
 type LayerId = 'default';
@@ -87,7 +88,7 @@ export function CanvasViewDemo() {
         </div>
         <DemoStage width={W} height={H}>
           <SceneCanvas
-            features={[viewPreset, pickPreset, movePreset]}
+            features={[presets.view, presets.pick, presets.move]}
             className="ckd-canvas"
             scene={scene}
             selection={selection}

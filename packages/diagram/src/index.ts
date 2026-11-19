@@ -51,19 +51,19 @@ export {
 export type { CanDropItem, ItemDrop, ItemDropOptions, ItemDropTarget } from './itemDrop';
 export { bodyAt, isBodyEnd } from './connectTargets';
 export type { BodyEnd, BodyHit, ConnectEnd, ConnectView } from './connectTargets';
-export { DRAW_CONNECTOR_ACTION_ID, CONNECTOR_TOOL_ID, connectorTool, useConnectorTool } from './connectorTool';
+export { DRAW_CONNECTOR_ACTION_ID, CONNECTOR_TOOL_ID, createConnectorTool, useConnectorTool } from './connectorTool';
 export { FLOWCHART_STENCILS, stencilInsertOps, stencilIdOf, stencilKind } from './stencil';
 export type { DiagramStencil } from './stencil';
-export { stencilTool, useStencilInsert, useStencilTool } from './stencilTool';
+export { createStencilTool, useStencilInsert, useStencilTool } from './stencilTool';
 export {
-  DIAGRAM_TOOLS, STENCIL_TOOLS, stencilTools, stencilToolSet, useDiagramTools, type UseDiagramToolsOptions,
+  DIAGRAM_TOOLS, STENCIL_TOOLS, createStencilTools, stencilToolSet, useDiagramTools, type UseDiagramToolsOptions,
 } from './diagramTools';
 export type { StencilInsertOptions } from './stencilTool';
 export { StencilGhost, type StencilGhostProps } from './StencilGhost';
 export * from './containers';
 export {
   GRAB_LABEL_ACTION_ID, GRAB_WAYPOINT_ACTION_ID, SELECT_LABEL_EDGE_ACTION_ID,
-  diagramLabels, createDiagramPortsContribution, createDiagramWaypointsContribution,
+  createDiagramLabelsContribution, createDiagramPortsContribution, createDiagramWaypointsContribution,
 } from './contribution';
 export type { DiagramContributionOptions } from './contribution';
 export {
@@ -134,7 +134,7 @@ export type { EndChange, ReconnectOptions } from './reconnect';
 export { REORDER_ACTION_ID, createReorderAction, reorderBinding, createReorderContribution, createReorderPreset, slotsAlong } from './reorder';
 export type { ReorderGap, ReorderItem, ReorderMove, ReorderOptions, ReorderSlots } from './reorder';
 export {
-  STEP_REORDER_ACTION_ID, createStepReorderAction, clusterReorderContribution, createClusterReorderPreset, clusterReorderSlots,
+  STEP_REORDER_ACTION_ID, createStepReorderAction, createClusterReorderContribution, createClusterReorderPreset, clusterReorderSlots,
 } from './clusterReorder';
 export {
   DIAGRAM_EDGE,
@@ -243,7 +243,7 @@ export type {
 } from './fromData';
 export { diagramMarkOf, markShape, registerMarkShape, type MarkShapeOptions } from './marks';
 export type { DataMark, DiagramMark } from './marks';
-export { force, forceRelaxation } from './force';
+export { force, createForceRelaxation } from './force';
 export type { ForceBody, ForceOptions, ForceRelaxation } from './force';
 export { EASED_LAYOUTS, easedProducer, forceProducer, useLiveLayout } from './live';
 export type {

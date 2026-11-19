@@ -19,9 +19,10 @@ import { useCanvasModes } from './useCanvasModes';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 import { solid } from '@weasel-js/paint';
 import { SceneCanvas, asNodeId, createScene, hasEditablePath, pathFromD, type PolygonPath } from '@weasel-js/core';
-import { pathsPreset } from '@weasel-js/path-tools';
+import * as pathTools from '@weasel-js/path-tools/presets';
 import type { DrawScene } from '../drawDocument';
-import { drawPreset, useSelection } from '@weasel-js/editing';
+import { useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 beforeAll(() => {
   (HTMLCanvasElement.prototype as unknown as { getContext: () => null }).getContext = () => null;
@@ -84,7 +85,7 @@ function MachineHarness({
         onCommit={() => machine.commitMode()}
         onCancel={() => machine.cancelMode()}
       />
-      <SceneCanvas features={[drawPreset, pathsPreset]} scene={scene} selection={selection} layers={{}} width={64} height={64}
+      <SceneCanvas features={[presets.draw, pathTools.paths]} scene={scene} selection={selection} layers={{}} width={64} height={64}
         ambient={modes.ambient}
         modes={machine.registry}
         pathEdit={modes.pathEdit} />

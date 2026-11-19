@@ -2,8 +2,8 @@
 '@weasel-js/core': patch
 ---
 
-A `momentum` coast canceled on its animator (`cancelAll`, unmounting) is recorded as an undoable flick where it stopped
+A `momentum` flick over a scene that the animator cancels mid-coast is recorded where it stopped, so undo takes the node back.
 
-It ends as a new drag of the node ends it: the document takes the pose the coast reached, the flick is one history step back to where the drag began, and an adapter's `previewPoses` preview is cleared.
+This covers `cancelAll` and the animator going away.
 
 <!-- entry: fix -->

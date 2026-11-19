@@ -102,7 +102,7 @@ export function tokenCategory(token: TokenEntry): TokenCategory {
 }
 
 // CSS's <number>: a sign, and an exponent as `${n}` writes one past 1e21 or below 1e-6.
-const AMOUNT = String.raw`[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?`;
+const AMOUNT = String.raw`[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?`;
 const DIMENSION = new RegExp(
   `^${AMOUNT}(?:px|rem|em|%|ch|ex|lh|rlh|vh|vw|vmin|vmax|svh|lvh|dvh|cqw|cqh|pt|pc|cm|mm|in|q)$`,
   'i',
@@ -112,12 +112,29 @@ const NUMBER = new RegExp(`^${AMOUNT}$`);
 const LENGTH = new RegExp(`^${AMOUNT}(?:px|rem|em)?$`);
 const BEZIER = new RegExp(`^cubic-bezier\\(\\s*(${AMOUNT})\\s*,\\s*(${AMOUNT})\\s*,\\s*(${AMOUNT})\\s*,\\s*(${AMOUNT})\\s*\\)$`, 'i');
 const GRADIENT = /^(?:repeating-)?(?:linear|radial|conic)-gradient\(/i;
-/** Commas outside parentheses: a shadow's layers, not a color function's arguments. */
-const LAYERS = /,(?![^(]*\))/;
 const PARTS = /[a-z-]+\([^)]*\)|\S+/gi;
 
+/** `value` split at commas outside parentheses: a shadow's layers, not a color function's arguments. A scan, since a
+ *  lookahead for the closing parenthesis reads to the end of the text from every comma. */
+function layersOf(value: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < value.length; i++) {
+    const ch = value[i];
+    if (ch === '(') depth++;
+    else if (ch === ')') depth = Math.max(0, depth - 1);
+    else if (ch === ',' && depth === 0) {
+      out.push(value.slice(start, i));
+      start = i + 1;
+    }
+  }
+  out.push(value.slice(start));
+  return out;
+}
+
 function isShadow(value: string): boolean {
-  return value.split(LAYERS).every((layer) => {
+  return layersOf(value).every((layer) => {
     const parts = layer.trim().replace(/^inset\s+/i, '').match(PARTS) ?? [];
     const lengths = parts.filter((part) => LENGTH.test(part));
     const rest = parts.filter((part) => !LENGTH.test(part));

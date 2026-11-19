@@ -86,7 +86,7 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   but does not flip through it. Retract and Symmetric have no default shortcut.
 - 2026-10-18: `ModeDefinition.entry.targets` names the routing kinds a `'double-click-target'`
   entry takes (`PATH_EDIT` `['path']`, `TEXT_EDIT` none), and core's
-  `modeTriggers(registry, { enter, canEnter })` binds them: ambient tier, so a tool that binds the
+  `createModeTriggersContribution(registry, { enter, canEnter })` binds them: ambient tier, so a tool that binds the
   double-click itself (pen, spiro, slice finishing) now wins where draw's `onDoubleClick` observer
   used to enter path-edit alongside it.
 - 2026-10-18: `<SceneCanvas isPointerInteractive>` now gates every point hit, not only the
@@ -113,7 +113,7 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   which no theme sets.
 - 2026-10-18: Whether a single click on a grouped member selects the group is still open. A single
   click is unchanged and picks the member.
-- 2026-10-18: Create Outlines moved from Mod+Shift+O to Mod+Enter (Affinity's Convert to Curves)
+- 2026-10-18: Create Outlines moved from Mod+Shift+O to Mod+Enter
   and Average Anchors from Mod+Alt+J to Mod+Alt+Shift+J, off chords Chrome takes first.
 - 2026-10-19: Bridge and Bridge anchors moved from Mod+Shift+J, Firefox's Browser Console, to
   Alt+J, beside the Alt-letter anchor selections.
@@ -323,7 +323,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   inside `batch` or `untracked`.
 - 2026-10-12: A removal deselects its nodes. A replayed op whose node is gone is skipped. An
   adapter whose layer list changes must implement `subscribeLayers`. `/clone` exports types only.
-  New layouts: `slots`, `pack`, `quadtree`, and `perContainer`.
+  New layouts: `slots`, `pack`, `quadtree`, and `createPerContainerStrategy`.
 - 2026-10-13: `TargetTransform` is `{ identity, toWorld, toLocal }` and `annulusSemiAxes` takes
   one, so chrome follows a pose's `transform`. A pre-built `{ layer }` in `<SceneCanvas layers>`
   paints.
@@ -707,6 +707,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   as the end of its paragraph: X8 closes every embedding and isolate there, BD9 pairs no `PDI` past it, and `'auto'`
   takes its direction from before it, so `'\nא'` reads left to right where it read right to left. text's layout cuts
   paragraphs before calling it, so only a separator text does not cut at (U+001C–U+001E) meets this (f533898fb).
+- Ruled 2026-11-18 (audit 37, the lane's call): bidi's `reorder` and `reorderLine` throw a `RangeError` for a line that is
+  not integers with `0 <= start <= end <=` the paragraph's length, where one past the end returned indices of characters
+  that do not exist. There is no override: no such range names a line.
 - Ruled 2026-11-16 (audit 29): the edit overlay writes a `selectionBackground` or `selectionColor`,
   default included, into its `::selection` rule only when `parsesAsColor` (`@weasel-js/paint`) reads it as a CSS
   color; any other value is left out with a warning, and the rule is not written when neither is one. There is no
@@ -784,7 +787,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   frame an extension refuses previews the transform alone. A resize's frame is read from poses
   only, so a `data.path` node it scales previews its links from the unscaled path; the commit
   reads the scaled one.
-- 2026-10-19: A broken constraint link is drawn on every canvas with `constraintsPreset`, in or out
+- 2026-10-19: A broken constraint link is drawn on every canvas with `pathTools.constraints`, in or out
   of path edit, by a screen-space layer of its own (`createConstraintLinkMarks`): the link's
   constraint mark by the anchor it holds and a dashed line to where the link wants that anchor,
   both in the conflict red. A link that holds draws nothing there. The layer reads the committed
@@ -918,6 +921,13 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## ui, prefs, and theme
 
+- Open (2026-11-18, accessibility sweep): theme tokens drawn as text miss WCAG's 4.5:1 on the surfaces they sit
+  on, measured by axe over every ui and labkit story in both modes (`apps/forge/a11y.browser.test.tsx`, which
+  lists the stories in `a11y.known.ts`). The status bases as text on `gray-50`: danger `#d94a3f` 3.85:1, warning
+  `#d99a3f` 2.22:1, success `#2ec27e` 2.11:1, info `#7ab8d4` 2.00:1; danger on `gray-800` 4.14:1. The muted grays
+  on `gray-50` (`#828284` 3.52:1, `#9b9b9d` 2.54:1, `#89898b` 3.20:1), the accent `#6a62d4` 4.47:1 on `gray-50`,
+  and the tinted chips (`ToggleChips`, `PrefKindBadge`, `Subpanel` tints) fall short too. No color was changed:
+  whether status text takes a darker step of each hue, or the bases change, is a theme call.
 - Open (2026-11-11, audit round 15, leftovers lane): which minus sign a formatted number uses, and one formatter
   for both. quantity writes a negative with U+2212 (`MINUS_SIGN`, `packages/quantity/src/number.ts`), and plot's
   `formatTick` (`packages/plot/src/scales/tickFormat.ts`) writes `toFixed`'s hyphen-minus, so a chart's tick reads
@@ -1149,6 +1159,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   node and timed out Prefs' Rail Filterable. `viewport` is gone from `RunStoryOptions` in
   `@weasel-js/forge/test`, and inside a story with a viewport `window.innerWidth` and media queries
   see the test page's default 414×896.
+- 2026-11-18 (my call, audit round 37): a voice's `rate` (`play`, `playNote`, `playNoise`, `stream`, `setRate`, and
+  the voice kernels) is a positive finite number, and 0 or below throws `RangeError`. A note's nodes retune by its
+  logarithm, and the voice processor read a noise loop backward into NaN. A buffer voice played both, frozen at 0
+  and backward below it, and is held to the same rule so that `setRate` means one thing on every handle.
+
 - 2026-10-11: Diagram groups nest and their boxes take presses; the `orthogonal` router turns at
   once after a waypoint where it would double back. Audio has `onDrop`.
 - 2026-10-12: labkit's `isConfigNodeShown` takes the resolved schema; `DragState` carries `from`; a
@@ -1327,9 +1342,6 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   (b686c535b). It does not report them; nothing in symmetry has a place to.
 - 2026-11-11 (my call, cursor second pass): `placeCursorPath` throws a `RangeError` for a scale or move that makes a
   coordinate `NaN` or infinite (e3481a9d2), as `bakeCursor` refuses an infinite size, rather than dropping the point.
-- 2026-11-18 (my call, audit round 38): audio's test helper `renderEngineStereo` throws a `RangeError` for a
-  `later.at` the offline render cannot pause at (outside it, or inside the first quantum when worklet voices hold
-  it there), rather than skipping the hook (e8efbaa43).
 - Open (dither second pass, 2026-11-11): `dither()` takes an output grid whose pitch is 0, `NaN`, or infinite, as
   `deviceGrid` gives for a view scaled to 0, and passes it to the shader, which divides by it. No ruling on whether
   it throws, draws nothing, or falls back to the screen grid.
@@ -1502,11 +1514,9 @@ Calls the round made:
   name (`InertiaConfig`, `ActionDisabledReason`): removing them breaks consumers in a patch release.
 - `withAlpha01(c, NaN)` writes `'#rrggbbNaN'` and `paintWithAlpha(p, NaN)` sets opacity NaN. Left as is:
   NaN could leave the color unchanged, mean 0, or mean 1.
-- A flick's coast canceled from outside (`cancelAll`, `cancelKey`, or the animator going away) records the
-  flick where the coast stopped and clears its preview, as a new drag of the node does; on 2026-11-18 (the
-  fixer's call, audit round thirty-eight) for every adapter, since over pose targets the cancel had already
-  written the stopped pose into the document outside history. Clearing the preview and restoring the
-  pre-drag pose was the alternative.
+- A flick's coast canceled from outside (`cancelAll`, or the animator going away) over an adapter with
+  `previewPoses` and no pose targets leaves its last frame as a preview and records nothing, as the code
+  says it means to. Left as is: it could record where the coast stopped, or clear the preview.
 
 ## Audit round seven (2026-11-08)
 
@@ -2662,26 +2672,56 @@ Calls the lanes made without a ruling:
   or a sampled colour that is not `#rrggbb`, and on a LEGO name holding a named HTML reference other than `&amp;`,
   `&lt;`, `&gt;`, `&quot;`, `&apos;` and `&nbsp;`. Skipping the row with a warning was the alternative.
 
-## Audit round thirty-eight (2026-11-18): audio
+## Audit round thirty-seven (2026-11-18): the audio graph
 
-- 2026-11-18 (the fixer's call): a synth voice's `duration` and a glide's `ms` must be finite and 0 or more, or
-  `playNote`/`playNoise` (and the kernels) throw a `RangeError`; an envelope's or filter's number that is not finite
-  throws too. A negative envelope time or an out-of-range sustain is still clamped. Clamping a negative duration to 0
+- 2026-11-18 (the fixer's call): an audio graph's `fadeMs` below 0 throws `RangeError` at construction, as a
+  non-finite one does; clamping it to 0 was the alternative.
+- 2026-11-18 (the fixer's call): a graph source whose `start` throws is left stopped and still in the graph. `start()`
+  starts the rest and rethrows the first error, an `add` or `replace` while playing keeps the new def and rethrows,
+  and `apply` treats it as it treats a throwing `set`: the rest apply, then the first error is rethrown. Removing the
+  node again on a failed `add` was the alternative.
+- 2026-11-18 (the fixer's call): an audio graph's `add` and `replace` throw on a def the graph still holds — any
+  node's live def, one a `replace` is fading out, or a removed node's still fading — and `apply` refuses one before
+  changing anything. `replace` with the node's own def, to retrigger its crossfade, is refused too; skipping it as a
+  no-op was the alternative.
+## Audit round thirty-seven (2026-11-18): brush
+
+- 2026-11-18 (the fixer's call): `shareBrushSize` throws on an empty key, and on a size leaf with a `measure` or a
+  `unit` other than plain `px` under `BRUSH_SIZE_PX`; a size in world units passes a key of its own, which is the
+  override. A leaf naming neither a unit nor a measure passes, since it says nothing. Warning and sharing anyway
   was the alternative.
-- 2026-11-18 (the fixer's call): a `playNote` voice's rate must be above 0: `setRate` (and an untyped `rate` at the
-  call) throws a `RangeError` otherwise, on both voice paths. A buffer or noise voice still takes 0 and a negative
-  rate, which a buffer source plays as held or backwards, and a worklet noise voice now plays backwards too. Reading a
-  note's 0 as silence, as the kernel did, was the alternative.
-## Audit round thirty-eight (2026-11-18): clock
+## Audit round thirty-seven (2026-11-18): clock
 
-- 2026-11-18 (the fixer's call): a clock declared `start: 'end'` refuses, with a `RangeError`, any change that would
-  make its run endless — a `duration` or `loop` write, `declare`, `override` — and opening such a clock endless
-  from a recorded position throws as creating one does. `reset` could not place it otherwise. labkit's transport
-  loop toggle on such a trial now throws from its handler where `reset` threw later. Letting the write through and
-  having `reset` open an endless `'end'` run at 0 was the alternative.
-- 2026-11-18 (the fixer's call): a clock registration another under its id shadows is still held: the registry's
-  `all()` and `targets()` list it, so `useClockLoop` keeps driving and gating it and a lab's still holds it.
-  Freezing a shadowed clock until it comes back, and rebasing it then, was the alternative.
+- 2026-11-18 (the fixer's call): a clock declared `start: 'end'` whose run is made endless at runtime (a loop toggle,
+  `duration = Infinity`, an override) resets to the end of its declared run, standing at that pass's end, and
+  `declare` throws a `RangeError` on a declaration whose run never ends for such a clock, keeping the last one.
+  Resetting to 0 there, or letting `declare` through and throwing at Reset as before, were the alternatives.
+## Audit round thirty-seven (2026-11-18): core's animation
+
+- 2026-11-18 (the fixer's call): an `animateLifecycle` insert or removal whose tween cannot run (no pose target and a
+  geometry with no `lerp`) throws as `tweenPose` does, leaving the inserted node at its own pose and the node to be
+  removed in place and removable again. Falling back to an instant insert or removal without throwing was the
+  alternative.
+- 2026-11-18 (the fixer's call): `animateOnSetPose` and `animateLifecycle` take round nineteen's reduced-motion call: with
+  no `ms`, they take no time under `prefers-reduced-motion`. A `spring` option, which the caller names, still springs.
+- 2026-11-18 (the fixer's call): a `momentum` flick on pose targets that the animator cancels from outside (`cancelAll`,
+  an unmount) is recorded where it stopped, as one undo step, since each canceled decay has already written that pose
+  to the document. Putting the document back where the drag began was the alternative. Round six's line on the
+  `previewPoses` path, which records nothing, stands.
+## Parser fuzzing (2026-11-18)
+
+- 2026-11-18 (the fixer's call): a weasel clipboard paste with any malformed item (not a node, a duplicate id, a layer
+  the scene lacks, a pose with no finite bounds, a parent loop) pastes nothing, with a debug warning. Pasting the
+  well-formed items and reporting the rest through `onOmit` was the alternative; it needs a new `PasteOmission` reason.
+- 2026-11-18 (the fixer's call): `History.restore` refuses a snapshot of the wrong shape whole, throwing
+  `HistoryRestoreError` when strict and warning with `restored: false` when best-effort, as `Scene.restoreHistory`
+  already did for a snapshot of the wrong form. Dropping only the malformed entries under best-effort was the
+  alternative.
+- 2026-11-18 (the fixer's call): a tagged typed array whose data holds an object decodes that entry as `NaN`. Refusing
+  the whole snapshot with `SnapshotShapeError` was the alternative.
+- 2026-11-18 (the fixer's call): `resolveUnitExpr` refuses an expression nesting parentheses or signs past 1000 levels
+  with its own `unitExpr:` error.
+
 ## Audit round thirty-eight (2026-11-18): core's animation
 
 - 2026-11-18 (the fixer's call): `rigFromNode` and `useRigNode` leave out a joint the rig node's skeleton lacks, one

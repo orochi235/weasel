@@ -9,8 +9,8 @@ import {
   type RectPose,
   type RenderLayer,
   type View,
-  viewPreset,
 } from '@weasel-js/core';
+import * as corePresets from '@weasel-js/core/presets';
 import {
   dither, deviceGrid, createProtectTexture,
   type DitherMethod, type ProtectTexture,
@@ -185,7 +185,7 @@ export function DitherDemo() {
       <DemoStage width={W} height={H}>
         <SceneCanvas
           key={snap}
-          features={[viewPreset]}
+          features={[corePresets.view]}
           viewport={ZOOM_RANGE}
           defaultActiveTool="hand"
           view={view}

@@ -81,15 +81,13 @@ export function hitAffordanceRegions(
   return null;
 }
 
-/** Whether chrome caps leave a region of a shown affordance shown: its own `chromeId`, when it
- *  has one, must be visible too. Paint and the hit walk both ask this. */
-export function regionShown(region: AffordanceRegion, isVisible?: ((id: string) => boolean) | null): boolean {
+/** Whether a region's own `chromeId` leaves it shown; paint and hit both ask. */
+export function regionShown(region: AffordanceRegion, isVisible: ((id: string) => boolean) | null | undefined): boolean {
   return !isVisible || !region.chromeId || isVisible(region.chromeId);
 }
 
 /** Squared screen distance from the point to a region's representative center,
- *  used only to rank regions that all already contain the point. On screen, the
- *  space a point region's hit square is tested in. */
+ *  used only to rank regions that all already contain the point. */
 function regionDistance2(
   region: AffordanceRegion,
   wx: number,
@@ -104,6 +102,7 @@ function regionDistance2(
     : s.kind === 'annulus'
       ? localToWorld(xf, s.cx, s.cy)
       : localToWorld(xf, s.x + s.width / 2, s.y + s.height / 2);
+  // On screen, as the hit squares are tested: a world distance misranks under non-uniform zoom.
   const d = scaleDelta(w.x - wx, w.y - wy, view.scale);
   return d.x * d.x + d.y * d.y;
 }
@@ -205,9 +204,9 @@ export function annulusSemiAxes(
   const bandPx = shape.minBandPx ?? 0;
   if (bandPx === 0) return { rx: shape.rx, ry: shape.ry };
   const band = pxExtentIn(bandPx, view.scale, xf);
-  // Past the cutout edge farther from the center, which need not be centered on it.
-  const reachX = Math.max(Math.abs(shape.innerX - shape.cx), Math.abs(shape.innerX + shape.innerWidth - shape.cx));
-  const reachY = Math.max(Math.abs(shape.innerY - shape.cy), Math.abs(shape.innerY + shape.innerHeight - shape.cy));
+  // The band is floored past the inner rect's edge farthest from the center.
+  const reachX = Math.max(shape.cx - shape.innerX, shape.innerX + shape.innerWidth - shape.cx);
+  const reachY = Math.max(shape.cy - shape.innerY, shape.innerY + shape.innerHeight - shape.cy);
   return {
     rx: Math.max(shape.rx, reachX + band.x),
     ry: Math.max(shape.ry, reachY + band.y),

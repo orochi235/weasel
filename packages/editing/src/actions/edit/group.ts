@@ -1,10 +1,11 @@
 import type { SceneNode as Node, NodeId, Op } from '@weasel-js/core';
-import { createInsertOp, groupingSite, pageIdOf, translatePoseViaDescriptor, unionBounds, poseDescriptorOf, visualBoundsViaDescriptor, createSetPoseOp, scenePoseFrame, commitOps } from '@weasel-js/core/engine';
-import { createReparentOp, createDeleteOp, createSetDependsOnOp, rootsAmong, followerOpsFor, finiteThroughout, requiresContent, operandContent, inPaintOrder, slotAbove } from '@weasel-js/core';
+import { groupingSite, pageIdOf, translatePoseViaDescriptor, unionBounds, poseDescriptorOf, visualBoundsViaDescriptor, scenePoseFrame, commitOps } from '@weasel-js/core/engine';
+import { rootsAmong, followerOpsFor, finiteThroughout, requiresContent, operandContent, inPaintOrder, slotAbove } from '@weasel-js/core';
 import { ActionDisabledReason, type Action, type ActionDeps, BETWEEN_GESTURES } from '@weasel-js/routing';
 import { icon } from '../../icons.gen';
 import type { AnyScene } from '@weasel-js/core/engine';
 import { STRUCTURE_GROUP } from '../../actionGroups';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** Where grouping the selection puts its container and members, or null when it cannot: no content, members on
  *  more than one layer, a container too large for the double range, a container that lands in a singular frame
@@ -82,7 +83,7 @@ export const groupAction: Action & { requires: string[] } = {
       const containerId = scene.mintId();
       const index = slotAbove(scene, parent, nodes.at(-1)!.id);
       const ops: Op[] = [
-        createInsertOp<Node<unknown, string, unknown>>({
+        coreOps.insert<Node<unknown, string, unknown>>({
           node: {
             id: containerId,
             kind: 'group',
@@ -96,14 +97,14 @@ export const groupAction: Action & { requires: string[] } = {
         }),
       ];
       nodes.forEach((node, i) => {
-        ops.push(createReparentOp({
+        ops.push(coreOps.reparent({
           id: node.id as string,
           fromParentId: (node.parent ?? null) as string | null,
           toParentId: containerId as string,
           toIndex: i,
           label: 'Group',
         }));
-        ops.push(createSetPoseOp<unknown>({ id: node.id as string, from: node.pose, to: locals.get(node.id), label: 'Group' }));
+        ops.push(coreOps.setPose<unknown>({ id: node.id as string, from: node.pose, to: locals.get(node.id), label: 'Group' }));
       });
       ops.push(...followers);
 
@@ -185,24 +186,24 @@ function ungroupOps(scene: AnyScene, plan: UngroupPlan): Op[] | null {
     for (const childId of scene.childrenOf(containerId)) {
       const to = frame.localUnder(parent, frame.world(childId));
       if (to === null) return null;
-      moves.push(createReparentOp({
+      moves.push(coreOps.reparent({
         id: childId as string,
         fromParentId: containerId as string,
         toParentId: parent as string | null,
         toSlot: { index, before: containerId as string },
         label: 'Ungroup',
       }));
-      moves.push(createSetPoseOp<unknown>({
+      moves.push(coreOps.setPose<unknown>({
         id: childId as string,
         from: scene.get(childId)!.pose,
         to,
         label: 'Ungroup',
       }));
     }
-    removals.push(createDeleteOp({ node: { ...container, parent }, index, label: 'Ungroup' }));
+    removals.push(coreOps.delete({ node: { ...container, parent }, index, label: 'Ungroup' }));
   }
   const cuts = [...plan.released].map(([id, to]) =>
-    createSetDependsOnOp({ id, from: scene.get(id)!.dependsOn as readonly NodeId[], to, label: 'Ungroup' }));
+    coreOps.setDependsOn({ id, from: scene.get(id)!.dependsOn as readonly NodeId[], to, label: 'Ungroup' }));
   return [...moves, ...cuts, ...removals];
 }
 

@@ -4,12 +4,12 @@ import { createBusGraph, type BusHandle } from './buses';
 import { createAudioGraph, disposeNow } from './graph/createAudioGraph';
 import type { AudioGraph, AudioGraphOptions } from './graph/types';
 import type { Slots, Starter } from './liveVoice';
-import { checkMsOption } from './param';
+import { checkSpan } from './param';
 import { createResumeWatch } from './resumeWatch';
-import { createScheduler } from './scheduler';
+import { checkSchedulerTiming, createScheduler } from './scheduler';
 import { createSoundCache, type SoundCache, type SoundHandle } from './soundCache';
 import { checkListener, type SpatialOptions, type SpatialPoint } from './spatialize';
-import { createStreamStarters } from './streamStarter';
+import { createStreamStarters, restream } from './streamStarter';
 import { createSynthStarters } from './synthStarters';
 import { createWorkletVoices } from './worklet/workletVoices';
 import { createTickTimer } from './tickTimer';
@@ -19,7 +19,7 @@ import type {
 import { createChainPool } from './voiceChains';
 import { createDropWarnings, type DropWarnings } from './voiceDrops';
 import { createVoicePool } from './voicePool';
-import { checkVoice, createVoices } from './voices';
+import { createVoices } from './voices';
 
 /** A sound engine: named mix buses, a per-bus voice pool, lookahead
  *  scheduling and 2D or 3D spatialization over one `AudioContext`. Times are engine
@@ -198,19 +198,6 @@ function engineClock(ctx: BaseAudioContext, opts: AudioEngineOptions) {
   return { now, tickTimer, timers, scheduler };
 }
 
-/** The engine's buses, once every option is checked: ahead of the context and
- *  the tick timer's worker, which a throw would leave behind. */
-function checkEngineOptions(opts: AudioEngineOptions): string[] {
-  checkMsOption('lookahead', opts.lookahead);
-  checkMsOption('tickInterval', opts.tickInterval, true);
-  checkMsOption('insertFadeMs', opts.insertFadeMs);
-  const busNames = opts.buses ?? ['sfx', 'music', 'ui'];
-  if (busNames.length === 0) {
-    throw new Error('@weasel-js/audio: an engine needs at least one bus');
-  }
-  return busNames;
-}
-
 /**
  * Create an engine. Browsers start the context suspended: `play()` before it
  * is unlocked drops the voice with a warning. The engine resumes it on the
@@ -218,11 +205,17 @@ function checkEngineOptions(opts: AudioEngineOptions): string[] {
  * `dispose()` when done.
  */
 export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
-  const busNames = checkEngineOptions(opts);
+  // Before anything is made: the tick timer's worker and a context of the engine's own would leak.
+  checkSchedulerTiming({ lookahead: opts.lookahead, interval: opts.tickInterval });
+  checkSpan('insert fade', opts.insertFadeMs);
   const ctx = opts.context ?? new AudioContext();
   // A context the engine made is a context the engine closes; a consumer's is
   // theirs to keep.
   const ownsContext = opts.context === undefined;
+  const busNames = opts.buses ?? ['sfx', 'music', 'ui'];
+  if (busNames.length === 0) {
+    throw new Error('@weasel-js/audio: an engine needs at least one bus');
+  }
   const sounds = createSoundCache(ctx, opts.fetchFn);
   const { requireSlots, active } = busSlots(busNames, opts);
   const { now, tickTimer, timers, scheduler } = engineClock(ctx, opts);
@@ -268,15 +261,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       voices.launch(playOpts, bufferStarter(ctx, sounds, warn, sound, playOpts.loop ?? false)),
     playNote: (note) => voices.launch(note, synth.note(note)),
     playNoise: (noise) => voices.launch(noise, synth.noise(noise)),
-    stream(media, streamOpts = {}) {
-      // `launch` reads numbers an untyped caller passed; check them before the earlier stream stops.
-      checkVoice(streamOpts);
-      const el = streams.element(media, streamOpts);
-      streams.streaming.get(el)?.stop();
-      const handle = voices.launch(streamOpts, streams.starter(el, streamOpts));
-      streams.streaming.set(el, handle);
-      return handle;
-    },
+    stream: (media, streamOpts = {}) => restream(streams, voices.launch, media, streamOpts),
     schedule(when, fire, key) {
       if (disposed) return;
       scheduler.schedule(when, fire, key);

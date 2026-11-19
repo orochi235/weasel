@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import { IDENTITY_POSE_COMPOSITION, createScene, asNodeId } from '@weasel-js/core/engine';
-import { createReparentOp } from '@weasel-js/core';
 import type { Op } from '@weasel-js/core';
 import { moveGestureAdapter } from '../../../actions/move/gestureAdapter';
 import {
@@ -12,6 +11,7 @@ import {
   runBehaviorSettled,
 } from '@weasel-js/core';
 import type { BehaviorEnd } from '@weasel-js/core/engine';
+import * as ops from '@weasel-js/core/ops';
 
 const refuse = (): never => { throw new Error('refused'); };
 
@@ -51,7 +51,7 @@ describe('commitRunOps — whether the commit landed', () => {
     scene.setArrivalHandler(() => (arrive === 'refuses' ? null : new Map()));
     return { scene, at: { scene: scene as never, applyOps, adapter: moveGestureAdapter(scene) } };
   }
-  const into = (): Op[] => [createReparentOp({ id: 'loose', fromParentId: null, toParentId: 'box' })];
+  const into = (): Op[] => [ops.reparent({ id: 'loose', fromParentId: null, toParentId: 'box' })];
   const recorded = () => readRunLifecycle({}, 'Test');
   const transient = () => readRunLifecycle({ transient: true }, 'Test');
 

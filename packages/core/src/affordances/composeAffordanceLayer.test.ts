@@ -316,23 +316,6 @@ describe('composeAffordanceLayer', () => {
       expect((out[0] as { fill: { paint: { color: string } } }).fill.paint.color).toBe('blue');
     });
 
-    it('draw skips a region whose own chromeId reports !isVisible, as hitTest does', () => {
-      const gated: Affordance = {
-        id: 'aff-g',
-        regions: () => [pointRegion({
-          id: 'r-g',
-          chromeId: 'hidden-part',
-          shape: { kind: 'point', x: 0, y: 0, hitRadiusPx: 4 },
-          paint: { kind: 'square', sizePx: 4, fill: { paint: { color: 'red' } } },
-        })],
-      };
-      const layer = composeAffordanceLayer('x', 'X', [gated]);
-      const isVisible = (id: string) => id !== 'hidden-part';
-      const data = { getChromeState: () => makeState(), getIsVisible: () => isVisible };
-      expect(layer.hitTest(0, 0, makeState(), VIEW, DIMS, isVisible)).toBeNull();
-      expect(layer.draw(data as unknown as ChromeState, VIEW, DIMS)).toHaveLength(0);
-    });
-
     it('hitTest skips affordances whose id reports !isVisible', () => {
       const layer = composeAffordanceLayer('x', 'X', [a, b]);
       const isVisible = (id: string) => id !== 'aff-a';

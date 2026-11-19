@@ -11,8 +11,6 @@ import type { Node, NodeId, Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createSetPoseOp } from 'core/ops/setPose';
 import { createSetDataOp } from 'core/ops/setData';
-import { createInsertOp } from 'core/ops/create';
-import { createDeleteOp } from 'core/ops/delete';
 import { resolveEditablePathOf, storeEditablePath } from 'domains/paths/editablePath';
 import { nodeFrameOf, shownIn } from 'domains/paths/nodeFrame';
 import { withoutShapeGenerator } from 'domains/paths/shapeGenerator';
@@ -124,21 +122,4 @@ export function pathCopy(
     if (Object.keys(carried).length > 0) data = { ...(next.data as object), ...carried };
   }
   return { ...target.node, id: scene.mintId(), pose: next.pose, data } as Node<unknown, string, unknown>;
-}
-
-/** Where `id` sits among its siblings, back to front. */
-export function slotOf(scene: Scene<unknown, string, unknown>, id: NodeId): number {
-  const parent = scene.get(id)?.parent ?? null;
-  const siblings = parent === null ? scene.roots : scene.childrenOf(parent);
-  return siblings.indexOf(id);
-}
-
-/** Insert `node` at `index` among its parent's children. */
-export function createInsertNodeOp(node: Node<unknown, string, unknown>, index: number, label: string): Op {
-  return createInsertOp(index >= 0 ? { node, index, label } : { node, label });
-}
-
-/** Delete `node`, remembering its slot for undo. */
-export function createDeleteNodeOp(scene: Scene<unknown, string, unknown>, node: Node<unknown, string, unknown>, label: string): Op {
-  return createDeleteOp({ node, index: slotOf(scene, node.id), label });
 }

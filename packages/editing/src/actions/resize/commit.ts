@@ -1,9 +1,10 @@
 import { rectToRect, type Affine } from '@weasel-js/geom';
 import type { Op, NodeId } from '@weasel-js/core';
-import { createSetPoseOp, defaultCommitAdapter, createGeometryDataOp, type GeometryProjection } from '@weasel-js/core/engine';
+import { defaultCommitAdapter, type GeometryProjection } from '@weasel-js/core/engine';
 import { commitRunOps, reduceBehaviorEnd } from '@weasel-js/core';
 import type { PoseDescriptor } from '@weasel-js/core/engine';
 import type { ResizeFrame, ResizeSession } from './session';
+import * as coreOps from '@weasel-js/core/ops';
 
 /** The op mapping a leaf's data-held geometry by the box→box affine its pose
  *  underwent, and the pose to commit beside it. Null when the projection
@@ -22,7 +23,7 @@ function projectedGeometry(
     sb.x, sb.y, sb.width, sb.height,
     db.x, db.y, db.width, db.height,
   );
-  const dataOp = createGeometryDataOp(projection, { id: node.id, data: node.data, pose: from }, m, next, label);
+  const dataOp = coreOps.geometryData(projection, { id: node.id, data: node.data, pose: from }, m, next, label);
   if (!dataOp) return null;
   // The data absorbed the affine — including any mirror from a
   // drag past the opposite edge — so the pose must commit as a
@@ -53,7 +54,7 @@ export function resizeOps(
   for (const [id, h] of leaves.held ?? []) {
     if (!leaves.scene.get(id)) continue;
     const to = previews.get(id);
-    if (to !== undefined) ops.push(createSetPoseOp<unknown>({ id: id as string, from: h.from, to, label }));
+    if (to !== undefined) ops.push(coreOps.setPose<unknown>({ id: id as string, from: h.from, to, label }));
   }
   for (const id of leaves.writeIds) {
     const next = previews.get(id);
@@ -71,7 +72,7 @@ export function resizeOps(
         to = projected.pose;
       }
     }
-    ops.push(createSetPoseOp<unknown>({ id: id as string, from, to, label }));
+    ops.push(coreOps.setPose<unknown>({ id: id as string, from, to, label }));
   }
   return ops;
 }

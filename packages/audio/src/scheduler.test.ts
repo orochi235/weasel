@@ -34,13 +34,6 @@ function harness(startMs = 0) {
 }
 
 describe('createScheduler', () => {
-  it('refuses a lookahead or interval that is not a usable number of ms', () => {
-    const base = { now: () => 0, setTimer: () => 1, clearTimer: () => {} };
-    expect(() => createScheduler({ ...base, lookahead: Number.NaN })).toThrow(RangeError);
-    expect(() => createScheduler({ ...base, interval: Infinity })).toThrow(RangeError);
-    expect(() => createScheduler({ ...base, interval: 0 })).toThrow(RangeError);
-  });
-
   it('fires an event already due on the next pass', () => {
     const h = harness();
     const fire = vi.fn();
@@ -356,5 +349,18 @@ describe('createScheduler', () => {
     h.tick();
     // The restart armed the next pass; the pass it ran in must not arm another.
     expect(h.armCount()).toBe(2);
+  });
+});
+
+describe('createScheduler timing', () => {
+  it('refuses a lookahead or interval it could not run with', () => {
+    const base = { now: () => 0, setTimer: () => 1, clearTimer: () => {} };
+    for (const bad of [
+      { lookahead: Number.NaN }, { lookahead: -1 }, { interval: 0 }, { interval: Number.NaN },
+      { interval: Number.POSITIVE_INFINITY }, { interval: 2 ** 31 },
+    ]) {
+      expect(() => createScheduler({ ...base, ...bad })).toThrow(RangeError);
+    }
+    expect(() => createScheduler({ ...base, lookahead: 0, interval: 2 ** 31 - 1 })).not.toThrow();
   });
 });

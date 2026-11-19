@@ -18,7 +18,7 @@ export type StarPoint = WorldPoint;
 export interface UseStarToolOptions extends InsertToolOptions {
   label?: string;
   /** The point count before its user changes it, the `points` option's
-   *  default. Persists across gestures (Illustrator convention), adjustable
+   *  default. Persists across gestures, adjustable
    *  mid-drag via ArrowUp/Down or wheel (range 3–32). */
   points?: number;
   /** The inner-radius / outer-radius ratio before its user changes it, the

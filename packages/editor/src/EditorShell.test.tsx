@@ -9,7 +9,8 @@ import { EDITOR_ACTIONS } from './editorCommands';
 import { EditorShell } from './EditorShell';
 import { menuRun } from './menuBar';
 import { usePublishEditorTools } from './shortcutSheet';
-import { drawPreset, SHAPE_TOOLS } from '@weasel-js/editing';
+import { SHAPE_TOOLS } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
@@ -71,7 +72,7 @@ describe('EditorShell', () => {
     function Workspace() {
       const [tools, setTools] = useState<ToolsApi | null>(null);
       usePublishEditorTools(tools, [SHAPE_TOOLS]);
-      return <SceneCanvas features={[drawPreset]} scene={scene()} layers={{}} width={64} height={64} defaultTools={[SHAPE_TOOLS]} onToolsCreated={setTools} />;
+      return <SceneCanvas features={[presets.draw]} scene={scene()} layers={{}} width={64} height={64} defaultTools={[SHAPE_TOOLS]} onToolsCreated={setTools} />;
     }
     render(<EditorShell><Probe /><Workspace /></EditorShell>);
     key({ key: '?', code: 'Slash', shiftKey: true });
@@ -97,7 +98,7 @@ describe('EditorShell', () => {
     render(
       <EditorShell>
         <Probe run={run} />
-        <SceneCanvas features={[drawPreset]} scene={scene()} layers={{}} width={64} height={64} claimKeys />
+        <SceneCanvas features={[presets.draw]} scene={scene()} layers={{}} width={64} height={64} claimKeys />
       </EditorShell>,
     );
     key({ key: 'q' });
@@ -144,7 +145,7 @@ describe('EditorShell', () => {
     it('opens editor.canvas on a right-click on empty canvas', () => {
       render(
         <EditorShell>
-          <SceneCanvas features={[drawPreset]} scene={scene()} layers={{}} width={64} height={64}>
+          <SceneCanvas features={[presets.draw]} scene={scene()} layers={{}} width={64} height={64}>
             <HostProbe />
           </SceneCanvas>
         </EditorShell>,
@@ -156,7 +157,7 @@ describe('EditorShell', () => {
     it('installs none with `contextMenus={false}`', () => {
       render(
         <EditorShell contextMenus={false}>
-          <SceneCanvas features={[drawPreset]} scene={scene()} layers={{}} width={64} height={64}>
+          <SceneCanvas features={[presets.draw]} scene={scene()} layers={{}} width={64} height={64}>
             <HostProbe />
           </SceneCanvas>
         </EditorShell>,

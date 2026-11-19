@@ -32,9 +32,9 @@ export interface MomentumOptions {
    */
   bounds?: Rect;
   /**
-   * Boundary policy when the clamped position hits an edge. 'stop' settles
-   * each node at the edge it hits at once, while the others travel on.
-   * 'continue' keeps decaying, so the object drifts along the edge. Default 'stop'.
+   * Boundary policy when the clamped position hits an edge. 'stop' settles at
+   * the edge at once. 'continue' keeps decaying, so the object drifts along
+   * the edge. Default 'stop'.
    */
   boundary?: 'stop' | 'continue';
   /** How to translate poses. Default `AUTO_POSE_DESCRIPTOR`. */
@@ -59,8 +59,7 @@ const SAMPLES = scratchKey<PointerSample[]>('momentum.samples');
  * scene-backed one has, each node coasts on its own pose target, so anything
  * else animating it adds; over one without, the coast is shown through
  * `previewPoses`, or written through `setPose` each frame. Dragging a node
- * again while it coasts stops the coast and records it where it stands, as
- * does canceling it on the animator (`cancelAll`, its unmounting). A
+ * again while it coasts stops the coast and records it where it stands. A
  * `tweenPose` or `springPose` of a coasting node ends its coast. A node
  * something else moves or deletes mid-coast, an undo included, drops out of
  * the coast where that left it, and nothing is recorded for it.

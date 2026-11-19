@@ -1,7 +1,8 @@
-import { translatePoseViaDescriptor, type PoseDescriptor, createSetPoseOp } from '@weasel-js/core/engine';
+import { translatePoseViaDescriptor, type PoseDescriptor } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
 import type { PoseComposition, ContainerBounds, LayoutDragged } from '@weasel-js/core/engine';
 import { strategyView, type StrategyView } from '@weasel-js/core';
+import * as ops from '@weasel-js/core/ops';
 
 /** `pose`'s box as `g` measures it, and nothing else of it. */
 export function boxOf(g: PoseDescriptor<unknown>, pose: unknown): ContainerBounds {
@@ -44,5 +45,5 @@ export function viewContainsPoint(
 export function opInWorld(view: StrategyView<unknown>, op: Op): Op {
   if (!view.turned || op.name !== 'transform') return op;
   const a = op.args as { id: string; from: unknown; to: unknown; label?: string; coalesceKey?: string };
-  return createSetPoseOp<unknown>({ ...a, from: view.toWorld(a.from), to: view.toWorld(a.to) });
+  return ops.setPose<unknown>({ ...a, from: view.toWorld(a.from), to: view.toWorld(a.to) });
 }

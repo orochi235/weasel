@@ -3,6 +3,7 @@ import { useLatest } from '@weasel-js/react';
 import { runPlaceAt, type Point, type TrackRun } from '@weasel-js/geom';
 import row from './runRow.module.css';
 import s from './runText.module.css';
+import { pathThrough } from '../../pathThrough';
 
 /** Marks the copy of a text node drawn along the run, and the element whose own glyphs that copy stands in for. */
 const BEND = 'data-run-text-bend';
@@ -173,12 +174,11 @@ function lay(bend: Bend, run: TrackRun, center: Point, origin: Point, turn: numb
   }
   // Read left to right in the item's own frame, whichever way the run runs.
   if (pts[pts.length - 1]!.x < pts[0]!.x) pts.reverse();
-  bend.path.setAttribute('d', pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${round(p.x)} ${round(p.y)}`).join(''));
+  bend.path.setAttribute('d', pathThrough(pts));
   const along = bend.text.firstChild!;
   if (along.textContent !== data) along.textContent = data;
 }
 
-const round = (v: number): number => Math.round(v * 100) / 100;
 
 let measure: CanvasRenderingContext2D | null | undefined;
 

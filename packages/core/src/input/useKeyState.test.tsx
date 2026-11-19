@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { act, render } from '@testing-library/react';
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useKeyState } from './useKeyState';
 import type { KeyState } from './keyState';
 
@@ -40,19 +40,24 @@ describe('useKeyState', () => {
     expect(keys.isDown('KeyB')).toBe(true);
   });
 
-  it('attaches to a target element that mounts after the hook first ran', () => {
+  it('attaches to the element its ref holds once one mounts, and follows a swap', () => {
     let keys!: KeyState;
-    let show!: () => void;
-    function Probe() {
+    let host!: HTMLDivElement;
+    function Probe({ show, k }: { show: boolean; k: string }) {
       const ref = useRef<HTMLDivElement>(null);
-      const [ready, setReady] = useState(false);
-      show = () => setReady(true);
       keys = useKeyState({ target: ref });
-      return ready ? <div ref={ref} data-testid="late" /> : null;
+      return show ? <div key={k} ref={(el) => { ref.current = el; if (el) host = el; }} /> : null;
     }
-    const { getByTestId } = render(<Probe />);
-    act(() => show());
-    press(getByTestId('late'), 'KeyC');
+    const { rerender } = render(<Probe show={false} k="a" />);
+    rerender(<Probe show k="a" />);
+    const first = host;
+    press(first, 'KeyA');
+    expect(keys.isDown('KeyA')).toBe(true);
+    rerender(<Probe show k="b" />);
+    expect(host).not.toBe(first);
+    press(first, 'KeyB');
+    expect(keys.isDown('KeyB')).toBe(false);
+    press(host, 'KeyC');
     expect(keys.isDown('KeyC')).toBe(true);
   });
 });

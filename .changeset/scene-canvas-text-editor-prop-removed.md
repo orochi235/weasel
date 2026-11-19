@@ -8,10 +8,10 @@ This is breaking. `editor` takes `useSceneTextEdit`'s options as the prop did, o
 
 ```tsx
 // before
-<SceneCanvas textEditor={{ escape: 'commit' }} features={[drawPreset]} />
+<SceneCanvas textEditor={{ escape: 'commit' }} features={[presets.draw]} />
 // after
 const text = useMemo(() => createTextPreset({ editor: { escape: 'commit' } }), []);
-<SceneCanvas features={[drawPreset, text]} />
+<SceneCanvas features={[presets.draw, text]} />
 ```
 
 <!-- entry: breaking api -->

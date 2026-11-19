@@ -68,10 +68,6 @@ export {
 
 export { translatePoseViaDescriptor, visualBoundsViaDescriptor } from '../core/geometry/poseDescriptor';
 export { resolveSpatialReference } from '../interactions/actions/spatialReference';
-export {
-  ANCHORS_GROUP, HISTORY_GROUP, PATH_GROUP, PRESENTATION_GROUP, VIEWPORT_GROUP,
-} from '../interactions/actions/actionGroups';
-export { TOOL_GROUP } from '@weasel-js/routing';
 export { sceneBoxFrames, scenePoseFrame, worldPoseOf, worldPoses } from '../interactions/actions/poseFrame';
 export { undeclaredMagnifications, createUnitFrameLookup, type UndeclaredMagnification } from '../interactions/actions/magnification';
 export { moveNodes, moveNodesOps, MOVE_NODES_REQUIRES } from '../interactions/actions/moveNodes';

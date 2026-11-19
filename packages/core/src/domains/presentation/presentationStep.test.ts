@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { layoutPages } from 'core/pages/pages';
 import { fitViewToPage } from 'core/pages/fitViewToPage';
 import type { View } from 'core/viewport/view';
-import { canvasCamera, requestedPage, stepPresentation, type PresentationCamera } from './presentationStep';
+import { createCanvasCamera, requestedPage, stepPresentation, type PresentationCamera } from './presentationStep';
 
 const PAGES = layoutPages([
   { id: 'a', width: 400, height: 300 },
@@ -71,7 +71,7 @@ describe('stepPresentation', () => {
   });
 });
 
-describe('canvasCamera', () => {
+describe('createCanvasCamera', () => {
   it('drives a canvas handle, reading its glide target while it animates', () => {
     let view = fitted(0);
     let animating = false;
@@ -82,7 +82,7 @@ describe('canvasCamera', () => {
       animateView: vi.fn(() => { animating = true; }),
       isViewAnimating: () => animating,
     };
-    const cam = canvasCamera(canvas);
+    const cam = createCanvasCamera(canvas);
     expect(stepPresentation(cam, PAGES, { by: 1 })?.id).toBe('b');
     expect(canvas.animateView).toHaveBeenCalledWith(fitted(1), {});
     // The view has not moved yet; the second press steps on from where the first is heading.

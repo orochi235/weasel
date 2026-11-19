@@ -23,7 +23,7 @@ export interface PresentationOptions extends PresentationStepOptions {
   /** Bind the keys: Right, Down and Page Down step on, Left, Up and Page Up step back, Home and End go to
    *  either end. Default `true`. `false` registers the actions alone, for a host whose own input steps the
    *  show: a presentation runtime with a keymap of its own, which can also step a canvas handle directly with
-   *  `stepPresentation(canvasCamera(api), …)`. */
+   *  `stepPresentation(createCanvasCamera(api), …)`. */
   keys?: boolean;
   /** Told the page each step arrives at. */
   onPage?: (page: PlacedPage) => void;

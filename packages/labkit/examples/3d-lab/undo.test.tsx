@@ -3,13 +3,14 @@
  * history: a solid inserted is taken back by the trial's Undo, one step per press.
  */
 import { act, fireEvent, screen } from '@testing-library/react';
-import { createInsertOp, defaultCommitAdapter } from '@weasel-js/core/engine';
+import { defaultCommitAdapter } from '@weasel-js/core/engine';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { Lab } from '../../src/lab/Lab';
 import { pose3, type SolidScene } from './scene3d';
 import { SolidInstrument } from './SolidInstrument';
+import * as ops from '@weasel-js/core/ops';
 
 const made: SolidScene[] = [];
 vi.mock('./scene3d', async (importOriginal) => {
@@ -45,7 +46,7 @@ function insertBox(): void {
     data: { kind: 'box' as const, color: '#c49a3f' },
   };
   act(() => {
-    s.applyBatch([createInsertOp({ node, label: 'Insert box' })], 'Insert box', defaultCommitAdapter(s as never));
+    s.applyBatch([ops.insert({ node, label: 'Insert box' })], 'Insert box', defaultCommitAdapter(s as never));
   });
 }
 

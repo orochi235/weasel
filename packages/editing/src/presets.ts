@@ -7,12 +7,12 @@
  * <SceneCanvas features={[presets.view, presets.pick, presets.move, presets.delete]} />
  * ```
  *
- * Each is the same object as its `…Preset` export from `@weasel-js/editing` (or `@weasel-js/core`, for the view
- * presets). Importing this entry loads every preset's actions.
+ * The view presets are the same objects as `@weasel-js/core/presets` exports. Importing this entry loads every
+ * preset's actions.
  *
  * @packageDocumentation
  */
-export { viewPreset as view, viewToolsPreset as viewTools } from '@weasel-js/core';
+export { view, viewTools } from '@weasel-js/core/presets';
 export {
   alignPreset as align, arrangePreset as arrange, distributePreset as distribute, flipPreset as flip,
   reorderPreset as reorder,

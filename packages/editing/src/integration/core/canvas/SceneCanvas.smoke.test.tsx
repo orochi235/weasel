@@ -16,7 +16,8 @@ import type { Scene, NodeId } from '@weasel-js/core';
 import type { ActionDisabledReason } from '@weasel-js/routing';
 import { defaultNodeRouting } from '@weasel-js/core';
 import type { NodeRoutingEntry } from '@weasel-js/core';
-import { drawPreset, KIT_TOOL_IDS } from '@weasel-js/editing';
+import { KIT_TOOL_IDS } from '@weasel-js/editing';
+import { drawPreset } from '../../../presets/composites';
 
 type D = { kind: string; path?: unknown; fill?: string };
 type L = 'main';
@@ -312,8 +313,7 @@ describe('clone smoke (alt-drag via select tool)', () => {
     batchSpy.mockRestore();
   });
 
-  // Illustrator behavior: alt-drag on a node clones it whether or not it was
-  // pre-selected.
+  // Alt-drag on a node clones it whether or not it was pre-selected.
   it('alt-drag on UNSELECTED body fires cloneAction → scene.applyBatch("Clone")', () => {
     const scene = makeScene();
     const countBefore = nodeCount(scene);

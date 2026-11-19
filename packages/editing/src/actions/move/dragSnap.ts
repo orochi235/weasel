@@ -1,6 +1,6 @@
 import type { InvocationCtx, WorldPoint } from '@weasel-js/routing';
 import type { SnapSession } from '@weasel-js/core/engine';
-import { lazySnapSession } from '@weasel-js/core';
+import { createLazySnapSession } from '@weasel-js/core';
 import { snapMods } from '@weasel-js/core/engine';
 
 /** A translate drag's snapping: a move's, or a clone's. */
@@ -15,7 +15,7 @@ export interface DragSnap {
 export function beginDragSnap(ctx: InvocationCtx, ids: readonly string[], exclude?: readonly string[]): DragSnap {
   const press = ctx.drag?.start ?? ctx.world;
   return {
-    snap: lazySnapSession(ctx.deps.snap, { gesture: 'move', ids, press, constrain: 'axis', ...(exclude ? { exclude } : {}) }),
+    snap: createLazySnapSession(ctx.deps.snap, { gesture: 'move', ids, press, constrain: 'axis', ...(exclude ? { exclude } : {}) }),
     press,
   };
 }

@@ -14,7 +14,7 @@ import { createScene } from '@weasel-js/core/engine';
 import type { Scene } from '@weasel-js/core/engine';
 import type { RenderLayer, SurfaceContribution, VisibilityRules } from '@weasel-js/core';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 type D = { kind: 'rect' };
 type L = 'main';

@@ -11,7 +11,8 @@ import { measureEndsOf } from './measurement';
 import { createMeasurementsContribution } from './measureContribution';
 import { measureEndSource } from './measureHit';
 import { MEASURE_ACTION_IDS } from './actionIds';
-import { drawPreset, useEyedropperTool, useSelection } from '@weasel-js/editing';
+import { useEyedropperTool, useSelection } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const ms0 = () => createMeasurements({ layer: 'notes' });
 
@@ -96,7 +97,7 @@ describe('measurements through <SceneCanvas>', () => {
     const snap = useMemo(() => ({ sources: [measureEndSource()] }), []);
     return (
       <SceneCanvas
-        features={[drawPreset]} scene={s} selection={selection} layers={{}} width={400} height={400}
+        features={[presets.draw]} scene={s} selection={selection} layers={{}} width={400} height={400}
         tools={{ measure, eyedropper, hand }} ambient={ambient} snap={snap} onViewChange={onView}
       >
         <Probe />

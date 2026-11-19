@@ -6,13 +6,13 @@ import { parseSvg } from './parse';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
 import { svgNodesToKitDrafts } from './unpack';
 import {
-  createInsertOp, dwarn, unionAabb, type IngestCtx, type Op, type PoseComposition, type Stroke,
+  arrivalBounds, dwarn, unionAabb, type IngestCtx, type Op, type PoseComposition, type Stroke,
 } from '@weasel-js/core';
 import { type StyledRun, type TextStyle } from '@weasel-js/text';
 import type { SvgDraftPose } from './draftPose';
 import { svgDraftSpecs } from './draftSpecs';
+import * as coreOps from '@weasel-js/core/ops';
 
-const CASCADE_OFFSET_PX = 24;
 const VIEWPORT_FIT = 0.9;
 
 /** `File.text()` via FileReader: jsdom ships `FileReader` but not `Blob.text`. */
@@ -93,17 +93,11 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
         union.width > 0 ? (view.width * VIEWPORT_FIT) / union.width : 1,
         union.height > 0 ? (view.height * VIEWPORT_FIT) / union.height : 1,
       );
-      const target = ctx.point ?? {
-        x: view.x + view.width / 2,
-        y: view.y + view.height / 2,
-      };
-      const offset = index * CASCADE_OFFSET_PX;
-      const cx = union.x + union.width / 2;
-      const cy = union.y + union.height / 2;
+      const box = arrivalBounds(ctx, { width: union.width * scale, height: union.height * scale }, index);
       const place = (p: SvgDraftPose): SvgDraftPose => ({
         ...p,
-        x: target.x + (p.x - cx) * scale + offset,
-        y: target.y + (p.y - cy) * scale + offset,
+        x: box.x + (p.x - union.x) * scale,
+        y: box.y + (p.y - union.y) * scale,
         width: p.width * scale,
         height: p.height * scale,
       });
@@ -112,7 +106,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
         ...d, pose: place(d.pose), ...(d.kind === 'mark' ? { data: scaleLeafData(d.data, scale) } : {}),
       }) as typeof d);
       const specs = svgDraftSpecs(placed, { layer, composition: ctx.scene.composition as PoseComposition<SvgDraftPose> });
-      const ops: Op[] = specs.map((node) => createInsertOp({ node: node as unknown as { id: string }, label: 'Insert SVG' }));
+      const ops: Op[] = specs.map((node) => coreOps.insert({ node: node as unknown as { id: string }, label: 'Insert SVG' }));
       ctx.applyOps(ops, 'Insert SVG');
       index++;
     } catch (err) {

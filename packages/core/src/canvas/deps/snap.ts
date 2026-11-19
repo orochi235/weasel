@@ -15,7 +15,7 @@ import type { OriginProjection } from 'interactions/gestures/shared/originProjec
 import type { SnapOutcomeStore } from 'domains/snap/outcomeStore';
 import type { SnapSourceRegistry } from 'domains/snap/registry';
 import { assertSnapSourceIds } from 'domains/snap/gather';
-import { sceneSession2d } from 'domains/snap/sceneSession2d';
+import { createSceneSession2d } from 'domains/snap/sceneSession2d';
 import { DEFAULT_SNAP_PX } from 'domains/snap/session2d';
 import type { SnapReadoutDep } from 'domains/snap/readoutDep';
 import { rotationSnapSource } from 'domains/snap/rotationSource';
@@ -87,7 +87,7 @@ export function useSnapDepSource(
       assertSnapSourceIds(sources);
       const debug = s.debug?.() ?? undefined;
       const reachPx = s.reachPx ?? kitSettings.get('targets.snapPx') ?? DEFAULT_SNAP_PX;
-      const session = sceneSession2d({
+      const session = createSceneSession2d({
         req,
         scene: s.scene,
         boxes: s.boxes(),

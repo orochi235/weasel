@@ -1,0 +1,10 @@
+{
+ "pairs": [],
+ "a": [
+  "Stepping `]` (grow) on a sharing brush at its own max shrinks the shared size for every other brush"
+ ],
+ "b": [
+  "A shared brush size is held to the first sharing tool's bounds, not each tool's, in a prefs-backed host",
+  "shareBrushSize defaults every size to the screen-pixel key whatever unit the option is in"
+ ]
+}

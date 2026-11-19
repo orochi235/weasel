@@ -9,7 +9,7 @@ export function formatSeconds(ms: number): string {
 /** Ms from a seconds string, or null for anything but a finite number. An exponent is read, as `formatSeconds`
  *  writes one past 1e21 seconds. */
 export function parseSeconds(text: string | null | undefined): number | null {
-  if (text == null || !/^\s*-?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?\s*$/i.test(text)) return null;
+  if (text == null || !/^\s*-?(\d+(?:\.\d*)?|\.\d+)(e[+-]?\d+)?\s*$/i.test(text)) return null;
   const ms = Math.round(Number(text) * 1000);
   return Number.isFinite(ms) ? ms : null;
 }

@@ -2,9 +2,9 @@
 import { useEffect } from 'react';
 import { SceneCanvas, registerNodeShape, type RectPose, type Scene, type ToolsApi } from '@weasel-js/core';
 import { gemInsert, gemShape, gemTool } from './gem.js';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
-const FEATURES = [drawPreset];
+const FEATURES = [presets.draw];
 const TOOLS = { gem: gemTool };
 const FACTORIES = { gem: gemInsert };
 

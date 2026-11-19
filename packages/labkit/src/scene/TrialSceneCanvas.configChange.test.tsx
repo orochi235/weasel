@@ -1,7 +1,7 @@
 import { act, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { asNodeId, createScene, type Scene } from '@weasel-js/core';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { useLayoutEffect } from 'react';
@@ -59,7 +59,7 @@ function Body({ ctx }: { ctx: RenderContext<State, Config> }) {
     () => scene.subscribe(() => showConfig('size', scene.get(ID)?.data?.size)),
     [scene, showConfig],
   );
-  return <TrialSceneCanvas features={[drawPreset]} scene={scene} trial={ctx.trial} />;
+  return <TrialSceneCanvas features={[presets.draw]} scene={scene} trial={ctx.trial} />;
 }
 
 const instrument = defineInstrument<State, Config>({

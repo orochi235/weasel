@@ -1,7 +1,7 @@
 import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { asNodeId, createScene, key, type Scene, type ToolsApi } from '@weasel-js/core';
-import { drawPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
@@ -43,7 +43,7 @@ function Body({ ctx }: { ctx: RenderContext<State, Record<string, never>> }) {
   live.scene = scene;
   return (
     <TrialSceneCanvas
-      features={[drawPreset]}
+      features={[presets.draw]}
       defaultTools={['rect']}
       scene={scene}
       trial={ctx.trial}
@@ -166,7 +166,7 @@ describe('<TrialSceneCanvas>', () => {
     function Seeded({ ctx }: { ctx: RenderContext<State, Record<string, never>> }) {
       const scene = useTrialScene(ctx, seeded);
       live.scene = scene;
-      return <TrialSceneCanvas features={[drawPreset]} scene={scene} trial={ctx.trial} />;
+      return <TrialSceneCanvas features={[presets.draw]} scene={scene} trial={ctx.trial} />;
     }
     await mount({ ...instrument, render: (ctx) => <Seeded ctx={ctx} /> });
     const [seed] = live.scene.roots;
@@ -195,7 +195,7 @@ describe('<TrialSceneCanvas>', () => {
     function Fixed({ ctx }: { ctx: RenderContext<State, Record<string, never>> }) {
       const scene = useTrialScene(ctx, fixed);
       live.scene = scene;
-      return <TrialSceneCanvas features={[drawPreset]} scene={scene} trial={ctx.trial} />;
+      return <TrialSceneCanvas features={[presets.draw]} scene={scene} trial={ctx.trial} />;
     }
     await mount({ ...instrument, render: (ctx) => <Fixed ctx={ctx} /> });
     // Selected from outside the scene, as `useSelection({ initial })` does.
@@ -212,7 +212,7 @@ describe('<TrialSceneCanvas> tool keys', () => {
     const scene = useTrialScene(ctx, create);
     return (
       <TrialSceneCanvas
-        features={[drawPreset]}
+        features={[presets.draw]}
         defaultTools={['rect']}
         scene={scene}
         trial={ctx.trial}

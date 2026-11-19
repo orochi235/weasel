@@ -13,7 +13,8 @@ import { SceneCanvas } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import type { Scene } from '@weasel-js/core/engine';
 import { ActiveToolContextProvider, useActiveToolContext } from '@weasel-js/routing/react';
-import { drawPreset, KIT_TOOL_IDS } from '@weasel-js/editing';
+import { KIT_TOOL_IDS } from '@weasel-js/editing';
+import { drawPreset } from '../../presets/composites';
 
 type D = { kind: 'rect' };
 type L = 'main';

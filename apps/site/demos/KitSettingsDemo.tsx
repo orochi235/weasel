@@ -10,7 +10,7 @@ import { Tree, type TreeNode } from '@weasel-js/ui/components/Tree';
 import { uiKitSettingsSchema } from '@weasel-js/ui/kit-settings';
 import { useState } from 'react';
 import s from './KitSettingsDemo.module.css';
-import { movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
+import * as presets from '@weasel-js/editing/presets';
 
 const SCHEMA = mergePrefGroups('Kit settings', uiKitSettingsSchema, coreKitSettingsSchema);
 
@@ -34,7 +34,7 @@ function Specimens() {
     <div className={s.specimens}>
       <Tree aria-label="Files" nodes={FILES} defaultExpandedIds={['src']} />
       <UnitField aria-label="Count" value={n} onChange={setN} steppers />
-      <SceneCanvas features={[pickPreset, movePreset, transformPreset]} width={260} height={160} className="ckd-canvas" scene={scene} snap={SNAP} />
+      <SceneCanvas features={[presets.pick, presets.move, presets.transform]} width={260} height={160} className="ckd-canvas" scene={scene} snap={SNAP} />
     </div>
   );
 }

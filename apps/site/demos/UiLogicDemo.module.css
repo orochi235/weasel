@@ -1,0 +1,49 @@
+.demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-6);
+  width: 560px;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-4);
+}
+
+.label {
+  width: 140px;
+}
+
+.drawing {
+  display: block;
+}
+
+.box {
+  fill: var(--wzl-surface-sunken);
+  stroke: var(--wzl-border);
+  stroke-width: 0.5;
+}
+
+.part {
+  fill: none;
+  stroke: var(--wzl-accent);
+  stroke-width: 0.5;
+}
+
+.partName {
+  font-size: 5px;
+  fill: var(--wzl-fg-muted);
+}
+
+.dom {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-6);
+}
+
+.readout {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  font-size: 12px;
+  color: var(--wzl-fg-muted);
+}

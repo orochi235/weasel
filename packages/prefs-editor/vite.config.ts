@@ -3,21 +3,16 @@
  * editor is styled with `*.module.css`, which esbuild cannot emit as one stable stylesheet. Declarations come from
  * `tsc -p tsconfig.build.json`.
  */
-import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { stableScopedName } from '../../scripts/vite-css-modules.ts';
 import { weaselIcons } from '../icons-plugin/src/index.ts';
 import { assertPackageBuild } from '../../scripts/lib/own-install.mjs';
+import { installedExternal } from '../../scripts/lib/installed-external.mjs';
 
 assertPackageBuild(import.meta.dirname);
 
-const manifest = JSON.parse(readFileSync(resolve(import.meta.dirname, 'package.json'), 'utf8')) as {
-  dependencies?: Record<string, string>;
-  peerDependencies?: Record<string, string>;
-};
-const installed = [...Object.keys(manifest.dependencies ?? {}), ...Object.keys(manifest.peerDependencies ?? {})];
 
 export default defineConfig({
   plugins: [react(), weaselIcons.vite({ mode: 'library' })],
@@ -35,9 +30,7 @@ export default defineConfig({
     sourcemap: true,
     emptyOutDir: true,
     rollupOptions: {
-      // Everything the consumer installs stays external, deep imports included: a bundled copy splits a context from
-      // its readers. `npm run check:bundled-deps` fails a build that inlines one.
-      external: (id) => installed.some((name) => id === name || id.startsWith(`${name}/`)),
+      external: installedExternal(import.meta.dirname),
       output: { entryFileNames: '[name].js', minify: false },
     },
   },

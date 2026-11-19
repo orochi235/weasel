@@ -1,0 +1,28 @@
+{
+ "pairs": [
+  [
+   2,
+   3
+  ],
+  [
+   3,
+   2
+  ]
+ ],
+ "a": [
+  "`rig.bake()` throws, and bakes nothing, once any bound or skinned node has been deleted",
+  "`momentum`'s `boundary: 'stop'` stops a node at the edge on one adapter path and lets it slide along the edge on the other",
+  "`useRigNode` writes skins into a plain object by node id, so a child with id `__proto__` is not skinned",
+  "`scenePoseTarget`'s per-scene target cache keeps an entry for every node ever animated and later deleted",
+  "`animateLifecycle` leaves a node stuck in `leaving`, or at its enter pose, when `tweenPose` throws",
+  "`animateOnSetPose` and `animateLifecycle` keep their 200 ms default under `prefers-reduced-motion`, where the reflow default yields"
+ ],
+ "b": [
+  "animateLifecycle removes a node re-inserted while its exit animation runs",
+  "momentum's pose-target coast writes the document with no history entry after an outside cancel",
+  "scenePoseTarget keeps, and keeps returning, the target of a node deleted while at rest",
+  "rigFromNode writes skins into a plain object keyed by node id, so a `__proto__` id is lost",
+  "A skinned node with a rotated pose is baked with its rotation applied twice",
+  "rewindingTween ends a leg early under an overshooting easing"
+ ]
+}

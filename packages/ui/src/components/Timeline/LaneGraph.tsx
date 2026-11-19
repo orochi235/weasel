@@ -7,7 +7,7 @@ import { LayeredCurveEditor } from '../CurveEditor/LayeredCurveEditor';
 import { applyKeyframeDrag, type KeyframeLayerState } from '../CurveEditor/createKeyframeLayer';
 import { KeyframeLayer } from '../CurveEditor/KeyframeLayer';
 import s from './Timeline.module.css';
-import { TICK_SPACING_PX, windowScale, type TimeWindow } from './timeScale';
+import { msLabel, TICK_SPACING_PX, windowScale, type TimeWindow } from './timeScale';
 
 /** Keeps the extreme keys inside the lane: at the very edge a key centers on
  *  the lane's border and hangs half into its neighbor. As a percentage of
@@ -17,7 +17,6 @@ const V_INSET_PCT = 8;
 /** One arrow-key step, in ms; shift multiplies by ten. */
 const KEY_STEP = { x: 10 };
 const TRACK_TIME = [0, Infinity] as const;
-const formatMs = (t: number): string => `${Math.round(t)} ms`;
 
 export interface LaneGraphProps {
   keys: readonly Keyframe<number>[];
@@ -132,7 +131,7 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
           <KeyframeLayer
             id="keys"
             label={label}
-            formatX={formatMs}
+            formatX={msLabel}
             snapX={snapX}
             xClamp={TRACK_TIME}
             step={KEY_STEP}

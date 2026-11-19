@@ -1,5 +1,5 @@
 /** Where a score sits on the three axes it is steered by. Values outside a
- *  range are read as its nearest end. */
+ *  range are read as its nearest end; a NaN throws a `RangeError`. */
 export interface ScoreMood {
   /** -1 dark to 1 bright. */
   valence: number;
@@ -53,13 +53,10 @@ export interface ScoreCueReading {
 
 const clamp = (value: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, value));
 
-/** Throws a `RangeError` on a mood axis that is not a number. Out of range is
- *  fine: it reads as the nearest end. */
+/** Throws on a mood with a NaN axis, which no end of its range is nearest to. */
 export function checkScoreMood(mood: ScoreMood): void {
   for (const axis of ['valence', 'tension', 'urgency'] as const) {
-    if (typeof mood[axis] !== 'number' || Number.isNaN(mood[axis])) {
-      throw new RangeError(`@weasel-js/audio: a score mood's ${axis} is a number, not ${mood[axis]}`);
-    }
+    if (Number.isNaN(mood[axis])) throw new RangeError(`@weasel-js/audio: a score mood's ${axis} is a number, not NaN`);
   }
 }
 

@@ -132,6 +132,17 @@ describe('sourcedFromBundled', () => {
       'pkg/src/shape.ts',
     ]);
   });
+
+  it('takes what a served file reaches through a relative import.meta.glob, less what a `!` pattern excludes', () => {
+    file('app/sweep.test.tsx', "const all = import.meta.glob(['../pkg/src/*.stories.tsx', '!../pkg/src/Skipped.stories.tsx']);");
+    file('pkg/src/Skipped.stories.tsx', "import { other } from './other';");
+    const sourced = sourcedFromBundled([join(tree, 'app/sweep.test.tsx')], [join(tree, 'pkg')]);
+    expect([...sourced].map((f) => f.slice(tree.length + 1)).sort()).toEqual([
+      'pkg/src/Widget.stories.tsx',
+      'pkg/src/leaf.ts',
+      'pkg/src/shape.ts',
+    ]);
+  });
 });
 
 describe('namesSourced', () => {
