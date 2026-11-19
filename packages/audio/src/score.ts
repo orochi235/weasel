@@ -2,7 +2,7 @@ import type { AudioEngine } from './createAudioEngine';
 import { createPatternPlayer } from './patternPlayer';
 import { SCORE_BAR_STEPS, scoreBar, type ScoreBarOptions } from './scoreBar';
 import {
-  readScoreCue, resolveScoreMood, type ScoreCueReading, type ScoreMood, type ScoreSettings,
+  checkScoreMood, readScoreCue, resolveScoreMood, type ScoreCueReading, type ScoreMood, type ScoreSettings,
 } from './scoreMood';
 
 /** What a score is playing in one bar, and why: the mood it was given, the cue
@@ -110,7 +110,10 @@ export function createScore(engine: AudioEngine, opts: ScoreOptions): Score {
     stop: () => player.stop(),
     isPlaying: () => player.isPlaying(),
     mood: () => target,
-    setMood(mood) { target = mood; },
+    setMood(mood) {
+      checkScoreMood(mood);
+      target = mood;
+    },
     state: () => current,
   };
 }
