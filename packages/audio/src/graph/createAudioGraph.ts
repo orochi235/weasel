@@ -76,19 +76,17 @@ export function createAudioGraph(
       validatePatches(edits.view(), patches);
       let failed: { error: unknown } | null = null;
       for (const p of patches) {
-        switch (p.kind) {
-          case 'add': graph.add(p.id, p.def); break;
-          case 'remove': graph.remove(p.id); break;
-          case 'replace': graph.replace(p.id, p.def); break;
-          case 'connect': graph.connect(p.from, p.to); break;
-          case 'disconnect': graph.disconnect(p.from, p.to); break;
-          case 'set':
-            try {
-              graph.set(p.id, p.param, p.value, p.rampMs);
-            } catch (error) {
-              failed ??= { error };
-            }
-            break;
+        try {
+          switch (p.kind) {
+            case 'add': graph.add(p.id, p.def); break;
+            case 'remove': graph.remove(p.id); break;
+            case 'replace': graph.replace(p.id, p.def); break;
+            case 'connect': graph.connect(p.from, p.to); break;
+            case 'disconnect': graph.disconnect(p.from, p.to); break;
+            case 'set': graph.set(p.id, p.param, p.value, p.rampMs); break;
+          }
+        } catch (error) {
+          failed ??= { error };
         }
       }
       if (failed) throw failed.error;

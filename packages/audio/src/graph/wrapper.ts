@@ -65,13 +65,29 @@ export function tapWrapper(ctx: BaseAudioContext, w: NodeWrapper, opts?: Analyse
   return t;
 }
 
+/** A def whose `start` throws is left not running, so a later start tries it again. */
 export function startWrapper(w: NodeWrapper, when: number): void {
   const { def } = w;
   if (w.running || !def.start) return;
-  w.running = true;
+  let ended = false;
   def.start(when, () => {
+    ended = true;
     if (w.def === def) w.running = false;
   });
+  if (!ended) w.running = true;
+}
+
+/** Start each of `ws`, every one tried even past one that throws; then rethrow the first error. */
+export function startAll(ws: readonly NodeWrapper[], when: number): void {
+  let failed: { error: unknown } | null = null;
+  for (const w of ws) {
+    try {
+      startWrapper(w, when);
+    } catch (error) {
+      failed ??= { error };
+    }
+  }
+  if (failed) throw failed.error;
 }
 
 /** Stops the def and any a `replace` is still fading out. */

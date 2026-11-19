@@ -1,6 +1,6 @@
 import { atAudioTime, type Timers } from '../audioTime';
 import { writeParam } from '../param';
-import { startWrapper, stopWrapper, type NodeWrapper } from './wrapper';
+import { startAll, stopWrapper, type NodeWrapper } from './wrapper';
 
 export interface TransportDeps {
   ctx: BaseAudioContext;
@@ -48,7 +48,7 @@ export function createTransport(deps: TransportDeps) {
       if (playing) return;
       playing = true;
       fadeOutput(1, () => {});
-      for (const w of deps.live()) startWrapper(w, ctx.currentTime);
+      startAll(deps.live(), ctx.currentTime);
     },
     stop(): void {
       if (!playing) return;

@@ -46,7 +46,6 @@ export function replaceDef(
   w.outFader = openFader(ctx, timers, next.output, w.out, ms);
   w.def = next;
   w.running = false;
-  if (playing) startWrapper(w, ctx.currentTime);
 
   let open = old.faders.length;
   for (const f of old.faders) {
@@ -57,6 +56,7 @@ export function replaceDef(
       hooks.onSettle();
     });
   }
+  if (playing) startWrapper(w, ctx.currentTime);
 }
 
 function openFader(

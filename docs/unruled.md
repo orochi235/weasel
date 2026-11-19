@@ -2656,3 +2656,12 @@ Calls the lanes made without a ruling:
 - 2026-11-18 (the fixer's call): `gen-brand-colors` throws, writing neither table, on a Copic marker with no name
   or a sampled colour that is not `#rrggbb`, and on a LEGO name holding a named HTML reference other than `&amp;`,
   `&lt;`, `&gt;`, `&quot;`, `&apos;` and `&nbsp;`. Skipping the row with a warning was the alternative.
+
+## Audit round thirty-seven (2026-11-18): the audio graph
+
+- 2026-11-18 (the fixer's call): an audio graph's `fadeMs` below 0 throws `RangeError` at construction, as a
+  non-finite one does; clamping it to 0 was the alternative.
+- 2026-11-18 (the fixer's call): a graph source whose `start` throws is left stopped and still in the graph. `start()`
+  starts the rest and rethrows the first error, an `add` or `replace` while playing keeps the new def and rethrows,
+  and `apply` treats it as it treats a throwing `set`: the rest apply, then the first error is rethrown. Removing the
+  node again on a failed `add` was the alternative.
