@@ -425,14 +425,6 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
-- **(P3) [agent] The control sweep judges labkit's annotation tool options alive on weak evidence:**
-  `Freehand › Width` and the other tool-option fields in annotation-capture read alive only because the trial's
-  theme button acts differently after them (2026-11-19 sweep); the gesture probe, dragging with the chosen
-  tool, sees no difference, though a wider stroke should show in the mark it draws. Either the probe drags
-  where the annotation overlay does not take the press, or the capture misses the overlay. Ellipse and Text
-  run past the demo's 12-minute budget. Closes when the sweep reads these fields alive from the drawn mark
-  (`scripts/control-sweep/probe.mjs`, `dragRun`) and annotation-capture finishes inside its budget.
-
 - **(P3) [maintainer] Seven published packages have no badge on the site's Releases chips:** `export`,
   `paint-kinds`, `prefs-editor`, `prefs-schema`, `scale`, `text-tools` and `ui-canvas`. `PACKAGE_ICONS`
   (`apps/site/releaseIcons.ts`) has no entry for them, so their chips draw no glyph; the badges are drawn in
