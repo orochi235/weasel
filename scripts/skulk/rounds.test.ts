@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { chapman, isSettled, nextRound, pickAreas, readPasses } from './rounds.mjs';
+import { areasInFlight, chapman, isSettled, nextRound, pickAreas, readPasses } from './rounds.mjs';
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -49,6 +49,13 @@ describe('pickAreas', () => {
     ]);
     const picked = pickAreas({ areas: ['a', 'b', 'c', 'd'].map((id) => area(id)), passes: readPasses(root), touched: never, count: 3 }).picked;
     expect(picked).toEqual(['c', 'd', 'b']);
+  });
+
+  it('skips an area an unlanded round still holds on an audit branch', () => {
+    const inFlight = areasInFlight(['audit37-b', 'audit37-core.animation', 'batch/2026-11-18-audit37', 'feature-x']);
+    expect([...inFlight].sort()).toEqual(['b', 'core.animation']);
+    const picked = pickAreas({ areas: ['a', 'b', 'c'].map((id) => area(id)), passes: new Map(), touched: never, count: 3, inFlight }).picked;
+    expect(picked).toEqual(['a', 'c']);
   });
 
   it('picks an area again as never audited when its only pass had a reviewer that never ran', () => {

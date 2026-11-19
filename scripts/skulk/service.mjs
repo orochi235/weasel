@@ -11,7 +11,7 @@ import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import { after } from '../../packages/registry/src/after.ts';
 import { STATE_DIR } from './config.mjs';
-import { CURRENT_FILE, LAST_FILE, STOP_FILE } from './night.mjs';
+import { CURRENT_FILE, LAST_FILE, STOP_FILE, nightRunning } from './night.mjs';
 import { handle, msUntil, shouldAutoStart } from './serviceCore.mjs';
 
 /** The checkout nights run from: the main checkout, not onto's copy of the tree this service runs in. */
@@ -30,20 +30,11 @@ let child;
 let lastLine = '';
 let lastStarted = readJson(LAST_FILE)?.started ? new Date(readJson(LAST_FILE).started) : undefined;
 
-const alive = (pid) => {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (error) {
-    return error.code === 'EPERM';
-  }
-};
 
 /** A night this service started, or one started by hand that is still writing its status. */
 const running = () => {
   if (child !== undefined) return true;
-  const pid = readJson(CURRENT_FILE)?.pid;
-  return Number.isInteger(pid) && alive(pid);
+  return nightRunning() !== null;
 };
 
 const start = (args) => {
