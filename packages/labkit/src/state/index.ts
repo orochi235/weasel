@@ -32,7 +32,7 @@ export {
   labStorageKey,
   serializeTrials,
 } from './helpers';
-export { indexedDbAdapter } from './labStorage';
+export { labIndexedDbAdapter } from './labStorage';
 export { type OpenedLabStore, type OpenLabStoreOptions, openLabStore } from './openLabStore';
 export { Persistence, type PersistenceProps } from './Persistence';
 export {
