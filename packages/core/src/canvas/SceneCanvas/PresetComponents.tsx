@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+import { createPart } from '@weasel-js/registry';
 import { DepRank } from '@weasel-js/routing/react';
 import type { PresetComponentProps } from './features';
 
@@ -7,14 +8,9 @@ const PRESET_DEP_RANK = 1;
 /** The rank the canvas's children's dep sources join at: over its presets' components, whichever mounted last. */
 export const CHILD_DEP_RANK = 2;
 
-const keys = new WeakMap<ComponentType<PresetComponentProps>, number>();
 let nextKey = 0;
 /** One key per component for as long as it lives, so turning off a preset ahead of it does not remount it. */
-function keyOf(part: ComponentType<PresetComponentProps>): number {
-  let key = keys.get(part);
-  if (key === undefined) keys.set(part, (key = nextKey++));
-  return key;
-}
+const keyOf = createPart((_part: ComponentType<PresetComponentProps>): number => nextKey++);
 
 /** The canvas's presets' components, each rendered once with what the canvas hands them. */
 export function PresetComponents({ parts, ...props }: PresetComponentProps & {
