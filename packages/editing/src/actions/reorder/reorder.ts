@@ -5,6 +5,7 @@ import { ActionDisabledReason, defineAction, BETWEEN_GESTURES } from '@weasel-js
 import type { ReorderParams } from '../../actionParamSchema';
 import { sameList } from '@weasel-js/registry';
 import { icon } from '../../icons.gen';
+import { REORDER_GROUP } from '../../actionGroups';
 
 // ---------------------------------------------------------------------------
 // Shared helper
@@ -100,7 +101,7 @@ function reorderEnabled(direction: 'forward' | 'backward') {
 export const reorderForwardAction = defineAction({
   id: 'reorder.forward',
   label: 'Bring',
-  group: 'reorder',
+  group: REORDER_GROUP,
   variants: [
     { key: 'adjacent', label: 'Bring Forward', icon: icon('bringForward'), params: { distance: 'adjacent' } },
     { key: 'extreme', label: 'Bring to Front', icon: icon('bringToFront'), params: { distance: 'extreme' } },
@@ -156,7 +157,7 @@ export const reorderForwardAction = defineAction({
 export const reorderBackwardAction = defineAction({
   id: 'reorder.backward',
   label: 'Send',
-  group: 'reorder',
+  group: REORDER_GROUP,
   variants: [
     { key: 'adjacent', label: 'Send Backward', icon: icon('sendBackward'), params: { distance: 'adjacent' } },
     { key: 'extreme', label: 'Send to Back', icon: icon('sendToBack'), params: { distance: 'extreme' } },

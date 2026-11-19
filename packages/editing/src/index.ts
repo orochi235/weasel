@@ -12,6 +12,10 @@ export type { EditingIconName } from './icons.gen';
 
 export type { AlignParams, DistributeParams, FlipParams, ReorderParams } from './actionParamSchema';
 
+export {
+  ALIGN_GROUP, CLIPBOARD_GROUP, DISTRIBUTE_GROUP, EDIT_GROUP, FLIP_GROUP, INSERT_GROUP, NUDGE_GROUP, PATHFINDER_GROUP,
+  REORDER_GROUP, STRUCTURE_GROUP,
+} from './actionGroups';
 export { selectPreset } from './presets/select';
 export { selectionPreset } from './presets/selection';
 export { movePreset, outlinePreset, resizePreset, rotatePreset } from './presets/transform';

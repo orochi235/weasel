@@ -1,6 +1,7 @@
 import { defineAction, type Action, type ActionParamsOf, type BoundGesture } from '@weasel-js/routing';
 import { wheelPan } from 'core/viewport/wheelHandler';
 import type {} from '../actionParamSchema';
+import { VIEWPORT_GROUP } from '../actionGroups';
 
 /**
  * Wheel and trackpad pan. Shift+wheel pans horizontally, by routing deltaY
@@ -11,7 +12,7 @@ import type {} from '../actionParamSchema';
 export const viewportWheelPanAction = defineAction({
   id: 'viewport.wheelPan',
   label: 'Pan (wheel)',
-  group: 'viewport',
+  group: VIEWPORT_GROUP,
   /**
    * The matcher's strict modifier check keeps the bindings exclusive, and
    * leaves Cmd+wheel to `viewportZoomAction`: omitting `mods` forbids any

@@ -6,7 +6,7 @@ import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Sequence, valuesSweep } from '@weasel-js/ui/components/Sequence';
 import { DemoStage, DemoStageGroup } from './DemoStage';
-import { pathfinderPreset, pickPreset, useSelection } from '@weasel-js/editing';
+import { pathfinderPreset, pickPreset, useSelection, PATHFINDER_GROUP } from '@weasel-js/editing';
 
 const W = 240;
 const H = 200;
@@ -76,7 +76,7 @@ function InteractivePanel() {
     <div className="ckd-boolops-panel">
       <h3 className="ckd-boolops-label">Interactive</h3>
       <div className="ckd-boolops-toolbar">
-        <ActionBar group="pathfinder" />
+        <ActionBar group={PATHFINDER_GROUP} />
         <Button className="ckd-boolops-reset" onClick={reset}>Reset</Button>
       </div>
       <DemoStage width={W} height={H}>

@@ -4,6 +4,7 @@ import type { ViewApi } from '../depSchema';
 import type { InertiaOptions } from 'core/viewport/useDecayLoop';
 import { createVelocityTracker, type VelocityTracker } from 'core/viewport/createVelocityTracker';
 import type {} from '../actionParamSchema';
+import { VIEWPORT_GROUP } from '../actionGroups';
 
 interface DragPanScratch {
   startView: View;
@@ -67,7 +68,7 @@ export interface DragPanParams {
 export const viewportDragPanAction = defineAction({
   id: 'viewport.dragPan',
   label: 'Drag to pan viewport',
-  group: 'viewport',
+  group: VIEWPORT_GROUP,
   cursor: 'grab',
   activeCursor: 'grabbing',
   requires: ['view', 'debug'],

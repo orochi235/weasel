@@ -9,6 +9,7 @@ import { icon } from '../../icons.gen';
 import { hiddenSourcesTakenWith } from '@weasel-js/core';
 import { withoutPageStructure } from '@weasel-js/core/engine';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
+import { EDIT_GROUP } from '../../actionGroups';
 
 /** `id`'s slot among the scene roots or its parent's children, or `-1`. */
 function hostIndex(scene: Scene<unknown, string, unknown>, id: NodeId): number {
@@ -121,7 +122,7 @@ export function createDeleteAction(opts: DeleteActionOptions = {}): Action & { r
     id: 'delete',
     label: 'Delete',
     icon: icon('core:delete'),
-    group: 'edit',
+    group: EDIT_GROUP,
     // Suppressed while any tool is mid-gesture — accidentally hitting
     // Delete during a drag shouldn't wipe the selection out from under
     // the in-flight handle.

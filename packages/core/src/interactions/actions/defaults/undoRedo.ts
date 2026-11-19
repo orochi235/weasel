@@ -1,6 +1,7 @@
 import { ActionDisabledReason, type Action, type ActionDeps } from '@weasel-js/routing';
 import { icon } from '../../../icons.gen';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
+import { HISTORY_GROUP } from '../actionGroups';
 
 function historyCan(deps: ActionDeps | undefined, which: 'canUndo' | 'canRedo'): true | ActionDisabledReason {
   return deps?.history?.[which]?.() ? true : ActionDisabledReason.NotApplicable;
@@ -14,7 +15,7 @@ export const undoAction: Action & { requires: string[] } = {
   id: 'undo',
   label: 'Undo',
   icon: icon('undo'),
-  group: 'history',
+  group: HISTORY_GROUP,
   defaultBinding: [{ spec: { kind: 'key', key: 'z', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'undo.key' } }],
   requires: ['history'],
   invoker: {
@@ -33,7 +34,7 @@ export const redoAction: Action & { requires: string[] } = {
   id: 'redo',
   label: 'Redo',
   icon: icon('redo'),
-  group: 'history',
+  group: HISTORY_GROUP,
   defaultBinding: [{ spec: { kind: 'key', key: 'z', mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'redo.key' } }],
   requires: ['history'],
   invoker: {

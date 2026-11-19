@@ -5,6 +5,7 @@ import { icon } from '../../icons.gen';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
 import { pref } from '@weasel-js/prefs-schema';
 import { isFiniteNumber } from '@weasel-js/registry';
+import { EDIT_GROUP } from '../../actionGroups';
 
 
 const offsetLeaf = (name: string, axis: string) => pref.number(name, DUPLICATE_OFFSET, {
@@ -64,7 +65,7 @@ export const duplicateAction: Action & { requires: string[] } = {
   id: 'duplicate',
   label: 'Duplicate',
   icon: icon('duplicate'),
-  group: 'edit',
+  group: EDIT_GROUP,
   // Cmd/Ctrl+D is `transformAgain`, which duplicates when nothing else is
   // there to repeat.
   defaultBinding: [{ spec: { kind: 'key', key: 'd', mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'duplicate.key' } }],

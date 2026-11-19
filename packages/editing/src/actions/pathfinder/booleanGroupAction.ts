@@ -4,6 +4,7 @@ import { groupingSite, pageIdOf, commitOps, defaultCommitAdapter, createInsertOp
 import type { Op, SceneNode as Node, NodeId } from '@weasel-js/core';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { icon } from '../../icons.gen';
+import { PATHFINDER_GROUP } from '../../actionGroups';
 
 const PAINT_KEYS = ['fill', 'stroke'] as const;
 
@@ -75,7 +76,7 @@ export const makeBooleanGroupAction: Action & { requires: string[] } = {
   id: 'pathfinder.booleanGroup',
   label: 'Make Boolean Group',
   icon: icon('booleanGroup'),
-  group: 'pathfinder',
+  group: PATHFINDER_GROUP,
   eligible: { capability: 'creates-shapes' },
   requires: ['scene', 'operands', 'applyOps'],
   invoker: {

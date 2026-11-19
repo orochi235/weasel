@@ -5,6 +5,7 @@ import { duplicateAction, duplicateSelection } from '../edit/duplicate';
 import { DUPLICATE_OFFSET, requiresContent, requiresOperands, lastTransform, recordTransform, type RepeatableTransform } from '@weasel-js/core';
 import { selectionTransformOps } from './transformSelection';
 import { icon } from '../../icons.gen';
+import { EDIT_GROUP } from '../../actionGroups';
 
 const LABEL = 'Transform Again';
 
@@ -45,7 +46,7 @@ export const transformAgainAction: Action & { requires: string[] } = {
   id: 'transformAgain',
   label: LABEL,
   icon: icon('transformAgain'),
-  group: 'edit',
+  group: EDIT_GROUP,
   defaultBinding: [{ spec: { kind: 'key', key: 'd', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'transformAgain.key' } }],
   eligible: { capability: 'transforms-selection' },
   requires: [

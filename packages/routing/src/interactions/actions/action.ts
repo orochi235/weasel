@@ -58,9 +58,9 @@ export interface ActionPresentation {
   grade?: Grade;
   /** The action's icon, by qualified name: `icon('group')` in the package that draws it. */
   icon?: IconSpec;
-  /** Grouping key for palette/menu surfaces. Free-form string; the kit
-   *  ships defaults for `'align'` (six edges/centers), `'distribute'`
-   *  (two axes), and recommends `'pathfinder'` for boolean ops. */
+  /** The one group the action sits in, which an `<ActionBar group>`, a menu or a palette gathers it by. Free-form;
+   *  the kit's own are named constants: core's `HISTORY_GROUP`, `VIEWPORT_GROUP` and the rest, editing's
+   *  `CLIPBOARD_GROUP`, `ALIGN_GROUP` and the rest, and routing's `TOOL_GROUP`. */
   group?: string;
   /** Words the action is also found by and gathered under. Where `group` is
    *  the one place an action sits, an action carries any number of tags: a

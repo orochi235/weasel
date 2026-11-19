@@ -1,3 +1,4 @@
+import { HISTORY_GROUP } from '@weasel-js/core';
 import { copyText } from '@weasel-js/react';
 import { getOwn, setOwn } from '@weasel-js/registry';
 import { COLOR_MODE_OPTIONS, CycleButton } from '@weasel-js/ui/components/CycleButton';
@@ -224,7 +225,7 @@ export function builtinContributions(
     out.push({
       id: 'undo',
       region: 'toolbar',
-      group: 'history',
+      group: HISTORY_GROUP,
       item: {
         icon: icon('core:undo'),
         label: 'Undo',
@@ -236,7 +237,7 @@ export function builtinContributions(
     out.push({
       id: 'redo',
       region: 'toolbar',
-      group: 'history',
+      group: HISTORY_GROUP,
       item: {
         icon: icon('core:redo'),
         label: 'Redo',

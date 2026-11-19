@@ -239,7 +239,7 @@ export {
   steppedOption, toolOptionActionIds, toolOptionLeaf, toolOptionNumberLeaf, toolOptionParams, toolOptionSlot, withToolOptionDefault,
 } from './tools/toolOptions';
 export type { ToolOptionsSpec, ToolOptionShare, ToolOptionStep, ToolOptionValues } from './tools/toolOptions';
-export { toolOptionSteps } from './tools/toolOptionSteps';
+export { TOOL_GROUP, toolOptionSteps } from './tools/toolOptionSteps';
 export { prefsToolOptionValues, toolOptionsPrefs } from './tools/toolOptionPrefs';
 export { declaredToolShortcuts, TOOL_ACTIVATE_ID, toolShortcutsOf } from './tools/toolShortcuts';
 export type { ToolShortcuts } from './tools/toolShortcuts';

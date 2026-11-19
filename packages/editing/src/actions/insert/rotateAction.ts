@@ -1,6 +1,7 @@
 import { defineAction } from '@weasel-js/routing';
 import type { InsertLiveGesture } from './live';
 import type {} from '@weasel-js/core';
+import { INSERT_GROUP } from '../../actionGroups';
 
 /** Radians per unit of wheel deltaY. Tuned so a typical mouse-wheel click
  *  (deltaY ≈ 100) yields ~25°, while a trackpad event (deltaY ≈ 1–10)
@@ -16,7 +17,7 @@ const ROTATION_SENSITIVITY = Math.PI / 720;
 export const insertRotateAction = defineAction({
   id: 'insert.rotate',
   label: 'Insert — rotate',
-  group: 'insert',
+  group: INSERT_GROUP,
   eligible: { capability: 'creates-shapes' },
   invoker: {
     timing: 'immediate',

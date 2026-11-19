@@ -2,6 +2,7 @@ import { ActionDisabledReason, defineAction, resolveParams } from '@weasel-js/ro
 import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
 import { pathOperationTags } from '@weasel-js/core';
 import type {} from '../actionParamSchema';
+import { EDIT_GROUP } from '@weasel-js/editing';
 
 /**
  * Static descriptor for the `slice` Action.
@@ -17,7 +18,7 @@ export const sliceAction = defineAction({
   id: 'slice',
   label: 'Slice',
   tags: pathOperationTags('click'),
-  group: 'edit',
+  group: EDIT_GROUP,
   eligible: { capability: 'edits-page' },
   requires: ['slice'],
   invoker: {

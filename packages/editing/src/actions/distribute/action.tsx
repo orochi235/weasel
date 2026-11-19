@@ -7,6 +7,7 @@ import type { Action, ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import type { DistributeParams } from '../../actionParamSchema';
 import { icon } from '../../icons.gen';
+import { DISTRIBUTE_GROUP } from '../../actionGroups';
 
 const ID_FOR = { x: 'distribute.horizontal', y: 'distribute.vertical' } as const satisfies Record<DistributeAxis, string>;
 const LABEL_FOR: Record<DistributeAxis, string> = { x: 'Distribute Horizontally', y: 'Distribute Vertically' };
@@ -64,7 +65,7 @@ function makeDistributeAction(axis: DistributeAxis): Action {
     id: ID_FOR[axis],
     label: LABEL_FOR[axis],
     icon: ICON_FOR[axis],
-    group: 'distribute',
+    group: DISTRIBUTE_GROUP,
     eligible: { capability: 'transforms-selection' },
     requires: ['operands', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'transformFollowers'],
     // No default keybindings. Wire bindings explicitly via the actions registry.

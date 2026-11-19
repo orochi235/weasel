@@ -5,6 +5,7 @@ import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { icon } from '../../icons.gen';
 import { applyBooleanOp, countOperands, previewBooleanOp, type BooleanOp, type BooleanOpOptions, type BooleanStrokes } from '../../booleans';
+import { PATHFINDER_GROUP } from '../../actionGroups';
 
 const ID_FOR: Record<BooleanOp, string> = {
   union: 'pathfinder.union',
@@ -57,7 +58,7 @@ function makePathfinderAction(op: BooleanOp): Action {
     id: ID_FOR[op],
     label: LABEL_FOR[op],
     icon: ICON_FOR[op],
-    group: 'pathfinder',
+    group: PATHFINDER_GROUP,
     eligible: { capability: 'creates-shapes' },
     requires: ['operands', 'booleansAdapter', 'view', 'previewPaths', 'notices'],
     // No default keybindings — there's no industry-standard chord set for

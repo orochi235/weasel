@@ -4,6 +4,7 @@ import { hasStroke } from '@weasel-js/core';
 import { applyOutlineStroke } from './outlineStroke';
 import { withOutlines } from './createOutlinesAction';
 import { icon } from '../icons.gen';
+import { PATHFINDER_GROUP } from '@weasel-js/editing';
 
 /**
  * Static descriptor for Outline Stroke: replace each selected
@@ -15,7 +16,7 @@ export const outlineStrokeAction: Action = {
   id: 'outlineStroke',
   label: 'Outline Stroke',
   icon: icon('core:outlineStroke'),
-  group: 'pathfinder',
+  group: PATHFINDER_GROUP,
   eligible: { capability: 'creates-shapes' },
   requires: ['operands', 'createOutlinesAdapter', 'view', 'notices'],
   invoker: {

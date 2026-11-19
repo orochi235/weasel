@@ -4,6 +4,7 @@ import { createReparentOp, createDeleteOp, createSetDependsOnOp, rootsAmong, fol
 import { ActionDisabledReason, type Action, type ActionDeps, BETWEEN_GESTURES } from '@weasel-js/routing';
 import { icon } from '../../icons.gen';
 import type { AnyScene } from '@weasel-js/core/engine';
+import { STRUCTURE_GROUP } from '../../actionGroups';
 
 /** Where grouping the selection puts its container and members, or null when it cannot: no content, members on
  *  more than one layer, a container too large for the double range, a container that lands in a singular frame
@@ -65,7 +66,7 @@ export const groupAction: Action & { requires: string[] } = {
   id: 'group',
   label: 'Group',
   icon: icon('group'),
-  group: 'structure',
+  group: STRUCTURE_GROUP,
   defaultBinding: [{ spec: { kind: 'key', key: 'g', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'group.key' } }],
   eligible: { capability: 'edits-page' },
   requires: ['scene', 'operands', 'applyOps', 'poseDescriptor'],
@@ -219,7 +220,7 @@ export const ungroupAction: Action & { requires: string[] } = {
   id: 'ungroup',
   label: 'Ungroup',
   icon: icon('ungroup'),
-  group: 'structure',
+  group: STRUCTURE_GROUP,
   defaultBinding: [{ spec: { kind: 'key', key: 'g', mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'ungroup.key' } }],
   eligible: { capability: 'edits-page' },
   requires: ['scene', 'operands', 'applyOps'],

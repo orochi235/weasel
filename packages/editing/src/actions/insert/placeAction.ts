@@ -6,6 +6,7 @@ import { insertKind } from './shape';
 import { clearedSelection } from './session';
 import { insertStyleOf } from './style';
 import type {} from '@weasel-js/core';
+import { INSERT_GROUP } from '../../actionGroups';
 
 /** What the dispatcher lays under an immediate action's params for a click. */
 const CLICK_FIELDS = ['world', 'press', 'affordance', 'mods'] as const;
@@ -29,7 +30,7 @@ const NO_KEYS: ModifierState = { alt: false, ctrl: false, meta: false, shift: fa
 export const placeAction: Action = inPlane(defineAction({
   id: 'place',
   label: 'Place',
-  group: 'insert',
+  group: INSERT_GROUP,
   eligible: { capability: 'creates-shapes' },
   modifierRoles: SNAP_ROLES,
   requires: ['insert', 'insertInto', 'canDropInto', 'operands', 'snap', 'scene'],

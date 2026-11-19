@@ -3,6 +3,7 @@ import type { Op } from '@weasel-js/core';
 import { poseDescriptorOf, defaultCommitAdapter, operandMethods, createTransformCommit } from '@weasel-js/core/engine';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { requiresOperands, moveNodesOps, nudgeSpec, NUDGE_LABEL, nudgeDelta, type NudgeDirection, recordTransform } from '@weasel-js/core';
+import { NUDGE_GROUP } from '../../actionGroups';
 
 /**
  * Apply a world translation of (dx, dy) to the selected nodes and the
@@ -36,7 +37,7 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
   return {
     id: `nudge.${dir}`,
     label: `Nudge ${NUDGE_LABEL[dir]}`,
-    group: 'nudge',
+    group: NUDGE_GROUP,
     defaultBinding: [
       { spec: nudgeSpec(dir, false), opts: { id: `nudge.${dir}.small`, params: { magnitude: 'small' } } },
       { spec: nudgeSpec(dir, true), opts: { id: `nudge.${dir}.big`, params: { magnitude: 'big' } } },
