@@ -18,7 +18,7 @@ describe('useSceneCanvasChrome', () => {
       },
       selection: [] as readonly NodeId[],
       viewRef: { current: { x: 0, y: 0, scale: { x: 1, y: 1 } } },
-      dispatcher: { getActiveAction: () => null },
+      dispatcher: { getActiveAction: () => ({ kind: null, id: null }) },
     }));
     result.current.trackHoverOn(el);
     fireEvent.pointerMove(el, { clientX: 5, clientY: 5 });

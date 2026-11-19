@@ -5,10 +5,12 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { useEffect, type ReactNode } from 'react';
-import { useDepRegistry, useDepSource, type DepName } from '@weasel-js/routing/react';
+import type { DepName } from '@weasel-js/routing';
+import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { SceneCanvas } from '../SceneCanvas';
 import { createScene } from 'core/scene/scene';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import type { FeaturePreset } from './features';
 
 beforeAll(() => {
@@ -22,7 +24,7 @@ beforeAll(() => {
 afterEach(() => { cleanup(); });
 
 const PROBE = 'presetComponentsProbe' as DepName;
-const scene = createScene<{ kind: 'rect' }, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+const scene = createScene<{ kind: 'rect' }, 'main', unknown>({ systemLayers: [{ id: 'main' }], composition: IDENTITY_POSE_COMPOSITION });
 
 function Canvas({ features, children }: { features: FeaturePreset[]; children?: ReactNode }) {
   return <SceneCanvas scene={scene} layers={{}} width={100} height={100} features={features}>{children}</SceneCanvas>;

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import React, { useEffect, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { render } from '@testing-library/react';
 import type { Action, ActionsProp, ActionsRegistry } from '@weasel-js/routing';
 import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
