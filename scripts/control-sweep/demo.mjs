@@ -9,12 +9,17 @@ import { animationFlips, compareCaptures, fingerprintOf, sameSteadyState, slug, 
 import { ROOT, kit, menuItemsOf, operate } from './operate.mjs';
 import { probeButtons, probeGesture } from './probe.mjs';
 
-/** The demo's box as a JPEG: evidence for a person, so small beats exact. */
 const SLOW_SETTLE_MS = 1000;
 
+/** The demo's box as a JPEG: evidence for a person, so small beats exact. A box the browser will not clip to gives the viewport. */
 const frameShot = async (page) => {
   const clip = await page.locator('.ckd-canvas-wrap').first().boundingBox();
-  return page.screenshot({ ...(clip ? { clip } : {}), type: 'jpeg', quality: 70, animations: 'disabled', caret: 'hide' });
+  const shot = (box) => page.screenshot({ ...(box ? { clip: box } : {}), type: 'jpeg', quality: 70, animations: 'disabled', caret: 'hide' });
+  try {
+    return await shot(clip);
+  } catch {
+    return shot(null);
+  }
 };
 
 /** Captures before, operates, captures after. Answers the comparison, what the page did, and the restore. */
