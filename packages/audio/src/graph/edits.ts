@@ -41,6 +41,25 @@ function viewOf(
   };
 }
 
+/** An edge is fading in or out or waiting to be wired, or a node is crossfading. */
+function fading(edges: readonly Edge[], wrappers: readonly NodeWrapper[]): boolean {
+  return edges.some((e) => e.state !== 'open' || e.fader!.opening()) || wrappers.some(wrapperFading);
+}
+
+/** A wrapper for `def`, handed to `onAdd`; cut again, rethrowing, if `onAdd` throws. */
+function admit(
+  ctx: BaseAudioContext, timers: Timers, id: string, def: GraphNodeDef, onAdd: (w: NodeWrapper) => void,
+): NodeWrapper {
+  const w = createWrapper(ctx, timers, id, def);
+  try {
+    onAdd(w);
+  } catch (error) {
+    abandonWrapper(w);
+    throw error;
+  }
+  return w;
+}
+
 /** The graph's nodes and edges: every structural edit, and the bookkeeping that
  *  lets a removed node finish fading out after its id is free again. */
 export function createEdits(deps: EditsDeps) {
@@ -51,9 +70,6 @@ export function createEdits(deps: EditsDeps) {
   const edges: Edge[] = [];
   /** Every def the graph has taken: one in two places is disposed under the other. */
   const used = new WeakSet<GraphNodeDef>();
-  const checkUnused = (def: GraphNodeDef): void => {
-    if (used.has(def)) throw defInUse();
-  };
 
   const live = (id: string): NodeWrapper => {
     const w = nodes.get(id);
@@ -101,21 +117,11 @@ export function createEdits(deps: EditsDeps) {
     allNodes: () => [...nodes.values(), ...leaving],
     /** The live nodes and the edges a caller can see, by id, for `validatePatches`. */
     view: (): GraphView => viewOf(nodes, edges, used),
-    /** An edge is fading in or out or waiting to be wired, or a node is crossfading. */
-    busy: () =>
-      edges.some((e) => e.state !== 'open' || e.fader!.opening()) ||
-      [...nodes.values(), ...leaving].some(wrapperFading),
+    busy: () => fading(edges, [...nodes.values(), ...leaving]),
     add(id: string, def: GraphNodeDef): void {
       if (nodes.has(id)) throw duplicateNode(id);
-      checkUnused(def);
-      const w = createWrapper(ctx, timers, id, def);
-      try {
-        deps.onAdd(w);
-      } catch (error) {
-        abandonWrapper(w);
-        throw error;
-      }
-      nodes.set(id, w);
+      if (used.has(def)) throw defInUse();
+      nodes.set(id, admit(ctx, timers, id, def, deps.onAdd));
       used.add(def);
     },
     remove(id: string): void {
@@ -129,7 +135,7 @@ export function createEdits(deps: EditsDeps) {
     /** Crossfade `id` into `def`; edges into a port `def` lacks close with it. */
     replace(id: string, def: GraphNodeDef, playing: boolean): void {
       const w = live(id);
-      checkUnused(def);
+      if (used.has(def)) throw defInUse();
       replaceDef(ctx, timers, w, def, fade(), playing, {
         closePort: (port) => {
           for (const e of edges.filter((x) => x.to === w && x.port === port)) close(e);
