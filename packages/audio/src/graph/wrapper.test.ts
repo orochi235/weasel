@@ -27,7 +27,7 @@ describe('tapWrapper', () => {
 describe('a source that ends on its own', () => {
   it('starts again on a start inside the stop fade', () => {
     const { ctx, graph } = harness();
-    const file = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 100, 100) as never, loop: false });
+    const file = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 100 * 480, 48000) as never, loop: false });
     graph.add('f', file);
     graph.connect('f', { output: true });
     graph.start();

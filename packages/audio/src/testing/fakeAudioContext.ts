@@ -81,13 +81,21 @@ function createFakeBuffer(channels: number, length: number, sampleRate: number):
   if (channels < 1 || length < 1) {
     throw new Error('NotSupportedError: createBuffer needs a channel and a frame');
   }
+  // The specification's floor and ceiling; NaN fails both comparisons.
+  if (!(sampleRate >= 3000 && sampleRate <= 768_000)) {
+    throw new Error(`NotSupportedError: createBuffer's sample rate ${sampleRate} is outside 3000-768000`);
+  }
   const data = Array.from({ length: channels }, () => new Float32Array(length));
   return {
     duration: length / sampleRate,
     length,
     numberOfChannels: channels,
     sampleRate,
-    getChannelData: (channel) => data[channel],
+    getChannelData: (channel) => {
+      const out = data[channel];
+      if (!out) throw new Error(`IndexSizeError: the buffer has no channel ${channel}`);
+      return out;
+    },
   };
 }
 
@@ -99,15 +107,19 @@ export function createFakeAudioContext(): FakeAudioContext {
   const listeners = new Set<() => void>();
   const routed = new WeakSet<FakeMediaElement>();
   const now = (): number => ctx.currentTime;
+  // A closed context rejects every state change: it cannot be reopened.
+  const requireOpen = (call: string): void => {
+    if (ctx.state === 'closed') throw new Error(`InvalidStateError: ${call} on a closed AudioContext`);
+  };
 
   const ctx: FakeAudioContext = {
     state: 'suspended',
     currentTime: 0,
     sampleRate: 48000,
     destination: node('destination'),
-    async resume() { ctx._setState('running'); },
-    async suspend() { ctx._setState('suspended'); },
-    async close() { ctx._setState('closed'); },
+    async resume() { requireOpen('resume'); ctx._setState('running'); },
+    async suspend() { requireOpen('suspend'); ctx._setState('suspended'); },
+    async close() { requireOpen('close'); ctx._setState('closed'); },
     addEventListener(_type, fn) { listeners.add(fn); },
     removeEventListener(_type, fn) { listeners.delete(fn); },
     createGain: () => node('gain', { gain: param(1) }),

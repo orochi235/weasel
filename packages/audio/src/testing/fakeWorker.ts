@@ -1,5 +1,3 @@
-import { vi } from 'vitest';
-
 /** A dedicated-Worker double. Nothing runs in it: a test reads what was posted
  *  and delivers the worker's replies by hand. */
 export class FakeWorker {
@@ -39,6 +37,7 @@ export class FakeWorker {
 
   /** Test hook: the worker failed — a CSP refusal arrives this way. */
   _fail(): void {
+    if (this.terminated) return;
     for (const fn of [...(this.listeners.get('error') ?? [])]) fn({ type: 'error' });
   }
 }
@@ -51,6 +50,10 @@ export function stubWorkerGlobals() {
   const revoked: string[] = [];
   const create = URL.createObjectURL;
   const revoke = URL.revokeObjectURL;
+  // Put back only what this installs: `vi.unstubAllGlobals` would also undo
+  // globals the test stubbed itself.
+  const g = globalThis as Record<string, unknown>;
+  const saved = (['Worker', 'Blob'] as const).map((name) => [name, Object.getOwnPropertyDescriptor(g, name)] as const);
 
   class RecordingBlob {
     readonly type: string;
@@ -60,8 +63,11 @@ export function stubWorkerGlobals() {
     }
   }
 
-  vi.stubGlobal('Worker', FakeWorker);
-  vi.stubGlobal('Blob', RecordingBlob);
+  const install = (name: string, value: unknown) => {
+    Object.defineProperty(g, name, { value, configurable: true, writable: true, enumerable: true });
+  };
+  install('Worker', FakeWorker);
+  install('Blob', RecordingBlob);
   URL.createObjectURL = (() => `blob:fake/${scripts.length}`) as typeof URL.createObjectURL;
   URL.revokeObjectURL = ((url: string) => { revoked.push(url); }) as typeof URL.revokeObjectURL;
 
@@ -70,7 +76,10 @@ export function stubWorkerGlobals() {
     scripts,
     revoked,
     restore() {
-      vi.unstubAllGlobals();
+      for (const [name, desc] of saved) {
+        if (desc) Object.defineProperty(g, name, desc);
+        else delete g[name];
+      }
       URL.createObjectURL = create;
       URL.revokeObjectURL = revoke;
     },

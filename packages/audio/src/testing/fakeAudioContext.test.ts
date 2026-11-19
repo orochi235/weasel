@@ -9,6 +9,19 @@ describe('createFakeAudioContext', () => {
     expect(ctx.state).toBe('running');
   });
 
+  it('rejects resume, suspend and close once closed, and stays closed', async () => {
+    const ctx = createFakeAudioContext();
+    await ctx.resume();
+    await ctx.close();
+    const seen = vi.fn();
+    ctx.addEventListener('statechange', seen);
+    await expect(ctx.resume()).rejects.toThrow(/InvalidStateError/);
+    await expect(ctx.suspend()).rejects.toThrow(/InvalidStateError/);
+    await expect(ctx.close()).rejects.toThrow(/InvalidStateError/);
+    expect(ctx.state).toBe('closed');
+    expect(seen).not.toHaveBeenCalled();
+  });
+
   it('advances the clock in seconds when told milliseconds', () => {
     const ctx = createFakeAudioContext();
     ctx._advance(500);
@@ -101,6 +114,47 @@ describe('createFakeAudioContext', () => {
     expect(done).not.toHaveBeenCalled();
   });
 
+  it('ends a buffer source after what is left past its offset, at its playback rate', () => {
+    const ctx = createFakeAudioContext();
+    const offset = ctx.createBufferSource();
+    const fast = ctx.createBufferSource();
+    const ends: string[] = [];
+    offset.buffer = { duration: 1 };
+    fast.buffer = { duration: 1 };
+    fast.playbackRate.value = 2;
+    offset.onended = () => ends.push('offset');
+    fast.onended = () => ends.push('fast');
+    offset.start(0, 0.6);
+    fast.start(0);
+    ctx._advance(390);
+    expect(ends).toEqual([]);
+    ctx._advance(20);
+    expect(ends).toEqual(['offset']);
+    ctx._advance(100);
+    expect(ends).toEqual(['offset', 'fast']);
+  });
+
+  it('ends a buffer source after the duration given to start, looping or not', () => {
+    const ctx = createFakeAudioContext();
+    const s = ctx.createBufferSource();
+    const done = vi.fn();
+    s.buffer = { duration: 0.5 };
+    s.loop = true;
+    s.onended = done;
+    s.start(0, 0, 2);
+    expect(s.durations).toEqual([2]);
+    ctx._advance(1990);
+    expect(done).not.toHaveBeenCalled();
+    ctx._advance(20);
+    expect(done).toHaveBeenCalledTimes(1);
+  });
+
+  it('throws on a negative offset or duration, as the specification requires', () => {
+    const ctx = createFakeAudioContext();
+    expect(() => ctx.createBufferSource().start(0, -1)).toThrow(RangeError);
+    expect(() => ctx.createBufferSource().start(0, 0, -1)).toThrow(RangeError);
+  });
+
   it('fires onended at a scheduled stop time, before the buffer runs out', () => {
     const ctx = createFakeAudioContext();
     const s = ctx.createBufferSource();
@@ -127,6 +181,22 @@ describe('createFakeAudioContext', () => {
     expect(done).toHaveBeenCalledTimes(1);
   });
 
+  it('refuses a buffer at a sample rate no context supports', () => {
+    const ctx = createFakeAudioContext();
+    for (const rate of [0, -1, Number.NaN, Infinity, 2999, 768_001]) {
+      expect(() => ctx.createBuffer(1, 10, rate)).toThrow(/NotSupportedError/);
+    }
+    expect(ctx.createBuffer(1, 10, 3000).duration).toBeCloseTo(10 / 3000);
+  });
+
+  it('throws for a channel a buffer does not have', () => {
+    const ctx = createFakeAudioContext();
+    const b = ctx.createBuffer(1, 10, 48000);
+    expect(b.getChannelData(0)).toHaveLength(10);
+    expect(() => b.getChannelData(1)).toThrow(/IndexSizeError/);
+    expect(() => b.getChannelData(-1)).toThrow(/IndexSizeError/);
+  });
+
   it('records ramps, holds and cancels on a param', () => {
     const ctx = createFakeAudioContext();
     const g = ctx.createGain();
@@ -148,15 +218,21 @@ describe('createFakeAudioContext', () => {
     expect(a.frequencyBinCount).toBe(256);
   });
 
-  it('writes index-dependent and length-dependent analyser data', () => {
+  it('writes data that depends on bin index and window length, not on the array', () => {
     const ctx = createFakeAudioContext();
     const a = ctx.createAnalyser();
-    const small = new Uint8Array(4);
-    a.getByteFrequencyData(small);
-    expect([...small]).toEqual([0, 64, 128, 191]);
-    const big = new Uint8Array(8);
-    a.getByteTimeDomainData(big);
-    expect([...big]).toEqual([0, 32, 64, 96, 128, 159, 191, 223]);
+    a.fftSize = 32;
+    const freq = new Uint8Array(4);
+    a.getByteFrequencyData(freq);
+    expect([...freq]).toEqual([0, 16, 32, 48]);
+    const wave = new Uint8Array(4);
+    a.getByteTimeDomainData(wave);
+    expect([...wave]).toEqual([0, 8, 16, 24]);
+    // A bin reads the same into a longer array.
+    const longer = new Uint8Array(16);
+    a.getByteFrequencyData(longer);
+    expect([...longer.slice(0, 4)]).toEqual([0, 16, 32, 48]);
+    expect(longer[15]).toBe(239);
   });
 
   it('never writes past the bin count into an oversized array', () => {
