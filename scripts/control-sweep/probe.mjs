@@ -28,7 +28,7 @@ const drag = async (page, r) => {
  * ('before', 'after' or never): what the demo shows.
  */
 const dragRun = async (page, c, ctx, when, tool) => {
-  await load(page, ctx.url, { reload: true, tries: ctx.tries });
+  await load(page, ctx.url, { tries: ctx.tries });
   const live = await prepare(page, ctx.url, c, ctx.settleMs, ctx.tries);
   if (tool) {
     const t = (await discover(page)).find((d) => d.key === tool.key);
@@ -88,7 +88,7 @@ const BUTTONS_TRIED = 5;
 
 /** A fresh load and `c`'s precondition, `c` operated if `operated`, then `button` pressed: two captures a settle apart. */
 const pressRun = async (page, c, button, ctx, operated) => {
-  await load(page, ctx.url, { reload: true, tries: ctx.tries });
+  await load(page, ctx.url, { tries: ctx.tries });
   const live = await prepare(page, ctx.url, c, ctx.settleMs, ctx.tries);
   if (operated) await operate(page, live);
   await settle(page, ctx.settleMs);

@@ -39,11 +39,19 @@ export const capture = async (page, id) => {
 
 const steady = (a, b) => sameSteadyState(a, a, b);
 
-/** Loads (or reloads) the demo and waits until it holds still, or until it plainly never will. */
-export const load = async (page, url, { reload = false, tries = STEADY_TRIES } = {}) => {
+/** Loads the demo afresh, with its origin's storage cleared, and waits until it holds still, or until it plainly never will. */
+export const load = async (page, url, { tries = STEADY_TRIES } = {}) => {
+  // A lab keeps its settings in IndexedDB, so a plain reload brings back what the last control changed. Leave
+  // the page first, so nothing holds the database open, and clear the origin's storage.
+  await page.goto('about:blank');
+  const cdp = await page.context().newCDPSession(page);
+  try {
+    await cdp.send('Storage.clearDataForOrigin', { origin: new URL(url).origin, storageTypes: 'all' });
+  } finally {
+    await cdp.detach();
+  }
   // Not 'load': a demo still fetching something (a font, a worker) holds that back, and the frame is what counts.
-  if (reload) await page.reload({ waitUntil: 'domcontentloaded' });
-  else await page.goto(url, { waitUntil: 'domcontentloaded' });
+  await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector(ROOT, { timeout: LOAD_TIMEOUT_MS });
   await page.evaluate((s) => document.querySelector(s)?.scrollIntoView({ block: 'start' }), ROOT);
   let last = await capture(page);
@@ -69,7 +77,7 @@ export const locate = async (page, c) => {
 /** Puts the page back where `pre` (if any) left it, with `c` found afresh. */
 export const prepare = async (page, url, c, settleMs, tries) => {
   if (c.precondition) {
-    await load(page, url, { reload: true, tries });
+    await load(page, url, { tries });
     const pre = await locate(page, c.precondition);
     if (!pre) throw new Error(`the control it depends on, ${c.precondition.label}, is gone`);
     await operate(page, pre);

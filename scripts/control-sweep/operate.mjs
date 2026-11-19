@@ -12,7 +12,13 @@ const sel = (id) => `[data-sweep-id="${id}"]`;
 const click = async (page, id) => {
   const hit = await kit(page, 'markHit', id);
   if (!hit) throw new Error('control is gone');
-  await page.locator(hit).first().click({ timeout: 3000 });
+  try {
+    await page.locator(hit).first().click({ timeout: 2000 });
+  } catch {
+    // Something lies over it (a popover's backdrop, a sibling's hit area): press it from the keyboard instead.
+    await page.locator(sel(id)).first().focus({ timeout: 2000 });
+    await page.keyboard.press('Space');
+  }
 };
 
 const focus = (page, id) => page.locator(sel(id)).first().focus({ timeout: 3000 });

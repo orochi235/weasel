@@ -67,9 +67,14 @@ const trial = async (page, demo, c, ctx) => {
     : (await discover(page)).filter((d) => isNewControl(d, keysBefore, live.id)).map((d) => ({ ...d, precondition: { key: c.key, label: c.label, kind: c.kind, triggerKey: c.triggerKey, item: c.item } }));
   let reload = Boolean(c.precondition) || (!a.restore && verdict !== 'dead');
   if (!reload && a.restore && verdict !== 'dead') {
-    await a.restore();
-    await settle(page, ctx.settleMs);
-    reload = !sameSteadyState(a.before0, a.before1, await capture(page, live.id));
+    try {
+      await a.restore();
+      await settle(page, ctx.settleMs);
+      reload = !sameSteadyState(a.before0, a.before1, await capture(page, live.id));
+    } catch {
+      // The control re-rendered out from under its restore; a fresh load puts it back instead.
+      reload = true;
+    }
   }
   let shots;
   if (verdict === 'dead') {
@@ -89,7 +94,7 @@ const trial = async (page, demo, c, ctx) => {
 
 /** Whether moving a slider one step, rather than to its far end, changes anything. */
 const nudged = async (page, c, ctx) => {
-  await load(page, ctx.url, { reload: true, tries: ctx.tries });
+  await load(page, ctx.url, { tries: ctx.tries });
   const live = await prepare(page, ctx.url, c, ctx.settleMs, ctx.tries);
   const a = await attempt(page, { ...live, nudge: true }, { ...ctx, shots: false });
   return verdictOf(compareCaptures(a.before0, a.before1, a.after)).verdict === 'alive';
@@ -98,7 +103,7 @@ const nudged = async (page, c, ctx) => {
 /** Whether a key shortcut the control declares (`aria-keyshortcuts`, as a drag handle's Alt+Arrow) changes anything. */
 const viaShortcut = async (page, c, ctx) => {
   for (const key of c.shortcuts ?? []) {
-    await load(page, ctx.url, { reload: true, tries: ctx.tries });
+    await load(page, ctx.url, { tries: ctx.tries });
     const live = await prepare(page, ctx.url, c, ctx.settleMs, ctx.tries);
     const before0 = await capture(page, live.id);
     await settle(page, ctx.settleMs);
@@ -116,7 +121,7 @@ const viaShortcut = async (page, c, ctx) => {
  * probe (and through its key shortcut, if it declares one). Dead to all of them is dead.
  */
 const confirm = async (page, demo, c, ctx) => {
-  await load(page, ctx.url, { reload: true, tries: ctx.tries });
+  await load(page, ctx.url, { tries: ctx.tries });
   const live = await prepare(page, ctx.url, c, ctx.settleMs, ctx.tries);
   // The retry waits longer: an effect that runs through a promise (an export, a texture) lands late.
   const a = await attempt(page, live, { ...ctx, settleMs: Math.max(ctx.settleMs * 6, SLOW_SETTLE_MS), shots: true });
@@ -188,7 +193,7 @@ export const sweepDemo = async (page, demo, ctx) => {
     records.push(out.rec);
     ctx.onRecord(out.rec);
     queue.push(...out.revealed);
-    if (out.reload) await load(page, url, { reload: true, tries: full.tries });
+    if (out.reload) await load(page, url, { tries: full.tries });
   }
   return { records, steadyLoad, ms: Date.now() - t0 };
 };
