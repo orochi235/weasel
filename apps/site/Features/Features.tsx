@@ -1,5 +1,5 @@
 import {
-  actionShortcuts, BASELINE_ACTIONS, type FeaturePreset,
+  actionShortcuts, BASELINE_ACTIONS, describePresets, type FeaturePreset,
 } from '@weasel-js/core';
 import { formatShortcutParts } from '@weasel-js/gestures';
 import type { Action } from '@weasel-js/routing';
@@ -7,9 +7,8 @@ import { FEATURE_PRESETS } from '@weasel-js/editing';
 import { KeySequence } from '@weasel-js/ui/components/Keycaps';
 import s from './Features.module.css';
 
-type ToolEntry = NonNullable<FeaturePreset['tools']>[number];
-
-const toolName = (t: ToolEntry): string => (typeof t === 'string' ? t : 'id' in t ? t.id : String(t));
+/** The ids of the tools each preset mounts, its tool sets opened. */
+const TOOL_IDS = new Map(describePresets({ editing: Object.values(FEATURE_PRESETS) }).map((d) => [d.id, d.tools]));
 
 /** An action's label, then each key it answers to. */
 function ActionChip({ action }: { action: Action }) {
@@ -34,14 +33,14 @@ function List<T>({ items, render, empty = '—' }: { items: readonly T[]; render
 }
 
 function PresetRow({ name, actions, tools = [], chrome = [], includes = [] }: {
-  name: React.ReactNode; actions: readonly Action[]; tools?: readonly ToolEntry[]; chrome?: readonly string[];
+  name: React.ReactNode; actions: readonly Action[]; tools?: readonly string[]; chrome?: readonly string[];
   includes?: readonly FeaturePreset[];
 }) {
   return (
     <tr>
       <th scope="row">{name}</th>
       <td><List items={actions} render={(a) => <ActionChip key={a.id} action={a} />} /></td>
-      <td><List items={tools} render={(t) => <li key={toolName(t)}><code>{toolName(t)}</code></li>} /></td>
+      <td><List items={tools} render={(t) => <li key={t}><code>{t}</code></li>} /></td>
       <td><List items={chrome} render={(c) => <li key={c}><code>{c}</code></li>} /></td>
       <td><List items={includes} render={(p) => <li key={p.id}><code>{p.id}</code></li>} /></td>
     </tr>
@@ -74,7 +73,7 @@ export function Features() {
               key={name}
               name={<code>{name}</code>}
               actions={preset.actions ?? []}
-              {...(preset.tools ? { tools: preset.tools } : {})}
+              tools={TOOL_IDS.get(preset.id) ?? []}
               {...(preset.chrome ? { chrome: preset.chrome } : {})}
               {...(preset.includes ? { includes: preset.includes } : {})}
             />
