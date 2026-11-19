@@ -22,8 +22,9 @@ const CHECK_ENV = stepEnv(process.env);
 const LONGEST_FIRST = ['typecheck:packages', 'typecheck', 'check:needs', 'check:first-publish', 'audit:jsdoc', 'check:test-projects'];
 
 const output = (error: unknown) => {
-  const { stdout, stderr } = error as { stdout?: string; stderr?: string };
-  return `${stdout ?? ''}${stderr ?? ''}`.trim() || String(error);
+  const { stdout, stderr, code, signal } = error as { stdout?: string; stderr?: string; code?: unknown; signal?: unknown };
+  const how = `exit ${String(code ?? '?')}${signal ? `, signal ${String(signal)}` : ''}`;
+  return `${`${stdout ?? ''}${stderr ?? ''}`.trim() || String(error)}\n(${how})`;
 };
 
 /** The checks above ci.yml's first build. The ones after it read `dist`; `test:fleet:postbuild` runs them. */

@@ -518,9 +518,9 @@ only story runner in the repo.
 
 - **(P3) [waiting] The gate's `npm run lint` step failed in 93 ms with no output** in the full run of
   `0852e33894` (2026-11-18), while `npm run lint` alone on the same commit on the fleet linted the repo and exited
-  0. 93 ms is too short for eslint to have linted anything, so it died starting up; the gate runs it with
-  `--silent`, which hid why. Closes when it fails that way again and the gate shows the cause, or after five more
-  full runs without it.
+  0. 93 ms is too short for eslint to have linted anything, so it died starting up, printing nothing. The gate
+  now reports a failed step's exit code and signal. Closes when it fails that way again and those say why, or
+  after five more full runs without it.
 
 - **(P3) [waiting] `typedoc/headerComments.test.mjs` "open no file with a doc comment on an export list" failed
   under the full suite** on studio at `c38ba3732` (2026-11-15), its retry too, taking 11.9 s against 1.3 s alone.
