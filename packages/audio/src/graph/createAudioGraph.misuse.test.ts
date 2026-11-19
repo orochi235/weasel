@@ -68,3 +68,32 @@ describe('a source whose start throws', () => {
     expect(allPaths(a.output, ctx.destination)).toHaveLength(1);
   });
 });
+
+describe('a def the graph already holds', () => {
+  it('is refused by replace, add, and apply, changing nothing', () => {
+    const { ctx, graph } = harness();
+    const a = testNode(ctx, [], true);
+    graph.add('a', a.def);
+    graph.connect('a', { output: true });
+    graph.start();
+    expect(() => graph.replace('a', a.def)).toThrow(/already/);
+    expect(() => graph.add('b', a.def)).toThrow(/already/);
+    expect(graph.has('b')).toBe(false);
+    expect(() => graph.apply([{ kind: 'replace', id: 'a', def: a.def }])).toThrow(/already/);
+    const c = testNode(ctx).def;
+    expect(() => graph.apply([{ kind: 'add', id: 'c', def: c }, { kind: 'add', id: 'd', def: c }])).toThrow(/already/);
+    expect(graph.ids()).toEqual(['a']);
+    expect(a.dispose).not.toHaveBeenCalled();
+    expect(allPaths(a.output, ctx.destination)).toHaveLength(1);
+  });
+
+  it('is refused after it has left the graph', () => {
+    const { ctx, graph, settle } = harness();
+    const a = testNode(ctx);
+    graph.add('a', a.def);
+    graph.remove('a');
+    settle();
+    expect(a.dispose).toHaveBeenCalledTimes(1);
+    expect(() => graph.add('a', a.def)).toThrow(/already/);
+  });
+});

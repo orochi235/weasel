@@ -1332,6 +1332,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   it throws, draws nothing, or falls back to the screen grid.
 - 2026-11-18 (my call, audit round 38): `createAudioGraph` throws a `RangeError` for a `fadeMs` that is negative as
   well as for a non-finite one. A negative fade used to act as 0; a caller who wants no fade passes 0.
+- 2026-11-18 (my call, audit round 38): an `AudioGraph` throws on `add` or `replace` given a def it has held before,
+  live, fading out or released, and `apply` refuses such a list whole, as an insert chain refuses an effect it has
+  held. `replace(id, sameDef)` is refused too, not read as a no-op: a reconciler re-applying an unchanged node skips
+  the patch. Before, the def was disposed under the node still holding it.
 
 ## draw
 

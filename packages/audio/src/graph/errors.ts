@@ -8,3 +8,5 @@ export const noParam = (id: string, param: string): Error =>
   graphError(`node "${id}" has no param "${param}"`);
 export const closesCycle = (from: string, to: string): Error =>
   graphError(`connecting "${from}" to "${to}" would close a cycle`);
+export const defInUse = (): Error =>
+  graphError('a node def goes into a graph once, and this one is already in it or has been');

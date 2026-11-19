@@ -36,9 +36,11 @@ export interface AudioGraphOptions extends Partial<Timers> {
 
 /** A patchable graph of nodes that can be added, wired and set while it plays. */
 export interface AudioGraph {
-  add(id: string, def: GraphNodeDef): void; // throws on a live duplicate id
+  /** Throws on a live duplicate id, or a def this graph has held before: each def goes in once. */
+  add(id: string, def: GraphNodeDef): void;
   remove(id: string): void; // no-op on an unknown id
-  replace(id: string, def: GraphNodeDef): void; // keeps connections and taps; throws on unknown id
+  /** Keeps connections and taps. Throws on an unknown id, or a def this graph has held before. */
+  replace(id: string, def: GraphNodeDef): void;
   connect(from: string, to: GraphTarget): void; // idempotent; throws on unknown id/port or a cycle
   disconnect(from: string, to: GraphTarget): void; // no-op when not connected
   set(id: string, param: string, value: number, rampMs?: number): void; // throws on unknown id/param

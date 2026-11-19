@@ -4,7 +4,7 @@ import { blocked, drop, findLive, logical, reaches, touches, type Edge } from '.
 import { createFader } from './fader';
 import { replaceDef } from './replace';
 import type { GraphNodeDef, GraphTarget } from './types';
-import { closesCycle, duplicateNode, noNode, noParam, noPort } from './errors';
+import { closesCycle, defInUse, duplicateNode, noNode, noParam, noPort } from './errors';
 import type { GraphView } from './validate';
 import { abandonWrapper, createWrapper, releaseWrapper, type NodeWrapper } from './wrapper';
 
@@ -29,8 +29,13 @@ function target(live: (id: string) => NodeWrapper, to: GraphTarget): [NodeWrappe
   return [w, to.port];
 }
 
-function viewOf(nodes: ReadonlyMap<string, NodeWrapper>, edges: readonly Edge[]): GraphView {
+function viewOf(
+  nodes: ReadonlyMap<string, NodeWrapper>,
+  edges: readonly Edge[],
+  used: WeakSet<GraphNodeDef>,
+): GraphView {
   return {
+    used: (def) => used.has(def),
     nodes: new Map([...nodes].map(([id, w]) => [id, { ports: new Set(w.ins.keys()), params: w.def.params }])),
     edges: edges.filter(logical).map((e) => ({ from: e.from.id, to: e.to?.id ?? null, port: e.port })),
   };
@@ -44,6 +49,11 @@ export function createEdits(deps: EditsDeps) {
   /** Out of `nodes` at once, released once no edge touches them. */
   const leaving = new Set<NodeWrapper>();
   const edges: Edge[] = [];
+  /** Every def the graph has taken: one in two places is disposed under the other. */
+  const used = new WeakSet<GraphNodeDef>();
+  const checkUnused = (def: GraphNodeDef): void => {
+    if (used.has(def)) throw defInUse();
+  };
 
   const live = (id: string): NodeWrapper => {
     const w = nodes.get(id);
@@ -90,13 +100,14 @@ export function createEdits(deps: EditsDeps) {
     /** Live and leaving: every wrapper whose def has not been released. */
     allNodes: () => [...nodes.values(), ...leaving],
     /** The live nodes and the edges a caller can see, by id, for `validatePatches`. */
-    view: (): GraphView => viewOf(nodes, edges),
+    view: (): GraphView => viewOf(nodes, edges, used),
     /** An edge is fading out or waiting to be wired, or a replaced def is fading out. */
     busy: () =>
       edges.some((e) => e.state !== 'open') ||
       [...nodes.values(), ...leaving].some((w) => w.outgoing.size > 0),
     add(id: string, def: GraphNodeDef): void {
       if (nodes.has(id)) throw duplicateNode(id);
+      checkUnused(def);
       const w = createWrapper(ctx, timers, id, def);
       try {
         deps.onAdd(w);
@@ -105,6 +116,7 @@ export function createEdits(deps: EditsDeps) {
         throw error;
       }
       nodes.set(id, w);
+      used.add(def);
     },
     remove(id: string): void {
       const w = nodes.get(id);
@@ -117,12 +129,14 @@ export function createEdits(deps: EditsDeps) {
     /** Crossfade `id` into `def`; edges into a port `def` lacks close with it. */
     replace(id: string, def: GraphNodeDef, playing: boolean): void {
       const w = live(id);
+      checkUnused(def);
       replaceDef(ctx, timers, w, def, fade(), playing, {
         closePort: (port) => {
           for (const e of edges.filter((x) => x.to === w && x.port === port)) close(e);
         },
         onSettle: deps.onSettle,
       });
+      used.add(def);
       deps.onSettle();
     },
     connect(from: string, to: GraphTarget): void {
