@@ -1,8 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { type PolygonPath, pathFromD } from '@weasel-js/geom';
 import { pathToAnchors, remapPointValues } from '@weasel-js/geom';
-import { hitTestRectForTests as hitTestRect } from '@weasel-js/core/test-seams';
-import { IDENTITY_POSE_COMPOSITION, resolveEditablePathOf } from '@weasel-js/core';
+import { hitTestRect, IDENTITY_POSE_COMPOSITION, resolveEditablePathOf } from '@weasel-js/core';
 import type { Scene } from '@weasel-js/core';
 import { setup } from './testing/penHarness';
 
