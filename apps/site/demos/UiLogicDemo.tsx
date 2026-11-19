@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { scopedIcon } from '@weasel-js/icons';
 import { expandVars } from '@weasel-js/theme';
 import { useTints } from '@weasel-js/theme/react';
 import { measureButton, UNBOUNDED, type ButtonSize, type FontSpec, type MeasureEnv } from '@weasel-js/ui-logic';
@@ -16,6 +17,8 @@ const SIZES: { value: ButtonSize; label: string }[] = [
   { value: 'sm', label: 'sm' },
   { value: 'md', label: 'md' },
 ];
+
+const STAR = scopedIcon('shape')('shape:star');
 
 const SCALE = 2;
 const PAD = 8;
@@ -81,7 +84,7 @@ export function UiLogicDemo() {
         ))}
       </svg>
       <div className={s.dom}>
-        <Button size={size} loading={loading} leadingIcon={leading ? <Icon name="shape:star" size={14} /> : undefined}>
+        <Button size={size} loading={loading} leadingIcon={leading ? <Icon name={STAR} size={14} /> : undefined}>
           {label}
         </Button>
         <span className={s.readout}>measureButton: {width.toFixed(1)} × {height.toFixed(1)}</span>
