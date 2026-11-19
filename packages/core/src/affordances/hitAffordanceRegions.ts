@@ -204,9 +204,12 @@ export function annulusSemiAxes(
   const bandPx = shape.minBandPx ?? 0;
   if (bandPx === 0) return { rx: shape.rx, ry: shape.ry };
   const band = pxExtentIn(bandPx, view.scale, xf);
+  // The band is floored past the inner rect's edge farthest from the center.
+  const reachX = Math.max(shape.cx - shape.innerX, shape.innerX + shape.innerWidth - shape.cx);
+  const reachY = Math.max(shape.cy - shape.innerY, shape.innerY + shape.innerHeight - shape.cy);
   return {
-    rx: Math.max(shape.rx, shape.innerWidth / 2 + band.x),
-    ry: Math.max(shape.ry, shape.innerHeight / 2 + band.y),
+    rx: Math.max(shape.rx, reachX + band.x),
+    ry: Math.max(shape.ry, reachY + band.y),
   };
 }
 
