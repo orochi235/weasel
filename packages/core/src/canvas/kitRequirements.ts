@@ -103,7 +103,7 @@ function parseComparator(token: string): Comparator[] | null {
     case '<=': return nums.length === 3 ? [{ op: '<=', v: lower }] : upper ? [{ op: '<', v: upper }] : [];
     case '~': {
       const top = nums.length <= 1 ? v(M + 1, 0, 0) : v(M, mi + 1, 0);
-      return [{ op: '>=', v: lower }, { op: '<', v: top }];
+      return nums.length === 0 ? [] : [{ op: '>=', v: lower }, { op: '<', v: top }];
     }
     case '^': {
       const top = M > 0 || nums.length === 1 ? v(M + 1, 0, 0)
