@@ -1631,6 +1631,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/UiLogicDemo').then((m) => m.UiLogicDemo),
     path: 'apps/site/demos/UiLogicDemo.tsx',
   },
+  {
+    id: 'menu-model',
+    title: 'The menu model, drawn by hand',
+    package: 'menu',
+    description: "`createMenuController` from `@weasel-js/menu` running one open menu, drawn here by hand to show that the model holds all of its behavior. Its entries are plain data: items, separators, a submenu, a checked row and a disabled one, each item with a `run`. The panels draw `controller.stack()`, the highlighted index at each open level, and `controller.entriesAt(level)`. Keys go to `controller.key`, which moves the highlight past separators, opens and closes submenus, and runs typeahead; the pointer goes to `controller.hover`, which opens a submenu after a rest, and `controller.press`. Choosing an item calls `onClose`, and so does Escape on the first level; on a submenu it closes that level. ui's `ContextMenuHost` and the HUD's WebGL menu draw this same model.",
+    hint: 'Open the menu and use the arrows: Right opens Export, Left closes it, Enter chooses. Type <kbd>s</kbd> to jump to Show grid, or hover Export to open it after a moment.',
+    load: () => import('./demos/MenuDemo').then((m) => m.MenuDemo),
+    path: 'apps/site/demos/MenuDemo.tsx',
+  },
 ];
 
 export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({
