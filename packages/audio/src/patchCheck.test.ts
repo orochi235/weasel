@@ -55,6 +55,12 @@ describe('synth patch checks', () => {
     }
   });
 
+  it('refuses a harmonic wave with no levels, or a level that is not finite', () => {
+    refusesNote({ pitch: 'A4', wave: [] });
+    refusesNote({ pitch: 'A4', wave: [1, NaN] });
+    refusesNote({ pitch: 'A4', wave: [Infinity] });
+  });
+
   it('takes a patch whose numbers are all finite', () => {
     const note: NoteOptions = {
       pitch: 'A4', duration: 0, glide: { to: 'C5', ms: 0 },

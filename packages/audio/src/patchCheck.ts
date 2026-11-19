@@ -11,11 +11,15 @@ const finite = (what: string, value: number | undefined): void => {
 
 const WAVE_NAMES = new Set<string>(['sine', 'square', 'sawtooth', 'triangle']);
 
-/** Throws on a named wave neither voice path could play. Harmonic levels and
- *  inharmonic partials are checked apart. */
+/** Throws on a named or harmonic wave neither voice path could play.
+ *  Inharmonic partials are checked by `resolvePartials`. */
 export function checkWave(wave: Waveform): void {
-  if (typeof wave === 'string' && !WAVE_NAMES.has(wave)) {
-    fail(`"${wave}" is not a wave: one of sine, square, sawtooth, triangle`);
+  if (typeof wave === 'string') {
+    if (!WAVE_NAMES.has(wave)) fail(`"${wave}" is not a wave: one of sine, square, sawtooth, triangle`);
+  } else if (Array.isArray(wave)) {
+    const levels = wave as readonly number[];
+    if (levels.length === 0) fail('a harmonic wave needs at least one level');
+    for (const v of levels) finite('harmonic level', v);
   }
 }
 
