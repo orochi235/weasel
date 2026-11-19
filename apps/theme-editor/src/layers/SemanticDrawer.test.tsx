@@ -1,4 +1,5 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { AxisDefs, Varying } from '@weasel-js/theme';
 import type { SemanticRule } from '@weasel-js/theme/engine';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -18,9 +19,9 @@ const type = (text: string) => {
   fireEvent.blur(field);
 };
 
-function renderDrawer(rule: Varying<SemanticRule>) {
+function renderDrawer(rule: Varying<SemanticRule>, ramps: Readonly<Record<string, readonly string[]>> = {}) {
   const onRule = vi.fn();
-  const props = { name: 'x', row, axes, ramps: {}, semantics: ['x'], issues: [], onRule, onRevert: vi.fn(), onClose: vi.fn() };
+  const props = { name: 'x', row, axes, ramps, semantics: ['x'], issues: [], onRule, onRevert: vi.fn(), onClose: vi.fn() };
   const view = renderWithIcons(<SemanticDrawer {...props} rule={rule} />);
   const rerender = (next: Varying<SemanticRule>) => view.rerender(<SemanticDrawer {...props} rule={next} />);
   return { onRule, rerender };
@@ -51,5 +52,20 @@ describe('<SemanticDrawer>', () => {
     expect(screen.queryByText(/has no comfortable branch/)).not.toBeInTheDocument();
     type('c');
     expect(onRule.mock.calls.at(-1)![0]).toEqual({ by: 'mode', dark: { value: 'c' }, light: comfortable });
+  });
+
+  it('keeps a step that varies by axis when the ramp changes, moving only a step the new ramp lacks', async () => {
+    const ramps = { gray: ['100', '200', '300'], tint: ['200', '400'] };
+    const { onRule } = renderDrawer({ ramp: 'gray', step: { by: 'density', comfortable: '200', compact: '300' } } as SemanticRule, ramps);
+    await userEvent.click(screen.getByRole('button', { name: /Ramp$/ }));
+    await userEvent.click(within(screen.getByRole('listbox')).getByRole('option', { name: 'tint' }));
+    expect(onRule.mock.calls.at(-1)![0]).toEqual({ ramp: 'tint', step: { by: 'density', comfortable: '200', compact: '200' } });
+  });
+
+  it('keeps a plain step the new ramp also has', async () => {
+    const { onRule } = renderDrawer({ ramp: 'gray', step: '400' } as SemanticRule, { gray: ['100', '400'], tint: ['200', '400'] });
+    await userEvent.click(screen.getByRole('button', { name: /Ramp$/ }));
+    await userEvent.click(within(screen.getByRole('listbox')).getByRole('option', { name: 'tint' }));
+    expect(onRule.mock.calls.at(-1)![0]).toEqual({ ramp: 'tint', step: '400' });
   });
 });

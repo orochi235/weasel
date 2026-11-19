@@ -26,6 +26,14 @@ export interface SemanticDrawerProps {
   readonly onClose: () => void;
 }
 
+/** `step` on a new ramp of `steps`: every leaf the ramp has stays, and one it lacks moves to its first step. */
+function stepOn(step: Varying<string>, steps: readonly string[]): Varying<string> {
+  if (isByAxis(step)) {
+    return Object.fromEntries(Object.entries(step).map(([k, v]) => [k, k === 'by' ? v : stepOn(v, steps)])) as Varying<string>;
+  }
+  return steps.includes(step) ? step : (steps[0] ?? '');
+}
+
 const DIRECTIONS = [
   { value: 'lighter', label: 'Lighter' },
   { value: 'darker', label: 'Darker' },
@@ -126,7 +134,7 @@ function RuleFields({
           label="Ramp"
           value={rule.ramp}
           options={rampOptions}
-          onChange={(ramp) => onChange({ ...rule, ramp, step: getOwn(ramps, ramp)?.[0] ?? '' }, 'ramp')}
+          onChange={(ramp) => onChange({ ...rule, ramp, step: stepOn(rule.step, getOwn(ramps, ramp) ?? []) }, 'ramp')}
         />
         {isByAxis(rule.step) ? (
           <p className={styles.paramNote}>The step varies by {rule.step.by}; edit it in the definition file.</p>
