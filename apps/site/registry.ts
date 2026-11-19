@@ -1640,6 +1640,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/MenuDemo').then((m) => m.MenuDemo),
     path: 'apps/site/demos/MenuDemo.tsx',
   },
+  {
+    id: 'prefs-schema',
+    title: 'A schema and its repairs',
+    package: 'prefs-schema',
+    description: "A settings schema written with the `pref` builders from `@weasel-js/prefs-schema` — `pref.group`, `pref.number`, `pref.enum`, `pref.color`, `pref.boolean` and `pref.string` — each returning the plain data a literal would. ui's `PrefsForm` draws the form from it, with no store behind it: the demo keeps the stored values in state. Every value the form reads goes through `repairPrefValue(leaf, stored)`, which clamps a number to its `min` and `max`, cuts a string to its `maxLength`, and falls back to the default for a value of the wrong kind, an unknown option, or a color that does not parse. It never writes back, so the table keeps what was stored beside what it reads as.",
+    hint: 'Press Store bad values: the stored column keeps them, and the form and the repaired column read 64, round, the default color and a 12-letter name. Edit a field to store a good value.',
+    load: () => import('./demos/PrefsSchemaDemo').then((m) => m.PrefsSchemaDemo),
+    path: 'apps/site/demos/PrefsSchemaDemo.tsx',
+  },
 ];
 
 export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({
