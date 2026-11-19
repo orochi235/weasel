@@ -2664,3 +2664,6 @@ Calls the lanes made without a ruling:
   from a recorded position throws as creating one does. `reset` could not place it otherwise. labkit's transport
   loop toggle on such a trial now throws from its handler where `reset` threw later. Letting the write through and
   having `reset` open an endless `'end'` run at 0 was the alternative.
+- 2026-11-18 (the fixer's call): a clock registration another under its id shadows is still held: the registry's
+  `all()` and `targets()` list it, so `useClockLoop` keeps driving and gating it and a lab's still holds it.
+  Freezing a shadowed clock until it comes back, and rebasing it then, was the alternative.

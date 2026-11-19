@@ -31,6 +31,19 @@ describe('createClockRegistry', () => {
     expect(warn).toHaveBeenCalledOnce();
   });
 
+  it('lists a shadowed registration in all and targets, so its clock is still driven', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
+    const registry = createClockRegistry();
+    const first = createClock({});
+    const second = createClock({});
+    const el = {};
+    registry.register('t1', first, () => el);
+    registry.register('t1', second);
+    expect([...registry.all()]).toEqual([first, second]);
+    expect(registry.targets(first).map((t) => t())).toEqual([el]);
+  });
+
   it('publishes a clock under its trial id until released', () => {
     const registry = createClockRegistry();
     const handle = createClock({});
