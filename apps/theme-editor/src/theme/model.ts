@@ -1,5 +1,5 @@
 import { getOwn } from '@weasel-js/registry';
-import { isByAxis, parseTokenValue, type PinValue, type Theme, type ThemeDefinition, type TokenValue, type Varying } from '@weasel-js/theme';
+import { isByAxis, parseTokenValue, type AxisChoice, type PinValue, type Theme, type ThemeDefinition, type TokenValue, type Varying } from '@weasel-js/theme';
 import {
   bakeChain,
   declaredSteps,
@@ -99,6 +99,25 @@ export const tokenValueFromText = (type: string | undefined, raw: string, previo
 
 function withEntry<T>(record: Readonly<Record<string, T>> | undefined, key: string, value: T): Record<string, T> {
   return { ...record, [key]: value };
+}
+
+/** The leaf `v` holds at `selection`, or undefined when a `by` there has no branch for it. */
+export function leafAt<T>(v: Varying<T> | undefined, selection: AxisChoice): T | undefined {
+  let cur: unknown = v;
+  while (isByAxis(cur)) {
+    const key = getOwn(selection, cur.by);
+    if (key === undefined || key === 'by' || !Object.hasOwn(cur, key)) return undefined;
+    cur = cur[key];
+  }
+  return cur as T | undefined;
+}
+
+/** `v` with the leaf at `selection` replaced by `leaf`; every other branch of a `by` stays as it was. */
+export function writeAt<T>(v: Varying<T> | undefined, selection: AxisChoice, leaf: T): Varying<T> {
+  if (!isByAxis(v)) return leaf;
+  const key = getOwn(selection, v.by);
+  if (key === undefined || key === 'by') return leaf;
+  return { ...v, [key]: writeAt(getOwn(v, key) as Varying<T> | undefined, selection, leaf) } as Varying<T>;
 }
 
 export function setPin(def: ThemeDefinition, name: string, value: Varying<PinValue>): ThemeDefinition {

@@ -257,7 +257,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
       case 'semantics':
         return <SemanticsLayer draft={draft} derived={derived} lookup={lookup} highlight={highlight} onChange={history.update} />;
       default:
-        return <TokenLayer layer={layer} draft={draft} result={derived.primary.result} highlight={highlight} onChange={history.update} />;
+        return <TokenLayer layer={layer} draft={draft} result={derived.primary.result} selection={derived.primary.selection} highlight={highlight} onChange={history.update} />;
     }
   })();
 
