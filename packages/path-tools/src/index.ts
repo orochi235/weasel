@@ -50,7 +50,7 @@ export { ANCHORS_TOOL_ID, anchorsTool } from './pathEdit/anchorsTool';
 export { editAnchorsAction } from './pathEdit/editAnchors/editAnchors';
 export { hitAnchor, type AnchorHit } from './pathEdit/editAnchors/handles';
 export {
-  finishPathEditFrame, pathEditPreview, type PathEditFrame, type PathEditPreview, type PathStorageKind,
+  finishPathEditFrame, createPathEditPreview, type PathEditFrame, type PathEditPreview, type PathStorageKind,
 } from './pathEdit/editAnchors/preview';
 export { editedPathSymmetries } from './pathEdit/editAnchors/symmetry';
 export { HANDLE_LOCK_ROLES, locksInForce } from './pathEdit/editAnchors/handleDrag';

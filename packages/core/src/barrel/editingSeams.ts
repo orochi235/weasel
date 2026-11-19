@@ -82,7 +82,7 @@ export { carryPose, invertPlane, planeOf } from '../interactions/actions/planeIn
 export { pointerStateOf } from '../interactions/actions/pointerState';
 export { boundsOffset } from '../interactions/actions/poseDescriptorDep';
 export { moveSources, translateTargets } from '../interactions/actions/selectionSubtree';
-export { transformFinisher, transformPreview } from '../interactions/actions/transformFinish';
+export { transformFinisher, createTransformPreview } from '../interactions/actions/transformFinish';
 export type { TransformFinisher, TransformPreview } from '../interactions/actions/transformFinish';
 export { gestureReaders } from '../interactions/gestures/shared/screenTolerance';
 export type { GestureReaders } from '../interactions/gestures/shared/screenTolerance';

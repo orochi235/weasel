@@ -1,7 +1,7 @@
 import { defineAction, type Action } from '@weasel-js/routing';
 import { createEmitter } from '@weasel-js/registry';
 import type { InvocationCtx } from '@weasel-js/routing';
-import { transformPreview, finiteFrame, closeRun, runBehaviorCancel, inPlane, selectionLayer, recordTransform } from '@weasel-js/core';
+import { createTransformPreview, finiteFrame, closeRun, runBehaviorCancel, inPlane, selectionLayer, recordTransform } from '@weasel-js/core';
 import { beginMove, type MoveFrame } from './session';
 import type { ReparentOnDrop } from '@weasel-js/core';
 import { nextFrame } from './frame';
@@ -46,7 +46,7 @@ export const moveAction: Action = inPlane(defineAction({
       const { session, readers } = begun;
       const subject = [...(ctx.deps.operands?.get() ?? [])] as string[];
       const hold = session.scene.overrides.hold();
-      const preview = transformPreview(ctx.deps, session.scene, () => frame.previews);
+      const preview = createTransformPreview(ctx.deps, session.scene, () => frame.previews);
       // Where the last move put the pointer; null until the first.
       let engaged: { x: number; y: number } | null = null;
       let lastMove: InvocationCtx | null = null;
