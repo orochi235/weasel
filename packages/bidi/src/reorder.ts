@@ -19,8 +19,8 @@ export interface ReorderedLine {
    */
   order: number[];
   /**
-   * Level per original index over the line, after L1. `-1` where X9 removed
-   * the character.
+   * Level per line position, after L1: the character at original index `i`
+   * is `levels[i - start]`. `-1` where X9 removed the character.
    */
   levels: Int16Array;
 }
