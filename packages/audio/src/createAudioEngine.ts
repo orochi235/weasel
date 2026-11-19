@@ -198,6 +198,19 @@ function engineClock(ctx: BaseAudioContext, opts: AudioEngineOptions) {
   return { now, tickTimer, timers, scheduler };
 }
 
+/** The engine's buses, once every option is checked: ahead of the context and
+ *  the tick timer's worker, which a throw would leave behind. */
+function checkEngineOptions(opts: AudioEngineOptions): string[] {
+  checkMsOption('lookahead', opts.lookahead);
+  checkMsOption('tickInterval', opts.tickInterval, true);
+  checkMsOption('insertFadeMs', opts.insertFadeMs);
+  const busNames = opts.buses ?? ['sfx', 'music', 'ui'];
+  if (busNames.length === 0) {
+    throw new Error('@weasel-js/audio: an engine needs at least one bus');
+  }
+  return busNames;
+}
+
 /**
  * Create an engine. Browsers start the context suspended: `play()` before it
  * is unlocked drops the voice with a warning. The engine resumes it on the
@@ -205,18 +218,11 @@ function engineClock(ctx: BaseAudioContext, opts: AudioEngineOptions) {
  * `dispose()` when done.
  */
 export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
-  // Ahead of the context and the tick timer's worker, which a throw would leave behind.
-  checkMsOption('lookahead', opts.lookahead);
-  checkMsOption('tickInterval', opts.tickInterval, true);
-  checkMsOption('insertFadeMs', opts.insertFadeMs);
+  const busNames = checkEngineOptions(opts);
   const ctx = opts.context ?? new AudioContext();
   // A context the engine made is a context the engine closes; a consumer's is
   // theirs to keep.
   const ownsContext = opts.context === undefined;
-  const busNames = opts.buses ?? ['sfx', 'music', 'ui'];
-  if (busNames.length === 0) {
-    throw new Error('@weasel-js/audio: an engine needs at least one bus');
-  }
   const sounds = createSoundCache(ctx, opts.fetchFn);
   const { requireSlots, active } = busSlots(busNames, opts);
   const { now, tickTimer, timers, scheduler } = engineClock(ctx, opts);

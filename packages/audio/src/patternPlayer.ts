@@ -96,6 +96,45 @@ export const checkTempo = (bpm: number): void => {
   }
 };
 
+/** Events by the whole step they are booked with. Throws on a step that is not finite. */
+function indexByStep(events: readonly PatternEvent[]): Map<number, PatternEvent[]> {
+  for (const e of events) {
+    if (!Number.isFinite(e.step)) throw new RangeError(`@weasel-js/audio: a pattern event's step is finite, not ${e.step}`);
+  }
+  const byStep = new Map<number, PatternEvent[]>();
+  for (const e of events) {
+    const step = Math.floor(e.step);
+    const list = byStep.get(step);
+    if (list) list.push(e);
+    else byStep.set(step, [e]);
+  }
+  return byStep;
+}
+
+/** What `f` threw, if it threw. */
+function attempt(f: () => void): { err: unknown } | null {
+  try {
+    f();
+    return null;
+  } catch (err) {
+    return { err };
+  }
+}
+
+/** Play one event at `at`, engine ms, its gate counted in steps of `stepMs`. */
+function playEvent(engine: AudioEngine, e: PatternEvent, at: number, detune: number, stepMs: number): VoiceHandle {
+  if ('sound' in e) {
+    const { step: _s, sound, ...play } = e;
+    return engine.play(sound, { ...play, detune, when: at });
+  }
+  if ('noise' in e) {
+    const { step: _s, length: steps = 1, ...noise } = e;
+    return engine.playNoise({ ...noise, detune, when: at, duration: steps * stepMs });
+  }
+  const { step: _s, length: steps = 1, ...note } = e;
+  return engine.playNote({ ...note, detune, when: at, duration: steps * stepMs });
+}
+
 /**
  * A step sequencer over `engine`. Each step is one `engine.schedule` booking;
  * when it fires, it books that step's events at the step's exact time and then
@@ -120,16 +159,7 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
   let byStep = new Map<number, PatternEvent[]>();
   const setEvents = (events: readonly PatternEvent[], len?: number): void => {
     if (len !== undefined) checkSteps('length', len);
-    for (const e of events) {
-      if (!Number.isFinite(e.step)) throw new RangeError(`@weasel-js/audio: a pattern event's step is finite, not ${e.step}`);
-    }
-    byStep = new Map();
-    for (const e of events) {
-      const step = Math.floor(e.step);
-      const list = byStep.get(step);
-      if (list) list.push(e);
-      else byStep.set(step, [e]);
-    }
+    byStep = indexByStep(events);
     length = len ?? patternLength(events, stepsPerBeat);
   };
   setEvents(opts.events ?? [], opts.length);
@@ -148,20 +178,6 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
 
   const book = (): void => { engine.schedule(nextAt, fire, key); };
 
-  const playEvent = (e: PatternEvent, at: number): VoiceHandle => {
-    const detune = (e.detune ?? 0) + (typeof drift === 'function' ? drift(e.step) : drift);
-    if ('sound' in e) {
-      const { step: _s, sound, ...play } = e;
-      return engine.play(sound, { ...play, detune, when: at });
-    }
-    if ('noise' in e) {
-      const { step: _s, length: steps = 1, ...noise } = e;
-      return engine.playNoise({ ...noise, detune, when: at, duration: steps * stepMs() });
-    }
-    const { step: _s, length: steps = 1, ...note } = e;
-    return engine.playNote({ ...note, detune, when: at, duration: steps * stepMs() });
-  };
-
   const fire = (scheduled: number): void => {
     if (!running) return;
     let when = scheduled;
@@ -177,13 +193,8 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
     }
     const step = count % length;
     const ran = run;
-    let refused: { err: unknown } | null = null;
     inStep = true;
-    try {
-      opts.beforeStep?.(step, when, count);
-    } catch (err) {
-      refused = { err };
-    }
+    let refused = attempt(() => opts.beforeStep?.(step, when, count));
     inStep = false;
     if (!running || run !== ran) {
       if (refused) throw refused.err;
@@ -193,7 +204,8 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
     // Each event on its own: one the engine refuses must not cost the rest of the step, or the next one.
     for (const e of byStep.get(step) ?? []) {
       try {
-        voices.add(playEvent(e, when + (e.step - step) * stepMs()));
+        const detune = (e.detune ?? 0) + (typeof drift === 'function' ? drift(e.step) : drift);
+        voices.add(playEvent(engine, e, when + (e.step - step) * stepMs(), detune, stepMs()));
       } catch (err) {
         refused ??= { err };
       }
