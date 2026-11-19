@@ -63,7 +63,7 @@ export { StencilGhost, type StencilGhostProps } from './StencilGhost';
 export * from './containers';
 export {
   GRAB_LABEL_ACTION_ID, GRAB_WAYPOINT_ACTION_ID, SELECT_LABEL_EDGE_ACTION_ID,
-  diagramLabels, createDiagramPortsContribution, createDiagramWaypointsContribution,
+  createDiagramLabelsContribution, createDiagramPortsContribution, createDiagramWaypointsContribution,
 } from './contribution';
 export type { DiagramContributionOptions } from './contribution';
 export {
@@ -134,7 +134,7 @@ export type { EndChange, ReconnectOptions } from './reconnect';
 export { REORDER_ACTION_ID, createReorderAction, reorderBinding, createReorderContribution, createReorderPreset, slotsAlong } from './reorder';
 export type { ReorderGap, ReorderItem, ReorderMove, ReorderOptions, ReorderSlots } from './reorder';
 export {
-  STEP_REORDER_ACTION_ID, createStepReorderAction, clusterReorderContribution, createClusterReorderPreset, clusterReorderSlots,
+  STEP_REORDER_ACTION_ID, createStepReorderAction, createClusterReorderContribution, createClusterReorderPreset, clusterReorderSlots,
 } from './clusterReorder';
 export {
   DIAGRAM_EDGE,

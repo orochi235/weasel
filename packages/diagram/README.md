@@ -67,7 +67,7 @@ return <SceneCanvas scene={scene} ambient={[ports]} />;
 ```
 
 The other editing entries below (`createDiagramWaypointsContribution`, `createDiagramEdgeEndsContribution`,
-`diagramLabels`, `createDiagramContainersContribution`, `createDiagramSequenceContribution`) are built the same
+`createDiagramLabelsContribution`, `createDiagramContainersContribution`, `createDiagramSequenceContribution`) are built the same
 way. Their layers are hit in `ambient` order, the last first:
 `[containers, labelDrag, ports, route, ends, sequence]`.
 

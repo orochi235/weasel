@@ -188,10 +188,10 @@ function packageFactories(s: Sweep, scene: never): void {
   s.value(measure.createMeasurementsContribution(scene, measurements), 'measure.createMeasurementsContribution');
   s.value(diagram.createDiagramPortsContribution({ participants: () => [] } as never), 'diagram.createDiagramPortsContribution');
   s.value(diagram.createDiagramWaypointsContribution({} as never), 'diagram.createDiagramWaypointsContribution');
-  s.value(diagram.diagramLabels({} as never), 'diagram.diagramLabels');
+  s.value(diagram.createDiagramLabelsContribution({} as never), 'diagram.createDiagramLabelsContribution');
   s.value(diagram.createDiagramEdgeEndsContribution({} as never), 'diagram.createDiagramEdgeEndsContribution');
   s.value(diagram.createReorderContribution({} as never), 'diagram.createReorderContribution');
-  s.value(diagram.clusterReorderContribution(() => {}), 'diagram.clusterReorderContribution');
+  s.value(diagram.createClusterReorderContribution(() => {}), 'diagram.createClusterReorderContribution');
   s.value(diagram.createReorderPreset({} as never), 'diagram.createReorderPreset');
   s.value(diagram.createClusterReorderPreset(() => {}), 'diagram.createClusterReorderPreset');
   s.value(diagram.createDiagramContainersContribution({} as never), 'diagram.createDiagramContainersContribution');
