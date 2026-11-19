@@ -64,3 +64,22 @@ describe('a synth patch number a voice could not play is refused at the call', (
     expect(() => engine.playNote({ pitch: 'A4', duration: 0, envelope: { attack: -5 } })).not.toThrow();
   });
 });
+
+describe('a harmonic wave is refused at the call when it is empty or holds a level that is not finite', () => {
+  const badWaves = [[], [1, Number.NaN], [Number.POSITIVE_INFINITY]];
+
+  it('on nodes and in a kernel', async () => {
+    const { engine, ctx } = await engineHarness();
+    for (const wave of badWaves) {
+      expect(() => engine.playNote({ pitch: 'A4', wave })).toThrow(RangeError);
+      expect(() => createNoteKernel({ pitch: 'A4', wave }, 48000)).toThrow(RangeError);
+    }
+    expect(ctx._oscillators).toHaveLength(0);
+  });
+
+  it("under synthVoices: 'worklet'", async () => {
+    const engine = await workletEngine();
+    for (const wave of badWaves) expect(() => engine.playNote({ pitch: 'A4', wave })).toThrow(RangeError);
+    expect(installed!.nodes.flatMap((n) => n.posted)).toEqual([]);
+  });
+});

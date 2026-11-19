@@ -124,6 +124,13 @@ export function checkShaping(patch: { envelope?: Envelope; filter?: VoiceFilter;
   checkEnvelope('filter envelope', filter.envelope);
 }
 
+function checkHarmonics(levels: readonly number[]): void {
+  if (levels.length === 0) {
+    throw new RangeError('@weasel-js/audio: a harmonic wave needs at least one level');
+  }
+  for (const level of levels) checkFinite('harmonic level', level);
+}
+
 /** What of a note is checked where it was written, not when it comes due. */
 export interface ResolvedNote {
   from: number;
@@ -131,7 +138,7 @@ export interface ResolvedNote {
   partials: (SynthPartial & { gain: number })[] | null;
 }
 
-/** A note's pitch, glide target and partials. Throws on a bad pitch, partial, glide or
+/** A note's pitch, glide target and partials. Throws on a bad pitch, wave, partial, glide or
  *  {@link checkShaping} number. */
 export function resolveNote(
   note: Pick<NoteOptions, 'pitch' | 'glide' | 'wave' | 'envelope' | 'filter' | 'duration'>,
@@ -139,6 +146,7 @@ export function resolveNote(
   checkShaping(note);
   checkSpan('glide', note.glide?.ms);
   const wave = note.wave ?? 'sine';
+  if (Array.isArray(wave)) checkHarmonics(wave);
   return {
     from: toFrequency(note.pitch),
     glideTo: note.glide ? toFrequency(note.glide.to) : undefined,
