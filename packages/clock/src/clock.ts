@@ -39,6 +39,8 @@ interface Run {
   /** Inert as of the last sync: the next one only records the time. */
   slept: boolean;
   wakeFired: boolean;
+  /** Opens, and resets, at the end of its run, so the run must end. */
+  endStart: boolean;
 }
 
 interface Hub {
@@ -81,6 +83,12 @@ function placeIn(run: Run, pass: number, into: number): void {
   run.edge = run.elapsed > 0 && end;
 }
 
+/** Refuses a run that never ends to a clock that opens at its end, which `reset` could not place. */
+function checkSpan(run: Run, duration: number, loop: boolean | number): void {
+  if (run.endStart && !Number.isFinite(duration * passesOf(loop)))
+    throw new RangeError("a run that never ends has no 'end' to start at");
+}
+
 function change(run: Run, hub: Hub): void {
   run.changed = true;
   if (run.wakeFired) return;
@@ -91,6 +99,7 @@ function change(run: Run, hub: Hub): void {
 function setDuration(run: Run, hub: Hub, next: number): void {
   checkDuration(next);
   if (next === run.duration) return;
+  checkSpan(run, next, run.loop);
   if (Number.isFinite(run.duration) && Number.isFinite(next)) {
     const ended = run.elapsed >= run.span;
     const pass = passAt(run);
@@ -139,6 +148,7 @@ function applyRun(run: Run, hub: Hub, declared: Declared, override: SpanOverride
   checkOrigin(origin);
   checkSpeed(declared.speed);
   checkLoop(declared.loop);
+  checkSpan(run, duration, declared.loop);
   const finite = Number.isFinite(run.duration) && Number.isFinite(duration);
   const { pass, into } = finite ? passOf(run) : { pass: 0, into: run.elapsed };
   // Moved by the change of origin alone, so an unchanged origin leaves the time within the pass exactly as it was.
@@ -243,6 +253,7 @@ function createClockView(run: Run, hub: Hub, seekable: boolean, speeds: readonly
     set loop(next: boolean | number) {
       checkLoop(next);
       if (next === run.loop) return;
+      checkSpan(run, run.duration, next);
       const { pass, into } = passOf(run);
       run.loop = next;
       run.span = run.duration * passesOf(run.loop);
@@ -315,13 +326,11 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
     changed: false,
     slept: false,
     wakeFired: false,
+    endStart: spec.start === 'end',
   };
-  const opening = (): number => {
-    if (spec.start !== 'end') return clamp(run, spec.start ?? 0);
-    if (!Number.isFinite(run.span))
-      throw new RangeError("a run that never ends has no 'end' to start at");
-    return run.span;
-  };
+  // Checked for a reopened run too, which `reset` would otherwise place nowhere.
+  checkSpan(run, run.duration, run.loop);
+  const opening = (): number => (spec.start === 'end' ? run.span : clamp(run, spec.start ?? 0));
   run.elapsed = at ? clamp(run, at.elapsed) : opening();
   if (!Number.isFinite(run.elapsed))
     throw new RangeError(`a clock opens at a time in its run, not ${at ? at.elapsed : spec.start}`);

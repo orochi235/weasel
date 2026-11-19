@@ -2656,3 +2656,11 @@ Calls the lanes made without a ruling:
 - 2026-11-18 (the fixer's call): `gen-brand-colors` throws, writing neither table, on a Copic marker with no name
   or a sampled colour that is not `#rrggbb`, and on a LEGO name holding a named HTML reference other than `&amp;`,
   `&lt;`, `&gt;`, `&quot;`, `&apos;` and `&nbsp;`. Skipping the row with a warning was the alternative.
+
+## Audit round thirty-eight (2026-11-18): clock
+
+- 2026-11-18 (the fixer's call): a clock declared `start: 'end'` refuses, with a `RangeError`, any change that would
+  make its run endless — a `duration` or `loop` write, `declare`, `override` — and opening such a clock endless
+  from a recorded position throws as creating one does. `reset` could not place it otherwise. labkit's transport
+  loop toggle on such a trial now throws from its handler where `reset` threw later. Letting the write through and
+  having `reset` open an endless `'end'` run at 0 was the alternative.

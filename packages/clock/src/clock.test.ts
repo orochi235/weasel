@@ -424,6 +424,20 @@ describe('createClock', () => {
       expect(clock.elapsed).toBeCloseTo(600);
     });
 
+    it("refuses to make a run that opens at its 'end' endless, which reset could not place", () => {
+      const h = createClock({ duration: 100, start: 'end' });
+      expect(() => (h.clock.duration = Infinity)).toThrow(RangeError);
+      expect(() => (h.clock.loop = true)).toThrow(RangeError);
+      expect(() => h.declare({ start: 'end' })).toThrow(RangeError);
+      expect(() => h.override({ duration: Infinity })).toThrow(RangeError);
+      expect(() => createClock({ start: 'end', duration: 100 }, { elapsed: 0, rate: 0, duration: Infinity })).toThrow(
+        RangeError,
+      );
+      expect([h.clock.duration, h.clock.loop]).toEqual([100, false]);
+      h.reset();
+      expect(h.clock.elapsed).toBe(100);
+    });
+
     it('keeps an ended run ended', () => {
       const { clock } = createClock({ duration: 100, start: 'end' });
       clock.duration = 250;
