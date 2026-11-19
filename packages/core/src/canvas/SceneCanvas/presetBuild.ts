@@ -123,16 +123,24 @@ export function usePresetBuilds(
 }
 
 /** `options`, kept while every entry's fields are the same values: an inline `toolOptions={{ lasso: { mode } }}`
- *  does not rebuild the tools. */
+ *  or `toolOptions={{ insert: { behaviors: [snap] } }}` does not rebuild the tools. An array or plain object is
+ *  compared by what it holds, anything else by identity. */
 function useStableToolOptions(options: SceneCanvasToolOptions | undefined): SceneCanvasToolOptions {
-  const parts: string[] = [];
-  for (const [tool, entry] of Object.entries(options ?? {}).sort(([a], [b]) => (a < b ? -1 : 1))) {
-    parts.push(tool);
-    if (entry && typeof entry === 'object') {
-      for (const [k, v] of Object.entries(entry).sort(([a], [b]) => (a < b ? -1 : 1))) parts.push(k, identityKeyOf(v));
-    } else parts.push(identityKeyOf(entry));
-  }
-  const key = parts.join('|');
+  const key = contentKeyOf(options ?? {}, new Set());
   // eslint-disable-next-line react-hooks/exhaustive-deps
   return useMemo(() => options ?? {}, [key]);
+}
+
+/** A key equal for two values holding the same things: arrays and plain objects by their contents, anything
+ *  else, and a value reached again inside itself, by identity. */
+function contentKeyOf(v: unknown, open: Set<object>): string {
+  if (typeof v !== 'object' || v === null || open.has(v)) return identityKeyOf(v);
+  const proto: unknown = Object.getPrototypeOf(v);
+  if (!Array.isArray(v) && proto !== Object.prototype && proto !== null) return identityKeyOf(v);
+  open.add(v);
+  const key = Array.isArray(v)
+    ? `[${v.map((x) => contentKeyOf(x, open)).join(',')}]`
+    : `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${contentKeyOf((v as Record<string, unknown>)[k], open)}`).join(',')}}`;
+  open.delete(v);
+  return key;
 }
