@@ -44,8 +44,9 @@ pass it in 20–44 s. `onto set keiei --allow repo:orochi235/weasel` takes it ba
 **The fleet also runs the `gate` project**: the typecheck, lint, and `check:*` steps CI runs,
 read from `ci.yml` by `scripts/ci-checks.gate.ts`, each as a test. CI only runs on a push, so
 this is what says a commit would fail there. `test:fleet` runs it with everything else, so read its
-results from that log. It runs typecheck, lint and every check at once, so it has no npm script of
-its own and runs only inside a fleet run.
+results from that log. It runs typecheck, lint and every check at once, so it runs only inside a
+fleet run. `npm run checks:gate` runs the same list, read the same way, outside vitest, for a job
+already on a fleet node (a skulk fixer); it skips nothing for an unchanged input.
 
 **On a branch run the gate skips `check:needs`, `check:first-publish`,
 `audit:jsdoc` and `check:test-projects` when the branch changes none of the paths each reads**,

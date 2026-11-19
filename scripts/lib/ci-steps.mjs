@@ -106,6 +106,18 @@ export const sourceChecks = (steps) =>
     return CHECK.exec(step.run)[1].split(/\s+/);
   });
 
+/** By their times in a full run on `main` (2026-10-29): typecheck 97 s, check:needs 59; typecheck:packages 92 s (2026-11-14). */
+const LONGEST_FIRST = ['typecheck:packages', 'typecheck', 'check:needs', 'check:first-publish', 'audit:jsdoc', 'check:test-projects'];
+
+/** `checks` (as `sourceChecks` gives them) with the longest first, so a pool running a few at once never starts one late. */
+export const longestFirst = (checks) => {
+  const order = ([name]) => {
+    const at = LONGEST_FIRST.indexOf(name);
+    return at < 0 ? LONGEST_FIRST.length : at;
+  };
+  return [...checks].sort((a, b) => order(a) - order(b));
+};
+
 /** The first build and every step after it. */
 export const builtSteps = (steps) => offCi(steps.slice(firstBuild(steps)));
 

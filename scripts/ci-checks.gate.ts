@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { describe, expect, inject, it } from 'vitest';
-import { CI_YML, readCi, sourceChecks } from './lib/ci-steps.mjs';
+import { CI_YML, longestFirst, readCi, sourceChecks } from './lib/ci-steps.mjs';
 import type { BranchChanges } from './lib/fleet-tree.mjs';
 import { stepEnv } from './lib/fleet-tree.mjs';
 import { skipReason } from './lib/gate-inputs.mjs';
@@ -18,8 +18,6 @@ declare module 'vitest' {
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const run = promisify(execFile);
 const CHECK_ENV = stepEnv(process.env);
-/** By their times in a full run on `main` (2026-10-29): typecheck 97 s, check:needs 59; typecheck:packages 92 s (2026-11-14). */
-const LONGEST_FIRST = ['typecheck:packages', 'typecheck', 'check:needs', 'check:first-publish', 'audit:jsdoc', 'check:test-projects'];
 
 const output = (error: unknown) => {
   const { stdout, stderr, code, signal } = error as { stdout?: string; stderr?: string; code?: unknown; signal?: unknown };
@@ -42,11 +40,7 @@ describe('the checks ci.yml runs as steps', () => {
   // Concurrent, or typecheck, lint, and check:needs queue behind each other for five minutes. Only
   // `maxConcurrency` start at once, in this order, so the longest go first: ci.yml's order had
   // typecheck, the longest by far, starting about 20 s late (gate 117 s, typecheck 97 s, 2026-10-29).
-  const order = (name: string) => {
-    const at = LONGEST_FIRST.indexOf(name);
-    return at < 0 ? LONGEST_FIRST.length : at;
-  };
-  for (const args of [...checks].sort((a, b) => order(a[0]) - order(b[0]))) {
+  for (const args of longestFirst(checks)) {
     const skip = skipReason(args[0], changes);
     if (skip) console.log(`gate: skipped npm run ${args[0]}: ${skip}`);
     // Concurrent when skipped too: vitest runs each unbroken run of concurrent tests as one batch, so
