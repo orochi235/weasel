@@ -180,7 +180,9 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
       {...(held ? { isOpen: false, onOpenChange: undefined } : open !== undefined ? { isOpen: open } : {})}
       selectedKey={mixed ? null : shownKey}
       onSelectionChange={(picked) => {
-        const k = held ? undefined : pick(shownKey, picked, lastKey.current === 'ArrowLeft' || lastKey.current === 'ArrowRight');
+        const step = lastKey.current === 'ArrowLeft' || lastKey.current === 'ArrowRight';
+        // A mixed select hands React Aria no value, so its arrows step from there.
+        const k = held ? undefined : pick(mixed ? null : shownKey, picked, step);
         if (k === undefined) return;
         if (selectedKey === undefined) setOwnKey(k as T | null);
         onSelectionChange?.(k as T);

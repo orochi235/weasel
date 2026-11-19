@@ -68,4 +68,21 @@ describe('a Select with a disabled option', () => {
     expect(trigger).toHaveTextContent('Red');
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it("steps from no value on a mixed select's closed trigger, past a disabled first option", () => {
+    const onChange = vi.fn();
+    const options = [
+      { value: 'g', label: 'Green', disabled: true },
+      { value: 'r', label: 'Red' },
+      { value: 'b', label: 'Blue' },
+    ];
+    render(<Select aria-label="Color" options={options} mixed selectedKey="b" onSelectionChange={onChange} />);
+    const trigger = screen.getByRole('button', { name: /Color/ });
+    act(() => trigger.focus());
+    key(trigger, 'ArrowRight');
+    expect(onChange).toHaveBeenLastCalledWith('r');
+    key(trigger, 'ArrowLeft');
+    expect(onChange).toHaveBeenCalledTimes(2);
+    expect(onChange).toHaveBeenLastCalledWith('r');
+  });
 });
