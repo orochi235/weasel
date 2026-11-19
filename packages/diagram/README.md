@@ -483,7 +483,7 @@ const decision = useStencilTool(FLOWCHART_STENCILS[1]);
 ```
 
 `useDiagramTools` builds every tool the package ships at once: the connector, a
-tool per stencil (`stencilTools`), and the sequence tools. `DIAGRAM_TOOLS` names
+tool per stencil (`createStencilTools`), and the sequence tools. `DIAGRAM_TOOLS` names
 them, with one set per stencil group under `STENCIL_TOOLS`.
 
 ```tsx
@@ -516,7 +516,7 @@ stack of lanes, each holding shapes. Both are core `GroupNode`s carrying a
 | clicks the button past the end of a pool | a lane is added at the end |
 
 `CONTAINER_STENCILS` offers Container, Pool (rows), and Pool (columns); pass it
-as `useStencilInsert`'s `containers` and give each a `stencilTool`. Their glyphs
+as `useStencilInsert`'s `containers` and give each a tool from `createStencilTool`. Their glyphs
 are in the `diagram` icon namespace, whose table is `@weasel-js/diagram/icons`;
 an app without the icons build plugin registers it beside the kit's. A stencil
 drawn inside a container or a lane becomes its member (`diagramDropParentAt`).

@@ -51,12 +51,12 @@ export {
 export type { CanDropItem, ItemDrop, ItemDropOptions, ItemDropTarget } from './itemDrop';
 export { bodyAt, isBodyEnd } from './connectTargets';
 export type { BodyEnd, BodyHit, ConnectEnd, ConnectView } from './connectTargets';
-export { DRAW_CONNECTOR_ACTION_ID, CONNECTOR_TOOL_ID, connectorTool, useConnectorTool } from './connectorTool';
+export { DRAW_CONNECTOR_ACTION_ID, CONNECTOR_TOOL_ID, createConnectorTool, useConnectorTool } from './connectorTool';
 export { FLOWCHART_STENCILS, stencilInsertOps, stencilIdOf, stencilKind } from './stencil';
 export type { DiagramStencil } from './stencil';
-export { stencilTool, useStencilInsert, useStencilTool } from './stencilTool';
+export { createStencilTool, useStencilInsert, useStencilTool } from './stencilTool';
 export {
-  DIAGRAM_TOOLS, STENCIL_TOOLS, stencilTools, stencilToolSet, useDiagramTools, type UseDiagramToolsOptions,
+  DIAGRAM_TOOLS, STENCIL_TOOLS, createStencilTools, stencilToolSet, useDiagramTools, type UseDiagramToolsOptions,
 } from './diagramTools';
 export type { StencilInsertOptions } from './stencilTool';
 export { StencilGhost, type StencilGhostProps } from './StencilGhost';

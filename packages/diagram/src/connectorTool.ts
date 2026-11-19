@@ -17,7 +17,7 @@ export const DRAW_CONNECTOR_ACTION_ID = 'diagram.drawConnector';
 
 /** The connector tool's definition, outside React. `id`, `startFrom` and
  *  `bodies` are the tool's own. */
-export function connectorTool<TPose>(opts: ConnectActionOptions<TPose>): Tool {
+export function createConnectorTool<TPose>(opts: ConnectActionOptions<TPose>): Tool {
   return defineTool({
     id: CONNECTOR_TOOL_ID,
     hookName: 'useConnectorTool',
@@ -28,12 +28,12 @@ export function connectorTool<TPose>(opts: ConnectActionOptions<TPose>): Tool {
   });
 }
 
-/** {@link connectorTool}, rebuilt when one of its options changes rather than
+/** {@link createConnectorTool}, rebuilt when one of its options changes rather than
  *  when the bag holding them does. */
 export function useConnectorTool<TPose>(opts: ConnectActionOptions<TPose>): Tool {
   const { participants, read, poseDescriptor, canConnect, showsPort, snapRadius, router, routers, commit, edgeStroke } = opts;
   return useMemo(
-    () => connectorTool(opts),
+    () => createConnectorTool(opts),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `opts` is the fields listed
     [participants, read, poseDescriptor, canConnect, showsPort, snapRadius, router, routers, commit, edgeStroke],
   );

@@ -196,8 +196,8 @@ function packageFactories(s: Sweep, scene: never): void {
   s.value(diagram.createClusterReorderPreset(() => {}), 'diagram.createClusterReorderPreset');
   s.value(diagram.createDiagramContainersContribution({} as never), 'diagram.createDiagramContainersContribution');
   s.value(diagram.createDiagramOffPageContribution(), 'diagram.createDiagramOffPageContribution');
-  s.value(diagram.connectorTool({} as never), 'diagram.connectorTool');
-  s.value(diagram.stencilTool({ id: 'box', label: 'Box' }), 'diagram.stencilTool');
+  s.value(diagram.createConnectorTool({} as never), 'diagram.createConnectorTool');
+  s.value(diagram.createStencilTool({ id: 'box', label: 'Box' }), 'diagram.createStencilTool');
   s.value({ id: 'diagram bindings', bindings: [diagram.editEdgeLabelBinding(), diagram.editContainerTitleBinding()] }, 'diagram');
 }
 
