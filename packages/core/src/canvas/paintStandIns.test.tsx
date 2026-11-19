@@ -4,7 +4,9 @@ import type { DrawCommand } from '@weasel-js/renderer';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import { defaultDrawOne, defaultPaintBounds } from './defaultDrawOne';
-import { layersStandingIn, paintStandInsOver, registerPaintStandIn, type KeepPaint } from './paintStandIns';
+import { useRef } from 'react';
+import { render } from '@testing-library/react';
+import { layersStandingIn, paintStandInsOver, registerPaintStandIn, useStandInLayers, type KeepPaint } from './paintStandIns';
 
 const withoutPaths: KeepPaint = (cmds) => cmds.filter((c) => c.kind !== 'path');
 const kinds = (cmds: readonly DrawCommand[]) => cmds.map((c) => c.kind);
@@ -53,5 +55,26 @@ describe('layersStandingIn', () => {
     expect(slot.drawOne(node, node.pose)).toEqual([]);
     const custom = { scene: { layer: {} as never } };
     expect(layersStandingIn(custom as never, new Map([['r', withoutPaths]]))).toBe(custom);
+  });
+});
+
+describe('useStandInLayers', () => {
+  it('applies a stand-in already shown when the canvas mounts', () => {
+    const s = scene();
+    const within = document.createElement('div');
+    document.body.appendChild(within);
+    const standIn = registerPaintStandIn(s, within, withoutPaths);
+    standIn.show('r');
+    let seen: ReturnType<typeof useStandInLayers> = undefined;
+    function Probe() {
+      const ref = useRef<HTMLElement | null>(null);
+      seen = useStandInLayers(s, ref, undefined);
+      return <canvas ref={ref as never} />;
+    }
+    const { unmount } = render(<Probe />, { container: within });
+    expect(seen).toBeDefined();
+    unmount();
+    standIn.dispose();
+    within.remove();
   });
 });
