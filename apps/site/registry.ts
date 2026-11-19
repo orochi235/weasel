@@ -1658,6 +1658,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/PrefsEditorDemo').then((m) => m.PrefsEditorDemo),
     path: 'apps/site/demos/PrefsEditorDemo.tsx',
   },
+  {
+    id: 'devtools',
+    title: 'Devtools panel',
+    package: 'devtools',
+    description: "A three-node scene and the devtools panel reading it, on one page. The canvas takes the `devtools` contribution from `@weasel-js/devtools/hook` through `<SceneCanvas ambient>`, which installs the page's hook and registers the canvas with it; a canvas without it is not listed and pays nothing. `<DevtoolsPanel>` talks to that hook over `createInPagePanelTransport()` and, given `tabs`, shows three of its tabs: Scene walks the node tree and shows a node's pose and data, State shows the selection, view and active tool, and Dispatch lists each input the canvas resolved and the action it fired. The panel only reads and steers; it never edits the scene.",
+    hint: 'Click and drag the shapes, then read the Dispatch tab. Pick a node in the Scene tab to see its pose, and watch State follow the selection.',
+    load: () => import('./demos/DevtoolsDemo').then((m) => m.DevtoolsDemo),
+    path: 'apps/site/demos/DevtoolsDemo.tsx',
+  },
 ];
 
 export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({

@@ -1,0 +1,14 @@
+.demo {
+  display: flex;
+  align-items: start;
+  gap: var(--wzl-space-8);
+}
+
+/* The panel fills its container, so the container sets its size. */
+.panel {
+  inline-size: 420px;
+  block-size: 380px;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+  overflow: hidden;
+}
