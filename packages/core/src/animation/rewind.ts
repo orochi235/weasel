@@ -67,16 +67,21 @@ export function rewindingTween<TPose>(
     const done = ms > 0 ? ease(at / ms) : 1;
     const span = forward ? ms - at : at;
     const dest = forward ? o.to : o.start;
-    // Nothing of the move lies that way: the pose is at that end already.
-    if (!first && (span < 1 || (forward ? done >= 1 : done <= 0))) {
+    // No time of the move lies that way: the pose is at that end already. Asked of the time and
+    // not the eased value, which an easing that overshoots carries past 1 (or below 0) mid-move.
+    if (!first && span < 1) {
       target.stop({ commit: false });
       if (forward) o.onDone?.();
       return;
     }
-    // The share of this leg's travel covered `v` of the way through its time.
-    const easing = forward
-      ? (v: number) => (ease((at + span * v) / ms) - done) / (1 - done)
-      : (v: number) => 1 - ease((at * (1 - v)) / ms) / done;
+    // The share of this leg's travel covered `v` of the way through its time. Where the eased
+    // value sits at the leg's end already, `from` is that end, and the leg holds it until its time is up.
+    const left = forward ? 1 - done : done;
+    const easing = left === 0
+      ? (v: number) => v
+      : forward
+        ? (v: number) => (ease((at + span * v) / ms) - done) / left
+        : (v: number) => 1 - ease((at * (1 - v)) / ms) / left;
     const mine: AnimationHandle = current = animator.tween<TPose>({
       target,
       from,

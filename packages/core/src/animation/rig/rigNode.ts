@@ -1,5 +1,5 @@
 import { getOwn, setOwn, sameList } from '@weasel-js/registry';
-import { useMemo, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { transformPoint, poseFrameInverseOf, poseFrameOf, type Affine } from '@weasel-js/geom';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from '../../core/geometry/poseDescriptor';
@@ -43,6 +43,17 @@ export interface RigNodeParts {
 interface Reading extends RigNodeParts {
   /** Every node, pose, and data object the parts were read from, to tell when they are stale. */
   refs: unknown[];
+  /** Each node under the rig that names a joint the skeleton lacks, and the joint: left out. */
+  dangling: string[];
+}
+
+/** `skin` with only the joints in `names`, and the ones it weighed that are not. */
+function skinOn(skin: Skin, names: ReadonlySet<string>): { kept: Skin; lost: string[] } {
+  const lost = Object.keys(skin).filter((joint) => !names.has(joint));
+  if (lost.length === 0) return { kept: skin, lost };
+  const kept: Skin = {};
+  for (const joint of Object.keys(skin)) if (names.has(joint)) setOwn(kept, joint, skin[joint]);
+  return { kept, lost };
 }
 
 const through = (m: Affine | null, x: number, y: number): [number, number] => (m ? transformPoint(m, x, y) : [x, y]);
@@ -105,7 +116,8 @@ function read<TPose>(
 
   const skeleton = placeSkeleton(local, node.pose, descriptor);
 
-  const out: Reading = { skeleton, bindings: {}, skins: {}, refs: [node.pose, node.data] };
+  const names = new Set(skeleton.joints.map((joint) => joint.name));
+  const out: Reading = { skeleton, bindings: {}, skins: {}, refs: [node.pose, node.data], dangling: [] };
   const walk = (parent: NodeId): void => {
     for (const child of scene.childrenOf(parent)) {
       const n = scene.get(child);
@@ -113,8 +125,14 @@ function read<TPose>(
       const data = n.data as RigNodeData | null | undefined;
       const skin = painted.get(child) ?? data?.skin;
       out.refs.push(child, n.pose, n.data, skin);
-      if (skin) out.skins[child] = skin;
-      else if (data?.joint !== undefined) {
+      if (skin) {
+        // A joint renamed or removed from the skeleton, with the document still naming it.
+        const { kept, lost } = skinOn(skin, names);
+        for (const joint of lost) out.dangling.push(`${child} (skin) → ${joint}`);
+        setOwn(out.skins, child, kept);
+      } else if (data?.joint !== undefined && !names.has(data.joint)) {
+        out.dangling.push(`${child} → ${data.joint}`);
+      } else if (data?.joint !== undefined) {
         const bound = getOwn(out.bindings, data.joint);
         if (bound) bound.push(child);
         else setOwn(out.bindings, data.joint, [child]);
@@ -131,7 +149,9 @@ const sameRefs = (a: Reading, b: Reading): boolean =>
 
 /**
  * Read a rig out of the scene: the skeleton in `id`'s `data.skeleton`, placed by that node's
- * pose, and under it every node whose data has a `skin` or names a `joint`.
+ * pose, and under it every node whose data has a `skin` or names a `joint`. A joint the
+ * skeleton lacks, one renamed or removed since, is left out: a node naming it is not bound,
+ * and a skin weighing it bends by its other joints.
  */
 export function rigFromNode<TPose>(
   scene: RigNodeSource<TPose>,
@@ -180,6 +200,10 @@ export function useRigNode<TPose>(options: UseRigNodeOptions<TPose>): Rig {
   const [held, setHeld] = useState(next);
   const parts = sameRefs(held, next) ? held : next;
   if (parts !== held) setHeld(next);
+  const dangling = parts.dangling.join(', ');
+  useEffect(() => {
+    if (dangling) console.warn(`useRigNode: nodes under rig "${node}" name joints its skeleton lacks, and are left out: ${dangling}.`);
+  }, [node, dangling]);
   const joints = JSON.stringify(parts.skeleton.joints.map((joint) => joint.name));
   // A pose target's axes are its joints' names in order, so the seat holds while those do,
   // and the next one takes over from it.

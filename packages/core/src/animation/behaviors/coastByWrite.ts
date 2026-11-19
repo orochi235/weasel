@@ -35,20 +35,22 @@ export function coastByWrite<TPose>(a: CoastArgs<TPose>): void {
   };
   // Where each node was last put, which under bounds is not its start plus the decay's travel.
   const finalPositions = new Map<string, Delta>();
+  /** Under 'stop', the nodes settled at an edge: each stays where it hit while the rest travel on. */
+  const halted = new Set<string>();
   const cancelKey = coastKey();
   const coast: Coast = {
     ids: ctx.draggedIds.slice(),
     stop: (): void => {
-      // Canceled from outside (cancelAll, unmount), it stopped long ago and somewhere else.
-      if (!animator.isActive(cancelKey)) {
-        coasts.delete(coast);
-        return;
-      }
       decayHandle.cancel();
       commitFlick();
     },
   };
   coasts.add(coast);
+  // A decay canceled from outside (`cancelAll`, `cancelKey`, the animator unmounting) skips
+  // `onDone`: the coast has stopped where it last showed the nodes, and is recorded there.
+  const unwatch = animator.watch((event) => {
+    if (event.type === 'cancel' && event.animation.key === cancelKey) commitFlick();
+  });
   // Held from the release itself, so no frame paints the pre-drag pose
   // between the drag's preview going away and the first coast frame.
   show(new Map([...riding].flatMap((id) => {
@@ -65,7 +67,6 @@ export function coastByWrite<TPose>(a: CoastArgs<TPose>): void {
     magnitude: (v) => Math.hypot(v.x, v.y),
     onTick: (delta) => {
       lastValue = delta;
-      let allHit = bounds !== undefined;
       const frame = new Map<string, TPose | null>();
       for (const id of [...riding]) {
         if (!stillOurs(id)) {
@@ -74,10 +75,10 @@ export function coastByWrite<TPose>(a: CoastArgs<TPose>): void {
           continue;
         }
         const start = startPoses.get(id);
-        if (!start) continue;
+        if (!start || halted.has(id)) continue;
         const o = d.getBounds(start);
         const { nx, ny, hitX, hitY } = clampCorner(bounds, o.x + delta.x, o.y + delta.y);
-        if (!hitX && !hitY) allHit = false;
+        if (a.boundary === 'stop' && (hitX || hitY)) halted.add(id);
         finalPositions.set(id, { x: nx, y: ny });
         frame.set(id, translatePoseViaDescriptor(start, nx - o.x, ny - o.y, d));
       }
@@ -85,12 +86,12 @@ export function coastByWrite<TPose>(a: CoastArgs<TPose>): void {
       for (const id of riding) lastSeen.set(id, d.getBounds(adapter.getPose(id)));
       if (riding.size === 0) {
         coasts.delete(coast);
+        unwatch();
         decayHandle.cancel();
         return;
       }
-      // Under 'stop', once every node is at the boundary the coast ends
-      // there instead of drifting along the edge as friction wears off.
-      if (a.boundary === 'stop' && allHit) coast.stop();
+      // Under 'stop', once every node has settled at an edge the coast is over.
+      if ([...riding].every((id) => halted.has(id) || !startPoses.has(id))) coast.stop();
     },
     onDone: () => {
       commitFlick();
@@ -99,6 +100,7 @@ export function coastByWrite<TPose>(a: CoastArgs<TPose>): void {
 
   function commitFlick(): void {
     if (!coasts.delete(coast)) return;
+    unwatch();
     const ops: Op[] = [];
     const shown = new Map<string, TPose | null>();
     for (const id of riding) {

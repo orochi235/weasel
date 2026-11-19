@@ -1502,9 +1502,11 @@ Calls the round made:
   name (`InertiaConfig`, `ActionDisabledReason`): removing them breaks consumers in a patch release.
 - `withAlpha01(c, NaN)` writes `'#rrggbbNaN'` and `paintWithAlpha(p, NaN)` sets opacity NaN. Left as is:
   NaN could leave the color unchanged, mean 0, or mean 1.
-- A flick's coast canceled from outside (`cancelAll`, or the animator going away) over an adapter with
-  `previewPoses` and no pose targets leaves its last frame as a preview and records nothing, as the code
-  says it means to. Left as is: it could record where the coast stopped, or clear the preview.
+- A flick's coast canceled from outside (`cancelAll`, `cancelKey`, or the animator going away) records the
+  flick where the coast stopped and clears its preview, as a new drag of the node does; on 2026-11-18 (the
+  fixer's call, audit round thirty-eight) for every adapter, since over pose targets the cancel had already
+  written the stopped pose into the document outside history. Clearing the preview and restoring the
+  pre-drag pose was the alternative.
 
 ## Audit round seven (2026-11-08)
 
@@ -2680,3 +2682,13 @@ Calls the lanes made without a ruling:
 - 2026-11-18 (the fixer's call): a clock registration another under its id shadows is still held: the registry's
   `all()` and `targets()` list it, so `useClockLoop` keeps driving and gating it and a lab's still holds it.
   Freezing a shadowed clock until it comes back, and rebasing it then, was the alternative.
+## Audit round thirty-eight (2026-11-18): core's animation
+
+- 2026-11-18 (the fixer's call): `rigFromNode` and `useRigNode` leave out a joint the rig node's skeleton lacks, one
+  renamed or removed while nodes under it still name it: a node bound to it is not bound, and a skin weighing it bends
+  by its other joints. `useRigNode` warns, naming each such node and joint, once per change in that list. `bindRig`,
+  whose caller passes the bindings, still throws on one. Throwing from `useRigNode`'s render, as before, was the
+  alternative.
+- 2026-11-18 (the fixer's call): `momentum()` throws a `RangeError` on a `friction` outside (0, 1). 1 threw at release
+  over a scene adapter and coasted forever over any other; refusing it when the behavior is made gives one answer for
+  both. Allowing 1 over an adapter without pose targets, stopped only by `bounds`, was the alternative.

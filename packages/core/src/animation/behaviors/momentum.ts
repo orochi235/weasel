@@ -14,7 +14,11 @@ import type { Rect } from '@weasel-js/geom';
 export interface MomentumOptions {
   /** Required: the per-Canvas animator that will own the decay. */
   animator: Animator;
-  friction?: number;     // default 0.92 (per second)
+  /**
+   * The share of its speed a coast keeps each second, in (0, 1). Default 0.92. 1, which would
+   * never slow, is refused, as are 0 and anything outside the range.
+   */
+  friction?: number;
   threshold?: number;    // default 200 world units/sec; the slowest release that coasts
   /** Sample window in ms for velocity computation. Default 80ms. */
   velocitySampleMs?: number;
@@ -28,9 +32,9 @@ export interface MomentumOptions {
    */
   bounds?: Rect;
   /**
-   * Boundary policy when the clamped position hits an edge. 'stop' settles at
-   * the edge at once. 'continue' keeps decaying, so the object drifts along
-   * the edge. Default 'stop'.
+   * Boundary policy when the clamped position hits an edge. 'stop' settles
+   * each node at the edge it hits at once, while the others travel on.
+   * 'continue' keeps decaying, so the object drifts along the edge. Default 'stop'.
    */
   boundary?: 'stop' | 'continue';
   /** How to translate poses. Default `AUTO_POSE_DESCRIPTOR`. */
@@ -55,13 +59,17 @@ const SAMPLES = scratchKey<PointerSample[]>('momentum.samples');
  * scene-backed one has, each node coasts on its own pose target, so anything
  * else animating it adds; over one without, the coast is shown through
  * `previewPoses`, or written through `setPose` each frame. Dragging a node
- * again while it coasts stops the coast and records it where it stands. A
+ * again while it coasts stops the coast and records it where it stands, as
+ * does canceling it on the animator (`cancelAll`, its unmounting). A
  * `tweenPose` or `springPose` of a coasting node ends its coast. A node
  * something else moves or deletes mid-coast, an undo included, drops out of
  * the coast where that left it, and nothing is recorded for it.
  */
 export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
   const friction = opts.friction ?? 0.92;
+  if (!(friction > 0 && friction < 1)) {
+    throw new RangeError(`momentum: friction is the share of speed a coast keeps a second, in (0, 1), not ${friction}`);
+  }
   const threshold = opts.threshold ?? 200;
   const sampleMs = opts.velocitySampleMs ?? 80;
   const now = opts.now ?? (() => Date.now());

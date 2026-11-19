@@ -59,6 +59,33 @@ describe('tweenPose with `rewind`', () => {
     expect(done).toBe(0);
   });
 
+  it('turns forward again through an easing\'s overshoot, and ends only once its time is up', () => {
+    const { animator, frame, scene, a, adapter, shown } = setup();
+    // Up to 1.2 by halfway, then back down to 1.
+    const overshoot = (t: number): number => (t < 0.5 ? 2.4 * t : 1.2 - 0.4 * (t - 0.5));
+    let done = 0;
+    act(() => {
+      tweenPose(animator(), adapter, { id: a, to: at(100), ms: 100, easing: overshoot, rewind: true, onDone: () => { done += 1; } });
+    });
+    frame(0);
+    frame(60);
+    expect(shown().x).toBeCloseTo(116);
+    act(() => { scene.undo(); });
+    frame(70);
+    frame(80);
+    act(() => { scene.redo(); });
+    frame(90);
+    // Turned forward where the eased value is past 1: still in the overshoot, not snapped to 100.
+    expect(shown().x).toBeGreaterThan(110);
+    expect(done).toBe(0);
+    frame(100);
+    expect(shown().x).toBeGreaterThan(105);
+    expect(done).toBe(0);
+    for (let t = 110; t <= 200; t += 10) frame(t);
+    expect(shown().x).toBe(100);
+    expect(done).toBe(1);
+  });
+
   it('turns forward again when the undo is redone, and is done once it arrives', () => {
     const { animator, frame, scene, a, adapter, shown } = setup();
     let done = 0;

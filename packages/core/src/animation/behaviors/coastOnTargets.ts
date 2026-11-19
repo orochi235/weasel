@@ -2,7 +2,7 @@ import { createSetPoseOp } from 'core/ops/setPose';
 import type { Op } from 'core/ops/types';
 import { translatePoseViaDescriptor, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Target, TargetAxes } from '@weasel-js/animator';
-import type { AnimationHandle } from '@weasel-js/animator';
+import type { AnimationHandle, Animator } from '@weasel-js/animator';
 import { poseKey } from '../poseHelpers';
 import { clampCorner, coastKey, sameBounds, type Coast, type CoastArgs } from './coast';
 
@@ -32,6 +32,30 @@ function poseVelocity<TPose>(
   const alongX = ax.to(translatePoseViaDescriptor(at, 1, 0, d));
   const alongY = ax.to(translatePoseViaDescriptor(at, 0, 1, d));
   return ax.from(base.map((b, i) => vx * (alongX[i]! - b) + vy * (alongY[i]! - b)));
+}
+
+/** Cancels `r`'s decay as the coast's own doing, which {@link onOutsideCancel} leaves alone. */
+function release(r: Rider<unknown>): void {
+  const handle = r.handle;
+  r.handle = null;
+  handle?.cancel();
+}
+
+/**
+ * Calls `halted` for each rider whose decay is canceled from outside (`cancelAll`, `cancelKey`,
+ * the animator unmounting): that commits the pose it reached and skips `onDone`, so it has
+ * stopped there, and the flick is recorded there. Returns the unsubscribe.
+ */
+function onOutsideCancel<TPose>(
+  animator: Animator,
+  cancelKey: string,
+  riders: ReadonlyMap<string, Rider<TPose>>,
+  halted: (r: Rider<TPose>) => void,
+): () => void {
+  return animator.watch((event) => {
+    if (event.type !== 'cancel' || event.animation.key !== cancelKey) return;
+    for (const r of riders.values()) if (r.handle?.id === event.animation.id) halted(r);
+  });
 }
 
 /**
@@ -86,7 +110,7 @@ export function coastOnTargets<TPose>(a: CoastArgs<TPose>, targets: ReadonlyMap<
   const drop = (r: Rider<TPose>, own: TPose): void => {
     const left = r.target.committed();
     riders.delete(r.id);
-    r.handle?.cancel();
+    release(r);
     r.target.commit(left);
     if (r.target.active && adapter.getNode(r.id) !== undefined) {
       const moved = d.getBounds(left);
@@ -114,7 +138,7 @@ export function coastOnTargets<TPose>(a: CoastArgs<TPose>, targets: ReadonlyMap<
     const vx = hitX ? 0 : r.vx - drag * (corner.x - r.startX);
     const vy = hitY ? 0 : r.vy - drag * (corner.y - r.startY);
     // Canceled, it commits the pose it reached; the edge is where it belongs.
-    r.handle?.cancel();
+    release(r);
     r.target.commit(translatePoseViaDescriptor(r.target.committed(), nx - corner.x, ny - corner.y, d));
     r.seen = r.target.committed();
     if (a.boundary === 'continue' && Math.hypot(vx, vy) > 0) launch(r, undefined, vx, vy);
@@ -124,23 +148,20 @@ export function coastOnTargets<TPose>(a: CoastArgs<TPose>, targets: ReadonlyMap<
   const coast: Coast = {
     ids: ctx.draggedIds.slice(),
     stop: (): void => {
-      // Canceled from outside (cancelAll, unmount), it stopped long ago and somewhere else.
-      if (!animator.isActive(cancelKey)) {
-        coasts.delete(coast);
-        return;
-      }
       for (const r of riders.values()) {
-        r.handle?.cancel();
-        r.handle = null;
+        release(r);
         r.seen = r.target.committed();
       }
       commitFlick();
     },
   };
   coasts.add(coast);
+  const unwatch = onOutsideCancel(animator, cancelKey, riders, halted);
 
   function commitFlick(): void {
-    if (!coasts.delete(coast) || !adapter.applyOps) return;
+    if (!coasts.delete(coast)) return;
+    unwatch();
+    if (!adapter.applyOps) return;
     const ops: Op[] = [];
     for (const r of riders.values()) {
       if (!ours(r)) continue;

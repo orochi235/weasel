@@ -146,7 +146,17 @@ export function createPoseTarget<TPose>(opts: PoseTargetOptions<TPose>): Target<
   return target;
 }
 
-const sceneTargets = createPart((_overrides: object) => new Map<string, Target<unknown>>());
+/** Each scene's pose targets by node id, and the size at which the next one made sweeps them. */
+const sceneTargets = createPart((_overrides: object) => ({ byId: new Map<string, Target<unknown>>(), sweepAt: 64 }));
+
+/**
+ * Drops the targets of nodes gone from the scene while at rest, which nothing asks for again.
+ * Run as the table doubles, so a session that animates and deletes nodes keeps no target per id.
+ */
+function sweepTargets(scene: PoseSource<unknown>, made: { byId: Map<string, Target<unknown>>; sweepAt: number }): void {
+  for (const [id, t] of made.byId) if (!t.active && !scene.get(id as NodeId)) made.byId.delete(id);
+  made.sweepAt = Math.max(64, made.byId.size * 2);
+}
 
 /** Whether two poses hold the same fields, compared without allocating: a running target asks on every publish. */
 function samePoseShallow(a: unknown, b: unknown): boolean {
@@ -177,11 +187,17 @@ export function scenePoseTarget<TPose>(
   id: string,
   descriptor?: PoseDescriptor<TPose>,
 ): Target<TPose> | undefined {
-  const made = sceneTargets(scene.overrides);
+  const table = sceneTargets(scene.overrides);
+  const made = table.byId;
   const nid = id as NodeId;
   const node = scene.get(nid);
   const by = descriptor ?? (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>);
   const held = made.get(id) as Target<TPose> | undefined;
+  // A node removed mid-flight keeps its target until the flight ends; one removed at rest has none.
+  if (held && !node && !held.active) {
+    made.delete(id);
+    return undefined;
+  }
   // A pose that has changed shape at rest, a polygon given more points, needs axes made for it.
   const fits = !held || held.active || !node
     || poseAxes(by, documentPose(scene, node))?.count === held.axisCount;
@@ -225,6 +241,7 @@ export function scenePoseTarget<TPose>(
     return !!n && mine !== undefined && !samePoseShallow(n.pose, mine);
   });
   if (!target) return undefined;
+  if (made.size >= table.sweepAt) sweepTargets(scene as PoseSource<unknown>, table);
   made.set(id, target as Target<unknown>);
   return target;
 }

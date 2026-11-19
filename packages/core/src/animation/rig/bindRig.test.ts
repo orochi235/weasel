@@ -109,6 +109,18 @@ describe('bindRig', () => {
     close(where(scene, upper), posed);
   });
 
+  it('skips a bound node the scene has since lost, in what it shows and what it bakes', () => {
+    const { scene, upper, lower } = armScene();
+    const rig = bindRig({ scene, skeleton: ARM, bindings: { upper, lower } });
+    rig.pose({ upper: { rotation: Math.PI / 2 } });
+    scene.remove(lower);
+    rig.pose({ upper: { rotation: Math.PI } });
+    expect(scene.overrides.has(lower)).toBe(false);
+    expect(() => rig.bake()).not.toThrow();
+    close(scene.get(upper)!.pose, { x: 50, y: 95, width: 50, height: 10, rotation: Math.PI });
+    expect(scene.overrides.has(upper)).toBe(false);
+  });
+
   it('release returns the nodes to their document poses', () => {
     const { scene, upper } = armScene();
     const rig = bindRig({ scene, skeleton: ARM, bindings: { upper } });
