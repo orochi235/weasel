@@ -542,6 +542,20 @@ describe('createAudioGraph deferred edges and settling', () => {
     expect(done).toBe(true);
   });
 
+  it('settled waits for a new connection to fade in', async () => {
+    const { ctx, graph, step } = harness();
+    graph.add('a', testNode(ctx, []).def);
+    graph.add('b', testNode(ctx).def);
+    graph.connect('a', { node: 'b', port: 'in' });
+    let done = false;
+    void graph.settled().then(() => { done = true; });
+    await tick();
+    expect(done).toBe(false);
+    step();
+    await tick();
+    expect(done).toBe(true);
+  });
+
   it('throws from every mutator once disposed', () => {
     const { ctx, graph } = harness();
     graph.add('a', testNode(ctx).def);

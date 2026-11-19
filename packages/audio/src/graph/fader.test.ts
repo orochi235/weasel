@@ -45,6 +45,24 @@ describe('createFader', () => {
     expect(gain.gain.ramps.at(-1)).toEqual({ value: 1, at: t + 0.02 });
   });
 
+  it('is opening until its ramp lands, then reports done; a close ends the opening', () => {
+    const { ctx, fader, runTimers } = harness();
+    const done = vi.fn();
+    fader.open(MS, done);
+    expect(fader.opening()).toBe(true);
+    ctx._advance(MS);
+    runTimers();
+    expect(fader.opening()).toBe(false);
+    expect(done).toHaveBeenCalledTimes(1);
+    const again = vi.fn();
+    fader.open(MS, again);
+    fader.close(MS);
+    expect(fader.opening()).toBe(false);
+    ctx._advance(MS);
+    runTimers();
+    expect(again).not.toHaveBeenCalled();
+  });
+
   it('closes, then cuts and reports done', () => {
     const { ctx, from, fader, gain, runTimers } = harness();
     const done = vi.fn();

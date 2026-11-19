@@ -52,6 +52,11 @@ export function createWrapper(
   return { id, def, ins, inFaders, out, outFader, taps: new Set(), running: false, outgoing: new Set() };
 }
 
+/** A replace is fading a def out, or one of the wrapper's faders is still opening. */
+export function wrapperFading(w: NodeWrapper): boolean {
+  return w.outgoing.size > 0 || w.outFader.opening() || [...w.inFaders.values()].some((f) => f.opening());
+}
+
 export function tapWrapper(ctx: BaseAudioContext, w: NodeWrapper, opts?: AnalyserTapOptions): AnalyserTap {
   const inner = createAnalyserTap(ctx, w.out, opts);
   const t: AnalyserTap = {

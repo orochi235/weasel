@@ -6,7 +6,7 @@ import { replaceDef } from './replace';
 import type { GraphNodeDef, GraphTarget } from './types';
 import { closesCycle, defInUse, duplicateNode, noNode, noParam, noPort } from './errors';
 import type { GraphView } from './validate';
-import { abandonWrapper, createWrapper, releaseWrapper, type NodeWrapper } from './wrapper';
+import { abandonWrapper, createWrapper, releaseWrapper, wrapperFading, type NodeWrapper } from './wrapper';
 
 export interface EditsDeps {
   ctx: BaseAudioContext;
@@ -64,7 +64,7 @@ export function createEdits(deps: EditsDeps) {
   const wire = (e: Edge): void => {
     e.state = 'open';
     e.fader = createFader(ctx, timers, e.from.out, e.to ? e.to.ins.get(e.port)! : output);
-    e.fader.open(fade());
+    e.fader.open(fade(), deps.onSettle);
   };
 
   /** Wire what is no longer blocked, release what nothing touches, then wake `settled`. */
@@ -101,10 +101,10 @@ export function createEdits(deps: EditsDeps) {
     allNodes: () => [...nodes.values(), ...leaving],
     /** The live nodes and the edges a caller can see, by id, for `validatePatches`. */
     view: (): GraphView => viewOf(nodes, edges, used),
-    /** An edge is fading out or waiting to be wired, or a replaced def is fading out. */
+    /** An edge is fading in or out or waiting to be wired, or a node is crossfading. */
     busy: () =>
-      edges.some((e) => e.state !== 'open') ||
-      [...nodes.values(), ...leaving].some((w) => w.outgoing.size > 0),
+      edges.some((e) => e.state !== 'open' || e.fader!.opening()) ||
+      [...nodes.values(), ...leaving].some(wrapperFading),
     add(id: string, def: GraphNodeDef): void {
       if (nodes.has(id)) throw duplicateNode(id);
       checkUnused(def);

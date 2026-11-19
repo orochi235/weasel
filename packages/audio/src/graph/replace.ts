@@ -6,7 +6,8 @@ import { releaseOutgoing, startDef, type NodeWrapper, type Outgoing } from './wr
 export interface ReplaceHooks {
   /** Close every edge into `w.ins.get(port)`; called before the port is dropped. */
   closePort(port: string): void;
-  /** Called when the old def has faded out and been disposed, to wake `settled`. */
+  /** Called when the old def has faded out and been disposed, and when the new one has
+   *  faded in, to wake `settled`. */
   onSettle(): void;
 }
 
@@ -42,9 +43,9 @@ export function replaceDef(
   for (const port of Object.keys(next.inputs)) {
     let gain = w.ins.get(port);
     if (!gain) w.ins.set(port, (gain = ctx.createGain()));
-    w.inFaders.set(port, openFader(ctx, timers, gain, next.inputs[port], ms));
+    w.inFaders.set(port, openFader(ctx, timers, gain, next.inputs[port], ms, hooks.onSettle));
   }
-  w.outFader = openFader(ctx, timers, next.output, w.out, ms);
+  w.outFader = openFader(ctx, timers, next.output, w.out, ms, hooks.onSettle);
   w.def = next;
   w.running = started;
 
@@ -65,8 +66,9 @@ function openFader(
   from: AudioNode,
   to: AudioNode,
   ms: number,
+  done: () => void,
 ): Fader {
   const f = createFader(ctx, timers, from, to);
-  f.open(ms);
+  f.open(ms, done);
   return f;
 }
