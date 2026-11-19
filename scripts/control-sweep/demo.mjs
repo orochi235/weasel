@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { RESTLESS_TRIES, STEADY_TRIES, capture, discover, hash, load, prepare, settle } from './capture.mjs';
 import { animationFlips, compareCaptures, fingerprintOf, sameSteadyState, slug, verdictOf } from './judge.mjs';
 import { ROOT, kit, menuItemsOf, operate } from './operate.mjs';
-import { probeGesture } from './probe.mjs';
+import { probeButtons, probeGesture } from './probe.mjs';
 
 /** The demo's box as a JPEG: evidence for a person, so small beats exact. */
 const SLOW_SETTLE_MS = 1000;
@@ -127,6 +127,8 @@ const confirm = async (page, demo, c, ctx) => {
   if (await viaShortcut(page, c, ctx)) return { verdict: 'alive', reason: 'acts through its key shortcut' };
   const probed = await probeGesture(page, c, ctx);
   if (probed) return { verdict: 'alive', reason: probed === 'before' ? 'changes what a drag on the canvas does' : 'acts on what a drag on the canvas left' };
+  const via = await probeButtons(page, c, ctx);
+  if (via) return { verdict: 'alive', reason: `changes what "${via}" does` };
   const base = `${demo.id}--${slug(c.label)}`;
   const shots = [`${base}-before.jpg`, `${base}-after.jpg`];
   writeFileSync(join(ctx.shotsDir, shots[0]), a.shotBefore);

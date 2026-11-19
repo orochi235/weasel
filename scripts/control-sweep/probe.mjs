@@ -4,7 +4,7 @@
  * only once a drag has moved or selected something. So the probe drags across the demo's largest canvas
  * from fresh loads three ways (plain, control first, control after) and compares what each leaves.
  */
-import { capture, load, prepare, settle } from './capture.mjs';
+import { capture, discover, load, prepare, settle } from './capture.mjs';
 import { compareCaptures } from './judge.mjs';
 import { ROOT, kit, operate } from './operate.mjs';
 
@@ -57,6 +57,38 @@ export const probeGesture = async (page, c, ctx) => {
   for (const when of action ? ['before', 'after'] : ['before']) {
     const probed = await dragRun(page, c, ctx, when);
     if (probed && differs(compareCaptures(plain, again, probed))) return when;
+  }
+  return undefined;
+};
+
+const BUTTONS_TRIED = 5;
+
+/** A fresh load and `c`'s precondition, `c` operated if `operated`, then `button` pressed: two captures a settle apart. */
+const pressRun = async (page, c, button, ctx, operated) => {
+  await load(page, ctx.url, { reload: true, tries: ctx.tries });
+  const live = await prepare(page, ctx.url, c, ctx.settleMs, ctx.tries);
+  if (operated) await operate(page, live);
+  await settle(page, ctx.settleMs);
+  const target = (await discover(page)).find((d) => d.key === button.key);
+  if (!target) return undefined;
+  await operate(page, target);
+  await settle(page, ctx.settleMs);
+  const first = await capture(page, live.id);
+  await settle(page, ctx.settleMs);
+  return { first, second: await capture(page, live.id) };
+};
+
+/**
+ * Whether operating setting `c` changes what one of the demo's buttons then does: a fit mode only a Fit
+ * button reads, a key only the Push buttons use. Answers that button's label, or undefined.
+ */
+export const probeButtons = async (page, c, ctx) => {
+  if (c.kind === 'button' || c.kind === 'menuitem') return undefined;
+  const buttons = (await discover(page)).filter((d) => (d.kind === 'button' || d.kind === 'toggle') && !d.skip && !d.chrome && d.key !== c.key).slice(0, BUTTONS_TRIED);
+  for (const b of buttons) {
+    const plain = await pressRun(page, c, b, ctx, false);
+    const probed = plain && await pressRun(page, c, b, ctx, true);
+    if (probed && differs(compareCaptures(plain.first, plain.second, probed.second))) return b.label;
   }
   return undefined;
 };
