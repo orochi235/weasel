@@ -125,6 +125,15 @@ describe('scenePoseTarget', () => {
     expect(scenePoseTarget(paths, p)).toBeUndefined();
   });
 
+  it('has none for a node deleted after its animation came to rest', () => {
+    const { animator, frame, scene, a } = setup();
+    act(() => { animator().tween({ target: scenePoseTarget(scene, a)!, to: at(100), ms: 100, easing: linear }); });
+    frame(0);
+    frame(100);
+    scene.remove(a);
+    expect(scenePoseTarget(scene, a)).toBeUndefined();
+  });
+
   it('keeps the fields of the pose it does not move as they are in the document', () => {
     const { animator, frame, scene, a, shown } = setup();
     const target = scenePoseTarget(scene, a)!;
