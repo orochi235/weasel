@@ -30,6 +30,11 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-11-18, jsdom only: a lab's Escape out of presentation, now the `lab.presentation.exit` action, leaving a
+  focused text field or an open modal its own Escape; `useUndoKeys` in a lab built without `<Lab>`, leaving an
+  open menu its own Mod+Z; the long-press ring after its model moved to `@weasel-js/gestures`, on a real touch
+  or pen hold.
+
 - 2026-11-14, by eye only (the rest of the day's list was driven headless the same evening): the look of
   kernel3d's axis-move handles in the 3D lab (`npm run dev:3d` in `packages/labkit`), which have no hover state
   beyond the move cursor; the `timeline-frames` demo in a headed Chrome, which asks once before a site saves
