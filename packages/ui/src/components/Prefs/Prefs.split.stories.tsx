@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { openPrefsSync, type PrefGroup, type PrefScope } from '@weasel-js/prefs';
-import { usePrefsState } from '@weasel-js/prefs/react';
+import { type PrefGroup, type PrefScope } from '@weasel-js/prefs';
+import { usePrefsState, usePrefsStore } from '@weasel-js/prefs/react';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import { PrefsForm, type PrefsLayout } from '@weasel-js/ui/components/Prefs';
 
@@ -48,7 +48,8 @@ interface SplitFormProps {
 
 /** A form over a store in memory: what `usePrefsState` returns is what the form takes. */
 function SplitForm({ layout, held, open }: SplitFormProps) {
-  const [store] = useState(() => openPrefsSync(SCHEMA, { storage: createMemoryAdapter(new Map(Object.entries(held).map(([path, value]) => [`p.${path}`, value]))), prefix: 'p.' }));
+  const [storage] = useState(() => createMemoryAdapter(new Map(Object.entries(held).map(([path, value]) => [`p.${path}`, value]))));
+  const store = usePrefsStore(SCHEMA, { storage, prefix: 'p.' });
   const { values, set, scopes, setAt } = usePrefsState(store);
   return (
     <PrefsForm layout={layout} schema={SCHEMA} values={values} onChange={set} scopes={scopes}
