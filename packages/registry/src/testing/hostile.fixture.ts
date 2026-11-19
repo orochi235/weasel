@@ -106,12 +106,15 @@ export function longText(text: (run: string) => string = (run) => run, pieces: r
     .map(([piece, tail]) => text(piece.repeat(Math.ceil(LONG / piece.length)) + tail));
 }
 
-/** `read()`, failing when it takes longer than `budgetMs`: a linear reader takes a millisecond or two on {@link LONG}
- *  characters, a quadratic one hundreds. */
-export function quick<T>(read: () => T, budgetMs = 100): T {
-  const t0 = performance.now();
-  const out = read();
-  const took = performance.now() - t0;
-  if (took > budgetMs) throw new Error(`took ${took.toFixed(0)} ms, past the ${budgetMs} ms budget`);
-  return out;
+/** `read()`, failing when each of `tries` runs takes longer than `budgetMs`: a linear reader takes a millisecond or
+ *  two on {@link LONG} characters, a quadratic one hundreds every time, and a loaded test node only now and then. */
+export function quick<T>(read: () => T, budgetMs = 100, tries = 3): T {
+  let best = Number.POSITIVE_INFINITY;
+  for (let i = 0; i < tries; i++) {
+    const t0 = performance.now();
+    const out = read();
+    best = Math.min(best, performance.now() - t0);
+    if (best <= budgetMs) return out;
+  }
+  throw new Error(`took ${best.toFixed(0)} ms at best of ${tries}, past the ${budgetMs} ms budget`);
 }
