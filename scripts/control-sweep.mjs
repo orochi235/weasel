@@ -39,7 +39,7 @@ export const parseArgs = (argv) => {
     packages: !argv.includes('--skip-packages'),
     concurrency: Math.max(1, Number(value('--concurrency', 5)) || 5),
     settleMs: Math.max(0, Number(value('--settle', 150)) || 0),
-    demoMs: Math.max(1, Number(value('--demo-minutes', 8)) || 8) * 60_000,
+    demoMs: Math.max(1, Number(value('--demo-minutes', 12)) || 12) * 60_000,
     updateAllow: argv.includes('--update-allow'),
     verbose: argv.includes('--verbose'),
   };
