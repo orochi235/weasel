@@ -2656,3 +2656,10 @@ Calls the lanes made without a ruling:
 - 2026-11-18 (the fixer's call): `gen-brand-colors` throws, writing neither table, on a Copic marker with no name
   or a sampled colour that is not `#rrggbb`, and on a LEGO name holding a named HTML reference other than `&amp;`,
   `&lt;`, `&gt;`, `&quot;`, `&apos;` and `&nbsp;`. Skipping the row with a warning was the alternative.
+
+## Audit round thirty-seven (2026-11-18): clock
+
+- 2026-11-18 (the fixer's call): a clock declared `start: 'end'` whose run is made endless at runtime (a loop toggle,
+  `duration = Infinity`, an override) resets to the end of its declared run, standing at that pass's end, and
+  `declare` throws a `RangeError` on a declaration whose run never ends for such a clock, keeping the last one.
+  Resetting to 0 there, or letting `declare` through and throwing at Reset as before, were the alternatives.

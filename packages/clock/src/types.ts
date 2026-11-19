@@ -122,7 +122,8 @@ export interface ClockHandle {
    *  that differs from the last declaration's. Keeps the pass and the time
    *  shown within it (`origin` plus ms into the pass), clamped to the new pass
    *  and run; play state and rate are left alone. Notifies like a seek. Unlike
-   *  assigning `duration`, this does not keep `phase`. */
+   *  assigning `duration`, this does not keep `phase`. Throws a `RangeError`
+   *  on a run that never ends for a clock that opens at its `'end'`. */
   declare(spec: ClockSpec): void;
   /** Replaces the declared `duration` and `origin` with `span`'s, where it
    *  gives them, until called with `null`; a later `declare` changes what lies
