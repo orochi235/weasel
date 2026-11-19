@@ -1,7 +1,7 @@
 /** A number as the Mermaid chart kinds write one. */
 import { lineError } from '../../lineError';
 
-const NUMBER = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i;
+const NUMBER = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i;
 
 /** `text` as a number; `undefined` for text that is not one, or one too large to hold, which would write back as
  *  `Infinity`. */
