@@ -1,6 +1,6 @@
 /**
- * Hostile input for the readers of saved data: JSON-ish junk, and a valid value with one field dropped,
- * duplicated or retyped. Test-only: no package source imports it.
+ * Hostile input for the readers of outside data: JSON-ish junk, a valid value with one field dropped, duplicated or
+ * retyped, and very long text with a time budget. Test-only: no package source imports it.
  */
 import fc from 'fast-check';
 
@@ -91,3 +91,27 @@ export function prototypePolluted(): boolean {
   return Object.getOwnPropertyNames(Object.prototype).some((k) => !BASELINE.has(k));
 }
 const BASELINE = new Set(Object.getOwnPropertyNames(Object.prototype));
+
+/** How long {@link longText} is: past anything typed, short enough that a quadratic reader shows. */
+export const LONG = 20_000;
+
+/** Pieces a backtracking pattern over numbers, spaces, brackets and separators trips on. */
+const PIECES = ['1', '1.', '.1', '1e', '0', ' ', '\t', '-', '+', ',', ';', ':', '(', ')', '[', ']', '{', '}', '"', "'", '\\', '*', '%',
+  '#', '&', '<', 'a', 'a ', '1 ', '1px ', 'e'];
+
+/** A piece repeated to {@link LONG} characters, then a tail that makes most patterns fail only at the end. `text`
+ *  wraps it, so a reader can be reached through the syntax around it. */
+export function longText(text: (run: string) => string = (run) => run, pieces: readonly string[] = PIECES): fc.Arbitrary<string> {
+  return fc.tuple(fc.constantFrom(...pieces), fc.constantFrom('', 'x', '!', ')', ']', ' ', '%'))
+    .map(([piece, tail]) => text(piece.repeat(Math.ceil(LONG / piece.length)) + tail));
+}
+
+/** `read()`, failing when it takes longer than `budgetMs`: a linear reader takes a millisecond or two on {@link LONG}
+ *  characters, a quadratic one hundreds. */
+export function quick<T>(read: () => T, budgetMs = 100): T {
+  const t0 = performance.now();
+  const out = read();
+  const took = performance.now() - t0;
+  if (took > budgetMs) throw new Error(`took ${took.toFixed(0)} ms, past the ${budgetMs} ms budget`);
+  return out;
+}
