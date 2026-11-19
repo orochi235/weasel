@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createCanvasReader, readGl, regionAround } from './readback';
 
-const core = vi.hoisted(() => ({ backend: 'webgl2' as 'webgl2' | 'webgpu', reads: [] as unknown[] }));
+const core = vi.hoisted(() => ({ backend: 'webgl2' as 'webgl2' | 'webgpu' | undefined, reads: [] as unknown[] }));
 vi.mock('./canvasBackend', () => ({ canvasPaintsWith: () => core.backend }));
 vi.mock('./readCanvasPixels', () => ({
   readCanvasPixels: (_c: unknown, rect: { width: number; height: number }) => {
@@ -72,6 +72,19 @@ describe('createCanvasReader on WebGPU', () => {
     expect(Array.from(reader.pixel({ x: 11, y: 21, width: 1, height: 1 })!)).toEqual([4, 10, 20, 255]);
     expect(reader.pixel({ x: 13, y: 21, width: 1, height: 1 })).toBeNull();
     expect(core.reads).toEqual([{ x: 10, y: 20, width: 3, height: 2 }]);
+    core.backend = 'webgl2';
+  });
+});
+
+describe('createCanvasReader before the canvas has a renderer', () => {
+  it('answers null without opening a context, so the renderer still gets the kind it asks for', () => {
+    core.backend = undefined;
+    const canvas = document.createElement('canvas');
+    const getContext = vi.spyOn(canvas, 'getContext');
+    const reader = createCanvasReader(canvas);
+    expect(reader.region({ x: 0, y: 0, width: 2, height: 2 })).toBeNull();
+    expect(reader.pixel({ x: 0, y: 0, width: 1, height: 1 })).toBeNull();
+    expect(getContext).not.toHaveBeenCalled();
     core.backend = 'webgl2';
   });
 });

@@ -3,3 +3,4 @@ export { leaseCanvasRenderer } from '../canvas/canvasRenderer';
 export { IMAGE_PAINTER } from '../canvas/nodeShapes/imagePainter';
 export { useScenePickers } from '../canvas/SceneCanvas/useScenePickers';
 export { useCanvasRenderer } from '../canvas/useCanvasRenderer';
+export { rememberBackend } from '../canvas/canvasBackend';

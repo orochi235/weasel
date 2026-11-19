@@ -59,7 +59,7 @@ export function readGl(gl: WebGL2RenderingContext, bufferHeight: number, rect: R
 
 /** What {@link createCanvasReader} answers with. */
 export interface CanvasReader {
-  /** `rect`'s pixels, top-down and premultiplied, or null when the canvas cannot answer. */
+  /** `rect`'s pixels, top-down and premultiplied, or null when the canvas cannot answer, as before its first renderer. */
   region(rect: Rect): ImageData | Promise<ImageData> | null;
   /** The RGBA of the pixel at `rect`'s corner, read at once or from the last region read. */
   pixel(rect: Rect): ArrayLike<number> | null;
@@ -73,7 +73,8 @@ export interface CanvasReader {
 export function createCanvasReader(canvas: HTMLCanvasElement): CanvasReader {
   let last: { rect: Rect; data: ImageData } | null = null;
   const now = (rect: Rect): ImageData | null => {
-    if (canvasPaintsWith(canvas) === 'webgpu') return null;
+    // Before its first renderer the canvas has chosen no context kind, and getContext would choose one for it.
+    if (canvasPaintsWith(canvas) !== 'webgl2') return null;
     const gl = canvas.getContext('webgl2');
     return gl ? readGl(gl, canvas.height, rect) : null;
   };

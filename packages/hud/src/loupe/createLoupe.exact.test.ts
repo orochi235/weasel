@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { rememberBackend } from '@weasel-js/core/testing/canvas';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import type { LayerSampleArgs, RenderLayer } from '@weasel-js/core';
 import { createHud, type Hud } from '../hud';
@@ -39,6 +40,7 @@ function canvasShowingChrome() {
   vi.spyOn(el, 'getBoundingClientRect').mockReturnValue(
     { left: 0, top: 0, width: 800, height: 600, right: 800, bottom: 600, x: 0, y: 0, toJSON: () => ({}) } as DOMRect,
   );
+  rememberBackend(el, 'webgl2');
   vi.spyOn(el, 'getContext').mockReturnValue({
     RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
     readPixels: (_x: number, _y: number, _w: number, _h: number, _f: number, _t: number, buf: Uint8Array) => {
