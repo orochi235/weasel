@@ -6,6 +6,7 @@ import {
   useRef,
   type ReactNode,
   type Ref,
+  type RefObject,
 } from 'react';
 import { useControlHold } from '../Disabled/controlHold';
 import { TreeDragGhost } from './TreeGhost';
@@ -77,7 +78,7 @@ export const Tree = forwardRef(function Tree(
     onMove: move, onCopy, onLink, canDrop, onDragOutside, onDropOutside, ghost = true, renderGhost, externalDrag, dropRef,
     disabled: off, disabledReason, readOnly, readOnlyReason,
   }: TreeProps,
-  ref: Ref<HTMLUListElement>,
+  ref: Ref<HTMLElement>,
 ) {
   const hold = useControlHold({ disabled: off, disabledReason, readOnly, readOnlyReason }, { readonlyRole: false });
   const { expanded, setExpanded, toggle, expand } = useTreeFold(expandedIds, defaultExpandedIds, onExpandedChange, hold.disabled);
@@ -98,11 +99,11 @@ export const Tree = forwardRef(function Tree(
     visible, nodeAt, expanded, selection, selectionMode, selectionFollowsFocus, toggle, pressFolds, onAction, held: hold.disabled, grid,
   });
 
-  const treeEl = useRef<HTMLUListElement | null>(null);
+  const treeEl = useRef<HTMLElement | null>(null);
   const isEmpty = nodes.length === 0;
   // The element behind the ref changes when the tree swaps with the empty state.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useImperativeHandle(ref, () => treeEl.current as HTMLUListElement, [isEmpty]);
+  useImperativeHandle(ref, () => treeEl.current as HTMLElement, [isEmpty]);
   useUntabbedControls(grid, treeEl);
   const drag = useTreeDrag({
     enabled: !!onMove,
@@ -132,6 +133,7 @@ export const Tree = forwardRef(function Tree(
     rowTip, rowBox, focused: nav.onFocus, activate, toggle, onRowContextMenu,
     drag: onMove ? drag.onPointerDown : undefined,
   };
+  const List = grid ? 'div' : 'ul';
   let seq = 0;
   const renderLevel = (list: readonly TreeNode[], level: number): ReactNode =>
     list.map((node, pos) => {
@@ -153,9 +155,9 @@ export const Tree = forwardRef(function Tree(
           {...bindRowPointer(node, pointerHost)}
         >
           {open && node.children!.length > 0 && (
-            <ul role={grid ? 'none' : 'group'} className={guides ? `${s.group} ${s.guide}` : s.group}>
+            <List role={grid ? 'none' : 'group'} className={guides ? `${s.group} ${s.guide}` : s.group}>
               {renderLevel(node.children!, level + 1)}
-            </ul>
+            </List>
           )}
         </TreeRow>
       );
@@ -163,8 +165,8 @@ export const Tree = forwardRef(function Tree(
 
   return (
     <>
-      {hold.wrap(hold.scope(<ul
-        ref={treeEl}
+      {hold.wrap(hold.scope(<List
+        ref={treeEl as RefObject<HTMLDivElement & HTMLUListElement>}
         role={grid ? 'treegrid' : 'tree'}
         className={[s.tree, className].filter(Boolean).join(' ')}
         aria-label={ariaLabel}
@@ -178,7 +180,7 @@ export const Tree = forwardRef(function Tree(
         aria-readonly={(grid && hold.access.state === 'readOnly') || undefined}
       >
         {renderLevel(nodes, 1)}
-      </ul>))}
+      </List>))}
       <TreeOverlays
         tip={tipNode?.tooltip != null ? { el: rowTip.tip!.el, content: tipNode.tooltip } : null}
         ghost={ghost ? treeEl.current : null} nodes={nodes} drag={drag.state} renderGhost={renderGhost}
