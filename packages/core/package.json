@@ -77,6 +77,10 @@
       "types": "./dist/engine.d.ts",
       "import": "./dist/engine.js"
     },
+    "./groups": {
+      "types": "./dist/groups.d.ts",
+      "import": "./dist/groups.js"
+    },
     "./render-worker": {
       "types": "./dist/render-worker.d.ts",
       "import": "./dist/render-worker.js"

@@ -3,12 +3,13 @@
  * onto their anchors, or make each anchor's pair symmetric.
  */
 
-import { ANCHORS_GROUP, pathOperationTags } from '@weasel-js/core';
+import { pathOperationTags } from '@weasel-js/core';
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { makeHandlesSymmetric, retractHandles, type AnchorSet } from '@weasel-js/geom';
 import { anchorEditWouldChange, commitAnchorEdit, openPathEditOf, requiresAnchorSelection } from './anchorEditing';
 import { icon } from '../icons.gen';
+import * as groups from '@weasel-js/core/groups';
 
 /** An edit of the handles of the anchors at `flatIndexes`; absent means
  *  every anchor of the path. */
@@ -31,7 +32,7 @@ export function createHandleEditAction(
     id,
     label,
     icon,
-    group: ANCHORS_GROUP,
+    group: groups.anchors,
     tags: pathOperationTags('command'),
     eligible: { capability: 'edits-anchors' },
     requires: ['editAnchors'],

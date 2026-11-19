@@ -101,7 +101,7 @@ export { REACH_TO_MEET_PARAMS, reachToMeetAction, type ReachToMeetParams } from 
 export { TUG_PATH_PARAMS, tugPathAction, type TugPathParams } from './tug/tugPath';
 export { useTugTool } from './tug/useTugTool';
 export {
-  overlayShown, PATH_OVERLAYS_GROUP, showPoiseAction, showCombAction, showFilletsAction, showDirectionAction,
+  overlayShown, showPoiseAction, showCombAction, showFilletsAction, showDirectionAction,
   createOverlayToggleAction,
 } from './overlays/showOverlay';
 export {
@@ -111,7 +111,7 @@ export { fairAnchorsAction } from './fairing/fairing';
 export { reversePathAction, setPathStartAction } from './pathStructure/pathStructure';
 export { convertSegmentAtAction, convertSegmentsAction } from './segmentType/convertSegments';
 export {
-  ANCHOR_SELECTION_GROUP, growAnchorSelectionAction, invertAnchorSelectionAction, SELECT_EVERY_NTH_ANCHOR_PARAMS, selectCornerAnchorsAction,
+  growAnchorSelectionAction, invertAnchorSelectionAction, SELECT_EVERY_NTH_ANCHOR_PARAMS, selectCornerAnchorsAction,
   selectEveryNthAnchorAction, selectSmoothAnchorsAction, shrinkAnchorSelectionAction,
 } from './anchorSelect/anchorSelect';
 export { RESAMPLE_PARAMS, resamplePathAction, type ResamplePathParams } from './resample/resample';
@@ -124,7 +124,6 @@ export {
 export {
   bendAlongAction, tweenAction, editPathEffectAction, expandPathEffectAction, puckerBloatAction, repeatAlongAction,
   roughenAction, textAlongAction, zigzagAction,
-  PATH_EFFECTS_GROUP,
 } from './pathEffects/actions';
 export { releasePathEffectAction, setEffectPathAction } from './pathEffects/retarget';
 export { releaseTweenSpineAction, setTweenSpineAction } from './pathEffects/spine';

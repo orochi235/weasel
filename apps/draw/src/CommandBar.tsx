@@ -14,8 +14,7 @@ import { Bar } from '@weasel-js/ui/components/Bar';
 import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
 import { DEBUG_MENU } from './dev/devRoutes';
 import { CommandSlot } from './surfaces/CommandSurfaces';
-import { HISTORY_GROUP } from '@weasel-js/core';
-import { CLIPBOARD_GROUP, EDIT_GROUP, STRUCTURE_GROUP } from '@weasel-js/editing';
+import * as groups from '@weasel-js/editing/groups';
 
 export interface CommandBarProps {
   /** The app's menu bar, drawn first in the row. */
@@ -32,10 +31,10 @@ export function CommandBar(p: CommandBarProps) {
     <Bar className="wd-commandbar" label="Actions" wrap>
       {p.menus}
       <CommandSlot id="file" group />
-      <Run id="undo" group={HISTORY_GROUP} />
-      <Run id="clipboard" group={CLIPBOARD_GROUP} />
-      <Run id="edit" group={EDIT_GROUP} />
-      <Run id="structure" group={STRUCTURE_GROUP} />
+      <Run id="undo" group={groups.history} />
+      <Run id="clipboard" group={groups.clipboard} />
+      <Run id="edit" group={groups.edit} />
+      <Run id="structure" group={groups.structure} />
       <Run id="view" group="view" />
       <CommandSlot id="pathCommands" group />
       <CommandSlot id="fillets" group />

@@ -1,7 +1,6 @@
 {
   ".": {
     "ALWAYS": "const",
-    "ANCHORS_GROUP": "const",
     "ANCHOR_HIT_BASE_PX": "const",
     "ANGLE_RADIANS": "const",
     "ANY_MODS": "const",
@@ -404,7 +403,6 @@
     "GroupTransform": "type",
     "GroupingSite": "type",
     "HANDLE_BASE_PX": "const",
-    "HISTORY_GROUP": "const",
     "HOME_VIEW": "const",
     "HalfWidths": "type",
     "HandleEdge": "type",
@@ -684,7 +682,6 @@
     "PATH_EFFECT_DERIVATIONS": "const",
     "PATH_GEOMETRY_PROJECTION": "const",
     "PATH_GESTURE_TAGS": "const",
-    "PATH_GROUP": "const",
     "PATH_L": "const",
     "PATH_M": "const",
     "PATH_OVERLAY_ROLES": "const",
@@ -693,7 +690,6 @@
     "PATH_SNAP_LABELS": "const",
     "PATH_Z": "const",
     "PIXELS": "const",
-    "PRESENTATION_GROUP": "const",
     "PRESENTATION_ID": "const",
     "PRESENT_GO_ACTION_ID": "const",
     "PRESENT_STEP_ACTION_ID": "const",
@@ -1242,7 +1238,6 @@
     "SystemLayerSpec": "type",
     "THROUGH_CHROME": "const",
     "TILE_KINDS": "const",
-    "TOOL_GROUP": "const",
     "TargetPredicate": "type",
     "TargetSpec": "type",
     "TargetTransform": "type",
@@ -1324,7 +1319,6 @@
     "UserLayerRecord": "type",
     "V1Classifier": "type",
     "VERSION": "const",
-    "VIEWPORT_GROUP": "const",
     "VIEW_ANIMATION_KEY": "const",
     "VIEW_MARKER_DEFAULT_STYLE": "const",
     "VIEW_MARKER_DRAG": "const",
@@ -3132,6 +3126,14 @@
     "worldPosesOf": "function",
     "worldToLocal": "function",
     "worldToScreen": "function"
+  },
+  "./groups": {
+    "anchors": "const",
+    "history": "const",
+    "path": "const",
+    "presentation": "const",
+    "tool": "const",
+    "viewport": "const"
   },
   "./icons": {
     "icons": "const"

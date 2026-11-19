@@ -1,5 +1,6 @@
 import { ActionDisabledReason, useCommand, type ActionParamsOf, type BoundGesture, type ClipboardDep, type CommandOptions } from '@weasel-js/core';
-import { useClipboard, type UseClipboardOptions, CLIPBOARD_GROUP } from '@weasel-js/editing';
+import { useClipboard, type UseClipboardOptions } from '@weasel-js/editing';
+import * as groups from '@weasel-js/editing/groups';
 
 /** The ids of the commands `useDocClipboard` registers: the kit's own, so a menu naming them finds these. */
 export const DOC_CLIPBOARD_ACTIONS = { copy: 'clipboard.copy', paste: 'clipboard.paste' } as const;
@@ -56,5 +57,5 @@ function useDocClipboardCommand<Slot extends keyof typeof DOC_CLIPBOARD_ACTIONS>
 ): void {
   const { label = defaultLabel, keys, ...rest } = options ?? {};
   const bound = keys === null ? {} : { keys: keys ?? { spec: DOC_CLIPBOARD_KEYS[slot], opts: { id: `${DOC_CLIPBOARD_ACTIONS[slot]}.key` } } };
-  useCommand(DOC_CLIPBOARD_ACTIONS[slot], label, run, { group: CLIPBOARD_GROUP, ...rest, ...bound, enabled });
+  useCommand(DOC_CLIPBOARD_ACTIONS[slot], label, run, { group: groups.clipboard, ...rest, ...bound, enabled });
 }

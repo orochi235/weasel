@@ -5,10 +5,11 @@
 import { ActionDisabledReason, BETWEEN_GESTURES, defineAction } from '@weasel-js/routing';
 import { addExtremaAnchors, anchorAt, segmentEnds, type AnchorSet, type ExtremaAxes, type PenAnchor } from '@weasel-js/geom';
 import { pref } from '@weasel-js/prefs-schema';
-import { ANCHORS_GROUP, pathOperationTags } from '@weasel-js/core';
+import { pathOperationTags } from '@weasel-js/core';
 import { anchorEditWouldChange, commitAnchorEdit, openPathEditOf } from '../pathEdit/anchorEditing';
 import { icon } from '../icons.gen';
 import type {} from '../actionParamSchema';
+import * as groups from '@weasel-js/core/groups';
 
 const LABEL = 'Add extremes';
 
@@ -69,7 +70,7 @@ export const addExtremeAnchorsAction = defineAction({
   id: 'addExtremeAnchors',
   icon: icon('extremeAnchors'),
   label: LABEL,
-  group: ANCHORS_GROUP,
+  group: groups.anchors,
   tags: pathOperationTags('command'),
   // `code` too: with Alt held on a Mac the key reads as another glyph.
   defaultBinding: [{ spec: { kind: 'key', key: 'x', code: 'KeyX', mods: { alt: true }, phase: BETWEEN_GESTURES }, opts: { id: 'addExtremeAnchors.key' } }],

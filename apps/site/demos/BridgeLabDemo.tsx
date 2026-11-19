@@ -1,5 +1,7 @@
 import { solid } from '@weasel-js/paint';
-import { ANCHORS_GROUP, PATH_GROUP, type ActionTunings, asNodeId, createScene, PathBuilder, type PolygonPath, type RectPose, pathNode } from '@weasel-js/core';
+import {
+  type ActionTunings, asNodeId, createScene, PathBuilder, type PolygonPath, type RectPose, pathNode,
+} from '@weasel-js/core';
 import { bridgePreset, DEFAULT_BRIDGE_TENSION, pathsPreset, usePenTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -18,6 +20,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 import { drawPreset } from '@weasel-js/editing';
+import * as groups from '@weasel-js/editing/groups';
 
 const FEATURES = [drawPreset, pathsPreset, bridgePreset] as const;
 
@@ -55,7 +58,7 @@ function BridgeTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const selectionOptions = useMemo(() => ({ mode: 'multiple' as const, initial: BRIDGE_SEED.map((id) => asNodeId(id)) }), []);
 
   return (
-    <PathLabStage bar={<><ActionBar group={PATH_GROUP} /><ActionBar group={ANCHORS_GROUP} /></>}>
+    <PathLabStage bar={<><ActionBar group={groups.path} /><ActionBar group={groups.anchors} /></>}>
       <TrialSceneCanvas
         features={FEATURES}
         tools={{ pen }}

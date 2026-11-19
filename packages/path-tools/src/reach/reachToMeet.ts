@@ -6,13 +6,14 @@ import {
   type AnchorSet, type ReachToMeetOptions, type OpenPathEnd, type PenAnchor, type PointOrigin, type PolygonPath,
 } from '@weasel-js/geom';
 import { pref } from '@weasel-js/prefs-schema';
-import { PATH_GROUP, commitOps, type Op, type PathNode, reshapeOps, operandPathNodes, pathOperationTags } from '@weasel-js/core';
+import { commitOps, type Op, type PathNode, reshapeOps, operandPathNodes, pathOperationTags } from '@weasel-js/core';
 import {
   pressOf, scenePathNodes, strokeReachPref, strokesBesides, type StrokePress, type StrokePressParams,
 } from '../shared/scenePaths';
 import { icon } from '../icons.gen';
 import type {} from '../actionParamSchema';
 import { isFiniteNumber } from '@weasel-js/registry';
+import * as groups from '@weasel-js/core/groups';
 
 const REACH_LABEL = 'Reach';
 
@@ -140,7 +141,7 @@ export const reachToMeetAction = defineAction({
   icon: icon('reach'),
   label: REACH_LABEL,
   tags: pathOperationTags('click'),
-  group: PATH_GROUP,
+  group: groups.path,
   eligible: { capability: 'creates-shapes' },
   requires: ['operands', 'scene', 'applyOps', 'editAnchors', 'view'],
   params: REACH_TO_MEET_PARAMS,

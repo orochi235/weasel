@@ -1,5 +1,5 @@
 import { type ActionTunings, PathBuilder } from '@weasel-js/core';
-import { ANCHOR_SELECTION_GROUP, anchorSelectionPreset, pathsPreset } from '@weasel-js/path-tools';
+import { anchorSelectionPreset, pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -16,6 +16,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 import { drawPreset } from '@weasel-js/editing';
+import * as pathToolsGroups from '@weasel-js/path-tools/groups';
 
 const config = f.schema({
   n: f.number(4).range(2, 8).step(1).label('Every Nth: N'),
@@ -52,7 +53,7 @@ function AnchorSelectTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }
   const { n } = ctx.config;
   const tune = useMemo<ActionTunings>(() => ({ selectEveryNthAnchor: { params: { n } } }), [n]);
   return (
-    <PathLabStage bar={<ActionBar group={ANCHOR_SELECTION_GROUP} />}>
+    <PathLabStage bar={<ActionBar group={pathToolsGroups.anchorSelection} />}>
       <TrialSceneCanvas
         features={features}
         scene={scene}

@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { autoSkin } from '@weasel-js/animator';
 import type { Skeleton, Skin } from '@weasel-js/animator';
 import { solid } from '@weasel-js/paint';
-import { asNodeId, dataRestPath, placeSkeleton, polygonFromPoints, SceneCanvas, useRigNode, WeaselProvider, useScene, HISTORY_GROUP } from '@weasel-js/core';
+import {
+  asNodeId, dataRestPath, placeSkeleton, polygonFromPoints, SceneCanvas, useRigNode, WeaselProvider, useScene,
+} from '@weasel-js/core';
 import { pathsPreset } from '@weasel-js/path-tools';
 import type { NodeId, Path, RectPose, Stroke, Fill } from '@weasel-js/core';
 import { createRigEditState, useRigTools } from '@weasel-js/rig';
@@ -12,6 +14,7 @@ import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
 import { pickPreset } from '@weasel-js/editing';
+import * as groups from '@weasel-js/editing/groups';
 
 const W = 600, H = 320;
 const BOX: RectPose = { x: 80, y: 180, width: 440, height: 100 };
@@ -84,7 +87,7 @@ function RigTools() {
           />
         </Field>
         <Button onClick={reweigh}>weigh from bones</Button>
-        <ActionBar group={HISTORY_GROUP} />
+        <ActionBar group={groups.history} />
       </div>
       <DemoStage width={W} height={H}>
         <SceneCanvas

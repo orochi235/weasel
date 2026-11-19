@@ -1,4 +1,3 @@
-import { ANCHORS_GROUP } from '@weasel-js/core';
 import { addExtremesPreset, anchorSelectionPreset, pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -16,6 +15,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 import { drawPreset } from '@weasel-js/editing';
+import * as groups from '@weasel-js/editing/groups';
 
 const config = f.schema({});
 type Config = ConfigOf<typeof config>;
@@ -29,7 +29,7 @@ const features = [drawPreset, pathsPreset, addExtremesPreset, anchorSelectionPre
 function AddExtremesTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
   const { scene, selection, pathEdit } = usePathEditTrial(ctx, BLOB, { fill: '#bfe3c0' });
   return (
-    <PathLabStage bar={<><ActionBar group={ANCHORS_GROUP} /><LastOperationPanel /></>}>
+    <PathLabStage bar={<><ActionBar group={groups.anchors} /><LastOperationPanel /></>}>
       <TrialSceneCanvas
         features={features}
         scene={scene}

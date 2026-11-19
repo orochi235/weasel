@@ -1,12 +1,12 @@
-import { ANCHORS_GROUP, PATH_GROUP } from '@weasel-js/core';
 import { EDITOR_ACTIONS } from '@weasel-js/editor';
-import { PATH_EFFECTS_GROUP } from '@weasel-js/path-tools';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { FILE_ACTIONS } from '../fileCommands';
 import { LOUPE_SCHEMA, useLoupeBinding } from '../LoupeProvider';
 import { PANEL_ASSETS } from './panelAssets';
 import { PATH_COMMAND_ASSETS } from './pathCommandAssets';
 import type { SurfaceAsset, SurfaceKind } from './types';
+import * as groups from '@weasel-js/core/groups';
+import * as pathToolsGroups from '@weasel-js/path-tools/groups';
 
 const ALL: readonly SurfaceKind[] = ['bar', 'panel', 'menu'];
 
@@ -15,7 +15,7 @@ const run = (group: string): PrefGroup => pref.group('', { actions: pref.actions
 
 const LEAD = { lead: 'label' } as const;
 
-const PATH = pref.group('Path', { path: run(PATH_GROUP), anchors: run(ANCHORS_GROUP), effects: run(PATH_EFFECTS_GROUP) }, LEAD);
+const PATH = pref.group('Path', { path: run(groups.path), anchors: run(groups.anchors), effects: run(pathToolsGroups.pathEffects) }, LEAD);
 
 const CONSTRAINTS = pref.group('Constraints', { constraints: run('constraints') }, LEAD);
 

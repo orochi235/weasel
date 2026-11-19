@@ -4,7 +4,7 @@
  * spans it some other way.
  */
 import {
-  commitOps, createDeleteNodeOp, createInsertNodeOp, PATH_GROUP, pathCopy, type PathNode, pathOperationTags, reshapeOps,
+  commitOps, createDeleteNodeOp, createInsertNodeOp, pathCopy, type PathNode, pathOperationTags, reshapeOps,
   operandPathNodes, slotOf,
 } from '@weasel-js/core';
 import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
@@ -19,6 +19,7 @@ import { pieceOrigins } from './pieceOrigins';
 import { joinedAnchorData } from './joinAnchorData';
 import { icon } from '../icons.gen';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
+import * as groups from '@weasel-js/core/groups';
 
 const CUT_LABEL = 'Cut at Crossings';
 
@@ -45,7 +46,7 @@ export const snipAtCrossingsAction: Action & { requires: string[] } = {
   id: 'snipAtCrossings',
   label: CUT_LABEL,
   icon: icon('core:cutAtCrossings'),
-  group: PATH_GROUP,
+  group: groups.path,
   tags: pathOperationTags('command'),
   eligible: { capability: 'creates-shapes' },
   requires: ['operands', 'scene', 'applyOps'],
@@ -151,7 +152,7 @@ export function createJoinPathsAction(
   const plan = (deps: ActionDeps | undefined, params?: Record<string, unknown>) => planJoin(operandPathNodes(deps), options(params));
   return {
     ...base,
-    group: PATH_GROUP,
+    group: groups.path,
     tags: pathOperationTags('command'),
     eligible: { capability: 'creates-shapes' },
     requires: ['operands', 'scene', 'applyOps', 'editAnchors'],
