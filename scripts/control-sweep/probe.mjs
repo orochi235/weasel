@@ -10,7 +10,7 @@ import { ROOT, kit, operate } from './operate.mjs';
 
 const DRAG_STEPS = 12;
 
-/** A press at 30%/35% of the canvas, dragged to 65%/70%, and let go. */
+/** A press at 30%/35% of the canvas, dragged to 65%/70%, and let go; then a wheel turn at its center, which a view zooms on. */
 const drag = async (page, r) => {
   const at = (fx, fy) => [r.x + r.width * fx, r.y + r.height * fy];
   const [x0, y0] = at(0.3, 0.35);
@@ -19,6 +19,8 @@ const drag = async (page, r) => {
   await page.mouse.down();
   await page.mouse.move(x1, y1, { steps: DRAG_STEPS });
   await page.mouse.up();
+  await page.mouse.move(...at(0.5, 0.5));
+  await page.mouse.wheel(0, -240);
 };
 
 /**
