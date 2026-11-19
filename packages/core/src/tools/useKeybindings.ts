@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { useActionsRegistry } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
+import { getOwn } from '@weasel-js/registry';
 import { eligibleForMode, type ModeRegistry } from '@weasel-js/modes';
 import {
   createToolActivateAction,
@@ -84,7 +85,7 @@ export function useKeybindings(
     const eligible = (toolId: string): boolean => {
       const modes = optionsRef.current.modes;
       if (!modes) return true;
-      const tags = toolsRef.current.registry[toolId]?.eligibility.capabilities;
+      const tags = getOwn(toolsRef.current.registry, toolId)?.eligibility.capabilities;
       return eligibleForMode(modes.current(), tags ?? []);
     };
 
