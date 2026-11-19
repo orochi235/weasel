@@ -199,7 +199,9 @@ export function installSweepKit(win) {
       const other = peers.find((p) => !chosen(p) && !disabled(p));
       if (d.selected && other) d.alternate = idOf(other);
     }
-    // A palette's active tool: choosing it again does nothing, so it is tried after choosing another.
+    // A palette's tools: one of them current. Choosing the current one again does nothing, so it is
+    // tried after choosing another.
+    if (kind === 'button' && (el.parentElement?.closest(GROUPS) ?? el.parentElement)?.querySelector('[aria-current=true]')) d.tool = true;
     if (kind === 'button' && el.getAttribute('aria-current') === 'true') {
       d.selected = true;
       const box = el.parentElement?.closest(GROUPS) ?? el.parentElement;

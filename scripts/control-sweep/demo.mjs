@@ -126,7 +126,10 @@ const confirm = async (page, demo, c, ctx) => {
   if (c.kind === 'slider' && await nudged(page, c, ctx)) return { verdict: 'alive', reason: 'one step changes it; its far end looks like its start' };
   if (await viaShortcut(page, c, ctx)) return { verdict: 'alive', reason: 'acts through its key shortcut' };
   const probed = await probeGesture(page, c, ctx);
-  if (probed) return { verdict: 'alive', reason: probed === 'before' ? 'changes what a drag on the canvas does' : 'acts on what a drag on the canvas left' };
+  if (probed) {
+    const tool = probed.startsWith('before:') ? ` with the ${probed.slice(7)} tool` : '';
+    return { verdict: 'alive', reason: probed === 'after' ? 'acts on what a drag on the canvas left' : `changes what a drag on the canvas does${tool}` };
+  }
   const via = await probeButtons(page, c, ctx);
   if (via) return { verdict: 'alive', reason: `changes what "${via}" does` };
   const base = `${demo.id}--${slug(c.label)}`;

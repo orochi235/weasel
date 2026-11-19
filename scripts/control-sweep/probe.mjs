@@ -21,10 +21,18 @@ const drag = async (page, r) => {
   await page.mouse.up();
 };
 
-/** A fresh load and `c`'s precondition, then the drag with `c` operated `when` ('before', 'after' or never): what the demo shows. */
-const dragRun = async (page, c, ctx, when) => {
+/**
+ * A fresh load and `c`'s precondition, `tool` chosen if given, then the drag with `c` operated `when`
+ * ('before', 'after' or never): what the demo shows.
+ */
+const dragRun = async (page, c, ctx, when, tool) => {
   await load(page, ctx.url, { reload: true, tries: ctx.tries });
   const live = await prepare(page, ctx.url, c, ctx.settleMs, ctx.tries);
+  if (tool) {
+    const t = (await discover(page)).find((d) => d.key === tool.key);
+    if (!t) return undefined;
+    await operate(page, t);
+  }
   const act = async () => {
     await operate(page, { ...c, ...(await prepare(page, ctx.url, { ...c, precondition: undefined }, ctx.settleMs, ctx.tries)) });
     await settle(page, ctx.settleMs);
@@ -43,20 +51,33 @@ const dragRun = async (page, c, ctx, when) => {
 
 const differs = (cmp) => cmp.domChanged > 0 || cmp.canvasChanged.length > 0;
 
+const TOOLS_TRIED = 4;
+
+/** Whether `c` operated `when` changes what a drag with `tool` (or the tool already chosen) does or leaves. */
+const differsUnder = async (page, c, ctx, when, tool) => {
+  const plain = await dragRun(page, c, ctx, undefined, tool);
+  // A second plain run says what differs from one load to the next (a seed, a clock), which proves nothing.
+  const again = plain && await dragRun(page, c, ctx, undefined, tool);
+  const probed = again && await dragRun(page, c, ctx, when, tool);
+  return Boolean(probed && differs(compareCaptures(plain, again, probed)));
+};
+
 /**
  * Whether operating `c` changes what a drag on the canvas does, or what a drag left behind: 'before',
- * 'after', or undefined for neither (and when the demo has no canvas to drag on).
+ * 'after', or undefined for neither (and when the demo has no canvas to drag on). A setting is tried
+ * with each of the palette's tools too, since a tool's own setting shows only in that tool's drag.
  */
 export const probeGesture = async (page, c, ctx) => {
-  const plain = await dragRun(page, c, ctx, undefined);
-  if (!plain) return undefined;
-  // A second plain run says what differs from one load to the next (a seed, a clock), which proves nothing.
-  const again = await dragRun(page, c, ctx, undefined);
+  if (!await kit(page, 'bigCanvas', ROOT)) return undefined;
   // A setting changes what the next drag does; only an action (a button, a menu item) can act on what a drag left.
   const action = c.kind === 'button' || c.kind === 'menuitem';
   for (const when of action ? ['before', 'after'] : ['before']) {
-    const probed = await dragRun(page, c, ctx, when);
-    if (probed && differs(compareCaptures(plain, again, probed))) return when;
+    if (await differsUnder(page, c, ctx, when, undefined)) return when;
+  }
+  if (action || c.tool) return undefined;
+  const tools = (await discover(page)).filter((d) => d.tool && !d.selected && !d.skip).slice(0, TOOLS_TRIED);
+  for (const tool of tools) {
+    if (await differsUnder(page, c, ctx, 'before', tool)) return `before:${tool.label}`;
   }
   return undefined;
 };
@@ -84,7 +105,7 @@ const pressRun = async (page, c, button, ctx, operated) => {
  */
 export const probeButtons = async (page, c, ctx) => {
   if (c.kind === 'button' || c.kind === 'menuitem') return undefined;
-  const buttons = (await discover(page)).filter((d) => (d.kind === 'button' || d.kind === 'toggle') && !d.skip && !d.chrome && d.key !== c.key).slice(0, BUTTONS_TRIED);
+  const buttons = (await discover(page)).filter((d) => (d.kind === 'button' || d.kind === 'toggle') && !d.skip && !d.chrome && !d.tool && d.key !== c.key).slice(0, BUTTONS_TRIED);
   for (const b of buttons) {
     const plain = await pressRun(page, c, b, ctx, false);
     const probed = plain && await pressRun(page, c, b, ctx, true);
