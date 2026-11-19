@@ -173,7 +173,20 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
           },
         },
       },
-      { id: 'new', region: 'header', item: { icon: icon('ui:add'), label: 'New theme', showLabel: true, onActivate: () => setCreating(true) } },
+      {
+        id: 'new',
+        region: 'header',
+        item: {
+          icon: icon('ui:add'),
+          label: 'New theme',
+          showLabel: true,
+          onActivate: () => {
+            setNewName('');
+            setNewProblem(null);
+            setCreating(true);
+          },
+        },
+      },
     ],
     [],
   );
