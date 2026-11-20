@@ -1,5 +1,8 @@
-/** The WebKit trackpad pinch channel: `gesturestart` / `gesturechange` / `gestureend` as `pinch` steps. */
-import type { DispatchCore } from '../dispatchCore';
+/**
+ * The WebKit trackpad pinch channel: `gesturestart` / `gesturechange` / `gestureend` as `pinch` steps.
+ * A gesture event a surface nested inside has taken is left to it, as a right-click is.
+ */
+import { eventTaken, takeEvent, type DispatchCore } from '../dispatchCore';
 import type { InputEvent } from '../matcher';
 import { underPointer } from '../underPointer';
 
@@ -58,6 +61,7 @@ export function webkitPinchInput(core: DispatchCore): {
 
   const onGestureStart = (e: Event) => {
     endPinch();
+    if (eventTaken(e)) return;
     // Claimed up front, with a probe at unit scale: Safari starts its own
     // page zoom from an unprevented start, before any change arrives.
     // `direction`-filtered bindings cannot match a unit step, so they are
@@ -65,10 +69,12 @@ export function webkitPinchInput(core: DispatchCore): {
     const probe = pinchEventOf(e, 1, 0);
     if (dispatcherNow().resolveOnly(probe, ctxNow()) === null) return;
     pinchLive = true;
+    takeEvent(e);
     e.preventDefault();
   };
 
   const onGestureChange = (e: Event) => {
+    if (eventTaken(e)) return;
     const g = e as Event & { scale?: number; rotation?: number };
     const scale = typeof g.scale === 'number' && g.scale > 0 ? g.scale : pinchScale;
     const rotation = typeof g.rotation === 'number' ? g.rotation : pinchRotation;
@@ -78,10 +84,12 @@ export function webkitPinchInput(core: DispatchCore): {
     pinchRotation = rotation;
     if (dispatch(pinchEventOf(e, step, turn)) === 'handled') {
       pinchLive = true;
+      takeEvent(e);
       e.preventDefault();
     } else if (pinchLive) {
       // The start was claimed; letting one change through would hand the
       // rest of the pinch to Safari's page zoom mid-gesture.
+      takeEvent(e);
       e.preventDefault();
     }
   };
