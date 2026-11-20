@@ -1,6 +1,9 @@
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build as esbuild } from 'esbuild';
-import { build, createServer, type Plugin, type Rollup } from 'vite';
+import { build, createServer, type Plugin, type Rollup, type ViteDevServer } from 'vite';
 import { describe, expect, it } from 'vitest';
 import { weaselIcons, type WeaselIconsOptions } from './index';
 
@@ -153,6 +156,52 @@ describe('weaselIcons in dev', () => {
       expect(own.default.map((t) => t.namespace)).toEqual(['fx']);
     } finally {
       await server.close();
+    }
+  });
+});
+
+describe('weaselIcons in dev, as tables change', () => {
+  const gen = `import { scopedIcon } from '@weasel-js/icons';\nexport const icon = scopedIcon('late');\n`;
+  const table = (...names: string[]) =>
+    JSON.stringify({
+      namespace: 'late',
+      owner: 'late-pkg',
+      icons: Object.fromEntries(names.map((n) => [n, { body: `<path data-id="late-${n}"/>`, group: 'Marks', tags: [] }])),
+    });
+  type Tables = { default: { namespace: string; icons: Record<string, unknown> }[] };
+  const glyphs = async (server: ViteDevServer) =>
+    ((await server.ssrLoadModule('virtual:weasel-icons')) as Tables).default.find((t) => t.namespace === 'late')?.icons;
+
+  it('serves a table a transform finds, and a glyph added to it, without a restart', async () => {
+    // Beside the app's root rather than under it, so only a transform can find the table.
+    const dir = realpathSync(mkdtempSync(join(tmpdir(), 'weasel-icons-dev-')));
+    const app = join(dir, 'app');
+    const lib = join(dir, 'lib');
+    mkdirSync(app);
+    mkdirSync(lib);
+    writeFileSync(join(lib, 'icons.gen.ts'), gen);
+    writeFileSync(join(lib, 'icons.table.json'), table('a'));
+    writeFileSync(join(app, 'main.ts'), `import { icon } from '../lib/icons.gen';\nexport const a = icon('a');\n`);
+    const server = await createServer({
+      root: app,
+      logLevel: 'silent',
+      configFile: false,
+      appType: 'custom',
+      server: { middlewareMode: true, hmr: false, ws: false, fs: { allow: [dir] } },
+      optimizeDeps: { noDiscovery: true, include: [] },
+      resolve: { alias: { '@weasel-js/icons': iconsSrc } },
+      plugins: [weaselIcons.vite({ mode: 'app' })],
+    });
+    try {
+      expect(await glyphs(server)).toBeUndefined();
+      await server.ssrLoadModule(join(app, 'main.ts'));
+      expect(Object.keys((await glyphs(server)) ?? {})).toEqual(['a']);
+      writeFileSync(join(lib, 'icons.table.json'), table('a', 'b'));
+      server.watcher.emit('change', join(lib, 'icons.table.json'));
+      expect(Object.keys((await glyphs(server)) ?? {}).sort()).toEqual(['a', 'b']);
+    } finally {
+      await server.close();
+      rmSync(dir, { recursive: true, force: true });
     }
   });
 });

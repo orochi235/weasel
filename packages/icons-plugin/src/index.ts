@@ -1,5 +1,8 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
+import type { IconTable } from '@weasel-js/icons';
 import MagicString from 'magic-string';
+import type { ViteDevServer } from 'vite';
 import { createUnplugin, type UnpluginBuildContext, type UnpluginContext, type UnpluginInstance } from 'unplugin';
 import { libraryAnnotations } from './annotate.ts';
 import { assertBundler } from './bundlers.ts';
@@ -47,6 +50,39 @@ async function genFiles(ctx: object, code: string, file: string, id: string): Pr
   return out;
 }
 
+const TABLE = 'icons.table.json';
+const GEN_FILE = /^icons\.gen\.[cm]?[jt]sx?$/;
+
+/** Drop every loaded `virtual:weasel-icons` module, so the next request reads the catalog afresh. */
+function invalidateVariants(server: ViteDevServer): void {
+  for (const env of Object.values(server.environments)) {
+    let hit = false;
+    for (const [id, mod] of env.moduleGraph.idToModuleMap) {
+      if (variantOf(id) === undefined) continue;
+      env.moduleGraph.invalidateModule(mod);
+      hit = true;
+    }
+    if (hit) env.hot.send({ type: 'full-reload' });
+  }
+}
+
+/**
+ * Takes each table regenerated while serving in through `add`, so its new glyphs reach the next load.
+ * A glyph it drops stays until a restart.
+ */
+function watchTables(server: ViteDevServer, add: (table: IconTable) => boolean): void {
+  const reread = (file: string) => {
+    if (basename(file) !== TABLE || !readdirSync(dirname(file)).some((n) => GEN_FILE.test(n))) return;
+    try {
+      if (add(JSON.parse(readFileSync(file, 'utf8')) as IconTable)) invalidateVariants(server);
+    } catch (error) {
+      server.config.logger.warn(`weasel-icons: ${file} was not read: ${(error as Error).message}`);
+    }
+  };
+  server.watcher.on('change', reread);
+  server.watcher.on('add', reread);
+}
+
 /** The ids of every module in the build, when the bundler's context can list them. */
 function liveModules(ctx: object): Set<string> | undefined {
   if (!('getModuleIds' in ctx) || typeof ctx.getModuleIds !== 'function') return undefined;
@@ -70,6 +106,7 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, true> = createUnp
   const seenPackages = new Set<string>();
   const library = libraryAnnotations();
   let dev = false;
+  let server: ViteDevServer | undefined;
 
   // Runs after every module is transformed, so `refs` and `tables` are complete.
   function renderChunk(this: object, code: string, chunk: { fileName: string }) {
@@ -118,7 +155,9 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, true> = createUnp
       } else {
         const fresh = pkg && !seenPackages.has(pkg) ? [pkg] : [];
         fresh.forEach((d) => seenPackages.add(d));
-        for (const t of tablesFrom(gens, fresh)) catalog.add(this, t);
+        const changed = tablesFrom(gens, fresh).map((t) => catalog.add(this, t)).includes(true);
+        server?.watcher.add(gens.map((g) => join(dirname(g), TABLE)));
+        if (changed && server) invalidateVariants(server);
       }
     }
     return out ? { code: out.code, map: out.map } : null;
@@ -160,6 +199,11 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, true> = createUnp
         configResolved(config) {
           dev = config.command === 'serve';
           if (app && dev) for (const t of reachableTables(config.root)) catalog.add(this, t);
+        },
+        configureServer(devServer) {
+          if (!app) return;
+          server = devServer;
+          watchTables(devServer, (table) => catalog.add({}, table));
         },
         renderChunk: lastRenderChunk,
         generateBundle,
