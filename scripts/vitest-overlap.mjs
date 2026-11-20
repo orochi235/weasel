@@ -26,7 +26,12 @@ const require = createRequire(import.meta.url);
 const pkg = require.resolve('vitest/package.json');
 const VITEST = join(dirname(pkg), require(pkg).bin.vitest);
 
-const args = process.argv.slice(2);
+// On the fleet, each failure also prints as it happens (`scripts/vitest-fleet-fail.mjs`). A
+// `--reporter` flag replaces the config's reporters, so the default one is named too when none is.
+const FAIL_REPORTER = '--reporter=./scripts/vitest-fleet-fail.mjs';
+const given = process.argv.slice(2);
+const fleet = Boolean(process.env.WEASEL_FLEET_COMMIT);
+const args = !fleet ? given : given.some((a) => a.startsWith('--reporter')) ? [...given, FAIL_REPORTER] : [...given, '--reporter=default', FAIL_REPORTER];
 const isProject = (a) => a.startsWith('--project=');
 const projects = args.filter(isProject);
 const common = args.filter((a) => !isProject(a));

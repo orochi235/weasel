@@ -20,6 +20,14 @@ node builds on the pushed merge-base, but unpushed `main` commits are not the br
 `--since <ref>` selects from what the branch adds past `<ref>` instead, for a branch stacked on one
 whose own run was green.
 
+**Every failure prints one `fleet-fail:` line the moment it happens**, on a line of its own, once, while
+the run goes on: `fleet-fail: <project> <file> :: <test name>` for a test (a browser instance's project
+reads `browser:chromium`), `fleet-fail: <project> <file> :: (file)` for a file that failed with no
+failing test, such as one that did not load, `fleet-fail: gate <npm script>` for a gate check, and
+`fleet-fail: postbuild <step>` for a postbuild step. Point a Monitor at `fleet-fail:` in the run's log
+and start on the first one; the summary at the end lists the same failures. `scripts/vitest-fleet-fail.mjs`
+prints the test ones.
+
 **Draw is served from `.claude/worktrees/view`, a detached checkout of `main`**, so edits to the
 main checkout don't reload the browser tab mid-session. A local `pre-push` hook runs
 `scripts/advance-view.mjs` on every push to `main`, moving it to the pushed commit (and running

@@ -122,7 +122,7 @@ const ontoOnce = (args, { cwd, prefix = '', onJob }) =>
         for (const line of lines) {
           const job = jobStarted(line);
           if (job) onJob?.(job);
-          to.write(`${prefix}${line}\n`);
+          to.write(`${line.startsWith('fleet-fail:') ? '' : prefix}${line}\n`);
         }
       });
       stream.on('end', () => rest && to.write(`${prefix}${rest}\n`));

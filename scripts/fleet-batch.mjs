@@ -31,7 +31,7 @@ const start = (script, argv, { prefix = '', onLine = () => {} } = {}) => {
       rest = lines.pop();
       for (const line of lines) {
         onLine(line);
-        to.write(`${prefix}${line}\n`);
+        to.write(`${line.startsWith('fleet-fail:') ? '' : prefix}${line}\n`);
       }
     });
     stream.on('end', () => rest && to.write(`${prefix}${rest}\n`));
