@@ -1,6 +1,8 @@
 import { getOwn } from '@weasel-js/registry';
 import { parseColor } from './color';
-import { oklabToSrgbU8, oklchToOklab } from './colorSpaces';
+import { linearToSrgb, oklabToSrgbU8, oklchToOklab } from './colorSpaces';
+import { hslToSrgb } from './hsl';
+import { clamp01 } from './scalar';
 import { byteHex, parseHexBytes } from './hex';
 
 /**
@@ -146,6 +148,12 @@ export function colorLiteralToHex(color: ColorLiteral): string | null {
       break;
     case 'oklch':
       rgb = oklabToSrgbU8(...oklchToOklab(x, y, (z * Math.PI) / 180));
+      break;
+    case 'srgb-linear':
+      rgb = [x, y, z].map((c) => linearToSrgb(c) * 255);
+      break;
+    case 'hsl':
+      rgb = hslToSrgb(x, clamp01(y / 100), clamp01(z / 100)).map((c) => c * 255);
       break;
     default:
       return null;
