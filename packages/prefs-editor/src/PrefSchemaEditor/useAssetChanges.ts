@@ -78,6 +78,8 @@ export function useAssetChanges(
   }, [base, current, origins]);
   const reported = useLatest(report);
   const { ids } = changes;
-  useEffect(() => reported.current?.(ids), [ids, reported]);
+  useEffect(() => {
+    reported.current?.(ids);
+  }, [ids, reported]);
   return changes;
 }
