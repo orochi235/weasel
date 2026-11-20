@@ -80,6 +80,14 @@ describe('finished runs', () => {
     expect(lastFinished(state())).toBeUndefined();
   });
 
+  it('counts a run that left the live list without a summary, so a service restart does not start another night', () => {
+    const dir = state();
+    claimRound(4, dir);
+    writeFileSync(join(runDir(4, dir), 'status.json'), JSON.stringify({ round: 4, started: '2026-11-20T04:12:00Z', pid: 999999 }));
+    expect(liveRuns(dir)).toEqual([]);
+    expect(lastStartedAt(dir)?.toISOString()).toBe('2026-11-20T04:12:00.000Z');
+  });
+
   it('pruning keeps the newest and every live run', () => {
     const dir = state();
     for (const round of [1, 2, 3, 4, 5]) claimRound(round, dir);

@@ -73,7 +73,8 @@ export const lastFinished = (state = STATE_DIR) => {
 
 /** When the most recent run, live or finished, started, or `undefined`. */
 export const lastStartedAt = (state = STATE_DIR) => {
-  const times = [...liveRuns(state), ...rounds(state).map((r) => readJson(join(runDir(r, state), 'summary.json')))]
+  // A stopping or crashed run has left the live list and written no summary yet; its status still says when it started.
+  const times = [...liveRuns(state), ...rounds(state).flatMap((r) => ['summary.json', 'status.json'].map((f) => readJson(join(runDir(r, state), f))))]
     .flatMap((s) => (s?.started ? [new Date(s.started)] : []));
   return times.length ? new Date(Math.max(...times)) : undefined;
 };
