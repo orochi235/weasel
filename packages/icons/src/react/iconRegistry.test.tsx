@@ -105,4 +105,23 @@ describe('icon registry provider', () => {
     expect(error).toHaveBeenCalledTimes(1);
     error.mockRestore();
   });
+
+  it('retries a failed variant in a mounted component once its loader is replaced', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const broken = async (): Promise<{ default: IconTable[] }> => { throw new Error('offline'); };
+    const fixed = vi.fn(async () => ({ default: [more] }));
+    function Probe() {
+      const { state } = useIconVariant('all');
+      return <span>{state}</span>;
+    }
+    const tree = (loader: typeof broken) => (
+      <IconRegistryProvider icons={core} variants={{ all: loader }}><Probe /></IconRegistryProvider>
+    );
+    const { rerender } = render(tree(broken));
+    await waitFor(() => expect(screen.getByText('failed')).toBeTruthy());
+    await act(async () => rerender(tree(fixed)));
+    await waitFor(() => expect(screen.getByText('loaded')).toBeTruthy());
+    expect(fixed).toHaveBeenCalledTimes(1);
+    error.mockRestore();
+  });
 });
