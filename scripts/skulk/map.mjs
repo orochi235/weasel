@@ -84,7 +84,9 @@ export const nightLanes = (log, areas, jobs = [], reports = new Map()) => {
     if (job.finished) {
       const key = `${m[1]}\n${m[2]}`;
       finished.set(key, [...(finished.get(key) ?? []), job]);
-    } else if (step.state === 'waiting') Object.assign(step, { state: 'running', node: job.node, since: job.started });
+    } else if (step.state === 'waiting') {
+      Object.assign(step, { state: 'running', node: job.node, since: job.started, ...(job.progress ? { done: job.progress.done, total: job.progress.total } : {}) });
+    }
   }
   for (const [key, ran] of finished) {
     const [id, name] = key.split('\n');
@@ -96,6 +98,28 @@ export const nightLanes = (log, areas, jobs = [], reports = new Map()) => {
     Object.assign(step, { started: new Date(started).toISOString(), ended: new Date(ended).toISOString() });
   }
   return [...lanes].map(([id, steps]) => ({ id, steps }));
+};
+
+/** Each running onto job's progress by its task, its first counter's `{ done, total }`: a reviewer's files read, a
+ *  fixer's commits of the findings it was given. Empty when onto cannot be asked. */
+const ontoProgress = () => {
+  try {
+    const out = execFileSync('onto', ['top', '--json', '--once'], { encoding: 'utf8', timeout: 10_000, stdio: ['ignore', 'pipe', 'ignore'] });
+    const found = new Map();
+    const walk = (o) => {
+      if (Array.isArray(o)) return o.forEach(walk);
+      if (!o || typeof o !== 'object') return;
+      const first = Array.isArray(o.progress) ? o.progress[0] : null;
+      if (typeof o.task === 'string' && first && Number.isFinite(first.done) && Number.isFinite(first.total)) {
+        found.set(o.task, { done: first.done, total: first.total });
+      }
+      Object.values(o).forEach(walk);
+    };
+    walk(JSON.parse(out));
+    return found;
+  } catch {
+    return new Map();
+  }
 };
 
 /** The onto jobs running now or started since `since` (an ISO time), or none when onto cannot be asked. */
@@ -193,7 +217,10 @@ export const readRuns = (state = STATE_DIR, jobs = null) => {
   const live = legacy ? (current ? [current] : []) : liveRuns(state);
   const all = [...live, ...(last ? [last] : [])];
   const since = all.map((r) => r.started).filter(Boolean).sort()[0];
-  const known = all.length ? (jobs ?? (since ? ontoJobs(since) : [])) : [];
+  const asked = all.length ? (jobs ?? (since ? ontoJobs(since) : [])) : [];
+  // Only a job still running reports progress, so onto is asked for it only while one is.
+  const progress = !jobs && asked.some((j) => !j.finished) ? ontoProgress() : new Map();
+  const known = asked.map((j) => (progress.has(j.task) ? { ...j, progress: progress.get(j.task) } : j));
   return [...live.map((r) => readRun(r, true, known, state)), ...(last ? [readRun(last, false, known, state)] : [])];
 };
 

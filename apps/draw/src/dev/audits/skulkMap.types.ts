@@ -32,6 +32,10 @@ export interface LaneStep {
   readonly state: 'waiting' | 'running' | 'done' | 'failed';
   readonly node?: string;
   readonly since?: string;
+  /** A running step's own count of its work, as onto reports it: a reviewer's files read, a fixer's commits of its
+   *  findings. */
+  readonly done?: number;
+  readonly total?: number;
   readonly findings?: number;
   readonly read?: number;
   readonly files?: number;

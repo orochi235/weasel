@@ -260,8 +260,9 @@ export const STEP_COLUMN_COUNT = Math.max(...STEP_COLUMNS.map((c) => c.start + c
 const RUNNING_FILL_CAP = 0.9;
 
 /**
- * An area's lane as the steps view draws it: a column of one length per step, filled by its state, a running one as
- * far as its minutes so far go into its typical minutes, short of full until it finishes.
+ * An area's lane as the steps view draws it: a column of one length per step, filled by its state, a running one by its
+ * own count where onto reports one (a fixer's commits of its findings), else as far as its minutes so far go into its
+ * typical minutes, short of full until it finishes.
  */
 export function laneStepsOf(lane: AuditLane, now: number): SpanStripSpan[] {
   return STEP_COLUMNS.map(({ step, part, phase, start, width, track, trackSpan }): SpanStripSpan => {
@@ -269,6 +270,7 @@ export function laneStepsOf(lane: AuditLane, now: number): SpanStripSpan[] {
     const since = s.state === 'running' ? ms(s.since) : null;
     const fill = s.state === 'done' || s.state === 'failed' ? 1
       : step === 'patch' ? patchFillOf(lane)
+      : s.state === 'running' && s.total ? Math.min(RUNNING_FILL_CAP, (s.done ?? 0) / s.total)
       : since !== null ? Math.min(RUNNING_FILL_CAP, (now - since) / (TYPICAL_MINUTES[part] * MIN))
       : 0;
     return {

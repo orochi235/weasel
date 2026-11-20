@@ -141,4 +141,12 @@ describe('laneStepsOf', () => {
   it('stops a running step short of full until it finishes', () => {
     expect(laneStepsOf(lane({ A: running(at(0)) }), NOW)[0]!.fill).toBe(0.9);
   });
+
+  it('fills a running step by its own count where onto reports one, and says the count', () => {
+    const fixing = lane({ A: done({ findings: 5 }), B: done({ findings: 3 }), match: matched(5, 3, 0), fix: { ...running(at(6)), done: 3, total: 8 } });
+    const fix = laneStepsOf(fixing, NOW).find((s) => s.id === 'fix')!;
+    expect(fix.fill).toBe(3 / 8);
+    expect(fix.label).toMatch(/^studio · 3\/8 · \d/);
+    expect(laneStepsOf(lane({ fix: { ...running(at(6)), done: 8, total: 8 } }), NOW).find((s) => s.id === 'fix')!.fill).toBe(0.9);
+  });
 });
