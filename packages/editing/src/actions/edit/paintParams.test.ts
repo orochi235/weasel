@@ -5,6 +5,7 @@ import { makeCtx, makeScene, ongoingInvoker } from './paintActionTestUtils';
 import { setFillOpacityAction } from './setFillOpacity';
 import { setStrokeOpacityAction } from './setStrokeOpacity';
 import { setStrokeWidthAction } from './setStrokeWidth';
+import { setVertexColorAction } from './setVertexColor';
 
 const RAMP = [1, 0, 0, 1, 0, 1, 0, 1];
 
@@ -30,6 +31,13 @@ describe('a paint action given a value it cannot write', () => {
     it(`setStrokeWidth ignores a width of ${bad}`, () => {
       expect(run(setStrokeWidthAction, { width: bad }).stroke!.width).toBe(2);
       expect(run(setStrokeWidthAction, { width: 4 }, { width: bad }).stroke!.width).toBe(4);
+    });
+  }
+
+  for (const bad of [[1, 0, 0], [1, 0, 0, NaN], [1, 0, 0, 1, 1]]) {
+    it(`setVertexColor ignores an rgba of ${JSON.stringify(bad)}`, () => {
+      expect(run(setVertexColorAction, { index: 0, rgba: bad }).vertexColors).toEqual(RAMP);
+      expect(run(setVertexColorAction, { index: 0, rgba: [0, 0, 0, 1] }, { rgba: bad }).vertexColors).toEqual([0, 0, 0, 1, 0, 1, 0, 1]);
     });
   }
 });
