@@ -102,3 +102,14 @@ describe('ringSignedArea', () => {
     expect(ringSignedArea(buf, 2, 6)).toBe(4);
   });
 });
+
+describe('ringSignedArea far from 0', () => {
+  it("keeps a small ring's area and sign at 1e8", () => {
+    const o = 1e8;
+    // Counterclockwise with y up: area +1.
+    const ccw = [o, o, o + 1, o, o + 1, o + 1, o, o + 1];
+    expect(ringSignedArea(ccw)).toBe(1);
+    const cw = [o, o, o, o + 1, o + 1, o + 1, o + 1, o];
+    expect(ringSignedArea(cw)).toBe(-1);
+  });
+});
