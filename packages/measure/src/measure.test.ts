@@ -206,6 +206,26 @@ describe('picking and the current measurement', () => {
     expect(currentMeasureId(rig.scene as unknown as AnyScene, rig.ms)).toBe(a);
   });
 
+  it('passes over a hidden measurement, or one on a hidden layer, for the current one', () => {
+    const rig = setup();
+    rig.measure({ x: 0, y: 0 }, { x: 10, y: 0 });
+    rig.measure({ x: 0, y: 0 }, { x: 0, y: 20 });
+    const [a, b] = rig.ids();
+    const current = () => currentMeasureId(rig.scene as unknown as AnyScene, rig.ms);
+    rig.ms.picked.set(b!);
+    rig.scene.setHidden(b!, true);
+    expect(current()).toBe(a);
+    rig.scene.setHidden(a!, true);
+    expect(current()).toBeNull();
+    expect(rig.enabled(MEASURE_ACTION_IDS.delete)).toMatchObject({ enabled: false, reason: ActionDisabledReason.NotApplicable });
+    rig.scene.setHidden(a!, false);
+    rig.scene.setHidden(b!, false);
+    rig.scene.setLayerVisible('notes', false);
+    expect(current()).toBeNull();
+    rig.run(MEASURE_ACTION_IDS.delete);
+    expect(rig.ids()).toHaveLength(2);
+  });
+
   it('leaves the content selection alone when a measurement is picked', () => {
     const rig = setup();
     rig.measure({ x: 0, y: 0 }, { x: 100, y: 0 });
