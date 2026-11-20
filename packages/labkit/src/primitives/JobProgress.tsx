@@ -10,19 +10,22 @@ export interface JobProgressProps {
 
 /** A running job's progress, failures and outcome. Determinate once the job
  *  reports a total; a job that cannot count up front never sends one, so the
- *  bar stays indeterminate rather than inventing a denominator. */
+ *  bar sweeps while it runs rather than inventing a denominator, and ends full
+ *  when it finishes or empty when it fails. */
 export function JobProgress({ job, className }: JobProgressProps) {
   const { status, done, total, failures, error } = job;
   if (status === 'idle') return null;
 
   const determinate = total !== null && total > 0;
-  const fraction = determinate ? Math.min(1, done / total) : 0;
+  // Only a running job sweeps: one that ended without a total says how it ended.
+  const sweeping = !determinate && status === 'running';
+  const fraction = determinate ? Math.min(1, done / total) : status === 'done' ? 1 : 0;
   const cls = ['lk-job', `lk-job--${status}`, className].filter(Boolean).join(' ');
 
   return (
     <div className={cls}>
       <div
-        className={`lk-job__track${determinate ? '' : ' lk-job__track--indeterminate'}`}
+        className={`lk-job__track${sweeping ? ' lk-job__track--indeterminate' : ''}`}
         role="progressbar"
         aria-label="Job progress"
         aria-valuenow={determinate ? done : undefined}
@@ -33,7 +36,7 @@ export function JobProgress({ job, className }: JobProgressProps) {
             progress updates never reflow the status bar. */}
         <div
           className="lk-job__fill"
-          style={determinate ? { transform: `scaleX(${fraction})` } : undefined}
+          style={sweeping ? undefined : { transform: `scaleX(${fraction})` }}
         />
       </div>
 
