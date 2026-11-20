@@ -195,6 +195,9 @@ function buildScene<TData, TLayer extends string, TPose>(
       if (mode.open()) {
         throw new Error('Scene: cannot loadState inside another edit — it replaces the state that edit would revert to');
       }
+      if (recording.journalOpen()) {
+        throw new Error('Scene: cannot loadState while a journal is open — commit or cancel it first; its entries edit the state this replaces');
+      }
       buildScene(options, json.systemLayers.map(layerFromSerialized), () => specs, json.doc); // a dry run: a bad snapshot keeps the document
       // Session state, and every id is a new node after this.
       sessions.clearShown();

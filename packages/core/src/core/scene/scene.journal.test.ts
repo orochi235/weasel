@@ -161,3 +161,24 @@ describe('Scene — history.goto holds to the History contract', () => {
     expect(x()).toBe(5);
   });
 });
+
+describe('Scene — loadState with a journal open', () => {
+  it('throws and leaves the document and the journal as they were', () => {
+    const { scene, x } = makeScene();
+    const json = scene.toJSON();
+    const journal = scene.history.beginJournal({ label: 'session' });
+    scene.setPose(A, { ...POSE, x: 7 });
+    expect(() => scene.loadState(json)).toThrow(/journal/);
+    expect(x()).toBe(7);
+    journal.cancel();
+    expect(x()).toBe(0);
+    scene.loadState(json);
+  });
+
+  it('throws while a suspended journal is open too', () => {
+    const { scene } = makeScene();
+    const json = scene.toJSON();
+    scene.history.beginJournal({ label: 'session' }).suspend();
+    expect(() => scene.loadState(json)).toThrow(/journal/);
+  });
+});

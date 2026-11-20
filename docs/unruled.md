@@ -2772,3 +2772,9 @@ Calls the lanes made without a ruling:
 - 2026-11-19 (the fixer's call): `stableStringify` writes an object of the caller's own with a `$type` key as
   `{"$type":"object","value":…}`, so `{ $type: 'bigint', value: '10' }` and `10n` no longer give one string. Leaving
   such an object as JSON writes it, and the two colliding, was the alternative.
+
+## Audit round forty-one (2026-11-19): the scene's history and tree
+
+- 2026-11-19 (the fixer's call): `scene.loadState` throws while a journal is open, a suspended one opened on
+  `scene.history` included; commit or cancel it first. Closing every open journal along with the history was the
+  alternative; it would end a modality or an edit session from under its owner.

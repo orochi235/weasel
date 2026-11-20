@@ -76,6 +76,8 @@ export function createSceneHistory(env: SceneHistoryEnv): {
   openJournal(): Journal | null;
   /** The journal edits go to now as the engine holds it, or null. */
   targetJournal(): Journal | null;
+  /** Whether a journal opened through `history` is not yet closed, suspended ones included. */
+  anyJournalOpen(): boolean;
 } {
   const { engine, replay, notify, refuseUntracked } = env;
 
@@ -181,5 +183,5 @@ export function createSceneHistory(env: SceneHistoryEnv): {
     resumeJournal: journals.resume,
     activeJournal: () => env.activeJournal(),
   };
-  return { history, methods, openJournal: journals.innermost, targetJournal: journals.target };
+  return { history, methods, openJournal: journals.innermost, targetJournal: journals.target, anyJournalOpen: () => journals.opened().length > 0 };
 }
