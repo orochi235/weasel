@@ -16,6 +16,17 @@ const BW: GradStop[] = [
 ];
 
 describe('sampleGradientStops', () => {
+  it('takes the later of coincident stops at their shared offset', () => {
+    const stops: GradStop[] = [
+      { offset: 0, color: '#ff0000' }, { offset: 0.5, color: '#00ff00' },
+      { offset: 0.5, color: '#0000ff' }, { offset: 1, color: '#ffffff' },
+    ];
+    expect(sampleGradientStops(stops, 0.5)).toBe('#0000ff');
+    expect(sampleGradientStops(stops, 0.4999999)).not.toBe('#0000ff');
+    expect(sampleGradientStops([{ offset: 0, color: '#ff0000' }, { offset: 0, color: '#0000ff' }, { offset: 1, color: '#ffffff' }], 0)).toBe('#0000ff');
+    expect(sampleGradientStops(stops, Number.NaN)).toBe('#ff0000');
+  });
+
   it('returns the endpoint colors at the ends', () => {
     expect(sampleGradientStops(BW, 0)).toBe('#000000');
     expect(sampleGradientStops(BW, 1)).toBe('#ffffff');
