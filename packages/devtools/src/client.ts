@@ -47,9 +47,10 @@ export interface DevtoolsClient {
   onChanged(listener: (rootId: string, areas: DevtoolsArea[]) => void): () => void;
   /** Send `body` about `rootId`. Rejects with the page's message when it refuses. */
   request<B extends DevtoolsRequestBody>(rootId: string, body: B): Promise<DevtoolsResultMap[B['type']]>;
-  /** Say `yo` and start listening. Called again after {@link DevtoolsClient.close}, it reconnects. */
+  /** Say `yo` and start listening. Called again after {@link DevtoolsClient.close}, it reconnects. A `yo` whose send
+   *  throws leaves the client in `error`, holding the transport's message, and a later call tries again. */
   open(): void;
-  /** Say `bye` and stop listening. Pending requests reject. */
+  /** Say `bye` and stop listening. Pending requests reject. It closes even when sending the `bye` throws. */
   close(): void;
 }
 
@@ -140,11 +141,22 @@ export function createDevtoolsClient(transport: PanelTransport): DevtoolsClient 
       if (off) return;
       off = transport.onMessage(receive);
       set({ status: 'connecting', error: null });
-      transport.send({ type: 'yo', protocol: DEVTOOLS_PROTOCOL });
+      try {
+        transport.send({ type: 'yo', protocol: DEVTOOLS_PROTOCOL });
+      } catch (err) {
+        // Nothing is listening for this connection, so stop hearing the transport and leave a retry possible.
+        off();
+        off = null;
+        set({ status: 'error', error: (err as Error).message });
+      }
     },
     close() {
       if (!off) return;
-      transport.send({ type: 'bye', protocol: DEVTOOLS_PROTOCOL });
+      try {
+        transport.send({ type: 'bye', protocol: DEVTOOLS_PROTOCOL });
+      } catch {
+        // The other end is already gone, which is what a bye would have told it.
+      }
       off();
       off = null;
       set({ status: 'closed', kitVersion: null, roots: [] });

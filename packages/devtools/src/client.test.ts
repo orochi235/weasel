@@ -119,6 +119,41 @@ describe('connectDevtools', () => {
     expect(client.state().status).toBe('closed');
   });
 
+  it('closes, unsubscribed and rejecting what is pending, when sending bye throws', async () => {
+    let listening = 0;
+    let gone = false;
+    const transport: PanelTransport = {
+      send: (m) => { if (gone || m.type === 'bye') throw new Error('port disconnected'); },
+      onMessage: () => { listening++; return () => { listening--; }; },
+    };
+    const client = connectDevtools(transport);
+    const pending = client.request('root-1', { type: 'get-state' });
+    expect(() => client.close()).not.toThrow();
+    expect(listening).toBe(0);
+    expect(client.state().status).toBe('closed');
+    await expect(pending).rejects.toThrow(/closed/);
+    gone = false;
+    client.open();
+    expect(listening).toBe(1);
+  });
+
+  it('reports a yo whose send throws, and can be opened again', () => {
+    let listening = 0;
+    let fail = true;
+    const transport: PanelTransport = {
+      send: () => { if (fail) throw new Error('port disconnected'); },
+      onMessage: () => { listening++; return () => { listening--; }; },
+    };
+    const client = createDevtoolsClient(transport);
+    expect(() => client.open()).not.toThrow();
+    expect(client.state()).toMatchObject({ status: 'error', error: /port disconnected/ });
+    expect(listening).toBe(0);
+    fail = false;
+    client.open();
+    expect(client.state().status).toBe('connecting');
+    expect(listening).toBe(1);
+  });
+
   it('forgets the roots and kit version of a connection it closed', () => {
     const t = setup();
     const client = connectDevtools(t.transport);
