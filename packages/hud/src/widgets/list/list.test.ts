@@ -103,4 +103,35 @@ describe('list widget', () => {
     expect(l.onKey!(key('ArrowDown'))).toBe(false);
     expect(l.accessibleTree!.read().children![0]!.role).toBe('listitem');
   });
+
+  it('keeps the keyboard, hovered and pressed rows on their rows when setRows inserts or reorders', () => {
+    const onActivate = vi.fn();
+    const l = createList({ id: 'l', x: 0, y: 0, width: 200, rows, onActivate });
+    l.onFocusChange!(true);
+    l.onKey!(key('End'));
+    expect(l.active).toBe(2);
+    l.setRows([{ id: 'n', label: 'New' }, ...rows]);
+    expect(l.active).toBe(3);
+    l.onKey!(key('Enter'));
+    expect(onActivate).toHaveBeenLastCalledWith('c', 3);
+
+    const y = rowH * 0.5;
+    l.onPointer({ type: 'down', x: 10, y, native: null });
+    l.setRows([...rows, { id: 'n', label: 'New' }]);
+    l.onPointer({ type: 'up', x: 10, y, native: null });
+    expect(onActivate).toHaveBeenCalledTimes(1);
+  });
+
+  it('puts the keyboard row on its neighbor when its row is removed', () => {
+    const l = createList({ id: 'l', x: 0, y: 0, width: 200, rows, onActivate: () => {} });
+    l.onFocusChange!(true);
+    l.onKey!(key('Home'));
+    l.onKey!(key('ArrowDown'));
+    l.setRows(rows.filter((r) => r.id !== 'b'));
+    expect(l.active).toBe(1);
+    l.setRows([rows[0]!]);
+    expect(l.active).toBe(0);
+    l.setRows([]);
+    expect(l.active).toBeNull();
+  });
 });

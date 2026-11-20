@@ -99,8 +99,9 @@ export function createList(opts: ListOptions): ListWidget {
     return true;
   };
   const setRowsInner = (next: readonly HudListRow[]) => {
+    const prev = rows;
     rows = next.map((r) => (r.swatch !== undefined ? { ...r, leadingWidth: SWATCH_SIZE } : r));
-    nav.clamp();
+    nav.rebase(prev);
     fit();
   };
   setRowsInner(opts.rows);
