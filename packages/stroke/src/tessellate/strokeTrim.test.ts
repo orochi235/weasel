@@ -91,3 +91,32 @@ describe('a trimmed stroke whose widths split its corners', () => {
     expect(minY(nibbed)).toBeCloseTo(5, 4);
   });
 });
+
+describe('a trimmed stroke with a dot', () => {
+  const DOTTED = new PathBuilder().moveTo(0, 0).lineTo(100, 0).moveTo(50, 50).lineTo(50, 50).build();
+  const maxY = (mesh: { vertices: Float32Array }) => {
+    let hi = -Infinity;
+    for (let i = 1; i < mesh.vertices.length; i += 2) hi = Math.max(hi, mesh.vertices[i]);
+    return hi;
+  };
+
+  it('keeps a round-capped dot a whole-path trim covers', () => {
+    const round: Stroke = { ...BASE, cap: 'round' };
+    expect(maxY(tessellateStroke(DOTTED, round))).toBeCloseTo(51, 4);
+    expect(maxY(tessellateStroke(DOTTED, { ...round, trim: {} }))).toBeCloseTo(51, 4);
+  });
+
+  it('drops a dot the window leaves out', () => {
+    expect(maxY(tessellateStroke(DOTTED, { ...BASE, cap: 'round', trim: { end: 0.5 } }))).toBeCloseTo(1, 4);
+  });
+});
+
+describe('a trimmed stroke with a dot at its start', () => {
+  const LEAD = new PathBuilder().moveTo(50, 50).lineTo(50, 50).moveTo(0, 0).lineTo(100, 0).build();
+  it('keeps it under a window from the start, and drops it under one starting later', () => {
+    const round: Stroke = { ...BASE, cap: 'round' };
+    const top = (mesh: { vertices: Float32Array }) => Math.max(...Array.from(mesh.vertices).filter((_, i) => i % 2 === 1));
+    expect(top(tessellateStroke(LEAD, { ...round, trim: { end: 0.5 } }))).toBeCloseTo(51, 4);
+    expect(top(tessellateStroke(LEAD, { ...round, trim: { start: 0.25 } }))).toBeCloseTo(1, 4);
+  });
+});
