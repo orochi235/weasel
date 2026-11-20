@@ -200,9 +200,10 @@ function runLengths(run: LengthRun, dim: 2 | 3, base: number): Float64Array {
     }
     const a = (i - 1) * dim;
     const b = (i % n) * dim;
-    let d2 = 0;
-    for (let k = 0; k < dim; k++) d2 += (p[b + k] - p[a + k]) ** 2;
-    c[i] = c[i - 1] + (Number.isFinite(d2) ? Math.sqrt(d2) : 0);
+    const len = dim === 2
+      ? Math.hypot(p[b] - p[a], p[b + 1] - p[a + 1])
+      : Math.hypot(p[b] - p[a], p[b + 1] - p[a + 1], p[b + 2] - p[a + 2]);
+    c[i] = c[i - 1] + (Number.isFinite(len) ? len : 0);
   }
   return c;
 }
