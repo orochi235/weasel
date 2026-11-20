@@ -57,6 +57,7 @@ function Chart({ map }: { map: SkulkMap }) {
   const shownId = hovered ?? picked;
   const areas = useMemo(() => withLivePasses(map.areas, map.runs), [map.areas, map.runs]);
   const area = areas.find((a) => a.id === shownId);
+  const pickedArea = picked ? areas.find((a) => a.id === picked) ?? null : null;
   const stats = useMemo(() => statsFor(areas), [areas]);
   const unmerged = useMemo(() => new Set(map.rounds.filter((r) => r.pending === 'unmerged').map((r) => r.round)), [map.rounds]);
   const next = useMemo(() => nextUpOf(areas, NEXT_UP_ROUNDS * (map.areasPerRound ?? 16)), [areas, map.areasPerRound]);
@@ -70,7 +71,7 @@ function Chart({ map }: { map: SkulkMap }) {
       <div className={s.top}>
         <div className={s.runs}><LiveRuns runs={map.runs} unmerged={unmerged} now={Date.parse(map.generated)} on={on} /></div>
         <ResizeHandle className={s.vseam} value={tabsWidth} min={TABS.min} max={TABS.max} invert onInput={setTabsWidth} onChange={keepTabs} aria-label="Resize the rounds and queue tabs" />
-        <TopTabs rounds={map.rounds} next={next} onPick={pick} onLight={setLit} />
+        <TopTabs rounds={map.rounds} area={pickedArea} next={next} onPick={pick} onLight={setLit} />
       </div>
       <ResizeHandle
         className={s.seam} orientation="horizontal" value={topHeight} min={TOP.min} max={TOP.max}

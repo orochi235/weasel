@@ -4,7 +4,7 @@ import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { SpanStrips, type SpanStripSpan, type SpanStripsRow } from '@weasel-js/ui/components/SpanStrip';
 import { clockRuler } from './clock';
-import { GATE_RUNS, STEP_COLUMN_COUNT, inSharedSteps, laneStepsOf, laneViewOf, passDone, runClockOf, sharedSpansOf, type LaneView } from './phases';
+import { STEP_COLUMN_COUNT, leadsWithNode, inSharedSteps, laneStepsOf, laneViewOf, passDone, runClockOf, sharedSpansOf, type LaneView } from './phases';
 import { NODE_SEP, headlineOf, lastLineOf, spendOf, startedText } from './runData';
 import { useViewerPref } from './viewerPref';
 import type { AuditLane, AuditRun } from './skulkMap.types';
@@ -80,8 +80,18 @@ function Lanes({ run, now, mode, hideComplete, on }: { run: AuditRun; now: numbe
   });
   if (lanes.length === 0) return null;
   const rows = lanes.map(({ lane, view }) => laneRow(lane, view, on, mode === 'steps' ? laneStepsOf(lane, now) : view.spans));
+  // Anywhere on a lane picks and lights its area, as its name does; the name stays the keyboard's way in.
+  const areaAt = (target: EventTarget) => {
+    const row = target instanceof Element ? target.closest('[role="listitem"]') : null;
+    const index = row?.parentElement ? [...row.parentElement.children].filter((c) => c.getAttribute('role') === 'listitem').indexOf(row) : -1;
+    return index >= 0 ? rows[index]?.id ?? null : null;
+  };
   return (
-    <div ref={ref}>
+    <div
+      ref={ref} className={s.lanesHit}
+      onClick={(e) => { const id = areaAt(e.target); if (id) on.onPick(id); }}
+      onPointerOver={(e) => on.onLight(areaAt(e.target))} onPointerLeave={() => on.onLight(null)}
+    >
       {mode === 'clock'
         ? <SpanStrips aria-label={`Round ${run.round} lanes`} window={clock} at={now} ruler={clockRuler(clock.from)} rows={rows} />
         : <SpanStrips aria-label={`Round ${run.round} lanes`} window={STEPS_WINDOW} rows={rows} />}
@@ -113,10 +123,11 @@ function RunStrip({ run, now, mode, onMode, hideComplete, onHideComplete, on }: 
           {(inSharedSteps(run) || run.lanes.every(passDone)) && (
             <SpanStrips
               aria-label={`Round ${run.round}, every area`} window={SHARED_WINDOW}
-              rows={GATE_RUNS.map((g) => ({
-                id: g.id, spans: sharedSpansOf(run, g.id).map(withNode), 'aria-label': `all areas, ${g.label}`,
-                lead: <span className={s.nameCell}>{g.id === 'tests' ? 'all areas' : ''}</span>,
-              }))}
+              className={s.shared}
+              rows={[{
+                id: 'all', spans: sharedSpansOf(run).map((span) => (leadsWithNode(span, run) ? withNode(span) : span)), 'aria-label': 'all areas',
+                lead: <span className={s.nameCell}>all areas</span>,
+              }]}
             />
           )}
         </div>

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { heatScaleOf, labelIn, nextUpOf, runHolding, statsFor, toneOf, wrapAtDots } from './areaData';
 import { headlineOf, parseJob, recentJobsOf, spendOf, stepText } from './runData';
-import { inSharedSteps, sharedSpansOf } from './phases';
+import { inSharedSteps, leadsWithNode, sharedSpansOf } from './phases';
 import { ticksFor } from './RoundsChart';
 import { layoutMap, squarify } from './mapLayout';
 import { areaTree, leavesOf, type AreaTreeNode } from './areaTree';
@@ -24,18 +24,31 @@ describe('lanes', () => {
     expect(stepText('patch', { state: 'failed', why: 'conflicts; left out of the batch' }, now)).toBe('conflicts; left out of the batch');
   });
 
-  it('runs the shared lane through batch, fleet run and merge, the fleet run filled by the tests it has run', () => {
+  it('runs the shared lane through batch, both fleet runs side by side, and merge, each fleet run filled by its count', () => {
     const states = (run: typeof live) => sharedSpansOf(run).map((s) => [s.id, s.state, s.fill]);
     expect(inSharedSteps(live)).toBe(false);
-    expect(states({ ...live, step: 'batch' })).toEqual([['batch', 'active', 0], ['fleet', 'pending', 0], ['merge', 'pending', 0]]);
-    const running = { ...live, step: 'fleet', fleet: { tests: { done: 250, total: 1000 }, build: { done: 30, total: 40 } } };
-    const fleet = sharedSpansOf(running, 'tests');
-    expect(fleet.map((s) => [s.id, s.state, s.fill])).toEqual([['batch', 'done', 1], ['fleet', 'active', 0.25], ['merge', 'pending', 0]]);
-    expect(fleet[1]!.label).toBe('fleet tests · 25%');
-    expect(sharedSpansOf(running, 'build')[1]!.label).toBe('postbuild · 75%');
-    expect(states({ ...live, step: 'merge-wait' })).toEqual([['batch', 'done', 1], ['fleet', 'done', 1], ['merge', 'active', 0]]);
+    expect(states({ ...live, step: 'batch' })).toEqual([
+      ['batch', 'active', 0], ['fleet-tests', 'pending', 0], ['fleet-build', 'pending', 0], ['merge', 'pending', 0],
+    ]);
+    const running = sharedSpansOf({ ...live, step: 'fleet', fleet: { tests: { done: 250, total: 1000 }, build: { done: 30, total: 40 } } });
+    expect(running.map((s) => [s.id, s.state, s.fill, s.track ?? 0, s.trackSpan ?? 1])).toEqual([
+      ['batch', 'done', 1, 0, 2], ['fleet-tests', 'active', 0.25, 0, 1], ['fleet-build', 'active', 0.75, 1, 1], ['merge', 'pending', 0, 0, 2],
+    ]);
+    expect(running.map((s) => s.label)).toEqual(['batch', 'fleet tests · 25%', 'postbuild · 75%', 'merge']);
+    // The node running each, where known, leads its label, and only that part pulses.
+    const placed = { ...live, step: 'fleet', fleet: { tests: { done: 1, total: 4 }, build: null }, gateNodes: { tests: 'studio', build: null } } as const;
+    const spans = sharedSpansOf(placed);
+    expect(spans.map((s) => s.label)).toEqual(['batch', 'studio · fleet tests · 25%', 'postbuild', 'merge']);
+    expect(spans.map((s) => leadsWithNode(s, placed))).toEqual([true, true, false, true]);
+    expect(states({ ...live, step: 'merge-wait' }).map(([, state]) => state)).toEqual(['done', 'done', 'done', 'active']);
     expect(states(finished).every(([, state]) => state === 'done')).toBe(true);
-    expect(states({ ...finished, report: 'red: batch kept' })).toEqual([['batch', 'done', 1], ['fleet', 'failed', 1], ['merge', 'pending', 0]]);
+    // A red round says which of its fleet runs failed, and its batch running again reads as running.
+    const red = { ...finished, report: 'red: batch kept', gates: { tests: 'failed', build: 'passed' } } as const;
+    expect(states(red)).toEqual([['batch', 'done', 1], ['fleet-tests', 'failed', 1], ['fleet-build', 'done', 1], ['merge', 'pending', 0]]);
+    const again = sharedSpansOf({ ...red, rerun: true, gates: { tests: 'running', build: 'passed' }, fleet: { tests: { done: 10, total: 40 }, build: null } });
+    expect(again.map((s) => [s.id, s.state, s.fill])).toEqual([
+      ['batch', 'done', 1], ['fleet-tests', 'active', 0.25], ['fleet-build', 'done', 1], ['merge', 'pending', 0],
+    ]);
   });
 
   it('heads each run with its round, step and spend', () => {

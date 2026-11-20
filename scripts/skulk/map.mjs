@@ -179,6 +179,62 @@ export const fleetProgressOf = (nightDir) => {
 
 const readdirSafe = (dir) => { try { return readdirSync(dir); } catch { return []; } };
 
+/** How each of a finished batch's two fleet runs ended, from the gate's closing line in its test log:
+ *  `{ tests, build }`, each 'passed', 'failed' or null where the log does not say. */
+export const gateOutcomesOf = (nightDir) => {
+  const file = nightDir ? readdirSafe(nightDir).find((f) => f.endsWith('.test-batch.log')) : undefined;
+  const text = file ? readFileSync(join(nightDir, file), 'utf8').replace(/\x1b\[[0-9;]*m/g, '') : '';
+  const of = (name) => {
+    const m = [...text.matchAll(new RegExp(`\\b${name} (passed|failed)\\b`, 'g'))].at(-1);
+    return m ? m[1] : null;
+  };
+  return { tests: of('test:fleet'), build: of('test:fleet:postbuild') };
+};
+
+/** A finished round's batch run again: each of its fleet runs' onto jobs running now, `{ tests, build }` each the
+ *  sum of their progress (`{ done, total }`, null before any reports) or undefined where none runs; null when no
+ *  job of the round's batch runs. */
+const gateJobsOf = (round, jobs) =>
+  jobs.filter((j) => !j.finished && new RegExp(`batch-\\d{4}-\\d\\d-\\d\\d-(?:audit|skulk)${round}(?:-|$)`).test(j.task ?? ''));
+const isBuild = (j) => /^postbuild-/.test(j.task);
+
+/** The nodes running each of a round's two fleet runs now, `{ tests, build }`, each its nodes joined or null. */
+export const gateNodesOf = (round, jobs) => {
+  const own = gateJobsOf(round, jobs);
+  const names = (js) => [...new Set(js.map((j) => j.node).filter(Boolean))].join(' + ') || null;
+  return { tests: names(own.filter((j) => !isBuild(j))), build: names(own.filter(isBuild)) };
+};
+
+export const rerunOf = (round, jobs) => {
+  const own = gateJobsOf(round, jobs);
+  if (!own.length) return null;
+  const sum = (js) => {
+    if (!js.length) return undefined;
+    const counted = js.filter((j) => j.progress);
+    return counted.length ? counted.reduce((t, j) => ({ done: t.done + j.progress.done, total: t.total + j.progress.total }), { done: 0, total: 0 }) : null;
+  };
+  return { tests: sum(own.filter((j) => !isBuild(j))), build: sum(own.filter(isBuild)) };
+};
+
+/** A run's two fleet runs: `fleet`, how far each has got while it runs, and `gates`, each one's state ('running',
+ *  'passed', 'failed', or null before it starts). A finished round whose batch runs again reads as running. */
+const fleetOf = (run, running, jobs) => {
+  if (running) {
+    const fleet = fleetProgressOf(run.nightDir);
+    return { fleet, gates: null, rerun: false, gateNodes: gateNodesOf(run.round, jobs) };
+  }
+  const again = rerunOf(run.round, jobs);
+  const ended = gateOutcomesOf(run.nightDir);
+  if (!again) return { fleet: null, gates: ended, rerun: false, gateNodes: null };
+  const stateOf = (gate) => (again[gate] !== undefined ? 'running' : ended[gate]);
+  return {
+    fleet: { tests: again.tests ?? null, build: again.build ?? null },
+    gates: { tests: stateOf('tests'), build: stateOf('build') },
+    rerun: true,
+    gateNodes: gateNodesOf(run.round, jobs),
+  };
+};
+
 /** What one run, live (`running`) or finished, says about its areas; `jobs` are onto's jobs, running and finished. */
 export const readRun = (found, running, jobs = [], state = STATE_DIR) => {
   const run = { ...found, nightDir: nightDirOf(found, state) };
@@ -203,7 +259,7 @@ export const readRun = (found, running, jobs = [], state = STATE_DIR) => {
     nightDir: run.nightDir ?? null,
     lastLine: lines.at(-1) ?? null,
     lines: lines.slice(-40),
-    fleet: running ? fleetProgressOf(run.nightDir) : null,
+    ...fleetOf(run, running, jobs),
   };
 };
 
