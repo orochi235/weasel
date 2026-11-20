@@ -27,14 +27,25 @@ export const guideAxisOf = (part: 'top' | 'left'): 'x' | 'y' => (part === 'top' 
 
 const CURSOR: Record<RulerPart, string> = { top: 'row-resize', left: 'col-resize', corner: 'default' };
 
-/** The guide whose line passes within `GUIDE_HIT_PX` of screen point `s`, nearest first. */
+/** Whether screen point `s` is along `g`'s span, within `GUIDE_HIT_PX` of
+ *  its ends, as the guides layer draws it; always for a guide with no span. */
+function alongSpan(g: Guide, view: View, s: { x: number; y: number }): boolean {
+  if (g.span === undefined) return true;
+  const lo = viewWorldToScreen(view, { x: g.span.min, y: g.span.min });
+  const hi = viewWorldToScreen(view, { x: g.span.max, y: g.span.max });
+  const [a, b, at] = g.axis === 'x' ? [lo.y, hi.y, s.y] : [lo.x, hi.x, s.x];
+  return at >= Math.min(a, b) - GUIDE_HIT_PX && at <= Math.max(a, b) + GUIDE_HIT_PX;
+}
+
+/** The guide whose line passes within `GUIDE_HIT_PX` of screen point `s`,
+ *  nearest first; a spanned guide only along its span. */
 function guideAt(guides: readonly Guide[], view: View, s: { x: number; y: number }): Guide | null {
   let best: Guide | null = null;
   let bestPx = GUIDE_HIT_PX;
   for (const g of guides) {
     const on = viewWorldToScreen(view, { x: g.offset, y: g.offset });
     const px = Math.abs(g.axis === 'x' ? s.x - on.x : s.y - on.y);
-    if (px <= bestPx) { best = g; bestPx = px; }
+    if (px <= bestPx && alongSpan(g, view, s)) { best = g; bestPx = px; }
   }
   return best;
 }

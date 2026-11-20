@@ -135,6 +135,20 @@ describe('createRulers', () => {
     expect(at(200, 130)).toBeNull();
   });
 
+  it('claims a press near a spanned guide only along the stretch it is drawn over', () => {
+    const { guides, layers } = fixture();
+    guides.addGuide({ id: 'v', axis: 'x', offset: 100, span: { min: 0, max: 50 } });
+    const hit = layers.find((l) => l.id === 'rulers-hit')!;
+    const at = (x: number, y: number) => {
+      const w = screenToWorld(x, y);
+      return (hit.hitTest!(w.x, w.y, undefined, VIEW, { width: 400, height: 300 }) as { initialScratch?: { part: string } } | null)?.initialScratch?.part ?? null;
+    };
+    // World x 100 is screen x 120; the span runs down screen y 20..70.
+    expect(at(121, 40)).toBe('guide');
+    expect(at(121, 73)).toBe('guide');
+    expect(at(121, 200)).toBeNull();
+  });
+
   it('moves a placed guide, and removes one dropped on a ruler, each one undo step', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     const { guides, rulers, action } = fixture();
