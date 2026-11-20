@@ -153,10 +153,16 @@ export function createGLRecorder(options: GLRecorderOptions = {}): GLRecorder {
 
   // Read as data, not called. The Proxy below hands back a recording function
   // for every lowercase property, so without this `drawingBufferHeight` is a
-  // function and every y-flip computed from it is NaN — silently.
+  // function and every y-flip computed from it is NaN — silently. Every data
+  // property a real context has belongs here.
   const DATA_PROPERTIES: Readonly<Record<string, unknown>> = {
     drawingBufferWidth,
     drawingBufferHeight,
+    drawingBufferColorSpace: 'srgb',
+    unpackColorSpace: 'srgb',
+    drawingBufferFormat: 0x8058,
+    // An event target, so a renderer watches it for context loss and a test can dispatch one.
+    canvas: Object.assign(new EventTarget(), { width: drawingBufferWidth, height: drawingBufferHeight }),
   };
 
   const handler = (name: string) => (...args: unknown[]) => {

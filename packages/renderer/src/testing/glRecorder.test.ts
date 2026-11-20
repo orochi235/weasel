@@ -7,6 +7,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { createGLRecorder } from './glRecorder';
+import { WeaselRenderer } from '../WeaselRenderer';
 
 describe('createGLRecorder', () => {
   it('gives every framebuffer constant a real, distinct value', () => {
@@ -76,5 +77,15 @@ describe('createGLRecorder', () => {
     const recorder = createGLRecorder();
     (recorder.gl as unknown as { valueOf(): unknown }).valueOf();
     expect(recorder.calls.map((c) => c.name)).toEqual(['valueOf']);
+  });
+
+  it('reports its canvas as data a renderer can watch for context loss', () => {
+    const recorder = createGLRecorder();
+    const renderer = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
+    recorder.reset();
+    recorder.gl.canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
+    expect(renderer.isContextLost()).toBe(true);
+    expect(recorder.gl.drawingBufferColorSpace).toBe('srgb');
+    expect(recorder.calls).toEqual([]);
   });
 });
