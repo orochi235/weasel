@@ -341,6 +341,13 @@ describe('registerDisplayKind', () => {
     expect(parseAs('0x10', { kind: 'hex' })).toBe(16);
   });
 
+  it('speaks a leading minus sign for a kind with no speak of its own', () => {
+    expect(present(-3, ordinal()).spoken).toBe('minus 3rd');
+    const signedText: DisplayKind<{ kind: 'signed' }> = { kind: 'signed', format: (v) => [{ type: 'number', value: `\u2212${Math.abs(v)}` }] };
+    unregister = registerDisplayKind(signedText);
+    expect(qty(-2, { kind: 'signed' }).spoken).toBe('minus 2');
+  });
+
   it('replaces a built-in, and removing it restores the built-in', () => {
     unregister = registerDisplayKind({ ...fractionKind, speak: () => 'one twelfth' });
     expect(qty(1 / 12, fraction()).spoken).toBe('one twelfth');

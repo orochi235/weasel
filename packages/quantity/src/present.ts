@@ -1,5 +1,5 @@
 import { createReflectable, type Reflection } from '@weasel-js/registry';
-import { escapeMarkup as escape, textOf, type DisplayKind, type FormatContext, type Part } from './kind';
+import { escapeMarkup as escape, spokenSign, textOf, type DisplayKind, type FormatContext, type Part } from './kind';
 import { compactKind, decimalKind, integerKind } from './kinds/plain';
 import { fractionKind, multiplierKind, percentKind, ratioKind, zoomKind } from './kinds/proportion';
 import { bytesKind, currencyKind, durationKind, unitKind } from './kinds/measure';
@@ -104,7 +104,7 @@ export function present(q: Quantity, fallback?: Display, options?: PresentOption
   const text = textOf(parts);
   const out: Presentation = {
     text,
-    spoken: kind.speak ? kind.speak(value, display, ctx) : text,
+    spoken: kind.speak ? kind.speak(value, display, ctx) : spokenSign(text),
     html: partsToHtml(value, parts),
   };
   const mathml = kind.mathml?.(value, display, ctx);
