@@ -9,6 +9,10 @@ import type { EdgeHop } from './types';
 /** How far off its route a hop may lie and still draw. */
 const ON_ROUTE = 0.5;
 
+/** How far a hop may overrun its segment, or the hop before it, and still
+ *  draw: past what rounding a stored hop to 0.001 can move it. */
+const SLACK = 0.01;
+
 /** The control distance that makes a cubic a quarter circle, per unit radius. */
 const KAPPA = 0.5523;
 
@@ -61,14 +65,14 @@ function placedOn(a: Vec2, b: Vec2, hops: readonly EdgeHop[]): Placed[] {
     const dx = hop.at.x - a.x;
     const dy = hop.at.y - a.y;
     const t = dx * ux + dy * uy;
-    if (Math.abs(dx * uy - dy * ux) > ON_ROUTE || t - hop.r < 0 || t + hop.r > len) continue;
+    if (Math.abs(dx * uy - dy * ux) > ON_ROUTE || t - hop.r < -SLACK || t + hop.r > len + SLACK) continue;
     found.push({ t, r: hop.r });
   }
   found.sort((m, n) => m.t - n.t);
   const out: Placed[] = [];
   for (const p of found) {
     const last = out[out.length - 1];
-    if (last === undefined || p.t - p.r >= last.t + last.r) out.push(p);
+    if (last === undefined || p.t - p.r >= last.t + last.r - SLACK) out.push(p);
   }
   return out;
 }
