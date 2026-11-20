@@ -21,6 +21,8 @@ const DPRS = [1, 2, 3] as const;
 export interface CompareChoice {
   /** The action whose variant the row is. */
   action: typeof COMPARE_WITH_ID | typeof COMPARE_DPR_ID;
+  /** Its variant's key. An option is keyed by its index, never its value: two values can print alike, and a dot in a
+   *  path or a value would let two rows' keys meet. */
   key: string;
   group: string;
   label: string;
@@ -40,9 +42,9 @@ function argChoices(shape: Readonly<Record<string, ConfigEntry>>, at: string): C
             { value: false, label: 'Off' },
           ]
         : (entry.annotations.options ?? []);
-    return options.map((o): CompareChoice => ({
+    return options.map((o, i): CompareChoice => ({
       action: COMPARE_WITH_ID,
-      key: `arg.${path}.${String(o.value)}`,
+      key: `arg.${path}.${i}`,
       group: `Arg ${path}`,
       label: o.label,
       compare: { kind: 'custom', args: { [path]: o.value } } as const,
@@ -54,9 +56,9 @@ function argChoices(shape: Readonly<Record<string, ConfigEntry>>, at: string): C
  *  story under it that are booleans or have options. */
 export function compareChoices(declarations: GlobalDeclarations, schema: ConfigSchema<unknown> | null): CompareChoice[] {
   const globals = Object.entries(declarations).flatMap(([key, declaration]) =>
-    declaration.options.map((o): CompareChoice => ({
+    declaration.options.map((o, i): CompareChoice => ({
       action: COMPARE_WITH_ID,
-      key: `global.${key}.${o.value}`,
+      key: `global.${key}.${i}`,
       group: declaration.label,
       label: o.label,
       compare: { kind: 'custom', globals: { [key]: o.value } } as const,

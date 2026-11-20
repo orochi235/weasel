@@ -71,9 +71,19 @@ describe('compareChoices', () => {
       'Arg grid.on / On',
       'Arg grid.on / Off',
     ]);
-    expect(choices.find((c) => c.key === 'global.theme.ocean')?.compare).toEqual({ kind: 'custom', globals: { theme: 'ocean' } });
+    expect(choices.find((c) => c.key === 'global.theme.1')?.compare).toEqual({ kind: 'custom', globals: { theme: 'ocean' } });
     expect(choices.find((c) => c.key === 'dpr.2')?.compare).toEqual({ kind: 'custom', dpr: 2 });
-    expect(choices.find((c) => c.key === 'arg.grid.on.true')?.compare).toEqual({ kind: 'custom', args: { 'grid.on': true } });
+    expect(choices.find((c) => c.key === 'arg.grid.on.0')?.compare).toEqual({ kind: 'custom', args: { 'grid.on': true } });
+  });
+
+  it('keys every row apart where a path’s dots meet a value’s', () => {
+    const declarations: GlobalDeclarations = {
+      a: { label: 'A', default: 'b.c', options: [{ value: 'b.c', label: 'B.C' }] },
+      'a.b': { label: 'A.B', default: 'c', options: [{ value: 'c', label: 'C' }] },
+    };
+    const dotted = f.schema({ a: f.enum('b.c', ['b.c']), 'a.b': f.enum('c', ['c']) });
+    const keys = compareChoices(declarations, dotted).map((c) => c.key);
+    expect(new Set(keys).size).toBe(keys.length);
   });
 
   it('offers no args without a story under the lens', () => {
@@ -87,8 +97,8 @@ describe('the compare menu', () => {
     const groups = Object.values(def.menu.children) as { name: string; children: Record<string, { action?: string }> }[];
     expect(groups.map((g) => g.name)).toEqual(['Theme', 'DPR']);
     expect(Object.values(groups[0]!.children).map((r) => r.action)).toEqual([
-      `${COMPARE_WITH_ID}:global.theme.paper`,
-      `${COMPARE_WITH_ID}:global.theme.ocean`,
+      `${COMPARE_WITH_ID}:global.theme.0`,
+      `${COMPARE_WITH_ID}:global.theme.1`,
     ]);
     expect(Object.values(groups[1]!.children).map((r) => r.action)).toEqual([
       `${COMPARE_DPR_ID}:dpr.1`,
@@ -112,7 +122,7 @@ describe('the compare menu', () => {
     const other = api.add() as string;
     expect(api.current()).toBe(other);
     const [withAction] = compareActions(api, requestFor(lensId, true));
-    const variant = withAction?.variants?.find((v) => v.key === 'global.theme.ocean');
+    const variant = withAction?.variants?.find((v) => v.key === 'global.theme.1');
     if (withAction?.invoker?.timing !== 'immediate' || !variant) throw new Error('an immediate action with an ocean row');
     withAction.invoker.run({}, variant.params);
     expect(settingsOf(api.scene, lensId)?.compare).toEqual({ kind: 'custom', globals: { theme: 'ocean' } });
