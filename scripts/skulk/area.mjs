@@ -69,7 +69,7 @@ const review = async (ctx, area, side) => {
   const findings = parseFindings(text);
   const read = parseFilesRead(text).filter((f) => area.files.includes(f)).length;
   if (!run.launched) ctx.say(`review ${area.id} ${side}: never launched; the area is recorded incomplete`);
-  ctx.progress('review', `${area.id} ${side} on ${run.node}: ${findings.length} findings, ${read}/${area.files.length} files read, ${run.minutes.toFixed(1)} min, ${(run.usage.totalTokens / 1e6).toFixed(2)}M tokens${run.usage.budgetHit ? ', hit its ceiling' : ''}`, ctx.total.review);
+  ctx.progress('review', `${area.id} ${side} on ${run.node}: ${findings.length} findings, ${read}/${area.files.length} files read, ${run.minutes.toFixed(1)} min, ${(run.usage.totalTokens / 1e6).toFixed(2)}M tokens${run.usage.budgetHit ? ', hit its ceiling' : ''}${run.launched && !isFinished(text) ? ', unfinished: not counted as a pass' : ''}`, ctx.total.review);
   return { text, findings, read, ...run };
 };
 
