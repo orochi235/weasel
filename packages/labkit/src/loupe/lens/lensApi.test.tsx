@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { LabContext, type LabContextValue } from '../../lab/LabContext';
 import { MAX_LENSES } from './lensActionDefs';
 import { createLensApi, lensClient, useLensFocus } from './lensApi';
-import { createLensScene, lensesOf, setAimOps } from './lensScene';
+import { createLensScene, keepHeldOps, lensesOf, setAimOps, setLensOps } from './lensScene';
 import { BODY_SIZE } from './lensTypes';
 import { type Remeasurable, useLensRemeasure } from './useLensRemeasure';
 
@@ -233,5 +233,31 @@ describe('a lens API’s scene subscription', () => {
     expect(spy).toHaveBeenCalledTimes(1);
     act(() => api.unfollow(lensId));
     expect(unsubscribed).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('a Follow reticle zoomed while its pointer rests', () => {
+  it('is held at the new patch, and pins there', () => {
+    const { scene, api } = setup();
+    const lensId = api.add()!;
+    act(() => api.apply(setAimOps(scene, lensId, 'follow')));
+    act(() => api.follow({ x: 40, y: 40 }));
+    const factor = 8;
+    act(() => api.apply(setLensOps(scene, lensId, { factor })));
+    const reticle = () => effectivePose(scene, scene.get(asNodeId(`${lensId}:reticle`))!);
+    const want = {
+      x: 40 - BODY_SIZE / factor / 2,
+      y: 40 - BODY_SIZE / factor / 2,
+      width: BODY_SIZE / factor,
+      height: BODY_SIZE / factor,
+    };
+    expect(reticle()).toEqual(want);
+    act(() =>
+      api.apply([
+        ...setAimOps(scene, lensId, 'pinned'),
+        ...keepHeldOps(scene, `${lensId}:reticle`, 'pin'),
+      ]),
+    );
+    expect(scene.get(asNodeId(`${lensId}:reticle`))?.pose).toEqual(want);
   });
 });

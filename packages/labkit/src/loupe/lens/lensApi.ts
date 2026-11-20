@@ -16,6 +16,9 @@ import { addLensOps, aimAt, lensesOf, lensIdsOf, settingsOf } from './lensScene'
 import type { LensSources } from './lensSource';
 import { BODY_SIZE, type LensScene, type LensSourceKind, type LoupePoint } from './lensTypes';
 
+const samePose = (a: RectPose, b: RectPose): boolean =>
+  a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+
 /** Each new lens's body sits this far further along than the last, so lenses added in a row do not stack. */
 const STAGGER = 24;
 
@@ -76,7 +79,10 @@ export interface LensApiRefs<C> {
 export function createLensApi<C>(scene: LensScene<C>, refs: LensApiRefs<C>): LensActionApi<C> {
   let next = 0;
   // Each held lens, and the aim it was held under: the hold is on the node that aim moves.
-  const holds = new Map<string, { hold: PoseHold<RectPose>; aim: string | undefined }>();
+  const holds = new Map<
+    string,
+    { hold: PoseHold<RectPose>; aim: string | undefined; at: LoupePoint }
+  >();
   // Subscribed only while a lens is held, so an api a host drops leaves no listener on a scene that outlives it.
   let unsubscribe: (() => void) | null = null;
   const release = (lensId: string) => {
@@ -87,12 +93,24 @@ export function createLensApi<C>(scene: LensScene<C>, refs: LensApiRefs<C>): Len
       unsubscribe = null;
     }
   };
-  // An undo, a redo or a write from outside the actions can also change a held lens's aim.
+  // An undo, a redo or a write from outside the actions can also change a held lens's aim, and a new factor the
+  // size of the patch a held reticle marks.
   const watch = () => {
     unsubscribe ??= scene.subscribe(() => {
-      for (const [lensId, { aim }] of [...holds])
+      for (const [lensId, { aim, at }] of [...holds]) {
         if (settingsOf(scene, lensId)?.aim !== aim) release(lensId);
+        else hold(lensId, at);
+      }
     });
+  };
+  const hold = (lensId: string, at: LoupePoint) => {
+    const held = holds.get(lensId);
+    const aimed = held && aimAt(scene, lensId, at);
+    if (!held || !aimed) return;
+    held.at = at;
+    const was = scene.overrides.read(aimed.id as never)?.pose;
+    if (was && samePose(was, aimed.pose)) return;
+    held.hold.set([[aimed.id as never, aimed.pose]]);
   };
   const toBody = (client: LoupePoint, body: HTMLElement) => {
     const [x, y] = clientToCanvas(body, client.x, client.y);
@@ -133,15 +151,12 @@ export function createLensApi<C>(scene: LensScene<C>, refs: LensApiRefs<C>): Len
       const lensId = named ?? current();
       const body = refs.body.current;
       if (lensId === null || !body) return;
-      const aimed = aimAt(scene, lensId, toBody(client, body));
-      if (aimed === null) return;
-      const held = holds.get(lensId) ?? {
-        hold: scene.overrides.hold(),
-        aim: settingsOf(scene, lensId)?.aim,
-      };
-      holds.set(lensId, held);
+      const at = toBody(client, body);
+      if (aimAt(scene, lensId, at) === null) return;
+      if (!holds.has(lensId))
+        holds.set(lensId, { hold: scene.overrides.hold(), aim: settingsOf(scene, lensId)?.aim, at });
       watch();
-      held.hold.set([[aimed.id as never, aimed.pose]]);
+      hold(lensId, at);
     },
     unfollow: release,
     sourceAvailable: (kind: LensSourceKind) =>
