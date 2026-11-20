@@ -25,6 +25,7 @@ function setup() {
   const cbs = new Map<number, (t: number) => void>();
   let now = 0;
   const clock = {
+    now: () => now,
     requestFrame: (cb: (t: number) => void): number => {
       const h = next++;
       cbs.set(h, cb);
