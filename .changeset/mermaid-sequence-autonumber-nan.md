@@ -2,6 +2,6 @@
 '@weasel-js/diagram-formats': patch
 ---
 
-The Mermaid sequence writer writes an `autonumber` start that is not a finite number as plain `autonumber`, with a warning, so the file reads back.
+The Mermaid sequence writer writes a non-finite `autonumber` start as plain `autonumber`, with a warning.
 
 <!-- entry: fix -->

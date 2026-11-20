@@ -2,6 +2,6 @@
 '@weasel-js/diagram-formats': patch
 ---
 
-The Mermaid state writer writes a note joined from its state beside that state, and drops a note beside only a start or end and a note's connectors past its first, with warnings, so the file reads back with no phantom state.
+Mermaid state notes write back as notes, never as phantom states. A note joined from its state sits beside it; one beside only a start or end, and a note's connectors past its first, are dropped with a warning.
 
 <!-- entry: fix data -->

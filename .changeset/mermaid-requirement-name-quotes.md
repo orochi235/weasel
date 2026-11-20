@@ -2,6 +2,6 @@
 '@weasel-js/diagram-formats': patch
 ---
 
-The Mermaid requirement writer writes a name's double quotes as single ones, with a warning, before making names distinct, so two boxes no longer read back as one.
+Two Mermaid requirement boxes whose names differ only in `"` and `'` stay two boxes. The writer writes a name's double quotes as single ones, with a warning.
 
 <!-- entry: fix data -->
