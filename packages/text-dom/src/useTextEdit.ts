@@ -48,12 +48,18 @@ export function useTextEdit(
     usePublishedRange(overlayRef, pendingAtRef, dropPending);
 
 
-  const cancelEdit = useCallback(() => setEditingId(null), [setEditingId]);
+  // The draft is dropped before the session ends: `onEnd` runs from inside the call, and a blur it causes
+  // reaches `commit` while the overlay is still mounted.
+  const cancelEdit = useCallback(() => {
+    draftRef.current = null;
+    setEditingId(null);
+  }, [setEditingId]);
 
   const commit = useCallback(() => {
     const id = editingId;
     const overlay = overlayRef.current;
     const draft = draftRef.current;
+    draftRef.current = null;
     if (id == null || !overlay || !draft) return void setEditingId(null);
     const edit = draft.finished(overlay, nodeStyleRef.current);
     if (edit) {
@@ -65,8 +71,9 @@ export function useTextEdit(
 
   const startEdit = useCallback((id: string, opts?: StartEditOptions) => {
     initialCaretRef.current = opts?.caret ?? 'all';
+    if (editingIdRef.current !== id) draftRef.current = null;
     setEditingId(id);
-  }, [setEditingId]);
+  }, [setEditingId, editingIdRef]);
 
   const isEditing = useCallback((id: string) => editingId === id, [editingId]);
 
