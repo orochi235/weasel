@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useEffect, useRef } from 'react';
-import { key } from '@weasel-js/gestures';
+import { held, key } from '@weasel-js/gestures';
 import { ActionsProvider, useActionsRegistry } from '../interactions/actions/ActionsProvider';
 import type { ActionsRegistry } from '../interactions/actions/registry';
 import { ActiveToolContextProvider } from '../interactions/actions/activeToolContext';
@@ -180,6 +180,9 @@ describe('createKeymapContribution', () => {
   it('refuses a keymap that binds Escape', () => {
     expect(() => createKeymapContribution({
       id: 'k', label: 'K', leader: key('k'), bindings: [{ spec: key('Escape'), actionId: 'x' }],
+    })).toThrow(/binds Escape/);
+    expect(() => createKeymapContribution({
+      id: 'k', label: 'K', leader: key('k'), bindings: [{ spec: held('Escape'), actionId: 'x' }],
     })).toThrow(/binds Escape/);
   });
 
