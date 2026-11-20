@@ -60,6 +60,37 @@ describe('node raster host', () => {
     await expect(host.render({ scene: fixtureScene(), ...FIXTURE_RENDER })).rejects.toThrow(/bad script/);
   });
 
+  it('opens a new page before rendering once the one it had crashed while idle', async () => {
+    let pages = 0;
+    const crash: Array<() => void> = [];
+    const browser = {
+      close: vi.fn(async () => {}),
+      isConnected: () => true,
+      newContext: async () => {
+        const n = ++pages;
+        let evaluated = 0;
+        return {
+          close: vi.fn(async () => {}),
+          newPage: async () => ({
+            on: (event: string, fn: () => void) => { if (event === 'crash') crash[n - 1] = fn; },
+            addScriptTag: async () => {},
+            isClosed: () => false,
+            evaluate: async () => {
+              if (evaluated++ === 0) return true;
+              return { width: 1, height: 1, base64: Buffer.from([n, n, n, n]).toString('base64') };
+            },
+          }),
+        };
+      },
+    } as unknown as Browser;
+    const host = createNodeRasterHost({ browser, pageScript: 'x' });
+    expect(Array.from((await host.render({ scene: fixtureScene(), ...FIXTURE_RENDER })).data)).toEqual([1, 1, 1, 1]);
+    crash[0]!();
+    expect(Array.from((await host.render({ scene: fixtureScene(), ...FIXTURE_RENDER })).data)).toEqual([2, 2, 2, 2]);
+    expect(pages).toBe(2);
+    await host.dispose();
+  });
+
   /** A browser whose one page answers every render with `result`. */
   function fakeBrowser(result: { width: number; height: number; base64: string }) {
     const close = vi.fn(async () => {});
