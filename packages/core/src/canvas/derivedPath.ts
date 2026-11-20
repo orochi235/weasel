@@ -238,13 +238,15 @@ export function withDerivedPaths<TData, TLayer extends string, TPose>(
 }
 
 /** {@link withDerivedPaths} for a cull's `paintBounds`: a node shown by a pose override's path is measured
- *  by that path, which can reach past the pose box. */
-export function withOverridePathBounds<TNode extends { id: NodeId }, TPose>(
-  overrides: { read(id: NodeId): { path?: Path } | undefined },
-  paintBounds: PaintBoundsFn<TNode, TPose>,
-): PaintBoundsFn<TNode, TPose> {
+ *  by that path, which can reach past the pose box, carried into the box `toPose` answers as paint carries it. */
+export function withOverridePathBounds<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  paintBounds: PaintBoundsFn<Node<TData, TLayer, TPose>, TPose>,
+  toPose?: ToPose<TData, TLayer, TPose>,
+): PaintBoundsFn<Node<TData, TLayer, TPose>, TPose> {
+  const overridePathOf = sceneOverridePathOf(scene, toPose);
   return (node, pose, view, ctx) => {
-    const path = overrides.read(node.id)?.path;
+    const path = overridePathOf(node);
     return paintBounds(node, pose, view, path === undefined ? ctx : { ...ctx, derivedPath: path });
   };
 }
