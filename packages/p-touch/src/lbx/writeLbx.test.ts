@@ -110,6 +110,13 @@ describe('lbxConfig', () => {
     expect(skipped).toEqual([{ kind: 'path', detail: 'no rasterize hook for what .lbx cannot draw' }]);
   });
 
+  it('rasterizes an object reaching past the label under auto length, as it crops what it rasterizes there', async () => {
+    const over = rect(120, 2, 40, 5, { fill: { paint: { color: '#000' } } });
+    expect((await lbxConfig({ ...page([over]), autoLength: true })).config.objects).toEqual([]);
+    expect((await lbxConfig({ ...page([rect(-5, 2, 40, 5, { fill: { paint: { color: '#000' } } })]), autoLength: true })).config.objects).toEqual([]);
+    expect((await lbxConfig(page([over]))).config.objects.map((o) => o.type)).toEqual(['rect']);
+  });
+
   it('writes the tape, the length and the cuts', async () => {
     const fixed = await lbxConfig({ ...page([]), cuts: [72, 0, 200, 36] });
     expect(fixed.config.paper).toMatchObject({ width: 33.6, format: 259, height: 144, autoLength: false });
@@ -168,6 +175,23 @@ describe('lbxObjectsCommand', () => {
     expect(config.objects).toEqual([{ ...barcode, position: { x: 12, y: 4, width: 40, height: 10 } }]);
   });
 
+  it('places carried objects inside a rect clip drawn under a mirror', async () => {
+    const { config, skipped } = await lbxConfig(page([{
+      kind: 'group', transform: mat3.fromAffine([1, 0, 0, -1, 0, 30]), clip: { kind: 'rect', x: 0, y: 0, width: 100, height: 30 },
+      children: [{ kind: 'group', transform: mat3.fromAffine([1, 0, 0, -1, 10, 29]), children: [lbxObjectsCommand([barcode])] }],
+    }]));
+    expect(skipped).toEqual([]);
+    expect(config.objects).toEqual([{ ...barcode, position: { x: 12, y: 4, width: 40, height: 10 } }]);
+  });
+
+  it('drops carried objects a transform collapses to a line, as it does the paint beside them', async () => {
+    const { config, skipped } = await lbxConfig(page([
+      { ...(frame({ kind: 'rect', x: 0, y: 0, width: 100, height: 30 }, [lbxObjectsCommand([barcode])]) as GroupDrawCommand), transform: mat3.scaled(mat3.identity(), 0, 1) },
+    ]));
+    expect(skipped).toEqual([]);
+    expect(config.objects).toEqual([]);
+  });
+
   it('skips carried objects a clip would cut, or under a group the writer must rasterize', async () => {
     const narrow = await lbxConfig(page([frame({ kind: 'rect', x: 0, y: 0, width: 20, height: 20 }, [lbxObjectsCommand([barcode])])]));
     expect(narrow.config.objects).toEqual([]);
@@ -204,7 +228,7 @@ describe('writeLbx', () => {
   it('writes a polyline of a million points without overflowing the call stack', async () => {
     const b = new PathBuilder().moveTo(0, 0);
     for (let i = 1; i < 1_000_000; i++) b.lineTo(i % 60, i % 2 === 0 ? 0 : 10);
-    const { config } = await lbxConfig(page([{ kind: 'path', path: b.build(), stroke: { paint: { color: '#000' }, width: 1, cap: 'round' } }]));
+    const { config } = await lbxConfig(page([{ kind: 'path', path: b.build(), stroke: { paint: { color: '#000' }, width: 1, cap: 'round', miterLimit: 20 } }]));
     expect((config.objects[0] as LineObject).position).toEqual({ x: 0, y: 0, width: 59, height: 10 });
   });
 });
