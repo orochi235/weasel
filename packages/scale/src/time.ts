@@ -73,9 +73,11 @@ function gridTicks(lo: number, hi: number, interval: Interval): number[] {
   const at = new Date(lo);
   let month = at.getUTCFullYear() * 12 + at.getUTCMonth();
   month = Math.ceil(month / interval.months) * interval.months;
+  const first = month;
   for (;; month += interval.months) {
     const t = monthStart(month);
-    // NaN past the last month a Date holds.
+    // NaN where the month starts before the first instant a Date holds, or past the last.
+    if (Number.isNaN(t) && month === first) continue;
     if (!(t <= hi)) break;
     if (t < lo) continue;
     out.push(t);

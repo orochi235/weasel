@@ -230,6 +230,11 @@ describe('timeScale', () => {
     expect(ticks.length).toBeLessThan(20);
     expect(s.tickFormat()(ticks[1]!)).toMatch(/^-?\d+$/);
   });
+
+  it('ticks the months a Date holds in the first month it holds', () => {
+    const s = timeScale({ domain: [-8.64e15, -8.64e15 + 1e10], range: [0, 100] });
+    expect(s.ticks().map(s.format)).toEqual(['-271821-05', '-271821-06', '-271821-07', '-271821-08']);
+  });
 });
 
 describe('ordinalScale', () => {
