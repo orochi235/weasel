@@ -99,6 +99,10 @@ function avoidFollower<TPose>(scene: Scene<unknown, string, TPose>, router: Avoi
     return true;
   };
   return {
+    begin() {
+      last = null;
+      router.beginPreview();
+    },
     preview(frame, data) {
       if (frame.size === 0) return [];
       if (still(frame)) return last!.out;

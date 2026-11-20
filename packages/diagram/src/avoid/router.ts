@@ -20,7 +20,8 @@ export interface AvoidUpdateOptions {
    *  them, with no crossing penalty and no nudging. */
   preview?: boolean;
   /** Milliseconds a preview may spend. The connectors it does not reach keep
-   *  the route the last preview gave them. Default no limit. */
+   *  the route the last preview since {@link AvoidRouter.beginPreview} gave
+   *  them. Default no limit. */
   budgetMs?: number;
 }
 
@@ -37,6 +38,9 @@ export interface AvoidRouter {
    *  this is a preview. Answers only the connectors it rerouted, or moved
    *  while spreading a channel they share. */
   update(input: AvoidInput, opts?: AvoidUpdateOptions): AvoidRoutes;
+  /** Start a run of previews, one drag: a connector a later frame over its
+   *  budget does not reach keeps a route only from this run's frames. */
+  beginPreview(): void;
   /** Drop what the router holds for connectors `ids`, so the next update
    *  reroutes them: for routes the host did not store, such as a locked
    *  connector's. */
@@ -189,6 +193,9 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
       const dirty = dirtyEdges(input.edges, keys, changed, (e) => [routeOf(e), rawOf(e)], pathless);
       forget(input);
       return commit(input, dirty, obstacles);
+    },
+    beginPreview() {
+      previews.clear();
     },
     forget(ids) {
       for (const id of ids) for (const map of [keys, raw, shown, pathless]) map.delete(id);
