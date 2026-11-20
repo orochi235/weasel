@@ -4,7 +4,7 @@
  */
 import { mat3, PATH_CMD_LENGTHS, PATH_L, PATH_M, type PolygonPath, maxOf, minOf } from '@weasel-js/geom';
 import type { PathDrawCommand, TextDrawCommand } from '@weasel-js/renderer';
-import { paragraphDirection } from '@weasel-js/text';
+import { DEFAULT_TEXT_STYLE, paragraphDirection } from '@weasel-js/text';
 import type { ArrowStyle, HorizontalAlignment, LineObject, RectObject, TextObject, VerticalAlignment } from 'bil-lbx';
 import { axisMap, fillColor, mitersAt, plainStroke, uniformScale, type DrawState, type PlainStroke } from './style';
 
@@ -144,6 +144,10 @@ export function textObject(cmd: TextDrawCommand, state: DrawState): TextObject |
   }
   const data = cmd.runs.map((run) => run.text).join('').replace(HARD_BREAK, '\n');
   if (NOT_XML.test(data) || NOT_XML_ATTR.test(first!.fontFamily)) return undefined;
+  // P-touch spaces lines and tab stops its own way, which only the defaults are taken to match.
+  const lines = data.includes('\n') || Number.isFinite(cmd.maxWidth);
+  if (lines && (cmd.style.lineHeight ?? DEFAULT_TEXT_STYLE.lineHeight) !== DEFAULT_TEXT_STYLE.lineHeight) return undefined;
+  if (data.includes('\t') && (cmd.style.tabSize ?? DEFAULT_TEXT_STYLE.tabSize) !== DEFAULT_TEXT_STYLE.tabSize) return undefined;
   // Only text the canvas lays out left to right is an object: `start` and `end` map to LEFT and RIGHT.
   const direction = cmd.direction ?? cmd.style.direction ?? 'auto';
   if (data.split('\n').some((line) => paragraphDirection(line, direction) === 'rtl')) return undefined;

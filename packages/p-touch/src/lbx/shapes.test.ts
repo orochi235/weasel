@@ -90,4 +90,12 @@ describe('text boxes', () => {
     expect(await written(box({}, [run('a'), run('b', { strutSize: 16 })]))).toBeUndefined();
     expect(await written(box({}, [run('Label', { fontFeatures: [], strutSize: 12 })]))).toBeDefined();
   });
+
+  it('rasterizes a box of more than one line at a line height of its own, or a tab at a tab size of its own', async () => {
+    expect(await written(box({ style: { lineHeight: 2 } }, [run('one\ntwo')]))).toBeUndefined();
+    expect(await written(box({ style: { lineHeight: 2 } }))).toBeUndefined();
+    expect(await written(box({ maxWidth: Infinity, style: { lineHeight: 2 } }))).toBeDefined();
+    expect(await written(box({ style: { tabSize: 2 } }, [run('a\tb')]))).toBeUndefined();
+    expect(await written(box({ style: { tabSize: 2 } }))).toBeDefined();
+  });
 });
