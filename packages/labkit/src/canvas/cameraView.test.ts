@@ -57,4 +57,10 @@ describe('clampZoomAbout', () => {
     const pan: View = { x: 10, y: 5, scale: { x: 1, y: 1 } };
     expect(clampZoomAbout(prev, pan, 0.5, 2)).toBe(pan);
   });
+  it('passes a pan through when the view already sits outside the range', () => {
+    // Zoomed to 20, then the range lowered to [0.1, 8]: a drag must not rescale about screen (0, 0).
+    const at20: View = { x: 0, y: 0, scale: { x: 20, y: 20 } };
+    const pan: View = { x: 3, y: -2, scale: { x: 20, y: 20 } };
+    expect(clampZoomAbout(at20, pan, 0.1, 8)).toBe(pan);
+  });
 });

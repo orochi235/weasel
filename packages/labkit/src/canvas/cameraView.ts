@@ -46,8 +46,9 @@ export function clampZoomAbout(prev: View, next: View, min: number, max: number)
   const s0 = prev.scale.x;
   const s1 = next.scale.x;
   const clamped = Math.min(max, Math.max(min, s1));
-  if (clamped === s1) return next;
-  if (s0 === s1) return { ...next, scale: { x: clamped, y: clamped } };
+  // A pan has no anchor to rescale about, so it passes through even outside the range;
+  // the next zoom brings the view back inside it.
+  if (clamped === s1 || s0 === s1) return next;
   // The screen point both views agree on: p / s0 + x0 = p / s1 + x1.
   const inv = 1 / s0 - 1 / s1;
   const px = (next.x - prev.x) / inv;
