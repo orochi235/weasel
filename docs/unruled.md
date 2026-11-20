@@ -662,6 +662,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   name more code points than the format maps (65,536 for format 4, 1,114,112 for 12 and 13), overlaps included. A CFF
   glyph whose outline holds a non-finite coordinate is refused as one glyph, which the registry warns of and serves
   from the SDF tier. A TrueType glyph's path data now keeps the line back to its contour's start before the `Z`.
+- 2026-11-20 (font, audit round 47): `parseBmFont` refuses an atlas with a glyph on any page but 0, naming it, since
+  `registerFont` takes one atlas image per face and the renderer samples that one for every glyph. Whether the
+  registry should take a URL per page instead is open.
 - 2026-11-11 (font, second property pass): `parseBmFont` refuses an atlas whose glyph or kerning entry is not an object
   or holds a non-finite field, naming it; a `kernings` that is not an array is still read as none.
 - Open (2026-11-11, font property tests): a face whose `cmap` maps any code point to a glyph id past its last glyph
