@@ -6,7 +6,7 @@ import type { Channel } from '../../protocol/channel';
 import type { FromFrame, StoryGlobals, ToFrame } from '../../protocol/messages';
 import { describeSchema } from '../../protocol/schema';
 import type { IndexBundle } from '../../story/indexBundle';
-import { runAxe } from '../a11y';
+import { auditElement } from '../a11y';
 import type { FrameSetup } from '../FrameController';
 import { fault } from '../fault';
 import { frameDecorators } from '../frameDecorators';
@@ -21,8 +21,6 @@ export interface StartIndexOptions {
   container: HTMLElement;
   setup?: FrameSetup;
 }
-
-const message = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
 /** Faults the frame when the page itself throws. A single story's throw stays in its own cell. */
 class PageBoundary extends Component<{ onError: (error: unknown) => void; children: ReactNode }, { failed: unknown }> {
@@ -111,10 +109,7 @@ export function startIndex(options: StartIndexOptions): () => void {
         announce();
         break;
       case 'a11y.run':
-        runAxe(wrapper).then(
-          (report) => send({ type: 'a11y', id: msg.id, ok: true, report }),
-          (error: unknown) => send({ type: 'a11y', id: msg.id, ok: false, message: message(error) }),
-        );
+        void auditElement(wrapper).then((outcome) => send({ type: 'a11y', id: msg.id, ...outcome }));
         break;
       default:
         break;
