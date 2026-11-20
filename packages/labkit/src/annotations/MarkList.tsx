@@ -61,7 +61,8 @@ export function MarkList({ meaning, config }: MarkListProps) {
                 className="lk-mark-list__status"
                 aria-label={`Status of ${a.kind} on ${a.target}`}
                 value={a.status ?? ''}
-                onChange={(e) => marks.update(a.id, { status: e.target.value })}
+                // "—" clears the status, so a cleared mark reads as one that never had one.
+                onChange={(e) => marks.update(a.id, { status: e.target.value || undefined })}
               >
                 <option value="">—</option>
                 {statuses.map((s) => (

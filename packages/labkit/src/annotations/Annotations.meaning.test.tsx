@@ -73,6 +73,16 @@ describe('<MarkList>', () => {
     expect((screen.getAllByRole('combobox')[0] as HTMLSelectElement).value).toBe('fixed');
   });
 
+  it('clears a status on "—", as though the mark never had one', () => {
+    const store = seeded();
+    mount(store, MEANING);
+    const picker = screen.getAllByRole('combobox')[0];
+    if (!picker) throw new Error('no status picker');
+    fireEvent.change(picker, { target: { value: '' } });
+    expect(store.query({ where: (a) => a.status === undefined })).toHaveLength(2);
+    expect(JSON.stringify(store.toJSON())).not.toContain('"status":""');
+  });
+
   it('renames a mark through the store', () => {
     const store = seeded();
     mount(store, MEANING);
