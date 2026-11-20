@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { defaultDrawOne } from './defaultDrawOne';
+import { defaultDrawOne, defaultPaintBounds } from './defaultDrawOne';
 import { registerNodeShape } from './NodeShape';
 import { solid, solidStroke } from '@weasel-js/paint';
 import type { Node } from 'core/scene/types';
@@ -143,5 +143,21 @@ describe('defaultDrawOne', () => {
     const label = cmds.find((c) => c.kind === 'text') as TextDrawCommand;
     expect([label.x, label.y]).toEqual([36, 54]);
     expect(defaultDrawOne(node({ label: 'P' }), { a: 1 } as never).some((c) => c.kind === 'text')).toBe(false);
+  });
+
+  it('lays no label over a painter that draws its own, and culls it by the painter\'s bounds', () => {
+    const own: DrawCommand[] = [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { color: '#abc' } } }];
+    const box = { x: 0, y: 0, width: 5, height: 5 };
+    const dispose = registerNodeShape(
+      { id: 'test:own-label', matches: () => true, paint: () => own, bounds: () => box, drawsLabel: true },
+      { priority: 'high' },
+    );
+    try {
+      const n = node({ label: 'Hi' });
+      expect(defaultDrawOne(n, POSE)).toEqual(own);
+      expect(defaultPaintBounds(n, POSE, { x: 0, y: 0, scale: { x: 1, y: 1 } })).toEqual(box);
+    } finally {
+      dispose();
+    }
   });
 });

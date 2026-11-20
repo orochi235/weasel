@@ -129,6 +129,8 @@ export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
    *  than its silhouette. For content whose silhouette is no drawn outline,
    *  as text's line boxes and an image's pixels are not. */
   snapsToBox?: boolean;
+  /** `paint` draws the node's `data.label` itself, so the kit lays no label of its own over it. */
+  drawsLabel?: boolean;
   /** Optional: the geometry the node is made of, where `silhouette` does not carry it — a text
    *  node's glyphs, where its silhouette is line boxes. Booleans, Create Outlines and Outline
    *  Stroke read it, through an adapter's `getOutline` (`sceneNodeOutline`). Absent, or `null`

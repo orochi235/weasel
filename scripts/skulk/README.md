@@ -137,8 +137,14 @@ line, each echoing its `id`:
 
 `node scripts/skulk/map.mjs --out map.json` writes every area's passes, status (never audited, due, settled,
 in a live run), queue position and the stage the run holding it has reached, read from the round records and
-`runs/`; its `runs` lists every live run, then the one that ended last. The page at https://claude.ai/artifact/CyXRYZbDw6b8Knm8zT7RQK draws it as a
-treemap; it reads a published `map.json` beside it, so keeping it current is republishing that file.
+`runs/`; its `runs` lists every live run, then the one that ended last. Each run carries a lane per area (both
+reviews, the match, the fix and the patch, each done, running, waiting or failed) and its log's last 40 lines.
+
+WeaselDraw's dev server draws it at `#/dev/audits` (`emilia up dev:draw`, then open the draw URL with that
+hash): the live runs, the treemap, the queue, the rounds and the jobs coming back. The page asks the server's
+`__skulk/map` route every 15 seconds while it is visible, and the server runs `map.mjs` for each ask. The page
+at https://claude.ai/artifact/CyXRYZbDw6b8Knm8zT7RQK draws the same data from a published `map.json` beside
+it, so keeping that one current is republishing the file.
 
 ## Where things go
 

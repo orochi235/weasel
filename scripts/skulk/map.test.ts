@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { nightStages, readRuns } from './map.mjs';
+import { nightLanes, nightStages, readRuns } from './map.mjs';
 import { claimRound, writeStatus, writeSummary } from './runs.mjs';
 
 const dirs: string[] = [];
@@ -33,8 +33,26 @@ describe('nightStages', () => {
   });
 });
 
+describe('nightLanes', () => {
+  it("fills each area's thread from the log, and marks a step running from onto's running tasks", () => {
+    const log = [
+      'review 1/4 core.core.ops A on studio: 5 findings, 24/24 files read, 2.8 min, 1.30M tokens',
+      'review 2/4 core.core.ops B on teitou: 2 findings, 24/24 files read, 2.9 min, 1.66M tokens',
+      'match 1/2 core.core.ops: 2 shared of 5 + 2',
+    ].join('\n');
+    const running = [{ task: 'audit41-core.core.ops-fix', node: 'studio', started: '2026-11-19T21:00:00Z' }, { task: 'audit41-core.debug-A', node: 'teitou', started: '2026-11-19T21:01:00Z' }];
+    const [ops, debug] = nightLanes(log, ['core.core.ops', 'core.debug'], running);
+    expect(ops.steps.A).toEqual({ state: 'done', node: 'studio', findings: 5, read: 24, files: 24, minutes: 2.8 });
+    expect(ops.steps.match).toEqual({ state: 'done', shared: 2, a: 5, b: 2 });
+    expect(ops.steps.fix).toEqual({ state: 'running', node: 'studio', since: '2026-11-19T21:00:00Z' });
+    expect(ops.steps.patch.state).toBe('waiting');
+    expect(debug.steps.A.state).toBe('running');
+    expect(debug.steps.B.state).toBe('waiting');
+  });
+});
+
 describe('readRuns', () => {
-  it('lists every live run with its own stages, then the last finished', () => {
+  it('lists every live run with its own stages, lanes and lines, then the last finished', () => {
     const state = mkdtempSync(join(tmpdir(), 'skulk-map-'));
     dirs.push(state);
     const night = (round: number, lines: string[]) => {
@@ -45,13 +63,22 @@ describe('readRuns', () => {
     };
     for (const round of [40, 41, 42]) claimRound(round, state);
     writeSummary(40, { round: 40, started: 's', ended: 'e', areas: [{ id: 'old' }], nightDir: night(40, []) }, state);
-    writeStatus(41, { step: 'review', areas: ['a'], nightDir: night(41, ['review 1/2 a A on studio: 0 findings']) }, state);
+    writeStatus(41, { step: 'review', areas: ['a'], nightDir: night(41, ['review 1/2 a A on studio: 0 findings, 3/3 files read, 1.0 min']) }, state);
     writeStatus(42, { step: 'fleet', areas: ['b'], nightDir: night(42, ['patch b: 1 commits on audit42-b']) }, state);
-    const runs = readRuns(state);
+    const jobs = [{ task: 'audit41-a-B', node: 'teitou', started: 't' }, { task: 'audit42-a-B', node: 'studio', started: 'u' }];
+    const runs = readRuns(state, jobs);
     expect(runs.map((r) => [r.round, r.running, r.step, r.areas, r.stages])).toEqual([
       [41, true, 'review', ['a'], { a: 'reviewing' }],
       [42, true, 'fleet', ['b'], { b: 'patched' }],
       [40, false, 'done', ['old'], {}],
     ]);
+    expect(runs[0].lanes).toEqual([{ id: 'a', steps: {
+      A: { state: 'done', node: 'studio', findings: 0, read: 3, files: 3, minutes: 1 },
+      B: { state: 'running', node: 'teitou', since: 't' },
+      match: { state: 'waiting' }, fix: { state: 'waiting' }, patch: { state: 'waiting' },
+    } }]);
+    expect(runs[1].lanes[0].steps.patch).toEqual({ state: 'done', commits: 1 });
+    expect(runs[1].lines).toEqual(['patch b: 1 commits on audit42-b']);
+    expect(runs[2].lanes).toEqual([{ id: 'old', steps: expect.objectContaining({ A: { state: 'waiting' } }) }]);
   });
 });
