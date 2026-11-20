@@ -80,6 +80,12 @@ describe('loupe model: factor and mode', () => {
     expect(loupe.factor).toBe(2);
   });
 
+  it('starts inside the declared range', () => {
+    const { surface } = stubSurface();
+    expect(createLoupeModel({ surface, factor: 32, maxFactor: 16 }).factor).toBe(16);
+    expect(createLoupeModel({ surface, minFactor: 10 }).factor).toBe(10);
+  });
+
   it('leaves the factor alone when no range is declared', () => {
     const { surface } = stubSurface();
     const loupe = createLoupeModel({ surface });

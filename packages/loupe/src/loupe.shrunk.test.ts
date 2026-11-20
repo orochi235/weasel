@@ -22,8 +22,9 @@ describe('shrunk from the loupe properties', () => {
       surface: { lens: () => null, covers: () => false, sample: () => null, hidden: () => false, gone: () => false, changed },
       minFactor: 0.5, maxFactor: 0.5,
     });
+    expect(loupe.factor).toBe(0.5);
     loupe.setFactor(0);
     loupe.setFactor(1);
-    expect(changed).toHaveBeenCalledTimes(1);
+    expect(changed).not.toHaveBeenCalled();
   });
 });

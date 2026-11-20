@@ -50,7 +50,7 @@ export interface LoupeModelOptions {
   /** Magnification. Default 8. Always positive and finite: a factor that is
    *  not becomes `ZOOM_FLOOR`, the same rule a view's zoom follows. */
   factor?: number;
-  /** Bounds `setFactor` clamps to. Unset means bounded only by that rule. */
+  /** Bounds `factor` and `setFactor` clamp to. Unset means bounded only by that rule. */
   minFactor?: number;
   maxFactor?: number;
   /** Called with the hex color under the aim point whenever it changes: `null` once the aim is
@@ -94,14 +94,14 @@ export interface LoupeModel {
 export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
   const { surface } = opts;
   let mode: LoupeMode = opts.mode ?? 'vector';
-  let factor = normalizeZoom(opts.factor ?? 8);
+  const clamp = (n: number): number =>
+    normalizeZoom(clampTo(n, opts.minFactor ?? Number.NEGATIVE_INFINITY, opts.maxFactor ?? Number.POSITIVE_INFINITY));
+
+  let factor = clamp(opts.factor ?? 8);
   let aim: LoupePoint = { x: 0, y: 0 };
   let color: string | null = null;
   let disposed = false;
   let aimUnsampled = false;
-
-  const clamp = (n: number): number =>
-    normalizeZoom(clampTo(n, opts.minFactor ?? Number.NEGATIVE_INFINITY, opts.maxFactor ?? Number.POSITIVE_INFINITY));
 
   const sampleColor = () => {
     const hex = surface.sample(aim);
