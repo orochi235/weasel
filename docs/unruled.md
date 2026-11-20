@@ -2812,3 +2812,11 @@ Calls the lanes made without a ruling:
   and the end only where none does, so `present.go` reaches every page by its id and old callers keep working.
   Keeping the ends ahead of the ids, so such a page was unreachable by id, was the alternative; so was dropping
   `to: 'first' | 'last'` outright.
+
+## Audit round forty-six (2026-11-20): diagram sequences
+
+- 2026-11-20 (the fixer's call): a sequence whose root or any part is locked takes no edit. `placedSequences` leaves
+  it out, so it offers no regions and the authoring clicks pass over it, and `commitSequence` returns without
+  writing (`sequenceLocked`, `sequence/layer.ts`), as `redrawSequences` already did. Every edit builds all of a
+  root's parts again, so one locked part holds the whole sequence. Throwing from `commitSequence`, or rebuilding
+  through `scene.unlocked` around the locked part, were the alternatives.

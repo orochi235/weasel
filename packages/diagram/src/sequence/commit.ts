@@ -7,6 +7,7 @@ import type { MeasureRowText } from '../body';
 import { diagramThemeOf } from '../theme/resolve';
 import type { DiagramTheme } from '../theme/types';
 import { setSequenceText } from './edit';
+import { sequenceLocked } from './layer';
 import { sequenceSpecs } from './specs';
 import { sequencePartOf, sequenceRootOf } from './trait';
 import type { SequenceData } from './types';
@@ -41,10 +42,13 @@ function rebuild(scene: AnyScene, id: string, data: SequenceData, opts: Sequence
   if (kept.length !== scene.getSelection().length) scene.setSelection(kept);
 }
 
-/** Replaces root `id`'s sequence with `data` and builds its parts again, as one undo entry under `label`. */
+/**
+ * Replaces root `id`'s sequence with `data` and builds its parts again, as one undo entry under `label`.
+ * A sequence whose root or any part is locked is left as it stands, as {@link redrawSequences} leaves it.
+ */
 export function commitSequence(scene: AnyScene, id: string, data: SequenceData, label: string, opts: SequenceDrawOptions = {}): void {
   const node = scene.get(id as never);
-  if (node === undefined || sequenceRootOf(node) === null) return;
+  if (node === undefined || sequenceRootOf(node) === null || sequenceLocked(scene, id)) return;
   scene.batch(label, () => rebuild(scene, id, data, opts));
 }
 
@@ -72,7 +76,7 @@ export function startSequence(
 export function redrawSequences(scene: AnyScene, opts: SequenceDrawOptions = {}): void {
   for (const node of scene.renderOrderNodes()) {
     const root = sequenceRootOf(node);
-    if (root === null || [node.id, ...scene.childrenOf(node.id)].some((id) => scene.isLocked(id as never))) continue;
+    if (root === null || sequenceLocked(scene, node.id)) continue;
     rebuild(scene, node.id, root.sequence, opts);
   }
 }
