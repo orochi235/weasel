@@ -4,6 +4,7 @@ import { storyId, storyNameFromExport } from '../story/ids.ts';
 import type { IndexEntry } from '../story/types.ts';
 import {
   type Bindings,
+  bindingsOf,
   calleeOf,
   docOf,
   exportedName,
@@ -75,7 +76,6 @@ export function foreignCallees(code: string, file: string): ForeignCallee[] {
 
 /** The program's top-level bindings, and its locals that are forge's `meta` or `story`. */
 export function scan(program: t.Program, extra: ReadonlySet<string>): { bindings: Bindings; wrappers: Set<string> } {
-  const bindings: Bindings = new Map();
   const wrappers = new Set(extra);
   for (const stmt of program.body) {
     if (stmt.type === 'ImportDeclaration' && stmt.source.value === '@weasel-js/forge') {
@@ -85,14 +85,8 @@ export function scan(program: t.Program, extra: ReadonlySet<string>): { bindings
         }
       }
     }
-    const decl = stmt.type === 'ExportNamedDeclaration' ? stmt.declaration : stmt;
-    if (decl?.type === 'VariableDeclaration') {
-      for (const d of decl.declarations) if (d.id.type === 'Identifier' && d.init) bindings.set(d.id.name, d.init);
-    } else if (decl?.type === 'FunctionDeclaration' && decl.id) {
-      bindings.set(decl.id.name, decl);
-    }
   }
-  return { bindings, wrappers };
+  return { bindings: bindingsOf(program), wrappers };
 }
 
 export function indexProgram(program: t.Program, file: string, autoTitle: string, extra: ReadonlySet<string>, foreign?: Foreign): IndexEntry[] {

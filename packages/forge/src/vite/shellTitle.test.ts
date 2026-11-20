@@ -12,6 +12,11 @@ describe('shellTitle', () => {
     expect(shellTitle(`const NAME = 'Acme';\nconst config = { title: NAME };\nexport default config;\n`, FILE)).toBe('Acme');
   });
 
+  it('reads the title through an exported const', () => {
+    expect(shellTitle(`export const config = defineShellConfig({ title: 'Kit' });\nexport default config;\n`, FILE)).toBe('Kit');
+    expect(shellTitle(`export const title = 'Kit';\nexport default defineShellConfig({ title });\n`, FILE)).toBe('Kit');
+  });
+
   it('reads none from a config that names no title, computes one, or does not parse', () => {
     expect(shellTitle(`export default defineShellConfig({ globals: {} });\n`, FILE)).toBeUndefined();
     expect(shellTitle(`export default defineShellConfig({ title: name() });\n`, FILE)).toBeUndefined();
@@ -23,6 +28,11 @@ describe('shellAllowOrigins', () => {
   it("reads the origins a shell config's capture.allowOrigins names, as origins, without running it", () => {
     const code = `const FONTS = ['https://fonts.googleapis.com/', 'https://fonts.gstatic.com'] as const;\nexport default defineShellConfig({ capture: { allowOrigins: FONTS } });\n`;
     expect(shellAllowOrigins(code, FILE)).toEqual(['https://fonts.googleapis.com', 'https://fonts.gstatic.com']);
+  });
+
+  it('reads the list through an exported const', () => {
+    const code = `export const config = defineShellConfig({ capture: { allowOrigins: ['https://fonts.gstatic.com'] } });\nexport default config;\n`;
+    expect(shellAllowOrigins(code, FILE)).toEqual(['https://fonts.gstatic.com']);
   });
 
   it('reads none from a config with no list or one that does not parse, and skips a computed entry or one that is no URL', () => {
