@@ -15,7 +15,12 @@ describe('stableStringify', () => {
   it('writes what JSON writes for dates, undefined and functions', () => {
     const value = { d: new Date(0), u: undefined, f: () => 1, list: [undefined, NaN] };
     expect(stableStringify(value)).toBe(JSON.stringify({ d: new Date(0), list: [undefined, NaN] }));
-    expect(stableStringify(undefined)).toBeUndefined();
+  });
+
+  it('writes a value JSON writes nothing for as a string no JSON reads as', () => {
+    for (const v of [undefined, () => 1, Symbol('s'), { toJSON: () => undefined }]) {
+      expect(stableStringify(v)).toBe('undefined');
+    }
   });
 
   it('writes a bigint as a marker instead of throwing, and tells two apart', () => {

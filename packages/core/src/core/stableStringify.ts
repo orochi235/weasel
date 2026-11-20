@@ -1,7 +1,8 @@
 /**
- * JSON with object keys sorted, so two equal values produce one string. What JSON cannot write and would throw on
- * is written with the tags `@weasel-js/devtools`' serialization uses: a bigint as `{"$type":"bigint","value":"10"}`, a reference
- * to an object that contains it as `{"$type":"cycle"}`.
+ * JSON with object keys sorted, so two equal values produce one string. What JSON cannot write and
+ * would throw on is written with the tags `@weasel-js/devtools`' serialization uses: a bigint as
+ * `{"$type":"bigint","value":"10"}`, a reference to an object that contains it as `{"$type":"cycle"}`. A value JSON
+ * writes nothing for (`undefined`, a function, a symbol) is the bare word `undefined`, which no JSON text equals.
  */
 export function stableStringify(value: unknown): string {
   const open = new Set<object>();
@@ -27,5 +28,5 @@ export function stableStringify(value: unknown): string {
       open.delete(v);
     }
   };
-  return JSON.stringify(sorted(value, ''));
+  return JSON.stringify(sorted(value, '')) ?? 'undefined';
 }

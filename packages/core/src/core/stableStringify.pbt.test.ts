@@ -1,6 +1,7 @@
 /**
  * Property tests for `stableStringify`: for anything `JSON.stringify` writes, it writes the same JSON with every
- * object's keys sorted, so key order never matters; what JSON throws on it writes as a tag instead.
+ * object's keys sorted, so key order never matters, and the bare word `undefined` where JSON writes nothing; what JSON throws on
+ * it writes as a tag instead.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
@@ -16,9 +17,9 @@ function canonical(v: unknown): unknown {
   if (v === null || typeof v !== 'object') return v;
   return Object.fromEntries(Object.keys(v).sort().map((k) => [k, canonical((v as Record<string, unknown>)[k])]));
 }
-const oracle = (v: unknown): string | undefined => {
+const oracle = (v: unknown): string => {
   const text = JSON.stringify(v);
-  return text === undefined ? undefined : JSON.stringify(canonical(JSON.parse(text)));
+  return text === undefined ? 'undefined' : JSON.stringify(canonical(JSON.parse(text)));
 };
 
 /** An own data property, even for `__proto__`. */

@@ -13,7 +13,7 @@ export interface LocalArg {
 export type LocalArgs = Record<string, LocalArg>;
 
 /** A config value in the form `LocalArg.over` records. */
-export const coverOf = (value: unknown): string => stableStringify(value) ?? ' undefined';
+export const coverOf = (value: unknown): string => stableStringify(value);
 
 /** The frame-local values that still apply over `config`. */
 export const appliedLocal = (local: LocalArgs, config: Args): Args =>
