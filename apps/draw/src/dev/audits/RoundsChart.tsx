@@ -6,7 +6,7 @@ import s from './RoundsChart.module.css';
 
 const W = 272, H = 150;
 const PENDING_LABEL = { live: 'live', unmerged: 'unmerged' } as const;
-const M = { top: 8, right: 6, bottom: 22, left: 28 };
+const M = { top: 8, right: 6, bottom: 22, left: 40 };
 
 /** Round ticks for a value axis from 0 to at least `max`: a step of 1, 2 or 5 times a power of ten. */
 export function ticksFor(max: number, count = 4): number[] {
@@ -36,6 +36,7 @@ export function RoundsChart({ rounds }: { rounds: readonly AuditRound[] }) {
               <line className={s.hatch} x1="0" y1="0" x2="0" y2="4" />
             </pattern>
           </defs>
+          <text className={s.title} transform={`translate(11 ${(M.top + H - M.bottom) / 2}) rotate(-90)`} textAnchor="middle">defects per area</text>
           {ticks.map((t) => (
             <g key={t}>
               <line className={s.grid} x1={M.left} x2={W - M.right} y1={y(t)} y2={y(t)} />

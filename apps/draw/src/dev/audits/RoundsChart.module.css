@@ -6,6 +6,13 @@
 
 .grid { stroke: var(--audit-rule); }
 
+.title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  fill: var(--audit-muted);
+}
+
 .axis {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
   font-size: 9px;
