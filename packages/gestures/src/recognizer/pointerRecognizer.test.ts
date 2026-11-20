@@ -4,30 +4,10 @@ import { DRAG_THRESHOLD_PX } from '../ui/dragThreshold';
 import { createPointerRecognizer, type PointerRecognizerOptions } from './pointerRecognizer';
 import type { HeldPress } from './longPressHold';
 import type { PointerSample, PressSample } from './samples';
+import { fakeClock } from '../pbt.fixture';
 import { DOUBLE_CLICK_MAX_MS, DOUBLE_CLICK_MAX_PX, LONG_PRESS_MS, TAP_THRESHOLD_PX } from './thresholds';
 
 const MODS = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
-
-/** A clock that only moves when told to, firing the timers it passes. */
-function fakeClock() {
-  let t = 0;
-  let seq = 0;
-  const timers = new Map<number, { at: number; fn: () => void }>();
-  return {
-    now: () => t,
-    setTimer: (fn: () => void, ms: number) => { timers.set(++seq, { at: t + ms, fn }); return seq; },
-    clearTimer: (id: unknown) => { timers.delete(id as number); },
-    advance(ms: number) {
-      t += ms;
-      for (const [id, timer] of [...timers]) {
-        if (timer.at > t) continue;
-        timers.delete(id);
-        timer.fn();
-      }
-    },
-    pending: () => timers.size,
-  };
-}
 
 function harness(opts: {
   /** Event kinds the sink answers `'handled'` to. */
