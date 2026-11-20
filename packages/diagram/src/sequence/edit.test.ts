@@ -66,3 +66,25 @@ describe('setSequenceText', () => {
     expect(setSequenceText(data, { participant: 'a' }, 'Alice')).toBe(data);
   });
 });
+
+describe('moveParticipant beside boxes', () => {
+  const boxed = { ...data, boxes: [{ id: 'x', members: ['a', 'b'] }] };
+
+  it('takes a head dragged between two members into their box', () => {
+    const next = moveParticipant(boxed, 'c', 1);
+    expect(next.participants.map((p) => p.id)).toEqual(['a', 'c', 'b']);
+    expect(next.boxes).toEqual([{ id: 'x', members: ['a', 'b', 'c'] }]);
+  });
+
+  it('takes a member dragged past every other member out of its box', () => {
+    const next = moveParticipant(boxed, 'a', 3);
+    expect(next.participants.map((p) => p.id)).toEqual(['b', 'c', 'a']);
+    expect(next.boxes).toEqual([{ id: 'x', members: ['b'] }]);
+  });
+
+  it('keeps a member reordered within its box', () => {
+    const next = moveParticipant(boxed, 'a', 2);
+    expect(next.participants.map((p) => p.id)).toEqual(['b', 'a', 'c']);
+    expect(next.boxes).toBe(boxed.boxes);
+  });
+});

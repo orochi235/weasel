@@ -121,14 +121,45 @@ export function moveStep(data: SequenceData, id: string, to: StepPlace): Sequenc
   return { ...data, steps };
 }
 
-/** Participant `id` moved to `index` among them, counted as they stand before the move. */
+/**
+ * `data`, whose participant `id` has just been put where it stands, with the
+ * boxes kept side by side: a box spans every column between its ends, so one
+ * landing between two members of a box joins it, and a member landing beside
+ * none of its box's other members leaves it. A box left empty goes.
+ */
+export function settleBoxMembership(data: SequenceData, id: string): SequenceData {
+  if (data.boxes === undefined || data.boxes.length === 0) return data;
+  const at = data.participants.findIndex((p) => p.id === id);
+  if (at < 0) return data;
+  const boxOf = (pid: string | undefined) => (pid === undefined ? undefined : data.boxes!.find((b) => b.members.includes(pid)));
+  const left = boxOf(data.participants[at - 1]?.id);
+  const right = boxOf(data.participants[at + 1]?.id);
+  const own = boxOf(id);
+  const into = left !== undefined && left === right ? left
+    : own !== undefined && (left === own || right === own || own.members.length === 1) ? own
+    : undefined;
+  if (into === own) return data;
+  const boxes = data.boxes.flatMap((b) => {
+    if (b === into) return [{ ...b, members: [...b.members, id] }];
+    if (b !== own) return [b];
+    const members = b.members.filter((m) => m !== id);
+    return members.length === 0 ? [] : [{ ...b, members }];
+  });
+  const { boxes: _boxes, ...rest } = data;
+  return boxes.length === 0 ? rest : { ...rest, boxes };
+}
+
+/**
+ * Participant `id` moved to `index` among them, counted as they stand before
+ * the move, joining or leaving a box as {@link settleBoxMembership} puts it.
+ */
 export function moveParticipant(data: SequenceData, id: string, index: number): SequenceData {
   const from = data.participants.findIndex((p) => p.id === id);
   if (from < 0 || index === from || index === from + 1) return data;
   const p = data.participants[from]!;
   const rest = data.participants.filter((_, i) => i !== from);
   const at = index > from ? index - 1 : index;
-  return { ...data, participants: [...rest.slice(0, at), p, ...rest.slice(at)] };
+  return settleBoxMembership({ ...data, participants: [...rest.slice(0, at), p, ...rest.slice(at)] }, id);
 }
 
 /** Message `id`'s `end` moved to `participant`'s lifeline. */

@@ -6,7 +6,7 @@
 import { freshId } from '@weasel-js/registry';
 import type { Outline } from '../outline';
 import { flatSteps } from './columns';
-import { hasId, pruneSteps } from './edit';
+import { hasId, pruneSteps, settleBoxMembership } from './edit';
 import type { SeqBox, SeqParticipant, SequenceData } from './types';
 
 /** Every id `data` uses: its participants', its steps', its boxes'. */
@@ -35,11 +35,14 @@ export function newParticipant(data: SequenceData, kind: SeqParticipantKind = 'p
   return { id, label, ...(kind === 'actor' ? { outline: 'actor' as const } : {}) };
 }
 
-/** `p` added at `index` among the participants (default last). Nothing changes when its id is taken. */
+/**
+ * `p` added at `index` among the participants (default last), into the box
+ * whose members it lands between. Nothing changes when its id is taken.
+ */
 export function addParticipant(data: SequenceData, p: SeqParticipant, index = data.participants.length): SequenceData {
   if (seqIdTaken(data, p.id)) return data;
   const at = Math.max(0, Math.min(index, data.participants.length));
-  return { ...data, participants: [...data.participants.slice(0, at), p, ...data.participants.slice(at)] };
+  return settleBoxMembership({ ...data, participants: [...data.participants.slice(0, at), p, ...data.participants.slice(at)] }, p.id);
 }
 
 /**
