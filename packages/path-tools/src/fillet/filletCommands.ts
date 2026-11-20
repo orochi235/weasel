@@ -8,7 +8,6 @@ import {
   cornerSpecAt,
   isCornerShape,
   nextCornerShape,
-  withCorner,
   type CornerFrame,
   type CornerShape,
   type PolygonPath,
@@ -17,6 +16,7 @@ import { pref } from '@weasel-js/prefs-schema';
 import { pathOperationTags, type EditAnchorsDep } from '@weasel-js/core';
 import { openPathEditOf, requiresAnchorSelection } from '../pathEdit/anchorEditing';
 import { DEFAULT_FILLET_SHAPE, editedPath } from './editFillet';
+import { withCornerRadii } from './cornerRadii';
 import { icon } from '../icons.gen';
 import type { SetFilletsParams } from '../actionParamSchema';
 import { isFiniteNumber } from '@weasel-js/registry';
@@ -66,17 +66,15 @@ interface CornerChange {
  * radius.
  */
 function changeCorners(path: PolygonPath, frames: readonly CornerFrame[], change: CornerChange): PolygonPath {
-  let out = path;
-  for (const f of frames) {
+  return withCornerRadii(path, frames.map((f) => {
     const spec = cornerSpecAt(path, f.index);
     const shape = change.shape ?? spec?.shape ?? DEFAULT_FILLET_SHAPE;
     let radius = Math.max(0, change.radius ?? spec?.radius ?? 0);
     if (change.shape !== undefined && change.radius === undefined && radius <= 0) {
       radius = (change.share ?? DEFAULT_FILLET_TRIM_SHARE) * f.maxTrim;
     }
-    out = withCorner(out, f.index, { shape, radius: Math.min(radius, f.maxTrim) });
-  }
-  return out;
+    return { index: f.index, shape, radius };
+  }));
 }
 
 function commitChange(deps: ActionDeps | undefined, label: string, change: (frames: CornerFrame[], path: PolygonPath) => CornerChange): void {
