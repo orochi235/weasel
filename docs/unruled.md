@@ -2935,3 +2935,12 @@ Calls the lanes made without a ruling:
   then `DFLT`'s, then the rest in ScriptList order, and taking the first whose lookups cover the pair. Layout knows
   no run's script, so picking one script for every pair was the alternative, and loses kerning other scripts' lookups
   alone carry.
+## Audit round fifty (2026-11-20): labkit's trial clock
+
+- 2026-11-20 (the fixer's call): a trial transport's Play, and `<TrialTransport replay>`, start a played-out run over
+  in the direction it plays: a run played backward to its start seeks to its end and plays backward, and an ended
+  clock that is not seekable is reset (`handle.reset()`) and played from its start. Limiting `replay` to seekable
+  clocks in its doc, and leaving Play inert there, was the alternative.
+- 2026-11-20 (the fixer's call): a clock's transport hold takes each speed a redeclaration gives the clock until a
+  transport sets a speed of its own; working the clock otherwise (a pause, a loop toggle, a seek) does not stop it
+  following. Following only while the hold is untouched was the alternative.
