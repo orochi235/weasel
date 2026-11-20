@@ -104,10 +104,15 @@ export function wrapGroup(
   children: DrawCommand[],
   view: View,
   dims: LayerDims,
+  /** Told when the `effects` thunk throws; the run then composites without effects. */
+  onEffectsError: (error: unknown) => void,
 ): DrawCommand[] {
-  const declared = typeof group.effects === 'function'
-    ? group.effects(view, dims)
-    : group.effects;
+  let declared: readonly Effect[] | undefined;
+  try {
+    declared = typeof group.effects === 'function' ? group.effects(view, dims) : group.effects;
+  } catch (error) {
+    onEffectsError(error);
+  }
   const effects = declared && declared.length > 0 ? declared : undefined;
   if (!effects && group.alpha === undefined && group.colorMatrix === undefined
       && group.composite === undefined) return children;

@@ -15,7 +15,8 @@ export { subscribeToSources, type RedrawSource } from './redrawSource';
 const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 /**
- * What a layer's `draw` threw, and which layer threw it. A throw that escaped
+ * What a layer's `draw` threw, and which layer threw it — or which layer group, when its
+ * `effects` thunk threw. A throw that escaped
  * the frame loop would take the whole frame with it, every other layer
  * included.
  */
@@ -213,9 +214,10 @@ export function drawLayers<TData>(
 
   const closeRun = () => {
     if (!run) return;
+    const { group } = run;
     const start = out.length;
     const t0 = spans ? clockMs() : 0;
-    for (const c of wrapGroup(run.group, run.children, v, dims)) out.push(c);
+    for (const c of wrapGroup(run.group, run.children, v, dims, (error) => onLayerError({ layerId: group.id, error }))) out.push(c);
     spans?.push({ id: run.group.id, start, end: out.length, buildMs: run.buildMs + clockMs() - t0 });
     run = null;
   };

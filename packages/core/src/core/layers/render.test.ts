@@ -514,3 +514,19 @@ describe('isLayerVisible', () => {
     expect(isLayerVisible(layer, {})).toBe(false);
   });
 });
+
+describe('a group whose effects thunk throws', () => {
+  it('reports it under the group id and paints the run without the effects', () => {
+    const a: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { color: '#a' } } };
+    const hud: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 1, y: 0, width: 1, height: 1 }, fill: { paint: { color: '#h' } } };
+    const onLayerError = vi.fn();
+    const out = drawLayers(
+      [{ id: 'a', label: 'A', space: 'screen', draw: () => [a] }, { id: 'hud', label: 'H', space: 'screen', draw: () => [hud] }],
+      null, {}, undefined, VIEW, DIMS, undefined, onLayerError,
+      [{ id: 'g', layers: ['a'], alpha: 0.5, effects: () => { throw new Error('no blur yet'); } }],
+    );
+    expect(out).toEqual([{ kind: 'group', isolate: true, alpha: 0.5, children: [a] }, hud]);
+    expect(onLayerError).toHaveBeenCalledTimes(1);
+    expect(onLayerError.mock.calls[0][0].layerId).toBe('g');
+  });
+});
