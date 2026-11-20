@@ -1,6 +1,7 @@
 /** Edits to a gitgraph's commands as a collection, each command's fields, and the graph's options, as plain data in and
  *  out. */
 import { freshName, insertAt, moveAt, removeAt, updateAt, withOptional } from '../editing/lists';
+import { replayGitGraph } from './replay';
 import type { GitCommand, GitCommitType, GitGraphData } from './types';
 
 /** The kinds of command a graph runs. */
@@ -42,8 +43,8 @@ export const setGitCommand = (data: GitGraphData, at: number, command: GitComman
 
 /**
  * `data` with command `at` turned into a command of `kind`, keeping the fields both kinds hold. What the new kind needs
- * and the old did not hold is filled in: a fresh name for a branch, the main branch to check out, the last branch
- * created to merge, the last commit id to pick.
+ * and the old did not hold is filled in, from the history before it: a fresh name for a branch, the main branch to check
+ * out, the latest other branch to merge, the latest commit on another branch to pick.
  */
 export function setGitCommandKind(data: GitGraphData, at: number, kind: GitCommand['kind']): GitGraphData {
   const old = data.commands[at];
@@ -54,14 +55,39 @@ export function setGitCommandKind(data: GitGraphData, at: number, kind: GitComma
     return v === undefined || (f === 'id' && (old.kind === 'cherry-pick') !== (kind === 'cherry-pick')) ? [] : [[f, v]];
   }));
   const branches = gitBranchNames(data);
-  const ids = data.commands.flatMap((c) => ((c.kind === 'commit' || c.kind === 'merge') && c.id !== undefined ? [c.id] : []));
   const needs: Record<string, unknown> =
     kind === 'branch' ? { name: freshName('branch', branches, branches.length, '-') }
     : kind === 'checkout' ? { name: mainOf(data) }
-    : kind === 'merge' ? { branch: branches[branches.length - 1] }
-    : kind === 'cherry-pick' ? { id: ids[ids.length - 1] ?? '' }
+    : kind === 'merge' ? { branch: mergeable(data, at) }
+    : kind === 'cherry-pick' ? { id: pickable(data, at) }
     : {};
   return setGitCommand(data, at, { ...needs, ...kept, kind } as GitCommand);
+}
+
+/** What replaying the commands before `at` leaves: its history, and the branch checked out. */
+function replayedBefore(data: GitGraphData, at: number) {
+  const history = replayGitGraph({ ...data, commands: data.commands.slice(0, at) });
+  let current = mainOf(data);
+  for (const c of data.commands.slice(0, history.error?.command ?? at)) if (c.kind === 'branch' || c.kind === 'checkout') current = c.name;
+  return { history, current };
+}
+
+/** The latest branch made before `at` that a merge there can take in: not the one checked out, and holding a commit. */
+function mergeable(data: GitGraphData, at: number): string {
+  const { history, current } = replayedBefore(data, at);
+  const others = history.branches.filter((b) => b.name !== current);
+  const order = data.commands.slice(0, at).flatMap((c) => (c.kind === 'branch' ? [c.name] : []));
+  others.sort((a, b) => order.lastIndexOf(b.name) - order.lastIndexOf(a.name));
+  return (others.find((b) => b.commits.length > 0 || b.fork !== undefined) ?? others[0])?.name ?? mainOf(data);
+}
+
+/** The latest commit before `at`, named by an id of its own, that a cherry-pick there can take: not a merge, and on
+ *  another branch. */
+function pickable(data: GitGraphData, at: number): string {
+  const { history, current } = replayedBefore(data, at);
+  const named = (k: number) => (data.commands[k] as { id?: string }).id !== undefined;
+  const picks = history.commits.filter((c) => c.branch !== current && c.parents.length <= 1 && c.source === undefined && named(c.command));
+  return picks.at(-1)?.id ?? '';
 }
 
 const TYPES: readonly GitCommitType[] = ['NORMAL', 'REVERSE', 'HIGHLIGHT'];
