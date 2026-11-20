@@ -84,10 +84,17 @@ function gradientKind(id: GradientKind, label: string, icon: IconRef): PaintKind
     icon,
     // `bounds` units make the seed independent of the node's actual size.
     seed: (color) => gradientForBounds(id, UNIT_BOX, twoStopRamp(color), 'bounds'),
-    colorOf: (paint) => (paint as Partial<GradientPaint>).stops?.[0]?.color,
+    colorOf: (paint) => firstStop((paint as Partial<GradientPaint>).stops)?.color,
     stopsOf: (paint) => (paint as GradientPaint).stops,
     fromStops: (stops) => gradientForBounds(id, UNIT_BOX, stops, 'bounds'),
   };
+}
+
+/** The stop at the gradient's start: stop lists are drawn sorted, but need not be written so. */
+function firstStop(stops: readonly GradStop[] | undefined): GradStop | undefined {
+  let first: GradStop | undefined;
+  for (const stop of stops ?? []) if (!first || stop.offset < first.offset) first = stop;
+  return first;
 }
 
 const UNIT_BOX = { x: 0, y: 0, width: 1, height: 1 };
