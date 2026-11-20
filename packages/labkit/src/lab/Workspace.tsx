@@ -1,5 +1,5 @@
 import { Children, type ReactNode, useCallback, useMemo } from 'react';
-import { asNodeId, floatingStrategy, gridStrategy, type NodeId } from 'windease';
+import { asNodeId, gridStrategy, type NodeId } from 'windease';
 import { Container, DragProvider, Provider, StrategyRegistryProvider } from 'windease/react';
 import { createTileChrome, FloatingPanels, type PanelDescriptor } from './tileChrome';
 import {
@@ -15,10 +15,7 @@ import {
 export type { PanelDescriptor } from './tileChrome';
 export type { TrialLayout } from './workspaceStore';
 
-const STRATEGIES = {
-  grid: gridStrategy as never,
-  floating: floatingStrategy as never,
-};
+const STRATEGIES = { grid: gridStrategy as never };
 
 /** Props for `Workspace`. */
 export interface WorkspaceProps {
@@ -49,7 +46,7 @@ export interface WorkspaceProps {
   padding?: number;
   /** Undocked sidebar panels to render alongside the trials. A `'tile'` panel
    *  joins the grid as a peer of the trials; a `'floating'` one goes into the
-   *  floating zone above it. The body is portaled in by the trial that owns
+   *  floating layer above it, stacked down its top-right corner. The body is portaled in by the trial that owns
    *  it, so all this renders is the frame and the host. */
   panels?: readonly PanelDescriptor[];
   /**

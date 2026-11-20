@@ -5,7 +5,6 @@ import { asNodeId, createNode, type NodeId, Store } from 'windease';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
 
 export const ZONE_ID = asNodeId('lk-workspace');
-const FLOAT_ZONE_ID = asNodeId('lk-workspace-floating');
 export const PANEL_KIND = 'panel';
 export const TRIAL_KIND = 'trial';
 
@@ -19,7 +18,7 @@ export type TrialLayout = Record<
   { size?: { w?: number; h?: number }; span?: { cols?: number; rows?: number } }
 >;
 
-/** The layout store a workspace keeps for its lifetime: the tile grid, and the zone floating panels live in. */
+/** The layout store a workspace keeps for its lifetime: the tile grid. */
 function createWorkspaceStore(grid: { resizable: boolean; gap: number; padding: number }): Store {
   const store = new Store();
   store.registerNode(
@@ -27,13 +26,6 @@ function createWorkspaceStore(grid: { resizable: boolean; gap: number; padding: 
       kind: 'zone',
       id: ZONE_ID,
       container: { strategyId: 'grid', config: grid },
-    }),
-  );
-  store.registerNode(
-    createNode({
-      kind: 'zone',
-      id: FLOAT_ZONE_ID,
-      container: { strategyId: 'floating', config: {} },
     }),
   );
   return store;
