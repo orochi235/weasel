@@ -18,7 +18,7 @@ export const SHIPPED_TAGS = [
 /** One capability a tool or contribution declares, and a mode allows. Any
  *  string is accepted so apps can add tags of their own; `SHIPPED_TAGS` is the
  *  set this package ships. */
-export type CapabilityTag = (typeof SHIPPED_TAGS)[number] | (string & {});
+export type CapabilityTag = ShippedTag | (string & {});
 
 /** Tags that are implicitly allowed in every mode — never listed per-mode.
  *  A tool carrying only these is eligible everywhere. */
@@ -34,8 +34,11 @@ export function capabilitiesAllowed(allowed: ReadonlySet<string>, tags: readonly
   return tags === undefined || tags.every((tag) => allowed.has(tag));
 }
 
+/** One of the tags in `SHIPPED_TAGS`. */
+export type ShippedTag = (typeof SHIPPED_TAGS)[number];
+
 /** Whether a string is one of the shipped `SHIPPED_TAGS`. An app-defined tag is
  *  still a valid `CapabilityTag` and will answer `false` here. */
-export function isShippedTag(value: string): value is CapabilityTag {
+export function isShippedTag(value: string): value is ShippedTag {
   return (SHIPPED_TAGS as readonly string[]).includes(value);
 }
