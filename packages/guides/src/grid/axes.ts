@@ -9,8 +9,8 @@ export type GridLength = Exclude<PlaneValue, PerAxis<unknown>>;
  * pass through, limited to `from`..`to` (inclusive); or lines at explicit
  * positions, for uneven bays. Positions are measured from the grid's origin:
  * a container's corner, or the root's origin. A pitch of 0 gives the axis no
- * lines. So does a negative, NaN or infinite pitch, or `from` past `to`, with a
- * development warning.
+ * lines. So does a negative, NaN or infinite pitch, a NaN or infinite
+ * `offset`, or `from` past `to`, with a development warning.
  */
 export type GridAxis =
   | GridLength
@@ -79,6 +79,7 @@ function resolveAxis(a: GridAxis, read: (v: GridLength) => number): AxisLines | 
 function periodic(pitch: number, offset: number, from: number, to: number): AxisLines | Invalid | null {
   if (pitch === 0) return null;
   if (!(pitch > 0) || !Number.isFinite(pitch)) return { invalid: `pitch ${pitch} is not a positive finite number` };
+  if (!Number.isFinite(offset)) return { invalid: `offset ${offset} is not a finite number` };
   if (!(from <= to)) return { invalid: `from ${from} is past to ${to}` };
   return { pitch, offset, from, to };
 }

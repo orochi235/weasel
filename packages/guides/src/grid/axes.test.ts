@@ -37,6 +37,17 @@ describe('resolveGridLines', () => {
     warn.mockRestore();
   });
 
+  it('warns for a NaN or infinite offset, so no cell or line comes of it', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const lines = resolveGridLines({ x: { pitch: 10, offset: Number.NaN }, y: { pitch: 10, offset: -Infinity } }, bare);
+    expect(lines).toEqual({ x: null, y: null });
+    expect(warn.mock.calls.map((c) => c[0])).toEqual([
+      expect.stringContaining('x axis: offset NaN is not a finite number'),
+      expect.stringContaining('y axis: offset -Infinity is not a finite number'),
+    ]);
+    warn.mockRestore();
+  });
+
   it('reads every length of an axis in its units, and names the axis that fails', () => {
     expect(gridLines({ x: { pitch: { value: 1, unit: 'ft' }, offset: 6, to: { value: 2, unit: 'ft' } } }, IMPERIAL_INCHES, undefined).x)
       .toEqual({ pitch: 12, offset: 6, from: -Infinity, to: 24 });
