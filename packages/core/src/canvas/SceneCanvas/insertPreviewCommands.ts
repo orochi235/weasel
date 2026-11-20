@@ -61,7 +61,7 @@ export function insertPreviewCommands(
   }
   const pathCmd = world && transformPath(world, toScreen);
   if (pathCmd && geom.kind === 'box' && ov.shape === 'image') {
-    const e = ov.extras as Partial<{ src: string; preview: string }>;
+    const e = (typeof ov.extras === 'object' && ov.extras !== null ? ov.extras : {}) as Partial<{ src: string; preview: string }>;
     // The bitmap when it has decoded, the bare outline until then
     // (or when the tool opted out) — the outline is drawn either
     // way, so the drag always has an edge to read.

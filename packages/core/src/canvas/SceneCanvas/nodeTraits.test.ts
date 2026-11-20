@@ -51,8 +51,10 @@ describe('nodeTraitsOf', () => {
   it('lists each painter once, in preset order', () => {
     const painter = { id: 'p', matches: () => false, paint: () => [] };
     const a: FeaturePreset = { id: 'a', shapes: [painter] };
-    const b: FeaturePreset = { id: 'b', shapes: [{ painter, priority: 'high' }] };
+    const b: FeaturePreset = { id: 'b', shapes: [{ painter, priority: 'normal' }] };
     expect(nodeTraitsOf([a, b]).shapes).toEqual([{ painter }]);
+    const high: FeaturePreset = { id: 'high', shapes: [{ painter, priority: 'high' }] };
+    expect(() => nodeTraitsOf([a, high])).toThrow('presets "a" and "high" both install a shape painter');
   });
 });
 

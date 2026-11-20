@@ -2,12 +2,14 @@
  * `<SceneCanvas>`'s dev HUDs: the cursor readout, the pick list, and the
  * modality panel, each a fixed-position widget pinned to the canvas.
  */
-import { useCallback, type RefObject } from 'react';
+import { useCallback, useRef, type RefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { View } from 'core/viewport/view';
 import type { WorldPoint } from '@weasel-js/routing';
 import type { DebugFlags } from '../../debug/types';
 import type { CanvasExtensionApi } from '../canvasExtension';
+import { useOptionalViewRegistry } from '../viewRegistry';
+import { worldPointAt } from './worldPointAt';
 import { CursorCoordsHud } from '../CursorCoordsHud';
 import { ModalityHud } from '../ModalityHud';
 import { PickHud } from '../PickHud';
@@ -20,7 +22,7 @@ export interface DevHudsProps {
   /** The element input comes from. */
   canvasRef: RefObject<HTMLElement | null>;
   /** Read for the canvas's own client→world conversion, so a readout agrees
-   *  with a pick. */
+   *  with a pick. A point over a declared view converts through that view. */
   canvasApiRef: RefObject<Pick<CanvasExtensionApi, 'clientToWorld'> | null>;
   /** Under `paintInto`, the caller's input element, `null` until it arrives;
    *  `undefined` when the canvas renders its own. Each HUD of a detached
@@ -28,27 +30,37 @@ export interface DevHudsProps {
    *  pane of the shared surface sits in. */
   detachedInput: HTMLElement | null | undefined;
   viewRef: RefObject<View>;
-  pickEvery: (world: WorldPoint) => readonly string[];
-  /** The id a bare click at this point would select. */
-  pickBest: (world: WorldPoint) => string | null;
+  /** Every id a press routed to `viewId`'s view (the surface's, `null`) lands on at `world`. */
+  pickEvery: (world: WorldPoint, viewId: string | null) => readonly string[];
+  /** The id a bare click at this point, in `viewId`'s view, would select. */
+  pickBest: (world: WorldPoint, viewId: string | null) => string | null;
 }
 
 export function DevHuds(props: DevHudsProps) {
   const { cursorCoords, pick, modality, canvasRef, canvasApiRef, detachedInput, viewRef } = props;
+  const registry = useOptionalViewRegistry();
+  // The view the last converted point landed in, which the pick HUD's picks
+  // then ask about: it converts a point and picks at it in one handler.
+  const viewIdRef = useRef<string | null>(null);
   const toWorld = useCallback(
-    (clientX: number, clientY: number): [number, number] =>
-      canvasApiRef.current?.clientToWorld(clientX, clientY) ?? [clientX, clientY],
-    [canvasApiRef],
+    (clientX: number, clientY: number): [number, number] => {
+      const api = canvasApiRef.current;
+      if (!api) return [clientX, clientY];
+      const target = registry?.resolver.at(null, clientX, clientY);
+      viewIdRef.current = target?.id ?? null;
+      return worldPointAt(api, target, clientX, clientY);
+    },
+    [canvasApiRef, registry],
   );
   // The pick HUD installs its pointer listener again whenever a picker's
   // identity changes, so it gets two that never do.
   const pickersRef = useLatest({ pickEvery: props.pickEvery, pickBest: props.pickBest });
   const pickEvery = useCallback(
-    (world: WorldPoint): readonly string[] => pickersRef.current.pickEvery(world),
+    (world: WorldPoint): readonly string[] => pickersRef.current.pickEvery(world, viewIdRef.current),
     [pickersRef],
   );
   const pickBest = useCallback(
-    (world: WorldPoint): string | null => pickersRef.current.pickBest(world),
+    (world: WorldPoint): string | null => pickersRef.current.pickBest(world, viewIdRef.current),
     [pickersRef],
   );
 

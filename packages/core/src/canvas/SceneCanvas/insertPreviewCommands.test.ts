@@ -42,3 +42,13 @@ describe('insertPreviewCommands radial shapes', () => {
     expect(flipped.cy).toBeCloseTo(-up.cy);
   });
 });
+
+describe('insertPreviewCommands image', () => {
+  it('draws the bare outline for an image preview with no extras', () => {
+    const cmds = insertPreviewCommands({
+      kind: 'insertPreview', visibilityId: 'action.insert-preview', shape: 'image',
+      bounds: { x: 0, y: 0, width: 20, height: 10 }, geometry: { kind: 'box' }, extras: undefined,
+    } as Parameters<typeof insertPreviewCommands>[0], view(1, 1), style);
+    expect(cmds.map((c) => c.kind)).toEqual(['path']);
+  });
+});

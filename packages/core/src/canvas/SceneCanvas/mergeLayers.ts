@@ -15,10 +15,15 @@ export function layersOverPresets<L extends object>(
   return { ...presetLayers, ...user } as L;
 }
 
+/** `config` without its keys set to `undefined`: a field given as `undefined` is one left out. */
+function givenFields<C extends object>(config: C): Partial<C> {
+  return Object.fromEntries(Object.entries(config).filter(([, v]) => v !== undefined)) as Partial<C>;
+}
+
 /** Deep-merge user-supplied `layers` with kit defaults. Slots the user
  *  doesn't mention get filled with defaults; slots explicitly set to
  *  `null` are dropped. Partial slot configs are shallow-spread on top of the
- *  default slot config. `targetScale` (from the {@link DeviceProfile}) and `baseSizes` go to `targetSizesPx`. */
+ *  default slot config, a field set to `undefined` counting as left out. `targetScale` (from the {@link DeviceProfile}) and `baseSizes` go to `targetSizesPx`. */
 export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
   user: SceneCanvasLayers<Node<TData, TLayer, TPose>, TPose> | undefined,
   targetScale = 1, baseSizes: Partial<TargetSizesPx> = {},
@@ -44,8 +49,9 @@ export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
   } else if (user.scene === null || isCustomEntry(user.scene)) {
     result.scene = user.scene;
   } else {
-    const scene = { ...defaults.scene, ...user.scene };
-    result.scene = user.scene && 'paintBounds' in user.scene
+    const given = givenFields(user.scene ?? {});
+    const scene = { ...defaults.scene, ...given };
+    result.scene = 'paintBounds' in given
       ? scene
       : { ...scene, paintBounds: paintBoundsFor<TData, TLayer, TPose>(scene.drawOne) };
   }
@@ -55,7 +61,7 @@ export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
   } else if (user.selectionOverlay === null || isCustomEntry(user.selectionOverlay)) {
     result.selectionOverlay = user.selectionOverlay;
   } else {
-    result.selectionOverlay = { ...defaults.selectionOverlay, ...user.selectionOverlay };
+    result.selectionOverlay = { ...defaults.selectionOverlay, ...givenFields(user.selectionOverlay ?? {}) };
   }
 
   return result;

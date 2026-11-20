@@ -2726,6 +2726,20 @@ Calls the lanes made without a ruling:
 - 2026-11-18 (the fixer's call): `resolveUnitExpr` refuses an expression nesting parentheses or signs past 1000 levels
   with its own `unitExpr:` error.
 
+## Audit round forty (2026-11-19): SceneCanvas, part one
+
+- 2026-11-19 (the fixer's call): two presets installing one shape painter at different priorities throw, naming
+  both, as two presets giving one routing name or insert kind different values do; the same painter at one priority
+  still counts once. The first preset's priority used to win silently, which a test pinned. Letting the refining
+  preset's priority win was the alternative.
+- 2026-11-19 (the fixer's call): two unrelated presets giving one chrome id different `chromeRules` throw, and a
+  preset's own tool and another's built tool of one id are weighed together, a refiner winning and two unrelated
+  presets throwing. Before, the last preset's chrome rule won and the own tool always won. Keeping either silent
+  winner was the alternative.
+- 2026-11-19 (the fixer's call): `<SceneCanvas>` no longer takes `gestureSource`, `previewPoseExtra` or
+  `boundsOfPose`; a passed one replaced the dispatcher-backed one. Composing a consumer's value with the canvas's
+  own was the alternative.
+
 ## Audit round thirty-nine (2026-11-19): SceneCanvas, part two
 
 - 2026-11-19 (the fixer's call): a `<SceneCanvas scene>` that changes from a live `Scene` to serialized JSON keeps

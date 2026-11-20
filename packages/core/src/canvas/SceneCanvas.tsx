@@ -158,7 +158,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         cursorCoords={props.cursorCoordsHud} pick={props.pickHud} modality={props.modalityHud}
         canvasRef={internalCanvasRef} canvasApiRef={canvasApiRef}
         detachedInput={props.paintInto ? props.inputElement ?? null : undefined}
-        viewRef={viewRef} pickEvery={picking.pickEvery} pickBest={picking.pickBest}
+        viewRef={viewRef} pickEvery={picking.pickEveryIn} pickBest={picking.pickBestIn}
       />
       <GestureReason dispatcher={dispatcher} canvasRef={internalCanvasRef} viewRef={viewRef} />
       <SceneCanvasInput
