@@ -10,7 +10,7 @@ import type { HudContentCtx, WidgetBounds } from '../widget';
 /** The canvas a lens can be a view on. */
 export type LensHost = Pick<SceneCanvasApi, 'addView' | 'getSurfaceRect'> & Partial<Pick<SceneCanvasApi, 'getPaintedVersion' | 'viewAt'>>;
 
-/** Where an interactive lens routes while its window is hidden: nowhere. */
+/** Where an interactive lens routes while its window is hidden or gone: nowhere. */
 const NO_RECT = { x: 0, y: 0, width: 0, height: 0 };
 
 /** The lens camera aimed at `aim`: magnifying the view under it, or the
@@ -60,7 +60,7 @@ export function createVectorLens(setup: VectorLensSetup): VectorLens {
   let lens: CanvasViewHandle | null = host ? host.addView({
     id: viewId,
     label: 'Loupe',
-    bounds: () => (win.hidden ? NO_RECT : win.contentRect),
+    bounds: () => (win.hidden || win.disposed === true ? NO_RECT : win.contentRect),
     view: (outer) => innerView(outer, win.contentRect),
     paint: false,
     interactive,

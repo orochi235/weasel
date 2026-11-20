@@ -500,4 +500,23 @@ describe('createLoupe on a shared canvas', () => {
     expect(a.window.id).not.toBe(b.window.id);
     a.dispose(); b.dispose();
   });
+
+  it('takes an interactive lens view off its canvas once its window is taken off the HUD', () => {
+    const hud = createHud();
+    const frame = bindHost(hud);
+    let bounds: unknown = null;
+    const remove = vi.fn();
+    const views = {
+      addView: vi.fn((v: { id: string; bounds?: unknown }) => {
+        bounds = v.bounds;
+        return { id: v.id, draw: () => [], remove };
+      }),
+      getSurfaceRect: () => ({ x: 0, y: 0, width: 800, height: 600 }),
+    };
+    const loupe = createLoupe({ hud, canvas: makeElement(), requestRedraw: () => {}, views, interactive: true });
+    hud.remove(loupe.window);
+    expect((bounds as () => unknown)()).toMatchObject({ width: 0, height: 0 });
+    frame();
+    expect(remove).toHaveBeenCalled();
+  });
 });

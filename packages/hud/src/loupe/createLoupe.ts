@@ -212,6 +212,8 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   // Subscribed ahead of the model, so the frame that lands first is already
   // readable by the time the model samples on it.
   const unsubscribeFrame = hud.subscribeFrame(() => {
+    // A window taken off the HUD takes its loupe with it, on the frame its removal asks for.
+    if (win.disposed === true) { model.dispose(); return; }
     pixels.land();
     if (watch.changed() || refreshAsked) {
       refreshAsked = false;
