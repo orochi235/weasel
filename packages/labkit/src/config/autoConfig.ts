@@ -83,7 +83,7 @@ export function resolveAutoConfig<TC>(
     try {
       // Read `out` only after the resolver has run: it forces its own
       // dependencies, and each of those replaced `out`.
-      const computed = resolve?.(demand(() => out, resolvers, need));
+      const computed = resolve?.(demand(() => out, resolvers, need, inFlight));
       const value = prefAutoValue(leaf, computed);
       if (value !== undefined) out = withConfigValueAt(out, path, value);
     } finally {
@@ -99,7 +99,9 @@ export function resolveAutoConfig<TC>(
 /**
  * The config a resolver reads. A top-level key that is itself unpinned is
  * forced before it is handed back, which is what makes declaration order
- * irrelevant and turns a genuine loop into a named error.
+ * irrelevant and turns a genuine loop into a named error. Enumerating the
+ * config or testing a key with `in` forces every such key first, except one
+ * already being resolved, which reads as absent.
  *
  * Only top-level keys are trapped: a resolver reaching `c.grid.size` gets the
  * already-dropped branch, and a nested auto path it depends on resolves by
@@ -109,7 +111,11 @@ function demand(
   read: () => Record<string, unknown>,
   resolvers: ReadonlyMap<string, Resolver | undefined>,
   need: (path: string) => void,
+  resolving: ReadonlySet<string>,
 ): Record<string, unknown> {
+  const settle = (key: string | symbol): void => {
+    if (typeof key === 'string' && resolvers.has(key) && !resolving.has(key)) need(key);
+  };
   // A target of its own, never the config: every trap reads `read()`, and a frozen config as the target would
   // make reporting a key a resolver has since written break the proxy's invariants.
   return new Proxy({} as Record<string, unknown>, {
@@ -118,12 +124,15 @@ function demand(
       return Reflect.get(read(), key);
     },
     has(_target, key) {
+      settle(key);
       return Reflect.has(read(), key);
     },
     ownKeys() {
+      for (const key of resolvers.keys()) if (!key.includes('.')) settle(key);
       return Reflect.ownKeys(read());
     },
     getOwnPropertyDescriptor(_target, key) {
+      settle(key);
       const found = Reflect.getOwnPropertyDescriptor(read(), key);
       return found && { ...found, configurable: true };
     },
