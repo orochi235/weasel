@@ -160,13 +160,16 @@ function usePanelAuto(
     given
       ? write
       : (path, value) => {
-          const next = applyConfigWrite(config, [...ownAuto], path, value);
-          setOwnAuto(
-            next.autoPaths.length === ownAuto.size && next.autoPaths.every((p) => ownAuto.has(p))
-              ? ownAuto
-              : new Set(next.autoPaths),
-          );
-          if (!isAuto(value)) write(path, configValueAt(next.config, path));
+          // Folded into the latest set, not this render's: a reset of several leaves writes each in one event.
+          setOwnAuto((prev) => {
+            const { autoPaths } = applyConfigWrite(config, [...prev], path, value);
+            return autoPaths.length === prev.size && autoPaths.every((p) => prev.has(p))
+              ? prev
+              : new Set(autoPaths);
+          });
+          // What a write stores does not depend on the set, only on the sentinels in `value`.
+          if (!isAuto(value))
+            write(path, configValueAt(applyConfigWrite(config, [], path, value).config, path));
         };
   const setRowAuto = (path: string, next: boolean, value: unknown): void => {
     if (given) {
