@@ -9,7 +9,7 @@ import { isPanelMessage } from './messageShape';
 import type { DevtoolsRoot } from './root';
 import type { DevtoolsSchedule } from './notices';
 import { openSession, type SessionHost } from './session';
-import { createWindowPageTransport, isDevtoolsEnvelope, type PageTransport } from './transport';
+import { createWindowPageTransport, isDevtoolsEnvelope, postedBy, type PageTransport } from './transport';
 
 /** What `window.__weaselDevtools__` holds: the page's canvases, and the way a panel connects to them. */
 export interface WeaselDevtoolsHook {
@@ -71,12 +71,13 @@ export function createDevtoolsHook(opts: { schedule?: DevtoolsSchedule } = {}): 
   };
 }
 
-/** Serve the one window-transport panel there can be: a `yo` posted to the window opens it, replacing any before. */
+/** Serve the one window-transport panel there can be: a `yo` posted to the window opens it, replacing any before.
+ *  Another frame's `yo` is ignored. */
 function serveWindow(hook: WeaselDevtoolsHook): void {
   const transport = createWindowPageTransport();
   let close: (() => void) | null = null;
   window.addEventListener('message', (e) => {
-    if (!isDevtoolsEnvelope(e.data) || e.data.side !== 'panel' || !isPanelMessage(e.data.message) || e.data.message.type !== 'yo') return;
+    if (!postedBy(e, window) || !isDevtoolsEnvelope(e.data) || e.data.side !== 'panel' || !isPanelMessage(e.data.message) || e.data.message.type !== 'yo') return;
     close?.();
     close = hook.connect(transport, e.data.message);
   });

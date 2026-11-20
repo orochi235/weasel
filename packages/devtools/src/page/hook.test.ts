@@ -3,7 +3,7 @@ import { createDispatchTrace, createTraceRing } from '@weasel-js/routing';
 import type { CanvasExtensionApi, ContributionDepReader } from '@weasel-js/core';
 import { installDevtoolsHook } from './hook';
 import { DEVTOOLS_PROTOCOL, type PageMessage } from './protocol';
-import { createWindowPanelTransport } from './transport';
+import { createWindowPageTransport, createWindowPanelTransport } from './transport';
 import { createDevtoolsRoot } from './root';
 import { attachDevtools } from './attach';
 
@@ -44,6 +44,27 @@ describe('the devtools hook', () => {
     expect(await sup).toMatchObject({ type: 'sup', roots: [{ label: 'c' }] });
     panel.send({ type: 'bye', protocol: DEVTOOLS_PROTOCOL });
     off();
+  });
+
+  it('ignores a yo and requests posted by another frame', async () => {
+    const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
+    await settle();
+    const hook = installDevtoolsHook()!;
+    const off = hook.register(root());
+    const frame = document.createElement('iframe');
+    document.body.append(frame);
+    const heard: PageMessage[] = [];
+    const stop = createWindowPanelTransport().onMessage((m) => heard.push(m));
+    const fromFrame = (message: unknown) => window.dispatchEvent(new MessageEvent('message', {
+      data: { source: 'weasel-devtools', side: 'panel', message }, source: frame.contentWindow,
+    }));
+    fromFrame({ type: 'yo', protocol: DEVTOOLS_PROTOCOL });
+    const page = createWindowPageTransport();
+    const offPage = page.onMessage((m) => heard.push(m as never));
+    fromFrame({ type: 'bye', protocol: DEVTOOLS_PROTOCOL });
+    await settle();
+    expect(heard).toEqual([]);
+    stop(); offPage(); off(); frame.remove();
   });
 
   it('is installed by the first canvas that attaches, which it lists until the canvas detaches', () => {
