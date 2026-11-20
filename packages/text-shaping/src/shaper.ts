@@ -45,7 +45,7 @@ export interface TextShaper {
    *
    * `language` is a BCP 47 tag (`'sr'`, `'ur'`) and selects the face's forms
    * for that language: Serbian Cyrillic italics, Urdu digits. Absent, the
-   * face's default forms are drawn.
+   * face's default forms are drawn. A tag holding anything outside ASCII is refused.
    *
    * Glyphs come in logical order: clusters by ascending `cluster`, and a
    * cluster's own glyphs in the order they are drawn, left to right. The array
@@ -130,6 +130,9 @@ class HarfBuzzShaper implements TextShaper {
   ): readonly ShapedGlyph[] {
     const rec = this.#face(bytes);
     const lang = language || undefined;
+    if (lang !== undefined && !ASCII.test(lang)) {
+      throw new Error(`weasel shape: "${lang}" is not a BCP 47 language tag; a tag is ASCII letters, digits, and hyphens, such as "sr-Latn"`);
+    }
     // Refused before the cache is read, so a bad setting is refused whatever was shaped before.
     const hbFeatures = features.map((tag) => this.#feature(tag));
     // Length-prefixed, so no feature, language, or text can run into the next and answer another's key.

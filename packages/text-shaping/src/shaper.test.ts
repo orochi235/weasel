@@ -116,4 +116,8 @@ describe('loadShaper — refusals', () => {
       expect(() => shaper.shape(LATIN, 'abc', [tag])).toThrow(/weasel shape: ".*" is not an OpenType feature setting/);
     }
   });
+
+  it('refuses a language tag holding a character outside ASCII with its own error', () => {
+    expect(() => shaper.shape(LATIN, 'abc', [], 'sr\u2011Latn')).toThrow(/weasel shape: ".*" is not a BCP 47 language tag/);
+  });
 });
