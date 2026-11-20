@@ -242,9 +242,12 @@ async function foldOldStorage(
       oldKeys.filter((key) => !written.has(key)),
     );
   } else {
+    // Writing on would put down records with no meta beside them, which the next open folds
+    // the old storage over.
     console.warn(
-      `[labkit] keeping the old storage for "${storageKey}": could not confirm its records were written`,
+      `[labkit] keeping the old storage for "${storageKey}": could not confirm its records were written; not persisting`,
     );
+    records.stopWriting();
   }
   return { doc, orders: ordersOf(doc) };
 }

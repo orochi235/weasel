@@ -764,6 +764,30 @@ describe('openLabStore — folding a version-3 document', () => {
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('keeping the old storage'));
   });
 
+  it('writes nothing more once a fold could not confirm its records, so the next open folds again', async () => {
+    const backing = new Map<string, unknown>();
+    storeV3(backing, { trials: [trial('w1')], saves: [], layout: {}, mode: 'auto' });
+    const memory = createMemoryAdapter(backing);
+    const dropsMeta: StorageAdapter = {
+      ...memory,
+      set: async (key, value) => {
+        if (key === `${P}meta`) return;
+        await memory.set(key, value);
+      },
+    };
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const opened = await openLabStore({ storageKey: 'test', storage: dropsMeta });
+    const written = structuredClone(backing.get(`${P}trial:w1`));
+    opened.store.getState().updateTrialState('w1', { n: 7 });
+    await opened.close();
+    expect(backing.get(`${P}trial:w1`)).toEqual(written);
+
+    const again = await open(backing);
+    expect(again.store.getState().trials.map((t) => t.id)).toEqual(['w1']);
+    expect(backing.has(labDocumentKey('test'))).toBe(false);
+    await again.close();
+  });
+
   it('fills whatever an incomplete document is missing', async () => {
     const backing = new Map<string, unknown>();
     storeV3(backing, {});
