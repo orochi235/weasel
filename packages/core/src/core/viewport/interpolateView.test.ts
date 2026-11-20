@@ -124,4 +124,10 @@ describe('interpolateView', () => {
     }
     expectViewCloseTo(f(1), to);
   });
+  it('stays close to a pan when the scales differ by a hair', () => {
+    const from = V(0, 0, 1);
+    const to = V(1e6, 0, 1 + 1e-11);
+    const f = interpolateView(from, to);
+    for (const t of [0.1, 0.25, 0.5, 0.9]) expect(Math.abs(f(t).x - 1e6 * t)).toBeLessThan(1e-3);
+  });
 });
