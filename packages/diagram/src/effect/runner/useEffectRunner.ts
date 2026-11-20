@@ -30,15 +30,8 @@ export function useEffectRunner(opts: UseEffectRunnerOptions): EffectRunnerHandl
   const { pipeline, sources, evaluators, kinds, previews, previewSize, target, requestFrame, cancelFrame, clock } = opts;
   const [runner] = useState(() => createEffectRunner(opts));
   useEffect(() => { runner.setPipeline(pipeline); }, [runner, pipeline]);
-  useEffect(() => { if (sources !== undefined) runner.setSources(sources); }, [runner, sources]);
-  useEffect(() => {
-    runner.setOptions({
-      evaluators,
-      ...(kinds !== undefined ? { kinds } : {}),
-      ...(previews !== undefined ? { previews } : {}),
-      ...(previewSize !== undefined ? { previewSize } : {}),
-    });
-  }, [runner, evaluators, kinds, previews, previewSize]);
+  useEffect(() => { runner.setSources(sources); }, [runner, sources]);
+  useEffect(() => { runner.setOptions({ evaluators, kinds, previews, previewSize }); }, [runner, evaluators, kinds, previews, previewSize]);
   const state = useSyncExternalStore(runner.subscribe, () => runner.state);
 
   const last = useRef<number | null>(null);
