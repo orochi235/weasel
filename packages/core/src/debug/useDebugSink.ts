@@ -1,12 +1,11 @@
 import { useCallback, useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
-import type { RenderStats } from '@weasel-js/renderer';
 import { paintedLayers, type LayerDrawSpan, type RenderLayer } from 'core/layers/render';
 import type { CanvasDebugSink, DebugFlags } from './types';
 import { resolveDebugFlags } from './parseDebugFlags';
 import { createDebugSink } from './createDebugSink';
 import { createDebugOverlayLayer, DEBUG_OVERLAY_ID } from './createDebugOverlayLayer';
-import { frameStatsOf } from './frameStats';
+import { frameStatsOf, type TimedRun } from './frameStats';
 
 /** A surface's debug state for one resolved config. */
 export interface SurfaceDebug {
@@ -46,8 +45,9 @@ export interface DebugFrame {
   /** Start the paint clock. Returns the list `drawLayers` fills, or
    *  `undefined` when the frame panel is off and nothing is timed. */
   time(): LayerDrawSpan[] | undefined;
-  /** Record what the timed paint cost. A no-op unless `time` was called. */
-  end(render: RenderStats): void;
+  /** Record what the timed paint cost, one run per renderer it went
+   *  through, bottom first. A no-op unless `time` was called. */
+  end(runs: readonly TimedRun[]): void;
 }
 
 /**
@@ -79,8 +79,8 @@ export function beginDebugFrame(
       startedAt = performance.now();
       return spans;
     },
-    end: (render) => {
-      if (spans) sink.recordFrame(frameStatsOf(spans, render, performance.now() - startedAt));
+    end: (runs) => {
+      if (spans) sink.recordFrame(frameStatsOf(runs, performance.now() - startedAt));
     },
   };
 }

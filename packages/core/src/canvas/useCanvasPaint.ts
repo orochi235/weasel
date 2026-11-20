@@ -9,6 +9,7 @@ import {
 import type { CanvasDebugSink } from '../debug/types';
 import type { CanvasIdReadOptions } from './canvasExtension';
 import { beginDebugFrame } from '../debug/useDebugSink';
+import type { TimedRun } from '../debug/frameStats';
 import { resolveDpr, type CanvasRendererLease } from './canvasRenderer';
 import type { CanvasProps } from './canvasProps';
 import type { CanvasElements } from './useCanvasElements';
@@ -119,14 +120,15 @@ export function useCanvasPaint(
     const view = snapRef.current.draw(viewRef.current, Math.round(w * dpr) / w, retain !== false && retain?.whole !== false);
     const stack = stackRef.current;
     if (stack) {
+      const timedRuns: TimedRun[] | undefined = debugFrame?.time() ? [] : undefined;
       stack.paint({
         layers: paintLayers, helpers: helpersRef.current, visibility: vis ?? NO_LAYER_VISIBILITY, order, view,
         dims: { width: w, height: h, dpr }, cache: layerCacheRef.current, groups, retain: retainPolicy(retain),
         options: { flattenTolerance: paintFlattenTolerance, imageMinification, shaders: paintShaders },
-        paints: stack.paints, inputs: stack.inputs(),
+        paints: stack.paints, inputs: stack.inputs(), timed: timedRuns,
       }, renderer);
       const stats = renderer.lastFrameStats();
-      debugFrame?.end(stats);
+      if (timedRuns) debugFrame?.end(timedRuns);
       markPainted();
       if (snapRef.current.owesFrame(stats.retained.declined)) requestRedraw();
       return true;
@@ -148,7 +150,7 @@ export function useCanvasPaint(
     renderer.render(commands, viewToMat3(view), spans ? { spans } : undefined);
     lastFrameRef.current = { renderer, commands, view };
     const stats = renderer.lastFrameStats();
-    debugFrame?.end(stats);
+    if (spans) debugFrame?.end([{ spans, render: stats }]);
     markPainted();
     if (snapRef.current.owesFrame(stats.retained.declined)) requestRedraw();
     return true;
