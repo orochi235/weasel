@@ -2,6 +2,9 @@
 
 import { forEachCrossing } from './sweep';
 import { lerp } from '../scalar';
+import { anchorParamsBetween } from './anchorParams';
+import { anyContact } from './evenOdd';
+import { nestRings, type Ring } from './nesting';
 
 /** Flattened contours with each vertex's anchor parameterization. */
 export interface FlattenedContours {
@@ -35,13 +38,19 @@ interface Piece {
 const keyOf = (n: Node): string => `${n.x},${n.y}`;
 
 /**
- * The boundary of `flat`'s nonzero fill as loops that do not cross, each with
- * the fill on its left, or `null` when no two edges cross and `always` is
- * not set.
+ * Contours drawing `flat`'s nonzero fill that triangulate ring by ring, with
+ * their rings: `flat` itself when no two edges meet and nothing winds past 1,
+ * else the fill's boundary as loops that neither cross nor overlap. `flat`
+ * too, unresolved, when that boundary would not close into loops.
  */
-export function resolveCrossings(flat: FlattenedContours, always = false): FlattenedContours | null {
-  if (!always && !anyCrossing(flat)) return null;
-  return resolve(flat, (w) => w !== 0)!.contours;
+export function nonzeroContours(flat: FlattenedContours): { contours: FlattenedContours; rings: Ring[] } {
+  if (!anyContact(flat)) {
+    const rings = nestRings(flat);
+    if (rings.every((r) => Math.abs(r.winding) <= 1)) return { contours: flat, rings };
+  }
+  const out = resolve(flat, (w) => w !== 0)!;
+  const contours = out.complete ? out.contours : flat;
+  return { contours, rings: nestRings(contours) };
 }
 
 /**
@@ -74,7 +83,7 @@ function resolve(
   if (!cutAtCrossings(edges, maxCrossings)) return null;
   cutAtContacts(edges, eps);
   weld(edges, eps);
-  const pieces = boundaryPieces(edges, filled);
+  const pieces = boundaryPieces(edges, filled, eps);
   const { loops, complete } = chainLoops(pieces);
   return { contours: loopsToContours(loops), complete };
 }
@@ -91,28 +100,6 @@ function edgeCount(flat: FlattenedContours): number {
     }
   });
   return n;
-}
-
-/** Whether any two edges of `flat` cross. Every nonzero fill asks this, and
- *  most cross nowhere, so it reads the coordinates without building edges. */
-export function anyCrossing(flat: FlattenedContours): boolean {
-  const { coords, contourStarts } = flat;
-  const total = coords.length / 2;
-  const ends = new Float64Array(total * 4);
-  let n = 0;
-  contourStarts.forEach((start, c) => {
-    const end = c + 1 < contourStarts.length ? contourStarts[c + 1] : total;
-    for (let i = start; i < end; i++) {
-      const j = i + 1 < end ? i + 1 : start;
-      const x0 = coords[i * 2], y0 = coords[i * 2 + 1], x1 = coords[j * 2], y1 = coords[j * 2 + 1];
-      if (x0 === x1 && y0 === y1) continue;
-      ends[n * 4] = x0; ends[n * 4 + 1] = y0; ends[n * 4 + 2] = x1; ends[n * 4 + 3] = y1;
-      n++;
-    }
-  });
-  let found = false;
-  forEachCrossing(ends, n, () => (found = true));
-  return found;
 }
 
 function edgesOf(flat: FlattenedContours): Edge[] {
@@ -220,26 +207,16 @@ function cutAt(e: Edge, p: Node, eps: number): void {
   e.cuts.push({ s, node: p });
 }
 
-/** Anchors for a point `s` of the way along `e`: interpolated within one
- *  curve's run, else the nearer end's. */
+/** Anchors for a point `s` of the way along `e`. */
 function anchorsAlong(e: Edge, s: number): { a: number; b: number; t: number } {
   const { from, to } = e;
-  if (from.a === to.a && from.b === to.b) return { a: from.a, b: from.b, t: lerp(from.t, to.t, s) };
-  const near = s < 0.5 ? from : to;
-  return { a: near.a, b: near.b, t: near.t };
+  const [a, b, t] = anchorParamsBetween(from.a, from.b, from.t, to.a, to.b, to.t, s);
+  return { a, b, t };
 }
 
 /** The pieces between cuts that have fill on exactly one side, turned so it
  *  is on the left. A stretch two edges share comes out once. */
-function boundaryPieces(edges: Edge[], filledBy: (winding: number) => boolean): Piece[] {
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const { from: p } of edges) {
-    minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
-    minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
-  }
-  const eps = Math.max(Math.hypot(maxX - minX, maxY - minY) * 1e-7, 1e-9);
-  const filled = (x: number, y: number) => filledBy(windingAt(edges, x, y));
-
+function boundaryPieces(edges: Edge[], filledBy: (winding: number) => boolean, eps: number): Piece[] {
   const out: Piece[] = [];
   const seen = new Set<string>();
   const keep = (from: Node, to: Node): void => {
@@ -252,12 +229,10 @@ function boundaryPieces(edges: Edge[], filledBy: (winding: number) => boolean): 
     const stops = [e.from, ...e.cuts.sort((p, q) => p.s - q.s).map((c) => c.node), e.to];
     for (let k = 0; k + 1 < stops.length; k++) {
       const p = stops[k], q = stops[k + 1];
-      const dx = q.x - p.x, dy = q.y - p.y;
-      const len = Math.hypot(dx, dy);
+      const len = Math.hypot(q.x - p.x, q.y - p.y);
       if (len === 0) continue;
-      const mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2;
-      const nx = (-dy / len) * eps, ny = (dx / len) * eps;
-      const left = filled(mx + nx, my + ny), right = filled(mx - nx, my - ny);
+      const w = windingBeside(edges, (p.x + q.x) / 2, (p.y + q.y) / 2, (q.x - p.x) / len, (q.y - p.y) / len, eps);
+      const left = filledBy(w.left), right = filledBy(w.left - w.along);
       if (left && !right) keep(p, q);
       else if (right && !left) keep(q, p);
     }
@@ -265,14 +240,32 @@ function boundaryPieces(edges: Edge[], filledBy: (winding: number) => boolean): 
   return out;
 }
 
-function windingAt(edges: Edge[], x: number, y: number): number {
-  let w = 0;
-  for (const { from: p, to: q } of edges) {
-    const side = (q.x - p.x) * (y - p.y) - (x - p.x) * (q.y - p.y);
-    if (p.y <= y && q.y > y && side > 0) w++;
-    else if (q.y <= y && p.y > y && side < 0) w--;
+/**
+ * The winding number just left of a point `m` on the outline, where it runs
+ * in direction `d`, and how much it drops crossing to the right: the edges
+ * lying along `d` through `m`, each +1 running with it and -1 against. Counted
+ * on a ray from `m` along the left normal, not at a point offset from `m`,
+ * which a sliver or spike narrower than the offset would put past another edge.
+ */
+function windingBeside(
+  edges: Edge[], mx: number, my: number, dx: number, dy: number, eps: number,
+): { left: number; along: number } {
+  // A frame with `m` at the origin, the ray along +u and v = -d.
+  const u = (x: number, y: number) => (x - mx) * -dy + (y - my) * dx;
+  const v = (x: number, y: number) => -((x - mx) * dx + (y - my) * dy);
+  let left = 0, along = 0;
+  for (const { from, to } of edges) {
+    const pu = u(from.x, from.y), pv = v(from.x, from.y);
+    const qu = u(to.x, to.y), qv = v(to.x, to.y);
+    if (Math.abs(pu) <= eps && Math.abs(qu) <= eps) {
+      if (Math.min(pv, qv) < 0 && Math.max(pv, qv) > 0) along += qv < pv ? 1 : -1;
+      continue;
+    }
+    const side = (qu - pu) * -pv + pu * (qv - pv);
+    if (pv <= 0 && qv > 0 && side > 0) left++;
+    else if (qv <= 0 && pv > 0 && side < 0) left--;
   }
-  return w;
+  return { left, along };
 }
 
 /** Join pieces end to start into closed loops. Where a node has several ways

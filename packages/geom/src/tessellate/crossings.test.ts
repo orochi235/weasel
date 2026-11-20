@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { anyCrossing, type FlattenedContours } from './crossings';
+import { nonzeroContours, resolveEvenOdd, type FlattenedContours } from './crossings';
 
 const contours = (...rings: number[][]): FlattenedContours => {
   const flat: FlattenedContours = { coords: [], contourStarts: [], anchorA: [], anchorB: [], anchorT: [] };
@@ -15,26 +15,62 @@ const contours = (...rings: number[][]): FlattenedContours => {
   return flat;
 };
 
-describe('anyCrossing', () => {
-  it('finds a figure eight crossing itself', () => {
-    expect(anyCrossing(contours([0, 0, 10, 10, 10, 0, 0, 10]))).toBe(true);
-  });
+/** Area where `filled` holds of the winding number, sampled on a grid. */
+const sampledArea = (flat: FlattenedContours, filled: (w: number) => boolean, size: number, n: number): number => {
+  const { coords, contourStarts } = flat;
+  let hits = 0;
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      const x = ((i + 0.5) / n) * size, y = ((j + 0.5) / n) * size;
+      let w = 0;
+      contourStarts.forEach((start, c) => {
+        const end = c + 1 < contourStarts.length ? contourStarts[c + 1] : coords.length / 2;
+        for (let k = start; k < end; k++) {
+          const l = k + 1 < end ? k + 1 : start;
+          const [px, py, qx, qy] = [coords[k * 2], coords[k * 2 + 1], coords[l * 2], coords[l * 2 + 1]];
+          const side = (qx - px) * (y - py) - (x - px) * (qy - py);
+          if (py <= y && qy > y && side > 0) w++;
+          else if (qy <= y && py > y && side < 0) w--;
+        }
+      });
+      if (filled(w)) hits++;
+    }
+  }
+  return (hits / (n * n)) * size * size;
+};
 
-  it('finds two outlines crossing each other', () => {
-    expect(anyCrossing(contours([0, 0, 10, 0, 10, 10, 0, 10], [5, 5, 15, 5, 15, 15, 5, 15]))).toBe(true);
+const signedArea = (flat: FlattenedContours): number => {
+  const { coords, contourStarts } = flat;
+  let sum = 0;
+  contourStarts.forEach((start, c) => {
+    const end = c + 1 < contourStarts.length ? contourStarts[c + 1] : coords.length / 2;
+    for (let k = start; k < end; k++) {
+      const l = k + 1 < end ? k + 1 : start;
+      sum += coords[k * 2] * coords[l * 2 + 1] - coords[l * 2] * coords[k * 2 + 1];
+    }
   });
+  return sum / 2;
+};
 
-  it('finds no crossing in a square, or in a hole inside it', () => {
-    expect(anyCrossing(contours([0, 0, 10, 0, 10, 10, 0, 10]))).toBe(false);
-    expect(anyCrossing(contours([0, 0, 10, 0, 10, 10, 0, 10], [3, 3, 3, 7, 7, 7, 7, 3]))).toBe(false);
-  });
+describe('resolving crossings', () => {
+  // Outlines with a spike (two edges doubling back at a hair's angle) and three
+  // edges crossing nearly at one point: each leaves a sliver of the fill
+  // narrower than any fixed probe distance off a boundary piece.
+  const slivers = [
+    contours([133, 42, 559, 843, 587, 50, 853, 897], [718, 703, 180, 39, 819, 466, 886, 554, 205, 871, 122, 130]),
+    contours(
+      [40, 9, 681, 430, 415, 68, 997, 860, 326, 520, 885, 570, 902, 187, 198, 17],
+      [382, 104, 615, 635, 971, 713, 833, 418, 326, 792, 973, 196],
+    ),
+  ];
 
-  it('counts neither a shared vertex nor a shared edge as a crossing', () => {
-    expect(anyCrossing(contours([0, 0, 10, 0, 10, 10, 0, 10], [10, 10, 20, 10, 20, 20, 10, 20]))).toBe(false);
-    expect(anyCrossing(contours([0, 0, 10, 0, 10, 10, 0, 10], [10, 0, 20, 0, 20, 10, 10, 10]))).toBe(false);
-  });
-
-  it('skips a repeated vertex', () => {
-    expect(anyCrossing(contours([0, 0, 10, 0, 10, 0, 10, 10, 0, 10]))).toBe(false);
+  it('closes every boundary loop around a sliver', () => {
+    for (const flat of slivers) {
+      const nonzero = nonzeroContours(flat).contours;
+      expect(Math.abs(signedArea(nonzero))).toBeCloseTo(sampledArea(flat, (w) => w !== 0, 1000, 400), -3);
+      const evenOdd = resolveEvenOdd(flat);
+      expect(evenOdd).not.toBeNull();
+      expect(Math.abs(signedArea(evenOdd!))).toBeCloseTo(sampledArea(flat, (w) => (w & 1) !== 0, 1000, 400), -3);
+    }
   });
 });

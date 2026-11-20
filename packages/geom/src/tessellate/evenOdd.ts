@@ -60,7 +60,7 @@ function segmentsOf(flat: FlattenedContours): Segments {
 }
 
 /** Whether any two segments meet other than at the end two neighbors share. */
-function anyContact(flat: FlattenedContours): boolean {
+export function anyContact(flat: FlattenedContours): boolean {
   const s = segmentsOf(flat);
   const { ends, n } = s;
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;

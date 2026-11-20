@@ -2950,3 +2950,12 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): geom's `stepLine` throws a `RangeError` for a `step` that is zero or not finite, and so
   does a gesture whose `constrain: { step }` holds one; it had answered a line of `NaN` direction, which froze the drag
   at the press. Reading such a step as no rounding, the raw direction, was the alternative.
+
+## Audit round forty-nine (2026-11-20): fill tessellation
+
+- 2026-11-20 (the fixer's call): a nonzero fill whose resolved boundary would not close into loops draws its
+  unresolved outline, as an even-odd one keeps the stencil, rather than drawing the loops that did close and dropping
+  the rest. No outline is known to reach it since boundary pieces are judged on a ray, not at an offset point.
+- 2026-11-20 (the fixer's call): resolving a nonzero fill's crossings has no work cap. The even-odd cap falls back to
+  the parity stencil, and the renderer has no nonzero stencil to fall back to, so a cap would draw a wrong fill rather
+  than a slow one. A nonzero stencil pass (increment front faces, decrement back) is what would let it have one.
