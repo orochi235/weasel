@@ -90,8 +90,11 @@ export function routerOf(style: CellStyle): DiagramRouter {
   return ORTHOGONAL_EDGE_STYLES.has(style.values.get('edgeStyle') ?? '') ? 'orthogonal' : 'straight';
 }
 
+/** The marker at one end. An end the style does not name is unset: the diagram's own, an arrow at the end and none at the
+ *  start, as a color the style does not name is the theme's. */
 function markerAt(style: CellStyle, end: 'start' | 'end', warn: Warn): MarkerRef | null {
-  const name = style.values.get(`${end}Arrow`) ?? (end === 'end' ? 'classic' : 'none');
+  const name = style.values.get(`${end}Arrow`);
+  if (name === undefined) return end === 'end' ? 'arrow' : null;
   const marker = markerOf(name, style.values.get(`${end}Fill`));
   if (marker !== undefined) return marker;
   warn(`Arrowheads of kind "${name}" were drawn as arrows.`);

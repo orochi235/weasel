@@ -97,7 +97,7 @@ describe('reading a file of pages', () => {
   it('reads an edge\'s stroke, label color, and markers', () => {
     expect(edges(doc).get('e2')!.colors).toEqual({ stroke: '#b85450', label: '#b85450', width: 2, dash: [3, 3] });
     expect(edges(doc).get('e3')!.colors).toEqual({ markerEnd: 'arrow-open' });
-    expect(edges(doc).get('e4')!.colors).toEqual({ markerStart: 'arrow', markerEnd: null });
+    expect(edges(doc).get('e4')!.colors).toEqual({ markerStart: 'arrow-concave', markerEnd: null });
   });
 
   it('leaves out an edge with a loose end, with a warning', () => {

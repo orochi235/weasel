@@ -103,9 +103,10 @@ export const ORTHOGONAL_EDGE_STYLES: ReadonlySet<string> = new Set([
   'orthogonalEdgeStyle', 'elbowEdgeStyle', 'sideToSideEdgeStyle', 'topToBottomEdgeStyle', 'segmentEdgeStyle', 'entityRelationEdgeStyle',
 ]);
 
-/** Arrowheads by their style name, and whether a `Fill` of `0` makes one hollow. */
+/** Arrowheads by their style name, and whether a `Fill` of `0` makes one hollow. `classic` is concave, as a draw app draws
+ *  it, and `block` straight-backed, so each name means the marker {@link markerStyle} writes it for. */
 const MARKERS_READ: Readonly<Record<string, { filled: MarkerRef; hollow?: MarkerRef }>> = {
-  classic: { filled: 'arrow' }, classicThin: { filled: 'arrow' }, block: { filled: 'arrow', hollow: 'triangle-hollow' },
+  classic: { filled: 'arrow-concave' }, classicThin: { filled: 'arrow-concave' }, block: { filled: 'arrow', hollow: 'triangle-hollow' },
   blockThin: { filled: 'arrow', hollow: 'triangle-hollow' }, open: { filled: 'arrow-open' }, openThin: { filled: 'arrow-open' },
   diamond: { filled: 'diamond', hollow: 'diamond-hollow' }, diamondThin: { filled: 'diamond', hollow: 'diamond-hollow' },
   oval: { filled: 'circle' }, box: { filled: 'square' }, dash: { filled: 'bar' },

@@ -38,6 +38,23 @@ describe('reading labels', () => {
 });
 
 describe('reading connectors', () => {
+  it('reads each arrowhead as the marker the writer writes it for', async () => {
+    const doc = { pages: [{ kind: 'graph' as const, id: 'p', width: 600, height: 300, data: {
+      nodes: [{ id: 'a', lines: ['A'], at: { x: 20, y: 20 } }, { id: 'b', lines: ['B'], at: { x: 300, y: 20 } }],
+      edges: [
+        { id: 'concave', from: 'a', to: 'b', colors: { markerEnd: 'arrow-concave' as const, markerStart: 'arrow-concave' as const } },
+        { id: 'plain', from: 'a', to: 'b', colors: { markerStart: 'arrow' as const } },
+      ],
+    } }] };
+    const back = asGraph((await DIAGRAM_DRAW_XML.read!(DIAGRAM_DRAW_XML.write!(doc).text)).document.pages[0]!).data;
+    expect(back.edges.map((e) => [e.colors?.markerStart, e.colors?.markerEnd])).toEqual([['arrow-concave', 'arrow-concave'], ['arrow', undefined]]);
+  });
+
+  it('reads an end the style names no arrowhead for as the diagram\'s own', async () => {
+    const { data } = await page(box('a', 0, 0) + box('b', 200, 0) + edge('e', 'html=1;'));
+    expect(data.edges[0]!.colors).toBeUndefined();
+  });
+
   it('reads every draw-app edge style that routes at right angles as orthogonal', async () => {
     const styles = ['segmentEdgeStyle', 'sideToSideEdgeStyle', 'topToBottomEdgeStyle', 'elbowEdgeStyle'];
     const { data } = await page(box('a', 0, 0) + box('b', 200, 100) + styles.map((s) => edge(s, `edgeStyle=${s};`)).join(''));

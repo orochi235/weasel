@@ -2812,3 +2812,10 @@ Calls the lanes made without a ruling:
   and the end only where none does, so `present.go` reaches every page by its id and old callers keep working.
   Keeping the ends ahead of the ids, so such a page was unreachable by id, was the alternative; so was dropping
   `to: 'first' | 'last'` outright.
+
+## Audit round forty-six (2026-11-20): draw-style XML
+
+- 2026-11-20 (the fixer's call): a draw-style XML edge whose style names no `endArrow` or `startArrow` reads that end as
+  unset, the diagram's own marker, as an unnamed color reads as the theme's; a named `classic` reads as `arrow-concave`.
+  Reading the draw app's own default, `classic`, onto every such edge as an explicit `arrow-concave` was the alternative
+  (`drawXml/readStyle.ts`, `markerAt`).
