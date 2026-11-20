@@ -19,9 +19,12 @@ export function JobProgress({ job, className }: JobProgressProps) {
   // A failed item is one the job has got through: `total` counts it, `done` does not.
   const handled = done + failures.length;
   const determinate = total !== null && total > 0;
+  // A total revised below what the job has got through widens the range to the
+  // count, so the fill, the progressbar's value and the count's sizer agree.
+  const range = determinate ? Math.max(total, handled) : 0;
   // Only a running job sweeps: one that ended without a total says how it ended.
   const sweeping = !determinate && status === 'running';
-  const fraction = determinate ? Math.min(1, handled / total) : status === 'done' ? 1 : 0;
+  const fraction = determinate ? handled / range : status === 'done' ? 1 : 0;
   const cls = ['lk-job', `lk-job--${status}`, className].filter(Boolean).join(' ');
 
   return (
@@ -32,7 +35,7 @@ export function JobProgress({ job, className }: JobProgressProps) {
         aria-label="Job progress"
         aria-valuenow={determinate ? handled : undefined}
         aria-valuemin={determinate ? 0 : undefined}
-        aria-valuemax={determinate ? total : undefined}
+        aria-valuemax={determinate ? range : undefined}
       >
         {/* Scaling a full-width bar keeps the fill off the layout path, so
             progress updates never reflow the status bar. */}
@@ -50,7 +53,7 @@ export function JobProgress({ job, className }: JobProgressProps) {
         {/* The widest count this job reaches, unseen, holds the cell's width as the count climbs. */}
         {determinate ? (
           <span className="lk-job__count-sizer" aria-hidden="true">
-            {`${total} / ${total}`}
+            {`${range} / ${total}`}
           </span>
         ) : null}
       </span>

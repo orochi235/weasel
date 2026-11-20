@@ -55,4 +55,12 @@ describe('JobProgress', () => {
     expect(track).toHaveAttribute('aria-valuenow', '120');
     expect(container.querySelector('.lk-job__count > span')).toHaveTextContent('120 / 120');
   });
+
+  it('keeps a count past a revised total inside the bar range and the reserved width', () => {
+    const { track, fill, container } = parts({ ...base, done: 130, total: 120 });
+    expect(fill.style.transform).toBe('scaleX(1)');
+    expect(track).toHaveAttribute('aria-valuenow', '130');
+    expect(track).toHaveAttribute('aria-valuemax', '130');
+    expect(container.querySelector('.lk-job__count-sizer')).toHaveTextContent('130 / 120');
+  });
 });
