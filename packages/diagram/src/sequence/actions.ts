@@ -5,7 +5,8 @@
  * `commit`, which by default replaces it in the scene as one undo entry.
  */
 import type { Action, InvocationCtx, OngoingHandle, RectPose, SurfaceContribution, Vec2, AnyScene } from '@weasel-js/core';
-import { moveParticipant, moveStep, reconnectMessage } from './edit';
+import { findStep, hasId, moveParticipant, moveStep, reconnectMessage } from './edit';
+import { flatSteps } from './columns';
 import { sequenceCommitOf, type SequenceEditOptions } from './commit';
 import { SELECT_SEQUENCE_PART_ACTION_ID, selectSequencePartAction } from './select';
 import { SEQUENCE_AFFORDANCE_KIND, SEQUENCE_LAYER_ID, placedSequences, createSequenceLayer, sequenceScratchOf, type PlacedSequence, type SequenceScratch } from './layer';
@@ -28,15 +29,22 @@ interface Press {
   carried: ReadonlyMap<string, RectPose>;
 }
 
-/** Whether part `node` of the sequence belongs to what a press on `s` carries. */
-function carries(s: SequenceScratch, part: NonNullable<ReturnType<typeof sequencePartOf>>): boolean {
+/** The steps a drag of step `id` moves: it, and for a fragment every step inside it. */
+function stepsMoved(data: SequenceData, id: string): ReadonlySet<string> {
+  const step = findStep(data.steps, id);
+  const inner = step?.kind === 'fragment' ? [...flatSteps([step])] : [];
+  return new Set([id, ...inner.flatMap((q) => (hasId(q) ? [q.id] : []))]);
+}
+
+/** Whether part `node` of the sequence belongs to what a press on `s` carries; `steps` is what a step press moves. */
+function carries(s: SequenceScratch, part: NonNullable<ReturnType<typeof sequencePartOf>>, steps: ReadonlySet<string>): boolean {
   if (s.part === 'head') {
     if (part.target !== undefined) return 'participant' in part.target && part.target.participant === s.id;
     return part.id === s.id && ['head', 'lifeline', 'destroy', 'activation'].includes(part.part);
   }
   if (s.part === 'step') {
-    return part.id === s.id || (part.target !== undefined && (('step' in part.target && part.target.step === s.id)
-      || ('fragment' in part.target && part.target.fragment === s.id)));
+    return (part.id !== undefined && steps.has(part.id)) || (part.target !== undefined && (('step' in part.target && steps.has(part.target.step))
+      || ('fragment' in part.target && steps.has(part.target.fragment))));
   }
   return s.part === 'end' && part.part === 'message' && part.id === s.id;
 }
@@ -49,10 +57,11 @@ function pressOf(ctx: InvocationCtx): Press | null {
   const root = scene === undefined || held === null ? undefined : placedSequences(scene).find((p) => p.id === scratch!.root);
   if (scratch === null || scene === undefined || held === null || root === undefined) return null;
   const carried = new Map<string, RectPose>();
+  const steps = scratch.part === 'step' ? stepsMoved(held.sequence, scratch.id) : new Set<string>();
   for (const id of scene.childrenOf(scratch.root as never)) {
     const child = scene.get(id)!;
     const part = sequencePartOf(child);
-    if (part !== null && carries(scratch, part)) carried.set(id, child.pose as RectPose);
+    if (part !== null && carries(scratch, part, steps)) carried.set(id, child.pose as RectPose);
   }
   return { scratch, scene, root, data: held.sequence, start: ctx.drag?.start ?? { x: ctx.world.x, y: ctx.world.y }, carried };
 }

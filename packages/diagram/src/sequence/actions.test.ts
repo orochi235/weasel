@@ -81,6 +81,26 @@ describe('createSequenceDragAction', () => {
     expect(dataOf(scene)).toEqual(data);
   });
 
+  it('carries a numbered message\'s digit, and a fragment\'s type label and every step inside it', () => {
+    const numbered = { ...data, autonumber: 1 };
+    const scene = createScene<unknown, 'main', RectPose>({
+      systemLayers: [{ id: 'main' }], initial: sequenceSpecs(numbered, { id: 'seq', at: AT }) as never, registry: withDiagramRegistry(),
+    });
+    const g = geometry(scene);
+    const m1 = g.messages.find((m) => m.id === 'm1')!;
+    const press = { x: AT.x + (m1.x1 + m1.x2) / 2, y: AT.y + m1.y };
+    const msg = drag(scene, press, { part: 'step', id: 'm1' });
+    msg.handle.onMove!(msg.ctxAt({ x: press.x, y: press.y + 40 }));
+    expect(msg.handle.previewIds!()).toEqual(expect.arrayContaining(['seq/msg:m1/number', 'seq/msg:m1/number/text']));
+    const tab = g.fragments!.find((f) => f.id === 'f1')!.grip;
+    const grip = { x: AT.x + tab.x + 2, y: AT.y + tab.y + 2 };
+    const frag = drag(scene, grip, { part: 'step', id: 'f1' });
+    frag.handle.onMove!(frag.ctxAt({ x: grip.x, y: grip.y + 40 }));
+    expect(frag.handle.previewIds!()).toEqual(expect.arrayContaining([
+      'seq/frag:f1/tab', 'seq/frag:f1/type', 'seq/msg:m2', 'seq/msg:m2/text', 'seq/msg:m3/number/text',
+    ]));
+  });
+
   it('drags a head past its neighbor to reorder participants', () => {
     const scene = sceneOf();
     const g = geometry(scene);
