@@ -2935,3 +2935,12 @@ Calls the lanes made without a ruling:
   then `DFLT`'s, then the rest in ScriptList order, and taking the first whose lookups cover the pair. Layout knows
   no run's script, so picking one script for every pair was the alternative, and loses kerning other scripts' lookups
   alone carry.
+## Audit round fifty (2026-11-20): labkit chrome
+
+- 2026-11-20 (the fixer's call): every labkit chrome region lays its contributions out by `groupsOf`: a group's
+  members together where the group first appears, a group `end` when any member sets `end`, and every `end` run
+  after the rest. In the viewport, sidebar, and palette, which draw no spacer, "the far end" means last. The built-in
+  FPS meter is ungrouped, so the scale bar it used to share `view` with stays at the status bar's near end. Keeping
+  arrival order and the first member's `end` was the alternative, and contradicted `ContributionBase.end`.
+- 2026-11-20 (the fixer's call): a toolbar or header group is announced by its `group` name (`history`, `view`), and
+  an ungrouped contribution's bar group carries no name. A label of its own on a group is not offered.
