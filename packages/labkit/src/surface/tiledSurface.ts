@@ -38,18 +38,29 @@ export type TilePainter = (rect: Rect, frame: SurfaceFrame) => void | (() => voi
  *  viewport takes. */
 export type SurfaceClear = (size: { width: number; height: number }, dpr: number) => void;
 
+/** Run `fn`, logging what it throws: one tenant's failure must not cost the others their frame. */
+function isolated<T>(kind: 'painter' | 'clear', id: string, fn: () => T): T | undefined {
+  try {
+    return fn();
+  } catch (err) {
+    console.error(`[labkit] surface ${kind} ${JSON.stringify(id)} threw`, err);
+    return undefined;
+  }
+}
+
 /** Every dirty tile's painter, in one commit, then what each asked to run after it. A `flushSync` per tile would
  *  count each as a nested update while any other work is pending, and React gives up past 50. */
 function paintTiles(frame: SurfaceFrame, painters: ReadonlyMap<string, TilePainter>): void {
-  const after: (() => void)[] = [];
+  const after: [string, () => void][] = [];
   flushSync(() => {
     for (const id of frame.dirty) {
       const rect = frame.rects.get(id);
-      const then = rect ? painters.get(id)?.(rect, frame) : undefined;
-      if (typeof then === 'function') after.push(then);
+      const paint = rect ? painters.get(id) : undefined;
+      const then = paint && rect ? isolated('painter', id, () => paint(rect, frame)) : undefined;
+      if (typeof then === 'function') after.push([id, then]);
     }
   });
-  for (const then of after) then();
+  for (const [id, then] of after) isolated('painter', id, then);
 }
 
 /** `box`, a client rect, measured from `origin`'s top-left corner. */
@@ -94,7 +105,9 @@ export class TiledSurface {
   private readonly painters = new Map<string, TilePainter>();
   private readonly clears = new Map<string, SurfaceClear>();
   private stale = true;
-  private tileLeft = false;
+  /** The next measurement retiles whatever it finds: a tile left, the scope changed or the container did, so
+   *  pixels may sit where no rect now is, or none sit where one is. */
+  private retileDue = false;
   private lastDpr = 0;
   private scopeEl: SurfaceScope = null;
   private readonly scopeChanged = createEmitter();
@@ -108,6 +121,8 @@ export class TiledSurface {
     if (this.container === el) return false;
     this.container = el;
     this.stale = true;
+    // A new container may be new buffers at the same place, blank and unsized.
+    this.retileDue = true;
     return true;
   }
 
@@ -149,12 +164,19 @@ export class TiledSurface {
     } else {
       this.tiles.delete(id);
       // Its rect goes now, so the next measurement cannot see that it left.
-      if (this.rects.delete(id)) this.tileLeft = true;
+      if (this.rects.delete(id)) this.retileDue = true;
       this.visible.delete(id);
       this.dirty.delete(id);
     }
     this.stale = true;
+    // Under a scope, which tiles are inside it is what changed.
+    if (this.scopeEl) this.scopeChanged.emit();
     return true;
+  }
+
+  /** Drop `el` from `id`, if it still holds it. Returns whether that changed anything. */
+  releaseTile(id: string, el: HTMLElement): boolean {
+    return this.tiles.get(id) === el && this.placeTile(id, null);
   }
 
   holdClear(id: string, clear: SurfaceClear): () => void {
@@ -165,11 +187,13 @@ export class TiledSurface {
     return hold(this.painters, 'painter', id, paint);
   }
 
-  /** Narrow to the tiles inside `el`, telling every scope listener. Returns whether that changed anything. */
+  /** Narrow to the tiles inside `el`, telling every scope listener, as placing or dropping a tile under a scope
+   *  does. Returns whether that changed anything. */
   setScope(el: SurfaceScope): boolean {
     if (sameScope(this.scopeEl, el)) return false;
     this.scopeEl = el;
     this.stale = true;
+    this.retileDue = true;
     this.scopeChanged.emit();
     return true;
   }
@@ -193,16 +217,16 @@ export class TiledSurface {
       this.dirty.clear();
       return false;
     }
-    const { moved, left } = this.remeasure(el);
+    const { moved, forced } = this.remeasure(el);
     let retiled = moved;
-    const dpr = globalThis.devicePixelRatio ?? 1;
+    const dpr = (el.ownerDocument.defaultView ?? globalThis).devicePixelRatio || 1;
     if (dpr !== this.lastDpr) {
       this.lastDpr = dpr;
       retiled = true;
       this.markMeasured();
     }
-    // The last tile leaving dirties nothing, and still has pixels to clear.
-    if (this.dirty.size === 0 && !left) return moved;
+    // The last tile leaving, or a scope holding none, dirties nothing and still has pixels to clear.
+    if (this.dirty.size === 0 && !forced) return moved;
     const box = el.getBoundingClientRect();
     this.deliver(
       {
@@ -218,17 +242,17 @@ export class TiledSurface {
     return moved;
   }
 
-  /** Measure every tile if anything asked; `moved` when the geometry changed or a tile left. */
-  private remeasure(el: HTMLElement): { moved: boolean; left: boolean } {
-    if (!this.stale) return { moved: false, left: false };
+  /** Measure every tile if anything asked; `moved` when the geometry changed or a retile was due. */
+  private remeasure(el: HTMLElement): { moved: boolean; forced: boolean } {
+    if (!this.stale) return { moved: false, forced: false };
     this.stale = false;
     const next = measureTiles(el, this.tiles, this.scopeEl);
     const changed = !sameRects(this.rects, next.rects) || !sameRects(this.visible, next.visible);
     this.rects = next.rects;
     this.visible = next.visible;
-    const left = this.tileLeft;
-    this.tileLeft = false;
-    if (!changed && !left) return { moved: false, left };
+    const forced = this.retileDue;
+    this.retileDue = false;
+    if (!changed && !forced) return { moved: false, forced };
     this.markMeasured();
     // Geometry that changed may still be moving: a panel whose size has
     // settled while its position animates gives `ResizeObserver` nothing
@@ -236,7 +260,7 @@ export class TiledSurface {
     // mid-flight at. Measure again next frame, and keep going until a
     // measurement finds nothing moved.
     this.stale = true;
-    return { moved: true, left };
+    return { moved: true, forced };
   }
 
   private markMeasured(): void {
@@ -251,7 +275,9 @@ export class TiledSurface {
     onFrame(frame);
     // After the owner sized the buffer, before anything paints into it.
     if (frame.retiled) {
-      for (const clear of this.clears.values()) clear(frame.size, frame.dpr);
+      for (const [id, clear] of this.clears) {
+        isolated('clear', id, () => clear(frame.size, frame.dpr));
+      }
     }
     // After the owner, which is what resized the buffer this frame — and
     // whatever it just dirtied paints now rather than a frame later.

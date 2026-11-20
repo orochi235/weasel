@@ -3034,3 +3034,9 @@ Calls the lanes made without a ruling:
   development when `id` changes, as it does for `storageKey` and `storage`. Following the new id, opening a second
   synthetic trial, was the alternative. `initialConfig` and `initialState` are documented as read once but not
   warned on, since callers pass them as literals built each render.
+## Audit round fifty-one (2026-11-20): labkit.surface
+
+- 2026-11-20 (the fixer's call): `SurfaceHandle.registerTile` returns a release bound to the element it placed, which
+  does nothing once another element holds the id; labkit's own tenants release through it. `registerTile(id, null)`
+  still drops whatever holds the id, for a ref callback detaching. Making the null form refuse to drop a connected
+  element was the alternative, but a ref callback whose id changed detaches an element still in the document.

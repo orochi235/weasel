@@ -25,10 +25,11 @@ export interface SurfaceHandle {
   /** Re-measure before the next frame. The escape hatch for a host that knows it
    *  moved something a ResizeObserver cannot see. */
   invalidateRects: () => void;
-  /** Publish `el`'s rect under `id`, or with `null` drop it. Throws when another
+  /** Publish `el`'s rect under `id`, or with `null` drop whatever holds it. Throws when another
    *  element still in the document holds `id`; `registerClear` and
-   *  `registerPainter` throw likewise on an id not yet released. */
-  registerTile: (id: string, el: HTMLElement | null) => void;
+   *  `registerPainter` throw likewise on an id not yet released. Returns the release, which drops `el`
+   *  only while it still holds `id`: a release running after another element took the id leaves that one be. */
+  registerTile: (id: string, el: HTMLElement | null) => () => void;
   /** Register a tenant's whole-buffer clear. Every one registered runs, before
    *  any painter, on a frame where the tile geometry changed — the pixels a
    *  tile vacated are in no scissor now, and only the context that drew them
@@ -73,13 +74,24 @@ function onAnyScroll(doc: Document, onScroll: () => void): () => void {
   return () => doc.removeEventListener('scroll', onScroll, true);
 }
 
+/** Re-measure on what moves tiles in `el`'s window with no observer firing: a scroll anywhere in its document, and
+ *  the window moving to a display of another density, which keeps every CSS box. Returns the unsubscribe. */
+function watchWindow(el: HTMLElement, remeasure: () => void): () => void {
+  const offScroll = onAnyScroll(el.ownerDocument, remeasure);
+  const offDensity = watchDevicePixelRatio(remeasure, el.ownerDocument.defaultView);
+  return () => {
+    offScroll();
+    offDensity();
+  };
+}
+
 /** The handle's methods: each records its work on `surface`, then asks for a frame. */
 function createSurfaceHandle(
   surface: TiledSurface,
   schedule: () => void,
   invalidateRects: () => void,
   watch: ReturnType<typeof useElementWatch>['watch'],
-  unlistenScroll: { current: (() => void) | null },
+  unlistenWindow: { current: (() => void) | null },
 ): SurfaceHandle {
   return {
     invalidate: (id) => {
@@ -95,17 +107,23 @@ function createSurfaceHandle(
     },
     invalidateRects,
     registerTile: (id, el) => {
-      if (!surface.placeTile(id, el)) return;
-      watch(`tile:${id}`, el, { moves: true });
-      schedule();
+      if (surface.placeTile(id, el)) {
+        watch(`tile:${id}`, el, { moves: true });
+        schedule();
+      }
+      return () => {
+        if (!el || !surface.releaseTile(id, el)) return;
+        watch(`tile:${id}`, null);
+        schedule();
+      };
     },
     registerClear: (id, clear) => surface.holdClear(id, clear),
     registerPainter: (id, paint) => surface.holdPainter(id, paint),
     containerRef: (el) => {
       if (!surface.setContainer(el)) return;
       watch('container', el);
-      unlistenScroll.current?.();
-      unlistenScroll.current = el ? onAnyScroll(el.ownerDocument, invalidateRects) : null;
+      unlistenWindow.current?.();
+      unlistenWindow.current = el ? watchWindow(el, invalidateRects) : null;
       schedule();
     },
     getContainer: () => surface.getContainer(),
@@ -147,15 +165,23 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
   }, [surface, schedule]);
 
   const { watch } = useElementWatch(invalidateRects);
-  const unlistenScroll = useRef<(() => void) | null>(null);
+  const unlistenWindow = useRef<(() => void) | null>(null);
 
   useEffect(() => () => frameLoop.cancel(), [frameLoop]);
 
-  // A window moved to a display of another density keeps its CSS box, so no observer fires.
-  useEffect(() => watchDevicePixelRatio(invalidateRects), [invalidateRects]);
+  // A host need never call `containerRef(null)`, so the window listeners go with the hook. The body puts them back
+  // after StrictMode's unmount and remount, which calls no ref with the same element again.
+  useEffect(() => {
+    const el = surface.getContainer();
+    if (el && !unlistenWindow.current) unlistenWindow.current = watchWindow(el, invalidateRects);
+    return () => {
+      unlistenWindow.current?.();
+      unlistenWindow.current = null;
+    };
+  }, [surface, invalidateRects]);
 
   return useMemo(
-    () => createSurfaceHandle(surface, schedule, invalidateRects, watch, unlistenScroll),
+    () => createSurfaceHandle(surface, schedule, invalidateRects, watch, unlistenWindow),
     [surface, schedule, invalidateRects, watch],
   );
 }

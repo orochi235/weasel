@@ -14,11 +14,19 @@ export interface TileGeometry {
  *  of several. Null is every tile. */
 export type SurfaceScope = HTMLElement | readonly HTMLElement[] | null;
 
-/** Whether `tile` is inside `scope`. */
+/** Whether `el` is `node` or holds it, counting what is inside shadow roots below it. */
+function holds(el: Node, node: Node): boolean {
+  for (let n: Node | null = node; n; n = n instanceof ShadowRoot ? n.host : n.parentNode) {
+    if (n === el) return true;
+  }
+  return false;
+}
+
+/** Whether `tile` is inside `scope`, shadow trees included. */
 export function scopeHolds(scope: SurfaceScope, tile: Node): boolean {
   if (!scope) return true;
-  if ('contains' in scope) return scope.contains(tile);
-  return scope.some((el) => el.contains(tile));
+  if ('contains' in scope) return holds(scope, tile);
+  return scope.some((el) => holds(el, tile));
 }
 
 /** Whether two scopes name the same elements, in the same order. */

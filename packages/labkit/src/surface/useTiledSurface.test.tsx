@@ -1,6 +1,6 @@
 import { act, render, renderHook } from '@testing-library/react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
-import { useEffect } from 'react';
+import { StrictMode, useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SurfaceFrame, SurfaceHandle } from './useTiledSurface';
 import { useTiledSurface } from './useTiledSurface';
@@ -281,6 +281,114 @@ describe('useTiledSurface', () => {
 
     expect([...(frames[0]?.dirty ?? [])].sort()).toEqual(['a', 'b']);
     expect(frames[0]?.dpr).toBe(2);
+  });
+
+  it("watches the density of the container's own window", () => {
+    const frame = document.createElement('iframe');
+    document.body.append(frame);
+    const view = frame.contentWindow as Window;
+    let dpr = 1;
+    Object.defineProperty(view, 'devicePixelRatio', { configurable: true, get: () => dpr });
+    const listeners = new Set<() => void>();
+    Object.defineProperty(view, 'matchMedia', {
+      configurable: true,
+      value: (query: string) => ({
+        media: query,
+        matches: true,
+        addEventListener: (_: string, fn: () => void) => listeners.add(fn),
+        removeEventListener: (_: string, fn: () => void) => listeners.delete(fn),
+      }),
+    });
+    const frames: SurfaceFrame[] = [];
+    function Popout() {
+      const surface = useTiledSurface({ onFrame: (f) => frames.push(f) });
+      useEffect(() => {
+        const container = view.document.createElement('div');
+        const tile = view.document.createElement('div');
+        view.document.body.append(container, tile);
+        stubBox(container, 0, 0, 800, 600);
+        stubBox(tile, 0, 0, 100, 100);
+        surface.containerRef(container);
+        surface.registerTile('t', tile);
+        return () => {
+          surface.registerTile('t', null);
+          surface.containerRef(null);
+        };
+      }, [surface]);
+      return null;
+    }
+    render(<Popout />);
+    flushFrames();
+    expect(frames.at(-1)?.dpr).toBe(1);
+    expect(listeners.size).toBe(1);
+    frames.length = 0;
+
+    dpr = 2;
+    act(() => {
+      for (const fn of [...listeners]) fn();
+    });
+    flushFrames();
+    expect(frames[0]?.dpr).toBe(2);
+    expect([...(frames[0]?.dirty ?? [])]).toEqual(['t']);
+    frame.remove();
+  });
+
+  it('stops listening for scrolls on unmount, though the container was never released', () => {
+    const off = vi.spyOn(document, 'removeEventListener');
+    const { unmount } = render(<Harness frames={[]} onHandle={() => {}} />);
+    flushFrames();
+    expect(off.mock.calls.some(([type]) => type === 'scroll')).toBe(false);
+    unmount();
+    expect(off.mock.calls.some(([type]) => type === 'scroll')).toBe(true);
+  });
+
+  it('keeps listening for scrolls through a StrictMode remount', () => {
+    const frames: SurfaceFrame[] = [];
+    const { getByTestId } = render(
+      <StrictMode>
+        <Harness frames={frames} onHandle={() => {}} />
+      </StrictMode>,
+    );
+    flushFrames();
+    frames.length = 0;
+    stubBox(getByTestId('b'), 300, 0, 400, 600);
+    act(() => {
+      document.dispatchEvent(new Event('scroll'));
+    });
+    flushFrames();
+    expect(frames[0]?.rects.get('b')).toEqual({ x: 300, y: 0, width: 400, height: 600 });
+  });
+
+  it("leaves a tile's newer element be when the older one's release runs late", () => {
+    const frames: SurfaceFrame[] = [];
+    let handle: SurfaceHandle | null = null;
+    render(
+      <Harness
+        frames={frames}
+        onHandle={(h) => {
+          handle = h;
+        }}
+      />,
+    );
+    flushFrames();
+    const h = handle as unknown as SurfaceHandle;
+    const older = document.createElement('div');
+    const newer = document.createElement('div');
+    document.body.append(older);
+    stubBox(newer, 100, 100, 50, 50);
+    const releaseOlder = h.registerTile('k', older);
+    // The older element leaves the document and the newer takes the id, before the older's release runs.
+    older.remove();
+    document.body.append(newer);
+    h.registerTile('k', newer);
+    act(() => releaseOlder());
+    flushFrames();
+    expect(frames.at(-1)?.rects.get('k')).toEqual({ x: 100, y: 100, width: 50, height: 50 });
+
+    frames.length = 0;
+    act(() => h.registerTile('k', newer)());
+    flushFrames();
+    expect(frames.at(-1)?.rects.has('k')).toBe(false);
   });
 
   it('re-measures on invalidateRects, which is how a moved tile is caught', () => {
