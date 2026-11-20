@@ -41,3 +41,16 @@ export function trialAt(client: LoupePoint, doc: Document = document): TrialHit 
   }
   return null;
 }
+
+/** Calls `notify` whenever the host it is pointed at changes size, as a pane resized without the window does; pointing
+ *  it at null stops it. */
+export function createSizeWatcher(notify: () => void): (host: HTMLElement | null) => void {
+  const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => notify());
+  let watched: HTMLElement | null = null;
+  return (host) => {
+    if (host === watched) return;
+    if (watched) observer?.unobserve(watched);
+    watched = host;
+    if (host) observer?.observe(host);
+  };
+}

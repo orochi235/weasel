@@ -88,6 +88,45 @@ describe('createPixelsSource', () => {
     handle.detach();
   });
 
+  it('captures again when the host under it is resized, with no window resize to say so', async () => {
+    vi.useFakeTimers();
+    const observers: { fn: () => void; watched: Set<Element> }[] = [];
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        watched = new Set<Element>();
+        constructor(public fn: () => void) {
+          observers.push(this);
+        }
+        observe(el: Element) {
+          this.watched.add(el);
+        }
+        unobserve(el: Element) {
+          this.watched.delete(el);
+        }
+        disconnect() {}
+      },
+    );
+    const host = document.body.appendChild(document.createElement('div'));
+    host.dataset.fgHost = 'trial-a';
+    let width = 100;
+    Object.defineProperty(host, 'offsetWidth', { configurable: true, get: () => width });
+    document.elementsFromPoint = () => [host];
+    const { fetch, posts } = endpoint();
+    const sized = (hit: TrialHit) => ({ ...payload('s'), box: { width: hit.width, height: 100 } });
+    const source = createPixelsSource({ base: '/', payloadFor: sized, fetch, ...revisions() });
+    const handle = source.attach(document.createElement('div'), request(50));
+    await vi.advanceTimersByTimeAsync(0);
+    posts[0]!.answer();
+    await settle();
+    width = 300;
+    for (const o of observers) if (o.watched.has(host)) o.fn();
+    await vi.advanceTimersByTimeAsync(LENS_REST_MS);
+    expect(posts.map((p) => p.body.box.width)).toEqual([100, 300]);
+    handle.detach();
+    expect(observers.some((o) => o.watched.has(host))).toBe(false);
+  });
+
   it('never shows a capture that was taken before the story was edited', async () => {
     vi.useFakeTimers();
     hosts();

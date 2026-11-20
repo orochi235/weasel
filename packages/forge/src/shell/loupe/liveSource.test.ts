@@ -1,5 +1,5 @@
 import type { LensSourceHandle, LensSourceRequest } from '@weasel-js/labkit/loupe';
-import { afterEach, beforeEach, expect, it } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { type ForgeComparison, resolveComparison } from './conditions';
 import { createLiveLenses } from './liveLenses';
 import { createLiveSource } from './liveSource';
@@ -154,4 +154,35 @@ it('posts a new request when the host under a still reticle is resized, so the c
   const after = lenses.forTrial('t1')[0];
   expect(after).not.toBe(before);
   expect(after?.hit).toMatchObject({ width: 600, height: 300 });
+});
+
+it('looks again when the host under it is resized, with no window resize to say so', () => {
+  const observers: { fn: () => void; watched: Set<Element> }[] = [];
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      watched = new Set<Element>();
+      constructor(public fn: () => void) {
+        observers.push(this);
+      }
+      observe(el: Element) {
+        this.watched.add(el);
+      }
+      unobserve(el: Element) {
+        this.watched.delete(el);
+      }
+      disconnect() {}
+    },
+  );
+  try {
+    const lenses = createLiveLenses();
+    let width = 400;
+    Object.defineProperty(left, 'offsetWidth', { configurable: true, get: () => width });
+    attach(100, null, undefined, lenses);
+    width = 600;
+    for (const o of observers) if (o.watched.has(left)) o.fn();
+    expect(lenses.forTrial('t1')[0]?.hit.width).toBe(600);
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });
