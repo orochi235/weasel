@@ -2,6 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { createWindow } from './window';
 import { DEFAULT_WINDOW_METRICS as M } from './zones';
+import type { TextDrawCommand } from '@weasel-js/core/renderer';
+import { textWidth } from '../../menu/textWidth';
 
 const ctx = {
   dims: { width: 800, height: 600 },
@@ -12,6 +14,15 @@ const ctx = {
 const opts = { id: 'w', x: 100, y: 100, width: 200, height: 150, title: 'Loupe' };
 
 describe('window widget', () => {
+  it('cuts a title too long for its bar to one line ending in an ellipsis, short of the close box', () => {
+    const win = createWindow({ ...opts, width: 160, title: 'Layer properties for the selected group' });
+    const text = win.draw(ctx).find((c): c is TextDrawCommand => c.kind === 'text')!;
+    const shown = text.runs.map((r) => r.text).join('');
+    expect(text.maxWidth).toBeUndefined();
+    expect(shown).toMatch(/…$/);
+    expect(textWidth(shown, 12, ctx.defaultFont)).toBeLessThanOrEqual(160 - M.edge * 2 - M.closeSize - 4);
+  });
+
   it('draws a titlebar, a border ring, a title and a close glyph', () => {
     const win = createWindow(opts);
     const cmds = win.draw(ctx);
@@ -182,6 +193,39 @@ describe('window widget', () => {
     win.onPointer({ type: 'move', x: 170, y: 100 + M.titleH / 2 + 10, native: null });
     expect(win.bounds).toMatchObject({ x: 120, y: 110, width: 200, height: 150 });
     expect(onMove).toHaveBeenCalled();
+  });
+
+  it('keeps dragging when onMove snaps the window through setBounds', () => {
+    const snap = (v: number) => Math.round(v / 50) * 50;
+    const win = createWindow({ ...opts, onMove: (b) => win.setBounds({ ...b, x: snap(b.x), y: snap(b.y) }) });
+    const y = 100 + M.titleH / 2;
+    win.onPointer({ type: 'down', x: 150, y, native: null });
+    win.onPointer({ type: 'move', x: 160, y, native: null });
+    expect(win.bounds).toMatchObject({ x: 100, y: 100 });
+    win.onPointer({ type: 'move', x: 230, y, native: null });
+    expect(win.bounds).toMatchObject({ x: 200, y: 100 });
+    win.onPointer({ type: 'move', x: 290, y: y + 60, native: null });
+    expect(win.bounds).toMatchObject({ x: 250, y: 150 });
+  });
+
+  it('keeps resizing when onResize constrains the window through setBounds', () => {
+    const win = createWindow({ ...opts, onResize: (b) => win.setBounds({ ...b, height: b.width * 0.75 }) });
+    win.onPointer({ type: 'down', x: 299, y: 175, native: null });
+    win.onPointer({ type: 'move', x: 309, y: 175, native: null });
+    win.onPointer({ type: 'move', x: 339, y: 175, native: null });
+    expect(win.bounds).toMatchObject({ width: 240, height: 180 });
+  });
+
+  it('pulls the window back onto a host that shrank past it, and reports the move', () => {
+    const onMove = vi.fn();
+    const win = createWindow({ ...opts, x: 900, y: 100, onMove });
+    win.draw({ ...ctx, dims: { width: 1200, height: 600 } });
+    expect(onMove).not.toHaveBeenCalled();
+    win.draw({ ...ctx, dims: { width: 700, height: 600 } });
+    expect(win.bounds).toMatchObject({ x: 500, y: 100 });
+    expect(onMove).toHaveBeenCalledWith(win.bounds);
+    win.draw({ ...ctx, dims: { width: 0, height: 0 } });
+    expect(win.bounds).toMatchObject({ x: 500, y: 100 });
   });
 
   it('drags the east edge to resize, and reports via onResize', () => {

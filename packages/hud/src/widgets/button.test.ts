@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { createButton } from './button';
+import { textWidth } from '../menu/textWidth';
 import { layoutRuns, resolveTextStyle, verticalAlignOffset } from '@weasel-js/text';
 import { registerDefaultFont, DEFAULT_FONT_FAMILY } from '../fonts/registerDefaultFont';
 import { resolveFontVariant } from '@weasel-js/font';
@@ -234,13 +235,38 @@ describe('button keyboard', () => {
     expect(b.tabOrder).toBe(3);
   });
 
-  it('Enter and Space press it, and say so', () => {
+  it('Enter presses it on keydown, and Space on keyup, and say so', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'x' });
     const press = vi.fn();
     b.subscribe('press', press);
     expect(b.onKey!(k('Enter'))).toBe(true);
+    expect(press).toHaveBeenCalledTimes(1);
     expect(b.onKey!(k(' '))).toBe(true);
+    expect(press).toHaveBeenCalledTimes(1);
+    expect(b.onKey!(k(' ', 'keyup'))).toBe(true);
     expect(press).toHaveBeenCalledTimes(2);
+  });
+
+  it('presses once for a held Space, as a native button does', () => {
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'x' });
+    const press = vi.fn();
+    b.subscribe('press', press);
+    b.onKey!(k(' '));
+    for (let i = 0; i < 30; i++) expect(b.onKey!({ ...k(' '), repeat: true })).toBe(true);
+    expect(press).not.toHaveBeenCalled();
+    b.onKey!(k(' ', 'keyup'));
+    expect(press).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not press for a Space whose keydown it never heard, or that focus left before release', () => {
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'x' });
+    const press = vi.fn();
+    b.subscribe('press', press);
+    expect(b.onKey!(k(' ', 'keyup'))).toBe(false);
+    b.onKey!(k(' '));
+    b.onFocusChange!(false);
+    expect(b.onKey!(k(' ', 'keyup'))).toBe(false);
+    expect(press).not.toHaveBeenCalled();
   });
 
   it('leaves every other key for the canvas', () => {
@@ -250,5 +276,15 @@ describe('button keyboard', () => {
     expect(b.onKey!(k('Delete'))).toBe(false);
     expect(b.onKey!(k('Enter', 'keyup'))).toBe(false);
     expect(press).not.toHaveBeenCalled();
+  });
+});
+
+describe('button label', () => {
+  it('ends a label wider than the button with an ellipsis, inside the button', () => {
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 60, height: 28, label: 'Export settings', fontSize: 13 });
+    const text = b.draw(ctx).find((c): c is TextDrawCommand => c.kind === 'text')!;
+    const label = text.runs.map((r) => r.text).join('');
+    expect(label).toMatch(/…$/);
+    expect(text.x + textWidth(label, 13, 'D')).toBeLessThanOrEqual(60);
   });
 });

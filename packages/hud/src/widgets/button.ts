@@ -8,6 +8,7 @@ import {
   envPx, exactly, measureButton, type ButtonFace, type ButtonLayout, type ButtonSize, type HeadlessComponent,
 } from '@weasel-js/ui-logic';
 import { hudMeasureEnv } from '../measureEnv';
+import { ellipsize } from '../menu/textWidth';
 import { textCommandFromRuns } from '@weasel-js/core';
 import { solidFill } from '@weasel-js/paint';
 
@@ -95,12 +96,15 @@ export const hudButton: HeadlessComponent<HudButtonState, ButtonLayout, HudButto
     const out: DrawCommand[] = [{
       kind: 'path', path: roundRectPath(b.x, b.y, b.width, b.height, radius), fill: solidFill(color),
     }];
+    const font = { fontFamily: target.fontFamily ?? ctx.defaultFont, fontSize: layout.metrics.font.size };
     for (const { part, rect } of layout.parts) {
       if (part !== 'label') continue;
+      // Held to the label part's width, which the measure trims to what the button leaves it.
+      const label = ellipsize(state.label ?? '', rect.width, font.fontSize, font.fontFamily);
       out.push(textCommandFromRuns(
         b.x + rect.x, b.y,
-        [{ text: state.label ?? '', fill: solidFill(target.textColor ?? t['--wzl-fg']) }],
-        { fontFamily: target.fontFamily ?? ctx.defaultFont, fontSize: layout.metrics.font.size },
+        [{ text: label, fill: solidFill(target.textColor ?? t['--wzl-fg']) }],
+        font,
         undefined, b.height, 'center',
       ));
     }
@@ -130,6 +134,8 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
   let hidden = false;
   let label = opts.label;
   let press: PressState = IDLE_PRESS;
+  // Space presses on its release, as a native `<button>` does; its keydown arms it, and focus leaving disarms it.
+  let spaceArmed = false;
 
   // Each report goes to the listeners held as it starts, and one that throws leaves the rest heard.
   const reports = createKeyedEmitter<ButtonEvent>();
@@ -150,11 +156,22 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
     focusable: opts.focusable ?? true,
     ...(opts.tabOrder !== undefined ? { tabOrder: opts.tabOrder } : {}),
     get accessibleName() { return label; },
+    // As a native `<button>`: Enter presses on keydown, each auto-repeat included; Space presses once, on keyup,
+    // after a keydown this button heard. Both halves of a Space are claimed, so neither reaches the canvas alone.
     onKey(evt: HudKeyEvent): boolean {
-      if (evt.type !== 'keydown' || !isPressKey(evt.key)) return false;
+      if (!isPressKey(evt.key)) return false;
+      if (evt.key === ' ') {
+        if (evt.type === 'keydown') { spaceArmed = true; return true; }
+        if (!spaceArmed) return false;
+        spaceArmed = false;
+        emit('press');
+        return true;
+      }
+      if (evt.type !== 'keydown') return false;
       emit('press');
       return true;
     },
+    onFocusChange(focused: boolean) { if (!focused) spaceArmed = false; },
     setBounds(b) { assertNotDisposed(); bounds = { ...b }; rev.changed(); },
     setHidden(h) { assertNotDisposed(); hidden = h; rev.changed(); },
     setLabel(l) { assertNotDisposed(); label = l; rev.changed(); },

@@ -4,7 +4,7 @@ import {
 } from '@weasel-js/ui-logic';
 import { createEmitter } from '@weasel-js/registry';
 import { resolveTheme, weaselTheme, type ResolvedTheme } from '@weasel-js/theme';
-import { createRevision } from '../../widget';
+import { createRevision, DEFAULT_WIDGET_CLAIMS } from '../../widget';
 import type {
   HudAccessibleNode, HudAccessibleTree, HudDrawCtx, HudKeyEvent, HudPointerEvent, Widget, WidgetBounds,
 } from '../../widget';
@@ -13,12 +13,14 @@ import { DEFAULT_FONT_FAMILY } from '../../fonts/registerDefaultFont';
 import { hudItemList, SWATCH_SIZE, type HudListRow } from './drawList';
 import { createListNav } from './listNav';
 import { rectContainsPointHalfOpen } from '@weasel-js/geom';
+import type { ClaimableGesture } from '@weasel-js/core';
 
 /** Options for a list widget. */
 export interface ListOptions {
   id: string;
   x: number; y: number; width: number;
-  /** Default: as tall as its rows, measured again whenever they or the theme change. */
+  /** Default: as tall as its rows, measured again whenever they or the theme change. Shorter than its rows, the list
+   *  clips them and scrolls: by the wheel, and to keep the keyboard's row in view. */
   height?: number;
   rows: readonly HudListRow[];
   /** Shown in place of the rows when there are none. */
@@ -47,10 +49,13 @@ export interface ListWidget extends Widget {
   setHidden(hidden: boolean): void;
   /** The row the keyboard is on. */
   readonly active: number | null;
+  /** How far the rows are scrolled up, in px: 0 unless the list is shorter than its rows. */
+  readonly scrollTop: number;
   dispose(): void;
 }
 
 let builtIn: ResolvedTheme | null = null;
+const SCROLLING_CLAIMS: readonly ClaimableGesture[] = [...DEFAULT_WIDGET_CLAIMS, 'wheel'];
 
 /** A list's rows as its assistive tech tree: the container and row roles its mode gives, the keyboard's row active. */
 function listTree(
@@ -78,6 +83,7 @@ export function createList(opts: ListOptions): ListWidget {
   let rows: readonly HudListRow[] = [];
   let lastCtx: Pick<HudDrawCtx, 'tokens' | 'defaultFont'> | null = null;
   let bounds: WidgetBounds = { x: opts.x, y: opts.y, width: opts.width, height: opts.height ?? 0 };
+  let scrollTop = 0;
   const nav = createListNav(() => rows, mode, (i) => opts.onActivate?.(rows[i]!.id, i));
 
   const changed = () => { rev.changed(); subs.emit(); };
@@ -98,14 +104,33 @@ export function createList(opts: ListOptions): ListWidget {
     bounds = { ...bounds, height: h };
     return true;
   };
+  /** Hold the scroll within the rows' overflow; true when it moved. */
+  const holdScroll = (to: number): boolean => {
+    const max = Math.max(0, measure().height - bounds.height);
+    const next = Math.min(Math.max(0, to), max);
+    if (next === scrollTop) return false;
+    scrollTop = next;
+    return true;
+  };
+  /** Scroll the keyboard's row into view, as a focused DOM row scrolls itself. */
+  const reveal = (): void => {
+    const r = nav.active === null ? undefined : measure().rows[nav.active]?.rect;
+    if (!r) return;
+    if (r.y < scrollTop) holdScroll(r.y);
+    else if (r.y + r.height > scrollTop + bounds.height) holdScroll(r.y + r.height - bounds.height);
+  };
   const setRowsInner = (next: readonly HudListRow[]) => {
+    const prev = rows;
     rows = next.map((r) => (r.swatch !== undefined ? { ...r, leadingWidth: SWATCH_SIZE } : r));
-    nav.clamp();
+    nav.rebase(prev);
     fit();
+    holdScroll(scrollTop);
   };
   setRowsInner(opts.rows);
+  // Only a row drawn in the bounds is under a point: a scrolled-out one is clipped away.
   const rowAt = (x: number, y: number): number | null =>
-    (x < bounds.x || x >= bounds.x + bounds.width ? null : rowAtY(measure(), y - bounds.y));
+    (rectContainsPointHalfOpen(bounds, x, y) ? rowAtY(measure(), y - bounds.y + scrollTop) : null);
+  const overflows = () => measure().height > bounds.height;
   const tree: HudAccessibleTree = {
     read: () => listTree(opts, mode, rows, nav.active),
     subscribe: (fn) => subs.subscribe(fn),
@@ -118,22 +143,26 @@ export function createList(opts: ListOptions): ListWidget {
     get hidden() { return hidden; },
     get disposed() { return disposed; },
     get active() { return nav.active; },
+    get scrollTop() { return scrollTop; },
+    // The wheel is the list's only while it has rows to scroll to; otherwise it falls through to the canvas.
+    get claims() { return overflows() ? SCROLLING_CLAIMS : DEFAULT_WIDGET_CLAIMS; },
     focusable: mode !== 'list',
     focusRing: false,
     ...(opts.tabOrder !== undefined ? { tabOrder: opts.tabOrder } : {}),
     accessibleName: opts.accessibleName ?? opts.id,
     accessibleTree: tree,
     setRows(next) { assertLive(); setRowsInner(next); changed(); },
-    setBounds(b) { assertLive(); bounds = { ...b }; fit(); changed(); },
+    setBounds(b) { assertLive(); bounds = { ...b }; fit(); holdScroll(scrollTop); changed(); },
     setHidden(h) { assertLive(); hidden = h; changed(); },
     draw(ctx: HudDrawCtx): DrawCommand[] {
       if (lastCtx?.tokens !== ctx.tokens || lastCtx.defaultFont !== ctx.defaultFont) {
         lastCtx = { tokens: ctx.tokens, defaultFont: ctx.defaultFont };
         // A theme with taller rows: the new height lands on the next frame.
-        if (fit()) changed();
+        const grew = fit();
+        if (holdScroll(scrollTop) || grew) changed();
       }
       return hudItemList.draw(
-        { rows, empty: opts.empty, mode, active: nav.active, hover: nav.hover, ring: nav.ring },
+        { rows, empty: opts.empty, mode, active: nav.active, hover: nav.hover, ring: nav.ring, scrollTop },
         { bounds, ctx, fontFamily: opts.fontFamily },
       );
     },
@@ -141,13 +170,19 @@ export function createList(opts: ListOptions): ListWidget {
       return !hidden && rectContainsPointHalfOpen(bounds, x, y);
     },
     cursorAt() { return 'default'; },
-    onPointer(evt: HudPointerEvent) { if (nav.pointer(evt, rowAt)) changed(); },
+    onPointer(evt: HudPointerEvent) {
+      if (evt.type === 'wheel') {
+        if (holdScroll(scrollTop + evt.deltaY)) changed();
+        return;
+      }
+      if (nav.pointer(evt, rowAt)) changed();
+    },
     onKey(evt: HudKeyEvent): boolean {
       const r = nav.key(evt);
-      if (r.changed) changed();
+      if (r.changed) { reveal(); changed(); }
       return r.handled;
     },
-    onFocusChange(f: boolean) { if (nav.focus(f)) changed(); },
+    onFocusChange(f: boolean) { if (nav.focus(f)) { reveal(); changed(); } },
     dispose() {
       if (disposed) return;
       disposed = true;

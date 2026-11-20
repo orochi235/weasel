@@ -4,6 +4,7 @@ import { dashForStrokeStyle, mixOklab, type ColorSource, solidFill } from '@weas
 import { TINT_REF, type Emphasis, type Grade, type Stance } from '@weasel-js/theme';
 import type { HudDrawCtx, WidgetBounds } from '../../widget';
 import { windowLook } from './windowLook';
+import { ellipsize } from '../../menu/textWidth';
 import type { WindowMetrics } from './zones';
 
 /** A window's fixed layout: its metrics, whether it has a titlebar, and whether it grows a grip strip. */
@@ -104,16 +105,15 @@ export function drawWindowFrame(
   if (gripped) out.push(gripDots(x + w / 2, y + (m.edge + m.grip) / 2, look['title-color']));
   if (!chrome) return out;
 
+  // One line, reserving the close box: a long title ends in an ellipsis rather than wrapping out of the bar or
+  // running under the ✕. (A text command's `maxWidth` wraps; it does not cut.)
+  const titleFont = { fontFamily: ctx.defaultFont, fontSize: 12 };
+  const title = ellipsize(casedTitle(a.title, look['title-case']), w - m.edge * 2 - m.closeSize - 4, 12, ctx.defaultFont);
   out.push(textCommandFromRuns(
     x + m.edge + 2, y,
-    [{ text: casedTitle(a.title, look['title-case']), fill: solidFill(look['title-color']) }],
-    {
-      fontFamily: ctx.defaultFont,
-      fontSize: 12,
-    },
-    // Reserve the close box so a long title is ellipsized rather than
-    // running under the ✕.
-    w - m.edge * 2 - m.closeSize - 4,
+    [{ text: title, fill: solidFill(look['title-color']) }],
+    titleFont,
+    undefined,
     m.titleH,
     'center',
   ));

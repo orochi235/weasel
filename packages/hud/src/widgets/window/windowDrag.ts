@@ -1,4 +1,5 @@
 import type { HudPointerEvent, WidgetBounds } from '../../widget';
+import { clampRectWithin } from '@weasel-js/geom';
 import { applyWindowDrag, type WindowZone } from './zones';
 
 /** The zone a press in `z` drags. With no titlebar to grab, the interior is the move handle — it is
@@ -89,6 +90,33 @@ export function createWindowDrag(host: WindowDragHost): WindowDrag {
         default:
           break;
       }
+    },
+  };
+}
+
+/** The host a window is held on: its size as the last draw saw it. */
+export interface HostHold {
+  /** `b` pulled back onto the host; `b` itself before any draw has given a size. */
+  clamp(b: WidgetBounds): WidgetBounds;
+  /** Records the host's size from a draw; true when it changed to one with area, so the window should be held again. */
+  resize(dims: { width: number; height: number }): boolean;
+}
+
+/** No host size until a draw supplies one, so a window never drawn is not clamped; each draw at a new size with
+ *  area holds it again. A host with no area yet (before layout) places nothing. */
+export function createHostHold(): HostHold {
+  let dims: { width: number; height: number } | null = null;
+  return {
+    clamp(b) {
+      if (!dims) return b;
+      const r = clampRectWithin(b, { x: 0, y: 0, width: dims.width, height: dims.height });
+      return { ...b, x: r.x, y: r.y };
+    },
+    resize(next) {
+      const was = dims;
+      dims = next;
+      const moved = !was || was.width !== next.width || was.height !== next.height;
+      return moved && next.width > 0 && next.height > 0;
     },
   };
 }

@@ -3,10 +3,9 @@ import type {
   Widget, WidgetBounds, HudDrawCtx, HudContentCtx, HudPointerEvent,
 } from '../../widget';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { clampRectWithin } from '@weasel-js/geom';
 import type { ColorSource } from '@weasel-js/paint';
 import type { Emphasis, Grade, Stance } from '@weasel-js/theme';
-import { createWindowDrag, dragZoneFor } from './windowDrag';
+import { createHostHold, createWindowDrag, dragZoneFor } from './windowDrag';
 import { drawWindowFrame, type WindowAppearance, type WindowShape } from './windowFrame';
 import {
   zoneAt, windowContentRect, cursorForZone,
@@ -101,17 +100,8 @@ export function createWindow(opts: WindowOptions): WindowWidget {
     x: b.x, y: b.y, width: Math.max(minW, b.width), height: Math.max(minH, b.height),
   });
 
-  // No host size until a draw supplies one, so a window never drawn is not
-  // clamped.
-  let hostDims: { width: number; height: number } | null = null;
-  const clampOnHost = (b: WidgetBounds): WidgetBounds => {
-    if (!hostDims) return b;
-    const r = clampRectWithin(
-      b,
-      { x: 0, y: 0, width: hostDims.width, height: hostDims.height },
-    );
-    return { ...b, x: r.x, y: r.y };
-  };
+  const host = createHostHold();
+  const clampOnHost = host.clamp;
 
   let disposed = false;
   const rev = createRevision(opts.onChange);
@@ -125,6 +115,13 @@ export function createWindow(opts: WindowOptions): WindowWidget {
     if (disposed) throw new Error('weasel-hud: cannot mutate a disposed widget.');
   };
   const asDrag = (z: WindowZone | null): WindowZone | null => dragZoneFor(z, chrome, passing);
+  // True while the window reports a move or resize it made itself, so a `setBounds` from that report (a snap, an
+  // aspect lock) overrides this step of the drag rather than ending it.
+  let reporting = false;
+  const report = (zone: WindowZone) => {
+    reporting = true;
+    try { (zone === 'title' ? opts.onMove : opts.onResize)?.(bounds); } finally { reporting = false; }
+  };
 
   const drag = createWindowDrag({
     bounds: () => bounds,
@@ -133,7 +130,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
     minW, minH, clampOnHost,
     place(b, zone) {
       bounds = b;
-      (zone === 'title' ? opts.onMove : opts.onResize)?.(bounds);
+      report(zone);
       rev.changed();
     },
     close() { opts.onClose?.(); },
@@ -151,8 +148,15 @@ export function createWindow(opts: WindowOptions): WindowWidget {
     content: opts.content,
 
     // Ends any drag in flight: `dragStart` would otherwise still hold the
-    // pre-call bounds, so the next move would rebase from stale origin.
-    setBounds(b) { assertNotDisposed(); bounds = clampOnHost(clampSize(b)); drag.end(); rev.changed(); },
+    // pre-call bounds, so the next move would rebase from stale origin. Called
+    // from the window's own onMove or onResize, it only overrides where this
+    // step of the drag put the window; the drag goes on from where it began.
+    setBounds(b) {
+      assertNotDisposed();
+      bounds = clampOnHost(clampSize(b));
+      if (!reporting) drag.end();
+      rev.changed();
+    },
     setHidden(h) { assertNotDisposed(); hidden = h; rev.changed(); },
     setTitle(t) { assertNotDisposed(); appearance.title = t; rev.changed(); },
     setStance(st) { assertNotDisposed(); appearance.stance = st; rev.changed(); },
@@ -160,8 +164,17 @@ export function createWindow(opts: WindowOptions): WindowWidget {
     setEmphasis(e) { assertNotDisposed(); appearance.emphasis = e; rev.changed(); },
     setTint(t) { assertNotDisposed(); appearance.tint = t; rev.changed(); },
 
+    // A host that changed size pulls the window back onto it, as a move would, so a canvas narrowed past the window
+    // never leaves its titlebar out of reach.
     draw(ctx: HudDrawCtx): DrawCommand[] {
-      hostDims = ctx.dims;
+      if (host.resize(ctx.dims)) {
+        const held = clampOnHost(bounds);
+        if (held.x !== bounds.x || held.y !== bounds.y) {
+          bounds = held;
+          report('title');
+          rev.changed();
+        }
+      }
       return drawWindowFrame(ctx, bounds, shape, appearance);
     },
 

@@ -5,6 +5,7 @@ import {
 } from '@weasel-js/ui-logic';
 import { resolveCurrentColor } from '@weasel-js/theme';
 import { hudMeasureEnv } from '../../measureEnv';
+import { ellipsize } from '../../menu/textWidth';
 import type { HudDrawCtx, WidgetBounds } from '../../widget';
 import { textCommandFromRuns } from '@weasel-js/core';
 import { solidFill } from '@weasel-js/paint';
@@ -29,6 +30,9 @@ export interface HudListState {
   readonly hover: number | null;
   /** Whether the active row shows its focus ring: the list holds focus and the keyboard has been used. */
   readonly ring: boolean;
+  /** How far the rows are scrolled up, in px, when they are taller than the bounds. Default 0. Rows are clipped to
+   *  the bounds whenever they overflow them, as `ItemList`'s `overflow: auto` clips. */
+  readonly scrollTop?: number;
 }
 
 /** Where a HUD list draws. */
@@ -57,30 +61,35 @@ export const hudItemList: HeadlessComponent<HudListState, RowListLayout, HudList
     const env = hudMeasureEnv(ctx, target.fontFamily);
     const { layout } = measureRowList(state, exactly(b.width, b.height), env);
     const font = { fontFamily: target.fontFamily ?? ctx.defaultFont, fontSize: layout.metrics.font.size };
-    const text = (s: string, x: number, y: number, h: number, color: string): DrawCommand =>
-      textCommandFromRuns(x, y, [{ text: s, fill: solidFill(color) }], font, undefined, h, 'center');
+    // ItemList.module.css's `.label`: one line, `text-overflow: ellipsis` at its box's width.
+    const text = (s: string, x: number, y: number, w: number, h: number, color: string): DrawCommand => textCommandFromRuns(
+      x, y, [{ text: ellipsize(s, w, font.fontSize, font.fontFamily), fill: solidFill(color) }], font, undefined, h, 'center',
+    );
     if (layout.empty) {
       const e = layout.empty;
-      return [text(state.empty ?? '—', b.x + e.x, b.y + e.y, e.height, subtle)];
+      return [text(state.empty ?? '—', b.x + e.x, b.y + e.y, e.width, e.height, subtle)];
     }
     const radius = envPx(env, '--wzl-radius-sm', 0);
     const out: DrawCommand[] = [];
+    const scroll = state.scrollTop ?? 0;
+    const top = b.y - scroll;
     layout.rows.forEach((box, i) => {
       const row = state.rows[i]!;
       const r = box.rect;
-      const x = b.x + r.x, y = b.y + r.y;
+      const x = b.x + r.x, y = top + r.y;
+      if (y + r.height <= b.y || y >= b.y + b.height) return;
       const fill = row.selected ? t['--wzl-border'] : state.hover === i ? t['--wzl-surface'] : undefined;
       if (fill) out.push({ kind: 'path', path: roundRectPath(x, y, r.width, r.height, radius), fill: solidFill(fill) });
       if (row.swatch && box.leading) {
         const l = box.leading;
         out.push({
           kind: 'path',
-          path: { kind: 'rect', x: b.x + l.x, y: b.y + l.y + (l.height - SWATCH_SIZE) / 2, width: SWATCH_SIZE, height: SWATCH_SIZE },
+          path: { kind: 'rect', x: b.x + l.x, y: top + l.y + (l.height - SWATCH_SIZE) / 2, width: SWATCH_SIZE, height: SWATCH_SIZE },
           fill: solidFill(row.swatch),
           stroke: { paint: { kind: 'solid', color: t['--wzl-border'] }, width: 1 },
         });
       }
-      out.push(text(row.label, b.x + box.label.x, y, r.height, row.muted ? subtle : fg));
+      out.push(text(row.label, b.x + box.label.x, y, box.label.width, r.height, row.muted ? subtle : fg));
       // ItemList's `outline: 2px; outline-offset: -2px`: a ring just inside the row.
       if (state.ring && state.active === i) {
         const inset = RING_WIDTH / 2;
@@ -91,6 +100,8 @@ export const hudItemList: HeadlessComponent<HudListState, RowListLayout, HudList
         });
       }
     });
-    return out;
+    const last = layout.rows[layout.rows.length - 1]?.rect;
+    const overflows = scroll > 0 || (last !== undefined && last.y + last.height > b.height);
+    return overflows ? [{ kind: 'group', clip: { kind: 'rect', ...b }, children: out }] : out;
   },
 };

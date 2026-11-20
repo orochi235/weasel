@@ -17,8 +17,9 @@ export interface ListNav {
   /** `handled` false for a key that falls through to the canvas. */
   key(evt: HudKeyEvent): { handled: boolean; changed: boolean };
   focus(focused: boolean): boolean;
-  /** The rows changed: keep the active and hovered rows in range. */
-  clamp(): void;
+  /** The rows changed from `prev`: the active, hovered and pressed rows follow their row ids. A row gone leaves
+   *  the active row on the one now at its place (the last, past the end), and the hover and the press on none. */
+  rebase(prev: readonly HudListRow[]): void;
 }
 
 /** A list's keyboard and pointer, over `rows()`, calling `activate` for a pressed or Enter'd row. */
@@ -98,10 +99,18 @@ export function createListNav(
       if (f && active === null) active = home();
       return true;
     },
-    clamp() {
-      const n = rows().length;
-      if (active !== null && active >= n) active = n ? n - 1 : null;
-      if (hover !== null && hover >= n) hover = null;
+    rebase(prev) {
+      const all = rows();
+      const follow = (i: number | null): number | null => {
+        const id = i === null ? undefined : prev[i]?.id;
+        if (id === undefined) return null;
+        const at = all.findIndex((r) => r.id === id);
+        return at >= 0 ? at : null;
+      };
+      const n = all.length;
+      active = active === null ? null : follow(active) ?? (n ? Math.min(active, n - 1) : null);
+      hover = follow(hover);
+      pressRow = follow(pressRow);
     },
   };
 }

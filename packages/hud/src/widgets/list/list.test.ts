@@ -4,6 +4,7 @@ import type { DrawCommand, TextDrawCommand } from '@weasel-js/core/renderer';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { createList } from './list';
 import { hudMeasureEnv } from '../../measureEnv';
+import { textWidth } from '../../menu/textWidth';
 import type { HudKeyEvent } from '../../widget';
 
 const tokens = resolveTheme(weaselTheme, { mode: 'dark' });
@@ -102,5 +103,87 @@ describe('list widget', () => {
     expect(l.focusable).toBe(false);
     expect(l.onKey!(key('ArrowDown'))).toBe(false);
     expect(l.accessibleTree!.read().children![0]!.role).toBe('listitem');
+  });
+
+  it('keeps the keyboard, hovered and pressed rows on their rows when setRows inserts or reorders', () => {
+    const onActivate = vi.fn();
+    const l = createList({ id: 'l', x: 0, y: 0, width: 200, rows, onActivate });
+    l.onFocusChange!(true);
+    l.onKey!(key('End'));
+    expect(l.active).toBe(2);
+    l.setRows([{ id: 'n', label: 'New' }, ...rows]);
+    expect(l.active).toBe(3);
+    l.onKey!(key('Enter'));
+    expect(onActivate).toHaveBeenLastCalledWith('c', 3);
+
+    const y = rowH * 0.5;
+    l.onPointer({ type: 'down', x: 10, y, native: null });
+    l.setRows([...rows, { id: 'n', label: 'New' }]);
+    l.onPointer({ type: 'up', x: 10, y, native: null });
+    expect(onActivate).toHaveBeenCalledTimes(1);
+  });
+
+  it('puts the keyboard row on its neighbor when its row is removed', () => {
+    const l = createList({ id: 'l', x: 0, y: 0, width: 200, rows, onActivate: () => {} });
+    l.onFocusChange!(true);
+    l.onKey!(key('Home'));
+    l.onKey!(key('ArrowDown'));
+    l.setRows(rows.filter((r) => r.id !== 'b'));
+    expect(l.active).toBe(1);
+    l.setRows([rows[0]!]);
+    expect(l.active).toBe(0);
+    l.setRows([]);
+    expect(l.active).toBeNull();
+  });
+
+  it('ends a label too long for its row with an ellipsis, inside the row', () => {
+    const l = createList({ id: 'l', x: 0, y: 0, width: 120, rows: [{ id: 'a', label: 'A very long layer name indeed' }] });
+    const m = measureRowList({ rows: [{ id: 'a', label: 'A very long layer name indeed' }] }, exactly(120, l.bounds.height), hudMeasureEnv(ctx));
+    const [label] = texts(l.draw(ctx));
+    expect(label).toMatch(/…$/);
+    expect(textWidth(label!, m.layout.metrics.font.size, 'D')).toBeLessThanOrEqual(m.layout.rows[0]!.label.width);
+  });
+
+  describe('shorter than its rows', () => {
+    const eight = Array.from({ length: 8 }, (_, i) => ({ id: `r${i}`, label: `Row ${i}` }));
+    const pitch = rowH + 1;
+    const make = (onActivate = vi.fn()) =>
+      createList({ id: 'l', x: 0, y: 0, width: 200, height: pitch * 2, rows: eight, onActivate });
+
+    it('clips its rows to its bounds and draws none wholly outside them', () => {
+      const cmds = make().draw(ctx);
+      expect(cmds).toHaveLength(1);
+      const group = cmds[0]!;
+      expect(group).toMatchObject({ kind: 'group', clip: { kind: 'rect', x: 0, y: 0, width: 200, height: pitch * 2 } });
+      expect(texts((group as { children: DrawCommand[] }).children)).toEqual(['Row 0', 'Row 1']);
+    });
+
+    it('scrolls the keyboard row into view, and draws and presses the rows it scrolled to', () => {
+      const onActivate = vi.fn();
+      const l = make(onActivate);
+      l.onFocusChange!(true);
+      l.onKey!(key('End'));
+      expect(l.scrollTop).toBe(pitch * 8 - 1 - pitch * 2);
+      const group = l.draw(ctx)[0] as { children: DrawCommand[] };
+      expect(texts(group.children)).toContain('Row 7');
+      const y = pitch * 2 - 2;
+      l.onPointer({ type: 'down', x: 10, y, native: null });
+      l.onPointer({ type: 'up', x: 10, y, native: null });
+      expect(onActivate).toHaveBeenCalledWith('r7', 7);
+      l.onKey!(key('Home'));
+      expect(l.scrollTop).toBe(0);
+    });
+
+    it('scrolls by the wheel, within its rows, and claims the wheel only while it can scroll', () => {
+      const l = make();
+      expect(l.claims).toContain('wheel');
+      l.onPointer({ type: 'wheel', x: 10, y: 10, deltaX: 0, deltaY: 30, native: null });
+      expect(l.scrollTop).toBe(30);
+      l.onPointer({ type: 'wheel', x: 10, y: 10, deltaX: 0, deltaY: 10_000, native: null });
+      expect(l.scrollTop).toBe(pitch * 8 - 1 - pitch * 2);
+      l.setRows(eight.slice(0, 2));
+      expect(l.scrollTop).toBe(0);
+      expect(l.claims).not.toContain('wheel');
+    });
   });
 });

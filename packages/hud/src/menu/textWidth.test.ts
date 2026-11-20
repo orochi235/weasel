@@ -3,7 +3,7 @@ import { FIXTURE_FONT, registerFont } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import type { OpenMenu } from '@weasel-js/core';
 import type { HudDrawCtx } from '../widget';
-import { textWidth } from './textWidth';
+import { ellipsize, textWidth } from './textWidth';
 import { createMenuWidget } from './menuWidget';
 import { menuTokens, THEME_METRICS as m } from './menu.fixture';
 
@@ -66,5 +66,27 @@ describe('a menu widget with no measure of its own', () => {
     });
     w.draw(ctx);
     expect(w.bounds.width).toBe(Math.ceil(20 * A * m.font.size / SIZE) + m.padX * 2 + m.iconSize + m.gap * 2 + m.labelPad);
+  });
+});
+
+describe('ellipsize', () => {
+  const face = FAMILY;
+  const w = (s: string) => textWidth(s, 10, face);
+
+  it('keeps a label that fits, and cuts one that does not to the width, ending it with an ellipsis', () => {
+    expect(ellipsize('Layer', w('Layer'), 10, face)).toBe('Layer');
+    const cut = ellipsize('A very long layer name', w('A very…'), 10, face);
+    expect(cut).toBe('A very…');
+    expect(textWidth(cut, 10, face)).toBeLessThanOrEqual(w('A very…'));
+  });
+
+  it('drops a space before the ellipsis, and gives nothing where the ellipsis alone does not fit', () => {
+    expect(ellipsize('Ab cdefgh', w('Ab …'), 10, face)).toBe('Ab…');
+    expect(ellipsize('Abc', w('…') - 1, 10, face)).toBe('');
+  });
+
+  it('cuts between grapheme clusters, never inside one', () => {
+    const cut = ellipsize('e\u0301e\u0301e\u0301e\u0301', w('e\u0301…'), 10, face);
+    expect(cut).toBe('e\u0301…');
   });
 });
