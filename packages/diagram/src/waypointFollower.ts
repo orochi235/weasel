@@ -35,8 +35,8 @@ function carried(edge: DiagramEdge, d: Vec2): DiagramEdge {
 }
 
 /** Each edge whose two ends `frame` moves by one offset, with its data as
- *  that offset leaves it. `frame` holds the poses the transform gives the
- *  nodes it moves. */
+ *  that offset leaves it, but for a locked edge, whose route stays put.
+ *  `frame` holds the poses the transform gives the nodes it moves. */
 function followers(sc: AnyScene, plane: LayoutFrame<unknown>, frame: ReadonlyMap<string, unknown>): TransformPreviewNode[] {
   const out: TransformPreviewNode[] = [];
   const before = worldWith(sc);
@@ -45,7 +45,7 @@ function followers(sc: AnyScene, plane: LayoutFrame<unknown>, frame: ReadonlyMap
     const edge = diagramEdgeOf(node);
     const ends = node.dependsOn;
     if (edge === null || (edge.waypoints ?? []).length === 0 || !Array.isArray(ends) || ends.length !== 2) continue;
-    if (sc.get(ends[0]!) === undefined || sc.get(ends[1]!) === undefined) continue;
+    if (sc.get(ends[0]!) === undefined || sc.get(ends[1]!) === undefined || sc.isLocked(node.id)) continue;
     const d = offsetOf(plane, before(ends[0]!), after(ends[0]!));
     const e = offsetOf(plane, before(ends[1]!), after(ends[1]!));
     if (Math.abs(d.x - e.x) > EPS || Math.abs(d.y - e.y) > EPS || (d.x === 0 && d.y === 0)) continue;

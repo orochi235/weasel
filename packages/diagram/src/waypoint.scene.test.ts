@@ -143,4 +143,12 @@ describe('waypointFollower', () => {
     expect(scene.get('A' as never)!.pose).toMatchObject({ x: 10, y: 5 });
     expect(waypoints(scene)).toEqual([{ x: 200, y: 100 }]);
   });
+
+  it('leaves a locked edge\'s waypoints where they are, and the move of its ends goes through', () => {
+    const { scene } = twoShapes();
+    scene.setLocked('ab' as never, true);
+    drag(scene, ['A', 'B'], (handle) => expect([...(handle.previewIds?.() ?? [])]).not.toContain('ab'));
+    expect(scene.get('A' as never)!.pose).toMatchObject({ x: 10, y: 5 });
+    expect(waypoints(scene)).toEqual([{ x: 200, y: 100 }]);
+  });
 });
