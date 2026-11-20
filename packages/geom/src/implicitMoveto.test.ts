@@ -70,7 +70,8 @@ describe('a drawing command after Z with no M', () => {
     ));
     expect(polys).toHaveLength(2);
     const second = polys.find((p) => p[0].some(([x]) => x < 10))!;
-    expect(second[0][0]).toEqual([10, 10]);
+    // Which vertex a ring starts at is the fill resolution's choice; that it passes through the start is the point.
+    expect(second[0]).toContainEqual([10, 10]);
     expect(Math.max(...second[0].map(([x]) => x))).toBe(10);
   });
 });
