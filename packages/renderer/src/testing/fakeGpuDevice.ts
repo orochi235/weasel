@@ -93,6 +93,7 @@ export function fakeGpuDevice(width = 64, height = 64): FakeGpuDevice {
     popErrorScope: () => (scopes.length === 0
       ? Promise.reject(new DOMException('no error scope to pop', 'OperationError'))
       : Promise.resolve(scopes.pop() ?? null)),
+    destroy: () => { lose({ reason: 'destroyed', message: 'destroyed' } as GPUDeviceLostInfo); },
     addEventListener: events.addEventListener.bind(events),
     removeEventListener: events.removeEventListener.bind(events),
     createCommandEncoder: () => ({

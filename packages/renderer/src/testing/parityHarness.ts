@@ -54,16 +54,29 @@ export interface Diff {
   readonly first: readonly string[];
 }
 
-let device: GPUDevice | null = null;
+let device: Promise<GPUDevice> | null = null;
 const errors: string[] = [];
 
-/** The shared device, every uncaptured error it raises collected for `takeErrors`. */
-export async function parityDevice(): Promise<GPUDevice> {
-  if (device) return device;
-  device = await requestRendererDevice();
-  if (!device) throw new Error('no WebGPU device: the browser project launches Chromium with --enable-unsafe-webgpu');
-  device.addEventListener('uncapturederror', (e) => errors.push(`uncaptured: ${(e as GPUUncapturedErrorEvent).error.message}`));
+/** The shared device, every uncaptured error it raises collected for `takeErrors`,
+ *  and requested again once it is lost. */
+export function parityDevice(): Promise<GPUDevice> {
+  device ??= openDevice().catch((err: unknown) => {
+    device = null;
+    throw err;
+  });
   return device;
+}
+
+async function openDevice(): Promise<GPUDevice> {
+  const gpu = await requestRendererDevice();
+  if (!gpu) throw new Error('no WebGPU device: the browser project launches Chromium with --enable-unsafe-webgpu');
+  const held = device;
+  gpu.addEventListener('uncapturederror', (e) => errors.push(`uncaptured: ${(e as GPUUncapturedErrorEvent).error.message}`));
+  void gpu.lost.then((info) => {
+    if (info.reason !== 'destroyed') errors.push(`device lost: ${info.message}`);
+    if (device === held) device = null;
+  });
+  return gpu;
 }
 
 /** The WebGPU errors raised since the last call. Not the browser's own
@@ -134,8 +147,9 @@ export function closeBackends(): void {
 
 /** Destroy the shared device, once a file is done with it. */
 export function releaseDevice(): void {
-  device?.destroy();
+  const held = device;
   device = null;
+  void held?.then((gpu) => gpu.destroy(), () => {});
 }
 
 function readGl(b: Backends): Uint8Array {
