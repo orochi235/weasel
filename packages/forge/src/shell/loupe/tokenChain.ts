@@ -118,6 +118,11 @@ function collect(rules: CSSRuleList, doc: Document, into: Rule[], parent?: strin
     const children = (rule as CSSRule & { cssRules?: CSSRuleList }).cssRules;
     if (rule.type !== STYLE_RULE) {
       if (children) collect(children, doc, into, parent);
+      // Declarations written after a nested rule (`CSSNestedDeclarations`) are their parent rule's.
+      else if (parent !== undefined) {
+        const style = (rule as CSSRule & { style?: CSSStyleDeclaration }).style;
+        if (style) into.push({ selector: parent, style });
+      }
       continue;
     }
     const style = rule as CSSStyleRule;
