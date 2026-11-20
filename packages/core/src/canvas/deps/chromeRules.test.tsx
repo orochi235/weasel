@@ -15,4 +15,10 @@ describe('useChromeRulesDep', () => {
     expect(result.current.dep.get('path-edit.comb')).toBe(always);
     expect(result.current.dep).toBe(dep);
   });
+
+  it('reads no rule for an id named like an Object.prototype member', () => {
+    const { result } = renderHook(() => useChromeRulesDep({}));
+    expect(result.current.dep.get('hasOwnProperty')).toBeUndefined();
+    expect(result.current.dep.get('constructor')).toBeUndefined();
+  });
 });
