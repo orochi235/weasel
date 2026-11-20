@@ -34,3 +34,17 @@ describe('loadIndexBundle', () => {
     expect((await load({ '/chip.stories.tsx': moduleOf('Basic') })).api).toBeUndefined();
   });
 });
+
+describe('titles sharing one index page', () => {
+  it("load each file's stories under that file's own title", async () => {
+    const bundle = await loadIndexBundle(indexId('labkit/Lab'), {
+      index: [
+        { id: 'labkit-lab--one', title: 'labkit/Lab', file: '/a.stories.tsx', exportName: 'One' },
+        { id: 'labkit-lab--two', title: 'Labkit/Lab', file: '/b.stories.tsx', exportName: 'Two' },
+      ],
+      importOf: async (file) => (file === '/a.stories.tsx' ? { One: story({ render: () => null }) } : { Two: story({ render: () => null }) }),
+    });
+    expect(bundle.title).toBe('labkit/Lab');
+    expect(bundle.stories.map((s) => s.title)).toEqual(['labkit/Lab', 'Labkit/Lab']);
+  });
+});
