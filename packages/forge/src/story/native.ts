@@ -19,7 +19,7 @@ export function loadNativeModule(mod: Record<string, unknown>, title: string): L
     stories.push({
       id: storyId(title, exportName),
       title,
-      name: spec.name ?? storyNameFromExport(exportName),
+      name: spec.name || storyNameFromExport(exportName),
       exportName,
       config: spec.config ?? f.schema({}),
       initialState: spec.initialState ?? null,
