@@ -92,7 +92,7 @@ function RunStrip({ run, now, mode, onMode, hideComplete, onHideComplete, on }: 
   hideComplete: boolean; onHideComplete: (hide: boolean) => void; on: AreaHandlers;
 }) {
   return (
-    <section className={s.run} aria-label={`Round ${run.round}`}>
+    <section className={cx(s.run, !run.running && s.idle)} aria-label={`Round ${run.round}`}>
       <div className={s.pulse} aria-hidden="true" />
       <div className={s.what}>
         <span>{headlineOf(run)}</span>
@@ -122,11 +122,14 @@ function RunStrip({ run, now, mode, onMode, hideComplete, onHideComplete, on }: 
   );
 }
 
-/** A strip for every run still running; a finished round lives on in the rounds chart and the map. */
-export function LiveRuns({ runs, now, on }: { runs: readonly AuditRun[]; now: number; on: AreaHandlers }) {
+/** A strip for every run still running, and for every finished one whose batch has not merged; a merged round lives on
+ *  in the rounds chart and the map. */
+export function LiveRuns({ runs, unmerged, now, on }: {
+  runs: readonly AuditRun[]; unmerged: ReadonlySet<number>; now: number; on: AreaHandlers;
+}) {
   const [mode, setMode] = useLaneMode();
   const [hideComplete, setHideComplete] = useHideComplete();
-  const live = runs.filter((r) => r.running);
+  const live = runs.filter((r) => r.running || unmerged.has(r.round));
   if (live.length === 0) return <section className={cx(s.run, s.idle)}><div className={s.what}>No round running</div></section>;
   return (
     <div className={s.runs} aria-live="polite">

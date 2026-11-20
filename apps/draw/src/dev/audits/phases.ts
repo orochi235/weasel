@@ -169,7 +169,7 @@ function withInk(span: SpanStripSpan): SpanStripSpan {
 export function tallyOf(lane: AuditLane): string {
   const { match, fix } = lane.steps;
   if (fix.state === 'done' && fix.fixed !== undefined) {
-    const also = [fix.dismissed ? `${fix.dismissed} dismissed` : '', fix.deferred ? `${fix.deferred} filed` : ''].filter(Boolean);
+    const also = [fix.dismissed ? `${fix.dismissed} FP` : '', fix.deferred ? `${fix.deferred} filed` : ''].filter(Boolean);
     return `${fix.fixed} of ${fix.of ?? fix.fixed} fixed${also.map((a) => ` · ${a}`).join('')}${fix.extra ? ` +${fix.extra} extra` : ''}`;
   }
   return match.state === 'done' ? `${(match.a ?? 0) + (match.b ?? 0) - (match.shared ?? 0)} found` : '';
@@ -298,15 +298,18 @@ export type GateRun = typeof GATE_RUNS[number]['id'];
 /** One of the run's lanes for every area at once: the batch, `gate`'s fleet run, and the merge, a column each, the
  *  fleet run filled by how far it has got. */
 export function sharedSpansOf(run: AuditRun, gate: GateRun = 'tests'): SpanStripSpan[] {
-  const at = run.running ? SHARED_STEPS.findIndex((s) => (s.steps as readonly string[]).includes(run.step)) : SHARED_STEPS.length;
+  // A run that ended red stopped at its fleet run, which failed, and never merged.
+  const red = !run.running && /^red\b/.test(run.report ?? '');
+  const at = run.running ? SHARED_STEPS.findIndex((s) => (s.steps as readonly string[]).includes(run.step))
+    : red ? SHARED_STEPS.findIndex((s) => s.id === 'fleet') : SHARED_STEPS.length;
   return SHARED_STEPS.map((s, i): SpanStripSpan => {
-    const state = i < at ? 'done' : i === at ? 'active' : 'pending';
+    const state = i < at ? 'done' : i === at ? (red ? 'failed' : 'active') : 'pending';
     const fleet = s.id === 'fleet' && state === 'active' ? run.fleet?.[gate] ?? null : null;
-    const fill = state === 'done' ? 1 : fleet && fleet.total > 0 ? Math.min(1, fleet.done / fleet.total) : 0;
+    const fill = state === 'done' || state === 'failed' ? 1 : fleet && fleet.total > 0 ? Math.min(1, fleet.done / fleet.total) : 0;
     const name = s.id === 'fleet' ? GATE_RUNS.find((g) => g.id === gate)!.label : s.label;
     const label = fleet ? `${name} · ${Math.round(fill * 100)}%` : name;
     return {
-      id: s.id, start: i, ms: 1, state, fill, label, color: phaseColor(s.id === 'merge' ? 'patch' : 'fix'),
+      id: s.id, start: i, ms: 1, state, fill, label, color: phaseColor(state === 'failed' ? 'conflict' : s.id === 'merge' ? 'patch' : 'fix'),
       ...(s.id === 'merge' ? { ink: phaseInkOf('patch', fill) } : {}),
       ...(fleet ? { title: `${fleet.done.toLocaleString()} of ${fleet.total.toLocaleString()} done` } : {}),
     };

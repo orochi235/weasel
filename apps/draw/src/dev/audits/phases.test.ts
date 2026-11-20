@@ -84,7 +84,7 @@ describe('laneViewOf', () => {
     }
     // A finding found sound is settled, not left: no hatch where nothing was deferred.
     const sound = { ...fixed, fix: done({ minutes: 9, commits: 6, fixed: 3, of: 4, deferred: 0, dismissed: 1 }) };
-    expect(laneStepsOf(lane(sound), NOW).at(-1)?.label).toBe('3 of 4 fixed · 1 dismissed');
+    expect(laneStepsOf(lane(sound), NOW).at(-1)?.label).toBe('3 of 4 fixed · 1 FP');
     expect(laneStepsOf(lane(fixed), NOW).find((s) => s.id === 'patch')?.label).toBe('2 of 4 fixed · 1 filed');
     expect(laneStepsOf(lane(sound), NOW).map((s) => s.id)).not.toContain('patch-unfixed');
     // A tally line alone says nothing of why, so everything unfixed is left.
