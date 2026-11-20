@@ -341,6 +341,11 @@ describe('PrefConditionEditor inside an entry', () => {
     expect(seen.value).toEqual({ from: 'item', path: 'length', above: 3 });
   });
 
+  it('offers no field of the entry an excluded path through the entry names', () => {
+    renderWithIcons(<PrefConditionEditor aria-label="Enabled if" schema={schema} entryOf={phases} exclude={['phases.*.mode']} value={undefined} onChange={() => {}} />);
+    expect(offered(group(), /Add a condition/)).toEqual(['Length this Phase: length', 'Mode mode', 'Phases phases']);
+  });
+
   it('says what is wrong with a test of the entry where there is no entry, or no such field', () => {
     openEntry({ from: 'item', path: 'gone' });
     expect(row(1)).toHaveAttribute('data-invalid');
