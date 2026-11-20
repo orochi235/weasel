@@ -3,12 +3,13 @@ import { memberKey, readBundles, type Bundle, type BundleMember } from './bundle
 import type { SchemaRoot } from './schemaEdit';
 import { pairNodes, type OriginOf } from './schemaExport';
 
-/** One edit to the presets, against the ones the editor opened on. Ids are the edited ones, but a `remove`'s and a `rename`'s own. */
+/** One edit to the presets, against the ones the editor opened on. Ids are the edited ones, but a `remove`'s and a `rename`'s own. A
+ *  `repackage`'s `from` and `to` are packages; a `move`'s are bundles, for a bundle included in one as for any other member. */
 export type BundleChange =
   | { op: 'create'; kind: 'bundle'; id: string; package: string; label: string }
   | { op: 'remove'; kind: 'bundle'; id: string }
   | { op: 'rename'; kind: 'bundle'; id: string; to?: string; label?: string }
-  | { op: 'move'; kind: 'bundle'; id: string; from: string; to: string }
+  | { op: 'repackage'; kind: 'bundle'; id: string; from: string; to: string }
   | { op: 'move'; kind: BundleMember['kind']; id: string; from: string; to: string }
   | { op: 'include'; kind: BundleMember['kind']; id: string; bundle: string }
   | { op: 'exclude'; kind: BundleMember['kind']; id: string; bundle: string };
@@ -65,7 +66,7 @@ export function bundleChanges(baseRoot: SchemaRoot, root: SchemaRoot, originOf?:
     if (to.id !== b.id || to.label !== b.label) {
       out.push({ op: 'rename', kind: 'bundle', id: b.id, ...(to.id !== b.id ? { to: to.id } : {}), ...(to.label !== b.label ? { label: to.label } : {}) });
     }
-    if (to.package !== b.package) out.push({ op: 'move', kind: 'bundle', id: to.id, from: b.package, to: to.package });
+    if (to.package !== b.package) out.push({ op: 'repackage', kind: 'bundle', id: to.id, from: b.package, to: to.package });
   }
   // Each member's bundles on both sides, by edited id; a removed bundle keeps its own.
   const held = (bundles: ReadonlyArray<Bundle>, id: (b: Bundle) => string, member: (m: BundleMember) => BundleMember) => {
@@ -104,11 +105,11 @@ function touched(changes: readonly BundleChange[], before: readonly Bundle[], af
   const ids = changes.flatMap((c): string[] => {
     if (c.op === 'create') return [c.id];
     if (c.op === 'include' || c.op === 'exclude') return [c.bundle];
-    if (c.op === 'move' && c.kind !== 'bundle') return [c.from, c.to];
+    if (c.op === 'move') return [c.from, c.to];
     return [c.id];
   });
   const out = new Set(ids.flatMap((id) => pkg.get(id) ?? []));
-  for (const c of changes) if (c.op === 'move' && c.kind === 'bundle') out.add(c.from).add(c.to);
+  for (const c of changes) if (c.op === 'repackage') out.add(c.from).add(c.to);
   return out;
 }
 

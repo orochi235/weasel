@@ -24,6 +24,24 @@ describe('bundlesDocument', () => {
     expect(doc.bundles.every((b) => b.package === '@weasel-js/core')).toBe(true);
   });
 
+  const two = [d('inc', { package: 'p', actions: ['x'] }), d('a1', { package: 'q', includes: ['inc'] }), d('a2', { package: 'q', actions: ['y'] })];
+
+  it('moves an included bundle between bundles as a member, and lists the package of the bundles it moved between', () => {
+    const tree = bundleTree(two);
+    const moved = moveNodes(tree, ['q/a1/inc'], { parentPath: 'q/a2', index: 0 }).root;
+    const doc = bundlesDocument(two, tree, moved);
+    expect(doc.changes).toEqual([{ op: 'move', kind: 'bundle', id: 'inc', from: 'a1', to: 'a2' }]);
+    expect(doc.bundles.map((b) => b.id)).toEqual(['a1', 'a2']);
+  });
+
+  it('says a bundle that went to another package was repackaged, and lists both packages', () => {
+    const tree = bundleTree(two);
+    const moved = moveNodes(tree, ['q/a2'], { parentPath: 'p', index: 1 }).root;
+    const doc = bundlesDocument(two, tree, moved);
+    expect(doc.changes).toEqual([{ op: 'repackage', kind: 'bundle', id: 'a2', from: 'q', to: 'p' }]);
+    expect(doc.bundles.map((b) => b.id).sort()).toEqual(['a1', 'a2', 'inc']);
+  });
+
   it('hashes the descriptions it was made from, and another set to another hash', () => {
     expect(presetsHash(CORE)).toMatch(/^[0-9a-f]{16}$/);
     expect(presetsHash(CORE.slice(1))).not.toBe(presetsHash(CORE));
