@@ -1,14 +1,13 @@
 /**
  * Seams for tests in other packages, each named `…ForTests`.
  *
- * The paint-kind and stroke-marker registries are global module state that
- * changes what renders, so a test that registers into one has to be able to
- * put it back. Path edit's dep source and a stub of its dep let a package
+ * The stroke-marker and content-handler registries are global module state,
+ * so a test that registers into one has to be able to put it back (the
+ * paint-kind registry's reset is `@weasel-js/paint-kinds/test-seams`). Path edit's dep source and a stub of its dep let a package
  * building on path edit test against the real thing, and a fake adapter's
  * flat tree lets one test a commit through ops. A snap session built straight
  * from a scene lets a package's snap source be tested without mounting a
- * canvas. The insert dep's source and the area hit test let a package's
- * drawing tool commit and pick against a scene of its own. These live here rather than on the package barrel so that reaching
+ * canvas. These live here rather than on the package barrel so that reaching
  * for them is a deliberate import of a test surface, not something an
  * application finds by autocomplete.
  *
