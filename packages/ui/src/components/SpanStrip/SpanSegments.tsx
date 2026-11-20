@@ -16,7 +16,7 @@ function Segment({ placed }: { placed: PlacedSpan }): ReactElement {
   const { span } = placed;
   return (
     <span ref={(el) => place(el, placed)} className={s.segment} data-state={span.state ?? 'pending'} title={span.title ?? span.label}>
-      {span.label}
+      {span.content ?? span.label}
     </span>
   );
 }

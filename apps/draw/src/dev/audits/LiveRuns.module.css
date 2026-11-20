@@ -45,6 +45,12 @@
   white-space: nowrap;
 }
 
+.started {
+  margin-inline-start: var(--wzl-space-2);
+  font-weight: var(--wzl-font-weight-normal);
+  color: var(--audit-muted);
+}
+
 .view {
   display: flex;
   align-items: center;
@@ -138,9 +144,13 @@
   color: var(--audit-live);
 }
 
-/* A running step's label names the node doing it; it pulses to white and back while the job runs. */
+/* Every lane label inks black, filled or not, so a running step's node name pulses the same way in each: to white
+   and back while the job runs. */
+.lanes [data-state],
+.lanes [aria-hidden='true'] > [data-state] { color: #000; }
+
 @media (prefers-reduced-motion: no-preference) {
-  .lanes [data-state='active'] { animation: node-pulse 1.6s ease-in-out infinite; }
+  .lanes [data-state='active'] .node { animation: node-pulse 1.6s ease-in-out infinite; }
 }
 
 @keyframes node-pulse { 50% { color: #fff; } }

@@ -38,7 +38,8 @@ describe('AuditsPage', () => {
 
     const lanes = screen.getByRole('list', { name: 'Round 41 lanes' });
     expect(within(lanes).getByRole('meter', { name: 'core.ops' })).toHaveAttribute('aria-valuetext', 'fix, 12 min in');
-    expect(within(lanes).getAllByText('studio · 12 min')).not.toHaveLength(0);
+    expect(within(lanes).getAllByTitle(/studio · 12 min/).some((el) => el.textContent === 'studio · 12 min')).toBe(true);
+    expect(within(lanes).getAllByText('studio')).not.toHaveLength(0);
     expect(screen.getByText('conflict')).toBeInTheDocument();
     expect(screen.getByText('batch, fleet run and merge, once every lane is patched')).toBeInTheDocument();
 

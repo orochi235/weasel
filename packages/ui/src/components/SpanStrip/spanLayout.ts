@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { spanFraction, spanShare, spanValue, type Span } from '@weasel-js/ui-input';
 
 /** Where a span stands: not begun, under way, finished, or stopped short. */
@@ -8,6 +9,9 @@ export interface SpanStripSpan {
   id: string;
   /** Shown in the segment, cut short with an ellipsis where it does not fit. */
   label: string;
+  /** What the segment shows in place of `label`, so part of it can be marked up; `label` stays its words for the
+   *  tooltip and for screen readers. Default: `label`. */
+  content?: ReactNode;
   /** Its length; a negative one counts as none. */
   ms: number;
   /** Where it begins, in the strip's time. Default: where the span before it ends, or the window's start. */
