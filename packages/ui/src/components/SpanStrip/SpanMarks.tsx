@@ -1,17 +1,21 @@
 import type { ReactElement } from 'react';
-import type { SpanStripSpan } from './spanLayout';
+import type { PlacedSpan } from './spanLayout';
 import s from './SpanStrip.module.css';
 
-/** A dotted line where each span meets the next, drawn as the end edge of a cell laid over the segments. */
-export function SpanSeams({ spans }: { spans: readonly SpanStripSpan[] }): ReactElement {
+const seamAt = (el: HTMLElement | null, at: number): void => { el?.style.setProperty('--seam-at', at.toFixed(5)); };
+
+/** A dotted line at the end of each span that stops short of the strip's end. */
+export function SpanSeams({ placed }: { placed: readonly PlacedSpan[] }): ReactElement {
   return (
-    <div className={s.seams} aria-hidden="true">
-      {spans.map((span) => <span key={span.id} className={s.seam} />)}
-    </div>
+    <>
+      {placed.filter((p) => p.share > 0 && p.from + p.share < 0.999).map((p) => (
+        <span key={p.span.id} ref={(el) => seamAt(el, p.from + p.share)} className={s.seam} aria-hidden="true" />
+      ))}
+    </>
   );
 }
 
-/** The line at `at`. */
+/** The line at the strip's `--at`. */
 export function SpanPlayhead(): ReactElement {
   return <span className={s.playhead} aria-hidden="true" />;
 }
