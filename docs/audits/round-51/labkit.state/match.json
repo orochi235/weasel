@@ -1,0 +1,37 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   3,
+   4
+  ],
+  [
+   4,
+   7
+  ]
+ ],
+ "a": [
+  "A remote snapshot record this tab cannot load keeps the stale snapshot and also lists it unreadable",
+  "A fold whose write-back fails seeds `meta` into the cache, so the session never writes `meta` and the next open re-folds the old document over its edits",
+  "`openLabStore` leaves its record cache open when building the store throws",
+  "Own-undo data parked for a trial is never dropped when the trial closes",
+  "`newId`'s fallback ids collide across tabs, though they name records every tab shares"
+ ],
+ "b": [
+  "A fold whose records could not be confirmed keeps writing records without `meta`, so the next open re-folds the old storage over this session's edits",
+  "`setInstruments` rewrites a stale snapshot over another tab's newer record it could not read",
+  "An unreadable remote snapshot is listed twice: still in `savedSnapshots` and in `unreadable`, and discarding the unreadable entry deletes the record of a snapshot still shown",
+  "`setInstruments` with any changed instrument object rewrites every trial record of that instrument even when nothing changed",
+  "A parked instrument undo outlives its trial's removal",
+  "`as3DView` checks `depth` only when it rebuilds the camera; a whole-lens view passes any `depth` through",
+  "`SingletonExperimentProvider` throws when `id` changes after mount, without the read-once warning its sibling props get",
+  "`newId`'s fallback ids are persisted and shared across tabs, though the comment says they only need to survive one page load"
+ ]
+}

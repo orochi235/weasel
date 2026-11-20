@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   4
+  ]
+ ],
+ "a": [
+  "The exported `resetTrial` keeps the trial's undo `history` and `undo`, which the store's Reset strips",
+  "A seed config's concrete value at a path the schema starts auto is ignored: the path stays unpinned",
+  "`MissingTrial`'s Close does nothing when it stands in for the lab's only trial",
+  "The Trial story builds a fresh lab store every render, and the store never holds the trial it shows"
+ ],
+ "b": [
+  "Undo steps recorded for layer show/hide and reorder bring nothing back",
+  "A seed value for a path the schema starts auto is silently ignored",
+  "A `dragDrop` instrument without a `canvas` shows its palette, but nothing can be dropped",
+  "An undocked sidebar section loses `fill`",
+  "`MissingTrial`'s close button stays enabled on the last trial, where it does nothing",
+  "`trialHistoryOf` drops the save/restore that `History` supports, so a trial loses its undo on reload by mounting one"
+ ]
+}

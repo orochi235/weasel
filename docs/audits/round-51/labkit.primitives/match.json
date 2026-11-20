@@ -1,0 +1,22 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   2
+  ]
+ ],
+ "a": [
+  "A finished or failed job that never reported a total keeps sweeping as if still working",
+  "A count past the total is clamped for the bar but not for the progressbar's value or the count's sizer"
+ ],
+ "b": [
+  "A finished job with any failed items never fills its bar or reaches its total",
+  "A job with no total keeps sweeping \"working\" after it has finished or failed",
+  "A total revised below `done` puts aria-valuenow past aria-valuemax and outgrows the count's sizer",
+  "A controlled `width` is not enforced: a drag the parent rejects stays applied"
+ ]
+}

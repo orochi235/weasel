@@ -1,0 +1,51 @@
+{
+ "id": "labkit.primitives",
+ "commit": "d6aa8f2ede77fc3556ffbf594c570943b8bf31f2",
+ "date": "2026-11-20",
+ "files": [
+  "packages/labkit/src/primitives/JobProgress.less",
+  "packages/labkit/src/primitives/JobProgress.stories.tsx",
+  "packages/labkit/src/primitives/JobProgress.tsx",
+  "packages/labkit/src/primitives/PersistedFloatingPanel.less",
+  "packages/labkit/src/primitives/PersistedFloatingPanel.stories.tsx",
+  "packages/labkit/src/primitives/PersistedFloatingPanel.tsx",
+  "packages/labkit/src/primitives/Split.less",
+  "packages/labkit/src/primitives/Split.tsx",
+  "packages/labkit/src/primitives/index.ts",
+  "packages/labkit/src/primitives/splitFloors.ts"
+ ],
+ "a": 2,
+ "b": 4,
+ "m": 2,
+ "distinct": 4,
+ "chapman": 4,
+ "unfound": 0,
+ "read": {
+  "A": 10,
+  "B": 10
+ },
+ "patches": 4,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.7,
+   "B": 3.3,
+   "match": 0.2,
+   "fix": 18.3
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 659474,
+  "costUsd": 3.11
+ },
+ "fixCommits": [
+  "4bce49c2c65cca14483a8d1239e1618ed3c40377",
+  "19fb947a19c55e8a01bd629044b7a77dfa5a6dd0",
+  "7a5be37e257c32417cb278dde5b932aec0b8ac82",
+  "1074b38248db01c79a767f4b564ab15bfca2a85b"
+ ]
+}

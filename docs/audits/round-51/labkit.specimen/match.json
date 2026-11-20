@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   2
+  ]
+ ],
+ "a": [
+  "The \"Rings\" slider in the PropertyPanel cell cannot be moved: its value is a literal and its onChange is a no-op",
+  "The SidebarPanel cell draws a hide button that does nothing",
+  "The momentary SegmentedBar (Undo/Redo) is a toolbar with no accessible name"
+ ],
+ "b": [
+  "The specimen's demo ToastRegion takes over the app's refusal toasts while it is mounted",
+  "The \"Rings\" property row is pinned to 32 with a no-op onChange, so it can't be edited",
+  "The SidebarPanel's hide button is wired to a no-op",
+  "The InlineRange cell skips the range's edit protocol, so Escape doesn't cancel a drag",
+  "The right-docked Sidebar draws at the left edge of its box"
+ ]
+}

@@ -1,0 +1,62 @@
+{
+ "id": "labkit.trial.part2",
+ "commit": "d6aa8f2ede77fc3556ffbf594c570943b8bf31f2",
+ "date": "2026-11-20",
+ "files": [
+  "packages/labkit/src/trial/useKeptMarks.ts",
+  "packages/labkit/src/trial/useOrbitView.tsx",
+  "packages/labkit/src/trial/useRestoredHistory.ts",
+  "packages/labkit/src/trial/useRuntimeSections.tsx",
+  "packages/labkit/src/trial/useTrialCamera.tsx",
+  "packages/labkit/src/trial/useTrialChromeContext.ts",
+  "packages/labkit/src/trial/useTrialClock.ts",
+  "packages/labkit/src/trial/useTrialConfig.ts",
+  "packages/labkit/src/trial/useTrialContributions.ts",
+  "packages/labkit/src/trial/useTrialDragDrop.tsx",
+  "packages/labkit/src/trial/useTrialEdits.ts",
+  "packages/labkit/src/trial/useTrialJob.ts",
+  "packages/labkit/src/trial/useTrialLayerStack.tsx",
+  "packages/labkit/src/trial/useTrialLayers.ts",
+  "packages/labkit/src/trial/useTrialMarks.ts",
+  "packages/labkit/src/trial/useTrialOrbit.ts",
+  "packages/labkit/src/trial/useTrialPanels.ts",
+  "packages/labkit/src/trial/useTrialSnapshot.ts",
+  "packages/labkit/src/trial/useTrialTool.ts",
+  "packages/labkit/src/trial/useTrialToolSlot.ts",
+  "packages/labkit/src/trial/useTrialUndo.ts",
+  "packages/labkit/src/trial/useTrialWrites.ts",
+  "packages/labkit/src/trial/useViewPlacement.ts",
+  "packages/labkit/src/trial/useWriteGestures.ts",
+  "packages/labkit/src/trial/watch3d.ts",
+  "packages/labkit/src/trial/writeGesture.ts"
+ ],
+ "a": 5,
+ "b": 6,
+ "m": 1,
+ "distinct": 10,
+ "chapman": 20,
+ "unfound": 10,
+ "read": {
+  "A": 26,
+  "B": 26
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.7,
+   "B": 9.7,
+   "match": 0.1,
+   "fix": 38
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "studio"
+  },
+  "weightedTokens": 1496555,
+  "costUsd": 8.17
+ },
+ "fixCommits": []
+}

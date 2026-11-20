@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   3,
+   4
+  ]
+ ],
+ "a": [
+  "clipToAncestors clips to the root element's (or a propagating body's) box, so a scrolled page hides tiles that are on screen",
+  "An ancestor whose `overflow` applies to no box (display: contents, a non-replaced inline) collapses the tile's visible rect",
+  "Paint containment clips like overflow, but clipToAncestors ignores it",
+  "clipToAncestors stops at a shadow root, so a tile inside a web component ignores every clip outside it",
+  "scopeHolds uses Node.contains, which does not cross shadow boundaries, so a shadow-DOM tile drops out of a scope that holds it",
+  "The document scroll listener outlives the surface unless the host calls containerRef(null)",
+  "Releasing a tile with registerTile(id, null) drops whichever element now holds the id, not the one leaving",
+  "Swapping the container for one at the same place neither retiles nor repaints, so the new buffers stay blank"
+ ],
+ "b": [
+  "Narrowing the scope to an element holding no tiles never clears the buffer of the tiles it dropped",
+  "useTileInScope is never told when a tile registers or unregisters, so a tile mounted while a scope is set reads out of scope until the scope next changes",
+  "A painter that throws drops every later painter and all post-commit callbacks of the frame, and those tiles are never repainted",
+  "The surface reads `devicePixelRatio` from the global window while measuring and listening in the container's own document",
+  "clipToAncestors stops at a shadow root, so a tile inside a shadow tree ignores every clipping ancestor outside it"
+ ]
+}

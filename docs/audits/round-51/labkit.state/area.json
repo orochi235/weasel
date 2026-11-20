@@ -1,0 +1,75 @@
+{
+ "id": "labkit.state",
+ "commit": "d6aa8f2ede77fc3556ffbf594c570943b8bf31f2",
+ "date": "2026-11-20",
+ "files": [
+  "packages/labkit/src/state/Persistence.tsx",
+  "packages/labkit/src/state/SingletonExperiment.tsx",
+  "packages/labkit/src/state/bindLabStore.ts",
+  "packages/labkit/src/state/context.tsx",
+  "packages/labkit/src/state/document.ts",
+  "packages/labkit/src/state/helpers.ts",
+  "packages/labkit/src/state/hydrate.ts",
+  "packages/labkit/src/state/index.ts",
+  "packages/labkit/src/state/instrumentHooks.ts",
+  "packages/labkit/src/state/labRecordReads.ts",
+  "packages/labkit/src/state/labRecordWrites.ts",
+  "packages/labkit/src/state/labRecords.ts",
+  "packages/labkit/src/state/labStorage.ts",
+  "packages/labkit/src/state/openLabStore.ts",
+  "packages/labkit/src/state/ownUndo.ts",
+  "packages/labkit/src/state/savedUndo.ts",
+  "packages/labkit/src/state/snapshotActions.ts",
+  "packages/labkit/src/state/snapshots.ts",
+  "packages/labkit/src/state/store.ts",
+  "packages/labkit/src/state/trialFields.ts",
+  "packages/labkit/src/state/trialRecordActions.ts",
+  "packages/labkit/src/state/trialRestarts.ts",
+  "packages/labkit/src/state/types.ts",
+  "packages/labkit/src/state/undock.ts",
+  "packages/labkit/src/state/useOpenOnce.ts",
+  "packages/labkit/src/state/usePersistedState.ts",
+  "packages/labkit/src/state/useTrialState.ts",
+  "packages/labkit/src/state/view.ts",
+  "packages/labkit/src/state/watchTrialHistories.ts"
+ ],
+ "a": 5,
+ "b": 8,
+ "m": 4,
+ "distinct": 9,
+ "chapman": 9.8,
+ "unfound": 0.8,
+ "read": {
+  "A": 29,
+  "B": 29
+ },
+ "patches": 9,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7,
+   "B": 7.5,
+   "match": 0.2,
+   "fix": 10.8
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 2321700,
+  "costUsd": 6.67
+ },
+ "fixCommits": [
+  "70f05c6cd0897ec65e37c29b2b8597fe7a0f1867",
+  "f13778117ebb7d5e2d67919f725faa133849ebfd",
+  "b43063a8186f01879a4a0b0add969ae3b2192cb4",
+  "ae3b9a5a819cca7bb1410ba6895443ca191c6406",
+  "cf95da95d00a544327116ca7476a0628aaf0b94e",
+  "25b96b85099615f7111f1183d15a2a4ad383d3e9",
+  "2dfddfb779e16d82ab920f1a284a9983f2ef8bc0",
+  "5040c2dcbed0add87e01ef97cfb7249fbbab8ffc",
+  "2c54ebeb6232fbe36707ca478be0b7e3461db799"
+ ]
+}

@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   2,
+   2
+  ],
+  [
+   3,
+   3
+  ]
+ ],
+ "a": [
+  "A captured CanvasSource keeps serving its last snapshot after its last reader releases it",
+  "capture() on a zero-size canvas leaves the previous frame current",
+  "The model's initial factor ignores minFactor/maxFactor",
+  "A rejected hover sample leaves the previous point's color as `color`",
+  "A surface that goes `gone()` is only noticed on the next aimAt"
+ ],
+ "b": [
+  "A sampler over a captured CanvasSource answers `null` forever unless something else retains the source, then warns that `capture()` is never called",
+  "canvasPixelSource scales by the canvas's current size but `pixel` reads a snapshot that may be another size",
+  "The initial factor ignores `minFactor`/`maxFactor`, so the model's factor can sit outside the bounds `setFactor` enforces",
+  "Eyedropper: a rejected async sample leaves `color` at the previous point's color",
+  "README's eyedropper example casts an async sample to a string and feeds it to the loupe surface"
+ ]
+}
