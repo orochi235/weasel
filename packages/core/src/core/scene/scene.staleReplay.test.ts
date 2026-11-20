@@ -195,4 +195,13 @@ describe('Scene — replaying an entry whose layer an untracked edit took', () =
     expect(scene.redo()).toBe(true);
     expect(scene.get(B)).toBeUndefined();
   });
+
+  it('removes the layer an entry names, not the one an untracked move put at its old index', () => {
+    const { scene } = layered();
+    scene.addLayer({ id: 'L', name: 'L' });
+    scene.addLayer({ id: 'M', name: 'M' });
+    scene.untracked(() => scene.moveLayer('M', 0));
+    scene.undo();
+    expect(scene.layers.map((l) => l.id)).toEqual(['default', 'L']);
+  });
 });

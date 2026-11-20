@@ -36,13 +36,14 @@ export function registerLayerOps<TData, TLayer extends string, TPose>(
     revert: (p) => { setParallax(state.layers[requireLayerIndex(p.layer)], p.from); },
   });
 
+  // Each takes its layer out by id, not by the index it was at: an untracked move can have put another there.
   registerKitOp<{ record: UserLayerRecord<TLayer>; index: number }>('kit:addLayer', {
     apply: (p) => { state.layers.splice(p.index, 0, { ...p.record }); rebuildLayerIndex(); },
-    revert: (p) => { state.layers.splice(p.index, 1); rebuildLayerIndex(); },
+    revert: (p) => { state.layers.splice(requireLayerIndex(p.record.id), 1); rebuildLayerIndex(); },
   });
 
   registerKitOp<{ record: LayerRecord<TLayer>; index: number }>('kit:removeLayer', {
-    apply: (p) => { state.layers.splice(p.index, 1); rebuildLayerIndex(); },
+    apply: (p) => { state.layers.splice(requireLayerIndex(p.record.id), 1); rebuildLayerIndex(); },
     revert: (p) => { state.layers.splice(p.index, 0, { ...p.record } as MutableLayerRecord<TLayer>); rebuildLayerIndex(); },
   });
 
