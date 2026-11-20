@@ -70,7 +70,7 @@ async function decide(handler: (route: FakeRoute) => unknown, url: string): Prom
  *  the first `hang` renders never settle. */
 function fakePlaywright({ hold = false, hang = 0 } = {}) {
   let hangs = hang;
-  const launches: { closed: boolean }[] = [];
+  const launches: { closed: boolean; disconnect(): void; contextsClosed: number[] }[] = [];
   const pagesClosed: number[] = [];
   const contexts: number[] = [];
   const viewports: unknown[] = [];
@@ -113,13 +113,22 @@ function fakePlaywright({ hold = false, hang = 0 } = {}) {
   const playwright = {
     chromium: {
       launch: async () => {
-        const record = { closed: false };
+        const listeners: (() => void)[] = [];
+        const record = { closed: false, disconnect: () => listeners.forEach((l) => l()), contextsClosed: [] as number[] };
         launches.push(record);
         return {
+          on: (event: string, listener: () => void) => {
+            if (event === 'disconnected') listeners.push(listener);
+          },
           newContext: async (options: { deviceScaleFactor: number }) => {
             contexts.push(options.deviceScaleFactor);
             contextOptions.push(options);
-            return { newPage: async () => page };
+            return {
+              newPage: async () => page,
+              close: async () => {
+                record.contextsClosed.push(options.deviceScaleFactor);
+              },
+            };
           },
           close: async () => {
             record.closed = true;
@@ -218,6 +227,17 @@ describe('launchCaptureBrowser', () => {
     expect(fake.launches[1]!.closed).toBe(false);
     await browser.close();
     expect(fake.launches[1]!.closed).toBe(true);
+  });
+
+  it('starts a new Chromium for the next capture once the one it had disconnects', async () => {
+    const fake = fakePlaywright();
+    const browser = await launched(fake.load);
+    await browser.capture('http://localhost:5173/x', payload);
+    fake.launches[0]!.disconnect();
+    await browser.capture('http://localhost:5173/x', payload);
+    expect(fake.launches).toHaveLength(2);
+    expect(fake.contexts).toEqual([2, 2]);
+    await browser.close();
   });
 
   it('fails a capture that has not finished in 20 s, closes its page, and takes the next', async () => {

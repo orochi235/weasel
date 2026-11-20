@@ -105,13 +105,14 @@ export async function launchCaptureBrowser(
   } catch {
     return { unavailable: INSTALL_PLAYWRIGHT };
   }
-  let chromium: Promise<Browser> | null;
+  let first: Browser;
   try {
-    chromium = Promise.resolve(await playwright.chromium.launch({ headless: true }));
+    first = await playwright.chromium.launch({ headless: true });
   } catch (err) {
     return { unavailable: messageOf(err) };
   }
 
+  let chromium: Promise<Browser> | null = null;
   const contexts = new Map<string, Promise<BrowserContext>>();
   let idle: ReturnType<typeof setTimeout> | undefined;
   let outstanding = 0;
@@ -129,16 +130,18 @@ export async function launchCaptureBrowser(
     idle = setTimeout(() => void shut(), IDLE_CLOSE_MS);
     idle.unref?.();
   };
-  const browser = (): Promise<Browser> => {
-    if (!chromium) {
-      const launching = playwright.chromium.launch({ headless: true });
-      chromium = launching;
-      launching.catch(() => {
-        if (chromium === launching) chromium = null;
-      });
-    }
-    return chromium;
+  /** Makes `launching` the browser captures use, until it fails to start or disconnects. */
+  const adopt = (launching: Promise<Browser>): Promise<Browser> => {
+    chromium = launching;
+    const drop = () => {
+      if (chromium !== launching) return;
+      chromium = null;
+      contexts.clear();
+    };
+    launching.then((b) => b.on('disconnected', drop), drop);
+    return launching;
   };
+  const browser = (): Promise<Browser> => chromium ?? adopt(playwright.chromium.launch({ headless: true }));
   /**
    * One context per device pixel ratio, since a context's scale factor is fixed when it is made, and per whether the
    * dev server is served over https: only then are certificate errors ignored, for its self-signed certificate.
@@ -193,6 +196,7 @@ export async function launchCaptureBrowser(
     }
   };
 
+  adopt(Promise.resolve(first));
   arm();
   return {
     capture(url, payload, allow = []) {
