@@ -58,9 +58,17 @@ const browserClock: RecognizerClock = {
   clearTimer: (cancel) => { (cancel as () => void)(); },
 };
 
+/** A running {@link capturePointer}. */
+export interface PointerCapture {
+  /** Stop listening; gives the pointers still pressed. */
+  stop(): ReadonlySet<number>;
+  /** Settle on a click held back for a double click, if one is; whether one was. */
+  flush(): boolean;
+}
+
 /**
  * Listen, through `listen`, for the next pointer gesture of `kinds` and hand
- * its spec to `done`. Returns what stops it, which gives the pointers still pressed. A press goes through the
+ * its spec to `done`. A press goes through the
  * dispatcher's recognizer, so a click and a drag part where they do on a canvas.
  */
 export function capturePointer(
@@ -70,8 +78,9 @@ export function capturePointer(
   thresholds: CaptureThresholds,
   listen: (type: string, fn: (e: Event) => void) => void,
   done: (spec: CapturedSpec) => void,
-): () => ReadonlySet<number> {
+): PointerCapture {
   let cancelClick = (): void => {};
+  let pendingClick: CapturedSpec | null = null;
   const pressed = new Set<number>();
   let dragPress: PointerDownEvent | null = null;
 
@@ -86,6 +95,7 @@ export function capturePointer(
         const spec = specOf('click', ev, apple);
         if (!kinds.has('doubleClick')) { done(spec); return 'handled'; }
         cancelClick();
+        pendingClick = spec;
         cancelClick = after(thresholds.doubleClickMs ?? DOUBLE_CLICK_MAX_MS, () => { done(spec); });
         return 'handled';
       }
@@ -159,9 +169,16 @@ export function capturePointer(
     });
   }
 
-  return () => {
-    cancelClick();
-    recognizer.reset();
-    return pressed;
+  return {
+    stop: () => {
+      cancelClick();
+      recognizer.reset();
+      return pressed;
+    },
+    flush: () => {
+      if (!pendingClick) return false;
+      done(pendingClick);
+      return true;
+    },
   };
 }

@@ -81,6 +81,15 @@ describe('captureGesture', () => {
     vi.runOnlyPendingTimers();
   });
 
+  it('settles on a click held back for a double click when a key comes in the window', async () => {
+    const got = captureGesture(window, { kinds: ['key', 'click', 'doubleClick'] });
+    clickAt(10, 10);
+    const k = new KeyboardEvent('keydown', { key: 'a', cancelable: true });
+    window.dispatchEvent(k);
+    expect(await got).toEqual({ kind: 'click' });
+    expect(k.defaultPrevented).toBe(false);
+  });
+
   it('captures a right click as a context menu, and keeps the native menu shut', async () => {
     const got = captureGesture(window, { kinds: ['click', 'contextMenu'] });
     fire('pointerdown', { button: 2, clientX: 0, clientY: 0 });
