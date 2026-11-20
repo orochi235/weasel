@@ -1,4 +1,5 @@
 let last = 0;
+let seeded = Number.NEGATIVE_INFINITY;
 
 /**
  * When an undoable edit was recorded, for ordering edits across histories:
@@ -20,5 +21,13 @@ export function lastEditStamp(): number {
 
 /** Hand out stamps past `stamp` from now on: one a restored history already holds. */
 export function seedEditStamp(stamp: number): void {
-  if (Number.isFinite(stamp)) last = Math.max(last, stamp);
+  if (!Number.isFinite(stamp)) return;
+  last = Math.max(last, stamp);
+  seeded = Math.max(seeded, stamp);
+}
+
+/** The latest stamp a restored history has held: a stamp no later than it was read back, not made here, so it
+ *  is no new edit. */
+export function restoredEditStamp(): number {
+  return seeded;
 }
