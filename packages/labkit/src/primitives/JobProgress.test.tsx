@@ -38,4 +38,21 @@ describe('JobProgress', () => {
     expect(track).not.toHaveClass('lk-job__track--indeterminate');
     expect(fill.style.transform).toBe('scaleX(0)');
   });
+
+  it('counts a failed item as handled, so a finished job with failures fills its bar', () => {
+    const failures = [
+      { index: 3, error: 'timed out' },
+      { index: 91, error: 'bad input' },
+    ];
+    const { track, fill, container } = parts({
+      ...base,
+      status: 'done',
+      done: 118,
+      total: 120,
+      failures,
+    });
+    expect(fill.style.transform).toBe('scaleX(1)');
+    expect(track).toHaveAttribute('aria-valuenow', '120');
+    expect(container.querySelector('.lk-job__count > span')).toHaveTextContent('120 / 120');
+  });
 });

@@ -43,6 +43,8 @@ export interface JobFailure {
  *  capability; `undefined` otherwise. */
 export interface JobHandle {
   status: JobStatus;
+  /** Items that arrived. A failed item is in `failures` instead, so the job has
+   *  got through `done + failures.length` of its `total`. */
   done: number;
   /** Null until the job reports a total, and forever if it never does. */
   total: number | null;

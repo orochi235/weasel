@@ -16,10 +16,12 @@ export function JobProgress({ job, className }: JobProgressProps) {
   const { status, done, total, failures, error } = job;
   if (status === 'idle') return null;
 
+  // A failed item is one the job has got through: `total` counts it, `done` does not.
+  const handled = done + failures.length;
   const determinate = total !== null && total > 0;
   // Only a running job sweeps: one that ended without a total says how it ended.
   const sweeping = !determinate && status === 'running';
-  const fraction = determinate ? Math.min(1, done / total) : status === 'done' ? 1 : 0;
+  const fraction = determinate ? Math.min(1, handled / total) : status === 'done' ? 1 : 0;
   const cls = ['lk-job', `lk-job--${status}`, className].filter(Boolean).join(' ');
 
   return (
@@ -28,7 +30,7 @@ export function JobProgress({ job, className }: JobProgressProps) {
         className={`lk-job__track${sweeping ? ' lk-job__track--indeterminate' : ''}`}
         role="progressbar"
         aria-label="Job progress"
-        aria-valuenow={determinate ? done : undefined}
+        aria-valuenow={determinate ? handled : undefined}
         aria-valuemin={determinate ? 0 : undefined}
         aria-valuemax={determinate ? total : undefined}
       >
@@ -42,7 +44,7 @@ export function JobProgress({ job, className }: JobProgressProps) {
 
       <span className="lk-job__count">
         <span>
-          {done}
+          {handled}
           {determinate ? ` / ${total}` : ''}
         </span>
         {/* The widest count this job reaches, unseen, holds the cell's width as the count climbs. */}
