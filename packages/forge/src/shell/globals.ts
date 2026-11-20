@@ -30,7 +30,8 @@ export interface GlobalDeclaration {
   icon?: IconSpec;
   /**
    * Whether the toolbar offers `value` given the lab's other values; every option shows when absent. `globals` is
-   * resolved without any declaration's `shows`, so one `shows` cannot depend on another's outcome.
+   * resolved without any declaration's `shows`, so one `shows` cannot depend on another's outcome, and with each `App`
+   * resolved to the mode the chrome shows.
    */
   shows?: (value: string, globals: StoryGlobals) => boolean;
   /**
@@ -98,9 +99,10 @@ export function followApp(declarations: GlobalDeclarations, values: StoryGlobals
 /**
  * The lab's values from what was stored: declared keys only. A value no option offers falls back to the default, and
  * one its declaration's `shows` hides or its option disables falls back to the shown, enabled option nearest it in
- * `options`, the earlier on a tie.
+ * `options`, the earlier on a tie. `shows` is asked with each `App` resolved against `chrome`; without `chrome` it sees
+ * `App` itself.
  */
-export function labGlobals(declarations: GlobalDeclarations, stored: unknown): StoryGlobals {
+export function labGlobals(declarations: GlobalDeclarations, stored: unknown, chrome?: LabChrome): StoryGlobals {
   const from = isRecord(stored) ? stored : {};
   const offered: StoryGlobals = Object.fromEntries(
     Object.entries(declarations).map(([key, declaration]) => {
@@ -110,9 +112,10 @@ export function labGlobals(declarations: GlobalDeclarations, stored: unknown): S
       return [key, known ? value : declaration.default];
     }),
   );
+  const asked = chrome ? followApp(declarations, offered, chrome) : offered;
   return Object.fromEntries(
     Object.entries(declarations).map(([key, declaration]) => {
-      const shown = shownOptions(declaration, offered).filter((option) => !option.disabled);
+      const shown = shownOptions(declaration, asked).filter((option) => !option.disabled);
       const value = getOwn(offered, key);
       if (value === FOLLOW_APP && declaration.follows) return [key, value];
       if (shown.length === 0 || shown.some((option) => option.value === value)) return [key, value];

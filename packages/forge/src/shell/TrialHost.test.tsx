@@ -158,6 +158,46 @@ describe('TrialHost', () => {
     }
   }, 20_000);
 
+  it('holds its story shown for an audit asked for while it is out of view, rendered before or not', async () => {
+    let report!: (isIntersecting: boolean) => void;
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: (entries: unknown[]) => void) {
+          report = (isIntersecting) => callback([{ isIntersecting, rootBounds: null }]);
+        }
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+    const frames = createTrialFrames();
+    const host = (id: string) => (
+      <TrialIdContext.Provider value={id}>
+        <TrialHost layout="padded" setup={{}} config={{}}>
+          {() => <img src="x.png" />}
+        </TrialHost>
+      </TrialIdContext.Provider>
+    );
+    const flagsImage = (outcome: Awaited<ReturnType<NonNullable<ReturnType<typeof frames.get>['audit']>>>) =>
+      outcome.ok && outcome.report.violations.some((v) => v.id === 'image-alt');
+    try {
+      const { container } = render(<TrialFramesContext.Provider value={frames}>{host('t4')}</TrialFramesContext.Provider>);
+      await waitFor(() => expect(container.querySelector('img')).not.toBeNull());
+      act(() => report(false));
+      expect(container.querySelector('img')).toBeNull();
+      expect(flagsImage(await frames.get('t4').audit!())).toBe(true);
+      await waitFor(() => expect(container.querySelector('img')).toBeNull());
+
+      const never = render(<TrialFramesContext.Provider value={frames}>{host('t5')}</TrialFramesContext.Provider>);
+      act(() => report(false));
+      expect(never.container.querySelector('img')).toBeNull();
+      expect(flagsImage(await frames.get('t5').audit!())).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  }, 20_000);
+
   it('unhides itself once its first commit has rendered', async () => {
     const onRendered = vi.fn();
     const { container } = render(

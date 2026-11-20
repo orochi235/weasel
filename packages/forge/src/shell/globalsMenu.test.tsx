@@ -67,6 +67,22 @@ describe('globalsMenu', () => {
     expect(set).toHaveBeenCalledWith('font', 'b');
   });
 
+  it('asks a `shows` with App resolved against the chrome', () => {
+    const declarations: GlobalDeclarations = {
+      mode: { label: 'Mode', default: 'app', options, follows: (chrome) => chrome.mode },
+      screen: {
+        label: 'Screen',
+        default: 'lcd',
+        options: [{ value: 'lcd', label: 'LCD' }, { value: 'oled', label: 'OLED' }],
+        shows: (value, globals) => globals.mode === 'dark' || value !== 'oled',
+      },
+    };
+    const offered = (mode: 'light' | 'dark') =>
+      (submenu(globalsMenu(declarations, { mode: 'app', screen: 'lcd' }, vi.fn(), { mode }), 1).children.v as PrefEnum).options.map((o) => o.value);
+    expect(offered('dark')).toEqual(['lcd', 'oled']);
+    expect(offered('light')).toEqual(['lcd']);
+  });
+
   it('leaves out an option the declaration hides at the current values, as the header does', () => {
     const declarations = { theme: { label: 'Theme', default: 'auto', options, shows: (v: string) => v !== 'dark' } };
     const menus = globalsMenu(declarations, { theme: 'auto' }, vi.fn());
@@ -139,5 +155,15 @@ describe('globalsMenu', () => {
     expect(screen.queryByRole('menuitemradio', { name: 'Light' })).toBeNull();
     const checked = screen.getAllByRole('menuitemradio').filter((el) => el.getAttribute('aria-checked') === 'true');
     expect(checked).toHaveLength(1);
+    for (let n = 0; n < 2; n++) {
+      await act(async () => {
+        fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+      });
+    }
+    await waitFor(() => expect(screen.queryByRole('menuitemradio')).toBeNull());
+    await choose('Contrast', 'High');
+    await open('Globals');
+    await press(await screen.findByRole('menuitem', { name: 'Theme' }));
+    expect(screen.getByRole('menuitemradio', { name: 'Light' })).toHaveAttribute('aria-checked', 'true');
   });
 });

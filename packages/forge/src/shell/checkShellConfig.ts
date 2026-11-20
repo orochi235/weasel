@@ -9,6 +9,9 @@ export function checkShellConfig(globals: GlobalDeclarations | undefined, modeGl
     if (values.includes(FOLLOW_LAB)) {
       throw new Error(`${at} offers the value '${FOLLOW_LAB}', which a trial's pin uses to mean "follow the lab". Name the option something else.`);
     }
+    if (declaration.follows !== undefined && values.includes(FOLLOW_APP)) {
+      throw new Error(`${at} offers the value '${FOLLOW_APP}', which a declaration that \`follows\` the chrome uses to mean "follow the app's chrome". Name the option something else.`);
+    }
     const followsApp = declaration.follows !== undefined && declaration.default === FOLLOW_APP;
     if (!values.includes(declaration.default) && !followsApp) {
       const offered = values.map((value) => JSON.stringify(value)).join(', ');

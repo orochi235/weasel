@@ -173,6 +173,30 @@ describe('A11yPanel', () => {
     expect(screen.getByRole('button', { name: 'Re-check' })).toHaveProperty('disabled', false);
   });
 
+  it('keeps each trial\'s audit to itself when the trial it reads changes', async () => {
+    const frames = createTrialFrames();
+    const sendB = vi.fn();
+    frames.connect('t1', { send: vi.fn(), audit: () => new Promise(() => {}) });
+    frames.reportA11y('t1', { ok: true, report });
+    frames.connect('t2', { send: sendB, audit: vi.fn(async () => ({ ok: true as const, report })) });
+    frames.reportA11y('t2', { ok: true, report });
+    const tree = (id: string) => (
+      <TrialFramesContext.Provider value={frames}>
+        <TrialIdContext.Provider value={id}>
+          <A11yPanel />
+        </TrialIdContext.Provider>
+      </TrialFramesContext.Provider>
+    );
+    const view = renderWithIcons(tree('t1'));
+    cleanups.push(() => view.unmount());
+    await flush();
+    fireEvent.mouseOver(screen.getByText('Images must have alternate text'));
+    view.rerender(tree('t2'));
+    await flush();
+    expect(screen.getByRole('button', { name: 'Re-check' })).toHaveProperty('disabled', false);
+    expect(sendB.mock.calls.filter(([msg]) => msg.type === 'a11y.highlight' && msg.targets.length > 0)).toEqual([]);
+  });
+
   it('runs once against a connected frame and lists what it found', async () => {
     const frames = createTrialFrames();
     const audit = vi.fn(async () => {

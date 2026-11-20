@@ -1,13 +1,14 @@
 import { breadcrumb } from '../breadcrumb';
 import { useLabContext } from '@weasel-js/labkit';
 import { Dialog } from '@weasel-js/ui/components/Dialog';
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import { LibrariesContext } from '../../story/library';
 import type { IndexEntry } from '../../story/types';
 import { storyDossier } from './dossier';
 import { StoryDossier } from './StoryDossier';
 
 export interface StoryInfoDialogProps {
+  /** Every entry a trial can show: the stories and their components' index pages. */
   index: readonly IndexEntry[];
   /** Whether a story's frame has reported its schema — `StoryRegistry.isReady`. */
   isReady: (id: string) => boolean;
@@ -17,13 +18,18 @@ export interface StoryInfoDialogProps {
 
 /**
  * Get Info for the focused trial's story. Mount inside `<Lab>`: it reads the
- * lab's context, and renders nothing until it is opened.
+ * lab's context, and renders nothing until it is opened. Opened on a trial
+ * showing no entry of `index`, it closes again at once.
  */
 export function StoryInfoDialog({ index, isReady, open, onOpenChange }: StoryInfoDialogProps) {
   const { focusedTrialId, trials, instruments } = useLabContext();
   const libraries = useContext(LibrariesContext);
   const trial = trials.find((record) => record.id === focusedTrialId);
   const entry = trial ? index.find((candidate) => candidate.id === trial.instrumentName) : undefined;
+  const closeEmpty = open && !entry;
+  useEffect(() => {
+    if (closeEmpty) onOpenChange(false);
+  }, [closeEmpty, onOpenChange]);
   if (!entry) return null;
   const dossier = storyDossier({
     entry,

@@ -226,7 +226,7 @@ export function Workshop(props: WorkshopProps) {
                 <RouteKnobs instruments={registry.instruments} isReady={registry.isReady} />
                 <RoutePlayhead />
                 <StoryInfoDialog
-                  index={index}
+                  index={entries}
                   isReady={registry.isReady}
                   open={infoOpen}
                   onOpenChange={setInfoOpen}
