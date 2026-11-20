@@ -19,6 +19,16 @@ describe('EffectLook', () => {
   });
 });
 
+describe('a pipeline whose wires share an id', () => {
+  it('draws under every look, the repeat flagged', () => {
+    const pipeline = { ...SKIP, wires: SKIP.wires.map((w) => ({ ...w, id: 'w1' })) };
+    for (const look of Object.values(EFFECT_LOOKS) as EffectLook[]) {
+      const { data, scene } = look(pipeline);
+      expect(() => diagramScene(data, scene)).not.toThrow();
+    }
+  });
+});
+
 describe('a look under a theme', () => {
   const pipeline = { ...SKIP, stages: SKIP.stages.map((s) => (s.id === 'mix' ? { ...s, bypassed: true } : s)) };
   type Painted = { fill?: { paint: { color: string } }; stroke?: { paint: { color: string }; dash?: number[] } };

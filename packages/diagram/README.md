@@ -1211,6 +1211,7 @@ they can:
 | `type-mismatch` | A wire joins ports of different types. | The wire is drawn in the warning color. |
 | `duplicate-stage` | Two stages share an id. | The first is drawn. |
 | `duplicate-port` | Two ports on one stage share an id. | Both are listed; wires attach to the first. |
+| `duplicate-wire` | A wire's `id` repeats an earlier wire's. | The wire is drawn in the warning color, without the id. |
 | `duplicate-cluster` | A cluster's id repeats an earlier cluster's, or is a stage's. | Only the first cluster with the id is drawn, and a cluster with a stage's id is not. |
 | `missing-member` | A cluster names something that is neither a stage nor a cluster. | The name is ignored. |
 | `duplicate-member` | A cluster names a stage or cluster that an earlier cluster already holds. `stage` is set when it is a stage. | It is drawn in the first cluster that names it. |

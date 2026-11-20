@@ -3,7 +3,7 @@ import type { EffectCluster, EffectPipeline, EffectStage } from './types';
 /** One thing wrong with a pipeline, and where. */
 export interface EffectProblem {
   kind: 'missing-stage' | 'missing-port' | 'wrong-direction' | 'type-mismatch'
-    | 'duplicate-stage' | 'duplicate-port' | 'duplicate-cluster' | 'missing-member' | 'duplicate-member' | 'cluster-loop' | 'bad-split';
+    | 'duplicate-stage' | 'duplicate-port' | 'duplicate-wire' | 'duplicate-cluster' | 'missing-member' | 'duplicate-member' | 'cluster-loop' | 'bad-split';
   message: string;
   stage?: string;
   port?: string;
@@ -48,7 +48,12 @@ export function checkPipeline(pipeline: EffectPipeline): EffectProblem[] {
     if (split !== null) out.push({ kind: 'bad-split', stage: stage.id, message: `Stage "${stage.id}" ${split}.` });
   }
 
+  const wireIds = new Set<string>();
   pipeline.wires.forEach((wire, index) => {
+    if (wire.id !== undefined) {
+      if (wireIds.has(wire.id)) out.push({ kind: 'duplicate-wire', wire: index, message: `Wire ${index} has the id "${wire.id}" of an earlier wire.` });
+      wireIds.add(wire.id);
+    }
     const ends = ([['from', 'outputs', 'inputs'], ['to', 'inputs', 'outputs']] as const).map(([end, own, other]) => {
       const ref = wire[end];
       const stage = stages.get(ref.stage);

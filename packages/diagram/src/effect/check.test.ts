@@ -76,6 +76,12 @@ describe('checkPipeline', () => {
     expect(nested.map((x) => [x.kind, x.cluster, x.stage])).toEqual([['duplicate-member', 'k', undefined]]);
   });
 
+  it('names a wire whose id an earlier wire has', () => {
+    const w = { ...OK.wires[0]!, id: 'w1' };
+    expect(checkPipeline({ ...OK, wires: [w, { ...w }] }).map(({ message: _m, ...rest }) => rest))
+      .toEqual([{ kind: 'duplicate-wire', wire: 1 }]);
+  });
+
   it('names a cut that is not a finite number', () => {
     const gate = {
       id: 'gate', title: 'Gate', kind: 'decision',
