@@ -50,4 +50,26 @@ describe('theme files', () => {
   it('refuses a default role named like an Object.prototype member that the roles do not hold', () => {
     expect(errorsOf(edited((raw) => { raw.defaultRole = 'toString'; }))).toEqual(['defaultRole: no role "toString"']);
   });
+
+  it('checks the optional fields the scene writers paint and size with', () => {
+    const errors = errorsOf(edited((raw) => {
+      Object.assign(raw.roles.default, { header: 5, headerText: null, strokeWidth: 'x', dash: 'a' });
+      Object.assign(raw.edge, { label: 7, width: -1, dash: [1, 'x'], markerEnd: 3, trim: { end: 'x' } });
+      raw.lane.bodies[0].strokeWidth = Number.NaN;
+      raw.series = [];
+    }));
+    for (const path of ['roles.default.header', 'roles.default.headerText', 'roles.default.strokeWidth', 'roles.default.dash',
+      'edge.label', 'edge.width', 'edge.dash', 'edge.markerEnd', 'edge.trim', 'lane.bodies.0.strokeWidth', 'series']) {
+      expect(errors.some((e) => e.startsWith(`${path}:`)), path).toBe(true);
+    }
+  });
+
+  it('refuses a font size too large to be a number', () => {
+    const json = edited((raw) => { raw.font.size = 999; }).replace('"size":999', '"size":1e400');
+    expect(errorsOf(json)).toEqual(['font.size: null is not a size']);
+  });
+
+  it('takes a marker given as null or as a key with a size', () => {
+    expect(errorsOf(edited((raw) => { Object.assign(raw.edge, { markerStart: null, markerEnd: { key: 'arrow', size: 4 } }); }))).toEqual([]);
+  });
 });
