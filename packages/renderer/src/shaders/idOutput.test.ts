@@ -22,6 +22,17 @@ describe('withIdOutput', () => {
     expect(out.frag.startsWith('#version 300 es')).toBe(true);
   });
 
+  it('reads past a main or an output that sits only in a comment', () => {
+    const frag = FRAG.replace('out vec4 fragColor;', `out vec4 fragColor;
+/* void main() { fragColor = vec4(0.0); }
+out vec4 oldColor; */
+// void main() {}`);
+    const out = withIdOutput(CUSTOM_VERT_SRC, frag)!;
+    expect(out).not.toBeNull();
+    expect(out.frag).toContain('fragColor.a >= u_weaselId.a');
+    expect(out.frag.split('\n').indexOf('void weasel_main() {')).toBe(frag.split('\n').indexOf('void main() {'));
+  });
+
   it('runs the shader\'s own main before writing the id, and leaves the vertex stage alone', () => {
     const out = withIdOutput(CUSTOM_VERT_SRC, FRAG)!;
     expect(out.frag.match(/void main\(\)/g)).toHaveLength(1);

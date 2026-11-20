@@ -19,6 +19,17 @@ import type { GpuDevice, GpuTexture } from '../gpu/types';
 /** Texels across one ramp — the resolution a gradient is sampled at. */
 export const RAMP_WIDTH = 256;
 
+/** Ramp position → texture `u`. Texel `i` holds position `i / (RAMP_WIDTH - 1)`
+ *  at its center, `(i + 0.5) / RAMP_WIDTH`, so sampling at the position itself
+ *  would land up to half a texel off. */
+export const RAMP_U_SCALE = (RAMP_WIDTH - 1) / RAMP_WIDTH;
+export const RAMP_U_OFFSET = 0.5 / RAMP_WIDTH;
+
+/** That map as a GLSL or WGSL expression over `t`. */
+export function rampU(t: string): string {
+  return `(${t} * ${RAMP_U_SCALE} + ${RAMP_U_OFFSET})`;
+}
+
 /** Rows the atlas starts at, doubling from there. */
 const INITIAL_ROWS = 16;
 

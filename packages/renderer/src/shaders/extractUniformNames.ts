@@ -88,17 +88,25 @@ function scanUniforms(glsl: string): UniformScan {
   return scan;
 }
 
-/** Records a top-level `const int N = expr;` at `i`, keeping the largest value
- *  a name takes across preprocessor branches. */
+/** Records each declarator of a top-level `const int N = expr, M = expr;` at
+ *  `i`, keeping the largest value a name takes across preprocessor branches. */
 function recordConstInt(toks: readonly string[], i: number, sizeOf: SizeOf, consts: Map<string, number>): void {
   let j = i + 1;
   while (QUALIFIERS.has(toks[j])) j++;
-  if ((toks[j] !== 'int' && toks[j] !== 'uint') || !IDENT.test(toks[j + 1] ?? '') || toks[j + 2] !== '=') return;
-  let end = j + 3;
-  while (end < toks.length && toks[end] !== ';') end++;
-  const v = sizeOf(j + 3, end);
-  const prior = consts.get(toks[j + 1]);
-  if (v !== null && (prior === undefined || v > prior)) consts.set(toks[j + 1], v);
+  if (toks[j] !== 'int' && toks[j] !== 'uint') return;
+  j++;
+  while (IDENT.test(toks[j] ?? '') && toks[j + 1] === '=') {
+    let end = j + 2;
+    for (let parens = 0; end < toks.length && toks[end] !== ';' && (parens > 0 || toks[end] !== ','); end++) {
+      if (toks[end] === '(') parens++;
+      else if (toks[end] === ')') parens--;
+    }
+    const v = sizeOf(j + 2, end);
+    const prior = consts.get(toks[j]);
+    if (v !== null && (prior === undefined || v > prior)) consts.set(toks[j], v);
+    if (toks[end] !== ',') return;
+    j = end + 1;
+  }
 }
 
 /** Adds the names the `uniform` declaration at `i` answers to into `scan`.

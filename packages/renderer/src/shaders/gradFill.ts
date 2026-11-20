@@ -1,3 +1,5 @@
+import { rampU } from '../cache/GradientRampAtlas';
+
 /**
  * GLSL ES 3.0 sources for gradient-fill paths (linear, radial, conic).
  *
@@ -56,7 +58,7 @@ vec4 shadePaint(vec2 world) {
     t = fract(a / (2.0 * PI));
   }
   t = clamp(t, 0.0, 1.0);
-  vec4 rampColor = texture(u_ramp, vec2(t, u_rampV));
+  vec4 rampColor = texture(u_ramp, vec2(${rampU('t')}, u_rampV));
   // Fill opacity into the alpha channel before the matrix, which is where the
   // batch program's vertex alpha sits. The two have to agree, since a linear
   // gradient goes through that one and a radial through this.

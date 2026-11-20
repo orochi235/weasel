@@ -45,25 +45,29 @@ class MissingSourceError extends Error {
 /** One renderer's compiled copies of the module-level registered programs. */
 export class CustomPrograms {
   readonly registry = new Map<string, ShaderProgram>();
-  /** The source each compiled program was built from — or, after a failed
-   *  recompile, the source that failed, so it is not retried every frame. */
+  /** The source each compiled program was built from. */
   private readonly sources = new Map<string, ProgramSource>();
-  /** Advanced when a program is compiled again over one already drawn with,
-   *  which leaves every retained surface drawn by the old one stale. */
+  /** Advanced when a program is compiled again over one already drawn with, or
+   *  dropped, which leaves every retained surface drawn by the old one stale. */
   epoch = 0;
-  /** The source `ensure` last failed to compile for each id, so that source
-   *  is reported once and not compiled again every frame. */
+  /** The source last failed to compile for each id, so that source is
+   *  reported once and not compiled again every frame. */
   private readonly declined = new Map<string, ProgramSource>();
 
   constructor(private readonly gpu: GpuDevice) {}
 
-  /** Compile `id`'s registered source. Throws when there is none, or on a
-   *  compile failure. */
+  /** Compile `id`'s registered source, unless the program held is already
+   *  built from it. Throws when there is none, or on a compile failure. */
   register(id: string): void {
     const src = getProgramSource(id);
     if (!src) {
       throw new Error(`WeaselRenderer.registerProgram: program "${id}" not found in source registry. `
         + 'Call the module-level registerProgram() first.');
+    }
+    const compiled = this.sources.get(id);
+    if (compiled && sameProgramSource(src, compiled)) {
+      this.sources.set(id, src);
+      return;
     }
     this.install(id, src, compileCustomProgram(this.gpu, id, src));
   }
@@ -76,14 +80,28 @@ export class CustomPrograms {
     }
     this.registry.set(id, program);
     this.sources.set(id, src);
+    this.declined.delete(id);
+  }
+
+  private drop(id: string): void {
+    const program = this.registry.get(id);
+    if (program) this.gpu.deleteProgram(program);
+    this.registry.delete(id);
+    this.sources.delete(id);
+    this.epoch++;
   }
 
   /** Recompile every program whose module-level source was re-registered
-   *  since it was compiled. A source that fails keeps the old program drawing. */
+   *  since it was compiled, and drop every one whose source was released. A
+   *  source that fails keeps the old program drawing. */
   refresh(): void {
     for (const [id, compiled] of this.sources) {
       const src = getProgramSource(id);
-      if (!src || src === compiled) continue;
+      if (!src) {
+        this.drop(id);
+        continue;
+      }
+      if (src === compiled || this.declined.get(id) === src) continue;
       if (sameProgramSource(src, compiled)) {
         this.sources.set(id, src);
         continue;
@@ -91,7 +109,7 @@ export class CustomPrograms {
       try {
         this.install(id, src, compileCustomProgram(this.gpu, id, src));
       } catch (e) {
-        this.sources.set(id, src);
+        this.declined.set(id, src);
         console.error(`weasel: failed to recompile re-registered program "${id}"; still drawing the previous one:`, e);
       }
     }
@@ -124,23 +142,41 @@ export class CustomPrograms {
     return this.registry.get(id) ?? null;
   }
 
-  /** Compile every program again on a restored context. One that fails is
-   *  dropped, not left holding the lost context's program; and a compile that
-   *  failed before the loss is tried again, as the loss may be why it failed. */
+  /** Compile every program again on a restored context. A re-registered source
+   *  that fails falls back to the one the program was drawing with, as it did
+   *  before the loss. One with neither is dropped, not left holding the lost
+   *  context's program; and a compile that failed before the loss is tried
+   *  again, as the loss may be why it failed. */
   restore(): void {
     this.declined.clear();
     for (const id of [...this.registry.keys()]) {
       const src = getProgramSource(id);
+      const drawn = this.sources.get(id);
       try {
         if (!src) throw new Error('its source is no longer registered');
         this.registry.set(id, compileCustomProgram(this.gpu, id, src));
         this.sources.set(id, src);
       } catch (e) {
+        if (src && drawn && drawn !== src && this.restoreDrawn(id, drawn)) {
+          this.declined.set(id, src);
+          console.error(`weasel: failed to recompile re-registered program "${id}" after context restore; `
+            + 'still drawing the previous one:', e);
+          continue;
+        }
         this.registry.delete(id);
         this.sources.delete(id);
         if (src) this.declined.set(id, src);
         console.error(`weasel: failed to recompile program "${id}" after context restore:`, e);
       }
+    }
+  }
+
+  private restoreDrawn(id: string, drawn: ProgramSource): boolean {
+    try {
+      this.registry.set(id, compileCustomProgram(this.gpu, id, drawn));
+      return true;
+    } catch {
+      return false;
     }
   }
 

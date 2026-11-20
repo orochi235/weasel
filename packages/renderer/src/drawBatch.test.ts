@@ -34,6 +34,7 @@ import { RAMP_SLOT, PAINT_MODE_IMAGE, paintModeOf } from './shaders/batchFill';
 import { glProgramHandle, glUniformLocation } from './gpu/webgl/GlProgram';
 import type { ShaderProgram } from './shaders/ShaderProgram';
 import { rendererParts } from './rendererParts';
+import { rampPosition } from './testing/rampPosition';
 
 const ARRAY_BUFFER = 0x8892;
 const ELEMENT_ARRAY_BUFFER = 0x8893;
@@ -295,7 +296,7 @@ describe('renderer — consecutive solid-fill batching', () => {
       r.render([acrossRect(20)]);
       const verts = rampVertices();
       // The gradient spans x 0..10 and the rect sits at x 20..30.
-      expect(verts.map((v) => v[0])).toEqual([2, 3, 3, 2]);
+      expect(verts.map((v) => rampPosition(v[0]))).toEqual([2, 3, 3, 2].map((t) => expect.closeTo(t, 5)));
       // One ramp in a 16-row atlas: the center of row 0.
       expect(new Set(verts.map((v) => v[1]))).toEqual(new Set([0.5 / 16]));
       // The ramp slot at the plain paint mode — no mode of its own.

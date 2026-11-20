@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { rampU } from '../cache/GradientRampAtlas';
 import {
   BATCH_VERT_SRC, BATCH_FRAG_SRC, BATCH_MATRICES_FRAG_SRC, BATCH_FILL_UNIFORMS, BATCH_FILL_ATTRIBUTES,
   BATCH_TEXTURE_SLOTS, BATCH_MATRIX_SLOTS, WHITE_SLOT, RAMP_SLOT, PAINT_MODE_PLAIN, PAINT_MODE_RADIAL,
@@ -96,7 +97,7 @@ describe('batch program — the sampler tree', () => {
     // A second copy of the tree in the gradient arm took a software
     // rasterizer longer to build than the rest of the program.
     expect(RAMP_SLOT).toBe(BATCH_TEXTURE_SLOTS - 1);
-    expect(BATCH_FRAG_SRC).toContain(`texture(u_samplers[${RAMP_SLOT}], vec2(t, v_post))`);
+    expect(BATCH_FRAG_SRC).toContain(`texture(u_samplers[${RAMP_SLOT}], vec2(${rampU('t')}, v_post))`);
     expect([...BATCH_FRAG_SRC.matchAll(/texture\(/g)]).toHaveLength(BATCH_TEXTURE_SLOTS + 1);
     expect([...BATCH_FRAG_SRC.matchAll(/sampleSlot\(v_texSlot/g)]).toHaveLength(1);
   });
