@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { outlinePolyline, portsOnOutline, rayHit } from './onOutline';
+import { PathBuilder } from '@weasel-js/core/math';
+import { outlinePolyline, outlineRings, portsOnOutline, rayHit } from './onOutline';
 import { portsOf } from './ports';
 import type { Bounds } from './outline';
 import type { Port } from './types';
@@ -23,6 +24,30 @@ describe('outlinePolyline', () => {
 
   it('flattens a stadium\'s curves into many segments', () => {
     expect(outlinePolyline('stadium', BOX).length).toBeGreaterThan(20);
+  });
+});
+
+describe('outlineRings', () => {
+  /** A body below a separate head, in the unit square. */
+  const twoPiece = new PathBuilder()
+    .moveTo(0.2, 0.4).lineTo(0.8, 0.4).lineTo(0.8, 1).lineTo(0.2, 1).close()
+    .moveTo(0.4, 0).lineTo(0.6, 0).lineTo(0.6, 0.2).lineTo(0.4, 0.2).close()
+    .build();
+  const SQUARE: Bounds = { x: 0, y: 0, width: 100, height: 100 };
+
+  it('keeps each subpath its own closed ring', () => {
+    const rings = outlineRings(twoPiece, SQUARE);
+    expect(rings).toHaveLength(2);
+    for (const ring of rings) expect(ring.slice(0, 2)).toEqual(ring.slice(-2));
+    expect(outlineRings('person', SQUARE)).toHaveLength(2);
+  });
+
+  it('puts a port on a piece of the shape, never on the step between two pieces', () => {
+    // The ray to the north-west corner leaves the body's top edge at (40, 40),
+    // and passes beside the head; the step from body to head would meet it at (26.7, 26.7).
+    const [moved] = portsOnOutline([port(0, 0)], twoPiece, SQUARE);
+    expect(moved!.point.x).toBeCloseTo(40);
+    expect(moved!.point.y).toBeCloseTo(40);
   });
 });
 

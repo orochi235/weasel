@@ -16,18 +16,33 @@ import { worldCoords, type PolygonPath } from '@weasel-js/geom';
 /** Curve flattening tolerance, in world units. Finer than a port is wide. */
 const TOLERANCE = 0.25;
 
-/** The outline as a closed polyline: `[x0, y0, x1, y1, …]`. */
+/** The outline as one polyline, `[x0, y0, x1, y1, …]`: each of its subpaths
+ *  closed, one after another. Where the outline has more than one subpath, the
+ *  step from one to the next is no part of it; cast rays at
+ *  {@link outlineRings}, which keeps them apart. */
 export function outlinePolyline(outline: Outline, bounds: Bounds): number[] {
-  const path = outlinePath(outline, bounds);
-  return flattenPath(path);
+  return outlineRings(outline, bounds).flat();
 }
 
-function flattenPath(path: Path): number[] {
+/** The outline as closed rings, one per subpath: `[[x0, y0, x1, y1, …], …]`.
+ *  A person's head and body are two. */
+export function outlineRings(outline: Outline, bounds: Bounds): number[][] {
+  return flattenRings(outlinePath(outline, bounds));
+}
+
+function flattenRings(path: Path): number[][] {
   if (path.kind === 'rect') {
     const { x, y, width: w, height: h } = path;
-    return [x, y, x + w, y, x + w, y + h, x, y + h, x, y];
+    return [[x, y, x + w, y, x + w, y + h, x, y + h, x, y]];
   }
-  const out: number[] = [];
+  const rings: number[][] = [];
+  let out: number[] = [];
+  // Close it, so a ray leaving through the last edge still finds a crossing.
+  const end = () => {
+    if (out.length >= 2 && (out[0] !== out[out.length - 2] || out[1] !== out[out.length - 1])) out.push(out[0]!, out[1]!);
+    if (out.length >= 4) rings.push(out);
+    out = [];
+  };
   const { commands } = path as PolygonPath;
   const coords = worldCoords(path as PolygonPath);
   let ci = 0;
@@ -37,6 +52,7 @@ function flattenPath(path: Path): number[] {
   let sy = 0;
   for (const cmd of commands) {
     if (cmd === PATH_M) {
+      end();
       cx = coords[ci]!; cy = coords[ci + 1]!; ci += 2;
       sx = cx; sy = cy;
       out.push(cx, cy);
@@ -67,47 +83,42 @@ function flattenPath(path: Path): number[] {
       cx = sx; cy = sy;
     }
   }
-  // Close it, so a ray leaving through the last edge still finds a crossing.
-  if (out.length >= 2 && (out[0] !== out[out.length - 2] || out[1] !== out[out.length - 1])) {
-    out.push(out[0]!, out[1]!);
-  }
-  return out;
+  end();
+  return rings;
 }
 
 /**
  * Where the ray from `center` through `point` last crosses `poly`, or `null`
- * when it never does.
+ * when it never does. `poly` is one closed polyline, or several rings
+ * ({@link outlineRings}), crossed as one outline with no step between them.
  *
  * The *last* crossing rather than the first: a concave outline can be crossed
  * more than once, and the far side is the boundary an edge should attach to.
  */
 export function rayHit(
-  poly: readonly number[],
+  poly: readonly number[] | readonly (readonly number[])[],
   center: { x: number; y: number },
   point: { x: number; y: number },
 ): { x: number; y: number } | null {
   const dx = point.x - center.x;
   const dy = point.y - center.y;
   if (dx === 0 && dy === 0) return null;
+  const rings = (poly.length > 0 && typeof poly[0] !== 'number' ? poly : [poly]) as readonly (readonly number[])[];
   let bestT = -Infinity;
-  let hit: { x: number; y: number } | null = null;
-  for (let i = 0; i + 3 < poly.length; i += 2) {
-    const ax = poly[i]!, ay = poly[i + 1]!;
-    const bx = poly[i + 2]!, by = poly[i + 3]!;
-    const ex = bx - ax;
-    const ey = by - ay;
-    const denom = dx * ey - dy * ex;
-    if (denom === 0) continue;
-    // t along the ray, u along the segment.
-    const t = ((ax - center.x) * ey - (ay - center.y) * ex) / denom;
-    const u = ((ax - center.x) * dy - (ay - center.y) * dx) / denom;
-    if (t < 0 || u < 0 || u > 1) continue;
-    if (t > bestT) {
-      bestT = t;
-      hit = { x: center.x + dx * t, y: center.y + dy * t };
+  for (const ring of rings) {
+    for (let i = 0; i + 3 < ring.length; i += 2) {
+      const ax = ring[i]!, ay = ring[i + 1]!;
+      const ex = ring[i + 2]! - ax;
+      const ey = ring[i + 3]! - ay;
+      const denom = dx * ey - dy * ex;
+      if (denom === 0) continue;
+      // t along the ray, u along the segment.
+      const t = ((ax - center.x) * ey - (ay - center.y) * ex) / denom;
+      const u = ((ax - center.x) * dy - (ay - center.y) * dx) / denom;
+      if (t >= 0 && u >= 0 && u <= 1 && t > bestT) bestT = t;
     }
   }
-  return hit;
+  return bestT === -Infinity ? null : { x: center.x + dx * bestT, y: center.y + dy * bestT };
 }
 
 /**
@@ -120,7 +131,7 @@ export function portsOnOutline(
   bounds: Bounds,
 ): Port[] {
   if (bounds.width <= 0 || bounds.height <= 0) return [...ports];
-  const poly = outlinePolyline(outline, bounds);
+  const poly = outlineRings(outline, bounds);
   const center = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
   return ports.map((port) => {
     const hit = rayHit(poly, center, port.point);
