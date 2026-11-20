@@ -208,14 +208,17 @@ function shapeOf(
  *
  * It reads back what `prefsFromConfig` writes: an `object` leaf marked
  * `group` is that group, its children keyed below it, and what that wrote
- * beside a node's or a section's prefs fields is its options again.
+ * beside a node's or a section's prefs fields is its options again, and an
+ * `admits` on `given` the selectors the schema admits.
  */
 export function configFromPrefs(given: PrefSection): ConfigSchema<Record<string, unknown>> {
   const schema = resolvePrefGroupConditions(given);
   const leaves: Array<[string, PrefLeaf]> = [];
   const nodes = shapeOf(schema.members, '', leaves);
+  const { admits } = given as PrefSection & { admits?: readonly string[] };
   return {
     nodes: nodes as ConfigShape,
+    ...(admits?.length ? { admitted: admits } : {}),
     defaults: () =>
       leaves.reduce<Record<string, unknown>>(
         (config, [path, leaf]) =>

@@ -140,8 +140,10 @@ function membersOf(
  * prints it: a group's `as`, `overflow`, `lead`, `resettable`, and motif under `group` (which is what marks the leaf a
  * group), a section's `collapsed`, `layout`, `pack`, `className`, and motif (as `frame`), and a node's `.render`,
  * `.dialog`, the `.showIf` and `.enableIf` written as functions, and an `f.custom` leaf's `validate` (as `render`,
- * `dialog`, `showWhen`, `enableWhen` and `validate`).
+ * `dialog`, `showWhen`, `enableWhen` and `validate`). The root's `admits` rides on the section returned.
  */
 export function prefsFromConfig(resolved: ResolvedConfig): PrefSection {
-  return { name: resolved.group.name, members: membersOf(resolved, resolved.group, '') };
+  const out = { name: resolved.group.name, members: membersOf(resolved, resolved.group, '') };
+  const { admits } = resolved.group;
+  return (admits?.length ? { ...out, admits } : out) as PrefSection;
 }

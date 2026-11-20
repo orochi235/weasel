@@ -54,6 +54,13 @@ describe('f.prefs', () => {
     expect(resolveConfigSchema(back, []).validators?.get('vec')).toBe(validate);
   });
 
+  it('keeps the selectors a schema admits through a round trip to a prefs schema', () => {
+    const once = resolveConfigSchema(f.schema({ n: f.number(1) }).admits('doc'), []);
+    const back = f.prefs(prefsFromConfig(once));
+    expect(back.admitted).toEqual(['doc']);
+    expect(resolveConfigSchema(back, []).group.admits).toEqual(['doc']);
+  });
+
   it('nests each leaf at the path its key names, as the config holds it', () => {
     const config = f.prefs(SCHEMA);
     expect(config.defaults()).toEqual({
