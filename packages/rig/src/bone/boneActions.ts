@@ -34,7 +34,7 @@ const activeIn = (env: BoneEnv, skeleton: Skeleton): string | null => {
 };
 
 /** Write `next`, a skeleton in the scene's space, into the rig node, and take `removed`
- *  joints out of the skins under it, as one undo entry. */
+ *  joints out of the skins and `joint` bindings under it, as one undo entry. */
 function commitSkeleton(
   scene: Scene<unknown, string, unknown>,
   deps: ActionDeps,
@@ -51,8 +51,15 @@ function commitSkeleton(
   const strip = (parent: NodeId): void => {
     for (const child of scene.childrenOf(parent)) {
       const data = scene.get(child)?.data as RigNodeData | null | undefined;
-      const kept = data?.skin && dropSkinJoints(data.skin, removed);
-      if (kept && kept !== data.skin) ops.push(coreOps.setData({ id: child, from: data, to: { ...data, skin: kept }, label }));
+      if (data) {
+        const kept = data.skin && dropSkinJoints(data.skin, removed);
+        const unbind = data.joint !== undefined && removed.includes(data.joint);
+        if ((kept && kept !== data.skin) || unbind) {
+          const to: RigNodeData = { ...data, ...(kept ? { skin: kept } : {}) };
+          if (unbind) delete to.joint;
+          ops.push(coreOps.setData({ id: child, from: data, to, label }));
+        }
+      }
       strip(child);
     }
   };

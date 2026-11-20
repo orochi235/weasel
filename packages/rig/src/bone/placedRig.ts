@@ -28,3 +28,13 @@ export function placedRig(
 export function sceneReach(deps: ActionDeps, px: number): number {
   return pxReach(px, deps.view?.get().scale ?? { x: 1, y: 1 });
 }
+
+/** A subscription notified by each of `sources` that is defined. */
+export function listenAll(
+  ...sources: readonly (((fn: () => void) => () => void) | undefined)[]
+): (fn: () => void) => () => void {
+  return (fn) => {
+    const offs = sources.map((source) => source?.(fn));
+    return () => { for (const off of offs) off?.(); };
+  };
+}

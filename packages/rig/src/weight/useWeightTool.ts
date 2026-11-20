@@ -5,7 +5,7 @@ import type { NodeId, Scene } from '@weasel-js/core';
 import { defineTool } from '@weasel-js/core';
 import type { Tool } from '@weasel-js/core';
 import { createBoneOverlay } from '../bone/boneOverlay';
-import { placedRig } from '../bone/placedRig';
+import { listenAll, placedRig } from '../bone/placedRig';
 import { createRigEditState, type RigEditState } from '../bone/rigEditState';
 import { createWeightActions, weighedPaths, WEIGHT_TOOL_OPTIONS, type WeightEnv } from './weightActions';
 import { createWeightOverlay } from './weightOverlay';
@@ -23,6 +23,9 @@ export interface UseWeightToolOptions {
   keybinding?: ToolKeybinding | null;
   /** Screen px around a joint within which a click picks it. Default 10. */
   reachPx?: number;
+  /** Notified when what `rig` answers changes other than through the scene, so the tool's
+   *  overlay repaints. Not needed when `rig` reads only the scene. */
+  subscribe?: (listener: () => void) => () => void;
   /** Laid over its options' shares: `{ radiusPx: BRUSH_SIZE_PX }` (`@weasel-js/brush`) gives it the size every
    *  brush naming that key shares. Keep it stable across renders. */
   share?: ToolOptionShare;
@@ -42,7 +45,7 @@ export function useWeightTool(options: UseWeightToolOptions): Tool {
   const ownState = useMemo(() => createRigEditState(), []);
   const state = options.state ?? ownState;
   const opts = useLatest({
-    scene: options.scene, rig: options.rig, reachPx: options.reachPx ?? 10,
+    scene: options.scene, rig: options.rig, reachPx: options.reachPx ?? 10, subscribe: options.subscribe,
   });
   const env = useMemo((): WeightEnv => ({
     state,
@@ -55,22 +58,25 @@ export function useWeightTool(options: UseWeightToolOptions): Tool {
 
   const actions = useMemo(() => createWeightActions(env), [env]);
   const kitSettings = useKitSettings();
-  const overlay = useMemo(() => [
-    createWeightOverlay({
-      id: 'weight-tool-points',
-      paths: () => weighedPaths(env),
-      active: state.active,
-      subscribe: state.listen,
-      pointRadiusPx: () => kitSettings.get('targets.weightPointRadiusPx'),
-    }),
-    createBoneOverlay({
-      id: 'weight-tool-skeleton',
-      skeleton: () => env.placed()?.skeleton ?? null,
-      active: state.active,
-      subscribe: state.listen,
-      jointRadiusPx: () => kitSettings.get('targets.boneJointRadiusPx'),
-    }),
-  ], [env, state, kitSettings]);
+  const overlay = useMemo(() => {
+    const listen = (fn: () => void) => listenAll(state.listen, opts.current.subscribe)(fn);
+    return [
+      createWeightOverlay({
+        id: 'weight-tool-points',
+        paths: () => weighedPaths(env),
+        active: state.active,
+        subscribe: listen,
+        pointRadiusPx: () => kitSettings.get('targets.weightPointRadiusPx'),
+      }),
+      createBoneOverlay({
+        id: 'weight-tool-skeleton',
+        skeleton: () => env.placed()?.skeleton ?? null,
+        active: state.active,
+        subscribe: listen,
+        jointRadiusPx: () => kitSettings.get('targets.boneJointRadiusPx'),
+      }),
+    ];
+  }, [env, state, kitSettings, opts]);
 
   const { keybinding, share } = options;
   return useMemo(() => defineTool({

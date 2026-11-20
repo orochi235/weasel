@@ -90,15 +90,17 @@ const activeJoint = (env: WeightEnv): string | null => {
   return name !== null && env.placed()?.skeleton.joints.some((j) => j.name === name) ? name : null;
 };
 
-/** One dab of the brush at `(x, y)`: what `env.painted()` becomes, or `null` if no point moved. */
+/** One dab of the brush at `(x, y)`, swept there from `from` when given: what `env.painted()` becomes, or
+ *  `null` if no point moved. */
 function dab(
   env: WeightEnv, deps: ActionDeps, joint: string, x: number, y: number, mode: 'add' | 'remove', radiusPx: number,
+  from?: { readonly x: number; readonly y: number },
 ): Map<NodeId, Skin> | null {
   const radius = sceneReach(deps, radiusPx);
   let next: Map<NodeId, Skin> | null = null;
   for (const { id, path, skin } of weighedPaths(env)) {
     const count = path.coords.length >> 1;
-    const hits = brushWeights(worldCoords(path), x, y, radius, jointShares(skin, joint, count), mode);
+    const hits = brushWeights(worldCoords(path), x, y, radius, jointShares(skin, joint, count), mode, from);
     if (hits.size === 0) continue;
     next ??= new Map(env.painted());
     next.set(id, setJointWeights(skin, count, joint, hits));
@@ -136,8 +138,10 @@ export function createWeightActions(env: WeightEnv): Action[] {
           const joint = activeJoint(env);
           if (joint === null) return {};
           let radiusPx = radiusOf(resolveParams(opts?.params));
+          let last: { x: number; y: number } | undefined;
           const stroke = (x: number, y: number, alt: boolean): void => {
-            const next = dab(env, deps, joint, x, y, alt ? 'remove' : 'add', radiusPx);
+            const next = dab(env, deps, joint, x, y, alt ? 'remove' : 'add', radiusPx, last);
+            last = { x, y };
             if (next) env.paint(next);
           };
           const press = drag?.start ?? world;
