@@ -49,17 +49,21 @@ export interface EmbedImageOptions {
 /**
  * @internal The shared embed engine: for each file, measure → resolve a
  * `src` → fit-clamp to 90% of the visible viewport → insert one image node
- * centered on `ctx.point` (or the viewport center), cascading multi-file
- * batches by a fixed offset. A file that fails to measure or resolve is
- * skipped with a `console.warn`; the rest proceed.
+ * centered on `ctx.point` (or the viewport center), cascading each file by its
+ * place among the arrival's files (`ctx.items`), so files that different
+ * handlers took do not stack, as `ghostBounds` draws them. A file the arrival
+ * did not carry (a string made into one) takes the next place after them. A file
+ * that fails to measure or resolve is skipped with a `console.warn`; the rest proceed.
  */
 export async function embedFilesAsImageNodes(
   files: File[],
   ctx: IngestCtx,
   opts: EmbedImageOptions = {},
 ): Promise<void> {
-  let index = 0;
+  const arrived = (ctx.items ?? []).flatMap((it) => (it.kind === 'file' ? [it.file] : []));
+  let next = arrived.length;
   for (const file of files) {
+    const place = arrived.indexOf(file);
     try {
       // Measure first: a corrupt file should fail cheaply here, not after
       // a consumer `resolveSrc` has already uploaded it somewhere.
@@ -75,8 +79,7 @@ export async function embedFilesAsImageNodes(
         (view.height * VIEWPORT_FIT) / natural.height,
       );
       const size = { width: natural.width * scale, height: natural.height * scale };
-      ctx.insert.commit(arrivalBounds(ctx, size, index), { kind: 'image', src });
-      index++;
+      ctx.insert.commit(arrivalBounds(ctx, size, place >= 0 ? place : next++), { kind: 'image', src });
     } catch (err) {
       console.warn(`weasel ingest: image "${file.name}" failed to load`, err);
     }

@@ -18,7 +18,8 @@ const GHOST_FRACTION = 1 / 6;
  * The boxes a drop of `items` would fill: one per file some handler could
  * claim, or, when no file could be claimed, one for the strings, since a drag's
  * string flavors are several spellings of one thing. Cascaded and centered as
- * the kit's handlers place what they insert.
+ * the kit's handlers place what they insert: a file by its place among every
+ * file the drag carries.
  */
 export function ghostBounds(
   items: readonly IngestItem[],
@@ -31,10 +32,10 @@ export function ghostBounds(
   const hasString = claimable.some((item) => kindOf(item) === 'string');
   const view = at.viewportWorldRect();
   const side = Math.min(view.width, view.height) * GHOST_FRACTION;
-  const sizes = files.length > 0
-    ? files.map(() => ({ width: side, height: side }))
-    : hasString ? [{ width: side * 2, height: side / 4 }] : [];
-  return sizes.map((size, i) => arrivalBounds(at, size, i));
+  // A file keeps its place among every file carried, as the kit's handlers place it.
+  const places = items.filter((item) => kindOf(item) === 'file');
+  if (files.length > 0) return files.map((f) => arrivalBounds(at, { width: side, height: side }, places.indexOf(f)));
+  return hasString ? [arrivalBounds(at, { width: side * 2, height: side / 4 }, 0)] : [];
 }
 
 /**
