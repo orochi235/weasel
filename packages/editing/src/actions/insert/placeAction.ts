@@ -50,24 +50,29 @@ export const placeAction: Action = inPlane(defineAction({
 
       const prior = deps.operands ? [...deps.operands.get()] : [];
       deps.operands?.set([]);
-      const parent = insertParent(deps.scene, deps.insertInto?.get(), deps.canDropInto, { x, y });
-      const snap = deps.snap?.begin({ gesture: 'point', press: { x, y }, ...(parent === null ? {} : { parent }) });
-      const mods = snapMods({ modifiers: params?.mods ?? NO_KEYS });
-      const out = snap?.at({ x, y }, mods);
-      const at = out ? out.point : { x, y };
-      snap?.end();
-      const extras: { kind: string; [extra: string]: unknown } = { ...params, kind: insertKind(params) };
-      for (const k of [...CLICK_FIELDS, 'size']) delete extras[k];
-      const style = insertStyleOf(params);
-      if (style) extras['style'] = style;
-      const bounds = { x: at.x - size.width / 2, y: at.y - size.height / 2, width: size.width, height: size.height };
-      const ends = {
-        start: at, end: { x: at.x + size.width / 2, y: at.y + size.height / 2 }, fromCenter: true,
-        ...(out?.landing !== undefined ? { landings: { start: out.landing } } : {}),
-      };
-      const id = dep.commit(bounds, extras, ends, clearedSelection(prior));
-      if (id === null) {
-        restoreSelection({ priorSelection: prior, selection: deps.operands });
+      let committed = false;
+      try {
+        const parent = insertParent(deps.scene, deps.insertInto?.get(), deps.canDropInto, { x, y });
+        const snap = deps.snap?.begin({ gesture: 'point', press: { x, y }, ...(parent === null ? {} : { parent }) });
+        let out;
+        try {
+          out = snap?.at({ x, y }, snapMods({ modifiers: params?.mods ?? NO_KEYS }));
+        } finally {
+          snap?.end();
+        }
+        const at = out ? out.point : { x, y };
+        const extras: { kind: string; [extra: string]: unknown } = { ...params, kind: insertKind(params) };
+        for (const k of [...CLICK_FIELDS, 'size']) delete extras[k];
+        const style = insertStyleOf(params);
+        if (style) extras['style'] = style;
+        const bounds = { x: at.x - size.width / 2, y: at.y - size.height / 2, width: size.width, height: size.height };
+        const ends = {
+          start: at, end: { x: at.x + size.width / 2, y: at.y + size.height / 2 }, fromCenter: true,
+          ...(out?.landing !== undefined ? { landings: { start: out.landing } } : {}),
+        };
+        committed = dep.commit(bounds, extras, ends, clearedSelection(prior)) !== null;
+      } finally {
+        if (!committed) restoreSelection({ priorSelection: prior, selection: deps.operands });
       }
     },
   },

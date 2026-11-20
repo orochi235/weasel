@@ -107,5 +107,23 @@ describe('placeAction', () => {
     click({ kind: 'rect', size: { width: 10, height: 10 } }, { insert, operands: selection } as never);
     expect(selection.get()).toEqual(['a']);
   });
-});
 
+  it('puts the selection back and closes the snap session when the insert dep throws', () => {
+    const insert: InsertDep = { commit: () => { throw new Error('factory'); } };
+    const selection = makeSelection(['a']);
+    let open = 0;
+    const snap: SnapDep = { begin: () => { open++; return { at: (p) => ({ point: p, held: false, marks: [] }), end: () => { open--; } }; } };
+    expect(() => click({ kind: 'rect', size: { width: 10, height: 10 } }, { insert, operands: selection, snap } as never)).toThrow('factory');
+    expect(selection.get()).toEqual(['a']);
+    expect(open).toBe(0);
+  });
+
+  it('puts the selection back and closes the snap session when the snap throws', () => {
+    const selection = makeSelection(['a']);
+    let open = 0;
+    const snap: SnapDep = { begin: () => { open++; return { at: () => { throw new Error('snap'); }, end: () => { open--; } }; } };
+    expect(() => click({ kind: 'rect', size: { width: 10, height: 10 } }, { insert: makeInsertDep(), operands: selection, snap } as never)).toThrow('snap');
+    expect(selection.get()).toEqual(['a']);
+    expect(open).toBe(0);
+  });
+});
