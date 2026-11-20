@@ -17,7 +17,7 @@ export const BRACKETS: Readonly<Record<string, readonly [string, string]>> = {
 
 /** BPMN's figures as the Mermaid shape nearest each: an event's circle, a gateway's diamond without its marker. */
 const NEAREST: Readonly<Record<string, string>> = {
-  event: 'ellipse', intermediateEvent: 'doubleEllipse', exclusiveGateway: 'diamond', parallelGateway: 'diamond',
+  event: 'ellipse', intermediateEvent: 'doubleEllipse', endEvent: 'ellipse', exclusiveGateway: 'diamond', parallelGateway: 'diamond',
   inclusiveGateway: 'diamond', eventGateway: 'diamond', subprocess: 'roundRect',
 };
 

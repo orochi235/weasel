@@ -2,7 +2,7 @@
 import { createPageRun, createScene, defaultCommitAdapter, type Op, type RectPose } from '@weasel-js/core';
 import {
   DIAGRAM_THEME_KEY, DIAGRAM_TYPES, DIAGRAM_TYPE_DOC_KEY, STENCIL_GROUPS, commitEdgeToScene, containerBuild, diagramTypeDocValue,
-  diagramTypeEdgeStroke, diagramTypeOf, isContainerStencil, lanesOf, stencilInsertOps, withDiagramRegistry, type ContainerStencil, type DiagramStencil,
+  diagramTypeEdgeStroke, diagramTypeOf, isContainerStencil, lanesOf, roleStyle, stencilInsertOps, withDiagramRegistry, type ContainerStencil, type DiagramStencil,
 } from '@weasel-js/diagram';
 import type { DiagramDocument } from '../document';
 import { documentFromScene } from '../fromScene';
@@ -44,7 +44,7 @@ export function authoredScene(type: string, placements: readonly Placement[] = [
     const common = { layer: 'main', newId: () => `${p.stencil}-${++n}`, parent: parentOf(p) };
     const { id, ops } = isContainerStencil(stencil)
       ? containerBuild(stencil, bounds, common)
-      : stencilInsertOps(stencil, bounds, { ...common, measure: MEASURE });
+      : stencilInsertOps(stencil, bounds, { ...common, measure: MEASURE, style: roleStyle(THEME, stencil.themeRole) });
     scene.applyBatch(ops as Op[], `Insert ${stencil.label}`, defaultCommitAdapter(scene));
     ids.push(id);
   }
@@ -60,9 +60,9 @@ export function connect(scene: DocScene, from: string, to: string): void {
 }
 
 /** The scene as a document, as Mermaid, and that Mermaid read back. */
-export function mermaidRoundTrip(scene: DocScene): { written: DiagramDocument; text: string; back: DiagramDocument } {
+export function mermaidRoundTrip(scene: DocScene): { written: DiagramDocument; text: string; warnings: readonly string[]; back: DiagramDocument } {
   const written = documentFromScene(scene);
-  const { text } = DIAGRAM_MERMAID.write!(written);
+  const { text, warnings } = DIAGRAM_MERMAID.write!(written);
   const back = (DIAGRAM_MERMAID.read!(text) as { document: DiagramDocument }).document;
-  return { written, text, back };
+  return { written, text, warnings, back };
 }

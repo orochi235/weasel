@@ -114,4 +114,33 @@ describe('a chart drawn from a notation type\'s stencils writes that notation, a
     const pool = graph(back).data.containers![0]!;
     expect(pool.lanes?.map((l) => [l.label, l.members?.length ?? 0])).toEqual([['To do', 1], ['In progress', 0], ['Done', 1]]);
   });
+  it('class', () => {
+    const { text, back } = drawn('umlClass', [
+      { stencil: 'uml-interface', at: { x: 100, y: 100 } },
+      { stencil: 'uml-abstract', at: { x: 400, y: 100 } },
+    ]);
+    expect(text).toMatch(/^classDiagram/m);
+    expect(text).toMatch(/\["Interface"\] \{\n\s+<<interface>>\n\s+\+ run\(\) void\n\s+\+ stop\(\) void\n\s+\}/);
+    expect(text).toMatch(/\["AbstractClass"\] \{\n\s+<<abstract>>\n\s+# id int\n\s+\+ draw\(\)\* void/);
+    expect(graph(back).data.nodes.map((n) => labels(n).slice(0, 2))).toEqual([['<<interface>>', 'Interface'], ['<<abstract>>', 'AbstractClass']]);
+  });
+
+  it('ER', () => {
+    const { text, back } = drawn('erd', [{ stencil: 'erd-entity', at: { x: 100, y: 100 } }]);
+    expect(text).toMatch(/^erDiagram/m);
+    expect(text).toMatch(/\{\n\s+int id PK\n\s+string name\n\s+int owner_id FK\n\s+\}/);
+    const fields = (graph(back).data.nodes[0]!.rows ?? []).flatMap((r) => (r.kind === 'field' ? [[r.label, r.value]] : []));
+    expect(fields).toEqual([['int', 'id PK'], ['string', 'name'], ['int', 'owner_id FK']]);
+  });
+
+  it('mind map', () => {
+    const { text, warnings, back } = drawn('mindMap', [
+      { stencil: 'central-topic', at: { x: 300, y: 300 } },
+      { stencil: 'main-topic', at: { x: 600, y: 300 } },
+      { stencil: 'subtopic', at: { x: 800, y: 300 } },
+    ], [[0, 1], [1, 2]]);
+    expect(text).toMatch(/^mindmap/m);
+    expect(warnings).toEqual([]);
+    expect(outlines(back)).toEqual(['ellipse', 'roundRect', 'rect']);
+  });
 });

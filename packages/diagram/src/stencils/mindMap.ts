@@ -13,7 +13,7 @@ export const MIND_MAP_STENCILS: readonly DiagramStencil[] = [
     rows: [{ kind: 'label', text: 'Main topic', style: { bold: true, fontSize: 13 } }], icon: icon('mainTopic'),
   },
   {
-    id: 'subtopic', label: 'Subtopic', outline: 'stadium', size: { width: 130, height: 40 },
+    id: 'subtopic', label: 'Subtopic', outline: 'rect', size: { width: 130, height: 40 },
     rows: [{ kind: 'label', text: 'Subtopic' }], icon: icon('subtopic'),
   },
   {

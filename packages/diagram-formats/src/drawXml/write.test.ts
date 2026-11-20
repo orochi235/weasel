@@ -220,7 +220,7 @@ describe('writing what the format cannot carry', () => {
 
   it('round-trips the BPMN and network outlines without a warning, their labels left where they were', async () => {
     const OUTLINES = [
-      'event', 'intermediateEvent', 'exclusiveGateway', 'parallelGateway', 'inclusiveGateway', 'eventGateway', 'subprocess',
+      'event', 'intermediateEvent', 'endEvent', 'exclusiveGateway', 'parallelGateway', 'inclusiveGateway', 'eventGateway', 'subprocess',
       'server', 'router', 'switch', 'firewall', 'laptop', 'desktop', 'phone', 'printer', 'user',
     ] as const;
     const doc: DiagramDocument = { pages: [{ kind: 'graph', id: 'p', width: 1700, height: 200, data: {
@@ -238,11 +238,11 @@ describe('writing what the format cannot carry', () => {
     const cell = (id: string, style: string) =>
       `<mxCell id="${id}" value="${id}" style="${style}" vertex="1" parent="1"><mxGeometry x="0" y="0" width="50" height="50" as="geometry"/></mxCell>`;
     const text = `<mxfile><diagram id="d"><mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>${
-      cell('end', 'shape=mxgraph.bpmn.event;outline=end;symbol=terminate;')}${
+      cell('boundary', 'shape=mxgraph.bpmn.event;outline=boundInt;symbol=timer;')}${
       cell('complex', 'shape=mxgraph.bpmn.gateway2;gwType=complex;')}${
       cell('task', 'shape=mxgraph.bpmn.task;taskMarker=user;rounded=1;')}</root></mxGraphModel></diagram></mxfile>`;
     const back = (await DIAGRAM_DRAW_XML.read!(text)).document.pages.map(asGraph)[0]!.data;
-    expect(back.nodes.map((n) => [n.id, n.outline])).toEqual([['end', 'event'], ['complex', 'diamond'], ['task', 'roundRect']]);
+    expect(back.nodes.map((n) => [n.id, n.outline])).toEqual([['boundary', 'event'], ['complex', 'diamond'], ['task', 'roundRect']]);
   });
 
   it('round-trips the labels at an edge\'s ends as labels at its source and target', async () => {

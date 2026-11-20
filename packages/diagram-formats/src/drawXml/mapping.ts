@@ -50,6 +50,7 @@ export const SHAPES: ReadonlyArray<{
   { name: 'mxgraph.bpmn.event', when: ['outline', 'standard'], outline: 'event', write: event('standard') },
   { name: 'mxgraph.bpmn.event', when: ['outline', 'catching'], outline: 'intermediateEvent', write: event('catching') },
   { name: 'mxgraph.bpmn.event', when: ['outline', 'throwing'], outline: 'intermediateEvent' },
+  { name: 'mxgraph.bpmn.event', when: ['outline', 'end'], outline: 'endEvent', write: event('end') },
   { name: 'mxgraph.bpmn.event', outline: 'event' },
   // As draw.io's own BPMN palette (Sidebar-BPMN.js) writes them: only exclusive, parallel and complex are a `gwType`;
   // the default, `event`, draws the event `outline` and `symbol` name inside the diamond.
