@@ -29,7 +29,7 @@ describe('trialAt', () => {
     const child = main.appendChild(document.createElement('span'));
     stack(child, main, document.body);
     const hit = trialAt({ x: 150, y: 80 });
-    expect(hit).toEqual({ trialId: 't1', host: main, local: { x: 100, y: 60 }, scale: 0.5 });
+    expect(hit).toEqual({ trialId: 't1', host: main, local: { x: 100, y: 60 }, scale: 0.5, width: 400, height: 300 });
   });
 
   it('skips copies when finding the trial under a point', () => {

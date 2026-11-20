@@ -118,6 +118,11 @@ function collect(rules: CSSRuleList, doc: Document, into: Rule[], parent?: strin
     const children = (rule as CSSRule & { cssRules?: CSSRuleList }).cssRules;
     if (rule.type !== STYLE_RULE) {
       if (children) collect(children, doc, into, parent);
+      // Declarations written after a nested rule (`CSSNestedDeclarations`) are their parent rule's.
+      else if (parent !== undefined) {
+        const style = (rule as CSSRule & { style?: CSSStyleDeclaration }).style;
+        if (style) into.push({ selector: parent, style });
+      }
       continue;
     }
     const style = rule as CSSStyleRule;
@@ -215,15 +220,24 @@ function declarationOf(el: Element, property: string, rules: readonly Declared[]
   return null;
 }
 
-/** How often each document's head has changed: a sheet added or removed, or a `<style>` rewritten, as a forge
- *  override or a vite CSS update does. */
+const isSheet = (n: Node) => n.nodeName === 'STYLE' || n.nodeName === 'LINK';
+
+/** Whether a mutation can change the document's stylesheets: anything in the head, or a sheet in the body. */
+function touchesSheets(r: MutationRecord, head: HTMLHeadElement | null): boolean {
+  const at = r.target.nodeType === Node.ELEMENT_NODE ? (r.target as Element) : r.target.parentElement;
+  if (at && (head?.contains(at) || at.closest('style, link'))) return true;
+  return Array.from(r.addedNodes).some(isSheet) || Array.from(r.removedNodes).some(isSheet);
+}
+
+/** How often each document's stylesheets have changed: a sheet added or removed, or a `<style>` rewritten, in the
+ *  head or the body, as a forge override, a vite CSS update or a story's own `<style>` does. */
 const revisions = createPart((doc: Document) => {
   const made = { n: 0, observer: null as MutationObserver | null };
-  if (typeof MutationObserver !== 'undefined' && doc.head) {
-    made.observer = new MutationObserver(() => {
-      made.n += 1;
+  if (typeof MutationObserver !== 'undefined') {
+    made.observer = new MutationObserver((records) => {
+      if (records.some((r) => touchesSheets(r, doc.head))) made.n += 1;
     });
-    made.observer.observe(doc.head, { childList: true, subtree: true, characterData: true, attributes: true });
+    made.observer.observe(doc.documentElement, { childList: true, subtree: true, characterData: true, attributes: true });
   }
   return made;
 });
@@ -231,8 +245,18 @@ const revisions = createPart((doc: Document) => {
 function revisionOf(doc: Document): number {
   const r = revisions(doc);
   // Records not yet delivered count now, so a change made in this same task is not missed.
-  if ((r.observer?.takeRecords().length ?? 0) > 0) r.n += 1;
+  if (r.observer?.takeRecords().some((m) => touchesSheets(m, doc.head))) r.n += 1;
   return r.n;
+}
+
+/** Every attribute of `el` and its ancestors: what a selector can read from the element's own context. */
+function ancestry(el: Element): string {
+  let out = '';
+  for (let at: Element | null = el; at; at = at.parentElement) {
+    out += `<${at.tagName}`;
+    for (const a of Array.from(at.attributes)) out += ` ${a.name}=${a.value}`;
+  }
+  return out;
 }
 
 const chains = createPart((_el: Element) => new Map<string, { key: string; chain: readonly ChainLink[] }>());
@@ -242,12 +266,12 @@ const chains = createPart((_el: Element) => new Map<string, { key: string; chain
  * declaration of that custom property on the element or its nearest ancestor declaring it, until a value names no
  * `var()`. A forge override is a rule like any other. User-agent styles are not modeled: where the user agent sets
  * an element's own color, as for a link or a button, an inherited property's chain is that of the nearest ancestor
- * an author rule declares it on, and empty when none does. Reused while the element's computed value and the
- * document's stylesheets stand as they were.
+ * an author rule declares it on, and empty when none does. Reused while the element's computed value, its and its
+ * ancestors' attributes, and the document's stylesheets stand as they were.
  */
 export function tokenChain(at: ColorAt): readonly ChainLink[] {
   const doc = at.element.ownerDocument;
-  const key = `${at.value}|${revisionOf(doc)}|${doc.styleSheets.length}|${doc.adoptedStyleSheets?.length ?? 0}`;
+  const key = `${at.value}|${revisionOf(doc)}|${doc.styleSheets.length}|${doc.adoptedStyleSheets?.length ?? 0}|${ancestry(at.element)}`;
   const byProperty = chains(at.element);
   const held = byProperty.get(at.property);
   if (held?.key === key) return held.chain;

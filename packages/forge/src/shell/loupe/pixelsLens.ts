@@ -4,7 +4,7 @@ import { stableStringify } from '../../protocol/messages';
 import { type CapturePayload, messageOf } from '../../vite/capture/payload';
 import type { ForgeComparison } from './conditions';
 import { NOTHING_UNDER } from './liveSource';
-import { type TrialHit, trialAt } from './trialAt';
+import { createSizeWatcher, type TrialHit, trialAt } from './trialAt';
 
 type Request = LensSourceRequest<ForgeComparison>;
 export type PayloadFor = (hit: TrialHit, dpr: number, c: ForgeComparison | null) => CapturePayload | { unavailable: string };
@@ -72,6 +72,8 @@ function blank(canvas: HTMLCanvasElement) {
 export interface PixelsLens extends LensSourceHandle<ForgeComparison> {
   measure(): void;
   revised(): void;
+  /** The `sideOf` its request is now. */
+  side(): string;
 }
 
 /**
@@ -133,8 +135,10 @@ export function attachPixelsLens(slot: HTMLElement, first: Request, shared: Pixe
       void run();
     }, LENS_REST_MS);
   };
+  const watchSize = createSizeWatcher(() => measure());
   const measure = () => {
     const aimed = aim(shared, request, doc);
+    watchSize('reason' in aimed ? null : aimed.hit.host);
     if ('reason' in aimed) {
       wanted = null;
       cancel();
@@ -168,6 +172,7 @@ export function attachPixelsLens(slot: HTMLElement, first: Request, shared: Pixe
       blank(canvas);
       measure();
     },
+    side: () => sideOf(request),
     update(next) {
       request = next;
       measure();
@@ -175,6 +180,7 @@ export function attachPixelsLens(slot: HTMLElement, first: Request, shared: Pixe
     detach() {
       gone = true;
       unwatchDensity();
+      watchSize(null);
       cancel();
       shared.shots.delete(sideOf(request));
       canvas.remove();

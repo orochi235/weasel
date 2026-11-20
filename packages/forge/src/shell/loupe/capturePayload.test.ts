@@ -109,7 +109,7 @@ describe('trialPayload', () => {
     overrides: {},
     playhead: () => 1500,
   };
-  const hit = (): TrialHit => ({ trialId: 't1', host: host(100, 50), local: { x: 10, y: 10 }, scale: 1 });
+  const hit = (): TrialHit => ({ trialId: 't1', host: host(100, 50), local: { x: 10, y: 10 }, scale: 1, width: 100, height: 50 });
   const lab = {
     labValues: { mode: 'light', theme: 'chrome', density: 'compact' },
     mode: 'auto' as const,
