@@ -119,4 +119,24 @@ describe('TiledSurface', () => {
     expect(() => surface.step(() => {})).not.toThrow();
     expect(ran).toEqual(['y', 'a']);
   });
+
+  it("reads the dpr of the container's own window", () => {
+    vi.stubGlobal('devicePixelRatio', 1);
+    const frame = document.createElement('iframe');
+    document.body.append(frame);
+    const view = frame.contentWindow as Window;
+    Object.defineProperty(view, 'devicePixelRatio', { configurable: true, value: 2 });
+    const container = view.document.createElement('div');
+    const tile = view.document.createElement('div');
+    view.document.body.append(container, tile);
+    stubBox(container, 0, 0, 800, 600);
+    stubBox(tile, 0, 0, 100, 100);
+    const surface = new TiledSurface();
+    surface.setContainer(container);
+    surface.placeTile('t', tile);
+    const frames: SurfaceFrame[] = [];
+    surface.step((f) => frames.push(f));
+    expect(frames[0]?.dpr).toBe(2);
+    vi.unstubAllGlobals();
+  });
 });

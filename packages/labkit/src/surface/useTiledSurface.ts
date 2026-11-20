@@ -73,13 +73,24 @@ function onAnyScroll(doc: Document, onScroll: () => void): () => void {
   return () => doc.removeEventListener('scroll', onScroll, true);
 }
 
+/** Re-measure on what moves tiles in `el`'s window with no observer firing: a scroll anywhere in its document, and
+ *  the window moving to a display of another density, which keeps every CSS box. Returns the unsubscribe. */
+function watchWindow(el: HTMLElement, remeasure: () => void): () => void {
+  const offScroll = onAnyScroll(el.ownerDocument, remeasure);
+  const offDensity = watchDevicePixelRatio(remeasure, el.ownerDocument.defaultView);
+  return () => {
+    offScroll();
+    offDensity();
+  };
+}
+
 /** The handle's methods: each records its work on `surface`, then asks for a frame. */
 function createSurfaceHandle(
   surface: TiledSurface,
   schedule: () => void,
   invalidateRects: () => void,
   watch: ReturnType<typeof useElementWatch>['watch'],
-  unlistenScroll: { current: (() => void) | null },
+  unlistenWindow: { current: (() => void) | null },
 ): SurfaceHandle {
   return {
     invalidate: (id) => {
@@ -104,8 +115,8 @@ function createSurfaceHandle(
     containerRef: (el) => {
       if (!surface.setContainer(el)) return;
       watch('container', el);
-      unlistenScroll.current?.();
-      unlistenScroll.current = el ? onAnyScroll(el.ownerDocument, invalidateRects) : null;
+      unlistenWindow.current?.();
+      unlistenWindow.current = el ? watchWindow(el, invalidateRects) : null;
       schedule();
     },
     getContainer: () => surface.getContainer(),
@@ -147,15 +158,12 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
   }, [surface, schedule]);
 
   const { watch } = useElementWatch(invalidateRects);
-  const unlistenScroll = useRef<(() => void) | null>(null);
+  const unlistenWindow = useRef<(() => void) | null>(null);
 
   useEffect(() => () => frameLoop.cancel(), [frameLoop]);
 
-  // A window moved to a display of another density keeps its CSS box, so no observer fires.
-  useEffect(() => watchDevicePixelRatio(invalidateRects), [invalidateRects]);
-
   return useMemo(
-    () => createSurfaceHandle(surface, schedule, invalidateRects, watch, unlistenScroll),
+    () => createSurfaceHandle(surface, schedule, invalidateRects, watch, unlistenWindow),
     [surface, schedule, invalidateRects, watch],
   );
 }

@@ -214,7 +214,7 @@ export class TiledSurface {
     }
     const { moved, forced } = this.remeasure(el);
     let retiled = moved;
-    const dpr = globalThis.devicePixelRatio ?? 1;
+    const dpr = (el.ownerDocument.defaultView ?? globalThis).devicePixelRatio || 1;
     if (dpr !== this.lastDpr) {
       this.lastDpr = dpr;
       retiled = true;

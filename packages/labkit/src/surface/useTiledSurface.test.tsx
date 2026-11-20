@@ -283,6 +283,56 @@ describe('useTiledSurface', () => {
     expect(frames[0]?.dpr).toBe(2);
   });
 
+  it("watches the density of the container's own window", () => {
+    const frame = document.createElement('iframe');
+    document.body.append(frame);
+    const view = frame.contentWindow as Window;
+    let dpr = 1;
+    Object.defineProperty(view, 'devicePixelRatio', { configurable: true, get: () => dpr });
+    const listeners = new Set<() => void>();
+    Object.defineProperty(view, 'matchMedia', {
+      configurable: true,
+      value: (query: string) => ({
+        media: query,
+        matches: true,
+        addEventListener: (_: string, fn: () => void) => listeners.add(fn),
+        removeEventListener: (_: string, fn: () => void) => listeners.delete(fn),
+      }),
+    });
+    const frames: SurfaceFrame[] = [];
+    function Popout() {
+      const surface = useTiledSurface({ onFrame: (f) => frames.push(f) });
+      useEffect(() => {
+        const container = view.document.createElement('div');
+        const tile = view.document.createElement('div');
+        view.document.body.append(container, tile);
+        stubBox(container, 0, 0, 800, 600);
+        stubBox(tile, 0, 0, 100, 100);
+        surface.containerRef(container);
+        surface.registerTile('t', tile);
+        return () => {
+          surface.registerTile('t', null);
+          surface.containerRef(null);
+        };
+      }, [surface]);
+      return null;
+    }
+    render(<Popout />);
+    flushFrames();
+    expect(frames.at(-1)?.dpr).toBe(1);
+    expect(listeners.size).toBe(1);
+    frames.length = 0;
+
+    dpr = 2;
+    act(() => {
+      for (const fn of [...listeners]) fn();
+    });
+    flushFrames();
+    expect(frames[0]?.dpr).toBe(2);
+    expect([...(frames[0]?.dirty ?? [])]).toEqual(['t']);
+    frame.remove();
+  });
+
   it('re-measures on invalidateRects, which is how a moved tile is caught', () => {
     const frames: SurfaceFrame[] = [];
     let handle: SurfaceHandle | null = null;
