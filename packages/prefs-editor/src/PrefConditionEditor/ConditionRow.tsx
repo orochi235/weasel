@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import {
-  checkPrefCondition, type PrefCondition, type PrefConditionSite, type PrefEnum, type PrefGroup, type PrefLeaf,
-  type PrefSection,
+  checkPrefCondition, type PrefCondition, prefConditionInGroup, type PrefConditionSite, type PrefEnum, type PrefGroup,
+  type PrefLeaf, type PrefSection, type PrefTest,
 } from '@weasel-js/prefs';
 import {
   Button, CheckboxGroup, CLOSE_BUTTON_PROPS, Code, type ListOption, prefFieldProps, PropertyControl, Select,
@@ -26,6 +26,16 @@ export interface ConditionScope {
   prefOptions: readonly ListOption[];
 }
 
+/**
+ * The leaf `test` reads, and the test as read from the schema root: one read from its group (`from: 'group'`) reads
+ * the root at the group's path, where the editor is told it.
+ */
+export function rowLeaf(scope: ConditionScope, test: PrefTest): { read: PrefTest; found: ConditionLeaf | undefined } {
+  const { group } = scope.site;
+  const read = group === undefined ? test : prefConditionInGroup(test, group) as PrefTest;
+  return { read, found: conditionLeafOf(scope.leaves, read) };
+}
+
 export interface ConditionRowProps {
   /** Names the row's controls: `Condition 2.1`. */
   name: string;
@@ -47,7 +57,11 @@ function ValueControl({ label, row, leaf, comparison, onChange }: {
       value: row.test[op],
       setValue: (value) => { if (typeof value === 'number' && !Number.isNaN(value)) onChange(withValue(row, comparison, value)); },
     });
-    if (field?.kind === 'number') return <PropertyControl {...field} control="input" name={label} />;
+    if (field?.kind === 'number') {
+      // The pref's own readout and clearing are not the compared number's, which is always a number typed.
+      const { readOnly: _readOnly, onClear: _onClear, ...typed } = field;
+      return <PropertyControl {...typed} control="input" name={label} />;
+    }
   }
   const { options } = leaf as PrefEnum;
   if (op === 'in') {
@@ -76,22 +90,27 @@ export function ConditionRow({ name, row, scope, onChange, onRemove }: Condition
   const { test } = row;
   const { leaves, prefOptions } = scope;
   const problems = checkPrefCondition(rowCondition(row), scope.schema, scope.site, scope.over);
-  const found = conditionLeafOf(leaves, test);
-  const clauses = found && clausesOf(row, found.leaf);
+  const { read, found } = rowLeaf(scope, test);
+  // The controls draw a test read from its group as the root's, and write it back read from the group.
+  const drawn: TestRow = read === test ? row : { ...row, test: read };
+  const clauses = found && clausesOf(drawn, found.leaf);
   const bound = found && clauses ? openBound(found.leaf, clauses) : undefined;
-  const write = (next: TestRow) => onChange(rowCondition(next));
+  const repoint = (next: TestRow) => onChange(rowCondition(next));
+  const write = (next: TestRow) => repoint(read === test ? next : { ...next, test: { ...next.test, from: test.from, path: test.path } });
+  const named = found?.leaf.name || test.path;
+  const where = test.from === 'group' ? `this group: ${test.path}` : test.from === 'item' ? `this entry: ${test.path}` : test.path;
   const nth = (i: number) => (i === 0 ? '' : ` ${i + 1}`);
   const remove = <Button {...CLOSE_BUTTON_PROPS} className={s.removeRow} aria-label={`Remove ${name.toLowerCase()}`} onClick={onRemove} />;
   return (
     <div className={s.row} role="group" aria-label={name} data-invalid={problems.length > 0 || undefined}>
       <Select className={s.pref} aria-label={`${name} pref`} selectedKey={leafKey(test)}
-        options={prefOptions.some((o) => o.value === leafKey(test)) ? prefOptions : [{ value: leafKey(test), label: found?.leaf.name || test.path }, ...prefOptions]}
+        options={prefOptions.some((o) => o.value === leafKey(test)) ? prefOptions : [{ value: leafKey(test), label: <>{named} <span className={s.path}>{where}</span></>, textValue: `${named} ${where}` }, ...prefOptions]}
         onSelectionChange={(key) => {
           const next = leaves.find((l) => leafKey(l) === key);
-          if (next) write(rowAt(next, row));
+          if (next) repoint(rowAt(next, row));
         }} />
       {found && clauses?.map((comparison, i) => {
-        const value = <ValueControl label={`${name} value${nth(i)}`} row={row} leaf={found.leaf} comparison={comparison} onChange={write} />;
+        const value = <ValueControl label={`${name} value${nth(i)}`} row={drawn} leaf={found.leaf} comparison={comparison} onChange={write} />;
         // A value sits beside its comparison, but for the options one of which it may be, which take a line of their own.
         const beside = operatorOf(comparison) !== undefined && operatorOf(comparison) !== 'in';
         return (
@@ -99,16 +118,16 @@ export function ConditionRow({ name, row, scope, onChange, onRemove }: Condition
             {i > 0 && <span className={s.and}>and</span>}
             <Select className={beside ? s.comparison : s.comparisonAlone} aria-label={`${name} comparison${nth(i)}`} selectedKey={comparison}
               options={clauseChoices(found.leaf, clauses, i).map((c) => ({ value: c, label: COMPARISON_LABEL[c] }))}
-              onSelectionChange={(next) => write(withComparison(row, found.leaf, next as Comparison, i))} />
+              onSelectionChange={(next) => write(withComparison(drawn, found.leaf, next as Comparison, i))} />
             {beside && (
               <div className={s.value}>
                 {value}
                 {bound && i === clauses.length - 1 && (
-                  <Button variant="ghost" size="sm" aria-label={`Add a bound to ${name.toLowerCase()}`} onClick={() => write(withBound(row, bound))}>and…</Button>
+                  <Button variant="ghost" size="sm" aria-label={`Add a bound to ${name.toLowerCase()}`} onClick={() => write(withBound(drawn, bound))}>and…</Button>
                 )}
               </div>
             )}
-            {i === 0 ? remove : <Button {...CLOSE_BUTTON_PROPS} aria-label={`Remove ${name.toLowerCase()} comparison ${i + 1}`} onClick={() => write(withoutClause(row, comparison))} />}
+            {i === 0 ? remove : <Button {...CLOSE_BUTTON_PROPS} aria-label={`Remove ${name.toLowerCase()} comparison ${i + 1}`} onClick={() => write(withoutClause(drawn, comparison))} />}
             {!beside && value}
           </Fragment>
         );
@@ -116,7 +135,7 @@ export function ConditionRow({ name, row, scope, onChange, onRemove }: Condition
       {found && !clauses && (
         <Select className={s.comparisonAlone} aria-label={`${name} comparison`} selectedKey={null} placeholder={printOperators(test)}
           options={comparisonsFor(found.leaf).map((c) => ({ value: c, label: COMPARISON_LABEL[c] }))}
-          onSelectionChange={(next) => write(withComparison(row, found.leaf, next as Comparison))} />
+          onSelectionChange={(next) => write(withComparison(drawn, found.leaf, next as Comparison))} />
       )}
       {!found && <Code size="xs" emphasis="low" className={s.text}>{row.negated ? `not ${printOperators(test)}` : printOperators(test)}</Code>}
       {!clauses && remove}

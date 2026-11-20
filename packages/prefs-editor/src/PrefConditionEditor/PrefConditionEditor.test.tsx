@@ -116,6 +116,17 @@ describe('PrefConditionEditor', () => {
     expect(seen.value).toEqual({ path: 'view.step', atMost: 12 });
   });
 
+  it('types the number a row compares a readout pref with', () => {
+    const schema: PrefGroup = { name: 'Root', children: {
+      size: { kind: 'number', name: 'Size', description: '', default: 12, readout: true } as PrefLeaf,
+    } };
+    const seen = open({ path: 'size', atLeast: 4 }, schema);
+    const box = within(row(1)).getByRole('spinbutton', { name: 'Condition 1 value' });
+    fireEvent.change(box, { target: { value: '7' } });
+    fireEvent.blur(box);
+    expect(seen.value).toEqual({ path: 'size', atLeast: 7 });
+  });
+
   it('shows a number with a display unit in that unit, reads one typed in it, and writes the stored number', () => {
     const turn = {
       kind: 'number', name: 'Turn', description: '', default: 0,
@@ -330,6 +341,11 @@ describe('PrefConditionEditor inside an entry', () => {
     expect(seen.value).toEqual({ from: 'item', path: 'length', above: 3 });
   });
 
+  it('offers no field of the entry an excluded path through the entry names', () => {
+    renderWithIcons(<PrefConditionEditor aria-label="Enabled if" schema={schema} entryOf={phases} exclude={['phases.*.mode']} value={undefined} onChange={() => {}} />);
+    expect(offered(group(), /Add a condition/)).toEqual(['Length this Phase: length', 'Mode mode', 'Phases phases']);
+  });
+
   it('says what is wrong with a test of the entry where there is no entry, or no such field', () => {
     openEntry({ from: 'item', path: 'gone' });
     expect(row(1)).toHaveAttribute('data-invalid');
@@ -337,6 +353,28 @@ describe('PrefConditionEditor inside an entry', () => {
     cleanup();
     open({ from: 'item', path: 'mode' });
     expect(row(1)).toHaveTextContent('"mode" is read from an entry, and this is inside no list or map');
+  });
+});
+
+describe('PrefConditionEditor read from its group', () => {
+  function InGroup({ start, seen }: { start: PrefCondition; seen: { value?: PrefCondition } }) {
+    const [value, setValue] = useState<PrefCondition | undefined>(start);
+    seen.value = value;
+    return <PrefConditionEditor aria-label="Shown if" schema={SCHEMA} group="view" value={value} onChange={setValue} />;
+  }
+
+  it('draws a test read from its group on the leaf there, names it as the group\'s, and keeps reading the group through an edit', () => {
+    const seen: { value?: PrefCondition } = {};
+    renderWithIcons(<InGroup start={{ from: 'group', path: 'step', atLeast: 4 }} seen={seen} />);
+    expect(row(1)).not.toHaveAttribute('data-invalid');
+    expect(within(row(1)).getByRole('button', { name: /pref/ })).toHaveTextContent('Zoom step this group: step');
+    expect(within(row(1)).getByRole('button', { name: /comparison/ })).toHaveTextContent('is at least');
+    const box = within(row(1)).getByRole('spinbutton', { name: 'Condition 1 value' });
+    fireEvent.change(box, { target: { value: '6' } });
+    fireEvent.blur(box);
+    expect(seen.value).toEqual({ from: 'group', path: 'step', atLeast: 6 });
+    pick(row(1), /comparison/, 'is below');
+    expect(seen.value).toEqual({ from: 'group', path: 'step', below: 6 });
   });
 });
 
@@ -380,6 +418,30 @@ describe('PrefConditionEditor copy and paste', () => {
     open();
     fireEvent.click(screen.getByRole('button', { name: 'Paste condition' }));
     await waitFor(() => expect(row(1)).toHaveTextContent('no leaf holds a value at "elsewhere.flag"'));
+  });
+
+  it('says what Copy did only until the condition changes', async () => {
+    clipboard();
+    renderWithIcons(<Live start={{ path: 'view.grid', is: true }} seen={{ writes: 0 }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Copy condition' }));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Copied.'));
+    pick(row(1), /comparison/, 'is off');
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('says the clipboard could not be read where reading it is refused', async () => {
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText: async () => {}, readText: () => Promise.reject(new DOMException('denied', 'NotAllowedError')) } });
+    open({ path: 'view.grid' });
+    fireEvent.click(screen.getByRole('button', { name: 'Paste condition' }));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('The clipboard could not be read.'));
+  });
+
+  it('pastes a condition over one that is no condition at all', async () => {
+    clipboard(JSON.stringify({ path: 'view.grid', is: true }));
+    const seen = open({ path: 1 } as unknown as PrefCondition);
+    fireEvent.click(screen.getByRole('button', { name: 'Paste condition' }));
+    await waitFor(() => expect(seen.value).toEqual({ path: 'view.grid', is: true }));
+    expect(row(1)).not.toHaveAttribute('data-invalid');
   });
 
   it('writes nothing for a clipboard that holds no condition, and says so', async () => {

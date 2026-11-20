@@ -1,16 +1,28 @@
 import { useMemo } from 'react';
 import {
   checkPrefCondition, isPrefCondition, type PrefCondition, type PrefConditionSite, type PrefGroup, type PrefList,
-  type PrefMap, type PrefSection,
+  type PrefMap, type PrefSection, PREF_ENTRY,
 } from '@weasel-js/prefs';
 import { Button, Code, type ListOption } from '@weasel-js/ui';
 import { ConditionClipboard } from './ConditionClipboard';
 import { ConditionGroupRows } from './ConditionGroupRows';
 import type { ConditionScope } from './ConditionRow';
-import { conditionLeaves, leafKey, rootCondition, rootGroup } from '@weasel-js/prefs/edit';
+import { type ConditionLeaf, conditionLeaves, leafKey, rootCondition, rootGroup } from '@weasel-js/prefs/edit';
 import s from './PrefConditionEditor.module.css';
 
 const NO_PATHS: readonly string[] = [];
+const ENTRY_STEP = `.${PREF_ENTRY}.`;
+const beneath = (path: string, out: string): boolean => path === out || path.startsWith(`${out}.`);
+
+/** Whether `exclude` leaves `found` out: a field of the entry by what an excluded path names past its last entry step. */
+function excluded(found: ConditionLeaf, exclude: readonly string[]): boolean {
+  if (found.over) return false;
+  if (found.from !== 'item') return exclude.some((out) => beneath(found.path, out));
+  return exclude.some((out) => {
+    const at = out.lastIndexOf(ENTRY_STEP);
+    return at >= 0 && beneath(found.path, out.slice(at + ENTRY_STEP.length));
+  });
+}
 
 /** Props for {@link PrefConditionEditor}. */
 export interface PrefConditionEditorProps {
@@ -28,8 +40,9 @@ export interface PrefConditionEditorProps {
   over?: PrefGroup | PrefSection;
   /**
    * Value paths no row is offered: the pref at one, and every pref beneath one, is left out of the pickers. For
-   * what the condition belongs to, which cannot sensibly be shown or enabled by its own value. A row that
-   * already reads such a pref keeps it.
+   * what the condition belongs to, which cannot sensibly be shown or enabled by its own value. A path through an
+   * entry (`phases.*.mode`) leaves out, from `entryOf`'s fields, the one at what follows its last `*` (`mode`). A row
+   * that already reads such a pref keeps it.
    */
   exclude?: readonly string[];
   /**
@@ -65,7 +78,7 @@ export function PrefConditionEditor({ value, onChange, schema, over, exclude = N
   const leaves = useMemo(() => conditionLeaves(schema, entryOf, over), [schema, entryOf, over]);
   const site = useMemo<PrefConditionSite>(() => ({ ...(entryOf ? { within: entryOf } : {}), ...(group === undefined ? {} : { group }) }), [entryOf, group]);
   const prefOptions = useMemo<ListOption[]>(() => leaves
-    .filter((found) => found.from === 'item' || found.over || !exclude.some((out) => found.path === out || found.path.startsWith(`${out}.`)))
+    .filter((found) => !excluded(found, exclude))
     .map((found) => {
       const { path, leaf, from } = found;
       // A field of the entry is named as the entry's, so it reads apart from a root pref at the same path; a pref
@@ -78,6 +91,9 @@ export function PrefConditionEditor({ value, onChange, schema, over, exclude = N
       };
     }), [leaves, exclude, entryOf, over]);
   const classes = [s.editor, className].filter(Boolean).join(' ');
+  // A page not served securely has no clipboard, and then neither button is drawn.
+  const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
+  const tools = clipboard && <ConditionClipboard clipboard={clipboard} value={value} onPaste={onChange} />;
 
   if (value !== undefined && !isPrefCondition(value)) {
     return (
@@ -85,19 +101,18 @@ export function PrefConditionEditor({ value, onChange, schema, over, exclude = N
         <div className={s.row} data-invalid>
           <Code size="xs" emphasis="low" className={s.text}>{JSON.stringify(value) ?? String(value)}</Code>
           <Button size="sm" onClick={() => onChange(undefined)}>Remove</Button>
+          {tools}
           {checkPrefCondition(value, schema, site, over).map((p, i) => <p key={i} className={s.problem}>{p.problem}</p>)}
         </div>
       </div>
     );
   }
 
-  // A page not served securely has no clipboard, and then neither button is drawn.
-  const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
   const scope: ConditionScope = { schema, over, site, leaves, prefOptions };
   return (
     <div className={classes} role="group" aria-label={ariaLabel}>
       <ConditionGroupRows group={rootGroup(value)} scope={scope} onChange={(next) => onChange(rootCondition(next))}
-        tools={clipboard && <ConditionClipboard clipboard={clipboard} value={value} onPaste={onChange} />} />
+        tools={tools} />
     </div>
   );
 }

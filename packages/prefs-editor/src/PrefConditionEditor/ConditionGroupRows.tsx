@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import type { PrefCondition } from '@weasel-js/prefs';
 import { Button, CLOSE_BUTTON_PROPS, Select } from '@weasel-js/ui';
-import { ConditionRow, type ConditionScope } from './ConditionRow';
+import { ConditionRow, type ConditionScope, rowLeaf } from './ConditionRow';
 import {
-  clausesOf, type ConditionGroup, EMPTY_HOLDS, groupCondition, groupOf, leafKey, conditionLeafOf, nestedQuantifier,
+  clausesOf, type ConditionGroup, EMPTY_HOLDS, groupCondition, groupOf, leafKey, nestedQuantifier,
   type Quantifier, QUANTIFIER_LABEL, rowAt, rowCondition, testRowOf,
 } from '@weasel-js/prefs/edit';
 import s from './PrefConditionEditor.module.css';
@@ -53,9 +53,10 @@ export function ConditionGroupRows({ name, group, scope, onChange, onRemove, too
       {parts.map((part, i) => {
         const rowName = name === undefined ? `Condition ${i + 1}` : `${name}.${i + 1}`;
         const row = testRowOf(part);
-        const leaf = row && conditionLeafOf(scope.leaves, row.test)?.leaf;
+        const read = row && rowLeaf(scope, row.test);
+        const leaf = read?.found?.leaf;
         // A `not` no comparison says is none of the one test it wraps.
-        if (row && (!row.negated || !leaf || clausesOf(row, leaf))) {
+        if (row && (!row.negated || !leaf || clausesOf({ ...row, test: read!.read }, leaf))) {
           return <ConditionRow key={i} name={rowName} row={row} scope={scope} onChange={(next) => replace(i, next)} onRemove={() => remove(i)} />;
         }
         return (
