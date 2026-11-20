@@ -16,7 +16,7 @@ import {
 } from '@weasel-js/core';
 import { heldPathWarpOf, resolvePathWarp, withoutPathWarp } from './pathWarp';
 import {
-  freshWarpBox, storeWarp, WARP_LABELS, warpTargets, withWarpSettings, type WarpKind, type WarpSettings, type WarpTarget,
+  freshWarp, freshWarpBox, storeWarp, WARP_LABELS, warpTargets, withWarpSettings, type WarpKind, type WarpSettings, type WarpTarget,
 } from './warpTargets';
 import { selectedWarpLeaves, selectedWarpPaths } from './warpSelection';
 import { outlineSession, type OutlineSession } from '../shared/outlineSession';
@@ -93,19 +93,25 @@ type Shapes = Map<string, { target: WarpTarget; shape: { pose: unknown; data: un
  *  warp, the targets sharing the warp, and the control's place in world space. Null where there is none. */
 function grabControl(deps: ActionDeps, kind: WarpKind, label: string, scratch: WarpHandleScratch, settings: WarpSettings) {
   // Only a fresh warp's controls stand over text: a held warp is on paths already.
-  const { session, box } = scratch.warpId === null
+  const fresh = scratch.warpId === null;
+  const { session, box } = fresh
     ? beginOnText(deps, kind, label)
     : { session: outlineSession(deps, [], label), box: undefined };
-  const targets = warpTargets(deps, kind, settings, box)
-    .filter((t) => (scratch.warpId === null ? t.fresh : t.held.id === scratch.warpId));
+  const targetsNow = () => warpTargets(deps, kind, settings, box)
+    .filter((t) => (fresh ? t.fresh : t.held.id === scratch.warpId));
+  const targets = targetsNow();
   const first = targets[0];
-  const control = first && warpControls(first.held.warp)[scratch.index];
+  // Text whose face is still loading converts on a later move; the fresh warp it joins is laid over `box` already.
+  const warp = first?.held.warp ?? (fresh && box && session.waiting() ? freshWarp(kind, box, settings) : null);
+  const control = warp && warpControls(warp)[scratch.index];
   if (!control) {
     session.cancel();
     return null;
   }
-  const [x, y] = transformPoint(first.toWorld, control.x, control.y);
-  return { session, targets, control: { x, y } };
+  const [x, y] = first ? transformPoint(first.toWorld, control.x, control.y) : [control.x, control.y];
+  /** The targets again once text still waiting has converted, or null while none has. */
+  const retarget = (): WarpTarget[] | null => (session.waiting() && session.convert().length > 0 ? targetsNow() : null);
+  return { session, targets, control: { x, y }, retarget };
 }
 
 /** Each target with its warp's control `index` moved to `world`, then remade under `tuned` when given, as `scene`'s
@@ -154,7 +160,8 @@ export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
         const settings = resolveParams(opts?.params) ?? {};
         const grabbed = grabControl(deps, kind, label, scratch, settings);
         if (!grabbed) return {};
-        const { session, targets, control } = grabbed;
+        const { session, control, retarget } = grabbed;
+        let { targets } = grabbed;
         const press = ctx.drag?.start ?? ctx.world;
         let current: Shapes = new Map();
         const publish = () => live?.set(new Map([...current].map(([id, e]) => [id, e.shape])));
@@ -167,6 +174,7 @@ export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
             const world = { x: control.x + at.x - press.x, y: control.y + at.y - press.y };
             if (last !== null && last.x === world.x && last.y === world.y) return;
             last = world;
+            targets = retarget() ?? targets;
             current = shapesWith(deps.scene as QuantizedScene, targets, scratch.index, world);
             publish();
           },
@@ -177,7 +185,7 @@ export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
             if (reason === 'cancel' || done.size === 0) session.cancel();
             else session.commit(() => commitTargets(deps, done, label), label);
           },
-          params: () => settingsOfWarp(targets[0].held),
+          params: () => (targets[0] ? settingsOfWarp(targets[0].held) : settings),
           replay(params): void {
             const to = last;
             const again = to && grabControl(deps, kind, label, scratch, settings);
