@@ -62,6 +62,13 @@ describe('pack', () => {
     expect(left.bounds).toEqual({ x: 10, y: 20, width: 100, height: 30 });
   });
 
+  it('leaves a grown container its height when a departure leaves a child wider than it', () => {
+    const growing = pack<P>({ overflow: 'grow' });
+    const narrow = { id: 'C', bounds: { x: 0, y: 0, width: 50, height: 80 } };
+    const left = growing.depart!(narrow, [rect('w', 0, 0, 60, 40)], new Set(['b']));
+    expect(left.bounds).toBeUndefined();
+  });
+
   it('runs past the container when it scrolls, and reports the extent', () => {
     const scrolling = pack<P>({ gap: 5, overflow: 'scroll' });
     const children = [rect('a', 10, 20, 100, 30), rect('b', 10, 55, 100, 25), rect('c', 10, 85, 10, 10)];
