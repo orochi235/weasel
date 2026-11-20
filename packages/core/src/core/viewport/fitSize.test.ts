@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { fitSize, fitZoom } from './fitSize';
+import { DEFAULT_MAX_ZOOM, DEFAULT_MIN_ZOOM } from './zoomBounds';
+
+const free = { min: 0, max: Infinity };
 
 describe('fitZoom', () => {
   it('returns the smaller of width and height ratios', () => {
     // wide viewport, square content -> height is the constraint
-    expect(fitZoom(400, 100, 10, 10)).toBe(10);
+    expect(fitZoom(400, 100, 10, 10, free)).toBe(10);
     // tall viewport, square content -> width is the constraint
-    expect(fitZoom(100, 400, 10, 10)).toBe(10);
+    expect(fitZoom(100, 400, 10, 10, free)).toBe(10);
   });
 
   it('respects clamp.max', () => {
@@ -18,8 +21,8 @@ describe('fitZoom', () => {
   });
 
   it('fits along the one axis content has', () => {
-    expect(fitZoom(400, 100, 0, 10)).toBe(10);
-    expect(fitZoom(400, 100, 10, 0)).toBe(40);
+    expect(fitZoom(400, 100, 0, 10, free)).toBe(10);
+    expect(fitZoom(400, 100, 10, 0, free)).toBe(40);
   });
 
   it('reports nothing to fit for content with no extent', () => {
@@ -29,6 +32,13 @@ describe('fitZoom', () => {
     expect(fitSize(400, 100, 0, 0)).toBeNull();
   });
 
+  it('defaults to the kit-wide zoom clamp, as every other zoom path does', () => {
+    expect(fitZoom(800, 600, 10, 10)).toBe(DEFAULT_MAX_ZOOM);
+    expect(fitZoom(800, 600, 1e6, 1e6)).toBe(DEFAULT_MIN_ZOOM);
+    expect(fitSize(800, 600, 10, 10)!.zoom).toBe(DEFAULT_MAX_ZOOM);
+    expect(fitZoom(800, 600, 10, 10, { max: 20 })).toBe(20);
+  });
+
   it('returns raw ratio when within clamp range', () => {
     expect(fitZoom(100, 100, 10, 10, { min: 1, max: 100 })).toBe(10);
   });
@@ -36,7 +46,7 @@ describe('fitZoom', () => {
 
 describe('fitSize', () => {
   it('centers content with no padding', () => {
-    const r = fitSize(200, 200, 10, 10)!;
+    const r = fitSize(200, 200, 10, 10, 0, free)!;
     expect(r.zoom).toBe(20);
     expect(r.panX).toBe(0);
     expect(r.panY).toBe(0);
@@ -45,7 +55,7 @@ describe('fitSize', () => {
   it('centers content within larger viewport', () => {
     // viewport 200x100, content 10x10 -> zoom = min(200/10, 100/10) = 10
     // contentPx = 100x100; panX = (200-100)/2 = 50, panY = 0
-    const r = fitSize(200, 100, 10, 10)!;
+    const r = fitSize(200, 100, 10, 10, 0, free)!;
     expect(r.zoom).toBe(10);
     expect(r.panX).toBe(50);
     expect(r.panY).toBe(0);
@@ -54,7 +64,7 @@ describe('fitSize', () => {
   it('subtracts padding from each side when computing zoom', () => {
     // 200x200 viewport with 10px padding -> avail 180x180; content 10x10 -> zoom 18
     // contentPx 180; pan = (200-180)/2 = 10
-    const r = fitSize(200, 200, 10, 10, 10)!;
+    const r = fitSize(200, 200, 10, 10, 10, free)!;
     expect(r.zoom).toBe(18);
     expect(r.panX).toBe(10);
     expect(r.panY).toBe(10);

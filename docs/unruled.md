@@ -2772,3 +2772,10 @@ Calls the lanes made without a ruling:
 - 2026-11-19 (the fixer's call): `stableStringify` writes an object of the caller's own with a `$type` key as
   `{"$type":"object","value":…}`, so `{ $type: 'bigint', value: '10' }` and `10n` no longer give one string. Leaving
   such an object as JSON writes it, and the two colliding, was the alternative.
+
+## Audit round forty-one (2026-11-19): core's viewport
+
+- 2026-11-19 (the fixer's call): `fitZoom`, `fitSize` and `useFitOnce` clamp the fit to the kit-wide zoom range
+  (`DEFAULT_MIN_ZOOM`, `DEFAULT_MAX_ZOOM`) unless given a `clamp`, as `fitViewToBounds` and every other zoom path do;
+  before, they were unbounded, and the first wheel or pinch snapped a fit past 8x back to 8x. A caller wanting the raw
+  ratio passes `{ min: 0, max: Infinity }`. Leaving them unbounded as plain arithmetic was the alternative.
