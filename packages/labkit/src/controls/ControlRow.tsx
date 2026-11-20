@@ -309,17 +309,8 @@ function LeafRow<TC extends Record<string, unknown>>({
   const choices = useFieldChoices();
   const settles = useLabSettles();
   const textWaitMs = useTextWaitMs(leaf);
-  const rowAuto = useRowAuto({
-    path,
-    leaf,
-    resolved,
-    config,
-    shown,
-    auto,
-    setRowAuto,
-    setConfig,
-    over,
-  });
+  const at = { path, leaf, resolved, config, shown, auto, over };
+  const rowAuto = useRowAuto({ ...at, setRowAuto, setConfig });
   const { value, setAuto, readout: autoReadout, props: autoProps } = rowAuto;
 
   const changed = changedPaths?.has(path) === true;
