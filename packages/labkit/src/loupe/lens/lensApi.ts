@@ -93,6 +93,13 @@ export function createLensApi<C>(scene: LensScene<C>, refs: LensApiRefs<C>): Len
   const apply = (ops: readonly Op[]) => {
     if (ops.length > 0) sceneToAdapter(scene).applyOps([...ops], 'lens');
   };
+  // A host's scene may outlive an api built over it, so an id is minted past the lenses it already holds.
+  const mint = () => {
+    let lensId: string;
+    do lensId = `lens-${next++}`;
+    while (lensIdsOf(scene, `${lensId}:body`) !== null || lensIdsOf(scene, `${lensId}:reticle`) !== null);
+    return lensId;
+  };
   const current = () => {
     const focused = refs.focus.current;
     if (focused !== null && settingsOf(scene, focused)) return focused;
@@ -109,7 +116,7 @@ export function createLensApi<C>(scene: LensScene<C>, refs: LensApiRefs<C>): Len
       const box = layoutBoxOf(body);
       const client = at ?? refs.pointer.current;
       const reticle = client ? toBody(client, body) : { x: box.width / 2, y: box.height / 2 };
-      const lensId = `lens-${next++}`;
+      const lensId = mint();
       apply(addLensOps(scene, lensId, { body: bodyBeside(reticle, box, count), reticle }));
       refs.focus.current = lensId;
       return lensId;

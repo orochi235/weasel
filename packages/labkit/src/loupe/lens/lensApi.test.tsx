@@ -191,3 +191,19 @@ describe('a host’s re-measuring', () => {
     body.remove();
   });
 });
+
+describe('a lens API built over a scene that already holds lenses', () => {
+  it('mints ids past the lenses already there', () => {
+    const { scene, api } = setup();
+    const first = api.add();
+    const again = createLensApi(scene, {
+      body: { current: document.createElement('div') },
+      pointer: { current: null },
+      focus: { current: null },
+      sources: { current: {} },
+    });
+    const second = again.add();
+    expect(second).not.toBe(first);
+    expect(lensesOf(scene).map((l) => l.lensId)).toEqual([first, second]);
+  });
+});
