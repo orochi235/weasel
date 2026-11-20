@@ -48,6 +48,22 @@ describe('usePageSettle', () => {
     expect(sink.set).not.toHaveBeenCalled();
   });
 
+  it('holds for a pointer already down when single paging turns on', () => {
+    vi.useFakeTimers();
+    const setView = vi.fn();
+    const { rerender } = renderHook(({ paging }) => usePageSettle(pages, BETWEEN, DIMS, setView, { paging }), {
+      initialProps: { paging: 'single' as 'single' | 'continuous' },
+    });
+    rerender({ paging: 'continuous' });
+    pointer('pointerdown', 7);
+    rerender({ paging: 'single' });
+    vi.advanceTimersByTime(300);
+    expect(setView).not.toHaveBeenCalled();
+    pointer('pointerup', 7);
+    vi.advanceTimersByTime(150);
+    expect(setView).toHaveBeenCalledWith(fit(B, BETWEEN));
+  });
+
   it('restarts its wait on each view change and holds while a pointer is down', () => {
     vi.useFakeTimers();
     const setView = vi.fn();

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { createMemoryAdapter, openRecordsSync } from '@weasel-js/storage';
+import { createMemoryAdapter, openRecordsSync, type RecordCache } from '@weasel-js/storage';
 import { useAutosave, type SessionWrite } from './useAutosave';
 
 afterEach(() => {
@@ -84,6 +84,35 @@ describe('useAutosave', () => {
     renderHook(() => useAutosave(write('a'), { onSaved }));
     await vi.advanceTimersByTimeAsync(300);
     expect(onSaved).toHaveBeenLastCalledWith(false);
+  });
+
+  it('passes on the error of a save that throws, and logs it when there is no onSaved', async () => {
+    vi.useFakeTimers();
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const broken = new Error('broken cache');
+    const records = { get writable(): boolean { throw broken; } } as unknown as RecordCache;
+    const onSaved = vi.fn();
+    renderHook(() => useAutosave(write('a'), { records, onSaved }));
+    await vi.advanceTimersByTimeAsync(300);
+    expect(onSaved).toHaveBeenLastCalledWith(false, broken);
+    renderHook(() => useAutosave(write('a'), { records }));
+    await vi.advanceTimersByTimeAsync(300);
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('save failed'), broken);
+  });
+
+  it('runs the save queued behind one whose onSaved threw, and logs the throw', async () => {
+    vi.useFakeTimers();
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const boom = new Error('listener');
+    const heard: boolean[] = [];
+    const onSaved = (ok: boolean) => { heard.push(ok); if (heard.length === 1) throw boom; };
+    const { rerender, unmount } = renderHook(({ v }) => useAutosave(write(v), { onSaved }), { initialProps: { v: 'a' } });
+    window.dispatchEvent(new Event('pagehide'));
+    rerender({ v: 'b' });
+    unmount();
+    await vi.advanceTimersByTimeAsync(0);
+    expect([localStorage.getItem('doc'), heard]).toEqual(['"b"', [true, true]]);
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('onSaved threw'), boom);
   });
 
   it('logs a write that throws when there is no onSaved to hear it', async () => {

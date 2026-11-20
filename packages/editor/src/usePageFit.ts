@@ -27,6 +27,7 @@ export function usePageFit(
   const workspaceRef = useLatest(workspace);
   const pageRef = useLatest(page);
   const setViewRef = useLatest(setView);
+  const paddingRef = useLatest(padding);
   const recenter = useCallback(() => {
     const dims = workspaceRef.current;
     if (dims.width === 0 || dims.height === 0) return;
@@ -39,9 +40,9 @@ export function usePageFit(
       { x: p.x ?? 0, y: p.y ?? 0, width: p.width, height: p.height },
       dims,
       HOME_VIEW,
-      { padding },
+      { padding: paddingRef.current },
     ) ?? HOME_VIEW);
-  }, [workspaceRef, pageRef, setViewRef, padding]);
+  }, [workspaceRef, pageRef, setViewRef, paddingRef]);
   useEffect(() => {
     if (workspace.width === 0 || workspace.height === 0) return;
     if (lastFitKeyRef.current === fitKey) return;

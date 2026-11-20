@@ -9,19 +9,20 @@ interface ShellTools {
   toolSets: readonly ToolSet[] | undefined;
 }
 
-const PublishTools = createContext<((tools: ShellTools | null) => void) | null>(null);
+// Publishes one caller's tools and returns what withdraws that publication alone.
+const PublishTools = createContext<((tools: ShellTools) => () => void) | null>(null);
 
 /**
  * Tells the `<EditorShell>` above which tools its canvas holds, grouped by `toolSets`, so its shortcut sheet lists
- * them by name and glyph. Does nothing outside a shell. The newest caller wins; unmounting withdraws them.
+ * them by name and glyph. Does nothing outside a shell. The newest caller still mounted wins; unmounting withdraws only
+ * the caller's own, so the sheet goes back to the one published before it.
  */
 export function usePublishEditorTools(tools: ToolsApi | null, toolSets?: readonly ToolSet[]): void {
   const publish = useContext(PublishTools);
   const registry = tools?.registry;
   useEffect(() => {
     if (!publish || !registry) return;
-    publish({ tools: { registry }, toolSets });
-    return () => publish(null);
+    return publish({ tools: { registry }, toolSets });
   }, [publish, registry, toolSets]);
 }
 
@@ -38,11 +39,17 @@ function SheetCommand({ options, open }: { options: EditorCommandOptions; open: 
 
 /** The shell's `shortcuts.show` and the sheet it opens, listing the tools `usePublishEditorTools` publishes. */
 export function ShortcutSheetHost({ options, children }: { options: EditorCommandOptions | null; children: ReactNode }) {
-  const [shown, setShown] = useState<ShellTools | null>(null);
+  // Every publication still held, oldest first; the sheet shows the last.
+  const [held, setHeld] = useState<readonly ShellTools[]>([]);
+  const publish = useCallback((tools: ShellTools) => {
+    setHeld((was) => [...was, tools]);
+    return () => setHeld((was) => was.filter((t) => t !== tools));
+  }, []);
+  const shown = held.length > 0 ? held[held.length - 1] : null;
   const [sheetOpen, setOpen] = useState(false);
   const open = useCallback(() => setOpen(true), []);
   return (
-    <PublishTools.Provider value={setShown}>
+    <PublishTools.Provider value={publish}>
       {children}
       {options !== null && (
         <>
