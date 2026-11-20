@@ -2824,3 +2824,7 @@ Calls the lanes made without a ruling:
   the router `diagramScene` draws an edge naming none with, and reports no `router`; set, it previews with it and
   `onConnect`'s edge names it. A host whose `diagramScene` call sets its own `router` sets `portOptions.router` to
   match. Always reporting the preview's router was the alternative, which would pin `'straight'` on every new edge.
+- 2026-11-20 (the fixer's call): `useDiagramTools` keeps a tool for every shipped stencil, containers included, and
+  `useStencilInsert` warns once per id in development when an insert names a `stencil:` kind it was not handed,
+  then hands it to the insert dep it displaced as before. Dropping the container tools from the default list, or
+  having `useStencilInsert` fall back to every shipped stencil, were the alternatives.

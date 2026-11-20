@@ -150,6 +150,17 @@ describe('useStencilInsert', () => {
     expect(scene.get(id!)).toBeUndefined();
   });
 
+  it('warns in development of a stencil kind it was handed no stencil for', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const { dep } = insertDep();
+      dep.commit({ x: 0, y: 0, width: 0, height: 0 }, { kind: stencilKind(CONTAINER_STENCILS[0]!.id) } as never);
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining(`"${CONTAINER_STENCILS[0]!.id}"`));
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
   it('hands a kind no stencil names to the insert dep it displaced', () => {
     const under = { commit: vi.fn(() => 'r1' as never), build: vi.fn(() => null), layer: () => 'main' } satisfies InsertDep;
     const { dep } = insertDep(undefined, under);

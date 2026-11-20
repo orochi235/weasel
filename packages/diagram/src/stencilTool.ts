@@ -9,7 +9,9 @@ import { diagramDropParentAt, type DropParentScene } from './containers/canDropI
 import { containerBuild, type ContainerStencil } from './containers/containerStencils';
 import type { NodeStyle } from './dataTypes';
 import { stencilInsertOps, stencilIdOf, stencilKind, type DiagramStencil } from './stencil';
+import { firstSight } from './firstSight';
 import { roleStyle } from './theme/resolve';
+import { isDev } from '@weasel-js/registry';
 import type { DiagramTheme } from './theme/types';
 import { INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING } from '@weasel-js/editing';
 import type { Rect } from '@weasel-js/geom';
@@ -55,6 +57,18 @@ export interface StencilInsertOptions {
   theme?: DiagramTheme;
 }
 
+const unwarned = firstSight();
+
+/** In dev, warns once per id of a `stencil:` kind no stencil `useStencilInsert` holds: its tool's drag falls to
+ *  the displaced insert, which does not build stencils. */
+function warnUnknownStencil(id: string): void {
+  if (!isDev() || !unwarned(id)) return;
+  console.warn(
+    `@weasel-js/diagram: an insert names stencil "${id}", which useStencilInsert was not handed; `
+    + 'pass it among `stencils`, or a container stencil in `containers`',
+  );
+}
+
 /**
  * Registers the `insert` dep for stencil kinds. Any other kind goes to the
  * `insert` dep this one displaced, so core's rect, ellipse and text tools
@@ -73,7 +87,9 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
     const stencilOf = (kind: string): DiagramStencil | ContainerStencil | undefined => {
       const id = stencilIdOf(kind);
       if (id === null) return undefined;
-      return stencilsRef.current.find((s) => s.id === id) ?? optsRef.current.containers?.find((s) => s.id === id);
+      const found = stencilsRef.current.find((s) => s.id === id) ?? optsRef.current.containers?.find((s) => s.id === id);
+      if (found === undefined) warnUnknownStencil(id);
+      return found;
     };
     const builtAt = (stencil: DiagramStencil | ContainerStencil, world: Rect): { id: string; ops: Op[] } | null => {
       if (scene === undefined) return null;
