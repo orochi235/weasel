@@ -7,6 +7,7 @@ import type { MarkerRef } from '@weasel-js/core';
 import type { DataContainer, DataEdge, DataNode, EdgeStyle, LayoutDirection, Outline } from '@weasel-js/diagram';
 import type { ImportResult } from '../../document';
 import { Membership, Warnings, graphPage } from '../../graphRead';
+import { readPageName } from '../common/lines';
 import { checkProps, dashOf, mermaidColor, nodeColors, strokeWidthOf } from '../common/styles';
 import { textLines } from '../common/text';
 import type { LinkHead, MermaidShape } from './lex';
@@ -51,6 +52,8 @@ class MermaidReader {
   readonly styles = new Map<string, StyleProps>();
   readonly classes = new Map<string, string[]>();
   readonly linkStyles = new Map<number | 'default', StyleProps>();
+  accTitle: string | undefined;
+  accDescr: string | undefined;
   links = 0;
 
   constructor(readonly subgraphIds: ReadonlySet<string>, readonly edgeIds: ReadonlySet<string>) {}
@@ -153,6 +156,9 @@ class MermaidReader {
         for (const i of s.indexes === 'default' ? ['default' as const] : s.indexes) {
           this.linkStyles.set(i, [...(this.linkStyles.get(i) ?? []), ...s.props]);
         }
+      } else if (s.kind === 'acc') {
+        if (s.of === 'title') this.accTitle = s.text;
+        else this.accDescr = s.text;
       } else {
         this.warnings.list('Mermaid statements a diagram does not hold were dropped', s.keyword);
       }
@@ -219,9 +225,8 @@ function subgraphContainerIds(subgraphs: readonly string[], nodes: ReadonlyMap<s
 export function readFlowchart(text: string): ImportResult {
   const chart = parseFlowchart(text);
   const r = new MermaidReader(subgraphIdsOf(chart.stmts), edgeIdsOf(chart.stmts));
-  if (chart.frontConfig !== undefined) r.warnings.add('Mermaid front matter other than the title was dropped.');
-  if (chart.directives > 0) r.warnings.add('Mermaid configuration directives were dropped.');
   r.walk(chart.stmts, null);
+  const name = readPageName({ ...chart, ...(r.accTitle !== undefined ? { accTitle: r.accTitle } : {}), ...(r.accDescr !== undefined ? { accDescr: r.accDescr } : {}) }, r.warnings);
   const nodes: DataNode[] = [...r.nodes].map(([id, d]) => {
     const colors = nodeColors(r.propsOf(id, true), r.warnings);
     return { id, lines: d.lines, outline: d.outline, ...(colors !== undefined ? { colors } : {}) };
@@ -244,7 +249,7 @@ export function readFlowchart(text: string): ImportResult {
   });
   const direction = getOwn(DIRECTIONS, chart.direction);
   const page = graphPage({
-    ...(chart.title !== undefined ? { name: chart.title } : {}),
+    ...(name !== undefined ? { name } : {}),
     ...(direction !== undefined ? { direction } : {}),
     nodes, edges, containers,
   });

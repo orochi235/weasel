@@ -94,6 +94,15 @@ describe('reading Mermaid', () => {
     expect(q.data.edges[0]!.colors).toEqual({ stroke: '#444', dash: [5, 5] });
   });
 
+  it('names the page by its accessible title where there is no front matter title, as every other kind does', () => {
+    const named = readFlowchart('flowchart TD\n  accTitle: Checkout flow\n  accDescr: Steps\n  A --> B');
+    expect(named.document.pages[0]!.name).toBe('Checkout flow');
+    expect(named.warnings).toEqual(['Mermaid accessible descriptions were dropped.']);
+    const titled = readFlowchart('---\ntitle: T\n---\nflowchart TD\n  accTitle: Checkout flow\n  A --> B');
+    expect(titled.document.pages[0]!.name).toBe('T');
+    expect(titled.warnings).toEqual(['Mermaid accessible titles were dropped; the page is named by the title.']);
+  });
+
   it('warns that front matter other than the title was dropped', () => {
     expect(readFlowchart('---\nconfig:\n  look: handDrawn\n---\nflowchart TD\nA --> B').warnings)
       .toEqual(['Mermaid front matter other than the title was dropped.']);
@@ -101,10 +110,10 @@ describe('reading Mermaid', () => {
 
   it('warns for each construct a diagram does not hold', () => {
     expect(readFlowchart(FLOW).warnings).toEqual([
-      'Mermaid configuration directives were dropped.',
       'Mermaid statements a diagram does not hold were dropped: click.',
       'Mermaid subgraph directions were dropped; the page runs one way.',
       'Mermaid style properties a diagram does not hold were dropped: font-size.',
+      'Mermaid configuration directives were dropped.',
     ]);
     expect(readFlowchart('flowchart TD\nA ~~~ B\nA --x B').warnings).toEqual([
       'Mermaid invisible links were dropped.', 'Mermaid cross ends read as arrows.',

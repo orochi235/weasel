@@ -36,6 +36,7 @@ export type MermaidStmt =
   | { kind: 'class'; ids: string[]; className: string; line: number }
   | { kind: 'style'; id: string; props: StyleProps; line: number }
   | { kind: 'linkStyle'; indexes: number[] | 'default'; props: StyleProps; line: number }
+  | { kind: 'acc'; of: 'title' | 'descr'; text: string; line: number }
   | { kind: 'other'; keyword: string; line: number };
 
 /** A whole flowchart. */
@@ -61,6 +62,7 @@ const SUBGRAPH =/^(?:"([^"]*)"|([^\s[]+)\s*(?:\[\s*(?:"([^"]*)"|([^\]]*))\s*\])?
 
 /** A keyword statement other than `subgraph`, from the rest of its line. */
 function statementOf(keyword: string, rest: string, line: number): MermaidStmt {
+  if (keyword === 'accTitle' || keyword === 'accDescr') return { kind: 'acc', of: keyword === 'accTitle' ? 'title' : 'descr', text: rest, line };
   if (keyword === 'direction') return { kind: 'direction', value: rest.toUpperCase(), line };
   const [first = '', ...more] = rest.split(/\s+/);
   const remainder = rest.slice(first.length).trim();
