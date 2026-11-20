@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { RenderContext } from '../instrument/types';
 import { sceneResetsOf } from './sceneResets';
 
+const STACK_ONLY: ReadonlySet<string> = new Set(['restore', 'clear', 'prune', 'drop', 'branch']);
+
 /** The state of an instrument whose subject is a weasel scene: the scene as
  *  `toJSON` wrote it, or `null` before anyone has edited it. */
 export interface SceneTrialState<TData = unknown, TLayer extends string = string, TPose = unknown> {
@@ -45,9 +47,10 @@ export function useTrialScene<
 
   useEffect(
     () =>
-      // A restore changes no node, and writing the scene back would echo another tab's write.
+      // A step that only moves the stacks changes no node; `loadState` clears them before it builds its nodes,
+      // and writing the scene back then would store it empty, or echo another tab's write.
       scene.history.observe((step) => {
-        if (step.kind === 'restore') return;
+        if (STACK_ONLY.has(step.kind)) return;
         const json = scene.toJSON();
         known.current = json;
         written.current.add(json);
