@@ -3130,3 +3130,9 @@ Calls the lanes made without a ruling:
   `measureIds`, and so picking, editing, Delete and Clear all, reads only `ms.layer`. Either `measureIds` reads the
   whole scene, which puts a walk of every node on each pointer move's hit test (`measureEndSource.test.ts` holds
   that it must not), or the painter and the snap source take only `ms.layer`'s nodes and the rest go undrawn.
+
+## Audit round fifty-five (2026-11-20): text
+
+- Ruled 2026-11-20 (my call, audit): a run grammar's delimiter is one UTF-16 unit, and `runsToMarkdown` and
+  `markdownToRuns` throw for any other, an astral character or `'~~'` included. The reader finds delimiters one unit
+  at a time, so the writer wrote what it could not read back; a doubled marker is spelled with `repeat`.

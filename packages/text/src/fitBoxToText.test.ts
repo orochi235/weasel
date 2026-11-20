@@ -55,6 +55,11 @@ describe('fitBoxToText', () => {
     expect(fit.height).toBe(LINE);
   });
 
+  it('resolves a screen-pixel font size at the view scale given', () => {
+    const fit = fitBoxToText(textPose({ style: { ...STYLE, fontSize: { px: SIZE * 4 } } }), { scale: 4 });
+    expect(fit.height).toBeCloseTo(LINE, 9);
+  });
+
   it('grows height to fit wrapped content', () => {
     // 'AB AB' is 44 + 8 + 44 = 96 unwrapped; at width 60 it wraps to 2 lines.
     const fit = fitBoxToText(textPose({ width: 60, text: 'AB AB', style: WRAP }));

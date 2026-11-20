@@ -34,6 +34,11 @@ function makeMockCtx() {
 const mockMeasure = (text: string) => text.length * 10;
 
 describe('layoutCanvasRuns', () => {
+  it('rejoins a surrogate pair that two runs split, as the GL tier does', () => {
+    const result = layoutCanvasRuns([{ text: 'a\ud83d', bold: true }, { text: '\ude00b' }], Infinity, 13, mockMeasure);
+    expect(result.lines[0].runs.map((r) => r.text)).toEqual(['a\u{1f600}', 'b']);
+  });
+
   it('lays out plain text on one line', () => {
     const runs = markdownToRuns('hello');
     const result = layoutCanvasRuns(runs, Infinity, 13, mockMeasure);
@@ -178,6 +183,19 @@ describe('layoutCanvasRuns with no characters', () => {
 });
 
 describe('createMarkdownRenderer', () => {
+  it('turns each glyph of a rotated run about its own pen', () => {
+    const { ctx, fillCalls } = makeMockCtx();
+    const turns: number[][] = [];
+    Object.assign(ctx, {
+      save: () => {}, restore: () => {},
+      transform: (...m: number[]) => { turns.push(m); },
+    });
+    const r = createMarkdownRenderer(ctx, [{ text: 'ab', rotate: 90 }], 13);
+    r.renderer(ctx, 'ab', 5, 7);
+    expect(fillCalls.map((c) => c.text)).toEqual(['a', 'b']);
+    expect(turns.map((m) => m.map((v) => Math.round(v * 1e9) / 1e9))).toEqual([[0, 1, -1, 0, 5, 7], [0, 1, -1, 0, 15, 7]]);
+  });
+
   it('uses sans-serif by default', () => {
     const { ctx, fillCalls } = makeMockCtx();
     const r = createMarkdownRenderer(ctx, 'hello', 13);

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isBoldWeight, resolveRuns, type ResolvedRun } from './resolveRuns';
+import { isBoldWeight, numericWeight, resolveRuns, type ResolvedRun } from './resolveRuns';
 import { SMALL_CAPS_SCALE, smallCapsScale } from './smallCaps';
 import { resolveTextStyle } from '../textStyle';
 import type { StyledRun } from '../runs';
@@ -356,3 +356,11 @@ describe('resolveRuns — a stroke trim', () => {
   });
 });
 
+
+describe('numericWeight', () => {
+  it('reads a blank weight as 400, like any other it cannot parse', () => {
+    expect(numericWeight('')).toBe(400);
+    expect(numericWeight('  ')).toBe(400);
+    expect(numericWeight(' 300 ')).toBe(300);
+  });
+});

@@ -20,6 +20,8 @@ export interface FitBoxToTextOptions {
   axis?: 'height' | 'both';
   /** Padding (world units) added to all four sides. Default 0. */
   padding?: number | { x?: number; y?: number };
+  /** The view scale a `{ px }` font size resolves at, as the painter draws it. Default 1. */
+  scale?: number;
 }
 
 /** Recompute a `TextPose`'s `width`/`height` to fit its content; pure helper, doesn't mutate scene state. */
@@ -33,7 +35,7 @@ export function fitBoxToText(
   const own: TextPose = { ...pose, fit: undefined };
   const { bounds } = layoutTextPose(axis === 'height'
     ? { ...own, width: pose.width - padX * 2 }
-    : { ...own, style: { ...pose.style, wrap: false } }).laid;
+    : { ...own, style: { ...pose.style, wrap: false } }, opts.scale ?? 1).laid;
   if (axis === 'height') return { ...pose, height: bounds.height + padY * 2 };
   return {
     ...pose,

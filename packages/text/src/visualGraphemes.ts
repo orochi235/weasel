@@ -34,6 +34,7 @@ export function visualGraphemes(
     const i = owner[k]!;
     if (seen.has(i)) continue;
     seen.add(i);
+    if (BIDI_CONTROLS.test(graphemes[i]!)) continue;
     out.push(levels[k]! % 2 === 1 ? mirrored(bidi, graphemes[i]!) : graphemes[i]!);
   }
   return direction === 'rtl' ? out.reverse() : out;
