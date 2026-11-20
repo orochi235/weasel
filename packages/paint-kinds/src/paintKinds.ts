@@ -11,7 +11,7 @@
 import type {
   ColorSpace, Paint, GradientPaint, GradientKind, GradStop, TileKind, TilePaint,
 } from '@weasel-js/paint';
-import { gradientForBounds, isGradientPaint, isTilePaint, withGradientKind } from '@weasel-js/paint';
+import { gradientForBounds, isGradientPaint, isTilePaint, tryParseColor, withGradientKind } from '@weasel-js/paint';
 import { createReflectable, type PushOptions, type ReflectedEntry, type Reflection } from '@weasel-js/registry';
 import { getPaintDrawKind, registerPaintDrawKind, registerPaintDrawKindLoader } from '@weasel-js/renderer';
 import type { PaintKind, PaintKindEntry, PaintKindFamily } from './paintKindEntry';
@@ -95,7 +95,8 @@ const UNIT_BOX = { x: 0, y: 0, width: 1, height: 1 };
 /** `color` to a contrasting end — white reads against any hue; against white
  *  itself, black does. */
 function twoStopRamp(color: string): GradStop[] {
-  const isWhite = color.slice(0, 7).toLowerCase() === '#ffffff';
+  const rgba = tryParseColor(color);
+  const isWhite = rgba !== null && rgba[0] === 1 && rgba[1] === 1 && rgba[2] === 1;
   return [{ offset: 0, color }, { offset: 1, color: isWhite ? '#000000ff' : '#ffffffff' }];
 }
 
