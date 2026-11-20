@@ -7,11 +7,14 @@ import type { ViewApi } from 'interactions/actions/depSchema';
 
 /**
  * Where a step goes: `by` places along the page order from the page in view
- * (`1` is the next slide), `to` a page by its id, its index, or an end.
+ * (`1` is the next slide), `end` the first or the last page, and `to` a page by
+ * its id or its index. A `to` of `'first'` or `'last'` names the page with that
+ * id where there is one, and the end otherwise.
  */
 export type PageRequest =
   | { readonly by: number }
-  | { readonly to: string | number | 'first' | 'last' };
+  | { readonly end: 'first' | 'last' }
+  | { readonly to: string | number };
 
 /** What a presentation moves: the view, read and written, and the size it is seen at. */
 export interface PresentationCamera {
@@ -42,11 +45,14 @@ export function requestedPage(
   wrap = false,
 ): PlacedPage | null {
   if ('by' in request) return adjacentPage(pages, current?.id ?? null, request.by, { wrap });
+  if ('end' in request) return endPage(pages, request.end);
   const { to } = request;
-  if (to === 'first') return pages[0] ?? null;
-  if (to === 'last') return pages.at(-1) ?? null;
   if (typeof to === 'number') return pages[to] ?? null;
-  return pages.find((p) => p.id === to) ?? null;
+  return pages.find((p) => p.id === to) ?? (to === 'first' || to === 'last' ? endPage(pages, to) : null);
+}
+
+function endPage(pages: readonly PlacedPage[], end: 'first' | 'last'): PlacedPage | null {
+  return (end === 'first' ? pages[0] : pages.at(-1)) ?? null;
 }
 
 /** The page the camera shows, or is gliding to: the one most of its view covers. */
@@ -103,6 +109,9 @@ export interface PresentationCanvas {
   setView(next: View): void;
   animateView(to: View, opts?: ViewAnimationOptions): void;
   isViewAnimating(): boolean;
+  /** Where the canvas's glide in flight is heading, whoever started it; `null` when none is. Without it the
+   *  camera knows only the glides it started itself. */
+  viewAnimationTarget?(): View | null;
 }
 
 /** A `<SceneCanvas>` handle as a {@link PresentationCamera}, for a host stepping pages from outside the canvas:
@@ -113,10 +122,24 @@ export function createCanvasCamera(canvas: PresentationCanvas): PresentationCame
     get: () => canvas.getView(),
     dims: () => measured(canvas.getSurfaceRect()),
     show: (to, animate) => {
-      heading = animate === null ? null : to;
-      if (animate === null) canvas.setView(to);
-      else canvas.animateView(to, animate);
+      heading = null;
+      if (animate === null) {
+        canvas.setView(to);
+        return;
+      }
+      const glide = to;
+      heading = glide;
+      canvas.animateView(to, {
+        ...animate,
+        onDone: () => {
+          if (heading === glide) heading = null;
+          animate.onDone?.();
+        },
+      });
     },
-    target: () => (heading !== null && canvas.isViewAnimating() ? heading : null),
+    target: () => {
+      if (canvas.viewAnimationTarget) return canvas.viewAnimationTarget();
+      return heading !== null && canvas.isViewAnimating() ? heading : null;
+    },
   };
 }

@@ -57,6 +57,9 @@ export interface ClipboardIngestCtx {
 export interface IngestionDep {
   /** Visible canvas area in world coordinates. */
   viewportWorldRect(): Rect;
+  /** The world distance one CSS px spans along each screen axis, signed so a
+   *  positive step runs right and down on screen. Absent reads as `{ x: 1, y: 1 }`. */
+  worldPerPx?(): { x: number; y: number };
   /** Consumer file→src resolver (from SceneCanvas's `ingestion` prop).
    *  Live accessor — read it at use time. Destructuring (or copying the
    *  property early) snapshots the current value and won't track later

@@ -24,3 +24,8 @@ export function viewportWorldRect(
     height,
   };
 }
+
+/** The world distance one CSS px spans along each screen axis under `view`, signed: negative on a flipped axis. */
+export function worldPerPxOf(view: View): { x: number; y: number } {
+  return { x: 1 / view.scale.x, y: 1 / view.scale.y };
+}

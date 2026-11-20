@@ -22,7 +22,7 @@ const GHOST_FRACTION = 1 / 6;
  */
 export function ghostBounds(
   items: readonly IngestItem[],
-  at: Pick<IngestCtx, 'point' | 'viewportWorldRect'>,
+  at: Pick<IngestCtx, 'point' | 'viewportWorldRect' | 'worldPerPx'>,
   handlers?: readonly ContentHandlerEntry[],
 ): Rect[] {
   const claimable = items.filter((item) => couldClaim([item], handlers));
@@ -51,7 +51,12 @@ export function previewIngest(
   const { ingestion, previewPaths } = deps;
   if (!items || items.length === 0 || !ingestion || !previewPaths) return undefined;
   const point = params?.world ?? null;
-  const boxes = ghostBounds(items, { point, viewportWorldRect: () => ingestion.viewportWorldRect() }, handlers);
+  const at = {
+    point,
+    viewportWorldRect: () => ingestion.viewportWorldRect(),
+    ...(ingestion.worldPerPx ? { worldPerPx: () => ingestion.worldPerPx!() } : {}),
+  };
+  const boxes = ghostBounds(items, at, handlers);
   if (boxes.length === 0) return undefined;
   return previewPaths.show(boxes.map((b) => ({ path: rectPath(b.x, b.y, b.width, b.height) })));
 }

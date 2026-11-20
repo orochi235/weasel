@@ -80,4 +80,17 @@ describe('createEnteredGroupScope', () => {
     entered.leave();
     expect(fn).toHaveBeenCalledTimes(1);
   });
+
+  it('bumps its version for a change made while nobody was subscribed', () => {
+    const { scope, entered, outer } = build();
+    const off = scope.subscribe(() => {});
+    off();
+    const before = scope.getVersion();
+    entered.enter(outer);
+    const after = scope.getVersion();
+    expect(after).toBeGreaterThan(before);
+    expect(scope.getVersion()).toBe(after);
+    entered.leaveAll();
+    expect(scope.getVersion()).toBeGreaterThan(after);
+  });
 });

@@ -269,6 +269,8 @@ export interface SceneCanvasApi extends CanvasExtensionApi {
   /** Cancel a camera animation. The view stays where it is. */
   stopViewAnimation(): void;
   isViewAnimating(): boolean;
+  /** Where the camera animation in flight is heading, or `null` when none is. */
+  viewAnimationTarget(): View | null;
   /**
    * The camera as an animation target, and the animator that moves it. An
    * animation started on `animator` with `target` adds to a glide in flight: a
