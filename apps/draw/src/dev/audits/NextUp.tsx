@@ -1,5 +1,4 @@
 import { Icon } from '@weasel-js/ui/components/Icon';
-import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 import { icon } from '../../icons.gen';
 import type { AuditArea } from './skulkMap.types';
 import s from './NextUp.module.css';
@@ -9,8 +8,7 @@ export function NextUp({ areas, onPick, onLight }: {
   areas: readonly AuditArea[]; onPick: (id: string) => void; onLight: (id: string | null) => void;
 }) {
   return (
-    <SidebarPanel title="Next up">
-      <ol className={s.list}>
+    <ol className={s.list}>
         {areas.map((a) => (
           <li key={a.id} value={a.queue ?? undefined}>
             <button
@@ -25,7 +23,6 @@ export function NextUp({ areas, onPick, onLight }: {
             </button>
           </li>
         ))}
-      </ol>
-    </SidebarPanel>
+    </ol>
   );
 }

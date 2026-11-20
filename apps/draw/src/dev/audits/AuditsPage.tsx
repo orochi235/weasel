@@ -7,9 +7,8 @@ import { AreaDefects } from './AreaDefects';
 import { AreaDetail } from './AreaDetail';
 import { JobsFeed } from './JobsFeed';
 import { LiveRuns } from './LiveRuns';
-import { NextUp } from './NextUp';
-import { RoundsChart } from './RoundsChart';
 import { Stats } from './Stats';
+import { TopTabs } from './TopTabs';
 import { Treemap } from './Treemap';
 import { nextUpOf, runHolding, statsFor } from './areaData';
 import { createAuditScene } from './auditScene';
@@ -66,7 +65,7 @@ function Chart({ map }: { map: SkulkMap }) {
       {probes}
       <div className={s.top}>
         <div className={s.runs}><LiveRuns runs={map.runs} now={Date.parse(map.generated)} on={on} /></div>
-        <RoundsChart rounds={map.rounds} />
+        <TopTabs rounds={map.rounds} next={next} onPick={pick} onLight={setLit} />
       </div>
       <ResizeHandle
         className={s.seam} orientation="horizontal" value={topHeight} min={TOP.min} max={TOP.max}
@@ -76,10 +75,9 @@ function Chart({ map }: { map: SkulkMap }) {
       <div ref={mainRef} className={s.main}>
         <Treemap scene={scene} selection={selection} areas={areas} palette={colors} phases={phases} onHover={setHovered} lit={lit} />
         <ResizeHandle value={asideWidth} min={ASIDE.min} max={ASIDE.max} invert onInput={setAsideWidth} onChange={keepAside} aria-label="Resize the side panel" />
-        <aside className={s.aside} aria-label="Area and queue">
+        <aside className={s.aside} aria-label="Area">
           <AreaDetail area={area} holder={area && runHolding(map.runs, area.id)} />
           {picked && <AreaDefects id={picked} version={map.generated} />}
-          <NextUp areas={next} onPick={pick} onLight={setLit} />
         </aside>
       </div>
       <ResizeHandle
