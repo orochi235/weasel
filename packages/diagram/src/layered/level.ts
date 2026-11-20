@@ -5,12 +5,15 @@
  * author put it, so two ends can still finish side by side. Leaving by the
  * faces toward the next and last rank, such an edge would loop out and back
  * round; it runs straight across between their facing sides instead, or,
- * when a node sits between them, out past both on the side toward the next
- * rank and back.
+ * when a node or a cluster neither is in sits between them, out past both on
+ * the side toward the next rank and back.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import type { Graph } from '../graph';
+import type { Graph, GraphCluster } from '../graph';
 import type { Bounds } from '../outline';
+import { unionRects } from '@weasel-js/geom';
+import { boxAround } from '../clusterBox';
+import { grownBy } from '../footprint';
 import { center, extent, type LayoutAxes, type LayoutDirection, type LayoutPorts } from '../layout';
 import { FACES, hasCompassPort, type Compass } from '../route';
 
@@ -51,6 +54,7 @@ export function levelRoutes(input: LevelInput): LevelRoutes {
   const { graph, boxes, axes } = input;
   const out: LevelRoutes = { ports: new Map(), waypoints: new Map() };
   const seen = new Set<string>();
+  const clusters = clusterBoxes(graph, boxes);
   for (const e of graph.edges) {
     const id = e.origin?.id ?? e.id;
     if (seen.has(id)) continue;
@@ -62,6 +66,7 @@ export function levelRoutes(input: LevelInput): LevelRoutes {
     if (from === to || a === undefined || b === undefined) continue;
     if (!overlaps(spanOf(a, axes.rank), spanOf(b, axes.rank)) || overlaps(spanOf(a, axes.cross), spanOf(b, axes.cross))) continue;
     const others = [...boxes].filter(([n]) => n !== from && n !== to).map(([, box]) => box);
+    for (const { cluster, box } of clusters) if (!cluster.members.includes(from) && !cluster.members.includes(to)) others.push(box);
     if (between(a, b, others, axes)) {
       const face = FACES[input.direction ?? 'down'].out;
       out.ports.set(id, named(graph, [from, face], [to, face]));
@@ -73,6 +78,25 @@ export function levelRoutes(input: LevelInput): LevelRoutes {
     }
   }
   return out;
+}
+
+/** Each cluster's box around where its members finish, nested boxes
+ *  included, as `clusterDerivePose` draws it. */
+function clusterBoxes(graph: Graph, boxes: ReadonlyMap<string, Bounds>): { cluster: GraphCluster; box: Bounds }[] {
+  const clusters = graph.clusters ?? [];
+  const byId = new Map(clusters.map((g) => [g.id, g]));
+  const depth = (g: GraphCluster): number => (g.parent === undefined || !byId.has(g.parent) ? 0 : 1 + depth(byId.get(g.parent)!));
+  const built = new Map<string, Bounds>();
+  // Innermost first, so a parent's box takes in its children's.
+  for (const g of [...clusters].sort((p, q) => depth(q) - depth(p))) {
+    const nodes = g.members.flatMap((id) => {
+      const box = boxes.get(id);
+      return box === undefined ? [] : [grownBy(box, graph.node(id)?.margin)];
+    });
+    const union = unionRects([...nodes, ...clusters.filter((c) => c.parent === g.id).flatMap((c) => built.get(c.id) ?? [])]);
+    if (union !== null) built.set(g.id, boxAround(union, g));
+  }
+  return clusters.filter((g) => built.has(g.id)).map((g) => ({ cluster: g, box: built.get(g.id)! }));
 }
 
 /** The ports each end has by the name given. */

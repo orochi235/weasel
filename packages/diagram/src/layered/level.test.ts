@@ -57,6 +57,24 @@ describe('layered, an edge between two nodes level along the rank axis', () => {
     expect(plan.waypoints.get('ab')).toEqual([{ x: 40, y: 188 }, { x: 440, y: 188 }]);
   });
 
+  it('goes around a cluster box between them that neither end is in', () => {
+    const graph = pinnedGraph({ a: { x: 0, y: 0 }, k1: { x: 200, y: -60 }, k2: { x: 200, y: 60 }, b: { x: 400, y: 0 } }, [['a', 'b']]);
+    graph.nodes.find((n) => n.id === 'k1')!.cluster = 'K';
+    graph.nodes.find((n) => n.id === 'k2')!.cluster = 'K';
+    const clustered: Graph = { ...graph, clusters: [{ id: 'K', members: ['k1', 'k2'], inset: { top: 12, right: 12, bottom: 12, left: 12 } }] };
+    const plan = layeredPlan(clustered, { rankGap: 96 });
+    expect(plan.ports.get('ab')).toEqual({ from: 's', to: 's' });
+    expect(plan.waypoints.get('ab')).toEqual([{ x: 40, y: 150 }, { x: 440, y: 150 }]);
+  });
+
+  it('runs straight across inside the cluster both ends are in', () => {
+    const graph = pinnedGraph({ a: { x: 0, y: 0 }, b: { x: 400, y: 0 } }, [['a', 'b']]);
+    for (const n of graph.nodes) n.cluster = 'K';
+    const clustered: Graph = { ...graph, clusters: [{ id: 'K', members: ['a', 'b'], inset: { top: 12, right: 12, bottom: 12, left: 12 } }] };
+    const plan = layeredPlan(clustered, { rankGap: 96 });
+    expect(plan.ports.get('ab')).toEqual({ from: 'e', to: 'w' });
+  });
+
   it('keeps the rank faces for nodes that are not level', () => {
     const plan = layeredPlan(pinnedGraph({ a: { x: 0, y: 0 }, b: { x: 200, y: 200 } }, [['a', 'b']]));
     expect(plan.ports.get('ab')).toEqual({ from: 's', to: 'n' });
