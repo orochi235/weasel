@@ -3,7 +3,7 @@ import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { mat3 } from '@weasel-js/geom';
 import type { TextDrawCommand } from './DrawCommand';
-import { textBox } from './textBounds';
+import { textBox, textLayerBox } from './textBounds';
 import { laidOutText } from './textLayout';
 
 const underlined = (letterSpacing: number): TextDrawCommand => ({
@@ -38,5 +38,18 @@ describe('textBox', () => {
     const ruleEnd = last.x + last.step;
     expect(last.step - last.advance).toBe(32);
     expect(textBox(cmd, mat3.identity())!.maxX).toBeGreaterThanOrEqual(ruleEnd);
+  });
+});
+
+describe('textLayerBox', () => {
+  it('measures a layer again once a face lands', async () => {
+    _resetFontRegistryForTests();
+    const texts = [underlined(0)];
+    const layer = { kind: 'text-layer' as const, texts };
+    const before = textLayerBox(layer, mat3.identity());
+    await registerFont('inter', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const fresh = textLayerBox({ kind: 'text-layer', texts: [...texts] }, mat3.identity());
+    expect(fresh).not.toEqual(before);
+    expect(textLayerBox(layer, mat3.identity())).toEqual(fresh);
   });
 });

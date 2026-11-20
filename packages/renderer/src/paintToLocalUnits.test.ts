@@ -45,6 +45,24 @@ describe('paintToLocalUnits', () => {
     expect(wide.to.x - wide.from.x).toBe(800);
   });
 
+  it('keeps a diagonal gradient\'s bands leaning with a non-square box, as objectBoundingBox does', () => {
+    const diagonal: GradientPaint = { ...LINEAR, from: { x: 0, y: 0 }, to: { x: 1, y: 1 } };
+    const box = { x: 0, y: 0, width: 200, height: 100 };
+    const out = paintToLocalUnits(diagonal, box);
+    if (out.kind !== 'linear-gradient') throw new Error('unreachable');
+    const t = (x: number, y: number) => {
+      const dx = out.to.x - out.from.x, dy = out.to.y - out.from.y;
+      return ((x - out.from.x) * dx + (y - out.from.y) * dy) / (dx * dx + dy * dy);
+    };
+    expect(t(200, 0)).toBeCloseTo(0.5, 9);
+    expect(t(0, 100)).toBeCloseTo(0.5, 9);
+    expect(t(200, 100)).toBeCloseTo(1, 9);
+    const back = paintToBoundsUnits(out, box);
+    if (back.kind !== 'linear-gradient') throw new Error('unreachable');
+    expect(back.to.x).toBeCloseTo(1, 9);
+    expect(back.to.y).toBeCloseTo(1, 9);
+  });
+
   it('scales a radius by the box diagonal, which is the width for a square', () => {
     const radial: GradientPaint = {
       kind: 'radial-gradient', center: { x: 0.5, y: 0.5 }, radius: 0.5, stops: STOPS, units: 'bounds',

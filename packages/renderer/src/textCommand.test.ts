@@ -4,8 +4,10 @@
  * `TextDrawCommand`. Verifies (1) plain-text encoding, (2) align is
  * sourced from the resolved style, (3) style defaults flow through.
  */
-import { describe, it, expect } from 'vitest';
-import { textCommand, textCommandFromPose, textCommandFromRuns } from './textCommand';
+import { afterEach, beforeEach, describe, it, expect } from 'vitest';
+import { installFakeOffscreenCanvas, uninstallFakeOffscreenCanvas } from './patterns/test-utils/fakeOffscreenCanvas';
+import { textCommand, textCommandFromPose, textCommandFromRuns, textCommandFromRunsInto } from './textCommand';
+import type { TextDrawCommand } from './index';
 
 describe('textCommand', () => {
   it('emits a `text` DrawCommand with the given position and text', () => {
@@ -147,5 +149,26 @@ describe('screen-pixel sizes', () => {
     const paint = { kind: 'solid' as const, color: '#123' };
     const cmd = textCommandFromPose({ x: 0, y: 0, width: 10, height: 10, text: 'x', fill: { paint } });
     expect(cmd.runs[0].fill?.paint).toBe(paint);
+  });
+});
+
+describe('text with no pose', () => {
+  beforeEach(installFakeOffscreenCanvas);
+  afterEach(uninstallFakeOffscreenCanvas);
+  const hatch = { kind: 'hatch' as const, color: '#000' };
+
+  it('swaps a tile paint for its texture in textCommand', () => {
+    const cmd = textCommand(0, 0, 'Hi', undefined, undefined, undefined, undefined, { fill: { paint: hatch } });
+    expect((cmd as TextDrawCommand).runs[0].fill?.paint).toMatchObject({ kind: 'texture' });
+  });
+
+  it('swaps a run\'s tile fill and stroke in textCommandFromRuns and textCommandFromRunsInto', () => {
+    const runs = [{ text: 'Hi', fill: { paint: hatch }, stroke: { paint: hatch, width: 1 } }];
+    const cmd = textCommandFromRuns(0, 0, runs) as TextDrawCommand;
+    expect(cmd.runs[0].fill?.paint).toMatchObject({ kind: 'texture' });
+    expect(cmd.runs[0].stroke?.paint).toMatchObject({ kind: 'texture' });
+    const again = textCommandFromRunsInto(cmd, 0, 0, runs);
+    expect(again.runs[0].fill?.paint).toMatchObject({ kind: 'texture' });
+    expect(runs[0].fill.paint).toBe(hatch);
   });
 });

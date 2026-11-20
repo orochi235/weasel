@@ -36,7 +36,9 @@ export function paintToLocalUnits(fill: Paint, box: Rect): PosedPaint {
   });
 
   if (fill.kind === 'linear-gradient') {
-    return { ...fill, from: toBox(fill.from), to: toBox(fill.to), units: 'local' as const };
+    const from = toBox(fill.from);
+    const to = keepBands(fill.from, fill.to, 1 / box.width, 1 / box.height);
+    return { ...fill, from, to: to ? toBox(to) : toBox(fill.to), units: 'local' as const };
   }
   if (fill.kind === 'radial-gradient') {
     const scale = Math.hypot(box.width, box.height) / Math.SQRT2;
@@ -73,13 +75,31 @@ export function paintToBoundsUnits(fill: Paint, box: Rect): Paint {
   });
 
   if (fill.kind === 'linear-gradient') {
-    return { ...fill, from: fromBox(fill.from), to: fromBox(fill.to), units: 'bounds' as const };
+    const to = keepBands(fill.from, fill.to, box.width, box.height);
+    return { ...fill, from: fromBox(fill.from), to: fromBox(to ?? fill.to), units: 'bounds' as const };
   }
   if (fill.kind === 'radial-gradient') {
     const scale = Math.hypot(box.width, box.height) / Math.SQRT2;
     return { ...fill, center: fromBox(fill.center), radius: fill.radius / scale, units: 'bounds' as const };
   }
   return { ...fill, center: fromBox(fill.center), units: 'bounds' as const };
+}
+
+/**
+ * The `to` that keeps a linear gradient's bands where they were once its space is scaled by `(1/sx, 1/sy)`,
+ * as `fromBox` and `toBox` scale it. Mapping both ends alone tilts the bands on a non-square box, where
+ * SVG's `objectBoundingBox` scales the whole gradient space and the bands lean with the box. `null` where
+ * the gradient has no length or the scale is degenerate.
+ */
+function keepBands(
+  from: { x: number; y: number }, to: { x: number; y: number }, sx: number, sy: number,
+): { x: number; y: number } | null {
+  const dx = to.x - from.x, dy = to.y - from.y;
+  if (dx === 0 || dy === 0) return to;
+  const nx = dx * sx, ny = dy * sy;
+  const k = (dx * dx + dy * dy) / (nx * nx + ny * ny);
+  if (!Number.isFinite(k) || !Number.isFinite(sx) || !Number.isFinite(sy)) return null;
+  return { x: from.x + dx * sx * sx * k, y: from.y + dy * sy * sy * k };
 }
 
 /** True when this fill is a pattern anchored to the painted node's box.

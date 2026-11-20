@@ -22,9 +22,10 @@ export interface TileGeometry {
   shapes: TileShape[];
 }
 
-/** Defaults per tile kind, matching each factory's signature. */
+/** Defaults per tile kind, matching each factory's signature. A given `size` rounds to whole pixels, since
+ *  the raster tile can only hold whole ones and the vector tile has to repeat at the same period. */
 export function tileSize(spec: TilePatternSpec): number {
-  if (spec.size !== undefined) return spec.size;
+  if (spec.size !== undefined) return Math.round(spec.size);
   switch (spec.kind) {
     case 'hatch': return 5;
     case 'crosshatch': return 6;
@@ -74,7 +75,8 @@ export function tileGeometry(spec: TilePatternSpec): TileGeometry {
       const chunkSize = spec.chunkSize ?? 3;
       const rand = mulberry32(spec.seed ?? 42);
       const wanted = Math.round((s * s * density) / (chunkSize * chunkSize));
-      const count = chunkSize > 0 && Number.isFinite(wanted) ? wanted : 0;
+      // No more chunks than the tile has pixels: past that a scatter covers nothing more, and only hangs.
+      const count = chunkSize > 0 && Number.isFinite(wanted) ? Math.min(wanted, s * s) : 0;
       const shapes: TileShape[] = [];
       if (spec.bg !== undefined) {
         shapes.push({ kind: 'rect', x: 0, y: 0, width: s, height: s, color: spec.bg });

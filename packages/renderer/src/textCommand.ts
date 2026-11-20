@@ -24,6 +24,7 @@ import type { TextVerticalAlign, ResolvedRun, ResolvedTextStyle } from '@weasel-
 import { isSolidPaint, type Paint } from '@weasel-js/paint';
 import type { Rect } from '@weasel-js/geom';
 import { commandFill, commandPaint } from './patterns/commandPaint';
+import { resolvePaintPattern } from './patterns/resolveSpec';
 
 /** The style each command resolves into: read while its runs resolve, and
  *  kept by nothing. */
@@ -48,7 +49,7 @@ export function textCommandFromRuns(
     kind: 'text',
     x,
     y,
-    runs: resolveRuns(runs, resolved, scale),
+    runs: withPatternsResolved(resolveRuns(runs, resolved, scale)),
     align: resolved.align,
     direction: resolved.direction,
     justify: resolved.align === 'justify',
@@ -82,7 +83,7 @@ export function textCommandFromRunsInto(
   const resolved = resolveTextStyleInto(resolvedStyle, style, paint, scale);
   cmd.x = x;
   cmd.y = y;
-  cmd.runs = resolveRunsInto(cmd.runs, runs, resolved, scale);
+  cmd.runs = withPatternsResolved(resolveRunsInto(cmd.runs, runs, resolved, scale));
   cmd.align = resolved.align;
   cmd.direction = resolved.direction;
   cmd.justify = resolved.align === 'justify';
@@ -149,6 +150,24 @@ function runsInPoseFrame(runs: ResolvedRun[], box: Rect): ResolvedRun[] {
     const paint = r.stroke?.paint && commandPaint(r.stroke.paint, box);
     return { ...r, fill, stroke: r.stroke && { ...r.stroke, paint: paint || undefined } };
   });
+}
+
+/** Each run's tile or image paint swapped for its texture, in place: placing a tile needs no box, so text
+ *  with no pose takes the step a pose's runs take in `runsInPoseFrame`. */
+function withPatternsResolved(runs: ResolvedRun[]): ResolvedRun[] {
+  for (const r of runs) {
+    const fill = r.fill?.paint;
+    if (r.fill && fill && !isSolidPaint(fill)) {
+      const paint = resolvePaintPattern(fill);
+      if (paint !== fill) r.fill = paint ? { ...r.fill, paint } : null;
+    }
+    const stroke = r.stroke?.paint;
+    if (r.stroke && stroke && !isSolidPaint(stroke)) {
+      const paint = resolvePaintPattern(stroke);
+      if (paint !== stroke) r.stroke = { ...r.stroke, paint: paint ?? undefined };
+    }
+  }
+  return runs;
 }
 
 function isSolid(paint: Paint | null | undefined): boolean {

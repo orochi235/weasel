@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { _resetPaintDrawKindsForTests, registerPaintDrawKind, type PaintDrawKind } from './paintKinds';
-import { _resetProgramRegistryForTests, getProgramSource } from './shaders/registerProgram';
+import { _resetProgramRegistryForTests, getProgramSource, type ProgramSource } from './shaders/registerProgram';
 
 afterEach(() => {
   _resetPaintDrawKindsForTests();
@@ -42,5 +42,11 @@ describe('the shader programs a paint draw kind declares', () => {
     registerPaintDrawKind(kind({ p: B }));
     under();
     expect(getProgramSource('p')).toEqual(B);
+  });
+
+  it('leave every id as it was when one of them has no source', () => {
+    registerPaintDrawKind(kind({ p: A }));
+    expect(() => registerPaintDrawKind({ ...kind({ p: B, broken: {} as ProgramSource }), id: 'other' })).toThrow(/no source/);
+    expect(getProgramSource('p')).toEqual(A);
   });
 });

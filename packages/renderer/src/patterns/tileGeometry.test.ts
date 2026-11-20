@@ -79,4 +79,17 @@ describe('tileGeometry on sizes that draw nothing', () => {
       }
     }
   });
+
+  it('rounds a fractional size to the whole pixels a raster tile holds', () => {
+    const geometry = tileGeometry({ kind: 'hatch', color: 'red', size: 5.5 });
+    expect(geometry.size).toBe(6);
+    expect(geometry).toEqual(tileGeometry({ kind: 'hatch', color: 'red', size: 6 }));
+  });
+
+  it('scatters no more chunks than the tile has pixels, however small or dense they are asked to be', () => {
+    for (const spec of [{ chunkSize: 0.01 }, { density: 1e6 }]) {
+      const { shapes } = tileGeometry({ kind: 'chunks', color: 'red', size: 16, ...spec });
+      expect(shapes.length).toBeLessThanOrEqual(16 * 16 * 4);
+    }
+  });
 });

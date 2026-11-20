@@ -1,5 +1,5 @@
 import type { GlMat3, Path, Rect } from '@weasel-js/geom';
-import { getOwn, sameList } from '@weasel-js/registry';
+import { getOwn, sameList, setOwn } from '@weasel-js/registry';
 import type { DrawCommand } from '../DrawCommand';
 import type { Effect } from '../effects/types';
 import type { ShaderUniform } from '../shaders/registerProgram';
@@ -39,7 +39,15 @@ export function keepKey(key: RetainedKey): RetainedKey {
     screenMatrix: key.screenMatrix?.slice(),
     clips: key.clips.map((c) => ({ path: c.path, transform: c.transform.slice() })),
     window: key.window && { ...key.window },
+    effects: key.effects?.map((e) => (e.uniforms ? { ...e, uniforms: keepUniforms(e.uniforms) } : e)),
   };
+}
+
+/** `uniforms` with each array copied, as the matrices are, since `sameUniform` compares arrays by value. */
+function keepUniforms(uniforms: Record<string, ShaderUniform>): Record<string, ShaderUniform> {
+  const out: Record<string, ShaderUniform> = {};
+  for (const [k, u] of Object.entries(uniforms)) setOwn(out, k, typeof u === 'number' || 'id' in u ? u : u.slice());
+  return out;
 }
 
 export function sameKey(a: RetainedKey, b: RetainedKey): boolean {
