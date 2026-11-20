@@ -118,10 +118,10 @@ export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
   // A store that already holds a selection wins: the hook is joining it, not
   // resetting it. In an effect, not during render — the store has other
   // subscribers.
-  const seeded = useRef(false);
+  const seeded = useRef<SelectionStore | null>(null);
   useLayoutEffect(() => {
-    if (!scene || seeded.current) return;
-    seeded.current = true;
+    if (!scene || seeded.current === scene) return;
+    seeded.current = scene;
     if (initialRef.current.length > 0 && scene.getSelection().length === 0) {
       scene.setSelection([...initialRef.current]);
     }
