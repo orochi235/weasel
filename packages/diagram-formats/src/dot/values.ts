@@ -13,10 +13,23 @@ export interface EdgeNames {
   head: string;
 }
 
+/** An HTML label's lines as Graphviz draws them: a run of the source's own whitespace, line breaks included, as one
+ *  space; a `<br>` and the end of a table row as a break; cells of one row a space apart. Empty lines at either end are
+ *  dropped, and those between two `<br>`s kept. */
+function htmlLines(markup: string): string[] {
+  const folded = markup.replace(/\s+/g, ' ').replace(/<\/tr\s*>/gi, '<br/>').replace(/<\/t[dh]\s*>/gi, ' ');
+  const lines = markupLines(folded).map((l) => l.replace(/ {2,}/g, ' '));
+  let from = 0;
+  let to = lines.length;
+  while (from < to && lines[from] === '') from++;
+  while (to > from && lines[to - 1] === '') to--;
+  return lines.slice(from, to);
+}
+
 /** A label's lines: an HTML label's text, else the string with its escapes read. `\N` names `self`, `\G` the graph,
  *  and on an edge `\E`, `\T` and `\H` the edge, its tail, and its head. */
 export function labelLines(label: DotValue, self: string, graph: string, edge?: EdgeNames): string[] {
-  if (label.html) return markupLines(label.value).filter((l, i, all) => l !== '' || (i > 0 && i < all.length - 1));
+  if (label.html) return htmlLines(label.value);
   const lines = [''];
   const text = label.value;
   for (let i = 0; i < text.length; i++) {

@@ -39,4 +39,11 @@ describe('DOT values', () => {
     const lines = ['say "hi"', 'back\\slash'];
     expect(labelLines({ value: quoteLabel(lines).slice(1, -1), quoted: true }, 'n', 'g')).toEqual(lines);
   });
+
+  it('reads an HTML label laid out over several source lines as Graphviz draws it', () => {
+    const html = (value: string) => labelLines({ value, quoted: false, html: true }, 'n', 'g');
+    expect(html('\n  <b>Bold</b><br/>\n  plain\n')).toEqual(['Bold', 'plain']);
+    expect(html('<table>\n  <tr><td>A</td><td>B</td></tr>\n  <tr><td>C</td></tr>\n</table>')).toEqual(['A B', 'C']);
+    expect(html('one<br/><br/>three')).toEqual(['one', '', 'three']);
+  });
 });
