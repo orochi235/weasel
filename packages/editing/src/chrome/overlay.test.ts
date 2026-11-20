@@ -7,7 +7,7 @@ import {
   createSelectionHandlesLayer,
 } from './overlay';
 import { asNodeId } from '@weasel-js/core/engine';
-import { MULTI_RESIZE_TARGET_ID } from '@weasel-js/core';
+import { MULTI_RESIZE_TARGET_ID, createNodeShapes } from '@weasel-js/core';
 import { circleForTests as circle, CIRCLE_POSE_DESCRIPTORForTests as CIRCLE_POSE_DESCRIPTOR, type CirclePoseForTests as CirclePose } from '@weasel-js/core/test-seams';
 
 /**
@@ -360,6 +360,30 @@ describe('createSelectionOverlayLayer', () => {
       ])), VIEW, DIMS);
       expect(legacy.length).toBe(allOn.length);
     });
+  });
+});
+
+describe("selection box from the scene's own painters", () => {
+  it("sizes the box by a painter registered on the scene's shapes", () => {
+    const shapes = createNodeShapes();
+    shapes.register({
+      id: 'test:halo',
+      matches: (n) => (n.data as { halo?: boolean } | undefined)?.halo === true,
+      paint: () => [],
+      drawnBounds: (_n, p) => {
+        const b = p as Pose;
+        return { x: b.x - 20, y: b.y - 20, width: b.width + 40, height: b.height + 40 };
+      },
+    });
+    const node = { id: asNodeId('a'), kind: 'mark', layer: 'main', data: { halo: true }, pose: { x: 0, y: 0, width: 10, height: 10 } };
+    const layer = createSelectionOutlineLayer<Pose>({
+      getSelection: () => [asNodeId('a')],
+      getPose: () => node.pose,
+      scene: { get: () => node as never, shapes },
+      outline: { pad: 0 },
+    });
+    const cmd = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS)[0] as PathDrawCommand;
+    expect(cmd.path).toMatchObject({ x: -20, y: -20, width: 50, height: 50 });
   });
 });
 

@@ -45,9 +45,11 @@ function boxReader<TPose>(
       aabb: (_id, pose) => visualBoundsViaDescriptor(pose, d),
     };
   }
+  // Everything but `childrenOf`: the scene's own painters still say how each node is drawn.
   const leaves: DrawnBoundsScene = {
     get: (id) => scene.get(id),
     ...(scene.derivedPathOf ? { derivedPathOf: (id: NodeId) => scene.derivedPathOf!(id) } : {}),
+    get shapes() { return scene.shapes; },
   };
   const opts = (scale: number | Scale2 | undefined) => ({
     descriptor: d as PoseDescriptor<unknown>,
