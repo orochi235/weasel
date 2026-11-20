@@ -353,3 +353,19 @@ describe('lassoSelectAction behaviors', () => {
     expect(dep.calls.setSelection).toEqual([['hit']]);
   });
 });
+
+describe('a lasso too thin to enclose anything', () => {
+  it('reads as a click under the default commit, as under selectFromLasso', () => {
+    const invoker = getOngoingInvoker(lassoSelectAction);
+    const dep = makeLassoSelectDep(['crossed'], ['held']);
+    const handle = invoker.start(makeCtx(dep, { x: 0, y: 0 }), undefined);
+    const at = (x: number): InvocationCtx => ({
+      world: { x, y: 0 }, screen: { x, y: 0 }, modifiers: { alt: false, ctrl: false, meta: false, shift: false }, deps: {},
+    });
+    handle.onMove!(at(20));
+    handle.onMove!(at(40));
+    handle.onEnd!(at(40), 'commit');
+    expect(dep.calls.hitTestLasso).toHaveLength(0);
+    expect(dep.calls.setSelection).toEqual([[]]);
+  });
+});

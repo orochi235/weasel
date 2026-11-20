@@ -15,6 +15,12 @@ export const LASSO_VERTICES = scratchKey<ReadonlyArray<{ x: number; y: number }>
 
 const MIN_AREA = 4;
 
+/** Whether a lasso through `vertices` is too small to enclose anything, so it reads as a click: fewer than
+ *  three vertices, or a box under 4 world px². */
+export function isTinyLasso(vertices: ReadonlyArray<{ x: number; y: number }>): boolean {
+  return vertices.length < 3 || polygonAabbArea(vertices) < MIN_AREA;
+}
+
 /** Options for `selectFromLasso`. */
 export interface SelectFromLassoOptions {
   /** Hit mode for `hitTestLasso`. Default 'intersect'. */
@@ -40,8 +46,7 @@ export function selectFromLasso(opts?: SelectFromLassoOptions): LassoSelectBehav
       const from = adapter.getSelection();
 
       // Tiny / degenerate lassos behave like a click: clear (or preserve on shift).
-      const tiny = vertices.length < 3 || polygonAabbArea(vertices) < MIN_AREA;
-      if (tiny) {
+      if (isTinyLasso(vertices)) {
         const to = shiftHeld ? from : [];
         const op: Op = ops.setSelection({ from: from as NodeId[], to: to as NodeId[] });
         return [op];
