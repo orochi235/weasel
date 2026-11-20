@@ -8,6 +8,7 @@ import type {
   SidebarSlotContext,
   TrialChromeContext,
 } from '../types';
+import { inLayoutOrder } from './groupsOf';
 
 /** Props for `<SidebarRegion>`. */
 export interface SidebarRegionProps<TCtx extends SidebarSlotContext = TrialChromeContext> {
@@ -109,7 +110,7 @@ export function SidebarRegion<TCtx extends SidebarSlotContext = TrialChromeConte
   if (contributions.length === 0) return null;
   return (
     <>
-      {contributions.map((c) => {
+      {inLayoutOrder(contributions).map((c) => {
         if (c.render) return <div key={c.id}>{c.render(ctx)}</div>;
         if (c.region !== region || !c.item) return null;
         if (ctx.undockedPanels?.includes(c.id)) return null;

@@ -3,10 +3,11 @@ import { Button } from '@weasel-js/ui/components/Button';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import type { MouseEvent, PointerEvent, ReactNode } from 'react';
 import type { TrialChromeContext, TrialContribution } from '../types';
+import { groupsOf } from './groupsOf';
 
 /** Which end of the title bar a `<TitleBarRegion>` lays out: `'lead'` renders
- *  the contributions that leave `end` unset, before the title; `'actions'`
- *  renders the ones that set it, after everything else. */
+ *  the groups none of whose contributions set `end`, before the title;
+ *  `'actions'` renders the rest, after everything else. */
 export type TitleBarPlacement = 'lead' | 'actions';
 
 /** Props for `<TitleBarRegion>`. */
@@ -65,7 +66,9 @@ const keepPress = {
 /** Lays a trial's `titlebar` contributions out at one end of the bar. */
 export function TitleBarRegion({ contributions, ctx, placement = 'actions' }: TitleBarRegionProps) {
   const wanted = placement === 'actions';
-  const mine = contributions.filter((c) => (c.end ?? false) === wanted);
+  const mine = groupsOf(contributions)
+    .filter((g) => g.end === wanted)
+    .flatMap((g) => g.entries);
   if (mine.length === 0) return null;
   return (
     <span

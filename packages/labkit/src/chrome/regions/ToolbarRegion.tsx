@@ -93,7 +93,7 @@ export function ToolbarRegion<TCtx = TrialChromeContext>({
   return (
     <Bar label={label} roving size={strip ? 'sm' : undefined} framed={strip ? 'band' : undefined}>
       {groups.map((g) => (
-        <Bar.Group key={g.id} end={g.end} aria-label={g.key}>
+        <Bar.Group key={g.id} end={g.end} aria-label={g.named ? g.key : undefined}>
           {g.entries.map((c) => renderEntry(c, ctx, region))}
         </Bar.Group>
       ))}

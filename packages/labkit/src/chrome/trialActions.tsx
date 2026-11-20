@@ -1,5 +1,6 @@
 import { copyText } from '@weasel-js/react';
 import { resolveAutoConfig } from '../config/autoConfig';
+import { withAutoReports } from '../config/autoReports';
 import { withOverValues } from '../config/over';
 import { icon } from '../icons.gen';
 import type { TrialChromeContext, TrialContribution } from './types';
@@ -19,9 +20,11 @@ const settingsReplacer = (_key: string, value: unknown): unknown => {
   return typeof value === 'number' && !Number.isFinite(value) ? String(value) : value;
 };
 
-/** The trial's settings as JSON, at the values it runs with: each auto path at its resolved value. */
+/** The trial's settings as JSON, at the values it runs with: each auto path at the value its instrument reported,
+ *  else its resolved one, as the Settings panel shows it. */
 export function settingsJson(ctx: TrialChromeContext): string {
-  const config = resolveAutoConfig(ctx.configSchema, ctx.config, ctx.auto);
+  const resolved = resolveAutoConfig(ctx.configSchema, ctx.config, ctx.auto);
+  const config = withAutoReports(resolved, ctx.reported, ctx.auto);
   return JSON.stringify(settingsConfig({ ...ctx, config }), settingsReplacer, 2);
 }
 

@@ -113,6 +113,25 @@ describe('StatusRegion', () => {
     expect(kids).toEqual(['A', '|', 'B', 'C']);
   });
 
+  it('keeps a readout without end at the near end, past an end one declared before it', () => {
+    const { container } = renderWithIcons(
+      <StatusRegion
+        contributions={[
+          { id: 'scale', region: 'status', group: 'view', item: { text: 'S' } },
+          { id: 'fps', region: 'status', end: true, item: { text: 'F' } },
+          { id: 'count', region: 'status', item: { text: 'N' } },
+          { id: 'zoom', region: 'status', group: 'view', item: { text: 'Z' } },
+        ]}
+        ctx={ctx}
+      />,
+    );
+    const bar = container.querySelector('footer') as HTMLElement;
+    const kids = [...bar.children]
+      .filter((el) => el.getAttribute('role') !== 'separator')
+      .map((el) => (el.getAttribute('aria-hidden') === 'true' ? '|' : el.textContent));
+    expect(kids).toEqual(['S', 'Z', 'N', '|', 'F']);
+  });
+
   it('keeps a readout title as its hover text', () => {
     renderWithIcons(
       <StatusRegion
