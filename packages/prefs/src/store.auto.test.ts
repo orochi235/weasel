@@ -168,3 +168,28 @@ describe('a prefs store against the one rule', () => {
     );
   });
 });
+
+describe('a split leaf that is auto', () => {
+  const mode = { kind: 'enum', name: 'Mode', description: '', default: 'light', options: [{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }] } as const;
+  const splitSchema = (auto: object, defaultScope?: object) => ({
+    name: 'Test',
+    children: { mode, ink: { kind: 'color', name: 'Ink', description: '', default: '#000000', scopes: [{ selector: 'mode' }], auto, ...(defaultScope ? { defaultScope } : {}) } },
+  }) as unknown as PrefGroup;
+  const open = (schema: PrefGroup) => createPrefsStore(schema, createRecordCache({ storage: createMemoryAdapter(), prefix: 'p.' }));
+  const at = (option: string) => ({ at: { mode: option } });
+
+  it('keeps the other options at the auto value when one option is written', () => {
+    const store = open(splitSchema({ on: true, value: { $by: 'mode', $in: { dark: '#111111', light: '#eeeeee' } } }));
+    store.set('ink', '#222222', at('dark'));
+    expect(store.get('ink', at('dark'))).toBe('#222222');
+    expect(store.get('ink', at('light'))).toBe('#eeeeee');
+  });
+
+  it('pins every option at what it read while auto', () => {
+    const store = open(splitSchema({ on: true, value: '#888888' }, { $by: 'mode', $in: { light: '#000000', dark: '#ffffff' } }));
+    store.setAuto('ink', false);
+    expect(store.isAuto('ink')).toBe(false);
+    expect(store.get('ink', at('light'))).toBe('#888888');
+    expect(store.get('ink', at('dark'))).toBe('#888888');
+  });
+});

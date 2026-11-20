@@ -59,11 +59,13 @@ export interface PrefWritesSource {
   version: number;
   /** The option each selector is set to, read as a write is made. */
   selection: () => PrefSelection;
+  /** What the leaf at a path holds while it is auto, repaired; nothing while it is pinned. */
+  autoHeld: (path: string) => { held: unknown } | undefined;
   warnIfClosed: (path: string | undefined) => void;
 }
 
 /** A store's `set`. */
-export function prefWrites({ leaves, cache, selectors, admitted, version, selection, warnIfClosed }: PrefWritesSource): {
+export function prefWrites({ leaves, cache, selectors, admitted, version, selection, autoHeld, warnIfClosed }: PrefWritesSource): {
   set: (path: string, value: unknown, write?: { at?: PrefSelection }) => void;
 } {
   /** The leaf's split default as stored, where it has one it can hold. */
@@ -94,7 +96,10 @@ export function prefWrites({ leaves, cache, selectors, admitted, version, select
       store(path, stored);
       return;
     }
-    const had = cache.has(path) && !isAutoRecord(cache.get(path)) ? recordValue(cache.get(path)) : unsetScope(leaf);
+    const auto = autoHeld(path);
+    const had = auto?.held !== undefined
+      ? mapScopeValues(auto.held, (member) => encodeInfinity(leaf, member))
+      : cache.has(path) && !isAutoRecord(cache.get(path)) ? recordValue(cache.get(path)) : unsetScope(leaf);
     const now = selection();
     const under = write?.at ? selectionAt(selectors, now, write.at, admitted) : now;
     const overridesOf = prefOverridesLookup(leaf);
