@@ -221,6 +221,9 @@ export function curveFaces(paths: readonly Path[], tolerance?: number, polish = 
   const operands = paths.map((p) => parseContours(p));
   const clockwise = operands.map(clockwiseFirst);
   const extent = extentOf(operands.flat()) || 1;
+  if (tolerance !== undefined && !(tolerance > 0 && tolerance < Infinity)) {
+    throw new RangeError(`flattenTolerance must be a positive number, not ${tolerance}`);
+  }
   const tol = tolerance ?? extent * 1e-5;
   const flat = flatten(operands, tol);
   const arr = arrangeLines(flat.lines);

@@ -125,3 +125,11 @@ describe('polishing crossings onto the curves', () => {
     expect(on.polish.largestMove).toBeLessThanOrEqual((1.05 * 2 * tolerance) / 0.05);
   });
 });
+
+describe('pathFaceArrangement flattenTolerance', () => {
+  it('refuses a tolerance that is not a positive number', () => {
+    for (const t of [0, -1, Number.NaN, Infinity]) {
+      expect(() => pathFaceArrangement([circle(0, 0, 10)], { flattenTolerance: t })).toThrow(RangeError);
+    }
+  });
+});

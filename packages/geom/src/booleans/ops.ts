@@ -107,6 +107,7 @@ export interface FaceArrangementOptions {
   /**
    * How far the flattening the arrangement is cut from may stray from a
    * curve, in path units. Default a hundred-thousandth of the inputs' extent.
+   * Anything but a positive finite number throws a `RangeError`.
    */
   flattenTolerance?: number;
 }
