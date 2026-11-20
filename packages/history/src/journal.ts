@@ -95,7 +95,8 @@ export interface Journal {
   /** Flushes the journal to its parent as one entry labelled `label`, or the label it was
    *  opened with. Throws while a journal opened inside this one is still active or suspended. */
   commit(label?: string): void;
-  /** Cancels every journal still open inside this one first, suspended ones included. */
+  /** Cancels every journal still open inside this one first, suspended ones included, the one
+   *  that edited last first. */
   cancel(): void;
   /** Throws while a journal opened inside this one is active. */
   suspend(): void;
@@ -135,6 +136,9 @@ export function createJournalInternal(
   /** Journals opened inside this one; each leaves `RESUMERS` when it closes. */
   const children: Journal[] = [];
   const openChildren = (): Journal[] => children.filter((c) => RESUMERS.has(c));
+  /** When each child last changed the adapter, counted in opens and edits. */
+  const lastEdit = new Map<Journal, number>();
+  let edits = 0;
 
   const journal: Journal = {
     targetId,
@@ -175,6 +179,8 @@ export function createJournalInternal(
       ENCLOSING.set(child, journal);
       OWNER.set(child, inner);
       children.push(child);
+      lastEdit.set(child, ++edits);
+      child.observe(() => lastEdit.set(child, ++edits));
       return child;
     },
     getVersion: () => version,
@@ -195,7 +201,8 @@ export function createJournalInternal(
     },
     cancel(): void {
       if (state !== 'active') throw new Error('Journal is not active');
-      for (const child of openChildren().reverse()) {
+      // Latest edit first. Edits interleaved between suspended siblings cannot be unwound exactly by any order.
+      for (const child of openChildren().sort((x, y) => lastEdit.get(y)! - lastEdit.get(x)!)) {
         if (!child.isActive()) RESUMERS.get(child)!();
         child.cancel();
       }

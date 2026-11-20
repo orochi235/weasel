@@ -63,4 +63,26 @@ describe('Journal.cancel', () => {
     j.suspend();
     expect(() => j.cancel()).toThrow();
   });
+
+  it('unwinds the journals inside it latest edit first, not in the order they opened', () => {
+    const setX = (from: number, to: number): Op => ({
+      name: 'test:setX',
+      args: { from, to },
+      apply(a: { x: number }) { a.x = to; },
+      invert: () => setX(to, from),
+    } as Op);
+    const adapter = { x: 0 };
+    const h = createHistory(adapter);
+    const j = h.beginJournal({ label: 'outer' });
+    const first = j.beginJournal({ label: 'first' });
+    first.suspend();
+    const second = j.beginJournal({ label: 'second' });
+    second.applyOps([setX(0, 2)], 'two');
+    second.suspend();
+    h.resumeJournal(first);
+    first.applyOps([setX(2, 3)], 'three');
+
+    j.cancel();
+    expect(adapter.x).toBe(0);
+  });
 });
