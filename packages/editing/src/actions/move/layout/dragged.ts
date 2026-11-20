@@ -11,7 +11,7 @@ export interface DraggedChild {
   center: { x: number; y: number };
 }
 
-/** Each dragged root in world, in the edited plane. */
+/** Each dragged root no other one holds, in world, in the edited plane. */
 export function gatherDragged(session: MoveSession, delta: { dx: number; dy: number }): DraggedChild[] {
   const scene = session.scene;
   const pc = session.pc;
@@ -26,7 +26,7 @@ export function gatherDragged(session: MoveSession, delta: { dx: number; dy: num
   const d = session.projection;
   const grabAdapter = grabbedPoseAdapter(session, poseAdapter);
   const dragged: DraggedChild[] = [];
-  for (const id of session.ids) {
+  for (const id of session.outer) {
     const node = scene.get(id);
     if (!node) continue;
     const startWorld = composeWorldPose(grabAdapter, id as string, pc.compose);

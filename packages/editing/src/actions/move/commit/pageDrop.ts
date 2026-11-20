@@ -141,7 +141,7 @@ export function pageDropOps(
   }
   const below = belowRoots(session, new Set([...drops.keys()].filter((id) => dragged.has(id))));
   const ridden = new Set([...below.values()].flat());
-  for (const id of session.ids) {
+  for (const id of session.outer) {
     if (ridden.has(id)) continue;
     const drop = drops.get(id) ?? STAY;
     const d = { dx: delta.dx + drop.shift.dx, dy: delta.dy + drop.shift.dy };

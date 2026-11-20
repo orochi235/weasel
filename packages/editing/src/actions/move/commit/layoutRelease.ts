@@ -100,7 +100,7 @@ export function layoutReleaseOps(
     const pc = session.pc;
     const commitAdapter = sceneViewPoseAdapter(session.scene);
     const sources = groupBySourceContainer(
-      session.ids.map((id) => ({
+      session.outer.map((id) => ({
         id,
         sourceContainerId: (session.scene.get(id)?.parent ?? null) as string | null,
       })),
@@ -114,7 +114,7 @@ export function layoutReleaseOps(
     }
     // A child its container let go of outside that container leaves it,
     // keeping the world pose it was dropped at.
-    exits = resolveLayoutExits(session, dropCenter, session.ids.filter((id) => !released.has(id)));
+    exits = resolveLayoutExits(session, dropCenter, session.outer.filter((id) => !released.has(id)));
     const below = belowRoots(session, new Set(exits.keys()));
     for (const [id, toParent] of exits) {
       const node = session.scene.get(id)!;

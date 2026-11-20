@@ -2,7 +2,7 @@ import { definesFrame } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
 import type { SnapTarget, BehaviorResult, CloneBehavior, MoveBehavior, MoveEnd, GestureContext } from '@weasel-js/core/engine';
 import { scratchKey, getScratch, setScratch, type ScratchKey } from '@weasel-js/routing';
-import { holderOf } from '@weasel-js/select';
+import { holderOf, outermost } from '@weasel-js/select';
 import { after } from '@weasel-js/registry';
 import * as coreOps from '@weasel-js/core/ops';
 
@@ -25,6 +25,11 @@ function getState<TPose>(ctx: GestureContext<TPose>, key: StateKey): SnapState<T
     setScratch(ctx.scratch, key, s as SnapState<unknown>);
   }
   return s;
+}
+
+/** The dragged nodes no other dragged one holds: each is planted, and the rest ride inside it. */
+function rootsOf<TPose>(ctx: GestureContext<TPose>): readonly string[] {
+  return outermost(ctx.draggedIds, (id) => ctx.adapter.getParent(id));
 }
 
 /** Whether `snap` would put a dragged node inside itself: its container is one of them or under one. */
@@ -65,7 +70,7 @@ export function snapToContainer<TPose>(args: {
   /** Each dragged node's slot in the snapped container: the snapped slot for
    *  the first, and for each other node the one `findTarget` answers for it. */
   const slotsFor = (ctx: GestureContext<TPose>, snap: SnapTarget<TPose>): Map<string, TPose> => {
-    const [primary, ...rest] = ctx.draggedIds;
+    const [primary, ...rest] = rootsOf(ctx);
     const slots = new Map<string, TPose>([[primary, snap.slotPose]]);
     for (const id of rest) {
       const own = findTarget(id, ctx.pointer.worldX, ctx.pointer.worldY);
@@ -76,7 +81,7 @@ export function snapToContainer<TPose>(args: {
   // A slot is a world pose; a preview shows it in the frame the node is stored in now.
   // A move's origin is as stored and a clone's is in world.
   const snapped = (ctx: GestureContext<TPose>, snap: SnapTarget<TPose>, originInWorld: boolean): BehaviorResult<TPose> => {
-    const id = ctx.draggedIds[0];
+    const id = rootsOf(ctx)[0];
     const start = ctx.origin.get(id);
     const startWorld = start === undefined || originInWorld ? start : ctx.frames?.toWorld(id, start) ?? start;
     const toSlot = startWorld !== undefined ? ctx.offset?.(startWorld, snap.slotPose) : undefined;
@@ -94,7 +99,7 @@ export function snapToContainer<TPose>(args: {
 
   const track = (ctx: GestureContext<TPose>, originInWorld: boolean): BehaviorResult<TPose> | undefined => {
     const s = getState<TPose>(ctx, key);
-    const found = findTarget(ctx.draggedIds[0], ctx.pointer.worldX, ctx.pointer.worldY);
+    const found = findTarget(rootsOf(ctx)[0], ctx.pointer.worldX, ctx.pointer.worldY);
     const target = found && !intoDragged(ctx, found) ? found : null;
 
     // Leaving a container withdraws the target it announced, which the commit reads.
@@ -192,7 +197,7 @@ function plantOps<TPose>(
     reparent(id);
   }
   // A node with no slot of its own lands where the preview drew it.
-  const rest = ctx.draggedIds.filter((id) => !slots.has(id));
+  const rest = rootsOf(ctx).filter((id) => !slots.has(id));
   const moved = end.translateOps(rest);
   ops.push(...moved);
   for (const id of rest) {

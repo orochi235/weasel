@@ -4,7 +4,6 @@ import type { Op, NodeId, ReparentOnDrop } from '@weasel-js/core';
 import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
 import type { MoveSession } from '../session';
 import { translateOps } from '../translate';
-import { outermost } from '@weasel-js/select';
 import { worldBoundsOf, type MoveRefusal } from '../refusal';
 import * as coreOps from '@weasel-js/core/ops';
 
@@ -163,7 +162,7 @@ export function reparentOps(
   // The destination's children as each op will find them: an earlier root's
   // landing shifts where a later one goes.
   const siblings = [...(target.newParent === null ? scene.roots : scene.childrenOf(target.newParent))];
-  const roots = new Set(outermost(session.ids, (id) => scene.get(id)?.parent ?? null));
+  const roots = new Set(session.outer);
   for (const id of roots) {
     const node = scene.get(id);
     // A node removed mid-drag is skipped, as the translate commit skips it.

@@ -1,5 +1,6 @@
 import type { Op, NodeId } from '@weasel-js/core';
 import { translateNodeOps } from '@weasel-js/core';
+import { holderOf } from '@weasel-js/select';
 import { localDelta, storedLeadFor } from './delta';
 import type { MoveSession } from './session';
 
@@ -27,10 +28,11 @@ export function translateOps(session: MoveSession, ids: Iterable<NodeId>, delta:
 }
 
 /** The default translate commit for the dragged roots among `roots` and the
- *  descendants that follow them. Anything else in `roots` is ignored. */
+ *  descendants that follow them, dragged ones included. Anything else in `roots` is ignored. */
 export function rootTranslateOps(session: MoveSession, roots: Iterable<string>, delta: { dx: number; dy: number }): Op[] {
   const wanted = new Set<string>(roots);
-  const others = new Set<NodeId>(session.ids.filter((id) => !wanted.has(id)));
+  const parentOf = (id: string): string | null => session.scene.get(id as NodeId)?.parent ?? null;
+  const others = new Set<NodeId>(session.ids.filter((id) => holderOf(wanted, id, parentOf) === null));
   return translateOps(session, unreleasedIds(session, others), delta);
 }
 
@@ -38,16 +40,13 @@ export function rootTranslateOps(session: MoveSession, roots: Iterable<string>, 
  *  that follow them — the part of the selection the translate commit owns. */
 export function unreleasedIds(session: MoveSession, released: Set<NodeId>): NodeId[] {
   const selected = new Set<NodeId>(session.ids);
-  const out: NodeId[] = session.ids.filter((id) => !released.has(id));
-  for (const id of session.cascadeIds) {
-    let cur = session.scene.get(id)?.parent ?? null;
-    let claimed = false;
-    while (cur) {
-      if (released.has(cur)) { claimed = true; break; }
-      if (selected.has(cur)) break;
-      cur = session.scene.get(cur)?.parent ?? null;
+  /** Whether a released root holds `id`, through no selected id that was not released. */
+  const claimed = (id: NodeId): boolean => {
+    for (let cur = session.scene.get(id)?.parent ?? null; cur; cur = session.scene.get(cur)?.parent ?? null) {
+      if (released.has(cur)) return true;
+      if (selected.has(cur)) return false;
     }
-    if (!claimed) out.push(id);
-  }
-  return out;
+    return false;
+  };
+  return [...session.ids.filter((id) => !released.has(id)), ...session.cascadeIds].filter((id) => !claimed(id));
 }
