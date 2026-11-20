@@ -129,12 +129,12 @@ describe('fontEmbedding', () => {
     expect(e.postScriptName).toBe(name);
   });
 
-  it('answers null for a WOFF face, whose bytes are no sfnt to embed', async () => {
+  it('embeds a WOFF face as the sfnt it wraps', async () => {
     const woff = uncompressedWoff(interBytes());
     expect(String.fromCharCode(...new Uint8Array(woff, 0, 4))).toBe('wOFF');
     registerFontOutlines('emb-woff', {}, woff);
     expect(await loadFontOutlines('emb-woff', {})).toBe('ready');
-    expect(await fontEmbedding('emb-woff', 400, 'normal')).toBeNull();
+    expect(new DataView((await fontEmbedding('emb-woff', 400, 'normal'))!.sfnt).getUint32(0)).toBe(0x00010000);
   });
 
   it('reports a bitmap-only face as not embeddable', async () => {

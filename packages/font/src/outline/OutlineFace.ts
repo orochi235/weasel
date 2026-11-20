@@ -47,8 +47,8 @@ export interface OutlineFace {
    *  them together. `0` when the face kerns neither this pair nor at all. */
   kernOf(left: number, right: number): number;
   /** The face's raw material for embedding it whole in another format (a PDF).
-   *  Optional: a custom parser that has no sfnt behind it omits it, and so
-   *  does the built-in one for a WOFF file. */
+   *  Optional: a custom parser that has no sfnt behind it omits it. The
+   *  built-in one embeds a WOFF file as the sfnt it wraps. */
   embedding?(): FaceEmbedding;
 }
 

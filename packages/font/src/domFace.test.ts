@@ -3,7 +3,7 @@ import { cssFontFamily, cssFontFamilyLoading, _resetDomFacesForTests } from './d
 import { _resetFontRegistryForTests } from './registerFont';
 import { registerCanvasFont, _resetDynamicFontsForTests } from './dynamic/dynamicAtlas';
 import {
-  registerFontOutlines, loadFontOutlines, unregisterFontOutlines, _resetFontOutlinesForTests,
+  registerFontOutlines, loadFontOutlines, unregisterFontOutlines, outlineFace, _resetFontOutlinesForTests,
 } from './outline/outlineRegistry';
 import { registerTestFont } from './testing/registerTestFont';
 
@@ -177,10 +177,11 @@ describe('building the DOM face when the bytes arrive', () => {
     let arrive!: (b: ArrayBuffer) => void;
     registerFontOutlines('sans-serif', {}, () => new Promise<ArrayBuffer>((r) => { arrive = r; }),
       { parser: () => PARSED });
-    const loading = loadFontOutlines('sans-serif');
+    // Starts this registration's load and no other: `loadFontOutlines` would go on to load its replacement.
+    outlineFace('sans-serif', 400, 'normal');
     registerFontOutlines('sans-serif', {}, '/fonts/b.ttf', { parser: () => PARSED });
     arrive(old);
-    await loading;
+    await new Promise((r) => setTimeout(r, 0));
     expect(StubFace.made.map((f) => f.source)).not.toContain(old);
     cssFontFamily('sans-serif');
     expect(StubFace.made.map((f) => f.source)).toEqual(['url("/fonts/b.ttf")']);

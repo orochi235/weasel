@@ -66,6 +66,11 @@ export function tableOf(bytes: ArrayBuffer, tag: string): DataView | null {
   }
 }
 
+/** The PostScript name of a single font, or `null` when it carries none or its `name` table cannot be read. */
+export function postScriptNameOf(bytes: ArrayBuffer): string | null {
+  return memberName(new DataView(bytes), 0);
+}
+
 /** The PostScript name of the member whose directory is at `dirOffset`, or `null` when it carries none or its
  *  directory or `name` table runs past the end of the file: a member that cannot be read leaves the rest selectable. */
 function memberName(view: DataView, dirOffset: number): string | null {

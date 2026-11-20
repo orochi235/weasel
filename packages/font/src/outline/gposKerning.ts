@@ -7,13 +7,16 @@
  * extensions unwrapped.
  *
  * Scope: horizontal pair adjustment (PairPos formats 1 and 2), first glyph's
- * XAdvance, lookups of every `kern` feature in LookupList order regardless of
- * script. Contextual and mark positioning are out of scope — they don't
+ * XAdvance, the `kern` lookups of one LangSys in LookupList order (see
+ * `lookupIndexSets`). Contextual and mark positioning are out of scope — they don't
  * change a Latin run's width.
  *
  * Self-contained on purpose: `scripts/gen-font.ts` imports it under plain
  * Node, which strips types but resolves nothing else.
  */
+
+/** How many pairs a face remembers the kerning of before it starts over. */
+const PAIR_MEMO_LIMIT = 4096;
 
 /** Kerning between two glyph ids, in font units; negative pulls them together. */
 export type PairKerning = (left: number, right: number) => number;
@@ -35,7 +38,7 @@ export function gposPairKerning(bytes: ArrayBuffer): PairKerning | null {
   const featureList = gpos + v.getUint16(gpos + 6);
   const lookupList = gpos + v.getUint16(gpos + 8);
   // A list, feature, or lookup whose offsets run past the end of the font is skipped, as a subtable is below.
-  const lookupIndexes = new Set<number>();
+  const kernLookups = new Map<number, number[]>();
   const featureCount = inRange(() => v.getUint16(featureList)) ?? 0;
   for (let i = 0; i < featureCount; i++) {
     inRange(() => {
@@ -43,31 +46,23 @@ export function gposPairKerning(bytes: ArrayBuffer): PairKerning | null {
       if (tag(v, rec) !== 'kern') return;
       const feature = featureList + v.getUint16(rec + 4);
       const count = v.getUint16(feature + 2);
-      for (let j = 0; j < count; j++) lookupIndexes.add(v.getUint16(feature + 4 + j * 2));
+      const indexes: number[] = [];
+      for (let j = 0; j < count; j++) indexes.push(v.getUint16(feature + 4 + j * 2));
+      kernLookups.set(i, indexes);
     });
   }
-  if (lookupIndexes.size === 0) return null;
+  if (kernLookups.size === 0) return null;
 
-  const lookups: number[][] = [];
-  for (const index of [...lookupIndexes].sort((a, b) => a - b)) {
-    const subtables: number[] = [];
-    inRange(() => {
-      const lookup = lookupList + v.getUint16(lookupList + 2 + index * 2);
-      const type = v.getUint16(lookup);
-      const count = v.getUint16(lookup + 4);
-      for (let j = 0; j < count; j++) {
-        let sub = lookup + v.getUint16(lookup + 6 + j * 2);
-        let subType = type;
-        // opentype.js reads no extension's header, so a font it accepts can point one past its end.
-        if (type === 9) {
-          if (sub + 8 > v.byteLength) continue;
-          subType = v.getUint16(sub + 2);
-          sub += v.getUint32(sub + 4);
-        }
-        if (subType === 2) subtables.push(sub);
-      }
-    });
-    if (subtables.length > 0) lookups.push(subtables);
+  const subtablesOf = new Map<number, number[]>();
+  const lookupSets: number[][][] = [];
+  for (const indexes of lookupIndexSets(v, gpos, kernLookups)) {
+    const set: number[][] = [];
+    for (const index of indexes) {
+      if (!subtablesOf.has(index)) subtablesOf.set(index, pairSubtables(v, lookupList, index));
+      const subtables = subtablesOf.get(index)!;
+      if (subtables.length > 0) set.push(subtables);
+    }
+    if (set.length > 0) lookupSets.push(set);
   }
 
   const memo = new Map<number, number>();
@@ -75,16 +70,109 @@ export function gposPairKerning(bytes: ArrayBuffer): PairKerning | null {
     const key = left * 0x10000 + right;
     const hit = memo.get(key);
     if (hit !== undefined) return hit;
-    let total = 0;
-    for (const subtables of lookups) {
-      for (const sub of subtables) {
-        const value = readablePairValue(v, sub, left, right);
-        if (value !== null) { total += value; break; }
-      }
-    }
+    const total = pairKerning(v, lookupSets, left, right);
+    // A face lives as long as its registration, and its pairs number up to its glyph count squared.
+    if (memo.size >= PAIR_MEMO_LIMIT) memo.clear();
     memo.set(key, total);
     return total;
   };
+}
+
+/**
+ * The `kern` lookups each LangSys applies, one sorted set per distinct LangSys, `latn`'s first and then `DFLT`'s: a
+ * shaper applies one script's lookups, so the sets are alternatives rather than a sum. A font whose ScriptList names
+ * no `kern` feature has every `kern` feature's lookups taken as one set.
+ */
+function lookupIndexSets(v: DataView, gpos: number, kernLookups: Map<number, number[]>): number[][] {
+  const scripts: { tag: string; langSyses: number[][] }[] = [];
+  inRange(() => {
+    const scriptOffset = v.getUint16(gpos + 4);
+    if (scriptOffset === 0) return;
+    const scriptList = gpos + scriptOffset;
+    const count = v.getUint16(scriptList);
+    for (let i = 0; i < count; i++) {
+      inRange(() => {
+        const rec = scriptList + 2 + i * 6;
+        const script = scriptList + v.getUint16(rec + 4);
+        const langSysAt: number[] = [];
+        const defaultOffset = v.getUint16(script);
+        if (defaultOffset !== 0) langSysAt.push(script + defaultOffset);
+        const langSysCount = v.getUint16(script + 2);
+        for (let j = 0; j < langSysCount; j++) langSysAt.push(script + v.getUint16(script + 4 + j * 6 + 4));
+        const langSyses: number[][] = [];
+        for (const at of langSysAt) {
+          inRange(() => {
+            const features: number[] = [];
+            const required = v.getUint16(at + 2);
+            if (required !== 0xffff) features.push(required);
+            const featureCount = v.getUint16(at + 4);
+            for (let k = 0; k < featureCount; k++) features.push(v.getUint16(at + 6 + k * 2));
+            langSyses.push(features);
+          });
+        }
+        scripts.push({ tag: tag(v, rec), langSyses });
+      });
+    }
+  });
+  const rank = (t: string): number => (t === 'latn' ? 0 : t === 'DFLT' ? 1 : 2);
+  scripts.sort((a, b) => rank(a.tag) - rank(b.tag));
+
+  const sets: number[][] = [];
+  const seen = new Set<string>();
+  for (const { langSyses } of scripts) {
+    for (const features of langSyses) {
+      const lookups = new Set<number>();
+      for (const f of features) for (const l of kernLookups.get(f) ?? []) lookups.add(l);
+      if (lookups.size === 0) continue;
+      const set = [...lookups].sort((a, b) => a - b);
+      const key = set.join(',');
+      if (seen.has(key)) continue;
+      seen.add(key);
+      sets.push(set);
+    }
+  }
+  if (sets.length > 0) return sets;
+  const all = new Set<number>();
+  for (const indexes of kernLookups.values()) for (const l of indexes) all.add(l);
+  return [[...all].sort((a, b) => a - b)];
+}
+
+/** The PairPos subtables of lookup `index`, extensions unwrapped. */
+function pairSubtables(v: DataView, lookupList: number, index: number): number[] {
+  const subtables: number[] = [];
+  inRange(() => {
+    const lookup = lookupList + v.getUint16(lookupList + 2 + index * 2);
+    const type = v.getUint16(lookup);
+    const count = v.getUint16(lookup + 4);
+    for (let j = 0; j < count; j++) {
+      let sub = lookup + v.getUint16(lookup + 6 + j * 2);
+      let subType = type;
+      // opentype.js reads no extension's header, so a font it accepts can point one past its end.
+      if (type === 9) {
+        if (sub + 8 > v.byteLength) continue;
+        subType = v.getUint16(sub + 2);
+        sub += v.getUint32(sub + 4);
+      }
+      if (subType === 2) subtables.push(sub);
+    }
+  });
+  return subtables;
+}
+
+/** The pair's kerning under the first lookup set that kerns it: each of its lookups' first applying subtable, summed. */
+function pairKerning(v: DataView, lookupSets: readonly (readonly number[][])[], left: number, right: number): number {
+  for (const lookups of lookupSets) {
+    let total = 0;
+    let applied = false;
+    for (const subtables of lookups) {
+      for (const sub of subtables) {
+        const value = readablePairValue(v, sub, left, right);
+        if (value !== null) { total += value; applied = true; break; }
+      }
+    }
+    if (applied) return total;
+  }
+  return 0;
 }
 
 function tag(v: DataView, at: number): string {

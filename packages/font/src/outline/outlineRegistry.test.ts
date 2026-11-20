@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   registerFontOutlines, unregisterFontOutlines, hasFontOutlines,
-  outlineStatus, listFontOutlines, fontOutlineRegistry, glyphOutline, loadFontOutlines,
+  outlineStatus, listFontOutlines, fontOutlineRegistry, glyphOutline, loadFontOutlines, outlineCssSource,
   _resetFontOutlinesForTests,
 } from './outlineRegistry';
 import type { OutlineFace, OutlineParser } from './OutlineFace';
@@ -310,6 +310,50 @@ describe('outline registry', () => {
 
     it('resolves to null for a face nobody registered', async () => {
       await expect(loadFontOutlines('Nobody', { weight: 700 })).resolves.toBeNull();
+    });
+
+    it('settles on the registration that replaced the one it began loading', async () => {
+      let release!: () => void;
+      const held = new Promise<void>((r) => { release = r; });
+      registerFontOutlines('Fake', {}, new ArrayBuffer(4), { parser: async () => { await held; return stubFace; } });
+      const pending = loadFontOutlines('Fake');
+      await settle();
+      registerFontOutlines('Fake', {}, new ArrayBuffer(4), {
+        parser: () => { throw new Error('bad font'); },
+      });
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      release();
+      await expect(pending).resolves.toBe('failed');
+      expect(outlineStatus('Fake', 400, 'normal')).toBe('failed');
+    });
+
+    it('reads a thunk source once when DOM text asks for the bytes before the canvas does', async () => {
+      const source = vi.fn(() => new ArrayBuffer(4));
+      registerFontOutlines('Fake', {}, source, { parser: stubParser });
+      const css = outlineCssSource('Fake', 400, 'normal');
+      if (!css || !('bytes' in css)) throw new Error('expected a bytes source');
+      await css.bytes();
+      await expect(loadFontOutlines('Fake')).resolves.toBe('ready');
+      expect(source).toHaveBeenCalledTimes(1);
+    });
+
+    it('reads a thunk source again for DOM text after a failed read', async () => {
+      const source = vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValue(new ArrayBuffer(4));
+      registerFontOutlines('Fake', {}, source, { parser: stubParser });
+      const css = outlineCssSource('Fake', 400, 'normal');
+      if (!css || !('bytes' in css)) throw new Error('expected a bytes source');
+      await expect(css.bytes()).rejects.toThrow('offline');
+      await expect(css.bytes()).resolves.toBeInstanceOf(ArrayBuffer);
+    });
+
+    it('resolves to null when the face is dropped while it loads', async () => {
+      let release!: () => void;
+      const held = new Promise<void>((r) => { release = r; });
+      registerFontOutlines('Fake', {}, new ArrayBuffer(4), { parser: async () => { await held; return stubFace; } });
+      const pending = loadFontOutlines('Fake');
+      unregisterFontOutlines('Fake');
+      release();
+      await expect(pending).resolves.toBeNull();
     });
   });
 });

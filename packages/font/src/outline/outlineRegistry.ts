@@ -36,6 +36,7 @@ import type { OutlineFace, OutlineParser } from './OutlineFace';
 import { normalizeVariant, type FontStyle, type FontVariant } from '../fontStyle';
 import { cssString } from '../cssFamily';
 import { openTypeParser } from './opentypeParser';
+import { closeContours } from './closeContours';
 
 /**
  * Where a face's bytes come from. A URL is fetched; a buffer or blob is used
@@ -84,6 +85,9 @@ interface FaceSlot extends OutlineFaceInfo {
   glyphs: Map<number, string | null>;
   /** The in-flight or settled load, so every caller waiting on it shares one parse. */
   load: Promise<void> | null;
+  /** The source's bytes while a read is in hand, so DOM text asking first and the canvas share one read. Dropped when
+   *  the load settles, which hands DOM text its bytes itself, and when the read fails. */
+  read: Promise<ArrayBuffer> | null;
 }
 
 const slots = createReflectable<FaceSlot>({ name: 'font outlines' });
@@ -128,6 +132,7 @@ export function registerFontOutlines(
     face: null,
     glyphs: new Map(),
     load: null,
+    read: null,
   };
   slots.set(key, slot);
   // Layouts cache which tier each run resolved to and poll `glyphGeneration()`
@@ -171,37 +176,6 @@ export function listFontOutlines(): readonly OutlineFaceInfo[] {
     .map(({ value: { family, weight, style, status } }) => ({ family, weight, style, status }))
     .sort((a, b) => a.family.localeCompare(b.family) || a.weight - b.weight
       || a.style.localeCompare(b.style));
-}
-
-/**
- * Close every contour of a glyph's path data.
- *
- * A glyph contour is closed by definition, but not every serializer writes
- * the `Z` that says so, and the omission is invisible until someone *strokes*
- * the outline: a fill closes the contour implicitly, while a stroke leaves the
- * closing edge unpainted, with a cap at each loose end. Normalized here rather
- * than in one parser so it covers every consumer-supplied `OutlineParser`.
- * A contour a relative `m` continues from stays as written.
- */
-export function closeContours(d: string): string {
-  let out = '';
-  let start = 0;
-  for (let i = 1; i < d.length; i++) {
-    const c = d[i];
-    if (c !== 'M' && c !== 'm') continue;
-    // A `Z` returns the pen to the contour's start, which a relative `m` is
-    // then measured from: closing here would move every contour after it.
-    out += closeOne(d.slice(start, i), c === 'M');
-    start = i;
-  }
-  return out + closeOne(d.slice(start), true);
-}
-
-function closeOne(contour: string, close: boolean): string {
-  const trimmed = contour.trimEnd();
-  if (trimmed.length === 0 || !close) return trimmed;
-  const last = trimmed[trimmed.length - 1];
-  return last === 'Z' || last === 'z' ? trimmed : `${trimmed}Z`;
 }
 
 /**
@@ -272,17 +246,20 @@ export function outlineFace(
 /**
  * Load a registered face's bytes now and resolve with its settled status:
  * `'ready'`, `'failed'`, or `null` when nothing is registered for the
- * variant. Never rejects — a failed load is a status. For a caller that needs
+ * variant once it settles. Never rejects — a failed load is a status. For a caller that needs
  * the geometry in one go, such as converting text to paths.
  */
 export async function loadFontOutlines(
   family: string, variant: FontVariant = {},
 ): Promise<OutlineStatus | null> {
   const { weight, style } = normalizeVariant(variant);
-  const slot = slots.get(slotKey(family, weight, style));
-  if (!slot) return null;
-  await beginLoad(slot);
-  return slot.status;
+  const key = slotKey(family, weight, style);
+  // A registration replaced while it loaded answers for nothing: wait on whatever holds the variant now.
+  for (let slot = slots.get(key); slot; slot = slots.get(key)) {
+    await beginLoad(slot);
+    if (slots.get(key) === slot) return slot.status;
+  }
+  return null;
 }
 
 function beginLoad(slot: FaceSlot): Promise<void> {
@@ -294,8 +271,9 @@ async function runLoad(slot: FaceSlot): Promise<void> {
   slot.status = 'loading';
   slots.bump();
   try {
-    const bytes = await readSource(slot.source);
+    const bytes = await readSlot(slot);
     announceBytes(slot, bytes);
+    slot.read = null;
     slot.face = await slot.parser(bytes);
     slot.status = 'ready';
     slots.bump();
@@ -339,8 +317,7 @@ export function outlineCssSource(
   if (typeof slot.source === 'string') {
     return { registration: slot, url: `url(${cssString(slot.source)})` };
   }
-  const source = slot.source;
-  return { registration: slot, bytes: () => readSource(source) };
+  return { registration: slot, bytes: () => readSlot(slot) };
 }
 
 /** `registration` is the one {@link outlineCssSource} names. */
@@ -365,6 +342,14 @@ function announceBytes(slot: FaceSlot, bytes: ArrayBuffer): void {
   } catch {
     // DOM text falling behind must not cost the canvas its outlines.
   }
+}
+
+function readSlot(slot: FaceSlot): Promise<ArrayBuffer> {
+  if (slot.read) return slot.read;
+  const read = readSource(slot.source);
+  read.catch(() => { if (slot.read === read) slot.read = null; });
+  slot.read = read;
+  return read;
 }
 
 async function readSource(source: OutlineSource): Promise<ArrayBuffer> {

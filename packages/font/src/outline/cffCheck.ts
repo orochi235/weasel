@@ -4,8 +4,8 @@
  * opentype.js trusts the table: a top DICT operator given the wrong number of operands hands it an array where it
  * expects an offset, which it adds to a number as a string, and an INDEX at that "offset" then reads byte 0 tens of
  * thousands of times while the string grows. A 2.6 KB face held the parser for a minute. So every INDEX and DICT
- * opentype.js follows from the header is checked here first: inside the table, offsets in order, and each offset
- * operator holding the one integer (two, for `Private`) the format gives it.
+ * opentype.js follows from the header, the FDArray's Font DICTs included, is checked here first: inside the table,
+ * offsets in order, and each offset operator holding the one integer (two, for `Private`) the format gives it.
  */
 
 /** Top DICT operators whose operands opentype.js reads as offsets, with how many each takes. */
@@ -41,9 +41,18 @@ export function checkCff(cff: DataView): void {
     if (Object.hasOwn(PREDEFINED, op) && operands[0]! < PREDEFINED[op]!) continue;
     if (op === 18) checkPrivate(cff, operands[1]!, operands[0]!);
     else if (operands[0]! < 0 || operands[0]! >= cff.byteLength) throw bad(`Top DICT operator ${op} points past the table`);
-    if (op === 17 || op === 1236) readIndex(cff, operands[0]!, op === 17 ? 'CharStrings INDEX' : 'FDArray INDEX');
+    if (op === 17) readIndex(cff, operands[0]!, 'CharStrings INDEX');
+    // opentype.js reads each FDArray item as it reads the Top DICT, following its Private and Subrs.
+    if (op === 1236) for (const item of readIndex(cff, operands[0]!, 'FDArray INDEX').items) checkFontDict(cff, item);
   }
   if (!top.has(17)) throw bad('it has no CharStrings');
+}
+
+function checkFontDict(cff: DataView, item: [number, number]): void {
+  const operands = readDict(cff, item, 'FDArray Font DICT').get(18);
+  if (operands === undefined) return;
+  if (operands.length !== 2 || !operands.every(Number.isInteger)) throw bad(`Font DICT operator 18 holds ${operands.join(' ')}`);
+  checkPrivate(cff, operands[1]!, operands[0]!);
 }
 
 function checkPrivate(cff: DataView, at: number, size: number): void {

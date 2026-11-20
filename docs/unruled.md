@@ -2924,3 +2924,13 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): a click-place builds its extras as a drag out from the click's center to the size's
   corner does, so a polygon's first vertex points at that corner unless the binding names a `rotation`, and a custom
   kind's extras carry `originMode: 'center'`. Inscribing a radial shape in the box unturned was the alternative.
+## Audit round forty-seven (2026-11-20): font outlines
+
+- 2026-11-20 (the fixer's call): the default outline parser rejects a variable font (one with `fvar`) asked for by a
+  PostScript name other than its nameID 6, the default instance's, since it draws only default outlines; a local
+  variable font's other named instances keep their text on the SDF tier. Applying the instance's `fvar` coordinates
+  was the alternative, and needs `gvar`/`CFF2` support opentype.js does not have.
+- 2026-11-20 (the fixer's call): GPOS pair kerning applies one LangSys's `kern` lookups per pair, trying `latn`'s,
+  then `DFLT`'s, then the rest in ScriptList order, and taking the first whose lookups cover the pair. Layout knows
+  no run's script, so picking one script for every pair was the alternative, and loses kerning other scripts' lookups
+  alone carry.
