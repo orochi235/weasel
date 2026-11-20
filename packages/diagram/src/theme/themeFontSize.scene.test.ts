@@ -35,4 +35,19 @@ describe('a theme font size change', () => {
     expect(sizeOf(scene, `${AB}/label`)).toBe(20);
     expect(sizeOf(scene, 'a/1')).toBe(16);
   });
+
+  it('puts a row it took below the floor back where it was on the step back', () => {
+    const scene = themedScene();
+    applyDiagramTheme(scene, sized(20));
+    setDiagramFontSize(scene, ['c'], 4);
+    const c = scene.get('c' as never)!.data as { diagram: Record<string, unknown> };
+    scene.update('c' as never, { data: { ...c, diagram: { ...c.diagram, ownFont: [] } } });
+    applyDiagramTheme(scene, sized(12));
+    expect(sizeOf(scene, 'c/1')).toBe(1);
+    applyDiagramTheme(scene, sized(14));
+    expect(sizeOf(scene, 'c/1')).toBe(1);
+    applyDiagramTheme(scene, sized(20));
+    expect(sizeOf(scene, 'c/1')).toBe(4);
+    expect(scene.get('c/1' as never)!.data).not.toHaveProperty('unclampedFontSize');
+  });
 });

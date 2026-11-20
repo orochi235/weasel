@@ -7,7 +7,7 @@ import type { MeasureRowText } from '../body';
 import { relayoutBodies, type RelayoutScene } from '../bodyRelayout';
 import { redrawSequences } from '../sequence/commit';
 import { diagramThemeOf, roleStyle, themeDocValue } from './resolve';
-import { themeWrites, type ThemedScene } from './themeWrites';
+import { UNCLAMPED_FONT_SIZE, themeWrites, type ThemedScene } from './themeWrites';
 import { DIAGRAM_THEME_KEY, type DiagramTheme, type FontField, type StyleField } from './types';
 
 type Paint = { paint?: Record<string, unknown> } & Record<string, unknown>;
@@ -204,7 +204,7 @@ export function setDiagramFontSize(
       const data = scene.get(id as never)!.data as Data;
       if (!state.ownFont.includes('size')) scene.update(id as never, { data: withTrait(data, { ...data.diagram, ownFont: [...state.ownFont, 'size'] }) });
       for (const t of textNodesOf(scene, id, state.kind)) {
-        const text = scene.get(t as never)!.data as Data & { style?: Record<string, unknown> };
+        const { [UNCLAMPED_FONT_SIZE]: _, ...text } = scene.get(t as never)!.data as Data & { style?: Record<string, unknown> };
         writes.set(t, { ...text, style: { ...text.style, fontSize: size } });
       }
     }

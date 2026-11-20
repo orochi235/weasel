@@ -134,16 +134,25 @@ function paintBand(data: Data, look: Look): { headerFill?: Paint } {
   return headerFill === undefined ? {} : { headerFill };
 }
 
+/** The key on a text row's `data` holding the size a theme step took it to below 1, where it is
+ *  drawn at 1, so the step back lands where it started. */
+export const UNCLAMPED_FONT_SIZE = 'unclampedFontSize';
+
 /** `data`'s text recolored to `color` (unless `undefined`), set in `family`, and its size moved by
- *  `step`, or `null` when nothing changes. */
+ *  `step`, or `null` when nothing changes. A size the step takes below 1 is drawn at 1 and kept as
+ *  {@link UNCLAMPED_FONT_SIZE}, and the next step moves from it. */
 function paintText(data: Data, color: string | undefined, family: string, step: number): Data | null {
   const fill = color === undefined ? undefined : recolored(data.fill, color);
   const size = data.style?.fontSize;
-  const resized = step !== 0 && typeof size === 'number' ? { fontSize: Math.max(1, size + step) } : {};
+  const owed = data[UNCLAMPED_FONT_SIZE];
+  const want = step !== 0 && typeof size === 'number' ? (typeof owed === 'number' ? owed : size) + step : undefined;
+  const resized = want !== undefined ? { fontSize: Math.max(1, want) } : {};
   const face = data.style !== undefined && (data.style.fontFamily !== family || 'fontSize' in resized)
     ? { ...data.style, fontFamily: family, ...resized } : undefined;
   if (fill === undefined && face === undefined) return null;
-  return { ...data, ...(fill ? { fill } : {}), ...(face ? { style: face } : {}) };
+  const { [UNCLAMPED_FONT_SIZE]: _, ...rest } = data;
+  const keep = want === undefined ? (owed !== undefined ? { [UNCLAMPED_FONT_SIZE]: owed } : {}) : want < 1 ? { [UNCLAMPED_FONT_SIZE]: want } : {};
+  return { ...rest, ...keep, ...(fill ? { fill } : {}), ...(face ? { style: face } : {}) };
 }
 
 /** An off-page tag's `data` in `theme`'s label color and face, on its page color, its size moved
