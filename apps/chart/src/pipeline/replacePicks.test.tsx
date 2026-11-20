@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within, waitFor } from '@testing-library/react';
 import { addStage, IMAGE_STAGE_TYPES, stageFromType, type EffectDoc } from '@weasel-js/diagram/effect';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -41,14 +41,14 @@ describe('replacing the pipeline', () => {
     render(<App />, { wrapper: withIcons });
     choose('Mode', 'Pipeline');
     act(() => { fireEvent.click(screen.getByRole('row', { name: 'Blur' })); });
-    await vi.waitFor(() => expect(localStorage.getItem(PIPELINE_STORAGE_KEY)).toContain('stages'));
+    await waitFor(() => expect(localStorage.getItem(PIPELINE_STORAGE_KEY)).toContain('stages'));
     const [stage] = (JSON.parse(localStorage.getItem(PIPELINE_STORAGE_KEY)!) as EffectDoc).pipeline.stages;
     expect(within(params()).queryByText('Select a stage to edit its params.')).toBeNull();
     const composite = IMAGE_STAGE_TYPES.find((t) => t.type === 'composite')!;
     const other = addStage({ pipeline: { stages: [], wires: [] }, places: {} }, stageFromType(composite, stage!.id));
     picked.text = JSON.stringify(other);
     choose('File', 'Open…');
-    await vi.waitFor(() => expect(localStorage.getItem(PIPELINE_STORAGE_KEY)).toContain('composite'));
+    await waitFor(() => expect(localStorage.getItem(PIPELINE_STORAGE_KEY)).toContain('composite'));
     expect(within(params()).getByText('Select a stage to edit its params.')).toBeTruthy();
   });
 
@@ -57,7 +57,7 @@ describe('replacing the pipeline', () => {
     choose('Mode', 'Pipeline');
     act(() => { fireEvent.click(screen.getByRole('row', { name: 'Blur' })); });
     choose('Arrange', 'Group');
-    await vi.waitFor(() => expect(localStorage.getItem(PIPELINE_STORAGE_KEY)).toContain('members'));
+    await waitFor(() => expect(localStorage.getItem(PIPELINE_STORAGE_KEY)).toContain('members'));
     expect(within(params()).getByRole('textbox', { name: 'Name' })).toBeTruthy();
     act(() => { fireEvent.click(screen.getByRole('row', { name: 'Blur' })); });
     act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'Arrange' })); });

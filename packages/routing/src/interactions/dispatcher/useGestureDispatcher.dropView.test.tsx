@@ -4,7 +4,7 @@
  * and context both, to the view it landed in.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { act, render } from '@testing-library/react';
+import { act, render, waitFor } from '@testing-library/react';
 import { useRef, type ReactNode } from 'react';
 import { useGestureDispatcher, type DispatcherViewTarget } from './useGestureDispatcher';
 import { createDispatcher, type DispatcherContext } from './dispatcher';
@@ -61,7 +61,7 @@ describe('a drop whose items arrive after the pointer changed view', () => {
       canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 1, clientX: 50, clientY: 10 }));
     });
 
-    await vi.waitFor(() => { expect(seen.some((s) => s.ev.kind === 'drop')).toBe(true); });
+    await waitFor(() => { expect(seen.some((s) => s.ev.kind === 'drop')).toBe(true); });
     expect(seen.find((s) => s.ev.kind === 'drop')!.ctx.viewId).toBe('panel');
   });
 });

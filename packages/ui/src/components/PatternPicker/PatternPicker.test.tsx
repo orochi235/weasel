@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent, screen } from '@testing-library/react';
+import { render, fireEvent, screen, waitFor } from '@testing-library/react';
 import { composePatternTransform, decomposePatternTransform, type PatternPaint as PatternFill } from '@weasel-js/paint';
 import { PatternPicker, seedImagePattern, seedPattern } from './PatternPicker';
 
@@ -118,7 +118,7 @@ describe('PatternPicker images', () => {
       />,
     );
     upload();
-    await vi.waitFor(() => expect(onChange).toHaveBeenCalled());
+    await waitFor(() => expect(onChange).toHaveBeenCalled());
     expect(readImage).toHaveBeenCalledWith(expect.objectContaining({ name: 'tile.png' }));
     expect(onChange.mock.calls[0][0]).toEqual({ ...seedImagePattern(READ), transform });
     expect(seedImagePattern(READ)).toMatchObject({ kind: 'image', width: 128, height: 64, units: 'bounds' });
@@ -149,7 +149,7 @@ describe('PatternPicker images', () => {
       />,
     );
     upload();
-    await vi.waitFor(() => expect(warn).toHaveBeenCalled());
+    await waitFor(() => expect(warn).toHaveBeenCalled());
     expect(onChange).not.toHaveBeenCalled();
     warn.mockRestore();
   });

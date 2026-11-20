@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { useClipboardOps } from './clipboardOps';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { InsertAdapter } from '@weasel-js/core/engine';
@@ -409,7 +409,7 @@ describe('useClipboardOps — OS clipboard flavor seam', () => {
       useClipboardOps(helpers.adapter, { getSelection: () => [asNodeId('a')] }),
     );
     act(() => { result.current.copy(); });
-    await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(write).toHaveBeenCalledTimes(1));
     const items = write.mock.calls[0][0] as InstanceType<typeof FakeClipboardItem>[];
     expect(items).toHaveLength(1);
     const item = items[0];
@@ -431,7 +431,7 @@ describe('useClipboardOps — OS clipboard flavor seam', () => {
       useClipboardOps(helpers.adapter, { getSelection: () => [asNodeId('a')] }),
     );
     act(() => { result.current.copy(); });
-    await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(write).toHaveBeenCalledTimes(2));
     const secondItem = write.mock.calls[1][0][0] as InstanceType<typeof FakeClipboardItem>;
     expect(secondItem.types).not.toContain(WEASEL_CLIPBOARD_MIME_WEB);
     expect(secondItem.types).not.toContain(WEASEL_CLIPBOARD_MIME);
@@ -449,7 +449,7 @@ describe('useClipboardOps — OS clipboard flavor seam', () => {
       useClipboardOps(helpers.adapter, { getSelection: () => [asNodeId('a')] }),
     );
     expect(() => act(() => { result.current.copy(); })).not.toThrow();
-    await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(write).toHaveBeenCalledTimes(2));
     act(() => { result.current.paste(); });
     expect(helpers.batches).toHaveLength(1);
   });
@@ -477,7 +477,7 @@ describe('useClipboardOps — OS clipboard flavor seam', () => {
       }),
     );
     act(() => { result.current.copy(); });
-    await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(write).toHaveBeenCalledTimes(1));
     const item = write.mock.calls[0][0][0] as InstanceType<typeof FakeClipboardItem>;
     expect(item.types).toEqual(['web image/svg+xml']);
     expect(await blobText(item, 'web image/svg+xml')).toBe('<svg/>');
@@ -498,7 +498,7 @@ describe('useClipboardOps — OS clipboard flavor seam', () => {
     );
     act(() => { result.current.copy(); });
     // The write is issued before the flavor settles, so it stays inside the gesture.
-    await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(write).toHaveBeenCalledTimes(1));
     const item = write.mock.calls[0][0][0] as InstanceType<typeof FakeClipboardItem>;
     resolve('<svg/>');
     expect(await blobText(item, 'web image/svg+xml')).toBe('<svg/>');
@@ -535,7 +535,7 @@ describe('useClipboardOps — OS clipboard flavor seam', () => {
       }),
     );
     act(() => { result.current.copy(); });
-    await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(write).toHaveBeenCalledTimes(1));
     const item = write.mock.calls[0][0][0] as InstanceType<typeof FakeClipboardItem>;
     const text = await blobText(item, 'text/plain');
     expect(text).toBe(buildWeaselClipboardText([{ id: 'a', x: 0, y: 0 }], replacer));

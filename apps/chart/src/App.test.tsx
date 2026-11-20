@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within, waitFor } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { PAGE_TEMPLATES } from '@weasel-js/diagram-formats';
 import { defaultToastQueue } from '@weasel-js/ui/components/Toast';
@@ -61,11 +61,11 @@ describe('App', () => {
     choose('Mode', 'Pipeline');
     act(() => { fireEvent.click(screen.getByRole('row', { name: 'Blur' })); });
     const stages = () => (JSON.parse(localStorage.getItem(PIPELINE_STORAGE_KEY) ?? '{"pipeline":{"stages":[]}}') as { pipeline: { stages: unknown[] } }).pipeline.stages;
-    await vi.waitFor(() => expect(stages()).toHaveLength(1));
+    await waitFor(() => expect(stages()).toHaveLength(1));
     choose('Mode', 'Chart');
     choose('Mode', 'Pipeline');
     choose('Edit', 'Undo');
-    await vi.waitFor(() => expect(stages()).toHaveLength(0));
+    await waitFor(() => expect(stages()).toHaveLength(0));
   });
 
   it('gives pipeline mode a File menu of its own', () => {
@@ -388,7 +388,7 @@ describe('App', () => {
     });
     try {
       mount();
-      await vi.waitFor(() => expect(screen.getByText('This chart is not being kept in the browser')).toBeTruthy());
+      await waitFor(() => expect(screen.getByText('This chart is not being kept in the browser')).toBeTruthy());
     } finally {
       setItem.mockRestore();
     }

@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within, waitFor } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { ActionsProvider, DepRegistryProvider, documentOf } from '@weasel-js/core';
 import type { ExportScene } from '@weasel-js/export';
@@ -89,7 +89,7 @@ function exportAs(row: string): void {
 describe('File › Export', () => {
   it('downloads the page as an SVG named for it', async () => {
     exportAs('Page as SVG');
-    await vi.waitFor(() => expect(saved).toHaveLength(1));
+    await waitFor(() => expect(saved).toHaveLength(1));
     expect(saved[0]!.name).toBe('Page 1.svg');
     expect(saved[0]!.blob.type).toBe('image/svg+xml');
     expect(await saved[0]!.blob.text()).toMatch(/^<svg[^>]* viewBox="0 0 1056 816"/);
@@ -97,7 +97,7 @@ describe('File › Export', () => {
 
   it('downloads the page as a PNG at the scale picked, named for the page and the scale', async () => {
     exportAs('Page as PNG (2×)');
-    await vi.waitFor(() => expect(saved).toHaveLength(1));
+    await waitFor(() => expect(saved).toHaveLength(1));
     expect(saved[0]!.name).toBe('Page 1@2x.png');
     expect(saved[0]!.blob.type).toBe('image/png');
     expect(readPages(png.mock.calls[0]!)).toMatchObject({ name: 'Page 1', x: 0, y: 0 });
@@ -106,7 +106,7 @@ describe('File › Export', () => {
 
   it('downloads every page as one PDF', async () => {
     exportAs('Pages as PDF');
-    await vi.waitFor(() => expect(saved).toHaveLength(1));
+    await waitFor(() => expect(saved).toHaveLength(1));
     expect(saved[0]!.name).toBe('chart.pdf');
     expect(readPages(pdf.mock.calls[0]!)).toEqual([expect.objectContaining({ name: 'Page 1', x: 0, y: 0 })]);
   });
@@ -117,13 +117,13 @@ describe('File › Export', () => {
       return new Blob(['%PDF']);
     });
     exportAs('Pages as PDF');
-    await vi.waitFor(() => expect(warned).toHaveBeenCalledWith('Exported', ['glyph U+1F600'], 'chart-export-pdf'));
+    await waitFor(() => expect(warned).toHaveBeenCalledWith('Exported', ['glyph U+1F600'], 'chart-export-pdf'));
   });
 
   it('reports what the SVG could not carry, as the PDF does', async () => {
     svgWarns.on = true;
     exportAs('Page as SVG');
-    await vi.waitFor(() => expect(saved).toHaveLength(1));
+    await waitFor(() => expect(saved).toHaveLength(1));
     expect(warned).toHaveBeenCalledWith('Exported', ['a font this export uses failed to load'], 'chart-export-svg');
   });
 
@@ -133,14 +133,14 @@ describe('File › Export', () => {
       return new Blob(['png'], { type: 'image/png' });
     });
     exportAs('Page as PNG (1×)');
-    await vi.waitFor(() => expect(saved).toHaveLength(1));
+    await waitFor(() => expect(saved).toHaveLength(1));
     expect(warned).toHaveBeenCalledWith('Exported', ['a font this export uses failed to load'], 'chart-export-png');
   });
 
   it('draws the page last shown while the view is between pages', async () => {
     between.on = true;
     exportAs('Page as PNG (2×)');
-    await vi.waitFor(() => expect(saved).toHaveLength(1));
+    await waitFor(() => expect(saved).toHaveLength(1));
     expect(saved[0]!.name).toBe('Last shown@2x.png');
   });
 

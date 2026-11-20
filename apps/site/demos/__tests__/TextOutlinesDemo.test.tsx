@@ -1,4 +1,4 @@
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 afterEach(() => {
@@ -24,11 +24,11 @@ describe('TextOutlinesDemo', () => {
     const { TextOutlinesDemo } = await import('../TextOutlinesDemo');
 
     render(<TextOutlinesDemo />);
-    await vi.waitFor(() => { expect(warn).toHaveBeenCalled(); });
+    await waitFor(() => { expect(warn).toHaveBeenCalled(); });
     cleanup();
     fail = false;
     render(<TextOutlinesDemo />);
-    await vi.waitFor(() => { expect(add).toHaveBeenCalledTimes(1); });
+    await waitFor(() => { expect(add).toHaveBeenCalledTimes(1); });
     expect(loads).toHaveLength(2);
   });
 });

@@ -5,7 +5,7 @@
  * read (`dataTransfer`, `clientX`/`clientY`, `clipboardData`, modifiers).
  */
 import { describe, it, expect, vi } from 'vitest';
-import { act } from '@testing-library/react';
+import { act, waitFor } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useRef } from 'react';
 import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
@@ -83,7 +83,7 @@ describe('useGestureDispatcher — ingest channels', () => {
     });
     act(() => { canvas.dispatchEvent(ev); });
 
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(spy).toHaveBeenCalledTimes(1);
     });
     const params = spy.mock.calls[0][0] as Record<string, unknown>;
@@ -144,7 +144,7 @@ describe('useGestureDispatcher — ingest channels', () => {
     Object.assign(ev, { clipboardData: { files: [file], getData: () => '' } });
     act(() => { window.dispatchEvent(ev); });
 
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(spy).toHaveBeenCalledTimes(1);
     });
     const params = spy.mock.calls[0][0] as Record<string, unknown>;

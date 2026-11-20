@@ -5,7 +5,7 @@
  * `<SceneCanvas>` mount.
  */
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
-import { act } from '@testing-library/react';
+import { act, waitFor } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { createRef } from 'react';
 import { SceneCanvas, registerContentHandler, type ContentHandlerEntry } from '@weasel-js/core';
@@ -118,7 +118,7 @@ describe('SceneCanvasApi.ingest', () => {
       // `SceneCanvasApi.ingest` is non-optional — no `!` needed on the method.
       ref.current!.ingest([pngFile()], { x: 50, y: 60 });
     });
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(imageNodes(scene)).toHaveLength(1);
     });
 
@@ -141,7 +141,7 @@ describe('SceneCanvasApi.ingest', () => {
     await act(async () => {
       ref.current!.ingest([pngFile()]);
     });
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(imageNodes(scene)).toHaveLength(1);
     });
 
@@ -164,7 +164,7 @@ describe('SceneCanvasApi.ingest', () => {
     await act(async () => {
       ref.current!.ingest([svg], { x: 50, y: 60 });
     });
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(scene.roots).toHaveLength(1);
     });
 
@@ -192,7 +192,7 @@ describe('SceneCanvasApi.ingest', () => {
     await act(async () => {
       ref.current!.ingest([svg], { x: 100, y: 75 });
     });
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(scene.roots).toHaveLength(1);
     });
 
@@ -231,7 +231,7 @@ describe('SceneCanvasApi.ingest', () => {
     await act(async () => {
       ref.current!.ingest([pngFile()], { x: 50, y: 60 });
     });
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(imageNodes(scene)).toHaveLength(1);
     });
   });
@@ -250,7 +250,7 @@ describe('SceneCanvasApi.ingest', () => {
     await act(async () => {
       ref.current!.ingest([{ kind: 'string', mime: 'text/plain', text }]);
     });
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(scene.roots).toHaveLength(1);
     });
 
@@ -297,7 +297,7 @@ describe('SceneCanvasApi.ingest', () => {
     await act(async () => {
       ref.current!.ingest([pngFile()], { x: 10, y: 10 });
     });
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(imageNodes(scene)).toHaveLength(1);
     });
 
@@ -363,7 +363,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
   it('edit alone pastes copied nodes from a paste event', async () => {
     const { scene } = mount([editPreset]);
     const ev = paste({ text: NODE_TEXT });
-    await vi.waitFor(() => expect(scene.roots).toHaveLength(1));
+    await waitFor(() => expect(scene.roots).toHaveLength(1));
     expect(scene.get(scene.roots[0])!.id).not.toBe('src-1');
     expect(ev.defaultPrevented).toBe(true);
     act(() => scene.undo());
@@ -474,7 +474,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
     rerender(<SceneCanvas features={[editPreset, ingestPreset]} scene={scene} layers={{}} width={64} height={64} ref={ref} />);
     act(() => { took = ref.current!.ingest([pngFile()]); });
     expect(took).toBe(true);
-    await vi.waitFor(() => expect(scene.roots).toHaveLength(1));
+    await waitFor(() => expect(scene.roots).toHaveLength(1));
   });
 
   it('edit alone runs no handler another canvas holds', async () => {
@@ -488,7 +488,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
     const { scene } = mount([editPreset]);
     paste({ text: NODE_TEXT });
     paste({ text: 'plain words' });
-    await vi.waitFor(() => expect(scene.roots).toHaveLength(1));
+    await waitFor(() => expect(scene.roots).toHaveLength(1));
     await settle();
     expect(handle).not.toHaveBeenCalled();
   });
@@ -501,20 +501,20 @@ describe('SceneCanvas paste and drop events, by preset', () => {
     // The dispatcher runs one binding per event, so a second paste cannot
     // show here; what shows `ingest` answered is content only it accepts.
     paste({ text: SVG_TEXT });
-    await vi.waitFor(() => expect(scene.roots).toHaveLength(2));
+    await waitFor(() => expect(scene.roots).toHaveLength(2));
   });
 
   it('ingest alone still pastes nodes, images, and SVG, and takes drops', async () => {
     const { scene, canvas } = mount([ingestPreset]);
     paste({ text: NODE_TEXT });
-    await vi.waitFor(() => expect(scene.roots).toHaveLength(1));
+    await waitFor(() => expect(scene.roots).toHaveLength(1));
     const img = paste({ files: [pngFile()] });
     expect(img.defaultPrevented).toBe(true);
-    await vi.waitFor(() => expect(scene.roots).toHaveLength(2));
+    await waitFor(() => expect(scene.roots).toHaveLength(2));
     paste({ text: SVG_TEXT });
-    await vi.waitFor(() => expect(scene.roots).toHaveLength(3));
+    await waitFor(() => expect(scene.roots).toHaveLength(3));
     dropFile(canvas, pngFile());
-    await vi.waitFor(() => expect(scene.roots).toHaveLength(4));
+    await waitFor(() => expect(scene.roots).toHaveLength(4));
   });
 
   it('ingest alone runs a registered consumer handler on a paste', async () => {
@@ -522,7 +522,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
     const off = registerContentHandler({ id: 'app:text', match: 'text/plain', handle });
     mount([ingestPreset]);
     paste({ text: 'plain words' });
-    await vi.waitFor(() => expect(handle).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(handle).toHaveBeenCalledTimes(1));
     off();
   });
 
@@ -542,7 +542,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
 
     act(() => { ref.current!.ingest([pngFile()]); });
     act(() => { otherRef.current!.ingest([pngFile()]); });
-    await vi.waitFor(() => expect(imageNodes(other)).toHaveLength(1));
+    await waitFor(() => expect(imageNodes(other)).toHaveLength(1));
     await settle();
     expect(quiet.roots).toHaveLength(0);
   });
@@ -574,6 +574,6 @@ describe('SceneCanvas paste and drop events, by preset', () => {
     await settle();
     expect(handle).not.toHaveBeenCalled();
     act(() => { ownRef.current!.ingest([pdf()]); });
-    await vi.waitFor(() => expect(handle).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(handle).toHaveBeenCalledTimes(1));
   });
 });

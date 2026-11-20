@@ -1,6 +1,6 @@
 /** Plain-text paste on a canvas given `textTools.text`: a text node, and only for text no other handler claims. */
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
-import { act } from '@testing-library/react';
+import { act, waitFor } from '@testing-library/react';
 import { createRef } from 'react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas, createScene, type FeaturePreset, type Scene, type SceneCanvasApi } from '@weasel-js/core';
@@ -67,12 +67,12 @@ describe('plain-text paste with textPreset', () => {
   it('turns pasted plain text into a text node, and leaves node payloads and SVG alone', async () => {
     const { scene } = mount([presets.ingest, textPreset]);
     paste({ text: 'hello\nworld' });
-    await vi.waitFor(() => expect(textNodesOf(scene)).toHaveLength(1));
+    await waitFor(() => expect(textNodesOf(scene)).toHaveLength(1));
     expect(textNodesOf(scene)[0]!.data.text).toBe('hello\nworld');
 
     paste({ text: NODE_TEXT });
     paste({ text: SVG_TEXT });
-    await vi.waitFor(() => expect(scene.roots).toHaveLength(3));
+    await waitFor(() => expect(scene.roots).toHaveLength(3));
     await settle();
     expect(textNodesOf(scene)).toHaveLength(1);
     expect(scene.roots).toHaveLength(3);
@@ -81,7 +81,7 @@ describe('plain-text paste with textPreset', () => {
   it('inserts a pasted file once, without a text node for the name riding beside it', async () => {
     const { scene } = mount([presets.ingest, textPreset]);
     paste({ files: [pngFile()], text: 'a.png' });
-    await vi.waitFor(() => expect(scene.roots).toHaveLength(1));
+    await waitFor(() => expect(scene.roots).toHaveLength(1));
     await settle();
     expect(scene.roots).toHaveLength(1);
     expect(scene.get(scene.roots[0]!)!.data.text).toBeUndefined();
@@ -97,7 +97,7 @@ describe('plain-text paste with textPreset', () => {
 
     act(() => { ref.current!.ingest([{ kind: 'string', mime: 'text/plain', text: 'words' }]); });
     act(() => { otherRef.current!.ingest([{ kind: 'string', mime: 'text/plain', text: 'words' }]); });
-    await vi.waitFor(() => expect(textNodesOf(other)).toHaveLength(1));
+    await waitFor(() => expect(textNodesOf(other)).toHaveLength(1));
     await settle();
     expect(quiet.roots).toHaveLength(0);
   });
