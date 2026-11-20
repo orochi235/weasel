@@ -97,6 +97,7 @@ export interface Journal {
   commit(label?: string): void;
   /** Cancels every journal still open inside this one first, suspended ones included. */
   cancel(): void;
+  /** Throws while a journal opened inside this one is active. */
   suspend(): void;
   isActive(): boolean;
 }
@@ -206,6 +207,8 @@ export function createJournalInternal(
     },
     suspend(): void {
       if (state !== 'active') throw new Error('Journal is not active');
+      // It would go on writing to the adapter while the history counts no journal open.
+      if (openChildren().some((c) => c.isActive())) throw new Error('A journal inside this one is still active — commit, cancel, or suspend it first');
       state = 'suspended';
       onClose?.();
       bump();
