@@ -191,6 +191,7 @@ export const flipAction = defineAction({
   enabled: (deps, _at, _carried, params) => {
     const needs = requiresOperands(deps);
     if (needs !== true) return needs;
-    return flipOpsFor(deps!, deps!.operands!, deps!.scene!, params).length > 0 ? true : ActionDisabledReason.NotApplicable;
+    if (!deps?.scene) return ActionDisabledReason.NotApplicable;
+    return flipOpsFor(deps, deps.operands!, deps.scene, params).length > 0 ? true : ActionDisabledReason.NotApplicable;
   },
 });

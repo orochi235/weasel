@@ -181,7 +181,6 @@ describe('nudgeUpAction (magnitude param)', () => {
 
   it('enabled returns SelectionRequired until something is selected', () => {
     expect(nudgeUpAction.enabled!()).toBe(ActionDisabledReason.SelectionRequired);
-    expect(nudgeUpAction.enabled!({ operands: { get: () => ['a'] } } as never)).toBe(true);
   });
 });
 
@@ -224,5 +223,12 @@ describe('nudgeRightAction descriptor', () => {
     runNudge(nudgeRightAction, { operands: selection, scene }, { magnitude: 'big' });
 
     expect(scene.poses.get('a')).toMatchObject({ x: 20, y: 10 });
+  });
+});
+
+describe('nudge with operands and no scene', () => {
+  it('is not applicable, since run has nothing to move', () => {
+    const operands = { get: () => [asNodeId('a')] };
+    expect(nudgeUpAction.enabled?.({ operands } as never)).toBe(ActionDisabledReason.NotApplicable);
   });
 });

@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { flipAction } from './action';
 import type { NodeId } from '@weasel-js/core';
 import type { BoundGesture } from '@weasel-js/routing';
-import { taggedActionItems } from '@weasel-js/routing';
+import { ActionDisabledReason, taggedActionItems } from '@weasel-js/routing';
 
 interface Pose { x: number; y: number; width: number; height: number; rotation?: number }
 
@@ -360,5 +360,11 @@ describe('flip through a per-node descriptor', () => {
     runFlip({ operands: makeSelection(['a', 'b']), scene, poseDescriptor }, { axis: 'x' });
     expect(scene.poses.get('a')).toMatchObject({ rotation: -0.5, turnedBy: 'base' });
     expect(scene.poses.get('b')).toMatchObject({ rotation: -0.5, turnedBy: 'odd' });
+  });
+});
+
+describe('flip enabled with operands and no scene', () => {
+  it('is not applicable rather than throwing', () => {
+    expect(flipAction.enabled?.({ operands: makeSelection(['a']) } as never)).toBe(ActionDisabledReason.NotApplicable);
   });
 });

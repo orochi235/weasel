@@ -222,3 +222,10 @@ describe('recordTransform', () => {
     expect(lastTransform({})).toBeUndefined();
   });
 });
+
+describe('transformAgain with operands and no scene', () => {
+  it('is not applicable, since run has nothing to repeat on', () => {
+    const operands = { get: () => [asNodeId('a')] };
+    expect(transformAgainAction.enabled?.({ operands } as never)).toBe(ActionDisabledReason.NotApplicable);
+  });
+});

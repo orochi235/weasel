@@ -61,7 +61,8 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
     // On while some selected node would move: a step rounding absorbs moves nothing (2026-11-10 ruling).
     enabled: (deps, _at, _carried, params) => {
       const given = requiresOperands(deps);
-      if (given !== true || !deps?.scene) return given;
+      if (given !== true) return given;
+      if (!deps?.scene) return ActionDisabledReason.NotApplicable;
       const { dx, dy } = nudgeDelta(dir, params?.magnitude);
       const ops = moveNodesOps(deps.scene, deps.operands!.get() as readonly string[], { dx, dy }, deps, 'Nudge');
       return ops.length > 0 ? true : ActionDisabledReason.NotApplicable;

@@ -66,7 +66,8 @@ export const transformAgainAction: Action & { requires: string[] } = {
   },
   enabled: (deps) => {
     const selected = requiresOperands(deps);
-    if (selected !== true || !deps?.scene) return selected;
+    if (selected !== true) return selected;
+    if (!deps?.scene) return ActionDisabledReason.NotApplicable;
     return canRepeat(deps, deps.scene, lastTransform(deps.scene) ?? FIRST);
   },
 };
