@@ -25,6 +25,13 @@ describe('lerpPaint', () => {
     expect((lerpPaint(conic(6.2), conic(0.1), 0.5) as { angle: number }).angle).toBeCloseTo(6.2 + (0.1 + 2 * Math.PI - 6.2) / 2);
   });
 
+  it('keeps the color of a fully transparent solid', () => {
+    const clearRed = { color: '#ff0000', opacity: 0 };
+    expect(lerpPaint(clearRed, clearRed, 0)).toEqual({ color: '#ff0000', opacity: 0 });
+    expect(lerpPaint(undefined, { color: '#ff0000' }, 0)).toEqual({ color: '#ff0000', opacity: 0 });
+    expect(lerpPaint({ color: '#ff0000' }, undefined, 1)).toEqual({ color: '#ff0000', opacity: 0 });
+  });
+
   it('fades a missing side in as transparent', () => {
     expect(lerpPaint(undefined, { color: '#0000ff' }, 0.5)).toEqual({ color: '#0000ff', opacity: 0.5 });
   });
