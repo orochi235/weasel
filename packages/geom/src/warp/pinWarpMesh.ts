@@ -10,8 +10,9 @@ import type { Point } from '../paths/cubicMath';
 import { boundsOfPath } from '../paths/bounds';
 import { polygonContainsPoint } from '../polyline';
 import { flattenPolygon } from '../tessellate/tessellate';
-import { resolveCrossings, type FlattenedContours } from '../tessellate/crossings';
-import { nestRings } from '../tessellate/nesting';
+import { resolveCrossings, resolveEvenOdd, type FlattenedContours } from '../tessellate/crossings';
+import { evenOddRings } from '../tessellate/evenOdd';
+import { nestRings, type Ring } from '../tessellate/nesting';
 import type { ArapMesh } from './arap';
 import { refineTriangulation } from './refine';
 import { addOrigin } from '../paths/pathOrigin';
@@ -42,15 +43,24 @@ interface Region {
   inner: MeshPoint[];
 }
 
-function ringsOf(path: PolygonPath, tolerance: number): { flat: FlattenedContours; filled: (w: number) => boolean } {
+/** `path`'s outline as rings that do not cross, nested, and which windings are fill; as the renderer resolves it. */
+function ringsOf(path: PolygonPath, tolerance: number): { flat: FlattenedContours; rings: Ring[]; filled: (w: number) => boolean } {
   const flat = flattenPolygon(path, tolerance);
   addOrigin(path, flat.coords);
-  if (path.fillRule === 'evenodd') return { flat, filled: (w) => w % 2 !== 0 };
-  const crossed = resolveCrossings(flat);
   const nonzero = (w: number) => w !== 0;
-  if (crossed) return { flat: crossed, filled: nonzero };
-  const simple = nestRings(flat).every((r) => Math.abs(r.winding) <= 1);
-  return { flat: simple ? flat : resolveCrossings(flat, true)!, filled: nonzero };
+  if (path.fillRule === 'evenodd') {
+    const rings = evenOddRings(flat);
+    if (rings) return { flat, rings, filled: nonzero };
+    const resolved = resolveEvenOdd(flat);
+    if (resolved) return { flat: resolved, rings: nestRings(resolved), filled: nonzero };
+    return { flat, rings: nestRings(flat), filled: (w) => w % 2 !== 0 };
+  }
+  const crossed = resolveCrossings(flat);
+  if (crossed) return { flat: crossed, rings: nestRings(crossed), filled: nonzero };
+  const rings = nestRings(flat);
+  if (rings.every((r) => Math.abs(r.winding) <= 1)) return { flat, rings, filled: nonzero };
+  const rebuilt = resolveCrossings(flat, true)!;
+  return { flat: rebuilt, rings: nestRings(rebuilt), filled: nonzero };
 }
 
 /** The ring from vertex `start` to `end` of `coords`, with no edge longer than `h`. */
@@ -72,8 +82,7 @@ function resample(coords: number[], start: number, end: number, h: number): Mesh
 }
 
 function regionsOf(path: PolygonPath, tolerance: number, h: number): { regions: Region[]; area: number } {
-  const { flat, filled } = ringsOf(path, tolerance);
-  const rings = nestRings(flat);
+  const { flat, rings, filled } = ringsOf(path, tolerance);
   const regions = new Map<number, Region>();
   let area = 0;
   rings.forEach((r, i) => {

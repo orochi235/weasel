@@ -169,6 +169,27 @@ describe('pinWarpMap', () => {
     mesh.pinVertex.forEach((v, k) => close({ x: vertices[2 * v], y: vertices[2 * v + 1] }, { x: mesh.vertices[2 * v] + 4 * k, y: mesh.vertices[2 * v + 1] - 3 * k }));
   });
 
+  it('meshes an even-odd pentagram without its empty center', () => {
+    const b = new PathBuilder();
+    for (let i = 0; i < 5; i++) {
+      const a = Math.PI / 2 + (i * 4 * Math.PI) / 5;
+      if (i) b.lineTo(100 + 100 * Math.cos(a), 100 + 100 * Math.sin(a)); else b.moveTo(100 + 100 * Math.cos(a), 100 + 100 * Math.sin(a));
+    }
+    const star = { ...b.close().build(), fillRule: 'evenodd' as const };
+    const mesh = pinWarpMesh(star, []);
+    const T = mesh.triangles, V = mesh.vertices;
+    let area = 0;
+    for (let t = 0; t < T.length; t += 3) {
+      const [a, b2, c] = [T[t], T[t + 1], T[t + 2]];
+      area += Math.abs((V[2 * b2] - V[2 * a]) * (V[2 * c + 1] - V[2 * a + 1]) - (V[2 * c] - V[2 * a]) * (V[2 * b2 + 1] - V[2 * a + 1])) / 2;
+    }
+    // Five tips, each a triangle on one side of the inner pentagon, whose circumradius is R·sin18°/sin126°.
+    const r = (100 * Math.sin(Math.PI / 10)) / Math.sin((7 * Math.PI) / 10);
+    const side = 2 * r * Math.sin(Math.PI / 5);
+    const tips = 5 * 0.5 * side * (side / 2) * Math.tan((2 * Math.PI) / 5);
+    expect(area).toBeCloseTo(tips, 0);
+  });
+
   it('moves the whole shape with one pin, and leaves it be with none', () => {
     close(pinWarpMap(square(), [])({ x: 3, y: 4 }), { x: 3, y: 4 });
     close(pinWarpMap(square(), [{ from: { x: 50, y: 50 }, to: { x: 55, y: 57 } }])({ x: 10, y: 10 }), { x: 15, y: 17 });
