@@ -6,7 +6,6 @@ import {
 } from '@weasel-js/core';
 import * as coreOps from '@weasel-js/core/ops';
 
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** Where a node sits: its parent, its layer, and the sibling it is just below (`null` when it is last). */
 interface Place {
@@ -16,7 +15,7 @@ interface Place {
   before: string | null;
 }
 
-function placeOf(scene: AnyScene, id: NodeId): Place {
+function placeOf(scene: Scene<unknown, string, unknown>, id: NodeId): Place {
   const node = scene.get(id)!;
   const parent = node.parent ?? null;
   const siblings = parent === null ? scene.roots : scene.childrenOf(parent);
@@ -48,7 +47,7 @@ function landOps(id: NodeId, from: Place, to: Place, label: string): Op[] {
  * each pose as stored once the translation has applied. `null` when `parent`'s frame is singular.
  */
 function reframed(
-  scene: AnyScene,
+  scene: Scene<unknown, string, unknown>,
   frame: PoseFrame<unknown>,
   id: NodeId,
   parent: NodeId | null,
@@ -82,7 +81,7 @@ function reframed(
  * `swappable`'s to say.
  */
 export function swapOps(
-  scene: AnyScene,
+  scene: Scene<unknown, string, unknown>,
   a: string,
   b: string,
   deps: Pick<ActionDeps, 'poseDescriptor' | 'geometryProjection'> = {},

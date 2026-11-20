@@ -60,6 +60,7 @@ const KIT_IDS = [
   'reorder.forward', 'reorder.backward',
   'align.left', 'align.right', 'align.top', 'align.bottom', 'align.centerX', 'align.centerY',
   'distribute.horizontal', 'distribute.vertical',
+  'swap',
   'pathfinder.union', 'pathfinder.subtract', 'pathfinder.intersect',
   'pathfinder.exclude', 'pathfinder.divide', 'pathfinder.crop',
   'pathfinder.trim', 'pathfinder.merge', 'pathfinder.booleanGroup',
