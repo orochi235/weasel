@@ -30,12 +30,21 @@ function cubicSecondDerivativeAt(p0: Point, p1: Point, p2: Point, p3: Point, t: 
 export function cubicCurvatureAt(p0: Point, p1: Point, p2: Point, p3: Point, t: number): number {
   const d1 = cubicDerivativeAt(p0, p1, p2, p3, t);
   const d2 = cubicSecondDerivativeAt(p0, p1, p2, p3, t);
-  const speed = Math.hypot(d1.x, d1.y);
-  // Judged against the control polygon, so a curve's size does not decide whether it has a direction.
   const reach = Math.hypot(p1.x - p0.x, p1.y - p0.y) + Math.hypot(p2.x - p1.x, p2.y - p1.y)
     + Math.hypot(p3.x - p2.x, p3.y - p2.y);
+  return curvatureFromDerivatives(d1, d2, reach);
+}
+
+/**
+ * Signed curvature from a curve's first and second derivatives at a point, 0 where the first is no longer
+ * than `EPS` of `reach`, the length of the curve's control polygon: judged against that, a curve's size does
+ * not decide whether it has a direction. Divided through the unit tangent, so no power of the speed over-
+ * or underflows at either end of the double range.
+ */
+export function curvatureFromDerivatives(d1: Point, d2: Point, reach: number): number {
+  const speed = Math.hypot(d1.x, d1.y);
   if (!(speed > EPS * reach)) return 0;
-  return (d1.x * d2.y - d1.y * d2.x) / (speed * speed * speed);
+  return ((d1.x / speed) * d2.y - (d1.y / speed) * d2.x) / speed / speed;
 }
 
 /** One tooth of a curvature comb: a point on the curve and the tip of the
