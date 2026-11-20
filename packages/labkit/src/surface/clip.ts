@@ -24,6 +24,22 @@ function paddingEdges(el: Element): Edges {
   return { left, top, right: left + el.clientWidth * sx, bottom: top + el.clientHeight * sy };
 }
 
+/** The viewport in viewport px, inside its scrollbars. */
+function viewportEdges(doc: Document): Edges {
+  const root = doc.documentElement;
+  return { left: 0, top: 0, right: root.clientWidth, bottom: root.clientHeight };
+}
+
+/** Whether the `overflow` `a` computes to clips the viewport rather than `a`'s own box: the root's always does,
+ *  and the body's does when the root's is `visible` on both axes, which hands the body's to the viewport. */
+function clipsViewport(a: Element): boolean {
+  const doc = a.ownerDocument;
+  if (a === doc.documentElement) return true;
+  if (a !== doc.body) return false;
+  const root = getComputedStyle(doc.documentElement);
+  return !clips(root.overflowX) && !clips(root.overflowY);
+}
+
 /** Whether `el` is drawn in the top layer, where no ancestor's overflow reaches. */
 function inTopLayer(el: Element): boolean {
   try {
@@ -64,7 +80,7 @@ export function clipToAncestors(el: Element, box: Box): Box {
     const style = getComputedStyle(a);
     const x = clips(style.overflowX);
     const y = clips(style.overflowY);
-    const edges = x || y ? paddingEdges(a) : null;
+    const edges = !(x || y) ? null : clipsViewport(a) ? viewportEdges(a.ownerDocument) : paddingEdges(a);
     if (edges && x) {
       out.left = Math.max(out.left, edges.left);
       out.right = Math.min(out.right, edges.right);

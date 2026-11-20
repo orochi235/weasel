@@ -94,6 +94,44 @@ describe('clipToAncestors', () => {
     expect(clipToAncestors(tile, box)).toEqual({ left: 100, top: 120, width: 200, height: 40 });
   });
 
+  describe('at the root', () => {
+    const root = document.documentElement;
+    /** A viewport of 1000 × 800 under a document scrolled 500px down. */
+    function scrolled(): void {
+      Object.defineProperty(root, 'clientWidth', { configurable: true, value: 1000 });
+      Object.defineProperty(root, 'clientHeight', { configurable: true, value: 800 });
+      Object.defineProperty(root, 'offsetWidth', { configurable: true, value: 1000 });
+      Object.defineProperty(root, 'offsetHeight', { configurable: true, value: 3000 });
+      stubBox(root, 0, -500, 1000, 3000);
+      stubBox(document.body, 0, -500, 1000, 0);
+    }
+    afterEach(() => {
+      Reflect.deleteProperty(root, 'clientWidth');
+      Reflect.deleteProperty(root, 'clientHeight');
+      Reflect.deleteProperty(root, 'offsetWidth');
+      Reflect.deleteProperty(root, 'offsetHeight');
+      root.style.cssText = '';
+      document.body.style.cssText = '';
+      vi.restoreAllMocks();
+    });
+    const onScreen = { left: 100, top: 400, width: 200, height: 100 };
+
+    it("cuts to the viewport, not the scrolled root's own box", () => {
+      scrolled();
+      root.style.cssText = 'overflow-x: hidden; overflow-y: scroll';
+      const { tile } = nest('', '');
+      expect(clipToAncestors(tile, onScreen)).toEqual(onScreen);
+    });
+
+    it("reads a body's overflow, handed to the viewport, as the viewport's", () => {
+      scrolled();
+      document.body.style.cssText = BOTH;
+      const { tile } = nest('', '');
+      expect(clipToAncestors(tile, onScreen)).toEqual(onScreen);
+      expect(clipToAncestors(tile, { ...onScreen, top: 750 }).height).toBe(50);
+    });
+  });
+
   it('is zero-sized where nothing shows', () => {
     const { outer, tile } = nest(BOTH, '');
     stubBox(outer, 400, 0, 100, 1000);
