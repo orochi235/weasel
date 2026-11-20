@@ -90,7 +90,8 @@ export function reachToMeet(
     }
     // A curve bends away before it runs straight: let the straight run cover the reach on its own.
     if (mode === 'eased') reach += Math.min(easeLength(frame, opts), reach);
-    if (mode === 'curvature') reach = Infinity;
+    // An arc stops itself at one full turn; a straight end has no turn to stop it.
+    if (mode === 'curvature' && frame.curvature !== 0) reach = Infinity;
   }
   if (!(reach > 0)) return null;
   let best: number | null = null;
