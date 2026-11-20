@@ -294,6 +294,43 @@ describe('full pages', () => {
     expect(face.font.charMap.size).toBe(0);
   });
 
+  it('empties the settled pages for a glyph that found no room while they refilled, once text asks for it again', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const notified = vi.fn();
+    const face = getDynamicFace('Big', 400, 'normal');
+    for (let i = 0; i < 5; i++) face.requestGlyph(65 + i);
+    vi.runAllTimers();
+    resetBakeBudget(Infinity);
+    for (let i = 0; i < 5; i++) face.requestGlyph(65 + i);
+    vi.runAllTimers();
+    expect(face.requestGlyph(69).page).toBe(-1);
+    subscribeGlyphReady(notified);
+
+    // The text scrolls so only the glyph that found no room is on screen.
+    resetBakeBudget(Infinity);
+    resetBakeBudget(Infinity);
+    face.requestGlyph(69);
+    vi.runAllTimers();
+    expect(notified).toHaveBeenCalledTimes(1);
+    expect(face.requestGlyph(69).page).toBe(0);
+  });
+
+  it('empties the pages for such a glyph once, while text needs more than they hold', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const notified = vi.fn();
+    const face = getDynamicFace('Big', 400, 'normal');
+    const frame = () => {
+      resetBakeBudget(Infinity);
+      for (let i = 0; i < 5; i++) face.requestGlyph(65 + i);
+      vi.runAllTimers();
+    };
+    frame();
+    frame();
+    subscribeGlyphReady(notified);
+    for (let i = 0; i < 6; i++) frame();
+    expect(notified).toHaveBeenCalledTimes(1);
+  });
+
   it('does not empty the pages for a glyph no page could hold', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     __setGlyphRasterizerForTests({

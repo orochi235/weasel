@@ -22,7 +22,7 @@ export const SDF_CUTOFF = 0.5;
 export const DEFAULT_BAKE_BUDGET = 16;
 
 type Raster = RasterizedGlyph | RasterizedColorGlyph;
-interface PendingBake { char: BmFontChar; raster: Raster; sharp: boolean; }
+interface PendingBake { char: BmFontChar; raster: Raster; sharp: boolean; retried?: boolean }
 
 /** Room on one set of pages, and whether that set is waiting to be emptied. */
 interface Room {
@@ -43,6 +43,13 @@ let flushScheduled = false;
 let budget = DEFAULT_BAKE_BUDGET;
 /** Glyphs measured since the frame began. */
 let asked = 0;
+/** Glyphs that found no room while their pages refilled after an emptying,
+ *  kept so that asking for one again once the pages settle can empty them. */
+let starved = new Map<BmFontChar, PendingBake>();
+/** Set by an emptying a starved glyph asked for, and cleared by a newly
+ *  measured glyph: one that starves again then waits for the text to change,
+ *  so text needing more than the pages hold does not empty them every frame. */
+let starvedRetry: 'idle' | 'emptying' | 'blocked' = 'idle';
 let forgetGlyphs: () => void = () => {};
 let forgetSharp: () => void = () => {};
 const warned = new Set<string>();
@@ -64,30 +71,54 @@ export function onSharpPagesEmptied(forget: () => void): void {
  */
 export function requestBake(char: BmFontChar, raster: Raster, sharp = false): void {
   asked++;
+  if (starvedRetry === 'blocked') starvedRetry = 'idle';
   if (raster.width === 0 || raster.height === 0) {
     char.page = 0; // blank glyph (space): nothing to bake
     return;
   }
+  queueBake({ char, raster, sharp });
+}
+
+function queueBake(job: PendingBake): void {
   if (budget > 0) {
     budget--;
-    bake(char, raster, sharp);
+    bake(job.char, job.raster, job.sharp, job.retried);
   } else {
-    pending.push({ char, raster, sharp });
+    pending.push(job);
     scheduleFlush();
   }
+}
+
+/**
+ * Text asked again for `char`, a glyph with no rect. One that found no room
+ * while the pages refilled is baked again once they have settled, which
+ * empties them when it still finds none, so the text now on screen bakes into
+ * the room that leaves.
+ */
+export function retryStarved(char: BmFontChar): void {
+  const job = starved.get(char);
+  if (!job || starvedRetry === 'blocked' || !roomOf(job).settled) return;
+  starved.delete(char);
+  asked++;
+  queueBake({ ...job, retried: true });
+}
+
+function roomOf(job: PendingBake): Room {
+  return job.sharp ? sharpRoom : 'rgba' in job.raster ? colorRoom : fieldRoom;
 }
 
 /** Abandon the bakes still waiting for any of `chars`. */
 export function dropBakes(chars: ReadonlySet<BmFontChar>): void {
   pending = pending.filter((job) => !chars.has(job.char));
+  for (const char of chars) starved.delete(char);
 }
 
-function bake(char: BmFontChar, raster: Raster, sharp: boolean): void {
+function bake(char: BmFontChar, raster: Raster, sharp: boolean, retried = false): void {
   const color = 'rgba' in raster;
-  const room = sharp ? sharpRoom : color ? colorRoom : fieldRoom;
+  const room = roomOf({ char, raster, sharp });
   const spot = room.packer.alloc(raster.width, raster.height);
   if (!spot) {
-    noRoom(room, raster, sharp ? reclaimSharp : reclaim);
+    noRoom(room, { char, raster, sharp, retried }, sharp ? reclaimSharp : reclaim);
     return;
   }
   if (color && sharp) {
@@ -106,18 +137,22 @@ function bake(char: BmFontChar, raster: Raster, sharp: boolean): void {
 }
 
 /** A glyph found no room, and stays invisible for the frame that asked. */
-function noRoom(room: Room, raster: Raster, empty: () => void): void {
+function noRoom(room: Room, job: PendingBake, empty: () => void): void {
+  const { raster } = job;
   if (!room.packer.fits(raster.width, raster.height)) {
     warnOnce('weasel DynamicGlyphAtlas: a glyph is larger than a page and will not render.');
   } else if (!room.settled) {
     // A sharp bake that finds no room leaves its glyph on a softer one, so it
     // goes unsaid.
     if (room === sharpRoom) return;
+    starved.set(job.char, job);
+    if (starvedRetry === 'emptying') starvedRetry = 'blocked';
     warnOnce(
       `weasel DynamicGlyphAtlas: more glyphs are in use at once than its pages hold ` +
       `(${MAX_PAGES} × ${PAGE_SIZE}²); the rest will not render.`);
   } else if (!room.reclaimScheduled) {
     room.reclaimScheduled = true;
+    if (job.retried) starvedRetry = 'emptying';
     setTimeout(empty, 0);
   }
 }
@@ -138,6 +173,7 @@ function reclaim(): void {
   colorRoom = { ...newRoom(), settled: false };
   sharpRoom = { ...newRoom(), settled: false };
   pending = [];
+  starved = new Map();
   clearPages();
   forgetGlyphs();
   forgetSharp();
@@ -166,7 +202,7 @@ function flushPending(): void {
   while (pending.length > 0 && n < DEFAULT_BAKE_BUDGET) {
     const job = pending.shift()!;
     if (job.char.page !== -1) continue; // already baked
-    bake(job.char, job.raster, job.sharp);
+    bake(job.char, job.raster, job.sharp, job.retried);
     n++;
   }
   if (pending.length > 0) scheduleFlush();
@@ -179,6 +215,7 @@ function flushPending(): void {
 export function resetBakeBudget(n: number = DEFAULT_BAKE_BUDGET): void {
   budget = n;
   if (asked === 0 && pending.length === 0) {
+    if (starvedRetry === 'emptying') starvedRetry = 'idle';
     fieldRoom.settled = true;
     colorRoom.settled = true;
     sharpRoom.settled = true;
@@ -192,6 +229,8 @@ export function _resetBakeQueueForTests(): void {
   colorRoom = newRoom();
   sharpRoom = newRoom();
   pending = [];
+  starved = new Map();
+  starvedRetry = 'idle';
   flushScheduled = false;
   asked = 0;
   warned.clear();

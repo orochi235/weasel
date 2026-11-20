@@ -26,7 +26,7 @@ import type { BmFont, BmFontChar } from '../FontAtlas';
 import { getFontFallbackPolicy } from '../fallback';
 import { notifyGlyphReady, _clearGlyphReadySubscribers } from '../glyphReady';
 import { PAGE_SIZE, MAX_PAGES, _resetPagesForTests } from './dynamicPages';
-import { dropBakes, onPagesEmptied, requestBake, _resetBakeQueueForTests } from './bakeQueue';
+import { dropBakes, onPagesEmptied, requestBake, retryStarved, _resetBakeQueueForTests } from './bakeQueue';
 import { familyKey, watchFontLoads } from './fontLoads';
 import { createCanvasRasterizer, BAKE_SIZE, type GlyphRasterizer } from './glyphRasterizer';
 import { addSharpSource, sharpBakesOf } from './sharpColor';
@@ -267,7 +267,10 @@ export function getDynamicFace(
     family, weight, style, font, clusters, shaped,
     requestGlyph(cp: number): BmFontChar {
       const cached = font.charMap.get(cp);
-      if (cached) return cached;
+      if (cached) {
+        if (cached.page === -1) retryStarved(cached);
+        return cached;
+      }
       const raster = r.rasterize(family, weight, style, cp);
       const char = record(cp, raster);
       font.charMap.set(cp, char);
@@ -277,7 +280,10 @@ export function getDynamicFace(
     },
     requestCluster(text: string): BmFontChar | null {
       const cached = clusters.get(text);
-      if (cached !== undefined) return cached;
+      if (cached !== undefined) {
+        if (cached?.page === -1) retryStarved(cached);
+        return cached;
+      }
       const raster = r.rasterizeColor?.(family, weight, style, text) ?? null;
       const char: BmFontChar | null = raster && { ...record(text.codePointAt(0)!, raster), color: true };
       clusters.set(text, char);
@@ -289,7 +295,10 @@ export function getDynamicFace(
     },
     requestShaped(key: string, d: string): BmFontChar | null {
       const cached = shaped.get(key);
-      if (cached !== undefined) return cached;
+      if (cached !== undefined) {
+        if (cached?.page === -1) retryStarved(cached);
+        return cached;
+      }
       const raster = typeof Path2D === 'undefined' ? null : r.rasterizePath?.(d) ?? null;
       const char = raster && record(0, raster);
       shaped.set(key, char);
