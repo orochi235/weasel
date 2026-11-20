@@ -1,4 +1,4 @@
-import { decimalsOf, formatNumber, tickCount } from './linear';
+import { decimalsOf, formatNumber, stepTicks, tickCount, tickStep } from './linear';
 import { replacedFormat } from './replacedFormat';
 import { tickDecimals } from './tickFormat';
 import type { ContinuousScale } from './types';
@@ -33,8 +33,7 @@ export function logScale(opts: LogScaleOptions): LogScale {
   // Ends too near for their logarithms to differ are told apart by their distance, which a ratio rounds away.
   const along = l1 !== l0 ? (v: number) => (log(v) - l0) / (l1 - l0) : (v: number) => Math.log1p((v - d0) / d0) / Math.log1p((d1 - d0) / d0);
   const map = (v: number) => (d1 === d0 ? (r0 + r1) / 2 : lerp(r0, r1, along(v)));
-  const ticks = (asked = 5): number[] => {
-    const count = tickCount(asked);
+  const powerTicks = (count: number): number[] => {
     const [lo, hi] = l0 <= l1 ? [l0, l1] : [l1, l0];
     if (!Number.isFinite(lo) || !Number.isFinite(hi)) return [];
     const first = Math.floor(lo + 1e-9);
@@ -56,12 +55,20 @@ export function logScale(opts: LogScaleOptions): LogScale {
     }
     return l0 <= l1 ? out : out.reverse();
   };
+  // A domain holding fewer than two of those is nearly linear across it, and ticks and reads as a linear one would.
+  const linear = (count: number) => d0 !== d1 && powerTicks(count).length < 2;
+  const ticks = (count = 5): number[] => {
+    const n = tickCount(count);
+    return linear(n) ? stepTicks(d0, d1, tickStep(d0, d1, n)) : powerTicks(n);
+  };
+  const linearFormat = (count: number) => (v: number) => formatNumber(v, tickStep(d0, d1, count));
   // Each label is as precise as its own decade, whatever the count, and another base's powers as their digits need.
-  const format = (v: number): string => {
+  const decadeFormat = (v: number): string => {
     const decade = v >= 1 ? 0 : decimalsOf(10 ** Math.floor(Math.log10(v)));
     // Digits counted on the value moved up past its decade, as `tickDecimals` counts places to an absolute tolerance.
     return formatNumber(v, 10 ** -(base === 10 ? decade : decade + tickDecimals([v * 10 ** decade])));
   };
+  const format = linear(5) ? linearFormat(5) : decadeFormat;
   return {
     kind: 'log',
     base,
@@ -77,8 +84,9 @@ export function logScale(opts: LogScaleOptions): LogScale {
     },
     ticks,
     format,
-    tickFormat() {
-      return replacedFormat(this, format) ?? format;
+    tickFormat(count) {
+      const n = tickCount(count);
+      return replacedFormat(this, format) ?? (linear(n) ? linearFormat(n) : decadeFormat);
     },
   };
 }

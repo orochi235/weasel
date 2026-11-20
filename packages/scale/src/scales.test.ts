@@ -138,6 +138,16 @@ describe('logScale', () => {
     expect(s.invert(25)).toBeGreaterThan(d0);
     expect(s.invert(75)).toBeLessThan(d1);
   });
+
+  it('ticks a domain holding fewer than two of its round values as a linear scale would, and labels them so', () => {
+    for (const domain of [[300, 450], [6, 9], [1.1, 1.9], [150, 450]] as const) {
+      const s = logScale({ domain, range: [0, 100] });
+      expect(s.ticks()).toEqual(linearScale({ domain, range: [0, 100] }).ticks());
+      expect(s.ticks().map(s.tickFormat())).toEqual(linearScale({ domain, range: [0, 100] }).ticks().map(linearScale({ domain, range: [0, 100] }).tickFormat()));
+    }
+    expect(logScale({ domain: [1.1, 1.9], range: [0, 100] }).format(1.5)).toBe('1.5');
+    expect(logScale({ domain: [3, 3.5], range: [0, 100], base: 2 }).ticks().length).toBeGreaterThan(1);
+  });
 });
 
 describe('bandScale', () => {
