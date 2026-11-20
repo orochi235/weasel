@@ -50,3 +50,18 @@ describe('reading connectors', () => {
     expect(warnings).toContain('Connectors with more than one label at an end kept only the first.');
   });
 });
+
+describe('reading groups', () => {
+  it('warns of a group holding only containers, and of a connector ending on it', async () => {
+    const lane = (id: string, x: number) =>
+      `<mxCell id="${id}" value="${id}" style="swimlane;" vertex="1" parent="g"><mxGeometry x="${x}" y="0" width="100" height="80" as="geometry"/></mxCell>`;
+    const { data, warnings } = await page(`<mxCell id="g" style="group;" vertex="1" parent="1"><mxGeometry x="0" y="0" width="300" height="80" as="geometry"/></mxCell>`
+      + lane('c1', 0) + lane('c2', 150) + box('a', 0, 200)
+      + `<mxCell id="e" edge="1" parent="1" source="a" target="g"><mxGeometry relative="1" as="geometry"/></mxCell>`);
+    expect(data.clusters).toBeUndefined();
+    expect(data.edges).toEqual([]);
+    expect(warnings).toContain('Groups holding no shape were dropped.');
+    expect(warnings).toContain('Connectors ending on a dropped group were left out.');
+    expect(warnings).not.toContain('Connectors with a loose end, or with an end on another connector, were left out.');
+  });
+});

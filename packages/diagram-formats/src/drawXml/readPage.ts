@@ -85,7 +85,7 @@ const groupMembers = (page: PageCells, cell: RawCell, kept: (c: RawCell) => bool
   page.childrenOf(cell.id).filter((c) => page.kindOf(c) === 'shape' || (page.kindOf(c) === 'group' && kept(c)));
 
 /** The group cells a page keeps: those holding a shape or a kept group, outside every container, pool and lane, whose
- *  shapes belong to the region alone. Warns of a group dropped from a region. */
+ *  shapes belong to the region alone. Warns of a group dropped from a region, and of one dropped for holding no shape. */
 function keptGroups(page: PageCells, warn: Warn): Set<RawCell> {
   const seen = new Map<RawCell, boolean>();
   const kept = (cell: RawCell): boolean => {
@@ -98,6 +98,7 @@ function keptGroups(page: PageCells, warn: Warn): Set<RawCell> {
   };
   const groups = page.cells.filter((c) => page.kindOf(c) === 'group');
   if (groups.some((c) => page.regionOf(c) !== null)) warn('Groups inside a container or lane were dropped; their shapes stay in it.');
+  if (groups.some((c) => page.regionOf(c) === null && !kept(c))) warn('Groups holding no shape were dropped.');
   return new Set(groups.filter(kept));
 }
 
@@ -108,15 +109,15 @@ function readGroup({ page, idOf, groups }: Reader, cell: RawCell): DataCluster {
 const moved = (p: Vec2, by: Vec2): Vec2 => ({ x: p.x + by.x, y: p.y + by.y });
 
 function readEdge({ page, idOf, groups, warn }: Reader, cell: RawCell, byCellId: ReadonlyMap<string, RawCell>): DataEdge | null {
-  const end = (id: string | null) => {
-    const target = id === null ? undefined : byCellId.get(id);
-    if (target === undefined || (page.kindOf(target) === 'group' && !groups.has(target))) return undefined;
-    return page.kindOf(target) === 'edge' || page.kindOf(target) === 'label' ? undefined : idOf.get(target);
-  };
-  const from = end(cell.source);
-  const to = end(cell.target);
+  const target = (id: string | null) => (id === null ? undefined : byCellId.get(id));
+  const dropped = (c: RawCell | undefined) => c !== undefined && page.kindOf(c) === 'group' && !groups.has(c);
+  const end = (c: RawCell | undefined) =>
+    (c === undefined || dropped(c) || page.kindOf(c) === 'edge' || page.kindOf(c) === 'label' ? undefined : idOf.get(c));
+  const from = end(target(cell.source));
+  const to = end(target(cell.target));
   if (from === undefined || to === undefined) {
-    warn('Connectors with a loose end, or with an end on another connector, were left out.');
+    if ([target(cell.source), target(cell.target)].some(dropped)) warn('Connectors ending on a dropped group were left out.');
+    else warn('Connectors with a loose end, or with an end on another connector, were left out.');
     return null;
   }
   const origin = page.originOf(cell.parent);

@@ -237,7 +237,7 @@ describe('reading groups and connectors in a model', () => {
     expect(() => documentSpecs(document)).not.toThrow();
   });
 
-  it('drops a group holding no shape from its group\'s members, and an edge to it with the loose-end warning', async () => {
+  it('drops a group holding no shape from its group\'s members, and an edge to it, with warnings', async () => {
     const { document, warnings } = await read(`<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>
       <mxCell id="g1" style="group;" vertex="1" parent="1"><mxGeometry x="0" y="0" width="200" height="100" as="geometry"/></mxCell>
       <mxCell id="a" value="A" vertex="1" parent="g1"><mxGeometry x="0" y="0" width="40" height="20" as="geometry"/></mxCell>
@@ -248,7 +248,7 @@ describe('reading groups and connectors in a model', () => {
     const page = document.pages.map(asGraph)[0]!;
     expect(page.data.clusters).toEqual([{ id: 'g1', members: ['a'] }]);
     expect(page.data.edges).toEqual([]);
-    expect(warnings).toContain('Connectors with a loose end, or with an end on another connector, were left out.');
+    expect(warnings).toEqual(['Groups holding no shape were dropped.', 'Connectors ending on a dropped group were left out.']);
   });
 
   it('moves a waypoint left of the page onto it, and grows the page to hold one past its right edge', async () => {
