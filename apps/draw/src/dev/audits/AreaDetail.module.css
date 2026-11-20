@@ -61,10 +61,10 @@
 
 .pillA {
   left: 0;
-  background: color-mix(in oklab, var(--wzl-swatch-sky) 30%, transparent);
+  background: oklch(from var(--wzl-swatch-sky) l calc(c * 0.35) h / 0.3);
 }
 
 .pillB {
   right: 0;
-  background: color-mix(in oklab, var(--wzl-swatch-fuchsia) 30%, transparent);
+  background: oklch(from var(--wzl-swatch-fuchsia) l calc(c * 0.35) h / 0.3);
 }
