@@ -82,7 +82,9 @@ describe('<DrawCanvas>', () => {
     };
     render(<DrawCanvas width={40} height={20} background={background} draw={[]} />);
     const [bg] = lastFrame();
-    expect((bg as { fill: unknown }).fill).toMatchObject({ paint: { units: 'local', to: { x: 40, y: 20 } } });
+    expect((bg as { fill: unknown }).fill).toMatchObject({
+      paint: { units: 'local', from: { x: 0, y: 0 }, to: { x: expect.closeTo(16, 9), y: expect.closeTo(32, 9) } },
+    });
   });
 
   it('repaints on the next frame when its commands change', async () => {
