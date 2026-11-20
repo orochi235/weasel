@@ -38,10 +38,11 @@ export function useRestoredHistory(args: {
   const { store, trialId, enabled, maxDepth, rebuild } = args;
   const saved = useStore(store, (s) => s.trials.find((t) => t.id === trialId)?.undo?.trial);
   useEffect(() => {
-    if (!saved || restored.has(saved)) return;
+    // Not marked until the trial can take it: an instrument that gains `undo` later still restores it.
+    if (!enabled || !saved || restored.has(saved)) return;
     restored.add(saved);
     const record = store.getState().trials.find((t) => t.id === trialId);
-    if (!enabled || !record || record.history) return;
+    if (!record || record.history) return;
     const serializer = ownAt(store.getState().instrumentHooks().serializers, record.instrumentName);
     const data = restorableTrialHistory(saved, serializer);
     const history = trialUndoHistory(maxDepth, rebuild);
