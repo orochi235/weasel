@@ -5,7 +5,7 @@ import {
   _resetExportFormatsForTests, exportFormatRegistry, exportFormats, exportRegions, pickExportOptions, registerExportFormat,
 } from './exportFormats';
 import { exportPages } from './exportPages';
-import type { ExportFormat, ExportOptions, ExportRegion } from './exportTypes';
+import { exportBackgroundOf, type ExportFormat, type ExportOptions, type ExportRegion, type ExportScene } from './exportTypes';
 import { exportRegionsOf } from './captureExport';
 import { selectionRegion } from './selectionRegion';
 
@@ -169,6 +169,16 @@ describe('exportPages', () => {
     await exportPages(scene, stale, 'many');
     expect(calls[0]!.regions.map((r) => r.x)).toEqual([0, 240]);
     await expect(exportPages(scene, [{ ...pages[0]!, id: 'gone' }], 'many')).rejects.toThrow(/no page "gone"/);
+  });
+});
+
+describe('the registry\'s background option', () => {
+  it('takes a function of the document drawn and hands it to the format', async () => {
+    registerExportFormat(fake('two', true));
+    const { scene, pages } = plainScene();
+    const background = (doc: ExportScene) => (doc.nodes.size > 0 ? '#ffffff' : null);
+    await exportPages(scene, pages, 'two', { background });
+    expect(exportBackgroundOf(calls[0]!.opts.background, scene)).toBe('#ffffff');
   });
 });
 
