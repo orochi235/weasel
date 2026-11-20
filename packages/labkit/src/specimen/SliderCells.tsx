@@ -40,13 +40,7 @@ export function SliderCells() {
       </Cell>
       <Cell label="useDetents, InlineRange">
         <Slider aria-label="Playback rate" trackHeight={8} {...detents} />
-        <InlineRange
-          aria-label="Width"
-          min={0}
-          max={20}
-          value={width}
-          onValueInput={setWidth}
-        />
+        <InlineRange aria-label="Width" min={0} max={20} value={width} onValueInput={setWidth} />
       </Cell>
     </>
   );

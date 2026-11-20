@@ -1,7 +1,12 @@
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { ActionDisabledReason, type ActionsRegistry } from '@weasel-js/routing';
 import {
-  ActionsProvider, ActiveToolContextProvider, DepRegistryProvider, useActionsRegistry, useCommand, useGestureDispatcher,
+  ActionsProvider,
+  ActiveToolContextProvider,
+  DepRegistryProvider,
+  useActionsRegistry,
+  useCommand,
+  useGestureDispatcher,
 } from '@weasel-js/routing/react';
 import { createToastQueue, ToastRegion } from '@weasel-js/ui/components/Toast';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
@@ -62,14 +67,19 @@ function Refused() {
     enabled: () => ActionDisabledReason.SelectionRequired,
   });
   useGestureDispatcher({
-    canvasRef: { current: null }, actions: registry, entriesById: new Map(),
-    channels: { contextMenu: false, ingest: false }, keyboard: 'page',
+    canvasRef: { current: null },
+    actions: registry,
+    entriesById: new Map(),
+    channels: { contextMenu: false, ingest: false },
+    keyboard: 'page',
   });
   return null;
 }
 
 describe('the specimen toast demo', () => {
-  beforeEach(() => { vi.useFakeTimers(); });
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
   afterEach(() => {
     cleanup();
     vi.useRealTimers();
@@ -88,7 +98,9 @@ describe('the specimen toast demo', () => {
       </DepRegistryProvider>,
     );
     fireEvent.keyDown(document.body, { key: 'd' });
-    act(() => { vi.advanceTimersByTime(1); });
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
     const told = screen.getAllByText('Selection required');
     expect(told).toHaveLength(1);
     expect(told[0]!.closest('.host')).not.toBeNull();
