@@ -8,6 +8,8 @@ import { resolveLayoutExits } from '../layout/exits';
 import type { MoveSession } from '../session';
 import { translateOps, unreleasedIds } from '../translate';
 import { rebaseTransformOp } from './rebase';
+import { belowRoots } from './pageDrop';
+import { landedCascadeOps } from './reparent';
 import { boxOf, containerView, draggedInView, opInWorld } from '../layout/view';
 import * as coreOps from '@weasel-js/core/ops';
 
@@ -92,6 +94,7 @@ export function layoutReleaseOps(
   const releasedOps: Op[] = [];
   let exits = new Map<NodeId, NodeId | null>();
   const exitOps: Op[] = [];
+  const ridden = new Set<NodeId>();
   if (session.layout) {
     const pc = session.pc;
     const commitAdapter = sceneViewPoseAdapter(session.scene);
@@ -111,6 +114,7 @@ export function layoutReleaseOps(
     // A child its container let go of outside that container leaves it,
     // keeping the world pose it was dropped at.
     exits = resolveLayoutExits(session, dropCenter, session.ids.filter((id) => !released.has(id)));
+    const below = belowRoots(session, new Set(exits.keys()));
     for (const [id, toParent] of exits) {
       const node = session.scene.get(id)!;
       const world = draggedWorldPose(session, grabbedPoseAdapter(session, commitAdapter), id, { dx, dy });
@@ -128,6 +132,12 @@ export function layoutReleaseOps(
         to,
         label: session.lifecycle.label,
       }));
+      // What rides the root is stored in the frame the root moves into, as on a reparent.
+      const riders = (below.get(id) ?? []).filter((r) => !exits.has(r));
+      const cascade = landedCascadeOps(session, riders, toParent, delta);
+      if (cascade === null) return null;
+      exitOps.push(...cascade);
+      for (const r of riders) ridden.add(r);
     }
   }
   if (released.size === 0 && exits.size === 0) return undefined;
@@ -141,7 +151,7 @@ export function layoutReleaseOps(
     ...followers,
     ...translateOps(
       session,
-      unreleasedIds(session, released).filter((id) => !exits.has(id)),
+      unreleasedIds(session, released).filter((id) => !exits.has(id) && !ridden.has(id)),
       { dx, dy },
     ),
   ];

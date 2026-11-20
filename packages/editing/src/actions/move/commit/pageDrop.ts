@@ -106,7 +106,7 @@ export function pageDrops(
 }
 
 /** Each dragged node below one of `roots`, selected or not, keyed by that root. */
-function belowRoots(session: MoveSession, roots: ReadonlySet<NodeId>): Map<NodeId, NodeId[]> {
+export function belowRoots(session: MoveSession, roots: ReadonlySet<NodeId>): Map<NodeId, NodeId[]> {
   const out = new Map<NodeId, NodeId[]>();
   for (const id of new Set([...session.ids, ...session.cascadeIds])) {
     let cur = session.scene.get(id)?.parent ?? null;
