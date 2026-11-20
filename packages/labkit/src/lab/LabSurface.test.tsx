@@ -1,6 +1,10 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { type LightboxLayerSet, LightboxLayers, useLightboxLayers } from '../lightbox/LightboxLayers';
+import {
+  type LightboxLayerSet,
+  LightboxLayers,
+  useLightboxLayers,
+} from '../lightbox/LightboxLayers';
 import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext';
 import type { SurfaceHandle } from '../surface/useTiledSurface';
 import { LabSurface } from './LabSurface';
@@ -23,7 +27,9 @@ describe('LabSurface', () => {
     }
     render(
       <SurfaceContext.Provider value={surface}>
-        <SurfaceCanvasContext.Provider value={{ over: null, under: null, top: null, claimTop: () => () => {} }}>
+        <SurfaceCanvasContext.Provider
+          value={{ over: null, under: null, top: null, claimTop: () => () => {} }}
+        >
           <LightboxLayers below={host.below} above={host.above}>
             <LabSurface bodyRef={() => {}}>
               <Probe />
