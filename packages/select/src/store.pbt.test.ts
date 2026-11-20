@@ -1,8 +1,8 @@
 /**
  * Stateful property test of `createSelectionStore`: random sets (with repeats, unchanged, reordered, emptied) and
  * subscribes and unsubscribes against a model. Every step checks the ids, each once at its first place, that a set
- * leaving them as they were notifies no one and keeps the array readers hold, and that a change notifies each
- * listener once.
+ * leaving them as they were notifies no one and keeps the array readers hold, that a change notifies each listener
+ * once, and that the store never holds the caller's own array.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
@@ -30,7 +30,7 @@ class SetIds implements fc.Command<Model, Real> {
     expect(r.store.getSelection()).toEqual(want);
     expect([...r.heard].sort()).toEqual(changes ? [...m.on].sort() : []);
     if (!changes) expect(r.store.getSelection()).toBe(before);
-    else if (want.length === next.length) expect(r.store.getSelection()).toBe(next);
+    else expect(r.store.getSelection()).not.toBe(next);
     t.count(changes ? 'changed' : 'unchanged');
     if (next.length !== want.length) t.count('repeats');
     m.ids = want;
@@ -71,6 +71,7 @@ describe('createSelectionStore, against a model', () => {
     ], { maxCommands: 25 }), (initial, cmds) => {
       const store = createSelectionStore(initial);
       expect(store.getSelection()).toEqual(firsts(initial));
+      expect(store.getSelection()).not.toBe(initial);
       fc.modelRun(() => ({ model: { ids: firsts(initial), on: new Set<number>() }, real: { store, heard: [], offs: new Map() } }), cmds);
     }), runs(RUNS));
     t.atLeast('changed', RUNS / 3);
