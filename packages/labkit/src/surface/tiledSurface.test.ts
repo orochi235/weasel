@@ -86,4 +86,37 @@ describe('TiledSurface', () => {
     surface.placeTile('t', null);
     expect(heard).toHaveBeenCalledTimes(2);
   });
+
+  it('paints every other tile, and runs their after-commit work, when one painter throws', () => {
+    const { surface } = settled();
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const ran: string[] = [];
+    surface.holdPainter('a', () => {
+      throw new Error('context lost');
+    });
+    surface.holdPainter('b', () => {
+      ran.push('b');
+      return () => ran.push('b after');
+    });
+    surface.invalidateAll();
+    expect(() => surface.step(() => {})).not.toThrow();
+    expect(ran).toEqual(['b', 'b after']);
+    expect(logged).toHaveBeenCalledTimes(1);
+  });
+
+  it('runs every other clear, and the painters, when one clear throws', () => {
+    const { surface } = settled();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const ran: string[] = [];
+    surface.holdClear('x', () => {
+      throw new Error('context lost');
+    });
+    surface.holdClear('y', () => ran.push('y'));
+    surface.holdPainter('a', () => {
+      ran.push('a');
+    });
+    surface.setContainer(div());
+    expect(() => surface.step(() => {})).not.toThrow();
+    expect(ran).toEqual(['y', 'a']);
+  });
 });

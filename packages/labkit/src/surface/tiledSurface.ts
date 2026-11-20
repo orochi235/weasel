@@ -38,18 +38,29 @@ export type TilePainter = (rect: Rect, frame: SurfaceFrame) => void | (() => voi
  *  viewport takes. */
 export type SurfaceClear = (size: { width: number; height: number }, dpr: number) => void;
 
+/** Run `fn`, logging what it throws: one tenant's failure must not cost the others their frame. */
+function isolated<T>(kind: 'painter' | 'clear', id: string, fn: () => T): T | undefined {
+  try {
+    return fn();
+  } catch (err) {
+    console.error(`[labkit] surface ${kind} ${JSON.stringify(id)} threw`, err);
+    return undefined;
+  }
+}
+
 /** Every dirty tile's painter, in one commit, then what each asked to run after it. A `flushSync` per tile would
  *  count each as a nested update while any other work is pending, and React gives up past 50. */
 function paintTiles(frame: SurfaceFrame, painters: ReadonlyMap<string, TilePainter>): void {
-  const after: (() => void)[] = [];
+  const after: [string, () => void][] = [];
   flushSync(() => {
     for (const id of frame.dirty) {
       const rect = frame.rects.get(id);
-      const then = rect ? painters.get(id)?.(rect, frame) : undefined;
-      if (typeof then === 'function') after.push(then);
+      const paint = rect ? painters.get(id) : undefined;
+      const then = paint && rect ? isolated('painter', id, () => paint(rect, frame)) : undefined;
+      if (typeof then === 'function') after.push([id, then]);
     }
   });
-  for (const then of after) then();
+  for (const [id, then] of after) isolated('painter', id, then);
 }
 
 /** `box`, a client rect, measured from `origin`'s top-left corner. */
@@ -259,7 +270,9 @@ export class TiledSurface {
     onFrame(frame);
     // After the owner sized the buffer, before anything paints into it.
     if (frame.retiled) {
-      for (const clear of this.clears.values()) clear(frame.size, frame.dpr);
+      for (const [id, clear] of this.clears) {
+        isolated('clear', id, () => clear(frame.size, frame.dpr));
+      }
     }
     // After the owner, which is what resized the buffer this frame — and
     // whatever it just dirtied paints now rather than a frame later.
