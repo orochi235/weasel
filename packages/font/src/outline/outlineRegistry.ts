@@ -272,17 +272,20 @@ export function outlineFace(
 /**
  * Load a registered face's bytes now and resolve with its settled status:
  * `'ready'`, `'failed'`, or `null` when nothing is registered for the
- * variant. Never rejects — a failed load is a status. For a caller that needs
+ * variant once it settles. Never rejects — a failed load is a status. For a caller that needs
  * the geometry in one go, such as converting text to paths.
  */
 export async function loadFontOutlines(
   family: string, variant: FontVariant = {},
 ): Promise<OutlineStatus | null> {
   const { weight, style } = normalizeVariant(variant);
-  const slot = slots.get(slotKey(family, weight, style));
-  if (!slot) return null;
-  await beginLoad(slot);
-  return slot.status;
+  const key = slotKey(family, weight, style);
+  // A registration replaced while it loaded answers for nothing: wait on whatever holds the variant now.
+  for (let slot = slots.get(key); slot; slot = slots.get(key)) {
+    await beginLoad(slot);
+    if (slots.get(key) === slot) return slot.status;
+  }
+  return null;
 }
 
 function beginLoad(slot: FaceSlot): Promise<void> {

@@ -29,6 +29,8 @@ const keyOf = (family: string, v: { weight: number; style: FontStyle }) => JSON.
 const flush = () => new Promise<void>((r) => setTimeout(r, 0));
 
 let held: (() => void)[] = [];
+/** Faces a `loadFontOutlines` call still waits on: it goes on to load whatever replaced the registration it began. */
+let chasing = new Set<string>();
 let ids = 0;
 
 /** A face whose one glyph, at U+0041, names the registration it was parsed for. */
@@ -95,6 +97,7 @@ class Load extends Step {
     const slot = m.get(this.key);
     void loadFontOutlines(this.family, this.variant);
     if (slot?.status === 'idle') slot.status = 'loading';
+    if (slot?.status === 'loading') chasing.add(this.key);
     check(m);
   }
 }
@@ -118,6 +121,11 @@ class Settle implements fc.AsyncCommand<Model, Real> {
     now.forEach((go) => go());
     await flush();
     for (const slot of m.values()) if (slot.status === 'loading') slot.status = slot.good ? 'ready' : 'failed';
+    for (const key of chasing) {
+      const slot = m.get(key);
+      if (slot?.status === 'idle') slot.status = 'loading';
+      else chasing.delete(key);
+    }
     check(m);
   }
   toString = () => 'settle';
@@ -146,6 +154,7 @@ describe('outline registry, stateful', () => {
     await fc.assert(fc.asyncProperty(commands, async (cmds) => {
       _resetFontOutlinesForTests();
       held = [];
+      chasing = new Set();
       await fc.asyncModelRun(() => ({ model: new Map(), real: { t } }), cmds);
     }), runs(RUNS));
     t.atLeast('glyph', 40);
