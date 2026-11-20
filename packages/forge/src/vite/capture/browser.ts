@@ -15,6 +15,8 @@ export const IDLE_CLOSE_MS = 120_000;
 /** How long one capture may take, page load included, before it fails and frees the queue. */
 export const SHOT_DEADLINE_MS = 20_000;
 export const QUEUE_CAP = 8;
+/** How many browser contexts stay open, the least recently used closed past it. */
+export const CONTEXT_CAP = 4;
 export const QUEUE_FULL = 'capture queue is full';
 export const INSTALL_PLAYWRIGHT = 'install playwright';
 export const INSTALL_CHROMIUM = 'install Chromium for Playwright: npx playwright install chromium';
@@ -149,7 +151,16 @@ export async function launchCaptureBrowser(
   const contextFor = (dpr: number, secure: boolean): Promise<BrowserContext> => {
     const key = `${dpr}:${secure}`;
     let context = contexts.get(key);
-    if (!context) {
+    if (context) {
+      contexts.delete(key);
+      contexts.set(key, context);
+    } else {
+      // Captures run one at a time, so no page is open in a context evicted here.
+      const oldest = contexts.size >= CONTEXT_CAP ? contexts.keys().next().value : undefined;
+      if (oldest !== undefined) {
+        void contexts.get(oldest)!.then((c) => c.close()).catch(() => {});
+        contexts.delete(oldest);
+      }
       const making = browser().then((b) =>
         b.newContext({ deviceScaleFactor: dpr, ignoreHTTPSErrors: secure, serviceWorkers: 'block' }),
       );

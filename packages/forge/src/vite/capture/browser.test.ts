@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   type CaptureBrowser,
+  CONTEXT_CAP,
   captureAvailability,
   IDLE_CLOSE_MS,
   INSTALL_CHROMIUM,
@@ -199,6 +200,20 @@ describe('launchCaptureBrowser', () => {
     expect(fake.contexts).toEqual([2, 1]);
     expect(fake.viewports[0]).toEqual({ width: 101, height: 50 });
     expect(fake.launches).toHaveLength(1);
+    await browser.close();
+  });
+
+  it('keeps at most CONTEXT_CAP contexts open, closing the least recently used', async () => {
+    const fake = fakePlaywright();
+    const browser = await launched(fake.load);
+    const dprs = [1, 1.25, 1.5, 1.75];
+    for (const dpr of dprs) await browser.capture('http://localhost:5173/x', { ...payload, dpr });
+    await browser.capture('http://localhost:5173/x', { ...payload, dpr: 1 });
+    await browser.capture('http://localhost:5173/x', { ...payload, dpr: 2 });
+    await vi.waitFor(() => expect(fake.launches[0]!.contextsClosed).toEqual([1.25]));
+    await browser.capture('http://localhost:5173/x', { ...payload, dpr: 1 });
+    expect(fake.contexts).toEqual([...dprs, 2]);
+    expect(CONTEXT_CAP).toBe(dprs.length);
     await browser.close();
   });
 
