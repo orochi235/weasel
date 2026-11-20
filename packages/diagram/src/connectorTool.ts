@@ -31,10 +31,10 @@ export function createConnectorTool<TPose>(opts: ConnectActionOptions<TPose>): T
 /** {@link createConnectorTool}, rebuilt when one of its options changes rather than
  *  when the bag holding them does. */
 export function useConnectorTool<TPose>(opts: ConnectActionOptions<TPose>): Tool {
-  const { participants, read, poseDescriptor, canConnect, showsPort, snapRadius, router, routers, commit, edgeStroke } = opts;
+  const { participants, read, poseDescriptor, frame, canConnect, showsPort, snapRadius, router, routers, commit, edgeStroke } = opts;
   return useMemo(
     () => createConnectorTool(opts),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `opts` is the fields listed
-    [participants, read, poseDescriptor, canConnect, showsPort, snapRadius, router, routers, commit, edgeStroke],
+    [participants, read, poseDescriptor, frame, canConnect, showsPort, snapRadius, router, routers, commit, edgeStroke],
   );
 }
