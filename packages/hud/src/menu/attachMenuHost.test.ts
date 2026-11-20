@@ -316,7 +316,7 @@ describe('attachMenuHost with a hud drawing in another font', () => {
     layer!.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 800, height: 600, dpr: 1 });
     const advance = FIXTURE_FONT.chars[0]!.xadvance;
     expect(own.widgets()[0]!.bounds.width)
-      .toBe(Math.ceil(20 * advance * m.font.size / FIXTURE_FONT.info.size) + m.padX * 2 + m.iconSize + m.gap * 2);
+      .toBe(Math.ceil(20 * advance * m.font.size / FIXTURE_FONT.info.size) + m.padX * 2 + m.iconSize + m.gap * 2 + m.labelPad);
     off();
     unhud();
   });
