@@ -130,7 +130,12 @@ function readEdge({ page, idOf, groups, warn }: Reader, cell: RawCell, byCellId:
   const labels = children.filter((c) => endOf(c) === null);
   const holder = labelOf(cell) !== undefined ? cell : labels[0];
   if (labels.length + (holder === cell ? 1 : 0) > 1) warn('Connectors with more than one label kept only the first.');
-  const endLabels = Object.fromEntries(ends.map((c) => [endOf(c)!, labelOf(c)!]));
+  const endLabels: { from?: string; to?: string } = {};
+  for (const c of ends) {
+    const at = endOf(c)!;
+    if (endLabels[at] === undefined) endLabels[at] = labelOf(c)!;
+    else warn('Connectors with more than one label at an end kept only the first.');
+  }
   return {
     id: idOf.get(cell)!, from, to, router: routerOf(cell.style),
     ...optional('fromPort', portAt(cell.style, 'exit')),

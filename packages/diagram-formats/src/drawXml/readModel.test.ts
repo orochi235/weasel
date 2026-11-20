@@ -41,4 +41,12 @@ describe('reading connectors', () => {
     const { data } = await page(box('a', 0, 0) + box('b', 200, 100) + styles.map((s) => edge(s, `edgeStyle=${s};`)).join(''));
     expect(data.edges.map((e: DataEdge) => e.router)).toEqual(styles.map(() => 'orthogonal'));
   });
+
+  it('keeps the first of two labels at one end, with the warning extra mid labels get', async () => {
+    const label = (id: string, value: string) =>
+      `<mxCell id="${id}" value="${value}" style="edgeLabel;" vertex="1" parent="e"><mxGeometry x="-1" relative="1" as="geometry"/></mxCell>`;
+    const { data, warnings } = await page(box('a', 0, 0) + box('b', 200, 100) + edge('e', '', label('l1', 'first') + label('l2', 'second')));
+    expect(data.edges[0]!.endLabels).toEqual({ from: 'first' });
+    expect(warnings).toContain('Connectors with more than one label at an end kept only the first.');
+  });
 });
