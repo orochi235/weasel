@@ -268,4 +268,29 @@ describe('Lightbox', () => {
     act(() => enable());
     expect(expanded()).toBe(false);
   });
+
+  it('closes the innermost of two open lightboxes on Escape, then the outer one', () => {
+    renderWithIcons(
+      <Lightbox label="outer">
+        <Lightbox label="inner">
+          <div />
+        </Lightbox>
+      </Lightbox>,
+    );
+    const [outer, inner] = [...document.querySelectorAll('.lk-lightbox')] as [
+      HTMLElement,
+      HTMLElement,
+    ];
+    const open = (el: HTMLElement): boolean => el.classList.contains('lk-lightbox--expanded');
+    const expandOf = (el: HTMLElement) =>
+      el.querySelector(':scope > .lk-lightbox__open') as HTMLElement;
+    fireEvent.click(expandOf(outer));
+    expect(open(outer)).toBe(true);
+    fireEvent.click(expandOf(inner));
+    expect(open(inner)).toBe(true);
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect([open(outer), open(inner)]).toEqual([true, false]);
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect([open(outer), open(inner)]).toEqual([false, false]);
+  });
 });
