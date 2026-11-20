@@ -87,7 +87,10 @@ export function moveGanttTaskToSection(data: GanttData, from: number, task: numb
   const moving = data.sections[from]?.tasks[task];
   if (moving === undefined) throw new Error(`moveGanttTaskToSection: the gantt holds no task ${task} in section ${from}`);
   if (data.sections[to] === undefined) throw new Error(`moveGanttTaskToSection: the gantt holds no section ${to}`);
-  if (from === to) return reorderGanttTask(data, from, task, at ?? data.sections[from]!.tasks.length - 1);
+  if (from === to) {
+    const before = at ?? data.sections[from]!.tasks.length;
+    return reorderGanttTask(data, from, task, before > task ? before - 1 : before);
+  }
   const taken = withTasks(data, from, (tasks) => removeAt(tasks, task, 'moveGanttTaskToSection'), 'moveGanttTaskToSection');
   return withTasks(taken, to, (tasks) => insertAt(tasks, at ?? tasks.length, moving, 'moveGanttTaskToSection'), 'moveGanttTaskToSection');
 }
