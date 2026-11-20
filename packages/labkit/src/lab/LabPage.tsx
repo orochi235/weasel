@@ -157,7 +157,7 @@ function labFooter(footer: ReactNode, chromeAll: LabChromeAll): ReactNode {
 }
 
 /** The lab's page body: its notices and shortcut sheet, then its surface, holding the options palette and the
- *  contributed palette beside `children`, in panes when anything contributes to one. */
+ *  contributed palette beside `children`, in the lab's sidebar and aside panes. */
 function LabContent({
   chromeAll,
   shortcuts,
@@ -179,17 +179,10 @@ function LabContent({
       <PanelHostContext.Provider value={panelHosts}>
         <LabSurface bodyRef={bodyRef} contributions={chromeAll.all}>
           <AnnotationOptions tools={chromeAll.tools} />
-          {chromeAll.hasPanes ? (
-            <LabPanes contributions={chromeAll.all}>
-              <LabPalette contributions={chromeAll.all} />
-              {children}
-            </LabPanes>
-          ) : (
-            <>
-              <LabPalette contributions={chromeAll.all} />
-              {children}
-            </>
-          )}
+          <LabPanes contributions={chromeAll.all}>
+            <LabPalette contributions={chromeAll.all} />
+            {children}
+          </LabPanes>
         </LabSurface>
       </PanelHostContext.Provider>
     </>
