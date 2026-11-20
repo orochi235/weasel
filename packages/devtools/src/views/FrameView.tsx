@@ -1,7 +1,7 @@
 /**
  * The Frame tab: what the last paint cost, overall and per render layer. The
  * canvas measures only while its `fps` overlay is on and announces nothing, so
- * this polls, and only while the tab is open and the overlay on.
+ * this polls while the tab is open: the overlay always, the frame while it is on.
  */
 import { useState, type ReactElement } from 'react';
 import type { FrameStats } from '@weasel-js/core';
@@ -33,6 +33,7 @@ export function FrameView({ client, rootId }: DevtoolsViewProps): ReactElement {
   const state = useRootQuery(client, rootId, [], () => client.request(rootId, { type: 'get-state' }));
   const fps = state.data?.overlays.fps === true;
   const [frame, setFrame] = useState<SerializedValue>(null);
+  usePoll(state.refresh, POLL_MS, true);
   usePoll(() => {
     client.request(rootId, { type: 'get-frame' }).then(setFrame, () => {});
   }, POLL_MS, fps);
