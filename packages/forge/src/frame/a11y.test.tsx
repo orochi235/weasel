@@ -7,6 +7,7 @@ import { meta, story } from '../story/define';
 import { loadNativeModule } from '../story/native';
 import type { LoadedStory } from '../story/types';
 import { PAGE_RULES, runAxe } from './a11y';
+import { resolveTarget } from './a11yHighlight';
 import { startFrame } from './FrameController';
 
 async function flush() {
@@ -71,6 +72,23 @@ describe('runAxe', () => {
       expect(imageAlt).toBeDefined();
       expect(imageAlt?.helpUrl).toContain('image-alt');
       expect(imageAlt?.nodes.map((n) => n.target.join(' '))).toContain('#no-alt');
+    } finally {
+      host.remove();
+    }
+  }, 20_000);
+
+  it('gives an element inside a shadow root a target that reaches it, one entry per shadow step', async () => {
+    const host = document.createElement('div');
+    host.id = 'fg-t-shadow-host';
+    const shadow = host.attachShadow({ mode: 'open' });
+    shadow.innerHTML = '<img src="cat.png" id="fg-t-shadowed">';
+    document.body.append(host);
+    try {
+      const report = await runAxe(host);
+      const node = report.violations.find((v) => v.id === 'image-alt')?.nodes[0];
+      expect(node).toBeDefined();
+      expect(node!.target.length).toBeGreaterThan(1);
+      expect(resolveTarget(document, node!.target)).toBe(shadow.getElementById('fg-t-shadowed'));
     } finally {
       host.remove();
     }

@@ -56,8 +56,8 @@ function finding(from: AxeFinding, withReasons = false): A11yFinding {
     helpUrl: from.helpUrl,
     description: from.description,
     nodes: from.nodes.map((node, i) => ({
-      // An axe target entry is a selector, or an array of them for an element inside a shadow root.
-      target: node.target.map((part) => (Array.isArray(part) ? part.join(' ') : String(part))),
+      // An axe target entry is a selector, or an array of them stepping into shadow roots: one entry per step either way.
+      target: node.target.flatMap((part) => (Array.isArray(part) ? part.map(String) : [String(part)])),
       html: node.html,
       ...(node.failureSummary === undefined ? {} : { failureSummary: node.failureSummary }),
       ...(reasons[i] ? { reason: reasons[i] } : {}),
