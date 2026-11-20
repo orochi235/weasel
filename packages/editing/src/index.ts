@@ -129,7 +129,7 @@ export { setStrokeWidthAction } from './actions/edit/setStrokeWidth';
 export { setVertexColorAction } from './actions/edit/setVertexColor';
 export { ingestAction } from './actions/edit/ingest';
 export { transformAgainAction } from './actions/transformAgain/action';
-export { transformSelection, type SelectionTransform } from './actions/transformAgain/transformSelection';
+export { selectionTransformAnswer, transformSelection, type SelectionTransform } from './actions/transformAgain/transformSelection';
 export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteCopiedAction } from './actions/clipboard/action';
 export {
   PATHFINDER_STROKES, pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction,

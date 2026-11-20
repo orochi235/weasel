@@ -274,6 +274,25 @@ describe('transform by the measurement', () => {
     expect(rig.ids()).toHaveLength(1);
   });
 
+  it('declines to move or turn a selection the batch would leave as it is, locked or gone', () => {
+    const rig = setup();
+    rig.measure({ x: 0, y: 0 }, { x: 5, y: -5 });
+    for (const lock of [() => rig.scene.setLocked(rig.box as never, true), () => rig.scene.setLayerLocked('main', true)]) {
+      lock();
+      for (const id of [MEASURE_ACTION_IDS.moveBy, MEASURE_ACTION_IDS.rotateBy]) {
+        expect(rig.enabled(id).enabled).toBe(false);
+        rig.run(id);
+      }
+      expect(rig.pose(rig.box)).toMatchObject({ x: 0, y: 0, rotation: 0 });
+      rig.scene.setLocked(rig.box as never, false);
+      rig.scene.setLayerLocked('main', false);
+    }
+    rig.selection.set(['gone' as NodeId]);
+    expect(rig.enabled(MEASURE_ACTION_IDS.moveBy)).toMatchObject({ enabled: false, reason: ActionDisabledReason.NotApplicable });
+    rig.selection.set([rig.box as NodeId]);
+    expect(rig.enabled(MEASURE_ACTION_IDS.moveBy).enabled).toBe(true);
+  });
+
   it('turns nothing by a measurement along the x axis, and says so', () => {
     const rig = setup();
     rig.measure({ x: 0, y: 0 }, { x: 5, y: 0 });

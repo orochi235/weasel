@@ -1,11 +1,12 @@
 import type { ActionDeps } from '@weasel-js/routing';
 import type { Op } from '@weasel-js/core';
 import type { AnyScene } from '@weasel-js/core/engine';
-import { commitTransformOps } from '@weasel-js/core/engine';
+import { commitTransformOps, finishTransformOps } from '@weasel-js/core/engine';
+import { ActionDisabledReason, type ActionUnavailable } from '@weasel-js/routing';
 import { moveNodesOps, recordTransform, type RepeatableTransform } from '@weasel-js/core';
 import { resizeSelectionOps } from '../resize/replay';
 import { rotateSelectionOps } from '../rotate/replay';
-import { writesLocked } from '../lockedWrites';
+import { opsAnswer, writesLocked } from '../lockedWrites';
 
 /** A move, rotate or resize the selection can be given: a {@link RepeatableTransform} other than a duplicate. */
 export type SelectionTransform = Exclude<RepeatableTransform, { kind: 'duplicate' }>;
@@ -22,6 +23,16 @@ export function selectionTransformOps(
     case 'scale':
       return resizeSelectionOps(scene, selected, t.anchor, t.to, deps, label);
   }
+}
+
+/** `enabled`'s answer for applying `t` to the selection (ruled 2026-11-09 and 2026-11-10): not applicable when the
+ *  batch the followers finish changes nothing, locked when it would rewrite a locked node. */
+export function selectionTransformAnswer(deps: ActionDeps, t: SelectionTransform, label: string): true | ActionUnavailable {
+  const { scene, operands } = deps;
+  if (!scene || !operands) return ActionDisabledReason.NotApplicable;
+  const ops = selectionTransformOps(deps, scene, [...operands.get()] as string[], t, label);
+  const all = ops.length > 0 ? finishTransformOps(deps, ops, label) : null;
+  return all ? opsAnswer(scene, all) : ActionDisabledReason.NotApplicable;
 }
 
 /**
