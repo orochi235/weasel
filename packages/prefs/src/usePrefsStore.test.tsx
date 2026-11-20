@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { createMemoryAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
 import { StrictMode } from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { PrefGroup } from '@weasel-js/prefs-schema';
 import { usePrefsStore } from './react';
 import { recordValue } from './stamp';
@@ -182,6 +182,25 @@ describe('usePrefsStore', () => {
     b.unmount();
     await settle();
     expect(seen.live).toBe(0);
+  });
+
+  it('keeps a write through a closed store out of storage and the other store sharing its prefix', async () => {
+    const other = { name: 'Other', children: { density: SCHEMA.children.density } } satisfies PrefGroup;
+    const { storage, backing } = counted();
+    const a = renderHook(() => usePrefsStore(SCHEMA, { storage, prefix: 'p.' }));
+    const b = renderHook(() => usePrefsStore(other, { storage, prefix: 'p.' }));
+    const closed = a.result.current;
+    a.unmount();
+    await settle();
+    expect(closed.closed).toBe(true);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    closed.set('density', 100);
+    warn.mockRestore();
+    expect(b.result.current.get('density')).toBe(72);
+    expect(await b.result.current.flush()).toBe(true);
+    expect(backing.has('p.density')).toBe(false);
+    b.unmount();
+    await settle();
   });
 
   it('closes a store opened by a render that never mounted', async () => {
