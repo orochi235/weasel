@@ -24,7 +24,7 @@ export function holdForFaces(style: ResolvedTextStyle, runs: readonly StyledRun[
 }
 
 /** The selection an edit opens with: the whole text, or a caret `caret`
- *  characters in, clamped to the end. */
+ *  characters in, clamped to the text. */
 export function openingRange(overlay: HTMLElement, caret: number | 'all'): Range {
   const range = document.createRange();
   if (caret === 'all') {
