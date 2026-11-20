@@ -74,7 +74,7 @@ const BEGINS = [...REQUIRES, 'history', 'createOutlinesAdapter', 'notices'] as c
  */
 function beginOnText(deps: ActionDeps, kind: WarpKind, label: string): { session: OutlineSession; box: ReturnType<typeof freshWarpBox> } {
   const leaves = selectedWarpLeaves(deps);
-  const scene = deps.scene as Pick<AnyScene, 'get' | 'childrenOf'> | undefined;
+  const scene = deps.scene as AnyScene | undefined;
   const box = scene ? freshWarpBox(scene, leaves, kind) : null;
   const session = outlineSession(deps, leaves.texts, label);
   session.convert();

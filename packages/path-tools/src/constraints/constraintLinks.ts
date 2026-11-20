@@ -223,7 +223,7 @@ export interface BrokenConstraintLink {
 }
 
 /** Link node `id` when its constraint does not hold, else null — null too when `id` is no link. */
-export function brokenConstraintLink(scene: Pick<AnyScene, 'get'>, id: string): BrokenConstraintLink | null {
+export function brokenConstraintLink(scene: AnyScene, id: string): BrokenConstraintLink | null {
   const link = linkAt({ node: (nid) => scene.get(nid as NodeId) ?? null, dependents: () => [] }, id);
   if (!link) return null;
   const paths = link.nodes.map((n) => resolveEditablePathOf(shownNodeOf(scene, n)));
@@ -233,7 +233,7 @@ export function brokenConstraintLink(scene: Pick<AnyScene, 'get'>, id: string): 
 }
 
 /** Every link in `scene` whose constraint does not hold. */
-export function brokenConstraintLinks(scene: Pick<AnyScene, 'get' | 'renderOrderNodes'>): BrokenConstraintLink[] {
+export function brokenConstraintLinks(scene: AnyScene): BrokenConstraintLink[] {
   return [...scene.renderOrderNodes()].flatMap((n) => {
     const broken = constraintLinkOf(n.data) ? brokenConstraintLink(scene, n.id) : null;
     return broken ? [broken] : [];
@@ -241,7 +241,7 @@ export function brokenConstraintLinks(scene: Pick<AnyScene, 'get' | 'renderOrder
 }
 
 /** The ids of the link nodes tying `id` whose constraint does not hold in the nodes' committed paths. */
-export function constraintLinkConflictsOf(scene: Pick<AnyScene, 'get' | 'removalClosure'>, id: string): string[] {
+export function constraintLinkConflictsOf(scene: AnyScene, id: string): string[] {
   if (!scene.get(id as NodeId)) return [];
   return scene.removalClosure([id as NodeId]).flatMap((lid) => {
     const broken = lid === id ? null : brokenConstraintLink(scene, lid);

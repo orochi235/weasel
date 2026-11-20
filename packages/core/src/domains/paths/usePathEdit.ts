@@ -75,7 +75,8 @@ export function usePathEditOverlayLayer(
           id, live.current.nodeOf(id), previews, live.current.planeOfNode(id, view), state.getExtensions(),
           live.current.frameOf?.(id) ?? null,
         ),
-      getAnchorMarkers: (id, previews) => liveAnchorMarkers(id, live.current.nodeOf(id), previews, state.getExtensions()),
+      getAnchorMarkers: (id, previews) =>
+        liveAnchorMarkers(id, live.current.nodeOf(id), previews, state.getExtensions(), live.current.frameOf?.(id) ?? null),
       getSelectedAnchors: state.getSelectedAnchors,
       getSelectedMark: state.getSelectedMark,
       getExtensions: state.getExtensions,

@@ -19,15 +19,32 @@ export interface NodeFrame {
   inverts: boolean;
 }
 
+type FramedNode = { id: string; parent?: string | null; pose: unknown };
+
 /** `node`'s frame, or null where its stored pose is already world: a root, or
  *  a polygon pose, which draws as stored. */
 export function nodeFrameOf(
-  scene: Pick<Scene<unknown, string, unknown>, 'get'>,
-  node: { id: string; parent?: string | null; pose: unknown } | null | undefined,
+  scene: Scene<unknown, string, unknown>,
+  node: FramedNode | null | undefined,
 ): NodeFrame | null {
-  if (node?.parent == null || !isRectPose(node.pose)) return null;
-  const frame = scenePoseFrame(scene as Scene<unknown, string, unknown>);
-  const parent = frame.parentWorld(node.id as NodeId);
+  return nodeFramesOf(scene)(node);
+}
+
+/** {@link nodeFrameOf} for many nodes of `scene`, building the scene's pose
+ *  frame once, at the first node that needs it. */
+export function nodeFramesOf(
+  scene: Scene<unknown, string, unknown>,
+): (node: FramedNode | null | undefined) => NodeFrame | null {
+  let frame: ReturnType<typeof scenePoseFrame> | null = null;
+  return (node) => {
+    if (node?.parent == null || !isRectPose(node.pose)) return null;
+    frame ??= scenePoseFrame(scene);
+    return frameUnder(frame, node.id);
+  };
+}
+
+function frameUnder(frame: ReturnType<typeof scenePoseFrame>, id: string): NodeFrame | null {
+  const parent = frame.parentWorld(id as NodeId);
   if (parent === null) return null;
   const { compose, decompose } = frame.pc;
   return {
@@ -39,8 +56,8 @@ export function nodeFrameOf(
 
 /** Whether an edit to what `node` shows can be stored back: false in a singular frame. */
 export function storesEdits(
-  scene: Pick<Scene<unknown, string, unknown>, 'get'>,
-  node: { id: string; parent?: string | null; pose: unknown } | null | undefined,
+  scene: Scene<unknown, string, unknown>,
+  node: FramedNode | null | undefined,
 ): boolean {
   return nodeFrameOf(scene, node)?.inverts ?? true;
 }
@@ -52,7 +69,7 @@ export function shownIn<S extends { pose: unknown }>(frame: NodeFrame | null, sh
 
 /** Node `id` of `scene` with its pose in world, or undefined when missing. */
 export function shownNodeOf(
-  scene: Pick<Scene<unknown, string, unknown>, 'get'>,
+  scene: Scene<unknown, string, unknown>,
   id: string,
 ): ReturnType<Scene<unknown, string, unknown>['get']> {
   const node = scene.get(id as NodeId);
