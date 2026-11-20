@@ -68,7 +68,7 @@ function vertices(data: DiagramData, theme: DiagramTheme, headerOf: (id: string)
       out.push({ id: lane.id, value: regionLabel(lane), style: regionStyle({ ...lane, role: 'lane' }, headerOf(lane.id), theme, i) });
     });
   }
-  for (const g of data.clusters ?? []) out.push({ id: g.id, value: '', style: GROUP_STYLE, group: true });
+  for (const g of data.clusters ?? []) out.push({ id: g.id, value: regionLabel(g), style: GROUP_STYLE, group: true });
   for (const n of data.nodes) out.push({ id: n.id, value: nodeLines(n, warn).join('\n'), style: nodeStyle(n, theme, warn) });
   return out;
 }

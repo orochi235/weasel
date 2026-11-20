@@ -104,7 +104,9 @@ function keptGroups(page: PageCells, warn: Warn): Set<RawCell> {
 }
 
 function readGroup({ page, idOf, groups }: Reader, cell: RawCell): DataCluster {
-  return { id: idOf.get(cell)!, members: groupMembers(page, cell, (c) => groups.has(c)).map((c) => idOf.get(c)!) };
+  return {
+    id: idOf.get(cell)!, members: groupMembers(page, cell, (c) => groups.has(c)).map((c) => idOf.get(c)!), ...optional('label', labelOf(cell)),
+  };
 }
 
 const moved = (p: Vec2, by: Vec2): Vec2 => ({ x: p.x + by.x, y: p.y + by.y });
