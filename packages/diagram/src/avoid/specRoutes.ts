@@ -93,7 +93,9 @@ export function createSpecRouter(options: SpecRouterOptions = {}): (specs: reado
       if (edge === null || edge.offPage !== undefined) continue;
       const ends = Array.isArray(spec.dependsOn) ? spec.dependsOn.map((id) => byId.get(id as string)) : [];
       const [a, b] = ends;
-      if (a === undefined || b === undefined || a === b) continue;
+      if (a === undefined || b === undefined) continue;
+      // A self-loop is routed only between two named ports, as `avoidSceneInput` routes one.
+      if (a === b && (edge.from.port === undefined || edge.to.port === undefined)) continue;
       const portsAt = (s: DiagramSpec, port: string | undefined) => {
         const n = { id: s.id as string, kind: s.kind, data: s.data };
         const pose = world.get(n.id) ?? (s.pose as RectPose);

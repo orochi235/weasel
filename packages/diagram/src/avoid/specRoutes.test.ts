@@ -146,4 +146,17 @@ describe('createSpecRouter', () => {
     const specs = createSpecRouter()(diagramScene(data, { layout: 'none' }));
     expect(edgeOf(specs, AB).route!.length).toBeGreaterThan(0);
   });
+
+  it('routes a self-loop naming both its ports, as the scene router does, and leaves one naming one port alone', () => {
+    const data: DiagramData = {
+      nodes: [{ id: 'a', lines: ['a'], at: { x: 0, y: 0 }, width: 100 }],
+      edges: [{ from: 'a', to: 'a', fromPort: 'e', toPort: 'n' }, { from: 'a', to: 'a', fromPort: 's' }],
+    };
+    const specs = createSpecRouter()(diagramScene(data, { layout: 'none' }));
+    const both = edgeOf(specs, edgeIdOf({ from: 'a', to: 'a', fromPort: 'e', toPort: 'n' }));
+    expect(both.router).toBe('avoid');
+    expect(both.route!.length).toBeGreaterThan(0);
+    expect(edgeOf(specs, edgeIdOf({ from: 'a', to: 'a', fromPort: 's' })).router).not.toBe('avoid');
+  });
+
 });
