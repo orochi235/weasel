@@ -83,13 +83,15 @@ function bakeInBatch(scene: Scene<unknown, string, unknown>, id: NodeId): BakeRe
   const copies = group.kind === 'group' && group.copiesFromPose
     ? group.copiesFromPose(worldPoseOf(scene, id, 'document'), group) ?? [] : [];
   const index = (group.parent === null ? scene.roots : scene.childrenOf(group.parent)).indexOf(id);
+  const { symmetry: _s, ...data } = (group.data ?? {}) as Record<string, unknown>;
   const plain = scene.add({
     kind: 'group',
     layer: group.layer,
     pose: group.pose,
-    data: {},
+    data,
     parent: group.parent,
     index,
+    ...statedFields(group),
     dependsOn: 'children',
     derivePose: scene.registry.derivePose?.[UNION_OF_CHILDREN] ?? unionOfChildren,
   });
