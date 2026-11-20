@@ -45,6 +45,13 @@
   white-space: nowrap;
 }
 
+.view {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-3);
+  font-size: var(--wzl-font-size-sm);
+}
+
 .spend {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
   font-size: var(--wzl-font-size-md);

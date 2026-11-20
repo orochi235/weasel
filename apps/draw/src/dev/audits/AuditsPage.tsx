@@ -15,6 +15,7 @@ import { createAuditScene } from './auditScene';
 import { phasesOf } from './phases';
 import { useAuditPalette } from './useAuditPalette';
 import { useSkulkMap, type UseSkulkMapOptions } from './useSkulkMap';
+import { readSize, useViewerPref } from './viewerPref';
 import type { SkulkMap } from './skulkMap.types';
 import palette from './palette.module.css';
 import s from './AuditsPage.module.css';
@@ -23,26 +24,8 @@ const ASIDE = { key: 'aside', min: 240, max: 560, initial: 300 } as const;
 const TOP = { key: 'top', min: 80, max: 900, initial: 260 } as const;
 const JOBS = { key: 'jobs', min: 80, max: 900, initial: 220 } as const;
 
-/** A pane's size the viewer dragged it to, kept between visits; `set` follows a drag, `keep` stores where it ended. */
-function usePaneSize({ key, initial }: { key: string; initial: number }): [number, (n: number) => void, (n: number) => void] {
-  const storeKey = `weasel.audits.${key}`;
-  const [size, set] = useState<number>(() => {
-    try {
-      const n = Number(localStorage.getItem(storeKey));
-      return n > 0 ? n : initial;
-    } catch {
-      return initial;
-    }
-  });
-  const keep = (n: number) => {
-    try {
-      localStorage.setItem(storeKey, String(n));
-    } catch {
-      // Nowhere to keep it; the size lasts the visit.
-    }
-  };
-  return [size, set, keep];
-}
+/** A pane's size the viewer dragged it to, kept between visits. */
+const usePaneSize = ({ key, initial }: { key: string; initial: number }) => useViewerPref(key, initial, readSize);
 
 function stampOf(map: SkulkMap): string {
   const when = new Date(map.generated).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
