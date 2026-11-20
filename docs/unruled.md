@@ -3081,3 +3081,9 @@ Calls the lanes made without a ruling:
   `u_colorMatrix` and `u_colorBias` where it declares them, the convention the built-in programs use; one that
   declares neither draws unmapped and development warns once per program. Exposing the matrix on
   `PaintBindContext` for the kind to upload itself was the alternative.
+## Audit round fifty-four (2026-11-20): renderer.gpu
+
+- 2026-11-20 (the fixer's call): WebGPU's `writeBuffer` throws on a write that starts off a multiple of 4 bytes, or
+  ends off one before the buffer's end; a queue write takes only whole words, so it used to zero up to 3 bytes past
+  the write and dropped a write at an odd offset. WebGL still writes either. Keeping a CPU copy of every buffer, to
+  fill the padding from what it holds, was the alternative.

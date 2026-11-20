@@ -50,8 +50,8 @@ function emptyTexture(host: ResourceHost, width: number, height: number, filter:
 
 export function createTarget(host: ResourceHost, desc: GpuTargetDesc): WgpuTarget {
   const { width, height } = desc;
-  const requested = desc.samples ?? 0;
-  const samples: 1 | 4 = requested > 1 ? 4 : 1;
+  // WebGPU multisamples only 4×: any count past 1 gets that, and is reported as it was made.
+  const samples: 1 | 4 = (desc.samples ?? 0) > 1 ? 4 : 1;
   const device = host.device;
   const color = samples === 1 ? emptyTexture(host, width, height, desc.filter ?? 'nearest') : null;
   const msaa = samples === 1 ? null
@@ -64,9 +64,9 @@ export function createTarget(host: ResourceHost, desc: GpuTargetDesc): WgpuTarge
   const colorView = color?.view ?? msaa!.createView();
   const depthView = depth?.createView();
   const attached = new Set<WgpuTexture>([color, ids].filter((t): t is WgpuTexture => t !== null));
-  const perPixel = Math.max(1, requested) * (4 + (stencil ? 4 : 0)) + (ids ? 4 : 0);
+  const perPixel = samples * (4 + (stencil ? 4 : 0)) + (ids ? 4 : 0);
   const target: WgpuTarget = {
-    kind: 'target', width, height, samples: requested, sampleCount: samples, color, ids, msaa, depth, resolved: null, usedIn: -1,
+    kind: 'target', width, height, samples: samples === 4 ? 4 : 0, sampleCount: samples, color, ids, msaa, depth, resolved: null, usedIn: -1,
     format: 'rgba8unorm', stencil, hasIds: ids !== null, key: attachmentKey('rgba8unorm', samples, stencil, ids !== null), attached,
     get bytes() { return width * height * (perPixel + (this.resolved ? 4 : 0)); },
     colorView: () => colorView,
@@ -117,10 +117,12 @@ export class CanvasTarget implements PassAttachments {
 
   /** Make the multisampled buffers match the canvas, keeping them while they do. */
   private ensure(): { color: GPUTextureView; resolved?: GPUTextureView; depth: GPUTextureView } {
-    const { width, height } = this;
+    // A zero-sized canvas still gets 1×1 buffers, which have to count as matching it.
+    const width = Math.max(1, this.width);
+    const height = Math.max(1, this.height);
     if (this.views && this.color!.width === width && this.color!.height === height) return this.views;
     this.dispose();
-    const size = [Math.max(1, width), Math.max(1, height)];
+    const size = [width, height];
     const device = this.host.device;
     const sampleCount = this.sampleCount;
     const single = TextureUsage.RENDER_ATTACHMENT | TextureUsage.COPY_SRC;
@@ -197,17 +199,22 @@ export function encodeReadIds(
 }
 
 /** Encode reading `rect` of an RGBA8 `texture` `height` tall; the promise,
- *  once the encoder is submitted, holds its texels with rows bottom-up. */
+ *  once the encoder is submitted, holds its texels with rows bottom-up, and
+ *  zeros wherever the rect falls off the texture. */
 export function encodeReadTexture(
   device: GPUDevice, encoder: GPUCommandEncoder, texture: GPUTexture | null, height: number, rect: GpuRect,
 ): () => Promise<Uint8Array> {
   const { width, height: rows } = rect;
-  if (width === 0 || rows === 0 || !texture) return () => Promise.resolve(new Uint8Array(width * rows * 4));
-  const stride = Math.ceil((width * 4) / 256) * 256;
-  const buffer = device.createBuffer({ size: stride * rows, usage: BufferUsage.COPY_DST | BufferUsage.MAP_READ });
   const from = topDown(rect, height);
+  const x0 = Math.max(0, from.x);
+  const y0 = Math.max(0, from.y);
+  const copyWidth = texture ? Math.min(texture.width, from.x + width) - x0 : 0;
+  const copyRows = texture ? Math.min(texture.height, from.y + rows) - y0 : 0;
+  if (copyWidth <= 0 || copyRows <= 0 || !texture) return () => Promise.resolve(new Uint8Array(width * rows * 4));
+  const stride = Math.ceil((copyWidth * 4) / 256) * 256;
+  const buffer = device.createBuffer({ size: stride * copyRows, usage: BufferUsage.COPY_DST | BufferUsage.MAP_READ });
   encoder.copyTextureToBuffer(
-    { texture, origin: [from.x, from.y] }, { buffer, bytesPerRow: stride, rowsPerImage: rows }, [width, rows],
+    { texture, origin: [x0, y0] }, { buffer, bytesPerRow: stride, rowsPerImage: copyRows }, [copyWidth, copyRows],
   );
   return async () => {
     const out = new Uint8Array(width * rows * 4);
@@ -220,8 +227,10 @@ export function encodeReadTexture(
     }
     const mapped = new Uint8Array(buffer.getMappedRange());
     // Read top-down; the layer's rows run bottom-up.
-    for (let row = 0; row < rows; row++) {
-      out.set(mapped.subarray(row * stride, row * stride + width * 4), (rows - 1 - row) * width * 4);
+    const column = (x0 - from.x) * 4;
+    for (let row = 0; row < copyRows; row++) {
+      const into = rows - 1 - (y0 - from.y + row);
+      out.set(mapped.subarray(row * stride, row * stride + copyWidth * 4), into * width * 4 + column);
     }
     buffer.unmap();
     buffer.destroy();

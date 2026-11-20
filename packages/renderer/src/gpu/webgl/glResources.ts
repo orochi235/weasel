@@ -115,10 +115,13 @@ function upload(gl: WebGL2RenderingContext, format: GpuTextureFormat, data: GpuT
       return;
     }
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
-    withPremultipliedSource(data.source, (source) =>
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source));
-    // Put back: it would premultiply every later typed-array upload too.
-    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    try {
+      withPremultipliedSource(data.source, (source) =>
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source));
+    } finally {
+      // Put back even on a throw: it would premultiply every later upload too.
+      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    }
     return;
   }
   const { width, height } = data;

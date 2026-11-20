@@ -107,6 +107,35 @@ describe('WebGLDevice textures', () => {
     expect(order).toEqual(['pixelStorei', 'texImage2D', 'pixelStorei', 'texImage2D']);
   });
 
+  it('puts the premultiply flag back when the image upload throws', () => {
+    const rec = createGLRecorder();
+    const gl = new Proxy(rec.gl, {
+      get: (target, name) => name === 'texImage2D'
+        ? () => { throw new DOMException('tainted', 'SecurityError'); }
+        : Reflect.get(target, name),
+    });
+    const gpu = new WebGLDevice(gl);
+    const source = { width: 1, height: 1, data: new Uint8ClampedArray(4) } as ImageData;
+    const sampling = { min: 'linear', mag: 'linear', wrapS: 'clamp', wrapT: 'clamp' } as const;
+    rec.reset();
+    expect(() => gpu.createTexture('rgba8', sampling, { source, premultiply: true })).toThrow('tainted');
+    expect(argsOf(rec, 'pixelStorei').at(-1)).toEqual([0x9241, false]);
+  });
+
+  it('puts back at frame start the unpack state another user of the context may have left set', () => {
+    const rec = createGLRecorder();
+    const gpu = new WebGLDevice(rec.gl);
+    gpu.beginFrame();
+    const gl = rec.gl;
+    expect(argsOf(rec, 'bindBuffer')).toContainEqual([gl.PIXEL_UNPACK_BUFFER, null]);
+    expect(argsOf(rec, 'pixelStorei')).toEqual(expect.arrayContaining([
+      [gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false], [gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.BROWSER_DEFAULT_WEBGL],
+      [gl.UNPACK_ALIGNMENT, 4], [gl.UNPACK_ROW_LENGTH, 0], [gl.UNPACK_SKIP_ROWS, 0], [gl.UNPACK_SKIP_PIXELS, 0],
+    ]));
+    expect(gl.PIXEL_UNPACK_BUFFER).toBe(0x88EC);
+    expect(gl.UNPACK_SKIP_PIXELS).toBe(0x0CF4);
+  });
+
   it('empties a unit holding the texture a pass draws into', () => {
     const { rec, gpu } = setup();
     const { program, geometry, state } = drawable(gpu);
