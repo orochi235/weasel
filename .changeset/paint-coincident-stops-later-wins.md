@@ -2,6 +2,6 @@
 '@weasel-js/paint': patch
 ---
 
-A gradient sampled exactly at an offset two stops share takes the later stop's color, as CSS draws a hard color break, in `sampleGradientStops` and the GL ramp.
+A gradient sampled exactly where two stops share an offset takes the later stop's color, as CSS draws a hard break.
 
 <!-- entry: fix visual -->
