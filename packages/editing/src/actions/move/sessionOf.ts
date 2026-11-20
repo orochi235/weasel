@@ -1,5 +1,6 @@
 import type { GestureContext } from '@weasel-js/core/engine';
 import type { MoveSession } from './session';
+import { createPart } from '@weasel-js/registry';
 
 const sessions = new WeakMap<GestureContext<unknown>, MoveSession>();
 
@@ -14,17 +15,16 @@ export function moveSessionOf(ctx: GestureContext<unknown>): MoveSession | undef
   return sessions.get(ctx);
 }
 
-const armedSwaps = new WeakMap<GestureContext<unknown>, Set<object>>();
+/** The swap behaviors armed on each drag. */
+const armedSwapsOf = createPart((_ctx: GestureContext<unknown>) => new Set<object>());
 
 /** Record whether the swap behavior `owner` is armed on this drag. */
 export function holdSwap(ctx: GestureContext<unknown>, owner: object, armed: boolean): void {
-  let held = armedSwaps.get(ctx);
-  if (!held) armedSwaps.set(ctx, (held = new Set()));
-  if (armed) held.add(owner);
-  else held.delete(owner);
+  if (armed) armedSwapsOf(ctx).add(owner);
+  else armedSwapsOf(ctx).delete(owner);
 }
 
 /** Whether a swap is armed on this drag: it preempts the drops at release, so they show nothing while it is. */
 export function swapArmed(ctx: GestureContext<unknown>): boolean {
-  return (armedSwaps.get(ctx)?.size ?? 0) > 0;
+  return armedSwapsOf(ctx).size > 0;
 }
