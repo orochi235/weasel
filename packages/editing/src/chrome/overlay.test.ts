@@ -363,6 +363,19 @@ describe('createSelectionOverlayLayer', () => {
   });
 });
 
+describe('selection outline stroke', () => {
+  it('passes every stroke field the consumer set through to the renderer', () => {
+    const layer = createSelectionOutlineLayer<Pose>({
+      getSelection: () => [asNodeId('a')],
+      getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }),
+      outline: { dash: [4, 4], dashOffset: 2, miterLimit: 1, join: 'miter', pad: 3 },
+    });
+    const cmd = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS)[0] as PathDrawCommand;
+    expect(cmd.stroke).toMatchObject({ dash: [4, 4], dashOffset: 2, miterLimit: 1, join: 'miter', width: 2 });
+    expect(cmd.stroke).not.toHaveProperty('pad');
+  });
+});
+
 describe('rotate badge on a target that cannot rotate', () => {
   const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
   const box = { x: 0, y: 0, width: 50, height: 50 };
