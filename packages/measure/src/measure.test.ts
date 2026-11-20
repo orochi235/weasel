@@ -376,6 +376,15 @@ describe('editing a measurement', () => {
     expect(rig.ids()).toHaveLength(2);
   });
 
+  it('declines to unpick a pick the scene no longer holds, so Escape reaches the ambient escape', () => {
+    const rig = setup();
+    rig.measure({ x: 0, y: 0 }, { x: 10, y: 0 });
+    expect(rig.enabled(MEASURE_ACTION_IDS.unpick).enabled).toBe(true);
+    rig.scene.undo();
+    expect(rig.ms.picked.get()).not.toBeNull();
+    expect(rig.enabled(MEASURE_ACTION_IDS.unpick)).toMatchObject({ enabled: false, reason: ActionDisabledReason.NotApplicable });
+  });
+
   it('drops the pick on unpick, and declines with nothing picked', () => {
     const rig = setup();
     expect(rig.enabled(MEASURE_ACTION_IDS.unpick).enabled).toBe(false);

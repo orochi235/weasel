@@ -133,8 +133,12 @@ function unpick(ms: Measurements): Action {
   return {
     id: MEASURE_ACTION_IDS.unpick,
     label: 'Deselect Measurement',
-    // Declining with nothing picked leaves Escape to the ambient `escape`.
-    enabled: () => (ms.picked.get() !== null ? true : ActionDisabledReason.NotApplicable),
+    requires: ['scene'],
+    // Declining with nothing picked, or a pick no longer drawn, leaves Escape to the ambient `escape`.
+    enabled: (deps) => {
+      const c = current(deps, ms);
+      return c !== null && c.id === ms.picked.get() ? true : ActionDisabledReason.NotApplicable;
+    },
     invoker: { timing: 'immediate', run: () => ms.picked.set(null) },
   };
 }
