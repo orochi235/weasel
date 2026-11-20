@@ -138,6 +138,16 @@ describe('pinWarpMap', () => {
     close(unwarpPoint(map, map(p), map(p), 1e-9), p, 5);
   });
 
+  it('moves an outline point by the mean drag of the pins that snapped to it', () => {
+    const pins = [
+      { from: { x: -50, y: 50 }, to: { x: -50, y: 50 } },
+      { from: { x: -10, y: 50 }, to: { x: -10, y: 80 } },
+      { from: { x: 100, y: 50 }, to: { x: 100, y: 50 } },
+    ];
+    expect(pinWarpMesh(square(), pins.map((p) => p.from)).pinVertex[0]).toBe(pinWarpMesh(square(), pins.map((p) => p.from)).pinVertex[1]);
+    close(pinWarpMap(square(), pins)({ x: 0, y: 50 }), { x: 0, y: 65 }, 3);
+  });
+
   it('moves the whole shape with one pin, and leaves it be with none', () => {
     close(pinWarpMap(square(), [])({ x: 3, y: 4 }), { x: 3, y: 4 });
     close(pinWarpMap(square(), [{ from: { x: 50, y: 50 }, to: { x: 55, y: 57 } }])({ x: 10, y: 10 }), { x: 15, y: 17 });

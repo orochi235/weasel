@@ -66,18 +66,22 @@ export function pinWarpMap(source: PolygonPath, pins: readonly WarpPin[]): (p: P
   };
 }
 
-/** The rig's vertices under `pins`, or null when no pin landed on the mesh. */
+/** The rig's vertices under `pins`, or null when no pin landed on the mesh. Pins
+ *  sharing a vertex move it by the mean of their drags. */
 function solveRig(rig: Rig, pins: readonly WarpPin[], opts?: ArapSolveOptions): Float64Array | null {
-  const targets: number[] = [];
-  const seen = new Set<number>();
+  const drag = new Map<number, { dx: number; dy: number; n: number }>();
   pins.forEach((pin, k) => {
     const v = rig.mesh.pinVertex[k];
-    if (v < 0 || seen.has(v)) return;
-    seen.add(v);
-    // A pin off the outline holds the outline point it snapped to, carried by its own drag.
-    targets.push(pin.to.x + rig.mesh.vertices[2 * v] - pin.from.x, pin.to.y + rig.mesh.vertices[2 * v + 1] - pin.from.y);
+    if (v < 0) return;
+    const d = drag.get(v) ?? { dx: 0, dy: 0, n: 0 };
+    d.dx += pin.to.x - pin.from.x; d.dy += pin.to.y - pin.from.y; d.n++;
+    drag.set(v, d);
   });
-  return targets.length === 0 ? null : rig.solver.solve(targets, opts);
+  if (drag.size === 0) return null;
+  // A pin off the outline holds the outline point it snapped to, carried by its own drag.
+  const targets: number[] = [];
+  for (const [v, d] of drag) targets.push(rig.mesh.vertices[2 * v] + d.dx / d.n, rig.mesh.vertices[2 * v + 1] + d.dy / d.n);
+  return rig.solver.solve(targets, opts);
 }
 
 /**
