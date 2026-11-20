@@ -2902,3 +2902,7 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): `setDiagramStyle`, `setDiagramColor` and `setDiagramFontSize` leave a locked shape or
   connector, and locked text of an unlocked one, as `applyDiagramTheme` does, and edit the rest. They had thrown from
   `scene.update` partway through. Throwing up front on any locked id was the alternative.
+- 2026-11-20 (the fixer's call): `setThemeValue` throws a `RangeError` on a path through a role, a lane body or a series
+  color the theme lacks, past appending one color at the end of `series`; `addThemeRole` is how a role is made. It had
+  made a role holding one field, or a sparse array, which painted `undefined` and failed `diagramThemeErrors`. Filling
+  a missing role from the default role, as `addThemeRole` does, was the alternative.

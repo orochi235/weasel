@@ -50,9 +50,27 @@ function setIn(at: unknown, path: readonly (string | number)[], value: unknown):
   return { ...obj, [key!]: setIn(Object.hasOwn(obj, key!) ? obj[key!] : undefined, rest, value) };
 }
 
-/** `theme` with `value` at `path`; everything else shared with it. */
-export const setThemeValue = (theme: DiagramTheme, path: ThemePath, value: string | number): DiagramTheme =>
-  setIn(theme, path, value) as DiagramTheme;
+/** Throws unless every step of `path` but the last is already in `theme`, and a last step into an
+ *  array is a whole index no further than its end. */
+function assertSettable(theme: DiagramTheme, path: ThemePath): void {
+  let at: unknown = theme;
+  path.forEach((key, i) => {
+    const last = i === path.length - 1;
+    const ok = Array.isArray(at)
+      ? Number.isInteger(key) && (key as number) >= 0 && (key as number) < at.length + (last ? 1 : 0)
+      : at !== null && typeof at === 'object' && (last || Object.hasOwn(at, key));
+    if (!ok) throw new RangeError(`setThemeValue: theme '${theme.id}' has no ${path.slice(0, i + 1).join('.')}`);
+    if (!last) at = Array.isArray(at) ? at[key as number] : getOwn(at as Record<string, unknown>, key as string);
+  });
+}
+
+/** `theme` with `value` at `path`; everything else shared with it. Throws a `RangeError` on a path
+ *  through a role, a lane body or a series color the theme lacks, past appending one series color:
+ *  {@link addThemeRole} makes a role. */
+export function setThemeValue(theme: DiagramTheme, path: ThemePath, value: string | number): DiagramTheme {
+  assertSettable(theme, path);
+  return setIn(theme, path, value) as DiagramTheme;
+}
 
 /** Every role `theme` styles with the name a picker shows: the shipped roles first, in their order,
  *  then the theme's own. */
