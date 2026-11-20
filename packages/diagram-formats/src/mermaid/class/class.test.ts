@@ -120,6 +120,11 @@ describe('writing a Mermaid class diagram', () => {
     expect(page(text).data.nodes[0]!.rows).toContainEqual({ kind: 'label', text: 'my class' });
   });
 
+  it('writes a note whose text is in its rows', () => {
+    const text = writeClassDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'n', outline: 'note', rows: [{ kind: 'label', text: 'remember' }] }], edges: [] } }] }).text;
+    expect(text).toContain('  note "remember"');
+  });
+
   it('keeps a backslash and the n after it in a note line', () => {
     const text = writeClassDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'n', outline: 'note', lines: ['C:\\new', 'two'] }], edges: [] } }] }).text;
     expect(page(text).data.nodes[0]!.lines).toEqual(['C:\\new', 'two']);
