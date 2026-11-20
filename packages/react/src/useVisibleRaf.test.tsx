@@ -298,8 +298,8 @@ describe('useVisibleRaf', () => {
 
   it('resumes, rebase first, when a suspended loop\'s target is swapped for one not yet reported', () => {
     const clock = makeClock();
-    const a = document.createElement('div');
-    const b = document.createElement('div');
+    const a = document.body.appendChild(document.createElement('div'));
+    const b = document.body.appendChild(document.createElement('div'));
     let target: Element = a;
     const order: string[] = [];
     const { loop } = mount(() => order.push('frame'), {
@@ -317,6 +317,56 @@ describe('useVisibleRaf', () => {
 
     act(() => { setHidden(true); });
     expect(order).toEqual(['suspend', 'resume', 'frame', 'suspend']);
+  });
+
+  it('keeps a continuous loop running when its element leaves the document', () => {
+    const clock = makeClock();
+    const a = document.body.appendChild(document.createElement('div'));
+    const frame = vi.fn((_t: number, self: VisibleRaf) => self.request());
+    const { loop } = mount(frame, { ...clock, target: () => a });
+    act(() => { loop().request(); });
+    act(() => { clock.flush(); });
+    a.remove();
+    act(() => { for (const cb of observerCallbacks) cb([{ isIntersecting: false, target: a } as unknown as IntersectionObserverEntry], null as never); });
+    act(() => { clock.flush(); });
+    expect(frame).toHaveBeenCalledTimes(2);
+  });
+
+  it('resumes a suspended loop on the commit that points its target at a visible element', () => {
+    const clock = makeClock();
+    const frame = vi.fn((_t: number, self: VisibleRaf) => self.request());
+    const loopRef = { current: null as VisibleRaf | null };
+    function Swap({ which }: { which: 'a' | 'b' }) {
+      const a = useRef<HTMLDivElement | null>(null);
+      const b = useRef<HTMLDivElement | null>(null);
+      loopRef.current = useVisibleRaf(frame, { ...clock, target: which === 'a' ? a : b });
+      return <><div ref={a} /><div ref={b} /></>;
+    }
+    const view = render(<Swap which="a" />);
+    act(() => { loopRef.current!.request(); });
+    act(() => { setIntersecting(false); });
+    view.rerender(<Swap which="b" />);
+    act(() => { clock.flush(); });
+    expect(frame).toHaveBeenCalledTimes(1);
+  });
+
+  it('never cancels a window frame with the handle of a clock injected without cancelFrame', () => {
+    const clock = makeClock();
+    const cancelAnimationFrame = vi.fn();
+    vi.stubGlobal('cancelAnimationFrame', cancelAnimationFrame);
+    const { loop } = mount(vi.fn(), { requestFrame: clock.requestFrame });
+    act(() => { loop().request(); });
+    act(() => { loop().cancel(); });
+    expect(cancelAnimationFrame).not.toHaveBeenCalled();
+  });
+
+  it('keeps running on a clock that calls back inside the request', () => {
+    let time = 0;
+    const frame = vi.fn();
+    const { loop } = mount(frame, { requestFrame: (cb) => { cb((time += 16)); return 1; }, cancelFrame: () => {} });
+    act(() => { loop().request(); });
+    act(() => { loop().request(); });
+    expect(frame).toHaveBeenCalledTimes(2);
   });
 
   it('cancels a held request without running it later', () => {

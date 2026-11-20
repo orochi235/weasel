@@ -102,3 +102,31 @@ test('a report queued before unmount leaves no scroll listener and wakes no obse
   document.dispatchEvent(new Event('scroll'));
   expect(observes).toBe(after);
 });
+
+test('observes an element that mounts after the hook, and the one that replaces it', () => {
+  const observed: Element[] = [];
+  vi.stubGlobal(
+    'IntersectionObserver',
+    class {
+      constructor(cb: (entries: Entry[]) => void) { report = cb; }
+      observe(el: Element) { observed.push(el); }
+      unobserve() {}
+      disconnect() {}
+    },
+  );
+  function Late({ show }: { show: 'none' | 'a' | 'b' }) {
+    const ref = useRef<HTMLDivElement>(null);
+    const near = useNearViewport(ref, '0px', false);
+    return show === 'none' ? null : <div key={show} ref={ref} data-near={String(near)} />;
+  }
+  const view = render(<Late show="none" />);
+  expect(observed).toEqual([]);
+  view.rerender(<Late show="a" />);
+  const a = document.querySelector('[data-near]');
+  expect(observed).toEqual([a]);
+  act(() => report([{ isIntersecting: true, rootBounds: ROOT, boundingClientRect: rect(10, 90) }]));
+  expect(near()).toBe('true');
+  view.rerender(<Late show="b" />);
+  expect(observed.at(-1)).not.toBe(a);
+  expect(observed.at(-1)).toBe(document.querySelector('[data-near]'));
+});

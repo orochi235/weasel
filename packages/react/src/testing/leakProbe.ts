@@ -99,10 +99,9 @@ interface Pending {
 
 const always = () => true;
 
-function watchListeners({ records, replace }: Patch): void {
-  const proto = EventTarget.prototype;
-  const add = proto.addEventListener;
-  const remove = proto.removeEventListener;
+function watchListeners({ scope, records, replace }: Patch): void {
+  type Add = EventTarget['addEventListener'];
+  type Remove = EventTarget['removeEventListener'];
   type Entry = { rec: Live; type: string; cb: EventListenerOrEventListenerObject; capture: boolean };
   // By target, held weakly: a story's elements come and go by the thousand, and none of them is the probe's to keep.
   const byTarget = new WeakMap<EventTarget, Entry[]>();
@@ -115,28 +114,48 @@ function watchListeners({ records, replace }: Patch): void {
     if (at >= 0) list!.splice(at, 1);
     records.delete(e.rec);
   };
-  replace(proto, 'addEventListener', function (this: EventTarget, type, cb, options) {
-    add.call(this, type, cb, options);
-    if (!cb) return;
-    const capture = captureOf(options);
-    if (find(this, type, cb, capture)) return;
-    const target = this;
-    const rec = onTarget({ kind: 'listener', what: `${nameOf(target)} ${type}`, stack: stackHere() }, target);
-    const entry: Entry = { rec, type, cb, capture };
-    const list = byTarget.get(target) ?? [];
-    byTarget.set(target, list);
-    list.push(entry);
-    records.add(rec);
-    const opts = typeof options === 'object' ? options : undefined;
-    if (opts?.once) add.call(target, type, () => drop(target, entry), { once: true, capture });
-    if (opts?.signal) add.call(opts.signal, 'abort', () => drop(target, entry), { once: true });
-  });
-  replace(proto, 'removeEventListener', function (this: EventTarget, type, cb, options) {
-    remove.call(this, type, cb, options);
-    if (!cb) return;
-    const entry = find(this, type, cb, captureOf(options));
-    if (entry) drop(this, entry);
-  });
+  const watching = (add: Add): Add =>
+    function (this: EventTarget, type, cb, options) {
+      const opts = typeof options === 'object' ? options : undefined;
+      const capture = captureOf(options);
+      // An aborted signal adds nothing, and a listener already added is not added again.
+      if (!cb || opts?.signal?.aborted || find(this, type, cb, capture)) {
+        add.call(this, type, cb, options);
+        return;
+      }
+      const target = this;
+      const entry: Entry = {
+        rec: onTarget({ kind: 'listener', what: `${nameOf(target)} ${type}`, stack: stackHere() }, target),
+        type, cb, capture,
+      };
+      // Ahead of the listener, so one that stops the event's propagation still lets this see it fire.
+      if (opts?.once) add.call(target, type, () => drop(target, entry), { once: true, capture });
+      add.call(target, type, cb, options);
+      const list = byTarget.get(target) ?? [];
+      byTarget.set(target, list);
+      list.push(entry);
+      records.add(entry.rec);
+      // A test environment's `AbortSignal` can come from another realm than its `EventTarget`.
+      if (opts?.signal) opts.signal.addEventListener('abort', () => drop(target, entry), { once: true });
+    };
+  const unwatching = (remove: Remove): Remove =>
+    function (this: EventTarget, type, cb, options) {
+      remove.call(this, type, cb, options);
+      if (!cb) return;
+      const entry = find(this, type, cb, captureOf(options));
+      if (entry) drop(this, entry);
+    };
+  const proto = EventTarget.prototype;
+  replace(proto, 'addEventListener', watching(proto.addEventListener));
+  replace(proto, 'removeEventListener', unwatching(proto.removeEventListener));
+  // jsdom test environments copy the window's methods onto the global scope, bound, where the prototype's patch misses them.
+  const own = (key: string) => Object.prototype.hasOwnProperty.call(scope, key) && typeof scope[key] === 'function';
+  if (own('addEventListener') && own('removeEventListener')) {
+    const add = scope.addEventListener.bind(scope);
+    const remove = scope.removeEventListener.bind(scope);
+    replace(scope, 'addEventListener', watching(add as Add));
+    replace(scope, 'removeEventListener', unwatching(remove as Remove));
+  }
 }
 
 function watchTimer(
@@ -165,7 +184,8 @@ function watchTimer(
   replace(scope, clear, ((id?: number) => {
     realClear(id);
     const p = id === undefined ? undefined : pending.get(id);
-    if (p && p.rec.kind === kind) {
+    // One id pool: either clear function stops either kind of timer.
+    if (p) {
       pending.delete(id!);
       records.delete(p.rec);
     }

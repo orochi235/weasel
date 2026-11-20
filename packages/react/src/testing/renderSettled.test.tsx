@@ -48,4 +48,10 @@ describe('renderSettled', () => {
     await new Promise((r) => setTimeout(r, 40));
     expect(ran).not.toHaveBeenCalled();
   });
+
+  it('leaves in place a frame function stubbed while it held frames', async () => {
+    const stub = vi.fn(() => 0);
+    await actSettled(() => { vi.stubGlobal('requestAnimationFrame', stub); });
+    expect(requestAnimationFrame).toBe(stub);
+  });
 });
