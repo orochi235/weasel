@@ -3,6 +3,8 @@ import { act, renderHook } from '@testing-library/react';
 import { createScene, derivedDepOf, type NodeId, type RectPose, type Vec2 } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH } from './edge';
 import { CLUSTER_DERIVE_POSE, boxAround } from './clusterBox';
+import { layered } from './layered';
+import type { LayoutPlan, LayoutPlanner } from './layout';
 import { useLiveLayout } from './live';
 import { sceneParticipants } from './portLayer';
 
@@ -26,12 +28,13 @@ function makeClock() {
   };
 }
 
-function live(s: S, algorithm: string) {
+function live(s: S, algorithm: string | LayoutPlanner, easing?: (t: number) => number) {
   const clock = makeClock();
   const { result } = renderHook(() => useLiveLayout<RectPose>({
     scene: s,
     source: sceneParticipants<RectPose>(s as never),
     algorithm,
+    ...(easing ? { easing } : {}),
     frames: 4,
     requestFrame: clock.requestFrame,
     cancelFrame: clock.cancelFrame,
@@ -135,5 +138,32 @@ describe('a live run\'s eased routes', () => {
     expect(handle().isRunning()).toBe(true);
     expect(route()).toHaveLength(2);
     expect(drawn(s, long)).toHaveLength(2);
+  });
+
+  it('stop showing once a restart or a throwing step drops the run easing them', async () => {
+    for (const end of ['restart', 'throw'] as const) {
+      const s = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
+      const a = s.add({ kind: 'mark', layer: 'main', pose: box(0, 0), data: { diagram: {} } });
+      const b = s.add({ kind: 'mark', layer: 'main', pose: box(200, 30), data: { diagram: {} } });
+      const e = addEdge(s, a, b);
+      const answers: (() => void)[] = [];
+      let fail = false;
+      const planner: LayoutPlanner = {
+        plan: (graph) => new Promise<LayoutPlan>((resolve) => { answers.push(() => resolve(layered.plan!(graph))); }),
+      };
+      const easing = (t: number) => { if (fail) throw new Error('lost'); return t; };
+      const { clock, handle } = end === 'restart' ? live(s, planner) : live(s, 'layered', easing);
+      act(() => { handle().start(); });
+      if (end === 'restart') await act(async () => { answers[0]!(); });
+      act(() => { clock.frames(2); });
+      expect(s.overrides.read(e)?.path).toBeDefined();
+      if (end === 'restart') {
+        act(() => { handle().restart(); });
+      } else {
+        fail = true;
+        try { act(() => { clock.frames(1); }); } catch { /* the step's own error */ }
+      }
+      expect([end, s.overrides.read(e)?.path]).toEqual([end, undefined]);
+    }
   });
 });

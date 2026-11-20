@@ -165,6 +165,17 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
   }, [optsRef, eased]);
 
   const step = useCallback((ctx: PoseRunCtx<TPose>): PoseRunStep<TPose> => {
+    // A step that throws ends the run with its node overrides released; the routes go with them.
+    try {
+      return stepOnce(ctx);
+    } catch (err) {
+      eased.drop();
+      throw err;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eased]);
+
+  const stepOnce = (ctx: PoseRunCtx<TPose>): PoseRunStep<TPose> => {
     const o = optsRef.current;
     if (producer.current === null) return { poses: [], done: true };
     if (ctx.pinned.size > 0) held.current = true;
@@ -184,7 +195,7 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
     const { u } = progress(frame, o.frames ?? EASE_FRAMES, o.easing ?? easeInOutQuad);
     eased.show(o.scene, held.current ? null : u, (id) => poses.get(id) ?? ctx.pinned.get(id as NodeId), frameFor(o));
     return { poses: [...poses] as [NodeId, TPose][], done };
-  }, [optsRef, eased]);
+  };
 
   const run = usePoseRun<TPose>({
     scene: opts.scene,
@@ -231,8 +242,9 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
   const restart = useCallback((): void => {
     pending.drop();
     run.cancel();
+    eased.drop();
     if (build()) run.start();
-  }, [pending, run, build]);
+  }, [pending, run, build, eased]);
 
   // A node or edge appearing or disappearing is a new problem, so the run
   // re-heats rather than finishing the one it started on. A planner is asked
@@ -252,7 +264,7 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
       if (run.isRunning() || pending.isWaiting()) return;
       if (build()) run.start();
     },
-    stop: () => { pending.drop(); run.stop(); },
+    stop: () => { pending.drop(); run.stop(); eased.drop(); },
     cancel: () => { pending.drop(); run.cancel(); eased.drop(); },
     restart,
     isRunning: () => run.isRunning() || pending.isWaiting(),
