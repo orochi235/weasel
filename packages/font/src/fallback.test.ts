@@ -7,6 +7,8 @@ import {
   registerCanvasFont, unregisterCanvasFont, _resetDynamicFontsForTests,
 } from './dynamic/dynamicAtlas';
 import { registerTestFont } from './testing/registerTestFont';
+import { registerFontOutlines, loadFontOutlines, _resetFontOutlinesForTests } from './outline/outlineRegistry';
+import type { OutlineFace } from './outline/OutlineFace';
 import { glyphGeneration, subscribeGlyphReady } from './glyphReady';
 import { _resetFallbackForTests as resetFallbackFromSeams } from './test-seams';
 
@@ -114,6 +116,24 @@ describe('substitute policy — canvas-registered default family', () => {
     expect(result.substituted).toEqual({ requested: 'Comic Sans', resolved: 'SystemUI' });
     expect(result.resolved).toEqual({ family: 'SystemUI', weight: 400, style: 'normal' });
     warn.mockRestore();
+  });
+
+  it('substitutes a default family served by the outline tier', async () => {
+    _resetFontOutlinesForTests();
+    const face: OutlineFace = { unitsPerEm: 1000, ascender: 0.8, advanceOf: () => 0.5, kernOf: () => 0, glyphD: () => null };
+    registerFontOutlines('Brand', {}, new ArrayBuffer(4), { parser: () => face });
+    setDefaultFontFamily('Brand');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    expect(resolveFontVariant('Comic Sans', 400, 'normal').entry).toBeNull();
+    await loadFontOutlines('Brand');
+    const result = resolveFontVariant('Comic Sans', 400, 'normal');
+
+    expect(result.outlineFace).toBe(face);
+    expect(result.substituted).toEqual({ requested: 'Comic Sans', resolved: 'Brand' });
+    expect(warn.mock.calls.map((c) => c[0] as string).join()).not.toContain('not registered either');
+    warn.mockRestore();
+    _resetFontOutlinesForTests();
   });
 
   it('accepts a registered default family that resolves through the dynamic tier', async () => {

@@ -8,12 +8,12 @@ import { variantKey } from './variantKey';
 import type { FontStyle } from './fontStyle';
 import { isCanvasFont, isExplicitCanvasFont, autoEnrollCanvasFont, getDynamicFace } from './dynamic/dynamicAtlas';
 import { getFontFallbackPolicy, getDefaultFontFamily } from './fallback';
-import { outlineFace, outlineStatus } from './outline/outlineRegistry';
+import { hasFontOutlines, outlineFace, outlineStatus } from './outline/outlineRegistry';
 import { chainPick, farPick, type ChainPick } from './familyFace';
 import { atlasResult, sharedExactResult } from './atlasResult';
 import type { ResolveResult } from './resolveResult';
 import {
-  atlasPending, firstRegisteredFamily, fontRegistry, isRegisteredFamily, variantKeysOf, wakeVariant,
+  atlasPending, firstRegisteredFamily, fontRegistry, isFontPending, isRegisteredFamily, variantKeysOf, wakeVariant,
 } from './registerFont';
 import {
   warnMissingFamilyOnce, warnSelfUnusableDefaultOnce, warnUnregisteredDefaultOnce, warnUnusableDefaultOnce,
@@ -78,28 +78,31 @@ function missResolveResult(
   if (policy === 'substitute') {
     const fallback = getDefaultFontFamily() ?? firstRegisteredFamily();
     // Guard against recursing when the default family is itself unknown.
-    // Canvas families never enter `registry`, so membership there alone would
-    // reject `setDefaultFontFamily` pointed at one. `isCanvasFont` answers
-    // "served by the dynamic tier right now": a family the `'canvas'` policy
-    // auto-enrolled is not served under this policy.
+    // Canvas and outline families never enter `registry`, so membership there
+    // alone would reject `setDefaultFontFamily` pointed at one. `isCanvasFont`
+    // answers "served by the dynamic tier right now": a family the `'canvas'`
+    // policy auto-enrolled is not served under this policy.
+    const fallbackOutlines = fallback !== null && hasFontOutlines(fallback, weight, style);
     if (fallback !== null && fallback !== family) {
-      if (fontRegistry.has(fallback) || isCanvasFont(fallback) || atlasPending(fallback)) {
+      if (fontRegistry.has(fallback) || isCanvasFont(fallback) || atlasPending(fallback) || fallbackOutlines) {
         // A probe, not a top-level request: suppress, so this recursion can't
         // land in the `fallback === family` branch below and double-warn.
         const result = resolveFontVariantInternal(fallback, weight, style, true, false);
-        // Renderable, not baked: a fallback served by the dynamic tier reports
-        // `entry: null` with a dynamicFace.
-        if (result.entry !== null || result.dynamicFace !== undefined) {
+        // Renderable, not baked: a fallback served by the dynamic or outline
+        // tier reports `entry: null` with its face.
+        if (result.entry !== null || result.dynamicFace !== undefined || result.outlineFace !== undefined) {
           if (!suppressWarn) warnMissingFamilyOnce(family, weight, style, fallback, isRegisteredFamily(family));
           return { ...result, substituted: { requested: family, resolved: fallback } };
         }
         // Still loading: nothing to swap to yet, and nothing to warn about.
-        if (atlasPending(fallback)) return pendingMiss(family, weight, style);
+        if (isFontPending(fallback, weight, style)) return pendingMiss(family, weight, style);
       }
       // Substitution was supposed to happen and produced nothing: text is
       // invisible, so say which of the two families to fix.
       if (!suppressWarn) {
-        warnUnusableDefaultOnce(family, weight, style, fallback, isRegisteredFamily(fallback) || isCanvasFont(fallback));
+        warnUnusableDefaultOnce(
+          family, weight, style, fallback, isRegisteredFamily(fallback) || isCanvasFont(fallback) || fallbackOutlines,
+        );
       }
     } else if (fallback === family && !suppressWarn) {
       // The family that can't serve this variant *is* the effective default.
