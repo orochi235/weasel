@@ -60,9 +60,8 @@ describe('an anchor drag snapping', () => {
     expect(anchor2(dragAnchor2To({ x: 203, y: 48 }, { others: ['M200 0 L200 100'] })!)).toEqual([200, 50]);
   });
 
-  it('snaps back onto a target it began on, once dragged off it', () => {
-    const out = dragAnchor2To({ x: 102, y: 98 }, { others: ['M100 100 L200 200'], via: { x: 130, y: 130 } })!;
-    expect(anchor2(out)).toEqual([100, 100]);
+  it('snaps back onto a target it began on, once dragged off it, which leaves nothing to commit', () => {
+    expect(dragAnchor2To({ x: 102, y: 98 }, { others: ['M100 100 L200 200'], via: { x: 130, y: 130 } })).toBeNull();
   });
 
   it('is not snapped while Ctrl is held', () => {

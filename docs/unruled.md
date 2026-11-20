@@ -3049,3 +3049,8 @@ Calls the lanes made without a ruling:
   copies nor freezes an app's own definitions, so mutating one after registering it leaves
   `createActiveModeReader` serving the old tags until the next `setMode`. Copying them on registration was
   the alternative, at the cost of `byId` no longer returning the object passed in.
+## Audit round fifty-three (2026-11-20): path-tools.pathEdit
+
+- 2026-11-20 (the fixer's call): `setAnchorField` asked `enabled` with params answers as its `run` would, so an
+  entry that would change nothing is `NotApplicable`; asked with no params, as a listing asks, it answers for the
+  anchor selection alone, since what a field would write only arrives with the entry.

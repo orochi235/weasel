@@ -3,6 +3,7 @@ import { PathBuilder, cubicPointAt, pathToAnchors, type PolygonPath } from '@wea
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { createEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
+import type { EditAnchorsDep } from '@weasel-js/core';
 import { bendSegmentAction } from './bendSegment';
 import { createKitSettingsStore } from '@weasel-js/react';
 
@@ -14,11 +15,12 @@ function line(): PolygonPath {
   return b.build();
 }
 
-function setup() {
+function setup(finishEdit?: EditAnchorsDep['finishEdit']) {
   const commits: Array<{ path: PolygonPath; label: string }> = [];
   let current = line();
   const dep = makeEditAnchorsDep({
     editingId: 'p1',
+    ...(finishEdit ? { finishEdit } : {}),
     getEditablePath: () => current,
     applyEdit: (_id, worldPath, label) => {
       current = worldPath as PolygonPath;
@@ -62,6 +64,22 @@ describe('bendSegmentAction', () => {
     handle.onEnd!(at(deps, 50, 20), 'cancel');
     expect(commits).toHaveLength(0);
     expect(handle.previewIds!()).toBeNull();
+  });
+
+  it('keeps the last frame an extension could finish, and commits that', () => {
+    // Refuses any bend that takes the segment's midpoint past y = 25.
+    const { deps, commits } = setup((_id, p) => {
+      const [a, b] = pathToAnchors(p as PolygonPath).anchors[0];
+      const mid = a.outHandle && b.inHandle ? cubicPointAt(a, a.outHandle, b.inHandle, b, 0.5) : { y: 0 };
+      return mid.y > 25 ? null : { path: p, others: [] };
+    });
+    const handle = ongoing.start(at(deps, 50, 0), {});
+    handle.onMove!(at(deps, 50, 20));
+    handle.onMove!(at(deps, 50, 40));
+    handle.onEnd!(at(deps, 50, 40), 'commit');
+    expect(commits).toHaveLength(1);
+    const [a, b] = pathToAnchors(commits[0].path).anchors[0];
+    expect(cubicPointAt(a, a.outHandle!, b.inHandle!, b, 0.5).y).toBeCloseTo(20, 3);
   });
 
   it('reaches a segment as far as targets.segmentHitPx', () => {
