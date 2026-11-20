@@ -49,3 +49,12 @@ describe('a title several files share', () => {
     expect(page).not.toHaveProperty('tags');
   });
 });
+
+describe('a title whose last segment has spaces or separators', () => {
+  it("is spoken for by the file named for it without them", () => {
+    const files = ['/c/lab/ColorFieldArc.stories.tsx', '/c/ColorField.stories.tsx'];
+    expect(primaryFile('ui/Color Field', files)).toBe(files[1]);
+    expect(primaryFile('ui/color-field', files)).toBe(files[1]);
+    expect(primaryFile('ui/Color_Field', files)).toBe(files[1]);
+  });
+});
