@@ -25,7 +25,8 @@ export interface LoupeSurface {
    * pointer never covers it and answers `false`.
    */
   covers(p: LoupePoint): boolean;
-  /** Hex color at a surface point, or `null` where nothing is drawn there or the surface cannot say. */
+  /** Hex color at a surface point, or `null` where nothing is drawn there or the surface cannot say.
+   *  Answered at once: a sampler that answers with a promise drives an eyedropper, not a loupe. */
   sample(p: LoupePoint): string | null;
   /** Is the lens off screen? Aims are ignored while it is. */
   hidden(): boolean;
@@ -104,8 +105,19 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
   let disposed = false;
   let aimUnsampled = false;
 
+  const sampleAt = (p: LoupePoint): string | null => {
+    const hex: unknown = surface.sample(p);
+    if (typeof (hex as { then?: unknown } | null)?.then === 'function') {
+      throw new TypeError(
+        '[weasel loupe] A loupe surface answers at once, and its sample() answered with a promise. ' +
+          'Give an asynchronous sampler to createEyedropperModel, and the loupe a surface that reads now.',
+      );
+    }
+    return hex as string | null;
+  };
+
   const sampleColor = () => {
-    const hex = surface.sample(aim);
+    const hex = sampleAt(aim);
     if (hex === color) return;
     color = hex;
     opts.onColorChange?.(hex);
@@ -176,7 +188,7 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
         // lens' own chrome as artwork.
         if (surface.covers(at)) return null;
       }
-      const hex = surface.sample(at);
+      const hex = sampleAt(at);
       if (hex !== null) opts.onPick?.(hex);
       return hex;
     },

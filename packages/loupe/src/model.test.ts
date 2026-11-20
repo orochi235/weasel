@@ -206,6 +206,21 @@ describe('loupe model: color', () => {
   });
 });
 
+describe('loupe model: a surface that answers later', () => {
+  it('throws rather than take a promise for a color', () => {
+    const later = Promise.resolve('#112233');
+    const { surface } = stubSurface({ sample: () => later as unknown as string });
+    const onColorChange = vi.fn();
+    const onPick = vi.fn();
+    const loupe = createLoupeModel({ surface, onColorChange, onPick });
+    expect(() => loupe.aimAt({ x: 1, y: 1 })).toThrow(/answers at once/);
+    expect(() => loupe.pick()).toThrow(/answers at once/);
+    expect(loupe.color).toBeNull();
+    expect(onColorChange).not.toHaveBeenCalled();
+    expect(onPick).not.toHaveBeenCalled();
+  });
+});
+
 describe('loupe model: resampling', () => {
   it('reads the aim again when the pixels under it change', () => {
     let hex = '#111111';

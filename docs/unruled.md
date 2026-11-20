@@ -505,6 +505,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   factor of 0 that a point in the lens could not be mapped back through.
 - Ruled 2026-11-10 (my call, overnight sweep): the loupe model's `setFactor` asks the surface for no redraw when the
   factor it clamps to is the one it has, as `setMode` already did.
+- 2026-11-20 (my call, audit round 51): a captured `CanvasSource` read while no reader holds it answers `null` and
+  warns once to `retain()` it; `canvasPixelSource` does not hold its source itself, since a read has no end to
+  release at. The copy is dropped when the last reader releases.
+- 2026-11-20 (my call, audit round 51): a `LoupeSurface` whose `sample` answers with a promise throws a `TypeError`
+  from the loupe model's aim, resample and pick, rather than the model storing the promise as its color; the loupe
+  stays synchronous and an asynchronous sampler drives only the eyedropper.
 - 2026-11-06 (WebGPU backend): A program with no WGSL, registered after a canvas went WebGPU, draws
   nothing there and is reported once, mirroring a WGSL-only program on WebGL; the canvas is never
   swapped for one of the other context kind, which would lose its listeners and layout.

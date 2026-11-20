@@ -11,7 +11,8 @@ export interface EyedropperModelOptions {
   /**
    * A loupe on the same surface. `hover` aims it, so the lens shows the
    * neighborhood of the point a click would take. Give the loupe's surface
-   * the same sampler and its readout is the color that click takes.
+   * the same sampler and its readout is the color that click takes — when the
+   * sampler answers at once; a loupe's surface cannot wait for a promise.
    */
   loupe?: LoupeModel;
   /** Called with the color under the pointer whenever it changes; `null`
