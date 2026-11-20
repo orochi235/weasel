@@ -19,8 +19,8 @@
  *
  * ## Action-lookup miss behavior
  * When the walk reaches a binding whose `actionId` has no entry in
- * `ctx.actions.list()`, the dispatcher emits `console.warn` and returns
- * `'unhandled'`, so the gesture falls through as if unmatched.
+ * `ctx.actions.list()`, the dispatcher emits `console.warn` and skips it, so
+ * the walk goes on to the next candidate as if that binding were absent.
  */
 
 import { createEmitter } from '@weasel-js/registry';
