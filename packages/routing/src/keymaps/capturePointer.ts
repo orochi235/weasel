@@ -15,6 +15,38 @@ export interface CaptureThresholds {
 /** What a browser follows a press with; taken too, or the page acts on a gesture already captured. */
 export const TRAILING = ['click', 'auxclick', 'dblclick', 'contextmenu'] as const;
 
+const RELEASE = ['pointermove', 'pointerup', 'pointercancel'] as const;
+
+/**
+ * Keep taking, after a capture settles, the moves and release of each pointer
+ * in `held` and what the browser follows them with, until the last comes up.
+ * A fresh press ends it: a press means a release went missing.
+ */
+export function guardRelease(target: EventTarget, held: ReadonlySet<number>): void {
+  const holding = new Set(held);
+  // Its own, so that another capture's guard ending removes only that one.
+  const trailing = (e: Event): void => { take(e); };
+  const end = (): void => {
+    for (const type of TRAILING) target.removeEventListener(type, trailing, true);
+    for (const type of RELEASE) target.removeEventListener(type, onPointer, true);
+    target.removeEventListener('pointerdown', end, true);
+  };
+  // The click and dblclick a release goes on to fire arrive in the same task.
+  const endSoon = (): void => { setTimeout(end, 0); };
+  function onPointer(e: Event): void {
+    const p = e as PointerEvent;
+    if (!holding.has(p.pointerId)) return;
+    take(p);
+    if (p.type === 'pointermove') return;
+    holding.delete(p.pointerId);
+    if (holding.size === 0) endSoon();
+  }
+  for (const type of TRAILING) target.addEventListener(type, trailing, true);
+  if (holding.size === 0) { endSoon(); return; }
+  for (const type of RELEASE) target.addEventListener(type, onPointer, true);
+  target.addEventListener('pointerdown', end, true);
+}
+
 const sampleOf = (e: PointerEvent): PointerSample => ({
   pointerId: e.pointerId, clientX: e.clientX, clientY: e.clientY, target: e.target, timeStamp: e.timeStamp,
   altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
@@ -28,7 +60,7 @@ const browserClock: RecognizerClock = {
 
 /**
  * Listen, through `listen`, for the next pointer gesture of `kinds` and hand
- * its spec to `done`. Returns what stops it. A press goes through the
+ * its spec to `done`. Returns what stops it, which gives the pointers still pressed. A press goes through the
  * dispatcher's recognizer, so a click and a drag part where they do on a canvas.
  */
 export function capturePointer(
@@ -38,8 +70,9 @@ export function capturePointer(
   thresholds: CaptureThresholds,
   listen: (type: string, fn: (e: Event) => void) => void,
   done: (spec: CapturedSpec) => void,
-): () => void {
+): () => ReadonlySet<number> {
   let cancelClick = (): void => {};
+  const pressed = new Set<number>();
   let dragPress: PointerDownEvent | null = null;
 
   const recognized = (ev: InputEvent): 'handled' | 'unhandled' => {
@@ -90,6 +123,7 @@ export function capturePointer(
     // Read as the dispatcher reads it: a pen's eraser is primary, and back and forward are the browser's.
     const button = pressButtonOf(p);
     if (!button) return;
+    pressed.add(p.pointerId);
     // An element hears a held pointer's moves and release only while it captures them.
     if (target instanceof Element) {
       try { target.setPointerCapture(p.pointerId); } catch { /* the pointer is already gone */ }
@@ -103,6 +137,7 @@ export function capturePointer(
   listen('pointerup', (e) => {
     const p = held(e);
     if (!p) return;
+    pressed.delete(p.pointerId);
     const drag = dragPress;
     dragPress = null;
     recognizer.release(sampleOf(p));
@@ -113,6 +148,7 @@ export function capturePointer(
   listen('pointercancel', (e) => {
     const p = held(e);
     if (!p) return;
+    pressed.delete(p.pointerId);
     dragPress = null;
     recognizer.cancel(p.pointerId);
   });
@@ -126,5 +162,6 @@ export function capturePointer(
   return () => {
     cancelClick();
     recognizer.reset();
+    return pressed;
   };
 }

@@ -1,5 +1,5 @@
 import { isApplePlatform } from '@weasel-js/gestures';
-import { capturePointer, TRAILING, type CaptureThresholds } from './capturePointer';
+import { capturePointer, guardRelease, type CaptureThresholds } from './capturePointer';
 import { specOf, take, type CaptureKind, type CapturedSpec } from './captureSpec';
 
 export type { CaptureKind, CapturedSpec } from './captureSpec';
@@ -32,12 +32,12 @@ const MODIFIER_KEYS: ReadonlySet<string> = new Set(['Shift', 'Control', 'Alt', '
  * binding editor: its modifiers with the platform's primary one as `mod`. A
  * press is told a click or a drag by the dispatcher's own recognizer, at its
  * drag threshold, and a middle or secondary drag keeps its `button`; a click
- * is held back for a double click only when both are
- * asked for. A bare modifier key is waited past. Escape, or an abort, resolves
- * `null`. What it takes is `preventDefault`ed and stopped, the click a browser
- * follows a press with included, so nothing else acts on it. The pointer is
- * left alone when no pointer kind is asked for, and keys other than Escape
- * when no key kind is.
+ * is held back for a double click only when both are asked for. A bare
+ * modifier key is waited past. Escape, or an abort, resolves `null`. What it
+ * takes is `preventDefault`ed and stopped, the click a browser follows a press
+ * with included, and the rest of a press still held when it settles, so
+ * nothing else acts on it. The pointer is left alone when no pointer kind is
+ * asked for, and keys other than Escape when no key kind is.
  */
 export function captureGesture(target: EventTarget, opts: CaptureGestureOptions = {}): Promise<CapturedSpec | null> {
   const apple = opts.apple ?? isApplePlatform();
@@ -48,7 +48,7 @@ export function captureGesture(target: EventTarget, opts: CaptureGestureOptions 
   return new Promise((resolve) => {
     if (opts.signal?.aborted) { resolve(null); return; }
     let settled = false;
-    let stopPointer = (): void => {};
+    let stopPointer = (): ReadonlySet<number> => new Set();
     const listeners: [string, (e: Event) => void][] = [];
     const listen = (type: string, fn: (e: Event) => void): void => {
       listeners.push([type, fn]);
@@ -58,14 +58,10 @@ export function captureGesture(target: EventTarget, opts: CaptureGestureOptions 
     const done = (spec: CapturedSpec | null): void => {
       if (settled) return;
       settled = true;
-      stopPointer();
+      const held = stopPointer();
       opts.signal?.removeEventListener('abort', onAbort);
       for (const [type, fn] of listeners) target.removeEventListener(type, fn, true);
-      // The click and dblclick a release goes on to fire arrive in the same task.
-      if (pointer) {
-        for (const type of TRAILING) target.addEventListener(type, take, true);
-        setTimeout(() => { for (const type of TRAILING) target.removeEventListener(type, take, true); }, 0);
-      }
+      if (pointer) guardRelease(target, held);
       resolve(spec);
     };
     const onAbort = (): void => { done(null); };
