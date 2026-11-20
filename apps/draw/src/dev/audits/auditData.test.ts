@@ -55,6 +55,15 @@ describe('jobs', () => {
     expect(parseJob('patch core.ops: 2 commits on audit41-core.ops')).toMatchObject({ kind: 'patch', bad: false });
   });
 
+  it('reads a sweep that came back, and not the plan announcing one', () => {
+    expect(parseJob('control sweep: 2 dead, 1 unsure, 0 skipped of 90 controls in 12 demos, 6.5 min')).toMatchObject({
+      kind: 'sweep', what: '2 dead, 1 unsure, 0 skipped of 90 controls in 12 demos, 6.5 min', bad: false,
+    });
+    expect(parseJob('control sweep: did not run (no gui node)')).toMatchObject({ kind: 'sweep', bad: true });
+    expect(parseJob('control sweep: off (it runs only with --sweep)')).toBeNull();
+    expect(parseJob('control sweep: one browser job at the frozen commit beside the reviews, and a fixer for what it finds dead')).toBeNull();
+  });
+
   it('marks a review that did not finish, and says so and that it hit its ceiling', () => {
     const line = 'review 1/4 core.ops B on teitou: 2 findings, 12/12 files read, 9.0 min, 1.20M tokens';
     expect(parseJob(`${line}, hit its ceiling, unfinished: not counted as a pass`)).toMatchObject({

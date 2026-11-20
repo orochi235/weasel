@@ -89,8 +89,9 @@ export function parseJob(line: string): Job | null {
   if ((m = /^batch: audit\d+-(\S+) conflicts/.exec(line))) {
     return { kind: 'batch', label: 'batch', area: m[1]!, what: 'conflicts; left out of the batch', bad: true };
   }
-  if (line.startsWith('control sweep:')) {
-    return { kind: 'sweep', label: 'sweep', area: '', what: line.replace(/^control sweep: /, '').replace(/; see \S+/, ''), bad: line.includes('did not run') };
+  // The plan's own `control sweep:` line, printed at start-up, reports no job; only a count or a failure does.
+  if ((m = /^control sweep: (\d+ dead.*|did not run.*)$/.exec(line))) {
+    return { kind: 'sweep', label: 'sweep', area: '', what: m[1]!.replace(/; see \S+/, ''), bad: m[1]!.startsWith('did not run') };
   }
   if (line.startsWith('fleet:')) return { kind: 'fleet', label: 'fleet', area: '', what: line.replace(/^fleet: /, ''), bad: line.includes('fail') };
   if ((m = /^(night|record|batch): (.*)$/.exec(line))) return { kind: 'night', label: m[1]!, area: '', what: m[2]!, bad: false };
