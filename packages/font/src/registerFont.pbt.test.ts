@@ -77,7 +77,7 @@ function check(m: Model): void {
   }
   const listed = listAtlasFonts().map((f) => [f.family, f.variants.map(keyOf).sort()]);
   const want = [...m.registered].flatMap((family) => {
-    const keys = [...(m.variants.get(family) ?? [])].filter(([, v]) => v.state !== 'loading').map(([k]) => k).sort();
+    const keys = [...(m.variants.get(family)?.keys() ?? [])].sort();
     return keys.length > 0 ? [[family, keys]] : [];
   });
   expect(listed).toEqual(want);

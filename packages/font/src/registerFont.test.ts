@@ -685,6 +685,12 @@ describe('registerFont — lazy', () => {
     expect(fetchCalls()).toBe(0);
   });
 
+  it('lists an eager face while it fetches, as it lists a declared one', () => {
+    void registerFont('inter', { weight: 700 }, '/b.json', '/b.png');
+    expect(listAtlasFonts()).toEqual([{ family: 'inter', variants: [{ weight: 700, style: 'normal' }] }]);
+    expect(listFontWeights('inter')).toEqual([700]);
+  });
+
   it('an eager registration of a declared variant loads it now', async () => {
     const lazy = registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
     await registerFont('inter', {}, '/i.json', '/i.png');

@@ -242,9 +242,11 @@ export function isRegisteredFamily(family: string): boolean {
   return registeredFamilies.has(family);
 }
 
-/** The keys of every variant of `family` registered, landed or declared lazily. */
+/** The keys of every variant of `family` registered: landed, fetching, or declared lazily. */
 export function variantKeysOf(family: string): Set<string> {
-  return new Set([...(registry.get(family)?.keys() ?? []), ...(declared.get(family)?.keys() ?? [])]);
+  return new Set([
+    ...(registry.get(family)?.keys() ?? []), ...(loads.get(family)?.keys() ?? []), ...(declared.get(family)?.keys() ?? []),
+  ]);
 }
 
 /** Every atlas fetch running for `family`. */
