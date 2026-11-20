@@ -125,6 +125,7 @@ export function createStoryIndex(options: StoryIndexOptions): StoryIndex {
         current.set(file, read(file));
       } catch (err) {
         logError(err);
+        if (event === 'add') current.set(file, []);
         if (through.length === 0) return null;
       }
     }
