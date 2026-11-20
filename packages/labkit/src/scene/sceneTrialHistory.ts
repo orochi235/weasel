@@ -75,6 +75,10 @@ export function sceneTrialHistory<TData, TLayer extends string, TPose>(
     undoStamp: () => stampOf('undo'),
     redoStamp: () => stampOf('redo'),
     dropRedo: () => scene.history.dropRedo(),
+    clear: () => {
+      scene.history.clear();
+      stamps.clear();
+    },
     subscribe: (listener) => scene.subscribe(listener),
     record: (op, label) => {
       if (batching > 0) scene.applyBatch([op], label, null);

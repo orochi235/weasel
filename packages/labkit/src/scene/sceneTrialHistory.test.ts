@@ -128,4 +128,27 @@ describe('sceneTrialHistory', () => {
     scene.undo();
     expect(undone).toEqual(['second']);
   });
+
+  it('clears both stacks and their stamps, the settings entries included', () => {
+    const scene = make();
+    const stamps = new Map<number, number>();
+    const stop = stampSceneEdits(scene, stamps);
+    const source = sceneTrialHistory(scene, stamps);
+    scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { n: 1 } });
+    source.record(
+      {
+        label: 'settings',
+        apply: () => {},
+        invert: () => ({ label: 'settings', apply: () => {}, invert: () => ({}) as Op }),
+      },
+      'settings',
+    );
+    scene.undo();
+    expect(source.clear).toBeDefined();
+    source.clear?.();
+    expect(source.canUndo()).toBe(false);
+    expect(source.canRedo()).toBe(false);
+    expect(stamps.size).toBe(0);
+    stop();
+  });
 });
