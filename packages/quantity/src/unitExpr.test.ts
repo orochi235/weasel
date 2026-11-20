@@ -63,3 +63,23 @@ describe('parseUnitExpr', () => {
     expect(resolveUnitExpr(expr, { unitSystem: IMPERIAL_INCHES, percentOf: 200 })).toBe(124);
   });
 });
+
+describe('resolveUnitExpr on a long run of terms', () => {
+  const inches = { unitSystem: IMPERIAL_INCHES };
+
+  it('resolves a sum of many terms without overflowing the stack', () => {
+    expect(resolveUnitExpr(`${'1+'.repeat(30_000)}1`)).toBe(30_001);
+    expect(resolveUnitExpr(Array(50_000).fill('1in').join('+'), inches)).toBe(50_000);
+    expect(resolveUnitExpr(`${'1*'.repeat(30_000)}1`)).toBe(1);
+  });
+
+  it('resolves a compound value of many terms', () => {
+    expect(resolveUnitExpr('1in '.repeat(50_000).trim(), inches)).toBe(50_000);
+  });
+
+  it('keeps the order of a mixed chain', () => {
+    expect(resolveUnitExpr('10-2-3')).toBe(5);
+    expect(resolveUnitExpr('2*3+4*5-6/2')).toBe(23);
+    expect(resolveUnitExpr('1ft 2in*2', inches)).toBe(28);
+  });
+});

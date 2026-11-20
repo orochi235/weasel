@@ -11,6 +11,8 @@ export type UnitExpr =
   | { op: 'neg'; of: UnitExpr }
   | { op: 'add' | 'sub' | 'mul' | 'div'; left: UnitExpr; right: UnitExpr };
 
+type BinaryExpr = Extract<UnitExpr, { left: UnitExpr }>;
+
 /** What a {@link UnitExpr} resolves against. */
 export interface UnitExprContext {
   unitSystem?: UnitSystem;
@@ -152,9 +154,20 @@ function resolveNode(expr: UnitExpr, ctx: UnitExprContext): Resolved {
     const of = amountOf(resolveNode(expr.of, ctx));
     return { ...of, n: -of.n };
   }
-  const l = amountOf(resolveNode(expr.left, ctx));
-  const r = amountOf(resolveNode(expr.right, ctx));
-  switch (expr.op) {
+  // A run of terms is a left spine as long as the run, so it is walked in a loop; only the right side recurses.
+  const spine: BinaryExpr[] = [];
+  let at: UnitExpr = expr;
+  while (at.op !== 'value' && at.op !== 'neg') {
+    spine.push(at);
+    at = at.left;
+  }
+  let l = amountOf(resolveNode(at, ctx));
+  for (let k = spine.length - 1; k >= 0; k--) l = combine(spine[k]!.op, l, amountOf(resolveNode(spine[k]!.right, ctx)));
+  return l;
+}
+
+function combine(op: BinaryExpr['op'], l: Resolved, r: Resolved): Resolved {
+  switch (op) {
     case 'add':
       return { n: l.n + r.n, measure: l.measure || r.measure, offset: false };
     case 'sub':
