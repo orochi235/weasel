@@ -122,7 +122,9 @@ export function strokePolylines(
   // clipping at the renderer level (not here).
   const rectInMetric = metric && path.kind === 'rect' ? rectIntoMetric(path, metric) : null;
   let workingPath: Path = rectInMetric ?? path;
-  if (workingPath.kind === 'rect' && align !== 'center' && alignedStrokeRectHolds(workingPath, align, width)) {
+  // A rect a metric rotates out of its axes is stroked centered, `width` being a length in the metric's space.
+  const shifts = !metric || rectInMetric !== null;
+  if (shifts && workingPath.kind === 'rect' && align !== 'center' && alignedStrokeRectHolds(workingPath, align, width)) {
     workingPath = { kind: 'rect', ...alignedStrokeRect(workingPath, align, width) };
   }
 
