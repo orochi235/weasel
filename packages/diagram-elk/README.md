@@ -3,7 +3,7 @@
 Lays a `@weasel-js/diagram` graph out with [ELK](https://eclipse.dev/elk/), the
 Eclipse Layout Kernel, through [elkjs](https://github.com/kieler/elkjs), and
 answers with the diagram package's own `LayoutPlan`, so the result is applied
-the way `layered` or `tree` is. ELK places ports, edge labels and nested groups
+the way `layered` or `tree` is. ELK places ports, edge labels and nested clusters
 well; use it to lay a diagram out from a `DiagramView`, to lay a generated
 diagram out once, or to check one of the diagram package's layouts against it.
 
@@ -52,11 +52,12 @@ What goes in, and how ELK reads it:
 | --- | --- |
 | A participant | A node of its own size. |
 | A port an edge names | A fixed port where the diagram draws it, cast onto the node's outline. |
-| A group | A compound node, nested the way the groups nest, padded by its `inset`. `minWidth` is its minimum width. |
-| An edge to or from a group | One edge to the compound node, not one per member. |
+| A cluster | A compound node, nested the way the clusters nest, padded by its `inset`. `minWidth` is its minimum width. |
+| An edge to or from a cluster | One edge to the compound node, not one per member. |
 | An edge label's room | An edge label of that size. One with an `offset` gets room centered on its wire, wide enough for the label that far off on either side. |
 | `direction`, `nodeGap`, `rankGap` | `elk.direction`, `elk.spacing.nodeNode`, `elk.layered.spacing.nodeNodeBetweenLayers`. |
 | `order`, `chain`, `chainSide` | Not taken; ELK orders ranks itself. |
+| A reordering cluster's member order (`GraphCluster.ordered`) | Not taken: elkjs 0.12 cannot hold one compound node's members to an order while it lays every level out at once, so ELK orders them itself. |
 
 What comes back, beyond a `LayoutPlan`'s `moves`, `waypoints` and `labels`:
 
@@ -64,8 +65,8 @@ What comes back, beyond a `LayoutPlan`'s `moves`, `waypoints` and `labels`:
 | --- | --- |
 | `ports` | For each edge, the port it leaves and arrives by: the one it names, or else the declared port nearest where ELK met the node. |
 | `routes` | Each routed edge end to end. `waypoints` is the same route without its two ends. |
-| `groups` | Each group's box as ELK sized it. Nothing writes these, since the diagram derives a group's box from its members. |
-| `unheld` | Pinned nodes ELK put somewhere else. The layout is translated so the first pin stays where it is; ELK cannot be told about the rest. An edge at one, or at a group holding one, gets no route, label point or port back. |
+| `clusters` | Each cluster's box as ELK sized it. Nothing writes these, since the diagram derives a cluster's box from its members. |
+| `unheld` | Pinned nodes ELK put somewhere else. The layout is translated so the first pin stays where it is; ELK cannot be told about the rest. An edge at one, or at a cluster holding one, gets no route, label point or port back. |
 
 An edge the author routed (`GraphEdge.authored`) still shapes the layout but
 gets no route back. Anything else ELK takes goes in `elkOptions`, applied
