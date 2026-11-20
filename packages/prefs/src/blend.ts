@@ -1,6 +1,6 @@
 // How the alternatives of a split value fold into one, by kind.
 
-import { hexToRgba, mixRgbaWeighted, rgbaToHex } from '@weasel-js/paint';
+import { mixRgbaWeighted, parseColor, rgbaToHex } from '@weasel-js/paint';
 import type { PrefWeighted, PrefLeaf } from '@weasel-js/prefs-schema';
 import { getOwn, isFiniteNumber } from '@weasel-js/registry';
 
@@ -35,7 +35,7 @@ const blendNumber: PrefBlend = (members, leaf) => {
 
 const blendColor: PrefBlend = (members, leaf) => {
   try {
-    return rgbaToHex(mixRgbaWeighted(members.map(({ value, weight }) => ({ color: hexToRgba(value as string), weight }))));
+    return rgbaToHex(mixRgbaWeighted(members.map(({ value, weight }) => ({ color: parseColor(value as string), weight }))));
   } catch {
     return heaviest(members, leaf);
   }

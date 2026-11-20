@@ -16,6 +16,8 @@ const SELECTORS: Record<string, { leaf?: PrefLeaf; refused?: PrefScopeProblem['c
   s1: { leaf: enumOf() },
   bad_encoded: { leaf: enumOf({ encoding: { read: () => 'x', write: () => 1 } }), refused: 'encoded' },
   bad_clearable: { leaf: enumOf({ clearable: true, default: undefined }), refused: 'clearable' },
+  bad_auto: { leaf: enumOf({ auto: { on: true } }), refused: 'auto' },
+  auto_valued: { leaf: enumOf({ auto: { on: true, value: 'y' } }) },
   bad_split: { leaf: enumOf({ scopes: [{ selector: 's0' }] }), refused: 'split' },
   bad_number: { leaf: { kind: 'number', name: 'N', description: '', default: 0 }, refused: 'not-enum' },
   adm: {},
@@ -82,7 +84,7 @@ describe('checkPrefScopes, properties', () => {
       }),
       runs(400),
     );
-    for (const code of ['valueless', 'no-leaf', 'not-enum', 'encoded', 'clearable', 'split', 'twice', 'default', 'per', 'admits']) t.atLeast(code, 5);
+    for (const code of ['valueless', 'no-leaf', 'not-enum', 'encoded', 'clearable', 'auto', 'split', 'twice', 'default', 'per', 'admits']) t.atLeast(code, 5);
   }, timeoutFor(400, 3));
 
   it('lets a store over a schema it passes warn of nothing, read each split value as it was written, and read it the same once stored', () => {

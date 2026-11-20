@@ -45,8 +45,13 @@ describe('blendPref', () => {
     expect(blendPref(leaf('color', { alpha: true }), at(['#00000000', 0.5], ['#0000ffff', 0.5]))).toBe('#0000ff80');
   });
 
-  it('takes the heaviest color where one of them is not a hex color', () => {
-    expect(blendPref(leaf('color'), at(['#000000', 0.4], ['rebeccapurple', 0.6]))).toBe('rebeccapurple');
+  it('mixes any CSS color the leaf keeps, not only hex', () => {
+    const hex = blendPref(leaf('color'), at(['#ff0000', 0.5], ['#0000ff', 0.5]));
+    expect(blendPref(leaf('color'), at(['red', 0.5], ['rgb(0 0 255)', 0.5]))).toBe(hex);
+  });
+
+  it('takes the heaviest color where one of them is no color', () => {
+    expect(blendPref(leaf('color'), at(['#000000', 0.4], ['currentColor', 0.6]))).toBe('currentColor');
   });
 
   it('takes the heaviest member of a kind that cannot blend, the first of them on a tie', () => {

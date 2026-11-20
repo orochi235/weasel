@@ -24,6 +24,8 @@ export interface SourceWriteOptions {
 export interface PrefsSource {
   /** What the source edits, from its root. */
   schema: PrefGroup | PrefSection;
+  /** The schema a form's aliases point into, where a path `schema` lacks is found, for a read and a reset alike. */
+  over?: PrefGroup | PrefSection;
   /** What the surface reads at `path`: a leaf's value as it is shown, and its auto state. */
   valueAt(path: string): LeafReading;
   /** Write `value` at `path` into every target; `AUTO` unpins a leaf that can be auto. */

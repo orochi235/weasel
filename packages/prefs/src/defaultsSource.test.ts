@@ -26,6 +26,18 @@ describe('createDefaultsSource', () => {
     expect(css).toContain('--gap: 9px;');
   });
 
+  it('reads a leaf that starts auto at its auto value, as a store at defaults does', () => {
+    const schema = pref.group('Prefs', {
+      accent: { ...pref.color('Accent', '#000000'), auto: { on: true, value: '#3366ff' } },
+      tint: { ...pref.color('Tint', '#000000'), auto: { on: true } },
+    });
+    const store = openPrefsSync(schema, { storage: createMemoryAdapter(), prefix: 'x.' });
+    const source = createDefaultsSource(schema);
+    expect(source.get('accent')).toBe('#3366ff');
+    expect(source.get('tint')).toBeUndefined();
+    expect(prefsCss(source)).toBe(prefsCss(store));
+  });
+
   it('reads a split default at a selection, and its scope', () => {
     const source = createDefaultsSource(SCHEMA);
     expect(source.get('gap')).toBe(4);

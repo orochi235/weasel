@@ -1,7 +1,7 @@
 // The one reset policy every params surface runs: what a reset reaches, and whether a leaf already is at it.
 // `resetPlans` says what the reset writes; a source says what it reads.
 
-import { readingIsAtReset, resetPlans, type LeafReading, type ResetWrite } from '../autoReset';
+import { prefNodeAt, readingIsAtReset, resetPlans, type LeafReading, type ResetWrite } from '../autoReset';
 import type { PrefLeaf } from '@weasel-js/prefs-schema';
 import type { PrefsSource } from './prefsSource';
 
@@ -11,12 +11,14 @@ export function resetReader(source: Pick<PrefsSource, 'stateAt' | 'valueAt'>): (
 }
 
 /** The writes a reset of the leaves and groups at `paths` makes in `source`. */
-export function sourceResetPlan(source: Pick<PrefsSource, 'schema' | 'stateAt' | 'valueAt'>, paths: readonly string[]): ResetWrite[] {
-  return resetPlans(source.schema, paths, resetReader(source));
+export function sourceResetPlan(source: Pick<PrefsSource, 'schema' | 'over' | 'stateAt' | 'valueAt'>, paths: readonly string[]): ResetWrite[] {
+  const { schema, over } = source;
+  const read = resetReader(source);
+  return paths.flatMap((path) => resetPlans(over && !prefNodeAt(schema, path) ? over : schema, [path], read));
 }
 
 /** Whether every leaf at or under `path` already is as a reset leaves it. */
-export function sourceIsAtReset(source: Pick<PrefsSource, 'schema' | 'stateAt' | 'valueAt'>, path: string): boolean {
+export function sourceIsAtReset(source: Pick<PrefsSource, 'schema' | 'over' | 'stateAt' | 'valueAt'>, path: string): boolean {
   return sourceResetPlan(source, [path]).length === 0;
 }
 

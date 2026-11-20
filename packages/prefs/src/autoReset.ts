@@ -140,9 +140,8 @@ export function prefNodeAt(
   if (path === '') return root;
   if (isPrefLeaf(root)) return undefined;
   if (isPrefSection(root)) {
-    if (Object.hasOwn(root.members, path)) return root.members[path];
-    for (const child of Object.values(root.members)) {
-      const found = isPrefLeaf(child) ? undefined : prefNodeAt(child, path);
+    for (const [key, child] of Object.entries(root.members)) {
+      const found = isPrefLeaf(child) ? (key === path ? child : undefined) : prefNodeAt(child, path);
       if (found) return found;
     }
     return undefined;

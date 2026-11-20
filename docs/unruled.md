@@ -3075,3 +3075,9 @@ Calls the lanes made without a ruling:
   stays missing, and one that a move or a `setXyValue` puts inside it is `NaN`, drawn as no point. An inserted row is
   a zero in each series that reaches it. Padding every series with zeros to the row count first, which drew the
   missing rows as zeros, was what it did.
+## Audit round fifty-three (2026-11-20): prefs
+
+- 2026-11-20 (the fixer's call): an enum that can be auto is refused as a selector (`checkPrefScopes` code `auto`)
+  unless its `auto.value` is one of its options, since while auto it otherwise reads `undefined` and every split
+  leaf would read and write under no option, as a clearable enum would. Reading such a selector's auto as its
+  `default` was the alternative.

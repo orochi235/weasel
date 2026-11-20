@@ -1,4 +1,4 @@
-import type { OwnedRecordCache, StorageAdapter, SyncStorageAdapter } from '@weasel-js/storage';
+import { createRecordCache, type OwnedRecordCache, type StorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
 import { useCallback, useSyncExternalStore } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs-schema';
 import { openPrefsCacheSync, type PrefsOptions } from './open';
@@ -35,12 +35,20 @@ function heldOf(at: Shared, schema: PrefGroup): Held {
   return entry;
 }
 
-/** `cache` for one store among several: closing it sends queued writes and
- *  leaves the cache open for the others. */
-const lent = (cache: OwnedRecordCache): OwnedRecordCache =>
-  Object.create(cache, {
-    close: { value: (): Promise<boolean> => cache.flush() },
-  }) as OwnedRecordCache;
+/** `cache` for one store among several: closing it sends queued writes and leaves the cache open for the others,
+ *  and the store then reads and writes a copy of its own, which reaches neither storage nor the others. */
+const lent = (cache: OwnedRecordCache, storage: StorageAdapter): OwnedRecordCache => {
+  let at = cache;
+  const close = (): Promise<boolean> => {
+    const sent = cache.flush();
+    at = createRecordCache({ storage, prefix: cache.prefix, initial: cache.entries(), writable: false });
+    void at.close();
+    return sent;
+  };
+  return new Proxy(cache, {
+    get: (_, key) => (key === 'close' ? close : Reflect.get(at, key)),
+  });
+};
 
 /** Close a store nothing holds, and the cache once no store is over it, a
  *  microtask on: after the remount StrictMode and fast refresh make in the
@@ -71,7 +79,7 @@ function acquire<S extends PrefGroup>(schema: S, options: UsePrefsStoreOptions):
     at.open ??= openPrefsCacheSync(options);
     entry.store = createPrefsStore(
       schema,
-      lent(at.open.cache),
+      lent(at.open.cache, storage),
       options.validators,
       undefined,
       options.migrations?.length ?? 0,

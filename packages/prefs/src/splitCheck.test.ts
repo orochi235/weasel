@@ -33,6 +33,23 @@ describe('checkPrefScopes', () => {
   });
 });
 
+describe('a selector that can be auto', () => {
+  const schemaWith = (auto: object) => ({
+    name: 'Test',
+    children: {
+      mode: leaf({ kind: 'enum', default: 'dark', options: [option('dark'), option('light')], auto }),
+      ink: leaf({ kind: 'color', default: '#000000', scopes: [{ selector: 'mode' }] }),
+    },
+  }) as unknown as PrefGroup;
+
+  it('is refused where its auto value is none of its options, and accepted where it is one', () => {
+    expect(checkPrefScopes(schemaWith({ on: true })).map(({ code, path }) => [path, code])).toEqual([['mode', 'auto']]);
+    expect(prefSelectors(prefLeaves(schemaWith({ on: true })))).toEqual(new Map());
+    expect(checkPrefScopes(schemaWith({ on: true, value: 'light' }))).toEqual([]);
+    expect([...prefSelectors(prefLeaves(schemaWith({ value: 'light' })))]).toEqual([['mode', ['dark', 'light']]]);
+  });
+});
+
 describe('prefSelectors', () => {
   it('holds the options of each leaf that can be split by, and no other', () => {
     expect([...prefSelectors(prefLeaves(SCHEMA))]).toEqual([['mode', ['dark', 'light']]]);
