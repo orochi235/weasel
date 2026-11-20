@@ -57,15 +57,26 @@ export function isJsonSafe(value: unknown, seen: Set<object> = new Set()): boole
     case 'object': {
       if (seen.has(value)) return false;
       seen.add(value);
-      const ok = Array.isArray(value)
-        ? isDenseList(value) && value.every((v) => isJsonSafe(v, seen))
-        : isPlainObject(value) && Object.values(value).every((v) => v === undefined || isJsonSafe(v, seen));
+      const ok =
+        !hasSkippedKey(value) &&
+        (Array.isArray(value)
+          ? isDenseList(value) && value.every((v) => isJsonSafe(v, seen))
+          : isPlainObject(value) && Object.values(value).every((v) => v === undefined || isJsonSafe(v, seen)));
       seen.delete(value);
       return ok;
     }
     default:
       return false;
   }
+}
+
+/** Whether `value` has an own key `JSON.stringify` skips: a symbol, or one that is not enumerable. */
+function hasSkippedKey(value: object): boolean {
+  return Reflect.ownKeys(value).some(
+    (k) =>
+      typeof k === 'symbol' ||
+      (!Object.prototype.propertyIsEnumerable.call(value, k) && !(k === 'length' && Array.isArray(value))),
+  );
 }
 
 /** Every index of `list` held, and no other key beside them. */

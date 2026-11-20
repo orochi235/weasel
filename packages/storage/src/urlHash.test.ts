@@ -11,4 +11,11 @@ describe('encodeUrlHash / decodeUrlHash', () => {
     expect(decodeUrlHash('')).toBeNull();
     expect(decodeUrlHash('not-base64!!!')).toBeNull();
   });
+
+  it('reads a fragment whose base64 something percent-encoded on the way', () => {
+    const original = JSON.stringify({ a: '1' });
+    const encoded = encodeUrlHash(original);
+    expect(encoded).toMatch(/[=+/]/);
+    expect(decodeUrlHash(encodeURIComponent(encoded))).toBe(original);
+  });
 });

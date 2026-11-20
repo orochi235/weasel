@@ -1026,8 +1026,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   cross the whole range stops at its far end, not on the far end's stop.
 - 2026-11-11 (my call, second property pass): a record cache that hears another writer change a record while only a
   write of its own is on its way reads the record back from storage once that write lands, and takes what it reads
-  as a remote change; the change still reaches `onOverruled` when heard. Open: a value `deepEqual` cannot compare (a
-  `Map`, a `Date`) read back unchanged reports as a remote change of the same value.
+  as a remote change; the change still reaches `onOverruled` when heard.
 - Open (2026-11-11): a record cache with `retryMs: 0`, or a negative one, tries a failed read or write again every
   tick for as long as storage fails, since doubling 0 leaves 0; nothing floors the backoff.
 - 2026-11-11 (my call, modes/registry/select/menu second property pass): `matchQuery`, a menu's access letters,

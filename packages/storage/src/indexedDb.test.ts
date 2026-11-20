@@ -109,3 +109,16 @@ describe('createIndexedDbAdapter — a blocked upgrade', () => {
     expect(await thumbs.get('a')).toBe(1);
   });
 });
+
+describe('createIndexedDbAdapter — a request that fails', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('rejects with the request\'s error, not null', async () => {
+    const adapter = createIndexedDbAdapter({ database: fresh() });
+    await adapter.set('a', 1);
+    vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementation(function (this: IDBObjectStore, value, key) {
+      return this.add(value, key);
+    });
+    await expect(adapter.set('a', 2)).rejects.toMatchObject({ name: 'ConstraintError' });
+  });
+});
