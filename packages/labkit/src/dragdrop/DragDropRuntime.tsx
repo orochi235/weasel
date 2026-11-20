@@ -61,6 +61,8 @@ export interface UseDragDropResult {
 
 /** What the drop action calls back into the hook with, in the instrument's world. */
 interface DropSink {
+  /** Whether `item` is the one this hook's own palette is carrying: a canvas takes only its own palette's drags. */
+  carries(item: unknown): item is PaletteItem;
   over(world: Point | null): void;
   drop(world: Point, item: PaletteItem): void;
 }
@@ -70,9 +72,10 @@ interface DropSink {
  * primary-button press starts a carry; releasing it over the canvas `target`
  * is rendered in emits `'canvas.itemAdded'` and then applies `onDrop`'s state,
  * so an undo snapshot taken on the event holds the state from before it.
- * Releasing anywhere else, where `onDragOver` answers `ok: false`, or a
- * canceled gesture, drops nothing. `onDragOver` is probed at most once per
- * frame while the carry is over the canvas, and once more at the release.
+ * Releasing anywhere else, over another hook's canvas, where `onDragOver`
+ * answers `ok: false`, or a canceled gesture, drops nothing. `onDragOver` is
+ * probed at most once per frame while the carry is over the canvas, and once
+ * more at the release.
  */
 export function useDragDrop<TS, TC>({
   capability,
@@ -106,6 +109,7 @@ export function useDragDrop<TS, TC>({
 
   const sink = useMemo<DropSink>(
     () => ({
+      carries: (item): item is PaletteItem => item != null && dragRef.current?.item === item,
       over: (world) => {
         pendingWorld.current = world;
         if (world) {
@@ -187,8 +191,8 @@ function paletteDropAction(sink: DropSink, frame: () => WorldFrame | undefined):
     invoker: {
       timing: 'ongoing',
       start: (ctx) => {
-        const item = ctx.carry?.value as PaletteItem | undefined;
-        if (!item) return {};
+        const item = ctx.carry?.value;
+        if (!sink.carries(item)) return {};
         sink.over(world(ctx));
         return {
           onMove: (c) => sink.over(world(c)),
