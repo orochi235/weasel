@@ -259,9 +259,10 @@ const SHARED = ['name', 'description', 'tags', 'hidden', 'showIf', 'enableIf', '
 
 const PRIMITIVES = new Set(['string', 'number', 'boolean']);
 
-function carriesDefault(v: unknown, blank: Record<string, unknown>): boolean {
-  if (!PRIMITIVES.has(typeof v) || typeof v !== typeof blank.default) return false;
-  const options = blank.options as Array<{ value: unknown }> | undefined;
+/** Whether `v` can stand as the default of `made`, a converted leaf, against the options it ends up holding. */
+function carriesDefault(v: unknown, made: Record<string, unknown>): boolean {
+  if (!PRIMITIVES.has(typeof v) || typeof v !== typeof made.default) return false;
+  const options = made.options as Array<{ value: unknown }> | undefined;
   return options === undefined || options.some((o) => o.value === v);
 }
 
@@ -288,12 +289,7 @@ export function convertLeaf(leaf: PrefLeaf, choice: string, custom: CustomKinds 
   const next: Record<string, unknown> = { ...blank };
   const dropped: string[] = [];
   for (const [k, v] of Object.entries(leaf)) {
-    if (k === 'kind' || k === 'type' || v === undefined) continue;
-    if (k === 'default') {
-      if (!typed && carriesDefault(v, blank)) next.default = v;
-      else dropped.push('default');
-      continue;
-    }
+    if (k === 'kind' || k === 'type' || k === 'default' || v === undefined) continue;
     if (k === 'auto') {
       // What it reads while auto is a value of the old kind.
       const kept = withAutoRow(v as LeafAuto, 'value', undefined);
@@ -309,6 +305,10 @@ export function convertLeaf(leaf: PrefLeaf, choice: string, custom: CustomKinds 
     }
     if (keep.has(k) && (typed || offers(getOwn(attrs, k), v))) setOwn(next, k, v);
     else dropped.push(k);
+  }
+  if (leaf.default !== undefined) {
+    if (!typed && carriesDefault(leaf.default, next)) next.default = leaf.default;
+    else dropped.push('default');
   }
   return { leaf: next as unknown as PrefLeaf, dropped };
 }

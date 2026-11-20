@@ -252,6 +252,13 @@ describe('the conditions a node is shown and enabled by', () => {
   it('removes one that is emptied', () => {
     expect(normalizeAttr('showIf', undefined)).toBeUndefined();
   });
+  it("keeps a default among the options a leaf carries onto an enum, not the blank enum's", () => {
+    const theme = { kind: 'mode', name: 'Theme', description: '', default: 'dark', options: [{ value: 'light' }, { value: 'dark' }] } as unknown as PrefLeaf;
+    const made = convertLeaf(theme, 'enum');
+    expect(made.leaf).toMatchObject({ default: 'dark', options: [{ value: 'light' }, { value: 'dark' }] });
+    expect(made.dropped).not.toContain('default');
+  });
+
   it("shows a group drawn as an unknown form with no extra attributes, though the form's name is an Object member", () => {
     expect(Object.keys(attributeSchema({ name: 'G', as: 'toString', children: {} } as unknown as PrefGroup).shared)).toContain('as');
   });
