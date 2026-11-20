@@ -29,7 +29,8 @@ export interface LoupeSurface {
   sample(p: LoupePoint): string | null;
   /** Is the lens off screen? Aims are ignored while it is. */
   hidden(): boolean;
-  /** Is the lens gone for good? The model tears itself down when it is. */
+  /** Is the lens gone for good? The model tears itself down the next time it
+   *  is called, or a frame lands, once it is. */
   gone(): boolean;
   /** Something the painter must redraw for has changed. */
   changed(): void;
@@ -111,6 +112,7 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
   };
 
   const unsubscribeFrame = surface.subscribeFrame?.(() => {
+    if (disposed || dead()) return;
     if (!aimUnsampled) return;
     aimUnsampled = false;
     sampleColor();
@@ -123,6 +125,15 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
     opts.onDispose?.();
   };
 
+  // A lens can be taken away by whatever owns it, without coming back through
+  // `dispose`. Every entry point follows it down rather than keep working for a
+  // magnifier nobody can see.
+  function dead(): boolean {
+    if (!surface.gone()) return false;
+    teardown();
+    return true;
+  }
+
   return {
     get mode() { return mode; },
     get factor() { return factor; },
@@ -130,13 +141,13 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
     get color() { return color; },
 
     setMode(next) {
-      if (disposed || next === mode) return;
+      if (disposed || dead() || next === mode) return;
       mode = next;
       surface.changed();
     },
 
     setFactor(next) {
-      if (disposed) return;
+      if (disposed || dead()) return;
       const clamped = clamp(next);
       if (clamped === factor) return;
       factor = clamped;
@@ -144,11 +155,7 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
     },
 
     aimAt(p) {
-      if (disposed) return;
-      // A lens can be taken away by whatever owns it, without coming back
-      // through `dispose`. Follow it down rather than keep sampling for a
-      // magnifier nobody can see.
-      if (surface.gone()) { teardown(); return; }
+      if (disposed || dead()) return;
       if (surface.hidden()) return;
       if (surface.covers(p)) return;
       aim = p;
@@ -158,7 +165,7 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
     },
 
     pick(p) {
-      if (disposed) return null;
+      if (disposed || dead()) return null;
       let at = aim;
       if (p) {
         const rect = surface.lens();
@@ -175,7 +182,7 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
     },
 
     resample() {
-      if (disposed || surface.hidden()) return;
+      if (disposed || dead() || surface.hidden()) return;
       aimUnsampled = false;
       sampleColor();
     },

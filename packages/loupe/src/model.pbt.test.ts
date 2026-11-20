@@ -131,6 +131,7 @@ describe('createLoupeModel', () => {
             case 'pick': {
               const got = loupe.pick(o.p);
               let want: string | null;
+              if (!m.disposed && world.gone) teardown();
               if (m.disposed) want = null;
               else if (!o.p) want = colorAt(world, m.aim);
               else if (!world.lens) want = null;
@@ -144,6 +145,7 @@ describe('createLoupeModel', () => {
             }
             case 'factor': {
               loupe.setFactor(o.f);
+              if (!m.disposed && world.gone) teardown();
               if (m.disposed) break;
               const next = clamp(o.f);
               if (next !== m.factor) { m.factor = next; m.redraws++; } else seen.count('same factor');
@@ -151,16 +153,19 @@ describe('createLoupeModel', () => {
             }
             case 'mode':
               loupe.setMode(o.mode);
+              if (!m.disposed && world.gone) teardown();
               if (!m.disposed && o.mode !== m.mode) { m.mode = o.mode; m.redraws++; }
               break;
             case 'resample':
               loupe.resample();
+              if (!m.disposed && world.gone) teardown();
               if (m.disposed || world.hidden) break;
               m.unsampled = false;
               sampleAim();
               break;
             case 'frame':
               for (const fn of [...frameFns]) fn();
+              if (framed && !m.disposed && world.gone) teardown();
               if (framed && !m.disposed && m.unsampled) { m.unsampled = false; sampleAim(); seen.count('landed'); }
               break;
             case 'hide': world.hidden = o.hidden; break;
