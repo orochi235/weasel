@@ -3016,3 +3016,14 @@ Calls the lanes made without a ruling:
   differs from the URLs another HUD registered `weasel-hud-default` with, since every HUD on a page shares that one
   family. A host wanting another atlas registers it under a family of its own and passes the name. Swapping the
   family to the newest pair with `replace`, under every HUD already drawing it, was the alternative.
+
+## Audit round fifty-one (2026-11-20): labkit's state
+
+- 2026-11-20 (the fixer's call): a lab whose fold of old storage cannot confirm its records stops persisting for
+  the session, keeping the old storage for the next open to fold again. Leaving `meta` out of the cache's seed, so
+  the session's first write put it down, was the alternative; a fold record that never landed would then have been
+  lost behind that `meta`.
+- 2026-11-20 (the fixer's call): `<SingletonExperimentProvider>` keeps the trial id it mounted with and warns in
+  development when `id` changes, as it does for `storageKey` and `storage`. Following the new id, opening a second
+  synthetic trial, was the alternative. `initialConfig` and `initialState` are documented as read once but not
+  warned on, since callers pass them as literals built each render.

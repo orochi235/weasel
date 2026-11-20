@@ -1,6 +1,6 @@
 import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
 import { createMemoryAdapter } from '@weasel-js/storage';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { labPrefix } from './labRecords';
 import { SingletonExperimentProvider } from './SingletonExperiment';
 import { useTrialState } from './useTrialState';
@@ -15,14 +15,16 @@ interface State {
 
 function Provider({
   backing,
+  id = 'test',
   children,
 }: {
   backing: Map<string, unknown>;
+  id?: string;
   children: React.ReactNode;
 }) {
   return (
     <SingletonExperimentProvider<State, Config>
-      id="test"
+      id={id}
       initialConfig={{ width: 100, bg: '#000' }}
       initialState={{ zoom: 1 }}
       storage={createMemoryAdapter(backing)}
@@ -91,5 +93,25 @@ describe('SingletonExperimentProvider', () => {
     const { result } = renderHook(() => useTrialState<State, Config>(), { wrapper });
     await waitFor(() => expect(result.current?.config).toEqual({ width: 999, bg: '#fff' }));
     expect(result.current.state).toEqual({ zoom: 2 });
+  });
+
+  it('keeps the trial it mounted with when `id` changes, and warns', async () => {
+    const backing = new Map<string, unknown>();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const Probe = () => <p>{useTrialState<State, Config>().config.width}</p>;
+    const { rerender } = render(
+      <Provider backing={backing}>
+        <Probe />
+      </Provider>,
+    );
+    await screen.findByText('100');
+    rerender(
+      <Provider backing={backing} id="other">
+        <Probe />
+      </Provider>,
+    );
+    expect(screen.getByText('100')).toBeInTheDocument();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('`id`'));
+    warn.mockRestore();
   });
 });

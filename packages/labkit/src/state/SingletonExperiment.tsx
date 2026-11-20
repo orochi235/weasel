@@ -1,5 +1,5 @@
 import type { StorageAdapter } from '@weasel-js/storage';
-import type { ReactNode } from 'react';
+import { type ReactNode, useRef } from 'react';
 import { LabStoreProvider, TrialIdProvider } from './context';
 import { defaultStorage } from './labStorage';
 import { openLabStore } from './openLabStore';
@@ -11,7 +11,7 @@ const SINGLETON_INSTRUMENT = '__singleton__';
 /** Props for `<SingletonExperimentProvider>`. */
 export interface SingletonExperimentProviderProps<TS, TC> {
   /** Stable id for the synthetic trial; also doubles as the
-   *  TrialIdContext value. */
+   *  TrialIdContext value. Read once, at mount. */
   id: string;
   initialConfig: TC;
   initialState: TS;
@@ -27,8 +27,8 @@ export interface SingletonExperimentProviderProps<TS, TC> {
  * One-trial `<Lab>` substitute for single-screen experiments. Mounts
  * a `LabStoreProvider` + `TrialIdProvider` with one synthetic
  * trial, so `useTrialState` works without going through the
- * full `<Lab instruments={...}>` runtime. `storageKey` and `storage` are read
- * once, at mount.
+ * full `<Lab instruments={...}>` runtime. `id`, `storageKey`, `storage`,
+ * `initialConfig` and `initialState` are read once, at mount.
  */
 export function SingletonExperimentProvider<TS, TC>({
   id,
@@ -39,12 +39,13 @@ export function SingletonExperimentProvider<TS, TC>({
   fallback = null,
   children,
 }: SingletonExperimentProviderProps<TS, TC>) {
-  useWarnIgnoredChange('<SingletonExperimentProvider>', { storageKey, storage });
+  useWarnIgnoredChange('<SingletonExperimentProvider>', { id, storageKey, storage });
+  const trialId = useRef(id).current;
   const opened = useOpenOnce(async () => {
     const lab = await openLabStore({ storageKey, storage: storage ?? (await defaultStorage()) });
-    if (!lab.store.getState().trials.some((w) => w.id === id)) {
+    if (!lab.store.getState().trials.some((w) => w.id === trialId)) {
       lab.store.getState().addTrial({
-        id,
+        id: trialId,
         instrumentName: SINGLETON_INSTRUMENT,
         config: initialConfig,
         state: initialState,
@@ -57,7 +58,7 @@ export function SingletonExperimentProvider<TS, TC>({
   return (
     <LabStoreProvider store={opened.store}>
       <PersistenceContext.Provider value={opened.records}>
-        <TrialIdProvider trialId={id}>{children}</TrialIdProvider>
+        <TrialIdProvider trialId={trialId}>{children}</TrialIdProvider>
       </PersistenceContext.Provider>
     </LabStoreProvider>
   );
