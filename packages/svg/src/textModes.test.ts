@@ -8,9 +8,9 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { boundsOfPath, pathFromD, registerFontOutlines } from '@weasel-js/core';
 import { textFitScale, textToPathsByPaint } from '@weasel-js/text';
-import { _resetFontOutlinesForTests, _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
+import { _resetFallbackForTests, _resetFontOutlinesForTests, _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
-import type { OutlineFace } from '@weasel-js/font';
+import { setDefaultFontFamily, type OutlineFace } from '@weasel-js/font';
 import { serializeSvg } from './serialize';
 import { svgLeafFromKit } from './fromKit';
 import { warmSvg } from './warm';
@@ -148,6 +148,19 @@ describe("text: 'embed'", () => {
     const { svg } = await warmed([{ ...text('x'), style: { fontSize: 20 } }], 'embed');
     expect(svg).toContain('font-family="sans-serif"');
     expect(svg).toContain('@font-face{font-family:"sans-serif"');
+  });
+
+  it('declares a substituted face under the family the text names', async () => {
+    registerFontOutlines('svg-inter', {}, interBytes());
+    setDefaultFontFamily('svg-inter');
+    try {
+      const { svg } = await warmed([text('svg-unregistered')], 'embed');
+      expect(svg).toContain('font-family="svg-unregistered"');
+      expect(svg).toContain('@font-face{font-family:"svg-unregistered"');
+      expect(svg).not.toContain('@font-face{font-family:"svg-inter"');
+    } finally {
+      _resetFallbackForTests();
+    }
   });
 
   it('writes text set in a face whose license forbids embedding as outlines, naming the face', async () => {

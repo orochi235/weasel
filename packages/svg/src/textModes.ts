@@ -37,11 +37,11 @@ export function requestedFaces(node: SvgTextNode): TextFace[] {
 }
 
 /** The face a requested one renders in, and its embedding once its outlines have loaded. */
-function embeddingOf(requested: TextFace): { face: TextFace; embedding: FaceEmbedding | null } {
+function embeddingOf(requested: TextFace): { requested: TextFace; face: TextFace; embedding: FaceEmbedding | null } {
   const face = cachedFontVariant(requested.family, requested.weight, requested.style).resolved;
   const outline = outlineFace(face.family, face.weight, face.style)
     ?? outlineFace(requested.family, requested.weight, requested.style);
-  return { face, embedding: outline?.embedding?.() ?? null };
+  return { requested, face, embedding: outline?.embedding?.() ?? null };
 }
 
 const faceName = (f: TextFace): string => `"${f.family}" ${f.weight} ${f.style}`;
@@ -76,7 +76,8 @@ export function withTextMode(
         : `the face ${faceName(missing.face)} has no font file to embed; text set in it is written as outlines`);
       return outlined(node);
     }
-    for (const { face, embedding } of found) faces.set(faceKey(face), { ...face, embedding: embedding! });
+    // Declared under the face the text names, which a reader matches, holding the one the canvas draws.
+    for (const { requested, embedding } of found) faces.set(faceKey(requested), { ...requested, embedding: embedding! });
     // A reader sets text with no family in its own default face, never the embedded one.
     return node.style?.fontFamily ? node : { ...node, style: { ...node.style, fontFamily: resolveTextStyle(node.style).fontFamily } };
   };
