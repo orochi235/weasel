@@ -62,6 +62,8 @@ export function useLoupe(
       canvas: api.surface,
       ...(api.element ? { input: api.element } : {}),
       ...(sourceRef.current ? { source: stableSource } : { views: api }),
+      // The pane's rect of a shared surface, which the aim and the readback are relative to.
+      region: () => api.getSurfaceRect(),
       mode,
       factor,
       requestRedraw: () => api.requestRedraw(),

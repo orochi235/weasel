@@ -2995,3 +2995,10 @@ Calls the lanes made without a ruling:
 - Open: edits interleaved between suspended sibling journals (one edits, a second opens and edits, the first resumes
   and edits again) cannot be taken back exactly by the enclosing journal's `cancel`, which unwinds one journal at a
   time, latest edit first. Doing it exactly needs one log of edits across the siblings.
+
+## Audit round forty-nine (2026-11-20): hud
+
+- 2026-11-20 (the fixer's call): `attachHud` throws, attaching nothing, when its `font` pair (or the bundled atlas)
+  differs from the URLs another HUD registered `weasel-hud-default` with, since every HUD on a page shares that one
+  family. A host wanting another atlas registers it under a family of its own and passes the name. Swapping the
+  family to the newest pair with `replace`, under every HUD already drawing it, was the alternative.

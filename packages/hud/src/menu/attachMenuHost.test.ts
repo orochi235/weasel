@@ -328,7 +328,7 @@ describe('attachMenuHost with a hud drawing in another font', () => {
     detach();
     const placed = createHud();
     placed.bind({
-      requestRedraw: () => {}, registerLayer: () => () => {}, subscribeFrame: () => () => {},
+      requestRedraw: () => {}, subscribeFrame: () => () => {},
       toCanvas: ({ x, y }) => ({ x: x - 100, y: y - 50 }),
       size: () => ({ width: 800, height: 600 }),
     });

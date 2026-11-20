@@ -82,7 +82,7 @@ describe('Hud focus', () => {
 
   it('redraws when focus changes', () => {
     const hud = createHud();
-    const host = { requestRedraw: vi.fn(), registerLayer: () => () => {}, subscribeFrame: () => () => {} };
+    const host = { requestRedraw: vi.fn(), subscribeFrame: () => () => {} };
     const a = widget('a');
     hud.add(a);
     hud.bind(host);

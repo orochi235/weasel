@@ -113,6 +113,16 @@ describe('focus from the pointer', () => {
     expect(hud.focused).toBeNull();
   });
 
+  it('a press on a widget that lets presses through to the scene blurs', () => {
+    const a = box('a', 0);
+    const wheel = box('wheel', 40, [], { claims: ['wheel'] });
+    hud.add(a.w);
+    hud.add(wheel.w);
+    hud.focus(a.w);
+    press(el, 45, 5);
+    expect(hud.focused).toBeNull();
+  });
+
   it('the canvas losing DOM focus blurs the HUD', () => {
     const a = box('a', 0);
     hud.add(a.w);

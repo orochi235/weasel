@@ -34,7 +34,6 @@ function bindHost(hud: Hud): { frame(loupe: LoupeHandle, view?: View): void; red
   let redraws = 0;
   hud.bind({
     requestRedraw: () => { redraws += 1; },
-    registerLayer: () => () => {},
     subscribeFrame: (fn) => { subs.add(fn); return () => { subs.delete(fn); }; },
   });
   return {

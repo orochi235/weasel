@@ -1,6 +1,6 @@
 import type { Hud } from './hud';
 import { clientToCanvas } from '@weasel-js/core';
-import { isFocusable, type HudKeyEvent, type Widget } from './widget';
+import { claimsOf, isFocusable, type HudKeyEvent, type Widget } from './widget';
 import { hideVisually, mirrorFocusedTree } from './accessibleMirror';
 import { wireTextInput } from './textInputHost';
 
@@ -25,7 +25,10 @@ export function wireFocus(
 ): () => void {
   const onPointerDown = (e: PointerEvent) => {
     const hit = hitAt(...clientToCanvas(element, e.clientX, e.clientY));
-    hud.focus(hit && isFocusable(hit) ? hit : null, { visible: false });
+    // A widget that does not claim `pointer` lets the press through to the
+    // scene, so it takes no focus from it either.
+    const takes = hit !== null && claimsOf(hit).includes('pointer') && isFocusable(hit);
+    hud.focus(takes ? hit : null, { visible: false });
   };
 
   const liveFocused = (): Widget | null => {
