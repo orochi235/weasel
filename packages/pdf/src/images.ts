@@ -153,7 +153,7 @@ function place(ctx: PageCtx, ref: PdfRef, iw: number, ih: number, p: Place): voi
   const f = p.flipY ? bottom - H : top + H;
 
   out.op('q');
-  if (p.opacity < 1) out.op('gs', `/${ctx.resources.extGState(p.opacity, p.opacity)}`);
+  if (!(p.opacity >= 1)) out.op('gs', `/${ctx.resources.extGState(p.opacity, p.opacity)}`);
   if (p.source) out.op('re', p.x, p.y, p.width, p.height).op('W').op('n');
   out.op('cm', a, 0, 0, d, e, f);
   out.op('Do', `/${ctx.resources.xobject(ref)}`);

@@ -66,6 +66,12 @@ describe('writeGroup', () => {
     expect(content).toContain('0 0.3 0.3 rg\n');
   });
 
+  it('drops and reports an isolated group with a NaN alpha, as it does one not isolated', async () => {
+    const { content, skipped } = await render([{ kind: 'group', isolate: true, alpha: NaN, children: [red] }]);
+    expect(content).not.toContain('Do');
+    expect(skipped.map((s) => s.detail)).toEqual(['group has a non-finite coordinate']);
+  });
+
   it('draws an isolated group as a transparency group form', async () => {
     const { s, content } = await render([
       { kind: 'group', isolate: true, alpha: 0.5, children: [red, red] },

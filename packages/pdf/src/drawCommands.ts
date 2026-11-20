@@ -80,7 +80,7 @@ function writeShadedFill(ctx: PageCtx, cmd: PathDrawCommand, state: DrawState, p
   out.op('q');
   out.op(fillPathOps(out, cmd.path) ? 'W*' : 'W');
   out.op('n');
-  if (sh.alpha < 1) setAlpha(ctx, sh.alpha, sh.alpha);
+  if (!(sh.alpha >= 1)) setAlpha(ctx, sh.alpha, sh.alpha);
   if (sh.matrix) out.op('cm', ...mat3.toAffine(sh.matrix));
   if (sh.softMask) out.op('gs', `/${sh.softMask}`);
   out.op('sh', `/${sh.shading}`);

@@ -101,6 +101,16 @@ describe('images', () => {
   });
 });
 
+describe('non-finite opacity', () => {
+  it('drops and reports an image or sprites with a NaN opacity, as it does a path', async () => {
+    const img = fakeImage(4, 4);
+    const sprites: DrawCommand = { kind: 'sprites', image: img, sprites: Float32Array.from([0, 0, 4, 4, 0, 0, 4, 4, NaN]) } as DrawCommand;
+    const { content, skipped } = await render([image(img, { opacity: NaN }), sprites]);
+    expect(content).not.toContain(' Do');
+    expect(skipped.map((s) => s.detail)).toEqual(['image has a non-finite coordinate', 'sprites has a non-finite coordinate']);
+  });
+});
+
 describe('texture paint', () => {
   const handles: ReturnType<typeof registerTexture>[] = [];
   afterEach(() => {
