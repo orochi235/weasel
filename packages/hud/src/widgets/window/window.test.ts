@@ -195,6 +195,27 @@ describe('window widget', () => {
     expect(onMove).toHaveBeenCalled();
   });
 
+  it('keeps dragging when onMove snaps the window through setBounds', () => {
+    const snap = (v: number) => Math.round(v / 50) * 50;
+    const win = createWindow({ ...opts, onMove: (b) => win.setBounds({ ...b, x: snap(b.x), y: snap(b.y) }) });
+    const y = 100 + M.titleH / 2;
+    win.onPointer({ type: 'down', x: 150, y, native: null });
+    win.onPointer({ type: 'move', x: 160, y, native: null });
+    expect(win.bounds).toMatchObject({ x: 100, y: 100 });
+    win.onPointer({ type: 'move', x: 230, y, native: null });
+    expect(win.bounds).toMatchObject({ x: 200, y: 100 });
+    win.onPointer({ type: 'move', x: 290, y: y + 60, native: null });
+    expect(win.bounds).toMatchObject({ x: 250, y: 150 });
+  });
+
+  it('keeps resizing when onResize constrains the window through setBounds', () => {
+    const win = createWindow({ ...opts, onResize: (b) => win.setBounds({ ...b, height: b.width * 0.75 }) });
+    win.onPointer({ type: 'down', x: 299, y: 175, native: null });
+    win.onPointer({ type: 'move', x: 309, y: 175, native: null });
+    win.onPointer({ type: 'move', x: 339, y: 175, native: null });
+    expect(win.bounds).toMatchObject({ width: 240, height: 180 });
+  });
+
   it('drags the east edge to resize, and reports via onResize', () => {
     const onResize = vi.fn();
     const win = createWindow({ ...opts, onResize });

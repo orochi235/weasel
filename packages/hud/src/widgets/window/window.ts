@@ -125,6 +125,13 @@ export function createWindow(opts: WindowOptions): WindowWidget {
     if (disposed) throw new Error('weasel-hud: cannot mutate a disposed widget.');
   };
   const asDrag = (z: WindowZone | null): WindowZone | null => dragZoneFor(z, chrome, passing);
+  // True while the window reports a move or resize it made itself, so a `setBounds` from that report (a snap, an
+  // aspect lock) overrides this step of the drag rather than ending it.
+  let reporting = false;
+  const report = (zone: WindowZone) => {
+    reporting = true;
+    try { (zone === 'title' ? opts.onMove : opts.onResize)?.(bounds); } finally { reporting = false; }
+  };
 
   const drag = createWindowDrag({
     bounds: () => bounds,
@@ -133,7 +140,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
     minW, minH, clampOnHost,
     place(b, zone) {
       bounds = b;
-      (zone === 'title' ? opts.onMove : opts.onResize)?.(bounds);
+      report(zone);
       rev.changed();
     },
     close() { opts.onClose?.(); },
@@ -151,8 +158,15 @@ export function createWindow(opts: WindowOptions): WindowWidget {
     content: opts.content,
 
     // Ends any drag in flight: `dragStart` would otherwise still hold the
-    // pre-call bounds, so the next move would rebase from stale origin.
-    setBounds(b) { assertNotDisposed(); bounds = clampOnHost(clampSize(b)); drag.end(); rev.changed(); },
+    // pre-call bounds, so the next move would rebase from stale origin. Called
+    // from the window's own onMove or onResize, it only overrides where this
+    // step of the drag put the window; the drag goes on from where it began.
+    setBounds(b) {
+      assertNotDisposed();
+      bounds = clampOnHost(clampSize(b));
+      if (!reporting) drag.end();
+      rev.changed();
+    },
     setHidden(h) { assertNotDisposed(); hidden = h; rev.changed(); },
     setTitle(t) { assertNotDisposed(); appearance.title = t; rev.changed(); },
     setStance(st) { assertNotDisposed(); appearance.stance = st; rev.changed(); },
