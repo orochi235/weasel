@@ -72,7 +72,7 @@ export interface KnobLeaf {
 
 /** What a knob's value is checked against below its kind: an enum's choices, and the leaves a list, a map, an object
  *  or a union holds. A nested leaf carries these on itself rather than under `annotations`. */
-interface KnobParts {
+export interface KnobParts {
   options?: readonly { value: string }[];
   item?: NestedLeaf;
   children?: Readonly<Record<string, NestedLeaf>>;
@@ -80,7 +80,8 @@ interface KnobParts {
   variants?: Readonly<Record<string, NestedLeaf>>;
 }
 
-type NestedLeaf = KnobParts & { kind?: unknown };
+/** A leaf a list, map, object or union holds: its parts on itself, and its kind where it names one. */
+export type NestedLeaf = KnobParts & { kind?: unknown };
 
 type Codec = 'number' | 'boolean' | 'string' | 'enum' | 'json';
 

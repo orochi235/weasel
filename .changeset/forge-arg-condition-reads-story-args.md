@@ -2,6 +2,6 @@
 '@weasel-js/forge': patch
 ---
 
-A Storybook argType `if` on an arg that has no control, such as a React element, reads the story's own arg, so the control it conditions shows as it does in Storybook.
+An argType `if` on an arg with no control, such as a React element, reads the story's own arg, so its control shows as in Storybook.
 
 <!-- entry: fix -->
