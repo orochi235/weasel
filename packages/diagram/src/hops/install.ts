@@ -106,6 +106,7 @@ export function installHops<TPose>(scene: Scene<unknown, string, TPose>, opts: H
   };
 
   const pass = (summary: SceneEditSummary) => {
+    passed = true;
     const value = sc.doc.get<HopsDocValue>(HOPS_DOC_KEY);
     const keyed = summary.docChanged.has(HOPS_DOC_KEY);
     if (value === undefined) {
@@ -157,6 +158,20 @@ export function installHops<TPose>(scene: Scene<unknown, string, TPose>, opts: H
     const edges = sceneEdges(sc);
     held = { polylines: allPolylines(edges, polylineOf), order: edges.map((e) => e.node.id), r: on.size };
   }
-  const dispose = scene.addEditPass(pass, { order: DIAGRAM_PASS_ORDER.hops });
+  // Undo, redo, a replay, `loadState` and untracked writes change the scene with no pass to hear
+  // them, so whatever `held` says after one is a guess: drop it, and the next pass starts over.
+  let passed = false;
+  let version = scene.getContentVersion();
+  const unsubscribe = scene.subscribe(() => {
+    const now = scene.getContentVersion();
+    if (now !== version && !passed) held = null;
+    version = now;
+    passed = false;
+  });
+  const removePass = scene.addEditPass(pass, { order: DIAGRAM_PASS_ORDER.hops });
+  const dispose = () => {
+    removePass();
+    unsubscribe();
+  };
   return { follower: hopFollower(scene), dispose };
 }

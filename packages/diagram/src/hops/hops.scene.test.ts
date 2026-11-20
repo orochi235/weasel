@@ -148,4 +148,29 @@ describe('line jumps in a scene', () => {
     split('ab');
     expect(hopsOf(scene, 'cd')).toBeUndefined();
   });
+
+  it('computes against the routes undo restores, not the ones it held before the undo', () => {
+    const { scene, move } = load(false);
+    scene.doc.set(HOPS_DOC_KEY, { size: 5 });
+    move('c', 600, -200);
+    move('d', 600, 200);
+    scene.undo();
+    scene.undo();
+    expect(hopsOf(scene, 'cd')).toEqual([{ at: { x: 250, y: 30 }, over: ['ab'], r: 5 }]);
+    move('a', 0, 40);
+    move('b', 400, 40);
+    expect(hopsOf(scene, 'cd')).toEqual([{ at: { x: 250, y: 70 }, over: ['ab'], r: 5 }]);
+  });
+
+  it('computes against the routes an untracked write leaves', () => {
+    const { scene, move } = load(false);
+    scene.doc.set(HOPS_DOC_KEY, { size: 5 });
+    scene.untracked(() => {
+      for (const id of ['c', 'd']) scene.setPose(id as never, { ...scene.get(id as never)!.pose, x: 600 });
+    });
+    move('a', 0, 40);
+    move('b', 400, 40);
+    expect(hopsOf(scene, 'cd')).toBeUndefined();
+  });
+
 });
