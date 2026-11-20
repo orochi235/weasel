@@ -82,9 +82,11 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   const history: History = {
     ...createStackView(undoStack, redoStack),
     apply(op, label) {
+      journals.refuse();
       pushOrCoalesce([op], label ?? op.label ?? '', true);
     },
     applyOps(ops, label) {
+      journals.refuse();
       pushOrCoalesce(ops, label);
     },
     undo() {
@@ -136,6 +138,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     observe: clock.observe,
     serialize: () => snapshot({ undoStack, redoStack, ...forks.state(), nextEntryId: recorder.nextEntryId() }, logger),
     recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void {
+      journals.refuse();
       record(ops, ops, label, options);
     },
     nextEntryId: recorder.nextEntryId,
@@ -143,6 +146,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     activeJournal: journals.active,
     resumeJournal: (journal) => journals.resume(history, journal),
     restore(serialized: SerializedHistory, restoreOptions: RestoreOptions = {}): HistoryRestoreReport {
+      journals.refuse();
       const fault = snapshotFault(serialized);
       if (fault) {
         const report = { restored: false, unresolved: [] };

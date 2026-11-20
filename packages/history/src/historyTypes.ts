@@ -76,7 +76,10 @@ export interface HistoryStep {
 
 /** Op-batched undo/redo controller returned by `createHistory`. */
 export interface History {
+  /** Throws while a journal is active, as `undo` does: an entry pushed beneath the journal's edits would
+   *  sit below its commit though it ran after them. */
   apply(op: Op, label?: string): void;
+  /** Throws while a journal is active, as `apply` does. */
   applyOps(ops: Op[], label: string): void;
   /** Throws while a journal is active: the journal's edits sit over this stack's top. */
   undo(): void;
@@ -161,12 +164,12 @@ export interface History {
    *  report. A snapshot of the wrong shape (one storage corrupted) is refused
    *  whole: a strict restore throws `HistoryRestoreError`, a best-effort one
    *  warns and reports `restored: false`. Bumps `version` and notifies
-   *  subscribers exactly once. */
+   *  subscribers exactly once. Throws while a journal is active. */
   restore(snapshot: SerializedHistory, options?: RestoreOptions): HistoryRestoreReport;
   /** Push an entry whose ops have already been applied to the adapter.
    *  Unlike `applyOps`, does NOT call `op.apply()`. Used by Journal.commit
    *  to flush a session's net forward ops to the parent as one entry without
-   *  re-mutating the scene. */
+   *  re-mutating the scene. Throws while a journal is active, as `apply` does. */
   recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void;
   /** Concatenated forwardOps of every undo-stack entry, in order. Snapshot
    *  of "what changes are currently applied via this history" — useful for
