@@ -119,14 +119,17 @@ export function graphOut(doc: DiagramDocument, opts: WriteOptions | undefined, f
   return { page, theme, ...tree, byId, edges: [...page.data.edges], warnings };
 }
 
-/** A CSS color in a spelling every graph format reads: `rgb()` and `rgba()` as hex, short hex long. Names pass through. */
+/**
+ * A CSS color in a spelling every graph format reads: any color function (`rgb()`, `hsl()`, `oklch()`, `color()`) as
+ * hex, short hex long. A name passes through.
+ */
 export function hexColor(css: string): string {
   if (css.startsWith('#')) return tryNormalizeHex(css) ?? css;
-  if (!/^rgba?\(/i.test(css)) return css;
   const rgba = tryParseColor(css);
   if (!rgba) return css;
+  if (/^[a-z]+$/i.test(css.trim())) return css;
   // An alpha written out is kept, `ff` included: a fourth comma-separated value or one after `/`.
-  return normalizeHex(rgbaToHex(rgba), /\/|(?:,[^,]*){3}/.test(css) ? 'rgba' : 'rgb');
+  return normalizeHex(rgbaToHex(rgba), /\/|(?:,[^,]*){3}/.test(css) || rgba[3] < 1 ? 'rgba' : 'rgb');
 }
 
 /** `style`'s fields that differ from `base`. */

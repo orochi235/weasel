@@ -10,6 +10,10 @@ describe('DOT values', () => {
     expect(hexColor('steelblue')).toBe('steelblue');
     expect(hexColor('rgb(100% 0% 50%)')).toBe('#ff0080');
     expect(hexColor('rgb(var(--x) 0 0)')).toBe('rgb(var(--x) 0 0)');
+    expect(hexColor('hsl(120, 100%, 50%)')).toBe('#00ff00');
+    expect(hexColor('hsl(0 100% 50% / 0.5)')).toBe('#ff000080');
+    expect(hexColor('oklch(0.628 0.2577 29.23)')).toMatch(/^#[0-9a-f]{6}$/);
+    expect(hexColor('color(srgb 0 0 1)')).toBe('#0000ff');
   });
 
   it('reads back what it writes', () => {
