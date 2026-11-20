@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FRAME_HELLO } from '../protocol/messages';
-import { createFramePool, type FramePool, HELLO_TIMEOUT_MS } from './framePool';
+import { createFramePool, type FramePool, HELLO_TIMEOUT_MS, MAX_HELLO_MISSES } from './framePool';
 
 const proto = Element.prototype as Element & { moveBefore?: unknown };
 
@@ -93,6 +93,15 @@ describe('createFramePool', () => {
     expect(pool.claim()).toBeNull();
     idle();
     expect(shelved()).toHaveLength(0);
+  });
+
+  it('stops loading a frame URL after it misses its hello a few times running', () => {
+    proto.moveBefore = () => {};
+    pool = createFramePool('/frame.html', 1);
+    idle();
+    for (let n = 0; n < MAX_HELLO_MISSES + 3; n++) vi.advanceTimersByTime(HELLO_TIMEOUT_MS + 1000);
+    expect(shelved()).toHaveLength(0);
+    expect(document.querySelectorAll('.fg-frame-pool > iframe')).toHaveLength(0);
   });
 
   it('takes its frames out of the document when disposed', () => {
