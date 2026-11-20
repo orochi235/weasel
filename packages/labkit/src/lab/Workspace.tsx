@@ -15,7 +15,10 @@ import {
 export type { PanelDescriptor } from './tileChrome';
 export type { TrialLayout } from './workspaceStore';
 
-const STRATEGIES = { grid: gridStrategy as never, floating: floatingStrategy as never };
+const STRATEGIES = {
+  grid: gridStrategy as never,
+  floating: floatingStrategy as never,
+};
 
 /** Props for `Workspace`. */
 export interface WorkspaceProps {
@@ -34,7 +37,8 @@ export interface WorkspaceProps {
    *  reorders `children` itself: it reports the order a drop would produce and
    *  the caller commits it. */
   reorderable?: boolean;
-  /** The full id list a drop would produce, in its new order. */
+  /** The children's ids in the order a drop would produce. A tile panel's
+   *  place among them is the workspace's own, and is left out. */
   onReorder?: (ids: string[]) => void;
   /** Extents from a previous session, applied to tiles as they register. */
   layout?: TrialLayout;
@@ -102,25 +106,34 @@ export function Workspace({
   // Identity has to be stable while the id *contents* are unchanged: the sync
   // effect keys off it, and a fresh array every render would re-register
   // every tile forever.
+  const panelKey = JSON.stringify(tilePanels.map((p) => panelNodeId(p.key)));
   const idKey = JSON.stringify([
     ...items.map((_, i) => ids?.[i] ?? `lk-ws-${i}`),
-    ...tilePanels.map((p) => panelNodeId(p.key)),
+    ...JSON.parse(panelKey),
   ]);
   const nodeIds = useMemo(() => (JSON.parse(idKey) as string[]).map(asNodeId), [idKey]);
+  const panelIds = useMemo(() => new Set<string>(JSON.parse(panelKey) as string[]), [panelKey]);
 
   const store = useWorkspaceStore(resizable, gap, padding);
-  useTileSync(store, nodeIds, layout);
+  useTileSync(store, nodeIds, panelIds, layout);
   useSurfaceRetile(store, nodeIds);
   useLayoutReport(store, onLayoutChange);
 
   const commitOrder = useCallback(
-    (nextIds: NodeId[]) => onReorder?.(nextIds.map(String)),
-    [onReorder],
+    (nextIds: NodeId[]) => onReorder?.(nextIds.map(String).filter((id) => !panelIds.has(id))),
+    [onReorder, panelIds],
   );
 
   const chrome = useMemo(
     () =>
-      createTileChrome({ nodeIds, items, tilePanels, reorderable, lightbox, expandOnDoubleClick }),
+      createTileChrome({
+        nodeIds,
+        items,
+        tilePanels,
+        reorderable,
+        lightbox,
+        expandOnDoubleClick,
+      }),
     [nodeIds, items, reorderable, tilePanels, lightbox, expandOnDoubleClick],
   );
 

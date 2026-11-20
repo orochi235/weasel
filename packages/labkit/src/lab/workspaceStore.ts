@@ -9,10 +9,8 @@ const FLOAT_ZONE_ID = asNodeId('lk-workspace-floating');
 export const PANEL_KIND = 'panel';
 export const TRIAL_KIND = 'trial';
 
-const PANEL_PREFIX = 'lk-panel-';
-
 /** The node id an undocked panel's tile registers under. */
-export const panelNodeId = (key: string): string => `${PANEL_PREFIX}${key}`;
+export const panelNodeId = (key: string): string => `lk-panel-${key}`;
 
 /** A tile's persisted extent, keyed by the id its caller gave it. Grid resizes
  *  write `span`; `size` is here because a strategy swap would write that. */
@@ -66,11 +64,12 @@ export function useWorkspaceStore(resizable: boolean, gap: number, padding: numb
   return store;
 }
 
-/** Keeps the grid's tiles to `nodeIds`, in that order. A tile registering for the first time takes its extent from
- *  `layout`. */
+/** Keeps the grid's tiles to `nodeIds`, in that order, those in `panelIds` as panels and the rest as trials. A tile
+ *  registering for the first time takes its extent from `layout`. */
 export function useTileSync(
   store: Store,
   nodeIds: readonly NodeId[],
+  panelIds: ReadonlySet<string>,
   layout: TrialLayout | undefined,
 ): void {
   // Held in a ref rather than depended on: a fresh object each render would
@@ -84,14 +83,14 @@ export function useTileSync(
     }
     for (const id of nodeIds) {
       if (present.has(id)) continue;
-      const kind = String(id).startsWith(PANEL_PREFIX) ? PANEL_KIND : TRIAL_KIND;
+      const kind = panelIds.has(id) ? PANEL_KIND : TRIAL_KIND;
       store.registerNode(createNode({ kind, id, parentId: ZONE_ID, focus: true })); // eslint-disable-line weasel/effect-cleanup -- the store owns its tiles; this reconciles them with nodeIds
       store.showNode(id);
       const saved = layoutRef.current && getOwn(layoutRef.current, id);
       if (saved) store.patchPlacement(id, saved);
     }
     store.setChildOrder(ZONE_ID, [...nodeIds]);
-  }, [store, nodeIds, layoutRef]);
+  }, [store, nodeIds, panelIds, layoutRef]);
 }
 
 /** Re-measures the lab's surface whenever the grid moves a tile. Optional: a lab may own no surface. */
