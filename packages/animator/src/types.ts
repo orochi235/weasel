@@ -64,6 +64,10 @@ export interface TweenOptions<T> {
   interpolator?: InterpolatorFactory<T>;
   onTick: (value: T) => void;
   onDone?: () => void;
+  /** Runs when the tween stops short of its end: canceled by handle, by `cancelKey`, by
+   *  `cancelAll` or by another animation taking its key, or retired for a tick that threw.
+   *  Exactly one of `onDone` and `onCancel` runs. */
+  onCancel?: () => void;
   /** Any new animation passed the same cancelKey cancels the prior one in flight. */
   cancelKey?: string;
   /** Names this animation in {@link AnimatorEvent}s and `animator.live()`. */
