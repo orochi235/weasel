@@ -33,6 +33,15 @@ describe('createGridLayer', () => {
     expect(tree.filter((c) => c.kind === 'path')).toHaveLength(8);
   });
 
+  it('draws only the part of its bounds the canvas shows, its lines still from the bounds\' corner', () => {
+    const layer = createGridLayer({ spacing: 10, bounds: () => ({ x: 3, y: 3, width: 1e6, height: 1e6 }) });
+    const paths = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100, dpr: 1 })
+      .filter((c): c is PathDrawCommand => c.kind === 'path');
+    const xs = paths.map((p) => (p.path as { coords: Float32Array }).coords).filter((c) => c[0] === c[2]).map((c) => c[0]);
+    expect(xs).toEqual([3, 13, 23, 33, 43, 53, 63, 73, 83, 93]);
+    expect(paths).toHaveLength(20);
+  });
+
   it('draws the visible grid for a y-up view', () => {
     const layer = createGridLayer({ spacing: 10 });
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: -1 } }, { width: 100, height: 100, dpr: 1 });

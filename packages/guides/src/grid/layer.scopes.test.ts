@@ -70,7 +70,7 @@ describe('createGridLayer — unit scopes', () => {
     // Its 0.5-unit lines sit under the 4 px floor at this zoom, so the nested
     // region draws nothing; at 8x they show.
     expect(far).toHaveLength(2);
-    const near = layer.draw(undefined, { x: 0, y: 0, scale: { x: 8, y: 8 } }, DIMS);
+    const near = layer.draw(undefined, { x: 0, y: 0, scale: { x: 8, y: 8 } }, { ...DIMS, width: 800, height: 800 });
     expect(verticals(near[2]!)).toEqual(Array.from({ length: 21 }, (_, k) => 30 + k / 2));
   });
 
@@ -164,7 +164,7 @@ describe('createGridLayer — a region\'s own frame', () => {
       regions: () => [{ outline: squareIn(frame, 0, 0, 40), chain: [ROOT, HALF], frame }],
       bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
     });
-    const [, inner] = layer.draw(undefined, { x: 0, y: 0, scale: { x: 2, y: 2 } }, DIMS);
+    const [, inner] = layer.draw(undefined, { x: 0, y: 0, scale: { x: 2, y: 2 } }, { ...DIMS, width: 200, height: 200 });
     const turned = (inner as GroupDrawCommand).children[0] as GroupDrawCommand;
     expect(turned.transform).toEqual(mat3.fromAffine(frame));
     expect(verticals(turned)).toEqual([0, 5, 10, 15, 20, 25, 30, 35, 40]);

@@ -43,7 +43,8 @@ export interface GridLayerOptions {
   regions?: () => readonly GridRegion[];
   /**
    * The area to cover, in world units, read every paint with that paint's
-   * view and canvas size. Lines start at its own `x`/`y`. Omitted, the grid
+   * view and canvas size; the part of it the canvas shows is drawn. Lines
+   * start at its own `x`/`y`. Omitted, the grid
    * covers whatever the canvas shows, with its lines measured from world
    * zero so they stay put as the view pans.
    */
@@ -87,10 +88,13 @@ export function createGridLayer(opts: GridLayerOptions): RenderLayer<unknown> {
     id: 'grid',
     label: 'Grid',
     draw: (_data, view, dims) => {
-      const b = opts.bounds ? opts.bounds(view, dims) : padded(viewportWorldRect(view, dims), view);
+      const bounds = opts.bounds?.(view, dims);
+      // Only what the canvas shows of the bounds draws, so a page far larger than the view costs what is on screen.
+      const seen = padded(viewportWorldRect(view, dims), view);
+      const b = bounds ? intersect(bounds, seen) : seen;
       if (!hasArea(b)) return [];
       // The root's lines run from the bounds' corner, else from world zero, as snapping reads them.
-      const anchor = opts.bounds ? { x: b.x, y: b.y } : { x: 0, y: 0 };
+      const anchor = bounds ? { x: bounds.x, y: bounds.y } : { x: 0, y: 0 };
       const root = lattice(b, placed(gridLines(opts.spacing, opts.unitSystem, opts.scopes), anchor), opts, view, styles);
       const regions = opts.regions?.() ?? [];
       if (regions.length === 0) return root;
