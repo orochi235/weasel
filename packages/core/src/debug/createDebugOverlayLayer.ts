@@ -14,7 +14,7 @@ import type {
   DebugTheme,
   RecordedViewport,
 } from './types';
-import { DEFAULT_DEBUG_STROKES, DEFAULT_DEBUG_THEME } from './defaultTheme';
+import { DEFAULT_DEBUG_STROKES, DEFAULT_DEBUG_THEME, withDebugDefaults } from './defaultTheme';
 import { emitFramePanel, emitLayersPanel, emitTextPanel, LINE_H, rectPath } from './overlayPanels';
 
 /** What `createDebugOverlayLayer` paints from: a sink to snapshot and the features to draw. */
@@ -70,8 +70,8 @@ export function buildDebugOverlayCommands(
   dims: Dims,
   frameTimes: readonly number[] = [],
 ): DrawCommand[] {
-  const theme: DebugTheme = { ...DEFAULT_DEBUG_THEME, ...(config.theme ?? {}) };
-  const strokes: DebugStrokes = { ...DEFAULT_DEBUG_STROKES, ...(config.strokes ?? {}) };
+  const theme: DebugTheme = withDebugDefaults(DEFAULT_DEBUG_THEME, config.theme);
+  const strokes: DebugStrokes = withDebugDefaults(DEFAULT_DEBUG_STROKES, config.strokes);
   const s = snapshot;
   const t = viewToTransform(view);
   const out: DrawCommand[] = [];

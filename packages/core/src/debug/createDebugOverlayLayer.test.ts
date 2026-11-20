@@ -3,6 +3,7 @@ import type { DrawCommand, PathDrawCommand, TextDrawCommand } from '@weasel-js/r
 import { buildDebugOverlayCommands, createDebugOverlayLayer } from './createDebugOverlayLayer';
 import { createDebugSink } from './createDebugSink';
 import type { CreateDebugOverlayLayerOptions } from './index';
+import { DEFAULT_DEBUG_STROKES, DEFAULT_DEBUG_THEME } from './defaultTheme';
 
 const DIMS = { width: 800, height: 600, dpr: 1 };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -166,5 +167,17 @@ describe('the ids feature', () => {
     expect(label!.y).toBeGreaterThanOrEqual(50);
     // A 10 px label starting inside a 12 px box ends within it.
     expect(label!.y + 10).toBeLessThanOrEqual(62);
+  });
+});
+
+describe('theme and stroke overrides', () => {
+  it('treats an entry set to undefined as absent, keeping the default', () => {
+    const sink = createDebugSink({ hitboxes: true });
+    sink.recordHitbox('a', 'body', { kind: 'rect', x: 0, y: 0, width: 10, height: 10 });
+    const [cmd] = buildDebugOverlayCommands(sink.snapshot(), {
+      hitboxes: true, strokes: { hitbox: undefined }, theme: { hitboxStroke: undefined },
+    }, VIEW, DIMS) as PathDrawCommand[];
+    expect(cmd!.stroke?.width).toBe(DEFAULT_DEBUG_STROKES.hitbox.width);
+    expect(cmd!.stroke?.paint).toEqual({ kind: 'solid', color: DEFAULT_DEBUG_THEME.hitboxStroke });
   });
 });
