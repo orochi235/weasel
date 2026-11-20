@@ -2,6 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { createWindow } from './window';
 import { DEFAULT_WINDOW_METRICS as M } from './zones';
+import type { TextDrawCommand } from '@weasel-js/core/renderer';
+import { textWidth } from '../../menu/textWidth';
 
 const ctx = {
   dims: { width: 800, height: 600 },
@@ -12,6 +14,15 @@ const ctx = {
 const opts = { id: 'w', x: 100, y: 100, width: 200, height: 150, title: 'Loupe' };
 
 describe('window widget', () => {
+  it('cuts a title too long for its bar to one line ending in an ellipsis, short of the close box', () => {
+    const win = createWindow({ ...opts, width: 160, title: 'Layer properties for the selected group' });
+    const text = win.draw(ctx).find((c): c is TextDrawCommand => c.kind === 'text')!;
+    const shown = text.runs.map((r) => r.text).join('');
+    expect(text.maxWidth).toBeUndefined();
+    expect(shown).toMatch(/…$/);
+    expect(textWidth(shown, 12, ctx.defaultFont)).toBeLessThanOrEqual(160 - M.edge * 2 - M.closeSize - 4);
+  });
+
   it('draws a titlebar, a border ring, a title and a close glyph', () => {
     const win = createWindow(opts);
     const cmds = win.draw(ctx);
