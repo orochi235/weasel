@@ -39,4 +39,25 @@ describe('theme lookups by a name from data', () => {
     expect(themeDocValue(custom)).toBe(custom);
     expect(themeDocValue(paper)).toBe('paper');
   });
+
+  it.each([
+    ['no roles', (t: Record<string, unknown>) => { t.roles = {}; }],
+    ['a default role it lacks', (t: Record<string, unknown>) => { t.defaultRole = 'nope'; }],
+    ['no edge', (t: Record<string, unknown>) => { delete t.edge; }],
+    ['no font', (t: Record<string, unknown>) => { delete t.font; }],
+  ])('falls back for a whole theme with %s, warning once', (_, spoil) => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const bad = structuredClone(paper) as unknown as Record<string, unknown>;
+    spoil(bad);
+    const night = DIAGRAM_THEMES.night!;
+    expect(diagramThemeFrom(bad, night)).toBe(night);
+    expect(diagramThemeFrom(bad, night)).toBe(night);
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
+  it('takes a whole theme that checks', () => {
+    const custom = { ...structuredClone(paper), id: 'mine' };
+    expect(diagramThemeFrom(custom)).toBe(custom);
+  });
 });
