@@ -110,6 +110,13 @@ describe('lbxConfig', () => {
     expect(skipped).toEqual([{ kind: 'path', detail: 'no rasterize hook for what .lbx cannot draw' }]);
   });
 
+  it('rasterizes an object reaching past the label under auto length, as it crops what it rasterizes there', async () => {
+    const over = rect(120, 2, 40, 5, { fill: { paint: { color: '#000' } } });
+    expect((await lbxConfig({ ...page([over]), autoLength: true })).config.objects).toEqual([]);
+    expect((await lbxConfig({ ...page([rect(-5, 2, 40, 5, { fill: { paint: { color: '#000' } } })]), autoLength: true })).config.objects).toEqual([]);
+    expect((await lbxConfig(page([over]))).config.objects.map((o) => o.type)).toEqual(['rect']);
+  });
+
   it('writes the tape, the length and the cuts', async () => {
     const fixed = await lbxConfig({ ...page([]), cuts: [72, 0, 200, 36] });
     expect(fixed.config.paper).toMatchObject({ width: 33.6, format: 259, height: 144, autoLength: false });

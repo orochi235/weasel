@@ -109,7 +109,15 @@ function finiteObject(v: unknown): boolean {
   return Object.values(v).every(finiteObject);
 }
 
-function collect(commands: readonly DrawCommand[], state: DrawState, clips: readonly Clip[], out: Item[], skipped: LbxSkip[]): void {
+/** Whether an object lies along the tape within `[0, end]`, the stretch the rasterizer draws. */
+function withinLength(object: LabelObject, end: number): boolean {
+  return object.position.x >= -CLIP_EPS && object.position.x + object.position.width <= end + CLIP_EPS;
+}
+
+/** `end`: under auto length, the label's length, past which P-touch would grow the label for an object. */
+function collect(
+  commands: readonly DrawCommand[], state: DrawState, clips: readonly Clip[], end: number, out: Item[], skipped: LbxSkip[],
+): void {
   const raster = (cmd: DrawCommand) => {
     const at = placed(cmd, state, clips);
     if (at) out.push({ raster: at });
@@ -144,7 +152,7 @@ function collect(commands: readonly DrawCommand[], state: DrawState, clips: read
       // Without an isolate, a clipped group's children paint one by one, so each carries the clip on its own.
       const transform = cmd.transform ? mat3.multiply(state.transform, cmd.transform) : state.transform;
       const inner = cmd.clip ? [...clips, { path: cmd.clip, transform }] : clips;
-      collect(cmd.children, { transform, alpha: state.alpha * (cmd.alpha ?? 1) }, inner, out, skipped);
+      collect(cmd.children, { transform, alpha: state.alpha * (cmd.alpha ?? 1) }, inner, end, out, skipped);
       continue;
     }
     const mapped =
@@ -152,8 +160,9 @@ function collect(commands: readonly DrawCommand[], state: DrawState, clips: read
       cmd.kind === 'text' ? textObject(cmd, state) :
       undefined;
     // A position past the double range, under a scale or a stroke that overflows it, is the rasterizer's to draw.
-    if (mapped === undefined || !(Array.isArray(mapped) ? mapped : [mapped]).every(finiteObject)) raster(cmd);
-    else for (const object of Array.isArray(mapped) ? mapped : [mapped]) out.push({ object });
+    const objects = mapped === undefined ? undefined : Array.isArray(mapped) ? mapped : [mapped];
+    if (!objects || !objects.every((o) => finiteObject(o) && withinLength(o, end))) raster(cmd);
+    else for (const object of objects) out.push({ object });
   }
 }
 
@@ -234,7 +243,7 @@ export async function lbxConfig(page: LbxPage, opts: WriteLbxOptions = {}): Prom
   }
   const items: Item[] = [];
   const skipped: LbxSkip[] = [];
-  collect(page.commands, { transform: mat3.identity(), alpha: 1 }, [], items, skipped);
+  collect(page.commands, { transform: mat3.identity(), alpha: 1 }, [], page.autoLength ? page.length : Infinity, items, skipped);
   const objects = await settle(items, page, opts, skipped);
   const paper = {
     width: page.tape.widthPt,
