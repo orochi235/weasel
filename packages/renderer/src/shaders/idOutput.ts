@@ -18,6 +18,8 @@
  * Outside an id frame nothing is attached at location 1 and GL drops the write.
  */
 
+import { stripComments } from './glslSource';
+
 /** The highest id an id frame can carry: three bytes of one RGBA8 texel. */
 export const MAX_PICK_ID = 0xffffff;
 
@@ -41,8 +43,9 @@ function count(re: RegExp, src: string): number {
  * location 0 or none named, and no other output. A program built from `null`
  * writes no ids, and an id frame draws it with attachment 1 switched off.
  */
-export function withIdOutput(vert: string, frag: string): { vert: string; frag: string } | null {
-  if (count(MAIN, vert) !== 1 || count(MAIN, frag) !== 1) return null;
+export function withIdOutput(vert: string, source: string): { vert: string; frag: string } | null {
+  const frag = stripComments(source);
+  if (count(MAIN, stripComments(vert)) !== 1 || count(MAIN, frag) !== 1) return null;
   if (count(COLOR_OUT, frag) !== 1 || count(ANY_OUT, frag) !== 1) return null;
   if (frag.includes(ID_UNIFORM) || frag.includes('weasel_idOut')) return null;
   let color = '';

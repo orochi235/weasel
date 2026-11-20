@@ -1,22 +1,29 @@
 export const IDENT = /^[A-Za-z_]\w*$/;
 
+/** `glsl` with its comments taken out, each line ending where it did, so a
+ *  compile error still names the line the author wrote. */
+export function stripComments(glsl: string): string {
+  let stripped = '';
+  for (let k = 0; k < glsl.length; k++) {
+    if (glsl[k] === '/' && glsl[k + 1] === '/') {
+      while (k < glsl.length && glsl[k] !== '\n') k++;
+      stripped += '\n';
+    } else if (glsl[k] === '/' && glsl[k + 1] === '*') {
+      const end = glsl.indexOf('*/', k + 2);
+      const comment = glsl.slice(k, end < 0 ? glsl.length : end);
+      stripped += ' ' + '\n'.repeat(comment.split('\n').length - 1);
+      k = end < 0 ? glsl.length : end + 1;
+    } else {
+      stripped += glsl[k];
+    }
+  }
+  return stripped;
+}
+
 /** Comments stripped and directives removed. Every conditional branch is kept:
  *  an extra name only looks up a null location, a missing one drops writes. */
 export function preprocess(glsl: string): { code: string; defines: Map<string, string[]> } {
-  const spliced = glsl.replace(/\\\r?\n/g, '');
-  let stripped = '';
-  for (let k = 0; k < spliced.length; k++) {
-    if (spliced[k] === '/' && spliced[k + 1] === '/') {
-      while (k < spliced.length && spliced[k] !== '\n') k++;
-      stripped += '\n';
-    } else if (spliced[k] === '/' && spliced[k + 1] === '*') {
-      const end = spliced.indexOf('*/', k + 2);
-      k = end < 0 ? spliced.length : end + 1;
-      stripped += ' ';
-    } else {
-      stripped += spliced[k];
-    }
-  }
+  const stripped = stripComments(glsl.replace(/\\\r?\n/g, ''));
   const defines = new Map<string, string[]>();
   const lines = stripped.split('\n').map((line) => {
     if (!/^\s*#/.test(line)) return line;
