@@ -2,7 +2,7 @@ import { createHistory, type SerializedHistory, type SwapArgs, useLatest } from 
 import { type TokenScale, usePersistedState, useTrialId } from '@weasel-js/labkit';
 import { useKitSetting } from '@weasel-js/react';
 import { HISTORY_COALESCE_MS } from '@weasel-js/ui/kit-settings';
-import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { CssOverrides } from './overrides';
 import * as ops from '@weasel-js/core/ops';
 
@@ -13,6 +13,13 @@ export interface VarsState {
 }
 
 const SWAP = 'fg.vars.swap';
+
+/** A history, and the trial and serialization it was opened from or last wrote. */
+interface Opened {
+  readonly trialId: string | null;
+  readonly from: SerializedHistory | null;
+  readonly history: ReturnType<typeof createHistory>;
+}
 /** The history is kept with the trial, so it is held to a count. */
 const LIMIT = 100;
 
@@ -55,8 +62,8 @@ export function useVarsHistory(state: VarsState, apply: (from: VarsState, to: Va
   // Set while a commit after the tick's first applies, which merges into it whatever the window is.
   const sameTick = useRef(false);
 
-  const history = useMemo(() => {
-    const opened = createHistory(null, {
+  const open = (from: SerializedHistory | null): Opened => {
+    const history = createHistory(null, {
       coalesceWindowMs: () => (sameTick.current ? Number.POSITIVE_INFINITY : coalesceMs.current),
       historyLimit: LIMIT,
       rebuildOp: (name, args) => {
@@ -64,12 +71,21 @@ export function useVarsHistory(state: VarsState, apply: (from: VarsState, to: Va
         return name === SWAP ? swap(before, after) : null;
       },
     });
-    if (stored) opened.restore(stored);
-    return opened;
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- a trial's history is opened once, from what was kept with it
-  }, [trialId]);
+    if (from) history.restore(from);
+    return { trialId, from, history };
+  };
+  const [opened, setOpened] = useState(() => open(stored));
+  // A serialization this view did not write came from another view of the trial: take it up rather than write over it.
+  const stale = opened.trialId !== trialId || opened.from !== stored;
+  const live = stale ? open(stored) : opened;
+  if (stale) setOpened(live);
+  const { history } = live;
   useSyncExternalStore(history.subscribe, history.getVersion);
-  const keep = () => setStored(history.canUndo() || history.canRedo() ? history.serialize() : null);
+  const store = (next: SerializedHistory | null) => {
+    setOpened((was) => (was.history === history ? { ...was, from: next } : was));
+    setStored(next);
+  };
+  const keep = () => store(history.canUndo() || history.canRedo() ? history.serialize() : null);
 
   // The key of the tick's first commit, which the rest of the tick's commits take so they merge into it.
   const tick = useRef<string | null>(null);
@@ -100,7 +116,7 @@ export function useVarsHistory(state: VarsState, apply: (from: VarsState, to: Va
     reset(next) {
       emit(next);
       history.clear();
-      setStored(null);
+      store(null);
     },
   };
 }

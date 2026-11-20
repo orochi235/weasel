@@ -46,4 +46,17 @@ describe('useVarsEdits', () => {
     expect(edits[0]!.overrides).toEqual({ '--wzl-a': 'red' });
   });
 
+  it('takes up the steps another view of the trial writes, so its own step does not overwrite them', async () => {
+    const edits = await mount(2);
+    act(() => edits[0]!.write('--wzl-a', 'red'));
+    await act(async () => {});
+    act(() => edits[1]!.write('--wzl-b', 'blue'));
+    await act(async () => {});
+    expect(edits[0]!.overrides).toEqual({ '--wzl-a': 'red', '--wzl-b': 'blue' });
+
+    act(() => edits[0]!.history.step('undo'));
+    expect(edits[1]!.overrides).toEqual({ '--wzl-a': 'red' });
+    act(() => edits[1]!.history.step('undo'));
+    expect(edits[0]!.overrides).toEqual({});
+  });
 });
