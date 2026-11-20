@@ -81,3 +81,14 @@ export function withColorPickers(
   const out = walk(entries);
   return { entries: out, swatchOf: (e) => swatches.get(e)?.(), unheld: (e) => hexes.has(e) };
 }
+
+/** `c`'s text rows as a menu drawing `pickers` reads and writes them: a picker's hex row reads the picker's color and
+ *  writes what is typed straight to its `set`, so the controller never holds its text. */
+export function pickerTexts(
+  pickers: Pick<HudColorPickers, 'unheld'>, c: () => Pick<MenuController, 'textValue' | 'setText'>,
+): Pick<MenuController, 'textValue' | 'setText'> {
+  return {
+    textValue: (e) => (pickers.unheld(e) ? e.value : c().textValue(e)),
+    setText: (e, text) => { if (pickers.unheld(e)) e.set?.(text); else c().setText(e, text); },
+  };
+}

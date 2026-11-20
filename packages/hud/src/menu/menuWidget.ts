@@ -1,4 +1,4 @@
-import { createMenuController, withLinks, type MenuController, type MenuEntry, type MenuRect } from '@weasel-js/menu';
+import { createMenuController, withLinks, type MenuController, type MenuRect } from '@weasel-js/menu';
 import { faceGeneration } from '@weasel-js/font';
 import type { ClaimableGesture, OpenMenu } from '@weasel-js/core';
 import { createEmitter, createPart } from '@weasel-js/registry';
@@ -13,7 +13,7 @@ import { textWidth } from './textWidth';
 import { createPlacer, type PlacedPanel } from './placePanels';
 import { caretAt, caretX } from './valueRows';
 import { createTextEditor, editMods } from './textEdit';
-import { DEFAULT_MENU_PALETTE, withColorPickers } from './colorPicker';
+import { DEFAULT_MENU_PALETTE, pickerTexts, withColorPickers } from './colorPicker';
 import type { Point } from '@weasel-js/geom';
 import { chordKey } from '@weasel-js/gestures';
 import type { StepRepeatOptions } from '@weasel-js/ui-input';
@@ -106,6 +106,13 @@ function menuKey(c: MenuController, typing: ReturnType<typeof createTextEditor>,
   return true;
 }
 
+/** End `typing`'s edit, keeping what was typed, once its row is on no open level, as the DOM menu's field does when
+ *  its panel unmounts. */
+function leaveHidden(c: Pick<MenuController, 'stack' | 'entriesAt'>, typing: ReturnType<typeof createTextEditor>): void {
+  const edit = typing.current();
+  if (edit && !c.stack().some((_, level) => c.entriesAt(level).includes(edit.entry))) typing.leave();
+}
+
 /** A menu's metrics in `tokens`, read once per theme. */
 const metricsIn = createPart((tokens: ResolvedTheme): MenuPanelMetrics =>
   menuPanelMetrics(menuMeasureEnv(tokens, '', () => 0)));
@@ -123,11 +130,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   const c = createMenuController({
     entries: pickers.entries, highlightFirst: opts.open.source === 'keyboard', onClose: opts.close,
   });
-  // A picker's hex row reads and writes the picker's color, so the controller never holds its text.
-  const texts: Pick<MenuController, 'textValue' | 'setText'> = {
-    textValue: (e) => (pickers.unheld(e) ? e.value : c.textValue(e)),
-    setText: (e, text) => { if (pickers.unheld(e)) e.set?.(text); else c.setText(e, text); },
-  };
+  const texts = pickerTexts(pickers, () => c);
   const place = createPlacer({
     anchor: opts.toCanvas(opts.open.client),
     ...(opts.open.under ? { under: underOnCanvas(opts.open.under, opts.toCanvas) } : {}),
@@ -145,15 +148,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   let hoverPanel: number | null = null;
   const typing = createTextEditor(texts, rev.changed);
   const chips = createChipHold(c, (x, y) => chipUnder(c, panels, metricsIn(tokens), x, y), opts.repeat);
-  /** Whether `e` is a row of an open level. */
-  const shown = (e: MenuEntry) => c.stack().some((_, level) => c.entriesAt(level).includes(e));
-  c.subscribe(() => {
-    // A row whose panel closed ends its edit keeping what was typed, as the DOM menu's field does when it unmounts.
-    const edit = typing.current();
-    if (edit && !shown(edit.entry)) typing.leave();
-    replace();
-    rev.changed();
-  });
+  c.subscribe(() => { leaveHidden(c, typing); replace(); rev.changed(); });
 
   /** The pointer is now over `level` (null: no panel). Leaving a panel clears
    *  its row, as the DOM menu's per-panel `pointerleave` does. */
