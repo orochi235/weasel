@@ -25,9 +25,9 @@ export function frontTitle(raw: string): string {
 
 /** The front matter at the start of `text`, `length` 0 when there is none. Newlines are `\n`. */
 export function frontMatter(text: string): FrontMatter {
-  const front = /^---[ \t]*\n([\s\S]*?)\n---[ \t]*(?:\n|$)/.exec(text);
+  const front = /^---[ \t]*\n(?:([\s\S]*?)\n)?---[ \t]*(?:\n|$)/.exec(text);
   if (front === null) return { length: 0, lines: 0 };
-  const t = /^title:[ \t]*([^\n]*)$/m.exec(front[1]!)?.[1];
+  const t = /^title:[ \t]*([^\n]*)$/m.exec(front[1] ?? '')?.[1];
   const title = t === undefined ? undefined : frontTitle(t);
   return {
     ...(title !== undefined ? { title } : {}),
