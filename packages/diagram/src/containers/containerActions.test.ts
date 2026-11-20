@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   commitOps, createDispatcher, createScene, type Action, type ActionsRegistry, type DispatcherContext, type InputEvent, scenePoseFrame, type ActionDeps, type ImmediateInvoker, type InvocationCtx, type NodeId, type OngoingHandle,
-  type OngoingInvoker, type RectPose,
+  type OngoingInvoker, type RectPose, boundsOfPath,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { withDiagramRegistry } from '../edge';
@@ -29,6 +29,25 @@ describe('lane affordances', () => {
     const { scene, poolId, first, second } = pool();
     const regions = createLaneAffordance(scene as never).regions({} as never);
     expect(regions.map((r) => r.id)).toEqual([`${first}:boundary`, `${second}:boundary`, `${poolId}:add-lane`]);
+  });
+});
+
+describe('lane affordances on a turned pool', () => {
+  it('draw the boundary and the add-lane button where the turned pool draws them', () => {
+    const { scene, poolId, first } = pool();
+    scene.setPose(poolId as NodeId, { ...(pose(scene, poolId) as RectPose), rotation: Math.PI / 2 });
+    const regions = createLaneAffordance(scene as never).regions({} as never);
+    const boundary = regions.find((r) => r.id === `${first}:boundary`)!.shape as unknown as { path: never };
+    const b = boundsOfPath(boundary.path);
+    // The first lane's far edge, y 120 from x 32 to 480, turned a quarter about the pool's center (240, 120).
+    expect(b.x).toBeCloseTo(240);
+    expect(b.width).toBeCloseTo(0);
+    expect(b.y).toBeCloseTo(-88);
+    expect(b.height).toBeCloseTo(448);
+    const add = regions.find((r) => r.id === `${poolId}:add-lane`)!.shape as { x: number; y: number; standoff: { normal: Vec2 } };
+    expect(add.x).toBeCloseTo(120);
+    expect(add.y).toBeCloseTo(120);
+    expect(add.standoff.normal.x).toBeCloseTo(-1);
   });
 });
 
@@ -76,6 +95,23 @@ describe('the lane resize action', () => {
       expect(resize(h, { x: 200, y: 150 })).toEqual({});
       expect(h.scene.historyIndex()).toBe(entries);
     }
+  });
+
+  it('keeps the lanes in order when one grows past the lanes after it', () => {
+    const h = pool();
+    resize(h, { x: 200, y: 370 });
+    expect(lanesOf(h.scene as never, h.poolId)).toEqual([h.first, h.second]);
+    expect(pose(h.scene, h.first)).toMatchObject({ y: 0, height: 370 });
+    expect(pose(h.scene, h.second)).toMatchObject({ y: 370, height: 120 });
+    expect(pose(h.scene, h.poolId)).toMatchObject({ height: 490 });
+  });
+
+  it('grows a lane by a drag along its turned pool\'s stack', () => {
+    const h = pool();
+    h.scene.setPose(h.poolId as NodeId, { ...(pose(h.scene, h.poolId) as RectPose), rotation: Math.PI / 2 });
+    // A quarter turn sends the stack's +y to world -x.
+    resize(h, { x: 170, y: 140 });
+    expect(pose(h.scene, h.first)).toMatchObject({ height: 150 });
   });
 
   it('stops a lane at its least size', () => {

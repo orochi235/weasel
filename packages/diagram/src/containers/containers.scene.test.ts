@@ -225,6 +225,16 @@ describe('pools in a scene', () => {
     expect(parentOf(scene, 's')).toBe(null);
   });
 
+  it('release a lane\'s members above the pool it stays in, so they are not drawn under its fill', () => {
+    const scene = makeScene();
+    const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
+    const [first] = lanesOf(scene as never, pool);
+    shape(scene, 's', { x: 100, y: 30, width: 40, height: 20 }, first);
+    releaseMembers(scene as never, first!);
+    expect(scene.get(pool as NodeId)).toBeDefined();
+    expect(scene.roots).toEqual([pool, 's']);
+  });
+
   it('round-trip through toJSON with their layouts', () => {
     const scene = makeScene();
     const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });

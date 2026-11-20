@@ -1,8 +1,8 @@
 import { rectContainsPointHalfOpen, type Rect } from '@weasel-js/geom';
 import { diagramEdgeOf } from '../edgeTrait';
 import { diagramLabelOf } from '../labelTrait';
-import { dataKeyReader } from '../trait';
-import type { DropVerdict } from '@weasel-js/core';
+import { DIAGRAM_TRAIT_KEY } from '../trait';
+import { childVerdict, definesFrame, targetTransformOf, worldToLocal, type CanDropIntoDep, type ChildReader, type DropVerdict } from '@weasel-js/core';
 import { bodyBox, diagramContainerOf, type ContainerRole } from './trait';
 
 /** Whether the nodes `ids` may move into the container or lane `container`. */
@@ -10,11 +10,11 @@ export type CanReparent = (ids: readonly string[], container: string) => DropVer
 
 /**
  * The `canDropInto` dep for a diagram scene. A container or a lane takes
- * shapes and other containers, a pool takes only lanes, and a lane goes
- * nowhere but a pool. A stencil body, an edge, or a label takes nothing, and
+ * shapes and other containers, a pool takes only lanes stacking along its
+ * axis, and a lane goes nowhere but a pool. A stencil body, an edge, or a label takes nothing, and
  * edges and labels are never dropped in: they stay where they are, drawn from
- * what they are attached to. Any other container — a plain group — takes
- * anything but a lane. `canReparent` is asked about a move the rules allow
+ * what they are attached to. A plain group — a group carrying no diagram
+ * trait — takes anything but a lane, and nothing else takes anything. `canReparent` is asked about a move the rules allow
  * into a container the nodes are not already in, and has the last word.
  */
 export function diagramCanDropInto(
@@ -34,10 +34,14 @@ export function diagramCanDropInto(
     const node = nodeOf(parent);
     if (node === undefined || ids.some(attached)) return false;
     const role = roleOf(parent);
-    if (role === 'pool') return ids.every((id) => roleOf(id) === 'lane');
+    if (role === 'pool') {
+      // A lane is built for its pool's axis, header and layout both, so it moves only into a pool stacking the same way.
+      const side = diagramContainerOf(node)?.header?.side;
+      return ids.every((id) => roleOf(id) === 'lane' && diagramContainerOf(nodeOf(id)!)?.header?.side === side);
+    }
     if (ids.some((id) => roleOf(id) === 'lane')) return false;
     if (role !== null) return ids.every((id) => roleOf(id) !== 'pool');
-    return !attached(parent) && dataKeyReader(node) === null;
+    return node.kind === 'group' && !hasDiagramTrait(node);
   };
   return (parent, ids) => {
     if (!allowed(parent, ids)) return false;
@@ -46,11 +50,20 @@ export function diagramCanDropInto(
   };
 }
 
+function hasDiagramTrait(node: { data: unknown }): boolean {
+  const data = node.data;
+  return data !== null && typeof data === 'object' && (data as Record<string, unknown>)[DIAGRAM_TRAIT_KEY] != null;
+}
+
 /** What {@link diagramDropParentAt} walks. */
 export interface DropParentScene {
   readonly roots: readonly string[];
   childrenOf(id: never): readonly string[];
-  get(id: never): { id: string; kind: 'mark' | 'group'; data: unknown; pose: unknown } | undefined;
+  get(id: never): { id: string; kind: 'mark' | 'group'; data: unknown; pose: unknown; dependsOn?: unknown; derivePose?: unknown } | undefined;
+  /** Whether a node takes no edits; a locked region takes no insert. Absent, nothing is locked. */
+  isLocked?(id: never): boolean;
+  /** Whether a node is out of sight; an insert never lands in a hidden region. Absent, nothing is hidden. */
+  isHidden?(id: never): boolean;
   /** How a child's stored pose joins its parent's. Absent, poses are world poses. */
   readonly composition?: { compose(parent: never, child: never): unknown };
 }
@@ -58,27 +71,36 @@ export interface DropParentScene {
 /**
  * The innermost container or lane whose body holds `point`, that would admit
  * a new node of `role` (`null` for a shape): where an insert at `point` goes.
- * Null for the top level — always so for a pool.
+ * A region admits it as core's insert asks (`childVerdict`): not when locked
+ * or hidden, and as `canDropInto` says, {@link diagramCanDropInto} when absent. Null for the top level —
+ * always so for a pool.
  */
 export function diagramDropParentAt(
   scene: DropParentScene,
   point: { x: number; y: number },
   role: ContainerRole | null,
+  canDropInto?: CanDropIntoDep,
 ): string | null {
   if (role === 'pool' || role === 'lane') return null;
   let best: string | null = null;
+  const verdict = canDropInto ?? diagramCanDropInto(scene as never);
   const compose = scene.composition?.compose;
   const walk = (ids: readonly string[], frame: Rect | null): void => {
     for (const id of ids) {
       const node = scene.get(id as never);
-      if (node === undefined) continue;
+      if (node === undefined || scene.isHidden?.(id as never) === true) continue;
       const pose = node.pose as Rect;
       const world = frame === null || compose === undefined ? pose : compose(frame as never, pose as never) as Rect;
       const trait = diagramContainerOf(node);
-      const b = bodyBox(world, trait?.header);
-      if (!rectContainsPointHalfOpen(b, point.x, point.y)) continue;
-      if (trait?.role === 'container' || trait?.role === 'lane') best = id;
-      walk(scene.childrenOf(id as never), world);
+      // Only a region's box bounds what it holds; a plain group's or an envelope's need not.
+      if (trait !== null) {
+        const p = worldToLocal(targetTransformOf(world), point.x, point.y);
+        if (p === null || !rectContainsPointHalfOpen(bodyBox(world, trait.header), p.x, p.y)) continue;
+        const takes = trait.role === 'container' || trait.role === 'lane';
+        if (takes && childVerdict(scene as unknown as ChildReader, id as never, [], verdict) === true) best = id;
+      }
+      // An envelope is no frame: its children are stored in the one above it.
+      walk(scene.childrenOf(id as never), definesFrame(node) ? world : frame);
     }
   };
   walk(scene.roots, null);

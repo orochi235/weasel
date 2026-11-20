@@ -65,7 +65,7 @@ export function containerBuild<TLayer extends string>(
   ];
   const label = `Insert ${stencil.label}`;
   // Built in one frame; each lane and title is stored in its container's.
-  const stored = localizeWorldPoses(specs, RIGID_POSE_COMPOSITION);
+  const stored = localizeWorldPoses(specs, opts.composition ?? RIGID_POSE_COMPOSITION);
   return { id, ops: stored.map((node) => ops.insert({ node, label })) };
 }
 
@@ -115,9 +115,10 @@ export function addLane(scene: AnyScene, poolId: string, index?: number, style?:
   }), scene.composition as PoseComposition<RectPose>);
   scene.batch('Add lane', () => {
     for (const spec of specs) scene.add(spec as never);
-    // A themed scene colors the lane as a theme change would, by its place in the stack.
+    // A themed scene colors the lanes as a theme change would, by their places in the stack: the new one, and
+    // those after it, which it moved along one.
     if (style === undefined && scene.doc.get(DIAGRAM_THEME_KEY) !== undefined) {
-      const writes = themeWrites(scene as unknown as ThemedScene, diagramThemeOf(scene), new Set([id]));
+      const writes = themeWrites(scene as unknown as ThemedScene, diagramThemeOf(scene), new Set([id, ...lanes]));
       for (const [at, data] of writes) scene.update(at as never, { data } as never);
     }
   });
@@ -145,7 +146,8 @@ function releasePlan(scene: AnyScene, id: string) {
   const restacked = beside === node.id ? [] : [beside, titleIdOf(beside), ...membersOf(beside)];
   if (restacked.some((id) => scene.isLocked(id as NodeId))) return null;
   const parent = scene.get(beside)!.parent;
-  const index = (parent === null ? scene.roots : scene.childrenOf(parent)).indexOf(beside);
+  // A lane's members go just past the pool, which stays and would draw over them; a container's take its place.
+  const index = (parent === null ? scene.roots : scene.childrenOf(parent)).indexOf(beside) + (beside === node.id ? 0 : 1);
   // Read where each draws before the first move: it is stored in a frame that is about to go.
   const frame = scenePoseFrame(scene);
   const locals = members.map((m) => frame.localUnder(parent, frame.world(m)));

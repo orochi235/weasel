@@ -14,6 +14,8 @@ import {
 import { diagramContainerOf, headerBox } from './trait';
 import type {} from '../actionParamSchema';
 import { rectContainsPoint } from '@weasel-js/geom';
+import { worldWith } from '../worldWith';
+import { targetTransformOf, worldToLocal, type AnyScene } from '@weasel-js/core';
 
 /** The action a double-click on a region's header runs. */
 export const EDIT_CONTAINER_TITLE_ACTION_ID = 'diagram.editContainerTitle';
@@ -22,12 +24,16 @@ export const EDIT_CONTAINER_TITLE_ACTION_ID = 'diagram.editContainerTitle';
 export function regionHeaderAt(deps: ActionDeps | undefined, at: { x: number; y: number } | undefined): string | null {
   if (deps === undefined || at === undefined) return null;
   const scene = deps.scene;
+  const world = scene === undefined ? null : worldWith(scene as unknown as AnyScene);
   for (let id = deps.nodeAtPoint?.(at) ?? null; id != null && scene !== undefined; id = scene.get(id)?.parent ?? null) {
     const node = scene.get(id);
     const trait = node === undefined ? null : diagramContainerOf(node);
     if (node === undefined || trait === null) continue;
-    const h = headerBox(node.pose as RectPose, trait.header);
-    if (h !== null && rectContainsPoint(h, at.x, at.y)) return id as string;
+    const box = world!(id as string) as RectPose;
+    const h = headerBox(box, trait.header);
+    // Tested in the region's unturned box, so a rotated region's header is where it draws.
+    const p = worldToLocal(targetTransformOf(box), at.x, at.y);
+    if (h !== null && p !== null && rectContainsPoint(h, p.x, p.y)) return id as string;
   }
   return null;
 }

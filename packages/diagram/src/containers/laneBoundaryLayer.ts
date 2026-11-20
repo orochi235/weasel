@@ -11,6 +11,7 @@ import {
   paintsLayer,
   PathBuilder,
   polylineFromPoints,
+  rotatedRectCorners,
   viewToTransform,
   type Affordance,
   type AffordanceRegion,
@@ -101,12 +102,29 @@ const DEFAULT_STROKE: CommandStroke = { paint: { kind: 'solid', color: '#3b6fd4'
 /** How far past the end of the stack the add-lane button sits, in screen pixels. */
 const ADD_STANDOFF_PX = 14;
 
+type Point = { x: number; y: number };
+
+/** A region's two edges across a stack along `axis`, as `at` draws them — turned and transformed with it: where
+ *  the stack enters it and where it leaves, each as its two ends. */
+export function stackEdges(axis: 'x' | 'y', at: RectPose): { start: [Point, Point]; end: [Point, Point] } {
+  const [tl, tr, br, bl] = rotatedRectCorners({ ...at, rotation: at.rotation ?? 0 }) as [Point, Point, Point, Point];
+  return axis === 'y' ? { start: [tl, tr], end: [bl, br] } : { start: [tl, bl], end: [tr, br] };
+}
+
+const midOf = ([a, b]: [Point, Point]): Point => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+
+/** The way a region at `at` stacks along `axis` where it is drawn: the unit direction, and how far it runs. */
+export function stackDirection(axis: 'x' | 'y', at: RectPose): { dir: Point; length: number } {
+  const { start, end } = stackEdges(axis, at);
+  const a = midOf(start), b = midOf(end);
+  const length = Math.hypot(b.x - a.x, b.y - a.y);
+  return { dir: length === 0 ? { x: axis === 'x' ? 1 : 0, y: axis === 'y' ? 1 : 0 } : { x: (b.x - a.x) / length, y: (b.y - a.y) / length }, length };
+}
+
 /** The far edge of a lane: the boundary between it and the next. */
 function boundaryOf(axis: 'x' | 'y', lane: RectPose) {
-  const b = new PathBuilder();
-  return axis === 'y'
-    ? b.moveTo(lane.x, lane.y + lane.height).lineTo(lane.x + lane.width, lane.y + lane.height).build()
-    : b.moveTo(lane.x + lane.width, lane.y).lineTo(lane.x + lane.width, lane.y + lane.height).build();
+  const [a, b] = stackEdges(axis, lane).end;
+  return new PathBuilder().moveTo(a.x, a.y).lineTo(b.x, b.y).build();
 }
 
 /** The add-lane button: a ring with a plus, drawn in screen pixels. */
@@ -153,10 +171,8 @@ export function createLaneAffordance(scene: AnyScene, opts: LaneLayerOptions = {
           });
         }
         if (addSizePx <= 0 || addLaneLocked(scene, pool)) continue;
-        const p = pool.at;
-        const end = pool.axis === 'y'
-          ? { x: p.x + p.width / 2, y: p.y + p.height, normal: { x: 0, y: 1 } }
-          : { x: p.x + p.width, y: p.y + p.height / 2, normal: { x: 1, y: 0 } };
+        const { dir } = stackDirection(pool.axis, pool.at);
+        const end = { ...midOf(stackEdges(pool.axis, pool.at).end), normal: dir };
         out.push({
           id: `${pool.id}:add-lane`,
           targetId: null,

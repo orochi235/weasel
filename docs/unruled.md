@@ -2828,3 +2828,8 @@ Calls the lanes made without a ruling:
   unset, the diagram's own marker, as an unnamed color reads as the theme's; a named `classic` reads as `arrow-concave`.
   Reading the draw app's own default, `classic`, onto every such edge as an explicit `arrow-concave` was the alternative
   (`drawXml/readStyle.ts`, `markerAt`).
+## Audit round forty-six (2026-11-20): diagram containers
+
+- 2026-11-20 (the fixer's call): `diagramCanDropInto` refuses a lane moving into a pool that stacks along the other
+  axis — a lane whose header side is not the pool's — so a lane dragged from a pool of columns into a pool of rows
+  stays where it was. Letting it in and rewriting its header and layout key for the new axis was the alternative.

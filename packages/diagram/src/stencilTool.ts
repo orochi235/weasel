@@ -3,7 +3,7 @@
  * drag to core's `insert` action, and the `insert` dep that builds the body.
  */
 import { useMemo } from 'react';
-import { commitOps, defineTool, createCommitSelectionOps, insertSite, scenePoseFrame, useDepRegistry, useDepSource, useLatest, type ActionDeps, type InsertDep, type NodeId, type Op, type Tool } from '@weasel-js/core';
+import { commitOps, defineTool, createCommitSelectionOps, insertSite, scenePoseFrame, useDepRegistry, useDepSource, useLatest, type ActionDeps, type InsertDep, type NodeId, type Op, type PoseComposition, type RectPose, type Tool } from '@weasel-js/core';
 import type { MeasureRowText } from './body';
 import { diagramDropParentAt, type DropParentScene } from './containers/canDropInto';
 import { containerBuild, type ContainerStencil } from './containers/containerStencils';
@@ -80,15 +80,17 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
       const center = { x: world.x + world.width / 2, y: world.y + world.height / 2 };
       const role = 'role' in stencil ? stencil.role : null;
       const { style, measure, font, containerStyle, laneStyles, theme } = optsRef.current;
-      const into = diagramDropParentAt(scene as unknown as DropParentScene, center, role);
+      const canDropInto = registry.get('canDropInto');
+      const into = diagramDropParentAt(scene as unknown as DropParentScene, center, role, canDropInto);
       // Drawn in world; built in the frame of the container it lands in, else where core's inserts land: the page
       // for its center in a paged scene, or the top of the tree.
-      const site = into === null ? insertSite(scene as never, { at: center }) : null;
+      const site = into === null ? insertSite(scene as never, { at: center, ...(canDropInto ? { canDropInto } : {}) }) : null;
       const parent = into ?? site?.parent ?? null;
       const bounds = (site !== null ? site.local({ ...world }) : scenePoseFrame(scene as never).localUnder(into as NodeId, { ...world })) as Rect | null;
       // A container in a singular frame could not hold the stencil where it was drawn.
       if (bounds === null) return null;
-      const common = { layer: layer(), newId: () => scene.mintId() as string, parent };
+      const composition = scene.composition as PoseComposition<RectPose>;
+      const common = { layer: layer(), newId: () => scene.mintId() as string, parent, composition };
       if ('role' in stencil) {
         const boxStyle = containerStyle ?? style;
         return containerBuild(stencil, bounds, {

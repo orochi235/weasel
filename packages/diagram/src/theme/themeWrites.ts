@@ -12,6 +12,8 @@ export interface ThemedNode {
   id: string;
   parent: string | null;
   data: unknown;
+  /** Its box; a lane's orders it in its pool's stack. */
+  pose?: unknown;
   dependsOn?: readonly string[] | 'children';
 }
 
@@ -44,12 +46,19 @@ function containerRole(trait: Trait): string | null {
   return c !== null && typeof c === 'object' && typeof c.role === 'string' ? c.role : null;
 }
 
+/** A lane's place in its pool's stack: by its middle along the pool's axis, as `laneStackLayout` orders them. */
 function laneIndex(scene: ThemedScene, node: ThemedNode): number {
   if (node.parent === null) return 0;
+  const pool = traitOf(scene.get(node.parent as never)?.data)?.container as { header?: { side?: string } } | undefined;
+  const axis = pool?.header?.side === 'top' ? 'x' : 'y';
+  const mid = (id: string) => {
+    const p = scene.get(id as never)?.pose as { x?: number; y?: number; width?: number; height?: number } | undefined;
+    return (p?.[axis] ?? 0) + (p?.[axis === 'y' ? 'height' : 'width'] ?? 0) / 2;
+  };
   const lanes = scene.childrenOf(node.parent as never).filter((id) => {
     const t = traitOf(scene.get(id as never)?.data);
     return t !== null && containerRole(t) === 'lane';
-  });
+  }).sort((a, b) => mid(a) - mid(b));
   return Math.max(0, lanes.indexOf(node.id));
 }
 
