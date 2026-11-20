@@ -344,3 +344,21 @@ describe('the guide\'s angle knob', () => {
     expect(guideOf(sym).hitTest!(100, 64, undefined, VIEW, DIMS)?.initialScratch).toEqual({ handle: 'angle', group });
   });
 });
+
+describe('createSymmetry, subscribe', () => {
+  it('hears an Undo of a change to the active group, and of its making', () => {
+    const { scene, sym, group } = setup();
+    let calls = 0;
+    sym.subscribe(() => { calls++; });
+    sym.update(group, { spec: { kind: 'both' } });
+    const after = calls;
+    expect(after).toBeGreaterThan(0);
+    scene.undo();
+    expect(calls).toBeGreaterThan(after);
+    expect(sym.read(group)!.spec.kind).toBe('mirror');
+    const before = calls;
+    scene.remove(group);
+    expect(calls).toBeGreaterThan(before);
+    expect(sym.active()).toBeNull();
+  });
+});
