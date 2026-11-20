@@ -18,6 +18,12 @@ afterEach(() => {
 });
 
 describe('useSkulkMap', () => {
+  it('reads a server answering the route with its HTML fallback as no server', async () => {
+    serve(() => new Response('<!doctype html><html></html>', { status: 200, headers: { 'content-type': 'text/html' } }));
+    const { result } = renderHook(() => useSkulkMap({ url: URL, everyMs: 60_000, dev: true }));
+    await waitFor(() => expect(result.current.status).toBe('no-server'));
+  });
+
   it('keeps the map it had when a later ask finds no server', async () => {
     serve(json, () => new Response('', { status: 404 }));
     const { result } = renderHook(() => useSkulkMap({ url: URL, everyMs: 10, dev: true }));

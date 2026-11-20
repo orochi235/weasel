@@ -38,7 +38,8 @@ export function useSkulkMap(options: UseSkulkMapOptions = {}): SkulkMapState {
       try {
         const res = await fetch(url, { cache: 'no-store' });
         if (!live) return;
-        if (res.status === 404) return noServer();
+        // Vite answers a route no plugin serves with its index.html fallback, not a 404.
+        if (res.status === 404 || res.headers.get('content-type')?.includes('text/html')) return noServer();
         if (!res.ok) throw new Error(`${res.status} ${(await res.text()).slice(0, 200)}`);
         const map = (await res.json()) as SkulkMap;
         if (live) setState({ status: 'ready', map });
