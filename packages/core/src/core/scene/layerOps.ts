@@ -36,13 +36,16 @@ export function registerLayerOps<TData, TLayer extends string, TPose>(
     revert: (p) => { setParallax(state.layers[requireLayerIndex(p.layer)], p.from); },
   });
 
+  // Adding and removing find the layer to take out by id, as `placeLayer`
+  // does: a replay or a restored history onto a stack in another order then
+  // takes out the layer it names, or throws when the scene does not hold it.
   registerKitOp<{ record: UserLayerRecord<TLayer>; index: number }>('kit:addLayer', {
     apply: (p) => { state.layers.splice(p.index, 0, { ...p.record }); rebuildLayerIndex(); },
-    revert: (p) => { state.layers.splice(p.index, 1); rebuildLayerIndex(); },
+    revert: (p) => { state.layers.splice(requireLayerIndex(p.record.id), 1); rebuildLayerIndex(); },
   });
 
   registerKitOp<{ record: LayerRecord<TLayer>; index: number }>('kit:removeLayer', {
-    apply: (p) => { state.layers.splice(p.index, 1); rebuildLayerIndex(); },
+    apply: (p) => { state.layers.splice(requireLayerIndex(p.record.id), 1); rebuildLayerIndex(); },
     revert: (p) => { state.layers.splice(p.index, 0, { ...p.record } as MutableLayerRecord<TLayer>); rebuildLayerIndex(); },
   });
 
