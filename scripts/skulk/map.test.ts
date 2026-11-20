@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { nightLanes, nightRoundOf, nightStages, nightsOf, readRuns } from './map.mjs';
+import { livePassOf, nightLanes, nightRoundOf, nightStages, nightsOf, readRuns } from './map.mjs';
 import { claimRound, writeStatus, writeSummary } from './runs.mjs';
 
 const dirs: string[] = [];
@@ -34,6 +34,11 @@ describe('nightStages', () => {
 });
 
 describe('nightLanes', () => {
+  it('counts a match done, nothing shared, when one reviewer found nothing', () => {
+    const log = 'review 1/4 p A on studio: 1 findings, 12/12 files read, 3.0 min\nreview 2/4 p B on teitou: 0 findings, 12/12 files read, 5.3 min';
+    expect(nightLanes(log, ['p'])[0]!.steps.match).toMatchObject({ state: 'done', shared: 0, a: 1, b: 0 });
+  });
+
   it('gives a done fix its report\'s tally, and leaves one with no tally as it was', () => {
     const log = 'fix 1/2 a on studio: 5 commits, 8.0 min, 0.5M weighted tokens\nfix 2/2 b on studio: 2 commits, 3.0 min, 0.2M weighted tokens';
     const lanes = nightLanes(log, ['a', 'b'], [], new Map([['a', 'tally: 3 of 4 fixed, 1 extra fixed'], ['b', 'A note about a watcher; nothing was lost.']]));
@@ -71,6 +76,16 @@ describe('nightLanes', () => {
   it("fails a patch that did not apply", () => {
     const [ops] = nightLanes('patch core.core.ops: did not apply: conflict in a.ts', ['core.core.ops']);
     expect(ops.steps.patch).toEqual({ state: 'failed', why: 'did not apply' });
+  });
+});
+
+describe('livePassOf', () => {
+  it('gives an area this round\'s pass once its patch is applied, and none before', () => {
+    const W = { state: 'waiting' };
+    const lane = (patch: object) => ({ id: 'a', steps: { A: W, B: W, match: { state: 'done', a: 7, b: 4, shared: 1 }, fix: W, patch } });
+    const run = (patch: object) => ({ round: 47, started: '2026-11-20T14:11:24.920Z', lanes: [lane(patch)] });
+    expect(livePassOf(run({ state: 'waiting' }), 'a')).toBeNull();
+    expect(livePassOf(run({ state: 'done', commits: 3 }), 'a')).toMatchObject({ round: 47, date: '2026-11-20', distinct: 10, est: 19, left: 9, provisional: true });
   });
 });
 

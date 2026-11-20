@@ -12,6 +12,8 @@ export interface AuditPass {
   readonly distinct: number;
   readonly est: number;
   readonly left: number;
+  /** A live run's pass, its patch applied and its round's record not yet landed. */
+  readonly provisional?: boolean;
 }
 
 export interface AuditArea {

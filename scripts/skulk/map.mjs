@@ -68,6 +68,13 @@ export const nightLanes = (log, areas, jobs = [], reports = new Map()) => {
       Object.assign(at(m[1], 'patch') ?? {}, { state: 'failed', why: 'conflicts; left out of the batch' });
     }
   }
+  // A reviewer who found nothing leaves nothing to pair, so no matcher runs and no match line is written.
+  for (const steps of lanes.values()) {
+    const { A, B, match } = steps;
+    if (match.state === 'waiting' && A.state === 'done' && B.state === 'done' && (A.findings === 0 || B.findings === 0)) {
+      Object.assign(match, { state: 'done', shared: 0, a: A.findings, b: B.findings, minutes: 0 });
+    }
+  }
   const finished = new Map();
   for (const job of jobs) {
     const m = /^(?:audit|skulk)\d+-(.+)-(A|B|match|fix)$/.exec(job.task ?? '');
@@ -205,6 +212,23 @@ export const nightsOf = (runs, state = STATE_DIR) => {
   return [...latest.values()];
 };
 
+/** A pass as the map draws it: the reviews' counts, Chapman's estimate of what the area held, and what is left. */
+const passOf = (round, date, a, b, shared, distinct) => {
+  const est = chapman(a, b, shared);
+  return { round, date, a, b, shared, distinct, est: Math.round(est * 10) / 10, left: Math.max(0, Math.round((est - distinct) * 10) / 10) };
+};
+
+/**
+ * The pass a live run has made of an area once its patch is applied, from its lane's match, so the map shades it by
+ * this round before the round's record lands; `provisional` until then. Null before the patch.
+ */
+export const livePassOf = (run, id) => {
+  const steps = run.lanes.find((l) => l.id === id)?.steps;
+  if (steps?.patch.state !== 'done' || steps.match.state !== 'done') return null;
+  const { a = 0, b = 0, shared = 0 } = steps.match;
+  return { ...passOf(run.round, run.started?.slice(0, 10) ?? '', a, b, shared, a + b - shared), provisional: true };
+};
+
 export const buildMap = (root) => {
   const git = gitIn(root);
   const head = git('rev-parse', '--short', 'HEAD');
@@ -218,11 +242,10 @@ export const buildMap = (root) => {
   const holder = new Map(runs.filter((r) => r.running).flatMap((r) => r.areas.map((id) => [id, r])));
 
   const out = areas.map((area) => {
-    const history = (passes.get(area.id) ?? []).map((p) => {
-      const est = chapman(p.a, p.b, p.m);
-      return { round: p.round, date: p.date, a: p.a, b: p.b, shared: p.m, distinct: p.distinct, est: Math.round(est * 10) / 10, left: Math.max(0, Math.round((est - p.distinct) * 10) / 10) };
-    });
+    const history = (passes.get(area.id) ?? []).map((p) => passOf(p.round, p.date, p.a, p.b, p.m, p.distinct));
     const run = holder.get(area.id);
+    const live = run && livePassOf(run, area.id);
+    if (live && !history.some((p) => p.round === live.round)) history.push(live);
     const status = run ? 'tonight' : settledSet.has(area.id) ? 'settled' : history.length ? 'due' : 'unaudited';
     return {
       id: area.id,
@@ -237,7 +260,7 @@ export const buildMap = (root) => {
 
   const rounds = new Map();
   for (const a of out) {
-    for (const p of a.passes) {
+    for (const p of a.passes.filter((q) => !q.provisional)) {
       const r = rounds.get(p.round) ?? { round: p.round, date: p.date, areas: 0, files: 0, distinct: 0, est: 0 };
       r.areas += 1;
       r.files += a.files;
