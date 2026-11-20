@@ -45,6 +45,12 @@
   white-space: nowrap;
 }
 
+.started {
+  margin-inline-start: var(--wzl-space-2);
+  font-weight: var(--wzl-font-weight-normal);
+  color: var(--audit-muted);
+}
+
 .view {
   display: flex;
   align-items: center;

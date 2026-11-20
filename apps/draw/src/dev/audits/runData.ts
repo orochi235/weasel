@@ -44,6 +44,14 @@ export function headlineOf(run: AuditRun): string {
   return summary ? `Round ${run.round} finished · ${summary}` : `Round ${run.round} finished`;
 }
 
+/** When a round began: its clock time, and its date too when that was not today. */
+export function startedText(iso: string, now: number): string {
+  const at = new Date(iso);
+  const time = at.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  if (at.toDateString() === new Date(now).toDateString()) return `started ${time}`;
+  return `started ${at.toLocaleDateString([], { month: 'short', day: 'numeric' })}, ${time}`;
+}
+
 export function spendOf(run: AuditRun): string {
   const cost = `$${run.costUsd.toFixed(2)}`;
   return run.capUsd ? `${cost} of $${run.capUsd}` : cost;

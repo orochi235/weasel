@@ -5,7 +5,7 @@ import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { SpanStrips, type SpanStripSpan, type SpanStripsRow } from '@weasel-js/ui/components/SpanStrip';
 import { clockRuler } from './clock';
 import { laneStepsOf, laneViewOf, passDone, runClockOf, type LaneView } from './phases';
-import { NODE_SEP, headlineOf, lastLineOf, sharedLaneOf, spendOf } from './runData';
+import { NODE_SEP, headlineOf, lastLineOf, sharedLaneOf, spendOf, startedText } from './runData';
 import { useViewerPref } from './viewerPref';
 import type { AuditLane, AuditRun } from './skulkMap.types';
 import s from './LiveRuns.module.css';
@@ -94,7 +94,10 @@ function RunStrip({ run, now, mode, onMode, hideComplete, onHideComplete, on }: 
   return (
     <section className={s.run} aria-label={`Round ${run.round}`}>
       <div className={s.pulse} aria-hidden="true" />
-      <div className={s.what}>{headlineOf(run)}</div>
+      <div className={s.what}>
+        <span>{headlineOf(run)}</span>
+        {run.started && <span className={s.started}>{startedText(run.started, now)}</span>}
+      </div>
       <div className={s.line} title={lastLineOf(run)}><InlineMarkdown text={lastLineOf(run)} /></div>
       <div className={s.view}>
         <Checkbox isSelected={hideComplete} onChange={onHideComplete}>Hide complete</Checkbox>
