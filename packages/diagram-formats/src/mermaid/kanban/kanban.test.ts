@@ -73,6 +73,18 @@ describe('writing a Mermaid kanban board', () => {
     expect(text).toContain('    tests[Create parsing tests]@{ ticket: \'MC-2038\', assigned: \'K.Sveidqvist\', priority: \'High\' }\n');
   });
 
+  it('writes an id that reads like one the reader makes up wherever the reader would not give it back, and kanban ids as written', () => {
+    const board = (lanes: { id: string; members: string[] }[]) => ({ pages: [{
+      kind: 'graph' as const, id: 'p', width: 100, height: 100,
+      data: { nodes: lanes.flatMap((l) => l.members).map((id) => ({ id, lines: [id] })), edges: [], containers: [{ id: 'b', role: 'pool' as const, lanes }] },
+    }] });
+    const doc = board([{ id: 'column-7', members: ['card-2', 'card-3'] }, { id: 'column-2', members: ['todo-list', '2024', 'card-1'] }]);
+    const text = writeKanban(doc).text;
+    expect(text).toBe('kanban\n  column-7[column-7]\n    card-2[card-2]\n    card-3[card-3]\n  [column-2]\n    todo-list[todo-list]\n    2024[2024]\n    [card-1]\n');
+    expect(sortedPage(page(text))).toEqual(sortedPage(page(writeKanban({ pages: [page(text)] }).text)));
+    expect(page(text).data.nodes.map((n) => n.id)).toEqual(['card-2', 'card-3', 'todo-list', '2024', 'card-1']);
+  });
+
   it('writes a closing bracket and character references in text as Mermaid references, so they read back as written', () => {
     const first = page('kanban\n  col[Todo #93; now]\n    t1[a #quot;b#quot; #35;lt;]');
     const text = writeKanban({ pages: [first] }).text;

@@ -79,11 +79,18 @@ describe('readMermaidSequence', () => {
   });
 
   it('warns about what it drops', () => {
-    const { warnings } = readMermaidSequence('%%{init: {}}%%\nsequenceDiagram\naccTitle: t\nautonumber 1 5\nlink A: Docs @ https://x\nA->>B: x');
+    const { warnings } = readMermaidSequence('%%{init: {}}%%\nsequenceDiagram\naccDescr: t\nautonumber 1 5\nlink A: Docs @ https://x\nA->>B: x');
     expect(warnings).toEqual(expect.arrayContaining([
       'Mermaid configuration directives were dropped.', 'Accessibility titles and descriptions were dropped.',
       'Autonumber steps other than 1 were dropped; messages count up by one.', 'Participant menus (links, properties, details) were dropped.',
     ]));
+  });
+
+  it('names the page by its accessible title where it has no title, as every Mermaid kind does', () => {
+    expect(pageOf('sequenceDiagram\naccTitle: Login flow\nA->>B: x').name).toBe('Login flow');
+    const titled = readMermaidSequence('sequenceDiagram\ntitle Login\naccTitle: Login flow\nA->>B: x');
+    expect(titled.document.pages[0]!.name).toBe('Login');
+    expect(titled.warnings).toEqual(['Mermaid accessible titles were dropped; the page is named by the title.']);
   });
 
   it('reads a quoted front matter title as every Mermaid kind does', () => {

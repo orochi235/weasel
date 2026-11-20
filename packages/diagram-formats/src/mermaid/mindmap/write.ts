@@ -26,17 +26,19 @@ export function writeMindmap(doc: DiagramDocument, opts?: WriteOptions): ExportR
     children.set(e.from, [...(children.get(e.from) ?? []), e.to]);
     hasParent.add(e.to);
   }
-  const roots = page.data.nodes.filter((n) => !hasParent.has(n.id));
+  // Where a cycle leaves every node a parent, the first node roots the tree.
+  const root = page.data.nodes.find((n) => !hasParent.has(n.id)) ?? page.data.nodes[0];
   const order: { node: DataNode; depth: number }[] = [];
   const seen = new Set<string>();
   const visit = (id: string, depth: number) => {
-    if (seen.has(id)) return;
     seen.add(id);
     order.push({ node: out.byId.get(id)!, depth });
-    for (const c of children.get(id) ?? []) visit(c, depth + 1);
+    for (const c of children.get(id) ?? []) if (!seen.has(c)) visit(c, depth + 1);
   };
-  if (roots[0] !== undefined) visit(roots[0].id, 0);
+  if (root !== undefined) visit(root.id, 0);
   if (seen.size < page.data.nodes.length) warnings.add('Mermaid mind maps hold one tree; shapes outside the first root\'s were dropped.');
+  const kept = out.edges.filter((e) => seen.has(e.from) && seen.has(e.to)).length;
+  if (kept > seen.size - 1) warnings.add('Mermaid mind maps hold a tree; connectors that would join a shape to a second parent, or close a loop, were dropped.');
   const generated = mindmapIds(order.map(() => ({})));
   const ids = mermaidIds(order.map(({ node }) => node.id));
   const lines = [...titleLines(page.name), 'mindmap'];

@@ -20,6 +20,8 @@ class StateWriter {
   readonly ids: Map<string, string>;
   /** The cluster each node sits in directly. */
   readonly scopeOf = new Map<string, string>();
+  /** The cluster each cluster sits in directly. */
+  readonly clusterParent = new Map<string, string>();
   readonly pools: ReadonlySet<string>;
   readonly notes: ReadonlySet<string>;
 
@@ -27,6 +29,7 @@ class StateWriter {
     this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds]);
     const visit = (c: Cluster) => {
       for (const id of c.nodes) this.scopeOf.set(id, c.id);
+      for (const child of c.clusters) this.clusterParent.set(child.id, c.id);
       c.clusters.forEach(visit);
     };
     out.clusters.forEach(visit);
@@ -81,11 +84,32 @@ class StateWriter {
     for (const e of this.out.edges) if (this.edgeScope(e) === c.id) this.lines.push(this.transition(e, indent));
   }
 
-  /** Where an edge is written: in the scope of a `[*]` it has, else at the top. Notes' edges are written as notes. */
+  /** Where an edge is written: in the scope of a `[*]` it has, else at the top. Notes' edges are written as notes, and
+   *  one a scope's `[*]` cannot write is not written. */
   edgeScope(e: DataEdge): string | null | undefined {
-    if (this.notes.has(e.from)) return undefined;
+    if (this.notes.has(e.from) || this.notes.has(e.to) || this.crossesScope(e)) return undefined;
+    return this.pseudoScope(e);
+  }
+
+  private pseudoScope(e: DataEdge): string | null {
     const pseudo = [e.from, e.to].find((id) => isPseudo(this.out.byId.get(id)));
     return pseudo === undefined ? null : this.scopeOf.get(pseudo) ?? null;
+  }
+
+  /** Whether `e` joins a scope's `[*]` to a state outside that scope, which Mermaid reads as a member of it, or to
+   *  another scope's `[*]`. */
+  crossesScope(e: DataEdge): boolean {
+    const scope = this.pseudoScope(e);
+    if (scope === null && ![e.from, e.to].some((id) => isPseudo(this.out.byId.get(id)))) return false;
+    return [e.from, e.to].some((id) => {
+      const node = this.out.byId.get(id);
+      const at = node !== undefined ? this.scopeOf.get(id) ?? null : this.clusterParent.get(id) ?? null;
+      if (isPseudo(node)) return at !== scope;
+      for (let c: string | null = at; ; c = this.clusterParent.get(c) ?? null) {
+        if (c === scope) return false;
+        if (c === null) return true;
+      }
+    });
   }
 
   transition(e: DataEdge, indent: string): string {
@@ -100,19 +124,22 @@ class StateWriter {
 
   noteLines(): void {
     for (const id of this.notes) {
-      const target = this.out.edges.find((e) => e.from === id);
-      const text = (this.out.byId.get(id)!.lines ?? []).map((l) => mermaidEscaped([l]));
-      if (target === undefined) {
+      const joined = this.out.edges.filter((e) => e.from === id || e.to === id);
+      const beside = joined.map((e) => (e.from === id ? e.to : e.from)).find((other) => !isPseudo(this.out.byId.get(other)) && !this.notes.has(other));
+      if (joined.length > 1) this.out.warnings.add('Mermaid notes sit beside one state; their other connectors were dropped.');
+      if (beside === undefined) {
         this.out.warnings.add('Mermaid notes sit beside a state; notes beside none were dropped.');
         continue;
       }
-      if (text.length === 1) this.lines.push(`  note right of ${this.id(target.to)} : ${text[0]}`);
-      else this.lines.push(`  note right of ${this.id(target.to)}`, ...text.map((t) => `    ${lineOpening(t, ['end note'])}`), '  end note');
+      const text = nodeLines(this.out.byId.get(id)!, this.out.warnings, 'Mermaid').map((l) => mermaidEscaped([l]));
+      if (text.length === 1) this.lines.push(`  note right of ${this.id(beside)} : ${text[0]}`);
+      else this.lines.push(`  note right of ${this.id(beside)}`, ...text.map((t) => `    ${lineOpening(t, ['end note'])}`), '  end note');
     }
   }
 
   styles(): void {
     const byProps = new Map<string, string[]>();
+    if (this.out.page.data.nodes.some((n) => isPseudo(n) && n.colors !== undefined)) this.out.warnings.add('Mermaid start and end states hold no colors here; they were dropped.');
     for (const n of this.out.page.data.nodes) {
       const props = n.colors !== undefined && !isPseudo(n) && !this.notes.has(n.id) ? styleProps(n.colors) : '';
       if (props !== '') byProps.set(props, [...(byProps.get(props) ?? []), this.id(n.id)]);
@@ -133,6 +160,9 @@ export function writeStateDiagram(doc: DiagramDocument, opts?: WriteOptions): Ex
   for (const n of out.nodes) w.node(n, '  ');
   for (const c of out.clusters) w.cluster(c, '  ');
   for (const e of out.edges) if (w.edgeScope(e) === null) w.lines.push(w.transition(e, '  '));
+  if (out.edges.some((e) => w.crossesScope(e))) {
+    out.warnings.add('Mermaid joins a composite\'s [*] only to states inside it; transitions joining one to a state outside were dropped.');
+  }
   w.noteLines();
   w.styles();
   return { text: `${w.lines.join('\n')}\n`, warnings: out.warnings.all() };

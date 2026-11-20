@@ -67,4 +67,31 @@ describe('writeMermaidSequence', () => {
     const data: SequenceData = { participants: [{ id: 'a' }], steps: [], boxes: [{ id: 'b1', label: 'red team', members: ['a'] }] };
     expect(pageOf(writeMermaidSequence(page(data)).text).data.boxes).toEqual([{ id: 'b1', label: 'red team', members: ['a'] }]);
   });
+
+  it('declares a box\'s members together, those only its steps name too, with a warning where that moves one', () => {
+    const data: SequenceData = {
+      participants: [{ id: 'A' }, { id: 'B' }, { id: 'C' }],
+      steps: [{ kind: 'message', id: 'm1', from: 'A', to: 'D', line: 'solid', head: 'arrow', text: 'x' }],
+      boxes: [{ id: 'b1', label: 'Svc', members: ['A', 'C', 'D'] }],
+    };
+    const out = writeMermaidSequence(page(data));
+    expect(out.text).toBe('sequenceDiagram\n  box Svc\n    participant A\n    participant C\n    participant D\n  end\n  participant B\n  A->>D: x\n');
+    expect(out.warnings).toEqual(['Mermaid declares a box\'s members together; members declared apart were moved beside each other.']);
+    expect(pageOf(out.text).data.boxes).toEqual([{ id: 'b1', label: 'Svc', members: ['A', 'C', 'D'] }]);
+  });
+
+  it('warns of a box member a step creates, which Mermaid declares outside the box', () => {
+    const out = writeMermaidSequence(page({
+      participants: [{ id: 'A' }, { id: 'B' }], steps: [{ kind: 'create', participant: 'B' }, { kind: 'message', id: 'm1', from: 'A', to: 'B', line: 'solid', head: 'arrow' }],
+      boxes: [{ id: 'b1', members: ['A', 'B'] }],
+    }));
+    expect(out.warnings).toEqual(['Participants a step creates were written outside their boxes.']);
+  });
+
+  it('writes an autonumber start that is not a number as 1, with a warning, so it reads back', () => {
+    const out = writeMermaidSequence(page({ participants: [{ id: 'A' }], steps: [], autonumber: Number.NaN }));
+    expect(out.text).toBe('sequenceDiagram\n  autonumber\n  participant A\n');
+    expect(out.warnings).toEqual(['Mermaid numbers messages from a number; an autonumber start that is not one was written as 1.']);
+    expect(pageOf(out.text).data.autonumber).toBe(1);
+  });
 });

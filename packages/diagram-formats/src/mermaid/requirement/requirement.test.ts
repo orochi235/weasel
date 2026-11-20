@@ -79,4 +79,30 @@ describe('writing a Mermaid requirement diagram', () => {
       expect(page(text).data.nodes[0]!.rows).toContainEqual({ kind: 'field', label: 'text', value });
     }
   });
+
+  const graph = (nodes: object[], edges: object[] = []) => ({ pages: [{ kind: 'graph' as const, id: 'p', width: 100, height: 100, data: { nodes, edges } as never }] });
+
+  it('writes a name\'s double quotes as single ones before making names distinct, with a warning, so two blocks stay two', () => {
+    const { text, warnings } = writeRequirementDiagram(graph([{ id: 'a', lines: ['say "hi"'] }, { id: 'b', lines: ["say 'hi'"] }], [{ from: 'a', to: 'b' }]));
+    expect(page(text).data.nodes.map((n) => n.id)).toEqual(["say 'hi'", "say 'hi' 2"]);
+    expect(page(text).data.edges.map((e) => [e.from, e.to])).toEqual([["say 'hi'", "say 'hi' 2"]]);
+    expect(warnings).toContain('Mermaid requirement names hold no double quotes; they were written as single ones.');
+  });
+
+  it('warns of colors on a block whose name is not one word, which a style cannot name', () => {
+    const { text, warnings } = writeRequirementDiagram(graph([{ id: 'a', lines: ['Login page'], colors: { fill: '#f00' } }]));
+    expect(text).not.toContain('style');
+    expect(warnings).toEqual(['Mermaid styles name a block by one word; colors on blocks with longer names were dropped.']);
+  });
+
+  it('warns of text rows before the divider past the name, and of rows other than text and fields', () => {
+    const { warnings } = writeRequirementDiagram(graph([
+      { id: 'a', lines: ['Login', 'must lock after 3 tries'] },
+      { id: 'b', rows: [{ kind: 'label', text: 'B' }, { kind: 'slot', height: 10 }] },
+    ]));
+    expect(warnings).toEqual([
+      'Mermaid requirements hold a name and named fields; text rows before the divider past the name were dropped.',
+      'Mermaid requirements hold text and fields only; other rows were dropped.',
+    ]);
+  });
 });

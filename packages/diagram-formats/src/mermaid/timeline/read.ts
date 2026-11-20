@@ -41,7 +41,7 @@ export function readMermaidTimeline(text: string): ImportResult {
     last = { label: label!, events: said };
     sections[sections.length - 1]!.periods.push(last);
   }
-  const name = readPageName(src, warnings);
+  const name = readPageName(src, warnings, title);
   if (title !== undefined && src.title !== undefined && title !== src.title) {
     warnings.add('The front matter title was dropped; the chart is named by its title statement.');
   }

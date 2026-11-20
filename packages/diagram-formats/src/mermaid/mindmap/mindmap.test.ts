@@ -65,4 +65,24 @@ describe('writing a Mermaid mind map', () => {
     expect(page(odd.text).data.nodes[0]!.lines).toEqual(['f(x)']);
     expect(odd.warnings).toContain('Mermaid mind maps hold one tree; shapes outside the first root\'s were dropped.');
   });
+
+  const graph = (ids: string[], edges: [string, string][]) => ({ pages: [{
+    kind: 'graph' as const, id: 'p', width: 100, height: 100,
+    data: { nodes: ids.map((id) => ({ id, lines: [id.toUpperCase()] })), edges: edges.map(([from, to]) => ({ from, to })) },
+  }] });
+  const LOOP = 'Mermaid mind maps hold a tree; connectors that would join a shape to a second parent, or close a loop, were dropped.';
+
+  it('roots a page whose connectors make a loop at its first shape, and warns of the connector closing it', () => {
+    const out = writeMindmap(graph(['a', 'b', 'c'], [['a', 'b'], ['b', 'c'], ['c', 'a']]));
+    expect(out.text).toBe('mindmap\n  A\n    B\n      C\n');
+    expect(out.warnings).toEqual([LOOP]);
+    expect(writeMindmap(graph(['a'], [['a', 'a']])).text).toBe('mindmap\n  A\n');
+  });
+
+  it('warns of a connector joining a shape to a second parent', () => {
+    const out = writeMindmap(graph(['a', 'b', 'c', 'd'], [['a', 'b'], ['a', 'c'], ['b', 'd'], ['c', 'd']]));
+    expect(out.text).toBe('mindmap\n  A\n    B\n      D\n    C\n');
+    expect(out.warnings).toEqual([LOOP]);
+    expect(writeMindmap(graph(['a', 'b'], [['a', 'b']])).warnings).toEqual([]);
+  });
 });

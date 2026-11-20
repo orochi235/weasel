@@ -15,13 +15,14 @@ export function readMermaidRadar(text: string): ImportResult {
   if (!/^radar(?:-beta)?$/.test(src.header.text)) throw lineError('Mermaid', src.header.line, `"${src.header.text}" is not a radar header`);
   const warnings = new Warnings();
   const parsed = parseRadarBody(src.body);
-  if (parsed.title !== undefined && src.title !== undefined && parsed.title !== src.title) {
+  // An empty title statement titles nothing, so the front matter's title or the accessible one still names the page.
+  const own = parsed.title === '' ? undefined : parsed.title;
+  if (own !== undefined && src.title !== undefined && own !== src.title) {
     warnings.add('The front matter title was dropped; the title statement names the chart.');
   }
-  const fallback = readPageName({ ...src, ...(parsed.title !== undefined ? { title: parsed.title } : {}) }, warnings);
-  const title = parsed.title ?? src.title;
-  const data: RadarData = { ...parsed.data, ...(title !== undefined && title !== '' ? { title } : {}) };
-  const name = title || fallback;
+  const title = own ?? (src.title === '' ? undefined : src.title);
+  const name = readPageName(src, warnings, own);
+  const data: RadarData = { ...parsed.data, ...(title !== undefined ? { title } : {}) };
   const page: PlotPage = { kind: 'plot', id: 'page-1', ...(name ? { name } : {}), ...RADAR_PAGE, data };
   return { document: { pages: [page] }, warnings: warnings.all() };
 }

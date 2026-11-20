@@ -40,7 +40,7 @@ export function readMermaidPie(text: string): ImportResult {
     labels.add(label);
     slices.push({ label, value });
   }
-  const named = readPageName(src, warnings);
+  const named = readPageName(src, warnings, title);
   if (title !== undefined && src.title !== undefined && src.title !== title) warnings.add('The front matter title was dropped; the chart is titled by its own.');
   title ??= src.title;
   const data: PieData = { kind: 'pie', ...(title !== undefined ? { title } : {}), ...(head[1] !== undefined ? { showData: true } : {}), slices };

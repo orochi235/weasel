@@ -1,6 +1,8 @@
 /** A Mermaid xychart as a one-page document holding a plot page. */
 import type { XyChartData, XySeries } from '@weasel-js/plot';
 import type { ImportResult, PlotPage } from '../../document';
+import { Warnings } from '../../graphRead';
+import { readPageName } from '../common/lines';
 import { parseXyChart } from './parse';
 
 /** The page an xychart is read onto. */
@@ -9,14 +11,10 @@ export const XYCHART_PAGE = { width: 800, height: 500 } as const;
 /** Reads a Mermaid `xychart-beta` (or `xychart`) diagram. Throws, naming the line, on text that is not one. */
 export function readMermaidXychart(text: string): ImportResult {
   const parsed = parseXyChart(text);
-  const warnings: string[] = [];
-  const once = new Set<string>();
-  const warn = (message: string) => {
-    if (!once.has(message)) warnings.push(message);
-    once.add(message);
-  };
+  const warnings = new Warnings();
+  const warn = (message: string) => warnings.add(message);
   if (parsed.frontOther > 0) warn('Mermaid front matter other than the title was dropped.');
-  let title = parsed.frontTitle;
+  let title = parsed.source.title;
   let x: XyChartData['x'];
   let y: XyChartData['y'];
   const series: XySeries[] = [];
@@ -35,11 +33,9 @@ export function readMermaidXychart(text: string): ImportResult {
       case 'line':
         series.push({ kind: s.kind, ...(s.name !== undefined ? { name: s.name } : {}), values: s.values });
         break;
-      case 'dropped':
-        warn(s.what === 'directive' ? 'Mermaid configuration directives were dropped.' : `The chart's ${s.what} was dropped.`);
-        break;
     }
   }
+  const named = readPageName(parsed.source, warnings, title);
   if (x?.kind === 'band' && x.categories.length > 0) {
     const longest = series.reduce((m, s) => Math.max(m, s.values.length), 0);
     if (longest > x.categories.length) warn(`${longest - x.categories.length} value(s) past the last category are not drawn.`);
@@ -52,6 +48,7 @@ export function readMermaidXychart(text: string): ImportResult {
     ...(y !== undefined ? { y } : {}),
     series,
   };
-  const page: PlotPage = { kind: 'plot', id: 'page-1', ...(title ? { name: title } : {}), ...XYCHART_PAGE, data };
-  return { document: { pages: [page] }, warnings };
+  const name = title || named;
+  const page: PlotPage = { kind: 'plot', id: 'page-1', ...(name ? { name } : {}), ...XYCHART_PAGE, data };
+  return { document: { pages: [page] }, warnings: warnings.all() };
 }

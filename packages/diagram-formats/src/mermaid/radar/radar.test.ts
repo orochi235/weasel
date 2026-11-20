@@ -53,6 +53,13 @@ describe('reading a Mermaid radar', () => {
     });
   });
 
+  it('names the page by its accessible title or front matter title where the title statement is empty', () => {
+    const r = readMermaidRadar('radar-beta\n  accTitle: Skills\n  title\n  axis a\n  curve c{1}');
+    expect(r.document.pages[0]!.name).toBe('Skills');
+    expect(r.warnings).toEqual([]);
+    expect(readMermaidRadar('---\ntitle: Front\n---\nradar-beta\n  title\n  axis a\n  curve c{1}').document.pages[0]!.name).toBe('Front');
+  });
+
   it('warns on what it drops', () => {
     const { warnings } = readMermaidRadar('---\ntitle: Top\n---\n%%{init: {}}%%\nradar-beta\n  accDescr: d\n  title Body\n  axis x');
     expect(warnings).toEqual([

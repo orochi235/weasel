@@ -120,4 +120,49 @@ describe('writing a Mermaid state diagram', () => {
     } }] }).text;
     expect(page(text).data.nodes.find((n) => n.outline === 'note')!.lines).toEqual(['end note', 'z']);
   });
+
+  const graph = (data: object) => ({ pages: [{ kind: 'graph' as const, id: 'p', width: 100, height: 100, data: { edges: [], ...data } as never }] });
+  const noteOf = (text: string) => page(text).data.nodes.find((n) => n.outline === 'note');
+
+  it('writes a note\'s text from its rows', () => {
+    const text = writeStateDiagram(graph({ nodes: [{ id: 'a' }, { id: 'n', outline: 'note', rows: [{ kind: 'label', text: 'hi' }] }], edges: [{ from: 'n', to: 'a' }] })).text;
+    expect(text).toContain('  note right of a : hi\n');
+  });
+
+  it('writes a note joined from its state beside that state, never as a transition', () => {
+    const out = writeStateDiagram(graph({ nodes: [{ id: 'A' }, { id: 'n1', outline: 'note', lines: ['x'] }], edges: [{ from: 'A', to: 'n1' }] }));
+    expect(out.text).toBe('stateDiagram-v2\n  A\n  note right of A : x\n');
+    expect(out.warnings).toEqual([]);
+  });
+
+  it('drops a note beside only a start or end, and a note\'s connectors past its first, with warnings, so the text reads back', () => {
+    const out = writeStateDiagram(graph({
+      nodes: [{ id: 's', outline: 'start' }, { id: 'A' }, { id: 'B' }, { id: 'n1', outline: 'note', lines: ['x'] }, { id: 'n2', outline: 'note', lines: ['y'] }],
+      edges: [{ from: 's', to: 'A' }, { from: 'n1', to: 's' }, { from: 'n2', to: 'A' }, { from: 'n2', to: 'B' }],
+    }));
+    expect(out.text).not.toContain('[*] :');
+    expect(out.warnings).toEqual(expect.arrayContaining([
+      'Mermaid notes sit beside a state; notes beside none were dropped.',
+      'Mermaid notes sit beside one state; their other connectors were dropped.',
+    ]));
+    expect(noteOf(out.text)!.lines).toEqual(['y']);
+  });
+
+  it('drops a transition joining a composite\'s [*] to a state outside it, with a warning, so no state changes container', () => {
+    const out = writeStateDiagram(graph({
+      nodes: [{ id: 'X' }, { id: 'Y' }, { id: 's', outline: 'start' }],
+      edges: [{ from: 's', to: 'X' }, { from: 's', to: 'Y' }],
+      containers: [{ id: 'C', role: 'container', members: ['Y', 's'] }],
+    }));
+    expect(out.warnings).toContain('Mermaid joins a composite\'s [*] only to states inside it; transitions joining one to a state outside were dropped.');
+    const back = page(out.text);
+    expect(back.data.containers?.[0]?.members).toEqual(['Y', 'C[start]']);
+    expect(back.data.edges.map((e) => [e.from, e.to])).toEqual([['C[start]', 'Y']]);
+  });
+
+  it('colors a [*] given a class in a transition', () => {
+    expect(node('stateDiagram-v2\n  classDef go fill:#f00\n  [*]:::go --> A', '[start]').colors).toMatchObject({ fill: '#f00' });
+    expect(writeStateDiagram(graph({ nodes: [{ id: 's', outline: 'start', colors: { fill: '#f00' } }] })).warnings)
+      .toEqual(['Mermaid start and end states hold no colors here; they were dropped.']);
+  });
 });

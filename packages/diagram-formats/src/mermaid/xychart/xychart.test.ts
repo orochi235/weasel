@@ -36,13 +36,30 @@ describe('reading a Mermaid xychart', () => {
   });
 
   it('warns on what it drops: directives, accessibility text, values past the last category', () => {
-    const { warnings } = readMermaidXychart('%%{init: {}}%%\nxychart-beta\n  accTitle: A\n  accDescr {\n  long\n  }\n  x-axis [a]\n  bar [1, 2]');
+    const { document, warnings } = readMermaidXychart('%%{init: {}}%%\nxychart-beta\n  accTitle: A\n  accDescr {\n  long\n  }\n  x-axis [a]\n  bar [1, 2]');
     expect(warnings).toEqual([
       'Mermaid configuration directives were dropped.',
-      'The chart\'s accTitle was dropped.',
-      'The chart\'s accDescr was dropped.',
+      'Mermaid accessible descriptions were dropped.',
       '1 value(s) past the last category are not drawn.',
     ]);
+    expect(document.pages[0]!.name).toBe('A');
+  });
+
+  it('reads accessible titles and descriptions as every line-oriented Mermaid kind does', () => {
+    for (const acc of ['accTitle : Sales', 'accTitle:Sales']) expect(plotOf(`xychart-beta\n  ${acc}\n  bar [1]`).name).toBe('Sales');
+    const titled = readMermaidXychart('xychart-beta\n  title "Chart"\n  accTitle: Sales\n  bar [1]');
+    expect(titled.document.pages[0]!.name).toBe('Chart');
+    expect(titled.warnings).toEqual(['Mermaid accessible titles were dropped; the page is named by the title.']);
+    expect(() => readMermaidXychart('xychart-beta\n%%{init: {}\n  bar [1, 2]')).toThrow(/line 2: a directive opened here is never closed/);
+    expect(() => readMermaidXychart('xychart-beta\n  accDescr {\n  long\n  bar [1, 2]')).toThrow(/line 2: an accDescr block is never closed/);
+  });
+
+  it('reads an axis or series title written as one bare word', () => {
+    expect(plotOf('xychart-beta\n  x-axis Months [jan, feb]\n  y-axis Revenue 4000 --> 11000\n  bar Sales [1, 2]').data).toMatchObject({
+      x: { kind: 'band', title: 'Months', categories: ['jan', 'feb'] }, y: { title: 'Revenue', min: 4000, max: 11000 },
+      series: [{ kind: 'bar', name: 'Sales', values: [1, 2] }],
+    });
+    expect(plotOf('xychart-beta\n  x-axis 1 --> 10\n  y-axis Score').data).toMatchObject({ x: { kind: 'range', min: 1, max: 10 }, y: { title: 'Score' } });
   });
 
   it('reads a quoted front matter title as every Mermaid kind does', () => {
