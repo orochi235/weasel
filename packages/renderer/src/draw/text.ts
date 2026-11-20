@@ -24,6 +24,7 @@ import { placeGlyph, type PlacedGlyph } from '../glyphCorners';
 import { QUAD_STRIDE, SYNTHETIC_ITALIC_RADIANS } from '@weasel-js/text';
 import type { DrawContext, GlyphPaintKind } from './drawContext';
 import { drawTriangles } from './drawTriangles';
+import { atMeshOrigin } from './uniforms';
 import { drawColorGlyphs } from './colorGlyphs';
 import { modelScale } from './modelScale';
 import { clipTest } from './stencil';
@@ -113,7 +114,7 @@ function drawOutlineMesh(ctx: DrawContext, fill: Paint, mesh: Mesh): void {
   const paint = batchPaint(ctx, fill, false);
   if (paint === null) return;
   if (tryStageFill(ctx, mesh, paint)) return;
-  drawPathFillByKind(ctx, fill, ctx.meshCache.uploadTransient(mesh));
+  atMeshOrigin(ctx, mesh.origin, () => drawPathFillByKind(ctx, fill, ctx.meshCache.uploadTransient(mesh)));
 }
 
 /**
@@ -149,9 +150,11 @@ function drawTextDecorations(
 }
 
 function ruleMesh(x0: number, y0: number, x1: number, y1: number): Mesh {
+  const w = x1 - x0, h = y1 - y0;
   return {
-    vertices: new Float32Array([x0, y0, x1, y0, x1, y1, x0, y1]),
+    vertices: new Float32Array([0, 0, w, 0, w, h, 0, h]),
     indices: new Uint32Array([0, 1, 2, 0, 2, 3]),
+    origin: { x: x0, y: y0 },
   };
 }
 
