@@ -27,7 +27,7 @@ export function hopFollower<TPose>(scene: Scene<unknown, string, TPose>): Transf
         if (!moved.has(e.node.id) && !hops.some((h) => h.over.some((id) => moved.has(id)))) continue;
         const shown = data.get(e.node.id) ?? e.node.data;
         const trait = diagramEdgeOf({ data: shown }) ?? e.trait;
-        out.push({ id: e.node.id, pose: e.node.pose, data: withHopsData(shown, trait, []) });
+        out.push({ id: e.node.id, pose: frame.get(e.node.id) ?? e.node.pose, data: withHopsData(shown, trait, []) });
       }
       return out;
     },

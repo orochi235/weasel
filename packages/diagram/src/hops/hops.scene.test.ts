@@ -200,4 +200,13 @@ describe('line jumps in a scene', () => {
     scene.setLayerVisible('back', true);
     expect(hopsOf(scene as never, 'cd')).toEqual([{ at: { x: 250, y: 30 }, over: ['ab'], r: 5 }]);
   });
+
+  it('keeps the pose the frame holds for a connector it hides hops on', () => {
+    const { scene, hops } = load(false);
+    scene.doc.set(HOPS_DOC_KEY, { size: 5 });
+    const dragged = { x: 7, y: 7, width: 0, height: 0 };
+    const preview = hops.follower.preview(new Map([['cd', dragged]]), new Map());
+    expect(preview.find((p) => p.id === 'cd')!.pose).toBe(dragged);
+  });
+
 });
