@@ -12,6 +12,7 @@ const dragTool = (name: string) => within(screen.getByRole('group', { name: 'Dra
 describe('AssetEditor on a panel', () => {
   it('offers a panel nothing that holds a value or a page, and a dialog all of it', () => {
     renderWithIcons(<Live />);
+    pickRow('view');
     expect(tool('Add pref')).toBeEnabled();
     expect(dragTool('Page')).toBeEnabled();
     fireEvent.click(asset('Code'));
@@ -20,6 +21,7 @@ describe('AssetEditor on a panel', () => {
     for (const name of ['Tab', 'Panel', 'Section', 'Group', 'Bar', 'Label', 'Separator']) expect(dragTool(name)).toBeEnabled();
     expect(tool('Add group')).toBeEnabled();
     fireEvent.click(asset('Settings'));
+    pickRow('view');
     expect(tool('Add pref')).toBeEnabled();
     expect(dragTool('Page')).toBeEnabled();
   });

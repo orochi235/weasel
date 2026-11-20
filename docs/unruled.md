@@ -3059,3 +3059,9 @@ Calls the lanes made without a ruling:
   `measureIds`, and so picking, editing, Delete and Clear all, reads only `ms.layer`. Either `measureIds` reads the
   whole scene, which puts a walk of every node on each pointer move's hit test (`measureEndSource.test.ts` holds
   that it must not), or the painter and the snap source take only `ms.layer`'s nodes and the rest go undrawn.
+
+## Audit round fifty-four (2026-11-20): the pref schema editor
+
+- 2026-11-20 (the fixer's call): the schema editor's "Add pref" is disabled where the new leaf would land directly
+  under a root that holds pages (nothing selected, or a loose root leaf selected), since it would be on no page.
+  This follows the rule the tree and preview drops already keep. Adding it to the first page was the alternative.
