@@ -2772,3 +2772,8 @@ Calls the lanes made without a ruling:
 - 2026-11-19 (the fixer's call): `stableStringify` writes an object of the caller's own with a `$type` key as
   `{"$type":"object","value":…}`, so `{ $type: 'bigint', value: '10' }` and `10n` no longer give one string. Leaving
   such an object as JSON writes it, and the two colliding, was the alternative.
+## Audit round forty-one (2026-11-19): core's scene
+
+- 2026-11-19 (the fixer's call): a tween draws at most 4096 steps (`MAX_TWEEN_STEPS`), and warns in development when its
+  `steps` or `distance` asks for more; a `steps` of `NaN` draws none. Drawing every step asked for, which ran out of
+  memory or never returned on a tiny `distance` or an infinite `steps`, was the alternative.
