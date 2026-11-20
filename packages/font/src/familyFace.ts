@@ -1,67 +1,74 @@
 import type { FontStyle } from './fontStyle';
-import { variantKey } from './variantKey';
-import { atlasResult, sharedExactResult } from './atlasResult';
-import type { FontEntry, FontFamilyFaces } from './registerFont';
-import type { ResolveResult } from './resolveResult';
+
+/** The face the within-family chain lands on, and what the shader fakes to close the gap. */
+export interface ChainPick {
+  key: string;
+  weight: number;
+  style: FontStyle;
+  bold: boolean;
+  italic: boolean;
+}
+
+interface Face { key: string; weight: number; style: FontStyle }
 
 function weightBucket(w: number): 'regular' | 'bold' {
   return w >= 600 ? 'bold' : 'regular';
 }
 
-/** The `style` face nearest `weight` in its bucket, ties going to the heavier. */
-function nearestInBucket(
-  faces: FontFamilyFaces, weight: number, style: FontStyle,
-): { entry: FontEntry; weight: number } | null {
+/** The `style` face nearest `weight`, within its bucket when `inBucket`, ties going to the heavier. */
+function nearest(faces: readonly Face[], weight: number, style: FontStyle, inBucket: boolean): Face | null {
   const bucket = weightBucket(weight);
-  let best: { entry: FontEntry; weight: number; distance: number } | null = null;
-  for (const [key, entry] of faces) {
-    const [wStr, s] = key.split('|') as [string, FontStyle];
-    const w = Number(wStr);
-    if (s !== style) continue;
-    if (weightBucket(w) !== bucket) continue;
-    const distance = Math.abs(w - weight);
-    if (best === null || distance < best.distance || (distance === best.distance && w > best.weight)) {
-      best = { entry, weight: w, distance };
-    }
+  let best: Face | null = null;
+  for (const f of faces) {
+    if (f.style !== style || (inBucket && weightBucket(f.weight) !== bucket)) continue;
+    const d = Math.abs(f.weight - weight);
+    const bestD = best === null ? Infinity : Math.abs(best.weight - weight);
+    if (d < bestD || (d === bestD && f.weight > best!.weight)) best = f;
   }
   return best;
 }
 
-/**
- * The face one family's registered `faces` serve for `(weight, style)`, walking
- * the within-family chain, or null when none of them will do. `shared` returns
- * an exact match as the face's one frozen result.
- */
-export function familyFaceFor(
-  faces: FontFamilyFaces, family: string, weight: number, style: FontStyle, shared: boolean,
-): ResolveResult | null {
-  // 1. Exact match
-  const exact = faces.get(variantKey(weight, style));
-  if (exact) {
-    return shared
-      ? sharedExactResult(exact, family, weight, style)
-      : atlasResult(exact, family, weight, style, false, false);
+function parse(keys: Iterable<string>): Face[] {
+  const faces: Face[] = [];
+  for (const key of keys) {
+    const [w, s] = key.split('|') as [string, FontStyle];
+    faces.push({ key, weight: Number(w), style: s });
   }
+  return faces;
+}
 
-  // 2. Same style, nearest weight in same bucket
-  const sameStyle = nearestInBucket(faces, weight, style);
-  if (sameStyle) return atlasResult(sameStyle.entry, family, sameStyle.weight, style, false, false);
+function pick(f: Face | null, bold: boolean, italic: boolean): ChainPick | null {
+  return f && { key: f.key, weight: f.weight, style: f.style, bold, italic };
+}
 
-  // 3. (family, 400, style)
-  const sameStyleRegular = faces.get(variantKey(400, style));
-  if (sameStyleRegular) return atlasResult(sameStyleRegular, family, 400, style, weight >= 600, false);
+/**
+ * The variant key, among a family's `keys`, that the within-family chain
+ * serves `(weight, style)` from: the requested style and the weight's own
+ * bucket (600 and up is bold) first, then its 400 and its upright faces,
+ * faking the bold or the italic they lack. Null when none of those will do.
+ */
+export function chainPick(keys: Iterable<string>, weight: number, style: FontStyle): ChainPick | null {
+  const faces = parse(keys);
+  const at = (w: number, s: FontStyle) => faces.find((f) => f.weight === w && f.style === s) ?? null;
+  const slant = style === 'italic';
+  return pick(at(weight, style), false, false)
+    ?? pick(nearest(faces, weight, style, true), false, false)
+    ?? pick(at(400, style), weight >= 600, false)
+    ?? pick(at(weight, 'normal'), false, slant)
+    ?? pick(nearest(faces, weight, 'normal', true), false, slant)
+    ?? pick(at(400, 'normal'), weight >= 600, slant);
+}
 
-  // 4. (family, weight, 'normal') — same weight, no italic
-  const sameWeightNormal = faces.get(variantKey(weight, 'normal'));
-  if (sameWeightNormal) return atlasResult(sameWeightNormal, family, weight, 'normal', false, style === 'italic');
-
-  // 4b. Nearest weight, normal style, same bucket
-  const normal = nearestInBucket(faces, weight, 'normal');
-  if (normal) return atlasResult(normal.entry, family, normal.weight, 'normal', false, style === 'italic');
-
-  // 5. (family, 400, 'normal') — last resort within family
-  const regular = faces.get(variantKey(400, 'normal'));
-  if (regular) return atlasResult(regular, family, 400, 'normal', weight >= 600, style === 'italic');
-
-  return null;
+/**
+ * The face a family with any of `keys` falls back to once {@link chainPick},
+ * the outline tier and canvas enrollment have all come up empty, so that, as
+ * in CSS font matching, a family with a face never draws in another family's:
+ * the nearest weight in the requested style, then in the other. An italic face
+ * set upright stays italic.
+ */
+export function farPick(keys: Iterable<string>, weight: number, style: FontStyle): ChainPick | null {
+  const faces = parse(keys);
+  const other: FontStyle = style === 'italic' ? 'normal' : 'italic';
+  const f = nearest(faces, weight, style, false) ?? nearest(faces, weight, other, false);
+  return pick(f, f !== null && weight >= 600 && f.weight < 600, style === 'italic' && f?.style === 'normal');
 }

@@ -1,7 +1,7 @@
 /**
  * `parseBmFont` over atlas documents with any field missing, of the wrong type, non-finite, or null, chars and
  * kernings included: it refuses a document with its own error, naming the field, or reads one whose every glyph and
- * kerning layout reads is a finite number, indexed by code point as the document gives it.
+ * kerning layout reads is a finite number, every glyph on page 0, indexed by code point as the document gives it.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
@@ -16,7 +16,9 @@ const odd = fc.constantFrom<unknown>(NaN, Infinity, -Infinity, null, undefined, 
 const num = (good: fc.Arbitrary<number>) => fc.oneof({ weight: 60, arbitrary: good }, { weight: 1, arbitrary: odd });
 
 const char = fc.oneof(
-  { weight: 12, arbitrary: fc.record(Object.fromEntries(CHAR_FIELDS.map((k) => [k, num(fc.integer({ min: -64, max: 0x10ffff }))]))) },
+  { weight: 12, arbitrary: fc.record(Object.fromEntries(CHAR_FIELDS.map((k) => [k, k === 'page'
+    ? num(fc.oneof({ weight: 30, arbitrary: fc.constant(0) }, { weight: 1, arbitrary: fc.integer({ min: -2, max: 3 }) }))
+    : num(fc.integer({ min: -64, max: 0x10ffff }))]))) },
   { weight: 1, arbitrary: odd },
 );
 const kerning = fc.oneof(
@@ -45,6 +47,7 @@ describe('parseBmFont, property', () => {
       t.count('read');
       for (const ch of font.chars) {
         for (const k of CHAR_FIELDS) expect(Number.isFinite(ch[k])).toBe(true);
+        expect(ch.page).toBe(0);
         t.count('char');
       }
       for (const k of font.kernings) {

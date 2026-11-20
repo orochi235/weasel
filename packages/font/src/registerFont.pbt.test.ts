@@ -28,6 +28,8 @@ type State = 'declared' | 'loading' | 'loaded';
 interface Model {
   registered: Set<string>;
   variants: Map<string, Map<string, { state: State; ok: boolean }>>;
+  /** Variants whose last load failed, per family, until registered again. */
+  failed: Map<string, Set<string>>;
 }
 interface Real { t: ReturnType<typeof tally> }
 
@@ -59,10 +61,14 @@ const variantsOf = (m: Model, family: string) => {
 
 /** Every load in flight lands, or fails and is forgotten. */
 function settleModel(m: Model): void {
-  for (const variants of m.variants.values()) {
+  for (const [family, variants] of m.variants) {
     for (const [key, v] of variants) {
       if (v.state !== 'loading') continue;
-      if (v.ok) v.state = 'loaded'; else variants.delete(key);
+      if (v.ok) v.state = 'loaded';
+      else {
+        variants.delete(key);
+        m.failed.set(family, (m.failed.get(family) ?? new Set()).add(key));
+      }
     }
   }
 }
@@ -77,7 +83,7 @@ function check(m: Model): void {
   }
   const listed = listAtlasFonts().map((f) => [f.family, f.variants.map(keyOf).sort()]);
   const want = [...m.registered].flatMap((family) => {
-    const keys = [...(m.variants.get(family) ?? [])].filter(([, v]) => v.state !== 'loading').map(([k]) => k).sort();
+    const keys = [...(m.variants.get(family)?.keys() ?? [])].sort();
     return keys.length > 0 ? [[family, keys]] : [];
   });
   expect(listed).toEqual(want);
@@ -101,6 +107,7 @@ class Register implements fc.AsyncCommand<Model, Real> {
     }
     register().catch(() => {});
     m.registered.add(this.family);
+    m.failed.get(this.family)?.delete(key);
     if (was?.state === 'loaded' || was?.state === 'loading') r.t.count('joined');
     else if (this.lazy) { if (!was) variants.set(key, { state: 'declared', ok: this.ok }); }
     else variants.set(key, { state: 'loading', ok: this.ok });
@@ -127,7 +134,8 @@ class Warm implements fc.AsyncCommand<Model, Real> {
     warmFonts([this.family]).then(() => { outcome = 'resolved'; }, () => { outcome = 'rejected'; });
     const variants = m.variants.get(this.family);
     for (const v of variants?.values() ?? []) if (v.state === 'declared') v.state = 'loading';
-    const fails = !m.registered.has(this.family) || [...(variants?.values() ?? [])].some((v) => v.state === 'loading' && !v.ok);
+    const fails = !m.registered.has(this.family) || (m.failed.get(this.family)?.size ?? 0) > 0
+      || [...(variants?.values() ?? [])].some((v) => v.state === 'loading' && !v.ok);
     await release();
     settleModel(m);
     expect(outcome).toBe(fails ? 'rejected' : 'resolved');
@@ -141,8 +149,7 @@ class Warm implements fc.AsyncCommand<Model, Real> {
 const landed = (m: Readonly<Model>) => [...m.variants].flatMap(([family, vs]) =>
   VARIANTS.filter((v) => vs.get(keyOf(v))?.state === 'loaded').map((v) => ({ family, variant: v })));
 
-/** Resolve the `pick`-th landed variant, cached and fresh: both land on it, and the lookup wakes the family's other
- *  declared variants. */
+/** Resolve the `pick`-th landed variant, cached and fresh: both land on it, and the lookup wakes nothing else. */
 class Resolve implements fc.AsyncCommand<Model, Real> {
   constructor(readonly pick: number) {}
   check = (m: Readonly<Model>) => landed(m).length > 0;
@@ -154,7 +161,6 @@ class Resolve implements fc.AsyncCommand<Model, Real> {
     expect(resolveFontVariant(family, weight, style)).toEqual(cached);
     expect(cached.entry).toBe(getAtlasFont(family, weight, style));
     expect(cached.resolved).toEqual({ family, weight, style });
-    for (const v of m.variants.get(family)!.values()) if (v.state === 'declared') v.state = 'loading';
     r.t.count('resolved');
     check(m);
   }
@@ -185,7 +191,7 @@ describe('atlas registry, stateful', () => {
     const t = tally();
     await fc.assert(fc.asyncProperty(commands, async (cmds) => {
       _resetFontRegistryForTests();
-      await fc.asyncModelRun(() => ({ model: { registered: new Set<string>(), variants: new Map() }, real: { t } }), cmds);
+      await fc.asyncModelRun(() => ({ model: { registered: new Set<string>(), variants: new Map(), failed: new Map() }, real: { t } }), cmds);
       await release();
     }), runs(RUNS));
     t.atLeast('warm resolved', 50);

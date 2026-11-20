@@ -42,10 +42,10 @@ function readCssString(css: string): string | null {
 }
 
 const unit = fc.oneof(
-  fc.constantFrom('\\', '\n', '\r', '\f', '\t', ' ', '\x7f', '\x01', 'a', ' ', '0', 'f', '\ud800', '😀', 'é'),
+  fc.constantFrom('"', "'", '\\', '\n', '\r', '\f', '\t', ' ', '\x7f', '\x01', 'a', ' ', '0', 'f', '\ud800', '😀', 'é'),
   fc.string({ unit: 'binary', minLength: 1, maxLength: 1 }),
 );
-const name = fc.string({ unit, minLength: 1, maxLength: 10 }).filter((s) => !/[,"'\0]/.test(s));
+const name = fc.string({ unit, minLength: 1, maxLength: 10 }).filter((s) => !/[,\0]/.test(s) && !/^\s*["']/.test(s));
 
 describe('cssFamilyName, property', () => {
   it('quotes a named family so CSS reads back the name, and leaves a generic keyword bare', () => {
@@ -57,7 +57,7 @@ describe('cssFamilyName, property', () => {
         return t.count('generic');
       }
       expect(readCssString(css)).toBe(family);
-      if (/[\\\n\r\f]/.test(family)) t.count('escaped');
+      if (/[\\\n\r\f"]/.test(family)) t.count('escaped');
     }), runs(RUNS));
     t.atLeast('generic', 20);
     t.atLeast('escaped', 100);

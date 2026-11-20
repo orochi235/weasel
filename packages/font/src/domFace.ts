@@ -86,8 +86,8 @@ function privateFamily(family: string, weight: number, style: FontStyle): {
  * for `family` at this variant.
  *
  * - A family the canvas draws through the browser (`registerCanvasFont`, or
- *   the `'canvas'` fallback policy) comes back unchanged: the DOM already
- *   resolves the name to the same face.
+ *   the `'canvas'` fallback policy) comes back as the name itself, quoted as
+ *   CSS needs it: the DOM already resolves the name to the same face.
  * - A family drawn from a baked atlas or from outlines comes back as a private
  *   face built from its `registerFontOutlines` file, in every registered
  *   weight and style, followed by `family` as the fallback.
@@ -95,11 +95,11 @@ function privateFamily(family: string, weight: number, style: FontStyle): {
  *
  * Starts loading the face on first call and never waits for it; ask
  * {@link cssFontFamilyLoading} for that. Outside a browser, `family` comes
- * back unchanged.
+ * back as the name itself.
  */
 export function cssFontFamily(family: string, weight = 400, style: FontStyle = 'normal'): string {
   const priv = privateFamily(family, weight, style);
-  if (!priv) return family;
+  if (!priv) return cssFamilyName(family);
   const name = nameFor(priv.target);
   for (const v of priv.variants) ensureFace(name, v.family, v.weight, v.style);
   return `${cssString(name)}, ${cssFamilyName(family)}`;

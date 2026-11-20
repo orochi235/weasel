@@ -51,6 +51,10 @@ interface Declared {
 /** Lazy registrations not yet started, per family, keyed like `registry`. */
 const declared = new Map<string, Map<string, Declared>>();
 
+/** What each variant's last load failed with, per family and keyed like
+ *  `registry`, until `registerFont` is called for that variant again. */
+const failures = new Map<string, Map<string, unknown>>();
+
 /** Every family `registerFont` was called for, eager or lazy, in call order —
  *  what "the first registered family" means to the substitute policy. */
 const registeredFamilies = new Set<string>();
@@ -61,6 +65,7 @@ export function _resetFontRegistryForTests(): void {
   inFlight.clear();
   loads.clear();
   declared.clear();
+  failures.clear();
   registeredFamilies.clear();
   _clearFallbackWarnings();
   _clearHeldFontUrls();
@@ -124,6 +129,7 @@ export function registerFont(
   const key = variantKey(weight, style);
   registeredFamilies.add(family);
   const replacing = claimFontUrls(family, key, metricsUrl, atlasUrl, opts.replace);
+  failures.get(family)?.delete(key);
   if (replacing) return replaceVariant(family, key, metricsUrl, atlasUrl);
   if (registry.get(family)?.has(key)) return Promise.resolve();
   if (!opts.lazy) return loadVariant(family, key, metricsUrl, atlasUrl);
@@ -166,7 +172,12 @@ function loadVariant(
     const now = loads.get(family);
     if (now?.get(key) === load && now.delete(key) && now.size === 0) loads.delete(family);
   };
-  load.then(settleLoad, settleLoad);
+  load.then(settleLoad, (err: unknown) => {
+    if (loads.get(family)?.get(key) === load) {
+      failures.set(family, (failures.get(family) ?? new Map<string, unknown>()).set(key, err));
+    }
+    settleLoad();
+  });
 
   const pendingLazy = declared.get(family)?.get(key);
   if (pendingLazy) {
@@ -189,8 +200,14 @@ async function fetchVariant(
     const face = await fetchAtlasFace(metricsUrl, atlasUrl);
     // Copy the family as it is now, not as it was before the await: another
     // variant of it may have landed meanwhile, and a stale copy would drop it.
+    // A bitmap nothing draws from is closed, so its decoded image is freed now
+    // rather than at some later collection: the one replaced, or a superseded fetch's.
     if (landFontUrls(family, key, metricsUrl, atlasUrl)) {
+      const before = registry.get(family)?.get(key);
       registry.set(family, new Map(registry.get(family)).set(key, face));
+      if (before && before.bitmap !== face.bitmap) before.bitmap.close();
+    } else if (registry.get(family)?.get(key)?.bitmap !== face.bitmap) {
+      face.bitmap.close();
     }
     settle(family, token);
     // Same meaning the lazy tiers give it: text that was painting from a
@@ -208,21 +225,11 @@ async function fetchVariant(
   }
 }
 
-/**
- * Start the lazy loads a request for `(family, weight, style)` needs: the
- * exact variant when it was declared, otherwise every declared variant of the
- * family, since the within-family chain may land on any of them.
- */
-export function wakeDeclared(family: string, weight: number, style: FontStyle): void {
-  const variants = declared.get(family);
-  if (!variants) return;
-  const exact = variantKey(weight, style);
-  const keys = variants.has(exact) ? [exact] : [...variants.keys()];
-  for (const key of keys) {
-    const { metricsUrl, atlasUrl } = variants.get(key)!;
-    // The declaration's own promise carries the failure to its caller.
-    loadVariant(family, key, metricsUrl, atlasUrl).catch(() => {});
-  }
+/** Start the lazy load of one variant of `family`, keyed like the registry, if it is still only declared. */
+export function wakeVariant(family: string, key: string): void {
+  const lazy = declared.get(family)?.get(key);
+  // The declaration's own promise carries the failure to its caller.
+  if (lazy) loadVariant(family, key, lazy.metricsUrl, lazy.atlasUrl).catch(() => {});
 }
 
 /** Start the load of every variant of `family` still declared lazily. */
@@ -242,9 +249,16 @@ export function isRegisteredFamily(family: string): boolean {
   return registeredFamilies.has(family);
 }
 
-/** The keys of every variant of `family` registered, landed or declared lazily. */
+/** The keys of every variant of `family` registered: landed, fetching, or declared lazily. */
 export function variantKeysOf(family: string): Set<string> {
-  return new Set([...(registry.get(family)?.keys() ?? []), ...(declared.get(family)?.keys() ?? [])]);
+  return new Set([
+    ...(registry.get(family)?.keys() ?? []), ...(loads.get(family)?.keys() ?? []), ...(declared.get(family)?.keys() ?? []),
+  ]);
+}
+
+/** The error a variant of `family` last failed to load with, if one has not been registered again since. */
+export function familyFailure(family: string): unknown {
+  return failures.get(family)?.values().next().value;
 }
 
 /** Every atlas fetch running for `family`. */

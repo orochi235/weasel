@@ -93,6 +93,30 @@ describe('registerFont', () => {
     await registerFont('inter', {}, '/b.json', '/b.png');
   });
 
+  it('closes the atlas image a replacement takes the place of, and a superseded fetch\'s', async () => {
+    const made: { close: ReturnType<typeof vi.fn> }[] = [];
+    global.createImageBitmap = vi.fn(() => {
+      const bitmap = { width: 512, height: 512, close: vi.fn() };
+      made.push(bitmap);
+      return Promise.resolve(bitmap as unknown as ImageBitmap);
+    }) as unknown as typeof createImageBitmap;
+    await registerFont('inter', {}, '/a.json', '/a.png');
+    await registerFont('inter', {}, '/b.json', '/b.png', { replace: true });
+    expect(made.map((b) => b.close.mock.calls.length)).toEqual([1, 0]);
+
+    const stub = global.fetch as ReturnType<typeof vi.fn>;
+    const answer = stub.getMockImplementation() as (url: string) => Promise<Response>;
+    let release!: () => void;
+    const held = new Promise<void>((r) => { release = r; });
+    stub.mockImplementation((url: string) => (url.startsWith('/c') ? held.then(() => answer(url)) : answer(url)));
+    const slow = registerFont('inter', {}, '/c.json', '/c.png', { replace: true });
+    await registerFont('inter', {}, '/d.json', '/d.png', { replace: true });
+    release();
+    await slow;
+    expect(made.map((b) => b.close.mock.calls.length)).toEqual([1, 1, 0, 1]);
+    expect(getAtlasFont('inter')!.bitmap).toBe(made[2]);
+  });
+
   it('holds the URLs of the atlas still drawn when a replacement fails to fetch', async () => {
     await registerFont('inter', {}, '/a.json', '/a.png');
     const first = getAtlasFont('inter', 400, 'normal');
@@ -353,6 +377,24 @@ describe('resolveFontVariant — canvas-dynamic tier', () => {
     expect(r.dynamicFace).toBeDefined();
   });
 
+  it('draws a family with any face in one of its own, across the weight buckets and styles', async () => {
+    await registerFont('Brand', { weight: 300 }, '/b3.json', '/b3.png');
+    expect(resolveFontVariant('Brand', 700, 'normal')).toMatchObject({
+      resolved: { family: 'Brand', weight: 300, style: 'normal' }, synthetic: { bold: true, italic: false },
+    });
+    expect(resolveFontVariant('Brand', 800, 'italic').synthetic).toEqual({ bold: true, italic: true });
+
+    await registerFont('Heavy', { weight: 700 }, '/h.json', '/h.png');
+    expect(resolveFontVariant('Heavy', 400, 'normal')).toMatchObject({
+      resolved: { weight: 700 }, synthetic: { bold: false, italic: false },
+    });
+
+    await registerFont('Slant', { weight: 500, style: 'italic' }, '/s.json', '/s.png');
+    expect(resolveFontVariant('Slant', 400, 'normal')).toMatchObject({
+      resolved: { family: 'Slant', weight: 500, style: 'italic' }, synthetic: { bold: false, italic: false },
+    });
+  });
+
   it('partial-baked family with only one variant still resolves via the synthetic fallback chain, not the canvas tier', async () => {
     await registerFont('Futura', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
     registerCanvasFont('Futura');
@@ -461,6 +503,13 @@ describe('resolveCanvasFallback', () => {
     stubRasterizer();
     setFontFallbackPolicy('none');
     expect(resolveCanvasFallback('Inter', 400, 'normal')).toBeNull();
+  });
+
+  it('escalates under the "none" policy for a family passed to registerCanvasFont', () => {
+    stubRasterizer();
+    setFontFallbackPolicy('none');
+    registerCanvasFont('Inter');
+    expect(resolveCanvasFallback('Inter', 400, 'normal')?.dynamicFace).toBeDefined();
   });
 
   it('declines rather than throwing when the rasterizer cannot serve', () => {
@@ -666,6 +715,21 @@ describe('registerFont — lazy', () => {
     expect(urls).toEqual(['/b.json', '/b.png']);
   });
 
+  it('fetches no other declared variant for text set in a landed one', async () => {
+    await registerFont('inter', { weight: 400 }, '/r.json', '/r.png');
+    void registerFont('inter', { weight: 700 }, '/b.json', '/b.png', { lazy: true });
+    resolveFontVariant('inter', 400, 'normal');
+    expect(fetchCalls()).toBe(2);
+  });
+
+  it('waits for the variant the chain lands on while it fetches, rather than a landed stand-in', async () => {
+    await registerFont('inter', { weight: 400 }, '/r.json', '/r.png');
+    const bold = registerFont('inter', { weight: 700 }, '/b.json', '/b.png');
+    expect(resolveFontVariant('inter', 600, 'normal').entry).toBeNull();
+    await bold;
+    expect(resolveFontVariant('inter', 600, 'normal').resolved.weight).toBe(700);
+  });
+
   it('waits for a declared exact variant rather than faking it from another', async () => {
     await registerFont('inter', { weight: 400 }, '/r.json', '/r.png');
     const bold = registerFont('inter', { weight: 700 }, '/b.json', '/b.png', { lazy: true });
@@ -683,6 +747,12 @@ describe('registerFont — lazy', () => {
     expect(listAtlasFonts()).toEqual([{ family: 'inter', variants: [{ weight: 700, style: 'normal' }] }]);
     expect(listFontWeights('inter')).toEqual([700]);
     expect(fetchCalls()).toBe(0);
+  });
+
+  it('lists an eager face while it fetches, as it lists a declared one', () => {
+    void registerFont('inter', { weight: 700 }, '/b.json', '/b.png');
+    expect(listAtlasFonts()).toEqual([{ family: 'inter', variants: [{ weight: 700, style: 'normal' }] }]);
+    expect(listFontWeights('inter')).toEqual([700]);
   });
 
   it('an eager registration of a declared variant loads it now', async () => {
@@ -759,6 +829,14 @@ describe('warmFonts', () => {
     await expect(warmFonts()).rejects.toThrow('weasel registerFont');
   });
 
+  it('rejects for a family whose load already failed, until the variant is registered again', async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('down'));
+    await registerFont('inter', {}, '/i.json', '/i.png').catch(() => {});
+    await expect(warmFonts(['inter'])).rejects.toThrow('weasel registerFont');
+    await registerFont('inter', {}, '/i.json', '/i.png');
+    await expect(warmFonts(['inter'])).resolves.toBeUndefined();
+  });
+
   describe('given the variants a render sets text in', () => {
     beforeEach(() => {
       _resetFallbackForTests();
@@ -772,11 +850,20 @@ describe('warmFonts', () => {
       expect(urls()).toEqual(['/b.json', '/b.png']);
     });
 
-    it('loads every declared variant when none matches, since the chain may land on any', async () => {
+    it('loads the declared variant the chain lands on when none matches', async () => {
       void registerFont('inter', { weight: 400 }, '/r.json', '/r.png', { lazy: true });
       void registerFont('inter', { weight: 700 }, '/b.json', '/b.png', { lazy: true });
       await warmFonts([{ family: 'inter', weight: 500, style: 'italic' }]);
-      expect(urls()).toEqual(['/r.json', '/r.png', '/b.json', '/b.png']);
+      expect(urls()).toEqual(['/r.json', '/r.png']);
+    });
+
+    it('leaves the default family alone when the requested family draws in a face of its own', async () => {
+      await registerFont('Display', { weight: 400, style: 'italic' }, '/d.json', '/d.png');
+      void registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
+      await warmFonts([{ family: 'Display' }]);
+      const r = resolveFontVariant('Display', 400, 'normal');
+      expect(r.entry).not.toBeNull();
+      expect(r.resolved.family).toBe('Display');
     });
 
     it('fetches nothing for a variant already registered', async () => {

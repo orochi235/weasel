@@ -104,7 +104,7 @@ describe('cssFontFamily', () => {
   it('leaves a family the canvas draws through the browser alone', () => {
     registerCanvasFont('Georgia');
     registerFontOutlines('Georgia', {}, '/fonts/georgia.ttf');
-    expect(cssFontFamily('Georgia')).toBe('Georgia');
+    expect(cssFontFamily('Georgia')).toBe('"Georgia"');
     expect(StubFace.made).toHaveLength(0);
   });
 
@@ -115,6 +115,11 @@ describe('cssFontFamily', () => {
     cssFontFamily('sans-serif');
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0][0]).toContain('registerFontOutlines("sans-serif"');
+  });
+
+  it('quotes a family the DOM sets as it stands, so a name like Font 3D parses', () => {
+    registerCanvasFont('Font 3D');
+    expect(cssFontFamily('Font 3D')).toBe('"Font 3D"');
   });
 
   it('answers the family itself outside a browser', async () => {

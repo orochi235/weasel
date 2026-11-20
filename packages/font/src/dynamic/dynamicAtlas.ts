@@ -26,7 +26,7 @@ import type { BmFont, BmFontChar } from '../FontAtlas';
 import { getFontFallbackPolicy } from '../fallback';
 import { notifyGlyphReady, _clearGlyphReadySubscribers } from '../glyphReady';
 import { PAGE_SIZE, MAX_PAGES, _resetPagesForTests } from './dynamicPages';
-import { dropBakes, onPagesEmptied, requestBake, _resetBakeQueueForTests } from './bakeQueue';
+import { dropBakes, onPagesEmptied, requestBake, retryStarved, _resetBakeQueueForTests } from './bakeQueue';
 import { familyKey, watchFontLoads } from './fontLoads';
 import { createCanvasRasterizer, BAKE_SIZE, type GlyphRasterizer } from './glyphRasterizer';
 import { addSharpSource, sharpBakesOf } from './sharpColor';
@@ -86,7 +86,13 @@ const autoEnrolledFamilies = new Set<string>();
 /** The calls holding each explicitly registered family, one token per call. */
 const canvasHolds = new Map<string, Set<object>>();
 let faces = new Map<string, Face>();
+/** How many faces the tier keeps measured. Past it the oldest is dropped, as
+ *  `unregisterCanvasFont` drops one, so a weight tween or a font field typed
+ *  into cannot grow the map, and the remeasure on every font load, without end. */
+export const MAX_DYNAMIC_FACES = 256;
 let rasterizer: GlyphRasterizer | null = null;
+/** Set once building the default rasterizer has failed: there is no canvas here. */
+let noCanvas = false;
 let stopWatchingLoads: (() => void) | null = null;
 
 function forgetGlyphs(face: Face): void {
@@ -214,6 +220,22 @@ function collectGlyphs(face: Face, into: Set<BmFontChar>): void {
 }
 
 /**
+ * {@link getDynamicFace}, or `undefined` when there is no canvas to rasterize
+ * into (SSR, a worker without `OffscreenCanvas`, a jsdom test without one) or
+ * it cannot measure the face, which the resolver treats as the tier being unavailable.
+ */
+export function tryDynamicFace(family: string, weight: number, style: FontStyle): DynamicFace | undefined {
+  if (noCanvas && !rasterizer) return undefined;
+  try {
+    return getDynamicFace(family, weight, style);
+  } catch {
+    // A rasterizer that was built and then failed to measure may serve the next face.
+    if (!rasterizer) noCanvas = true;
+    return undefined;
+  }
+}
+
+/**
  * Internal resolver helper — not part of the public barrel; consumers go
  * through registerCanvasFont + resolveFontVariant.
  */
@@ -249,7 +271,10 @@ export function getDynamicFace(
     family, weight, style, font, clusters, shaped,
     requestGlyph(cp: number): BmFontChar {
       const cached = font.charMap.get(cp);
-      if (cached) return cached;
+      if (cached) {
+        if (cached.page === -1) retryStarved(cached);
+        return cached;
+      }
       const raster = r.rasterize(family, weight, style, cp);
       const char = record(cp, raster);
       font.charMap.set(cp, char);
@@ -259,7 +284,10 @@ export function getDynamicFace(
     },
     requestCluster(text: string): BmFontChar | null {
       const cached = clusters.get(text);
-      if (cached !== undefined) return cached;
+      if (cached !== undefined) {
+        if (cached?.page === -1) retryStarved(cached);
+        return cached;
+      }
       const raster = r.rasterizeColor?.(family, weight, style, text) ?? null;
       const char: BmFontChar | null = raster && { ...record(text.codePointAt(0)!, raster), color: true };
       clusters.set(text, char);
@@ -271,7 +299,10 @@ export function getDynamicFace(
     },
     requestShaped(key: string, d: string): BmFontChar | null {
       const cached = shaped.get(key);
-      if (cached !== undefined) return cached;
+      if (cached !== undefined) {
+        if (cached?.page === -1) retryStarved(cached);
+        return cached;
+      }
       const raster = typeof Path2D === 'undefined' ? null : r.rasterizePath?.(d) ?? null;
       const char = raster && record(0, raster);
       shaped.set(key, char);
@@ -280,9 +311,20 @@ export function getDynamicFace(
     },
   };
   measureFace(face);
+  if (faces.size >= MAX_DYNAMIC_FACES) dropOldestFace();
   faces.set(key, face);
   stopWatchingLoads ??= watchFontLoads(refreshFamilies);
   return face;
+}
+
+function dropOldestFace(): void {
+  const [key, oldest] = faces.entries().next().value!;
+  faces.delete(key);
+  const dropped = new Set<BmFontChar>();
+  collectGlyphs(oldest, dropped);
+  dropBakes(dropped);
+  // Text still holding the face lays out again, and asks for one afresh.
+  notifyGlyphReady();
 }
 
 /** Read `face`'s metrics off the canvas, and forget the glyphs measured before. */
@@ -328,6 +370,7 @@ function refreshFamilies(families: readonly string[] | null): void {
  *  metrics). Pass null to restore the lazy default. */
 export function __setGlyphRasterizerForTests(r: GlyphRasterizer | null): void {
   rasterizer = r;
+  noCanvas = false;
 }
 
 /** @internal test seam — clear all dynamic-font state. */
@@ -342,4 +385,5 @@ export function _resetDynamicFontsForTests(): void {
   stopWatchingLoads = null;
   _clearGlyphReadySubscribers();
   rasterizer = null;
+  noCanvas = false;
 }

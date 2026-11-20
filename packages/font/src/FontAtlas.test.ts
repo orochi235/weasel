@@ -37,6 +37,11 @@ describe('parseBmFont', () => {
     expect(() => parseBmFont({ ...FIXTURE_FONT, common: { ...FIXTURE_FONT.common, base: 'x' } })).toThrow(/common\.base/);
   });
 
+  it('refuses a glyph on any page but the first, since a face has one atlas image', () => {
+    const chars = [FIXTURE_FONT.chars[0], { ...FIXTURE_FONT.chars[1], page: 1 }];
+    expect(() => parseBmFont({ ...FIXTURE_FONT, chars })).toThrow('parseBmFont: chars[1].page is 1');
+  });
+
   it('reads the field range msdf-bmfont-xml records', () => {
     const font = parseBmFont({ ...FIXTURE_FONT, distanceField: { fieldType: 'msdf', distanceRange: 4 } });
     expect(font.distanceRange).toBe(4);

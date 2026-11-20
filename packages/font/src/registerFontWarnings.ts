@@ -12,10 +12,9 @@ export function warnMissingFamilyOnce(
 ): void {
   if (!claimFallbackWarning(`substituted|${family}|${weight}|${style}`)) return;
   const cause = registered
-    ? `has no variant matching ${weight}/${style}, and none of its registered ` +
-      `variants are close enough for the within-family chain to substitute — ` +
-      `rendering with "${resolved}" instead. Bake that variant with ` +
-      `registerFont("${family}", { weight: ${weight}, style: '${style}' }, …)`
+    ? `is registered, but none of its atlas faces loaded — ` +
+      `rendering with "${resolved}" instead. Check the URLs given to ` +
+      `registerFont("${family}", …)`
     : `is not registered — rendering with "${resolved}" instead. ` +
       `Call registerFont("${family}", …)`;
   console.warn(

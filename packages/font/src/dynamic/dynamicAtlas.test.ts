@@ -3,7 +3,7 @@ import {
   registerCanvasFont, isCanvasFont, unregisterCanvasFont, getDynamicFace,
   autoEnrollCanvasFont, listCanvasFonts,
   _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
-  PAGE_SIZE, _getPagesForTests,
+  PAGE_SIZE, MAX_DYNAMIC_FACES, _getPagesForTests,
   resetBakeBudget, syncDynamicPageTexture,
 } from './dynamicAtlas';
 import { subscribeGlyphReady } from '../glyphReady';
@@ -294,6 +294,43 @@ describe('full pages', () => {
     expect(face.font.charMap.size).toBe(0);
   });
 
+  it('empties the settled pages for a glyph that found no room while they refilled, once text asks for it again', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const notified = vi.fn();
+    const face = getDynamicFace('Big', 400, 'normal');
+    for (let i = 0; i < 5; i++) face.requestGlyph(65 + i);
+    vi.runAllTimers();
+    resetBakeBudget(Infinity);
+    for (let i = 0; i < 5; i++) face.requestGlyph(65 + i);
+    vi.runAllTimers();
+    expect(face.requestGlyph(69).page).toBe(-1);
+    subscribeGlyphReady(notified);
+
+    // The text scrolls so only the glyph that found no room is on screen.
+    resetBakeBudget(Infinity);
+    resetBakeBudget(Infinity);
+    face.requestGlyph(69);
+    vi.runAllTimers();
+    expect(notified).toHaveBeenCalledTimes(1);
+    expect(face.requestGlyph(69).page).toBe(0);
+  });
+
+  it('empties the pages for such a glyph once, while text needs more than they hold', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const notified = vi.fn();
+    const face = getDynamicFace('Big', 400, 'normal');
+    const frame = () => {
+      resetBakeBudget(Infinity);
+      for (let i = 0; i < 5; i++) face.requestGlyph(65 + i);
+      vi.runAllTimers();
+    };
+    frame();
+    frame();
+    subscribeGlyphReady(notified);
+    for (let i = 0; i < 6; i++) frame();
+    expect(notified).toHaveBeenCalledTimes(1);
+  });
+
   it('does not empty the pages for a glyph no page could hold', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     __setGlyphRasterizerForTests({
@@ -309,6 +346,44 @@ describe('full pages', () => {
     vi.runAllTimers();
     expect(face.font.charMap.size).toBe(2);
     expect(warn).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('how many faces it keeps', () => {
+  it('drops the oldest face past its cap, so fractional weights cannot grow it without end', () => {
+    const first = getDynamicFace('Tween', 400, 'normal');
+    for (let i = 1; i <= MAX_DYNAMIC_FACES; i++) getDynamicFace('Tween', 400 + i / 100, 'normal');
+    expect(getDynamicFace('Tween', 401, 'normal')).toBe(getDynamicFace('Tween', 401, 'normal'));
+    expect(getDynamicFace('Tween', 400, 'normal')).not.toBe(first);
+  });
+});
+
+describe('the test reset', () => {
+  it('cancels an emptying still waiting, and forgets what each texture cache was sent', async () => {
+    pageSizedGlyphs();
+    const big = getDynamicFace('Big', 400, 'normal');
+    for (let i = 0; i < 5; i++) big.requestGlyph(65 + i);
+    const patches: string[] = [];
+    const ids = new Set<string>();
+    const sink = {
+      has: (id: string) => ids.has(id),
+      upload: (id: string) => id,
+      uploadR8: (id: string) => { ids.add(id); },
+      subImageR8: (_id: string, x: number, y: number) => { patches.push(`${x},${y}`); },
+      uploadRGBA: () => {},
+      subImageRGBA: () => {},
+    };
+    syncDynamicPageTexture(sink, 0);
+
+    _resetDynamicFontsForTests();
+    __setGlyphRasterizerForTests(fakeRasterizer());
+    const face = getDynamicFace('Small', 400, 'normal');
+    const glyph = face.requestGlyph(65);
+    syncDynamicPageTexture(sink, 0);
+    expect(patches).toEqual(['0,0']);
+    await new Promise<void>((r) => { setTimeout(r, 0); });
+    expect(face.font.charMap.get(65)).toBe(glyph);
+    expect(glyph.page).toBe(0);
   });
 });
 

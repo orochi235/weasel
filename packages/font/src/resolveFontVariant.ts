@@ -6,20 +6,21 @@
 
 import { variantKey } from './variantKey';
 import type { FontStyle } from './fontStyle';
-import { isCanvasFont, isExplicitCanvasFont, autoEnrollCanvasFont, getDynamicFace } from './dynamic/dynamicAtlas';
+import { isCanvasFont, isExplicitCanvasFont, autoEnrollCanvasFont, tryDynamicFace } from './dynamic/dynamicAtlas';
 import { getFontFallbackPolicy, getDefaultFontFamily } from './fallback';
-import { outlineFace } from './outline/outlineRegistry';
-import { familyFaceFor } from './familyFace';
+import { hasFontOutlines, outlineFace, outlineStatus } from './outline/outlineRegistry';
+import { chainPick, farPick, type ChainPick } from './familyFace';
+import { atlasResult, sharedExactResult } from './atlasResult';
 import type { ResolveResult } from './resolveResult';
 import {
-  atlasPending, firstRegisteredFamily, fontRegistry, isFontPending, variantLoad, wakeDeclared,
+  atlasPending, firstRegisteredFamily, fontRegistry, isFontPending, isRegisteredFamily, variantKeysOf, wakeVariant,
 } from './registerFont';
 import {
   warnMissingFamilyOnce, warnSelfUnusableDefaultOnce, warnUnregisteredDefaultOnce, warnUnusableDefaultOnce,
 } from './registerFontWarnings';
 
 function missResolveResult(
-  family: string, weight: number, style: FontStyle, suppressWarn = false,
+  family: string, weight: number, style: FontStyle, keys: ReadonlySet<string>, suppressWarn: boolean,
 ): ResolveResult {
   // Canvas-dynamic tier. Dynamic faces rasterize the real weight/style — no
   // synthetic flags.
@@ -27,10 +28,12 @@ function missResolveResult(
   // Explicit enrollment only. A family the `'canvas'` policy enrolled for
   // itself must not keep routing here after the policy changes, or `'none'`
   // could never restore the hard miss it documents.
-  if (isExplicitCanvasFont(family)) {
+  // With no canvas to rasterize into, the tier is skipped.
+  const explicit = isExplicitCanvasFont(family) ? tryDynamicFace(family, weight, style) : undefined;
+  if (explicit) {
     return {
       entry: null,
-      dynamicFace: getDynamicFace(family, weight, style),
+      dynamicFace: explicit,
       resolved: { family, weight, style },
       synthetic: { bold: false, italic: false },
       source: 'canvas',
@@ -51,17 +54,24 @@ function missResolveResult(
     };
   }
   // Its bytes are on their way, which outranks a stand-in as a pending atlas does.
-  if (isFontPending(family, weight, style)) return pendingMiss(family, weight, style);
+  const outline = outlineStatus(family, weight, style);
+  if (outline === 'idle' || outline === 'loading') return pendingMiss(family, weight, style);
+
+  // A family with any atlas face draws in one of its own before another family's.
+  const far = farPick(keys, weight, style);
+  if (far) return atlasServe(family, weight, style, far);
+  if (atlasPending(family)) return pendingMiss(family, weight, style);
 
   const policy = getFontFallbackPolicy();
 
-  if (policy === 'canvas') {
+  const dynamicFace = policy === 'canvas' ? tryDynamicFace(family, weight, style) : undefined;
+  if (dynamicFace) {
     // Auto-enroll: the browser probably has this family even though no atlas
     // was baked for it. Real typeface, canvas-SDF quality.
     autoEnrollCanvasFont(family);
     return {
       entry: null,
-      dynamicFace: getDynamicFace(family, weight, style),
+      dynamicFace,
       resolved: { family, weight, style },
       synthetic: { bold: false, italic: false },
       source: 'canvas',
@@ -71,28 +81,31 @@ function missResolveResult(
   if (policy === 'substitute') {
     const fallback = getDefaultFontFamily() ?? firstRegisteredFamily();
     // Guard against recursing when the default family is itself unknown.
-    // Canvas families never enter `registry`, so membership there alone would
-    // reject `setDefaultFontFamily` pointed at one. `isCanvasFont` answers
-    // "served by the dynamic tier right now": a family the `'canvas'` policy
-    // auto-enrolled is not served under this policy.
+    // Canvas and outline families never enter `registry`, so membership there
+    // alone would reject `setDefaultFontFamily` pointed at one. `isCanvasFont`
+    // answers "served by the dynamic tier right now": a family the `'canvas'`
+    // policy auto-enrolled is not served under this policy.
+    const fallbackOutlines = fallback !== null && hasFontOutlines(fallback, weight, style);
     if (fallback !== null && fallback !== family) {
-      if (fontRegistry.has(fallback) || isCanvasFont(fallback) || atlasPending(fallback)) {
+      if (fontRegistry.has(fallback) || isCanvasFont(fallback) || atlasPending(fallback) || fallbackOutlines) {
         // A probe, not a top-level request: suppress, so this recursion can't
         // land in the `fallback === family` branch below and double-warn.
         const result = resolveFontVariantInternal(fallback, weight, style, true, false);
-        // Renderable, not baked: a fallback served by the dynamic tier reports
-        // `entry: null` with a dynamicFace.
-        if (result.entry !== null || result.dynamicFace !== undefined) {
-          if (!suppressWarn) warnMissingFamilyOnce(family, weight, style, fallback, fontRegistry.has(family));
+        // Renderable, not baked: a fallback served by the dynamic or outline
+        // tier reports `entry: null` with its face.
+        if (result.entry !== null || result.dynamicFace !== undefined || result.outlineFace !== undefined) {
+          if (!suppressWarn) warnMissingFamilyOnce(family, weight, style, fallback, isRegisteredFamily(family));
           return { ...result, substituted: { requested: family, resolved: fallback } };
         }
         // Still loading: nothing to swap to yet, and nothing to warn about.
-        if (atlasPending(fallback)) return pendingMiss(family, weight, style);
+        if (isFontPending(fallback, weight, style)) return pendingMiss(family, weight, style);
       }
       // Substitution was supposed to happen and produced nothing: text is
       // invisible, so say which of the two families to fix.
       if (!suppressWarn) {
-        warnUnusableDefaultOnce(family, weight, style, fallback, fontRegistry.has(fallback) || isCanvasFont(fallback));
+        warnUnusableDefaultOnce(
+          family, weight, style, fallback, isRegisteredFamily(fallback) || isCanvasFont(fallback) || fallbackOutlines,
+        );
       }
     } else if (fallback === family && !suppressWarn) {
       // The family that can't serve this variant *is* the effective default.
@@ -114,6 +127,18 @@ function missResolveResult(
     synthetic: { bold: false, italic: false },
     source: 'atlas',
   };
+}
+
+/**
+ * The atlas face the chain picked, or a pending miss while it is still on its
+ * way, whose load this starts: laying out in a stand-in's metrics now would
+ * reflow the text when the picked face lands.
+ */
+function atlasServe(family: string, weight: number, style: FontStyle, p: ChainPick): ResolveResult {
+  const entry = fontRegistry.get(family)?.get(p.key);
+  if (entry) return atlasResult(entry, family, p.weight, p.style, p.bold, p.italic);
+  wakeVariant(family, p.key);
+  return pendingMiss(family, weight, style);
 }
 
 /** A miss that is only late: nothing substituted, nothing warned. */
@@ -162,21 +187,18 @@ function resolveFontVariantInternal(
   suppressWarn: boolean,
   shared: boolean,
 ): ResolveResult {
-  wakeDeclared(family, weight, style);
-  // An atlas on its way outranks every stand-in: laying out in a fallback's
-  // metrics now would reflow the text when the real face lands.
-  // A landed variant is not on its way, even before its load promise settles:
-  // `fetchVariant` wakes subscribers first, and they resolve synchronously.
   const exactKey = variantKey(weight, style);
-  if (variantLoad(family, exactKey) !== undefined && !fontRegistry.get(family)?.has(exactKey)) {
-    return pendingMiss(family, weight, style);
+  // A landed variant is served even while a replacement for it fetches.
+  const exact = fontRegistry.get(family)?.get(exactKey);
+  if (exact) {
+    return shared
+      ? sharedExactResult(exact, family, weight, style)
+      : atlasResult(exact, family, weight, style, false, false);
   }
-  const familyMap = fontRegistry.get(family);
-  if (!familyMap || familyMap.size === 0) {
-    if (atlasPending(family)) return pendingMiss(family, weight, style);
-    return missResolveResult(family, weight, style, suppressWarn);
-  }
-
-  return familyFaceFor(familyMap, family, weight, style, shared)
-    ?? missResolveResult(family, weight, style, suppressWarn);
+  // The chain picks among every variant registered, landed or not, so a face
+  // on its way outranks a landed stand-in it would replace.
+  const keys = variantKeysOf(family);
+  const near = chainPick(keys, weight, style);
+  if (near) return atlasServe(family, weight, style, near);
+  return missResolveResult(family, weight, style, keys, suppressWarn);
 }

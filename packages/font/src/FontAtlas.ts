@@ -124,7 +124,12 @@ export function parseBmFont(raw: unknown): BmFont {
     ? (r.kernings as BmFontKerning[])
     : [];
 
-  chars.forEach((ch, i) => checkFinite(`chars[${i}]`, ch, CHAR_FIELDS));
+  chars.forEach((ch, i) => {
+    checkFinite(`chars[${i}]`, ch, CHAR_FIELDS);
+    // The registry holds one atlas image per face, so a glyph on another page
+    // would sample page 0's texels at its rect.
+    if (ch.page !== 0) throw new Error(`parseBmFont: chars[${i}].page is ${ch.page}; only single-page atlases are supported`);
+  });
   kernings.forEach((k, i) => checkFinite(`kernings[${i}]`, k, KERNING_FIELDS));
 
   const charMap = new Map<number, BmFontChar>();
