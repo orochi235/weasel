@@ -65,6 +65,9 @@ const NUM = '$num';
 const TYPE = '$type';
 /** The attributes such a leaf has removed that its type holds. */
 const UNSET = '$unset';
+/** Wraps a plain object that holds one of these keys itself, so it reads back as data and not as a marker. */
+const DATA = '$data';
+const MARKERS: readonly string[] = [FROM, NEW, NUM, TYPE, UNSET, DATA];
 
 /** Where the source keeps a value: a node's path, then the attribute, then the keys down into it. */
 type Origin = readonly [path: string | null, ...keys: string[]];
@@ -105,7 +108,10 @@ function pack(value: unknown, origins: Map<unknown, Origin>, at: Origin | null):
   }
   if (typeof value === 'number' && !Number.isFinite(value)) return { [NUM]: String(value) };
   if (Array.isArray(value)) return value.map((v) => pack(v, origins, null));
-  if (isPlainObject(value)) return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, pack(v, origins, null)]));
+  if (isPlainObject(value)) {
+    const out = Object.fromEntries(Object.entries(value).map(([k, v]) => [k, pack(v, origins, null)]));
+    return MARKERS.some((m) => Object.hasOwn(out, m)) ? { [DATA]: out } : out;
+  }
   return value;
 }
 
@@ -170,6 +176,7 @@ export function packSteps(stacks: SerializedHistory, current: SchemaRoot, source
 function unpack(value: unknown, source: SchemaRoot, types: PrefTypes): unknown {
   if (Array.isArray(value)) return value.map((v) => unpack(v, source, types));
   if (!isPlainObject(value)) return value;
+  if (Object.hasOwn(value, DATA)) return unpackFields(value[DATA], source, types);
   if (Object.hasOwn(value, NUM)) return Number(value[NUM]);
   if (Object.hasOwn(value, NEW)) return STUB;
   if (Object.hasOwn(value, FROM)) {
@@ -178,19 +185,25 @@ function unpack(value: unknown, source: SchemaRoot, types: PrefTypes): unknown {
     for (const key of keys) held = held == null ? undefined : getOwn(held as Record<string, unknown>, key);
     return held;
   }
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(value)) {
-    if (k === TYPE || k === UNSET) continue;
-    const next = unpack(v, source, types);
-    // Code the source no longer holds is dropped with its attribute, as an attribute never set.
-    if (next !== undefined) setOwn(out, k, next);
-  }
+  const out = unpackFields(value, source, types, [TYPE, UNSET]);
   if (!Object.hasOwn(value, TYPE)) return out;
   const name = value[TYPE] as string;
   // A type the host no longer registers leaves a leaf of that name, holding only what the draft set on it.
   const leaf: Record<string, unknown> = { name, description: '', default: undefined, ...findType(types, name), ...out, type: name };
   for (const key of (value[UNSET] as string[] | undefined) ?? []) delete leaf[key];
   return leaf;
+}
+
+function unpackFields(value: unknown, source: SchemaRoot, types: PrefTypes, skip: readonly string[] = []): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (!isPlainObject(value)) return out;
+  for (const [k, v] of Object.entries(value)) {
+    if (skip.includes(k)) continue;
+    const next = unpack(v, source, types);
+    // Code the source no longer holds is dropped with its attribute, as an attribute never set.
+    if (next !== undefined) setOwn(out, k, next);
+  }
+  return out;
 }
 
 /** The schema {@link packDraft} wrote, its code taken back from `source` and its typed leaves from `types`. */

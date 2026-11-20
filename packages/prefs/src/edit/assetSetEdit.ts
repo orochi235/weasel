@@ -1,7 +1,7 @@
 import { gainsSetting, moveLayoutNodes, removeLayoutNodes, renameLayoutKey } from './layoutEdit';
 import { aliasesIn } from './aliases';
 import {
-  heldValuePaths, joinPath, moveNodes, outermost, parentPath, rebaseValuePaths, removeNode, removeNodes, renameKey, valueMove,
+  heldValuePaths, joinPath, moveNodes, outermost, parentPath, rebaseValuePaths, removeNode, removeNodes, renameKey, valueMoves,
   type SchemaRoot, type SchemaTarget, type ValueMove,
 } from './schemaEdit';
 import { assetOf, type Asset, type AssetSet } from './assetSet';
@@ -60,7 +60,8 @@ export function renameInAsset(assetSet: AssetSet, id: string, path: string, next
   const asset = editable(assetSet, id);
   if (!asset) return assetSet;
   if (asset.kind === 'layout') return editAsset(assetSet, id, renameLayoutKey(asset.root, path, nextKey), NO_MOVES);
-  return editAsset(assetSet, id, renameKey(asset.root, path, nextKey), [valueMove(asset.root, path, joinPath(parentPath(path), nextKey))]);
+  const renamed = renameKey(asset.root, path, nextKey);
+  return editAsset(assetSet, id, renamed, valueMoves(asset.root, path, renamed, joinPath(parentPath(path), nextKey)));
 }
 
 /**
@@ -74,7 +75,7 @@ export function moveInAsset(
   if (!asset) return { assetSet, from: outermost(paths), paths: outermost(paths) };
   const isLayout = asset.kind === 'layout';
   const moved = isLayout ? moveLayoutNodes(asset.root, paths, target) : moveNodes(asset.root, paths, target);
-  const moves = isLayout ? NO_MOVES : moved.from.map((from, i) => valueMove(asset.root, from, moved.paths[i]!));
+  const moves = isLayout ? NO_MOVES : moved.from.flatMap((from, i) => valueMoves(asset.root, from, moved.root, moved.paths[i]!));
   return { assetSet: editAsset(assetSet, id, moved.root, moves), from: moved.from, paths: moved.paths };
 }
 

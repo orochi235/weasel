@@ -33,6 +33,12 @@ describe('a condition as a flow', () => {
     expect(lines({ path: 'gone', is: 'x' }, 'test:0')).toEqual(['gone', "is 'x'"]);
   });
 
+  it("names a test read from its group for the group's pref", () => {
+    const root: PrefGroup = { name: 'Root', children: { page: { name: 'Page', children: { visible: { kind: 'boolean', name: 'Visible', description: '', default: true } } } } };
+    const flow = prefConditionFlow({ from: 'group', path: 'visible', is: true }, root, { group: 'page' });
+    expect(flow.nodes.find((n) => n.id === 'test:0')?.lines).toEqual(['this group: Visible', 'is on']);
+  });
+
   it('stands the parts of an all in a line, and the parts of an any side by side', () => {
     expect(paths({ all: [grid, mm] })).toEqual(['start>test:0.0', 'test:0.0>test:0.1', 'test:0.1>end']);
     expect(paths({ any: [grid, mm] })).toEqual(['start>test:0.0', 'start>test:0.1', 'test:0.0>end', 'test:0.1>end']);

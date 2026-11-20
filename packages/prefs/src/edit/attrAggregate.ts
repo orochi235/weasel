@@ -38,14 +38,14 @@ function splitObject(
   return { agreed, mixed };
 }
 
-/** `held` with `value` at the field `keys` name, a field holding nothing left out. */
-function withObjectField(held: unknown, keys: readonly string[], value: unknown): Record<string, unknown> {
+/** `held` with `value` at the field `keys` name, a field holding nothing left out: `undefined` once no field is left. */
+function withObjectField(held: unknown, keys: readonly string[], value: unknown): Record<string, unknown> | undefined {
   const [key, ...rest] = keys;
   const next = { ...fieldsOf(held) };
   const inner = rest.length === 0 ? value : withObjectField(getOwn(next, key!), rest, value);
   if (inner === undefined) delete next[key!];
   else setOwn(next, key!, inner);
-  return next;
+  return Object.keys(next).length > 0 ? next : undefined;
 }
 
 /** Whether `attr` names a field inside an object attribute of `schema`, as `frame.edge` does, and not an attribute. */

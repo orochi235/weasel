@@ -26,6 +26,12 @@ describe('a schema draft', () => {
     expect(nodeAt(back, 'view/cut')).toMatchObject({ max: Infinity });
   });
 
+  it('comes back equal holding plain data whose keys are the ones it writes for itself', () => {
+    const table = { $type: 'x', $unset: ['a'], $num: '1', $stub: true, $from: 'here', $data: 2, inner: { $num: 'NaN' } };
+    const back = round(setAttribute(SOURCE, 'view/cut', 'default', table));
+    expect((nodeAt(back, 'view/cut') as { default: unknown }).default).toEqual(table);
+  });
+
   it('keeps a node’s code when the node was moved and re-keyed', () => {
     const moved = moveNodes(SOURCE, ['view/snap'], { parentPath: 'other', index: 0 }).root;
     const back = round(renameKey(moved, 'other/snap', 'stick'));

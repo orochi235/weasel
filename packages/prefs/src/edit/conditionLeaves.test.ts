@@ -44,3 +44,15 @@ describe('the entry a condition\'s node is drawn in', () => {
     expect(conditionLeafOf(leaves, { path: 'mode', is: 'a' })).toBe(atRoot);
   });
 });
+
+describe('the group a condition\'s node is declared in', () => {
+  const root: PrefGroup = { name: 'Root', children: { grid: { name: 'Grid', children: { visible: flag, count } }, mode } };
+
+  it('offers the leaves inside the group, read from the group, before the schema\'s', () => {
+    const leaves = conditionLeaves(root, undefined, undefined, 'grid');
+    expect(leaves.map(({ path, from }) => [path, from])).toEqual([
+      ['visible', 'group'], ['count', 'group'], ['grid.visible', undefined], ['grid.count', undefined], ['mode', undefined],
+    ]);
+    expect(conditionLeafOf(leaves, { from: 'group', path: 'visible', is: true })?.leaf).toBe(flag);
+  });
+});

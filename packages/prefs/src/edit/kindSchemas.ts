@@ -179,7 +179,7 @@ export function attributeSchema(
 ): AttributeSchema {
   if (!isPrefLeaf(node)) {
     const attrs = Object.entries(isPrefSection(node) ? SECTION_ATTRS : GROUP_ATTRS);
-    const shared = attrs.flatMap((attr): Array<[string, KindAttr]> => (attr[0] === 'as' ? [attr, ...(AS_ATTRS[node.as ?? ''] ?? [])] : [attr]));
+    const shared = attrs.flatMap((attr): Array<[string, KindAttr]> => (attr[0] === 'as' ? [attr, ...(getOwn(AS_ATTRS, node.as ?? '') ?? [])] : [attr]));
     return { shared: Object.fromEntries(shared), own: {}, auto: {}, entry: {}, readOnly: [] };
   }
   const typed = node.type !== undefined;
@@ -255,13 +255,12 @@ export function blankSection(): PrefSection {
   return { name: 'New section', description: '', members: {} };
 }
 
-const SHARED = ['name', 'description', 'tags', 'hidden', 'showIf', 'enableIf', 'disabledReason', 'block', 'heading', 'icon', 'pair', 'short', 'absentIsDefault', 'readout'];
-
 const PRIMITIVES = new Set(['string', 'number', 'boolean']);
 
-function carriesDefault(v: unknown, blank: Record<string, unknown>): boolean {
-  if (!PRIMITIVES.has(typeof v) || typeof v !== typeof blank.default) return false;
-  const options = blank.options as Array<{ value: unknown }> | undefined;
+/** Whether `v` can stand as the default of `made`, a converted leaf, against the options it ends up holding. */
+function carriesDefault(v: unknown, made: Record<string, unknown>): boolean {
+  if (!PRIMITIVES.has(typeof v) || typeof v !== typeof made.default) return false;
+  const options = made.options as Array<{ value: unknown }> | undefined;
   return options === undefined || options.some((o) => o.value === v);
 }
 
@@ -284,17 +283,17 @@ export function convertLeaf(leaf: PrefLeaf, choice: string, custom: CustomKinds 
   const typed = typeNamed(choice) !== undefined;
   const blank = leafOf(choice, types, custom) as unknown as Record<string, unknown>;
   const attrs = kindAttrs(choice, custom);
-  const keep = new Set([...SHARED, ...(typed ? [] : Object.keys(attrs))]);
+  const made = blank as unknown as PrefLeaf;
+  const keep = new Set([...Object.keys(sharedAttrs(made)), ...(typed ? [] : Object.keys(attrs))]);
   const next: Record<string, unknown> = { ...blank };
   const dropped: string[] = [];
   for (const [k, v] of Object.entries(leaf)) {
-    if (k === 'kind' || k === 'type' || v === undefined) continue;
-    if (k === 'default') {
-      if (!typed && carriesDefault(v, blank)) next.default = v;
-      else dropped.push('default');
-      continue;
-    }
+    if (k === 'kind' || k === 'type' || k === 'default' || v === undefined) continue;
     if (k === 'auto') {
+      if (!prefHoldsValue(made)) {
+        dropped.push('auto');
+        continue;
+      }
       // What it reads while auto is a value of the old kind.
       const kept = withAutoRow(v as LeafAuto, 'value', undefined);
       if (kept !== undefined) next.auto = kept;
@@ -309,6 +308,10 @@ export function convertLeaf(leaf: PrefLeaf, choice: string, custom: CustomKinds 
     }
     if (keep.has(k) && (typed || offers(getOwn(attrs, k), v))) setOwn(next, k, v);
     else dropped.push(k);
+  }
+  if (leaf.default !== undefined) {
+    if (!typed && carriesDefault(leaf.default, next)) next.default = leaf.default;
+    else dropped.push('default');
   }
   return { leaf: next as unknown as PrefLeaf, dropped };
 }

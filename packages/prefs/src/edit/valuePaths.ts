@@ -49,10 +49,16 @@ export function heldValuePaths(root: SchemaRoot): Set<string> {
 /** A value path before and after a move. */
 export type ValueMove = readonly [from: string, to: string];
 
-/** The value paths a node going from tree path `from` to `to` takes along; `null` for a section, whose key is no part of one. */
-export function valueMove(root: SchemaRoot, from: string, to: string): ValueMove | null {
-  const node = nodeAt(root, from);
-  return node && isPrefSection(node) ? null : [valuePathOf(root, from), valuePathOf(root, to)];
+/**
+ * The value paths a node going from tree path `from` in `before` to `to` in `after` takes along: its own, or for a
+ * section, whose key is no part of one, each value path it holds, since the path above it may have changed.
+ */
+export function valueMoves(before: SchemaRoot, from: string, after: SchemaRoot, to: string): ValueMove[] {
+  const node = nodeAt(before, from);
+  if (!node) return [];
+  if (!isPrefSection(node)) return [[valuePathOf(before, from), valuePathOf(after, to)]];
+  const is = valuePathsAt(after, to, nodeAt(after, to) ?? node);
+  return valuePathsAt(before, from, node).map((was, i): ValueMove => [was, is[i] ?? was]);
 }
 
 const under = (at: string, key: string): string => (at === '' ? key : `${at}.${key}`);
@@ -60,9 +66,9 @@ const under = (at: string, key: string): string => (at === '' ? key : `${at}.${k
 /**
  * `root` with `fn` applied to every node, a list's or a map's entry and a union's variants among them; the same
  * object where none changed. `fn` is told the value path of the entry the node is drawn in, its step written `*`
- * (`'phases.*'`): the item's own for the item, and `undefined` outside every list and map.
+ * (`'phases.*'`): the item's own for the item, and `undefined` outside every list and map, and the value path of the
+ * group the node is declared in.
  */
-/** `fn` is told the entry a node sits in, if any, and the path of the group it is declared in. */
 function mapNodes<R extends SchemaRoot>(root: R, fn: (node: SchemaNode, entry: string | undefined, group: string) => SchemaNode): R {
   /** `at(key, kid)` is the value path of each kid. */
   const each = <M extends ChildMap>(kids: M, at: (key: string, kid: SchemaNode) => string, entry: string | undefined, group: string): M => {

@@ -22,7 +22,7 @@ export function useKeyDraft(path: string | null) {
 export function keyProblemFor(schema: SchemaRoot, path: string, node: SchemaNode, key: string): string | null {
   const parent = parentPath(path);
   const host = nodeAt(schema, parent)!;
-  return keyProblem(keysTakenAt(schema, parent, isPrefLeaf(node)), key, takesDottedKey(host, node)) || null;
+  return keyProblem(keysTakenAt(schema, parent, isPrefLeaf(node)), key, takesDottedKey(host, node), nodeAt(schema, path)) || null;
 }
 
 /** The key `node`, at `path`, takes from its name; `null` when it keeps the one it has. */
