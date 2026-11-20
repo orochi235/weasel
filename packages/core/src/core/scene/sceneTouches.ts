@@ -27,6 +27,7 @@ export interface SceneTouches {
   readonly structural: boolean;
 }
 
+/** The touched-ids feed a scene carries: what each change since a token touched. */
 export interface SceneTouchesMembers {
   /**
    * What changed since `token`, a token an earlier call answered. Without one,
