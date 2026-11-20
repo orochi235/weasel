@@ -71,6 +71,11 @@ describe('weasel clipboard wire format', () => {
       expect(extractWeaselClipboardFromSvg(embedded)).toBe(payload);
     });
 
+    it('round-trips a payload containing a literal </metadata>', () => {
+      const payload = buildWeaselClipboardText([{ id: 'a', data: { text: 'see </metadata> here' } }]);
+      expect(extractWeaselClipboardFromSvg(embedWeaselMetadataInSvg(SVG, payload))).toBe(payload);
+    });
+
     it('inserts the metadata element immediately after the opening <svg ...> tag', () => {
       const payload = buildWeaselClipboardText([{ id: 'a' }]);
       const embedded = embedWeaselMetadataInSvg(SVG, payload);

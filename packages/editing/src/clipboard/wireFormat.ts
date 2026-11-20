@@ -69,12 +69,27 @@ export function embedWeaselMetadataInSvg(svgText: string, payloadText: string): 
  * is absent or not the weasel wire format. A text scan, not an XML parse.
  */
 export function extractWeaselClipboardFromSvg(svgText: string): string | null {
-  const block = /<metadata(?:\s[^>]*)?>([\s\S]*?)<\/metadata>/i.exec(svgText);
-  if (!block) return null;
-  const inner = block[1];
-  const payload = inner.includes('<![CDATA[')
-    ? Array.from(inner.matchAll(/<!\[CDATA\[([\s\S]*?)\]\]>/g), (m) => m[1]).join('')
-    : inner;
+  const open = /<metadata(?:\s[^>]*)?>/i.exec(svgText);
+  if (!open) return null;
+  // CDATA sections are read whole before looking for the close, so a payload holding `</metadata>` survives.
+  const sections: string[] = [];
+  let plain = '';
+  let at = open.index + open[0].length;
+  for (;;) {
+    const cdata = svgText.indexOf('<![CDATA[', at);
+    const close = svgText.slice(at).search(/<\/metadata>/i);
+    if (close < 0) return null;
+    if (cdata < 0 || cdata > at + close) {
+      plain += svgText.slice(at, at + close);
+      break;
+    }
+    const end = svgText.indexOf(']]>', cdata + 9);
+    if (end < 0) return null;
+    plain += svgText.slice(at, cdata);
+    sections.push(svgText.slice(cdata + 9, end));
+    at = end + 3;
+  }
+  const payload = sections.length > 0 ? sections.join('') : plain;
   return sniffWeaselClipboardText(payload) ? payload : null;
 }
 
