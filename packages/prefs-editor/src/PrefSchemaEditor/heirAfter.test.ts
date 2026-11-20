@@ -11,6 +11,10 @@ const ROOT: PrefGroup = {
   },
 };
 const OPEN = new Set(['view', 'text']);
+const DEEP: PrefGroup = {
+  name: 'Prefs',
+  children: { view: { name: 'View', children: { grid: { name: 'Grid', children: { major: leaf('Major') } } } } },
+};
 
 describe('heirAfter: the row the selection passes to when rows are removed', () => {
   it('is the next sibling', () => {
@@ -25,6 +29,12 @@ describe('heirAfter: the row the selection passes to when rows are removed', () 
   it('skips what goes with the removed rows, and passes over a folded branch to its own row', () => {
     expect(heirAfter(ROOT, OPEN, ['view/grid', 'view/snap'])).toBe('view/hints');
     expect(heirAfter(ROOT, new Set(['text']), ['text'])).toBe('view');
+  });
+
+  it('is the folded row holding what is removed, when the removed rows are not drawn', () => {
+    expect(heirAfter(ROOT, new Set(['text']), ['view/snap'])).toBe('view');
+    expect(heirAfter(ROOT, new Set(), ['view/grid', 'text/sharp'])).toBe('view');
+    expect(heirAfter(DEEP, new Set(['view']), ['view/grid/major'])).toBe('view/grid');
   });
 
   it('is null when nothing is left', () => {
