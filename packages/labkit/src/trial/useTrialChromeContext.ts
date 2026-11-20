@@ -111,7 +111,6 @@ export function useTrialChromeContext({
   // A store's actions never change, so they are read once rather than subscribed to.
   const writes = useMemo(() => store.getState(), [store]);
   const panels = useTrialPanels(store, trialId);
-  const view2d = chromeView(record.view);
   const overValues = useLabOverValues();
 
   // A trial's own camera zooms about the view's middle, in the instrument's range, as the lab's does.
@@ -121,6 +120,7 @@ export function useTrialChromeContext({
   const lightbox = useLightboxControl();
 
   return useMemo<TrialChromeContext>(() => {
+    const view2d = chromeView(record.view);
     const setZoom = (z: number): void => {
       if (camera) zoomCameraTo(camera, z);
       else if (view2d) writes.updateTrialView(trialId, withZoom(view2d, z));
@@ -168,7 +168,6 @@ export function useTrialChromeContext({
     undoBindings,
     loupe,
     lightbox,
-    view2d,
     toolSlot,
     actions,
     configSchema,

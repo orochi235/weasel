@@ -1,12 +1,14 @@
 import type { History } from '@weasel-js/core';
-import { useEffect, useMemo, useRef } from 'react';
+import { useLatest } from '@weasel-js/core';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { AnnotationsApi } from '../annotations/types';
 import { restoredEditStamp } from '../undo/editStamp';
 import type { UndoBindings } from './TrialChrome';
 import type { TrialHistorySource } from './trialHistory';
 import { type Steps, trialSteps, trialUndoBindings } from './trialUndo';
 
-/** What a trial's Undo and Redo step (`trialUndoBindings`), with its two histories kept one order. */
+/** What a trial's Undo and Redo step (`trialUndoBindings`), with its two histories kept one order. The bindings
+ *  keep their identity while what they answer holds, so the chrome they reach does not rebuild for them. */
 export function useTrialUndo(args: {
   declaresUndo: boolean;
   marks: { moves: { undo: boolean; redo: boolean }; store: AnnotationsApi } | null;
@@ -19,7 +21,17 @@ export function useTrialUndo(args: {
     [declaresUndo, own, snapshots],
   );
   useCrossRedo(marks?.store ?? null, steps);
-  return trialUndoBindings(args);
+  const bindings = trialUndoBindings(args);
+  const latest = useLatest(bindings);
+  const undo = useCallback(() => latest.current?.undo(), [latest]);
+  const redo = useCallback(() => latest.current?.redo(), [latest]);
+  const bound = bindings !== undefined;
+  const canUndo = bindings?.canUndo ?? false;
+  const canRedo = bindings?.canRedo ?? false;
+  return useMemo(
+    () => (bound ? { canUndo, canRedo, undo, redo } : undefined),
+    [bound, canUndo, canRedo, undo, redo],
+  );
 }
 
 type Marks = Pick<AnnotationsApi, 'subscribe' | 'undoStamp' | 'dropRedo'>;

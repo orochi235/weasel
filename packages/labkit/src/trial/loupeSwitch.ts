@@ -34,15 +34,11 @@ export function useLoupeSwitch(): { loupeSwitch: LoupeSwitch; loupeBindings?: Lo
     () => ({ on, mount, dropper, pick: setPicked }),
     [on, mount, dropper],
   );
-  if (lenses === 0) return { loupeSwitch };
-  return {
-    loupeSwitch,
-    loupeBindings: {
-      on,
-      toggle: () => setOn((v) => !v),
-      dropper,
-      toggleDropper: () => setDropper((v) => !v),
-      picked,
-    },
-  };
+  const toggle = useCallback(() => setOn((v) => !v), []);
+  const toggleDropper = useCallback(() => setDropper((v) => !v), []);
+  const loupeBindings = useMemo(
+    () => ({ on, toggle, dropper, toggleDropper, picked }),
+    [on, toggle, dropper, toggleDropper, picked],
+  );
+  return lenses === 0 ? { loupeSwitch } : { loupeSwitch, loupeBindings };
 }

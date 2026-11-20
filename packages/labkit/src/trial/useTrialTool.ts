@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useStore } from 'zustand/react';
 import type { Instrument, InstrumentList } from '../instrument/types';
 import type { LabStore } from '../state/store';
@@ -27,8 +28,10 @@ export function useTrialTool(
   const resolvedToolId = declaresTools
     ? (record.activeToolId ?? instrument.tools?.initial ?? instrument.tools?.tools[0]?.id ?? null)
     : labTool;
-  const slot = useTrialToolSlot(resolvedToolId, (id) =>
-    declaresTools ? setTrialTool(record.id, id) : setLabTool(id),
+  const setActiveTool = useCallback(
+    (id: string) => (declaresTools ? setTrialTool(record.id, id) : setLabTool(id)),
+    [declaresTools, record.id, setTrialTool, setLabTool],
   );
+  const slot = useTrialToolSlot(resolvedToolId, setActiveTool);
   return { labTool, slot };
 }
