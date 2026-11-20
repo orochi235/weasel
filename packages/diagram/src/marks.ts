@@ -6,7 +6,6 @@
 import {
   commandFill,
   commandStroke,
-  pathFromD,
   RECT_POSE_DESCRIPTOR,
   registerNodeShape,
   resolveFill,
@@ -18,6 +17,7 @@ import {
   type Path,
   type Stroke,
 } from '@weasel-js/core';
+import { parseUnitD } from './outlines/fromD';
 import type { Vec2 } from '@weasel-js/core/math';
 import type { MeasureRowText, RowTextStyle } from './body';
 import type { DiagramTextStyle } from './fromData';
@@ -56,13 +56,9 @@ const PARSED_MAX = 256;
 function unitPath(d: string, onWarn?: (message: string) => void): Path {
   let path = PARSED.get(d);
   if (path === undefined) {
-    let warned = false;
-    path = pathFromD(d, (message) => {
-      warned = true;
-      onWarn?.(message);
-    });
-    if (path.kind === 'polygon' && path.commands.length === 0) onWarn?.('it draws nothing');
-    else if (!warned) {
+    const parsed = parseUnitD(d, onWarn);
+    path = parsed.path;
+    if (parsed.ok) {
       if (PARSED.size >= PARSED_MAX) PARSED.clear();
       PARSED.set(d, path);
     }

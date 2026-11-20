@@ -146,4 +146,16 @@ describe('outlineFromD', () => {
     expect(plain.content!(BOX)).toEqual(BOX);
     expect(plain.detail).toBeUndefined();
   });
+
+  it('throws on path data that does not parse or draws nothing', () => {
+    expect(() => outlineFromD('0 0 L1 0 L1 1Z')).toThrow(/outlineFromD: path data "0 0 L1 0 L1 1Z"/);
+    expect(() => outlineFromD('M0 0 L1')).toThrow(/does not parse/);
+    expect(() => outlineFromD('')).toThrow(/draws nothing/);
+    expect(() => outlineFromD('M0 0 L1 1 Z', { detail: 'M0 0 Q1' })).toThrow(/detail/);
+  });
+
+  it('throws on a content box with no area', () => {
+    expect(() => outlineFromD('M0 0 L1 1 Z', { content: { x: 0, y: 0, width: 0, height: 1 } })).toThrow(RangeError);
+    expect(() => outlineFromD('M0 0 L1 1 Z', { content: { x: 0, y: 0, width: 1, height: Number.NaN } })).toThrow(RangeError);
+  });
 });

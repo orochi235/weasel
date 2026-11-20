@@ -2817,3 +2817,6 @@ Calls the lanes made without a ruling:
 
 - 2026-11-20 (the fixer's call): `roundRectOutline` throws a `RangeError` on a negative or `NaN` radius, and takes
   `Infinity` as "a sixth of the shorter side always". Clamping a negative radius to 0 was the alternative.
+- 2026-11-20 (the fixer's call): `outlineFromD` throws on path data or `detail` that does not parse or draws nothing,
+  and a `RangeError` on a `content` with no area or a non-finite side, matching what a mark's `d` does. Building an
+  outline that paints nothing, with a warning, was the alternative.
