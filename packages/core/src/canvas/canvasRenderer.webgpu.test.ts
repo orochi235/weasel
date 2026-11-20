@@ -53,3 +53,27 @@ describe('WebGPU leases mounted and freed on one device', () => {
     live.release();
   });
 });
+
+describe('a tile of a canvas painting with WebGPU', () => {
+  it('builds no renderer and warns once, and the canvas still paints whole', async () => {
+    const fake = fakeGpuDevice();
+    gpu.fake = fake;
+    HTMLCanvasElement.prototype.getContext = (function (kind: string) {
+      return kind === 'webgpu' ? fake.context : null;
+    }) as HTMLCanvasElement['getContext'];
+    const canvas = document.createElement('canvas');
+    const whole = leaseCanvasRenderer({ backend: () => 'auto' });
+    if (!whole.bind(canvas, size)) await new Promise((r) => setTimeout(r, 0));
+    expect(whole.bind(canvas, size)?.backend).toBe('webgpu');
+
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const tile = leaseCanvasRenderer({ backend: () => 'auto' });
+    expect(tile.bind(canvas, size, { tile: { x: 0, y: 0 } })).toBeNull();
+    expect(tile.bind(canvas, size, { tile: { x: 0, y: 0 } })).toBeNull();
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+    expect(whole.bind(canvas, size)?.backend).toBe('webgpu');
+    tile.release();
+    whole.release();
+  });
+});

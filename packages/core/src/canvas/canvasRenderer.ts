@@ -25,6 +25,8 @@ const TENANTS: WeakMap<HTMLCanvasElement, Set<WeaselRenderer>> = new WeakMap();
 /** Canvases whose context the renderer refused, so a redraw does not rebuild
  *  and fail again, and the reason is reported once. */
 const REFUSED: WeakSet<HTMLCanvasElement> = new WeakSet();
+/** Canvases a tile was refused on, warned about once. */
+const TILE_REFUSED: WeakSet<HTMLCanvasElement> = new WeakSet();
 
 /** A renderer painting into the canvas, if any lease holds one. */
 export function cachedCanvasRenderer(canvas: HTMLCanvasElement): WeaselRenderer | undefined {
@@ -221,6 +223,14 @@ function createRenderer(
   }
   if (choice.kind === 'refuse') {
     refuse(canvas, choice.reason);
+    return null;
+  }
+  if (choice.kind === 'refuse-tile') {
+    // Not `refuse`: the canvas painted whole can still use its WebGPU context.
+    if (!TILE_REFUSED.has(canvas)) {
+      TILE_REFUSED.add(canvas);
+      console.warn('weasel: this canvas cannot be painted as a tile:', choice.reason);
+    }
     return null;
   }
   if (choice.kind === 'webgpu') {
