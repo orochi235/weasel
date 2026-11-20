@@ -71,7 +71,7 @@ const axisOf = (node: { data: unknown }): 'x' | 'y' | undefined =>
  * The reorderable cluster or container a press on `id` carries a member of: the
  * nearest one above `id` with `reorder` set, and its member on the way up —
  * `id` itself, or the cluster or container holding it. `null` when none above
- * it reorders.
+ * it reorders, and when the climb comes back round to a box it has passed.
  */
 export function reorderTargetOf(
   scene: ReorderScene,
@@ -79,7 +79,10 @@ export function reorderTargetOf(
   boxOf: (id: string) => Bounds | null,
 ): ReorderTarget | null {
   const held = holders(scene);
-  for (let member = id, holder = holderOf(scene, held, id); holder !== undefined; member = holder, holder = holderOf(scene, held, holder)) {
+  // `dependsOn` is not checked for loops, so two boxes may hold each other: each is climbed past once.
+  const climbed = new Set<string>();
+  for (let member = id, holder = holderOf(scene, held, id); holder !== undefined && !climbed.has(holder); member = holder, holder = holderOf(scene, held, holder)) {
+    climbed.add(holder);
     const axis = axisOf(scene.get(holder)!);
     if (axis === undefined) continue;
     const start = (m: string) => {

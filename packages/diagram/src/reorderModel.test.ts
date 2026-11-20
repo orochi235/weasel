@@ -41,6 +41,13 @@ describe('a reorderable cluster under layered layout', () => {
 });
 
 describe('reorderTargetOf', () => {
+  it('ends where cluster boxes hold each other in a loop, none of them reordering', () => {
+    const cluster = (id: string, dependsOn: string[]) => ({ id, data: { diagram: { cluster: {} } }, dependsOn });
+    const nodes = [{ id: 'x', data: { diagram: {} } }, cluster('A', ['x', 'B']), cluster('B', ['A'])];
+    const looped: ReorderScene = { get: (id) => nodes.find((n) => n.id === id), renderOrderNodes: () => nodes };
+    expect(reorderTargetOf(looped, 'x', () => null)).toBeNull();
+  });
+
   const specs = diagramScene(layers(['a', 'b', 'c']), { layout: 'layered', layoutOptions: { direction: 'right' } });
   const scene = sceneOf(specs);
 
