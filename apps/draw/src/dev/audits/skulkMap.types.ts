@@ -12,7 +12,7 @@ export interface AuditPass {
   readonly distinct: number;
   readonly est: number;
   readonly left: number;
-  /** A live run's pass, its patch applied and its round's record not yet landed. */
+  /** A live run's pass, its area's pass done and its round's record not yet landed. */
   readonly provisional?: boolean;
 }
 
@@ -54,6 +54,8 @@ export interface LaneStep {
 export interface AuditLane {
   readonly id: string;
   readonly steps: Readonly<Record<LaneStepName, LaneStep>>;
+  /** The pass this round has made of the area, once matched, as its record will hold it. */
+  readonly pass?: AuditPass;
 }
 
 export interface AuditRun {

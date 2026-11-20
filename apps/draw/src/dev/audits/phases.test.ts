@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CLOCK_AHEAD_MINUTES, TYPICAL_MINUTES, isFinished, laneStepsOf, laneViewOf, phaseColor, phaseOf, phasesOf, runClockOf } from './phases';
+import { CLOCK_AHEAD_MINUTES, TYPICAL_MINUTES, isFinished, laneStepsOf, laneViewOf, passDone, phaseColor, phaseOf, phasesOf, runClockOf, withLivePasses } from './phases';
 import fixture from './fixture.map.json';
 import type { AuditLane, AuditRun, LaneStep, LaneStepName, SkulkMap } from './skulkMap.types';
 
@@ -74,6 +74,18 @@ describe('laneViewOf', () => {
     expect(laneViewOf(lane({ ...fixed, fix: done({ minutes: 9, commits: 6 }) }), NOW, START).spans.at(-1)?.label).toBe('4 found');
     expect(laneViewOf(lane(fixed), NOW, START).spans.at(-1)?.fill).toBe(0.75);
     expect(laneStepsOf(lane(fixed), NOW).at(-1)?.fill).toBe(0.75);
+  });
+
+  it('counts an area\'s pass done once its fixer is, and gives the map that pass, provisionally', () => {
+    const pass = { round: 47, date: '2026-11-20', a: 3, b: 2, shared: 1, distinct: 4, est: 5, left: 1 };
+    const fixing = { ...lane({ match: matched(3, 2, 1), fix: { state: 'running' } }), pass };
+    const fixed = { ...lane({ match: matched(3, 2, 1), fix: done({ commits: 4 }) }), pass };
+    expect([passDone(fixing), passDone(fixed)]).toEqual([false, true]);
+    const area = { id: 'x', group: 'x', files: 3, status: 'tonight', queue: null, passes: [], stage: null } as const;
+    const run = (l: typeof fixed) => ({ ...map.runs[0]!, running: true, lanes: [l] });
+    expect(withLivePasses([area], [run(fixing)])[0]!.passes).toEqual([]);
+    expect(withLivePasses([area], [run(fixed)])[0]!.passes).toEqual([{ ...pass, provisional: true }]);
+    expect(phasesOf([run(fixed)]).get('x')).toBe('done');
   });
 
   it('colors a failed part as a conflict and says why', () => {

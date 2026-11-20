@@ -119,6 +119,14 @@ const nightDirOf = (run, state) => {
   return name ? join(nights, name) : null;
 };
 
+/** Each lane with the pass its round has made of the area once matched, as the record will hold it. */
+export const withPasses = (lanes, run) => lanes.map((lane) => {
+  const { match } = lane.steps;
+  if (match.state !== 'done') return lane;
+  const { a = 0, b = 0, shared = 0 } = match;
+  return { ...lane, pass: passOf(run.round, run.started?.slice(0, 10) ?? '', a, b, shared, a + b - shared) };
+});
+
 /** Each area's fixer report that has come home, by area. */
 const fixReports = (nightDir, ids) => new Map(nightDir ? ids.flatMap((id) => {
   const file = join(nightDir, 'jobs', id, 'fix', 'claude.json');
@@ -144,7 +152,7 @@ export const readRun = (found, running, jobs = [], state = STATE_DIR) => {
     report: run.report ?? null,
     areas: areaIds,
     stages: Object.fromEntries(nightStages(log)),
-    lanes: nightLanes(log, areaIds, running ? own : own.filter((j) => j.finished), fixReports(run.nightDir, areaIds)),
+    lanes: withPasses(nightLanes(log, areaIds, running ? own : own.filter((j) => j.finished), fixReports(run.nightDir, areaIds)), run),
     sweepRunning: running && jobs.some((j) => !j.finished && /control-sweep$/.test(j.task ?? '')),
     nightDir: run.nightDir ?? null,
     lastLine: lines.at(-1) ?? null,
@@ -219,17 +227,6 @@ const passOf = (round, date, a, b, shared, distinct) => {
   return { round, date, a, b, shared, distinct, est: Math.round(est * 10) / 10, left: Math.max(0, Math.round((est - distinct) * 10) / 10) };
 };
 
-/**
- * The pass a live run has made of an area once its patch is applied, from its lane's match, so the map shades it by
- * this round before the round's record lands; `provisional` until then. Null before the patch.
- */
-export const livePassOf = (run, id) => {
-  const steps = run.lanes.find((l) => l.id === id)?.steps;
-  if (steps?.patch.state !== 'done' || steps.match.state !== 'done') return null;
-  const { a = 0, b = 0, shared = 0 } = steps.match;
-  return { ...passOf(run.round, run.started?.slice(0, 10) ?? '', a, b, shared, a + b - shared), provisional: true };
-};
-
 export const buildMap = (root) => {
   const git = gitIn(root);
   const head = git('rev-parse', '--short', 'HEAD');
@@ -245,8 +242,6 @@ export const buildMap = (root) => {
   const out = areas.map((area) => {
     const history = (passes.get(area.id) ?? []).map((p) => passOf(p.round, p.date, p.a, p.b, p.m, p.distinct));
     const run = holder.get(area.id);
-    const live = run && livePassOf(run, area.id);
-    if (live && !history.some((p) => p.round === live.round)) history.push(live);
     const status = run ? 'tonight' : settledSet.has(area.id) ? 'settled' : history.length ? 'due' : 'unaudited';
     return {
       id: area.id,
@@ -261,7 +256,7 @@ export const buildMap = (root) => {
 
   const rounds = new Map();
   for (const a of out) {
-    for (const p of a.passes.filter((q) => !q.provisional)) {
+    for (const p of a.passes) {
       const r = rounds.get(p.round) ?? { round: p.round, date: p.date, areas: 0, files: 0, distinct: 0, est: 0 };
       r.areas += 1;
       r.files += a.files;

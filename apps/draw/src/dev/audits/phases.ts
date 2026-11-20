@@ -2,7 +2,7 @@
 import { getOwn } from '@weasel-js/registry';
 import type { SpanState, SpanStripSpan } from '@weasel-js/ui/components/SpanStrip';
 import { stepText } from './runData';
-import type { AuditLane, AuditRun, LaneStep, LaneStepName } from './skulkMap.types';
+import type { AuditArea, AuditLane, AuditRun, LaneStep, LaneStepName } from './skulkMap.types';
 import palette from './palette.module.css';
 
 /** Where every area goes, in order, `reviewed` once one of its two reviews is in: their colors run along one sweep,
@@ -81,9 +81,23 @@ function partPhase(p: PartState): AuditPhase {
   return p.part;
 }
 
-/** Every area a live run holds, by id, and its phase. */
+/** Whether the round's pass over an area is done: it is through, or its fixer has finished and only its patch, which
+ *  lands with the round's batch, is left. */
+export const passDone = (lane: AuditLane): boolean => isFinished(lane) || lane.steps.fix.state === 'done';
+
+/** Every area a live run holds, by id, and its phase on the map: `done` once its pass is. */
 export function phasesOf(runs: readonly AuditRun[]): ReadonlyMap<string, AuditPhase> {
-  return new Map(runs.filter((r) => r.running).flatMap((r) => r.lanes.map((lane) => [lane.id, phaseOf(lane)] as const)));
+  return new Map(runs.filter((r) => r.running).flatMap((r) => r.lanes.map((lane) => [lane.id, passDone(lane) ? 'done' : phaseOf(lane)] as const)));
+}
+
+/** `areas`, each whose pass a live run has done carrying that pass, provisional until the round's record lands. */
+export function withLivePasses(areas: readonly AuditArea[], runs: readonly AuditRun[]): readonly AuditArea[] {
+  const live = new Map(runs.filter((r) => r.running).flatMap((r) => r.lanes.filter((l) => l.pass && passDone(l)).map((l) => [l.id, l.pass!] as const)));
+  if (live.size === 0) return areas;
+  return areas.map((a) => {
+    const pass = live.get(a.id);
+    return pass && !a.passes.some((p) => p.round === pass.round) ? { ...a, passes: [...a.passes, { ...pass, provisional: true }] } : a;
+  });
 }
 
 const ms = (iso: string | undefined): number | null => {

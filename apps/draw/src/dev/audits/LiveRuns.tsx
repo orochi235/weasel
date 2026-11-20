@@ -3,7 +3,7 @@ import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { SpanStrips, type SpanStripSpan, type SpanStripsRow } from '@weasel-js/ui/components/SpanStrip';
 import { clockRuler } from './clock';
-import { laneStepsOf, laneViewOf, runClockOf, type LaneView } from './phases';
+import { laneStepsOf, laneViewOf, passDone, runClockOf, type LaneView } from './phases';
 import { headlineOf, lastLineOf, sharedLaneOf, spendOf } from './runData';
 import { useViewerPref } from './viewerPref';
 import type { AuditLane, AuditRun } from './skulkMap.types';
@@ -53,11 +53,11 @@ function useHideComplete(): [boolean, (hide: boolean) => void] {
 const STEPS_WINDOW = { from: 0, to: 5 };
 
 /** The run's areas, on the run's clock or as a grid of steps; a finished one stays, filled, until the run ends, unless
- *  the viewer hides it. */
+ *  the viewer hides those whose pass is done, as the map shows them. */
 function Lanes({ run, now, mode, hideComplete, on }: { run: AuditRun; now: number; mode: LaneMode; hideComplete: boolean; on: AreaHandlers }) {
   const ref = useRef<HTMLDivElement>(null);
   const clock = runClockOf(run, now);
-  const lanes = run.lanes.map((lane) => ({ lane, view: laneViewOf(lane, now, clock.from) })).filter(({ view }) => !hideComplete || !view.finished);
+  const lanes = run.lanes.map((lane) => ({ lane, view: laneViewOf(lane, now, clock.from) })).filter(({ lane }) => !hideComplete || !passDone(lane));
   const widest = Math.max(0, ...run.lanes.map((l) => l.id.length));
   useLayoutEffect(() => { ref.current?.style.setProperty('--audit-lead-ch', String(widest)); }, [widest]);
   if (lanes.length === 0) return null;

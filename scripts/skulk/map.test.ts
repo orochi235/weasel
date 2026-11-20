@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { livePassOf, nightLanes, nightRoundOf, nightStages, nightsOf, readRuns } from './map.mjs';
+import { nightLanes, nightRoundOf, nightStages, nightsOf, readRuns, withPasses } from './map.mjs';
 import { claimRound, writeStatus, writeSummary } from './runs.mjs';
 
 const dirs: string[] = [];
@@ -79,13 +79,13 @@ describe('nightLanes', () => {
   });
 });
 
-describe('livePassOf', () => {
-  it('gives an area this round\'s pass once its patch is applied, and none before', () => {
+describe('withPasses', () => {
+  it('gives a matched lane the pass its round made of the area, and an unmatched one none', () => {
     const W = { state: 'waiting' };
-    const lane = (patch: object) => ({ id: 'a', steps: { A: W, B: W, match: { state: 'done', a: 7, b: 4, shared: 1 }, fix: W, patch } });
-    const run = (patch: object) => ({ round: 47, started: '2026-11-20T14:11:24.920Z', lanes: [lane(patch)] });
-    expect(livePassOf(run({ state: 'waiting' }), 'a')).toBeNull();
-    expect(livePassOf(run({ state: 'done', commits: 3 }), 'a')).toMatchObject({ round: 47, date: '2026-11-20', distinct: 10, est: 19, left: 9, provisional: true });
+    const matched = { id: 'a', steps: { A: W, B: W, match: { state: 'done', a: 7, b: 4, shared: 1 }, fix: W, patch: W } };
+    const [a, b] = withPasses([matched, { id: 'b', steps: { A: W, B: W, match: W, fix: W, patch: W } }], { round: 47, started: '2026-11-20T14:11:24.920Z' });
+    expect(a!.pass).toEqual({ round: 47, date: '2026-11-20', a: 7, b: 4, shared: 1, distinct: 10, est: 19, left: 9 });
+    expect(b).not.toHaveProperty('pass');
   });
 });
 

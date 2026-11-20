@@ -111,7 +111,9 @@ function paintCell(d: AuditCellData, p: RectPose): DrawCommand[] {
 }
 
 function paintFrame(d: AuditFrameData, p: RectPose): DrawCommand[] {
-  const out: DrawCommand[] = [{ kind: 'path', path: rect(p), stroke: { paint: { color: d.edge, opacity: d.depth === 0 ? 0.55 : 0.3 }, width: 1 } }];
+  // Top and bottom edges only: side edges would stand between areas the layout lines up across frames.
+  const edges = pathFromD(`M ${p.x} ${p.y + 0.5} H ${p.x + p.width} M ${p.x} ${p.y + p.height - 0.5} H ${p.x + p.width}`);
+  const out: DrawCommand[] = [{ kind: 'path', path: edges, stroke: { paint: { color: d.edge, opacity: d.depth === 0 ? 0.55 : 0.3 }, width: 1 } }];
   if (d.title) {
     const room = framePadOf(d.depth).title;
     out.push(...filled(rect({ ...p, height: Math.min(p.height, room) }, 0.5), { color: d.band }));
