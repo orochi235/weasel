@@ -1,10 +1,11 @@
 import type { Action, InvocationCtx } from '@weasel-js/routing';
-import { ActionDisabledReason, defineAction, resolveParams } from '@weasel-js/routing';
+import { defineAction, resolveParams } from '@weasel-js/routing';
 import type { Scene, NodeId, Op } from '@weasel-js/core';
 import { commitOps, inheritedPaintIn, paintInheritors } from '@weasel-js/core/engine';
 import { INHERIT } from '@weasel-js/paint';
 import { deepEqual, isFiniteNumber } from '@weasel-js/registry';
 import * as coreOps from '@weasel-js/core/ops';
+import { operandContent, requiresContent } from '@weasel-js/core';
 
 /** The node data one paint action reads and writes: its own key, nothing else. */
 type PaintData<K extends string, TValue> = { [P in K]?: TValue | null };
@@ -101,7 +102,7 @@ export function createPaintAction<TState, TValue, K extends string, P>(
 
         if (!selection || !scene) return {};
 
-        const ids = selection.get() as NodeId[];
+        const ids = [...operandContent(ctx.deps)];
         if (ids.length === 0) return {};
 
         const fallback = resolveParams(opts?.params);
@@ -162,12 +163,6 @@ export function createPaintAction<TState, TValue, K extends string, P>(
         };
       },
     },
-    enabled: (deps) => {
-      const sel = deps?.operands;
-      if (!sel || (sel.get() as unknown[]).length === 0) {
-        return ActionDisabledReason.SelectionRequired;
-      }
-      return true;
-    },
+    enabled: requiresContent(1),
   });
 }

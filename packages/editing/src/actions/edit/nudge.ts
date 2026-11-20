@@ -2,7 +2,7 @@ import type { Scene, OperandsDep, PoseDescriptor, GeometryProjection } from '@we
 import type { Op } from '@weasel-js/core';
 import { poseDescriptorOf, defaultCommitAdapter, operandMethods, createTransformCommit } from '@weasel-js/core/engine';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
-import { requiresOperands, moveNodesOps, nudgeSpec, NUDGE_LABEL, nudgeDelta, type NudgeDirection, recordTransform } from '@weasel-js/core';
+import { requiresContent, operandContent, moveNodesOps, nudgeSpec, NUDGE_LABEL, nudgeDelta, type NudgeDirection, recordTransform } from '@weasel-js/core';
 import { NUDGE_GROUP } from '../../actionGroups';
 
 /**
@@ -54,16 +54,16 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
         const geometryProjection = deps.geometryProjection;
         if (!selection || !scene) return;
         if (translateSelection(selection, scene, dx, dy, applyOps, geometryProjection, poseDescriptorOf(deps.poseDescriptor))) {
-          recordTransform(scene, { kind: 'translate', dx, dy }, selection.get());
+          recordTransform(scene, { kind: 'translate', dx, dy }, operandContent(deps));
         }
       },
     },
     // On while some selected node would move: a step rounding absorbs moves nothing (2026-11-10 ruling).
     enabled: (deps, _at, _carried, params) => {
-      const given = requiresOperands(deps);
+      const given = requiresContent(1)(deps);
       if (given !== true || !deps?.scene) return given;
       const { dx, dy } = nudgeDelta(dir, params?.magnitude);
-      const ops = moveNodesOps(deps.scene, deps.operands!.get() as readonly string[], { dx, dy }, deps, 'Nudge');
+      const ops = moveNodesOps(deps.scene, operandContent(deps), { dx, dy }, deps, 'Nudge');
       return ops.length > 0 ? true : ActionDisabledReason.NotApplicable;
     },
   };
