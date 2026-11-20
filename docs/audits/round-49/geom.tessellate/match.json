@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   1,
+   2
+  ]
+ ],
+ "a": [
+  "Nonzero fills whose outlines cross only at a vertex skip crossing resolution, so overlaps are drawn twice or filled where winding is 0",
+  "nestRings rejects a ring on its container's outline when a vertex rounds just outside the container's box"
+ ],
+ "b": [
+  "A point cut inside a straight edge takes the nearer anchor's color instead of the blend (trim heads/tails, fill crossing nodes)",
+  "Nonzero fills resolve crossings with no work bound, unlike even-odd",
+  "nestRings rejects a ring by bounding box before checking whether the vertex lies on the outer ring's outline",
+  "resolveCrossings ignores an incomplete chain, so a nonzero fill silently loses the region",
+  "flattenPolygon copies kept contours by spreading them into push, which throws on a large contour"
+ ]
+}

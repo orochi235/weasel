@@ -1,0 +1,67 @@
+{
+ "id": "guides",
+ "commit": "2f3b11aab7ae249a1690ff9a4409dbdf440e5222",
+ "date": "2026-11-20",
+ "files": [
+  "packages/guides/src/index.ts",
+  "packages/guides/src/pbt.fixture.ts",
+  "packages/guides/src/rulers/actions.ts",
+  "packages/guides/src/rulers/createRulers.ts",
+  "packages/guides/src/rulers/hit.ts",
+  "packages/guides/src/rulers/index.ts",
+  "packages/guides/src/rulers/layout.ts",
+  "packages/guides/src/rulers/reading.ts",
+  "packages/guides/src/rulers/settings.ts",
+  "packages/guides/src/rulers/ticks.ts",
+  "packages/guides/src/sources/alignment.ts",
+  "packages/guides/src/sources/grid.ts",
+  "packages/guides/src/sources/guides.ts",
+  "packages/guides/src/sources/index.ts",
+  "packages/guides/src/sources/lines.ts",
+  "packages/guides/src/sources/spacing.ts",
+  "packages/guides/src/sources/targets.ts",
+  "packages/guides/src/sources/testing/session.ts",
+  "packages/guides/src/spacingHints/distance.ts",
+  "packages/guides/src/spacingHints/distanceReadout.ts",
+  "packages/guides/src/spacingHints/index.ts",
+  "packages/guides/src/spacingHints/preset.ts",
+  "packages/guides/src/strategies/onPlane.ts"
+ ],
+ "a": 4,
+ "b": 7,
+ "m": 4,
+ "distinct": 7,
+ "chapman": 7,
+ "unfound": 0,
+ "read": {
+  "A": 23,
+  "B": 23
+ },
+ "patches": 7,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.5,
+   "B": 7.2,
+   "match": 0.1,
+   "fix": 19.7
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 2352718,
+  "costUsd": 6.57
+ },
+ "fixCommits": [
+  "940b8516468b04f730baa783ff5fa76ecba72d01",
+  "815f90b4a527e872eeb601f786bde5a3c1daac6d",
+  "d5be3f87e73dfaa93ab3a6a9dd2345ab250a13d5",
+  "0f352c99a1d62fcbcb9b49a2c69a8c81c29b40d5",
+  "11a1cd39127dca58a3c2ad0f8f695ea00b56c1b5",
+  "13e50e72130ab07ac5ae451de91ce2c5aa6ba5d0",
+  "7071bf19ea205b8de05ae594affcb62a6e7a9e95"
+ ]
+}

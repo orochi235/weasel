@@ -1,0 +1,66 @@
+{
+ "id": "history",
+ "commit": "2f3b11aab7ae249a1690ff9a4409dbdf440e5222",
+ "date": "2026-11-20",
+ "files": [
+  "packages/history/src/createSwapOp.ts",
+  "packages/history/src/entryOps.ts",
+  "packages/history/src/forks.ts",
+  "packages/history/src/history.ts",
+  "packages/history/src/historyTypes.ts",
+  "packages/history/src/index.ts",
+  "packages/history/src/journal.ts",
+  "packages/history/src/journalSlot.ts",
+  "packages/history/src/op.ts",
+  "packages/history/src/recording.ts",
+  "packages/history/src/restore.ts",
+  "packages/history/src/serialized.ts",
+  "packages/history/src/snapshotShape.ts",
+  "packages/history/src/stackTime.ts",
+  "packages/history/src/stackView.ts",
+  "packages/history/src/versionClock.ts",
+  "packages/history/src/walk.ts"
+ ],
+ "a": 8,
+ "b": 7,
+ "m": 5,
+ "distinct": 10,
+ "chapman": 11,
+ "unfound": 1,
+ "read": {
+  "A": 17,
+  "B": 17
+ },
+ "patches": 12,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 9,
+   "B": 7,
+   "match": 0.2,
+   "fix": 18.6
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 2529839,
+  "costUsd": 7.13
+ },
+ "fixCommits": [
+  "3c7a87a29a1692456120a02b522f50df19e50faf",
+  "2e1270087372fc070274bbecf222d4939a39d2c4",
+  "a2f20aed6bb92534cd88b075e0c3b205ceed17d6",
+  "10dd276286d370fb493ec2750a08c4876deac0b8",
+  "ff75b6f621a754b5606eed124d616a54bc088163",
+  "f50c6d9bd21f2e460d10bcb27ba459c2160fa6d9",
+  "fb96bd38244356f3de250f071ab428e22433e4a2",
+  "17fa534f8b8b17a3b8d58ee7cefe3a62e884c1ec",
+  "1b003008ffd1bda5df239162342db4c8dac2ce30",
+  "88879195069dbd67ece1351d0eb50d461a45a11e",
+  "8cf81ed0c72a3a5a55f84cddf8b33fcc9f273587",
+  "602f8c26566fb618d3ac37e13b689ea1cb8d9fbe"
+ ]
+}

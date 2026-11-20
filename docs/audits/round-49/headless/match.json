@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "A lost WebGL context leaves the host failing every render for good",
+  "A page that crashed between renders fails the next render although the host already knows",
+  "A failing cleanup in `open` hides the error that caused it"
+ ],
+ "b": [
+  "sceneToWire decodes a live Scene's `toJSON()` as if it were encoded, so node data shaped like a codec tag changes type or value on the way to the page",
+  "`difference` compares only `a.length` bytes and goes `NaN` on a length mismatch, so a short or empty node raster can read as identical",
+  "The page's `toBase64` builds a binary string the size of the raster, so a large render fails with V8's \"Invalid string length\" instead of a usable error"
+ ]
+}

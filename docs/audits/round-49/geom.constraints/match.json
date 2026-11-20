@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   2,
+   1
+  ]
+ ],
+ "a": [
+  "An `onPath` constraint survives a subpath reversal with its segment still named in the old direction, so the solve holds the anchor on the wrong curve",
+  "`segmentBetween` cannot answer the closing segment of a two-anchor closed subpath, and answers its opening segment instead",
+  "A path's own constraint naming an anchor past that path's count silently binds an anchor of the next path in a multi-path edit",
+  "A `length` or `equalLength` constraint whose segment starts with zero length gets no gradient, so the solve cannot open the segment"
+ ],
+ "b": [
+  "anchorsBefore takes an anchor the edit added at an open subpath's end for a copy of its neighbor, so constraints and `fixed` references move onto the new anchor",
+  "An item's own constraint naming an anchor past its path's count binds to another item's anchor in constrainPathsEdit"
+ ]
+}

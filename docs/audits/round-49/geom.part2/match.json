@@ -1,0 +1,50 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   2,
+   5
+  ],
+  [
+   3,
+   4
+  ],
+  [
+   4,
+   7
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   1
+  ]
+ ],
+ "a": [
+  "poseFrameInverseOf / pathThroughPoseFrame throw on a null or undefined pose, where poseFrameOf answers null",
+  "stepLine with step 0 (or a non-finite step) answers a line of NaN direction",
+  "tagTypedArrays and typedArrayReplacer disagree on a class instance shaped like a tag or a wrapper",
+  "trackRun.nearest clamps the whole shape's nearest fraction into the run, so a point past one end of a sub-run snaps to the wrong end",
+  "Quadrant snap targets are placed from the control-point box, not the curve's box, so they miss on any curve whose handles overshoot it",
+  "polygonIntersectsPath with `filled: false` still counts the phantom closing chord of an open subpath",
+  "rotatePathAbout writes rotated coords far from the origin straight into Float32, where transformPath gives them an origin"
+ ],
+ "b": [
+  "polygonIntersectsPath with `filled: false` counts the unstroked closing edge of an open subpath",
+  "rotatePathAbout writes far-out world coords straight into float32, where transformPath gives them an origin",
+  "poseFrameInverseOf / poseRotationOf throw on a null or undefined pose that poseFrameOf accepts",
+  "ringSignedArea loses the area's sign far from the origin",
+  "trackRun.nearest clamps the whole shape's nearest fraction into the run, where trackSlice searches the stretch",
+  "tagTypedArrays leaves a class instance unwrapped that the replacer wraps, so `{__raw}`/`{__ta,data}`-shaped instances revive wrong",
+  "shiftTrack carries a closed shape past its seam at the seam's local ratio, so an open `at`/`nearest` past 1 lands off the shifted track's own length",
+  "Quadrant snap targets are centered on the control-point box, not the subpath's box",
+  "The paths guide documents nearestOnPath's result as `dist` and the hit tests' option as `tolerance`; the code has `distance` and `flattenTolerance`",
+  "ellipseShape turns `start: 0, end: 360` into a zero-length or not-quite-closed track, where arcShape and trackShapeD call it whole",
+  "pbt fixture `coord` promises no `-0` but its range includes it"
+ ]
+}

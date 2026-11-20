@@ -1,0 +1,52 @@
+{
+ "id": "guides.guides",
+ "commit": "2f3b11aab7ae249a1690ff9a4409dbdf440e5222",
+ "date": "2026-11-20",
+ "files": [
+  "packages/guides/src/guides/alignment/derive.ts",
+  "packages/guides/src/guides/alignment/finite.ts",
+  "packages/guides/src/guides/alignment/index.ts",
+  "packages/guides/src/guides/alignment/match.ts",
+  "packages/guides/src/guides/alignment/sceneBounds.ts",
+  "packages/guides/src/guides/alignment/spacing.ts",
+  "packages/guides/src/guides/alignment/types.ts",
+  "packages/guides/src/guides/index.ts",
+  "packages/guides/src/guides/layer.ts",
+  "packages/guides/src/guides/ops.ts",
+  "packages/guides/src/guides/types.ts",
+  "packages/guides/src/guides/useGuides.ts"
+ ],
+ "a": 3,
+ "b": 2,
+ "m": 1,
+ "distinct": 4,
+ "chapman": 5,
+ "unfound": 1,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "patches": 3,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3,
+   "B": 2.9,
+   "match": 0.2,
+   "fix": 12.7
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1576948,
+  "costUsd": 4.67
+ },
+ "fixCommits": [
+  "15cd80bb7ea759c9cad79da043a469f270f2b6f5",
+  "d4793c883d2328d739ae44a70e522011b4c30085",
+  "16b03e68164ee1b983b0ced344f7eb99d65c7e04"
+ ]
+}

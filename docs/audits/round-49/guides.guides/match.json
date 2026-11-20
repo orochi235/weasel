@@ -1,0 +1,17 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ]
+ ],
+ "a": [
+  "matchSpacing filters reference gaps against the pre-snap box, so a snap that carries the box into a gap's strip still marks that gap",
+  "Add and replace guide ops that change nothing still record an undo step",
+  "Equal-spacing EPS of 1e-6 is absolute, so far from the origin rounding in `x + width` reads touching boxes as overlapping or gapped"
+ ],
+ "b": [
+  "createAddGuideOp and createReplaceGuideOp record an undo step for a write that changed nothing",
+  "siblingBounds/worldBoundsOf ignore parallax planes, which deriveAlignmentGuides carries out to the camera's world"
+ ]
+}

@@ -1,0 +1,52 @@
+{
+ "id": "geom.constraints",
+ "commit": "2f3b11aab7ae249a1690ff9a4409dbdf440e5222",
+ "date": "2026-11-20",
+ "files": [
+  "packages/geom/src/constraints/check.ts",
+  "packages/geom/src/constraints/conflicts.ts",
+  "packages/geom/src/constraints/index.ts",
+  "packages/geom/src/constraints/pathConstraints.ts",
+  "packages/geom/src/constraints/pathsEdit.ts",
+  "packages/geom/src/constraints/points.ts",
+  "packages/geom/src/constraints/residuals.ts",
+  "packages/geom/src/constraints/solve.ts",
+  "packages/geom/src/constraints/sparse.ts",
+  "packages/geom/src/constraints/types.ts"
+ ],
+ "a": 4,
+ "b": 2,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 6.5,
+ "unfound": 1.5,
+ "read": {
+  "A": 10,
+  "B": 10
+ },
+ "patches": 5,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.3,
+   "B": 2.6,
+   "match": 3,
+   "fix": 10.4
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "weightedTokens": 1351092,
+  "costUsd": 4.23
+ },
+ "fixCommits": [
+  "5b84935a37785817f0f428e113303f89f00086e3",
+  "4dff167e72cb80b06ca27ff7108bc2686c0658b3",
+  "81cc3f8236d44493042a1b822732f7b845e97b50",
+  "2b2664182ce95ba77ca1f8da1b587fe75951fddc",
+  "e2808441cb755af4dc38fdf9c7c03a535387a59f"
+ ]
+}

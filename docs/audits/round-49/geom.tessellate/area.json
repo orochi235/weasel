@@ -1,0 +1,53 @@
+{
+ "id": "geom.tessellate",
+ "commit": "2f3b11aab7ae249a1690ff9a4409dbdf440e5222",
+ "date": "2026-11-20",
+ "files": [
+  "packages/geom/src/tessellate/anchorParams.ts",
+  "packages/geom/src/tessellate/atCurve.ts",
+  "packages/geom/src/tessellate/crossings.ts",
+  "packages/geom/src/tessellate/evenOdd.ts",
+  "packages/geom/src/tessellate/index.ts",
+  "packages/geom/src/tessellate/mesh.ts",
+  "packages/geom/src/tessellate/nesting.ts",
+  "packages/geom/src/tessellate/polyline.ts",
+  "packages/geom/src/tessellate/sweep.ts",
+  "packages/geom/src/tessellate/tessellate.ts",
+  "packages/geom/src/tessellate/trim.ts"
+ ],
+ "a": 2,
+ "b": 5,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 8,
+ "unfound": 2,
+ "read": {
+  "A": 11,
+  "B": 11
+ },
+ "patches": 5,
+ "questions": 1,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 9.6,
+   "B": 11.3,
+   "match": 0.1,
+   "fix": 20.8
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2171591,
+  "costUsd": 6.54
+ },
+ "fixCommits": [
+  "1e58c0da304e6bfdb3f1b7d48fd5a7b0492b36e4",
+  "d3b462a61c46fdcae50638d61d6ada1c735a31aa",
+  "d764d066eb4acde426fe7e79b10fe34991a3a9f4",
+  "cbd9a266a20fcd63e6ce2aad11ba0b5c74e2ce76",
+  "adb129016e4bf5bd5cb9addfe07eba8d21c71be5"
+ ]
+}

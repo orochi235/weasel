@@ -1,0 +1,75 @@
+{
+ "id": "geom.booleans",
+ "commit": "2f3b11aab7ae249a1690ff9a4409dbdf440e5222",
+ "date": "2026-11-20",
+ "files": [
+  "packages/geom/src/booleans/adapter.ts",
+  "packages/geom/src/booleans/arrangement.ts",
+  "packages/geom/src/booleans/clipper.ts",
+  "packages/geom/src/booleans/contourSegments.ts",
+  "packages/geom/src/booleans/contours.ts",
+  "packages/geom/src/booleans/coverageBoundary.ts",
+  "packages/geom/src/booleans/crossingPolish.ts",
+  "packages/geom/src/booleans/curveBoolean.ts",
+  "packages/geom/src/booleans/curveClassify.ts",
+  "packages/geom/src/booleans/curveEdges.ts",
+  "packages/geom/src/booleans/curveFaces.ts",
+  "packages/geom/src/booleans/curveOverlap.ts",
+  "packages/geom/src/booleans/curvePieces.ts",
+  "packages/geom/src/booleans/curveShapes.fixtures.ts",
+  "packages/geom/src/booleans/curveTrace.ts",
+  "packages/geom/src/booleans/cutCrossings.ts",
+  "packages/geom/src/booleans/cutLoops.ts",
+  "packages/geom/src/booleans/cutPolyline.ts",
+  "packages/geom/src/booleans/cutRegions.ts",
+  "packages/geom/src/booleans/edgeCrossings.ts",
+  "packages/geom/src/booleans/faceArrangement.bench.ts",
+  "packages/geom/src/booleans/faceCycles.ts",
+  "packages/geom/src/booleans/glyphCell.fixture.ts",
+  "packages/geom/src/booleans/index.ts",
+  "packages/geom/src/booleans/meshJunctions.ts",
+  "packages/geom/src/booleans/meshOutline.ts",
+  "packages/geom/src/booleans/ops.ts",
+  "packages/geom/src/booleans/snipAtCrossings.ts",
+  "packages/geom/src/booleans/splitBySegment.ts",
+  "packages/geom/src/booleans/trianglesToPath.ts",
+  "packages/geom/src/booleans/vertexFans.ts"
+ ],
+ "a": 2,
+ "b": 6,
+ "m": 1,
+ "distinct": 7,
+ "chapman": 9.5,
+ "unfound": 2.5,
+ "read": {
+  "A": 31,
+  "B": 31
+ },
+ "patches": 7,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.2,
+   "B": 5.6,
+   "match": 0.1,
+   "fix": 20.6
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 2998806,
+  "costUsd": 8.73
+ },
+ "fixCommits": [
+  "1eb7552e8bdaf54d3a1f85518feacc1a01e310d7",
+  "0ee2887d3734d720dea77ba9ed54e81abb763e69",
+  "7a053e0070e1185bfc2b1af9fd47de05053e7760",
+  "daba59fc6e5bc24487bb3bdc1293f955d2254803",
+  "acb38fe0552ce55eab4983fd35a666501fac1079",
+  "cf2ad81d49a33beb4667cca03bb171888669f1fa",
+  "4fb8cbf4de684bc98c54f6c6e214b9d4790f09d3"
+ ]
+}

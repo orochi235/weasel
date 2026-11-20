@@ -1,0 +1,20 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "unwarpPoint fails to converge when a pin warp turns the shape more than 60°, and returns its last guess rather than its best",
+  "Dropping a rejected step corrupts the oldest saved step once the L-BFGS memory is full",
+  "Dragging a pin does nothing when an earlier pin already holds the same vertex",
+  "A pinned vertex that refine leaves out of every triangle stays where it was and never reaches its target"
+ ],
+ "b": [
+  "A pin warp's mesh fills an even-odd path's self-crossing outline as if it did not cross",
+  "L-BFGS overwrites its oldest remembered step pair before it decides to drop the new one",
+  "meshLocator's search ends at ring 1 without the bound its comment promises",
+  "A mesh piece holding two or more pins whose system fails to factor ignores its own pins"
+ ]
+}

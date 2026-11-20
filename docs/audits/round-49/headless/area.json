@@ -1,0 +1,56 @@
+{
+ "id": "headless",
+ "commit": "2f3b11aab7ae249a1690ff9a4409dbdf440e5222",
+ "date": "2026-11-20",
+ "files": [
+  "packages/headless/src/defaultPage.ts",
+  "packages/headless/src/host.ts",
+  "packages/headless/src/index.ts",
+  "packages/headless/src/page.ts",
+  "packages/headless/src/pageLoad.ts",
+  "packages/headless/src/protocol.ts",
+  "packages/headless/src/testing/compareRaster.ts",
+  "packages/headless/src/testing/fixtureScene.ts",
+  "packages/headless/src/testing/protocol.ts",
+  "packages/headless/src/testing/registeredPage.ts",
+  "packages/headless/src/testing/registeredScene.ts"
+ ],
+ "a": 3,
+ "b": 3,
+ "m": 0,
+ "distinct": 6,
+ "chapman": 15,
+ "unfound": 9,
+ "read": {
+  "A": 11,
+  "B": 11
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.4,
+   "B": 3.4,
+   "match": 2.1,
+   "fix": 13.4
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1773413,
+  "costUsd": 5.04
+ },
+ "fixCommits": [
+  "179db385289c72704b34ac29319b00b26139cecc",
+  "6d62b45537b67469c7d86648dae95e03ee65cf2e",
+  "faf848114f23f0a269d0f7cb2f585a8f62e3b865",
+  "ec6720c1cf3fcfdf6aaf7e20f8ab308becab3562",
+  "9f6956f04f1a9c4c96ce4d95f9d957f7532032c7",
+  "04cd5f330d7d8a374367be947963e9289c7ae3ae",
+  "949556ea5ae3b0dbe21b78c8e393b7555bbc98e0",
+  "ed51c5a6f348c53dbb9e785cef442f113acb5157"
+ ]
+}

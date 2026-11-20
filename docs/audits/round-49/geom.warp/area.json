@@ -1,0 +1,54 @@
+{
+ "id": "geom.warp",
+ "commit": "2f3b11aab7ae249a1690ff9a4409dbdf440e5222",
+ "date": "2026-11-20",
+ "files": [
+  "packages/geom/src/warp/arap.ts",
+  "packages/geom/src/warp/arapPiece.ts",
+  "packages/geom/src/warp/arapSystem.ts",
+  "packages/geom/src/warp/cloughTocher.ts",
+  "packages/geom/src/warp/foldCases.ts",
+  "packages/geom/src/warp/index.ts",
+  "packages/geom/src/warp/injective.ts",
+  "packages/geom/src/warp/lbfgs.ts",
+  "packages/geom/src/warp/mesh.ts",
+  "packages/geom/src/warp/meshMap.ts",
+  "packages/geom/src/warp/pathWarp.ts",
+  "packages/geom/src/warp/pinWarp.ts",
+  "packages/geom/src/warp/pinWarpMesh.ts",
+  "packages/geom/src/warp/profileCholesky.ts",
+  "packages/geom/src/warp/quad.ts",
+  "packages/geom/src/warp/refine.ts",
+  "packages/geom/src/warp/warp.bench.ts",
+  "packages/geom/src/warp/warpPath.ts"
+ ],
+ "a": 4,
+ "b": 4,
+ "m": 1,
+ "distinct": 7,
+ "chapman": 11.5,
+ "unfound": 4.5,
+ "read": {
+  "A": 18,
+  "B": 18
+ },
+ "patches": 7,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 9.6,
+   "B": 10.5,
+   "match": 0.1,
+   "fix": 21.6
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2300470,
+  "costUsd": 6.88
+ },
+ "fixCommits": []
+}

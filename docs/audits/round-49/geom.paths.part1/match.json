@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "pathToAnchors upgrades a quadratic to a cubic by reusing its control point as both handles, which changes the curve",
+  "offsetCornerTraces reads a `square` corner as concave, so its trace moves the wrong way and an offset drops the spec"
+ ],
+ "b": [
+  "isAnchorSmooth counts two handles pointing the same way as smooth, so fairing flips one across the anchor and a handle drag mirrors the other",
+  "growRegion's round join sweeps a near-U-turn the wrong way, so the cap passes through the inside",
+  "growRegion offsets every contour by one path-wide winding sign, so a separate shape wound the other way shrinks instead of growing",
+  "flatAnchorIndices folds an implicit subpath's closing curve against the wrong start point, so its numbering drifts from pathToAnchors' corner numbering"
+ ]
+}
