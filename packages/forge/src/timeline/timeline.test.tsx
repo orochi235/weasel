@@ -41,6 +41,19 @@ function LateSpan() {
   return <Readout />;
 }
 
+/** A story whose span grows only when asked, as a fixture arriving late would grow it. */
+function Growing() {
+  const { setSpan } = useTimeline();
+  return (
+    <>
+      <Readout />
+      <button type="button" onClick={() => setSpan({ duration: 4000 })}>
+        probe: grow
+      </button>
+    </>
+  );
+}
+
 /** Stands the clock past its first pass, paused, as playing on through a loop leaves it. */
 function Lapped() {
   const handle = useContext(ClockContext);
@@ -58,6 +71,7 @@ const timed: IndexEntry = { id: 't--timed', title: 'T', name: 'Timed', exportNam
 const still: IndexEntry = { id: 't--still', title: 'T', name: 'Still', exportName: 'Still', file: '/t.stories.tsx' };
 
 const lapped: IndexEntry = { id: 't--lapped', title: 'T', name: 'Lapped', exportName: 'Lapped', file: '/t.stories.tsx' };
+const growing: IndexEntry = { id: 't--growing', title: 'T', name: 'Growing', exportName: 'Growing', file: '/t.stories.tsx' };
 const late: IndexEntry = { id: 't--late', title: 'T', name: 'Late', exportName: 'Late', file: '/t.stories.tsx' };
 
 const tModule = {
@@ -66,11 +80,12 @@ const tModule = {
   Timed: story({ timeline: { duration: 4000 }, render: () => <Readout /> }),
   Still: story({ render: () => <p>still</p> }),
   Lapped: story({ timeline: { duration: 4000 }, render: () => <Lapped /> }),
+  Growing: story({ timeline: { duration: 1000 }, render: () => <Growing /> }),
 };
 
 const importers = () => ({ '/t.stories.tsx': () => Promise.resolve(tModule as unknown as Record<string, unknown>) });
 
-const it = workshopIt({ index: [timed, still, late, lapped], importers });
+const it = workshopIt({ index: [timed, still, late, lapped, growing], importers });
 
 afterEach(() => {
   lateDelay = 20;
@@ -170,6 +185,24 @@ describe('a hash change under the open story', () => {
     });
     await act(() => new Promise((r) => setTimeout(r, 50)));
     expect(playhead()).toBe(4000);
+  });
+
+  it('drops a waiting t once the hash names the time shown, or none', async ({ lab }) => {
+    const { mount, loaded } = lab;
+    for (const next of ['#/t--growing?t=1', '#/t--growing']) {
+      const view = mount('/#/t--growing?t=3');
+      await loaded();
+      expect(playhead()).toBe(1000);
+      act(() => {
+        location.hash = next;
+      });
+      await act(() => new Promise((r) => setTimeout(r, 50)));
+      fireEvent.click(screen.getByRole('button', { name: 'probe: grow' }));
+      await act(() => new Promise((r) => setTimeout(r, 50)));
+      expect(playhead()).not.toBe(3000);
+      expect(tParam()).not.toBe('3');
+      view.unmount();
+    }
   });
 });
 

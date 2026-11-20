@@ -21,10 +21,12 @@ function PlayheadSync({ trialId, route, appliedRef }: PlayheadSyncProps) {
     if (!handle) return;
     const { clock } = handle;
     let hold: PlayheadHold | null = null;
+    // A `t` the URL names replaces any earlier one, met or absent alike.
     const fromUrl = (): void => {
       const t = readPlayheadParam();
-      if (t === null || t === shownTime(clock)) return;
       hold?.release();
+      hold = null;
+      if (t === null || t === shownTime(clock)) return;
       hold = holdAt(handle, t);
     };
     // Paused off the span's start, the URL holds the time shown within the pass; playing or at the start, it holds
