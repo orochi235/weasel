@@ -2941,3 +2941,10 @@ Calls the lanes made without a ruling:
   finite, has no cells: it moves no child, offers no drop and refuses every arrival, under any `overflow`. This is
   `gridSlots`' rule, except that `rows` is required here and so has no default to fall back to. Before, zero wrote
   `NaN` poses and a fraction laid cells past the container.
+- 2026-11-20 (the fixer's call): `tileGrid`'s resting arrangement keeps each child in the cell it sits in, so a drop on
+  an empty cell, from inside or out, stays there through later edits to its siblings; only a departure closes the
+  gaps, as before. A child off the grid, past its cells, or in a cell an earlier one holds takes the first free cell.
+  Compacting every rearrangement, and so offering a drop only the cells at the end of the run, was the alternative.
+  editing's drag-out preview now runs the source's `depart`, as its commit does, rather than `childPoses`. A resize
+  still reads each child's cell from its pose at the new pitch, so a child in a gap can change cell when the grid is
+  resized.

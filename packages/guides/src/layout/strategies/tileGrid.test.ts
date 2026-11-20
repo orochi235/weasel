@@ -22,7 +22,7 @@ describe('tileGrid', () => {
     expect(got.get('c')).toEqual({ x: 0, y: 50, width: 50, height: 50 });
   });
 
-  it('childPoses compacts in current cell order, so a swap survives a sibling leaving', () => {
+  it('depart compacts in current cell order, so a swap survives a sibling leaving', () => {
     const layout = tileGrid<P>({ cols: 2, rows: 2 });
     // `b` was swapped into cell 0 and `a` into cell 1; `c` holds cell 2.
     // `c` then leaves the grid, and the reflow must not re-sort a and b.
@@ -30,19 +30,22 @@ describe('tileGrid', () => {
       { id: 'a', pose: { x: 50, y: 0, width: 50, height: 50 } },
       { id: 'b', pose: { x: 0, y: 0, width: 50, height: 50 } },
     ];
-    const got = layout.childPoses(container, children);
+    const got = layout.depart!(container, children, new Set(['c'])).poses;
     expect(got.get('b')).toEqual({ x: 0, y: 0, width: 50, height: 50 });
     expect(got.get('a')).toEqual({ x: 50, y: 0, width: 50, height: 50 });
   });
 
-  it('childPoses closes the hole a departing child leaves', () => {
+  it('depart closes the hole a departing child leaves, where childPoses keeps every child in its cell', () => {
     const layout = tileGrid<P>({ cols: 2, rows: 2 });
     // Cell 0 is empty; `a` holds cell 1 and `b` cell 3. They compact up.
     const children = [
       { id: 'a', pose: { x: 50, y: 0, width: 50, height: 50 } },
       { id: 'b', pose: { x: 50, y: 50, width: 50, height: 50 } },
     ];
-    const got = layout.childPoses(container, children);
+    const kept = layout.childPoses(container, children);
+    expect(kept.get('a')).toEqual(children[0]!.pose);
+    expect(kept.get('b')).toEqual(children[1]!.pose);
+    const got = layout.depart!(container, children, new Set(['z'])).poses;
     expect(got.get('a')).toEqual({ x: 0, y: 0, width: 50, height: 50 });
     expect(got.get('b')).toEqual({ x: 50, y: 0, width: 50, height: 50 });
   });

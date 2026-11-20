@@ -12,7 +12,7 @@ import type { Rect } from '@weasel-js/geom';
 import { cellThenNearest } from '../snaps';
 import { defaultCenterOf } from './sequence';
 import {
-  linesFor, nearestFreeCell, packTiles, tileGridOf, tileIndexOf, tileMetaOf,
+  linesFor, nearestFreeCell, packTiles, settleTiles, tileGridOf, tileIndexOf, tileMetaOf,
   type TileGrid, type TileMeta, type TileShape,
 } from './tileCells';
 import * as coreOps from '@weasel-js/core/ops';
@@ -221,7 +221,9 @@ function cellless<TPose>(snap: LayoutSnap<TPose>): LayoutStrategy<TPose> {
  * inside the container swaps with the child in the cell it lands on; a drop
  * from outside is offered only the free cells, so it lands in the nearest
  * free one. A child that joins by an insert or a reparent is placed the same
- * way, in the free cell nearest to where it was put.
+ * way, in the free cell nearest to where it was put. A child keeps its cell,
+ * empty ones before it included, until a child leaves: a departure closes
+ * every gap.
  */
 export function tileGrid<TPose>(
   opts: TileGridOptions<TPose>,
@@ -255,8 +257,7 @@ export function tileGrid<TPose>(
     snap,
 
     childPoses(container, children) {
-      const grid = gridOf(container.bounds, children.length);
-      return packTiles(grid, grid, children, cellToPose);
+      return settleTiles(gridOf(container.bounds, children.length), children, cellToPose);
     },
 
     getDropTargets(container, children, dragged) {
