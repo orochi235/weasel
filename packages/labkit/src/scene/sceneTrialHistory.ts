@@ -1,4 +1,4 @@
-import type { Scene, SerializedSceneHistory } from '@weasel-js/core';
+import type { Op, Scene, SerializedSceneHistory } from '@weasel-js/core';
 import { maxOf } from '@weasel-js/geom';
 import { createPart } from '@weasel-js/registry';
 import { latestStamp } from '../state/savedUndo';
@@ -29,6 +29,19 @@ export function stampSceneEdits(scene: AnyScene, stamps: Map<number, number>): (
     }
   });
 }
+
+type Rebuild = (name: string, args: unknown) => Op | null;
+
+/** The one `TRIAL_EDIT_OP` handler registered on each scene, rebuilding through the latest restore's `rebuild`:
+ *  the op table refuses a second, different handler for a kind. */
+const trialEditKindOf = createPart((scene: Pick<Scene<unknown, string, unknown>, 'registerOp'>) => {
+  const kind = { rebuild: null as Rebuild | null };
+  scene.registerOp<unknown>(TRIAL_EDIT_OP, {
+    apply: (args) => kind.rebuild?.(TRIAL_EDIT_OP, args)?.apply(null),
+    revert: (args) => kind.rebuild?.(TRIAL_EDIT_OP, args)?.invert().apply(null),
+  });
+  return kind;
+});
 
 /** What `sceneTrialHistory` saves: the scene's history, and the stamps kept for its entries. */
 interface SavedSceneHistory {
@@ -62,6 +75,10 @@ export function sceneTrialHistory<TData, TLayer extends string, TPose>(
     undoStamp: () => stampOf('undo'),
     redoStamp: () => stampOf('redo'),
     dropRedo: () => scene.history.dropRedo(),
+    clear: () => {
+      scene.history.clear();
+      stamps.clear();
+    },
     subscribe: (listener) => scene.subscribe(listener),
     record: (op, label) => {
       if (batching > 0) scene.applyBatch([op], label, null);
@@ -88,10 +105,7 @@ export function sceneTrialHistory<TData, TLayer extends string, TPose>(
       if (!saved?.history) return;
       // The scene rebuilds an entry the trial recorded through a kind registered on it, which hands
       // undo and redo the same args.
-      scene.registerOp<unknown>(TRIAL_EDIT_OP, {
-        apply: (args) => rebuild(TRIAL_EDIT_OP, args)?.apply(null),
-        revert: (args) => rebuild(TRIAL_EDIT_OP, args)?.invert().apply(null),
-      });
+      trialEditKindOf(scene).rebuild = rebuild;
       scene.restoreHistory(saved.history);
       stamps.clear();
       for (const [id, stamp] of saved.stamps ?? []) stamps.set(id, stamp);

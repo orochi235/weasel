@@ -17,6 +17,8 @@ export interface CanvasStackSurface {
   /** The coordinate system the stack was given, which `frame` resolves at
    *  its size — for a re-draw at another size. */
   worldSpec?: WorldSpec;
+  /** The frames after each of which the stack repaints its `timed` layers, for a re-draw that keeps up with them. */
+  ticks?: (fn: () => void) => () => void;
 }
 
 /** What a canvas stack publishes to its children: the view, and the resolved

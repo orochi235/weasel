@@ -206,9 +206,9 @@ export function CanvasStack({
     () => ({
       view,
       frame,
-      surface: { element: containerRef, size, canvases: canvasMap, layers, worldSpec: spec },
+      surface: { element: containerRef, size, canvases: canvasMap, layers, worldSpec: spec, ticks },
     }),
-    [view, frame, size, layers, spec],
+    [view, frame, size, layers, spec, ticks],
   );
 
   const containerStyle: CSSProperties = { width, height };
