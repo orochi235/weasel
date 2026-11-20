@@ -36,8 +36,8 @@ import { withHops } from './hops/draw';
 import { ROUTERS, straight, type Router } from './routers';
 import type { Port } from './types';
 
-export { avoid, bezier, orthogonal, ROUTERS, straight } from './routers';
-export type { RouteRequest, Router } from './routers';
+export { avoid, bezier, bezierFor, orthogonal, ROUTERS, straight, VEC2_COMPONENTS } from './routers';
+export type { PointComponents, RouteRequest, Router } from './routers';
 
 /**
  * The port an end resolves to: the one it named, at whichever of its places
@@ -104,7 +104,7 @@ function facing(ports: readonly Port[], toward: Vec2): Port | undefined {
 
 /** The router an edge is drawn with: the one it names, else `straight`. */
 export function routerOf(edge: { router?: string }, routers: Readonly<Record<string, Router>> = ROUTERS): Router {
-  return (edge.router !== undefined ? getOwn(routers, edge.router) : undefined) ?? straight;
+  return (edge.router !== undefined ? getOwn(routers, edge.router) : undefined) ?? (straight as Router);
 }
 
 /** Options for {@link edgeDerivePath}. */
@@ -142,20 +142,21 @@ export function edgeDerivePath<TPose>(
   };
 }
 
-/** An edge's route as {@link edgeDerivePath} draws it, before it becomes a path. */
-export interface ResolvedRoute {
+/** An edge's route as {@link edgeDerivePath} draws it, before it becomes a
+ *  path. `P` is the point type the router ran in; a plane `Vec2` here. */
+export interface ResolvedRoute<P = Vec2> {
   /** The two ends, resolved. */
-  from: Port;
-  to: Port;
+  from: Port<P>;
+  to: Port<P>;
   /** What the router was handed between them: the author's waypoints, or a
    *  self-loop's turning point. */
-  waypoints: readonly Vec2[];
+  waypoints: readonly P[];
   /** The router's answer, `from.point` first and `to.point` last. */
-  points: readonly Vec2[];
+  points: readonly P[];
   /** Set while the edge is split across pages (`DiagramEdge.offPage`): the
    *  two runs drawn in place of `points`, one out of `from` to its tag's
    *  side and one from the other tag's side into `to`. */
-  stubs?: readonly [readonly Vec2[], readonly Vec2[]];
+  stubs?: readonly [readonly P[], readonly P[]];
 }
 
 /** How far a split edge's stub runs out of its shape, in world units. */

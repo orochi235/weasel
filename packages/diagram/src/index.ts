@@ -143,14 +143,16 @@ export {
   ROUTERS,
   avoid,
   bezier,
+  bezierFor,
   edgeDerivePath,
   edgeRouter,
   orthogonal,
   resolveEnd,
   straight,
+  VEC2_COMPONENTS,
   withDiagramRegistry,
 } from './edge';
-export type { EdgeRouteOptions, ResolvedRoute, RouteRequest, Router } from './edge';
+export type { EdgeRouteOptions, PointComponents, ResolvedRoute, RouteRequest, Router } from './edge';
 export { diagramEdgeOf, layoutOwnsPort, layoutOwnsRoute, layoutWritesRoute } from './edgeTrait';
 export type { DiagramEdge, EdgeEnd } from './edgeTrait';
 export { selfLoop } from './selfLoop';
