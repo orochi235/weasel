@@ -1,213 +1,198 @@
 /**
- * The per-scene pick index: one BVH per scene layer over every node's broad
- * box (`nodeBroadBox`), keyed by the node's place in the render order it was
- * built from. A pick after anything it read can have changed walks the scene
+ * The per-scene pick index: a reach tree over every node's broad box
+ * (`nodeBroadBox`), tagged by layer, updated from the scene's touched-ids
+ * feed. The first pick after a change the feed cannot name walks the scene
  * and only records that state; the next pick to find the scene unchanged
- * builds, so a scene edited before every pick never pays for a build. Nodes it
- * cannot box conservatively are on `always` and are tested by every walk.
+ * builds, so a scene changed that way before every pick never pays for a
+ * build, while one edited by ops keeps its index and updates the nodes edited.
+ * Nodes it cannot box conservatively hold everything and meet every query.
  */
 import { createPart } from '@weasel-js/registry';
 import { nodeShapesOf } from 'canvas/nodeShapeRegistry';
-import { createBvh, createSettledCache, type Bvh, type SettledCache } from '@weasel-js/geom/nd';
+import { createSettledCache, type SettledCache } from '@weasel-js/geom/nd';
 import { markerGeneration } from '@weasel-js/stroke';
 import { nodeShapeEntries } from 'canvas/NodeShape';
 import { inheritedPaintOf, inheritsPaint } from 'core/scene/inheritedPaint';
-import { nodesAsShown } from 'core/scene/nodeAsShown';
+import { nodeAsShown, nodesAsShown } from 'core/scene/nodeAsShown';
 import { nodeMemoGeneration } from 'core/scene/nodeMemo';
 import { outsideGeneration } from 'core/scene/outsideReads';
+import { renderRanksOf } from 'core/scene/renderRank';
+import { asNodeId } from 'core/scene/types';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { scenePaintedPoseOf } from '../derivedPath';
 import type { PickBroad, PickCandidate } from '../pickWalk';
 import { sceneParentsOf, sceneShownPathOf } from '../scenePickReads';
+import { createReachTree, type ReachTree } from '../reach/reachTree';
+import { BOX_ALL, BOX_NONE, BOX_SOME, type ReachRegion, type ReachSource } from '../reach/reachTypes';
 import { nodeBroadBox, type Box2 } from './nodeBroadBox';
 import type { AnyScene } from 'core/scene/anyScene';
 
 type Order = readonly PickCandidate<unknown>[];
 
 export interface ScenePickIndex {
-  /** The layers holding indexed nodes; `undefined` for nodes with none. */
+  /** The layers holding indexed nodes. */
   readonly layers: readonly (string | undefined)[];
   readonly maxOutsetPx: number;
 }
 
 let builds = 0;
 
-/** How many indexes have been built, for tests that pin when one rebuilds. */
+/** How many indexes have been built from a whole scene, for tests that pin when one rebuilds. */
 export function pickIndexBuildCount(): number {
   return builds;
 }
 
-const CACHE = createPart((_scene: object) => new WeakMap<PoseDescriptor<unknown>, SettledCache<BuiltIndex>>());
+/** Layers past this share one tag, which meets everywhere. */
+const TAG_BITS = 30;
 
 /** Past this share of the scene the index costs more than the walk it narrows. */
 const MAX_SHARE = 0.5;
-
-class BuiltIndex implements ScenePickIndex {
-  readonly layers: readonly (string | undefined)[];
-  /** The render order the candidates are read out of. */
-  private order: Order;
-  /** Build position to position in `order`, or null while they are the same array. */
-  private remap: Int32Array | null = null;
-  private readonly marks: Uint8Array;
-  private found: Int32Array;
-
-  constructor(
-    private readonly built: Order,
-    private readonly trees: Map<string | undefined, Bvh<number>>,
-    private readonly always: Int32Array,
-    readonly maxOutsetPx: number,
-  ) {
-    this.layers = [...trees.keys()];
-    this.order = built;
-    this.marks = new Uint8Array(built.length);
-    this.found = new Int32Array(Math.max(16, always.length));
-  }
-
-  /** Follow a new render order array the scene hands back for the same state. */
-  rankBy(order: Order): void {
-    if (order === this.order) return;
-    this.order = order;
-    if (order === this.built) {
-      this.remap = null;
-      return;
-    }
-    const rank = new Map<string, number>();
-    for (let i = 0; i < order.length; i++) rank.set(order[i].id, i);
-    const remap = new Int32Array(this.built.length);
-    for (let i = 0; i < remap.length; i++) remap[i] = rank.get(this.built[i].id) ?? -1;
-    this.remap = remap;
-  }
-
-  /** The nodes the boxes reach, in render order, or null when that is most of the scene. */
-  candidates(broads: readonly (PickBroad | null)[]): Order | null {
-    const limit = Math.floor(this.order.length * MAX_SHARE);
-    let count = 0;
-    const add = (built: number): boolean => {
-      const at = this.remap === null ? built : this.remap[built];
-      if (at < 0) return true;
-      if (count === this.found.length) {
-        const next = new Int32Array(count * 2);
-        next.set(this.found);
-        this.found = next;
-      }
-      this.found[count++] = at;
-      return count <= limit;
-    };
-    for (const i of this.always) if (!add(i)) return null;
-    for (let l = 0; l < this.layers.length; l++) {
-      const broad = broads[l];
-      const tree = this.trees.get(this.layers[l]);
-      if (broad === null || tree === undefined) continue;
-      const { x, y, width, height } = broad.box;
-      const k = broad.pxPerWorld;
-      const by = this.maxOutsetPx > 0 && k !== undefined ? (k > 0 ? this.maxOutsetPx / k : Infinity) : 0;
-      let over = false;
-      tree.queryBox([x - by, y - by, x + width + by, y + height + by], (i) => {
-        if (add(i)) return true;
-        over = true;
-        return false;
-      });
-      if (over) return null;
-    }
-    return this.readOut(count);
-  }
-
-  private readOut(count: number): Order {
-    const { order, found } = this;
-    const out: PickCandidate<unknown>[] = new Array(count);
-    // A handful sorts faster than a pass over every mark.
-    if (count * 32 < order.length) {
-      const ranks = found.subarray(0, count).sort();
-      for (let i = 0; i < count; i++) out[i] = order[ranks[i]];
-      return out;
-    }
-    const marks = this.marks.length >= order.length ? this.marks : new Uint8Array(order.length);
-    for (let i = 0; i < count; i++) marks[found[i]] = 1;
-    let n = 0;
-    for (let i = 0; n < count && i < order.length; i++) {
-      if (marks[i] === 0) continue;
-      marks[i] = 0;
-      out[n++] = order[i];
-    }
-    return out;
-  }
-}
 
 function hasCopyingAncestor(parents: Order): boolean {
   return parents.some((p) => typeof p.copiesFromPose === 'function');
 }
 
-function build(scene: AnyScene, descriptor: PoseDescriptor<unknown>, order: Order): BuiltIndex {
-  builds++;
-  const poseOf = scenePaintedPoseOf(scene);
-  const pathOf = sceneShownPathOf(scene);
-  const parentsOf = sceneParentsOf(scene);
-  const shapes = nodeShapesOf(scene);
-  const entries = new Map<string | undefined, [number, Box2][]>();
-  const always: number[] = [];
-  let maxOutsetPx = 0;
-  for (let i = 0; i < order.length; i++) {
-    const node = order[i];
-    const parents = parentsOf(node);
-    // Also hit wherever an ancestor paints a copy of it, which its own box does not cover.
-    if (hasCopyingAncestor(parents)) {
-      always.push(i);
-      continue;
+class PickIndex implements ScenePickIndex {
+  /** The largest screen-pixel reach any node's ink has had; it only grows, which only adds candidates. */
+  maxOutsetPx = 0;
+  private tree: ReachTree | null = null;
+  private readonly settle: SettledCache<true> = createSettledCache();
+  private bits: { layers: readonly unknown[]; of: Map<string, number> } | null = null;
+
+  constructor(private readonly scene: AnyScene, private readonly descriptor: PoseDescriptor<unknown>) {}
+
+  get layers(): readonly string[] {
+    return this.scene.layers.map((l) => l.id);
+  }
+
+  tagOf(layer: string): number {
+    const { layers } = this.scene;
+    if (this.bits?.layers !== layers) this.bits = { layers, of: new Map(layers.map((l, i) => [l.id, Math.min(i, TAG_BITS)])) };
+    return this.bits.of.get(layer) ?? TAG_BITS;
+  }
+
+  /** The tree, current; null while the scene has not held still since a change the feed could not name. */
+  current(): ReachTree | null {
+    if (this.tree !== null) {
+      if (this.tree.ensure(false)) return this.tree;
+      this.tree = null;
+      this.settle.clear();
     }
+    const { scene } = this;
+    const key = [
+      scene.getVersion(), scene.overrides.getGeneration(), scene.scroll?.getGeneration() ?? 0,
+      nodeMemoGeneration(), markerGeneration(), outsideGeneration(),
+    ];
+    if (this.settle.read(key, () => true) === null) return null;
+    builds++;
+    const tree = createReachTree(this.source());
+    tree.ensure();
+    this.tree = tree;
+    return tree;
+  }
+
+  private source(): ReachSource {
+    const { scene, descriptor } = this;
+    const poseOf = scenePaintedPoseOf(scene);
+    const pathOf = sceneShownPathOf(scene);
+    const parentsOf = sceneParentsOf(scene);
+    const shapes = nodeShapesOf(scene);
     const box: Box2 = [0, 0, 0, 0];
-    let outsetPx: number;
-    try {
-      const inherited = inheritsPaint(node) ? inheritedPaintOf(node, parents) : undefined;
-      outsetPx = nodeBroadBox(node, poseOf(node as never), pathOf(node), inherited, descriptor, box, shapes);
-    } catch {
-      always.push(i);
-      continue;
-    }
-    if (!Number.isFinite(outsetPx) || !box.every(Number.isFinite)) {
-      always.push(i);
-      continue;
-    }
-    if (outsetPx > maxOutsetPx) maxOutsetPx = outsetPx;
-    let list = entries.get(node.layer);
-    if (list === undefined) entries.set(node.layer, (list = []));
-    list.push([i, box]);
+    let markers = markerGeneration();
+    return {
+      dim: 2,
+      changesSince: (token) => {
+        const changed = scene.changesSince(token);
+        if (markerGeneration() === markers) return changed;
+        markers = markerGeneration();
+        return { ...changed, ids: 'unknown', parents: new Set(), structural: true };
+      },
+      childrenOf: (id) => (id === null ? scene.roots : scene.get(asNodeId(id))?.children ?? []),
+      parentOf: (id) => {
+        const node = scene.get(asNodeId(id));
+        return node === undefined ? undefined : node.parent;
+      },
+      ownBox: (id, out, at) => {
+        const raw = scene.get(asNodeId(id));
+        if (raw === undefined) return BOX_NONE;
+        // Boxed as shown, so a data override that grows a node's ink is met where it is painted.
+        const node = nodeAsShown(scene.overrides, raw) as unknown as PickCandidate<unknown>;
+        const parents = parentsOf(node);
+        // Also hit wherever an ancestor paints a copy of it, which its own box does not cover.
+        if (hasCopyingAncestor(parents)) return BOX_ALL;
+        let outsetPx: number;
+        try {
+          const inherited = inheritsPaint(node) ? inheritedPaintOf(node, parents) : undefined;
+          outsetPx = nodeBroadBox(node, poseOf(node as never), pathOf(node), inherited, descriptor, box, shapes);
+        } catch {
+          return BOX_ALL;
+        }
+        if (!Number.isFinite(outsetPx) || !box.every(Number.isFinite) || box[0] > box[2] || box[1] > box[3]) return BOX_ALL;
+        if (outsetPx > this.maxOutsetPx) this.maxOutsetPx = outsetPx;
+        out.set(box, at);
+        return BOX_SOME;
+      },
+      tagsOf: (id) => {
+        const node = scene.get(asNodeId(id));
+        return node === undefined ? 0 : 1 << this.tagOf(node.layer);
+      },
+    };
   }
-  const trees = new Map<string | undefined, Bvh<number>>();
-  for (const [layer, list] of entries) {
-    const tree = createBvh<number>(2, list);
-    // The tree drops an inverted box: test that node the old way.
-    if (tree.size !== list.length) {
-      for (const [i, box] of list) if (!(box[0] <= box[2] && box[1] <= box[3])) always.push(i);
+
+  /** The nodes the boxes reach, in render order, or null when that is most of the scene. */
+  candidates(tree: ReachTree, broadFor: (layer: string) => PickBroad | null, order: Order): Order | null {
+    const regions: (ReachRegion | undefined)[] = [];
+    let wanted = 0;
+    for (const layer of this.scene.layers) {
+      const broad = broadFor(layer.id);
+      if (broad === null) continue;
+      const bit = this.tagOf(layer.id);
+      wanted |= 1 << bit;
+      if (bit === TAG_BITS) {
+        regions[bit] = undefined;
+        continue;
+      }
+      const { x, y, width, height } = broad.box;
+      const k = broad.pxPerWorld;
+      const by = this.maxOutsetPx > 0 && k !== undefined ? (k > 0 ? this.maxOutsetPx / k : Infinity) : 0;
+      if (by === Infinity) {
+        regions[bit] = undefined;
+        continue;
+      }
+      regions[bit] = { box: [x - by, y - by, x + width + by, y + height + by] };
     }
-    trees.set(layer, tree);
+    const rank = renderRanksOf(this.scene.renderOrderNodes());
+    const limit = Math.floor(order.length * MAX_SHARE);
+    const found: number[] = [];
+    let over = false;
+    tree.collect({ wanted, regions }, (id) => {
+      const at = rank.get(id);
+      if (at !== undefined) found.push(at);
+      if (found.length <= limit) return true;
+      over = true;
+      return false;
+    });
+    if (over) return null;
+    found.sort((a, b) => a - b);
+    return found.map((i) => order[i]!);
   }
-  return new BuiltIndex(order, trees, Int32Array.from(always), maxOutsetPx);
+}
+
+const INDEXES = createPart((_scene: object) => new WeakMap<PoseDescriptor<unknown>, PickIndex>());
+
+function indexOf(scene: AnyScene, descriptor: PoseDescriptor<unknown>): PickIndex {
+  const perScene = INDEXES(scene);
+  let index = perScene.get(descriptor);
+  if (index === undefined) perScene.set(descriptor, (index = new PickIndex(scene, descriptor)));
+  // Registers the built-in painters first, which bumps the memo generation.
+  nodeShapeEntries(nodeShapesOf(scene));
+  return index;
 }
 
 /** The index for `scene` read through `descriptor`, or null when this pick walks instead. */
 export function scenePickIndex(scene: AnyScene, descriptor: PoseDescriptor<unknown>): ScenePickIndex | null {
-  return current(scene, descriptor);
-}
-
-function current(scene: AnyScene, descriptor: PoseDescriptor<unknown>): BuiltIndex | null {
-  // Registers the built-in painters first, which bumps the memo generation.
-  nodeShapeEntries(nodeShapesOf(scene));
-  const version = scene.getVersion();
-  const overrides = scene.overrides.getGeneration();
-  // Boxed where each node is painted, which a container's scroll moves.
-  const scrolled = scene.scroll?.getGeneration() ?? 0;
-  const memo = nodeMemoGeneration();
-  const markers = markerGeneration();
-  // A derived path that read glyph outlines reshapes when a face lands, with nothing in the scene changed.
-  const outside = outsideGeneration();
-  const perScene = CACHE(scene);
-  let cache = perScene.get(descriptor);
-  if (cache === undefined) perScene.set(descriptor, (cache = createSettledCache()));
-  // Boxed as shown, so a data override that grows a node's ink is met where it is painted.
-  const order = nodesAsShown(scene.overrides, scene.renderOrderNodes()) as unknown as Order;
-  const index = cache.read([version, overrides, scrolled, memo, markers, outside], () => build(scene, descriptor, order));
-  index?.rankBy(order);
-  return index;
+  const index = indexOf(scene, descriptor);
+  return index.current() === null ? null : index;
 }
 
 /** What `PickSource.candidates` answers for a scene source with an index. */
@@ -216,14 +201,16 @@ export function indexedCandidates(
   descriptor: PoseDescriptor<unknown>,
   broadFor: (layer: string | undefined) => PickBroad | null | undefined,
 ): readonly PickCandidate<unknown>[] | null {
-  const index = current(scene, descriptor);
-  if (index === null) return null;
-  const broads: (PickBroad | null)[] = [];
+  const index = indexOf(scene, descriptor);
+  const tree = index.current();
+  if (tree === null) return null;
+  const broads = new Map<string, PickBroad | null>();
   for (const layer of index.layers) {
     const broad = broadFor(layer);
     if (broad === undefined) return null;
     if (broad !== null && Number.isNaN(broad.box.x + broad.box.y + broad.box.width + broad.box.height)) return null;
-    broads.push(broad);
+    broads.set(layer, broad);
   }
-  return index.candidates(broads);
+  const order = nodesAsShown(scene.overrides, scene.renderOrderNodes()) as unknown as Order;
+  return index.candidates(tree, (layer) => broads.get(layer) ?? null, order);
 }

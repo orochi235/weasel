@@ -18,14 +18,15 @@ import { WideChildren } from './wideChildren';
 export const WIDE_AT = 64;
 
 export interface ReachTree {
-  /** Bring every box up to date with the scene. */
-  ensure(): void;
+  /** Bring every box up to date with the scene, and answer true. When only a build from the whole scene would,
+   *  and `rebuild` is false, forget every box instead and answer false. */
+  ensure(rebuild?: boolean): boolean;
   /** Forget every box: the next {@link ReachTree.ensure} builds from the whole scene. */
   invalidate(): void;
   /** Those of `children`, the children of `parent` (`null` for the roots), whose reach meets `q`, in order. */
   childrenMeeting(parent: string | null, children: readonly string[], q: ReachQuery): readonly string[];
-  /** Every node whose own box meets `q`, in tree preorder. */
-  collect(q: ReachQuery, visit: (id: string) => void): void;
+  /** Every node whose own box meets `q`, in tree preorder, until `visit` answers false. */
+  collect(q: ReachQuery, visit: (id: string) => boolean | void): void;
   /** The own box of `id` as kept, for a reader that tests it exactly. */
   ownOf(id: string): { kind: number; box: Float64Array; at: number } | undefined;
   /** How often it built from the whole scene, and how many nodes it holds. */
@@ -243,21 +244,22 @@ export function createReachTree(source: ReachSource, wideAt = WIDE_AT): ReachTre
     }
   }
 
-  function ensure(): void {
-    if (token === null) {
-      token = source.changesSince().token;
+  function ensure(rebuild = true): boolean {
+    const changed = source.changesSince(token ?? undefined);
+    if (token === null || changed.ids === 'unknown') {
+      if (!rebuild) {
+        token = null;
+        return false;
+      }
+      token = changed.token;
       buildAll();
-      return;
+      return true;
     }
-    const changed = source.changesSince(token);
     token = changed.token;
-    if (changed.ids === 'unknown') {
-      buildAll();
-      return;
-    }
-    if (changed.ids.size === 0 && changed.parents.size === 0) return;
+    if (changed.ids.size === 0 && changed.parents.size === 0) return true;
     apply(changed.ids, changed.parents);
     drain();
+    return true;
   }
 
   function rankChildren(rec: ReachRec, children: readonly string[]): void {
@@ -288,13 +290,14 @@ export function createReachTree(source: ReachSource, wideAt = WIDE_AT): ReachTre
     return hits.map((h) => h.id!);
   }
 
-  function collect(q: ReachQuery, visit: (id: string) => void): void {
-    const walk = (parent: string | null): void => {
+  function collect(q: ReachQuery, visit: (id: string) => boolean | void): void {
+    const walk = (parent: string | null): boolean => {
       for (const id of childrenMeeting(parent, source.childrenOf(parent), q)) {
         const c = recs.get(id);
-        if (c && boxMeets(c.own, c.tags, slab.data, slab.ownAt(c), dim, q)) visit(id);
-        walk(id);
+        if (c && boxMeets(c.own, c.tags, slab.data, slab.ownAt(c), dim, q) && visit(id) === false) return false;
+        if (!walk(id)) return false;
       }
+      return true;
     };
     walk(null);
   }
