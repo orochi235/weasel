@@ -12,8 +12,11 @@ import { SourceLink } from './sourceLinks';
 export function OpKindDetail({ entry }: { entry: OpKindEntry; onNavigate: Props['onNavigate'] }) {
   const factoryId = opFactoryNameFor(entry.id);
   const fn = opFactoryFor(factoryId);
-  const match = findSourceMatch(opFactorySourceNameFor(factoryId));
-  const arity = typeof fn === 'function' ? fn.length : undefined;
+  // A kind registered through `registerOpFactory` has no `ops` export; the
+  // rows below describe that export, so they go when it isn't there.
+  const hasFactory = typeof fn === 'function';
+  const match = hasFactory ? findSourceMatch(opFactorySourceNameFor(factoryId)) : undefined;
+  const arity = hasFactory ? fn.length : undefined;
   return (
     <div>
       <h2 className={s.detailHeading}>{entry.id}</h2>
@@ -23,15 +26,23 @@ export function OpKindDetail({ entry }: { entry: OpKindEntry; onNavigate: Props[
         ops across reloads.
       </p>
       <DetailList>
-        <DetailRow label="factory"><code>ops.{factoryId}</code></DetailRow>
-        <DetailRow label="runtime"><Code>{typeof fn}</Code></DetailRow>
+        {hasFactory ? (
+          <>
+            <DetailRow label="factory"><code>ops.{factoryId}</code></DetailRow>
+            <DetailRow label="runtime"><Code>{typeof fn}</Code></DetailRow>
+          </>
+        ) : (
+          <DetailRow label="factory">
+            <span className={s.empty}>No <code>ops</code> export; registered through <code>registerOpFactory</code>.</span>
+          </DetailRow>
+        )}
         {arity !== undefined && (
           <DetailRow label="parameters" values="figures">{arity}</DetailRow>
         )}
         {match?.path && <DetailRow label="source"><SourceLink match={match} /></DetailRow>}
       </DetailList>
       {match?.jsdoc && <Jsdoc text={match.jsdoc} />}
-      <OpSchemaPanel factoryId={factoryId} />
+      {hasFactory && <OpSchemaPanel factoryId={factoryId} />}
     </div>
   );
 }

@@ -202,3 +202,12 @@ describe('shape kind detail with no authoring tool', () => {
     expect(collectShapeTrait([rect]).find((k) => k.id === 'rect')?.tool).toBe('rect');
   });
 });
+
+describe('op kind detail for a kind with no ops export', () => {
+  it('claims no `ops.*` factory for a consumer-registered kind', () => {
+    const entry: TreeEntry = { kind: 'opKind', id: 'myapp:stamp', label: 'myapp:stamp' };
+    const { container } = renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
+    expect(container.textContent).not.toMatch(/ops\.myapp:stamp/);
+    expect(container.textContent).not.toMatch(/undefined/);
+  });
+});
