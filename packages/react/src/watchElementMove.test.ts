@@ -62,3 +62,21 @@ describe('watchElementMove after stopping', () => {
     expect(live.size).toBe(0);
   });
 });
+
+describe('watchElementMove roots', () => {
+  it('frames an unclipped element against its own document, not the implicit root', () => {
+    const roots: unknown[] = [];
+    vi.stubGlobal('IntersectionObserver', class {
+      constructor(_cb: IntersectionObserverCallback, opts?: IntersectionObserverInit) { roots.push(opts?.root); }
+      observe() {}
+      disconnect() {}
+    });
+    vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+    const other = document.implementation.createHTMLDocument('frame');
+    const element = other.body.appendChild(other.createElement('div'));
+    element.getBoundingClientRect = () => ({ left: 10, top: 10, width: 20, height: 20, right: 30, bottom: 30, x: 10, y: 10 }) as DOMRect;
+    const stop = watchElementMove(element, () => {});
+    expect(roots).toEqual([other]);
+    stop();
+  });
+});

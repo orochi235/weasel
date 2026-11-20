@@ -123,6 +123,7 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
         if (Math.abs(entry.intersectionRatio - ratio) > slack) watchShown(box, entry.intersectionRatio);
       },
       {
+        root: element.ownerDocument,
         rootMargin: `${FAR}px`,
         threshold: [Math.max(0, ratio - slack), Math.min(1, ratio + slack)],
       },
@@ -166,7 +167,8 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
         }
       },
       {
-        root: clipRoot,
+        // The element's own document, never the implicit root: inside an iframe that is the top-level viewport.
+        root: clipRoot ?? element.ownerDocument,
         rootMargin: marginAround(box, clipRoot, doc),
         threshold: Math.max(0, Math.min(1, threshold)) || 1,
       },
