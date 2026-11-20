@@ -100,21 +100,39 @@ describe('usePointerStylus', () => {
     expect(result.current.pressure).toBeCloseTo(0.4);
   });
 
-  it('tracks hover via pointerenter / pointerleave', () => {
+  // As a browser dispatches them: to the element entered, without bubbling, never to `window`.
+  const hover = (target: EventTarget, type: 'pointerenter' | 'pointerleave') => {
+    const e = new Event(type, { bubbles: false });
+    Object.assign(e, { pointerType: 'pen' });
+    target.dispatchEvent(e);
+  };
+
+  it('tracks hover over the page with no target', () => {
     const { result } = renderHook(() => usePointerStylus(undefined, { maxFps: Infinity }));
     expect(result.current.hovering).toBe(false);
-    act(() => {
-      const e = new Event('pointerenter', { bubbles: true });
-      Object.assign(e, { pointerType: 'pen' });
-      window.dispatchEvent(e);
-    });
+    act(() => { hover(document.documentElement, 'pointerenter'); });
     expect(result.current.hovering).toBe(true);
-    act(() => {
-      const e = new Event('pointerleave', { bubbles: true });
-      Object.assign(e, { pointerType: 'pen' });
-      window.dispatchEvent(e);
-    });
+    act(() => { hover(document.documentElement, 'pointerleave'); });
     expect(result.current.hovering).toBe(false);
+  });
+
+  it('binds to a ref\'s element once it is attached, and follows it when it changes', () => {
+    const first = document.createElement('div');
+    const second = document.createElement('div');
+    const ref: { current: HTMLElement | null } = { current: null };
+    const { result, rerender } = renderHook(() => usePointerStylus(ref, { maxFps: Infinity }));
+    act(() => { dispatchMove(window, { pointerType: 'pen', pressure: 0.3 }); });
+    expect(result.current.pressure).toBe(0);
+    ref.current = first;
+    rerender();
+    act(() => { dispatchMove(first, { pointerType: 'pen', pressure: 0.4 }); });
+    expect(result.current.pressure).toBeCloseTo(0.4);
+    ref.current = second;
+    rerender();
+    act(() => { dispatchMove(first, { pointerType: 'pen', pressure: 0.9 }); });
+    expect(result.current.pressure).toBeCloseTo(0.4);
+    act(() => { dispatchMove(second, { pointerType: 'pen', pressure: 0.7 }); });
+    expect(result.current.pressure).toBeCloseTo(0.7);
   });
 
   it('filters by the committed options, not an abandoned render\'s', () => {

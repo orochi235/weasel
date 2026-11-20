@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState, type Dispatch, type RefObject, type SetStateAction } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { after } from '@weasel-js/registry';
 import { getStylusData, type StylusData } from './stylus';
@@ -7,8 +7,9 @@ import { getStylusData, type StylusData } from './stylus';
  *  plus a `hovering` flag. */
 export interface PointerStylusState extends StylusData {
   /** True between `pointerenter` and `pointerleave` events on the target
-   *  element. iPad Safari fires these for Apple Pencil hover, so this is
-   *  true while the pen is near the glass without contact. */
+   *  element, or on the page's root element when there is no target. iPad
+   *  Safari fires these for Apple Pencil hover, so this is true while the
+   *  pen is near the glass without contact. */
   hovering: boolean;
 }
 
@@ -37,7 +38,9 @@ export interface UsePointerStylusOptions {
 
 /**
  * Subscribe to pointer events on a target element (defaults to `window`)
- * and expose the most recent stylus snapshot.
+ * and expose the most recent stylus snapshot. A ref target is read after
+ * every commit: the hook listens to nothing while the ref is empty, and
+ * moves to whatever element the ref holds next.
  *
  * The hook does NOT consume pointerdown / pointerup — leave gesture handling
  * to the dispatcher. Re-renders are throttled by default (`maxFps`); pass
@@ -54,56 +57,73 @@ export function usePointerStylus(
   const lastCommit = useRef(-Infinity);
   const optsRef = useLatest({ maxFps, stylusOnly });
 
+  // Bound after every commit rather than in an effect keyed on `target`: a ref's element is
+  // not a dependency React can see change.
+  const bound = useRef<{ el: EventTarget; off: () => void } | null>(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- binds listeners, sets no state itself; runs per commit by design
   useEffect(() => {
-    const el: EventTarget =
-      target == null
-        ? window
-        : target instanceof HTMLElement
-          ? target
-          : target.current ?? window;
-
-    let cancelTrailing = (): void => {};
-    const commit = (sample: StylusData, now: number) => {
-      cancelTrailing();
-      lastCommit.current = now;
-      setState((prev) => ({ ...sample, hovering: prev.hovering }));
-    };
-    const onMove = (raw: Event) => {
-      const e = raw as PointerEvent;
-      const { maxFps, stylusOnly } = optsRef.current;
-      if (stylusOnly && e.pointerType !== 'pen') return;
-      const now = performance.now();
-      const minGap = maxFps > 0 && Number.isFinite(maxFps) ? 1000 / maxFps : 0;
-      const sample = getStylusData(e);
-      const wait = minGap - (now - lastCommit.current);
-      if (minGap > 0 && wait > 0) {
-        cancelTrailing();
-        cancelTrailing = after(wait, () => commit(sample, performance.now()));
-        return;
-      }
-      commit(sample, now);
-    };
-    const onEnter = (raw: Event) => {
-      const e = raw as PointerEvent;
-      if (optsRef.current.stylusOnly && e.pointerType !== 'pen') return;
-      setState((prev) => ({ ...prev, hovering: true }));
-    };
-    const onLeave = (raw: Event) => {
-      const e = raw as PointerEvent;
-      if (optsRef.current.stylusOnly && e.pointerType !== 'pen') return;
-      setState((prev) => ({ ...prev, hovering: false }));
-    };
-
-    el.addEventListener('pointermove', onMove);
-    el.addEventListener('pointerenter', onEnter);
-    el.addEventListener('pointerleave', onLeave);
-    return () => {
-      el.removeEventListener('pointermove', onMove);
-      el.removeEventListener('pointerenter', onEnter);
-      el.removeEventListener('pointerleave', onLeave);
-      cancelTrailing();
-    };
-  }, [target, optsRef]);
+    const el: EventTarget | null = target == null ? window : target instanceof HTMLElement ? target : target.current;
+    if (bound.current?.el === el) return;
+    bound.current?.off();
+    bound.current = el ? { el, off: listen(el, setState, lastCommit, optsRef) } : null;
+  });
+  useEffect(() => () => {
+    bound.current?.off();
+    bound.current = null;
+  }, []);
 
   return state;
+}
+
+/** Listens for `el`'s pointer moves and hovers, writing what they report to `setState`; returns the way to stop. */
+function listen(
+  el: EventTarget,
+  setState: Dispatch<SetStateAction<PointerStylusState>>,
+  lastCommit: { current: number },
+  opts: { readonly current: Required<UsePointerStylusOptions> },
+): () => void {
+  // `pointerenter`/`pointerleave` go to elements and never bubble, so `window` hears neither.
+  const hoverEl: EventTarget = el === window ? document.documentElement : el;
+
+  let cancelTrailing = (): void => {};
+  const commit = (sample: StylusData, now: number) => {
+    cancelTrailing();
+    lastCommit.current = now;
+    setState((prev) => ({ ...sample, hovering: prev.hovering }));
+  };
+  const onMove = (raw: Event) => {
+    const e = raw as PointerEvent;
+    const { maxFps, stylusOnly } = opts.current;
+    if (stylusOnly && e.pointerType !== 'pen') return;
+    const now = performance.now();
+    const minGap = maxFps > 0 && Number.isFinite(maxFps) ? 1000 / maxFps : 0;
+    const sample = getStylusData(e);
+    const wait = minGap - (now - lastCommit.current);
+    if (minGap > 0 && wait > 0) {
+      cancelTrailing();
+      cancelTrailing = after(wait, () => commit(sample, performance.now()));
+      return;
+    }
+    commit(sample, now);
+  };
+  const onEnter = (raw: Event) => {
+    const e = raw as PointerEvent;
+    if (opts.current.stylusOnly && e.pointerType !== 'pen') return;
+    setState((prev) => ({ ...prev, hovering: true }));
+  };
+  const onLeave = (raw: Event) => {
+    const e = raw as PointerEvent;
+    if (opts.current.stylusOnly && e.pointerType !== 'pen') return;
+    setState((prev) => ({ ...prev, hovering: false }));
+  };
+
+  el.addEventListener('pointermove', onMove);
+  hoverEl.addEventListener('pointerenter', onEnter);
+  hoverEl.addEventListener('pointerleave', onLeave);
+  return () => {
+    el.removeEventListener('pointermove', onMove);
+    hoverEl.removeEventListener('pointerenter', onEnter);
+    hoverEl.removeEventListener('pointerleave', onLeave);
+    cancelTrailing();
+  };
 }

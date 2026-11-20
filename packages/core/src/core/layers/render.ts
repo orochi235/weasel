@@ -2,7 +2,7 @@ import { viewToMat3, type DrawCommand } from '@weasel-js/renderer';
 import type { Effect } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
 import { groupMembership, wrapGroup, type LayerGroup } from './layerGroup';
-import { warnLayersOnce, warnUnknownOrderIds } from './unknownOrderIds';
+import { warnLayersOnce, warnBadOrderIds } from './unknownOrderIds';
 import { DEFAULT_LAYER_RETAIN, retainedId, type LayerRetainPolicy } from './retain';
 import type { RedrawSource } from './redrawSource';
 import type { Dims, LayerDims } from './dims';
@@ -15,7 +15,8 @@ export { subscribeToSources, type RedrawSource } from './redrawSource';
 const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 /**
- * What a layer's `draw` threw, and which layer threw it. A throw that escaped
+ * What a layer's `draw` threw, and which layer threw it — or which layer group, when its
+ * `effects` thunk threw. A throw that escaped
  * the frame loop would take the whole frame with it, every other layer
  * included.
  */
@@ -206,16 +207,17 @@ export function drawLayers<TData>(
     }
   }
 
-  if (order) warnUnknownOrderIds(order, layerById);
+  if (order) warnBadOrderIds(order, layerById);
   const groupOf = groupMembership(groups, layerById.keys());
   const bracketed = new Set<LayerGroup>();
   let run: { group: LayerGroup; children: DrawCommand[]; buildMs: number } | null = null;
 
   const closeRun = () => {
     if (!run) return;
+    const { group } = run;
     const start = out.length;
     const t0 = spans ? clockMs() : 0;
-    for (const c of wrapGroup(run.group, run.children, v, dims)) out.push(c);
+    for (const c of wrapGroup(run.group, run.children, v, dims, (error) => onLayerError({ layerId: group.id, error }))) out.push(c);
     spans?.push({ id: run.group.id, start, end: out.length, buildMs: run.buildMs + clockMs() - t0 });
     run = null;
   };
@@ -289,7 +291,7 @@ export function isLayerPainted<TData>(
 
 /**
  * The layers that reach the screen, in the order they are drawn: `order`
- * sequences them and drops what it leaves out, then `visibility` drops what is
+ * sequences them, each at its first place, and drops what it leaves out, then `visibility` drops what is
  * hidden. What `drawLayers` paints, and what a view narrows its stack with.
  */
 export function paintedLayers<TData>(
@@ -299,7 +301,7 @@ export function paintedLayers<TData>(
 ): RenderLayer<TData>[] {
   if (!order) return layers.filter((l) => isLayerVisible(l, visibility));
   const byId = new Map(layers.map((l) => [l.id, l]));
-  return order
+  return [...new Set(order)]
     .map((id) => byId.get(id))
     .filter((l): l is RenderLayer<TData> => l !== undefined && isLayerVisible(l, visibility));
 }

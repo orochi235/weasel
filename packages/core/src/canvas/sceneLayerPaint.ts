@@ -71,7 +71,7 @@ export function paintedSceneLayers<T extends { id: string }>(
   const { layerVisibility, layerOrder } = view;
   if (layerVisibility === undefined && layerOrder === undefined) return layers;
   const sequence = layerOrder
-    ? layerOrder
+    ? [...new Set(layerOrder)]
       .map((key) => layers.find((l) => sceneLayerKey(l.id) === key))
       .filter((l): l is T => l !== undefined)
     : layers;

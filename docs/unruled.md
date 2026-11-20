@@ -2762,3 +2762,13 @@ Calls the lanes made without a ruling:
   host's page in turn, oldest first, for an SVG or `bitmapSrc` image, until one answers with a bitmap; the image cache
   is the worker realm's, so a load cannot tell which host's scene wanted it. `hostSceneRender` and `serveSceneRender`
   return a function that stops the host. Refusing a second live host in one realm was the alternative.
+## Audit round forty (2026-11-19): core's state
+
+- 2026-11-19 (the fixer's call): `usePointerStylus(ref)` listens to nothing while `ref.current` is empty, and moves to
+  each element the ref holds after a commit. Falling back to `window` for an empty ref, as before, was the alternative;
+  it reported pointers from the whole page as the element's. No target, or `null` passed directly, still means `window`.
+- 2026-11-19 (the fixer's call): a `layerOrder` naming a layer more than once draws it once, at its first place, and
+  warns in development. Drawing it at each place it is named, as before, was the alternative.
+- 2026-11-19 (the fixer's call): `stableStringify` writes an object of the caller's own with a `$type` key as
+  `{"$type":"object","value":…}`, so `{ $type: 'bigint', value: '10' }` and `10n` no longer give one string. Leaving
+  such an object as JSON writes it, and the two colliding, was the alternative.

@@ -1,7 +1,9 @@
 /**
- * JSON with object keys sorted, so two equal values produce one string. What JSON cannot write and would throw on
- * is written with the tags `@weasel-js/devtools`' serialization uses: a bigint as `{"$type":"bigint","value":"10"}`, a reference
- * to an object that contains it as `{"$type":"cycle"}`.
+ * JSON with object keys sorted, so two values produce one string only when they are equal. What JSON cannot write and
+ * would throw on is written with the tags `@weasel-js/devtools`' serialization uses: a bigint as
+ * `{"$type":"bigint","value":"10"}`, a reference to an object that contains it as `{"$type":"cycle"}`. An object of
+ * its own with a `$type` key is written as `{"$type":"object","value":…}`, so it never reads as a tag. A value JSON
+ * writes nothing for (`undefined`, a function, a symbol) is the bare word `undefined`, which no JSON text equals.
  */
 export function stableStringify(value: unknown): string {
   const open = new Set<object>();
@@ -19,13 +21,14 @@ export function stableStringify(value: unknown): string {
     try {
       if (Array.isArray(v)) return v.map((member, i) => sorted(member, String(i)));
       // Members JSON leaves out are left out here, so none (a `toJSON` among them) reaches the final write.
-      return Object.fromEntries(
+      const members = Object.fromEntries(
         Object.entries(v).sort(([a], [b]) => (a < b ? -1 : 1)).map(([k, member]) => [k, sorted(member, k)])
           .filter(([, member]) => member !== undefined && typeof member !== 'function' && typeof member !== 'symbol'),
       );
+      return Object.hasOwn(members, '$type') ? { $type: 'object', value: members } : members;
     } finally {
       open.delete(v);
     }
   };
-  return JSON.stringify(sorted(value, ''));
+  return JSON.stringify(sorted(value, '')) ?? 'undefined';
 }

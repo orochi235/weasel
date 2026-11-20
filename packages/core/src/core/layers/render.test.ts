@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { type LayerCommandCache, type LayerDrawSpan, type LayerGroup, type RenderLayer, drawLayers, drawOneLayer, isLayerVisible } from './render';
+import { type LayerCommandCache, type LayerDrawSpan, type LayerGroup, type RenderLayer, drawLayers, drawOneLayer, isLayerVisible, paintedLayers } from './render';
+import { warnLayersOnce } from './unknownOrderIds';
 import { viewToMat3, type DrawCommand } from '@weasel-js/renderer';
 
 describe('drawLayers', () => {
@@ -512,5 +513,52 @@ describe('isLayerVisible', () => {
   it('reads no visibility from the record\'s prototype', () => {
     const layer: RenderLayer<unknown> = { id: 'constructor', label: 'C', defaultVisible: false, draw: () => [] };
     expect(isLayerVisible(layer, {})).toBe(false);
+  });
+});
+
+describe('a group whose effects thunk throws', () => {
+  it('reports it under the group id and paints the run without the effects', () => {
+    const a: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { color: '#a' } } };
+    const hud: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 1, y: 0, width: 1, height: 1 }, fill: { paint: { color: '#h' } } };
+    const onLayerError = vi.fn();
+    const out = drawLayers(
+      [{ id: 'a', label: 'A', space: 'screen', draw: () => [a] }, { id: 'hud', label: 'H', space: 'screen', draw: () => [hud] }],
+      null, {}, undefined, VIEW, DIMS, undefined, onLayerError,
+      [{ id: 'g', layers: ['a'], alpha: 0.5, effects: () => { throw new Error('no blur yet'); } }],
+    );
+    expect(out).toEqual([{ kind: 'group', isolate: true, alpha: 0.5, children: [a] }, hud]);
+    expect(onLayerError).toHaveBeenCalledTimes(1);
+    expect(onLayerError.mock.calls[0][0].layerId).toBe('g');
+  });
+});
+
+describe('a layer listed twice in the order', () => {
+  it('paints once, at its first place, and warns', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const a: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { color: '#a' } } };
+    const b: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 1, y: 0, width: 1, height: 1 }, fill: { paint: { color: '#b' } } };
+    const layers: RenderLayer<unknown>[] = [
+      { id: 'twice', label: 'T', space: 'screen', draw: () => [a] },
+      { id: 'b', label: 'B', space: 'screen', draw: () => [b] },
+    ];
+    expect(paintedLayers(layers, {}, ['twice', 'b', 'twice']).map((l) => l.id)).toEqual(['twice', 'b']);
+    const out = drawLayers(layers, null, {}, ['twice', 'b', 'twice'], undefined, DIMS);
+    expect(out).toEqual([a, b]);
+    expect(warn.mock.calls.some(([m]) => String(m).includes('"twice" more than once'))).toBe(true);
+    warn.mockRestore();
+  });
+});
+
+describe('warnLayersOnce', () => {
+  it('keeps a bounded memory of what it has warned', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    warnLayersOnce('bounded: first');
+    warnLayersOnce('bounded: first');
+    expect(warn).toHaveBeenCalledTimes(1);
+    for (let i = 0; i < 1000; i++) warnLayersOnce(`bounded: ${i}`);
+    warn.mockClear();
+    warnLayersOnce('bounded: first');
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
   });
 });

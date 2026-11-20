@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import type { NodeId } from 'core/scene/types';
 import type { SelectionApi } from '@weasel-js/routing';
+import { sameList } from '@weasel-js/registry';
 
 /** `ids` as the scene's own selection would hold them (`Scene.selectable`). */
 export type Selectable = (ids: readonly NodeId[]) => readonly NodeId[];
@@ -28,15 +29,13 @@ export function legalSelection(api: SelectionApi, selectable: Selectable): Selec
   if (cached && cached.selectable === selectable) return cached.view;
   const narrow = (ids: readonly NodeId[]) => [...selectable(ids)];
   const settle = (): void => { settleSelection(api, selectable); };
-  // The last read, so an unchanged selection reads back as the same array.
-  let from: readonly NodeId[] | null = null;
+  // Narrowed on every read, since a lock or removal changes what `selectable` keeps under an
+  // unchanged `ids`; the last read comes back while it holds the same ids, for identity readers.
   let kept: NodeId[] = [];
   const read = (ids: readonly NodeId[]): NodeId[] => {
-    if (ids !== from) {
-      from = ids;
-      const legal = selectable(ids);
-      kept = (legal === ids ? ids : [...legal]) as NodeId[];
-    }
+    const legal = selectable(ids);
+    if (legal === ids) kept = ids as NodeId[];
+    else if (!sameList(legal, kept)) kept = [...legal];
     return kept;
   };
   const get = () => read(api.get());
