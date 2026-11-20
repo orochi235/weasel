@@ -19,6 +19,11 @@ describe('freshSeqId and newParticipant', () => {
 });
 
 describe('addParticipant', () => {
+  it('puts a participant added between two members of a box into it', () => {
+    const next = addParticipant({ ...data, boxes: [{ id: 'x', members: ['a', 'b'] }] }, { id: 'd' }, 1);
+    expect(next.boxes).toEqual([{ id: 'x', members: ['a', 'b', 'd'] }]);
+  });
+
   it('adds at an index, last by default, and refuses a taken id', () => {
     expect(ids(addParticipant(data, { id: 'd' }))).toEqual(['a', 'b', 'c', 'd']);
     expect(ids(addParticipant(data, { id: 'd' }, 1))).toEqual(['a', 'd', 'b', 'c']);

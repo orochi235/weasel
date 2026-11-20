@@ -2848,3 +2848,13 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): `outlineFromD` throws on path data or `detail` that does not parse or draws nothing,
   and a `RangeError` on a `content` with no area or a non-finite side, matching what a mark's `d` does. Building an
   outline that paints nothing, with a warning, was the alternative.
+## Audit round forty-six (2026-11-20): diagram sequences
+
+- 2026-11-20 (the fixer's call): a sequence whose root or any part is locked takes no edit. `placedSequences` leaves
+  it out, so it offers no regions and the authoring clicks pass over it, and `commitSequence` returns without
+  writing (`sequenceLocked`, `sequence/layer.ts`), as `redrawSequences` already did. Every edit builds all of a
+  root's parts again, so one locked part holds the whole sequence. Throwing from `commitSequence`, or rebuilding
+  through `scene.unlocked` around the locked part, were the alternatives.
+- 2026-11-20 (the fixer's call): `insertMessage` and `setMessageArrow` throw on an arrow name `SEQ_ARROWS` does not
+  hold as its own key (`'toString'`, a typo), naming it; the Message tool's `arrow` param, which can come from stored
+  options, still falls back to a call. Falling back to a call in both, as the tool does, was the alternative.

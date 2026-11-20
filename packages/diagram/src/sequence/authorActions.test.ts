@@ -11,6 +11,8 @@ import { createSequenceDeleteAction, selectSequencePartAction } from './select';
 import { sequenceSpecs } from './specs';
 import { sequenceRootOf } from './trait';
 import type { Action } from '@weasel-js/core';
+import { DIAGRAM_THEMES } from '../theme/themes';
+import { DIAGRAM_THEME_KEY } from '../theme/types';
 
 const AT = { x: 40, y: 30 };
 const KEYS = { alt: false, shift: false, meta: false, ctrl: false };
@@ -65,6 +67,16 @@ describe('the Participant action', () => {
     expect(placedSequences(scene as never)).toHaveLength(1);
   });
 
+  it('starts a sequence with its lifeline at the click in a theme set in a larger face', () => {
+    const scene = sceneOf();
+    const night = DIAGRAM_THEMES.night!;
+    scene.doc.set(DIAGRAM_THEME_KEY, { ...night, id: 'big', font: { ...night.font, size: 24 } });
+    run(createAddParticipantAction(), { scene }, { world: { x: 2000, y: 500 } });
+    const fresh = placedSequences(scene as never).find((r) => r.id !== 'seq')!;
+    expect(fresh.origin.x + fresh.geometry.columns[0]!.x).toBeCloseTo(2000, 0);
+    expect(fresh.origin.y + fresh.geometry.heads[0]!.box.y).toBeCloseTo(500, 0);
+  });
+
   it('starts a sequence in a paged scene on the page under the click, where the click put it', () => {
     const scene = pagedScene([]);
     run(createAddParticipantAction(), { scene }, { world: { x: 300, y: 20 } });
@@ -81,6 +93,13 @@ describe('the Participant action', () => {
 });
 
 describe('the Message and Note actions', () => {
+  it('draws a call for an arrow param naming an Object.prototype member', () => {
+    const scene = sceneOf();
+    const y = AT.y + geometry(scene).slots[0]!.y;
+    drag(createDrawMessageAction(), scene, { x: col(scene, 'a'), y }, { x: col(scene, 'c'), y: y + 10 }, { arrow: 'constructor' });
+    expect(dataOf(scene).steps[0]).toMatchObject({ kind: 'message', from: 'a', to: 'c', line: 'solid', head: 'arrow' });
+  });
+
   it('draws a self-message when released on its own lifeline, previewing its loop', () => {
     const scene = sceneOf();
     const y = AT.y + geometry(scene).slots[0]!.y;

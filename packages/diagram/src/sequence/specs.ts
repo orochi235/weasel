@@ -84,10 +84,11 @@ class PartSpecs {
     seq.marks = refs;
   }
 
-  text(id: string, r: Rect, text: string, color: string, target?: SeqTextTarget, face: { fontSize?: number; fontWeight?: number } = {}, centered = true): void {
+  /** Text an edit sets through `of` when it is a target, or text drawn for the participant or step `of` names. */
+  text(id: string, r: Rect, text: string, color: string, of: SeqTextTarget | string, face: { fontSize?: number; fontWeight?: number } = {}, centered = true): void {
     // A hair wider than measured, so the painter never breaks a line the layout kept whole.
     const box = { ...r, x: r.x - 1, width: r.width + 2 };
-    this.push(id, { part: 'text', ...(target ? { target } : {}) }, box, {
+    this.push(id, { part: 'text', ...(typeof of === 'string' ? { id: of } : { target: of }) }, box, {
       text, style: { ...this.font, ...(centered ? { align: 'center' as const } : {}), ...face }, verticalAlign: 'center', fill: { paint: { color } },
     });
   }
@@ -153,7 +154,7 @@ function messageSpecs(out: PartSpecs, steps: readonly SeqStep[], layout: Sequenc
     if (at.number) {
       const style = roleStyle(theme, SEQUENCE_ROLES.number);
       out.body(`msg:${s.id}/number`, 'number', s.id, at.number.box, 'ellipse', style);
-      out.text(`msg:${s.id}/number/text`, at.number.box, String(at.number.n), style.text, undefined, { fontSize: Math.max(8, out.font.fontSize - 2) });
+      out.text(`msg:${s.id}/number/text`, at.number.box, String(at.number.n), style.text, s.id, { fontSize: Math.max(8, out.font.fontSize - 2) });
     }
   }
 }
@@ -188,7 +189,7 @@ function fragmentSpecs(out: PartSpecs, steps: readonly SeqStep[], layout: Sequen
     });
     if (at.tab) {
       out.line(`frag:${s.id}/tab`, 'fragment', s.id, at.tab, 'M0 0H1V0.6L0.85 1H0Z', { paint: { color: style.stroke }, width: 1 }, theme.container.fill);
-      out.text(`frag:${s.id}/type`, at.tab, s.type, style.text, undefined, { fontWeight: 700 });
+      out.text(`frag:${s.id}/type`, at.tab, s.type, style.text, s.id, { fontWeight: 700 });
     }
   }
 }

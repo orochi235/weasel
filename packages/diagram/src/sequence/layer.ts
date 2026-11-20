@@ -47,13 +47,20 @@ export function sequenceScratchOf(hit: unknown): SequenceScratch | null {
 /** One root an edit may touch: its id, its world origin and size, and the geometry its parts were built with. */
 export interface PlacedSequence { id: string; origin: Vec2; width: number; height: number; geometry: SequenceGeometry }
 
-/** Every sequence root in `scene` that is neither locked nor hidden. */
+/**
+ * Whether root `id` or any of its parts is locked. Every edit builds all of a
+ * root's parts again, so one locked part holds the whole sequence as it stands.
+ */
+export const sequenceLocked = (scene: AnyScene, id: string): boolean =>
+  [id, ...scene.childrenOf(id as never)].some((n) => scene.isLocked(n as never));
+
+/** Every sequence root in `scene` that is neither hidden nor held by a lock on it or any of its parts. */
 export function placedSequences(scene: AnyScene): PlacedSequence[] {
   const out: PlacedSequence[] = [];
   const worldOf = worldPoses(scene, 'document');
   for (const node of scene.renderOrderNodes()) {
     const root = sequenceRootOf(node);
-    if (root === null || scene.isLocked(node.id) || scene.isHidden(node.id)) continue;
+    if (root === null || scene.isHidden(node.id) || sequenceLocked(scene, node.id)) continue;
     const at = worldOf(node.id) as RectPose;
     out.push({ id: node.id, origin: { x: at.x, y: at.y }, width: at.width, height: at.height, geometry: root.geometry });
   }

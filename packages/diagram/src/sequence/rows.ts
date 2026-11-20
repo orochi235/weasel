@@ -248,7 +248,11 @@ export function walkRows(data: SequenceData, m: SeqMeasure, cols: Columns, top: 
     const line = walk.lifeline.get(id);
     if (line !== undefined) line.y1 = fallback ?? bottom;
   }
-  for (const [id, stack] of walk.bars) while (stack.length > 0) walk.close(id, bottom + SEQ.footer);
+  // A bar still open where its lifeline was destroyed ends at the cross; the rest run to the foot.
+  for (const [id, stack] of walk.bars) {
+    const end = walk.lifeline.get(id)?.y1 ?? bottom + SEQ.footer;
+    while (stack.length > 0) walk.close(id, end);
+  }
   walk.out.bottom = bottom;
   return walk.out;
 }

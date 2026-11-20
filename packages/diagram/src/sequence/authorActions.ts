@@ -6,6 +6,7 @@
  */
 import { defineAction, type Action, type ActionDeps, type ImmediateParams, type Vec2, type AnyScene } from '@weasel-js/core';
 import { sequenceLayout } from './layout';
+import { diagramThemeOf, themeFont } from '../theme/resolve';
 import { addParticipant, newParticipant, type SeqParticipantKind } from './author';
 import { insertMark, insertNote } from './authorSteps';
 import { columnIndexAt, columnNear, sequenceAt, slotNear, type SequenceHit } from './authorPlace';
@@ -49,10 +50,14 @@ function clickOf(deps: ActionDeps, params: Readonly<Pick<ImmediateParams, 'world
   return scene === undefined || at === null ? null : { scene, at, hit: sequenceAt(scene, at) };
 }
 
-/** A sequence holding only `p`, placed so its lifeline stands at `at`'s x and its head's top at `at`'s y. */
-function firstAt(at: Vec2, p: SequenceData['participants'][number], opts: SequenceEditOptions): { at: Vec2; data: SequenceData } {
+/**
+ * A sequence holding only `p`, placed so its lifeline stands at `at`'s x and
+ * its head's top at `at`'s y, laid out in the font it will be drawn in.
+ */
+function firstAt(scene: AnyScene, at: Vec2, p: SequenceData['participants'][number], opts: SequenceEditOptions): { at: Vec2; data: SequenceData } {
   const data: SequenceData = { participants: [p], steps: [] };
-  const layout = sequenceLayout(data, opts.measure ? { measure: opts.measure } : {});
+  const font = themeFont(opts.theme ?? diagramThemeOf(scene));
+  const layout = sequenceLayout(data, { font, ...(opts.measure ? { measure: opts.measure } : {}) });
   const head = layout.heads[0]!;
   return { at: { x: at.x - layout.columns[0]!.x, y: at.y - head.box.y }, data };
 }
@@ -76,7 +81,7 @@ export function createAddParticipantAction(opts: SequenceAuthorOptions = {}): Ac
         const { hit } = click;
         if (hit === null) {
           if (start === null) return 'pass';
-          const first = firstAt(click.at, newParticipant({ participants: [], steps: [] }, kind), opts);
+          const first = firstAt(click.scene, click.at, newParticipant({ participants: [], steps: [] }, kind), opts);
           start(first.at, first.data, deps);
           return undefined;
         }
