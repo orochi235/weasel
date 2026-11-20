@@ -273,3 +273,31 @@ export function laneStepsOf(lane: AuditLane, now: number): SpanStripSpan[] {
   }).flatMap((span) => (span.id === 'patch' && span.state !== 'failed' ? withUnfixed(span, lane) : [span]))
     .map((span) => withInk(span));
 }
+
+/** The steps every area shares once its own lane is done, in order. */
+const SHARED_STEPS = [
+  { id: 'batch', label: 'batch', steps: ['batch'] },
+  { id: 'fleet', label: 'fleet run', steps: ['fleet'] },
+  { id: 'merge', label: 'merge', steps: ['merge-wait', 'merge'] },
+] as const;
+
+/** Whether the run has reached the steps its areas share: the batch, the fleet run and the merge. */
+export const inSharedSteps = (run: AuditRun): boolean =>
+  !run.running || SHARED_STEPS.some((s) => (s.steps as readonly string[]).includes(run.step));
+
+/** The run's lane for every area at once: its batch, fleet run and merge, a column each, the fleet run filled by the
+ *  tests it has run. */
+export function sharedSpansOf(run: AuditRun): SpanStripSpan[] {
+  const at = run.running ? SHARED_STEPS.findIndex((s) => (s.steps as readonly string[]).includes(run.step)) : SHARED_STEPS.length;
+  return SHARED_STEPS.map((s, i): SpanStripSpan => {
+    const state = i < at ? 'done' : i === at ? 'active' : 'pending';
+    const fleet = s.id === 'fleet' && state === 'active' ? run.fleet ?? null : null;
+    const fill = state === 'done' ? 1 : fleet && fleet.total > 0 ? fleet.done / fleet.total : 0;
+    const label = fleet ? `${s.label} · ${Math.round(fill * 100)}%` : s.label;
+    return {
+      id: s.id, start: i, ms: 1, state, fill, label, color: phaseColor(s.id === 'merge' ? 'patch' : 'fix'),
+      ...(s.id === 'merge' ? { ink: phaseInkOf('patch', fill) } : {}),
+      ...(fleet ? { title: `${fleet.done.toLocaleString()} of ${fleet.total.toLocaleString()} tests run` } : {}),
+    };
+  });
+}

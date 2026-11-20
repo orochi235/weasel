@@ -74,6 +74,8 @@ export interface AuditRun {
   readonly sweepRunning: boolean;
   readonly lastLine: string | null;
   readonly lines: readonly string[];
+  /** How far the batch's fleet run has got, in tests, while one runs. */
+  readonly fleet?: { readonly done: number; readonly total: number } | null;
 }
 
 export interface AuditRound {

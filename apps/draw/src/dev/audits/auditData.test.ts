@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { heatScaleOf, labelIn, nextUpOf, runHolding, statsFor, toneOf, wrapAtDots } from './areaData';
-import { headlineOf, parseJob, recentJobsOf, sharedLaneOf, spendOf, stepText } from './runData';
+import { headlineOf, parseJob, recentJobsOf, spendOf, stepText } from './runData';
+import { inSharedSteps, sharedSpansOf } from './phases';
 import { ticksFor } from './RoundsChart';
 import { layoutMap, squarify } from './mapLayout';
 import { areaTree, leavesOf, type AreaTreeNode } from './areaTree';
@@ -23,11 +24,15 @@ describe('lanes', () => {
     expect(stepText('patch', { state: 'failed', why: 'conflicts; left out of the batch' }, now)).toBe('conflicts; left out of the batch');
   });
 
-  it('gives the shared lane the batch while it runs, and the report once the run is done', () => {
-    expect(sharedLaneOf(live)).toEqual({ state: 'waiting', text: 'batch, fleet run and merge, once every lane is patched' });
-    expect(sharedLaneOf({ ...live, step: 'fleet' }).state).toBe('running');
-    expect(sharedLaneOf({ ...live, step: 'merge-wait' })).toEqual({ state: 'running', text: 'merge-wait: the batch is built; waiting for the merge lock' });
-    expect(sharedLaneOf(finished)).toEqual({ state: 'done', text: '8 areas merged; fleet green' });
+  it('runs the shared lane through batch, fleet run and merge, the fleet run filled by the tests it has run', () => {
+    const states = (run: typeof live) => sharedSpansOf(run).map((s) => [s.id, s.state, s.fill]);
+    expect(inSharedSteps(live)).toBe(false);
+    expect(states({ ...live, step: 'batch' })).toEqual([['batch', 'active', 0], ['fleet', 'pending', 0], ['merge', 'pending', 0]]);
+    const fleet = sharedSpansOf({ ...live, step: 'fleet', fleet: { done: 250, total: 1000 } });
+    expect(fleet.map((s) => [s.id, s.state, s.fill])).toEqual([['batch', 'done', 1], ['fleet', 'active', 0.25], ['merge', 'pending', 0]]);
+    expect(fleet[1]!.label).toBe('fleet run · 25%');
+    expect(states({ ...live, step: 'merge-wait' })).toEqual([['batch', 'done', 1], ['fleet', 'done', 1], ['merge', 'active', 0]]);
+    expect(states(finished).every(([, state]) => state === 'done')).toBe(true);
   });
 
   it('heads each run with its round, step and spend', () => {

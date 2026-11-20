@@ -28,7 +28,6 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .run:not(.idle) .pulse { animation: ping 1.8s ease-out infinite; }
-  .shared.running { animation: breathe 2.2s ease-in-out infinite; }
 }
 
 @keyframes ping {
@@ -37,7 +36,6 @@
   100% { box-shadow: 0 0 0 0 transparent; }
 }
 
-@keyframes breathe { 50% { background: transparent; } }
 
 .what {
   min-width: 0;
@@ -110,41 +108,10 @@
 .name:hover,
 .name:focus-visible { outline: 2px solid var(--audit-ink); outline-offset: -2px; }
 
-.sharedRow {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  align-items: center;
-  gap: var(--wzl-space-4);
-}
-
 .nameCell {
   font-family: var(--wzl-font-ui);
   font-size: var(--wzl-font-size-md);
   white-space: nowrap;
-}
-
-.shared {
-  padding: var(--wzl-space-1) var(--wzl-space-3);
-  border: 1px dashed var(--audit-rule);
-  border-radius: 3px;
-  font-family: var(--wzl-font-ui);
-  font-size: var(--wzl-font-size-sm);
-  color: var(--audit-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.shared.done {
-  border: 1px solid transparent;
-  background: var(--audit-depth-1);
-  color: var(--audit-ink);
-}
-
-.shared.running {
-  border: 1.5px solid var(--audit-live);
-  background: var(--audit-live-soft);
-  color: var(--audit-live);
 }
 
 /* Every lane label inks black, filled or not, so a running step's node name pulses the same way in each: between

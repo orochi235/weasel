@@ -133,6 +133,23 @@ const fixReports = (nightDir, ids) => new Map(nightDir ? ids.flatMap((id) => {
   return existsSync(file) ? [[id, parseEnvelope(readFileSync(file, 'utf8')).reply]] : [];
 }) : []);
 
+const PROGRESS = /^onto: progress (\d+)\/(\d+)\b/;
+
+/** How far the batch's fleet run has got, from the last progress line its test log holds outside the postbuild's and
+ *  browser's own: `{ done, total }`, or null before it reports. */
+export const fleetProgressOf = (nightDir) => {
+  const file = nightDir ? readdirSafe(nightDir).find((f) => f.endsWith('.test-batch.log')) : undefined;
+  if (!file) return null;
+  const lines = readFileSync(join(nightDir, file), 'utf8').replace(/\x1b\[[0-9;]*m/g, '').split('\n');
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const m = PROGRESS.exec(lines[i]);
+    if (m) return { done: Number(m[1]), total: Number(m[2]) };
+  }
+  return null;
+};
+
+const readdirSafe = (dir) => { try { return readdirSync(dir); } catch { return []; } };
+
 /** What one run, live (`running`) or finished, says about its areas; `jobs` are onto's jobs, running and finished. */
 export const readRun = (found, running, jobs = [], state = STATE_DIR) => {
   const run = { ...found, nightDir: nightDirOf(found, state) };
@@ -157,6 +174,7 @@ export const readRun = (found, running, jobs = [], state = STATE_DIR) => {
     nightDir: run.nightDir ?? null,
     lastLine: lines.at(-1) ?? null,
     lines: lines.slice(-40),
+    fleet: running ? fleetProgressOf(run.nightDir) : null,
   };
 };
 

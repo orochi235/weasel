@@ -41,7 +41,7 @@ describe('AuditsPage', () => {
     expect(within(lanes).getAllByTitle(/studio · 12 min/).some((el) => el.textContent === 'studio · 12 min')).toBe(true);
     expect(within(lanes).getAllByText('studio')).not.toHaveLength(0);
     expect(screen.getByText('conflict')).toBeInTheDocument();
-    expect(screen.getByText('batch, fleet run and merge, once every lane is patched')).toBeInTheDocument();
+    expect(screen.queryByRole('meter', { name: 'all areas' })).not.toBeInTheDocument();
 
     const stats = screen.getByRole('region', { name: 'Headline stats' });
     expect(within(stats).getByText('4 / 6')).toBeInTheDocument();
