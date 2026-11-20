@@ -102,3 +102,12 @@ describe('loadShaper — features, outlines and mixed scripts', () => {
     expect(shaper.shape(LATIN, 'Abc')).toBe(shaper.shape(LATIN, 'Abc'));
   });
 });
+
+describe('loadShaper — refusals', () => {
+  it('refuses a non-finite glyph offset', () => {
+    const [a] = shaper.shape(LATIN, 'A');
+    for (const [dx, dy] of [[Infinity, 0], [0, -Infinity], [NaN, 0], [0, NaN]]) {
+      expect(() => shaper.glyphD(LATIN, a.gid, dx, dy)).toThrow(/weasel glyphD: the offset .* is not finite/);
+    }
+  });
+});

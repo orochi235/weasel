@@ -54,7 +54,7 @@ export interface TextShaper {
   shape(face: ArrayBuffer, text: string, features?: readonly string[], language?: string): readonly ShapedGlyph[];
   /** Em-space SVG path data for glyph `gid` of `face`, moved by `(dx, dy)`
    *  ems; y grows downward and the origin is the pen on the baseline. Null for
-   *  a glyph with no contours. */
+   *  a glyph with no contours. Throws a `RangeError` for an offset that is not finite. */
   glyphD(face: ArrayBuffer, gid: number, dx?: number, dy?: number): string | null;
   /** Whether `face` has the OpenType feature `tag` (`'smcp'`, `'liga'`) in its
    *  substitutions or positioning. */
@@ -187,6 +187,9 @@ class HarfBuzzShaper implements TextShaper {
   }
 
   glyphD(bytes: ArrayBuffer, gid: number, dx = 0, dy = 0): string | null {
+    if (!Number.isFinite(dx) || !Number.isFinite(dy)) {
+      throw new RangeError(`weasel glyphD: the offset (${dx}, ${dy}) is not finite; a glyph is drawn at a finite pen position`);
+    }
     const rec = this.#face(bytes);
     let cmds = rec.paths.get(gid);
     if (cmds === undefined) {
