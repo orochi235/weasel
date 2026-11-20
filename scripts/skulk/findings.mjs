@@ -1,4 +1,5 @@
 /** Reading a reviewer's findings file and checking the matcher's answer against the two lists. */
+import { FIXED_MARK } from './progress.mjs';
 
 /** The `##` sections of a findings file, each `{ claim, where, body }`. */
 export const parseFindings = (text) => {
@@ -71,7 +72,6 @@ export const matchPrompt = (brief, a, b) => {
 };
 
 const TALLY = /^tally: (\d+) of (\d+) fixed, (\d+) extra fixed\s*$/im;
-const FIXED = /\bfixed (?:in )?`?[0-9a-f]{7,}/;
 const VERDICT = /\bfixed (?:in )?`?[0-9a-f]{7,}|\bnot a defect\b|\bquestion\b|\bduplicate of\b|\bnot fixed\b|\bdeclined\b/i;
 const EXTRAS = /^\W*(?:any )?extra\b/i;
 const CHECKS = /^\W*checks\b/i;
@@ -91,6 +91,6 @@ export const fixTallyOf = (report) => {
   const cut = body.findIndex((p) => EXTRAS.test(p));
   const listed = (cut === -1 ? body : body.slice(0, cut)).filter((p) => VERDICT.test(p));
   if (listed.length === 0) return null;
-  const extra = cut === -1 ? 0 : body.slice(cut).filter((p) => FIXED.test(p)).length;
-  return { fixed: listed.filter((p) => FIXED.test(p)).length, of: listed.length, extra };
+  const extra = cut === -1 ? 0 : body.slice(cut).filter((p) => FIXED_MARK.test(p)).length;
+  return { fixed: listed.filter((p) => FIXED_MARK.test(p)).length, of: listed.length, extra };
 };

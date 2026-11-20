@@ -30,7 +30,7 @@ export const parseEnvelope = (raw) => {
   };
   const reason = env.terminal_reason ?? env.subtype ?? (raw ? 'unknown' : 'no envelope');
   return {
-    reply: String(env.result ?? ''),
+    reply: String(env.report ?? env.result ?? ''),
     record: {
       models: Object.keys(env.modelUsage ?? {}),
       tokens,

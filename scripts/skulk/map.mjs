@@ -13,6 +13,7 @@ import { fixTallyOf } from './findings.mjs';
 import { partitionAt } from './partition.mjs';
 import { chapman, gitTouched, pickAreas, readPasses } from './rounds.mjs';
 import { lastFinished, liveRuns, readJson } from './runs.mjs';
+import { parseEnvelope } from './usage.mjs';
 
 /** Each area's furthest step in a night's log, from the lines `night.mjs` prints as jobs finish. */
 export const nightStages = (log) => {
@@ -121,7 +122,7 @@ const nightDirOf = (run, state) => {
 /** Each area's fixer report that has come home, by area. */
 const fixReports = (nightDir, ids) => new Map(nightDir ? ids.flatMap((id) => {
   const file = join(nightDir, 'jobs', id, 'fix', 'claude.json');
-  return existsSync(file) ? [[id, String(readJson(file)?.result ?? '')]] : [];
+  return existsSync(file) ? [[id, parseEnvelope(readFileSync(file, 'utf8')).reply]] : [];
 }) : []);
 
 /** What one run, live (`running`) or finished, says about its areas; `jobs` are onto's jobs, running and finished. */
