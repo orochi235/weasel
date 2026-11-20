@@ -5,8 +5,9 @@
  *     a curve, each curve in the result is a piece of an input curve
  *     (`curveBoolean`). Inputs of straight lines only, very large inputs, and
  *     the cases `curveBoolean` declines (self-crossing cubics, some
- *     tangencies) are flattened and clipped by `polygon-clipping`
- *     instead, so their result has only M/L/Z commands.
+ *     tangencies) are flattened, to within a ten-thousandth of the inputs'
+ *     extent and at most `DEFAULT_FLATTEN_TOLERANCE`, and clipped by
+ *     `polygon-clipping` instead, so their result has only M/L/Z commands.
  *   - Crop, trim and merge keep curves the same way (`curvePieces`), and
  *     fall back to the clipper in the same cases.
  *   - Divide and the face pieces trace the arrangement of every outline
@@ -25,6 +26,8 @@ import { curveFaces, type FaceNeighbor } from './curveFaces';
 import { curveMerge, curveTrim, type CurvePiece } from './curvePieces';
 import type { Path, PolygonPath } from '../path';
 import { keepCorners } from '../paths/cornerRestore';
+import { DEFAULT_FLATTEN_TOLERANCE } from '../flatten';
+import { extentOf, parseContours } from './contours';
 
 /** `mp` as a path, with the corners of `sources` it still draws whole kept as corners. */
 function toPath(mp: MultiPolygon, sources: readonly Path[]): PolygonPath {
@@ -33,12 +36,19 @@ function toPath(mp: MultiPolygon, sources: readonly Path[]): PolygonPath {
 
 type Clip = (head: MultiPolygon, ...rest: MultiPolygon[]) => MultiPolygon;
 
+/** `paths` flattened for the clipper, all at one tolerance: a ten-thousandth of their extent, and at most the default. */
+function flattened(paths: readonly Path[]): MultiPolygon[] {
+  const extent = extentOf(paths.flatMap((p) => parseContours(p)));
+  const flattenTolerance = Math.min(DEFAULT_FLATTEN_TOLERANCE, extent * 1e-4) || DEFAULT_FLATTEN_TOLERANCE;
+  return paths.map((p) => pathToMultiPolygon(p, { flattenTolerance }));
+}
+
 /** `keep` over `paths` with curves kept, or `clip` on their flattening where that declines. */
 function boolean(paths: Path[], keep: (inside: boolean[]) => boolean, clip: Clip): PolygonPath {
   if (paths.length === 0) return multiPolygonToPath([]);
   const curved = curveBoolean(paths, keep);
   if (curved) return keepCorners(paths, curved);
-  const [head, ...rest] = paths.map((p) => pathToMultiPolygon(p));
+  const [head, ...rest] = flattened(paths);
   return toPath(clip(head, ...rest), paths);
 }
 
@@ -177,7 +187,7 @@ export function pathFacePieces(...paths: Path[]): BooleanPiece[] {
 export function pathTrim(...paths: Path[]): BooleanPiece[] {
   const curved = curveTrim(paths);
   if (curved) return cornered(curved, paths);
-  const mps = paths.map((p) => pathToMultiPolygon(p));
+  const mps = flattened(paths);
   const out: BooleanPiece[] = [];
   // Front to back, so the cover over each input is built once.
   let cover: (typeof mps)[number] | null = null;

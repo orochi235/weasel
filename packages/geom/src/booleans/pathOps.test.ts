@@ -3,6 +3,9 @@ import { pathUnion } from './index';
 import { PATH_M, PATH_L, PATH_C, PATH_Z } from '../commands';
 import type { RectPath, PolygonPath } from '../path';
 import { pathContainsPoint } from '../pathHitTest';
+import { pathSignedArea } from '../paths/winding';
+import { circle } from './curveShapes.fixtures';
+import { pathTrim } from './ops';
 
 const r = (x: number, y: number, w: number, h: number): RectPath => ({
   kind: 'rect', x, y, width: w, height: h,
@@ -289,5 +292,29 @@ describe('booleans on straight contours that partly overlap', () => {
 
   it('fills the overlap where the fill rule does', () => {
     expect(pathContainsPoint(pathUnion(pair('nonzero', 1)), 7, 7)).toBe(true);
+  });
+});
+
+describe('booleans the clipper answers, on small curved inputs', () => {
+  /** A unit square at x = 10 drawn with more segments than the curve-keeping booleans take on. */
+  const many = (): PolygonPath => {
+    const n = 5000;
+    const xs: number[] = [];
+    for (let k = 0; k <= n; k++) xs.push(10 + k / n, 0);
+    xs.push(11, 1, 10, 1);
+    return {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, ...new Array<number>(n + 2).fill(PATH_L), PATH_Z]),
+      coords: new Float32Array(xs),
+      fillRule: 'nonzero',
+    };
+  };
+
+  it('flattens a unit circle finely enough to stay round', () => {
+    const u = pathUnion(circle(0, 0, 1), many());
+    expect(u.commands.includes(PATH_C)).toBe(false);
+    expect(Math.abs(pathSignedArea(u))).toBeCloseTo(Math.PI + 1, 2);
+    const [shown] = pathTrim(circle(0, 0, 1), many());
+    expect(Math.abs(pathSignedArea(shown.path))).toBeCloseTo(Math.PI, 2);
   });
 });
