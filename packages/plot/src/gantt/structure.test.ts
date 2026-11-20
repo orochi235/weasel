@@ -66,6 +66,11 @@ describe('gantt structure', () => {
     expect(moveGanttTaskToSection(CHAIN, 1, 0, 0).sections.map((s) => s.tasks.map((t) => t.name))).toEqual([['one', 'two'], ['three']]);
     expect(moveGanttTaskToSection(CHAIN, 1, 0, 1).sections[1]!.tasks.map((t) => t.name)).toEqual(['three', 'two']);
     expect(() => moveGanttTaskToSection(CHAIN, 0, 0, 5)).toThrow(/no section 5/);
+    const abc: GanttData = { kind: 'gantt', sections: [{ tasks: ['A', 'B', 'C'].map((name) => ({ name, start: { kind: 'previous' }, end: { kind: 'duration', amount: 1, unit: 'd' } })) }] };
+    const names = (d: GanttData) => d.sections[0]!.tasks.map((t) => t.name);
+    expect(names(moveGanttTaskToSection(abc, 0, 0, 0, 2))).toEqual(['B', 'A', 'C']);
+    expect(names(moveGanttTaskToSection(abc, 0, 0, 0, 3))).toEqual(['B', 'C', 'A']);
+    expect(names(moveGanttTaskToSection(abc, 0, 2, 0, 0))).toEqual(['C', 'A', 'B']);
     compiles(d);
   });
 

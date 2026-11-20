@@ -1,12 +1,13 @@
-import { SceneCanvas, WeaselProvider, useLatest, useScene, type NodeId, type Paint, type RectPose } from '@weasel-js/core';
-import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
+import { SceneCanvas, WeaselProvider, useScene, type Paint, type RectPose } from '@weasel-js/core';
+import { useMemo, useState, type ReactElement } from 'react';
 import { createTextPreset } from '@weasel-js/text-tools';
 import { createPlotEditingContribution } from './editing/createPlotEditingContribution';
 import { usePlotTextEdit } from './editing/textEdit';
 import type { PlotMeasure } from './measure';
 import type { PlotData } from './plotData';
-import { plotRootOf, plotSpecs, replacePlotData, type PlotSceneData, type PlotSpec } from './plotScene';
-import { PLOT_THEME, type PlotTheme } from './theme';
+import { plotSpecs, replacePlotData, type PlotSceneData, type PlotSpec } from './plotScene';
+import { usePlotPropsSync } from './plotViewSync';
+import type { PlotTheme } from './theme';
 import * as presets from '@weasel-js/editing/presets';
 
 /** Props for {@link PlotView}. */
@@ -47,41 +48,7 @@ function Inner({ data, onChange, width, height, theme, measure, background, clas
     id: ROOT, box: { x: 0, y: 0, width, height }, ...(theme ? { theme } : {}), ...(measure ? { measure } : {}),
   }));
   const scene = useScene<PlotSceneData, 'main', RectPose>({ systemLayers: [{ id: 'main' }], initial: initial as PlotSpec[] });
-  const changed = useLatest(onChange);
-  // The spec last reported or drawn from props, which a redraw from props must not report back.
-  const last = useRef(plotRootOf(scene.get(ROOT as NodeId))?.data);
-  const redrawing = useRef(false);
-  const drawnWith = useRef({ theme, measure });
-
-  // A spec from outside redraws without an undo entry; one the view reported back is already drawn. So do a new
-  // theme or measure, and a theme taken away redraws in the default one.
-  useEffect(() => {
-    const root = scene.get(ROOT as NodeId);
-    const pose = root?.pose;
-    const trait = plotRootOf(root);
-    const sized = pose !== undefined && pose.width === width && pose.height === height;
-    const drawn = drawnWith.current;
-    if (trait === null || (trait.data === data && sized && drawn.theme === theme && drawn.measure === measure)) return;
-    drawnWith.current = { theme, measure };
-    redrawing.current = true;
-    try {
-      scene.untracked(() => {
-        if (!sized) scene.setPose(ROOT as NodeId, { x: 0, y: 0, width, height });
-        replacePlotData(scene, ROOT, data, { theme: theme ?? PLOT_THEME, ...(measure ? { measure } : {}) });
-      });
-    } finally {
-      redrawing.current = false;
-    }
-    last.current = plotRootOf(scene.get(ROOT as NodeId))?.data;
-  }, [scene, data, width, height, theme, measure]);
-
-  useEffect(() => scene.subscribe(() => {
-    const now = plotRootOf(scene.get(ROOT as NodeId))?.data;
-    if (redrawing.current) last.current = now;
-    if (now === undefined || now === last.current) return;
-    last.current = now;
-    changed.current?.(now);
-  }), [scene, changed]);
+  usePlotPropsSync(scene, ROOT, data, { width, height, theme, measure }, onChange);
 
   const editing = useMemo(() => createPlotEditingContribution({ scene: scene as never, ...(measure ? { measure } : {}) }), [scene, measure]);
   const ambient = useMemo(() => [editing], [editing]);

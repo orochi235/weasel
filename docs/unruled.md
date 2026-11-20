@@ -3059,3 +3059,10 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): once a PDF face has given out every two-byte code, a glyph's further reading (other
   text, or another width) gets no code, so `writePdf` draws that glyph as an outline rather than as text. Reusing the
   glyph's first code, as before, copied out the wrong text and moved the pen by the wrong width.
+## Audit round fifty-three (2026-11-20): plot
+
+- 2026-11-20 (the fixer's call): `setGitCommandField` throws on a branch name another branch holds, the main branch
+  included, and on a commit or merge id another command gives a commit, as `setGitMainBranch` and `setGanttTaskId`
+  already do. Accepting either leaves a graph whose replay stops there. A gantt date is written held to the years its
+  `dateFormat` reads back (`YYYY` 0 to 9999, `YY` 1969 to 2068, a format with no year 1970), so a drag past them
+  stops at the edge rather than throwing.
