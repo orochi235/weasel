@@ -110,8 +110,19 @@ function measuredOf(p: PartState): number | null {
 
 const SPAN_STATE: Readonly<Record<LaneStep['state'], SpanState>> = { waiting: 'pending', running: 'active', done: 'done', failed: 'failed' };
 
-/** What a part shows in its segment: the node, what it found or made, and its minutes, never the phase's name. */
-function partLabel(p: PartState, now: number): string {
+/** The area's tally, its patch segment's caption: the distinct defects the reviews found, once matched, and the
+ *  fixer's commits, once it is done. */
+export function tallyOf(lane: AuditLane): string {
+  const { match, fix } = lane.steps;
+  if (match.state !== 'done') return '';
+  const found = `${(match.a ?? 0) + (match.b ?? 0) - (match.shared ?? 0)} found`;
+  return fix.state === 'done' ? `${found} / ${fix.commits ?? 0} fixed` : found;
+}
+
+/** What a part shows in its segment: the node, what it found or made, and its minutes, never the phase's name; the
+ *  patch shows the area's tally unless it failed. */
+function partLabel(lane: AuditLane, p: PartState, now: number): string {
+  if (p.part === 'patch' && p.state !== 'failed') return tallyOf(lane);
   if (p.state === 'waiting') return '';
   const running = p.steps.find((s) => s.state === 'running');
   if (running) return stepText(p.part === 'review' ? 'A' : p.part, running, now);
@@ -155,7 +166,7 @@ export function laneViewOf(lane: AuditLane, now: number, roundStart: number): La
     cursor = end;
     const title = STEPS_OF[p.part].map((name) => `${name}: ${stepText(name, lane.steps[name], now)}`).join('; ');
     return {
-      id: p.part, label: partLabel(p, now), start, ms: Math.max(0, end - start), color: phaseColor(phase), state: SPAN_STATE[p.state], title,
+      id: p.part, label: partLabel(lane, p, now), start, ms: Math.max(0, end - start), color: phaseColor(phase), state: SPAN_STATE[p.state], title,
       ...(p.state === 'waiting' ? { fill: 0 } : {}),
     };
   });
@@ -194,7 +205,7 @@ export function laneStepsOf(lane: AuditLane, now: number): SpanStripSpan[] {
       : 0;
     return {
       id: step, ms: 1, fill, state: SPAN_STATE[s.state], title: `${step}: ${stepText(step, s, now)}`,
-      label: s.state === 'waiting' ? '' : stepText(step, s, now),
+      label: step === 'patch' && s.state !== 'failed' ? tallyOf(lane) : s.state === 'waiting' ? '' : stepText(step, s, now),
       color: phaseColor(s.state === 'failed' ? 'conflict' : phase),
     };
   });

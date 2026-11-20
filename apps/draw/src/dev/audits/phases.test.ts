@@ -56,7 +56,7 @@ describe('laneViewOf', () => {
       ['review', 2, 4, 'done'], ['match', 6, TYPICAL_MINUTES.match, 'done'], ['fix', 18, 12, 'active'], ['patch', 30, TYPICAL_MINUTES.patch, 'pending'],
     ]);
     expect(view.elapsed).toBe('12m');
-    expect(view.spans.map((s) => s.label)).toEqual(['5+2 found · 4.0m', '5 total, 2 shared', 'studio · 12m', '']);
+    expect(view.spans.map((s) => s.label)).toEqual(['5+2 found · 4.0m', '5 total, 2 shared', 'studio · 12m', '5 found']);
     expect(view.spans[2]!.color).toBe(phaseColor('fix'));
     expect(view.spans[0]!.color).toBe(phaseColor('reviewed'));
   });
@@ -65,6 +65,12 @@ describe('laneViewOf', () => {
     const view = laneViewOf(lane({ A: done({ minutes: 3, findings: 1 }), B: done({ minutes: 5 }) }), NOW, START);
     expect(view.spans.map((s) => ((s.start ?? 0) - START) / MIN)).toEqual([0, 30, 30 + TYPICAL_MINUTES.match, 30 + TYPICAL_MINUTES.match + TYPICAL_MINUTES.fix]);
     expect(view.spans.map((s) => s.fill)).toEqual([undefined, 0, 0, 0]);
+  });
+
+  it('captions the patch with the defects found, then fixed', () => {
+    const fixed = { A: done({ findings: 3 }), B: done({ findings: 2 }), match: matched(3, 2, 1), fix: done({ minutes: 9, commits: 4 }) };
+    expect(laneViewOf(lane(fixed), NOW, START).spans.at(-1)?.label).toBe('4 found / 4 fixed');
+    expect(laneStepsOf(lane({ ...fixed, patch: done({ commits: 4 }) }), NOW).at(-1)?.label).toBe('4 found / 4 fixed');
   });
 
   it('colors a failed part as a conflict and says why', () => {
