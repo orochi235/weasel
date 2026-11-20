@@ -58,4 +58,22 @@ describe('DIAGRAM_JSON', () => {
     expect(DIAGRAM_JSON.read!(text(DIAGRAM_THEMES.paper))).toMatchObject({ document: { theme: DIAGRAM_THEMES.paper } });
     expect(DIAGRAM_JSON.read!(text('no-such-theme'))).toMatchObject({ document: { theme: 'no-such-theme' } });
   });
+
+  it('refuses a page it could not draw: no id, size, data object, or a graph\'s lists', () => {
+    const file = (page: object) => JSON.stringify({ format: 'weasel-diagram', version: 2, pages: [page] });
+    const graph = { kind: 'graph', id: 'p', width: 10, height: 10, data: { nodes: [], edges: [] } };
+    expect(() => DIAGRAM_JSON.read!(file(graph))).not.toThrow();
+    const { data: _data, ...noData } = graph;
+    const { width: _width, ...noWidth } = graph;
+    for (const [page, says] of [
+      [noData, /"p" with no data object/],
+      [noWidth, /"p" whose width is not a finite size/],
+      [{ ...graph, height: 'tall' }, /"p" whose height/],
+      [{ ...graph, id: 3 }, /no string id/],
+      [{ ...graph, data: { nodes: [] } }, /"p" whose graph data has no nodes and edges lists/],
+      [{ kind: 'plot', id: 'c', width: 10, height: 10 }, /"c" with no data object/],
+    ] as const) {
+      expect(() => DIAGRAM_JSON.read!(file(page))).toThrow(says);
+    }
+  });
 });
