@@ -167,6 +167,14 @@ describe('devtools session', () => {
     expect(t.setOverride).toHaveBeenLastCalledWith(null);
   });
 
+  it('drops an override the panel has emptied', () => {
+    const t = setup();
+    t.panel.send({ type: 'yo', protocol: P });
+    t.result({ type: 'highlight', ids: [t.leaf] });
+    t.result({ type: 'highlight', ids: [] });
+    expect(t.setOverride).toHaveBeenLastCalledWith(null);
+  });
+
   it('drops its override from a root that is unregistered while its canvas stays', () => {
     const t = setup();
     t.panel.send({ type: 'yo', protocol: P });

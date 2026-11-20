@@ -59,6 +59,7 @@ export function openSession(host: SessionHost, transport: PageTransport): Devtoo
       overlays: change.overlays ? { ...prev.overlays, ...change.overlays } : prev.overlays,
       highlight: change.highlight ?? prev.highlight,
     };
+    if (Object.keys(next.overlays).length === 0 && next.highlight.length === 0) return dropOverride(root.id);
     overrides.set(root.id, { root, override: next });
     root.source.setOverride(next);
   };
