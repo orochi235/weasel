@@ -2517,6 +2517,8 @@ Calls the lanes made without a ruling:
 - 2026-11-15 (the lane's call): a d3 transition handler passed to `on('end')` twice runs once, as every `createEmitter`
   listener does.
 - Ruled 2026-11-15: d3 cancel keys are built by `transitionCancelKey`, on `compositeKey`; the format is no longer documented.
+- 2026-11-20 (my call, audit round 45): a d3 transition's second `.tween()` of one name replaces the first, as d3's
+  `transition.tween(name, …)` does, rather than throwing; the two had shared a cancel key and left `end()` unsettled.
 - Ruled 2026-11-15: `record[key]` reaching `Object.prototype` is checked with type information, first as an eslint rule; the same day lint ran out of heap on it, so it runs as `check:proto-index`, one program over shipped source, and its unfixed files sit on a pending list that only shrinks (TODO).
 - Ruled 2026-11-15: snapshots keep `Infinity`, `-Infinity`, `NaN` and `-0` as `{ "__num": … }` tags, and the kit's default clipboard writes through the codec.
 - Ruled 2026-11-15: a router command is disabled when every selected connector already uses it.

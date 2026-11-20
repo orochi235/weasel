@@ -49,6 +49,9 @@ export function createTransitionHandle<TData, TPose>(
       return t;
     },
     tween(opts) {
+      // One tween per name, as d3's `transition.tween(name, …)`: a later one replaces it.
+      const at = settings.tweens.findIndex((ct) => ct.name === opts.name);
+      if (at >= 0) settings.tweens.splice(at, 1);
       settings.tweens.push({
         name: opts.name,
         from: opts.from as (d: TData, i: number) => unknown,

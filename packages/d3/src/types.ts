@@ -93,6 +93,8 @@ export interface D3Transition<TData, TPose = unknown> {
    *  it animates prior → joined; a chained transition without `.pose()` leaves
    *  the pose where the previous one put it. */
   pose(fn: (d: TData, i: number) => TPose): this;
+  /** A custom tween, applied each frame by `apply`. A transition runs one tween per `name`:
+   *  another of the same name replaces it, as in d3. */
   tween<TValue>(opts: {
     name: string;
     from: (d: TData, i: number) => TValue;
