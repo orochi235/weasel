@@ -126,9 +126,10 @@ export interface WeaselRendererOptions {
    *  already drawn straight through while they move makes room. Counts each surface, 4 bytes a device
    *  pixel. Not counted: the multisampled buffer surfaces are drawn in, a
    *  tile at a time, 8 bytes a sample at up to 1024x1024 plus a 4-byte copy,
-   *  held across frames that redraw one and freed after the first that does
-   *  not; on a frame that redraws, GPU memory can reach the budget plus that
-   *  buffer, 36 MiB more at 4x.
+   *  and the single-sampled one, 8 bytes a pixel, that a group drawn into an
+   *  effect's buffer uses. Each is held across frames that redraw into it and
+   *  freed after the first that does not, so GPU memory can reach the budget
+   *  plus both, 44 MiB more at 4x.
    *  Default {@link DEFAULT_RETAIN_BUDGET}; 0 retains nothing. */
   retainBudget?: number;
   /** Per-render synchronous bake budget for dynamic canvas-SDF glyphs.
