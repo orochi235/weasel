@@ -9,6 +9,7 @@ import { diagramEdgeOf } from './edgeTrait';
 import { commitRouteToScene, type RouteEdit, type RouteEditOptions } from './waypointAction';
 import { WAYPOINT_HIT_PX, routeStateOf, waypointScratchOf, type EdgeRouteState } from './waypointLayer';
 import { avoid } from './edge';
+import { offersPorts } from './portAffordance';
 import { removeSegment, removeWaypoint, unpinSegment, type RouteHandle } from './waypoints';
 import type {} from './actionParamSchema';
 
@@ -36,15 +37,19 @@ function removalOf(route: EdgeRouteState, handle: RouteHandle): Vec2[] | null {
 export function createRemoveWaypointAction<TPose>(opts: RouteEditOptions<TPose>): Action {
   const { commit = commitRouteToScene, hitRadiusPx = WAYPOINT_HIT_PX } = opts;
   const endsOf = createEdgeEnds(opts.participants, opts);
-  const routeOf = (edgeId: string) => {
+  /** The route of `edgeId`, where its handles are offered: not where the edge
+   *  is hidden, locked or on a layer the view does not paint, as the layer
+   *  draws none there. */
+  const routeOf = (edgeId: string, deps: ActionDeps | undefined) => {
     const ends = endsOf(edgeId);
-    return ends === null ? null : routeStateOf(ends as never, opts.routers);
+    if (ends === null || !offersPorts(ends.edge, deps?.view) || deps?.scene?.isLocked(edgeId as never) === true) return null;
+    return routeStateOf(ends as never, opts.routers);
   };
   /** The removal a double-click at `at` makes, read off the handles as the layer places them. */
   const removalAt = (deps: ActionDeps | undefined, at: Vec2): RouteEdit | null => {
     const reach = hitRadiusPx / Math.abs(deps?.view?.get().scale.x || 1);
     for (const edgeId of opts.selected()) {
-      const route = routeOf(edgeId);
+      const route = routeOf(edgeId, deps);
       for (const handle of route?.handles ?? []) {
         if (Math.max(Math.abs(handle.at.x - at.x), Math.abs(handle.at.y - at.y)) > reach) continue;
         const waypoints = removalOf(route!, handle);
@@ -64,7 +69,7 @@ export function createRemoveWaypointAction<TPose>(opts: RouteEditOptions<TPose>)
         const world = params?.world;
         if (!world) return;
         const pressed = waypointScratchOf(params.affordance);
-        const route = pressed === null ? null : routeOf(pressed.edgeId);
+        const route = pressed === null ? null : routeOf(pressed.edgeId, deps);
         const waypoints = pressed === null || route === null ? null : removalOf(route, pressed.handle);
         const edit = pressed !== null && waypoints !== null ? { edgeId: pressed.edgeId, waypoints } : removalAt(deps, world);
         if (edit !== null) commit(edit, { world, modifiers: NO_MODIFIERS, deps } as InvocationCtx);

@@ -278,4 +278,18 @@ describe('createRemoveWaypointAction', () => {
     expect(enabledAt('ac', 200, 120)).not.toBe(true);
     expect(enabledAt('ab', 230, 100, [{ x: 200, y: 100 }])).not.toBe(true);
   });
+
+  it('leaves a locked or hidden edge\'s waypoints alone, as its layer draws no handles there', () => {
+    const at = { x: 200, y: 100 };
+    const gated = (gate: { locked?: boolean; hidden?: boolean }) => () =>
+      participants([at])().map((p) => (p.node.id === 'ab' ? { ...p, ...gate } : p));
+    for (const gate of [{ locked: true }, { hidden: true }]) {
+      const commit = vi.fn();
+      const action = createRemoveWaypointAction<Rect>({ participants: gated(gate), selected: () => ['ab'], commit });
+      expect(action.enabled!({} as never, at)).not.toBe(true);
+      (action.invoker as ImmediateInvoker).run({} as never, { world: at, affordance: press('ab', { kind: 'vertex', index: 0, at }) });
+      (action.invoker as ImmediateInvoker).run({} as never, { world: at });
+      expect(commit).not.toHaveBeenCalled();
+    }
+  });
 });
