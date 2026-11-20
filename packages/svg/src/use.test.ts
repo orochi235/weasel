@@ -19,6 +19,21 @@ describe('<use>', () => {
     expect(out.warnings).toEqual([]);
   });
 
+  it('leaves out what a container would: a hidden or failing child of a <symbol>, a foreign one, and a hidden target', () => {
+    const out = parse(
+      '<symbol id="s" xmlns:foo="urn:foo"><rect width="1" height="1"/><rect display="none" width="2" height="2"/>'
+      + '<rect visibility="hidden" width="3" height="3"/><rect systemLanguage="zz" width="4" height="4"/><foo:bar/></symbol>'
+      + '<defs><rect id="h" visibility="hidden" width="5" height="5"/></defs><use href="#s"/><use href="#h"/>',
+    );
+    expect(out.warnings).toEqual([]);
+    expect(out.nodes.map((n) => (n as SvgPathNode).path)).toEqual([{ kind: 'rect', x: 0, y: 0, width: 1, height: 1 }]);
+    const kept = parseSvg(
+      '<svg xmlns="http://www.w3.org/2000/svg"><symbol id="s"><rect display="none" width="2" height="2"/></symbol><use href="#s"/></svg>',
+      { keepHidden: true },
+    );
+    expect(kept.nodes.map((n) => n.hidden)).toEqual([true]);
+  });
+
   it('draws a group it references, with what that group holds', () => {
     const out = parse('<g id="g"><rect width="1" height="1"/></g><use href="#g" x="4"/>');
     expect(out.nodes).toHaveLength(2);
