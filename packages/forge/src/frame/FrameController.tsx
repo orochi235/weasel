@@ -5,13 +5,13 @@ import type { FromFrame, StoryGlobals, ToFrame } from '../protocol/messages';
 import { describeSchema } from '../protocol/schema';
 import type { Decorator, LoadedStory } from '../story/types';
 import { auditElement } from './a11y';
-import { createA11yHighlighter } from './a11yHighlight';
 import { createOverrides } from './cssVars';
 import { watchCssVars } from './cssVarsWatch';
 import { followDocumentScroll } from './documentScroll';
 import { fault } from './fault';
 import { createGlobalsTarget, type GlobalsTarget } from './globalsTarget';
 import { frameDecorators } from './frameDecorators';
+import { startFrameServices } from './frameServices';
 import { createStorySession } from './storySession';
 
 /** The frame config: what `defineFrameConfig` returns and the `frameConfig` module default-exports. */
@@ -63,7 +63,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
 
   const overrides = createOverrides(document, setup.cssVarsScope);
   const globalsTarget = createGlobalsTarget(document.documentElement, ':root');
-  const highlighter = createA11yHighlighter(document);
+  const services = startFrameServices(document);
   const vars = watchCssVars(document, overrides, (report) => send({ type: 'vars', vars: report }), {
     under: document.documentElement,
   });
@@ -81,6 +81,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
   const audit = async (id: string) => send({ type: 'a11y', id, ...(await auditElement(wrapper)) });
 
   const off = channel.on((msg) => {
+    if (services.handle(msg)) return;
     switch (msg.type) {
       case 'init':
         session.init(msg);
@@ -102,9 +103,6 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
       case 'a11y.run':
         void audit(msg.id);
         break;
-      case 'a11y.highlight':
-        highlighter.show(msg.targets);
-        break;
       case 'scroll':
         scroll.apply(msg);
         break;
@@ -117,7 +115,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
     vars.dispose();
     overrides.dispose();
     globalsTarget.dispose();
-    highlighter.dispose();
+    services.dispose();
     root.unmount();
     wrapper.remove();
   };

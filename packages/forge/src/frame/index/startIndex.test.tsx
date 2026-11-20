@@ -189,4 +189,16 @@ describe('startIndex', () => {
     await init(shell);
     expect(received.find((m) => m.type === 'fault')).toMatchObject({ phase: 'render', message: 'bad page' });
   });
+
+  it('outlines the elements an a11y.highlight names, and clears them on an empty one', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { shell } = start();
+    await init(shell);
+    shell.send({ type: 'a11y.highlight', targets: [['.fg-index h1']] });
+    await flush();
+    expect(document.querySelectorAll('[data-fg-a11y-highlight]')).toHaveLength(1);
+    shell.send({ type: 'a11y.highlight', targets: [] });
+    await flush();
+    expect(document.querySelectorAll('[data-fg-a11y-highlight]')).toHaveLength(0);
+  });
 });

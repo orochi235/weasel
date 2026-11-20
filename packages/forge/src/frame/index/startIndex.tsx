@@ -9,6 +9,7 @@ import type { IndexBundle } from '../../story/indexBundle';
 import { runAxe } from '../a11y';
 import type { FrameSetup } from '../FrameController';
 import { frameDecorators } from '../frameDecorators';
+import { startFrameServices } from '../frameServices';
 import { createGlobalsTarget } from '../globalsTarget';
 import { indexEnvOf } from './indexEnv';
 import { IndexPage } from './IndexPage';
@@ -53,6 +54,7 @@ export function startIndex(options: StartIndexOptions): () => void {
   container.append(wrapper);
   const root = createKitRoot(wrapper, setup.icons);
   const globalsTarget = createGlobalsTarget(document.documentElement, ':root');
+  const services = startFrameServices(document);
   let globals: StoryGlobals | null = null;
   let announced = false;
 
@@ -84,6 +86,7 @@ export function startIndex(options: StartIndexOptions): () => void {
   };
 
   const off = channel.on((msg) => {
+    if (services.handle(msg)) return;
     switch (msg.type) {
       case 'init':
       case 'globals':
@@ -105,6 +108,7 @@ export function startIndex(options: StartIndexOptions): () => void {
 
   return () => {
     off();
+    services.dispose();
     globalsTarget.dispose();
     root.unmount();
     wrapper.remove();
