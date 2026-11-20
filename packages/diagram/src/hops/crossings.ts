@@ -5,6 +5,7 @@
 import type { Vec2 } from '@weasel-js/core/math';
 import { rectBetween, lerp } from '@weasel-js/geom';
 import { SpatialHash } from '../avoid/hash';
+import { straightRuns } from './draw';
 import type { EdgeHop } from './types';
 
 interface Segment {
@@ -79,7 +80,7 @@ function mergeAlong(seg: Segment, found: Crossing[], r: number): EdgeHop[] {
  * of two crossing connectors the later one hops. Only proper crossings count:
  * a touch at an end and a collinear overlap are not, nor is a crossing within
  * `2r` of either connector's ends, nor one within `r` of a bend of the
- * hopping connector, where its half circle would not fit. Hops on one segment
+ * hopping connector (a vertex it runs straight through is none), where its half circle would not fit. Hops on one segment
  * closer than `2r` merge into one longer hop.
  *
  * Answers every connector of `order` that `only` holds (default: all of
@@ -95,12 +96,12 @@ export function edgeHops(
   const hash = new SpatialHash<Segment>();
   const segments = new Map<string, Segment[]>();
   order.forEach((edge, rank) => {
-    const points = polylines.get(edge);
-    if (points === undefined) return;
+    const route = polylines.get(edge);
+    if (route === undefined) return;
+    const points = straightRuns(route);
     const list: Segment[] = [];
     for (let i = 1; i < points.length; i++) {
       const seg = { edge, rank, a: points[i - 1]!, b: points[i]! };
-      if (seg.a.x === seg.b.x && seg.a.y === seg.b.y) continue;
       list.push(seg);
       hash.insert(seg, boxOf(seg.a, seg.b));
     }

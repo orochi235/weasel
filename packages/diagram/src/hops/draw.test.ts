@@ -96,6 +96,12 @@ describe('withHops', () => {
     ]));
     expect(s.filter((x) => x.cmd === 'C')).toHaveLength(2);
   });
+
+  it('draws a hop across a vertex the route runs straight through', () => {
+    const s = steps(withHops([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 200, y: 0 }], [{ at: { x: 102, y: 0 }, over: ['v'], r: 5 }]));
+    expect(s.map((x) => x.cmd)).toEqual(['M', 'L', 'C', 'C', 'L']);
+    close(s[1]!.pts[0]!, { x: 97, y: 0 });
+  });
 });
 
 describe('edgeDerivePath with hops', () => {

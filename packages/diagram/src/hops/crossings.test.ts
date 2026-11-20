@@ -69,4 +69,11 @@ describe('edgeHops', () => {
     expect([...hops.keys()]).toEqual(['w']);
     expect(hops.get('w')).toEqual([{ at: { x: 150, y: 50 }, over: ['h'], r: 5 }]);
   });
+
+  it('hops near a vertex the route runs straight through, which is no bend', () => {
+    const polylines = new Map([['v', line(102, -100, 102, 100)], ['h', line(0, 0, 100, 0, 200, 0)]]);
+    expect(edgeHops(polylines, ['v', 'h'], 5).get('h')).toEqual([{ at: { x: 102, y: 0 }, over: ['v'], r: 5 }]);
+    const merged = new Map([['a', line(97, -100, 97, 100)], ['b', line(104, -100, 104, 100)], ['h', line(0, 0, 100, 0, 200, 0)]]);
+    expect(edgeHops(merged, ['a', 'b', 'h'], 5).get('h')).toEqual([{ at: { x: 100.5, y: 0 }, over: ['a', 'b'], r: 8.5 }]);
+  });
 });
