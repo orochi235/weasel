@@ -19,7 +19,8 @@ export interface AutosaveOptions {
    *  render schedules one. */
   revision?: unknown;
   /** Called after every save attempt with whether the primary entry was written, and the error when `write` threw.
-   *  Without it, a throwing `write` is logged with `console.error`. */
+   *  Without it, a throwing `write` is logged with `console.error`. An `onSaved` that throws is logged the same way,
+   *  and the saves queued behind it still run. */
   onSaved?: (ok: boolean, error?: unknown) => void;
   /** Where the entries are kept, their keys the records' names. Defaults to `localStorage`, under the keys
    *  themselves. */
@@ -55,11 +56,19 @@ export function useAutosave(write: () => SessionWrite | null, opts: AutosaveOpti
       if (pendingRef.current !== save) return;
       pendingRef.current = null;
       const { onSaved, records } = optsRef.current;
+      // A throwing `onSaved` is the app's bug, not the save's: it is logged, and the saves behind it still run.
+      const report = (ok: boolean, ...error: [unknown?]): void => {
+        try {
+          onSaved?.(ok, ...error);
+        } catch (thrown) {
+          console.error('weasel useAutosave: onSaved threw.', thrown);
+        }
+      };
       let entries: SessionWrite | null;
       try {
         entries = writeRef.current();
       } catch (error) {
-        if (onSaved) onSaved(false, error);
+        if (onSaved) report(false, error);
         else console.error('weasel useAutosave: write threw, so nothing was saved.', error);
         return;
       }
@@ -67,10 +76,10 @@ export function useAutosave(write: () => SessionWrite | null, opts: AutosaveOpti
       const { slot } = slotsFor(records);
       const { primary, dependents } = entries;
       const start = (): Promise<void> =>
-        writeSlots(slot, primary, dependents).then((ok) => onSaved?.(ok), () => onSaved?.(false));
+        writeSlots(slot, primary, dependents).then((ok) => report(ok), () => report(false));
       // One save at a time, so each hears whether its own entries landed. With none on its way, this one starts now:
-      // a save on `pagehide` cannot wait.
-      const run = busyRef.current ? busyRef.current.then(start) : start();
+      // a save on `pagehide` cannot wait. Whatever the one before did, this one still starts.
+      const run = busyRef.current ? busyRef.current.then(start, start) : start();
       busyRef.current = run;
       void run.finally(() => {
         if (busyRef.current === run) busyRef.current = null;

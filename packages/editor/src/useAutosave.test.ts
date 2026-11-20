@@ -86,6 +86,21 @@ describe('useAutosave', () => {
     expect(onSaved).toHaveBeenLastCalledWith(false);
   });
 
+  it('runs the save queued behind one whose onSaved threw, and logs the throw', async () => {
+    vi.useFakeTimers();
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const boom = new Error('listener');
+    const heard: boolean[] = [];
+    const onSaved = (ok: boolean) => { heard.push(ok); if (heard.length === 1) throw boom; };
+    const { rerender, unmount } = renderHook(({ v }) => useAutosave(write(v), { onSaved }), { initialProps: { v: 'a' } });
+    window.dispatchEvent(new Event('pagehide'));
+    rerender({ v: 'b' });
+    unmount();
+    await vi.advanceTimersByTimeAsync(0);
+    expect([localStorage.getItem('doc'), heard]).toEqual(['"b"', [true, true]]);
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('onSaved threw'), boom);
+  });
+
   it('logs a write that throws when there is no onSaved to hear it', async () => {
     vi.useFakeTimers();
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
