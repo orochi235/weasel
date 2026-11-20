@@ -230,4 +230,16 @@ describe('writing DOT', () => {
     expect(g.colors?.stroke).toBeUndefined();
     expect(g.colors?.text).toBeUndefined();
   });
+
+  it('writes a container\'s dash as its cluster\'s style, and reads a dashed or dotted cluster back with one', () => {
+    const doc = pageOf({ nodes: [{ id: 'a' }], edges: [], clusters: [{ id: 'g', members: ['a'] }], containers: [
+      { id: 'c', role: 'container', label: 'C', colors: { dash: [2, 3] }, members: ['g'] },
+    ] });
+    expect(writeDot(doc).text).toContain('style="filled,dotted";');
+    const containers = back(doc).data.containers!;
+    expect(containers.find((k) => k.id === 'c')!.colors?.dash).toEqual([2, 3]);
+    expect(containers.find((k) => k.id === 'g')!.colors?.dash).toBeUndefined();
+    const read = asGraph(readDot('digraph { subgraph cluster_x { style=dashed; a } }').document.pages[0]!);
+    expect(read.data.containers![0]!.colors?.dash).toEqual([6, 4]);
+  });
 });

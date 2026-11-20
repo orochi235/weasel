@@ -42,9 +42,9 @@ function nodeAttrs(out: GraphOut, node: DataNode, placed: boolean): string {
 }
 
 /** What a cluster around this one set, which Graphviz carries into this one unless it sets its own. */
-interface Inherited { label: boolean; filled: boolean; stroke: boolean; text: boolean }
+interface Inherited { label: boolean; styled: boolean; stroke: boolean; text: boolean }
 
-const NOTHING_INHERITED: Inherited = { label: false, filled: false, stroke: false, text: false };
+const NOTHING_INHERITED: Inherited = { label: false, styled: false, stroke: false, text: false };
 
 function writeCluster(
   out: GraphOut, c: Cluster, placed: boolean, indent: string, lines: string[], inherited: Inherited = NOTHING_INHERITED,
@@ -52,19 +52,22 @@ function writeCluster(
   lines.push(`${indent}subgraph ${dotId(`cluster_${c.id}`)} {`);
   const inner = `${indent}  `;
   const filled = c.style?.fill !== undefined;
+  const dash = c.style?.dash;
+  const styles = [filled ? 'filled' : null, dash !== undefined && dash.length > 0 ? dashStyle(dash) : null].filter((w) => w !== null);
   if (c.label !== undefined || inherited.label) lines.push(`${inner}label=${quoteLabel(c.label !== undefined ? [c.label] : [])};`);
-  if (!filled && inherited.filled) lines.push(`${inner}style="";`);
+  if (styles.length > 0) lines.push(`${inner}style=${styles.length > 1 ? `"${styles.join(',')}"` : styles[0]};`);
+  else if (inherited.styled) lines.push(`${inner}style="";`);
   if (c.style?.stroke === undefined && inherited.stroke) lines.push(`${inner}color="";`);
   if (c.style?.text === undefined && inherited.text) lines.push(`${inner}fontcolor="";`);
   if (c.style !== undefined) {
-    if (filled) lines.push(`${inner}style=filled;`, `${inner}${color('fillcolor', c.style.fill)};`);
+    if (filled) lines.push(`${inner}${color('fillcolor', c.style.fill)};`);
     for (const [key, value] of [['color', c.style.stroke], ['fontcolor', c.style.text]] as const) {
       if (value !== undefined) lines.push(`${inner}${color(key, value)};`);
     }
   }
   for (const id of c.nodes) lines.push(`${inner}${dotId(id)}${nodeAttrs(out, out.byId.get(id)!, placed)};`);
   for (const child of c.clusters) writeCluster(out, child, placed, inner, lines, {
-    label: inherited.label || c.label !== undefined, filled: inherited.filled || filled,
+    label: inherited.label || c.label !== undefined, styled: inherited.styled || styles.length > 0,
     stroke: inherited.stroke || c.style?.stroke !== undefined, text: inherited.text || c.style?.text !== undefined,
   });
   lines.push(`${indent}}`);
