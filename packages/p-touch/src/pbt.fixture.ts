@@ -54,12 +54,14 @@ export const solidRect: fc.Arbitrary<DrawCommand> = fc.record({
 }));
 
 export const polyline: fc.Arbitrary<DrawCommand> = fc.record({
-  points: fc.array(fc.tuple(coord, coord), { minLength: 2, maxLength: 5 }),
+  points: fc.oneof(fc.array(fc.tuple(coord, coord), { minLength: 2, maxLength: 5 }), fc.tuple(fc.tuple(coord, coord), fc.tuple(coord, coord))),
   color, width: extent, cap: fc.constantFrom('butt' as const, 'round' as const, 'square' as const),
-}).map(({ points, color, width, cap }) => {
+  join: fc.constantFrom('miter' as const, 'miter' as const, 'round' as const, 'bevel' as const),
+  miterLimit: fc.option(fc.double({ min: 1, max: 1e4, noNaN: true }), { nil: undefined }),
+}).map(({ points, color, width, cap, join, miterLimit }) => {
   const b = new PathBuilder().moveTo(points[0]![0], points[0]![1]);
   for (const [x, y] of points.slice(1)) b.lineTo(x, y);
-  return { kind: 'path', path: b.build(), stroke: { paint: { color }, width, cap } };
+  return { kind: 'path', path: b.build(), stroke: { paint: { color }, width, cap, join, miterLimit } };
 });
 
 const run = (text: string, over: Partial<ResolvedRun>): ResolvedRun => ({
