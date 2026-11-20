@@ -5,6 +5,7 @@
  */
 import { RIGID_POSE_COMPOSITION, type PoseComposition, type RectPose } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
+import { diagramClusterOf } from '../clusterBox';
 import { diagramContainerOf, headerBox } from '../containers/trait';
 import { diagramEdgeOf, type DiagramEdge } from '../edgeTrait';
 import type { DiagramSpec } from '../dataTypes';
@@ -21,16 +22,23 @@ const facing = (ports: readonly Port[]): AvoidPort[] =>
   ports.flatMap((p) => (p.normal === null ? [] : [{ point: p.point, normal: p.normal }]));
 
 /** The obstacles specs make, as `avoidSceneInput` reads a scene: a shape's box; a
- *  container's or pool's box as a region holding what is inside it, and its header;
- *  a lane's header alone. A derived box, a cluster's, is none. */
+ *  container's, pool's or cluster's box as a region holding what is inside it, and a
+ *  container's header; a lane's header alone. Any other derived box is none. A cluster's
+ *  box is the pose `diagramScene` placed it at, around its members. */
 function obstaclesOf(specs: readonly DiagramSpec[], world: ReadonlyMap<string, RectPose>): AvoidObstacle[] {
+  const byId = new Map(specs.map((s) => [s.id as string, s]));
   const children = new Map<string, string[]>();
   for (const s of specs) {
     if (s.parent == null) continue;
     children.set(s.parent as string, [...(children.get(s.parent as string) ?? []), s.id as string]);
   }
+  /** What `id` holds at any depth: its children, or what a cluster box is drawn around. */
   const inside = (id: string, into: Set<string>): Set<string> => {
-    for (const child of children.get(id) ?? []) {
+    const spec = byId.get(id);
+    const under = spec !== undefined && Array.isArray(spec.dependsOn) && diagramClusterOf(spec) !== null
+      ? (spec.dependsOn as string[]) : (children.get(id) ?? []);
+    for (const child of under) {
+      if (into.has(child)) continue;
       into.add(child);
       inside(child, into);
     }
@@ -39,14 +47,15 @@ function obstaclesOf(specs: readonly DiagramSpec[], world: ReadonlyMap<string, R
   const out: AvoidObstacle[] = [];
   for (const spec of specs) {
     const node = { id: spec.id as string, kind: spec.kind, data: spec.data };
-    if (spec.derivePose !== undefined || diagramEdgeOf(spec) !== null) continue;
-    const region = diagramContainerOf(spec);
-    if (diagramNodeOf(node) === null && region?.role !== 'lane') continue;
+    const cluster = diagramClusterOf(spec) !== null;
+    if ((spec.derivePose !== undefined && !cluster) || diagramEdgeOf(spec) !== null) continue;
+    const container = diagramContainerOf(spec);
+    if (diagramNodeOf(node) === null && container?.role !== 'lane') continue;
     const box = world.get(node.id) ?? (spec.pose as RectPose);
-    const header = region === null ? null : headerBox(box, region.header);
+    const header = container === null ? null : headerBox(box, container.header);
     if (header !== null) out.push({ id: headerIdOf(node.id), kind: 'shape', box: header });
-    if (region?.role === 'lane') continue;
-    out.push(region === null
+    if (container?.role === 'lane') continue;
+    out.push(container === null && !cluster
       ? { id: node.id, kind: 'shape', box }
       : { id: node.id, kind: 'region', box, members: inside(node.id, new Set()) });
   }
