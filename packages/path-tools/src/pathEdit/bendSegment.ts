@@ -19,7 +19,7 @@ import { bendSegment, editAnchorSetTracked, type PointOrigin, type PolygonPath }
 import {
   editingLayer, inPlane, pathOperationTags, type PathRepresentation, representationOf, segmentUnder,
 } from '@weasel-js/core';
-import { createPathEditPreview } from './editAnchors/preview';
+import { createPathEditPreview, finishPathEditFrame } from './editAnchors/preview';
 import { icon } from '../icons.gen';
 
 const BEND_CURSOR: CursorSpec = 'grab';
@@ -62,7 +62,9 @@ export const bendSegmentAction: Action & { requires: string[] } = inPlane({
         onMove(moveCtx: InvocationCtx): void {
           const dx = moveCtx.world.x - press.x;
           const dy = moveCtx.world.y - press.y;
-          current = editAnchorSetTracked(originPath, (set) => bendSegment(set, hit, dx, dy)) ?? current;
+          const next = editAnchorSetTracked(originPath, (set) => bendSegment(set, hit, dx, dy));
+          // A frame no extension can finish is dropped, as the anchor drag drops one.
+          if (next && finishPathEditFrame(dep, id, next.path, next.origins)) current = next;
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           const done = current;
