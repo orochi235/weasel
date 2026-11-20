@@ -65,7 +65,7 @@ What comes back, beyond a `LayoutPlan`'s `moves`, `waypoints` and `labels`:
 | `ports` | For each edge, the port it leaves and arrives by: the one it names, or else the declared port nearest where ELK met the node. |
 | `routes` | Each routed edge end to end. `waypoints` is the same route without its two ends. |
 | `groups` | Each group's box as ELK sized it. Nothing writes these, since the diagram derives a group's box from its members. |
-| `unheld` | Pinned nodes ELK put somewhere else. The layout is translated so the first pin stays where it is; ELK cannot be told about the rest. |
+| `unheld` | Pinned nodes ELK put somewhere else. The layout is translated so the first pin stays where it is; ELK cannot be told about the rest. An edge at one, or at a group holding one, gets no route, label point or port back. |
 
 An edge the author routed (`GraphEdge.authored`) still shapes the layout but
 gets no route back. Anything else ELK takes goes in `elkOptions`, applied

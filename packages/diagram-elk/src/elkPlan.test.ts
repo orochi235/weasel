@@ -114,6 +114,28 @@ describe('elkPlan', () => {
     expect([...(await elkPlan(graph)).unheld]).toEqual(['b']);
   });
 
+  it('routes no edge into a pin it could not hold, and infers no port for it', async () => {
+    const ports = [{ id: 'n', at: { u: 0.5, v: 0 } }, { id: 's', at: { u: 0.5, v: 1 } }];
+    const graph = graphOf(
+      [
+        node('a', { pinned: true, ports }),
+        node('b', { pinned: true, ports, bounds: { x: 600, y: -400, width: 80, height: 40 } }),
+        node('c', { ports }),
+      ],
+      [
+        { id: 'ab', from: 'a', to: 'b', label: { width: 20, height: 10 } },
+        { id: 'ac', from: 'a', to: 'c' },
+      ],
+    );
+    const plan = await elkPlan(graph);
+    expect([...plan.unheld]).toEqual(['b']);
+    expect(plan.routes.has('ab')).toBe(false);
+    expect(plan.waypoints!.has('ab')).toBe(false);
+    expect(plan.labels!.has('ab')).toBe(false);
+    expect(plan.ports!.has('ab')).toBe(false);
+    expect(plan.routes.has('ac')).toBe(true);
+  });
+
   it('leaves a node by the port its edge names', async () => {
     const graph = nested();
     const plan = await elkPlan(graph);
