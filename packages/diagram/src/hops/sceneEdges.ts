@@ -57,7 +57,9 @@ export function movesWith(scene: AnyScene, id: string, ids: { has(id: string): b
     if (seen.has(at)) return false;
     seen.add(at);
     const node = scene.get(at as never);
-    if (node?.derivePose !== undefined && (node.dependsOn ?? []).some((dep) => movesWith(scene, dep, ids, seen))) return true;
+    if (node?.derivePose === undefined) continue;
+    const deps = node.dependsOn === 'children' ? (node.children ?? []) : (node.dependsOn ?? []);
+    if (deps.some((dep) => movesWith(scene, dep, ids, seen))) return true;
   }
   return false;
 }

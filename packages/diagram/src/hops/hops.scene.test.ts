@@ -238,4 +238,27 @@ describe('line jumps in a scene', () => {
     const preview = hops.follower.preview(new Map([['c', { x: 210, y: -200, width: 100, height: 60 }]]), new Map());
     expect(preview.map((p) => p.id)).toEqual(['ed']);
   });
+
+  it('counts a connector on a container that fits its children as moved when a child is dragged', () => {
+    const scene: HopScene = createScene<unknown, 'main', RectPose>({
+      systemLayers: [{ id: 'main' }],
+      registry: withDiagramRegistry(),
+      initial: [
+        box('a', 0, 0), box('b', 400, 0), box('d', 200, 200),
+        {
+          ...box('k', 200, -200),
+          kind: 'group' as const,
+          dependsOn: 'children' as const,
+          derivePose: (_n: unknown, deps: readonly ({ pose: RectPose } | undefined)[]) => deps[0]?.pose ?? null,
+        },
+        { ...box('c', 200, -200), parent: 'k' as never },
+        connector('ab', 'a', 'b'), connector('kd', 'k', 'd'),
+      ] as never,
+    });
+    const hops = installHops(scene);
+    scene.doc.set(HOPS_DOC_KEY, { size: 5 });
+    expect(hopsOf(scene, 'kd')).toHaveLength(1);
+    const preview = hops.follower.preview(new Map([['c', { x: 210, y: -200, width: 100, height: 60 }]]), new Map());
+    expect(preview.map((p) => p.id)).toEqual(['kd']);
+  });
 });
