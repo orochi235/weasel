@@ -1,7 +1,7 @@
 /** The 3D world every dep is built from: core's scene with a `Pose3`, the
  *  viewport it is seen through, and how wide each node is. */
 
-import type { Scene, SceneNode } from '@weasel-js/core/engine';
+import { nodeAsShown, type Scene, type SceneNode } from '@weasel-js/core/engine';
 import { worldPoses, type PoseReading } from '@weasel-js/core';
 import { type NodeId } from '@weasel-js/routing';
 import type { Aabb, Vec3 } from '@weasel-js/geom/3d';
@@ -88,7 +88,9 @@ export function worldBoxes<TData, TLayer extends string>(
   reading: PoseReading,
 ): (node: Node3d<TData, TLayer>) => Aabb | null {
   const poseOf = worldPoses(world.scene, reading);
-  return (node) => boxAt(world, node, poseOf(node.id));
+  if (reading !== 'shown') return (node) => boxAt(world, node, poseOf(node.id));
+  const { overrides } = world.scene;
+  return (node) => boxAt(world, nodeAsShown(overrides, node), poseOf(node.id));
 }
 
 /** `ids` and everything under them. */

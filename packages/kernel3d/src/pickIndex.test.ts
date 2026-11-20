@@ -353,4 +353,21 @@ describe('worldPickIndex', () => {
     }
     expect(held()).toBe(10);
   });
+
+  it('boxes a node with the data its override shows it with', () => {
+    const scene = createScene<TestData, TestLayer, Pose3>({ composition: IDENTITY_POSE_COMPOSITION,
+      systemLayers: [{ id: 'solids' }],
+      initial: [{ kind: 'mark', layer: 'solids', pose: pose3({ x: 0, y: 0, z: 0 }, { x: 1, y: 1, z: 4 }), data: {} }],
+    });
+    const [id] = [...scene.renderOrder()];
+    const vp: Viewport3d = { camera: createCamera({ distance: 10 }), width: WIDTH, height: HEIGHT };
+    const world: World3d<TestData, TestLayer> = { scene, viewport: () => vp, bounds: boundsOfTestNode };
+    // Along +x past the stored box's half-width, inside the round one's radius of 2.
+    const ray: Ray = { origin: { x: 1.5, y: 0, z: -10 }, direction: { x: 0, y: 0, z: 1 } };
+    expect(worldPickIndex(world).nearestOnRay(ray, null)).toBeNull();
+    scene.overrides.set(id!, { data: (d: TestData) => ({ ...d, round: true }) } as never);
+    expect(worldPickIndex(world).nearestOnRay(ray, null)).toBe(id);
+    scene.overrides.clear(id!);
+    expect(worldPickIndex(world).nearestOnRay(ray, null)).toBeNull();
+  });
 });
