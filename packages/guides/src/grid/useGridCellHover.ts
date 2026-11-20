@@ -23,8 +23,8 @@ import type { GridScopes } from './reading';
 export interface UseGridCellHoverOptions {
   /** Element to attach pointer listeners to (typically the canvas). */
   ref: RefObject<HTMLElement | null>;
-  /** Read the current view transform. Called on every pointermove so it can
-   *  reflect live pan/zoom without a re-binding step. */
+  /** Read the current view transform. Called on every pointermove and every
+   *  `getCell()`, so a pan or zoom under a still pointer moves the cell. */
   view: () => ViewTransform;
   /** The grid's lines. Same value you pass to `createGridLayer`. */
   spacing: GridSpacing;
@@ -65,47 +65,84 @@ function cellsEqual(
     && (a.frame === b.frame || (!!a.frame && !!b.frame && a.frame.every((v, i) => v === b.frame![i])));
 }
 
-/** Track which grid cell the pointer is over; pairs with `createCellHighlightLayer`. */
+/** Track which grid cell the pointer is over; pairs with `createCellHighlightLayer`.
+ *  The cell follows the pointer, and is read again from where it last was
+ *  each render (new `spacing`, `regions`…) and each `getCell()` call (a
+ *  paint after a pan or zoom). Listeners follow `ref.current` as it stands
+ *  after each render, so a remounted element is bound once this component
+ *  renders. */
 export function useGridCellHover(opts: UseGridCellHoverOptions): UseGridCellHoverReturn {
   const [cell, setCell] = useState<GridCell | null>(null);
   const cellRef = useRef<GridCell | null>(null);
   const optsRef = useLatest(opts);
+  // The bound element and the pointer's last client point over it.
+  const bound = useRef<{ el: HTMLElement; dispose: () => void } | null>(null);
+  const pointer = useRef<{ x: number; y: number } | null>(null);
 
-  const getCell = useCallback(() => cellRef.current, []);
+  const update = useCallback((next: GridCell | null) => {
+    if (cellsEqual(cellRef.current, next)) return;
+    cellRef.current = next;
+    setCell(next);
+    optsRef.current.onChange?.(next);
+  }, [optsRef]);
+
+  // The cell under the pointer's last point, read with the current options.
+  const refresh = useCallback(() => {
+    const el = bound.current?.el;
+    const at = pointer.current;
+    if (!el || !at) return;
+    const o = optsRef.current;
+    const [sx, sy] = clientToCanvas(el, at.x, at.y);
+    const [wx, wy] = screenToWorld(sx, sy, o.view());
+    const scoped = { ...(o.scopes ? { scopes: o.scopes } : {}), ...(o.regions ? { regions: o.regions() } : {}) };
+    update(pointToGridCell({ x: wx, y: wy }, o.spacing, o.unitSystem, o.origin, scoped));
+  }, [optsRef, update]);
+
+  const getCell = useCallback(() => {
+    refresh();
+    return cellRef.current;
+  }, [refresh]);
 
   const enabled = opts.enabled ?? true;
+  // No deps: the element behind the ref can change on any render.
   useEffect(() => {
-    if (!enabled) return;
-    const el = opts.ref.current;
-    if (!el) return;
-
-    const update = (next: GridCell | null) => {
-      if (cellsEqual(cellRef.current, next)) return;
-      cellRef.current = next;
-      setCell(next);
-      optsRef.current.onChange?.(next);
-    };
-
-    const onMove = (e: PointerEvent) => {
-      const o = optsRef.current;
-      const [sx, sy] = clientToCanvas(el, e.clientX, e.clientY);
-      const [wx, wy] = screenToWorld(sx, sy, o.view());
-      const scoped = { ...(o.scopes ? { scopes: o.scopes } : {}), ...(o.regions ? { regions: o.regions() } : {}) };
-      update(pointToGridCell({ x: wx, y: wy }, o.spacing, o.unitSystem, o.origin, scoped));
-    };
-    const onLeave = () => update(null);
-
-    el.addEventListener('pointermove', onMove);
-    el.addEventListener('pointerleave', onLeave);
-    el.addEventListener('pointercancel', onLeave);
-    return () => {
-      el.removeEventListener('pointermove', onMove);
-      el.removeEventListener('pointerleave', onLeave);
-      el.removeEventListener('pointercancel', onLeave);
-      // No pointerleave reaches a detached listener, so a cell hovered now would stay lit.
+    const el = enabled ? opts.ref.current : null;
+    if (bound.current?.el === el) {
+      refresh();
+      return;
+    }
+    bound.current?.dispose();
+    const leave = () => {
+      pointer.current = null;
       update(null);
     };
-  }, [enabled, opts.ref, optsRef]);
+    bound.current = el && {
+      el,
+      dispose: listen(el, (e) => {
+        pointer.current = { x: e.clientX, y: e.clientY };
+        refresh();
+      }, leave),
+    };
+  });
+  useEffect(() => () => {
+    bound.current?.dispose();
+    bound.current = null;
+  }, []);
 
   return { cell, getCell };
+}
+
+/** Hear `el`'s pointer moving over it and leaving it; the returned call
+ *  stops, as a leave. */
+function listen(el: HTMLElement, onMove: (e: PointerEvent) => void, onLeave: () => void): () => void {
+  el.addEventListener('pointermove', onMove);
+  el.addEventListener('pointerleave', onLeave);
+  el.addEventListener('pointercancel', onLeave);
+  return () => {
+    el.removeEventListener('pointermove', onMove);
+    el.removeEventListener('pointerleave', onLeave);
+    el.removeEventListener('pointercancel', onLeave);
+    // No pointerleave reaches a detached listener, so a cell hovered now would stay lit.
+    onLeave();
+  };
 }
