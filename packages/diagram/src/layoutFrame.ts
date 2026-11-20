@@ -15,6 +15,7 @@ import {
   type PoseDescriptor,
   type Vec2,
 } from '@weasel-js/core';
+import { createPart } from '@weasel-js/registry';
 import type { Bounds } from './outlines/types';
 
 /** How a diagram reads and moves a pose on its plane. */
@@ -41,23 +42,19 @@ export interface FrameOptions<TPose> {
   frame?: LayoutFrame<TPose>;
 }
 
-const framesOf = new WeakMap<PoseDescriptor<unknown>, LayoutFrame<unknown>>();
+const frameOf = createPart(
+  (d: PoseDescriptor<unknown>): LayoutFrame<unknown> => ({
+    box: (pose) => d.getBounds(pose),
+    translate: (pose, dx, dy) => translatePoseViaDescriptor(pose, dx, dy, d),
+    fromBox: (box, pose) => d.fromBounds(box, pose),
+    ...(d.getRotation ? { rotation: (pose: unknown) => d.getRotation!(pose) } : {}),
+  }),
+);
 
 /** The frame a pose descriptor implies, where the plane is the descriptor's
  *  own space. The same frame for the same descriptor on every call. */
 export function layoutFrameOf<TPose>(descriptor: PoseDescriptor<TPose>): LayoutFrame<TPose> {
-  const d = descriptor as PoseDescriptor<unknown>;
-  let frame = framesOf.get(d);
-  if (frame === undefined) {
-    frame = {
-      box: (pose) => d.getBounds(pose),
-      translate: (pose, dx, dy) => translatePoseViaDescriptor(pose, dx, dy, d),
-      fromBox: (box, pose) => d.fromBounds(box, pose),
-      ...(d.getRotation ? { rotation: (pose: unknown) => d.getRotation!(pose) } : {}),
-    };
-    framesOf.set(d, frame);
-  }
-  return frame as LayoutFrame<TPose>;
+  return frameOf(descriptor as PoseDescriptor<unknown>) as LayoutFrame<TPose>;
 }
 
 /** The frame over the kit's `AUTO_POSE_DESCRIPTOR`: rect and path poses, in world. */
