@@ -17,8 +17,9 @@ export function gpuReady(reading: Reading | null): boolean;
 export function rankForBrowser(probed: { node: FleetNode; reading: Reading | null }[]): (FleetNode & Reading)[];
 export function usableNodes(nodes: FleetNode[], options?: { avoid?: string[]; minFree?: number }): FleetNode[];
 export function fleetNodes(): Promise<FleetNode[]>;
-export function pickBrowserNode(options?: {
+export function rankForRest(probed: { node: FleetNode; reading: Reading | null }[]): (FleetNode & Reading)[];
+export function placeParts(options?: {
   avoid?: string[];
   minFree?: number;
   timeoutMs?: number;
-}): Promise<{ node: (FleetNode & Reading) | undefined; readings: string }>;
+}): Promise<{ browser: (FleetNode & Reading) | undefined; rest: (FleetNode & Reading) | undefined; readings: string }>;

@@ -85,6 +85,13 @@ export const rankForBrowser = (probed) =>
     .sort((a, b) => a.reading.gpu - b.reading.gpu || b.node.free - a.node.free)
     .map(({ node, reading }) => ({ ...node, ...reading }));
 
+/** The best of `probed` for the rest of a run: nobody at it, then the most free cores. */
+export const rankForRest = (probed) =>
+  probed
+    .filter(({ reading }) => reading?.idle != null && reading.idle >= IDLE_WINDOW_S)
+    .sort((a, b) => b.node.free - a.node.free)
+    .map(({ node, reading }) => ({ ...node, ...reading }));
+
 /** The node fleet runs may use now, with none of `avoid` and at least `minFree` cores free. */
 export const usableNodes = (nodes, { avoid = [], minFree = 0 } = {}) =>
   nodes.filter((n) => n.online && !n.barred && !avoid.includes(n.name) && n.free >= minFree);
@@ -96,14 +103,16 @@ export const fleetNodes = async () => {
 };
 
 /**
- * The node to run the browser project on, measured now, or undefined with why when none qualifies.
- * Probes every usable node at once, so the slowest probe sets how long this takes.
+ * Where a split run's two jobs go, measured now: `browser` on an idle GPU nobody is using, and `rest`
+ * on the other unattended node with the most free cores, or undefined to let onto choose. Probes every
+ * usable node at once, so the slowest probe sets how long this takes.
  */
-export const pickBrowserNode = async ({ avoid = [], minFree = 4, timeoutMs = 30_000 } = {}) => {
+export const placeParts = async ({ avoid = [], minFree = 4, timeoutMs = 30_000 } = {}) => {
   const nodes = usableNodes(await fleetNodes(), { avoid, minFree });
   const probed = await Promise.all(nodes.map(async (node) => ({ node, reading: await probe(node.name, timeoutMs) })));
-  const [best] = rankForBrowser(probed);
+  const [browser] = rankForBrowser(probed);
+  const [rest] = browser ? rankForRest(probed.filter(({ node }) => node.name !== browser.name)) : [];
   const readings = probed.map(({ node, reading }) =>
     `${node.name} ${reading ? `GPU ${reading.gpu ?? '?'}%, idle ${reading.idle ?? '?'}s` : 'no answer'}`).join('; ');
-  return best ? { node: best, readings } : { node: undefined, readings: readings || 'no usable node' };
+  return { browser, rest, readings: readings || 'no usable node' };
 };

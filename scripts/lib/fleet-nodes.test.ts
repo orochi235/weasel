@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { gpuReady, inQuietHours, parseProbe, parseStatus, rankForBrowser, usableNodes } from './fleet-nodes.mjs';
+import { gpuReady, inQuietHours, parseProbe, parseStatus, rankForBrowser, rankForRest, usableNodes } from './fleet-nodes.mjs';
 import { wantsSplit } from './fleet-parts.mjs';
 
 const STATUS = `NAME     STATUS  LINK  GUI   CPU FREE  CORES  MEM FREE                 WORK USED          POWER  SLEEP                     JOBS       BUILD      AGE      APPS
@@ -54,6 +54,13 @@ describe('the fleet nodes', () => {
       { node: node('d', 18), reading: { gpu: 49, idle: 900 } },
     ]);
     expect(ranked.map((n) => n.name)).toEqual(['c', 'b', 'a']);
+    const rest = rankForRest([
+      { node: node('a', 9), reading: { gpu: 5, idle: 900 } },
+      { node: node('d', 18), reading: { gpu: 49, idle: 6 } },
+      { node: node('e', 12), reading: { gpu: 49, idle: 900 } },
+      { node: node('f', 20), reading: null },
+    ]);
+    expect(rest.map((n) => n.name)).toEqual(['e', 'a']);
   });
 
   it('splits the browser project off only when the plan runs it and nothing pinned the run', () => {
