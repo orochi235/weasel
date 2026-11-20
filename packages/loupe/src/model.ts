@@ -25,11 +25,13 @@ export interface LoupeSurface {
    * pointer never covers it and answers `false`.
    */
   covers(p: LoupePoint): boolean;
-  /** Hex color at a surface point, or `null` where nothing is drawn there or the surface cannot say. */
+  /** Hex color at a surface point, or `null` where nothing is drawn there or the surface cannot say.
+   *  Answered at once: a sampler that answers with a promise drives an eyedropper, not a loupe. */
   sample(p: LoupePoint): string | null;
   /** Is the lens off screen? Aims are ignored while it is. */
   hidden(): boolean;
-  /** Is the lens gone for good? The model tears itself down when it is. */
+  /** Is the lens gone for good? The model tears itself down the next time it
+   *  is called, or a frame lands, once it is. */
   gone(): boolean;
   /** Something the painter must redraw for has changed. */
   changed(): void;
@@ -50,7 +52,7 @@ export interface LoupeModelOptions {
   /** Magnification. Default 8. Always positive and finite: a factor that is
    *  not becomes `ZOOM_FLOOR`, the same rule a view's zoom follows. */
   factor?: number;
-  /** Bounds `setFactor` clamps to. Unset means bounded only by that rule. */
+  /** Bounds `factor` and `setFactor` clamp to. Unset means bounded only by that rule. */
   minFactor?: number;
   maxFactor?: number;
   /** Called with the hex color under the aim point whenever it changes: `null` once the aim is
@@ -94,23 +96,35 @@ export interface LoupeModel {
 export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
   const { surface } = opts;
   let mode: LoupeMode = opts.mode ?? 'vector';
-  let factor = normalizeZoom(opts.factor ?? 8);
+  const clamp = (n: number): number =>
+    normalizeZoom(clampTo(n, opts.minFactor ?? Number.NEGATIVE_INFINITY, opts.maxFactor ?? Number.POSITIVE_INFINITY));
+
+  let factor = clamp(opts.factor ?? 8);
   let aim: LoupePoint = { x: 0, y: 0 };
   let color: string | null = null;
   let disposed = false;
   let aimUnsampled = false;
 
-  const clamp = (n: number): number =>
-    normalizeZoom(clampTo(n, opts.minFactor ?? Number.NEGATIVE_INFINITY, opts.maxFactor ?? Number.POSITIVE_INFINITY));
+  const sampleAt = (p: LoupePoint): string | null => {
+    const hex: unknown = surface.sample(p);
+    if (typeof (hex as { then?: unknown } | null)?.then === 'function') {
+      throw new TypeError(
+        '[weasel loupe] A loupe surface answers at once, and its sample() answered with a promise. ' +
+          'Give an asynchronous sampler to createEyedropperModel, and the loupe a surface that reads now.',
+      );
+    }
+    return hex as string | null;
+  };
 
   const sampleColor = () => {
-    const hex = surface.sample(aim);
+    const hex = sampleAt(aim);
     if (hex === color) return;
     color = hex;
     opts.onColorChange?.(hex);
   };
 
   const unsubscribeFrame = surface.subscribeFrame?.(() => {
+    if (disposed || dead()) return;
     if (!aimUnsampled) return;
     aimUnsampled = false;
     sampleColor();
@@ -123,6 +137,15 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
     opts.onDispose?.();
   };
 
+  // A lens can be taken away by whatever owns it, without coming back through
+  // `dispose`. Every entry point follows it down rather than keep working for a
+  // magnifier nobody can see.
+  function dead(): boolean {
+    if (!surface.gone()) return false;
+    teardown();
+    return true;
+  }
+
   return {
     get mode() { return mode; },
     get factor() { return factor; },
@@ -130,13 +153,13 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
     get color() { return color; },
 
     setMode(next) {
-      if (disposed || next === mode) return;
+      if (disposed || dead() || next === mode) return;
       mode = next;
       surface.changed();
     },
 
     setFactor(next) {
-      if (disposed) return;
+      if (disposed || dead()) return;
       const clamped = clamp(next);
       if (clamped === factor) return;
       factor = clamped;
@@ -144,11 +167,7 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
     },
 
     aimAt(p) {
-      if (disposed) return;
-      // A lens can be taken away by whatever owns it, without coming back
-      // through `dispose`. Follow it down rather than keep sampling for a
-      // magnifier nobody can see.
-      if (surface.gone()) { teardown(); return; }
+      if (disposed || dead()) return;
       if (surface.hidden()) return;
       if (surface.covers(p)) return;
       aim = p;
@@ -158,7 +177,7 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
     },
 
     pick(p) {
-      if (disposed) return null;
+      if (disposed || dead()) return null;
       let at = aim;
       if (p) {
         const rect = surface.lens();
@@ -169,13 +188,13 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
         // lens' own chrome as artwork.
         if (surface.covers(at)) return null;
       }
-      const hex = surface.sample(at);
+      const hex = sampleAt(at);
       if (hex !== null) opts.onPick?.(hex);
       return hex;
     },
 
     resample() {
-      if (disposed || surface.hidden()) return;
+      if (disposed || dead() || surface.hidden()) return;
       aimUnsampled = false;
       sampleColor();
     },

@@ -45,6 +45,9 @@ export interface RestoreOptions {
   /** Best-effort only: called each time an undo, redo or goto steps past a restored op it cannot
    *  apply, as the step reaches it. */
   onSkip?: (skip: UnresolvedOp) => void;
+  /** Asked first for each op this restore rebuilds, before the history's own `rebuildOp`; `null` falls
+   *  through to it. For an owner that learns how to rebuild some ops only once the history exists. */
+  rebuildOp?: RebuildOp;
 }
 
 /** A strict restore that met ops it could not rebuild, or a snapshot of the wrong shape. The history was left as it was. */

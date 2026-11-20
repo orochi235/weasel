@@ -86,3 +86,36 @@ describe('CreateHistoryOptions.rebuildOp', () => {
     expect(cell.x).toBe(1);                   // dst state untouched by placeholder
   });
 });
+
+describe('RestoreOptions.rebuildOp', () => {
+  it('is asked before the history\'s own rebuildOp, which takes what it answers null for', () => {
+    const src: Cell = { x: 0 };
+    const a = createHistory(null);
+    a.applyOps([setX(src, 0, 5)], 'one');
+    a.applyOps([{ ...setX(src, 5, 7), name: 'rebuildtest:other' }], 'two');
+    const snap = a.serialize();
+
+    const dst: Cell = { x: 7 };
+    const asked: string[] = [];
+    const b = createHistory(null, {
+      rebuildOp: (name, args) => {
+        asked.push(`own:${name}`);
+        const { from, to } = args as { from: number; to: number };
+        return setX(dst, from, to);
+      },
+    });
+    b.restore(snap, {
+      rebuildOp: (name, args) => {
+        asked.push(`restore:${name}`);
+        if (name !== 'rebuildtest:other') return null;
+        const { from, to } = args as { from: number; to: number };
+        return setX(dst, from, to);
+      },
+    });
+    expect(asked).toEqual(['restore:rebuildtest:setX', 'own:rebuildtest:setX', 'restore:rebuildtest:other']);
+    b.undo();
+    expect(dst.x).toBe(5);
+    b.undo();
+    expect(dst.x).toBe(0);
+  });
+});

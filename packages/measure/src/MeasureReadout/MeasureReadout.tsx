@@ -5,6 +5,7 @@ import {
   type Action,
   type ActionItem,
   type Scene,
+  shownLookup,
 } from '@weasel-js/core';
 import { RAD_TO_DEG } from '@weasel-js/geom';
 import { decimal, qty } from '@weasel-js/quantity';
@@ -60,13 +61,15 @@ function useCommands(): { items: ActionItem[]; trigger: (id: string) => void } {
  */
 export function MeasureReadout({ scene, measurements: ms, className }: MeasureReadoutProps): ReactElement | null {
   useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
+  // A drag editing a measurement publishes it as an override until it commits.
+  useSyncExternalStore(scene.overrides.subscribe, scene.overrides.getGeneration, scene.overrides.getGeneration);
   // Read through `currentMeasureId` below; subscribed so a new pick re-renders.
   useSyncExternalStore(ms.picked.subscribe, ms.picked.get, ms.picked.get);
   const draft = useSyncExternalStore(ms.draft.subscribe, ms.draft.get, ms.draft.get);
   const { items, trigger } = useCommands();
   const states = useActionStates(items);
   const id = currentMeasureId(scene, ms);
-  const m = draft ?? (id === null ? null : measurementOf(scene.get(id)));
+  const m = draft ?? (id === null ? null : measurementOf(shownLookup(scene).get(id)));
   if (!m) return null;
   const mag = measureMagnification(scene, m.frames);
   const cells: [string, string][] = [

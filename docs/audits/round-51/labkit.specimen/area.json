@@ -1,0 +1,63 @@
+{
+ "id": "labkit.specimen",
+ "commit": "d6aa8f2ede77fc3556ffbf594c570943b8bf31f2",
+ "date": "2026-11-20",
+ "files": [
+  "packages/labkit/src/specimen/ButtonsAndToggles.tsx",
+  "packages/labkit/src/specimen/Cell.tsx",
+  "packages/labkit/src/specimen/Dot.tsx",
+  "packages/labkit/src/specimen/EditorsAndPlots.tsx",
+  "packages/labkit/src/specimen/FieldsAndPickers.tsx",
+  "packages/labkit/src/specimen/LabChrome.tsx",
+  "packages/labkit/src/specimen/ListsAndData.tsx",
+  "packages/labkit/src/specimen/OverlaysAndFeedback.tsx",
+  "packages/labkit/src/specimen/PanelsAndRows.tsx",
+  "packages/labkit/src/specimen/PrefsCell.tsx",
+  "packages/labkit/src/specimen/Section.tsx",
+  "packages/labkit/src/specimen/ShapePanelCell.tsx",
+  "packages/labkit/src/specimen/SliderCells.tsx",
+  "packages/labkit/src/specimen/Specimen.less",
+  "packages/labkit/src/specimen/Specimen.stories.tsx",
+  "packages/labkit/src/specimen/Specimen.tsx",
+  "packages/labkit/src/specimen/ToolChrome.tsx",
+  "packages/labkit/src/specimen/alignItems.tsx"
+ ],
+ "a": 3,
+ "b": 5,
+ "m": 2,
+ "distinct": 6,
+ "chapman": 7,
+ "unfound": 1,
+ "read": {
+  "A": 18,
+  "B": 18
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.2,
+   "B": 12.6,
+   "match": 0.1,
+   "fix": 13.6
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "weightedTokens": 2147029,
+  "costUsd": 5.98
+ },
+ "fixCommits": [
+  "443ef443727167be5059899458bfef07f68023c3",
+  "b485994f13f4c6e3742ef6e01acb651255986ca6",
+  "49175787bb121d49edf4164146f2338887e5b436",
+  "677ef284690fbe3b0126e5668beabc9f182adfdb",
+  "cfd330dfb8d7c68453d26a8e764dcdbba6af99af",
+  "7d0ea266a63fe3abbdfa1c0c1cc5ce685792111a",
+  "ae46546070c00e9ea5c835888825a943f0e11073",
+  "550092a33dc9ed1bd1688604912c7cba80cdf753"
+ ]
+}

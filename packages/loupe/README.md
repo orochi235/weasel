@@ -35,15 +35,21 @@ function draw() {
 sources, bottom first. It composites translucent layers source-over to the
 color a viewer sees, and answers `null` only where nothing is drawn. A source
 can answer later (a WebGPU readback); the sampler then answers with a promise.
-`canvasPixelSource` makes a `CanvasSource` one layer of that stack.
+`canvasPixelSource` makes a `CanvasSource` one layer of that stack. A captured
+source has a frame only while something holds it, so whatever samples one calls
+`retain()` for as long as it reads, and the release after.
 
 `createEyedropperModel` sits beside the loupe model and shares its sampler:
 `hover(p)` keeps `color` live under the pointer, and `pick(p)` reports to
 `onPick`. Given a loupe on the same surface, `hover` aims it, so the lens shows
-the neighborhood and its readout is the color a click takes.
+the neighborhood and its readout is the color a click takes. A loupe's surface
+answers at once, and throws if its `sample` answers with a promise, so it shares
+the sampler only while every source reads now, as a canvas source does; with a
+WebGPU readback in the stack, the eyedropper alone takes it.
 
 ```ts
 const sampler = createSampler(layers.map((l) => canvasPixelSource(l.source, l.box)));
+// Every layer is a canvas, read at once, so the sampler never answers with a promise.
 const loupe = createLoupeModel({ surface: { ...surface, sample: (p) => sampler.sample(p) as string | null } });
 const dropper = createEyedropperModel({ sample: sampler.sample, loupe, onPick: setFill });
 ```

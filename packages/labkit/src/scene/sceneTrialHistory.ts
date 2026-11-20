@@ -1,33 +1,17 @@
 import type { Scene, SerializedSceneHistory } from '@weasel-js/core';
-import { maxOf } from '@weasel-js/geom';
 import { createPart } from '@weasel-js/registry';
-import { latestStamp } from '../state/savedUndo';
 import { TRIAL_EDIT_OP } from '../trial/trialEditOp';
 import type { TrialHistorySource } from '../trial/trialHistory';
-import { editStamp, seedEditStamp } from '../undo/editStamp';
+import { restoreStamps, stampEdits, stampOf } from '../undo/historyStamps';
 
 type AnyScene = Pick<Scene<unknown, string, unknown>, 'history'>;
 
 /** The `editStamp`s kept for `scene`'s entries, one map per scene. */
 export const editStampsOf = createPart((_scene: object) => new Map<number, number>());
 
-/**
- * Stamps each entry `scene` records or merges into with `editStamp`, by id,
- * into `stamps`, so its steps order against the trial's marks to the
- * fraction of a millisecond where the scene's own timestamps are whole ones.
- * Returns the stop.
- */
+/** Stamps each entry `scene` records or merges into, as `stampEdits` does. Returns the stop. */
 export function stampSceneEdits(scene: AnyScene, stamps: Map<number, number>): () => void {
-  return scene.history.observe((step) => {
-    if (step.kind !== 'push' && step.kind !== 'coalesce') return;
-    for (const entry of step.entries) stamps.set(entry.id, editStamp());
-    const { undo, redo } = scene.history.entries();
-    // Entries the scene let go of (dropped redo, its history limit) take their stamps with them.
-    if (stamps.size > 2 * (undo.length + redo.length) + 16) {
-      const held = new Set([...undo, ...redo].map((e) => e.id));
-      for (const id of stamps.keys()) if (!held.has(id)) stamps.delete(id);
-    }
-  });
+  return stampEdits(scene.history, stamps);
 }
 
 /** What `sceneTrialHistory` saves: the scene's history, and the stamps kept for its entries. */
@@ -47,11 +31,6 @@ export function sceneTrialHistory<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   stamps: Map<number, number> = new Map(),
 ): TrialHistorySource {
-  const stampOf = (side: 'undo' | 'redo'): number | undefined => {
-    const { undo, redo } = scene.history.entries();
-    const entry = side === 'undo' ? undo[undo.length - 1] : redo[0];
-    return entry && (stamps.get(entry.id) ?? entry.timestamp);
-  };
   // Inside a batch, a settings entry is applied as part of it, which joins it to the batch's entry.
   let batching = 0;
   return {
@@ -59,8 +38,8 @@ export function sceneTrialHistory<TData, TLayer extends string, TPose>(
     canRedo: () => scene.canRedo(),
     undo: () => scene.undo(),
     redo: () => scene.redo(),
-    undoStamp: () => stampOf('undo'),
-    redoStamp: () => stampOf('redo'),
+    undoStamp: () => stampOf(scene.history, stamps, 'undo'),
+    redoStamp: () => stampOf(scene.history, stamps, 'redo'),
     dropRedo: () => scene.history.dropRedo(),
     subscribe: (listener) => scene.subscribe(listener),
     record: (op, label) => {
@@ -93,9 +72,7 @@ export function sceneTrialHistory<TData, TLayer extends string, TPose>(
         revert: (args) => rebuild(TRIAL_EDIT_OP, args)?.invert().apply(null),
       });
       scene.restoreHistory(saved.history);
-      stamps.clear();
-      for (const [id, stamp] of saved.stamps ?? []) stamps.set(id, stamp);
-      seedEditStamp(Math.max(maxOf(stamps.values()), latestStamp(saved.history)));
+      restoreStamps(stamps, saved.stamps, saved.history);
     },
   };
 }

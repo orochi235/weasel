@@ -17,15 +17,22 @@ export function labStorageKey(
  *
  * `crypto.randomUUID` exists only in a secure context, and a LAN address is
  * not one — so a lab opened on a phone or a tablet by IP throws on its first
- * render and shows a blank page with nothing in reach to say why. The counter
- * is per page load, which is all these ids have to survive: they name records
- * inside one session's store, and a saved snapshot carries its own name.
+ * render and shows a blank page with nothing in reach to say why. The ids name
+ * records every tab of the lab shares, so the fallback carries random bits:
+ * a counter alone mints the same id in two tabs started together.
  */
 let idCounter = 0;
 export function newId(): string {
-  const c = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+  const c = (globalThis as { crypto?: Partial<Crypto> }).crypto;
   if (c && typeof c.randomUUID === 'function') return c.randomUUID();
-  return `lk-${Date.now().toString(36)}-${idCounter++}`;
+  return `lk-${Date.now().toString(36)}-${randomPart(c)}-${idCounter++}`;
+}
+
+function randomPart(c: Partial<Crypto> | undefined): string {
+  if (c && typeof c.getRandomValues === 'function') {
+    return Array.from(c.getRandomValues(new Uint32Array(2)), (n) => n.toString(36)).join('');
+  }
+  return Math.random().toString(36).slice(2, 12);
 }
 
 /** Serialize trials for storage, running each instrument's own serializer

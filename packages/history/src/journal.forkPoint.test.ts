@@ -43,6 +43,8 @@ describe('forkedAtEntryId', () => {
     const j = parent.beginJournal({ label: 's' });
     const captured = j.forkedAtEntryId;
 
+    // A parent refuses new entries while a journal is active, so the journal steps aside first.
+    j.suspend();
     parent.applyOps([pushOp(99)], 'after-fork');
 
     expect(j.forkedAtEntryId).toBe(captured);

@@ -28,11 +28,12 @@ export const Determinate: Story = {
  *  without implying a position. */
 export const Indeterminate: Story = { args: { job: { ...base, done: 34 } } };
 
+/** `done` counts the items that arrived; the bar counts the failed ones too. */
 export const WithFailures: Story = {
   args: {
     job: {
       ...base,
-      done: 120,
+      done: 118,
       total: 120,
       status: 'done',
       failures: [

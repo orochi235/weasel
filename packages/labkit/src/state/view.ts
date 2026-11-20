@@ -56,7 +56,9 @@ export function as3DView(view: unknown, limits?: Partial<OrbitLimits>): ViewTran
     return null;
   }
   const positive = (n: unknown): n is number => isFiniteNumber(n) && n > 0;
-  const whole = positive(v.fov) && positive(v.near) && positive(v.far);
+  const depthKnown = v.depth === 'log' || v.depth === 'standard';
+  const whole =
+    positive(v.fov) && positive(v.near) && positive(v.far) && (depthKnown || v.depth === undefined);
   const camera = whole
     ? (view as Camera3d)
     : createCamera({
@@ -67,7 +69,7 @@ export function as3DView(view: unknown, limits?: Partial<OrbitLimits>): ViewTran
         ...(positive(v.fov) ? { fov: v.fov } : {}),
         ...(positive(v.near) ? { near: v.near } : {}),
         ...(positive(v.far) ? { far: v.far } : {}),
-        ...(v.depth === 'log' || v.depth === 'standard' ? { depth: v.depth } : {}),
+        ...(depthKnown ? { depth: v.depth as Camera3d['depth'] } : {}),
       });
   return clampCamera(camera, limits);
 }

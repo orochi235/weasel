@@ -505,6 +505,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   factor of 0 that a point in the lens could not be mapped back through.
 - Ruled 2026-11-10 (my call, overnight sweep): the loupe model's `setFactor` asks the surface for no redraw when the
   factor it clamps to is the one it has, as `setMode` already did.
+- 2026-11-20 (my call, audit round 51): a captured `CanvasSource` read while no reader holds it answers `null` and
+  warns once to `retain()` it; `canvasPixelSource` does not hold its source itself, since a read has no end to
+  release at. The copy is dropped when the last reader releases.
+- 2026-11-20 (my call, audit round 51): a `LoupeSurface` whose `sample` answers with a promise throws a `TypeError`
+  from the loupe model's aim, resample and pick, rather than the model storing the promise as its color; the loupe
+  stays synchronous and an asynchronous sampler drives only the eyedropper.
 - 2026-11-06 (WebGPU backend): A program with no WGSL, registered after a canvas went WebGPU, draws
   nothing there and is reported once, mirroring a WGSL-only program on WebGL; the canvas is never
   swapped for one of the other context kind, which would lose its listeners and layout.
@@ -3081,3 +3087,39 @@ Calls the lanes made without a ruling:
   unless its `auto.value` is one of its options, since while auto it otherwise reads `undefined` and every split
   leaf would read and write under no option, as a clearable enum would. Reading such a selector's auto as its
   `default` was the alternative.
+## Audit round fifty-one (2026-11-20): labkit primitives
+
+- 2026-11-20 (the fixer's call): `<Split width>` is controlled, as a React input's `value` is. A drag reports
+  through `onWidthChange` and the sidebar then goes back to whatever `width` the parent renders: the dragged width
+  if it adopted it, its own clamp if it clamped, the old width if it kept it. A parent that adopts the width
+  asynchronously (after a debounce, say) sees the seam snap back until it does. Treating `width` as a starting
+  point the seam may leave, as it did before, was the alternative; `defaultWidth` with no `width` still does that.
+## Audit round fifty-one (2026-11-20): labkit's state
+
+- 2026-11-20 (the fixer's call): a lab whose fold of old storage cannot confirm its records stops persisting for
+  the session, keeping the old storage for the next open to fold again. Leaving `meta` out of the cache's seed, so
+  the session's first write put it down, was the alternative; a fold record that never landed would then have been
+  lost behind that `meta`.
+- 2026-11-20 (the fixer's call): `<SingletonExperimentProvider>` keeps the trial id it mounted with and warns in
+  development when `id` changes, as it does for `storageKey` and `storage`. Following the new id, opening a second
+  synthetic trial, was the alternative. `initialConfig` and `initialState` are documented as read once but not
+  warned on, since callers pass them as literals built each render.
+## Audit round fifty-one (2026-11-20): labkit.surface
+
+- 2026-11-20 (the fixer's call): `SurfaceHandle.registerTile` returns a release bound to the element it placed, which
+  does nothing once another element holds the id; labkit's own tenants release through it. `registerTile(id, null)`
+  still drops whatever holds the id, for a ref callback detaching. Making the null form refuse to drop a connected
+  element was the alternative, but a ref callback whose id changed detaches an element still in the document.
+## Audit round fifty-one (2026-11-20): labkit's trials
+
+- 2026-11-20 (the fixer's call): an instrument declaring `dragDrop` without `canvas` throws, from `cameraOf`, as
+  `orbit` beside `canvas` does: only a canvas mounts the drop target and the drag overlay, so the palette showed and
+  nothing could be dropped. Mounting a drop target for `stage` and `orbit` cameras was the alternative; an `orbit`
+  one needs a world point from a ray, which `onDrop`'s `Point` has no form for.
+## Audit round fifty-one (2026-11-20): measure
+
+- Open: a node with `data.measure` off its `Measurements.layer` (moved by a layers panel, or loaded that way) is
+  still painted by `MEASURE_PAINTER` and offered as a snap target by `measureEndSource`, which read every node, but
+  `measureIds`, and so picking, editing, Delete and Clear all, reads only `ms.layer`. Either `measureIds` reads the
+  whole scene, which puts a walk of every node on each pointer move's hit test (`measureEndSource.test.ts` holds
+  that it must not), or the painter and the snap source take only `ms.layer`'s nodes and the rest go undrawn.

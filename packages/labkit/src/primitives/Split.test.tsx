@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { Split } from './Split';
 
@@ -255,5 +255,59 @@ describe('Split', () => {
     expect(screen.queryByText('sidebar body')).toBeNull();
     expect(screen.queryByRole('separator')).toBeNull();
     expect(mounts).toHaveBeenCalledTimes(1);
+  });
+
+  describe('a controlled width', () => {
+    function drag(seam: HTMLElement, to: number) {
+      fireEvent.pointerDown(seam, { clientX: 320, clientY: 100 });
+      fireEvent.pointerMove(seam, { clientX: to, clientY: 100 });
+      fireEvent.pointerUp(seam, { clientX: to, clientY: 100 });
+    }
+
+    it('goes back to the width the parent holds when the parent does not adopt a drag', async () => {
+      const onWidthChange = vi.fn();
+      renderBody({ width: 320, onWidthChange });
+      const seam = screen.getByRole('separator');
+      await act(async () => drag(seam, 380));
+      expect(onWidthChange).toHaveBeenCalledWith(380);
+      expect(seam).toHaveAttribute('aria-valuenow', '320');
+    });
+
+    it('keeps a drag the parent adopts', async () => {
+      function Adopting() {
+        const [w, setW] = useState(320);
+        return (
+          <Split viewport={VIEWPORT} sidebar={<p>sidebar body</p>} width={w} onWidthChange={setW}>
+            <p>instrument output</p>
+          </Split>
+        );
+      }
+      render(<Adopting />);
+      const seam = screen.getByRole('separator');
+      await act(async () => drag(seam, 380));
+      expect(seam).toHaveAttribute('aria-valuenow', '380');
+    });
+
+    it('takes the parent clamping a drag', async () => {
+      function Clamping() {
+        const [w, setW] = useState(320);
+        return (
+          <Split
+            viewport={VIEWPORT}
+            sidebar={<p>sidebar body</p>}
+            width={w}
+            onWidthChange={(n) => setW(Math.min(n, 350))}
+          >
+            <p>instrument output</p>
+          </Split>
+        );
+      }
+      render(<Clamping />);
+      const seam = screen.getByRole('separator');
+      await act(async () => drag(seam, 380));
+      expect(seam).toHaveAttribute('aria-valuenow', '350');
+      await act(async () => drag(seam, 400));
+      expect(seam).toHaveAttribute('aria-valuenow', '350');
+    });
   });
 });

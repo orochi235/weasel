@@ -189,8 +189,7 @@ function useLensTile(layer: HTMLElement | null, redraw: () => void) {
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   useEffect(() => {
     if (!surface || !layer) return;
-    surface.registerTile(TILE, layer);
-    return () => surface.registerTile(TILE, null);
+    return surface.registerTile(TILE, layer);
   }, [surface, layer]);
   useEffect(
     () =>

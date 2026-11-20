@@ -1,3 +1,4 @@
+import type { History } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
 import { AUTO } from '../config/auto';
 import { f } from '../config/builder';
@@ -227,6 +228,15 @@ describe('resetTrial', () => {
     expect(reset[0]?.view).toEqual({ zoom: 2, pan: { x: 5, y: 7 } });
   });
 
+  it('starts the undo afresh: drops the live history and the saved undo', () => {
+    const arr = addTrial([], instruments, 'Counter');
+    head(arr).history = {} as History;
+    head(arr).undo = { entries: [] } as unknown as TrialRecord['undo'];
+    const reset = resetTrial(arr, head(arr).id, instruments);
+    expect(reset[0]).not.toHaveProperty('history');
+    expect(reset[0]).not.toHaveProperty('undo');
+  });
+
   it('does not mutate input', () => {
     const arr = addTrial([], instruments, 'Counter');
     head(arr).config = { step: 99 } as CounterConfig;
@@ -249,6 +259,21 @@ describe('resetTrial', () => {
     head(arr).auto = [];
     const reset = resetTrial(arr, head(arr).id, instruments);
     expect([...(reset[0]?.auto ?? [])].sort()).toEqual(['cols', 'gap']);
+  });
+
+  it('opens pinned at a seed value the schema would start auto, and resets so', () => {
+    const arr = addTrial([], instruments, 'Schemed', { config: { cols: 8 } });
+    expect(head(arr).config).toMatchObject({ cols: 8 });
+    expect(head(arr).auto ?? []).not.toContain('cols');
+    head(arr).auto = ['cols'];
+    const reset = resetTrial(arr, head(arr).id, instruments);
+    expect(reset[0]?.auto ?? []).not.toContain('cols');
+    expect(reset[0]?.config).toMatchObject({ cols: 8 });
+  });
+
+  it('leaves a seed key given as undefined to the schema, auto included', () => {
+    const arr = addTrial([], instruments, 'Schemed', { config: { cols: undefined } });
+    expect(head(arr).auto).toEqual(['cols']);
   });
 
   it('pins a path the user un-pinned that the trial did not open on', () => {

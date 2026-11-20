@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "Move by and Rotate by report enabled for a selection they cannot change, and then do nothing",
+  "The current measurement can be a hidden one, so Delete removes a measurement the user cannot see",
+  "A pick left pointing at a removed measurement keeps Deselect Measurement enabled and swallows Escape",
+  "A measurement off its layer still paints and snaps but can no longer be picked, edited, deleted or cleared"
+ ],
+ "b": [
+  "MeasureReadout shows the committed measurement, not the one shown, while a measurement drag runs",
+  "The \"current\" measurement can be a hidden one, which hit-testing and the handles pass over"
+ ]
+}

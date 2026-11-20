@@ -57,7 +57,8 @@ export function OverlaysAndFeedback() {
           >
             Toast
           </Button>
-          <ToastRegion queue={toasts} placement="bottom-right" />
+          {/* A local demo queue: the app's own region keeps the refused-command toasts. */}
+          <ToastRegion queue={toasts} placement="bottom-right" refusals={false} />
         </div>
       </Cell>
       <Cell label="Powerline">

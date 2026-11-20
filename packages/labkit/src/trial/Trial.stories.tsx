@@ -2,6 +2,8 @@ import { createPointerStore } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { DEFAULT_VIEW, LabContext, type LabContextValue, TrialChrome } from '@weasel-js/labkit';
 import { createLabStore, LabStoreContext } from '@weasel-js/labkit/state';
+import { useState } from 'react';
+import { useStore } from 'zustand/react';
 import type { Instrument } from '../instrument/types';
 import type { TrialRecord } from '../state/types';
 import '../frames.stories.less';
@@ -22,11 +24,18 @@ const record: TrialRecord = {
   view: { zoom: 1, pan: { x: 0, y: 0 } },
 };
 
-function Harness() {
+function seededStore() {
   const store = createLabStore();
+  store.getState().addTrial(record);
+  return store;
+}
+
+function Harness() {
+  const [store] = useState(seededStore);
+  const live = useStore(store, (s) => s.trials.find((w) => w.id === record.id)) ?? record;
   const lab: LabContextValue = {
     instruments: [stub],
-    trials: [record],
+    trials: [live],
     addTrial: noop,
     cloneTrial: noop,
     closeTrial: noop,
@@ -49,7 +58,7 @@ function Harness() {
     <LabStoreContext.Provider value={{ store }}>
       <LabContext.Provider value={lab}>
         <div className="lk-story-h500">
-          <TrialChrome trialId="ws-demo" record={record} instrument={stub} isLastTrial={true}>
+          <TrialChrome trialId="ws-demo" record={live} instrument={stub} isLastTrial={true}>
             {stub.render({
               state: {},
               config: {},

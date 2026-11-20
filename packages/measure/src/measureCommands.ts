@@ -5,7 +5,7 @@ import { measurementOf, type Measurement } from './measurement';
 import { currentMeasureId, measureIds, type Measurements } from './measurements';
 import { deleteMeasureOps, MEASURE_LABELS } from './measureEdits';
 import { MEASURE_ACTION_IDS } from './actionIds';
-import { transformSelection } from '@weasel-js/editing';
+import { selectionTransformAnswer, type SelectionTransform, transformSelection } from '@weasel-js/editing';
 
 const MOVE_LABEL = 'Move by Measurement';
 const ROTATE_LABEL = 'Rotate by Measurement';
@@ -18,18 +18,23 @@ function current(deps: ActionDeps | undefined, ms: Measurements): { id: NodeId; 
   return id !== null && m ? { id, m } : null;
 }
 
-/** Enabled with a measurement `moves` reads as a change and a selection to apply it to. */
-function transformable(ms: Measurements, moves: (m: Measurement) => boolean) {
+/** Enabled with a measurement `transform` reads as a change and a selection it changes, none of it locked. */
+function transformable(ms: Measurements, transform: (m: Measurement) => SelectionTransform | null, label: string) {
   return (deps?: ActionDeps) => {
     const c = current(deps, ms);
-    if (!c || !moves(c.m)) return ActionDisabledReason.NotApplicable;
-    return requiresOperands(deps);
+    const t = c && transform(c.m);
+    if (!t) return ActionDisabledReason.NotApplicable;
+    const operands = requiresOperands(deps);
+    return operands === true ? selectionTransformAnswer(deps!, t, label) : operands;
   };
 }
 
-const travels = (m: Measurement): boolean => m.distance !== 0;
-/** A measurement along the x axis turns nothing. */
-const turns = (m: Measurement): boolean => m.distance !== 0 && m.angle !== 0;
+const translation = (m: Measurement): SelectionTransform | null =>
+  m.distance !== 0 ? { kind: 'translate', dx: m.dx, dy: m.dy } : null;
+/** A measurement along the x axis turns nothing. The measurement reads counterclockwise-positive; the canvas turns
+ *  clockwise-positive. */
+const rotation = (m: Measurement): SelectionTransform | null =>
+  m.distance !== 0 && m.angle !== 0 ? { kind: 'rotate', angle: -m.angle, pivot: 'union' } : null;
 
 function moveBy(ms: Measurements): Action {
   return {
@@ -38,12 +43,13 @@ function moveBy(ms: Measurements): Action {
     group: 'measure',
     eligible: { capability: 'transforms-selection' },
     requires: ['operands', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'transformFollowers'],
-    enabled: transformable(ms, travels),
+    enabled: transformable(ms, translation, MOVE_LABEL),
     invoker: {
       timing: 'immediate',
       run: (deps) => {
         const c = current(deps, ms);
-        if (c) transformSelection(deps, { kind: 'translate', dx: c.m.dx, dy: c.m.dy }, MOVE_LABEL);
+        const t = c && translation(c.m);
+        if (t) transformSelection(deps, t, MOVE_LABEL);
       },
     },
   };
@@ -56,13 +62,13 @@ function rotateBy(ms: Measurements): Action {
     group: 'measure',
     eligible: { capability: 'transforms-selection' },
     requires: ['operands', 'scene', 'applyOps', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'transformFollowers'],
-    enabled: transformable(ms, turns),
+    enabled: transformable(ms, rotation, ROTATE_LABEL),
     invoker: {
       timing: 'immediate',
       run: (deps) => {
         const c = current(deps, ms);
-        // The measurement reads counterclockwise-positive; the canvas turns clockwise-positive.
-        if (c) transformSelection(deps, { kind: 'rotate', angle: -c.m.angle, pivot: 'union' }, ROTATE_LABEL);
+        const t = c && rotation(c.m);
+        if (t) transformSelection(deps, t, ROTATE_LABEL);
       },
     },
   };
@@ -127,8 +133,12 @@ function unpick(ms: Measurements): Action {
   return {
     id: MEASURE_ACTION_IDS.unpick,
     label: 'Deselect Measurement',
-    // Declining with nothing picked leaves Escape to the ambient `escape`.
-    enabled: () => (ms.picked.get() !== null ? true : ActionDisabledReason.NotApplicable),
+    requires: ['scene'],
+    // Declining with nothing picked, or a pick no longer drawn, leaves Escape to the ambient `escape`.
+    enabled: (deps) => {
+      const c = current(deps, ms);
+      return c !== null && c.id === ms.picked.get() ? true : ActionDisabledReason.NotApplicable;
+    },
     invoker: { timing: 'immediate', run: () => ms.picked.set(null) },
   };
 }

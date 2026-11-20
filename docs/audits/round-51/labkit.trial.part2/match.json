@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ]
+ ],
+ "a": [
+  "Canvas layers the layer list does not name jump below every listed layer after the first reorder",
+  "`RenderContext.trial.setZoom` answers zoom differently from the trial chrome's setZoom: unclamped and about the world origin",
+  "The first cross-redo check after a reload drops both histories' saved redo",
+  "An instrument history that mounts again while its trial stays open starts empty, and the next save writes that",
+  "A config write to an `over` path that ends where it started leaves an empty undo step; a trial path takes it back"
+ ],
+ "b": [
+  "The trial chrome context is rebuilt on every render, because `view2d` is a fresh object each time",
+  "A layer toggle or reorder records an undo step that cannot undo it: layer order and visibility live outside the snapshot",
+  "A canvas layer not named in `layers.ids` jumps to the bottom of the stack after the first reorder",
+  "An `alwaysOn` layer is drawn hidden when visibility says false, while the list shows it on",
+  "The tool slot's chrome memo never holds: `setActiveTool` is a new closure every render",
+  "A saved trial history is marked restored before `enabled` is checked, so it is lost if the instrument gains `undo` later"
+ ]
+}

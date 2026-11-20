@@ -1,0 +1,54 @@
+{
+ "id": "loupe",
+ "commit": "d6aa8f2ede77fc3556ffbf594c570943b8bf31f2",
+ "date": "2026-11-20",
+ "files": [
+  "packages/loupe/src/actionParamSchema.ts",
+  "packages/loupe/src/actions.ts",
+  "packages/loupe/src/canvasSource.ts",
+  "packages/loupe/src/eyedropper.ts",
+  "packages/loupe/src/geometry.ts",
+  "packages/loupe/src/index.ts",
+  "packages/loupe/src/model.ts",
+  "packages/loupe/src/pbt.fixture.ts",
+  "packages/loupe/src/sampler.ts"
+ ],
+ "a": 5,
+ "b": 5,
+ "m": 2,
+ "distinct": 8,
+ "chapman": 11,
+ "unfound": 3,
+ "read": {
+  "A": 9,
+  "B": 9
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.4,
+   "B": 3.1,
+   "match": 0.2,
+   "fix": 15.2
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1620764,
+  "costUsd": 4.65
+ },
+ "fixCommits": [
+  "547e39b1f2123ff4a644ff4f45f422037fb5f7bc",
+  "5f5b06cbbd7f4713d6e4025d2ab0f51de3b1aad8",
+  "ca880526c9018203ede78c364079c59720fc79c7",
+  "f4c19d4de2dab3728d99f934dca3cb00953eac67",
+  "250660c677980d01d565809be357586d423c1cbd",
+  "2f920b2b958f2a78dbb6358da75c3811d6d455fe",
+  "6585e6cfa12f00ad080c1ddd766cb35af228052f",
+  "a5826da5c74930666f1745b5ba00e6641d3dee6f"
+ ]
+}

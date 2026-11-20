@@ -1,0 +1,60 @@
+{
+ "id": "labkit.surface",
+ "commit": "d6aa8f2ede77fc3556ffbf594c570943b8bf31f2",
+ "date": "2026-11-20",
+ "files": [
+  "packages/labkit/src/surface/SurfaceContext.ts",
+  "packages/labkit/src/surface/clip.ts",
+  "packages/labkit/src/surface/composeRects.ts",
+  "packages/labkit/src/surface/deviceRect.ts",
+  "packages/labkit/src/surface/index.ts",
+  "packages/labkit/src/surface/measureTiles.ts",
+  "packages/labkit/src/surface/rect.ts",
+  "packages/labkit/src/surface/tiledSurface.ts",
+  "packages/labkit/src/surface/useElementWatch.ts",
+  "packages/labkit/src/surface/useSurfaceTile.ts",
+  "packages/labkit/src/surface/useTiledSurface.ts"
+ ],
+ "a": 8,
+ "b": 5,
+ "m": 1,
+ "distinct": 12,
+ "chapman": 26,
+ "unfound": 14,
+ "read": {
+  "A": 11,
+  "B": 11
+ },
+ "patches": 12,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 13.2,
+   "B": 4.3,
+   "match": 0.2,
+   "fix": 20.9
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2253917,
+  "costUsd": 6.68
+ },
+ "fixCommits": [
+  "c8a155935d9a8da12cdb03fae242781aec82561d",
+  "abbbf567135a5b567834671c144bfc3d5c45e506",
+  "7a3f2d9a9c27b4133e72fbb641778f3068745228",
+  "9d5af05abfb9a514c5cd4530216047ae99ce1602",
+  "e3bb24b7ed825bfe08761a4b37b49a12fe42c772",
+  "0c4308aed75fa4b83000319b4906b9ef12db27b1",
+  "dc1d8ac1fce53e774c621b676344ef890692a259",
+  "99473172842c092f6f1a09d88347fbe8ece2b993",
+  "2fddf63ea74c9ffc5f0bf77a273df33555e866e7",
+  "e9f7adf5d90ea0e74adc9c5d655eb7d3df9716c5",
+  "aa1d78c3dda1746e0d3fff9636650592d4dfa4d5",
+  "ea1e4d6eb489f14d26b18e864f8fac26e6188dbc"
+ ]
+}

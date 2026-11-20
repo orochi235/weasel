@@ -29,23 +29,18 @@ export interface LabSurfaceProps {
 /** The `top` buffer: mounted only while some tenant claims it. */
 function useTopBuffer(
   ref: RefObject<HTMLCanvasElement | null>,
-  bufferRef: RefObject<{ width: number; height: number }>,
   surfaceRef: RefObject<ReturnType<typeof useTiledSurface> | null>,
 ) {
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const [claims, setClaims] = useState(0);
-  // A buffer that mounts later starts at 0×0; forgetting the size makes the
-  // next frame size every buffer, and repaint every tile into them.
+  // A buffer that mounts later is unsized until a frame sizes it.
   const attach = useCallback(
     (el: HTMLCanvasElement | null) => {
       ref.current = el;
       setCanvas(el);
-      if (el) {
-        bufferRef.current = { width: 0, height: 0 };
-        surfaceRef.current?.invalidateAll();
-      }
+      if (el) surfaceRef.current?.invalidateAll();
     },
-    [ref, bufferRef, surfaceRef],
+    [ref, surfaceRef],
   );
   const claim = useCallback(() => {
     setClaims((n) => n + 1);
@@ -79,28 +74,29 @@ export function LabSurface({ bodyRef, children, contributions }: LabSurfaceProps
   const [overLayer, setOverLayer] = useState<HTMLDivElement | null>(null);
   const ownOverRef = useRef<HTMLCanvasElement | null>(null);
   const ownUnderRef = useRef<HTMLCanvasElement | null>(null);
-  const bufferRef = useRef({ width: 0, height: 0 });
   const surfaceRef = useRef<ReturnType<typeof useTiledSurface> | null>(null);
   const ownTopRef = useRef<HTMLCanvasElement | null>(null);
-  const top = useTopBuffer(ownTopRef, bufferRef, surfaceRef);
+  const top = useTopBuffer(ownTopRef, surfaceRef);
 
-  // Sizing the buffer clears all of it, so every tile has to repaint — not
-  // only the one whose move triggered the measurement. Every buffer is the
-  // same box, so one invalidateAll covers them all.
+  // Sizing a buffer clears all of it, so every tile has to repaint — not
+  // only the one whose move triggered the measurement. Each buffer is checked
+  // against its own size: one mounted afresh is unsized whatever the others are.
   const onFrame = useCallback((frame: SurfaceFrame) => {
-    const canvases = [ownUnderRef.current, ownOverRef.current, ownTopRef.current].filter(
-      (c) => c !== null,
-    );
-    if (canvases.length === 0) return;
     const w = Math.round(frame.size.width * frame.dpr);
     const h = Math.round(frame.size.height * frame.dpr);
-    if (bufferRef.current.width !== w || bufferRef.current.height !== h) {
-      bufferRef.current = { width: w, height: h };
-      for (const c of canvases) {
+    const cssW = `${frame.size.width}px`;
+    const cssH = `${frame.size.height}px`;
+    const unsized = [ownUnderRef.current, ownOverRef.current, ownTopRef.current].filter(
+      (c): c is HTMLCanvasElement =>
+        c !== null &&
+        (c.width !== w || c.height !== h || c.style.width !== cssW || c.style.height !== cssH),
+    );
+    if (unsized.length > 0) {
+      for (const c of unsized) {
         c.width = w;
         c.height = h;
-        c.style.width = `${frame.size.width}px`;
-        c.style.height = `${frame.size.height}px`;
+        c.style.width = cssW;
+        c.style.height = cssH;
       }
       surfaceRef.current?.invalidateAll();
       return;

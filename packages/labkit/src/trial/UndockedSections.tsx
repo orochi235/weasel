@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
-import { DockButton, Section } from '../chrome/regions/SidebarRegion';
+import { DockButton, Section, sectionProps } from '../chrome/regions/SidebarRegion';
 import type { SidebarSection, TrialContribution } from '../chrome/types';
 import { usePanelHosts } from '../lab/panelHost';
 import { panelKey } from '../state/undock';
@@ -33,12 +33,7 @@ function Portalled({
   const item = contribution.item as SidebarSection;
   return createPortal(
     <Section
-      title={item.title}
-      stance={item.stance}
-      grade={item.grade}
-      emphasis={item.emphasis}
-      tint={item.tint}
-      actions={item.actions}
+      {...sectionProps(item)}
       trailing={<DockButton title={item.title} dock onPress={() => onDock(contribution.id)} />}
     >
       {item.body}

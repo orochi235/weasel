@@ -206,6 +206,26 @@ describe('picking and the current measurement', () => {
     expect(currentMeasureId(rig.scene as unknown as AnyScene, rig.ms)).toBe(a);
   });
 
+  it('passes over a hidden measurement, or one on a hidden layer, for the current one', () => {
+    const rig = setup();
+    rig.measure({ x: 0, y: 0 }, { x: 10, y: 0 });
+    rig.measure({ x: 0, y: 0 }, { x: 0, y: 20 });
+    const [a, b] = rig.ids();
+    const current = () => currentMeasureId(rig.scene as unknown as AnyScene, rig.ms);
+    rig.ms.picked.set(b!);
+    rig.scene.setHidden(b!, true);
+    expect(current()).toBe(a);
+    rig.scene.setHidden(a!, true);
+    expect(current()).toBeNull();
+    expect(rig.enabled(MEASURE_ACTION_IDS.delete)).toMatchObject({ enabled: false, reason: ActionDisabledReason.NotApplicable });
+    rig.scene.setHidden(a!, false);
+    rig.scene.setHidden(b!, false);
+    rig.scene.setLayerVisible('notes', false);
+    expect(current()).toBeNull();
+    rig.run(MEASURE_ACTION_IDS.delete);
+    expect(rig.ids()).toHaveLength(2);
+  });
+
   it('leaves the content selection alone when a measurement is picked', () => {
     const rig = setup();
     rig.measure({ x: 0, y: 0 }, { x: 100, y: 0 });
@@ -274,6 +294,25 @@ describe('transform by the measurement', () => {
     expect(rig.ids()).toHaveLength(1);
   });
 
+  it('declines to move or turn a selection the batch would leave as it is, locked or gone', () => {
+    const rig = setup();
+    rig.measure({ x: 0, y: 0 }, { x: 5, y: -5 });
+    for (const lock of [() => rig.scene.setLocked(rig.box as never, true), () => rig.scene.setLayerLocked('main', true)]) {
+      lock();
+      for (const id of [MEASURE_ACTION_IDS.moveBy, MEASURE_ACTION_IDS.rotateBy]) {
+        expect(rig.enabled(id).enabled).toBe(false);
+        rig.run(id);
+      }
+      expect(rig.pose(rig.box)).toMatchObject({ x: 0, y: 0, rotation: 0 });
+      rig.scene.setLocked(rig.box as never, false);
+      rig.scene.setLayerLocked('main', false);
+    }
+    rig.selection.set(['gone' as NodeId]);
+    expect(rig.enabled(MEASURE_ACTION_IDS.moveBy)).toMatchObject({ enabled: false, reason: ActionDisabledReason.NotApplicable });
+    rig.selection.set([rig.box as NodeId]);
+    expect(rig.enabled(MEASURE_ACTION_IDS.moveBy).enabled).toBe(true);
+  });
+
   it('turns nothing by a measurement along the x axis, and says so', () => {
     const rig = setup();
     rig.measure({ x: 0, y: 0 }, { x: 5, y: 0 });
@@ -335,6 +374,15 @@ describe('editing a measurement', () => {
     expect(rig.ids()).toEqual([]);
     rig.scene.undo();
     expect(rig.ids()).toHaveLength(2);
+  });
+
+  it('declines to unpick a pick the scene no longer holds, so Escape reaches the ambient escape', () => {
+    const rig = setup();
+    rig.measure({ x: 0, y: 0 }, { x: 10, y: 0 });
+    expect(rig.enabled(MEASURE_ACTION_IDS.unpick).enabled).toBe(true);
+    rig.scene.undo();
+    expect(rig.ms.picked.get()).not.toBeNull();
+    expect(rig.enabled(MEASURE_ACTION_IDS.unpick)).toMatchObject({ enabled: false, reason: ActionDisabledReason.NotApplicable });
   });
 
   it('drops the pick on unpick, and declines with nothing picked', () => {

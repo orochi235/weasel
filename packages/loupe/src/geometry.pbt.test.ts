@@ -60,7 +60,7 @@ describe('sourceRegion', () => {
         // drawImage stretches [sx, sx + sw] over the lens.
         const shown = { x: r.sx + (p.x / size) * r.sw, y: r.sy + (p.y / size) * r.sh };
         let read: { x: number; y: number } | null = null;
-        const source = { canvas: back, pixel: (q: { x: number; y: number }) => { read = q; return null; } } as unknown as CanvasSource;
+        const source = { canvas: back, frame: () => back, pixel: (q: { x: number; y: number }) => { read = q; return null; } } as unknown as CanvasSource;
         canvasPixelSource(source, () => b).pixel(loupeSourcePoint(p, rect, aim, f));
         const got = read as unknown as { x: number; y: number };
         const kx = back.width / b.width;

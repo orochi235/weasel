@@ -1,0 +1,9 @@
+packages/loupe/src/actionParamSchema.ts
+packages/loupe/src/actions.ts
+packages/loupe/src/canvasSource.ts
+packages/loupe/src/eyedropper.ts
+packages/loupe/src/geometry.ts
+packages/loupe/src/index.ts
+packages/loupe/src/model.ts
+packages/loupe/src/pbt.fixture.ts
+packages/loupe/src/sampler.ts

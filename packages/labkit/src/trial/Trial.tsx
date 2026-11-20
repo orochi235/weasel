@@ -41,9 +41,14 @@ export const Trial = memo(function Trial({ id, ...options }: TrialProps) {
   const record = useStore(storeCtx.store, (s) => s.trials.find((w) => w.id === id));
   const instrument = record ? instruments.find((i) => i.name === record.instrumentName) : undefined;
   const kept = useKeptMarks(instrument?.annotations?.storage, id);
+  const isLast = useStore(storeCtx.store, (s) => s.trials.length <= 1);
   if (!record) return <MissingTrial id={id}>{`Trial not found: ${id}`}</MissingTrial>;
   if (!instrument)
-    return <MissingTrial id={id}>{`Unknown instrument: ${record.instrumentName}`}</MissingTrial>;
+    return (
+      <MissingTrial id={id} isLastTrial={isLast}>
+        {`Unknown instrument: ${record.instrumentName}`}
+      </MissingTrial>
+    );
   if (!kept.ready) return <div className="lk-trial lk-trial--loading" />;
   return (
     <TrialRuntime

@@ -1,0 +1,73 @@
+{
+ "id": "labkit.trial.part1",
+ "commit": "d6aa8f2ede77fc3556ffbf594c570943b8bf31f2",
+ "date": "2026-11-20",
+ "files": [
+  "packages/labkit/src/trial/FloatSidebar.tsx",
+  "packages/labkit/src/trial/MissingTrial.tsx",
+  "packages/labkit/src/trial/Trial.less",
+  "packages/labkit/src/trial/Trial.stories.tsx",
+  "packages/labkit/src/trial/Trial.tsx",
+  "packages/labkit/src/trial/TrialBody.tsx",
+  "packages/labkit/src/trial/TrialChrome.tsx",
+  "packages/labkit/src/trial/TrialContexts.tsx",
+  "packages/labkit/src/trial/TrialDragContext.ts",
+  "packages/labkit/src/trial/TrialLayerList.tsx",
+  "packages/labkit/src/trial/TrialScope.tsx",
+  "packages/labkit/src/trial/TrialTheme.tsx",
+  "packages/labkit/src/trial/TrialTitleBar.tsx",
+  "packages/labkit/src/trial/UndockedSections.tsx",
+  "packages/labkit/src/trial/homeView.ts",
+  "packages/labkit/src/trial/index.ts",
+  "packages/labkit/src/trial/loupeSwitch.ts",
+  "packages/labkit/src/trial/renderContext.ts",
+  "packages/labkit/src/trial/trialConfigChange.ts",
+  "packages/labkit/src/trial/trialContent.tsx",
+  "packages/labkit/src/trial/trialEdit.ts",
+  "packages/labkit/src/trial/trialEditOp.ts",
+  "packages/labkit/src/trial/trialHistory.ts",
+  "packages/labkit/src/trial/trialHistoryOf.ts",
+  "packages/labkit/src/trial/trialOps.ts",
+  "packages/labkit/src/trial/trialTitle.ts",
+  "packages/labkit/src/trial/trialUndo.ts"
+ ],
+ "a": 4,
+ "b": 6,
+ "m": 2,
+ "distinct": 8,
+ "chapman": 10.7,
+ "unfound": 2.7,
+ "read": {
+  "A": 27,
+  "B": 27
+ },
+ "patches": 9,
+ "questions": 1,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.9,
+   "B": 11.2,
+   "match": 0.2,
+   "fix": 20
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 4025266,
+  "costUsd": 10.66
+ },
+ "fixCommits": [
+  "a5ed760a3b0e1e8007f37f1e39645d3340f93922",
+  "800d56f4021cad6c6d5441a780525ae6bd402cd3",
+  "26aad1de51f15c5bce1932d6efd4f683bcf40368",
+  "363405e08d0298429c389a2fdf968cc78aba1b03",
+  "ba22149bbb67ec956ac246fb558aa0dd8ae7dc0d",
+  "137d72da920644a6eedb20e4c2bf4a8c932c9861",
+  "947ae451ee1c9c512512fa49e9f3b5b7b2813970",
+  "53a1558ebd190f9043946a45039090b5cebc72e7",
+  "89c2d9e31f91982f9fc209fb6ef2083718c44980"
+ ]
+}

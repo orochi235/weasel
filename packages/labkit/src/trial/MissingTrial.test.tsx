@@ -7,8 +7,17 @@ import { LabStoreContext } from '../state/context';
 import { createLabStore } from '../state/store';
 import { Trial } from './Trial';
 
-function renderTrial(id: string, closeTrial: (id: string) => void) {
+function renderTrial(id: string, closeTrial: (id: string) => void, others = 1) {
   const store = createLabStore();
+  for (let i = 0; i < others; i++) {
+    store.getState().addTrial({
+      id: `other-${i}`,
+      instrumentName: 'Renamed',
+      config: {},
+      state: {},
+      view: { zoom: 1, pan: { x: 0, y: 0 } },
+    });
+  }
   store.getState().addTrial({
     id: 'gone',
     instrumentName: 'Renamed',
@@ -34,6 +43,15 @@ describe('a trial with nothing to mount', () => {
     expect(screen.getByText('Unknown instrument: Renamed')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Close trial' }));
     expect(closeTrial).toHaveBeenCalledWith('gone');
+  });
+
+  it("disables Close when the trial whose instrument is gone is the lab's only one", async () => {
+    const closeTrial = vi.fn();
+    await renderTrial('gone', closeTrial, 0);
+    const close = screen.getByRole('button', { name: 'Close trial' });
+    expect(close.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.click(close);
+    expect(closeTrial).not.toHaveBeenCalled();
   });
 
   it('closes a trial whose record is gone', async () => {
