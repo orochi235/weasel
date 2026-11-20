@@ -128,6 +128,10 @@ interface EditAnchorsScratch {
   /** The last move, to redo when an extension claims the wheel. */
   lastMove: InvocationCtx | null;
   originPose: PolygonPath;
+  /** The last frame an extension could finish, as the drag made it: what the
+   *  drag commits, since `applyEdit` finishes it again. */
+  frame: PolygonPath;
+  /** `frame` finished, which the preview shows. */
   currentPose: PolygonPath;
   /** The transforms `originPose` is its own image under, read at the press. */
   symmetries: readonly AnchorSymmetry[];
@@ -177,6 +181,7 @@ function track(scratch: EditAnchorsScratch, next: ReturnType<typeof editAnchorSe
   const { dep, id } = scratch;
   const done = finishPathEditFrame(dep, id, next.path, next.origins);
   if (!done) return;
+  scratch.frame = next.path;
   scratch.currentPose = done.path as PolygonPath;
   scratch.others = done.others as EditAnchorsScratch['others'];
   scratch.origins = next.origins;
@@ -337,6 +342,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
         }),
         lastMove: null,
         originPose: worldPath,
+        frame: worldPath,
         currentPose: worldPath,
         symmetries: editedPathSymmetries(ctx.deps.pathSymmetry, editingId, decoded),
         others: [],
@@ -374,8 +380,8 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           active = false;
           try {
-            if (reason === 'cancel' || samePolygon(scratch.originPose, scratch.currentPose)) return;
-            scratch.dep.applyEdit(scratch.id, scratch.currentPose, 'Edit anchors', scratch.origins);
+            if (reason === 'cancel' || samePolygon(scratch.frame, scratch.originPose)) return;
+            scratch.dep.applyEdit(scratch.id, scratch.frame, 'Edit anchors', scratch.origins);
           } finally {
             snapAnchor.end();
             endExtensionDrags(scratch.drags);

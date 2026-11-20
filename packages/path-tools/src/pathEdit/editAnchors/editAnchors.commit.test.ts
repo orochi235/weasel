@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { AffordanceHit, InvocationCtx } from '@weasel-js/routing';
 import type { EditAnchorsDep } from '@weasel-js/core';
 import { createEditAnchorsDepForTests as makeDep, stubDepsForTests as stubDeps } from '@weasel-js/core/test-seams';
-import { PATH_L, PATH_M, PATH_Z, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
+import { PATH_L, PATH_M, PATH_Z, pathToAnchors, translatePath, type PolygonPath } from '@weasel-js/geom';
 import { editAnchorsAction } from './editAnchors';
 
 const triangle = (): PolygonPath => ({
@@ -38,6 +38,21 @@ describe('editAnchors commit', () => {
     d.to(0, 0);
     d.end();
     expect(applied).toEqual([]);
+  });
+
+  it('commits the frame it made, not the frame the dep finished from it', () => {
+    const path = triangle();
+    let committed: PolygonPath | null = null;
+    const dep = makeDep({
+      getStorageKind: () => 'pose', getNodeShape: () => null, getEditablePath: () => path,
+      // Not idempotent: finishing twice moves the path twice.
+      finishEdit: (_id, p) => ({ path: translatePath(p as PolygonPath, 1, 0), others: [] }),
+      applyEdit: (_id, p) => { committed = p as PolygonPath; },
+    });
+    const d = drag(dep);
+    d.to(20, 20);
+    d.end();
+    expect(pathToAnchors(committed!).anchors[0][0]).toMatchObject({ x: 20, y: 20 });
   });
 
   it('begins no snap session for a Shift-press that drags nothing', () => {
