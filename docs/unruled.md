@@ -3059,3 +3059,13 @@ Calls the lanes made without a ruling:
   `measureIds`, and so picking, editing, Delete and Clear all, reads only `ms.layer`. Either `measureIds` reads the
   whole scene, which puts a walk of every node on each pointer move's hit test (`measureEndSource.test.ts` holds
   that it must not), or the painter and the snap source take only `ms.layer`'s nodes and the rest go undrawn.
+## Audit round fifty-four (2026-11-20): prefs.edit
+
+- 2026-11-20 (the fixer's call): a `weasel-bundles/1` export writes a bundle's change of package as
+  `{ op: 'repackage', kind: 'bundle', from, to }`, and `move` always names bundles, an included bundle's as well. Giving
+  the member move its own op instead was the alternative; a package move is the one change whose `from` and `to` are
+  packages, so it is the one that took a new name.
+- 2026-11-20 (the fixer's call): under a section root a leaf key that names a path inside the value of a leaf holding
+  one (`grid.size` beside `grid`), or around it, is refused whatever the new node's kind, a label among them; a moved
+  leaf that would clash is numbered after its first step (`grid2.size`). A bundle whose id takes another's tree key
+  gets the next number (`editingShapes2`) and keeps its id.
