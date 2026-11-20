@@ -20,6 +20,22 @@
 
 .found { fill: var(--audit-depth-2); }
 
+/* A round not merged yet: its bar filled by the hatch pattern (the `fill` attribute), so no `fill` here. */
+.pending {
+  stroke: var(--audit-depth-2);
+  stroke-width: 1;
+}
+
+.hatch {
+  stroke: var(--audit-depth-2);
+  stroke-width: 1.5;
+}
+
+.tag {
+  font-size: 9px;
+  fill: var(--audit-muted);
+}
+
 .hint {
   margin: var(--wzl-space-2) 0 0;
   font-size: var(--wzl-font-size-sm);
