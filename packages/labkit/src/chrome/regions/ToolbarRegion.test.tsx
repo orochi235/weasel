@@ -160,4 +160,17 @@ describe('ToolbarRegion', () => {
       'export',
     ]);
   });
+
+  it('names a group by its group, and leaves an ungrouped entry’s group unnamed', () => {
+    renderWithIcons(
+      <ToolbarRegion
+        contributions={[item('undo', { group: 'history' }), item('btn-x9')]}
+        ctx={ctx}
+      />,
+    );
+    expect(screen.getAllByRole('group').map((g) => g.getAttribute('aria-label'))).toEqual([
+      'history',
+      null,
+    ]);
+  });
 });

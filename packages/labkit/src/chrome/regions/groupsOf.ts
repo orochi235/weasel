@@ -6,6 +6,8 @@ export interface ContributionGroup<T extends ContributionBase> {
   key: string;
   /** Unlike `key`, never the same for two runs: a group may share its name with an ungrouped contribution's id. */
   id: string;
+  /** Whether a `group` named the run, rather than it standing for one ungrouped contribution. */
+  named: boolean;
   /** Whether any of its entries asked for the far end. */
   end: boolean;
   entries: T[];
@@ -21,12 +23,18 @@ export function groupsOf<T extends ContributionBase>(
   const byKey = new Map<string, ContributionGroup<T>>();
   for (const c of contributions) {
     if (c.group == null) {
-      groups.push({ key: c.id, id: `entry:${c.id}`, end: c.end ?? false, entries: [c] });
+      groups.push({
+        key: c.id,
+        id: `entry:${c.id}`,
+        named: false,
+        end: c.end ?? false,
+        entries: [c],
+      });
       continue;
     }
     let g = byKey.get(c.group);
     if (!g) {
-      g = { key: c.group, id: `group:${c.group}`, end: false, entries: [] };
+      g = { key: c.group, id: `group:${c.group}`, named: true, end: false, entries: [] };
       byKey.set(c.group, g);
       groups.push(g);
     }
