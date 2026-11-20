@@ -145,8 +145,6 @@ function isSfnt(bytes: ArrayBuffer): boolean {
 
 const isWoff2 = (bytes: ArrayBuffer): boolean => bytes.byteLength >= 4 && new DataView(bytes).getUint32(0) === 0x774f4632;
 
-const isCff = (bytes: ArrayBuffer): boolean => bytes.byteLength >= 4 && new DataView(bytes).getUint32(0) === 0x4f54544f;
-
 const finiteOr = (n: number | undefined, fallback: number): number => (Number.isFinite(n) ? n! : fallback);
 
 /** fsType bits that rule out embedding the outlines: restricted license, and bitmap embedding only. */
@@ -204,7 +202,8 @@ export function createOpenTypeParser(postScriptName?: string): OutlineParser {
       throw new Error(
         `no member of the font file is named "${postScriptName}" (it holds ${names.join(', ')})`);
     }
-    const cff = isCff(single) ? tableOf(single, 'CFF ') : null;
+    // opentype.js reads `CFF ` whenever the font lacks a glyf and loca pair, whatever its signature says.
+    const cff = tableOf(single, 'glyf') && tableOf(single, 'loca') ? null : tableOf(single, 'CFF ');
     if (cff) checkCff(cff);
     const cmap = tableOf(single, 'cmap');
     if (cmap) checkCmap(cmap);

@@ -92,3 +92,11 @@ describe('WOFF faces', () => {
     await expect(createOpenTypeParser()(woff)).rejects.toThrow(/WOFF file is damaged/);
   });
 });
+
+describe('a CFF font under a TrueType signature', () => {
+  it('has its CFF table checked, as opentype.js reads it with no glyf and loca to read instead', async () => {
+    const bytes = damagedCff();
+    new DataView(bytes).setUint32(0, 0x00010000);
+    await expect(createOpenTypeParser()(bytes)).rejects.toThrow(/CFF table is damaged/);
+  }, 5000);
+});
