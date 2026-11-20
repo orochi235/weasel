@@ -4,7 +4,7 @@ import { useLatest } from '@weasel-js/react';
 import type { Dispatcher, RuleCtx } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
-import { never, useHoverTracking, type HoverTracking, type VisibilityRules } from 'domains/chrome-caps';
+import { mergeVisibilityRules, never, useHoverTracking, type HoverTracking, type VisibilityRules } from 'domains/chrome-caps';
 import {
   useChromeCaps,
   type ChromeCaps,
@@ -75,7 +75,7 @@ export function useChromeRules(args: {
       defaults['action.marquee'] = never;
       defaults['action.lasso'] = never;
     }
-    return { ...defaults, ...chromeVisibility };
+    return mergeVisibilityRules(defaults, chromeVisibility);
   }, [chromeVisibility, selectable, enabled]);
 }
 
