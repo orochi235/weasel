@@ -36,7 +36,7 @@ export interface TextOutlineSource {
   verticalAlign?: TextVerticalAlign;
   /** The node's `data.fit`: `'shrink'` sets the glyphs at the size that fits the box. */
   fit?: TextFit;
-  /** The node's `data.fill`: `null` is no fill, absent the default black. */
+  /** The node's `data.fill`: absent or `null` is no fill. */
   fill?: Fill | null;
   /** The node's `data.stroke`: absent or `null` is no stroke. */
   stroke?: Stroke | null;
