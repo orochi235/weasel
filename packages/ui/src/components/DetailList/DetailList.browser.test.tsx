@@ -162,6 +162,6 @@ test('columns="auto" sets rows two to a line once the list is wide enough, and o
   expect(Math.abs(box(a!).top - box(b!).top)).toBeLessThan(0.5);
   expect(box(b!).left).toBeGreaterThan(box(a!).right);
   expect(box(c!).top).toBeGreaterThan(box(a!).bottom - 0.5);
-  const [x, y] = [...list(320).querySelectorAll('[data-v]')];
+  const [x, y] = [...list(280).querySelectorAll('[data-v]')];
   expect(box(y!).top).toBeGreaterThan(box(x!).bottom - 0.5);
 });
