@@ -48,7 +48,8 @@ function inputOf(specs: readonly DiagramSpec[]): PlaceLabelsInput {
 const keyOf = (input: PlaceLabelsInput): string => JSON.stringify([
   input.shapes.map((s) => [s.id, s.box.x, s.box.y, s.box.width, s.box.height]),
   input.routes.map((r) => [r.id, r.points.flatMap((p) => [p.x, p.y])]),
-  input.labels.map((l) => [l.id, l.edge, l.placement.at, l.placement.offset, l.placement.dodge, l.size.width, l.size.height]),
+  // Every field of the trait but `placed`, which placement writes and never reads for a moving label.
+  input.labels.map(({ id, edge, placement: { placed: _p, ...preferred }, size }) => [id, edge, preferred, size.width, size.height]),
 ]);
 
 /**
