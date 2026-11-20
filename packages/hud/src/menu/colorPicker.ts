@@ -13,6 +13,9 @@ export interface HudColorPickers {
   entries: MenuEntry[];
   /** The color drawn in `e`'s icon column: a picker's current color, or a swatch's own. */
   swatchOf(e: MenuEntry): string | undefined;
+  /** Whether `e` is a picker's hex row, whose text the menu must not hold: it reads the picker's color as its
+   *  `value`, and what is typed goes straight to its `set`. */
+  unheld(e: MenuEntry): boolean;
 }
 
 /** `text` as the `#rrggbb` (or with `alpha`, `#rrggbbaa`) a color row writes, or undefined when it is no hex color.
@@ -35,14 +38,14 @@ export function withColorPickers(
   entries: readonly MenuEntry[], palette: readonly string[], c: () => Pick<MenuController, 'colorValue' | 'setColor'>,
 ): HudColorPickers {
   const swatches = new Map<MenuEntry, () => string | undefined>();
+  const hexes = new Set<MenuEntry>();
   const picker = (e: MenuColorEntry): MenuEntry => {
     const now = () => c().colorValue(e);
     const alpha = e.alpha === true;
     const rows: MenuEntry[] = palette.map((color) => {
-      const value = hexColor(color, alpha, e.value) ?? color;
       const writes = (held: string | undefined) => hexColor(color, alpha, held) ?? color;
       const row: MenuEntry = {
-        kind: 'item', key: `${e.key}/${color}`, label: color,
+        kind: 'item', key: `${e.key}/${color}`, label: color, radio: true,
         keepOpen: true,
         // Checked when choosing it would write the color held now.
         get checked() {
@@ -51,7 +54,7 @@ export function withColorPickers(
         },
         run: () => c().setColor(e, writes(now())),
       };
-      swatches.set(row, () => value);
+      swatches.set(row, () => writes(now()));
       return row;
     });
     const hex: MenuTextEntry = {
@@ -62,6 +65,7 @@ export function withColorPickers(
         if (value !== undefined) c().setColor(e, value);
       },
     };
+    hexes.add(hex);
     const sub: MenuEntry = {
       kind: 'submenu', key: e.key, label: e.label, ...(e.access ? { access: e.access } : {}),
       entries: [...rows, { kind: 'separator', key: `${e.key}/|` }, hex],
@@ -75,5 +79,16 @@ export function withColorPickers(
     return e;
   });
   const out = walk(entries);
-  return { entries: out, swatchOf: (e) => swatches.get(e)?.() };
+  return { entries: out, swatchOf: (e) => swatches.get(e)?.(), unheld: (e) => hexes.has(e) };
+}
+
+/** `c`'s text rows as a menu drawing `pickers` reads and writes them: a picker's hex row reads the picker's color and
+ *  writes what is typed straight to its `set`, so the controller never holds its text. */
+export function pickerTexts(
+  pickers: Pick<HudColorPickers, 'unheld'>, c: () => Pick<MenuController, 'textValue' | 'setText'>,
+): Pick<MenuController, 'textValue' | 'setText'> {
+  return {
+    textValue: (e) => (pickers.unheld(e) ? e.value : c().textValue(e)),
+    setText: (e, text) => { if (pickers.unheld(e)) e.set?.(text); else c().setText(e, text); },
+  };
 }

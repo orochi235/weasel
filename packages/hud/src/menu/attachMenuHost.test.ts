@@ -43,6 +43,14 @@ beforeEach(() => {
 afterEach(() => detach());
 
 describe('attachMenuHost', () => {
+  it("takes the hud's toCanvas and canvasSize for options given as undefined", () => {
+    detach();
+    detach = attachMenuHost(hud, host, { toCanvas: undefined, canvasSize: undefined, measure: () => 40 });
+    expect(() => host.open({ menu: 'row', client: { x: 10, y: 10 } })).not.toThrow();
+    expect(hud.widgets()).toHaveLength(1);
+    expect(() => window.dispatchEvent(new WheelEvent('wheel', { clientX: 790, clientY: 590 }))).not.toThrow();
+  });
+
   it('adds a focused menu widget when the host opens', () => {
     const focused = vi.fn();
     hud.subscribeFocus(focused);

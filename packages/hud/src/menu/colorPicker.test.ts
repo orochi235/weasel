@@ -58,6 +58,16 @@ describe('withColorPickers', () => {
     expect(c.setColor).toHaveBeenCalledWith(row, '#ffffff80');
   });
 
+  it('draws each swatch as the color choosing it writes now, at the alpha held now', () => {
+    const row = { ...fill('#00000080'), alpha: true };
+    const c = ctrl('#12345620');
+    const { entries, swatchOf } = withColorPickers([row], ['#1e88e5'], () => c);
+    const swatch = (entries[0] as MenuSubmenuEntry).entries[0] as MenuItemEntry;
+    expect(swatchOf(swatch)).toBe('#1e88e520');
+    swatch.run();
+    expect(c.setColor).toHaveBeenCalledWith(row, '#1e88e520');
+  });
+
   it('checks the swatch the color holds at its current alpha, not the one it opened with', () => {
     const row = { ...fill('#000000ff'), alpha: true };
     const picker = withColorPickers([row], ['#000000', '#1e88e5'], () => ctrl('#1e88e580')).entries[0] as MenuSubmenuEntry;
@@ -104,6 +114,13 @@ describe('createMenuWidget: a color row', () => {
     expect(w.accessibleTree!.read().children![0]).toMatchObject({ label: 'Fill: #1e88e5' });
   });
 
+  it('exposes its swatches as radio rows, since choosing one unchecks the rest', () => {
+    const { w, type } = widget([fill('#1e88e5')]);
+    type(['ArrowDown', 'ArrowRight']);
+    const rows = w.accessibleTree!.read().children![0]!.children![0]!.children!;
+    expect(rows.slice(0, 2).map((r) => [r.role, r.checked])).toEqual([['menuitemradio', false], ['menuitemradio', true]]);
+  });
+
   it('takes typed hex in the picker and writes it without closing', () => {
     const row = fill('#336699');
     const { w, close, type } = widget([row]);
@@ -111,5 +128,24 @@ describe('createMenuWidget: a color row', () => {
     expect(row.set).toHaveBeenCalledWith('#ff0000');
     expect(close).not.toHaveBeenCalled();
     expect(w.accessibleTree!.read().children![0]).toMatchObject({ label: 'Fill: #ff0000' });
+  });
+
+  it('shows and edits from the color the picker holds in its hex row, and writes the same text typed twice', () => {
+    const row = fill('#336699');
+    const { w, type } = widget([row]);
+    const retype = ['End', 'Enter', 'Backspace', 'Backspace', 'Backspace', 'Backspace', 'Backspace', 'Backspace', 'f', '0', '0', 'Enter'];
+    type(['ArrowDown', 'ArrowRight', ...retype]);
+    type(['ArrowUp', 'Enter']);
+    expect(row.set).toHaveBeenLastCalledWith('#1e88e5');
+    const hexRow = () => w.accessibleTree!.read().children![0]!.children![0]!.children![3]!;
+    expect(hexRow().label).toBe('Hex: #1e88e5');
+    type(['End', 'Enter']);
+    expect(JSON.stringify((w.draw(ctx) as DrawCommand[]).filter((c) => c.kind === 'text'))).toContain('#1e88e5');
+    type(['Escape']);
+    type(retype);
+    expect(row.set).toHaveBeenLastCalledWith('#ff0000');
+    expect(row.set).toHaveBeenCalledTimes(3);
+    type(['End', 'Enter', 'z', 'Enter']);
+    expect(hexRow().label).toBe('Hex: #ff0000');
   });
 });

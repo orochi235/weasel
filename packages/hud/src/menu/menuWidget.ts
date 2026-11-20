@@ -5,15 +5,15 @@ import { createEmitter, createPart } from '@weasel-js/registry';
 import { maxOf, minOf } from '@weasel-js/geom';
 import { createRevision, type HudAccessibleTree, type HudTextInput, type HudKeyEvent, type HudPointerEvent, type Widget, type WidgetBounds } from '../widget';
 import { accessibleMenu } from './accessibleMenu';
-import { menuPanelMetrics, menuRowSpans, type MenuPanelMetrics } from '@weasel-js/ui-logic';
+import { menuPanelMetrics, menuRowSpans, type MenuPanelLayout, type MenuPanelMetrics } from '@weasel-js/ui-logic';
 import { resolveTheme, weaselTheme, type ResolvedTheme } from '@weasel-js/theme';
 import { panelCommands, rowAt, type MenuIcons } from './panelCommands';
 import { menuMeasureEnv } from './menuEnv';
 import { textWidth } from './textWidth';
-import { createPlacer } from './placePanels';
+import { createPlacer, type PlacedPanel } from './placePanels';
 import { caretAt, caretX } from './valueRows';
 import { createTextEditor, editMods } from './textEdit';
-import { DEFAULT_MENU_PALETTE, withColorPickers } from './colorPicker';
+import { DEFAULT_MENU_PALETTE, pickerTexts, withColorPickers } from './colorPicker';
 import type { Point } from '@weasel-js/geom';
 import { chordKey } from '@weasel-js/gestures';
 import type { StepRepeatOptions } from '@weasel-js/ui-input';
@@ -63,7 +63,7 @@ function union(panels: readonly MenuRect[]): WidgetBounds {
 /** The edit `typing` runs as a widget's text input: its caret's place on the canvas, read off `panels()`, and its
  *  composition. `measure` gives the width of a run of a row's text. */
 function menuTextInput(
-  c: Pick<MenuController, 'entriesAt'>, typing: ReturnType<typeof createTextEditor>, panels: () => readonly MenuRect[],
+  c: Pick<MenuController, 'entriesAt'>, typing: ReturnType<typeof createTextEditor>, panels: () => readonly PlacedPanel[],
   metrics: () => MenuPanelMetrics, measure: (text: string) => number, subscribe: HudTextInput['subscribe'],
 ): HudTextInput {
   const read = () => {
@@ -74,13 +74,19 @@ function menuTextInput(
       const entries = c.entriesAt(level);
       const i = entries.indexOf(edit.entry);
       if (i < 0) continue;
-      const p = ps[level]!, r = menuRowSpans(entries, m)[i]!;
-      const x = p.x + caretX(edit, p.width, m, measure);
+      const { rect: p, layout } = ps[level]!, r = menuRowSpans(entries, m)[i]!;
+      const x = p.x + caretX(edit, p.width, m, measure, fieldLeft(layout, i));
       return { rect: { x, y: p.y + r.y, width: Math.max(1, p.x + p.width - x), height: r.h }, label: edit.entry.label };
     }
     return null;
   };
   return { read, subscribe, compose: typing.compose, insert: typing.insert };
+}
+
+/** Where row `i`'s value column starts, panel-local: the column typed text stays in. */
+function fieldLeft(layout: MenuPanelLayout, i: number): number | undefined {
+  const box = layout.rows[i];
+  return box?.kind === 'row' ? box.trailing?.x : undefined;
 }
 
 let builtIn: ResolvedTheme | null = null;
@@ -100,6 +106,13 @@ function menuKey(c: MenuController, typing: ReturnType<typeof createTextEditor>,
   return true;
 }
 
+/** End `typing`'s edit, keeping what was typed, once its row is on no open level, as the DOM menu's field does when
+ *  its panel unmounts. */
+function leaveHidden(c: Pick<MenuController, 'stack' | 'entriesAt'>, typing: ReturnType<typeof createTextEditor>): void {
+  const edit = typing.current();
+  if (edit && !c.stack().some((_, level) => c.entriesAt(level).includes(edit.entry))) typing.leave();
+}
+
 /** A menu's metrics in `tokens`, read once per theme. */
 const metricsIn = createPart((tokens: ResolvedTheme): MenuPanelMetrics =>
   menuPanelMetrics(menuMeasureEnv(tokens, '', () => 0)));
@@ -117,6 +130,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   const c = createMenuController({
     entries: pickers.entries, highlightFirst: opts.open.source === 'keyboard', onClose: opts.close,
   });
+  const texts = pickerTexts(pickers, () => c);
   const place = createPlacer({
     anchor: opts.toCanvas(opts.open.client),
     ...(opts.open.under ? { under: underOnCanvas(opts.open.under, opts.toCanvas) } : {}),
@@ -132,9 +146,9 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   let disposed = false;
   let armed = false;
   let hoverPanel: number | null = null;
-  const typing = createTextEditor(c, rev.changed);
+  const typing = createTextEditor(texts, rev.changed);
   const chips = createChipHold(c, (x, y) => chipUnder(c, panels, metricsIn(tokens), x, y), opts.repeat);
-  c.subscribe(() => { replace(); rev.changed(); });
+  c.subscribe(() => { leaveHidden(c, typing); replace(); rev.changed(); });
 
   /** The pointer is now over `level` (null: no panel). Leaving a panel clears
    *  its row, as the DOM menu's per-panel `pointerleave` does. */
@@ -172,11 +186,15 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
       typing.start(entries[index]);
       const e = entries[index];
       const { width: w } = panels[level]!, x = evt.x - panels[level]!.x;
-      typing.place(e, (draft) => caretAt(draft, w, m, x, (s) => measure(s, m.font.size, family ?? '')));
+      const left = fieldLeft(placed[level]!.layout, index);
+      typing.place(e, (draft) => caretAt(
+        draft, w, m, x, (s) => measure(s, m.font.size, family ?? ''),
+        left === undefined ? undefined : { left, caret: typing.current()?.caret ?? Array.from(draft).length },
+      ));
     }
   };
 
-  const accessibleTree: HudAccessibleTree = { read: () => accessibleMenu(c, pickers.swatchOf, locale), subscribe: c.subscribe };
+  const accessibleTree: HudAccessibleTree = { read: () => accessibleMenu({ ...c, ...texts }, pickers.swatchOf, locale), subscribe: c.subscribe };
 
   return {
     id: `weasel-menu-${opts.open.seq}`,
@@ -189,7 +207,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     accessibleName: 'Context menu',
     accessibleTree,
     textInput: menuTextInput(
-      c, typing, () => panels, () => metricsIn(tokens), (s) => measure(s, metricsIn(tokens).font.size, family ?? ''), edits.subscribe,
+      c, typing, () => placed, () => metricsIn(tokens), (s) => measure(s, metricsIn(tokens).font.size, family ?? ''), edits.subscribe,
     ),
     deps: (ctx) => [...rev.deps(), ctx.defaultFont, ctx.tokens, faceGeneration(), opts.icons?.getVersion()],
     draw: (ctx) => {
@@ -197,7 +215,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
       tokens = ctx.tokens;
       replace();
       const values = {
-        number: c.numberValue, text: c.textValue, editing: typing.current(), swatch: pickers.swatchOf,
+        number: c.numberValue, text: texts.textValue, editing: typing.current(), swatch: pickers.swatchOf,
         measure, locale,
       };
       return placed.flatMap(({ rect, layout }, level) =>

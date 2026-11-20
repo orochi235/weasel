@@ -25,8 +25,10 @@ const measure = (t: string) => t.length * 7;
 const env = charEnv(7);
 /** A row's icon, gaps, and padding: everything but its label and its trailing column. */
 const columns = m.padX * 2 + m.iconSize + m.gap * 2 + m.labelPad;
+/** The commands, with every group's children in its place. */
+const flat = (cmds: readonly DrawCommand[]): DrawCommand[] => cmds.flatMap((c) => (c.kind === 'group' ? flat(c.children) : [c]));
 const textOf = (cmds: readonly DrawCommand[]) =>
-  cmds.flatMap((c) => (c.kind === 'text' ? [c.runs.map((r) => r.text).join('')] : []));
+  flat(cmds).flatMap((c) => (c.kind === 'text' ? [c.runs.map((r) => r.text).join('')] : []));
 
 function zoomRow(extra: Partial<MenuNumberEntry> = {}): MenuNumberEntry {
   return { kind: 'number', key: 'zoom', label: 'Magnification', value: 8, min: 2, max: 16, step: 1, suffix: '×', set: vi.fn(), ...extra };
@@ -82,7 +84,7 @@ describe('panelCommands: value rows', () => {
     const plain = panelCommands(ctx, b, [text], null);
     const typing = panelCommands(ctx, b, [text], null, undefined, { ...OPENED_VALUES, editing: startEdit(text, 'Lay') });
     expect(textOf(typing)).toEqual(['Name', 'Lay']);
-    expect(typing.filter((c) => c.kind === 'path').length).toBe(plain.filter((c) => c.kind === 'path').length + 1);
+    expect(flat(typing).filter((c) => c.kind === 'path').length).toBe(flat(plain).filter((c) => c.kind === 'path').length + 1);
   });
 
   it('widens the panel for a number row\'s chips and a color row\'s swatch and hex', () => {
