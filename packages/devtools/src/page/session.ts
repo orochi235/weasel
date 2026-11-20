@@ -35,7 +35,8 @@ export interface Override {
   highlight: readonly string[];
 }
 
-export function openSession(host: SessionHost, transport: PageTransport): DevtoolsSession {
+/** `onClose` runs once, when the session closes: on the panel's `bye` or a call to `close`. */
+export function openSession(host: SessionHost, transport: PageTransport, onClose?: () => void): DevtoolsSession {
   const send = (m: PageMessage): void => transport.send(m);
   const fail = (requestId: number | null, message: string): void =>
     send({ type: 'error', protocol: DEVTOOLS_PROTOCOL, requestId, message });
@@ -82,6 +83,7 @@ export function openSession(host: SessionHost, transport: PageTransport): Devtoo
     offRoots();
     for (const rootId of notices.ids()) notices.unfollow(rootId);
     for (const rootId of [...overrides.keys()]) dropOverride(rootId);
+    onClose?.();
   };
 
   const greet = (): void => {

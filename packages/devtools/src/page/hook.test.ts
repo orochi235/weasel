@@ -1,9 +1,9 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { createDispatchTrace, createTraceRing } from '@weasel-js/routing';
 import type { CanvasExtensionApi, ContributionDepReader } from '@weasel-js/core';
-import { installDevtoolsHook } from './hook';
+import { createDevtoolsHook, installDevtoolsHook } from './hook';
 import { DEVTOOLS_PROTOCOL, type PageMessage } from './protocol';
-import { createWindowPageTransport, createWindowPanelTransport } from './transport';
+import { createInPageTransports, createWindowPageTransport, createWindowPanelTransport } from './transport';
 import { createDevtoolsRoot } from './root';
 import { attachDevtools } from './attach';
 
@@ -33,6 +33,20 @@ const api = { element: null, getView: () => null, subscribeView: () => () => {},
 const deps: ContributionDepReader = { get: () => undefined };
 
 describe('the devtools hook', () => {
+  it('stops listening to a transport once its panel says bye', () => {
+    const hook = createDevtoolsHook();
+    const { page, panel } = createInPageTransports();
+    let listening = 0;
+    const counted: typeof page = {
+      send: page.send,
+      onMessage: (l) => { listening++; const off = page.onMessage(l); return () => { listening--; off(); }; },
+    };
+    hook.connect(counted);
+    panel.send({ type: 'yo', protocol: DEVTOOLS_PROTOCOL });
+    panel.send({ type: 'bye', protocol: DEVTOOLS_PROTOCOL });
+    expect(listening).toBe(0);
+  });
+
   it('answers a yo posted to the window, the way a content script sends one', async () => {
     const hook = installDevtoolsHook()!;
     const off = hook.register(root());

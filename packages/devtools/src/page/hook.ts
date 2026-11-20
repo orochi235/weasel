@@ -63,10 +63,11 @@ export function createDevtoolsHook(opts: { schedule?: DevtoolsSchedule } = {}): 
       };
     },
     connect(transport, opening) {
-      const session = openSession(host, transport);
-      const off = transport.onMessage((m) => session.receive(m));
+      let off: (() => void) | null = null;
+      const session = openSession(host, transport, () => { off?.(); off = null; });
+      off = transport.onMessage((m) => session.receive(m));
       if (opening) session.receive(opening);
-      return () => { off(); session.close(); };
+      return () => session.close();
     },
   };
 }
