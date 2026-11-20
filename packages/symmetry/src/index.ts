@@ -1,5 +1,5 @@
 export {
-  DEFAULT_SYMMETRY, HORIZONTAL_AXIS, SYMMETRY_KINDS, VERTICAL_AXIS, mirrorAcross, symmetryTransforms, turnAbout,
+  DEFAULT_SYMMETRY, HORIZONTAL_AXIS, SYMMETRY_KINDS, VERTICAL_AXIS, mirrorAcross, symmetryTransforms, turnAbout, wallpaperLattice,
   type SymmetryExtent, type SymmetryKind, type SymmetryKindDef, type SymmetrySpec, type WallpaperCell,
 } from './kinds';
 export {

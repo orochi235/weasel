@@ -14,9 +14,17 @@ export interface LatticePoint {
   y: number;
 }
 
-/** Index range a lattice is searched over, either way from the center, so a
- *  nearly collapsed lattice cannot make the search itself unbounded. */
-const SEARCH = 512;
+/** How many index pairs a lattice search visits at most, so a nearly
+ *  collapsed lattice cannot make the search itself unbounded. */
+const SEARCH_BUDGET = 1025 * 1025;
+
+/** The `n` indices in `lo..hi` nearest 0, or `null` when none is a safe integer. */
+function nearestZero(lo: number, hi: number, n: number): [number, number] | null {
+  const c = Math.min(hi, Math.max(lo, 0));
+  const a = Math.max(lo, Math.min(c - Math.floor((n - 1) / 2), hi - n + 1));
+  const b = Math.min(hi, a + n - 1);
+  return Number.isSafeInteger(a) && Number.isSafeInteger(b) ? [a, b] : null;
+}
 /** `Math.cos` and `Math.sin` leave 1e-16 where a quarter turn has an exact
  *  0, which a preset axis then carries into every coordinate it mirrors. */
 export const exact = (v: number): number => (Math.abs(v) < 1e-12 ? 0 : v);
@@ -38,17 +46,32 @@ export function latticePoints(spec: SymmetrySpec, limit = MAX_WALLPAPER_COPIES +
   const by = vy * spec.rowSpacing;
   // The cross product of the unit directions, so a lattice spaced near the double range's end does not overflow it.
   const cross = ux * vy - uy * vx;
-  const { x, y, width, height } = spec.extent;
+  // A box given from its far corner is the same box, as the guide outlines it.
+  const e = spec.extent;
+  const x = Math.min(e.x, e.x + e.width);
+  const y = Math.min(e.y, e.y + e.height);
+  const width = Math.abs(e.width);
+  const height = Math.abs(e.height);
   if (!(Math.abs(cross) * Math.abs(spec.spacing) * Math.abs(spec.rowSpacing) > 1e-9) || !(width >= 0) || !(height >= 0)) return [];
   // The extent's corners in lattice coordinates bound the indices worth trying.
   const corners = [[x, y], [x + width, y], [x, y + height], [x + width, y + height]]
     .map(([px, py]) => [(px * vy - py * vx) / cross / spec.spacing, (ux * py - uy * px) / cross / spec.rowSpacing]);
-  const range = (k: 0 | 1): [number, number] => [
-    Math.max(-SEARCH, Math.floor(minOf(corners, (c) => c[k]))),
-    Math.min(SEARCH, Math.ceil(maxOf(corners, (c) => c[k]))),
-  ];
-  const [i0, i1] = range(0);
-  const [j0, j1] = range(1);
+  const lo = (k: 0 | 1) => Math.floor(minOf(corners, (c) => c[k]));
+  const hi = (k: 0 | 1) => Math.ceil(maxOf(corners, (c) => c[k]));
+  let ni = hi(0) - lo(0) + 1;
+  let nj = hi(1) - lo(1) + 1;
+  if (!(ni * nj <= SEARCH_BUDGET)) {
+    // Past the budget, the indices nearest the center's are searched, a long side given what a short one leaves.
+    const side = Math.floor(Math.sqrt(SEARCH_BUDGET));
+    if (ni <= side) nj = Math.floor(SEARCH_BUDGET / ni);
+    else if (nj <= side) ni = Math.floor(SEARCH_BUDGET / nj);
+    else ni = nj = side;
+  }
+  const is = nearestZero(lo(0), hi(0), ni);
+  const js = nearestZero(lo(1), hi(1), nj);
+  if (!is || !js) return [];
+  const [i0, i1] = is;
+  const [j0, j1] = js;
   const eps = 1e-9 * Math.max(1, width, height);
   const out: LatticePoint[] = [];
   for (let j = j0; j <= j1; j++) {
