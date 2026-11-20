@@ -88,6 +88,11 @@ describe('extractUniformNames', () => {
     expect(extract('uniform float u_h[0x2];')).toEqual(['u_h[0]', 'u_h[1]']);
   });
 
+  it('sizes an array from any declarator of a const int list', () => {
+    const src = 'const int A = 2, B = A + 1;\nuniform vec3 u_a[A];\nuniform vec3 u_b[B];';
+    expect(extract(src)).toEqual(['u_a[0]', 'u_a[1]', 'u_b[0]', 'u_b[1]', 'u_b[2]']);
+  });
+
   it('takes the largest size a macro is given across branches', () => {
     const src = `
       #ifdef HQ
