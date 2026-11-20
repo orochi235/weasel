@@ -87,8 +87,11 @@ export function shapeEntry(name: string | undefined, value: (key: string) => str
 /** Style names that draw a plain box. */
 export const BOX_NAMES: ReadonlySet<string> = new Set(['rect', 'rectangle', 'text', 'label']);
 
-/** Edge styles that route at right angles. */
-export const ORTHOGONAL_EDGE_STYLES: ReadonlySet<string> = new Set(['orthogonalEdgeStyle', 'elbowEdgeStyle', 'entityRelationEdgeStyle']);
+/** Edge styles that route at right angles: mxGraph's orthogonal, elbow, side-to-side, top-to-bottom, segment and
+ *  entity-relation connectors. */
+export const ORTHOGONAL_EDGE_STYLES: ReadonlySet<string> = new Set([
+  'orthogonalEdgeStyle', 'elbowEdgeStyle', 'sideToSideEdgeStyle', 'topToBottomEdgeStyle', 'segmentEdgeStyle', 'entityRelationEdgeStyle',
+]);
 
 /** Arrowheads by their style name, and whether a `Fill` of `0` makes one hollow. */
 const MARKERS_READ: Readonly<Record<string, { filled: MarkerRef; hollow?: MarkerRef }>> = {
