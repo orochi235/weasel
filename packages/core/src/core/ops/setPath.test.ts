@@ -37,3 +37,25 @@ describe('createSetPathOp', () => {
     expect(setPath).toHaveBeenCalledWith('a', same);
   });
 });
+
+describe('createSetPathOp: what a polygon path compares', () => {
+  const polygon = (extra: Record<string, unknown> = {}) => ({
+    kind: 'polygon' as const, commands: new Uint8Array([0, 1]), coords: new Float32Array([0, 0, 5, 5]), fillRule: 'nonzero', ...extra,
+  });
+  const fields = (path: unknown) => ({ path, closed: true, params: undefined });
+
+  it.each([
+    ['fillRule', { fillRule: 'evenodd' }],
+    ['openFill', { openFill: 'never' }],
+    ['corners', { corners: [{ shape: 'round', radius: 2 }, null] }],
+  ])('reports a change that touches only %s', (_name, extra) => {
+    const op = createSetPathOp({ id: 'a', from: fields(polygon()), to: fields(polygon(extra)) });
+    expect(op.apply({ setPath: vi.fn() })).toBeUndefined();
+  });
+
+  it('reports a no-op for an equal copy carrying corners', () => {
+    const corners = () => [{ shape: 'round', radius: 2 }, null];
+    const op = createSetPathOp({ id: 'a', from: fields(polygon({ corners: corners() })), to: fields(polygon({ corners: corners() })) });
+    expect(op.apply({ setPath: vi.fn() })).toBe(false);
+  });
+});
