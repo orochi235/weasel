@@ -38,7 +38,7 @@ function orderedIds(layers: readonly RenderLayer<unknown>[], order: readonly str
   const ids = layers.map((l) => l.id);
   if (!order) return ids;
   const known = new Set(ids);
-  return order.filter((id) => known.has(id));
+  return [...new Set(order)].filter((id) => known.has(id));
 }
 
 /** Every worker's animator as one: a call goes to each worker, which paints the layers it holds. */
