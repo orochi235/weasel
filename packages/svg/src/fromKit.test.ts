@@ -213,8 +213,11 @@ describe('svgLeafFromKit', () => {
     }, BOX) as SvgGroupNode;
     const [shadow, framed] = node.children as [SvgGroupNode, SvgGroupNode];
     expect(node.clip).toBeUndefined();
-    expect(shadow).toMatchObject({ kind: 'group', opacity: expect.closeTo(0.16) });
+    expect(shadow.kind).toBe('group');
     expect(shadow.children.length).toBeGreaterThan(1);
+    // Each layer at its own opacity, stacking to the shadow's full color inside.
+    const opacities = shadow.children.map((c) => (c as SvgGroupNode).opacity ?? 1);
+    expect(1 - opacities.reduce((left, a) => left * (1 - a), 1)).toBeCloseTo(1, 10);
     expect(framed.clip).toEqual(rect);
     expect(framed.children.map((c) => c.kind)).toEqual(['path', 'path', 'text']);
     const edge = framed.children[1] as SvgPathNode;

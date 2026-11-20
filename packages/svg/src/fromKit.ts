@@ -114,10 +114,14 @@ export function svgLeafFromKit(
     if (!resolveFill(data.background)) return clip.clip ? { kind: 'group', children: [text], ...clip } : text;
     const box = svgLeafFromKit({ path: boxPath, fill: data.background }, pose) as SvgPathNode;
     const frame = textFrameOf(data, pose);
-    const under: SvgNode[] = frame.shadow ? [{
+    const shadow = frame.shadow;
+    const under: SvgNode[] = shadow ? [{
       kind: 'group',
-      opacity: frame.shadow.opacity,
-      children: frame.shadow.paths.map((path) => svgLeafFromKit({ path, fill: solidFill(frame.shadow!.color) }, pose) as SvgPathNode),
+      children: shadow.paths.map((path, i): SvgNode => ({
+        kind: 'group',
+        opacity: shadow.alphas[i],
+        children: [svgLeafFromKit({ path, fill: solidFill(shadow.color) }, pose) as SvgPathNode],
+      })),
     }] : [];
     const over: SvgNode[] = frame.edge
       ? [svgLeafFromKit({ path: frame.edge.path, fill: null, stroke: { paint: { kind: 'solid', color: frame.edge.color }, width: frame.edge.width } }, pose) as SvgPathNode]
