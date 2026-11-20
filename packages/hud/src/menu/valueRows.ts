@@ -4,7 +4,7 @@ import { menuNumberCanStep, menuNumberText, type MenuColorEntry, type MenuEntry,
 import type { WidgetBounds } from '../widget';
 import type { MenuPanelMetrics } from '@weasel-js/ui-logic';
 import { clusterStops, selectionOf, shownEdit, type HudTextEdit } from './textEdit';
-import { typedLine } from './typedLine';
+import { typedLine, type TypedLine } from './typedLine';
 import { solidFill } from '@weasel-js/paint';
 
 /** A span across a panel, from its left edge. */
@@ -79,34 +79,53 @@ export function textCommands(
 /** The right edge typed text is set against in a row of panel width `w`, leaving room for a caret after it. */
 const typedRight = (w: number, m: MenuPanelMetrics) => w - m.padX - 3;
 
+/** Where a text row's value column starts, panel-local, and the caret typed text is scrolled to keep in it. */
+export interface TypedField { left: number; caret: number }
+
+/** `draft` laid out in a row of panel width `w`: set against the row's end, and with `field`, slid right just far
+ *  enough that the caret stays inside the value column. */
+function fieldLine(
+  draft: string, w: number, m: MenuPanelMetrics, measure: (text: string) => number, field?: TypedField,
+): TypedLine & { right: number } {
+  const right = typedRight(w, m);
+  const line = typedLine(draft, right, measure);
+  const slide = field === undefined ? 0 : Math.max(0, field.left - line.xAt(field.caret));
+  return slide === 0 ? { ...line, right } : { ...typedLine(draft, right + slide, measure), right: right + slide };
+}
+
 /** The code-point offset in `draft`, typed into a row of panel width `w`, at the grapheme cluster boundary nearest
- *  panel-local `x`, or undefined when `x` is left of the text, over the row's label. `measure` gives the width of a run of the row's text. */
-export function caretAt(draft: string, w: number, m: MenuPanelMetrics, x: number, measure: (text: string) => number): number | undefined {
-  const line = typedLine(draft, typedRight(w, m), measure);
-  if (x < line.left - m.padX) return undefined;
+ *  panel-local `x`, or undefined when `x` is left of the text, over the row's label. `measure` gives the width of a
+ *  run of the row's text; `field` is the row's value column and caret, as {@link typingCommands} draws them. */
+export function caretAt(
+  draft: string, w: number, m: MenuPanelMetrics, x: number, measure: (text: string) => number, field?: TypedField,
+): number | undefined {
+  const line = fieldLine(draft, w, m, measure, field);
+  if (x < Math.max(line.left, field?.left ?? -Infinity) - m.padX) return undefined;
   let best = 0;
   for (const i of clusterStops(draft)) if (Math.abs(line.xAt(i) - x) < Math.abs(line.xAt(best) - x)) best = i;
   return best;
 }
 
-/** Panel-local x of the caret `edit` draws, after any composition in progress. */
-export function caretX(edit: HudTextEdit, w: number, m: MenuPanelMetrics, measure: (text: string) => number): number {
+/** Panel-local x of the caret `edit` draws, after any composition in progress, in a row whose value column starts
+ *  at panel-local `left`. */
+export function caretX(edit: HudTextEdit, w: number, m: MenuPanelMetrics, measure: (text: string) => number, left?: number): number {
   const shown = shownEdit(edit).edit;
-  return typedLine(shown.draft, typedRight(w, m), measure).xAt(shown.caret) + 1;
+  return fieldLine(shown.draft, w, m, measure, left === undefined ? undefined : { left, caret: shown.caret }).xAt(shown.caret) + 1;
 }
 
 /** A text row being typed into: what is typed at the row's end, the selection behind it in `selection`, an input
  *  method's composition underlined in place of the selection, and a caret where `edit` has it. `measure` gives the
- *  width of a run of the row's text. */
+ *  width of a run of the row's text. With `left`, the panel-local start of the row's value column, the text scrolls
+ *  to keep the caret in that column and is clipped to it. */
 export function typingCommands(
   b: WidgetBounds, r: { y: number; height: number }, edit: HudTextEdit, m: MenuPanelMetrics, ink: ValueInk, selection: string,
-  measure: (text: string) => number,
+  measure: (text: string) => number, left?: number,
 ): DrawCommand[] {
   const { edit: shown, preedit } = shownEdit(edit);
-  const line = typedLine(shown.draft, typedRight(b.width, m), measure);
+  const line = fieldLine(shown.draft, b.width, m, measure, left === undefined ? undefined : { left, caret: shown.caret });
   const xAt = (i: number) => b.x + line.xAt(i);
   // Room after the last character, so a caret at the end clears it.
-  const right = b.x + typedRight(b.width, m);
+  const right = b.x + line.right;
   const half = ink.font.fontSize * 0.6;
   const cy = b.y + r.y + r.height / 2;
   const out: DrawCommand[] = [];
@@ -126,7 +145,9 @@ export function typingCommands(
   }
   const x = xAt(shown.caret) + 1;
   out.push(mark(`M ${x} ${cy - half} L ${x} ${cy + half}`, ink.fg));
-  return out;
+  if (left === undefined) return out;
+  const x0 = b.x + left;
+  return [{ kind: 'group', clip: { kind: 'rect', x: x0, y: b.y + r.y, width: b.x + b.width - x0, height: r.height }, children: out }];
 }
 
 /** A swatch of `color` in a row's icon column, outlined in `edge`; `width` 2 marks the color a picker holds. */

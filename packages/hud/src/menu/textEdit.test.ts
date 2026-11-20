@@ -176,7 +176,9 @@ const ctx = {
 } as never as HudDrawCtx;
 const b = { x: 100, y: 50, width: 240, height: 40 };
 const measure = (t: string) => Array.from(t).length * 7;
-const draw = (edit: HudTextEdit) => panelCommands(ctx, b, [entry], null, undefined, { ...OPENED_VALUES, editing: edit, measure });
+/** The commands, with every group's children in its place. */
+const flat = (cmds: readonly DrawCommand[]): DrawCommand[] => cmds.flatMap((c) => (c.kind === 'group' ? flat(c.children) : [c]));
+const draw = (edit: HudTextEdit) => flat(panelCommands(ctx, b, [entry], null, undefined, { ...OPENED_VALUES, editing: edit, measure }));
 /** The x of the caret: the last stroke-only path, a vertical line. */
 const caretX = (cmds: readonly DrawCommand[]): number => {
   const c = cmds.filter((x) => x.kind === 'path' && x.stroke && !x.fill).at(-1)!;
@@ -205,5 +207,23 @@ describe('panelCommands: a text row being typed into', () => {
     const underline = (strokes.at(-2) as { path: { coords: ArrayLike<number> } }).path.coords;
     expect([underline[0], underline[2]]).toEqual([right - 4 * 7, right - 7]);
     expect(cmds.some((c) => JSON.stringify(c).includes('#246'))).toBe(false);
+  });
+
+  it('keeps typed text longer than its row inside the value column: scrolled to the caret, and clipped', () => {
+    const long = 'x'.repeat(40);
+    const clipOf = (edit: HudTextEdit) => {
+      const g = panelCommands(ctx, b, [entry], null, undefined, { ...OPENED_VALUES, editing: edit, measure })
+        .find((c) => c.kind === 'group' && c.clip) as { clip: { kind: string; x: number; width: number } } | undefined;
+      return g?.clip;
+    };
+    const atEnd = startEdit(entry, long);
+    const clip = clipOf(atEnd)!;
+    expect(clip.kind).toBe('rect');
+    expect(clip.x).toBeGreaterThan(b.x + m.padX + 7 * Array.from(entry.label).length);
+    expect(clip.x + clip.width).toBe(b.x + b.width);
+    expect(caretX(draw(atEnd))).toBe(right + 1);
+    const atStart = { ...atEnd, caret: 0, anchor: 0 };
+    expect(caretX(draw(atStart))).toBe(clip.x + 1);
+    expect(clipOf(startEdit(entry, 'ab'))).toBeDefined();
   });
 });

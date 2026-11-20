@@ -162,7 +162,7 @@ export function panelCommands(
     if (e.kind === 'text') {
       const edit = values.editing?.entry === e ? values.editing : undefined;
       out.push(...(edit
-        ? typingCommands(b, r, edit, m, ink, selection, (s) => measure(s, m.font.size, ctx.defaultFont))
+        ? typingCommands(b, r, edit, m, ink, selection, (s) => measure(s, m.font.size, ctx.defaultFont), box.trailing?.x)
         : textCommands(b, r, values.text(e), m, ink, e.disabled ? 'off' : 'live')));
     }
     const end = box.trailing;
