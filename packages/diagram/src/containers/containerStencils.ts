@@ -145,7 +145,8 @@ function releasePlan(scene: AnyScene, id: string) {
   const restacked = beside === node.id ? [] : [beside, titleIdOf(beside), ...membersOf(beside)];
   if (restacked.some((id) => scene.isLocked(id as NodeId))) return null;
   const parent = scene.get(beside)!.parent;
-  const index = (parent === null ? scene.roots : scene.childrenOf(parent)).indexOf(beside);
+  // A lane's members go just past the pool, which stays and would draw over them; a container's take its place.
+  const index = (parent === null ? scene.roots : scene.childrenOf(parent)).indexOf(beside) + (beside === node.id ? 0 : 1);
   // Read where each draws before the first move: it is stored in a frame that is about to go.
   const frame = scenePoseFrame(scene);
   const locals = members.map((m) => frame.localUnder(parent, frame.world(m)));
