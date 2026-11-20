@@ -114,6 +114,16 @@ describe('a chart drawn from a notation type\'s stencils writes that notation, a
     const pool = graph(back).data.containers![0]!;
     expect(pool.lanes?.map((l) => [l.label, l.members?.length ?? 0])).toEqual([['To do', 1], ['In progress', 0], ['Done', 1]]);
   });
+  it('class', () => {
+    const { text, back } = drawn('umlClass', [
+      { stencil: 'uml-interface', at: { x: 100, y: 100 } },
+      { stencil: 'uml-abstract', at: { x: 400, y: 100 } },
+    ]);
+    expect(text).toMatch(/^classDiagram/m);
+    expect(text).toMatch(/\["Interface"\] \{\n\s+<<interface>>\n\s+\+ run\(\) void\n\s+\+ stop\(\) void\n\s+\}/);
+    expect(labels(graph(back).data.nodes[0]!).slice(0, 2)).toEqual(['<<interface>>', 'Interface']);
+  });
+
   it('ER', () => {
     const { text, back } = drawn('erd', [{ stencil: 'erd-entity', at: { x: 100, y: 100 } }]);
     expect(text).toMatch(/^erDiagram/m);

@@ -14,7 +14,8 @@ const compartments = (name: readonly Row[], attributes: readonly Row[], operatio
   verticalAlign: 'top',
 });
 
-/** UML's class-diagram and use-case symbols. */
+/** UML's class-diagram and use-case symbols. A stereotype is spelled as Mermaid's class notation spells it, `<<interface>>`,
+ *  so it survives its writer. */
 export const UML_STENCILS: readonly DiagramStencil[] = [
   {
     id: 'uml-class', label: 'Class', outline: 'rect', size: { width: 160, height: 124 }, icon: icon('umlClass'),
@@ -27,7 +28,7 @@ export const UML_STENCILS: readonly DiagramStencil[] = [
   {
     id: 'uml-interface', label: 'Interface', outline: 'rect', size: { width: 160, height: 96 }, icon: icon('umlInterface'),
     ...compartments(
-      [{ kind: 'label', text: '«interface»' }, { kind: 'label', text: 'Interface', style: { bold: true } }],
+      [{ kind: 'label', text: '<<interface>>' }, { kind: 'label', text: 'Interface', style: { bold: true } }],
       [],
       [member('+ run()', 'void'), member('+ stop()', 'void')],
     ),
