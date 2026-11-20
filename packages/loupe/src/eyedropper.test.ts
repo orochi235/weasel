@@ -69,6 +69,24 @@ describe('eyedropper model', () => {
     expect(onPick).toHaveBeenCalledWith('#000003');
   });
 
+  it('settles on nothing when the latest hover\'s read fails', async () => {
+    const answers: Array<{ resolve: (hex: string) => void; reject: (e: Error) => void }> = [];
+    const sample = () => new Promise<string>((resolve, reject) => answers.push({ resolve, reject }));
+    const onColorChange = vi.fn();
+    const drop = createEyedropperModel({ sample, onColorChange });
+    drop.hover(at(1, 1));
+    answers[0].resolve('#ff0000');
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(drop.color).toBe('#ff0000');
+    drop.hover(at(2, 2));
+    answers[1].reject(new Error('device lost'));
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(drop.color).toBeNull();
+    expect(onColorChange).toHaveBeenLastCalledWith(null);
+  });
+
   it('does nothing once disposed', () => {
     const onPick = vi.fn();
     const drop = createEyedropperModel({ sample: red, onPick });

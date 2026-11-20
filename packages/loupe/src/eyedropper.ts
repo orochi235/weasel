@@ -15,7 +15,7 @@ export interface EyedropperModelOptions {
    */
   loupe?: LoupeModel;
   /** Called with the color under the pointer whenever it changes; `null`
-   *  once the pointer is over nothing, or has left. */
+   *  once the pointer is over nothing, has left, or its read failed. */
   onColorChange?: (hex: string | null) => void;
   /** Called when a pick lands on a color. Where it goes is the consumer's. */
   onPick?: (hex: string) => void;
@@ -67,9 +67,11 @@ export function createEyedropperModel(opts: EyedropperModelOptions): EyedropperM
       const mine = hovers.take();
       const got = opts.sample(p);
       if (!isPromise(got)) { settle(got); return; }
-      void got.then((hex) => {
-        if (!disposed && mine()) settle(hex);
-      }, () => undefined);
+      void got.then(
+        (hex) => { if (!disposed && mine()) settle(hex); },
+        // A read that failed cannot say what is there, and the last point's color is not this one's.
+        () => { if (!disposed && mine()) settle(null); },
+      );
     },
 
     leave() {
