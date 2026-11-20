@@ -23,6 +23,7 @@ describe('isEditableTarget', () => {
     expect(isEditableTarget(el('<textarea></textarea>'))).toBe(true);
     expect(isEditableTarget(el('<div contenteditable="true"></div>'))).toBe(true);
     expect(isEditableTarget(el('<div contenteditable></div>'))).toBe(true);
+    expect(isEditableTarget(el('<div contenteditable="plaintext-only"></div>'))).toBe(true);
   });
 
   it.each(['text', 'search', 'email', 'url', 'tel', 'password', 'number', 'date', 'datetime-local', 'month', 'week', 'time'])(

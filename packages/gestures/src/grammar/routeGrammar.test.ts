@@ -196,6 +196,9 @@ describe('parseRoute v3', () => {
   it('closes the arg slot at a paren that ends the arg, so ")" is a key', () => {
     expect(parseRoute('[*:*] keyDown()) +shift').arg).toBe(')');
     expect(parseRoute('[*:*] keyDown(()').arg).toBe('(');
+    expect(parseRoute('[*:*] keyDown()?shift)').arg).toBe(')?shift');
+    expect(parseRoute('[*:*] keyDown()?shift) +mod').arg).toBe(')?shift');
+    expect(() => parseRoute('[*:*] keyDown() +shift')).toThrow(/empty arg/);
     expect(parseRoute('[*:*] wheel(up) => kind:a').arg).toBe('up');
   });
 

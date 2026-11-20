@@ -89,4 +89,10 @@ describe('keySpecRoute', () => {
     expect(keySpecRoute({ kind: 'key', key: 'z', mods: { shift: 'optional', mod: true } }))
       .toBe('[*:*] keyDown(z?shift) +mod');
   });
+
+  it('writes and reads back ")" with an optional modifier', () => {
+    const spec: KeySpec = { kind: 'key', key: ')', mods: { shift: 'optional' } };
+    expect(keySpecRoute(spec)).toBe('[*:*] keyDown()?shift)');
+    expect(bindingSpec(keySpecRoute(spec)!)).toEqual(spec);
+  });
 });

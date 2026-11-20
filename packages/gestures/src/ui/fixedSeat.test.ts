@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fixedSeat, nearestPortalHost } from './fixedSeat';
 
-afterEach(() => { document.body.innerHTML = ''; });
+afterEach(() => { document.body.innerHTML = ''; vi.restoreAllMocks(); });
 
 function mount(html: string): HTMLElement {
   document.body.innerHTML = html;
@@ -59,5 +59,47 @@ describe('fixedSeat', () => {
       document.body.style.transform = '';
       delete (document.body as Partial<HTMLElement>).getBoundingClientRect;
     }
+  });
+
+  // jsdom's computed style drops these properties, so the style is stubbed for the one ancestor.
+  it.each([
+    ['scale', '1.5'], ['translate', '4px'], ['rotate', '10deg'],
+    ['willChange', 'opacity, transform'], ['willChange', 'filter'],
+    ['containerType', 'inline-size'], ['containerType', 'size'], ['contentVisibility', 'auto'],
+  ])("answers the corner of an ancestor whose %s is %s, which contains its fixed descendants", (prop, value) => {
+    const from = mount('<div id="a"><div data-wzl-theme="x" id="h"><i id="from"></i></div></div>');
+    const outer = document.getElementById('a')!;
+    outer.getBoundingClientRect = () => DOMRect.fromRect({ x: 12, y: 7 });
+    const real = window.getComputedStyle.bind(window);
+    vi.spyOn(window, 'getComputedStyle').mockImplementation((el) => {
+      const cs = real(el);
+      return el === outer ? ({ ...cs, transform: 'none', [prop]: value } as CSSStyleDeclaration) : cs;
+    });
+    expect(fixedSeat(from)).toMatchObject({ left: 12, top: 7 });
+  });
+
+  it.each([['willChange', 'opacity'], ['containerType', 'normal'], ['contentVisibility', 'visible']])(
+    'seats at the viewport origin past an ancestor whose %s is %s',
+    (prop, value) => {
+      const from = mount('<div id="a"><div data-wzl-theme="x" id="h"><i id="from"></i></div></div>');
+      const outer = document.getElementById('a')!;
+      const real = window.getComputedStyle.bind(window);
+      vi.spyOn(window, 'getComputedStyle').mockImplementation((el) => {
+        const cs = real(el);
+        return el === outer ? ({ ...cs, [prop]: value } as CSSStyleDeclaration) : cs;
+      });
+      expect(fixedSeat(from)).toMatchObject({ left: 0, top: 0 });
+    },
+  );
+
+  it("answers the containing block's padding corner, inside its border, at its scale", () => {
+    const from = mount('<div data-wzl-theme="x" id="h" style="transform: scale(2)"><i id="from"></i></div>');
+    const host = document.getElementById('h')!;
+    Object.defineProperty(host, 'offsetWidth', { value: 100 });
+    Object.defineProperty(host, 'offsetHeight', { value: 50 });
+    Object.defineProperty(host, 'clientLeft', { value: 2 });
+    Object.defineProperty(host, 'clientTop', { value: 3 });
+    host.getBoundingClientRect = () => DOMRect.fromRect({ x: 40, y: 25, width: 200, height: 100 });
+    expect(fixedSeat(from)).toEqual({ host, left: 44, top: 31, scale: { x: 2, y: 2 } });
   });
 });

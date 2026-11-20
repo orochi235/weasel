@@ -15,8 +15,8 @@ import { specKindForRouteGesture } from './specKinds';
  * paste arg is a `|`-separated MIME list. A `drag` arg is the button, and its
  * `*` takes either button rather than being dropped.
  *
- * Throws on a route no spec can express: `keyUp`, a key or finger-count
- * wildcard, or a target that is not a `TargetSpec` form.
+ * Throws on a route no spec can express: `keyUp`, a key, finger-count or
+ * hover-motion wildcard, or a target that is not a `TargetSpec` form.
  */
 export function routeToSpec(parsed: ParsedRoute): GestureSpec {
   const fail = (why: string): never => {
@@ -56,6 +56,8 @@ export function routeToSpec(parsed: ParsedRoute): GestureSpec {
     case undefined:
       return fail(`${parsed.gesture} has no GestureSpec kind`);
     case 'hover':
+      // A hover spec is a move or a leave, never both, so a wildcard has nothing to mean.
+      if (parsed.arg === '*') return fail('a hover spec moves or leaves, so it needs a concrete motion');
       return withMods({
         kind,
         ...(arg === 'leave' ? { motion: 'leave' as const } : {}),

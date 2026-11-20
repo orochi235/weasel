@@ -24,15 +24,15 @@ export function isEditableTarget(target: EventTarget | null): boolean {
   if (tag === 'INPUT') return TEXT_INPUT_TYPES.has((target as HTMLInputElement).type);
   if ((target as HTMLElement).isContentEditable) return true;
   const ce = target.getAttribute('contenteditable');
-  return ce === 'true' || ce === '';
+  return ce === 'true' || ce === '' || ce === 'plaintext-only';
 }
 
 const ACTIVATED_BY_KEY = [
   'button', 'a[href]', 'summary', 'select',
   'input[type="button"]', 'input[type="submit"]', 'input[type="reset"]',
   'input[type="checkbox"]', 'input[type="radio"]',
-  '[role="button"]', '[role="link"]', '[role="checkbox"]', '[role="switch"]',
-  '[role="menuitem"]', '[role="tab"]', '[role="option"]',
+  '[role="button"]', '[role="link"]', '[role="checkbox"]', '[role="switch"]', '[role="radio"]',
+  '[role="menuitem"]', '[role="menuitemcheckbox"]', '[role="menuitemradio"]', '[role="tab"]', '[role="option"]',
 ].join(', ');
 
 /**
