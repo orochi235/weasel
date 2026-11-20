@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  CAPTURE_CLOSED,
   type CaptureBrowser,
   CONTEXT_CAP,
   captureAvailability,
@@ -403,5 +404,19 @@ describe('launchCaptureBrowser', () => {
     fake.pending[QUEUE_CAP]!();
     await expect(next).resolves.toEqual(expect.any(Buffer));
     await browser.close();
+  });
+
+  it('fails the captures still queued once closed, and every capture after, without starting Chromium again', async () => {
+    const fake = fakePlaywright({ hold: true });
+    const browser = await launched(fake.load);
+    const first = browser.capture('http://x/', payload);
+    const queued = browser.capture('http://x/', payload);
+    await vi.waitFor(() => expect(fake.pending).toHaveLength(1));
+    await browser.close();
+    fake.pending[0]!();
+    await first;
+    await expect(queued).rejects.toThrow(CAPTURE_CLOSED);
+    await expect(browser.capture('http://x/', payload)).rejects.toThrow(CAPTURE_CLOSED);
+    expect(fake.launches).toHaveLength(1);
   });
 });

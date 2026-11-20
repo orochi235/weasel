@@ -6,7 +6,7 @@ import { type CapturePayload, messageOf } from './payload.ts';
 /** Headless Chromium, taking screenshots of capture pages one at a time. */
 export interface CaptureBrowser {
   /** A PNG of `url` rendering `payload`, loading nothing but `url`'s own origin and `allow`. Rejects with
-   *  `QUEUE_FULL` while `QUEUE_CAP` captures are outstanding. */
+   *  `QUEUE_FULL` while `QUEUE_CAP` captures are outstanding, and with `CAPTURE_CLOSED` once closed. */
   capture(url: string, payload: CapturePayload, allow?: readonly string[]): Promise<Buffer>;
   close(): Promise<void>;
 }
@@ -18,6 +18,7 @@ export const QUEUE_CAP = 8;
 /** How many browser contexts stay open, the least recently used closed past it. */
 export const CONTEXT_CAP = 4;
 export const QUEUE_FULL = 'capture queue is full';
+export const CAPTURE_CLOSED = 'capture browser is closed';
 export const INSTALL_PLAYWRIGHT = 'install playwright';
 export const INSTALL_CHROMIUM = 'install Chromium for Playwright: npx playwright install chromium';
 
@@ -119,6 +120,7 @@ export async function launchCaptureBrowser(
   let idle: ReturnType<typeof setTimeout> | undefined;
   let outstanding = 0;
   let tail: Promise<unknown> = Promise.resolve();
+  let closed = false;
 
   const shut = async () => {
     clearTimeout(idle);
@@ -143,7 +145,10 @@ export async function launchCaptureBrowser(
     launching.then((b) => b.on('disconnected', drop), drop);
     return launching;
   };
-  const browser = (): Promise<Browser> => chromium ?? adopt(playwright.chromium.launch({ headless: true }));
+  const browser = (): Promise<Browser> => {
+    if (closed) return Promise.reject(new Error(CAPTURE_CLOSED));
+    return chromium ?? adopt(playwright.chromium.launch({ headless: true }));
+  };
   /**
    * One context per device pixel ratio, since a context's scale factor is fixed when it is made, and per whether the
    * dev server is served over https: only then are certificate errors ignored, for its self-signed certificate.
@@ -211,6 +216,7 @@ export async function launchCaptureBrowser(
   arm();
   return {
     capture(url, payload, allow = []) {
+      if (closed) return Promise.reject(new Error(CAPTURE_CLOSED));
       if (outstanding >= QUEUE_CAP) return Promise.reject(new Error(QUEUE_FULL));
       outstanding += 1;
       clearTimeout(idle);
@@ -218,9 +224,12 @@ export async function launchCaptureBrowser(
       tail = run.catch(() => {});
       return run.finally(() => {
         outstanding -= 1;
-        if (outstanding === 0) arm();
+        if (outstanding === 0 && !closed) arm();
       });
     },
-    close: shut,
+    close() {
+      closed = true;
+      return shut();
+    },
   };
 }
