@@ -124,17 +124,6 @@ export function Workspace({
     [nodeIds, items, reorderable, tilePanels, lightbox, expandOnDoubleClick],
   );
 
-  const grid = (
-    <Container
-      parentId={ZONE_ID}
-      chrome={chrome}
-      className="lk-workspace windease-zone"
-      affordances={resizable}
-      viewport={viewport}
-      onChildOrderChange={reorderable ? commitOrder : undefined}
-    />
-  );
-
   return (
     <Provider store={store}>
       <StrategyRegistryProvider strategies={STRATEGIES}>
@@ -142,7 +131,17 @@ export function Workspace({
             remount the grid. The floating layer insets against this box; without
             one it insets against the page and lands over the lab header. */}
         <div className="lk-workspace-host">
-          {reorderable ? <DragProvider>{grid}</DragProvider> : grid}
+          {/* Mounted whether or not tiles reorder, so turning it on cannot remount the grid. */}
+          <DragProvider>
+            <Container
+              parentId={ZONE_ID}
+              chrome={chrome}
+              className="lk-workspace windease-zone"
+              affordances={resizable}
+              viewport={viewport}
+              onChildOrderChange={reorderable ? commitOrder : undefined}
+            />
+          </DragProvider>
           <FloatingPanels panels={floatPanels} />
         </div>
       </StrategyRegistryProvider>
