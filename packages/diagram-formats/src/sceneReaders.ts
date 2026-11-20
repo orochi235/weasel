@@ -12,11 +12,11 @@ import {
   type DiagramRouter, type DiagramTheme, type EdgeStyle, type NodeStyle, type BodyDivider, type BodyLayout, type HeaderBand, type Row,
 } from '@weasel-js/diagram';
 
-/** A scene node as the readers see it. */
+/** A scene node as the readers see it. The formats are 2D documents, so its pose is a rect. */
 export interface ReadNode {
   id: string;
   parent: string | null;
-  pose: unknown;
+  pose: RectPose;
   data: unknown;
   dependsOn?: readonly string[] | 'children';
 }
@@ -97,7 +97,7 @@ function headerRow(data: Data, band: HeaderBand, aside: string | undefined, ownS
 export function readShape(scene: ReadScene, node: ReadNode, page: Vec2, theme: DiagramTheme): DataNode {
   const trait = traitOf(node)!;
   const data = dataOf(node);
-  const pose = node.pose as RectPose;
+  const pose = node.pose;
   const texts = scene.childrenOf(node.id as never).map((id) => scene.get(id as never)!)
     .filter((c) => typeof dataOf(c).text === 'string' && typeof dataOf(c).bodyRow === 'number');
   const aside = texts.find((c) => dataOf(c).bodyAside === true);
@@ -234,7 +234,7 @@ export function readRegion(scene: ReadScene, node: ReadNode, page: Vec2, theme: 
   const role = container.role === 'pool' ? 'pool' : 'container';
   const style = trait.style as string | undefined;
   const themed = dataRegionStyle({ role, style }, theme);
-  const pose = node.pose as RectPose;
+  const pose = node.pose;
   const members = role === 'container' ? membersOf(scene, node.id) : [];
   const axis = poolAxisOf(container);
   return {
@@ -254,9 +254,9 @@ function lanesOf(scene: ReadScene, poolId: string, axis: 'x' | 'y', theme: Diagr
   const start = (p: RectPose) => (axis === 'y' ? p.y : p.x);
   const lanes = scene.childrenOf(poolId as never).map((id) => scene.get(id as never)!)
     .filter((n) => diagramContainerOf(n)?.role === 'lane')
-    .sort((p, q) => start(p.pose as RectPose) - start(q.pose as RectPose));
+    .sort((p, q) => start(p.pose) - start(q.pose));
   return lanes.map((lane, i) => {
-    const pose = lane.pose as RectPose;
+    const pose = lane.pose;
     const members = membersOf(scene, lane.id);
     return {
       id: lane.id,
