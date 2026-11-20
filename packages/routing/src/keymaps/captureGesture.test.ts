@@ -89,6 +89,22 @@ describe('captureGesture', () => {
     expect(menu.defaultPrevented).toBe(true);
   });
 
+  it('captures a middle or secondary drag with its button', async () => {
+    for (const [code, button] of [[1, 'middle'], [2, 'secondary']] as const) {
+      const got = captureGesture(window, { kinds: ['drag'] });
+      fire('pointerdown', { button: code, clientX: 0, clientY: 0 });
+      fire('pointermove', { button: code, clientX: DRAG_THRESHOLD_PX + 1, clientY: 0 });
+      fire('pointerup', { button: code, clientX: DRAG_THRESHOLD_PX + 1, clientY: 0 });
+      expect(await got).toEqual({ kind: 'drag', button });
+    }
+  });
+
+  it("reads a pen's eraser as the primary button, as the dispatcher does", async () => {
+    const got = captureGesture(window, { kinds: ['click'] });
+    clickAt(0, 0, { pointerType: 'pen', button: 5 });
+    expect(await got).toEqual({ kind: 'click' });
+  });
+
   it('takes every event of what it captures from the page', async () => {
     const heard: string[] = [];
     const listen = (e: Event): void => { heard.push(e.type); };

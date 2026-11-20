@@ -31,7 +31,8 @@ const MODIFIER_KEYS: ReadonlySet<string> = new Set(['Shift', 'Control', 'Alt', '
  * The next input on `target` of one of `opts.kinds`, as a gesture spec, for a
  * binding editor: its modifiers with the platform's primary one as `mod`. A
  * press is told a click or a drag by the dispatcher's own recognizer, at its
- * drag threshold; a click is held back for a double click only when both are
+ * drag threshold, and a middle or secondary drag keeps its `button`; a click
+ * is held back for a double click only when both are
  * asked for. A bare modifier key is waited past. Escape, or an abort, resolves
  * `null`. What it takes is `preventDefault`ed and stopped, the click a browser
  * follows a press with included, so nothing else acts on it. The pointer is

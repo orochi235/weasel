@@ -1,6 +1,6 @@
 import {
-  createPointerRecognizer, DOUBLE_CLICK_MAX_MS,
-  type EventModifiers, type InputEvent, type PointerSample, type RecognizerClock,
+  createPointerRecognizer, DOUBLE_CLICK_MAX_MS, pressButtonOf,
+  type DragSpec, type InputEvent, type PointerDownEvent, type PointerSample, type RecognizerClock,
 } from '@weasel-js/gestures';
 import { after } from '@weasel-js/registry';
 import { specOf, take, type CaptureKind, type CapturedSpec } from './captureSpec';
@@ -40,13 +40,13 @@ export function capturePointer(
   done: (spec: CapturedSpec) => void,
 ): () => void {
   let cancelClick = (): void => {};
-  let dragMods: EventModifiers | null = null;
+  let dragPress: PointerDownEvent | null = null;
 
   const recognized = (ev: InputEvent): 'handled' | 'unhandled' => {
     switch (ev.kind) {
       case 'pointerdown':
         // Without `stage` it is the press held back until it crossed the drag threshold.
-        if (!('stage' in ev && ev.stage === 'press')) dragMods = ev;
+        if (!('stage' in ev && ev.stage === 'press')) dragPress = ev;
         return 'unhandled';
       case 'click': {
         if (!kinds.has('click')) return 'unhandled';
@@ -87,14 +87,14 @@ export function capturePointer(
   listen('pointerdown', (e) => {
     const p = e as PointerEvent;
     take(p);
-    // Only the primary button presses as the dispatcher sees it; a secondary
-    // one reaches a binding as its `contextmenu`.
-    if ((p.button ?? 0) !== 0) return;
+    // Read as the dispatcher reads it: a pen's eraser is primary, and back and forward are the browser's.
+    const button = pressButtonOf(p);
+    if (!button) return;
     // An element hears a held pointer's moves and release only while it captures them.
     if (target instanceof Element) {
       try { target.setPointerCapture(p.pointerId); } catch { /* the pointer is already gone */ }
     }
-    recognizer.press({ ...sampleOf(p), x: p.clientX, y: p.clientY, pointerType: p.pointerType });
+    recognizer.press({ ...sampleOf(p), x: p.clientX, y: p.clientY, pointerType: p.pointerType, pointerButton: button });
   });
   listen('pointermove', (e) => {
     const p = held(e);
@@ -103,15 +103,17 @@ export function capturePointer(
   listen('pointerup', (e) => {
     const p = held(e);
     if (!p) return;
-    const drag = dragMods;
-    dragMods = null;
+    const drag = dragPress;
+    dragPress = null;
     recognizer.release(sampleOf(p));
-    if (drag && kinds.has('drag')) done(specOf('drag', drag, apple));
+    if (!drag || !kinds.has('drag')) return;
+    const spec: DragSpec = specOf('drag', drag, apple);
+    done(drag.pointerButton && drag.pointerButton !== 'primary' ? { ...spec, button: drag.pointerButton } : spec);
   });
   listen('pointercancel', (e) => {
     const p = held(e);
     if (!p) return;
-    dragMods = null;
+    dragPress = null;
     recognizer.cancel(p.pointerId);
   });
   for (const type of TRAILING) {
