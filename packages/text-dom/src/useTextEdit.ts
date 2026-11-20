@@ -38,7 +38,7 @@ export function useTextEdit(
   // `TextStyle`, and is called from event handlers rather than from render.
   const editingIdRef = useLatest(editingId);
   const overlayRef = useRef<HTMLDivElement | null>(null);
-  const { nodeStyle, nodeStyleRef, baseRef, holdNodeStyle, styleOf, restyleNode } = useHeldNodeStyle(optsRef);
+  const { nodeStyle, nodeStyleRef, baseRef, holdNodeStyle, styleOf, restyleNode, placeRef } = useHeldNodeStyle(optsRef);
   const follow = useOverlayFollow();
   const initialCaretRef = useRef<number | 'all'>('all');
   const draftRef = useRef<EditDraft | null>(null);
@@ -47,13 +47,8 @@ export function useTextEdit(
   const { selection, rangeStyle, selectionRef, publishRange, syncSelection, clearSelection } =
     usePublishedRange(overlayRef, pendingAtRef, dropPending);
 
-
-  // The draft is dropped before the session ends: `onEnd` runs from inside the call, and a blur it causes
-  // reaches `commit` while the overlay is still mounted.
-  const cancelEdit = useCallback(() => {
-    draftRef.current = null;
-    setEditingId(null);
-  }, [setEditingId]);
+  // Each way out drops the draft first: a blur `onEnd` causes reaches `commit` while the overlay is still mounted.
+  const cancelEdit = useCallback(() => { draftRef.current = null; setEditingId(null); }, [setEditingId]);
 
   const commit = useCallback(() => {
     const id = editingId;
@@ -96,17 +91,18 @@ export function useTextEdit(
 
     const style = resolveTextStyle(getStyle(editingId), getPaint?.(editingId));
     baseRef.current = style;
-    const runs = optsRef.current.getRuns?.(editingId);
-    const node = { text: getText(editingId), runs, style };
+    const node = { text: getText(editingId), runs: optsRef.current.getRuns?.(editingId), style };
     const frame = {
       pose: () => optsRef.current.getScreenPose(editingId),
       clip: () => optsRef.current.getClipRect?.() ?? null,
+      style: () => baseRef.current,
     };
     const holdFor = optsRef.current.fontHold ?? TEXT_EDIT_FONT_HOLD;
     const opened = openEditOverlay(container, node, frame, holdFor, initialCaretRef.current);
     const { overlay, boxes, draft, place } = opened;
     draftRef.current = draft;
     overlayRef.current = overlay;
+    placeRef.current = place;
     // Publish now rather than on the `selectionchange` task — a control mounted
     // alongside the editor would otherwise render one frame with no selection.
     syncSelection();
@@ -135,6 +131,7 @@ export function useTextEdit(
     return () => {
       stopFollowing();
       stopListening();
+      placeRef.current = () => {};
       opened.remove();
       overlayRef.current = null;
       historyRef.current = null;
@@ -143,7 +140,7 @@ export function useTextEdit(
     };
   }, [editingId, opts.container, optsRef, commit, cancelEdit, syncSelection, clearSelection,
       follow, toggleStyle, dropPending, publishRange, holdNodeStyle, sendDraft, restyleNode, pendingRef,
-      selectionRef, baseRef, nodeStyleRef]);
+      selectionRef, baseRef, nodeStyleRef, placeRef]);
 
   return {
     editingId, startEdit, cancelEdit, commitEdit: commit, isEditing, nodeStyle,
