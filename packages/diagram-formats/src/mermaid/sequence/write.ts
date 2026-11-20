@@ -58,27 +58,43 @@ class SequenceWriter {
     return `${create ? 'create ' : ''}${head}${label}`;
   }
 
+  /** Declares the participants, each box's members together where its first one stands. */
   participants(created: ReadonlySet<string>): void {
-    const boxOf = new Map<string, NonNullable<SequenceData['boxes']>[number]>();
+    type Box = NonNullable<SequenceData['boxes']>[number];
+    const boxOf = new Map<string, Box>();
     for (const b of this.data.boxes ?? []) for (const m of b.members) if (!boxOf.has(m)) boxOf.set(m, b);
-    let open: string | null = null;
+    const declared = new Map(this.data.participants.map((p) => [p.id, p]));
+    const named = new Set(this.ids.keys());
+    for (const [m] of boxOf) if (created.has(m)) this.warnings.add('Participants a step creates were written outside their boxes.');
+    for (const [m] of boxOf) if (!named.has(m)) this.warnings.add('Box members that name no participant were dropped.');
+    const kept = (id: string) => named.has(id) && !created.has(id);
+    const written: string[] = [];
+    const done = new Set<string>();
+    const declare = (p: SeqParticipant, depth: number) => {
+      this.out(depth, this.declaration(p, false));
+      written.push(p.id);
+    };
     for (const p of this.data.participants) {
       if (created.has(p.id)) continue;
       const box = boxOf.get(p.id);
-      if (open !== null && open !== box?.id) {
-        this.out(1, 'end');
-        open = null;
+      if (box === undefined) {
+        declare(p, 1);
+        continue;
       }
-      if (box !== undefined && open !== box.id) {
-        if (box.colors !== undefined && Object.keys(box.colors).some((k) => k !== 'fill')) this.warnings.add('Box colors other than the fill were dropped.');
-        const label = box.label === undefined ? undefined : mermaidSeqText(box.label);
-        const color = box.colors?.fill ?? (label !== undefined && leadingColor(label) !== undefined ? 'transparent' : undefined);
-        this.out(1, ['box', color, label].filter((s) => s !== undefined).join(' '));
-        open = box.id;
-      }
-      this.out(open === null ? 1 : 2, this.declaration(p, false));
+      if (done.has(box.id)) continue;
+      done.add(box.id);
+      if (box.colors !== undefined && Object.keys(box.colors).some((k) => k !== 'fill')) this.warnings.add('Box colors other than the fill were dropped.');
+      const label = box.label === undefined ? undefined : mermaidSeqText(box.label);
+      const color = box.colors?.fill ?? (label !== undefined && leadingColor(label) !== undefined ? 'transparent' : undefined);
+      this.out(1, ['box', color, label].filter((t) => t !== undefined).join(' '));
+      const members = new Set(box.members.filter((m) => boxOf.get(m) === box && kept(m)));
+      for (const q of this.data.participants) if (members.has(q.id)) declare(q, 2);
+      for (const m of members) if (!declared.has(m)) declare({ id: m }, 2);
+      this.out(1, 'end');
     }
-    if (open !== null) this.out(1, 'end');
+    const order = this.data.participants.map((p) => p.id).filter((id) => !created.has(id));
+    const moved = written.filter((id) => declared.has(id));
+    if (order.some((id, k) => moved[k] !== id)) this.warnings.add('Mermaid declares a box\'s members together; members declared apart were moved beside each other.');
   }
 
   steps(steps: readonly SeqStep[], depth: number): void {
@@ -137,7 +153,9 @@ export function writeMermaidSequence(page: SequencePage): ExportResult {
   const w = new SequenceWriter(page.data);
   // A colon after `title` is read as part of the keyword, so one opening the name is spelled out.
   if (page.name !== undefined) w.out(1, `title ${mermaidSeqText(page.name.trim()).replace(/^:/, '#58;')}`);
-  if (page.data.autonumber !== undefined) w.out(1, page.data.autonumber === 1 ? 'autonumber' : `autonumber ${page.data.autonumber}`);
+  const n = page.data.autonumber;
+  if (n !== undefined && !Number.isFinite(n)) w.warnings.add('Mermaid numbers messages from a number; an autonumber start that is not one was written as 1.');
+  if (n !== undefined) w.out(1, n === 1 || !Number.isFinite(n) ? 'autonumber' : `autonumber ${n}`);
   w.participants(createdIn(page.data.steps));
   w.steps(page.data.steps, 1);
   return { text: `${w.lines.join('\n')}\n`, warnings: w.warnings.all() };
