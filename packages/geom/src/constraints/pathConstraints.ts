@@ -75,7 +75,8 @@ export function withAnchorPoints(
 
 /**
  * For each anchor of `after`, the anchor of `before` it is: the one whose
- * point `origins` says it was copied from. An anchor the edit made has none.
+ * point `origins` says it was copied from. An anchor the edit made has none,
+ * even one that copies its only kept neighbor.
  * `origins` is what `editAnchorSetTracked` answered for the edit.
  */
 export function anchorsBefore(
@@ -87,7 +88,7 @@ export function anchorsBefore(
   anchorPointIndices(before).forEach((point, anchor) => anchorOfPoint.set(point, anchor));
   return anchorPointIndices(after).map((point) => {
     const o = origins[point];
-    if (!o || (o.t !== 0 && o.a !== o.b)) return undefined;
+    if (!o || o.made || (o.t !== 0 && o.a !== o.b)) return undefined;
     return anchorOfPoint.get(o.a);
   });
 }

@@ -181,6 +181,26 @@ describe('segmentBetween', () => {
   });
 });
 
+describe('anchorsBefore', () => {
+  const open = () => new PathBuilder().moveTo(0, 0).lineTo(100, 0).lineTo(100, 100).build() as PolygonPath;
+
+  it('answers no anchor for one the edit added past an open subpath\'s end', () => {
+    const before = open();
+    const prepended = editAnchorSetTracked(before, (set) => { set.anchors[0].unshift({ x: -50, y: 20 }); })!;
+    expect(anchorsBefore(before, prepended.path, prepended.origins)).toEqual([undefined, 0, 1, 2]);
+    const appended = editAnchorSetTracked(before, (set) => { set.anchors[0].push({ x: 150, y: 120 }); })!;
+    expect(anchorsBefore(before, appended.path, appended.origins)).toEqual([0, 1, 2, undefined]);
+  });
+
+  it('keeps a fixed anchor\'s constraint on it when the edit adds one before it', () => {
+    const before = open();
+    const edit = editAnchorSetTracked(before, (set) => { set.anchors[0].unshift({ x: -50, y: 20 }); })!;
+    const r = constrainPathEdit(before, edit.path, [{ kind: 'fixed', anchor: 0 }], { origins: edit.origins });
+    expect(r.constraints).toEqual([{ kind: 'fixed', anchor: 1 }]);
+    expect(pathAnchorPoints(r.path)[0]).toEqual({ x: -50, y: 20 });
+  });
+});
+
 describe('remapConstraints', () => {
   it('maps each constraint through the anchors it names', () => {
     const before = square();
