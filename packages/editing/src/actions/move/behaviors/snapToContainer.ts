@@ -1,7 +1,7 @@
 import { definesFrame } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
 import type { SnapTarget, BehaviorResult, CloneBehavior, MoveBehavior, MoveEnd, GestureContext } from '@weasel-js/core/engine';
-import { scratchKey, getScratch, setScratch } from '@weasel-js/routing';
+import { scratchKey, getScratch, setScratch, type ScratchKey } from '@weasel-js/routing';
 import { holderOf } from '@weasel-js/select';
 import { after } from '@weasel-js/registry';
 import * as coreOps from '@weasel-js/core/ops';
@@ -12,17 +12,17 @@ interface SnapState<TPose> {
   committedSnap: SnapTarget<TPose> | null;
 }
 
-// The slot is generic over TPose; we keep the unknown-pose key at module
-// scope and project it through `as` at the read site (each consumer call
-// of `snapToContainer<TPose>` is the only writer of its own SnapState
-// instance, so the cast is safe at runtime).
-const STATE = scratchKey<SnapState<unknown>>('snapToContainer');
+type StateKey = ScratchKey<SnapState<unknown>>;
 
-function getState<TPose>(ctx: GestureContext<TPose>): SnapState<TPose> {
-  let s = getScratch(ctx.scratch, STATE) as SnapState<TPose> | undefined;
+/** How many snap behaviors have been built: each keeps its state under a key of its own, so two on one
+ *  binding never share a dwell timer. */
+let built = 0;
+
+function getState<TPose>(ctx: GestureContext<TPose>, key: StateKey): SnapState<TPose> {
+  let s = getScratch(ctx.scratch, key) as SnapState<TPose> | undefined;
   if (!s) {
     s = { pendingTargetId: null, cancelPending: null, committedSnap: null };
-    setScratch(ctx.scratch, STATE, s as SnapState<unknown>);
+    setScratch(ctx.scratch, key, s as SnapState<unknown>);
   }
   return s;
 }
@@ -60,6 +60,7 @@ export function snapToContainer<TPose>(args: {
   reparentLabel?: string;
 }): MoveBehavior<TPose> {
   const { dwellMs, findTarget, isInstant, moveLabel = 'Move', reparentLabel = 'Move and reparent' } = args;
+  const key: StateKey = scratchKey<SnapState<unknown>>(`snapToContainer.${++built}`);
 
   /** Each dragged node's slot in the snapped container: the snapped slot for
    *  the first, and for each other node the one `findTarget` answers for it. */
@@ -92,7 +93,7 @@ export function snapToContainer<TPose>(args: {
   };
 
   const track = (ctx: GestureContext<TPose>, originInWorld: boolean): BehaviorResult<TPose> | undefined => {
-    const s = getState<TPose>(ctx);
+    const s = getState<TPose>(ctx, key);
     const found = findTarget(ctx.draggedIds[0], ctx.pointer.worldX, ctx.pointer.worldY);
     const target = found && !intoDragged(ctx, found) ? found : null;
 
@@ -129,13 +130,13 @@ export function snapToContainer<TPose>(args: {
     });
     return left;
   };
-  const cancel = (ctx: GestureContext<TPose>): void => { clearTimer(getState<TPose>(ctx)); };
+  const cancel = (ctx: GestureContext<TPose>): void => { clearTimer(getState<TPose>(ctx, key)); };
 
   const clone: CloneBehavior<TPose> = {
     onMove: (ctx) => track(ctx, true),
     onCancel: cancel,
     onEnd(ctx, end) {
-      const snap = released(ctx);
+      const snap = released(ctx, key);
       return snap ? end.copyOps({ parentId: snap.parentId, poses: slotsFor(ctx, snap) }) : undefined;
     },
   };
@@ -145,15 +146,15 @@ export function snapToContainer<TPose>(args: {
     onMove: (ctx) => track(ctx, false),
     onCancel: cancel,
     onEnd(ctx, end) {
-      const snap = released(ctx);
+      const snap = released(ctx, key);
       return snap ? plantOps(ctx, end, snap, slotsFor(ctx, snap), moveLabel, reparentLabel) : undefined;
     },
   };
 }
 
 /** The container a drag is let go into, if any; its dwell timer stops either way. */
-function released<TPose>(ctx: GestureContext<TPose>): SnapTarget<TPose> | null {
-  const s = getState<TPose>(ctx);
+function released<TPose>(ctx: GestureContext<TPose>, key: StateKey): SnapTarget<TPose> | null {
+  const s = getState<TPose>(ctx, key);
   clearTimer(s);
   const snap = s.committedSnap ?? ctx.snap;
   return snap && !intoDragged(ctx, snap) ? snap : null;

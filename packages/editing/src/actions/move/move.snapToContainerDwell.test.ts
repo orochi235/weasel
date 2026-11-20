@@ -49,3 +49,28 @@ describe('moveAction with snapToContainer, held still past the dwell', () => {
     expect(scene.get(leaf)!.parent).toBe(target);
   });
 });
+
+describe('moveAction with two snapToContainer behaviors on one binding', () => {
+  it('lets one dwell finish while the other finds no target', () => {
+    vi.useFakeTimers();
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const target = scene.add({ kind: 'group', layer: 'main', data: {}, pose: box(200, 0, 200, 200) });
+    const leaf = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(0, 0) });
+    const opts: BindingOptions = {
+      behaviors: [
+        snapToContainer<RectPose>({
+          dwellMs: 300,
+          findTarget: (_id, wx) => (wx > 200 ? { parentId: target, slotPose: box(210, 10) } : null),
+        }) as never,
+        snapToContainer<RectPose>({ dwellMs: 800, findTarget: () => null }) as never,
+      ],
+    };
+    const handle = (moveAction.invoker as OngoingInvoker).start(ctx(scene, [leaf]), opts) as OngoingHandle;
+    handle.onMove!(ctx(scene, [leaf], DRAG));
+    handle.onMove!(ctx(scene, [leaf], DRAG));
+    vi.advanceTimersByTime(300);
+    expect(scene.overrides.read(leaf)?.pose).toEqual(box(210, 10));
+    handle.onEnd!(ctx(scene, [leaf], DRAG), 'commit');
+    expect(scene.get(leaf)!.parent).toBe(target);
+  });
+});
