@@ -4,20 +4,35 @@ import {
 } from '@weasel-js/core';
 import type { ExportRegion, ExportScene } from './exportTypes';
 
+/** Options for {@link selectionRegion} and its sources. */
+export interface SelectionRegionOptions {
+  /** What the region is called: a PDF page's label, an SVG's `<title>`. */
+  name?: string;
+  /** The output pixels per world unit the export draws at, which a screen-pixel (`{ px }`) stroke is
+   *  measured at. Default 1. Pass the export's `scale` so such a stroke is not cut at its edge. */
+  scale?: number;
+}
+
 /**
  * The world box `ids` cover as the document draws them, strokes included:
  * the region that exports a selection. Pages and the page run are left out of
  * `ids`, and so is what no export draws: a hidden node, and a node on a
  * hidden or annotation layer (what its children draw still counts). `null`
- * when none of them draws anything.
+ * when none of them draws anything. A string third argument is the name.
  */
-export function selectionRegion(scene: ExportScene, ids: readonly string[], name?: string): ExportRegion | null {
+export function selectionRegion(
+  scene: ExportScene, ids: readonly string[], opts?: string | SelectionRegionOptions,
+): ExportRegion | null {
+  const { name, scale } = typeof opts === 'string' ? { name: opts, scale: undefined } : opts ?? {};
   const doc = documentOf(scene);
   const world = worldPoseLookup(scenePoseAdapter(doc), doc.composition.compose as (p: unknown, c: unknown) => unknown);
   const drawn = drawnBoundsScene(doc);
   const boxOf = (id: NodeId) => {
     const pose = world(id);
-    return pose === null ? null : drawnAabbOf(drawn, id, pose, { worldPoseOf: (m) => world(m) });
+    return pose === null ? null : drawnAabbOf(drawn, id, pose, {
+      worldPoseOf: (m) => world(m),
+      ...(scale !== undefined ? { scale } : {}),
+    });
   };
   const box = unionAabb(shownIds(doc, withoutPageStructure(doc, ids)).map(boxOf));
   return box === null ? null : { x: box.x, y: box.y, width: box.width, height: box.height, ...(name !== undefined ? { name } : {}) };

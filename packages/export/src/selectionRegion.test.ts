@@ -27,3 +27,13 @@ describe('selectionRegion leaves out what no export draws', () => {
     expect(selectionRegion(scene, ['g', 'o'])).toEqual({ x: 10, y: 10, width: 20, height: 20 });
   });
 });
+
+describe('selectionRegion at an export scale', () => {
+  it('measures a screen-pixel stroke at the scale the export draws it', () => {
+    const { scene } = plainScene();
+    scene.update(asNodeId('r'), { data: { ...(scene.get(asNodeId('r'))!.data as object), stroke: { paint: solidFill('#000'), width: { px: 10 } } } });
+    // 10 output px at scale 0.5 is 20 world units: a half-width of 10 past each edge.
+    expect(selectionRegion(scene, ['r'], { scale: 0.5 })).toEqual({ x: 10, y: 10, width: 80, height: 60 });
+    expect(selectionRegion(scene, ['r'], { scale: 2, name: 'S' })).toEqual({ x: 17.5, y: 17.5, width: 65, height: 45, name: 'S' });
+  });
+});
