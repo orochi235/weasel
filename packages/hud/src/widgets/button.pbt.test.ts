@@ -32,7 +32,7 @@ const cmd: fc.Arbitrary<Cmd> = fc.oneof(
   fc.record({ t: fc.constant('hide' as const), hidden: fc.boolean() }),
 );
 
-interface Model { held: boolean; down: boolean; hovered: boolean; b: { x: number; y: number; width: number; height: number } }
+interface Model { held: boolean; down: boolean; hovered: boolean; spaceArmed?: boolean; b: { x: number; y: number; width: number; height: number } }
 const inside = (m: Model, x: number, y: number) => x >= m.b.x && x < m.b.x + m.b.width && y >= m.b.y && y < m.b.y + m.b.height;
 
 /** The model's step: the events `c` reports, and whether what the button draws changed. */
@@ -46,7 +46,11 @@ function step(m: Model, c: Cmd): { events: ButtonEvent[]; stale: boolean } {
     case 'cancel': m.held = false; m.down = false; break;
     case 'hovermove': m.hovered = true; break;
     case 'hoverleave': m.hovered = false; break;
-    case 'key': if (c.type === 'keydown' && (c.key === 'Enter' || c.key === ' ')) events.push('press'); break;
+    case 'key':
+      if (c.key === 'Enter' && c.type === 'keydown') events.push('press');
+      if (c.key === ' ' && c.type === 'keydown') m.spaceArmed = true;
+      if (c.key === ' ' && c.type === 'keyup' && m.spaceArmed) { m.spaceArmed = false; events.push('press'); }
+      break;
     case 'bounds': m.b = { x: c.x, y: c.y, width: c.width, height: c.height }; return { events, stale: true };
     case 'hide': return { events, stale: true };
   }
