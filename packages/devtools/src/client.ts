@@ -66,6 +66,11 @@ function rejectAll(pending: Map<number, Pending>, err: Error): void {
   pending.clear();
 }
 
+/** `roots` with `root` in it. A root already listed is re-announced when its label or dimension changes; it keeps its place. */
+function withRoot(roots: DevtoolsClientState['roots'], root: DevtoolsClientState['roots'][number]): DevtoolsClientState['roots'] {
+  return roots.some((r) => r.id === root.id) ? roots.map((r) => (r.id === root.id ? root : r)) : [...roots, root];
+}
+
 /** A connection over `transport`, sending nothing until it is opened. It is connected once the page says `sup`. */
 export function createDevtoolsClient(transport: PanelTransport): DevtoolsClient {
   let state: DevtoolsClientState = { status: 'closed', kitVersion: null, roots: [], error: null };
@@ -111,10 +116,7 @@ export function createDevtoolsClient(transport: PanelTransport): DevtoolsClient 
         dropFor((id) => !m.roots.some((r) => r.id === id));
         return;
       case 'root-added':
-        // A root already listed is re-announced when its label or dimension changes; it keeps its place.
-        set({ roots: state.roots.some((r) => r.id === m.root.id)
-          ? state.roots.map((r) => (r.id === m.root.id ? m.root : r))
-          : [...state.roots, m.root] });
+        set({ roots: withRoot(state.roots, m.root) });
         return;
       case 'root-removed':
         set({ roots: state.roots.filter((r) => r.id !== m.rootId) });
