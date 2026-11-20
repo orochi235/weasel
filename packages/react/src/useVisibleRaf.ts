@@ -30,6 +30,7 @@ export interface VisibleRafOptions {
   dangerouslyRunWhenHidden?: boolean;
   /** Frame clock. Read live, so a test may inject one after mount. */
   requestFrame?: (cb: FrameRequestCallback) => number;
+  /** Cancels a frame `requestFrame` scheduled. Without it, such a frame is left to fire and ignored. */
   cancelFrame?: (handle: number) => void;
   /**
    * Runs once when the loop leaves suspension, before the frame that follows

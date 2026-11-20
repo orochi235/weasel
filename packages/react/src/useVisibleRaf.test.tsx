@@ -350,6 +350,16 @@ describe('useVisibleRaf', () => {
     expect(frame).toHaveBeenCalledTimes(1);
   });
 
+  it('never cancels a window frame with the handle of a clock injected without cancelFrame', () => {
+    const clock = makeClock();
+    const cancelAnimationFrame = vi.fn();
+    vi.stubGlobal('cancelAnimationFrame', cancelAnimationFrame);
+    const { loop } = mount(vi.fn(), { requestFrame: clock.requestFrame });
+    act(() => { loop().request(); });
+    act(() => { loop().cancel(); });
+    expect(cancelAnimationFrame).not.toHaveBeenCalled();
+  });
+
   it('cancels a held request without running it later', () => {
     const clock = makeClock();
     const frame = vi.fn();

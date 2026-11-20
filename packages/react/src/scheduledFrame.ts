@@ -65,6 +65,8 @@ export interface ScheduledFrameArgs {
 export function useScheduledFrame(args: ScheduledFrameArgs): { scheduleRaf: () => void; cancelRaf: () => void } {
   const { frameRef, optsRef, handleRef, aliveRef, pendingRef, isVisible, suspendRef } = args;
   const rafRef = useRef<number | null>(null);
+  /** Cancels `rafRef`'s frame on the clock that scheduled it; none for an injected clock given no canceller. */
+  const cancelRef = useRef<((handle: number) => void) | undefined>(undefined);
   /** This loop's entry in `dueUpdates` or `duePaints`, while it has a frame scheduled there. */
   const dueRef = useRef<{ set: Set<DueFrame>; entry: DueFrame } | null>(null);
   /** The time of the frame it last ran: a paint loop later in that frame must not run an update again. */
@@ -78,13 +80,15 @@ export function useScheduledFrame(args: ScheduledFrameArgs): { scheduleRaf: () =
   const cancelRaf = useCallback(() => {
     leaveDue();
     if (rafRef.current === null) return;
-    (optsRef.current.cancelFrame ?? cancelAnimationFrame)(rafRef.current);
+    cancelRef.current?.(rafRef.current);
     rafRef.current = null;
-  }, [optsRef, leaveDue]);
+  }, [leaveDue]);
 
   const scheduleRaf = useCallback(() => {
     if (rafRef.current !== null || !aliveRef.current) return;
-    const clock = optsRef.current.requestFrame ?? requestAnimationFrame;
+    const { requestFrame, cancelFrame } = optsRef.current;
+    const clock = requestFrame ?? requestAnimationFrame;
+    const cancel = requestFrame ? cancelFrame : cancelAnimationFrame;
     const update = optsRef.current.phase === 'update';
     let handle: number | null = null;
     /** The frame, from its own animation frame or run early by another loop's (`early`). */
@@ -95,7 +99,7 @@ export function useScheduledFrame(args: ScheduledFrameArgs): { scheduleRaf: () =
       if (!early && handle !== null && rafRef.current !== handle) return;
       leaveDue();
       // Run early, its own frame is dropped; the handle stays held below so requests still coalesce.
-      if (early && rafRef.current !== null) (optsRef.current.cancelFrame ?? cancelAnimationFrame)(rafRef.current);
+      if (early && rafRef.current !== null) cancel?.(rafRef.current);
       if (!aliveRef.current || !pendingRef.current) { rafRef.current = null; return; }
       // Hidden with no event to say so (the escape hatch lifted while hidden): suspend, so a return re-arms it.
       if (!isVisible()) { rafRef.current = null; suspendRef.current(); return; }
@@ -113,6 +117,7 @@ export function useScheduledFrame(args: ScheduledFrameArgs): { scheduleRaf: () =
     };
     handle = clock((time) => fire(time, false));
     rafRef.current = handle;
+    cancelRef.current = cancel;
     const set = update ? dueUpdates : updating === clock ? duePaints : null;
     if (set) {
       const entry = { clock, run: (time: number) => fire(time, true) };
