@@ -165,24 +165,41 @@ function structured(argType: ArgType, value: unknown): Leaf | null {
   return (argType.type ? shaped(argType.type, value) : null) ?? inferred(value);
 }
 
-/** Whether `control` gives both bounds, finite and in order: anything else Storybook draws unbounded, and labkit
- *  refuses as a range. */
-const hasRange = (control: Control): control is Control & { min: number; max: number } =>
-  Number.isFinite(control.min) && Number.isFinite(control.max) && (control.min as number) <= (control.max as number);
+/** A bound Storybook draws and labkit holds: finite, or left out. */
+const usable = (bound: number | undefined): boolean => bound === undefined || Number.isFinite(bound);
 
-/** Warns when `control` names bounds that {@link hasRange} drops, so a story's author learns why its control is
+/** The bounds of `control` labkit can hold: each one given finite, in order. Anything else Storybook draws
+ *  unbounded, and labkit refuses. */
+function boundsOf(control: Control): { min?: number; max?: number } {
+  const { min, max } = control;
+  if (!usable(min) || !usable(max) || (min !== undefined && max !== undefined && min > max)) return {};
+  return { ...(min === undefined ? {} : { min }), ...(max === undefined ? {} : { max }) };
+}
+
+/** Whether `control` gives both bounds, finite and in order. */
+const hasRange = (control: Control): boolean => {
+  const { min, max } = boundsOf(control);
+  return min !== undefined && max !== undefined;
+};
+
+/** Warns when `control` names bounds that {@link boundsOf} drops, so a story's author learns why its control is
  *  unbounded. */
 function warnUnusableBounds(key: string, control: Control): void {
-  if ((control.min === undefined && control.max === undefined) || hasRange(control)) return;
+  if (control.min === undefined && control.max === undefined) return;
+  const { min, max } = boundsOf(control);
+  if (min !== undefined || max !== undefined) return;
   console.warn(
-    `forge: the "${key}" control's bounds (min ${String(control.min)}, max ${String(control.max)}) are not both ` +
+    `forge: the "${key}" control's bounds (min ${String(control.min)}, max ${String(control.max)}) are not ` +
       'finite and in order, so it is drawn unbounded',
   );
 }
 
 function bounded(node: ReturnType<typeof f.number>, control: Control) {
+  const { min, max } = boundsOf(control);
   let out = node;
-  if (hasRange(control)) out = out.range(control.min, control.max);
+  if (min !== undefined && max !== undefined) out = out.range(min, max);
+  else if (min !== undefined) out = out.min(min);
+  else if (max !== undefined) out = out.max(max);
   if (control.step !== undefined) out = out.step(control.step);
   return out;
 }

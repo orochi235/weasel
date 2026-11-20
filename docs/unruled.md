@@ -2580,7 +2580,8 @@ Calls the lanes made without a ruling:
   `key` entirely, folding a run for the old key into state for the new one.
 - Ruled 2026-11-16: forge reads a Storybook number control whose bounds are not both finite and in order
   (`max: Infinity`, a NaN, `min` above `max`) as having none, keeping its slider or field, rather than letting
-  labkit's `range()` throw and fault every story in the file (`csf/argsToSchema.ts`, `hasRange`). It warns, naming the control.
+  labkit's `range()` throw and fault every story in the file (`csf/argsToSchema.ts`, `boundsOf`). It warns, naming the control.
+  A lone finite `min` or `max` is kept, as Storybook keeps it (2026-11-20).
 
 ## Audit round thirty (2026-11-16): diagrams
 

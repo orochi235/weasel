@@ -106,9 +106,19 @@ describe('argsToSchema', () => {
       .toEqual({ kind: 'number', default: 200, min: 100, max: 800, step: 20, control: 'input' });
   });
 
-  it('drops bounds labkit cannot hold, an endless, unreadable, reversed or lone bound, keeps the control, and warns', () => {
+  it('keeps a lone finite bound, as Storybook does', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    for (const [min, max] of [[0, Infinity], [Number.NaN, 10], [100, 0], [5, undefined]]) {
+    expect(shape(leaf({ n: 4 }, { n: { control: { type: 'number', min: 0 } } }, 'n'))).toEqual({ kind: 'number', default: 4, min: 0 });
+    expect(shape(leaf({ n: 4 }, { n: { control: { type: 'number', max: 9 } } }, 'n'))).toEqual({ kind: 'number', default: 4, max: 9 });
+    expect(shape(leaf({ n: 4 }, { n: { control: { type: 'range', min: 1 } } }, 'n')))
+      .toEqual({ kind: 'number', default: 4, min: 1, control: 'slider' });
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('drops bounds labkit cannot hold, an endless, unreadable or reversed pair, keeps the control, and warns', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    for (const [min, max] of [[0, Infinity], [Number.NaN, 10], [100, 0], [Number.NaN, undefined]]) {
       warn.mockClear();
       expect(shape(leaf({ size: 4 }, { size: { control: { type: 'range', min, max } } }, 'size')))
         .toEqual({ kind: 'number', default: 4, control: 'slider' });
