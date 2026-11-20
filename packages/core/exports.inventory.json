@@ -2004,6 +2004,7 @@
     "paintToBoundsUnits": "function",
     "paintToLocalUnits": "function",
     "paintedLayers": "function",
+    "paintedSceneLayers": "function",
     "paintsLayer": "function",
     "paintsPose": "function",
     "pairHistory": "function",

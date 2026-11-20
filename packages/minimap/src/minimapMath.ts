@@ -1,6 +1,6 @@
 /** Pure math helpers for `<MinimapCanvas>`: no GL, DOM, or renderer. */
-import { fitViewToBounds, hidesSubtree, sceneContentBounds, unionAabb, viewportWorldRect, worldPoses } from '@weasel-js/core';
-import type { NodeId, PoseReading, Scene } from '@weasel-js/core';
+import { fitViewToBounds, hidesSubtree, paintedSceneLayers, sceneContentBounds, unionAabb, viewportWorldRect, worldPoses } from '@weasel-js/core';
+import type { NodeId, PoseReading, Scene, SceneViewLayers } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
 import type { Bounds, ViewportDims } from '@weasel-js/core';
 import { FALLBACK_ACCENT, poseDescriptorForNode, type PoseDescriptor } from '@weasel-js/core';
@@ -67,16 +67,18 @@ function fitRectInto(rect: Bounds, dims: ViewportDims, padding: number): View {
  * `reading` says, read through `descriptor`; containers add no box
  * of their own, and a mark whose bounds are not finite is skipped, which would
  * otherwise make the whole union non-finite. A hidden node is left out with its
- * subtree, and a mark on a hidden layer is left out alone,
+ * subtree, and a mark on a layer the view does not paint is left out alone,
  * at any depth. `null` when nothing has bounds.
  */
 function sceneLeafBounds<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   descriptor: PoseDescriptor<TPose>,
   reading: PoseReading,
+  layers: Pick<SceneViewLayers, 'layerVisibility' | 'layerOrder'> = {},
 ): Bounds | null {
   const worldPose = worldPoses(scene, reading);
-  const unpainted = new Set(scene.layers.filter((l) => l.visible === false).map((l) => l.id));
+  const painted = new Set(paintedSceneLayers(scene.layers, layers).filter((l) => l.visible !== false).map((l) => l.id));
+  const unpainted = new Set(scene.layers.filter((l) => !painted.has(l.id)).map((l) => l.id));
   const boxOf = (id: NodeId): Bounds | null => {
     const node = scene.get(id);
     if (!node || hidesSubtree(node)) return null;
@@ -94,6 +96,9 @@ function sceneLeafBounds<TData, TLayer extends string, TPose>(
 export interface ComputeFitViewOptions {
   /** Inset (CSS px) around the fit rect on each side. Defaults to `8`. */
   padding?: number;
+  /** The view's own layer map, keyed `scene:<layerId>` as on `<SceneCanvas>`: a layer it hides, or leaves out of
+   *  `layerOrder`, is left out of the `"scene"` and `"live"` fits as one the scene hides is. */
+  layers?: Pick<SceneViewLayers, 'layerVisibility' | 'layerOrder'>;
 }
 
 /**
@@ -120,7 +125,7 @@ export function computeFitView<TData, TLayer extends string, TPose>(
     return fit(scene, dims);
   }
   if (fit === 'scene' || fit === 'live') {
-    const rect = sceneLeafBounds(scene, descriptor, fit === 'live' ? 'shown' : 'document');
+    const rect = sceneLeafBounds(scene, descriptor, fit === 'live' ? 'shown' : 'document', opts.layers);
     if (rect === null) return FALLBACK_FIT_VIEW;
     return fitRectInto(rect, dims, padding);
   }
