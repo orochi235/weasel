@@ -88,12 +88,14 @@ export function readsAsStatement(text: string): boolean {
   return t !== '' && !t.startsWith('%%') && !/^acc(?:Title|Descr)\s*[:{]/.test(t);
 }
 
-/** The page name `src` gives: its title, else its accessible title. Warns of what a page does not hold. */
-export function readPageName(src: MermaidSource, warnings: Warnings): string | undefined {
+/** The page name `src` gives: the first that is not empty of `own` (a title statement's text), its front matter title,
+ *  and its accessible title. Warns of what a page does not hold. */
+export function readPageName(src: MermaidSource, warnings: Warnings, own?: string): string | undefined {
   if (src.directives > 0) warnings.add('Mermaid configuration directives were dropped.');
   if (src.accDescr !== undefined) warnings.add('Mermaid accessible descriptions were dropped.');
-  if (src.title !== undefined && src.accTitle !== undefined) warnings.add('Mermaid accessible titles were dropped; the page is named by the title.');
-  return src.title ?? src.accTitle;
+  const title = [own, src.title].find((t) => t !== undefined && t !== '');
+  if (title !== undefined && src.accTitle !== undefined) warnings.add('Mermaid accessible titles were dropped; the page is named by the title.');
+  return title ?? src.accTitle;
 }
 
 /** The front matter naming a page, as lines to start a diagram with. */

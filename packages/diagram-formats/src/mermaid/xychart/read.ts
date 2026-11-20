@@ -35,7 +35,7 @@ export function readMermaidXychart(text: string): ImportResult {
         break;
     }
   }
-  const named = readPageName({ ...parsed.source, ...(title !== undefined && title !== '' ? { title } : {}) }, warnings);
+  const named = readPageName(parsed.source, warnings, title);
   if (x?.kind === 'band' && x.categories.length > 0) {
     const longest = series.reduce((m, s) => Math.max(m, s.values.length), 0);
     if (longest > x.categories.length) warn(`${longest - x.categories.length} value(s) past the last category are not drawn.`);
