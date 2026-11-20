@@ -5,6 +5,8 @@ import { buildRuleCtx, type RuleCtx } from '../../eligibility';
 import type { Action } from './action';
 import { ActionsNode } from './ActionsProvider';
 import { createDepRegistry } from './depNode';
+import { ActionDisabledReason } from './action';
+import { createDispatcher } from '../dispatcher/dispatcher';
 
 function ctxAllowing(...caps: CapabilityTag[]): RuleCtx {
   return buildRuleCtx({
@@ -50,5 +52,32 @@ describe("an action's eligible rule outside dispatch", () => {
     expect(row).toMatchObject({ kind: 'item', disabled: true });
     if (row.kind === 'item') row.run();
     expect(run).not.toHaveBeenCalled();
+  });
+
+  function fading(ctx: RuleCtx, enabled: boolean) {
+    const deps = createDepRegistry();
+    deps.register('ruleCtx', () => () => ctx);
+    const node = new ActionsNode(null, true, () => deps);
+    node.registry.setDispatcher(createDispatcher({ getAction: (id) => node.registry.list().find((a) => a.id === id) }));
+    const start = vi.fn(() => ({ onEnd: () => {} }));
+    node.registry.register({
+      id: 'test.fade', label: 'Fade', eligible: { capability: 'edits-page' },
+      enabled: () => (enabled ? true : ActionDisabledReason.SelectionRequired),
+      invoker: { timing: 'ongoing', start },
+    });
+    return { node, start };
+  }
+
+  it('stops begin where the mode bars it, or its enabled refuses', () => {
+    for (const { node, start } of [fading(ctxAllowing('transforms-selection'), true), fading(ctxAllowing('edits-page'), false)]) {
+      expect(node.registry.begin('test.fade')).toBeNull();
+      expect(start).not.toHaveBeenCalled();
+    }
+  });
+
+  it('lets begin start where the mode allows it and its enabled does', () => {
+    const { node, start } = fading(ctxAllowing('edits-page'), true);
+    expect(node.registry.begin('test.fade')).not.toBeNull();
+    expect(start).toHaveBeenCalledTimes(1);
   });
 });

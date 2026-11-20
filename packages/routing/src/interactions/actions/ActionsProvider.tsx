@@ -300,8 +300,11 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       const leaf = this.start();
       const a = leaf.resolve(id);
       const disp = leaf.dispatcher();
-      if (!a || !disp) return null;
-      return disp.beginUiOngoing(id, leaf.depsOf(a), params as Record<string, unknown> | undefined) as UiOngoingControl<InvokeParams<Id>> | null;
+      if (!a || !disp || !leaf.eligibleNow(a)) return null;
+      const given = params as Record<string, unknown> | undefined;
+      const deps = leaf.depsOf(a);
+      if (!checkEnabled(a, deps, pointOf(given), given).enabled) return null;
+      return disp.beginUiOngoing(id, deps, given) as UiOngoingControl<InvokeParams<Id>> | null;
     },
     activate: (opts?: { keys?: boolean }) => this.activate(opts),
     isActive: () => this.isActive(),
