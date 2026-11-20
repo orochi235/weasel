@@ -1,11 +1,11 @@
 import { pathContainsPoint, rectContainsPointHalfOpen, type Rect } from '@weasel-js/geom';
 import type { NodeId, Scene, StrategyView } from '@weasel-js/core';
-import { poseDescriptorForNode, toPlane, type PlaneMap, childFrameAt, composeWorldPose, sceneViewPoseAdapter, refusalOf, isPageStructure } from '@weasel-js/core/engine';
+import { poseDescriptorForNode, toPlane, type PlaneMap, composeWorldPose, sceneViewPoseAdapter, refusalOf, isPageStructure } from '@weasel-js/core/engine';
 import type { DropRegion, LayoutContainer, LayoutDropTargetMode, LayoutStrategy } from '@weasel-js/core/engine';
 import { planeOf } from '@weasel-js/core';
 import type { MoveSession } from '../session';
 import { carryDragged, type DraggedChild } from './dragged';
-import { boxOf, containerView, draggedInView } from './view';
+import { containerView, contentBoxOf, draggedInView } from './view';
 
 type Layout = LayoutStrategy<unknown>;
 export interface Candidate {
@@ -108,7 +108,7 @@ export function pickContainer(
     if (verdict === false) return;
     const refused = refusalOf(verdict);
     const view = containerView(pc, g, worldPose);
-    const content = boxOf(g, view.toStrategy(childFrameAt(poseAdapter, id as string, worldPose)));
+    const content = contentBoxOf(g, view, poseAdapter, id as string, worldPose);
     if (refused === null && layout.acceptsDrop) {
       const arg: LayoutContainer = { id: id as string, bounds: content, node };
       for (const c of dragged) {

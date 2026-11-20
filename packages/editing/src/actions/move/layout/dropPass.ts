@@ -5,7 +5,7 @@ import type { MoveSession } from '../session';
 import { pickContainer, type Candidate } from './container';
 import { carryDragged, gatherDragged, selectionCenter, type DraggedChild } from './dragged';
 import type { DropPass, LayoutPlacement } from './types';
-import { boxOf, containerView, draggedInView, viewContainsPoint } from './view';
+import { containerView, contentBoxOf, draggedInView, viewContainsPoint } from './view';
 
 /** Dragged ids grouped by the container they are leaving, skipping any that
  *  stay put (`exclude` is the destination) or that had no container. */
@@ -97,8 +97,9 @@ function sourceReflow(
     const srcNode = scene.get(asNodeId(srcId));
     if (!srcLayout || !srcNode) continue;
     const g = poseDescriptorForNode(d, srcNode);
-    const view = containerView(pc, g, composeWorldPose(poseAdapter, srcId, pc.compose));
-    const srcContainer: LayoutContainer = { id: srcId, bounds: boxOf(g, view.upright), node: srcNode };
+    const srcWorld = composeWorldPose(poseAdapter, srcId, pc.compose);
+    const view = containerView(pc, g, srcWorld);
+    const srcContainer: LayoutContainer = { id: srcId, bounds: contentBoxOf(g, view, poseAdapter, srcId, srcWorld), node: srcNode };
     const srcChildren: LayoutChild<unknown>[] = scene.childrenOf(asNodeId(srcId))
       .filter((cid) => !leaving.has(cid))
       .map((cid) => ({

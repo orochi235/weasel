@@ -1,5 +1,5 @@
 import { asNodeId, type NodeId, followerOpsFor } from '@weasel-js/core';
-import { composeChildFrame, composeWorldPose, rebaseLocalPose, type PoseAdapter, sceneViewPoseAdapter, poseDescriptorForNode, pageIdOf } from '@weasel-js/core/engine';
+import { composeWorldPose, rebaseLocalPose, type PoseAdapter, sceneViewPoseAdapter, poseDescriptorForNode, pageIdOf } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
 import type { LayoutChild, LayoutContainer } from '@weasel-js/core/engine';
 import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
@@ -10,7 +10,7 @@ import { translateOps, unreleasedIds } from '../translate';
 import { rebaseTransformOp } from './rebase';
 import { belowRoots } from './pageDrop';
 import { landedCascadeOps } from './reparent';
-import { boxOf, containerView, draggedInView, opInWorld } from '../layout/view';
+import { containerView, contentBoxOf, draggedInView, opInWorld } from '../layout/view';
 import * as coreOps from '@weasel-js/core/ops';
 
 function releaseFrom(
@@ -36,10 +36,11 @@ function releaseFrom(
   const srcNode = session.scene.get(asNodeId(srcId));
   if (!srcLayout?.releaseDrop || !srcNode) return { ops: releasedOps, released };
   const g = poseDescriptorForNode(session.projection, srcNode);
-  const view = containerView(pc, g, composeWorldPose(commitAdapter, srcId, pc.compose));
+  const srcWorld = composeWorldPose(commitAdapter, srcId, pc.compose);
+  const view = containerView(pc, g, srcWorld);
   const srcContainer: LayoutContainer = {
     id: srcId,
-    bounds: boxOf(g, view.toStrategy(composeChildFrame(commitAdapter, srcId, pc.compose))),
+    bounds: contentBoxOf(g, view, commitAdapter, srcId, srcWorld),
     node: srcNode,
   };
   // What the container is left holding — grown back as each
