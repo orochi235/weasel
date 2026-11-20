@@ -10,7 +10,9 @@
  * in its box by definition.
  */
 import { useCallback, useInsertionEffect, useRef, type RefObject } from 'react';
-import { transformPoint, invert, multiply, poseFrameOf, type Affine, type Rect } from '@weasel-js/geom';
+import {
+  transformPoint, invert, poseFrameOf, viewScreenToWorld, viewWorldToScreen, type Affine, type Rect,
+} from '@weasel-js/geom';
 import type { Node, RectPose, Scene } from '../scene/types';
 import { useCanvasSize } from './useCanvasSize';
 import type { View } from './view';
@@ -72,40 +74,33 @@ export function useNodeOverlayFrame<TData, TLayer extends string, TPose extends 
   const { width, height } = useCanvasSize(containerRef);
   const { view, compose } = options;
 
-  const project = useCallback((): Affine | null => {
+  const project = useCallback((): Projection | null => {
     const box = worldBoxOf(scene, nodeId, compose);
-    if (!box) return null;
-    const frame = poseFrameOf(box);
-    const toView = viewMatrix(resolveView(view));
-    return frame ? multiply(toView, frame) : toView;
+    return box ? projectionOf(poseFrameOf(box), resolveView(view)) : null;
   }, [scene, nodeId, compose, view]);
 
   const toScreen = useCallback((p: OverlayPoint): OverlayPoint => {
     const m = project();
-    if (!m) return p;
-    const [x, y] = transformPoint(m, p.x, p.y);
-    return { x, y };
+    return m ? forward(m, p) : p;
   }, [project]);
 
-  const lastInverse = useRef<Affine | null>(null);
+  const lastInvertible = useRef<Projection | null>(null);
 
   const toLocal = useCallback((p: OverlayPoint): OverlayPoint => {
     const m = project();
-    const inverse = m && invert(m);
-    if (inverse) lastInverse.current = inverse;
+    if (m?.invertible) lastInvertible.current = m;
     // Published by the commit that handed this toLocal out, so there is one.
-    const [x, y] = transformPoint(inverse ?? lastInverse.current!, p.x, p.y);
-    return { x, y };
+    return backward(m?.invertible ? m : lastInvertible.current!, p);
   }, [project]);
 
   const box = worldBoxOf(scene, nodeId, compose);
   const m = box && width !== 0 && height !== 0 ? project() : null;
-  const inverse = m && invert(m);
+  const invertible = m?.invertible ? m : null;
   useInsertionEffect(() => {
-    if (inverse) lastInverse.current = inverse;
+    if (invertible) lastInvertible.current = invertible;
   });
 
-  if (!box || !inverse) return null;
+  if (!box || !invertible) return null;
   return { box: { x: box.x, y: box.y, width: box.width, height: box.height }, toScreen, toLocal, width, height };
 }
 
@@ -130,9 +125,32 @@ function worldBoxOf<TData, TLayer extends string, TPose extends RectPose>(
   return composeWorldPose(adapter, nodeId, compose ?? composeRectPose);
 }
 
-/** World → overlay pixels: `screen = (world − view) × view.scale`. */
-function viewMatrix(view: View | undefined): Affine {
-  if (!view) return [1, 0, 0, 1, 0, 0];
-  const { x: sx, y: sy } = view.scale;
-  return [sx, 0, 0, sy, -view.x * sx, -view.y * sy];
+/** Node box frame → world (`frame`, `null` for none), then world → overlay pixels as
+ *  `(world − view) × view.scale`. Kept as two steps: one matrix would add two values the
+ *  size of `world × scale` and lose whole pixels far from the origin. */
+interface Projection {
+  frame: Affine | null;
+  view: View | undefined;
+  frameInverse: Affine | null;
+  /** Whether `toLocal` can undo it: neither the frame nor the view flattens an axis. */
+  invertible: boolean;
+}
+
+function projectionOf(frame: Affine | null, view: View | undefined): Projection {
+  const frameInverse = frame && invert(frame);
+  const viewInvertible = !view || (view.scale.x !== 0 && view.scale.y !== 0
+    && Number.isFinite(1 / view.scale.x) && Number.isFinite(1 / view.scale.y));
+  return { frame, view, frameInverse, invertible: viewInvertible && (!frame || frameInverse !== null) };
+}
+
+function forward(m: Projection, p: OverlayPoint): OverlayPoint {
+  const [x, y] = m.frame ? transformPoint(m.frame, p.x, p.y) : [p.x, p.y];
+  return m.view ? viewWorldToScreen(m.view, { x, y }) : { x, y };
+}
+
+function backward(m: Projection, p: OverlayPoint): OverlayPoint {
+  const w = m.view ? viewScreenToWorld(m.view, p) : p;
+  if (!m.frameInverse) return { x: w.x, y: w.y };
+  const [x, y] = transformPoint(m.frameInverse, w.x, w.y);
+  return { x, y };
 }

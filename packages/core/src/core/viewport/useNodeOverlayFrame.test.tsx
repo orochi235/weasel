@@ -161,6 +161,18 @@ describe('useNodeOverlayFrame', () => {
     near(result.current!.toLocal({ x: 10, y: 45 }), 10, 20);
   });
 
+  it('stays exact for a node far from the origin, subtracting the view before scaling', () => {
+    const far = 1e15;
+    const view: View = { x: far, y: far, scale: { x: 3, y: 3 } };
+    const plain = frameFor(sceneWith([{ id: 'a', pose: { x: far, y: far, width: 100, height: 100 } }]), 'a', view)!;
+    near(plain.toScreen({ x: far + 10.125, y: far + 10.125 }), 30.375, 30.375);
+    near(plain.toLocal({ x: 30.375, y: 30.375 }), far + 10.125, far + 10.125);
+    // Stretched 2x about the center (far + 50): far + 10.125 lands on far - 29.75.
+    const pose = { x: far, y: far, width: 100, height: 100, transform: [2, 0, 0, 1] } as RectPose;
+    const stretched = frameFor(sceneWith([{ id: 'a', pose }]), 'a', view)!;
+    near(stretched.toScreen({ x: far + 10.125, y: far + 10.125 }), -89.25, 30.375);
+  });
+
   it('is null with no node id, an unknown id, or an unmeasured container', () => {
     const scene = sceneWith([{ id: 'a', pose: { x: 0, y: 0, width: 10, height: 10 } }]);
     expect(frameFor(scene, null)).toBeNull();
