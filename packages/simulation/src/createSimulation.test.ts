@@ -93,4 +93,11 @@ describe('createSimulation', () => {
     expect(() => sim.tick(Infinity)).toThrow(RangeError);
     expect(sim.alpha()).toBe(1);
   });
+
+  it('holds a node pinned to a non-finite fx or fy where it stands', () => {
+    const a: TestNode = { id: 'a', x: 3, y: 4, vx: 1, vy: 1, fx: Number.NaN, fy: Infinity };
+    const sim = createSimulation({ nodes: [a] });
+    sim.tick();
+    expect(a).toMatchObject({ x: 3, y: 4, vx: 0, vy: 0 });
+  });
 });

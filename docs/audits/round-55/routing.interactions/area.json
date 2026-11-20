@@ -1,0 +1,53 @@
+{
+ "id": "routing.interactions",
+ "commit": "bfc55709b4b1c35343b8417dc8f74424b58d9714",
+ "date": "2026-11-20",
+ "files": [
+  "packages/routing/src/interactions/browserReservedKeys.ts",
+  "packages/routing/src/interactions/carry/carry.ts",
+  "packages/routing/src/interactions/carry/index.ts",
+  "packages/routing/src/interactions/handleDrag/handleDrag.ts",
+  "packages/routing/src/interactions/keyHelpers.ts",
+  "packages/routing/src/interactions/pointerSession/index.ts",
+  "packages/routing/src/interactions/pointerSession/pointerSession.ts",
+  "packages/routing/src/interactions/pointerSession/swallowClick.ts",
+  "packages/routing/src/interactions/scratchKey.ts",
+  "packages/routing/src/interactions/sweep/index.ts",
+  "packages/routing/src/interactions/sweep/sweep.ts",
+  "packages/routing/src/interactions/thresholdDrag/index.ts",
+  "packages/routing/src/interactions/thresholdDrag/thresholdDrag.ts"
+ ],
+ "a": 4,
+ "b": 3,
+ "m": 3,
+ "distinct": 4,
+ "chapman": 4,
+ "unfound": 0,
+ "read": {
+  "A": 13,
+  "B": 9
+ },
+ "patches": 3,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.2,
+   "B": 1.9,
+   "match": 2,
+   "fix": 3.5
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 772315,
+  "costUsd": 2.52
+ },
+ "fixCommits": [
+  "1a9548b87994fcf60f8401192c054e77b1c03ee0",
+  "67cb364e65d1371e61b077cc5dd68adfba977817",
+  "e04e543c012cdfded995e872f6e8cd8ac37d5580"
+ ]
+}

@@ -8,6 +8,7 @@ export interface ModeDefaultToolTarget {
   /** The tool the canvas starts on, which `active` may not show yet on the render that mounts it. */
   initial: string | null;
   setActive(id: string | null): void;
+  /** Whether `setActive` takes `id`. */
   has(id: string): boolean;
 }
 

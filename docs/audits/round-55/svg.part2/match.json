@@ -1,0 +1,37 @@
+{
+ "pairs": [
+  [
+   3,
+   1
+  ],
+  [
+   4,
+   2
+  ],
+  [
+   7,
+   7
+  ]
+ ],
+ "a": [
+  "A `<tspan>` that sets only `stroke-width` (or cap, join, dash) under a stroked `<text>` loses the override",
+  "A `<tspan stroke=\"inherit\">` gets a black stroke and a spurious warning",
+  "`text: 'embed'` declares the substituted face's family but the `<text>` keeps naming the requested one",
+  "`svgNodesToKitDrafts` drops a stroke's `align`, so an inner or outer stroke re-imports centered",
+  "Dropping a large SVG scales leaves' stroke widths but not a group's, which its children draw with",
+  "The golden round-trip helper compares polygon coords without their `origin`",
+  "`dominant-baseline` is read only as the `<text>`'s own attribute, not through the cascade",
+  "A marker's outline width ignores the unit on `stroke-width`",
+  "`baseline-shift` in an absolute or font-relative unit other than em is read as that many ems"
+ ],
+ "b": [
+  "A `<text>`-level `baseline-shift` is dropped from every `<tspan>` run, so a node-level `script` with runs loses its shift on round trip",
+  "`strokeDataFromSvg` drops the stroke's `align`, so an inner/outer-aligned stroke unpacks centered",
+  "The fit-clamp in `unpackSvgFiles` turns an inherited stroke (`'inherit'`) into a garbage object and never scales the container's own stroke",
+  "Keyword properties are validated case-insensitively but read case-sensitively, so `display=\"None\"` or `stroke-linejoin: Round` override the declaration below them and then read as absent",
+  "A `<pattern>` holding one `<image>` is read as an `image` paint without checking the image's `preserveAspectRatio` or `transform`",
+  "`roundTrip` test helper claims a deep-equal round trip but normalizes away most fields, so their loss passes",
+  "The fit-clamp leaves a framed text leaf's `padding` at source size",
+  "A `<marker>`'s outline width is read with `parseFloat`, ignoring the units every other stroke width converts"
+ ]
+}

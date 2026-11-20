@@ -627,3 +627,11 @@ describe('svgNodesToKitDrafts — consumer hooks', () => {
     expect(pose.height).toBeCloseTo(100);
   });
 });
+
+describe('svgNodesToKitDrafts stroke alignment', () => {
+  it('keeps an inner or outer stroke aligned', () => {
+    const stroke = { paint: { kind: 'solid' as const, color: '#000' }, width: 4, align: 'inner' as const };
+    const [d] = svgNodesToKitDrafts([rectNode(0, 0, 10, 10, { stroke })], seq());
+    expect(d!.data.stroke).toMatchObject({ width: 4, align: 'inner' });
+  });
+});

@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   3,
+   1
+  ]
+ ],
+ "a": [
+  "browserReservedChord ignores a KeySpec's `code`, so a binding that fires on a reserved chord by physical key is reported free",
+  "A sweep with non-primitive keys re-enters the same item on every move",
+  "thresholdDrag with `captureAt: 'threshold'` reports a far-travelled release as a click",
+  "thresholdDrag's Escape cancels mid-IME-composition, where pointerSession's own Escape does not"
+ ],
+ "b": [
+  "Sweep compares item keys with Object.is, so object keys re-enter the same item at every hit-tested point",
+  "Threshold drag's Escape ignores IME composition, where the pointer session's Escape honors it",
+  "browserReservedChord checks only `spec.key`, not `spec.code`, so a code-bound spec on a reserved chord passes as safe"
+ ]
+}

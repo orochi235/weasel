@@ -10,8 +10,8 @@ import { collapseRunWhitespace, preservesSpace } from './textWhitespace';
 import { fontSizeOf } from './fontSize';
 import { ownLang } from './textLang';
 import type { GradientTable } from './readGradients';
-import { deriveStyle, ownValue, setsOwn, type StyleContext } from './cascade';
-import { readStroke, isNonScalingStroke, ownStrokeStyle, coreStroke, coreTextFill } from './readPaint';
+import { deriveStyle, ownProp, ownValue, setsOwn, type StyleContext } from './cascade';
+import { readStroke, isNonScalingStroke, setsOwnStroke, coreStroke, coreTextFill } from './readPaint';
 import { withOutlinedStroke } from './strokeOutlineSvg';
 
 const glyphCount = (text: string): number => Array.from(text).length;
@@ -54,7 +54,8 @@ export function readRuns(
     const pieces = Array.from(el.childNodes).flatMap((child): Piece[] => {
       if (child.nodeType === 1 && (child as Element).tagName.toLowerCase() === 'tspan') {
         const sp = child as Element;
-        return [{ tspan: sp, run: readTspanRun(sp, gradients, leafStyle, onWarn) }];
+        const run = readTspanRun(sp, gradients, leafStyle, onWarn);
+        return [{ tspan: sp, run: ownProp(sp, 'baseline-shift') == null ? { ...run, ...inheritedShift } : run }];
       }
       if (child.nodeType === 1) onWarn(`<text> child <${(child as Element).tagName}> not supported; flattening text content`);
       else if (child.nodeType !== 3 /* TEXT_NODE */) return [];
@@ -107,7 +108,7 @@ function readTspanRun(
   const tspanStyle = deriveStyle(style, el);
   const ls = ownValue(el, 'letter-spacing', onWarn, fontSizeOf(tspanStyle));
   if (ls != null) run.letterSpacing = ls;
-  const shift = ownValue(el, 'baseline-shift', onWarn);
+  const shift = ownValue(el, 'baseline-shift', onWarn, fontSizeOf(tspanStyle));
   if (shift?.script != null) run.script = shift.script;
   if (shift?.baselineShift != null) run.baselineShift = shift.baselineShift;
   const decoration = ownValue(el, 'text-decoration', onWarn);
@@ -124,8 +125,10 @@ function readTspanRun(
   if (setsOwn(el, 'fill') || setsOwn(el, 'fill-opacity')) {
     run.fill = coreTextFill(tspanStyle, gradients, onWarn);
   }
-  // Own attributes only — see `ownStrokeStyle`.
-  const stroke = coreStroke(withOutlinedStroke(el, readStroke(ownStrokeStyle(el, tspanStyle), gradients, onWarn, isNonScalingStroke(el))));
-  if (stroke) run.stroke = stroke;
+  // Only where it overrides one — see `setsOwnStroke`.
+  if (setsOwnStroke(el)) {
+    const stroke = coreStroke(withOutlinedStroke(el, readStroke(tspanStyle, gradients, onWarn, isNonScalingStroke(el))));
+    if (stroke) run.stroke = stroke;
+  }
   return run;
 }

@@ -157,6 +157,13 @@ describe('ingesting a marker the kit has no key for', () => {
     expect(markers![0].outline).toEqual({ width: 1.5, paint: 'line' });
   });
 
+  it('converts a unit on the outline\'s stroke-width', () => {
+    const def = '<marker id="v" refX="5" refY="5" orient="auto">'
+      + '<path d="M0 0 L5 5 L0 10" fill="none" stroke="#000" stroke-width="0.5mm"/></marker>';
+    const { markers } = parseSvg(lineWith('marker-end="url(#v)"', def));
+    expect((markers![0].outline as { width: number }).width).toBeCloseTo(0.5 * 96 / 25.4);
+  });
+
   it('keys two different markers that share an id apart', () => {
     const a = parseSvg(lineWith('marker-end="url(#tri)"')).markers![0];
     const b = parseSvg(lineWith('marker-end="url(#tri)"', TRI.replace('#ff0000', '#0000ff'))).markers![0];

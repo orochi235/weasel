@@ -97,6 +97,22 @@ describe('createSweepAction', () => {
     expect(entered).toEqual(['a', 'b', 'a']);
   });
 
+  it('enters an item once however keyOf builds its key', () => {
+    const entered: string[] = [];
+    const { at } = setup({ sweep: {
+      // A fresh object per call, as a grid's `{ row, col }` would be.
+      keyOf: (el) => ({ k: (el as HTMLElement).dataset.key }) as unknown as string,
+      begin: () => ({ enter: (i) => entered.push((i.key as unknown as { k: string }).k) }),
+    } });
+    act(() => {
+      pointer(at(5), 'pointerdown', 5);
+      pointer(at(5), 'pointermove', 8);
+      pointer(at(5), 'pointermove', 18);
+      pointer(at(5), 'pointerup', 18);
+    });
+    expect(entered).toEqual(['a', 'b']);
+  });
+
   it('hands begin the press: the item and the modifiers held', () => {
     const begin = vi.fn(() => ({ enter: () => {} }));
     const { at } = setup({ sweep: { begin } });

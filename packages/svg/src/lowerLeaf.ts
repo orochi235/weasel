@@ -98,8 +98,8 @@ function svgFilled(path: Path): Path {
 }
 
 /**
- * Detect a polygon whose 4 vertices form an axis-aligned rectangle (in
- * the canonical `M L L L Z` order produced by our serializer), and
+ * Detect a polygon whose 4 vertices form an axis-aligned rectangle traced
+ * clockwise from its top-left corner (the order a `RectPath` is drawn in), and
  * reconstitute it as a `RectPath`. Returns null on any deviation.
  */
 function polygonToRectIfAxisAligned(p: PolygonPath): Path | null {
@@ -114,12 +114,9 @@ function polygonToRectIfAxisAligned(p: PolygonPath): Path | null {
   const x1 = c[2], y1 = c[3];
   const x2 = c[4], y2 = c[5];
   const x3 = c[6], y3 = c[7];
-  // Axis-aligned rectangle: top edge horizontal, right edge vertical, etc.
+  // A rect is drawn clockwise from its top-left corner; any other start or
+  // direction moves where the stroke's dashes and trim begin.
   if (y0 !== y1 || x1 !== x2 || y2 !== y3 || x3 !== x0) return null;
-  const x = Math.min(x0, x1);
-  const y = Math.min(y0, y2);
-  const width = Math.abs(x1 - x0);
-  const height = Math.abs(y2 - y1);
-  if (width === 0 || height === 0) return null;
-  return { kind: 'rect', x, y, width, height };
+  if (!(x1 > x0 && y2 > y1)) return null;
+  return { kind: 'rect', x: x0, y: y0, width: x1 - x0, height: y2 - y1 };
 }

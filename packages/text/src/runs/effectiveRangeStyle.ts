@@ -30,8 +30,8 @@ export function rangeWeight(
   return { fontWeight: weight, bold: isBoldWeight(weight) };
 }
 
-/** Keys a run overrides outright. `script` and the two primitives it presets
- *  have no node-level counterpart, so they only ever come from the range. */
+/** Keys a run overrides outright. `baselineShift` and `fontScale` have no
+ *  node-level counterpart, so they only ever come from the range. */
 const OVERRIDES = [
   'fontFamily', 'fontSize', 'letterSpacing', 'fill', 'stroke', 'script', 'baselineShift', 'fontScale',
   'textTransform', 'fontVariantCaps', 'rotate', 'lang',
@@ -68,6 +68,7 @@ export function effectiveRangeStyle(
   if (resolved.fill !== null) out.fill = resolved.fill;
   if (resolved.stroke !== undefined) out.stroke = resolved.stroke;
   if (resolved.lang !== undefined) out.lang = resolved.lang;
+  if (resolved.script !== undefined) out.script = resolved.script;
   Object.assign(out, rangeWeight(range, style));
   for (const key of FLAGS) {
     const on = styleHasFlag(node, key);

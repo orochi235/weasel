@@ -73,7 +73,7 @@ export function restoreOverlayFocus(overlay: HTMLElement, range: TextEditSelecti
   const active = document.activeElement;
   if (active === overlay || overlay.contains(active)) return;
   if (isEditableTarget(active) || (active instanceof Element && active.closest('[role="dialog"]') !== null)) return;
-  overlay.focus();
+  overlay.focus({ preventScroll: true });
   selectOffsets(overlay, range.start, range.end);
 }
 

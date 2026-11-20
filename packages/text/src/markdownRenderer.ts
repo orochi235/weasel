@@ -7,6 +7,7 @@ import { faceMetricsFor, type FaceMetrics } from '@weasel-js/font';
 import { markdownToRuns, type StyledRun } from './runs';
 import { fontString } from './textStyle';
 import { graphemeEnds } from './measure/graphemes';
+import { glyphTurn } from './glyphTurn';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './layout/decorationMetrics';
 import {
   layoutCanvasRuns, type FaceMetricsFn, type MarkdownFontOptions, type CanvasMeasureFn, type CanvasPositionedRun,
@@ -36,11 +37,29 @@ function canvasMeasure(ctx: CanvasRenderingContext2D): CanvasMeasureFn {
 }
 
 /** Paint `text` at `x` with `tracking` px after each grapheme cluster: through
- *  the context's own `letterSpacing` where it has one, else a cluster at a time. */
+ *  the context's own `letterSpacing` where it has one, else a cluster at a time.
+ *  A `rotate` turns each cluster that many degrees clockwise about its pen on the baseline. */
 function paintTracked(
   c: CanvasRenderingContext2D, text: string, x: number, y: number, tracking: number,
-  draw: (text: string, x: number, y: number) => void,
+  draw: (text: string, x: number, y: number) => void, rotate = 0,
 ): void {
+  if (rotate) {
+    if (tracksItself(c)) c.letterSpacing = '0px';
+    const below = alphabeticBaselineBelow(c);
+    const [cos, sin] = glyphTurn(rotate);
+    let pen = x;
+    let from = 0;
+    for (const end of graphemeEnds(text)) {
+      const cluster = text.slice(from, end);
+      c.save();
+      c.transform(cos, sin, -sin, cos, pen, y + below);
+      draw(cluster, 0, -below);
+      c.restore();
+      pen += c.measureText(cluster).width + tracking;
+      from = end;
+    }
+    return;
+  }
   if (tracksItself(c)) {
     c.letterSpacing = `${tracking}px`;
     draw(text, x, y);
@@ -158,7 +177,7 @@ export function createMarkdownRenderer(
       const fill = fontOpts.color
         ?? (run.italic && !run.bold ? 'rgba(255, 255, 255, 0.7)' : '#FFFFFF');
       _ctx.fillStyle = fill;
-      paintTracked(_ctx, run.text, rx, ry, run.tracking, (t, tx, ty) => _ctx.fillText(t, tx, ty));
+      paintTracked(_ctx, run.text, rx, ry, run.tracking, (t, tx, ty) => _ctx.fillText(t, tx, ty), run.rotate);
 
       if (!(run.underline || run.strikethrough || run.overline)) {
         flush();
@@ -193,7 +212,7 @@ export function createMarkdownRenderer(
 
   const strokeRenderer: TextRenderer = (_ctx, _text, x, y) => {
     walk(_ctx, x, y, (run, rx, ry) =>
-      paintTracked(_ctx, run.text, rx, ry, run.tracking, (t, tx, ty) => _ctx.strokeText(t, tx, ty)));
+      paintTracked(_ctx, run.text, rx, ry, run.tracking, (t, tx, ty) => _ctx.strokeText(t, tx, ty), run.rotate));
   };
 
   return { renderer, strokeRenderer, width: layout.width, height: layout.height };

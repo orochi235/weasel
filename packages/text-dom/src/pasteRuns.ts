@@ -80,7 +80,7 @@ export function htmlToRuns(html: string): StyledRun[] {
 
   const visit = (node: Node, style: StyleState, keep: boolean): void => {
     if (node.nodeType === Node.TEXT_NODE) {
-      const data = (node as Text).data.replace(/\r\n?/g, '\n');
+      const data = toLineFeeds((node as Text).data);
       if (keep) { if (data.length > 0) write(data, style); return; }
       data.split(/[ \t\n\f]+/).forEach((word, i) => {
         // The space goes in with the text node that held it, as a browser draws it.
@@ -130,6 +130,11 @@ export function clipboardRuns(data: DataTransfer): StyledRun[] {
   const html = data.getData('text/html');
   const fromHtml = html ? htmlToRuns(html) : [];
   if (fromHtml.length > 0) return fromHtml;
-  const plain = data.getData('text/plain').replace(/\r\n/g, '\n');
+  const plain = toLineFeeds(data.getData('text/plain'));
   return plain.length > 0 ? [{ text: plain }] : [];
+}
+
+/** Pasted text with each CRLF or lone CR read as the LF a typed break is. */
+function toLineFeeds(text: string): string {
+  return text.replace(/\r\n?/g, '\n');
 }

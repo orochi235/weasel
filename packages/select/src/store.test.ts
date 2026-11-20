@@ -9,6 +9,17 @@ describe('createSelectionStore', () => {
     expect(store.getSelection()).toEqual(['b', 'c']);
   });
 
+  it('keeps a copy of the arrays it is given, so mutating them later changes nothing', () => {
+    const initial = ['a'];
+    const store = createSelectionStore(initial);
+    initial.push('b');
+    expect(store.getSelection()).toEqual(['a']);
+    const next = ['c'];
+    store.setSelection(next);
+    next.push('d');
+    expect(store.getSelection()).toEqual(['c']);
+  });
+
   it('notifies subscribers on every set until they unsubscribe', () => {
     const store = createSelectionStore<string>();
     const listener = vi.fn();

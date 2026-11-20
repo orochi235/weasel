@@ -4,6 +4,7 @@ import { parseSvg } from './parse';
 import { serializeSvg } from './serialize';
 import { svgNodesToKitDrafts } from './unpack';
 import { svgNodesFromKit, type SvgKitTree } from './fromKit';
+import { fitLeafXml } from './groupPaintXml';
 
 const svg = (body: string): string => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${body}</svg>`;
 
@@ -97,5 +98,14 @@ describe('exporting a container’s paint', () => {
     expect(g.data.fill).toEqual({ paint: { color: '#ff0000' } });
     expect(a.data).toMatchObject({ fill: INHERIT });
     expect(b.data).toMatchObject({ fill: { paint: { color: '#0000ff' } } });
+  });
+});
+
+describe('fitLeafXml', () => {
+  it('reads a start tag past a > inside a quoted attribute value', () => {
+    const out = fitLeafXml('<path d="M0 0" inkscape:label="a > b"/>', undefined, new Set(['fill']));
+    expect(out).toBe('<path d="M0 0" inkscape:label="a > b" fill="#000000"/>');
+    expect(new DOMParser().parseFromString(`<svg xmlns:inkscape="x">${out}</svg>`, 'image/svg+xml')
+      .getElementsByTagName('parsererror')).toHaveLength(0);
   });
 });

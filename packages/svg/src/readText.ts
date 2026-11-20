@@ -112,7 +112,7 @@ export function parseTextElement(
   const textPaint = readTextPaint(el, leafStyle, gradients, onWarn, isNonScalingStroke(el));
   const fontSize = resolveScreenLength(textStyle.fontSize ?? 16, 1);
 
-  const dominantBaseline = el.getAttribute('dominant-baseline');
+  const dominantBaseline = styleValue(leafStyle, 'dominant-baseline', onWarn);
   // Laid-out lines sit on their own baselines, and `y` stays the box top.
   const laid = el.hasAttribute(LAID_ATTR);
   const explicitTopAnchor = laid || dominantBaseline === 'text-before-edge'
@@ -121,7 +121,7 @@ export function parseTextElement(
   // every other run key it has no node-level home to be read into — so a bare
   // text child would drop it. Seed those children with it instead; a <tspan>
   // naming its own still wins, as the SVG cascade says.
-  const inheritedShift = ownValue(el, 'baseline-shift', onWarn) ?? {};
+  const inheritedShift = ownValue(el, 'baseline-shift', onWarn, fontSize) ?? {};
 
   const tracker = new LineTracker(el, onWarn);
   const { runs, lead } = readRuns(el, tracker, inheritedShift, textStyle, gradients, leafStyle, onWarn);

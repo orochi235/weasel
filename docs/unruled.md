@@ -20,6 +20,12 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - Ruled 2026-11-10: `keySpecRoute` writes a spec's phase in the route's phase slot, and gives `null` for a
   spec with a physical key `code` or more than one key, which the route grammar has no form for.
 
+- 2026-11-20: `captureGesture` settles on a click it holds back for a double click when a key other than
+  Escape comes in the window, and leaves that key to the page; Escape still resolves `null`.
+- 2026-11-20: A tool with options may not be named `shared` or `shared.<anything>`: `defineTool` and
+  `toolOptionsPrefs` throw, since its options would land in the group every tool's shared options are kept in.
+  `toolOptionsPrefs` also throws for an option key or shared key with a dot, and for a tool whose options would sit
+  inside another tool's option (`path`'s option `brush` beside a tool `path.brush`), rather than escaping either.
 - 2026-11-20: `CONTROL_SELECTOR` names everything `focusedControlOwnsKey` leaves Space and Enter to:
   `summary` and roles `tab`, `option`, `radio`, `menuitemcheckbox` and `menuitemradio` now count as
   controls a host leaves a press to, and the last three also own Space and Enter. A dispatcher surface
@@ -872,6 +878,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Ruled 2026-11-10 (my call, overnight sweep): a simulation's alpha decays toward `alphaTarget` without passing it.
   An `alphaDecay` above 1 acts as 1 and lands on the target, and a negative one as 0, which never moves it; d3-force
   takes either unchecked, and above 2 alpha grew without bound to `Infinity`, which no finite input may give.
+- Ruled 2026-11-20 (my call, audit round 55): a simulation node pinned to a non-finite `fx` or `fy` holds that
+  coordinate where it stands, with no velocity, rather than taking the NaN or `Infinity` into its position.
 - Ruled 2026-11-10 (my call, overnight sweep): a tween with its own `interpolate` or `interpolator` is handed exactly
   1 on its last frame (0 when it ends at its start, played backward), whatever its easing answers there, as a tween
   of numbers already ends at `to`: an easing such as `1 - cos(t π/2)` gives 0.9999999999999999 at 1. A d3
@@ -1018,8 +1026,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   cross the whole range stops at its far end, not on the far end's stop.
 - 2026-11-11 (my call, second property pass): a record cache that hears another writer change a record while only a
   write of its own is on its way reads the record back from storage once that write lands, and takes what it reads
-  as a remote change; the change still reaches `onOverruled` when heard. Open: a value `deepEqual` cannot compare (a
-  `Map`, a `Date`) read back unchanged reports as a remote change of the same value.
+  as a remote change; the change still reaches `onOverruled` when heard.
 - Open (2026-11-11): a record cache with `retryMs: 0`, or a negative one, tries a failed read or write again every
   tick for as long as storage fails, since doubling 0 leaves 0; nothing floors the backoff.
 - 2026-11-11 (my call, modes/registry/select/menu second property pass): `matchQuery`, a menu's access letters,
@@ -3156,3 +3163,17 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (my call): a `chunks` tile scatters at most one chunk per pixel of its tile (`size²`), however small a
   `chunkSize` or large a `density` asks for more; past that count a scatter covers nothing more and only hangs the
   resolve. The cap could instead be a fixed count, or a warning.
+## Audit round fifty-five (2026-11-20): text
+
+- Ruled 2026-11-20 (my call, audit): a run grammar's delimiter is one UTF-16 unit, and `runsToMarkdown` and
+  `markdownToRuns` throw for any other, an astral character or `'~~'` included. The reader finds delimiters one unit
+  at a time, so the writer wrote what it could not read back; a doubled marker is spelled with `repeat`.
+## Audit round fifty-five (2026-11-20): text-shaping
+
+- 2026-11-20 (the fixer's call): text-shaping's `glyphD` throws a `RangeError` for an offset that is not finite. An
+  infinite one threw `BigInt`'s own `RangeError` and a `NaN` one returned path data reading `NaN`; there is no
+  override, since no such offset places a glyph. Passing the value through into the path data was the alternative.
+- 2026-11-20 (the fixer's call): text-shaping's `shape` throws for a `language` holding a character outside ASCII
+  (`'sr‑Latn'`), naming the tag, before it reads its cache. HarfBuzz threw its own "Expected ASCII text" for one
+  and leaked the copy. No BCP 47 tag holds such a character, so there is no override; shaping as though no language
+  were given was the alternative, which draws the default forms with no sign the tag went unread.

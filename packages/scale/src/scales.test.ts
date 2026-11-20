@@ -120,6 +120,34 @@ describe('logScale', () => {
   it('throws on a domain that does not lie above zero', () => {
     expect(() => logScale({ domain: [0, 10], range: [0, 1] })).toThrow(/above zero/);
   });
+
+  it('ticks on exact powers of another base, and labels them so', () => {
+    const s = logScale({ domain: [1, 2 ** 50], range: [0, 100], base: 2 });
+    expect(s.ticks(100)).toContain(2 ** 40);
+    expect(s.ticks(100).at(-1)).toBe(2 ** 50);
+    expect(s.tickFormat()(2 ** 40)).toBe('1099511627776');
+  });
+
+  it('inverts its positions between ends too near for their logarithms to differ', () => {
+    const d0 = 1e300;
+    const d1 = 1e300 * (1 + 1e-14);
+    const s = logScale({ domain: [d0, d1], range: [0, 100] });
+    const mid = d0 + (d1 - d0) / 2;
+    expect(Math.abs(s.position(mid) - 50)).toBeLessThan(1);
+    expect(s.invert(s.position(mid)) / mid - 1).toBeCloseTo(0, 15);
+    expect(s.invert(25)).toBeGreaterThan(d0);
+    expect(s.invert(75)).toBeLessThan(d1);
+  });
+
+  it('ticks a domain holding fewer than two of its round values as a linear scale would, and labels them so', () => {
+    for (const domain of [[300, 450], [6, 9], [1.1, 1.9], [150, 450]] as const) {
+      const s = logScale({ domain, range: [0, 100] });
+      expect(s.ticks()).toEqual(linearScale({ domain, range: [0, 100] }).ticks());
+      expect(s.ticks().map(s.tickFormat())).toEqual(linearScale({ domain, range: [0, 100] }).ticks().map(linearScale({ domain, range: [0, 100] }).tickFormat()));
+    }
+    expect(logScale({ domain: [1.1, 1.9], range: [0, 100] }).format(1.5)).toBe('1.5');
+    expect(logScale({ domain: [3, 3.5], range: [0, 100], base: 2 }).ticks().length).toBeGreaterThan(1);
+  });
 });
 
 describe('bandScale', () => {
@@ -221,6 +249,19 @@ describe('timeScale', () => {
   it('ticks on hours within a day', () => {
     const s = timeScale({ domain: [jan1, jan1 + day], range: [0, 1] });
     expect(s.ticks().map(s.format)).toEqual(['2026-01-01', '06:00', '12:00', '18:00', '2026-01-02']);
+  });
+
+  it('ticks a domain wider than a Date holds on whole years across the part it holds', () => {
+    const s = timeScale({ domain: [-1e308, 1e308], range: [0, 100] });
+    const ticks = s.ticks();
+    expect(ticks.length).toBeGreaterThan(1);
+    expect(ticks.length).toBeLessThan(20);
+    expect(s.tickFormat()(ticks[1]!)).toMatch(/^-?\d+$/);
+  });
+
+  it('ticks the months a Date holds in the first month it holds', () => {
+    const s = timeScale({ domain: [-8.64e15, -8.64e15 + 1e10], range: [0, 100] });
+    expect(s.ticks().map(s.format)).toEqual(['-271821-05', '-271821-06', '-271821-07', '-271821-08']);
   });
 });
 

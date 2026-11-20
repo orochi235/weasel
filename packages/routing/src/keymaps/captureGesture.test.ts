@@ -81,12 +81,37 @@ describe('captureGesture', () => {
     vi.runOnlyPendingTimers();
   });
 
+  it('settles on a click held back for a double click when a key comes in the window', async () => {
+    const got = captureGesture(window, { kinds: ['key', 'click', 'doubleClick'] });
+    clickAt(10, 10);
+    const k = new KeyboardEvent('keydown', { key: 'a', cancelable: true });
+    window.dispatchEvent(k);
+    expect(await got).toEqual({ kind: 'click' });
+    expect(k.defaultPrevented).toBe(false);
+  });
+
   it('captures a right click as a context menu, and keeps the native menu shut', async () => {
     const got = captureGesture(window, { kinds: ['click', 'contextMenu'] });
     fire('pointerdown', { button: 2, clientX: 0, clientY: 0 });
     const menu = fire('contextmenu', { button: 2, shiftKey: true });
     expect(await got).toEqual({ kind: 'contextMenu', mods: { shift: true } });
     expect(menu.defaultPrevented).toBe(true);
+  });
+
+  it('captures a middle or secondary drag with its button', async () => {
+    for (const [code, button] of [[1, 'middle'], [2, 'secondary']] as const) {
+      const got = captureGesture(window, { kinds: ['drag'] });
+      fire('pointerdown', { button: code, clientX: 0, clientY: 0 });
+      fire('pointermove', { button: code, clientX: DRAG_THRESHOLD_PX + 1, clientY: 0 });
+      fire('pointerup', { button: code, clientX: DRAG_THRESHOLD_PX + 1, clientY: 0 });
+      expect(await got).toEqual({ kind: 'drag', button });
+    }
+  });
+
+  it("reads a pen's eraser as the primary button, as the dispatcher does", async () => {
+    const got = captureGesture(window, { kinds: ['click'] });
+    clickAt(0, 0, { pointerType: 'pen', button: 5 });
+    expect(await got).toEqual({ kind: 'click' });
   });
 
   it('takes every event of what it captures from the page', async () => {
@@ -105,6 +130,40 @@ describe('captureGesture', () => {
     expect(heard).toEqual([]);
     expect(down.defaultPrevented).toBe(true);
     expect(click.defaultPrevented).toBe(true);
+  });
+
+  it('takes the release and click of a press still held when Escape settles it', async () => {
+    const heard: string[] = [];
+    const listen = (e: Event): void => { heard.push(e.type); };
+    const types = ['pointerup', 'click', 'auxclick'];
+    for (const t of types) document.body.addEventListener(t, listen);
+    const got = captureGesture(window, { kinds: ['click', 'contextMenu'] });
+    fire('pointerdown', { clientX: 0, clientY: 0 });
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }));
+    expect(await got).toBeNull();
+    await new Promise((r) => setTimeout(r, 5));
+    const up = new PointerEvent('pointerup', { bubbles: true, cancelable: true, pointerId: 1 });
+    document.body.dispatchEvent(up);
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    document.body.dispatchEvent(click);
+    expect(heard).toEqual([]);
+    expect(click.defaultPrevented).toBe(true);
+
+    // A right press settled by its menu, as macOS fires it at the press.
+    const menu = captureGesture(window, { kinds: ['contextMenu'] });
+    fire('pointerdown', { pointerId: 2, button: 2 });
+    fire('contextmenu', { pointerId: 2, button: 2 });
+    expect(await menu).toEqual({ kind: 'contextMenu' });
+    await new Promise((r) => setTimeout(r, 5));
+    document.body.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 2, button: 2 }));
+    document.body.dispatchEvent(new MouseEvent('auxclick', { bubbles: true, button: 2 }));
+    expect(heard).toEqual([]);
+
+    // Once the release is in, the page hears its pointer again.
+    await new Promise((r) => setTimeout(r, 5));
+    document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    for (const t of types) document.body.removeEventListener(t, listen);
+    expect(heard).toEqual(['click']);
   });
 
   it('captures a keystroke beside pointer gestures', async () => {
@@ -128,6 +187,7 @@ describe('captureGesture', () => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }));
     expect(await esc).toBeNull();
     fire('pointerup', { clientX: 0, clientY: 0 });
+    await new Promise((r) => setTimeout(r, 5));
 
     const ctl = new AbortController();
     const aborted = captureGesture(window, { kinds: ['click'], signal: ctl.signal });

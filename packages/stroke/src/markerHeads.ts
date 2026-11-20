@@ -5,7 +5,7 @@
 import type { MarkerRef, Stroke } from '@weasel-js/paint';
 import { type Path, type PolygonPath, boundsOfPath } from '@weasel-js/geom';
 import { extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
-import { createPart, isDev } from '@weasel-js/registry';
+import { createPart, createWarnOnce } from '@weasel-js/registry';
 import { getMarker, type MarkerEntry } from './strokeMarkers';
 import { markerKeyOf, resolveMarkerSize, strokeInsets } from './markerInset';
 import { markerSites, type MarkerSite } from './markerSites';
@@ -152,15 +152,11 @@ export function markerPlacements(
   return out;
 }
 
-const warnedMarkers = new Set<string>();
+const warnOnce = createWarnOnce();
 
 function warnUnknownMarker(key: string): void {
-  if (warnedMarkers.has(key)) return;
-  warnedMarkers.add(key);
-  if (isDev()) {
-    console.warn(`weasel: no marker "${key}" is registered, so the stroke draws no head there; `
-      + 'check the spelling, or register it with registerMarker().');
-  }
+  warnOnce(`weasel: no marker "${key}" is registered, so the stroke draws no head there; `
+    + 'check the spelling, or register it with registerMarker().');
 }
 
 /** The flattening of `path` heads sit on: the corner-resolved path, as the ribbon flattens it. */

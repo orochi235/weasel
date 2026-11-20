@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   3,
+   3
+  ]
+ ],
+ "a": [
+  "useOpenKeymap's hint goes stale when binding overrides or the action list change while a keymap is open",
+  "captureGesture ignores a pen-eraser press, which the dispatcher treats as a primary press",
+  "createKeymapContribution's Escape guard misses a keyHeld Escape binding",
+  "A capture cancelled by Escape or abort mid-press leaves pointer capture set, and the release's click reaches the page"
+ ],
+ "b": [
+  "captureGesture cannot capture a middle- or secondary-button drag, though the dispatcher binds them",
+  "describeKeymap silently drops a keymap key bound with Ctrl (on a Mac) or Meta (off one)",
+  "useOpenKeymap's description goes stale when overrides, tunings or actions change while a keymap is open",
+  "Events after a capture settles outside the press's own task reach the page",
+  "A completed click held back for a double click is discarded when a key arrives in the window"
+ ]
+}

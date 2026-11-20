@@ -15,7 +15,7 @@ export const DROPOVER_CLASS = 'weasel-dropover';
 
 export function ingestInput(core: DispatchCore): {
   onDragOver: (e: DragEvent) => void;
-  onDragLeave: () => void;
+  onDragLeave: (e: DragEvent) => void;
   onDrop: (e: DragEvent) => void;
   onPaste: (e: ClipboardEvent) => void;
   /** Take down a drag's preview, for teardown. */
@@ -48,7 +48,9 @@ export function ingestInput(core: DispatchCore): {
     dt.dropEffect = 'copy';
   };
 
-  const onDragLeave = () => {
+  const onDragLeave = (e: DragEvent) => {
+    // A drag moving onto one of the element's own children has not left it.
+    if (e.relatedTarget instanceof Node && canvas?.contains(e.relatedTarget)) return;
     canvas?.classList.remove(DROPOVER_CLASS);
     preview.end();
   };

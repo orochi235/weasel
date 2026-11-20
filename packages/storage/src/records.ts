@@ -155,6 +155,8 @@ function buildCache(
     queued: (name) => queue.has(name),
     live: () => !closed && !stopped,
     read: (key) => storage.get(key),
+    retryMs,
+    retryMaxMs,
     applied: emit,
     overruled: overruledEmitter.emit,
   });

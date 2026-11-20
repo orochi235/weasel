@@ -198,4 +198,28 @@ describe('the dispatcher with a keymap open', () => {
     expect(copy.run).toHaveBeenCalledOnce();
     expect(stack.open().map((k) => k.id)).toEqual(['loupe']);
   });
+
+  it('predicts what a dispatch would do, and changes nothing of the keymap', () => {
+    stack.push('loupe', 'Loupe');
+    const d = createDispatcher();
+    const ctx = ctxFor();
+    expect(d.resolveOnly(down('2'), ctx)?.actionId).toBe('inside');
+    expect(d.resolveOnly(down('3'), ctx)).toBeNull();
+    expect(d.resolveAll(down('3'), ctx)).toEqual([]);
+    expect(d.explain(down('3'), ctx).outcome).toBe('handled');
+    expect(d.resolveOnly(down('3'), ctxFor({ leaderUnbound: 'cascade' }))?.actionId).toBe('outside');
+    expect(d.resolveOnly(down('Escape'), ctx)).toBeNull();
+    expect(d.resolveOnly(click, ctx)?.actionId).toBe('outsideClick');
+    expect(stack.open().map((k) => k.id)).toEqual(['loupe']);
+    expect(inside.run).not.toHaveBeenCalled();
+  });
+
+  it('predicts no drag from a press it keeps for the click it binds', () => {
+    stack.push('loupe', 'Loupe');
+    const drag: Action = { id: 'drag', label: 'drag', defaultBinding: { kind: 'drag' }, invoker: { timing: 'ongoing', start: vi.fn() } };
+    const entry: Contribution<never> = { id: 'loupe', eligibility: { keymap: true }, bindings: [{ spec: { kind: 'click' }, actionId: 'pin' }] };
+    const ctx = makeCtx({ actions: makeRegistry([drag, act('pin')]), entriesById: new Map([['loupe', entry]]), keymaps: stack });
+    const p = { pointerId: 1, pointerType: 'mouse' as const, button: 0, buttons: 1, x: 0, y: 0, clientX: 0, clientY: 0, ...mods };
+    expect(createDispatcher().resolveOnly({ kind: 'pointerdown', ...p } as InputEvent, ctx)).toBeNull();
+  });
 });

@@ -5,6 +5,7 @@ import { RESERVED_ID_NAMES, RESERVED_ID_PREFIXES } from '@weasel-js/gestures';
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { KernelOverlay } from '../index';
 import { toolOptionSteps } from './toolOptionSteps';
+import { checkToolOptionOwner } from './toolOptions';
 
 /** Validate that `id` is usable as a tool / channel id in the route
  *  grammar. Rejects ids that start with a reserved sigil (would shadow
@@ -36,6 +37,7 @@ export function defineTool<TOverlay = KernelOverlay>(
   def: ToolDef<TOverlay>,
 ): Tool<TOverlay> {
   validateId(def.id, 'tool');
+  if (def.options) checkToolOptionOwner(def.id);
 
   const resolveCursor = (): CursorSpec => {
     if (def.cursor == null) return '';

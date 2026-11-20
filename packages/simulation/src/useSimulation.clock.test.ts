@@ -109,4 +109,35 @@ describe('useSimulation switching clocks', () => {
     act(() => { b.clock.sync(30); });
     expect(onTick).toHaveBeenCalledTimes(3);
   });
+
+  it('keeps stepping when onEnd restarts it, as the frame loop does', () => {
+    const handle = createClock({ rate: 1, seekable: false, step: 10 });
+    const onTick = vi.fn();
+    let restarts = 0;
+    const n: SimulationNode = { x: 0, y: 0, vx: 10, vy: 0 };
+    const { result } = renderHook(() =>
+      useSimulation({
+        nodes: [n], clock: handle, onTick,
+        onEnd: () => { if (restarts++ === 0) result.current.alpha(1).restart(); },
+      }),
+    );
+    let wall = 0;
+    act(() => { handle.clock.sync(wall); });
+    for (let i = 0; i < 100 && restarts === 0; i++) act(() => { wall += 100; handle.clock.sync(wall); });
+    expect(restarts).toBe(1);
+    const ticks = onTick.mock.calls.length;
+    act(() => { wall += 100; handle.clock.sync(wall); });
+    expect(onTick.mock.calls.length).toBeGreaterThan(ticks);
+  });
+
+  it('stays stopped when onTick stops it', () => {
+    const handle = createClock({ rate: 1, seekable: false, step: 10 });
+    const n: SimulationNode = { x: 0, y: 0, vx: 10, vy: 0 };
+    const onTick = vi.fn(() => { result.current.stop(); });
+    const { result } = renderHook(() => useSimulation({ nodes: [n], clock: handle, onTick }));
+    act(() => { handle.clock.sync(0); });
+    act(() => { handle.clock.sync(100); });
+    act(() => { handle.clock.sync(200); });
+    expect(onTick).toHaveBeenCalledTimes(1);
+  });
 });

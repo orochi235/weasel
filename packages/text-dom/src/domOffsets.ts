@@ -49,14 +49,14 @@ function afterBreak(piece: { br: Element } | { block: Element }): { node: Node; 
  * The DOM position of plain-text character position `offset`: a text node
  * and an offset into it wherever one holds the position, otherwise an element
  * and a child index (just past a `<br>` that ends the text). Offsets beyond
- * the text clamp to its end. Returns `{ node: parent, offset: 0 }` for an
+ * the text clamp to its end, and a negative one to its start. Returns `{ node: parent, offset: 0 }` for an
  * overlay with no text.
  */
 export function charOffsetToDomPosition(
   parent: HTMLElement,
   offset: number,
 ): { node: Node; offset: number } | null {
-  let remaining = offset;
+  let remaining = offset > 0 ? offset : 0;
   let end: { node: Node; offset: number } = { node: parent, offset: 0 };
   /** Set while the position sits just past a break, with no text met since. */
   let pending: { node: Node; offset: number } | null = null;

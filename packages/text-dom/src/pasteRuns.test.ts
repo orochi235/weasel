@@ -92,3 +92,7 @@ describe('clipboardRuns', () => {
     expect(clipboardRuns(transfer({}))).toEqual([]);
   });
 });
+
+it('reads a lone CR in plain text as the line break an HTML paste of it gives', () => {
+  expect(clipboardRuns(transfer({ 'text/plain': 'a\rb\r\nc' }))).toEqual([{ text: 'a\nb\nc' }]);
+});

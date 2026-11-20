@@ -31,7 +31,7 @@ export function textEffectItems(data: TextOutlineSource, pose: PathInWorldPose):
   noteFontRead();
   let clusters: TextCluster[];
   try {
-    clusters = textClusters(data, { width: pose.width });
+    clusters = textClusters(data, { width: pose.width, height: pose.height });
   } catch (err) {
     if (!(err instanceof TextOutlinesError)) throw err;
     if (err.reason === 'outlines-loading') {

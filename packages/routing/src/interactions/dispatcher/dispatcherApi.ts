@@ -191,7 +191,8 @@ export interface Dispatcher {
    * Predict which action `event` would route to WITHOUT invoking it: the
    * first candidate `handleInput`'s walk would fire, or `null` when the event
    * would go unhandled. Pure query: no invoker runs, no in-flight state
-   * changes, no trace-log entry.
+   * changes, no trace-log entry. An open keymap routes it as a dispatch
+   * would, without closing the keymap or noting the input.
    *
    * Known divergence from a real dispatch: an ongoing invoker that matches
    * but returns an empty handle at `start()` (runtime bail) makes the real
@@ -206,7 +207,8 @@ export interface Dispatcher {
    * with a verdict explaining whether it would fire. Nothing is dropped:
    * candidates that `resolveOnly`'s walk would filter out are kept here and
    * labeled `ineligible` instead. Pure query, and it shares `resolveOnly`'s
-   * known divergence from a real dispatch.
+   * known divergence from a real dispatch. An input an open keymap withholds
+   * (a key it swallows, a press kept for the click it binds) lists none.
    *
    * `resolveOnly` is the first `would-fire` entry of this list.
    *

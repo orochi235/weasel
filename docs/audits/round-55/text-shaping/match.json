@@ -1,0 +1,29 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   1,
+   3
+  ],
+  [
+   2,
+   4
+  ]
+ ],
+ "a": [
+  "scriptPieces does not pair canonically equivalent angle brackets, which bidi's own bracket pairing does",
+  "glyphD throws a RangeError for a non-finite offset instead of returning path data",
+  "The parsed-feature cache in HarfBuzzShaper has no bound"
+ ],
+ "b": [
+  "A non-ASCII feature setting throws \"Expected ASCII text\" instead of the documented refusal, and leaks HarfBuzz stack and heap on every call",
+  "A non-ASCII `lang` makes `shape` throw mid-layout and leaks HarfBuzz heap",
+  "Script pieces don't pair the canonically equivalent angle brackets, though bidi does",
+  "`glyphD` throws a RangeError for an infinite offset",
+  "The parsed-feature cache has no bound",
+  "Node detection disagrees with harfbuzzjs's own in an Electron renderer"
+ ]
+}

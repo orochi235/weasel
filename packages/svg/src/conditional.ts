@@ -5,7 +5,7 @@ import { SUPPORTED_LEAF_TAGS } from './lowerLeaf';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 /** What this parser draws; `<switch>` passes over any other child for the next one. */
-const DRAWN_TAGS = new Set([...SUPPORTED_LEAF_TAGS, 'text', 'image', 'g', 'a', 'svg', 'switch']);
+const DRAWN_TAGS = new Set([...SUPPORTED_LEAF_TAGS, 'text', 'image', 'g', 'a', 'svg', 'switch', 'use']);
 
 /** The reader's languages, most preferred first; none outside a browser-like host. */
 function userLanguages(): readonly string[] {

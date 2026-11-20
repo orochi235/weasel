@@ -1,0 +1,33 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   3
+  ],
+  [
+   2,
+   4
+  ],
+  [
+   3,
+   1
+  ]
+ ],
+ "a": [
+  "The tools slot goes empty when the last canvas to publish unmounts, though an earlier canvas is still mounted",
+  "A tool with the id `shared` shares one slot with the shared tool options",
+  "Tool option values kept in prefs never read back for a tool id or shared key containing `.`",
+  "A tool held on its hotkey has its options tuned in, but its size/strength step keys and Shift+wheel are disabled"
+ ],
+ "b": [
+  "The tools slot empties when the last-published canvas unmounts, though an earlier canvas is still mounted",
+  "A tool held on its hotkey cannot step its own size/strength: the step actions are enabled only for the *active* tool, while the tunings treat the held tool as live",
+  "`has()` admits ambient-only ids that `setActive` rejects, so a mode whose `defaultTool` is an ambient tool throws from an effect",
+  "A tool whose id is `shared` collides with the shared-options owner",
+  "A tool or option id containing `.` never reads back from a prefs-backed `toolOptionValues`"
+ ]
+}

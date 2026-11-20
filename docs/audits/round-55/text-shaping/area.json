@@ -1,0 +1,48 @@
+{
+ "id": "text-shaping",
+ "commit": "bfc55709b4b1c35343b8417dc8f74424b58d9714",
+ "date": "2026-11-20",
+ "files": [
+  "packages/text-shaping/src/__fixtures__/fonts.ts",
+  "packages/text-shaping/src/index.ts",
+  "packages/text-shaping/src/pbt.fixture.ts",
+  "packages/text-shaping/src/scripts.ts",
+  "packages/text-shaping/src/shaper.ts"
+ ],
+ "a": 3,
+ "b": 6,
+ "m": 3,
+ "distinct": 6,
+ "chapman": 6,
+ "unfound": 0,
+ "read": {
+  "A": 5,
+  "B": 5
+ },
+ "patches": 6,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.6,
+   "B": 3.1,
+   "match": 0.1,
+   "fix": 11.8
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1237555,
+  "costUsd": 3.74
+ },
+ "fixCommits": [
+  "edddd2e3f23c913c9cc8fc66d29066f699680bf4",
+  "0a7c47a3d937a55a0c2f55b24660c85e4a5d507d",
+  "92d75109597f89e44edfd8b4762377499c2f7f6b",
+  "e6f671b267a7dfb678f892a42fe72593aceaab9c",
+  "8fc276a05c0c90891e2b9b8166ac76e4b7c4d562",
+  "82bd42f037c5fd38be6b3200c2fe5499ab621d43"
+ ]
+}

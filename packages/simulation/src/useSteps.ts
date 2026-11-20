@@ -40,13 +40,17 @@ export function useSteps(
   );
 
   const running = useRef(false);
+  /** Whether `start` ran during the current step, so a step that ends its run and restarts it
+   *  from its own `onEnd` keeps running. */
+  const restarted = useRef(false);
   const owed = useRef(createClockSteps()).current;
   useLayoutEffect(() => {
     if (!clock) return;
     return clock.onFrame((elapsed) => {
       const n = owed.owed(elapsed, clock.step ?? DEFAULT_STEP_MS);
       for (let i = 0; i < n && running.current; i++) {
-        if (!stepRef.current()) running.current = false;
+        restarted.current = false;
+        if (!stepRef.current() && !restarted.current) running.current = false;
       }
     });
   }, [clock, owed, stepRef]);
@@ -59,6 +63,7 @@ export function useSteps(
       }
       if (!running.current) owed.rebase(clock.clock.elapsed);
       running.current = true;
+      restarted.current = true;
     },
     stop() {
       frameLoop.cancel();

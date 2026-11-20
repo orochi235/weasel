@@ -11,6 +11,8 @@ import {
   keyAEvent,
 } from './testing/dispatcherStubs';
 
+const NO_MODS = { alt: false, ctrl: false, meta: false, shift: false };
+
 const keyBEvent: InputEvent = {
   kind: 'key',
   key: 'b',
@@ -122,10 +124,9 @@ describe('createDispatcher', () => {
       const dispatcher = createDispatcher();
 
       dispatcher.handleInput(keyAEvent, makeCtx({ actions: registry, depRegistry }));
-      // Second arg is opts.params — undefined for a bare GestureSpec binding.
       expect(run).toHaveBeenCalledWith(
         expect.objectContaining({ selection: ['item1'] }),
-        undefined,
+        expect.anything(),
       );
     });
   });
@@ -178,8 +179,7 @@ describe('createDispatcher', () => {
 
       dispatcher.handleInput(keyAEvent, makeCtx({ actions: registry }));
       expect(run).toHaveBeenCalledOnce();
-      // Second arg to run() is the params object.
-      expect(run.mock.calls[0][1]).toEqual({ x: 1 });
+      expect(run.mock.calls[0][1]).toEqual({ x: 1, mods: NO_MODS });
     });
 
     it('when binding B matches, invoker.run receives params { x: 2 }', () => {
@@ -190,10 +190,10 @@ describe('createDispatcher', () => {
 
       dispatcher.handleInput(keyBEvent, makeCtx({ actions: registry }));
       expect(run).toHaveBeenCalledOnce();
-      expect(run.mock.calls[0][1]).toEqual({ x: 2 });
+      expect(run.mock.calls[0][1]).toEqual({ x: 2, mods: NO_MODS });
     });
 
-    it('bare GestureSpec entry in array (no opts) passes undefined params', () => {
+    it('bare GestureSpec entry in array (no opts) passes only what the event carries', () => {
       const run = vi.fn();
       const action: Action = {
         id: 'mixedAction',
@@ -208,10 +208,9 @@ describe('createDispatcher', () => {
       const registry = makeRegistry([action]);
       const dispatcher = createDispatcher();
 
-      // Binding A is a bare spec — params should be undefined.
       dispatcher.handleInput(keyAEvent, makeCtx({ actions: registry }));
       expect(run).toHaveBeenCalledOnce();
-      expect(run.mock.calls[0][1]).toBeUndefined();
+      expect(run.mock.calls[0][1]).toEqual({ mods: NO_MODS });
     });
   });
 });

@@ -28,7 +28,15 @@ export function tickDecimals(values: readonly number[]): number {
 export function toFixedPlain(value: number, places: number): string {
   const decimals = Math.min(100, Math.max(0, Math.trunc(places) || 0));
   if (!(Math.abs(value) >= 1e21) || !Number.isFinite(value)) return value.toFixed(decimals);
-  return BigInt(value).toString() + (decimals > 0 ? `.${'0'.repeat(decimals)}` : '');
+  return plainDigits(value) + (decimals > 0 ? `.${'0'.repeat(decimals)}` : '');
+}
+
+/** A value of 1e21 or more written out in the shortest digits that read back as it, not its binary expansion. */
+function plainDigits(value: number): string {
+  const [mantissa = '', exponent = '0'] = String(Math.abs(value)).split('e+');
+  const point = mantissa.indexOf('.');
+  const whole = (point < 0 ? mantissa.length : point) + Number(exponent);
+  return (value < 0 ? '-' : '') + mantissa.replace('.', '').padEnd(whole, '0');
 }
 
 /** The smallest step whose places `toFixed` can write. */

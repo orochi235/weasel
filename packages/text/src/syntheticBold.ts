@@ -6,7 +6,7 @@
  */
 
 import { syntheticBoldGrowth, type ResolveResult } from '@weasel-js/font';
-import { growRegion, mergeRegion, pathFromD, pathToD, type PolygonPath } from '@weasel-js/geom';
+import { growRegion, mergeRegion, pathFromD, pathSignedArea, pathToD, type PolygonPath } from '@weasel-js/geom';
 
 /** How closely the grown outline follows the font's curves, in em. */
 export const SYNTHETIC_BOLD_TOLERANCE = 0.0005;
@@ -40,7 +40,8 @@ export function syntheticBoldOffset(resolved: ResolveResult): { growth: number; 
 export function emboldenGlyph(em: PolygonPath, d: string, resolved: ResolveResult): PolygonPath {
   const offset = syntheticBoldOffset(resolved);
   if (offset === null) return em;
-  const key = `${offset.growth}|${offset.join}|${d}`;
+  // Callers pass one glyph's data wound either way, and growing keeps the input's winding.
+  const key = `${offset.growth}|${offset.join}|${pathSignedArea(em) < 0 ? '-' : '+'}|${d}`;
   let grown = cache.get(key);
   if (grown) return grown;
   grown = mergeRegion(

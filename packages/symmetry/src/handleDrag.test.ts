@@ -58,7 +58,13 @@ function rig() {
   const turnKnob = (deg: number, mods: Mods = {}) => drag('angle', { x: CENTER.x, y: CENTER.y + 50 }, {
     x: CENTER.x + 50 * Math.cos(deg * DEG_TO_RAD), y: CENTER.y + 50 * Math.sin(deg * DEG_TO_RAD),
   }, mods);
-  return { dragCenter, turnKnob };
+  /** Press `handle`, move it to `to`, and cancel. */
+  const cancel = (handle: SymmetryHandlePress['handle'], start: Point, to: Point) => {
+    const h = (createSymmetryHandleAction(sym).invoker as OngoingInvoker).start(ctx(handle, start, start), undefined);
+    h.onMove!(ctx(handle, start, to));
+    h.onEnd!(ctx(handle, start, to), 'cancel');
+  };
+  return { dragCenter, turnKnob, cancel, scene, group };
 }
 
 describe('the symmetry center drag', () => {
@@ -87,5 +93,18 @@ describe('the symmetry axis drag', () => {
 
   it('leaves the axis on the pointer while Ctrl suspends snapping', () => {
     expect(rig().turnKnob(92, { ctrl: true }).spec.angle).toBeCloseTo(92 * DEG_TO_RAD, 9);
+  });
+});
+
+describe('a canceled symmetry handle drag', () => {
+  it('puts back the group\'s data and pose exactly as stored, fields this version does not read included', () => {
+    const { cancel, scene, group } = rig();
+    const data = { symmetry: { ...(scene.get(group)!.data as { symmetry: object }).symmetry, future: 3, count: 'x' } };
+    scene.update(group, { data });
+    const pose = scene.get(group)!.pose;
+    cancel('angle', { x: CENTER.x, y: CENTER.y + 50 }, { x: CENTER.x + 50, y: CENTER.y });
+    cancel('center', CENTER, { x: 150, y: 20 });
+    expect(scene.get(group)!.data).toBe(data);
+    expect(scene.get(group)!.pose).toBe(pose);
   });
 });

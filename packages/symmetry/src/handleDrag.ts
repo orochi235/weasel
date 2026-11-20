@@ -1,5 +1,6 @@
 import { SNAP_ANGLE_STEP, SNAP_ROLES, snapMods, type Action, type InvocationCtx, type NodeId, type OngoingHandle } from '@weasel-js/core';
 import type { SymmetryChange, SymmetryController } from './controller';
+import { restorer } from './frames';
 import type { SymmetryHandlePress } from './guide';
 import type { SymmetrySpec } from './kinds';
 import type { Point } from '@weasel-js/geom';
@@ -81,7 +82,7 @@ export function createSymmetryHandleAction(ctrl: SymmetryController): Action & {
             theta0: Math.atan2(from.y - c.y, from.x - c.x), constrain: { step: SNAP_ANGLE_STEP },
           }) ?? null;
         let last: SymmetryChange | null = null;
-        const back: SymmetryChange = { spec: origin.spec, center: origin.center };
+        const restore = restorer(ctrl.scene, id);
         return {
           kind: 'symmetry-guide',
           onMove(move: InvocationCtx): void {
@@ -94,7 +95,7 @@ export function createSymmetryHandleAction(ctrl: SymmetryController): Action & {
           },
           onEnd(_end: InvocationCtx, reason: 'commit' | 'cancel'): void {
             try {
-              ctrl.preview(id, back);
+              restore();
               if (reason === 'commit' && last) ctrl.update(id, last, 'Move symmetry guide');
             } finally {
               session?.end();

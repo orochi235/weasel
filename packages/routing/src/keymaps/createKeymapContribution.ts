@@ -47,7 +47,7 @@ export function leaderBindings(def: Pick<KeymapDef, 'id' | 'leader'>): BoundGest
 }
 
 const isPlainEscape = (spec: GestureSpec): boolean =>
-  spec.kind === 'key' && [spec.key].flat().includes('Escape') && Object.values(spec.mods ?? {}).every((m) => m !== true);
+  (spec.kind === 'key' || spec.kind === 'keyHeld') && [spec.key].flat().includes('Escape') && Object.values(spec.mods ?? {}).every((m) => m !== true);
 
 /** `[keymap entry, leader entry]`. Triggered without a key, the leader opens
  *  its keymap tapped; `trigger('keymap.<id>', { hold: true })` holds it open

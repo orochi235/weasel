@@ -1,5 +1,5 @@
 import { multiply, rotate, translate, type Affine, type Point, type Rect } from '@weasel-js/geom';
-import { MAX_WALLPAPER_COPIES, exact, latticePoints } from './wallpaper';
+import { MAX_WALLPAPER_COPIES, exact, latticePoints, type LatticePoint } from './wallpaper';
 
 /** Which copies a symmetry group draws. */
 export type SymmetryKind = 'mirror' | 'both' | 'point' | 'radial' | 'kaleidoscope' | 'repeat' | 'wallpaper';
@@ -149,13 +149,9 @@ const ROWS: Readonly<Record<SymmetryKind, SymmetryKindDef>> = {
       const cell = [ID, ...cellTransforms(s, c)];
       const glide = s.glide ? mirrorAcross(c, s.angle) : null;
       const out: Affine[] = [];
-      const limit = Math.floor((MAX_WALLPAPER_COPIES + 1) / cell.length);
-      let points = latticePoints(s, limit);
+      const points = latticeOf(s, cell.length);
       // The original draws wherever it is, so its cell does too: the guide and `pointGroup` say so.
-      if (!points.some((p) => p.i === 0 && p.j === 0)) {
-        out.push(...cell.slice(1));
-        if (points.length >= limit) points = latticePoints(s, limit - 1);
-      }
+      if (!points.some((p) => p.i === 0 && p.j === 0)) out.push(...cell.slice(1));
       for (const p of points) {
         const home = p.i === 0 && p.j === 0;
         const step = translate(p.x, p.y);
@@ -187,6 +183,19 @@ export const SYMMETRY_KINDS: Readonly<Record<SymmetryKind, SymmetryKindDef>> = O
 /** What a wallpaper's cell draws about the center, its axis turned by `cellAngle`. */
 function cellTransforms(s: SymmetrySpec, c: Point): Affine[] {
   return s.cell === 'none' ? [] : SYMMETRY_KINDS[s.cell].transforms({ ...s, angle: s.angle + s.cellAngle }, c);
+}
+
+/** The lattice points a wallpaper whose cell draws `cellSize` shapes puts a cell at, past its home one: as many as
+ *  {@link MAX_WALLPAPER_COPIES} leaves room for, the nearest the center kept. */
+function latticeOf(s: SymmetrySpec, cellSize: number): LatticePoint[] {
+  const limit = Math.floor((MAX_WALLPAPER_COPIES + 1) / cellSize);
+  const points = latticePoints(s, limit);
+  return points.length >= limit && !points.some((p) => p.i === 0 && p.j === 0) ? latticePoints(s, limit - 1) : points;
+}
+
+/** The lattice points wallpaper `spec` draws its cell at about `center`, the cell around each included. */
+export function wallpaperLattice(spec: SymmetrySpec, center: Point): LatticePoint[] {
+  return latticeOf(spec, 1 + cellTransforms(spec, center).length);
 }
 
 /** The most wedges a radial kind uses: a kaleidoscope of this many draws

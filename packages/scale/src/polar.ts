@@ -44,7 +44,7 @@ export function polarScale(opts: PolarScaleOptions): PolarScale {
   const center = { x: opts.center.x, y: opts.center.y };
   const radius = [opts.radius[0], opts.radius[1]] as const;
   const domain = [opts.domain[0], opts.domain[1]] as const;
-  const axes = Math.max(1, Math.floor(opts.axes));
+  const axes = Number.isFinite(opts.axes) ? Math.max(1, Math.floor(opts.axes)) : 1;
   const start = opts.startAngle ?? 0;
   const linear = linearScale({ domain, range: radius });
   const angle = (i: number) => start + (2 * Math.PI * i) / axes;

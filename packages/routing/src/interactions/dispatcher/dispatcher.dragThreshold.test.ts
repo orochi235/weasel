@@ -110,4 +110,32 @@ describe("an action's drag threshold", () => {
     expect(handle.onEnd).toHaveBeenCalledWith(expect.anything(), 'commit');
     error.mockRestore();
   });
+
+  it('cancels the handle a held start returns after ending every gesture itself', () => {
+    const { handle, start, send, dispatcher } = setup(8);
+    start.mockImplementationOnce(() => { dispatcher.cancelAll('cancel'); return handle; });
+    send(at('pointerdown', 100));
+    send(at('pointermove', 120));
+    expect(handle.onMove).not.toHaveBeenCalled();
+    expect(handle.onEnd).toHaveBeenCalledOnce();
+    expect(handle.onEnd).toHaveBeenCalledWith(expect.anything(), 'cancel');
+    expect(dispatcher.inFlight().size).toBe(0);
+  });
+
+  it("hears the subscribe of the handle a held start returns", () => {
+    const { handle, send, dispatcher } = setup(8);
+    let shown: (() => void) | null = null;
+    const off = vi.fn();
+    Object.assign(handle, { subscribe: (changed: () => void) => { shown = changed; return off; } });
+    const seen = vi.fn();
+    dispatcher.subscribe(seen);
+    send(at('pointerdown', 100));
+    send(at('pointermove', 120));
+    seen.mockClear();
+    expect(shown).not.toBeNull();
+    shown!();
+    expect(seen).toHaveBeenCalled();
+    send(at('pointerup', 120));
+    expect(off).toHaveBeenCalledOnce();
+  });
 });

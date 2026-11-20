@@ -3,7 +3,7 @@
  */
 import type { ActionsRegistry } from '../interactions/actions/registry';
 import type { DepRegistry } from '../interactions/actions/depNode';
-import { keepToolOptions, toolOptionActionIds, toolOptionParams } from './toolOptions';
+import { keepToolOptions, liveTool, toolOptionActionIds, toolOptionParams } from './toolOptions';
 import type { Tool } from './types';
 
 /** Tune the actions each tool's options are params of with every option's
@@ -27,13 +27,7 @@ export function tuneToolOptions(
   const readBy = new Map<string, string>();
   const all = [...tools];
   const ids = new Set(all.map((t) => t.id));
-  // The newest of these tools held on its key, else the active one, as routing walks them.
-  const live = (): string | null => {
-    const slot = deps?.get('activeTool');
-    const stack = slot?.hotkeyStack ?? [];
-    for (let i = stack.length - 1; i >= 0; i--) if (ids.has(stack[i]!)) return stack[i]!;
-    return slot?.active ?? null;
-  };
+  const live = (): string | null => liveTool(deps?.get('activeTool'), ids);
   for (const tool of all) {
     const options = tool.options;
     if (!options) continue;

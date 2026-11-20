@@ -14,6 +14,7 @@ import { useGestureDispatcher } from '../dispatcher/useGestureDispatcher';
 import { createKeymapContribution } from '../../keymaps/createKeymapContribution';
 import type { KeymapStack } from '../../keymaps/keymapStack';
 import { holdPreview, holdPreviewId } from './holdPreview';
+import type { ActionsRegistry } from './registry';
 
 function rig(opts: { enabled?: Action['enabled']; throws?: boolean } = {}) {
   const dispatcher = createDispatcher();
@@ -47,8 +48,10 @@ function rig(opts: { enabled?: Action['enabled']; throws?: boolean } = {}) {
     actions: [unite, holdPreview(unite), cancel],
   });
   let keymaps: () => KeymapStack | null | undefined = () => undefined;
+  let actions: ActionsRegistry | null = null;
   function Probe() {
     const registry = useActionsRegistry()!;
+    actions = registry;
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     useEffect(() => {
       const releases = entries.flatMap((e) => e.actions ?? []).map((a) => registry.register(a));
@@ -73,7 +76,7 @@ function rig(opts: { enabled?: Action['enabled']; throws?: boolean } = {}) {
   };
   const tap = (k: string) => { send('keydown', k); send('keyup', k); };
   const open = () => keymaps()?.innermost()?.id ?? null;
-  return { shown, hidden, run, send, tap, dispatcher, open };
+  return { shown, hidden, run, send, tap, dispatcher, open, registry: actions! };
 }
 
 describe('holdPreview', () => {
@@ -147,5 +150,38 @@ describe('holdPreview', () => {
     expect(r.run).toHaveBeenCalledWith({ op: 'union' }, expect.anything());
     expect(error).toHaveBeenCalledWith(expect.stringContaining('preview of "unite" threw'), expect.any(Error));
     error.mockRestore();
+  });
+
+  it('does nothing where the action it holds is muted', () => {
+    const r = rig();
+    act(() => { r.registry.mute('unite'); });
+    r.tap('p');
+    r.send('keydown', 'u');
+    r.send('keyup', 'u');
+    expect(r.shown).not.toHaveBeenCalled();
+    expect(r.run).not.toHaveBeenCalled();
+  });
+
+  it("previews and runs with the action's tunings, under the binding's params", () => {
+    const r = rig();
+    act(() => { r.registry.tune('unite', { params: { op: 'tuned', keep: true } }); });
+    r.tap('p');
+    r.send('keydown', 'u');
+    expect(r.shown).toHaveBeenCalledWith({ op: 'union', keep: true }, expect.anything());
+    r.send('keyup', 'u');
+    expect(r.run).toHaveBeenCalledWith({ op: 'union', keep: true }, expect.anything());
+  });
+
+  it('runs the action registered over the one it was made from', () => {
+    const r = rig();
+    const replaced = vi.fn();
+    act(() => {
+      r.registry.register({ id: 'unite', label: 'Unite', requires: ['keymaps'], invoker: { timing: 'immediate', run: replaced } });
+    });
+    r.tap('p');
+    r.send('keydown', 'u');
+    r.send('keyup', 'u');
+    expect(r.run).not.toHaveBeenCalled();
+    expect(replaced).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,8 +1,7 @@
 import type { Affine, Point, Rect } from '@weasel-js/geom';
 import {
-  clipNothing, worldPoses, type AddNodeSpec, type CopiesFromPoseFn, type NodeId, type Scene, type SceneRegistry,
+  clipNothing, scenePoseFrame, worldPoses, type AddNodeSpec, type CopiesFromPoseFn, type NodeId, type Scene, type SceneRegistry,
 } from '@weasel-js/core';
-import { localPoseUnder } from './frames';
 import {
   DEFAULT_SYMMETRY, SYMMETRY_KINDS, symmetryTransforms, type SymmetryExtent, type SymmetrySpec, type WallpaperCell,
 } from './kinds';
@@ -26,11 +25,11 @@ export function poseAtCenter(c: Point): SymmetryPose {
   return { x: c.x, y: c.y, width: 0, height: 0 };
 }
 
-/** World point `center` as the center of a group stored under `parent`, or `null` when `parent`'s frame is
- *  singular and no stored center draws there. */
+/** World point `center`, as shown, as the center of a group stored under `parent`, or `null` when `parent`'s frame
+ *  is singular and no stored center draws there. Read back through {@link symmetryOf}, it is `center` again. */
 export function centerUnder(scene: Scene<unknown, string, unknown>, center: Point, parent: NodeId | null): Point | null {
   if (parent === null) return center;
-  const local = localPoseUnder(scene, poseAtCenter(center), parent);
+  const local = scenePoseFrame(scene).localUnder(parent, poseAtCenter(center));
   return local === null ? null : centerOfPose(local);
 }
 

@@ -8,7 +8,7 @@ import type { Path } from '@weasel-js/geom';
 import type { Stroke } from '@weasel-js/paint';
 import { ellipsePath, linePath } from '@weasel-js/geom';
 import { extractPolylines } from '@weasel-js/geom/tessellate';
-import { tessellateStroke } from './stroke';
+import { ribbonAligns, tessellateStroke } from './stroke';
 import { strokeMetricOf } from './metric';
 
 /** World → screen: 4:1, the anisotropy the TODO entry measured. */
@@ -164,4 +164,17 @@ describe('screen lengths on a world-width ribbon', () => {
       expect(max).toBeCloseTo(end, 4);
     },
   );
+});
+
+describe('an aligned rect under a metric that rotates it', () => {
+  it('builds the centered ribbon ribbonAligns promises, for the caller to cut', () => {
+    // A shear: the rect does not stay axis-aligned in the metric's space.
+    const { metric: sheared } = strokeMetricOf(1, 0, 0.5, 1);
+    const rect: Path = { kind: 'rect', x: 0, y: 0, width: 100, height: 50 };
+    const inner: Stroke = { paint: { kind: 'solid', color: '#000' }, width: 4, align: 'inner' };
+    expect(ribbonAligns(rect, inner, sheared!)).toBe(false);
+    const aligned = tessellateStroke(rect, inner, { metric: sheared! });
+    const centered = tessellateStroke(rect, { ...inner, align: 'center' }, { metric: sheared! });
+    expect(Array.from(aligned.vertices)).toEqual(Array.from(centered.vertices));
+  });
 });

@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { sameStored } from './json';
+import { isJsonSafe, sameStored } from './json';
 
 it('reads two values a JSON store keeps alike as the same, and a bigint as the digits it is stored as', () => {
   expect(sameStored({ a: [1, 2], b: 'x' }, { a: [1, 2], b: 'x' })).toBe(true);
@@ -16,4 +16,12 @@ it('answers false for a value JSON cannot write, rather than throwing', () => {
   expect(sameStored(loop, again)).toBe(false);
   expect(sameStored(loop, loop)).toBe(true);
   expect(sameStored(undefined, () => {})).toBe(false);
+});
+
+it('calls a value with a key JSON skips unsafe: a symbol key, or a key that is not enumerable', () => {
+  expect(isJsonSafe({ a: 2 })).toBe(true);
+  expect(isJsonSafe([1, 2])).toBe(true);
+  expect(isJsonSafe({ [Symbol('id')]: 1, a: 2 })).toBe(false);
+  expect(isJsonSafe(Object.assign([1], { [Symbol('id')]: 1 }))).toBe(false);
+  expect(isJsonSafe(Object.defineProperty({ a: 2 }, 'b', { value: 3, enumerable: false }))).toBe(false);
 });

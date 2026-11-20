@@ -34,7 +34,7 @@ describe('pattern serialization', () => {
 
     const back = firstFill(parseSvg(svg).nodes);
     expect(back).toBeDefined();
-    expect(back).toEqual(spec);
+    expect(back).toEqual({ ...spec, units: 'world' });
   });
 
   it('emits the tile as real geometry, not just the spec attribute', () => {
@@ -136,7 +136,7 @@ describe('pattern serialization', () => {
       const { nodes, warnings } = parseSvg(svg);
       expect(warnings).toEqual([]);
       expect(nodes).toHaveLength(1);
-      expect(firstFill(nodes)).toEqual(IMAGE);
+      expect(firstFill(nodes)).toEqual({ ...IMAGE, units: 'world' });
     });
 
     it('carries its origin and transform as a tile does', () => {
@@ -153,7 +153,7 @@ describe('pattern serialization', () => {
         + '<defs><pattern id="p" patternUnits="userSpaceOnUse" width="10" height="20">'
         + '<image xlink:href="tile.png" x="0" y="0" width="10" height="20"/></pattern></defs>'
         + '<rect x="0" y="0" width="100" height="100" fill="url(#p)"/></svg>';
-      expect(firstFill(parseSvg(doc).nodes)).toEqual({ kind: 'image', src: 'tile.png', width: 10, height: 20 });
+      expect(firstFill(parseSvg(doc).nodes)).toEqual({ kind: 'image', src: 'tile.png', width: 10, height: 20, units: 'world' });
     });
 
     it('drops a pattern whose picture does not fill the tile', () => {
@@ -164,6 +164,26 @@ describe('pattern serialization', () => {
       const { nodes, warnings } = parseSvg(doc);
       expect(firstFill(nodes)).toBeUndefined();
       expect(warnings.join(' ')).toContain('unsupported pattern');
+    });
+
+    it('drops a pattern whose picture is transformed in the tile', () => {
+      const doc = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+        + '<defs><pattern id="p" patternUnits="userSpaceOnUse" width="20" height="10">'
+        + '<image href="tile.png" width="20" height="10" transform="rotate(45 10 5)"/></pattern></defs>'
+        + '<rect x="0" y="0" width="100" height="100" fill="url(#p)"/></svg>';
+      const { nodes, warnings } = parseSvg(doc);
+      expect(firstFill(nodes)).toBeUndefined();
+      expect(warnings.join(' ')).toContain('unsupported pattern');
+    });
+
+    it('warns that a picture fitted by preserveAspectRatio is read stretched', () => {
+      const doc = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+        + '<defs><pattern id="p" patternUnits="userSpaceOnUse" width="20" height="10">'
+        + '<image href="tile.png" width="20" height="10" preserveAspectRatio="xMidYMid meet"/></pattern></defs>'
+        + '<rect x="0" y="0" width="100" height="100" fill="url(#p)"/></svg>';
+      const { nodes, warnings } = parseSvg(doc);
+      expect(firstFill(nodes)).toMatchObject({ kind: 'image', width: 20, height: 10 });
+      expect(warnings.join(' ')).toContain('preserveAspectRatio');
     });
 
     it('warns and drops one with no tile extent, which SVG cannot size', () => {

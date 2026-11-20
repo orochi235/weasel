@@ -9,6 +9,7 @@ import type { DispatcherContext } from './dispatcherApi';
 import { capabilitiesAllowed, type CapabilityTag } from '@weasel-js/modes';
 import { liveScope } from '../../contributions/eligibility';
 import { DEFAULT_KEYMAP_UNBOUND } from '../../kitSettings';
+import type { KeymapStack } from '../../keymaps/keymapStack';
 
 type Outcome = 'handled' | 'unhandled';
 
@@ -20,7 +21,15 @@ export interface KeymapPasses {
   binds(event: InputEvent): boolean;
   /** Whether a gesture is in flight. */
   engaged(): boolean;
+  /** Route without closing a keymap or noting what it saw: a prediction of what a dispatch would do. */
+  quiet?: boolean;
 }
+
+type Effects = Pick<KeymapStack, 'closeAll' | 'closeInnermost' | 'inputSeen' | 'swallowed' | 'cascaded'>;
+
+const NO_EFFECTS: Effects = {
+  closeAll: () => {}, closeInnermost: () => {}, inputSeen: () => {}, swallowed: () => {}, cascaded: () => {},
+};
 
 const MODIFIER_KEYS: ReadonlySet<string> = new Set(['Shift', 'Control', 'Alt', 'Meta', 'AltGraph', 'CapsLock']);
 
@@ -53,11 +62,12 @@ export function routeThroughKeymap(
   const stack = ctx.keymaps;
   const open = stack?.innermost();
   if (!stack || !open || event.kind === 'hover') return undefined;
+  const effects = passes.quiet ? NO_EFFECTS : stack;
   const isKey = event.kind === 'key' || event.kind === 'keyHeld';
   // A key this surface hears only because the pointer is over it belongs to whoever holds the keys.
   if (isKey && ctx.keyReach && !ctx.keyReach.held) return undefined;
   if (!stillLive(open.id, ctx)) {
-    stack.closeAll();
+    effects.closeAll();
     return undefined;
   }
 
@@ -69,15 +79,15 @@ export function routeThroughKeymap(
   if (isPlainEscape(event)) {
     // A gesture in flight — a key held through a keymap, say — is Escape's to cancel before the keymap's to close.
     if (passes.engaged() && passes.run('none', event) === 'handled') {
-      stack.inputSeen();
+      effects.inputSeen();
       return 'handled';
     }
-    stack.closeInnermost();
+    effects.closeInnermost();
     return 'handled';
   }
 
   if (passes.run('only', event) === 'handled') {
-    stack.inputSeen();
+    effects.inputSeen();
     return 'handled';
   }
 
@@ -92,10 +102,10 @@ export function routeThroughKeymap(
     const entry = ctx.entriesById.get(open.id)?.eligibility.keymap;
     const own = typeof entry === 'object' ? entry.unbound : undefined;
     if ((own ?? ctx.leaderUnbound ?? DEFAULT_KEYMAP_UNBOUND) === 'modal') {
-      stack.swallowed();
+      effects.swallowed();
       return 'handled';
     }
-    stack.cascaded();
+    effects.cascaded();
     return passes.run('none', event);
   }
 
@@ -108,6 +118,6 @@ export function routeThroughKeymap(
   const stroke = STROKES.has(event.kind) || (event.kind === 'pointerdown' && outcome === 'handled');
   // A click the keymap passes on may be the first of a double click it binds.
   const firstOfDouble = event.kind === 'click' && passes.binds({ ...event, kind: 'doubleclick' } as InputEvent);
-  if (stroke && !firstOfDouble) stack.inputSeen();
+  if (stroke && !firstOfDouble) effects.inputSeen();
   return outcome;
 }

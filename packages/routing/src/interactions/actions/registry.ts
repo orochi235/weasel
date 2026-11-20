@@ -99,7 +99,8 @@ export interface ActionsRegistry {
    * Returns a control object with `update(params)` and `end(reason)`.
    *
    * Returns `null` if no dispatcher is wired into this registry, the
-   * action is unknown, or its invoker is not ongoing.
+   * action is unknown, its `eligible` rule or `enabled` refuses, as for
+   * `trigger`, or its invoker is not ongoing.
    *
    * See `Dispatcher.beginUiOngoing` for full semantics including
    * auto-commit when a prior UI handle for the same action is in flight.

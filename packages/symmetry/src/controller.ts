@@ -26,7 +26,7 @@ export interface SymmetryController {
    *  once that group is gone, an undone create say. */
   active(): NodeId | null;
   setActive(id: NodeId | null): void;
-  /** Hear that the active group, or anything about it, changed. */
+  /** Hear that the active group, or anything about it, changed, an Undo, a Redo or another edit included. */
   subscribe(listener: () => void): () => void;
   /** Add an empty group, one undo step, and make it the active one. Its layer
    *  defaults to the scene's first. `center` is in the world, as every
@@ -72,6 +72,29 @@ export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: Cre
   let activeId: NodeId | null = null;
   const listeners = createEmitter();
   const notify = () => listeners.emit();
+  // While anyone listens, every scene change may be an Undo, a Redo or another edit of the active group.
+  let offScene: (() => void) | null = null;
+  let heard: NodeId | null = null;
+  const onScene = () => {
+    const now = ctrl.active();
+    if (now === null && heard === null) return;
+    heard = now;
+    notify();
+  };
+  const subscribe = (listener: () => void): (() => void) => {
+    const off = listeners.subscribe(listener);
+    if (offScene === null) {
+      heard = ctrl.active();
+      offScene = scene.subscribe(onScene);
+    }
+    return () => {
+      off();
+      if (listeners.size === 0 && offScene !== null) {
+        offScene();
+        offScene = null;
+      }
+    };
+  };
 
   /** Apply `change` to group `id`, answering whether it wrote anything. */
   const write = (id: NodeId, change: SymmetryChange): boolean => {
@@ -80,8 +103,10 @@ export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: Cre
     let wrote = false;
     if (change.spec) {
       const now = symmetrySpecOf(node.data);
-      const spec = { ...now, ...change.spec };
-      if (!deepEqual(spec, now)) {
+      const stored: unknown = (node.data as { symmetry?: unknown } | null | undefined)?.symmetry;
+      // Fields this version does not read stay as the file had them.
+      const spec = { ...(typeof stored === 'object' && stored !== null ? stored : {}), ...change.spec };
+      if (!deepEqual(symmetrySpecOf({ symmetry: spec }), now)) {
         scene.update(id, { data: { ...(node.data as object), symmetry: spec } });
         wrote = true;
       }
@@ -100,9 +125,10 @@ export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: Cre
     setActive(id) {
       if (id === activeId) return;
       activeId = id;
+      heard = ctrl.active();
       notify();
     },
-    subscribe: listeners.subscribe,
+    subscribe,
     create({ center, symmetry, layer, parent }) {
       const id = scene.add(symmetryGroupSpec({
         layer: layer ?? scene.layers[0]?.id ?? 'default', center: centerUnder(scene, center, parent ?? null) ?? center,
@@ -114,16 +140,12 @@ export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: Cre
     },
     read: (id) => symmetryOf(scene, id),
     update(id, change, label = 'Change symmetry') {
-      if (scene.batch(label, () => write(id, change))) notify();
+      scene.batch(label, () => write(id, change));
     },
     preview(id, change) {
-      if (scene.untracked(() => write(id, change))) notify();
+      scene.untracked(() => write(id, change));
     },
-    bake(id) {
-      const out = bakeSymmetry(scene, id);
-      if (out) notify();
-      return out;
-    },
+    bake: (id) => bakeSymmetry(scene, id),
     contribution: undefined as unknown as SurfaceContribution,
   };
 

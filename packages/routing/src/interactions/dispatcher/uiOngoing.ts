@@ -19,6 +19,8 @@ export function createUiOngoing(
   inFlight: InFlightGestures,
   notify: () => void,
   getAction: ((id: string) => Action | undefined) | undefined,
+  /** Bumped by each end of every gesture, so a `start` that ran one is seen. */
+  endings: () => number,
 ): UiOngoing {
   let seq = 0;
   /** actionId → gestureId of that action's handle in flight, so a second
@@ -83,6 +85,7 @@ export function createUiOngoing(
 
       const gestureId = `ui-${actionId}-${++seq}`;
       let handle: OngoingHandle;
+      const before = endings();
       try {
         // Params go through both `ctx.params` (the UI-driven channel) and
         // `BindingOptions.params` (the gesture-driven channel).
@@ -92,6 +95,12 @@ export function createUiOngoing(
         return null;
       }
       if (isEmptyOngoingHandle(handle)) return null;
+      if (endings() !== before) {
+        // `start` tore the dispatcher down, and nothing would end what it returned.
+        try { handle.onEnd?.(uiInvocationCtx(deps), 'cancel'); }
+        catch (e) { console.error(`weasel dispatcher: action "${actionId}" threw on onEnd`, e); }
+        return null;
+      }
 
       inFlight.open(gestureId, handle, null);
       byAction.set(actionId, gestureId);

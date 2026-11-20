@@ -1,0 +1,77 @@
+{
+ "id": "routing.interactions.actions",
+ "commit": "bfc55709b4b1c35343b8417dc8f74424b58d9714",
+ "date": "2026-11-20",
+ "files": [
+  "packages/routing/src/interactions/actions/ActionsProvider.tsx",
+  "packages/routing/src/interactions/actions/action.ts",
+  "packages/routing/src/interactions/actions/actionEnabled.ts",
+  "packages/routing/src/interactions/actions/actionIcon.typetest.ts",
+  "packages/routing/src/interactions/actions/actionIds.ts",
+  "packages/routing/src/interactions/actions/actionItems.ts",
+  "packages/routing/src/interactions/actions/actionSettings.ts",
+  "packages/routing/src/interactions/actions/actionShortcuts.ts",
+  "packages/routing/src/interactions/actions/actionTags.ts",
+  "packages/routing/src/interactions/actions/activeToolContext.tsx",
+  "packages/routing/src/interactions/actions/betweenGestures.ts",
+  "packages/routing/src/interactions/actions/binding.ts",
+  "packages/routing/src/interactions/actions/bindingOpts.ts",
+  "packages/routing/src/interactions/actions/bindingOverrides.ts",
+  "packages/routing/src/interactions/actions/buildDeps.ts",
+  "packages/routing/src/interactions/actions/defineAction.ts",
+  "packages/routing/src/interactions/actions/depNode.ts",
+  "packages/routing/src/interactions/actions/depRegistry.tsx",
+  "packages/routing/src/interactions/actions/holdPreview.ts",
+  "packages/routing/src/interactions/actions/inputScope.tsx",
+  "packages/routing/src/interactions/actions/invoker.ts",
+  "packages/routing/src/interactions/actions/keyOrder.ts",
+  "packages/routing/src/interactions/actions/lastOperation.ts",
+  "packages/routing/src/interactions/actions/modifierRoles.ts",
+  "packages/routing/src/interactions/actions/overlay.ts",
+  "packages/routing/src/interactions/actions/refusal.ts",
+  "packages/routing/src/interactions/actions/registry.ts",
+  "packages/routing/src/interactions/actions/scopeNode.ts",
+  "packages/routing/src/interactions/actions/showPreview.ts",
+  "packages/routing/src/interactions/actions/toolOffhand.ts",
+  "packages/routing/src/interactions/actions/tunedForm.ts",
+  "packages/routing/src/interactions/actions/tuning.ts",
+  "packages/routing/src/interactions/actions/useCommand.ts",
+  "packages/routing/src/interactions/actions/useLastOperation.ts",
+  "packages/routing/src/interactions/actions/useOngoingAction.ts"
+ ],
+ "a": 4,
+ "b": 4,
+ "m": 3,
+ "distinct": 5,
+ "chapman": 5.3,
+ "unfound": 0.3,
+ "read": {
+  "A": 35,
+  "B": 35
+ },
+ "patches": 5,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.1,
+   "B": 8.4,
+   "match": 0.2,
+   "fix": 18.8
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "weightedTokens": 2063209,
+  "costUsd": 6.22
+ },
+ "fixCommits": [
+  "082dd1d3455eece9129a4bfc47f498227b02c3a0",
+  "24fe6655b40d794c4ab0b0630766ce7d8cecc150",
+  "0090147580fc05d12b84a7230fe697800f59c7dd",
+  "d7de41fb41a760a03e9550f2a0a6aa6170763cb3",
+  "0aa51324d96ad73fb2da3c26c6619857b0a98b17"
+ ]
+}

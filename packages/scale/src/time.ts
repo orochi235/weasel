@@ -1,4 +1,4 @@
-import { proportion, tickStep } from './linear';
+import { proportion, tickCount, tickStep } from './linear';
 import { replacedFormat } from './replacedFormat';
 import type { ContinuousScale } from './types';
 import { lerp, wrapPositive } from '@weasel-js/geom';
@@ -39,7 +39,7 @@ const spanOf = (i: Interval): number => i.ms ?? i.months * MONTH_MS;
 
 /** The interval nearest a cut of `span` into `count` pieces; whole years past the table's end. */
 function intervalFor(span: number, count: number): Interval {
-  const target = span / Math.max(1, count);
+  const target = span / Math.max(1, tickCount(count));
   let best = INTERVALS[0]!;
   for (const i of INTERVALS) if (Math.abs(Math.log(spanOf(i) / target)) < Math.abs(Math.log(spanOf(best) / target))) best = i;
   if (best.unit === 'year' && target > 12 * MONTH_MS) {
@@ -73,9 +73,11 @@ function gridTicks(lo: number, hi: number, interval: Interval): number[] {
   const at = new Date(lo);
   let month = at.getUTCFullYear() * 12 + at.getUTCMonth();
   month = Math.ceil(month / interval.months) * interval.months;
+  const first = month;
   for (;; month += interval.months) {
     const t = monthStart(month);
-    // NaN past the last month a Date holds.
+    // NaN where the month starts before the first instant a Date holds, or past the last.
+    if (Number.isNaN(t) && month === first) continue;
     if (!(t <= hi)) break;
     if (t < lo) continue;
     out.push(t);
@@ -105,10 +107,11 @@ export function formatInstant(t: number, unit: TimeUnit): string {
 export function timeScale(opts: TimeScaleOptions): TimeScale {
   const [d0, d1] = opts.domain;
   const [r0, r1] = opts.range;
-  const span = d1 - d0;
+  // Ticks lie only where a Date holds an instant, so the span they cut is the part of the domain inside that.
+  const span = Math.max(0, Math.min(Math.max(d0, d1), MAX_INSTANT) - Math.max(Math.min(d0, d1), -MAX_INSTANT));
   const { along, unmap } = proportion(d0, d1);
   const map = (v: number) => (d1 === d0 ? (r0 + r1) / 2 : lerp(r0, r1, along(v)));
-  const interval = (count = 5) => intervalFor(Math.abs(span), count);
+  const interval = (count = 5) => intervalFor(span, count);
   const format = (v: number): string => formatInstant(v, interval().unit);
   return {
     kind: 'time',

@@ -170,3 +170,23 @@ describe('WALLPAPER_GROUPS', () => {
     }
   });
 });
+
+describe('latticePoints, past the index search', () => {
+  const strip = (x: number, width: number) =>
+    square({ spacing: 20, rowSpacing: 20, extent: { x, y: 0, width, height: 0 } });
+
+  it('finds every point of a long strip under the copy cap', () => {
+    expect(latticePoints(strip(-15000, 30000))).toHaveLength(1501);
+  });
+
+  it('finds the points of an extent far from the center', () => {
+    expect(latticePoints(strip(12000, 1000))).toHaveLength(51);
+  });
+
+  it('reads an extent given from its far corner as the same box', () => {
+    const box = { x: -360, y: -240, width: 720, height: 480 };
+    const flipped = { x: 360, y: 240, width: -720, height: -480 };
+    expect(latticePoints(square({ extent: flipped }))).toEqual(latticePoints(square({ extent: box })));
+    expect(latticePoints(square({ extent: box })).length).toBeGreaterThan(1);
+  });
+});

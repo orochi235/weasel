@@ -40,16 +40,16 @@ export function seats(ref: MarkerRef): boolean {
 /**
  * The def `ref` is written as, and its id. An unsized reference's seated id
  * is the marker key itself: `parseSvg` reads `url(#key)` back as the key when
- * the registry knows it. A sized one is suffixed with its size, and an
- * unseated def of a seating entry with `-tip`.
+ * the registry knows it. A sized one is suffixed with `--s` and its size, and an
+ * unseated def of a seating entry with `--tip`.
  */
 export function markerDefOf(ref: MarkerRef, seated: boolean): { id: string; def: MarkerDef } {
   const key = typeof ref === 'string' ? ref : ref.key;
   const size = typeof ref === 'string' ? undefined : ref.size;
   const asSeated = seated && seats(ref);
   const base = idOfKey(key);
-  const sized = size === undefined ? base : `${base}-s${typeof size === 'number' ? trimNumber(size) : `${trimNumber(size.px)}px`}`;
-  const id = !asSeated && seats(ref) ? `${sized}-tip` : sized;
+  const sized = size === undefined ? base : `${base}--s${typeof size === 'number' ? trimNumber(size) : `${trimNumber(size.px)}px`}`;
+  const id = !asSeated && seats(ref) ? `${sized}--tip` : sized;
   return { id, def: { key, ...(size === undefined ? {} : { size }), seated: asSeated } };
 }
 
@@ -68,10 +68,11 @@ const SAFE_ID = /^[^\s"'&<>()#\\]+$/;
 
 /** `key` as an id an attribute and a `url(#…)` can both hold: itself when it
  *  is one, else its safe characters and a hash of the whole, so two keys that
- *  differ only in what is replaced stay apart. */
+ *  differ only in what is replaced stay apart. Only a derived id holds `--`,
+ *  so none can equal another key's own. */
 function idOfKey(key: string): string {
-  if (SAFE_ID.test(key)) return key;
-  return `m-${key.replace(/[^\w.-]/g, '_')}-${shortHash(key)}`;
+  if (SAFE_ID.test(key) && !key.includes('--')) return key;
+  return `m--${key.replace(/[^\w.]/g, '_')}--${shortHash(key)}`;
 }
 
 /** Whether `def` is written with an attribute in the private namespace. */

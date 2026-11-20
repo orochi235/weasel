@@ -303,7 +303,7 @@ function lineLineIntersect(
   bpx: number, bpy: number, bdx: number, bdy: number,
 ): [number, number] | null {
   const denom = adx * bdy - ady * bdx;
-  if (Math.abs(denom) < 1e-9) return null;
+  if (Math.abs(denom) < 1e-9 * Math.hypot(adx, ady) * Math.hypot(bdx, bdy)) return null;
   const t = ((bpx - apx) * bdy - (bpy - apy) * bdx) / denom;
   return [apx + t * adx, apy + t * ady];
 }

@@ -2,8 +2,7 @@ import { transformPoint, ellipsePath, linePath, rectPath, type Path, type Point 
 import {
   viewToTransform, worldToScreen, type DrawCommand, type LayerHit, type RenderLayer, type View,
 } from '@weasel-js/core';
-import { SYMMETRY_KINDS, wedges, type SymmetrySpec } from './kinds';
-import { latticePoints } from './wallpaper';
+import { SYMMETRY_KINDS, wallpaperLattice, wedges, type SymmetrySpec } from './kinds';
 
 /** The guide layer's id. */
 export const SYMMETRY_GUIDE_ID = 'weasel-symmetry-guide';
@@ -89,6 +88,24 @@ function screenDir(angle: number, view: View): Point {
   return { x: x / len, y: y / len };
 }
 
+/** The part of the line from (`x`, `y`) along `d`, from `t0` on, that lies on a canvas of `dims`, or `null` for none. */
+function clipToBox(x: number, y: number, d: Point, t0: number, dims: { width: number; height: number }): [Point, Point] | null {
+  let lo = t0;
+  let hi = Infinity;
+  for (const [p, dp, max] of [[x, d.x, dims.width], [y, d.y, dims.height]] as const) {
+    if (dp === 0) {
+      if (p < 0 || p > max) return null;
+      continue;
+    }
+    const a = (0 - p) / dp;
+    const b = (max - p) / dp;
+    lo = Math.max(lo, Math.min(a, b));
+    hi = Math.min(hi, Math.max(a, b));
+  }
+  if (!(lo < hi)) return null;
+  return [{ x: x + d.x * lo, y: y + d.y * lo }, { x: x + d.x * hi, y: y + d.y * hi }];
+}
+
 /** The angles of the lines a spec reflects across: for a wallpaper, those
  *  through the center its cell reflects across. */
 function mirrorAngles(spec: SymmetrySpec): number[] {
@@ -131,22 +148,20 @@ export function createSymmetryGuideLayer(source: SymmetryGuideSource, style: Sym
       const { spec, center, reach: contentReach = 0 } = g;
       const t = viewToTransform(view);
       const [cx, cy] = worldToScreen(center.x, center.y, t);
-      const reach = Math.hypot(dims.width, dims.height) * 2;
       const out: DrawCommand[] = [];
-      for (const a of mirrorAngles(spec)) {
+      // A line through the center at `a`, or only its half from the center out, cut to the canvas.
+      const across = (a: number, c: string, half = false): void => {
         const d = screenDir(a, view);
-        out.push(line({ x: cx - d.x * reach, y: cy - d.y * reach }, { x: cx + d.x * reach, y: cy + d.y * reach }, color));
-      }
+        const seg = clipToBox(cx, cy, d, half ? 0 : -Infinity, dims);
+        if (seg) out.push(line(seg[0], seg[1], c));
+      };
+      for (const a of mirrorAngles(spec)) across(a, color);
       if (spec.kind === 'radial') {
         const n = wedges(spec);
-        for (let k = 0; k < n; k++) {
-          const d = screenDir(spec.angle + (2 * Math.PI * k) / n, view);
-          out.push(line({ x: cx, y: cy }, { x: cx + d.x * reach, y: cy + d.y * reach }, faint));
-        }
+        for (let k = 0; k < n; k++) across(spec.angle + (2 * Math.PI * k) / n, faint, true);
       }
       if (spec.kind === 'repeat') {
-        const d = screenDir(spec.angle, view);
-        out.push(line({ x: cx, y: cy }, { x: cx + d.x * reach, y: cy + d.y * reach }, faint));
+        across(spec.angle, faint, true);
         for (const m of SYMMETRY_KINDS.repeat.transforms(spec, center)) {
           const [wx, wy] = transformPoint(m, center.x, center.y);
           const [x, y] = worldToScreen(wx, wy, t);
@@ -184,7 +199,7 @@ export function createSymmetryGuideLayer(source: SymmetryGuideSource, style: Sym
   };
 }
 
-/** A wallpaper's extent outlined, and a dot at each of its lattice points. */
+/** A wallpaper's extent outlined, and a dot at each lattice point it draws a cell at. */
 function latticeGuide(spec: SymmetrySpec, center: Point, view: View, color: string): DrawCommand[] {
   const t = viewToTransform(view);
   const { x, y, width, height } = spec.extent;
@@ -196,7 +211,7 @@ function latticeGuide(spec: SymmetrySpec, center: Point, view: View, color: stri
     path: rectPath(Math.min(x0, x1), Math.min(y0, y1), Math.abs(x1 - x0), Math.abs(y1 - y0)),
     stroke: { paint, width: { px: 1 }, dash: [4, 4] },
   }];
-  for (const p of latticePoints(spec)) {
+  for (const p of wallpaperLattice(spec, center)) {
     const [px, py] = worldToScreen(center.x + p.x, center.y + p.y, t);
     out.push({ kind: 'path', path: ellipsePath({ x: px - 2, y: py - 2, width: 4, height: 4 }), fill: { paint } });
   }

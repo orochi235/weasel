@@ -40,11 +40,11 @@ describe('svg export seats an inset head on the cut shaft', () => {
       { kind: 'path', path: pathFromD('M0 0L5 0') as PolygonPath, fill: { kind: 'none' }, stroke: { paint: INK, width: 4, markerEnd: 'arrow' } },
     ]);
     const [curve, short] = elements(svg);
-    expect(attr(curve, 'marker-mid')).toBe('url(#arrow-tip)');
+    expect(attr(curve, 'marker-mid')).toBe('url(#arrow--tip)');
     expect(attr(curve, 'marker-end')).toBe('url(#arrow)');
-    expect(attr(short, 'marker-end')).toBe('url(#arrow-tip)');
+    expect(attr(short, 'marker-end')).toBe('url(#arrow--tip)');
     expect(attr(short, 'd')).toBe('M0 0L5 0');
-    const tip = marker(svg, 'arrow-tip')!;
+    const tip = marker(svg, 'arrow--tip')!;
     expect(attr(tip, 'refX')).toBe('0');
     expect(attr(tip, 'wzl:key')).toBe('arrow');
   });

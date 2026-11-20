@@ -1,7 +1,6 @@
 /** The node style an edit holds: the one it rewrote, if any, and the resolved style the overlay is dressed in. */
 import { useCallback, useRef, useState } from 'react';
-import { resolveTextStyle, type TextStyle } from '@weasel-js/text';
-import type { OverlayRunBase } from './domRuns';
+import { resolveTextStyle, type ResolvedTextStyle, type TextStyle } from '@weasel-js/text';
 import { applyOverlayStyle } from './overlayStyle';
 import type { UseTextEditOptions } from './textEditTypes';
 
@@ -13,7 +12,7 @@ import type { UseTextEditOptions } from './textEditTypes';
 export function useHeldNodeStyle(
   optsRef: { readonly current: Pick<UseTextEditOptions, 'getStyle' | 'getPaint'> },
 ) {
-  const baseRef = useRef<OverlayRunBase>(resolveTextStyle(undefined));
+  const baseRef = useRef<ResolvedTextStyle>(resolveTextStyle(undefined));
   const [nodeStyle, setNodeStyle] = useState<TextStyle | null>(null);
   const nodeStyleRef = useRef<TextStyle | null>(null);
   const holdNodeStyle = useCallback((style: TextStyle | null) => {
@@ -24,13 +23,17 @@ export function useHeldNodeStyle(
     (id: string): TextStyle | undefined => nodeStyleRef.current ?? optsRef.current.getStyle(id),
     [optsRef],
   );
-  /** Hold `style` as the node's, or the node's own for `null`, and dress the overlay in it. */
+  /** Places the open edit's overlay; set by the edit for as long as it is open. */
+  const placeRef = useRef<() => void>(() => {});
+  /** Hold `style` as the node's, or the node's own for `null`, dress the overlay in it, and place it again. */
   const restyleNode = useCallback((overlay: HTMLDivElement, id: string, style: TextStyle | null) => {
     holdNodeStyle(style);
     // The root's own decoration and slant reach every run by inheritance.
     const base = (baseRef.current = resolveTextStyle(style ?? optsRef.current.getStyle(id), optsRef.current.getPaint?.(id)));
     applyOverlayStyle(overlay, base);
+    // Dressing resets the sizes `place` set from the pose.
+    placeRef.current();
     return base;
   }, [holdNodeStyle, optsRef]);
-  return { nodeStyle, nodeStyleRef, baseRef, holdNodeStyle, styleOf, restyleNode };
+  return { nodeStyle, nodeStyleRef, baseRef, holdNodeStyle, styleOf, restyleNode, placeRef };
 }

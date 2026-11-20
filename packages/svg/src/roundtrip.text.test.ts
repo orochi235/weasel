@@ -80,11 +80,15 @@ describe('round-trip', () => {
       miterLimit: 6,
       dash: [4, 2],
     });
-    // The run overrides colour and width and inherits nothing else — a run's
-    // stroke replaces the node's rather than merging with it.
+    // The tspan overrides color and width and inherits the rest, as a browser
+    // draws it; a run's stroke replaces the node's, so it carries all of it.
     expect(t.runs?.[1].stroke).toEqual({
       paint: { kind: 'solid', color: '#1e90ff' },
       width: 1.5,
+      join: 'round',
+      cap: 'round',
+      miterLimit: 6,
+      dash: [4, 2],
     });
 
     const out = serializeSvg(first.nodes, { viewBox: { x: 0, y: 0, width: 200, height: 100 } });

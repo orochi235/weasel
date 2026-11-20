@@ -82,7 +82,7 @@ export function mediaEnvironmentFor(
     ...DEFAULT_MEDIA_ENVIRONMENT,
     width: width ?? DEFAULT_MEDIA_ENVIRONMENT.width,
     height: height ?? DEFAULT_MEDIA_ENVIRONMENT.height,
-    ...overrides,
+    ...Object.fromEntries(Object.entries(overrides).filter(([, v]) => v !== undefined)),
   };
 }
 

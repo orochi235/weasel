@@ -43,10 +43,13 @@ export interface LinearScale extends ContinuousScale {
 
 const DEFAULT_TICKS = 5;
 
+/** `count`, or the default for a count that is not a finite number, as a `width / spacing` of 0 / 0 gives. */
+export const tickCount = (count: number | undefined, fallback = DEFAULT_TICKS): number => (Number.isFinite(count) ? count! : fallback);
+
 /** The round step, 1, 2 or 5 times a power of ten, that cuts `lo`..`hi` into about `count` pieces. */
 export function tickStep(lo: number, hi: number, count = DEFAULT_TICKS): number {
   // Halved first, so ends near ±Number.MAX_VALUE still give a step rather than an infinite span.
-  const raw = (Math.abs(hi / 2 - lo / 2) / Math.max(1, count)) * 2;
+  const raw = (Math.abs(hi / 2 - lo / 2) / Math.max(1, tickCount(count))) * 2;
   if (!Number.isFinite(raw)) return 1;
   // A span among the subnormals halves to nothing, and is cut at multiples of itself.
   if (raw === 0) return Math.abs(hi - lo) || 1;

@@ -1,0 +1,29 @@
+{
+ "pairs": [
+  [
+   0,
+   6
+  ],
+  [
+   1,
+   3
+  ]
+ ],
+ "a": [
+  "textClusters lays a `fit: 'shrink'` node out in a zero-height box, so text on a path shrinks to almost nothing",
+  "The synthetic-bold cache uses one key for winding-normalized and raw outlines, so textToPath's bold glyphs wind according to draw history",
+  "With a bidi engine, visualGraphemes keeps LRM/RLM/ALM and isolate-control graphemes that its doc and its no-engine path drop",
+  "patchRangeStyle keeps the range's value for a key armed `undefined`, while text-dom's armedOver takes it off: one decision, two answers",
+  "layoutCanvasRuns does not rejoin a surrogate pair split across runs, which the GL path does",
+  "TextOutlineSource documents an absent `fill` as default black, but it resolves to no fill"
+ ],
+ "b": [
+  "effectiveRangeStyle drops the node's own `style.script`, so a superscripted node reports ordinary text",
+  "A run grammar whose delimiter is more than one UTF-16 unit is written by `runsToMarkdown` but never read by `markdownToRuns`",
+  "fitBoxToText resolves a `{ px }` font size at view scale 1, with no way to pass the scale",
+  "Synthetic-bold glyph cache is shared by a wound-positive and an as-authored input, so `textToPath` can get a negatively wound glyph",
+  "The 2D-canvas markdown path drops a run's `rotate`",
+  "numericWeight reads an empty or blank weight string as 0, not 400",
+  "textClusters lays a `fit: 'shrink'` node out in a zero-height box, shrinking its clusters to almost nothing"
+ ]
+}

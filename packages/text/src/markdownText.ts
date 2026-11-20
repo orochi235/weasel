@@ -4,6 +4,7 @@ import type { FaceMetrics, FontStyle } from '@weasel-js/font';
 import { resolveRunFace, scriptMetrics } from './runs/resolveRuns';
 import { graphemeCount } from './measure/graphemes';
 import { transformRunTexts } from './runs/textTransform';
+import { rejoinSplitPairs } from './runs/codePointCuts';
 import { smallCapsScale, smallCapsText } from './runs/smallCaps';
 import { endsHyphenated, hangs, wrapLines, type HyphenWidth } from './layout/lineBreak/wrapLines';
 import { DEFAULT_TAB_SIZE, tabAdvance, widthWithTabs, type TabStop } from './layout/tabStops';
@@ -93,7 +94,8 @@ export interface CanvasRunsLayout {
 
 /** `runs` as drawn: transformed, and split by small caps where the size
  *  changes, with the small pieces marked. */
-function segmentsOf(runs: readonly StyledRun[]): Segment[] {
+function segmentsOf(authored: readonly StyledRun[]): Segment[] {
+  const runs = rejoinSplitPairs(authored);
   // No caret reads this layout, so the transformed text simply replaces the source.
   const shown = transformRunTexts(
     runs.map((r) => r.text), runs.map((r) => r.textTransform ?? 'none'), runs.map((r) => r.lang),

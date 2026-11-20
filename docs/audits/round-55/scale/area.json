@@ -1,0 +1,59 @@
+{
+ "id": "scale",
+ "commit": "bfc55709b4b1c35343b8417dc8f74424b58d9714",
+ "date": "2026-11-20",
+ "files": [
+  "packages/scale/src/band.ts",
+  "packages/scale/src/index.ts",
+  "packages/scale/src/linear.ts",
+  "packages/scale/src/log.ts",
+  "packages/scale/src/ordinal.ts",
+  "packages/scale/src/pbt.fixture.ts",
+  "packages/scale/src/polar.ts",
+  "packages/scale/src/replacedFormat.ts",
+  "packages/scale/src/tickFormat.ts",
+  "packages/scale/src/time.ts",
+  "packages/scale/src/types.ts",
+  "packages/scale/src/warp.ts"
+ ],
+ "a": 9,
+ "b": 6,
+ "m": 4,
+ "distinct": 11,
+ "chapman": 13,
+ "unfound": 2,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "patches": 10,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.3,
+   "B": 7,
+   "match": 0.2,
+   "fix": 13.9
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1374208,
+  "costUsd": 4.25
+ },
+ "fixCommits": [
+  "cce50d5cc9539164f4b5d22e861d0b47868f5b11",
+  "f4a888fec88ee0521c0e336e41d8819119c03db7",
+  "1608601a411e94cf1e9e48ba6fa634c82aa5c886",
+  "d510bd3bf27485f5f76e7a5265abeffd967ca35a",
+  "aef6bf77fa8921c0782d69c52fea093319a69685",
+  "1e1e868baa59d3145fb95e5b086dd4c984523839",
+  "2f32eefa54907e9ce519e57daeeb3974d3b2eaba",
+  "7ab6c70077a67b0af1c45166293571fc16f1042e",
+  "684a6cd5d271fab7a3cfcdd85b0cc03959671d31",
+  "638d22c2672366a4dc7432ea21e529d876e1175a"
+ ]
+}

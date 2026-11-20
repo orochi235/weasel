@@ -1,0 +1,5 @@
+packages/text-shaping/src/__fixtures__/fonts.ts
+packages/text-shaping/src/index.ts
+packages/text-shaping/src/pbt.fixture.ts
+packages/text-shaping/src/scripts.ts
+packages/text-shaping/src/shaper.ts

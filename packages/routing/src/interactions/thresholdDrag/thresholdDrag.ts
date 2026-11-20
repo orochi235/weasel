@@ -72,7 +72,8 @@ export function startThresholdDrag(
   const keys: EventTarget = origin.ownerDocument.defaultView ?? origin.ownerDocument;
   // Window capture, and stopped there: the Escape that ends a drag must not also close the dialog the drag is in.
   const onKey = (ev: Event) => {
-    if (!activated || (ev as KeyboardEvent).key !== 'Escape') return;
+    const key = ev as KeyboardEvent;
+    if (!activated || key.key !== 'Escape' || key.isComposing) return;
     ev.preventDefault();
     ev.stopPropagation();
     session.cancel();

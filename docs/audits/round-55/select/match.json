@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   3,
+   0
+  ]
+ ],
+ "a": [
+  "README usage example does not typecheck: reassigning `select`'s result to the inferred `state`",
+  "A `between` range can put the same id in the selection twice, which the store then disagrees with",
+  "`createSelectionStore` keeps the caller's array itself, so a later mutation of it changes the selection silently",
+  "`SelectionMode`'s doc names a mode `multi` that no longer exists"
+ ],
+ "b": [
+  "`SelectionMode`'s doc still names the mode `multi`, which no longer exists",
+  "The README's `range` row omits `between`, so its fallback condition is wrong for surfaces that pass one"
+ ]
+}

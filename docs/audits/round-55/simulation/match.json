@@ -1,0 +1,16 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "On a clock, `restart()` called from `onEnd` is swallowed: the run stays stopped while the hook believes it is running",
+  "Clock mode runs every owed step synchronously in one frame, with no cap",
+  "A pinned node with a non-finite `fx`/`fy` writes NaN into `x`/`y`, skipping the finiteness guard the free path has"
+ ],
+ "b": [
+  "On a clock, `restart()` called from `onEnd` is lost: the simulation stays stopped while the hook believes it runs"
+ ]
+}

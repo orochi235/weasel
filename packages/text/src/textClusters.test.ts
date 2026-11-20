@@ -205,6 +205,18 @@ describe('textClusters', () => {
     expect(narrow.map((c) => c.paths.length > 0)).toEqual([true, true, false]);
   });
 
+  it('shrinks a fitted node to its box, and only by its width when given no height', () => {
+    const src: TextOutlineSource = {
+      text: 'ab', style: { fontFamily: 'outline-inter', fontSize: 100 }, fit: 'shrink', fill: INK,
+    };
+    const whole = textClusters({ ...src, fit: 'none' }).reduce((sum, c) => sum + c.advance, 0);
+    const unbounded = textClusters(src, { width: 1e6 }).reduce((sum, c) => sum + c.advance, 0);
+    expect(unbounded).toBeCloseTo(whole, 6);
+    const short = textClusters(src, { width: 1e6, height: 60 }).reduce((sum, c) => sum + c.advance, 0);
+    expect(short).toBeGreaterThan(whole * 0.2);
+    expect(short).toBeLessThan(whole * 0.9);
+  });
+
   it('sizes a small capital and its middle by the glyph\'s own size', () => {
     const style = { fontFamily: 'outline-inter', fontSize: 100, fontVariantCaps: 'small-caps' as const };
     const [big, small] = textClusters({ text: 'Xx', style, fill: INK });
@@ -272,6 +284,7 @@ describe('textClusters', () => {
     expect(textClusters(src, { width: 600 })).not.toBe(first);
     expect(textClusters(src, { width: 600, scale: 2 })).not.toBe(first);
     expect(textClusters({ ...src }, { width: 600, scale: 2 })).not.toBe(first);
+    expect(textClusters(src, { width: 500, height: 80 })).not.toBe(first);
   });
 
   it('lays out again once a face changes', async () => {

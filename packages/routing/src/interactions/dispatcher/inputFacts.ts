@@ -90,14 +90,18 @@ const at = (event: InputEvent): { world?: WorldPoint } => {
 };
 
 /**
- * The params an immediate invoker runs with: what the event carries, under the
- * binding's own `resolved` params. An immediate invoker gets `(deps, params)`
- * and no `InvocationCtx`, so this is where it reads deltas and positions.
+ * The params an immediate invoker runs with: what the event carries, its modifiers among them, under
+ * the binding's own `resolved` params. An immediate invoker gets `(deps, params)` and no
+ * `InvocationCtx`, so this is where it reads deltas and positions.
  */
 export function immediateParams(
   event: InputEvent,
   resolved: Record<string, unknown> | undefined,
-): (ImmediateParams & Record<string, unknown>) | undefined {
+): ImmediateParams & Record<string, unknown> {
+  return { ...carried(event), mods: modifierStateOf(event), ...resolved };
+}
+
+function carried(event: InputEvent): ImmediateParams {
   switch (event.kind) {
     case 'wheel':
       return {
@@ -105,7 +109,6 @@ export function immediateParams(
         clientX: event.clientX, clientY: event.clientY,
         ...at(event),
         affordance: event.affordance,
-        ...resolved,
       };
     case 'pinch':
       return {
@@ -113,7 +116,6 @@ export function immediateParams(
         clientX: event.clientX, clientY: event.clientY,
         ...at(event),
         affordance: event.affordance,
-        ...resolved,
       };
     case 'click':
     case 'doubleclick':
@@ -122,11 +124,7 @@ export function immediateParams(
         affordance: event.affordance,
         ...(event.kind === 'click' && event.pressX !== undefined && event.pressY !== undefined
           ? { press: { x: event.pressX, y: event.pressY } } : {}),
-        mods: modifierStateOf(event),
-        ...resolved,
       };
-    // Only a `stage: 'press'` pointerdown reaches an immediate invoker: the
-    // buffered copy matches `drag` specs, which are ongoing.
     case 'contextmenu':
       return {
         ...at(event),
@@ -134,27 +132,19 @@ export function immediateParams(
         affordance: event.affordance,
         bodyTarget: event.bodyTarget,
         bodyKind: event.bodyKind,
-        mods: modifierStateOf(event),
-        ...resolved,
       };
+    // Only a `stage: 'press'` pointerdown reaches an immediate invoker: the
+    // buffered copy matches `drag` specs, which are ongoing.
     case 'pointerdown':
     case 'longpress':
-      return {
-        ...at(event),
-        affordance: event.affordance,
-        bodyTarget: event.bodyTarget,
-        mods: modifierStateOf(event),
-        ...resolved,
-      };
+      return { ...at(event), affordance: event.affordance, bodyTarget: event.bodyTarget };
     case 'hover':
       return {
         ...at(event),
         clientX: event.clientX, clientY: event.clientY,
         affordance: event.affordance,
         bodyTarget: event.bodyTarget,
-        mods: modifierStateOf(event),
         held: event.held === true,
-        ...resolved,
       };
     case 'carry':
       return {
@@ -164,18 +154,11 @@ export function immediateParams(
         affordance: event.affordance,
         bodyTarget: event.bodyTarget,
         bodyKind: event.bodyKind,
-        mods: modifierStateOf(event),
-        ...resolved,
       };
     case 'drop':
     case 'paste':
-      return {
-        items: event.items,
-        via: event.kind,
-        ...at(event),
-        ...resolved,
-      };
+      return { items: event.items, via: event.kind, ...at(event) };
     default:
-      return resolved;
+      return {};
   }
 }

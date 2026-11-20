@@ -134,7 +134,8 @@ export function createIndexedDbAdapter({
     return new Promise<T>((resolve, reject) => {
       const result = body(tx.objectStore(store));
       tx.oncomplete = () => resolve(result());
-      tx.onerror = () => reject(tx.error);
+      // A failed request's error reaches the transaction before `tx.error` is set.
+      tx.onerror = (e) => reject((e.target as IDBRequest | null)?.error ?? tx.error);
       tx.onabort = () => reject(tx.error);
     });
   };

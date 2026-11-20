@@ -6,10 +6,15 @@
  */
 import type { RunFlag, RunGrammar, RunMarker } from '../runs';
 
-/** Each delimiter's markers, longest first. */
+/** Each delimiter's markers, longest first. Throws for a delimiter that is not one UTF-16 unit, which the
+ *  reader could not find again in what the writer wrote. */
 export function markersByDelimiter(grammar: RunGrammar): Map<string, RunMarker[]> {
   const out = new Map<string, RunMarker[]>();
   for (const m of grammar.markers) {
+    if (m.delimiter.length !== 1 || /[\ud800-\udfff]/.test(m.delimiter)) {
+      throw new Error(`run grammar: the delimiter ${JSON.stringify(m.delimiter)} is not one character of one UTF-16 unit; `
+        + 'spell a doubled marker with `repeat` instead');
+    }
     const list = out.get(m.delimiter) ?? [];
     list.push(m);
     out.set(m.delimiter, list);

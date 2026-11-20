@@ -1,0 +1,58 @@
+{
+ "id": "symmetry",
+ "commit": "bfc55709b4b1c35343b8417dc8f74424b58d9714",
+ "date": "2026-11-20",
+ "files": [
+  "packages/symmetry/src/bake.ts",
+  "packages/symmetry/src/controller.ts",
+  "packages/symmetry/src/frames.ts",
+  "packages/symmetry/src/group.ts",
+  "packages/symmetry/src/guide.ts",
+  "packages/symmetry/src/handleDrag.ts",
+  "packages/symmetry/src/index.ts",
+  "packages/symmetry/src/kinds.ts",
+  "packages/symmetry/src/pbt.fixture.ts",
+  "packages/symmetry/src/settings.ts",
+  "packages/symmetry/src/wallpaper.ts"
+ ],
+ "a": 7,
+ "b": 3,
+ "m": 1,
+ "distinct": 9,
+ "chapman": 15,
+ "unfound": 6,
+ "read": {
+  "A": 11,
+  "B": 11
+ },
+ "patches": 10,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 12.6,
+   "B": 5.7,
+   "match": 0.1,
+   "fix": 25.9
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 1779949,
+  "costUsd": 5.36
+ },
+ "fixCommits": [
+  "aadfa8cd4f086e64b456920acd640951f2d523aa",
+  "2f0ca4a32ecd212a65579f3bbe4e06544f3b57c7",
+  "e9b0c24f395c9d489b90ee192bfbe16ace72335a",
+  "c1b798ac2ae125898d6f5d45a80d17d88ada5a2d",
+  "90d3b4826080f99091d293010e3dd812c076c65c",
+  "f05881c5700b610287a96d5982674248672cac1d",
+  "f93395519257acf75c0dac8882bdc3f6ca70409a",
+  "f9b1d466947a71de0a894a123963f8cf9edfe6d6",
+  "931e358ac5b08f17d3fa2e33d8a89fcaa07803aa",
+  "ecc168a9e726a74ebdb2c11d197f58b86dcc9db5"
+ ]
+}

@@ -1,0 +1,39 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   3
+  ],
+  [
+   5,
+   2
+  ],
+  [
+   7,
+   4
+  ]
+ ],
+ "a": [
+  "A pow or warp scale over a narrow domain away from zero has no ticks at all",
+  "A log scale whose domain sits inside one decade between its 1-2-5 values has no ticks",
+  "Log ticks for base 2 (or 3, ...) are rounded to 12 significant digits, so large powers are wrong values and labels",
+  "A linear scale's ticks(NaN) ticks at a step of 1, producing up to millions of ticks or an out-of-memory hang",
+  "A time scale's ticks(NaN) falls to the 1-second interval: millions of ticks over any long span",
+  "A warp/pow scale's `format` labels its own ticks at the linear step's precision, rounding them wrong",
+  "Month/quarter ticks vanish for a time domain starting in the first month a Date holds",
+  "A log scale whose ends' logarithms are equal inverts every point to an end",
+  "polarScale's axes sanitization lets NaN through, so every angle and point is NaN"
+ ],
+ "b": [
+  "timeScale.ticks hangs on a domain whose span overflows to Infinity",
+  "warp/pow scales give no ticks for a narrow domain away from zero",
+  "warp/pow `format` labels its own ticks at the wrong precision, disagreeing with `tickFormat`",
+  "logScale gives no ticks for a domain inside one decade that holds no 1, 2 or 5 multiple",
+  "logScale.invert disagrees with position for ends too near for their logarithms to differ",
+  "Tick labels at or above 1e21 print the double's float-noise digits"
+ ]
+}

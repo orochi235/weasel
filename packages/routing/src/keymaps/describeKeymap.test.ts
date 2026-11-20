@@ -44,6 +44,15 @@ describe('describeKeymap', () => {
       .toEqual([undefined, 'Ctrl-click', 'Win-Alt-drag']);
   });
 
+  it('gives a key bound with Ctrl or Meta a row in words, pressed or held', () => {
+    const ctrl: OpenKeymap = { ...level, bindings: [
+      { spec: { kind: 'key', key: '1', mods: { ctrl: true } }, actionId: 'zoom' },
+      { spec: { kind: 'keyHeld', key: 'K', mods: { meta: true, shift: true } }, actionId: 'peek' },
+    ] };
+    expect(describeKeymap(ctrl, actions, undefined, { platform: 'macos' }).rows.map((r) => r.gesture))
+      .toEqual([undefined, 'Control-1', 'Hold Cmd-Shift-K']);
+  });
+
   it("names a binding that picks a variant by the variant's label", () => {
     const flip: Action = { id: 'flip', label: 'Flip', variants: [
       { key: 'x', label: 'Flip Horizontal', params: { axis: 'x' } },

@@ -136,4 +136,23 @@ describe('modifier roles', () => {
     d.handleInput({ ...pointer('pointerdown'), kind: 'click', altKey: true, metaKey: true } as InputEvent, ctx);
     expect(seen).toEqual([{ 'handle.holdAngle': true, 'handle.holdLength': true }]);
   });
+
+  it.each([
+    ['key', { spec: { kind: 'key', key: 'h', mods: { shift: true } } }, { kind: 'key', key: 'h' }],
+    ['wheel', { spec: { kind: 'wheel', mods: { shift: true } } }, { kind: 'wheel', x: 0, y: 0, clientX: 0, clientY: 0, deltaX: 0, deltaY: 1 }],
+  ] as const)('hands an immediate action bound to a %s its roles and view in params', (_kind, binding, event) => {
+    const seen: unknown[] = [];
+    const action: Action = {
+      id: 'tap',
+      label: 'tap',
+      defaultBinding: [binding as never],
+      modifierRoles: holdAction(() => ({})).modifierRoles,
+      invoker: { timing: 'immediate', run: (_deps, params) => { seen.push(params); } },
+    };
+    const ctx = makeCtx({ actions: makeRegistry([action]), viewId: 'left' });
+    createDispatcher().handleInput({ ...event, altKey: false, ctrlKey: false, metaKey: false, shiftKey: true } as InputEvent, ctx);
+    expect(seen).toEqual([expect.objectContaining({
+      roles: { 'handle.holdAngle': true, 'handle.holdLength': false }, viewId: 'left',
+    })]);
+  });
 });

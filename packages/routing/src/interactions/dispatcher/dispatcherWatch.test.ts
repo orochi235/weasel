@@ -53,4 +53,14 @@ describe('dispatcherWatch', () => {
     watch.stop();
     expect(a.listeners.size).toBe(0);
   });
+
+  it('lets go of a dispatcher that is no longer live while another is listed twice', () => {
+    const a = fakeDispatcher();
+    const b = fakeDispatcher();
+    const watch = dispatcherWatch(vi.fn());
+    watch.sync([a.dispatcher, b.dispatcher]);
+    watch.sync([a.dispatcher, a.dispatcher]);
+    expect(b.listeners.size).toBe(0);
+    expect(a.listeners.size).toBe(1);
+  });
 });

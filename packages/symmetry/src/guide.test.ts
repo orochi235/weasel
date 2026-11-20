@@ -107,3 +107,30 @@ describe('symmetryHandleChange', () => {
     expect(out.spec!.angle).toBeUndefined();
   });
 });
+
+describe('the wallpaper guide', () => {
+  it('dots only the lattice points a capped cell draws at', () => {
+    const s = spec({
+      kind: 'wallpaper', cell: 'kaleidoscope', count: 6, angle: 0, spacing: 4, rowAngle: Math.PI / 3, rowSpacing: 4,
+      extent: { x: -400, y: -400, width: 800, height: 800 },
+    });
+    const draw = createSymmetryGuideLayer(source(s)).draw!(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
+    const dots = draw.filter((c) => c.kind === 'path' && 'fill' in c && c.fill && !('stroke' in c && c.stroke));
+    expect(dots).toHaveLength(Math.floor(4097 / 12));
+  });
+});
+
+describe('the guide\'s lines', () => {
+  it('cross the canvas from a center far off it', () => {
+    // Zoomed 10×, the center 4000 px left of a 400 px canvas, the mirror axis horizontal through it.
+    const s = spec({ kind: 'mirror', angle: HORIZONTAL_AXIS });
+    const far = { current: () => ({ group: 'g', spec: s, center: { x: -400, y: 20 } }), subscribe: () => () => {} };
+    const cmds = createSymmetryGuideLayer(far).draw!(undefined, { x: 0, y: 0, scale: { x: 10, y: 10 } }, DIMS);
+    const onCanvas = cmds.filter((c) => {
+      if (c.kind !== 'path' || !('stroke' in c) || 'fill' in c) return false;
+      const b = boundsOfPath(c.path);
+      return b.x <= 0 && b.x + b.width >= 400 && b.y === 200;
+    });
+    expect(onCanvas).toHaveLength(1);
+  });
+});

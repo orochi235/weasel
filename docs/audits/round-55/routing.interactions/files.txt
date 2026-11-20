@@ -1,0 +1,13 @@
+packages/routing/src/interactions/browserReservedKeys.ts
+packages/routing/src/interactions/carry/carry.ts
+packages/routing/src/interactions/carry/index.ts
+packages/routing/src/interactions/handleDrag/handleDrag.ts
+packages/routing/src/interactions/keyHelpers.ts
+packages/routing/src/interactions/pointerSession/index.ts
+packages/routing/src/interactions/pointerSession/pointerSession.ts
+packages/routing/src/interactions/pointerSession/swallowClick.ts
+packages/routing/src/interactions/scratchKey.ts
+packages/routing/src/interactions/sweep/index.ts
+packages/routing/src/interactions/sweep/sweep.ts
+packages/routing/src/interactions/thresholdDrag/index.ts
+packages/routing/src/interactions/thresholdDrag/thresholdDrag.ts

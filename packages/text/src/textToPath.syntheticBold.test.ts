@@ -23,6 +23,7 @@ import {
   pathToCubicContours,
   pathContainsPoint,
   reversePath,
+  pathSignedArea,
   PATH_C,
   PATH_Q,
   type PolygonPath,
@@ -168,8 +169,6 @@ describe('syntheticBoldOffset — per tier', () => {
     expect(syntheticBoldOffset(resolvedAs('outline', true))).toBeNull();
   });
 
-  // The cache keys on outline data alone, and its callers pass that data wound either way, so a hit
-  // can hand one caller the other's winding: harmless only if both grow the same region.
   it('grows a glyph to the same region whichever way it is wound', () => {
     const ring = pathFromD('M0 0H0.6V0.7H0ZM0.15 0.15V0.55H0.45V0.15Z') as PolygonPath;
     const bold = resolvedAs('atlas', true);
@@ -192,5 +191,14 @@ describe('syntheticBoldOffset — per tier', () => {
       expect(pathContainsPoint(forward, x, y)).toBe(inside);
       expect(pathContainsPoint(reversed, x, y)).toBe(inside);
     }
+  });
+
+  it('keeps each winding of one glyph apart in the cache', () => {
+    const ring = pathFromD('M0 0H0.6V0.7H0ZM0.15 0.15V0.55H0.45V0.15Z') as PolygonPath;
+    const bold = resolvedAs('atlas', true);
+    const negative = emboldenGlyph(reversePath(ring), 'ring-shared', bold);
+    const positive = emboldenGlyph(ring, 'ring-shared', bold);
+    expect(Math.sign(pathSignedArea(negative))).toBe(Math.sign(pathSignedArea(reversePath(ring))));
+    expect(Math.sign(pathSignedArea(positive))).toBe(Math.sign(pathSignedArea(ring)));
   });
 });

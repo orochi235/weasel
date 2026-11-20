@@ -1,4 +1,4 @@
-/** Which of two nested surfaces a wheel or a right-click goes to: the innermost it landed in, then the one around it. */
+/** Which of two nested surfaces a wheel, a WebKit pinch or a right-click goes to: the innermost it landed in, then the one around it. */
 import { describe, expect, it, vi } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { useEffect, useRef, type ReactNode, type RefObject } from 'react';
@@ -20,7 +20,7 @@ function Root({ children }: { children: ReactNode }): ReactNode {
   );
 }
 
-type Kind = 'wheel' | 'contextMenu' | 'click';
+type Kind = 'wheel' | 'contextMenu' | 'click' | 'pinch';
 
 /** A dispatcher on `surface` whose `kind` binding calls `run`, or binds nothing when `run` is absent. */
 function WheelOn({ surface, run, kind }: { surface: RefObject<HTMLElement | null>; run?: () => void; kind: Kind }): null {
@@ -56,6 +56,34 @@ const wheel = (): void => {
 const rightClick = (): void => {
   act(() => { document.querySelector('canvas')!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true })); });
 };
+
+const pinch = (): void => {
+  const c = document.querySelector('canvas')!;
+  const gesture = (type: string, scale: number): Event =>
+    Object.assign(new Event(type, { bubbles: true, cancelable: true }), { scale, rotation: 0, clientX: 0, clientY: 0 });
+  act(() => {
+    c.dispatchEvent(gesture('gesturestart', 1));
+    c.dispatchEvent(gesture('gesturechange', 1.2));
+    c.dispatchEvent(gesture('gestureend', 1.2));
+  });
+};
+
+describe('a WebKit pinch on a surface nested in another', () => {
+  it('goes to the inner surface, and not on to the outer one once taken', () => {
+    const outer = vi.fn();
+    const inner = vi.fn();
+    render(<Root><Nested outer={outer} inner={inner} kind="pinch" /></Root>);
+    pinch();
+    expect([outer.mock.calls.length, inner.mock.calls.length]).toEqual([0, 1]);
+  });
+
+  it('goes on to the outer surface when the inner one binds no pinch', () => {
+    const outer = vi.fn();
+    render(<Root><Nested outer={outer} kind="pinch" /></Root>);
+    pinch();
+    expect(outer).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe('a right-click on a surface nested in another', () => {
   it('goes to the inner surface, and not on to the outer one once taken', () => {

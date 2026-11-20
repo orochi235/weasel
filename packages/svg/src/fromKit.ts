@@ -117,16 +117,27 @@ export function svgLeafFromKit(
     const under: SvgNode[] = frame.shadow ? [{
       kind: 'group',
       opacity: frame.shadow.opacity,
-      children: frame.shadow.paths.map((path) => svgLeafFromKit({ path, fill: solidFill(frame.shadow!.color) }, pose) as SvgPathNode),
+      children: frame.shadow.paths.map((path) => framePartFromKit(path, { fill: solidFill(frame.shadow!.color) }, pose)),
     }] : [];
     const over: SvgNode[] = frame.edge
-      ? [svgLeafFromKit({ path: frame.edge.path, fill: null, stroke: { paint: { kind: 'solid', color: frame.edge.color }, width: frame.edge.width } }, pose) as SvgPathNode]
+      ? [framePartFromKit(frame.edge.path, { fill: null, stroke: { paint: { kind: 'solid', color: frame.edge.color }, width: frame.edge.width } }, pose)]
       : [];
     const framed: SvgGroupNode = { kind: 'group', children: [box, ...over, text], ...clip };
     return under.length > 0 ? { kind: 'group', children: [...under, framed], textFrame: true } : { ...framed, textFrame: true };
   }
   const outline = data.path ? pathInPoseBox(data.path, pose) : shapePathOf(data, pose);
   if (!outline) return data.image ? svgImageFromKit(data.image, pose) : null;
+  return leafOnOutline(outline, data, pose);
+}
+
+/** A text frame's shadow layer or edge: a path already where it sits round
+ *  the node's box, so it is turned about that box's center, not its own. */
+function framePartFromKit(path: Path, data: Pick<SvgKitLeafData, 'fill' | 'stroke'>, pose: SvgKitPose): SvgPathNode {
+  if (!pose.rotation || poseLinearOf(pose)) return leafOnOutline(path, data, pose);
+  return leafOnOutline(pathThroughPoseFrame(path, pose), data, { ...pose, rotation: 0 });
+}
+
+function leafOnOutline(outline: Path, data: Pick<SvgKitLeafData, 'fill' | 'stroke'>, pose: SvgKitPose): SvgPathNode {
   const stroke = svgStrokeFromKit(resolveStroke(data.stroke), pose);
   const node: SvgPathNode = {
     kind: 'path',
