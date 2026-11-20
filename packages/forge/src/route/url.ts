@@ -1,4 +1,4 @@
-import { type ConfigSchema, type ConfigShape, isConfigBranch, configValueAt } from '@weasel-js/labkit/config';
+import { type ConfigSchema, type ConfigShape, isConfigBranch, configValueAt, hasConfigPath } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
 import { type PrefLeaf, type PrefObject, prefSectionLeaves } from '@weasel-js/prefs-schema';
 import { type StoryGlobals, stableStringify } from '../protocol/messages';
@@ -75,6 +75,8 @@ export interface KnobLeaf {
     children?: PrefObject['children'];
     tag?: string;
     variants?: Readonly<Record<string, PrefObject>>;
+    /** The leaf may be unset; an empty param carries it so. */
+    clearable?: boolean;
   };
 }
 
@@ -179,6 +181,7 @@ function fits(codec: Codec, value: unknown, leaf: KnobLeaf): boolean {
  */
 export function decodeKnob(raw: string, leaf: KnobLeaf): { value: unknown } | undefined {
   const codec = codecOf(leaf);
+  if (raw === '' && leaf.annotations?.clearable && (codec === 'number' || codec === 'enum')) return { value: undefined };
   switch (codec) {
     case 'number': {
       const n = raw.trim() === '' ? Number.NaN : Number(raw);
@@ -235,13 +238,22 @@ export function sameKnob(a: unknown, b: unknown): boolean {
   return Object.is(a, b) || stableStringify(a) === stableStringify(b);
 }
 
+/** Whether `config` holds `leaf` at `path` cleared: a clearable leaf set to `undefined`, which its default is not. */
+export function isClearedKnob(config: unknown, path: string, leaf: KnobLeaf): boolean {
+  return leaf.annotations?.clearable === true && leaf.default !== undefined && hasConfigPath(config, path) && configValueAt(config, path) === undefined;
+}
+
 /**
  * The knob params for `config`: one per leaf whose value differs from its default, keyed by dotted path, in schema
- * order. A leaf absent from `config` is at its default.
+ * order. A leaf absent from `config` is at its default; a cleared one is an empty param.
  */
 export function knobsToParams(schema: Pick<ConfigSchema<unknown>, 'nodes'>, config: unknown): Record<string, string> {
   const params: Record<string, string> = {};
   for (const { path, leaf } of knobPaths(schema)) {
+    if (isClearedKnob(config, path, leaf)) {
+      setOwn(params, path, '');
+      continue;
+    }
     const value = configValueAt(config, path);
     if (value === undefined || sameKnob(value, leaf.default)) continue;
     const encoded = encodeKnob(value);

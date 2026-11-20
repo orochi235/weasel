@@ -140,6 +140,15 @@ describe('decodeKnob', () => {
 });
 
 describe('knobsToParams', () => {
+  it('writes a cleared clearable leaf as an empty param, which reads back cleared', () => {
+    const schema = f.schema({ size: f.number(12).clearable(), count: f.number(1) });
+    const params = knobsToParams(schema, { size: undefined, count: 1 });
+    expect(params).toEqual({ size: '' });
+    expect(paramsToKnobs(schema, params)).toEqual({ size: undefined });
+    expect(knobsToParams(schema, { count: 1 })).toEqual({});
+    expect(paramsToKnobs(schema, { count: '' })).toEqual({});
+  });
+
   it('compares a story arg holding a cycle to its default, after a port has cloned it, without throwing', () => {
     const tree: Record<string, unknown> = { name: 'root' };
     tree.self = tree;
