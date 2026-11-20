@@ -387,7 +387,7 @@ describe('fontWeight and bold', () => {
     expect(patchRangeStyle({ fontWeight: 300, italic: true }, { bold: true }))
       .toEqual({ bold: true, italic: true });
     expect(patchRangeStyle({ bold: MIXED }, { fontWeight: 500 })).toEqual({ fontWeight: 500 });
-    expect(patchRangeStyle({ fontSize: 12 }, { fontSize: undefined })).toEqual({ fontSize: 12 });
+    expect(patchRangeStyle({ fontSize: 12 }, { fontSize: undefined })).toEqual({});
   });
 
   it('a patch naming both keys writes both as given', () => {

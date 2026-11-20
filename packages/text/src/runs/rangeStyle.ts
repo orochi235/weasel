@@ -21,7 +21,7 @@
  * `styleAtRange` reports. Treat `fill` values as immutable.
  */
 
-import { MIXED, deepEqual } from '@weasel-js/registry';
+import { MIXED, deepEqual, setOwn } from '@weasel-js/registry';
 import type { Mixed } from '@weasel-js/registry';
 import type { StyledRun } from '../runs';
 import { snapToCodePoints } from './codePointCuts';
@@ -187,14 +187,18 @@ export function supersededKey(patch: RunStylePatch): 'bold' | 'fontWeight' | und
 /**
  * `range` with `patch` laid over it, keyed as a write of `patch` would leave
  * the runs — for showing styling armed for the next keystroke over the
- * styling at the caret. A key the patch leaves `undefined` keeps the range's
- * value; the key it supersedes is dropped.
+ * styling at the caret. A key the patch names `undefined` is taken off, as a
+ * write takes it off the runs; the key it supersedes is dropped.
  */
 export function patchRangeStyle(range: RangeStyle, patch: RunStylePatch): RangeStyle {
   const out: Record<string, unknown> = { ...range };
   const superseded = supersededKey(patch);
   if (superseded !== undefined) delete out[superseded];
-  return { ...out, ...Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined)) } as RangeStyle;
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === undefined) delete out[key];
+    else setOwn(out, key, value);
+  }
+  return out as RangeStyle;
 }
 
 /** Apply `patch` to one run, deleting rather than storing "no override". */
