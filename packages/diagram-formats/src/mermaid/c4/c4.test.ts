@@ -55,6 +55,14 @@ describe('reading a Mermaid C4 diagram', () => {
     ]);
   });
 
+  it('warns that a front matter title or an accessible title was dropped for a title statement', () => {
+    const front = readC4('---\ntitle: A\n---\nC4Context\n  title B');
+    expect(onlyPage(front.document).name).toBe('B');
+    expect(front.warnings).toEqual(['The front matter title was dropped; the page is named by its title statement.']);
+    expect(readC4('C4Context\n  accTitle: A\n  title B').warnings).toEqual(['Mermaid accessible titles were dropped; the page is named by the title.']);
+    expect(readC4('---\ntitle: B\n---\nC4Context\n  title B').warnings).toEqual([]);
+  });
+
   it('lays the page out', () => {
     const laid = laidOutPage(page(BANKING), { theme: diagramThemeFrom(undefined) });
     expect(laid.data.nodes.every((n) => n.at !== undefined)).toBe(true);
