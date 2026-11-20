@@ -18,7 +18,7 @@ export function hopFollower<TPose>(scene: Scene<unknown, string, TPose>): Transf
       const edges = sceneEdges(sc);
       const moved = new Set<string>();
       for (const e of edges) {
-        if (frame.has(e.node.id) || e.ends.some((end) => inOrUnder(sc, end, frame))) moved.add(e.node.id);
+        if (data.has(e.node.id) || frame.has(e.node.id) || e.ends.some((end) => inOrUnder(sc, end, frame))) moved.add(e.node.id);
       }
       const out: TransformPreviewNode[] = [];
       for (const e of edges) {

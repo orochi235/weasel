@@ -209,4 +209,14 @@ describe('line jumps in a scene', () => {
     expect(preview.find((p) => p.id === 'cd')!.pose).toBe(dragged);
   });
 
+
+  it('counts a connector an earlier follower rerouted as moved, so the connectors hopping over it hide their hops', () => {
+    const { scene, hops } = load(false);
+    scene.doc.set(HOPS_DOC_KEY, { size: 5 });
+    const rerouted = { ...(scene.get('ab' as never)!.data as object), routedBy: 'earlier' };
+    const frame = new Map([['elsewhere', { x: 900, y: 900, width: 10, height: 10 }]]);
+    const preview = hops.follower.preview(frame, new Map([['ab', rerouted]]));
+    expect(preview.map((p) => p.id)).toEqual(['cd']);
+  });
+
 });
