@@ -109,6 +109,21 @@ describe('reachToMeetAction', () => {
     expect(reachToMeetAction.params).toBeDefined();
   });
 
+  it('outside path edit, carries per-anchor widths onto the anchors an end grows', () => {
+    const paths = { arc: 'M0 0 A50 50 0 0 1 25 6.69872981', wall: 'M-200 120 H400' };
+    const count = pathToAnchors(pathFromD(paths.arc)).anchors[0].length;
+    const widths = Array.from({ length: count }, (_, i) => i + 1);
+    const { deps, batches, nodes } = setup(paths, ['arc']);
+    nodes.get('arc')!.data = { stroke: { paint: { color: '#000' }, width: 1, vertexWidths: widths } };
+    run(reachToMeetAction, deps);
+    const setData = batches[0].ops[1];
+    const after = pathToAnchors((batches[0].ops[0].args as { to: PolygonPath }).to).anchors[0].length;
+    expect(after).toBeGreaterThan(count);
+    const carried = ((setData?.args as { to: { stroke: { vertexWidths?: unknown[] } } })?.to.stroke.vertexWidths) ?? [];
+    expect(carried).toHaveLength(after);
+    expect(carried.slice(0, count)).toEqual(widths);
+  });
+
   it('is unavailable when no end meets anything', () => {
     const { deps } = setup({ seg: 'M13 0 H17', far: 'M0 40 H40' }, ['seg']);
     expect(reachToMeetAction.enabled!(deps)).toBe(ActionDisabledReason.NotApplicable);

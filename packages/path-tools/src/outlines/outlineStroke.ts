@@ -38,7 +38,7 @@ function paintedPaths(adapter: CreateOutlinesAdapter, id: NodeId): PaintedPath[]
 }
 
 /**
- * Outline the stroke of every stroked path and stroked outline in the selection,
+ * Outline the stroke of every stroked path and stroked outline among `ids` (the selection, when not given),
  * as one batch labeled "Outline Stroke". Other selected nodes are left alone
  * and stay selected. Each stroke is outlined in the frame it is drawn in: see
  * {@link strokeRegion}. All or nothing: if a stroked outline cannot be
@@ -47,11 +47,12 @@ function paintedPaths(adapter: CreateOutlinesAdapter, id: NodeId): PaintedPath[]
 export function applyOutlineStroke(
   adapter: CreateOutlinesAdapter,
   opts: StrokeRegionOptions = {},
+  ids?: readonly NodeId[],
 ): OutlineStrokeResult {
   const sel = [...adapter.getSelection()] as NodeId[];
   const converted: { id: NodeId; paths: PaintedPath[] }[] = [];
   try {
-    for (const id of sel) {
+    for (const id of ids ?? sel) {
       const frame = adapter.getStrokeFrame?.(id);
       const paths: PaintedPath[] = [];
       let outlined = false;
