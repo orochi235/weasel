@@ -110,4 +110,10 @@ describe('loadShaper — refusals', () => {
       expect(() => shaper.glyphD(LATIN, a.gid, dx, dy)).toThrow(/weasel glyphD: the offset .* is not finite/);
     }
   });
+
+  it('refuses a feature setting holding a character outside ASCII with its own error', () => {
+    for (const tag of ['smcp\u200B', '“liga”']) {
+      expect(() => shaper.shape(LATIN, 'abc', [tag])).toThrow(/weasel shape: ".*" is not an OpenType feature setting/);
+    }
+  });
 });

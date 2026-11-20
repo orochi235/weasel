@@ -79,6 +79,9 @@ const SHAPE_CACHE_LIMIT = 512;
  *  which an SVG path tokenizer would read as a command. */
 const PRECISION = 1e5;
 
+/** HarfBuzz reads its strings as ASCII, and throws from mid-allocation on anything else. */
+const ASCII = /^[\x00-\x7f]*$/;
+
 const fmt = (v: number): string => {
   const scaled = v * PRECISION;
   const r = Number.isFinite(scaled) ? Math.round(scaled) / PRECISION : v;
@@ -114,7 +117,7 @@ class HarfBuzzShaper implements TextShaper {
   #feature(tag: string): HbFeature {
     let f = this.#features.get(tag);
     if (!f) {
-      const parsed = this.#hb.Feature.fromString(tag);
+      const parsed = ASCII.test(tag) ? this.#hb.Feature.fromString(tag) : undefined;
       if (!parsed) throw new Error(`weasel shape: "${tag}" is not an OpenType feature setting; pass one per entry, a tag such as "smcp" or a setting such as "liga=0"`);
       f = parsed;
       this.#features.set(tag, f);
