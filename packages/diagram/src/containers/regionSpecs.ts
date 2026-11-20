@@ -3,7 +3,7 @@
  * which a stencil drawn on the canvas and a `DiagramData` container both build
  * from.
  */
-import type { AddNodeSpec, NodeId, RectPose } from '@weasel-js/core';
+import type { AddNodeSpec, NodeId, PoseComposition, RectPose } from '@weasel-js/core';
 import { LANE_STROKE_WIDTH, DEFAULT_NODE_STYLE, NODE_STROKE_WIDTH, type DiagramSceneData, type NodeStyle } from '../dataTypes';
 import { DEFAULT_FONT } from '../edgeLabel';
 import { CONTAINER_LAYOUTS, containerShape } from './layouts';
@@ -27,6 +27,9 @@ export interface ContainerBuildOptions<TLayer extends string> {
   parent?: string | null;
   /** A pool's header colors and its lanes' bodies in turn. Default `style` for both. */
   laneStyles?: { header: NodeStyle; bodies: readonly NodeStyle[] };
+  /** How the scene stores a child's pose under its parent: each lane and title is stored by it. Pass the scene's
+   *  `composition`. Default `RIGID_POSE_COMPOSITION`, `diagramScene`'s default. */
+  composition?: PoseComposition<RectPose>;
 }
 
 /** Options for {@link regionSpecs}. */

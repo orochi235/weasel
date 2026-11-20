@@ -3,7 +3,7 @@
  * drag to core's `insert` action, and the `insert` dep that builds the body.
  */
 import { useMemo } from 'react';
-import { commitOps, defineTool, createCommitSelectionOps, insertSite, scenePoseFrame, useDepRegistry, useDepSource, useLatest, type ActionDeps, type InsertDep, type NodeId, type Op, type Tool } from '@weasel-js/core';
+import { commitOps, defineTool, createCommitSelectionOps, insertSite, scenePoseFrame, useDepRegistry, useDepSource, useLatest, type ActionDeps, type InsertDep, type NodeId, type Op, type PoseComposition, type RectPose, type Tool } from '@weasel-js/core';
 import type { MeasureRowText } from './body';
 import { diagramDropParentAt, type DropParentScene } from './containers/canDropInto';
 import { containerBuild, type ContainerStencil } from './containers/containerStencils';
@@ -89,7 +89,8 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
       const bounds = (site !== null ? site.local({ ...world }) : scenePoseFrame(scene as never).localUnder(into as NodeId, { ...world })) as Rect | null;
       // A container in a singular frame could not hold the stencil where it was drawn.
       if (bounds === null) return null;
-      const common = { layer: layer(), newId: () => scene.mintId() as string, parent };
+      const composition = scene.composition as PoseComposition<RectPose>;
+      const common = { layer: layer(), newId: () => scene.mintId() as string, parent, composition };
       if ('role' in stencil) {
         const boxStyle = containerStyle ?? style;
         return containerBuild(stencil, bounds, {

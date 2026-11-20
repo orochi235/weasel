@@ -65,7 +65,7 @@ export function containerBuild<TLayer extends string>(
   ];
   const label = `Insert ${stencil.label}`;
   // Built in one frame; each lane and title is stored in its container's.
-  const stored = localizeWorldPoses(specs, RIGID_POSE_COMPOSITION);
+  const stored = localizeWorldPoses(specs, opts.composition ?? RIGID_POSE_COMPOSITION);
   return { id, ops: stored.map((node) => ops.insert({ node, label })) };
 }
 

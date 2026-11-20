@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createElement, type ReactNode } from 'react';
 import { renderHook } from '@testing-library/react';
-import { commitOps, createPageRun, createScene, DepRegistryProvider, useDepRegistry, useDepSource, type ActionDeps, type InsertDep, type RectPose } from '@weasel-js/core';
+import { commitOps, createPageRun, createScene, DepRegistryProvider, IDENTITY_POSE_COMPOSITION, scenePoseFrame, type NodeId, type PoseComposition, useDepRegistry, useDepSource, type ActionDeps, type InsertDep, type RectPose } from '@weasel-js/core';
 import { withDiagramRegistry } from './edge';
 import { FLOWCHART_STENCILS, stencilInsertOps, stencilKind } from './stencil';
 import { DEFAULT_NODE_STYLE } from './fromData';
@@ -116,8 +116,12 @@ describe('useStencilTool', () => {
 });
 
 describe('useStencilInsert', () => {
-  function insertDep(opts?: StencilInsertOptions, under?: InsertDep, pages?: { id: string; width: number; height: number }[]) {
-    const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
+  function insertDep(
+    opts?: StencilInsertOptions, under?: InsertDep, pages?: { id: string; width: number; height: number }[], composition?: PoseComposition<RectPose>,
+  ) {
+    const scene = createScene<unknown, 'main', RectPose>({
+      systemLayers: [{ id: 'main' }], registry: withDiagramRegistry(), ...(composition ? { composition } : {}),
+    });
     if (pages) createPageRun(scene, pages);
     const wrapper = ({ children }: { children: ReactNode }) => createElement(DepRegistryProvider, null, children);
     const { result } = renderHook(() => {
@@ -195,5 +199,17 @@ describe('useStencilInsert', () => {
     expect(scene.get(shape)).toMatchObject({ parent: 'p2', pose: { x: 60, y: 100 } });
     const pool = dep.commit({ x: 600, y: 20, width: 240, height: 200 }, { kind: stencilKind('pool-rows') } as never)!;
     expect(scene.get(pool)).toMatchObject({ parent: 'p2', pose: { x: 260, y: 20 } });
+  });
+
+  it("stores a pool's lanes and a body's rows by the scene's own composition", () => {
+    const { scene, dep } = insertDep({ containers: CONTAINER_STENCILS }, undefined, undefined, IDENTITY_POSE_COMPOSITION as never);
+    const world = (id: string) => scenePoseFrame(scene as never).world(id as NodeId) as RectPose;
+    const pool = dep.commit({ x: 400, y: 300, width: 480, height: 240 }, { kind: stencilKind('pool-rows') } as never)!;
+    const [lane] = lanesOf(scene as never, pool);
+    expect(world(lane!)).toMatchObject({ x: 432, y: 300 });
+    const box = dep.commit({ x: 1000, y: 800, width: 120, height: 60 }, { kind: stencilKind('process') } as never)!;
+    const row = scene.childrenOf(box)[0]!;
+    expect(world(row).x).toBeGreaterThanOrEqual(1000);
+    expect(world(row).y).toBeGreaterThanOrEqual(800);
   });
 });

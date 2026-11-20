@@ -2,7 +2,7 @@
  * Stencils: the shapes a palette offers, as data, and what one becomes when it
  * is drawn — a `buildBody` body whose rows are ordinary text nodes.
  */
-import { RIGID_POSE_COMPOSITION, localizeWorldPoses, type Op, type RectPose } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, localizeWorldPoses, type Op, type PoseComposition, type RectPose } from '@weasel-js/core';
 import type { BodySpec, MeasureRowText, Row } from './body';
 import { buildBody } from './buildBody';
 import { bodyLayoutOf } from './bodyRelayout';
@@ -65,13 +65,15 @@ function placedBounds(stencil: DiagramStencil, b: Rect): Rect {
  * `style` colors the body and its text; default `diagramScene`'s node style.
  * `font` is the face its text rows fall back on; default 12px sans-serif.
  * `parent` is the container the body goes in; default the top level.
+ * `composition` is how the scene stores a row under its body: pass the
+ * scene's; default `RIGID_POSE_COMPOSITION`, `diagramScene`'s default.
  */
 export function stencilInsertOps<TLayer extends string>(
   stencil: DiagramStencil,
   bounds: Rect,
   opts: {
     layer: TLayer; newId: () => string; measure?: MeasureRowText; style?: NodeStyle;
-    font?: { fontFamily: string; fontSize: number }; parent?: string | null;
+    font?: { fontFamily: string; fontSize: number }; parent?: string | null; composition?: PoseComposition<RectPose>;
   },
 ): { id: string; ops: Op[] } {
   const id = opts.newId();
@@ -111,7 +113,7 @@ export function stencilInsertOps<TLayer extends string>(
     },
   );
   // Built in one frame; each row is stored in the body's.
-  const specs = localizeWorldPoses(built.specs.map((spec, k) => ({ ...spec, id: spec.id ?? `${id}/${k}` })), RIGID_POSE_COMPOSITION);
+  const specs = localizeWorldPoses(built.specs.map((spec, k) => ({ ...spec, id: spec.id ?? `${id}/${k}` })), opts.composition ?? RIGID_POSE_COMPOSITION);
   const ops = specs.map((spec) => coreOps.insert({
     node: { ...spec, parent: spec.parent ?? opts.parent ?? null },
     label: `Insert ${stencil.label}`,
