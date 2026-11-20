@@ -1,5 +1,6 @@
 /** What the audit page says about areas: their tone on the map, the headline stats, and the queue. */
 import { lerp } from '@weasel-js/geom';
+import { warpScale } from '@weasel-js/scale';
 import { getOwn } from '@weasel-js/registry';
 import type { AreaStatus, AuditArea, AuditPass, AuditRun } from './skulkMap.types';
 
@@ -34,6 +35,9 @@ export function toneOf(area: AuditArea): AreaTone {
   return pass ? { left: pass.left } : 'unaudited';
 }
 
+/** How near the top, as a share of the bar, a round tick gives way to the top's own. */
+const TOP_ROOM = 0.12;
+
 /** The least the heat scale's top may be, so a quiet map does not paint its few defects hot. */
 const HEAT_FLOOR = 8;
 
@@ -51,7 +55,7 @@ export interface HeatScale {
   readonly top: number;
   /** `left`'s place along the ramp, 0 to 1, through log1p so the middle has room and only outliers reach the top. */
   readonly at: (left: number) => number;
-  /** 0, the median, the 90th percentile and the top. */
+  /** Round values spaced evenly along the bar, then the top. */
   readonly ticks: readonly { readonly label: string; readonly value: number }[];
 }
 
@@ -59,11 +63,11 @@ export interface HeatScale {
 export function heatScaleOf(areas: readonly AuditArea[]): HeatScale {
   const left = areas.flatMap((a) => (a.status === 'settled' ? [] : [lastPassOf(a)?.left ?? NaN])).filter(Number.isFinite).sort((x, y) => x - y);
   const top = Math.max(HEAT_FLOOR, quantile(left, 0.98));
-  const at = (v: number) => Math.min(1, Math.max(0, Math.log1p(Math.max(0, v)) / Math.log1p(top)));
+  const scale = warpScale({ domain: [0, top], range: [0, 1], to: Math.log1p, from: Math.expm1 });
+  const at = (v: number) => Math.min(1, Math.max(0, scale.position(Math.max(0, v))));
+  // The top keeps its own tick, so a round one crowding it gives way.
   const ticks = [
-    { label: '0', value: 0 },
-    { label: 'median', value: quantile(left, 0.5) },
-    { label: 'p90', value: quantile(left, 0.9) },
+    ...scale.ticks(4).filter((v) => at(v) < 1 - TOP_ROOM).map((value) => ({ label: String(value), value })),
     { label: 'top', value: top },
   ];
   return { top, at, ticks };

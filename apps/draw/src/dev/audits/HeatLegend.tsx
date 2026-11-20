@@ -6,7 +6,7 @@ const valueText = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1)
 /** A tick's place along the bar is the one thing about it no class can name. */
 const placeAt = (el: HTMLElement | null, f: number) => { el?.style.setProperty('--at', f.toFixed(4)); };
 
-/** The heat ramp as one bar, each tick at the place the scale puts its value: 0, the median, p90 and the top. */
+/** The heat ramp as one bar, each tick at the place the scale puts its value: round values spaced evenly, then the top. */
 export function HeatLegend({ heat }: { heat: HeatScale }) {
   return (
     <span className={s.legend}>

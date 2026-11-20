@@ -99,14 +99,18 @@ describe('areas', () => {
     expect(map.areas.map(toneOf)).toEqual([{ left: 1.7 }, 'unaudited', { left: 10 }, 'settled', 'unaudited', { left: 1 }]);
   });
 
-  it('puts defects left on a heat scale whose top is the 98th percentile, at least 8', () => {
+  it('puts defects left on a heat scale whose top is the 98th percentile, at least 8, ticked evenly along it', () => {
     const heat = heatScaleOf(map.areas);
     expect(heat.top).toBeCloseTo(9.668);
     expect(heat.at(0)).toBe(0);
     expect(heat.at(heat.top)).toBe(1);
     expect(heat.at(40)).toBe(1);
     expect(heat.at(1.7)).toBeCloseTo(Math.log1p(1.7) / Math.log1p(9.668));
-    expect(heat.ticks.map((t) => [t.label, t.value])).toEqual([['0', 0], ['median', 1.7], ['p90', expect.closeTo(8.34, 2)], ['top', expect.closeTo(9.668, 2)]]);
+    const ticks = heat.ticks.map((t) => t.value);
+    expect(ticks.slice(0, -1)).toEqual([0, 0.8, 2.5, 5]);
+    expect(heat.ticks.at(-1)).toMatchObject({ label: 'top', value: expect.closeTo(9.668, 2) });
+    const gaps = ticks.slice(1).map((t, i) => heat.at(t) - heat.at(ticks[i]!));
+    expect(Math.max(...gaps) / Math.min(...gaps)).toBeLessThan(1.6);
     expect(heatScaleOf([]).top).toBe(8);
   });
 
