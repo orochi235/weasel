@@ -3,10 +3,12 @@ import { createEmitter } from '@weasel-js/registry';
 import type { ToolsApi } from './useTools';
 
 /** Where a canvas publishes its tools, for a palette or a bar inside it or beside it. The canvas that published
- *  last holds it, as the actions registry of a shared scope follows the canvas that joined it last. */
+ *  last holds it, as the actions registry of a shared scope follows the canvas that joined it last; when that one
+ *  unmounts, the slot goes back to the newest publisher still mounted. */
 class ToolsSlot {
   private tools: ToolsApi | null = null;
-  private owner: object | null = null;
+  // Each publisher still mounted and what it published, newest last.
+  private readonly published: Array<{ owner: object; tools: ToolsApi }> = [];
   private readonly changed = createEmitter();
 
   get = (): ToolsApi | null => this.tools;
@@ -14,14 +16,22 @@ class ToolsSlot {
   subscribe = (listener: () => void): (() => void) => this.changed.subscribe(listener);
 
   publish(owner: object, tools: ToolsApi): () => void {
-    this.set(owner, tools);
+    this.drop(owner);
+    this.published.push({ owner, tools });
+    this.show();
     return () => {
-      if (this.owner === owner) this.set(null, null);
+      this.drop(owner);
+      this.show();
     };
   }
 
-  private set(owner: object | null, tools: ToolsApi | null): void {
-    this.owner = owner;
+  private drop(owner: object): void {
+    const at = this.published.findIndex((p) => p.owner === owner);
+    if (at >= 0) this.published.splice(at, 1);
+  }
+
+  private show(): void {
+    const tools = this.published.at(-1)?.tools ?? null;
     if (this.tools === tools) return;
     this.tools = tools;
     this.changed.emit();
@@ -51,7 +61,7 @@ const NONE = () => null;
 /**
  * The tools of the canvas this sits in, or beside under a shared `WeaselProvider`: the `ToolsApi` its
  * `onToolsCreated` hands over, kept current as the active tool changes. `null` while no canvas in scope has
- * mounted. Where several canvases share a scope, it is the tools of the one that published last.
+ * mounted. Where several canvases share a scope, it is the tools of the newest one to publish still mounted.
  */
 export function useScopedTools(): ToolsApi | null {
   const slot = useContext(ToolsSlotContext);
