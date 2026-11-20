@@ -4,7 +4,7 @@
  * share a tree. What a job writes under `.skulk/out` comes back to a local directory.
  */
 import { spawn, spawnSync } from 'node:child_process';
-import { createWriteStream, mkdirSync } from 'node:fs';
+import { createWriteStream, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -79,11 +79,25 @@ export const fixShell = (area, budgetUsd, findings) =>
  * so every run on this Mac shares them. `pinned` replaces the time-of-day node list; `about` goes into
  * each lease (the run's round).
  */
+/**
+ * Slots per node for `role`, read again at every lease from `<state>/limits.json` (`{ "review": n, "fix": n }`)
+ * when it names one, so a change reaches runs already going; else the config's.
+ */
+export const slotsPerNode = (role, state = STATE_DIR) => {
+  const fallback = role === 'fix' ? FIX_SLOTS_PER_NODE : REVIEW_SLOTS_PER_NODE;
+  try {
+    const n = JSON.parse(readFileSync(join(state, 'limits.json'), 'utf8'))[role === 'fix' ? 'fix' : 'review'];
+    return Number.isInteger(n) && n > 0 ? n : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
 export const createSlots = (pinned, { about = {}, state = STATE_DIR } = {}) => {
   const held = new Set();
   const refusedUntil = new Map();
   const take = (role, { now = new Date(), exclude = new Set() } = {}) => {
-    const perNode = role === 'fix' ? FIX_SLOTS_PER_NODE : REVIEW_SLOTS_PER_NODE;
+    const perNode = slotsPerNode(role, state);
     for (const node of pinned ?? nodesAt(now)) {
       if (role === 'fix' && NO_FIXERS.includes(node)) continue;
       if (exclude.has(node) || (refusedUntil.get(node) ?? 0) > now.getTime()) continue;
