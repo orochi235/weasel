@@ -4,6 +4,7 @@ import { solid, solidStroke } from '@weasel-js/paint';
 import { makeCtx, makeScene, ongoingInvoker } from './paintActionTestUtils';
 import { setFillOpacityAction } from './setFillOpacity';
 import { setStrokeOpacityAction } from './setStrokeOpacity';
+import { setStrokeWidthAction } from './setStrokeWidth';
 
 const RAMP = [1, 0, 0, 1, 0, 1, 0, 1];
 
@@ -22,6 +23,13 @@ describe('a paint action given a value it cannot write', () => {
     it(`${action.id} ignores a non-finite alpha01 at start and on a move`, () => {
       expect(run(action, { alpha01: NaN })[key]!.paint!.opacity).toBe(1);
       expect(run(action, { alpha01: 0.5 }, { alpha01: NaN })[key]!.paint!.opacity).toBe(0.5);
+    });
+  }
+
+  for (const bad of [NaN, Infinity, -3]) {
+    it(`setStrokeWidth ignores a width of ${bad}`, () => {
+      expect(run(setStrokeWidthAction, { width: bad }).stroke!.width).toBe(2);
+      expect(run(setStrokeWidthAction, { width: 4 }, { width: bad }).stroke!.width).toBe(4);
     });
   }
 });
