@@ -142,14 +142,19 @@ function rectOutline(r: Rect): Point[] {
 function withHoles(outline: readonly Point[], holes: readonly GridRegion[]): PolygonPath {
   const commands: number[] = [];
   const coords: number[] = [];
+  // Measured from the outline's first corner, so a clip far from world zero keeps its fraction in float32.
+  const origin = outline[0] ?? { x: 0, y: 0 };
   for (const contour of [outline, ...holes.map((h) => h.outline)]) {
     contour.forEach((p, i) => {
       commands.push(i === 0 ? PATH_M : PATH_L);
-      coords.push(p.x, p.y);
+      coords.push(p.x - origin.x, p.y - origin.y);
     });
     commands.push(PATH_Z);
   }
-  return { kind: 'polygon', commands: new Uint8Array(commands), coords: new Float32Array(coords), fillRule: 'evenodd' };
+  return {
+    kind: 'polygon', commands: new Uint8Array(commands), coords: new Float32Array(coords), fillRule: 'evenodd',
+    origin: { x: origin.x, y: origin.y },
+  };
 }
 
 /**

@@ -14,6 +14,12 @@ import { createGridLayer } from './layer';
 import { pointToGridCell } from './pointToGridCell';
 import { sceneGridRegions, type GridRegion } from './regions';
 
+/** A path's coordinates in world units: `coords` measured from its `origin`. */
+const worldCoords = (path: unknown): number[] => {
+  const { coords, origin } = path as { coords: ArrayLike<number>; origin?: { x: number; y: number } };
+  return Array.from(coords, (v, i) => v + (i % 2 ? origin?.y ?? 0 : origin?.x ?? 0));
+};
+
 const ROOT: UnitScope = { system: { base: 'u', units: { u: 1 } } };
 /** Ten of its units are five of the root's. */
 const HALF: UnitScope = { system: { base: 'h', units: { h: 1 } }, scale: 0.5 };
@@ -31,8 +37,10 @@ const square = (x: number, y: number, size: number) => [
 const verticals = (g: DrawCommand): number[] =>
   (g as GroupDrawCommand).children
     .filter((c): c is PathDrawCommand => c.kind === 'path')
-    .filter((c) => c.path.kind === 'polygon' && c.path.coords[0] === c.path.coords[2])
-    .map((c) => (c.path as { coords: Float32Array }).coords[0]!);
+    .filter((c) => c.path.kind === 'polygon')
+    .map((c) => worldCoords(c.path))
+    .filter((c) => c[0] === c[2])
+    .map((c) => c[0]!);
 
 /** How many closed contours a group's clip has. */
 const contours = (g: DrawCommand): number =>

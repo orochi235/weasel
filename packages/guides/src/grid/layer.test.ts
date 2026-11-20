@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { type PathDrawCommand, IMPERIAL_INCHES } from '@weasel-js/core';
 import { createGridLayer } from './layer';
 
+/** A path's coordinates in world units: `coords` measured from its `origin`. */
+const worldCoords = (path: unknown): number[] => {
+  const { coords, origin } = path as { coords: ArrayLike<number>; origin?: { x: number; y: number } };
+  return Array.from(coords, (v, i) => v + (i % 2 ? origin?.y ?? 0 : origin?.x ?? 0));
+};
+
 describe('createGridLayer', () => {
   it('exposes id "grid" and label "Grid"', () => {
     const layer = createGridLayer({
@@ -37,9 +43,30 @@ describe('createGridLayer', () => {
     const layer = createGridLayer({ spacing: 10, bounds: () => ({ x: 3, y: 3, width: 1e6, height: 1e6 }) });
     const paths = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100, dpr: 1 })
       .filter((c): c is PathDrawCommand => c.kind === 'path');
-    const xs = paths.map((p) => (p.path as { coords: Float32Array }).coords).filter((c) => c[0] === c[2]).map((c) => c[0]);
+    const xs = paths.map((p) => worldCoords(p.path)).filter((c) => c[0] === c[2]).map((c) => c[0]);
     expect(xs).toEqual([3, 13, 23, 33, 43, 53, 63, 73, 83, 93]);
     expect(paths).toHaveLength(20);
+  });
+
+  it('keeps each line on its own position far from world zero, where float32 steps are coarser than the pitch', () => {
+    const layer = createGridLayer({ spacing: 0.01 });
+    const tree = layer.draw(undefined, { x: 1e6, y: 0, scale: { x: 1000, y: 1000 } }, { width: 100, height: 10, dpr: 1 });
+    const xs = (tree as PathDrawCommand[]).map((p) => worldCoords(p.path)).filter((c) => c[0] === c[2]).map((c) => c[0]!);
+    expect(xs).toHaveLength(11);
+    xs.forEach((x, k) => expect(Math.abs(x - (1e6 + k * 0.01))).toBeLessThan(1e-6));
+  });
+
+  it('keeps a region\'s clip on its outline far from world zero', () => {
+    const at = 1e6 + 0.01;
+    const outline = [{ x: at, y: at }, { x: at + 0.05, y: at }, { x: at + 0.05, y: at + 0.05 }, { x: at, y: at + 0.05 }];
+    const layer = createGridLayer({ spacing: 0.01, regions: () => [{ outline, spacing: null }] });
+    const [root] = layer.draw(undefined, { x: 1e6, y: 1e6, scale: { x: 1000, y: 1000 } }, { width: 100, height: 100, dpr: 1 });
+    const clip = worldCoords((root as { clip: unknown }).clip);
+    const hole = clip.slice(8);
+    outline.forEach((p, i) => {
+      expect(Math.abs(hole[2 * i]! - p.x)).toBeLessThan(1e-6);
+      expect(Math.abs(hole[2 * i + 1]! - p.y)).toBeLessThan(1e-6);
+    });
   });
 
   it('draws the visible grid for a y-up view', () => {
@@ -67,7 +94,7 @@ describe('createGridLayer', () => {
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 4, y: 1 } }, { width: 100, height: 100, dpr: 1 });
     const paths = tree as PathDrawCommand[];
     for (const p of paths) {
-      const c = (p.path as { coords: ArrayLike<number> }).coords;
+      const c = worldCoords(p.path);
       const vertical = c[0] === c[2];
       expect(p.stroke?.width).toBeCloseTo(vertical ? 1 / 4 : 1, 6);
     }
@@ -137,7 +164,7 @@ describe('createGridLayer', () => {
 
   describe('with bounds omitted', () => {
     const coords = (tree: unknown[]) => (tree as PathDrawCommand[])
-      .map((p) => Array.from((p.path as { coords: ArrayLike<number> }).coords));
+      .map((p) => worldCoords(p.path));
     const verticalXs = (tree: unknown[]) => [...new Set(coords(tree).filter((c) => c[0] === c[2]).map((c) => c[0]))].sort((a, b) => a - b);
 
     it('covers the visible world rect, which follows the canvas size', () => {
@@ -171,7 +198,7 @@ describe('createGridLayer', () => {
       const tree = layer.draw(undefined, { x: 23, y: 0, scale: { x: 1, y: 1 } }, { width: 40, height: 10, dpr: 1 }) as PathDrawCommand[];
       const accentXs = tree
         .filter((p) => (p.stroke?.paint as { color?: string }).color === 'red')
-        .map((p) => (p.path as { coords: ArrayLike<number> }).coords)
+        .map((p) => worldCoords(p.path))
         .filter((c) => c[0] === c[2])
         .map((c) => c[0]);
       expect(accentXs.every((x) => x % 50 === 0)).toBe(true);
@@ -218,7 +245,7 @@ describe('createGridLayer', () => {
       const layer = createGridLayer({ spacing: 10, bounds: () => ({ x: 0, y: 0, width: 30, height: 30 }) });
       const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 0.1, y: 1 } }, { width: 100, height: 100, dpr: 1 });
       // Vertical lines would be 1px apart; the 4 horizontal ones stay.
-      const coords = (tree as PathDrawCommand[]).map((p) => (p.path as { coords: ArrayLike<number> }).coords);
+      const coords = (tree as PathDrawCommand[]).map((p) => worldCoords(p.path));
       expect(coords.every((c) => c[1] === c[3])).toBe(true);
       expect(tree).toHaveLength(4);
     });

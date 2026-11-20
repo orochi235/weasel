@@ -3,13 +3,19 @@ import { createScene, type Bounds, type DrawCommand, type GroupDrawCommand, type
 import { createGridLayer } from './layer';
 import { sceneGridRegions } from './regions';
 
+/** A path's coordinates in world units: `coords` measured from its `origin`. */
+const worldCoords = (path: unknown): number[] => {
+  const { coords, origin } = path as { coords: ArrayLike<number>; origin?: { x: number; y: number } };
+  return Array.from(coords, (v, i) => v + (i % 2 ? origin?.y ?? 0 : origin?.x ?? 0));
+};
+
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const DIMS = { width: 100, height: 100, dpr: 1 };
 const BOUNDS = () => ({ x: 0, y: 0, width: 100, height: 100 });
 
 const segments = (tree: readonly DrawCommand[]): number[][] => tree.flatMap((c) =>
-  c.kind === 'group' ? segments((c as GroupDrawCommand).children) : [Array.from((c as PathDrawCommand).path.kind === 'polygon'
-    ? ((c as PathDrawCommand).path as { coords: Float32Array }).coords : [])]);
+  c.kind === 'group' ? segments((c as GroupDrawCommand).children) : [(c as PathDrawCommand).path.kind === 'polygon'
+    ? worldCoords((c as PathDrawCommand).path) : []]);
 const verticals = (tree: readonly DrawCommand[]) => segments(tree).filter((c) => c[0] === c[2]);
 const horizontals = (tree: readonly DrawCommand[]) => segments(tree).filter((c) => c[1] === c[3]);
 
@@ -39,8 +45,8 @@ describe('createGridLayer — a rule per axis', () => {
       spacing: { x: { at: [10, 40] }, y: 10 }, accentEvery: 5, bounds: BOUNDS, style: { accent },
     }).draw(undefined, VIEW, DIMS) as PathDrawCommand[];
     const red = tree.filter((c) => c.stroke === undefined ? false : (c.stroke.paint as { color?: string }).color === 'red');
-    expect(red.every((c) => c.path.kind === 'polygon' && c.path.coords[1] === c.path.coords[3])).toBe(true);
-    expect(red.map((c) => (c.path as { coords: Float32Array }).coords[1])).toEqual([0, 50, 100]);
+    expect(red.every((c) => c.path.kind === 'polygon' && worldCoords(c.path)[1] === worldCoords(c.path)[3])).toBe(true);
+    expect(red.map((c) => worldCoords(c.path)[1])).toEqual([0, 50, 100]);
   });
 });
 

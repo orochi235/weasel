@@ -50,9 +50,10 @@ export function lattice(
     if (!(hi > lo)) return;
     const width = resolveScreenLength(s.width ?? 1, 1) * px[axis];
     for (const p of at) {
-      const coords = axis === 'x' ? [p, lo, p, hi] : [lo, p, hi, p];
+      // Measured from the line's start, so a line far from world zero keeps its fraction in float32.
+      const [origin, coords] = axis === 'x' ? [{ x: p, y: lo }, [0, 0, 0, hi - lo]] : [{ x: lo, y: p }, [0, 0, hi - lo, 0]];
       const path: PolygonPath = {
-        kind: 'polygon', commands: new Uint8Array([PATH_M, PATH_L]), coords: new Float32Array(coords), fillRule: 'nonzero',
+        kind: 'polygon', commands: new Uint8Array([PATH_M, PATH_L]), coords: new Float32Array(coords), fillRule: 'nonzero', origin,
       };
       children.push({ kind: 'path', path, stroke: { ...s, width } });
     }
