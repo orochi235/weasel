@@ -106,6 +106,9 @@ function mergeGlyphMeshes(
   // glyph's turn then rotates the sheared glyph about its pen.
   const shear = shearOf(group);
 
+  // Vertices are float32, so they are measured from the first glyph's pen,
+  // which is carried in doubles as `origin`; text far from (0, 0) keeps its shape.
+  const x0 = parts[0].glyph.x, y0 = parts[0].glyph.baselineY;
   const vertices = new Float32Array(vertexFloats);
   const indices = new Uint32Array(indexCount);
   let vi = 0;
@@ -118,11 +121,11 @@ function mergeGlyphMeshes(
       const ex = mesh.vertices[k];
       const ey = mesh.vertices[k + 1];
       const lx = (ex - ey * shear) * scale, ly = ey * scale;
-      vertices[vi++] = x + dx + lx * cos - ly * sin;
-      vertices[vi++] = baselineY + dy + lx * sin + ly * cos;
+      vertices[vi++] = x - x0 + lx * cos - ly * sin;
+      vertices[vi++] = baselineY - y0 + lx * sin + ly * cos;
     }
     for (let k = 0; k < mesh.indices.length; k++) indices[ii++] = base + mesh.indices[k];
     base += mesh.vertices.length / 2;
   }
-  return { vertices, indices };
+  return { vertices, indices, origin: { x: x0 + dx, y: y0 + dy } };
 }

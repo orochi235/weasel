@@ -35,6 +35,7 @@ import { foldColor, foldColorInto } from './foldColor';
 import { batchPaint } from './gradient';
 import { bindPattern, bindGradient } from './paintBind';
 import { drawPathFillByKind } from './pathPaint';
+import { atMeshOrigin } from './uniforms';
 import { renderPaintToScratch, bindScratchPaint } from './scratchPass';
 import type { ScreenBox } from '../paintedBounds';
 
@@ -113,7 +114,8 @@ function drawOutlineMesh(ctx: DrawContext, fill: Paint, mesh: Mesh): void {
   const paint = batchPaint(ctx, fill, false);
   if (paint === null) return;
   if (tryStageFill(ctx, mesh, paint)) return;
-  drawPathFillByKind(ctx, fill, ctx.meshCache.uploadTransient(mesh));
+  const handle = ctx.meshCache.uploadTransient(mesh);
+  atMeshOrigin(ctx, mesh.origin, () => drawPathFillByKind(ctx, fill, handle));
 }
 
 /**
