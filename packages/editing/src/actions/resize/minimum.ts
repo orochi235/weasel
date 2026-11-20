@@ -24,8 +24,9 @@ export function boxMinimum(
     const min = minSizeOf(scene.get(id)?.data);
     const leaf = leafBounds[i];
     if (!min || !leaf) return;
-    const rx = leaf.width > 0 ? min.width / leaf.width : 0;
-    const ry = leaf.height > 0 ? min.height / leaf.height : 0;
+    // A member stored flipped is held by its size, as a lone one is.
+    const rx = leaf.width !== 0 ? min.width / Math.abs(leaf.width) : 0;
+    const ry = leaf.height !== 0 ? min.height / Math.abs(leaf.height) : 0;
     const turned = poseFrameOf(startWorlds.get(id)) !== null;
     sx = Math.max(sx, turned ? Math.max(rx, ry) : rx);
     sy = Math.max(sy, turned ? Math.max(rx, ry) : ry);

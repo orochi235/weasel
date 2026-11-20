@@ -25,7 +25,9 @@ export function unitsOfBox(from: Bounds, to: Bounds): Bounds {
 
 /** The ops that resize `selected` the way a handle drag would, taking the box
  *  it would resize to `units` of itself. The resize policy's expansion
- *  applies; its constraints and point snaps, which shape a pointer, do not. */
+ *  applies, and so do the scene's output grid and a written frame's contents
+ *  held where they draw; its constraints and point snaps, which shape a
+ *  pointer, do not. */
 export function resizeSelectionOps(
   scene: Scene<unknown, string, unknown>,
   selected: readonly string[],

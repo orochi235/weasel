@@ -257,6 +257,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-11 (my call, same pass): a resize that would rewrite a locked node, as a group's resize rewrites its
   members, does not start, after the 2026-11-09 ruling for commands; the press goes on to the next binding. Rejected:
   resizing the members around the locked one, which move and rotate do not do either (they carry it with the group).
+- 2026-11-20 (my call, audit round 47): a resize whose constraint's `onEnd` commits ops of its own in place of the
+  box leaves Transform Again with nothing recorded, so Cmd+D duplicates: what landed is the constraint's, which no
+  box in units repeats. Rejected: recording the box the pointer asked for, which repeats a scale the user never got,
+  and keeping the transform before it, which repeats one made on something else. Move and rotate still record their
+  drag in that case.
 - 2026-11-11 (my call, same pass): Nudge, Flip, Group, Align, and Distribute are disabled with `NotApplicable` where
   they would write a pose past the double range or, for Nudge, move nothing; Group also where its members are on more
   than one layer, where it used to be enabled and do nothing.

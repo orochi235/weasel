@@ -5,9 +5,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import { createScene, unionOfChildren, scenePoseFrame } from '@weasel-js/core/engine';
+import { createScene, unionOfChildren, scenePoseFrame, defaultCommitAdapter } from '@weasel-js/core/engine';
 import { asNodeId, type NodeId, type RectPose, type Scene } from '@weasel-js/core';
 import { resizeAction } from './action';
+import { resizeSelectionOps } from './replay';
 
 const BOX = asNodeId('box');
 const KID = asNodeId('kid');
@@ -28,12 +29,12 @@ function makeScene(): Scene<unknown, string, unknown> {
 }
 
 /** The top-left handle dragged from the container's corner to `to`. */
-function ctxAt(scene: Scene<unknown, string, unknown>, to: { x: number; y: number }): InvocationCtx {
+function ctxAt(scene: Scene<unknown, string, unknown>, to: { x: number; y: number }, deps: object = {}): InvocationCtx {
   return {
     world: to,
     screen: to,
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { operands: { get: () => [BOX] as NodeId[] }, scene },
+    deps: { operands: { get: () => [BOX] as NodeId[] }, scene, ...deps },
     drag: {
       start: { x: 100, y: 100 }, current: to, delta: { x: to.x - 100, y: to.y - 100 },
       affordance: { kind: 'handle:top-left', targetIds: [BOX as string], anchor: { x: 'max', y: 'max' } },
@@ -63,5 +64,32 @@ describe('resizing a frame', () => {
     expect(scene.historyEntries()).toHaveLength(entries + 1);
     scene.undo();
     expect(scene.get(KID)!.pose).toMatchObject({ x: 50, y: 50 });
+  });
+
+  it('leaves its contents where they drew when the resize is replayed by command', () => {
+    const scene = makeScene();
+    // The drag above, from 200 × 100 to 260 × 140 holding the bottom-right corner.
+    const units = { x: -0.3, y: -0.4, width: 1.3, height: 1.4 };
+    const ops = resizeSelectionOps(scene, [BOX], { x: 'max', y: 'max' }, units, {}, 'Scale');
+    scene.applyBatch(ops, 'Scale', defaultCommitAdapter(scene));
+    expect(scene.get(BOX)!.pose).toMatchObject({ x: 40, y: 60, width: 260, height: 140 });
+    expect(worldAt(scene, KID)).toEqual({ x: 150, y: 150 });
+    expect(worldAt(scene, INNER)).toEqual({ x: 200, y: 120 });
+  });
+
+  it('leaves its contents where they drew when its data takes a drag past its far edge', () => {
+    const scene = makeScene();
+    // A projection that answers for the frame: its pose commits normalized, the mirror going to its data.
+    const geometryProjection = { transform: (node: { id?: string; data: unknown }) => (node.id === BOX ? { mirrored: true } : null) };
+    const deps = { geometryProjection };
+    const handle = resizeAction.invoker!.timing === 'ongoing'
+      ? resizeAction.invoker!.start(ctxAt(scene, { x: 100, y: 100 }, deps), undefined) as OngoingHandle
+      : null;
+    handle!.onMove!(ctxAt(scene, { x: 400, y: 60 }, deps));
+    expect(worldAt(scene, KID)).toEqual({ x: 150, y: 150 });
+    handle!.onEnd!(ctxAt(scene, { x: 400, y: 60 }, deps), 'commit');
+    expect(scene.get(BOX)!.pose).toMatchObject({ x: 300, y: 60, width: 100, height: 140 });
+    expect(worldAt(scene, KID)).toEqual({ x: 150, y: 150 });
+    expect(worldAt(scene, INNER)).toEqual({ x: 200, y: 120 });
   });
 });

@@ -6,7 +6,7 @@ import type { NodeId, Bounds, GestureReaders, BoundsConstraint, GestureContext, 
 import { boundsForRules } from './ruleBounds';
 import { boxFrame } from './boxFrame';
 import type { ResizeBox, ResizeFrame, ResizeSession } from './session';
-import { clampToMinSize } from './behaviors/clampMinSize';
+import { clampToMinSize, clampToMinSizeKeepingAspect } from './behaviors/clampMinSize';
 import { edgeAspect, onDiagonal } from './aspect';
 import { snapMods } from '@weasel-js/core/engine';
 
@@ -95,15 +95,34 @@ function storedPose(
 }
 
 /** Every write id's stored pose with the box taken from where the press found
- *  it to `asked`, held to the place's minimum. A lone target is also pinned at
+ *  it to `asked`, held to the place's minimum, scaling every axis alike when
+ *  `aspect` locks them together, and put on the scene's output grid holding
+ *  the anchored side. Each node a written frame holds is re-expressed in its
+ *  frame's pose, so it stays where it draws. A lone target is also pinned at
  *  the fixed corner, and comes back with its world pose. `proposed` is the box
- *  they were put in. */
+ *  they were put in. The drag and the command path both resize through it. */
 export function posesInBox(
+  place: Pick<ResizeSession, 'scene' | 'poseFrame' | 'view' | 'geometryOf' | 'writeIds' | 'startWorlds' | 'box' | 'sharedBox' | 'minimum' | 'held'>,
+  asked: Bounds,
+  opts: { aspect?: boolean } = {},
+): BoxedPoses {
+  const boxed = rawPosesInBox(place, asked, opts);
+  // The output grid is the invariant, so it shapes the poses after the snap and the constraints.
+  const quantized = new Map([...boxed.previews].map(([id, pose]) => [id, quantizedPreview(place.scene, id, pose, place.box.anchor)]));
+  return { ...boxed, previews: holdInPlace(quantized, place.held, place.poseFrame) };
+}
+
+type BoxedPoses = { previews: Map<NodeId, unknown>; proposed: Bounds; lone?: { id: NodeId; g: PoseDescriptor<unknown>; world: unknown } };
+
+/** {@link posesInBox} before the output grid and the held contents. */
+function rawPosesInBox(
   place: Pick<ResizeSession, 'scene' | 'poseFrame' | 'view' | 'geometryOf' | 'writeIds' | 'startWorlds' | 'box' | 'sharedBox' | 'minimum'>,
   asked: Bounds,
-): { previews: Map<NodeId, unknown>; proposed: Bounds; lone?: { id: NodeId; g: PoseDescriptor<unknown>; world: unknown } } {
+  opts: { aspect?: boolean },
+): BoxedPoses {
   const { box } = place;
-  const proposed = (place.minimum && clampToMinSize(asked, box.anchor, place.minimum)) ?? asked;
+  const clamp = opts.aspect ? clampToMinSizeKeepingAspect : clampToMinSize;
+  const proposed = (place.minimum && clamp(asked, box.anchor, place.minimum, box.bounds)) ?? asked;
   const previews = new Map<NodeId, unknown>();
   const worldOf = (id: NodeId): unknown => {
     const start = place.startWorlds.get(id);
@@ -171,11 +190,9 @@ export function nextFrame(session: ResizeSession, readers: GestureReaders, moveC
   const shaped = mods.constrain ? edgeAspect(drawn, drawnStart, box.anchor) : drawn;
   const constrained = insetBox(constrain(session.constraints, gctx, box.anchor, shaped), box.extents);
 
-  const { previews: boxed, proposed, lone } = posesInBox(session, constrained);
-  // The output grid is the invariant, so it shapes the poses after the snap and the constraints.
-  const previews = new Map([...boxed].map(([id, pose]) => [id, quantizedPreview(session.scene, id, pose, box.anchor)]));
+  const { previews, proposed, lone } = posesInBox(session, constrained, { aspect: mods.constrain });
   const key = gctx.draggedIds[0]!;
   const ruled = lone ? boundsForRules(lone.g, lone.world) : proposed;
   gctx.current = new Map<string, Bounds>([[key, outsetBox(ruled, box.extents)]]);
-  return { previews: holdInPlace(previews, session.held, session.poseFrame), proposed };
+  return { previews, proposed };
 }

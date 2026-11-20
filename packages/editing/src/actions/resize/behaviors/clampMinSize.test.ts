@@ -73,4 +73,16 @@ describe('clampMinSize', () => {
     const r = b.onMove!(ctx(), proposed({ x: 0, y: 0, width: 0.1, height: 5 }, { x: 'free', y: 'free' }));
     expect(r).toBeUndefined();
   });
+
+  it('an axis with no minimum: flips through its anchor rather than collapsing', () => {
+    const r = clampMinSize<P>({ minWidth: 0, minHeight: 1 }).onMove!(ctx(), proposed({ x: 0, y: 0, width: -3, height: 5 }, { x: 'min', y: 'min' }));
+    expect(r).toBeUndefined();
+  });
+
+  it('a box stored flipped: holds its size and keeps the flip', () => {
+    const flipped = ctx();
+    flipped.origin.set('a', { x: 10, y: 0, width: -10, height: 10 });
+    const r = b.onMove!(flipped, proposed({ x: 10, y: 0, width: -0.5, height: 5 }, { x: 'min', y: 'free' }));
+    expect(r).toEqual({ pose: { x: 10, y: 0, width: -1, height: 5 } });
+  });
 });

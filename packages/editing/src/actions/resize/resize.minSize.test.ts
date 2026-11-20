@@ -16,9 +16,10 @@ const MIN = { width: 48, height: 48 };
 const BOTTOM_RIGHT: ResizeAnchor = { x: 'min', y: 'min' };
 const TOP_LEFT: ResizeAnchor = { x: 'max', y: 'max' };
 
-function makeScene(): Scene<unknown, string, unknown> {
+function makeScene(a: { pose?: RectPose; minSize?: Partial<typeof MIN> } = {}): Scene<unknown, string, unknown> {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: A, kind: 'mark', layer: 'main', data: { minSize: MIN }, pose: { x: 0, y: 0, width: 100, height: 100 } });
+  const pose = a.pose ?? { x: 0, y: 0, width: 100, height: 100 };
+  scene.add({ id: A, kind: 'mark', layer: 'main', data: { minSize: a.minSize ?? MIN }, pose });
   scene.add({ id: B, kind: 'mark', layer: 'main', data: {}, pose: { x: 100, y: 0, width: 100, height: 100 } });
   return scene as unknown as Scene<unknown, string, unknown>;
 }
@@ -30,11 +31,12 @@ function drag(
   from: { x: number; y: number },
   to: { x: number; y: number },
   resizePolicy?: unknown,
+  shift = false,
 ): void {
   const ctx = (at: { x: number; y: number }) => ({
     world: at,
     screen: { x: 0, y: 0 },
-    modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+    modifiers: { alt: false, ctrl: false, meta: false, shift },
     deps: { operands: { get: () => ids }, scene, ...(resizePolicy ? { resizePolicy } : {}) },
     drag: {
       start: from,
@@ -102,5 +104,44 @@ describe('resize — a node\'s minimum size', () => {
     scene.update(B, { data: { minSize: { width: 'wide' } } });
     drag(scene, [B], BOTTOM_RIGHT, { x: 200, y: 100 }, { x: 110, y: 10 });
     expect((scene.get(B)!.pose as RectPose).width).toBeCloseTo(10);
+  });
+
+  it('lets an axis with no minimum of its own flip through its anchor', () => {
+    const scene = makeScene({ minSize: { height: 20 } });
+    drag(scene, [A], { x: 'min', y: 'free' }, { x: 100, y: 50 }, { x: -50, y: 50 });
+    expectSamePose(scene.get(A)!.pose as RectPose, { x: 0, y: 0, width: -50, height: 100 });
+  });
+
+  it('keeps a flipped lone node flipped, held to the minimum by its size', () => {
+    const scene = makeScene({ pose: { x: 100, y: 0, width: -50, height: 100 } });
+    // The east handle of a box flipped on x sits at its x + width, 50; anchored there at 'min' is x = 100.
+    drag(scene, [A], { x: 'min', y: 'free' }, { x: 50, y: 50 }, { x: 51, y: 50 });
+    expectSamePose(scene.get(A)!.pose as RectPose, { x: 100, y: 0, width: -49, height: 100 });
+    drag(scene, [A], { x: 'min', y: 'free' }, { x: 51, y: 50 }, { x: 95, y: 50 });
+    expectSamePose(scene.get(A)!.pose as RectPose, { x: 100, y: 0, width: -48, height: 100 });
+  });
+
+  it('holds a flipped member of a shared box to its minimum as it holds an unflipped one', () => {
+    const scene = makeScene({ pose: { x: 100, y: 0, width: -100, height: 100 } });
+    drag(scene, [A, B], BOTTOM_RIGHT, { x: 200, y: 100 }, { x: 20, y: 10 });
+    expectSamePose(scene.get(A)!.pose as RectPose, { x: 48, y: 0, width: -48, height: 48 });
+  });
+
+  it('keeps the aspect Shift holds on an edge handle, with both axes at least the minimum', () => {
+    const scene = makeScene({ minSize: { width: 50, height: 50 } });
+    drag(scene, [A], { x: 'free', y: 'min' }, { x: 50, y: 100 }, { x: 50, y: 20 }, undefined, true);
+    expectSamePose(scene.get(A)!.pose as RectPose, { x: 25, y: 0, width: 50, height: 50 });
+  });
+
+  it('holds the free axis Shift drives to its minimum', () => {
+    const scene = makeScene({ minSize: { width: 150 }, pose: { x: 0, y: 0, width: 200, height: 100 } });
+    drag(scene, [A], { x: 'free', y: 'min' }, { x: 100, y: 100 }, { x: 100, y: 40 }, undefined, true);
+    expectSamePose(scene.get(A)!.pose as RectPose, { x: 25, y: 0, width: 150, height: 75 });
+  });
+
+  it('keeps the aspect Shift holds on a corner, with both axes at least the minimum', () => {
+    const scene = makeScene({ minSize: { width: 50, height: 50 }, pose: { x: 0, y: 0, width: 100, height: 200 } });
+    drag(scene, [A], BOTTOM_RIGHT, { x: 100, y: 200 }, { x: 20, y: 40 }, undefined, true);
+    expectSamePose(scene.get(A)!.pose as RectPose, { x: 0, y: 0, width: 50, height: 100 });
   });
 });

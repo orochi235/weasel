@@ -1,6 +1,6 @@
 import type { Action, ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { NodeId } from '@weasel-js/core';
-import { createTransformPreview, finiteFrame, closeRun, runBehaviorCancel, inPlane, selectionLayer, recordTransform } from '@weasel-js/core';
+import { createTransformPreview, finiteFrame, closeRun, runBehaviorCancel, inPlane, selectionLayer, recordTransform, forgetTransform } from '@weasel-js/core';
 import { commitResize } from './commit';
 import { nextFrame } from './frame';
 import { beginResize, type ResizeFrame } from './session';
@@ -65,10 +65,14 @@ export function createResizeAction(opts: ResizeActionOptions = {}): Action & { r
                 committed = frame.previews.size > 0;
                 if (committed) commit(new Map(frame.previews), ctx.deps);
               } else if (reason === 'commit') {
-                committed = commitResize(session, frame);
-                if (committed && frame.proposed) {
+                const landed = commitResize(session, frame);
+                committed = landed !== 'none';
+                if (landed === 'box' && frame.proposed) {
                   const to = unitsOfBox(session.box.bounds, frame.proposed);
                   recordTransform(session.scene, { kind: 'scale', to, anchor: session.box.anchor }, subject);
+                } else if (landed === 'constraint') {
+                  // What landed is the constraint's, which no box repeats.
+                  forgetTransform(session.scene);
                 }
               } else runBehaviorCancel(session.constraints, session.gestureCtx);
             } finally {
