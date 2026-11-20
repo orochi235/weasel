@@ -878,6 +878,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Ruled 2026-11-10 (my call, overnight sweep): a simulation's alpha decays toward `alphaTarget` without passing it.
   An `alphaDecay` above 1 acts as 1 and lands on the target, and a negative one as 0, which never moves it; d3-force
   takes either unchecked, and above 2 alpha grew without bound to `Infinity`, which no finite input may give.
+- Ruled 2026-11-20 (my call, audit round 55): a simulation node pinned to a non-finite `fx` or `fy` holds that
+  coordinate where it stands, with no velocity, rather than taking the NaN or `Infinity` into its position.
 - Ruled 2026-11-10 (my call, overnight sweep): a tween with its own `interpolate` or `interpolator` is handed exactly
   1 on its last frame (0 when it ends at its start, played backward), whatever its easing answers there, as a tween
   of numbers already ends at `to`: an easing such as `1 - cos(t π/2)` gives 0.9999999999999999 at 1. A d3
