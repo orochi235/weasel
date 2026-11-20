@@ -22,6 +22,7 @@ import s from './AuditsPage.module.css';
 
 const ASIDE = { key: 'aside', min: 240, max: 560, initial: 300 } as const;
 const TOP = { key: 'top', min: 80, max: 900, initial: 260 } as const;
+const TABS = { key: 'tabs', min: 200, max: 720, initial: 300 } as const;
 const JOBS = { key: 'jobs', min: 80, max: 900, initial: 220 } as const;
 
 /** A pane's size the viewer dragged it to, kept between visits. */
@@ -40,15 +41,17 @@ function Chart({ map }: { map: SkulkMap }) {
   const { probes, palette: colors } = useAuditPalette();
   const [asideWidth, setAsideWidth, keepAside] = usePaneSize(ASIDE);
   const [topHeight, setTopHeight, keepTop] = usePaneSize(TOP);
+  const [tabsWidth, setTabsWidth, keepTabs] = usePaneSize(TABS);
   const [jobsHeight, setJobsHeight, keepJobs] = usePaneSize(JOBS);
   const mainRef = useRef<HTMLDivElement>(null);
-  // The sizes are read by the page's root, which holds every pane: the side column's width sets the rounds chart's too.
+  // The sizes are read by the page's root, which holds every pane.
   useLayoutEffect(() => {
     const root = mainRef.current?.parentElement;
     root?.style.setProperty('--audit-aside-width', `${asideWidth}px`);
     root?.style.setProperty('--audit-top-height', `${topHeight}px`);
     root?.style.setProperty('--audit-jobs-height', `${jobsHeight}px`);
-  }, [asideWidth, topHeight, jobsHeight]);
+    root?.style.setProperty('--audit-tabs-width', `${tabsWidth}px`);
+  }, [asideWidth, topHeight, jobsHeight, tabsWidth]);
 
   const picked = selection.current[0] ?? null;
   const shownId = hovered ?? picked;
@@ -65,6 +68,7 @@ function Chart({ map }: { map: SkulkMap }) {
       {probes}
       <div className={s.top}>
         <div className={s.runs}><LiveRuns runs={map.runs} now={Date.parse(map.generated)} on={on} /></div>
+        <ResizeHandle className={s.vseam} value={tabsWidth} min={TABS.min} max={TABS.max} invert onInput={setTabsWidth} onChange={keepTabs} aria-label="Resize the rounds and queue tabs" />
         <TopTabs rounds={map.rounds} next={next} onPick={pick} onLight={setLit} />
       </div>
       <ResizeHandle
@@ -73,7 +77,7 @@ function Chart({ map }: { map: SkulkMap }) {
       />
       <Stats stats={stats} />
       <div ref={mainRef} className={s.main}>
-        <Treemap scene={scene} selection={selection} areas={areas} palette={colors} phases={phases} onHover={setHovered} lit={lit} />
+        <Treemap scene={scene} selection={selection} areas={areas} palette={colors} phases={phases} onHover={setHovered} lit={lit} areasPerRound={map.areasPerRound} />
         <ResizeHandle value={asideWidth} min={ASIDE.min} max={ASIDE.max} invert onInput={setAsideWidth} onChange={keepAside} aria-label="Resize the side panel" />
         <aside className={s.aside} aria-label="Area">
           <AreaDetail area={area} holder={area && runHolding(map.runs, area.id)} />
