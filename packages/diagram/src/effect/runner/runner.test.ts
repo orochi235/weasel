@@ -192,4 +192,23 @@ describe('createEffectRunner', () => {
     expect(runner.state.run).toMatchObject({ at: 'u' });
     expect(Object.keys(runner.state.run!.stages)).toEqual(['u']);
   });
+
+  it('starts a step under way over when an option changes, and a key set to undefined goes back to its default', async () => {
+    const runner = createEffectRunner({ pipeline: PIPELINE, evaluators: EVAL, previews: false, kinds: PREVIEWED });
+    await runner.step();
+    await runner.step();
+    expect(runner.state.run).toMatchObject({ at: 'a' });
+    runner.setOptions({ evaluators: { ...EVAL, inc: ({ inputs }) => ({ outputs: { out: (inputs.in as number) + 10 } }) } });
+    await runner.step();
+    await runner.step();
+    expect(runner.state.run).toMatchObject({ at: 'a', stages: { a: { values: { out: '10' } } } });
+    expect(runner.state.run!.stages.a!.previews).toBeUndefined();
+    runner.setOptions({ previews: undefined });
+    await runner.run();
+    expect(runner.state.run!.stages.a!.previews?.out).toBeDefined();
+    runner.setSources({ n: 1 });
+    runner.setSources(undefined);
+    await runner.step();
+    expect(runner.state.run).toMatchObject({ at: 't' });
+  });
 });
