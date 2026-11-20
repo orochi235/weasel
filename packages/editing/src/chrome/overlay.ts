@@ -19,7 +19,7 @@ import { containerAwareBoundsResolver } from './selectionPose';
 import { targetCorners, targetTransformOf, type TargetTransform } from '@weasel-js/core';
 import { AUTO_POSE_DESCRIPTOR } from '@weasel-js/core/engine';
 import type { CommandStroke } from '@weasel-js/paint';
-import { DEFAULT_ROTATION_HANDLE_DISTANCE } from './rotationHandleGeometry';
+import { DEFAULT_ROTATION_HANDLE_DISTANCE, targetCanRotate } from './rotationHandleGeometry';
 import type { Bounds } from '@weasel-js/core';
 import type { ChromeState } from '@weasel-js/core';
 import { MULTI_RESIZE_TARGET_ID } from '@weasel-js/core';
@@ -242,6 +242,8 @@ function buildSelectionLayer<TPose>(
       }
       if (showRotation && rotationHandleDistance !== null) {
         for (const id of ids) {
+          // Paint the badge only where the rotate affordance offers its grab region.
+          if (!targetCanRotate(chromeState, id)) continue;
           const b = resolveTargetBounds(id);
           if (!b) continue;
           for (const cmd of rotationHandleCommands(b, handles, rotationHandleDistance, view)) {

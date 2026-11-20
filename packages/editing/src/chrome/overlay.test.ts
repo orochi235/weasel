@@ -363,6 +363,29 @@ describe('createSelectionOverlayLayer', () => {
   });
 });
 
+describe('rotate badge on a target that cannot rotate', () => {
+  const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+  const box = { x: 0, y: 0, width: 50, height: 50 };
+  const state = (selection: string[], rotatable: Set<string>, multiActive = false) => ({
+    selection,
+    multiActive,
+    unionBounds: multiActive ? box : null,
+    boundsOf: () => box,
+    canRotate: (id: string) => rotatable.has(id),
+  });
+  const layer = createSelectionHandlesLayer<Pose>({ handles: { size: 8 }, rotationHandle: true });
+  const count = (s: ReturnType<typeof state>) => layer.draw({ getChromeState: () => s }, VIEW, DIMS).length;
+
+  it('paints no badge on a single node whose pose cannot carry a rotation', () => {
+    expect(count(state(['a'], new Set()))).toBeLessThan(count(state(['a'], new Set(['a']))));
+  });
+
+  it('paints no badge on a multi-selection holding one member that cannot rotate', () => {
+    expect(count(state(['a', 'b'], new Set(['a']), true)))
+      .toBeLessThan(count(state(['a', 'b'], new Set(['a', 'b']), true)));
+  });
+});
+
 describe('createSelectionOutlineLayer', () => {
   it('emits one stroke path per selected id (screen-space, no group wrapper)', () => {
     const layer = createSelectionOutlineLayer<Pose>({
