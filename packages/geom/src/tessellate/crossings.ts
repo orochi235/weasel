@@ -2,6 +2,7 @@
 
 import { forEachCrossing } from './sweep';
 import { lerp } from '../scalar';
+import { anchorParamsBetween } from './anchorParams';
 
 /** Flattened contours with each vertex's anchor parameterization. */
 export interface FlattenedContours {
@@ -220,13 +221,11 @@ function cutAt(e: Edge, p: Node, eps: number): void {
   e.cuts.push({ s, node: p });
 }
 
-/** Anchors for a point `s` of the way along `e`: interpolated within one
- *  curve's run, else the nearer end's. */
+/** Anchors for a point `s` of the way along `e`. */
 function anchorsAlong(e: Edge, s: number): { a: number; b: number; t: number } {
   const { from, to } = e;
-  if (from.a === to.a && from.b === to.b) return { a: from.a, b: from.b, t: lerp(from.t, to.t, s) };
-  const near = s < 0.5 ? from : to;
-  return { a: near.a, b: near.b, t: near.t };
+  const [a, b, t] = anchorParamsBetween(from.a, from.b, from.t, to.a, to.b, to.t, s);
+  return { a, b, t };
 }
 
 /** The pieces between cuts that have fill on exactly one side, turned so it

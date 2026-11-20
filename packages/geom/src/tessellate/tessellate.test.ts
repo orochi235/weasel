@@ -462,6 +462,15 @@ describe('tessellate (PolygonPath, nonzero, crossing or nested outlines)', () =>
     expect(coverage(sameWound, 4.3, 3.1)).toBe(1);
     expect(area(sameWound)).toBeCloseTo(100);
   });
+  it('blends the anchors of a crossing cut inside a straight edge', () => {
+    const a = square(0, 0, 10, true), b = square(5, 5, 10, true);
+    const mesh = tessellate(poly([...a.cmds, ...b.cmds], [...a.xy, ...b.xy]));
+    const at = [...Array(mesh.vertices.length / 2).keys()]
+      .find((i) => mesh.vertices[i * 2] === 10 && mesh.vertices[i * 2 + 1] === 5)!;
+    expect(at).toBeDefined();
+    expect(mesh.anchorA![at]).not.toBe(mesh.anchorB![at]);
+    expect(mesh.anchorT![at]).toBeCloseTo(0.5);
+  });
 });
 
 describe('flattenPolygon (closed contours only)', () => {
