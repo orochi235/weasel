@@ -3,7 +3,7 @@
  * script in one direction, so a run mixing Latin and Arabic is shaped a piece
  * at a time.
  */
-import { bidiClassOf, pairedBracket } from '@weasel-js/bidi';
+import { bidiClassOf, canonicalBracket, pairedBracket } from '@weasel-js/bidi';
 
 /**
  * Every value of the Unicode Script property through Unicode 17, but the three
@@ -100,10 +100,11 @@ export function scriptPieces(text: string): ScriptPiece[] {
       const bracket = pairedBracket(cp);
       if (bracket?.kind === 'open') {
         if (open.length === MAX_OPEN) open.shift();
-        open.push({ close: bracket.pair, script: current });
+        open.push({ close: canonicalBracket(bracket.pair), script: current });
       } else if (bracket?.kind === 'close') {
+        const close = canonicalBracket(cp);
         let k = open.length - 1;
-        while (k >= 0 && open[k].close !== cp) k--;
+        while (k >= 0 && open[k].close !== close) k--;
         if (k >= 0) {
           script = open[k].script;
           open.length = k;

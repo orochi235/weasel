@@ -22,6 +22,8 @@ describe('scriptPieces', () => {
 
   it('gives a closing bracket the script of its opening one', () => {
     expect(cut('abc (שלום) def')).toEqual([['abc (', 'ltr'], ['שלום', 'rtl'], [') def', 'ltr']]);
+    // U+2329 and U+3009 are canonical equivalents of the pair's halves, so they pair as bidi's BD16 pairs them.
+    expect(cut('abc \u2329שלום\u3009 def')).toEqual([['abc \u2329', 'ltr'], ['שלום', 'rtl'], ['\u3009 def', 'ltr']]);
   });
 
   it('reads a piece a closing bracket opens in its script\'s direction', () => {
