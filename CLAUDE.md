@@ -244,6 +244,10 @@ are not test runs and still go to the fleet, one job at a time. On 2026-10-30, s
 finishing with a branch run and then a run of `main` per merge put 2–3 suite-sized runs behind every
 change.
 
+**No suite-sized run goes out until every test in it has been seen passing (2026-11-20).** A batch merged with
+anything unseen since its last green tip (`main`, another branch) first runs `npm run test:fleet -- HEAD --since
+<green sha>`, which selects only what changed since; the batch run then confirms rather than discovers.
+
 **A failed fleet run is fixed locally, every failure of it, before the next one goes out.** Rerun each
 failing test file on its own here (`--maxWorkers=1`) until it passes, and each failing gate step as the
 step's own command, the whole of it: `lint -w <pkg>` is every check that script chains, not eslint on
