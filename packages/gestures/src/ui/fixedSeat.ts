@@ -63,7 +63,15 @@ export function fixedSeat(from: Element | null | undefined): FixedSeat {
   for (let el: Element | null = host; el !== null; el = el.parentElement) {
     if (!containsFixed(el)) continue;
     const rect = el.getBoundingClientRect();
-    return { host, left: rect.left, top: rect.top, scale: clientScaleOf(el, rect) };
+    const scale = clientScaleOf(el, rect);
+    // Fixed descendants are placed from the padding box, inside the border the rect includes.
+    const border = el as Partial<Pick<HTMLElement, 'clientLeft' | 'clientTop'>>;
+    return {
+      host,
+      left: rect.left + (border.clientLeft ?? 0) * scale.x,
+      top: rect.top + (border.clientTop ?? 0) * scale.y,
+      scale,
+    };
   }
   return { host, left: 0, top: 0, scale: { x: 1, y: 1 } };
 }

@@ -91,4 +91,15 @@ describe('fixedSeat', () => {
       expect(fixedSeat(from)).toMatchObject({ left: 0, top: 0 });
     },
   );
+
+  it("answers the containing block's padding corner, inside its border, at its scale", () => {
+    const from = mount('<div data-wzl-theme="x" id="h" style="transform: scale(2)"><i id="from"></i></div>');
+    const host = document.getElementById('h')!;
+    Object.defineProperty(host, 'offsetWidth', { value: 100 });
+    Object.defineProperty(host, 'offsetHeight', { value: 50 });
+    Object.defineProperty(host, 'clientLeft', { value: 2 });
+    Object.defineProperty(host, 'clientTop', { value: 3 });
+    host.getBoundingClientRect = () => DOMRect.fromRect({ x: 40, y: 25, width: 200, height: 100 });
+    expect(fixedSeat(from)).toEqual({ host, left: 44, top: 31, scale: { x: 2, y: 2 } });
+  });
 });
