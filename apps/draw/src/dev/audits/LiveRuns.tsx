@@ -86,9 +86,9 @@ function RunStrip({ run, now, mode, onMode, on }: {
     <section className={s.run} aria-label={`Round ${run.round}`}>
       <div className={s.pulse} aria-hidden="true" />
       <div className={s.what}>{headlineOf(run)}</div>
+      <div className={s.line} title={lastLineOf(run)}>{lastLineOf(run)}</div>
       <SegmentedBar aria-label="Lane view" size="sm" items={MODES} value={mode} onChange={(v) => v && onMode(v)} />
       <div className={s.spend}>{spendOf(run)}</div>
-      <div className={s.line}>{lastLineOf(run)}</div>
       {run.lanes.length > 0 && (
         <div className={s.lanes}>
           <Lanes run={run} now={now} mode={mode} on={on} />

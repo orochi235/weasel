@@ -50,9 +50,17 @@ describe('validPairs', () => {
 });
 
 describe('fixTallyOf', () => {
-  it('reads the fixer\'s closing tally line, and nothing from a report without one', () => {
+  it('reads the fixer\'s closing tally line, and nothing from a report with no verdicts', () => {
     expect(fixTallyOf('fixed 1a2b3c4d | a thing (A)\nChecks: pass\ntally: 3 of 4 fixed, 1 extra fixed\n')).toEqual({ fixed: 3, of: 4, extra: 1 });
-    expect(fixTallyOf('fixed 1a2b3c4d | a thing (A)\nfixed 5e6f7a8b | another (B)')).toBeNull();
+    expect(fixTallyOf('A note about a watcher; nothing was lost.')).toBeNull();
+  });
+
+  it('counts a report with no tally from its verdict lines, extras apart and checks left out', () => {
+    const report = [
+      'fixed 1a2b3c4d | a thing (A)', 'not a defect (it is documented) | another (B)', 'fixed 5e6f7a8b | a third (A+B)',
+      'Extra defects found while fixing:', 'fixed 9c0d1e2f | an extra (sweep)', 'Checks:', '- vitest: fixed 3 files, pass',
+    ].join('\n');
+    expect(fixTallyOf(report)).toEqual({ fixed: 2, of: 3, extra: 1 });
   });
 });
 

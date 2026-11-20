@@ -71,14 +71,26 @@ export const matchPrompt = (brief, a, b) => {
 };
 
 const TALLY = /^tally: (\d+) of (\d+) fixed, (\d+) extra fixed\s*$/im;
+const FIXED = /\bfixed (?:in )?`?[0-9a-f]{7,}/;
+const VERDICT = /\bfixed (?:in )?`?[0-9a-f]{7,}|\bnot a defect\b|\bquestion\b|\bduplicate of\b|\bnot fixed\b|\bdeclined\b/i;
+const EXTRAS = /^\W*(?:any )?extra\b/i;
+const CHECKS = /^\W*checks\b/i;
 
 /**
- * What a fixer's report says it did, from its closing `tally:` line: how many of the `of` findings it was given it
- * fixed, and how many defects nobody had listed it fixed besides. Null for a report with no tally, as every report
- * before round 47's later fixers has: their prose lists findings split and merged unlike the match, so no count read
- * from it is comparable with the round's.
+ * What a fixer's report says it did: of the `of` findings it answered, how many it `fixed`, and the `extra` defects
+ * nobody had listed that it fixed besides. From the closing `tally:` line; in a report from before fixers wrote one,
+ * from its verdict lines, the extras counted apart and the checks left out. The fixer's own list splits and joins
+ * findings unlike the match, so `of` is its count, not the round's. Null for a report with no verdicts.
  */
 export const fixTallyOf = (report) => {
   const t = TALLY.exec(report);
-  return t ? { fixed: Number(t[1]), of: Number(t[2]), extra: Number(t[3]) } : null;
+  if (t) return { fixed: Number(t[1]), of: Number(t[2]), extra: Number(t[3]) };
+  const paras = report.split(/\n\s*\n|\n(?=\S)/).map((p) => p.trim()).filter(Boolean);
+  const checks = paras.findIndex((p) => CHECKS.test(p));
+  const body = checks === -1 ? paras : paras.slice(0, checks);
+  const cut = body.findIndex((p) => EXTRAS.test(p));
+  const listed = (cut === -1 ? body : body.slice(0, cut)).filter((p) => VERDICT.test(p));
+  if (listed.length === 0) return null;
+  const extra = cut === -1 ? 0 : body.slice(cut).filter((p) => FIXED.test(p)).length;
+  return { fixed: listed.filter((p) => FIXED.test(p)).length, of: listed.length, extra };
 };

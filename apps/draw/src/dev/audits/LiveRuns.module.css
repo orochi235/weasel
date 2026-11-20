@@ -5,7 +5,7 @@
 
 .run {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
   align-items: center;
   gap: var(--wzl-space-3) 18px;
   padding: var(--wzl-space-3) var(--wzl-space-4);
@@ -42,6 +42,7 @@
 .what {
   min-width: 0;
   font-weight: var(--wzl-font-weight-bold);
+  white-space: nowrap;
 }
 
 .spend {
@@ -51,12 +52,16 @@
   white-space: nowrap;
 }
 
+/* The last log line, beside the headline: it changes every few seconds, so it takes the slack and is cut short there
+   rather than moving what follows it. */
 .line {
-  grid-column: 2 / -1;
+  min-width: 0;
   font-family: var(--wzl-font-ui);
   font-size: var(--wzl-font-size-md);
   color: var(--audit-muted);
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .lanes {

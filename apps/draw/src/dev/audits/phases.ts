@@ -110,14 +110,21 @@ function measuredOf(p: PartState): number | null {
 
 const SPAN_STATE: Readonly<Record<LaneStep['state'], SpanState>> = { waiting: 'pending', running: 'active', done: 'done', failed: 'failed' };
 
-/** The area's tally, its patch segment's caption: the distinct defects the reviews found, once matched, and what
- *  the fixer's report tallies as fixed, where it gives a tally. */
+/** How much of the patch to shade once the fixer reports: the share of the findings it answered that it fixed, all of
+ *  it once the patch is applied, and none before the fixer reports or where it gives no tally. */
+export function patchFillOf(lane: AuditLane): number {
+  const { fix, patch } = lane.steps;
+  if (patch.state === 'done') return 1;
+  if (fix.state !== 'done' || fix.fixed === undefined) return 0;
+  return fix.of ? Math.min(1, fix.fixed / fix.of) : 1;
+}
+
+/** The area's tally, its patch segment's caption: how many of the findings its fixer answered it fixed, and the
+ *  extras it fixed besides; before the fixer reports, or where its report gives no tally, what the reviews found. */
 export function tallyOf(lane: AuditLane): string {
   const { match, fix } = lane.steps;
-  if (match.state !== 'done') return '';
-  const found = `${(match.a ?? 0) + (match.b ?? 0) - (match.shared ?? 0)} found`;
-  if (fix.state !== 'done' || fix.fixed === undefined) return found;
-  return `${found} / ${fix.fixed} fixed${fix.extra ? ` +${fix.extra} extra` : ''}`;
+  if (fix.state === 'done' && fix.fixed !== undefined) return `${fix.fixed} of ${fix.of ?? fix.fixed} fixed${fix.extra ? ` +${fix.extra} extra` : ''}`;
+  return match.state === 'done' ? `${(match.a ?? 0) + (match.b ?? 0) - (match.shared ?? 0)} found` : '';
 }
 
 /** What a part shows in its segment: the node, what it found or made, and its minutes, never the phase's name; the
@@ -159,16 +166,20 @@ export function laneViewOf(lane: AuditLane, now: number, roundStart: number): La
   const spans = partsOf(lane).map((p): SpanStripSpan => {
     const phase = partPhase(p);
     const times = timesOf(p, now);
-    // A part not begun yet can begin no earlier than now.
-    const start = times.start ?? (p.state === 'waiting' ? Math.max(cursor, now) : cursor);
-    const end = times.end ?? start + (p.state === 'done' ? measuredOf(p) ?? TYPICAL_MINUTES[p.part] : TYPICAL_MINUTES[p.part]) * MIN;
+    // A patch waits from its fix's end for the round's batch, shaded by what the fix did; any other part not begun yet
+    // can begin no earlier than now.
+    const waitsForBatch = p.part === 'patch' && p.state === 'waiting' && lane.steps.fix.state === 'done';
+    const start = times.start ?? (p.state === 'waiting' && !waitsForBatch ? Math.max(cursor, now) : cursor);
+    const end = times.end ?? (waitsForBatch
+      ? Math.max(now, start + TYPICAL_MINUTES.patch * MIN)
+      : start + (p.state === 'done' ? measuredOf(p) ?? TYPICAL_MINUTES[p.part] : TYPICAL_MINUTES[p.part]) * MIN);
     if (p.state === 'running') elapsed = minutesText((now - start) / MIN);
     if (p.state === 'done' || p.state === 'failed') ended = Math.max(ended ?? end, end);
     cursor = end;
     const title = STEPS_OF[p.part].map((name) => `${name}: ${stepText(name, lane.steps[name], now)}`).join('; ');
     return {
       id: p.part, label: partLabel(lane, p, now), start, ms: Math.max(0, end - start), color: phaseColor(phase), state: SPAN_STATE[p.state], title,
-      ...(p.state === 'waiting' ? { fill: 0 } : {}),
+      ...(waitsForBatch ? { fill: patchFillOf(lane) } : p.state === 'waiting' ? { fill: 0 } : {}),
     };
   });
   return { phase: phaseOf(lane), finished: isFinished(lane), spans, elapsed, ended };
@@ -202,6 +213,7 @@ export function laneStepsOf(lane: AuditLane, now: number): SpanStripSpan[] {
     const s = lane.steps[step];
     const since = s.state === 'running' ? ms(s.since) : null;
     const fill = s.state === 'done' || s.state === 'failed' ? 1
+      : step === 'patch' ? patchFillOf(lane)
       : since !== null ? Math.min(RUNNING_FILL_CAP, (now - since) / (TYPICAL_MINUTES[part] * MIN))
       : 0;
     return {
