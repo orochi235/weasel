@@ -20,3 +20,12 @@ it('reports the assets that differ from the baseline when it mounts, and again w
   fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
   expect([...onChangedAssets.mock.lastCall![0]]).toEqual([]);
 });
+
+it('treats what the host returns from onChangedAssets as nothing, not as an effect cleanup', () => {
+  const cleanupCalled = vi.fn();
+  const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const { unmount } = renderWithIcons(<Live onChangedAssets={() => cleanupCalled} />);
+  unmount();
+  expect(cleanupCalled).not.toHaveBeenCalled();
+  error.mockRestore();
+});

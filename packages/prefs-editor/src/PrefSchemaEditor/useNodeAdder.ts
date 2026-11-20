@@ -1,7 +1,7 @@
 /** Adding a node from the structure pane's tools: where it lands, what it is made as, and the dialog that names it. */
 import { useMemo, useState } from 'react';
 import {
-  addNode, blankGroup, blankSection, branchUnder, childrenOf, type CustomKinds, joinPath, keyOf, keysTakenAt,
+  addNode, blankGroup, blankSection, branchUnder, childrenOf, type CustomKinds, holdsPages, joinPath, keyOf, keysTakenAt,
   kindChoices, leafOf, nodeAt, parentPath, type PrefTypes, type SchemaNode, type SchemaRoot,
 } from '@weasel-js/prefs/edit';
 import type { NewNode } from './AddNodeDialog';
@@ -26,7 +26,8 @@ export interface NodeMaking {
 
 /**
  * The add of a pref or a branch at `lead`: `open` starts one, and `dialog` is the props of the `AddNodeDialog` that
- * names it. The new node is selected, and its parent opened.
+ * names it. The new node is selected, and its parent opened. `addsPref` is false where a new pref would sit under a
+ * root that holds pages, on none of them.
  */
 export function useNodeAdder(schema: SchemaRoot, lead: string | null, pageless: boolean, making: NodeMaking, landing: Omit<PaletteLanding, 'move'>) {
   const { kinds, types, custom } = making;
@@ -49,6 +50,7 @@ export function useNodeAdder(schema: SchemaRoot, lead: string | null, pageless: 
   return {
     branch,
     parent: target.parent,
+    addsPref: !(target.parent === null && holdsPages(schema, pageless)),
     open: setAdding,
     dialog: {
       what: adding === 'branch' ? branch : adding,

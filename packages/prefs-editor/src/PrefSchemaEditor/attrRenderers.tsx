@@ -1,6 +1,6 @@
 import type { PrefEnumOption, PrefPair } from '@weasel-js/prefs';
 import {
-  Checkbox, Button, CLOSE_BUTTON_PROPS, Input, type LeafContext, type LeafRenderer, MIXED_HINT, Select, TokenField,
+  Checkbox, Button, CLOSE_BUTTON_PROPS, Input, type LeafContext, type LeafRenderer, MIXED_HINT, PrefMixed, Select, TokenField,
 } from '@weasel-js/ui';
 import { NumberText } from './NumberText';
 import { IconAttrField } from './IconAttrField';
@@ -30,8 +30,10 @@ function optionProblem(rows: readonly Option[], i: number): string | undefined {
   return undefined;
 }
 
-/** An enum's options as chips: each shows its label, and its stored value on hover; typing adds one stored as typed. */
+/** An enum's options as chips: each shows its label, and its stored value on hover; typing adds one stored as typed.
+ *  Where the selected enums' lists differ, it says so until asked to replace them all. */
 function EnumOptions({ ctx }: { ctx: LeafContext }) {
+  if (ctx.mixed) return <PrefMixed onReplace={ctx.disabled ? undefined : () => ctx.setValue([])} />;
   const rows = (ctx.value as Option[] | undefined) ?? [];
   return (
     <TokenField<Option>
@@ -61,8 +63,9 @@ function EnumOptions({ ctx }: { ctx: LeafContext }) {
 }
 
 /** The fields sharing a leaf's row, each picked from the schema's fields by path, and the row's label override.
- *  Picking none removes the pairing. */
+ *  Picking none removes the pairing. Where the selected leaves' pairings differ, it says so until asked to replace them. */
 function PairEditor({ ctx }: { ctx: LeafContext }) {
+  if (ctx.mixed) return <PrefMixed onReplace={ctx.disabled ? undefined : () => ctx.setValue(undefined)} />;
   const pair = ctx.value as PrefPair | undefined;
   const partners = pair === undefined ? [] : typeof pair.with === 'string' ? [pair.with] : [...pair.with];
   const label = pair?.label ?? '';

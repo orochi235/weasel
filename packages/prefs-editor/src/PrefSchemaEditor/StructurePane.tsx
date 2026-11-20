@@ -156,7 +156,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
       {toolSlot && createPortal(
         <StructureTools items={palette} sections={isPrefSection(schema)} ghost={!outsideDraws} disabled={readOnly} pages={!pageless} onDrag={onPaletteDrag} onDrop={onPaletteDrop}
           branch={branch} links={links}
-          onAddPref={readOnly || pageless ? null : () => adder.open('pref')}
+          onAddPref={readOnly || pageless || !adder.addsPref ? null : () => adder.open('pref')}
           onAddBranch={readOnly || (branch === 'group' && !withinDepth(adder.parent, [blankGroup()], maxDepth)) ? null : () => adder.open('branch')}
           onLink={aliasAt === null ? null : () => alias(selected, aliasAt)}
           onRemove={readOnly || selected.length === 0 ? null : onRemove} />,

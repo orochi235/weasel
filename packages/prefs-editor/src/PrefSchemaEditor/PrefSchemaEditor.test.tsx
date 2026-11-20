@@ -102,6 +102,13 @@ describe('PrefSchemaEditor', () => {
     expect(screen.getByText(/\+ view\/lineWidth {2}\(number\)/, { normalizer: exact })).toBeInTheDocument();
   });
 
+  it('offers no Add pref with nothing selected under a root that holds pages, where a new pref would be on none', () => {
+    renderWithIcons(<Live />);
+    expect(screen.getByRole('button', { name: 'Add pref' })).toBeDisabled();
+    fireEvent.click(row('view'));
+    expect(screen.getByRole('button', { name: 'Add pref' })).toBeEnabled();
+  });
+
   it('adds nothing until a pref has a name, a free id and a kind', () => {
     renderWithIcons(<Live />);
     fireEvent.click(row('view'));
