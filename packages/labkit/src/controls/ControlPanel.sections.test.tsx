@@ -337,3 +337,31 @@ describe('<ControlPanel> groups drawn `as`', () => {
     expect(screen.getByLabelText('Shout')).toBeInTheDocument();
   });
 });
+
+describe('<ControlPanel> group drawn as a section', () => {
+  const schema = resolveConfigSchema(
+    f.schema({
+      blur: f
+        .group({ on: f.boolean(true).label('On').heading(), radius: f.number(4).label('Radius') })
+        .label('Blur')
+        .as('section')
+        .resettable(),
+    }),
+  );
+
+  it('puts its reset and its .heading() control on the heading, as a framed group does', () => {
+    const setConfig = vi.fn();
+    renderWithIcons(
+      <ControlPanel
+        schema={schema}
+        config={{ blur: { on: false, radius: 9 } }}
+        setConfig={setConfig}
+      />,
+    );
+    // Lifted, the control takes the heading's name and its own row is gone.
+    expect(screen.getByRole('checkbox', { name: 'Blur' })).not.toBeChecked();
+    expect(screen.queryByText('On')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Blur' }));
+    expect(setConfig).toHaveBeenCalledWith('blur', { on: true, radius: 4 });
+  });
+});

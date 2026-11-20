@@ -14,7 +14,9 @@ import {
 import { qty, withUnit } from '@weasel-js/quantity';
 import { getOwn } from '@weasel-js/registry';
 import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
-import { RowScope, stepDisplay } from '@weasel-js/ui/components/Properties';
+import { PropertyAutoReadout, RowScope, stepDisplay } from '@weasel-js/ui/components/Properties';
+import type { ReactNode } from 'react';
+import { autoQuotes } from '../config/autoConfig';
 import type { InDialogOptions, LeafRenderer } from '../config/types';
 import { DraftDialogRow } from './DraftDialogRow';
 import { extra } from './fields';
@@ -98,6 +100,18 @@ export function summarizeLeaf(leaf: PrefLeaf, value: unknown): string {
   return summarizeValue(shownValue(leaf, value));
 }
 
+/** An auto value as tooltip text. A number with a unit or a display reads as its field shows it. Any other computed
+ *  number is cut to 6 significant digits, so `0.1 + 0.2` reads `0.3`. */
+export function summarizeAuto(value: unknown, leaf: PrefLeaf): string {
+  if (typeof value !== 'number') return summarizeLeaf(leaf, value);
+  const text = leaf.kind === 'number' ? numberText(leaf as PrefNumber, value) : undefined;
+  return text ?? summarizeValue(Number(value.toPrecision(6)));
+}
+
+/** What an auto row reads out beside its control: the word, with `value` quoted after it where one is given. */
+export const autoReadout = (value: string | undefined): ReactNode =>
+  value === undefined ? 'auto' : <PropertyAutoReadout value={value} />;
+
 /**
  * Moves a control into a modal: the row becomes a button showing a summary of
  * the value, and the button opens a dialog whose body is `body`, handed the
@@ -124,12 +138,29 @@ export function inDialog(body: LeafRenderer, opts: InDialogOptions = {}): LeafRe
           description={pref.description}
           summary={summary(value)}
           title={opts.title}
-          readout={auto ? 'auto' : undefined}
+          disabled={ctx.disabled}
+          readout={
+            auto
+              ? autoReadout(autoQuotes(pref) ? summarizeAuto(value, pref) : undefined)
+              : undefined
+          }
           value={value}
           setValue={ctx.setValue}
           commit={opts.commit}
         >
-          {(draft, setDraft) => body({ ...ctx, value: draft, setValue: setDraft })}
+          {(draft, setDraft) => {
+            // Every way the body writes goes to the draft, from the draft: a write past it would land at once
+            // and survive Cancel. Its drafts are the draft too, which Done alone writes.
+            const update = (fn: (value: unknown) => unknown): void => setDraft(fn(draft));
+            return body({
+              ...ctx,
+              value: draft,
+              each: [draft],
+              setValue: setDraft,
+              update,
+              drafts: { setValue: setDraft, update },
+            });
+          }}
         </DraftDialogRow>
       </RowScope>
     );
