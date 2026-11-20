@@ -112,4 +112,24 @@ describe('a clone source', () => {
     expect(source.kind).toBe('live');
     expect(source.label(request())).toBe('Live');
   });
+
+  it('leaves the trial’s own radio checked, and its copy shows it checked too', () => {
+    const { root, slot } = setup(
+      '<p class="probe"><input type="radio" name="size" value="s" checked><input type="radio" name="size" value="m"></p>',
+    );
+    createCloneSource<null>({ onFrame }).attach(slot, request());
+    const own = root.querySelector<HTMLInputElement>('input[value="s"]');
+    const copied = slot.querySelector<HTMLInputElement>('input[value="s"]');
+    expect(own?.checked).toBe(true);
+    expect(copied?.checked).toBe(true);
+  });
+
+  it('starts no load or playback in its copy', () => {
+    const { slot } = setup(
+      '<p class="probe"><iframe src="about:blank#x"></iframe><video autoplay src="a.webm"></video></p>',
+    );
+    createCloneSource<null>({ onFrame }).attach(slot, request());
+    expect(slot.querySelector('iframe')?.hasAttribute('src')).toBe(false);
+    expect(slot.querySelector('video')?.hasAttribute('autoplay')).toBe(false);
+  });
 });

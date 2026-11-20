@@ -22,14 +22,14 @@ const NO_COMPARISON = () => null;
  */
 export function LabLoupe() {
   const [scene] = useState(createLensScene<null>);
-  const { body, bodyRef, pointer, attachMarker } = useLabBody();
+  const { body, bodyRef, frameRef, pointer, attachMarker } = useLabBody();
   const { focus, onFocusLens } = useLensFocus();
   const onFrame = useFrameSchedule();
   const [live] = useState(() => createCloneSource<null>({ onFrame }));
   const sources = useMemo<LensSources<null>>(() => ({ live }), [live]);
   const sourcesRef = useLatest(sources);
   const [api] = useState(() =>
-    createLensApi(scene, { body: bodyRef, pointer, focus, sources: sourcesRef }),
+    createLensApi(scene, { body: bodyRef, frame: frameRef, pointer, focus, sources: sourcesRef }),
   );
   const [, rerender] = useReducer((n: number) => n + 1, 0);
   // A Follow reticle moves through the scene's overrides, which bump no version; the lenses re-read it on a render.

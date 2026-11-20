@@ -16,6 +16,7 @@ interface HarnessProps {
   sample?: (p: { x: number; y: number }) => string | null;
   minFactor?: number;
   maxFactor?: number;
+  mode?: LoupeOptions['mode'];
   onColorChange?: (hex: string | null) => void;
   shape?: LoupeShape;
   place?: LoupeOptions['place'];
@@ -249,6 +250,27 @@ describe('useLoupe', () => {
       });
     }
     expect(Number(read('factor'))).toBe(4);
+  });
+
+  it('follows bounds and a mode the props change after mount', () => {
+    const { rerender } = render(<Harness minFactor={4} maxFactor={8} />);
+    move(40, 25);
+    for (let i = 0; i < 40; i++) {
+      act(() => {
+        fireEvent.wheel(screen.getByTestId('host'), { deltaY: -100 });
+      });
+    }
+    expect(Number(read('factor'))).toBe(8);
+    rerender(<Harness minFactor={4} maxFactor={16} mode="pixel" />);
+    expect(read('mode')).toBe('pixel');
+    for (let i = 0; i < 40; i++) {
+      act(() => {
+        fireEvent.wheel(screen.getByTestId('host'), { deltaY: -100 });
+      });
+    }
+    expect(Number(read('factor'))).toBe(16);
+    rerender(<Harness minFactor={4} maxFactor={6} mode="pixel" />);
+    expect(Number(read('factor'))).toBe(6);
   });
 
   it('leaves the wheel to pan-zoom while the lens is not shown', () => {

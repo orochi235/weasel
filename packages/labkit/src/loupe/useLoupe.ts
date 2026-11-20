@@ -113,6 +113,20 @@ function magnify(model: LoupeModel | null, deltaY: number, rate: number): void {
   if (model) model.setFactor(model.factor * Math.exp(-deltaY * rate));
 }
 
+/** `factor` only opens the model, but `mode` and the bounds are the props' to change: the model follows them, and a
+ *  new bound clamps the factor it holds. */
+function useFollowOptions(
+  model: LoupeModel,
+  { mode, minFactor, maxFactor }: Pick<ResolvedLoupe, 'mode' | 'minFactor' | 'maxFactor'>,
+): void {
+  useEffect(() => {
+    model.setMode(mode);
+  }, [model, mode]);
+  useEffect(() => {
+    model.setFactor(Math.min(maxFactor, Math.max(minFactor, model.factor)));
+  }, [model, minFactor, maxFactor]);
+}
+
 /**
  * Binds `@weasel-js/loupe`'s model to a host element.
  *
@@ -150,8 +164,9 @@ export function useLoupe<TData = unknown, TLayer extends string = string, TPose 
     [enabledRef, pointer],
   );
 
+  const optionsRef = useLatest(options);
   const modelRef = useRef<LoupeModel | null>(null);
-  modelRef.current ??= createHostLoupeModel(options, {
+  modelRef.current ??= createHostLoupeModel(() => optionsRef.current, {
     lens: () => lensRef.current,
     sample: (p) => sampleRef.current?.(p) ?? null,
     shown,
@@ -161,6 +176,7 @@ export function useLoupe<TData = unknown, TLayer extends string = string, TPose 
     onPick: (hex) => onPickRef.current?.(hex),
   });
   const model = modelRef.current;
+  useFollowOptions(model, options);
 
   const goneRef = useRef(false);
 
