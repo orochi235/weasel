@@ -52,4 +52,13 @@ describe('createSwapOp', () => {
     second.history.undo();
     expect(second.read()).toBe('a');
   });
+
+  it('reports an undo by the same name, with the values swapped', () => {
+    const { history, swap } = harness();
+    history.applyOps([swap('a', 'b')], 'edit');
+    const applied: unknown[] = [];
+    history.observe((step) => applied.push(...step.entries.flatMap((e) => e.applied.map((op) => [op.name, op.args]))));
+    history.undo();
+    expect(applied).toEqual([['test.swap', { before: 'b', after: 'a' }]]);
+  });
 });
