@@ -1354,6 +1354,7 @@
     "ViewAt": "type",
     "ViewChannel": "type",
     "ViewKitSettings": "type",
+    "ViewLayerPaint": "type",
     "ViewMarker": "function",
     "ViewMarkerGrab": "type",
     "ViewMarkerHost": "type",

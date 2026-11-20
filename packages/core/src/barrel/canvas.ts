@@ -77,6 +77,7 @@ export type { DrawnBoundsOptions, DrawnBoundsScene } from '../canvas/drawnBounds
 export { drawnBoundsScene } from '../canvas/derivedPath';
 export { sceneContentBounds } from '../canvas/contentBounds';
 export { paintedSceneLayers } from '../canvas/sceneLayerPaint';
+export type { ViewLayerPaint } from '../canvas/sceneLayerPaint';
 export type { InkExtents } from '../core/geometry/inkExtents';
 export {
   bitmapSrc,
