@@ -84,20 +84,24 @@ describe('merging contributions', () => {
 
 describe("a region's runs", () => {
   it(
-    'hold each group together where it first appears, keep each ungrouped entry in place, and are each told apart',
+    'hold each group together where it first appears, keep each ungrouped entry in place, put end runs last, and are each told apart',
     () => {
       const t = tally();
       fc.assert(
         fc.property(fc.uniqueArray(entry, { selector: (c) => c.id, maxLength: 7 }), (list) => {
           const runs = groupsOf(list as ContributionBase[]);
-          // Model: walk the list, opening a run at an ungrouped entry or a group's first entry.
-          const want: { group: string | undefined; ids: string[] }[] = [];
+          // Model: walk the list, opening a run at an ungrouped entry or a group's first entry, then move the runs
+          // any member marked `end` after the rest.
+          const want: { group: string | undefined; ids: string[]; end: boolean }[] = [];
           for (const c of list) {
             const open = c.group === undefined ? undefined : want.find((w) => w.group === c.group);
-            if (open) open.ids.push(c.id);
-            else want.push({ group: c.group, ids: [c.id] });
+            if (open) {
+              open.ids.push(c.id);
+              open.end ||= c.end === true;
+            } else want.push({ group: c.group, ids: [c.id], end: c.end === true });
           }
-          expect(runs.map((r) => r.entries.map((c) => c.id))).toEqual(want.map((w) => w.ids));
+          const laid = [...want.filter((w) => !w.end), ...want.filter((w) => w.end)];
+          expect(runs.map((r) => r.entries.map((c) => c.id))).toEqual(laid.map((w) => w.ids));
           const told = runs.map((r) => r.id);
           expect(new Set(told).size).toBe(told.length);
           if (list.some((c) => c.group === undefined && list.some((d) => d.group === c.id)))
