@@ -28,8 +28,10 @@ function inputOf(specs: readonly DiagramSpec[]): PlaceLabelsInput {
     const id = spec.id as string;
     const ends = Array.isArray(spec.dependsOn) ? spec.dependsOn : [];
     if (diagramEdgeOf(spec) !== null) {
-      const points = routeOf(spec, ends.map(dep))?.points;
-      if (points !== undefined && points.length >= 2) routes.push({ id, points: points as Vec2[] });
+      const route = routeOf(spec, ends.map(dep));
+      // A connector split across pages draws only its stubs, and its label stands on the first.
+      if (route?.stubs !== undefined) routes.push({ id, points: route.stubs[0], more: [route.stubs[1]] });
+      else if (route !== null && route.points.length >= 2) routes.push({ id, points: route.points as Vec2[] });
       continue;
     }
     const placement = diagramLabelOf(spec);
@@ -47,7 +49,7 @@ function inputOf(specs: readonly DiagramSpec[]): PlaceLabelsInput {
 
 const keyOf = (input: PlaceLabelsInput): string => JSON.stringify([
   input.shapes.map((s) => [s.id, s.box.x, s.box.y, s.box.width, s.box.height]),
-  input.routes.map((r) => [r.id, r.points.flatMap((p) => [p.x, p.y])]),
+  input.routes.map((r) => [r.id, [r.points, ...(r.more ?? [])].map((run) => run.flatMap((p) => [p.x, p.y]))]),
   // Every field of the trait but `placed`, which placement writes and never reads for a moving label.
   input.labels.map(({ id, edge, placement: { placed: _p, ...preferred }, size }) => [id, edge, preferred, size.width, size.height]),
 ]);

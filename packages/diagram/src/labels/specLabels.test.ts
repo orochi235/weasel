@@ -32,4 +32,18 @@ describe('createSpecLabelPlacer', () => {
     placer(near.specs);
     expect(labelOf(placer(far.specs), far.id)).toEqual(fresh);
   });
+
+  it('places a split connector\'s label on the stubs it draws, not the line between pages', () => {
+    // `a` on the first page and `b` on the second; `cover` sits on the undrawn
+    // line between them, well past the first stub.
+    const edge = { from: 'a', to: 'b', label: 'note', labelPlacement: { at: 'mid' as const } };
+    const node = (id: string, x: number) => ({ id, lines: [], at: { x, y: 20 }, width: 30, height: 20, pinned: true });
+    const specs = diagramScene({
+      pages: [{ id: 'p1', width: 200, height: 100 }, { id: 'p2', width: 200, height: 100 }],
+      nodes: [node('a', 20), node('b', 360), node('cover', 190)],
+      edges: [edge],
+    }, { layout: 'none' });
+    const id = `${edgeIdOf(edge)}/label`;
+    expect(labelOf(createSpecLabelPlacer()(specs), id)).toEqual({ at: 'mid' });
+  });
 });
