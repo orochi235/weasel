@@ -34,13 +34,15 @@ export function folderTitles(rel: string, rule: FolderTitleRule, exportsOf: (fol
   const folder = /^[a-z]/.test(segs[0]!) ? segs.slice(0, 2) : segs.slice(0, 1);
   const lab = segs.slice(folder.length).join('/') === 'lab';
   const base = `${rule.library}/${folder.join('/')}`;
-  const own = folder[folder.length - 1]!;
-  const expected = lab || name === own ? base : `${base}/${name}`;
+  const named = (segment: string) => name.toLowerCase() === segment.toLowerCase();
+  const exported = exportsOf(folder.join('/'));
+  const takesFolder = lab || named(folder[folder.length - 1]!);
+  const expected = takesFolder ? base : `${base}/${[...exported].find(named) ?? name}`;
   const fits = (title: string): boolean => {
-    if (title === base) return lab || name === own;
+    if (title === base) return takesFolder;
     if (!title.startsWith(`${base}/`)) return false;
-    const exported = title.slice(base.length + 1);
-    return !exported.includes('/') && exportsOf(folder.join('/')).has(exported) && (lab || name.toLowerCase() === exported.toLowerCase());
+    const last = title.slice(base.length + 1);
+    return !last.includes('/') && exported.has(last) && (lab || named(last));
   };
   return { expected, fits };
 }
