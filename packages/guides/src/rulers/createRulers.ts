@@ -102,7 +102,7 @@ export function createRulers(opts: RulersOptions): Rulers {
   const onRuler = hitPredicate((hit) => (hit as { kind?: string } | null | undefined)?.kind === `layer:${hitLayerId}`);
   const bindings: GestureBinding[] = [
     { spec: { kind: 'hover', mods: ANY_MODS }, actionId: dynamicActionId(pointer.id), opts: { id: `${id}.hover`, params: { over: true } } },
-    { spec: { kind: 'hover', motion: 'leave' }, actionId: dynamicActionId(pointer.id), opts: { id: `${id}.leave`, params: { over: false } } },
+    { spec: { kind: 'hover', motion: 'leave', mods: ANY_MODS }, actionId: dynamicActionId(pointer.id), opts: { id: `${id}.leave`, params: { over: false } } },
     { spec: { kind: 'drag', target: { kindOf: onRuler }, mods: ANY_MODS }, actionId: guide.id, opts: { id: `${id}.drag` } },
   ];
   const draftLayer = createGuidesLayer({

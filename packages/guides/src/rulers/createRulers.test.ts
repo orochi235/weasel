@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  asNodeId, createScene,
+  ANY_MODS, asNodeId, createScene,
   type ActionDeps, type CanvasExtensionApi, type ContributionFrameCtx, type ImmediateInvoker, type InvocationCtx,
   type OngoingInvoker, type RectPose, type RenderLayer, type UnitScope, type View,
 } from '@weasel-js/core';
@@ -79,6 +79,13 @@ describe('createRulers', () => {
     expect(heard).toHaveBeenCalled();
     expect(rulers.get()).toMatchObject({ view: null, width: 0, height: 0, pointer: null, draft: null });
     expect(rulers.layout()).toBeNull();
+  });
+
+  it('hears the pointer leave the canvas with any keys held, as it hears it hover', () => {
+    const { rulers } = fixture();
+    const spec = (id: string) => rulers.contribution.bindings!.find((b) => b.opts?.id === id)!.spec;
+    expect(spec('rulers.leave')).toEqual({ kind: 'hover', motion: 'leave', mods: ANY_MODS });
+    expect(spec('rulers.hover')).toMatchObject({ mods: ANY_MODS });
   });
 
   it('claims presses on the strips along the top and left, and the corner', () => {

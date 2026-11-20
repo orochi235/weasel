@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createScene, createSnapOutcomeStore, type ActionDeps, type CanvasExtensionApi, type NodeId } from '@weasel-js/core';
+import { ANY_MODS, createScene, createSnapOutcomeStore, type ActionDeps, type CanvasExtensionApi, type NodeId } from '@weasel-js/core';
 import { createDistanceReadoutContribution } from './distanceReadout';
 
 type Pose = { x: number; y: number; width: number; height: number };
@@ -95,7 +95,7 @@ describe('createDistanceReadoutContribution', () => {
     expect(r.bindings!.map((b) => [b.spec, b.opts?.params])).toEqual([
       [{ kind: 'hover', mods: { alt: true, ctrl: 'optional', meta: 'optional', shift: 'optional' } }, { show: true }],
       [{ kind: 'hover', mods: { alt: false, ctrl: 'optional', meta: 'optional', shift: 'optional' } }, { show: false }],
-      [{ kind: 'hover', motion: 'leave' }, { show: false }],
+      [{ kind: 'hover', motion: 'leave', mods: ANY_MODS }, { show: false }],
     ]);
   });
 

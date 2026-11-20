@@ -1,4 +1,4 @@
-import { defineAction, drawnBoxes, dynamicActionId, sceneMagnification, scenePoseFrame, unionAabb, type Action, type ActionDeps, type Bounds, type GestureBinding, type ModSpec, type NodeId, type SnapMark, type SnapOutcomeStore, type SurfaceContribution } from '@weasel-js/core';
+import { ANY_MODS, defineAction, drawnBoxes, dynamicActionId, sceneMagnification, scenePoseFrame, unionAabb, type Action, type ActionDeps, type Bounds, type GestureBinding, type ModSpec, type NodeId, type SnapMark, type SnapOutcomeStore, type SurfaceContribution } from '@weasel-js/core';
 import { measureDistances, type DistanceReadout } from './distance';
 import type { ImmediateParams, AnyScene } from '@weasel-js/core';
 
@@ -119,7 +119,8 @@ export function createDistanceReadoutContribution(opts: DistanceReadoutOptions =
   const bindings: GestureBinding[] = [
     { spec: { kind: 'hover', mods: mods(true) }, actionId: dynamicActionId(action.id), opts: { id: `${id}.show`, params: { show: true } } },
     { spec: { kind: 'hover', mods: mods(false) }, actionId: dynamicActionId(action.id), opts: { id: `${id}.hide`, params: { show: false } } },
-    { spec: { kind: 'hover', motion: 'leave' }, actionId: dynamicActionId(action.id), opts: { id: `${id}.leave`, params: { show: false } } },
+    // Any keys: leaving with the modifier still held is the usual way out, and must still hide it.
+    { spec: { kind: 'hover', motion: 'leave', mods: ANY_MODS }, actionId: dynamicActionId(action.id), opts: { id: `${id}.leave`, params: { show: false } } },
   ];
 
   return {
