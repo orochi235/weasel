@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { calibrate, createBar, deviation, measured, planWeights } from './ci-progress.mjs';
 
 const parse = (line: string) => {
-  const [, kind, done, total] = /^onto: (plan|progress) (\d+)\/(\d+) ci$/.exec(line) ?? [];
+  const [, kind, done, total] = /^onto: (plan|progress) (\d+)\/(\d+)s ci$/.exec(line) ?? [];
   return { kind, done: Number(done), total: Number(total) };
 };
 
@@ -33,10 +33,10 @@ describe('createBar', () => {
 
   it('plans the sum of the weights and reports each step at its full weight', () => {
     const { lines } = drive([10, 1, 5], [1, 1, 1]);
-    expect(lines[0]).toBe('onto: plan 0/16 ci');
-    expect(lines).toContain('onto: progress 10/16 ci');
-    expect(lines).toContain('onto: progress 11/16 ci');
-    expect(lines.at(-1)).toBe('onto: progress 16/16 ci');
+    expect(lines[0]).toBe('onto: plan 0/16s ci');
+    expect(lines).toContain('onto: progress 10/16s ci');
+    expect(lines).toContain('onto: progress 11/16s ci');
+    expect(lines.at(-1)).toBe('onto: progress 16/16s ci');
   });
 
   it('creeps inside a long step every two seconds', () => {
@@ -58,7 +58,7 @@ describe('createBar', () => {
 
   it('advances a skipped step by its weight, so the bar still ends full', () => {
     const { lines } = drive([5, 20, 30], [1, 1, 1], 1);
-    expect(lines.slice(-2)).toEqual(['onto: progress 25/55 ci', 'onto: progress 55/55 ci']);
+    expect(lines.slice(-2)).toEqual(['onto: progress 25/55s ci', 'onto: progress 55/55s ci']);
   });
 
   it('scores a bar whose weights match the run close to zero, and a lopsided one far from it', () => {

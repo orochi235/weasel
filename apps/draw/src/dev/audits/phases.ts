@@ -1,7 +1,7 @@
 /** Where a run has an area: the phase it is in, the color that phase wears, and its lane as spans on the run's clock. */
 import { getOwn } from '@weasel-js/registry';
 import type { SpanState, SpanStripSpan } from '@weasel-js/ui/components/SpanStrip';
-import { stepText } from './runData';
+import { minutesText, stepText } from './runData';
 import type { AuditArea, AuditLane, AuditRun, LaneStep, LaneStepName } from './skulkMap.types';
 import palette from './palette.module.css';
 
@@ -104,7 +104,6 @@ const ms = (iso: string | undefined): number | null => {
   const t = iso ? Date.parse(iso) : NaN;
   return Number.isFinite(t) ? t : null;
 };
-const minutesText = (m: number): string => (m < 1 ? '<1m' : `${Math.round(m)}m`);
 
 /** When a part's steps began and ended, as far as onto's records say: a running step ends now. */
 function timesOf(p: PartState, now: number): { start: number | null; end: number | null } {
@@ -151,7 +150,7 @@ function partLabel(lane: AuditLane, p: PartState, now: number): string {
   if (p.part === 'review' && p.state === 'done') {
     const minutes = measuredOf(p);
     const found = `${p.steps.map((s) => s.findings ?? 0).join('+')} found`;
-    return minutes === null ? found : `${found} · ${minutes.toFixed(1)}m`;
+    return minutes === null ? found : `${found} · ${minutesText(minutes)}`;
   }
   return stepText(p.part === 'review' ? 'A' : p.part, p.steps[0]!, now);
 }

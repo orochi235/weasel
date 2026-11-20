@@ -43,15 +43,13 @@ function Chart({ map }: { map: SkulkMap }) {
   const [topHeight, setTopHeight, keepTop] = usePaneSize(TOP);
   const [jobsHeight, setJobsHeight, keepJobs] = usePaneSize(JOBS);
   const mainRef = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    mainRef.current?.style.setProperty('--audit-aside-width', `${asideWidth}px`);
-  }, [asideWidth]);
-  // The two heights are read by the page's root, which holds every pane.
+  // The sizes are read by the page's root, which holds every pane: the side column's width sets the rounds chart's too.
   useLayoutEffect(() => {
     const root = mainRef.current?.parentElement;
+    root?.style.setProperty('--audit-aside-width', `${asideWidth}px`);
     root?.style.setProperty('--audit-top-height', `${topHeight}px`);
     root?.style.setProperty('--audit-jobs-height', `${jobsHeight}px`);
-  }, [topHeight, jobsHeight]);
+  }, [asideWidth, topHeight, jobsHeight]);
 
   const picked = selection.current[0] ?? null;
   const shownId = hovered ?? picked;
@@ -66,7 +64,10 @@ function Chart({ map }: { map: SkulkMap }) {
   return (
     <>
       {probes}
-      <div className={s.top}><LiveRuns runs={map.runs} now={Date.parse(map.generated)} on={on} /></div>
+      <div className={s.top}>
+        <div className={s.runs}><LiveRuns runs={map.runs} now={Date.parse(map.generated)} on={on} /></div>
+        <RoundsChart rounds={map.rounds} />
+      </div>
       <ResizeHandle
         className={s.seam} orientation="horizontal" value={topHeight} min={TOP.min} max={TOP.max}
         onInput={setTopHeight} onChange={keepTop} aria-label="Resize the runs strip"
@@ -75,11 +76,10 @@ function Chart({ map }: { map: SkulkMap }) {
       <div ref={mainRef} className={s.main}>
         <Treemap scene={scene} selection={selection} areas={areas} palette={colors} phases={phases} onHover={setHovered} lit={lit} />
         <ResizeHandle value={asideWidth} min={ASIDE.min} max={ASIDE.max} invert onInput={setAsideWidth} onChange={keepAside} aria-label="Resize the side panel" />
-        <aside className={s.aside} aria-label="Area, queue and rounds">
+        <aside className={s.aside} aria-label="Area and queue">
           <AreaDetail area={area} holder={area && runHolding(map.runs, area.id)} />
           {picked && <AreaDefects id={picked} version={map.generated} />}
           <NextUp areas={next} onPick={pick} onLight={setLit} />
-          <RoundsChart rounds={map.rounds} />
         </aside>
       </div>
       <ResizeHandle

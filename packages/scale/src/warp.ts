@@ -21,8 +21,52 @@ export interface WarpScale extends ContinuousScale {
 
 const DEFAULT_TICKS = 5;
 
-/** A scale from `domain` onto `range`, linear in `to(value)` and inverted through `from`. Ticks and labels are a
- *  linear scale's over the same domain, in the value's own units. */
+/** Round values: 1, 1.5, 2, 2.5, 3, 4, 5, 6 or 8 times a power of ten. Fewer leave two neighbors bunched where an even
+ *  place falls between them, as 20 and 25 did on a square-root axis to 100. */
+const MANTISSAS = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10] as const;
+
+/** `m` times `p` without the float noise a bare product carries. */
+const times = (m: number, p: number) => Number((m * p).toPrecision(12));
+
+/** The round value inside `lo`..`hi` nearest `v` along a scale warped by `to`, or null for none there. */
+function roundNear(v: number, to: (value: number) => number, lo: number, hi: number): number | null {
+  if (v === 0) return lo <= 0 && hi >= 0 ? 0 : null;
+  const p = 10 ** Math.floor(Math.log10(Math.abs(v)));
+  const near = MANTISSAS.map((m) => Math.sign(v) * times(m, p)).filter((c) => c >= lo && c <= hi);
+  if (near.length === 0) return null;
+  return near.reduce((best, c) => (Math.abs(to(c) - to(v)) < Math.abs(to(best) - to(v)) ? c : best));
+}
+
+/**
+ * About `count` ticks spaced evenly along a scale warped by `to`, each moved to the round value nearest its place,
+ * in the domain's direction. Evenly spaced values bunch at one end of a warped axis, so the spacing is the warped one.
+ */
+export function warpTicks(domain: readonly [number, number], to: (value: number) => number, from: (warped: number) => number, count = DEFAULT_TICKS): number[] {
+  const [d0, d1] = domain;
+  const w0 = to(d0);
+  const w1 = to(d1);
+  if (w0 === w1 || !Number.isFinite(w0) || !Number.isFinite(w1)) return stepTicks(d0, d1, tickStep(d0, d1, count));
+  const lo = Math.min(d0, d1);
+  const hi = Math.max(d0, d1);
+  const n = Math.max(1, Math.round(count));
+  const out: number[] = [];
+  for (let i = 0; i <= n; i++) {
+    const tick = roundNear(from(lerp(w0, w1, i / n)), to, lo, hi);
+    if (tick !== null && !out.includes(tick)) out.push(tick);
+  }
+  return out.sort((a, b) => (d0 <= d1 ? a - b : b - a));
+}
+
+/** The grid a round value sits on, so its label keeps the decimals it has: 0.5 for 2.5, 1 for 2. */
+function gridOf(v: number): number {
+  if (v === 0 || !Number.isFinite(v)) return 1;
+  const p = 10 ** Math.floor(Math.log10(Math.abs(v)));
+  const m = Math.abs(v) / p;
+  return Math.abs(m - Math.round(m)) < 1e-9 ? p : p / 10;
+}
+
+/** A scale from `domain` onto `range`, linear in `to(value)` and inverted through `from`. Its ticks are spaced
+ *  evenly along the range, on round values in the value's own units ({@link warpTicks}). */
 export function warpScale(opts: WarpScaleOptions): WarpScale {
   const { to, from } = opts;
   const [d0, d1] = opts.domain;
@@ -39,11 +83,10 @@ export function warpScale(opts: WarpScaleOptions): WarpScale {
     range: [r0, r1],
     position: map,
     invert: (at) => (r1 === r0 ? d0 : from(unmap((at - r0) / (r1 - r0)))),
-    ticks: (count = DEFAULT_TICKS) => stepTicks(d0, d1, step(count)),
+    ticks: (count = DEFAULT_TICKS) => warpTicks([d0, d1], to, from, count),
     format,
-    tickFormat(count) {
-      const s = step(count);
-      return replacedFormat(this, format) ?? ((v) => formatNumber(v, s));
+    tickFormat() {
+      return replacedFormat(this, format) ?? ((v) => formatNumber(v, gridOf(v)));
     },
   };
 }

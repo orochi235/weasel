@@ -55,8 +55,8 @@ describe('laneViewOf', () => {
     expect(view.spans.map((s) => [s.id, ((s.start ?? 0) - START) / MIN, s.ms / MIN, s.state])).toEqual([
       ['review', 2, 4, 'done'], ['match', 6, TYPICAL_MINUTES.match, 'done'], ['fix', 18, 12, 'active'], ['patch', 30, TYPICAL_MINUTES.patch, 'pending'],
     ]);
-    expect(view.elapsed).toBe('12m');
-    expect(view.spans.map((s) => s.label)).toEqual(['5+2 found · 4.0m', '5 total, 2 shared', 'studio · 12m', '5 found']);
+    expect(view.elapsed).toBe('12 min');
+    expect(view.spans.map((s) => s.label)).toEqual(['5+2 found · 4.0 min', '5 total, 2 shared', 'studio · 12 min', '5 found']);
     expect(view.spans[2]!.color).toBe(phaseColor('fix'));
     expect(view.spans[0]!.color).toBe(phaseColor('reviewed'));
   });
@@ -110,7 +110,7 @@ describe('laneStepsOf', () => {
     const spans = laneStepsOf(lane({ A: done({ findings: 5, minutes: 3 }), B: running(at(27.5)), match: W }), NOW);
     expect(spans.map((s) => [s.id, s.ms, s.fill])).toEqual([['A', 1, 1], ['B', 1, 0.5], ['match', 1, 0], ['fix', 1, 0], ['patch', 1, 0]]);
     expect(spans.map((s) => s.color)).toEqual(['review', 'reviewed', 'match', 'fix', 'patch'].map((p) => phaseColor(p as never)));
-    expect(spans[1]!.label).toBe('studio · 3m');
+    expect(spans[1]!.label).toBe('studio · 2.5 min');
     expect(spans[2]!.label).toBe('');
   });
 

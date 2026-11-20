@@ -14,12 +14,12 @@ const now = Date.parse(map.generated);
 describe('lanes', () => {
   it('says what each step of an area has done, or how long it has been running', () => {
     const ops = live.lanes[0]!;
-    expect(stepText('A', ops.steps.A, now)).toBe('5 found · 2.8m');
+    expect(stepText('A', ops.steps.A, now)).toBe('5 found · 2.8 min');
     expect(stepText('match', ops.steps.match, now)).toBe('5 total, 2 shared');
-    expect(stepText('fix', ops.steps.fix, now)).toBe('studio · 12m');
+    expect(stepText('fix', ops.steps.fix, now)).toBe('studio · 12 min');
     expect(stepText('patch', ops.steps.patch, now)).toBe('after fix');
-    expect(stepText('B', live.lanes[1]!.steps.B, now)).toBe('studio · <1m');
-    expect(stepText('fix', { state: 'done', commits: 1, minutes: 7.6 }, now)).toBe('1 commit · 8m');
+    expect(stepText('B', live.lanes[1]!.steps.B, now)).toBe('studio · <1 min');
+    expect(stepText('fix', { state: 'done', commits: 1, minutes: 7.6 }, now)).toBe('1 commit · 7.6 min');
     expect(stepText('patch', { state: 'failed', why: 'conflicts; left out of the batch' }, now)).toBe('conflicts; left out of the batch');
   });
 
@@ -99,14 +99,18 @@ describe('areas', () => {
     expect(map.areas.map(toneOf)).toEqual([{ left: 1.7 }, 'unaudited', { left: 10 }, 'settled', 'unaudited', { left: 1 }]);
   });
 
-  it('puts defects left on a heat scale whose top is the 98th percentile, at least 8', () => {
+  it('puts defects left on a heat scale whose top is the 98th percentile, at least 8, ticked evenly along it', () => {
     const heat = heatScaleOf(map.areas);
     expect(heat.top).toBeCloseTo(9.668);
     expect(heat.at(0)).toBe(0);
     expect(heat.at(heat.top)).toBe(1);
     expect(heat.at(40)).toBe(1);
     expect(heat.at(1.7)).toBeCloseTo(Math.log1p(1.7) / Math.log1p(9.668));
-    expect(heat.ticks.map((t) => [t.label, t.value])).toEqual([['0', 0], ['median', 1.7], ['p90', expect.closeTo(8.34, 2)], ['top', expect.closeTo(9.668, 2)]]);
+    const ticks = heat.ticks.map((t) => t.value);
+    expect(ticks.slice(0, -1)).toEqual([0, 0.8, 2.5, 5]);
+    expect(heat.ticks.at(-1)).toMatchObject({ label: 'top', value: expect.closeTo(9.668, 2) });
+    const gaps = ticks.slice(1).map((t, i) => heat.at(t) - heat.at(ticks[i]!));
+    expect(Math.max(...gaps) / Math.min(...gaps)).toBeLessThan(1.6);
     expect(heatScaleOf([]).top).toBe(8);
   });
 
@@ -129,6 +133,7 @@ describe('areas', () => {
   it('ticks the rounds axis on round steps', () => {
     expect(ticksFor(74)).toEqual([0, 20, 40, 60, 80]);
     expect(ticksFor(0)).toEqual([0]);
+    expect(ticksFor(1.7)).toEqual([0, 0.5, 1, 1.5, 2]);
   });
 });
 
