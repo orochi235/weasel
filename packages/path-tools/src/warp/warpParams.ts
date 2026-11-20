@@ -3,6 +3,7 @@
  * form lays them out by kind, and the last-operation panel shows the ones a
  * warp drag or a `configureWarp` run used.
  */
+import { isFiniteNumber } from '@weasel-js/registry';
 import { pref, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs-schema';
 import type { HeldPathWarp } from './pathWarp';
 import {
@@ -41,11 +42,11 @@ function groupOf(name: string, fields: readonly Field[]): PrefGroup {
   return { name, children: Object.fromEntries(fields.map((f) => [f, WARP_SETTING_FIELDS[f]])) };
 }
 
-/** `{ [field]: value }`, or `null` when `value` is not one `field` holds: a number for a number field, one of its
- *  options for a choice. */
+/** `{ [field]: value }`, or `null` when `value` is not one `field` holds: a finite number for a number field, one
+ *  of its options for a choice. */
 export function warpSettingOf(field: Field, value: unknown): WarpSettings | null {
   const leaf = WARP_SETTING_FIELDS[field];
-  const holds = 'options' in leaf ? leaf.options.some((o) => o.value === value) : typeof value === leaf.kind;
+  const holds = 'options' in leaf ? leaf.options.some((o) => o.value === value) : isFiniteNumber(value);
   return holds ? { [field]: value } as WarpSettings : null;
 }
 
