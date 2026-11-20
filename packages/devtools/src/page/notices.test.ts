@@ -4,14 +4,15 @@ import { createNotices } from './notices';
 import type { DevtoolsArea, PageMessage } from './protocol';
 import type { DevtoolsRoot } from './root';
 
-function fakeRoot(): DevtoolsRoot & { change(area: DevtoolsArea): void } {
+function fakeRoot(): DevtoolsRoot & { change(area: DevtoolsArea): void; dimension: '2d' | '3d' } {
   const changes = createEmitter<[area: DevtoolsArea]>();
   const versions = { scene: 0, selection: 0, view: 0, tool: 0, trace: 0, registry: 0, history: 0 };
   const watch = () => () => {};
   return {
     id: 'r',
     source: { trace: { watch }, coords: { watch } } as unknown as DevtoolsRoot['source'],
-    info: () => ({ id: 'r', label: 'r', dimension: '2d' }),
+    dimension: '2d',
+    info() { return { id: 'r', label: 'r', dimension: this.dimension }; },
     probes: new Map(),
     version: (area) => versions[area],
     notify: () => {},
@@ -39,5 +40,17 @@ describe('createNotices', () => {
     expect(queued).toHaveLength(1);
     queued.shift()!();
     expect(sent.map((m) => m.type === 'changed' && Object.keys(m.areas))).toEqual([['scene'], ['selection']]);
+  });
+
+  it('announces a root again when its dimension changes after it was followed', () => {
+    const root = fakeRoot();
+    const sent: PageMessage[] = [];
+    const notices = createNotices(() => root, (f) => f(), (m) => sent.push(m));
+    notices.follow(root);
+    root.change('scene');
+    expect(sent.map((m) => m.type)).toEqual(['changed']);
+    root.dimension = '3d';
+    root.change('scene');
+    expect(sent.slice(1)).toMatchObject([{ type: 'root-added', root: { id: 'r', dimension: '3d' } }, { type: 'changed' }]);
   });
 });

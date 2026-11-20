@@ -33,6 +33,33 @@ describe('serialize', () => {
     });
   });
 
+  it('names an error, a regexp, a buffer and other built-ins rather than writing them as {}', () => {
+    class Boom extends Error {}
+    const frame = document.createElement('div');
+    expect(serialize({
+      err: new Error('boom'),
+      sub: new Boom('bang'),
+      re: /a+/g,
+      buf: new ArrayBuffer(8),
+      view: new DataView(new ArrayBuffer(4)),
+      weak: new WeakMap(),
+      el: frame,
+    })).toMatchObject({
+      err: { $class: 'Error', name: 'Error', message: 'boom' },
+      sub: { $class: 'Boom', name: 'Error', message: 'bang' },
+      re: { $class: 'RegExp', source: 'a+', flags: 'g' },
+      buf: { $class: 'ArrayBuffer', byteLength: 8 },
+      view: { $class: 'DataView', byteLength: 4 },
+      weak: { $class: 'WeakMap' },
+      el: { $class: 'HTMLDivElement' },
+    });
+  });
+
+  it('writes an object that only claims to be a map as an object', () => {
+    const fake = { [Symbol.toStringTag]: 'Map', a: 1 };
+    expect(serialize(fake)).toEqual({ $class: 'Map', a: 1 });
+  });
+
   it('writes strings that look like its own markers as the strings they are', () => {
     const strings = ['[cycle]', 'NaN', '10n', 'ƒ draw', '…', '… 2 more', '[threw: x]'];
     expect(serialize(strings)).toEqual(strings);

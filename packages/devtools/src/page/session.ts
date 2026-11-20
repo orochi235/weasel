@@ -35,7 +35,8 @@ export interface Override {
   highlight: readonly string[];
 }
 
-export function openSession(host: SessionHost, transport: PageTransport): DevtoolsSession {
+/** `onClose` runs once, when the session closes: on the panel's `bye` or a call to `close`. */
+export function openSession(host: SessionHost, transport: PageTransport, onClose?: () => void): DevtoolsSession {
   // The `session` the panel's `yo` named, tagged on everything sent it so a panel sharing the channel ignores it.
   let tag: string | undefined;
   const send = (m: PageMessage): void => transport.send(tag === undefined ? m : { ...m, session: tag });
@@ -45,19 +46,24 @@ export function openSession(host: SessionHost, transport: PageTransport): Devtoo
   let greeted = false;
   let closed = false;
   const notices = createNotices(host.root, host.schedule, (m) => { if (!closed) send(m); });
-  const overrides = new Map<string, Override>();
+  // Each override keeps its root: a removed root is gone from the host by the time the session hears of it.
+  const overrides = new Map<string, { root: DevtoolsRoot; override: Override }>();
 
   const dropOverride = (rootId: string): void => {
-    if (overrides.delete(rootId)) host.root(rootId)?.source.setOverride(null);
+    const held = overrides.get(rootId);
+    if (!held) return;
+    overrides.delete(rootId);
+    held.root.source.setOverride(null);
   };
 
   const steer = (root: DevtoolsRoot, change: Partial<Override>): void => {
-    const prev = overrides.get(root.id) ?? { overlays: {}, highlight: [] };
+    const prev = overrides.get(root.id)?.override ?? { overlays: {}, highlight: [] };
     const next: Override = {
       overlays: change.overlays ? { ...prev.overlays, ...change.overlays } : prev.overlays,
       highlight: change.highlight ?? prev.highlight,
     };
-    overrides.set(root.id, next);
+    if (Object.keys(next.overlays).length === 0 && next.highlight.length === 0) return dropOverride(root.id);
+    overrides.set(root.id, { root, override: next });
     root.source.setOverride(next);
   };
 
@@ -79,6 +85,7 @@ export function openSession(host: SessionHost, transport: PageTransport): Devtoo
     offRoots();
     for (const rootId of notices.ids()) notices.unfollow(rootId);
     for (const rootId of [...overrides.keys()]) dropOverride(rootId);
+    onClose?.();
   };
 
   const greet = (): void => {
