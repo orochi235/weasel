@@ -96,8 +96,8 @@ describe('moveAction — a behavior placing a root of its own pose kind', () => 
     const scene = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
     // An envelope: its pose is the circle around its child, which it does not carry as a frame would.
     const root = scene.add({
-      kind: 'circle', layer: 'main', pose: circle(10, 10, 5), data: {}, dependsOn: 'children',
-      derivePose: (_n: unknown, kids: readonly { pose: unknown }[]) => {
+      kind: 'group', layer: 'main', pose: circle(10, 10, 5), data: {}, dependsOn: 'children',
+      derivePose: (_n, kids) => {
         const p = kids[0]?.pose as { x: number; y: number } | undefined;
         return p ? circle(p.x + 2, p.y + 2, 5) : null;
       },
@@ -105,7 +105,7 @@ describe('moveAction — a behavior placing a root of its own pose kind', () => 
     const child = scene.add({ kind: 'mark', layer: 'main', parent: root, pose: { x: 8, y: 8, width: 4, height: 4 }, data: {} });
     const descriptor = {
       ...RECT_POSE_DESCRIPTOR,
-      forNode: (n: { kind: string }) => (n.kind === 'circle' ? CIRCLE_POSE_DESCRIPTOR : undefined),
+      forNode: (n: { kind: string }) => (n.kind === 'group' ? CIRCLE_POSE_DESCRIPTOR : undefined),
     };
     const place: MoveBehavior<unknown> = {
       onEnd: () => [ops.setPose<unknown>({ id: root, from: circle(10, 10, 5), to: circle(40, 10, 5), label: 'Place' })],
