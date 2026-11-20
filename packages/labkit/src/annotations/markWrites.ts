@@ -1,5 +1,5 @@
 import { asNodeId } from '@weasel-js/core';
-import { boundsOf, fracToWorld, roundFrac, worldToFrac } from './frac';
+import { boundsOf, fracToWorld, worldToFrac } from './frac';
 import { markDataFrom } from './markData';
 import { markIdOf } from './markId';
 import type { FoundMark } from './markReads';
@@ -42,7 +42,8 @@ export function createMarkWrites(o: MarkWritesOptions): MarkWrites {
   return {
     add(init, config) {
       const target = o.targetOf(init.target);
-      const frac = roundFrac(init.frac);
+      // Unrounded: the scene holds world units, and 4dp of a long target's side is whole units. Reads round.
+      const frac = init.frac;
       const shape = shapeFor(init.kind, init.points, frac);
       const data = markDataFrom(init, shape, seenValues(config, target?.positionDependsOn ?? []));
       const node = o.openScene(init.target).add({
@@ -62,7 +63,7 @@ export function createMarkWrites(o: MarkWritesOptions): MarkWrites {
       const frac = fracPatch ?? (points ? boundsOf(points) : null);
       // Only a move needs the content box: a title or a color lands whatever the target's size.
       const content = frac ? contentOf(found.target) : o.contentOf(found.target);
-      const bounds = roundFrac(frac ?? worldToFrac(found.node.pose as MarkPose, content));
+      const bounds = frac ?? worldToFrac(found.node.pose as MarkPose, content);
       const shape = points ? shapeFor(found.node.data.kind, points, bounds) : undefined;
       // A legacy mark is written back settled, so its vertices follow the bounds from here on.
       const settled = settledMarkData(found.node.data, found.node.pose as MarkPose, content);

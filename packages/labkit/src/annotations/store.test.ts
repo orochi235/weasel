@@ -595,6 +595,26 @@ function legacyLine() {
   };
 }
 
+describe('a mark on a long target', () => {
+  const LONG: AnnotationTargetInfo[] = [{ id: 'trace', content: { width: 60_000, height: 2_000 } }];
+
+  it('is placed and moved where it was asked, not on a 1/10,000 grid of the target', () => {
+    const store = createMarkStore({ targets: () => LONG });
+    const id = store.add({
+      target: 'trace',
+      kind: 'rect',
+      frac: { x: 12_345 / 60_000, y: 0.25, width: 0.01, height: 0.25 },
+    });
+    const pose = () => {
+      const [painted] = store.paintedMarks('trace');
+      return painted?.mark.pose;
+    };
+    expect(pose()?.x).toBeCloseTo(12_345, 6);
+    store.update(id, { frac: { x: 12_346 / 60_000, y: 0.25, width: 0.01, height: 0.25 } });
+    expect(pose()?.x).toBeCloseTo(12_346, 6);
+  });
+});
+
 describe('a target with no content box', () => {
   const RECT: AnnotationInit = {
     target: 'naive',
