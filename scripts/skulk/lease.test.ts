@@ -122,3 +122,11 @@ describe('slotsPerNode', () => {
     expect(slots.take('fix')?.tree).toBe('weasel-skulk-f2');
   });
 });
+
+describe('spreading', () => {
+  it('takes a slot on the node with the fewest live leases of the role', () => {
+    const dir = state();
+    const slots = createSlots(['studio', 'teitou'], { state: dir });
+    expect([slots.take('fix')?.node, slots.take('fix')?.node, slots.take('fix')?.node]).toEqual(['studio', 'teitou', 'studio']);
+  });
+});
