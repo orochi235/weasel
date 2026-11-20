@@ -3,6 +3,7 @@ import { PathBuilder, polygonFromPoints } from '../paths/builder';
 import { deleteAnchorsAt, insertAnchorOnSegment, moveHandleTo, translateAnchorBy } from '../paths/anchorEdits';
 import { editAnchorSetTracked } from '../paths/anchorOrigins';
 import { pathToAnchors } from '../paths/anchors';
+import { reverseSubpaths } from '../paths/pathStructure';
 import type { PolygonPath } from '../path';
 import { pathAnchorPoints, remapConstraints, anchorsBefore, segmentBetween, solvePathConstraints } from './pathConstraints';
 import { constrainPathEdit } from './pathsEdit';
@@ -147,6 +148,16 @@ describe('onPath through an edit', () => {
     expect(r.constraints).toEqual([]);
   });
 
+  it('turns its segment round with a subpath the edit reversed, so the curve it reads stays the drawn one', () => {
+    // Anchor 3 sits on the curve from anchor 0 to anchor 1, at its middle.
+    const before = new PathBuilder().moveTo(0, 0).curveTo(30, -40, 70, -40, 100, 0)
+      .lineTo(100, 100).lineTo(50, -30).build() as PolygonPath;
+    const edit = editAnchorSetTracked(before, (set) => { reverseSubpaths(set); })!;
+    const r = constrainPathEdit(before, edit.path, [{ kind: 'onPath', anchor: 3, segment: [0, 1] }], { origins: edit.origins });
+    expect(r.converged).toBe(true);
+    expect(r.constraints).toEqual([{ kind: 'onPath', anchor: 0, segment: [2, 3] }]);
+    expect(pathAnchorPoints(r.path)).toEqual(pathAnchorPoints(edit.path));
+  });
 });
 
 describe('segmentBetween', () => {
