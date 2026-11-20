@@ -3,7 +3,7 @@
  * drawn through a renderer of its own, each worker run handed its layers and the frame's view.
  */
 import { viewToMat3, type DrawCommand, type IdBuffer, type WeaselRenderer } from '@weasel-js/renderer';
-import { drawLayers, isLayerVisible, type LayerCommandCache, type LayerRetainPolicy, type RenderLayer } from '../../core/layers/render';
+import { drawLayers, isLayerVisible, type LayerCommandCache, type LayerDrawSpan, type LayerRetainPolicy, type RenderLayer } from '../../core/layers/render';
 import type { LayerGroup } from '../../core/layers/layerGroup';
 import type { View } from '../../core/viewport/view';
 import type { CanvasIdReadOptions } from '../canvasExtension';
@@ -13,6 +13,7 @@ import type { AnyRenderWorker } from './liveClients';
 import type { SceneRenderInputs } from './startSceneRenderWorker';
 import { setOwn } from '@weasel-js/registry';
 import type { Rect } from '@weasel-js/geom';
+import type { TimedRun } from '../../debug/frameStats';
 
 /** What a canvas painted partly by a worker is told by its owner: which layers the worker paints,
  *  how to start one, and what the worker's frame reads beside the view and the size. */
@@ -45,6 +46,8 @@ export interface StackFrame {
   retain: LayerRetainPolicy | false;
   options: CanvasPaintOptions;
   inputs: ReturnType<CanvasWorkerSurface['inputs']>;
+  /** Set when the frame is timed: each page run adds what its renderer drew, bottom first. */
+  timed?: TimedRun[];
 }
 
 /** What each page canvas drew last, for an id read of it. */
@@ -78,12 +81,14 @@ export function paintPageRun(
   renderer: WeaselRenderer, run: LayerRun, index: number, frame: StackFrame, frames: PageFrames,
 ): void {
   const ids = new Set(run.ids);
+  const spans: LayerDrawSpan[] | undefined = frame.timed ? [] : undefined;
   const commands = drawLayers(
     onlyIds(frame.layers, ids), frame.helpers, frame.visibility,
     frame.order?.filter((id) => ids.has(id)), frame.view, frame.dims, frame.cache, undefined,
-    groupsFor(frame.groups, ids, frame.paints), undefined, frame.retain,
+    groupsFor(frame.groups, ids, frame.paints), spans, frame.retain,
   );
-  renderer.render(commands, viewToMat3(frame.view));
+  renderer.render(commands, viewToMat3(frame.view), spans ? { spans } : undefined);
+  if (spans) frame.timed!.push({ spans, render: renderer.lastFrameStats() });
   frames.set(index, { renderer, commands, view: frame.view });
 }
 

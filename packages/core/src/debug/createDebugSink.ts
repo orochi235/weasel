@@ -13,7 +13,8 @@ import type {
  *
  * `beginFrame()` clears every per-frame array. Snap, the latest viewport
  * record, and the last frame's stats survive across frames. `snapshot()`
- * returns live references — no copy.
+ * returns live references — no copy. `config.highlight` is read on each
+ * call, so an owner may replace it in place.
  */
 export function createDebugSink(config: DebugFlags): CanvasDebugSink {
   const snap: DebugSnapshot = {
@@ -26,7 +27,12 @@ export function createDebugSink(config: DebugFlags): CanvasDebugSink {
     viewport: null,
     frame: null,
   };
-  const highlighted = new Set(config.highlight ?? []);
+  let highlightIds = config.highlight;
+  let highlighted = new Set(highlightIds ?? []);
+  const isHighlighted = (id: string): boolean => {
+    if (config.highlight !== highlightIds) highlighted = new Set(highlightIds = config.highlight);
+    return highlighted.has(id);
+  };
   return {
     recordHitbox(id, kind, shape: HitShape) {
       if (!config.hitboxes) return;
@@ -37,7 +43,7 @@ export function createDebugSink(config: DebugFlags): CanvasDebugSink {
       snap.handles.push({ id, position, kind });
     },
     recordBounds(id, bounds) {
-      if (!config.bounds && !config.ids && !highlighted.has(id)) return;
+      if (!config.bounds && !config.ids && !isHighlighted(id)) return;
       snap.bounds.push({ id, bounds });
     },
     recordOrigin(id, point) {

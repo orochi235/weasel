@@ -35,3 +35,14 @@ export const DEFAULT_DEBUG_STROKES: DebugStrokes = {
   viewport: { width: 1, dash: [6, 4] },
   highlight: { width: 2 },
 };
+
+/** `defaults` with each entry of `overrides` laid over it, an entry set to `undefined` counting as absent. */
+export function withDebugDefaults<T extends object>(defaults: T, overrides: Partial<T> | undefined): T {
+  const out = { ...defaults };
+  if (!overrides) return out;
+  for (const key of Object.keys(overrides) as (keyof T)[]) {
+    const v = overrides[key];
+    if (v !== undefined) out[key] = v as T[keyof T];
+  }
+  return out;
+}

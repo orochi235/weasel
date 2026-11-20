@@ -14,7 +14,7 @@ import type {
   DebugTheme,
   RecordedViewport,
 } from './types';
-import { DEFAULT_DEBUG_STROKES, DEFAULT_DEBUG_THEME } from './defaultTheme';
+import { DEFAULT_DEBUG_STROKES, DEFAULT_DEBUG_THEME, withDebugDefaults } from './defaultTheme';
 import { emitFramePanel, emitLayersPanel, emitTextPanel, LINE_H, rectPath } from './overlayPanels';
 
 /** What `createDebugOverlayLayer` paints from: a sink to snapshot and the features to draw. */
@@ -25,6 +25,8 @@ export interface CreateDebugOverlayLayerOptions {
 
 export const DEBUG_OVERLAY_ID = 'debug-overlay';
 const FPS_WINDOW = 60;
+/** Paints older than this leave the frame-rate window, so a pause the canvas sat idle through is not averaged in. */
+const FPS_MAX_AGE_MS = 1000;
 
 /**
  * Screen-space `RenderLayer` that paints the sink's snapshot. Appended at
@@ -36,7 +38,7 @@ export function createDebugOverlayLayer({
   sink,
   config,
 }: CreateDebugOverlayLayerOptions): RenderLayer<unknown> {
-  // Timestamps of the last FPS_WINDOW draws, kept for the life of the layer.
+  // Timestamps of the last FPS_WINDOW draws within FPS_MAX_AGE_MS, kept for the life of the layer.
   const fpsHistory: number[] = [];
   return {
     id: DEBUG_OVERLAY_ID,
@@ -45,8 +47,9 @@ export function createDebugOverlayLayer({
     alwaysOn: true,
     draw: (_data, view, dims) => {
       if (config.fps) {
-        fpsHistory.push(typeof performance !== 'undefined' ? performance.now() : Date.now());
-        if (fpsHistory.length > FPS_WINDOW) fpsHistory.shift();
+        const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+        fpsHistory.push(now);
+        while (fpsHistory.length > FPS_WINDOW || now - fpsHistory[0]! > FPS_MAX_AGE_MS) fpsHistory.shift();
       } else if (fpsHistory.length > 0) {
         fpsHistory.length = 0;
       }
@@ -70,8 +73,8 @@ export function buildDebugOverlayCommands(
   dims: Dims,
   frameTimes: readonly number[] = [],
 ): DrawCommand[] {
-  const theme: DebugTheme = { ...DEFAULT_DEBUG_THEME, ...(config.theme ?? {}) };
-  const strokes: DebugStrokes = { ...DEFAULT_DEBUG_STROKES, ...(config.strokes ?? {}) };
+  const theme: DebugTheme = withDebugDefaults(DEFAULT_DEBUG_THEME, config.theme);
+  const strokes: DebugStrokes = withDebugDefaults(DEFAULT_DEBUG_STROKES, config.strokes);
   const s = snapshot;
   const t = viewToTransform(view);
   const out: DrawCommand[] = [];
@@ -293,7 +296,7 @@ function emitIds(
     const [sx, sy] = worldToScreen(b.bounds.x, b.bounds.y, t);
     out.push(textCommandFromRuns(
       sx + 2,
-      sy + 11,
+      sy + 1,
       [{ text: b.id, fill: { paint: { kind: 'solid', color: theme.idText } } }],
       { fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 10 },
     ));

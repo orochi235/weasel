@@ -1,8 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import type { DrawCommand, PathDrawCommand, TextDrawCommand } from '@weasel-js/renderer';
 import { buildDebugOverlayCommands, createDebugOverlayLayer } from './createDebugOverlayLayer';
 import { createDebugSink } from './createDebugSink';
 import type { CreateDebugOverlayLayerOptions } from './index';
+import { DEFAULT_DEBUG_STROKES, DEFAULT_DEBUG_THEME } from './defaultTheme';
 
 const DIMS = { width: 800, height: 600, dpr: 1 };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -153,5 +154,47 @@ describe('hitboxes under non-uniform zoom', () => {
     // A 10-square turned 45° spans 10·√2 on each world axis.
     expect(e.width).toBeCloseTo(4 * 10 * Math.SQRT2, 3);
     expect(e.height).toBeCloseTo(10 * Math.SQRT2, 3);
+  });
+});
+
+describe('the ids feature', () => {
+  it('puts a label inside the top of its bounds, as text commands are top-anchored', () => {
+    const sink = createDebugSink({ ids: true });
+    sink.recordBounds('a', { x: 100, y: 50, width: 40, height: 12 });
+    const [label] = createDebugOverlayLayer({ sink, config: { ids: true } })
+      .draw(null, VIEW, DIMS) as TextDrawCommand[];
+    expect(label!.kind).toBe('text');
+    expect(label!.y).toBeGreaterThanOrEqual(50);
+    // A 10 px label starting inside a 12 px box ends within it.
+    expect(label!.y + 10).toBeLessThanOrEqual(62);
+  });
+});
+
+describe('theme and stroke overrides', () => {
+  it('treats an entry set to undefined as absent, keeping the default', () => {
+    const sink = createDebugSink({ hitboxes: true });
+    sink.recordHitbox('a', 'body', { kind: 'rect', x: 0, y: 0, width: 10, height: 10 });
+    const [cmd] = buildDebugOverlayCommands(sink.snapshot(), {
+      hitboxes: true, strokes: { hitbox: undefined }, theme: { hitboxStroke: undefined },
+    }, VIEW, DIMS) as PathDrawCommand[];
+    expect(cmd!.stroke?.width).toBe(DEFAULT_DEBUG_STROKES.hitbox.width);
+    expect(cmd!.stroke?.paint).toEqual({ kind: 'solid', color: DEFAULT_DEBUG_THEME.hitboxStroke });
+  });
+});
+
+describe('the frame-rate readout', () => {
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  const fpsLine = (cmds: DrawCommand[]) => (cmds.find((c) => c.kind === 'text') as TextDrawCommand).runs[0]!.text;
+
+  it('reads the current cadence after an idle spell, not one averaged across it', () => {
+    let now = 0;
+    vi.spyOn(performance, 'now').mockImplementation(() => now);
+    const layer = createDebugOverlayLayer({ sink: createDebugSink({ fps: true }), config: { fps: true } });
+    for (let i = 0; i < 30; i++) { now = i * 16; layer.draw(null, VIEW, DIMS); }
+    now += 10_000;
+    let cmds: DrawCommand[] = [];
+    for (let i = 0; i < 10; i++) { now += 16; cmds = layer.draw(null, VIEW, DIMS); }
+    expect(fpsLine(cmds)).toMatch(/fps\s+62\.50/);
   });
 });

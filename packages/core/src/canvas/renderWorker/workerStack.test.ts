@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { IdBuffer } from '@weasel-js/renderer';
 import type { AnyRenderWorker } from './liveClients';
-import { paintWorkerRun, readStackIds, snapshotStack, type StackFrame, type StackSurface } from './workerStack';
+import { paintPageRun, paintWorkerRun, readStackIds, snapshotStack, type StackFrame, type StackSurface } from './workerStack';
 import { combinedStatus, type RenderWorkerStatus } from './workerHealth';
 
 const RECT = { x: 0, y: 0, width: 1, height: 1 };
@@ -91,5 +91,25 @@ describe('combinedStatus', () => {
 
   it('answers the same object while nothing changed', () => {
     expect(combinedStatus([{ state: 'running' }])).toBe(combinedStatus([{ state: 'running' }]));
+  });
+});
+
+describe('paintPageRun', () => {
+  it("adds its layers' spans and its renderer's stats to a timed frame", () => {
+    const stats = { drawCalls: 2, ms: 1, spans: [{ id: 'a', drawCalls: 2, ms: 1 }], retained: { composited: 0, redrawn: 0, declined: 0, bytes: 0 } };
+    const render = vi.fn();
+    const renderer = { render, lastFrameStats: () => stats } as unknown as Parameters<typeof paintPageRun>[0];
+    const layer = { id: 'a', label: 'a', space: 'screen' as const, draw: () => [{ kind: 'path' as const, path: { kind: 'rect' as const, x: 0, y: 0, width: 1, height: 1 } }] };
+    const timed: NonNullable<StackFrame['timed']> = [];
+    const frame = {
+      layers: [layer], visibility: {}, order: undefined, view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
+      dims: { width: 1, height: 1, dpr: 1 }, cache: new Map(), groups: undefined, paints: () => false,
+      retain: false, timed,
+    } as unknown as StackFrame;
+    paintPageRun(renderer, { by: 'page', ids: ['a'] }, 0, frame, new Map());
+    expect(timed).toHaveLength(1);
+    expect(timed[0]!.spans.map((sp) => sp.id)).toEqual(['a']);
+    expect(timed[0]!.render).toBe(stats);
+    expect(render.mock.calls[0]![2]).toEqual({ spans: timed[0]!.spans });
   });
 });
