@@ -39,6 +39,16 @@ describe('a percentage length on a shape, image, or text', () => {
     expect((nodes[0] as SvgPathNode).path).toMatchObject({ width: 100, height: 50 });
   });
 
+  it('sizes a nested svg without width and height, or in percentages, from the viewport it sits in', () => {
+    const { nodes, warnings } = parseSvg(
+      `<svg ${NS} viewBox="0 0 400 100"><svg x="10"><rect width="50%" height="10"/></svg>`
+      + '<svg width="50%" height="50%"><rect width="10%" height="10%"/></svg></svg>',
+    );
+    expect(warnings).toEqual([]);
+    expect((nodes[0] as SvgPathNode).path).toMatchObject({ width: 200 });
+    expect((nodes[1] as SvgPathNode).path).toMatchObject({ width: 20, height: 5 });
+  });
+
   it('reads image and text positions the same way', () => {
     const { nodes } = parseSvg(
       `<svg ${NS} viewBox="0 0 200 100"><image x="10%" y="10%" width="50%" height="50%" href="a.png"/>`

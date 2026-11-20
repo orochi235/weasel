@@ -17,20 +17,30 @@ const LENGTH = /^\s*([-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?)\s*([a-z%]*)\s*$/
  *  axis, like a radius: SVG's normalized diagonal, `sqrt((w² + h²) / 2)`. */
 export type LengthAxis = 'x' | 'y' | 'other';
 
-function viewportOf(el: Element): { width: number; height: number } | undefined {
+type Viewport = { readonly width: number; readonly height: number };
+
+function viewportOf(el: Element): Viewport | undefined {
   for (let e = el.parentElement; e; e = e.parentElement) {
     if (e.tagName.toLowerCase() !== 'svg') continue;
     const box = parseViewBoxAttr(e.getAttribute('viewBox'));
     if (box) return { width: box.width, height: box.height };
-    const w = e.getAttribute('width');
-    const h = e.getAttribute('height');
-    if (w == null || h == null || LENGTH.exec(w)?.[2] === '%' || LENGTH.exec(h)?.[2] === '%') return undefined;
-    const quiet = (): void => {};
-    const width = resolveLength(w, e, 'width', 'x', NaN, quiet);
-    const height = resolveLength(h, e, 'height', 'y', NaN, quiet);
+    let outer: Viewport | undefined | null = null;
+    const around = (): Viewport | undefined => (outer === null ? (outer = viewportOf(e)) : outer);
+    const width = viewportSide(e, 'width', around);
+    const height = viewportSide(e, 'height', around);
     return Number.isFinite(width) && Number.isFinite(height) ? { width, height } : undefined;
   }
   return undefined;
+}
+
+/** An `<svg>`'s `width` or `height`: absent is `100%`, and a percentage is of
+ *  the viewport it sits in; `NaN` where there is none. */
+function viewportSide(svg: Element, name: 'width' | 'height', around: () => Viewport | undefined): number {
+  const raw = svg.getAttribute(name) ?? '100%';
+  const m = LENGTH.exec(raw);
+  if (m?.[2] !== '%') return resolveLength(raw, svg, name, name === 'width' ? 'x' : 'y', NaN, () => {});
+  const outer = around();
+  return outer ? (Number(m[1]) / 100) * outer[name] : NaN;
 }
 
 export function readLength(
