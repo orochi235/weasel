@@ -45,7 +45,7 @@ export function SliderCells() {
           min={0}
           max={20}
           value={width}
-          onChange={(event) => setWidth(Number((event.target as HTMLInputElement).value))}
+          onValueInput={setWidth}
         />
       </Cell>
     </>

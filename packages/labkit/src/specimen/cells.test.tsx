@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { ButtonsAndToggles } from './ButtonsAndToggles';
 import { PanelsAndRows } from './PanelsAndRows';
 import { ShapePanelCell } from './ShapePanelCell';
+import { SliderCells } from './SliderCells';
 
 // Each cell shows its control in a small working state (`Specimen`'s doc): every control on it answers.
 
@@ -35,5 +36,15 @@ describe('specimen cells', () => {
   it('names the momentary SegmentedBar toolbar', () => {
     renderWithIcons(<ButtonsAndToggles />);
     for (const bar of screen.getAllByRole('toolbar')) expect(bar).toHaveAccessibleName();
+  });
+
+  it('cancels an InlineRange drag on Escape, back to the width it started at', () => {
+    renderWithIcons(<SliderCells />);
+    const range = screen.getByLabelText<HTMLInputElement>('Width');
+    const from = range.value;
+    fireEvent.pointerDown(range, { pointerId: 1, button: 0 });
+    fireEvent.input(range, { target: { value: String(Number(from) + 5) } });
+    fireEvent.keyDown(range, { key: 'Escape' });
+    expect(range.value).toBe(from);
   });
 });
