@@ -52,4 +52,12 @@ describe('createSpecHops', () => {
     expect(edgeOf(hopped, CD).hops).toBeUndefined();
     expect(edgeOf(hopped, AB).hops).toBeUndefined();
   });
+
+  it('gives no hop over a hidden edge spec, or one inside a hidden spec', () => {
+    const base = diagramScene(DATA, { layout: 'none' });
+    const hidden = base.map((s) => (s.id === AB ? { ...s, hidden: true } : s)) as DiagramSpec[];
+    expect(edgeOf(createSpecHops(6)(hidden), CD).hops).toBeUndefined();
+    const under = [{ id: 'g', kind: 'group', layer: base.find((s) => s.id === AB)!.layer, hidden: true, pose: { x: 0, y: 0, width: 0, height: 0 } }, ...base.map((s) => (s.id === AB ? { ...s, parent: 'g' } : s))] as DiagramSpec[];
+    expect(edgeOf(createSpecHops(6)(under), CD).hops).toBeUndefined();
+  });
 });

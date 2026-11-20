@@ -13,17 +13,24 @@ import { withHopsData } from './sceneEdges';
 import { specDeps, specWorldPoses } from '../specWorld';
 
 /** A function from specs to the same specs with every edge's hops of radius
- *  `r`, edges hopping those earlier in the list. An edge split across pages
- *  takes no part. */
+ *  `r`, edges hopping those earlier in the list. An edge split across pages,
+ *  or hidden itself or by a spec it sits in, takes no part. */
 export function createSpecHops(r: number): (specs: readonly DiagramSpec[]) => DiagramSpec[] {
   const route = edgeRouter<RectPose>();
   return (specs) => {
     const dep = specDeps(specs, specWorldPoses(specs));
+    const byId = new Map(specs.map((spec) => [spec.id as string, spec]));
+    const hidden = (spec: DiagramSpec): boolean => {
+      for (let at: DiagramSpec | undefined = spec, n = 0; at !== undefined && n <= specs.length; at = byId.get(at.parent as string), n++) {
+        if (at.hidden === true) return true;
+      }
+      return false;
+    };
     const polylines = new Map<string, Vec2[]>();
     const order: string[] = [];
     for (const spec of specs) {
       const ends = spec.dependsOn;
-      if (diagramEdgeOf(spec) === null || !Array.isArray(ends) || ends.length !== 2) continue;
+      if (diagramEdgeOf(spec) === null || !Array.isArray(ends) || ends.length !== 2 || hidden(spec)) continue;
       const routed = route(spec, [dep(ends[0]), dep(ends[1])]);
       const points = routed?.stubs === undefined ? routed?.points : undefined;
       if (points === undefined || points.length < 2) continue;

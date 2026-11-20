@@ -9,8 +9,34 @@ import type { EdgeHop } from './types';
 /** How far off its route a hop may lie and still draw. */
 const ON_ROUTE = 0.5;
 
+/** How far a hop may overrun its segment, or the hop before it, and still
+ *  draw: past what rounding a stored hop to 0.001 can move it. */
+const SLACK = 0.01;
+
 /** The control distance that makes a cubic a quarter circle, per unit radius. */
 const KAPPA = 0.5523;
+
+/** `points` without the vertices a route runs straight through, repeats
+ *  included: what is left is one point per bend, so a hop near a vertex
+ *  that is no bend still fits. Hops are found and drawn on these runs. */
+export function straightRuns(points: readonly Vec2[]): Vec2[] {
+  const out: Vec2[] = [];
+  for (const p of points) {
+    const last = out[out.length - 1];
+    if (last !== undefined && last.x === p.x && last.y === p.y) continue;
+    const before = out[out.length - 2];
+    if (before !== undefined && last !== undefined) {
+      const ux = last.x - before.x;
+      const uy = last.y - before.y;
+      const vx = p.x - last.x;
+      const vy = p.y - last.y;
+      const straight = Math.abs(ux * vy - uy * vx) <= 1e-9 * Math.hypot(ux, uy) * Math.hypot(vx, vy) && ux * vx + uy * vy > 0;
+      if (straight) out.pop();
+    }
+    out.push(p);
+  }
+  return out;
+}
 
 /** A hop placed on one segment: its center `t` units along it. */
 interface Placed {
@@ -39,14 +65,14 @@ function placedOn(a: Vec2, b: Vec2, hops: readonly EdgeHop[]): Placed[] {
     const dx = hop.at.x - a.x;
     const dy = hop.at.y - a.y;
     const t = dx * ux + dy * uy;
-    if (Math.abs(dx * uy - dy * ux) > ON_ROUTE || t - hop.r < 0 || t + hop.r > len) continue;
+    if (Math.abs(dx * uy - dy * ux) > ON_ROUTE || t - hop.r < -SLACK || t + hop.r > len + SLACK) continue;
     found.push({ t, r: hop.r });
   }
   found.sort((m, n) => m.t - n.t);
   const out: Placed[] = [];
   for (const p of found) {
     const last = out[out.length - 1];
-    if (last === undefined || p.t - p.r >= last.t + last.r) out.push(p);
+    if (last === undefined || p.t - p.r >= last.t + last.r - SLACK) out.push(p);
   }
   return out;
 }
@@ -57,10 +83,11 @@ function placedOn(a: Vec2, b: Vec2, hops: readonly EdgeHop[]): Placed[] {
  * or an end for its half circle to fit on one segment, is stale and does not
  * draw; nor does one overlapping the hop before it.
  */
-export function withHops(points: readonly Vec2[], hops: readonly EdgeHop[]): Path {
+export function withHops(route: readonly Vec2[], hops: readonly EdgeHop[]): Path {
   const b = new PathBuilder();
-  const first = points[0];
-  if (first === undefined || hops.length === 0) return polylineFromPoints(points);
+  if (route.length === 0 || hops.length === 0) return polylineFromPoints(route);
+  const points = straightRuns(route);
+  const first = points[0]!;
   b.moveTo(first.x, first.y);
   let arcs = 0;
   for (let i = 1; i < points.length; i++) {
@@ -80,5 +107,5 @@ export function withHops(points: readonly Vec2[], hops: readonly EdgeHop[]): Pat
     }
     b.lineTo(q.x, q.y);
   }
-  return arcs === 0 ? polylineFromPoints(points) : b.build();
+  return arcs === 0 ? polylineFromPoints(route) : b.build();
 }

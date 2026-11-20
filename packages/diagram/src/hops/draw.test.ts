@@ -3,6 +3,7 @@ import { polylineFromPoints, type Path } from '@weasel-js/geom';
 import type { Vec2 } from '@weasel-js/core/math';
 import { asNodeId, type DerivedDep, type RectPose } from '@weasel-js/core';
 import { edgeDerivePath } from '../edge';
+import { edgeHops } from './crossings';
 import { withHops } from './draw';
 
 const NAMES = ['M', 'L', 'C'] as const;
@@ -95,6 +96,22 @@ describe('withHops', () => {
       { at: { x: 106, y: 50 }, over: ['b'], r: 5 },
     ]));
     expect(s.filter((x) => x.cmd === 'C')).toHaveLength(2);
+  });
+
+  it('draws a hop across a vertex the route runs straight through', () => {
+    const s = steps(withHops([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 200, y: 0 }], [{ at: { x: 102, y: 0 }, over: ['v'], r: 5 }]));
+    expect(s.map((x) => x.cmd)).toEqual(['M', 'L', 'C', 'C', 'L']);
+    close(s[1]!.pts[0]!, { x: 97, y: 0 });
+  });
+
+  it('draws a hop edgeHops placed at the clearance limit, whatever its rounding moved', () => {
+    const h = [{ x: 0.0004, y: -100 }, { x: 0.0004, y: 50 }, { x: 200, y: 50 }];
+    const hops = edgeHops(new Map([['v', [{ x: 5.0004, y: 0 }, { x: 5.0004, y: 200 }]], ['h', h]]), ['v', 'h'], 5).get('h')!;
+    expect(hops).toHaveLength(1);
+    expect(steps(withHops(h, hops)).filter((x) => x.cmd === 'C')).toHaveLength(2);
+    const points = [{ x: 0, y: 50 }, { x: 200, y: 50 }];
+    const apart = withHops(points, [{ at: { x: 100, y: 50 }, over: ['a'], r: 5 }, { at: { x: 109.999, y: 50 }, over: ['b'], r: 5 }]);
+    expect(steps(apart).filter((x) => x.cmd === 'C')).toHaveLength(4);
   });
 });
 

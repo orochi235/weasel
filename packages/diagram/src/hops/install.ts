@@ -10,7 +10,7 @@ import { DIAGRAM_PASS_ORDER } from '../passOrder';
 import { samePoints } from '../edgeTrait';
 import { edgeHops } from './crossings';
 import { hopFollower } from './follower';
-import { edgePolylines, hopDataOps, inOrUnder, sceneEdges, type AnyScene, type SceneEdge } from './sceneEdges';
+import { edgePolylines, hopDataOps, reroutedBy, sceneEdges, type AnyScene, type SceneEdge } from './sceneEdges';
 import { HOPS_DOC_KEY, type EdgeHop, type HopsDocValue } from './types';
 
 /** Options for {@link installHops} and `useHops`: how a connector routes, as
@@ -67,14 +67,11 @@ function allPolylines(edges: readonly SceneEdge[], polylineOf: (e: SceneEdge) =>
   return out;
 }
 
-/** The connectors an edit may have rerouted: changed themselves, new, or
- *  attached to a changed node or one inside it, or to a node whose pose
- *  derives from others. */
+/** The connectors an edit may have rerouted: new, or rerouted by what it
+ *  changed (`reroutedBy`). */
 function candidates(sc: AnyScene, edges: readonly SceneEdge[], held: Held, s: SceneEditSummary): SceneEdge[] {
   const changed = new Set<string>([...s.added, ...s.removed, ...s.posed, ...s.reparented, ...s.dataChanged]);
-  const derived = (id: string) => sc.get(id as never)?.derivePose !== undefined;
-  return edges.filter((e) => changed.has(e.node.id) || !held.polylines.has(e.node.id)
-    || e.ends.some((end) => inOrUnder(sc, end, changed) || derived(end)));
+  return edges.filter((e) => !held.polylines.has(e.node.id) || reroutedBy(sc, e, changed));
 }
 
 /**
@@ -97,6 +94,8 @@ export function installHops<TPose>(scene: Scene<unknown, string, TPose>, opts: H
     }
     return hopDataOps(sc, hops);
   };
+  // A hidden connector, or one on a hidden layer, neither hops nor is hopped over.
+  const drawn = () => sceneEdges(sc).filter((e) => !sc.isHidden(e.node.id));
   const unlocked = () => [...stale].filter((id) => !sc.isLocked(id as never));
 
   const full = (edges: SceneEdge[], r: number) => {
@@ -106,6 +105,7 @@ export function installHops<TPose>(scene: Scene<unknown, string, TPose>, opts: H
   };
 
   const pass = (summary: SceneEditSummary) => {
+    passed = true;
     const value = sc.doc.get<HopsDocValue>(HOPS_DOC_KEY);
     const keyed = summary.docChanged.has(HOPS_DOC_KEY);
     if (value === undefined) {
@@ -114,7 +114,7 @@ export function installHops<TPose>(scene: Scene<unknown, string, TPose>, opts: H
       const ops = cleared.length === 0 ? [] : write(new Map(cleared.map((id) => [id, []])));
       return ops.length === 0 ? null : ops;
     }
-    const edges = sceneEdges(sc);
+    const edges = drawn();
     const order = edges.map((e) => e.node.id);
     if (keyed || held === null || held.r !== value.size || reordered(held.order, order)) return full(edges, value.size);
     const h: Held = held;
@@ -154,9 +154,23 @@ export function installHops<TPose>(scene: Scene<unknown, string, TPose>, opts: H
 
   const on = sc.doc.get<HopsDocValue>(HOPS_DOC_KEY);
   if (on !== undefined) {
-    const edges = sceneEdges(sc);
+    const edges = drawn();
     held = { polylines: allPolylines(edges, polylineOf), order: edges.map((e) => e.node.id), r: on.size };
   }
-  const dispose = scene.addEditPass(pass, { order: DIAGRAM_PASS_ORDER.hops });
+  // Undo, redo, a replay, `loadState` and untracked writes change the scene with no pass to hear
+  // them, so whatever `held` says after one is a guess: drop it, and the next pass starts over.
+  let passed = false;
+  let version = scene.getContentVersion();
+  const unsubscribe = scene.subscribe(() => {
+    const now = scene.getContentVersion();
+    if (now !== version && !passed) held = null;
+    version = now;
+    passed = false;
+  });
+  const removePass = scene.addEditPass(pass, { order: DIAGRAM_PASS_ORDER.hops });
+  const dispose = () => {
+    removePass();
+    unsubscribe();
+  };
   return { follower: hopFollower(scene), dispose };
 }

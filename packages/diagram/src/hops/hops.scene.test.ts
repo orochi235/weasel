@@ -148,4 +148,117 @@ describe('line jumps in a scene', () => {
     split('ab');
     expect(hopsOf(scene, 'cd')).toBeUndefined();
   });
+
+  it('computes against the routes undo restores, not the ones it held before the undo', () => {
+    const { scene, move } = load(false);
+    scene.doc.set(HOPS_DOC_KEY, { size: 5 });
+    move('c', 600, -200);
+    move('d', 600, 200);
+    scene.undo();
+    scene.undo();
+    expect(hopsOf(scene, 'cd')).toEqual([{ at: { x: 250, y: 30 }, over: ['ab'], r: 5 }]);
+    move('a', 0, 40);
+    move('b', 400, 40);
+    expect(hopsOf(scene, 'cd')).toEqual([{ at: { x: 250, y: 70 }, over: ['ab'], r: 5 }]);
+  });
+
+  it('computes against the routes an untracked write leaves', () => {
+    const { scene, move } = load(false);
+    scene.doc.set(HOPS_DOC_KEY, { size: 5 });
+    scene.untracked(() => {
+      for (const id of ['c', 'd']) scene.setPose(id as never, { ...scene.get(id as never)!.pose, x: 600 });
+    });
+    move('a', 0, 40);
+    move('b', 400, 40);
+    expect(hopsOf(scene, 'cd')).toBeUndefined();
+  });
+
+  it('leaves a hidden connector out: nothing hops over it, and hiding or showing it recomputes its neighbors', () => {
+    const { scene } = load(false);
+    scene.setHidden('ab' as never, true);
+    scene.doc.set(HOPS_DOC_KEY, { size: 5 });
+    expect(hopsOf(scene, 'cd')).toBeUndefined();
+    scene.setHidden('ab' as never, false);
+    expect(hopsOf(scene, 'cd')).toEqual([{ at: { x: 250, y: 30 }, over: ['ab'], r: 5 }]);
+    scene.setHidden('ab' as never, true);
+    expect(hopsOf(scene, 'cd')).toBeUndefined();
+  });
+
+  it('leaves a connector on a hidden layer out', () => {
+    const scene = createScene<unknown, 'main' | 'back', RectPose>({
+      systemLayers: [{ id: 'back' }, { id: 'main' }],
+      registry: withDiagramRegistry(),
+      initial: [
+        box('a', 0, 0), box('b', 400, 0), box('c', 200, -200), box('d', 200, 200),
+        { ...connector('ab', 'a', 'b'), layer: 'back' as const }, connector('cd', 'c', 'd'),
+      ] as never,
+    });
+    installHops(scene);
+    scene.setLayerVisible('back', false);
+    scene.doc.set(HOPS_DOC_KEY, { size: 5 });
+    expect(hopsOf(scene as never, 'cd')).toBeUndefined();
+    scene.setLayerVisible('back', true);
+    expect(hopsOf(scene as never, 'cd')).toEqual([{ at: { x: 250, y: 30 }, over: ['ab'], r: 5 }]);
+  });
+
+  it('keeps the pose the frame holds for a connector it hides hops on', () => {
+    const { scene, hops } = load(false);
+    scene.doc.set(HOPS_DOC_KEY, { size: 5 });
+    const dragged = { x: 7, y: 7, width: 0, height: 0 };
+    const preview = hops.follower.preview(new Map([['cd', dragged]]), new Map());
+    expect(preview.find((p) => p.id === 'cd')!.pose).toBe(dragged);
+  });
+
+  it('counts a connector an earlier follower rerouted as moved, so the connectors hopping over it hide their hops', () => {
+    const { scene, hops } = load(false);
+    scene.doc.set(HOPS_DOC_KEY, { size: 5 });
+    const rerouted = { ...(scene.get('ab' as never)!.data as object), routedBy: 'earlier' };
+    const frame = new Map([['elsewhere', { x: 900, y: 900, width: 10, height: 10 }]]);
+    const preview = hops.follower.preview(frame, new Map([['ab', rerouted]]));
+    expect(preview.map((p) => p.id)).toEqual(['cd']);
+  });
+
+  it('counts a connector whose end derives its pose from a dragged node as moved in a drag, as the commit does', () => {
+    const scene: HopScene = createScene<unknown, 'main', RectPose>({
+      systemLayers: [{ id: 'main' }],
+      registry: withDiagramRegistry(),
+      initial: [
+        box('a', 0, 0), box('b', 400, 0), box('c', 200, -200), box('d', 200, 200),
+        {
+          ...box('e', 0, 0),
+          dependsOn: ['c' as never],
+          derivePose: (_n: unknown, deps: readonly ({ pose: RectPose } | undefined)[]) => deps[0]?.pose ?? null,
+        },
+        connector('ab', 'a', 'b'), connector('ed', 'e', 'd'),
+      ] as never,
+    });
+    const hops = installHops(scene);
+    scene.doc.set(HOPS_DOC_KEY, { size: 5 });
+    expect(hopsOf(scene, 'ed')).toEqual([{ at: { x: 250, y: 30 }, over: ['ab'], r: 5 }]);
+    const preview = hops.follower.preview(new Map([['c', { x: 210, y: -200, width: 100, height: 60 }]]), new Map());
+    expect(preview.map((p) => p.id)).toEqual(['ed']);
+  });
+
+  it('counts a connector on a container that fits its children as moved when a child is dragged', () => {
+    const scene: HopScene = createScene<unknown, 'main', RectPose>({
+      systemLayers: [{ id: 'main' }],
+      registry: withDiagramRegistry(),
+      initial: [
+        box('a', 0, 0), box('b', 400, 0), box('d', 200, 200),
+        {
+          ...box('k', 200, -200),
+          kind: 'group' as const,
+          dependsOn: 'children' as const,
+          derivePose: (_n: unknown, deps: readonly ({ pose: RectPose } | undefined)[]) => deps[0]?.pose ?? null,
+        },
+        { ...box('c', 200, -200), parent: 'k' as never },
+        connector('ab', 'a', 'b'), connector('kd', 'k', 'd'),
+      ] as never,
+    });
+    const hops = installHops(scene);
+    scene.doc.set(HOPS_DOC_KEY, { size: 5 });
+    expect(hopsOf(scene, 'kd')).toHaveLength(1);
+    const preview = hops.follower.preview(new Map([['c', { x: 210, y: -200, width: 100, height: 60 }]]), new Map());
+    expect(preview.map((p) => p.id)).toEqual(['kd']);
+  });
 });
