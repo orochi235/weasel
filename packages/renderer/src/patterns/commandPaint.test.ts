@@ -26,7 +26,7 @@ describe('commandPaint', () => {
 
   it('maps a bounds gradient onto the box', () => {
     expect(commandPaint(BOUNDS_GRADIENT, BOX)).toMatchObject({
-      units: 'local', from: { x: 10, y: 20 }, to: { x: 110, y: 70 },
+      units: 'local', from: { x: 10, y: 20 }, to: { x: expect.closeTo(50, 9), y: expect.closeTo(100, 9) },
     });
   });
 

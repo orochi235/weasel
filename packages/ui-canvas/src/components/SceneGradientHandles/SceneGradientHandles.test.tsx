@@ -163,11 +163,11 @@ describe('SceneGradientHandles', () => {
     const seen: Record<string, unknown>[] = [];
     const scene = sceneWith(BOX, { fill: { paint: BOUNDS_RAMP } });
     render(<Overlay scene={scene} slot="fill" seen={seen} />);
-    drag('Gradient end', { x: 100, y: 50 });
+    drag('Gradient end', { x: 100, y: 0 });
 
     expect(seen.at(-1)).toMatchObject({
       action: 'setFill',
-      paint: { kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 0.5, y: 0.5 }, units: 'bounds' },
+      paint: { kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 0.5, y: 0 }, units: 'bounds' },
     });
   });
 
@@ -202,11 +202,11 @@ describe('SceneGradientHandles', () => {
     const seen: Record<string, unknown>[] = [];
     const scene = sceneWith(BOX, { stroke: { paint: BOUNDS_RAMP, width: 2 } });
     render(<Overlay scene={scene} slot="stroke" seen={seen} />);
-    drag('Gradient end', { x: 100, y: 50 });
+    drag('Gradient end', { x: 100, y: 0 });
 
     expect(seen.at(-1)).toMatchObject({
       action: 'setStroke',
-      paint: { to: { x: 0.5, y: 0.5 }, units: 'bounds' },
+      paint: { to: { x: 0.5, y: 0 }, units: 'bounds' },
     });
   });
 

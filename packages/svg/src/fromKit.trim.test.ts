@@ -157,10 +157,10 @@ describe('svg export bakes a stroke trim', () => {
     const flat = write('M0 0 L100 0 L100 100', { x: 0, y: 1 });
     expect(flat).toContain('gradientUnits="userSpaceOnUse"');
     expect(flat).toContain('x1="0" y1="0" x2="0" y2="100"');
-    // A curve's box is its extent, 75 high, wherever the window ends.
+    // A curve's box is its extent, 75 high, wherever the window ends; the diagonal's bands lean with that box.
     const curve = write('M0 0 C0 100 100 100 100 0', { x: 1, y: 1 });
     expect(curve).toContain('gradientUnits="userSpaceOnUse"');
-    expect(curve).toContain('x1="0" y1="0" x2="100" y2="75"');
+    expect(curve).toContain('x1="0" y1="0" x2="72" y2="96"');
   });
 
   it("ends a stretched trim at the canvas's point on a corner the stretch would straighten", () => {
