@@ -1,7 +1,8 @@
 /** A swap drop: held still over a node of its shape for the dwell, a dragged node trades places with it on release. */
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
-import { createScene, asNodeId, type NodeId, type RectPose } from '@weasel-js/core/engine';
+import { createScene, asNodeId, type RectPose } from '@weasel-js/core/engine';
+import type { NodeId } from '@weasel-js/core';
 import type { MoveBehavior } from '@weasel-js/core/engine';
 import { moveAction } from './action';
 import { swapOnDrop } from './behaviors/swapOnDrop';
