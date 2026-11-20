@@ -2,7 +2,7 @@
 
 import { nearestPointOnSegment as nearestPointOnSegmentN } from '../points';
 import { SINGULAR_RATIO } from '../scalar';
-import { add, dot, len, len2, scale, sub, type Vec3 } from './vec3';
+import { add, dot, len, len2, MIN_NORMAL, scale, sub, type Vec3 } from './vec3';
 import { transformPoint, type Mat4 } from './mat4';
 
 /** A ray from `origin` along `direction`, which need not be unit length: the
@@ -108,9 +108,21 @@ export function aabbOfPoints(points: readonly Vec3[]): Aabb | null {
 /** The point of the infinite line through `origin` along `direction` nearest
  *  `p`. A zero direction makes the line the point `origin`. */
 export function nearestPointOnLine(p: Vec3, origin: Vec3, direction: Vec3): Vec3 {
-  const d2 = len2(direction);
+  const v = squarable(direction).v;
+  const d2 = len2(v);
   if (!(d2 > 0)) return origin;
-  return add(origin, scale(direction, dot(sub(p, origin), direction) / d2));
+  return add(origin, scale(v, dot(sub(p, origin), v) / d2));
+}
+
+/** `v` divided by its largest component when its squared length would leave the normal range, with that
+ *  divisor `k`: the projections here are unchanged by the direction's length, and its square must not
+ *  over- or underflow. `k` is 1 for every vector that squares in range, so those answer bit for bit as before. */
+function squarable(v: Vec3): { v: Vec3; k: number } {
+  const l2 = len2(v);
+  if (l2 >= MIN_NORMAL && l2 < Infinity) return { v, k: 1 };
+  const k = Math.max(Math.abs(v.x), Math.abs(v.y), Math.abs(v.z));
+  if (!(k > 0 && k < Infinity)) return { v, k: 1 };
+  return { v: scale(v, 1 / k), k };
 }
 
 /** The point of segment `a`–`b` nearest `p`; `a` when the segment has no
@@ -130,8 +142,8 @@ export function nearestPointsRayLine(
   origin: Vec3,
   direction: Vec3,
 ): { onRay: Vec3; onLine: Vec3; t: number; s: number } {
-  const u = ray.direction;
-  const v = direction;
+  const { v: u, k: ku } = squarable(ray.direction);
+  const { v, k: kv } = squarable(direction);
   const w = sub(ray.origin, origin);
   const a = len2(u);
   const b = dot(u, v);
@@ -141,7 +153,7 @@ export function nearestPointsRayLine(
   const denom = a * c - b * b;
   let t = 0;
   if (a > 0 && denom > SINGULAR_RATIO * a * c) t = Math.max(0, (b * e - c * d) / denom);
-  const onRay = pointOnRay(ray, t);
+  const onRay = add(ray.origin, scale(u, t));
   const s = c > 0 ? dot(sub(onRay, origin), v) / c : 0;
-  return { onRay, onLine: add(origin, scale(v, s)), t, s };
+  return { onRay, onLine: add(origin, scale(v, s)), t: t / ku, s: s / kv };
 }

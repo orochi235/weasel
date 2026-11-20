@@ -54,11 +54,11 @@ export function len2(a: Vec3): number {
 }
 
 /** The smallest positive double with full precision. */
-const MIN_NORMAL = 2.2250738585072014e-308;
+export const MIN_NORMAL = 2.2250738585072014e-308;
 
 /** Euclidean length. */
 export function len(a: Vec3): number {
-  return Math.sqrt(len2(a));
+  return Math.hypot(a.x, a.y, a.z);
 }
 
 /** A vector with no length, or no finite one, normalizes to the zero vector
@@ -86,7 +86,7 @@ export function distance2(a: Vec3, b: Vec3): number {
 
 /** Euclidean distance between two points. */
 export function distance(a: Vec3, b: Vec3): number {
-  return len(sub(a, b));
+  return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 
 /** The point `t` of the way from `a` to `b`; `t` outside [0, 1] extrapolates. */
