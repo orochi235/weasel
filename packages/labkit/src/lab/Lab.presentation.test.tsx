@@ -146,6 +146,13 @@ describe('usePresentation', () => {
     widget.remove();
   });
 
+  it('does nothing in a lab with no trial to present', async () => {
+    const { container } = await mountLab({ instruments: [] });
+    await act(async () => presentation?.enter());
+    expect(presentation?.active).toBe(false);
+    expect(root(container).classList.contains('lk-lab--present')).toBe(false);
+  });
+
   it('throws outside <Lab>', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(() => renderWithIcons(<Capture />)).toThrow(/inside <Lab>/);

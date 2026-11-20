@@ -11,7 +11,8 @@ import { type Still, stillOf, useStill } from './still';
 /** A lab's presentation mode: one trial, without the lab's chrome or its own. */
 export interface Presentation {
   active: boolean;
-  /** Present the focused trial. Escape returns to the workspace. */
+  /** Present the focused trial. Escape returns to the workspace. Does nothing
+   *  while no trial is focused. */
   enter(): void;
   exit(): void;
 }
@@ -105,7 +106,9 @@ export function useLabPresentation(
   return useMemo(
     () => ({
       active: presenting,
-      enter: () => setPresentedBy((by) => by ?? 'enter'),
+      enter: () => {
+        if (focusedTrialId !== null) setPresentedBy((by) => by ?? 'enter');
+      },
       exit: () => setPresentedBy(null),
       trialId: presenting ? focusedTrialId : null,
       returns: presentedBy === 'enter',
