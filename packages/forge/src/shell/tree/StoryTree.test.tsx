@@ -656,4 +656,32 @@ describe('StoryTree folders sharing a path', () => {
     expect(held.flat().sort()).toEqual(['Gallery', 'x']);
     expect(error.mock.calls.filter(([m]) => String(m).includes('same key'))).toEqual([]);
   });
+
+  it('folds each of two folders sharing a path on its own', async () => {
+    const at = (title: string, file: string): IndexEntry => ({ ...entry(title, 'Default'), file });
+    const ui = '/packages/ui/x.stories.tsx';
+    const labkit = '/packages/labkit/x.stories.tsx';
+    const shared = [at('ui/x', ui), at('x', ui), at('ui/Gallery', labkit), at('Gallery', labkit)];
+    const chrome: LabContribution[] = [{ id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={shared} /> }];
+    function Shared() {
+      const { instruments } = useStoryRegistry([...shared, ...indexEntries(shared)], { frameUrl: '/frame.html' });
+      return <Lab instruments={instruments} opening={[]} labChrome={chrome} addTrial={false} storageKey="tree-shared-folds" storage={createMemoryAdapter()} />;
+    }
+    const libraries = librariesFrom([{ path: '/packages/ui/', label: 'ui' }, { path: '/packages/labkit/', label: 'labkit' }]);
+    renderWithIcons(
+      <LibrariesContext.Provider value={libraries}>
+        <Shared />
+      </LibrariesContext.Provider>,
+    );
+    const treeEl = await screen.findByRole('tree', { name: 'Stories' });
+    const folders = () => within(treeEl).getAllByRole('treeitem', { name: named('ui') }).filter((el) => el.getAttribute('aria-level') === '1');
+    expect(folders()).toHaveLength(2);
+    const open = () => folders().map((folder) => folder.getAttribute('aria-expanded'));
+    expect(open()).toEqual(['false', 'false']);
+    fireEvent.click(foldOf(folders()[0]!));
+    expect(open()).toEqual(['true', 'false']);
+    fireEvent.click(foldOf(folders()[1]!));
+    fireEvent.click(foldOf(folders()[0]!));
+    expect(open()).toEqual(['false', 'true']);
+  });
 });

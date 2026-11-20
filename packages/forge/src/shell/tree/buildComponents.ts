@@ -139,7 +139,7 @@ export function componentNodes(rows: readonly ComponentRow[]): TreeNode[] {
       const key = compositeKey([row.library, path]);
       let folder = folders.get(key);
       if (!folder) {
-        folder = { kind: 'folder', label: labels[i], path, tag, children: [] };
+        folder = { kind: 'folder', label: labels[i], path, tag, scope: row.library, children: [] };
         folders.set(key, folder);
         siblings.push(folder);
       }

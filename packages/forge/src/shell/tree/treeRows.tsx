@@ -1,4 +1,5 @@
 import type { TreeNode as UiTreeNode } from '@weasel-js/ui/components/Tree';
+import { compositeKey } from '@weasel-js/registry';
 import type { ReactNode } from 'react';
 import { LabBadge } from '../../frame/index/LabBadge';
 import { LibraryBadge as PackageBadge } from '../../frame/index/LibraryBadge';
@@ -9,10 +10,14 @@ import type { TreeNode as StoryNode } from './buildTree';
 
 export type StoryFolder = Extract<StoryNode, { kind: 'folder' }>;
 
-/** A sidebar node's row id, before numbering apart from a row that shares it. */
-export const keyOf = (node: StoryNode): string => (node.kind === 'folder' ? `folder:${node.path}` : `story:${node.entry.id}`);
+/** The key a folder's fold is stored under: its path, with the scope that tells it apart from another at that path. */
+export const foldKeyOf = (folder: StoryFolder): string =>
+  folder.scope === undefined ? folder.path : compositeKey([folder.scope, folder.path]);
 
-/** `node`'s key, numbered past those `ids` holds: folders of two libraries can share a path in the components view. */
+/** A sidebar node's row id, before numbering apart from a row that shares it. */
+export const keyOf = (node: StoryNode): string => (node.kind === 'folder' ? `folder:${foldKeyOf(node)}` : `story:${node.entry.id}`);
+
+/** `node`'s key, numbered past those `ids` holds, should two rows still share one. */
 function freshKey(node: StoryNode, ids: ReadonlyMap<string, unknown>): string {
   let id = keyOf(node);
   for (let n = 2; ids.has(id); n++) id = `${keyOf(node)}#${n}`;
