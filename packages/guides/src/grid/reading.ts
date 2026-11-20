@@ -15,12 +15,12 @@ export interface GridScopes {
   spacing?: (scope: UnitScope) => GridSpacing;
 }
 
-/** A length in `chain`'s innermost units, in world units. Grid lengths are
+/** A length, in world units, as `read` resolves it. Grid lengths are
  *  measured from the grid's origin, so a unit that disagrees about zero
  *  moves them nowhere. */
-function span(v: GridLength, chain: readonly UnitScope[]): number {
+function span(v: GridLength, read: (v: GridLength) => number): number {
   const zero = typeof v === 'number' ? 0 : { ...v, value: 0 };
-  return resolveScoped(v, chain) - resolveScoped(zero, chain);
+  return read(v) - read(zero);
 }
 
 /**
@@ -34,9 +34,9 @@ export function gridLines(
   scopes: GridScopes | undefined,
   chain?: readonly UnitScope[],
 ): GridLines {
-  if (!scopes) return resolveGridLines(spacing, (v, axis) => resolveUnit(v, axisUnits(unitSystem, axis)));
+  if (!scopes) return resolveGridLines(spacing, (v, axis) => span(v, (u) => resolveUnit(u, axisUnits(unitSystem, axis))));
   const at = chain ?? [scopes.root];
-  return resolveGridLines(spacing, (v) => span(v, at));
+  return resolveGridLines(spacing, (v) => span(v, (u) => resolveScoped(u, at)));
 }
 
 /** The grid a container whose scopes are `chain` runs when nothing gives it
