@@ -4,6 +4,7 @@ import type { DrawCommand, TextDrawCommand } from '@weasel-js/core/renderer';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { createList } from './list';
 import { hudMeasureEnv } from '../../measureEnv';
+import { textWidth } from '../../menu/textWidth';
 import type { HudKeyEvent } from '../../widget';
 
 const tokens = resolveTheme(weaselTheme, { mode: 'dark' });
@@ -133,5 +134,13 @@ describe('list widget', () => {
     expect(l.active).toBe(0);
     l.setRows([]);
     expect(l.active).toBeNull();
+  });
+
+  it('ends a label too long for its row with an ellipsis, inside the row', () => {
+    const l = createList({ id: 'l', x: 0, y: 0, width: 120, rows: [{ id: 'a', label: 'A very long layer name indeed' }] });
+    const m = measureRowList({ rows: [{ id: 'a', label: 'A very long layer name indeed' }] }, exactly(120, l.bounds.height), hudMeasureEnv(ctx));
+    const [label] = texts(l.draw(ctx));
+    expect(label).toMatch(/…$/);
+    expect(textWidth(label!, m.layout.metrics.font.size, 'D')).toBeLessThanOrEqual(m.layout.rows[0]!.label.width);
   });
 });

@@ -5,6 +5,7 @@ import {
 } from '@weasel-js/ui-logic';
 import { resolveCurrentColor } from '@weasel-js/theme';
 import { hudMeasureEnv } from '../../measureEnv';
+import { ellipsize } from '../../menu/textWidth';
 import type { HudDrawCtx, WidgetBounds } from '../../widget';
 import { textCommandFromRuns } from '@weasel-js/core';
 import { solidFill } from '@weasel-js/paint';
@@ -57,11 +58,13 @@ export const hudItemList: HeadlessComponent<HudListState, RowListLayout, HudList
     const env = hudMeasureEnv(ctx, target.fontFamily);
     const { layout } = measureRowList(state, exactly(b.width, b.height), env);
     const font = { fontFamily: target.fontFamily ?? ctx.defaultFont, fontSize: layout.metrics.font.size };
-    const text = (s: string, x: number, y: number, h: number, color: string): DrawCommand =>
-      textCommandFromRuns(x, y, [{ text: s, fill: solidFill(color) }], font, undefined, h, 'center');
+    // ItemList.module.css's `.label`: one line, `text-overflow: ellipsis` at its box's width.
+    const text = (s: string, x: number, y: number, w: number, h: number, color: string): DrawCommand => textCommandFromRuns(
+      x, y, [{ text: ellipsize(s, w, font.fontSize, font.fontFamily), fill: solidFill(color) }], font, undefined, h, 'center',
+    );
     if (layout.empty) {
       const e = layout.empty;
-      return [text(state.empty ?? '—', b.x + e.x, b.y + e.y, e.height, subtle)];
+      return [text(state.empty ?? '—', b.x + e.x, b.y + e.y, e.width, e.height, subtle)];
     }
     const radius = envPx(env, '--wzl-radius-sm', 0);
     const out: DrawCommand[] = [];
@@ -80,7 +83,7 @@ export const hudItemList: HeadlessComponent<HudListState, RowListLayout, HudList
           stroke: { paint: { kind: 'solid', color: t['--wzl-border'] }, width: 1 },
         });
       }
-      out.push(text(row.label, b.x + box.label.x, y, r.height, row.muted ? subtle : fg));
+      out.push(text(row.label, b.x + box.label.x, y, box.label.width, r.height, row.muted ? subtle : fg));
       // ItemList's `outline: 2px; outline-offset: -2px`: a ring just inside the row.
       if (state.ring && state.active === i) {
         const inset = RING_WIDTH / 2;
