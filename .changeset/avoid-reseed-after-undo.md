@@ -2,6 +2,6 @@
 '@weasel-js/diagram': patch
 ---
 
-Avoid routing takes the shapes, labels and routes an undo, a redo or a history jump leaves as its own, so the next drag and edit route against them.
+Avoid routing takes what an undo, redo or history jump leaves as routed. The next drag and edit route against those shapes, labels and routes.
 
 <!-- entry: fix -->

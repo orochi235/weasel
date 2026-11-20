@@ -2,6 +2,6 @@
 '@weasel-js/diagram': minor
 ---
 
-`AvoidRouter.forget(ids)` drops what the router holds for those connectors, so its next update reroutes them: for a host that did not store the routes it was given.
+`AvoidRouter.forget(ids)` makes the router's next update reroute those connectors. For a host that did not store the routes it was given, such as a locked connector's.
 
 <!-- entry: api -->
