@@ -3,7 +3,8 @@ import { useKitSettings, useLatest } from '@weasel-js/react';
 import { defineTool } from '@weasel-js/core';
 import type { Tool } from '@weasel-js/core';
 import type { ToolKeybinding } from '@weasel-js/routing';
-import { sliceAction } from './slice';
+import { createSliceAction } from './slice';
+import type { SliceOptions } from './slicePaths';
 import { icon } from '../icons.gen';
 import type { GestureBinding } from '@weasel-js/routing';
 import { createPendingCutActions, createSliceLive, resetPendingCut, type SliceScratch } from './slicePendingCut';
@@ -11,8 +12,9 @@ import { createPendingCutLayer } from './slicePendingCutLayer';
 
 export type { SliceScratch } from './slicePendingCut';
 
-/** Options for `useSliceTool`. */
-export interface UseSliceToolOptions {
+/** Options for `useSliceTool`: `commit` and `requires` say what a cut does,
+ *  for the drag cut and the click-by-click one alike. Pass stable values. */
+export interface UseSliceToolOptions extends SliceOptions {
   /** Override the default keybinding (`{ key: 'K' }`). Pass `null` to omit. */
   keybinding?: ToolKeybinding | null;
   /** Screen-px radius around the first point within which a click closes the
@@ -50,8 +52,8 @@ const SLICE_BINDINGS: GestureBinding[] = [
  * loop and commits. While points are placed, a drag places one more where it
  * is released instead of cutting on its own.
  *
- * Every cut goes to the `slice` dep, which decides what it does to the scene.
- * `<SceneCanvas>` publishes one that cuts every path the cut crosses.
+ * Every cut goes to `options.commit`; by default `slicePaths`, which cuts
+ * every path the cut crosses.
  */
 export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
   const scratch = useRef<SliceScratch>({ points: [] }).current;
@@ -59,11 +61,15 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
   const kitSettings = useKitSettings();
   const live = useMemo(() => createSliceLive(), []);
 
-  const actions = useMemo(() => [
-    sliceAction,
-    ...createPendingCutActions(scratch, live, () =>
-      closeHitRef.current ?? kitSettings.get('targets.sliceCloseHitPx') ?? SLICE_CLOSE_HIT_PX),
-  ], [scratch, live, closeHitRef, kitSettings]);
+  const { commit, requires } = options;
+  const actions = useMemo(() => {
+    const slice: SliceOptions = { ...(commit ? { commit } : {}), ...(requires ? { requires } : {}) };
+    return [
+      createSliceAction(slice),
+      ...createPendingCutActions(scratch, live, () =>
+        closeHitRef.current ?? kitSettings.get('targets.sliceCloseHitPx') ?? SLICE_CLOSE_HIT_PX, slice),
+    ];
+  }, [scratch, live, closeHitRef, kitSettings, commit, requires]);
 
   const overlay = useMemo(() => createPendingCutLayer(scratch, live, () =>
     kitSettings.get('targets.sliceVertexRadiusPx') ?? VERTEX_RADIUS_PX,

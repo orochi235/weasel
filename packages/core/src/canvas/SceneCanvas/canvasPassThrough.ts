@@ -10,7 +10,7 @@ const OWN_PROPS = [
   'gestureSource', 'previewPoseExtra', 'boundsOfPose', 'boundsOf', 'adapter', 'viewState', 'getIsVisible',
   'contentVersion',
   'scene', 'composition', 'geometry', 'poseDescriptor', 'selectTool', 'insertNodeFactories',
-  'ingestion', 'layoutDropTarget', 'reflowTransition', 'poseTransition', 'geometryProjection', 'routing',
+  'ingestion', 'reflowTransition', 'poseTransition', 'geometryProjection', 'routing',
   'selection', 'selectionOptions', 'selectable', 'tools', 'features', 'enableKeybindings',
   'claimKeys', 'enableGestureDispatcher', 'onToolsCreated', 'defaultTools', 'toolOptions', 'toolOptionValues',
   'defaultActiveTool', 'ambient', 'versionCheck', 'longPress', 'viewport', 'layers', 'actions',

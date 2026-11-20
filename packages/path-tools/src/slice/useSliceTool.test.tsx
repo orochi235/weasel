@@ -7,20 +7,20 @@ import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react
 import type { ReactNode } from 'react';
 import { reportRouteConflicts, type Action, type ActionDeps, type InvocationCtx } from '@weasel-js/routing';
 import type { RenderLayer } from '@weasel-js/core';
-import { createPointerStore, useDepSource } from '@weasel-js/routing/react';
+import { createPointerStore } from '@weasel-js/routing/react';
 import { createScene, SceneCanvas } from '@weasel-js/core';
 import * as presets from '@weasel-js/editing/presets';
 
 type Pt = { x: number; y: number };
 
 function setup(opts: Parameters<typeof useSliceTool>[0] = {}, settings?: KitSettingsOverrides) {
-  const { result } = renderHook(() => useSliceTool(opts), {
+  const commit = vi.fn<(cut: ReadonlyArray<Pt>) => void>();
+  const apply = (cut: ReadonlyArray<Pt>) => commit(cut);
+  const { result } = renderHook(() => useSliceTool({ commit: apply, ...opts }), {
     ...(settings ? { wrapper: ({ children }: { children: ReactNode }) => <KitSettingsProvider value={settings}>{children}</KitSettingsProvider> } : {}),
   });
-  const commit = vi.fn<(cut: ReadonlyArray<Pt>) => void>();
   const pointer = createPointerStore();
   const deps = {
-    slice: { commit },
     view: { get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }), set: () => {} },
     pointer,
   } as unknown as ActionDeps;
@@ -258,20 +258,13 @@ describe('useSliceTool — through <SceneCanvas>', () => {
     proto.releasePointerCapture = vi.fn();
   });
 
-  function SliceDep({ commit }: { commit: (cut: ReadonlyArray<Pt>) => void }) {
-    useDepSource('slice', () => ({ commit }));
-    return null;
-  }
-
   function Harness({ commit }: { commit: (cut: ReadonlyArray<Pt>) => void }) {
-    const slice = useSliceTool();
+    const slice = useSliceTool({ commit });
     const scene = createScene<{ kind: string }, 'main', { x: number; y: number; width: number; height: number }>({
       systemLayers: [{ id: 'main' }],
     });
     return (
-      <SceneCanvas features={[presets.draw]} scene={scene} layers={{}} width={400} height={400} tools={{ slice }}>
-        <SliceDep commit={commit} />
-      </SceneCanvas>
+      <SceneCanvas features={[presets.draw]} scene={scene} layers={{}} width={400} height={400} tools={{ slice }} />
     );
   }
 

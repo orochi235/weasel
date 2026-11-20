@@ -21,7 +21,7 @@ const INITIAL = [
 
 export function SliceDemo() {
   const slice = useSliceTool();
-  // `<SceneCanvas>` publishes the `slice` dep over its own scene, so mounting
+  // The tool's default commit, `slicePaths`, works over the canvas's own scene, so mounting
   // the tool is all this needs: every cut swaps the paths it crosses for their pieces.
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: INITIAL });
   const selection = useSelection({ scene, mode: 'multiple' });

@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { cleanup, renderHook } from '@testing-library/react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
-import { DepRegistryProvider, useDepRegistry, useDepSource, type DepRegistry } from '@weasel-js/routing/react';
+import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import type { Dispatcher } from '@weasel-js/routing';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import type { Scene } from 'core/scene/types';
@@ -115,14 +115,12 @@ describe('dep sources after an abandoned render', () => {
     expect(dep(reg, 'ingestion').svg).toBe(a);
   });
 
-  it('layout reads the committed drop target', () => {
+  it('layout reads the committed reflow transition', () => {
     const scene = sceneWith();
-    const reg = registryAfterAbandon(
-      { drop: 'innermost' as const },
-      { drop: 'topmost' as const },
-      (p) => { useLayoutDepSource(scene as never, p.drop); },
-    );
-    expect(dep(reg, 'layout').dropTarget).toBe('innermost');
+    const a = { glide() {}, settle() {}, stop() {}, poseOf: () => undefined };
+    const b = { ...a };
+    const reg = registryAfterAbandon(a, b, (r) => { useLayoutDepSource(scene as never, r); });
+    expect(dep(reg, 'layout').reflow).toBe(a);
   });
 
   it('nodeAtPoint picks through the committed pickEvery', () => {
@@ -137,13 +135,6 @@ describe('dep sources after an abandoned render', () => {
     const b = {};
     const reg = registryAfterAbandon(a, b, (d) => { usePoseDescriptorDepSource(d as never); });
     expect(dep(reg, 'poseDescriptor')).toBe(a);
-  });
-
-  it('slice hands out the committed dep', () => {
-    const a = {};
-    const b = {};
-    const reg = registryAfterAbandon(a, b, (d) => { useDepSource('slice', () => d as never); });
-    expect(dep(reg, 'slice')).toBe(a);
   });
 
   it('snap runs its sessions over the committed sources', () => {

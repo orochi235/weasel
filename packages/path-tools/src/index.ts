@@ -60,7 +60,8 @@ export {
   createPenPreviewLayer, PEN_CLOSE_HIT_PX, type CreatePenPreviewLayerOptions, type PenPreviewStyle,
 } from './pen/penPreviewLayer';
 export { PENCIL_TOOL_OPTIONS, usePencilTool, type PencilPoint } from './pencil/usePencilTool';
-export { sliceAction } from './slice/slice';
+export { createSliceAction, sliceAction } from './slice/slice';
+export { slicePaths, SLICE_PATHS_REQUIRES, type SliceCommit, type SliceOptions } from './slice/slicePaths';
 export { useSliceTool, type SliceScratch, type UseSliceToolOptions } from './slice/useSliceTool';
 
 // ─── Actions ───────────────────────────────────────────────────────────────

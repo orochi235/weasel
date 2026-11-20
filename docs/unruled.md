@@ -336,8 +336,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   the rest on the originals.
 - 2026-10-13 (pass 6): `<SceneCanvas layouts>` and `sceneToAdapter({ layouts })` are gone, with
   `useLayoutArrivals`, `layoutArrivalHandler`, `LayoutSource`, and `LayoutArrivalOptions`: a
-  container's layout is the one its node declares. `useLayoutDepSource` is `(scene, dropTarget?,
-  reflow?)`.
+  container's layout is the one its node declares. `useLayoutDepSource` is `(scene, reflow?)`;
+  the drop-target mode became `move`'s `layoutDropTarget` param (2026-11-19).
 - 2026-10-13 (pass 6): A container's `transform` composes into its children under
   `composeRigidPose`, and a group resize writes a turned leaf's shear to its `transform`. The
   default node properties show a pose's `transform` as a Skew switch that can only clear it.

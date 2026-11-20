@@ -1,18 +1,19 @@
 /**
- * `<SceneCanvas>` publishes a working `slice` dep over its own scene, so the
- * slice tool (`@weasel-js/path-tools`) cuts with nothing else wired.
+ * `slicePaths`, the slice's default commit, over the deps `<SceneCanvas>`
+ * publishes for its own scene.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { useDepRegistry, useDepSource, type DepRegistry } from '@weasel-js/routing/react';
+import { useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import { boundsOfPath, rectPath, type Path, pathInWorld } from '@weasel-js/geom';
 import { SceneCanvas, asNodeId, type NodeId, type RectPose, type Scene } from '@weasel-js/core';
 import { createScene, RECT_POSE_COMPOSITION, RIGID_POSE_COMPOSITION } from '@weasel-js/core/engine';
-import type { SelectionApi } from '@weasel-js/routing';
-import type { SliceDep, PoseDescriptor } from '@weasel-js/core/engine';
+import type { ActionDeps, SelectionApi } from '@weasel-js/routing';
+import type { PoseDescriptor } from '@weasel-js/core/engine';
 import { useSelection } from '@weasel-js/editing';
-import { drawPreset } from '../../../presets/composites';
+import * as presets from '@weasel-js/editing/presets';
+import { slicePaths, SLICE_PATHS_REQUIRES } from './slicePaths';
 
 afterEach(() => { cleanup(); });
 
@@ -36,7 +37,6 @@ const leaves = (scene: S) =>
   [...scene.renderOrder()].map((id) => scene.get(id)!).filter((n) => n.kind === 'mark');
 
 function mount(scene: S, opts: {
-  override?: SliceDep;
   poseDescriptor?: PoseDescriptor<RectPose>;
   select?: string[];
 } = {}) {
@@ -46,15 +46,11 @@ function mount(scene: S, opts: {
     reg = useDepRegistry();
     return null;
   }
-  function Override({ dep }: { dep: SliceDep }) {
-    useDepSource('slice', () => dep);
-    return null;
-  }
   function Harness() {
     sel = useSelection({ scene: scene as never, initial: (opts.select ?? []) as NodeId[] });
     return (
       <SceneCanvas<Data, Layer, RectPose>
-        features={[drawPreset]}
+        features={[presets.draw]}
         scene={scene}
         selection={sel}
         layers={{}}
@@ -63,17 +59,17 @@ function mount(scene: S, opts: {
         {...(opts.poseDescriptor ? { poseDescriptor: opts.poseDescriptor } : {})}
       >
         <Capture />
-        {opts.override ? <Override dep={opts.override} /> : null}
       </SceneCanvas>
     );
   }
   render(<Harness />);
-  const commit = (cut: { x: number; y: number }[]) =>
-    act(() => { ((reg.get as (n: string) => unknown)('slice') as SliceDep).commit(cut); });
+  const deps = (): ActionDeps =>
+    Object.fromEntries(SLICE_PATHS_REQUIRES.map((name) => [name, (reg.get as (n: string) => unknown)(name)]));
+  const commit = (cut: { x: number; y: number }[]) => act(() => { slicePaths(cut, deps()); });
   return { commit, selection: () => sel };
 }
 
-describe('the default slice dep', () => {
+describe('slicePaths on a canvas', () => {
   it('swaps a crossed leaf for its pieces, carrying its paint, as one undo step', () => {
     const scene = makeScene();
     const { commit } = mount(scene);
@@ -337,14 +333,5 @@ describe('the default slice dep', () => {
       expect(ids).toContain('n10');
       expect(ids).toContain('n12');
     });
-  });
-
-  it('gives way to a slice dep the consumer publishes', () => {
-    const scene = makeScene();
-    const own = { commit: vi.fn() };
-    const { commit } = mount(scene, { override: own });
-    commit(across);
-    expect(own.commit).toHaveBeenCalledTimes(1);
-    expect(leaves(scene).map((n) => n.id)).toEqual(['sq']);
   });
 });

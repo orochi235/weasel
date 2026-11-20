@@ -6,9 +6,6 @@ import type { LayoutStrategy, ReflowTransition } from '../../layout/types';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type RectPose } from 'core/scene/types';
 
-const emptyScene = () =>
-  createScene<null, 'l', RectPose>({ systemLayers: [{ id: 'l' }] });
-
 function Capture({ onR }: { onR: (r: DepRegistry) => void }) {
   const r = useDepRegistry();
   onR(r);
@@ -16,27 +13,6 @@ function Capture({ onR }: { onR: (r: DepRegistry) => void }) {
 }
 
 describe('useLayoutDepSource', () => {
-  it('carries the drop-target mode, following the latest render', () => {
-    let reg!: DepRegistry;
-    const scene = emptyScene();
-    function Wire({ mode }: { mode?: 'topmost' | 'region' }) {
-      useLayoutDepSource(scene, mode);
-      return null;
-    }
-    const tree = (mode?: 'topmost' | 'region') => (
-      <DepRegistryProvider>
-        <Wire mode={mode} />
-        <Capture onR={(r) => { reg = r; }} />
-      </DepRegistryProvider>
-    );
-    const { rerender } = render(tree());
-    expect(reg.get('layout')?.dropTarget).toBeUndefined();
-    rerender(tree('topmost'));
-    expect(reg.get('layout')?.dropTarget).toBe('topmost');
-    rerender(tree('region'));
-    expect(reg.get('layout')?.dropTarget).toBe('region');
-  });
-
   it('answers the layout a container declares, and null for one that declares none', () => {
     const declared: LayoutStrategy<RectPose> = {
       snap: { pickTarget: () => null },
@@ -81,7 +57,7 @@ describe('useLayoutDepSource', () => {
       glide: vi.fn(), settle: vi.fn(), stop: vi.fn(), poseOf: () => undefined,
     };
     function Wire() {
-      useLayoutDepSource(scene, undefined, reflow);
+      useLayoutDepSource(scene, reflow);
       return null;
     }
     render(<DepRegistryProvider><Wire /></DepRegistryProvider>);

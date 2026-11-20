@@ -2,7 +2,7 @@ import type { BindingOptions, InvocationCtx, OngoingOverlay } from '@weasel-js/r
 import { operandMethods, nodeDescriptors, poseDescriptorOf, isPaged } from '@weasel-js/core/engine';
 import { isPathEditPart, resolveParams } from '@weasel-js/routing';
 import type { MoveParams, Op, NodeId, Scene, ReparentOnDrop } from '@weasel-js/core';
-import type { PoseDescriptor, PoseComposition, GestureContext, MoveBehavior, CanDropIntoDep, LayoutDep, NodeAtPointDep, DropVerdict, GeometryProjection } from '@weasel-js/core/engine';
+import type { PoseDescriptor, PoseComposition, GestureContext, MoveBehavior, CanDropIntoDep, LayoutDep, LayoutDropTargetMode, NodeAtPointDep, DropVerdict, GeometryProjection } from '@weasel-js/core/engine';
 import { gestureReaders, type GestureReaders, childVerdict, commitRunOps, readRunLifecycle, type RunLifecycle, transformFinisher, type TransformFinisher, moveSources } from '@weasel-js/core';
 import { layoutDrop } from './behaviors/layoutDrop';
 import { reparentOnDrop } from './behaviors/reparentOnDrop';
@@ -55,6 +55,8 @@ export interface MoveSession extends DragSnap {
   readonly mayRefuse: boolean;
   /** Read at release: a binding's params may be a thunk. */
   readonly reparentOnDrop: () => ReparentOnDrop;
+  /** Which layout container takes the drop, read on each pass for the same reason. */
+  readonly layoutDropTarget: () => LayoutDropTargetMode;
 }
 
 /** What one `onMove` produced. Replaced, not mutated, by the next. */
@@ -167,6 +169,7 @@ export function beginMove(
     admits: (parent) => verdict(parent) === true,
     mayRefuse: ctx.deps.canDropInto !== undefined,
     reparentOnDrop: () => resolveParams(opts?.params)?.reparentOnDrop ?? 'off',
+    layoutDropTarget: () => resolveParams(opts?.params)?.layoutDropTarget ?? 'innermost',
     ...beginDragSnap(ctx, ids),
   };
   return { session, readers };

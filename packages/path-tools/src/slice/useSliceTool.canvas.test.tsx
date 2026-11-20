@@ -1,4 +1,4 @@
-/** The slice tool cuts through the `slice` dep `<SceneCanvas>` publishes over its scene, with nothing else wired. */
+/** The slice tool cuts a canvas's paths with its default commit, with nothing else wired. */
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
@@ -12,7 +12,7 @@ afterEach(() => { cleanup(); });
 interface Data { path?: Path; fill?: string }
 
 describe('the slice tool on a canvas', () => {
-  it('cuts through the canvas\'s own slice dep', () => {
+  it('cuts the paths the cut crosses', () => {
     const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     scene.add({
       id: asNodeId('sq'), kind: 'mark', layer: 'main',

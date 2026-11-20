@@ -27,7 +27,7 @@ import { HANDLE_BASE_PX } from '../../core/device/targets';
 import type { DeviceProfile } from '../../core/device/types';
 import type { NodeRoutingEntry } from '../../core/scene/NodeRouting';
 import type { DebugFlags } from '../../debug/types';
-import type { LayoutDropTargetMode, ReflowTransition } from '../../layout/types';
+import type { ReflowTransition } from '../../layout/types';
 import type { FlattenTolerance, ShaderProgramHandle } from '@weasel-js/renderer';
 import type { SceneSlotConfig } from '../buildSceneLayer';
 import type { CanvasProps } from '../Canvas';
@@ -89,12 +89,6 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  spread over that slot's defaults; pass `slot: null` to suppress a
      *  default explicitly. */
     layers?: SceneCanvasLayers<Node<TData, TLayer, TPose>, TPose>;
-
-    /** Which layout container a drag lands in when several contain the drop
-     *  point — the innermost (default), the topmost in paint order, or only
-     *  containers whose strategy declares a `dropRegion`. Decides both the
-     *  drag-time reflow preview and the commit. */
-    layoutDropTarget?: LayoutDropTargetMode;
 
     /** Carries the siblings a layout reflow displaces to their slots over time
      *  instead of snapping them — `useAnimatedReflow` builds one. Covers a

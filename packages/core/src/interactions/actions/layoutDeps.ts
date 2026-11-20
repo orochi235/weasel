@@ -1,5 +1,5 @@
 import type { DropVerdict } from './dropVerdict';
-import type { LayoutDropTargetMode, LayoutStrategy, ReflowTransition } from '../../layout/types';
+import type { LayoutStrategy, ReflowTransition } from '../../layout/types';
 
 /**
  * Layout-strategy lookup by container id, consumed by `moveAction` to run
@@ -9,9 +9,6 @@ import type { LayoutDropTargetMode, LayoutStrategy, ReflowTransition } from '../
  */
 export interface LayoutDep {
   getLayout(containerId: string): LayoutStrategy<unknown> | null;
-  /** Which container wins when several contain the drop point. Default
-   *  `'innermost'`. */
-  dropTarget?: LayoutDropTargetMode;
   /** Carries displaced siblings to their slots over time. Absent, they snap. */
   reflow?: ReflowTransition<unknown> | null;
 }
