@@ -258,7 +258,16 @@ const resume = (root, args, say) => {
   if (!commit) throw new Error(`round ${round}'s commit is unknown: its status predates recording it and its frozen tree is gone`);
   const byId = new Map(partitionAt(root, commit).map((a) => [a.id, a]));
   // An area the stopped run already merged is done; the rest run again, reusing what came home.
-  const landed = new Set((prior.areas ?? []).flatMap((a) => (typeof a === 'object' && /^`[^`]+`$/.test(a.outcome ?? '') ? [a.id] : [])));
+  const git = gitIn(root);
+  const inMain = (id) => {
+    try {
+      git('merge-base', '--is-ancestor', `audit${round}-${id}`, 'main');
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  const landed = new Set((prior.areas ?? []).flatMap((a) => (typeof a === 'object' && (a.patches ?? 0) > 0 && inMain(a.id) ? [a.id] : [])));
   const ids = (prior.planned ?? prior.areas ?? []).map((a) => (typeof a === 'string' ? a : a.id)).filter((id) => !landed.has(id));
   clearStop(round);
   const p = { commit, round, picked: ids.flatMap((id) => (byId.has(id) ? [byId.get(id)] : [])), passes: readPasses(root), running: liveRuns() };
