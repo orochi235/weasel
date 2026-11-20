@@ -25,10 +25,11 @@ export interface SurfaceHandle {
   /** Re-measure before the next frame. The escape hatch for a host that knows it
    *  moved something a ResizeObserver cannot see. */
   invalidateRects: () => void;
-  /** Publish `el`'s rect under `id`, or with `null` drop it. Throws when another
+  /** Publish `el`'s rect under `id`, or with `null` drop whatever holds it. Throws when another
    *  element still in the document holds `id`; `registerClear` and
-   *  `registerPainter` throw likewise on an id not yet released. */
-  registerTile: (id: string, el: HTMLElement | null) => void;
+   *  `registerPainter` throw likewise on an id not yet released. Returns the release, which drops `el`
+   *  only while it still holds `id`: a release running after another element took the id leaves that one be. */
+  registerTile: (id: string, el: HTMLElement | null) => () => void;
   /** Register a tenant's whole-buffer clear. Every one registered runs, before
    *  any painter, on a frame where the tile geometry changed — the pixels a
    *  tile vacated are in no scissor now, and only the context that drew them
@@ -106,9 +107,15 @@ function createSurfaceHandle(
     },
     invalidateRects,
     registerTile: (id, el) => {
-      if (!surface.placeTile(id, el)) return;
-      watch(`tile:${id}`, el, { moves: true });
-      schedule();
+      if (surface.placeTile(id, el)) {
+        watch(`tile:${id}`, el, { moves: true });
+        schedule();
+      }
+      return () => {
+        if (!el || !surface.releaseTile(id, el)) return;
+        watch(`tile:${id}`, null);
+        schedule();
+      };
     },
     registerClear: (id, clear) => surface.holdClear(id, clear),
     registerPainter: (id, paint) => surface.holdPainter(id, paint),

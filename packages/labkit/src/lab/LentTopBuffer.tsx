@@ -22,7 +22,7 @@ export function LentTopBuffer({ surface, attach }: LentTopBufferProps) {
 
   useEffect(() => {
     if (!canvas) return;
-    surface.registerTile(tileId, canvas);
+    const offTile = surface.registerTile(tileId, canvas);
     const offClear = surface.registerClear(tileId, (size, dpr) => {
       const w = Math.round(size.width * dpr);
       const h = Math.round(size.height * dpr);
@@ -31,7 +31,7 @@ export function LentTopBuffer({ surface, attach }: LentTopBufferProps) {
     });
     return () => {
       offClear();
-      surface.registerTile(tileId, null);
+      offTile();
     };
   }, [surface, tileId, canvas]);
 

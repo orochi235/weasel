@@ -174,6 +174,11 @@ export class TiledSurface {
     return true;
   }
 
+  /** Drop `el` from `id`, if it still holds it. Returns whether that changed anything. */
+  releaseTile(id: string, el: HTMLElement): boolean {
+    return this.tiles.get(id) === el && this.placeTile(id, null);
+  }
+
   holdClear(id: string, clear: SurfaceClear): () => void {
     return hold(this.clears, 'clear', id, clear);
   }

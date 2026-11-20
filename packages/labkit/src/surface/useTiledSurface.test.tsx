@@ -359,6 +359,38 @@ describe('useTiledSurface', () => {
     expect(frames[0]?.rects.get('b')).toEqual({ x: 300, y: 0, width: 400, height: 600 });
   });
 
+  it("leaves a tile's newer element be when the older one's release runs late", () => {
+    const frames: SurfaceFrame[] = [];
+    let handle: SurfaceHandle | null = null;
+    render(
+      <Harness
+        frames={frames}
+        onHandle={(h) => {
+          handle = h;
+        }}
+      />,
+    );
+    flushFrames();
+    const h = handle as unknown as SurfaceHandle;
+    const older = document.createElement('div');
+    const newer = document.createElement('div');
+    document.body.append(older);
+    stubBox(newer, 100, 100, 50, 50);
+    const releaseOlder = h.registerTile('k', older);
+    // The older element leaves the document and the newer takes the id, before the older's release runs.
+    older.remove();
+    document.body.append(newer);
+    h.registerTile('k', newer);
+    act(() => releaseOlder());
+    flushFrames();
+    expect(frames.at(-1)?.rects.get('k')).toEqual({ x: 100, y: 100, width: 50, height: 50 });
+
+    frames.length = 0;
+    act(() => h.registerTile('k', newer)());
+    flushFrames();
+    expect(frames.at(-1)?.rects.has('k')).toBe(false);
+  });
+
   it('re-measures on invalidateRects, which is how a moved tile is caught', () => {
     const frames: SurfaceFrame[] = [];
     let handle: SurfaceHandle | null = null;

@@ -3016,3 +3016,10 @@ Calls the lanes made without a ruling:
   differs from the URLs another HUD registered `weasel-hud-default` with, since every HUD on a page shares that one
   family. A host wanting another atlas registers it under a family of its own and passes the name. Swapping the
   family to the newest pair with `replace`, under every HUD already drawing it, was the alternative.
+
+## Audit round fifty-one (2026-11-20): labkit.surface
+
+- 2026-11-20 (the fixer's call): `SurfaceHandle.registerTile` returns a release bound to the element it placed, which
+  does nothing once another element holds the id; labkit's own tenants release through it. `registerTile(id, null)`
+  still drops whatever holds the id, for a ref callback detaching. Making the null form refuse to drop a connected
+  element was the alternative, but a ref callback whose id changed detaches an element still in the document.
