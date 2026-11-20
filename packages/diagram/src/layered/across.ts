@@ -8,7 +8,7 @@
 import { maxOf, minOf } from '@weasel-js/geom';
 import type { Graph, GraphCluster } from '../graph';
 import { extent, type LayoutAxes } from '../layout';
-import { crossInset } from '../cluster';
+import { clusterSpans } from './clusterSpans';
 import type { Rows } from './types';
 
 /** What {@link settleAcross} reads. */
@@ -172,27 +172,13 @@ function itemsAt(ctx: Context, ids: readonly string[], depth: number, pref: Read
   return { items, byRank };
 }
 
-/** Where `members` reach across at `at`, with `cluster`'s room around them. */
+/** Where `members` reach across at `at`, as `cluster`'s box when they are its. */
 function spanOf(ctx: Context, cluster: GraphCluster | undefined, members: readonly string[], at: ReadonlyMap<string, number>): { pref: number; width: number } {
-  const lo = minOf(members, (id) => at.get(id)!);
-  const hi = maxOf(members, (id) => at.get(id)! + ctx.sizes.get(id)!);
-  const pad = cluster === undefined ? { lo: 0, hi: 0 } : padOf(cluster, ctx.clusters, ctx.input.axes);
-  return { pref: lo - pad.lo, width: hi - lo + pad.lo + pad.hi };
-}
-
-/** The room a cluster's box keeps across beyond its members on each side,
- *  through the deepest cluster nested in it on that side. */
-function padOf(cluster: GraphCluster, clusters: ReadonlyMap<string, GraphCluster>, axes: LayoutAxes): { lo: number; hi: number } {
-  const own = crossInset(cluster.inset, axes);
-  let lo = 0;
-  let hi = 0;
-  for (const child of clusters.values()) {
-    if (child.parent !== cluster.id) continue;
-    const pad = padOf(child, clusters, axes);
-    lo = Math.max(lo, pad.lo);
-    hi = Math.max(hi, pad.hi);
-  }
-  return { lo: own.lo + lo, hi: own.hi + hi };
+  const nodes = members.map((id) => ({ cluster: ctx.chains.get(id)!.at(-1)?.id, span: [at.get(id)!, at.get(id)! + ctx.sizes.get(id)!] as const }));
+  const [lo, hi] = cluster === undefined
+    ? [minOf(nodes, (n) => n.span[0]), maxOf(nodes, (n) => n.span[1])]
+    : clusterSpans([...ctx.clusters.values()], nodes, ctx.input.axes).get(cluster.id)!;
+  return { pref: lo, width: hi - lo };
 }
 
 /** Whether every two items in a rank, two pins aside, sit `gap` apart. Two
