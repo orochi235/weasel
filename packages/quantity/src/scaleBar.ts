@@ -65,7 +65,7 @@ export function scaleBar(opts: ScaleBarOptions): ScaleBar {
     : longestNice(units.map((u) => u.factor), fit);
   const fills = [...units].reverse().filter((u) => length / u.factor >= 1 - 1e-9);
   const whole = fills.find((u) => Math.abs(length / u.factor - Math.round(length / u.factor)) < 1e-9);
-  const chosen = whole ?? fills[0];
+  const chosen = whole ?? fills[0] ?? units[0];
   const unit = chosen?.unit ?? system.base;
   const label = `${present(length / (chosen?.factor ?? 1), LENGTH, { locale: opts.locale }).text}${unit}`;
   return { length, px: length * pxPerBase, label, unit, magnification };
