@@ -23,7 +23,7 @@ export function prefDisplayBounds(
   const ends = p.endless === undefined ? {} : { endless: p.endless };
   if (!p.unit) return { min: p.min, max: p.max, step: p.step ?? 1, ...ends, ...(p.stops ? { stops: p.stops } : {}) };
   const { toDisplay, toDisplayExact, places } = resolvePrefUnit(p.unit);
-  const backward = toDisplay(1) < toDisplay(0);
+  const backward = toDisplayExact(1) < toDisplayExact(0);
   const lo = p.min === undefined ? undefined : toDisplay(p.min);
   const hi = p.max === undefined ? undefined : toDisplay(p.max);
   const step = p.step === undefined ? 1 : displayStep(Math.abs(toDisplayExact(p.step) - toDisplayExact(0)), places);
