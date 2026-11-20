@@ -33,7 +33,8 @@ export interface DiagramTheme {
   roles: Readonly<Record<string, NodeStyle>>;
   /** The names a picker shows for roles beyond {@link DIAGRAM_ROLES}, or for a shipped role renamed. */
   roleLabels?: Readonly<Record<string, string>>;
-  /** The role a shape or connector naming none, or naming one this theme lacks, is drawn in. */
+  /** The role a shape naming none, or naming one this theme lacks, is drawn in. A connector either
+   *  way takes {@link DiagramTheme.edge} instead. */
   defaultRole: string;
   /** A connector naming no role. */
   edge: EdgeStyle;
