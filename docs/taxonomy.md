@@ -705,11 +705,12 @@ says where a non-rect pose's `origin` probe is. See [snapping.md](./snapping.md)
 
 `LayoutStrategy<TPose>` — a pluggable container-layout policy. Implements
 `childPoses`, `getDropTargets`, `reflowPoses`, `commitDrop`, `snap`, and
-optional hooks (`contains`, `dropRegion`, `acceptsDrop`, `releaseDrop`, `arrive`,
+optional hooks (`fit`, `contains`, `dropRegion`, `acceptsDrop`, `releaseDrop`, `arrive`,
 `depart`, `contentExtent`). A container declares one on its scene node
 (`SceneNode.layout`, swapped undoably by `scene.setLayout`). The scene's layout pass hands children
 that leave the container to `depart`, children that join it to `arrive`, and
-any other change to its child set, order or size to `childPoses`, recording the
+any other change to its child set, order or size to `fit` when it has one and `childPoses`
+otherwise, recording the
 writes in the same undo entry as the change.
 `moveAction` reads the same layout through the `layout` dep: it reflows
 siblings live on drag and calls `commitDrop` on release. The contract is

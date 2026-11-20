@@ -146,6 +146,15 @@ export interface LayoutStrategy<TPose> {
     children: ReadonlyArray<LayoutChild<TPose>>,
   ): Map<string, TPose>;
 
+  /** Optional: the resting arrangement with the bounds it needs, for a
+   *  container that sizes itself to its children. Present, the scene calls it
+   *  wherever it would call `childPoses`, and resizes the container when it
+   *  returns `bounds`. */
+  fit?(
+    container: LayoutContainer,
+    children: ReadonlyArray<LayoutChild<TPose>>,
+  ): LayoutArrival<TPose>;
+
   getDropTargets(
     container: LayoutContainer,
     children: ReadonlyArray<LayoutChild<TPose>>,

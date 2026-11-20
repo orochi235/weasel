@@ -75,6 +75,28 @@ describe('tileGrid as a scene layout', () => {
     expect(scene.get(z)!.pose).toEqual(box(100));
   });
 
+  it('leaves a child dragged within the grid on the empty cell it was dropped on, and there after a sibling moves', () => {
+    const { scene, leaf } = setup();
+    const a = leaf(box(0));
+    const b = leaf(box(50));
+    const layout: LayoutDep = { getLayout: (id) => scene.layoutOf(id as NodeId) as never };
+    const ctx = (x?: number): InvocationCtx => ({
+      world: { x: x ?? 25, y: 25 },
+      screen: { x: 0, y: 0 },
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      deps: { operands: { get: () => [a] }, scene, layout },
+      drag: x === undefined ? undefined : { start: { x: 25, y: 25 }, current: { x, y: 25 }, delta: { x: x - 25, y: 0 } },
+    }) as unknown as InvocationCtx;
+    const h = (moveAction.invoker as OngoingInvoker).start(ctx(), {}) as OngoingHandle;
+    h.onMove!(ctx(125));
+    h.onEnd!(ctx(125), 'commit');
+    expect(scene.get(a)!.pose).toEqual(box(100));
+    expect(scene.get(b)!.pose).toEqual(box(50));
+    scene.setPose(b, box(40, 5));
+    expect(scene.get(b)!.pose).toEqual(box(50));
+    expect(scene.get(a)!.pose).toEqual(box(100));
+  });
+
   it('fills a turned grid\'s cells along its own axes', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }], composition: RIGID_POSE_COMPOSITION });
     const G = scene.add({

@@ -96,7 +96,9 @@ export function pack<TPose>(opts: PackOptions<TPose> = {}): LayoutStrategy<TPose
 
     resize(container, sequence) {
       if (overflow !== 'grow') return undefined;
-      const height = Math.max(minHeight, shelve(container.bounds, sequence)?.height ?? 0);
+      const shelved = shelve(container.bounds, sequence);
+      if (!shelved) return undefined;
+      const height = Math.max(minHeight, shelved.height);
       return height === container.bounds.height ? undefined : { ...container.bounds, height };
     },
   });

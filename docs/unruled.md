@@ -2965,3 +2965,19 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): resolving a nonzero fill's crossings has no work cap. The even-odd cap falls back to
   the parity stencil, and the renderer has no nonzero stencil to fall back to, so a cap would draw a wrong fill rather
   than a slow one. A nonzero stencil pass (increment front faces, decrement back) is what would let it have one.
+## Audit round forty-nine (2026-11-20): guides' layouts
+
+- 2026-11-20 (the fixer's call): `tileGrid` rounds `cols` and `rows` down, and a grid with either under one, or not
+  finite, has no cells: it moves no child, offers no drop and refuses every arrival, under any `overflow`. This is
+  `gridSlots`' rule, except that `rows` is required here and so has no default to fall back to. Before, zero wrote
+  `NaN` poses and a fraction laid cells past the container.
+- 2026-11-20 (the fixer's call): `tileGrid`'s resting arrangement keeps each child in the cell it sits in, so a drop on
+  an empty cell, from inside or out, stays there through later edits to its siblings; only a departure closes the
+  gaps, as before. A child off the grid, past its cells, or in a cell an earlier one holds takes the first free cell.
+  Compacting every rearrangement, and so offering a drop only the cells at the end of the run, was the alternative.
+  editing's drag-out preview now runs the source's `depart`, as its commit does, rather than `childPoses`. A resize
+  still reads each child's cell from its pose at the new pitch, so a child in a gap can change cell when the grid is
+  resized.
+- 2026-11-20 (the fixer's call): `quadtree` rounds `maxDepth` down and holds it to 0–7, so a 128 × 128 grid at its
+  finest, the order of `snapPoint`'s 129 × 129 cap; `NaN` is the default 4. Past 31 the cell arithmetic overflowed and
+  its scan never ended, and at 8 a container of point-sized children took seconds per edit.

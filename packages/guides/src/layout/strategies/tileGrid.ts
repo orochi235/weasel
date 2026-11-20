@@ -12,7 +12,7 @@ import type { Rect } from '@weasel-js/geom';
 import { cellThenNearest } from '../snaps';
 import { defaultCenterOf } from './sequence';
 import {
-  linesFor, nearestFreeCell, packTiles, tileGridOf, tileIndexOf, tileMetaOf,
+  linesFor, nearestFreeCell, packTiles, settleTiles, tileGridOf, tileIndexOf, tileMetaOf,
   type TileGrid, type TileMeta, type TileShape,
 } from './tileCells';
 import * as coreOps from '@weasel-js/core/ops';
@@ -35,7 +35,9 @@ export type TileGridOverflow = 'reject' | 'grow' | 'scroll';
 
 /** Options for `tileGrid`. */
 export interface TileGridOptions<TPose> {
+  /** Columns, rounded down. Under one, or not finite, the grid has no cells. */
   cols: number;
+  /** Rows, rounded down. Under one, or not finite, the grid has no cells. */
   rows: number;
   /** Gap between cells, in world units. Default 0. */
   gap?: number;
@@ -65,6 +67,19 @@ function heldBy<TPose>(container: LayoutContainer, children: ReadonlyArray<Layou
   return dragged && dragged.sourceContainerId !== container.id
     ? children.filter((c) => c.id !== dragged.id).length
     : children.length;
+}
+
+/** How many of `children` other than `dragged` sit inside the container: in a growing grid, the ones it was
+ *  sized for, where an earlier member of the same drop placed past its last line is not yet. */
+function residents<TPose>(
+  shape: TileShape<TPose>, container: LayoutContainer, children: ReadonlyArray<LayoutChild<TPose>>, dragged: LayoutDragged<TPose>,
+): number {
+  const { x, y, width, height } = container.bounds;
+  return children.filter((c) => {
+    if (c.id === dragged.id) return false;
+    const p = shape.centerOf(c.pose);
+    return p.x >= x && p.x < x + width && p.y >= y && p.y < y + height;
+  }).length;
 }
 
 /** The swap dragging `dragged` onto `target` causes, or `null`. Preview and
@@ -185,6 +200,19 @@ function dropOps<TPose>(
   return ops;
 }
 
+/** A grid with no cells: it moves nobody, offers no drop, and refuses every arrival. */
+function cellless<TPose>(snap: LayoutSnap<TPose>): LayoutStrategy<TPose> {
+  return {
+    snap,
+    childPoses: () => new Map(),
+    getDropTargets: () => [],
+    reflowPoses: () => new Map(),
+    commitDrop: (_container, _children, dragged, target) => dropOps(dragged, target, () => null, (_cell, pose) => pose),
+    arrive: () => null,
+    depart: () => ({ poses: new Map() }),
+  };
+}
+
 /**
  * Layout strategy that arranges children into a grid of cells, one child per
  * cell. What happens past `cols × rows` children is the `overflow` policy.
@@ -193,12 +221,15 @@ function dropOps<TPose>(
  * inside the container swaps with the child in the cell it lands on; a drop
  * from outside is offered only the free cells, so it lands in the nearest
  * free one. A child that joins by an insert or a reparent is placed the same
- * way, in the free cell nearest to where it was put.
+ * way, in the free cell nearest to where it was put. A child keeps its cell,
+ * empty ones before it included, until a child leaves: a departure closes
+ * every gap.
  */
 export function tileGrid<TPose>(
   opts: TileGridOptions<TPose>,
 ): LayoutStrategy<TPose> {
-  const { cols, rows } = opts;
+  const cols = Math.floor(opts.cols);
+  const rows = Math.floor(opts.rows);
   const byColumn = opts.flow === 'column';
   const overflow = opts.overflow ?? 'reject';
   const snap = opts.snap ?? cellThenNearest<TPose>();
@@ -220,20 +251,21 @@ export function tileGrid<TPose>(
       return { ...(dragged as object), ...cell } as TPose;
     });
   const gridOf = (bounds: LayoutContainer['bounds'], n: number) => tileGridOf(shape, bounds, n);
+  if (!(cols >= 1 && cols < Infinity && rows >= 1 && rows < Infinity)) return cellless(snap);
 
   return {
     snap,
 
     childPoses(container, children) {
-      const grid = gridOf(container.bounds, children.length);
-      return packTiles(grid, grid, children, cellToPose);
+      return settleTiles(gridOf(container.bounds, children.length), children, cellToPose);
     },
 
     getDropTargets(container, children, dragged) {
-      const grid = gridOf(container.bounds, heldBy(container, children, dragged));
       // A drag from inside may land on an occupied cell and swap; one from
       // outside has nobody to swap with, so occupied cells are not offered.
       const fromOutside = dragged.sourceContainerId !== container.id;
+      const held = heldBy(container, children, dragged);
+      const grid = tileGridOf(shape, container.bounds, held, fromOutside ? residents(shape, container, children, dragged) : held);
       return offeredCells(shape, grid, children, dragged, fromOutside).map((i) => {
         const cellRect = grid.rectAt(i);
         return {

@@ -107,7 +107,11 @@ function sourceReflow(
         pose: view.toStrategy(composeWorldPose(poseAdapter, cid as string, pc.compose)),
         node: scene.get(cid),
       }));
-    for (const [cid, placed] of srcLayout.childPoses(srcContainer, srcChildren)) {
+    // The departure the commit's layout pass will run, so the preview shows what the drop leaves.
+    const left = srcLayout.depart
+      ? srcLayout.depart(srcContainer, srcChildren, new Set<string>(leaving)).poses
+      : srcLayout.childPoses(srcContainer, srcChildren);
+    for (const [cid, placed] of left) {
       const pose = view.toWorld(placed);
       const own = session.descriptorOf(cid);
       const cur = own.getBounds(composeWorldPose(poseAdapter, cid, pc.compose));

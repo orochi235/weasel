@@ -3,6 +3,7 @@ import type { LayoutStrategy } from '@weasel-js/core';
 import { createPerContainerStrategy } from './perContainer';
 import { nearestSnap } from './snaps';
 import { freeform } from './strategies/freeform';
+import { pack } from './strategies/pack';
 
 type P = { x: number; y: number };
 
@@ -34,6 +35,13 @@ describe('createPerContainerStrategy', () => {
     expect(layout.childPoses(box('B'), kids).get('k')).toEqual({ x: 1, y: 0 });
     expect(factory).toHaveBeenCalledTimes(2);
     expect(factory.mock.calls.map(([c]) => c.id)).toEqual(['A', 'B']);
+  });
+
+  it('hands on the bounds a self-sizing strategy fits its container to', () => {
+    type R = { x: number; y: number; width: number; height: number };
+    const layout = createPerContainerStrategy<R>(() => pack<R>({ overflow: 'grow' }), { snap: nearestSnap() });
+    const kids = [{ id: 'k', pose: { x: 0, y: 0, width: 50, height: 40 } }];
+    expect(layout.fit!(box('A'), kids).bounds).toEqual({ x: 0, y: 0, width: 100, height: 40 });
   });
 
   it('starts a container over once it is forgotten', () => {

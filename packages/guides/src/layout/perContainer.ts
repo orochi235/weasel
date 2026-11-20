@@ -1,4 +1,11 @@
-import type { LayoutContainer, LayoutSnap, LayoutStrategy } from '@weasel-js/core';
+import type { LayoutArrival, LayoutChild, LayoutContainer, LayoutSnap, LayoutStrategy } from '@weasel-js/core';
+
+/** `s`'s resting arrangement, with the bounds it needs when it sizes itself. */
+function rest<TPose>(
+  s: LayoutStrategy<TPose>, container: LayoutContainer, children: ReadonlyArray<LayoutChild<TPose>>,
+): LayoutArrival<TPose> {
+  return s.fit?.(container, children) ?? { poses: s.childPoses(container, children) };
+}
 
 /** Options for `createPerContainerStrategy`. */
 export interface PerContainerOptions<TPose> {
@@ -59,13 +66,14 @@ export function createPerContainerStrategy<TPose>(
 
     dropRegion: (container) => of(container).dropRegion?.(container) ?? null,
     acceptsDrop: (container, dragged) => of(container).acceptsDrop?.(container, dragged) ?? true,
+    fit: (container, children) => rest(of(container), container, children),
     arrive(container, children, arrivals) {
       const s = of(container);
-      return s.arrive ? s.arrive(container, children, arrivals) : { poses: s.childPoses(container, children) };
+      return s.arrive ? s.arrive(container, children, arrivals) : rest(s, container, children);
     },
     depart(container, children, departed) {
       const s = of(container);
-      return s.depart ? s.depart(container, children, departed) : { poses: s.childPoses(container, children) };
+      return s.depart ? s.depart(container, children, departed) : rest(s, container, children);
     },
     contentExtent: (container, children) =>
       of(container).contentExtent?.(container, children) ?? container.bounds,

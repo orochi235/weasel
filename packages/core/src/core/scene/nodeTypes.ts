@@ -92,7 +92,7 @@ export interface NodeBase<TData, TLayer extends string, TPose> {
   /** How this node arranges its children. Whenever the node's
    *  child set or order changes, its bounds change size, or a child's pose is
    *  written, the scene hands the change to the strategy — `depart` for children that left it,
-   *  `arrive` for children that joined it, `childPoses` otherwise — and records the poses it writes in the same
+   *  `arrive` for children that joined it, `fit` or `childPoses` otherwise — and records the poses it writes in the same
    *  undo entry as the change. A drag reads it too: it is the layout `move`
    *  reflows and drops against. */
   readonly layout?: LayoutStrategy<TPose>;
