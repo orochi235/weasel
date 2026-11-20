@@ -1,3 +1,4 @@
+import type { History } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
 import { AUTO } from '../config/auto';
 import { f } from '../config/builder';
@@ -225,6 +226,15 @@ describe('resetTrial', () => {
     head(arr).view = { zoom: 9, pan: { x: 9, y: 9 } };
     const reset = resetTrial(arr, head(arr).id, instruments);
     expect(reset[0]?.view).toEqual({ zoom: 2, pan: { x: 5, y: 7 } });
+  });
+
+  it('starts the undo afresh: drops the live history and the saved undo', () => {
+    const arr = addTrial([], instruments, 'Counter');
+    head(arr).history = {} as History;
+    head(arr).undo = { entries: [] } as unknown as TrialRecord['undo'];
+    const reset = resetTrial(arr, head(arr).id, instruments);
+    expect(reset[0]).not.toHaveProperty('history');
+    expect(reset[0]).not.toHaveProperty('undo');
   });
 
   it('does not mutate input', () => {

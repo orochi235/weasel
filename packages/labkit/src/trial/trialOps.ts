@@ -139,7 +139,8 @@ export function closeTrial(trials: TrialRecord[], id: string): TrialRecord[] {
 }
 
 /** Return a trial to what it opened on — its instrument's defaults under the
- *  seed `addTrial` was given — keeping its id and its place in the list. */
+ *  seed `addTrial` was given — keeping its id and its place in the list, and
+ *  starting its undo afresh. */
 export function resetTrial(
   trials: TrialRecord[],
   id: string,
@@ -156,7 +157,7 @@ export function resetTrial(
     current.configSeed as Record<string, unknown> | undefined,
     current.autoSeed,
   );
-  const { auto: _unpinnedNow, ...kept } = current;
+  const { auto: _unpinnedNow, history: _history, undo: _undo, ...kept } = current;
   const reset: TrialRecord = {
     ...kept,
     config,
