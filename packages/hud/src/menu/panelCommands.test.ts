@@ -72,7 +72,7 @@ describe('panelCommands', () => {
     const plain: MenuEntry = { kind: 'item', key: 'a', label, run };
     const chip: MenuEntry = { kind: 'item', key: 'a', label, shortcut, run };
     const text = formatShortcut(shortcut)!;
-    const columns = m.padX * 2 + m.iconSize + m.gap * 2;
+    const columns = m.padX * 2 + m.iconSize + m.gap * 2 + m.labelPad;
     expect(measurePanel([chip], env).width).toBe(columns + label.length * 7 + text.length * 7);
     expect(measurePanel([plain], env).width).toBe(columns + label.length * 7);
   });

@@ -55,6 +55,7 @@ a.row {
 }
 
 .label {
+  padding-inline-end: var(--wzl-space-8);
   white-space: nowrap;
 }
 

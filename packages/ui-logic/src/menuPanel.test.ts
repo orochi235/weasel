@@ -3,7 +3,7 @@ import { measureMenuPanel, menuPanelMetrics, menuRowAtY, menuRowSpans, MENU_MIN_
 import { exactly, UNBOUNDED, type MeasureEnv } from './measure';
 
 const TOKENS: Record<string, string> = {
-  '--wzl-control-h-sm': '24px', '--wzl-space-1': '2px', '--wzl-space-2': '4px', '--wzl-font-size': '10px',
+  '--wzl-control-h-sm': '24px', '--wzl-space-1': '2px', '--wzl-space-2': '4px', '--wzl-space-8': '16px', '--wzl-font-size': '10px',
   '--wzl-leading-snug': '1.2',
 };
 const env: MeasureEnv = {
@@ -14,8 +14,8 @@ const env: MeasureEnv = {
 describe('menuPanelMetrics', () => {
   it('reads the tokens the DOM menu is laid out with, its border inside the inset', () => {
     const m = menuPanelMetrics(env);
-    expect([m.rowHeight, m.inset, m.padX, m.padY, m.gap, m.separatorHeight, m.minWidth, m.iconSize, m.font.size])
-      .toEqual([24, 5, 9, 5, 4, 5, MENU_MIN_WIDTH, 16, 10]);
+    expect([m.rowHeight, m.inset, m.padX, m.padY, m.gap, m.labelPad, m.separatorHeight, m.minWidth, m.iconSize, m.font.size])
+      .toEqual([24, 5, 9, 5, 4, 16, 5, MENU_MIN_WIDTH, 16, 10]);
     expect(m.lineHeight).toBeCloseTo(12);
   });
 });
@@ -33,12 +33,12 @@ describe('measureMenuPanel', () => {
 
   it('stacks rows and separators inside the inset, as wide as the widest row', () => {
     const m = measureMenuPanel(face, UNBOUNDED, env);
-    // 9 + 16 + 4 + 200 + 4 + 0 + 9.
-    expect(m.width).toBe(242);
+    // 9 + 16 + 4 + 200 + 16 + 4 + 0 + 9.
+    expect(m.width).toBe(258);
     expect(m.height).toBe(5 + 24 + 5 + 24 + 24 + 5);
     expect(m.layout.rows.map((r) => r.rect.y)).toEqual([5, 29, 34, 58]);
     const sep = m.layout.rows[1]!;
-    expect(sep.kind === 'separator' && sep.line).toEqual({ x: 5, y: 31, width: 232, height: 1 });
+    expect(sep.kind === 'separator' && sep.line).toEqual({ x: 5, y: 31, width: 248, height: 1 });
     // The first line's baseline: 1px half-leading in its 12px line, 6px down a 24px row, 8 ascent.
     expect(m.baseline).toBeCloseTo(5 + 6 + 1 + 8);
   });
