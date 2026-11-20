@@ -9,7 +9,8 @@ export interface SimulationNode {
   y: number;
   vx?: number;
   vy?: number;
-  /** Pin x to this value when non-null. The integrator skips x/vx for the node. */
+  /** Pin x to this value when non-null. The integrator skips x/vx for the node, and a
+   *  non-finite pin holds x where it stands. */
   fx?: number | null;
   fy?: number | null;
   /** Array index, written by `initialize`. Some forces (e.g. forceLink) rely on it. */

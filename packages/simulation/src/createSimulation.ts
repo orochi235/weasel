@@ -72,7 +72,7 @@ export function createSimulation<TNode extends SimulationNode>(
         n.x += n.vx;
         if (!Number.isFinite(n.x)) n.x = 0;
       } else {
-        n.x = n.fx;
+        n.x = Number.isFinite(n.fx) ? n.fx : n.x;
         n.vx = 0;
       }
       if (n.fy == null) {
@@ -81,7 +81,7 @@ export function createSimulation<TNode extends SimulationNode>(
         n.y += n.vy;
         if (!Number.isFinite(n.y)) n.y = 0;
       } else {
-        n.y = n.fy;
+        n.y = Number.isFinite(n.fy) ? n.fy : n.y;
         n.vy = 0;
       }
     }
