@@ -2,8 +2,8 @@ import '@weasel-js/forge/shell.css';
 import '@weasel-js/forge/frame.css';
 import { loadStories, runAxe, runStory } from '@weasel-js/forge/test';
 import { describe, expect, it } from 'vitest';
-import { page, userEvent } from 'vitest/browser';
 import { KNOWN } from './a11y.known';
+import { shardOf } from './a11y.shards';
 import setup from './forge.frame';
 
 // Every story of ui and labkit, rendered as the workshop renders it and judged by axe in light and dark mode.
@@ -20,6 +20,17 @@ const OFF: Readonly<Record<string, string>> = {
 const JUDGED: Readonly<Record<string, readonly string[]>> = {
   'ui/src/components/BandEditor/BandEditor.stories.tsx': ['label-content-name-mismatch'],
 };
+
+/**
+ * What the sweep needs from `vitest/browser`, which only a browser test file may import: each shard's
+ * file passes its `page` and `userEvent` in.
+ */
+export interface Browser {
+  page: { screenshot(options: { element: Element; save: false }): Promise<string> };
+  userEvent: { keyboard(text: string): Promise<unknown> };
+}
+
+let browser: Browser;
 
 const MODES = ['light', 'dark'] as const;
 const FOCUS_RING = 'focus-ring';
@@ -65,7 +76,7 @@ async function shotOf(el: Element): Promise<string> {
   });
   document.body.append(frame);
   try {
-    return await page.screenshot({ element: frame, save: false });
+    return await browser.page.screenshot({ element: frame, save: false });
   } finally {
     frame.remove();
   }
@@ -92,7 +103,7 @@ async function unringed(host: HTMLElement, max = 40): Promise<string[]> {
   try {
     start.focus();
     for (let i = 0; i < max; i++) {
-      await userEvent.keyboard('{Tab}');
+      await browser.userEvent.keyboard('{Tab}');
       const el = document.activeElement as HTMLElement | null;
       if (!el || !host.contains(el) || reached.has(el)) break;
       reached.add(el);
@@ -120,7 +131,7 @@ async function unringed(host: HTMLElement, max = 40): Promise<string[]> {
   return out;
 }
 
-describe.each(Object.keys(modules).sort())('%s', (path) => {
+const judgeFile = (path: string) => {
   const known = KNOWN[path.replace('../../packages/', '')] ?? {};
   const judged = JUDGED[path.replace('../../packages/', '')] ?? [];
   const off = Object.keys(OFF).filter((rule) => !judged.includes(rule));
@@ -163,4 +174,14 @@ describe.each(Object.keys(modules).sort())('%s', (path) => {
     if (runs < MODES.length) return;
     expect(Object.keys(known).filter((rule) => !seen.has(rule))).toEqual([]);
   });
-});
+};
+
+/**
+ * Judges one shard of the story files (`a11y.shards.ts`). One file judging all of them ran 473 s, longer than
+ * the rest of the browser project took across 18 tabs (teitou, 2026-11-19); each `a11y.<n>.browser.test.tsx`
+ * calls this with its own shard, so the tabs share them.
+ */
+export const describeA11y = (shard: number, from: Browser) => {
+  browser = from;
+  describe.each(shardOf(Object.keys(modules), shard))('%s', judgeFile);
+};

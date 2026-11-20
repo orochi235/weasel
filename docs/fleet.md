@@ -8,7 +8,8 @@ a changed path run, and the gate runs all but the slow checks whose inputs the b
 (below); `main` and a bare commit run everything, and so does `--full`. A change to a root manifest or
 tsconfig, a setup file, or anything `vitest.config.ts` loads runs everything too — `TRIGGERS` in
 `scripts/lib/fleet-triggers.mjs`, whose test fails on a file the config loads that no glob there covers
-and no test imports. A trigger one package owns — its `package.json`, a `tsconfig`, its vite or vitest
+and no test imports, and on a file a glob there covers that nothing loads. A plugin only a dev server
+or a build loads, and any test file, select only the tests that import them. A trigger one package owns — its `package.json`, a `tsconfig`, its vite or vitest
 config — runs that package's tests and its dependents' instead (`SCOPED` beside it), and so does a lockfile
 change that touches only workspace entries, such as a version bump; one that changes an external
 package runs everything. A file read at build time rather than imported,
@@ -19,6 +20,14 @@ A changed path is one the branch adds to local `main`, or to `origin/main` when 
 node builds on the pushed merge-base, but unpushed `main` commits are not the branch's changes.
 `--since <ref>` selects from what the branch adds past `<ref>` instead, for a branch stacked on one
 whose own run was green.
+
+**Every failure prints one `fleet-fail:` line the moment it happens**, on a line of its own, once, while
+the run goes on: `fleet-fail: <project> <file> :: <test name>` for a test (a browser instance's project
+reads `browser:chromium`), `fleet-fail: <project> <file> :: (file)` for a file that failed with no
+failing test, such as one that did not load, `fleet-fail: gate <npm script>` for a gate check, and
+`fleet-fail: postbuild <step>` for a postbuild step. Point a Monitor at `fleet-fail:` in the run's log
+and start on the first one; the summary at the end lists the same failures. `scripts/vitest-fleet-fail.mjs`
+prints the test ones.
 
 **Draw is served from `.claude/worktrees/view`, a detached checkout of `main`**, so edits to the
 main checkout don't reload the browser tab mid-session. A local `pre-push` hook runs
@@ -78,5 +87,16 @@ audit runs it only when started with `--sweep`; how it judges a control is in `s
 From a clean `npm ci` it runs that build and every ci.yml step after it — the manifest, tree-shake
 and React-free checks, both consumer smokes, the site builds, draw's e2e suite — reading the list from ci.yml through
 `scripts/lib/ci-steps.mjs`, as the gate does. It builds in a node tree of its own
-(`weasel-postbuild`), so no test run shares its `dist`. It took 3.4–5.0 min wall on 2026-10-21; a batch
-runs it beside `test:fleet` on its tip before `main` fast-forwards.
+(`weasel-postbuild`), so no test run shares its `dist`. It took 3.4–5.0 min wall on 2026-10-21.
+
+**A batch runs `npm run test:batch -- <ref>`**: `test:fleet` and `test:fleet:postbuild` at once, the
+postbuild on a usable node the suite's jobs left free, with one exit status and a closing `test-batch:`
+line naming which failed. Either failing stops the other, onto jobs included.
+
+**The browser project goes to an idle GPU.** Before launching, `test:fleet` probes each usable node's
+GPU and keyboard idle time (`scripts/lib/fleet-nodes.mjs`). When one has its GPU at most 30% busy and
+nobody at it for ten minutes, the browser project runs there as its own job (tree `weasel-browser`, suite
+scope `browser`) beside a job running the rest (scope `full-rest` or `branch-rest`) on the other unattended node with the most free cores, or onto's pick when there is none, and the run's exit
+covers both; with none, it stays one job and the node overlaps or not as above. The browser part's lines
+in the log start `browser| `. `WEASEL_FLEET_SPLIT=0`, or naming a node, keeps it one job. On 2026-11-19
+the same 415 browser files took 746 s on an idle teitou and 1,239 s on one someone was using.

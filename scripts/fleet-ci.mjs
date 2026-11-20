@@ -16,6 +16,7 @@
  */
 import { fileURLToPath } from 'node:url';
 import { openCommitTree, ontoWhenFree } from './lib/commit-tree.mjs';
+import { killOnSignal } from './lib/fleet-parts.mjs';
 import { armTree, changedFiles } from './lib/fleet-tree.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -39,6 +40,8 @@ const [first, ...rest] = args;
 const named = first && !first.startsWith('-');
 const ontoArgs = named ? rest : args;
 const { commit, branch, tree, drop, git } = openCommitTree(ROOT, named ? first : 'HEAD', `${mode}-`);
+const jobs = [];
+killOnSignal(jobs);
 
 let status = 0;
 try {
@@ -52,7 +55,10 @@ try {
       ['do', '--kind', job.kind, '--icon', job.icon, '--in', job.tree, '--ref', base, '--timeout', '90m',
         '--env', commitEnv,'--task', `${job.task}-${(branch || commit.slice(0, 9)).replace(/[^A-Za-z0-9.-]/g, '-')}`, '--about', job.about,
         '--expect', job.expect, ...ontoArgs, '--', 'bash', '-c', job.shell],
-      { cwd: tree, say },
+      { cwd: tree, say, onJob: (job) => {
+        jobs.push(job.id);
+        say(`placed ${mode} job ${job.id} on ${job.node}`);
+      } },
     );
     say(`${job.label} ${result === 0 ? 'passed' : 'failed'} in ${((Date.now() - started) / 60000).toFixed(1)} min wall`);
     status ||= result;

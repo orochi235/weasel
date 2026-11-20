@@ -53,6 +53,7 @@
     "test:smoke": "vitest run --project=smoke",
     "test:fleet": "node scripts/fleet-test.mjs",
     "test:fleet:postbuild": "node scripts/fleet-ci.mjs postbuild",
+    "test:batch": "node scripts/fleet-batch.mjs",
     "sweep:controls": "node scripts/control-sweep-fleet.mjs",
     "test:browser": "node scripts/vitest-overlap.mjs run --project=browser",
     "test:smoke:consumer": "node scripts/smoke-consumer-bundle.mjs",

@@ -116,6 +116,7 @@ const runOne = async (i) => {
   const took = (Date.now() - t0) / 1000;
   say(`${at} ${ok ? 'ok  ' : 'FAIL'} ${secs(took)}  (plan ${planned.padStart(7)}, ${(took / weights[i]).toFixed(2).padStart(5)}×)  ${label}`);
   if (ok) return;
+  console.log(`fleet-fail: postbuild ${label}`);
   failed++;
   const lines = output.trimEnd().split('\n');
   console.log(lines.slice(-TAIL).map((line) => `    ${line}`).join('\n'));
