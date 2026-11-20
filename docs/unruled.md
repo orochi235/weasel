@@ -2897,3 +2897,8 @@ Calls the lanes made without a ruling:
 - 2026-11-19 (the fixer's call): `elkPlan` rejects a `Graph` naming two of its participants and clusters by one id,
   since an edge names its ends by id and could join either. Giving nodes and clusters separate id maps and resolving an
   edge's end to the node first was the alternative; `buildGraph` never produces such a graph, as scene ids are unique.
+## Audit round forty-seven (2026-11-20): diagram themes
+
+- 2026-11-20 (the fixer's call): `setDiagramStyle`, `setDiagramColor` and `setDiagramFontSize` leave a locked shape or
+  connector, and locked text of an unlocked one, as `applyDiagramTheme` does, and edit the rest. They had thrown from
+  `scene.update` partway through. Throwing up front on any locked id was the alternative.

@@ -87,14 +87,21 @@ export interface DiagramStyleEditOptions {
 
 const withTrait = (data: Data, trait: Record<string, unknown>): Data => ({ ...data, diagram: trait });
 
+/** The state of the shape or connector `id`, or `null` when it is not one or is locked: an edit by
+ *  hand leaves a locked node as a theme does. */
+function editableStyleOf(scene: AnyScene, id: string): DiagramStyleState | null {
+  const node = scene.get(id as never);
+  return node === undefined || scene.isLocked(id as never) ? null : diagramStyleOf(node);
+}
+
 /**
  * Names `role` on every shape and connector among `ids` and recolors them in
  * it, as one undo entry. Choosing a role hands back any color the author had
- * set, so the role shows.
+ * set, so the role shows. A locked one, or locked text of one, is left as it is.
  */
 export function setDiagramStyle(scene: AnyScene, ids: readonly string[], role: string, opts: DiagramStyleEditOptions = {}): void {
   const theme = opts.theme ?? diagramThemeOf(scene);
-  const styled = ids.filter((id) => { const n = scene.get(id as never); return n !== undefined && diagramStyleOf(n) !== null; });
+  const styled = ids.filter((id) => editableStyleOf(scene, id) !== null);
   if (styled.length === 0) return;
   scene.batch(opts.label ?? 'Set style', () => {
     for (const id of styled) {
@@ -156,20 +163,20 @@ export function diagramFontSizeOf(scene: AnyScene, id: string): number | undefin
  * Sets `field` to `color` on every shape and connector among `ids` — `text`
  * reaching a shape's rows and a connector's label — and records it in their
  * `ownStyle`, so a theme change leaves it. One undo entry. A connector has no
- * fill, and ignores one.
+ * fill, and ignores one. A locked one, or locked text of one, is left as it is.
  */
 export function setDiagramColor(scene: AnyScene, ids: readonly string[], field: StyleField, color: string, opts: Pick<DiagramStyleEditOptions, 'label'> = {}): void {
   scene.batch(opts.label ?? `Set ${field} color`, () => {
     for (const id of ids) {
-      const node = scene.get(id as never);
-      const state = node === undefined ? null : diagramStyleOf(node);
+      const state = editableStyleOf(scene, id);
       if (state === null || (state.kind === 'connector' && field === 'fill')) continue;
-      const data = node!.data as Data;
+      const data = scene.get(id as never)!.data as Data;
       const own = state.own.includes(field) ? state.own : [...state.own, field];
       const next = withTrait(data, { ...data.diagram, ownStyle: own });
       if (field !== 'text') next[field] = painted(data[field], color);
       scene.update(id as never, { data: next });
       for (const t of colorTextNodesOf(scene, id, state, field)) {
+        if (scene.isLocked(t as never)) continue;
         const text = scene.get(t as never)!.data as Data;
         scene.update(t as never, { data: { ...text, fill: painted(text.fill, color) } });
       }
@@ -180,7 +187,7 @@ export function setDiagramColor(scene: AnyScene, ids: readonly string[], field: 
 /**
  * Sets the text of every shape and connector among `ids` — a shape's rows, a
  * connector's label — to `size`, and records it in their `ownFont`, so a
- * theme's size change leaves it. One undo entry.
+ * theme's size change leaves it. One undo entry. A locked one, or locked text of one, is left as it is.
  */
 export function setDiagramFontSize(
   scene: AnyScene, ids: readonly string[], size: number, opts: Pick<DiagramStyleEditOptions, 'label'> & { measure?: MeasureRowText } = {},
@@ -188,10 +195,9 @@ export function setDiagramFontSize(
   scene.batch(opts.label ?? 'Set text size', () => {
     const writes = new Map<string, unknown>();
     for (const id of ids) {
-      const node = scene.get(id as never);
-      const state = node === undefined ? null : diagramStyleOf(node);
+      const state = editableStyleOf(scene, id);
       if (state === null) continue;
-      const data = node!.data as Data;
+      const data = scene.get(id as never)!.data as Data;
       if (!state.ownFont.includes('size')) scene.update(id as never, { data: withTrait(data, { ...data.diagram, ownFont: [...state.ownFont, 'size'] }) });
       for (const t of textNodesOf(scene, id, state.kind)) {
         const text = scene.get(t as never)!.data as Data & { style?: Record<string, unknown> };
