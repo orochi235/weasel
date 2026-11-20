@@ -39,7 +39,7 @@ export interface TrialSnapshotOptions {
 /** Records the trial for undo on an event its instrument snapshots on: its
  *  state and settings, or `op` in their place where the write is to something
  *  else. With a history of the instrument's own mounted, only a settings
- *  change is recorded, onto that history. True when it recorded. */
+ *  change or an `op` is recorded, onto that history. True when it recorded. */
 export type TrialSnapshot = (event: string, op?: Op) => boolean;
 
 /** A trial's undo recorder: what {@link TrialSnapshot} records onto, and the
@@ -113,7 +113,7 @@ export function useTrialSnapshot({
       const current = stored();
       if (!current) return false;
       const own = ownHistory();
-      if (own && !isConfigEvent(event)) return false;
+      if (own && !op && !isConfigEvent(event)) return false;
       const entry = recorded(op ?? trialEditOf(current, own ? 'settings' : 'edit', store));
       if (own) {
         own.record(entry, event);
