@@ -57,7 +57,7 @@ import {
   type PenAnchor,
   type PointOrigin,
 } from '@weasel-js/geom';
-import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
+import { pathToAnchors, samePolygon, type PolygonPath } from '@weasel-js/geom';
 import { HANDLE_LOCK_ROLES, lockHandle, locksInForce, type HandlePress } from './handleDrag';
 import { finishPathEditFrame, createPathEditPreview } from './preview';
 import {
@@ -375,7 +375,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           active = false;
           try {
-            if (reason === 'cancel' || scratch.originPose === scratch.currentPose) return;
+            if (reason === 'cancel' || samePolygon(scratch.originPose, scratch.currentPose)) return;
             scratch.dep.applyEdit(scratch.id, scratch.currentPose, 'Edit anchors', scratch.origins);
           } finally {
             snapAnchor.end();
