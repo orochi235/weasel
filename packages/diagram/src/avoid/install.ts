@@ -36,7 +36,7 @@ export interface AvoidRouting {
   router: AvoidRouter;
   /** The drag half, for the `transformFollowers` dep (`useTransformFollower`). */
   follower: TransformFollower;
-  /** Remove the edit pass. */
+  /** Remove the edit pass and stop following the history. */
   dispose(): void;
 }
 
@@ -122,7 +122,8 @@ function avoidFollower<TPose>(scene: Scene<unknown, string, TPose>, router: Avoi
 /**
  * Route `scene`'s `avoid` connectors around its shapes from now on. Every
  * live edit reroutes what it disturbed, in its own history entry; on install
- * nothing reroutes, and the routes the scene holds stand. A host without
+ * nothing reroutes, and the routes the scene holds stand, as they do after an
+ * undo, a redo or a history jump. A host without
  * React calls this; a component calls `useAvoidRouting`.
  */
 export function installAvoidRouting<TPose>(
@@ -140,5 +141,23 @@ export function installAvoidRouting<TPose>(
     const ops = routeDataOps(sc, routes);
     return ops.length === 0 ? null : ops;
   }, { order: DIAGRAM_PASS_ORDER.avoid });
-  return { router, follower: avoidFollower(scene, router, opts), dispose };
+  // Undo, redo and a history jump run no pass, so the router takes what they leave as routed, once the scene has settled.
+  let stepped = false;
+  const unobserve = scene.history.observe((step) => {
+    if (step.kind === 'undo' || step.kind === 'redo' || step.kind === 'goto') stepped = true;
+  });
+  const unsubscribe = scene.subscribe(() => {
+    if (!stepped) return;
+    stepped = false;
+    router.seed(avoidSceneInput(scene, opts));
+  });
+  return {
+    router,
+    follower: avoidFollower(scene, router, opts),
+    dispose: () => {
+      dispose();
+      unobserve();
+      unsubscribe();
+    },
+  };
 }
