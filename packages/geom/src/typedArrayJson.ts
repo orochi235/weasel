@@ -86,16 +86,23 @@ const onlyRawKey = (value: object): boolean => {
   return keys.length === 1 && keys[0] === RAW;
 };
 
-/** Whether the reader would take the plain value for something the writer wrote: a tagged array or a wrapper. */
-const misread = (value: unknown): boolean => isPlain(value) && (isRawWrapper(value) || untagTypedArray(value) !== undefined);
+/** Whether the reader would take a non-array object, written with its own keys, for something the writer wrote: a
+ *  tagged array or a wrapper. Any object JSON writes with its own keys reads back as a plain one, a class instance's
+ *  included. */
+const misreadAsWritten = (value: object): boolean => onlyRawKey(value) || untagTypedArray(value) !== undefined;
 
-/** A copy of an array or a plain object, `each` applied to what it holds; anything else as it is. */
-function within(value: unknown, each: (v: unknown) => unknown): unknown {
-  if (Array.isArray(value)) return value.map(each);
+/** A copy of an array or a plain object, `each` applied to what it holds with its key; anything else as it is. */
+function within(value: unknown, each: (v: unknown, key: string) => unknown): unknown {
+  if (Array.isArray(value)) return value.map((v, i) => each(v, String(i)));
   if (!isPlain(value)) return value;
+  return ownCopy(value, each);
+}
+
+/** A plain object of `value`'s own enumerable keys, `each` applied to what each holds. */
+function ownCopy(value: object, each: (v: unknown, key: string) => unknown): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const key of Object.keys(value)) {
-    const v = each(value[key]);
+    const v = each((value as Record<string, unknown>)[key], key);
     // Assigned, an own `__proto__` as `JSON.parse` makes would set the copy's prototype instead.
     if (key === '__proto__') Object.defineProperty(out, key, { value: v, enumerable: true, writable: true, configurable: true });
     else out[key] = v;
@@ -105,24 +112,34 @@ function within(value: unknown, each: (v: unknown) => unknown): unknown {
 
 /**
  * A copy of `value` that `JSON.stringify` writes whole: every typed array in it, at any
- * depth of arrays and plain objects, becomes a `TaggedTypedArray`. A `Path` goes through it
+ * depth of arrays and objects, becomes a `TaggedTypedArray`. A `Path` goes through it
  * to be saved, and `reviveTypedArrays` reads it back. A plain object `reviveTypedArrays`
  * would take for one of those, or for a `{ "__raw": … }` wrapper, is written inside such a
- * wrapper, which the reader takes off and reads nothing into.
+ * wrapper, which the reader takes off and reads nothing into. Any other object is copied as
+ * `JSON.stringify` writes it, as `typedArrayReplacer` sees it: what its `toJSON` answers, or else
+ * a plain object of its own keys, so a class instance is tagged and wrapped as a plain one is.
  */
 export function tagTypedArrays(value: unknown): unknown {
+  return tagAt(value, '');
+}
+
+function tagAt(value: unknown, key: string): unknown {
   const tagged = tagTypedArray(value);
   if (tagged) return tagged;
-  const copy = within(value, tagTypedArrays);
-  return misread(value) ? { [RAW]: copy } : copy;
+  if (value === null || typeof value !== 'object') return value;
+  const toJSON = (value as { toJSON?: unknown }).toJSON;
+  if (typeof toJSON === 'function') return tagAt(toJSON.call(value, key), key);
+  if (Array.isArray(value)) return within(value, tagAt);
+  const copy = ownCopy(value, tagAt);
+  return misreadAsWritten(value) ? { [RAW]: copy } : copy;
 }
 
 /** A copy of `value` with every `TaggedTypedArray` in it a typed array again, and every
  *  `{ "__raw": … }` wrapper taken off: what `JSON.parse` answered for something
  *  `tagTypedArrays` or `typedArrayReplacer` wrote. */
 export function reviveTypedArrays(value: unknown): unknown {
-  if (isRawWrapper(value)) return within(value.__raw, reviveTypedArrays);
-  return untagTypedArray(value) ?? within(value, reviveTypedArrays);
+  if (isRawWrapper(value)) return within(value.__raw, (v) => reviveTypedArrays(v));
+  return untagTypedArray(value) ?? within(value, (v) => reviveTypedArrays(v));
 }
 
 /**
@@ -138,9 +155,8 @@ export function typedArrayReplacerWrapping(
     const tagged = tagTypedArray(value);
     if (tagged) return tagged;
     if (value === null || typeof value !== 'object' || wrappers.has(this as object)) return value;
-    // Any object JSON writes with its own keys reads back as a plain one, a class instance's included.
-    const misreadAsWritten = !Array.isArray(value) && (onlyRawKey(value) || untagTypedArray(value) !== undefined);
-    if (!misreadAsWritten && !alsoWrap?.(key, value)) return value;
+    const misread = !Array.isArray(value) && misreadAsWritten(value);
+    if (!misread && !alsoWrap?.(key, value)) return value;
     const wrapper = { [RAW]: value };
     wrappers.add(wrapper);
     return wrapper;

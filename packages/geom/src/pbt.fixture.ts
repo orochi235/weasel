@@ -9,7 +9,8 @@ import { PathBuilder } from './paths/builder';
 
 /** A finite double in `±limit`, no `NaN`, no `-0` worries for callers that compare with `toBe`. */
 export function coord(limit = 1000): fc.Arbitrary<number> {
-  return fc.double({ min: -limit, max: limit, noNaN: true, noDefaultInfinity: true });
+  // fast-check draws -0 inside a range spanning 0; adding 0 makes it 0.
+  return fc.double({ min: -limit, max: limit, noNaN: true, noDefaultInfinity: true }).map((v) => v + 0);
 }
 
 /** A multiple of 1/8 in `±limit`: exact in float32 and in a decimal string, so a round trip can compare with `===`. */

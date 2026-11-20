@@ -2939,3 +2939,8 @@ Calls the lanes made without a ruling:
 
 - 2026-11-20 (the fixer's call): `pathFaceArrangement` throws a `RangeError` for a `flattenTolerance` that is not a
   positive finite number. Clamping it to some floor, or reading it as the default, was the alternative.
+## Audit round forty-nine (2026-11-20): geometry, part two
+
+- 2026-11-20 (the fixer's call): geom's `stepLine` throws a `RangeError` for a `step` that is zero or not finite, and so
+  does a gesture whose `constrain: { step }` holds one; it had answered a line of `NaN` direction, which froze the drag
+  at the press. Reading such a step as no rounding, the raw direction, was the alternative.

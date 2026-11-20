@@ -8,6 +8,7 @@ import type {
   TrackStation,
 } from './shape';
 import { RAD_TO_DEG } from '../angle';
+import { nearestInStretch } from './slice';
 
 /** A station as a run places an item: `normal` is the item's up after any flip, `tangent` its reading direction,
  *  `angle` the CSS rotation in degrees that tips an upright item to the place (0 = upright, clockwise positive, in
@@ -90,7 +91,7 @@ export function trackRun(shape: TrackShape, from = 0, to = 1, options: TrackRunO
   const toG = (f: number): number => span === 0 ? 0 : reversed ? (to - f) / span : (f - from) / span;
 
   const nearest = (p: Point, options?: TrackNearestOptions): TrackNearest => {
-    const f = clamp(shape.nearest(p).f, lo, hi);
+    const f = nearestInStretch(shape, lo, hi, p);
     const q = shape.at(f).point;
     const dist = Math.hypot(p.x - q.x, p.y - q.y);
     if (!options?.open) return { f: toG(f), distance: dist };

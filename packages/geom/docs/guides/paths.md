@@ -289,7 +289,7 @@ strokeHitTest(triangle, 50, -3, 4);   // true: 3 units from the top edge
 const hit = pathContainsPoint(triangle, 50, -3) || strokeHitTest(triangle, 50, -3, 4);
 ```
 
-Both take a `tolerance` option, the flattening tolerance used for curved
+Both take a `flattenTolerance` option, the flattening tolerance used for curved
 segments.
 
 A pointer's forgiveness is a distance on screen, not in the path's units. When
@@ -331,7 +331,7 @@ const triangle = pathFromD('M0 0 L100 0 L50 80 Z');
 pathDistanceToPoint(triangle, 50, -10); // 10
 
 const nearest = nearestOnPath(triangle.commands, triangle.coords, 50, -10);
-// { x: 50, y: 0, t: 0.5, dist: 10, commandIndex: 1, coordIndex: 2 }
+// { x: 50, y: 0, t: 0.5, distance: 10, commandIndex: 1, coordIndex: 2 }
 ```
 
 `commandIndex` is the position in `commands` of the segment that holds the

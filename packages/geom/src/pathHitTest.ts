@@ -15,7 +15,8 @@ import { pointSegmentDistance2 } from './points2';
 import { rectsIntersect, type Rect, rectContainsPoint } from './box';
 import type { Path } from './path';
 import type { CurveSpan } from './along/curvePosition';
-import { closedSubpaths, regionSubpaths } from './pathSubpaths';
+import { closedSubpaths, flatSubpaths, regionSubpaths } from './pathSubpaths';
+import { DEFAULT_FLATTEN_TOLERANCE } from './flatten';
 import { someSegment, type SegmentVisit } from './outlineSegments';
 import type { Affine } from './affine';
 import type { Point } from './paths/cubicMath';
@@ -344,9 +345,10 @@ export function polygonIntersectsPath(
   if (polygon.length < 3) return false;
   const filled = opts.filled !== false;
   if (path.kind === 'rect' && filled) return polygonsIntersect(rectToVerts(path), polygon);
+  // Unfilled, an open subpath is only its drawn line: the open-fill rule's closing edge is not drawn.
   const { closed, open } = path.kind === 'rect'
     ? { closed: [flattenVerts(rectToVerts(path))], open: [] }
-    : regionSubpaths(path, opts);
+    : filled ? regionSubpaths(path, opts) : flatSubpaths(path, opts.flattenTolerance ?? DEFAULT_FLATTEN_TOLERANCE);
   const flatPoly = flattenVerts(polygon);
   if (anyVertexInPolygon(closed, flatPoly) || anyVertexInPolygon(open, flatPoly)) return true;
   if (anyEdgeCrossesPolygon(closed, polygon) || anyOpenEdgeCrossesPolygon(open, polygon)) {

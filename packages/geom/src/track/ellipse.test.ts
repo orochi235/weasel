@@ -189,3 +189,14 @@ describe('trackShapeD on an ellipse', () => {
     expect(trackShapeD(e)).toBe('M 0 -10 A 20 10 0 0 1 0 10 A 20 10 0 0 1 0 -10');
   });
 });
+
+describe('ellipseShape from 0 to 360', () => {
+  test.each(['cw', 'ccw'] as const)('is the whole ellipse, %s', (direction) => {
+    for (const radiusY of [50, 300]) {
+      const e = ellipseShape({ center: { x: 0, y: 0 }, radiusX: 100, radiusY, start: 0, end: 360, direction });
+      const whole = ellipseShape({ center: { x: 0, y: 0 }, radiusX: 100, radiusY, start: 0, end: 0, direction });
+      expect(e.closed).toBe(true);
+      expect(e.length).toBeCloseTo(whole.length, 6);
+    }
+  });
+});

@@ -11,7 +11,6 @@ import { segmentCrossings } from '../intersect/segmentIntersections';
 import { pathSegments, type PathSegment } from '../intersect/pathSegments';
 import { perpendicularTsFrom, segmentExtremaT, segmentMidT, tangentTsFrom } from './segmentFeatures';
 import { createBvh, type Bvh } from '../bvh/bvh';
-import { maxOf, minOf } from '../scalar';
 import { createPart } from '@weasel-js/registry';
 
 /**
@@ -26,7 +25,7 @@ import { createPart } from '@weasel-js/registry';
  * - `midpoint` — the middle of a segment by length.
  * - `extremum` — on a curve, where its tangent turns horizontal or vertical.
  * - `quadrant` — where a closed subpath crosses the horizontal and vertical
- *   lines through the center of its box: a circle's four compass points.
+ *   lines through the center of the box its curves reach: a circle's four compass points.
  * - `nearest` — the closest point on any stroke, when nothing else is in range.
  */
 export type PathSnapKind =
@@ -144,7 +143,24 @@ export function createPathSnapIndex(paths: readonly Path[], extra: readonly Path
   };
 }
 
-/** The compass points of each closed subpath in `segs` about the center of its box. */
+/** The box `sub`'s curves reach, not their control points': each segment's ends and its extremes. */
+function curveBox(sub: readonly PathSegment[]): { x0: number; y0: number; x1: number; y1: number } {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  const take = (p: Point) => {
+    if (p.x < x0) x0 = p.x;
+    if (p.x > x1) x1 = p.x;
+    if (p.y < y0) y0 = p.y;
+    if (p.y > y1) y1 = p.y;
+  };
+  for (const s of sub) {
+    take(s.pts[0]!);
+    take(s.pts[s.pts.length - 1]!);
+    for (const t of segmentExtremaT(s.pts)) take(evalSeg(s.pts, t));
+  }
+  return { x0, y0, x1, y1 };
+}
+
+/** The compass points of each closed subpath in `segs` about the center of the box its curves reach. */
 function quadrantPoints(segs: readonly PathSegment[]): Point[] {
   const out: Point[] = [];
   const subs = new Map<number, PathSegment[]>();
@@ -155,8 +171,7 @@ function quadrantPoints(segs: readonly PathSegment[]): Point[] {
     else subs.set(s.sub, [s]);
   }
   for (const sub of subs.values()) {
-    const x0 = minOf(sub, (s) => s.box.x0), x1 = maxOf(sub, (s) => s.box.x1);
-    const y0 = minOf(sub, (s) => s.box.y0), y1 = maxOf(sub, (s) => s.box.y1);
+    const { x0, y0, x1, y1 } = curveBox(sub);
     const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
     const across: Seg[] = [[{ x: x0 - 1, y: cy }, { x: x1 + 1, y: cy }], [{ x: cx, y: y0 - 1 }, { x: cx, y: y1 + 1 }]];
     for (const line of across) {
