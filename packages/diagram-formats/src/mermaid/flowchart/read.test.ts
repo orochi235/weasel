@@ -94,6 +94,11 @@ describe('reading Mermaid', () => {
     expect(q.data.edges[0]!.colors).toEqual({ stroke: '#444', dash: [5, 5] });
   });
 
+  it('warns that front matter other than the title was dropped', () => {
+    expect(readFlowchart('---\nconfig:\n  look: handDrawn\n---\nflowchart TD\nA --> B').warnings)
+      .toEqual(['Mermaid front matter other than the title was dropped.']);
+  });
+
   it('warns for each construct a diagram does not hold', () => {
     expect(readFlowchart(FLOW).warnings).toEqual([
       'Mermaid configuration directives were dropped.',

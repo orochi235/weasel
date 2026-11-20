@@ -14,6 +14,12 @@ const node = (text: string, id: string) => page(text).data.nodes.find((n) => n.i
 const edge = (text: string, from: string, to: string) => page(text).data.edges.find((e) => e.from === from && e.to === to)!;
 
 describe('reading a Mermaid class diagram', () => {
+  it('warns that front matter other than the title was dropped, as it does for a directive', () => {
+    const { warnings } = readClassDiagram('---\ntitle: T\nconfig:\n  theme: dark\n---\nclassDiagram\n  class A');
+    expect(warnings).toEqual(['Mermaid front matter other than the title was dropped.']);
+    expect(readClassDiagram('---\ntitle: T\n---\nclassDiagram\n  class A').warnings).toEqual([]);
+  });
+
   it('reads a page of notation class, named and run as the file says', () => {
     expect(page(SHOP)).toMatchObject({ name: 'Shop model', direction: 'right', notation: 'class' });
   });

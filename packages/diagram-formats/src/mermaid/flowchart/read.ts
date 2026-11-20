@@ -219,6 +219,7 @@ function subgraphContainerIds(subgraphs: readonly string[], nodes: ReadonlyMap<s
 export function readFlowchart(text: string): ImportResult {
   const chart = parseFlowchart(text);
   const r = new MermaidReader(subgraphIdsOf(chart.stmts), edgeIdsOf(chart.stmts));
+  if (chart.frontConfig !== undefined) r.warnings.add('Mermaid front matter other than the title was dropped.');
   if (chart.directives > 0) r.warnings.add('Mermaid configuration directives were dropped.');
   r.walk(chart.stmts, null);
   const nodes: DataNode[] = [...r.nodes].map(([id, d]) => {

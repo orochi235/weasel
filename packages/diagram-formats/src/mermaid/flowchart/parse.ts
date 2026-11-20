@@ -41,6 +41,8 @@ export type MermaidStmt =
 /** A whole flowchart. */
 export interface MermaidFlowchart {
   title?: string;
+  /** The front matter's lines other than its title. */
+  frontConfig?: string;
   /** As written: `TB`, `TD`, `BT`, `LR`, or `RL`. */
   direction: string;
   directives: number;
@@ -76,7 +78,7 @@ function statementOf(keyword: string, rest: string, line: number): MermaidStmt {
 
 /** Parses a Mermaid flowchart. Throws, naming the line, on text that is not one. */
 export function parseFlowchart(text: string): MermaidFlowchart {
-  const { tokens, title, directives } = lexFlowchart(text);
+  const { tokens, title, frontConfig, directives } = lexFlowchart(text);
   let i = 0;
   const peek = () => tokens[i];
   const lastLine = text.split('\n').length;
@@ -93,7 +95,11 @@ export function parseFlowchart(text: string): MermaidFlowchart {
   i++;
   const direction = restOf().toUpperCase() || 'TB';
   const stmts = block(null);
-  return { ...(title !== undefined ? { title } : {}), direction, directives, stmts };
+  return {
+    ...(title !== undefined ? { title } : {}),
+    ...(frontConfig !== undefined ? { frontConfig } : {}),
+    direction, directives, stmts,
+  };
 
   function block(opened: number | null): MermaidStmt[] {
     const out: MermaidStmt[] = [];

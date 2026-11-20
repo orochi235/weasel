@@ -22,6 +22,8 @@ export interface MermaidSource {
   header: Statement;
   body: Statement[];
   title?: string;
+  /** The front matter's lines other than its title. */
+  frontConfig?: string;
   accTitle?: string;
   accDescr?: string;
   /** How many `%%{…}%%` directives there were. */
@@ -76,6 +78,7 @@ export function statementsOf(text: string): MermaidSource {
   return {
     header, body, directives,
     ...(front.title !== undefined ? { title: front.title } : {}),
+    ...(front.config !== undefined ? { frontConfig: front.config } : {}),
     ...(accTitle !== undefined ? { accTitle } : {}),
     ...(accDescr !== undefined ? { accDescr } : {}),
   };
@@ -89,7 +92,11 @@ export function readsAsStatement(text: string): boolean {
 }
 
 /** The page name `src` gives: its title, else its accessible title. Warns of what a page does not hold. */
-export function readPageName(src: MermaidSource, warnings: Warnings): string | undefined {
+export function readPageName(
+  src: Pick<MermaidSource, 'title' | 'frontConfig' | 'accTitle' | 'accDescr' | 'directives'>,
+  warnings: Warnings,
+): string | undefined {
+  if (src.frontConfig !== undefined) warnings.add('Mermaid front matter other than the title was dropped.');
   if (src.directives > 0) warnings.add('Mermaid configuration directives were dropped.');
   if (src.accDescr !== undefined) warnings.add('Mermaid accessible descriptions were dropped.');
   if (src.title !== undefined && src.accTitle !== undefined) warnings.add('Mermaid accessible titles were dropped; the page is named by the title.');
