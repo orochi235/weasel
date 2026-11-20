@@ -85,6 +85,7 @@ export class WideChildren {
       if (asked.has(region)) continue;
       asked.add(region);
       if ('box' in region) this.bvh.queryBox(region.box, take);
+      else if ('ray' in region) this.bvh.raycast(region.ray.origin, region.ray.dir, take, region.ray.tMax);
       else this.bvh.queryHalfSpaces(region.planes, take);
     }
   }

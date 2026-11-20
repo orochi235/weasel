@@ -11,8 +11,15 @@ export const BOX_NONE: BoxKind = 0;
 export const BOX_SOME: BoxKind = 1;
 export const BOX_ALL: BoxKind = 2;
 
-/** Where a query looks: a box, or the inside of every half-space (a frustum, a screen rect seen in 3D). */
-export type ReachRegion = { readonly box: ArrayLike<number> } | { readonly planes: readonly HalfSpace[] };
+/** A ray from `origin` along `dir`, out to `tMax` in units of `dir`. A reader may shorten `tMax` as it finds
+ *  nearer hits; the tree reads it at each test. */
+export interface ReachRay { readonly origin: ArrayLike<number>; readonly dir: ArrayLike<number>; tMax: number }
+
+/** Where a query looks: a box, the inside of every half-space (a frustum, a screen rect seen in 3D), or a ray. */
+export type ReachRegion =
+  | { readonly box: ArrayLike<number> }
+  | { readonly planes: readonly HalfSpace[] }
+  | { readonly ray: ReachRay };
 
 /**
  * A question to a reach tree. Each node carries tag bits (the render index's

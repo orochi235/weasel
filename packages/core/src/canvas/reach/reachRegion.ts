@@ -1,5 +1,5 @@
 /** Whether a box meets a reach query's region, and the box arithmetic the tree runs on. */
-import { BOX_ALL, BOX_NONE, BOX_SOME, type BoxKind, type ReachQuery, type ReachRegion } from './reachTypes';
+import { BOX_ALL, BOX_NONE, BOX_SOME, type BoxKind, type ReachQuery, type ReachRay, type ReachRegion } from './reachTypes';
 
 /** Whether the box at `box[at…]` meets `region`. Closed: touching counts. */
 export function regionMeets(region: ReachRegion, box: Float64Array, at: number, dim: number): boolean {
@@ -10,12 +10,36 @@ export function regionMeets(region: ReachRegion, box: Float64Array, at: number, 
     }
     return true;
   }
+  if ('ray' in region) return rayEntry(region.ray, box, at, dim) >= 0;
   for (const { normal, offset } of region.planes) {
     let v = offset;
     for (let j = 0; j < dim; j++) v += normal[j]! * (normal[j]! >= 0 ? box[at + dim + j]! : box[at + j]!);
     if (v < 0) return false;
   }
   return true;
+}
+
+/** Where `ray` enters the box at `box[at…]`, or -1 when it misses it before `ray.tMax`. Divides as the BVH's own
+ *  slab test does, so the two agree on a ray grazing an edge. */
+export function rayEntry(ray: ReachRay, box: Float64Array, at: number, dim: number): number {
+  const { origin: org, dir } = ray;
+  let near = 0;
+  let far = ray.tMax;
+  for (let j = 0; j < dim; j++) {
+    const lo = box[at + j]!;
+    const hi = box[at + dim + j]!;
+    if (Number.isNaN(org[j]!) || Number.isNaN(dir[j]!)) return -1;
+    if (dir[j] === 0) {
+      if (org[j]! < lo || org[j]! > hi) return -1;
+      continue;
+    }
+    const t1 = (lo - org[j]!) / dir[j]!;
+    const t2 = (hi - org[j]!) / dir[j]!;
+    if (t1 < t2) { if (t1 > near) near = t1; if (t2 < far) far = t2; }
+    else { if (t2 > near) near = t2; if (t1 < far) far = t1; }
+    if (near > far) return -1;
+  }
+  return near;
 }
 
 /** Whether a box of `kind` carrying `tags` meets `q`. */

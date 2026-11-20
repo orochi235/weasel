@@ -202,6 +202,12 @@ export { sceneDerivedPathOf, scenePaintedPoseOf } from '../canvas/derivedPath';
 export { nodesAsShown, shownLookup } from '../core/scene/nodeAsShown';
 export { targetTransformOf, worldToLocal, type TargetTransform } from '../core/geometry/targetFrame';
 export { indexedCandidates } from '../canvas/pickIndex/scenePickIndex';
+// The reach tree every scene index is built on, in any dimension: kernel3d's pick index is one.
+export { createReachTree, type ReachTree } from '../canvas/reach/reachTree';
+export {
+  BOX_ALL, BOX_NONE, BOX_SOME,
+  type BoxImage, type BoxKind, type ReachQuery, type ReachRay, type ReachRegion, type ReachSource,
+} from '../canvas/reach/reachTypes';
 export type { PickBroad, PickCandidate } from '../canvas/pickWalk';
 export type { ClipBearing } from '../canvas/ownClip';
 export { findMountedCanvas, mountedCanvasRegistry, type MountedCanvas } from '../canvas/mountedCanvases';
