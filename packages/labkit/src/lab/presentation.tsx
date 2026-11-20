@@ -36,6 +36,8 @@ interface PresentationContextValue extends Presentation {
   still: 'pending' | 'ready' | null;
   /** Whether the lab's document is framed, so presenting hands it back to its embedder. */
   framed: boolean;
+  /** Whether the lab started presenting, as an embed does. Fixed for the lab's life. */
+  embed: boolean;
 }
 
 /** How a lab starts: presenting or not, and held still or not. */
@@ -135,8 +137,18 @@ export function useLabPresentation(
       transport: minWidth === null ? null : { minWidth, ...(formatRate ? { formatRate } : {}) },
       still,
       framed,
+      embed: start.presenting,
     }),
-    [presenting, presentedBy, focusedTrialId, minWidth, formatRate, still, framed],
+    [
+      presenting,
+      presentedBy,
+      focusedTrialId,
+      minWidth,
+      formatRate,
+      still,
+      framed,
+      start.presenting,
+    ],
   );
 }
 

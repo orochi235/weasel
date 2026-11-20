@@ -198,6 +198,11 @@ visible from the code:
   stored trial, an unchanged one keeps the visitor's.
 - **Escape only exits a presentation `enter()` started.** A lab mounted
   presenting is an embed, with no workspace a visitor should land in.
+- **An embed lays its trials out with no sidebar or aside panes.** A
+  `Split` mounts its content only after a `ResizeObserver` has measured it, so
+  an embed's trial would arrive in the middle of a delivery and collapse the
+  splits above it, a ResizeObserver loop. With nothing to return to, it never
+  shows them anyway.
 - **Entering refits the view** for the presented box when the instrument's
   `initialView` depends on the size (`trial/useViewPlacement.ts`, the same
   placement the first measurement uses), and leaving restores the tile's view.

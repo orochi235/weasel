@@ -131,11 +131,13 @@
   display: flex;
   min-width: 0;
   height: 100%;
+}
 
-  > .lk-workspace-host {
-    flex: 1;
-    min-width: 0;
-  }
+// An embed has no panes, so its workspace sits in the body itself.
+.lk-lab__main > .lk-workspace-host,
+.lk-lab__body > .lk-workspace-host {
+  flex: 1;
+  min-width: 0;
 }
 
 // The lab's two shared drawing buffers, stacked around the trials: marks that
