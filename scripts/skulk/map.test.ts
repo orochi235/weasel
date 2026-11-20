@@ -127,6 +127,7 @@ describe('nightRoundOf', () => {
     expect(bar.est).toBeCloseTo(5 + 3);
     expect(nightRoundOf({ round: 41, running: false, nightDir })?.pending).toBe('unmerged');
     expect(nightRoundOf({ round: 40, running: false, nightDir: null })).toBeNull();
+    expect(nightRoundOf({ round: 43, running: true, started: '2026-11-20T03:23:24Z', nightDir: null })).toMatchObject({ round: 43, areas: 0, distinct: 0, pending: 'live' });
   });
 });
 

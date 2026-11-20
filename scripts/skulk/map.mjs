@@ -220,7 +220,8 @@ export const nightResults = (nightDir) => {
  *  run that has finished no area. */
 export const nightRoundOf = (run) => {
   const results = nightResults(run.nightDir);
-  if (results.length === 0) return null;
+  // A live round has a bar from its start, empty until its first area reports; a finished one with no results has none.
+  if (results.length === 0 && !run.running) return null;
   const sum = (key) => results.reduce((n, r) => n + r[key], 0);
   return {
     round: run.round, date: (run.started ?? '').slice(0, 10), areas: results.length,

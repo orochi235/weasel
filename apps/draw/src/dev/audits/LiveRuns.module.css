@@ -115,7 +115,7 @@
 }
 
 /* Every lane label inks black, filled or not, so a running step's node name pulses the same way in each: between
-   black and 60% white while the job runs. */
+   20% and 80% white while the job runs. */
 .lanes { --span-ink: #000; }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -123,6 +123,6 @@
 }
 
 @keyframes node-pulse {
-  0%, 100% { color: #000; }
-  50% { color: color-mix(in srgb, #fff 60%, #000); }
+  0%, 100% { color: color-mix(in srgb, #fff 20%, #000); }
+  50% { color: color-mix(in srgb, #fff 80%, #000); }
 }
