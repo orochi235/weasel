@@ -1,4 +1,4 @@
-import { createMenuController, withLinks, type MenuController, type MenuRect } from '@weasel-js/menu';
+import { createMenuController, withLinks, type MenuController, type MenuEntry, type MenuRect } from '@weasel-js/menu';
 import { faceGeneration } from '@weasel-js/font';
 import type { ClaimableGesture, OpenMenu } from '@weasel-js/core';
 import { createEmitter, createPart } from '@weasel-js/registry';
@@ -139,7 +139,15 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   let hoverPanel: number | null = null;
   const typing = createTextEditor(texts, rev.changed);
   const chips = createChipHold(c, (x, y) => chipUnder(c, panels, metricsIn(tokens), x, y), opts.repeat);
-  c.subscribe(() => { replace(); rev.changed(); });
+  /** Whether `e` is a row of an open level. */
+  const shown = (e: MenuEntry) => c.stack().some((_, level) => c.entriesAt(level).includes(e));
+  c.subscribe(() => {
+    // A row whose panel closed ends its edit keeping what was typed, as the DOM menu's field does when it unmounts.
+    const edit = typing.current();
+    if (edit && !shown(edit.entry)) typing.leave();
+    replace();
+    rev.changed();
+  });
 
   /** The pointer is now over `level` (null: no panel). Leaving a panel clears
    *  its row, as the DOM menu's per-panel `pointerleave` does. */

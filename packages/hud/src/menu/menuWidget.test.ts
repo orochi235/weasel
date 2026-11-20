@@ -246,6 +246,36 @@ describe('createMenuWidget', () => {
     expect(measure.mock.calls.length).toBe(opened);
   });
 
+  it("ends a text row's edit, keeping what was typed, once its submenu closes", () => {
+    vi.useFakeTimers();
+    try {
+      const set = vi.fn();
+      const cut = vi.fn();
+      const { w } = widget({
+        ...open,
+        entries: [
+          { kind: 'submenu', key: 'more', label: 'More', entries: [{ kind: 'text', key: 'name', label: 'Name', value: 'abc', set }] },
+          { kind: 'item', key: 'cut', label: 'Cut', run: cut },
+        ],
+      });
+      w.onPointer({ type: 'down', x: 110, y: 110, native: null });
+      w.onPointer({ type: 'up', x: 110, y: 110, native: null });
+      w.onPointer({ type: 'down', x: 440, y: 110, native: null });
+      w.onPointer({ type: 'up', x: 440, y: 110, native: null });
+      expect(w.textInput!.read()).not.toBeNull();
+      w.onKey!(keydown('z'));
+      w.onPointer({ type: 'hovermove', x: 110, y: 110 + 24, native: null });
+      vi.advanceTimersByTime(1000);
+      expect(w.bounds.width).toBe(180);
+      expect(set).toHaveBeenCalledExactlyOnceWith(expect.stringContaining('z'));
+      expect(w.textInput!.read()).toBeNull();
+      w.onKey!(keydown('Enter'));
+      expect(cut).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('stops answering once disposed', () => {
     const { w, close } = widget();
     w.dispose();
