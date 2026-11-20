@@ -3,7 +3,7 @@ import { ActionDisabledReason, defineAction, resolveParams } from '@weasel-js/ro
 import type { Scene, NodeId, Op } from '@weasel-js/core';
 import { commitOps, inheritedPaintIn, paintInheritors } from '@weasel-js/core/engine';
 import { INHERIT } from '@weasel-js/paint';
-import { deepEqual } from '@weasel-js/registry';
+import { deepEqual, isFiniteNumber } from '@weasel-js/registry';
 import * as coreOps from '@weasel-js/core/ops';
 
 /** The node data one paint action reads and writes: its own key, nothing else. */
@@ -36,6 +36,9 @@ export interface PaintActionSpec<TState, TValue, K extends string, P> {
    *  equal to it, leaves the node out of the preview and the commit. */
   merge(prev: TValue | null | undefined, state: TState): TValue | null;
 }
+
+/** `v` when it is a finite number, else `fallback`: how a paint action reads a numeric param. */
+export const finiteOr = <T>(v: unknown, fallback: T): number | T => (isFiniteNumber(v) ? v : fallback);
 
 /** Whether `merge` handed back the value it was given, or one equal to it: nothing to write. */
 const unchanged = (prev: unknown, next: unknown): boolean =>
