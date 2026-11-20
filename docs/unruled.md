@@ -2779,3 +2779,7 @@ Calls the lanes made without a ruling:
   (`DEFAULT_MIN_ZOOM`, `DEFAULT_MAX_ZOOM`) unless given a `clamp`, as `fitViewToBounds` and every other zoom path do;
   before, they were unbounded, and the first wheel or pinch snapped a fit past 8x back to 8x. A caller wanting the raw
   ratio passes `{ min: 0, max: Infinity }`. Leaving them unbounded as plain arithmetic was the alternative.
+- 2026-11-19 (the fixer's call): `useDecayLoop`'s `start` and a `viewport.dragPan` binding's `inertia` throw a
+  `RangeError` on a `friction` outside (0, 1) or a `minSpeed` that is not positive, as `momentum()` does (round
+  thirty-eight); the pan checks at the press, so a bad option never throws from a release. Each coasted forever. Letting
+  friction 1 through when `bounds` with `'stop'` or `'spring'` would end the coast was the alternative.

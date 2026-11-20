@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useVisibleRaf, type VisibleRaf } from '@weasel-js/react';
+import { checkInertia } from './checkInertia';
 
 /** Per-axis limits on a view's position. Any side may be left open. */
 export interface PanBounds {
@@ -13,7 +14,9 @@ export interface PanBounds {
  *  and what happens at the pan limits. The `DecayLoopOptions` fields a caller
  *  chooses up front, without the per-gesture `velocity` / `onTick`. */
 export interface InertiaOptions {
+  /** Share of speed kept each 60 Hz frame, in (0, 1). Default 0.92. */
   friction?: number;
+  /** Speed, in units per ms, below which the coast ends; positive. Default 0.01. */
   minSpeed?: number;
   /** What to do when inertial pan reaches `bounds`. Default: no clamping. */
   boundary?: 'stop' | 'bounce' | 'spring';
@@ -136,6 +139,7 @@ export function useDecayLoop() {
   }, [frameLoop]);
 
   const start = useCallback((config: DecayLoopOptions) => {
+    checkInertia('useDecayLoop', config);
     cancel();
     const { velocity, friction = 0.92, minSpeed = 0.01, viewBounds, boundary, initialPosition, onTick, onEnd } = config;
     const speed = Math.sqrt(velocity.vx ** 2 + velocity.vy ** 2);

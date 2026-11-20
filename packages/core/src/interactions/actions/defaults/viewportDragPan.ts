@@ -2,6 +2,7 @@ import { defineAction, resolveParams, type InvocationCtx, type OngoingHandle } f
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
 import type { InertiaOptions } from 'core/viewport/useDecayLoop';
+import { checkInertia } from 'core/viewport/checkInertia';
 import { createVelocityTracker, type VelocityTracker } from 'core/viewport/createVelocityTracker';
 import type {} from '../actionParamSchema';
 import { VIEWPORT_GROUP } from '../actionGroups';
@@ -84,6 +85,7 @@ export const viewportDragPanAction = defineAction({
       // the gesture needs has to be captured now.
       const params = resolveParams(opts?.params) ?? {};
       const inertia = params.inertia === true ? {} : params.inertia || undefined;
+      if (inertia) checkInertia('viewport.dragPan inertia', inertia);
       const scratch: DragPanScratch = {
         startView,
         base: startView,
