@@ -89,7 +89,7 @@ export const insertAction: Action = inPlane(defineAction({
             resolved, frame, frame.points, gesture.userRotation, session.snap.landingAt, session.place.site,
           );
           const copies = copiesNow();
-          const lands = scene && insertLanding(scene, session.dep, bounds, extras, ends);
+          const lands = scene && insertLanding(scene, session.dep, bounds, extras, ends, session.place.parent);
           return {
             kind: 'insertPreview',
             shape: extras.kind,
