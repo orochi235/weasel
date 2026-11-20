@@ -1,5 +1,5 @@
 import { createEmitter } from '@weasel-js/registry';
-import { sameId } from './same';
+import { once, sameId } from './same';
 
 /** Somewhere a selection can live outside the component that edits it. core's `Scene` satisfies
  *  it, and so does any store with the same three methods. */
@@ -24,11 +24,4 @@ export function createSelectionStore<K>(initial: readonly K[] = []): SelectionSt
     },
     subscribe: changed.subscribe,
   };
-}
-
-/** `ids` with each id once, at its first place; `ids` itself when none repeats. */
-function once<K>(ids: readonly K[]): readonly K[] {
-  if (ids.length < 2) return ids;
-  const seen = new Set(ids);
-  return seen.size === ids.length ? ids : [...seen];
 }

@@ -115,6 +115,11 @@ describe('select', () => {
     expect(select(state(['a'], 'a'), 'e', 'range', { order, between })).toEqual({ ids: ['a', 'c', 'e'], anchor: 'a' });
   });
 
+  it('range through `between` keeps each id once, at its first place', () => {
+    const between = () => ['a', 'c', 'a', 'c', 'e'];
+    expect(select(state(['a'], 'a'), 'e', 'range', { between })).toEqual({ ids: ['a', 'c', 'e'], anchor: 'a' });
+  });
+
   it('range through `between` skips forced-single ids and replaces when it gives nothing', () => {
     const between = () => ['a', 'b', 'c'];
     expect(select(state([], 'a'), 'c', 'range', { between, forceSingle: (id) => id === 'b' }))
