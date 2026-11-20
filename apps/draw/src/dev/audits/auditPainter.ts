@@ -12,11 +12,8 @@ export interface AuditCellData {
   readonly ink: string;
   /** Its name, a line each. */
   readonly label?: readonly string[];
-  /** How far a live run has taken it, under the label. */
-  readonly stage?: string;
-  /** The outline's color while a live run holds it; the stage sits on a chip of it, in `stageInk`. */
+  /** The outline's color while a live run holds it, which says how far the run has taken it. */
   readonly live?: string;
-  readonly stageInk?: string;
   /** A solid color its label lines sit on, where `over` would put a hatch under them. */
   readonly backing?: string;
   /** Its queue place, in the cell's corner. */
@@ -100,12 +97,8 @@ function paintCell(d: AuditCellData, p: RectPose): DrawCommand[] {
     if (d.backing) texts.push(...chip(p.x + 2, y - 1, line, 12, d.backing));
     texts.push(text(p.x + 4, y, line, d.ink, d.font, 12));
   });
-  if (d.stage && d.live) {
-    const y = p.y + 4 + Math.max(1, lines.length) * LINE;
-    texts.push(...chip(p.x + 2, y - 1, d.stage, 11.5, d.live), text(p.x + 4, y, d.stage, d.stageInk ?? d.ink, d.font, 11.5, 500));
-  }
   if (d.queue !== undefined) texts.push(text(p.x + p.width - 4 - digitsWidth(d.queue, 13), p.y + p.height - 17, String(d.queue), d.ink, d.numericFont, 13, 700));
-  // Label widths are estimated, not measured; the clip keeps a long one inside its own cell.
+  // The clip keeps a label inside its own cell where its width was only estimated.
   if (texts.length > 0) out.push({ kind: 'group', clip: rect(p, 1), children: texts });
   return out;
 }

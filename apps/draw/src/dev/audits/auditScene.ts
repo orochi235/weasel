@@ -2,7 +2,7 @@
 import { asNodeId, contrastRatio, createScene, nodeShapesOf, type NodeId, type RectPose, type Scene } from '@weasel-js/core';
 import { deepEqual } from '@weasel-js/registry';
 import { AUDIT_PAINTER, type AuditCellData, type AuditFrameData, type AuditNodeData } from './auditPainter';
-import { heatScaleOf, stageLabelOf, labelIn, toneOf, wrapAtDots, type HeatScale } from './areaData';
+import { heatScaleOf, labelIn, toneOf, wrapAtDots, type HeatScale } from './areaData';
 import { rampAt } from './heat';
 import type { MapCell, MapFrame } from './mapLayout';
 import type { AuditPhase } from './phases';
@@ -61,12 +61,17 @@ const poseIn = (b: Box, parent: Box | undefined): RectPose =>
 /** A frame's title size: a top-level package's, and a smaller one inside it. */
 const titleSizeOf = (depth: number) => (depth === 0 ? 12.5 : 11);
 
-function frameTitle(f: MapFrame): string | undefined {
+function frameTitle(f: MapFrame, font: string): string | undefined {
   if (!f.titled) return undefined;
   const own = f.parent ? labelIn(f.name, f.parent) : f.name.toUpperCase();
   const full = `${own} · ${f.files}`;
-  const char = TITLE_CHAR * (titleSizeOf(f.depth) / 12.5);
-  return full.length * char < f.width - 8 ? full : own.slice(0, Math.max(1, Math.floor((f.width - 8) / char)));
+  const size = titleSizeOf(f.depth);
+  const weight = f.depth === 0 ? 700 : 500;
+  const room = f.width - 8;
+  if (textWidth(full, font, size, weight) <= room) return full;
+  let cut = own.length;
+  while (cut > 1 && textWidth(own.slice(0, cut), font, size, weight) > room) cut -= 1;
+  return own.slice(0, cut);
 }
 
 /** Whichever of the two inks reads better on `fill`. */
@@ -76,9 +81,19 @@ export function inkOn(fill: string, palette: AuditPalette): string {
   return inverse > plain ? palette.inkInverse : palette.ink;
 }
 
-/** Rough widths of a character of Oswald, the theme's condensed face: a cell label at 12px, a frame title at 12.5px bold. */
-const LABEL_CHAR = 6.2;
-const TITLE_CHAR = 6.9;
+/** Rough width of a character of Oswald, the theme's condensed face, at 12px: what a label is cut by where no canvas
+ *  can measure it, as under jsdom. */
+const CHAR_AT_12 = 6.2;
+
+let measurer: OffscreenCanvasRenderingContext2D | null | undefined;
+
+/** `s`'s width set in `font` at `size` and `weight`, measured where the page can, else estimated. */
+function textWidth(s: string, font: string, size: number, weight = 400): number {
+  measurer ??= typeof OffscreenCanvas === 'undefined' ? null : new OffscreenCanvas(1, 1).getContext('2d');
+  if (!measurer) return s.length * CHAR_AT_12 * (size / 12) * (weight >= 700 ? 1.11 : 1);
+  measurer.font = `${weight} ${size}px ${font}`;
+  return measurer.measureText(s).width;
+}
 /** A label line's height. */
 const LINE = 15;
 
@@ -86,9 +101,11 @@ const LINE = 15;
 const dotsRoom = (passes: number) => (passes > 0 ? Math.min(passes, 4) * 6 + 4 : 0);
 
 /** An area's label as the lines its cell has room for, broken after dots, the last cut short if it must be. */
-function labelLines(area: AuditArea, cell: MapCell, staged: boolean): string[] {
-  const room = cell.height - 6 - (staged ? LINE + 1 : 0) - (area.queue !== null ? 17 : 0);
-  return wrapAtDots(labelIn(area.id, cell.parent), Math.floor((cell.width - 8 - dotsRoom(area.passes.length)) / LABEL_CHAR), Math.max(1, Math.floor(room / LINE)));
+function labelLines(area: AuditArea, cell: MapCell, font: string): string[] {
+  const room = cell.height - 6 - (area.queue !== null ? 17 : 0);
+  const label = labelIn(area.id, cell.parent);
+  const perChar = textWidth(label, font, 12) / Math.max(1, label.length);
+  return wrapAtDots(label, Math.floor((cell.width - 8 - dotsRoom(area.passes.length)) / perChar), Math.max(1, Math.floor(room / LINE)));
 }
 
 function cellData(area: AuditArea, cell: MapCell, palette: AuditPalette, heat: HeatScale, phase: AuditPhase | undefined, lit: boolean): AuditCellData {
@@ -97,7 +114,6 @@ function cellData(area: AuditArea, cell: MapCell, palette: AuditPalette, heat: H
   const ink = tone === 'unaudited' ? palette.ink : inkOn(fill, palette);
   const live = area.status === 'tonight';
   const labeled = cell.width > 52 && cell.height > 28;
-  const staged = live && area.stage !== null && labeled && cell.height > 46;
   const showsQueue = area.queue !== null && area.queue <= 16 && !live && cell.width > 22 && cell.height > 22;
   return {
     kind: 'audit-cell',
@@ -105,9 +121,8 @@ function cellData(area: AuditArea, cell: MapCell, palette: AuditPalette, heat: H
     ...(tone === 'unaudited' ? { over: { kind: 'hatch', color: palette.hatch, size: 6, lineWidth: 1.6 } } : {}),
     edge: palette.panel,
     ink,
-    ...(labeled ? { label: labelLines(area, cell, staged) } : {}),
+    ...(labeled ? { label: labelLines(area, cell, palette.font.ui) } : {}),
     ...(live ? { live: phase ? palette.phase[phase] : palette.live } : {}),
-    ...(staged ? { stage: stageLabelOf(area.stage!), stageInk: inkOn(live ? (phase ? palette.phase[phase] : palette.live) : palette.live, palette) } : {}),
     ...(tone === 'unaudited' && labeled ? { backing: palette.uncharted } : {}),
     font: palette.font.ui,
     numericFont: palette.font.numeric,
@@ -135,7 +150,7 @@ export function auditNodeSpecs(
   // Frames come in the order the layout made them, each after its parent; cells after every frame.
   for (const f of layout.frames) {
     const parent = f.parent === null ? undefined : frameBox.get(f.parent);
-    const title = frameTitle(f);
+    const title = frameTitle(f, palette.font.ui);
     const band = f.depth === 0 ? palette.panel : palette.band;
     const data: AuditFrameData = {
       kind: 'audit-frame', edge: palette.ink, band, ink: inkOn(band, palette), font: palette.font.ui, size: titleSizeOf(f.depth), depth: f.depth, ...(title ? { title } : {}),
