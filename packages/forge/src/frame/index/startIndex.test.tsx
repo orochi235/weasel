@@ -229,4 +229,14 @@ describe('startIndex', () => {
       sheet.remove();
     }
   });
+
+  it('faults the frame when applying the globals throws, naming the input it answers', async () => {
+    const applyGlobals = vi.fn(() => {
+      throw new Error('no such mode');
+    });
+    const { shell, received } = start({ setup: { applyGlobals } });
+    await init(shell);
+    expect(received.find((m) => m.type === 'fault')).toMatchObject({ phase: 'render', message: 'no such mode', seq: 1 });
+    expect(received.some((m) => m.type === 'rendered')).toBe(false);
+  });
 });

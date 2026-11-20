@@ -8,6 +8,7 @@ import { describeSchema } from '../../protocol/schema';
 import type { IndexBundle } from '../../story/indexBundle';
 import { runAxe } from '../a11y';
 import type { FrameSetup } from '../FrameController';
+import { fault } from '../fault';
 import { frameDecorators } from '../frameDecorators';
 import { startFrameServices } from '../frameServices';
 import { createGlobalsTarget } from '../globalsTarget';
@@ -57,6 +58,8 @@ export function startIndex(options: StartIndexOptions): () => void {
   const services = startFrameServices(document, send, setup.cssVarsScope);
   let globals: StoryGlobals | null = null;
   let announced = false;
+  /** `init`, `config`, `state` and `globals` messages received, as the shell counts them for a fault's `seq`. */
+  let seq = 0;
 
   const render = (): void => {
     if (!globals) return;
@@ -88,11 +91,22 @@ export function startIndex(options: StartIndexOptions): () => void {
   const off = channel.on((msg) => {
     if (services.handle(msg)) return;
     switch (msg.type) {
+      case 'config':
+      case 'state':
+        seq += 1;
+        break;
       case 'init':
       case 'globals':
-        globals = msg.globals;
-        setup.applyGlobals?.(globals, globalsTarget);
-        flushSync(render);
+        seq += 1;
+        // A throw faults the frame as a story's input does; otherwise the trial would wait on a frame that never answers.
+        try {
+          globals = msg.globals;
+          setup.applyGlobals?.(globals, globalsTarget);
+          flushSync(render);
+        } catch (error) {
+          send(fault('render', error, seq));
+          break;
+        }
         services.vars.scan();
         announce();
         break;
