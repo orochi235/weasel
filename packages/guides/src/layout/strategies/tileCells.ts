@@ -45,10 +45,13 @@ export function linesFor(shape: TileShape<unknown>, n: number): number {
 /** The grid over `bounds` while it holds `n` children: its cell pitch, and
  *  how many cells it offers before running past the container. A growing
  *  grid spreads its lines over the container, which it keeps sized to fit
- *  them; the others always lay the declared grid over it. */
-export function tileGridOf<TPose>(shape: TileShape<TPose>, bounds: ContainerBounds, n: number): TileGrid<TPose> {
+ *  them — the lines `sized` children fill, when the container has not grown
+ *  for all `n` yet; the others always lay the declared grid over it. */
+export function tileGridOf<TPose>(
+  shape: TileShape<TPose>, bounds: ContainerBounds, n: number, sized = n,
+): TileGrid<TPose> {
   const { cols, rows, gap, byColumn, overflow, perLine, minLines } = shape;
-  const lines = overflow === 'grow' ? linesFor(shape, n) : minLines;
+  const lines = overflow === 'grow' ? linesFor(shape, sized) : minLines;
   const c = byColumn ? lines : cols;
   const r = byColumn ? rows : lines;
   const cw = (bounds.width - gap * (c - 1)) / c;

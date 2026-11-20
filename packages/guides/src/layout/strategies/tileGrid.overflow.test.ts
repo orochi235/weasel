@@ -122,6 +122,18 @@ describe('tileGrid overflow — reject (the default)', () => {
 });
 
 describe('tileGrid overflow — grow', () => {
+  it('offers the second of a selection dropped into a full grid the next cell at the grid\'s own pitch', () => {
+    const grid = tileGrid<RectPose>({ cols: 2, rows: 1, overflow: 'grow' });
+    const box = { id: 'G', bounds: { x: 0, y: 0, width: 100, height: 50 } };
+    const held = [{ id: 'a', pose: rect(0, 0) }, { id: 'b', pose: rect(50, 0) }];
+    const drag = (id: string) => ({ id, originPose: rect(300, 300), pose: rect(300, 300), sourceContainerId: null });
+    const [first] = grid.getDropTargets(box, held, drag('p'));
+    expect(first!.pose).toEqual(rect(0, 50));
+    // The drop places p before it asks about q, and the container has not grown yet.
+    const second = grid.getDropTargets(box, [...held, { id: 'p', pose: first!.pose }], drag('q'));
+    expect(second.map((t) => t.pose)).toEqual([rect(50, 50)]);
+  });
+
   it('a drop into a full grid opens a row and grows the container', () => {
     const s = setup({ overflow: 'grow' });
     s.drop({ x: 50, y: 50 });

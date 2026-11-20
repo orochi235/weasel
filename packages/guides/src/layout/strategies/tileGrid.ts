@@ -69,6 +69,19 @@ function heldBy<TPose>(container: LayoutContainer, children: ReadonlyArray<Layou
     : children.length;
 }
 
+/** How many of `children` other than `dragged` sit inside the container: in a growing grid, the ones it was
+ *  sized for, where an earlier member of the same drop placed past its last line is not yet. */
+function residents<TPose>(
+  shape: TileShape<TPose>, container: LayoutContainer, children: ReadonlyArray<LayoutChild<TPose>>, dragged: LayoutDragged<TPose>,
+): number {
+  const { x, y, width, height } = container.bounds;
+  return children.filter((c) => {
+    if (c.id === dragged.id) return false;
+    const p = shape.centerOf(c.pose);
+    return p.x >= x && p.x < x + width && p.y >= y && p.y < y + height;
+  }).length;
+}
+
 /** The swap dragging `dragged` onto `target` causes, or `null`. Preview and
  *  commit both use it, so they cannot disagree. */
 function computeSwap<TPose>(
@@ -247,10 +260,11 @@ export function tileGrid<TPose>(
     },
 
     getDropTargets(container, children, dragged) {
-      const grid = gridOf(container.bounds, heldBy(container, children, dragged));
       // A drag from inside may land on an occupied cell and swap; one from
       // outside has nobody to swap with, so occupied cells are not offered.
       const fromOutside = dragged.sourceContainerId !== container.id;
+      const held = heldBy(container, children, dragged);
+      const grid = tileGridOf(shape, container.bounds, held, fromOutside ? residents(shape, container, children, dragged) : held);
       return offeredCells(shape, grid, children, dragged, fromOutside).map((i) => {
         const cellRect = grid.rectAt(i);
         return {
