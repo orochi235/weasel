@@ -114,6 +114,11 @@ export interface PaintDrawKind {
    * the paint. Shader output must be premultiplied:
    * `outColor = vec4(rgb * a, a)`.
    *
+   * A program declaring `u_colorMatrix` (mat4) and `u_colorBias` (vec4) is
+   * handed the group's color matrix in them, to apply to its straight color as
+   * `clamp(u_colorMatrix * c + u_colorBias, 0.0, 1.0)`; one that declares
+   * neither draws unmapped, and development warns once per program.
+   *
    * The geometry is not always the node's own. Text below the outline tier
    * paints by drawing a quad over its glyphs' screen box into an offscreen
    * buffer and masking that with glyph coverage, so a paint must come from

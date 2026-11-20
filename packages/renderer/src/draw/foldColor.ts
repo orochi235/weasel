@@ -5,7 +5,7 @@ import { sameValues } from './uniforms';
 
 /** Identity in row-major 4×5 leaves `src` untouched *and* leaves the shader's
  *  clamp with nothing to do, which is what makes the alpha fold exact. */
-function isIdentityColorMatrix(cm: Float32Array): boolean {
+export function isIdentityColorMatrix(cm: Float32Array): boolean {
   return cm === IDENTITY_COLOR_MATRIX || sameValues(IDENTITY_COLOR_MATRIX, cm);
 }
 

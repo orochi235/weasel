@@ -3059,3 +3059,10 @@ Calls the lanes made without a ruling:
   `measureIds`, and so picking, editing, Delete and Clear all, reads only `ms.layer`. Either `measureIds` reads the
   whole scene, which puts a walk of every node on each pointer move's hit test (`measureEndSource.test.ts` holds
   that it must not), or the painter and the snap source take only `ms.layer`'s nodes and the rest go undrawn.
+
+## Audit round fifty-four (2026-11-20): renderer.draw
+
+- 2026-11-20 (the fixer's call): a registered paint kind's program is handed the group's color matrix as
+  `u_colorMatrix` and `u_colorBias` where it declares them, the convention the built-in programs use; one that
+  declares neither draws unmapped and development warns once per program. Exposing the matrix on
+  `PaintBindContext` for the kind to upload itself was the alternative.
