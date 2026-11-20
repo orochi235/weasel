@@ -17,6 +17,14 @@ describe('specimen cells', () => {
     expect(Number(rings.value)).toBe(33);
   });
 
+  it('hides the sidebar panel from its hide button and brings it back', () => {
+    renderWithIcons(<PanelsAndRows />);
+    fireEvent.click(screen.getByRole('button', { name: 'Hide panel' }));
+    expect(screen.queryByText('2 items selected')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show panel' }));
+    expect(screen.getByText('2 items selected')).toBeInTheDocument();
+  });
+
   it('docks the right sidebar after a main area, on the box edge it names', () => {
     renderWithIcons(<PanelsAndRows />);
     const sidebar = screen.getByRole('complementary', { name: 'Specimen sidebar' });
