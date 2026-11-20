@@ -1790,9 +1790,9 @@ Calls the lanes made without a ruling:
   and a text box's typing coalesces into its insert on purpose (`useTextEditSession`'s "one undo entry with its
   insert"). Sealing the history on entry fixes discard and splits that entry. No soft mode has a coalescing edit
   today.
-- Open: whether a `LensCapture`'s bitmap stays valid after the source's next capture. The Pixels source closes the
-  captures it throws away, and leaves a replaced shot open because `capture()` handed it to a caller that may paint
-  it later.
+- Ruled 2026-11-20: a lens source owns the bitmap in each `LensCapture` it hands out. A capture is good until that
+  source's next capture for the same lens side, or until the shot is dropped, and a caller keeping it longer copies
+  it. The Pixels source closes every shot it lets go of; Difference copies its two captures as they land.
 - Open: whether paint keeps a lerp of its own (no dependencies) or takes geom's, which also stays finite where
   `b - a` overflows. d3's transition pins `t` 0 and 1 over a pose descriptor's lerp; that is not a copy.
 - Open: whether `useGestureDispatcher`'s `views` (multi-view routing, which core fills through
