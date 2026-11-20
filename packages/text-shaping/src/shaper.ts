@@ -256,6 +256,12 @@ export function loadShaper(): Promise<TextShaper> {
  * package build points at the copy it writes beside the built JavaScript.
  */
 function wasmLocation(): { locateFile: () => string } {
-  const isNode = typeof process === 'object' && !!process.versions?.node;
-  return { locateFile: () => (isNode ? import.meta.resolve('harfbuzzjs/dist/harfbuzz.wasm') : wasmUrl) };
+  const node = isNodeRuntime(typeof process === 'object' ? process : undefined);
+  return { locateFile: () => (node ? import.meta.resolve('harfbuzzjs/dist/harfbuzz.wasm') : wasmUrl) };
+}
+
+/** Whether harfbuzzjs's loader reads its WebAssembly from disk here, by the loader's own test: an Electron
+ *  renderer has Node's `process` but loads as a web page. */
+export function isNodeRuntime(proc: { versions?: { node?: string }; type?: string } | undefined): boolean {
+  return !!proc?.versions?.node && proc.type !== 'renderer';
 }
