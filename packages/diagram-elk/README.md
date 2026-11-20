@@ -54,7 +54,7 @@ What goes in, and how ELK reads it:
 | A port an edge names | A fixed port where the diagram draws it, cast onto the node's outline. |
 | A group | A compound node, nested the way the groups nest, padded by its `inset`. `minWidth` is its minimum width. |
 | An edge to or from a group | One edge to the compound node, not one per member. |
-| An edge label's room | An edge label of that size. |
+| An edge label's room | An edge label of that size. One with an `offset` gets room centered on its wire, wide enough for the label that far off on either side. |
 | `direction`, `nodeGap`, `rankGap` | `elk.direction`, `elk.spacing.nodeNode`, `elk.layered.spacing.nodeNodeBetweenLayers`. |
 | `order`, `chain`, `chainSide` | Not taken; ELK orders ranks itself. |
 
