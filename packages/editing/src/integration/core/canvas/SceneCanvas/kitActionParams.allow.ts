@@ -16,7 +16,6 @@ export const ACTION_LITERALS: Readonly<Record<string, Readonly<Record<string, st
   'packages/editing/src/actions/distribute/action.tsx': { 3: 'count: the fewest nodes there is a between to distribute' },
   'packages/editing/src/actions/insert/action.ts': { 8: 'threshold: how far a press travels before an insert drags out a size' },
   'packages/editing/src/actions/insert/rotateAction.ts': { 720: 'gesture: radians a pixel of travel turns a shape mid-insert' },
-  'packages/editing/src/actions/lassoSelect/action.ts': { 3: 'count: the fewest points that enclose an area' },
   'packages/diagram/src/edgeLabel.ts': {
     12: 'the font size an edge label is set in where its data names none, not an action\'s',
     4: 'where an end label sits from its end where its data names none, not an action\'s',

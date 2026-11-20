@@ -384,9 +384,9 @@ describe('groupAction — per-node descriptors', () => {
         return { x: p.x + p.width / 2 - r, y: p.y + p.height / 2 - r, width: 2 * r, height: 2 * r };
       },
     };
-    const poseDescriptor = { ...rect, forNode: (node: { kind: string }) => (node.kind === 'ball' ? ball : undefined) };
+    const poseDescriptor = { ...rect, forNode: (node: { data: unknown }) => ((node.data as Data).label === 'ball' ? ball : undefined) };
     const scene = makeScene();
-    const a = scene.add({ kind: 'ball', layer: 'main', pose: { x: 0, y: 0, width: 40, height: 10 }, data: {} });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 40, height: 10 }, data: { label: 'ball' } });
     const b = scene.add({ kind: 'mark', layer: 'main', pose: { x: 50, y: 0, width: 10, height: 10 }, data: {} });
     const selection = makeSelection([a, b]);
     (groupAction.invoker as ImmediateInvoker).run({ scene, operands: selection, poseDescriptor } as never, undefined as never);

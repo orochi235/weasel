@@ -36,12 +36,13 @@ type Case = [string, Action, (f: ReturnType<typeof fixture>) => NodeId[], unknow
 
 /** Actions the scene refuses mid-batch, by throwing. */
 const refused: Case[] = [
-  ['nudge', nudgeRightAction, (f) => [f.free, f.art]],
   ['group', groupAction, (f) => [f.art, f.top]],
 ];
 
-/** Actions disabled while a node they would move or remove is locked (ruled 2026-11-09; reorder 2026-11-10). */
+/** Actions disabled while a node they would move or remove is locked (ruled 2026-11-09; reorder 2026-11-10; nudge
+ *  2026-11-20, with the transforms that would rewrite a locked envelope source). */
 const disabled: Case[] = [
+  ['nudge', nudgeRightAction, (f) => [f.free, f.art]],
   ['delete', deleteAction, (f) => [f.free, f.art]],
   ['reorder', reorderForwardAction, (f) => [f.art]],
   ['ungroup', ungroupAction, (f) => [f.box]],

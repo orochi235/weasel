@@ -8,7 +8,7 @@ import {
 } from '@weasel-js/font/test-seams';
 import { layoutAndPaint } from './testing/layoutAndPaint';
 import type { ResolvedRun } from '../runs/resolveRuns';
-import { stubFetch, registerFixture } from './testing/fontFixtures';
+import { stubFetch } from './testing/fontFixtures';
 
 beforeEach(() => {
   _resetFontRegistryForTests();
@@ -68,15 +68,16 @@ describe('layoutRuns — a family with no metrics at all', () => {
     warn.mockRestore();
   });
 
-  it('leaves it at one warning when the registry already said the face cannot render', async () => {
-    // A family that is its own fallback and has no variant near the request.
-    await registerFixture('lonely', [{ weight: 700, style: 'italic' }]);
+  it('warns once for a family that is its own fallback and has no face loaded', async () => {
+    // A family that is its own fallback with no face loaded: one with any face draws in it.
+    global.fetch = vi.fn().mockRejectedValue(new Error('down')) as typeof fetch;
+    await registerFont('lonely', { weight: 700, style: 'italic' }, '/fonts/lonely.json', '/fonts/lonely.png').catch(() => {});
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     layoutAndPaint([run('hello', 'lonely')], OPTS);
 
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0][0]).toContain('will not render at all');
+    expect(warn.mock.calls[0][0]).toContain('"lonely"');
     warn.mockRestore();
   });
 
