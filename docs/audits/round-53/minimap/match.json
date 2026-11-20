@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "a": [
+  "The scene/live fit frames hidden descendants of a shown container",
+  "`<MinimapCanvas>`'s rootView reads the last-rendered `mainView`, so samples landing before a re-render overwrite each other",
+  "A touch pinch that opens with both fingers on one point never zooms",
+  "`<MinimapCanvas layerVisibility>` hides a layer but the fit still frames it"
+ ],
+ "b": [
+  "`<MinimapCanvas>`'s `rootView.get()` does not see its own `set` until React re-renders, so back-to-back zoom samples don't add up",
+  "A two-finger touch pinch that starts at spread 0 does nothing for its whole length, pan included",
+  "`useFitView` refits on every render after an override publish or a scroll, even under a `\"scene\"` fit that reads neither"
+ ]
+}

@@ -1,0 +1,65 @@
+{
+ "id": "path-tools.pathEdit",
+ "commit": "830b463cc110fc3f5182a03383bb1d182067d8e3",
+ "date": "2026-11-20",
+ "files": [
+  "packages/path-tools/src/pathEdit/aidSettings.ts",
+  "packages/path-tools/src/pathEdit/anchorEditing.ts",
+  "packages/path-tools/src/pathEdit/anchorFields.ts",
+  "packages/path-tools/src/pathEdit/anchorHandles.tsx",
+  "packages/path-tools/src/pathEdit/anchorJoin.ts",
+  "packages/path-tools/src/pathEdit/anchorNudge.ts",
+  "packages/path-tools/src/pathEdit/anchorsTool.ts",
+  "packages/path-tools/src/pathEdit/bendSegment.ts",
+  "packages/path-tools/src/pathEdit/editAnchors/editAnchors.ts",
+  "packages/path-tools/src/pathEdit/editAnchors/extensionDrags.ts",
+  "packages/path-tools/src/pathEdit/editAnchors/handleDrag.ts",
+  "packages/path-tools/src/pathEdit/editAnchors/handles.ts",
+  "packages/path-tools/src/pathEdit/editAnchors/preview.ts",
+  "packages/path-tools/src/pathEdit/editAnchors/symmetry.ts",
+  "packages/path-tools/src/pathEdit/enterPathEdit.ts",
+  "packages/path-tools/src/pathEdit/insertPathAnchor.ts",
+  "packages/path-tools/src/pathEdit/leavePathEdit.ts",
+  "packages/path-tools/src/pathEdit/pathEditMarks.ts"
+ ],
+ "a": 7,
+ "b": 5,
+ "m": 3,
+ "distinct": 9,
+ "chapman": 11,
+ "unfound": 2,
+ "read": {
+  "A": 18,
+  "B": 18
+ },
+ "patches": 10,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.1,
+   "B": 4.4,
+   "match": 9.5,
+   "fix": 25.8
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 2524375,
+  "costUsd": 7.22
+ },
+ "fixCommits": [
+  "2d649c073c37405bc247eee8a8d202ec1fb27a34",
+  "666ff95136abd265e578fac091409fce9f62c78d",
+  "9a03912860c6399e86ab450767e58f0d48287b61",
+  "373becd285668299642807c2430bffa0ecbb6f70",
+  "79e22dcff8a78f74731496c6aab8d1de816fe48b",
+  "1ca4e090b46c169cbababee45a9ee4681485561c",
+  "08d04fb91bcfeded58e3229136df7023933e3b17",
+  "099cdcbb027ab095a7758a3ef9bd23fdfe66c7bd",
+  "d302e545b2aba4a4c1e8887899e5ba6a208a0ddd",
+  "70fdef4d6c817d71192ca35ee5f7100e85bc3c03"
+ ]
+}

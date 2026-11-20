@@ -1,0 +1,61 @@
+{
+ "id": "p-touch",
+ "commit": "830b463cc110fc3f5182a03383bb1d182067d8e3",
+ "date": "2026-11-20",
+ "files": [
+  "packages/p-touch/src/index.ts",
+  "packages/p-touch/src/lbx/carried.ts",
+  "packages/p-touch/src/lbx/sceneLbx.ts",
+  "packages/p-touch/src/lbx/shapes.ts",
+  "packages/p-touch/src/lbx/style.ts",
+  "packages/p-touch/src/lbx/writeLbx.ts",
+  "packages/p-touch/src/pbt.fixture.ts",
+  "packages/p-touch/src/print.ts",
+  "packages/p-touch/src/render.ts",
+  "packages/p-touch/src/tape.ts"
+ ],
+ "a": 7,
+ "b": 6,
+ "m": 2,
+ "distinct": 11,
+ "chapman": 17.7,
+ "unfound": 6.7,
+ "read": {
+  "A": 10,
+  "B": 10
+ },
+ "patches": 14,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.3,
+   "B": 3.8,
+   "match": 0.1,
+   "fix": 19.3
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2234627,
+  "costUsd": 6.43
+ },
+ "fixCommits": [
+  "c65efd640798d62d70d90a87b553b65e0d5b02f9",
+  "fc28caf1a4e8beb1cfc03bed97bb8f4caec11632",
+  "6d5df611237dc6fdac65e260db86ae0fd4ea891a",
+  "74d1f1144ebe8f12f555b9ef0016eeda8dd05c17",
+  "954b5a4fe596147bdb70922c280d302a74246e52",
+  "414b10782d5c09fc1e03160e432168a5ad881e6a",
+  "ac434c32a44f3a9d0b72e67eb41a9945de1672d4",
+  "9d6f1d2a250699827dfb8efc7817f58d11b6e267",
+  "87f13103138300274f7f21b7d9db461bba33499f",
+  "5ea15b700b6fa6b97e8383f39d35413ef904b01d",
+  "9c8724ceb0698b582ad41b58a8e04847391b3084",
+  "3c9f1e07676f2e0104423a6bbfd830be185a6d14",
+  "a31bf0fe08143c462711e4fe3babda703eeb9fc4",
+  "41152228da59ce1b7a8b505f557a79d87f89508b"
+ ]
+}

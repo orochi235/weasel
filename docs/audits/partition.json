@@ -3321,6 +3321,7 @@
    "packages/forge/src/shell/dependencies.ts",
    "packages/forge/src/shell/documentInstrument.tsx",
    "packages/forge/src/shell/followEdits.ts",
+   "packages/forge/src/shell/frameActions.ts",
    "packages/forge/src/shell/frameLink.ts",
    "packages/forge/src/shell/framePool.ts",
    "packages/forge/src/shell/globals.ts",
@@ -3494,6 +3495,7 @@
    "packages/geom/src/booleans/meshJunctions.ts",
    "packages/geom/src/booleans/meshOutline.ts",
    "packages/geom/src/booleans/ops.ts",
+   "packages/geom/src/booleans/ringFill.ts",
    "packages/geom/src/booleans/snipAtCrossings.ts",
    "packages/geom/src/booleans/splitBySegment.ts",
    "packages/geom/src/booleans/trianglesToPath.ts",
@@ -3627,6 +3629,7 @@
    "packages/geom/src/paths/builder.ts",
    "packages/geom/src/paths/compose.ts",
    "packages/geom/src/paths/contourSamples.ts",
+   "packages/geom/src/paths/contourSides.ts",
    "packages/geom/src/paths/cornerCarry.ts",
    "packages/geom/src/paths/cornerOffset.ts",
    "packages/geom/src/paths/cornerRestore.ts",
@@ -3646,13 +3649,13 @@
    "packages/geom/src/paths/fitRun.ts",
    "packages/geom/src/paths/growRegion.ts",
    "packages/geom/src/paths/handleEdits.ts",
-   "packages/geom/src/paths/joinAnchors.ts",
-   "packages/geom/src/paths/kneadPath.ts"
+   "packages/geom/src/paths/joinAnchors.ts"
   ]
  },
  {
   "id": "geom.paths.part2",
   "files": [
+   "packages/geom/src/paths/kneadPath.ts",
    "packages/geom/src/paths/markers.ts",
    "packages/geom/src/paths/mergeRegion.ts",
    "packages/geom/src/paths/nearestAnchor.ts",
@@ -3836,6 +3839,7 @@
    "packages/guides/src/guides/index.ts",
    "packages/guides/src/guides/layer.ts",
    "packages/guides/src/guides/ops.ts",
+   "packages/guides/src/guides/sameGuide.ts",
    "packages/guides/src/guides/types.ts",
    "packages/guides/src/guides/useGuides.ts"
   ]

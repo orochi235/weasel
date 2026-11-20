@@ -1,0 +1,9 @@
+packages/modes/src/capabilities.ts
+packages/modes/src/decorations.ts
+packages/modes/src/eligibility.ts
+packages/modes/src/index.ts
+packages/modes/src/modeDefinition.ts
+packages/modes/src/pbt.fixture.ts
+packages/modes/src/presets/default.ts
+packages/modes/src/registry.ts
+packages/modes/src/scopingLayer.ts

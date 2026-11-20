@@ -1,0 +1,34 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   2,
+   3
+  ],
+  [
+   4,
+   1
+  ]
+ ],
+ "a": [
+  "A values source with `over` reads an alias row's target but its reset never reaches it",
+  "Writing `undefined` to a split pref wipes every option's value and ignores `at`",
+  "An auto-capable enum is accepted as a selector, and while it is auto with no `auto.value` every split read and write runs under the option \"undefined\"",
+  "`unitScopedPrefUnit` recovers the scale by subtracting two `toRoot` results, losing it where a scope has a large offset",
+  "`createDefaultsSource` reads every leaf at `default`, where a store holding nothing reads a leaf that starts auto at its `auto.value`",
+  "A write at one option of a split leaf that is auto rebuilds from `defaultScope`, not from the `auto.value` the other options were reading"
+ ],
+ "b": [
+  "A split color pref holding CSS color names or rgb()/hsl() strings is never mixed, only snapped to its heaviest member",
+  "`createDefaultsSource` reads a leaf that starts auto at its `default`, where a store with nothing stored reads its `auto.value`",
+  "A values source's reset ignores `over`, so an alias row's Reset into another schema writes nothing",
+  "A selector enum that opts into `auto` is accepted, and while auto with no `auto.value` the store's selection holds `undefined`",
+  "A store from `usePrefsStore` still persists and notifies after `close`, against the store's own contract",
+  "Pinning a split leaf that is auto with a plain `auto.value` pins it only under the current selection",
+  "`prefsCss` writes an enum option that is a CSS-wide keyword bare, so the property takes the keyword's meaning",
+  "`prefNodeAt` finds a nested section by its key, though a section's key is no path segment, and `resetPlans` then builds paths no leaf has"
+ ]
+}

@@ -1,0 +1,9 @@
+{
+ "pairs": [],
+ "a": [
+  "Hovering a separator leaves a pending submenu open running, where hovering a panel's padding cancels it"
+ ],
+ "b": [
+  "A letter typed mid-search is taken as an access letter (or a number-row step) instead of extending the search"
+ ]
+}

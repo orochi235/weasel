@@ -1,0 +1,10 @@
+packages/prefs-editor/src/PrefConditionEditor/ConditionClipboard.tsx
+packages/prefs-editor/src/PrefConditionEditor/ConditionGroupRows.tsx
+packages/prefs-editor/src/PrefConditionEditor/ConditionRow.tsx
+packages/prefs-editor/src/PrefConditionEditor/PrefConditionEditor.module.css
+packages/prefs-editor/src/PrefConditionEditor/PrefConditionEditor.stories.module.css
+packages/prefs-editor/src/PrefConditionEditor/PrefConditionEditor.stories.tsx
+packages/prefs-editor/src/PrefConditionEditor/PrefConditionEditor.tsx
+packages/prefs-editor/src/icons.gen.ts
+packages/prefs-editor/src/index.ts
+packages/prefs-editor/src/testing/prefSchemaEditor.ts
