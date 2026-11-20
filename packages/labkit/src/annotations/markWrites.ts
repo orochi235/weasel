@@ -4,7 +4,7 @@ import { markDataFrom } from './markData';
 import { markIdOf } from './markId';
 import type { FoundMark } from './markReads';
 import type { MarkPose, MarkScene } from './markScenes';
-import { shapeFor } from './markShape';
+import { settledMarkData, shapeFor } from './markShape';
 import { seenValues } from './staleness';
 import type { AnnotationsApi, AnnotationTargetInfo } from './types';
 
@@ -53,13 +53,16 @@ export function createMarkWrites(o: MarkWritesOptions): MarkWrites {
       const frac = fracPatch ?? (points ? boundsOf(points) : null);
       const bounds = roundFrac(frac ?? worldToFrac(found.node.pose as MarkPose, content));
       const shape = points ? shapeFor(found.node.data.kind, points, bounds) : undefined;
-      const data = { ...found.node.data, ...meaning, ...(shape ? { shape } : {}) };
+      // A legacy mark is written back settled, so its vertices follow the bounds from here on.
+      const settled = settledMarkData(found.node.data, found.node.pose as MarkPose, content);
+      const data = { ...settled, ...meaning, ...(shape ? { shape } : {}) };
       const coalesce =
         opts?.coalesceKey === undefined ? undefined : { coalesceKey: opts.coalesceKey };
       found.scene.batch(
         'update mark',
         () => {
-          if (Object.keys(meaning).length > 0 || shape) found.scene.update(nid, { data });
+          if (Object.keys(meaning).length > 0 || shape || settled !== found.node.data)
+            found.scene.update(nid, { data });
           if (frac) found.scene.setPose(nid, fracToWorld(bounds, content));
         },
         coalesce,

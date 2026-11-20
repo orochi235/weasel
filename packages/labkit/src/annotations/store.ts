@@ -8,6 +8,7 @@ import { MarkHistory, markHistoryOf, markUndo } from './history';
 import { splitMarkId } from './markId';
 import { createMarkReads } from './markReads';
 import { createMarkScenes, type MarkPose, type MarkScene } from './markScenes';
+import { settledMarkData } from './markShape';
 import { createMarkWrites } from './markWrites';
 import { matchesQuery } from './query';
 import { isStale as isStaleAgainst } from './staleness';
@@ -158,10 +159,9 @@ export function createMarkStore(opts: AnnotationStoreOptions): AnnotationsApi {
       return [...scene.renderOrder()].flatMap((id) => {
         const node = scene.get(asNodeId(String(id)));
         if (!node) return [];
-        const data = node.data as AnnotationData;
-        return [
-          { mark: { pose: node.pose as MarkPose, data }, style: resolveMarkStyle(data, draw) },
-        ];
+        const pose = node.pose as MarkPose;
+        const data = settledMarkData(node.data as AnnotationData, pose, info.content);
+        return [{ mark: { pose, data }, style: resolveMarkStyle(data, draw) }];
       });
     },
 

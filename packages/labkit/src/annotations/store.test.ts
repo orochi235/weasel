@@ -542,7 +542,58 @@ describe('a moved mark', () => {
     const [node] = (store.toJSON().scenes.naive as { nodes: { data: unknown }[] }).nodes;
     expect(node?.data).toEqual({ target: 'naive', kind: 'line', points: LINE.points });
   });
+
+  it('reads and draws a legacy save restored before its target had a content box', () => {
+    // A target sized from its element reports 0x0 until its ref attaches, after the store is built.
+    let targets: AnnotationTargetInfo[] = [{ id: 'naive', content: { width: 0, height: 0 } }];
+    const store = loadAnnotations(legacyLine(), () => targets);
+    targets = TARGETS;
+    expect(store.get('naive/n1')?.points).toEqual(LINE.points);
+    expectNear(drawn(store), LINE.points ?? []);
+  });
+
+  it('keeps such a save following its bounds through an update', () => {
+    let targets: AnnotationTargetInfo[] = [{ id: 'naive', content: { width: 0, height: 0 } }];
+    const store = loadAnnotations(legacyLine(), () => targets);
+    targets = TARGETS;
+    const before = store.get('naive/n1');
+    if (!before) throw new Error('no mark');
+    store.update('naive/n1', { frac: { ...before.frac, x: before.frac.x + 0.1 } });
+    const moved = (LINE.points ?? []).map((p) => ({ x: p.x + 0.1, y: p.y }));
+    expectNear(store.get('naive/n1')?.points ?? [], moved);
+    const [node] = (store.toJSON().scenes.naive as { nodes: { data: object }[] }).nodes;
+    expect(node?.data).not.toHaveProperty('points');
+  });
 });
+
+/** A store saved before vertices followed the bounds: one line, its points in content fractions. */
+function legacyLine() {
+  return {
+    version: 1,
+    scenes: {
+      naive: {
+        version: 1,
+        systemLayers: [{ id: 'marks' }],
+        nodes: [
+          {
+            id: 'n1',
+            kind: 'mark',
+            layer: 'marks',
+            pose: { x: 0.1 * 256, y: 0.2 * 170, width: 0.5 * 256, height: 0.4 * 170 },
+            data: {
+              target: 'naive',
+              kind: 'line',
+              points: [
+                { x: 0.1, y: 0.6 },
+                { x: 0.6, y: 0.2 },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  };
+}
 
 describe('paintedMarks', () => {
   it("hands over a target's marks in world units with their resolved style", () => {
