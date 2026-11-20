@@ -266,6 +266,17 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P2) [agent] Nothing checks that fonts cascade the way a component expects.** A component that sets or resets
+  `font-family` (or the `font` shorthand) on its root replaces what its consumer's container chose, and nothing
+  catches it: on 2026-11-19 the audit page's lanes, rebuilt on ui's new `SpanStrip`, silently changed from the
+  page's narrow font to another. Wants a rule for which elements may set a family (the theme's roots, text inputs,
+  mono readouts by token) and a check that holds components to it: a static check over `*.module.css` in the
+  style of `check:numeric` / `check:spacing` for families set outside the allowed places, plus a browser test
+  rendering each ui and labkit component inside a container with a distinctive family and asserting every text
+  node's computed `font-family` is the container's unless the component documents an exception. Then audit
+  ui, labkit, forge and the apps, fixing what it finds. Closes when the check runs in the gate, the browser test
+  covers every exported ui and labkit component, and both pass on main.
+
 - **(P3) [maintainer] Trials in one labkit workspace have no way to share params.** Each trial owns its own
   settings, so two trials meant to show one setting from different angles each get their own copy, and editing it
   in one leaves the other behind. Wants a way for trials to declare that a param is shared, and a decision on where
@@ -502,7 +513,8 @@ Arcs toward scenes far larger than a screen, in the order each builds on the las
 comparing pezlie's wall, which pans a 1.1M-cell corpus at 60 fps). Arc 1, render-time visibility, landed
 on 2026-11-19 (`docs/concepts.md`, "Visibility index"); these rest on its feed and reach tree.
 
-- **(P3) [agent] Level of detail: a node's representation chosen by its size on screen.** Painters get
+- **(P3) [agent] Level of detail: a node's representation chosen by its size on screen.** Design:
+  `docs/proposals/2026-11-19-level-of-detail.md`. Painters get
   `pixelScale` (`packages/core/src/canvas/nodeShapeTypes.ts:23`) and nothing builds on it. A node declares
   representations by on-screen size, and the engine picks one with hysteresis so a zoom parked on a boundary
   does not flicker (pezlie's `wall/src/levels.ts:66` goes up at ×1.5 and down at ×0.67). Closes when a node
@@ -511,8 +523,8 @@ on 2026-11-19 (`docs/concepts.md`, "Visibility index"); these rest on its feed a
 - **(P3) [agent] A tile-pyramid layer.** `retain` (`packages/renderer/src/draw/retained.ts`) survives only
   whole-device-pixel pans; any zoom redraws. A layer renders its content into `z/tx/ty` power-of-two tiles
   under a per-frame budget, draws a coarser parent until a finer tile is ready, cross-fades between levels,
-  and keeps a bounded LRU with the coarsest level pinned (pezlie's `wall/src/tiles.ts`). Tiles bake through
-  `renderSceneToPixels`. Closes when a layer can be marked tiled, a zoom over a static backdrop draws from
+  and keeps a bounded LRU with the coarsest level pinned (pezlie's `wall/src/tiles.ts`). Design:
+  `docs/proposals/2026-11-19-tile-pyramid.md`. Closes when a layer can be marked tiled, a zoom over a static backdrop draws from
   tiles with no full redraw (measured), and the cache's bound is tested.
 - **(P3) [agent] A streaming scene source.** Nothing loads or drops nodes as the view moves; a consumer on
   `onViewChange` pays an undo-history entry per change. A source answers the nodes
