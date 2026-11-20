@@ -225,6 +225,20 @@ describe('startThresholdDrag', () => {
     expect(onEnd).not.toHaveBeenCalled();
   });
 
+  it('leaves an Escape that ends an IME composition to the composition', () => {
+    const start = makeStart(0, 0);
+    const onCancel = vi.fn();
+    const outer = vi.fn();
+    document.addEventListener('keydown', outer);
+    const drag = startThresholdDrag(start as unknown as React.PointerEvent, { onMove: () => {}, onEnd: () => {}, onCancel });
+    fireMove(50, 50);
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, isComposing: true }));
+    document.removeEventListener('keydown', outer);
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(outer).toHaveBeenCalledTimes(1);
+    drag.cancel();
+  });
+
   it('leaves Escape alone before the press is a drag, and after it ends', () => {
     const start = makeStart(0, 0);
     const onCancel = vi.fn();
