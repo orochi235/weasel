@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  cornerWeights, evalPatch, isTensorPatch, isValidPatch, patchBounds, patchCorner,
+  bicubicNet, cornerWeights, evalPatch, isTensorPatch, isValidPatch, patchBounds, patchCorner,
   type MeshPatch, type MeshPoint,
 } from './surface';
 
@@ -184,5 +184,31 @@ describe('patchBounds', () => {
     // of the way there, which is the whole reason this samples.
     expect(box.y).toBeGreaterThan(-1);
     expect(box.y).toBeLessThan(-0.6);
+  });
+
+  it('encloses a bowed edge whose extreme falls between grid samples', () => {
+    const p = squarePatch();
+    const points = p.points.map((pt) => ({ x: pt.x * 900, y: pt.y * 900 }));
+    points[1] = { x: 300, y: -1000 };
+    points[2] = { x: 600, y: 0 };
+    const box = patchBounds({ ...p, points });
+    // y(t) = -3000 (1 - t)² t, lowest at t = 1/3.
+    expect(box.y).toBeLessThanOrEqual(-4000 / 9);
+    expect(box.y).toBeGreaterThan(-4000 / 9 - 5);
+  });
+});
+
+describe('bicubicNet', () => {
+  it('gives a Coons patch the interior that evaluates as the same surface', () => {
+    const p = squarePatch();
+    const points = p.points.map((pt, i) => ({ x: pt.x + 0.3 * Math.sin(i * 1.7), y: pt.y + 0.3 * Math.cos(i * 2.3) }));
+    const coons: MeshPatch = { ...p, points };
+    const n = bicubicNet(coons);
+    const tensor: MeshPatch = { ...p, points: [...points, n[1][1], n[2][1], n[2][2], n[1][2]] };
+    for (const [u, v] of [[0.2, 0.7], [0.5, 0.5], [0.9, 0.1]]) {
+      const a = evalPatch(coons, u, v), b = evalPatch(tensor, u, v);
+      expect(b.x).toBeCloseTo(a.x, 9);
+      expect(b.y).toBeCloseTo(a.y, 9);
+    }
   });
 });

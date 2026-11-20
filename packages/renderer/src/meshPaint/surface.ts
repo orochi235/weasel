@@ -1,4 +1,4 @@
-import type { Rect } from '@weasel-js/geom';
+import { lerp, type Rect } from '@weasel-js/geom';
 
 /**
  * Coons and tensor-product patch surfaces — PDF's shading types 6 and 7, as
@@ -150,23 +150,71 @@ export function cornerWeights(u: number, v: number): [number, number, number, nu
   return [(1 - u) * (1 - v), u * (1 - v), u * v, (1 - u) * v];
 }
 
-/** Axis-aligned bounds of a patch, sampled on a grid: control points alone
- *  bound a Bézier but not tightly. */
+/** Axis-aligned bounds of a patch: the union, over a `steps` × `steps` split of it, of each piece's control
+ *  net. A piece's net encloses the piece, so the box encloses the surface, and it closes in on it as the
+ *  pieces shrink, where the control points of the whole patch alone bound it loosely. */
 export function patchBounds(
   patch: MeshPatch<unknown>, steps = 8,
 ): Rect {
+  const net = bicubicNet(patch);
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
   let maxY = -Infinity;
-  for (let i = 0; i <= steps; i++) {
-    for (let j = 0; j <= steps; j++) {
-      const p = evalPatch(patch, i / steps, j / steps);
-      if (p.x < minX) minX = p.x;
-      if (p.y < minY) minY = p.y;
-      if (p.x > maxX) maxX = p.x;
-      if (p.y > maxY) maxY = p.y;
+  for (let i = 0; i < steps; i++) {
+    const s0 = i / steps, s1 = (i + 1) / steps;
+    const rows = net.map((row) => [0, 1, 2, 3].map((k) => blossomAt(row, k, s0, s1)));
+    for (let j = 0; j < steps; j++) {
+      const t0 = j / steps, t1 = (j + 1) / steps;
+      for (let a = 0; a < 4; a++) {
+        const column = [rows[0][a], rows[1][a], rows[2][a], rows[3][a]];
+        for (let b = 0; b < 4; b++) {
+          const p = blossomAt(column, b, t0, t1);
+          if (p.x < minX) minX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y > maxY) maxY = p.y;
+        }
+      }
     }
   }
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+/** The bicubic net a patch evaluates as, indexed `[u][v]` as `tensorNet` is: a Coons patch's interior is the
+ *  one that makes the tensor surface equal the Coons one (PDF's type 6 to type 7 rule). */
+export function bicubicNet(patch: MeshPatch<unknown>): MeshPoint[][] {
+  if (isTensorPatch(patch)) return tensorNet(patch);
+  const p = patch.points;
+  const n: MeshPoint[][] = [
+    [p[0], p[11], p[10], p[9]],
+    [p[1], p[1], p[1], p[8]],
+    [p[2], p[2], p[2], p[7]],
+    [p[3], p[4], p[5], p[6]],
+  ];
+  for (const i of [1, 2]) {
+    for (const j of [1, 2]) {
+      const I = i === 1 ? 0 : 3, J = j === 1 ? 0 : 3, fI = 3 - I, fJ = 3 - J;
+      const mix = (k: 'x' | 'y'): number => (
+        -4 * n[I][J][k] + 6 * (n[I][j][k] + n[i][J][k]) - 2 * (n[I][fJ][k] + n[fI][J][k])
+        + 3 * (n[fI][j][k] + n[i][fJ][k]) - n[fI][fJ][k]
+      ) / 9;
+      n[i][j] = { x: mix('x'), y: mix('y') };
+    }
+  }
+  return n;
+}
+
+/** Control point `k` of the cubic `c` cut to `[a, b]`: its blossom at `a` taken `3 − k` times and `b` `k` times. */
+function blossomAt(c: readonly MeshPoint[], k: number, a: number, b: number): MeshPoint {
+  const ts = [k > 2 ? b : a, k > 1 ? b : a, k > 0 ? b : a];
+  let pts = c;
+  for (const t of ts) {
+    const next: MeshPoint[] = [];
+    for (let m = 0; m + 1 < pts.length; m++) {
+      next.push({ x: lerp(pts[m].x, pts[m + 1].x, t), y: lerp(pts[m].y, pts[m + 1].y, t) });
+    }
+    pts = next;
+  }
+  return pts[0];
 }
