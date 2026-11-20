@@ -51,7 +51,10 @@ export interface UseSelectToolOptions<TPose> {
   /**
    * Grab slop around a shape's outline, in **world** units. Default 0.
    *
-   * Only consulted under `leafPicking: 'silhouette'`. World units because
+   * Consulted under `leafPicking: 'silhouette'`, and under `'aabb'` for a node
+   * that derives its path (a connector route), as slop around that path's
+   * box: a straight horizontal or vertical route has a box with no area, and
+   * is hit only within this distance of its line. World units because
    * this hook has no view; `<SceneCanvas>` takes a screen-pixel figure
    * (`geometry.pickTolerancePx`) and divides by scale on its own pick path.
    * Without some slop a hairline outline is an unhittable target.
