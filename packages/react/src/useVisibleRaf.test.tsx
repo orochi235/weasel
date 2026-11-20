@@ -360,6 +360,15 @@ describe('useVisibleRaf', () => {
     expect(cancelAnimationFrame).not.toHaveBeenCalled();
   });
 
+  it('keeps running on a clock that calls back inside the request', () => {
+    let time = 0;
+    const frame = vi.fn();
+    const { loop } = mount(frame, { requestFrame: (cb) => { cb((time += 16)); return 1; }, cancelFrame: () => {} });
+    act(() => { loop().request(); });
+    act(() => { loop().request(); });
+    expect(frame).toHaveBeenCalledTimes(2);
+  });
+
   it('cancels a held request without running it later', () => {
     const clock = makeClock();
     const frame = vi.fn();

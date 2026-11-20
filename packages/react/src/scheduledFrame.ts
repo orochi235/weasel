@@ -91,12 +91,15 @@ export function useScheduledFrame(args: ScheduledFrameArgs): { scheduleRaf: () =
     const cancel = requestFrame ? cancelFrame : cancelAnimationFrame;
     const update = optsRef.current.phase === 'update';
     let handle: number | null = null;
+    /** Set once its own animation frame calls it: a clock may do so before returning the handle. */
+    let fired = false;
     /** The frame, from its own animation frame or run early by another loop's (`early`). */
     const fire = (time: number, early: boolean): void => {
       // An update runs once an animation frame, however many loops would run it.
       if (early && update && ranAtRef.current === time) return;
       // A frame run early, or canceled, whose callback a clock still calls.
       if (!early && handle !== null && rafRef.current !== handle) return;
+      if (!early) fired = true;
       leaveDue();
       // Run early, its own frame is dropped; the handle stays held below so requests still coalesce.
       if (early && rafRef.current !== null) cancel?.(rafRef.current);
@@ -116,6 +119,7 @@ export function useScheduledFrame(args: ScheduledFrameArgs): { scheduleRaf: () =
       else run();
     };
     handle = clock((time) => fire(time, false));
+    if (fired) return;
     rafRef.current = handle;
     cancelRef.current = cancel;
     const set = update ? dueUpdates : updating === clock ? duePaints : null;
