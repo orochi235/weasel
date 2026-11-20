@@ -54,6 +54,14 @@ describe('growRegion', () => {
     expect(inPath(g, -0.6, -0.6)).toBe(true);
   });
 
+  it('caps both ends of a zero-area line outward under a round join', () => {
+    const g = growRegion(pathFromD('M0 0 L10 0'), 1, { join: 'round' });
+    expect(boundsOfPath(g).x).toBeCloseTo(-1, 5);
+    expect(boundsOfPath(g).width).toBeCloseTo(12, 5);
+    expect(inPath(g, -0.5, 0.2)).toBe(true);
+    expect(inPath(g, 10.5, 0.2)).toBe(true);
+  });
+
   it('grows the same either way a region is wound', () => {
     const cw = growRegion(pathFromD('M0 0 L0 10 L10 10 L10 0 Z'), 1);
     expect(boundsOfPath(cw)).toMatchObject({
