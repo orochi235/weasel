@@ -118,7 +118,7 @@ function descendantGroups(scene: Scene<unknown, string, unknown>, id: NodeId): N
 
 /**
  * Add `id` and everything under it, carried through `m`, under `parent`. Each
- * copy keeps its node's kind, data and stated fields, so a declared clip, a
+ * copy keeps its node's kind, data, stated fields and copies, so a declared clip, a
  * unit scope and a mark's own children come with it; its pose goes through
  * {@link carryPose}, which carries what the node clips to as well, since a
  * clip is drawn in its node's pose. A node whose pose derives from its
@@ -144,6 +144,7 @@ function copySubtree(scene: Scene<unknown, string, unknown>, id: NodeId, m: Affi
     ...(derived ? { dependsOn: 'children' as const, derivePose: node.derivePose } : {}),
     ...(node.clipFromPose ? { clipFromPose: node.clipFromPose } : {}),
     ...(node.layout ? { layout: node.layout } : {}),
+    ...(node.kind === 'group' && node.copiesFromPose ? { copiesFromPose: node.copiesFromPose } : {}),
   });
   for (const c of scene.childrenOf(id)) copySubtree(scene, c, m, sub, skipped);
 }

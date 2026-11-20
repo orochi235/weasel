@@ -26,4 +26,16 @@ describe('bakeSymmetry', () => {
     expect(baked.data).toEqual({ label: 'L' });
     expect(baked).toMatchObject({ hidden: true });
   });
+
+  it('keeps a copied container\'s own copies', () => {
+    const { scene, group } = setup();
+    const copies = () => [[1, 0, 0, 1, 0, 50] as const];
+    const inner = scene.add({
+      kind: 'group', layer: 'main', parent: group, pose: { x: 40, y: 0, width: 10, height: 10 }, data: {},
+      copiesFromPose: copies as never,
+    } as never);
+    const baked = bakeSymmetry(scene as never, group)!.group;
+    const groups = scene.childrenOf(baked).map((c) => scene.get(c)!).filter((n) => n.kind === 'group');
+    expect(groups.map((n) => n.id === inner || (n as { copiesFromPose?: unknown }).copiesFromPose === copies)).toEqual([true, true]);
+  });
 });
