@@ -1,5 +1,4 @@
 import type { Op, Scene, SerializedSceneHistory } from '@weasel-js/core';
-import { maxOf } from '@weasel-js/geom';
 import { createPart } from '@weasel-js/registry';
 import { TRIAL_EDIT_OP } from '../trial/trialEditOp';
 import type { TrialHistorySource } from '../trial/trialHistory';
