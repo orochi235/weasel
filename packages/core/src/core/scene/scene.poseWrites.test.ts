@@ -116,6 +116,22 @@ describe('Scene.onPoseWrite', () => {
     expect(seen).toEqual([[expect.objectContaining({ id: A, from: at(0), to: at(6) })]]);
   });
 
+  it('leaves out a descendant the change both added and removed', () => {
+    const scene = createScene<null, 'l', RectPose>({ systemLayers: [{ id: 'l' }] });
+    const g = scene.add({ kind: 'group', layer: 'l', pose: at(0), data: null });
+    const k = scene.add({ kind: 'mark', layer: 'l', parent: g, pose: at(4), data: null });
+    const removed: PoseRemoval<RectPose>[] = [];
+    const seen: PoseWrite<RectPose>[] = [];
+    scene.onPoseWrite((w, r) => { seen.push(...w); removed.push(...r); });
+    scene.batch('fill and drop', () => {
+      scene.add({ kind: 'mark', layer: 'l', parent: g, pose: at(8), data: null });
+      scene.remove(g);
+    });
+    expect(seen).toEqual([]);
+    expect(removed.map((r) => r.id)).toEqual([g]);
+    expect(removed[0]!.children.map((c) => (c.node as { id: NodeId }).id)).toEqual([k]);
+  });
+
   it('reports a node an undo brings back as added', () => {
     const { scene, seen } = setup();
     scene.remove(A);
