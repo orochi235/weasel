@@ -50,7 +50,7 @@ export interface EffectRunner {
   /** Sets each option `opts` names; one named as `undefined` goes back to its
    *  default (`evaluators`, which has none, stays), and one left out stays. A step run under way starts over when
    *  any of them changes. */
-  setOptions(opts: { [K in keyof RunnerSettings]?: RunnerSettings[K] | undefined }): void;
+  setOptions(opts: { [K in keyof EffectRunnerSettings]?: EffectRunnerSettings[K] | undefined }): void;
   /** Says `run` is on screen: every preview of an older run that `run` does
    *  not show is closed. */
   drawn(run: EffectRun | undefined): void;
@@ -60,7 +60,8 @@ export interface EffectRunner {
 }
 
 /** What `setOptions` sets. */
-type RunnerSettings = Omit<EffectRunnerOptions, 'pipeline' | 'sources'>;
+/** What `setOptions` can change on a running effect runner: every option but its pipeline and sources. */
+export type EffectRunnerSettings = Omit<EffectRunnerOptions, 'pipeline' | 'sources'>;
 
 /** The pass a runner steps, if one is under way. */
 interface Stepping {
@@ -189,7 +190,7 @@ export function createEffectRunner(opts: EffectRunnerOptions): EffectRunner {
     idle: () => tail,
     setOptions(next) {
       const merged = { ...options, ...next, evaluators: next.evaluators ?? options.evaluators };
-      const keys = Object.keys(next) as Array<keyof RunnerSettings>;
+      const keys = Object.keys(next) as Array<keyof EffectRunnerSettings>;
       if (keys.every((key) => merged[key] === options[key])) return;
       for (const key of keys) if (merged[key] === undefined) delete merged[key];
       options = merged;

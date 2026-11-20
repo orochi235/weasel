@@ -89,7 +89,7 @@ export { createPass } from './effect/runner/pass';
 export type { EffectPass, RunPipelineOptions } from './effect/runner/pass';
 export { runPipeline } from './effect/runner/runPipeline';
 export { createEffectRunner } from './effect/runner/runner';
-export type { EffectRunner, EffectRunnerOptions, EffectRunnerState } from './effect/runner/runner';
+export type { EffectRunner, EffectRunnerOptions, EffectRunnerSettings, EffectRunnerState } from './effect/runner/runner';
 export type {
   EffectEvalContext,
   EffectEvalResult,
