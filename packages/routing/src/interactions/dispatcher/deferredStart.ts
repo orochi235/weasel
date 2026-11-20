@@ -7,13 +7,19 @@ import { isEmptyOngoingHandle } from './inFlightGestures';
  * runs and every read goes to the handle it returns, beginning with the move that crossed. A `start`
  * that declines, with an empty handle, passes the drag on, as it would have fallen through at the
  * press. A release short of the threshold ends a gesture that never started. A `start` that throws is
- * handed to `threw`, which ends the drag, and is never called again.
+ * handed to `threw`, which ends the drag, and is never called again. A `start` that ends the drag
+ * itself (a `cancelAll` from inside it) has the handle it returns canceled at once.
  */
 export function deferredStart(
   start: () => OngoingHandle, thresholdPx: number, threw: (err: unknown) => void,
 ): OngoingHandle {
   let inner: OngoingHandle | null = null;
   let failed = false;
+  let ended: InvocationCtx | null = null;
+  const listeners = new Map<() => void, (() => void) | undefined>();
+  const hear = (handle: OngoingHandle): void => {
+    for (const changed of listeners.keys()) listeners.set(changed, handle.subscribe?.(changed));
+  };
   const onMove = (ctx: InvocationCtx): void | 'pass' => {
     if (!inner) {
       const travel = ctx.drag?.screenDelta;
@@ -26,17 +32,32 @@ export function deferredStart(
         return;
       }
       if (isEmptyOngoingHandle(inner)) return 'pass';
+      if (ended) {
+        inner.onEnd?.(ended, 'cancel');
+        return;
+      }
+      hear(inner);
     }
     return inner.onMove?.(ctx);
   };
   const onEnd = (ctx: InvocationCtx, reason: 'commit' | 'cancel'): void => {
+    ended = ctx;
     inner?.onEnd?.(ctx, reason);
+  };
+  // Heard from the press on, so a dispatcher subscribing then hears the handle `start` returns later.
+  const subscribe = (changed: () => void): (() => void) => {
+    listeners.set(changed, inner?.subscribe?.(changed));
+    return () => {
+      listeners.get(changed)?.();
+      listeners.delete(changed);
+    };
   };
   // A proxy rather than a copy of each field: an absent method and one answering null mean
   // different things to the canvas (`previewPose`), so each must be absent until the action starts.
   const read = (key: PropertyKey): unknown => {
     if (key === 'onMove') return onMove;
     if (key === 'onEnd') return onEnd;
+    if (key === 'subscribe') return subscribe;
     if (!inner) return undefined;
     const value: unknown = Reflect.get(inner, key);
     return typeof value === 'function' ? value.bind(inner) : value;

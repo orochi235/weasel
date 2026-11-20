@@ -19,8 +19,8 @@
  *
  * ## Action-lookup miss behavior
  * When the walk reaches a binding whose `actionId` has no entry in
- * `ctx.actions.list()`, the dispatcher emits `console.warn` and returns
- * `'unhandled'`, so the gesture falls through as if unmatched.
+ * `ctx.actions.list()`, the dispatcher emits `console.warn` and skips it, so
+ * the walk goes on to the next candidate as if that binding were absent.
  */
 
 import { createEmitter } from '@weasel-js/registry';
@@ -32,7 +32,7 @@ import { endAllGestures, invokeAction, pumpGesture, type GestureRun } from './ge
 import { handOff } from './handOff';
 import { createInFlightGestures } from './inFlightGestures';
 import { createUiOngoing } from './uiOngoing';
-import { explain, resolveAll, resolveOnly } from './predict';
+import { bindsInKeymap, explain, resolveAll, resolveOnly } from './predict';
 import { rank, walk, type Attempt } from './walk';
 import { routeThroughKeymap } from './keymapRoute';
 import type { Ranking, Walked } from './ranking';
@@ -58,8 +58,8 @@ function firstRefusal(r: Ranking, walked: Walked): Refusal | null {
   return null;
 }
 
-/** Build a dispatcher. `getAction` overrides how action ids are resolved;
- *  by default the `DispatcherContext`'s registry is used. */
+/** Build a dispatcher. Input is matched against the `DispatcherContext`'s registry; `getAction`
+ *  resolves the ids `beginUiOngoing` starts, and without it that warns and returns `null`. */
 export function createDispatcher(opts?: {
   getAction?: (id: string) => Action | undefined;
 }): Dispatcher {
@@ -78,7 +78,7 @@ export function createDispatcher(opts?: {
     changed.emit();
   }
 
-  const uiOngoing = createUiOngoing(inFlight, notify, opts?.getAction);
+  const uiOngoing = createUiOngoing(inFlight, notify, opts?.getAction, () => run.endings);
 
   // The view the input being handled landed in. Set per `handleInput`, so a
   // pump of an in-flight gesture reports the view it is pinned to.
@@ -105,7 +105,7 @@ export function createDispatcher(opts?: {
 
     return routeThroughKeymap(event, ctx, {
       run: (pass, ev) => route(ev, { ...ctx, keymapPass: pass }),
-      binds: (ev) => rank(ev, { ...ctx, keymapPass: 'only' }, inFlight.engagedOwners(), false).ordered.length > 0,
+      binds: (ev) => bindsInKeymap(ev, ctx, inFlight.engagedOwners()),
       engaged: () => inFlight.handles.size > 0,
     }) ?? route(event, ctx);
   }
@@ -165,9 +165,11 @@ export function createDispatcher(opts?: {
 
   return {
     handleInput: handleInputWithNotify,
-    resolveOnly: (event, ctx) => resolveOnly(event, ctx, inFlight.engagedOwners()),
-    resolveAll: (event, ctx, resolveOpts) => resolveAll(event, ctx, inFlight.engagedOwners(), resolveOpts),
-    explain: (event, ctx, explainOpts) => explain(event, ctx, inFlight.engagedOwners(), explainOpts),
+    resolveOnly: (event, ctx) => resolveOnly(event, ctx, inFlight.engagedOwners(), inFlight.handles.size > 0),
+    resolveAll: (event, ctx, resolveOpts) =>
+      resolveAll(event, ctx, inFlight.engagedOwners(), inFlight.handles.size > 0, resolveOpts),
+    explain: (event, ctx, explainOpts) =>
+      explain(event, ctx, inFlight.engagedOwners(), inFlight.handles.size > 0, explainOpts),
     cancelAll: cancelAllWithNotify,
     inFlight: () => inFlight.handles,
     inFlightCursor: inFlight.cursor,

@@ -266,4 +266,15 @@ describe('a handle that says what it shows changed', () => {
     ctrl.end('commit');
     expect(unsubscribe).toHaveBeenCalledTimes(1);
   });
+
+  it('cancels and returns no control for a start that ends every gesture itself', () => {
+    const onEnd = vi.fn();
+    let d: ReturnType<typeof createDispatcher> | null = null;
+    const action = makeOngoingAction('scrub', { onStart: () => d!.cancelAll('cancel'), onEnd, onMove: vi.fn() });
+    d = createDispatcher({ getAction: (id) => id === action.id ? action : undefined });
+    expect(d.beginUiOngoing('scrub', {})).toBeNull();
+    expect(onEnd).toHaveBeenCalledOnce();
+    expect(onEnd).toHaveBeenCalledWith(expect.anything(), 'cancel');
+    expect(d.inFlight().size).toBe(0);
+  });
 });
