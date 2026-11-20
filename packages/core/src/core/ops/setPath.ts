@@ -2,6 +2,7 @@ import type { Op } from './types';
 import { registerKitOpFactory } from './registry';
 import { originOf, type PolygonPath } from '@weasel-js/geom';
 import { sameValue } from '../scene/sameValue';
+import { alreadyHolds } from './alreadyHolds';
 
 /** The geometry fields a `setPath` op replaces together — the path itself,
  *  whether it is closed, and the parameters it was generated from. They move
@@ -28,8 +29,10 @@ export interface SetPathArgs {
 /**
  * Op: atomically replace a PathObj's geometric fields (path + closed + params).
  * Used for pen-edit anchor mutations and parametric-shape trapdoor conversions.
- * Reports no-op when `from` and `to` are structurally equal (same path bytes,
- * closed, params), letting history skip the entry.
+ * Reports a no-op when the node already holds `to` (same path, closed,
+ * params), letting history skip the entry; the node's `path`, `closed` and
+ * `params` are read through the adapter's `getNode`, and `from` stands in only
+ * where there is none.
  *
  * `coalesceKey` defaults to `setPath:${id}` so successive geometry writes to
  * the same node (dragging a bezier anchor) merge into one undo entry within the
@@ -44,13 +47,14 @@ export function createSetPathOp(args: SetPathArgs): Op {
     coalesceKey,
     apply(adapter) {
       // Always call setPath so consumers that inspect op behavior see a
-      // consistent "this op writes (id, to)" signal. When from and to
-      // are field-equal, additionally report a no-op to history so the
-      // entry can be skipped from the undo stack. setPath with the same
-      // value is idempotent.
+      // consistent "this op writes (id, to)" signal, and report a no-op to
+      // history when the node already holds `to`. The node is the answer
+      // where it can be read: a stated `from` can be stale.
+      const held = alreadyHolds(adapter, id, (node) => fieldsEqual(
+        { path: node.path, closed: node.closed as boolean, params: node.params }, to,
+      )) ?? fieldsEqual(from, to);
       (adapter as SetPathAdapter).setPath(id, to);
-      if (fieldsEqual(from, to)) return false;
-      return undefined;
+      return held ? false : undefined;
     },
     invert() {
       return createSetPathOp({ id, from: to, to: from, label, coalesceKey });

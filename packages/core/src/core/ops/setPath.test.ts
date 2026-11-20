@@ -59,3 +59,18 @@ describe('createSetPathOp: what a polygon path compares', () => {
     expect(op.apply({ setPath: vi.fn() })).toBe(false);
   });
 });
+
+describe('createSetPathOp: the node decides the no-op', () => {
+  const rect = (width: number) => ({ path: { kind: 'rect' as const, x: 0, y: 0, width, height: 10 }, closed: true, params: undefined });
+
+  it('reports a change when a stale `from` equals `to` but the node holds something else', () => {
+    const held = rect(20);
+    const op = createSetPathOp({ id: 'a', from: rect(10), to: rect(10) });
+    expect(op.apply({ setPath: vi.fn(), getNode: () => ({ id: 'a', ...held }) })).toBeUndefined();
+  });
+
+  it('reports a no-op when the node already holds `to`, whatever `from` says', () => {
+    const op = createSetPathOp({ id: 'a', from: rect(20), to: rect(10) });
+    expect(op.apply({ setPath: vi.fn(), getNode: () => ({ id: 'a', ...rect(10) }) })).toBe(false);
+  });
+});
