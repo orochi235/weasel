@@ -26,6 +26,7 @@ describe('lanes', () => {
   it('gives the shared lane the batch while it runs, and the report once the run is done', () => {
     expect(sharedLaneOf(live)).toEqual({ state: 'waiting', text: 'batch, fleet run and merge, once every lane is patched' });
     expect(sharedLaneOf({ ...live, step: 'fleet' }).state).toBe('running');
+    expect(sharedLaneOf({ ...live, step: 'merge-wait' })).toEqual({ state: 'running', text: 'merge-wait: the batch is built; waiting for the merge lock' });
     expect(sharedLaneOf(finished)).toEqual({ state: 'done', text: '8 areas merged; fleet green' });
   });
 

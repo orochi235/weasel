@@ -23,7 +23,8 @@ export function stepText(step: LaneStepName, s: LaneStep, now: number): string {
 /** The run's line under every area's lane: the batch, the fleet run and the merge, which every area shares. */
 export function sharedLaneOf(run: AuditRun): { state: LaneStep['state']; text: string } {
   if (!run.running) return { state: 'done', text: run.report ?? 'done' };
-  if (run.step === 'batch' || run.step === 'merge' || run.step === 'fleet') {
+  if (run.step === 'merge-wait') return { state: 'running', text: 'merge-wait: the batch is built; waiting for the merge lock' };
+  if (run.step === 'batch' || run.step === 'fleet') {
     return { state: 'running', text: `${run.step}: merging every area's fixes, then one fleet run` };
   }
   return { state: 'waiting', text: 'batch, fleet run and merge, once every lane is patched' };
