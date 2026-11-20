@@ -21,3 +21,17 @@ describe('writing groups', () => {
     expect((await back(data)).clusters).toEqual([{ id: 'g', members: ['a', 'b'], label: 'Team' }]);
   });
 });
+
+describe('writing regions', () => {
+  it('writes the members of a container\'s lanes, which only a pool draws, on the page', async () => {
+    const data: DiagramData = {
+      nodes: [{ id: 'a', lines: ['A'], at: { x: 20, y: 20 } }, { id: 'b', lines: ['B'], at: { x: 200, y: 20 } }],
+      edges: [{ id: 'ab', from: 'a', to: 'b' }],
+      containers: [{ id: 'k', role: 'container', box: { x: 0, y: 200, width: 200, height: 100 }, lanes: [{ id: 'l', members: ['a'] }] }],
+    };
+    const { text, warnings } = written(data);
+    const cells = cellsOf(text);
+    expect([cells.has('a'), cells.has('ab')]).toEqual([true, true]);
+    expect(warnings).toEqual([]);
+  });
+});
