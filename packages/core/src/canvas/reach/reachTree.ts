@@ -9,10 +9,11 @@
  * It is generic over dimension and over the box: the render index boxes
  * paint, the pick indexes their broad boxes, kernel3d its 3D boxes.
  */
-import { boxMeets, boxWithin, sameBox, unionInto } from './reachRegion';
-import { ReachRec, ReachSlab } from './reachRec';
-import { BOX_ALL, BOX_NONE, BOX_SOME, type ReachQuery, type ReachSource } from './reachTypes';
-import { WideChildren } from './wideChildren';
+import { ReachBoxes } from './reachBoxes';
+import { boxMeets, boxWithin } from './reachRegion';
+import type { ReachRec } from './reachRec';
+import type { ReachQuery, ReachSource } from './reachTypes';
+import type { WideChildren } from './wideChildren';
 
 /** Children past which a container indexes them; below half of it, it stops. */
 export const WIDE_AT = 64;
@@ -27,8 +28,6 @@ export interface ReachTree {
   childrenMeeting(parent: string | null, children: readonly string[], q: ReachQuery): readonly string[];
   /** Every node whose own box meets `q`, in tree preorder, until `visit` answers false. */
   collect(q: ReachQuery, visit: (id: string) => boolean | void): void;
-  /** The own box of `id` as kept, for a reader that tests it exactly. */
-  ownOf(id: string): { kind: number; box: Float64Array; at: number } | undefined;
   /** How often it built from the whole scene, and how many nodes it holds. */
   stats(): { builds: number; records: number; wide: number };
 }
@@ -40,177 +39,71 @@ export function reachTreeBuildCount(): number {
   return totalBuilds;
 }
 
-export function createReachTree(source: ReachSource, wideAt = WIDE_AT): ReachTree {
-  const { dim } = source;
-  let slab = new ReachSlab(dim);
-  let recs = new Map<string, ReachRec>();
-  let root = new ReachRec(null, slab.alloc());
-  let token: number | null = null;
-  let builds = 0;
-  /** Records waiting to recompute, by depth, deepest drained first. */
-  let queue: ReachRec[][] = [];
-  const scratch = new Float64Array(2 * dim);
-  const image = new Float64Array(2 * dim);
+class Tree implements ReachTree {
+  private boxes: ReachBoxes;
+  private token: number | null = null;
+  private builds = 0;
 
-  const recOf = (id: string | null): ReachRec | undefined => (id === null ? root : recs.get(id));
-
-  function depthOf(rec: ReachRec): number {
-    let d = 0;
-    for (let p = rec.parent; p !== null; p = p.parent) d++;
-    return d;
+  constructor(private readonly source: ReachSource, private readonly wideAt: number) {
+    this.boxes = new ReachBoxes(source, wideAt);
   }
 
-  function enqueue(rec: ReachRec): void {
-    if (rec.queued) return;
-    rec.queued = true;
-    (queue[depthOf(rec)] ??= []).push(rec);
-  }
-
-  function create(id: string): ReachRec {
-    const rec = new ReachRec(id, slab.alloc());
-    recs.set(id, rec);
-    return rec;
-  }
-
-  function drop(rec: ReachRec): void {
-    rec.parent?.wide?.drop(rec);
-    if (rec.parent) enqueue(rec.parent);
-    recs.delete(rec.id!);
-    slab.release(rec.slot);
-  }
-
-  function readOwn(rec: ReachRec): void {
-    if (rec.id === null) {
-      rec.own = BOX_NONE;
-      rec.tags = 0;
-    } else {
-      rec.own = source.ownBox(rec.id, slab.data, slab.ownAt(rec));
-      rec.tags = source.tagsOf(rec.id);
-    }
-    rec.ownStale = false;
-  }
-
-  /** Fit a container's child index to how many children it has now. */
-  function fitWide(rec: ReachRec, kids: readonly string[]): void {
-    const wide = kids.length >= wideAt || (rec.wide !== null && kids.length >= wideAt / 2);
-    if (!wide) {
-      rec.wide = null;
-    } else if (rec.wide === null) {
-      rec.wide = new WideChildren(slab);
-      const list: ReachRec[] = [];
-      for (const k of kids) {
-        const c = recs.get(k);
-        if (c) list.push(c);
+  ensure(rebuild = true): boolean {
+    const changed = this.source.changesSince(this.token ?? undefined);
+    if (this.token === null || changed.ids === 'unknown') {
+      if (!rebuild) {
+        this.token = null;
+        return false;
       }
-      rec.wide.load(list);
-    } else if (rec.orderMoved) {
-      rec.wide.ranksStale = true;
+      this.token = changed.token;
+      this.buildAll();
+      return true;
     }
-    rec.orderMoved = false;
-    rec.childrenStale = false;
+    this.token = changed.token;
+    if (changed.ids.size === 0 && changed.parents.size === 0) return true;
+    this.apply(changed.ids, changed.parents);
+    this.boxes.drain();
+    return true;
   }
 
-  /** Recompute `rec`'s reach from its own box and its children's reaches. True when it moved. */
-  function recompute(rec: ReachRec): boolean {
-    if (rec.ownStale) readOwn(rec);
-    const kids = source.childrenOf(rec.id);
-    if (rec.childrenStale) fitWide(rec, kids);
-    const at = slab.reachAt(rec);
-    const was = rec.reach;
-    const wasTags = rec.reachTags;
-    scratch.set(slab.data.subarray(at, at + 2 * dim));
-    // Children first, into `scratch`'s twin `image`, so a copy can map their union.
-    let kind = BOX_NONE as typeof rec.reach;
-    let tags = 0;
-    if (rec.wide !== null) {
-      const b = rec.wide.bounds(image, 0);
-      kind = b === 'all' ? BOX_ALL : b ? BOX_SOME : BOX_NONE;
-      tags = rec.wide.tags;
-    } else {
-      for (const k of kids) {
-        const c = recs.get(k);
-        if (c === undefined) continue;
-        kind = unionInto(image, 0, kind, slab.data, slab.reachAt(c), c.reach, dim);
-        tags |= c.reachTags;
-      }
-    }
-    let reach = unionInto(slab.data, at, BOX_NONE, slab.data, slab.ownAt(rec), rec.own, dim);
-    reach = unionInto(slab.data, at, reach, image, 0, kind, dim);
-    const images = rec.id !== null && kind !== BOX_NONE ? source.imagesOf?.(rec.id) : null;
-    for (const map of images ?? []) {
-      if (kind === BOX_ALL) {
-        reach = BOX_ALL;
-        break;
-      }
-      const out = new Float64Array(2 * dim);
-      map(image, 0, out, 0);
-      reach = unionInto(slab.data, at, reach, out, 0, BOX_SOME, dim);
-    }
-    rec.reach = reach;
-    rec.reachTags = rec.tags | tags;
-    return reach !== was || rec.reachTags !== wasTags || (reach === BOX_SOME && !sameBox(slab.data, at, scratch, 0, dim));
+  invalidate(): void {
+    this.token = null;
   }
 
-  function drain(): void {
-    for (let d = queue.length - 1; d >= 0; d--) {
-      const level = queue[d];
-      if (level === undefined) continue;
-      for (let i = 0; i < level.length; i++) {
-        const rec = level[i]!;
-        rec.queued = false;
-        if (rec.id !== null && !recs.has(rec.id)) continue;
-        if (!recompute(rec) || rec.parent === null) continue;
-        rec.parent.wide?.put(rec);
-        enqueue(rec.parent);
-      }
-    }
-    queue = [];
-  }
-
-  function buildAll(): void {
-    builds++;
+  private buildAll(): void {
+    this.builds++;
     totalBuilds++;
-    slab = new ReachSlab(dim, Math.max(64, recs.size + 1));
-    recs = new Map();
-    root = new ReachRec(null, slab.alloc());
-    const visit = (rec: ReachRec): void => {
-      readOwn(rec);
-      for (const k of source.childrenOf(rec.id)) {
-        const c = create(k);
-        c.parent = rec;
-        visit(c);
-      }
-      recompute(rec);
-    };
-    visit(root);
+    this.boxes = new ReachBoxes(this.source, this.wideAt, Math.max(64, this.boxes.recs.size + 1));
+    this.boxes.build();
   }
 
-  function apply(ids: ReadonlySet<string>, parents: ReadonlySet<string | null>): void {
+  private apply(ids: ReadonlySet<string>, parents: ReadonlySet<string | null>): void {
+    const { boxes, source } = this;
     for (const p of parents) {
-      const rec = recOf(p);
+      const rec = boxes.recOf(p);
       if (rec === undefined) continue;
       rec.childrenStale = true;
-      enqueue(rec);
+      boxes.enqueue(rec);
     }
     // Every id first gets a record, so a node added under another added node finds its parent's.
     const live: ReachRec[] = [];
     for (const id of ids) {
       const parent = source.parentOf(id);
-      const rec = recs.get(id);
+      const rec = boxes.recs.get(id);
       if (parent === undefined) {
-        if (rec) drop(rec);
+        if (rec) boxes.drop(rec);
         continue;
       }
-      live.push(rec ?? create(id));
+      live.push(rec ?? boxes.create(id));
     }
     const joined = new Map<ReachRec, ReachRec[]>();
     for (const rec of live) {
-      const parent = recOf(source.parentOf(rec.id!) ?? null) ?? root;
+      const parent = boxes.recOf(source.parentOf(rec.id!) ?? null) ?? boxes.root;
       const joinedNow = rec.parent !== parent;
       if (joinedNow) {
         if (rec.parent) {
           rec.parent.wide?.drop(rec);
-          enqueue(rec.parent);
+          boxes.enqueue(rec.parent);
         }
         rec.parent = parent;
       }
@@ -224,77 +117,62 @@ export function createReachTree(source: ReachSource, wideAt = WIDE_AT): ReachTre
       // A record queued at its old depth would drain out of order.
       if (rec.queued) rec.queued = false;
     }
-    for (const [parent, list] of joined) rankJoined(parent, list);
-    for (const rec of live) enqueue(rec);
+    for (const [parent, list] of joined) this.rankJoined(parent, list);
+    for (const rec of live) boxes.enqueue(rec);
   }
 
   /** Rank the children that joined or moved within a wide container, when they are all at its end, after the rest;
    *  otherwise it re-ranks whole. A child leaving keeps the others' order, so it needs nothing. */
-  function rankJoined(parent: ReachRec, list: readonly ReachRec[]): void {
+  private rankJoined(parent: ReachRec, list: readonly ReachRec[]): void {
     if (parent.wide === null || parent.wide.ranksStale || parent.orderMoved) return;
-    const kids = source.childrenOf(parent.id);
+    const kids = this.source.childrenOf(parent.id);
     const tail = new Set(kids.slice(kids.length - list.length));
     if (!list.every((r) => tail.has(r.id!))) {
       parent.orderMoved = true;
       return;
     }
     for (let i = kids.length - list.length; i < kids.length; i++) {
-      const c = recs.get(kids[i]!);
+      const c = this.boxes.recs.get(kids[i]!);
       if (c) c.rank = parent.wide.nextRank++;
     }
   }
 
-  function ensure(rebuild = true): boolean {
-    const changed = source.changesSince(token ?? undefined);
-    if (token === null || changed.ids === 'unknown') {
-      if (!rebuild) {
-        token = null;
-        return false;
-      }
-      token = changed.token;
-      buildAll();
-      return true;
-    }
-    token = changed.token;
-    if (changed.ids.size === 0 && changed.parents.size === 0) return true;
-    apply(changed.ids, changed.parents);
-    drain();
-    return true;
-  }
-
-  function rankChildren(rec: ReachRec, children: readonly string[]): void {
+  private rankChildren(wide: WideChildren, children: readonly string[]): void {
     for (let i = 0; i < children.length; i++) {
-      const c = recs.get(children[i]!);
+      const c = this.boxes.recs.get(children[i]!);
       if (c) c.rank = i;
     }
-    rec.wide!.ranksStale = false;
-    rec.wide!.nextRank = children.length;
+    wide.ranksStale = false;
+    wide.nextRank = children.length;
   }
 
-  function childrenMeeting(parent: string | null, children: readonly string[], q: ReachQuery): readonly string[] {
-    const rec = recOf(parent);
+  childrenMeeting(parent: string | null, children: readonly string[], q: ReachQuery): readonly string[] {
+    const { boxes } = this;
+    const rec = boxes.recOf(parent);
     if (rec === undefined || children.length === 0) return children;
-    const { data } = slab;
+    const { slab } = boxes;
+    const { data, dim } = slab;
     // A container wholly in view: every child that paints a wanted tag meets, and the walk culls the rest by node.
     if (boxWithin(rec.reach, rec.reachTags, data, slab.reachAt(rec), dim, q)) return children;
     if (rec.wide === null) {
       return children.filter((id) => {
-        const c = recs.get(id);
+        const c = boxes.recs.get(id);
         return c === undefined || boxMeets(c.reach, c.reachTags, data, slab.reachAt(c), dim, q);
       });
     }
-    if (rec.wide.ranksStale) rankChildren(rec, children);
+    if (rec.wide.ranksStale) this.rankChildren(rec.wide, children);
     const hits: ReachRec[] = [];
     rec.wide.meeting(q, hits);
     hits.sort((a, b) => a.rank - b.rank);
     return hits.map((h) => h.id!);
   }
 
-  function collect(q: ReachQuery, visit: (id: string) => boolean | void): void {
+  collect(q: ReachQuery, visit: (id: string) => boolean | void): void {
     const walk = (parent: string | null): boolean => {
-      for (const id of childrenMeeting(parent, source.childrenOf(parent), q)) {
-        const c = recs.get(id);
-        if (c && boxMeets(c.own, c.tags, slab.data, slab.ownAt(c), dim, q) && visit(id) === false) return false;
+      for (const id of this.childrenMeeting(parent, this.source.childrenOf(parent), q)) {
+        const c = this.boxes.recs.get(id);
+        const { slab } = this.boxes;
+        if (c && boxMeets(c.own, c.tags, slab.data, slab.ownAt(c), slab.dim, q) && visit(id) === false) return false;
         if (!walk(id)) return false;
       }
       return true;
@@ -302,19 +180,14 @@ export function createReachTree(source: ReachSource, wideAt = WIDE_AT): ReachTre
     walk(null);
   }
 
-  return {
-    ensure,
-    invalidate() { token = null; },
-    childrenMeeting,
-    collect,
-    ownOf(id) {
-      const rec = recs.get(id);
-      return rec && { kind: rec.own, box: slab.data, at: slab.ownAt(rec) };
-    },
-    stats() {
-      let wide = root.wide ? 1 : 0;
-      for (const rec of recs.values()) if (rec.wide) wide++;
-      return { builds, records: recs.size, wide };
-    },
-  };
+  stats(): { builds: number; records: number; wide: number } {
+    let wide = this.boxes.root.wide ? 1 : 0;
+    for (const rec of this.boxes.recs.values()) if (rec.wide) wide++;
+    return { builds: this.builds, records: this.boxes.recs.size, wide };
+  }
+}
+
+/** A reach tree over `source`'s nodes, built on its first {@link ReachTree.ensure}. */
+export function createReachTree(source: ReachSource, wideAt = WIDE_AT): ReachTree {
+  return new Tree(source, wideAt);
 }

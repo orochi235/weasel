@@ -4,7 +4,7 @@ import { documentReads, sceneMutators } from './sceneMutators';
 import { createNotifier, type Notifier } from './notifier';
 import type { SerializedDoc } from './docValues';
 import { sceneChanges } from './sceneChanges';
-import { createSceneTouches } from './sceneTouches';
+import { createSceneTouches, type SceneTouchesEnv } from './sceneTouches';
 import { createTouchJournal } from './touchJournal';
 import { createPoseWriteLog } from './poseWrites';
 import { effectivePose } from './effectivePose';
@@ -97,6 +97,22 @@ function sceneSessions(
   return sessions;
 }
 
+/** The touched-ids feed over a scene's document and the view state of every session on it. */
+function sceneTouchesOver(
+  doc: { state: { nodes: SceneTouchesEnv['nodes'] }; store: Pick<SceneTouchesEnv, 'dependents' | 'childDerived'> },
+  sessions: Pick<SessionHost, 'each'>,
+) {
+  const journal = createTouchJournal();
+  const touches = createSceneTouches({
+    journal,
+    nodes: doc.state.nodes,
+    dependents: doc.store.dependents,
+    childDerived: doc.store.childDerived,
+    eachShown: (fn) => sessions.each((s) => { fn(s.overrides); fn(s.scroll); }),
+  });
+  return { journal, touches };
+}
+
 type SceneConfig<TData, TLayer extends string, TPose> =
   Omit<SceneOptions<TData, TLayer, TPose>, 'systemLayers' | 'initial' | 'doc'>;
 
@@ -134,14 +150,7 @@ function buildScene<TData, TLayer extends string, TPose>(
   const generateId = freshIds(options.generateId ?? defaultGenerateId, (id) => state.nodes.has(id));
   const sessions = sceneSessions(doc, notifier);
   const { selection } = sessions.own;
-  const journal = createTouchJournal();
-  const touches = createSceneTouches({
-    journal,
-    nodes: state.nodes,
-    dependents: doc.store.dependents,
-    childDerived: doc.store.childDerived,
-    eachShown: (fn) => sessions.each((s) => { fn(s.overrides); fn(s.scroll); }),
-  });
+  const { journal, touches } = sceneTouchesOver(doc, sessions);
 
   const recording = createSceneRecording({
     notifier,

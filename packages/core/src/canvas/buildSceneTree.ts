@@ -68,6 +68,35 @@ function viewInPlane(view: View, m: PlaneMap): View {
   };
 }
 
+/** The view each parallax layer is painted through, or null when none is a plane. */
+function planeViewsOf(
+  layers: readonly { id: string; parallax?: ParallaxOptions }[],
+  planes: ReturnType<typeof createLayerPlaneLookup> | null,
+  view: View,
+  camera: View | null,
+): Map<string, View> | null {
+  let out: Map<string, View> | null = null;
+  for (const l of layers) {
+    if (planes && l.parallax) {
+      const v = camera === view ? deriveParallaxView(view, l.parallax) : viewInPlane(view, planes(l.id)!);
+      (out ??= new Map()).set(l.id, v);
+    }
+  }
+  return out;
+}
+
+/** The filter `prune` answers for a walk painting the visible layers, or `forLayer` alone. */
+function pruneFor(
+  prune: SubtreeCullFor,
+  layers: readonly { id: string; visible: boolean }[],
+  forLayer: string | undefined,
+  viewOf: (layer: string) => View,
+): SubtreeCull {
+  const painting = new Set<string>();
+  for (const l of layers) if (l.visible && (forLayer === undefined || l.id === forLayer)) painting.add(l.id);
+  return prune(viewOf, painting);
+}
+
 /**
  * Walk the adapter's scene tree once and emit each node's own paint into the bucket for
  * **that node's own `layer`** — not its parent's. A node carrying `hidden` is skipped with
@@ -124,20 +153,8 @@ export function buildSceneTree<
   const buckets = new Map<string, DrawCommand[]>();
   for (const l of layers) if (l.visible) buckets.set(l.id, []);
   const planes = camera === null ? null : createLayerPlaneLookup(layers, camera);
-  let planeViews: Map<string, View> | null = null;
-  for (const l of layers) {
-    if (planes && l.parallax) {
-      const v = camera === view ? deriveParallaxView(view, l.parallax) : viewInPlane(view, planes(l.id)!);
-      (planeViews ??= new Map()).set(l.id, v);
-    }
-  }
-
-  let keep: SubtreeCull | null = null;
-  if (prune) {
-    const painting = new Set<string>();
-    for (const l of layers) if (l.visible && (forLayer === undefined || l.id === forLayer)) painting.add(l.id);
-    keep = prune((layer) => planeViews?.get(layer) ?? view, painting);
-  }
+  const planeViews = planeViewsOf(layers, planes, view, camera);
+  const keep = prune ? pruneFor(prune, layers, forLayer, (layer) => planeViews?.get(layer) ?? view) : null;
 
   const compose = adapter.composePose?.bind(adapter);
   const scrolled = compose ? adapter.childFrame?.bind(adapter) : undefined;
