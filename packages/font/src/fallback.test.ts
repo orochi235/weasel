@@ -155,6 +155,22 @@ describe('substitute policy — canvas-registered default family', () => {
   });
 });
 
+describe('with no canvas to rasterize into', () => {
+  it('misses rather than throwing, for the canvas policy and for an enrolled family', () => {
+    const noContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+    try {
+      setFontFallbackPolicy('canvas');
+      const policy = resolveFontVariant('Helvetica', 400, 'normal');
+      expect([policy.entry, policy.dynamicFace]).toEqual([null, undefined]);
+      registerCanvasFont('Georgia');
+      const enrolled = resolveFontVariant('Georgia', 400, 'normal');
+      expect([enrolled.entry, enrolled.dynamicFace]).toEqual([null, undefined]);
+    } finally {
+      noContext.mockRestore();
+    }
+  });
+});
+
 describe('canvas enrollment provenance', () => {
   it('serves an explicitly registered canvas family under every policy', async () => {
     await registerTestFont('Inter', 400, 'normal');

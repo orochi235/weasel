@@ -1,5 +1,5 @@
 import type { FontStyle } from './fontStyle';
-import { getDynamicFace } from './dynamic/dynamicAtlas';
+import { tryDynamicFace } from './dynamic/dynamicAtlas';
 import { getFontFallbackPolicy } from './fallback';
 import type { ResolveResult } from './resolveResult';
 
@@ -22,17 +22,14 @@ export function resolveCanvasFallback(
   style: FontStyle,
 ): ResolveResult | null {
   if (getFontFallbackPolicy() === 'none') return null;
-  try {
-    return {
-      entry: null,
-      dynamicFace: getDynamicFace(family, weight, style),
-      resolved: { family, weight, style },
-      // The dynamic tier rasterizes the real weight and style, so there is
-      // nothing for the shader to fake.
-      synthetic: { bold: false, italic: false },
-      source: 'canvas',
-    };
-  } catch {
-    return null;
-  }
+  const dynamicFace = tryDynamicFace(family, weight, style);
+  return dynamicFace ? {
+    entry: null,
+    dynamicFace,
+    resolved: { family, weight, style },
+    // The dynamic tier rasterizes the real weight and style, so there is
+    // nothing for the shader to fake.
+    synthetic: { bold: false, italic: false },
+    source: 'canvas',
+  } : null;
 }

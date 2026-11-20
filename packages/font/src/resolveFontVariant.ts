@@ -6,7 +6,7 @@
 
 import { variantKey } from './variantKey';
 import type { FontStyle } from './fontStyle';
-import { isCanvasFont, isExplicitCanvasFont, autoEnrollCanvasFont, getDynamicFace } from './dynamic/dynamicAtlas';
+import { isCanvasFont, isExplicitCanvasFont, autoEnrollCanvasFont, tryDynamicFace } from './dynamic/dynamicAtlas';
 import { getFontFallbackPolicy, getDefaultFontFamily } from './fallback';
 import { hasFontOutlines, outlineFace, outlineStatus } from './outline/outlineRegistry';
 import { chainPick, farPick, type ChainPick } from './familyFace';
@@ -28,10 +28,12 @@ function missResolveResult(
   // Explicit enrollment only. A family the `'canvas'` policy enrolled for
   // itself must not keep routing here after the policy changes, or `'none'`
   // could never restore the hard miss it documents.
-  if (isExplicitCanvasFont(family)) {
+  // With no canvas to rasterize into, the tier is skipped.
+  const explicit = isExplicitCanvasFont(family) ? tryDynamicFace(family, weight, style) : undefined;
+  if (explicit) {
     return {
       entry: null,
-      dynamicFace: getDynamicFace(family, weight, style),
+      dynamicFace: explicit,
       resolved: { family, weight, style },
       synthetic: { bold: false, italic: false },
       source: 'canvas',
@@ -62,13 +64,14 @@ function missResolveResult(
 
   const policy = getFontFallbackPolicy();
 
-  if (policy === 'canvas') {
+  const dynamicFace = policy === 'canvas' ? tryDynamicFace(family, weight, style) : undefined;
+  if (dynamicFace) {
     // Auto-enroll: the browser probably has this family even though no atlas
     // was baked for it. Real typeface, canvas-SDF quality.
     autoEnrollCanvasFont(family);
     return {
       entry: null,
-      dynamicFace: getDynamicFace(family, weight, style),
+      dynamicFace,
       resolved: { family, weight, style },
       synthetic: { bold: false, italic: false },
       source: 'canvas',
