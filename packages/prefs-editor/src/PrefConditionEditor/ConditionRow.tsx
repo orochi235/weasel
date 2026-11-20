@@ -57,7 +57,11 @@ function ValueControl({ label, row, leaf, comparison, onChange }: {
       value: row.test[op],
       setValue: (value) => { if (typeof value === 'number' && !Number.isNaN(value)) onChange(withValue(row, comparison, value)); },
     });
-    if (field?.kind === 'number') return <PropertyControl {...field} control="input" name={label} />;
+    if (field?.kind === 'number') {
+      // The pref's own readout and clearing are not the compared number's, which is always a number typed.
+      const { readOnly: _readOnly, onClear: _onClear, ...typed } = field;
+      return <PropertyControl {...typed} control="input" name={label} />;
+    }
   }
   const { options } = leaf as PrefEnum;
   if (op === 'in') {

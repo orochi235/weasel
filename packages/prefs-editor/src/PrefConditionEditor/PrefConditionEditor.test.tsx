@@ -116,6 +116,17 @@ describe('PrefConditionEditor', () => {
     expect(seen.value).toEqual({ path: 'view.step', atMost: 12 });
   });
 
+  it('types the number a row compares a readout pref with', () => {
+    const schema: PrefGroup = { name: 'Root', children: {
+      size: { kind: 'number', name: 'Size', description: '', default: 12, readout: true } as PrefLeaf,
+    } };
+    const seen = open({ path: 'size', atLeast: 4 }, schema);
+    const box = within(row(1)).getByRole('spinbutton', { name: 'Condition 1 value' });
+    fireEvent.change(box, { target: { value: '7' } });
+    fireEvent.blur(box);
+    expect(seen.value).toEqual({ path: 'size', atLeast: 7 });
+  });
+
   it('shows a number with a display unit in that unit, reads one typed in it, and writes the stored number', () => {
     const turn = {
       kind: 'number', name: 'Turn', description: '', default: 0,
