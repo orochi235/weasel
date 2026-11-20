@@ -68,9 +68,47 @@ function controlOf(argType: ArgType): Control | false {
   return { type: control?.type, min: control?.min, max: control?.max, step: control?.step, icons: control?.icons };
 }
 
-function stringOptions(argType: ArgType): string[] | null {
+/** A choice control's options, as the strings an enum holds, with the values they stand for. */
+export interface OptionChoice {
+  labels: readonly string[];
+  values: readonly unknown[];
+}
+
+const CHOICE_CONTROLS: ReadonlySet<string | undefined> = new Set(['select', 'radio', 'inline-radio', undefined]);
+
+const hasStringForm = (o: unknown): boolean =>
+  o === null || o === undefined || ['string', 'number', 'boolean', 'bigint'].includes(typeof o);
+
+/** `argType`'s options as a choice, each read as `String(option)`; null for none, or for options that have no string
+ *  form or read alike, which no enum can tell apart. */
+function optionChoice(argType: ArgType): OptionChoice | null {
   const opts = argType.options;
-  return opts && opts.length > 0 && opts.every((o) => typeof o === 'string') ? (opts as string[]) : null;
+  if (!opts || opts.length === 0 || !opts.every(hasStringForm)) return null;
+  const labels = opts.map(String);
+  return new Set(labels).size === labels.length ? { labels, values: opts } : null;
+}
+
+/** The choice each key's control offers, for every key whose argType draws its options as one. */
+export function argChoices(argTypes: Readonly<Record<string, ArgType | undefined>>): Record<string, OptionChoice> {
+  const out: Record<string, OptionChoice> = {};
+  for (const [key, argType] of Object.entries(argTypes)) {
+    const control = argType ? controlOf(argType) : false;
+    const choice = control && CHOICE_CONTROLS.has(control.type) ? optionChoice(argType!) : null;
+    if (choice) setOwn(out, key, choice);
+  }
+  return out;
+}
+
+/** The option a choice's config value stands for; any other value as it is. */
+export function choiceValue(choice: OptionChoice | undefined, value: unknown): unknown {
+  const at = choice && typeof value === 'string' ? choice.labels.indexOf(value) : -1;
+  return at === -1 ? value : choice!.values[at];
+}
+
+/** The config value standing for an option of a choice; any other value as it is. */
+export function choiceLabel(choice: OptionChoice | undefined, value: unknown): unknown {
+  const at = choice ? choice.values.findIndex((v) => Object.is(v, value)) : -1;
+  return at === -1 ? value : choice!.labels[at];
 }
 
 function inferred(value: unknown): Leaf | null {
@@ -204,8 +242,7 @@ function bounded(node: ReturnType<typeof f.number>, control: Control) {
   return out;
 }
 
-function controlled(control: Control, argType: ArgType, has: boolean, value: unknown): Leaf | null {
-  const options = stringOptions(argType);
+function controlled(control: Control, key: string, argType: ArgType, has: boolean, value: unknown): Leaf | null {
   // Storybook passes an argTypes-only key as undefined, so the component's own default applies.
   const def = <T>() => (has ? value : undefined) as T;
   switch (control.type) {
@@ -229,14 +266,23 @@ function controlled(control: Control, argType: ArgType, has: boolean, value: unk
     case 'radio':
     case 'inline-radio':
     case undefined: {
-      if (!options) return control.type === undefined && has ? structured(argType, value) : null;
+      const choice = optionChoice(argType);
+      if (!choice) {
+        if (argType.options && argType.options.length > 0) {
+          console.warn(
+            `forge: the "${key}" control's options are not each a string, number, boolean, null or undefined that ` +
+              'reads apart from the rest, so it is not drawn as a choice',
+          );
+        }
+        return has ? structured(argType, value) : null;
+      }
       const { icons } = control;
       const node = f.enum(
-        def<string>(),
-        icons ? options.map((value) => {
+        choiceLabel(choice, def()) as string,
+        icons ? choice.labels.map((value) => {
           const ref = iconFromData(getOwn(icons, value));
           return { value, label: value, ...(ref ? { icon: ref } : {}) };
-        }) : options,
+        }) : choice.labels,
       );
       return control.type === 'radio' || control.type === 'inline-radio' ? node.radio() : node;
     }
@@ -269,7 +315,7 @@ export interface ControlMatchers {
 
 /** Storybook's rule: a string arg with no control or options whose name matches `color` gets a color picker. */
 function matched(key: string, value: unknown, argType: ArgType | undefined, matchers: ControlMatchers): Leaf | null {
-  if (typeof value !== 'string' || argType?.control !== undefined || stringOptions(argType ?? {})) return null;
+  if (typeof value !== 'string' || argType?.control !== undefined || (argType?.options?.length ?? 0) > 0) return null;
   return matchers.color?.test(key) ? f.color(value) : null;
 }
 
@@ -292,7 +338,7 @@ export function argsToSchema(
 
     let node: Leaf | null =
       (has ? matched(key, value, argType, matchers) : null) ??
-      (control ? controlled(control, argType ?? {}, has, value) : has ? inferred(value) : null);
+      (control ? controlled(control, key, argType ?? {}, has, value) : has ? inferred(value) : null);
     if (!node) continue;
     if (argType && (argType.control === false || argType.table?.disable)) node = node.hidden();
     if (argType?.description) node = node.describe(argType.description);

@@ -73,6 +73,29 @@ describe('useArgs with values that cannot cross the port', () => {
     expect(captured?.[0]).toMatchObject({ n: 2, onClick: next });
   });
 
+  it('renders a choice of non-string options with the option itself, and sends an update as its string form', () => {
+    let captured: ReturnType<typeof useArgs> | undefined;
+    const story = loadCsfModule(
+      {
+        default: { title: 'ui/Size', args: { size: 12 }, argTypes: { size: { control: 'select', options: [8, 12, 16] } } },
+        A: {
+          render: function Read() {
+            captured = useArgs();
+            return <p>{typeof captured[0].size}:{String(captured[0].size)}</p>;
+          },
+        },
+      },
+      'Auto',
+    )[0] as LoadedStory;
+    const { sent, replace } = mount(story);
+    expect(screen.getByText('number:12')).toBeInTheDocument();
+    act(() => captured?.[1]({ size: 16 }));
+    expect(sent).toEqual([['size', '16']]);
+    expect(screen.getByText('number:16')).toBeInTheDocument();
+    replace({ size: '8' });
+    expect(screen.getByText('number:8')).toBeInTheDocument();
+  });
+
   it('resets frame-local values back to the original args', () => {
     let captured: ReturnType<typeof useArgs> | undefined;
     const { sent } = mount(

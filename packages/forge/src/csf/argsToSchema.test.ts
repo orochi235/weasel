@@ -82,6 +82,25 @@ describe('argsToSchema', () => {
       .toEqual({ kind: 'enum', default: 'serif', options: options('sans', 'serif') });
   });
 
+  it('draws options that are not strings as a choice of their string forms', () => {
+    for (const control of ['select', 'radio', undefined]) {
+      const node = leaf({ size: 12 }, { size: { ...(control ? { control } : {}), options: [8, 12, 16] } }, 'size');
+      expect(node).toMatchObject({ kind: 'enum', default: '12', annotations: { options: options('8', '12', '16') } });
+    }
+    expect(leaf({ at: null }, { at: { control: 'select', options: ['auto', 0, null] } }, 'at'))
+      .toMatchObject({ kind: 'enum', default: 'null', annotations: { options: options('auto', '0', 'null') } });
+  });
+
+  it('warns, and falls back to the value, for options no enum can tell apart', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(shape(leaf({ n: 1 }, { n: { control: 'select', options: [1, '1'] } }, 'n'))).toEqual({ kind: 'number', default: 1 });
+    expect(shape(leaf({ o: { a: 1 } }, { o: { control: 'radio', options: [{ a: 1 }, { a: 2 }] } }, 'o')))
+      .toEqual({ kind: 'json', default: { a: 1 } });
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn.mock.calls[0]?.[0]).toMatch(/"n" control's options/);
+    warn.mockRestore();
+  });
+
   it('maps options with no control to an enum', () => {
     expect(shape(leaf({ mode: '2d' }, { mode: { options: ['1d', '2d'] } }, 'mode')))
       .toEqual({ kind: 'enum', default: '2d', options: options('1d', '2d') });
