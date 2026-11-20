@@ -309,6 +309,27 @@ describe('CssVarsPanel', () => {
     expect(vars().queryByRole('button', { name: 'Save to theme' })).toBeNull();
   });
 
+  it('keeps an edit made while a save is in flight, to a token or a scale the save wrote', async () => {
+    location.hash = '#/x--a';
+    const { release } = stubHeldStore();
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    const { received } = await openTrial('A');
+    await editFontBase(String(editedBase));
+    await editToken('--wzl-gray-50', '#111111');
+
+    fireEvent.click(vars().getByRole('button', { name: 'Save to theme' }));
+    await editToken('--wzl-gray-50', '#333333');
+    fireEvent.change(vars().getByLabelText('Filter'), { target: { value: '' } });
+    await editFontBase(String(editedBase + 1));
+    await release();
+
+    expect(row(vars(), 'font').getByRole('textbox', { name: 'font base' })).toHaveValue(String(editedBase + 1));
+    expect((setsOf(received) as VarsSet[]).some((m) => m.value === null)).toBe(false);
+    await editToken('--wzl-gray-50', '#333333');
+    expect(row(vars(), '--wzl-gray-50').getByRole('textbox')).toHaveValue('#333333');
+    expect(vars().getByRole('button', { name: 'Save to theme' })).toBeInTheDocument();
+  });
+
   it('saves a font base edit into the current density’s seed, then drops the overrides the theme now carries', async () => {
     location.hash = '#/x--a';
     const calls = stubStore({ status: 200, body: { status: 'saved', hash: 'h2', issues: [], regenerated: true, problems: [] } });

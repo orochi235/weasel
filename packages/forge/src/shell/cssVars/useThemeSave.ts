@@ -1,7 +1,8 @@
 import { type AxisDefs, THEME_SOURCES } from '@weasel-js/theme';
 import { httpThemeApi, type ThemeApi } from '@weasel-js/theme/engine';
 import { useMemo, useState } from 'react';
-import { deepEqual } from '@weasel-js/registry';
+import { deepEqual, getOwn } from '@weasel-js/registry';
+import type { TokenScale } from '@weasel-js/labkit';
 import type { StoryGlobals } from '../../protocol/messages';
 import type { CssOverrides } from './overrides';
 import { applyScaleEdits, type ScaleEdit } from './saveScales';
@@ -93,16 +94,19 @@ export function useThemeSave({ globals, themeApi, scales, overrides, history }: 
         setNotice({ outcome: 'error', text: result.message });
         return;
       }
-      // What was saved is the theme's own now, so nothing from before the save has a value to go back to.
-      const saved = new Set([
-        ...scales.flatMap((scale) => scale.tokens),
-        ...Object.keys(tokens).map((token) => `${TOKEN_PREFIX}${token}`),
-      ]);
-      const groups = new Set(scales.map((scale) => scale.group));
+      // What was saved is the theme's own now, so nothing from before the save has a value to go back to. An edit
+      // made while the save was out wrote no part of it, and stays.
+      const saved = new Map(
+        [...scales.flatMap((scale) => scale.tokens), ...Object.keys(tokens).map((token) => `${TOKEN_PREFIX}${token}`)].map(
+          (name) => [name, getOwn(overrides, name)],
+        ),
+      );
       const now = history.current();
+      const unsaved = (group: string, scale: TokenScale) =>
+        !scales.some((s) => s.group === group && deepEqual({ base: scale.base, rule: scale.rule }, s.edit));
       history.reset({
-        overrides: Object.fromEntries(Object.entries(now.overrides).filter(([name]) => !saved.has(name))),
-        scales: Object.fromEntries(Object.entries(now.scales).filter(([group]) => !groups.has(group))),
+        overrides: Object.fromEntries(Object.entries(now.overrides).filter(([name, value]) => saved.get(name) !== value)),
+        scales: Object.fromEntries(Object.entries(now.scales).filter(([group, scale]) => unsaved(group, scale))),
       });
       setNotice(
         result.regenerated || result.problems.length === 0
