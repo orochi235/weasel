@@ -252,4 +252,9 @@ describe('writing DOT', () => {
     expect(page.data.nodes.map((n) => n.colors?.strokeWidth)).toEqual([1.5, 1.5]);
     expect(page.data.edges[0]!.colors?.width).toBe(2);
   });
+
+  it('writes a node\'s size on a page that is not placed', () => {
+    const page = back(pageOf({ nodes: [{ id: 'a', width: 144, height: 72 }, { id: 'b' }], edges: [] }));
+    expect(page.data.nodes.map((n) => [n.id, n.width, n.height])).toEqual([['a', 144, 72], ['b', undefined, undefined]]);
+  });
 });

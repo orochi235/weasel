@@ -49,7 +49,8 @@ function nodeAttrs(out: GraphOut, node: DataNode, placed: boolean): string {
     color('fillcolor', own.fill), color('color', own.stroke), color('fontcolor', own.text),
     penwidth(own.strokeWidth),
     placed ? `pos="${dotNumber(node.at!.x + node.width! / 2)},${dotNumber(page - node.at!.y - node.height! / 2)}"` : null,
-    placed ? `width=${dotNumber(node.width! / POINTS_PER_INCH)}, height=${dotNumber(node.height! / POINTS_PER_INCH)}` : null,
+    node.width !== undefined && Number.isFinite(node.width) ? `width=${dotNumber(node.width / POINTS_PER_INCH)}` : null,
+    node.height !== undefined && Number.isFinite(node.height) ? `height=${dotNumber(node.height / POINTS_PER_INCH)}` : null,
   ]);
 }
 
