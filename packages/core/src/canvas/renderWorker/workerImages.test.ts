@@ -47,6 +47,28 @@ describe('answerImage', () => {
     await settle();
     expect(reply).toHaveBeenCalledWith({ type: 'image', id: 1, src, bitmap: expect.objectContaining({ width: 200 }) });
   });
+
+  it('waits for its own source to re-raster, not for any image on the page to land', async () => {
+    let finish: (b: ImageBitmap) => void = () => {};
+    __setImageLoaderForTests((src, size) => {
+      if (src === 'other.png') return Promise.resolve({ width: 1, height: 1, close() {} } as ImageBitmap);
+      if (!size) return Promise.resolve({ width: 200, height: 200, close() {} } as ImageBitmap);
+      return new Promise<ImageBitmap>((r) => { finish = r; });
+    });
+    vi.stubGlobal('createImageBitmap', async (b: ImageBitmap) => b);
+    const settle = async () => { for (let i = 0; i < 5; i++) await Promise.resolve(); };
+    const src = 'sharp.svg';
+    getImageBitmap(src);
+    await settle();
+    const reply = vi.fn();
+    answerImage({ type: 'image', id: 1, src, size: { width: 800, height: 800 } }, reply);
+    getImageBitmap('other.png');
+    await settle();
+    expect(reply).not.toHaveBeenCalled();
+    finish({ width: 800, height: 800, close() {} } as ImageBitmap);
+    await settle();
+    expect(reply).toHaveBeenCalledWith({ type: 'image', id: 1, src, bitmap: expect.objectContaining({ width: 800 }) });
+  });
 });
 
 describe('loadFromPage', () => {

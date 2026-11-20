@@ -45,13 +45,19 @@ export function answerImage(
   reply: (answer: Extract<ToWorker, { type: 'image' }>) => void,
 ): () => void {
   const { id, src, size } = request;
-  let tries = 0;
+  let landings = 0;
+  let seen: ImageBitmap | undefined;
+  let first = true;
   const attempt = (): boolean => {
     const bitmap = getImageBitmap(src, size);
+    // The ready notice is the page's, for any source: only a new raster of this one is a landing.
+    if (!first && bitmap !== seen) landings++;
+    first = false;
+    seen = bitmap;
     const bigEnough = !size || (bitmap && bitmap.width >= size.width && bitmap.height >= size.height);
     // A raster smaller than asked for waits for one re-raster landing, no longer, and for none when
     // the page starts none: its texture side may be smaller than the worker's.
-    if (bitmap && (bigEnough || tries > 0 || !imagePending(src))) {
+    if (bitmap && (bigEnough || landings > 0 || !imagePending(src))) {
       // A copy, so the page's own stays whole and the worker's cache can own the one it gets.
       createImageBitmap(bitmap).then(
         (copy) => reply({ type: 'image', id, src, bitmap: copy }),
@@ -65,7 +71,6 @@ export function answerImage(
       reply({ type: 'image', id, src, error: `weasel: could not load ${src}` });
       return true;
     }
-    tries++;
     return false;
   };
   if (attempt()) return () => {};
