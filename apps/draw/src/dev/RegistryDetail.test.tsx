@@ -211,3 +211,15 @@ describe('op kind detail for a kind with no ops export', () => {
     expect(container.textContent).not.toMatch(/undefined/);
   });
 });
+
+describe('RouteBadge held', () => {
+  it('tells a hover that needs a held button from one that allows it and from plain hover', () => {
+    const text = (route: string) => renderWithIcons(<RouteBadge route={route} />).container.textContent;
+    const plain = text('[*] hover');
+    const required = text('[*] hover +held');
+    const optional = text('[*] hover ?held');
+    expect(new Set([plain, required, optional]).size).toBe(3);
+    expect(required).toMatch(/held/);
+    expect(optional).toMatch(/held/);
+  });
+});
