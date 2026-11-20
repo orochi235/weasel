@@ -2935,3 +2935,10 @@ Calls the lanes made without a ruling:
   then `DFLT`'s, then the rest in ScriptList order, and taking the first whose lookups cover the pair. Layout knows
   no run's script, so picking one script for every pair was the alternative, and loses kerning other scripts' lookups
   alone carry.
+## Audit round forty-nine (2026-11-20): geom, part one
+
+- 2026-11-20 (the fixer's call): in a length table, a subpath a drawing command opens after `Z` with no `M` has no
+  anchor of its own at its start, so its first segment spans no anchor range: `anchorAtLength` along it answers the
+  anchor it ends on, and `lengthAtSegmentFraction` gives it no share. Its start had taken the closed subpath's first
+  anchor, and the anchor queries answered on the wrong subpath. Numbering the implicit start, which would shift every
+  later authored anchor, was the alternative.
