@@ -1,5 +1,5 @@
 import { registerEffect, type Effect, type TextureHandle } from '@weasel-js/renderer';
-import { DEFAULT_THRESHOLD, WHITE } from '../shared';
+import { DEFAULT_THRESHOLD, DITHER_METHODS, WHITE, checkMethod } from '../shared';
 import type { Rgb, Rgba } from '../types';
 import { DITHER_FRAG, DITHER_WGSL } from './frag';
 import type { DeviceGrid } from './deviceGrid';
@@ -52,7 +52,10 @@ const premultiplied = ([r, g, b, a]: Rgba): number[] => {
 export function dither(options: DitherOptions = {}): Effect[] {
   const method = options.method ?? 'threshold';
   if (method !== 'threshold' && method !== 'bayer') {
-    throw new Error(`dither: '${String(method)}' is error diffusion, which runs on the CPU only (ditherPixels)`);
+    if ((DITHER_METHODS as readonly string[]).includes(method as string)) {
+      throw new Error(`dither: '${String(method)}' is error diffusion, which runs on the CPU only (ditherPixels)`);
+    }
+    checkMethod('dither', method, ['threshold', 'bayer']);
   }
   const grid = options.grid === undefined || options.grid === 'screen' ? SCREEN : options.grid;
   if (options.protect && grid === SCREEN) {

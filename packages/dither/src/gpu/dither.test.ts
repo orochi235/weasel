@@ -31,6 +31,11 @@ describe('dither (GPU)', () => {
 
   it('refuses error diffusion, which no fragment shader can compute', () => {
     expect(() => dither({ method: 'floyd-steinberg' as never })).toThrow(/CPU/);
+    expect(() => dither({ method: 'atkinson' as never })).toThrow(/CPU/);
+  });
+
+  it('refuses a method nobody knows without calling it error diffusion', () => {
+    expect(() => dither({ method: 'ordered' as never })).toThrow(/'ordered' is not a method it takes \(threshold, bayer\)$/);
   });
 
   it('refuses a protect mask on the screen grid, since the mask is in dots', () => {

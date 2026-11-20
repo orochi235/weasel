@@ -1,4 +1,4 @@
-import type { Rgb } from './types';
+import type { DitherMethod, Rgb } from './types';
 import { wrapPositive } from '@weasel-js/geom';
 
 /** The classic 4×4 Bayer index matrix, row-major. The GPU shader embeds this
@@ -11,6 +11,16 @@ export const LUMA: readonly [number, number, number] = [0.299, 0.587, 0.114];
 export const DEFAULT_THRESHOLD = 128;
 
 export const WHITE: Rgb = [255, 255, 255];
+
+/** Every `DitherMethod`, the error-diffusion ones last. */
+export const DITHER_METHODS: readonly DitherMethod[] = ['threshold', 'bayer', 'floyd-steinberg', 'atkinson'];
+
+/** Throws unless `method` is one of `methods`. */
+export function checkMethod(caller: string, method: unknown, methods: readonly string[]): void {
+  if (!methods.includes(method as string)) {
+    throw new RangeError(`${caller}: '${String(method)}' is not a method it takes (${methods.join(', ')})`);
+  }
+}
 
 /** Throws unless `width` and `height` are whole numbers of pixels, zero included. */
 export function checkImageSize(caller: string, width: number, height: number): void {
