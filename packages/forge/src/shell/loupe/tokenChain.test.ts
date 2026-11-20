@@ -47,3 +47,33 @@ it('reads a declaration written after a nested rule as its parent rule’s', () 
     ['--wzl-fg', ':root'],
   ]);
 });
+
+it('walks again when an ancestor’s class changes which rule supplies the same color', () => {
+  document.head.append(document.createElement('style'));
+  document.body.innerHTML = '<div class="a"><p class="x">Hi</p></div>';
+  const p = document.querySelector('.x') as HTMLElement;
+  vi.mocked(cssRulesOf).mockReturnValue(
+    list([
+      { type: 1, selectorText: '.a .x', style: declarations('color: var(--wzl-accent)'), cssRules: list([]) },
+      { type: 1, selectorText: '.b .x', style: declarations('color: var(--wzl-link)'), cssRules: list([]) },
+    ]),
+  );
+  const at = { element: p, property: 'color', value: 'rgb(0, 0, 255)' } as const;
+  expect(tokenChain(at)[0]?.selector).toBe('.a .x');
+  (p.parentElement as HTMLElement).className = 'b';
+  expect(tokenChain(at)[0]?.selector).toBe('.b .x');
+});
+
+it('walks again when a style element in the body is rewritten', async () => {
+  const sheet = document.body.appendChild(document.createElement('style'));
+  sheet.textContent = '.x { color: blue }';
+  document.body.insertAdjacentHTML('beforeend', '<p class="x">Hi</p>');
+  const p = document.querySelector('.x') as HTMLElement;
+  let rules = list([{ type: 1, selectorText: '.x', style: declarations('color: var(--wzl-accent)'), cssRules: list([]) }]);
+  vi.mocked(cssRulesOf).mockImplementation(() => rules);
+  const at = { element: p, property: 'color', value: 'rgb(0, 0, 255)' } as const;
+  expect(tokenChain(at)[0]?.declared).toBe('var(--wzl-accent)');
+  rules = list([{ type: 1, selectorText: '.x', style: declarations('color: var(--wzl-link)'), cssRules: list([]) }]);
+  sheet.textContent = '.x { color: blue; }';
+  expect(tokenChain(at)[0]?.declared).toBe('var(--wzl-link)');
+});
