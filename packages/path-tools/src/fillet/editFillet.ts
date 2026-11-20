@@ -14,7 +14,6 @@ import {
   CORNER_KEYWORDS,
   cornerFrames,
   cornerSpecAt,
-  withCorner,
   type CornerFrame,
   type CornerKeyword,
   type CornerShape,
@@ -23,6 +22,7 @@ import {
 import { editingLayer, inPlane, pathOperationTags, type EditAnchorsDep } from '@weasel-js/core';
 import { createPathEditPreview } from '../pathEdit/editAnchors/preview';
 import { icon } from '../icons.gen';
+import { withCornerRadii } from './cornerRadii';
 import type {} from '../actionParamSchema';
 
 /** The shape a corner with no spec yet takes. */
@@ -74,11 +74,7 @@ interface CornerTarget {
 
 /** `path` with `radius` on every target, each clamped to the room it has. */
 function withRadius(path: PolygonPath, targets: readonly CornerTarget[], radius: number): PolygonPath {
-  let out = path;
-  for (const { frame, shape } of targets) {
-    out = withCorner(out, frame.index, { shape, radius: Math.max(0, Math.min(radius, frame.maxTrim)) });
-  }
-  return out;
+  return withCornerRadii(path, targets.map(({ frame, shape }) => ({ index: frame.index, shape, radius })));
 }
 
 /** Enabled while a path is open. */
