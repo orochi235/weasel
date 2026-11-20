@@ -6,6 +6,7 @@ import type { View } from 'core/viewport/view';
 import type { KitSettingsStore } from '@weasel-js/react';
 
 import type { ModifierState, OngoingOverlay } from '@weasel-js/routing';
+import type { CursorSpec } from '@weasel-js/cursor';
 import type { GestureFrames } from './frames';
 export type { GestureFrames, ModifierState };
 
@@ -165,6 +166,9 @@ export interface BehaviorResult<TPose> {
   snap?: SnapTarget<TPose> | null;
   /** Chrome to paint beside the drag this frame, added to the other behaviors'. */
   overlays?: readonly OngoingOverlay[];
+  /** The cursor the drag shows this frame, in place of the action's own. A
+   *  later behavior's replaces an earlier one's. */
+  cursor?: CursorSpec;
 }
 
 /** What a move behavior's `onEnd` is told. */

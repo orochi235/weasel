@@ -33,6 +33,9 @@ export interface HoverCursorInput {
   onLeave(): void;
   /** A modifier or hotkey changed, which re-routes the predicted drag with no pointer movement. */
   onKey(e: KeyboardEvent): void;
+  /** A dispatcher changed: a gesture in flight may show another cursor with no input to carry it, as a
+   *  dwell elapsing under a held pointer does. */
+  changed(): void;
   clear(): void;
 }
 
@@ -156,6 +159,10 @@ export function hoverCursorInput(
       // A modifier changing over a resting pointer is a hover with new modifiers.
       if (changed && hears()) hoverAt(last);
       refreshSoon();
+    },
+    changed() {
+      if (!canvas || !last || dispatcherNow().inFlight().size === 0) return;
+      override.apply(dispatcherNow().inFlightCursor());
     },
     clear: override.clear,
   };
