@@ -12,7 +12,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import type { Graph, GraphCluster } from '../graph';
 import type { Bounds } from '../outline';
 import { unionRects } from '@weasel-js/geom';
-import { boxAround } from '../clusterBox';
+import { boxAround } from '../cluster';
 import { grownBy } from '../footprint';
 import { center, extent, type LayoutAxes, type LayoutDirection, type LayoutPorts } from '../layout';
 import { FACES, hasCompassPort, type Compass } from '../route';
