@@ -1,28 +1,8 @@
+import { isNamedColor } from './color';
 import { parseHexBytes } from './hex';
 
 const COLOR_FUNCTION = /^(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix)\([^{};]+\)$/i;
-const KEYWORDS = new Set([
-  'transparent',
-  'currentcolor',
-  'black',
-  'white',
-  'gray',
-  'silver',
-  'red',
-  'orange',
-  'yellow',
-  'gold',
-  'lime',
-  'green',
-  'teal',
-  'cyan',
-  'blue',
-  'navy',
-  'purple',
-  'magenta',
-  'pink',
-  'brown',
-]);
+const KEYWORDS = new Set(['transparent', 'currentcolor']);
 
 const CSS_WIDE = new Set(['inherit', 'initial', 'unset', 'revert', 'revert-layer']);
 
@@ -39,5 +19,5 @@ export function parsesAsColor(value: string, supports: ((value: string) => boole
   // `CSS.supports` accepts any `var()`, and any CSS-wide keyword, for any property.
   if (!v || v.includes('var(') || CSS_WIDE.has(v.toLowerCase())) return false;
   if (supports) return supports(v);
-  return parseHexBytes(v) !== null || COLOR_FUNCTION.test(v) || KEYWORDS.has(v.toLowerCase());
+  return parseHexBytes(v) !== null || COLOR_FUNCTION.test(v) || KEYWORDS.has(v.toLowerCase()) || isNamedColor(v);
 }
