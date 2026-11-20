@@ -22,9 +22,10 @@ export interface TileGeometry {
   shapes: TileShape[];
 }
 
-/** Defaults per tile kind, matching each factory's signature. */
+/** Defaults per tile kind, matching each factory's signature. A given `size` rounds to whole pixels, since
+ *  the raster tile can only hold whole ones and the vector tile has to repeat at the same period. */
 export function tileSize(spec: TilePatternSpec): number {
-  if (spec.size !== undefined) return spec.size;
+  if (spec.size !== undefined) return Math.round(spec.size);
   switch (spec.kind) {
     case 'hatch': return 5;
     case 'crosshatch': return 6;

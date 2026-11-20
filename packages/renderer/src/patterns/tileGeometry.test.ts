@@ -79,4 +79,10 @@ describe('tileGeometry on sizes that draw nothing', () => {
       }
     }
   });
+
+  it('rounds a fractional size to the whole pixels a raster tile holds', () => {
+    const geometry = tileGeometry({ kind: 'hatch', color: 'red', size: 5.5 });
+    expect(geometry.size).toBe(6);
+    expect(geometry).toEqual(tileGeometry({ kind: 'hatch', color: 'red', size: 6 }));
+  });
 });
