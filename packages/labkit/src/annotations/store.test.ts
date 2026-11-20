@@ -595,6 +595,65 @@ function legacyLine() {
   };
 }
 
+describe('a target with no content box', () => {
+  const RECT: AnnotationInit = {
+    target: 'naive',
+    kind: 'rect',
+    frac: { x: 0.25, y: 0.5, width: 0.25, height: 0.25 },
+  };
+
+  it('reads its marks where they were once the instrument stops declaring it', () => {
+    let targets: AnnotationTargetInfo[] = TARGETS;
+    const store = createMarkStore({ targets: () => targets });
+    const id = store.add(RECT);
+    expect(store.get(id)?.frac).toEqual(RECT.frac);
+    targets = [];
+    expect(store.get(id)?.frac).toEqual(RECT.frac);
+    expect(store.query()).toHaveLength(1);
+  });
+
+  it('refuses a write that would place a mark against no content box', () => {
+    let targets: AnnotationTargetInfo[] = [{ id: 'naive', content: { width: 0, height: 0 } }];
+    const store = createMarkStore({ targets: () => targets });
+    expect(() => store.add(RECT)).toThrow(/content box/);
+    targets = TARGETS;
+    const id = store.add(RECT);
+    targets = [];
+    // Meaning still lands; a title does not need to know where the mark is.
+    store.update(id, { title: 'kept' });
+    expect(store.get(id)?.title).toBe('kept');
+  });
+
+  it('refuses a move on a target whose content box was never known', () => {
+    const store = loadAnnotations(
+      {
+        version: 1,
+        scenes: {
+          gone: {
+            version: 1,
+            systemLayers: [{ id: 'marks' }],
+            nodes: [
+              {
+                id: 'n1',
+                kind: 'mark',
+                layer: 'marks',
+                pose: { x: 10, y: 10, width: 20, height: 20 },
+                data: { target: 'gone', kind: 'rect' },
+              },
+            ],
+          },
+        },
+      },
+      () => [],
+    );
+    expect(() => store.update('gone/n1', { frac: RECT.frac })).toThrow(/content box/);
+    const [node] = (store.toJSON().scenes.gone as { nodes: { pose: object }[] }).nodes;
+    expect(node?.pose).toEqual({ x: 10, y: 10, width: 20, height: 20 });
+    store.update('gone/n1', { title: 'still named' });
+    expect(store.get('gone/n1')?.title).toBe('still named');
+  });
+});
+
 describe('paintedMarks', () => {
   it("hands over a target's marks in world units with their resolved style", () => {
     let config: Record<string, string> = { angle: 'iso', shading: 'outline' };

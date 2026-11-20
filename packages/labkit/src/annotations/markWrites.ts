@@ -28,7 +28,15 @@ export type MarkWrites = Pick<
 /** The store's mutations: each converts fractions to world units and lands as
  *  scene ops, so every one is undoable through the scene's own history. */
 export function createMarkWrites(o: MarkWritesOptions): MarkWrites {
-  const { nodeOf, contentOf } = o;
+  const { nodeOf } = o;
+  /** A target's content box, to place a mark in. One with no area would put every mark at the origin. */
+  const contentOf = (target: string) => {
+    const content = o.contentOf(target);
+    if (content.width > 0 && content.height > 0) return content;
+    throw new Error(
+      `[labkit] cannot place a mark on '${target}': its content box is not known, or has no area`,
+    );
+  };
   return {
     add(init, config) {
       const target = o.targetOf(init.target);
@@ -49,8 +57,9 @@ export function createMarkWrites(o: MarkWritesOptions): MarkWrites {
       if (!found) return;
       const { frac: fracPatch, points, ...meaning } = patch;
       const nid = asNodeId(found.node.id);
-      const content = contentOf(found.target);
       const frac = fracPatch ?? (points ? boundsOf(points) : null);
+      // Only a move needs the content box: a title or a color lands whatever the target's size.
+      const content = frac ? contentOf(found.target) : o.contentOf(found.target);
       const bounds = roundFrac(frac ?? worldToFrac(found.node.pose as MarkPose, content));
       const shape = points ? shapeFor(found.node.data.kind, points, bounds) : undefined;
       // A legacy mark is written back settled, so its vertices follow the bounds from here on.

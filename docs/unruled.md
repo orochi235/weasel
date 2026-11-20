@@ -2935,3 +2935,10 @@ Calls the lanes made without a ruling:
   then `DFLT`'s, then the rest in ScriptList order, and taking the first whose lookups cover the pair. Layout knows
   no run's script, so picking one script for every pair was the alternative, and loses kerning other scripts' lookups
   alone carry.
+## Audit round fifty (2026-11-20): labkit annotations
+
+- 2026-11-20 (the fixer's call): a mark store reads a target's marks against the last content box with an area it
+  was given, so a target the instrument stops declaring, or whose element has not sized again, keeps reporting
+  where its marks are. `add`, and an `update` that moves a mark (`frac` or `points`), throw on a target whose content
+  box was never known or has no area; an `update` of meaning alone still lands. Skipping such writes silently, as
+  an unknown id is, was the alternative.

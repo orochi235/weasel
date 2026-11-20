@@ -62,6 +62,22 @@ export interface CaptureDeps {
 
 const NO_CONTENT = { width: 0, height: 0 };
 
+/** Each target's content box, or its last one with an area: a target the instrument has stopped declaring, or whose
+ *  element has not sized yet, still reads its marks where they are. */
+function lastKnownContent(
+  targetOf: (id: string) => AnnotationTargetInfo | undefined,
+): (id: string) => { width: number; height: number } {
+  const known = new Map<string, { width: number; height: number }>();
+  return (id) => {
+    const declared = targetOf(id)?.content;
+    if (declared && declared.width > 0 && declared.height > 0) {
+      known.set(id, declared);
+      return declared;
+    }
+    return known.get(id) ?? declared ?? NO_CONTENT;
+  };
+}
+
 /**
  * A facade over one weasel scene per target: the scenes are the truth, this
  * answers questions about them. Everything crossing this boundary is in
@@ -81,7 +97,7 @@ export function createMarkStore(opts: AnnotationStoreOptions): AnnotationsApi {
     (typeof opts.selection === 'function' ? opts.selection() : opts.selection) !== 'per-target';
   const targetOf = (id: string): AnnotationTargetInfo | undefined =>
     targets().find((t) => t.id === id);
-  const contentOf = (id: string) => targetOf(id)?.content ?? NO_CONTENT;
+  const contentOf = lastKnownContent(targetOf);
 
   const { scenes, openScene, hold } = createMarkScenes({
     restore: opts.restore,
