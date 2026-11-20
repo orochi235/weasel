@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fakeGpuDevice, type FakeGpuDevice } from './fakeGpuDevice';
+import { createGLRecorder } from './glRecorder';
 
 const requested: FakeGpuDevice[] = [];
 vi.mock('../gpu/webgpu/requestRendererDevice', () => ({
@@ -10,7 +11,7 @@ vi.mock('../gpu/webgpu/requestRendererDevice', () => ({
   },
 }));
 
-const { parityDevice, releaseDevice } = await import('./parityHarness');
+const { openBackends, parityDevice, releaseDevice, renderEach } = await import('./parityHarness');
 
 afterEach(() => {
   releaseDevice();
@@ -31,5 +32,31 @@ describe('parityDevice', () => {
     await Promise.resolve();
     await Promise.resolve();
     expect(await parityDevice()).not.toBe(first);
+  });
+});
+
+describe('renderEach', () => {
+  it('destroys its readback buffer when mapping it fails', async () => {
+    const fake = fakeGpuDevice(4, 4);
+    fake.failMaps = true;
+    const { gl } = createGLRecorder();
+    const b = {
+      gl: { render() {} }, gpu: { render() {} }, glContext: gl, device: fake.device, width: 4, height: 4,
+      canvas: { getContext: () => fake.context },
+    } as unknown as Parameters<typeof renderEach>[0];
+    await expect(renderEach(b, [])).rejects.toThrow();
+    expect(fake.buffers.filter((o) => !o.destroyed)).toEqual([]);
+  });
+});
+
+describe('openBackends', () => {
+  it('lets go of the WebGL context when building the WebGPU renderer throws', async () => {
+    const recorder = createGLRecorder();
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(((kind: string) => {
+      if (kind === 'webgl2') return recorder.gl;
+      throw new Error('no webgpu here');
+    }) as typeof HTMLCanvasElement.prototype.getContext);
+    await expect(openBackends({ width: 4, height: 4, dpr: 1 })).rejects.toThrow();
+    expect(recorder.calls.some((c) => c.name === 'getExtension' && c.args[0] === 'WEBGL_lose_context')).toBe(true);
   });
 });
