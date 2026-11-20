@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from '
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { createProgress } from './progress.mjs';
+import { createCommitProgress, createProgress } from './progress.mjs';
 import { parseEnvelope } from './usage.mjs';
 
 const SCRIPT = join(import.meta.dirname, 'progress.mjs');
@@ -73,5 +73,18 @@ describe('progress.mjs', () => {
     expect(run.status).toBe(0);
     expect(readFileSync(join(dir, 'claude.json'), 'utf8')).toBe('');
     expect(parseEnvelope('').record.terminalReason).toBe('no envelope');
+  });
+});
+
+describe('createCommitProgress', () => {
+  const bash = (command: string) => JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Bash', input: { command } }] } });
+  it('steps once per git commit the fixer runs, out of its findings, and raises the total past them', () => {
+    const { start, feed } = createCommitProgress(2);
+    expect(start).toBe('onto: progress 0/2');
+    expect(feed(bash('npx vitest run a.test.ts')).progress).toBeUndefined();
+    expect(feed(bash('git add -A && git commit -m one')).progress).toBe('onto: progress 1/2');
+    expect(feed(bash('git -c user.name=a commit -q -m two')).progress).toBe('onto: progress 2/2');
+    expect(feed(bash('git commit -m three')).progress).toBe('onto: progress 3/3');
+    expect(feed('{"type":"result","result":"ok"}').result).toBe('{"type":"result","result":"ok"}');
   });
 });

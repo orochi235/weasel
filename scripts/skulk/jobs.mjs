@@ -26,17 +26,17 @@ export const PROGRESS_IN = `${JOB_IN}/progress.mjs`;
 
 /**
  * Runs `claude -p` on a prompt file, stopped by an alarm before onto's timeout so what it wrote still comes
- * home. With `progressFiles` (the area's file list), it streams through the progress filter, which prints
- * onto progress lines and writes the same result envelope to `claude.json`.
+ * home. With `progress` (the progress filter's arguments before the result path), it streams through the
+ * filter, which prints onto progress lines and writes the same result envelope to `claude.json`.
  */
-const claudeLine = (promptFile, budgetUsd, flags, progressFiles) =>
+const claudeLine = (promptFile, budgetUsd, flags, progress) =>
   [
     `CLAUDE_CONFIG_DIR=${CLAUDE_CONFIG}`,
     `perl -e 'alarm shift; exec @ARGV' ${JOB_TIMEOUT_MIN * 60}`,
     'claude -p "$(cat', `${q(promptFile)})"`,
-    `--output-format ${progressFiles ? 'stream-json --verbose' : 'json'} --strict-mcp-config --max-budget-usd ${budgetUsd}`, ...flags,
-    progressFiles
-      ? `2> ${JOB_OUT}/claude.err | node ${PROGRESS_IN} ${q(progressFiles)} ${JOB_OUT}/claude.json; echo "\${PIPESTATUS[0]}" > ${JOB_OUT}/exit`
+    `--output-format ${progress ? 'stream-json --verbose' : 'json'} --strict-mcp-config --max-budget-usd ${budgetUsd}`, ...flags,
+    progress
+      ? `2> ${JOB_OUT}/claude.err | node ${PROGRESS_IN} ${progress} ${JOB_OUT}/claude.json; echo "\${PIPESTATUS[0]}" > ${JOB_OUT}/exit`
       : `> ${JOB_OUT}/claude.json 2> ${JOB_OUT}/claude.err; echo $? > ${JOB_OUT}/exit`,
   ].join(' ');
 
@@ -47,7 +47,7 @@ const fresh = `rm -rf ${JOB_OUT} && mkdir -p ${JOB_OUT}`;
 export const reviewShell = (area, budgetUsd) =>
   [NVM, fresh, claudeLine(`${JOB_IN}/${area}/review.md`, budgetUsd, [
     '--allowedTools', q(REVIEW_TOOLS.join(',')), '--disallowedTools', q(REVIEW_DENIED.join(',')), ...model(REVIEW_MODEL),
-  ], `${JOB_IN}/${area}/files.txt`)].join(' && ');
+  ], q(`${JOB_IN}/${area}/files.txt`))].join(' && ');
 
 export const matchShell = (area, budgetUsd) =>
   [fresh, claudeLine(`${JOB_IN}/${area}/match.md`, budgetUsd, ['--disallowedTools', q('Bash,Edit,Write,Task,Agent'), ...model(MATCH_MODEL)])].join(' && ');
@@ -57,7 +57,7 @@ export const matchShell = (area, budgetUsd) =>
  * when the lockfile changed since the tree's last install, lets the model fix and commit, and hands
  * back its commits as one mbox.
  */
-export const fixShell = (area, budgetUsd) =>
+export const fixShell = (area, budgetUsd, findings) =>
   [
     'set -e', NVM, fresh,
     'grep -qx ".skulk/" .git/info/exclude 2>/dev/null || echo ".skulk/" >> .git/info/exclude',
@@ -68,7 +68,7 @@ export const fixShell = (area, budgetUsd) =>
     'LOCK=$(shasum package-lock.json | cut -d" " -f1)',
     `if [ "$(cat node_modules/.skulk-lock 2>/dev/null)" != "$LOCK" ]; then npm ci --no-audit --no-fund > ${JOB_OUT}/npm-ci.log 2>&1 && echo "$LOCK" > node_modules/.skulk-lock; fi`,
     'set +e',
-    claudeLine(`${JOB_IN}/${area}/fix.md`, budgetUsd, ['--dangerously-skip-permissions', ...model(FIX_MODEL)]),
+    claudeLine(`${JOB_IN}/${area}/fix.md`, budgetUsd, ['--dangerously-skip-permissions', ...model(FIX_MODEL)], `--commits ${findings}`),
     `git format-patch --stdout "$BASE..HEAD" > ${JOB_OUT}/fix.mbox`,
     `git status --porcelain > ${JOB_OUT}/uncommitted.txt`,
     'exit 0',

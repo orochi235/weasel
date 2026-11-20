@@ -1,10 +1,10 @@
 /**
- * A reviewer's `claude -p --output-format stream-json --verbose` on stdin, turned into onto progress:
- * `onto: progress <k>/<n>` on stdout each time the reviewer first reads one of its area's listed files,
+ * A job's `claude -p --output-format stream-json --verbose` on stdin, turned into onto progress on stdout,
  * and the stream's `result` event, verbatim, written to the result file, where `--output-format json`
  * would have put it. Runs on the node, from `.skulk/in`, so it imports nothing outside node itself.
  *
- *   node progress.mjs <files.txt> <result.json>
+ *   node progress.mjs <files.txt> <result.json>      a reviewer: each listed file it first reads
+ *   node progress.mjs --commits <n> <result.json>    a fixer: each commit it makes, of its n findings
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
@@ -48,10 +48,49 @@ export const createProgress = (files, root = process.cwd()) => {
   return { start, feed };
 };
 
+/** The commands the event's assistant message runs with the Bash tool. */
+const bashCommands = (event) => {
+  if (event?.type !== 'assistant' || !Array.isArray(event.message?.content)) return [];
+  return event.message.content
+    .filter((c) => c?.type === 'tool_use' && c.name === 'Bash' && typeof c.input?.command === 'string')
+    .map((c) => c.input.command);
+};
+
+const COMMITS = /\bgit\b(?:\s+-c\s+\S+)*\s+commit\b/;
+
+/**
+ * As {@link createProgress}, for a fixer: a step each time it runs `git commit`, out of `findings`, the
+ * distinct findings it was handed. One commit a finding is the fixer brief's rule, so a fixer that commits
+ * more than that raises the total rather than running past it.
+ */
+export const createCommitProgress = (findings) => {
+  let total = Math.max(1, findings);
+  let made = 0;
+  const start = `onto: progress 0/${total}`;
+  const feed = (line) => {
+    let event;
+    try {
+      event = JSON.parse(line);
+    } catch {
+      return {};
+    }
+    if (event?.type === 'result') return { result: line };
+    const commits = bashCommands(event).filter((c) => COMMITS.test(c)).length;
+    if (commits === 0) return {};
+    made += commits;
+    total = Math.max(total, made);
+    return { progress: `onto: progress ${made}/${total}` };
+  };
+  return { start, feed };
+};
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const [filesPath, resultPath] = process.argv.slice(2);
-  const files = readFileSync(filesPath, 'utf8').split('\n').map((s) => s.trim()).filter(Boolean);
-  const { start, feed } = createProgress(files);
+  const argv = process.argv.slice(2);
+  const commits = argv[0] === '--commits';
+  const resultPath = commits ? argv[2] : argv[1];
+  const { start, feed } = commits
+    ? createCommitProgress(Number(argv[1]))
+    : createProgress(readFileSync(argv[0], 'utf8').split('\n').map((s) => s.trim()).filter(Boolean));
   // An empty file, like the redirect of a `--output-format json` run killed before it printed, until a result arrives.
   writeFileSync(resultPath, '');
   process.stdout.write(`${start}\n`);

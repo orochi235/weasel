@@ -106,12 +106,12 @@ const reviewedSource = (ctx, id) => fill(
 );
 
 /** One fixer job on `area`'s findings, which are already in `.skulk/in/<area>/` in the frozen tree. */
-export const fix = async (ctx, area, source = reviewedSource(ctx, area.id)) => {
+export const fix = async (ctx, area, findings, source = reviewedSource(ctx, area.id)) => {
   const to = jobDir(ctx.nightDir, area.id, 'fix');
   const vars = { round: ctx.round, area: area.id, commit: ctx.commit, source };
   writeFileSync(join(ctx.frozen, JOB_IN, area.id, 'fix.md'), fill(brief('fixer.md'), vars));
   const run = await dispatch(ctx, area, 'fix', {
-    kind: 'fix', expect: 'none', shell: fixShell(area.id, ctx.budget.fix), to,
+    kind: 'fix', expect: 'none', shell: fixShell(area.id, ctx.budget.fix, findings), to,
     env: { FROZEN_TREE: ctx.frozenTree, ...ctx.identity },
     task: `audit${ctx.round}-${area.id}-fix`, logPath: join(to, '..', 'fix.log'),
     about: `Fixer for audit round ${ctx.round}, area ${area.id}: verifies, tests and fixes its findings.`,
@@ -151,7 +151,7 @@ export const runArea = async (ctx, area, { previous, changedSince }) => {
   // A side that never ran, or stopped before its report's done line, looked at too little for an estimate.
   const incomplete = [a, b].flatMap((r, i) => (r.launched && isFinished(r.text) ? [] : [i === 0 ? 'A' : 'B']));
   const estimate = incomplete.length ? undefined : chapman(na, nb, m);
-  const fixed = distinct > 0 ? await fix(ctx, area) : undefined;
+  const fixed = distinct > 0 ? await fix(ctx, area, distinct) : undefined;
   if (fixed?.report) writeFileSync(join(dir, 'fix.md'), fixed.report);
   if (fixed?.mbox) copyFileSync(fixed.mbox, join(dir, 'fix.mbox'));
   const changed = new Set(changedSince);

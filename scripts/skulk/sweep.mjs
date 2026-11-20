@@ -75,7 +75,7 @@ export const fixSweep = async (ctx, dead) => {
   writeFileSync(join(ctx.frozen, report), findingsOf(dead));
   const out = join(ctx.nightDir, SWEEP_ID);
   writeFileSync(join(out, 'findings.md'), findingsOf(dead));
-  const fixed = await fix(ctx, { id: SWEEP_ID }, sweepSource(ctx.commit, report));
+  const fixed = await fix(ctx, { id: SWEEP_ID }, dead.length, sweepSource(ctx.commit, report));
   if (fixed.report) writeFileSync(join(out, 'fix.md'), fixed.report);
   return fixed;
 };
