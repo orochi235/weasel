@@ -23,6 +23,40 @@ export function clampToMinSize<TPose extends Bounds>(
   };
 }
 
+/** `pose`, put in `origin` scaled by one factor on every axis as an aspect lock
+ *  leaves it, grown so each axis meets `min`. The axes `anchor` holds keep their
+ *  anchored edge, and a free axis its center. The factor keeps its sign unless an
+ *  anchored axis has a minimum of its own, which a box dragged past its anchor
+ *  comes back to as {@link clampToMinSize} does. `null` when `pose` already meets
+ *  it. */
+export function clampToMinSizeKeepingAspect<TPose extends Bounds>(
+  pose: TPose,
+  anchor: ResizeAnchor,
+  min: { width: number; height: number },
+  origin: Bounds,
+): TPose | null {
+  const axes = [
+    { side: anchor.x, at: pose.x, extent: pose.width, from: origin.width, min: min.width },
+    { side: anchor.y, at: pose.y, extent: pose.height, from: origin.height, min: min.height },
+  ];
+  const driven = axes.filter((a) => a.side !== 'free' && a.from !== 0);
+  if (driven.length === 0) return clampToMinSize(pose, anchor, min, origin);
+  const scale = driven.map((a) => a.extent / a.from).reduce((s, t) => (Math.abs(t) > Math.abs(s) ? t : s));
+  const least = Math.max(0, ...axes.map((a) => (a.min > 0 && a.from !== 0 ? a.min / Math.abs(a.from) : 0)));
+  const unflip = driven.some((a) => a.min > 0);
+  const next = unflip ? Math.max(scale, least) : Math.sign(scale || 1) * Math.max(Math.abs(scale), least);
+  if (next === scale) return null;
+  const [x, y] = axes.map((a) => {
+    if (a.side === 'free') {
+      const extent = Math.abs(next * a.from) * signOf(a.extent);
+      return { at: a.at + a.extent / 2 - extent / 2, extent };
+    }
+    const extent = next * a.from;
+    return { at: a.side === 'max' ? a.at + a.extent - extent : a.at, extent };
+  });
+  return { ...pose, x: x!.at, width: x!.extent, y: y!.at, height: y!.extent };
+}
+
 function signOf(v: number | undefined): 1 | -1 {
   return v !== undefined && v < 0 ? -1 : 1;
 }

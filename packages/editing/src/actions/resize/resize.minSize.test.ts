@@ -126,4 +126,22 @@ describe('resize — a node\'s minimum size', () => {
     drag(scene, [A, B], BOTTOM_RIGHT, { x: 200, y: 100 }, { x: 20, y: 10 });
     expectSamePose(scene.get(A)!.pose as RectPose, { x: 48, y: 0, width: -48, height: 48 });
   });
+
+  it('keeps the aspect Shift holds on an edge handle, with both axes at least the minimum', () => {
+    const scene = makeScene({ minSize: { width: 50, height: 50 } });
+    drag(scene, [A], { x: 'free', y: 'min' }, { x: 50, y: 100 }, { x: 50, y: 20 }, undefined, true);
+    expectSamePose(scene.get(A)!.pose as RectPose, { x: 25, y: 0, width: 50, height: 50 });
+  });
+
+  it('holds the free axis Shift drives to its minimum', () => {
+    const scene = makeScene({ minSize: { width: 150 }, pose: { x: 0, y: 0, width: 200, height: 100 } });
+    drag(scene, [A], { x: 'free', y: 'min' }, { x: 100, y: 100 }, { x: 100, y: 40 }, undefined, true);
+    expectSamePose(scene.get(A)!.pose as RectPose, { x: 25, y: 0, width: 150, height: 75 });
+  });
+
+  it('keeps the aspect Shift holds on a corner, with both axes at least the minimum', () => {
+    const scene = makeScene({ minSize: { width: 50, height: 50 }, pose: { x: 0, y: 0, width: 100, height: 200 } });
+    drag(scene, [A], BOTTOM_RIGHT, { x: 100, y: 200 }, { x: 20, y: 40 }, undefined, true);
+    expectSamePose(scene.get(A)!.pose as RectPose, { x: 0, y: 0, width: 50, height: 100 });
+  });
 });
