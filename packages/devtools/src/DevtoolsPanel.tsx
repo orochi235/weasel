@@ -4,7 +4,7 @@ import { Icon } from '@weasel-js/ui/components/Icon';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
 import { useDevtoolsClient } from './hooks';
 import { RootPicker } from './RootPicker';
-import type { DevtoolsClient } from './client';
+import type { DevtoolsClient, DevtoolsClientState } from './client';
 import { DEVTOOLS_TABS, type DevtoolsTab, type DevtoolsTabId } from './tabs';
 import s from './DevtoolsPanel.module.css';
 
@@ -57,7 +57,7 @@ export function DevtoolsPanel({ transport, tabs, defaultTab, className }: Devtoo
           ))}
         </Tabs>
       ) : (
-        <p className={s.empty}>{state.status === 'connected' ? 'No canvas on this page.' : 'Connecting…'}</p>
+        <p className={s.empty}>{emptyText(state.status)}</p>
       )}
     </section>
   );
@@ -66,6 +66,13 @@ export function DevtoolsPanel({ transport, tabs, defaultTab, className }: Devtoo
 /** A view keyed by its root, so picking another canvas starts it fresh. */
 function renderView(View: DevtoolsTab['View'], client: DevtoolsClient, rootId: string): ReactElement {
   return <View key={rootId} client={client} rootId={rootId} />;
+}
+
+/** What the body says with no canvas to show. The bar carries an error's message. */
+function emptyText(status: DevtoolsClientState['status']): string {
+  if (status === 'connected') return 'No canvas on this page.';
+  if (status === 'connecting') return 'Connecting…';
+  return 'Not connected.';
 }
 
 function statusText(status: string, kitVersion: string | null, error: string | null): string {

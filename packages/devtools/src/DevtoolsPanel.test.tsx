@@ -1,7 +1,7 @@
 /** The panel end to end against a real `<SceneCanvas>` and the hook it installs, over an in-page connection. */
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { PanelMessage, PanelTransport } from './protocol';
+import type { PageMessage, PanelMessage, PanelTransport } from './protocol';
 import type { DispatchRecord } from '@weasel-js/core/routing';
 import { DevtoolsPanel } from './DevtoolsPanel';
 import { createInPagePanelTransport } from './inPageTransport';
@@ -232,5 +232,16 @@ describe('DevtoolsPanel', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'State' }));
     view.rerender(<><TestCanvas /><DevtoolsPanel transport={t.transport} tabs={['scene', 'dispatch']} /></>);
     expect(screen.getByRole('tab', { name: 'Scene' }).getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('says it is not connected, not connecting, once the page refuses the connection', async () => {
+    let deliver: (m: PageMessage) => void = () => {};
+    const transport: PanelTransport = { send: () => {}, onMessage: (l) => { deliver = l; return () => {}; } };
+    render(<DevtoolsPanel transport={transport} />);
+    expect(screen.getByText('Connecting…')).toBeTruthy();
+    act(() => deliver({ type: 'error', protocol: 2, requestId: null, message: 'protocol mismatch: the page speaks 2, the panel 1' }));
+    expect(screen.queryByText('Connecting…')).toBeNull();
+    expect(screen.getByText('Not connected.')).toBeTruthy();
+    expect(screen.getByText(/protocol mismatch/)).toBeTruthy();
   });
 });
