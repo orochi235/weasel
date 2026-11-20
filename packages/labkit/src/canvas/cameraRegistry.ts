@@ -1,6 +1,6 @@
 import { useActionsRegistry } from '@weasel-js/core';
 import { createReflectable, type Reflection } from '@weasel-js/registry';
-import { createContext, useContext, useEffect } from 'react';
+import { createContext, useContext, useEffect, useSyncExternalStore } from 'react';
 import type { CameraView } from './CameraInput';
 
 /**
@@ -31,6 +31,14 @@ export function createCameraRegistry(): CameraRegistry {
 
 /** The registry a lab keeps its trials' cameras in. */
 export const CameraRegistryContext = createContext<CameraRegistry | null>(null);
+
+const noSubscribe = (): (() => void) => () => undefined;
+
+/** The camera live under `key` in the lab's registry, or null where none is. */
+export function useRegisteredCamera(key: string): CameraView | null {
+  const cameras = useContext(CameraRegistryContext);
+  return useSyncExternalStore(cameras?.subscribe ?? noSubscribe, () => cameras?.get(key) ?? null);
+}
 
 /** Where a camera publishes itself. The host binds the key — a trial provides
  *  one that registers under its own id — so the camera needs no name. */

@@ -1,5 +1,5 @@
-import { useContext, useMemo, useSyncExternalStore } from 'react';
-import { CameraRegistryContext } from '../canvas/cameraRegistry';
+import { useMemo } from 'react';
+import { useRegisteredCamera } from '../canvas/cameraRegistry';
 import { zoomCameraTo } from '../canvas/cameraZoom';
 import type { ToolSlotContext, TrialChromeContext } from '../chrome/types';
 import { useLabOverValues } from '../config/over';
@@ -35,7 +35,6 @@ const NO_RUN = (): boolean => false;
 /** One frozen empty map, so a trial that has folded nothing keeps a stable
  *  context identity across renders. */
 const NO_SECTIONS: Readonly<Record<string, boolean>> = Object.freeze({});
-const noSubscribe = (): (() => void) => NO_OP;
 
 /** The chrome context's loupe fields, from the trial's bindings: all off while no lens is mounted. */
 function loupeChrome(loupe: LoupeBindings | undefined) {
@@ -116,11 +115,7 @@ export function useTrialChromeContext({
   const overValues = useLabOverValues();
 
   // A trial's own camera zooms about the view's middle, in the instrument's range, as the lab's does.
-  const cameras = useContext(CameraRegistryContext);
-  const camera = useSyncExternalStore(
-    cameras?.subscribe ?? noSubscribe,
-    () => cameras?.get(trialId) ?? null,
-  );
+  const camera = useRegisteredCamera(trialId);
 
   // The title bar carries the expand toggle, so the lightbox drops its own.
   const lightbox = useLightboxControl();

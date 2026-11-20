@@ -1,6 +1,8 @@
 import { type Camera3d, clampCamera, createCamera } from '@weasel-js/kernel3d';
 import { type ReactNode, type RefObject, useContext, useMemo, useRef, useState } from 'react';
 import { type CameraGestures, CameraGesturesContext } from '../canvas/cameraGestures';
+import { useRegisteredCamera } from '../canvas/cameraRegistry';
+import { zoomCameraTo } from '../canvas/cameraZoom';
 import { clientSize, layoutSize } from '../canvas/hostBox';
 import { Orbit } from '../canvas/Orbit';
 import { orbitZoomView } from '../canvas/orbitZoom';
@@ -79,6 +81,7 @@ export function useTrialCamera({
     [pane],
   );
   const gestures = gesturesOf(camera, useContext(CameraGesturesContext));
+  const registered = useRegisteredCamera(trialId);
   const placement = useViewPlacement({
     instrument,
     view,
@@ -129,8 +132,10 @@ export function useTrialCamera({
     placement,
     home,
     zoom: view2d?.zoom ?? (view3d && orbitZoom ? orbitZoom.get().scale.x : 1),
+    // Through the live camera where there is one, so this zooms as the chrome's does.
     setZoom: (z) => {
-      if (view2d) setView(withZoom(view2d, z));
+      if (registered) zoomCameraTo(registered, z);
+      else if (view2d) setView(withZoom(view2d, z));
       else if (view3d) orbitZoom?.set({ x: 0, y: 0, scale: { x: z, y: z } });
     },
     orbit,
