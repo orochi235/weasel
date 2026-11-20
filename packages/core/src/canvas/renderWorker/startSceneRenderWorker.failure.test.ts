@@ -55,6 +55,30 @@ describe('a render worker that errs after it started', () => {
     expect(w.terminate).not.toHaveBeenCalled();
   });
 
+  it('sends everything next after a frame the worker answered as lost, without asking for one itself', () => {
+    const w = start();
+    w.answer({ type: 'ready' });
+    w.client.sync();
+    const due = vi.fn();
+    w.client.subscribe(due);
+    w.answer({ type: 'drawn', id: w.lastFrame().id, lost: true });
+    expect(due).not.toHaveBeenCalled();
+    w.client.sync();
+    expect(frames(w.posted)).toHaveLength(2);
+    expect(w.lastFrame()).toMatchObject({ scene: { reset: expect.anything() }, view: VIEW, size: expect.anything() });
+  });
+
+  it('remembers a bounded number of the warnings it gave', () => {
+    const w = start();
+    w.answer({ type: 'ready' });
+    for (let i = 0; i < 101; i++) w.answer({ type: 'error', message: `no animation registered as "k${i}"` });
+    expect(warn).toHaveBeenCalledTimes(101);
+    w.answer({ type: 'error', message: 'no animation registered as "k100"' });
+    expect(warn).toHaveBeenCalledTimes(101);
+    w.answer({ type: 'error', message: 'no animation registered as "k0"' });
+    expect(warn).toHaveBeenCalledTimes(102);
+  });
+
   it('only warns of an error it reports and answered for', async () => {
     const w = start();
     w.answer({ type: 'ready' });

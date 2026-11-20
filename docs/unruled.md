@@ -2755,3 +2755,10 @@ Calls the lanes made without a ruling:
 - 2026-11-18 (the fixer's call): `momentum()` throws a `RangeError` on a `friction` outside (0, 1). 1 threw at release
   over a scene adapter and coasted forever over any other; refusing it when the behavior is made gives one answer for
   both. Allowing 1 over an adapter without pose targets, stopped only by `bounds`, was the alternative.
+
+## Audit round forty (2026-11-19): the render worker
+
+- 2026-11-19 (the fixer's call): a render worker serving several ports (`hostSceneRender` once per port) asks each
+  host's page in turn, oldest first, for an SVG or `bitmapSrc` image, until one answers with a bitmap; the image cache
+  is the worker realm's, so a load cannot tell which host's scene wanted it. `hostSceneRender` and `serveSceneRender`
+  return a function that stops the host. Refusing a second live host in one realm was the alternative.

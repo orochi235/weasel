@@ -52,6 +52,7 @@ export interface SceneRenderServeOptions {
 export interface RenderPort {
   postMessage(message: unknown, transfer?: Transferable[]): void;
   addEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
+  removeEventListener?(type: 'message', listener: (event: MessageEvent) => void): void;
 }
 
 interface Painting {
@@ -101,8 +102,42 @@ function openPainting(
   };
 }
 
-/** Paint the scene over `port`. {@link serveSceneRender} is this over the worker's own scope. */
-export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptions = {}): void {
+/** Bring the worker's copy and `painting` to what `msg` carries. Each input that fails is skipped
+ *  and the rest still land; returns what each failure threw. */
+function takeInputs(
+  msg: Extract<ToWorker, { type: 'frame' }>, mirror: SceneMirror, alphas: Map<string, number>, painting: Painting,
+): unknown[] {
+  const errors: unknown[] = [];
+  const step = (fn: () => void) => {
+    try { fn(); } catch (e) { errors.push(e); }
+  };
+  if (msg.scene) {
+    const delta = msg.scene;
+    if (delta.reset) alphas.clear();
+    step(() => mirror.apply(delta));
+  }
+  if (msg.overrides) step(() => mirror.setOverrides(msg.overrides!));
+  if (msg.scroll) step(() => mirror.setScroll(msg.scroll!));
+  for (const [id, a] of msg.alpha ?? []) {
+    if (a === 1) alphas.delete(id);
+    else alphas.set(id, a);
+  }
+  if (msg.view) painting.view = msg.view;
+  if (msg.layers) painting.inputs.layers = msg.layers;
+  if (msg.cull !== undefined) painting.inputs.cull = msg.cull;
+  if (msg.extraCommands !== undefined) painting.inputs.extraCommands = msg.extraCommands;
+  if (msg.size) {
+    const size = msg.size;
+    painting.size = size;
+    step(() => painting.renderer.resize(size));
+  }
+  return errors;
+}
+
+/** Paint the scene over `port`. {@link serveSceneRender} is this over the worker's own scope.
+ *  Several hosts can share a worker, one per port; the function returned stops this one, and
+ *  lets go of its renderer. */
+export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptions = {}): () => void {
   const drawOne = (options.drawOne ?? defaultDrawOne) as SceneViewDrawOne<unknown, string, unknown>;
   const paintBounds = (options.paintBounds ?? paintBoundsFor(drawOne)) as PaintBoundsFn<AnyNode, unknown> | undefined;
   const mirror = createSceneMirror(options.scene);
@@ -113,36 +148,24 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
   const dirty = () => post({ type: 'dirty' });
   const report = (e: unknown) => post({ type: 'error', message: e instanceof Error ? e.message : String(e) });
   const animations = createWorkerAnimations(options.animations ?? {}, dirty);
-  const answerImage = loadFromPage(post);
-  subscribeImageReady(dirty);
-  subscribeGlyphReady(dirty);
-  subscribeNodeShapes(dirty);
+  const images = loadFromPage(post);
+  const offs = [subscribeImageReady(dirty), subscribeGlyphReady(dirty), subscribeNodeShapes(dirty)];
   let painting: Painting | null = null;
   const alphas = new Map<string, number>();
   const alphaFor = (id: string): number => alphas.get(id) ?? 1;
   /** Whether the last paint that threw has had its retry. */
   let retried = false;
+  /** Whether the last frame whose inputs failed to land has had its retry. */
+  let refusedRetried = false;
 
-  const frame = (msg: Extract<ToWorker, { type: 'frame' }>): void => {
-    if (!painting) return;
-    if (msg.scene) {
-      if (msg.scene.reset) alphas.clear();
-      mirror.apply(msg.scene);
-    }
-    if (msg.overrides) mirror.setOverrides(msg.overrides);
-    if (msg.scroll) mirror.setScroll(msg.scroll);
-    for (const [id, a] of msg.alpha ?? []) {
-      if (a === 1) alphas.delete(id);
-      else alphas.set(id, a);
-    }
-    if (msg.view) painting.view = msg.view;
-    if (msg.layers) painting.inputs.layers = msg.layers;
-    if (msg.cull !== undefined) painting.inputs.cull = msg.cull;
-    if (msg.extraCommands !== undefined) painting.inputs.extraCommands = msg.extraCommands;
-    if (msg.size) {
-      painting.size = msg.size;
-      painting.renderer.resize(msg.size);
-    }
+  /** Take in what `msg` carries and paint it. `false` when an input failed to land, so the page
+   *  counts the frame lost and sends everything next. */
+  const frame = (msg: Extract<ToWorker, { type: 'frame' }>): boolean => {
+    if (!painting) return true;
+    const errors = takeInputs(msg, mirror, alphas, painting);
+    const landed = errors.length === 0;
+    if (landed) refusedRetried = false;
+    else if (!refusedRetried) { refusedRetried = true; dirty(); }
     const { scene } = mirror;
     animations.at(msg.at, msg.resumed === true);
     const failed = scene && msg.animations ? animations.run(msg.animations, scene) : [];
@@ -154,10 +177,11 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
       // As the page's frame loop does: the page sends a frame only when something changes, so a
       // failed paint would otherwise stand until then. One retry, so a paint that always throws doesn't spin.
       if (!retried) { retried = true; dirty(); }
-      throw e;
+      errors.push(e);
     } finally {
-      for (const e of failed) report(e);
+      for (const e of [...errors, ...failed]) report(e);
     }
+    return landed;
   };
 
   const paint = (scene: SceneMirror['scene']): void => {
@@ -180,8 +204,7 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
         painting = openPainting(msg, options, post, dirty);
         return;
       case 'frame':
-        frame(msg);
-        post({ type: 'drawn', id: msg.id });
+        post(frame(msg) ? { type: 'drawn', id: msg.id } : { type: 'drawn', id: msg.id, lost: true });
         return;
       case 'ping':
         post({ type: 'pong', id: msg.id });
@@ -191,7 +214,7 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
           post({ type: 'snapshot', id: msg.id, bitmap }, bitmap ? [bitmap] : []));
         return;
       case 'image':
-        answerImage(msg);
+        images.answer(msg);
         return;
       case 'readIds': {
         const ids = readIds(painting, msg);
@@ -200,17 +223,29 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
     }
   };
 
-  port.addEventListener('message', (event) => {
+  const listener = (event: MessageEvent): void => {
     const msg = event.data as ToWorker;
     try {
       receive(msg);
     } catch (e) {
       // The page waits on these answers.
-      if (msg.type === 'frame') post({ type: 'drawn', id: msg.id });
+      if (msg.type === 'frame') post({ type: 'drawn', id: msg.id, lost: true });
       else if (msg.type === 'readIds') post({ type: 'ids', id: msg.id, ids: null });
       report(e);
     }
-  });
+  };
+  port.addEventListener('message', listener);
+  let disposed = false;
+  return () => {
+    if (disposed) return;
+    disposed = true;
+    port.removeEventListener?.('message', listener);
+    for (const off of offs) off();
+    images.dispose();
+    painting?.canvas.removeEventListener('webglcontextrestored', dirty);
+    painting?.renderer.dispose();
+    painting = null;
+  };
 }
 
 function readIds(painting: Painting | null, msg: Extract<ToWorker, { type: 'readIds' }>): IdBuffer | null {
@@ -232,6 +267,6 @@ async function snapshot(canvas: OffscreenCanvas | null): Promise<ImageBitmap | n
  * this, call it — plus whatever the page registers that paints: node shapes, fonts, paint kinds,
  * shader programs, and the scene registry. Hand the module to `<SceneViewCanvas worker>`.
  */
-export function serveSceneRender(options: SceneRenderServeOptions = {}): void {
-  hostSceneRender(globalThis as unknown as RenderPort, options);
+export function serveSceneRender(options: SceneRenderServeOptions = {}): () => void {
+  return hostSceneRender(globalThis as unknown as RenderPort, options);
 }

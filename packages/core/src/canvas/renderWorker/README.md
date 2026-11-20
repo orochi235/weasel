@@ -147,7 +147,9 @@ it is handed from the call: a setup that throws (the transfer, or an init messag
 posted) terminates it, stops watching the scene and rethrows its own error, so a React host's
 error boundary sees what went wrong. A canvas whose transfer went through cannot be handed over again. A canvas can be transferred once, so a
 StrictMode remount, which runs cleanup and setup back to back on one element, keeps the client:
-cleanup releases it a task later and the setup in between takes it back.
+cleanup releases it a task later and the setup in between takes it back. A canvas kept past
+that task, as a hidden `<Activity>` or a re-suspended boundary keeps it, is spent: shown again,
+the component mounts a new canvas and starts a new worker.
 
 ## Failure and recovery
 
@@ -163,6 +165,7 @@ carries everything. A timeout also sends a ping, which a busy worker answers onc
 | A ping goes unanswered for the timeout too | yes | answered as missing | `failed`, `unresponsive` |
 | An uncaught error after it started, or a message the page cannot read | no | answered as missing, since the error may have eaten an answer; later frames go | `running` |
 | An error the worker caught and reported (a paint, an animation that is not registered) | no | answered by the worker | `running` |
+| A frame whose scene changes, overrides or size the worker could not take in | no | answered by the worker as lost: the next frame carries everything, and the worker asks for it once | `running` |
 
 A fatal failure terminates the worker and stops watching the scene, and the client answers
 everything after it as missing. A canvas can be handed to a worker only once, so recovery means a

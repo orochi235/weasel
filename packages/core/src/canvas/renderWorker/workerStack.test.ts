@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { IdBuffer } from '@weasel-js/renderer';
 import type { AnyRenderWorker } from './liveClients';
-import { paintWorkerRun, readStackIds, type StackFrame, type StackSurface } from './workerStack';
+import { paintWorkerRun, readStackIds, snapshotStack, type StackFrame, type StackSurface } from './workerStack';
 import { combinedStatus, type RenderWorkerStatus } from './workerHealth';
 
 const RECT = { x: 0, y: 0, width: 1, height: 1 };
@@ -32,7 +32,51 @@ describe('paintWorkerRun', () => {
     paintWorkerRun(client, { by: 'worker', ids: ['__proto__', 'a', 'constructor'] }, frame);
     const shown = sent!.layerVisibility as Record<string, boolean>;
     expect(Object.getPrototypeOf(shown)).toBe(Object.prototype);
-    expect(Object.entries(shown)).toEqual([['__proto__', false], ['a', true]]);
+    expect(Object.entries(shown)).toEqual([['__proto__', false], ['a', true], ['constructor', true]]);
+  });
+
+  const sentFor = (ids: string[], layers: object[], visibility: Record<string, boolean>) => {
+    let sent: Record<string, unknown> | undefined;
+    const client = { update: (u: Record<string, unknown>) => { sent = u; }, sync: () => {} } as unknown as AnyRenderWorker;
+    const frame = { inputs: {}, view: { x: 0, y: 0, scale: 1 }, dims: { width: 1, height: 1, dpr: 1 }, visibility, layers } as unknown as StackFrame;
+    paintWorkerRun(client, { by: 'worker', ids }, frame);
+    return sent!;
+  };
+
+  it('shows each layer as the page would: alwaysOn over an entry, an entry over defaultVisible', () => {
+    const sent = sentFor(['scene:a', 'scene:b'], [
+      { id: 'scene:a', alwaysOn: true }, { id: 'scene:b', defaultVisible: false },
+    ], { 'scene:a': false });
+    expect(sent.layerVisibility).toEqual({ 'scene:a': true, 'scene:b': false });
+  });
+
+  it('paints nothing of a whole scene layer the page hides', () => {
+    expect(sentFor(['scene'], [{ id: 'scene' }], { scene: false }).layerOrder).toEqual([]);
+    expect(sentFor(['scene'], [{ id: 'scene' }], {}).layerOrder).toBeUndefined();
+  });
+});
+
+describe('snapshotStack', () => {
+  it('closes every bitmap a worker answered with, drawn or not', async () => {
+    const close = vi.fn();
+    const bitmap = (width: number) => ({ width, height: width, close }) as unknown as ImageBitmap;
+    const surface = (b: ImageBitmap): StackSurface => ({
+      by: 'worker', run: { by: 'worker', ids: ['scene'] },
+      client: { snapshot: () => Promise.resolve(b) } as unknown as AnyRenderWorker,
+    });
+    const drawImage = vi.fn();
+    vi.stubGlobal('OffscreenCanvas', class {
+      constructor(public width: number, public height: number) {}
+      getContext() { return { drawImage }; }
+      transferToImageBitmap() { return 'composed'; }
+    });
+    try {
+      expect(await snapshotStack([surface(bitmap(4)), surface(bitmap(0))], 4, 4)).toBe('composed');
+      expect(drawImage).toHaveBeenCalledTimes(1);
+      expect(close).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
 

@@ -58,6 +58,8 @@ const IDLE_ANIMATOR = workerAnimator(() => {});
 interface Held {
   ref: { current: AnyWorker | null };
   relay: StatusRelay;
+  /** Mount a new canvas: the one shown is spent. */
+  remount: () => void;
 }
 
 function useSceneRenderWorker(
@@ -65,7 +67,7 @@ function useSceneRenderWorker(
   start: { worker: () => Worker; timeout: number | undefined },
   inputs: SceneRenderInputs<unknown, string, unknown>,
   onDue: () => void,
-  { ref: clientRef, relay }: Held,
+  { ref: clientRef, relay, remount }: Held,
 ): void {
   const startRef = useLatest(start);
   const inputsRef = useLatest(inputs);
@@ -74,6 +76,7 @@ function useSceneRenderWorker(
     if (!canvas) return;
     const { worker, timeout } = startRef.current;
     const held = holdRenderWorker(canvas, worker, inputsRef.current, timeout === undefined ? undefined : { timeout });
+    if (!held) { remount(); return; }
     clientRef.current = held.client;
     const off = held.client.subscribe(onDue);
     const offStatus = relay.follow(held.client);
@@ -86,7 +89,7 @@ function useSceneRenderWorker(
       held.release();
       relay.changed();
     };
-  }, [canvasRef, onDue, clientRef, relay, startRef, inputsRef]);
+  }, [canvasRef, onDue, clientRef, relay, remount, startRef, inputsRef]);
 }
 
 /** One canvas and the worker painting it. A restart mounts a new one. */
@@ -134,14 +137,15 @@ export function WorkerSceneView<TData, TLayer extends string, TPose>(
   const [generation, setGeneration] = useState(0);
   const [held] = useState<Held>(() => {
     const ref: Held['ref'] = { current: null };
-    return { ref, relay: createStatusRelay(() => (ref.current ? [ref.current] : [])) };
+    const remount = () => setGeneration((g) => g + 1);
+    return { ref, relay: createStatusRelay(() => (ref.current ? [ref.current] : [])), remount };
   });
   useImperativeHandle(workerRef, () => ({
     get animator() { return held.ref.current?.animator ?? IDLE_ANIMATOR; },
     snapshot: () => held.ref.current?.snapshot() ?? Promise.resolve(null),
     get status() { return held.relay.status(); },
     subscribeStatus: held.relay.subscribe,
-    restart: () => setGeneration((g) => g + 1),
+    restart: held.remount,
   }), [held]);
   const surface = props as unknown as WorkerSceneViewProps<unknown, string, unknown>;
   return <WorkerSceneSurface key={generation} {...surface} held={held} />;

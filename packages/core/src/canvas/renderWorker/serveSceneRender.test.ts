@@ -23,7 +23,7 @@ function host(animations: Record<string, WorkerAnimation> = {}, shaders?: readon
     postMessage: (m) => { out.push(m as FromWorker); },
     addEventListener: (_type, fn) => { listener = fn; },
   };
-  hostSceneRender(port, { animations, ...(shaders ? { shaders } : {}) });
+  const stop = hostSceneRender(port, { animations, ...(shaders ? { shaders } : {}) });
   const send = (msg: ToWorker) => listener({ data: msg } as MessageEvent);
   send({ type: 'init', canvas, width: 20, height: 20, dpr: 1 });
   const scene = createScene<object, 'main', RectPose>({
@@ -36,7 +36,7 @@ function host(animations: Record<string, WorkerAnimation> = {}, shaders?: readon
     ...writer.write({ scene: scene as unknown as Scene<unknown, string, unknown>, view: VIEW, width: 20, height: 20, dpr: 1 }),
     id: ++frames, at: { time: 0 }, ...extra,
   });
-  return { send, frame, out, canvas };
+  return { send, frame, out, canvas, stop };
 }
 
 afterEach(() => { vi.restoreAllMocks(); });
@@ -131,5 +131,37 @@ describe('hostSceneRender', () => {
     const off = registerNodeShape({ id: 'test:late', matches: () => false, paint: () => [] });
     off();
     expect(out.filter((m) => m.type === 'dirty').length).toBe(before + 2);
+  });
+
+  it('answers a frame whose scene delta threw as lost, still takes the rest of it, and asks for one retry', () => {
+    const resize = vi.spyOn(WeaselRenderer.prototype, 'resize');
+    const played = vi.fn();
+    const { send, frame, out } = host({ glow: () => { played(); } });
+    frame();
+    const bad = (id: number) => send({
+      type: 'frame', id, at: { time: 0 },
+      scene: { nodes: [{ id: 'b', kind: 'mark', layer: 'nowhere', pose: {}, data: {} } as never], order: ['a', 'b'] },
+      view: VIEW, size: { width: 30, height: 30, dpr: 1 }, animations: [{ op: 'play', id, key: 'glow' }],
+    });
+    bad(2);
+    expect(out).toContainEqual({ type: 'drawn', id: 2, lost: true });
+    expect(out.filter((m) => m.type === 'error')).toHaveLength(1);
+    expect(resize).toHaveBeenCalledWith({ width: 30, height: 30, dpr: 1 });
+    expect(played).toHaveBeenCalledTimes(1);
+    expect(out.filter((m) => m.type === 'dirty')).toHaveLength(1);
+    bad(3);
+    expect(out.filter((m) => m.type === 'dirty')).toHaveLength(1);
+  });
+
+  it('stops hearing the realm and lets go of its renderer once stopped', () => {
+    const dispose = vi.spyOn(WeaselRenderer.prototype, 'dispose');
+    const { frame, out, stop } = host();
+    frame();
+    stop();
+    expect(dispose).toHaveBeenCalledTimes(1);
+    const before = out.length;
+    const off = registerNodeShape({ id: 'test:after-stop', matches: () => false, paint: () => [] });
+    off();
+    expect(out).toHaveLength(before);
   });
 });
