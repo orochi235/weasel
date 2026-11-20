@@ -57,7 +57,7 @@ export interface Job {
   readonly tokens?: number;
   /** Its place among the round's jobs of its kind, `3/16`. */
   readonly of?: string;
-  /** Whether it went wrong: a review that skipped files or did not finish, a conflict, a failed fleet run. */
+  /** Whether it went wrong: a review that skipped files or did not finish, a patch that did not apply, a conflict, a failed fleet run. */
   readonly bad: boolean;
 }
 
@@ -82,6 +82,9 @@ export function parseJob(line: string): Job | null {
   }
   if ((m = /^patch (\S+): (\d+) commits on (\S+)/.exec(line))) {
     return { kind: 'patch', label: 'patch', area: m[1]!, what: `${m[2]} commits on ${m[3]}`, bad: false };
+  }
+  if ((m = /^patch (\S+): (did not apply: .*)$/.exec(line))) {
+    return { kind: 'patch', label: 'patch', area: m[1]!, what: m[2]!, bad: true };
   }
   if ((m = /^batch: audit\d+-(\S+) conflicts/.exec(line))) {
     return { kind: 'batch', label: 'batch', area: m[1]!, what: 'conflicts; left out of the batch', bad: true };

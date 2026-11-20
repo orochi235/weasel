@@ -48,6 +48,13 @@ describe('jobs', () => {
     expect(parseJob('something else')).toBeNull();
   });
 
+  it('reads a patch that did not apply as a bad patch job', () => {
+    expect(parseJob('patch core.ops: did not apply: error: patch failed: a.ts:3')).toEqual({
+      kind: 'patch', label: 'patch', area: 'core.ops', what: 'did not apply: error: patch failed: a.ts:3', bad: true,
+    });
+    expect(parseJob('patch core.ops: 2 commits on audit41-core.ops')).toMatchObject({ kind: 'patch', bad: false });
+  });
+
   it('marks a review that did not finish, and says so and that it hit its ceiling', () => {
     const line = 'review 1/4 core.ops B on teitou: 2 findings, 12/12 files read, 9.0 min, 1.20M tokens';
     expect(parseJob(`${line}, hit its ceiling, unfinished: not counted as a pass`)).toMatchObject({
