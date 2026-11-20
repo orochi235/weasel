@@ -25,7 +25,7 @@ export function createPlotEditingContribution(
   return {
     id: 'weasel-plot-editing',
     eligibility: { claimed: [PLOT_HANDLE_LAYER_ID] },
-    layers: [createPlotHandleLayer(opts.scene)],
+    layers: [createPlotHandleLayer(opts.scene, opts)],
     actions: [createPlotDragAction({ ...opts, id: actionId }), grabHandleAction],
     bindings: [
       { spec: { kind: 'drag', target }, actionId, opts: { id: 'weasel-plot-editing.drag' } },

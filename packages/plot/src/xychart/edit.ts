@@ -1,6 +1,6 @@
 /** Edits to an xychart, as plain data in and out. */
-import { decimalsOf } from '@weasel-js/scale';
-import { xyLength, type XyLayout } from './compile';
+import { decimalsOf, type LinearScale } from '@weasel-js/scale';
+import { xyLength } from './compile';
 import type { XyChartData } from './types';
 
 /** How many rows the chart has: its categories, or its longest series where that is longer. */
@@ -18,9 +18,10 @@ export function setXyValue(data: XyChartData, series: number, index: number, val
   return { ...data, series: data.series.map((s, i) => (i === series ? { ...s, values } : s)) };
 }
 
-/** The value a point stands at along `layout`'s value axis, rounded to a tenth of its tick step. */
-export function xyValueAt(layout: XyLayout, at: { x: number; y: number }): number {
-  const raw = layout.value.invert(layout.orientation === 'vertical' ? at.y : at.x);
-  const step = layout.value.tickStep() / 10;
+/** The value standing at `along` on the value axis `value` (an `XyScales` or `XyLayout`'s), rounded to a
+ *  tenth of its tick step. */
+export function xyValueAt(value: LinearScale, along: number): number {
+  const raw = value.invert(along);
+  const step = value.tickStep() / 10;
   return Number((Math.round(raw / step) * step).toFixed(decimalsOf(step)));
 }

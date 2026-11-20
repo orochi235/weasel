@@ -81,6 +81,43 @@ describe('plot.editValue', () => {
     expect((plotRootOf(scene.get('p' as NodeId))!.data as XyChartData).series[0]!.values).toEqual([4, 7]);
   });
 
+  it('reads the pointer through a frame\'s toPlot and places handles through its fromPlot', () => {
+    const { scene } = setup();
+    // A stand-in for a cast onto a plane: the plot drawn at twice its size, its corner at (1000, 500).
+    const roots: string[] = [];
+    const frame = {
+      toPlot: (w: { x: number; y: number }, rootId: string) => { roots.push(rootId); return { x: (w.x - 1000) / 2, y: (w.y - 500) / 2 }; },
+      fromPlot: (p: { x: number; y: number }) => ({ x: 1000 + p.x * 2, y: 500 + p.y * 2 }),
+    };
+    const bar = scene.get('p/bar:0:1' as NodeId)!.pose;
+    const unit = bar.height / 6;
+    const handle = [...plotHandles(scene as never, frame)].find((h) => h.markId === 'p/bar:0:1')!;
+    expect(handle.at).toEqual({ x: 1000 + (bar.x + bar.width / 2) * 2, y: 500 + bar.y * 2 });
+    const ctx = (world: { x: number; y: number }) => ({
+      world, deps: { scene }, drag: { start: { x: handle.at.x, y: handle.at.y + 2 }, affordance: { payload: handle } },
+    }) as unknown as InvocationCtx;
+    const drag = (createPlotDragAction({ measure, ...frame }).invoker as { start(ctx: InvocationCtx): OngoingHandle })
+      .start(ctx({ x: handle.at.x, y: handle.at.y + 2 }));
+    // Two world units per plot unit, so three values up is six units of the plot's value step.
+    const at = { x: handle.at.x, y: handle.at.y + 2 - 2 * 3 * unit };
+    drag.onMove!(ctx(at));
+    drag.onEnd!(ctx(at), 'commit');
+    expect((plotRootOf(scene.get('p' as NodeId))!.data as XyChartData).series[0]!.values).toEqual([4, 9]);
+    expect(new Set(roots)).toEqual(new Set(['p']));
+  });
+
+  it('hands a contribution\'s frame on to its handle layer', () => {
+    const { scene } = setup();
+    const fromPlot = (p: { x: number; y: number }) => ({ x: p.x + 700, y: p.y + 700 });
+    const layer = createPlotEditingContribution({ scene: scene as never, fromPlot }).layers![0]! as unknown as {
+      hitTest(x: number, y: number, state: unknown, view: unknown, dims: unknown): { initialScratch?: unknown } | null;
+    };
+    const plain = [...plotHandles(scene as never, { fromPlot: (p) => p })].find((h) => h.markId === 'p/bar:0:1')!;
+    const hit = (p: { x: number; y: number }) => layer.hitTest(p.x, p.y, {}, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 2000, height: 2000, dpr: 1 });
+    expect(hit(plain.at)).toBeNull();
+    expect(hit(fromPlot(plain.at))?.initialScratch).toMatchObject({ markId: 'p/bar:0:1', at: fromPlot(plain.at) });
+  });
+
   it('is bound to a drag on the handle layer\'s kind', () => {
     const { scene } = setup();
     const contribution = createPlotEditingContribution({ scene: scene as never });

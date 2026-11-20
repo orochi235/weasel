@@ -3,14 +3,14 @@
  * mark whose datum names an `edit` is the spec's text, and closing the editor
  * folds what was typed into one edit of the spec.
  */
-import { useLatest, type NodeId, type RectPose, type AnyScene } from '@weasel-js/core';
+import { useLatest, type NodeId, type AnyScene } from '@weasel-js/core';
 import { isTextData } from '@weasel-js/text';
 import { type CanvasTextEditorOptions } from '@weasel-js/text-tools';
 import { useMemo } from 'react';
 import type { PlotDatum } from '../marks/types';
 import { textMeasure } from '../measure';
 import { compilePlot } from '../plotData';
-import { plotMarkOf, plotRootOf } from '../plotScene';
+import { plotMarkOf, plotRootOf, plotSizeOf } from '../plotScene';
 import type { PlotEdit } from './dragAction';
 import { plotEditorOf } from './editors';
 
@@ -24,9 +24,8 @@ export function plotTextDatumOf(node: { data: unknown } | undefined): PlotDatum 
 function compiledText(scene: AnyScene, rootId: string, markId: string): string | undefined {
   const root = scene.get(rootId as NodeId)!;
   const trait = plotRootOf(root)!;
-  const { width, height } = root.pose as RectPose;
   const key = markId.slice(rootId.length + 1);
-  return compilePlot(trait.data, { width, height }, trait.theme, textMeasure).find((m) => m.key === key)?.data.text;
+  return compilePlot(trait.data, plotSizeOf(root), trait.theme, textMeasure).find((m) => m.key === key)?.data.text;
 }
 
 /** Whether `data` is a chart's text an edit can set. */
