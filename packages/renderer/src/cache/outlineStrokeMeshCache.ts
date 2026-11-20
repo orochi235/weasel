@@ -70,11 +70,15 @@ export function outlineStrokeMesh(
   const glyph = pathFromD(d);
   const sized = { ...stroke, width: emWidth };
   const align = stroke.align ?? 'center';
-  // The ribbon has no side of its own, so an aligned one is the stroke's outline, cut to it. A glyph draws no heads.
+  // The ribbon has no side of its own, so an aligned one is the stroke's outline, cut to it, drawn in the
+  // metric's space (its frame is P⁻¹). A glyph draws no heads.
   const mesh = align === 'center'
     ? tessellateStroke(glyph, sized, { flattenTolerance: OUTLINE_FLATTEN_TOLERANCE, metric })
     : tessellate(
-      strokeToPath(glyph, { ...sized, markerStart: undefined, markerMid: undefined, markerEnd: undefined }, { flattenTolerance: OUTLINE_FLATTEN_TOLERANCE }),
+      strokeToPath(glyph, { ...sized, markerStart: undefined, markerMid: undefined, markerEnd: undefined }, {
+        flattenTolerance: OUTLINE_FLATTEN_TOLERANCE,
+        frame: metric && [metric.r, -metric.q, -metric.q, metric.p, 0, 0],
+      }),
       { flattenTolerance: OUTLINE_FLATTEN_TOLERANCE },
     );
   cache.set(key, mesh);
