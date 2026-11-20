@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { citedPaths, firstJson, isFinished, parseFilesRead, parseFindings, reviewText, validPairs } from './findings.mjs';
+import { citedPaths, firstJson, fixTallyOf, isFinished, parseFilesRead, parseFindings, reviewText, validPairs } from './findings.mjs';
 import { appendRecordRow } from './record.mjs';
 import { mayStartArea, parseEnvelope } from './usage.mjs';
 
@@ -46,6 +46,13 @@ describe('validPairs', () => {
   it('reads the first JSON object out of a fenced reply', () => {
     expect(firstJson('```json\n{"pairs": [[0, 1]]}\n```')).toEqual({ pairs: [[0, 1]] });
     expect(() => firstJson('no pairs')).toThrow();
+  });
+});
+
+describe('fixTallyOf', () => {
+  it('reads the fixer\'s closing tally line, and nothing from a report without one', () => {
+    expect(fixTallyOf('fixed 1a2b3c4d | a thing (A)\nChecks: pass\ntally: 3 of 4 fixed, 1 extra fixed\n')).toEqual({ fixed: 3, of: 4, extra: 1 });
+    expect(fixTallyOf('fixed 1a2b3c4d | a thing (A)\nfixed 5e6f7a8b | another (B)')).toBeNull();
   });
 });
 

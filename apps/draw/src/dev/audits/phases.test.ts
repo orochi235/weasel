@@ -67,10 +67,11 @@ describe('laneViewOf', () => {
     expect(view.spans.map((s) => s.fill)).toEqual([undefined, 0, 0, 0]);
   });
 
-  it('captions the patch with the defects found, then fixed', () => {
-    const fixed = { A: done({ findings: 3 }), B: done({ findings: 2 }), match: matched(3, 2, 1), fix: done({ minutes: 9, commits: 4 }) };
-    expect(laneViewOf(lane(fixed), NOW, START).spans.at(-1)?.label).toBe('4 found / 4 fixed');
-    expect(laneStepsOf(lane({ ...fixed, patch: done({ commits: 4 }) }), NOW).at(-1)?.label).toBe('4 found / 4 fixed');
+  it('captions the patch with the defects found, then the fixer\'s tally of what it fixed', () => {
+    const fixed = { A: done({ findings: 3 }), B: done({ findings: 2 }), match: matched(3, 2, 1), fix: done({ minutes: 9, commits: 6, fixed: 3, of: 4, extra: 1 }) };
+    expect(laneViewOf(lane(fixed), NOW, START).spans.at(-1)?.label).toBe('4 found / 3 fixed +1 extra');
+    expect(laneStepsOf(lane({ ...fixed, patch: done({ commits: 6 }) }), NOW).at(-1)?.label).toBe('4 found / 3 fixed +1 extra');
+    expect(laneViewOf(lane({ ...fixed, fix: done({ minutes: 9, commits: 6 }) }), NOW, START).spans.at(-1)?.label).toBe('4 found');
   });
 
   it('colors a failed part as a conflict and says why', () => {

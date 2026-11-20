@@ -34,6 +34,13 @@ describe('nightStages', () => {
 });
 
 describe('nightLanes', () => {
+  it('gives a done fix its report\'s tally, and leaves one with no tally as it was', () => {
+    const log = 'fix 1/2 a on studio: 5 commits, 8.0 min, 0.5M weighted tokens\nfix 2/2 b on studio: 2 commits, 3.0 min, 0.2M weighted tokens';
+    const lanes = nightLanes(log, ['a', 'b'], [], new Map([['a', 'tally: 3 of 4 fixed, 1 extra fixed'], ['b', 'fixed 1a2b3c4d']]));
+    expect(lanes.find((l) => l.id === 'a')!.steps.fix).toMatchObject({ commits: 5, fixed: 3, of: 4, extra: 1 });
+    expect(lanes.find((l) => l.id === 'b')!.steps.fix).not.toHaveProperty('fixed');
+  });
+
   it("fills each area's thread from the log, and marks a step running from onto's running tasks", () => {
     const log = [
       'review 1/4 core.core.ops A on studio: 5 findings, 24/24 files read, 2.8 min, 1.30M tokens',

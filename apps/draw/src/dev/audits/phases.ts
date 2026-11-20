@@ -110,13 +110,14 @@ function measuredOf(p: PartState): number | null {
 
 const SPAN_STATE: Readonly<Record<LaneStep['state'], SpanState>> = { waiting: 'pending', running: 'active', done: 'done', failed: 'failed' };
 
-/** The area's tally, its patch segment's caption: the distinct defects the reviews found, once matched, and the
- *  fixer's commits, once it is done. */
+/** The area's tally, its patch segment's caption: the distinct defects the reviews found, once matched, and what
+ *  the fixer's report tallies as fixed, where it gives a tally. */
 export function tallyOf(lane: AuditLane): string {
   const { match, fix } = lane.steps;
   if (match.state !== 'done') return '';
   const found = `${(match.a ?? 0) + (match.b ?? 0) - (match.shared ?? 0)} found`;
-  return fix.state === 'done' ? `${found} / ${fix.commits ?? 0} fixed` : found;
+  if (fix.state !== 'done' || fix.fixed === undefined) return found;
+  return `${found} / ${fix.fixed} fixed${fix.extra ? ` +${fix.extra} extra` : ''}`;
 }
 
 /** What a part shows in its segment: the node, what it found or made, and its minutes, never the phase's name; the

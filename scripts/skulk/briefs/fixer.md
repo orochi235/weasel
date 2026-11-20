@@ -41,3 +41,7 @@ One line per distinct finding: `fixed <sha> | not a defect (why) | question (wha
 each line led by the finding's claim in a few words and where it came from (A, B, A+B, or sweep). Then any
 extra defects you found while fixing, the same way. Then the checks you ran and their results, verbatim
 pass/fail.
+
+End with one line, exactly: `tally: <F> of <N> fixed, <X> extra fixed`. N is how many findings you were
+given, counted as they were listed to you, however you split or joined them while fixing; F is how many of those
+you fixed; X is the extra defects you fixed.

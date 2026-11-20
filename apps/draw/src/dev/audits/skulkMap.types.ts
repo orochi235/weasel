@@ -38,6 +38,11 @@ export interface LaneStep {
   readonly a?: number;
   readonly b?: number;
   readonly commits?: number;
+  /** A done fix's tally, where its report gives one: of the `of` findings it was given, how many it fixed, and the
+   *  defects nobody had listed it fixed besides. */
+  readonly fixed?: number;
+  readonly of?: number;
+  readonly extra?: number;
   readonly why?: string;
   /** When a done step began and ended, from onto's record of the job that ran it. */
   readonly started?: string;

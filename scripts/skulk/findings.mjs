@@ -69,3 +69,16 @@ export const matchPrompt = (brief, a, b) => {
   const list = (findings) => findings.map((f, i) => `${i}. ${f.claim}\n   where: ${f.where}`).join('\n');
   return `${brief}\n\n# List A\n\n${list(a) || '(empty)'}\n\n# List B\n\n${list(b) || '(empty)'}\n`;
 };
+
+const TALLY = /^tally: (\d+) of (\d+) fixed, (\d+) extra fixed\s*$/im;
+
+/**
+ * What a fixer's report says it did, from its closing `tally:` line: how many of the `of` findings it was given it
+ * fixed, and how many defects nobody had listed it fixed besides. Null for a report with no tally, as every report
+ * before round 47's later fixers has: their prose lists findings split and merged unlike the match, so no count read
+ * from it is comparable with the round's.
+ */
+export const fixTallyOf = (report) => {
+  const t = TALLY.exec(report);
+  return t ? { fixed: Number(t[1]), of: Number(t[2]), extra: Number(t[3]) } : null;
+};

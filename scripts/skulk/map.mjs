@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gitIn } from './batch.mjs';
 import { STATE_DIR } from './config.mjs';
+import { fixTallyOf } from './findings.mjs';
 import { partitionAt } from './partition.mjs';
 import { chapman, gitTouched, pickAreas, readPasses } from './rounds.mjs';
 import { lastFinished, liveRuns, readJson } from './runs.mjs';
@@ -45,9 +46,9 @@ const bestFinished = (jobs, minutes) => {
  * Each area's lane: for every step of its thread (reviews A and B, match, fix, patch), whether it is done,
  * with what the log says it produced, or running, from `jobs`' `audit<N>-<area>-<step>` onto tasks. A job with
  * no `finished` is running, and gives its step's `since`; a finished one gives a done step its `ended`, and its
- * `started` as that less the minutes the log reports.
+ * `started` as that less the minutes the log reports. A done fix takes its report's tally from `reports`, by area.
  */
-export const nightLanes = (log, areas, jobs = []) => {
+export const nightLanes = (log, areas, jobs = [], reports = new Map()) => {
   const lanes = new Map(areas.map((id) => [id, Object.fromEntries(LANE_STEPS.map((s) => [s, { state: 'waiting' }]))]));
   const at = (id, step) => lanes.get(id)?.[step];
   for (const line of log.split('\n')) {
@@ -57,7 +58,8 @@ export const nightLanes = (log, areas, jobs = []) => {
     } else if ((m = /^match \d+\/\d+ (\S+): (\d+) shared of (\d+) \+ (\d+)/.exec(line))) {
       Object.assign(at(m[1], 'match') ?? {}, { state: 'done', shared: Number(m[2]), a: Number(m[3]), b: Number(m[4]) });
     } else if ((m = /^fix \d+\/\d+ (\S+) on (\S+): (\d+) commits, ([\d.]+) min/.exec(line))) {
-      Object.assign(at(m[1], 'fix') ?? {}, { state: 'done', node: m[2], commits: Number(m[3]), minutes: Number(m[4]) });
+      const tally = fixTallyOf(reports.get(m[1]) ?? '');
+      Object.assign(at(m[1], 'fix') ?? {}, { state: 'done', node: m[2], commits: Number(m[3]), minutes: Number(m[4]), ...(tally ?? {}) });
     } else if ((m = /^patch (\S+): (\d+) commits on /.exec(line))) {
       Object.assign(at(m[1], 'patch') ?? {}, { state: 'done', commits: Number(m[2]) });
     } else if ((m = /^patch (\S+): did not apply/.exec(line))) {
@@ -109,6 +111,12 @@ const nightDirOf = (run, state) => {
   return name ? join(nights, name) : null;
 };
 
+/** Each area's fixer report that has come home, by area. */
+const fixReports = (nightDir, ids) => new Map(nightDir ? ids.flatMap((id) => {
+  const file = join(nightDir, 'jobs', id, 'fix', 'claude.json');
+  return existsSync(file) ? [[id, String(readJson(file)?.result ?? '')]] : [];
+}) : []);
+
 /** What one run, live (`running`) or finished, says about its areas; `jobs` are onto's jobs, running and finished. */
 export const readRun = (found, running, jobs = [], state = STATE_DIR) => {
   const run = { ...found, nightDir: nightDirOf(found, state) };
@@ -128,7 +136,7 @@ export const readRun = (found, running, jobs = [], state = STATE_DIR) => {
     report: run.report ?? null,
     areas: areaIds,
     stages: Object.fromEntries(nightStages(log)),
-    lanes: nightLanes(log, areaIds, running ? own : own.filter((j) => j.finished)),
+    lanes: nightLanes(log, areaIds, running ? own : own.filter((j) => j.finished), fixReports(run.nightDir, areaIds)),
     sweepRunning: running && jobs.some((j) => !j.finished && /control-sweep$/.test(j.task ?? '')),
     nightDir: run.nightDir ?? null,
     lastLine: lines.at(-1) ?? null,
