@@ -340,6 +340,28 @@ describe('PrefConditionEditor inside an entry', () => {
   });
 });
 
+describe('PrefConditionEditor read from its group', () => {
+  function InGroup({ start, seen }: { start: PrefCondition; seen: { value?: PrefCondition } }) {
+    const [value, setValue] = useState<PrefCondition | undefined>(start);
+    seen.value = value;
+    return <PrefConditionEditor aria-label="Shown if" schema={SCHEMA} group="view" value={value} onChange={setValue} />;
+  }
+
+  it('draws a test read from its group on the leaf there, names it as the group\'s, and keeps reading the group through an edit', () => {
+    const seen: { value?: PrefCondition } = {};
+    renderWithIcons(<InGroup start={{ from: 'group', path: 'step', atLeast: 4 }} seen={seen} />);
+    expect(row(1)).not.toHaveAttribute('data-invalid');
+    expect(within(row(1)).getByRole('button', { name: /pref/ })).toHaveTextContent('Zoom step this group: step');
+    expect(within(row(1)).getByRole('button', { name: /comparison/ })).toHaveTextContent('is at least');
+    const box = within(row(1)).getByRole('spinbutton', { name: 'Condition 1 value' });
+    fireEvent.change(box, { target: { value: '6' } });
+    fireEvent.blur(box);
+    expect(seen.value).toEqual({ from: 'group', path: 'step', atLeast: 6 });
+    pick(row(1), /comparison/, 'is below');
+    expect(seen.value).toEqual({ from: 'group', path: 'step', below: 6 });
+  });
+});
+
 describe('PrefConditionEditor copy and paste', () => {
   /** A clipboard holding `text`, in place of the one jsdom lacks. */
   const clipboard = (text = '') => {
