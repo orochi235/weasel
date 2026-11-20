@@ -7,13 +7,15 @@ import { isEmptyOngoingHandle } from './inFlightGestures';
  * runs and every read goes to the handle it returns, beginning with the move that crossed. A `start`
  * that declines, with an empty handle, passes the drag on, as it would have fallen through at the
  * press. A release short of the threshold ends a gesture that never started. A `start` that throws is
- * handed to `threw`, which ends the drag, and is never called again.
+ * handed to `threw`, which ends the drag, and is never called again. A `start` that ends the drag
+ * itself (a `cancelAll` from inside it) has the handle it returns canceled at once.
  */
 export function deferredStart(
   start: () => OngoingHandle, thresholdPx: number, threw: (err: unknown) => void,
 ): OngoingHandle {
   let inner: OngoingHandle | null = null;
   let failed = false;
+  let ended: InvocationCtx | null = null;
   const onMove = (ctx: InvocationCtx): void | 'pass' => {
     if (!inner) {
       const travel = ctx.drag?.screenDelta;
@@ -26,10 +28,15 @@ export function deferredStart(
         return;
       }
       if (isEmptyOngoingHandle(inner)) return 'pass';
+      if (ended) {
+        inner.onEnd?.(ended, 'cancel');
+        return;
+      }
     }
     return inner.onMove?.(ctx);
   };
   const onEnd = (ctx: InvocationCtx, reason: 'commit' | 'cancel'): void => {
+    ended = ctx;
     inner?.onEnd?.(ctx, reason);
   };
   // A proxy rather than a copy of each field: an absent method and one answering null mean

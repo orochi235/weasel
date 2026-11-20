@@ -110,4 +110,15 @@ describe("an action's drag threshold", () => {
     expect(handle.onEnd).toHaveBeenCalledWith(expect.anything(), 'commit');
     error.mockRestore();
   });
+
+  it('cancels the handle a held start returns after ending every gesture itself', () => {
+    const { handle, start, send, dispatcher } = setup(8);
+    start.mockImplementationOnce(() => { dispatcher.cancelAll('cancel'); return handle; });
+    send(at('pointerdown', 100));
+    send(at('pointermove', 120));
+    expect(handle.onMove).not.toHaveBeenCalled();
+    expect(handle.onEnd).toHaveBeenCalledOnce();
+    expect(handle.onEnd).toHaveBeenCalledWith(expect.anything(), 'cancel');
+    expect(dispatcher.inFlight().size).toBe(0);
+  });
 });
