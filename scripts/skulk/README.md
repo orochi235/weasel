@@ -35,13 +35,13 @@ Flags:
 
 | Flag | Default | Does |
 |---|---|---|
-| `--areas K` | 8 | areas tonight |
+| `--areas K` | 16 | areas tonight |
 | `--only a,b` | | these areas, ignoring the pick order; refused if a live run holds one |
 | `--nodes a,b` | | only these nodes (onto's own quiet hours still apply) |
 | `--dry` | | print the plan (round, nodes, areas and their files, jobs) and stop |
 | `--no-merge` | | leave `main` alone even when the batch is green; the batch and branches are kept |
 | `--sweep` | | run the control sweep too; a night leaves it out unless asked (2026-11-19) |
-| `--cap-usd N` | 80 | list-price dollars the night may spend, summed from each job's cost |
+| `--cap-usd N` | 160 | list-price dollars the night may spend, summed from each job's cost |
 | `--budget-review USD`, `--budget-match USD`, `--budget-fix USD` | 8, 1, 15 | each job's `--max-budget-usd` |
 
 ## The control sweep
