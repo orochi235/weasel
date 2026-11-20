@@ -80,7 +80,7 @@ export interface ExportResult {
 
 /** Options for {@link DiagramFormat.write}. */
 export interface WriteOptions {
-  /** The page a format with no pages writes. Default the first. */
+  /** The page a format with no pages writes. Default the first; one the document does not have throws. */
   page?: string;
 }
 
@@ -103,9 +103,13 @@ export interface DiagramFormat {
   kinds: readonly PageKind[];
 }
 
-/** The page a one-page format writes: the one `opts.page` names, else the first. `null` for a document with none. */
+/** The page a one-page format writes: the one `opts.page` names, else the first. `null` for a document with none.
+ *  Throws a `RangeError` when `opts.page` names a page the document does not have. */
 export function writtenPage(doc: DiagramDocument, opts: WriteOptions = {}): DocumentPage | null {
-  return doc.pages.find((p) => p.id === opts.page) ?? doc.pages[0] ?? null;
+  if (opts.page === undefined) return doc.pages[0] ?? null;
+  const page = doc.pages.find((p) => p.id === opts.page);
+  if (page === undefined) throw new RangeError(`The document has no page ${JSON.stringify(opts.page)} to write`);
+  return page;
 }
 
 /** `page` as a graph, for a format that writes graphs only. Throws on a page of any other kind. */

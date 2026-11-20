@@ -64,7 +64,8 @@ describe('sequence pages', () => {
     const [graph, sequence] = placedPagesOf(scene);
     expect([...scenePageKinds(scene, { page: graph!.id })]).toEqual(['graph']);
     expect([...scenePageKinds(scene, { page: sequence!.id })]).toEqual(['sequence']);
-    expect([...scenePageKinds(scene, { page: 'nowhere' })]).toEqual(['graph']);
+    expect([...scenePageKinds(scene, { page: undefined })]).toEqual(['graph']);
+    expect(() => scenePageKinds(scene, { page: 'nowhere' })).toThrow(RangeError);
     expect(formatFitsKinds(DIAGRAM_DOT, scenePageKinds(scene, { page: graph!.id }))).toBe(true);
   });
 

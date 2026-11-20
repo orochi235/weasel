@@ -13,7 +13,8 @@ import type { PageKind } from './document';
  * every menu render.
  *
  * With `opts.page`, the kind of the one page a one-page writer would write
- * (`writtenPage`): the page so named, else the first.
+ * (`writtenPage`): the page so named, else the first. A name the scene has no
+ * page for throws a `RangeError`, as `writtenPage` does.
  */
 export function scenePageKinds<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>, opts: { page?: string | undefined } = {},
@@ -30,7 +31,8 @@ export function scenePageKinds<TData, TLayer extends string, TPose>(
     if (page !== null && !claimed.has(page)) claimed.set(page, kind);
   }
   if ('page' in opts && placed.length > 0) {
-    const written = placed.find((p) => p.id === opts.page) ?? placed[0]!;
+    const written = opts.page === undefined ? placed[0]! : placed.find((p) => p.id === opts.page);
+    if (written === undefined) throw new RangeError(`The scene has no page ${JSON.stringify(opts.page)} to write`);
     return new Set([claimed.get(written.id) ?? 'graph']);
   }
   if (placed.length === 0 ? kinds.size === 0 : placed.some((p) => !claimed.has(p.id))) kinds.add('graph');

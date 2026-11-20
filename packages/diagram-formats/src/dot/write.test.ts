@@ -257,4 +257,8 @@ describe('writing DOT', () => {
     const page = back(pageOf({ nodes: [{ id: 'a', width: 144, height: 72 }, { id: 'b' }], edges: [] }));
     expect(page.data.nodes.map((n) => [n.id, n.width, n.height])).toEqual([['a', 144, 72], ['b', undefined, undefined]]);
   });
+
+  it('throws on a page the document does not have, rather than writing the first', () => {
+    expect(() => writeDot(pageOf({ nodes: [], edges: [] }), { page: 'p9' })).toThrow(/no page "p9"/);
+  });
 });

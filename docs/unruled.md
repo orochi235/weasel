@@ -2818,3 +2818,7 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): the Diagram JSON reader refuses a page with no string `id`, a `width` or `height` that
   is not a finite size of at least 0, or no `data` object, and a graph page whose data has no `nodes` and `edges`
   lists, as it refuses a theme that does not check. Taking such a page and failing at draw time was the alternative.
+- 2026-11-20 (the fixer's call): `writtenPage`, and so every one-page writer (DOT, Mermaid), throws a `RangeError` when
+  `WriteOptions.page` names a page the document does not have, and `scenePageKinds` does the same for an `opts.page`
+  its scene has no page for. Both had fallen back to the first page, so a stale id exported another page as if it
+  were the one asked for. An unset `page` still means the first.
