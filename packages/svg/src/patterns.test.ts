@@ -109,6 +109,7 @@ describe('pattern serialization', () => {
       { onWarn: (m) => warnings.push(m) },
     );
     expect(svg).not.toContain('<pattern ');
+    expect(svg).toMatch(/fill="url\(#pat\d+\) none"/);
     expect(warnings.join(' ')).toContain('TextureHandle');
   });
 
