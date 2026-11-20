@@ -79,7 +79,8 @@ const commands = [
     r.source.capture();
     m.captured = true;
     const { width, height } = r.canvas;
-    if (m.readers === 0 || width === 0 || height === 0) return;
+    if (m.readers === 0) return;
+    if (width === 0 || height === 0) { if (m.current) m.frames++; m.current = false; m.missed = 0; return; }
     m.snapshot = { width, height };
     m.current = true;
     m.missed = 0;

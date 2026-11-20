@@ -166,6 +166,18 @@ describe('createCanvasSource', () => {
     expect(String(warn.mock.calls[0][0])).not.toMatch(/nothing has called capture/);
   });
 
+  it('answers no frame once a capture finds the canvas empty', () => {
+    const c = canvas(64, 32);
+    const s = createCanvasSource(gl(false, c));
+    s.retain();
+    s.capture();
+    (c as { width: number; height: number }).width = 0;
+    s.capture();
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    expect(s.frame()).toBeNull();
+    expect(s.pixel({ x: 1, y: 1 })).toBeNull();
+  });
+
   it('reads a backing-store pixel, and nothing off the canvas', () => {
     const s = createCanvasSource(canvas(200, 100));
     expect([...s.pixel({ x: 5.7, y: 3.2 })!]).toEqual([10, 20, 30, 255]);

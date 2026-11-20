@@ -139,7 +139,15 @@ export function createCanvasSource(
       captured = true;
       if (readers === 0) return;
       const { width, height } = canvas;
-      if (width === 0 || height === 0) return;
+      if (width === 0 || height === 0) {
+        missed = 0;
+        // The canvas shows nothing now; the last copy is of a picture that has gone.
+        if (current) {
+          current = false;
+          frames.emit();
+        }
+        return;
+      }
       if (!snapshot) snapshot = makeCanvas(width, height);
       else if (snapshot.width !== width || snapshot.height !== height) {
         snapshot.width = width;
