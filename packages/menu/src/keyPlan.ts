@@ -13,8 +13,8 @@ export interface KeyPlan {
   effect: KeyEffect;
 }
 
-/** What one key does to an open menu: navigation, then an access letter, then typeahead. A space mid-search is
- *  typed, as in a list. `null` when the key is none of the menu's. `stack` is the same array when nothing moved. */
+/** What one key does to an open menu: navigation, then an access letter, then typeahead. A character typed
+ *  mid-search, space included, extends the search while the search still finds a row. `null` when the key is none of the menu's. `stack` is the same array when nothing moved. */
 export function planKey(
   root: readonly MenuEntry[],
   stack: MenuStack,
@@ -25,7 +25,10 @@ export function planKey(
 ): KeyPlan | null {
   const level = stack.length - 1;
   const rows = entriesAt(root, stack, level);
-  if (key === ' ' && typeaheadSearching(typed, now)) return typeahead(rows, stack, typed, key, now);
+  if (isOneChar(key) && typeaheadSearching(typed, now)) {
+    const extended = typeahead(rows, stack, typed, key, now);
+    if (extended.found) return extended.plan;
+  }
   const r = keyStep(root, stack, key, dir);
   if (r.handled) {
     return { stack: r.stack, typed: r.stack !== stack ? EMPTY_TYPEAHEAD : typed, effect: r.effect };
@@ -43,14 +46,16 @@ export function planKey(
         : highlight(stack, letter);
     return { stack: opened, typed: EMPTY_TYPEAHEAD, effect: { kind: 'none' } };
   }
-  return typeahead(rows, stack, typed, key, now);
+  return typeahead(rows, stack, typed, key, now).plan;
 }
 
 /** `key` typed into the search over the top level's `rows`. */
-function typeahead(rows: readonly MenuEntry[], stack: MenuStack, typed: TypeaheadBuffer, key: string, now: number): KeyPlan {
+function typeahead(
+  rows: readonly MenuEntry[], stack: MenuStack, typed: TypeaheadBuffer, key: string, now: number,
+): { plan: KeyPlan; found: boolean } {
   const t = typeaheadStep(rows, stack.at(-1) ?? null, typed, key, now);
   const next = t.hit === null ? stack : highlight(stack, t.hit);
-  return { stack: next, typed: t.buffer, effect: { kind: 'none' } };
+  return { plan: { stack: next, typed: t.buffer, effect: { kind: 'none' } }, found: t.hit !== null };
 }
 
 /** `stack` with its top level's highlight on `index`: `stack` itself when it is there already. */
