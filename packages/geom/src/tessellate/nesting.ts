@@ -47,7 +47,7 @@ function contains(coords: number[], o: Ring, box: number[], r: Ring): boolean {
   const eps = Math.max(box[2] - box[0], box[3] - box[1]) * 1e-9;
   for (let i = r.start; i < r.end; i++) {
     const x = coords[i * 2], y = coords[i * 2 + 1];
-    if (x < box[0] || x > box[2] || y < box[1] || y > box[3]) return false;
+    if (x < box[0] - eps || x > box[2] + eps || y < box[1] - eps || y > box[3] + eps) return false;
     if (!onOutline(coords, o, x, y, eps)) return polygonContainsPoint(coords, x, y, o.start, o.end);
   }
   for (let i = r.start; i < r.end; i++) {
