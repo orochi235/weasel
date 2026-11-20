@@ -22,6 +22,19 @@ describe('attribute controls', () => {
     expect(screen.getByText('Mixed')).toBeTruthy();
   });
 
+  it('enum-options and pair say when the selection holds different lists, and replace them only when asked', () => {
+    for (const kind of ['enum-options', 'pair'] as const) {
+      const setValue = vi.fn();
+      renderWithIcons(<>{ATTR_RENDERERS[kind]({ ...ctx(kind, undefined, setValue), mixed: true })}</>);
+      expect(screen.getByText('Mixed')).toBeTruthy();
+      expect(screen.queryByRole('textbox', { name: 'Add to Options' })).toBeNull();
+      expect(screen.queryByRole('button', { name: /Add a paired field/ })).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Replace all' }));
+      expect(setValue).toHaveBeenCalledWith(kind === 'pair' ? undefined : []);
+      cleanup();
+    }
+  });
+
   it('optional-number writes a number, and undefined when cleared', () => {
     const setValue = vi.fn();
     renderWithIcons(<>{ATTR_RENDERERS['optional-number'](ctx('optional-number', 4, setValue))}</>);
