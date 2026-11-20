@@ -68,6 +68,12 @@ function Lanes({ run, now, mode, hideComplete, on }: { run: AuditRun; now: numbe
   const lanes = run.lanes.map((lane) => ({ lane, view: laneViewOf(lane, now, clock.from) })).filter(({ lane }) => !hideComplete || !passDone(lane));
   const widest = Math.max(0, ...run.lanes.map((l) => l.id.length));
   useLayoutEffect(() => { ref.current?.style.setProperty('--audit-lead-ch', String(widest)); }, [widest]);
+  // A label's element is remade whenever its text changes, restarting its pulse; one shared start keeps every pulse in step.
+  useLayoutEffect(() => {
+    for (const a of ref.current?.getAnimations?.({ subtree: true }) ?? []) {
+      if (a instanceof CSSAnimation && a.animationName.includes('node-pulse')) a.startTime = 0;
+    }
+  });
   if (lanes.length === 0) return null;
   const rows = lanes.map(({ lane, view }) => laneRow(lane, view, on, mode === 'steps' ? laneStepsOf(lane, now) : view.spans));
   return (
