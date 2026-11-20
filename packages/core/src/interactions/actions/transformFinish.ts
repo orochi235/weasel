@@ -22,6 +22,9 @@ export interface TransformPreviewNode {
  * in order.
  */
 export interface TransformFollower {
+  /** A transform drag starts: what this follower kept from an earlier drag's
+   *  frames no longer holds. Called once per drag, before its first frame. */
+  begin?(): void;
   /** The other nodes a drag's frame changes, given the stored pose the frame
    *  puts each transformed node in: what `finish` would commit for it.
    *  `data` holds the data the followers before this one previewed, by id. */
@@ -117,6 +120,7 @@ export function createTransformPreview(
   previews: () => ReadonlyMap<NodeId, unknown>,
 ): TransformPreview {
   const followers = deps?.transformFollowers ?? [];
+  for (const follower of followers) follower.begin?.();
   let seen: ReadonlyMap<NodeId, unknown> | null = null;
   let others = new Map<string, TransformPreviewNode>();
   let posed: ReadonlyMap<NodeId, unknown> = new Map();
