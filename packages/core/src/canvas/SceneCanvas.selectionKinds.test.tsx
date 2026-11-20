@@ -123,4 +123,12 @@ describe('the published selection kinds on one canvas', () => {
     act(() => scene.setSelection([asNodeId('gone'), asNodeId('group')]));
     expect(seen.label).toEqual(['group']);
   });
+
+  it('relabels a selected node whose data an edit changes, with the selection unchanged', () => {
+    const { seen, scene } = answers();
+    const before = seen.label?.[IDS.indexOf(asNodeId('card'))];
+    expect(before).toBeUndefined();
+    act(() => scene.update(asNodeId('card'), { data: { image: { src: 'b.png' } } }));
+    expect(seen.label?.[IDS.indexOf(asNodeId('card'))]).toBe('image');
+  });
 });
