@@ -20,7 +20,7 @@ export const LOADED = [
   'scripts/vitest-{browser-commands,browser-deps,browser-overlay,browser-prebundle,css-cache-key,load-reruns,own-frame,resolve-cache-key,timeout-retries}.ts',
   'scripts/vitest-{browser-spread,fleet-fail,overlap}.mjs',
   'scripts/{chromium-gpu-args,headless-source}.ts',
-  'scripts/lib/{browser-shape,fleet-tree,fleet-triggers,imports,load-reruns,merge-progress,node-load,own-install,packageEntries,prune-older-than,workspaces}.mjs',
+  'scripts/lib/{browser-shape,fleet-tree,fleet-triggers,imports,load-reruns,merge-progress,module-cache,node-load,own-install,packageEntries,prune-older-than,workspaces}.mjs',
   'scripts/lib/{cssBlocks,markdownBlocks}.ts',
   'scripts/release/{changelogs,entry-marker,summary,vite-plugin}.ts',
   'scripts/release/bumps.mjs',

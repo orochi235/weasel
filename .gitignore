@@ -11,6 +11,7 @@ coverage
 .DS_Store
 *.tsbuildinfo
 .tsbuildinfo/
+.vitest-cache/
 .vite
 .env
 .env.local

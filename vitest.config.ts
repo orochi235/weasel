@@ -32,6 +32,7 @@ import { HOST_GPU_ARGS } from './scripts/chromium-gpu-args.ts';
 import { spreadPlaywright } from './scripts/vitest-browser-spread.mjs';
 import { browserShape } from './scripts/lib/browser-shape.mjs';
 import { assertOwnInstall } from './scripts/lib/own-install.mjs';
+import { moduleCacheDir } from './scripts/lib/module-cache.mjs';
 
 assertOwnInstall(import.meta.dirname);
 
@@ -103,6 +104,7 @@ export default defineConfig({
   test: {
     globalSetup: ['./scripts/fleet-tree.setup.ts', './scripts/module-cache.setup.ts'],
     fsModuleCache: true,
+    fsModuleCachePath: moduleCacheDir(import.meta.dirname),
     // vitest's default (RAM / workers) never recycles a vm worker, and one that lives the whole run
     // segfaults V8 on Node 24.22; at 1 GB each is replaced about once (2026-10-22, see docs/traps/testing.md).
     vmMemoryLimit: '1gb',
