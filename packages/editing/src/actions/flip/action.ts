@@ -1,5 +1,5 @@
 import type { NodeId, Scene, OperandsDep, Bounds, Op, PoseDescriptor, RectPose } from '@weasel-js/core';
-import { shapeSources, uncarried, withoutPageStructure, poseDescriptorOf, unionAabb, drawnBoxes, type DrawnBoxes, isNoInkExtents, scenePoseFrame, type PoseFrame, actionReferenceSources, resolveSpatialReference, sameValue, finiteThroughout, defaultCommitAdapter, operandMethods, createTransformCommit, requiresOperands, type GeometryProjection } from '@weasel-js/core';
+import { shapeSources, uncarried, withoutPageStructure, poseDescriptorOf, nodeDescriptors, unionAabb, drawnBoxes, type DrawnBoxes, isNoInkExtents, scenePoseFrame, type PoseFrame, actionReferenceSources, resolveSpatialReference, sameValue, finiteThroughout, defaultCommitAdapter, operandMethods, createTransformCommit, requiresOperands, type GeometryProjection } from '@weasel-js/core';
 import { multiply, rotate, translate, type Affine, type Rect } from '@weasel-js/geom';
 import {
   flipPoseAboutBounds,
@@ -63,7 +63,7 @@ function flipOps(
   axis: FlipAxis,
   pivot: FlipPivot,
   geometryProjection: GeometryProjection | undefined,
-  geom: PoseDescriptor<unknown>,
+  descriptorOf: (id: NodeId) => PoseDescriptor<unknown>,
   params: Readonly<Partial<FlipParams>> | undefined,
   pointer: PointerContextValue | undefined,
   boxesOver: (frame: PoseFrame<unknown>) => DrawnBoxes,
@@ -114,6 +114,7 @@ function flipOps(
     if (!node) continue;
     const world = worlds.get(id as string)!;
     const about = sharedPivot ?? ownPivot.get(id as string) ?? null;
+    const geom = descriptorOf(id);
     const flipped = about
       ? flipPoseAboutBounds(world, axis, geom, about)
       : flipPoseViaDescriptor(world, axis, geom);
@@ -147,7 +148,7 @@ function flipOps(
 function flipOpsFor(deps: ActionDeps, selection: Pick<OperandsDep, 'get'>, scene: Scene<unknown, string, unknown>, params: Readonly<Partial<FlipParams>> | undefined): Op[] {
   return flipOps(
     selection, scene, params?.axis ?? 'x', params?.pivot ?? 'each', deps.geometryProjection,
-    poseDescriptorOf(deps.poseDescriptor), params, deps.pointer, (frame) => drawnBoxes(deps, frame),
+    nodeDescriptors(scene, poseDescriptorOf(deps.poseDescriptor)), params, deps.pointer, (frame) => drawnBoxes(deps, frame),
   );
 }
 

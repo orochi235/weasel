@@ -340,3 +340,25 @@ describe('flip in a search', () => {
     expect(taggedActionItems([flipAction], 'mirror').map((i) => i.label)).toEqual(['Flip Horizontal', 'Flip Vertical']);
   });
 });
+
+describe('flip through a per-node descriptor', () => {
+  interface TaggedPose extends Pose { odd?: boolean; turnedBy?: string }
+  const base = {
+    getBounds: (p: TaggedPose) => p,
+    remapBounds: (p: TaggedPose, _src: unknown, dst: Pose) => ({ ...p, x: dst.x, y: dst.y, width: dst.width, height: dst.height }),
+    fromBounds: (b: Pose) => ({ ...b }),
+    withRotation: (p: TaggedPose, rotation: number) => ({ ...p, rotation, turnedBy: 'base' }),
+  };
+  const odd = { ...base, withRotation: (p: TaggedPose, rotation: number) => ({ ...p, rotation, turnedBy: 'odd' }) };
+  const poseDescriptor = { ...base, forNode: (node: { pose: TaggedPose }) => (node.pose.odd ? odd : undefined) };
+
+  it("mirrors each node through the descriptor its own forNode resolves", () => {
+    const scene = makeStubScene({
+      a: { x: 0, y: 0, width: 10, height: 10, rotation: 0.5 },
+      b: { x: 50, y: 0, width: 10, height: 10, rotation: 0.5, odd: true } as Pose,
+    });
+    runFlip({ operands: makeSelection(['a', 'b']), scene, poseDescriptor }, { axis: 'x' });
+    expect(scene.poses.get('a')).toMatchObject({ rotation: -0.5, turnedBy: 'base' });
+    expect(scene.poses.get('b')).toMatchObject({ rotation: -0.5, turnedBy: 'odd' });
+  });
+});
