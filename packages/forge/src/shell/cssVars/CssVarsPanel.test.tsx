@@ -380,6 +380,30 @@ describe('CssVarsPanel', () => {
     expect(cleared.map((m) => m.name).sort()).toEqual(fontSteps.map((s) => `--wzl-font-size-${s}`).sort());
   });
 
+  it('drops a scale edit a save leaves no step of, so a later step edit shows the scale the steps stand at', async () => {
+    location.hash = '#/x--a';
+    stubStore({ status: 200, body: { status: 'saved', hash: 'h2', issues: [], regenerated: true, problems: [] } });
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    await openTrial('A');
+    await editFontBase(String(editedBase));
+    const step = `--wzl-font-size-${fontSteps[0]}`;
+    fireEvent.change(vars().getByLabelText('Filter'), { target: { value: step.replace('--wzl-', '') } });
+    fireEvent.click(row(vars(), step).getByRole('button', { name: `Reset ${step}` }));
+    await flush();
+
+    fireEvent.click(vars().getByRole('button', { name: 'Save to theme' }));
+    await waitFor(() => expect(vars().getByRole('status')).toHaveTextContent('Saved to themes/weasel.json.'));
+    await flush();
+    const field = row(vars(), step).getByRole('textbox');
+    act(() => {
+      fireEvent.change(field, { target: { value: '9' } });
+      fireEvent.blur(field);
+    });
+    await flush();
+    fireEvent.change(vars().getByLabelText('Filter'), { target: { value: '' } });
+    expect(row(vars(), 'font').getByRole('textbox', { name: 'font base' })).toHaveValue(String(fontBase));
+  });
+
   it('saves a token edited by hand where the theme writes its value out, and pins one it derives', async () => {
     location.hash = '#/x--a';
     const calls = stubStore({ status: 200, body: { status: 'saved', hash: 'h2', issues: [], regenerated: true, problems: [] } });

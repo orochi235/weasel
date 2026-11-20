@@ -3,7 +3,13 @@ import { KitSettingsProvider } from '@weasel-js/react';
 import { act, render, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
+import { THEME_SOURCES } from '@weasel-js/theme';
+import { scaleValuesFor } from './themeScales';
 import { useVarsEdits, type VarsEdits } from './useVarsEdits';
+
+const factors = THEME_SOURCES.weasel?.scales?.['font-size']?.factors as number[];
+const fontScale = { tokens: [], base: 20, rule: { kind: 'factors' as const, factors } };
+const fontSteps = (scaleValuesFor('font', fontScale) ?? []).map(([name]) => name);
 
 /** Renders `count` panels' edits on one trial and one store, as tabs showing the same trial do. */
 async function mount(count: number, settings: { history?: { coalesceMs: number } } = {}) {
@@ -57,6 +63,18 @@ describe('useVarsEdits', () => {
     act(() => edits[0]!.history.step('undo'));
     expect(edits[1]!.overrides).toEqual({ '--wzl-a': 'red' });
     act(() => edits[1]!.history.step('undo'));
+    expect(edits[0]!.overrides).toEqual({});
+  });
+
+  it('drops a scale edit once none of its steps is overridden', async () => {
+    const edits = await mount(1);
+    expect(fontSteps.length).toBeGreaterThan(1);
+    act(() => edits[0]!.editScale('font', fontScale));
+    expect(Object.keys(edits[0]!.edited)).toEqual(['font']);
+    for (const name of fontSteps.slice(1)) act(() => edits[0]!.write(name, null));
+    expect(Object.keys(edits[0]!.edited)).toEqual(['font']);
+    act(() => edits[0]!.write(fontSteps[0]!, null));
+    expect(edits[0]!.edited).toEqual({});
     expect(edits[0]!.overrides).toEqual({});
   });
 });
