@@ -32,7 +32,7 @@ const DISCARD = { shortcut: { apple: 'Meta+Escape' } } as const;
 
 /** Editing the anchors of a path. Scoped to the target, entered by
  *  double-clicking a `path` or with Enter, left with Escape. It starts on
- *  core's `anchors` tool. */
+ *  `@weasel-js/path-tools`' `anchors` tool. */
 export const PATH_EDIT: ModeDefinition = frozen({
   id: 'path-edit',
   label: 'Path Edit',
