@@ -94,7 +94,7 @@ function useMeasuredBox(ref: RefObject<HTMLElement | null>): {
       const box = scaled ? known : rect;
       const scale = (box.width > 0 ? rect.width / box.width : 1) * embedScale(win);
       const { width, height } = box;
-      const dpr = backingDensity(width, height, window.devicePixelRatio ?? 1, scale);
+      const dpr = backingDensity(width, height, win?.devicePixelRatio ?? 1, scale);
       setSize((prev) => {
         if (prev.width === width && prev.height === height && prev.dpr === dpr) return prev;
         return { width, height, dpr };
@@ -114,6 +114,27 @@ function useMeasuredBox(ref: RefObject<HTMLElement | null>): {
     };
   }, [ref]);
   return size;
+}
+
+/** `spec` resolved against `size`, each kept while its numbers are: an inline
+ *  `worldSpec` is a new object every render, and a new frame marks every layer dirty. */
+function useWorldFrame(spec: WorldSpec | undefined, size: ViewportSize) {
+  const given = spec !== undefined;
+  const origin = spec?.origin;
+  const hasOrigin = origin !== undefined;
+  const ox = origin?.x;
+  const oy = origin?.y;
+  const yAxis = spec?.yAxis;
+  const stable = useMemo(() => {
+    if (!given) return undefined;
+    const out: WorldSpec = {};
+    if (hasOrigin) out.origin = { x: ox as number, y: oy as number };
+    if (yAxis !== undefined) out.yAxis = yAxis;
+    return out;
+  }, [given, hasOrigin, ox, oy, yAxis]);
+  const { width, height } = size;
+  const frame = useMemo(() => resolveFrame(stable, { width, height }), [stable, width, height]);
+  return { spec: stable, frame };
 }
 
 /** Stacks one `<canvas>` per layer and drives them from a shared view, so a
@@ -157,7 +178,7 @@ export function CanvasStack({
     onResizeRef.current?.({ width: size.width, height: size.height });
   }, [size.width, size.height, onResizeRef]);
 
-  const frame = useMemo(() => resolveFrame(worldSpec, size), [worldSpec, size]);
+  const { spec, frame } = useWorldFrame(worldSpec, size);
 
   const camera = useCameraView({
     view: viewProp,
@@ -185,9 +206,9 @@ export function CanvasStack({
     () => ({
       view,
       frame,
-      surface: { element: containerRef, size, canvases: canvasMap, layers, worldSpec },
+      surface: { element: containerRef, size, canvases: canvasMap, layers, worldSpec: spec },
     }),
-    [view, frame, size, layers, worldSpec],
+    [view, frame, size, layers, spec],
   );
 
   const containerStyle: CSSProperties = { width, height };

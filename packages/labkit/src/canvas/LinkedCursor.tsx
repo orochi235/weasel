@@ -17,12 +17,8 @@ export function LinkedCursor() {
   if (!camera) return null;
   const local = pointerElsewhere(pointer, STAGE_VIEW_ID, camera.frame);
   if (!local) return null;
-  // `pointerElsewhere` hands back the instrument's world; the camera works
-  // frame-local, and the map is its own inverse.
-  const { x, y } = viewWorldToScreen(camera.view.get(), {
-    x: local.x,
-    y: local.y * camera.frame.yDir,
-  });
+  // `pointerElsewhere` hands back the point frame-local, the space the camera's view works in.
+  const { x, y } = viewWorldToScreen(camera.view.get(), local);
   const { halo, bars } = crosshairRects(x, y, { x: 1, y: 1 });
   const arms = ARMS.map((name, i) => ({ name, halo: halo[i], bar: bars[i] }));
   return (
