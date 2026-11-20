@@ -72,11 +72,11 @@ export const kitWeaselJsonHandler: ContentHandlerEntry = {
       dwarn('clipboard', 'weasel payload unusable — declining (see prior warning if the parse threw)');
       return;
     }
-    // `ctx.point` is null for paste, so no dropPoint is threaded — the
-    // cascade offset is the placement.
+    // A drop lands at its point; a paste (`ctx.point` null) at the cascade offset.
     const snapshot: ClipboardSnapshot = { items: nodes };
     const result = materializePaste(clipboard.adapter, snapshot, {
       currentSelection: [...ctx.operands.get()],
+      dropPoint: ctx.point,
       onOmitted: clipboard.onOmitted,
     });
     if (!result) return;

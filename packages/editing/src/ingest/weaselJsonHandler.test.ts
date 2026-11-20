@@ -103,6 +103,13 @@ describe('kitWeaselJsonHandler.handle — paste', () => {
     expect(onOmitted).toHaveBeenCalledWith([{ id: 'b', reason: 'dependency-not-copied', missing: ['z'] }]);
   });
 
+  it('lands a drop at its point: ctx.point is threaded to commitPaste as dropPoint', async () => {
+    const adapter = stubAdapter();
+    const c = ctx({ clipboard: { adapter }, point: { x: 300, y: 200 } });
+    await kitWeaselJsonHandler.handle([stringItem(buildWeaselClipboardText(NODES))], c);
+    expect(adapter.commitPaste.mock.calls[0][2]).toEqual({ dropPoint: { x: 300, y: 200 } });
+  });
+
   it('commits the paste through ctx.clipboard.adapter and applies insert + selection ops', async () => {
     const adapter = stubAdapter();
     const c = ctx({ clipboard: { adapter } });
