@@ -124,6 +124,17 @@ describe('a WebGPU buffer written off a 4-byte boundary', () => {
   });
 });
 
+describe('a WebGPU target asked for a sample count the device does not make', () => {
+  it('reports the samples it made and the bytes they take', () => {
+    const fake = fakeGpuDevice();
+    const gpu = new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
+    const eight = gpu.createTarget({ width: 4, height: 4, samples: 8, stencil: true });
+    expect([eight.samples, eight.bytes]).toEqual([4, 16 * 4 * 8]);
+    const one = gpu.createTarget({ width: 4, height: 4, samples: 1 });
+    expect([one.samples, one.bytes, one.color !== null]).toEqual([0, 16 * 4, true]);
+  });
+});
+
 describe('WebGPU renderers built and freed on one shared device', () => {
   /** `fake`, with each reaction registered on its `device.lost` counted. A reaction on a promise that
    *  never settles holds what it closes over for as long as the device lives. */

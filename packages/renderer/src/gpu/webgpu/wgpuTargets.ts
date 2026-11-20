@@ -50,8 +50,8 @@ function emptyTexture(host: ResourceHost, width: number, height: number, filter:
 
 export function createTarget(host: ResourceHost, desc: GpuTargetDesc): WgpuTarget {
   const { width, height } = desc;
-  const requested = desc.samples ?? 0;
-  const samples: 1 | 4 = requested > 1 ? 4 : 1;
+  // WebGPU multisamples only 4×: any count past 1 gets that, and is reported as it was made.
+  const samples: 1 | 4 = (desc.samples ?? 0) > 1 ? 4 : 1;
   const device = host.device;
   const color = samples === 1 ? emptyTexture(host, width, height, desc.filter ?? 'nearest') : null;
   const msaa = samples === 1 ? null
@@ -64,9 +64,9 @@ export function createTarget(host: ResourceHost, desc: GpuTargetDesc): WgpuTarge
   const colorView = color?.view ?? msaa!.createView();
   const depthView = depth?.createView();
   const attached = new Set<WgpuTexture>([color, ids].filter((t): t is WgpuTexture => t !== null));
-  const perPixel = Math.max(1, requested) * (4 + (stencil ? 4 : 0)) + (ids ? 4 : 0);
+  const perPixel = samples * (4 + (stencil ? 4 : 0)) + (ids ? 4 : 0);
   const target: WgpuTarget = {
-    kind: 'target', width, height, samples: requested, sampleCount: samples, color, ids, msaa, depth, resolved: null, usedIn: -1,
+    kind: 'target', width, height, samples: samples === 4 ? 4 : 0, sampleCount: samples, color, ids, msaa, depth, resolved: null, usedIn: -1,
     format: 'rgba8unorm', stencil, hasIds: ids !== null, key: attachmentKey('rgba8unorm', samples, stencil, ids !== null), attached,
     get bytes() { return width * height * (perPixel + (this.resolved ? 4 : 0)); },
     colorView: () => colorView,
