@@ -23,6 +23,10 @@ export interface StoryTreeProps {
 
 const folderOf = (byId: ReadonlyMap<string, StoryNode>, id: string): StoryFolder => byId.get(id) as StoryFolder;
 
+/** Whether `folder` is open: as its stored fold says, else when the routed story sits inside it. */
+const isOpen = (folder: StoryFolder, folds: Readonly<Record<string, boolean>>, routeAncestors: ReadonlySet<string>): boolean =>
+  getOwn(folds, foldKeyOf(folder)) ?? routeAncestors.has(folder.path);
+
 interface LibraryFilterProps {
   readonly libraries: readonly string[];
   readonly hidden: Readonly<Record<string, boolean>>;
@@ -78,13 +82,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
 
   const { nodes, byId, folders: folderIds } = useMemo(() => treeRowsFor(shown, openIds), [shown, openIds]);
   const expanded = useMemo(
-    () =>
-      new Set(
-        folderIds.filter((id) => {
-          const folder = folderOf(byId, id);
-          return filtering || (getOwn(folds, foldKeyOf(folder)) ?? routeAncestors.has(folder.path));
-        }),
-      ),
+    () => new Set(folderIds.filter((id) => filtering || isOpen(folderOf(byId, id), folds, routeAncestors))),
     [folderIds, byId, filtering, folds, routeAncestors],
   );
 
