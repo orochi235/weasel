@@ -154,25 +154,26 @@ export function auditNodeSpecs(
 const samePose = (a: RectPose, b: RectPose) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 
 /**
- * Make `scene` hold exactly `specs`, outside its history: a node whose id and parent stay keeps its identity, so the
+ * Make `scene` hold exactly `specs`, outside its history: a node whose id stays keeps its identity, moved if its parent changed, so the
  * selection on it survives a refresh. A frame is never picked, so hovering and clicking land on areas.
  */
 export function syncAuditScene(scene: AuditScene, specs: readonly AuditNodeSpec[]): void {
   const wanted = new Map(specs.map((s) => [s.id, s]));
   scene.untracked(() => {
-    const gone = [...scene.nodes.values()]
-      .filter((n) => wanted.get(n.id)?.parent !== n.parent)
-      .map((n) => n.id);
-    if (gone.length > 0) scene.removeMany(gone.filter((id) => scene.get(id)));
+    // Specs list a parent before its children, so a node's new parent is in place, under its own, when it moves.
     for (const spec of specs) {
       const node = scene.get(spec.id);
       if (!node) {
         scene.add({ id: spec.id, kind: 'mark', layer: 'map', parent: spec.parent, pose: spec.pose, data: spec.data, ...(spec.pickable ? {} : { pickable: false }) });
         continue;
       }
+      if (node.parent !== spec.parent) scene.move(spec.id, spec.parent);
       if (!samePose(node.pose, spec.pose)) scene.setPose(spec.id, spec.pose);
       if (!deepEqual(node.data, spec.data)) scene.update(spec.id, { data: spec.data });
     }
+    // Every node still wanted has moved out from under those going, so removing them takes nothing kept.
+    const gone = [...scene.nodes.values()].filter((n) => !wanted.has(n.id)).map((n) => n.id);
+    if (gone.length > 0) scene.removeMany(gone);
   });
 }
 
