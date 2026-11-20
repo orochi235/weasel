@@ -72,6 +72,12 @@ describe('jobs', () => {
     expect(parseJob(`${line}, hit its ceiling`)).toMatchObject({ what: '2 findings, read 12 of 12 files, hit its ceiling', bad: false });
   });
 
+  it('keys two identical lines of one log apart', () => {
+    const run = { ...map.runs[0]!, lines: ['fleet: test:batch passed', 'fleet: test:batch passed'] };
+    const keys = recentJobsOf([run]).map((j) => j.key);
+    expect(new Set(keys).size).toBe(2);
+  });
+
   it('lists every run, each newest first', () => {
     const jobs = recentJobsOf(map.runs);
     expect(jobs.map((j) => [j.round, j.job.label, j.job.area])).toEqual([

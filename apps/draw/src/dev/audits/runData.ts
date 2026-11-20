@@ -98,7 +98,7 @@ export function parseJob(line: string): Job | null {
   return null;
 }
 
-/** A job and the round whose log it came from, keyed by the line that reported it. */
+/** A job and the round whose log it came from, keyed by the line that reported it and which copy of that line it is. */
 export interface RunJob {
   readonly key: string;
   readonly line: string;
@@ -108,9 +108,17 @@ export interface RunJob {
 
 /** Each run's jobs, newest first, live runs before the finished one, at most `perRun` from each. */
 export function recentJobsOf(runs: readonly AuditRun[], perRun = 14): RunJob[] {
-  return runs.flatMap((run) => run.lines
-    .map((line) => ({ key: `${run.round}:${line}`, line, round: run.round, job: parseJob(line) }))
-    .filter((r): r is RunJob => r.job !== null)
-    .reverse()
-    .slice(0, perRun));
+  return runs.flatMap((run) => {
+    // `lines` is the log's tail, whose indices move every poll, so the key counts copies of the same text instead.
+    const seen = new Map<string, number>();
+    return run.lines
+      .map((line) => {
+        const copy = seen.get(line) ?? 0;
+        seen.set(line, copy + 1);
+        return { key: `${run.round}:${copy}:${line}`, line, round: run.round, job: parseJob(line) };
+      })
+      .filter((r): r is RunJob => r.job !== null)
+      .reverse()
+      .slice(0, perRun);
+  });
 }
