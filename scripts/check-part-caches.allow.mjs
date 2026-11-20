@@ -26,6 +26,7 @@ export const PART_CACHE_ALLOWED = new Map([
   ['packages/d3/src/liveTransitions.ts', 'two other functions read it without making it'],
   ['packages/editing/src/actions/move/delta.ts', 'replaced every call with a value from the call\'s arguments'],
   ['packages/editing/src/actions/move/sessionOf.ts', 'set by beginMove to the session it built, and read by that gesture\'s behaviors without being made'],
+  ['packages/editing/src/ingest/weaselJsonHandler.ts', 'replaced on every paste with what that paste made, and read without being made'],
   ['packages/editing/src/actions/move/dragSnap.ts', 'deleted and replaced each frame from the drag\'s output'],
   ['packages/editor/src/sessionStore.ts', 'read with a fallback, and set only under a condition on another map'],
   ['packages/gestures/src/ui/heldPointers.ts', 'the entry is deleted when its last user releases it'],
