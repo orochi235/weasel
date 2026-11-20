@@ -138,19 +138,22 @@ export function patchFillOf(lane: AuditLane): number {
 }
 
 /**
- * A patch span split by what its fixer left: the share it fixed, shaded as the patch is, then the share it filed
- * rather than fixed, hatched dark gray. Whole where the fixer fixed everything, has not reported, or gave no tally.
+ * A patch span split by what its fixer left: the share it settled, fixed or found sound, shaded as the patch is,
+ * then the share it left for later, filed or waiting on a question, hatched dark gray. Whole where it left nothing,
+ * has not reported, or gave no tally.
  */
 export function withUnfixed(span: SpanStripSpan, lane: AuditLane): SpanStripSpan[] {
   const { fix } = lane.steps;
-  if (fix.state !== 'done' || fix.fixed === undefined || !fix.of || fix.fixed >= fix.of) return [span];
-  const share = fix.fixed / fix.of;
-  const left = fix.of - fix.fixed;
+  if (fix.state !== 'done' || fix.fixed === undefined || !fix.of) return [span];
+  // A report with only a tally line says nothing of why a finding went unfixed, so all of them count as left.
+  const left = fix.deferred ?? fix.of - fix.fixed;
+  if (left <= 0) return [span];
+  const share = 1 - left / fix.of;
   return [
     { ...span, ms: span.ms * share, fill: 1 },
     {
       ...span, id: `${span.id}-unfixed`, label: '', start: undefined, ms: span.ms * (1 - share), fill: 1, state: 'failed',
-      color: 'var(--audit-filed)', title: `${left} of ${fix.of} filed rather than fixed`, content: undefined,
+      color: 'var(--audit-filed)', title: `${left} of ${fix.of} left for later`, content: undefined,
     },
   ];
 }
@@ -165,7 +168,10 @@ function withInk(span: SpanStripSpan): SpanStripSpan {
  *  extras it fixed besides; before the fixer reports, or where its report gives no tally, what the reviews found. */
 export function tallyOf(lane: AuditLane): string {
   const { match, fix } = lane.steps;
-  if (fix.state === 'done' && fix.fixed !== undefined) return `${fix.fixed} of ${fix.of ?? fix.fixed} fixed${fix.extra ? ` +${fix.extra} extra` : ''}`;
+  if (fix.state === 'done' && fix.fixed !== undefined) {
+    const also = [fix.dismissed ? `${fix.dismissed} dismissed` : '', fix.deferred ? `${fix.deferred} filed` : ''].filter(Boolean);
+    return `${fix.fixed} of ${fix.of ?? fix.fixed} fixed${also.map((a) => ` · ${a}`).join('')}${fix.extra ? ` +${fix.extra} extra` : ''}`;
+  }
   return match.state === 'done' ? `${(match.a ?? 0) + (match.b ?? 0) - (match.shared ?? 0)} found` : '';
 }
 

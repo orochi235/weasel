@@ -45,6 +45,10 @@ export interface LaneStep {
   readonly fixed?: number;
   readonly of?: number;
   readonly extra?: number;
+  /** Of `of`, how many the fixer left for later, filed or waiting on a question, rather than fixed or found sound. */
+  readonly deferred?: number;
+  /** Of `of`, how many the fixer found were no defect. */
+  readonly dismissed?: number;
   readonly why?: string;
   /** When a done step began and ended, from onto's record of the job that ran it. */
   readonly started?: string;
