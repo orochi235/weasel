@@ -1213,6 +1213,7 @@ they can:
 | `duplicate-port` | Two ports on one stage share an id. | Both are listed; wires attach to the first. |
 | `duplicate-cluster` | A cluster's id repeats an earlier cluster's, or is a stage's. | Only the first cluster with the id is drawn, and a cluster with a stage's id is not. |
 | `missing-member` | A cluster names something that is neither a stage nor a cluster. | The name is ignored. |
+| `duplicate-member` | A cluster names a stage or cluster that an earlier cluster already holds. `stage` is set when it is a stage. | It is drawn in the first cluster that names it. |
 | `cluster-loop` | Clusters hold each other in a loop, directly or through other clusters, or a cluster holds itself. One problem per loop: `clusters` lists them all and `cluster` is the first. | The chart still draws. |
 | `bad-split` | A `split` names an input the stage lacks, has no cuts, has cuts out of order or one that is not a finite number, or does not have one more output than cuts. | A decision that would draw as a bar draws as a diamond. |
 

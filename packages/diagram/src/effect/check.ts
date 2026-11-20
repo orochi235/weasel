@@ -3,7 +3,7 @@ import type { EffectCluster, EffectPipeline, EffectStage } from './types';
 /** One thing wrong with a pipeline, and where. */
 export interface EffectProblem {
   kind: 'missing-stage' | 'missing-port' | 'wrong-direction' | 'type-mismatch'
-    | 'duplicate-stage' | 'duplicate-port' | 'duplicate-cluster' | 'missing-member' | 'cluster-loop' | 'bad-split';
+    | 'duplicate-stage' | 'duplicate-port' | 'duplicate-cluster' | 'missing-member' | 'duplicate-member' | 'cluster-loop' | 'bad-split';
   message: string;
   stage?: string;
   port?: string;
@@ -84,10 +84,21 @@ export function checkPipeline(pipeline: EffectPipeline): EffectProblem[] {
     clusterIds.add(cluster.id);
     return true;
   });
+  const holder = new Map<string, string>();
   for (const cluster of clusters) {
     for (const member of cluster.members) {
-      if (stages.has(member) || clusterIds.has(member)) continue;
-      out.push({ kind: 'missing-member', cluster: cluster.id, message: `Group "${cluster.id}" names "${member}", which is neither a stage nor a group.` });
+      if (!stages.has(member) && !clusterIds.has(member)) {
+        out.push({ kind: 'missing-member', cluster: cluster.id, message: `Group "${cluster.id}" names "${member}", which is neither a stage nor a group.` });
+        continue;
+      }
+      const first = holder.get(member);
+      if (first === undefined) holder.set(member, cluster.id);
+      else if (first !== cluster.id) {
+        out.push({
+          kind: 'duplicate-member', cluster: cluster.id, ...(stages.has(member) ? { stage: member } : {}),
+          message: `Group "${cluster.id}" names "${member}", which group "${first}" already holds.`,
+        });
+      }
     }
   }
   out.push(...clusterLoops(clusters));
