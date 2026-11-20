@@ -77,6 +77,23 @@ describe('createPathEditHost', () => {
     expect(setMode).toHaveBeenCalledTimes(2);
   });
 
+  it('tells subscribers when a mode target moves the open path from one node to another', () => {
+    const modes = createModeRegistry({ initial: 'normal' });
+    let on: string | null = null;
+    const target = {
+      get: () => on,
+      open: (id: string) => { on = id; modes.setMode('path-edit'); },
+      close: () => { on = null; modes.setMode('normal'); },
+    };
+    const host = createPathEditHost({ modes, target });
+    host.setEditingId('a');
+    const heard = vi.fn();
+    host.subscribe(heard);
+    host.setEditingId('b');
+    expect(host.editingId()).toBe('b');
+    expect(heard).toHaveBeenCalledTimes(1);
+  });
+
   it('names no path while the open one fails `editable`', () => {
     const host = createPathEditHost({ id: 'rect', editable: (id) => id !== 'rect' });
     expect(host.editingId()).toBeNull();
