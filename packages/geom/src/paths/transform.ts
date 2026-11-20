@@ -11,6 +11,7 @@
 import { rectToRect } from '../affine';
 import { forEachSegment, pathCommandCoordCount } from '../commands';
 import { boundsOfPath } from './bounds';
+import { ORIGIN_THRESHOLD } from './pathOrigin';
 import { transformPath } from './transformPath';
 import type { Path, PolygonPath, RectPath } from '../path';
 
@@ -31,12 +32,17 @@ function translatePolygonCopy(path: PolygonPath, dx: number, dy: number): Polygo
   if (o) return { ...path, coords: path.coords.slice(), origin: { x: o.x + dx, y: o.y + dy } };
   const next = new Float32Array(path.coords.length);
   const { commands, coords } = path;
+  let reach = 0;
   forEachSegment(commands, coords, (cmd, ci) => {
     for (let k = 0, len = pathCommandCoordCount(cmd); k < len; k += 2) {
-      next[ci + k] = coords[ci + k] + dx;
-      next[ci + k + 1] = coords[ci + k + 1] + dy;
+      const x = coords[ci + k] + dx, y = coords[ci + k + 1] + dy;
+      next[ci + k] = x;
+      next[ci + k + 1] = y;
+      reach = Math.max(reach, Math.abs(x), Math.abs(y));
     }
   });
+  // Past the threshold the float32 copy has lost the fraction; pick an origin as transformPath does.
+  if (reach >= ORIGIN_THRESHOLD) return transformPath(path, [1, 0, 0, 1, dx, dy]) as PolygonPath;
   return { ...path, coords: next };
 }
 
