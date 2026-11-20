@@ -216,18 +216,20 @@ const emLength = length('em', 'em');
 /**
  * `super` and `sub` are the presets `script` names; a percentage resolves
  * against the parent's font size, the unit `baselineShift` is already in; a
- * bare number is ems; `baseline` or zero is no shift.
+ * bare number is ems; an absolute length is taken in ems of the element's
+ * `fontSize`; `baseline` or zero is no shift.
  */
 function readBaselineShift(
-  v: string, warn: Warn, prop: string,
+  v: string, warn: Warn, prop: string, fontSize: number,
 ): { script?: 'super' | 'sub'; baselineShift?: number } | undefined {
   const k = v.toLowerCase();
   if (k === 'super' || k === 'sub') return { script: k };
   if (k === 'baseline') return {};
   const d = dimension(v);
   if (d?.unit === '%') return d.n === 0 ? {} : { baselineShift: d.n / 100 };
-  const n = emLength(v, warn, prop, DEFAULT_FONT_SIZE);
-  if (n == null) return undefined;
+  const px = d && d.unit !== '' ? absolutePx(d.unit) : undefined;
+  const n = px != null ? (d!.n * px) / fontSize : emLength(v, warn, prop, fontSize);
+  if (n == null || !Number.isFinite(n)) return undefined;
   return n === 0 ? {} : { baselineShift: n };
 }
 

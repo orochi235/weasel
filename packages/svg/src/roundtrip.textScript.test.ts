@@ -84,6 +84,18 @@ describe('baseline-shift / relative font-size', () => {
     expect(t.runs?.[3]?.baselineShift).toBe(0.25);
   });
 
+  it('reads an absolute baseline-shift in ems of the element\'s font size', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <text x="0" y="0" font-size="16">a<tspan baseline-shift="4px">b</tspan><tspan font-size="8" baseline-shift="6pt">c</tspan></text>
+    </svg>`;
+    const { nodes, warnings } = parseSvg(svg);
+    expect(warnings).toEqual([]);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.runs?.[1]?.baselineShift).toBeCloseTo(0.25, 6);
+    expect(t.runs?.[2]?.baselineShift).toBeCloseTo(1, 6);
+  });
+
   it('keeps a run-level property named on <text> itself, with no tspan to carry it', () => {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
       <text x="0" y="0" baseline-shift="super">hi</text>
@@ -122,13 +134,13 @@ describe('baseline-shift / relative font-size', () => {
 
   it('warns on a baseline-shift unit it cannot convert but still parses the number', () => {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
-      <text x="0" y="0"><tspan baseline-shift="4px">hi</tspan></text>
+      <text x="0" y="0"><tspan baseline-shift="4vw">hi</tspan></text>
     </svg>`;
     const { nodes, warnings } = parseSvg(svg);
     const t = nodes[0];
     if (t.kind !== 'text') throw new Error('expected text');
     expect(t.runs?.[0]?.baselineShift).toBe(4);
-    expect(warnings.some((w) => /baseline-shift/.test(w) && /px/.test(w))).toBe(true);
+    expect(warnings.some((w) => /baseline-shift/.test(w) && /vw/.test(w))).toBe(true);
   });
 
   it('parses a percentage font-size to fontScale and a length to fontSize', () => {

@@ -128,7 +128,7 @@ describe('PROPERTIES is the parser\'s one pathway', () => {
     'direction': text('rtl', 'sideways'),
     'text-transform': text('uppercase', 'full-width'),
     'font-variant': text('small-caps', 'all-small-caps'),
-    'baseline-shift': text('super', '3pt'),
+    'baseline-shift': text('super', '3vw'),
     'stop-color': { honored: 'blue', rejected: 'currentColor', on: STOP },
     'stop-opacity': { honored: '0.5', rejected: 'half', on: STOP },
   };

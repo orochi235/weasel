@@ -107,7 +107,7 @@ function readTspanRun(
   const tspanStyle = deriveStyle(style, el);
   const ls = ownValue(el, 'letter-spacing', onWarn, fontSizeOf(tspanStyle));
   if (ls != null) run.letterSpacing = ls;
-  const shift = ownValue(el, 'baseline-shift', onWarn);
+  const shift = ownValue(el, 'baseline-shift', onWarn, fontSizeOf(tspanStyle));
   if (shift?.script != null) run.script = shift.script;
   if (shift?.baselineShift != null) run.baselineShift = shift.baselineShift;
   const decoration = ownValue(el, 'text-decoration', onWarn);
