@@ -42,12 +42,13 @@ export interface PageApi {
 }
 
 /** A live scene or its snapshot, as JSON carries it: encoded by core's snapshot codec. A snapshot already
- *  encoded passes through unchanged. */
+ *  encoded passes through unchanged; a live scene's `toJSON()` is always decoded, so it is encoded as it is. */
 export function sceneToWire(scene: object): object {
   if (!isRecord(scene)) refuse('scene', 'an object', scene);
   const toJSON = (scene as { toJSON?: unknown }).toJSON;
+  if (typeof toJSON === 'function') return encodeSnapshot(toJSON.call(scene)) as object;
   // Read back first, so arrays the snapshot holds already tagged are tagged once rather than escaped as data.
-  return encodeSnapshot(decodeSnapshot(typeof toJSON === 'function' ? toJSON.call(scene) : scene)) as object;
+  return encodeSnapshot(decodeSnapshot(scene)) as object;
 }
 
 /** The snapshot `sceneToWire` sent, its typed arrays restored. */
