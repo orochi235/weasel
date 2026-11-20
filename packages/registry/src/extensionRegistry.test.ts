@@ -82,4 +82,17 @@ describe('createExtensionRegistry', () => {
     expect(() => r.register('x', { v: 1 })).not.toThrow();
     expect(() => r.register('x', { v: 2 })).toThrow(/thing "x"/);
   });
+
+  it('keeps a listener\'s own subscription to the parent when its subscription to a child ends', () => {
+    const parent = make();
+    const child = make(parent);
+    const onChange = vi.fn();
+    parent.subscribe(onChange);
+    child.own.subscribe(onChange);
+    child.subscribe(onChange)();
+    parent.register('a', 'one');
+    expect(onChange).toHaveBeenCalledTimes(1);
+    child.register('b', 'two');
+    expect(onChange).toHaveBeenCalledTimes(2);
+  });
 });

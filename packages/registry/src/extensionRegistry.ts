@@ -1,3 +1,4 @@
+import { createEmitter } from './emitter';
 import { createReflectable, type ReflectedEntry, type Reflection } from './reflectable';
 
 /** Options for {@link ExtensionRegistry.register}. */
@@ -70,6 +71,11 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
   const store = createReflectable<V>({ name: kind });
   const held = new Map<string, Holding>();
   let cached: { version: number; entries: readonly ReflectedEntry<V>[] } | null = null;
+  /** This registry's own listeners, so subscribing here never shares a subscription a listener holds on `own` or
+   *  the parent; it hears the store and the parent only while it has listeners. */
+  const changes = createEmitter();
+  const notify = (): void => { changes.emit(); };
+  let offUpstream: (() => void) | null = null;
 
   const get = (id: string): V | undefined => (store.has(id) ? store.get(id) : parent?.get(id));
   const getVersion = (): number => store.getVersion() + (parent?.getVersion() ?? 0);
@@ -101,9 +107,18 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
       return cached.entries;
     },
     subscribe(listener) {
-      const off = store.subscribe(listener);
-      const offParent = parent?.subscribe(listener);
-      return () => { off(); offParent?.(); };
+      if (changes.size === 0) {
+        const offStore = store.subscribe(notify);
+        const offParent = parent?.subscribe(notify);
+        offUpstream = () => { offStore(); offParent?.(); };
+      }
+      const off = changes.subscribe(listener);
+      return () => {
+        off();
+        if (changes.size > 0 || !offUpstream) return;
+        offUpstream();
+        offUpstream = null;
+      };
     },
     getVersion,
     register(id, value, opts = {}) {
