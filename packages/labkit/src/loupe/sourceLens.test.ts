@@ -1,6 +1,6 @@
 import { createCanvasSource } from '@weasel-js/loupe';
-import { describe, expect, it } from 'vitest';
-import { resolveLoupeSource, sourceBoxIn } from './sourceLens';
+import { describe, expect, it, vi } from 'vitest';
+import { drawSourceLens, resolveLoupeSource, sourceBoxIn } from './sourceLens';
 
 function canvas(width = 200, height = 100): HTMLCanvasElement {
   const c = document.createElement('canvas');
@@ -87,5 +87,34 @@ describe('sourceBoxIn', () => {
       height: 150,
     });
     host.remove();
+  });
+});
+
+describe('drawSourceLens', () => {
+  it('reads the region from the frame it draws, not from a canvas resized since that frame was captured', () => {
+    const frame = { width: 100, height: 50 };
+    const source = {
+      canvas: { width: 200, height: 100 },
+      frame: () => frame,
+    } as unknown as Parameters<typeof drawSourceLens>[1]['source'];
+    const drawImage = vi.fn();
+    const ctx = {
+      save() {},
+      restore() {},
+      setTransform() {},
+      clearRect() {},
+      drawImage,
+      imageSmoothingEnabled: true,
+    } as unknown as CanvasRenderingContext2D;
+    drawSourceLens(ctx, {
+      aim: { x: 50, y: 25 },
+      factor: 4,
+      diameter: 40,
+      dpr: 1,
+      source,
+      box: { x: 0, y: 0, width: 100, height: 50 },
+    });
+    // 40 CSS px at 4× is 10 CSS px of the box, which the 100-px frame holds at one device px each.
+    expect(drawImage).toHaveBeenCalledWith(frame, 45, 20, 10, 10, 0, 0, 40, 40);
   });
 });
