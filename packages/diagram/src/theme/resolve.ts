@@ -1,10 +1,11 @@
 import type { Stroke } from '@weasel-js/core';
-import { getOwn, isDev } from '@weasel-js/registry';
+import { createPart, getOwn, isDev } from '@weasel-js/registry';
 import { labelStyleOf } from '../edgeLabel';
 import { edgeStrokeOf } from '../edgeStroke';
 import { firstSight } from '../firstSight';
 import type { EdgeStyle, NodeStyle } from '../dataTypes';
 import { isShippedTheme } from './themeEdit';
+import { diagramThemeErrors } from './themeFile';
 import { DIAGRAM_THEMES } from './themes';
 import { DIAGRAM_THEME_KEY, defaultRoleStyle, type DiagramTheme } from './types';
 
@@ -45,9 +46,22 @@ export const themeLabelFont = (theme: DiagramTheme, font = themeFont(theme)): { 
 export const themeLabelStyle = (theme: DiagramTheme) => labelStyleOf(themeLabelFont(theme));
 
 const unwarnedTheme = firstSight();
+const themeErrorsOf = createPart((value: object) => diagramThemeErrors(value));
+const warnedOf = createPart((_value: object) => ({ done: false }));
 
-/** The theme a document value names: a shipped theme by id, or a whole theme. `fallback` for none,
- *  or for an id no shipped theme has, with a development warning once per id. */
+/** Whether `value` checks as a whole theme, warning in development the first time it does not. */
+function isWholeTheme(value: object, fallback: DiagramTheme): boolean {
+  const errors = themeErrorsOf(value);
+  if (errors.length === 0) return true;
+  const warned = warnedOf(value);
+  if (isDev() && !warned.done) console.warn(`@weasel-js/diagram: a theme that does not check (${errors.slice(0, 3).join('; ')}); drawing with '${fallback.id}'`);
+  warned.done = true;
+  return false;
+}
+
+/** The theme a document value names: a shipped theme by id, or a whole theme that checks
+ *  (`diagramThemeErrors`). `fallback` for none, for an id no shipped theme has, or for a theme that
+ *  does not check, with a development warning once per id or theme. */
 export function diagramThemeFrom(value: unknown, fallback: DiagramTheme = DIAGRAM_THEMES.night!): DiagramTheme {
   if (typeof value === 'string') {
     const shipped = getOwn(DIAGRAM_THEMES, value);
@@ -57,7 +71,7 @@ export function diagramThemeFrom(value: unknown, fallback: DiagramTheme = DIAGRA
     }
     return fallback;
   }
-  if (value !== null && typeof value === 'object' && 'roles' in value) return value as DiagramTheme;
+  if (value !== null && typeof value === 'object' && 'roles' in value && isWholeTheme(value, fallback)) return value as DiagramTheme;
   return fallback;
 }
 

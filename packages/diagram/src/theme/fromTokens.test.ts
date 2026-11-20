@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { diagramThemeFromTokens } from './fromTokens';
+import { diagramThemeErrors } from './themeFile';
 import { DIAGRAM_THEMES } from './themes';
 
 const TOKENS: Record<string, string> = {
@@ -37,5 +38,14 @@ describe('diagramThemeFromTokens', () => {
   it('names every shared role', () => {
     expect(Object.keys(diagramThemeFromTokens(read).roles).sort())
       .toEqual(['accent', 'default', 'muted', 'negative', 'positive', 'warning']);
+  });
+
+  it("takes paper's color for a token that reads as a color the kit cannot parse, so the theme checks", () => {
+    const relative = (token: string) => (token === '--wzl-fg-muted' ? 'rgb(from currentColor r g b / 0.7)' : read(token));
+    const theme = diagramThemeFromTokens(relative);
+    const paper = DIAGRAM_THEMES.paper!;
+    expect(theme.roles.muted!.text).toBe(paper.roles.muted!.text);
+    expect(theme.edge.stroke).toBe(paper.roles.muted!.text);
+    expect(diagramThemeErrors(theme)).toEqual([]);
   });
 });

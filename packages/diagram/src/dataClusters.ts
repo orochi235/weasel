@@ -4,7 +4,7 @@
  */
 import { maxOf, minOf, type Rect } from '@weasel-js/geom';
 import type { ClusterInset } from './cluster';
-import type { DataCluster, DiagramSceneData, DiagramSpec, NodeStyle } from './dataTypes';
+import { outlineOf, type DataCluster, type DiagramSceneData, type DiagramSpec, type NodeStyle } from './dataTypes';
 import { ANCHOR_DERIVE_POSE, CLUSTER_DERIVE_POSE, boxAround, type DiagramAnchor } from './clusterBox';
 import { nestClusters } from './clusterTree';
 
@@ -162,11 +162,7 @@ export function clusterSpecs(
           },
         },
         fill: { paint: { color: style.fill } },
-        stroke: {
-          paint: { color: style.stroke },
-          width: style.strokeWidth ?? 1,
-          ...(style.dash ? { dash: style.dash } : {}),
-        },
+        stroke: { paint: { color: style.stroke }, ...outlineOf(style, 'cluster') },
       },
       dependsOn: [...g.direct, ...(labels.get(g.cluster.id) ?? []).map((l) => l.id)] as never[],
       derivePose: CLUSTER_DERIVE_POSE as never,

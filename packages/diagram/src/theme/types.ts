@@ -14,7 +14,7 @@ export const DIAGRAM_ROLES = [
 /** The id of one of {@link DIAGRAM_ROLES}. A theme may style roles of its own besides. */
 export type DiagramRole = (typeof DIAGRAM_ROLES)[number]['id'];
 
-export type { FontField, StyleField } from './styleField';
+export type { FontField, LineField, StyleField } from './styleField';
 
 /** The face a theme sets diagram text in. A text row keeps its own size. */
 export interface DiagramFont {
@@ -33,7 +33,8 @@ export interface DiagramTheme {
   roles: Readonly<Record<string, NodeStyle>>;
   /** The names a picker shows for roles beyond {@link DIAGRAM_ROLES}, or for a shipped role renamed. */
   roleLabels?: Readonly<Record<string, string>>;
-  /** The role a shape or connector naming none, or naming one this theme lacks, is drawn in. */
+  /** The role a shape naming none, or naming one this theme lacks, is drawn in. A connector either
+   *  way takes {@link DiagramTheme.edge} instead. */
   defaultRole: string;
   /** A connector naming no role. */
   edge: EdgeStyle;

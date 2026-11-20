@@ -1,17 +1,21 @@
+import { tryParseColor } from '@weasel-js/core';
 import { DIAGRAM_THEMES } from './themes';
 import type { DiagramTheme } from './types';
 
 /**
  * A theme matching its host's chrome, built from resolved `--wzl-*` values:
  * `read` answers a custom property's value, as `getComputedStyle(el)
- * .getPropertyValue` does. A token that reads empty takes `paper`'s color.
+ * .getPropertyValue` does. A token that reads empty, or as a color the kit cannot parse (a
+ * custom property's value is not computed, so relative color syntax arrives as written), takes
+ * `paper`'s color.
  */
 export function diagramThemeFromTokens(
   read: (token: string) => string,
   opts: { id?: string; name?: string } = {},
 ): DiagramTheme {
   const paper = DIAGRAM_THEMES.paper!;
-  const t = (name: string, fallback: string): string => read(`--wzl-${name}`).trim() || fallback;
+  const raw = (name: string): string => read(`--wzl-${name}`).trim();
+  const t = (name: string, fallback: string): string => { const v = raw(name); return v !== '' && tryParseColor(v) !== null ? v : fallback; };
   const fg = t('fg', paper.roles.default!.text);
   const muted = t('fg-muted', paper.roles.muted!.text);
   const raised = t('surface-raised', paper.roles.default!.fill);
@@ -46,7 +50,7 @@ export function diagramThemeFromTokens(
       ],
     },
     page: t('surface', paper.page),
-    font: { family: t('font-ui', paper.font.family), size: Number.isFinite(size) && size > 0 ? size : paper.font.size },
+    font: { family: raw('font-ui') || paper.font.family, size: Number.isFinite(size) && size > 0 ? size : paper.font.size },
     series: [accent, success, warning, danger, t('accent-strong', accent), muted],
   };
 }

@@ -2,7 +2,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import type { ClusterInset } from './cluster';
 import type { Outline } from './outline';
 import type { DiagramContainer } from './containers/trait';
-import type { FontField, StyleField } from './theme/styleField';
+import type { FontField, LineField, StyleField } from './theme/styleField';
 
 /**
  * Where a port sits on its node, in **normalized bounds coordinates**:
@@ -81,6 +81,8 @@ export interface DiagramNode {
   ownStyle?: readonly StyleField[];
   /** The parts of its text face the author set by hand, which a theme leaves as they are. */
   ownFont?: readonly FontField[];
+  /** The parts of its outline the author set by hand, which a theme leaves as they are. */
+  ownLine?: readonly LineField[];
   /** On a built body whose rows are all text or dividers: how it stacks them, so it can be laid out
    *  again when their text changes size. Each row's text node carries its place as `bodyRow`. */
   body?: BodyLayout;

@@ -3,9 +3,11 @@
  * text row, connector, label, and off-page tag, as new node `data`. A color named in the
  * owner's `ownStyle` is the author's, and stays.
  */
-import type { NodeStyle } from '../dataTypes';
+import { outlineOf, type NodeStyle, type OutlineKind } from '../dataTypes';
+import { deepEqual } from '@weasel-js/registry';
+import { edgeStrokeOf } from '../edgeStroke';
 import { roleEdgeStyle, roleStyle, themeLabelFamily, themeLabelFont } from './resolve';
-import type { DiagramTheme, FontField, StyleField } from './types';
+import type { DiagramTheme, FontField, LineField, StyleField } from './types';
 
 /** A scene node as {@link themeWrites} reads it. */
 export interface ThemedNode {
@@ -24,13 +26,15 @@ export interface ThemedScene {
   childrenOf(id: never): readonly string[];
 }
 
-type Trait = Record<string, unknown> & { style?: string; ownStyle?: readonly StyleField[]; ownFont?: readonly FontField[] };
+type Trait = Record<string, unknown> & {
+  style?: string; ownStyle?: readonly StyleField[]; ownFont?: readonly FontField[]; ownLine?: readonly LineField[];
+};
 type Paint = { paint?: { color?: string } & Record<string, unknown> } & Record<string, unknown>;
 type Data = Record<string, unknown> & { diagram?: Trait; fill?: Paint; stroke?: Paint; text?: unknown; style?: Record<string, unknown> };
 
-/** A box's colors, and the ones its author set, and whether the author set its text size. Its text
- *  rows take `style.text`. */
-interface Look { style: NodeStyle; own: ReadonlySet<StyleField>; ownSize: boolean }
+/** A box's colors and outline, and the ones its author set, and whether the author set its text size.
+ *  Its text rows take `style.text`. */
+interface Look { style: NodeStyle; kind: OutlineKind; own: ReadonlySet<StyleField>; ownLine: ReadonlySet<LineField>; ownSize: boolean }
 
 const traitOf = (data: unknown): Trait | null => {
   const d = (data as Data | null)?.diagram;
@@ -39,6 +43,7 @@ const traitOf = (data: unknown): Trait | null => {
 
 const ownOf = (trait: Trait): ReadonlySet<StyleField> => new Set(trait.ownStyle ?? []);
 const ownsSize = (trait: Trait): boolean => trait.ownFont?.includes('size') === true;
+const ownLineOf = (trait: Trait): ReadonlySet<LineField> => new Set(trait.ownLine ?? []);
 
 /** A container's role, as the containers trait (`data.diagram.container`) names it. */
 function containerRole(trait: Trait): string | null {
@@ -67,26 +72,44 @@ function laneIndex(scene: ThemedScene, node: ThemedNode): number {
 function boxLook(scene: ThemedScene, node: ThemedNode, theme: DiagramTheme): Look | null {
   const trait = traitOf(node.data);
   if (trait === null || 'from' in trait || 'label' in trait || 'anchor' in trait || 'mark' in trait) return null;
-  const own = ownOf(trait);
-  const ownSize = ownsSize(trait);
+  const marks = { own: ownOf(trait), ownLine: ownLineOf(trait), ownSize: ownsSize(trait) };
   const role = containerRole(trait);
-  if (role === 'pool') return { style: theme.lane.header, own, ownSize };
+  if (role === 'pool') return { style: theme.lane.header, kind: 'region', ...marks };
   if (role === 'lane') {
     const bodies = theme.lane.bodies;
-    return { style: bodies[laneIndex(scene, node) % bodies.length] ?? theme.container, own, ownSize };
+    return { style: bodies[laneIndex(scene, node) % bodies.length] ?? theme.container, kind: 'lane', ...marks };
   }
-  if (role !== null || 'cluster' in trait) return { style: theme.container, own, ownSize };
-  return { style: roleStyle(theme, trait.style), own, ownSize };
+  if (role !== null) return { style: theme.container, kind: 'region', ...marks };
+  if ('cluster' in trait) return { style: theme.container, kind: 'cluster', ...marks };
+  return { style: roleStyle(theme, trait.style), kind: 'body', ...marks };
 }
 
 const recolored = (paint: Paint | undefined, color: string): Paint | undefined =>
   paint?.paint?.color === color ? undefined : { ...paint, paint: { ...paint?.paint, color } };
 
-/** `data` with its fill and stroke recolored where the author has not set them, or `null` when
- *  nothing changes. */
+const sameDash = (a: unknown, b: unknown): boolean =>
+  (Array.isArray(a) && a.length > 0 ? a.join() : '') === (Array.isArray(b) && b.length > 0 ? b.join() : '');
+
+/** `stroke` in `color` (unless `undefined`) and in `line`'s width and dash where the author has not
+ *  set them, or `undefined` when nothing changes. */
+function restroked(stroke: Paint, color: string | undefined, line: { width: unknown; dash?: readonly number[] }, own: ReadonlySet<LineField>): Paint | undefined {
+  const next: Paint = { ...stroke };
+  if (color !== undefined) next.paint = { ...stroke.paint, color };
+  if (!own.has('width')) next.width = line.width;
+  if (!own.has('dash')) {
+    if (line.dash !== undefined && line.dash.length > 0) next.dash = [...line.dash];
+    else delete next.dash;
+  }
+  const same = next.paint?.color === stroke.paint?.color && deepEqual(next.width, stroke.width) && sameDash(next.dash, stroke.dash);
+  return same ? undefined : next;
+}
+
+/** `data` with its fill, stroke and outline as `look` draws them where the author has not set them,
+ *  or `null` when nothing changes. */
 function paintBox(data: Data, look: Look): Data | null {
   const fill = look.own.has('fill') ? undefined : recolored(data.fill, look.style.fill);
-  const stroke = look.own.has('stroke') || data.stroke === undefined ? undefined : recolored(data.stroke, look.style.stroke);
+  const stroke = data.stroke === undefined ? undefined
+    : restroked(data.stroke, look.own.has('stroke') ? undefined : look.style.stroke, outlineOf(look.style, look.kind), look.ownLine);
   const band = paintBand(data, look);
   if (fill === undefined && stroke === undefined && band.headerFill === undefined) return null;
   return { ...data, ...(fill ? { fill } : {}), ...(stroke ? { stroke } : {}), ...band };
@@ -111,16 +134,25 @@ function paintBand(data: Data, look: Look): { headerFill?: Paint } {
   return headerFill === undefined ? {} : { headerFill };
 }
 
+/** The key on a text row's `data` holding the size a theme step took it to below 1, where it is
+ *  drawn at 1, so the step back lands where it started. */
+export const UNCLAMPED_FONT_SIZE = 'unclampedFontSize';
+
 /** `data`'s text recolored to `color` (unless `undefined`), set in `family`, and its size moved by
- *  `step`, or `null` when nothing changes. */
+ *  `step`, or `null` when nothing changes. A size the step takes below 1 is drawn at 1 and kept as
+ *  {@link UNCLAMPED_FONT_SIZE}, and the next step moves from it. */
 function paintText(data: Data, color: string | undefined, family: string, step: number): Data | null {
   const fill = color === undefined ? undefined : recolored(data.fill, color);
   const size = data.style?.fontSize;
-  const resized = step !== 0 && typeof size === 'number' ? { fontSize: Math.max(1, size + step) } : {};
+  const owed = data[UNCLAMPED_FONT_SIZE];
+  const want = step !== 0 && typeof size === 'number' ? (typeof owed === 'number' ? owed : size) + step : undefined;
+  const resized = want !== undefined ? { fontSize: Math.max(1, want) } : {};
   const face = data.style !== undefined && (data.style.fontFamily !== family || 'fontSize' in resized)
     ? { ...data.style, fontFamily: family, ...resized } : undefined;
   if (fill === undefined && face === undefined) return null;
-  return { ...data, ...(fill ? { fill } : {}), ...(face ? { style: face } : {}) };
+  const { [UNCLAMPED_FONT_SIZE]: _, ...rest } = data;
+  const keep = want === undefined ? (owed !== undefined ? { [UNCLAMPED_FONT_SIZE]: owed } : {}) : want < 1 ? { [UNCLAMPED_FONT_SIZE]: want } : {};
+  return { ...rest, ...keep, ...(fill ? { fill } : {}), ...(face ? { style: face } : {}) };
 }
 
 /** An off-page tag's `data` in `theme`'s label color and face, on its page color, its size moved
@@ -132,10 +164,14 @@ function paintTag(data: Data, theme: DiagramTheme, step: number): Data | null {
   return { ...(text ?? data), ...(background ? { background } : {}) };
 }
 
-/** A connector's own colors, and its label's, under `theme`. */
-function edgeLook(trait: Trait, theme: DiagramTheme): { stroke: string; label: string; own: ReadonlySet<StyleField>; ownSize: boolean } {
+/** A connector's own colors and line, and its label's color, under `theme`. */
+function edgeLook(trait: Trait, theme: DiagramTheme) {
   const style = roleEdgeStyle(theme, trait.style);
-  return { stroke: style.stroke, label: style.label ?? style.stroke, own: ownOf(trait), ownSize: ownsSize(trait) };
+  const { width, dash } = edgeStrokeOf(style);
+  return {
+    stroke: style.stroke, label: style.label ?? style.stroke, line: { width, ...(dash ? { dash } : {}) },
+    own: ownOf(trait), ownLine: ownLineOf(trait), ownSize: ownsSize(trait),
+  };
 }
 
 const ownerOf = (node: ThemedNode): string | null =>
@@ -171,7 +207,8 @@ export function themeWrites(scene: ThemedScene, theme: DiagramTheme, ids?: Reado
     if (trait !== null && 'from' in trait && 'to' in trait) {
       if (ids !== undefined && !ids.has(node.id)) continue;
       const look = edgeLook(trait, theme);
-      const stroke = look.own.has('stroke') || data.stroke === undefined ? undefined : recolored(data.stroke, look.stroke);
+      const stroke = data.stroke === undefined ? undefined
+        : restroked(data.stroke, look.own.has('stroke') ? undefined : look.stroke, look.line, look.ownLine);
       if (stroke !== undefined) out.set(node.id, { ...data, stroke });
       continue;
     }

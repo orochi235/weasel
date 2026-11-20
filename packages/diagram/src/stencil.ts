@@ -10,7 +10,7 @@ import { bodyLayoutOf } from './bodyRelayout';
 import { asideFillOf, headerFillOf, rowTextColor } from './dataColors';
 import { DEFAULT_FONT } from './edgeLabel';
 import { DEFAULT_NODE_STYLE, type DiagramSceneData, type NodeStyle } from './dataTypes';
-import { NODE_STROKE_WIDTH } from './dataTypes';
+import { outlineOf } from './dataTypes';
 import { asideFace, rowTextStyle } from './rowStyle';
 import type { IconSpec } from '@weasel-js/icons';
 import type { Outline } from './outline';
@@ -99,7 +99,7 @@ export function stencilInsertOps<TLayer extends string>(
       body: (trait) => ({
         diagram: { ...trait, ...bodyLayoutOf(spec, trait, measure), ...(stencil.themeRole !== undefined ? { style: stencil.themeRole } : {}) },
         fill: { paint: { color: style.fill } },
-        stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? NODE_STROKE_WIDTH, ...(style.dash ? { dash: style.dash } : {}) },
+        stroke: { paint: { color: style.stroke }, ...outlineOf(style, 'body') },
         ...headerFillOf(trait, style),
       }),
       row: (text, box) => box.row.kind === 'label' || box.row.kind === 'field' || box.row.kind === 'header'

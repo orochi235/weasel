@@ -6,8 +6,8 @@ import type { AnyScene } from '@weasel-js/core';
 import type { MeasureRowText } from '../body';
 import { relayoutBodies, type RelayoutScene } from '../bodyRelayout';
 import { redrawSequences } from '../sequence/commit';
-import { diagramThemeOf, themeDocValue } from './resolve';
-import { themeWrites, type ThemedScene } from './themeWrites';
+import { diagramThemeOf, roleStyle, themeDocValue } from './resolve';
+import { UNCLAMPED_FONT_SIZE, themeWrites, type ThemedScene } from './themeWrites';
 import { DIAGRAM_THEME_KEY, type DiagramTheme, type FontField, type StyleField } from './types';
 
 type Paint = { paint?: Record<string, unknown> } & Record<string, unknown>;
@@ -24,10 +24,10 @@ export interface DiagramStyleState {
 }
 
 /** The style state of a shape (a body) or a connector, or `null` for anything else — a text row,
- *  a label, a cluster, a container. */
+ *  a label, a cluster, a container, a sequence or one of its parts, which it draws from its data. */
 export function diagramStyleOf(node: { data: unknown }): DiagramStyleState | null {
   const trait = (node.data as Data | null)?.diagram;
-  if (trait === null || typeof trait !== 'object') return null;
+  if (trait === null || typeof trait !== 'object' || 'seq' in trait || 'sequence' in trait) return null;
   const kind = 'from' in trait && 'to' in trait ? 'connector' : 'outline' in trait && !('cluster' in trait) && !('container' in trait) ? 'shape' : null;
   if (kind === null) return null;
   const role = trait.style as string | undefined;
@@ -87,14 +87,21 @@ export interface DiagramStyleEditOptions {
 
 const withTrait = (data: Data, trait: Record<string, unknown>): Data => ({ ...data, diagram: trait });
 
+/** The state of the shape or connector `id`, or `null` when it is not one or is locked: an edit by
+ *  hand leaves a locked node as a theme does. */
+function editableStyleOf(scene: AnyScene, id: string): DiagramStyleState | null {
+  const node = scene.get(id as never);
+  return node === undefined || scene.isLocked(id as never) ? null : diagramStyleOf(node);
+}
+
 /**
  * Names `role` on every shape and connector among `ids` and recolors them in
  * it, as one undo entry. Choosing a role hands back any color the author had
- * set, so the role shows.
+ * set, so the role shows. A locked one, or locked text of one, is left as it is.
  */
 export function setDiagramStyle(scene: AnyScene, ids: readonly string[], role: string, opts: DiagramStyleEditOptions = {}): void {
   const theme = opts.theme ?? diagramThemeOf(scene);
-  const styled = ids.filter((id) => { const n = scene.get(id as never); return n !== undefined && diagramStyleOf(n) !== null; });
+  const styled = ids.filter((id) => editableStyleOf(scene, id) !== null);
   if (styled.length === 0) return;
   scene.batch(opts.label ?? 'Set style', () => {
     for (const id of styled) {
@@ -117,12 +124,14 @@ function textNodesOf(scene: AnyScene, id: string, kind: DiagramStyleState['kind'
   }).map((n) => n.id);
 }
 
-/** The text nodes a `field` color set on `id` reaches: a header row takes the box's fill, the
- *  other rows and a connector's labels its text color, and a stroke reaches none. */
-function colorTextNodesOf(scene: AnyScene, id: string, state: DiagramStyleState, field: StyleField): string[] {
+/** The text nodes a `field` color set on `id` reaches: a header row takes the box's fill unless
+ *  `theme` names its role a header text color, the other rows and a connector's labels its text
+ *  color, and a stroke reaches none. */
+function colorTextNodesOf(scene: AnyScene, id: string, state: DiagramStyleState, field: StyleField, theme?: DiagramTheme): string[] {
   if (field === 'stroke') return [];
   const header = (scene.get(id as never)!.data as Data).diagram?.header !== undefined;
-  return textNodesOf(scene, id, state.kind).filter((t) => (header && (scene.get(t as never)!.data as Data).bodyRow === 0) === (field === 'fill'));
+  const rows = textNodesOf(scene, id, state.kind).filter((t) => (header && (scene.get(t as never)!.data as Data).bodyRow === 0) === (field === 'fill'));
+  return field === 'fill' && theme !== undefined && roleStyle(theme, state.role).headerText !== undefined ? [] : rows;
 }
 
 /**
@@ -155,21 +164,23 @@ export function diagramFontSizeOf(scene: AnyScene, id: string): number | undefin
 /**
  * Sets `field` to `color` on every shape and connector among `ids` — `text`
  * reaching a shape's rows and a connector's label — and records it in their
- * `ownStyle`, so a theme change leaves it. One undo entry. A connector has no
- * fill, and ignores one.
+ * `ownStyle`, so a theme change leaves it. A fill reaches a header row's text unless the theme
+ * names the role a `headerText`, as a shape built with that fill is drawn. One undo entry. A connector has no
+ * fill, and ignores one. A locked one, or locked text of one, is left as it is.
  */
-export function setDiagramColor(scene: AnyScene, ids: readonly string[], field: StyleField, color: string, opts: Pick<DiagramStyleEditOptions, 'label'> = {}): void {
+export function setDiagramColor(scene: AnyScene, ids: readonly string[], field: StyleField, color: string, opts: DiagramStyleEditOptions = {}): void {
+  const theme = opts.theme ?? diagramThemeOf(scene);
   scene.batch(opts.label ?? `Set ${field} color`, () => {
     for (const id of ids) {
-      const node = scene.get(id as never);
-      const state = node === undefined ? null : diagramStyleOf(node);
+      const state = editableStyleOf(scene, id);
       if (state === null || (state.kind === 'connector' && field === 'fill')) continue;
-      const data = node!.data as Data;
+      const data = scene.get(id as never)!.data as Data;
       const own = state.own.includes(field) ? state.own : [...state.own, field];
       const next = withTrait(data, { ...data.diagram, ownStyle: own });
       if (field !== 'text') next[field] = painted(data[field], color);
       scene.update(id as never, { data: next });
-      for (const t of colorTextNodesOf(scene, id, state, field)) {
+      for (const t of colorTextNodesOf(scene, id, state, field, theme)) {
+        if (scene.isLocked(t as never)) continue;
         const text = scene.get(t as never)!.data as Data;
         scene.update(t as never, { data: { ...text, fill: painted(text.fill, color) } });
       }
@@ -180,7 +191,7 @@ export function setDiagramColor(scene: AnyScene, ids: readonly string[], field: 
 /**
  * Sets the text of every shape and connector among `ids` — a shape's rows, a
  * connector's label — to `size`, and records it in their `ownFont`, so a
- * theme's size change leaves it. One undo entry.
+ * theme's size change leaves it. One undo entry. A locked one, or locked text of one, is left as it is.
  */
 export function setDiagramFontSize(
   scene: AnyScene, ids: readonly string[], size: number, opts: Pick<DiagramStyleEditOptions, 'label'> & { measure?: MeasureRowText } = {},
@@ -188,13 +199,12 @@ export function setDiagramFontSize(
   scene.batch(opts.label ?? 'Set text size', () => {
     const writes = new Map<string, unknown>();
     for (const id of ids) {
-      const node = scene.get(id as never);
-      const state = node === undefined ? null : diagramStyleOf(node);
+      const state = editableStyleOf(scene, id);
       if (state === null) continue;
-      const data = node!.data as Data;
+      const data = scene.get(id as never)!.data as Data;
       if (!state.ownFont.includes('size')) scene.update(id as never, { data: withTrait(data, { ...data.diagram, ownFont: [...state.ownFont, 'size'] }) });
       for (const t of textNodesOf(scene, id, state.kind)) {
-        const text = scene.get(t as never)!.data as Data & { style?: Record<string, unknown> };
+        const { [UNCLAMPED_FONT_SIZE]: _, ...text } = scene.get(t as never)!.data as Data & { style?: Record<string, unknown> };
         writes.set(t, { ...text, style: { ...text.style, fontSize: size } });
       }
     }

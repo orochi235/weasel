@@ -22,7 +22,7 @@ import { dataNodeStyle } from './dataStyles';
 import { scenePageSplits } from './dataPages';
 import { edgeSpecs, wireLabels } from './dataEdges';
 import {
-  DEFAULT_NODE_STYLE, NODE_STROKE_WIDTH,
+  DEFAULT_NODE_STYLE, outlineOf,
   type DataEdge, type DataCluster, type DataNode, type DiagramData, type DiagramSceneData, type DiagramSceneOptions, type DiagramSpec,
   type NodeStyle,
 } from './dataTypes';
@@ -114,7 +114,7 @@ function nodeSpecs(
         ...ownNodeStyle(n.colors),
       },
       fill: { paint: { color: style.fill } },
-      stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? NODE_STROKE_WIDTH, ...(style.dash ? { dash: style.dash } : {}) },
+      stroke: { paint: { color: style.stroke }, ...outlineOf(style, 'body') },
       ...headerFillOf(trait, style),
     }),
     row: (text, at) =>

@@ -96,4 +96,15 @@ describe('roles named like Object.prototype members', () => {
     delete (own as { roleLabels?: unknown }).roleLabels;
     expect(themeRoles(own).find((r) => r.id === 'toString')?.label).toBe('toString');
   });
+
+  it('refuses a path through a role, a lane body or a series color the theme lacks', () => {
+    const theme = DIAGRAM_THEMES.paper!;
+    const n = theme.series.length;
+    expect(() => setThemeValue(theme, ['roles', 'new', 'fill'], '#f00')).toThrow(RangeError);
+    expect(() => setThemeValue(theme, ['lane', 'bodies', 5, 'fill'], '#f00')).toThrow(RangeError);
+    expect(() => setThemeValue(theme, ['series', n + 1], '#f00')).toThrow(RangeError);
+    expect(() => setThemeValue(theme, ['series', -1], '#f00')).toThrow(RangeError);
+    expect(setThemeValue(theme, ['series', n], '#f00').series).toEqual([...theme.series, '#f00']);
+    expect(setThemeValue(theme, ['roles', 'accent', 'fill'], '#f00').roles.accent!.fill).toBe('#f00');
+  });
 });

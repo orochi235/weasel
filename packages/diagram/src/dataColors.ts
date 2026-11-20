@@ -1,23 +1,30 @@
 /** Which of a data item's own colors `diagramScene` lists in its trait's `ownStyle`. */
 import type { Row } from './body';
 import type { EdgeStyle, NodeStyle } from './dataTypes';
-import type { StyleField } from './theme/styleField';
+import type { LineField, StyleField } from './theme/styleField';
 import type { DiagramNode } from './types';
 
 const NODE_FIELDS: readonly StyleField[] = ['fill', 'stroke', 'text'];
 
-/** The `ownStyle` a node, container, or lane given `colors` carries: `{}` when it sets no color. */
-export function ownNodeStyle(colors: Partial<NodeStyle> | undefined): { ownStyle?: StyleField[] } {
+const ownLineOf = (width: unknown, dash: unknown): { ownLine?: LineField[] } => {
+  const line: LineField[] = [...(width !== undefined ? ['width' as const] : []), ...(dash !== undefined ? ['dash' as const] : [])];
+  return line.length > 0 ? { ownLine: line } : {};
+};
+
+/** The `ownStyle` and `ownLine` a node, container, or lane given `colors` carries: `{}` when it sets
+ *  no color and no outline. */
+export function ownNodeStyle(colors: Partial<NodeStyle> | undefined): { ownStyle?: StyleField[]; ownLine?: LineField[] } {
   const own = NODE_FIELDS.filter((f) => colors?.[f] !== undefined);
-  return own.length > 0 ? { ownStyle: own } : {};
+  return { ...(own.length > 0 ? { ownStyle: own } : {}), ...ownLineOf(colors?.strokeWidth, colors?.dash) };
 }
 
-/** The `ownStyle` an edge given `colors` carries: its stroke as `stroke`, its label as `text`. */
-export function ownEdgeStyle(colors: Partial<EdgeStyle> | undefined): { ownStyle?: StyleField[] } {
+/** The `ownStyle` an edge given `colors` carries, its stroke as `stroke` and its label as `text`, and
+ *  its `ownLine`. */
+export function ownEdgeStyle(colors: Partial<EdgeStyle> | undefined): { ownStyle?: StyleField[]; ownLine?: LineField[] } {
   const own: StyleField[] = [];
   if (colors?.stroke !== undefined) own.push('stroke');
   if (colors?.label !== undefined) own.push('text');
-  return own.length > 0 ? { ownStyle: own } : {};
+  return { ...(own.length > 0 ? { ownStyle: own } : {}), ...ownLineOf(colors?.width, colors?.dash) };
 }
 
 /** `style` with every color `colors` sets over it. */

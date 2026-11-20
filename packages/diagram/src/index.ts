@@ -343,7 +343,7 @@ export { diagramLayoutOf } from './sceneSync';
 export { applyDiagramEdit, applyNodeResizes, type ApplyEditOptions } from './applyEdit';
 export { useMirroredSelection } from './mirrorSelection';
 export { DIAGRAM_ROLES, DIAGRAM_THEME_KEY } from './theme/types';
-export type { DiagramFont, DiagramRole, DiagramTheme, FontField, StyleField } from './theme/types';
+export type { DiagramFont, DiagramRole, DiagramTheme, FontField, LineField, StyleField } from './theme/types';
 export { DIAGRAM_THEMES } from './theme/themes';
 export { diagramThemeFromTokens } from './theme/fromTokens';
 export {
