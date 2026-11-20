@@ -484,3 +484,20 @@ describe('createLoupe', () => {
     expect(hud.widgets()).not.toContain(loupe.window);
   });
 });
+
+describe('createLoupe on a shared canvas', () => {
+  it('gives each lens a view and a window id of its own', () => {
+    const hud = createHud();
+    bindHost(hud);
+    const ids: string[] = [];
+    const views = {
+      addView: vi.fn((v: { id: string }) => { ids.push(v.id); return { id: v.id, draw: () => [], remove: () => {} }; }),
+      getSurfaceRect: () => ({ x: 0, y: 0, width: 800, height: 600 }),
+    };
+    const a = createLoupe({ hud, canvas: makeElement(), requestRedraw: () => {}, views });
+    const b = createLoupe({ hud, canvas: makeElement(), requestRedraw: () => {}, views });
+    expect(new Set(ids).size).toBe(2);
+    expect(a.window.id).not.toBe(b.window.id);
+    a.dispose(); b.dispose();
+  });
+});
