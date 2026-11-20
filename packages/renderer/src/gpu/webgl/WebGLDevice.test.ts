@@ -122,6 +122,20 @@ describe('WebGLDevice textures', () => {
     expect(argsOf(rec, 'pixelStorei').at(-1)).toEqual([0x9241, false]);
   });
 
+  it('puts back at frame start the unpack state another user of the context may have left set', () => {
+    const rec = createGLRecorder();
+    const gpu = new WebGLDevice(rec.gl);
+    gpu.beginFrame();
+    const gl = rec.gl;
+    expect(argsOf(rec, 'bindBuffer')).toContainEqual([gl.PIXEL_UNPACK_BUFFER, null]);
+    expect(argsOf(rec, 'pixelStorei')).toEqual(expect.arrayContaining([
+      [gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false], [gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.BROWSER_DEFAULT_WEBGL],
+      [gl.UNPACK_ALIGNMENT, 4], [gl.UNPACK_ROW_LENGTH, 0], [gl.UNPACK_SKIP_ROWS, 0], [gl.UNPACK_SKIP_PIXELS, 0],
+    ]));
+    expect(gl.PIXEL_UNPACK_BUFFER).toBe(0x88EC);
+    expect(gl.UNPACK_SKIP_PIXELS).toBe(0x0CF4);
+  });
+
   it('empties a unit holding the texture a pass draws into', () => {
     const { rec, gpu } = setup();
     const { program, geometry, state } = drawable(gpu);
