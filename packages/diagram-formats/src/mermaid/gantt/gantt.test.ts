@@ -109,6 +109,26 @@ describe('writing a Mermaid gantt', () => {
     expect(() => writeMermaidGantt({ ...pageOf(data), data: { kind: 'timeline', sections: [] } })).toThrow(/as a gantt only/);
   });
 
+  it('writes no task after an id it dropped: the chain after it follows the task before, and a start naming it does too', () => {
+    const d3 = { kind: 'duration', amount: 3, unit: 'd' } as const;
+    const data: GanttData = {
+      kind: 'gantt',
+      sections: [{ tasks: [
+        { name: 'Plan', id: 'a', start: { kind: 'previous' }, end: d3 },
+        { name: 'Build', id: 'b', start: { kind: 'previous' }, end: d3 },
+        { name: 'Ship', start: { kind: 'after', ids: ['b'] }, end: { kind: 'until', ids: ['a'] } },
+      ] }],
+    };
+    const { text, warnings } = writeMermaidGantt(pageOf(data));
+    expect(text).toBe('gantt\n  Plan :3d\n  Build :3d\n  Ship :1d\n');
+    expect(warnings).toEqual([
+      'Mermaid gives no id to a first task, or one after a task with none, unless it has a start of its own; those ids were dropped.',
+      'Tasks starting after or ending at a task whose id was dropped follow the task before them, or last a day.',
+    ]);
+    const tasks = ganttOf(text).sections[0]!.tasks;
+    expect(tasks.map((t) => t.start)).toEqual([{ kind: 'previous' }, { kind: 'previous' }, { kind: 'previous' }]);
+  });
+
   it('renames a task id that is a tag word, with a warning, and the starts naming it', () => {
     const data: GanttData = { kind: 'gantt', dateFormat: 'YYYY-MM-DD', sections: [{ tasks: [
       { name: 'A', id: 'done', start: { kind: 'date', date: '2024-01-01' }, end: { kind: 'duration', amount: 3, unit: 'd' } },
