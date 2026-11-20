@@ -90,7 +90,8 @@ export function assetSetCodec(types: PrefTypes): DocumentCodec<AssetSet> {
       });
       const at = assetSets(base);
       const value = at(base.assets.map((a, i) => opened[i]?.draft?.schema ?? a.root));
-      if (value === base) {
+      // At the baseline with steps to redo is a draft still, as `draft.ts` keeps one for a lone schema.
+      if (value === base && !opened.some((o) => o?.draft?.stacks)) {
         dropDraft(key, storage);
         return null;
       }

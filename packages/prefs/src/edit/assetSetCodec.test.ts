@@ -166,6 +166,19 @@ describe('assetSetCodec', () => {
     expect(doc.value()).toBe(base);
   });
 
+  it('reopens a draft undone back to the baseline with its steps to redo, as a lone schema’s draft does', () => {
+    const doc = editor(ASSET_SET);
+    doc.commit(nameGrid('Grid')(doc.value()));
+    doc.history.undo();
+    const storage = memory();
+    codec.saveDraft(KEY, doc.value(), ASSET_SET, doc.history.serialize(), 5, storage);
+    const opened = codec.openDraft(KEY, ASSET_SET, storage)!;
+    expect(opened.value).toBe(ASSET_SET);
+    const back = reopened(opened);
+    back.history.redo();
+    expect(gridName(back.value())).toBe('Grid');
+  });
+
   it('opens nothing, and removes the draft, when the source took the reader’s only edit', () => {
     const { storage } = saved(ASSET_SET, [nameGrid('Grid')]);
     expect(codec.openDraft(KEY, sourceMoved('Grid'), storage)).toBeNull();
