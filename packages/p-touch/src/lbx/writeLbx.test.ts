@@ -168,6 +168,23 @@ describe('lbxObjectsCommand', () => {
     expect(config.objects).toEqual([{ ...barcode, position: { x: 12, y: 4, width: 40, height: 10 } }]);
   });
 
+  it('places carried objects inside a rect clip drawn under a mirror', async () => {
+    const { config, skipped } = await lbxConfig(page([{
+      kind: 'group', transform: mat3.fromAffine([1, 0, 0, -1, 0, 30]), clip: { kind: 'rect', x: 0, y: 0, width: 100, height: 30 },
+      children: [{ kind: 'group', transform: mat3.fromAffine([1, 0, 0, -1, 10, 29]), children: [lbxObjectsCommand([barcode])] }],
+    }]));
+    expect(skipped).toEqual([]);
+    expect(config.objects).toEqual([{ ...barcode, position: { x: 12, y: 4, width: 40, height: 10 } }]);
+  });
+
+  it('drops carried objects a transform collapses to a line, as it does the paint beside them', async () => {
+    const { config, skipped } = await lbxConfig(page([
+      { ...frame({ kind: 'rect', x: 0, y: 0, width: 100, height: 30 }, [lbxObjectsCommand([barcode])]), transform: mat3.scaled(mat3.identity(), 0, 1) },
+    ]));
+    expect(skipped).toEqual([]);
+    expect(config.objects).toEqual([]);
+  });
+
   it('skips carried objects a clip would cut, or under a group the writer must rasterize', async () => {
     const narrow = await lbxConfig(page([frame({ kind: 'rect', x: 0, y: 0, width: 20, height: 20 }, [lbxObjectsCommand([barcode])])]));
     expect(narrow.config.objects).toEqual([]);
