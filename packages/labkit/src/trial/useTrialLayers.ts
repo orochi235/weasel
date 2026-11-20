@@ -39,9 +39,7 @@ export function useTrialLayers({
   const canvasLayers: CanvasLayerDescriptor[] = useMemo(() => {
     if (!instrument.canvas) return [];
     const baseLayers = instrument.canvas.layers;
-    const ordered = layerOrder
-      ? [...baseLayers].sort((a, b) => layerOrder.indexOf(a.id) - layerOrder.indexOf(b.id))
-      : baseLayers;
+    const ordered = layerOrder ? inListedOrder(baseLayers, layerOrder) : baseLayers;
     return ordered.map((layer) => ({
       id: layer.id,
       visible: getOwn(layerVisibility, layer.id) !== false,
@@ -71,9 +69,7 @@ export function useTrialLayers({
   // In the order the canvas draws them, with the always-on layers pinned
   // below the rest, where a drag cannot reach past them.
   const layerItems: LayerListItem[] = useMemo(() => {
-    const ordered = layerOrder
-      ? [...layerDescriptors].sort((a, b) => layerOrder.indexOf(a.id) - layerOrder.indexOf(b.id))
-      : layerDescriptors;
+    const ordered = layerOrder ? inListedOrder(layerDescriptors, layerOrder) : layerDescriptors;
     const pinnedLast = [
       ...ordered.filter((l) => !l.alwaysOn),
       ...ordered.filter((l) => l.alwaysOn),
@@ -87,4 +83,17 @@ export function useTrialLayers({
   }, [layerDescriptors, layerOrder, layerVisibility]);
 
   return { visibleLayers, canvasLayers, layerDescriptors, layerItems };
+}
+
+/** `layers` with the ones `order` names put in its order, among the places they hold; a layer it does not name
+ *  keeps its own place. */
+function inListedOrder<T extends { id: string }>(
+  layers: readonly T[],
+  order: readonly string[],
+): T[] {
+  const rank = new Map(order.map((id, i) => [id, i]));
+  const at = (l: T): number => rank.get(l.id) ?? -1;
+  const listed = layers.filter((l) => at(l) >= 0).sort((a, b) => at(a) - at(b));
+  let next = 0;
+  return layers.map((l) => (at(l) >= 0 ? (listed[next++] ?? l) : l));
 }
