@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { boundsOfPath } from '@weasel-js/core';
-import { contentBox, outlineDetail, outlinePath } from '../outline';
+import { contentBox, outlineDetail, outlinePath, outlineSolid } from '../outline';
 import { BPMN_GROUP, BPMN_STENCILS } from './bpmn';
 import { builtNodes, expectLabelUnder, expectStencilsBuild } from './stencils.fixture';
 
@@ -24,9 +24,17 @@ describe('the bpmn group', () => {
     }
   });
 
-  it('draws an end event with a heavier ring than a start event', () => {
-    const width = (id: string) => (builtNodes(byId(id))[0]!.data as { stroke: { width: number } }).stroke.width;
-    expect(width('end-event')).toBeGreaterThan(width('start-event'));
+  it('draws an end event as its own outline, a heavy ring filled inside the circle, not a restyled start event', () => {
+    const end = byId('end-event');
+    expect(end.outline).toBe('endEvent');
+    expect(end.style).toBeUndefined();
+    const [body] = builtNodes(end);
+    const ring = outlineSolid(end.outline, body!.pose);
+    expect(ring).not.toBeNull();
+    const circle = boundsOfPath(outlinePath(end.outline, body!.pose));
+    const filled = boundsOfPath(ring!);
+    for (const k of ['x', 'y', 'width', 'height'] as const) expect(filled[k], k).toBeCloseTo(circle[k], 6);
+    expect(outlineSolid(byId('start-event').outline, body!.pose)).toBeNull();
   });
 
   it('marks every gateway and the subprocess', () => {

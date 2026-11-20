@@ -3,7 +3,7 @@ import { outlinePath } from '../outline';
 
 const NAMES = [
   'server', 'router', 'switch', 'firewall', 'laptop', 'desktop', 'phone', 'printer', 'user', 'globe', 'disk',
-  'event', 'intermediateEvent', 'exclusiveGateway', 'parallelGateway', 'inclusiveGateway', 'eventGateway', 'subprocess',
+  'event', 'intermediateEvent', 'endEvent', 'exclusiveGateway', 'parallelGateway', 'inclusiveGateway', 'eventGateway', 'subprocess',
 ];
 
 describe('the network and BPMN outlines', () => {

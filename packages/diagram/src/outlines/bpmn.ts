@@ -1,10 +1,11 @@
 /**
  * BPMN's own figures. Events and gateways are small and carry their label
- * underneath, as BPMN draws them; a subprocess is a task with a boxed plus
+ * underneath, as BPMN draws them; an end event's heavy ring is filled, so it
+ * reads as one in any stroke; a subprocess is a task with a boxed plus
  * at its foot.
  */
 import { trimNumber } from '@weasel-js/geom';
-import { PathBuilder } from '@weasel-js/core/math';
+import { PathBuilder, type Path } from '@weasel-js/core/math';
 import { FIGURE_OUTLINES, figureOver } from './figures';
 import { FLOWCHART_OUTLINES } from './flowchart';
 import { outlineFromD } from './fromD';
@@ -21,6 +22,28 @@ export const EVENT_SIZE = { width: 90, height: EVENT + STRIP };
 export const GATEWAY_SIZE = { width: 100, height: GATEWAY + STRIP };
 
 const event = figureOver(FLOWCHART_OUTLINES.ellipse, 1, EVENT / (EVENT + STRIP));
+
+/** An end event's ring, as a share of its radius: 3px on the 40px circle. */
+const END_RING = 0.15;
+const KAPPA = 0.5522847498;
+
+/** The band between `b`'s ellipse and one `k` of its radius smaller, the inner one wound the other way so it is a hole. */
+function annulus({ x, y, width: w, height: h }: Bounds, k: number): Path {
+  const cx = x + w / 2, cy = y + h / 2;
+  const b = new PathBuilder();
+  for (const [rx, ry, turn] of [[w / 2, h / 2, 1], [(w / 2) * (1 - k), (h / 2) * (1 - k), -1]] as const) {
+    const ox = rx * KAPPA, oy = ry * KAPPA * turn, ey = ry * turn;
+    b.moveTo(cx + rx, cy)
+      .curveTo(cx + rx, cy + oy, cx + ox, cy + ey, cx, cy + ey)
+      .curveTo(cx - ox, cy + ey, cx - rx, cy + oy, cx - rx, cy)
+      .curveTo(cx - rx, cy - oy, cx - ox, cy - ey, cx, cy - ey)
+      .curveTo(cx + ox, cy - ey, cx + rx, cy - oy, cx + rx, cy)
+      .close();
+  }
+  return b.build();
+}
+
+const endEvent = figureOver({ ...FLOWCHART_OUTLINES.ellipse, solid: (b) => annulus(b, END_RING) }, 1, EVENT / (EVENT + STRIP));
 const intermediateEvent = figureOver(FIGURE_OUTLINES.doubleEllipse, 1, EVENT / (EVENT + STRIP));
 
 const DIAMOND = 'M0.5 0L1 0.5L0.5 1L0 0.5Z';
@@ -75,5 +98,5 @@ const subprocess: OutlineDef = {
 };
 
 export const BPMN_OUTLINES = {
-  event, intermediateEvent, exclusiveGateway, parallelGateway, inclusiveGateway, eventGateway, subprocess,
+  event, intermediateEvent, endEvent, exclusiveGateway, parallelGateway, inclusiveGateway, eventGateway, subprocess,
 };

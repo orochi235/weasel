@@ -141,10 +141,11 @@ export function figureOver(def: OutlineDef, aspect: number, share: number): Outl
     const s = Math.min(h * share, w / aspect);
     return { x: x + (w - s * aspect) / 2, y: y + h * share - s, width: s * aspect, height: s };
   };
-  const detail = def.detail;
+  const { detail, solid } = def;
   return {
     path: (b) => def.path(figureBox(b)),
     ...(detail ? { detail: (b: Bounds) => detail(figureBox(b)) } : {}),
+    ...(solid ? { solid: (b: Bounds) => solid(figureBox(b)) } : {}),
     content: ({ x, y, width: w, height: h }) => ({ x, y: y + h * share, width: w, height: h * (1 - share) }),
     boxForContent: (c) => ({ width: c.width, height: c.height / (1 - share) }),
   };
