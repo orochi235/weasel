@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getAtlasFont, _resetFontRegistryForTests } from './registerFont';
+import { getAtlasFont, registerFont, _resetFontRegistryForTests } from './registerFont';
 import { resolveFontVariant } from './resolveFontVariant';
 import type { FontFallbackPolicy } from './fallback';
 import { setDefaultFontFamily, setFontFallbackPolicy, _resetFallbackForTests } from './fallback';
@@ -9,6 +9,12 @@ import {
 import { registerTestFont } from './testing/registerTestFont';
 import { glyphGeneration, subscribeGlyphReady } from './glyphReady';
 import { _resetFallbackForTests as resetFallbackFromSeams } from './test-seams';
+
+/** Register `family` with an atlas whose fetch fails, so it is registered with no face. */
+async function registerFailedFont(family: string, weight = 400, style: 'normal' | 'italic' = 'normal'): Promise<void> {
+  global.fetch = vi.fn().mockRejectedValue(new Error('down')) as typeof fetch;
+  await registerFont(family, { weight, style }, `/fonts/${family}.json`, `/fonts/${family}.png`).catch(() => {});
+}
 
 const ALL_POLICIES: readonly FontFallbackPolicy[] = ['substitute', 'canvas', 'none'];
 
@@ -214,14 +220,9 @@ describe('canvas enrollment provenance', () => {
 });
 
 describe('warning accuracy', () => {
-  it('distinguishes an unregistered family from one with no matching variant', async () => {
-    // Slab is registered, but only as 700/italic. A 400/normal request walks
-    // the whole within-family chain (exact → nearest weight in bucket →
-    // (400, style) → (weight, 'normal') → nearest normal → (400, 'normal'))
-    // without ever reaching an italic-only, bold-bucket variant, so it lands
-    // in the same miss path an unregistered family does.
+  it('distinguishes an unregistered family from a registered one with no face loaded', async () => {
     await registerTestFont('Inter', 400, 'normal');
-    await registerTestFont('Slab', 700, 'italic');
+    await registerFailedFont('Slab', 700, 'italic');
     setDefaultFontFamily('Inter');
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -230,7 +231,7 @@ describe('warning accuracy', () => {
     expect(result.substituted).toEqual({ requested: 'Slab', resolved: 'Inter' });
     const message = warn.mock.calls[0][0] as string;
     expect(message).not.toContain('is not registered');
-    expect(message).toContain('no variant matching 400/normal');
+    expect(message).toContain('none of its atlas faces loaded');
     warn.mockRestore();
   });
 
@@ -265,11 +266,9 @@ describe('warning accuracy', () => {
 
 describe('unusable default family', () => {
   it('warns when the default family cannot serve the requested variant', async () => {
-    // Inter is baked only at 700/italic, so substituting it for a 400/normal
-    // request resolves to nothing — the exact invisible-text trap the
-    // fallback policy exists to eliminate, reached by the likeliest
-    // misconfiguration of setDefaultFontFamily.
-    await registerTestFont('Inter', 700, 'italic');
+    // Inter's atlas never loaded, so substituting it resolves to nothing —
+    // the invisible-text trap the fallback policy exists to eliminate.
+    await registerFailedFont('Inter', 700, 'italic');
     setDefaultFontFamily('Inter');
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -355,7 +354,7 @@ describe('unusable default family', () => {
   });
 
   it('warns when the requested family is itself the unusable default', async () => {
-    await registerTestFont('Inter', 700, 'italic');
+    await registerFailedFont('Inter', 700, 'italic');
     setDefaultFontFamily('Inter');
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 

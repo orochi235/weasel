@@ -9,10 +9,11 @@ import type { FontStyle } from './fontStyle';
 import { isCanvasFont, isExplicitCanvasFont, autoEnrollCanvasFont, getDynamicFace } from './dynamic/dynamicAtlas';
 import { getFontFallbackPolicy, getDefaultFontFamily } from './fallback';
 import { outlineFace } from './outline/outlineRegistry';
-import { familyFaceFor } from './familyFace';
+import { familyFaceFor, farPick } from './familyFace';
+import { atlasResult } from './atlasResult';
 import type { ResolveResult } from './resolveResult';
 import {
-  atlasPending, firstRegisteredFamily, fontRegistry, isFontPending, variantLoad, wakeDeclared,
+  atlasPending, firstRegisteredFamily, fontRegistry, isFontPending, isRegisteredFamily, variantLoad, wakeDeclared,
 } from './registerFont';
 import {
   warnMissingFamilyOnce, warnSelfUnusableDefaultOnce, warnUnregisteredDefaultOnce, warnUnusableDefaultOnce,
@@ -53,6 +54,11 @@ function missResolveResult(
   // Its bytes are on their way, which outranks a stand-in as a pending atlas does.
   if (isFontPending(family, weight, style)) return pendingMiss(family, weight, style);
 
+  // A family with any atlas face draws in one of its own before another family's.
+  const faces = fontRegistry.get(family);
+  const far = faces && farPick(faces.keys(), weight, style);
+  if (far) return atlasResult(faces.get(far.key)!, family, far.weight, far.style, far.bold, far.italic);
+
   const policy = getFontFallbackPolicy();
 
   if (policy === 'canvas') {
@@ -83,7 +89,7 @@ function missResolveResult(
         // Renderable, not baked: a fallback served by the dynamic tier reports
         // `entry: null` with a dynamicFace.
         if (result.entry !== null || result.dynamicFace !== undefined) {
-          if (!suppressWarn) warnMissingFamilyOnce(family, weight, style, fallback, fontRegistry.has(family));
+          if (!suppressWarn) warnMissingFamilyOnce(family, weight, style, fallback, isRegisteredFamily(family));
           return { ...result, substituted: { requested: family, resolved: fallback } };
         }
         // Still loading: nothing to swap to yet, and nothing to warn about.
@@ -92,7 +98,7 @@ function missResolveResult(
       // Substitution was supposed to happen and produced nothing: text is
       // invisible, so say which of the two families to fix.
       if (!suppressWarn) {
-        warnUnusableDefaultOnce(family, weight, style, fallback, fontRegistry.has(fallback) || isCanvasFont(fallback));
+        warnUnusableDefaultOnce(family, weight, style, fallback, isRegisteredFamily(fallback) || isCanvasFont(fallback));
       }
     } else if (fallback === family && !suppressWarn) {
       // The family that can't serve this variant *is* the effective default.

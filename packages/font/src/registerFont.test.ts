@@ -353,6 +353,24 @@ describe('resolveFontVariant — canvas-dynamic tier', () => {
     expect(r.dynamicFace).toBeDefined();
   });
 
+  it('draws a family with any face in one of its own, across the weight buckets and styles', async () => {
+    await registerFont('Brand', { weight: 300 }, '/b3.json', '/b3.png');
+    expect(resolveFontVariant('Brand', 700, 'normal')).toMatchObject({
+      resolved: { family: 'Brand', weight: 300, style: 'normal' }, synthetic: { bold: true, italic: false },
+    });
+    expect(resolveFontVariant('Brand', 800, 'italic').synthetic).toEqual({ bold: true, italic: true });
+
+    await registerFont('Heavy', { weight: 700 }, '/h.json', '/h.png');
+    expect(resolveFontVariant('Heavy', 400, 'normal')).toMatchObject({
+      resolved: { weight: 700 }, synthetic: { bold: false, italic: false },
+    });
+
+    await registerFont('Slant', { weight: 500, style: 'italic' }, '/s.json', '/s.png');
+    expect(resolveFontVariant('Slant', 400, 'normal')).toMatchObject({
+      resolved: { family: 'Slant', weight: 500, style: 'italic' }, synthetic: { bold: false, italic: false },
+    });
+  });
+
   it('partial-baked family with only one variant still resolves via the synthetic fallback chain, not the canvas tier', async () => {
     await registerFont('Futura', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
     registerCanvasFont('Futura');
@@ -783,6 +801,15 @@ describe('warmFonts', () => {
       void registerFont('inter', { weight: 700 }, '/b.json', '/b.png', { lazy: true });
       await warmFonts([{ family: 'inter', weight: 500, style: 'italic' }]);
       expect(urls()).toEqual(['/r.json', '/r.png', '/b.json', '/b.png']);
+    });
+
+    it('leaves the default family alone when the requested family draws in a face of its own', async () => {
+      await registerFont('Display', { weight: 400, style: 'italic' }, '/d.json', '/d.png');
+      void registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
+      await warmFonts([{ family: 'Display' }]);
+      const r = resolveFontVariant('Display', 400, 'normal');
+      expect(r.entry).not.toBeNull();
+      expect(r.resolved.family).toBe('Display');
     });
 
     it('fetches nothing for a variant already registered', async () => {
