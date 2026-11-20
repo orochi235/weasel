@@ -32,6 +32,16 @@ describe.each(DESCRIPTORS)('%s', (_name, descriptor) => {
     expect(lerp({ x: 0.7, y: 100.1, width: 3, height: -0.1, rotation: 0.3 }, b, 1)).toEqual(b);
   });
 
+  it('lerps the transform, landing on the end pose\'s at t = 1', () => {
+    const lerp = descriptor.lerp as unknown as (a: object, b: object, t: number) => { transform?: number[] };
+    const box = { x: 0, y: 0, width: 10, height: 10, rotation: 0 };
+    const skewed = { ...box, transform: [1, 0.5, 0, 1] };
+    expect(lerp(skewed, box, 1)).toEqual(box);
+    expect(lerp(box, skewed, 1)).toEqual(skewed);
+    expect(lerp(box, skewed, 0.5).transform).toEqual([1, 0.25, 0, 1]);
+    expect(lerp(skewed, box, 0)).toEqual(skewed);
+  });
+
   it('reads back the rotation it writes', () => {
     expect(descriptor.withRotation).toBeDefined();
     expect(descriptor.getRotation).toBeDefined();
