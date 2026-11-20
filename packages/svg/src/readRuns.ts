@@ -11,7 +11,7 @@ import { fontSizeOf } from './fontSize';
 import { ownLang } from './textLang';
 import type { GradientTable } from './readGradients';
 import { deriveStyle, ownValue, setsOwn, type StyleContext } from './cascade';
-import { readStroke, isNonScalingStroke, ownStrokeStyle, coreStroke, coreTextFill } from './readPaint';
+import { readStroke, isNonScalingStroke, setsOwnStroke, coreStroke, coreTextFill } from './readPaint';
 import { withOutlinedStroke } from './strokeOutlineSvg';
 
 const glyphCount = (text: string): number => Array.from(text).length;
@@ -124,8 +124,10 @@ function readTspanRun(
   if (setsOwn(el, 'fill') || setsOwn(el, 'fill-opacity')) {
     run.fill = coreTextFill(tspanStyle, gradients, onWarn);
   }
-  // Own attributes only — see `ownStrokeStyle`.
-  const stroke = coreStroke(withOutlinedStroke(el, readStroke(ownStrokeStyle(el, tspanStyle), gradients, onWarn, isNonScalingStroke(el))));
-  if (stroke) run.stroke = stroke;
+  // Only where it overrides one — see `setsOwnStroke`.
+  if (setsOwnStroke(el)) {
+    const stroke = coreStroke(withOutlinedStroke(el, readStroke(tspanStyle, gradients, onWarn, isNonScalingStroke(el))));
+    if (stroke) run.stroke = stroke;
+  }
   return run;
 }

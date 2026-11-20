@@ -3,7 +3,7 @@
 import type { SvgPaint, SvgStroke } from './types';
 import type { Fill, Paint, Stroke } from '@weasel-js/core';
 import type { GradientTable } from './readGradients';
-import { ownProp, ownValue, resolveCurrentColor, setsOwn, styleValue, type StyleContext } from './cascade';
+import { ownValue, resolveCurrentColor, setsOwn, styleValue, type StyleContext } from './cascade';
 import { readProperty, type InheritedPropertyName } from './properties';
 
 export function readPaint(
@@ -98,15 +98,7 @@ export function readStroke(
   return stroke;
 }
 
-/**
- * The stroke keys `readStroke` consults, collected off one element's own
- * attributes rather than the inherited cascade.
- *
- * A `<tspan>` inherits its parent `<text>`'s stroke per the SVG cascade, but
- * the runs model resolves a run's stroke against the node's already — so
- * lifting an inherited value onto the run would write the same paint twice
- * and make an unstyled run look deliberately styled.
- */
+/** The stroke keys `readStroke` consults. */
 const STROKE_KEYS: readonly InheritedPropertyName[] = [
   'stroke', 'stroke-width', 'stroke-opacity', 'stroke-linecap',
   'stroke-linejoin', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-miterlimit',
@@ -122,12 +114,17 @@ export function isNonScalingStroke(el: Element): boolean {
   return ownValue(el, 'vector-effect') === 'non-scaling-stroke';
 }
 
-export function ownStrokeStyle(el: Element, computed: StyleContext): StyleContext {
-  const out: Partial<Record<InheritedPropertyName, string>> = {};
-  for (const k of STROKE_KEYS) {
-    if (ownProp(el, k) != null) out[k] = setsOwn(el, k) ? computed[k] : 'inherit';
-  }
-  return out;
+/**
+ * Whether `el` gives any stroke property a value of its own, rather than
+ * taking its parent's.
+ *
+ * A `<tspan>` inherits its parent `<text>`'s stroke per the SVG cascade, but
+ * the runs model resolves a run's stroke against the node's already — so a
+ * run takes a stroke only where it overrides one, and then the whole of it,
+ * since a run's stroke replaces the node's.
+ */
+export function setsOwnStroke(el: Element): boolean {
+  return STROKE_KEYS.some((k) => setsOwn(el, k));
 }
 
 /**

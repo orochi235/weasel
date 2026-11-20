@@ -1,7 +1,7 @@
 /** Writing `<text>` and its `<tspan>` runs. */
 
 import { escapeAttr } from '@weasel-js/registry';
-import type { FontRequest } from '@weasel-js/core';
+import type { FontRequest, Stroke } from '@weasel-js/core';
 import type { StyledRun, TextPoseLayout } from '@weasel-js/text';
 import { isSolidPaint, resolveScreenLength } from '@weasel-js/core';
 import { halfLeadingFor, numericWeight, resolveRunFace, resolveTextStyle, scriptMetricsFor } from '@weasel-js/text';
@@ -120,7 +120,7 @@ export function textXml(
   if (frame) attrs.push(frame);
 
   const pieces = node.runs && node.runs.length > 0
-    ? node.runs.map((r) => ({ text: r.text, attrs: runAttrs(r, style, registry, warn) }))
+    ? node.runs.map((r) => ({ text: r.text, attrs: runAttrs(r, style, node.stroke, registry, warn) }))
     : [{ text: node.text, attrs: null }];
   const body = layout
     ? laidLinesXml(pieces, layout, { anchor, rtl: direction === 'rtl' })
@@ -147,6 +147,7 @@ export function scriptSizeFace(
 function runAttrs(
   run: StyledRun,
   style: SvgTextNode['style'],
+  nodeStroke: Stroke | null | undefined,
   registry: PaintServerRegistry,
   warn: Warn,
 ): string[] {
@@ -194,6 +195,7 @@ function runAttrs(
     }
   }
   for (const a of coreStrokeAttrs(run.stroke, registry, warn)) attrs.push(a);
+  if (run.stroke) attrs.push(...strokeResets(run.stroke, nodeStroke));
   // `none` included: on a run it overrides a transform the node would pass down.
   if (run.textTransform) attrs.push(`style="text-transform:${run.textTransform}"`);
   // One value turns every glyph of the tspan: a glyph past a list's end takes its last.
@@ -202,6 +204,20 @@ function runAttrs(
 }
 
 /** The flags as an SVG `text-decoration` value, or `null` when none is set. */
+/** The initial values of the stroke properties `node` sets and `run` leaves
+ *  unset: a run's stroke replaces the node's, where a `<tspan>` would inherit them. */
+function strokeResets(run: Stroke, node: Stroke | null | undefined): string[] {
+  if (!node) return [];
+  const out: string[] = [];
+  if (node.paint?.opacity != null && run.paint?.opacity == null) out.push('stroke-opacity="1"');
+  if (node.cap && !run.cap) out.push('stroke-linecap="butt"');
+  if (node.join && !run.join) out.push('stroke-linejoin="miter"');
+  if (node.dash?.length && !run.dash?.length) out.push('stroke-dasharray="none"');
+  else if (node.dashOffset && !run.dashOffset) out.push('stroke-dashoffset="0"');
+  if (node.miterLimit != null && run.miterLimit == null) out.push('stroke-miterlimit="4"');
+  return out;
+}
+
 function textDecorationValue(
   underline: boolean | undefined,
   strikethrough: boolean | undefined,
