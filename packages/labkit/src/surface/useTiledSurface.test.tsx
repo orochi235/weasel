@@ -1,6 +1,6 @@
 import { act, render, renderHook } from '@testing-library/react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
-import { useEffect } from 'react';
+import { StrictMode, useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SurfaceFrame, SurfaceHandle } from './useTiledSurface';
 import { useTiledSurface } from './useTiledSurface';
@@ -331,6 +331,32 @@ describe('useTiledSurface', () => {
     expect(frames[0]?.dpr).toBe(2);
     expect([...(frames[0]?.dirty ?? [])]).toEqual(['t']);
     frame.remove();
+  });
+
+  it('stops listening for scrolls on unmount, though the container was never released', () => {
+    const off = vi.spyOn(document, 'removeEventListener');
+    const { unmount } = render(<Harness frames={[]} onHandle={() => {}} />);
+    flushFrames();
+    expect(off.mock.calls.some(([type]) => type === 'scroll')).toBe(false);
+    unmount();
+    expect(off.mock.calls.some(([type]) => type === 'scroll')).toBe(true);
+  });
+
+  it('keeps listening for scrolls through a StrictMode remount', () => {
+    const frames: SurfaceFrame[] = [];
+    const { getByTestId } = render(
+      <StrictMode>
+        <Harness frames={frames} onHandle={() => {}} />
+      </StrictMode>,
+    );
+    flushFrames();
+    frames.length = 0;
+    stubBox(getByTestId('b'), 300, 0, 400, 600);
+    act(() => {
+      document.dispatchEvent(new Event('scroll'));
+    });
+    flushFrames();
+    expect(frames[0]?.rects.get('b')).toEqual({ x: 300, y: 0, width: 400, height: 600 });
   });
 
   it('re-measures on invalidateRects, which is how a moved tile is caught', () => {

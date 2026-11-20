@@ -162,6 +162,17 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
 
   useEffect(() => () => frameLoop.cancel(), [frameLoop]);
 
+  // A host need never call `containerRef(null)`, so the window listeners go with the hook. The body puts them back
+  // after StrictMode's unmount and remount, which calls no ref with the same element again.
+  useEffect(() => {
+    const el = surface.getContainer();
+    if (el && !unlistenWindow.current) unlistenWindow.current = watchWindow(el, invalidateRects);
+    return () => {
+      unlistenWindow.current?.();
+      unlistenWindow.current = null;
+    };
+  }, [surface, invalidateRects]);
+
   return useMemo(
     () => createSurfaceHandle(surface, schedule, invalidateRects, watch, unlistenWindow),
     [surface, schedule, invalidateRects, watch],
