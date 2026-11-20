@@ -133,6 +133,7 @@ describe('a path drawn from a form', () => {
     expect(pathEditPathOf(stale, extensions)).toBe(stale.pose);
     expect(storeEditablePath(stale, tri(4), extensions)).toEqual({ pose: tri(4), data: {} });
     expect(liveAnchorMarkers('a', node, [], [])).toBeNull();
+    expect(liveAnchorMarkers('a', stale, [], extensions)).toBeNull();
   });
 });
 

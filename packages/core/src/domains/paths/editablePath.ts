@@ -17,7 +17,9 @@ import { isRectPose } from 'core/geometry/autoPoseDescriptor';
 import type { RectPose } from 'core/scene/types';
 import type { PlaneMap } from 'core/viewport/parallax';
 import type { PathEditExtension } from './pathEditExtension';
-import { pathFormOf, representationOf, withoutPathForm, type AnchorMarkerShape } from './pathRepresentation';
+import {
+  pathFormOf, representationOf, withoutPathForm, type AnchorMarkerShape, type PathForm, type PathRepresentation,
+} from './pathRepresentation';
 
 /** The fields of a node the editable path is read from. A node's `kind`
  *  says whether a rect pose with no path is a leaf drawn as that rect. */
@@ -90,9 +92,19 @@ export function pathEditPathOf(
   node: EditableShape | undefined | null,
   extensions: readonly PathEditExtension[] = [],
 ): PolygonPath | null {
+  return formInUse(node, extensions)?.editPath ?? resolveEditablePathOf(node);
+}
+
+/** The representation path edit shows `node` through, and the edit path it gives;
+ *  null where path edit edits the drawn path instead. */
+function formInUse(
+  node: EditableShape | undefined | null,
+  extensions: readonly PathEditExtension[],
+): { representation: PathRepresentation; form: PathForm; editPath: PolygonPath } | null {
   const path = resolveEditablePathOf(node);
   const held = path ? representationOf(extensions, node!.data) : null;
-  return (held && held.representation.editPath(path!, held.form)) ?? path;
+  const editPath = held?.representation.editPath(path!, held.form) ?? null;
+  return held && editPath ? { ...held, editPath } : null;
 }
 
 /**
@@ -165,15 +177,18 @@ export function liveEditablePath(
 }
 
 /** The marker of each anchor {@link liveEditablePath} shows for node `id`, as
- *  the representation reading its form draws them; null for a node it reads
- *  none of. */
+ *  the representation reading its form draws them; null where path edit shows
+ *  the drawn path, as it does for a form none reads or one that no longer
+ *  describes the path. */
 export function liveAnchorMarkers(
   id: string,
   node: EditableShape | undefined | null,
   previews: readonly GesturePreviewSource[],
   extensions: readonly PathEditExtension[],
+  toWorld: { world(stored: unknown): unknown } | null = null,
 ): readonly (AnchorMarkerShape | null)[] | null {
   if (!node) return null;
-  const held = representationOf(extensions, previewedShape(id, node, previews).data);
+  const shape = previewedShape(id, node, previews);
+  const held = formInUse(toWorld ? { ...shape, pose: toWorld.world(shape.pose) } : shape, extensions);
   return held?.representation.anchorMarkers?.(held.form) ?? null;
 }
