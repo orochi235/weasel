@@ -230,6 +230,10 @@ describe('isAnchorSmooth', () => {
     })).toBe(false);
   });
 
+  it('returns false when both handles point the same way (a cusp)', () => {
+    expect(isAnchorSmooth({ x: 0, y: 0, inHandle: { x: 10, y: 0 }, outHandle: { x: 5, y: 0 } })).toBe(false);
+  });
+
   it('returns false when either handle is missing', () => {
     expect(isAnchorSmooth({ x: 50, y: 50, outHandle: { x: 60, y: 50 } })).toBe(false);
     expect(isAnchorSmooth({ x: 50, y: 50, inHandle: { x: 40, y: 50 } })).toBe(false);

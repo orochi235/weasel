@@ -197,7 +197,7 @@ const SMOOTH_THRESHOLD = 0.001;
 
 /**
  * Returns true if the anchor's in-handle and out-handle are collinear with
- * the anchor point, indicating "smooth" (mirror-drag) behavior. Detected via
+ * the anchor point and on opposite sides of it, indicating "smooth" (mirror-drag) behavior. Detected via
  * the magnitude of the normalized cross product of the two handle vectors.
  *
  * Edge cases:
@@ -214,9 +214,10 @@ export function isAnchorSmooth(a: PenAnchor): boolean {
   const outLen = Math.hypot(outDX, outDY);
   if (inLen === 0 || outLen === 0) return false;
   // For collinear handles on opposite sides of the anchor, the cross product
-  // of the two handle vectors should be zero. Normalize by both magnitudes.
+  // of the two handle vectors should be zero and their dot product negative;
+  // two handles pointing the same way make a cusp. Normalize by both magnitudes.
   const cross = (inDX * outDY - inDY * outDX) / (inLen * outLen);
-  return Math.abs(cross) < SMOOTH_THRESHOLD;
+  return inDX * outDX + inDY * outDY < 0 && Math.abs(cross) < SMOOTH_THRESHOLD;
 }
 
 /** How many anchors a path has. Matches the per-anchor arrays the renderer

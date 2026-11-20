@@ -31,6 +31,13 @@ function curvatureEitherSide(set: AnchorSet, idx: number): [number, number] {
 }
 
 describe('fairAnchors', () => {
+  it('leaves a cusp whose handles point the same way', () => {
+    const set = lopsided();
+    set.anchors[0][1].inHandle = { x: 120, y: 0 };
+    expect(fairAnchors(set, [1])).toBe(false);
+    expect(set.anchors[0][1].inHandle).toEqual({ x: 120, y: 0 });
+  });
+
   it('matches the curvature either side of a smooth anchor', () => {
     const set = lopsided();
     const [before0, before1] = curvatureEitherSide(set, 1);
