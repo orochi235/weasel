@@ -56,7 +56,7 @@ describe('laneViewOf', () => {
       ['review', 2, 4, 'done'], ['match', 6, TYPICAL_MINUTES.match, 'done'], ['fix', 18, 12, 'active'], ['patch', 30, TYPICAL_MINUTES.patch, 'pending'],
     ]);
     expect(view.elapsed).toBe('12m');
-    expect(view.spans.map((s) => s.label)).toEqual(['5+2 found · 4.0m', '2 shared of 5+2', 'studio · 12m', '']);
+    expect(view.spans.map((s) => s.label)).toEqual(['5+2 found · 4.0m', '5 total, 2 shared', 'studio · 12m', '']);
     expect(view.spans[2]!.color).toBe(phaseColor('fix'));
     expect(view.spans[0]!.color).toBe(phaseColor('reviewed'));
   });

@@ -30,6 +30,7 @@ function Chart({ map }: { map: SkulkMap }) {
   const [scene] = useState(createAuditScene);
   const selection = useSelection({ scene, mode: 'single' });
   const [hovered, setHovered] = useState<string | null>(null);
+  const [lit, setLit] = useState<string | null>(null);
   const { probes, palette: colors } = useAuditPalette();
   const [asideWidth, setAsideWidth] = useState<number>(ASIDE.initial);
   const mainRef = useRef<HTMLDivElement>(null);
@@ -44,22 +45,23 @@ function Chart({ map }: { map: SkulkMap }) {
   const next = useMemo(() => nextUpOf(map.areas), [map.areas]);
   const phases = useMemo(() => phasesOf(map.runs), [map.runs]);
   const pick = (id: string) => selection.set([asNodeId(id)]);
+  const on = { onPick: pick, onLight: setLit };
 
   return (
     <>
       {probes}
-      <LiveRuns runs={map.runs} now={Date.parse(map.generated)} onPick={pick} />
+      <LiveRuns runs={map.runs} now={Date.parse(map.generated)} on={on} />
       <Stats stats={stats} />
       <div ref={mainRef} className={s.main}>
-        <Treemap scene={scene} selection={selection} areas={map.areas} palette={colors} phases={phases} onHover={setHovered} />
+        <Treemap scene={scene} selection={selection} areas={map.areas} palette={colors} phases={phases} onHover={setHovered} lit={lit} />
         <ResizeHandle value={asideWidth} min={ASIDE.min} max={ASIDE.max} invert onInput={setAsideWidth} aria-label="Resize the side panel" />
         <aside className={s.aside} aria-label="Area, queue and rounds">
           <AreaDetail area={area} holder={area && runHolding(map.runs, area.id)} />
-          <NextUp areas={next} onPick={pick} />
+          <NextUp areas={next} onPick={pick} onLight={setLit} />
           <RoundsChart rounds={map.rounds} />
         </aside>
       </div>
-      <div className={s.jobs}><JobsFeed runs={map.runs} /></div>
+      <div className={s.jobs}><JobsFeed runs={map.runs} onLight={setLit} /></div>
     </>
   );
 }

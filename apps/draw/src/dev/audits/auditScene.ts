@@ -91,7 +91,7 @@ function labelLines(area: AuditArea, cell: MapCell, staged: boolean): string[] {
   return wrapAtDots(labelIn(area.id, cell.parent), Math.floor((cell.width - 8 - dotsRoom(area.passes.length)) / LABEL_CHAR), Math.max(1, Math.floor(room / LINE)));
 }
 
-function cellData(area: AuditArea, cell: MapCell, palette: AuditPalette, heat: HeatScale, phase: AuditPhase | undefined): AuditCellData {
+function cellData(area: AuditArea, cell: MapCell, palette: AuditPalette, heat: HeatScale, phase: AuditPhase | undefined, lit: boolean): AuditCellData {
   const tone = toneOf(area);
   const fill = tone === 'settled' ? palette.settled : tone === 'unaudited' ? palette.uncharted : rampAt(palette.depth, heat.at(tone.left));
   const ink = tone === 'unaudited' ? palette.ink : inkOn(fill, palette);
@@ -114,16 +114,19 @@ function cellData(area: AuditArea, cell: MapCell, palette: AuditPalette, heat: H
     ...(showsQueue ? { queue: area.queue! } : {}),
     ...(tone === 'settled' ? { settled: true } : {}),
     dots: area.passes.length,
+    ...(lit ? { glow: palette.live } : {}),
     pulse: 1,
   };
 }
 
-/** Every node the map needs for `areas` laid out as `frames` and `cells`, a live area outlined in its phase's color. */
+/** Every node the map needs for `areas` laid out as `frames` and `cells`, a live area outlined in its phase's color
+ *  and the `lit` one glowing. */
 export function auditNodeSpecs(
   areas: readonly AuditArea[],
   layout: { frames: readonly MapFrame[]; cells: readonly MapCell[] },
   palette: AuditPalette,
   phases: ReadonlyMap<string, AuditPhase> = new Map(),
+  lit: string | null = null,
 ): AuditNodeSpec[] {
   const byId = new Map(areas.map((a) => [a.id, a]));
   const heat = heatScaleOf(areas);
@@ -145,7 +148,7 @@ export function auditNodeSpecs(
     const parent = c.parent === null ? undefined : frameBox.get(c.parent);
     out.push({
       id: asNodeId(c.id), parent: c.parent === null ? null : frameIdOf(c.parent), pickable: true,
-      pose: poseIn(c, parent), data: cellData(area, c, palette, heat, phases.get(area.id)),
+      pose: poseIn(c, parent), data: cellData(area, c, palette, heat, phases.get(area.id), area.id === lit),
     });
   }
   return out;

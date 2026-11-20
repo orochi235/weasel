@@ -9,14 +9,27 @@ import s from './LiveRuns.module.css';
 
 const cx = (...names: (string | false | undefined)[]) => names.filter(Boolean).join(' ');
 
+/** What naming an area does: a click picks it on the map, and hovering or focusing lights it there. */
+export interface AreaHandlers {
+  readonly onPick: (id: string) => void;
+  readonly onLight: (id: string | null) => void;
+}
+
 /** An area's lane as a stack row: its name, and `spans`, its steps in the view chosen. */
-function laneRow(lane: AuditLane, view: LaneView, onPick: (id: string) => void, spans: SpanStripSpan[]): SpanStripsRow {
+function laneRow(lane: AuditLane, view: LaneView, on: AreaHandlers, spans: SpanStripSpan[]): SpanStripsRow {
   return {
     id: lane.id,
     spans,
     'aria-label': lane.id,
     valueText: view.elapsed ? `${view.phase}, ${view.elapsed} in` : view.phase,
-    lead: <button type="button" className={s.name} onClick={() => onPick(lane.id)}>{lane.id}</button>,
+    lead: (
+      <button
+        type="button" className={s.name} onClick={() => on.onPick(lane.id)}
+        onPointerEnter={() => on.onLight(lane.id)} onPointerLeave={() => on.onLight(null)} onFocus={() => on.onLight(lane.id)} onBlur={() => on.onLight(null)}
+      >
+        {lane.id}
+      </button>
+    ),
   };
 }
 
@@ -47,7 +60,7 @@ function useLaneMode(): [LaneMode, (mode: LaneMode) => void] {
 const STEPS_WINDOW = { from: 0, to: 5 };
 
 /** The run's areas still in flight, on the run's clock or as a grid of steps; the rest have left. */
-function Lanes({ run, now, mode, onPick }: { run: AuditRun; now: number; mode: LaneMode; onPick: (id: string) => void }) {
+function Lanes({ run, now, mode, on }: { run: AuditRun; now: number; mode: LaneMode; on: AreaHandlers }) {
   const ref = useRef<HTMLDivElement>(null);
   const clock = runClockOf(run, now);
   const left = run.lanes.map((lane) => ({ lane, view: laneViewOf(lane, now, clock.from) })).filter(({ view }) => !view.finished);
@@ -55,7 +68,7 @@ function Lanes({ run, now, mode, onPick }: { run: AuditRun; now: number; mode: L
   const widest = Math.max(0, ...run.lanes.map((l) => l.id.length));
   useLayoutEffect(() => { ref.current?.style.setProperty('--audit-lead-ch', String(widest)); }, [widest]);
   if (left.length === 0) return null;
-  const rows = left.map(({ lane, view }) => laneRow(lane, view, onPick, mode === 'steps' ? laneStepsOf(lane, now) : view.spans));
+  const rows = left.map(({ lane, view }) => laneRow(lane, view, on, mode === 'steps' ? laneStepsOf(lane, now) : view.spans));
   return (
     <div ref={ref}>
       {mode === 'clock'
@@ -66,8 +79,8 @@ function Lanes({ run, now, mode, onPick }: { run: AuditRun; now: number; mode: L
 }
 
 /** One run's strip: what it is doing and what it has spent, its last line, and a lane per area in flight. */
-function RunStrip({ run, now, mode, onMode, onPick }: {
-  run: AuditRun; now: number; mode: LaneMode; onMode: (mode: LaneMode) => void; onPick: (id: string) => void;
+function RunStrip({ run, now, mode, onMode, on }: {
+  run: AuditRun; now: number; mode: LaneMode; onMode: (mode: LaneMode) => void; on: AreaHandlers;
 }) {
   const shared = sharedLaneOf(run);
   return (
@@ -79,7 +92,7 @@ function RunStrip({ run, now, mode, onMode, onPick }: {
       <div className={s.line}>{lastLineOf(run)}</div>
       {run.lanes.length > 0 && (
         <div className={s.lanes}>
-          <Lanes run={run} now={now} mode={mode} onPick={onPick} />
+          <Lanes run={run} now={now} mode={mode} on={on} />
           <div className={s.sharedRow}>
             <span className={s.nameCell}>all areas</span>
             <span className={cx(s.shared, s[shared.state])}>{shared.text}</span>
@@ -91,13 +104,13 @@ function RunStrip({ run, now, mode, onMode, onPick }: {
 }
 
 /** A strip for every run still running; a finished round lives on in the rounds chart and the map. */
-export function LiveRuns({ runs, now, onPick }: { runs: readonly AuditRun[]; now: number; onPick: (id: string) => void }) {
+export function LiveRuns({ runs, now, on }: { runs: readonly AuditRun[]; now: number; on: AreaHandlers }) {
   const [mode, setMode] = useLaneMode();
   const live = runs.filter((r) => r.running);
   if (live.length === 0) return <section className={cx(s.run, s.idle)}><div className={s.what}>No round running</div></section>;
   return (
     <div className={s.runs} aria-live="polite">
-      {live.map((run) => <RunStrip key={run.round} run={run} now={now} mode={mode} onMode={setMode} onPick={onPick} />)}
+      {live.map((run) => <RunStrip key={run.round} run={run} now={now} mode={mode} onMode={setMode} on={on} />)}
     </div>
   );
 }
