@@ -152,11 +152,15 @@ const PROGRAMS_HELD = new Map<PaintDrawKind, Map<string, () => void>>();
 
 /** Register the programs `entry` declares in place of whatever those ids hold: the kind owns them. */
 function holdPrograms(entry: PaintDrawKind): void {
-  const releases = PROGRAMS_HELD.get(entry) ?? new Map<string, () => void>();
-  for (const [id, declared] of Object.entries(entry.programs ?? {})) {
+  const declaredPrograms = Object.entries(entry.programs ?? {});
+  // Every source is checked before any is registered, so a throw leaves no program behind.
+  for (const [id, declared] of declaredPrograms) {
     if (!declared.glsl && !declared.wgsl) {
       throw new Error(`weasel registerPaintKind: kind "${entry.id}" declares program "${id}" with no source.`);
     }
+  }
+  const releases = PROGRAMS_HELD.get(entry) ?? new Map<string, () => void>();
+  for (const [id, declared] of declaredPrograms) {
     const release = programSourceRegistry.register(id, paintProgramSource(declared), { replace: true });
     releases.get(id)?.();
     releases.set(id, release);
