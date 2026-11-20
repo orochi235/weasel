@@ -122,7 +122,7 @@ branches and worktrees there. Once, sync the tree it runs in, then bring it up:
 After changing `service.mjs`, sync the tree again; onto restarts the service. A run always runs the main
 checkout's `night.mjs`.
 
-It starts a run by itself at 23:00 unless any run is live or one has started since 23:00 that day (a run started by hand after midnight does not count as that evening's). Requests, one JSON object a
+It starts a run by itself at 23:00 unless any run is live or one has started since 23:00 that day (a run started by hand after midnight does not count as that evening's). Starting or restarting the service, which every `onto sync` does, never starts a run. Requests, one JSON object a
 line, each echoing its `id`:
 
 | Request | Reply |
