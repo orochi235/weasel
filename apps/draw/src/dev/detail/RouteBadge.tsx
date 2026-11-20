@@ -37,7 +37,7 @@ export function modifierKeys(modifiers: ParsedModifiers): readonly KeyLegend[] |
 
 /** Decomposes a v3 route string (`[phaseList] gesture(arg) => target +mod`)
  *  into its constituent tokens — bracketed phase list, gesture badge with
- *  fused arg, target tag, modifier sequence. Arg is rendered inside the
+ *  fused arg, target tag, modifier sequence, and a hover's `+held`/`?held`. Arg is rendered inside the
  *  gesture badge as `gesture(arg)`; descriptor defaults (e.g. `wheel(*)`)
  *  are kept visible but muted. Target is rendered whenever the descriptor
  *  has a target slot, with the wildcard `*` muted so specific targets
@@ -76,6 +76,14 @@ export function RouteBadge({ route }: { route: string }) {
         <span className={s.modGroup}>
           <span className={s.modSigil}>+</span>
           <KeySequence keys={modKeys} variant="inverse" />
+        </span>
+      )}
+      {parsed.held && (
+        // `+held` a button must be pressed, `?held` one may be; absent, none
+        // may. The grammar's own sigils, so the three hover routes read apart.
+        <span className={s.modGroup}>
+          <span className={s.modSigil}>{parsed.held === 'required' ? '+' : '?'}</span>
+          <Code>held</Code>
         </span>
       )}
       {hasTarget && (

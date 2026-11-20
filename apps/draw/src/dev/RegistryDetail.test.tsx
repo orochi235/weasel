@@ -4,7 +4,8 @@ import { renderWithIcons } from '../testIcons';
 import { RegistryDetail } from './RegistryDetail';
 import { icon } from '../icons.gen';
 import { RouteBadge } from './detail/RouteBadge';
-import type { ActionEntry, TreeEntry } from './registryEntries';
+import type { ActionEntry, ToolEntry, TreeEntry } from './registryEntries';
+import { collectShapeTrait } from './registryData';
 
 describe('RegistryDetail', () => {
   it('pairs each fact about an entry with its label in a description list', () => {
@@ -149,5 +150,76 @@ describe('op kind detail', () => {
     renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
     expect(screen.getByText('ops.setPose')).toBeInTheDocument();
     expect(screen.queryByText('ops.transform')).toBeNull();
+  });
+});
+
+describe('gesture detail', () => {
+  const gesture: TreeEntry = { kind: 'gesture', id: 'key', label: 'key' };
+
+  it('does not describe tool bindings as a phase grammar', () => {
+    const { container } = renderWithIcons(<RegistryDetail entry={gesture} tools={[]} actions={[]} onNavigate={() => {}} />);
+    expect(container.textContent).not.toMatch(/phase grammar/);
+  });
+
+  it('gives each of an action\'s bindings its own row, even when their routes read the same', () => {
+    const zoom: ActionEntry = {
+      kind: 'action', id: 'zoomReset', label: 'Reset zoom',
+      defaultBinding: [
+        { kind: 'key', key: '0', mods: { mod: true } },
+        { kind: 'key', key: '0', code: 'Numpad0', mods: { mod: true } },
+      ],
+    } as unknown as ActionEntry;
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      renderWithIcons(<RegistryDetail entry={gesture} tools={[]} actions={[zoom]} onNavigate={() => {}} />);
+      expect(screen.getAllByText('Reset zoom')).toHaveLength(2);
+      expect(errors.mock.calls.flat().join(' ')).not.toMatch(/same key/);
+    } finally {
+      errors.mockRestore();
+    }
+  });
+});
+
+describe('phase output detail', () => {
+  it.each(['overlay', 'cursor'] as const)('describes %s without the removed phase tables', (id) => {
+    const entry: TreeEntry = { kind: 'phaseOutput', id, label: id };
+    const { container } = renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
+    expect(container.textContent).not.toMatch(/initial\.overlay|claimsAll|pointerdown/);
+  });
+});
+
+describe('shape kind detail with no authoring tool', () => {
+  it('names no authoring tool and no source for a kind no mounted tool mints', () => {
+    const image = collectShapeTrait([]).find((k) => k.id === 'image')!;
+    expect(image.tool).toBeUndefined();
+    renderWithIcons(<RegistryDetail entry={image} tools={[]} actions={[]} onNavigate={() => {}} />);
+    expect(screen.queryByText('authored by', { selector: 'dt' })).toBeNull();
+    expect(screen.queryByText('source', { selector: 'dt' })).toBeNull();
+  });
+
+  it('still names the tool that mints a kind when it is mounted', () => {
+    const rect = { kind: 'tool', id: 'rect', hookName: 'useRectTool' } as unknown as ToolEntry;
+    expect(collectShapeTrait([rect]).find((k) => k.id === 'rect')?.tool).toBe('rect');
+  });
+});
+
+describe('op kind detail for a kind with no ops export', () => {
+  it('claims no `ops.*` factory for a consumer-registered kind', () => {
+    const entry: TreeEntry = { kind: 'opKind', id: 'myapp:stamp', label: 'myapp:stamp' };
+    const { container } = renderWithIcons(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
+    expect(container.textContent).not.toMatch(/ops\.myapp:stamp/);
+    expect(container.textContent).not.toMatch(/undefined/);
+  });
+});
+
+describe('RouteBadge held', () => {
+  it('tells a hover that needs a held button from one that allows it and from plain hover', () => {
+    const text = (route: string) => renderWithIcons(<RouteBadge route={route} />).container.textContent;
+    const plain = text('[*] hover');
+    const required = text('[*] hover +held');
+    const optional = text('[*] hover ?held');
+    expect(new Set([plain, required, optional]).size).toBe(3);
+    expect(required).toMatch(/held/);
+    expect(optional).toMatch(/held/);
   });
 });
