@@ -1,11 +1,12 @@
 import type { CssVarReport } from '../protocol/messages';
-import { type Overrides, resolveCssVar, scanCssVars } from './cssVars';
+import { type Overrides, resolveCssVars, scanCssVars } from './cssVars';
 
 /** A running report of the custom properties `scanCssVars` finds. */
 export interface CssVarsWatch {
   /** Scans now, and reports the result if it changed. */
   scan(): void;
-  /** Reports one var again once an override has changed it, when the last report held it. */
+  /** Reports the last report's vars again once an override on `name` has changed it, every value re-resolved: a var
+   *  defined through `name` changes with it. */
   revise(name: string): void;
   dispose(): void;
 }
@@ -51,11 +52,13 @@ export function watchCssVars(
   return {
     scan,
     revise(name) {
-      const at = last?.findIndex((v) => v.name === name) ?? -1;
-      if (!last || at < 0) return;
-      const vars = last.slice();
-      vars[at] = { ...vars[at]!, value: resolveCssVar(doc, name, root), overridden: overrides.has(name) };
-      publish(vars);
+      if (!last?.some((v) => v.name === name)) return;
+      const values = resolveCssVars(
+        doc,
+        last.map((v) => v.name),
+        root,
+      );
+      publish(last.map((v) => ({ ...v, value: values.get(v.name) ?? '', overridden: overrides.has(v.name) })));
     },
     dispose() {
       mutations?.disconnect();

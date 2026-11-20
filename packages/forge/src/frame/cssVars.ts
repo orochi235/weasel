@@ -61,9 +61,9 @@ function resolveValues(doc: Document, names: Iterable<string>, root: Element): M
   return values;
 }
 
-/** One custom property's value, resolved the way `scanCssVars` resolves each. */
-export function resolveCssVar(doc: Document, name: string, root: Element = doc.documentElement): string {
-  return resolveValues(doc, [name], root).get(name) ?? '';
+/** Custom properties' values, resolved the way `scanCssVars` resolves each; a name that resolves to nothing is absent. */
+export function resolveCssVars(doc: Document, names: Iterable<string>, root: Element = doc.documentElement): Map<string, string> {
+  return resolveValues(doc, names, root);
 }
 
 export interface Overrides {
