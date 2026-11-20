@@ -59,16 +59,15 @@ function useLaneMode(): [LaneMode, (mode: LaneMode) => void] {
 
 const STEPS_WINDOW = { from: 0, to: 5 };
 
-/** The run's areas still in flight, on the run's clock or as a grid of steps; the rest have left. */
+/** Every area of the run, on the run's clock or as a grid of steps; a finished one stays, filled, until the run ends. */
 function Lanes({ run, now, mode, on }: { run: AuditRun; now: number; mode: LaneMode; on: AreaHandlers }) {
   const ref = useRef<HTMLDivElement>(null);
   const clock = runClockOf(run, now);
-  const left = run.lanes.map((lane) => ({ lane, view: laneViewOf(lane, now, clock.from) })).filter(({ view }) => !view.finished);
-  // Sized for every area of the run, so the strips keep their place as lanes leave.
+  const lanes = run.lanes.map((lane) => ({ lane, view: laneViewOf(lane, now, clock.from) }));
   const widest = Math.max(0, ...run.lanes.map((l) => l.id.length));
   useLayoutEffect(() => { ref.current?.style.setProperty('--audit-lead-ch', String(widest)); }, [widest]);
-  if (left.length === 0) return null;
-  const rows = left.map(({ lane, view }) => laneRow(lane, view, on, mode === 'steps' ? laneStepsOf(lane, now) : view.spans));
+  if (lanes.length === 0) return null;
+  const rows = lanes.map(({ lane, view }) => laneRow(lane, view, on, mode === 'steps' ? laneStepsOf(lane, now) : view.spans));
   return (
     <div ref={ref}>
       {mode === 'clock'
