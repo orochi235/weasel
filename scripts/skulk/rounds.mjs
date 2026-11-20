@@ -36,10 +36,11 @@ export const readPasses = (root) => {
 
 /**
  * The round after every number already used: round directories, the hardening record's rows and
- * its practices table ("rounds 28–30"), and branches named for a round (`audit30-ui`, `batch/…-audit31`).
+ * its practices table ("rounds 28–30"), branches named for a round (`audit30-ui`, `batch/…-audit31`),
+ * and the rounds runs have claimed (`claimed`, numbers as strings or numbers).
  */
-export const nextRound = ({ roundDirs = [], hardening = '', branches = [] }) => {
-  const used = [0];
+export const nextRound = ({ roundDirs = [], hardening = '', branches = [], claimed = [] }) => {
+  const used = [0, ...claimed.map(Number)];
   for (const name of roundDirs) {
     const m = /^round-(\d+)$/.exec(name);
     if (m) used.push(Number(m[1]));
