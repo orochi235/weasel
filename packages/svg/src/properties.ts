@@ -67,8 +67,11 @@ const length = (native: 'px' | 'em', coercedAs: string) =>
 
 const worldLength = length('px', 'world units');
 
-const keyword = <W extends string>(...words: W[]) => (v: string): W | undefined =>
-  (words as string[]).includes(v) ? (v as W) : undefined;
+/** CSS keywords are ASCII case-insensitive, so every reader folds case before comparing one. */
+const keyword = <W extends string>(...words: W[]) => (v: string): W | undefined => {
+  const k = v.toLowerCase();
+  return (words as string[]).includes(k) ? (k as W) : undefined;
+};
 
 const isCurrentColor = (v: string): boolean => v.toLowerCase() === 'currentcolor';
 
@@ -76,8 +79,9 @@ const isCurrentColor = (v: string): boolean => v.toLowerCase() === 'currentcolor
 export type PaintValue = ParsedColor | { kind: 'context'; of: 'fill' | 'stroke' };
 
 function readPaint(v: string): PaintValue | undefined {
-  if (v === 'context-fill') return { kind: 'context', of: 'fill' };
-  if (v === 'context-stroke') return { kind: 'context', of: 'stroke' };
+  const k = v.toLowerCase();
+  if (k === 'context-fill') return { kind: 'context', of: 'fill' };
+  if (k === 'context-stroke') return { kind: 'context', of: 'stroke' };
   return parsePaintAttr(v) ?? undefined;
 }
 
@@ -111,7 +115,7 @@ function readLinecap(v: string, warn: Warn): 'butt' | 'round' | 'square' | undef
 function readLinejoin(v: string, warn: Warn): 'miter' | 'round' | 'bevel' | undefined {
   const join = keyword('miter', 'round', 'bevel')(v);
   if (join) return join;
-  if (v === 'arcs' || v === 'miter-clip') {
+  if (keyword('arcs', 'miter-clip')(v)) {
     warn(`stroke-linejoin "${v}" not supported; falling back to miter`);
     return 'miter';
   }
@@ -121,7 +125,7 @@ function readLinejoin(v: string, warn: Warn): 'miter' | 'round' | 'bevel' | unde
 
 /** `null` is `none`; an odd-length list is repeated to make the pattern even, as SVG says. */
 function readDashArray(v: string, warn: Warn, _prop: string, fontSize: number): number[] | null | undefined {
-  if (v === 'none' || v === '') return null;
+  if (v.toLowerCase() === 'none' || v === '') return null;
   const nums: number[] = [];
   for (const t of v.split(/[\s,]+/).filter(Boolean)) {
     const d = dimension(t);
@@ -162,14 +166,16 @@ function readFontSize(
 }
 
 function readFontWeight(v: string): 'normal' | 'bold' | 'bolder' | number | undefined {
-  if (v === 'normal' || v === 'bold' || v === 'bolder') return v;
+  const word = keyword('normal', 'bold', 'bolder')(v);
+  if (word) return word;
   const d = dimension(v);
   return d && d.unit === '' && d.n >= 1 && d.n <= 1000 ? d.n : undefined;
 }
 
 function readFontStyle(v: string, warn: Warn): 'normal' | 'italic' | undefined {
-  if (v === 'normal' || v === 'italic') return v;
-  if (v === 'oblique') {
+  const word = keyword('normal', 'italic', 'oblique')(v);
+  if (word === 'normal' || word === 'italic') return word;
+  if (word === 'oblique') {
     warn('font-style "oblique" is read as italic');
     return 'italic';
   }
@@ -178,7 +184,7 @@ function readFontStyle(v: string, warn: Warn): 'normal' | 'italic' | undefined {
 
 /** `null` is `normal`. */
 function readLetterSpacing(v: string, warn: Warn, prop: string, fontSize: number): number | null | undefined {
-  return v === 'normal' ? null : worldLength(v, warn, prop, fontSize);
+  return v.toLowerCase() === 'normal' ? null : worldLength(v, warn, prop, fontSize);
 }
 
 export interface Decoration { underline?: boolean; strikethrough?: boolean; overline?: boolean }
@@ -346,7 +352,7 @@ export function isDeclarationHonored(prop: string, value: string): boolean {
   const name = prop.toLowerCase();
   if (!hasOwnKey(PROPERTIES, name)) return false;
   const v = value.trim();
-  if (v === 'inherit') return PROPERTIES[name].inherits;
+  if (v.toLowerCase() === 'inherit') return PROPERTIES[name].inherits;
   let warned = false;
   return readProperty(name, v, () => { warned = true; }) !== undefined && !warned;
 }
