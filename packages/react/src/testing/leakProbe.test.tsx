@@ -51,6 +51,7 @@ describe('installLeakProbe', () => {
     ['an aborted listener', () => { const ac = new AbortController(); window.addEventListener('resize', noop, { signal: ac.signal }); return () => ac.abort(); }],
     ['a timeout that runs out', () => { setTimeout(noop, 60_000); return noop; }],
     ['a cleared interval', () => { const id = setInterval(noop, 10); return () => clearInterval(id); }],
+    ['an interval cleared by clearTimeout', () => { const id = setInterval(noop, 10); return () => clearTimeout(id); }],
     ['a canceled frame', () => { const id = requestAnimationFrame(noop); return () => cancelAnimationFrame(id); }],
     ['a disconnected observer', () => { const o = new ResizeObserver(noop); o.observe(document.body); return () => o.disconnect(); }],
     ['a removed media listener', () => { const q = matchMedia('(x)'); q.addListener(noop); return () => q.removeListener(noop); }],

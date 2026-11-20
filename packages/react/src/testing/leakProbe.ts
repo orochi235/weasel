@@ -165,7 +165,8 @@ function watchTimer(
   replace(scope, clear, ((id?: number) => {
     realClear(id);
     const p = id === undefined ? undefined : pending.get(id);
-    if (p && p.rec.kind === kind) {
+    // One id pool: either clear function stops either kind of timer.
+    if (p) {
       pending.delete(id!);
       records.delete(p.rec);
     }
