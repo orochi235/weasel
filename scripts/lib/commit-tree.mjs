@@ -98,15 +98,37 @@ export const openCommitTree = (root, ref, prefix) => {
   return { commit, branch, tree, drop, git };
 };
 
-/** `onto` with its output passed straight through, and what it wrote to stderr kept to read after. */
-const ontoOnce = (args, cwd) =>
+/** The job id and node in the line onto prints once a job starts (`  tests  <id> on <node>`, `  job    <id> on <node>`). */
+export const jobStarted = (line) => {
+  const m = /^\s+(?:tests|job)\s+([0-9a-f]{6,}) on (\S+)\s*$/.exec(line);
+  return m ? { id: m[1], node: m[2] } : undefined;
+};
+
+/**
+ * `onto` with its output passed through, each line with `prefix`, and what it wrote to stderr kept to
+ * read after. `onJob` hears the job's id and node once it starts.
+ */
+const ontoOnce = (args, { cwd, prefix = '', onJob }) =>
   new Promise((done) => {
-    const child = spawn('onto', args, { cwd, stdio: ['inherit', 'inherit', 'pipe'] });
+    const child = spawn('onto', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
     let stderr = '';
-    child.stderr.on('data', (chunk) => {
-      stderr += chunk;
-      process.stderr.write(chunk);
-    });
+    const relay = (stream, to, keep) => {
+      let rest = '';
+      stream.on('data', (chunk) => {
+        const text = rest + chunk;
+        if (keep) stderr += chunk;
+        const lines = text.split('\n');
+        rest = lines.pop();
+        for (const line of lines) {
+          const job = jobStarted(line);
+          if (job) onJob?.(job);
+          to.write(`${prefix}${line}\n`);
+        }
+      });
+      stream.on('end', () => rest && to.write(`${prefix}${rest}\n`));
+    };
+    relay(child.stdout, process.stdout, false);
+    relay(child.stderr, process.stderr, true);
     child.on('error', (error) => done({ status: 1, stderr: String(error) }));
     child.on('close', (status) => done({ status: status ?? 1, stderr }));
   });
@@ -115,11 +137,14 @@ const ontoOnce = (args, cwd) =>
  * A node runs one job per tree, so a launch while another session's job holds it is refused before
  * anything has run. Wait for it rather than fail. Resolves to onto's exit status.
  */
-export const ontoWhenFree = async (args, { cwd, say }) => {
+export const ontoWhenFree = async (args, { cwd, say, prefix, onJob }) => {
   for (let attempt = 1; ; attempt++) {
-    const run = await ontoOnce(args, cwd);
+    const run = await ontoOnce(args, { cwd, prefix, onJob });
     if (!/working tree .* is busy/.test(run.stderr) || attempt === BUSY_TRIES) return run.status;
     say(`the node's tree is busy, retrying in ${BUSY_WAIT_S}s (${attempt}/${BUSY_TRIES})`);
     spawnSync('sleep', [String(BUSY_WAIT_S)]);
   }
 };
+
+/** Stops a job on the fleet: interrupting the `onto` that launched it leaves it running. */
+export const killJob = (id) => spawnSync('onto', ['kill', id], { stdio: 'ignore' }).status === 0;

@@ -13,12 +13,17 @@
  *   npm run test:fleet -- --full       # every test, on a branch too
  *   npm run test:fleet -- --since <ref>   # select from what the branch changes past <ref>, not main
  *
+ * The browser project runs as a job of its own on a node whose GPU is idle and that nobody is using,
+ * beside a job running the rest, when one is free (`scripts/lib/fleet-parts.mjs`); WEASEL_FLEET_SPLIT=0,
+ * or naming a node, keeps it one job.
+ *
  * On a branch other than main, the test projects run only the files whose imports reach what the
  * branch changes, and the gate skips the slow checks whose inputs it leaves alone
  * (`scripts/lib/gate-inputs.mjs`). main runs everything.
  */
 import { fileURLToPath } from 'node:url';
-import { openCommitTree, ontoWhenFree } from './lib/commit-tree.mjs';
+import { openCommitTree } from './lib/commit-tree.mjs';
+import { killOnSignal, runSuite } from './lib/fleet-parts.mjs';
 import { armTree, changedFiles, lockScope, runsEverything } from './lib/fleet-tree.mjs';
 import { SCOPED, TRIGGERS } from './lib/fleet-triggers.mjs';
 
@@ -37,6 +42,8 @@ const [first, ...rest] = argv;
 const named = first && !first.startsWith('-');
 const ontoArgs = named ? rest : argv;
 const { commit, branch, tree, drop, git } = openCommitTree(ROOT, named ? first : 'HEAD', 'fleet-');
+const jobs = [];
+killOnSignal(jobs);
 const isAncestor = (a, b) => {
   try {
     git('merge-base', '--is-ancestor', a, b);
@@ -79,9 +86,7 @@ try {
   // onto remembers a suite's test count per scope to start the next run's bar from, and a branch's
   // few tests would otherwise seed a full run's.
   const scope = !select || runsEverything(select, { triggers: TRIGGERS, scoped: SCOPED, lockScope: locked }) ? 'full' : 'branch';
-  status = await ontoWhenFree(['test', '--dir', tree, '--ref', base, '--scope', scope, ...ontoArgs], {
-    say: (line) => console.log(`fleet-test: ${line}`),
-  });
+  status = await runSuite({ tree, base, scope, ontoArgs, jobs, say: (line) => console.log(`fleet-test: ${line}`) });
 } finally {
   drop();
 }
