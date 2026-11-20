@@ -100,6 +100,12 @@
   }
 }
 
+// A clipped-out region takes no hit test, and the interior probe reads the compared side at the lens's aim, which a
+// seam right of center clips away.
+.lk-lens-layer[data-probe='interior'] .lk-lens-slot[data-view='split'] .lk-lens-side[data-side='compared'] {
+  clip-path: none;
+}
+
 .lk-lens-seam {
   position: absolute;
   top: 0;
