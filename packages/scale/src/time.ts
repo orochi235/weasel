@@ -1,4 +1,4 @@
-import { proportion, tickStep } from './linear';
+import { proportion, tickCount, tickStep } from './linear';
 import { replacedFormat } from './replacedFormat';
 import type { ContinuousScale } from './types';
 import { lerp, wrapPositive } from '@weasel-js/geom';
@@ -39,7 +39,7 @@ const spanOf = (i: Interval): number => i.ms ?? i.months * MONTH_MS;
 
 /** The interval nearest a cut of `span` into `count` pieces; whole years past the table's end. */
 function intervalFor(span: number, count: number): Interval {
-  const target = span / Math.max(1, count);
+  const target = span / Math.max(1, tickCount(count));
   let best = INTERVALS[0]!;
   for (const i of INTERVALS) if (Math.abs(Math.log(spanOf(i) / target)) < Math.abs(Math.log(spanOf(best) / target))) best = i;
   if (best.unit === 'year' && target > 12 * MONTH_MS) {

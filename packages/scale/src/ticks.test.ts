@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { decimalsOf, linearScale } from './linear';
+import { decimalsOf, linearScale, niceDomain } from './linear';
 import { logScale } from './log';
 import { formatTick, tickDecimals } from './tickFormat';
+import { timeScale } from './time';
+import { powScale } from './warp';
 
 /** `spacedTicks` over `domain` laid `px` long. */
 const spaced = (domain: readonly [number, number], px: number, minSpacing: number, inset?: number) =>
@@ -129,4 +131,19 @@ describe('a scale onto a unit track', () => {
       for (let i = 1; i < at.length; i++) expect(at[i]).toBeGreaterThan(at[i - 1]!);
     });
   }
+});
+
+describe('a tick count that is not a number', () => {
+  it('takes the default count, as 0 / 0 spacing gives', () => {
+    const linear = linearScale({ domain: [0, 1e6], range: [0, 100] });
+    expect(linear.ticks(NaN)).toEqual(linear.ticks());
+    expect(niceDomain([0, 7], NaN)).toEqual(niceDomain([0, 7]));
+    const time = timeScale({ domain: [0, 30 * 86400000], range: [0, 100] });
+    expect(time.ticks(NaN)).toEqual(time.ticks());
+    expect(time.tickFormat(NaN)(0)).toBe(time.tickFormat()(0));
+    const pow = powScale({ domain: [0, 100], range: [0, 100], exponent: 0.5 });
+    expect(pow.ticks(NaN)).toEqual(pow.ticks());
+    const log = logScale({ domain: [1, 1000], range: [0, 100] });
+    expect(log.ticks(Infinity)).toEqual(log.ticks());
+  });
 });

@@ -1,4 +1,4 @@
-import { decimalsOf, formatNumber } from './linear';
+import { decimalsOf, formatNumber, tickCount } from './linear';
 import { replacedFormat } from './replacedFormat';
 import { tickDecimals } from './tickFormat';
 import type { ContinuousScale } from './types';
@@ -33,7 +33,8 @@ export function logScale(opts: LogScaleOptions): LogScale {
   // Ends too near for their logarithms to differ are told apart by their distance, which a ratio rounds away.
   const along = l1 !== l0 ? (v: number) => (log(v) - l0) / (l1 - l0) : (v: number) => Math.log1p((v - d0) / d0) / Math.log1p((d1 - d0) / d0);
   const map = (v: number) => (d1 === d0 ? (r0 + r1) / 2 : lerp(r0, r1, along(v)));
-  const ticks = (count = 5): number[] => {
+  const ticks = (asked = 5): number[] => {
+    const count = tickCount(asked);
     const [lo, hi] = l0 <= l1 ? [l0, l1] : [l1, l0];
     if (!Number.isFinite(lo) || !Number.isFinite(hi)) return [];
     const first = Math.floor(lo + 1e-9);

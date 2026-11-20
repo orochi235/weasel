@@ -1,4 +1,4 @@
-import { formatNumber, proportion, stepTicks, tickStep } from './linear';
+import { formatNumber, proportion, stepTicks, tickCount, tickStep } from './linear';
 import { replacedFormat } from './replacedFormat';
 import type { ContinuousScale } from './types';
 import { lerp } from '@weasel-js/geom';
@@ -52,7 +52,7 @@ export function warpTicks(domain: readonly [number, number], to: (value: number)
   if (w0 === w1 || !Number.isFinite(w0) || !Number.isFinite(w1)) return stepTicks(d0, d1, tickStep(d0, d1, count));
   const lo = Math.min(d0, d1);
   const hi = Math.max(d0, d1);
-  const n = Math.max(1, Math.round(count));
+  const n = Math.max(1, Math.round(tickCount(count)));
   const out: number[] = [];
   // A domain holding a whole number for every tick ticks on whole numbers only.
   const whole = Math.floor(hi) - Math.ceil(lo) + 1 >= n + 1;
