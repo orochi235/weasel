@@ -33,6 +33,9 @@ export interface InsertSession {
   readonly gestureCtx: GestureContext<unknown>;
   /** For committing a behavior's `Op[]`. */
   readonly scene: Scene<unknown, string, unknown> | undefined;
+  /** How far the behaviors' `onStart` moved the start off where the snap put
+   *  it at press. A carry keeps it. */
+  readonly startShift: InsertPoint;
   /** Where the node lands. The one part of the session a drag changes: moving
    *  the shape mid-draw carries it. */
   readonly place: InsertPlace;
@@ -122,6 +125,7 @@ export function beginInsert(
   if (snap.startHeld()) gestureCtx.origin.set(GESTURE_KEY, origin);
   const startPoint = gestureCtx.origin.get(GESTURE_KEY) as InsertPoint;
   snap.anchor(startPoint);
+  const startShift = { x: startPoint.x - origin.x, y: startPoint.y - origin.y };
 
   const session: InsertSession = {
     dep,
@@ -131,6 +135,7 @@ export function beginInsert(
     behaviors,
     gestureCtx,
     scene: ctx.deps.scene,
+    startShift,
     place,
     applyOps: ctx.deps.applyOps,
     selection,

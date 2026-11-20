@@ -12,8 +12,8 @@ export interface SpanSnap {
   /** Snap the end. */
   end(p: Point, mods: SnapMods): SnapOutcome;
   /** Turn the end about `p`, a start placed by something other than this
-   *  snap. */
-  anchor(p: Point): void;
+   *  snap. Whether that moved the point the end turns about. */
+  anchor(p: Point): boolean;
   /** Whether a target holds the start. */
   startHeld(): boolean;
   /** The host's landing (`SnapOutcome.landing`) for an end at `p`: the start's
@@ -87,10 +87,11 @@ export function createSpanSnap(
       return endOut;
     },
     anchor(p) {
-      if (p.x === start.x && p.y === start.y) return;
+      if (p.x === start.x && p.y === start.y) return false;
       start = p;
       startOut = null;
       drop();
+      return true;
     },
     startHeld: () => held,
     landingAt: (p) => at(startOut, p) ?? at(endOut, p),

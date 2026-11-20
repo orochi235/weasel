@@ -34,13 +34,16 @@ function shapeEndpoints(
     gctx.plane = readers.plane();
     gctx.current.set(GESTURE_KEY, current);
     const mode = effectiveOriginMode(resolved?.['originMode'], raw.altHeld);
+    let shapedEnd = false;
     for (const b of session.behaviors) {
       const bounds = insertRectFor(start.x, start.y, current.x, current.y, mode);
       const r = b.onMove?.(gctx, { start, current, bounds, pose: bounds });
       if (!r) continue;
       if (r.start && !startHeld) start = r.start;
-      if (r.current && !end.held) current = r.current;
+      if (r.current && !end.held) { current = r.current; shapedEnd = true; }
     }
+    // The end the snap placed turns about the start as drawn, the behaviors' included.
+    if (!shapedEnd && session.snap.anchor(start)) current = session.snap.end(raw.pointer, snapMods(moveCtx)).point;
     gctx.current.set(GESTURE_KEY, current);
   }
   return { start, current };
@@ -51,7 +54,7 @@ function shapeEndpoints(
  *  carried unsnapped and snapped where it lands, in the container its site
  *  is carried into. */
 export function carryStart(
-  session: Pick<InsertSession, 'snap' | 'gestureCtx' | 'place'>,
+  session: Pick<InsertSession, 'snap' | 'gestureCtx' | 'place' | 'startShift'>,
   from: InsertPoint,
   to: InsertPoint,
   moveCtx: Pick<InvocationCtx, 'modifiers' | 'roles'>,
@@ -63,7 +66,11 @@ export function carryStart(
   place.site = { x: place.site.x + dx, y: place.site.y + dy };
   place.parent = place.parentAt(place.site);
   const landed = session.snap.carry(dx, dy, snapMods(moveCtx));
-  session.gestureCtx.origin.set(GESTURE_KEY, landed.point);
+  // A snap target holds the start where it put it; otherwise the start keeps the behaviors' shaping.
+  const shift = landed.held ? { x: 0, y: 0 } : session.startShift;
+  const origin = { x: landed.point.x + shift.x, y: landed.point.y + shift.y };
+  session.gestureCtx.origin.set(GESTURE_KEY, origin);
+  session.snap.anchor(origin);
 }
 
 /** One pump event's pointer, modifiers, and trail, and the endpoints they
