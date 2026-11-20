@@ -91,7 +91,7 @@ describe('the specimen toast demo', () => {
         <ActionsProvider>
           <ActiveToolContextProvider>
             <Refused />
-            <ToastRegion queue={createToastQueue()} className="host" />
+            <ToastRegion queue={createToastQueue()} className="lk-test-host" />
             <OverlaysAndFeedback />
           </ActiveToolContextProvider>
         </ActionsProvider>
@@ -103,6 +103,6 @@ describe('the specimen toast demo', () => {
     });
     const told = screen.getAllByText('Selection required');
     expect(told).toHaveLength(1);
-    expect(told[0]!.closest('.host')).not.toBeNull();
+    expect(told[0]!.closest('.lk-test-host')).not.toBeNull();
   });
 });
