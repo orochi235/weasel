@@ -26,20 +26,23 @@ function readFileText(file: File): Promise<string> {
 }
 
 /**
- * Apply the fit-clamp scale to the lengths a leaf holds in data rather than
+ * Apply the fit-clamp scale to the lengths a draft holds in data rather than
  * in its pose, which `place` does not reach: stroke width and dashes on any
- * leaf, and a text leaf's font size and letter spacing.
+ * draft (a group's, which the leaves inheriting it draw with, included), a
+ * group's border, and a text leaf's font size, letter spacing, and padding.
  */
-function scaleLeafData(
+function scaleDraftData(
   data: Record<string, unknown>,
   scale: number,
 ): Record<string, unknown> {
   if (scale === 1) return data;
   const out = { ...data };
-  if (out.stroke) out.stroke = scaleStroke(out.stroke as Stroke, scale);
+  if (typeof out.stroke === 'object' && out.stroke) out.stroke = scaleStroke(out.stroke as Stroke, scale);
+  if (typeof out.border === 'object' && out.border) out.border = scaleStroke(out.border as Stroke, scale);
   if (typeof out.text === 'string') {
     out.style = scaleTextStyle(out.style as TextStyle | undefined, scale);
     if (out.runs) out.runs = scaleRuns(out.runs as StyledRun[], scale);
+    if (typeof out.padding === 'number') out.padding = out.padding * scale;
   }
   return out;
 }
@@ -103,7 +106,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
       });
 
       const placed = drafts.map((d) => ({
-        ...d, pose: place(d.pose), ...(d.kind === 'mark' ? { data: scaleLeafData(d.data, scale) } : {}),
+        ...d, pose: place(d.pose), data: scaleDraftData(d.data as Record<string, unknown>, scale),
       }) as typeof d);
       const specs = svgDraftSpecs(placed, { layer, composition: ctx.scene.composition as PoseComposition<SvgDraftPose> });
       const ops: Op[] = specs.map((node) => coreOps.insert({ node: node as unknown as { id: string }, label: 'Insert SVG' }));

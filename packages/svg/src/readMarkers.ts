@@ -19,7 +19,7 @@ import { multiply, parseTransform } from './transform';
 import { styleAt } from './styleAt';
 import { WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
 import type { GradientTable } from './readGradients';
-import { deriveStyle, type StyleContext } from './cascade';
+import { deriveStyle, styleValue, type StyleContext } from './cascade';
 import { readProperty } from './properties';
 import { SUPPORTED_LEAF_TAGS, IGNORED_TAGS, lowerLeaf } from './lowerLeaf';
 import { parseViewBoxAttr } from './viewBox';
@@ -276,7 +276,7 @@ function markerEntryFrom(
   const first = parts[0].style;
   const fill = markerPaint(first, 'fill', gradients, onWarn);
   const outlinePaint = markerPaint(first, 'stroke', gradients, onWarn);
-  const outlineWidth = parseFloat(first['stroke-width'] ?? '1') * Math.sqrt(sx * sy) * k;
+  const outlineWidth = (styleValue(first, 'stroke-width', onWarn) ?? 1) * Math.sqrt(sx * sy) * k;
   const outline = outlinePaint !== 'none' && outlineWidth > 0
     ? { width: outlineWidth, paint: outlinePaint }
     : false;

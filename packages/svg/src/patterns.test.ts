@@ -166,6 +166,26 @@ describe('pattern serialization', () => {
       expect(warnings.join(' ')).toContain('unsupported pattern');
     });
 
+    it('drops a pattern whose picture is transformed in the tile', () => {
+      const doc = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+        + '<defs><pattern id="p" patternUnits="userSpaceOnUse" width="20" height="10">'
+        + '<image href="tile.png" width="20" height="10" transform="rotate(45 10 5)"/></pattern></defs>'
+        + '<rect x="0" y="0" width="100" height="100" fill="url(#p)"/></svg>';
+      const { nodes, warnings } = parseSvg(doc);
+      expect(firstFill(nodes)).toBeUndefined();
+      expect(warnings.join(' ')).toContain('unsupported pattern');
+    });
+
+    it('warns that a picture fitted by preserveAspectRatio is read stretched', () => {
+      const doc = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+        + '<defs><pattern id="p" patternUnits="userSpaceOnUse" width="20" height="10">'
+        + '<image href="tile.png" width="20" height="10" preserveAspectRatio="xMidYMid meet"/></pattern></defs>'
+        + '<rect x="0" y="0" width="100" height="100" fill="url(#p)"/></svg>';
+      const { nodes, warnings } = parseSvg(doc);
+      expect(firstFill(nodes)).toMatchObject({ kind: 'image', width: 20, height: 10 });
+      expect(warnings.join(' ')).toContain('preserveAspectRatio');
+    });
+
     it('warns and drops one with no tile extent, which SVG cannot size', () => {
       const warnings: string[] = [];
       const svg = serializeSvg(patternedRect({ kind: 'image', src: 'tile.png' }), { onWarn: (m) => warnings.push(m) });

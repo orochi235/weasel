@@ -4,12 +4,14 @@
  * `parseSvg(svg).nodes`. The intermediate SVG bytes don't have to match
  * the input — only the parsed shape must round-trip.
  *
+ * Every field a node carries is compared, with geometry in world coordinates.
  * Floats are rounded to 3 decimals during normalization so that the
  * trimNumber serializer (6 decimals) plus the arc→cubic conversion
  * (transcendental math) don't trip equality.
  */
 
 import { parseSvg, serializeSvg, type SvgNode } from '../index';
+import { worldCoords } from '@weasel-js/geom';
 import type { Path } from '@weasel-js/core';
 
 export interface NormalizedPath {
@@ -26,6 +28,7 @@ export interface NormalizedPath {
   fill: unknown;
   stroke?: unknown;
   opacity?: number;
+  [field: string]: unknown;
 }
 
 export interface NormalizedGroup {
@@ -34,6 +37,7 @@ export interface NormalizedGroup {
   transform?: number[];
   clip?: { commands: number[]; coords: number[] };
   opacity?: number;
+  [field: string]: unknown;
 }
 
 export interface NormalizedText {
@@ -46,6 +50,7 @@ export interface NormalizedText {
   runs?: unknown;
   style?: unknown;
   opacity?: number;
+  [field: string]: unknown;
 }
 
 export interface NormalizedImage {
@@ -57,6 +62,7 @@ export interface NormalizedImage {
   height: number;
   opacity?: number;
   rotation?: number;
+  [field: string]: unknown;
 }
 
 export type NormalizedNode = NormalizedPath | NormalizedGroup | NormalizedText | NormalizedImage;
@@ -65,95 +71,57 @@ export function round(n: number): number {
   return Math.round(n * 1000) / 1000;
 }
 
-/** A bare outline — a clip carries no paint, so only its geometry matters. */
-function normalizeOutline(path: Path): { commands: number[]; coords: number[] } {
+/** `v` with every number rounded and every typed array made a plain one, so floats compare loosely. */
+function roundDeep(v: unknown): unknown {
+  if (typeof v === 'number') return round(v);
+  if (ArrayBuffer.isView(v)) return Array.from(v as unknown as ArrayLike<number>, round);
+  if (Array.isArray(v)) return v.map(roundDeep);
+  if (v && typeof v === 'object') {
+    return Object.fromEntries(Object.entries(v).filter(([, x]) => x !== undefined).map(([k, x]) => [k, roundDeep(x)]));
+  }
+  return v;
+}
+
+/** A bare outline in world coordinates: a polygon's `coords` are measured from its `origin`. */
+function normalizeOutline(path: Path): { commands: number[]; coords: number[]; fillRule: string } {
   if (path.kind === 'rect') {
+    // M h v h Z lowering — matches what the serializer emits for rects.
     return {
-      commands: [0, 1, 1, 1, 4],
+      commands: [0, 1, 1, 1, 4], // PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z
       coords: [
         path.x, path.y,
         path.x + path.width, path.y,
         path.x + path.width, path.y + path.height,
         path.x, path.y + path.height,
       ].map(round),
+      fillRule: 'nonzero',
     };
   }
   return {
     commands: Array.from(path.commands as Uint8Array),
-    coords: Array.from(path.coords as Float32Array).map(round),
+    coords: Array.from(worldCoords(path), round),
+    fillRule: path.fillRule,
   };
 }
 
+/** Every field the node carries, its geometry in world coordinates and its numbers rounded. */
 function normalize(node: SvgNode): NormalizedNode {
   if (node.kind === 'group') {
-    const out: NormalizedGroup = {
-      kind: 'group',
-      children: node.children.map(normalize),
-    };
-    if (node.transform) out.transform = Array.from(node.transform).map(round);
-    if (node.clip) out.clip = normalizeOutline(node.clip);
-    if (node.opacity != null) out.opacity = round(node.opacity);
-    return out;
+    const { children, clip, ...rest } = node;
+    return {
+      ...(roundDeep(rest) as Omit<NormalizedGroup, 'children'>),
+      children: children.map(normalize),
+      ...(clip ? { clip: normalizeOutline(clip) } : {}),
+    } as NormalizedGroup;
   }
-  if (node.kind === 'text') {
-    const out: NormalizedText = {
-      kind: 'text',
-      x: round(node.x),
-      y: round(node.y),
-      width: round(node.width),
-      height: round(node.height),
-      text: node.text,
-    };
-    if (node.runs) out.runs = node.runs;
-    if (node.style) out.style = node.style;
-    if (node.opacity != null) out.opacity = round(node.opacity);
-    return out;
+  if (node.kind === 'path') {
+    const { path, ...rest } = node;
+    return { ...(roundDeep(rest) as Omit<NormalizedPath, 'commands' | 'coords' | 'fillRule'>), ...normalizeOutline(path) } as NormalizedPath;
   }
-  if (node.kind === 'image') {
-    const out: NormalizedImage = {
-      kind: 'image',
-      href: node.href,
-      x: round(node.x),
-      y: round(node.y),
-      width: round(node.width),
-      height: round(node.height),
-    };
-    if (node.opacity != null) out.opacity = round(node.opacity);
-    if (node.rotation != null) out.rotation = round(node.rotation);
-    return out;
-  }
-  const path = node.path;
-  let commands: number[];
-  let coords: number[];
-  let fillRule: string;
-  if (path.kind === 'rect') {
-    // M h v h Z lowering — matches what the serializer emits for rects.
-    commands = [0, 1, 1, 1, 4]; // PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z
-    coords = [
-      path.x, path.y,
-      path.x + path.width, path.y,
-      path.x + path.width, path.y + path.height,
-      path.x, path.y + path.height,
-    ].map(round);
-    fillRule = 'nonzero';
-  } else {
-    commands = Array.from(path.commands as Uint8Array);
-    coords = Array.from(path.coords as Float32Array).map(round);
-    fillRule = path.fillRule;
-  }
-  const norm: NormalizedPath = {
-    kind: 'path',
-    commands,
-    coords,
-    fillRule,
-    fill: node.fill,
-  };
-  if (node.stroke) norm.stroke = node.stroke;
-  if (node.opacity != null) norm.opacity = round(node.opacity);
-  return norm;
+  return roundDeep(node) as NormalizedNode;
 }
 
-function normalizeAll(nodes: SvgNode[]): NormalizedNode[] {
+export function normalizeAll(nodes: SvgNode[]): NormalizedNode[] {
   return nodes.map(normalize);
 }
 

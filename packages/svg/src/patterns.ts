@@ -90,7 +90,7 @@ const PATTERN_TAGS = new Set(['pattern']);
 
 function readPattern(el: Element, onWarn?: (m: string) => void): Paint | null {
   const raw = el.getAttribute('data-weasel-tile');
-  const image = raw ? null : readImagePattern(el);
+  const image = raw ? null : readImagePattern(el, onWarn);
   if (image) return image;
   if (!raw) {
     // A hand-authored or exported pattern holds arbitrary
@@ -116,10 +116,11 @@ function readPattern(el: Element, onWarn?: (m: string) => void): Paint | null {
  * A pattern whose only content is one `<image>` filling its tile, as an
  * `image` paint; `null` for any other pattern. Only a tile sized in user
  * space qualifies: a pattern sized as fractions of the shape it fills, or
- * one whose picture is offset or scaled within the tile, has no `image`
- * paint that draws the same.
+ * one whose picture is offset, scaled, or transformed within the tile, has
+ * no `image` paint that draws the same. A `preserveAspectRatio` is taken as
+ * `none`, as on a bare `<image>`, and one that says otherwise is warned about.
  */
-function readImagePattern(el: Element): ImagePatternPaint | null {
+function readImagePattern(el: Element, onWarn?: (m: string) => void): ImagePatternPaint | null {
   const children = Array.from(el.children);
   const img = children[0];
   if (children.length !== 1 || img.localName !== 'image') return null;
@@ -132,6 +133,11 @@ function readImagePattern(el: Element): ImagePatternPaint | null {
   const at = (name: string, fallback: number) => parseFloat(img.getAttribute(name) ?? String(fallback));
   if (at('x', 0) !== 0 || at('y', 0) !== 0 || at('width', width) !== width || at('height', height) !== height) {
     return null;
+  }
+  if (!isIdentity(parseTransform(img.getAttribute('transform'), onWarn))) return null;
+  const fit = img.getAttribute('preserveAspectRatio')?.trim();
+  if (fit && fit !== 'none') {
+    onWarn?.(`<pattern id="${el.getAttribute('id')}"> <image> preserveAspectRatio is not modeled; the tile is filled stretched`);
   }
   return { kind: 'image', src, width, height, ...readPlacement(el) };
 }
