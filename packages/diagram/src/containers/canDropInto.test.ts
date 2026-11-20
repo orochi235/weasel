@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { dataKeyReader } from '../trait';
-import { createScene, type RectPose } from '@weasel-js/core';
+import { createScene, unionOfChildren, type NodeId, type RectPose } from '@weasel-js/core';
 import { withDiagramRegistry } from '../edge';
 import { diagramScene } from '../fromData';
 import { diagramCanDropInto, diagramDropParentAt } from './canDropInto';
@@ -88,5 +88,17 @@ describe('diagramDropParentAt', () => {
     for (const spec of specs) scene.add(spec as never);
     expect(diagramDropParentAt(scene as never, { x: 400, y: 300 }, null)).toBe('inner');
     expect(diagramDropParentAt(scene as never, { x: 150, y: 300 }, null)).toBe('outer');
+  });
+
+  it('finds a container under an envelope where it is drawn, the envelope being no frame', () => {
+    const specs = diagramScene({
+      nodes: [], edges: [],
+      containers: [{ id: 'box', role: 'container', box: { x: 300, y: 100, width: 200, height: 200 }, pinned: true }],
+    }, { layout: 'none' });
+    const scene = createScene<Record<string, unknown>, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
+    scene.add({ id: 'env' as NodeId, kind: 'group', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {}, dependsOn: 'children', derivePose: unionOfChildren });
+    for (const spec of specs) scene.add({ ...(spec as object), ...((spec as { parent?: unknown }).parent == null ? { parent: 'env' } : {}) } as never);
+    expect(scene.get('box' as NodeId)!.parent).toBe('env');
+    expect(diagramDropParentAt(scene as never, { x: 400, y: 250 }, null)).toBe('box');
   });
 });

@@ -2,7 +2,7 @@ import { rectContainsPointHalfOpen, type Rect } from '@weasel-js/geom';
 import { diagramEdgeOf } from '../edgeTrait';
 import { diagramLabelOf } from '../labelTrait';
 import { DIAGRAM_TRAIT_KEY } from '../trait';
-import type { DropVerdict } from '@weasel-js/core';
+import { definesFrame, type DropVerdict } from '@weasel-js/core';
 import { bodyBox, diagramContainerOf, type ContainerRole } from './trait';
 
 /** Whether the nodes `ids` may move into the container or lane `container`. */
@@ -55,7 +55,7 @@ function hasDiagramTrait(node: { data: unknown }): boolean {
 export interface DropParentScene {
   readonly roots: readonly string[];
   childrenOf(id: never): readonly string[];
-  get(id: never): { id: string; kind: 'mark' | 'group'; data: unknown; pose: unknown } | undefined;
+  get(id: never): { id: string; kind: 'mark' | 'group'; data: unknown; pose: unknown; dependsOn?: unknown; derivePose?: unknown } | undefined;
   /** How a child's stored pose joins its parent's. Absent, poses are world poses. */
   readonly composition?: { compose(parent: never, child: never): unknown };
 }
@@ -80,10 +80,13 @@ export function diagramDropParentAt(
       const pose = node.pose as Rect;
       const world = frame === null || compose === undefined ? pose : compose(frame as never, pose as never) as Rect;
       const trait = diagramContainerOf(node);
-      const b = bodyBox(world, trait?.header);
-      if (!rectContainsPointHalfOpen(b, point.x, point.y)) continue;
-      if (trait?.role === 'container' || trait?.role === 'lane') best = id;
-      walk(scene.childrenOf(id as never), world);
+      // Only a region's box bounds what it holds; a plain group's or an envelope's need not.
+      if (trait !== null) {
+        if (!rectContainsPointHalfOpen(bodyBox(world, trait.header), point.x, point.y)) continue;
+        if (trait.role === 'container' || trait.role === 'lane') best = id;
+      }
+      // An envelope is no frame: its children are stored in the one above it.
+      walk(scene.childrenOf(id as never), definesFrame(node) ? world : frame);
     }
   };
   walk(scene.roots, null);
