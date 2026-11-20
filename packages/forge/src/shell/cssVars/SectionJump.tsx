@@ -26,6 +26,11 @@ function readLine(panel: Element): number {
   return (panel.querySelector(LIST) ?? panel).getBoundingClientRect().top;
 }
 
+/** What holds the bar and the panel: the section the bar sits in, docked or torn out, or else the page. */
+function rootOf(bar: Element | null): Element {
+  return bar?.closest(HOST) ?? document.body;
+}
+
 function sectionsOf(panel: Element): HTMLElement[] {
   return [...panel.querySelectorAll<HTMLElement>('[data-token-category]')];
 }
@@ -35,16 +40,19 @@ export function SectionJump() {
   const ref = useRef<HTMLDivElement>(null);
   const [present, setPresent] = useState<readonly TokenCategory[]>([]);
   const [current, setCurrent] = useState<TokenCategory | null>(null);
-  // A picked section stays lit until the reader scrolls by hand: near the end of the list it cannot reach the top.
-  const held = useRef(false);
+  // A picked section stays lit until the list moves from where the jump left it, or the reader scrolls by hand:
+  // near the end of the list it cannot reach the top.
+  const held = useRef<{ readonly scroller: Element; readonly top: number } | null>(null);
 
   useEffect(() => {
-    // The section holding this bar holds the panel too, docked or torn out, and outlives a remount of the panel.
-    const root = ref.current?.closest(HOST) ?? document.body;
+    // The root outlives a remount of the panel.
+    const root = rootOf(ref.current);
     const read = () => {
       const panel = root.querySelector(PANEL);
       const sections = panel ? sectionsOf(panel) : [];
       setPresent(sections.map((s) => s.dataset.tokenCategory as TokenCategory));
+      const hold = held.current;
+      if (hold && Math.abs(hold.scroller.scrollTop - hold.top) > 1) held.current = null;
       if (!panel || held.current) return;
       const line = readLine(panel) + 1;
       let top = sections[0]?.dataset.tokenCategory as TokenCategory | undefined;
@@ -52,7 +60,7 @@ export function SectionJump() {
       setCurrent(top ?? null);
     };
     const release = () => {
-      held.current = false;
+      held.current = null;
     };
     read();
     const observer = new MutationObserver(read);
@@ -76,13 +84,13 @@ export function SectionJump() {
   }));
 
   const jump = (next: TokenCategory | null) => {
-    const panel = ref.current?.closest(HOST)?.querySelector(PANEL);
+    const panel = rootOf(ref.current).querySelector(PANEL);
     const target = next && panel?.querySelector(`[data-token-category="${next}"]`);
     const scroller = panel?.querySelector(LIST);
     if (!panel || !target || !scroller) return;
-    held.current = true;
     setCurrent(next);
     scroller.scrollTop = scrolledPlaceOf(target, scroller).y;
+    held.current = { scroller, top: scroller.scrollTop };
   };
 
   return (

@@ -1,7 +1,8 @@
 import { type AxisDefs, THEME_SOURCES } from '@weasel-js/theme';
 import { httpThemeApi, type ThemeApi } from '@weasel-js/theme/engine';
 import { useMemo, useState } from 'react';
-import { deepEqual } from '@weasel-js/registry';
+import { deepEqual, getOwn } from '@weasel-js/registry';
+import type { TokenScale } from '@weasel-js/labkit';
 import type { StoryGlobals } from '../../protocol/messages';
 import type { CssOverrides } from './overrides';
 import { applyScaleEdits, type ScaleEdit } from './saveScales';
@@ -13,7 +14,7 @@ export const THEME_NAME = 'weasel';
 export const TOKEN_PREFIX = '--wzl-';
 const NO_AXES: AxisDefs = {};
 
-type Notice = { readonly trialId: string | null; readonly outcome: 'saved' | 'error'; readonly text: string };
+type Notice = { readonly outcome: 'saved' | 'error'; readonly text: string };
 
 /** An edited scale, and the steps of it that still hold what its edit generated. */
 export interface UnsavedScale {
@@ -27,7 +28,6 @@ export interface UnsavedScale {
 }
 
 export interface ThemeSaveOptions {
-  readonly trialId: string | null;
   /** The globals the trial renders under, which pick the axis values a save writes into. */
   readonly globals: StoryGlobals;
   /** Where a save goes. Defaults to the dev server's theme store. */
@@ -41,7 +41,7 @@ export interface ThemeSave {
   /** Whether any edit has a place in the definition to be saved to. */
   readonly pending: boolean;
   readonly saving: boolean;
-  readonly notice: Omit<Notice, 'trialId'> | null;
+  readonly notice: Notice | null;
   save(): Promise<void>;
 }
 
@@ -50,7 +50,7 @@ export interface ThemeSave {
  * the definition writes its value out or pinned over what it derives. An override the theme has no token for, or one
  * whose branch the trial's globals do not pick, stays the trial's own.
  */
-export function useThemeSave({ trialId, globals, themeApi, scales, overrides, history }: ThemeSaveOptions): ThemeSave {
+export function useThemeSave({ globals, themeApi, scales, overrides, history }: ThemeSaveOptions): ThemeSave {
   const definition = THEME_SOURCES[THEME_NAME];
   const selection = useTrialSelection(definition?.axes ?? NO_AXES, globals);
   const tokens = useMemo(() => {
@@ -66,8 +66,7 @@ export function useThemeSave({ trialId, globals, themeApi, scales, overrides, hi
   }, [definition, selection, scales, overrides]);
 
   const [saving, setSaving] = useState(false);
-  const [held, setHeld] = useState<Notice | null>(null);
-  const setNotice = (next: Omit<Notice, 'trialId'> | null) => setHeld(next && { ...next, trialId });
+  const [notice, setNotice] = useState<Notice | null>(null);
 
   const save = async () => {
     setSaving(true);
@@ -95,16 +94,19 @@ export function useThemeSave({ trialId, globals, themeApi, scales, overrides, hi
         setNotice({ outcome: 'error', text: result.message });
         return;
       }
-      // What was saved is the theme's own now, so nothing from before the save has a value to go back to.
-      const saved = new Set([
-        ...scales.flatMap((scale) => scale.tokens),
-        ...Object.keys(tokens).map((token) => `${TOKEN_PREFIX}${token}`),
-      ]);
-      const groups = new Set(scales.map((scale) => scale.group));
+      // What was saved is the theme's own now, so nothing from before the save has a value to go back to. An edit
+      // made while the save was out wrote no part of it, and stays.
+      const saved = new Map(
+        [...scales.flatMap((scale) => scale.tokens), ...Object.keys(tokens).map((token) => `${TOKEN_PREFIX}${token}`)].map(
+          (name) => [name, getOwn(overrides, name)],
+        ),
+      );
       const now = history.current();
+      const unsaved = (group: string, scale: TokenScale) =>
+        !scales.some((s) => s.group === group && deepEqual({ base: scale.base, rule: scale.rule }, s.edit));
       history.reset({
-        overrides: Object.fromEntries(Object.entries(now.overrides).filter(([name]) => !saved.has(name))),
-        scales: Object.fromEntries(Object.entries(now.scales).filter(([group]) => !groups.has(group))),
+        overrides: Object.fromEntries(Object.entries(now.overrides).filter(([name, value]) => saved.get(name) !== value)),
+        scales: Object.fromEntries(Object.entries(now.scales).filter(([group, scale]) => unsaved(group, scale))),
       });
       setNotice(
         result.regenerated || result.problems.length === 0
@@ -121,7 +123,7 @@ export function useThemeSave({ trialId, globals, themeApi, scales, overrides, hi
   return {
     pending: scales.length > 0 || Object.keys(tokens).length > 0,
     saving,
-    notice: held?.trialId === trialId ? held : null,
+    notice,
     save,
   };
 }

@@ -3,7 +3,7 @@ import { getOwn } from '@weasel-js/registry';
 import { useMemo } from 'react';
 import type { ToFrame } from '../../protocol/messages';
 import { type CssOverrides, useCssOverrides } from './overrides';
-import { scaleValuesFor } from './themeScales';
+import { liveScales, scaleValuesFor } from './themeScales';
 import { useVarsHistory, type VarsHistory, type VarsState } from './varsHistory';
 
 /** The CSS variable edits of the trial this is rendered inside, and how to make one. */
@@ -26,13 +26,20 @@ export function useVarsEdits(send: ((msg: ToFrame) => void) | null): VarsEdits {
   const [overrides, setOverrides] = useCssOverrides();
   const [edited, setEdited] = usePersistedState<Readonly<Record<string, TokenScale>>>('fg-css-vars-scales', {}, { scope: 'trial' });
   const state = useMemo<VarsState>(() => ({ overrides, scales: edited }), [overrides, edited]);
-  const history = useVarsHistory(state, (from, to) => {
+  const opened = useVarsHistory(state, (from, to) => {
     setOverrides(to.overrides);
     setEdited(to.scales);
     for (const name of new Set([...Object.keys(from.overrides), ...Object.keys(to.overrides)])) {
       if (getOwn(from.overrides, name) !== getOwn(to.overrides, name)) send?.({ type: 'vars.set', name, value: getOwn(to.overrides, name) ?? null });
     }
   });
+  // A scale edit no step shows any more is dropped with the last of its overrides, by an edit or a save alike.
+  const live = (next: VarsState): VarsState => ({ ...next, scales: liveScales(next.scales, next.overrides) });
+  const history: VarsHistory = {
+    ...opened,
+    commit: (next, key) => opened.commit(live(next), key),
+    reset: (next) => opened.reset(live(next)),
+  };
   const write = (name: string, value: string | null) => {
     const now = history.current();
     const { [name]: _dropped, ...rest } = now.overrides;
