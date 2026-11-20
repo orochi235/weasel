@@ -30,7 +30,7 @@ export function undigit(key: string): string {
 }
 
 /** `base`, or `base` with the first number from 2 that no key of `kids` holds. */
-export function uniqueKey(kids: ChildMap, base: string): string {
+export function uniqueKey(kids: Readonly<Record<string, unknown>>, base: string): string {
   if (!Object.hasOwn(kids, base)) return base;
   let n = 2;
   while (Object.hasOwn(kids, `${base}${n}`)) n++;

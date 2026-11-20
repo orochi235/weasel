@@ -34,10 +34,13 @@ export const BUNDLE_KINDS: CustomKinds = {
 /** The tree key a bundle with id `id` sits under: an id like `tools:select` is no key. */
 export const bundleKey = (id: string): string => actionLeafKey(id);
 
-/** The id of the bundle group keyed `key`: the id it was made with, until it is given a key that id would not take. */
+/** The id of the bundle group keyed `key`: the id it was made with, until it is given a key that id would not take. A
+ *  number after the id's key is one it takes, where another bundle's id took the key itself. */
 export function bundleIdOf(key: string, group: SchemaNode): string {
   const held = (group as { bundle?: string }).bundle;
-  return held !== undefined && bundleKey(held) === key ? held : key;
+  if (held === undefined) return key;
+  const base = bundleKey(held);
+  return key === base || (key.startsWith(base) && /^([2-9]|[1-9]\d+)$/.test(key.slice(base.length))) ? held : key;
 }
 
 /** Whether the node at `path` is a bundle: a group in a package's section. */
@@ -100,16 +103,26 @@ export function bundleTree(presets: readonly PresetDescription[]): PrefGroup {
     setOwn(taken, key, { name: pkg, description: '', children: {} });
     packageKeys.set(pkg, key);
   }
+  const bundleKeys = new Map<string, string>();
+  for (const pkg of packages) {
+    const keys: Record<string, true> = {};
+    for (const d of presets) {
+      if (d.package !== pkg || d.atom) continue;
+      const key = uniqueKey(keys, bundleKey(d.id));
+      setOwn(keys, key, true);
+      bundleKeys.set(d.id, key);
+    }
+  }
   const pathOf = (id: string): string => {
     const d = byId.get(id);
-    return d ? `${packageKeys.get(d.package)}.${bundleKey(id)}` : bundleKey(id);
+    return d ? `${packageKeys.get(d.package)}.${bundleKeys.get(id) ?? bundleKey(id)}` : bundleKey(id);
   };
   const included = new Set(presets.filter((d) => !d.atom).flatMap((d) => d.includes));
   const children = Object.fromEntries(packages.map((pkg) => {
     const own = presets.filter((d) => d.package === pkg);
     const kids: GroupKids = {};
     for (const d of own.filter((p) => !p.atom)) {
-      setOwn(kids, bundleKey(d.id), { name: d.label, description: '', bundle: d.id, children: leavesOf(d, byId, pathOf) } as PrefGroup);
+      setOwn(kids, bundleKeys.get(d.id)!, { name: d.label, description: '', bundle: d.id, children: leavesOf(d, byId, pathOf) } as PrefGroup);
     }
     for (const d of own.filter((p) => p.atom && !included.has(p.id))) setOwn(kids, uniqueKey(kids, actionLeafKey(d.id)), atomNode(d));
     const section: PrefGroup = { name: pkg, description: '', as: 'section', children: kids };

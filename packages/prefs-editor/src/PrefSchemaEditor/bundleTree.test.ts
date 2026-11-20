@@ -31,6 +31,12 @@ describe('bundleTree', () => {
     }
   });
 
+  it('keeps two bundles whose ids differ only in punctuation apart, each link reaching its own', () => {
+    const tree = bundleTree([d('editing:shapes'), d('editing.shapes'), d('both', { includes: ['editing:shapes', 'editing.shapes'] })]);
+    expect(readBundles(tree).map((b) => b.id)).toEqual(['editing:shapes', 'editing.shapes', 'both']);
+    expect(readBundles(tree).find((b) => b.id === 'both')!.members).toEqual([{ kind: 'bundle', id: 'editing:shapes' }, { kind: 'bundle', id: 'editing.shapes' }]);
+  });
+
   it('files a section per package, and an atom no bundle includes on its own in its section', () => {
     const tree = bundleTree([d('loose', { atom: true, actions: ['a'] }), d('b', { package: '@x/path-tools', includes: [] })]);
     expect(Object.keys(tree.children)).toEqual(['pkg', 'pathTools']);
