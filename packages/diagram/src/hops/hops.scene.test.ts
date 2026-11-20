@@ -173,4 +173,31 @@ describe('line jumps in a scene', () => {
     expect(hopsOf(scene, 'cd')).toBeUndefined();
   });
 
+  it('leaves a hidden connector out: nothing hops over it, and hiding or showing it recomputes its neighbors', () => {
+    const { scene } = load(false);
+    scene.setHidden('ab' as never, true);
+    scene.doc.set(HOPS_DOC_KEY, { size: 5 });
+    expect(hopsOf(scene, 'cd')).toBeUndefined();
+    scene.setHidden('ab' as never, false);
+    expect(hopsOf(scene, 'cd')).toEqual([{ at: { x: 250, y: 30 }, over: ['ab'], r: 5 }]);
+    scene.setHidden('ab' as never, true);
+    expect(hopsOf(scene, 'cd')).toBeUndefined();
+  });
+
+  it('leaves a connector on a hidden layer out', () => {
+    const scene = createScene<unknown, 'main' | 'back', RectPose>({
+      systemLayers: [{ id: 'back' }, { id: 'main' }],
+      registry: withDiagramRegistry(),
+      initial: [
+        box('a', 0, 0), box('b', 400, 0), box('c', 200, -200), box('d', 200, 200),
+        { ...connector('ab', 'a', 'b'), layer: 'back' as const }, connector('cd', 'c', 'd'),
+      ] as never,
+    });
+    installHops(scene);
+    scene.setLayerVisible('back', false);
+    scene.doc.set(HOPS_DOC_KEY, { size: 5 });
+    expect(hopsOf(scene as never, 'cd')).toBeUndefined();
+    scene.setLayerVisible('back', true);
+    expect(hopsOf(scene as never, 'cd')).toEqual([{ at: { x: 250, y: 30 }, over: ['ab'], r: 5 }]);
+  });
 });

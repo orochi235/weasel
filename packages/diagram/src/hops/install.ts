@@ -97,6 +97,8 @@ export function installHops<TPose>(scene: Scene<unknown, string, TPose>, opts: H
     }
     return hopDataOps(sc, hops);
   };
+  // A hidden connector, or one on a hidden layer, neither hops nor is hopped over.
+  const drawn = () => sceneEdges(sc).filter((e) => !sc.isHidden(e.node.id));
   const unlocked = () => [...stale].filter((id) => !sc.isLocked(id as never));
 
   const full = (edges: SceneEdge[], r: number) => {
@@ -115,7 +117,7 @@ export function installHops<TPose>(scene: Scene<unknown, string, TPose>, opts: H
       const ops = cleared.length === 0 ? [] : write(new Map(cleared.map((id) => [id, []])));
       return ops.length === 0 ? null : ops;
     }
-    const edges = sceneEdges(sc);
+    const edges = drawn();
     const order = edges.map((e) => e.node.id);
     if (keyed || held === null || held.r !== value.size || reordered(held.order, order)) return full(edges, value.size);
     const h: Held = held;
@@ -155,7 +157,7 @@ export function installHops<TPose>(scene: Scene<unknown, string, TPose>, opts: H
 
   const on = sc.doc.get<HopsDocValue>(HOPS_DOC_KEY);
   if (on !== undefined) {
-    const edges = sceneEdges(sc);
+    const edges = drawn();
     held = { polylines: allPolylines(edges, polylineOf), order: edges.map((e) => e.node.id), r: on.size };
   }
   // Undo, redo, a replay, `loadState` and untracked writes change the scene with no pass to hear
