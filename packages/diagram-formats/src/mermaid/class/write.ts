@@ -5,7 +5,7 @@ import { getOwn } from '@weasel-js/registry';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, type Cluster, type GraphOut } from '../../graphWrite';
 import { readsAsStatement, titleLines } from '../common/lines';
-import { styleProps } from '../common/styles';
+import { dropPorts, styleProps } from '../common/styles';
 import { mermaidIds, oneLine, spelledBreaks } from '../common/text';
 
 const HEADER: Readonly<Record<LayoutDirection, string>> = { down: 'TB', up: 'BT', right: 'LR', left: 'RL' };
@@ -132,6 +132,7 @@ export function writeClassDiagram(doc: DiagramDocument, opts?: WriteOptions): Ex
       out.warnings.add('Mermaid class relations join classes; connectors to namespaces were dropped.');
       continue;
     }
+    dropPorts(e, (m) => out.warnings.add(m));
     w.lines.push(w.relation(e));
   }
   w.noteLines();

@@ -74,6 +74,9 @@ class C4Writer {
     const macro = start && !end ? 'Rel_Back' : start ? 'BiRel' : way !== undefined ? `Rel_${way}` : 'Rel';
     if (!start && !end) this.out.warnings.add('Mermaid C4 relationships always have a head; unmarked edges were written with one.');
     if (start && way !== undefined) this.out.warnings.add('Mermaid C4 has no direction for a two-way or backward relationship; its ports were dropped.');
+    if (way === undefined && (e.fromPort !== undefined || e.toPort !== undefined)) {
+      this.out.warnings.add('Mermaid C4 relationships run up, down, left or right, from one side to the opposite; other ports were dropped.');
+    }
     const m = /^(.*?)(?: \[([^\]]*)\])?$/s.exec(e.label ?? '')!;
     this.lines.push(`  ${macro}(${args([this.id(e.from), this.id(e.to), m[1]!, m[2]], 2)})`);
     this.relColors(e, e.colors);

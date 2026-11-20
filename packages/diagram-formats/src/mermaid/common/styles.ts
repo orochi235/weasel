@@ -4,7 +4,7 @@
  * colors written back as one.
  */
 import type { MarkerRef } from '@weasel-js/core';
-import type { NodeStyle } from '@weasel-js/diagram';
+import type { DataEdge, NodeStyle } from '@weasel-js/diagram';
 import type { Warnings } from '../../graphRead';
 import { checkedColor } from '../../colorCheck';
 import { hexColor } from '../../graphWrite';
@@ -84,6 +84,11 @@ export function nodeColors(props: ReadonlyMap<string, string>, warnings: Warning
 
 /** Whether `marker` draws a head, for a kind that draws every head as an arrow. `warn` hears, naming `kind`, of a head
  *  that is not one. */
+/** Warns, for a kind whose connectors meet no port, that `e`'s ports were dropped. */
+export function dropPorts(e: DataEdge, warn: (message: string) => void): void {
+  if (e.fromPort !== undefined || e.toPort !== undefined) warn('Mermaid has no ports; connectors\' ports were dropped.');
+}
+
 export function arrowHead(marker: MarkerRef | null | undefined, kind: string, warn: (message: string) => void): boolean {
   if (marker === null || marker === undefined) return false;
   if ((typeof marker === 'string' ? marker : marker.key) !== 'arrow') warn(`Mermaid ${kind} links end in arrows; other ends were written as arrows.`);

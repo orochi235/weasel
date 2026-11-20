@@ -4,7 +4,7 @@ import { getOwn } from '@weasel-js/registry';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
 import { titleLines } from '../common/lines';
-import { arrowHead, styleProps } from '../common/styles';
+import { arrowHead, dropPorts, styleProps } from '../common/styles';
 import { mermaidIds, mermaidText } from '../common/text';
 import { BRACKETS } from '../flowchart/write';
 
@@ -85,6 +85,7 @@ class BlockWriter {
     const { markerStart, markerEnd, dash, width } = edgeStyleIn(this.out, e);
     const body = dash !== undefined ? '-.-' : (width ?? 0) >= 3 ? '==' : '--';
     const warn = (m: string) => this.out.warnings.add(m);
+    dropPorts(e, warn);
     const end = arrowHead(markerEnd, 'block diagram', warn);
     const start = arrowHead(markerStart, 'block diagram', warn);
     const tail = end ? '>' : body === '--' ? '-' : body === '==' ? '=' : '';
