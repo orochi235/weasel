@@ -152,6 +152,18 @@ function itemJobs<TData, TPose>(
   return jobs;
 }
 
+/** Item `i`'s delay in ms, 0 or more. A delay function answering `NaN` is warned of and starts
+ *  the item at once: by now the transition is running, too late to refuse it. */
+function itemDelay<TData>(delay: ((d: TData, i: number) => number) | null, d: TData, i: number): number {
+  if (!delay) return 0;
+  const ms = delay(d, i);
+  if (Number.isNaN(ms)) {
+    console.warn(`d3Bind.transition.delay: the delay function answered NaN for item ${i}; starting it at once`);
+    return 0;
+  }
+  return Math.max(0, ms);
+}
+
 function makeStage<TData, TPose>(
   ctx: TransitionCtx<TData, TPose>,
   parent: Stage | null,
@@ -189,7 +201,7 @@ function makeStage<TData, TPose>(
   const runItem = (i: number): void => {
     // Dropped already: interrupted on its node while it waited its turn on a microtask.
     if (progress.canceled || progress.done(i) || lost(i)) return;
-    const delayMs = settings.delay ? Math.max(0, settings.delay(data[i], i)) : 0;
+    const delayMs = itemDelay(settings.delay, data[i], i);
     // Read when the delay ends, as d3 does: where the node stands then, and `start` only then.
     // With nothing to tween it still starts on its node, interrupting the transition of its name there.
     const prepare = (): readonly TweenJob[] | null => {

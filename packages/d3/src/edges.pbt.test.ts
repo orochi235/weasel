@@ -1,6 +1,7 @@
 /**
  * Property tests of transitions at the edges of their timing: durations and delays that are zero, negative, NaN,
- * infinite, or past what one timer can wait. A NaN duration is refused where it is set; any other transition starts
+ * infinite, or past what one timer can wait. A NaN duration or delay is refused where it is set, and a delay
+ * function answering NaN warns and starts the item at once; any other transition starts
  * no sooner than its delay, ends at its target once its delay and duration have run, holds where it started for as
  * long as either is infinite, settles when interrupted, and writes only finite poses.
  */
@@ -21,7 +22,7 @@ const duration = fc.oneof(fc.integer({ min: 0, max: 1000 }), fc.constantFrom(-5,
 const delay = fc.oneof(fc.integer({ min: 0, max: 1000 }), fc.constantFrom(-5, NaN, Infinity, LONGEST_TIMER, LONGEST_TIMER + 1, 3e9, 1e13));
 
 describe('a transition at any duration and delay', () => {
-  it('waits out its delay, ends at its target after its duration, or is refused for a NaN duration', async () => {
+  it('waits out its delay, ends at its target after its duration, or is refused for a NaN duration or delay', async () => {
     const seen = tally();
     await fc.assert(fc.asyncProperty(duration, delay, fc.boolean(), async (ms, wait, perItem) => {
       // A fresh fake clock each run: one advanced by many runs' long waits holds a time too coarse for a 16 ms step.
@@ -41,6 +42,14 @@ describe('a transition at any duration and delay', () => {
         unsub();
         return;
       }
+      if (Number.isNaN(wait) && !perItem) {
+        seen.count('refused');
+        expect(() => t.delay(wait)).toThrow(RangeError);
+        clock.dispose();
+        unsub();
+        return;
+      }
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
       t.duration(ms).delay(perItem ? () => wait : wait);
       let settled = false;
       void t.end().then(() => { settled = true; });
@@ -70,6 +79,8 @@ describe('a transition at any duration and delay', () => {
         expect(settled).toBe(true);
       }
       expect(poses.filter((p) => !Number.isFinite(p))).toEqual([]);
+      expect(warn).toHaveBeenCalledTimes(Number.isNaN(wait) ? 1 : 0);
+      warn.mockRestore();
       clock.dispose();
       unsub();
     }), runs(RUNS));

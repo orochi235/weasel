@@ -86,7 +86,8 @@ export interface D3Transition<TData, TPose = unknown> {
   duration(ms: number): this;
   ease(fn: (t: number) => number): this;
   /** Per-item delay, in ms. On a chained transition it counts from the moment that
-   *  item's previous transition ended. An infinite delay never starts the item. */
+   *  item's previous transition ended. An infinite delay never starts the item. Throws a
+   *  `RangeError` on `NaN`; a function answering `NaN` for an item warns and starts it at once. */
   delay(ms: number | ((d: TData, i: number) => number)): this;
   /** Per-item target pose. The first transition to start on a node after its join
    *  tweens it from its prior pose, by default to the pose `.join()` set; any other

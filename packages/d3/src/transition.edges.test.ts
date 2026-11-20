@@ -302,3 +302,25 @@ describe('d3Bind transition — a pose descriptor without lerp', () => {
     expect(s.scene.current.get('a' as never)).toBeUndefined();
   });
 });
+
+describe('d3Bind transition — a NaN delay', () => {
+  it('is refused where it is set, as a NaN duration is', () => {
+    const s = setup();
+    const t = s.bind([{ id: 'a', x: 0 }]).transition();
+    expect(() => t.delay(Number.NaN)).toThrow(RangeError);
+  });
+
+  it('from a delay function warns, naming the item, and starts it at once', () => {
+    const s = setup();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    act(() => void s.bind([{ id: 'a', x: 0 }]));
+    act(() => void s.bind([{ id: 'a', x: 100 }]).transition().duration(100).ease(linear)
+      .delay(() => Number.NaN).end());
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toMatch(/NaN/);
+    act(() => s.clock.advance(0));
+    act(() => s.clock.advance(50));
+    expect(s.x('a')).toBeCloseTo(50, 6);
+    warn.mockRestore();
+  });
+});

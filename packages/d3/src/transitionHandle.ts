@@ -43,6 +43,9 @@ export function createTransitionHandle<TData, TPose>(
       return t;
     },
     delay(arg) {
+      if (typeof arg === 'number' && Number.isNaN(arg)) {
+        throw new RangeError('d3Bind.transition.delay: ms is a time, not NaN');
+      }
       settings.delay = typeof arg === 'function' ? arg : () => arg;
       return t;
     },
