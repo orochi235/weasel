@@ -11,6 +11,14 @@ describe('polarScale', () => {
     expect(polarScale({ ...scale, axes: 3, startAngle: 1 }).angle(1)).toBeCloseTo(1 + (2 * Math.PI) / 3);
   });
 
+  it('holds an axis count that is not a finite number to one axis', () => {
+    for (const axes of [NaN, Infinity]) {
+      const one = polarScale({ ...scale, axes });
+      expect(one.axes).toBe(1);
+      expect(one.point(0, 10)).toEqual(polarScale({ ...scale, axes: 1 }).point(0, 10));
+    }
+  });
+
   it('places a value along its axis, the domain spread over the radius', () => {
     const up = scale.point(0, 10);
     expect(up.x).toBeCloseTo(100);
