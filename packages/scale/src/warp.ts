@@ -26,17 +26,23 @@ const DEFAULT_TICKS = 5;
  *  place falls between them, as 20 and 25 did on a square-root axis to 100. */
 const MANTISSAS = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10] as const;
 
-/** `m` times `p` without the float noise a bare product carries. */
-const times = (m: number, p: number) => Number((m * p).toPrecision(12));
+/** `base + m * p` without the float noise a bare sum carries, keeping the digits `base` holds above `p`. */
+const onDecade = (base: number, m: number, p: number) =>
+  Number((base + m * p).toPrecision(Math.min(17, 12 + Math.max(0, Math.round(Math.log10(base / p))))));
 
 /**
  * The round value inside `lo`..`hi` nearest `v` along a scale warped by `to`, not one already `taken`, and a whole
- * number where `whole`; null for none there.
+ * number where `whole`; null for none there. Round on `v`'s own decade, or on a finer one where the domain is
+ * narrower than that.
  */
 function roundNear(v: number, to: (value: number) => number, lo: number, hi: number, whole: boolean, taken: readonly number[]): number | null {
   if (v === 0) return lo <= 0 && hi >= 0 && !taken.includes(0) ? 0 : null;
-  const p = 10 ** Math.floor(Math.log10(Math.abs(v)));
-  const near = MANTISSAS.map((m) => Math.sign(v) * times(m, p))
+  const a = Math.abs(v);
+  const narrow = 10 ** Math.floor(Math.log10(hi - lo));
+  const own = 10 ** Math.floor(Math.log10(a));
+  const p = narrow > 0 && narrow < own ? narrow : own;
+  const base = Math.floor(a / (10 * p)) * 10 * p;
+  const near = (base > 0 ? [0, ...MANTISSAS] : MANTISSAS).map((m) => Math.sign(v) * onDecade(base, m, p))
     .filter((c) => c >= lo && c <= hi && !taken.includes(c) && (!whole || Number.isInteger(c)));
   if (near.length === 0) return null;
   return near.reduce((best, c) => (Math.abs(to(c) - to(v)) < Math.abs(to(best) - to(v)) ? c : best));
