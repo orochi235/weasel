@@ -10,20 +10,21 @@ Everything is plain Node. The model calls are `claude -p` jobs on fleet nodes, u
 
 ## A night
 
-`node scripts/skulk/night.mjs` runs one night from the main checkout. Each step prints one line as it
-completes (`review 3/16 …`).
+`node scripts/skulk/night.mjs` runs one night from the main checkout: a *run*, one round with the flags
+below. Several runs may go at once, each with its own flags; a run's id is its round number. Each step prints
+one line as it completes (`review 3/16 …`).
 
 | Step | What happens |
 |---|---|
-| plan | Areas come from the partition (below). The round number is one past the highest used by a `docs/audits/round-<N>/` directory, `docs/hardening.md`, or a branch named `audit<N>-…`. |
+| plan | Areas come from the partition (below), less every area a live run holds. The round number is one past the highest used by a `docs/audits/round-<N>/` directory, `docs/hardening.md`, a branch named `audit<N>-…`, or a run's claim. The run claims it by creating `runs/<N>/` (below); if another run got there first it takes the next. Planning holds `plan.lock`, so two runs starting at once never pick the same area. |
 | freeze | A detached worktree at `main`'s tip, `.worktrees/audit<N>-frozen-night`. That sha is the round's commit. |
 | sweep | Only with `--sweep`: the control sweep (below) at the frozen commit, one `onto do --gui` job that starts with the reviews and runs beside them. Its dead controls go to one fixer. The night patches nothing until both are done. |
 | review | Per area, two reviewer jobs, each `onto do` from the frozen tree with the brief in `briefs/reviewer.md` and the area's file list. Reviewers may read, search, and run `git log/show/diff/blame`, and write only `.skulk/out/`. Each lists the files it read. |
 | match | One haiku job per area pairs the two lists (`briefs/matcher.md`); the script keeps only one-to-one pairs and computes the estimate. |
 | fix | Per area with findings, one fixer job (`briefs/fixer.md`), permissions bypassed, in the node's own synced tree. It first commits the synced tree and checks it hashes to the frozen commit's tree, installs if the lockfile changed, then hands back its commits as an mbox. |
 | patch | Each mbox is applied with `git am` onto `audit<N>-<area>` at the frozen commit. One that does not apply is reported and left out. |
-| batch | Every branch merges into `batch/<date>-audit<N>` (a worktree); a conflicting one is left out and reported. The round's record is committed there. Then `npm run test:fleet` and `npm run test:fleet:postbuild` run on its tip, as `CLAUDE.md` "Worktrees and the fleet" says. |
-| merge | Green: local `main` fast-forwards to the batch (never pushed), and the branches are deleted. If `main` moved during the night, `main` is merged into the batch and both runs go again, up to twice, so `main` only lands on a tested commit; a conflict there keeps the batch for you. Red: the batch worktree and its branches stay, and the report names them. |
+| batch | Every branch merges into `batch/<date>-audit<N>` (a worktree); a conflicting one is left out and reported. The round's record is committed there. Then the run waits for `merge.lock`, which one run at a time holds from its fleet run through `main`'s fast-forward, so two runs never sync the fleet tree at once. Holding it, it merges `main` in if another run has landed meanwhile, and `npm run test:fleet` and `npm run test:fleet:postbuild` run on its tip, as `CLAUDE.md` "Worktrees and the fleet" says. |
+| merge | Green: local `main` fast-forwards to the batch (never pushed), and the branches are deleted. If `main` moved during the fleet run, `main` is merged into the batch and both runs go again, up to twice, so `main` only lands on a tested commit; a conflict there keeps the batch for you. Red: the batch worktree and its branches stay, and the report names them. |
 
 The record, in `docs/audits/round-<N>/`: per area `files.txt`, `A.md`, `B.md`, `match.json`, `fix.md` and
 `area.json` (counts, estimate, the previous pass's estimate this one tests, findings in files changed since,
@@ -35,7 +36,7 @@ Flags:
 | Flag | Default | Does |
 |---|---|---|
 | `--areas K` | 8 | areas tonight |
-| `--only a,b` | | these areas, ignoring the pick order |
+| `--only a,b` | | these areas, ignoring the pick order; refused if a live run holds one |
 | `--nodes a,b` | | only these nodes (onto's own quiet hours still apply) |
 | `--dry` | | print the plan (round, nodes, areas and their files, jobs) and stop |
 | `--no-merge` | | leave `main` alone even when the batch is green; the batch and branches are kept |
@@ -95,7 +96,8 @@ All are named constants in `config.mjs`.
   day it is the machine being worked on. Fixers never run on orochi. A node onto reports as quiet or
   unavailable is skipped; a dispatch a node refuses moves to another node and keeps that one out for 30
   minutes. Each node runs up to 6 reviewer or matcher jobs and 1 fixer at once, each in its own tree
-  (`weasel-skulk-r<k>`, `weasel-skulk-f<k>`).
+  (`weasel-skulk-r<k>`, `weasel-skulk-f<k>`), counted across every run: a job leases its tree in `slots/`
+  (below) first.
 - **Time.** Each job is stopped at 45 minutes, early enough that what it wrote still comes home. A night
   starts no new area after 07:00.
 - **Money.** Each job runs with `--max-budget-usd` (list price), and one that hits it is recorded as such,
@@ -115,36 +117,38 @@ branches and worktrees there. Once, sync the tree it runs in, then bring it up:
       --env WEASEL_ROOT=/Users/mike/src/weasel \
       --about "Runs the nightly blind-pair audit of weasel." -- bash -lc 'exec node scripts/skulk/service.mjs'
 
-After changing `service.mjs`, sync the tree again; onto restarts the service. A night always runs the main
+After changing `service.mjs`, sync the tree again; onto restarts the service. A run always runs the main
 checkout's `night.mjs`.
 
-It starts a night by itself at 23:00 unless one is running or one has started since 23:00 that day (a night started by hand after midnight does not count as that evening's). Requests, one JSON object a
+It starts a run by itself at 23:00 unless any run is live or one has started since 23:00 that day (a run started by hand after midnight does not count as that evening's). Requests, one JSON object a
 line, each echoing its `id`:
 
 | Request | Reply |
 |---|---|
 | `{"ping":true}` | `pong` and the main checkout's commit |
-| `{"status":true}` | whether a night runs, its round, step, areas, and tokens and list-price dollars used against the dollar cap; the last night's summary |
-| `{"plan":true}` | what a night started now would pick |
-| `{"start":true}` | starts a night now; takes `areas`, `only`, `nodes`, `capUsd`, `budget` (`{review, match, fix}`), `merge: false` and `sweep: true`, as the flags above |
-| `{"stop":true}` | no new jobs start; running ones finish, then the night patches, batches and records what completed |
+| `{"status":true}` | `runs`: every live run's round, step, areas, flags, and tokens and list-price dollars used against its dollar cap; `last`: the summary of the run that ended last |
+| `{"plan":true}` | what a run started now would pick |
+| `{"start":true}` | starts a run now, beside any already running; takes `areas`, `only`, `nodes`, `capUsd`, `budget` (`{review, match, fix}`), `merge: false` and `sweep: true`, as the flags above |
+| `{"stop":true}` | with `round`, that run; without, every live run: no new jobs start, running ones finish, then the run patches, batches and records what completed |
 
     onto call skulk '{"id":1,"status":true}'
 
 ## The audit chart
 
 `node scripts/skulk/map.mjs --out map.json` writes every area's passes, status (never audited, due, settled,
-in tonight's round), queue position and tonight's stage, read from the round records and the service's
-`current.json` / `last.json`. The page at https://claude.ai/artifact/CyXRYZbDw6b8Knm8zT7RQK draws it as a
+in a live run), queue position and the stage the run holding it has reached, read from the round records and
+`runs/`; its `runs` lists every live run, then the one that ended last. The page at https://claude.ai/artifact/CyXRYZbDw6b8Knm8zT7RQK draws it as a
 treemap; it reads a published `map.json` beside it, so keeping it current is republishing that file.
 
 ## Where things go
 
 | What | Where | Bound |
 |---|---|---|
-| A night's log, job outputs and onto logs | `~/.local/state/weasel-skulk/nights/<start>-round<N>/` (`SKULK_STATE` moves the root) | the newest 30 nights; older ones are deleted when a night starts |
-| Status of the running night, summary of the last | `current.json`, `last.json` beside `nights/` | one file each, overwritten |
+| A run's log, job outputs and onto logs | `~/.local/state/weasel-skulk/nights/<start>-round<N>/` (`SKULK_STATE` moves the root; the rows below sit in it too) | the newest 30; older ones are deleted when a run starts |
+| A run's claim, status, stop request and summary | `runs/<N>/`: the directory is the round's claim; `status.json` (with its pid) while it runs, `stop` when asked to stop, `summary.json` when it ends. A run whose pid is dead is not live | the newest 30 run directories, never a live one; older ones are deleted when a run starts |
+| Node tree leases | `slots/<node>/<tree>`, holding the run's pid and round | deleted as each job ends; one whose pid is dead is taken back |
+| Locks | `plan.lock` (planning), `merge.lock` (fleet run through fast-forward), the same kind of lease | one file each, deleted on release |
 | The service's own log | onto's log for the service (`onto logs <job>`) | onto's |
-| Worktrees | `.worktrees/audit<N>-frozen-night`, `skulk-am-<area>`, `batch-<date>-audit<N>` | removed when the night ends, except a red batch's, which the report names |
+| Worktrees | `.worktrees/audit<N>-frozen-night`, `audit<N>-am-<area>`, `batch-<date>-audit<N>` | removed when the run ends, except a red batch's, which the report names |
 | Node trees | `weasel-skulk-r<k>`, `weasel-skulk-f<k>` on each node | a fixed set; each job clears its own output |
 | Control sweep runs | `.control-sweep/<run>/` in the node tree `weasel-control-sweep` and wherever `--out` points here; the night's in its directory | the newest 7 runs per directory; screenshots only for dead controls |

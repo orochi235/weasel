@@ -11,7 +11,7 @@ export const msUntil = (now, hhmm = START_AT) => {
 };
 
 /**
- * Whether the service should start a night by itself at `now`: past START_AT, nothing running, and no
+ * Whether the service should start a night by itself at `now`: past START_AT, no run live, and no
  * night started since today's START_AT (`lastStarted`, a Date or undefined). A night started after
  * midnight by hand does not stand in for that evening's.
  */
@@ -47,7 +47,8 @@ export const startArgs = (req) => {
 
 /**
  * Answers one request line. `deps` is the service's live side: `status()`, `plan()`, `start(args)`,
- * `stop()`, `running()`. Every reply echoes the request's `id`.
+ * `stop(rounds)`, and `live()`, the rounds running now. `start` starts a run whatever else runs; `stop`
+ * stops the run `round` names, or every one. Every reply echoes the request's `id`.
  */
 export const handle = async (line, deps) => {
   let req;
@@ -61,14 +62,15 @@ export const handle = async (line, deps) => {
     if (req.ping) return reply({ pong: true, build: deps.build });
     if (req.status) return reply(deps.status());
     if (req.plan) return reply({ plan: await deps.plan() });
-    if (req.start) {
-      if (deps.running()) return reply({ error: 'a night is already running', ...deps.status() });
-      return reply({ started: true, args: deps.start(startArgs(req)) });
-    }
+    if (req.start) return reply({ started: true, args: deps.start(startArgs(req)) });
     if (req.stop) {
-      if (!deps.running()) return reply({ error: 'no night is running' });
-      deps.stop();
-      return reply({ stopping: true, note: 'no new jobs start; running jobs finish, then the night records and batches what completed' });
+      const live = deps.live();
+      const round = req.round === undefined ? undefined : Number(req.round);
+      if (round !== undefined && !live.includes(round)) return reply({ error: `round ${req.round} is not running`, running: live });
+      const rounds = round !== undefined ? [round] : live;
+      if (rounds.length === 0) return reply({ error: 'no run is running' });
+      deps.stop(rounds);
+      return reply({ stopping: rounds, note: 'no new jobs start; running jobs finish, then each run records and batches what completed' });
     }
     return reply({ error: 'unknown request; send ping, status, plan, start or stop' });
   } catch (error) {

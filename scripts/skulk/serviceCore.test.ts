@@ -7,16 +7,17 @@ const at = (hhmm: string, day = 16) => {
   return new Date(2026, 10, day, h, m);
 };
 
-const deps = (running = false) => {
-  const calls: string[][] = [];
+/** A service's live side with `live` rounds running; each start and stop is recorded in `calls`. */
+const deps = (live: number[] = []) => {
+  const calls: (string | number)[][] = [];
   return {
     calls,
     build: 'abc',
-    running: () => running,
-    status: () => ({ running }),
+    live: () => live,
+    status: () => ({ running: live.length > 0, runs: live.map((round) => ({ round })) }),
     plan: async () => ['round 31'],
     start: (args: string[]) => (calls.push(args), args),
-    stop: () => calls.push(['stop']),
+    stop: (rounds: number[]) => calls.push(['stop', ...rounds]),
   };
 };
 
@@ -29,20 +30,27 @@ describe('handle', () => {
     expect(await handle('nope', d)).toEqual({ error: 'not a JSON object' });
   });
 
-  it('starts a night with the request\'s limits, and refuses a second while one runs', async () => {
+  it('starts a run with the request\'s limits, and another beside it while one runs', async () => {
     const d = deps();
     const reply = await handle(JSON.stringify({ id: 1, start: true, areas: 1, nodes: ['studio'], capUsd: 40, budget: { fix: 5 }, merge: false, sweep: true }), d);
     expect(reply).toMatchObject({ id: 1, started: true });
     expect(d.calls).toEqual([['--areas', '1', '--nodes', 'studio', '--cap-usd', '40', '--budget-fix', '5', '--no-merge', '--sweep']]);
-    expect(await handle('{"id":2,"start":true}', deps(true))).toMatchObject({ id: 2, error: 'a night is already running' });
+    const busy = deps([41]);
+    expect(await handle('{"id":2,"start":true,"only":["ui.menu"]}', busy)).toEqual({ id: 2, started: true, args: ['--only', 'ui.menu'] });
     expect(await handle('{"id":3,"start":true,"budget":{"lunch":1}}', d)).toMatchObject({ error: 'budget has no role lunch' });
   });
 
-  it('stops only a running night', async () => {
-    expect(await handle('{"id":1,"stop":true}', deps())).toMatchObject({ error: 'no night is running' });
-    const d = deps(true);
-    expect(await handle('{"id":2,"stop":true}', d)).toMatchObject({ id: 2, stopping: true });
-    expect(d.calls).toEqual([['stop']]);
+  it('answers status for every live run', async () => {
+    expect(await handle('{"id":4,"status":true}', deps([41, 42]))).toEqual({ id: 4, running: true, runs: [{ round: 41 }, { round: 42 }] });
+  });
+
+  it('stops the run a round names, or every live run', async () => {
+    expect(await handle('{"id":1,"stop":true}', deps())).toMatchObject({ id: 1, error: 'no run is running' });
+    const d = deps([41, 42]);
+    expect(await handle('{"id":2,"stop":true,"round":42}', d)).toMatchObject({ id: 2, stopping: [42] });
+    expect(await handle('{"id":3,"stop":true,"round":40}', d)).toMatchObject({ id: 3, error: 'round 40 is not running', running: [41, 42] });
+    expect(await handle('{"id":4,"stop":true}', d)).toMatchObject({ id: 4, stopping: [41, 42] });
+    expect(d.calls).toEqual([['stop', 42], ['stop', 41, 42]]);
   });
 
   it('rejects start fields it does not know', () => {

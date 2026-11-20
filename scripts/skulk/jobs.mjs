@@ -8,8 +8,9 @@ import { createWriteStream, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   CLAUDE_CONFIG, FIX_MODEL, FIX_SLOTS_PER_NODE, JOB_IN, JOB_OUT, JOB_TIMEOUT_MIN, MATCH_MODEL, NO_FIXERS,
-  REFUSED_COOLDOWN_MIN, REVIEW_DENIED, REVIEW_MODEL, REVIEW_SLOTS_PER_NODE, REVIEW_TOOLS, nodesAt,
+  REFUSED_COOLDOWN_MIN, REVIEW_DENIED, REVIEW_MODEL, REVIEW_SLOTS_PER_NODE, REVIEW_TOOLS, STATE_DIR, nodesAt,
 } from './config.mjs';
+import { takeLease } from './lease.mjs';
 
 const NVM = 'export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"; . "$NVM_DIR/nvm.sh" >/dev/null; nvm use >/dev/null';
 export const BUSY = /working tree .* is busy/;
@@ -61,9 +62,13 @@ export const fixShell = (area, budgetUsd) =>
     'exit 0',
   ].join('\n');
 
-/** Slots: one tree name per concurrent job on a node. `pinned` replaces the time-of-day node list. */
-export const createSlots = (pinned) => {
-  const busy = new Set();
+/**
+ * Slots: one tree name per concurrent job on a node, leased on disk under `<state>/slots/<node>/<tree>`
+ * so every run on this Mac shares them. `pinned` replaces the time-of-day node list; `about` goes into
+ * each lease (the run's round).
+ */
+export const createSlots = (pinned, { about = {}, state = STATE_DIR } = {}) => {
+  const held = new Set();
   const refusedUntil = new Map();
   const take = (role, { now = new Date(), exclude = new Set() } = {}) => {
     const perNode = role === 'fix' ? FIX_SLOTS_PER_NODE : REVIEW_SLOTS_PER_NODE;
@@ -73,15 +78,21 @@ export const createSlots = (pinned) => {
       for (let k = 1; k <= perNode; k++) {
         const tree = `weasel-skulk-${role === 'fix' ? 'f' : 'r'}${k}`;
         const key = `${node}/${tree}`;
-        if (busy.has(key)) continue;
-        busy.add(key);
-        return { node, tree, release: () => busy.delete(key) };
+        const unlease = takeLease(join(state, 'slots', node, tree), { ...about, role });
+        if (!unlease) continue;
+        held.add(key);
+        return {
+          node, tree, release: () => {
+            held.delete(key);
+            unlease();
+          },
+        };
       }
     }
     return undefined;
   };
   const refuse = (node, now = Date.now()) => refusedUntil.set(node, now + REFUSED_COOLDOWN_MIN * 60_000);
-  return { take, refuse, inUse: () => busy.size };
+  return { take, refuse, inUse: () => held.size };
 };
 
 export const ontoOnce = (args, cwd, log) =>
