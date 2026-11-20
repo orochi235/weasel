@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { nightStages } from './map.mjs';
+import { nightLanes, nightStages } from './map.mjs';
 
 describe('nightStages', () => {
   it('takes each area to the furthest step its log lines reach', () => {
@@ -21,5 +21,23 @@ describe('nightStages', () => {
       'core.core': 'reviewing',
       'core.canvas.part1': 'conflict',
     });
+  });
+});
+
+describe('nightLanes', () => {
+  it("fills each area's thread from the log, and marks a step running from onto's running tasks", () => {
+    const log = [
+      'review 1/4 core.core.ops A on studio: 5 findings, 24/24 files read, 2.8 min, 1.30M tokens',
+      'review 2/4 core.core.ops B on teitou: 2 findings, 24/24 files read, 2.9 min, 1.66M tokens',
+      'match 1/2 core.core.ops: 2 shared of 5 + 2',
+    ].join('\n');
+    const running = [{ task: 'audit41-core.core.ops-fix', node: 'studio', started: '2026-11-19T21:00:00Z' }, { task: 'audit41-core.debug-A', node: 'teitou', started: '2026-11-19T21:01:00Z' }];
+    const [ops, debug] = nightLanes(log, ['core.core.ops', 'core.debug'], running);
+    expect(ops.steps.A).toEqual({ state: 'done', node: 'studio', findings: 5, read: 24, files: 24, minutes: 2.8 });
+    expect(ops.steps.match).toEqual({ state: 'done', shared: 2, a: 5, b: 2 });
+    expect(ops.steps.fix).toEqual({ state: 'running', node: 'studio', since: '2026-11-19T21:00:00Z' });
+    expect(ops.steps.patch.state).toBe('waiting');
+    expect(debug.steps.A.state).toBe('running');
+    expect(debug.steps.B.state).toBe('waiting');
   });
 });
