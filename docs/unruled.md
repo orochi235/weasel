@@ -2935,3 +2935,8 @@ Calls the lanes made without a ruling:
   then `DFLT`'s, then the rest in ScriptList order, and taking the first whose lookups cover the pair. Layout knows
   no run's script, so picking one script for every pair was the alternative, and loses kerning other scripts' lookups
   alone carry.
+## Audit round forty-nine (2026-11-20): geometry, part two
+
+- 2026-11-20 (the fixer's call): geom's `stepLine` throws a `RangeError` for a `step` that is zero or not finite, and so
+  does a gesture whose `constrain: { step }` holds one; it had answered a line of `NaN` direction, which froze the drag
+  at the press. Reading such a step as no rounding, the raw direction, was the alternative.

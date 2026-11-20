@@ -16,7 +16,7 @@ export interface SnapGeometry {
 
 /** What builds a gesture's input subspace while `snap.constrain` is held:
  *  an angle step in radians about `origin` (a rotate's every multiple of
- *  it, required), an axis or 45° lock about the press, or a resize's
+ *  it, required; finite and nonzero, or the gesture throws), an axis or 45° lock about the press, or a resize's
  *  aspect. */
 export type SnapConstrain = { step: number } | 'aspect' | 'axis';
 

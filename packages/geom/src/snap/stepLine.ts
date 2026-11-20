@@ -5,8 +5,11 @@ import type { Flat, Vec } from './flat';
  * spans (as an angle from `basis[0]` toward `basis[1]`), is the multiple of
  * `step` nearest the direction from `about` to `toward`: a constrained
  * gesture's input subspace, in any dimension. `basis` is orthonormal.
+ * Throws a `RangeError` for a `step` that is zero or not finite, which has no
+ * multiples to hold the direction to.
  */
 export function stepLine(about: Vec, toward: Vec, basis: readonly [Vec, Vec], step: number): Flat {
+  if (!Number.isFinite(step) || step === 0) throw new RangeError(`stepLine: step must be finite and nonzero, got ${step}`);
   const [u, v] = basis;
   let a = 0;
   let b = 0;
