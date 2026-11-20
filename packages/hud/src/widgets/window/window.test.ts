@@ -216,6 +216,18 @@ describe('window widget', () => {
     expect(win.bounds).toMatchObject({ width: 240, height: 180 });
   });
 
+  it('pulls the window back onto a host that shrank past it, and reports the move', () => {
+    const onMove = vi.fn();
+    const win = createWindow({ ...opts, x: 900, y: 100, onMove });
+    win.draw({ ...ctx, dims: { width: 1200, height: 600 } });
+    expect(onMove).not.toHaveBeenCalled();
+    win.draw({ ...ctx, dims: { width: 700, height: 600 } });
+    expect(win.bounds).toMatchObject({ x: 500, y: 100 });
+    expect(onMove).toHaveBeenCalledWith(win.bounds);
+    win.draw({ ...ctx, dims: { width: 0, height: 0 } });
+    expect(win.bounds).toMatchObject({ x: 500, y: 100 });
+  });
+
   it('drags the east edge to resize, and reports via onResize', () => {
     const onResize = vi.fn();
     const win = createWindow({ ...opts, onResize });

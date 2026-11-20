@@ -3,10 +3,9 @@ import type {
   Widget, WidgetBounds, HudDrawCtx, HudContentCtx, HudPointerEvent,
 } from '../../widget';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { clampRectWithin } from '@weasel-js/geom';
 import type { ColorSource } from '@weasel-js/paint';
 import type { Emphasis, Grade, Stance } from '@weasel-js/theme';
-import { createWindowDrag, dragZoneFor } from './windowDrag';
+import { createHostHold, createWindowDrag, dragZoneFor } from './windowDrag';
 import { drawWindowFrame, type WindowAppearance, type WindowShape } from './windowFrame';
 import {
   zoneAt, windowContentRect, cursorForZone,
@@ -101,17 +100,8 @@ export function createWindow(opts: WindowOptions): WindowWidget {
     x: b.x, y: b.y, width: Math.max(minW, b.width), height: Math.max(minH, b.height),
   });
 
-  // No host size until a draw supplies one, so a window never drawn is not
-  // clamped.
-  let hostDims: { width: number; height: number } | null = null;
-  const clampOnHost = (b: WidgetBounds): WidgetBounds => {
-    if (!hostDims) return b;
-    const r = clampRectWithin(
-      b,
-      { x: 0, y: 0, width: hostDims.width, height: hostDims.height },
-    );
-    return { ...b, x: r.x, y: r.y };
-  };
+  const host = createHostHold();
+  const clampOnHost = host.clamp;
 
   let disposed = false;
   const rev = createRevision(opts.onChange);
@@ -174,8 +164,17 @@ export function createWindow(opts: WindowOptions): WindowWidget {
     setEmphasis(e) { assertNotDisposed(); appearance.emphasis = e; rev.changed(); },
     setTint(t) { assertNotDisposed(); appearance.tint = t; rev.changed(); },
 
+    // A host that changed size pulls the window back onto it, as a move would, so a canvas narrowed past the window
+    // never leaves its titlebar out of reach.
     draw(ctx: HudDrawCtx): DrawCommand[] {
-      hostDims = ctx.dims;
+      if (host.resize(ctx.dims)) {
+        const held = clampOnHost(bounds);
+        if (held.x !== bounds.x || held.y !== bounds.y) {
+          bounds = held;
+          report('title');
+          rev.changed();
+        }
+      }
       return drawWindowFrame(ctx, bounds, shape, appearance);
     },
 
