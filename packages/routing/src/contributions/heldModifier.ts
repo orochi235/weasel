@@ -2,17 +2,15 @@ import type { GestureSpec, ModSpec } from '@weasel-js/gestures';
 import { createPart, getOwn } from '@weasel-js/registry';
 import type { GestureBinding } from '../interactions/actions/binding';
 import type { HotkeyTrigger } from './types';
+import { offhandKeyFor } from '../interactions/actions/toolOffhand';
 
 type Modifier = 'alt' | 'ctrl' | 'meta' | 'shift';
 
-// Keyed by both spellings a trigger takes: the `HotkeyTrigger` names and the `KeyboardEvent.key` ones.
-const MODIFIER_OF: Readonly<Record<string, Modifier>> = {
-  alt: 'alt', Alt: 'alt', ctrl: 'ctrl', Control: 'ctrl', meta: 'meta', Meta: 'meta', shift: 'shift', Shift: 'shift',
-};
+const MODIFIER_OF: Readonly<Record<string, Modifier>> = { Alt: 'alt', Control: 'ctrl', Meta: 'meta', Shift: 'shift' };
 
 /** The modifier an offhand `trigger` holds down, or `null` for any other key. */
 export function heldModifierOf(trigger: HotkeyTrigger | undefined): Modifier | null {
-  return trigger === undefined ? null : getOwn(MODIFIER_OF, trigger) ?? null;
+  return trigger === undefined ? null : getOwn(MODIFIER_OF, offhandKeyFor(trigger)) ?? null;
 }
 
 const loosened = createPart((_binding: GestureBinding): Partial<Record<Modifier, GestureBinding>> => ({}));
