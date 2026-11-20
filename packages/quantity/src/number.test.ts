@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { formatCompact, formatNumber, parseNumber } from './localized';
 import { MINUS_SIGN, parseSignedNumber } from './number';
-import { qty } from './present';
+import { parseAs, qty } from './present';
+import { bytes, unit } from './kinds/measure';
 import { zoom } from './kinds/proportion';
 
 const formatZoom = (z: number) => qty(z, zoom()).text;
@@ -306,5 +307,33 @@ describe('parseNumber in a locale', () => {
 describe('scientific numbers with magnitude suffixes', () => {
   it.each([['1e3k', 1_000_000], ['1.1e-2k', 11], ['1e-3m', 1000]])('reads %s', (text, value) => {
     expect(parseNumber(text)).toBe(value);
+  });
+});
+
+describe('compound unit text, long', () => {
+  const feet = unit('ft', { accepts: { ft: 12, in: 1 } });
+  function timed<T>(read: () => T): T {
+    const t0 = performance.now();
+    const out = read();
+    expect(performance.now() - t0).toBeLessThan(250);
+    return out;
+  }
+
+  it('reads many terms in time linear in the text', () => {
+    expect(timed(() => parseAs('1 ft '.repeat(10_000).trim(), feet))).toBe(120_000);
+    expect(timed(() => parseAs('1B'.repeat(10_000), bytes()))).toBe(10_000);
+  });
+
+  it('reads a long digit run ending in junk before a unit as NaN in linear time', () => {
+    expect(timed(() => parseAs(`${'1'.repeat(20_000)}x ft`, feet))).toBeNaN();
+    expect(timed(() => parseAs(`${'1'.repeat(20_000)}x ft`, feet, { locale: 'de-DE' }))).toBeNaN();
+  });
+
+  it('still reads each term form', () => {
+    expect(parseAs('5ft 3in', feet)).toBe(63);
+    expect(parseAs('-5ft 3in', feet)).toBe(-63);
+    expect(parseAs('1.5ft .5in', feet)).toBe(18.5);
+    expect(parseAs('5FT 3IN', feet)).toBe(63);
+    expect(parseAs('5ft 3', feet)).toBeNaN();
   });
 });
