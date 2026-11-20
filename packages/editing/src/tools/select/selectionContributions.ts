@@ -52,8 +52,11 @@ export function selectionMoveBindings<TPose>(
     };
   })();
   const cloneBehaviors = (options.move?.behaviors ?? []).flatMap((b) => (b.clone ? [b.clone] : []));
+  // The threshold is the press's, not the move's: an Alt-press on the same
+  // body waits as far as a plain one before it drops a copy.
   const cloneOpts = (id: string): Omit<BindingOptions, 'params'> => ({
     id,
+    ...(options.move?.dragThresholdPx !== undefined ? { dragThresholdPx: options.move.dragThresholdPx } : {}),
     ...(cloneBehaviors.length ? { behaviors: cloneBehaviors as BindingOptions['behaviors'] } : {}),
   });
 
