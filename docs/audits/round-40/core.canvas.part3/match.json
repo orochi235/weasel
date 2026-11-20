@@ -1,0 +1,22 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   0
+  ]
+ ],
+ "a": [
+  "A slot layer painted under the views still counts as \"painted above\" them, so it takes presses inside a view's rect",
+  "useHostAnchor never watches a host that resolves after its effect ran, so a host that mounts late leaves the panel unplaced",
+  "registerLayer keys a Set by layer object, so one owner's dispose removes a layer another owner still holds"
+ ],
+ "b": [
+  "useHostAnchor watches only the host it found when the effect ran, so a late-mounting host is never followed",
+  "`claimsAbove` lets the surface's slot layers occlude every `<CanvasView>`, though views paint above them",
+  "The headless scene view culls a `dependsOn` node by its stored pose box, while painting it along its derived path"
+ ]
+}

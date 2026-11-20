@@ -1,0 +1,68 @@
+{
+ "id": "core.canvas.renderWorker",
+ "commit": "603a953acedbe17c16d34cffc6ad28dc47c06809",
+ "date": "2026-11-19",
+ "files": [
+  "packages/core/src/canvas/renderWorker/WorkerCanvasStack.tsx",
+  "packages/core/src/canvas/renderWorker/WorkerSceneView.tsx",
+  "packages/core/src/canvas/renderWorker/frameSync.ts",
+  "packages/core/src/canvas/renderWorker/frameWriter.ts",
+  "packages/core/src/canvas/renderWorker/layerRuns.ts",
+  "packages/core/src/canvas/renderWorker/liveClients.ts",
+  "packages/core/src/canvas/renderWorker/protocol.ts",
+  "packages/core/src/canvas/renderWorker/requests.ts",
+  "packages/core/src/canvas/renderWorker/sceneDiff.ts",
+  "packages/core/src/canvas/renderWorker/sceneMirror.ts",
+  "packages/core/src/canvas/renderWorker/serveSceneRender.ts",
+  "packages/core/src/canvas/renderWorker/startSceneRenderWorker.ts",
+  "packages/core/src/canvas/renderWorker/statusRelay.ts",
+  "packages/core/src/canvas/renderWorker/testing/fakeWorker.ts",
+  "packages/core/src/canvas/renderWorker/testing/sceneRender.worker.ts",
+  "packages/core/src/canvas/renderWorker/useWorkerStack.ts",
+  "packages/core/src/canvas/renderWorker/workerAnimations.ts",
+  "packages/core/src/canvas/renderWorker/workerAnimator.ts",
+  "packages/core/src/canvas/renderWorker/workerHealth.ts",
+  "packages/core/src/canvas/renderWorker/workerImages.ts",
+  "packages/core/src/canvas/renderWorker/workerStack.ts"
+ ],
+ "a": 7,
+ "b": 5,
+ "m": 4,
+ "distinct": 8,
+ "chapman": 8.6,
+ "unfound": 0.6,
+ "read": {
+  "A": 21,
+  "B": 21
+ },
+ "patches": 10,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.8,
+   "B": 5.6,
+   "match": 0.2,
+   "fix": 21.9
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "tokens": 16575011,
+  "costUsd": 8.47
+ },
+ "fixCommits": [
+  "b934739f96a75113a52f68ecb32166f03322a3dc",
+  "42ec713d37547959efccaa8fa1cccb9c3acceace",
+  "cbc7e4bc39caaabf180a9b5d09f6d612e475691b",
+  "f1e9773365dcd095ed93620764878de9a55adaf6",
+  "0d0c238d4da163aac9f69f06bdce1ff9248b9dd5",
+  "eb070dc81247c7bb1c0da0be5c5314e19d2c7dc5",
+  "c4d5642c0f52845c64447ff9c53e8ac2d06ef83c",
+  "aba9531083e5d55e347020a8572b321c09634776",
+  "1e052ef9c1f557b4eddb289c209aff57cc8cdf43",
+  "3274fda4e916ffcc0ceb88fa6046fc3b1de99a84"
+ ]
+}

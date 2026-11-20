@@ -1,0 +1,41 @@
+{
+ "id": "apps.chart",
+ "commit": "603a953acedbe17c16d34cffc6ad28dc47c06809",
+ "date": "2026-11-19",
+ "files": [
+  "apps/chart/icons/actions.mjs",
+  "apps/chart/icons/index.mjs",
+  "apps/chart/vite.config.ts"
+ ],
+ "a": 0,
+ "b": 1,
+ "m": 0,
+ "distinct": 1,
+ "chapman": 1,
+ "unfound": 0,
+ "read": {
+  "A": 3,
+  "B": 3
+ },
+ "patches": 1,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.4,
+   "B": 3.5,
+   "match": 0,
+   "fix": 8
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "tokens": 1905838,
+  "costUsd": 1.76
+ },
+ "fixCommits": [
+  "5f4f33d8ae24ae1ddd86e6376441aef77dfa4e23"
+ ]
+}

@@ -1,0 +1,7 @@
+{
+ "pairs": [],
+ "a": [],
+ "b": [
+  "snapGaps and autoLayout draw boxes on pixel 0 and pixel 15, so their 1.5 stroke inks past the 20×20 viewBox and is clipped"
+ ]
+}

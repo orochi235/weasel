@@ -1035,6 +1035,7 @@
    "packages/audio/src/liveVoice.ts",
    "packages/audio/src/oscillator.ts",
    "packages/audio/src/param.ts",
+   "packages/audio/src/patchCheck.ts",
    "packages/audio/src/patternLoad.ts",
    "packages/audio/src/patternPlayer.ts",
    "packages/audio/src/pbt.fixture.ts",
@@ -1147,6 +1148,7 @@
   "id": "core",
   "files": [
    "packages/core/src/WeaselProvider.tsx",
+   "packages/core/src/affordances/annulusPaint.ts",
    "packages/core/src/affordances/composeAffordanceLayer.ts",
    "packages/core/src/affordances/hitAffordanceRegions.ts",
    "packages/core/src/affordances/index.ts",
@@ -4335,13 +4337,13 @@
    "packages/labkit/src/lightbox/useLightboxModal.ts",
    "packages/labkit/src/lightbox/useLightboxState.ts",
    "packages/labkit/src/overview/OverviewMarks.tsx",
-   "packages/labkit/src/overview/TrialOverview.less"
+   "packages/labkit/src/overview/TrialOverview.less",
+   "packages/labkit/src/overview/TrialOverview.stories.tsx"
   ]
  },
  {
   "id": "labkit.part2",
   "files": [
-   "packages/labkit/src/overview/TrialOverview.stories.tsx",
    "packages/labkit/src/overview/TrialOverview.tsx",
    "packages/labkit/src/overview/index.ts",
    "packages/labkit/src/passthrough/weasel-canvas.ts",
@@ -4370,7 +4372,9 @@
    "packages/labkit/src/undo/editStamp.ts",
    "packages/labkit/src/undo/index.ts",
    "packages/labkit/src/undo/stateOp.ts",
-   "packages/labkit/src/undo/useUndoKeys.ts"
+   "packages/labkit/src/undo/useUndoKeys.ts",
+   "packages/labkit/src/vite/index.ts",
+   "packages/labkit/src/vite/labRoutes.ts"
   ]
  },
  {

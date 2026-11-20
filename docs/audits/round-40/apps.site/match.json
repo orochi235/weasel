@@ -1,0 +1,20 @@
+{
+ "pairs": [
+  [
+   3,
+   1
+  ]
+ ],
+ "a": [
+  "The Canvas features table lists a preset's tool set by the set's id, not the tools it mounts",
+  "A `?pkg=` the history never names filters Releases to nothing, and no chip shows it is set",
+  "The sidebar never marks a package page as the active one",
+  "typography.css puts the Demo updates table's headers in the UI face through a class nothing renders any more"
+ ],
+ "b": [
+  "The canvas features page credits core with presets that now live in @weasel-js/editing",
+  "The demo updates table's headers lost the UI font: typography.css still targets a class nothing renders",
+  "Prose keeps its own copy of \"which fence languages CodeBlock can color\", and it has drifted",
+  "The same demo's last-modified date is shown by UTC day on one page and by local time on another"
+ ]
+}

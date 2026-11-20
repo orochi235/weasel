@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "A tile of a canvas that first painted whole with WebGPU builds a WebGPU renderer, erasing its co-tenants",
+  "watchThemeOf only hears attribute changes, so a token override made in a stylesheet or inline style never repaints chrome drawn in that color",
+  "`<SceneViewCanvas>` has no `redrawOn`, so an `alphaFor` that reads outside state goes stale"
+ ],
+ "b": [
+  "`<Canvas>` keeps the old `<canvas>` in the mounted-canvas registry when its element is replaced",
+  "`<SceneCanvas>`'s scene-slot cull still boxes a path node by its stored pose, not by the override path it is drawn from",
+  "`insertPreviewExtent` throws on an `insertPreview` overlay whose `extras` is not an object"
+ ]
+}

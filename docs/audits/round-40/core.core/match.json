@@ -1,0 +1,31 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   2,
+   3
+  ],
+  [
+   3,
+   2
+  ]
+ ],
+ "a": [
+  "legalSelection's read memo serves a stale selection when the scene's rules change but the api's array does not",
+  "A layer listed twice in `layerOrder` is painted twice, both times carrying the same retain id",
+  "usePointerStylus binds to `window` for good when a ref's element is not attached at effect time",
+  "usePointerStylus's `hovering` never becomes true with the default `window` target",
+  "stableStringify returns `undefined` despite its `string` return type, and its tags collide with real objects",
+  "warnLayersOnce's dedupe set grows without bound"
+ ],
+ "b": [
+  "A layer group's `effects` thunk that throws escapes `drawLayers` and loses the whole frame",
+  "`legalSelection`'s read memo serves a stale selection after the rules change under an unchanged array",
+  "`usePointerStylus` never reports `hovering` with its default `window` target",
+  "`usePointerStylus` resolves a ref target once, so a ref filled or swapped later leaves it on `window` or the old element",
+  "`usePublishSceneSelection` keeps stale kind labels when a selected node changes kind in place"
+ ]
+}

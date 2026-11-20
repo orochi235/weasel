@@ -1,0 +1,83 @@
+{
+ "id": "core.core",
+ "commit": "603a953acedbe17c16d34cffc6ad28dc47c06809",
+ "date": "2026-11-19",
+ "files": [
+  "packages/core/src/core/adapters/testing/rootsTree.ts",
+  "packages/core/src/core/adapters/types.ts",
+  "packages/core/src/core/applyOps.ts",
+  "packages/core/src/core/device/index.ts",
+  "packages/core/src/core/device/targets.ts",
+  "packages/core/src/core/device/types.ts",
+  "packages/core/src/core/device/useDeviceProfile.ts",
+  "packages/core/src/core/device/useTargetBasePx.ts",
+  "packages/core/src/core/device/watchDevicePixelRatio.ts",
+  "packages/core/src/core/isPlainObject.ts",
+  "packages/core/src/core/layers/backgroundFill.ts",
+  "packages/core/src/core/layers/children.ts",
+  "packages/core/src/core/layers/dims.ts",
+  "packages/core/src/core/layers/gateLayer.ts",
+  "packages/core/src/core/layers/layerGroup.ts",
+  "packages/core/src/core/layers/redrawSource.ts",
+  "packages/core/src/core/layers/render.ts",
+  "packages/core/src/core/layers/retain.ts",
+  "packages/core/src/core/layers/unknownOrderIds.ts",
+  "packages/core/src/core/modifierState.ts",
+  "packages/core/src/core/pbt.fixture.ts",
+  "packages/core/src/core/persistence/codec.ts",
+  "packages/core/src/core/persistence/pbt.fixture.ts",
+  "packages/core/src/core/persistence/sceneDocument.ts",
+  "packages/core/src/core/selection/chromeState.ts",
+  "packages/core/src/core/selection/legalSelection.ts",
+  "packages/core/src/core/selection/readOnlySelection.ts",
+  "packages/core/src/core/selection/selectionContract.ts",
+  "packages/core/src/core/selection/selectionTarget.ts",
+  "packages/core/src/core/selection/usePublishSceneSelection.ts",
+  "packages/core/src/core/selection/viewerSelection.ts",
+  "packages/core/src/core/shapeKinds.ts",
+  "packages/core/src/core/stableStringify.ts",
+  "packages/core/src/core/stylus/stylus.ts",
+  "packages/core/src/core/stylus/usePointerStylus.ts"
+ ],
+ "a": 6,
+ "b": 5,
+ "m": 3,
+ "distinct": 8,
+ "chapman": 9.5,
+ "unfound": 1.5,
+ "read": {
+  "A": 35,
+  "B": 35
+ },
+ "patches": 11,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.7,
+   "B": 3.8,
+   "match": 0.6,
+   "fix": 17.1
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "tokens": 12246237,
+  "costUsd": 6.8
+ },
+ "fixCommits": [
+  "b1e9d322b911bc160b28dbe34e96aefaa059fb5b",
+  "a34b3fc85175e35ab418cd1c23471fc2b38cd2ed",
+  "a0070e87b6808002dc115780e561ddc7f3d585b9",
+  "bea2d4b696f31773b41e2abc11e54448bfc283b0",
+  "4bf376e5312481c3412b9d7e6d199a5424c65129",
+  "768acf7e361a5e5fbb9ab5ae50a5883fb90a4524",
+  "cbcd3142228574ccbe46f1347d1df5bc33aa33b4",
+  "a34f31980979b8c5da16f5139619ed71c926d254",
+  "4816dc38bec2e2d32047e2e3c5e942bde968010e",
+  "f78029df447b96bd146ea3278f8b45a2404b8793",
+  "0fea39f953e149a82cd16eb21e79452cb077f0f5"
+ ]
+}

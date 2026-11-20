@@ -1,0 +1,36 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   2,
+   1
+  ],
+  [
+   4,
+   4
+  ],
+  [
+   5,
+   2
+  ]
+ ],
+ "a": [
+  "A frame whose scene delta throws in the worker is acked as drawn, so the page never resends what it lost",
+  "A worker run decides layer visibility differently from the page: `scene` hidden whole, `defaultVisible` and `alwaysOn` are all lost",
+  "A worker canvas re-held more than a task after its release throws: the canvas was already transferred",
+  "A worker stack whose second worker fails to start leaks the first",
+  "`snapshotStack` never closes the worker bitmaps it composes",
+  "The page answers a worker's sharp-raster request with the small raster as soon as any unrelated image lands",
+  "The client's warn-once set grows without bound on warnings whose detail varies"
+ ],
+ "b": [
+  "A scene delta the worker fails to apply is still acked as drawn, so the page never resends it and the worker's copy stays half-applied",
+  "A detached-and-reattached canvas (Suspense re-suspend, Activity hidden) throws on remount: the client was disposed a task after release and the canvas cannot be transferred again",
+  "answerImage gives up waiting for a sharper raster on any image's ready event, not this source's",
+  "hostSceneRender has no teardown and installs a realm-global image loader, so a second host in one worker steals the first one's image requests",
+  "snapshotStack never closes the ImageBitmaps the worker canvases answered with"
+ ]
+}

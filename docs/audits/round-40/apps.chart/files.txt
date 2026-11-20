@@ -1,0 +1,3 @@
+apps/chart/icons/actions.mjs
+apps/chart/icons/index.mjs
+apps/chart/vite.config.ts

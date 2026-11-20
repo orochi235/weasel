@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   1,
+   4
+  ],
+  [
+   4,
+   0
+  ]
+ ],
+ "a": [
+  "A consumer's `gestureSource`, `previewPoseExtra` or `boundsOfPose` silently replaces the ones SceneCanvas wires into its `<Canvas>`",
+  "A tool offered by one preset's `build` and a tool of another preset's own, both with one id, never conflict: the own tool always wins, whatever `refines` says",
+  "`toolOptions` entries holding an array or object field rebuild every preset's tools on every render",
+  "Two presets installing one painter at different priorities resolve silently to the first, where every other node-kind trait conflict throws",
+  "A partial scene slot with a key set to `undefined` drops the default `drawOne` or `paintBounds`"
+ ],
+ "b": [
+  "A partial scene slot with an explicit `undefined` field erases the kit default, so the scene paints nothing",
+  "Preset `chromeRules` resolve a conflict in the opposite direction from every other preset merge",
+  "The cursor and pick dev HUDs convert through the canvas's own camera over every declared view, so over a `<CanvasView>` panel they show the wrong world point and the wrong hits",
+  "The insert preview throws on an image preview whose overlay carries no `extras`",
+  "A preset's own tool and another preset's built tool with one id are never merged, so `refines` and the conflict throw do not apply between them"
+ ]
+}

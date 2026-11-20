@@ -1,0 +1,39 @@
+{
+ "run": "night-round40",
+ "host": "teitou",
+ "started": "2026-11-19T22:50:37.397Z",
+ "minutes": 28.4,
+ "demos": 180,
+ "loadFailures": 0,
+ "controls": 2503,
+ "alive": 1390,
+ "dead": 0,
+ "unsure": 19,
+ "skipped": 1086,
+ "waived": 8,
+ "error": 0,
+ "deadControls": [],
+ "loadErrors": [],
+ "staleWaivers": [
+  {
+   "demo": "audio",
+   "control": "sfx gain",
+   "reason": "A bus gain is heard, not seen: nothing on the page reads it, and the sweep plays no sound."
+  },
+  {
+   "demo": "*",
+   "control": "Theme: Auto — click for Light",
+   "reason": "Under the headless browser's light color scheme, Auto already shows Light, so the first click changes nothing visible. Kit chrome is swept in whichever lab reaches it first, so a run of every demo may find this unused."
+  },
+  {
+   "demo": "*",
+   "control": "trial 1 › Copy settings as JSON",
+   "reason": "Writes the clipboard, which shows nothing on the page."
+  },
+  {
+   "demo": "*",
+   "control": "trial 1 › Reset trial",
+   "reason": "A trial opens at its defaults, so Reset has nothing to put back until a setting moves, which no probe of a button does first."
+  }
+ ]
+}

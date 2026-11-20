@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   0
+  ]
+ ],
+ "a": [
+  "Editing a seed that varies by axis turns it into a plain string",
+  "Editing a by-axis pin in the Pins layer collapses it to one flat value",
+  "Inspect misses tokens a component reads through its own private custom properties",
+  "\"Compare in preview\" shows two identical previews when a ramp's pins are inherited",
+  "PinRepair labels a bezier or other array-valued pin \"varies by axis\""
+ ],
+ "b": [
+  "Editing a pin that varies by axis in the Pins layer replaces it with one value for every mode",
+  "Editing a seed that varies by axis stores its JSON text as a string seed",
+  "Changing the ramp of a step rule whose step varies by axis drops the variation",
+  "The palette lab's stat verdicts judge fixed thresholds, not the gates the generator was given",
+  "\"Copy as tokens\" emits duplicate keys when a pinned anchor shares a name with a generated swatch",
+  "The New theme dialog reopens with the last name and its stale error"
+ ]
+}
