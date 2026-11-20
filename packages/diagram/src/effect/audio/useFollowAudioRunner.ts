@@ -26,7 +26,7 @@ const noSubscribe = () => () => {};
 export function useFollowAudioRunner(runner: LiveAudioRunner | null, opts: FollowAudioRunnerOptions): LiveAudioRunnerState {
   const { pipeline, sources, previews, nodes, target, requestFrame, cancelFrame } = opts;
   useEffect(() => { runner?.setPipeline(pipeline); }, [runner, pipeline]);
-  useEffect(() => { if (sources !== undefined) runner?.setSources(sources); }, [runner, sources]);
+  useEffect(() => { runner?.setSources(sources ?? {}); }, [runner, sources]);
   useEffect(() => { runner?.setPreviews(previews); }, [runner, previews]);
   const live = useSyncExternalStore(runner?.subscribe ?? noSubscribe, () => runner?.state ?? null);
   const planned = useMemo(
