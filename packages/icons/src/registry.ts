@@ -44,6 +44,12 @@ const OVERRIDE = 'override';
 /** Overrides stack over every table's glyph, whenever the table arrives. */
 const OVERRIDE_RANK = 1;
 
+function isGlyph(value: unknown): value is IconGlyph {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
+  const g = value as Partial<Record<keyof IconGlyph, unknown>>;
+  return typeof g.body === 'string' && typeof g.group === 'string' && Array.isArray(g.tags) && (g.fill === undefined || typeof g.fill === 'string');
+}
+
 /** A registry, optionally seeded with tables; each `add` and `override` returns its own release function. */
 export function createIconRegistry(initial?: IconTable | readonly IconTable[]): IconRegistry {
   const glyphs = createReflectable<IconGlyph>({ name: 'icons' });
@@ -65,6 +71,11 @@ export function createIconRegistry(initial?: IconTable | readonly IconTable[]): 
       const icons: unknown = t?.icons;
       if (typeof t?.namespace !== 'string' || typeof t.owner !== 'string' || icons === null || typeof icons !== 'object' || Array.isArray(icons)) {
         throw new TypeError(`an icon table needs a string namespace and owner and an object of icons, got ${String(t?.namespace)}`);
+      }
+      for (const name of Object.keys(icons)) {
+        if (!isGlyph((icons as Record<string, unknown>)[name])) {
+          throw new TypeError(`icon "${t.namespace}:${name}" needs a string body and group and an array of tags`);
+        }
       }
     }
     // Check every claim, those within the batch included, before writing any: a refused batch registers nothing.

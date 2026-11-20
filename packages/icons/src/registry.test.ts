@@ -64,6 +64,16 @@ describe('createIconRegistry', () => {
     expect(r.get('core:undo')?.body).toBe('u');
   });
 
+  it('refuses a batch holding a glyph that is not a glyph, registering nothing', () => {
+    const r = createIconRegistry();
+    const bad = (icons: Record<string, unknown>) => ({ namespace: 'ui', owner: '@weasel-js/ui', icons }) as unknown as IconTable;
+    for (const g of [null, 'x', [], { group: 'Test', tags: [] }, { body: 'b', tags: [] }, { body: 'b', group: 'Test' }, { body: 'b', group: 'Test', tags: [], fill: 3 }]) {
+      expect(() => r.add([core({ undo: 'u' }), bad({ x: g })])).toThrow(TypeError);
+    }
+    expect(r.entries()).toEqual([]);
+    expect(r.owner('core')).toBeUndefined();
+  });
+
   it('notifies subscribers and advances its version on change', () => {
     const r = createIconRegistry();
     const listener = vi.fn();
