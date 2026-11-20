@@ -11,6 +11,26 @@ const SPANS: SpanStripSpan[] = [
 ];
 
 describe('spanLayout', () => {
+  it('splits a strip into a stripe per track, each track chaining its own spans', () => {
+    const placed = placeSpans([
+      { id: 'a', label: 'a', ms: 30 }, { id: 'b', label: 'b', ms: 50, track: 1 },
+      { id: 'c', label: 'c', ms: 20 }, { id: 'd', label: 'd', ms: 10, track: 1 },
+    ], { from: 0, to: 100 });
+    expect(placed.map((p) => [p.span.id, p.start, p.end, p.track, p.tracks])).toEqual([
+      ['a', 0, 30, 0, 2], ['b', 0, 50, 1, 2], ['c', 30, 50, 0, 2], ['d', 50, 60, 1, 2],
+    ]);
+    expect(placeSpans([{ id: 'a', label: 'a', ms: 1 }], { from: 0, to: 1 })[0]!.tracks).toBe(1);
+  });
+
+  it('places a span covering several tracks after the latest end on any of them', () => {
+    const placed = placeSpans([
+      { id: 'a', label: 'a', ms: 30 }, { id: 'b', label: 'b', ms: 50, track: 1 }, { id: 'both', label: 'both', ms: 10, trackSpan: 2 },
+    ], { from: 0, to: 100 });
+    expect(placed.map((p) => [p.span.id, p.start, p.track, p.trackSpan, p.tracks])).toEqual([
+      ['a', 0, 0, 1, 2], ['b', 0, 1, 1, 2], ['both', 50, 0, 2, 2],
+    ]);
+  });
+
   const WIN = stripWindow(SPANS);
 
   it('lays spans with no start end to end, the window running to where the last ends', () => {

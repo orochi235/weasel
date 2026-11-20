@@ -71,6 +71,9 @@ export const matchPrompt = (brief, a, b) => {
   return `${brief}\n\n# List A\n\n${list(a) || '(empty)'}\n\n# List B\n\n${list(b) || '(empty)'}\n`;
 };
 
+/** A verdict whose note says it answers a finding another line already did. */
+const DUPLICATE = /^\(?duplicate\b/i;
+
 const TALLY = /^tally: (\d+) of (\d+) fixed, (\d+) extra fixed\s*$/im;
 const VERDICT = /\bfixed (?:in )?`?[0-9a-f]{7,}|\bnot a defect\b|\bquestion\b|\bduplicate of\b|\bnot fixed\b|\bdeclined\b/i;
 const EXTRAS = /^\W*(?:any )?extra\b/i;
@@ -129,15 +132,17 @@ export const reportItems = (report) => {
 
 /**
  * What a fixer's report says it did: of the `of` findings it answered, how many it `fixed`, and the `extra` defects
- * nobody had listed that it fixed besides. From the closing `tally:` line, or else counted from {@link reportItems}.
- * The fixer's own list splits and joins findings unlike the match, so `of` is its count, not the round's. Null for a
- * report with no verdicts.
+ * nobody had listed that it fixed besides. Counted from its verdicts ({@link reportItems}), each finding once: a fixer's own
+ * `tally:` line miscounts (round 49's geom.part1 said "8 of 9" over eight fixed lines, one a duplicate, and an extra),
+ * so it is read only when no verdict parses. The fixer's list splits and joins findings unlike the match, so `of` is
+ * its count, not the round's. Null for a report with no verdicts.
  */
 export const fixTallyOf = (report) => {
-  const t = TALLY.exec(report);
-  if (t) return { fixed: Number(t[1]), of: Number(t[2]), extra: Number(t[3]) };
   const items = reportItems(report);
-  const listed = items.filter((i) => i.from !== 'extra');
-  if (listed.length === 0) return null;
+  const listed = items.filter((i) => i.from !== 'extra' && !DUPLICATE.test(i.note));
+  if (listed.length === 0) {
+    const t = TALLY.exec(report);
+    return t ? { fixed: Number(t[1]), of: Number(t[2]), extra: Number(t[3]) } : null;
+  }
   return { fixed: listed.filter((i) => i.verdict === 'fixed').length, of: listed.length, extra: items.filter((i) => i.from === 'extra' && i.verdict === 'fixed').length };
 };

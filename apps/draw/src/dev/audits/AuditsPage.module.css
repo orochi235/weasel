@@ -39,11 +39,14 @@
 
 /* The runs strip and the jobs feed each take the height their seam is dragged to, and scroll inside it; the map
    takes the rest. A runs strip shorter than its height keeps its own. */
+.top > .vseam { align-self: stretch; }
+
 .root > .top {
   flex: 0 1 auto;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--audit-aside-width, 300px);
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr) auto var(--audit-tabs-width, 300px);
+  /* The tabs' labels sit on the round header's baseline. */
+  align-items: first baseline;
   gap: var(--wzl-space-2);
 }
 

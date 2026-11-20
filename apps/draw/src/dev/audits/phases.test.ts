@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CLOCK_AHEAD_MINUTES, TYPICAL_MINUTES, isFinished, laneStepsOf, laneViewOf, passDone, phaseColor, phaseOf, phasesOf, runClockOf, withLivePasses } from './phases';
+import { STEP_COLUMN_COUNT, CLOCK_AHEAD_MINUTES, TYPICAL_MINUTES, isFinished, laneStepsOf, laneViewOf, passDone, phaseColor, phaseOf, phasesOf, runClockOf, withLivePasses } from './phases';
 import fixture from './fixture.map.json';
 import type { AuditLane, AuditRun, LaneStep, LaneStepName, SkulkMap } from './skulkMap.types';
 
@@ -69,11 +69,21 @@ describe('laneViewOf', () => {
 
   it('captions and shades the patch with the fixer\'s tally of what it fixed', () => {
     const fixed = { A: done({ findings: 3 }), B: done({ findings: 2 }), match: matched(3, 2, 1), fix: done({ minutes: 9, commits: 6, fixed: 3, of: 4, extra: 1 }) };
-    expect(laneViewOf(lane(fixed), NOW, START).spans.at(-1)?.label).toBe('3 of 4 fixed +1 extra');
-    expect(laneStepsOf(lane({ ...fixed, patch: done({ commits: 6 }) }), NOW).at(-1)?.label).toBe('3 of 4 fixed +1 extra');
+    const patchOf = (spans: { id: string }[]) => spans.find((s) => s.id === 'patch') as { label: string; ms: number; fill?: number } | undefined;
+    expect(patchOf(laneViewOf(lane(fixed), NOW, START).spans)?.label).toBe('3 of 4 fixed +1 extra');
+    expect(patchOf(laneStepsOf(lane({ ...fixed, patch: done({ commits: 6 }) }), NOW))?.label).toBe('3 of 4 fixed +1 extra');
     expect(laneViewOf(lane({ ...fixed, fix: done({ minutes: 9, commits: 6 }) }), NOW, START).spans.at(-1)?.label).toBe('4 found');
-    expect(laneViewOf(lane(fixed), NOW, START).spans.at(-1)?.fill).toBe(0.75);
-    expect(laneStepsOf(lane(fixed), NOW).at(-1)?.fill).toBe(0.75);
+  });
+
+  it('splits the patch into the share fixed, shaded, and the share filed rather than fixed, hatched dark gray', () => {
+    const fixed = { A: done({ findings: 3 }), B: done({ findings: 2 }), match: matched(3, 2, 1), fix: done({ minutes: 9, commits: 6, fixed: 3, of: 4 }) };
+    for (const spans of [laneStepsOf(lane(fixed), NOW), laneStepsOf(lane({ ...fixed, patch: done({ commits: 6 }) }), NOW)]) {
+      const [kept, filed] = spans.slice(-2);
+      expect([kept!.id, kept!.ms, kept!.fill]).toEqual(['patch', 0.6 * 0.75, 1]);
+      expect([filed!.id, filed!.ms, filed!.state, filed!.color, filed!.label]).toEqual(['patch-unfixed', 0.6 * 0.25, 'failed', 'var(--audit-filed)', '']);
+    }
+    const all = { ...fixed, fix: done({ minutes: 9, commits: 6, fixed: 4, of: 4 }) };
+    expect(laneStepsOf(lane(all), NOW).map((s) => s.id)).not.toContain('patch-unfixed');
   });
 
   it('counts an area\'s pass done once its fixer is, and gives the map that pass, provisionally', () => {
@@ -108,10 +118,18 @@ describe('runClockOf', () => {
 describe('laneStepsOf', () => {
   it('gives every step one equal column, filled by its state, a running one by its share of the typical time', () => {
     const spans = laneStepsOf(lane({ A: done({ findings: 5, minutes: 3 }), B: running(at(27.5)), match: W }), NOW);
-    expect(spans.map((s) => [s.id, s.ms, s.fill])).toEqual([['A', 1, 1], ['B', 1, 0.5], ['match', 1, 0], ['fix', 1, 0], ['patch', 1, 0]]);
+    expect(spans.map((s) => [s.id, s.ms, s.fill])).toEqual([['A', 1, 1], ['B', 1, 0.5], ['match', 1, 0], ['fix', 1, 0], ['patch', 0.6, 0]]);
     expect(spans.map((s) => s.color)).toEqual(['review', 'reviewed', 'match', 'fix', 'patch'].map((p) => phaseColor(p as never)));
     expect(spans[1]!.label).toBe('studio · 2.5 min');
     expect(spans[2]!.label).toBe('');
+  });
+
+  it('runs A and B in one column, A over B, and every later step a column after, across both', () => {
+    const spans = laneStepsOf(lane({}), NOW);
+    expect(spans.map((s) => [s.id, s.start, s.track ?? 0, s.trackSpan ?? 1])).toEqual([
+      ['A', 0, 0, 1], ['B', 0, 1, 1], ['match', 1, 0, 2], ['fix', 2, 0, 2], ['patch', 3, 0, 2],
+    ]);
+    expect(STEP_COLUMN_COUNT).toBe(3.6);
   });
 
   it('stops a running step short of full until it finishes', () => {

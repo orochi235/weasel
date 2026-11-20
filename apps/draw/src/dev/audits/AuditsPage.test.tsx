@@ -41,7 +41,7 @@ describe('AuditsPage', () => {
     expect(within(lanes).getAllByTitle(/studio · 12 min/).some((el) => el.textContent === 'studio · 12 min')).toBe(true);
     expect(within(lanes).getAllByText('studio')).not.toHaveLength(0);
     expect(screen.getByText('conflict')).toBeInTheDocument();
-    expect(screen.getByText('batch, fleet run and merge, once every lane is patched')).toBeInTheDocument();
+    expect(screen.queryByRole('meter', { name: 'all areas' })).not.toBeInTheDocument();
 
     const stats = screen.getByRole('region', { name: 'Headline stats' });
     expect(within(stats).getByText('4 / 6')).toBeInTheDocument();
@@ -56,7 +56,8 @@ describe('AuditsPage', () => {
     serve(200, fixture);
     renderPage();
     expect(await screen.findByText('Hover or click an area for its passes.')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /core\.scene/ }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Next up' }));
+    fireEvent.click(await screen.findByRole('button', { name: /core\.scene/ }));
     const detail = screen.getAllByText('core.scene', { selector: 'div' })[0]!.parentElement!;
     expect(within(detail).getByText('due again')).toBeInTheDocument();
     expect(within(detail).getByRole('table')).toHaveTextContent('33');

@@ -8,7 +8,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gitIn } from './batch.mjs';
-import { STATE_DIR } from './config.mjs';
+import { AREAS_PER_NIGHT, STATE_DIR } from './config.mjs';
 import { fixTallyOf } from './findings.mjs';
 import { partitionAt } from './partition.mjs';
 import { chapman, gitTouched, pickAreas, readPasses } from './rounds.mjs';
@@ -133,6 +133,23 @@ const fixReports = (nightDir, ids) => new Map(nightDir ? ids.flatMap((id) => {
   return existsSync(file) ? [[id, parseEnvelope(readFileSync(file, 'utf8')).reply]] : [];
 }) : []);
 
+const PROGRESS = /^onto: progress (\d+)\/(\d+)\b/;
+
+/** How far the batch's fleet run has got, from the last progress line its test log holds outside the postbuild's and
+ *  browser's own: `{ done, total }`, or null before it reports. */
+export const fleetProgressOf = (nightDir) => {
+  const file = nightDir ? readdirSafe(nightDir).find((f) => f.endsWith('.test-batch.log')) : undefined;
+  if (!file) return null;
+  const lines = readFileSync(join(nightDir, file), 'utf8').replace(/\x1b\[[0-9;]*m/g, '').split('\n');
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const m = PROGRESS.exec(lines[i]);
+    if (m) return { done: Number(m[1]), total: Number(m[2]) };
+  }
+  return null;
+};
+
+const readdirSafe = (dir) => { try { return readdirSync(dir); } catch { return []; } };
+
 /** What one run, live (`running`) or finished, says about its areas; `jobs` are onto's jobs, running and finished. */
 export const readRun = (found, running, jobs = [], state = STATE_DIR) => {
   const run = { ...found, nightDir: nightDirOf(found, state) };
@@ -157,6 +174,7 @@ export const readRun = (found, running, jobs = [], state = STATE_DIR) => {
     nightDir: run.nightDir ?? null,
     lastLine: lines.at(-1) ?? null,
     lines: lines.slice(-40),
+    fleet: running ? fleetProgressOf(run.nightDir) : null,
   };
 };
 
@@ -233,11 +251,12 @@ export const buildMap = (root) => {
   const areas = partitionAt(root, 'HEAD');
   const passes = readPasses(root);
   const { picked, settled } = pickAreas({ areas, passes, touched: gitTouched(git), count: Infinity });
-  const queue = new Map(picked.map((id, i) => [id, i + 1]));
   const settledSet = new Set(settled);
   const runs = readRuns();
   /** The live run holding each area. */
   const holder = new Map(runs.filter((r) => r.running).flatMap((r) => r.areas.map((id) => [id, r])));
+  // A live run's areas are being audited, not waiting, so the queue counts from 1 past them.
+  const queue = new Map(picked.filter((id) => !holder.has(id)).map((id, i) => [id, i + 1]));
 
   const out = areas.map((area) => {
     const history = (passes.get(area.id) ?? []).map((p) => passOf(p.round, p.date, p.a, p.b, p.m, p.distinct));
@@ -275,6 +294,7 @@ export const buildMap = (root) => {
   return {
     generated: new Date().toISOString(),
     head,
+    areasPerRound: AREAS_PER_NIGHT,
     runs,
     areas: out,
     rounds: [...rounds.values()].sort((x, y) => x.round - y.round).map((r) => ({ ...r, est: Math.round(r.est) })),

@@ -1,0 +1,13 @@
+.tabs {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  max-height: var(--audit-top-height, 260px);
+}
+
+.panel {
+  min-height: 0;
+  overflow: auto;
+  padding-block-start: var(--wzl-space-2);
+}

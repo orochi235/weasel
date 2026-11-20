@@ -1,6 +1,5 @@
 import { niceDomain, stepTicks, tickStep } from '@weasel-js/scale';
 import { useId } from 'react';
-import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 import type { AuditRound } from './skulkMap.types';
 import s from './RoundsChart.module.css';
 
@@ -28,7 +27,7 @@ export function RoundsChart({ rounds }: { rounds: readonly AuditRound[] }) {
   const x = (i: number) => M.left + i * band + (band - bar) / 2;
   const hatch = useId();
   return (
-    <SidebarPanel title="Rounds">
+    <>
       {rounds.length > 0 && (
         <svg className={s.chart} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Defects found and estimated per area, by round">
           <defs>
@@ -60,6 +59,6 @@ export function RoundsChart({ rounds }: { rounds: readonly AuditRound[] }) {
         Per area the round read. Solid: distinct defects found. Dashed: Chapman&apos;s estimate of what those areas held. Hatched: a round not merged
         yet, or still running, read from its run&apos;s own results.
       </p>
-    </SidebarPanel>
+    </>
   );
 }

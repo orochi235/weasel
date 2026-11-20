@@ -14,6 +14,9 @@ export type DetailListLayout = 'inline' | 'block';
  */
 export type DetailListValues = 'text' | 'figures';
 
+/** How many label-and-value pairs share a line: one, or `auto` for two once the list is wide enough for both. */
+export type DetailListColumns = 1 | 'auto';
+
 const ListValues = createContext<DetailListValues>('text');
 
 /** Props for {@link DetailList}. */
@@ -29,8 +32,11 @@ export interface DetailListProps {
   layout?: DetailListLayout;
   /** `text` by default. See {@link DetailListValues}. */
   values?: DetailListValues;
-  /** Class on the outermost element: the `<dl>`, or the `<section>` holding
-   *  the heading and the list when there is a `title`. */
+  /** `1` by default. `auto` sets the rows two to a line, across then down, where the list is at least 28rem wide,
+   *  as a property panel pairs its rows. Inline layout only. */
+  columns?: DetailListColumns;
+  /** Class on the outermost element: the `<dl>`, the box around it under `columns="auto"`, or the `<section>`
+   *  holding the heading and the list when there is a `title`. */
   className?: string;
 }
 
@@ -62,18 +68,21 @@ export interface DetailRowProps {
  * recipe and rail: `--wzl-params-label-width` sets the rail, so a detail list
  * and a property panel beside it line their labels up from one declaration.
  */
-export function DetailList({ children, title, layout = 'inline', values = 'text', className }: DetailListProps) {
+export function DetailList({ children, title, layout = 'inline', values = 'text', columns = 1, className }: DetailListProps) {
   const titleId = useId();
-  const list = (
+  const dl = (
     <dl
-      className={className && title == null ? `${s.list} ${className}` : s.list}
+      className={className && title == null && columns === 1 ? `${s.list} ${className}` : s.list}
       data-layout={layout}
       data-values={values}
+      data-columns={columns === 1 ? undefined : columns}
       aria-labelledby={title != null ? titleId : undefined}
     >
       <ListValues.Provider value={values}>{children}</ListValues.Provider>
     </dl>
   );
+  // A list that sizes its columns by its own width needs a box to measure it by.
+  const list = columns === 1 ? dl : <div className={className && title == null ? `${s.frame} ${className}` : s.frame}>{dl}</div>;
   if (title == null) return list;
   return (
     <section className={className}>

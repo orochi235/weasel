@@ -93,7 +93,7 @@
 
 .phaseNames {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   column-gap: var(--wzl-space-3);
   font-size: var(--wzl-font-size-xs);
   white-space: nowrap;
@@ -103,3 +103,18 @@
 .phaseNames > :not(:first-child, :last-child) { text-align: center; }
 .phaseNames > :last-child { text-align: end; }
 
+
+.upcoming {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+}
+
+.upcomingSlider { width: 140px; }
+
+/* Fixed to its widest count, so the slider beside it holds still as it changes. */
+.upcomingCount {
+  min-width: 3ch;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}

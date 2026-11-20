@@ -11,6 +11,20 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+.frame { container-type: inline-size; }
+
+@container (min-width: 28rem) {
+  .list[data-columns='auto']:not([data-layout='block']) {
+    grid-template-columns: repeat(2, var(--wzl-params-label-width, auto) minmax(0, 1fr));
+  }
+
+  .list[data-columns='auto']:not([data-layout='block'])[data-values='figures'] {
+    grid-template-columns: repeat(2, var(--wzl-params-label-width, auto) minmax(min-content, 1fr));
+  }
+
+  .list[data-columns='auto']:not([data-layout='block']) > .row { grid-column: span 2; }
+}
+
 .row {
   display: grid;
   grid-column: 1 / -1;

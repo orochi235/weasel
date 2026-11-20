@@ -28,7 +28,6 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .run:not(.idle) .pulse { animation: ping 1.8s ease-out infinite; }
-  .shared.running { animation: breathe 2.2s ease-in-out infinite; }
 }
 
 @keyframes ping {
@@ -37,7 +36,6 @@
   100% { box-shadow: 0 0 0 0 transparent; }
 }
 
-@keyframes breathe { 50% { background: transparent; } }
 
 .what {
   min-width: 0;
@@ -77,6 +75,9 @@
   text-overflow: ellipsis;
 }
 
+/* The steps view stacks A over B in one row, so its rows are tall enough for two stripes of small text. */
+.lanes[data-mode='steps'] { --span-strip-height: 28px; }
+
 .lanes {
   --span-strip-height: 18px;
   --span-strip-text: var(--wzl-font-size-xs);
@@ -107,50 +108,21 @@
 .name:hover,
 .name:focus-visible { outline: 2px solid var(--audit-ink); outline-offset: -2px; }
 
-.sharedRow {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  align-items: center;
-  gap: var(--wzl-space-4);
-}
-
 .nameCell {
   font-family: var(--wzl-font-ui);
   font-size: var(--wzl-font-size-md);
   white-space: nowrap;
 }
 
-.shared {
-  padding: var(--wzl-space-1) var(--wzl-space-3);
-  border: 1px dashed var(--audit-rule);
-  border-radius: 3px;
-  font-family: var(--wzl-font-ui);
-  font-size: var(--wzl-font-size-sm);
-  color: var(--audit-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.shared.done {
-  border: 1px solid transparent;
-  background: var(--audit-depth-1);
-  color: var(--audit-ink);
-}
-
-.shared.running {
-  border: 1.5px solid var(--audit-live);
-  background: var(--audit-live-soft);
-  color: var(--audit-live);
-}
-
-/* Every lane label inks black, filled or not, so a running step's node name pulses the same way in each: to white
-   and back while the job runs. */
-.lanes [data-state],
-.lanes [aria-hidden='true'] > [data-state] { color: #000; }
+/* Every lane label inks black, filled or not, so a running step's node name pulses the same way in each: between
+   black and 40% white while the job runs. */
+.lanes { --span-ink: #000; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .lanes [data-state='active'] .node { animation: node-pulse 1.6s ease-in-out infinite; }
+  .lanes [data-state='active'] .node { animation: node-pulse 1.07s ease-in-out infinite; }
 }
 
-@keyframes node-pulse { 50% { color: #fff; } }
+@keyframes node-pulse {
+  0%, 100% { color: #000; }
+  50% { color: color-mix(in srgb, #fff 40%, #000); }
+}
