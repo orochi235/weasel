@@ -20,6 +20,7 @@ function wrapJournal(raw: Journal, env: SceneHistoryEnv, open: OpenJournals): Jo
     targetId: raw.targetId,
     forkedAtEntryId: raw.forkedAtEntryId,
     applyOps(ops, label) {
+      env.refuseUntracked('journal.applyOps');
       env.labeled(label, () => env.runArrivalEdit(ops, (all) => {
         env.applying(() => raw.applyOps(all.map(env.causing), label));
         notify();

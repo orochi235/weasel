@@ -44,8 +44,8 @@ let defaultIdCounter = 0;
 const defaultGenerateId = (): NodeId =>
   asNodeId(`n${(defaultIdCounter++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
 
-/** `mint`, passing over any id `taken` already holds: a document reloaded into a new session keeps the ids the last
- *  session minted, and a generator restarted with the session can mint them again. */
+/** `mint`, passing over any id `taken` already holds: a document and history reloaded into a new session keep the ids
+ *  the last session minted, and a generator restarted with the session can mint them again. */
 function freshIds(mint: () => NodeId, taken: (id: NodeId) => boolean): () => NodeId {
   return () => {
     for (let tries = 0; tries < 1000; tries++) {
@@ -129,7 +129,8 @@ function buildScene<TData, TLayer extends string, TPose>(
     writePose,
   });
 
-  const generateId = freshIds(options.generateId ?? defaultGenerateId, (id) => state.nodes.has(id));
+  // `recording` is assigned below, before anything mints an id.
+  const generateId = freshIds(options.generateId ?? defaultGenerateId, (id) => state.nodes.has(id) || recording.namesNode(id));
   const sessions = sceneSessions(doc, notifier);
   const { selection } = sessions.own;
 
@@ -194,6 +195,9 @@ function buildScene<TData, TLayer extends string, TPose>(
       const specs = quantizedSpecs(foldable(specsFromSerialized(json, registry, { composition: scene.composition, ...opts }), options.composition), options.quantize, json.doc);
       if (mode.open()) {
         throw new Error('Scene: cannot loadState inside another edit — it replaces the state that edit would revert to');
+      }
+      if (recording.journalOpen()) {
+        throw new Error('Scene: cannot loadState while a journal is open — commit or cancel it first; its entries edit the state this replaces');
       }
       buildScene(options, json.systemLayers.map(layerFromSerialized), () => specs, json.doc); // a dry run: a bad snapshot keeps the document
       // Session state, and every id is a new node after this.

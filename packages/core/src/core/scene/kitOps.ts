@@ -219,9 +219,9 @@ function registerAdd<TData, TLayer extends string, TPose>(env: KitOpsEnv<TData, 
       invalidateDependents(p.id);
     },
     revert: (p) => {
-      env.forgetViewState(p.id);
       detach(p.id);
       state.nodes.delete(p.id);
+      env.forgetViewState(p.id);
       dependents.remove(p.id);
       childDerived.delete(p.id);
       invalidateChildDerivedFrom(p.parent);
@@ -239,12 +239,12 @@ function registerRemove<TData, TLayer extends string, TPose>(env: KitOpsEnv<TDat
   } = env.store;
   kitOpRegistrar(env)<RemoveSnapshot<TData, TLayer, TPose>>('kit:remove', {
     apply: (p) => {
-      for (const n of p.nodes) env.forgetViewState(n.id);
       for (const d of p.detached) detach(d.id);
       for (const n of p.nodes) {
         state.nodes.delete(n.id);
         dependents.remove(n.id);
         childDerived.delete(n.id);
+        env.forgetViewState(n.id);
       }
       // A `dependsOn: 'children'` container the removal did not take is now
       // hugging a smaller set.

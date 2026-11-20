@@ -2798,3 +2798,9 @@ Calls the lanes made without a ruling:
   `RangeError` on a `friction` outside (0, 1) or a `minSpeed` that is not positive, as `momentum()` does (round
   thirty-eight); the pan checks at the press, so a bad option never throws from a release. Each coasted forever. Letting
   friction 1 through when `bounds` with `'stop'` or `'spring'` would end the coast was the alternative.
+
+## Audit round forty-one (2026-11-19): the scene's history and tree
+
+- 2026-11-19 (the fixer's call): `scene.loadState` throws while a journal is open, a suspended one opened on
+  `scene.history` included; commit or cancel it first. Closing every open journal along with the history was the
+  alternative; it would end a modality or an edit session from under its owner.

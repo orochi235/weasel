@@ -137,6 +137,14 @@ describe('add / remove / move', () => {
     expect(s.roots).toEqual([c, a, b]);
   });
 
+  it('reorder reads an omitted index as the end, as move does', () => {
+    const s = makeScene();
+    const a = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const b = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    s.reorder(a, undefined as unknown as number);
+    expect(s.roots).toEqual([b, a]);
+  });
+
   it('accepts a child added on a higher layer than its parent', () => {
     const s = makeScene();
     const bed = s.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' } });

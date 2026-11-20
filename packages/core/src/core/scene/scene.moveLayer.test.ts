@@ -64,3 +64,15 @@ describe('Scene — a layer index that is NaN', () => {
     expect(order()).toBe('abcd');
   });
 });
+
+describe('Scene — moveLayer with a fractional index', () => {
+  it('truncates it, so a move to its own slot records nothing', () => {
+    const { scene, order } = makeScene(0);
+    scene.moveLayer('a', 0.5);
+    scene.moveLayer('b', 1.5);
+    expect(order()).toBe('abcd');
+    expect(scene.history.undoDepth()).toBe(0);
+    scene.moveLayer('a', 2.9);
+    expect(order()).toBe('bcad');
+  });
+});

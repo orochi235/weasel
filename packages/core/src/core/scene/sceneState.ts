@@ -66,7 +66,7 @@ export function createSceneState<TData, TLayer extends string, TPose>(
     state,
     order,
     locks,
-    stale: createStaleReplay(state.nodes),
+    stale: createStaleReplay(state.nodes, state.layerIndex),
     fnFields,
     store,
     layers,

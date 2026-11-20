@@ -8,6 +8,14 @@ describe('untracked', () => {
     const s = makeScene();
     expect(() => s.untracked(() => s.applyBatch([], 'x', undefined))).toThrow(/untracked/);
   });
+
+  it('refuses applyOps on a journal opened on scene.history, as history.applyOps does', () => {
+    const s = makeScene();
+    const j = s.history.beginJournal({ label: 'j' });
+    const op: Op = { apply: () => {}, invert: () => op };
+    expect(() => s.untracked(() => j.applyOps([op], 'x'))).toThrow(/untracked/);
+    expect(j.entries().undo).toHaveLength(0);
+  });
 });
 
 describe('applyBatch (no journal)', () => {

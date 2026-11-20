@@ -83,6 +83,23 @@ describe('createEditingSession — what a session owns', () => {
     expect(one.getSelection()).toEqual([b]);
   });
 
+  it('keeps a node\'s previews and scroll when the edit removing it throws and is reverted', () => {
+    const { scene, add } = makeScene();
+    const a = add();
+    const one = createEditingSession(scene);
+    one.overrides.set(a, { pose: box(5, 5) });
+    one.scroll.set(a, { x: 0, y: 200 });
+    scene.scroll.set(a, { x: 0, y: 50 });
+    expect(() => scene.batch('remove', () => { scene.remove(a); throw new Error('later step'); })).toThrow('later step');
+    expect(scene.get(a)).toBeDefined();
+    expect(one.overrides.ids()).toEqual([a]);
+    expect(one.scroll.get(a)).toEqual({ x: 0, y: 200 });
+    expect(scene.scroll.get(a)).toEqual({ x: 0, y: 50 });
+    scene.remove(a);
+    expect(one.overrides.ids()).toEqual([]);
+    expect(one.scroll.get(a)).toBeUndefined();
+  });
+
   it('tells its subscribers of its own selection and of document edits, and the scene of neither selection', () => {
     const { scene, add } = makeScene();
     const a = add();
