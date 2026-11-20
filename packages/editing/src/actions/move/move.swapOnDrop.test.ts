@@ -169,3 +169,23 @@ describe('swapOnDrop in a binding’s behaviors', () => {
     expect(scene.get(B)!.pose).toEqual(box(0, 0));
   });
 });
+
+describe('moveAction with swapOnDrop: dwell, a derived node selected', () => {
+  it('swaps the node the drag moves, not the derived one standing for it', () => {
+    const { scene, at, start } = setup([asNodeId('pin')]);
+    scene.add({
+      id: asNodeId('pin'), kind: 'mark', layer: 'main', data: {}, pose: box(0, 300),
+      dependsOn: [A], derivePose: (_n, deps) => {
+        const p = deps[0]?.pose as RectPose | undefined;
+        return p ? box(p.x, p.y + 20) : null;
+      },
+    });
+    const h = start(DWELL);
+    h.onMove!(at(55, 5));
+    vi.advanceTimersByTime(1000);
+    h.onEnd!(at(55, 5), 'commit');
+    expect(scene.get(A)!.pose).toEqual(box(50, 0));
+    expect(scene.get(B)!.pose).toEqual(box(0, 0));
+    expect(scene.historyEntries().at(-1)?.label).toBe('Swap');
+  });
+});

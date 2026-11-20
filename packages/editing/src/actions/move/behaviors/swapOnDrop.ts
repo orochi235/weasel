@@ -101,9 +101,9 @@ export function swapBehavior(options: SwapOnDropOptions, on: (session: MoveSessi
   const dwellMs = options.dwellMs ?? 1000;
   const key = scratchKey<SwapState>(`swapOnDrop.${++built}`);
   const stateOf = (ctx: GestureContext<unknown>): SwapState => stateIn(ctx, key);
-  /** The one node the drag can swap, or null: a multi-selection never swaps. */
+  /** The one node the drag moves, which is the one it can swap, or null: a drag of several never swaps. */
   const draggedOf = (session: MoveSession): string | null =>
-    (on(session) && session.selected.length === 1 ? session.selected[0]! : null);
+    (on(session) && session.ids.length === 1 ? session.ids[0]! : null);
 
   const targetAt = (session: MoveSession, point: { x: number; y: number }, id: string): string | null => {
     const found = options.targetAt ? options.targetAt(point, id) : hitTarget(session, point, id);
