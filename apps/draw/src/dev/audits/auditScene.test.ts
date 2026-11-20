@@ -51,6 +51,24 @@ describe('the audit scene', () => {
   });
 });
 
+describe('syncAuditScene', () => {
+  it('keeps a cell, and its selection, when a frame above it moves under a new frame', () => {
+    const scene = createAuditScene();
+    const specs = auditNodeSpecs(map.areas, layoutMap(map.areas, 900, 400), PALETTE);
+    syncAuditScene(scene, specs);
+    const cell = specs.find((sp) => sp.pickable && sp.parent !== null)!;
+    const frame = specs.find((sp) => sp.id === cell.parent)!;
+    scene.setSelection([cell.id]);
+    const before = scene.incarnation(cell.id);
+    const between = { ...frame, id: asNodeId(`${frame.id}~new`) };
+    const next = specs.flatMap((sp) => (sp.id === frame.id ? [between, { ...frame, parent: between.id }] : [sp]));
+    syncAuditScene(scene, next);
+    expect(scene.get(frame.id)?.parent).toBe(between.id);
+    expect(scene.incarnation(cell.id)).toBe(before);
+    expect(scene.getSelection()).toEqual([cell.id]);
+  });
+});
+
 describe('rampAt', () => {
   it('mixes between the two oklch stops a place falls between, the short way round the hue', () => {
     const stops = ['oklch(0.2 0.1 300)', 'oklch(0.6 0.2 20)', 'oklch(0.9 0.1 100)'];

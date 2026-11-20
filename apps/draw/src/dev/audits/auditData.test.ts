@@ -26,6 +26,7 @@ describe('lanes', () => {
   it('gives the shared lane the batch while it runs, and the report once the run is done', () => {
     expect(sharedLaneOf(live)).toEqual({ state: 'waiting', text: 'batch, fleet run and merge, once every lane is patched' });
     expect(sharedLaneOf({ ...live, step: 'fleet' }).state).toBe('running');
+    expect(sharedLaneOf({ ...live, step: 'merge-wait' })).toEqual({ state: 'running', text: 'merge-wait: the batch is built; waiting for the merge lock' });
     expect(sharedLaneOf(finished)).toEqual({ state: 'done', text: '8 areas merged; fleet green' });
   });
 
@@ -46,6 +47,36 @@ describe('jobs', () => {
     expect(parseJob('batch: audit41-core.ops conflicts; left out')?.bad).toBe(true);
     expect(parseJob('fleet: 2 failed')).toMatchObject({ kind: 'fleet', bad: true });
     expect(parseJob('something else')).toBeNull();
+  });
+
+  it('reads a patch that did not apply as a bad patch job', () => {
+    expect(parseJob('patch core.ops: did not apply: error: patch failed: a.ts:3')).toEqual({
+      kind: 'patch', label: 'patch', area: 'core.ops', what: 'did not apply: error: patch failed: a.ts:3', bad: true,
+    });
+    expect(parseJob('patch core.ops: 2 commits on audit41-core.ops')).toMatchObject({ kind: 'patch', bad: false });
+  });
+
+  it('reads a sweep that came back, and not the plan announcing one', () => {
+    expect(parseJob('control sweep: 2 dead, 1 unsure, 0 skipped of 90 controls in 12 demos, 6.5 min')).toMatchObject({
+      kind: 'sweep', what: '2 dead, 1 unsure, 0 skipped of 90 controls in 12 demos, 6.5 min', bad: false,
+    });
+    expect(parseJob('control sweep: did not run (no gui node)')).toMatchObject({ kind: 'sweep', bad: true });
+    expect(parseJob('control sweep: off (it runs only with --sweep)')).toBeNull();
+    expect(parseJob('control sweep: one browser job at the frozen commit beside the reviews, and a fixer for what it finds dead')).toBeNull();
+  });
+
+  it('marks a review that did not finish, and says so and that it hit its ceiling', () => {
+    const line = 'review 1/4 core.ops B on teitou: 2 findings, 12/12 files read, 9.0 min, 1.20M tokens';
+    expect(parseJob(`${line}, hit its ceiling, unfinished: not counted as a pass`)).toMatchObject({
+      what: '2 findings, read 12 of 12 files, hit its ceiling, unfinished: not counted as a pass', bad: true,
+    });
+    expect(parseJob(`${line}, hit its ceiling`)).toMatchObject({ what: '2 findings, read 12 of 12 files, hit its ceiling', bad: false });
+  });
+
+  it('keys two identical lines of one log apart', () => {
+    const run = { ...map.runs[0]!, lines: ['fleet: test:batch passed', 'fleet: test:batch passed'] };
+    const keys = recentJobsOf([run]).map((j) => j.key);
+    expect(new Set(keys).size).toBe(2);
   });
 
   it('lists every run, each newest first', () => {
