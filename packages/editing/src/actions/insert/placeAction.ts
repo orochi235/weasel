@@ -1,4 +1,4 @@
-import { defineAction, type Action, type ModifierState } from '@weasel-js/routing';
+import { defineAction, type Action, type ImmediateParams, type ModifierState } from '@weasel-js/routing';
 import { SNAP_ROLES, snapMods } from '@weasel-js/core/engine';
 import { inPlane, insertLayer, insertParent, minSizeOf } from '@weasel-js/core';
 import { restoreSelection } from './commit';
@@ -9,9 +9,15 @@ import type {} from '@weasel-js/core';
 import { INSERT_GROUP } from '../../actionGroups';
 
 /** What the dispatcher lays under an immediate action's params for a click. */
-const CLICK_FIELDS = ['world', 'press', 'affordance', 'mods'] as const;
+const CLICK_FIELDS = ['world', 'press', 'affordance', 'mods', 'roles'] as const;
 
 const NO_KEYS: ModifierState = { alt: false, ctrl: false, meta: false, shift: false };
+
+/** The keys a click held, and the roles the dispatcher resolved them to (`ImmediateParams`). */
+function clickRoles(params: Readonly<Record<string, unknown>> | undefined) {
+  const p = params as ImmediateParams | undefined;
+  return { modifiers: p?.mods ?? NO_KEYS, ...(p?.roles ? { roles: p.roles } : {}) };
+}
 
 /**
  * Click-to-insert: the companion to `insertAction` for a click, which draws
@@ -56,7 +62,7 @@ export const placeAction: Action = inPlane(defineAction({
         const snap = deps.snap?.begin({ gesture: 'point', press: { x, y }, ...(parent === null ? {} : { parent }) });
         let out;
         try {
-          out = snap?.at({ x, y }, snapMods({ modifiers: params?.mods ?? NO_KEYS }));
+          out = snap?.at({ x, y }, snapMods(clickRoles(params)));
         } finally {
           snap?.end();
         }

@@ -72,6 +72,9 @@ export type ImmediateParams = {
   bodyTarget?: BodyTarget;
   bodyKind?: BodyKind;
   mods?: ModifierState;
+  /** Which of the action's modifier roles `mods` hold, tunings and the binding's
+   *  `opts.roles` applied, as `InvocationCtx.roles`; for an action that declares roles. */
+  roles?: Readonly<Record<string, boolean>>;
   /** A hover's: whether a button was down. */
   held?: boolean;
   carry?: { type: string; value: unknown };

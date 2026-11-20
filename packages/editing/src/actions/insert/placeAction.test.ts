@@ -112,7 +112,7 @@ describe('placeAction', () => {
     const insert: InsertDep = { commit: () => { throw new Error('factory'); } };
     const selection = makeSelection(['a']);
     let open = 0;
-    const snap: SnapDep = { begin: () => { open++; return { at: (p) => ({ point: p, held: false, marks: [] }), end: () => { open--; } }; } };
+    const snap = { begin: () => { open++; return { at: (p: unknown) => ({ point: p, held: false, marks: [] }), end: () => { open--; } }; } };
     expect(() => click({ kind: 'rect', size: { width: 10, height: 10 } }, { insert, operands: selection, snap } as never)).toThrow('factory');
     expect(selection.get()).toEqual(['a']);
     expect(open).toBe(0);
@@ -121,9 +121,19 @@ describe('placeAction', () => {
   it('puts the selection back and closes the snap session when the snap throws', () => {
     const selection = makeSelection(['a']);
     let open = 0;
-    const snap: SnapDep = { begin: () => { open++; return { at: () => { throw new Error('snap'); }, end: () => { open--; } }; } };
+    const snap = { begin: () => { open++; return { at: () => { throw new Error('snap'); }, end: () => { open--; } }; } };
     expect(() => click({ kind: 'rect', size: { width: 10, height: 10 } }, { insert: makeInsertDep(), operands: selection, snap } as never)).toThrow('snap');
     expect(selection.get()).toEqual(['a']);
     expect(open).toBe(0);
+  });
+
+  it('suspends snapping on whatever key the dispatcher resolved snap.suspend to, and keeps the roles out of the extras', () => {
+    const insert = makeInsertDep();
+    const snap: SnapDep = sessionDep(createScene({ systemLayers: [{ id: 'main' }] }) as never, [gridSource(25)]);
+    const mods = { alt: true, ctrl: false, meta: false, shift: false };
+    const roles = { 'snap.suspend': true, 'snap.constrain': false };
+    click({ kind: 'sticky', size: { width: 40, height: 20 }, mods, roles }, { insert, snap }, { x: 103, y: 48 });
+    expect(insert.calls[0].bounds).toEqual({ x: 83, y: 38, width: 40, height: 20 });
+    expect(insert.calls[0].extras).toEqual({ kind: 'sticky' });
   });
 });
