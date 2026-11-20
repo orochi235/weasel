@@ -28,7 +28,7 @@ export function selectionTransformOps(
  * Apply `t` to the selection as one undo entry labeled `label`, finished by
  * the `transformFollowers` dep as a drag's transform is, and record it for
  * Transform Again. An action calling it requires what Transform Again does
- * for that kind: `scene`, `selection`, `applyOps`, `poseDescriptor`,
+ * for that kind: `scene`, `operands`, `applyOps`, `poseDescriptor`,
  * `transformFollowers`, and `geometryProjection` for a move or `view`,
  * `boundsIncludeStroke` and `drawnBoxes` for a rotate or a resize. Returns
  * whether anything changed.
