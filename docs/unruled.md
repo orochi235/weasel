@@ -3059,3 +3059,9 @@ Calls the lanes made without a ruling:
   `measureIds`, and so picking, editing, Delete and Clear all, reads only `ms.layer`. Either `measureIds` reads the
   whole scene, which puts a walk of every node on each pointer move's hit test (`measureEndSource.test.ts` holds
   that it must not), or the painter and the snap source take only `ms.layer`'s nodes and the rest go undrawn.
+
+## Audit round fifty-four (2026-11-20): renderer, part two
+
+- 2026-11-20 (my call): a `chunks` tile scatters at most one chunk per pixel of its tile (`size²`), however small a
+  `chunkSize` or large a `density` asks for more; past that count a scatter covers nothing more and only hangs the
+  resolve. The cap could instead be a fixed count, or a warning.
