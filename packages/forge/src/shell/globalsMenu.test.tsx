@@ -139,5 +139,15 @@ describe('globalsMenu', () => {
     expect(screen.queryByRole('menuitemradio', { name: 'Light' })).toBeNull();
     const checked = screen.getAllByRole('menuitemradio').filter((el) => el.getAttribute('aria-checked') === 'true');
     expect(checked).toHaveLength(1);
+    for (let n = 0; n < 2; n++) {
+      await act(async () => {
+        fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+      });
+    }
+    await waitFor(() => expect(screen.queryByRole('menuitemradio')).toBeNull());
+    await choose('Contrast', 'High');
+    await open('Globals');
+    await press(await screen.findByRole('menuitem', { name: 'Theme' }));
+    expect(screen.getByRole('menuitemradio', { name: 'Light' })).toHaveAttribute('aria-checked', 'true');
   });
 });

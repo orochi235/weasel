@@ -7,18 +7,22 @@ import { Icon } from '@weasel-js/ui/components/Icon';
 import { icon as glyph } from '../icons.gen';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getOwn } from '@weasel-js/registry';
+import { isPlainObject } from '@weasel-js/core';
 import type { StoryGlobals } from '../protocol/messages';
 import { followApp, type GlobalDeclaration, type GlobalDeclarations, type GlobalOption, labGlobals, labOptions } from './globals';
 
 const RECORD = 'fg-globals';
 
-/** The lab's global values, as persisted in the lab, and a setter for one. */
+/**
+ * The lab's global values, as persisted in the lab, and a setter for one. The setter writes onto what was stored, not
+ * onto the values read from it, so a choice another global's `shows` hides for now comes back once it shows again.
+ */
 export function useLabGlobals(declarations: GlobalDeclarations): [StoryGlobals, (key: string, value: string) => void] {
   const [stored, setStored] = usePersistedState<unknown>(RECORD, null, { scope: 'lab' });
   const values = useMemo(() => labGlobals(declarations, stored), [declarations, stored]);
   const set = useCallback(
-    (key: string, value: string) => setStored((prev: unknown) => ({ ...labGlobals(declarations, prev), [key]: value })),
-    [declarations, setStored],
+    (key: string, value: string) => setStored((prev: unknown) => ({ ...(isPlainObject(prev) ? prev : {}), [key]: value })),
+    [setStored],
   );
   return [values, set];
 }
