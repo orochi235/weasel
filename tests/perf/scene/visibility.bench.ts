@@ -64,10 +64,12 @@ const still: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 async function seams(): Promise<Seams> {
   const out: Seams = {};
   try {
-    const vis = await import('../../../packages/core/src/canvas/reach/sceneVisibility');
+    // Named at run time, so the merge-base, which has neither module, still loads this file.
+    const at = '../../../packages/core/src/canvas/reach/';
+    const vis = await import(/* @vite-ignore */ `${at}sceneVisibility`) as { __withoutSubtreeCullForTest: Seams['withoutCull'] };
     out.withoutCull = vis.__withoutSubtreeCullForTest;
-    const tree = await import('../../../packages/core/src/canvas/reach/reachTree');
-    out.builds = (tree as { reachTreeBuildCount?: () => number }).reachTreeBuildCount;
+    const tree = await import(/* @vite-ignore */ `${at}reachTree`) as { reachTreeBuildCount?: () => number };
+    out.builds = tree.reachTreeBuildCount;
   } catch {
     // The merge-base has no index.
   }
@@ -168,6 +170,7 @@ function machine(): Record<string, unknown> {
 it('render visibility: frame, edit and memory cost', async () => {
   const s = await seams();
   const started = machine();
+  console.log(`index seams ${s.withoutCull ? 'present' : 'absent'} at ${String(started.sha)} on ${String(started.host)}`);
   smallScenes();
   closingScenes(s);
   edits(1000);

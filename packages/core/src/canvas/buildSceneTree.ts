@@ -191,7 +191,7 @@ export function buildSceneTree<
     // An envelope's children share its own parent's frame.
     const childFrame = definesFrame(node as never) ? (scrolled ? scrolled(id, pose) : pose) : parentFrame;
     const children = node.consumesChildren === true ? [] : adapter.getChildren(id);
-    for (const cid of keep && !copied ? keep(id, children) : children) visit(cid, ownClips, childFrame, copied);
+    for (const cid of keep && !copied && children.length > 0 ? keep(id, children) : children) visit(cid, ownClips, childFrame, copied);
 
     // A copy is a copy of the clipped content, so its transform encloses the
     // container's own clip and sits inside every clip above it.

@@ -9,7 +9,7 @@
  * It is generic over dimension and over the box: the render index boxes
  * paint, the pick indexes their broad boxes, kernel3d its 3D boxes.
  */
-import { boxMeets, sameBox, unionInto } from './reachRegion';
+import { boxMeets, boxWithin, sameBox, unionInto } from './reachRegion';
 import { ReachRec, ReachSlab } from './reachRec';
 import { BOX_ALL, BOX_NONE, BOX_SOME, type ReachQuery, type ReachSource } from './reachTypes';
 import { WideChildren } from './wideChildren';
@@ -102,9 +102,10 @@ export function createReachTree(source: ReachSource, wideAt = WIDE_AT): ReachTre
         if (c) list.push(c);
       }
       rec.wide.load(list);
-    } else {
+    } else if (rec.orderMoved) {
       rec.wide.ranksStale = true;
     }
+    rec.orderMoved = false;
     rec.childrenStale = false;
   }
 
@@ -201,20 +202,45 @@ export function createReachTree(source: ReachSource, wideAt = WIDE_AT): ReachTre
       }
       live.push(rec ?? create(id));
     }
+    const joined = new Map<ReachRec, ReachRec[]>();
     for (const rec of live) {
       const parent = recOf(source.parentOf(rec.id!) ?? null) ?? root;
-      if (rec.parent !== parent) {
+      const joinedNow = rec.parent !== parent;
+      if (joinedNow) {
         if (rec.parent) {
           rec.parent.wide?.drop(rec);
           enqueue(rec.parent);
         }
         rec.parent = parent;
       }
+      // One that joined, or was touched in place under a container whose children changed: it may have moved among them.
+      if (joinedNow || parents.has(parent.id)) {
+        const list = joined.get(parent);
+        if (list) list.push(rec);
+        else joined.set(parent, [rec]);
+      }
       rec.ownStale = true;
       // A record queued at its old depth would drain out of order.
       if (rec.queued) rec.queued = false;
     }
+    for (const [parent, list] of joined) rankJoined(parent, list);
     for (const rec of live) enqueue(rec);
+  }
+
+  /** Rank the children that joined or moved within a wide container, when they are all at its end, after the rest;
+   *  otherwise it re-ranks whole. A child leaving keeps the others' order, so it needs nothing. */
+  function rankJoined(parent: ReachRec, list: readonly ReachRec[]): void {
+    if (parent.wide === null || parent.wide.ranksStale || parent.orderMoved) return;
+    const kids = source.childrenOf(parent.id);
+    const tail = new Set(kids.slice(kids.length - list.length));
+    if (!list.every((r) => tail.has(r.id!))) {
+      parent.orderMoved = true;
+      return;
+    }
+    for (let i = kids.length - list.length; i < kids.length; i++) {
+      const c = recs.get(kids[i]!);
+      if (c) c.rank = parent.wide.nextRank++;
+    }
   }
 
   function ensure(): void {
@@ -240,12 +266,15 @@ export function createReachTree(source: ReachSource, wideAt = WIDE_AT): ReachTre
       if (c) c.rank = i;
     }
     rec.wide!.ranksStale = false;
+    rec.wide!.nextRank = children.length;
   }
 
   function childrenMeeting(parent: string | null, children: readonly string[], q: ReachQuery): readonly string[] {
     const rec = recOf(parent);
-    if (rec === undefined) return children;
+    if (rec === undefined || children.length === 0) return children;
     const { data } = slab;
+    // A container wholly in view: every child that paints a wanted tag meets, and the walk culls the rest by node.
+    if (boxWithin(rec.reach, rec.reachTags, data, slab.reachAt(rec), dim, q)) return children;
     if (rec.wide === null) {
       return children.filter((id) => {
         const c = recs.get(id);

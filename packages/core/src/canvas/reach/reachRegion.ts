@@ -1,5 +1,5 @@
 /** Whether a box meets a reach query's region, and the box arithmetic the tree runs on. */
-import { BOX_ALL, BOX_NONE, type BoxKind, type ReachQuery, type ReachRegion } from './reachTypes';
+import { BOX_ALL, BOX_NONE, BOX_SOME, type BoxKind, type ReachQuery, type ReachRegion } from './reachTypes';
 
 /** Whether the box at `box[at…]` meets `region`. Closed: touching counts. */
 export function regionMeets(region: ReachRegion, box: Float64Array, at: number, dim: number): boolean {
@@ -53,5 +53,23 @@ export function unionInto(
 /** Whether two boxes of the tree's layout hold the same numbers. */
 export function sameBox(a: Float64Array, at: number, b: Float64Array, bt: number, dim: number): boolean {
   for (let j = 0; j < 2 * dim; j++) if (a[at + j] !== b[bt + j]) return false;
+  return true;
+}
+
+/** Whether every bit `q` wants of `tags` has a region holding the whole box at `box[at…]`: then all it holds meets `q`. */
+export function boxWithin(kind: BoxKind, tags: number, box: Float64Array, at: number, dim: number, q: ReachQuery): boolean {
+  if (kind !== BOX_SOME) return kind === BOX_NONE;
+  let bits = tags & q.wanted;
+  while (bits !== 0) {
+    const bit = 31 - Math.clz32(bits);
+    bits &= ~(1 << bit);
+    const region = q.regions[bit];
+    if (region === undefined) continue;
+    if (!('box' in region)) return false;
+    const r = region.box;
+    for (let j = 0; j < dim; j++) {
+      if (box[at + j]! < r[j]! || box[at + dim + j]! > r[dim + j]!) return false;
+    }
+  }
   return true;
 }

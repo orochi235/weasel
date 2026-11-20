@@ -15,6 +15,8 @@ export class WideChildren {
   tags = 0;
   /** Whether each child's `rank` still says its place among its siblings. */
   ranksStale = true;
+  /** The rank the next child joining at the end takes. */
+  nextRank = 0;
   private epoch = 0;
 
   constructor(private readonly slab: ReachSlab) {

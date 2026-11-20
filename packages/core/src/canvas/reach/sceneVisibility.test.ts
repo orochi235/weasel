@@ -67,7 +67,7 @@ function randomScene(rand: () => number, variant: Variant = {}): { scene: S; ids
     width: 5 + Math.round(rand() * 80), height: 5 + Math.round(rand() * 80),
     ...(rand() < 0.1 ? { rotation: rand() * 6 } : {}),
   });
-  for (let i = 0; i < 400; i++) {
+  for (let i = 0; i < 700; i++) {
     const parent = groups.length > 0 && rand() < 0.6 ? groups[Math.floor(rand() * Math.min(groups.length, 6))] : undefined;
     // A child may not paint below its parent's layer.
     const layer = (): Layer => (rand() < 0.3 || (parent && scene.get(parent)!.layer === 'b') ? 'b' : 'a');
@@ -109,8 +109,11 @@ function edit(scene: S, ids: NodeId[], groups: NodeId[], rand: () => number): vo
     const id = pick();
     const to = groups.find((g) => scene.get(g) !== undefined && g !== id && !scene.ancestorsOf(g).includes(id));
     scene.move(id, rand() < 0.5 || to === undefined ? null : to);
-  } else if (r < 0.95) {
+  } else if (r < 0.92) {
     scene.setLayer(pick(), rand() < 0.5 ? 'a' : 'b');
+  } else if (r < 0.96) {
+    const id = pick();
+    scene.reorder(id, Math.floor(rand() * 40));
   } else {
     const g = groups.find((x) => scene.get(x) !== undefined);
     if (g) scene.scroll!.set(g, { x: (rand() - 0.5) * 800, y: (rand() - 0.5) * 800 });

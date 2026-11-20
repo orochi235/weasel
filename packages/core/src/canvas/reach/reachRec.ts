@@ -11,6 +11,8 @@ export class ReachRec {
   ownStale = true;
   /** Its children changed: their ranks, and whether it is wide. */
   childrenStale = true;
+  /** A change to its children may have reordered them, so a wide one re-ranks. */
+  orderMoved = false;
   queued = false;
   wide: WideChildren | null = null;
   /** Its place among its siblings, read when its parent is wide. */

@@ -35,6 +35,10 @@ const TAG_BITS = 30;
 /** Trees kept per index, one per zoom octave a view of it is drawn at. */
 const OCTAVES_KEPT = 3;
 
+/** Nodes below which a scene is walked whole: the walk costs less than asking the index, measured on the
+ *  visibility bench (`tests/perf/scene/visibility.bench.ts`). */
+export const PRUNE_FROM_NODES = 512;
+
 /** Screen pixels a region is widened by, past the rounding between it and the exact cull. */
 const SLACK_PX = 1;
 
@@ -173,7 +177,7 @@ export function sceneSubtreeCull<TData, TLayer extends string, TPose>(
   rect: Rect,
   toPose?: (node: Node<TData, TLayer, TPose>) => TPose,
 ): SubtreeCullFor | undefined {
-  if (!enabled) return undefined;
+  if (!enabled || scene.nodes.size < PRUNE_FROM_NODES) return undefined;
   const index = visibilityOf(scene as AnyScene, paintBounds as PaintBoundsFn<AnyNode, unknown>, toPose as ToPose | undefined);
   return (viewOf, wanted) => {
     const octaves = new Map<string, View>();
