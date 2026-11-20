@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { RectPath, PolygonPath } from '../path';
 import { PATH_M, PATH_L, PATH_Z, PATH_C, PATH_Q as PQ, PATH_C as PC } from '../commands';
-import { tessellate } from './tessellate';
+import { tessellate, flattenPolygon } from './tessellate';
 import { MAX_EVENODD_RESOLVE_WORK } from './crossings';
 
 describe('tessellate (RectPath)', () => {
@@ -461,5 +461,23 @@ describe('tessellate (PolygonPath, nonzero, crossing or nested outlines)', () =>
     const sameWound = tessellate(squares([0, 0, 10, true], [3, 2, 4, true]));
     expect(coverage(sameWound, 4.3, 3.1)).toBe(1);
     expect(area(sameWound)).toBeCloseTo(100);
+  });
+});
+
+describe('flattenPolygon (closed contours only)', () => {
+  it('keeps a closed contour too long to spread into one push', () => {
+    const n = 400_000;
+    const coords: number[] = [];
+    // A square whose bottom edge is cut into collinear steps, which earcut drops cheaply.
+    for (let k = 0; k < n - 3; k++) coords.push((k / (n - 3)) * 100, 0);
+    coords.push(100, 0, 100, 100, 0, 100);
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, ...Array(n - 1).fill(PATH_L), PATH_Z]),
+      coords: new Float32Array(coords),
+      fillRule: 'nonzero',
+      openFill: 'none',
+    };
+    expect(flattenPolygon(path, 0.25).coords.length).toBe(n * 2);
   });
 });

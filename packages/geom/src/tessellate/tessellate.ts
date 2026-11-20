@@ -54,10 +54,12 @@ export function flattenPolygon(p: PolygonPath, tolerance: number): FlattenedCont
     if (!closed.has(c)) return;
     const end = c + 1 < all.contourStarts.length ? all.contourStarts[c + 1] : all.coords.length / 2;
     kept.contourStarts.push(kept.coords.length / 2);
-    kept.coords.push(...all.coords.slice(start * 2, end * 2));
-    kept.anchorA.push(...all.anchorA.slice(start, end));
-    kept.anchorB.push(...all.anchorB.slice(start, end));
-    kept.anchorT.push(...all.anchorT.slice(start, end));
+    for (let i = start * 2; i < end * 2; i++) kept.coords.push(all.coords[i]);
+    for (let i = start; i < end; i++) {
+      kept.anchorA.push(all.anchorA[i]);
+      kept.anchorB.push(all.anchorB[i]);
+      kept.anchorT.push(all.anchorT[i]);
+    }
   });
   return kept;
 }
