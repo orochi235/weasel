@@ -21,13 +21,18 @@ function PlayheadSync({ trialId, route, appliedRef }: PlayheadSyncProps) {
     if (!handle) return;
     const { clock } = handle;
     let hold: PlayheadHold | null = null;
-    // A `t` the URL names replaces any earlier one, met or absent alike.
+    let off: (() => void) | null = null;
+    // A `t` the URL names replaces any earlier one, met or absent alike. A new hold is made with `toUrl` unsubscribed
+    // and subscribes it again after, so its placing seek never reaches `toUrl` and its listener runs before `toUrl`'s on
+    // each later change: a seek or a play releases it before `toUrl` asks whether it still waits.
     const fromUrl = (): void => {
       const t = readPlayheadParam();
       hold?.release();
       hold = null;
       if (t === null || t === shownTime(clock)) return;
+      off?.();
       hold = holdAt(handle, t);
+      if (off) off = clock.subscribe(toUrl);
     };
     // Paused off the span's start, the URL holds the time shown within the pass; playing or at the start, it holds
     // none. While the span cannot hold a requested time yet, the URL keeps the request.
@@ -45,7 +50,7 @@ function PlayheadSync({ trialId, route, appliedRef }: PlayheadSyncProps) {
       fromUrl();
     }
     toUrl();
-    const off = clock.subscribe(toUrl);
+    off = clock.subscribe(toUrl);
     const onHashChange = (): void => {
       // A hash naming another story belongs to the trial that takes over; this one is about to unmount.
       if (readRoute() !== route) return;
@@ -55,7 +60,7 @@ function PlayheadSync({ trialId, route, appliedRef }: PlayheadSyncProps) {
     };
     window.addEventListener('hashchange', onHashChange);
     return () => {
-      off();
+      off?.();
       hold?.release();
       window.removeEventListener('hashchange', onHashChange);
     };

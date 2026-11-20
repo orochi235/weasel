@@ -187,6 +187,32 @@ describe('a hash change under the open story', () => {
     expect(playhead()).toBe(4000);
   });
 
+  it('writes the next scrub after a hash t to the URL', async ({ lab }) => {
+    const { mount, until, loaded } = lab;
+    mount('/#/t--timed');
+    await loaded();
+    act(() => {
+      location.hash = '#/t--timed?t=2';
+    });
+    await until(() => expect(playhead()).toBe(2000));
+    fireEvent.keyDown(within(trial()).getByRole('slider', { name: 'Position' }), { key: 'End' });
+    expect(playhead()).toBe(4000);
+    expect(tParam()).toBe('4');
+  });
+
+  it('writes play to the URL while a hash t still waits for the span', async ({ lab }) => {
+    const { mount, until, loaded } = lab;
+    mount('/#/t--growing');
+    await loaded();
+    act(() => {
+      location.hash = '#/t--growing?t=3';
+    });
+    await until(() => expect(playhead()).toBe(1000));
+    expect(tParam()).toBe('3');
+    fireEvent.click(within(trial()).getByRole('button', { name: 'Play' }));
+    expect(tParam()).toBeNull();
+  });
+
   it('drops a waiting t once the hash names the time shown, or none', async ({ lab }) => {
     const { mount, loaded } = lab;
     for (const next of ['#/t--growing?t=1', '#/t--growing']) {
