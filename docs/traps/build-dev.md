@@ -22,7 +22,8 @@ then `export type { X };`.
 **The consumer bundle's tree cannot catch an undeclared dependency.** It packs every `@weasel-js`
 package into one tree and externalizes every third-party one, so a bare specifier resolves whether or
 not the importer declared it. `npm run check:imports` compares each package's source imports with its
-manifest, and the installed consumers (`scripts/smoke-consumer-install.mjs`, the last phase of
+manifest, counting a sibling's optional peer that the imported entry loads (geom's `./booleans` loads
+`polygon-clipping`), since an install that nests the sibling leaves the peer out; and the installed consumers (`scripts/smoke-consumer-install.mjs`, the last phase of
 `test:smoke:consumer`) install only what a small app declares, so a third-party import nothing in that
 install declares fails as it loads. `check:manifests` reads no imports, only that advertised paths, and
 each wildcard export's JS and declaration for every name, are in the tarball.

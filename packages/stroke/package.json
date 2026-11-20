@@ -25,7 +25,9 @@
   "dependencies": {
     "@weasel-js/geom": "1.19.1",
     "@weasel-js/paint": "1.19.1",
-    "@weasel-js/registry": "1.19.1"
+    "@weasel-js/registry": "1.19.1",
+    "earcut": "3.2.4",
+    "polygon-clipping": "^0.15.7"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
