@@ -160,7 +160,8 @@ export function buildGraph<TPose>(
       if (Array.isArray(deps) && deps.length === 2) {
         // An end inside a region ranks against the outermost region holding it.
         const from = outer.get(deps[0]!), to = outer.get(deps[1]!);
-        if (from !== undefined && from === to) continue;
+        // Ends that resolve to one region are inside it, as a node's own loop is not.
+        if ((from !== undefined || to !== undefined) && (from ?? deps[0]) === (to ?? deps[1])) continue;
         candidates.push({
           id: node.id,
           from: from ?? deps[0]!,

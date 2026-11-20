@@ -11,14 +11,14 @@ import { withDiagramRegistry } from './edge';
 interface Rect { x: number; y: number; width: number; height: number }
 
 /** `src → m`, `m` inside container `box`, and `n` loose beside it. */
-function sceneOf(): Scene<unknown, 'main', Rect> {
+function sceneOf(extra: { from: string; to: string }[] = []): Scene<unknown, 'main', Rect> {
   const specs = diagramScene({
     nodes: [
       { id: 'src', lines: ['src'], at: { x: 600, y: 600 } },
       { id: 'm', lines: ['m'], at: { x: 40, y: 80 } },
       { id: 'n', lines: ['n'], at: { x: 900, y: 0 } },
     ],
-    edges: [{ from: 'src', to: 'm' }, { from: 'm', to: 'n' }],
+    edges: [{ from: 'src', to: 'm' }, { from: 'm', to: 'n' }, ...extra],
     containers: [{ id: 'box', role: 'container', label: 'Box', members: ['m'], box: { x: 0, y: 0, width: 300, height: 200 } }],
   }, { layout: 'none' });
   return createScene<unknown, 'main', Rect>({
@@ -41,5 +41,10 @@ describe('buildGraph over containers', () => {
     const at = new Map(Array.from(sceneParticipants(scene as never)(), (p) => [p.node.id, p.pose as Rect]));
     const box = at.get('box')!, m = at.get('m')!;
     expect([m.x - box.x, m.y - box.y]).toEqual([40, 80]);
+  });
+
+  it('drops an edge from a region to its own member, as diagramScene does, and keeps a node\'s own loop', () => {
+    const graph = graphOf(sceneOf([{ from: 'box', to: 'm' }, { from: 'src', to: 'src' }]));
+    expect(graph.edges.map((e) => [e.from, e.to])).toEqual([['src', 'box'], ['box', 'n'], ['src', 'src']]);
   });
 });
