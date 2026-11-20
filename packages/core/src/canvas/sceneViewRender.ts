@@ -15,10 +15,11 @@ import { wrapNodeOutput } from './wrapNodeOutput';
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 import { scenePickIds } from './scenePickIds';
 import { sceneToAdapter } from './sceneAdapter';
-import { withInheritedPaintBounds, withInheritedPaints } from './inheritedPaints';
+import { withInheritedPaints } from './inheritedPaints';
+import { sceneCullPaintBounds } from './sceneSlotWiring';
 import { withSceneShapes } from './sceneShapes';
 import { nodeShapesOf } from './nodeShapeRegistry';
-import { withDerivedPaths, withOverridePathBounds, sceneDerivedPathOf } from './derivedPath';
+import { withDerivedPaths, sceneDerivedPathOf } from './derivedPath';
 import { withPaintOverrides, type PaintOverrides } from './paintOverrides';
 import type { SceneViewDrawOne } from './NodeShape';
 import { paintedSceneLayers } from './sceneLayerPaint';
@@ -27,7 +28,6 @@ import { paintMissesView, type PaintBoundsFn } from './paintCull';
 import { paintBoundsFor } from './defaultDrawOne';
 import { pixelScaleCtx } from './pixelScale';
 import { nodeAsShown, shownLookup } from 'core/scene/nodeAsShown';
-import { withShownNode } from './shownNodes';
 
 export type { SceneViewDrawOne } from './NodeShape';
 
@@ -179,7 +179,7 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
 
   const cullRect = cull ? { x: 0, y: 0, width: cull.width, height: cull.height } : undefined;
   const culled = cullRect && cull?.paintBounds
-    ? paintMissesView(withShownNode(scene.overrides, withSceneShapes(scene, withOverridePathBounds(scene.overrides, withInheritedPaintBounds(shown, cull.paintBounds)))), view, cullRect)
+    ? paintMissesView(sceneCullPaintBounds(scene, cull.paintBounds, shown), view, cullRect)
     : undefined;
   const tree: DrawCommand[] = buildSceneTree(
     hierarchy as Parameters<typeof buildSceneTree>[0],
