@@ -58,6 +58,16 @@ describe('withColorPickers', () => {
     expect(c.setColor).toHaveBeenCalledWith(row, '#ffffff80');
   });
 
+  it('draws each swatch as the color choosing it writes now, at the alpha held now', () => {
+    const row = { ...fill('#00000080'), alpha: true };
+    const c = ctrl('#12345620');
+    const { entries, swatchOf } = withColorPickers([row], ['#1e88e5'], () => c);
+    const swatch = (entries[0] as MenuSubmenuEntry).entries[0] as MenuItemEntry;
+    expect(swatchOf(swatch)).toBe('#1e88e520');
+    swatch.run();
+    expect(c.setColor).toHaveBeenCalledWith(row, '#1e88e520');
+  });
+
   it('checks the swatch the color holds at its current alpha, not the one it opened with', () => {
     const row = { ...fill('#000000ff'), alpha: true };
     const picker = withColorPickers([row], ['#000000', '#1e88e5'], () => ctrl('#1e88e580')).entries[0] as MenuSubmenuEntry;

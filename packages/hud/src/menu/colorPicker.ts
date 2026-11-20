@@ -39,7 +39,6 @@ export function withColorPickers(
     const now = () => c().colorValue(e);
     const alpha = e.alpha === true;
     const rows: MenuEntry[] = palette.map((color) => {
-      const value = hexColor(color, alpha, e.value) ?? color;
       const writes = (held: string | undefined) => hexColor(color, alpha, held) ?? color;
       const row: MenuEntry = {
         kind: 'item', key: `${e.key}/${color}`, label: color, radio: true,
@@ -51,7 +50,7 @@ export function withColorPickers(
         },
         run: () => c().setColor(e, writes(now())),
       };
-      swatches.set(row, () => value);
+      swatches.set(row, () => writes(now()));
       return row;
     });
     const hex: MenuTextEntry = {
