@@ -1,6 +1,7 @@
 import type { NodeId, PoseHold, PoseOverride, PoseOverrides, ShownOverride } from './types';
 
-/** The table methods a hold writes through. */
+/** The table methods a hold writes through. `set` and `clear` need not
+ *  notify: the hold's `commit` closes each frame. */
 type HoldTable<TPose, TData> = Pick<PoseOverrides<TPose, TData>, 'set' | 'has' | 'ids' | 'clear' | 'commit'>;
 
 /** Build the {@link PoseHold} a table hands out from `hold()`. `pliesOf`
@@ -27,7 +28,6 @@ export function createPoseHold<TPose, TData = unknown>(
       }
       const entry: PoseOverride<TPose, TData> = { pose: shown.pose, data: shown.data };
       held.set(id, entry);
-      // `table.set` notifies per call, so an id is set once and mutated after.
       table.set(id, entry);
     }
     for (const [id, entry] of held) {

@@ -20,6 +20,19 @@ describe('PoseOverrides.hold', () => {
     expect(scene.overrides.read(b)?.pose).toEqual(at(7));
   });
 
+  it('notifies once per frame, however many ids it installs or releases', () => {
+    const { scene, a, b } = setup();
+    const hold = scene.overrides.hold();
+    const heard: Array<[number | undefined, number | undefined]> = [];
+    scene.overrides.subscribe(() => heard.push([scene.overrides.read(a)?.pose?.x, scene.overrides.read(b)?.pose?.x]));
+    const g = scene.overrides.getGeneration();
+    hold.set([[a, at(5)], [b, at(7)]]);
+    expect(heard).toEqual([[5, 7]]);
+    expect(scene.overrides.getGeneration()).toBe(g + 1);
+    hold.set([]);
+    expect(heard).toEqual([[5, 7], [undefined, undefined]]);
+  });
+
   it('releases an id the next frame leaves out', () => {
     const { scene, a, b } = setup();
     const hold = scene.overrides.hold();
