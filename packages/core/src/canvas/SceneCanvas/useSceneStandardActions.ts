@@ -43,7 +43,7 @@ import { useViewportActions, viewportZoomOption } from './useViewportActions';
 /** The `<SceneCanvas>` props the standard actions and their deps read. */
 export type StandardActionsProps = Pick<
   SceneCanvasProps<unknown, string, unknown>,
-  | 'actions' | 'tune' | 'bindingOverrides' | 'geometry' | 'viewport' | 'layoutDropTarget'
+  | 'actions' | 'tune' | 'bindingOverrides' | 'geometry' | 'viewport'
   | 'reflowTransition' | 'ingestion' | 'snap' | 'modes'
 >;
 
@@ -172,7 +172,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   // Per-dep wiring modules under `src/canvas/deps/`. See each file for the
   // dep's contract and trade-offs.
   useNodeAtPointDepSource(pickEvery);
-  useLayoutDepSource(scene, props.layoutDropTarget, reflowTransition);
+  useLayoutDepSource(scene, reflowTransition);
   useEnteredGroupApiSource(enteredGroup);
   useSnapDepSource(
     currentViewRef,

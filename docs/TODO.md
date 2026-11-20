@@ -240,13 +240,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-- **(P2) [agent] `<SceneCanvas layoutDropTarget>` is a move rule held on the canvas.** Its one reader is the move
-  action's layout drop (`packages/editing/src/actions/move/layout/container.ts`, through the `layout` dep's
-  `dropTarget`), so by the 2026-11-19 ruling on deps it belongs in the move action's definition, as a param or
-  an option of its `layoutDrop` behavior, and the prop and `LayoutDep.dropTarget` go. Left out of the
-  2026-11-19 dep sweep because another agent was rebuilding move's behaviors then.
-  Closes when the drop mode is configured on the move action and neither the prop nor `dropTarget` exists.
-
 ### Extension authoring and published consumers
 
 ---

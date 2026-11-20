@@ -46,7 +46,7 @@ describe('scene actions in a paged scene', () => {
     const { scene } = pagedScene();
     const session = {
       scene, pc: scene.composition, projection: RECT_POSE_DESCRIPTOR, view: undefined, verdict: () => true,
-      layout: { getLayout: (id: string) => scene.get(asNodeId(id))?.layout ?? null },
+      layout: { getLayout: (id: string) => scene.get(asNodeId(id))?.layout ?? null }, layoutDropTarget: () => 'innermost',
     };
     expect(pickContainer(session as never, [], { x: 20, y: 20 })).toBeNull();
   });

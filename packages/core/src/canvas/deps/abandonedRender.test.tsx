@@ -115,14 +115,12 @@ describe('dep sources after an abandoned render', () => {
     expect(dep(reg, 'ingestion').svg).toBe(a);
   });
 
-  it('layout reads the committed drop target', () => {
+  it('layout reads the committed reflow transition', () => {
     const scene = sceneWith();
-    const reg = registryAfterAbandon(
-      { drop: 'innermost' as const },
-      { drop: 'topmost' as const },
-      (p) => { useLayoutDepSource(scene as never, p.drop); },
-    );
-    expect(dep(reg, 'layout').dropTarget).toBe('innermost');
+    const a = { glide() {}, settle() {}, stop() {}, poseOf: () => undefined };
+    const b = { ...a };
+    const reg = registryAfterAbandon(a, b, (r) => { useLayoutDepSource(scene as never, r); });
+    expect(dep(reg, 'layout').reflow).toBe(a);
   });
 
   it('nodeAtPoint picks through the committed pickEvery', () => {

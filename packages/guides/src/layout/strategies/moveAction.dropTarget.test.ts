@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { type InvocationCtx, type LayoutDep, type LayoutStrategy, type NodeId } from '@weasel-js/core';
+import { type InvocationCtx, type LayoutDropTargetMode, type LayoutStrategy, type NodeId } from '@weasel-js/core';
 import { tileGrid } from './tileGrid';
 import {
   squarePolygon,
@@ -9,8 +9,8 @@ import {
 } from './testing/moveLayoutStubs';
 import { moveAction } from '@weasel-js/editing';
 
-describe('moveAction layout drop-target mode', () => {
-  type Mode = NonNullable<LayoutDep['dropTarget']>;
+describe("moveAction's layoutDropTarget param", () => {
+  type Mode = LayoutDropTargetMode;
   type Strategy = LayoutStrategy<P>;
   type Region = NonNullable<Strategy['dropRegion']>;
   type Drag = NonNullable<InvocationCtx['drag']>;
@@ -65,14 +65,10 @@ describe('moveAction layout drop-target mode', () => {
     drag: Drag = dragTo({ x: 75, y: 75 }),
   ) {
     const { scene, layouts } = fixture;
-    const ctx = (d?: Drag): InvocationCtx => {
-      const c = makeCtx(scene, ['x'], d, layouts);
-      if (mode) c.deps.layout!.dropTarget = mode;
-      return c;
-    };
+    const ctx = (d?: Drag): InvocationCtx => makeCtx(scene, ['x'], d, layouts);
     const invoker = moveAction.invoker;
     if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
-    const handle = invoker.start(ctx());
+    const handle = invoker.start(ctx(), mode ? { params: { layoutDropTarget: mode } } : undefined);
     handle.onMove!(ctx(drag));
     const duringDrag = [...fixture.reflowedInto];
     handle.onEnd!(ctx(drag), 'commit');

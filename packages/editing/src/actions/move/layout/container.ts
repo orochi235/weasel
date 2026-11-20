@@ -1,7 +1,7 @@
 import { pathContainsPoint, rectContainsPointHalfOpen, type Rect } from '@weasel-js/geom';
 import type { NodeId, Scene, StrategyView } from '@weasel-js/core';
 import { poseDescriptorForNode, toPlane, type PlaneMap, childFrameAt, composeWorldPose, sceneViewPoseAdapter, refusalOf, isPageStructure } from '@weasel-js/core/engine';
-import type { DropRegion, LayoutContainer, LayoutStrategy, LayoutDep } from '@weasel-js/core/engine';
+import type { DropRegion, LayoutContainer, LayoutDropTargetMode, LayoutStrategy } from '@weasel-js/core/engine';
 import { planeOf } from '@weasel-js/core';
 import type { MoveSession } from '../session';
 import { carryDragged, type DraggedChild } from './dragged';
@@ -42,7 +42,7 @@ function regionContains(
 
 function chooseContainer(
   scene: Scene<unknown, string, unknown>,
-  mode: NonNullable<LayoutDep['dropTarget']>,
+  mode: LayoutDropTargetMode,
   candidates: readonly Candidate[],
 ): Candidate | null {
   let dest: Candidate | null = null;
@@ -82,7 +82,7 @@ export function pickContainer(
   const d = session.projection;
   const draggedIds = new Set<NodeId>(dragged.map((c) => c.id));
   const candidates: Candidate[] = [];
-  const mode = layoutDep.dropTarget ?? 'innermost';
+  const mode = session.layoutDropTarget();
   const testInside = (
     id: NodeId, cPose: unknown, aabb: Rect, layout: Layout, at: { x: number; y: number },
   ): boolean => {

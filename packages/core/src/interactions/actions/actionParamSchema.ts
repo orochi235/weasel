@@ -11,6 +11,7 @@ import type { DragPanParams } from './defaults/viewportDragPan';
 import type { Paint, VertexWidth } from '@weasel-js/paint';
 import type { EditAnchorsParams } from './edit-anchors/params';
 import type { SetAnchorFieldParams } from 'domains/paths/useAnchorFields';
+import type { LayoutDropTargetMode } from '../../layout/types';
 
 /** A nudge action's params: the small or the big step. */
 export type NudgeParams = { magnitude: 'small' | 'big' };
@@ -37,6 +38,9 @@ export type ReparentOnDrop = 'off' | 'top' | 'above';
 /** `move`'s params: its history and lifecycle, where a drop lands the moved nodes, and the ids a drag carries. */
 export type MoveParams = RunLifecycleOptions & {
   reparentOnDrop?: ReparentOnDrop;
+  /** Which layout container takes the drop when several contain the drop point, for both the drag-time reflow
+   *  preview and the commit. Default `'innermost'`. */
+  layoutDropTarget?: LayoutDropTargetMode;
   expandIds?: (ids: string[]) => string[];
 };
 /** `rotate`'s params: its history and lifecycle, and the pivot a multi-selection turns about. */
