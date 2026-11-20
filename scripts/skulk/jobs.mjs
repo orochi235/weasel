@@ -8,8 +8,8 @@ import { createWriteStream, existsSync, mkdirSync, readFileSync, readdirSync } f
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  CLAUDE_CONFIG, FIX_MODEL, FIX_SLOTS_PER_NODE, JOB_IN, JOB_OUT, JOB_TIMEOUT_MIN, MATCH_MODEL, NO_FIXERS,
-  REFUSED_COOLDOWN_MIN, REVIEW_DENIED, REVIEW_MODEL, REVIEW_SLOTS_PER_NODE, REVIEW_TOOLS, STATE_DIR, nodesAt,
+  CLAUDE_CONFIG, FIX_EFFORT, FIX_MODEL, FIX_SLOTS_PER_NODE, JOB_IN, JOB_OUT, JOB_TIMEOUT_MIN, MATCH_MODEL, NO_FIXERS,
+  REFUSED_COOLDOWN_MIN, REVIEW_DENIED, REVIEW_EFFORT, REVIEW_MODEL, REVIEW_SLOTS_PER_NODE, REVIEW_TOOLS, STATE_DIR, nodesAt,
 } from './config.mjs';
 import { leaseAt, pidAlive, takeLease } from './lease.mjs';
 
@@ -34,19 +34,21 @@ const claudeLine = (promptFile, budgetUsd, flags, progress) =>
     `CLAUDE_CONFIG_DIR=${CLAUDE_CONFIG}`,
     `perl -e 'alarm shift; exec @ARGV' ${JOB_TIMEOUT_MIN * 60}`,
     'claude -p "$(cat', `${q(promptFile)})"`,
-    `--output-format ${progress ? 'stream-json --verbose' : 'json'} --strict-mcp-config --max-budget-usd ${budgetUsd}`, ...flags,
+    `--output-format ${progress ? 'stream-json --verbose' : 'json'} --strict-mcp-config --setting-sources project,local`,
+    `--max-budget-usd ${budgetUsd}`, ...flags,
     progress
       ? `2> ${JOB_OUT}/claude.err | node ${PROGRESS_IN} ${progress} ${JOB_OUT}/claude.json; echo "\${PIPESTATUS[0]}" > ${JOB_OUT}/exit`
       : `> ${JOB_OUT}/claude.json 2> ${JOB_OUT}/claude.err; echo $? > ${JOB_OUT}/exit`,
   ].join(' ');
 
 const model = (name) => (name ? ['--model', name] : []);
+const effort = (level) => (level ? ['--effort', level] : []);
 const fresh = `rm -rf ${JOB_OUT} && mkdir -p ${JOB_OUT}`;
 
 /** A reviewer, counted through the files listed in `.skulk/in/<area>/files.txt`. */
 export const reviewShell = (area, budgetUsd) =>
   [NVM, fresh, claudeLine(`${JOB_IN}/${area}/review.md`, budgetUsd, [
-    '--allowedTools', q(REVIEW_TOOLS.join(',')), '--disallowedTools', q(REVIEW_DENIED.join(',')), ...model(REVIEW_MODEL),
+    '--allowedTools', q(REVIEW_TOOLS.join(',')), '--disallowedTools', q(REVIEW_DENIED.join(',')), ...model(REVIEW_MODEL), ...effort(REVIEW_EFFORT),
   ], q(`${JOB_IN}/${area}/files.txt`))].join(' && ');
 
 export const matchShell = (area, budgetUsd) =>
@@ -68,7 +70,7 @@ export const fixShell = (area, budgetUsd, findings) =>
     'LOCK=$(shasum package-lock.json | cut -d" " -f1)',
     `if [ "$(cat node_modules/.skulk-lock 2>/dev/null)" != "$LOCK" ]; then npm ci --no-audit --no-fund > ${JOB_OUT}/npm-ci.log 2>&1 && echo "$LOCK" > node_modules/.skulk-lock; fi`,
     'set +e',
-    claudeLine(`${JOB_IN}/${area}/fix.md`, budgetUsd, ['--dangerously-skip-permissions', ...model(FIX_MODEL)], `--commits ${findings}`),
+    claudeLine(`${JOB_IN}/${area}/fix.md`, budgetUsd, ['--dangerously-skip-permissions', ...model(FIX_MODEL), ...effort(FIX_EFFORT)], `--commits ${findings}`),
     `git format-patch --stdout "$BASE..HEAD" > ${JOB_OUT}/fix.mbox`,
     `git status --porcelain > ${JOB_OUT}/uncommitted.txt`,
     'exit 0',
