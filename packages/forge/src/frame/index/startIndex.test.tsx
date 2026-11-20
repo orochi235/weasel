@@ -187,7 +187,12 @@ describe('startIndex', () => {
     };
     const { shell, received } = start({ render });
     await init(shell);
-    expect(received.find((m) => m.type === 'fault')).toMatchObject({ phase: 'render', message: 'bad page' });
+    expect(received.find((m) => m.type === 'fault')).toMatchObject({
+      phase: 'render',
+      message: 'bad page',
+      stack: expect.stringContaining('bad page'),
+      seq: 1,
+    });
   });
 
   it('outlines the elements an a11y.highlight names, and clears them on an empty one', async () => {

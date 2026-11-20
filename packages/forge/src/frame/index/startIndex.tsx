@@ -70,7 +70,7 @@ export function startIndex(options: StartIndexOptions): () => void {
       open: (id) => send({ type: 'open', id }),
     });
     root.render(
-      <PageBoundary onError={(error) => send({ type: 'fault', phase: 'render', message: message(error) })}>
+      <PageBoundary onError={(error) => send(fault('render', error, seq))}>
         <IndexPage env={env} render={options.bundle.render} />
       </PageBoundary>,
     );
