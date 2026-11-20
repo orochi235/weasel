@@ -3016,3 +3016,9 @@ Calls the lanes made without a ruling:
   differs from the URLs another HUD registered `weasel-hud-default` with, since every HUD on a page shares that one
   family. A host wanting another atlas registers it under a family of its own and passes the name. Swapping the
   family to the newest pair with `replace`, under every HUD already drawing it, was the alternative.
+
+## Audit round fifty-three (2026-11-20): plot
+
+- 2026-11-20 (the fixer's call): `insertPacketField` throws on a field starting inside the field before it, as
+  `setPacketStart` does, so the fields never overlap. Moving the new field along to the first free bit was the
+  alternative.
