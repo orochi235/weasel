@@ -2,11 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { nativeSvgKind, nativeSvgSpace } from './svgNative';
 
 describe('what SVG carries natively', () => {
-  it('has a paint server for solids, the two SVG gradients and patterns, and nothing else', () => {
-    for (const kind of ['solid', 'linear-gradient', 'radial-gradient', 'hatch', 'crosshatch', 'dots', 'chunks', 'texture']) {
+  it('has a paint server for solids, the two SVG gradients, tiles, and images, and nothing else', () => {
+    for (const kind of ['solid', 'linear-gradient', 'radial-gradient', 'hatch', 'crosshatch', 'dots', 'chunks', 'image']) {
       expect(nativeSvgKind(kind)).toBe(true);
     }
-    for (const kind of ['conic-gradient', 'mesh-gradient', 'noise']) {
+    for (const kind of ['conic-gradient', 'mesh-gradient', 'texture', 'noise']) {
       expect(nativeSvgKind(kind)).toBe(false);
     }
   });

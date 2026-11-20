@@ -224,12 +224,19 @@ export interface PaintDrawKindLoaderOptions extends Pick<PushOptions, 'fallback'
    * keeping a registry of its own over the draw half registers both here.
    */
   register?(entry: PaintDrawKind): () => void;
+  /**
+   * Whether the kind has landed, so needs no load. Defaults to whether its
+   * draw half is registered; a `register` filling a registry of its own
+   * answers for that one, so a draw half registered elsewhere still loads it.
+   */
+  has?(id: string): boolean;
 }
 
 /** One `registerPaintDrawKindLoader` call: its own object, so the same function declared twice is two loaders. */
 interface Loader {
   load(): Promise<PaintDrawKind>;
   register(entry: PaintDrawKind): () => void;
+  has(id: string): boolean;
   /** Its load, kept after it settles: a failed load is not retried on every frame that meets the kind. */
   started?: Promise<void>;
   /** Removes the kind this loader registered. */
@@ -259,7 +266,8 @@ export function registerPaintDrawKindLoader(
   id: string, load: PaintDrawKindLoader, options: PaintDrawKindLoaderOptions = {},
 ): () => void {
   const register = options.register ?? ((entry: PaintDrawKind) => registerPaintDrawKind(entry, { fallback: options.fallback }));
-  const loader: Loader = { load, register, disposed: false };
+  const has = options.has ?? ((kind: string) => KINDS.has(kind));
+  const loader: Loader = { load, register, has, disposed: false };
   const dropLoader = LOADERS.push(id, loader, { fallback: options.fallback });
   return () => {
     if (loader.disposed) return;
@@ -281,9 +289,15 @@ function startLoad(id: string): Promise<void> {
     if (entry.id !== id) failed(new Error(`weasel: the loader for paint kind "${id}" resolved to "${entry.id}".`));
     if (LOADERS.get(id) !== loader) {
       // Displaced or disposed while it ran: the live loader, if any, answers instead.
-      return KINDS.has(id) || !LOADERS.has(id) ? undefined : startLoad(id);
+      const live = LOADERS.get(id);
+      return !live || live.has(id) ? undefined : startLoad(id);
     }
-    if (!KINDS.has(id)) loader.drop = loader.register(entry);
+    if (loader.has(id)) return;
+    try {
+      loader.drop = loader.register(entry);
+    } catch (err) {
+      failed(err);
+    }
   }, failed);
   loader.started = done;
   return done;
@@ -307,8 +321,9 @@ export function warmPaintKinds(kinds?: readonly string[]): Promise<void> {
   const ids = kinds ?? LOADERS.entries().map((e) => e.key);
   const loads: Promise<void>[] = [];
   for (const id of ids) {
-    if (KINDS.has(id)) continue;
-    if (!LOADERS.has(id)) {
+    const loader = LOADERS.get(id);
+    if (loader ? loader.has(id) : KINDS.has(id)) continue;
+    if (!loader) {
       return Promise.reject(new Error(
         `weasel warmPaintKinds: "${id}" is neither registered nor loadable.`,
       ));

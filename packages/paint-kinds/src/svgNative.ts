@@ -5,10 +5,11 @@
 import { isTileKind } from '@weasel-js/paint';
 
 /** Whether SVG has its own paint server for paint kind `kind`: solids, the
- *  linear and radial gradients, and patterns. Any other kind is written in
- *  weasel's namespace with a fallback color, which other renderers paint flat. */
+ *  linear and radial gradients, tiles, and images. Any other kind, `texture`
+ *  included, is written in weasel's namespace with a fallback color, which
+ *  other renderers paint flat. */
 export function nativeSvgKind(kind: string): boolean {
-  return kind === 'solid' || kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'texture' || kind === 'image' || isTileKind(kind);
+  return kind === 'solid' || kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'image' || isTileKind(kind);
 }
 
 /** Whether a gradient interpolating through `space` blends the same in every
