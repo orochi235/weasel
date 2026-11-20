@@ -32,13 +32,30 @@ function hosted() {
 describe('a hollow lens’s damage', () => {
   it('invalidates the last box where the host now shows it, after a scroll', () => {
     const { el, invalidateBox, wrapper, scroll } = hosted();
-    const { result } = renderHook(() => useLensDamage(true, undefined, { current: { current: el } }), {
-      wrapper,
-    });
+    const { result } = renderHook(
+      () => useLensDamage(true, undefined, { current: { current: el } }),
+      {
+        wrapper,
+      },
+    );
     result.current?.(lensAt(50, 50));
     scroll(-30);
     invalidateBox.mockClear();
     result.current?.(lensAt(60, 50));
     expect(invalidateBox).toHaveBeenCalledWith({ left: 40, top: 10, width: 20, height: 20 });
+  });
+});
+
+describe('a hollow lens turned solid', () => {
+  it('redraws the tiles its last box covered', () => {
+    const { el, invalidateBox, wrapper } = hosted();
+    const { result, rerender } = renderHook(
+      ({ hollow }) => useLensDamage(hollow, vi.fn(), { current: { current: el } }),
+      { wrapper, initialProps: { hollow: true } },
+    );
+    result.current?.(lensAt(50, 50));
+    invalidateBox.mockClear();
+    rerender({ hollow: false });
+    expect(invalidateBox).toHaveBeenCalledWith({ left: 40, top: 40, width: 20, height: 20 });
   });
 });

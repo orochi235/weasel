@@ -1,5 +1,5 @@
 import { layoutBoxOf, useLatest } from '@weasel-js/core';
-import { type RefObject, useCallback, useRef } from 'react';
+import { type RefObject, useCallback, useEffect, useRef } from 'react';
 import type { Box } from '../surface/rect';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import type { LoupeLens } from './types';
@@ -13,6 +13,16 @@ function clientBoxOf(host: HTMLElement, lens: LoupeLens): Box {
     width: lens.width * at.scale.x,
     height: lens.height * at.scale.y,
   };
+}
+
+/** Redraws the tiles under each lens box, in `host`'s px. */
+function invalidate(
+  damage: { invalidateBox: (box: Box) => void },
+  host: HTMLElement | null,
+  lenses: readonly (LoupeLens | null)[],
+): void {
+  if (!host) return;
+  for (const lens of lenses) if (lens) damage.invalidateBox(clientBoxOf(host, lens));
 }
 
 /**
@@ -34,11 +44,18 @@ export function useLensDamage(
     (lens: LoupeLens | null) => {
       onLensLatest.current?.(lens);
       if (!damage) return;
-      const el = host.current.current;
-      for (const box of [was.current, lens]) if (box && el) damage.invalidateBox(clientBoxOf(el, box));
+      invalidate(damage, host.current.current, [was.current, lens]);
       was.current = lens;
     },
     [damage, onLensLatest, host],
+  );
+  // Turning hollow off, or losing the surface, leaves the last hollow drawing in its tiles unless they redraw now.
+  useEffect(
+    () => () => {
+      if (damage) invalidate(damage, host.current.current, [was.current]);
+      was.current = null;
+    },
+    [damage, host],
   );
   return onLens || damage ? report : undefined;
 }
