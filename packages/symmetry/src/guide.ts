@@ -2,8 +2,7 @@ import { transformPoint, ellipsePath, linePath, rectPath, type Path, type Point 
 import {
   viewToTransform, worldToScreen, type DrawCommand, type LayerHit, type RenderLayer, type View,
 } from '@weasel-js/core';
-import { SYMMETRY_KINDS, wedges, type SymmetrySpec } from './kinds';
-import { latticePoints } from './wallpaper';
+import { SYMMETRY_KINDS, wallpaperLattice, wedges, type SymmetrySpec } from './kinds';
 
 /** The guide layer's id. */
 export const SYMMETRY_GUIDE_ID = 'weasel-symmetry-guide';
@@ -184,7 +183,7 @@ export function createSymmetryGuideLayer(source: SymmetryGuideSource, style: Sym
   };
 }
 
-/** A wallpaper's extent outlined, and a dot at each of its lattice points. */
+/** A wallpaper's extent outlined, and a dot at each lattice point it draws a cell at. */
 function latticeGuide(spec: SymmetrySpec, center: Point, view: View, color: string): DrawCommand[] {
   const t = viewToTransform(view);
   const { x, y, width, height } = spec.extent;
@@ -196,7 +195,7 @@ function latticeGuide(spec: SymmetrySpec, center: Point, view: View, color: stri
     path: rectPath(Math.min(x0, x1), Math.min(y0, y1), Math.abs(x1 - x0), Math.abs(y1 - y0)),
     stroke: { paint, width: { px: 1 }, dash: [4, 4] },
   }];
-  for (const p of latticePoints(spec)) {
+  for (const p of wallpaperLattice(spec, center)) {
     const [px, py] = worldToScreen(center.x + p.x, center.y + p.y, t);
     out.push({ kind: 'path', path: ellipsePath({ x: px - 2, y: py - 2, width: 4, height: 4 }), fill: { paint } });
   }

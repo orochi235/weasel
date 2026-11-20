@@ -107,3 +107,15 @@ describe('symmetryHandleChange', () => {
     expect(out.spec!.angle).toBeUndefined();
   });
 });
+
+describe('the wallpaper guide', () => {
+  it('dots only the lattice points a capped cell draws at', () => {
+    const s = spec({
+      kind: 'wallpaper', cell: 'kaleidoscope', count: 6, angle: 0, spacing: 4, rowAngle: Math.PI / 3, rowSpacing: 4,
+      extent: { x: -400, y: -400, width: 800, height: 800 },
+    });
+    const draw = createSymmetryGuideLayer(source(s)).draw!(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
+    const dots = draw.filter((c) => c.kind === 'path' && 'fill' in c && c.fill && !('stroke' in c && c.stroke));
+    expect(dots).toHaveLength(Math.floor(4097 / 12));
+  });
+});
