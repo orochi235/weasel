@@ -2820,3 +2820,6 @@ Calls the lanes made without a ruling:
   writing (`sequenceLocked`, `sequence/layer.ts`), as `redrawSequences` already did. Every edit builds all of a
   root's parts again, so one locked part holds the whole sequence. Throwing from `commitSequence`, or rebuilding
   through `scene.unlocked` around the locked part, were the alternatives.
+- 2026-11-20 (the fixer's call): `insertMessage` and `setMessageArrow` throw on an arrow name `SEQ_ARROWS` does not
+  hold as its own key (`'toString'`, a typo), naming it; the Message tool's `arrow` param, which can come from stored
+  options, still falls back to a call. Falling back to a call in both, as the tool does, was the alternative.

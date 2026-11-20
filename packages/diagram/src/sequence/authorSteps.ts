@@ -4,6 +4,7 @@
  * functions from one `SequenceData` to the next; a no-op returns the data it
  * was given.
  */
+import { getOwn } from '@weasel-js/registry';
 import { freshSeqId, seqIdTaken } from './author';
 import { findStep, hasId, mapSteps, placeOf, pruneSteps, stepListOf, withList } from './edit';
 import type { SeqFragment, SeqMark, SeqMarkRef, SeqMessage, SeqNote, SeqStep, SequenceData, StepPlace } from './types';
@@ -32,6 +33,18 @@ export const SEQ_ARROWS = {
 /** A name in {@link SEQ_ARROWS}. */
 export type SeqArrowName = keyof typeof SEQ_ARROWS;
 
+/** The arrow `arrow` names, by {@link SEQ_ARROWS}' own keys only; `undefined` for any other name. */
+export const seqArrowNamed = (name: unknown): SeqArrow | undefined =>
+  typeof name === 'string' ? getOwn(SEQ_ARROWS, name) : undefined;
+
+/** `arrow` as an arrow; throws, naming it, on a name not in {@link SEQ_ARROWS}. */
+function arrowFrom(arrow: SeqArrowName | SeqArrow): SeqArrow {
+  if (typeof arrow === 'object') return arrow;
+  const named = seqArrowNamed(arrow);
+  if (named === undefined) throw new Error(`@weasel-js/diagram: no sequence arrow is named '${String(arrow)}'`);
+  return named;
+}
+
 /** The fragment types that hold more than one section: an alt's branches, a par's threads, a critical's options. */
 export const SEQ_MULTI_SECTION: ReadonlySet<SeqFragment['type']> = new Set(['alt', 'par', 'critical']);
 
@@ -57,10 +70,13 @@ export interface NewSeqMessage {
   id?: string;
 }
 
-/** A message from `from` to `to` (the same for a self-message) inserted at `at`. Nothing changes for an unknown participant. */
+/**
+ * A message from `from` to `to` (the same for a self-message) inserted at `at`. Nothing changes for an unknown
+ * participant; an arrow name not in {@link SEQ_ARROWS} throws.
+ */
 export function insertMessage(data: SequenceData, m: NewSeqMessage): SequenceData {
   if (!known(data, m.from, m.to)) return data;
-  const arrow = typeof m.arrow === 'object' ? m.arrow : SEQ_ARROWS[m.arrow ?? 'sync'];
+  const arrow = arrowFrom(m.arrow ?? 'sync');
   const step: SeqMessage = {
     kind: 'message', id: m.id ?? freshSeqId(data, 'm'), from: m.from, to: m.to, ...arrow, ...(m.text ? { text: m.text } : {}),
   };
@@ -212,9 +228,9 @@ function withMessage(data: SequenceData, id: string, fn: (m: SeqMessage) => SeqM
   return steps === data.steps ? data : { ...data, steps };
 }
 
-/** Message `id` drawn with `arrow`, a name in {@link SEQ_ARROWS} or an arrow of its own. */
+/** Message `id` drawn with `arrow`, a name in {@link SEQ_ARROWS} or an arrow of its own; any other name throws. */
 export function setMessageArrow(data: SequenceData, id: string, arrow: SeqArrowName | SeqArrow): SequenceData {
-  const next: SeqArrow = typeof arrow === 'object' ? arrow : SEQ_ARROWS[arrow];
+  const next = arrowFrom(arrow);
   return withMessage(data, id, (m) => {
     if (m.line === next.line && m.head === next.head && m.both === next.both && m.async === next.async) return m;
     const { both: _both, async: _async, ...rest } = m;

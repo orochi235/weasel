@@ -123,6 +123,12 @@ describe('messages', () => {
     expect(setMessageArrow(data, 'm2', 'reply')).toBe(data);
   });
 
+  it('throws on an arrow name SEQ_ARROWS does not hold, an Object.prototype member among them', () => {
+    expect(() => setMessageArrow(data, 'm1', 'toString' as never)).toThrow(/toString/);
+    expect(() => setMessageArrow(data, 'm1', 'foo' as never)).toThrow(/foo/);
+    expect(() => insertMessage(data, { from: 'a', to: 'b', at: top(0), arrow: 'constructor' as never })).toThrow(/constructor/);
+  });
+
   it('sets and clears activation flags', () => {
     const next = setMessageActivation(data, 'm1', { activate: undefined, deactivate: 'from' });
     const m = findStep(next.steps, 'm1');

@@ -93,6 +93,13 @@ describe('the Participant action', () => {
 });
 
 describe('the Message and Note actions', () => {
+  it('draws a call for an arrow param naming an Object.prototype member', () => {
+    const scene = sceneOf();
+    const y = AT.y + geometry(scene).slots[0]!.y;
+    drag(createDrawMessageAction(), scene, { x: col(scene, 'a'), y }, { x: col(scene, 'c'), y: y + 10 }, { arrow: 'constructor' });
+    expect(dataOf(scene).steps[0]).toMatchObject({ kind: 'message', from: 'a', to: 'c', line: 'solid', head: 'arrow' });
+  });
+
   it('draws a self-message when released on its own lifeline, previewing its loop', () => {
     const scene = sceneOf();
     const y = AT.y + geometry(scene).slots[0]!.y;

@@ -7,7 +7,7 @@
  */
 import { defineAction, resolveParams, type Action, type InvocationCtx, type OngoingOverlay, type Vec2, type AnyScene } from '@weasel-js/core';
 import { maxOf, minOf } from '@weasel-js/geom';
-import { SEQ_ARROWS, insertMessage, insertNote, wrapSteps, type SeqArrow } from './authorSteps';
+import { SEQ_ARROWS, insertMessage, seqArrowNamed, insertNote, wrapSteps, type SeqArrow } from './authorSteps';
 import { columnNear, sequenceAt, sequenceHitOf, slotNear, type SequenceHit } from './authorPlace';
 import { sameList } from './edit';
 import { noteAt } from './authorActions';
@@ -80,7 +80,7 @@ const world = (hit: SequenceHit, x: number, y: number): Vec2 => ({ x: hit.root.o
 
 /** `params.arrow` as an arrow: a name in `SEQ_ARROWS`, an arrow of its own, else a call. */
 const arrowOf = (params: Readonly<DrawMessageParams>): SeqArrow =>
-  typeof params.arrow === 'object' ? params.arrow : SEQ_ARROWS[params.arrow ?? 'sync'] ?? SEQ_ARROWS.sync;
+  typeof params.arrow === 'object' && params.arrow !== null ? params.arrow : seqArrowNamed(params.arrow ?? 'sync') ?? SEQ_ARROWS.sync;
 
 /**
  * The Message tool's drag: from the lifeline nearest the press to the one
