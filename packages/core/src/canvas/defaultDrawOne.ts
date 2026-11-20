@@ -24,8 +24,9 @@ const ambientDpr = (): number => globalThis.devicePixelRatio || 1;
 
 /** Paint one node the way the kit does by default: dispatch to the first
  *  registered node-shape painter that matches, then draw its `data.label` on
- *  top when it has one: on top of a container's children too. A group paints
- *  only its box, from `data.background` and `data.border` (`GroupBoxData`). Consumers replace or wrap this via `drawOne`. */
+ *  top when it has one and the painter does not draw it itself (`drawsLabel`): on top of a
+ *  container's children too. A group paints only its box, from `data.background` and
+ *  `data.border` (`GroupBoxData`). Consumers replace or wrap this via `drawOne`. */
 export function defaultDrawOne<TData, TLayer extends string, TPose>(
   node: Node<TData, TLayer, TPose>,
   pose: TPose,
@@ -40,9 +41,8 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
     : ctx ? { ...ctx, ...pixelScaleCtx(view, ambientDpr()), ...(ctx.scale !== undefined ? { scale: ctx.scale } : {}) } : pixelScaleCtx(view, ambientDpr());
   const primary = painter ? painter.paint(node, pose, paintCtx) : node.kind === 'group' ? paintGroupBox(node, pose) : [];
 
-  // Label overlay — skipped for text nodes (their content is the label).
-  const data = node.data as { label?: string; text?: string } | null;
-  const text = data?.label && data.text == null ? data.label : undefined;
+  // Label overlay: skipped for text nodes (their content is the label) and a painter that draws its own.
+  const text = painter?.drawsLabel ? undefined : overlaidLabelOf(node);
   const p = text ? labelAnchorOf(pose) : null;
   if (text && p !== null) {
     // Copy rather than `push`. A painter's return value is not ours to grow:
@@ -64,6 +64,12 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
   return primary;
 }
 
+/** The `data.label` the kit lays over a node a painter does not label, or none for a text node. */
+function overlaidLabelOf(node: Node<unknown, string, unknown>): string | undefined {
+  const data = node.data as { label?: string; text?: string } | null;
+  return data?.label && data.text == null ? data.label : undefined;
+}
+
 /** Where a label's box starts: the pose's own `x`/`y`, or a `Path` pose's bounds' corner.
  *  `null` for a pose with neither, which gets no label rather than one at NaN. */
 function labelAnchorOf(pose: unknown): { x: number; y: number } | null {
@@ -74,7 +80,7 @@ function labelAnchorOf(pose: unknown): { x: number; y: number } | null {
 
 /**
  * The box {@link defaultDrawOne}'s output for `node` fits in — the matched
- * painter's `bounds` — or `null` when it has none, or when a `data.label`
+ * painter's `bounds` — or `null` when it has none, or when the kit's `data.label`
  * overlay adds text nothing bounds cheaply, or an inherited stroke with no
  * `ctx.inherited` to say what it takes. The scene slot's `cull` reads it to
  * skip painting nodes the view cannot see.
@@ -85,8 +91,8 @@ export function defaultPaintBounds<TData, TLayer extends string, TPose>(
   view: View,
   ctx?: Pick<NodePaintCtx, 'inherited' | 'shapes' | 'derivedPath'>,
 ): Bounds | null {
-  const data = node.data as { label?: string; text?: string; stroke?: unknown } | null;
-  if (data?.label && data.text == null) return null;
+  const data = node.data as { stroke?: unknown } | null;
+  if (overlaidLabelOf(node) !== undefined && !findNodeShape(node, ctx?.shapes)?.drawsLabel) return null;
   const inherited = ctx?.inherited;
   if (node.kind === 'group') return groupBoxBounds(node.data, pose, screenScalesOf(view, pose));
   if (data?.stroke === INHERIT && inherited === undefined) return null;
