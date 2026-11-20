@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "The layers panel lists hidden layers, and numbers and orders them by the raw array, not the drawn stack",
+  "In worker (paint-stack) mode the frame panel never gets paint or per-layer stats"
+ ],
+ "b": [
+  "Changing `highlight` (every devtools tree-row hover) rebuilds the sink and overlay, wiping the frame panel, viewport record and in-flight snap candidates",
+  "A `theme`/`strokes` entry set to `undefined` overrides the default; an undefined stroke throws and drops the whole overlay",
+  "Frame-rate readout averages over the last 60 paints regardless of age, so after any idle spell it reports a fraction of the real rate",
+  "Id labels are placed 11 px below the bounds' top edge, as if `y` were a baseline, but text commands are top-anchored"
+ ]
+}

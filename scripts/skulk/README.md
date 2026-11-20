@@ -19,11 +19,11 @@ one line as it completes (`review 3/16 …`).
 | plan | Areas come from the partition (below), less every area a live run holds. The round number is one past the highest used by a `docs/audits/round-<N>/` directory, `docs/hardening.md`, a branch named `audit<N>-…`, or a run's claim. The run claims it by creating `runs/<N>/` (below); if another run got there first it takes the next. Planning holds `plan.lock`, so two runs starting at once never pick the same area. |
 | freeze | A detached worktree at `main`'s tip, `.worktrees/audit<N>-frozen-night`. That sha is the round's commit. |
 | sweep | Only with `--sweep`: the control sweep (below) at the frozen commit, one `onto do --gui` job that starts with the reviews and runs beside them. Its dead controls go to one fixer. The night patches nothing until both are done. |
-| review | Per area, two reviewer jobs, each `onto do` from the frozen tree with the brief in `briefs/reviewer.md` and the area's file list. Reviewers may read, search, and run `git log/show/diff/blame`, and write only `.skulk/out/`. Each lists the files it read. |
+| review | Per area, two reviewer jobs, each `onto do` from the frozen tree with the brief in `briefs/reviewer.md` and the area's file list. Reviewers may read, search, and run `git log/show/diff/blame`, and write only `.skulk/out/`. Each lists the files it read. Its stream goes through `progress.mjs`, so onto shows how many of the area's files it has opened. |
 | match | One haiku job per area pairs the two lists (`briefs/matcher.md`); the script keeps only one-to-one pairs and computes the estimate. |
 | fix | Per area with findings, one fixer job (`briefs/fixer.md`), permissions bypassed, in the node's own synced tree. It first commits the synced tree and checks it hashes to the frozen commit's tree, installs if the lockfile changed, then hands back its commits as an mbox. |
 | patch | Each mbox is applied with `git am` onto `audit<N>-<area>` at the frozen commit. One that does not apply is reported and left out. |
-| batch | Every branch merges into `batch/<date>-audit<N>` (a worktree); a conflicting one is left out and reported. The round's record is committed there. Then the run waits for `merge.lock`, which one run at a time holds from its fleet run through `main`'s fast-forward, so two runs never sync the fleet tree at once. Holding it, it merges `main` in if another run has landed meanwhile, and `npm run test:fleet` and `npm run test:fleet:postbuild` run on its tip, as `CLAUDE.md` "Worktrees and the fleet" says. |
+| batch | Every branch merges into `batch/<date>-audit<N>` (a worktree); a conflicting one is left out and reported. The round's record is committed there. Then the run waits for `merge.lock`, which one run at a time holds from its fleet run through `main`'s fast-forward, so two runs never sync the fleet tree at once. Holding it, it merges `main` in if another run has landed meanwhile, and `npm run test:batch` runs on its tip, as `CLAUDE.md` "Worktrees and the fleet" says. |
 | merge | Green: local `main` fast-forwards to the batch (never pushed), and the branches are deleted. If `main` moved during the fleet run, `main` is merged into the batch and both runs go again, up to twice, so `main` only lands on a tested commit; a conflict there keeps the batch for you. Red: the batch worktree and its branches stay, and the report names them. |
 
 The record, in `docs/audits/round-<N>/`: per area `files.txt`, `A.md`, `B.md`, `match.json`, `fix.md` and
@@ -98,8 +98,10 @@ All are named constants in `config.mjs`.
   minutes. Each node runs up to 6 reviewer or matcher jobs and 1 fixer at once, each in its own tree
   (`weasel-skulk-r<k>`, `weasel-skulk-f<k>`), counted across every run: a job leases its tree in `slots/`
   (below) first.
-- **Time.** Each job is stopped at 45 minutes, early enough that what it wrote still comes home. A night
-  starts no new area after 07:00.
+- **Time.** Each job's model is stopped at 45 minutes, and onto's `--timeout` stops the job at 55, so what
+  it wrote still comes home. A reviewer passes `--expect 8m`, which onto draws only if it prints no
+  progress; matches and fixes pass `--expect none` and are drawn against the timeout. A night starts no new
+  area after 07:00.
 - **Money.** Each job runs with `--max-budget-usd` (list price), and one that hits it is recorded as such,
   not retried. A night starts no new area when the areas running plus one more, each expected to cost the
   mean of tonight's finished areas ($10 before any has finished), would pass the night's dollar cap. Tokens

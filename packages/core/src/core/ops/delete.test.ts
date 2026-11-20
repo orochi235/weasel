@@ -228,4 +228,11 @@ describe('createDeleteOp — slot anchoring', () => {
     createDeleteOp<Obj>({ node: leaf('b', 2), index: 1 }).invert().apply(adapter as never);
     expect(adapter.order.ROOT).toEqual(['a', 'b', 'c']);
   });
+
+  it('captures the slot under the live parent when handed a copy with a stale parent', () => {
+    const adapter = makeAdapter([leaf('p', 0), leaf('g', 0), leaf('x', 1, 'g'), leaf('a', 2, 'g'), leaf('y', 3, 'g')]);
+    const op = createDeleteOp<Obj>({ node: leaf('a', 2, 'p'), index: 1 });
+    op.apply(adapter as never);
+    expect((op.args as { slot: unknown }).slot).toEqual({ index: 1, before: 'y' });
+  });
 });

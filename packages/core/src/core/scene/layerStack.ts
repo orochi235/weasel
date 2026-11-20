@@ -3,6 +3,7 @@
  * layer's id to its place in that order, the rule tying a node's layer to
  * its parent's, and the edits a caller makes to the stack.
  */
+import { own } from './owned';
 import { sameValue } from './sameValue';
 import { heldIndex } from './stackIndex';
 import type { LayerRecord, Node, NodeId, Scene, UseSceneOptions, UserLayerRecord } from './types';
@@ -23,7 +24,7 @@ export function systemLayerRecord<TLayer extends string>(
     id: spec.id,
     visible: spec.visible ?? true,
     locked: spec.locked ?? false,
-    ...(spec.parallax ? { parallax: spec.parallax } : {}),
+    ...(spec.parallax ? { parallax: own(spec.parallax) } : {}),
     ...(spec.annotation ? { annotation: true } : {}),
   };
 }
@@ -176,7 +177,7 @@ export function createLayerEdits<TData, TLayer extends string, TPose>(
         name: spec.name,
         visible: spec.visible ?? true,
         locked: spec.locked ?? false,
-        ...(spec.parallax ? { parallax: spec.parallax } : {}),
+        ...(spec.parallax ? { parallax: own(spec.parallax) } : {}),
         ...(spec.annotation ? { annotation: true } : {}),
       };
       record('kit:addLayer', { record: layer, index }, 'addLayer');

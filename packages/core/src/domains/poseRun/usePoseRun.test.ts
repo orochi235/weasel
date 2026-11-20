@@ -278,4 +278,26 @@ describe('usePoseRun — abandoned renders', () => {
     expect(stepA).toHaveBeenCalled();
     expect(stepB).not.toHaveBeenCalled();
   });
+
+  it('ends the run, holding nothing, when step throws, and starts again after', () => {
+    let fail = false;
+    let x = 0;
+    const s = setup(() => {
+      if (fail) throw new Error('producer failed');
+      x += 10;
+      return { poses: [[s.a, box(x, 0)]], done: false };
+    });
+    act(() => { s.run().start(); });
+    act(() => { s.clock.frame(); });
+    expect(s.drawnAt(s.a)).toEqual(box(10, 0));
+    fail = true;
+    expect(() => act(() => { s.clock.frame(); })).toThrow('producer failed');
+    expect(s.run().isRunning()).toBe(false);
+    expect(s.clock.pending()).toBe(0);
+    expect(s.drawnAt(s.a)).toEqual(box(0, 0));
+    expect(s.onCommit).not.toHaveBeenCalled();
+    fail = false;
+    act(() => { s.run().start(); });
+    expect(s.run().isRunning()).toBe(true);
+  });
 });

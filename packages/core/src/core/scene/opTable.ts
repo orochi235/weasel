@@ -21,6 +21,8 @@ export interface OpTableEnv {
   driven(): boolean;
   /** Run `step` as a replay step of its own, and notify. */
   replayAlone(step: () => void): void;
+  /** Called after any op ran, either way and by any path, with its kind and payload. */
+  touched(kind: string, payload: unknown): void;
 }
 
 export interface OpTable {
@@ -79,6 +81,7 @@ export function createOpTable(env: OpTableEnv): OpTable {
     const handler = requireHandler(kind);
     if (env.skips(kind, payload, forward)) return 'noop';
     (forward ? handler.apply : handler.revert)(payload);
+    env.touched(kind, payload);
     env.applied(kind, payload, !forward);
     return undefined;
   }
@@ -108,7 +111,10 @@ export function createOpTable(env: OpTableEnv): OpTable {
       if (held && !options?.replace) throw new ExtensionConflictError('Scene op', kind);
       handlers.set(kind, handler);
     },
-    run: (kind, payload) => requireHandler(kind).apply(payload),
+    run: (kind, payload) => {
+      requireHandler(kind).apply(payload);
+      env.touched(kind, payload);
+    },
     op: (kind, payload) => op(kind, payload),
     rebuild(name, args) {
       if (handlers.has(name)) return op(name, args);

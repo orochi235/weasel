@@ -7,12 +7,17 @@
 // (`scripts/lib/node-load.mjs`); WEASEL_JSDOM_WORKERS overrides the count, and WEASEL_OVERLAP=1 or 0
 // skips the check. Beside the rest, the browser project takes fewer Chromiums than alone
 // (`scripts/lib/browser-shape.mjs`).
+//
+// A fleet run that sends the browser project to a node of its own (`scripts/fleet-test.mjs`) names
+// each job's part in onto's suite scope: `browser` runs only that project, a scope ending `-rest`
+// everything else.
 import { spawn } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { cpus, tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
+import { fileURLToPath } from 'node:url';
 import { mergeProgress } from './lib/merge-progress.mjs';
 import { roomToOverlap, sampleLoad } from './lib/node-load.mjs';
 import { browserShape } from './lib/browser-shape.mjs';
@@ -22,7 +27,12 @@ const require = createRequire(import.meta.url);
 const pkg = require.resolve('vitest/package.json');
 const VITEST = join(dirname(pkg), require(pkg).bin.vitest);
 
-const args = process.argv.slice(2);
+// On the fleet, each failure also prints as it happens (`scripts/vitest-fleet-fail.mjs`). A
+// `--reporter` flag replaces the config's reporters, so the default one is named too when none is.
+const FAIL_REPORTER = `--reporter=${fileURLToPath(new URL('./vitest-fleet-fail.mjs', import.meta.url))}`;
+const given = process.argv.slice(2);
+const fleet = Boolean(process.env.WEASEL_FLEET_COMMIT);
+const args = !fleet ? given : given.some((a) => a.startsWith('--reporter')) ? [...given, FAIL_REPORTER] : [...given, '--reporter=default', FAIL_REPORTER];
 const isProject = (a) => a.startsWith('--project=');
 const projects = args.filter(isProject);
 const common = args.filter((a) => !isProject(a));
@@ -42,10 +52,19 @@ const overlap = async () => {
   return room;
 };
 
+const scope = process.env.ONTO_SUITE_SCOPE ?? '';
+const part = scope === 'browser' ? 'browser' : scope.endsWith('-rest') ? 'rest' : 'all';
+
 const runs = [];
 let browserEnv = {};
-const room = await overlap();
-if (!room.ok) runs.push(args);
+const room = part === 'all' ? await overlap() : { ok: false };
+if (part === 'browser') {
+  console.log('vitest-overlap: running only the browser project; the rest runs on another node');
+  runs.push([...common, ...browser, '--passWithNoTests']);
+} else if (part === 'rest') {
+  console.log('vitest-overlap: running everything but the browser project, which runs on another node');
+  runs.push([...common, ...rest]);
+} else if (!room.ok) runs.push(args);
 else {
   const count = process.env.WEASEL_JSDOM_WORKERS || room.jsdomWorkers || '50%';
   const workers = common.some((a) => a.startsWith('--maxWorkers')) ? [] : [`--maxWorkers=${count}`];

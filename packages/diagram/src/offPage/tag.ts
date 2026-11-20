@@ -3,18 +3,16 @@
  * the reference, and stations itself past the tip of its connector's stub.
  */
 import {
-  AUTO_POSE_DESCRIPTOR,
-  translatePoseViaDescriptor,
   type AddNodeSpec,
   pageName,
   type DerivedDep,
   type PlacedPage,
-  type PoseDescriptor,
   type RectPose,
   type Vec2,
 } from '@weasel-js/core';
 import type { MeasureRowText, RowTextStyle } from '../body';
 import { labelSize } from '../edgeLabel';
+import { frameFor, type FrameOptions } from '../layoutFrame';
 import { subpathOf } from '../subpaths';
 import { themeLabelStyle } from '../theme/resolve';
 import type { DiagramTheme } from '../theme/types';
@@ -112,20 +110,20 @@ function stubTip(path: Parameters<typeof subpathOf>[0], end: 'from' | 'to'): { t
  * connector draws no stub at that end.
  */
 export function offPageTagDerivePose<TPose>(
-  opts: { poseDescriptor?: PoseDescriptor<TPose> } = {},
+  opts: FrameOptions<TPose> = {},
 ): (node: { pose: TPose; data: unknown }, deps: readonly (DerivedDep<TPose> | undefined)[]) => TPose | null {
-  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const frame = frameFor(opts);
   return (node, deps) => {
     const tag = offPageTagOf(node);
     const path = deps[0]?.path ?? null;
     if (tag === null || path === null) return null;
     const at = stubTip(path, tag.end);
     if (at === null) return null;
-    const b = poseDescriptor.getBounds(node.pose);
+    const b = frame.box(node.pose);
     const reach = GAP + (Math.abs(at.out.x) * b.width + Math.abs(at.out.y) * b.height) / 2;
     const cx = at.tip.x + at.out.x * reach;
     const cy = at.tip.y + at.out.y * reach;
-    return translatePoseViaDescriptor(node.pose, cx - (b.x + b.width / 2), cy - (b.y + b.height / 2), poseDescriptor);
+    return frame.translate(node.pose, cx - (b.x + b.width / 2), cy - (b.y + b.height / 2));
   };
 }
 

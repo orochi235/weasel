@@ -52,4 +52,16 @@ describe('sceneNodeClientRect', () => {
     });
     expect(rect).toBeNull();
   });
+
+  it('stays exact for a node far from the origin, subtracting the view before scaling', () => {
+    const far = 1e15;
+    const rect = sceneNodeClientRect({
+      id: 'far',
+      getWorldBounds: () => ({ x: far + 10.125, y: far + 10.125, width: 2, height: 2 }),
+      view: { x: far, y: far, scale: { x: 3, y: 3 } },
+      canvas: fakeCanvas(0, 0),
+    });
+    expect(rect!.x).toBeCloseTo(30.375, 6);
+    expect(rect!.y).toBeCloseTo(30.375, 6);
+  });
 });

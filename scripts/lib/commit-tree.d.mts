@@ -10,5 +10,7 @@ export function openCommitTree(
 ): { commit: string; branch: string; tree: string; drop: () => void; git: (...args: string[]) => string };
 export function ontoWhenFree(
   args: string[],
-  options: { cwd: string; say: (message: string) => void },
+  options: { cwd?: string; say: (message: string) => void; prefix?: string; onJob?: (job: { id: string; node: string }) => void },
 ): Promise<number>;
+export function jobStarted(line: string): { id: string; node: string } | undefined;
+export function killJob(id: string): boolean;

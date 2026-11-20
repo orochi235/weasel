@@ -94,15 +94,21 @@ function rootTrait(scene: AnyScene, rootId: string): { node: NonNullable<ReturnT
   return { node, trait };
 }
 
-/** Replaces the spec of the plot rooted at `rootId` with `data` and rebuilds its marks, as one undo entry. */
-export function replacePlotData<TData, TLayer extends string, TPose>(
-  scene: Scene<TData, TLayer, TPose>, rootId: string, data: PlotData, opts: ReplacePlotOptions = {},
+/** The size of the box a plot root's marks are compiled into: its rect pose's own, unrotated. */
+export function plotSizeOf(root: { pose: unknown }): { width: number; height: number } {
+  const { width, height } = root.pose as RectPose;
+  return { width, height };
+}
+
+/** Replaces the spec of the plot rooted at `rootId` with `data` and rebuilds its marks, as one undo entry. A plot root is
+ *  rect-posed, as {@link plotSpecs} makes it, so `scene` is one of rect poses. */
+export function replacePlotData<TData, TLayer extends string>(
+  scene: Scene<TData, TLayer, RectPose>, rootId: string, data: PlotData, opts: ReplacePlotOptions = {},
 ): void {
   const s = scene as unknown as AnyScene;
   const { node, trait } = rootTrait(s, rootId);
   const theme = opts.theme ?? trait.theme;
-  const pose = node.pose as RectPose;
-  const marks = compilePlot(data, { width: pose.width, height: pose.height }, theme, opts.measure ?? textMeasure);
+  const marks = compilePlot(data, plotSizeOf(node), theme, opts.measure ?? textMeasure);
   s.batch(opts.label ?? 'Edit chart', () => {
     s.update(node.id, { data: { ...(node.data as object), plot: { data, theme } } });
     const children = s.childrenOf(node.id);

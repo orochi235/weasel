@@ -3,13 +3,13 @@
  * claims the press; this action previews every mark the proposed spec
  * redraws, and commits the spec as one edit of the plot's root.
  */
-import type { Action, InvocationCtx, NodeId, OngoingHandle, RectPose, AnyScene } from '@weasel-js/core';
+import type { Action, InvocationCtx, NodeId, OngoingHandle, RectPose, Scene, AnyScene } from '@weasel-js/core';
 import type { PlotPoint } from '../marks/types';
 import { textMeasure, type PlotMeasure } from '../measure';
 import { compilePlot, type PlotData } from '../plotData';
-import { markSpecs, plotMarkOf, plotRootOf, replacePlotData, type PlotSpec } from '../plotScene';
+import { markSpecs, plotMarkOf, plotRootOf, plotSizeOf, replacePlotData, type PlotSpec } from '../plotScene';
 import { plotEditorOf } from './editors';
-import { plotHandleScratchOf, plotOrigin } from './handleLayer';
+import { createPlotFrame, plotHandleScratchOf, type PlotFrame } from './handleLayer';
 
 /** The action that drags a plot's handle. */
 export const EDIT_PLOT_VALUE_ACTION_ID = 'plot.editValue';
@@ -20,8 +20,9 @@ export interface PlotEdit {
   data: PlotData;
 }
 
-/** Options for {@link createPlotDragAction}. */
-export interface PlotDragOptions {
+/** Options for {@link createPlotDragAction}. `toPlot` reads the pointer into the plot; `fromPlot` places the handles,
+ *  where `createPlotEditingContribution` hands these on to the handle layer. */
+export interface PlotDragOptions extends PlotFrame {
   id?: string;
   /** Default {@link textMeasure}. */
   measure?: PlotMeasure;
@@ -40,7 +41,7 @@ interface PlotPress {
   deps: InvocationCtx['deps'];
 }
 
-function pressOf(ctx: InvocationCtx, measure: PlotMeasure): PlotPress | null {
+function pressOf(ctx: InvocationCtx, measure: PlotMeasure, frame: PlotFrame): PlotPress | null {
   const pressed = plotHandleScratchOf(ctx.drag?.affordance);
   const scene = ctx.deps.scene as AnyScene | undefined;
   const root = pressed === null ? undefined : scene?.get(pressed.rootId as NodeId);
@@ -48,16 +49,19 @@ function pressOf(ctx: InvocationCtx, measure: PlotMeasure): PlotPress | null {
   const mark = plotMarkOf(pressed === null ? undefined : scene?.get(pressed.markId as NodeId));
   const editor = trait && plotEditorOf(trait.data);
   if (pressed === null || scene === undefined || root === undefined || trait === null || mark === null || editor === null) return null;
-  const size = { width: (root.pose as RectPose).width, height: (root.pose as RectPose).height };
+  const size = plotSizeOf(root);
   const propose = editor.drag(trait.data, mark, size, trait.theme, measure, pressed.part);
   if (propose === null) return null;
-  const origin = plotOrigin(scene, pressed.rootId);
-  const start = ctx.drag?.start ?? ctx.world;
-  const grab = { x: pressed.at.x - start.x, y: pressed.at.y - start.y };
+  const { toPlot } = createPlotFrame(scene, frame);
+  const at = (w: PlotPoint) => toPlot(w, pressed.rootId);
+  // The grab offset is taken in the plot, so it holds however the frame maps the world onto it.
+  const handle = at(pressed.at);
+  const start = at(ctx.drag?.start ?? ctx.world);
+  const grab = { x: handle.x - start.x, y: handle.y - start.y };
   return {
     rootId: pressed.rootId,
     propose,
-    toPlot: (w) => ({ x: w.x + grab.x - origin.x, y: w.y + grab.y - origin.y }),
+    toPlot: (w) => { const p = at(w); return { x: p.x + grab.x, y: p.y + grab.y }; },
     redraw: (data) => markSpecs(pressed.rootId, root.layer, compilePlot(data, size, trait.theme, measure)),
     deps: ctx.deps,
   };
@@ -67,7 +71,7 @@ function pressOf(ctx: InvocationCtx, measure: PlotMeasure): PlotPress | null {
 export function commitPlotToScene(edit: PlotEdit, ctx: InvocationCtx, measure: PlotMeasure = textMeasure): void {
   const scene = ctx.deps.scene as AnyScene | undefined;
   if (scene === undefined || plotRootOf(scene.get(edit.rootId as NodeId)) === null) return;
-  replacePlotData(scene, edit.rootId, edit.data, { label: 'Edit value', measure });
+  replacePlotData(scene as Scene<unknown, string, RectPose>, edit.rootId, edit.data, { label: 'Edit value', measure });
 }
 
 /** The `plot.editValue` action: an ongoing drag that moves one value of a plot, previewing the marks it redraws. */
@@ -83,7 +87,7 @@ export function createPlotDragAction(opts: PlotDragOptions = {}): Action {
     invoker: {
       timing: 'ongoing',
       start(ctx: InvocationCtx): OngoingHandle {
-        const p = pressOf(ctx, measure);
+        const p = pressOf(ctx, measure, opts);
         if (p === null) return {};
         // Null until the pointer moves, so a still click commits nothing.
         let next: PlotData | null = null;

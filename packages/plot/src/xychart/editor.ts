@@ -31,7 +31,8 @@ export const xyEditor: PlotEditor<XyChartData> = {
     const which = seriesIndex(trait.datum);
     if (which === null) return null;
     const { layout } = compileXyChart(data, size, theme, measure);
-    return (at) => setXyValue(data, which.series, which.index, xyValueAt(layout, at));
+    const vertical = layout.orientation === 'vertical';
+    return (at) => setXyValue(data, which.series, which.index, xyValueAt(layout.value, vertical ? at.y : at.x));
   },
   text: (data, datum, text) => (datum.edit === 'title' ? withTitle(data, text) : data),
 };

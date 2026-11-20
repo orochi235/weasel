@@ -7,7 +7,7 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from
 import { join } from 'node:path';
 import { JOB_IN, JOB_OUT } from './config.mjs';
 import { citedPaths, firstJson, isFinished, matchPrompt, parseFilesRead, parseFindings, reviewText, validPairs } from './findings.mjs';
-import { fixShell, jobDir, matchShell, reviewShell, runJob } from './jobs.mjs';
+import { PROGRESS_IN, PROGRESS_SOURCE, fixShell, jobDir, matchShell, reviewShell, runJob } from './jobs.mjs';
 import { chapman } from './rounds.mjs';
 import { parseEnvelope, totals } from './usage.mjs';
 
@@ -22,6 +22,11 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const LAUNCHES = 3;
 const RELAUNCH_WAIT_MS = 60_000;
 const cents = (n) => Number(n.toFixed(2));
+/**
+ * A reviewer's `--expect`, drawn only when it prints no progress of its own: rounds 38–40's reviews ran
+ * 6.9 min at p90 of `durationMs` in their `usage.jsonl`, plus the sync either side.
+ */
+const REVIEW_EXPECT = '8m';
 
 /**
  * Runs one job on whichever slot frees first, moving to another node when one turns it away. Answers
@@ -61,7 +66,7 @@ const dispatch = async (ctx, area, role, spec) => {
 const review = async (ctx, area, side) => {
   const to = jobDir(ctx.nightDir, area.id, side);
   const run = await dispatch(ctx, area, `review-${side}`, {
-    kind: 'review', expectMin: 30, shell: reviewShell(area.id, ctx.budget.review), to,
+    kind: 'review', expect: REVIEW_EXPECT, shell: reviewShell(area.id, ctx.budget.review), to,
     task: `audit${ctx.round}-${area.id}-${side}`, logPath: join(to, '..', `${side}.log`),
     about: `Blind reviewer ${side} for audit round ${ctx.round}, area ${area.id}: reads its files and lists defects without fixing.`,
   });
@@ -69,7 +74,7 @@ const review = async (ctx, area, side) => {
   const findings = parseFindings(text);
   const read = parseFilesRead(text).filter((f) => area.files.includes(f)).length;
   if (!run.launched) ctx.say(`review ${area.id} ${side}: never launched; the area is recorded incomplete`);
-  ctx.progress('review', `${area.id} ${side} on ${run.node}: ${findings.length} findings, ${read}/${area.files.length} files read, ${run.minutes.toFixed(1)} min, ${(run.usage.totalTokens / 1e6).toFixed(2)}M tokens${run.usage.budgetHit ? ', hit its ceiling' : ''}`, ctx.total.review);
+  ctx.progress('review', `${area.id} ${side} on ${run.node}: ${findings.length} findings, ${read}/${area.files.length} files read, ${run.minutes.toFixed(1)} min, ${(run.usage.totalTokens / 1e6).toFixed(2)}M tokens${run.usage.budgetHit ? ', hit its ceiling' : ''}${run.launched && !isFinished(text) ? ', unfinished: not counted as a pass' : ''}`, ctx.total.review);
   return { text, findings, read, ...run };
 };
 
@@ -78,7 +83,7 @@ const match = async (ctx, area, a, b) => {
   writeFileSync(join(ctx.frozen, JOB_IN, area.id, 'match.md'), matchPrompt(brief('matcher.md'), a.findings, b.findings));
   const to = jobDir(ctx.nightDir, area.id, 'match');
   const run = await dispatch(ctx, area, 'match', {
-    kind: 'review', expectMin: 2, shell: matchShell(area.id, ctx.budget.match), to,
+    kind: 'review', expect: 'none', shell: matchShell(area.id, ctx.budget.match), to,
     task: `audit${ctx.round}-${area.id}-match`, logPath: join(to, '..', 'match.log'),
     about: `Pairs the two blind reviewers' findings for audit round ${ctx.round}, area ${area.id}.`,
   });
@@ -106,7 +111,7 @@ export const fix = async (ctx, area, source = reviewedSource(ctx, area.id)) => {
   const vars = { round: ctx.round, area: area.id, commit: ctx.commit, source };
   writeFileSync(join(ctx.frozen, JOB_IN, area.id, 'fix.md'), fill(brief('fixer.md'), vars));
   const run = await dispatch(ctx, area, 'fix', {
-    kind: 'fix', expectMin: 40, shell: fixShell(area.id, ctx.budget.fix), to,
+    kind: 'fix', expect: 'none', shell: fixShell(area.id, ctx.budget.fix), to,
     env: { FROZEN_TREE: ctx.frozenTree, ...ctx.identity },
     task: `audit${ctx.round}-${area.id}-fix`, logPath: join(to, '..', 'fix.log'),
     about: `Fixer for audit round ${ctx.round}, area ${area.id}: verifies, tests and fixes its findings.`,
@@ -128,6 +133,8 @@ export const runArea = async (ctx, area, { previous, changedSince }) => {
   mkdirSync(inDir, { recursive: true });
   const vars = { round: ctx.round, area: area.id, commit: ctx.commit, out: `${JOB_OUT}/findings.md`, files: area.files.map((f) => `- ${f}`).join('\n') };
   writeFileSync(join(inDir, 'review.md'), fill(brief('reviewer.md'), vars));
+  writeFileSync(join(inDir, 'files.txt'), `${area.files.join('\n')}\n`);
+  copyFileSync(PROGRESS_SOURCE, join(ctx.frozen, PROGRESS_IN));
   const [a, b] = await Promise.all([review(ctx, area, 'A'), review(ctx, area, 'B')]);
   const dir = join(ctx.nightDir, 'areas', area.id);
   mkdirSync(dir, { recursive: true });

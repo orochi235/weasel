@@ -6,6 +6,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createWriteStream, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   CLAUDE_CONFIG, FIX_MODEL, FIX_SLOTS_PER_NODE, JOB_IN, JOB_OUT, JOB_TIMEOUT_MIN, MATCH_MODEL, NO_FIXERS,
   REFUSED_COOLDOWN_MIN, REVIEW_DENIED, REVIEW_MODEL, REVIEW_SLOTS_PER_NODE, REVIEW_TOOLS, STATE_DIR, nodesAt,
@@ -19,23 +20,34 @@ export const BUSY_WAIT_MS = 30_000;
 
 const q = (s) => `'${String(s).replace(/'/g, `'\\''`)}'`;
 
-/** Runs `claude -p` on a prompt file, stopped by an alarm before onto's timeout so what it wrote still comes home. */
-const claudeLine = (promptFile, budgetUsd, flags) =>
+/** The progress filter, copied into each frozen tree's `.skulk/in` so a node runs the one this run ships. */
+export const PROGRESS_SOURCE = fileURLToPath(new URL('./progress.mjs', import.meta.url));
+export const PROGRESS_IN = `${JOB_IN}/progress.mjs`;
+
+/**
+ * Runs `claude -p` on a prompt file, stopped by an alarm before onto's timeout so what it wrote still comes
+ * home. With `progressFiles` (the area's file list), it streams through the progress filter, which prints
+ * onto progress lines and writes the same result envelope to `claude.json`.
+ */
+const claudeLine = (promptFile, budgetUsd, flags, progressFiles) =>
   [
     `CLAUDE_CONFIG_DIR=${CLAUDE_CONFIG}`,
     `perl -e 'alarm shift; exec @ARGV' ${JOB_TIMEOUT_MIN * 60}`,
     'claude -p "$(cat', `${q(promptFile)})"`,
-    `--output-format json --strict-mcp-config --max-budget-usd ${budgetUsd}`, ...flags,
-    `> ${JOB_OUT}/claude.json 2> ${JOB_OUT}/claude.err; echo $? > ${JOB_OUT}/exit`,
+    `--output-format ${progressFiles ? 'stream-json --verbose' : 'json'} --strict-mcp-config --max-budget-usd ${budgetUsd}`, ...flags,
+    progressFiles
+      ? `2> ${JOB_OUT}/claude.err | node ${PROGRESS_IN} ${q(progressFiles)} ${JOB_OUT}/claude.json; echo "\${PIPESTATUS[0]}" > ${JOB_OUT}/exit`
+      : `> ${JOB_OUT}/claude.json 2> ${JOB_OUT}/claude.err; echo $? > ${JOB_OUT}/exit`,
   ].join(' ');
 
 const model = (name) => (name ? ['--model', name] : []);
 const fresh = `rm -rf ${JOB_OUT} && mkdir -p ${JOB_OUT}`;
 
+/** A reviewer, counted through the files listed in `.skulk/in/<area>/files.txt`. */
 export const reviewShell = (area, budgetUsd) =>
-  [fresh, claudeLine(`${JOB_IN}/${area}/review.md`, budgetUsd, [
+  [NVM, fresh, claudeLine(`${JOB_IN}/${area}/review.md`, budgetUsd, [
     '--allowedTools', q(REVIEW_TOOLS.join(',')), '--disallowedTools', q(REVIEW_DENIED.join(',')), ...model(REVIEW_MODEL),
-  ])].join(' && ');
+  ], `${JOB_IN}/${area}/files.txt`)].join(' && ');
 
 export const matchShell = (area, budgetUsd) =>
   [fresh, claudeLine(`${JOB_IN}/${area}/match.md`, budgetUsd, ['--disallowedTools', q('Bash,Edit,Write,Task,Agent'), ...model(MATCH_MODEL)])].join(' && ');
@@ -111,15 +123,16 @@ export const ontoOnce = (args, cwd, log) =>
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * One job, retried while its tree is busy. Answers `{ status, refused }`: `refused` when the node
- * turned the job away as quiet or unavailable before anything ran, so the caller tries another node.
+ * One job, retried while its tree is busy; `expect` is onto's `--expect`, a duration or `none`. Answers
+ * `{ status, refused }`: `refused` when the node turned the job away as quiet or unavailable before
+ * anything ran, so the caller tries another node.
  */
-export const runJob = async ({ frozen, base, slot, kind, task, about, expectMin, env = {}, shell, to, logPath }) => {
+export const runJob = async ({ frozen, base, slot, kind, task, about, expect, env = {}, shell, to, logPath }) => {
   mkdirSync(to, { recursive: true });
   const log = createWriteStream(logPath, { flags: 'a' });
   const args = [
     'do', '--kind', kind, '--node', slot.node, '--in', slot.tree, '--ref', base, '--force',
-    '--timeout', `${JOB_TIMEOUT_MIN + 10}m`, '--expect', `${expectMin}m`, '--task', task, '--about', about,
+    '--timeout', `${JOB_TIMEOUT_MIN + 10}m`, '--expect', expect, '--task', task, '--about', about,
     '--icon', kind === 'fix' ? 'wrench.and.screwdriver' : 'doc.text.magnifyingglass',
     '--out', JOB_OUT, '--to', to,
     ...Object.entries(env).flatMap(([k, v]) => ['--env', `${k}=${v}`]),

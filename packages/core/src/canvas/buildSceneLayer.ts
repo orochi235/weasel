@@ -8,7 +8,8 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
 import { cullDrawCommands, viewToMat3, type DrawCommand } from '@weasel-js/renderer';
 import { adapterDerivedPathOf } from './adapterDerivedPath';
-import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
+import { buildSceneTree, type HierarchicalAdapter, type SubtreeCullFor } from './buildSceneTree';
+import type { Rect } from '@weasel-js/geom';
 import { debugSinkFrom } from './drawEnvelope';
 import type { NodePaintCtx } from './NodeShape';
 import { paintMissesView, type PaintBoundsFn } from './paintCull';
@@ -84,6 +85,12 @@ export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
   paintBounds?: PaintBoundsFn<TNode, TPose>;
 }
 
+/** A scene slot wired to its scene, which can also say which subtrees cannot reach a view
+ *  `rect` (screen pixels) by `paintBounds`, for the cull to skip them unwalked. */
+export interface WiredSceneSlot<TNode extends { id: string }, TPose> extends SceneSlotConfig<TNode, TPose> {
+  subtreeCull?: (rect: Rect) => SubtreeCullFor | undefined;
+}
+
 /**
  * `cfg`'s `drawOne` and clip lookup, resolving derived paths off the adapter
  * when nothing scene-aware filled `derivedPathOf` in.
@@ -117,7 +124,7 @@ function withAdapterDerivedPaths<TNode extends { id: string }, TPose>(
  * debug sink on its draw envelope, it records each node's bounds and origin there.
  */
 export function buildSceneLayer<TNode extends { id: string }, TPose>(
-  cfg: SceneSlotConfig<TNode, TPose>,
+  cfg: WiredSceneSlot<TNode, TPose>,
   adapter: HierarchicalAdapter<TNode, TPose> | undefined,
   boundsOfFn: ((id: string) => Bounds | null) | undefined,
   hideIds: () => Set<string> | null,
@@ -139,6 +146,9 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
   const paintBounds = cfg.cull ? cfg.paintBounds : undefined;
   const culledIn = (view: View, dims: Dims) => paintBounds
     ? paintMissesView(paintBounds, view, { x: 0, y: 0, width: dims.width, height: dims.height })
+    : undefined;
+  const prunedIn = (dims: Dims) => paintBounds && cfg.subtreeCull
+    ? cfg.subtreeCull({ x: 0, y: 0, width: dims.width, height: dims.height })
     : undefined;
   return {
     id: slot?.id ?? 'scene',
@@ -182,6 +192,7 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
           cfg.drawnPose as Parameters<typeof buildSceneTree>[6],
           view,
           cfg.shapes,
+          prunedIn(dims),
         );
         return finish(postProcess ? postProcess(tree, view, dims) : tree, view, dims);
       }
@@ -218,7 +229,7 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
  * the tree, or the adapter declares no layers.
  */
 export function buildSceneLayers<TNode extends { id: string }, TPose>(
-  cfg: SceneSlotConfig<TNode, TPose>,
+  cfg: WiredSceneSlot<TNode, TPose>,
   adapter: HierarchicalAdapter<TNode, TPose> | undefined,
   boundsOfFn: ((id: string) => Bounds | null) | undefined,
   hideIds: () => Set<string> | null,

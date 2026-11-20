@@ -4,7 +4,8 @@
  */
 import { useCallback, useMemo, useState } from 'react';
 import { useLatest } from '@weasel-js/react';
-import type { VisibilityRules } from 'domains/chrome-caps';
+import { getOwn } from '@weasel-js/registry';
+import { mergeVisibilityRules, type VisibilityRules } from 'domains/chrome-caps';
 
 /** One chrome id's rule, as `VisibilityRules` holds it. */
 export type VisibilityRule = NonNullable<VisibilityRules[string]>;
@@ -32,11 +33,11 @@ declare module '@weasel-js/routing' {
  */
 export function useChromeRulesDep(rules: VisibilityRules): { rules: VisibilityRules; dep: ChromeRulesDep } {
   const [overrides, setOverrides] = useState<VisibilityRules>({});
-  const merged = useMemo(() => ({ ...rules, ...overrides }), [rules, overrides]);
+  const merged = useMemo(() => mergeVisibilityRules(rules, overrides), [rules, overrides]);
   const mergedRef = useLatest(merged);
   const set = useCallback((id: string, rule: VisibilityRule) => {
-    setOverrides((prev) => (prev[id] === rule ? prev : { ...prev, [id]: rule }));
+    setOverrides((prev) => (getOwn(prev, id) === rule ? prev : { ...prev, [id]: rule }));
   }, []);
-  const dep = useMemo<ChromeRulesDep>(() => ({ get: (id) => mergedRef.current[id], set }), [mergedRef, set]);
+  const dep = useMemo<ChromeRulesDep>(() => ({ get: (id) => getOwn(mergedRef.current, id), set }), [mergedRef, set]);
   return { rules: merged, dep };
 }

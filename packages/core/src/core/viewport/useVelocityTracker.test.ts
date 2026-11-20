@@ -43,4 +43,13 @@ describe('useVelocityTracker', () => {
     result.current.reset();
     expect(result.current.getVelocity()).toEqual({ vx: 0, vy: 0 });
   });
+
+  it('measures to the release time, so a pause before letting go slows the throw', () => {
+    const { result } = renderHook(() => useVelocityTracker());
+    result.current.record(10, 0, 0);
+    result.current.record(10, 0, 10);
+    expect(result.current.getVelocity(10).vx).toBeCloseTo(1);
+    // 10 px moved between the samples, then the pointer held still until 95 ms.
+    expect(result.current.getVelocity(95).vx).toBeCloseTo(10 / 95);
+  });
 });

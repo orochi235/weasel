@@ -7,10 +7,8 @@
  * commit will.
  */
 import {
-  AUTO_POSE_DESCRIPTOR,
   documentDepOf,
   effectivePose,
-  translatePoseViaDescriptor,
   type Action,
   type InvocationCtx,
   type OngoingHandle,
@@ -19,6 +17,7 @@ import type { Path, Vec2 } from '@weasel-js/core/math';
 import { LABEL_PLACEMENT, diagramLabelOf, type DiagramLabel, type LabelSpot } from './labelTrait';
 import { labelCenter, labelSpotAt } from './labels/station';
 import { labelScratchOf } from './labelDragLayer';
+import { AUTO_LAYOUT_FRAME } from './layoutFrame';
 
 /** The action that drags an edge label. */
 export const MOVE_LABEL_ACTION_ID = 'diagram.moveLabel';
@@ -85,7 +84,7 @@ function pressOf(ctx: InvocationCtx): LabelPress | null {
   const path = documentDepOf(scene as never, pressed.edgeId as never)?.path ?? null;
   if (path === null) return null;
   const pose = effectivePose(scene as never, node as never);
-  const box = AUTO_POSE_DESCRIPTOR.getBounds(pose);
+  const box = AUTO_LAYOUT_FRAME.box(pose);
   const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
   const press = ctx.drag?.start ?? { x: ctx.world.x, y: ctx.world.y };
   return {
@@ -103,7 +102,7 @@ const spotAt = (p: LabelPress, ctx: InvocationCtx): LabelSpot | null =>
 /** The press pose moved to where `spot` derives the label's center. */
 function poseAt(p: LabelPress, spot: LabelSpot): unknown {
   const c = labelCenter(p.path, placementAt(spot), p.size);
-  return c === null ? p.pose : translatePoseViaDescriptor(p.pose, c.x - p.center.x, c.y - p.center.y, AUTO_POSE_DESCRIPTOR);
+  return c === null ? p.pose : AUTO_LAYOUT_FRAME.translate(p.pose, c.x - p.center.x, c.y - p.center.y);
 }
 
 /** The `diagram.moveLabel` action: an ongoing drag moving one edge label along and beside its edge. */

@@ -42,9 +42,8 @@ export function createPoseFeed<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
 ): PoseFeed<TData, TLayer, TPose> {
   let seen: Map<NodeId, Snapshot<TData, TLayer, TPose>> | null = null;
-  let seenVersion = -1;
-  let seenGeneration = -1;
-  let seenOverridden: readonly NodeId[] = EMPTY;
+  /** The scene's change token as of `seen`. */
+  let token: number | null = null;
 
   const listeners = createEmitter();
   const notify = listeners.emit;
@@ -80,10 +79,31 @@ export function createPoseFeed<TData, TLayer extends string, TPose>(
     // An empty `seen` makes the walk report every node as added, and fills the
     // snapshot map in the same pass.
     seen = new Map();
-    seenVersion = scene.getVersion();
-    seenGeneration = scene.overrides.getGeneration();
-    seenOverridden = scene.overrides.ids();
+    token = scene.changesSince().token;
     return { ...walk(), removed: EMPTY, changed: EMPTY, reset: true };
+  };
+
+  /** The nodes the scene's feed names, each compared with what was last reported. */
+  const touched = (ids: ReadonlySet<NodeId>): FeedDelta<TData, TLayer, TPose> => {
+    const added: FeedNode<TData, TLayer, TPose>[] = [];
+    const changed: FeedNode<TData, TLayer, TPose>[] = [];
+    const removed: NodeId[] = [];
+    for (const id of ids) {
+      const node = scene.get(id);
+      const before = seen!.get(id);
+      if (node === undefined) {
+        if (before !== undefined) {
+          seen!.delete(id);
+          removed.push(id);
+        }
+        continue;
+      }
+      const pose = effectivePose(scene, node);
+      seen!.set(id, { pose, data: node.data, layer: node.layer });
+      if (before === undefined) added.push({ node, pose });
+      else if (before.pose !== pose || before.data !== node.data || before.layer !== node.layer) changed.push({ node, pose });
+    }
+    return { added, removed, changed, reset: false };
   };
 
   return {
@@ -106,41 +126,12 @@ export function createPoseFeed<TData, TLayer extends string, TPose>(
       };
     },
     read() {
-      if (seen === null) return resetTo();
-
-      const version = scene.getVersion();
-      const generation = scene.overrides.getGeneration();
-      const committedMoved = version !== seenVersion;
-      const overridesMoved = generation !== seenGeneration;
-
-      if (!committedMoved && !overridesMoved) {
-        return { added: EMPTY, removed: EMPTY, changed: EMPTY, reset: false };
-      }
-
-      const base = committedMoved
-        ? walk()
-        : {
-            added: [] as FeedNode<TData, TLayer, TPose>[],
-            removed: [] as NodeId[],
-            changed: [] as FeedNode<TData, TLayer, TPose>[],
-          };
-      seenVersion = version;
-
-      if (overridesMoved) {
-        const now = scene.overrides.ids();
-        const touched = new Set<NodeId>(now);
-        for (const id of seenOverridden) touched.add(id); // a cleared override moved too
-        const already = new Set(base.changed.map((n) => n.node.id));
-        for (const id of touched) {
-          if (already.has(id)) continue;
-          const node = scene.get(id);
-          if (node !== undefined) base.changed.push({ node, pose: effectivePose(scene, node) });
-        }
-        seenGeneration = generation;
-        seenOverridden = now;
-      }
-
-      return { ...base, reset: false };
+      if (seen === null || token === null) return resetTo();
+      const since = scene.changesSince(token);
+      token = since.token;
+      if (since.ids === 'unknown') return { ...walk(), reset: false };
+      if (since.ids.size === 0) return { added: EMPTY, removed: EMPTY, changed: EMPTY, reset: false };
+      return touched(since.ids);
     },
   };
 }

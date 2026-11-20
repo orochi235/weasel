@@ -32,6 +32,8 @@ export interface SceneRecordingEnv {
   /** The adapter an edit pass's ops apply through. */
   passAdapter(): unknown;
   writePose(id: string, pose: unknown): void;
+  /** Hears every op that ran, by any path: the touched-ids feed. */
+  touched(kind: string, payload: unknown): void;
   poseWrites: Pick<PoseWriteLog<unknown>, 'labeled' | 'label' | 'unlabel' | 'replaying'>;
   config: {
     getActiveJournal?: (() => Journal | null) | undefined;
@@ -45,6 +47,10 @@ export interface SceneRecording {
   ops: Pick<OpTable, 'register' | 'run'>;
   recorder: Recorder;
   clearHistory(): void;
+  /** Whether a restored history adds or removes node `id`. */
+  namesNode(id: string): boolean;
+  /** Whether a journal is open: active through the accessor, or opened on `history` and not yet closed. */
+  journalOpen(): boolean;
   methods: SceneHistoryMethods & Pick<
     Scene<unknown, string, unknown>,
     | 'registerOp' | 'registeredOps' | 'recordOp' | 'applyBatch' | 'history' | 'batch' | 'untracked'
@@ -71,7 +77,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
   const ops = createOpTable({
     driven: mode.open,
     replayAlone: (step) => { replay(step); notify(); },
-    skips: stale.skips,
+    skips: stale.skips, touched: env.touched,
     // Only a replay is logged: a first apply is recorded by the entry it
     // creates, and reverting it would leave that entry describing nothing.
     applied: (kind, payload, reverted) => { if (!mode.records()) logApplied(kind, payload, reverted); },
@@ -100,7 +106,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
     lifted,
     getSelection: selection.get,
     setSelection: selection.replace,
-    notify,
+    notify, touched: env.touched,
   });
   const { atomically, logApplied } = log;
 
@@ -128,11 +134,9 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
     poseWrites.replaying(() => atomically(() => lifted(() => (fresh ? engineDriven(step) : stale.during(() => engineDriven(step)))), () => true));
   }
 
-  function refuseUntracked(verb: string): void {
-    if (mode.untracked()) throw new Error(`Scene: cannot ${verb} inside untracked() — it records`);
-  }
+  const refuseUntracked = (verb: string): void => { if (mode.untracked()) throw new Error(`Scene: cannot ${verb} inside untracked() — it records`); };
 
-  const { history, methods, openJournal, targetJournal } = createSceneHistory({
+  const { history, methods, openJournal, targetJournal, anyJournalOpen, namesNode, clear } = createSceneHistory({
     engine,
     applying: (step) => atomically(() => engineDriven(step), () => true),
     causing: outer.causing,
@@ -147,7 +151,8 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
   return {
     ops,
     recorder,
-    clearHistory: () => engine.clear(),
+    clearHistory: clear, namesNode,
+    journalOpen: () => anyJournalOpen() || outer.activeJournal() !== null,
     methods: {
       registerOp(kind, handler, options) {
         if (kind.startsWith('kit:')) throw new Error(`Scene: op kind "${kind}" is reserved (kit:* prefix)`);

@@ -1,0 +1,62 @@
+{
+ "id": "core.interactions.actions.part2",
+ "commit": "a31056c5f3adeb20052a681c149c8af782f0f7b5",
+ "date": "2026-11-19",
+ "files": [
+  "packages/core/src/interactions/actions/moveOptions.ts",
+  "packages/core/src/interactions/actions/notices.ts",
+  "packages/core/src/interactions/actions/operands.ts",
+  "packages/core/src/interactions/actions/pathCommands/pathNodes.ts",
+  "packages/core/src/interactions/actions/pathGestureTags.ts",
+  "packages/core/src/interactions/actions/pbt.fixture.ts",
+  "packages/core/src/interactions/actions/pbtScene.fixture.ts",
+  "packages/core/src/interactions/actions/planeInput.ts",
+  "packages/core/src/interactions/actions/pointerState.ts",
+  "packages/core/src/interactions/actions/poseDescriptorDep.ts",
+  "packages/core/src/interactions/actions/poseFrame.ts",
+  "packages/core/src/interactions/actions/regionSelectDeps.ts",
+  "packages/core/src/interactions/actions/resizeOptions.ts",
+  "packages/core/src/interactions/actions/resolveOverlays.ts",
+  "packages/core/src/interactions/actions/resolvePreviews.ts",
+  "packages/core/src/interactions/actions/rotateOptions.ts",
+  "packages/core/src/interactions/actions/runLifecycle.ts",
+  "packages/core/src/interactions/actions/selectionSubtree.ts",
+  "packages/core/src/interactions/actions/settleWithinRounding.ts",
+  "packages/core/src/interactions/actions/snapDep.ts",
+  "packages/core/src/interactions/actions/spatialReference.ts",
+  "packages/core/src/interactions/actions/testUtils.ts",
+  "packages/core/src/interactions/actions/transform-again/memory.ts",
+  "packages/core/src/interactions/actions/transformFinish.ts",
+  "packages/core/src/interactions/actions/useActionSet.ts",
+  "packages/core/src/interactions/actions/useNotices.ts"
+ ],
+ "a": 4,
+ "b": 3,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 9,
+ "unfound": 3,
+ "read": {
+  "A": 26,
+  "B": 26
+ },
+ "patches": 0,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 10.2,
+   "B": 3.2,
+   "match": 0.2,
+   "fix": 0.3
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "tokens": 9455276,
+  "costUsd": 4.75
+ },
+ "fixCommits": []
+}

@@ -9,9 +9,10 @@
  *   npm run typecheck:packages                 # every package
  *   npm run typecheck:packages -- routing ui   # the ones named
  */
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { availableParallelism } from 'node:os';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { exitUnlessOwnInstall } from './lib/own-install.mjs';
@@ -62,32 +63,50 @@ const programs = packages.flatMap((name) => {
   }));
 });
 
-/** @param {string} config */
-function typecheck(config) {
-  const run = spawnSync(
-    process.execPath,
-    tscArgv(['-p', relative(ROOT, config), '--noEmit', '--incremental', 'false', '--pretty', 'false']),
-    { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28 },
-  );
-  return { status: run.status ?? 1, output: `${run.stdout ?? ''}${run.stderr ?? ''}${run.error ? String(run.error) : ''}` };
-}
+/**
+ * How many programs check at once. tsc checks on one core, and one after another the 65-odd took 194 s
+ * of the gate's 201 s on teitou (2026-11-19). A quarter of the cores, at most four, since the gate
+ * runs beside the other checks and the test projects; WEASEL_TYPECHECK_JOBS overrides it.
+ */
+const JOBS = Number(process.env.WEASEL_TYPECHECK_JOBS) || Math.max(1, Math.min(4, Math.floor(availableParallelism() / 4)));
+
+/** @param {string} config @returns {Promise<{ status: number, output: string }>} */
+const typecheck = (config) =>
+  new Promise((done) => {
+    const child = spawn(process.execPath, tscArgv(['-p', relative(ROOT, config), '--noEmit', '--incremental', 'false', '--pretty', 'false']), {
+      cwd: ROOT,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let output = '';
+    child.stdout.on('data', (chunk) => (output += chunk));
+    child.stderr.on('data', (chunk) => (output += chunk));
+    child.on('error', (error) => done({ status: 1, output: output + String(error) }));
+    child.on('close', (status) => done({ status: status ?? 1, output }));
+  });
 
 const width = Math.max(...programs.map(({ label }) => label.length));
 const digits = String(programs.length).length;
 const failed = [];
-for (const [index, { label, config, files }] of programs.entries()) {
+/** @param {number} index */
+const checkOne = async (index) => {
+  const { label, config, files } = programs[index];
   const { status, output } =
     files === 0
       ? { status: 1, output: `${relative(ROOT, config)} has no root files, so its program checks nothing.` }
-      : typecheck(config);
+      : await typecheck(config);
   /** @type {Record<string, number>} */
   const codes = {};
   for (const [, code] of output.matchAll(/error (TS\d+)/g)) codes[code] = (codes[code] ?? 0) + 1;
   const tally = Object.entries(codes).map(([code, count]) => `${count} ${code}`).join(', ');
   const verdict = status === 0 ? 'ok' : `FAIL ${files === 0 ? 'no root files' : tally || `exit ${status}`}`;
   console.log(`${String(index + 1).padStart(digits)}/${programs.length} ${label.padEnd(width)} ${verdict}`);
-  if (status !== 0) failed.push({ label, output });
-}
+  if (status !== 0) failed.push({ index, label, output });
+};
+let next = 0;
+await Promise.all(Array.from({ length: Math.min(JOBS, programs.length) }, async () => {
+  while (next < programs.length) await checkOne(next++);
+}));
+failed.sort((a, b) => a.index - b.index);
 
 for (const { label, output } of failed) console.log(`\n--- ${label}\n${output.trimEnd()}`);
 if (failed.length > 0) {

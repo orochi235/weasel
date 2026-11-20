@@ -57,7 +57,7 @@ describe('a scrolled container, as the view reads it', () => {
     expectSamePose(seen.get(c)!, box(100, 100, 100, 100));
   });
 
-  it('picks its child where it is shown, and rebuilds the pick index on a scroll', () => {
+  it('picks its child where it is shown, and the pick index follows a scroll', () => {
     const { scene, c, s } = scrolled();
     const at = (x: number, y: number) => pickWalk<RectPose>(
       scenePickSource(scene, { index: { descriptor: RECT_POSE_DESCRIPTOR as never } }),
@@ -74,7 +74,8 @@ describe('a scrolled container, as the view reads it', () => {
     scene.scroll.set(c, null);
     expect(at(115, 265)).toEqual([s]);
     expect(at(115, 265)).toEqual([s]);
-    expect(pickIndexBuildCount()).toBeGreaterThan(before);
+    // The index follows the scroll without building again.
+    expect(pickIndexBuildCount()).toBe(before);
   });
 
   it('puts selection chrome on the shown pose', () => {

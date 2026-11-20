@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   2,
+   2
+  ],
+  [
+   5,
+   3
+  ]
+ ],
+ "a": [
+  "nodeAsShown hands back a stale shown copy after the stored node is written in place",
+  "A tween spaced by distance has no bound on its stations, and hangs when `distance` is below the run's precision",
+  "onPoseWrite reports a node the change both added and removed, when it is not the removal's root",
+  "A node removed and put back in one change is reported as freshly added when it was removed under its parent",
+  "A layout pass never re-arranges the parent of a container the pass resized",
+  "outsideGeneration can come back to a value a derivation recorded after a source is removed",
+  "NodeBase.dependsOn's doc says it is fixed at add time, but setDependsOn retargets it"
+ ],
+ "b": [
+  "reconcileSpecs' reorder pass moves a child no spec names when a named child moves later",
+  "A pose hold's frame notifies once per newly held id, not once",
+  "A removal reports a descendant the same change added",
+  "outsideGeneration is a sum, so removing a source can bring back a value a stale derivation recorded"
+ ]
+}

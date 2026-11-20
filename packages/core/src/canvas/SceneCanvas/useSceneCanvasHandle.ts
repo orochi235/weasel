@@ -48,7 +48,7 @@ export function useSceneCanvasHandle(args: {
   /** Told the element whenever it attaches or detaches. */
   onElement: (element: HTMLElement | null) => void;
   ingest: SceneCanvasApi['ingest'];
-  viewAnimation: Pick<ViewAnimationApi, 'animate' | 'stop' | 'isAnimating'>;
+  viewAnimation: Pick<ViewAnimationApi, 'animate' | 'stop' | 'isAnimating' | 'target'>;
   camera: SceneCanvasApi['camera'];
   addView: SceneCanvasApi['addView'];
   viewAt: SceneCanvasApi['viewAt'];
@@ -74,6 +74,7 @@ export function useSceneCanvasHandle(args: {
             animateView: viewAnimation.animate,
             stopViewAnimation: viewAnimation.stop,
             isViewAnimating: viewAnimation.isAnimating,
+            viewAnimationTarget: viewAnimation.target,
             camera,
             addView,
             viewAt,

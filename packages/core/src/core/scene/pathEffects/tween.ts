@@ -8,6 +8,7 @@ import {
   type TweenPathsOptions, type Path, type PathMeasure,
 } from '@weasel-js/geom';
 import { lerpFill, lerpStroke } from '@weasel-js/paint';
+import { isDev } from '@weasel-js/registry';
 import type { DerivedPart } from '../derivedParts';
 import type { EffectSource, PathEffectOptions } from './source';
 
@@ -41,6 +42,16 @@ export interface TweenEffect extends TweenPathsOptions, PathEffectOptions {
 }
 
 const EPS = 1e-9;
+/** The most steps one tween stands between its sources. */
+export const MAX_TWEEN_STEPS = 4096;
+
+function capped(n: number): number {
+  if (!(n <= MAX_TWEEN_STEPS)) {
+    if (isDev()) console.warn(`[weasel] tween: ${n} steps asked for; drawing ${MAX_TWEEN_STEPS}`);
+    return MAX_TWEEN_STEPS;
+  }
+  return n;
+}
 
 /** The fractions of the way from the first source to the second that the
  *  steps sit at, over a run `length` long. */
@@ -49,10 +60,12 @@ export function tweenStations(effect: TweenEffect, length: number): number[] {
   const d = effect.distance;
   if (effect.spaceBy === 'distance' && d !== undefined && d > 0) {
     if (!(length > 0)) return out;
-    for (let s = d; s < length - EPS * Math.max(length, 1); s += d) out.push(s / length);
+    const end = length - EPS * Math.max(length, 1);
+    const n = capped(Math.max(Math.ceil(end / d) - 1, 0));
+    for (let i = 1; i <= n; i++) out.push((i * d) / length);
     return out;
   }
-  const steps = Math.max(Math.floor(effect.steps), 0);
+  const steps = capped(Math.max(Math.floor(effect.steps), 0) || 0);
   for (let i = 1; i <= steps; i++) out.push(i / (steps + 1));
   return out;
 }

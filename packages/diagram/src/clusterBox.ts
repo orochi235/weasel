@@ -9,15 +9,11 @@
  * An anchored node — a cluster's title is the first — derives its pose from one
  * dependency's bounds the same way, so it travels with the box it labels.
  */
-import {
-  AUTO_POSE_DESCRIPTOR,
-  translatePoseViaDescriptor,
-  type DerivedDep,
-  type PoseDescriptor,
-} from '@weasel-js/core';
+import type { DerivedDep } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { insetOf, type ClusterInset } from './cluster';
 import { grownBy } from './footprint';
+import { frameFor, type FrameOptions } from './layoutFrame';
 import { DIAGRAM_TRAIT_KEY } from './trait';
 import type { DiagramCluster, PortAnchor } from './types';
 import type { Rect } from '@weasel-js/geom';
@@ -52,11 +48,9 @@ export function diagramAnchorOf(node: { data: unknown }): DiagramAnchor | null {
   return anchor !== null && typeof anchor === 'object' && 'at' in anchor ? (anchor as DiagramAnchor) : null;
 }
 
-/** Options for {@link clusterDerivePose} and {@link anchorDerivePose}.
- *  `poseDescriptor` defaults to the kit's `AUTO_POSE_DESCRIPTOR`. */
-export interface ClusterPoseOptions<TPose> {
-  poseDescriptor?: PoseDescriptor<TPose>;
-}
+/** Options for {@link clusterDerivePose} and {@link anchorDerivePose}: the
+ *  plane the boxes are read on. */
+export type ClusterPoseOptions<TPose> = FrameOptions<TPose>;
 
 /** A `derivePose` function as the scene calls it: the node, then what it depends on, in `dependsOn` order. */
 export type DiagramDerivePose<TPose> = (
@@ -70,7 +64,7 @@ export type DiagramDerivePose<TPose> = (
  * carries no cluster trait or every member is gone.
  */
 export function clusterDerivePose<TPose>(opts: ClusterPoseOptions<TPose> = {}): DiagramDerivePose<TPose> {
-  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const frame = frameFor(opts);
   return (node, deps) => {
     const cluster = diagramClusterOf(node);
     if (cluster === null) return null;
@@ -80,14 +74,14 @@ export function clusterDerivePose<TPose>(opts: ClusterPoseOptions<TPose> = {}): 
     let y1 = -Infinity;
     for (const dep of deps) {
       if (dep === undefined) continue;
-      const b = grownBy(poseDescriptor.getBounds(dep.pose), traitOf(dep.node)?.margin as ClusterInset | undefined);
+      const b = grownBy(frame.box(dep.pose), traitOf(dep.node)?.margin as ClusterInset | undefined);
       x0 = Math.min(x0, b.x);
       y0 = Math.min(y0, b.y);
       x1 = Math.max(x1, b.x + b.width);
       y1 = Math.max(y1, b.y + b.height);
     }
     if (!Number.isFinite(x0)) return null;
-    return poseDescriptor.fromBounds(boxAround({ x: x0, y: y0, width: x1 - x0, height: y1 - y0 }, cluster), node.pose);
+    return frame.fromBox(boxAround({ x: x0, y: y0, width: x1 - x0, height: y1 - y0 }, cluster), node.pose);
   };
 }
 
@@ -113,17 +107,17 @@ export function boxAround(
  * `null` when the node carries no anchor trait or the dependency is gone.
  */
 export function anchorDerivePose<TPose>(opts: ClusterPoseOptions<TPose> = {}): DiagramDerivePose<TPose> {
-  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const frame = frameFor(opts);
   return (node, deps) => {
     const anchor = diagramAnchorOf(node);
     const dep = deps[0];
     if (anchor === null || dep === undefined) return null;
-    const target = poseDescriptor.getBounds(dep.pose);
-    const own = poseDescriptor.getBounds(node.pose);
+    const target = frame.box(dep.pose);
+    const own = frame.box(node.pose);
     const self = anchor.self ?? anchor.at;
     const x = target.x + anchor.at.u * target.width + (anchor.offset?.x ?? 0) - self.u * own.width;
     const y = target.y + anchor.at.v * target.height + (anchor.offset?.y ?? 0) - self.v * own.height;
-    return translatePoseViaDescriptor(node.pose, x - own.x, y - own.y, poseDescriptor);
+    return frame.translate(node.pose, x - own.x, y - own.y);
   };
 }
 

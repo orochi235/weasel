@@ -64,6 +64,20 @@ export interface PoseRun {
   isRunning(): boolean;
 }
 
+/** `step(ctx)`, running `onThrow` before a throw from it goes on. */
+function stepOrElse<TPose>(
+  step: UsePoseRunOptions<TPose>['step'],
+  ctx: PoseRunCtx<TPose>,
+  onThrow: () => void,
+): PoseRunStep<TPose> {
+  try {
+    return step(ctx);
+  } catch (err) {
+    onThrow();
+    throw err;
+  }
+}
+
 /**
  * Drive node poses frame by frame through `scene.overrides`, committing them as
  * one undo entry when `step` reports done or `stop` is called. Idle until
@@ -128,7 +142,8 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
     if (!mounted.current || !running.current) return;
     const hold = holdNow();
     const pinned = hold.others();
-    const { poses, done } = optsRef.current.step({ pinned, frame: frame.current });
+    // A producer that throws ends the run as a cancel would, not left running with no frame coming.
+    const { poses, done } = stepOrElse(optsRef.current.step, { pinned, frame: frame.current }, () => { halt(loop); release(); });
     frame.current++;
     previews.current.clear();
     for (const [id, pose] of poses) {

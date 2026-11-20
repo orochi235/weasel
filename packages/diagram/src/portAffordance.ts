@@ -24,12 +24,12 @@ import type {
   ChromeState,
   CommandStroke,
   CursorSpec,
-  PoseDescriptor,
   CommandFill,
 } from '@weasel-js/core';
 import { ellipsePath, paintsLayer, viewToTransform } from '@weasel-js/core';
 import { createSettledCache } from '@weasel-js/geom/nd';
 import { boxIndex, boxesMeeting, keyedIndex } from './keyedIndex';
+import { frameFor, type FrameOptions } from './layoutFrame';
 import { portsOf } from './ports';
 import type { DiagramNodeLike, DiagramNodeReader } from './trait';
 import type { Port } from './types';
@@ -95,11 +95,10 @@ export interface PortScratch {
 
 /** Options for {@link createPortAffordance}: which ports show, and how they
  *  are painted and hit. */
-export interface PortAffordanceOptions<TPose> {
+export interface PortAffordanceOptions<TPose> extends FrameOptions<TPose> {
   /** Also the chrome-caps visibility id. Default {@link PORT_LAYER_ID}. */
   id?: string;
   read?: DiagramNodeReader;
-  poseDescriptor?: PoseDescriptor<TPose>;
   /** Which participants show their ports. Default: all of them. Gate on
    *  selection or hover by reading `state`. */
   shows?: (node: DiagramNodeLike, state: ChromeState) => boolean;
@@ -158,10 +157,7 @@ export function createPortAffordance<TPose>(
     sizePx = DEFAULT_SIZE_PX,
     strength = 'exclusive',
   } = opts;
-  const portOpts = {
-    ...(opts.poseDescriptor ? { poseDescriptor: opts.poseDescriptor } : {}),
-    ...(opts.read ? { read: opts.read } : {}),
-  };
+  const portOpts = { frame: frameFor(opts), ...(opts.read ? { read: opts.read } : {}) };
   const paintOf = (port: Port): AffordanceRegion['paint'] => {
     if (sizePx <= 0) return undefined;
     const fill = typeof opts.fill === 'function' ? opts.fill(port) : opts.fill;

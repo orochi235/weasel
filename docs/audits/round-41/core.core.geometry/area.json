@@ -1,0 +1,57 @@
+{
+ "id": "core.core.geometry",
+ "commit": "782733b19c54308edbc779a6bdfcae2ca398cf65",
+ "date": "2026-11-19",
+ "files": [
+  "packages/core/src/core/geometry/autoPoseDescriptor.ts",
+  "packages/core/src/core/geometry/booleanOfPaths.ts",
+  "packages/core/src/core/geometry/circlePose.fixture.ts",
+  "packages/core/src/core/geometry/inkExtents.ts",
+  "packages/core/src/core/geometry/pathPoseDescriptor.ts",
+  "packages/core/src/core/geometry/poseDescriptor.ts",
+  "packages/core/src/core/geometry/rectPose.ts",
+  "packages/core/src/core/geometry/regionHit.ts",
+  "packages/core/src/core/geometry/rotatedRect.ts",
+  "packages/core/src/core/geometry/targetFrame.ts",
+  "packages/core/src/core/geometry/unionBounds.ts",
+  "packages/core/src/core/geometry/vec2.ts"
+ ],
+ "a": 5,
+ "b": 4,
+ "m": 2,
+ "distinct": 7,
+ "chapman": 9,
+ "unfound": 2,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.8,
+   "B": 2.9,
+   "match": 0.1,
+   "fix": 13.1
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "msb-uai"
+  },
+  "tokens": 7812054,
+  "costUsd": 4.67
+ },
+ "fixCommits": [
+  "921d4f84fdce70b6da0862189c76faa9f43e7733",
+  "45e100fc17d9e3f1e4483eb4bc5d2270b36213d7",
+  "6ab962a052d26216756c88e2924222f7780c4030",
+  "c3a8dea5c5d490e1a4325256573d464be7761d7c",
+  "c7e5656e16566e4579e86218866cb79826e7c6c6",
+  "2076b1bdb967d5aa0abe8248966fe75d6bc5ced1",
+  "f4e98a4179ee30f53fc40a788acccb168074ba50",
+  "22f330a76adb44d9d72ee79271fc56747bc9fadc"
+ ]
+}

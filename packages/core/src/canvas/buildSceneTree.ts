@@ -28,6 +28,13 @@ export interface HierarchicalAdapter<TNode, TPose> {
   pickIdOf?(id: string): number;
 }
 
+/** The children of `parent` (`null` for the roots) whose subtrees can paint in the view, in their order. */
+export type SubtreeCull = (parent: string | null, children: readonly string[]) => readonly string[];
+
+/** A visibility index's answer for one walk: given the view each layer is drawn in and the layers the walk
+ *  paints, the filter it prunes children by. See `sceneSubtreeCull`. */
+export type SubtreeCullFor = (viewOf: (layer: string) => View, painting: ReadonlySet<string>) => SubtreeCull;
+
 /** A clip on the chain, with the layer whose world it is drawn in, or the
  *  transform of a copy a container draws — see `GroupNode.copiesFromPose`. */
 type ChainEntry = { path: Path; layer: string } | { copy: Affine };
@@ -59,6 +66,35 @@ function viewInPlane(view: View, m: PlaneMap): View {
     y: m.offset.y + m.scale.y * view.y,
     scale: { x: view.scale.x / m.scale.x, y: view.scale.y / m.scale.y },
   };
+}
+
+/** The view each parallax layer is painted through, or null when none is a plane. */
+function planeViewsOf(
+  layers: readonly { id: string; parallax?: ParallaxOptions }[],
+  planes: ReturnType<typeof createLayerPlaneLookup> | null,
+  view: View,
+  camera: View | null,
+): Map<string, View> | null {
+  let out: Map<string, View> | null = null;
+  for (const l of layers) {
+    if (planes && l.parallax) {
+      const v = camera === view ? deriveParallaxView(view, l.parallax) : viewInPlane(view, planes(l.id)!);
+      (out ??= new Map()).set(l.id, v);
+    }
+  }
+  return out;
+}
+
+/** The filter `prune` answers for a walk painting the visible layers, or `forLayer` alone. */
+function pruneFor(
+  prune: SubtreeCullFor,
+  layers: readonly { id: string; visible: boolean }[],
+  forLayer: string | undefined,
+  viewOf: (layer: string) => View,
+): SubtreeCull {
+  const painting = new Set<string>();
+  for (const l of layers) if (l.visible && (forLayer === undefined || l.id === forLayer)) painting.add(l.id);
+  return prune(viewOf, painting);
 }
 
 /**
@@ -108,19 +144,17 @@ export function buildSceneTree<
   camera: View | null = view,
   /** The painters a `clip: 'outline'` container is outlined by. Default `defaultNodeShapes`. */
   shapes?: NodeShapes,
+  /** A visibility index: a subtree it says cannot paint in the view is not walked at all, so it
+   *  emits no painter, no clip and no wrapper group. Copies are walked whole. */
+  prune?: SubtreeCullFor,
 ): DrawCommand[] {
   const layers = adapter.getLayers();
   // A hidden layer gets no bucket, and a node with no bucket is not painted.
   const buckets = new Map<string, DrawCommand[]>();
   for (const l of layers) if (l.visible) buckets.set(l.id, []);
   const planes = camera === null ? null : createLayerPlaneLookup(layers, camera);
-  let planeViews: Map<string, View> | null = null;
-  for (const l of layers) {
-    if (planes && l.parallax) {
-      const v = camera === view ? deriveParallaxView(view, l.parallax) : viewInPlane(view, planes(l.id)!);
-      (planeViews ??= new Map()).set(l.id, v);
-    }
-  }
+  const planeViews = planeViewsOf(layers, planes, view, camera);
+  const keep = prune ? pruneFor(prune, layers, forLayer, (layer) => planeViews?.get(layer) ?? view) : null;
 
   const compose = adapter.composePose?.bind(adapter);
   const scrolled = compose ? adapter.childFrame?.bind(adapter) : undefined;
@@ -160,7 +194,7 @@ export function buildSceneTree<
       ownClips = [...ancestorClips, ownClip];
     }
 
-    // Every node emits a wrapper group even with empty paint, keeping the per-node tree
+    // Every node walked emits a wrapper group even with empty paint, keeping the per-node tree
     // shape stable. A node's own clip is its children's, so its own paint, over
     // its children or under them, takes only the clips above it.
     const pickId = adapter.pickIdOf?.(id);
@@ -174,7 +208,7 @@ export function buildSceneTree<
     // An envelope's children share its own parent's frame.
     const childFrame = definesFrame(node as never) ? (scrolled ? scrolled(id, pose) : pose) : parentFrame;
     const children = node.consumesChildren === true ? [] : adapter.getChildren(id);
-    for (const cid of children) visit(cid, ownClips, childFrame, copied);
+    for (const cid of keep && !copied && children.length > 0 ? keep(id, children) : children) visit(cid, ownClips, childFrame, copied);
 
     // A copy is a copy of the clipped content, so its transform encloses the
     // container's own clip and sits inside every clip above it.
@@ -188,7 +222,8 @@ export function buildSceneTree<
     if (bucket && over.length > 0) bucket.push(wrap(over));
   }
 
-  for (const rootId of adapter.getChildren(null)) visit(rootId, [], null, false);
+  const roots = adapter.getChildren(null);
+  for (const rootId of keep ? keep(null, roots) : roots) visit(rootId, [], null, false);
 
   const out: DrawCommand[] = [];
   for (const layer of layers) {

@@ -1,0 +1,55 @@
+{
+ "id": "devtools",
+ "commit": "a31056c5f3adeb20052a681c149c8af782f0f7b5",
+ "date": "2026-11-19",
+ "files": [
+  "packages/devtools/src/DevtoolsPanel.browser.module.css",
+  "packages/devtools/src/DevtoolsPanel.module.css",
+  "packages/devtools/src/DevtoolsPanel.stories.module.css",
+  "packages/devtools/src/DevtoolsPanel.stories.tsx",
+  "packages/devtools/src/DevtoolsPanel.tsx",
+  "packages/devtools/src/RootPicker.tsx",
+  "packages/devtools/src/client.ts",
+  "packages/devtools/src/history.ts",
+  "packages/devtools/src/hook.ts",
+  "packages/devtools/src/hooks.ts",
+  "packages/devtools/src/icons.gen.ts",
+  "packages/devtools/src/inPageTransport.ts",
+  "packages/devtools/src/index.ts",
+  "packages/devtools/src/mount.tsx",
+  "packages/devtools/src/protocol.ts",
+  "packages/devtools/src/tabs.ts",
+  "packages/devtools/src/testing/mountCanvas.tsx",
+  "packages/devtools/src/trace.ts"
+ ],
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "incomplete": [
+  "A",
+  "B"
+ ],
+ "read": {
+  "A": 0,
+  "B": 0
+ },
+ "patches": 0,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0.3,
+   "B": 0.3,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio"
+  },
+  "tokens": 0,
+  "costUsd": 0
+ },
+ "fixCommits": []
+}

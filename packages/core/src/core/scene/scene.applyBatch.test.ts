@@ -8,6 +8,14 @@ describe('untracked', () => {
     const s = makeScene();
     expect(() => s.untracked(() => s.applyBatch([], 'x', undefined))).toThrow(/untracked/);
   });
+
+  it('refuses applyOps on a journal opened on scene.history, as history.applyOps does', () => {
+    const s = makeScene();
+    const j = s.history.beginJournal({ label: 'j' });
+    const op: Op = { apply: () => {}, invert: () => op };
+    expect(() => s.untracked(() => j.applyOps([op], 'x'))).toThrow(/untracked/);
+    expect(j.entries().undo).toHaveLength(0);
+  });
 });
 
 describe('applyBatch (no journal)', () => {
@@ -141,5 +149,52 @@ describe('coalescing (coalesceWindowMs)', () => {
     expect(cell).toEqual({ a: 0, b: 0 });
     s.redo();
     expect(cell).toEqual({ a: 2, b: 2 });
+  });
+});
+
+describe('applyBatch with an op that names what it caused', () => {
+  it('applies the op and replays its caused ops against the call-site adapter', () => {
+    const s = makeScene();
+    const adapter = { cell: 0 };
+    const seen: unknown[] = [];
+    const set = (to: number, from: number): Op => ({
+      apply: (a) => { seen.push(a); (a as typeof adapter).cell = to; },
+      invert: () => set(from, to),
+    });
+    const deciding: Op = {
+      apply: (a) => { seen.push(a); (a as typeof adapter).cell = 7; },
+      invert: () => set(0, 7),
+      caused: () => [set(7, 0)],
+    };
+    s.applyBatch([deciding], 'decide', adapter);
+    expect(adapter.cell).toBe(7);
+    s.undo();
+    expect(adapter.cell).toBe(0);
+    s.redo();
+    expect(adapter.cell).toBe(7);
+    expect(seen).toEqual([adapter, adapter, adapter]);
+  });
+
+  it('keeps caused when the op joins an open batch', () => {
+    const s = makeScene();
+    const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const adapter = { cell: 0 };
+    let replays = 0;
+    const set = (to: number, from: number): Op => ({
+      apply: (a) => { replays++; (a as typeof adapter).cell = to; },
+      invert: () => set(from, to),
+    });
+    const deciding: Op = {
+      apply: (a) => { (a as typeof adapter).cell = 7; },
+      invert: () => { throw new Error('the entry should invert what the op caused'); },
+      caused: () => [set(7, 0)],
+    };
+    s.batch('both', () => {
+      s.setPose(id, { ...POSE, x: 3 });
+      s.applyBatch([deciding], 'decide', adapter);
+    });
+    s.undo();
+    expect(adapter.cell).toBe(0);
+    expect(replays).toBe(1);
   });
 });

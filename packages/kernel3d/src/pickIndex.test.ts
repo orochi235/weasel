@@ -8,7 +8,7 @@ import { pose3, type Pose3 } from './pose3';
 import { rayAt, type Viewport3d } from './project';
 import type { ScreenRect } from './screen';
 import { boundsOfTestNode, type TestData, type TestLayer, type TestNode, type TestScene } from './testScene';
-import type { World3d } from './world';
+import { withDescendants, type World3d } from './world';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -300,7 +300,7 @@ describe('worldPickIndex', () => {
     expect(hits).toBeGreaterThan(200);
   });
 
-  it('reads each node box once until the scene changes', () => {
+  it('reads each node box once, and after an edit only the boxes it touched', () => {
     const r = mulberry32(11);
     const scene = randomScene(r, 100);
     const vp = randomViewport(r);
@@ -324,7 +324,9 @@ describe('worldPickIndex', () => {
     expect(worldPickIndex(world)).toBe(index);
     const [id] = [...scene.renderOrder()];
     scene.setPose(id!, randomPose(r));
-    expect(worldPickIndex(world)).not.toBe(index);
+    worldPickIndex(world).nearestOnRay(ray, null);
+    expect(worldPickIndex(world)).toBe(index);
+    expect(reads - afterBuild).toBe(withDescendants(scene, [id!]).size);
   });
 
   it('rebuilds when the world takes a new bounds function', () => {

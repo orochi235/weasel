@@ -1,6 +1,6 @@
 /** The conversion of a scene saved with its pages as the `core:pages` document value. */
 import type { Scene } from '../scene/types';
-import { PAGES_DOC_KEY, pageRunOf, type PagesDoc } from './pageNodes';
+import { PAGES_DOC_KEY, pageRunOf, pagesDocFault, type PagesDoc } from './pageNodes';
 import { setPages, type PageEditOptions } from './pageEdits';
 import type { AnyScene } from 'core/scene/anyScene';
 
@@ -10,7 +10,8 @@ import type { AnyScene } from 'core/scene/anyScene';
  * puts what the scene holds on them), then drop the value. Not an
  * undo step: it is how the document loads. Returns whether there was a value
  * to convert into a scene without pages, so a second call is `false` and
- * changes nothing; a value beside an existing page run is dropped.
+ * changes nothing; a value beside an existing page run is dropped. Throws,
+ * changing nothing, on a value to convert that is not a `PagesDoc` (`pagesDocFault`).
  */
 export function adoptLegacyPages<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
@@ -23,6 +24,8 @@ export function adoptLegacyPages<TData, TLayer extends string, TPose>(
     s.untracked(() => s.doc.set(PAGES_DOC_KEY, undefined));
     return false;
   }
+  const fault = pagesDocFault(doc);
+  if (fault !== null) throw new Error(`adoptLegacyPages: the scene's ${PAGES_DOC_KEY} value ${fault}`);
   s.untracked(() => s.batch('Adopt pages', () => {
     setPages(s, doc, { ...options, label: 'Adopt pages' });
     s.doc.set(PAGES_DOC_KEY, undefined);

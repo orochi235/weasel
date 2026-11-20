@@ -15,12 +15,10 @@
  * `markerStart` / `markerEnd` any other stroke carries.
  */
 import {
-  AUTO_POSE_DESCRIPTOR,
   PathBuilder,
   polylineFromPoints,
   type DerivedDep,
   type Path,
-  type PoseDescriptor,
   type SceneRegistry,
   type Vec2,
 } from '@weasel-js/core';
@@ -29,6 +27,7 @@ import { ANCHOR_DERIVE_POSE, DIAGRAM_ANCHOR, DIAGRAM_CLUSTER, CLUSTER_DERIVE_POS
 import { DIAGRAM_CLUSTER_UPGRADE, upgradeClusterNames } from './clusterUpgrade';
 import { CONTAINER_LAYOUTS } from './containers/layouts';
 import { DIAGRAM_LABEL, LABEL_DERIVE_POSE } from './label';
+import { boxCenter, frameFor } from './layoutFrame';
 import { DIAGRAM_OFF_PAGE_TAG, OFF_PAGE_TAG_DERIVE_POSE } from './offPage/tag';
 import { portSitesOf, portsOf, type PortsOptions } from './ports';
 import { selfLoop } from './selfLoop';
@@ -37,8 +36,8 @@ import { withHops } from './hops/draw';
 import { ROUTERS, straight, type Router } from './routers';
 import type { Port } from './types';
 
-export { avoid, bezier, orthogonal, ROUTERS, straight } from './routers';
-export type { RouteRequest, Router } from './routers';
+export { avoid, bezier, bezierFor, orthogonal, ROUTERS, straight, VEC2_COMPONENTS } from './routers';
+export type { PointComponents, RouteRequest, Router } from './routers';
 
 /**
  * The port an end resolves to: the one it named, at whichever of its places
@@ -62,12 +61,6 @@ export function resolveEnd<TPose>(
     if (sites.length > 0) return ahead.length > 0 ? facing(ahead, toward) : sites[0];
   }
   return facing(allPorts(dep), toward);
-}
-
-/** The point an end aims at when it names none: the center of its bounds. */
-export function boxCenter<TPose>(poseDescriptor: PoseDescriptor<TPose>, pose: TPose): Vec2 {
-  const b = poseDescriptor.getBounds(pose);
-  return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
 }
 
 /**
@@ -111,7 +104,7 @@ function facing(ports: readonly Port[], toward: Vec2): Port | undefined {
 
 /** The router an edge is drawn with: the one it names, else `straight`. */
 export function routerOf(edge: { router?: string }, routers: Readonly<Record<string, Router>> = ROUTERS): Router {
-  return (edge.router !== undefined ? getOwn(routers, edge.router) : undefined) ?? straight;
+  return (edge.router !== undefined ? getOwn(routers, edge.router) : undefined) ?? (straight as Router);
 }
 
 /** Options for {@link edgeDerivePath}. */
@@ -149,20 +142,21 @@ export function edgeDerivePath<TPose>(
   };
 }
 
-/** An edge's route as {@link edgeDerivePath} draws it, before it becomes a path. */
-export interface ResolvedRoute {
+/** An edge's route as {@link edgeDerivePath} draws it, before it becomes a
+ *  path. `P` is the point type the router ran in; a plane `Vec2` here. */
+export interface ResolvedRoute<P = Vec2> {
   /** The two ends, resolved. */
-  from: Port;
-  to: Port;
+  from: Port<P>;
+  to: Port<P>;
   /** What the router was handed between them: the author's waypoints, or a
    *  self-loop's turning point. */
-  waypoints: readonly Vec2[];
+  waypoints: readonly P[];
   /** The router's answer, `from.point` first and `to.point` last. */
-  points: readonly Vec2[];
+  points: readonly P[];
   /** Set while the edge is split across pages (`DiagramEdge.offPage`): the
    *  two runs drawn in place of `points`, one out of `from` to its tag's
    *  side and one from the other tag's side into `to`. */
-  stubs?: readonly [readonly Vec2[], readonly Vec2[]];
+  stubs?: readonly [readonly P[], readonly P[]];
 }
 
 /** How far a split edge's stub runs out of its shape, in world units. */
@@ -190,12 +184,12 @@ function stubsPath(stubs: readonly (readonly Vec2[])[]): Path {
 export function edgeRouter<TPose>(
   opts: EdgeRouteOptions<TPose> = {},
 ): (node: { data: unknown }, deps: readonly (DerivedDep<TPose> | undefined)[]) => ResolvedRoute | null {
-  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
-  const portOpts: PortsOptions<TPose> = { poseDescriptor, ...(opts.read ? { read: opts.read } : {}) };
+  const frame = frameFor(opts);
+  const portOpts: PortsOptions<TPose> = { frame, ...(opts.read ? { read: opts.read } : {}) };
   const allPorts = (d: DerivedDep<TPose>): Port[] =>
     portsOf(d.node as never, d.pose, portOpts);
   const standoffOf = (d: DerivedDep<TPose>): number => {
-    const b = poseDescriptor.getBounds(d.pose);
+    const b = frame.box(d.pose);
     return Math.min(b.width, b.height) / 2;
   };
 
@@ -206,7 +200,7 @@ export function edgeRouter<TPose>(
     if (fromDep === undefined || toDep === undefined) return null;
 
     const authored = edge.waypoints ?? [];
-    const aims = endAims(boxCenter(poseDescriptor, fromDep.pose), boxCenter(poseDescriptor, toDep.pose), authored, edge.route);
+    const aims = endAims(boxCenter(frame, fromDep.pose), boxCenter(frame, toDep.pose), authored, edge.route);
     const named = edge.from.port !== undefined ? 'from' : edge.to.port !== undefined ? 'to' : null;
     const loop = fromDep.node.id === toDep.node.id && (edge.from.port === undefined || edge.to.port === undefined)
       ? selfLoop(allPorts(fromDep), opts.selfLoopStandoff ?? standoffOf(fromDep), named === null ? {} : {

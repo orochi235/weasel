@@ -11,9 +11,8 @@
 }
 
 .stamp {
-  font-family: var(--wzl-font-mono);
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   font-size: var(--wzl-font-size-sm);
-  font-variant-numeric: tabular-nums;
   color: var(--audit-muted);
 }
 

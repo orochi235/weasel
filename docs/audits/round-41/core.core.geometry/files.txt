@@ -1,0 +1,12 @@
+packages/core/src/core/geometry/autoPoseDescriptor.ts
+packages/core/src/core/geometry/booleanOfPaths.ts
+packages/core/src/core/geometry/circlePose.fixture.ts
+packages/core/src/core/geometry/inkExtents.ts
+packages/core/src/core/geometry/pathPoseDescriptor.ts
+packages/core/src/core/geometry/poseDescriptor.ts
+packages/core/src/core/geometry/rectPose.ts
+packages/core/src/core/geometry/regionHit.ts
+packages/core/src/core/geometry/rotatedRect.ts
+packages/core/src/core/geometry/targetFrame.ts
+packages/core/src/core/geometry/unionBounds.ts
+packages/core/src/core/geometry/vec2.ts

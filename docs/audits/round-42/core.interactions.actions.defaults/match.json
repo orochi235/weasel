@@ -1,0 +1,20 @@
+{
+ "pairs": [
+  [
+   4,
+   2
+  ]
+ ],
+ "a": [
+  "segmentUnder tests the world point against the plane-world path, while the segment affordance tests the camera-projected one",
+  "A new drag-pan does not stop the previous drag's inertia coast",
+  "buildToolActivateBindings mints the same binding id twice for a third spec of one tool on one key",
+  "Fit Content ignores `axis`, though the option says key zoom holds to one axis and only Cmd+0 resets both",
+  "containerScroll hit-tests a nested scroll container even where its scrolled parent clips it out of view"
+ ],
+ "b": [
+  "container.scroll drops a container's z scroll offset on every wheel step",
+  "container.scroll moves a scaled container's content by world units, not its own",
+  "container.scroll can scroll a nested container that is scrolled out of its parent's view"
+ ]
+}

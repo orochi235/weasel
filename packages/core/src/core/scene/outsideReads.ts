@@ -11,12 +11,18 @@
 
 let noted = false;
 const sources = new Set<() => number>();
+/** What removed sources counted, so the sum never falls back to a value a
+ *  derivation already recorded. */
+let departed = 0;
 
 /** Count `generation` into {@link outsideGeneration}. It must only ever grow,
  *  and move when what it guards lands. Returns the removal. */
 export function addOutsideSource(generation: () => number): () => void {
   sources.add(generation);
-  return () => sources.delete(generation);
+  return () => {
+    // One more than it counted: what it guarded is gone, which is a change.
+    if (sources.delete(generation)) departed += generation() + 1;
+  };
 }
 
 /** Note that the derivation running now read an outside source. */
@@ -38,9 +44,9 @@ export function withOutsideReads<T>(fn: () => T): { value: T; outside: boolean }
 }
 
 /** The generation an outside-reading derivation is checked against: the sum
- *  of every source's, so it moves when any of them does. */
+ *  of every source's, so it moves when any of them does, and only grows. */
 export function outsideGeneration(): number {
-  let sum = 0;
+  let sum = departed;
   for (const generation of sources) sum += generation();
   return sum;
 }

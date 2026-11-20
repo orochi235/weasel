@@ -12,6 +12,7 @@ import type { InheritedPaint } from './inheritedPaint';
 import {
   cubicContoursToPath, joinPaths, pathToCubicContours, type Path, type PolygonPath,
 } from '@weasel-js/geom';
+import { pathUnion } from '@weasel-js/geom/booleans';
 import {
   resolveFill, resolveStroke, type Fill, type Inherit, type PaintedFill, type PaintedStroke, type Stroke,
 } from '@weasel-js/paint';
@@ -61,6 +62,10 @@ export function derivedPartsOf(path: Path | null | undefined): readonly DerivedP
   return path == null ? undefined : PARTS.get(path);
 }
 
+/** The parts' outlines as one. Joined under `nonzero` where every part fills
+ *  by it; a part filling `evenodd` cannot keep its holes in that join, so a
+ *  set holding one is unioned instead, each part filled by its own rule. */
 function concatPaths(paths: readonly Path[]): PolygonPath {
+  if (paths.some((p) => p.kind === 'polygon' && p.fillRule === 'evenodd')) return pathUnion(...paths);
   return joinPaths(paths.map((p) => (p.kind === 'rect' ? cubicContoursToPath(pathToCubicContours(p)) : p)));
 }

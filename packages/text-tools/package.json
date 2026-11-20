@@ -55,7 +55,8 @@
     "@weasel-js/renderer": "1.19.1",
     "@weasel-js/routing": "1.19.1",
     "@weasel-js/text": "1.19.1",
-    "@weasel-js/text-dom": "1.19.1"
+    "@weasel-js/text-dom": "1.19.1",
+    "polygon-clipping": "^0.15.7"
   },
   "peerDependencies": {
     "@weasel-js/core": "1.19.1",

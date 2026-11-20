@@ -23,3 +23,19 @@ describe('createSetSelectionOp', () => {
     expect(adapter.calls).toEqual([['a']]);
   });
 });
+
+describe('createSetSelectionOp: the live selection decides the no-op', () => {
+  it('reports a change when a stale `from` equals `to` but the selection differs', () => {
+    const op = createSetSelectionOp({ from: ['a'], to: ['a'] });
+    expect(op.apply({ setSelection: () => {}, getSelection: () => ['b'] })).toBeUndefined();
+  });
+
+  it('reports a no-op when the selection is already `to`', () => {
+    const op = createSetSelectionOp({ from: ['b'], to: ['a'] });
+    expect(op.apply({ setSelection: () => {}, getSelection: () => ['a'] })).toBe(false);
+  });
+
+  it('falls back to `from` without a getSelection', () => {
+    expect(createSetSelectionOp({ from: ['a'], to: ['a'] }).apply({ setSelection: () => {} })).toBe(false);
+  });
+});

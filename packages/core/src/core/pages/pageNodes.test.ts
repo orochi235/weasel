@@ -23,6 +23,13 @@ function setup() {
 }
 
 describe('page nodes', () => {
+  it('refuses to make a second page run in a scene that has one', () => {
+    const { scene, run } = setup();
+    expect(() => createPageRun(scene, [{ id: 'c', width: 10, height: 10 }])).toThrow(/already has a page run/);
+    expect(scene.roots.filter((id) => scene.get(id)?.pageRun !== undefined)).toEqual([run]);
+    expect(scene.get('c' as NodeId)).toBeUndefined();
+  });
+
   it('lays the pages out in a run, on the lowest layer', () => {
     const { scene, run } = setup();
     expect(placedPagesOf(scene).map(({ id, x, y }) => ({ id, x, y }))).toEqual([{ id: 'a', x: 0, y: 0 }, { id: 'b', x: 110, y: 0 }]);

@@ -69,12 +69,10 @@ const testBatch = async ({ root, batch, nightDir, merge, say, tip }) => {
   if (merge && catchUp().conflict) return { report: `untested: merging main into the batch conflicts: ${kept}` };
   for (let pass = 1; ; pass++) {
     const suffix = pass === 1 ? '' : `.${pass}`;
-    const [tests, postbuild] = await Promise.all([
-      runFleetScript(root, 'test:fleet', batch.name, join(nightDir, `${logName}${suffix}.test-fleet.log`)),
-      runFleetScript(root, 'test:fleet:postbuild', batch.name, join(nightDir, `${logName}${suffix}.postbuild.log`)),
-    ]);
-    say(`fleet: test:fleet ${tests === 0 ? 'passed' : `failed (${tests})`}, test:fleet:postbuild ${postbuild === 0 ? 'passed' : `failed (${postbuild})`}`);
-    if (tests !== 0 || postbuild !== 0) return { report: `red: ${batch.name} and its branches kept; worktree ${batch.tree}; logs in ${nightDir}` };
+    const log = join(nightDir, `${logName}${suffix}.test-batch.log`);
+    const status = await runFleetScript(root, 'test:batch', batch.name, log);
+    say(`fleet: test:batch ${status === 0 ? 'passed' : `failed (${status}); its last test-batch: line in ${log} says which part`}`);
+    if (status !== 0) return { report: `red: ${batch.name} and its branches kept; worktree ${batch.tree}; logs in ${nightDir}` };
     if (!merge || pass === MAIN_CATCH_UPS + 1) return { tip };
     const caught = catchUp();
     if (caught.conflict) return { report: `green, but main moved and merging it conflicts: ${kept}` };

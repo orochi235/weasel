@@ -962,6 +962,49 @@ outline hits before the refinement ran.
 Off the `SceneCanvas` path, editing's `useSelectTool({ leafPicking, pickTolerance })`
 is the same behavior with a world-unit tolerance. Both scene pick paths agree.
 
+## Visibility index
+
+A scene says which nodes each change reached, and the indexes over it update those nodes alone, so a
+frame of a culled view costs what is on screen and an edit costs what it touched.
+
+**The feed.** `scene.changesSince(token)` answers the node ids touched since an earlier call, the
+containers whose children changed (`null` for the roots), and whether the render order moved. Every kit
+op notes the ids it names in a bounded journal (`core/scene/touchJournal.ts`, 4,096 entries); a read
+widens them to each node's descendants, the nodes deriving from it, and any container hugging its
+children above it. Pose previews and scroll are read per session by their generations, so a drag
+touches one node a frame. The answer is `'unknown'` without a token, past the journal's reach, after a
+consumer's op (which names nothing), a layer-record or document-value change, a `loadState`, or a move
+of an ambient generation (node memo, outside sources); a reader then starts over from the whole scene.
+
+**The reach tree** (`canvas/reach/reachTree.ts`, exported as `createReachTree`) keeps two boxes per
+node, `[min…, max…]` in any dimension: its own, and its reach, own ∪ every child's reach ∪ their images
+under each copy the container paints. A touched node recomputes, then its ancestors, deepest first, and
+a climb stops where a reach did not move. A container with 64 children or more keeps them in a BVH
+(`WideChildren`), so asking which of them meet a region costs what it finds; it drops the BVH below 32,
+and keeps its children's ranks through a removal and an arrival at its end. A container whose reach
+lies inside the view hands back its children unasked. A node's tags (a layer bit, past 30 layers one
+shared bit) say which regions of a query it is tested against; a region is a box, half-spaces or a ray.
+
+Its readers:
+
+| Reader | Box | Query |
+|---|---|---|
+| a culled scene walk (`sceneSubtreeCull`) | where the slot's `paintBounds` puts the paint, at its drawn pose | each painted layer's view of the screen rect |
+| the scene pick index | `nodeBroadBox` | each layer's broad box, grown by the largest screen outset |
+| kernel3d's pick index | the world's 3D box | a ray, or a screen rect's four half-spaces |
+
+`buildSceneTree` takes the walk's filter as `prune`: a subtree that cannot reach the view is not
+visited, so it emits no painter, no clip chain and no per-node wrapper group; the per-node cull still
+judges each node walked, and children under a copy are walked whole. A screen-sized stroke widens a box
+as the view zooms out, so paint boxes are taken at the view's scale rounded down to a power of two and a
+tree is kept per octave (three at most). A group the default painter paints nothing for is placed at
+its pose box (`defaultReachBounds`). A scene under 512 nodes is walked whole, where the walk costs less
+than asking. The pick index still walks the first pick after a change the feed cannot name, and builds
+on the next pick that finds the scene unchanged. The render worker's scene diff and `createPoseFeed`
+read the feed too, serializing or comparing only the nodes it names.
+
+What it costs and buys is measured in `tests/perf/README.md`, "A culled frame of a large scene" (2026-11-19).
+
 ## Tool
 
 A tool is a list of `{ spec, actionId }` bindings that are live while it holds

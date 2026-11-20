@@ -1,5 +1,6 @@
 /** What the audit page says about areas: their tone on the map, the headline stats, and the queue. */
 import { lerp } from '@weasel-js/geom';
+import { getOwn } from '@weasel-js/registry';
 import type { AreaStatus, AuditArea, AuditPass, AuditRun } from './skulkMap.types';
 
 /** How an area is shaded: never read, settled, or by how many defects are estimated to be left in it. */
@@ -12,7 +13,7 @@ export const STATUS_LABEL: Readonly<Record<AreaStatus, string>> = {
   tonight: 'in a live run',
 };
 
-export const STAGE_LABEL: Readonly<Record<string, string>> = {
+const STAGE_LABEL: Readonly<Record<string, string>> = {
   queued: 'queued',
   reviewing: 'one review in',
   reviewed: 'both reviews in',
@@ -21,6 +22,9 @@ export const STAGE_LABEL: Readonly<Record<string, string>> = {
   patched: 'patched',
   conflict: 'conflict',
 };
+
+/** What a live run's stage reads as: its label, or the stage's own name when it has none. */
+export const stageLabelOf = (stage: string): string => getOwn(STAGE_LABEL, stage) ?? stage;
 
 export const lastPassOf = (area: AuditArea): AuditPass | null => area.passes.at(-1) ?? null;
 

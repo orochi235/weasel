@@ -10,6 +10,12 @@ a dep, an action, a ranking rule — gets designed so a 3D host can use it too, 
 in `{x, y}` does so as a stated choice. Before calling anything "2D" in a spec, a TODO entry or a
 recommendation, check `packages/kernel3d` and `@weasel-js/geom/3d`.
 
+**Charts and diagrams are set up so 3D falls out (2026-11-19).** `plot`, `diagram` (and its
+`-elk` / `-formats`), `d3`, `scale` and `apps/chart` don't need 3D designed in, but their models
+can't foreclose it: a layout, a scale, an axis or a mark answers positions as the geometry it
+lives in, rather than `{x, y}` hard-wired below the point where a renderer picks a dimension. New
+work there keeps that seam; work that finds one closed opens it in the same change.
+
 ## Scope: weasel is an engine
 
 weasel is not a utility library, and it is not a depository for features
@@ -157,6 +163,15 @@ behavior — and pass each function the part it uses.
 entry only comes down: `npm run check:size -- --update` lowers it after a split
 and never raises it.
 
+## Architectural changes ship with before/after numbers (2026-11-19)
+
+A change to how the engine works, rather than what it offers (the render walk, an index, a cache,
+the scene's change tracking, a renderer pass, how ops apply), is benchmarked before and after on the
+same fleet node and its report states the impact. That means the win it was made for and the
+overhead it adds where it can't help (small scenes, the edit path, memory), with raw runs on disk
+and measured figures marked apart from estimated ones. Perf jobs go to the fleet one at a time
+(`--kind bench`). A regression past noise is stated and either removed or argued in the same change.
+
 ## Frame loops
 
 Every frame loop runs behind `useVisibleRaf` (`@weasel-js/react`), never a bare
@@ -216,8 +231,8 @@ on itself, which runs only the files whose imports reach what it changed; never 
 does not stand in for the batch run.
 Quick fixes from a `docs/TODO.md` pass go in as one commit each; grouping them is the agent's call,
 not Mike's, and the report says which went in. The controller merges every ready branch and fix into
-one `batch/<date>` branch in a worktree, and runs `test:fleet` (which includes the `gate` project) and
-`test:fleet:postbuild` once on its tip; it covers the whole batch, since a branch run selects tests
+one `batch/<date>` branch in a worktree, and runs `npm run test:batch` once on its tip, which runs
+`test:fleet` (with the `gate` project) and `test:fleet:postbuild` at once on separate nodes; it covers the whole batch, since a branch run selects tests
 from the diff against the merge-base. Green, `main` fast-forwards to that tip, and that run is
 `main`'s post-merge run, since `main` is then the commit it tested. Red, the failing file says whose it
 is: fix that branch or drop it, and rerun the batch. Hold a ready branch for the next batch rather

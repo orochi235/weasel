@@ -169,3 +169,25 @@ describe('history persistence through a scene\'s own op registry', () => {
     }
   });
 });
+
+describe('ids minted after restoreHistory', () => {
+  it('pass over an id the restored history removed, so undoing that removal brings the node back', () => {
+    let n = 0;
+    const make = () => createScene<Data, Layer>({
+      systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
+      generateId: () => asNodeId(`n${n++}`),
+    });
+    const a = make();
+    const gone = a.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'gone' } });
+    a.remove(gone);
+    const b = make();
+    n = 0;
+    b.loadState(a.toJSON());
+    b.restoreHistory(a.serializeHistory());
+    const fresh = b.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'fresh' } });
+    expect(fresh).not.toBe(gone);
+    b.undo();
+    b.undo();
+    expect(b.get(gone)?.data.label).toBe('gone');
+  });
+});

@@ -46,3 +46,40 @@ describe('pathPoseDescriptor.remapBounds on a degenerate source axis', () => {
     expect(Array.from((out as { coords: Float32Array }).coords)).toEqual([100, 0, 105, 10]);
   });
 });
+
+describe('pathPoseDescriptor polygon axes', () => {
+  const square = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }]);
+  const pentagon = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 5, y: 15 }, { x: 0, y: 10 }]);
+
+  it('writes no more than its count for a polygon of another point count', () => {
+    const axes = pathPoseDescriptor.axes!(square)!;
+    const out = new Float64Array(axes.count * 2).fill(-1);
+    axes.write!(pentagon, out, 0);
+    expect(Array.from(out.subarray(axes.count))).toEqual(new Array(axes.count).fill(-1));
+    expect(axes.to(pentagon)).toEqual([]);
+    expect(axes.add!(pentagon, new Array(axes.count).fill(1))).toBe(pentagon);
+  });
+
+  it('keeps the added pose\'s own commands and fields', () => {
+    const axes = pathPoseDescriptor.axes!(square)!;
+    const evenOdd = { ...square, fillRule: 'evenodd' as const };
+    const moved = axes.add!(evenOdd, new Array(axes.count).fill(1)) as PolygonPath;
+    expect(moved.fillRule).toBe('evenodd');
+    expect(Array.from(moved.coords)).toEqual([1, 1, 11, 1, 11, 11, 1, 11]);
+  });
+});
+
+describe('pathPoseDescriptor.lerp between polygons', () => {
+  const square = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }]);
+
+  it('refuses two polygons whose commands differ', () => {
+    const other = { ...square, commands: Uint8Array.from(square.commands, (c, i) => (i === 2 ? square.commands[0]! : c)) };
+    expect(() => pathPoseDescriptor.lerp!(square, other, 0.5)).toThrow(/incompatible/);
+  });
+
+  it('lands on the end polygon\'s fields at t = 1', () => {
+    const b = { ...square, fillRule: 'evenodd' as const };
+    expect((pathPoseDescriptor.lerp!(square, b, 1) as PolygonPath).fillRule).toBe('evenodd');
+    expect((pathPoseDescriptor.lerp!(square, b, 0) as PolygonPath).fillRule).toBe(square.fillRule);
+  });
+});

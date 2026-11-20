@@ -3,7 +3,7 @@ import { type CanvasSize, SceneCanvas, useLatest, useScene } from '@weasel-js/co
 import { useElapsedRaf } from '@weasel-js/react';
 import { quatFromAxisAngle, type Vec3 } from '@weasel-js/geom/3d';
 import {
-  POSE3_COMPOSITION, createCameraRigContribution, cameraViewProjection, createCamera, createLinePass, packLines,
+  POSE3_COMPOSITION, createCameraRigContribution, cameraFrame, createCamera, createLinePass, packLines,
   pose3, poseMatrix, useOrbitTool, worldPoseOf,
   type Line3, type LinePass, type Pose3,
 } from '@weasel-js/kernel3d';
@@ -70,7 +70,8 @@ export function Lines3dDemo() {
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    target.lines.draw(packLines(lines), cameraViewProjection(cameraRef.current, width / height), size.current, { depthTest: false });
+    const frame = cameraFrame(cameraRef.current, width / height);
+    target.lines.draw(packLines(lines, frame.origin), frame.viewProjection, size.current, { depthTest: false });
   }, { target: glCanvas });
   useEffect(() => { loop.request(); }, [loop]);
 

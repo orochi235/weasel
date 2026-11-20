@@ -1,0 +1,52 @@
+{
+ "id": "core.core.pages",
+ "commit": "782733b19c54308edbc779a6bdfcae2ca398cf65",
+ "date": "2026-11-19",
+ "files": [
+  "packages/core/src/core/pages/fitViewToPage.ts",
+  "packages/core/src/core/pages/legacyPages.ts",
+  "packages/core/src/core/pages/pageClip.ts",
+  "packages/core/src/core/pages/pageEdits.ts",
+  "packages/core/src/core/pages/pageNodes.ts",
+  "packages/core/src/core/pages/pagePlacement.ts",
+  "packages/core/src/core/pages/pageRunLayout.ts",
+  "packages/core/src/core/pages/pagedFixture.ts",
+  "packages/core/src/core/pages/pages.ts",
+  "packages/core/src/core/pages/pagesLayer.ts",
+  "packages/core/src/core/pages/placeOnPages.ts"
+ ],
+ "a": 3,
+ "b": 4,
+ "m": 3,
+ "distinct": 4,
+ "chapman": 4,
+ "unfound": 0,
+ "read": {
+  "A": 11,
+  "B": 11
+ },
+ "patches": 4,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.4,
+   "B": 3.2,
+   "match": 0.2,
+   "fix": 14.3
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "tokens": 7629184,
+  "costUsd": 4.89
+ },
+ "fixCommits": [
+  "c0d43eee1b6610905bcdc85a92b74c34cfbc76e9",
+  "7064286c645f60de9e8f964232b4fe37265969b1",
+  "c8f84f3129587fd7536a1804203d0ecb32f5e3a1",
+  "5ad99b63d354c825e71aba161f52d8a30a34af86"
+ ]
+}

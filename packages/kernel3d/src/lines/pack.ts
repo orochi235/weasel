@@ -103,41 +103,68 @@ function windowRun(run: LineRun3, r: number, cut: CurveSpan): { points: Vec3[]; 
  *
  * | floats | holds |
  * |---|---|
- * | 0–2, 3–5 | the segment's two ends, in the world |
+ * | 0–2, 3–5 | the segment's two ends, in the world less `origin` |
  * | 6–8 | the point past this vertex's own end, so the shaft can miter |
  * | 9, 10 | role and side |
  * | 11–13 | the segment's start and end along its run, and the run's length, in the line's own units |
  * | 14–17 | half the shaft's width in pixels, then the head's `lenRatio`, `maxShare` and `aspect` (`lenRatio` 0: no head) |
  * | 18–20, 21–23, 24 | the run's tip, the start of its last segment, and that segment's length: one screen scale for every vertex of the run |
  * | 25–28 | straight RGBA |
+ *
+ * Every position (the ends, the neighbor, the tip and its segment's start) is
+ * the world point less `origin`, subtracted in doubles before the float32
+ * write, and the pass draws them under a `cameraFrame` relative to the same
+ * origin. Near the eye a float32 holds a point to a fraction of a millimeter
+ * however far both are from the world's origin, where it holds an absolute one
+ * at Earth's radius in half-meter steps. Default origin: the world's, for a
+ * view-projection that takes world points.
  */
-export function packLines(lines: readonly Line3[]): Float32Array {
-  const chunks: number[] = [];
+export function packLines(lines: readonly Line3[], origin: Vec3 = { x: 0, y: 0, z: 0 }): Float32Array {
+  const { x: ox, y: oy, z: oz } = origin;
+  const runs: PlacedRun[] = [];
+  let vertices = 0;
   for (const line of lines) {
     const shaftHalf = (line.width ?? 4) / 2;
     const head = line.head === undefined ? HEAD : line.head;
-    const toWorld = line.model ? (p: Vec3) => transformPoint(line.model!, p) : (p: Vec3) => p;
+    const model = line.model;
+    const placed = (p: Vec3): Vec3 => {
+      const w = model ? transformPoint(model, p) : p;
+      return { x: w.x - ox, y: w.y - oy, z: w.z - oz };
+    };
     for (const run of visibleRuns(line)) {
-      packRun(chunks, run, run.points.map(toWorld), shaftHalf, run.headed ? head : null, line.color);
+      const headed = run.headed ? head : null;
+      vertices += (run.closed ? run.points.length : run.points.length - 1) * SHAFT_CORNERS.length
+        + (headed ? HEAD_CORNERS.length : 0);
+      runs.push({ run, placed: run.points.map(placed), shaftHalf, head: headed, color: line.color });
     }
   }
-  return Float32Array.from(chunks);
+  const out = new Float32Array(vertices * LINE_FLOATS);
+  let at = 0;
+  for (const r of runs) at = packRun(out, at, r);
+  return out;
 }
 
-function packRun(
-  out: number[], run: VisibleRun3, world: readonly Vec3[], shaftHalf: number,
-  head: HeadShape | null, color: Line3['color'],
-): void {
-  const n = world.length;
+interface PlacedRun {
+  run: VisibleRun3;
+  placed: readonly Vec3[];
+  shaftHalf: number;
+  head: HeadShape | null;
+  color: Line3['color'];
+}
+
+/** Writes `r`'s vertices into `out` from float `k`; returns where the next run starts. */
+function packRun(out: Float32Array, k: number, { run, placed, shaftHalf, head, color }: PlacedRun): number {
+  const n = placed.length;
   const segments = run.closed ? n : n - 1;
-  const at = (i: number) => world[wrapPositive(i, n)];
+  const at = (i: number) => placed[wrapPositive(i, n)];
   const along = [0];
   for (let i = 0; i < segments; i++) along.push(along[i] + dist(run.points[i], run.points[(i + 1) % n]));
   const total = along[segments];
   const apex = at(segments);
   const apexBack = at(segments - 1);
   const reach = total - along[segments - 1];
-  const shape = head ? [head.lenRatio, head.maxShare, head.aspect] : [0, 0, 0];
+  const [lenRatio, maxShare, aspect] = head ? [head.lenRatio, head.maxShare, head.aspect] : [0, 0, 0];
+  const [r, g, bl, alpha] = color;
   for (let i = 0; i < segments; i++) {
     const a = at(i);
     const b = at(i + 1);
@@ -147,12 +174,16 @@ function packRun(
     const corners = head && i === segments - 1 ? [...SHAFT_CORNERS, ...HEAD_CORNERS] : SHAFT_CORNERS;
     for (const [role, side] of corners) {
       const adj = role === ROLE_BACK ? before : role === ROLE_SHAFT_END ? after : b;
-      out.push(
-        a.x, a.y, a.z, b.x, b.y, b.z, adj.x, adj.y, adj.z, role, side,
-        along[i], along[i + 1], total, shaftHalf, ...shape,
-        apex.x, apex.y, apex.z, apexBack.x, apexBack.y, apexBack.z, reach,
-        ...color,
-      );
+      out[k++] = a.x; out[k++] = a.y; out[k++] = a.z;
+      out[k++] = b.x; out[k++] = b.y; out[k++] = b.z;
+      out[k++] = adj.x; out[k++] = adj.y; out[k++] = adj.z;
+      out[k++] = role; out[k++] = side;
+      out[k++] = along[i]; out[k++] = along[i + 1]; out[k++] = total;
+      out[k++] = shaftHalf; out[k++] = lenRatio; out[k++] = maxShare; out[k++] = aspect;
+      out[k++] = apex.x; out[k++] = apex.y; out[k++] = apex.z;
+      out[k++] = apexBack.x; out[k++] = apexBack.y; out[k++] = apexBack.z; out[k++] = reach;
+      out[k++] = r; out[k++] = g; out[k++] = bl; out[k++] = alpha;
     }
   }
+  return k;
 }

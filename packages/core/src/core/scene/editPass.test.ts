@@ -152,3 +152,24 @@ describe('scene edit passes', () => {
     expect(pass).not.toHaveBeenCalled();
   });
 });
+
+describe('a pass whose ops change nothing', () => {
+  it('leaves the edit free to coalesce with the next', () => {
+    vi.useFakeTimers();
+    try {
+      const scene = createScene<{ count: number }, 'base', Pose>({ systemLayers: [{ id: 'base' }], coalesceWindowMs: 500 });
+      scene.add({ kind: 'mark', id: A, layer: 'base', pose: POSE, data: { count: 0 } });
+      scene.history.clear();
+      const adapter = { setPose: (id: string, pose: Pose) => scene.setPose(asNodeId(id), pose) };
+      const idle = { apply: () => 'noop' as const, invert: () => idle };
+      scene.addEditPass(() => [idle]);
+      scene.applyBatch([createSetPoseOp({ id: A, from: POSE, to: moved(1) })], 'Move', adapter);
+      vi.advanceTimersByTime(100);
+      scene.applyBatch([createSetPoseOp({ id: A, from: moved(1), to: moved(2) })], 'Move', adapter);
+      expect(scene.get(A)!.pose).toEqual(moved(2));
+      expect(scene.historyEntries()).toHaveLength(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

@@ -24,7 +24,7 @@ const b = { x: 100, y: 50, width: 240, height: 80 };
 const measure = (t: string) => t.length * 7;
 const env = charEnv(7);
 /** A row's icon, gaps, and padding: everything but its label and its trailing column. */
-const columns = m.padX * 2 + m.iconSize + m.gap * 2;
+const columns = m.padX * 2 + m.iconSize + m.gap * 2 + m.labelPad;
 const textOf = (cmds: readonly DrawCommand[]) =>
   cmds.flatMap((c) => (c.kind === 'text' ? [c.runs.map((r) => r.text).join('')] : []));
 
@@ -285,6 +285,8 @@ describe('createMenuWidget: value rows', () => {
     expect(input.read()).toBeNull();
     type(w, ['ArrowDown', 'Enter']);
     expect(heard).toHaveBeenCalled();
+    // Drawn first: until then the panel is sized from estimated text widths.
+    w.draw(ctx);
     const p = w.bounds;
     expect(input.read()).toEqual({
       rect: { x: p.x + p.width - m.padX - 2, y: p.y + m.padY, width: m.padX + 2, height: m.rowHeight }, label: 'Name',

@@ -1,0 +1,60 @@
+{
+ "id": "core.domains.snap",
+ "commit": "a31056c5f3adeb20052a681c149c8af782f0f7b5",
+ "date": "2026-11-19",
+ "files": [
+  "packages/core/src/domains/snap/angle2d.ts",
+  "packages/core/src/domains/snap/debugCandidates.ts",
+  "packages/core/src/domains/snap/gather.ts",
+  "packages/core/src/domains/snap/inputSubspace.ts",
+  "packages/core/src/domains/snap/lazySession.ts",
+  "packages/core/src/domains/snap/marks.ts",
+  "packages/core/src/domains/snap/outcomeStore.ts",
+  "packages/core/src/domains/snap/pointSnap.ts",
+  "packages/core/src/domains/snap/probes2d.ts",
+  "packages/core/src/domains/snap/readoutDep.ts",
+  "packages/core/src/domains/snap/readoutDraw.ts",
+  "packages/core/src/domains/snap/readoutLayer.ts",
+  "packages/core/src/domains/snap/registry.ts",
+  "packages/core/src/domains/snap/resizeBox.ts",
+  "packages/core/src/domains/snap/roles.ts",
+  "packages/core/src/domains/snap/rotationSource.ts",
+  "packages/core/src/domains/snap/sceneReads.ts",
+  "packages/core/src/domains/snap/sceneSession2d.ts",
+  "packages/core/src/domains/snap/screen.ts",
+  "packages/core/src/domains/snap/session2d.ts",
+  "packages/core/src/domains/snap/spanSnap.ts",
+  "packages/core/src/domains/snap/stepAngles.ts",
+  "packages/core/src/domains/snap/testing/sessionDep.ts",
+  "packages/core/src/domains/snap/types.ts"
+ ],
+ "a": 5,
+ "b": 2,
+ "m": 0,
+ "distinct": 7,
+ "chapman": 17,
+ "unfound": 10,
+ "read": {
+  "A": 24,
+  "B": 24
+ },
+ "patches": 0,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 10.7,
+   "B": 6.2,
+   "match": 0.1,
+   "fix": 0.5
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "teitou"
+  },
+  "tokens": 5064324,
+  "costUsd": 3.37
+ },
+ "fixCommits": []
+}

@@ -38,6 +38,16 @@ describe('requestedPage', () => {
     expect(requestedPage(PAGES, null, { to: 1 })?.id).toBe('b');
     expect(requestedPage(PAGES, null, { to: 'last' })?.id).toBe('c');
     expect(requestedPage(PAGES, null, { to: 'first' })?.id).toBe('a');
+    expect(requestedPage(PAGES, null, { end: 'last' })?.id).toBe('c');
+    expect(requestedPage(PAGES, null, { end: 'first' })?.id).toBe('a');
+  });
+
+  it("names a page whose id is 'first' or 'last' by that id, and its end by `end`", () => {
+    const pages = PAGES.map((p, i) => ({ ...p, id: ['x', 'last', 'first'][i]! }));
+    expect(requestedPage(pages, null, { to: 'first' })?.id).toBe('first');
+    expect(requestedPage(pages, null, { to: 'last' })?.id).toBe('last');
+    expect(requestedPage(pages, null, { end: 'first' })?.id).toBe('x');
+    expect(requestedPage(pages, null, { end: 'last' })?.id).toBe('first');
     expect(requestedPage(PAGES, null, { to: 'z' })).toBeNull();
   });
 });
@@ -84,11 +94,45 @@ describe('createCanvasCamera', () => {
     };
     const cam = createCanvasCamera(canvas);
     expect(stepPresentation(cam, PAGES, { by: 1 })?.id).toBe('b');
-    expect(canvas.animateView).toHaveBeenCalledWith(fitted(1), {});
+    expect(canvas.animateView).toHaveBeenCalledWith(fitted(1), expect.objectContaining({ onDone: expect.any(Function) }));
     // The view has not moved yet; the second press steps on from where the first is heading.
     expect(stepPresentation(cam, PAGES, { by: 1 })?.id).toBe('c');
     animating = false;
     expect(stepPresentation(cam, PAGES, { to: 0 }, { animate: false })?.id).toBe('a');
     expect(canvas.setView).toHaveBeenCalledWith(fitted(0));
+  });
+
+  it('forgets its heading once its glide ends, so a later glide it did not start is not read as its own', () => {
+    let animating = false;
+    let done: (() => void) | undefined;
+    const canvas = {
+      getView: () => fitted(0),
+      getSurfaceRect: () => DIMS,
+      setView: vi.fn(),
+      animateView: vi.fn((_to: View, opts?: { onDone?: () => void }) => { animating = true; done = opts?.onDone; }),
+      isViewAnimating: () => animating,
+    };
+    const cam = createCanvasCamera(canvas);
+    stepPresentation(cam, PAGES, { to: 2 });
+    animating = false;
+    done?.();
+    // Someone else's glide, from a view still showing page a.
+    animating = true;
+    expect(cam.target?.()).toBeNull();
+    expect(stepPresentation(cam, PAGES, { by: 1 })?.id).toBe('b');
+  });
+
+  it("reads the canvas's own glide target where the handle has one", () => {
+    const canvas = {
+      getView: () => fitted(0),
+      getSurfaceRect: () => DIMS,
+      setView: vi.fn(),
+      animateView: vi.fn(),
+      isViewAnimating: () => true,
+      viewAnimationTarget: () => fitted(1),
+    };
+    const cam = createCanvasCamera(canvas);
+    stepPresentation(cam, PAGES, { to: 2 });
+    expect(stepPresentation(cam, PAGES, { by: 1 })?.id).toBe('c');
   });
 });

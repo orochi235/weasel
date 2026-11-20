@@ -926,7 +926,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 ## ui, prefs, and theme
 
 - Open (2026-11-18, accessibility sweep): theme tokens drawn as text miss WCAG's 4.5:1 on the surfaces they sit
-  on, measured by axe over every ui and labkit story in both modes (`apps/forge/a11y.browser.test.tsx`, which
+  on, measured by axe over every ui and labkit story in both modes (`apps/forge/a11y.suite.tsx`, which
   lists the stories in `a11y.known.ts`). The status bases as text on `gray-50`: danger `#d94a3f` 3.85:1, warning
   `#d99a3f` 2.22:1, success `#2ec27e` 2.11:1, info `#7ab8d4` 2.00:1; danger on `gray-800` 4.14:1. The muted grays
   on `gray-50` (`#828284` 3.52:1, `#9b9b9d` 2.54:1, `#89898b` 3.20:1), the accent `#6a62d4` 4.47:1 on `gray-50`,
@@ -2772,3 +2772,43 @@ Calls the lanes made without a ruling:
 - 2026-11-19 (the fixer's call): `stableStringify` writes an object of the caller's own with a `$type` key as
   `{"$type":"object","value":…}`, so `{ $type: 'bigint', value: '10' }` and `10n` no longer give one string. Leaving
   such an object as JSON writes it, and the two colliding, was the alternative.
+## Audit round forty-one (2026-11-19): core's geometry
+
+- 2026-11-19 (the fixer's call): `AUTO_POSE_DESCRIPTOR.lerp` throws for a Path pose and a rect pose, as
+  `pathPoseDescriptor.lerp` already does for a rect Path and a polygon. Snapping to the nearer end was the alternative.
+
+## Audit round forty-one (2026-11-19): pages
+
+- 2026-11-19 (the fixer's call): `createPageRun` throws on a scene that already has a page run. A second run's pages
+  drew and clipped, but `pageRunOf` finds only the first, so every page reader and edit missed them. Handing the call
+  to `setPages` on the existing run was the alternative.
+## Audit round forty-one (2026-11-19): core's scene
+
+- 2026-11-19 (the fixer's call): a tween draws at most 4096 steps (`MAX_TWEEN_STEPS`), and warns in development when its
+  `steps` or `distance` asks for more; a `steps` of `NaN` draws none. Drawing every step asked for, which ran out of
+  memory or never returned on a tiny `distance` or an infinite `steps`, was the alternative.
+
+## Audit round forty-one (2026-11-19): core's viewport
+
+- 2026-11-19 (the fixer's call): `fitZoom`, `fitSize` and `useFitOnce` clamp the fit to the kit-wide zoom range
+  (`DEFAULT_MIN_ZOOM`, `DEFAULT_MAX_ZOOM`) unless given a `clamp`, as `fitViewToBounds` and every other zoom path do;
+  before, they were unbounded, and the first wheel or pinch snapped a fit past 8x back to 8x. A caller wanting the raw
+  ratio passes `{ min: 0, max: Infinity }`. Leaving them unbounded as plain arithmetic was the alternative.
+- 2026-11-19 (the fixer's call): `useDecayLoop`'s `start` and a `viewport.dragPan` binding's `inertia` throw a
+  `RangeError` on a `friction` outside (0, 1) or a `minSpeed` that is not positive, as `momentum()` does (round
+  thirty-eight); the pan checks at the press, so a bad option never throws from a release. Each coasted forever. Letting
+  friction 1 through when `bounds` with `'stop'` or `'spring'` would end the coast was the alternative.
+
+## Audit round forty-one (2026-11-19): the scene's history and tree
+
+- 2026-11-19 (the fixer's call): `scene.loadState` throws while a journal is open, a suspended one opened on
+  `scene.history` included; commit or cancel it first. Closing every open journal along with the history was the
+  alternative; it would end a modality or an edit session from under its owner.
+
+## Audit round forty-two (2026-11-19): core's domains
+
+- 2026-11-19 (the fixer's call): a `PageRequest` names an end as `{ end: 'first' | 'last' }`, and `present.step`'s
+  Home and End variants send that. A `{ to }` of `'first'` or `'last'` names the page with that id where one has it,
+  and the end only where none does, so `present.go` reaches every page by its id and old callers keep working.
+  Keeping the ends ahead of the ids, so such a page was unreachable by id, was the alternative; so was dropping
+  `to: 'first' | 'last'` outright.

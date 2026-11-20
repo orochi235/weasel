@@ -1,10 +1,10 @@
 .list {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   display: grid;
   gap: var(--wzl-space-1);
   margin: 0;
   padding-left: 28px;
-  font-family: var(--wzl-font-ui);
-  font-size: var(--wzl-font-size-md);
+  font-size: var(--wzl-font-size-sm);
 }
 
 .pick {
@@ -29,7 +29,6 @@
 }
 
 .files {
-  composes: numeric from '@weasel-js/theme/numeric.module.css';
   display: inline-flex;
   align-items: center;
   gap: var(--wzl-space-1);

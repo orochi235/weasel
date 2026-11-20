@@ -77,6 +77,21 @@ function heldMoves(
   return out;
 }
 
+/** Add `id` to `key`'s list in `map`, once. */
+function noteIn(map: Map<NodeId, NodeId[]>, key: NodeId, id: NodeId): void {
+  const list = map.get(key);
+  if (list === undefined) map.set(key, [id]);
+  else if (!list.includes(id)) list.push(id);
+}
+
+/** Take `id` out of `key`'s list in `map`; whether it was there. */
+function takeOut(map: Map<NodeId, NodeId[]>, key: NodeId, id: NodeId): boolean {
+  const list = map.get(key);
+  const at = list?.indexOf(id) ?? -1;
+  if (at >= 0) list!.splice(at, 1);
+  return at >= 0;
+}
+
 export function createArrivalWindow<TData, TLayer extends string, TPose>(
   env: ArrivalWindowEnv<TData, TLayer, TPose>,
 ): ArrivalWindow<TPose> {
@@ -158,18 +173,15 @@ export function createArrivalWindow<TData, TLayer extends string, TPose>(
     noteArrival(id, parent, from) {
       if (arrivals === null || parent === null || parent === from) return;
       changed.add(parent);
-      const list = arrivals.get(parent);
-      if (list === undefined) arrivals.set(parent, [id]);
-      else if (!list.includes(id)) list.push(id);
+      // One that left earlier in this edit was there when it opened: it did not arrive.
+      if (!takeOut(departures, parent, id)) noteIn(arrivals, parent, id);
     },
     noteDeparture(id, from, to) {
       if (arrivals === null || from === null || from === to) return;
       changed.add(from);
       // One that joined earlier in this edit was never there to leave.
       if (arrivals.get(from)?.includes(id)) return;
-      const list = departures.get(from);
-      if (list === undefined) departures.set(from, [id]);
-      else if (!list.includes(id)) list.push(id);
+      noteIn(departures, from, id);
     },
     noteChange(id) {
       if (arrivals !== null && id !== null) changed.add(id);

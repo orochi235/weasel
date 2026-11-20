@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { axisMarks, axisRoom } from './axes';
+import { axisMarks, axisRoom, axisTicks } from './axes';
 import { bandScale } from '@weasel-js/scale';
 import { linearScale } from '@weasel-js/scale';
 import { PLOT_THEME } from './theme';
@@ -52,6 +52,30 @@ describe('axisMarks', () => {
     const scale = linearScale({ domain: [0, 1], range: [100, 0] });
     const title = axisMarks({ scale, side: 'left', at: 60, title: 'Rate', theme, measure }).find((m) => m.key === 'axis:left:title')!;
     expect(title.pose.rotation).toBeCloseTo(-Math.PI / 2);
+  });
+});
+
+describe('axisTicks', () => {
+  it('places and writes each tick the scale asks for, with no side, theme or measure', () => {
+    const scale = linearScale({ domain: [0, 100], range: [200, 0] });
+    const ticks = axisTicks({ scale });
+    expect(ticks[0]).toEqual({ value: 0, position: 200, label: '0' });
+    expect(ticks.at(-1)).toEqual({ value: 100, position: 0, label: '100' });
+    expect(ticks.map((t) => t.position)).toEqual(scale.ticks().map((v) => scale.position(v)));
+  });
+
+  it('writes a band axis\'s ticks at their centers, and a denser count to its own step', () => {
+    const bands = bandScale({ domain: ['a', 'b'], range: [0, 200], paddingInner: 0, paddingOuter: 0 });
+    expect(axisTicks({ scale: bands })).toEqual([{ value: 'a', position: 50, label: 'a' }, { value: 'b', position: 150, label: 'b' }]);
+    const dense = axisTicks({ scale: linearScale({ domain: [0, 1], range: [0, 1] }), ticks: 20 });
+    expect(dense.slice(0, 3).map((t) => t.label)).toEqual(['0', '0.05', '0.1']);
+  });
+
+  it('is what axisMarks draws: a label mark per tick, in order, with its text', () => {
+    const scale = linearScale({ domain: [0, 1], range: [200, 0] });
+    const labels = axisMarks({ scale, side: 'left', at: 50, theme, measure, key: 'y' })
+      .filter((m) => m.key.startsWith('y:label:')).map((m) => m.data.text);
+    expect(labels).toEqual(axisTicks({ scale }).map((t) => t.label));
   });
 });
 

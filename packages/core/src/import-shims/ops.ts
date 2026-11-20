@@ -1,13 +1,17 @@
 /**
  * `@weasel-js/core/ops`: the kit's op factories under short names, each the same function as its `create…Op` in
- * core's source:
+ * core's source. An action commits what they build with `commitOps`, as one undo entry:
  *
  * ```ts
  * import * as ops from '@weasel-js/core/ops';
- * ctx.applyBatch([ops.insert({ node }), ops.setPose({ id: node.id, from, to })]);
+ * commitOps(ctx.deps, [ops.insert({ node }), ops.setPose({ id: node.id, from, to })], 'insert');
  * ```
  *
  * Each builds an op; the `ops.` namespace is the verb (an exception to the naming rule, 2026-11-18).
+ *
+ * `ops.swap` is the one not from core: `@weasel-js/history`'s `createSwapOp`, which swaps a caller-held value
+ * (`{ name, label, before, after, emit }`) and never touches the scene. Swapping two nodes is editing's `swap`
+ * command, committed through its `swapOps`.
  *
  * @packageDocumentation
  */

@@ -12,6 +12,9 @@
  * A bare import of a sibling must name a subpath its `exports` lists, and shipped code must not
  * import a sibling's test surface (`./test-seams`, `./testing/*`): that puts test seams in every
  * consumer's module graph.
+ *
+ * A sibling's optional peer (geom's `earcut`) is the importer's to declare when the entry it imports
+ * loads that peer: an install that nests the sibling under another package leaves the peer out.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { builtinModules } from 'node:module';
@@ -58,6 +61,70 @@ export function exportsSubpath(exports, subpath) {
     return star >= 0 && subpath.length >= key.length
       && subpath.startsWith(key.slice(0, star)) && subpath.endsWith(key.slice(star + 1));
   });
+}
+
+const MODULE_FILES = ['', '.ts', '.tsx', '.mts', '.js', '.mjs', '/index.ts', '/index.tsx', '/index.js'];
+
+/** The source file a relative `specifier` in `from` names, or null. */
+function resolveSource(from, specifier) {
+  const base = resolve(dirname(from), specifier).replace(/\.[cm]?js$/, '');
+  for (const ext of MODULE_FILES) {
+    const path = base + ext;
+    if (SOURCE.test(path) && existsSync(path) && statSync(path).isFile()) return path;
+  }
+  return null;
+}
+
+/** The path an `exports` target loads under `import` (or `default`), through nested conditions. */
+function importPath(target) {
+  if (typeof target === 'string') return target;
+  if (!target || typeof target !== 'object' || Array.isArray(target)) return null;
+  return importPath(target.import ?? target.default ?? null);
+}
+
+/** Every optional peer of the package that `entry` loads at run time, through its relative imports. */
+function peersLoadedBy(entry, peers) {
+  const found = new Set();
+  const seen = new Set([entry]);
+  const queue = [entry];
+  while (queue.length > 0) {
+    const at = queue.pop();
+    for (const written of importSpecifiers(readFileSync(at, 'utf8'), at)) {
+      const specifier = written.replace(/\?.*$/, '');
+      if (specifier.startsWith('.')) {
+        const next = resolveSource(at, specifier);
+        if (next && !seen.has(next)) {
+          seen.add(next);
+          queue.push(next);
+        }
+      } else if (isBare(specifier) && peers.has(packageOf(specifier))) {
+        found.add(packageOf(specifier));
+      }
+    }
+  }
+  return found;
+}
+
+/**
+ * Each `exports` subpath of the package in `dir` mapped to the optional peers its entry loads at run
+ * time, read from the package's source: `./dist/x/index.js` is `src/x/index.ts`. A subpath loading
+ * none is left out.
+ */
+export function optionalPeersBySubpath(dir, manifest) {
+  const peers = new Set(
+    Object.entries(manifest.peerDependenciesMeta ?? {}).filter(([, meta]) => meta?.optional).map(([peer]) => peer),
+  );
+  const out = new Map();
+  if (peers.size === 0) return out;
+  for (const [subpath, target] of Object.entries(manifest.exports ?? {})) {
+    const path = importPath(target);
+    if (subpath.includes('*') || !path?.startsWith('./dist/')) continue;
+    const entry = resolveSource(join(dir, 'package.json'), `./src/${path.slice('./dist/'.length)}`);
+    if (!entry) continue;
+    const found = peersLoadedBy(entry, peers);
+    if (found.size > 0) out.set(subpath, [...found].sort());
+  }
+  return out;
 }
 
 function walk(dir, out = []) {
@@ -112,11 +179,13 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   }
 
   const siblings = new Map();
+  const siblingPeers = new Map();
   for (const name of readdirSync(PACKAGES)) {
     const path = join(PACKAGES, name, 'package.json');
     if (existsSync(path)) {
       const manifest = JSON.parse(readFileSync(path, 'utf8'));
       siblings.set(manifest.name, manifest);
+      siblingPeers.set(manifest.name, optionalPeersBySubpath(join(PACKAGES, name), manifest));
     }
   }
 
@@ -170,6 +239,11 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
           const subpath = `.${specifier.slice(pkg.length)}`;
           if (!exportsSubpath(sibling.exports, subpath)) reaches.push({ file: rel, specifier, why: 'is not in its exports' });
           else if (!testSurface && TEST_SURFACE.test(subpath)) reaches.push({ file: rel, specifier, why: 'is a test surface' });
+          if (runtime.has(written)) {
+            for (const peer of siblingPeers.get(pkg).get(subpath) ?? []) {
+              if (!declared.has(peer) && !missing.has(peer)) missing.set(peer, `${rel}, through ${specifier}`);
+            }
+          }
         }
         if (declared.has(pkg) || BUILTINS.has(pkg)) continue;
         // A type-only import leaves no specifier in the JavaScript, so a devDependency can meet it

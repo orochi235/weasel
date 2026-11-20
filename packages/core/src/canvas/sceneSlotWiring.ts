@@ -8,7 +8,8 @@
  * colors and stroke trims, which live in an animator. `<SceneCanvas>` folds them into the slot
  * here; `buildSceneViewCommands` does the same for the headless walk.
  */
-import type { SceneSlotConfig } from './buildSceneLayer';
+import type { SceneSlotConfig, WiredSceneSlot } from './buildSceneLayer';
+import { sceneSubtreeCull } from './reach/sceneVisibility';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { withInheritedPaintBounds, withInheritedPaints } from './inheritedPaints';
 import { withSceneShapes } from './sceneShapes';
@@ -55,7 +56,7 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   alphaFor?: (id: string) => number,
   overrides?: PaintOverrides,
-): SceneSlotConfig<Node<TData, TLayer, TPose>, TPose> {
+): WiredSceneSlot<Node<TData, TLayer, TPose>, TPose> {
   const shown = shownLookup(scene);
   const derived = withDerivedPaths(scene, withSceneShapes(scene, withInheritedPaints(shown, slot.drawOne)), slot.toPose);
   const painted = withPaintOverrides(overrides, derived);
@@ -65,7 +66,10 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
     ...slot,
     ...(slot.toPose ? { toPose: sceneShownToPose(scene, slot.toPose) } : {}),
     ...(slot.paintBounds
-      ? { paintBounds: sceneCullPaintBounds(scene, slot.paintBounds, shown, slot.toPose) }
+      ? {
+          paintBounds: sceneCullPaintBounds(scene, slot.paintBounds, shown, slot.toPose),
+          subtreeCull: (rect) => sceneSubtreeCull(scene, slot.paintBounds!, rect, slot.toPose),
+        }
       : {}),
     drawOne: withShownNode(scene.overrides, painted),
     ...(drawnAt ? { drawnPose: (node: Node<TData, TLayer, TPose>, pose: TPose) => drawnAt(nodeAsShown(scene.overrides, node), pose) } : {}),

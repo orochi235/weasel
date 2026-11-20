@@ -16,7 +16,6 @@ import {
   type Inherit,
   type NodeShapeEntry,
   type Path,
-  type PoseDescriptor,
   type Stroke,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
@@ -24,6 +23,7 @@ import type { MeasureRowText, RowTextStyle } from './body';
 import type { DiagramTextStyle } from './fromData';
 import type { DiagramSpec, NodeStyle } from './dataTypes';
 import { entryMemo } from './entryMemo';
+import { frameFor, type FrameOptions } from './layoutFrame';
 import { ANCHOR_DERIVE_POSE } from './clusterBox';
 import type { Bounds } from './outline';
 import { DIAGRAM_TRAIT_KEY } from './trait';
@@ -79,25 +79,26 @@ function checkMarkPath(nodeId: string, index: number, d: string): void {
 }
 
 /** Options for {@link markShape} and {@link registerMarkShape}. */
-export interface MarkShapeOptions<TPose> {
+export interface MarkShapeOptions<TPose> extends FrameOptions<TPose> {
   /** Names the painter. The registry holds one painter per id, so a painter with
-   *  its own `poseDescriptor` registered beside another (`DiagramView`'s) needs an id
+   *  its own `poseDescriptor` or `frame` registered beside another (`DiagramView`'s) needs an id
    *  of its own. Default `'diagram:mark'`. */
   id?: string;
-  /** Reads the box a mark is stretched over. Default `RECT_POSE_DESCRIPTOR`. */
-  poseDescriptor?: PoseDescriptor<TPose>;
+  /** Reads the box a mark is stretched over, where no `frame` is given.
+   *  Default `RECT_POSE_DESCRIPTOR`. */
+  poseDescriptor?: FrameOptions<TPose>['poseDescriptor'];
 }
 
 /** The painter for a drawn mark. */
 export function markShape<TPose>(opts: MarkShapeOptions<TPose> = {}): NodeShapeEntry<unknown, TPose> {
-  const poseDescriptor = opts.poseDescriptor ?? (RECT_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const frame = frameFor(opts, RECT_POSE_DESCRIPTOR as never);
   return {
     id: opts.id ?? 'diagram:mark',
     matches: (node) => diagramMarkOf(node) !== null,
     paint: (node, pose, ctx) => {
       const mark = diagramMarkOf(node);
       if (mark === null) return [];
-      const box = poseDescriptor.getBounds(pose);
+      const box = frame.box(pose);
       const d = node.data as { fill?: Fill | Inherit | null; stroke?: Stroke | Inherit | null };
       const declaredFill = resolveFill(d.fill, ctx?.inherited?.fill);
       const declaredStroke = resolveStroke(d.stroke, ctx?.inherited?.stroke);
@@ -116,7 +117,7 @@ export function markShape<TPose>(opts: MarkShapeOptions<TPose> = {}): NodeShapeE
 /** Register {@link markShape}; returns the disposer. Calls with the same
  *  options register one painter, so each may come and go on its own. */
 export function registerMarkShape<TPose>(opts: MarkShapeOptions<TPose> = {}): () => void {
-  const entry = markEntries([opts.id, opts.poseDescriptor], () => markShape(opts as MarkShapeOptions<unknown>));
+  const entry = markEntries([opts.id, opts.poseDescriptor, opts.frame], () => markShape(opts as MarkShapeOptions<unknown>));
   return registerNodeShape(entry, { priority: 'high' });
 }
 

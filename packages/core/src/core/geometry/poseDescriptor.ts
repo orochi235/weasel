@@ -4,6 +4,8 @@ import { extentScale, lerp, multiply, poseLinearOf, rotate, wrapAngle } from '@w
 import type { TargetAxes } from '@weasel-js/animator';
 import type { PoseComposition } from 'core/scene/composeFrame';
 
+const IDENTITY_LINEAR = [1, 0, 0, 1] as const;
+
 /** `Bounds` with a required rotation angle (radians). Pivot is the AABB
  *  center of the unrotated `{x, y, width, height}`. */
 export interface RotatedPose extends Bounds {
@@ -132,6 +134,14 @@ export const RECT_POSE_DESCRIPTOR: PoseDescriptor<Bounds> = {
       const to = b.rotation ?? 0;
       const turn = wrapAngle(to - from);
       pose.rotation = lerp(from, turn === to - from ? to : from + turn, t);
+    }
+    const ta = poseLinearOf(a), tb = poseLinearOf(b);
+    if (ta || tb) {
+      const [a0, a1, a2, a3] = ta ?? IDENTITY_LINEAR;
+      const [b0, b1, b2, b3] = tb ?? IDENTITY_LINEAR;
+      const mid = [lerp(a0, b0, t), lerp(a1, b1, t), lerp(a2, b2, t), lerp(a3, b3, t)] as const;
+      if (poseLinearOf({ transform: mid })) pose.transform = mid;
+      else delete pose.transform;
     }
     return pose;
   },

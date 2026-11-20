@@ -10,13 +10,13 @@
 }
 
 .value {
-  composes: numeric from '@weasel-js/theme/numeric.module.css';
   display: block;
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   font-size: var(--wzl-font-size-xl);
   font-weight: var(--wzl-font-weight-bold);
 }
 
 .label {
-  font-size: var(--wzl-font-size-md);
+  font-size: var(--wzl-font-size-sm);
   color: var(--audit-muted);
 }

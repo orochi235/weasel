@@ -266,6 +266,17 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P2) [agent] Nothing checks that fonts cascade the way a component expects.** A component that sets or resets
+  `font-family` (or the `font` shorthand) on its root replaces what its consumer's container chose, and nothing
+  catches it: on 2026-11-19 the audit page's lanes, rebuilt on ui's new `SpanStrip`, silently changed from the
+  page's narrow font to another. Wants a rule for which elements may set a family (the theme's roots, text inputs,
+  mono readouts by token) and a check that holds components to it: a static check over `*.module.css` in the
+  style of `check:numeric` / `check:spacing` for families set outside the allowed places, plus a browser test
+  rendering each ui and labkit component inside a container with a distinctive family and asserting every text
+  node's computed `font-family` is the container's unless the component documents an exception. Then audit
+  ui, labkit, forge and the apps, fixing what it finds. Closes when the check runs in the gate, the browser test
+  covers every exported ui and labkit component, and both pass on main.
+
 - **(P3) [maintainer] Trials in one labkit workspace have no way to share params.** Each trial owns its own
   settings, so two trials meant to show one setting from different angles each get their own copy, and editing it
   in one leaves the other behind. Wants a way for trials to declare that a param is shared, and a decision on where
@@ -496,6 +507,39 @@ only story runner in the repo.
 
 ---
 
+## Scale
+
+Arcs toward scenes far larger than a screen, in the order each builds on the last (2026-11-19, from
+comparing pezlie's wall, which pans a 1.1M-cell corpus at 60 fps). Arc 1, render-time visibility, landed
+on 2026-11-19 (`docs/concepts.md`, "Visibility index"); these rest on its feed and reach tree.
+
+- **(P3) [agent] Level of detail: a node's representation chosen by its size on screen.** Design:
+  `docs/proposals/2026-11-19-level-of-detail.md`. Painters get
+  `pixelScale` (`packages/core/src/canvas/nodeShapeTypes.ts:23`) and nothing builds on it. A node declares
+  representations by on-screen size, and the engine picks one with hysteresis so a zoom parked on a boundary
+  does not flicker (pezlie's `wall/src/levels.ts:66` goes up at ×1.5 and down at ×0.67). Closes when a node
+  type ships with two or more representations switched by the engine, a test pins the hysteresis, and a demo
+  shows labels dropping out and groups drawing as boxes as it zooms out.
+- **(P3) [agent] A tile-pyramid layer.** `retain` (`packages/renderer/src/draw/retained.ts`) survives only
+  whole-device-pixel pans; any zoom redraws. A layer renders its content into `z/tx/ty` power-of-two tiles
+  under a per-frame budget, draws a coarser parent until a finer tile is ready, cross-fades between levels,
+  and keeps a bounded LRU with the coarsest level pinned (pezlie's `wall/src/tiles.ts`). Design:
+  `docs/proposals/2026-11-19-tile-pyramid.md`. Closes when a layer can be marked tiled, a zoom over a static backdrop draws from
+  tiles with no full redraw (measured), and the cache's bound is tested.
+- **(P3) [agent] A streaming scene source.** Nothing loads or drops nodes as the view moves; a consumer on
+  `onViewChange` pays an undo-history entry per change. A source answers the nodes
+  of a world rect, loads in priority order (on screen, the margin, where a fling will land), adds and drops
+  them through a mutation path outside history, and caps concurrent loads. Closes when a demo pans a scene
+  larger than memory would hold whole, undo history stays empty through the pan, and the visibility index
+  updates without a rebuild.
+- **(P3) [agent] A true 3D force layout.** A diagram reaches a 3D host only through a `LayoutFrame`, a plane
+  (2026-11-19), so `force` relaxes in two dimensions: `@weasel-js/simulation`'s `SimulationNode` is
+  `{x, y, vx, vy, fx, fy}` (`packages/simulation/src/types.ts:7`) and `packages/diagram/src/force.ts` writes
+  `Vec2` places. The integrator and its forces run over an axis list instead (position, velocity and pin as
+  number arrays), `LayoutAxes` (`packages/diagram/src/layout.ts:118`) names axes by index rather than
+  `'x' | 'y'`, and a frame can answer a box in three dimensions. Closes when `force` relaxes a graph of
+  solids in 3D under kernel3d, with a test that a run over nodes all on z = 0 returns the 2D run's places.
+
 ## Backends (WebGL future)
 
 - **(P3) [waiting] Gradient ramp resolution at print scale** — 1×256 LINEAR ramps verified adequate for 8-bit
@@ -507,6 +551,12 @@ only story runner in the repo.
 ---
 
 ## Release-gate & build hygiene
+
+- **(P3) [waiting] forge's axe sweep failed `Field.stories.tsx` and `ClockFrames.stories.tsx` in both modes** in
+  the full run of `006b44f98a` (2026-11-19), the first in msb-uai's new `weasel-browser` tree (cold install and
+  transforms, 14 Chromiums): `aria-input-field-name` on Field's two `Slider` thumbs. On the same node and tree
+  minutes later, the shard files and the old single-file sweep both passed those stories. Closes on a second
+  sighting, with whatever it shares with this one, or after five more full runs without it.
 
 - **(P3) [waiting] The gate's `npm run lint` step failed in 93 ms with no output** in the full run of
   `0852e33894` (2026-11-18), while `npm run lint` alone on the same commit on the fleet linted the repo and exited

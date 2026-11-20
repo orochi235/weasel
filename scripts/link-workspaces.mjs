@@ -13,6 +13,7 @@
 //   node scripts/link-workspaces.mjs [worktree]      default: the current directory
 import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, rmSync, symlinkSync, unlinkSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { MODULE_CACHE_ROOT } from './lib/module-cache.mjs';
 
 const root = resolve(process.argv[2] ?? '.');
 const read = (p) => readFileSync(p, 'utf8');
@@ -89,6 +90,7 @@ if (linked + nestedLinked > 0) {
   for (const cache of ['.vitest-cache', '.vite', '.vite-browser']) {
     rmSync(join(root, 'node_modules', cache), { recursive: true, force: true });
   }
+  rmSync(join(root, MODULE_CACHE_ROOT), { recursive: true, force: true });
 }
 console.log(
   `linked ${linked} workspace packages and ${nestedLinked} package node_modules into ${root}; the rest resolves from ${host}`,

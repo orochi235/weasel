@@ -5,6 +5,7 @@
  * effective reading of a derivation go through it; the document reading
  * (`documentOf`), history and `scene.get` never do.
  */
+import { getOwn } from '@weasel-js/registry';
 import type { NodeId } from './types';
 
 /** What `nodeAsShown` reads of the overrides: a `Scene`'s satisfy it. */
@@ -42,10 +43,22 @@ export function nodeAsShown<TNode extends { id: NodeId; data?: unknown }>(
   const data = overrides.read(node.id)?.data;
   if (data === undefined) return node;
   const held = shownCopies.get(node);
-  if (held !== undefined && held.data === data && held.stored === node.data) return held.shown as TNode;
+  if (held !== undefined && held.data === data && held.stored === node.data && sameBesideData(node, held.shown)) {
+    return held.shown as TNode;
+  }
   const shown = withShownData(node, data(node.data as never));
   shownCopies.set(node, { stored: node.data, data, shown });
   return shown;
+}
+
+/** Whether `shown` still copies every field of `node` but `data`: the scene
+ *  writes `pose`, `hidden` and `locked` onto the stored node in place. */
+function sameBesideData(node: object, shown: object): boolean {
+  const a = node as Record<string, unknown>;
+  const b = shown as Record<string, unknown>;
+  for (const key in a) if (key !== 'data' && a[key] !== getOwn(b, key)) return false;
+  for (const key in b) if (key !== 'data' && !Object.hasOwn(a, key)) return false;
+  return true;
 }
 
 /** `node` showing `data`, marked so that no override applies to it again: for

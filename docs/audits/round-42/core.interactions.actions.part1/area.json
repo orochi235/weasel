@@ -1,0 +1,63 @@
+{
+ "id": "core.interactions.actions.part1",
+ "commit": "a31056c5f3adeb20052a681c149c8af782f0f7b5",
+ "date": "2026-11-19",
+ "files": [
+  "packages/core/src/interactions/actions/actionGroups.ts",
+  "packages/core/src/interactions/actions/actionParamSchema.ts",
+  "packages/core/src/interactions/actions/actionParams.extension.fixture.ts",
+  "packages/core/src/interactions/actions/actionParams.typetest.ts",
+  "packages/core/src/interactions/actions/admitsChild.ts",
+  "packages/core/src/interactions/actions/canSwap.ts",
+  "packages/core/src/interactions/actions/defaultCommitAdapter.ts",
+  "packages/core/src/interactions/actions/depSchema.ts",
+  "packages/core/src/interactions/actions/drawnBoxes.ts",
+  "packages/core/src/interactions/actions/dropVerdict.ts",
+  "packages/core/src/interactions/actions/duplicateOffset.ts",
+  "packages/core/src/interactions/actions/edit-anchors/geometry.ts",
+  "packages/core/src/interactions/actions/edit-anchors/params.ts",
+  "packages/core/src/interactions/actions/editAnchorsDep.ts",
+  "packages/core/src/interactions/actions/editDeps.ts",
+  "packages/core/src/interactions/actions/engineDeps.ts",
+  "packages/core/src/interactions/actions/finiteFrame.ts",
+  "packages/core/src/interactions/actions/followerMoves.ts",
+  "packages/core/src/interactions/actions/geometryProjection.ts",
+  "packages/core/src/interactions/actions/gestureFrames.ts",
+  "packages/core/src/interactions/actions/groupSlot.ts",
+  "packages/core/src/interactions/actions/hitSelection.ts",
+  "packages/core/src/interactions/actions/ingestionDeps.ts",
+  "packages/core/src/interactions/actions/insertDeps.ts",
+  "packages/core/src/interactions/actions/layoutDeps.ts",
+  "packages/core/src/interactions/actions/magnification.ts",
+  "packages/core/src/interactions/actions/moveNodes.ts"
+ ],
+ "a": 4,
+ "b": 4,
+ "m": 2,
+ "distinct": 6,
+ "chapman": 7.3,
+ "unfound": 1.3,
+ "read": {
+  "A": 27,
+  "B": 27
+ },
+ "patches": 0,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.1,
+   "B": 8.6,
+   "match": 0.2,
+   "fix": 0.4
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "tokens": 6889686,
+  "costUsd": 3.91
+ },
+ "fixCommits": []
+}

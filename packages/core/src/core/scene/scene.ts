@@ -4,6 +4,8 @@ import { documentReads, sceneMutators } from './sceneMutators';
 import { createNotifier, type Notifier } from './notifier';
 import type { SerializedDoc } from './docValues';
 import { sceneChanges } from './sceneChanges';
+import { createSceneTouches, type SceneTouchesEnv } from './sceneTouches';
+import { createTouchJournal } from './touchJournal';
 import { createPoseWriteLog } from './poseWrites';
 import { effectivePose } from './effectivePose';
 import { createEditMode } from './editMode';
@@ -44,8 +46,8 @@ let defaultIdCounter = 0;
 const defaultGenerateId = (): NodeId =>
   asNodeId(`n${(defaultIdCounter++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
 
-/** `mint`, passing over any id `taken` already holds: a document reloaded into a new session keeps the ids the last
- *  session minted, and a generator restarted with the session can mint them again. */
+/** `mint`, passing over any id `taken` already holds: a document and history reloaded into a new session keep the ids
+ *  the last session minted, and a generator restarted with the session can mint them again. */
 function freshIds(mint: () => NodeId, taken: (id: NodeId) => boolean): () => NodeId {
   return () => {
     for (let tries = 0; tries < 1000; tries++) {
@@ -95,6 +97,30 @@ function sceneSessions(
   return sessions;
 }
 
+/** The touched-ids feed over a scene's document and the view state of every session on it. */
+function sceneTouchesOver(
+  doc: { state: { nodes: SceneTouchesEnv['nodes'] }; store: Pick<SceneTouchesEnv, 'dependents' | 'childDerived'> },
+  sessions: Pick<SessionHost, 'each'>,
+) {
+  const journal = createTouchJournal();
+  const touches = createSceneTouches({
+    journal,
+    nodes: doc.state.nodes,
+    dependents: doc.store.dependents,
+    childDerived: doc.store.childDerived,
+    eachShown: (fn) => sessions.each((s) => { fn(s.overrides); fn(s.scroll); }),
+  });
+  return { journal, touches };
+}
+
+/** Throws when a `loadState` would replace the state an open edit or journal works against. */
+function refuseLoadMidEdit(editOpen: boolean, journalOpen: boolean): void {
+  if (editOpen) throw new Error('Scene: cannot loadState inside another edit — it replaces the state that edit would revert to');
+  if (journalOpen) {
+    throw new Error('Scene: cannot loadState while a journal is open — commit or cancel it first; its entries edit the state this replaces');
+  }
+}
+
 type SceneConfig<TData, TLayer extends string, TPose> =
   Omit<SceneOptions<TData, TLayer, TPose>, 'systemLayers' | 'initial' | 'doc'>;
 
@@ -129,9 +155,11 @@ function buildScene<TData, TLayer extends string, TPose>(
     writePose,
   });
 
-  const generateId = freshIds(options.generateId ?? defaultGenerateId, (id) => state.nodes.has(id));
+  // `recording` is assigned below, before anything mints an id.
+  const generateId = freshIds(options.generateId ?? defaultGenerateId, (id) => state.nodes.has(id) || recording.namesNode(id));
   const sessions = sceneSessions(doc, notifier);
   const { selection } = sessions.own;
+  const { journal, touches } = sceneTouchesOver(doc, sessions);
 
   const recording = createSceneRecording({
     notifier,
@@ -142,6 +170,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     selection: sessions.actingSelection,
     arrivals,
     writePose,
+    touched: touches.noteOp,
     poseWrites,
     config: options,
   });
@@ -192,12 +221,11 @@ function buildScene<TData, TLayer extends string, TPose>(
     loadState(json, opts) {
       // Validate + map up front: throws on a bad version or registry key before live state is touched.
       const specs = quantizedSpecs(foldable(specsFromSerialized(json, registry, { composition: scene.composition, ...opts }), options.composition), options.quantize, json.doc);
-      if (mode.open()) {
-        throw new Error('Scene: cannot loadState inside another edit — it replaces the state that edit would revert to');
-      }
+      refuseLoadMidEdit(mode.open(), recording.journalOpen());
       buildScene(options, json.systemLayers.map(layerFromSerialized), () => specs, json.doc); // a dry run: a bad snapshot keeps the document
       // Session state, and every id is a new node after this.
       sessions.clearShown();
+      journal.reset();
       doc.reset(json.systemLayers.map(layerFromSerialized), json.doc);
       recording.clearHistory();
       poseWrites.quiet(() => edits.construct(specs));
@@ -206,6 +234,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     },
 
     ...sceneChanges(notifier, selection),
+    changesSince: touches.changesSince,
   };
   sessions.serve(scene);
 

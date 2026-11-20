@@ -8,7 +8,7 @@
 
 .axis {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
-  font-size: 11px;
+  font-size: 9px;
   fill: var(--audit-muted);
 }
 
@@ -20,16 +20,8 @@
 
 .found { fill: var(--audit-depth-2); }
 
-.pending { stroke: var(--audit-depth-2); stroke-width: 1; }
-.hatch { stroke: var(--audit-depth-2); stroke-width: 1.5; }
-
-.tag {
-  font-size: 10px;
-  fill: var(--audit-muted);
-}
-
 .hint {
   margin: var(--wzl-space-2) 0 0;
-  font-size: var(--wzl-font-size-md);
+  font-size: var(--wzl-font-size-sm);
   color: var(--audit-muted);
 }

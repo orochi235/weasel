@@ -16,6 +16,7 @@
 }
 
 .table {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   width: 100%;
   border-collapse: collapse;
   font-size: var(--wzl-font-size-sm);
@@ -23,7 +24,7 @@
 
 .table th,
 .table td {
-  padding: 3px 4px;
+  padding: 3px var(--wzl-space-2);
   border-bottom: 1px solid var(--audit-rule);
   text-align: end;
 }
@@ -31,9 +32,4 @@
 .table th {
   font-weight: var(--wzl-font-weight-medium);
   color: var(--audit-muted);
-}
-
-.table td {
-  font-family: var(--wzl-font-mono);
-  font-variant-numeric: tabular-nums;
 }

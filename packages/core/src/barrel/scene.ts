@@ -133,6 +133,7 @@ export type {
   NodeClip,
   NodeId,
   PoseFeed,
+  SceneTouches,
   PoseOverride,
   PoseHold,
   PoseOverrides,
@@ -180,6 +181,7 @@ export type { AnyNode, AnyScene } from '../core/scene/anyScene';
 export type { NodeBase as SceneNodeBase } from '../core/scene/types';
 export type { LayerRecordBase, SceneLayerMembers } from '../core/scene/layerTypes';
 export type { SceneChanges } from '../core/scene/sceneChanges';
+export type { SceneTouchesMembers } from '../core/scene/sceneTouches';
 export type { SceneEditPasses } from '../core/scene/editPass';
 export type { SceneHistoryPersistence, SceneReplay } from '../core/scene/historyForm';
 export type { SceneSelectionMembers } from '../core/scene/sceneSelection';

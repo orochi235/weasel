@@ -4,28 +4,27 @@
  * `layoutBody` would, from the row heights its trait records.
  */
 import {
-  AUTO_POSE_DESCRIPTOR,
-  type PoseDescriptor,
   type Scene,
   type TransformFollower,
   type TransformPreviewNode,
   type AnyScene,
 } from '@weasel-js/core';
 import { recordedLayout } from './bodyRelayout';
+import { AUTO_LAYOUT_FRAME, type LayoutFrame } from './layoutFrame';
 import type { Bounds } from './outline';
 import { diagramNodeOf } from './trait';
 import { posesMovedBy } from './waypointFollower';
 import * as coreOps from '@weasel-js/core/ops';
 
 /** Each row node of every body `frame` resizes, at the pose the new size puts it in. */
-function restacked(sc: AnyScene, poseDescriptor: PoseDescriptor<unknown>, frame: ReadonlyMap<string, unknown>): TransformPreviewNode[] {
+function restacked(sc: AnyScene, plane: LayoutFrame<unknown>, frame: ReadonlyMap<string, unknown>): TransformPreviewNode[] {
   const out: TransformPreviewNode[] = [];
   for (const [id, pose] of frame) {
     const node = sc.get(id as never);
     const trait = node === undefined ? null : diagramNodeOf(node);
     if (node === undefined || trait?.body === undefined || trait.outline === undefined) continue;
-    const before = poseDescriptor.getBounds(node.pose);
-    const after = poseDescriptor.getBounds(pose);
+    const before = plane.box(node.pose);
+    const after = plane.box(pose);
     if (before.width === after.width && before.height === after.height) continue;
     // Rows are stored in the body's own frame.
     const boxes = recordedLayout(trait, { x: 0, y: 0, width: after.width, height: after.height });
@@ -44,15 +43,15 @@ function restacked(sc: AnyScene, poseDescriptor: PoseDescriptor<unknown>, frame:
 /**
  * The transform follower that lays a resized body's rows out again, for the
  * `transformFollowers` dep (`useTransformFollower`). A body saved before its
- * row heights were recorded is left as it is. `poseDescriptor` reads a pose's
- * bounds; default `AUTO_POSE_DESCRIPTOR`.
+ * row heights were recorded is left as it is. `plane` reads a pose's box;
+ * default {@link AUTO_LAYOUT_FRAME}.
  */
 export function bodyFollower<TPose>(
   scene: Scene<unknown, string, TPose>,
-  poseDescriptor: PoseDescriptor<TPose> = AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>,
+  plane: LayoutFrame<TPose> = AUTO_LAYOUT_FRAME as LayoutFrame<TPose>,
 ): TransformFollower {
   const sc = scene as unknown as AnyScene;
-  const geo = poseDescriptor as PoseDescriptor<unknown>;
+  const geo = plane as LayoutFrame<unknown>;
   return {
     preview: (frame) => restacked(sc, geo, frame),
     finish(ops, label) {

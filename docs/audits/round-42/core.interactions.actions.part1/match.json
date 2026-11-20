@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "`enumerateAnchors` ignores a subpath a drawing command opens after `Z`, so it and `pathToAnchors` number anchors differently",
+  "`commitOps` reads `deps.operands` with no `select`, the one read its own comment says must be skipped",
+  "`moveEachOps` lets a later entry move a node an earlier zero-delta entry reached, against \"a node two entries reach takes the first one's delta\"",
+  "`translateAnchor` moves a one-segment quadratic loop's control twice"
+ ],
+ "b": [
+  "commitOps reads `deps.operands` on the scene fallback even when no `select` was asked, throwing in dev for actions that never declared it",
+  "`swappable` lets a cross-parent swap land a node in a container `childVerdict` would refuse it",
+  "`moveEachOps` moves a node twice when one entry carries it in a container's frame and a later entry names it",
+  "`childVerdict` holds the follower page rule only for a page itself, not for a container on that page"
+ ]
+}

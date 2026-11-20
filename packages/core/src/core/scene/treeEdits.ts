@@ -183,7 +183,7 @@ export function createTreeEdits<TData, TLayer extends string, TPose>(
       edit('reorder', parent !== null, () => {
         noteChange(parent);
         const fromIndex = siblingsOf(parent).indexOf(id);
-        record('kit:move', { id, fromParent: parent, fromIndex, toParent: parent, toIndex: slotIndex(index, siblingsOf(parent).length) }, 'reorder');
+        record('kit:move', { id, fromParent: parent, fromIndex, toParent: parent, toIndex: slotIndex(index ?? Infinity, siblingsOf(parent).length) }, 'reorder');
       });
     },
   };

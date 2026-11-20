@@ -11,6 +11,8 @@ import type { View } from 'core/viewport/view';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { pickWalk, scenePickSource, type PickQuery, type PickSource } from 'canvas/pickWalk';
 import { mixedScene, pointPick, regionPick, rng } from './pickIndexFixture';
+import { pickIndexBuildCount } from './scenePickIndex';
+import { asNodeId } from 'core/scene/types';
 import type { AnyScene } from 'core/scene/anyScene';
 
 interface Tally { used: number; candidates: number; order: number; hits: number }
@@ -140,4 +142,46 @@ describe('pick index', () => {
     const ids = new Set(scene.renderOrderNodes().map((n) => n.id as string));
     for (const c of src.candidates!(() => q.broad) ?? []) expect(ids.has(c.id)).toBe(true);
   });
+
+  /** One edit of the kinds the index follows without a build, chosen by `r`. */
+  function edit(scene: AnyScene, r: () => number, step: number): void {
+    const marks = scene.renderOrderNodes().filter((n) => /^r\d/.test(n.id) && n.parent === null);
+    const pick = () => marks[Math.floor(r() * marks.length)]!;
+    const k = step % 6;
+    if (k === 0) {
+      const n = pick();
+      const p = n.pose as Record<string, number>;
+      scene.setPose(n.id, { ...p, x: r() * 900, y: r() * 900 } as never);
+    } else if (k === 1) {
+      const p = scene.get(asNodeId('frame'))!.pose as Record<string, number>;
+      scene.setPose(asNodeId('frame'), { ...p, x: p.x + (r() - 0.5) * 300 } as never);
+    } else if (k === 2) {
+      scene.update(pick().id, { data: { shape: 'rect', fill: null, stroke: { paint: { color: '#000000' }, width: 6 + r() * 30 } } as never });
+    } else if (k === 3) {
+      const n = pick();
+      scene.overrides.set(n.id, { pose: { ...(n.pose as object), x: r() * 900 } as never });
+      scene.overrides.commit();
+    } else if (k === 4) {
+      scene.add({ kind: 'mark', layer: 'main', pose: { x: r() * 900, y: r() * 900, width: 30, height: 30 }, data: { shape: 'rect', fill: { paint: { color: '#123456' } } } } as never);
+    } else {
+      const n = pick();
+      if (r() < 0.5) scene.remove(n.id);
+      else scene.move(n.id, asNodeId('frame'));
+    }
+  }
+
+  for (const composed of [false, true]) {
+    it(`follows 24 edits without a build, each pick still what the full walk returns (${composed ? 'composed' : 'absolute'})`, () => {
+      const scene = mixedScene(5, composed);
+      compare(scene, 1, 9);
+      const before = pickIndexBuildCount();
+      const r = rng(41);
+      for (let step = 0; step < 24; step++) {
+        edit(scene, r, step);
+        const { mismatches } = compare(scene, 1, 100 + step);
+        expect(mismatches.slice(0, 3)).toEqual([]);
+      }
+      expect(pickIndexBuildCount()).toBe(before);
+    });
+  }
 });

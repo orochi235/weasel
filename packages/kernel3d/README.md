@@ -182,12 +182,25 @@ into a WebGL2 context the host owns, between its own draws:
 
 ```ts
 const pass = createLinePass(gl);
+const frame = cameraFrame(camera, width / height);
 pass.draw(
-  packLines([{ runs: [{ points }], color: [1, 0.4, 0.2, 1], width: 4, trim: { end: 0.6 }, model }]),
-  cameraViewProjection(camera, width / height),
+  packLines([{ runs: [{ points }], color: [1, 0.4, 0.2, 1], width: 4, trim: { end: 0.6 }, model }], frame.origin),
+  frame.viewProjection,
   { width, height }, // the viewport in CSS pixels
+  { logDepth: frame.logDepth },
 );
 ```
+
+- **Positions are relative to the eye.** Points go in in world space; `packLines`
+  subtracts the frame's origin, the eye, in doubles before writing float32, and
+  `cameraFrame`'s view-projection holds no translation. A line at Earth's radius
+  then holds still to a fraction of a millimeter where absolute float32 steps by
+  half a meter. Lines that do not move need not be packed again as the camera
+  does: pack them once against a fixed point near them, and draw each frame
+  with `cameraFrame(camera, aspect, up, thatPoint)`, whose matrix carries the
+  eye's offset from it. The error is about that offset times 6e-8, a
+  millimeter at 15 km; pack again against a nearer point when the eye goes
+  farther. A buffer and a matrix must name the same origin.
 
 - **Widths are pixels.** Each line is widened after projection, so its shaft and
   head are the same size near the camera and far from it. Corners miter along
@@ -208,6 +221,32 @@ Depth is tested against the bound buffer by default and never written; pass
 `{ depthTest: false }` to draw over everything. The pass puts back the GL state
 it changes. A three.js host calls it after `renderer.render`, with
 `renderer.getContext()`, and then `renderer.resetState()`.
+
+## Depth
+
+A camera's `depth` is `'standard'` by default: GL's, from `perspective`. That
+spends its precision beside the near plane, so past a near/far ratio of about
+1e4 far surfaces share depth values and z-fight. `depth: 'log'` writes
+logarithmic depth instead: steps a fixed length below a knee at
+`sqrt(near * far)` and a fixed share of the distance beyond it, so two surfaces
+1 m apart resolve at 1e6 m from a camera with near 0.1 and far 2e6. Reversed-Z
+would need clip control, which WebGL lacks.
+
+Log depth is written in the fragment shader, so the projection, the vertex
+shader and clipping are unchanged, and the line pass tests against it when
+drawn with `{ logDepth: frame.logDepth }`. A host drawing meshes into the same
+buffer writes the same depth: paste `LOG_DEPTH_GLSL` into its fragment shader
+under `precision highp float`, upload `logDepthUniform(frame.logDepth)` as a
+`vec3`, and write
+
+```glsl
+gl_FragDepth = weaselLogDepth(u_logDepth);
+```
+
+`logDepthAt(w, frame.logDepth)` is the same depth on the CPU, for reading a
+buffer back. Writing `gl_FragDepth` turns off a GPU's early depth test for that
+draw. three.js's `logarithmicDepthBuffer` uses another curve, so its meshes and
+the line pass would disagree.
 
 ## Math
 

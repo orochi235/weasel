@@ -1,6 +1,6 @@
 /** `@weasel-js/geom/nd` — geometry over plain number arrays, in any
  *  dimension, so a tuple `[x, y, z]` passes as it is: the port-curve rule,
- *  point distance, lerpPoint and the nearest point of a segment,
+ *  dot product, point distance, lerpPoint and the nearest point of a segment,
  *  flats (points, lines and planes as affine subspaces), the snap
  *  resolver built on them, a BVH over axis-aligned boxes, and the settled
  *  cache that decides when an index is worth building. The root
@@ -11,7 +11,7 @@
  */
 export { PORT_REACH, cubicPointAt, portControls, portCurvePoints } from '../portCurve';
 export {
-  nearestPointOnSegment, distance, distance2, lerpPoint, pointSegmentDistance, pointSegmentDistance2, segmentT,
+  nearestPointOnSegment, distance, distance2, dot, lerpPoint, pointSegmentDistance, pointSegmentDistance2, segmentT,
 } from '../points';
 export {
   nearestBetweenFlats, nearestOnFlat, flatDim, intersectFlats,

@@ -11,9 +11,9 @@ import { PRESENTATION_GROUP } from '../../interactions/actions/actionGroups';
 
 /** The entry {@link createPresentationContribution} builds. */
 export const PRESENTATION_ID = 'weasel-presentation';
-/** Steps through the page order: params `{ by }` or `{ to: 'first' | 'last' }`, one variant each. */
+/** Steps through the page order: params `{ by }` or `{ end: 'first' | 'last' }`, one variant each. */
 export const PRESENT_STEP_ACTION_ID = 'present.step';
-/** Shows one page: params `{ to }`, its id or its index. */
+/** Shows one page: params `{ to }`, its id or its index; `'first'` and `'last'` are ends only where no page has that id. */
 export const PRESENT_GO_ACTION_ID = 'present.go';
 
 /** What {@link createPresentationContribution} takes. */
@@ -32,8 +32,8 @@ export interface PresentationOptions extends PresentationStepOptions {
 const STEP_VARIANTS = [
   { key: 'next', label: 'Next Page', params: { by: 1 } },
   { key: 'previous', label: 'Previous Page', params: { by: -1 } },
-  { key: 'first', label: 'First Page', params: { to: 'first' } },
-  { key: 'last', label: 'Last Page', params: { to: 'last' } },
+  { key: 'first', label: 'First Page', params: { end: 'first' } },
+  { key: 'last', label: 'Last Page', params: { end: 'last' } },
 ] as const;
 
 const KEYS: readonly (readonly [variant: (typeof STEP_VARIANTS)[number]['key'], keys: readonly string[]])[] = [
@@ -44,8 +44,13 @@ const KEYS: readonly (readonly [variant: (typeof STEP_VARIANTS)[number]['key'], 
 ];
 
 function requestOf(params: Readonly<Record<string, unknown>> | undefined, go: boolean): PageRequest | null {
+  const end = params?.end;
+  if (end === 'first' || end === 'last') return { end };
   const to = params?.to;
-  if (typeof to === 'string' || typeof to === 'number') return go || to === 'first' || to === 'last' ? { to } : null;
+  if (typeof to === 'string' || typeof to === 'number') {
+    if (go) return { to };
+    return to === 'first' || to === 'last' ? { end: to } : null;
+  }
   const by = params?.by;
   return !go && isFiniteNumber(by) ? { by } : null;
 }

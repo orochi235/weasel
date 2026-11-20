@@ -1,8 +1,8 @@
 /** The audit map as a scene: a frame per package, a cell per area, kept in step with the map's data. */
 import { asNodeId, contrastRatio, createScene, nodeShapesOf, type NodeId, type RectPose, type Scene } from '@weasel-js/core';
-import { deepEqual, getOwn } from '@weasel-js/registry';
+import { deepEqual } from '@weasel-js/registry';
 import { AUDIT_PAINTER, type AuditCellData, type AuditFrameData, type AuditNodeData } from './auditPainter';
-import { STAGE_LABEL, heatScaleOf, labelIn, toneOf, wrapAtDots, type HeatScale } from './areaData';
+import { heatScaleOf, stageLabelOf, labelIn, toneOf, wrapAtDots, type HeatScale } from './areaData';
 import { rampAt } from './heat';
 import type { MapCell, MapFrame } from './mapLayout';
 import type { AuditPhase } from './phases';
@@ -107,7 +107,7 @@ function cellData(area: AuditArea, cell: MapCell, palette: AuditPalette, heat: H
     ink,
     ...(labeled ? { label: labelLines(area, cell, staged) } : {}),
     ...(live ? { live: phase ? palette.phase[phase] : palette.live } : {}),
-    ...(staged ? { stage: getOwn(STAGE_LABEL, area.stage!) ?? area.stage!, stageInk: inkOn(live ? (phase ? palette.phase[phase] : palette.live) : palette.live, palette) } : {}),
+    ...(staged ? { stage: stageLabelOf(area.stage!), stageInk: inkOn(live ? (phase ? palette.phase[phase] : palette.live) : palette.live, palette) } : {}),
     ...(tone === 'unaudited' && labeled ? { backing: palette.uncharted } : {}),
     font: palette.font.ui,
     numericFont: palette.font.numeric,
