@@ -64,6 +64,29 @@ describe('createIconRegistry', () => {
     expect(r.get('core:undo')?.body).toBe('u');
   });
 
+  it('refuses a batch holding a glyph that is not a glyph, registering nothing', () => {
+    const r = createIconRegistry();
+    const bad = (icons: Record<string, unknown>) => ({ namespace: 'ui', owner: '@weasel-js/ui', icons }) as unknown as IconTable;
+    for (const g of [null, 'x', [], { group: 'Test', tags: [] }, { body: 'b', tags: [] }, { body: 'b', group: 'Test' }, { body: 'b', group: 'Test', tags: [], fill: 3 }]) {
+      expect(() => r.add([core({ undo: 'u' }), bad({ x: g })])).toThrow(TypeError);
+    }
+    expect(r.entries()).toEqual([]);
+    expect(r.owner('core')).toBeUndefined();
+  });
+
+  it('keeps a glyph in its place when its table is released and added back in the same tick', async () => {
+    const r = createIconRegistry();
+    const base = core({ undo: 'u' });
+    const off = r.add(base);
+    r.add({ namespace: 'ui', owner: '@weasel-js/ui', icons: { layer: glyph('l') } });
+    off();
+    expect(r.get('core:undo')).toBeUndefined();
+    r.add(base);
+    expect(r.entries().map((e) => e.ref)).toEqual(['core:undo', 'ui:layer']);
+    await Promise.resolve();
+    expect(r.entries().map((e) => e.ref)).toEqual(['core:undo', 'ui:layer']);
+  });
+
   it('notifies subscribers and advances its version on change', () => {
     const r = createIconRegistry();
     const listener = vi.fn();
@@ -240,5 +263,17 @@ describe('variants', () => {
     });
     await r.loadVariant('all');
     expect(r.variantState('all')).toBe('failed');
+  });
+
+  it('loads a variant once when a listener asks for it again during the loading notice', async () => {
+    const r = createIconRegistry();
+    const loader = vi.fn(async () => ({ default: [core({ undo: 'u' })] }));
+    r.provideVariants({ all: loader });
+    const off = r.subscribe(() => void r.loadVariant('all'));
+    await r.loadVariant('all');
+    off();
+    expect(loader).toHaveBeenCalledTimes(1);
+    expect(r.variantState('all')).toBe('loaded');
+    expect(r.entries()).toHaveLength(1);
   });
 });

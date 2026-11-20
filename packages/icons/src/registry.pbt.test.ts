@@ -255,11 +255,12 @@ describe('icon variants against a model', () => {
               });
               pending.set(name, list);
             })]));
-            const fresh = s.names.some((n) => !states.has(n));
+            // Every provide hands over new loaders, so a failed name is loadable again.
+            const fresh = s.names.some((n) => !states.has(n) || states.get(n) === 'failed');
             r.provideVariants(loaders);
             for (const n of s.names) {
               hasLoader.add(n);
-              if (!states.has(n)) states.set(n, 'idle');
+              if (!states.has(n) || states.get(n) === 'failed') states.set(n, 'idle');
             }
             if (!fresh) expect(r.getVersion()).toBe(before);
           } else if (s.op === 'load') {

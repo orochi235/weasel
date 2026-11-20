@@ -1428,9 +1428,13 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   variant it does not already know, change nothing: no version step, no notice, the same `entries()` array.
 - 2026-11-11 (my call, icons second property pass): the icon registry's `add` refuses with a `TypeError` a batch
   holding a table without a string namespace and owner and an object (not an array) of icons, checked before any
-  claim. An app build reads its tables in module id order, so where two tables of one namespace and owner disagree
+  claim; since 2026-11-20 (audit round 50) also one holding a glyph without a string `body` and `group`, an array of
+  `tags`, and a `fill` that is absent or a string. An app build reads its tables in module id order, so where two tables of one namespace and owner disagree
   on a glyph, the one beside the later module id wins every build; a virtual module's variant name is written
   `%uXXXX` per code unit outside `[A-Za-z0-9_.-]` in its placeholder.
+- 2026-11-20 (my call, audit round 50): `provideVariants` handing a `failed` variant a loader of another identity sets
+  it `idle` and announces it, so a mounted `useIconVariant` loads from the new one; a new loader for a `loaded` or
+  `loading` variant is kept for no run, since running it would add the variant's tables a second time.
 - Open (icons second property pass, 2026-11-11): the registry and icons-plugin take a table whose namespace, or a
   glyph's name, holds a colon or whitespace, which no `splitIconRef` reads: namespace `a` with glyph `b:c` and
   namespace `a:b` with glyph `c` share the slot `a:b:c` under two owners. Whether such a table is refused.

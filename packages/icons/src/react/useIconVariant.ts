@@ -9,8 +9,11 @@ const NOOP = () => () => {};
 export function useIconVariant(name: string): { entries: readonly IconEntry[]; state: IconVariantState } {
   const registry = useIconRegistry();
   const subscribe = registry ? registry.subscribe : NOOP;
-  const state = useSyncExternalStore(subscribe, () => registry?.variantState(name) ?? 'unknown');
-  const entries = useSyncExternalStore(subscribe, () => registry?.entries() ?? NONE);
+  const readState = () => registry?.variantState(name) ?? 'unknown';
+  const readEntries = () => registry?.entries() ?? NONE;
+  // The server renders from the registry as it stands, as the client's first render does.
+  const state = useSyncExternalStore(subscribe, readState, readState);
+  const entries = useSyncExternalStore(subscribe, readEntries, readEntries);
   const idle = state === 'idle';
   useEffect(() => {
     if (registry && (idle || state === 'failed')) void registry.loadVariant(name);

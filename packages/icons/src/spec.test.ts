@@ -19,6 +19,7 @@ describe('icon specs', () => {
     expect(toIconSpec('core:tune')).toBe('core:tune');
     expect(toIconSpec({ name: 'core:tune', mark: 'ui:markAdd' })).toEqual({ name: 'core:tune', mark: 'ui:markAdd' });
     expect(toIconSpec({ name: 'core:tune' })).toEqual({ name: 'core:tune' });
+    expect(toIconSpec({ name: 'core:tune', mark: null })).toEqual({ name: 'core:tune' });
     expect(toIconSpec('tune')).toBeUndefined();
     expect(toIconSpec({ name: 'core:tune', mark: 'markAdd' })).toBeUndefined();
     expect(toIconSpec({ mark: 'ui:markAdd' })).toBeUndefined();
