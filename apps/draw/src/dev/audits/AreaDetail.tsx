@@ -50,11 +50,11 @@ export function AreaDetail({ area, holder }: { area: AuditArea | undefined; hold
           <div><Badge shape="pill" size="sm" variant="solid" {...(GRADE[area.status] ? { grade: GRADE[area.status] } : {})}>
             {holder ? `in round ${holder.round}` : STATUS_LABEL[area.status]}
           </Badge></div>
-          <DetailList values="figures">
+          <DetailList values="figures" columns="auto">
             <DetailRow label="source files">{area.files}</DetailRow>
             <DetailRow label="passes">{area.passes.length}</DetailRow>
             {area.queue !== null && <DetailRow label="queue position">{area.queue}</DetailRow>}
-            {area.stage && <DetailRow label="this run" values="text">{stageLabelOf(area.stage)}</DetailRow>}
+            {area.stage && <DetailRow label="this run">{stageLabelOf(area.stage)}</DetailRow>}
             {last && <DetailRow label={`left after round ${last.round}`}>{last.left.toFixed(1)}</DetailRow>}
           </DetailList>
           <Passes area={area} />
