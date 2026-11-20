@@ -145,7 +145,7 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
     },
     vite: {
       configResolved(config) {
-        dev = config.command === 'serve' || config.mode === 'test';
+        dev = config.command === 'serve';
         if (app && dev) for (const t of reachableTables(config.root)) catalog.add(this, t);
       },
       renderChunk: lastRenderChunk,

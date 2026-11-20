@@ -9,10 +9,11 @@ const iconsSrc = fileURLToPath(new URL('../../icons/src/index.ts', import.meta.u
 
 async function bundle(
   options: Partial<WeaselIconsOptions> = {},
-  { minify = false, entry = 'main.ts', alias = {} as Record<string, string> } = {},
+  { minify = false, entry = 'main.ts', alias = {} as Record<string, string>, mode = 'production' } = {},
 ) {
   const out = await build({
     root,
+    mode,
     logLevel: 'silent',
     configFile: false,
     resolve: { alias: { '@weasel-js/icons': iconsSrc, ...alias } },
@@ -83,6 +84,12 @@ describe('weaselIcons app mode', () => {
 
   it('fails on a name missing from its namespace, naming the module', async () => {
     await expect(bundle({}, { entry: 'unknown.ts' })).rejects.toThrow(/icon "lib:nope" is not in @fx\/lib's table.*unknown\.ts/s);
+  });
+
+  it('trims and checks a build run under --mode test as any other build', async () => {
+    const { entry } = await bundle({}, { mode: 'test' });
+    expect(entry).not.toContain('fx-ring-body');
+    await expect(bundle({}, { entry: 'unknown.ts', mode: 'test' })).rejects.toThrow(/icon "lib:nope" is not in/);
   });
 
   it('forgets the previous build when one plugin builds again, as under --watch', async () => {
