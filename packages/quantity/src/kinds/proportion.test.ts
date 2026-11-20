@@ -22,3 +22,25 @@ describe('fraction and ratio read typed text in the locale', () => {
     expect(parseAs('3:4', ratio(), { locale: 'de-DE' })).toBe(0.75);
   });
 });
+
+function timed<T>(read: () => T): T {
+  const t0 = performance.now();
+  const out = read();
+  expect(performance.now() - t0).toBeLessThan(250);
+  return out;
+}
+
+describe('fraction counted in a constant', () => {
+  it('reads a long run of spaces in bounded time', () => {
+    expect(timed(() => parseAs(`π${' '.repeat(2000)}2`, fraction({ of: 'π' })))).toBeCloseTo(2 * Math.PI);
+    expect(timed(() => parseAs(`π${' '.repeat(2000)}x`, fraction({ of: 'π' })))).toBeNaN();
+  });
+
+  it('counts one of the constant for a bare sign or denominator', () => {
+    expect(parseAs('π', fraction({ of: 'π' }))).toBeCloseTo(Math.PI);
+    expect(parseAs(' - π ', fraction({ of: 'π' }))).toBeCloseTo(-Math.PI);
+    expect(parseAs('π/2', fraction({ of: 'π' }))).toBeCloseTo(Math.PI / 2);
+    expect(parseAs('-π/4', fraction({ of: 'π' }))).toBeCloseTo(-Math.PI / 4);
+    expect(parseAs('3π/4', fraction({ of: 'π' }))).toBeCloseTo((3 * Math.PI) / 4);
+  });
+});

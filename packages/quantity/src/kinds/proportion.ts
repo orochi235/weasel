@@ -232,7 +232,10 @@ export const fractionKind: DisplayKind<FractionDisplay> = {
     const token = new RegExp(spellings.map(escape).join('|'), 'i');
     if (!token.test(text)) return parseFraction(text, ctx.locale);
     // With the constant taken out, a bare `/2` or nothing at all counts one of it.
-    const coefficient = text.replace(token, '').replace(/^(\s*[-−+]?\s*)(?=[/⁄]|\s*$)/, '$11');
+    const rest = text.replace(token, '').trim();
+    const sign = /^[-−+]/.test(rest) ? rest[0]! : '';
+    const body = rest.slice(sign.length).trimStart();
+    const coefficient = body === '' || /^[/⁄]/.test(body) ? `${sign}1${body}` : rest;
     return parseFraction(coefficient, ctx.locale) * constant.value;
   },
   mathml: (value, d) => {
