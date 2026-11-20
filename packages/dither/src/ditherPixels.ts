@@ -1,12 +1,13 @@
 import { ATKINSON, FLOYD_STEINBERG, diffuse } from './diffuse';
 import { toGray } from './gray';
-import { DEFAULT_THRESHOLD, WHITE, bayerCutoff, checkImageSize } from './shared';
+import { DEFAULT_THRESHOLD, DITHER_METHODS, WHITE, bayerCutoff, checkImageSize, checkMethod } from './shared';
 import type { DitherPixelsOptions, RgbaImage } from './types';
 
 /** `image` quantized to ink: one byte per pixel, 1 = ink. */
 export function ditherPixels(image: RgbaImage, options: DitherPixelsOptions = {}): Uint8Array {
   const { method = 'threshold', threshold = DEFAULT_THRESHOLD, background = WHITE, protect } = options;
   const { width, height } = image;
+  checkMethod('ditherPixels', method, DITHER_METHODS);
   checkImageSize('ditherPixels', width, height);
   if (image.data.length !== width * height * 4) {
     throw new RangeError(`ditherPixels: data holds ${image.data.length} bytes, a ${width}×${height} image needs ${width * height * 4}`);

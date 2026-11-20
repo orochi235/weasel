@@ -49,3 +49,11 @@ describe('ditherPixels: bayer', () => {
     expect(m).toEqual(['11110000', '11110000', '11110000', '11110000']);
   });
 });
+
+describe('ditherPixels: method', () => {
+  it('refuses a method it does not know, naming the ones it does', () => {
+    expect(() => ditherPixels(grayImage(1, 1, () => 0), { method: 'ordered' as never })).toThrow(
+      /'ordered' is not a method it takes \(threshold, bayer, floyd-steinberg, atkinson\)/,
+    );
+  });
+});

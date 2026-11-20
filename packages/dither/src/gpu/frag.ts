@@ -20,7 +20,8 @@ uniform vec3 u_background;   // 0-1
 uniform vec4 u_ink;          // premultiplied 0-1
 uniform vec4 u_blank;        // premultiplied 0-1
 uniform vec2 u_pitch;        // device px per dot
-uniform vec2 u_gridOrigin;   // device px, top-down
+uniform vec2 u_gridOrigin;   // device px, top-down, within 4 dots of the buffer
+uniform vec2 u_dotOffset;    // dots from u_gridOrigin's dot to the grid's dot 0, a multiple of 4
 uniform sampler2D u_protect; // one texel per dot, red > 0.5 = protected
 uniform vec2 u_protectSize;  // dots; 0 = none
 out vec4 outColor;
@@ -65,9 +66,10 @@ void main() {
     gray = grayOf(sum / (taps.x * taps.y));
   }
 
+  vec2 gridDot = dotIndex + u_dotOffset;
   bool protectedDot = u_protectSize.x > 0.0
-    && all(greaterThanEqual(dotIndex, vec2(0.0))) && all(lessThan(dotIndex, u_protectSize))
-    && texelFetch(u_protect, ivec2(dotIndex), 0).r > 0.5;
+    && all(greaterThanEqual(gridDot, vec2(0.0))) && all(lessThan(gridDot, u_protectSize))
+    && texelFetch(u_protect, ivec2(gridDot), 0).r > 0.5;
 
   float cutoff = u_threshold;
   if (u_method > 0.5 && !protectedDot) {
@@ -87,6 +89,7 @@ struct Params {
   u_method: f32,
   u_pitch: vec2f,
   u_gridOrigin: vec2f,
+  u_dotOffset: vec2f,
   u_protectSize: vec2f,
   u_threshold: f32,
 }
@@ -125,9 +128,10 @@ fn effect(in: EffectVaryings) -> vec4f {
     gray = grayOf(sum / (taps.x * taps.y));
   }
 
+  let gridDot = dotIndex + params.u_dotOffset;
   var protectedDot = false;
-  if (params.u_protectSize.x > 0.0 && all(dotIndex >= vec2f(0.0)) && all(dotIndex < params.u_protectSize)) {
-    protectedDot = textureLoad(u_protect, vec2i(dotIndex), 0).r > 0.5;
+  if (params.u_protectSize.x > 0.0 && all(gridDot >= vec2f(0.0)) && all(gridDot < params.u_protectSize)) {
+    protectedDot = textureLoad(u_protect, vec2i(gridDot), 0).r > 0.5;
   }
 
   var cutoff = params.u_threshold;
