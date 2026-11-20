@@ -41,7 +41,7 @@ export { tuneAction } from '@weasel-js/routing';
 export { roleReader, roleMods, keysHeld, modifierStateOf } from '@weasel-js/routing';
 export type { ModifierRole, ModifierRoles, RoleKeys, RoleRebinds } from '@weasel-js/routing';
 export type {
-  ActionParamSchema, ActionTunings, NudgeParams, ReparentOnDrop,
+  ActionParamSchema, ActionTunings, NudgeParams, ReparentOnDrop, SwapOnDrop,
   FinishPathParams, IngestParams, InsertParams, MoveParams, PaintParams, RotateParams,
   PlaceParams, CountStepParams, OpacityParams, ViewportZoomParams, WheelScrollParams, PickParams,
 } from '../interactions/actions/actionParamSchema';
@@ -131,6 +131,7 @@ export type {
   LassoSelectDep,
   LayoutDep,
   CanDropIntoDep,
+  CanSwapDep,
   ColorAtDep,
   NodeAtPointDep,
   ResizePolicy,

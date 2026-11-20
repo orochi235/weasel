@@ -72,6 +72,7 @@ export { createSceneSession2d } from '../domains/snap/sceneSession2d';
 export type { SceneSessionInputs } from '../domains/snap/sceneSession2d';
 export { childVerdict } from '../interactions/actions/admitsChild';
 export type { ChildReader } from '../interactions/actions/admitsChild';
+export { swappable } from '../interactions/actions/canSwap';
 export { finiteFrame } from '../interactions/actions/finiteFrame';
 export { followerMove } from '../interactions/actions/followerMoves';
 export { sceneGestureFrames } from '../interactions/actions/gestureFrames';

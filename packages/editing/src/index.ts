@@ -77,7 +77,7 @@ export {
 } from './useStandardActions';
 
 export { moveAction } from './actions/move/action';
-export { snapToContainer, snapBackOrDelete, clampMove, type ClampMoveOptions } from './actions/move/behaviors';
+export { snapToContainer, snapBackOrDelete, clampMove, swapOnDrop, type ClampMoveOptions, type SwapOnDropOptions } from './actions/move/behaviors';
 export { cloneAction } from './actions/clone/action';
 export { createResizeAction, resizeAction, type ResizeActionOptions } from './actions/resize/action';
 export { clampMinSize } from './actions/resize/behaviors';
@@ -101,6 +101,8 @@ export { KIT_INSERT_KINDS, useInsertDepSource } from './deps/insert';
 export { flipAction } from './actions/flip/action';
 export type { FlipAxis, FlipPivot } from './actions/flip/helpers';
 export { reorderForwardAction, reorderBackwardAction } from './actions/reorder/reorder';
+export { swapAction } from './actions/swap/action';
+export { swapOps } from './actions/swap/swapOps';
 export {
   alignLeftAction, alignRightAction, alignTopAction, alignBottomAction, alignCenterXAction, alignCenterYAction,
 } from './actions/align/action';

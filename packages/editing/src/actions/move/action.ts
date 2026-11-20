@@ -36,7 +36,7 @@ export const moveAction: Action = inPlane(defineAction({
   defaultBinding: [{ spec: { kind: 'drag', target: 'selected-body' }, opts: { id: 'move.drag' } }],
   eligible: { capability: 'transforms-selection' },
   modifierRoles: SNAP_ROLES,
-  requires: ['operands', 'scene', 'poseDescriptor', 'layout', 'applyOps', 'geometryProjection', 'nodeAtPoint', 'canDropInto', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'kitSettings', 'snap', 'transformFollowers'],
+  requires: ['operands', 'scene', 'poseDescriptor', 'layout', 'applyOps', 'geometryProjection', 'nodeAtPoint', 'canDropInto', 'canSwap', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'kitSettings', 'snap', 'transformFollowers'],
   invoker: {
     timing: 'ongoing',
     start(ctx, opts) {
@@ -71,6 +71,7 @@ export const moveAction: Action = inPlane(defineAction({
           show(moveCtx);
         },
         subscribe: (changed) => shown.subscribe(changed),
+        cursor: () => frame.cursor,
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           let committed = false;
           try {

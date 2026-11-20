@@ -1,3 +1,5 @@
+import { chevron, GRID_HEAD, px } from '../../icons/scripts/lib/base.mjs';
+
 // The edit and arrange commands editing's actions carry.
 export const EDIT = {
   duplicate: `
@@ -54,6 +56,11 @@ export const EDIT = {
   flipX: `
     <path d="M1.25 2.5 8.75 6.25 8.75 13.75 1.25 17.5Z" fill="currentColor" stroke="none"/>
     <path d="M18.75 2.5 11.25 6.25 11.25 13.75 18.75 17.5Z M17.5 4.5225 12.5 7.0225 12.5 12.9775 17.5 15.4775Z" fill="currentColor" fill-rule="evenodd" stroke="none"/>`,
+  // Swap: two arrows passing each other, shafts and tips on pixel rows 4 and 11, so their heads, two pixels either
+  // side, leave three clear rows between them.
+  swap: `
+    <path d="M${px(1)} ${px(4)} H${px(14)} M${px(14)} ${px(11)} H${px(1)}" stroke-width="1.25"/>
+    <path d="${chevron([px(14), px(4)], [1, 0], ...GRID_HEAD)}${chevron([px(1), px(11)], [-1, 0], ...GRID_HEAD)}" stroke-width="1.25"/>`,
   flipY: `
     <path d="M17.5 1.25 13.75 8.75 6.25 8.75 2.5 1.25Z" fill="currentColor" stroke="none"/>
     <path d="M17.5 18.75 13.75 11.25 6.25 11.25 2.5 18.75Z M15.4775 17.5 12.9775 12.5 7.0225 12.5 4.5225 17.5Z" fill="currentColor" fill-rule="evenodd" stroke="none"/>`,

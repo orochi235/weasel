@@ -30,6 +30,7 @@ import type { PickingView } from 'core/adapters/types';
 import type { InsertDep, InsertEnds, InsertExtras, PathSymmetryDep, InsertIntoDep, InsertLive } from './insertDeps';
 import type { CommitSelection } from './defaultCommitAdapter';
 import type { LayoutDep, CanDropIntoDep } from './layoutDeps';
+import type { CanSwapDep } from './canSwap';
 import type { ClipboardDep, SliceDep } from './editDeps';
 import type { OperandsDep } from './operands';
 
@@ -37,7 +38,7 @@ export type { EnteredGroupApi, TransformFollower, TransformPreviewNode };
 export type { SnapDep, SnapGeometry } from './snapDep';
 export type { ColorAtDep, PickingView, NodeAtPointDep, AreaSelectDep, LassoSelectDep };
 export type { InsertDep, InsertEnds, InsertExtras, CommitSelection, PathSymmetryDep, InsertIntoDep, InsertLive };
-export type { LayoutDep, CanDropIntoDep };
+export type { LayoutDep, CanDropIntoDep, CanSwapDep };
 export type { ClipboardDep, SliceDep };
 export type { OperandsDep };
 
@@ -220,6 +221,8 @@ declare module '@weasel-js/routing' {
     layout?: LayoutDep;
     /** Which containers a move may drop into; see {@link CanDropIntoDep}. */
     canDropInto?: CanDropIntoDep;
+    /** Which two nodes may trade places, by a swap drop or the `swap` command; see {@link CanSwapDep}. */
+    canSwap?: CanSwapDep;
     /**
      * Slice dep — the commit for the Slice action. `<SceneCanvas>` publishes
      * `useSliceDepSource`; a consumer overrides it with `useDepSource('slice', …)`.

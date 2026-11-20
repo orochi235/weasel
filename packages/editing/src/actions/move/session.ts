@@ -1,21 +1,26 @@
 import type { BindingOptions, InvocationCtx, OngoingOverlay } from '@weasel-js/routing';
 import { operandMethods, nodeDescriptors, poseDescriptorOf, isPaged } from '@weasel-js/core/engine';
 import { isPathEditPart, resolveParams } from '@weasel-js/routing';
-import type { MoveParams, Op, NodeId, Scene, ReparentOnDrop } from '@weasel-js/core';
+import type { MoveParams, Op, NodeId, Scene, ReparentOnDrop, SwapOnDrop } from '@weasel-js/core';
 import type { PoseDescriptor, PoseComposition, GestureContext, MoveBehavior, CanDropIntoDep, LayoutDep, NodeAtPointDep, DropVerdict, GeometryProjection } from '@weasel-js/core/engine';
-import { gestureReaders, type GestureReaders, childVerdict, commitRunOps, readRunLifecycle, type RunLifecycle, transformFinisher, type TransformFinisher, moveSources } from '@weasel-js/core';
+import { gestureReaders, type GestureReaders, childVerdict, commitRunOps, readRunLifecycle, type RunLifecycle, transformFinisher, type TransformFinisher, moveSources, swappable } from '@weasel-js/core';
 import { layoutDrop } from './behaviors/layoutDrop';
 import { reparentOnDrop } from './behaviors/reparentOnDrop';
 import { pageDrop } from './behaviors/pageDrop';
+import { swapBehavior } from './behaviors/swapOnDrop';
+import { holdSession } from './sessionOf';
 import { buildGestureContext, captureFrames, capturePlaneRefs, captureStartPoses } from './capture';
 import { moveGestureAdapter, type MoveGestureAdapter } from './gestureAdapter';
 import { beginDragSnap, type DragSnap } from './dragSnap';
+import type { CursorSpec } from '@weasel-js/cursor';
 
 
 /** What a move captured at press. Nothing here changes during the drag. */
 export interface MoveSession extends DragSnap {
   readonly scene: Scene<unknown, string, unknown>;
-  /** The drag roots. */
+  /** The ids the drag was asked to move: the selection, through `expandIds`. */
+  readonly selected: readonly string[];
+  /** The drag roots: {@link selected}, with a node that derives its pose given way to what it derives from. */
   readonly ids: readonly NodeId[];
   /** Descendants of the roots, previewed along with them. */
   readonly cascadeIds: readonly NodeId[];
@@ -55,6 +60,10 @@ export interface MoveSession extends DragSnap {
   readonly mayRefuse: boolean;
   /** Read at release: a binding's params may be a thunk. */
   readonly reparentOnDrop: () => ReparentOnDrop;
+  /** Read each frame, as {@link reparentOnDrop} is. */
+  readonly swapOnDrop: () => SwapOnDrop;
+  /** Whether two nodes may trade places (`swappable`, over the `canSwap` dep). */
+  readonly swaps: (a: string, b: string) => boolean;
 }
 
 /** What one `onMove` produced. Replaced, not mutated, by the next. */
@@ -67,6 +76,8 @@ export interface MoveFrame {
   readonly opaque: ReadonlySet<NodeId>;
   /** What the behaviors asked to have painted beside the drag. */
   readonly overlays: readonly OngoingOverlay[];
+  /** The cursor the last behavior to name one asked for; absent, the action's own. */
+  readonly cursor?: CursorSpec;
 }
 
 /** What the behaviors the action builds itself read of the drag they belong
@@ -113,7 +124,8 @@ export function beginMove(
   const params = resolveParams(opts?.params);
   const expandIds = params?.expandIds;
   const selected = [...selection.get()] as string[];
-  const ids = moveSources(scene, expandIds ? expandIds(selected) : selected) as NodeId[];
+  const asked = expandIds ? expandIds(selected) : selected;
+  const ids = moveSources(scene, asked) as NodeId[];
   if (ids.length === 0) return null;
 
   const reflow = layout?.reflow ?? null;
@@ -123,10 +135,12 @@ export function beginMove(
   // Everything a move does beyond translating is a behavior: the binding's
   // own, then the layout drop, then, in a paged scene, the page drop, then
   // reparent-on-drop. On release the first to
-  // answer owns the commit, so each preempts the ones after it.
+  // answer owns the commit, so each preempts the ones after it. A swap the
+  // `swapOnDrop` param turns on comes ahead of the drops, which it preempts.
   const gesture: MoveGesture = { session: () => session, frame };
   const behaviors: MoveBehavior<unknown>[] = [
     ...((opts?.behaviors ?? []) as MoveBehavior<unknown>[]),
+    swapBehavior({}, (s) => s.swapOnDrop() === 'dwell'),
     ...(layout ? [layoutDrop(gesture)] : []),
     ...(isPaged(scene) ? [pageDrop(gesture)] : []),
     reparentOnDrop(gesture),
@@ -143,6 +157,7 @@ export function beginMove(
   const verdict = verdictOf(ctx.deps.canDropInto, ids, scene);
   const session: MoveSession = {
     startPoses,
+    selected: asked,
     ids,
     cascadeIds,
     carried,
@@ -167,7 +182,10 @@ export function beginMove(
     admits: (parent) => verdict(parent) === true,
     mayRefuse: ctx.deps.canDropInto !== undefined,
     reparentOnDrop: () => resolveParams(opts?.params)?.reparentOnDrop ?? 'off',
+    swapOnDrop: () => resolveParams(opts?.params)?.swapOnDrop ?? 'off',
+    swaps: (a, b) => swappable(scene, a, b, ctx.deps),
     ...beginDragSnap(ctx, ids),
   };
+  holdSession(gestureCtx, session);
   return { session, readers };
 }

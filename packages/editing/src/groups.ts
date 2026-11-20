@@ -14,5 +14,5 @@ export { anchors, history, path, presentation, tool, viewport } from '@weasel-js
 export {
   ALIGN_GROUP as align, CLIPBOARD_GROUP as clipboard, DISTRIBUTE_GROUP as distribute, EDIT_GROUP as edit,
   FLIP_GROUP as flip, INSERT_GROUP as insert, NUDGE_GROUP as nudge, PATHFINDER_GROUP as pathfinder,
-  REORDER_GROUP as reorder, STRUCTURE_GROUP as structure,
+  REORDER_GROUP as reorder, STRUCTURE_GROUP as structure, SWAP_GROUP as swap,
 } from './actionGroups';

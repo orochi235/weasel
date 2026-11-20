@@ -21,6 +21,7 @@ export type EditingIconName =
   | 'sendBackward'
   | 'sendToBack'
   | 'flipX'
+  | 'swap'
   | 'flipY'
   | 'alignLeft'
   | 'alignRight'
@@ -64,6 +65,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly EditingIconN
       "sendBackward",
       "sendToBack",
       "flipX",
+      "swap",
       "flipY"
     ]
   },
@@ -109,6 +111,7 @@ declare module '@weasel-js/icons' {
     'editing:sendBackward': true;
     'editing:sendToBack': true;
     'editing:flipX': true;
+    'editing:swap': true;
     'editing:flipY': true;
     'editing:alignLeft': true;
     'editing:alignRight': true;
