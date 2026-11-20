@@ -94,6 +94,14 @@ describe('clipToAncestors', () => {
     expect(clipToAncestors(tile, box)).toEqual({ left: 100, top: 120, width: 200, height: 40 });
   });
 
+  it('skips an ancestor whose overflow applies to no box', () => {
+    for (const display of ['contents', 'inline']) {
+      const { inner, tile } = nest('', `display: ${display}; ${BOTH}`);
+      stubBox(inner, 0, 0, 0, 0);
+      expect(clipToAncestors(tile, box)).toEqual(box);
+    }
+  });
+
   describe('at the root', () => {
     const root = document.documentElement;
     /** A viewport of 1000 × 800 under a document scrolled 500px down. */

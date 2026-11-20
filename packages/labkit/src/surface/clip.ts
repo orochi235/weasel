@@ -9,6 +9,10 @@ interface Edges {
 
 const clips = (overflow: string): boolean => overflow !== '' && overflow !== 'visible';
 
+/** Whether an element displayed as `display` has a box its `overflow` applies to: `contents` has none, and a
+ *  non-replaced inline one is never a scroll container. */
+const hasClipBox = (display: string): boolean => display !== 'contents' && display !== 'inline';
+
 /** An element's padding box in viewport px, which is what its `overflow` cuts
  *  to: inside the border, and inside a scrollbar. */
 function paddingEdges(el: Element): Edges {
@@ -78,8 +82,9 @@ export function clipToAncestors(el: Element, box: Box): Box {
   };
   for (let a = inTopLayer(el) ? null : boxParent(el); a; a = boxParent(a)) {
     const style = getComputedStyle(a);
-    const x = clips(style.overflowX);
-    const y = clips(style.overflowY);
+    const boxed = hasClipBox(style.display);
+    const x = boxed && clips(style.overflowX);
+    const y = boxed && clips(style.overflowY);
     const edges = !(x || y) ? null : clipsViewport(a) ? viewportEdges(a.ownerDocument) : paddingEdges(a);
     if (edges && x) {
       out.left = Math.max(out.left, edges.left);
