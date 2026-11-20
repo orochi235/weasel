@@ -1,4 +1,4 @@
-import { deepEqual } from '@weasel-js/registry';
+import { after, deepEqual } from '@weasel-js/registry';
 import type { RecordChange } from './records';
 import type { StorageChange } from './types';
 
@@ -15,6 +15,9 @@ export interface RemoteOptions {
   live(): boolean;
   /** Storage's record under `key`. */
   read(key: string): Promise<unknown>;
+  /** The wait before a failed read is tried again, doubling up to `retryMaxMs`; `false` waits for our next write. */
+  retryMs: number | false;
+  retryMaxMs: number;
   applied(changes: RecordChange[]): void;
   overruled(changes: [string, unknown][]): void;
 }
@@ -32,6 +35,7 @@ export function createRemote(o: RemoteOptions): Remote {
   const contested = new Set<string>();
   // How many changes from another writer each name has taken, so a read started before one does not undo it.
   const taken = new Map<string, number>();
+  const retryWait = new Map<string, number>();
 
   const apply = (changes: StorageChange[]): void => {
     const applied: RecordChange[] = [];
@@ -63,20 +67,32 @@ export function createRemote(o: RemoteOptions): Remote {
     try {
       value = await o.read(o.prefix + name);
     } catch {
+      retry(name);
       return;
     }
+    retryWait.delete(name);
     if (!o.live() || o.owns(name) || taken.get(name) !== mark) return;
     const held = o.values.has(name);
     if (value === undefined ? !held : held && deepEqual(o.values.get(name), value)) return;
     apply([[o.prefix + name, value]]);
   }
 
-  return {
-    apply,
-    settled(name) {
-      if (!contested.has(name) || o.owns(name)) return;
-      contested.delete(name);
-      void reconcile(name);
-    },
+  const settled = (name: string): void => {
+    if (!contested.has(name) || o.owns(name)) return;
+    contested.delete(name);
+    void reconcile(name);
   };
+
+  function retry(name: string): void {
+    if (!o.live()) return;
+    contested.add(name);
+    if (o.retryMs === false) return;
+    const wait = retryWait.get(name) ?? o.retryMs;
+    retryWait.set(name, Math.min(wait * 2, o.retryMaxMs));
+    after(wait, () => {
+      if (o.live()) settled(name);
+    });
+  }
+
+  return { apply, settled };
 }

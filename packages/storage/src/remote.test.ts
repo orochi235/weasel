@@ -13,6 +13,8 @@ function contestedRemote(values: Map<string, unknown>, read: RemoteOptions['read
     queued: () => false,
     live: () => true,
     read,
+    retryMs: 1000,
+    retryMaxMs: 30_000,
     applied: (c) => applied.push(c),
     overruled: () => {},
   });
@@ -34,5 +36,17 @@ describe('reconciling a contested record', () => {
     finish('B');
     await vi.advanceTimersByTimeAsync(0);
     expect(values.has('x')).toBe(false);
+  });
+
+  it('reads again on a backoff when the read fails', async () => {
+    const read = vi.fn().mockRejectedValueOnce(new Error('closed')).mockResolvedValue('B');
+    const values = new Map<string, unknown>([['x', 'A']]);
+    const { remote } = contestedRemote(values, read);
+    remote.settled('x');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(values.get('x')).toBe('A');
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(values.get('x')).toBe('B');
   });
 });
