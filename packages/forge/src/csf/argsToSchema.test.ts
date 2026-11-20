@@ -347,8 +347,11 @@ describe('argsToSchema', () => {
       expect(at({ truthy: false }, { mode: '' })).toBe(true);
       expect(at({ truthy: false }, { mode: 'a' })).toBe(false);
       expect(at({ exists: true }, { mode: 'a' })).toBe(true);
-      expect(at({ exists: true }, {})).toBe(false);
-      expect(at({ exists: false }, {})).toBe(true);
+      const absent = (condition: Record<string, unknown>, config: Record<string, unknown>) =>
+        shownWhen({ gridDivisions: { control: 'number', if: { arg: 'absent', ...condition } } }, 'gridDivisions', config);
+      expect(absent({ exists: true }, {})).toBe(false);
+      expect(absent({ exists: false }, {})).toBe(true);
+      expect(absent({ exists: true }, { absent: 1 })).toBe(true);
       expect(at({ eq: 'b' }, { mode: 'b' })).toBe(true);
       expect(at({ eq: 'b' }, { mode: 'a' })).toBe(false);
       expect(at({ neq: 'b' }, { mode: 'a' })).toBe(true);
@@ -362,6 +365,24 @@ describe('argsToSchema', () => {
       expect(at({ eq: { a: 1 } }, { mode: { a: 1 } })).toBe(true);
       expect(at({ neq: [1, 2] }, { mode: [1, 2] })).toBe(false);
       expect(at({ eq: [1, 2] }, { mode: [2, 1] })).toBe(false);
+    });
+
+    it("reads an arg with no control, or one config holds nothing for, as the story's own", () => {
+      const withIcon = { icon: createElement('span'), iconPosition: 'start' };
+      const argTypes = { iconPosition: { control: 'radio', options: ['start', 'end'], if: { arg: 'icon' } } } as const;
+      const node = argsToSchema(withIcon, argTypes).nodes.iconPosition as ConfigNode<unknown>;
+      expect(node.options.showIf?.({ iconPosition: 'start' })).toBe(true);
+      expect(shownWhen({ gridDivisions: { control: 'number', if: { arg: 'mode' } } }, 'gridDivisions', { mode: undefined })).toBe(true);
+    });
+
+    it('compares a choice of non-string options by the option the config value stands for', () => {
+      const argTypes = {
+        size: { control: 'select', options: [8, 12] },
+        gap: { control: 'number', if: { arg: 'size', eq: 12 } },
+      } as const;
+      const node = argsToSchema({ size: 8, gap: 1 }, argTypes).nodes.gap as ConfigNode<unknown>;
+      expect(node.options.showIf?.({ size: '12' })).toBe(true);
+      expect(node.options.showIf?.({ size: '8' })).toBe(false);
     });
 
     it('ignores a condition on a global, which a story’s config does not hold', () => {

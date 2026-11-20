@@ -293,12 +293,16 @@ function controlled(control: Control, key: string, argType: ArgType, has: boolea
   }
 }
 
+/** Reads one arg as the story sees it under `config`: config's value, as the option it stands for, or the story's own
+ *  arg where config holds none — an arg with no control included. */
+type ArgReader = (config: Record<string, unknown>, arg: string) => unknown;
+
 /** The config predicate for an `if`; null for a condition on a global, which a story's config does not hold. */
-function conditionOf(condition: ArgCondition): ((config: Record<string, unknown>) => boolean) | null {
+function conditionOf(condition: ArgCondition, read: ArgReader): ((config: Record<string, unknown>) => boolean) | null {
   if (!('arg' in condition)) return null;
   const { arg } = condition;
   return (config) => {
-    const value = getOwn(config, arg);
+    const value = read(config, arg);
     if (condition.exists !== undefined) return (value !== undefined) === condition.exists;
     if ('eq' in condition) return sameKnob(value, condition.eq);
     if ('neq' in condition) return !sameKnob(value, condition.neq);
@@ -326,6 +330,11 @@ export function argsToSchema(
   matchers: ControlMatchers = {},
 ): ConfigSchema<unknown> {
   const nodes: Record<string, Leaf> = {};
+  const choices = argChoices(argTypes);
+  const read: ArgReader = (config, arg) => {
+    const held = getOwn(config, arg);
+    return held === undefined ? getOwn(args, arg) : choiceValue(getOwn(choices, arg), held);
+  };
   for (const key of new Set([...Object.keys(args), ...Object.keys(argTypes)])) {
     const has = Object.hasOwn(args, key);
     // A control carries only what crosses the port; the frame puts the rest back from `args` (`withUnsent`).
@@ -343,7 +352,7 @@ export function argsToSchema(
     if (argType && (argType.control === false || argType.table?.disable)) node = node.hidden();
     if (argType?.description) node = node.describe(argType.description);
     if (argType?.name) node = node.label(argType.name);
-    const shownWhen = argType?.if ? conditionOf(argType.if) : null;
+    const shownWhen = argType?.if ? conditionOf(argType.if, read) : null;
     if (shownWhen) node = node.showIf(shownWhen);
     setOwn(nodes, key, node);
   }
