@@ -104,19 +104,27 @@ export interface EditEdgeLabelOptions {
   fill?: string;
 }
 
-function edgeUnder(deps: ActionDeps | undefined, at: { x: number; y: number } | undefined): string | null {
+/** The edge under `at`, and the label of it a double-click there lands on, when one does. */
+function edgeUnder(deps: ActionDeps | undefined, at: { x: number; y: number } | undefined): { edgeId: string; labelId?: string } | null {
   if (deps === undefined || at === undefined) return null;
   // A label is not pickable, so a connector passing under it would win the pick.
   const label = deps.scene === undefined ? null : labelUnder(deps.scene, at);
-  if (label !== null) return label.edgeId;
+  if (label !== null) return { edgeId: label.edgeId, labelId: label.labelId };
   const id = deps.nodeAtPoint?.(at);
   const node = id == null ? undefined : deps.scene?.get(id);
-  return node !== undefined && diagramEdgeOf(node) !== null ? id! : null;
+  return node !== undefined && diagramEdgeOf(node) !== null ? { edgeId: id! } : null;
 }
 
-function beginEditing(edgeId: string, ctx: InvocationCtx, look: Pick<EditEdgeLabelOptions, 'style' | 'fill'>): void {
+function beginEditing(
+  edgeId: string, ctx: InvocationCtx, look: Pick<EditEdgeLabelOptions, 'style' | 'fill'>, pressed?: string,
+): void {
   const { scene, textEdit } = ctx.deps;
   if (scene === undefined) return;
+  // An end label pressed is edited in place; anywhere else on the edge edits its middle label.
+  if (pressed !== undefined && scene.get(pressed as never) !== undefined) {
+    textEdit?.startEdit(pressed);
+    return;
+  }
   const labelId = edgeLabelIdOf(edgeId);
   if (scene.get(labelId as never) === undefined) {
     const edge = scene.get(edgeId as never);
@@ -140,7 +148,10 @@ function beginEditing(edgeId: string, ctx: InvocationCtx, look: Pick<EditEdgeLab
  * built from the deps and the click point.
  */
 export function createEditEdgeLabelAction(opts: EditEdgeLabelOptions = {}): Action {
-  const commit = opts.commit ?? ((edgeId: string, ctx: InvocationCtx) => beginEditing(edgeId, ctx, opts));
+  const given = opts.commit;
+  const commit = given !== undefined
+    ? (edgeId: string, ctx: InvocationCtx) => given(edgeId, ctx)
+    : (edgeId: string, ctx: InvocationCtx, labelId?: string) => beginEditing(edgeId, ctx, opts, labelId);
   return defineAction({
     id: EDIT_EDGE_LABEL_ACTION_ID,
     label: 'Edit edge label',
@@ -153,10 +164,10 @@ export function createEditEdgeLabelAction(opts: EditEdgeLabelOptions = {}): Acti
         const world = params?.world;
         if (!world) return;
         const pressed = labelScratchOf(params.affordance);
-        const edgeId = pressed?.edgeId ?? edgeUnder(deps, world);
-        if (edgeId === null) return;
+        const hit = pressed !== null ? { edgeId: pressed.edgeId, labelId: pressed.labelId } : edgeUnder(deps, world);
+        if (hit === null) return;
         const ctx = { world, modifiers: { alt: false, shift: false, meta: false, ctrl: false }, deps } as InvocationCtx;
-        commit(edgeId, ctx);
+        commit(hit.edgeId, ctx, hit.labelId);
       },
     },
     enabled: (deps, at) => (edgeUnder(deps, at) !== null ? true : ActionDisabledReason.NotApplicable),
