@@ -50,7 +50,7 @@ function setup() {
       .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
       .join();
   const x = (id: string) => scene.current.get(id as never)?.pose.x;
-  return { clock, bind, x, animator: () => animator.current as Animator };
+  return { clock, bind, x, animator: () => animator.current as Animator, scene: () => scene.current };
 }
 
 const settled = async (p: Promise<void>): Promise<boolean> => {
@@ -153,7 +153,7 @@ describe('d3Bind transition — cancel keys', () => {
     act(() => s.clock.advance(0));
     act(() => s.clock.advance(50));
     const mid = s.x('a')!;
-    act(() => s.animator().cancelKey(transitionCancelKey('move', 'a')));
+    act(() => s.animator().cancelKey(transitionCancelKey(s.scene(), 'move', 'a')));
     act(() => s.clock.advance(100));
     expect(s.x('a')).toBeCloseTo(mid, 6);
   });
@@ -180,7 +180,7 @@ describe('d3Bind transition — its tweens stopped from outside', () => {
   it('animator.cancelKey on its pose tween ends it as an interrupt, and runs nothing chained', async () => {
     const s = setup();
     const r = run(s);
-    act(() => s.animator().cancelKey(transitionCancelKey('move', 'a')));
+    act(() => s.animator().cancelKey(transitionCancelKey(s.scene(), 'move', 'a')));
     act(() => s.clock.advance(200));
     expect(await settled(r.end())).toBe(true);
     expect(r.seen).toEqual({ end: 0, interrupt: 1, next: 0 });
@@ -210,5 +210,36 @@ describe('d3Bind transition — its tweens stopped from outside', () => {
     expect(await settled(end)).toBe(true);
     expect(onInterrupt).toHaveBeenCalledTimes(1);
     error.mockRestore();
+  });
+});
+
+describe('d3Bind transition — two scenes on one animator', () => {
+  it('a transition or an interrupt on one scene leaves the other scene’s node of the same id running', async () => {
+    const s = setup();
+    const other = renderHook(() =>
+      useScene<Record<string, unknown>, 'graph', Pose>({ systemLayers: [{ id: 'graph' }], initial: [] }),
+    ).result;
+    const bindOther = (data: Datum[]) =>
+      d3Bind(other.current, data, { key: (d) => d.id, animator: s.animator() })
+        .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
+        .join();
+    act(() => void s.bind([{ id: 'a', x: 0 }]));
+    act(() => void bindOther([{ id: 'a', x: 0 }]));
+    const onInterrupt = vi.fn();
+    let end!: Promise<void>;
+    act(() => {
+      end = s.bind([{ id: 'a', x: 100 }]).transition().duration(100).ease(linear).on('interrupt', onInterrupt).end();
+    });
+    act(() => s.clock.advance(0));
+    act(() => s.clock.advance(20));
+    act(() => {
+      const sel = bindOther([{ id: 'a', x: 100 }]);
+      void sel.transition().duration(100).end();
+      sel.interrupt();
+    });
+    act(() => s.clock.advance(100));
+    expect(onInterrupt).not.toHaveBeenCalled();
+    expect(await settled(end)).toBe(true);
+    expect(s.x('a')).toBeCloseTo(100, 6);
   });
 });

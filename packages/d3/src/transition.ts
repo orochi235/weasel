@@ -113,13 +113,13 @@ function itemJobs<TData, TPose>(
   const d = ctx.data[i];
   const jobs: TweenJob[] = [];
   if (ends.to !== undefined) {
-    jobs.push(poseTweenJob(animator, settings, transitionCancelKey(name, id), ends.from, ends.to, ctx.geometry.lerp!, (pose) => {
+    jobs.push(poseTweenJob(animator, settings, transitionCancelKey(scene, name, id), ends.from, ends.to, ctx.geometry.lerp!, (pose) => {
       if (!lost()) scene.setPose(id, pose);
     }));
   }
   for (const ct of settings.tweens) {
     jobs.push(customTweenJob(
-      animator, settings, transitionCancelKey(name, id, ct.name), ct, ct.from(d, i), ct.to(d, i),
+      animator, settings, transitionCancelKey(scene, name, id, ct.name), ct, ct.from(d, i), ct.to(d, i),
       (value) => { if (!lost()) ct.apply(d, id, value); },
     ));
   }
@@ -140,7 +140,7 @@ function makeStage<TData, TPose>(
   let scheduled = false;
   /** The nodes this transition is the first to start on since their join. */
   let seeds = new Map<NodeId, Seed<TPose>>();
-  const keys = ids.map((id) => transitionCancelKey(name, id));
+  const keys = ids.map((id) => transitionCancelKey(scene, name, id));
   const stops = ids.map((_, i) => (): void => stage.root.cancelItem(i, true));
   const runs = createItemRuns(ctx.animator, keys, stops, () => stage.root);
 

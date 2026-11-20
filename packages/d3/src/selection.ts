@@ -61,7 +61,7 @@ export function createSelection<TData, TPose>(
     },
     interrupt(name?: string) {
       if (!animator) return sel;
-      for (const id of ids) interruptNode(animator, transitionCancelKey(name ?? '', id));
+      for (const id of ids) interruptNode(animator, transitionCancelKey(scene, name ?? '', id));
       return sel;
     },
   };
