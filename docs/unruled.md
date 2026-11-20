@@ -2772,3 +2772,9 @@ Calls the lanes made without a ruling:
 - 2026-11-19 (the fixer's call): `stableStringify` writes an object of the caller's own with a `$type` key as
   `{"$type":"object","value":…}`, so `{ $type: 'bigint', value: '10' }` and `10n` no longer give one string. Leaving
   such an object as JSON writes it, and the two colliding, was the alternative.
+
+## Audit round forty-one (2026-11-19): pages
+
+- 2026-11-19 (the fixer's call): `createPageRun` throws on a scene that already has a page run. A second run's pages
+  drew and clipped, but `pageRunOf` finds only the first, so every page reader and edit missed them. Handing the call
+  to `setPages` on the existing run was the alternative.

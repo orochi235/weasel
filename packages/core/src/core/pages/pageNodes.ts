@@ -186,7 +186,8 @@ export type CreatePageRunOptions<TLayer extends string> = PageLayoutOptions & {
  * of `pages` share an id. The run and its pages hold
  * `data: undefined` whatever the scene's `TData`: a reader of every node's
  * `data` meets them too. Neither is pickable, and each page clips what is on
- * it to its rect (`pageClip`).
+ * it to its rect (`pageClip`). Throws on a scene that already has a page run:
+ * change its pages with `setPages`.
  */
 export function createPageRun<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
@@ -194,6 +195,7 @@ export function createPageRun<TData, TLayer extends string, TPose>(
   options: CreatePageRunOptions<TLayer> = {},
 ): NodeId {
   requireDistinctPageIds(pages, 'createPageRun');
+  if (pageRunOf(scene) !== null) throw new Error('createPageRun: the scene already has a page run; change its pages with setPages');
   const { pasteboard, layer = scene.layers[0]!.id, ...layout } = options;
   const s = asAny(scene);
   return s.batch('Add pages', () => {
