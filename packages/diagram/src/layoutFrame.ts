@@ -14,7 +14,7 @@ import {
   translatePoseViaDescriptor,
   type PoseDescriptor,
   type Vec2,
-} from '@weasel-js/core';
+} from '@weasel-js/core/math';
 import { createPart } from '@weasel-js/registry';
 import type { Bounds } from './outlines/types';
 
