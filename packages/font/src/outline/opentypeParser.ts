@@ -14,6 +14,7 @@ import { OUTLINE_PRECISION, type FaceEmbedding, type OutlineFace, type OutlinePa
 import { sfntFromCollection, tableOf } from './sfnt';
 import { checkCff } from './cffCheck';
 import { checkCmap } from './cmapCheck';
+import { isWoff, sfntFromWoff } from './woff';
 import { gposPairKerning, type PairKerning } from './gposKerning';
 import { faceMetricsFromTables, type FaceMetricTables } from '../faceMetrics';
 
@@ -135,7 +136,7 @@ interface EmbedTables {
   cff?: unknown;
 }
 
-/** TrueType (`00 01 00 00`, `true`) or CFF (`OTTO`): a WOFF's bytes are not what FontFile2 holds. */
+/** TrueType (`00 01 00 00`, `true`) or CFF (`OTTO`). */
 function isSfnt(bytes: ArrayBuffer): boolean {
   if (bytes.byteLength < 4) return false;
   const tag = new DataView(bytes).getUint32(0);
@@ -198,7 +199,7 @@ export function createOpenTypeParser(postScriptName?: string): OutlineParser {
     const ns = await loadOpenType();
     assertOpenType2(ns);
     const parse = parserOf(ns);
-    const { bytes: single, matched, names } = sfntFromCollection(bytes, postScriptName);
+    const { bytes: single, matched, names } = sfntFromCollection(isWoff(bytes) ? await sfntFromWoff(bytes) : bytes, postScriptName);
     if (!matched) {
       throw new Error(
         `no member of the font file is named "${postScriptName}" (it holds ${names.join(', ')})`);
