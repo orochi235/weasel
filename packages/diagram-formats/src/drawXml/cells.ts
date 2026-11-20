@@ -1,5 +1,6 @@
 /** The cells of a draw-style graph model, read off its XML as they are, before they mean anything to a diagram. */
 import type { Vec2 } from '@weasel-js/core/math';
+import { freshId } from '@weasel-js/registry';
 import { parseStyle, type CellStyle } from './style';
 
 /** One cell element, with a wrapper's id and label read in. */
@@ -34,9 +35,10 @@ const numberAttr = (el: Element | null, name: string): number => {
 
 const childElements = (el: Element): Element[] => Array.from(el.childNodes).filter((n): n is Element => n.nodeType === 1);
 
-function rawCell(outer: Element, cell: Element, index: number): RawCell {
+const idAttr = (outer: Element, cell: Element): string | null => outer.getAttribute('id') ?? cell.getAttribute('id');
+
+function rawCell(outer: Element, cell: Element, id: string): RawCell {
   const wrapped = outer !== cell;
-  const id = outer.getAttribute('id') ?? cell.getAttribute('id') ?? `cell-${index + 1}`;
   const value = wrapped ? outer.getAttribute('label') ?? '' : cell.getAttribute('value') ?? '';
   return {
     id,
@@ -51,19 +53,28 @@ function rawCell(outer: Element, cell: Element, index: number): RawCell {
   };
 }
 
-/** The cells under a graph model's `root`, in document order. */
+/** The cells under a graph model's `root`, in document order. A cell with no id is given `cell-<n>`, numbered on past
+ *  any id the model holds, so it is never taken for another cell. */
 export function cellsOf(model: Element): RawCell[] {
   const root = childElements(model).find((c) => c.tagName === 'root');
   if (root === undefined) return [];
-  const out: RawCell[] = [];
+  const found: [Element, Element][] = [];
   for (const el of childElements(root)) {
-    if (el.tagName === 'mxCell') out.push(rawCell(el, el, out.length));
+    if (el.tagName === 'mxCell') found.push([el, el]);
     else if (WRAPPERS.has(el.tagName)) {
       const inner = childElements(el).find((c) => c.tagName === 'mxCell');
-      if (inner !== undefined) out.push(rawCell(el, inner, out.length));
+      if (inner !== undefined) found.push([el, inner]);
     }
   }
-  return out;
+  const taken = new Set(found.map(([outer, cell]) => idAttr(outer, cell)).filter((id): id is string => id !== null));
+  return found.map(([outer, cell], i) => {
+    let id = idAttr(outer, cell);
+    if (id === null) {
+      id = freshId(`cell-${i + 1}`, taken, { from: 2, bare: true });
+      taken.add(id);
+    }
+    return rawCell(outer, cell, id);
+  });
 }
 
 /** A cell's geometry. A missing one is an empty box at the origin. A negative width or height

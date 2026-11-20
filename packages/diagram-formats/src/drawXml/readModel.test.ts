@@ -76,3 +76,16 @@ describe('naming cells across pages', () => {
     expect(asGraph(document.pages[1]!).data.nodes.map((n) => n.id)).toEqual(['g', 'e']);
   });
 });
+
+describe('reading cells with no id', () => {
+  it('gives a cell with no id one no other cell has', async () => {
+    const { data } = await page(`<mxCell value="anon" vertex="1" parent="1"><mxGeometry x="0" y="0" width="40" height="20" as="geometry"/></mxCell>`
+      + `<mxCell id="cell-3" value="named" style="swimlane;" vertex="1" parent="1"><mxGeometry x="100" y="100" width="200" height="100" as="geometry"/></mxCell>`
+      + box('in', 10, 30, '', 'cell-3'));
+    const byText = new Map(data.nodes.map((n) => [n.lines![0], n]));
+    expect(byText.get('anon')!.at).toEqual({ x: 0, y: 0 });
+    expect(byText.get('in')!.at).toEqual({ x: 110, y: 130 });
+    expect(data.containers!.map((c) => [c.id, c.members])).toEqual([['cell-3', ['in']]]);
+    expect(byText.get('anon')!.id).not.toBe('cell-3');
+  });
+});
