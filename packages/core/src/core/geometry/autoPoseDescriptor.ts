@@ -44,9 +44,9 @@ export const AUTO_POSE_DESCRIPTOR: PoseDescriptor<unknown> = {
   lerp: (a, b, t) => (isPathLike(a) && isPathLike(b)
     ? pathPoseDescriptor.lerp!(a, b, t)
     : RECT_POSE_DESCRIPTOR.lerp!(a as Bounds, b as Bounds, t)),
-  axes: (p) => (isRectPose(p)
-    ? RECT_POSE_DESCRIPTOR.axes!(p) as never
-    : isPathLike(p) ? pathPoseDescriptor.axes!(p) as never : null),
+  axes: (p) => (isPathLike(p)
+    ? pathPoseDescriptor.axes!(p) as never
+    : isRectPose(p) ? RECT_POSE_DESCRIPTOR.axes!(p) as never : null),
   getRotation: (p) => {
     if (isPathLike(p)) return 0;
     const r = (p as { rotation?: unknown }).rotation;

@@ -111,6 +111,12 @@ describe('AUTO fromBounds / withRotation', () => {
       .toEqual({ kind: 'rect', x: 5, y: 0, width: 10, height: 20 });
   });
 
+  it('maps a rect Path through the Path axes, which carry no rotation', () => {
+    const axes = AUTO_POSE_DESCRIPTOR.axes!({ kind: 'rect', ...box })!;
+    expect(axes.count).toBe(4);
+    expect(axes.angles).toBeUndefined();
+  });
+
   it('pathPoseDescriptor.fromBounds returns a rect Path', () => {
     expect(pathPoseDescriptor.fromBounds(box, { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }))
       .toEqual({ kind: 'rect', ...box });
