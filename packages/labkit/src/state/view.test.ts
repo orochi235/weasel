@@ -175,6 +175,12 @@ describe('as3DView', () => {
     expect(as3DView(DEFAULT_VIEW)).toBeNull();
   });
 
+  it('gives a depth it does not know its default, whole lens or not', () => {
+    expect(as3DView({ ...cam, depth: 'bogus' })).toEqual(cam);
+    const { fov: _f, ...bare } = cam;
+    expect(as3DView({ ...bare, depth: 'bogus' })).toEqual(cam);
+  });
+
   it('brings pitch and distance inside the limits it is given', () => {
     expect(as3DView(cam, { maxDistance: 4, maxPitch: 0.1 })).toMatchObject({
       distance: 4,
