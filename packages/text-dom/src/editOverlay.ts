@@ -16,10 +16,11 @@ export interface EditedNode {
   readonly style: ResolvedTextStyle;
 }
 
-/** Where the node is on screen now, read each time the overlay is placed. */
+/** Where the node is on screen now, and the style the edit holds it in, read each time the overlay is placed. */
 export interface EditedFrame {
   pose(): TextEditScreenPose | null;
   clip(): TextEditClipRect | null;
+  style(): ResolvedTextStyle;
 }
 
 export interface EditOverlay {
@@ -57,8 +58,7 @@ export function openEditOverlay(
   const boxes = mountOverlayBoxes(container, overlay);
 
   const place = () => {
-    const clip = frame.clip();
-    placeOverlay(overlay, boxes, frame.pose(), clip, style);
+    placeOverlay(overlay, boxes, frame.pose(), frame.clip(), frame.style());
   };
   place();
   // Measured again on release: the first `place` ran in the fallback face.

@@ -87,7 +87,7 @@ export function overlayScroll(box: HTMLElement, overlay: HTMLElement): OverlaySc
     },
     focus() {
       const { scrollLeft, scrollTop } = box;
-      overlay.focus();
+      overlay.focus({ preventScroll: true });
       box.scrollLeft = scrollLeft;
       box.scrollTop = scrollTop;
     },

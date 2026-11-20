@@ -57,10 +57,10 @@ export function overlayHistory(host: {
   let open: { kind: ChangeKind; caret: TextEditSelection } | null = null;
 
   const step = (from: OverlayState[], to: OverlayState[]): void => {
-    const target = from.pop();
-    if (!target) return;
     const now = host.read();
-    if (now) to.push(now);
+    const target = now && from.pop();
+    if (!now || !target) return;
+    to.push(now);
     pending = null;
     open = null;
     host.write(target);

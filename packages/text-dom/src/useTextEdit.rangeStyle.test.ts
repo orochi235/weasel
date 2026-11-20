@@ -234,3 +234,18 @@ describe('useTextEdit — range styling surface', () => {
     expect(h.textCommits).toEqual([]);
   });
 });
+
+it('keeps the overlay at the pose\'s line height after lowering a node flag', async () => {
+  const h = makeRichHarness({ a: { text: 'abcd' } });
+  h.opts.getStyle = () => ({ fontSize: 16, fontStyle: 'italic' });
+  h.opts.setStyle = () => {};
+  h.opts.getScreenPose = () => ({ x: 0, y: 0, width: 200, height: 40, fontSize: 32, lineHeight: 2 });
+  const { result } = renderHook(() => useTextEdit(h.opts));
+  act(() => result.current.startEdit('a'));
+  const overlay = getOverlay(h.container)!;
+  expect(overlay.style.lineHeight).toBe('2');
+  await selectCharsAndSettle(overlay, 1, 3);
+  act(() => result.current.applyStyleToSelection({ italic: false }));
+  expect(result.current.nodeStyle).not.toBeNull();
+  expect(overlay.style.lineHeight).toBe('2');
+});

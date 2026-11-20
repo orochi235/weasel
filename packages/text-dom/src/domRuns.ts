@@ -251,11 +251,12 @@ function setLength(
   span.setAttribute(attr, String(v.px));
 }
 
-/** `el`'s text as `domToRuns` reads it: each break stand-in restored. */
+/** `el`'s text as `domToRuns` reads it: each break stand-in restored, and a `<br>` as a line feed. */
 function sourceText(el: Element): string {
   let out = '';
   for (const n of el.childNodes) {
     if (n.nodeType === Node.TEXT_NODE) out += (n as Text).data;
+    else if (n instanceof Element && n.tagName === 'BR') out += '\n';
     else if (n instanceof Element) out += n.hasAttribute(BREAK_ATTR) ? restoreBreak(n) : sourceText(n);
   }
   return out;
@@ -269,6 +270,7 @@ function piecesMatch(span: HTMLElement, transform: TextTransform, lang: string |
     let small: boolean;
     let text: string;
     if (n.nodeType === Node.TEXT_NODE) { small = false; text = (n as Text).data; }
+    else if (n instanceof HTMLElement && n.tagName === 'BR') { small = false; text = '\n'; }
     else if (n instanceof HTMLElement && n.hasAttribute(BREAK_ATTR)) { small = false; text = restoreBreak(n); }
     else if (n instanceof HTMLElement && isSmallCapsPiece(n) && n.children.length === 0) { small = true; text = n.textContent ?? ''; }
     else return false;

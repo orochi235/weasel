@@ -63,3 +63,52 @@ describe('useTextEdit reports the edit opening and closing', () => {
     expect(events).toEqual(['start a']);
   });
 });
+
+describe('useTextEdit ignores a blur its own onEnd causes', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  function focusingSession() {
+    const h = makeHarness({ a: 'hi' });
+    const canvas = document.createElement('button');
+    document.body.appendChild(canvas);
+    h.opts.onEnd = () => canvas.focus();
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    expect(document.activeElement).toBe(overlay);
+    overlay.textContent = 'hello';
+    return { h, edit: () => result.current };
+  }
+
+  it('writes nothing for a canceled edit', () => {
+    const { h, edit } = focusingSession();
+    act(() => edit().cancelEdit());
+    expect(h.commits).toEqual([]);
+  });
+
+  it('writes a committed edit once', () => {
+    const { h, edit } = focusingSession();
+    act(() => edit().commitEdit());
+    expect(h.commits).toEqual([{ id: 'a', text: 'hello' }]);
+  });
+});
+
+it('writes nothing for an edit another startEdit closes, when onEnd moves focus', () => {
+  const h = makeHarness({ a: 'hi', b: 'yo' });
+  const canvas = document.createElement('button');
+  document.body.appendChild(canvas);
+  h.opts.onEnd = () => canvas.focus();
+  const { result } = renderHook(() => useTextEdit(h.opts));
+  act(() => result.current.startEdit('a'));
+  getOverlay(h.container)!.textContent = 'hello';
+  act(() => result.current.startEdit('b'));
+  expect(h.commits).toEqual([]);
+});
+
+it('the test harness knows no node named for an Object.prototype key', () => {
+  const { opts } = makeHarness({ a: 'hi' });
+  expect(opts.getScreenPose('constructor')).toBeNull();
+  expect(opts.getText('constructor')).toBe('');
+});

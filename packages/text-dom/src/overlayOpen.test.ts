@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { resolveTextStyle } from '@weasel-js/text';
-import { installSelectionStyle } from './overlayOpen';
+import { installSelectionStyle, openingRange } from './overlayOpen';
 
 afterEach(() => {
   document.head.innerHTML = '';
@@ -25,5 +25,16 @@ describe('installSelectionStyle', () => {
     const style = resolveTextStyle({ selectionBackground: 'red; } * { color: red', caretColor: '#000' });
     expect(installSelectionStyle('edit-2', style)).toBeNull();
     expect(document.head.querySelectorAll('style')).toHaveLength(0);
+  });
+});
+
+describe('openingRange', () => {
+  it('clamps a negative caret to the start of the text', () => {
+    const overlay = document.createElement('div');
+    overlay.textContent = 'abc';
+    const range = openingRange(overlay, -1);
+    expect(range.collapsed).toBe(true);
+    expect(range.startContainer).toBe(overlay.firstChild);
+    expect(range.startOffset).toBe(0);
   });
 });

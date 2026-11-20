@@ -11,9 +11,9 @@ export function makeHarness(initial: Record<string, string>) {
   const commits: Array<{ id: string; text: string }> = [];
   const opts: UseTextEditOptions = {
     container,
-    getText: (id) => texts[id] ?? '',
+    getText: (id) => (Object.hasOwn(texts, id) ? texts[id] : ''),
     getStyle: () => ({ fontSize: 16 }),
-    getScreenPose: (id) => (id in texts ? { x: 0, y: 0, width: 200, height: 40, fontSize: 16 } : null),
+    getScreenPose: (id) => (Object.hasOwn(texts, id) ? { x: 0, y: 0, width: 200, height: 40, fontSize: 16 } : null),
     setText: (id, text) => {
       texts[id] = text;
       commits.push({ id, text });
@@ -45,7 +45,7 @@ export function makeRichHarness(initial: Record<string, { text: string; runs?: S
     container,
     getText: (id) => data[id]?.text ?? '',
     getStyle: () => ({ fontSize: 16 }),
-    getScreenPose: (id) => (id in data ? { x: 0, y: 0, width: 200, height: 40, fontSize: 16 } : null),
+    getScreenPose: (id) => (Object.hasOwn(data, id) ? { x: 0, y: 0, width: 200, height: 40, fontSize: 16 } : null),
     setText: (id, text) => { data[id] = { ...data[id], text }; textCommits.push({ id, text }); },
     getRuns: (id) => data[id]?.runs,
     setRuns: (id, runs) => { data[id] = { ...data[id], runs }; runCommits.push({ id, runs }); },
