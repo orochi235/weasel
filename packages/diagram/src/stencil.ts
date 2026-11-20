@@ -5,6 +5,7 @@
 import { RIGID_POSE_COMPOSITION, localizeWorldPoses, type Op, type RectPose } from '@weasel-js/core';
 import type { BodySpec, MeasureRowText, Row } from './body';
 import { buildBody } from './buildBody';
+import { filledMeasure } from './rowMeasure';
 import { bodyLayoutOf } from './bodyRelayout';
 import { asideFillOf, headerFillOf, rowTextColor } from './dataColors';
 import { DEFAULT_FONT } from './edgeLabel';
@@ -83,15 +84,18 @@ export function stencilInsertOps<TLayer extends string>(
     ...(stencil.gap !== undefined ? { gap: stencil.gap } : {}),
     ...(stencil.verticalAlign !== undefined ? { verticalAlign: stencil.verticalAlign } : {}),
   };
+  const font = opts.font ?? DEFAULT_FONT;
+  // Measured in the face each row is stored in, as a relayout of the body measures it.
+  const measure = filledMeasure(font, opts.measure);
   const built = buildBody<DiagramSceneData, TLayer, RectPose>(
     spec,
     at,
     {
       id,
       layer: opts.layer,
-      ...(opts.measure ? { measure: opts.measure } : {}),
+      measure,
       body: (trait) => ({
-        diagram: { ...trait, ...bodyLayoutOf(spec, trait, opts.measure), ...(stencil.themeRole !== undefined ? { style: stencil.themeRole } : {}) },
+        diagram: { ...trait, ...bodyLayoutOf(spec, trait, measure), ...(stencil.themeRole !== undefined ? { style: stencil.themeRole } : {}) },
         fill: { paint: { color: style.fill } },
         stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? NODE_STROKE_WIDTH, ...(style.dash ? { dash: style.dash } : {}) },
         ...headerFillOf(trait, style),
@@ -99,14 +103,14 @@ export function stencilInsertOps<TLayer extends string>(
       row: (text, box) => box.row.kind === 'label' || box.row.kind === 'field' || box.row.kind === 'header'
         ? {
             text,
-            style: rowTextStyle(box.row, opts.font ?? DEFAULT_FONT),
+            style: rowTextStyle(box.row, font),
             fill: { paint: { color: rowTextColor(box.row, style) } },
             bodyRow: box.index,
             ...(box.row.kind === 'field' ? { bodyField: box.row.label } : {}),
           }
         : null,
       aside: (text, box) => ({
-        text, style: asideFace(rowTextStyle(box.row, opts.font ?? DEFAULT_FONT)), fill: asideFillOf(style), bodyRow: box.index, bodyAside: true,
+        text, style: asideFace(rowTextStyle(box.row, font)), fill: asideFillOf(style), bodyRow: box.index, bodyAside: true,
       }),
     },
   );
