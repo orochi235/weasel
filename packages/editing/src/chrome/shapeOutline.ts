@@ -34,6 +34,10 @@ interface Edge {
   /** What the edge was built from: the silhouette, or the derived path that stands in for the pose. */
   key: Path;
   pose: unknown;
+  /** The paint the node inherits from its containers, which `inheritedPaintIn` hands back as the
+   *  same object while it holds: a container's stroke edit changes an inheriting band's caps
+   *  and heads without touching the node or its silhouette. */
+  inherited: unknown;
   distance: number;
   edge: Path;
 }
@@ -88,14 +92,14 @@ function traceEdge(id: string, reads: ShapeOutlineReads, scale: number, edges: M
   }
   const key = derivedPath ?? silhouette;
   const held = edges.get(id);
-  if (held && held.key === key && held.distance === distance) return held.edge;
-  if (held && held.distance === distance && reads.inFlight(id)) {
+  if (held && held.key === key && held.inherited === inherited && held.distance === distance) return held.edge;
+  if (held && held.inherited === inherited && held.distance === distance && reads.inFlight(id)) {
     const carry = boxMove(held.pose, pose);
     if (carry) return transformPath(held.edge, carry);
   }
   const edge = open ? inkBand(silhouette, ink?.stroke, pose, distance, scale) : offsetPath(silhouette, distance);
   if (edge.kind === 'polygon' && edge.commands.length === 0) return null;
-  edges.set(id, { key, pose, distance, edge });
+  edges.set(id, { key, pose, inherited, distance, edge });
   return edge;
 }
 

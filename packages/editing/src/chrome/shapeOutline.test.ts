@@ -20,6 +20,8 @@ function sceneOf() {
   mark('child', { shape: 'rect' }, { parent: asNodeId('g') });
   mark('wire', { path: pathFromD('M 0 0 L 100 0 L 100 60'), stroke: { paint: RED, width: 4 } });
   mark('arrowed', { path: pathFromD('M 0 0 L 100 0 L 100 60'), stroke: { paint: RED, width: 4, markerEnd: 'arrow', dash: [6, 4] } });
+  scene.add({ id: asNodeId('wg'), kind: 'group', layer: 'main', data: { stroke: { paint: RED, width: 4, cap: 'butt' } }, pose: { x: 0, y: 0, width: 100, height: 60 } } as never);
+  mark('heir', { path: pathFromD('M 0 0 L 100 0 L 100 60'), stroke: 'inherit' }, { parent: asNodeId('wg') });
   mark('bare', { path: pathFromD('M 0 0 L 100 60') });
   mark('labeled', { shape: 'ellipse' });
   mark('label', { text: 'x' }, { parent: asNodeId('labeled'), pickable: false });
@@ -120,5 +122,16 @@ describe("selection outline with follow: 'shape'", () => {
     expect(pathContainsPoint(edge, 50, 4)).toBe(false);
     // The head, wider than the line, near the end.
     expect(boundsOfPath(edge).x + boundsOfPath(edge).width).toBeGreaterThan(104);
+  });
+
+  it("rebuilds an open path's band when the stroke it inherits changes", () => {
+    const scene = sceneOf();
+    const layer = layerFor(scene, ['heir']);
+    const before = traced(layer.draw(undefined, VIEW, DIMS))[0].path as Path;
+    expect(pathContainsPoint(before, 100, 61.5)).toBe(false);
+    // A square cap reaches past the end without moving the outset.
+    scene.update(asNodeId('wg'), { data: { stroke: { paint: RED, width: 4, cap: 'square' } } });
+    const after = traced(layer.draw(undefined, VIEW, DIMS))[0].path as Path;
+    expect(pathContainsPoint(after, 100, 61.5)).toBe(true);
   });
 });

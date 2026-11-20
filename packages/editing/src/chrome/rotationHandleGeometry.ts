@@ -1,5 +1,5 @@
 import { localToWorld, normalToWorld, targetTransformOf } from '@weasel-js/core';
-import { ROTATION_HANDLE_BASE_PX } from '@weasel-js/core';
+import { MULTI_RESIZE_TARGET_ID, ROTATION_HANDLE_BASE_PX, type ChromeState } from '@weasel-js/core';
 import { standoff, type PoseLinear, type Scale2 } from '@weasel-js/geom';
 
 /** Default world-space distance from the rect's top edge to the rotation
@@ -45,4 +45,19 @@ export function hitRotationHandle(
   radius: number,
 ): boolean {
   return Math.abs(px - handle.cx) <= radius && Math.abs(py - handle.cy) <= radius;
+}
+
+/** Whether a selection target can take a rotation: a node whose pose carries
+ *  one, or the synthetic multi id when every selected member can. The rotate
+ *  ring, its badge's grab region and the painted badge all ask this, so a
+ *  badge is painted only where it can be grabbed. With no `canRotate` on the
+ *  state, everything can. */
+export function targetCanRotate(
+  state: Pick<ChromeState, 'canRotate' | 'selection'> | null,
+  id: string,
+): boolean {
+  const can = state?.canRotate;
+  if (!can) return true;
+  if (id === MULTI_RESIZE_TARGET_ID) return state.selection.every((m) => can.call(state, m));
+  return can.call(state, id);
 }

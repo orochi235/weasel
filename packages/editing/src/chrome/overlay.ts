@@ -19,7 +19,7 @@ import { containerAwareBoundsResolver } from './selectionPose';
 import { targetCorners, targetTransformOf, type TargetTransform } from '@weasel-js/core';
 import { AUTO_POSE_DESCRIPTOR } from '@weasel-js/core/engine';
 import type { CommandStroke } from '@weasel-js/paint';
-import { DEFAULT_ROTATION_HANDLE_DISTANCE } from './rotationHandleGeometry';
+import { DEFAULT_ROTATION_HANDLE_DISTANCE, targetCanRotate } from './rotationHandleGeometry';
 import type { Bounds } from '@weasel-js/core';
 import type { ChromeState } from '@weasel-js/core';
 import { MULTI_RESIZE_TARGET_ID } from '@weasel-js/core';
@@ -49,26 +49,20 @@ const DEFAULT_OUTLINE: Required<Pick<CommandStroke, 'paint' | 'width'>> & { pad:
   width: 2,
   pad: 1,
 };
-function resolveOutlineStroke(opts?: CommandStroke & { pad?: number }): {
+function resolveOutlineStroke(opts?: CommandStroke & { pad?: number; follow?: unknown }): {
   stroke: CommandStroke;
   pad: number;
 } {
-  if (!opts) {
-    return {
-      stroke: { paint: DEFAULT_OUTLINE.paint, width: DEFAULT_OUTLINE.width },
-      pad: DEFAULT_OUTLINE.pad,
-    };
-  }
+  // Everything the consumer set on the stroke reaches the renderer; only the
+  // paint and width take a default, and the layer's own `pad` / `follow` stay out.
+  const { pad, follow: _follow, ...rest } = opts ?? {};
   return {
     stroke: {
-      paint: opts.paint ?? DEFAULT_OUTLINE.paint,
-      width: opts.width ?? DEFAULT_OUTLINE.width,
-      dash: opts.dash,
-      cap: opts.cap,
-      join: opts.join,
-      align: opts.align,
+      ...rest,
+      paint: rest.paint ?? DEFAULT_OUTLINE.paint,
+      width: rest.width ?? DEFAULT_OUTLINE.width,
     },
-    pad: opts.pad ?? DEFAULT_OUTLINE.pad,
+    pad: pad ?? DEFAULT_OUTLINE.pad,
   };
 }
 
@@ -242,6 +236,8 @@ function buildSelectionLayer<TPose>(
       }
       if (showRotation && rotationHandleDistance !== null) {
         for (const id of ids) {
+          // Paint the badge only where the rotate affordance offers its grab region.
+          if (!targetCanRotate(chromeState, id)) continue;
           const b = resolveTargetBounds(id);
           if (!b) continue;
           for (const cmd of rotationHandleCommands(b, handles, rotationHandleDistance, view)) {

@@ -5,6 +5,7 @@ import { MULTI_RESIZE_TARGET_ID } from '@weasel-js/core';
 import { localToWorld, transformOf } from '@weasel-js/core';
 import type { CursorSpec } from '@weasel-js/cursor';
 import { rotateCursorAt } from './rotateCursor';
+import { targetCanRotate } from '../rotationHandleGeometry';
 
 /** Options for `createRotationAffordance` — how thick the rotate band is
  *  outside the selection, and how (or whether) it is painted. */
@@ -153,7 +154,7 @@ function pickTarget(state: ChromeState): { id: string; bounds: Bounds } | null {
     const id = state.selection[0];
     // Skip when the selected node's pose-descriptor declares it can't carry a rotation;
     // otherwise the ring would offer a rotate cursor over a node whose write is dropped.
-    if (state.canRotate && !state.canRotate(id)) return null;
+    if (!targetCanRotate(state, id)) return null;
     const b = state.boundsOf(id);
     return b ? { id, bounds: b } : null;
   }
@@ -161,11 +162,7 @@ function pickTarget(state: ChromeState): { id: string; bounds: Bounds } | null {
   // id and pivots at its own union center. Every selected id must support rotation — a
   // partial multi-rotate would feel broken.
   if (state.multiActive && state.unionBounds) {
-    if (state.canRotate) {
-      for (const id of state.selection) {
-        if (!state.canRotate(id)) return null;
-      }
-    }
+    if (!targetCanRotate(state, MULTI_RESIZE_TARGET_ID)) return null;
     return { id: MULTI_RESIZE_TARGET_ID, bounds: state.unionBounds };
   }
   return null;
