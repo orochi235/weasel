@@ -23,7 +23,7 @@ function host(animations: Record<string, WorkerAnimation> = {}, shaders?: readon
     postMessage: (m) => { out.push(m as FromWorker); },
     addEventListener: (_type, fn) => { listener = fn; },
   };
-  hostSceneRender(port, { animations, ...(shaders ? { shaders } : {}) });
+  const stop = hostSceneRender(port, { animations, ...(shaders ? { shaders } : {}) });
   const send = (msg: ToWorker) => listener({ data: msg } as MessageEvent);
   send({ type: 'init', canvas, width: 20, height: 20, dpr: 1 });
   const scene = createScene<object, 'main', RectPose>({
@@ -36,7 +36,7 @@ function host(animations: Record<string, WorkerAnimation> = {}, shaders?: readon
     ...writer.write({ scene: scene as unknown as Scene<unknown, string, unknown>, view: VIEW, width: 20, height: 20, dpr: 1 }),
     id: ++frames, at: { time: 0 }, ...extra,
   });
-  return { send, frame, out, canvas };
+  return { send, frame, out, canvas, stop };
 }
 
 afterEach(() => { vi.restoreAllMocks(); });
@@ -151,5 +151,17 @@ describe('hostSceneRender', () => {
     expect(out.filter((m) => m.type === 'dirty')).toHaveLength(1);
     bad(3);
     expect(out.filter((m) => m.type === 'dirty')).toHaveLength(1);
+  });
+
+  it('stops hearing the realm and lets go of its renderer once stopped', () => {
+    const dispose = vi.spyOn(WeaselRenderer.prototype, 'dispose');
+    const { frame, out, stop } = host();
+    frame();
+    stop();
+    expect(dispose).toHaveBeenCalledTimes(1);
+    const before = out.length;
+    const off = registerNodeShape({ id: 'test:after-stop', matches: () => false, paint: () => [] });
+    off();
+    expect(out).toHaveLength(before);
   });
 });

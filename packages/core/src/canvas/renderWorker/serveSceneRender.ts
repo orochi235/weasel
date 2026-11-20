@@ -52,6 +52,7 @@ export interface SceneRenderServeOptions {
 export interface RenderPort {
   postMessage(message: unknown, transfer?: Transferable[]): void;
   addEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
+  removeEventListener?(type: 'message', listener: (event: MessageEvent) => void): void;
 }
 
 interface Painting {
@@ -101,8 +102,10 @@ function openPainting(
   };
 }
 
-/** Paint the scene over `port`. {@link serveSceneRender} is this over the worker's own scope. */
-export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptions = {}): void {
+/** Paint the scene over `port`. {@link serveSceneRender} is this over the worker's own scope.
+ *  Several hosts can share a worker, one per port; the function returned stops this one, and
+ *  lets go of its renderer. */
+export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptions = {}): () => void {
   const drawOne = (options.drawOne ?? defaultDrawOne) as SceneViewDrawOne<unknown, string, unknown>;
   const paintBounds = (options.paintBounds ?? paintBoundsFor(drawOne)) as PaintBoundsFn<AnyNode, unknown> | undefined;
   const mirror = createSceneMirror(options.scene);
@@ -113,10 +116,8 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
   const dirty = () => post({ type: 'dirty' });
   const report = (e: unknown) => post({ type: 'error', message: e instanceof Error ? e.message : String(e) });
   const animations = createWorkerAnimations(options.animations ?? {}, dirty);
-  const answerImage = loadFromPage(post);
-  subscribeImageReady(dirty);
-  subscribeGlyphReady(dirty);
-  subscribeNodeShapes(dirty);
+  const images = loadFromPage(post);
+  const offs = [subscribeImageReady(dirty), subscribeGlyphReady(dirty), subscribeNodeShapes(dirty)];
   let painting: Painting | null = null;
   const alphas = new Map<string, number>();
   const alphaFor = (id: string): number => alphas.get(id) ?? 1;
@@ -204,7 +205,7 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
           post({ type: 'snapshot', id: msg.id, bitmap }, bitmap ? [bitmap] : []));
         return;
       case 'image':
-        answerImage(msg);
+        images.answer(msg);
         return;
       case 'readIds': {
         const ids = readIds(painting, msg);
@@ -213,7 +214,7 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
     }
   };
 
-  port.addEventListener('message', (event) => {
+  const listener = (event: MessageEvent): void => {
     const msg = event.data as ToWorker;
     try {
       receive(msg);
@@ -223,7 +224,19 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
       else if (msg.type === 'readIds') post({ type: 'ids', id: msg.id, ids: null });
       report(e);
     }
-  });
+  };
+  port.addEventListener('message', listener);
+  let disposed = false;
+  return () => {
+    if (disposed) return;
+    disposed = true;
+    port.removeEventListener?.('message', listener);
+    for (const off of offs) off();
+    images.dispose();
+    painting?.canvas.removeEventListener('webglcontextrestored', dirty);
+    painting?.renderer.dispose();
+    painting = null;
+  };
 }
 
 function readIds(painting: Painting | null, msg: Extract<ToWorker, { type: 'readIds' }>): IdBuffer | null {
@@ -245,6 +258,6 @@ async function snapshot(canvas: OffscreenCanvas | null): Promise<ImageBitmap | n
  * this, call it — plus whatever the page registers that paints: node shapes, fonts, paint kinds,
  * shader programs, and the scene registry. Hand the module to `<SceneViewCanvas worker>`.
  */
-export function serveSceneRender(options: SceneRenderServeOptions = {}): void {
-  hostSceneRender(globalThis as unknown as RenderPort, options);
+export function serveSceneRender(options: SceneRenderServeOptions = {}): () => void {
+  return hostSceneRender(globalThis as unknown as RenderPort, options);
 }

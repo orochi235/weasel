@@ -6,33 +6,67 @@
  */
 import {
   getImageBitmap, imagePending, imageStatus, isBitmapSrc, isVectorImageSrc, loadImageBitmap, setImageLoader, subscribeImageReady,
+  type ImageLoader, type ImageRasterSize,
 } from '@weasel-js/renderer';
 import type { FromWorker, ToWorker } from './protocol';
 
 type Waiter = { resolve: (b: ImageBitmap) => void; reject: (e: Error) => void };
+type Ask = (src: string, size: ImageRasterSize | undefined) => Promise<ImageBitmap>;
 
-/** Route the worker's loads of what only the page can serve through `ask`. Returns the handler
- *  for the page's answers. Each request carries an id its answer echoes: the page answers a
+/** Every page this realm's hosts serve, oldest first. The image cache is the realm's, so a load
+ *  asks each page in turn until one answers: a `bitmapSrc` name is only the page that minted it's. */
+const pages: Ask[] = [];
+
+const loadFromPages: ImageLoader = async (src, size) => {
+  if (!isVectorImageSrc(src) && !isBitmapSrc(src)) return loadImageBitmap(src, size);
+  let failure: unknown = new Error(`weasel render worker: no page to load ${src} from`);
+  for (const ask of [...pages]) {
+    try {
+      return await ask(src, size);
+    } catch (e) {
+      failure = e;
+    }
+  }
+  throw failure;
+};
+
+/** What the page behind one host serves of the worker's loads. */
+export interface PageImages {
+  /** Hand the page's answer to the request it answers. */
+  answer(answer: Extract<ToWorker, { type: 'image' }>): void;
+  /** Stop asking this page: what still waits on it is asked of the next. */
+  dispose(): void;
+}
+
+/** Route the worker's loads of what only the page can serve through `ask`, beside any other
+ *  host's page in this realm. Each request carries an id its answer echoes: the page answers a
  *  request for a sharper raster only once that raster lands, so answers come out of order. */
-export function loadFromPage(ask: (request: Extract<FromWorker, { type: 'image' }>) => void): (
-  answer: Extract<ToWorker, { type: 'image' }>,
-) => void {
+export function loadFromPage(ask: (request: Extract<FromWorker, { type: 'image' }>) => void): PageImages {
   const waiting = new Map<number, Waiter>();
   let next = 0;
-  setImageLoader((src, size) => {
-    if (!isVectorImageSrc(src) && !isBitmapSrc(src)) return loadImageBitmap(src, size);
-    return new Promise<ImageBitmap>((resolve, reject) => {
-      const id = ++next;
-      waiting.set(id, { resolve, reject });
-      ask(size ? { type: 'image', id, src, size } : { type: 'image', id, src });
-    });
+  const askPage: Ask = (src, size) => new Promise<ImageBitmap>((resolve, reject) => {
+    const id = ++next;
+    waiting.set(id, { resolve, reject });
+    ask(size ? { type: 'image', id, src, size } : { type: 'image', id, src });
   });
-  return (answer) => {
-    const waiter = waiting.get(answer.id);
-    if (!waiter) return;
-    waiting.delete(answer.id);
-    if (answer.bitmap) waiter.resolve(answer.bitmap);
-    else waiter.reject(new Error(answer.error ?? `weasel render worker: the page could not load ${answer.src}`));
+  pages.push(askPage);
+  if (pages.length === 1) setImageLoader(loadFromPages);
+  return {
+    answer(answer) {
+      const waiter = waiting.get(answer.id);
+      if (!waiter) return;
+      waiting.delete(answer.id);
+      if (answer.bitmap) waiter.resolve(answer.bitmap);
+      else waiter.reject(new Error(answer.error ?? `weasel render worker: the page could not load ${answer.src}`));
+    },
+    dispose() {
+      const at = pages.indexOf(askPage);
+      if (at < 0) return;
+      pages.splice(at, 1);
+      if (pages.length === 0) setImageLoader(null);
+      for (const w of waiting.values()) w.reject(new Error('weasel render worker: the page closed'));
+      waiting.clear();
+    },
   };
 }
 

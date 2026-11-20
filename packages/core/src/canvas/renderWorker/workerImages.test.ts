@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  bitmapSrc, getImageBitmap, releaseImage, setImageLoader, type ImageRasterSize,
+  bitmapSrc, getImageBitmap, releaseImage, type ImageRasterSize,
 } from '@weasel-js/renderer';
 import { __setImageLoaderForTests, _resetImageCacheForTests } from '@weasel-js/renderer/test-seams';
 import { answerImage, loadFromPage } from './workerImages';
@@ -74,7 +74,8 @@ describe('answerImage', () => {
 describe('loadFromPage', () => {
   it('hands each answer to the request it answers, whatever order the page answers in', async () => {
     const asked: Extract<FromWorker, { type: 'image' }>[] = [];
-    const answer = loadFromPage((request) => asked.push(request));
+    const page = loadFromPage((request) => asked.push(request));
+    const answer = page.answer;
     const settle = async () => { for (let i = 0; i < 5; i++) await Promise.resolve(); };
     const raster = (side: number) => ({ width: side, height: side, close() {} }) as ImageBitmap;
     const src = 'shape.svg';
@@ -92,7 +93,28 @@ describe('loadFromPage', () => {
     await settle();
     // Natural size: what a vector raster's later scales are measured against.
     expect(getImageBitmap(src)?.width).toBe(10);
-    setImageLoader(null);
+    page.dispose();
+  });
+
+  it("asks the next host's page for what one page could not load, and stops asking a page once disposed", async () => {
+    const settle = async () => { for (let i = 0; i < 5; i++) await Promise.resolve(); };
+    const firstAsked: Extract<FromWorker, { type: 'image' }>[] = [];
+    const secondAsked: Extract<FromWorker, { type: 'image' }>[] = [];
+    const first = loadFromPage((r) => firstAsked.push(r));
+    const second = loadFromPage((r) => secondAsked.push(r));
+    getImageBitmap('minted.svg');
+    expect(firstAsked).toHaveLength(1);
+    first.answer({ type: 'image', id: firstAsked[0]!.id, src: 'minted.svg', error: 'not mine' });
+    await settle();
+    expect(secondAsked).toHaveLength(1);
+    second.answer({ type: 'image', id: secondAsked[0]!.id, src: 'minted.svg', bitmap: { width: 3, height: 3, close() {} } as ImageBitmap });
+    await settle();
+    expect(getImageBitmap('minted.svg')?.width).toBe(3);
+    first.dispose();
+    getImageBitmap('later.svg');
+    expect(firstAsked).toHaveLength(1);
+    expect(secondAsked).toHaveLength(2);
+    second.dispose();
   });
 });
 
