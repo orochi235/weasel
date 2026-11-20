@@ -20,6 +20,20 @@ describe('splitByClosure', () => {
     expect(open!.fillRule).toBe(path.fillRule);
   });
 
+  it('keeps each corner on its own anchor after a subpath that opens without an M', () => {
+    const spec = { shape: 'round' as const, radius: 2 };
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_Z, PATH_L, PATH_L, PATH_Z]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10, 5, 5, 0, 10]),
+      fillRule: 'nonzero',
+      corners: [null, null, null, spec],
+    };
+    const { closed } = splitByClosure(path);
+    expect(Array.from(closed!.coords.slice(8, 10))).toEqual([5, 5]);
+    expect(closed!.corners).toEqual([null, null, null, null, spec]);
+  });
+
   it('keeps a closed subpath closed when the next one opens without an M', () => {
     const path: PolygonPath = {
       kind: 'polygon',

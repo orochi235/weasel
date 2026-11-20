@@ -120,3 +120,27 @@ describe('mergeRegion', () => {
     expect(edgesInsideFill(mergeRegion(offset, { tolerance: 0.0005 }), 1e-3)).toBe(0);
   });
 });
+
+describe('mergeRegion on open subpaths a fill does not close', () => {
+  it('winds them as it does when a fill closes them, since it closes every subpath', () => {
+    const open = pathFromD('M0 0 L0 10 L10 10 L10 0') as PolygonPath;
+    const closes = mergeRegion({ ...open, openFill: 'close' });
+    expect(pathToD(mergeRegion({ ...open, openFill: 'none' }))).toBe(pathToD(closes));
+  });
+});
+
+describe('mergeRegion where three edges cross at one point', () => {
+  it('cuts every edge there at one shared point, leaving no ring open', () => {
+    for (const turn of [[0.3, 1.4, 2.5], [0.1, 1.2, 2.2], [0.7, 1.9, 2.8], [0.05, 1.1, 2.0]]) {
+      const rect = (a: number) => {
+        const c = Math.cos(a), s = Math.sin(a);
+        const pts = [[-10, 0], [10, 0], [10, 10], [-10, 10]].map(([x, y]) => [x * c - y * s + 3.7, x * s + y * c + 1.3]);
+        return `M${pts.map((q) => q.join(' ')).join(' L')} Z`;
+      };
+      const src = pathFromD(turn.map(rect).join(' '));
+      const m = mergeRegion(src);
+      expect(edgesInsideFill(m, 0.01)).toBe(0);
+      expectSameRegion(src, m, 0.37);
+    }
+  });
+});

@@ -59,3 +59,16 @@ describe('marker builders', () => {
     });
   });
 });
+
+describe('marker builders given a count they cannot draw', () => {
+  it('refuse a circle of fewer than 3 segments', () => {
+    expect(() => circlePath(0, 0, 5, 0)).toThrow(RangeError);
+    expect(() => circlePath(0, 0, 5, 2.5)).toThrow(RangeError);
+    expect(circlePath(0, 0, 5, 3).coords).toHaveLength(6);
+  });
+
+  it('refuse a rounded corner of no samples', () => {
+    expect(() => roundRectPath(0, 0, 10, 10, 2, 0)).toThrow(RangeError);
+    expect(Array.from(roundRectPath(0, 0, 10, 10, 2, 1).coords).every(Number.isFinite)).toBe(true);
+  });
+});

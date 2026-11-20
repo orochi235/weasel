@@ -126,3 +126,12 @@ describe('growRegion', () => {
     expect(growRegion(pathFromD('M0 0 L1 0 L1 1 Z'), 0).commands.length).toBe(0);
   });
 });
+
+describe('growRegion on open subpaths a fill does not close', () => {
+  it('grows them outward as it does when a fill closes them, since it closes every subpath', () => {
+    const open = pathFromD('M0 0 L0 10 L10 10 L10 0');
+    if (open.kind !== 'polygon') throw new Error('expected a polygon');
+    const closes = growRegion({ ...open, openFill: 'close' }, 1);
+    expect(Array.from(growRegion({ ...open, openFill: 'none' }, 1).coords)).toEqual(Array.from(closes.coords));
+  });
+});

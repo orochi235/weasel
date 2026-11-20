@@ -146,6 +146,29 @@ describe('schneiderFit — recursive split', () => {
     expect(lastTwo[1]).toBeCloseTo(samples[samples.length - 1].y);
   });
 
+  it('joins its cubics smoothly, each split sharing one tangent', () => {
+    const samples: { x: number; y: number }[] = [];
+    for (let i = 0; i <= 40; i++) {
+      const t = i / 40;
+      samples.push({ x: t * 200, y: 40 * Math.sin(t * 2 * Math.PI) });
+    }
+    const c = (schneiderFit(samples, 1.0) as PolygonPath).coords;
+    expect(c.length).toBeGreaterThan(8);
+    // Coords: M (2), then 6 per cubic: cp1, cp2, end.
+    for (let k = 2; k + 6 < c.length; k += 6) {
+      const inX = c[k + 4] - c[k + 2], inY = c[k + 5] - c[k + 3];
+      const outX = c[k + 6] - c[k + 4], outY = c[k + 7] - c[k + 5];
+      const sin = (inX * outY - inY * outX) / (Math.hypot(inX, inY) * Math.hypot(outX, outY));
+      expect(Math.abs(sin)).toBeLessThan(1e-4);
+    }
+  });
+
+  it('leaves a repeated first sample\'s handle off its anchor', () => {
+    const samples = [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 10, y: 5 }, { x: 20, y: 0 }];
+    const c = (schneiderFit(samples, 0.5) as PolygonPath).coords;
+    expect(Math.hypot(c[2] - c[0], c[3] - c[1])).toBeGreaterThan(1);
+  });
+
   it('fits a 270° arc within the original 2.0 tolerance using multiple cubics', () => {
     // Re-test the reparam input — now with split available, should
     // hit the original spec tolerance of 2.0.

@@ -38,6 +38,8 @@ export function simplifyAnchorsAt(
     const order = closed ? [...sub.slice(shift), ...sub.slice(0, shift)] : sub;
     const inRun = (i: number) => named.has((i + shift) % sub.length);
     const out = order.slice();
+    // Where the subpath's own first anchor sits in `out`, so it can start there again.
+    let head = closed ? (sub.length - shift) % sub.length : 0;
     let thinned = false;
     // Back to front, so a splice leaves the runs before it where they were.
     for (let end = order.length - 1; end >= 0; end--) {
@@ -48,12 +50,14 @@ export function simplifyAnchorsAt(
         const refit = simplifySpan(order, closed, start, end, tolerance, opts);
         if (refit.length < end - start + 1) {
           out.splice(start, end - start + 1, ...refit);
+          if (head > end) head -= end - start + 1 - refit.length;
+          else if (head > start) head = start + refit.length - 1;
           thinned = true;
         }
       }
       end = start;
     }
-    if (thinned) { set.anchors[s] = out; changed = true; }
+    if (thinned) { set.anchors[s] = [...out.slice(head), ...out.slice(0, head)]; changed = true; }
   }
   return changed;
 }

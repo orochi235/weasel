@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { PathBuilder, polygonFromPoints, rectPath } from './builder';
 import { boundsOfPath } from './bounds';
 import { fitPathToRect, translatePath } from './transform';
+import { worldCoords } from './pathOrigin';
+import type { PolygonPath } from '../path';
 
 describe('translatePath', () => {
   it('translates a RectPath without allocating coords', () => {
@@ -26,6 +28,16 @@ describe('translatePath', () => {
     const t = translatePath(p, 1, 2);
     if (t.kind !== 'polygon') throw new Error('expected polygon');
     expect(Array.from(t.coords)).toEqual([1, 2, 11, 2, 21, 12, 31, 12]);
+  });
+});
+
+describe('translatePath far out', () => {
+  it('gives an origin-free polygon moved past the origin threshold an origin, as transformPath does', () => {
+    const p = new PathBuilder().moveTo(0.3, 0.3).lineTo(1.3, 0.3).lineTo(1.3, 1.3).close().build();
+    const t = translatePath(p, 1e6, 0) as PolygonPath;
+    expect(t.origin).toBeDefined();
+    expect(worldCoords(t)[0]).toBeCloseTo(1e6 + 0.3, 4);
+    expect(translatePath(p, 5, 0)).not.toHaveProperty('origin');
   });
 });
 
