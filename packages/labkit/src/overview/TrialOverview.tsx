@@ -285,10 +285,10 @@ function ChromeCanvas({
       );
       ctx.setLineDash([]);
     }
-    const world = pointerElsewhere(pointer, OVERVIEW_VIEW_ID, camera.frame);
-    if (world) {
-      // Back to frame-local: the map is its own inverse.
-      const at = px(world.x, world.y * camera.frame.yDir);
+    // Frame-local already, the space `fit` works in.
+    const local = pointerElsewhere(pointer, OVERVIEW_VIEW_ID, camera.frame);
+    if (local) {
+      const at = px(local.x, local.y);
       const { halo, bars } = crosshairRects(at.x, at.y, { x: 1, y: 1 });
       ctx.fillStyle = 'rgb(0 0 0 / 60%)';
       for (const r of halo) ctx.fillRect(r.x, r.y, r.width, r.height);
