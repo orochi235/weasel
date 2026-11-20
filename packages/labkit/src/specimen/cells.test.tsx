@@ -1,6 +1,7 @@
 import { fireEvent, screen } from '@testing-library/react';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it } from 'vitest';
+import { ButtonsAndToggles } from './ButtonsAndToggles';
 import { PanelsAndRows } from './PanelsAndRows';
 import { ShapePanelCell } from './ShapePanelCell';
 
@@ -29,5 +30,10 @@ describe('specimen cells', () => {
     renderWithIcons(<PanelsAndRows />);
     const sidebar = screen.getByRole('complementary', { name: 'Specimen sidebar' });
     expect(sidebar.previousElementSibling?.classList.contains('lk-specimen__box-main')).toBe(true);
+  });
+
+  it('names the momentary SegmentedBar toolbar', () => {
+    renderWithIcons(<ButtonsAndToggles />);
+    for (const bar of screen.getAllByRole('toolbar')) expect(bar).toHaveAccessibleName();
   });
 });

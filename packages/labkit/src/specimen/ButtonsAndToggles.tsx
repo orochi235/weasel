@@ -91,6 +91,7 @@ export function ButtonsAndToggles() {
           />
           <SegmentedBar
             mode="momentary"
+            aria-label="History"
             items={[
               { value: 'undo', label: 'Undo', onAction: () => {} },
               { value: 'redo', label: 'Redo', onAction: () => {} },
