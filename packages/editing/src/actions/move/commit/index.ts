@@ -40,7 +40,7 @@ export function commitMove(input: CommitInput): boolean {
     const followers = landedDescendantOps(
       {
         scene: session.scene,
-        projection: session.projection,
+        descriptorOf: session.descriptorOf,
         startPoses: session.startPoses,
         label: session.lifecycle.label,
       },

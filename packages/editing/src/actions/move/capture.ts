@@ -1,7 +1,7 @@
 import type { InvocationCtx } from '@weasel-js/routing';
 import { pointerStateOf, composeChildFrame, composeWorldPose, frameAtOrAbove, invertPlane, planeOf, sceneGestureFrames, boundsOffset, poseDescriptorOf, translateTargets, followerOpsFor } from '@weasel-js/core';
 import type { PoseDescriptor, ReflowTransition, GestureContext } from '@weasel-js/core/engine';
-import { effectivePose, toPlane, sceneViewPoseAdapter, scenePoseFrame } from '@weasel-js/core/engine';
+import { effectivePose, toPlane, sceneViewPoseAdapter, scenePoseFrame, poseDescriptorForNode } from '@weasel-js/core/engine';
 import type { NodeId, Scene, GestureReaders } from '@weasel-js/core';
 import type { MoveGestureAdapter } from './gestureAdapter';
 import { catchGliding } from './layout/glide';
@@ -90,13 +90,14 @@ export function capturePlaneRefs(
 ): Map<string, { own: { x: number; y: number }; edited: { x: number; y: number } }> {
   const planeRefs = new Map<string, { own: { x: number; y: number }; edited: { x: number; y: number } }>();
   for (const id of ids) {
-    const layer = scene.get(id)?.layer;
-    if (layer === undefined || planeRefs.has(layer)) continue;
+    const node = scene.get(id);
+    const layer = node?.layer;
+    if (node === undefined || layer === undefined || planeRefs.has(layer)) continue;
     const m = planeOf(view, layer);
     if (m === null) continue;
     const world = frames.get(id)?.world ?? startPoses.get(id);
     if (world === undefined) continue;
-    const b = projection.getBounds(world);
+    const b = poseDescriptorForNode(projection, node).getBounds(world);
     const own = { x: b.x, y: b.y };
     planeRefs.set(layer, { own, edited: toPlane(invertPlane(m)!, own) });
   }

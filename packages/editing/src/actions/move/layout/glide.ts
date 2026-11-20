@@ -1,6 +1,6 @@
 import type { NodeId, Scene } from '@weasel-js/core';
 import type { PoseDescriptor, ReflowTransition } from '@weasel-js/core/engine';
-import { documentPose, sceneViewPoseAdapter } from '@weasel-js/core/engine';
+import { documentPose, poseDescriptorForNode, sceneViewPoseAdapter } from '@weasel-js/core/engine';
 import { composeChildFrame, frameAtOrAbove, rebaseLocalPose } from '@weasel-js/core';
 import type { MoveSession } from '../session';
 
@@ -15,8 +15,10 @@ export function catchGliding(
   const shown = reflow?.poseOf(id as string);
   if (!reflow || shown === undefined) return null;
   reflow.glide(id as string, shown, { from: shown });
-  const at = projection.getBounds(shown);
-  const home = projection.getBounds(documentPose(scene, scene.get(id)!));
+  const node = scene.get(id)!;
+  const d = poseDescriptorForNode(projection, node);
+  const at = d.getBounds(shown);
+  const home = d.getBounds(documentPose(scene, node));
   return { dx: at.x - home.x, dy: at.y - home.y };
 }
 

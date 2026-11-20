@@ -63,7 +63,6 @@ export function carryDragged(session: MoveSession, c: DraggedChild, m: PlaneMap 
 
 /** Center of the bounds of everything dragged. */
 export function selectionCenter(session: MoveSession, dragged: readonly DraggedChild[]): { x: number; y: number } {
-  const d = session.projection;
   // The selection lands as a unit, so one point decides the container: the
   // center of the whole dragged group. Hit-testing each child on its own
   // would scatter a selection straddling two containers.
@@ -72,7 +71,7 @@ export function selectionCenter(session: MoveSession, dragged: readonly DraggedC
   let maxX = -Infinity;
   let maxY = -Infinity;
   for (const c of dragged) {
-    const b = d.getBounds(c.arg.pose);
+    const b = session.descriptorOf(c.id).getBounds(c.arg.pose);
     minX = Math.min(minX, b.x);
     minY = Math.min(minY, b.y);
     maxX = Math.max(maxX, b.x + b.width);

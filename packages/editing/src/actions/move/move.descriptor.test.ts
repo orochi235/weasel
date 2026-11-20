@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { moveAction } from './action';
 import type { InvocationCtx, BindingOptions } from '@weasel-js/routing';
-import { IDENTITY_POSE_COMPOSITION, createScene } from '@weasel-js/core/engine';
+import { IDENTITY_POSE_COMPOSITION, createScene, RECT_POSE_DESCRIPTOR } from '@weasel-js/core/engine';
 import type { NodeId, Scene } from '@weasel-js/core';
-import type { LayoutStrategy } from '@weasel-js/core/engine';
+import type { LayoutStrategy, MoveBehavior } from '@weasel-js/core/engine';
+import * as ops from '@weasel-js/core/ops';
 import { circleForTests as circle, CIRCLE_POSE_DESCRIPTORForTests as CIRCLE_POSE_DESCRIPTOR, type CirclePoseForTests as CirclePose } from '@weasel-js/core/test-seams';
 
 type S = Scene<object, 'main', CirclePose>;
@@ -87,5 +88,29 @@ describe('moveAction — non-rect poses through the descriptor', () => {
       drag: { start: { x: 0, y: 0 }, current: { x: 100, y: 100 }, delta: { x: 100, y: 100 } },
     } as unknown as InvocationCtx);
     expect(probes).toEqual([{ x: 100, y: 100 }]);
+  });
+});
+
+describe('moveAction — a behavior placing a root of its own pose kind', () => {
+  it('carries the root\'s descendants by the root\'s landing as its own descriptor measures it', () => {
+    const scene = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
+    // An envelope: its pose is the circle around its child, which it does not carry as a frame would.
+    const root = scene.add({
+      kind: 'circle', layer: 'main', pose: circle(10, 10, 5), data: {}, dependsOn: 'children',
+      derivePose: (_n: unknown, kids: readonly { pose: unknown }[]) => {
+        const p = kids[0]?.pose as { x: number; y: number } | undefined;
+        return p ? circle(p.x + 2, p.y + 2, 5) : null;
+      },
+    });
+    const child = scene.add({ kind: 'mark', layer: 'main', parent: root, pose: { x: 8, y: 8, width: 4, height: 4 }, data: {} });
+    const descriptor = {
+      ...RECT_POSE_DESCRIPTOR,
+      forNode: (n: { kind: string }) => (n.kind === 'circle' ? CIRCLE_POSE_DESCRIPTOR : undefined),
+    };
+    const place: MoveBehavior<unknown> = {
+      onEnd: () => [ops.setPose<unknown>({ id: root, from: circle(10, 10, 5), to: circle(40, 10, 5), label: 'Place' })],
+    };
+    drag(scene as unknown as S, [root], { x: 5, y: 0 }, { poseDescriptor: descriptor }, { behaviors: [place as never] });
+    expect(scene.get(child)!.pose).toEqual({ x: 38, y: 8, width: 4, height: 4 });
   });
 });
