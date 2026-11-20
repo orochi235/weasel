@@ -3022,3 +3022,7 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): `insertPacketField` throws on a field starting inside the field before it, as
   `setPacketStart` does, so the fields never overlap. Moving the new field along to the first free bit was the
   alternative.
+- 2026-11-20 (the fixer's call): an xychart row edit leaves a series shorter than the rows short: a row past its end
+  stays missing, and one that a move or a `setXyValue` puts inside it is `NaN`, drawn as no point. An inserted row is
+  a zero in each series that reaches it. Padding every series with zeros to the row count first, which drew the
+  missing rows as zeros, was what it did.

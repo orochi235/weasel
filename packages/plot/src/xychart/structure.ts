@@ -6,30 +6,40 @@ import { freshName, insertAt, moveAt, removeAt, updateAt, withOptional } from '.
 import { xyRows } from './edit';
 import type { XyBandAxis, XyChartData, XyRangeAxis, XySeries, XyValueAxis } from './types';
 
-/** `values` stretched with zeros to `n`. */
-const padded = (values: readonly number[], n: number): number[] => Array.from({ length: Math.max(n, values.length) }, (_, i) => values[i] ?? 0);
-
 /** The band axis's labels stretched to `n`, a missing one numbered as the chart numbers it. */
 const labels = (categories: readonly string[], n: number): string[] => Array.from({ length: n }, (_, i) => categories[i] ?? String(i + 1));
 
 /** Whether the chart's rows carry labels of their own. */
 const labeled = (data: XyChartData): boolean => data.x?.kind === 'band' && data.x.categories.length > 0;
 
-/** `data` with every series' values run through `values` and the band labels through `names`, each stretched to the
- *  chart's rows first. */
-function eachRow(data: XyChartData, values: (list: number[]) => number[], names: (list: string[]) => string[]): XyChartData {
+/** The index standing for a row `eachRow`'s rows inserts. */
+const NEW_ROW = -1;
+
+/** A series' values laid along `order`, the rows it held before: a row past its end stays missing, trailing ones
+ *  dropped and inner ones `NaN`, and a new row it reaches is a zero. */
+function reordered(values: readonly number[], order: readonly number[]): number[] {
+  const out = order.map((row, at) => (row === NEW_ROW ? (at <= values.length ? 0 : undefined) : values[row]));
+  while (out.length > 0 && out[out.length - 1] === undefined) out.pop();
+  return out.map((v) => v ?? Number.NaN);
+}
+
+/** `data` with its rows rearranged by `rows`, run over the row indices with a new row as {@link NEW_ROW}, and the band
+ *  labels through `names`, stretched to the chart's rows first. */
+function eachRow(data: XyChartData, rows: (list: number[]) => number[], names: (list: string[]) => string[]): XyChartData {
   const n = xyRows(data);
-  const series = data.series.map((s) => ({ ...s, values: values(padded(s.values, n)) }));
+  const order = rows(Array.from({ length: n }, (_, i) => i));
+  const series = data.series.map((s) => ({ ...s, values: reordered(s.values, order) }));
   if (!labeled(data) || data.x?.kind !== 'band') return { ...data, series };
   return { ...data, series, x: { ...data.x, categories: names(labels(data.x.categories, n)) } };
 }
 
-/** `data` with a row before row `at`: a zero in every series and, where rows are labeled, `label` (absent, a fresh one). */
+/** `data` with a row before row `at`: a zero in every series that reaches it and, where rows are labeled, `label`
+ *  (absent, a fresh one). */
 export function insertXyRow(data: XyChartData, at: number, label?: string): XyChartData {
   const n = xyRows(data);
   if (!Number.isInteger(at) || at < 0 || at > n) throw new Error(`insertXyRow: cannot insert at ${at} in ${n} rows`);
   const name = label ?? freshName('Category', data.x?.kind === 'band' ? data.x.categories : [], n + 1);
-  return eachRow(data, (list) => insertAt(list, at, 0, 'insertXyRow'), (list) => insertAt(list, at, name, 'insertXyRow'));
+  return eachRow(data, (list) => insertAt(list, at, NEW_ROW, 'insertXyRow'), (list) => insertAt(list, at, name, 'insertXyRow'));
 }
 
 /** `data` without row `at`, in every series and the labels. Throws on a row it does not hold. */
@@ -58,7 +68,7 @@ export function setXyCategory(data: XyChartData, index: number, label: string): 
 export function insertXySeries(data: XyChartData, at: number, series?: XySeries): XyChartData {
   const next = series ?? {
     kind: 'bar', name: freshName('Series', data.series.flatMap((s) => (s.name === undefined ? [] : [s.name])), data.series.length + 1),
-    values: padded([], xyRows(data)),
+    values: new Array<number>(xyRows(data)).fill(0),
   };
   return { ...data, series: insertAt(data.series, at, next, 'insertXySeries') };
 }

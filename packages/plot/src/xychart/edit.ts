@@ -6,15 +6,15 @@ import type { XyChartData, XyValueAxis } from './types';
 /** How many rows the chart has: its categories, or its longest series where that is longer. */
 export const xyRows = (data: XyChartData): number => Math.max(data.x?.kind === 'band' ? data.x.categories.length : 0, xyLength(data));
 
-/** `data` with series `series`'s value at `index` set to `value`, a shorter series padded with zeros. Throws on a series
- *  the chart does not hold or an index past its last row. */
+/** `data` with series `series`'s value at `index` set to `value`, any rows of a shorter series before it left missing
+ *  (`NaN`). Throws on a series the chart does not hold or an index past its last row. */
 export function setXyValue(data: XyChartData, series: number, index: number, value: number): XyChartData {
   const target = data.series[series];
   if (target === undefined || !Number.isInteger(index) || index < 0 || index >= xyRows(data)) {
     throw new Error(`setXyValue: series ${series} holds no value ${index}`);
   }
   if (target.values[index] === value) return data;
-  const values = Array.from({ length: Math.max(target.values.length, index + 1) }, (_, i) => (i === index ? value : target.values[i] ?? 0));
+  const values = Array.from({ length: Math.max(target.values.length, index + 1) }, (_, i) => (i === index ? value : target.values[i] ?? Number.NaN));
   return { ...data, series: data.series.map((s, i) => (i === series ? { ...s, values } : s)) };
 }
 
