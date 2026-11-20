@@ -6,7 +6,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import { rectBetween } from '@weasel-js/geom';
 import { samePoints } from '../edgeTrait';
 import { changedObstacles, dirtyEdges, fullRoute, stopsKey } from './dirty';
-import { DragIndex } from './dragIndex';
+import { DragIndex, type DragFrame } from './dragIndex';
 import { labelObstacle, labelObstacles } from './labels';
 import { routeEdge, type EdgeRouteContext } from './edgeRoute';
 import { nudge, type NudgeRoute } from './nudge';
@@ -121,22 +121,7 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
   function preview(input: AvoidInput, budgetMs: number): AvoidRoutes {
     const start = now();
     if (drag === null) indexForDrag({ obstacles: [...committed.values()], edges: input.edges });
-    const frame = drag!.frame(input.obstacles);
-    const out: AvoidRoutes = new Map();
-    for (const id of frame.dirty) {
-      if (now() - start > budgetMs) {
-        const last = previews.get(id);
-        if (last !== undefined) out.set(id, last);
-        continue;
-      }
-      const edge = edgeIn(input.edges, id);
-      if (edge === undefined) continue;
-      const full = routeEdge(edge, { index: frame.index, options: opts, limit: frame.limit });
-      const route = full === null ? null : full.slice(1, -1);
-      previews.set(id, route);
-      out.set(id, route);
-    }
-    return out;
+    return previewFrame(drag!.frame(input.obstacles), (id) => edgeIn(input.edges, id), previews, opts, () => now() - start > budgetMs);
   }
 
   /** Route `dirty` around `obstacles`, which hold `input`'s labels as they stand, and commit. */
@@ -201,6 +186,32 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
       for (const id of ids) for (const map of [keys, raw, shown, pathless]) map.delete(id);
     },
   };
+}
+
+/** Reroute `frame`'s dirty connectors, each found by `edgeOf`, into `previews`
+ *  and the answer; once `spent`, each left keeps the route `previews` holds. */
+function previewFrame(
+  frame: DragFrame,
+  edgeOf: (id: string) => AvoidEdge | undefined,
+  previews: Map<string, Vec2[] | null>,
+  options: EdgeRouteContext['options'],
+  spent: () => boolean,
+): AvoidRoutes {
+  const out: AvoidRoutes = new Map();
+  for (const id of frame.dirty) {
+    if (spent()) {
+      const last = previews.get(id);
+      if (last !== undefined) out.set(id, last);
+      continue;
+    }
+    const edge = edgeOf(id);
+    if (edge === undefined) continue;
+    const full = routeEdge(edge, { index: frame.index, options, limit: frame.limit });
+    const route = full === null ? null : full.slice(1, -1);
+    previews.set(id, route);
+    out.set(id, route);
+  }
+  return out;
 }
 
 /** Route each of `dirty` in turn, each counting crossings of the routes
