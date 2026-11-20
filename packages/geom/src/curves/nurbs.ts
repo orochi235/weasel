@@ -1,4 +1,5 @@
 import type { CurveRepresentation, Discriminator, SharedAnchor } from './types';
+import { polygonPathFrom } from '../paths/pathOrigin';
 import { PATH_L, PATH_M } from '../commands';
 import { clamp01 } from '../scalar';
 import { curvatureFromDerivatives } from '../paths/curvature';
@@ -111,12 +112,7 @@ export const nurbs: CurveRepresentation = {
       xs.push(p.x, p.y);
       if (s > 0) cmds.push(PATH_L);
     }
-    return {
-      kind: 'polygon',
-      commands: new Uint8Array(cmds),
-      coords: new Float32Array(xs),
-      fillRule: 'nonzero',
-    };
+    return polygonPathFrom(cmds, xs, 'nonzero');
   },
   curvatureAt(anchors, t) {
     if (anchors.length < 2) return 0;

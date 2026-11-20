@@ -3,7 +3,7 @@
  * `PolygonPath.origin`, added in doubles. Every reader that answers in that
  * space (hit tests, anchors, booleans, SVG data) reads through here.
  */
-import type { PolygonPath } from '../path';
+import type { PathFillRule, PolygonPath } from '../path';
 import type { Point } from './cubicMath';
 
 const ZERO: { readonly x: number; readonly y: number } = Object.freeze({ x: 0, y: 0 });
@@ -49,6 +49,15 @@ export function coordsFrom(origin: { readonly x: number; readonly y: number } | 
     out[i + 1] = world[i + 1] - oy;
   }
   return out;
+}
+
+/** A polygon path of `commands` through `world`, interleaved pairs in the path's own space, measured from
+ *  the origin {@link originFor} picks for them. */
+export function polygonPathFrom(commands: ArrayLike<number>, world: ArrayLike<number>, fillRule: PathFillRule): PolygonPath {
+  const origin = originFor(world);
+  return {
+    kind: 'polygon', commands: commands instanceof Uint8Array ? commands : Uint8Array.from(commands), coords: coordsFrom(origin, world), fillRule, ...(origin ? { origin } : {}),
+  };
 }
 
 /**
