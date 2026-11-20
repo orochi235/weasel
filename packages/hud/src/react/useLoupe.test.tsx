@@ -29,6 +29,14 @@ describe('useLoupe', () => {
     expect(created[0]).not.toHaveProperty('views');
   });
 
+  it('reads the pane of a shared surface its canvas paints, given layers', () => {
+    const ref = canvas();
+    const pane = { x: 420, y: 20, width: 380, height: 360 };
+    Object.assign(ref.current, { getSurfaceRect: () => pane });
+    renderHook(() => useLoupe(ref, {} as Hud, [], SETTINGS, EVENTS));
+    expect((created[0]?.region as (() => unknown) | undefined)?.()).toEqual(pane);
+  });
+
   it('paints the canvas as a view when given no layers', () => {
     const ref = canvas();
     renderHook(() => useLoupe(ref, {} as Hud, null, SETTINGS, EVENTS));
