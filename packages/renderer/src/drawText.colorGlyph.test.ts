@@ -83,6 +83,21 @@ describe('drawText — an emoji', () => {
     for (const v of quad) expect(v.post).toBeCloseTo(0.25);
   });
 
+  it('fades with a gradient fill\'s opacity', () => {
+    const { ctx, calls } = createRecorderCtx();
+    const command = textCommand('👍', '#ff0000');
+    command.runs[0]!.fill = {
+      paint: {
+        kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, opacity: 0.5,
+        stops: [{ offset: 0, color: '#f00' }, { offset: 1, color: '#00f' }],
+      },
+    } as never;
+    dispatch(ctx, command);
+    const quad = verticesOf(stagedVertices(ctx, calls), PAINT_MODE_IMAGE);
+    expect(quad).toHaveLength(4);
+    for (const v of quad) expect(v.post).toBeCloseTo(0.5);
+  });
+
   it('samples the color page it uploaded', () => {
     const { ctx, calls, gl } = createRecorderCtx();
     dispatch(ctx, textCommand('👍', '#000'));
