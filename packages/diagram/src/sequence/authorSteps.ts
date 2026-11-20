@@ -232,7 +232,7 @@ function withMessage(data: SequenceData, id: string, fn: (m: SeqMessage) => SeqM
 export function setMessageArrow(data: SequenceData, id: string, arrow: SeqArrowName | SeqArrow): SequenceData {
   const next = arrowFrom(arrow);
   return withMessage(data, id, (m) => {
-    if (m.line === next.line && m.head === next.head && m.both === next.both && m.async === next.async) return m;
+    if (m.line === next.line && m.head === next.head && !m.both === !next.both && !m.async === !next.async) return m;
     const { both: _both, async: _async, ...rest } = m;
     return { ...rest, line: next.line, head: next.head, ...(next.both ? { both: true } : {}), ...(next.async ? { async: true } : {}) };
   });
