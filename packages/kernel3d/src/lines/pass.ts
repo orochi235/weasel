@@ -1,11 +1,15 @@
 import type { Mat4 } from '@weasel-js/geom/3d';
+import { logDepthUniform, type LogDepth } from '../logDepth';
 import { LINE_FLOATS } from './pack';
-import { LINE_FS, LINE_VS } from './pass.glsl';
+import { LINE_FS, LINE_FS_LOG_DEPTH, LINE_VS } from './pass.glsl';
 
 /** Options for {@link LinePass.draw}. */
 export interface LineDrawOptions {
   /** Hide the parts of a line behind what the bound depth buffer holds. Default true. */
   depthTest?: boolean;
+  /** Test against log depth, as `cameraFrame(...).logDepth` gives it, for a buffer the host wrote that way. Default
+   *  `null`: standard depth. */
+  logDepth?: LogDepth | null;
 }
 
 /**
@@ -15,8 +19,10 @@ export interface LineDrawOptions {
 export interface LinePass {
   /**
    * Draw `vertices`, as {@link packLines} lays them out, into the bound
-   * framebuffer under the host's `gl.viewport`. `viewProjection` takes world
-   * points to clip space; `size` is that viewport in CSS pixels, the unit a
+   * framebuffer under the host's `gl.viewport`. `viewProjection` takes the
+   * packed points, the world less the origin they were packed against, to clip
+   * space: `cameraFrame`'s, with `packLines(lines, frame.origin)`. `size` is
+   * that viewport in CSS pixels, the unit a
    * line's width is given in. Depth is tested, not written, and blending is
    * straight alpha. The capabilities, depth mask, blend function, program,
    * vertex array and array buffer it changes are put back as it found them.
@@ -47,10 +53,10 @@ function compile(gl: WebGL2RenderingContext, type: number, source: string): WebG
   return shader;
 }
 
-function link(gl: WebGL2RenderingContext): WebGLProgram {
+function link(gl: WebGL2RenderingContext, fragment: string): WebGLProgram {
   const program = gl.createProgram()!;
   const vs = compile(gl, gl.VERTEX_SHADER, LINE_VS);
-  const fs = compile(gl, gl.FRAGMENT_SHADER, LINE_FS);
+  const fs = compile(gl, gl.FRAGMENT_SHADER, fragment);
   gl.attachShader(program, vs);
   gl.attachShader(program, fs);
   gl.linkProgram(program);
@@ -64,11 +70,28 @@ function link(gl: WebGL2RenderingContext): WebGLProgram {
   return program;
 }
 
-/** A {@link LinePass} on `gl`: one program, one vertex array, one buffer refilled each draw. */
+interface LineProgram {
+  program: WebGLProgram;
+  viewProjection: WebGLUniformLocation | null;
+  halfViewport: WebGLUniformLocation | null;
+  logDepth: WebGLUniformLocation | null;
+}
+
+function createLineProgram(gl: WebGL2RenderingContext, fragment: string): LineProgram {
+  const program = link(gl, fragment);
+  return {
+    program,
+    viewProjection: gl.getUniformLocation(program, 'u_viewProjection'),
+    halfViewport: gl.getUniformLocation(program, 'u_halfViewport'),
+    logDepth: gl.getUniformLocation(program, 'u_logDepth'),
+  };
+}
+
+/** A {@link LinePass} on `gl`: a program per depth mode, the log one built on first use, one vertex array, and one
+ *  buffer refilled each draw. */
 export function createLinePass(gl: WebGL2RenderingContext): LinePass {
-  const program = link(gl);
-  const viewProjection = gl.getUniformLocation(program, 'u_viewProjection');
-  const halfViewport = gl.getUniformLocation(program, 'u_halfViewport');
+  const standard = createLineProgram(gl, LINE_FS);
+  let log: LineProgram | null = null;
   const buffer = gl.createBuffer();
   const vao = gl.createVertexArray();
 
@@ -100,10 +123,13 @@ export function createLinePass(gl: WebGL2RenderingContext): LinePass {
           .map((p) => gl.getParameter(p) as number) as [number, number, number, number],
       };
 
-      gl.useProgram(program);
+      const logDepth = options.logDepth ?? null;
+      const p = logDepth ? (log ??= createLineProgram(gl, LINE_FS_LOG_DEPTH)) : standard;
+      gl.useProgram(p.program);
       matrix.set(vp);
-      gl.uniformMatrix4fv(viewProjection, false, matrix);
-      gl.uniform2f(halfViewport, Math.max(1, size.width) / 2, Math.max(1, size.height) / 2);
+      gl.uniformMatrix4fv(p.viewProjection, false, matrix);
+      gl.uniform2f(p.halfViewport, Math.max(1, size.width) / 2, Math.max(1, size.height) / 2);
+      if (logDepth) gl.uniform3fv(p.logDepth, logDepthUniform(logDepth));
       gl.enable(gl.BLEND);
       gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
       // A segment's quad winds whichever way its direction on screen turns it.
@@ -130,7 +156,8 @@ export function createLinePass(gl: WebGL2RenderingContext): LinePass {
     dispose() {
       gl.deleteVertexArray(vao);
       gl.deleteBuffer(buffer);
-      gl.deleteProgram(program);
+      gl.deleteProgram(standard.program);
+      if (log) gl.deleteProgram(log.program);
     },
   };
 }
