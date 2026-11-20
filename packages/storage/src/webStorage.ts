@@ -61,11 +61,16 @@ function webStorage(area: () => Storage, name: string, crossTab: boolean): WebSt
   if (crossTab) {
     adapter.subscribe = (prefix, on) => {
       if (typeof window === 'undefined') return () => {};
-      const sub = { prefix, keys: new Set(keysNow(prefix)) };
+      // Where the browser refuses site data, reading the area throws; the read that follows reports it.
+      let known: string[] = [];
+      try {
+        known = keysNow(prefix);
+      } catch {}
+      const sub = { prefix, keys: new Set(known) };
       subscribers.add(sub);
       const handler = (e: StorageEvent): void => {
-        const store = area();
-        if (e.storageArea !== store) return;
+        if (e.storageArea === null || e.storageArea !== area()) return;
+        const store = e.storageArea;
         if (e.key === null) {
           const gone = [...sub.keys].filter((key) => store.getItem(key) === null);
           for (const key of gone) sub.keys.delete(key);

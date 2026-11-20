@@ -68,9 +68,10 @@ export function createFirstRead(opts: FirstReadOptions): FirstRead {
     stopRetrying();
     // Listen before listing, so a change landing between the two is not lost.
     const early: StorageChange[] = [];
-    const stopEarly = storage.subscribe?.(prefix, (c) => early.push(...c));
+    let stopEarly: (() => void) | undefined;
     let listed: StorageChange[];
     try {
+      stopEarly = storage.subscribe?.(prefix, (c) => early.push(...c));
       listed = await storage.list(prefix);
     } catch (error) {
       stopEarly?.();
