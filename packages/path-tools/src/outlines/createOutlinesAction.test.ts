@@ -31,7 +31,7 @@ function lateOutline({ never = false }: { never?: boolean } = {}): NodeOutline {
 function makeAdapter(outlines: Record<string, NodeOutline>, ids = Object.keys(outlines)) {
   const applyOps = vi.fn();
   const adapter: CreateOutlinesAdapter = {
-    ...rootsTree(),
+    ...rootsTree([], (id) => (id in outlines ? { id } : undefined)),
     getSelection: () => ids.map(asNodeId),
     getOutline: (id) => outlines[id],
     createPathNode: () => ({ id: 'outlined' }),
@@ -105,5 +105,39 @@ describe('runCreateOutlines', () => {
     expect(notices.warn).toHaveBeenCalledWith(expect.stringContaining('nowhere'), expect.objectContaining({ id: 'outlines' }));
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
+  });
+
+  it('retries through an adapter whose methods read private fields', async () => {
+    const outline = lateOutline();
+    class PrivateAdapter {
+      readonly #outlines: Record<string, NodeOutline> = { g: outline };
+      readonly applied: unknown[] = [];
+      getSelection() { return [asNodeId('g')]; }
+      getOutline(id: string) { return this.#outlines[id]; }
+      createPathNode() { return { id: 'outlined' }; }
+      getNode(id: string) { return this.#outlines[id] ? { id } : undefined; }
+      getParent() { return null; }
+      getChildren() { return Object.keys(this.#outlines); }
+      applyOps(ops: unknown[]) { this.applied.push(ops); }
+    }
+    const adapter = new PrivateAdapter();
+    expect((await runCreateOutlines(adapter)).kind).toBe('applied');
+    expect(adapter.applied).toHaveLength(1);
+  });
+
+  it('leaves a node deleted while it waits out of the selection it sets', async () => {
+    let selected = ['g', 'r'];
+    const live = new Set(['g', 'r']);
+    const { adapter, applyOps } = makeAdapter({ g: lateOutline() });
+    adapter.getSelection = () => selected.map(asNodeId);
+    adapter.getNode = (id) => (live.has(id) ? { id } : undefined);
+    const pending = runCreateOutlines(adapter);
+    live.delete('r');
+    selected = ['g'];
+    expect((await pending).kind).toBe('applied');
+    const ops = applyOps.mock.calls[0]![0] as { args: { from?: unknown; to?: unknown } }[];
+    const selection = ops.at(-1)!.args;
+    expect(selection.from).toEqual(['g']);
+    expect(selection.to).toEqual(['outlined']);
   });
 });

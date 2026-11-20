@@ -8,30 +8,28 @@ import { icon } from '../icons.gen';
 type OutlinesFailure = { kind: 'failed'; error: NodeOutlineError };
 
 /**
- * Run `apply`, an outline conversion of the adapter's selection, waiting first
- * for any outline whose geometry has not landed (`NodeOutlineError.pending`) —
- * a text face is parsed on first use, so the first conversion in a session
- * would otherwise fail. The retry converts what was selected when it was asked, whatever is
- * selected by then, and a node deleted meanwhile is left out. Warns the user
- * through `notices` (under `tag` on the console without it) when the selection
+ * Run `apply` over `ids`, waiting first for any outline whose geometry has not
+ * landed (`NodeOutlineError.pending`): a text face is parsed on first use, so
+ * the first conversion in a session would otherwise fail. The retry converts
+ * `ids`, whatever is selected by then, less any node deleted meanwhile. Warns
+ * the user through `notices` (under `tag` on the console without it) when they
  * still cannot be converted.
  */
 export async function withOutlines<R extends { kind: string } | OutlinesFailure>(
   adapter: CreateOutlinesAdapter,
-  apply: (adapter: CreateOutlinesAdapter) => R,
+  ids: readonly NodeId[],
+  apply: (ids: readonly NodeId[]) => R,
   tag: string,
   notices?: NoticesDep,
 ): Promise<R> {
   const failure = (r: R): NodeOutlineError | null => (r.kind === 'failed' ? (r as OutlinesFailure).error : null);
-  const asked = [...adapter.getSelection()] as NodeId[];
-  let result = apply(adapter);
+  let result = apply(ids);
   if (failure(result)?.pending) {
-    const outlines = asked
+    const outlines = ids
       .map((id) => adapter.getOutline(id))
       .filter((o): o is NodeOutline => o !== undefined);
     await Promise.all(outlines.map((o) => o.load()));
-    const held: CreateOutlinesAdapter = Object.create(adapter, { getSelection: { value: () => asked } });
-    result = apply(held);
+    result = apply(ids.filter((id) => adapter.getNode(id) != null));
   }
   const error = failure(result);
   if (error) warnOutlines(notices, tag, error);
@@ -39,8 +37,10 @@ export async function withOutlines<R extends { kind: string } | OutlinesFailure>
 }
 
 /** {@link applyCreateOutlines} through {@link withOutlines}. */
-export function runCreateOutlines(adapter: CreateOutlinesAdapter, notices?: NoticesDep): Promise<CreateOutlinesResult> {
-  return withOutlines(adapter, (a) => applyCreateOutlines(a), 'createOutlines', notices);
+export function runCreateOutlines(
+  adapter: CreateOutlinesAdapter, notices?: NoticesDep, ids: readonly NodeId[] = adapter.getSelection() as readonly NodeId[],
+): Promise<CreateOutlinesResult> {
+  return withOutlines(adapter, [...ids], (at) => applyCreateOutlines(adapter, at), 'createOutlines', notices);
 }
 
 /**

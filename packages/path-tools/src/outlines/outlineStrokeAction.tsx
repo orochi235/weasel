@@ -3,6 +3,7 @@ import { ActionDisabledReason } from '@weasel-js/routing';
 import { hasStroke } from '@weasel-js/core';
 import { applyOutlineStroke } from './outlineStroke';
 import { withOutlines } from './createOutlinesAction';
+import type { NodeId } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 import * as groups from '@weasel-js/editing/groups';
 
@@ -25,7 +26,8 @@ export const outlineStrokeAction: Action = {
       const adapter = deps.createOutlinesAdapter;
       if (!adapter) return;
       const scale = deps.view?.get().scale;
-      void withOutlines(adapter, (a) => applyOutlineStroke(a, scale ? { scale } : {}), 'outlineStroke', deps.notices);
+      const ids = adapter.getSelection() as readonly NodeId[];
+      void withOutlines(adapter, ids, (at) => applyOutlineStroke(adapter, scale ? { scale } : {}, at), 'outlineStroke', deps.notices);
     },
   } satisfies ImmediateInvoker,
   enabled: (deps) => {
