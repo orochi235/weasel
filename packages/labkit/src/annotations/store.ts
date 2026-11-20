@@ -161,6 +161,7 @@ export function createMarkStore(opts: AnnotationStoreOptions): AnnotationsApi {
       scenes,
       openScene,
       hold,
+      grouped: (key, fn) => history.grouped(key, fn),
       nodeOf: reads.nodeOf,
       targetOf,
       contentOf,

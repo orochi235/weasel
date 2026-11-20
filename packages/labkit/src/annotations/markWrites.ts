@@ -13,6 +13,8 @@ export interface MarkWritesOptions {
   scenes: ReadonlyMap<string, MarkScene>;
   openScene: (target: string) => MarkScene;
   hold: (fn: () => void) => void;
+  /** Runs `fn`, whose changes on every target join the others made under `key` as one undo step. */
+  grouped: (key: string, fn: () => void) => void;
   nodeOf: (id: string) => FoundMark | undefined;
   targetOf: (id: string) => AnnotationTargetInfo | undefined;
   contentOf: (target: string) => { width: number; height: number };
@@ -65,17 +67,20 @@ export function createMarkWrites(o: MarkWritesOptions): MarkWrites {
       // A legacy mark is written back settled, so its vertices follow the bounds from here on.
       const settled = settledMarkData(found.node.data, found.node.pose as MarkPose, content);
       const data = { ...settled, ...meaning, ...(shape ? { shape } : {}) };
-      const coalesce =
-        opts?.coalesceKey === undefined ? undefined : { coalesceKey: opts.coalesceKey };
-      found.scene.batch(
-        'update mark',
-        () => {
-          if (Object.keys(meaning).length > 0 || shape || settled !== found.node.data)
-            found.scene.update(nid, { data });
-          if (frac) found.scene.setPose(nid, fracToWorld(bounds, content));
-        },
-        coalesce,
-      );
+      const key = opts?.coalesceKey;
+      const write = (): void =>
+        found.scene.batch(
+          'update mark',
+          () => {
+            if (Object.keys(meaning).length > 0 || shape || settled !== found.node.data)
+              found.scene.update(nid, { data });
+            if (frac) found.scene.setPose(nid, fracToWorld(bounds, content));
+          },
+          key === undefined ? undefined : { coalesceKey: key },
+        );
+      // The key folds updates within one target's scene; the group joins the targets' parts as one step.
+      if (key === undefined) write();
+      else o.grouped(key, write);
     },
 
     setMeta(id, meta) {

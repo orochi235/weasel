@@ -38,6 +38,12 @@ export class MarkHistory {
   /** Per change, its target and when it was first made. */
   private undoable: MarkOrderStep[] = [];
   private redoable: MarkOrderStep[] = [];
+  /** The last coalesce key changes were made under, and the group they joined: the next write under it continues
+   *  the group, until any other change comes between. */
+  private open: { key: string; group: number } | null = null;
+  /** The group changes join while `grouped` runs. */
+  private active: number | undefined;
+  private lastGroup = 0;
 
   private see(target: string, scene: HistoryScene): { now: number; current: string | undefined } {
     const now = scene.historyIndex();
@@ -71,10 +77,31 @@ export class MarkHistory {
           if (other !== target && s.canRedo()) s.history?.dropRedo?.();
         }
       }
-      this.undoable.push(redone ?? { target, stamp: editStamp() });
+      this.undoable.push(redone ?? this.step(target));
     } else if (now < before) {
       const undone = drop(this.undoable, target);
       this.redoable.push(undone ?? { target, stamp: editStamp() });
+    }
+  }
+
+  private step(target: string): MarkOrderStep {
+    const group = this.active;
+    if (group === undefined) this.open = null;
+    return { target, stamp: editStamp(), ...(group !== undefined ? { group } : {}) };
+  }
+
+  /** Runs `fn`, whose changes on any target join the ones last made under `key`, so they undo and redo as one
+   *  step: a restyle of a selection spanning targets is one burst, and each target's scene records its own part. */
+  grouped(key: string, fn: () => void): void {
+    if (this.open?.key !== key) this.lastGroup += 1;
+    const group = this.open?.key === key ? this.open.group : this.lastGroup;
+    this.open = { key, group };
+    const outer = this.active;
+    this.active = group;
+    try {
+      fn();
+    } finally {
+      this.active = outer;
     }
   }
 
@@ -120,15 +147,42 @@ export class MarkHistory {
   }
 
   undo(at: (t: string) => HistoryScene | undefined): boolean {
-    const step = this.next(this.undoable, (s) => s.canUndo(), at);
-    const scene = step === null ? undefined : at(step.target);
-    return scene ? scene.undo() : false;
+    return this.move(
+      () => this.undoable,
+      (s) => s.canUndo(),
+      (s) => s.undo(),
+      at,
+    );
   }
 
   redo(at: (t: string) => HistoryScene | undefined): boolean {
-    const step = this.next(this.redoable, (s) => s.canRedo(), at);
-    const scene = step === null ? undefined : at(step.target);
-    return scene ? scene.redo() : false;
+    return this.move(
+      () => this.redoable,
+      (s) => s.canRedo(),
+      (s) => s.redo(),
+      at,
+    );
+  }
+
+  /** Takes the next step off `stack`, and every step after it in the same group. */
+  private move(
+    stack: () => readonly MarkOrderStep[],
+    can: (s: HistoryScene) => boolean,
+    run: (s: HistoryScene) => boolean,
+    at: (t: string) => HistoryScene | undefined,
+  ): boolean {
+    this.open = null;
+    const first = this.next(stack(), can, at);
+    const scene = first === null ? undefined : at(first.target);
+    if (!first || !scene || !run(scene)) return false;
+    if (first.group === undefined) return true;
+    // Bounded by the stack: a scene whose move did not reach `observe` must not loop here.
+    for (let left = stack().length; left > 0; left--) {
+      const step = this.next(stack(), can, at);
+      const more = step?.group === first.group ? at(step.target) : undefined;
+      if (!more || !run(more)) break;
+    }
+    return true;
   }
 
   /** The order as data: each change's target and when it was first made, both ways. */
@@ -145,7 +199,13 @@ export class MarkHistory {
     const order = saved as Partial<MarkOrder> | null | undefined;
     this.undoable = steps(order?.undoable);
     this.redoable = steps(order?.redoable);
-    seedEditStamp(maxOf([...this.undoable, ...this.redoable], (s) => s.stamp));
+    const all = [...this.undoable, ...this.redoable];
+    seedEditStamp(maxOf(all, (s) => s.stamp));
+    // A group made after is not one the saved order holds.
+    this.lastGroup = Math.max(
+      0,
+      maxOf(all, (s) => s.group ?? 0),
+    );
   }
 }
 
@@ -193,7 +253,10 @@ export function withoutMarkHistory(doc: unknown): unknown {
 function steps(raw: unknown): MarkOrderStep[] {
   if (!Array.isArray(raw)) return [];
   return raw.filter(
-    (s): s is MarkOrderStep => typeof s?.target === 'string' && typeof s?.stamp === 'number',
+    (s): s is MarkOrderStep =>
+      typeof s?.target === 'string' &&
+      typeof s?.stamp === 'number' &&
+      (s.group === undefined || Number.isSafeInteger(s.group)),
   );
 }
 
@@ -214,6 +277,8 @@ export function markUndo(history: MarkHistory, at: (t: string) => HistoryScene |
 export interface MarkOrderStep {
   target: string;
   stamp: number;
+  /** Steps sharing a group were made under one coalesce key, and undo and redo together. */
+  group?: number;
 }
 
 /** Remove the last step on `target`, in place, and return it. */
