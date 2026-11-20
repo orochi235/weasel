@@ -18,6 +18,7 @@ export function ShapePanelCell() {
   const [side, setSide] = useState('center');
   const [label, setLabel] = useState('Badge');
   const [visible, setVisible] = useState(true);
+  const [rings, setRings] = useState(32);
   return (
     <Cell label="PropertyPanel">
       <PropertyPanel title="Shape">
@@ -89,11 +90,11 @@ export function ShapePanelCell() {
               kind="number"
               control="slider"
               label="Rings"
-              value={32}
+              value={rings}
               min={4}
               max={96}
               step={1}
-              onChange={() => {}}
+              onChange={setRings}
             />
           </PropertyGroup>
         </PropertyList>
