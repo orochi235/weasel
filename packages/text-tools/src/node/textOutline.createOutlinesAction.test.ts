@@ -18,7 +18,7 @@ const INTER_TTF = resolve(import.meta.dirname, '../../../../assets/fonts/inter/i
 function makeAdapter(texts: Record<string, TextNodeSource>, ids = Object.keys(texts)) {
   const applyOps = vi.fn();
   const adapter: CreateOutlinesAdapter = {
-    ...rootsTree(),
+    ...rootsTree([], (id) => (texts[id] ? { id } : undefined)),
     getSelection: () => ids.map(asNodeId),
     getOutline: (id) => (texts[id] ? textOutlineOf(texts[id].data as TextNodeData, texts[id].pose) : undefined),
     createPathNode: () => ({ id: 'outlined' }),
