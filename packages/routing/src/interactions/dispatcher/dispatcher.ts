@@ -78,7 +78,7 @@ export function createDispatcher(opts?: {
     changed.emit();
   }
 
-  const uiOngoing = createUiOngoing(inFlight, notify, opts?.getAction);
+  const uiOngoing = createUiOngoing(inFlight, notify, opts?.getAction, () => run.endings);
 
   // The view the input being handled landed in. Set per `handleInput`, so a
   // pump of an in-flight gesture reports the view it is pinned to.
