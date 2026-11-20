@@ -57,3 +57,37 @@ describe('a move with a snap landing', () => {
     expect(drag([nudge])).toMatchObject({ x: 5, y: 3 });
   });
 });
+
+describe('a move whose landing goes away at the same delta', () => {
+  it('stores the plain translate once the snap reports no landing', () => {
+    /** Reports a landing only while `lands`; the point is the same either way. */
+    let lands = true;
+    const modal: SnapDep = {
+      begin: () => ({
+        at: (p) => ({
+          point: { x: Math.round(p.x), y: Math.round(p.y) }, held: true, marks: [],
+          ...(lands ? { landing: { x: 1 / 3 } } : {}),
+        }),
+        angle: (theta) => ({ theta, marks: [] }),
+        end: () => {},
+      }),
+    };
+    const scene = createScene<object, 'main', Rect>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] }) as unknown as Scene<unknown, string, unknown>;
+    const id = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } }) as string;
+    const deps = {
+      scene, snap: modal, poseDescriptor: landingDescriptor,
+      operands: { get: () => [id], set: () => {} } as unknown as SelectionApi,
+    };
+    const start = { x: 5, y: 5 };
+    const ctx = (p: { x: number; y: number }) => ({
+      world: p, screen: p, modifiers: KEYS, deps,
+      drag: { start, current: p, delta: { x: p.x - start.x, y: p.y - start.y } },
+    }) as unknown as InvocationCtx;
+    const handle = (moveAction.invoker as OngoingInvoker).start(ctx(start), {});
+    handle.onMove!(ctx({ x: 9.2, y: 7.9 }));
+    lands = false;
+    handle.onMove!(ctx({ x: 9.2, y: 7.9 }));
+    handle.onEnd!(ctx({ x: 9.2, y: 7.9 }), 'commit');
+    expect(scene.get(asNodeId(id))!.pose).toMatchObject({ x: 4, y: 3 });
+  });
+});

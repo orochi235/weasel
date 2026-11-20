@@ -13,6 +13,7 @@ import { buildGestureContext, captureFrames, capturePlaneRefs, captureStartPoses
 import { moveGestureAdapter, type MoveGestureAdapter } from './gestureAdapter';
 import { beginDragSnap, type DragSnap } from './dragSnap';
 import type { CursorSpec } from '@weasel-js/cursor';
+import { outermost } from '@weasel-js/select';
 
 
 /** What a move captured at press. Nothing here changes during the drag. */
@@ -22,6 +23,8 @@ export interface MoveSession extends DragSnap {
   readonly selected: readonly string[];
   /** The drag roots: {@link selected}, with a node that derives its pose given way to what it derives from. */
   readonly ids: readonly NodeId[];
+  /** {@link ids} less each one another of them holds: what a drop places, the rest riding inside. */
+  readonly outer: readonly NodeId[];
   /** Descendants of the roots, previewed along with them. */
   readonly cascadeIds: readonly NodeId[];
   /** Start pose of every root and descendant. */
@@ -161,6 +164,7 @@ export function beginMove(
     startPoses,
     selected: asked,
     ids,
+    outer: outermost(ids, (id) => scene.get(id)?.parent ?? null),
     cascadeIds,
     carried,
     frames,

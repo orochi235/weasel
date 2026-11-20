@@ -5,7 +5,7 @@ import type { MoveSession } from '../session';
 import { pickContainer, type Candidate } from './container';
 import { carryDragged, gatherDragged, selectionCenter, type DraggedChild } from './dragged';
 import type { DropPass, LayoutPlacement } from './types';
-import { boxOf, containerView, draggedInView, viewContainsPoint } from './view';
+import { containerView, contentBoxOf, draggedInView, viewContainsPoint } from './view';
 
 /** Dragged ids grouped by the container they are leaving, skipping any that
  *  stay put (`exclude` is the destination) or that had no container. */
@@ -97,8 +97,9 @@ function sourceReflow(
     const srcNode = scene.get(asNodeId(srcId));
     if (!srcLayout || !srcNode) continue;
     const g = poseDescriptorForNode(d, srcNode);
-    const view = containerView(pc, g, composeWorldPose(poseAdapter, srcId, pc.compose));
-    const srcContainer: LayoutContainer = { id: srcId, bounds: boxOf(g, view.upright), node: srcNode };
+    const srcWorld = composeWorldPose(poseAdapter, srcId, pc.compose);
+    const view = containerView(pc, g, srcWorld);
+    const srcContainer: LayoutContainer = { id: srcId, bounds: contentBoxOf(g, view, poseAdapter, srcId, srcWorld), node: srcNode };
     const srcChildren: LayoutChild<unknown>[] = scene.childrenOf(asNodeId(srcId))
       .filter((cid) => !leaving.has(cid))
       .map((cid) => ({
@@ -108,8 +109,9 @@ function sourceReflow(
       }));
     for (const [cid, placed] of srcLayout.childPoses(srcContainer, srcChildren)) {
       const pose = view.toWorld(placed);
-      const cur = d.getBounds(composeWorldPose(poseAdapter, cid, pc.compose));
-      const next = d.getBounds(pose);
+      const own = session.descriptorOf(cid);
+      const cur = own.getBounds(composeWorldPose(poseAdapter, cid, pc.compose));
+      const next = own.getBounds(pose);
       const same = cur.x === next.x && cur.y === next.y
         && cur.width === next.width && cur.height === next.height;
       if (same) continue;
@@ -123,13 +125,16 @@ function sourceReflow(
 function reflowCarry(
   session: MoveSession, id: NodeId, world: unknown, moving: (id: NodeId) => boolean,
 ): Map<NodeId, unknown> {
-  const { scene, pc, projection: d } = session;
+  const { scene, pc, descriptorOf } = session;
+  const d = descriptorOf(id);
   const a = d.getBounds(composeWorldPose(sceneViewPoseAdapter(scene), id as string, pc.compose));
   const b = d.getBounds(world);
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   if (dx === 0 && dy === 0) return new Map();
-  return carriedDescendants(sceneCarrySource(scene), id, (pose) => translatePoseViaDescriptor(pose, dx, dy, d), moving);
+  return carriedDescendants(
+    sceneCarrySource(scene), id, (pose, at) => translatePoseViaDescriptor(pose, dx, dy, descriptorOf(at)), moving,
+  );
 }
 
 /** One frame's layout result, or null with no layout dep or nothing dragged. */

@@ -1,4 +1,4 @@
-import { translatePoseViaDescriptor, type PoseDescriptor } from '@weasel-js/core/engine';
+import { translatePoseViaDescriptor, childFrameAt, type PoseAdapter, type PoseDescriptor } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
 import type { PoseComposition, ContainerBounds, LayoutDragged } from '@weasel-js/core/engine';
 import { strategyView, type StrategyView } from '@weasel-js/core';
@@ -8,6 +8,15 @@ import * as ops from '@weasel-js/core/ops';
 export function boxOf(g: PoseDescriptor<unknown>, pose: unknown): ContainerBounds {
   const b = g.getBounds(pose);
   return { x: b.x, y: b.y, width: b.width, height: b.height };
+}
+
+/** Container `id`'s content box in `view`'s space: its body at world `pose` moved by its scroll offset, the
+ *  `LayoutContainer.bounds` every strategy hook is handed, so the slots it places agree with its children as
+ *  they are shown. */
+export function contentBoxOf(
+  g: PoseDescriptor<unknown>, view: StrategyView<unknown>, adapter: PoseAdapter<unknown>, id: string, pose: unknown,
+): ContainerBounds {
+  return boxOf(g, view.toStrategy(childFrameAt(adapter, id, pose)));
 }
 
 /** A container at world `pose` as its strategy's drag hooks see it: upright,

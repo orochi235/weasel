@@ -6,6 +6,7 @@ import { runDropPass } from '../layout/dropPass';
 import { landReleased, releasedPoses, stepGlide, type Released } from '../layout/glide';
 import type { DropPass } from '../layout/types';
 import type { MoveGesture } from '../session';
+import { swapArmed } from '../sessionOf';
 import { refusalOverlays } from '../refusal';
 
 /**
@@ -32,6 +33,11 @@ export function layoutDrop(move: MoveGesture): MoveBehavior<unknown> {
     onMove(ctx, proposed): BehaviorResult<unknown> | void {
       drop = null;
       const session = move.session();
+      const reflow = session.layout?.reflow;
+      if (swapArmed(ctx)) {
+        if (reflow) stepGlide(reflow, gliding, new Map());
+        return undefined;
+      }
       drop = runDropPass(
         session,
         { dx: proposed.dx, dy: proposed.dy },
@@ -39,7 +45,6 @@ export function layoutDrop(move: MoveGesture): MoveBehavior<unknown> {
       );
       const opaque = drop?.pass?.reflowIds;
       const overlays = drop?.refused ? refusalOverlays(drop.refused, { x: ctx.pointer.worldX, y: ctx.pointer.worldY }) : undefined;
-      const reflow = session.layout?.reflow;
       if (!reflow) return { poses: drop?.reflow, opaque, overlays };
       stepGlide(reflow, gliding, drop?.reflow ?? new Map());
       return { opaque, overlays };

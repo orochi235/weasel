@@ -1,5 +1,5 @@
 import { asNodeId, type NodeId, followerOpsFor } from '@weasel-js/core';
-import { composeChildFrame, composeWorldPose, rebaseLocalPose, type PoseAdapter, sceneViewPoseAdapter, poseDescriptorForNode, pageIdOf } from '@weasel-js/core/engine';
+import { composeWorldPose, rebaseLocalPose, type PoseAdapter, sceneViewPoseAdapter, poseDescriptorForNode, pageIdOf } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
 import type { LayoutChild, LayoutContainer } from '@weasel-js/core/engine';
 import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
@@ -8,7 +8,9 @@ import { resolveLayoutExits } from '../layout/exits';
 import type { MoveSession } from '../session';
 import { translateOps, unreleasedIds } from '../translate';
 import { rebaseTransformOp } from './rebase';
-import { boxOf, containerView, draggedInView, opInWorld } from '../layout/view';
+import { belowRoots } from './pageDrop';
+import { landedCascadeOps } from './reparent';
+import { containerView, contentBoxOf, draggedInView, opInWorld } from '../layout/view';
 import * as coreOps from '@weasel-js/core/ops';
 
 function releaseFrom(
@@ -34,10 +36,11 @@ function releaseFrom(
   const srcNode = session.scene.get(asNodeId(srcId));
   if (!srcLayout?.releaseDrop || !srcNode) return { ops: releasedOps, released };
   const g = poseDescriptorForNode(session.projection, srcNode);
-  const view = containerView(pc, g, composeWorldPose(commitAdapter, srcId, pc.compose));
+  const srcWorld = composeWorldPose(commitAdapter, srcId, pc.compose);
+  const view = containerView(pc, g, srcWorld);
   const srcContainer: LayoutContainer = {
     id: srcId,
-    bounds: boxOf(g, view.toStrategy(composeChildFrame(commitAdapter, srcId, pc.compose))),
+    bounds: contentBoxOf(g, view, commitAdapter, srcId, srcWorld),
     node: srcNode,
   };
   // What the container is left holding — grown back as each
@@ -92,11 +95,12 @@ export function layoutReleaseOps(
   const releasedOps: Op[] = [];
   let exits = new Map<NodeId, NodeId | null>();
   const exitOps: Op[] = [];
+  const ridden = new Set<NodeId>();
   if (session.layout) {
     const pc = session.pc;
     const commitAdapter = sceneViewPoseAdapter(session.scene);
     const sources = groupBySourceContainer(
-      session.ids.map((id) => ({
+      session.outer.map((id) => ({
         id,
         sourceContainerId: (session.scene.get(id)?.parent ?? null) as string | null,
       })),
@@ -110,7 +114,8 @@ export function layoutReleaseOps(
     }
     // A child its container let go of outside that container leaves it,
     // keeping the world pose it was dropped at.
-    exits = resolveLayoutExits(session, dropCenter, session.ids.filter((id) => !released.has(id)));
+    exits = resolveLayoutExits(session, dropCenter, session.outer.filter((id) => !released.has(id)));
+    const below = belowRoots(session, new Set(exits.keys()));
     for (const [id, toParent] of exits) {
       const node = session.scene.get(id)!;
       const world = draggedWorldPose(session, grabbedPoseAdapter(session, commitAdapter), id, { dx, dy });
@@ -128,6 +133,12 @@ export function layoutReleaseOps(
         to,
         label: session.lifecycle.label,
       }));
+      // What rides the root is stored in the frame the root moves into, as on a reparent.
+      const riders = (below.get(id) ?? []).filter((r) => !exits.has(r));
+      const cascade = landedCascadeOps(session, riders, toParent, delta);
+      if (cascade === null) return null;
+      exitOps.push(...cascade);
+      for (const r of riders) ridden.add(r);
     }
   }
   if (released.size === 0 && exits.size === 0) return undefined;
@@ -141,7 +152,7 @@ export function layoutReleaseOps(
     ...followers,
     ...translateOps(
       session,
-      unreleasedIds(session, released).filter((id) => !exits.has(id)),
+      unreleasedIds(session, released).filter((id) => !exits.has(id) && !ridden.has(id)),
       { dx, dy },
     ),
   ];

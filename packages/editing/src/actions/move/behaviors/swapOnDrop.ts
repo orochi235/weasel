@@ -6,7 +6,7 @@ import type { CursorSpec } from '@weasel-js/cursor';
 import { after } from '@weasel-js/registry';
 import type { Rect } from '@weasel-js/geom';
 import type { MoveSession } from '../session';
-import { moveSessionOf } from '../sessionOf';
+import { holdSwap, moveSessionOf } from '../sessionOf';
 import { swapOps } from '../../swap/swapOps';
 import { writesLocked } from '../../lockedWrites';
 
@@ -102,9 +102,9 @@ export function swapBehavior(options: SwapOnDropOptions, on: (session: MoveSessi
   const dwellMs = options.dwellMs ?? 1000;
   const key = scratchKey<SwapState>(`swapOnDrop.${++built}`);
   const stateOf = (ctx: GestureContext<unknown>): SwapState => stateIn(ctx, key);
-  /** The one node the drag can swap, or null: a multi-selection never swaps. */
+  /** The one node the drag moves, which is the one it can swap, or null: a drag of several never swaps. */
   const draggedOf = (session: MoveSession): string | null =>
-    (on(session) && session.selected.length === 1 ? session.selected[0]! : null);
+    (on(session) && session.ids.length === 1 ? session.ids[0]! : null);
 
   const targetAt = (session: MoveSession, point: { x: number; y: number }, id: string): string | null => {
     const found = options.targetAt ? options.targetAt(point, id) : hitTarget(session, point, id);
@@ -118,6 +118,7 @@ export function swapBehavior(options: SwapOnDropOptions, on: (session: MoveSessi
       const id = session ? draggedOf(session) : null;
       if (!session || id === null) {
         disarm(s);
+        holdSwap(ctx, s, false);
         return undefined;
       }
       const point = { x: ctx.pointer.worldX, y: ctx.pointer.worldY };
@@ -135,16 +136,20 @@ export function swapBehavior(options: SwapOnDropOptions, on: (session: MoveSessi
         }
       }
       const armed = s.armed;
+      holdSwap(ctx, s, armed !== null);
       if (armed === null) return undefined;
       return { poses: armed.poses, overlays: [outline(armed.bounds)], cursor: SWAP_CURSOR };
     },
     onCancel(ctx) {
-      disarm(stateOf(ctx));
+      const s = stateOf(ctx);
+      disarm(s);
+      holdSwap(ctx, s, false);
     },
     onEnd(ctx, end) {
       const s = stateOf(ctx);
       const armed = s.armed;
       disarm(s);
+      holdSwap(ctx, s, false);
       const session = moveSessionOf(ctx);
       if (end.answered || armed === null || !session) return undefined;
       const id = draggedOf(session);

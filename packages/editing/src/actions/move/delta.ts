@@ -36,6 +36,8 @@ interface MoveLead {
   readonly dx: number;
   readonly dy: number;
   readonly lead: TranslateLead<unknown> | null;
+  /** The snap's landing for `(dx0, dy0)` the lead was made with, which can change with the delta held still. */
+  readonly landing: unknown;
 }
 
 const leads = new WeakMap<MoveSession, MoveLead>();
@@ -44,17 +46,18 @@ const leads = new WeakMap<MoveSession, MoveLead>();
  *  space. Kept for the last drag asked about, since every id asks per frame. */
 function moveLead(session: MoveSession, dx0: number, dy0: number): MoveLead {
   const last = leads.get(session);
-  if (last && last.dx0 === dx0 && last.dy0 === dy0) return last;
+  const snapped = snapLanding(session, dx0, dy0);
+  if (last && last.dx0 === dx0 && last.dy0 === dy0 && last.landing === snapped) return last;
   const id = session.ids.find((r) =>
     session.startPoses.has(r) && !session.carried.has(r) && !session.caught.has(r));
-  let next: MoveLead = { dx0, dy0, dx: dx0, dy: dy0, lead: null };
+  let next: MoveLead = { dx0, dy0, dx: dx0, dy: dy0, lead: null, landing: snapped };
   if (id !== undefined) {
     const from = session.frames.get(id)?.world ?? session.startPoses.get(id);
     const { dx, dy } = planeDelta(session, id, dx0, dy0);
     // A landing is the snap's answer for the drag as the edited plane measured it.
-    const landing = dx === dx0 && dy === dy0 ? snapLanding(session, dx0, dy0) : undefined;
+    const landing = dx === dx0 && dy === dy0 ? snapped : undefined;
     const to = translatePoseViaDescriptor(from, dx, dy, session.descriptorOf(id), undefined, landing);
-    next = { dx0, dy0, dx, dy, lead: { from, to } };
+    next = { dx0, dy0, dx, dy, lead: { from, to }, landing: snapped };
   }
   leads.set(session, next);
   return next;

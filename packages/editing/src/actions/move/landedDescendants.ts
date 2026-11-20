@@ -5,7 +5,8 @@ import * as coreOps from '@weasel-js/core/ops';
 /** What a move gesture captured at its start, as this pass reads it. */
 export interface LandedDescendantsInput {
   scene: Scene<unknown, string, unknown>;
-  projection: PoseDescriptor<unknown>;
+  /** Each node's own descriptor, the one its pose is measured and moved by. */
+  descriptorOf: (id: NodeId) => PoseDescriptor<unknown>;
   /** Start pose of every root and descendant. */
   startPoses: ReadonlyMap<NodeId, unknown>;
   label: string;
@@ -20,7 +21,7 @@ export interface LandedDescendantsInput {
  * moving frame carries, is left alone.
  */
 export function landedDescendantOps(input: LandedDescendantsInput, ops: readonly Op[]): Op[] {
-  const { scene, projection, startPoses, label } = input;
+  const { scene, descriptorOf, startPoses, label } = input;
   const landed = new Map<NodeId, { from: unknown; to: unknown }>();
   for (const op of ops) {
     if (op.name !== 'transform') continue;
@@ -32,15 +33,16 @@ export function landedDescendantOps(input: LandedDescendantsInput, ops: readonly
   const out: Op[] = [];
   for (const [root, { from, to }] of landed) {
     if (from === undefined || to === undefined) continue;
-    const a = projection.getBounds(from);
-    const b = projection.getBounds(to);
+    const d = descriptorOf(root);
+    const a = d.getBounds(from);
+    const b = d.getBounds(to);
     const dx = b.x - a.x;
     const dy = b.y - a.y;
     if (dx === 0 && dy === 0) continue;
     const carried = carriedDescendants(
       source,
       root,
-      (pose) => translatePoseViaDescriptor(pose, dx, dy, projection),
+      (pose, id) => translatePoseViaDescriptor(pose, dx, dy, descriptorOf(id)),
       (id) => landed.has(id),
     );
     for (const [id, pose] of carried) {

@@ -106,7 +106,7 @@ export function pageDrops(
 }
 
 /** Each dragged node below one of `roots`, selected or not, keyed by that root. */
-function belowRoots(session: MoveSession, roots: ReadonlySet<NodeId>): Map<NodeId, NodeId[]> {
+export function belowRoots(session: MoveSession, roots: ReadonlySet<NodeId>): Map<NodeId, NodeId[]> {
   const out = new Map<NodeId, NodeId[]>();
   for (const id of new Set([...session.ids, ...session.cascadeIds])) {
     let cur = session.scene.get(id)?.parent ?? null;
@@ -141,7 +141,7 @@ export function pageDropOps(
   }
   const below = belowRoots(session, new Set([...drops.keys()].filter((id) => dragged.has(id))));
   const ridden = new Set([...below.values()].flat());
-  for (const id of session.ids) {
+  for (const id of session.outer) {
     if (ridden.has(id)) continue;
     const drop = drops.get(id) ?? STAY;
     const d = { dx: delta.dx + drop.shift.dx, dy: delta.dy + drop.shift.dy };

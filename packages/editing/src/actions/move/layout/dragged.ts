@@ -11,7 +11,7 @@ export interface DraggedChild {
   center: { x: number; y: number };
 }
 
-/** Each dragged root in world, in the edited plane. */
+/** Each dragged root no other one holds, in world, in the edited plane. */
 export function gatherDragged(session: MoveSession, delta: { dx: number; dy: number }): DraggedChild[] {
   const scene = session.scene;
   const pc = session.pc;
@@ -26,7 +26,7 @@ export function gatherDragged(session: MoveSession, delta: { dx: number; dy: num
   const d = session.projection;
   const grabAdapter = grabbedPoseAdapter(session, poseAdapter);
   const dragged: DraggedChild[] = [];
-  for (const id of session.ids) {
+  for (const id of session.outer) {
     const node = scene.get(id);
     if (!node) continue;
     const startWorld = composeWorldPose(grabAdapter, id as string, pc.compose);
@@ -63,7 +63,6 @@ export function carryDragged(session: MoveSession, c: DraggedChild, m: PlaneMap 
 
 /** Center of the bounds of everything dragged. */
 export function selectionCenter(session: MoveSession, dragged: readonly DraggedChild[]): { x: number; y: number } {
-  const d = session.projection;
   // The selection lands as a unit, so one point decides the container: the
   // center of the whole dragged group. Hit-testing each child on its own
   // would scatter a selection straddling two containers.
@@ -72,7 +71,7 @@ export function selectionCenter(session: MoveSession, dragged: readonly DraggedC
   let maxX = -Infinity;
   let maxY = -Infinity;
   for (const c of dragged) {
-    const b = d.getBounds(c.arg.pose);
+    const b = session.descriptorOf(c.id).getBounds(c.arg.pose);
     minX = Math.min(minX, b.x);
     minY = Math.min(minY, b.y);
     maxX = Math.max(maxX, b.x + b.width);
