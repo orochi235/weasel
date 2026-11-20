@@ -7,6 +7,7 @@ import {
   type Stroke,
   type View,
 } from '@weasel-js/core';
+import { scaledDash } from '@weasel-js/paint';
 import type { SvgNode, SvgPaint, SvgStroke } from '@weasel-js/svg';
 import { type MarkStyle, markCommands, type PaintableMark } from './paint';
 
@@ -30,14 +31,20 @@ function exportedMarker(ref: MarkerRef, scale: number): MarkerRef {
   return { ...ref, size: resolveScreenLength(ref.size, scale) };
 }
 
-/** `scale` is output pixels per user unit: what a `{ px }` length is written against. */
-function toSvgStroke(stroke: Stroke, scale: number): SvgStroke {
+/** `scale` is output pixels per user unit: what a `{ px }` length is written against. On a
+ *  `{ px }` stroke the dashes are screen pixels too, as the renderer draws them. */
+function toSvgStroke(given: Stroke, scale: number): SvgStroke {
+  const stroke =
+    typeof given.width === 'object'
+      ? scaledDash(given, resolveScreenLength({ px: 1 }, scale))
+      : given;
   return {
     paint: toSvgPaint(stroke.paint),
     width: resolveScreenLength(stroke.width ?? 1, scale),
     ...(stroke.cap ? { cap: stroke.cap } : {}),
     ...(stroke.join ? { join: stroke.join } : {}),
     ...(stroke.dash ? { dash: [...stroke.dash] } : {}),
+    ...(stroke.dashOffset ? { dashOffset: stroke.dashOffset } : {}),
     ...(stroke.miterLimit != null ? { miterLimit: stroke.miterLimit } : {}),
     ...(stroke.align ? { align: stroke.align } : {}),
     ...(stroke.markerStart ? { markerStart: exportedMarker(stroke.markerStart, scale) } : {}),
