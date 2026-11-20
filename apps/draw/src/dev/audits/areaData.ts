@@ -98,6 +98,9 @@ export function statsFor(areas: readonly AuditArea[]): Stat[] {
 }
 
 /** The next `count` areas a run would pick, leaving out those a live run already holds. */
+/** How many rounds' worth of the queue the next-up list shows. */
+export const NEXT_UP_ROUNDS = 3;
+
 export function nextUpOf(areas: readonly AuditArea[], count = 8): AuditArea[] {
   return areas
     .filter((a) => a.queue !== null && a.status !== 'tonight')

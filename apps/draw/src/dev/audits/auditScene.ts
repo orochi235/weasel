@@ -114,7 +114,7 @@ function cellData(area: AuditArea, cell: MapCell, palette: AuditPalette, heat: H
   const ink = tone === 'unaudited' ? palette.ink : inkOn(fill, palette);
   const live = area.status === 'tonight';
   const labeled = cell.width > 52 && cell.height > 28;
-  const showsQueue = area.queue !== null && area.queue <= 16 && !live && cell.width > 22 && cell.height > 22;
+  const showsQueue = area.queue !== null && !live;
   return {
     kind: 'audit-cell',
     fill: { color: fill },

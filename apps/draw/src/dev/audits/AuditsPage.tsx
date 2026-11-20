@@ -10,7 +10,7 @@ import { LiveRuns } from './LiveRuns';
 import { Stats } from './Stats';
 import { TopTabs } from './TopTabs';
 import { Treemap } from './Treemap';
-import { nextUpOf, runHolding, statsFor } from './areaData';
+import { NEXT_UP_ROUNDS, nextUpOf, runHolding, statsFor } from './areaData';
 import { createAuditScene } from './auditScene';
 import { phasesOf, withLivePasses } from './phases';
 import { useAuditPalette } from './useAuditPalette';
@@ -55,7 +55,7 @@ function Chart({ map }: { map: SkulkMap }) {
   const areas = useMemo(() => withLivePasses(map.areas, map.runs), [map.areas, map.runs]);
   const area = areas.find((a) => a.id === shownId);
   const stats = useMemo(() => statsFor(areas), [areas]);
-  const next = useMemo(() => nextUpOf(areas), [areas]);
+  const next = useMemo(() => nextUpOf(areas, NEXT_UP_ROUNDS * (map.areasPerRound ?? 16)), [areas, map.areasPerRound]);
   const phases = useMemo(() => phasesOf(map.runs), [map.runs]);
   const pick = (id: string) => selection.set([asNodeId(id)]);
   const on = { onPick: pick, onLight: setLit };

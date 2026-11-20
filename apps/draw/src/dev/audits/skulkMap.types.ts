@@ -90,6 +90,8 @@ export interface AuditRound {
 export interface SkulkMap {
   readonly generated: string;
   readonly head: string;
+  /** How many areas a round takes unless told otherwise. */
+  readonly areasPerRound?: number;
   readonly runs: readonly AuditRun[];
   readonly areas: readonly AuditArea[];
   readonly rounds: readonly AuditRound[];

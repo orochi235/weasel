@@ -64,6 +64,13 @@ const chip = (x: number, y: number, s: string, size: number, color: string): Dra
 /** The width `n` digits take at `size`, roughly: enough to set a number against the right edge. */
 const digitsWidth = (n: number, size: number) => String(n).length * size * 0.5;
 
+/** The size a queue number is set at in a cell `p`: 13px, or as large as fits a cell too small for that, down to 6. */
+function queueSizeIn(queue: number, p: { width: number; height: number }): number {
+  let size = 13;
+  while (size > 6 && (digitsWidth(queue, size) > p.width - 2 || size > p.height - 2)) size -= 1;
+  return size;
+}
+
 function filled(path: Path, paint: PosedPaint): DrawCommand[] {
   const resolved = resolvePaintPattern(paint);
   return resolved ? [{ kind: 'path', path, fill: { paint: resolved } }] : [];
@@ -97,7 +104,11 @@ function paintCell(d: AuditCellData, p: RectPose): DrawCommand[] {
     if (d.backing) texts.push(...chip(p.x + 2, y - 1, line, 12, d.backing));
     texts.push(text(p.x + 4, y, line, d.ink, d.font, 12));
   });
-  if (d.queue !== undefined) texts.push(text(p.x + p.width - 4 - digitsWidth(d.queue, 13), p.y + p.height - 17, String(d.queue), d.ink, d.numericFont, 13, 700));
+  if (d.queue !== undefined) {
+    const size = queueSizeIn(d.queue, p);
+    const inset = Math.min(4, (p.width - digitsWidth(d.queue, size)) / 2);
+    texts.push(text(p.x + p.width - inset - digitsWidth(d.queue, size), p.y + p.height - size - Math.min(4, (p.height - size) / 2), String(d.queue), d.ink, d.numericFont, size, 700));
+  }
   // The clip keeps a label inside its own cell where its width was only estimated.
   if (texts.length > 0) out.push({ kind: 'group', clip: rect(p, 1), children: texts });
   return out;
