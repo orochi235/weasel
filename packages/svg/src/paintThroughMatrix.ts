@@ -2,7 +2,7 @@
  * Take a paint or stroke that SVG states in user space through the matrix its
  * element's geometry was baked with, so the two stay registered.
  */
-import type { Paint } from '@weasel-js/core';
+import { isPatternPaint, type Paint } from '@weasel-js/core';
 import type { Matrix, SvgPaint, SvgStroke } from './types';
 import { applyMatrix } from './transform';
 import { scaleStroke } from './metricScale';
@@ -23,13 +23,21 @@ export function isNonUniform(m: Matrix): boolean {
     || Math.abs(Math.hypot(a, b) - Math.hypot(c, d)) > 1e-4 * n;
 }
 
-/** A gradient placed in coordinates (`units: 'world'`, or `'local'` to its
- *  node) with its geometry mapped through `m`. A `'bounds'` one follows the
- *  box by itself and passes through. `onWarn` hears what `m` does to one
- *  that the paint cannot hold. */
+/** A gradient or pattern placed in coordinates (`units: 'world'`, or
+ *  `'local'` to its node) with its geometry mapped through `m`. A `'bounds'`
+ *  one follows the box by itself and passes through. `onWarn` hears what `m`
+ *  does to one that the paint cannot hold. */
 export function fillThroughMatrix(fill: Paint, m: Matrix, onWarn?: (message: string) => void): Paint {
   if (!('units' in fill) || (fill.units !== 'world' && fill.units !== 'local')) return fill;
   const at = (p: { x: number; y: number }): { x: number; y: number } => applyMatrix(m, p.x, p.y);
+  if (isPatternPaint(fill)) {
+    const [a, b, c, d] = fill.transform ?? [1, 0, 0, 1];
+    const transform = [m[0] * a + m[2] * b, m[1] * a + m[3] * b, m[0] * c + m[2] * d, m[1] * c + m[3] * d] as const;
+    const { transform: _t, origin: _o, ...rest } = fill;
+    const origin = at(fill.origin ?? { x: 0, y: 0 });
+    const identity = transform[0] === 1 && transform[1] === 0 && transform[2] === 0 && transform[3] === 1;
+    return { ...rest, ...(origin.x === 0 && origin.y === 0 ? {} : { origin }), ...(identity ? {} : { transform }) };
+  }
   const similar = !isNonUniform(m);
   if (fill.kind === 'linear-gradient') {
     return { ...fill, from: at(fill.from), to: similar ? at(fill.to) : linearEnd(fill.from, fill.to, m) };

@@ -40,3 +40,13 @@ describe('a user-space gradient under a group transform', () => {
     expect(fillOf(SVG('scale(2 1)', radial)).warnings.join('\n')).toMatch(/radial gradient/);
   });
 });
+
+describe('a user-space pattern under a group transform', () => {
+  it('moves and scales its tile with the geometry it fills', () => {
+    const spec = JSON.stringify({ kind: 'dots', color: '#000000', size: 5 }).replace(/"/g, '&quot;');
+    const tile = `<pattern id="g" patternUnits="userSpaceOnUse" width="5" height="5" x="1" data-weasel-tile="${spec}"/>`;
+    const { fill, warnings } = fillOf(SVG('translate(100 0) scale(4)', tile));
+    expect(warnings).toEqual([]);
+    expect(fill.paint).toMatchObject({ units: 'world', origin: { x: 104, y: 0 }, transform: [4, 0, 0, 4] });
+  });
+});
