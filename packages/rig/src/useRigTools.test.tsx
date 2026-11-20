@@ -4,7 +4,7 @@ import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import type { Skeleton } from '@weasel-js/animator';
 import { createScene, toolIdsOf } from '@weasel-js/core';
 import { RIG_TOOLS } from './toolSets';
-import type { NodeId, RectPose, Tool } from '@weasel-js/core';
+import type { NodeId, RectPose, RenderLayer, Tool } from '@weasel-js/core';
 import { createRigEditState } from './bone/rigEditState';
 import { rigOfSelection, useRigTools, type UseRigToolsOptions } from './useRigTools';
 
@@ -104,6 +104,18 @@ describe('useRigTools', () => {
     drawBone(t.tools().bone, [150, 150], [200, 150]);
     expect(t.scene.get(t.loose)!.data.skeleton?.joints).toHaveLength(2);
     expect(state.active()).not.toBeNull();
+  });
+
+  it('repaints every overlay when its `subscribe` says the selection changed', () => {
+    const listeners = new Set<() => void>();
+    const t = setup({ subscribe: (fn) => { listeners.add(fn); return () => listeners.delete(fn); } });
+    const layers = [t.tools().bone, t.tools().weight].flatMap((tool) => [tool.overlay].flat()) as RenderLayer<unknown>[];
+    let repaints = 0;
+    const offs = layers.map((layer) => layer.subscribe!(() => { repaints++; }));
+    for (const fn of listeners) fn();
+    expect(repaints).toBe(layers.length);
+    for (const off of offs) off();
+    expect(listeners.size).toBe(0);
   });
 
   it('keys its tools by the ids RIG_TOOLS names', () => {

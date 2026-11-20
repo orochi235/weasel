@@ -7,7 +7,7 @@ import { defineTool } from '@weasel-js/core';
 import type { Tool } from '@weasel-js/core';
 import { createBoneActions, type BoneEnv } from './boneActions';
 import { createBoneOverlay } from './boneOverlay';
-import { placedRig } from './placedRig';
+import { listenAll, placedRig } from './placedRig';
 import { createRigEditState, type RigEditState } from './rigEditState';
 import { createEmitter } from '@weasel-js/registry';
 import { icon } from '../icons.gen';
@@ -25,6 +25,9 @@ export interface UseBoneToolOptions {
   keybinding?: ToolKeybinding | null;
   /** Screen px around a joint within which a press takes it. Default 10. */
   reachPx?: number;
+  /** Notified when what `rig` answers changes other than through the scene, so the tool's
+   *  overlay repaints. Not needed when `rig` reads only the scene. */
+  subscribe?: (listener: () => void) => () => void;
 }
 
 /**
@@ -38,7 +41,9 @@ export interface UseBoneToolOptions {
 export function useBoneTool(options: UseBoneToolOptions): Tool {
   const ownState = useMemo(() => createRigEditState(), []);
   const state = options.state ?? ownState;
-  const opts = useLatest({ scene: options.scene, rig: options.rig, reachPx: options.reachPx ?? 10 });
+  const opts = useLatest({
+    scene: options.scene, rig: options.rig, reachPx: options.reachPx ?? 10, subscribe: options.subscribe,
+  });
   /** The skeleton a drag is shaping, in the scene's space. */
   const liveRef = useRef<Skeleton | null>(null);
 
@@ -54,11 +59,7 @@ export function useBoneTool(options: UseBoneToolOptions): Tool {
         liveRef.current = skeleton;
         changed.emit();
       },
-      listen(fn) {
-        const offOwn = changed.subscribe(fn);
-        const off = state.listen(fn);
-        return () => { offOwn(); off(); };
-      },
+      listen: (fn) => listenAll(changed.subscribe, state.listen, opts.current.subscribe)(fn),
     };
     return tool;
   }, [opts, state]);

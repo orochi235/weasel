@@ -40,6 +40,9 @@ export interface UseRigToolsOptions {
   state?: RigEditState;
   /** Screen px around a joint within which a press takes it. */
   reachPx?: number;
+  /** Notified when what `selection` or `rig` answers changes other than through the scene,
+   *  so the tools' overlays repaint. Not needed when both read only the scene. */
+  subscribe?: (listener: () => void) => () => void;
 }
 
 /**
@@ -56,8 +59,8 @@ export function useRigTools(options: UseRigToolsOptions): Record<RigToolId, Tool
   }, [latest]);
   const ownState = useMemo(() => createRigEditState(), []);
   const state = options.state ?? ownState;
-  const { reachPx } = options;
-  const bone = useBoneTool({ scene, rig, state, reachPx });
-  const weight = useWeightTool({ scene, rig, state, reachPx });
+  const { reachPx, subscribe } = options;
+  const bone = useBoneTool({ scene, rig, state, reachPx, subscribe });
+  const weight = useWeightTool({ scene, rig, state, reachPx, subscribe });
   return useMemo(() => ({ bone, weight }), [bone, weight]);
 }
