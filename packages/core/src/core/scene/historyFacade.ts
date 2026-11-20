@@ -146,7 +146,8 @@ export function createSceneHistory(env: SceneHistoryEnv): SceneHistoryParts {
       }
       // Only the stacks are rebuilt: no op applies.
       const report = engine.restore(snapshot, options);
-      named = idsNamedBy(snapshot);
+      // Read what the engine kept: a best-effort restore drops entries too malformed to walk.
+      named = idsNamedBy(engine.serialize());
       notify();
       return report;
     },
