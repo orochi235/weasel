@@ -9,6 +9,7 @@ import type {
 } from '@weasel-js/core';
 import { createDispatchTrace, createTraceRing } from '@weasel-js/routing';
 import { installDevtoolsHook, type WeaselDevtoolsHook } from './hook';
+import { followRing, followTrace } from './followRing';
 import { recordHistory } from './history';
 import type { DevtoolsHistoryRecord, DevtoolsOverlays } from './protocol';
 import { describeRegistry } from './registry';
@@ -50,6 +51,8 @@ export function canvasRoot(api: CanvasExtensionApi, deps: ContributionDepReader)
   const inspection = (): CanvasInspection | undefined => deps.get('inspection');
   const scene = (): Scene<unknown, string, unknown> | null => deps.get('scene') ?? null;
   const history = createTraceRing<DevtoolsHistoryRecord>();
+  const trace = followTrace(() => deps.get('dispatchTrace') ?? NO_TRACE);
+  const coords = followRing(() => inspection()?.coords() ?? NO_COORDS);
   let recorded: Scene<unknown, string, unknown> | null = null;
   let stopRecording: (() => void) | null = null;
   const followHistory = (): void => {
@@ -69,8 +72,8 @@ export function canvasRoot(api: CanvasExtensionApi, deps: ContributionDepReader)
     activeTool: () => inspection()?.tools().active ?? null,
     tools: () => Object.keys(inspection()?.tools().registry ?? {}),
     setTool: (id) => inspection()?.tools().setActive(id),
-    get trace() { return deps.get('dispatchTrace') ?? NO_TRACE; },
-    get coords() { return inspection()?.coords() ?? NO_COORDS; },
+    trace,
+    coords,
     frame: () => api.getDebug()?.snapshot().frame ?? null,
     overlays: () => inspection()?.debug() ?? null,
     setOverride: (o) => inspection()?.setDebugOverride(o && overrideFlags(o)),
@@ -110,7 +113,10 @@ export function canvasRoot(api: CanvasExtensionApi, deps: ContributionDepReader)
   const root = createDevtoolsRoot(source);
   followHistory();
   const offScene = inspection()?.subscribe((change) => { if (change === 'scene') followHistory(); });
-  return { root, stop: () => { offScene?.(); stopRecording?.(); } };
+  // A dispatcher republishes `dispatchTrace` when its trace changes; the registry says so. The coord trace is
+  // the inspection's own for life once made, so it needs no such call, which would make it.
+  const offDeps = inspection()?.deps().subscribe?.(() => trace.sync());
+  return { root, stop: () => { offScene?.(); offDeps?.(); stopRecording?.(); } };
 }
 
 /** Register the canvas behind `api` with `hook`. Returns the removal. */
