@@ -18,7 +18,8 @@ export interface Camera3dDep {
   /** Pane size in CSS pixels — what turns a screen point into a ray. */
   size(): { width: number; height: number };
   /** Where the pane's top-left sits on the canvas, in CSS pixels: the space a
-   *  wheel's and a pinch's anchor arrive in. Omitted, the canvas origin. */
+   *  wheel's anchor arrives in. A pinch's centroid arrives view-local and does
+   *  not read it. Omitted, the canvas origin. */
   origin?(): { x: number; y: number };
   /** How far the camera actions may turn and dolly it. Omitted,
    *  `DEFAULT_ORBIT_LIMITS`. */

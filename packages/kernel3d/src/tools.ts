@@ -128,15 +128,15 @@ export const cameraPanAction: Action = {
   },
 };
 
-/** Where on the pane a dolly anchors: `at`, a canvas-local point, taken from
- *  the pane's top-left, or the middle of the pane when there is none. */
+/** Where on the pane a dolly anchors: `at` taken from `origin`, the pane's
+ *  top-left in `at`'s space, or the middle of the pane when there is no `at`. */
 function paneAnchor(
   at: { x: number; y: number } | undefined,
-  dep: Camera3dDep,
+  origin: { x: number; y: number } | undefined,
   pane: { width: number; height: number },
 ): { x: number; y: number } {
   if (!at) return { x: pane.width / 2, y: pane.height / 2 };
-  const o = dep.origin?.() ?? { x: 0, y: 0 };
+  const o = origin ?? { x: 0, y: 0 };
   return { x: at.x - o.x, y: at.y - o.y };
 }
 
@@ -173,7 +173,7 @@ export const cameraDollyAction: Action = defineAction({
         );
       if (!(factor > 0) || !Number.isFinite(factor) || factor === 1) return 'pass';
       const pane = dep.size();
-      dep.set(dollyToward(dep.get(), factor, paneAnchor(wheelPoint(params), dep, pane), pane, dep.limits?.(), dep.up?.()));
+      dep.set(dollyToward(dep.get(), factor, paneAnchor(wheelPoint(params), dep.origin?.(), pane), pane, dep.limits?.(), dep.up?.()));
       return undefined;
     },
   },
@@ -196,7 +196,8 @@ export const cameraPinchDollyAction: Action = {
       const at = ctx.multiTouch?.centroid;
       const apply = cameraStepper(dep, 1, (a, b) => a / b, (origin, factor, d) => {
         const pane = d.size();
-        return dollyToward(origin, factor, paneAnchor(at, d, pane), pane, d.limits?.(), d.up?.());
+        // The centroid is view-local already, where the wheel's point is canvas-local.
+        return dollyToward(origin, factor, paneAnchor(at, undefined, pane), pane, d.limits?.(), d.up?.());
       });
       return {
         kind: 'pinch',
