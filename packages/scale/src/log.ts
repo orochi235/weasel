@@ -48,7 +48,7 @@ export function logScale(opts: LogScaleOptions): LogScale {
     const out: number[] = [];
     for (let p = Math.ceil(first / every) * every; p <= last; p += every) {
       for (const m of steps) {
-        const v = Number((m * base ** p).toPrecision(12));
+        const v = base === 10 ? Number(`${m}e${p}`) : m * base ** p;
         const slack = Math.min(1e-9 * v, (vhi - vlo) * 1e-9);
         // Powers deep in the subnormals can round onto one another.
         if (v >= vlo - slack && v <= vhi + slack && v !== out.at(-1)) out.push(v);

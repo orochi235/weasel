@@ -120,6 +120,13 @@ describe('logScale', () => {
   it('throws on a domain that does not lie above zero', () => {
     expect(() => logScale({ domain: [0, 10], range: [0, 1] })).toThrow(/above zero/);
   });
+
+  it('ticks on exact powers of another base, and labels them so', () => {
+    const s = logScale({ domain: [1, 2 ** 50], range: [0, 100], base: 2 });
+    expect(s.ticks(100)).toContain(2 ** 40);
+    expect(s.ticks(100).at(-1)).toBe(2 ** 50);
+    expect(s.tickFormat()(2 ** 40)).toBe('1099511627776');
+  });
 });
 
 describe('bandScale', () => {
