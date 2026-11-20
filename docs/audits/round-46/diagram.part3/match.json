@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "a": [
+  "Reconnect's fixed end resolves its port without the caller's `frame`",
+  "A stencil's rows are measured at a different face from the one they are drawn in",
+  "Reset route and Remove waypoint don't check for locked edges, and the scene throws when they commit",
+  "The port-placement outline polyline joins separate subpaths with segments that aren't part of the outline"
+ ],
+ "b": [
+  "Waypoint follower rewrites a locked connector's data, so a move of its two unlocked ends throws",
+  "Reset route ignores locks: enabled with a locked connector selected, then throws",
+  "Reconnect places the fixed end's port without the caller's `frame`",
+  "reorderTargetOf never returns when cluster boxes hold each other in a dependsOn loop",
+  "Remove waypoint's point fallback ignores locked and hidden edges",
+  "createDiagramNodes gives kind traits to edges, labels and lanes whose own trait opts out"
+ ]
+}

@@ -1,0 +1,65 @@
+{
+ "id": "diagram-formats.drawXml",
+ "commit": "6438325dbfdd7d007274232811abe60fc38c4f12",
+ "date": "2026-11-19",
+ "files": [
+  "packages/diagram-formats/src/drawXml/cellText.ts",
+  "packages/diagram-formats/src/drawXml/cells.ts",
+  "packages/diagram-formats/src/drawXml/format.ts",
+  "packages/diagram-formats/src/drawXml/mapping.ts",
+  "packages/diagram-formats/src/drawXml/pageCells.ts",
+  "packages/diagram-formats/src/drawXml/read.ts",
+  "packages/diagram-formats/src/drawXml/readPage.ts",
+  "packages/diagram-formats/src/drawXml/readStyle.ts",
+  "packages/diagram-formats/src/drawXml/style.ts",
+  "packages/diagram-formats/src/drawXml/write.ts",
+  "packages/diagram-formats/src/drawXml/writeEdge.ts",
+  "packages/diagram-formats/src/drawXml/writePage.ts",
+  "packages/diagram-formats/src/drawXml/writeStyle.ts",
+  "packages/diagram-formats/src/drawXml/writeXml.ts"
+ ],
+ "a": 7,
+ "b": 9,
+ "m": 2,
+ "distinct": 14,
+ "chapman": 25.7,
+ "unfound": 11.7,
+ "read": {
+  "A": 14,
+  "B": 14
+ },
+ "patches": 14,
+ "questions": 1,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.6,
+   "B": 9,
+   "match": 3.1,
+   "fix": 41.9
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "orochi",
+   "fix": "studio"
+  },
+  "tokens": 2646815,
+  "costUsd": 7.07
+ },
+ "fixCommits": [
+  "41a8434ac8673208e6d622c0371559b6df0e3d98",
+  "24c30dd754d60c0c50b30b474a6100ebbbfb3da8",
+  "db3d7eb89182af6d71fabbc649f602b184b47dbd",
+  "8b9b65a18b01a040959e0aa36a1bf90e0f39a384",
+  "045a7de694a3790919efedff09b5c635ef98a548",
+  "2788665c0c40f97d21465c8a3d549af478a2a9f4",
+  "4ec4ab9d0fca65bf8c7fdadd5a47b4180e3c88aa",
+  "7dd80316efee09e9c9234a12d70b8727fcb6e3a9",
+  "c854eeffa9bf4e84607077aebefa45bdafb63b0d",
+  "3f516fde0fc7e915470432892dd2be6a01a786c3",
+  "b897139b678f2951125da75cb6b441417af77014",
+  "e117ff0a93ee9037711b6b6a458aad08a625cbf2",
+  "4dfc5fe2025abe92a90036e80a89eb35fe410fb1",
+  "a022f435cd4caf7c612a886e60f12f5b020f6fb0"
+ ]
+}

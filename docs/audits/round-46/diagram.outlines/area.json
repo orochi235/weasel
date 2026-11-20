@@ -1,0 +1,51 @@
+{
+ "id": "diagram.outlines",
+ "commit": "6438325dbfdd7d007274232811abe60fc38c4f12",
+ "date": "2026-11-19",
+ "files": [
+  "packages/diagram/src/outlines/bpmn.ts",
+  "packages/diagram/src/outlines/figures.ts",
+  "packages/diagram/src/outlines/flowchart.ts",
+  "packages/diagram/src/outlines/fromD.ts",
+  "packages/diagram/src/outlines/modeling.ts",
+  "packages/diagram/src/outlines/network.ts",
+  "packages/diagram/src/outlines/participants.ts",
+  "packages/diagram/src/outlines/states.ts",
+  "packages/diagram/src/outlines/storage.ts",
+  "packages/diagram/src/outlines/table.ts",
+  "packages/diagram/src/outlines/types.ts"
+ ],
+ "a": 2,
+ "b": 2,
+ "m": 0,
+ "distinct": 4,
+ "chapman": 8,
+ "unfound": 4,
+ "read": {
+  "A": 11,
+  "B": 11
+ },
+ "patches": 3,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 11.8,
+   "B": 3.4,
+   "match": 0.2,
+   "fix": 10.6
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "tokens": 4038502,
+  "costUsd": 3.21
+ },
+ "fixCommits": [
+  "5eac231e133106c8860ce5278c87942e9fa331d5",
+  "7a21cbdcc2fe801b1c27edaa4d2c57e5f6b0ad07",
+  "934dc6199a1aacfcd0384e2b094ecda4c9b73aa9"
+ ]
+}

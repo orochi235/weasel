@@ -1,0 +1,50 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ],
+  [
+   5,
+   1
+  ],
+  [
+   2,
+   6
+  ],
+  [
+   7,
+   3
+  ],
+  [
+   11,
+   5
+  ]
+ ],
+ "a": [
+  "Mind map writer silently drops every connector into a node that already has a parent",
+  "Mind map writer writes an empty map when every node has a parent (a cycle)",
+  "Sequence writer splits one box into several, or drops members, when its participants are not contiguous or are created",
+  "xychart reader throws on accTitle/accDescr written without a colon attached to the keyword",
+  "xychart reader rejects unquoted axis titles",
+  "xychart reader silently drops the rest of the file after a `%%{` directive that is never closed",
+  "Sequence and xychart readers drop accTitle where every other kind names the page by it",
+  "State writer reads a note's text from `lines` only, and misreads notes it cannot pair with one outgoing edge",
+  "State reader drops a class assigned to `[*]`",
+  "State writer moves a top-level state into a composite when a composite's `[*]` connects to it",
+  "Kanban writer drops or renames ids the board could keep",
+  "Requirement writer merges two boxes whose names differ only in `\"` vs `'`",
+  "Requirement writer drops colors on a box whose name is quoted, with no warning",
+  "Radar reader ignores accTitle when the title statement is empty"
+ ],
+ "b": [
+  "Mermaid mind map writer writes no nodes at all when every shape has a parent (a cycle)",
+  "Mermaid xychart parser silently swallows an unclosed `%%{` directive or `accDescr {` block, where every other kind refuses it",
+  "Mermaid state writer writes a note joined to a start or end shape as `note right of [*]`, which its reader refuses",
+  "Mermaid state writer drops a note with no outgoing edge but still writes the edge pointing at it, which reads back as a phantom state",
+  "Mermaid requirement writer silently drops a box's text rows past its name that sit before any divider, and rows of other kinds",
+  "Mermaid requirement writer turns `\"` into `'` in a quoted name without a warning, and can merge two blocks into one",
+  "Mermaid sequence writer splits a box whose members are not adjacent in the participant list into two boxes, silently",
+  "Mermaid sequence writer writes a non-finite `autonumber` that its reader refuses"
+ ]
+}

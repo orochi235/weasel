@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "settleAcross sizes a cluster's column without its `minWidth`, so a held pin can land inside a titled cluster's drawn box",
+  "settleAcross pads a cluster's column by every nested cluster's inset on both sides, wider than the box packClusters draws",
+  "turnOutward's drawing span ignores cluster `minWidth`, so placeholders inside a titled cluster's widened box count as outside the drawing",
+  "levelRoutes treats only node boxes as obstacles, so an edge between two level pins runs straight through a cluster box neither end is in"
+ ],
+ "b": [
+  "A level edge's detour runs through the box it detours around when that box reaches further toward the next rank than either end",
+  "A level route's two detour points are read back as a placeholder seed on the next pass"
+ ]
+}

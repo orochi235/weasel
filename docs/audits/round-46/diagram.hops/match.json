@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   4
+  ]
+ ],
+ "a": [
+  "The hop pass's cached routes (`held`) go stale on undo/redo, so later edits compute hops against routes the scene no longer has",
+  "The drag follower doesn't hide hops on connectors whose end has a derived pose, though the commit pass counts those ends as moved",
+  "A redundant collinear vertex in a route suppresses every crossing within `r` of it, though there is no bend there"
+ ],
+ "b": [
+  "The hop pass's held routes go stale after undo, redo or a history replay, and later edits compute hops against routes that are no longer there",
+  "The drag follower leaves hops on connectors that an earlier follower reroutes without their ends moving",
+  "Hidden connectors, and connectors on hidden layers, still make the connectors above them hop",
+  "The follower answers a connector's stored pose, discarding a pose an earlier follower previewed for it",
+  "The follower and the pass disagree on which connectors a move reroutes: ends with a derived pose count in one and not the other",
+  "Rounding a hop's center and radius separately can make a hop at the clearance limit fail to draw"
+ ]
+}

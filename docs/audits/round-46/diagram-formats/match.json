@@ -1,0 +1,48 @@
+{
+ "pairs": [
+  [
+   0,
+   3
+  ],
+  [
+   2,
+   5
+  ],
+  [
+   3,
+   2
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   8,
+   4
+  ]
+ ],
+ "a": [
+  "`scenePageKinds` and `documentFromScene` answer \"plot or sequence page\" two different ways",
+  "DOT drops a cluster's dash in both directions, with no warning",
+  "DOT writes the theme's colors as node/edge defaults but not its widths, so Graphviz draws every stroke at width 1",
+  "`addTemplatePage(scene, template)` draws in the night theme whatever theme the scene is in",
+  "DOT `detect` refuses a graph whose id is an HTML string, which `readDot` reads",
+  "`rowLines` drops a header row's text, and warns that port rows and slots were dropped",
+  "`hexColor` turns `rgb()` into hex but passes `hsl()`, `oklch()` and `color()` through, which neither Graphviz nor Mermaid reads",
+  "A DOT HTML label laid out over several source lines reads with blank lines in it",
+  "The Diagram JSON reader passes a page with no `data`, `width` or `height`, which then fails at draw time",
+  "`readShape` drops a shape's slot rows, image slots included, so even Diagram JSON loses them",
+  "A shape in both a container and a cluster loses its cluster membership in DOT/Mermaid without a warning"
+ ],
+ "b": [
+  "A shape's header row, and its aside, disappear when written to DOT, Mermaid flowchart or draw.io XML",
+  "DOT color names are read and written as CSS names, but Graphviz resolves them as X11, so several common names change color",
+  "addTemplatePage draws a new page in the night theme even when the scene names another",
+  "scenePageKinds and documentFromScene answer differently for a page holding both a plot root and a sequence root",
+  "Diagram JSON accepts a page with no `data`, which crashes later when the document is drawn",
+  "The DOT writer leaves out widths that differ from Graphviz's defaults and node sizes on an unplaced page",
+  "WriteOptions.page naming a page the document lacks silently writes the first page",
+  "DOT detection rejects files the DOT reader accepts when a `#` line is indented",
+  "The sortedPage test helper sorts lanes, whose order is meaningful, and never sorts clusters"
+ ]
+}

@@ -1,0 +1,46 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   2
+  ],
+  [
+   3,
+   3
+  ],
+  [
+   4,
+   5
+  ],
+  [
+   5,
+   7
+  ]
+ ],
+ "a": [
+  "The ERD entity stencil's attribute fields put the name in `label` and the type/key in `value`, the reverse of the ER reader and writer",
+  "The UML interface stencil spells its stereotype `«interface»`, which the class writer does not read as an annotation, so it exports as a class named \"«interface»\" with \"Interface\" as an attribute",
+  "The abstract-class stencil marks abstraction only with italics, which the class writer drops without a warning",
+  "The mind map's subtopic stencil uses `stadium`, which the mind map writer has no brackets for, so every placed subtopic exports plain with a warning",
+  "`expectStencilsBuild` checks each row's width against text measured in the default style, not the row's own bold or font size",
+  "`expectStencilsBuild` leaves `console.warn` mocked when any assertion inside it fails"
+ ],
+ "b": [
+  "The UML interface stencil spells its stereotype `«interface»`, which the class writer and reader don't recognize",
+  "The ERD entity stencil's field rows put the attribute name where the ER reader and writer keep its type",
+  "The abstract-class stencil marks abstractness only as italic, which the class writer drops without a warning",
+  "The mind-map subtopic and note stencils use outlines the mindMap type's Mermaid notation can't write",
+  "The BPMN end event differs from a start event only by stroke width, so draw.io export writes it as a start event",
+  "`expectStencilsBuild` checks row width against the text measured unstyled, so a bold or large row that overflows passes",
+  "`expectStencilsBuild` counts only label and field rows, but header rows also become text nodes",
+  "`expectStencilsBuild` leaves its `console.warn` spy installed when an assertion fails"
+ ]
+}

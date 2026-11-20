@@ -1,0 +1,34 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   3,
+   1
+  ],
+  [
+   4,
+   2
+  ]
+ ],
+ "a": [
+  "A block group whose id looks like `block-N` is written anonymous, so edges and styles naming it read back as a new block",
+  "A gitGraph that renames its main branch (`mainBranchName`) is refused, though `GitGraphData.mainBranch` can hold the name",
+  "Front matter `config:` is dropped silently, though the same settings in a `%%{init}%%` directive are reported",
+  "An empty front matter block (`---\\n---`) is not skipped, so a file `detect` accepts fails to read as any kind",
+  "The flowchart reader ignores `accTitle` for the page name and drops `accTitle`/`accDescr` as unknown statements, where every other kind uses `readPageName`",
+  "The architecture writer replaces a connector port that isn't a compass side with R/L, with no warning",
+  "The class writer writes a `note` shape's text from `lines` only, so a note whose text is in `rows` is written empty",
+  "The gantt writer writes `after <id>` for an id it just dropped, leaving the next task pointing at a task that doesn't exist",
+  "`metaEnd` treats an apostrophe inside a plain metadata value as an opening quote, so `@{ label: it's done }` throws \"never closed\"",
+  "C4 `<<person_db>>`/`<<person_queue>>` rows are accepted as a kind but written as a macro the reader refuses, so the element is lost"
+ ],
+ "b": [
+  "An anonymous block group's style and links are written under a renamed id the reader never gives it",
+  "Empty front matter is skipped by the kind sniffer but not by the readers",
+  "The flowchart drops `accTitle`, while every other kind names the page by it",
+  "C4 silently drops a front-matter title when there is also a `title` statement"
+ ]
+}

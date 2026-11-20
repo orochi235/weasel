@@ -1,0 +1,31 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   5
+  ],
+  [
+   3,
+   3
+  ]
+ ],
+ "a": [
+  "useConnectorTool's memo omits `frame`, so a changed layout frame keeps the old tool",
+  "`fit()` and a settled layout's refit compose already-world poses with their parents again, misframing anything inside a container",
+  "Double-clicking an edge's end label edits (or creates) the edge's middle label instead",
+  "createEdgeEnds drops the `frame` option, so edge-end handles are placed on the default plane"
+ ],
+ "b": [
+  "A connect with custom `routers` previews with the custom router but commits an edge that draws with the default ones",
+  "`useConnectorTool` keeps a stale tool when only `frame` changes",
+  "`DiagramView`'s connect previews with `portOptions.router` (default `straight`) but reports an edge with no router, which `diagramScene` draws as `bezier`",
+  "`createEdgeEnds` drops the `frame` option, so edge-end handles and reconnects resolve routes on the wrong plane for a 3D host",
+  "`relayoutBodies` measures rows in the stored face, not the face the body was built with, so the first relayout of an unchanged body rewrites its heights and restacks it",
+  "`fit()` and the refit after a layout run compose world poses a second time, so a diagram with containers is framed off its real bounds",
+  "`useDiagramTools` gives every shipped container stencil a tool, but the insert its doc pairs it with does not build containers unless told to"
+ ]
+}

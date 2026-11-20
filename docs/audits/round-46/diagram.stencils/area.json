@@ -1,0 +1,58 @@
+{
+ "id": "diagram.stencils",
+ "commit": "6438325dbfdd7d007274232811abe60fc38c4f12",
+ "date": "2026-11-19",
+ "files": [
+  "packages/diagram/src/stencils/architecture.ts",
+  "packages/diagram/src/stencils/bpmn.ts",
+  "packages/diagram/src/stencils/c4.ts",
+  "packages/diagram/src/stencils/containers.ts",
+  "packages/diagram/src/stencils/erd.ts",
+  "packages/diagram/src/stencils/flowchart.ts",
+  "packages/diagram/src/stencils/kanban.ts",
+  "packages/diagram/src/stencils/mindMap.ts",
+  "packages/diagram/src/stencils/network.ts",
+  "packages/diagram/src/stencils/org.ts",
+  "packages/diagram/src/stencils/requirement.ts",
+  "packages/diagram/src/stencils/state.ts",
+  "packages/diagram/src/stencils/stencils.fixture.ts",
+  "packages/diagram/src/stencils/uml.ts"
+ ],
+ "a": 6,
+ "b": 8,
+ "m": 6,
+ "distinct": 8,
+ "chapman": 8,
+ "unfound": 0,
+ "read": {
+  "A": 14,
+  "B": 14
+ },
+ "patches": 7,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.9,
+   "B": 6.4,
+   "match": 0.8,
+   "fix": 19.6
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "orochi",
+   "fix": "teitou"
+  },
+  "tokens": 16850919,
+  "costUsd": 7.96
+ },
+ "fixCommits": [
+  "993beb2c01b4f44384e1b6061ffc9ba632a3aee7",
+  "3fc3c937491fadebd1b7a79df698b727c6c5589d",
+  "5f6c2d7e84b7ae20ad00c8680482e395bc608d39",
+  "017fa7a6eaba8752ccb31c24cf8f7b3173055aa6",
+  "bdd33c6d58446e2a17b9e42d6c6dd9e743cddea0",
+  "1b291e6dc31a7442da463282f09d4eacad049c5e",
+  "e09e2eb102ecc3bc96e7239c4e3a3c7151f27d28"
+ ]
+}

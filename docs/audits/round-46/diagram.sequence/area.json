@@ -1,0 +1,69 @@
+{
+ "id": "diagram.sequence",
+ "commit": "6438325dbfdd7d007274232811abe60fc38c4f12",
+ "date": "2026-11-19",
+ "files": [
+  "packages/diagram/src/sequence/actions.ts",
+  "packages/diagram/src/sequence/author.ts",
+  "packages/diagram/src/sequence/authorActions.ts",
+  "packages/diagram/src/sequence/authorDrags.ts",
+  "packages/diagram/src/sequence/authorParams.ts",
+  "packages/diagram/src/sequence/authorPlace.ts",
+  "packages/diagram/src/sequence/authorSteps.ts",
+  "packages/diagram/src/sequence/columns.ts",
+  "packages/diagram/src/sequence/commit.ts",
+  "packages/diagram/src/sequence/edit.ts",
+  "packages/diagram/src/sequence/fixture.ts",
+  "packages/diagram/src/sequence/index.ts",
+  "packages/diagram/src/sequence/layer.ts",
+  "packages/diagram/src/sequence/layout.ts",
+  "packages/diagram/src/sequence/metrics.ts",
+  "packages/diagram/src/sequence/rows.ts",
+  "packages/diagram/src/sequence/select.ts",
+  "packages/diagram/src/sequence/selected.ts",
+  "packages/diagram/src/sequence/specs.ts",
+  "packages/diagram/src/sequence/textEdit.ts",
+  "packages/diagram/src/sequence/toolOptions.ts",
+  "packages/diagram/src/sequence/tools.ts",
+  "packages/diagram/src/sequence/trait.ts",
+  "packages/diagram/src/sequence/types.ts"
+ ],
+ "a": 7,
+ "b": 5,
+ "m": 5,
+ "distinct": 7,
+ "chapman": 7,
+ "unfound": 0,
+ "read": {
+  "A": 24,
+  "B": 24
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.8,
+   "B": 18.3,
+   "match": 0.1,
+   "fix": 16.9
+  },
+  "nodes": {
+   "A": "orochi",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "tokens": 10297068,
+  "costUsd": 6.33
+ },
+ "fixCommits": [
+  "cd86873a596119c3eccbff17433cc14ff1cf772f",
+  "e67a37158db065e4b87f0ede9eef7b9aa1975a7f",
+  "e408338417ffdb99f5264d82a920e3acab8cdc35",
+  "44ea8a63c75bf509e765736f7975e82840ca6712",
+  "897ac028a7d741579a1aa63d537857bf1fa5ad75",
+  "f7968a06973bd257b7f42fc3529cb02f5765bd49",
+  "000d836694bd50f2cd33c86a6e3c41e21f454adb",
+  "0b96b6d8e3eea29539fb44ba3ea6fe6c9313ca8d"
+ ]
+}

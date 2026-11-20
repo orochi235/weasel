@@ -1,0 +1,32 @@
+{
+ "pairs": [
+  [
+   4,
+   8
+  ],
+  [
+   5,
+   7
+  ]
+ ],
+ "a": [
+  "Lanes are written with `fillColor=none`, so their themed body fills are lost, and reading the file back pins every lane fill to transparent",
+  "A cluster's `label` is dropped on write with no warning",
+  "A container that carries `lanes` loses those lanes' members from the file entirely",
+  "`arrow-concave` is written as `classic`, which reads back as `arrow`",
+  "Two end labels on the same end of an edge: one is dropped with no warning",
+  "A group holding only containers, or only shapes nested under shapes, is dropped silently, and edges to it get the wrong warning",
+  "Cells that are later dropped still claim ids in the document's id space"
+ ],
+ "b": [
+  "A vertex's relative geometry under another vertex is read as pixels, not fractions of its parent",
+  "An edge label's `offset` point is never read, so a dragged label loses its position",
+  "A stock draw-app triangle (pointing east) reads as the diagram's triangle, its `direction` ignored",
+  "`segmentEdgeStyle` connectors read as straight, though a draw app routes them at right angles",
+  "Multi-line edge, container, pool, and lane labels lose their line breaks on read, though the writer keeps them",
+  "A swimlane with no `startSize` is measured as having no header, so a small pool reads as a container of containers",
+  "A generated fallback cell id can equal a real id, and the two cells are then conflated",
+  "A group holding only containers is dropped with no warning",
+  "Two end labels at the same end keep one silently, where two mid labels warn"
+ ]
+}

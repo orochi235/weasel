@@ -1,0 +1,81 @@
+{
+ "id": "diagram.effect.part1",
+ "commit": "6438325dbfdd7d007274232811abe60fc38c4f12",
+ "date": "2026-11-19",
+ "files": [
+  "packages/diagram/src/effect/EffectChart.tsx",
+  "packages/diagram/src/effect/EffectEditor.tsx",
+  "packages/diagram/src/effect/audio/livePreviews.ts",
+  "packages/diagram/src/effect/audio/liveRunner.ts",
+  "packages/diagram/src/effect/audio/nodes.ts",
+  "packages/diagram/src/effect/audio/patches.ts",
+  "packages/diagram/src/effect/audio/plan.ts",
+  "packages/diagram/src/effect/audio/scope.ts",
+  "packages/diagram/src/effect/audio/stageTypes.ts",
+  "packages/diagram/src/effect/audio/useFollowAudioRunner.ts",
+  "packages/diagram/src/effect/audio/useLiveAudioRunner.ts",
+  "packages/diagram/src/effect/chainEdit.ts",
+  "packages/diagram/src/effect/check.ts",
+  "packages/diagram/src/effect/clusterEdit.ts",
+  "packages/diagram/src/effect/clusterHandlers.ts",
+  "packages/diagram/src/effect/clusterOrder.ts",
+  "packages/diagram/src/effect/clusterTitle.tsx",
+  "packages/diagram/src/effect/compact.ts",
+  "packages/diagram/src/effect/docShape.ts",
+  "packages/diagram/src/effect/draw.ts",
+  "packages/diagram/src/effect/edit.ts",
+  "packages/diagram/src/effect/editorHandlers.ts",
+  "packages/diagram/src/effect/editorMapping.ts",
+  "packages/diagram/src/effect/editorPicks.ts",
+  "packages/diagram/src/effect/editorReorder.ts",
+  "packages/diagram/src/effect/glyphs.ts",
+  "packages/diagram/src/effect/image/evaluators.ts",
+  "packages/diagram/src/effect/image/stageTypes.ts",
+  "packages/diagram/src/effect/image/testCard.ts",
+  "packages/diagram/src/effect/image/valueKinds.ts",
+  "packages/diagram/src/effect/lab/EffectLab.stories.module.css"
+ ],
+ "a": 7,
+ "b": 7,
+ "m": 4,
+ "distinct": 10,
+ "chapman": 11.8,
+ "unfound": 1.8,
+ "read": {
+  "A": 31,
+  "B": 31
+ },
+ "patches": 13,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 15.7,
+   "B": 6.1,
+   "match": 0.2,
+   "fix": 25.9
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "tokens": 22077457,
+  "costUsd": 10.37
+ },
+ "fixCommits": [
+  "ec49e8ce832b690496aad9248c8c369493817da5",
+  "15bd121dccb2ff0a418bf3a9a48dbaabccc745e9",
+  "51978f93d5fc284dc47ac30adf7b0b8f7c3188e2",
+  "6d731a9e8e88ad86c8cf142b2fafd4334c1f98d6",
+  "8da47379bdd06e3dcc730de9f54de4fa985e7718",
+  "44892a1bc66386b4d48a7f2119f5dad28d15c434",
+  "da46a5cca45692fa8d5bb60cd691912337340955",
+  "85c41744bdacaed9f0c19936e62e1eae7acac650",
+  "6debed81b7880ac8364eb4584fff465a7675ec94",
+  "7cbda842cce7ea20fa9b668291af05fbd5758caf",
+  "78aa95d2ced7dfc4077a380e0d22b23e741da521",
+  "5b97b490dba9c699551c77279db31f8188004850",
+  "7e745bef3c737679479b24b3d7d82ac6c247318c"
+ ]
+}

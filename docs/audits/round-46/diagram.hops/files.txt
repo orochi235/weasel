@@ -1,0 +1,10 @@
+packages/diagram/src/hops/crossings.ts
+packages/diagram/src/hops/draw.ts
+packages/diagram/src/hops/follower.ts
+packages/diagram/src/hops/hops.bench.ts
+packages/diagram/src/hops/hopsAction.ts
+packages/diagram/src/hops/install.ts
+packages/diagram/src/hops/sceneEdges.ts
+packages/diagram/src/hops/specHops.ts
+packages/diagram/src/hops/types.ts
+packages/diagram/src/hops/useHops.ts

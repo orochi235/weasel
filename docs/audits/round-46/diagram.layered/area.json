@@ -1,0 +1,62 @@
+{
+ "id": "diagram.layered",
+ "commit": "6438325dbfdd7d007274232811abe60fc38c4f12",
+ "date": "2026-11-19",
+ "files": [
+  "packages/diagram/src/layered/across.ts",
+  "packages/diagram/src/layered/bands.ts",
+  "packages/diagram/src/layered/cloudFixture.ts",
+  "packages/diagram/src/layered/cycles.ts",
+  "packages/diagram/src/layered/expand.ts",
+  "packages/diagram/src/layered/fixtures.ts",
+  "packages/diagram/src/layered/inward.ts",
+  "packages/diagram/src/layered/level.ts",
+  "packages/diagram/src/layered/order.ts",
+  "packages/diagram/src/layered/overlaps.ts",
+  "packages/diagram/src/layered/pins.ts",
+  "packages/diagram/src/layered/place.ts",
+  "packages/diagram/src/layered/places.ts",
+  "packages/diagram/src/layered/plan.ts",
+  "packages/diagram/src/layered/rank.ts",
+  "packages/diagram/src/layered/reach.ts",
+  "packages/diagram/src/layered/types.ts"
+ ],
+ "a": 4,
+ "b": 2,
+ "m": 0,
+ "distinct": 6,
+ "chapman": 14,
+ "unfound": 8,
+ "read": {
+  "A": 17,
+  "B": 17
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.4,
+   "B": 18.8,
+   "match": 1.9,
+   "fix": 17.3
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "orochi",
+   "fix": "teitou"
+  },
+  "tokens": 12917072,
+  "costUsd": 7.9
+ },
+ "fixCommits": [
+  "601b526cc34d4f53722d0e27c397a8521325dfdd",
+  "08979e834c7d09c816e76dbbe955b563b9642172",
+  "19f10ceca89e3f3a86d0a4758a868f67ea0cbce2",
+  "0325a0e83062d616e520b71c7badd37a66b468ef",
+  "2a875e8b6f4b9f79b5dd274fb8703f4b904d1837",
+  "eaa44707004a029f1dfb1ef8252c2e5d7a00b429",
+  "01fe72fe3bc40ff883e021af2d75be9054c542df",
+  "e42e2e68741e121a5e7ff50fc331b048ca05e7ff"
+ ]
+}

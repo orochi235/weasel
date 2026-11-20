@@ -1,0 +1,57 @@
+{
+ "id": "diagram.hops",
+ "commit": "6438325dbfdd7d007274232811abe60fc38c4f12",
+ "date": "2026-11-19",
+ "files": [
+  "packages/diagram/src/hops/crossings.ts",
+  "packages/diagram/src/hops/draw.ts",
+  "packages/diagram/src/hops/follower.ts",
+  "packages/diagram/src/hops/hops.bench.ts",
+  "packages/diagram/src/hops/hopsAction.ts",
+  "packages/diagram/src/hops/install.ts",
+  "packages/diagram/src/hops/sceneEdges.ts",
+  "packages/diagram/src/hops/specHops.ts",
+  "packages/diagram/src/hops/types.ts",
+  "packages/diagram/src/hops/useHops.ts"
+ ],
+ "a": 3,
+ "b": 6,
+ "m": 2,
+ "distinct": 7,
+ "chapman": 8.3,
+ "unfound": 1.3,
+ "read": {
+  "A": 10,
+  "B": 10
+ },
+ "patches": 10,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 13.5,
+   "B": 4.2,
+   "match": 2,
+   "fix": 21.2
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "tokens": 11779530,
+  "costUsd": 6.33
+ },
+ "fixCommits": [
+  "1bc1b5cfd5647d2ff926c48fbffe433196824fd1",
+  "fc2594c2f82c8bad3dffee2c48bb31cac2bb4774",
+  "012eac426197e9e1cb2668b8d0beb501b6964963",
+  "711846cace45a8659b0d9a3a1311fb18d8dc1509",
+  "bf0869d14d114e4cc540c4c00463dd98e47659db",
+  "6a5449eb5ff051a9b4718bbcb843faf37b5759ff",
+  "2b51070ab20097db2efdaed02abc06ff4e1aab1a",
+  "b9158327b03a45207bf79d80eb6064c6987e2e8e",
+  "002bd980b73c34466beb21c4c9a17f118dd03111",
+  "62282f32c3252ff9a53ba2410016e69c76b1311f"
+ ]
+}

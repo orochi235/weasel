@@ -1,0 +1,76 @@
+{
+ "id": "diagram.avoid",
+ "commit": "6438325dbfdd7d007274232811abe60fc38c4f12",
+ "date": "2026-11-19",
+ "files": [
+  "packages/diagram/src/avoid/avoid.bench.ts",
+  "packages/diagram/src/avoid/avoidFixture.ts",
+  "packages/diagram/src/avoid/dirty.ts",
+  "packages/diagram/src/avoid/dragIndex.ts",
+  "packages/diagram/src/avoid/edgeRoute.ts",
+  "packages/diagram/src/avoid/grid.ts",
+  "packages/diagram/src/avoid/hash.ts",
+  "packages/diagram/src/avoid/heap.ts",
+  "packages/diagram/src/avoid/holds.ts",
+  "packages/diagram/src/avoid/index.ts",
+  "packages/diagram/src/avoid/install.ts",
+  "packages/diagram/src/avoid/labels.ts",
+  "packages/diagram/src/avoid/nudge.ts",
+  "packages/diagram/src/avoid/obstacles.ts",
+  "packages/diagram/src/avoid/router.ts",
+  "packages/diagram/src/avoid/sceneInput.ts",
+  "packages/diagram/src/avoid/scenes.fixture.ts",
+  "packages/diagram/src/avoid/search.ts",
+  "packages/diagram/src/avoid/segments.ts",
+  "packages/diagram/src/avoid/specRoutes.ts",
+  "packages/diagram/src/avoid/stateTable.ts",
+  "packages/diagram/src/avoid/turns.ts",
+  "packages/diagram/src/avoid/types.ts",
+  "packages/diagram/src/avoid/useAvoidRouting.ts",
+  "packages/diagram/src/avoid/visibility.ts"
+ ],
+ "a": 10,
+ "b": 9,
+ "m": 6,
+ "distinct": 13,
+ "chapman": 14.7,
+ "unfound": 1.7,
+ "read": {
+  "A": 25,
+  "B": 25
+ },
+ "patches": 14,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 9.2,
+   "B": 9.9,
+   "match": 0.2,
+   "fix": 38.8
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "tokens": 18105899,
+  "costUsd": 9.24
+ },
+ "fixCommits": [
+  "13a2e540055341159a5ce871897ff1242137c559",
+  "7da6fc636698aac83ee92cf37e2f436da7677da5",
+  "08b07aec5754a296f066836d7ac34c0a74e23234",
+  "06d4d46da49e575c19cd1481a247ea537d801817",
+  "f4ad59940322943e7a49391b230a713fdb12d922",
+  "a4ef1f7bd7b96d8d7dbdc28a0560a9b966c235e3",
+  "e448c6f46e2dc3a03b554522a5c35a23e998a496",
+  "7e971ee447b16c91a6cf559420f99d292262ff30",
+  "129da4b40604864f3ff6b872ee0190d7e93bfd44",
+  "8bd0c2d4089f6c131d6fc9ab56547d4fd48f2d73",
+  "73e93db000685468555b5dd36fce3563deacf3e2",
+  "41149dddd679059c88862ac025d437646ddc28eb",
+  "420a381b8cc5889d194d1b759eac0aa4c8461ba5",
+  "008306f1791030685553996420067c461aa3b1a3"
+ ]
+}

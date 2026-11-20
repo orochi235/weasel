@@ -1,0 +1,35 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   3
+  ],
+  [
+   2,
+   1
+  ],
+  [
+   4,
+   2
+  ]
+ ],
+ "a": [
+  "A throwing value kind's `preview`/`show` fails the whole run instead of the stage, and leaks the previews already made for that stage",
+  "A `many` input gets only the first reached wire's value; the generic runner never combines them",
+  "`useEffectRunner` never clears an option the caller stops passing",
+  "`setOptions` does not restart a step run, so a stepped pass keeps the old evaluators/kinds while whole runs use the new ones",
+  "`mainChain` memoizes paths cut short by a loop, so on a pipeline with a feedback loop the \"longest path\" depends on stage order and can miss the real one",
+  "A stage whose id starts with `~lane:` collides with the lanes look's lane nodes and makes `diagramScene` throw"
+ ],
+ "b": [
+  "A preview that rejects leaks the bitmaps already made for that stage and fails the whole run instead of the stage",
+  "useEffectRunner keeps stale sources and options when the caller sets them back to undefined",
+  "mainChain caches a path cut short by a loop and reuses it, so it is not the longest path on a pipeline with a feedback loop",
+  "The generic runner hands a `many` input only its first wire's value, silently dropping the rest",
+  "freeSpot can loop forever when the view is far from the origin"
+ ]
+}

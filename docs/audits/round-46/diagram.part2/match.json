@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   4
+  ]
+ ],
+ "a": [
+  "A live run restarted onto a planner leaves the cancelled run's eased edge paths on the override channel",
+  "The spec label placer's cache key leaves out `inset`, so changing only a label's inset reuses stale placements"
+ ],
+ "b": [
+  "diagramScene reserves layout room for labels the options station at an end or a fraction",
+  "A live run restarted onto a planner leaves the previous run's eased edge paths held in the override channel",
+  "buildGraph lays a fitted container out as one rigid box, where diagramScene lays out its members around it",
+  "createSpecLabelPlacer places a split connector's label on the whole cross-page route, not on the stubs it draws",
+  "createSpecLabelPlacer's cache key leaves out `inset`, which placement reads",
+  "buildGraph keeps an edge from a region to its own member as a self-loop that diagramScene drops"
+ ]
+}

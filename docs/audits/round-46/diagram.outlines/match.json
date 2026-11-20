@@ -1,0 +1,11 @@
+{
+ "pairs": [],
+ "a": [
+  "`outlineFromD` accepts path data that doesn't parse and builds an outline with an empty silhouette, while a mark's `d` with the same data throws",
+  "`roundRectOutline`'s `boxForContent` uses the raw `maxRadius` where its path and content clamp it, so it breaks the inverse for a non-finite or negative radius"
+ ],
+ "b": [
+  "An unregistered outline name falls back to the built-in `rect`, ignoring a registered `rect` that shadows it",
+  "`roundRectOutline(Infinity)` (or any large radius) sizes a node to an infinite or far-oversized box"
+ ]
+}

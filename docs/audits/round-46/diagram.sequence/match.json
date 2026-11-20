@@ -1,0 +1,40 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   2,
+   2
+  ],
+  [
+   3,
+   1
+  ],
+  [
+   4,
+   3
+  ],
+  [
+   5,
+   4
+  ]
+ ],
+ "a": [
+  "Editing a sequence with a locked part throws, even though its regions still accept presses",
+  "Dragging a head into or out of a box leaves the box drawn around a non-member",
+  "On a theme that isn't 12px sans-serif, a new sequence's lifeline misses the click",
+  "Dragging a message or fragment leaves its number digit or type label behind",
+  "An activation still open at a destroy runs past the cross to the diagram's foot",
+  "`SEQ_ARROWS` lookups go through the prototype chain",
+  "`setMessageArrow` treats an explicit `both: false` or `async: false` as a change"
+ ],
+ "b": [
+  "Any sequence edit throws when one of the root's parts is locked, though `redrawSequences` skips such a sequence",
+  "A step drag's preview leaves the number badge's digit, the fragment's type label, and the fragment's own rows behind",
+  "A Participant click on empty canvas places the new lifeline using the default 12px font, while the sequence is drawn in the theme's font",
+  "Open activations on a destroyed lifeline are closed at the diagram's foot, so the bar runs past the destruction's cross",
+  "`SEQ_ARROWS` is read through the prototype chain and without a guard, so an unexpected arrow name gives a message with no line or head, or throws"
+ ]
+}

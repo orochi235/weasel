@@ -1,0 +1,14 @@
+packages/diagram/src/stencils/architecture.ts
+packages/diagram/src/stencils/bpmn.ts
+packages/diagram/src/stencils/c4.ts
+packages/diagram/src/stencils/containers.ts
+packages/diagram/src/stencils/erd.ts
+packages/diagram/src/stencils/flowchart.ts
+packages/diagram/src/stencils/kanban.ts
+packages/diagram/src/stencils/mindMap.ts
+packages/diagram/src/stencils/network.ts
+packages/diagram/src/stencils/org.ts
+packages/diagram/src/stencils/requirement.ts
+packages/diagram/src/stencils/state.ts
+packages/diagram/src/stencils/stencils.fixture.ts
+packages/diagram/src/stencils/uml.ts

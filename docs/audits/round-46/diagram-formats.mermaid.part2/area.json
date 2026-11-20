@@ -1,0 +1,70 @@
+{
+ "id": "diagram-formats.mermaid.part2",
+ "commit": "6438325dbfdd7d007274232811abe60fc38c4f12",
+ "date": "2026-11-19",
+ "files": [
+  "packages/diagram-formats/src/mermaid/kanban/parse.ts",
+  "packages/diagram-formats/src/mermaid/kanban/read.ts",
+  "packages/diagram-formats/src/mermaid/kanban/write.ts",
+  "packages/diagram-formats/src/mermaid/mindmap/parse.ts",
+  "packages/diagram-formats/src/mermaid/mindmap/read.ts",
+  "packages/diagram-formats/src/mermaid/mindmap/write.ts",
+  "packages/diagram-formats/src/mermaid/packet/read.ts",
+  "packages/diagram-formats/src/mermaid/packet/write.ts",
+  "packages/diagram-formats/src/mermaid/pie/read.ts",
+  "packages/diagram-formats/src/mermaid/pie/write.ts",
+  "packages/diagram-formats/src/mermaid/plots.fixture.ts",
+  "packages/diagram-formats/src/mermaid/quadrant/parse.ts",
+  "packages/diagram-formats/src/mermaid/quadrant/read.ts",
+  "packages/diagram-formats/src/mermaid/quadrant/write.ts",
+  "packages/diagram-formats/src/mermaid/radar/parse.ts",
+  "packages/diagram-formats/src/mermaid/radar/read.ts",
+  "packages/diagram-formats/src/mermaid/radar/write.ts",
+  "packages/diagram-formats/src/mermaid/requirement/parse.ts",
+  "packages/diagram-formats/src/mermaid/requirement/read.ts",
+  "packages/diagram-formats/src/mermaid/requirement/write.ts",
+  "packages/diagram-formats/src/mermaid/sankey/read.ts",
+  "packages/diagram-formats/src/mermaid/sankey/write.ts",
+  "packages/diagram-formats/src/mermaid/sequence/parse.ts",
+  "packages/diagram-formats/src/mermaid/sequence/read.ts",
+  "packages/diagram-formats/src/mermaid/sequence/syntax.ts",
+  "packages/diagram-formats/src/mermaid/sequence/write.ts",
+  "packages/diagram-formats/src/mermaid/state/parse.ts",
+  "packages/diagram-formats/src/mermaid/state/read.ts",
+  "packages/diagram-formats/src/mermaid/state/write.ts",
+  "packages/diagram-formats/src/mermaid/timeline/read.ts",
+  "packages/diagram-formats/src/mermaid/timeline/write.ts",
+  "packages/diagram-formats/src/mermaid/xychart/parse.ts",
+  "packages/diagram-formats/src/mermaid/xychart/read.ts",
+  "packages/diagram-formats/src/mermaid/xychart/write.ts"
+ ],
+ "a": 14,
+ "b": 8,
+ "m": 5,
+ "distinct": 17,
+ "chapman": 21.5,
+ "unfound": 4.5,
+ "read": {
+  "A": 34,
+  "B": 34
+ },
+ "patches": 9,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.8,
+   "B": 12.4,
+   "match": 3.1,
+   "fix": 19
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "orochi",
+   "fix": "teitou"
+  },
+  "tokens": 15421724,
+  "costUsd": 9.45
+ },
+ "fixCommits": []
+}

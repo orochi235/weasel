@@ -1,0 +1,61 @@
+{
+ "id": "diagram.containers",
+ "commit": "6438325dbfdd7d007274232811abe60fc38c4f12",
+ "date": "2026-11-19",
+ "files": [
+  "packages/diagram/src/containers/canDropInto.ts",
+  "packages/diagram/src/containers/containerActions.ts",
+  "packages/diagram/src/containers/containerLayout.ts",
+  "packages/diagram/src/containers/containerStencils.ts",
+  "packages/diagram/src/containers/containerTitle.ts",
+  "packages/diagram/src/containers/index.ts",
+  "packages/diagram/src/containers/laneBoundaryLayer.ts",
+  "packages/diagram/src/containers/laneStack.ts",
+  "packages/diagram/src/containers/layouts.ts",
+  "packages/diagram/src/containers/regionSpecs.ts",
+  "packages/diagram/src/containers/titlePose.ts",
+  "packages/diagram/src/containers/trait.ts"
+ ],
+ "a": 7,
+ "b": 4,
+ "m": 1,
+ "distinct": 10,
+ "chapman": 19,
+ "unfound": 9,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "patches": 12,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.7,
+   "B": 9,
+   "match": 3,
+   "fix": 27.8
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "orochi",
+   "fix": "teitou"
+  },
+  "tokens": 18001132,
+  "costUsd": 8.44
+ },
+ "fixCommits": [
+  "67598c9745ecbbc988ec6d442e11fcc3fc7f1c62",
+  "d3c9045ee8de82a85634a6a1bf1546a26d776d7f",
+  "c526e136c121859590bbf306f956f85d07e7192b",
+  "8daaf5a8d98ac5ab1df5dd5a11c94077201a4250",
+  "3f6ce6c0c47c777b7597c41bf5b2b1f30008d992",
+  "c153b908772cdd3fb5117dad5f072b07bd980586",
+  "ab9b2a8a2d82ae7146ac1bc0f382ce3dd848440c",
+  "596acb7a313332744770f93a34206da44f7b1bc2",
+  "d091135ca00d6f6d80ceca3c43b1ba28ef1b7dd9",
+  "8f3e8e53eb80baff44bf49ef848c44da7540277f",
+  "9709a41545ec5c50ac522447c5475e2056a6d0e2",
+  "afe6999d09510c14dc7c15208f53e27ac66d8cfd"
+ ]
+}

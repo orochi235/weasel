@@ -1,0 +1,51 @@
+{
+ "pairs": [
+  [
+   2,
+   3
+  ],
+  [
+   3,
+   4
+  ],
+  [
+   4,
+   5
+  ],
+  [
+   7,
+   2
+  ],
+  [
+   8,
+   7
+  ],
+  [
+   9,
+   8
+  ]
+ ],
+ "a": [
+  "Crossing another route at a visibility-graph vertex costs nothing, so `crossPenalty` is dropped for the commonest crossings",
+  "After undo or redo the router keeps the undone edit's obstacles and labels, because nothing reseeds it",
+  "A cancelled drag's previews come back as routes in a later drag that runs out of budget",
+  "The follower's sub-pixel \"still\" shortcut answers the last drag's previews on a new drag's first frame",
+  "The spec router and the scene reader route self-loops and split connectors' labels differently",
+  "A moved label is matched against routes by `clearance`, though it is inflated by `labelClearance`",
+  "Routes computed for locked connectors are recorded as held, so after unlock the connector is never rerouted",
+  "The routeEdge window-doubling loop never ends when the limit is not finite",
+  "nearEdges picks an index past the end of `shapes` when the last shape starts a row",
+  "The full-route bench reports only the last run's unrouted count"
+ ],
+ "b": [
+  "A pathless connector's fallback line leaves out its waypoints, so its label obstacle and its dirty check are wrong",
+  "The spec router routes connectors straight through cluster boxes that the scene router routes around",
+  "A leg with no path in any window loops forever when the routing limit is not finite",
+  "A preview over budget can show a stale route left from a canceled drag",
+  "A drag's first frames can show the previous drag's preview routes",
+  "The spec router never routes a self-loop, while the scene router routes one with both ports named",
+  "The spec router makes no obstacle of an off-page connector's label; the scene router does",
+  "nearEdges indexes past the end of the shapes when the last shape starts a row",
+  "The full-route bench reports only the last layout's unrouted count"
+ ]
+}

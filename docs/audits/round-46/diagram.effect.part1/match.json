@@ -1,0 +1,38 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   2,
+   6
+  ],
+  [
+   3,
+   3
+  ],
+  [
+   6,
+   5
+  ]
+ ],
+ "a": [
+  "A node `build` that throws freezes the whole live graph, with no stage named",
+  "`pause()` (or `reset()`) during `play()`'s unlock is undone when the unlock resolves",
+  "`clusterAt` / `clusterSlotsAt` read a twice-named member's parent as the *last* cluster naming it; the rest of diagram uses the first",
+  "`dragEdit`'s `depth` climbs a cluster loop forever, hanging the tab on a box drag",
+  "Two wires sharing an `id` make `EffectChart`/`EffectEditor` throw in render; nothing reports or drops the repeat",
+  "One wire into a port the node lacks rolls the live graph back whole: no other edit reaches it",
+  "`useFollowAudioRunner` never hands the runner a `sources` that went back to `undefined`"
+ ],
+ "b": [
+  "A failing param write drops every later stage's param write, and the plan still records them as applied",
+  "A node whose `build` throws freezes the whole live graph and names no stage",
+  "Shipped audio nodes throw at build, not in `settings`, for a missing or unknown discrete setting",
+  "Dragging or resizing a cluster that is on a cluster loop hangs the editor",
+  "`sync` assumes a throwing structural apply changed nothing, but `graph.apply` keeps applying after an execution-time failure",
+  "Clearing `sources` leaves the live runner playing the old buffer",
+  "A member named by two clusters gets a different parent in the reorder than in the drawing, and `checkPipeline` does not report it"
+ ]
+}

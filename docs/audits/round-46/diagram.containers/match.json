@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ]
+ ],
+ "a": [
+  "regionHeaderAt tests a world point against each region's stored (parent-local) pose",
+  "Releasing a lane puts its members beneath the pool, under the pool's fill",
+  "diagramCanDropInto's \"plain group\" branch admits drops into any mark without a participant trait",
+  "diagramDropParentAt places stencil inserts into locked or hidden containers, bypassing the drop rules",
+  "addLane at an index colors the new lane by child order, not its place in the stack",
+  "Lane affordances and the resize drag ignore a pool's rotation",
+  "containerBuild localizes with RIGID_POSE_COMPOSITION while addLane uses the scene's composition"
+ ],
+ "b": [
+  "Growing a lane past the lanes after it reorders the pool's lanes on commit",
+  "regionHeaderAt tests a stored (parent-local) header box against a world point",
+  "diagramDropParentAt composes poses through envelope nodes, which the composition fold skips",
+  "diagramCanDropInto lets a lane move into a pool stacking along the other axis"
+ ]
+}
