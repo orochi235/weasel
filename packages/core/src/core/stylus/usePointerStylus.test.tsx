@@ -116,6 +116,25 @@ describe('usePointerStylus', () => {
     expect(result.current.hovering).toBe(false);
   });
 
+  it('binds to a ref\'s element once it is attached, and follows it when it changes', () => {
+    const first = document.createElement('div');
+    const second = document.createElement('div');
+    const ref: { current: HTMLElement | null } = { current: null };
+    const { result, rerender } = renderHook(() => usePointerStylus(ref, { maxFps: Infinity }));
+    act(() => { dispatchMove(window, { pointerType: 'pen', pressure: 0.3 }); });
+    expect(result.current.pressure).toBe(0);
+    ref.current = first;
+    rerender();
+    act(() => { dispatchMove(first, { pointerType: 'pen', pressure: 0.4 }); });
+    expect(result.current.pressure).toBeCloseTo(0.4);
+    ref.current = second;
+    rerender();
+    act(() => { dispatchMove(first, { pointerType: 'pen', pressure: 0.9 }); });
+    expect(result.current.pressure).toBeCloseTo(0.4);
+    act(() => { dispatchMove(second, { pointerType: 'pen', pressure: 0.7 }); });
+    expect(result.current.pressure).toBeCloseTo(0.7);
+  });
+
   it('filters by the committed options, not an abandoned render\'s', () => {
     function Probe({ stylusOnly }: { stylusOnly: boolean }) {
       usePointerStylus(undefined, { maxFps: Infinity, stylusOnly });

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { after } from '@weasel-js/registry';
 import { getStylusData, type StylusData } from './stylus';
@@ -38,7 +38,9 @@ export interface UsePointerStylusOptions {
 
 /**
  * Subscribe to pointer events on a target element (defaults to `window`)
- * and expose the most recent stylus snapshot.
+ * and expose the most recent stylus snapshot. A ref target is read after
+ * every commit: the hook listens to nothing while the ref is empty, and
+ * moves to whatever element the ref holds next.
  *
  * The hook does NOT consume pointerdown / pointerup — leave gesture handling
  * to the dispatcher. Re-renders are throttled by default (`maxFps`); pass
@@ -55,13 +57,16 @@ export function usePointerStylus(
   const lastCommit = useRef(-Infinity);
   const optsRef = useLatest({ maxFps, stylusOnly });
 
+  const [refEl, setRefEl] = useState<HTMLElement | null>(null);
+  const isRef = target != null && !(target instanceof HTMLElement);
+  useLayoutEffect(() => {
+    const next = isRef ? (target as RefObject<HTMLElement | null>).current : null;
+    if (next !== refEl) setRefEl(next);
+  });
+  const el: EventTarget | null = target == null ? window : isRef ? refEl : target;
+
   useEffect(() => {
-    const el: EventTarget =
-      target == null
-        ? window
-        : target instanceof HTMLElement
-          ? target
-          : target.current ?? window;
+    if (!el) return undefined;
     // `pointerenter`/`pointerleave` go to elements and never bubble, so `window` hears neither.
     const hoverEl: EventTarget = el === window ? document.documentElement : el;
 
@@ -106,7 +111,7 @@ export function usePointerStylus(
       hoverEl.removeEventListener('pointerleave', onLeave);
       cancelTrailing();
     };
-  }, [target, optsRef]);
+  }, [el, optsRef]);
 
   return state;
 }
