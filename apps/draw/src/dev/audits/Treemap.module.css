@@ -28,7 +28,7 @@
   align-items: center;
   gap: var(--wzl-space-2) var(--wzl-space-4);
   margin-top: var(--wzl-space-3);
-  font-size: var(--wzl-font-size-sm);
+  font-size: var(--wzl-font-size-md);
   color: var(--audit-muted);
 }
 
@@ -51,11 +51,31 @@
   background-image: repeating-linear-gradient(135deg, var(--audit-hatch) 0 1.5px, transparent 1.5px 5px);
 }
 
-.settled { background: var(--audit-settled); }
+.settled {
+  position: relative;
+  background: var(--audit-settled);
+}
+
+.settled::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  font-size: 12px;
+  line-height: 14px;
+  text-align: center;
+  color: var(--audit-ink);
+}
 
 .live {
   background: transparent;
-  border: 2.5px solid var(--audit-live);
+  border: 2.5px solid var(--audit-phase, var(--audit-live));
+}
+
+.phases {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wzl-space-2) var(--wzl-space-4);
 }
 
 .ramp {
@@ -65,6 +85,32 @@
 }
 
 .ramp i { width: 12px; }
+
+/* The phases' sweep, one bar, each name under its own stop. */
+.phaseRamp {
+  display: inline-grid;
+  gap: var(--wzl-space-1);
+  vertical-align: middle;
+}
+
+.phaseBar {
+  display: block;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--audit-phase-ramp);
+}
+
+.phaseNames {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  column-gap: var(--wzl-space-3);
+  font-size: var(--wzl-font-size-xs);
+  white-space: nowrap;
+}
+
+.phaseNames > :first-child { text-align: start; }
+.phaseNames > :not(:first-child, :last-child) { text-align: center; }
+.phaseNames > :last-child { text-align: end; }
 .depth0 { background: var(--audit-depth-0); }
 .depth1 { background: var(--audit-depth-1); }
 .depth2 { background: var(--audit-depth-2); }

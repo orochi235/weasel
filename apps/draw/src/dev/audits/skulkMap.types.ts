@@ -39,6 +39,9 @@ export interface LaneStep {
   readonly b?: number;
   readonly commits?: number;
   readonly why?: string;
+  /** When a done step began and ended, from onto's record of the job that ran it. */
+  readonly started?: string;
+  readonly ended?: string;
 }
 
 export interface AuditLane {
@@ -58,6 +61,7 @@ export interface AuditRun {
   readonly areas: readonly string[];
   readonly stages: Readonly<Record<string, string>>;
   readonly lanes: readonly AuditLane[];
+  readonly nightDir?: string | null;
   readonly sweepRunning: boolean;
   readonly lastLine: string | null;
   readonly lines: readonly string[];
@@ -70,6 +74,8 @@ export interface AuditRound {
   readonly files: number;
   readonly distinct: number;
   readonly est: number;
+  /** A round with no committed record, read from its run's night directory: still running, or not merged. */
+  readonly pending?: 'live' | 'unmerged';
 }
 
 export interface SkulkMap {

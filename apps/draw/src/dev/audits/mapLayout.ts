@@ -98,9 +98,9 @@ export interface MapCell extends Box {
 }
 
 /** How a package frame is padded: outside, between its areas, and above them when it is titled. */
-export const MAP_PADDING = { outer: 2, inner: 1.5, title: 15 } as const;
+export const MAP_PADDING = { outer: 2, inner: 1.5, title: 18 } as const;
 
-const titledAt = (b: Box) => b.width > 46 && b.height > 40;
+const titledAt = (b: Box) => b.width > 54 && b.height > 46;
 
 /** Every package as a frame and every area as a cell, in a `width` × `height` box. */
 export function layoutMap(

@@ -88,3 +88,21 @@ export function clip(text: string, max: number): string {
   if (max <= 0) return '';
   return text.length > max ? `${text.slice(0, Math.max(1, max - 1))}…` : text;
 }
+
+/**
+ * `text` in lines of at most `maxChars`, broken after its dots (`core.` / `domains.` / `paths`), at most `maxLines` of
+ * them: the last holds the rest, cut short with an ellipsis where it does not fit, and so does any one piece too long
+ * for a line of its own.
+ */
+export function wrapAtDots(text: string, maxChars: number, maxLines: number): string[] {
+  if (maxChars <= 0 || maxLines <= 0) return [];
+  const lines: string[] = [];
+  for (const piece of text.split(/(?<=\.)/)) {
+    const last = lines.at(-1);
+    if (last !== undefined && (last + piece).length <= maxChars) lines[lines.length - 1] = last + piece;
+    else lines.push(piece);
+  }
+  const kept = lines.slice(0, maxLines - 1);
+  if (lines.length >= maxLines) kept.push(lines.slice(maxLines - 1).join(''));
+  return kept.map((line) => clip(line, maxChars));
+}

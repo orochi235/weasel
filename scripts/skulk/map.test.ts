@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { nightLanes, nightStages, readRuns } from './map.mjs';
+import { nightLanes, nightRoundOf, nightStages, readRuns } from './map.mjs';
 import { claimRound, writeStatus, writeSummary } from './runs.mjs';
 
 const dirs: string[] = [];
@@ -49,6 +49,50 @@ describe('nightLanes', () => {
     expect(debug.steps.A.state).toBe('running');
     expect(debug.steps.B.state).toBe('waiting');
   });
+
+  it("times a done step from onto's finished job nearest its logged minutes, ending when that job did", () => {
+    const log = 'review 1/2 core.core.ops A on studio: 5 findings, 24/24 files read, 3.0 min, 1.30M tokens';
+    const jobs = [
+      { task: 'audit41-core.core.ops-A', node: 'studio', started: '2026-11-19T21:00:00Z', finished: '2026-11-19T21:00:04Z' },
+      { task: 'audit41-core.core.ops-A', node: 'studio', started: '2026-11-19T20:50:00Z', finished: '2026-11-19T20:53:10Z' },
+    ];
+    const [ops] = nightLanes(log, ['core.core.ops'], jobs);
+    expect(ops.steps.A).toMatchObject({ state: 'done', minutes: 3, started: '2026-11-19T20:50:10.000Z', ended: '2026-11-19T20:53:10.000Z' });
+    expect(ops.steps.B).toEqual({ state: 'waiting' });
+  });
+
+  it("fails a patch that did not apply", () => {
+    const [ops] = nightLanes('patch core.core.ops: did not apply: conflict in a.ts', ['core.core.ops']);
+    expect(ops.steps.patch).toEqual({ state: 'failed', why: 'did not apply' });
+  });
+});
+
+describe('nightRoundOf', () => {
+  it("finds a run's night directory by its round where its record names none", () => {
+    const state = mkdtempSync(join(tmpdir(), 'skulk-map-'));
+    dirs.push(state);
+    mkdirSync(join(state, 'nights', '2026-11-20T01-31-25-262Z-round41'), { recursive: true });
+    writeFileSync(join(state, 'last.json'), JSON.stringify({ round: 41, started: 's', ended: 'e', areas: [] }));
+    expect(readRuns(state, [])[0]!.nightDir).toBe(join(state, 'nights', '2026-11-20T01-31-25-262Z-round41'));
+  });
+
+  it("draws a round with no committed record from its night directory's finished areas", () => {
+    const nightDir = mkdtempSync(join(tmpdir(), 'skulk-night-'));
+    dirs.push(nightDir);
+    const area = (id: string, a: number, b: number, pairs: number, files: number) => {
+      mkdirSync(join(nightDir, 'areas', id), { recursive: true });
+      writeFileSync(join(nightDir, 'areas', id, 'match.json'), JSON.stringify({ pairs: Array(pairs).fill([0, 0]), a: Array(a).fill('x'), b: Array(b).fill('y') }));
+      writeFileSync(join(nightDir, 'areas', id, 'files.txt'), `${Array(files).fill('f.ts').join('\n')}\n`);
+    };
+    area('core.ops', 5, 2, 2, 24);
+    area('geom', 3, 3, 3, 10);
+    mkdirSync(join(nightDir, 'areas', 'cursor'));
+    const bar = nightRoundOf({ round: 42, running: true, started: '2026-11-20T03:23:24Z', nightDir });
+    expect(bar).toMatchObject({ round: 42, date: '2026-11-20', areas: 2, files: 34, distinct: 8, pending: 'live' });
+    expect(bar.est).toBeCloseTo(5 + 3);
+    expect(nightRoundOf({ round: 41, running: false, nightDir })?.pending).toBe('unmerged');
+    expect(nightRoundOf({ round: 40, running: false, nightDir: null })).toBeNull();
+  });
 });
 
 describe('readRuns', () => {
@@ -80,5 +124,6 @@ describe('readRuns', () => {
     expect(runs[1].lanes[0].steps.patch).toEqual({ state: 'done', commits: 1 });
     expect(runs[1].lines).toEqual(['patch b: 1 commits on audit42-b']);
     expect(runs[2].lanes).toEqual([{ id: 'old', steps: expect.objectContaining({ A: { state: 'waiting' } }) }]);
+    expect(runs[2].nightDir).toBe(join(state, 'nights', 'r40'));
   });
 });

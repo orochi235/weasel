@@ -110,6 +110,7 @@ export * from './components/SidebarPanel';
 export * from './components/Slider';
 export { paintGradientTrack } from './components/Slider/paintGradientTrack';
 export type { GradientTrackOptions } from './components/Slider/paintGradientTrack';
+export * from './components/SpanStrip';
 export * from './components/SwatchGrid';
 export * from './components/SwatchStrip';
 export * from './components/Switch';

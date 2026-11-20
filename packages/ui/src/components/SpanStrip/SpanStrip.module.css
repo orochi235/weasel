@@ -1,0 +1,147 @@
+/* A consumer sizes the strips with `--span-strip-height` and `--span-strip-text` on any ancestor.
+   `--at` (the playhead, 0 to 1) is set on the strip from its ref; each segment's `--span-from`, `--span-share` (its
+   start and length, as fractions of the window) and `--span-color` from its own, and each seam's `--seam-at`.
+   No rule here sets a font family: the text takes its container's. */
+.strip {
+  position: relative;
+  height: var(--span-strip-height, 22px);
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  background: var(--wzl-surface-sunken);
+  user-select: none;
+}
+
+.strip[data-seekable] {
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.strip:focus-visible {
+  outline: 2px solid var(--wzl-accent);
+  outline-offset: 1px;
+}
+
+.segment {
+  position: absolute;
+  inset-block: 0;
+  left: calc(var(--span-from, 0) * 100%);
+  width: calc(var(--span-share, 1) * 100%);
+  overflow: hidden;
+  padding: 0 var(--wzl-space-3);
+  box-sizing: border-box;
+  background: color-mix(in oklab, var(--span-color, var(--wzl-accent)) 16%, transparent);
+  color: var(--wzl-fg);
+  font-size: var(--span-strip-text, var(--wzl-font-size-2xs));
+  font-weight: var(--wzl-font-weight-bold);
+  line-height: calc(var(--span-strip-height, 22px) - 2px);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.segment[data-state='pending'] { opacity: 0.5; }
+
+.played {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0 calc((1 - var(--at, 0)) * 100%) 0 0);
+  pointer-events: none;
+}
+
+.played > .segment {
+  opacity: 1;
+  clip-path: inset(0 calc((1 - var(--span-fill, 1)) * 100%) 0 0);
+  background: var(--span-color, var(--wzl-accent));
+  /* Black or white, whichever reads on the span's color: the switch MotifFrame's edge ink makes, at oklch L 0.564. */
+  color: oklch(from var(--span-color, var(--wzl-accent)) clamp(0, (0.564 - l) * 1000, 1) 0 0);
+}
+
+.played > .segment[data-state='failed'] {
+  background-image: repeating-linear-gradient(135deg, transparent 0 4px, color-mix(in oklab, black 22%, transparent) 4px 6px);
+}
+
+.seam {
+  position: absolute;
+  inset-block: 0;
+  left: calc(var(--seam-at) * 100%);
+  margin-inline-start: -1px;
+  border-inline-start: 2px dotted white;
+  mix-blend-mode: difference;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.playhead {
+  position: absolute;
+  inset-block: 0;
+  left: calc(var(--at, 0) * 100%);
+  width: 2px;
+  margin-inline-start: -1px;
+  border-radius: 1px;
+  background: var(--wzl-accent);
+  box-shadow: 0 0 6px var(--wzl-accent);
+  pointer-events: none;
+}
+
+/* A stack: rows flush on one clock, neighbors sharing one border line, only the outer corners rounded, one playhead
+   down every row, and the ruler under them. `--rows` is set from its ref. */
+.stack {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  grid-template-rows: repeat(var(--rows, 1), var(--span-strip-height, 22px));
+  align-items: center;
+  column-gap: var(--wzl-space-4);
+}
+
+.rows,
+.row { display: contents; }
+
+.lead {
+  grid-column: 1;
+  grid-row: var(--row, auto);
+  min-width: 0;
+  max-height: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.row > .strip { grid-column: 2; grid-row: var(--row, auto); border-radius: 0; }
+.row + .row > .strip { margin-top: -1px; }
+.row:first-child > .strip { border-start-start-radius: var(--wzl-radius-sm); border-start-end-radius: var(--wzl-radius-sm); }
+.row:nth-last-child(2) > .strip { border-end-start-radius: var(--wzl-radius-sm); border-end-end-radius: var(--wzl-radius-sm); }
+.row > .strip > .playhead { display: none; }
+
+.stackHead {
+  grid-column: 2;
+  grid-row: 1 / span var(--rows, 1);
+  align-self: stretch;
+  position: relative;
+  margin-block: -3px;
+  pointer-events: none;
+}
+
+.stackHead::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: calc(var(--at, 0) * 100%);
+  width: 2px;
+  margin-inline-start: -1px;
+  border-radius: 1px;
+  background: var(--wzl-accent);
+  box-shadow: 0 0 6px var(--wzl-accent);
+}
+
+.ruler {
+  grid-column: 2;
+  grid-row: calc(var(--rows, 1) + 1);
+  min-width: 0;
+  height: calc(var(--span-strip-height, 22px) - 4px);
+  /* A label at the last tick runs past the ruler's end; it is cut there, not let out to widen the page. */
+  overflow: hidden;
+  margin-top: var(--wzl-space-1);
+  font-size: var(--span-strip-text, var(--wzl-font-size-2xs));
+}

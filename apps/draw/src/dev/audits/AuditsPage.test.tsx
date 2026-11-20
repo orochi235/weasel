@@ -27,13 +27,15 @@ describe('AuditsPage', () => {
     renderPage();
     expect(await screen.findByText('Round 41 running · fix · 2 areas')).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith(URL, { cache: 'no-store' });
-    expect(screen.getByText('Round 40 finished · 8 areas merged')).toBeInTheDocument();
+    expect(screen.queryByText('Round 40 finished · 8 areas merged')).toBeNull();
     expect(screen.getByText('$12.50 of $80')).toBeInTheDocument();
     expect(screen.getByText('main 6b331e4', { exact: false })).toBeInTheDocument();
 
-    const lanes = screen.getByRole('table', { name: 'Round 41 lanes' });
-    expect(within(lanes).getByText('studio · 12m')).toBeInTheDocument();
-    expect(within(lanes).getByText('batch, fleet run and merge, once every lane is patched')).toBeInTheDocument();
+    const lanes = screen.getByRole('list', { name: 'Round 41 lanes' });
+    expect(within(lanes).getByRole('meter', { name: 'core.ops' })).toHaveAttribute('aria-valuetext', 'fix, 12m in');
+    expect(within(lanes).getAllByText('studio · 12m')).not.toHaveLength(0);
+    expect(screen.getByText('conflict')).toBeInTheDocument();
+    expect(screen.getByText('batch, fleet run and merge, once every lane is patched')).toBeInTheDocument();
 
     const stats = screen.getByRole('region', { name: 'Headline stats' });
     expect(within(stats).getByText('4 / 6')).toBeInTheDocument();
@@ -53,7 +55,7 @@ describe('AuditsPage', () => {
     expect(within(detail).getByText('due again')).toBeInTheDocument();
     expect(within(detail).getByRole('table')).toHaveTextContent('33');
 
-    fireEvent.click(within(screen.getByRole('table', { name: 'Round 41 lanes' })).getByRole('button', { name: 'core.ops' }));
+    fireEvent.click(within(screen.getByRole('list', { name: 'Round 41 lanes' })).getByRole('button', { name: 'core.ops' }));
     expect(screen.getByText('in round 41')).toBeInTheDocument();
   });
 

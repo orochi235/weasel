@@ -12,6 +12,7 @@ import { Stats } from './Stats';
 import { Treemap } from './Treemap';
 import { nextUpOf, runHolding, statsFor } from './areaData';
 import { createAuditScene } from './auditScene';
+import { phasesOf } from './phases';
 import { useAuditPalette } from './useAuditPalette';
 import { useSkulkMap, type UseSkulkMapOptions } from './useSkulkMap';
 import type { SkulkMap } from './skulkMap.types';
@@ -41,6 +42,7 @@ function Chart({ map }: { map: SkulkMap }) {
   const area = map.areas.find((a) => a.id === shownId);
   const stats = useMemo(() => statsFor(map.areas), [map.areas]);
   const next = useMemo(() => nextUpOf(map.areas), [map.areas]);
+  const phases = useMemo(() => phasesOf(map.runs), [map.runs]);
   const pick = (id: string) => selection.set([asNodeId(id)]);
 
   return (
@@ -49,7 +51,7 @@ function Chart({ map }: { map: SkulkMap }) {
       <LiveRuns runs={map.runs} now={Date.parse(map.generated)} onPick={pick} />
       <Stats stats={stats} />
       <div ref={mainRef} className={s.main}>
-        <Treemap scene={scene} selection={selection} areas={map.areas} palette={colors} onHover={setHovered} />
+        <Treemap scene={scene} selection={selection} areas={map.areas} palette={colors} phases={phases} onHover={setHovered} />
         <ResizeHandle value={asideWidth} min={ASIDE.min} max={ASIDE.max} invert onInput={setAsideWidth} aria-label="Resize the side panel" />
         <aside className={s.aside} aria-label="Area, queue and rounds">
           <AreaDetail area={area} holder={area && runHolding(map.runs, area.id)} />
