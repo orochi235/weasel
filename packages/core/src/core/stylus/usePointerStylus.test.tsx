@@ -100,20 +100,19 @@ describe('usePointerStylus', () => {
     expect(result.current.pressure).toBeCloseTo(0.4);
   });
 
-  it('tracks hover via pointerenter / pointerleave', () => {
+  // As a browser dispatches them: to the element entered, without bubbling, never to `window`.
+  const hover = (target: EventTarget, type: 'pointerenter' | 'pointerleave') => {
+    const e = new Event(type, { bubbles: false });
+    Object.assign(e, { pointerType: 'pen' });
+    target.dispatchEvent(e);
+  };
+
+  it('tracks hover over the page with no target', () => {
     const { result } = renderHook(() => usePointerStylus(undefined, { maxFps: Infinity }));
     expect(result.current.hovering).toBe(false);
-    act(() => {
-      const e = new Event('pointerenter', { bubbles: true });
-      Object.assign(e, { pointerType: 'pen' });
-      window.dispatchEvent(e);
-    });
+    act(() => { hover(document.documentElement, 'pointerenter'); });
     expect(result.current.hovering).toBe(true);
-    act(() => {
-      const e = new Event('pointerleave', { bubbles: true });
-      Object.assign(e, { pointerType: 'pen' });
-      window.dispatchEvent(e);
-    });
+    act(() => { hover(document.documentElement, 'pointerleave'); });
     expect(result.current.hovering).toBe(false);
   });
 

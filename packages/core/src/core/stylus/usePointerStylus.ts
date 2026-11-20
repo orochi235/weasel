@@ -7,8 +7,9 @@ import { getStylusData, type StylusData } from './stylus';
  *  plus a `hovering` flag. */
 export interface PointerStylusState extends StylusData {
   /** True between `pointerenter` and `pointerleave` events on the target
-   *  element. iPad Safari fires these for Apple Pencil hover, so this is
-   *  true while the pen is near the glass without contact. */
+   *  element, or on the page's root element when there is no target. iPad
+   *  Safari fires these for Apple Pencil hover, so this is true while the
+   *  pen is near the glass without contact. */
   hovering: boolean;
 }
 
@@ -61,6 +62,8 @@ export function usePointerStylus(
         : target instanceof HTMLElement
           ? target
           : target.current ?? window;
+    // `pointerenter`/`pointerleave` go to elements and never bubble, so `window` hears neither.
+    const hoverEl: EventTarget = el === window ? document.documentElement : el;
 
     let cancelTrailing = (): void => {};
     const commit = (sample: StylusData, now: number) => {
@@ -95,12 +98,12 @@ export function usePointerStylus(
     };
 
     el.addEventListener('pointermove', onMove);
-    el.addEventListener('pointerenter', onEnter);
-    el.addEventListener('pointerleave', onLeave);
+    hoverEl.addEventListener('pointerenter', onEnter);
+    hoverEl.addEventListener('pointerleave', onLeave);
     return () => {
       el.removeEventListener('pointermove', onMove);
-      el.removeEventListener('pointerenter', onEnter);
-      el.removeEventListener('pointerleave', onLeave);
+      hoverEl.removeEventListener('pointerenter', onEnter);
+      hoverEl.removeEventListener('pointerleave', onLeave);
       cancelTrailing();
     };
   }, [target, optsRef]);
