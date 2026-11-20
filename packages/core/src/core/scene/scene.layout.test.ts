@@ -204,6 +204,26 @@ describe('scene container layout', () => {
     expect(depart).not.toHaveBeenCalled();
   });
 
+  it('does not count a child that left and came back in one edit as arrived', () => {
+    const base = stack();
+    const joined: string[] = [];
+    const scene = makeScene({
+      ...base,
+      arrive(container, children, arrived) {
+        joined.push(...arrived);
+        return { poses: base.childPoses(container, children) };
+      },
+    });
+    add(scene, 'a');
+    add(scene, 'b');
+    joined.length = 0;
+    scene.batch('round trip', () => {
+      scene.move(asNodeId('a'), null);
+      scene.move(asNodeId('a'), C);
+    });
+    expect(joined).toEqual([]);
+  });
+
   it('arranges the arrivals of an edit after its departures', () => {
     const order: string[] = [];
     const base = stack();
