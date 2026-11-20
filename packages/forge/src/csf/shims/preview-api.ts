@@ -5,17 +5,6 @@ import { getOwn, setOwn } from '@weasel-js/registry';
 
 type Args = Record<string, unknown>;
 
-/** A Proxy passes `isPortSafe` and still makes `structuredClone` throw. */
-const sendable = (value: unknown): boolean => {
-  if (!isPortSafe(value)) return false;
-  try {
-    structuredClone(value);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
 const without = (local: LocalArgs, keys: string[]): LocalArgs =>
   Object.fromEntries(Object.entries(local).filter(([key]) => !keys.includes(key)));
 
@@ -37,7 +26,7 @@ export function useArgs(): [
     const kept: LocalArgs = {};
     for (const [key, value] of Object.entries(patch)) {
       // A config `undefined` means the story's own arg, so a cleared arg stays in the frame, as Storybook drops it.
-      if (value !== undefined && sendable(value)) sent.push([key, value]);
+      if (value !== undefined && isPortSafe(value)) sent.push([key, value]);
       else setOwn(kept, key, { value, over: coverOf(getOwn(config, key)) });
     }
     setLocal((prev) => ({ ...without(prev, Object.keys(patch)), ...kept }));

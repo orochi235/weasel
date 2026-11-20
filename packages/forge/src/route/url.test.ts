@@ -115,6 +115,23 @@ describe('decodeKnob', () => {
     expect(decodeKnob('{oops', leaf('json', {}))).toBeUndefined();
   });
 
+  it("refuses an object, union, list or map param whose fields, tag or entries the leaf's own do not hold", () => {
+    const pos = f.object({ x: f.number(0), label: f.string('a') });
+    expect(decodeKnob('{"x":3}', pos)).toEqual({ value: { x: 3 } });
+    expect(decodeKnob('{"x":"abc"}', pos)).toBeUndefined();
+    expect(decodeKnob('[1]', pos)).toBeUndefined();
+    const look = f.union('kind', { solid: f.object({ width: f.number(1) }), dashed: f.object({ gap: f.number(2) }) });
+    expect(decodeKnob('{"kind":"dashed","gap":4}', look)).toEqual({ value: { kind: 'dashed', gap: 4 } });
+    expect(decodeKnob('{"kind":"nope"}', look)).toBeUndefined();
+    expect(decodeKnob('{"kind":"solid","width":"wide"}', look)).toBeUndefined();
+    const points = f.list([{ x: 0, label: 'a' }], pos);
+    expect(decodeKnob('[{"x":1}]', points)).toEqual({ value: [{ x: 1 }] });
+    expect(decodeKnob('[{"x":true}]', points)).toBeUndefined();
+    const sizes = f.map({ a: 1 }, f.number(0));
+    expect(decodeKnob('{"b":2}', sizes)).toEqual({ value: { b: 2 } });
+    expect(decodeKnob('{"b":"2"}', sizes)).toBeUndefined();
+  });
+
   it('falls back to the type of the default for a leaf with no declared kind, or a custom one', () => {
     expect(decodeKnob('7', leaf(null, 3))).toEqual({ value: 7 });
     expect(decodeKnob('false', leaf('my-toggle', true))).toEqual({ value: false });
@@ -123,6 +140,15 @@ describe('decodeKnob', () => {
 });
 
 describe('knobsToParams', () => {
+  it('writes a cleared clearable leaf as an empty param, which reads back cleared', () => {
+    const schema = f.schema({ size: f.number(12).clearable(), count: f.number(1) });
+    const params = knobsToParams(schema, { size: undefined, count: 1 });
+    expect(params).toEqual({ size: '' });
+    expect(paramsToKnobs(schema, params)).toEqual({ size: undefined });
+    expect(knobsToParams(schema, { count: 1 })).toEqual({});
+    expect(paramsToKnobs(schema, { count: '' })).toEqual({});
+  });
+
   it('compares a story arg holding a cycle to its default, after a port has cloned it, without throwing', () => {
     const tree: Record<string, unknown> = { name: 'root' };
     tree.self = tree;

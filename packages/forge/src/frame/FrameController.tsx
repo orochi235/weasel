@@ -89,6 +89,9 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
       case 'a11y.run':
         void audit(msg.id);
         break;
+      case 'action':
+        session.runAction(msg.path);
+        break;
     }
   });
 

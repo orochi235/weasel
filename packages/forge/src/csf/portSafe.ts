@@ -32,6 +32,16 @@ const hasOnlyClonedKeys = (v: object): boolean =>
       (Object.prototype.propertyIsEnumerable.call(v, key) || (Array.isArray(v) && key === 'length')),
   );
 
+/** Whether `structuredClone` takes `value`, which a Proxy refuses however plain it reads through its traps. */
+const clones = (value: unknown): boolean => {
+  try {
+    structuredClone(value);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 /**
  * Whether a MessagePort delivers `value` as the same thing it was. `structuredClone` succeeding is
  * not enough: it copies a class instance's fields onto a plain object and drops its methods.
@@ -52,16 +62,18 @@ export function isPortSafe(value: unknown): boolean {
     return hasOnlyClonedKeys(v) && Object.values(v).every(safe);
   };
   try {
-    return safe(value);
+    return safe(value) && clones(value);
   } catch {
     return false;
   }
 }
 
-/** A plain object or array whose members can be split: React elements are plain objects, but whole. */
+/** A plain object or array whose members can be split: React elements are plain objects, but whole, and so is one
+ *  whose members each cross yet which does not, a Proxy. */
 const splittable = (v: unknown): v is Record<string, unknown> | unknown[] =>
   (Array.isArray(v) ? Object.getPrototypeOf(v) === Array.prototype : isPlainObject(v) && !('$$typeof' in v)) &&
-  hasOnlyClonedKeys(v as object);
+  hasOnlyClonedKeys(v as object) &&
+  !(Object.values(v as object).every(isPortSafe) && !clones(v));
 
 /**
  * The part of `value` a port delivers intact, or null when none of it can cross. A plain object

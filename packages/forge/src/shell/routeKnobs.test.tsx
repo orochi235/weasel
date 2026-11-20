@@ -67,6 +67,27 @@ describe('pins in the URL', () => {
 });
 
 describe('knobs in the URL', () => {
+  it('opens a clearable knob cleared from an empty param, and keeps the param', async () => {
+    const clearModule = {
+      default: meta({ title: 'X' }),
+      A: story({
+        config: f.schema({ size: f.number(12).clearable() }),
+        render: ({ config }) => <output data-testid="story">size:{String(config.size)}</output>,
+      }),
+    };
+    history.replaceState(null, '', '/#/x--a?size=');
+    renderWithIcons(
+      <Workshop
+        index={[a]}
+        frameUrl="/frame.html"
+        importers={{ '/x.stories.tsx': vi.fn(() => Promise.resolve(clearModule as unknown as Record<string, unknown>)) }}
+        storage={createMemoryAdapter()}
+      />,
+    );
+    await shows('size:undefined');
+    await waitFor(() => expect(location.hash).toBe('#/x--a?size='));
+  });
+
   it('opens a story at the knob values its URL names, grouped ones by dotted path', async () => {
     mount('#/x--a?label=Go&look.px=8&look.round=true');
     await shows('Go/8/true');
