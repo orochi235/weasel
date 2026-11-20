@@ -28,6 +28,16 @@ describe('stableStringify', () => {
     expect(stableStringify(10n)).not.toBe(stableStringify(11n));
   });
 
+  it('never writes a real object as a tag', () => {
+    expect(stableStringify({ $type: 'bigint', value: '10' })).not.toBe(stableStringify(10n));
+    const loop: Record<string, unknown> = {};
+    loop.self = loop;
+    expect(stableStringify({ self: { $type: 'cycle' } })).not.toBe(stableStringify(loop));
+    const wrapped = { $type: 'object', value: { a: 1 } };
+    expect(stableStringify(wrapped)).not.toBe(stableStringify({ a: 1 }));
+    expect(stableStringify({ $type: 'object', value: wrapped })).not.toBe(stableStringify(wrapped));
+  });
+
   it('writes a cycle as a marker instead of throwing, and a shared reference out twice', () => {
     const shared = { v: 1 };
     const loop: Record<string, unknown> = { shared, again: shared };

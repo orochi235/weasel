@@ -2749,3 +2749,6 @@ Calls the lanes made without a ruling:
   it reported pointers from the whole page as the element's. No target, or `null` passed directly, still means `window`.
 - 2026-11-19 (the fixer's call): a `layerOrder` naming a layer more than once draws it once, at its first place, and
   warns in development. Drawing it at each place it is named, as before, was the alternative.
+- 2026-11-19 (the fixer's call): `stableStringify` writes an object of the caller's own with a `$type` key as
+  `{"$type":"object","value":…}`, so `{ $type: 'bigint', value: '10' }` and `10n` no longer give one string. Leaving
+  such an object as JSON writes it, and the two colliding, was the alternative.
