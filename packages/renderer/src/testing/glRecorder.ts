@@ -70,7 +70,6 @@ const GL_CONSTANTS: Readonly<Record<string, number>> = {
   UNPACK_SKIP_PIXELS: 0x0CF4,
   PIXEL_UNPACK_BUFFER: 0x88EC,
   MAX_TEXTURE_SIZE: 0x0D33,
-  UNPACK_ALIGNMENT: 0x0CF5,
   RENDERER: 0x1F01,
   SAMPLES: 0x80A9,
   // Blend factors
