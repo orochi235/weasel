@@ -63,6 +63,17 @@ describe('PrefSchemaEditor: the catalog of actions', () => {
     expect(name().value).toBe('Copy');
   });
 
+  it('leaves the catalog out of the Changes tab and Submit, which carry the schema\'s changes alone', () => {
+    const onSubmit = vi.fn();
+    renderWithIcons(<Live original={SCHEMA} onSubmit={onSubmit} />);
+    pickAction('edit/editCopy');
+    fireEvent.change(name(), { target: { value: 'Duplicate' } });
+    fireEvent.click(screen.getByRole('tab', { name: 'Changes' }));
+    const exported = screen.getByRole('region', { name: 'Export' });
+    expect(within(exported).getByRole('tabpanel', { name: 'Changes' }).textContent).toBe('No changes.');
+    expect((within(exported).getByRole('button', { name: 'Submit' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it('opens a draft kept before the catalog was, on the schema it holds', () => {
     renderWithIcons(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} draftKey="old-draft" />);
     fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('view'));

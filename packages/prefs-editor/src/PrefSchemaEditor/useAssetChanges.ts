@@ -25,11 +25,11 @@ export interface AssetSetChanges {
   ids: ReadonlySet<string>;
   /** The changes of the asset `id`; none for one that stands at its baseline. */
   of(id: string): readonly SchemaChange[];
-  /** Every asset's changes as one list, which is empty when nothing changed and another list when anything does. */
+  /** Every sent asset's changes as one list, which is empty when nothing sent changed and another list when anything does. */
   all: readonly SchemaChange[];
-  /** The changes as text: one asset's alone as `formatChanges` writes them, and several each under its asset's label. */
+  /** The sent assets' changes as text: one asset's alone as `formatChanges` writes them, and several each under its asset's label. */
   text: string;
-  /** What a submission hands over. */
+  /** What a submission hands over: every changed asset that is sent. */
   sent(types?: PrefTypes): SentAsset[];
   /** What the asset `id` exports as it stands. */
   exported(id: string, types?: PrefTypes): AssetExport;
@@ -48,10 +48,12 @@ function changesText(assetSet: AssetSet, each: readonly AssetChanges[]): string 
 /**
  * The changes from `base` to `assetSet`. An asset set `same` as the last one is not looked at again, so what the
  * panes are handed keeps its identity under a host that makes its asset set anew each time it draws. `report` is
- * called with the changed assets' ids on mount, and again whenever the set is another one.
+ * called with the changed assets' ids on mount, and again whenever the set is another one. `sends` picks the assets whose
+ * changes `all`, `text`, and `sent` carry; left out, every asset's.
  */
 export function useAssetChanges(
   base: AssetSet, assetSet: AssetSet, same: (a: AssetSet, b: AssetSet) => boolean, report?: (ids: ReadonlySet<string>) => void,
+  sends?: (asset: Asset) => boolean,
 ): AssetSetChanges {
   const [held, setHeld] = useState(assetSet);
   const current = held === assetSet || same(held, assetSet) ? held : assetSet;
@@ -63,19 +65,20 @@ export function useAssetChanges(
   const changes = useMemo<AssetSetChanges>(() => {
     const each = assetSetChanges(base, current, origins);
     const by = new Map(each.map((c) => [c.id, c.changes]));
+    const sent = sends ? each.filter(({ id }) => sends(assetOf(current, id)!)) : each;
     return {
       ids: new Set(by.keys()),
       of: (id) => by.get(id) ?? NO_CHANGES,
-      all: each.flatMap((c) => c.changes),
-      text: changesText(current, each),
-      sent: (types) => each.map(({ id, changes }) => {
+      all: sent.flatMap((c) => c.changes),
+      text: changesText(current, sent),
+      sent: (types) => sent.map(({ id, changes }) => {
         const asset = assetOf(current, id)!;
         return { id, kind: asset.kind, changes, literal: exportOf(asset, base, origins.of(id), types).text };
       }),
       exported: (id, types) => exportOf(assetOf(current, id)!, base, origins.of(id), types),
       follow: origins.follow,
     };
-  }, [base, current, origins]);
+  }, [base, current, origins, sends]);
   const reported = useLatest(report);
   const { ids } = changes;
   useEffect(() => reported.current?.(ids), [ids, reported]);
