@@ -1,4 +1,5 @@
-import { after, deepEqual } from '@weasel-js/registry';
+import { after } from '@weasel-js/registry';
+import { cloneEqual } from './cloneEqual';
 import type { RecordChange } from './records';
 import type { StorageChange } from './types';
 
@@ -73,7 +74,7 @@ export function createRemote(o: RemoteOptions): Remote {
     retryWait.delete(name);
     if (!o.live() || o.owns(name) || taken.get(name) !== mark) return;
     const held = o.values.has(name);
-    if (value === undefined ? !held : held && deepEqual(o.values.get(name), value)) return;
+    if (value === undefined ? !held : held && cloneEqual(o.values.get(name), value)) return;
     apply([[o.prefix + name, value]]);
   }
 
