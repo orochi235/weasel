@@ -1,4 +1,5 @@
 import type { Op } from '@weasel-js/core';
+import { sameGuide } from './sameGuide';
 import type { Guide } from './types';
 
 /** Where guide ops write: `useGuides()` is one. */
@@ -15,7 +16,7 @@ export interface GuideStore {
  * live outside the scene, so the op writes to the store it closes over and
  * leaves the commit adapter alone; with no registry name it is not kept in a
  * serialized history. Over a guide with the same id, it replaces that guide,
- * and its inverse puts it back.
+ * and its inverse puts it back; over an equal one it is a no-op.
  */
 export function createAddGuideOp(store: GuideStore, guide: Guide, index?: number): Op {
   let held: Guide | undefined;
@@ -23,14 +24,16 @@ export function createAddGuideOp(store: GuideStore, guide: Guide, index?: number
     label: 'Add Guide',
     apply: () => {
       held = store.getGuides().find((g) => g.id === guide.id);
+      if (held !== undefined && sameGuide(held, guide)) return 'noop';
       store.addGuide(guide, index);
+      return undefined;
     },
     invert: () => (held ? createReplaceGuideOp(store, guide, held) : createRemoveGuideOp(store, guide)),
   };
 }
 
 /** Put `to` in place of `from`, the guide with the same id, as an op: a
- *  guide moved. Once applied, its inverse puts back the guide it replaced,
+ *  guide moved, a no-op when the store already holds `to`. Once applied, its inverse puts back the guide it replaced,
  *  which a store changed since `from` was read may hold in place of `from`,
  *  and removes `to` from a store that held no guide with its id; before, it
  *  puts `from` back. */
@@ -42,7 +45,9 @@ export function createReplaceGuideOp(store: GuideStore, from: Guide, to: Guide):
     apply: () => {
       held = store.getGuides().find((g) => g.id === to.id);
       applied = true;
+      if (held !== undefined && sameGuide(held, to)) return 'noop';
       store.addGuide(to);
+      return undefined;
     },
     invert: () => (!applied ? createReplaceGuideOp(store, to, from) : held ? createReplaceGuideOp(store, to, held) : createRemoveGuideOp(store, to)),
   };
