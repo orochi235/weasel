@@ -996,7 +996,8 @@ A node's kind says whether it draws itself (decided 2026-10-22). Having children
 Whichever the kind, a node may clip, copy (`copiesFromPose`), lay out and set units for
 its children, and frames its children's poses unless it is an envelope. A child's
 `'inherit'` fill or stroke reads its parent's, whatever the parent's kind. With no
-`canDropInto` dep a group admits drops and a mark does not.
+`canDropInto` dep a group admits drops and a mark does not. With no `canSwap` dep two nodes of
+one kind and one size may trade places, by a swap drop or the `swap` command (`swappable`).
 
 **A node that consumes its children draws them only through itself** (`consumesChildren`,
 2026-10-27). The render walk paints none of them, and a press, a region select or select-all

@@ -97,6 +97,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/MoveSnapDemo.tsx',
   },
   {
+    id: 'swap',
+    title: 'Swap',
+    category: 'Tools',
+    description: 'The move action\'s swapOnDrop: "dwell" param, set through <SceneCanvas tune>, and the swap command. Drag a tile and hold it still over another for a second: the other slides into the dragged tile\'s place, is outlined, and the cursor turns to the swap arrows; let go and the two trade places as one undo step. A quick pass over a tile is a plain move. Shift-click two tiles and press Swap to trade them without dragging.',
+    hint: 'Drag a tile onto another and hold it there.',
+    load: () => import('./demos/SwapDemo').then((m) => m.SwapDemo),
+    path: 'apps/site/demos/SwapDemo.tsx',
+  },
+  {
     id: 'insert',
     title: 'Insert',
     category: 'Tools',
