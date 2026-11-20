@@ -183,4 +183,10 @@ describe('latticePoints, past the index search', () => {
     expect(latticePoints(strip(12000, 1000))).toHaveLength(51);
   });
 
+  it('reads an extent given from its far corner as the same box', () => {
+    const box = { x: -360, y: -240, width: 720, height: 480 };
+    const flipped = { x: 360, y: 240, width: -720, height: -480 };
+    expect(latticePoints(square({ extent: flipped }))).toEqual(latticePoints(square({ extent: box })));
+    expect(latticePoints(square({ extent: box })).length).toBeGreaterThan(1);
+  });
 });

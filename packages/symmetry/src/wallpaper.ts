@@ -46,7 +46,12 @@ export function latticePoints(spec: SymmetrySpec, limit = MAX_WALLPAPER_COPIES +
   const by = vy * spec.rowSpacing;
   // The cross product of the unit directions, so a lattice spaced near the double range's end does not overflow it.
   const cross = ux * vy - uy * vx;
-  const { x, y, width, height } = spec.extent;
+  // A box given from its far corner is the same box, as the guide outlines it.
+  const e = spec.extent;
+  const x = Math.min(e.x, e.x + e.width);
+  const y = Math.min(e.y, e.y + e.height);
+  const width = Math.abs(e.width);
+  const height = Math.abs(e.height);
   if (!(Math.abs(cross) * Math.abs(spec.spacing) * Math.abs(spec.rowSpacing) > 1e-9) || !(width >= 0) || !(height >= 0)) return [];
   // The extent's corners in lattice coordinates bound the indices worth trying.
   const corners = [[x, y], [x + width, y], [x, y + height], [x + width, y + height]]
