@@ -26,6 +26,15 @@ describe('stroke-dashoffset', () => {
     expect(scaled).toMatchObject({ dash: [8, 4], dashOffset: 3 });
   });
 
+  it('reads an em offset against the element\'s font size, and inherits the computed length', () => {
+    const { nodes } = parseSvg(doc(
+      '<path font-size="40" d="M0 0H50" stroke="#000" stroke-dasharray="1em 1em" stroke-dashoffset="0.5em"/>'
+      + '<g font-size="40" stroke-dashoffset="0.5em"><path font-size="10" d="M0 0H50" stroke="#000" stroke-dasharray="4 2"/></g>',
+    ));
+    expect((nodes[0] as SvgPathNode).stroke).toMatchObject({ dash: [40, 40], dashOffset: 20 });
+    expect(((nodes[1] as SvgGroupNode).children[0] as SvgPathNode).stroke?.dashOffset).toBe(20);
+  });
+
   it('round-trips through export, and onto the kit stroke', () => {
     const svg = serializeSvg([line({ dash: [4, 2], dashOffset: 1.25 })]);
     expect(svg).toContain('stroke-dashoffset="1.25"');

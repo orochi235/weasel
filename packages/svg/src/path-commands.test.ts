@@ -127,3 +127,17 @@ describe('SVG path commands', () => {
     expect(packed.coords).toEqual(spaced.coords);
   });
 });
+
+describe('a four-corner axis-aligned path', () => {
+  const pathOf = (d: string) => (parseSvg(`<svg xmlns="http://www.w3.org/2000/svg"><path d="${d}"/></svg>`).nodes[0] as { path: { kind: string } }).path;
+
+  it('is read as a rect when it runs clockwise from its top-left corner, as a rect is drawn', () => {
+    expect(pathOf('M0 0 L10 0 L10 10 L0 10 Z')).toEqual({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 });
+  });
+
+  it('keeps its own start and direction otherwise, where its dashes and trim begin', () => {
+    for (const d of ['M10 0 L0 0 L0 10 L10 10 Z', 'M10 10 L0 10 L0 0 L10 0 Z', 'M0 10 L10 10 L10 0 L0 0 Z']) {
+      expect(pathOf(d).kind).toBe('polygon');
+    }
+  });
+});

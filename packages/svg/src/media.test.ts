@@ -200,6 +200,10 @@ describe('mediaEnvironmentFor', () => {
     expect(mediaEnvironmentFor(root('<svg width="10" height="20"/>'), { width: 1200, prefersColorScheme: 'dark' }))
       .toMatchObject({ width: 1200, height: 20, prefersColorScheme: 'dark' });
   });
+  it('keeps the default for an override given as undefined', () => {
+    expect(mediaEnvironmentFor(root('<svg width="10" height="20"/>'), { width: undefined, prefersColorScheme: undefined }))
+      .toMatchObject({ width: 10, height: 20, prefersColorScheme: 'light' });
+  });
 });
 
 describe('evaluateMediaQuery: names spelled like Object.prototype members', () => {

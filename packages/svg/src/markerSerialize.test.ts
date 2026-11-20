@@ -104,6 +104,29 @@ describe('a marker key that is not an XML id, unregistered by the time it is rea
   });
 });
 
+describe('a sized or unseated def beside a key spelled like one', () => {
+  it('gives each its own def and reads each back as written', () => {
+    const arrow = getMarker('arrow')!;
+    const disposers = [
+      registerMarker({ ...arrow, id: 'arrow-s2' }),
+      registerMarker({ ...arrow, id: 'tick', inset: 2 }),
+      registerMarker({ ...arrow, id: 'tick-tip' }),
+    ];
+    try {
+      const svg = serializeSvg([
+        ...line({ markerEnd: { key: 'arrow', size: 2 } }), ...line({ markerEnd: 'arrow-s2' }),
+        ...line({ markerMid: 'tick' }), ...line({ markerEnd: 'tick-tip' }),
+      ]);
+      const ids = [...svg.matchAll(/marker-(?:end|mid)="url\(#([^)]+)\)"/g)].map((m) => m[1]);
+      expect(new Set(ids).size).toBe(4);
+      const strokes = parseSvg(svg).nodes.map((n) => (n as { stroke?: Record<string, unknown> }).stroke!);
+      expect(strokes.map((s) => s.markerEnd ?? s.markerMid)).toEqual([{ key: 'arrow', size: 2 }, 'arrow-s2', 'tick', 'tick-tip']);
+    } finally {
+      disposers.forEach((d) => d());
+    }
+  });
+});
+
 describe('a sized head read back under a scaling group', () => {
   it('scales the head with the stroke, as a browser draws its userSpaceOnUse def', () => {
     const svg = serializeSvg(line({ markerEnd: { key: 'arrow', size: 3 } }));

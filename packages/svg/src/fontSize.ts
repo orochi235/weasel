@@ -41,7 +41,7 @@ const DIMENSION = new RegExp(`^\\s*(${NUMBER})\\s*([a-z%]*)\\s*$`, 'i');
 const FONT_RELATIVE = new RegExp(`(?<![\\w.])(${NUMBER})(em|ex)(?![\\w%])`, 'gi');
 
 /** Property names whose values are lengths, and so may be written in `em` or `ex`. */
-const LENGTH_PROPERTIES = ['stroke-width', 'stroke-dasharray', 'letter-spacing'] as const;
+const LENGTH_PROPERTIES = ['stroke-width', 'stroke-dasharray', 'stroke-dashoffset', 'letter-spacing'] as const;
 
 type FontRelativeStyle = { [K in 'font-size' | (typeof LENGTH_PROPERTIES)[number]]?: string };
 

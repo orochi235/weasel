@@ -46,7 +46,7 @@ export function attrNames(attrs: readonly string[]): string[] {
   return attrs.map((a) => a.slice(0, a.indexOf('=')));
 }
 
-const START_TAG = /<(path|text)\b([^>]*?)(\/?)>/g;
+const START_TAG = /<(path|text)\b((?:[^>"]|"[^"]*")*?)(\/?)>/g;
 const ATTR = /\s([\w:-]+)="[^"]*"/g;
 
 /**

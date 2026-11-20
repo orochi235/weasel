@@ -137,13 +137,14 @@ function readImagePattern(el: Element): ImagePatternPaint | null {
 }
 
 /** A pattern element's `x` / `y` and `patternTransform`, as a paint's
- *  `origin` and `transform`, each present only when it moves the tile. */
+ *  `origin` and `transform`, each present only when it moves the tile, in the
+ *  user space of the element it fills. */
 function readPlacement(el: Element, onWarn?: (m: string) => void): PatternPlacement {
   const x = parseFloat(el.getAttribute('x') ?? '0');
   const y = parseFloat(el.getAttribute('y') ?? '0');
   const m = parseTransform(el.getAttribute('patternTransform'), onWarn);
   const origin = applyMatrix(m, x, y);
-  const placement: PatternPlacement = {};
+  const placement: PatternPlacement = { units: 'world' };
   if (origin.x !== 0 || origin.y !== 0) placement.origin = origin;
   if (!isIdentity([m[0], m[1], m[2], m[3], 0, 0])) placement.transform = [m[0], m[1], m[2], m[3]];
   return placement;

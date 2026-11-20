@@ -22,6 +22,7 @@ import {
   CascadeLayers, parseStylesheet, type StyleRule, type StylesheetContext,
 } from './stylesheet';
 import { computeFontRelative, fontSizeOf } from './fontSize';
+import { parseUrlRef } from './color';
 
 export { parseDeclarations, specificity, type Declaration, type Specificity };
 export { CascadeLayers, parseStylesheet, type StyleRule, type StylesheetContext };
@@ -216,9 +217,13 @@ export function deriveStyle(parent: StyleContext, el: Element): StyleContext {
  */
 export function resolveCurrentColor(raw: string | null, style: StyleContext): string | null {
   if (raw == null) return null;
-  if (raw.trim().toLowerCase() !== 'currentcolor') return raw;
+  const s = raw.trim();
+  const url = parseUrlRef(s);
+  const keyword = url ? url.rest : s;
+  if (keyword.toLowerCase() !== 'currentcolor') return raw;
   const color = readProperty('color', style['color']);
-  return color == null || color.toLowerCase() === 'currentcolor' ? '#000000' : color;
+  const resolved = color == null || color.toLowerCase() === 'currentcolor' ? '#000000' : color;
+  return url ? `${s.slice(0, s.length - keyword.length)}${resolved}` : resolved;
 }
 
 /** An element's own value of `prop`, read by the property's one reader. */

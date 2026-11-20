@@ -171,19 +171,34 @@ function readChildren(
   out: SvgNode[],
 ): void {
   for (let i = 0; i < children.length; i++) {
-    const el = children[i];
-    // Skip namespaced children — they belong to `meta.elements`, not nodes.
-    // (DOM gives SVG-native elements `http://www.w3.org/2000/svg`.)
-    const ns = el.namespaceURI;
-    if ((ns && ns !== 'http://www.w3.org/2000/svg') || isStrokeOutline(el) || !conditionsHold(el)) continue;
-    const hidden = isHiddenElement(el, style);
-    if (hidden && !keepHidden && booleanAttrOf(el).boolean === undefined) continue;
-    const node = unwrapStrokeGroup(el, parseElement(el, ctm, style, from, gradients, clips, onWarn, uriToPrefix, keepHidden));
-    if (!node) continue;
-    const parsed = Array.isArray(node) ? node : [node];
-    if (hidden) for (const n of parsed) n.hidden = true;
-    out.push(...parsed);
+    out.push(...readChild(children[i], ctm, style, from, gradients, clips, onWarn, uriToPrefix, keepHidden));
   }
+}
+
+/** What one child draws, once the checks every drawn element passes hold: a
+ *  container's child and a `<use>`'s target or `<symbol>` child alike. */
+function readChild(
+  el: Element,
+  ctm: Matrix,
+  style: StyleContext,
+  from: GroupPaintFrom,
+  gradients: GradientTable,
+  clips: ClipTable,
+  onWarn: (m: string) => void,
+  uriToPrefix: Map<string, string>,
+  keepHidden: boolean,
+): SvgNode[] {
+  // Skip namespaced children — they belong to `meta.elements`, not nodes.
+  // (DOM gives SVG-native elements `http://www.w3.org/2000/svg`.)
+  const ns = el.namespaceURI;
+  if ((ns && ns !== 'http://www.w3.org/2000/svg') || isStrokeOutline(el) || !conditionsHold(el)) return [];
+  const hidden = isHiddenElement(el, style);
+  if (hidden && !keepHidden && booleanAttrOf(el).boolean === undefined) return [];
+  const node = unwrapStrokeGroup(el, parseElement(el, ctm, style, from, gradients, clips, onWarn, uriToPrefix, keepHidden));
+  if (!node) return [];
+  const parsed = Array.isArray(node) ? node : [node];
+  if (hidden) for (const n of parsed) n.hidden = true;
+  return parsed;
 }
 
 function parseElement(
@@ -207,7 +222,7 @@ function parseElement(
       return image;
     }
   }
-  if (tag === 'use') return parseUse(el, ctm, style, (t, m, s) => parseElement(t, m, s, from, gradients, clips, onWarn, uriToPrefix, keepHidden), onWarn);
+  if (tag === 'use') return parseUse(el, ctm, style, (t, m, s) => readChild(t, m, s, from, gradients, clips, onWarn, uriToPrefix, keepHidden), onWarn);
   if (tag === 'g' || tag === 'a' || tag === 'switch') return parseGroup(el, ctm, style, from, gradients, clips, onWarn, uriToPrefix, keepHidden);
   const clipRaw = ownProp(el, 'clip-path');
   if (clipRaw != null && readProperty('clip-path', clipRaw) !== 'none') {
@@ -229,7 +244,10 @@ function parseElement(
     if (el.hasAttribute('viewBox')) {
       onWarn('nested <svg> viewBox is not modeled; its children are not rescaled');
     }
-    return parseChildren(el.children, multiply(ctm, offset), childStyle, viewportPaintFrom(el, from), gradients, clips, onWarn, uriToPrefix, keepHidden);
+    const own = multiply(ctm, parseTransform(el.getAttribute('transform'), onWarn));
+    const children = parseChildren(el.children, multiply(own, offset), childStyle, viewportPaintFrom(el, from), gradients, clips, onWarn, uriToPrefix, keepHidden);
+    const opacity = ownValue(el, 'opacity');
+    return opacity == null ? children : { kind: 'group', children, opacity };
   }
   return parseLeaf(el, tag, ctm, style, from, gradients, onWarn, uriToPrefix);
 }
