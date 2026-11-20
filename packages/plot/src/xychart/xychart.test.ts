@@ -202,3 +202,11 @@ describe('xyValueDomain with one end set', () => {
     expect(xyValueDomain(at({ min: 10, max: 0 }))).toEqual([10, 0]);
   });
 });
+
+describe('bar slots', () => {
+  it('gives a series listed twice a slot each', () => {
+    const s = { kind: 'bar', values: [1, 2] } as const;
+    const { get } = byKey({ kind: 'xychart', series: [s, s] });
+    expect(get('bar:1:0')!.pose.x).toBeGreaterThan(get('bar:0:0')!.pose.x);
+  });
+});
