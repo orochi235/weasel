@@ -16,12 +16,12 @@ npm install @weasel-js/select
 ## Usage
 
 ```ts
-import { intentOf, select } from '@weasel-js/select';
+import { intentOf, select, type Selection } from '@weasel-js/select';
 
 // A list's convention: Cmd/Ctrl toggles a row, shift ranges from the anchor.
 const policy = { mode: 'multiple', toggle: ['meta', 'ctrl'], range: 'shift' } as const;
 
-let state = { ids: ['b'], anchor: 'b' };
+let state: Selection<string> = { ids: ['b'], anchor: 'b' };
 state = select(state, 'd', intentOf({ shift: true, meta: false, ctrl: false }, policy), {
   order: ['a', 'b', 'c', 'd'],          // what a range walks
   forceSingle: (id) => id === 'c',      // a locked row is selected only alone
@@ -34,7 +34,7 @@ state = select(state, 'd', intentOf({ shift: true, meta: false, ctrl: false }, p
 | `replace` | `[id]` | `id` |
 | `alone` | `[id]`; every intent resolves to it on an id `forceSingle` holds | `id` |
 | `toggle` | the selected ids `forceSingle` does not hold, with `id` added or removed | `id` |
-| `range` | ids from anchor to `id` in `order`, skipping those `forceSingle` holds; `[id]` if there is no anchor or either end is outside `order` | unchanged; `id` when it falls back to `[id]` |
+| `range` | with `between`, the ids it gives for anchor and `id`, each once; without it, the ids from anchor to `id` in `order`; either way skipping those `forceSingle` holds, and `[id]` if there is no anchor or that leaves none | unchanged; `id` when it falls back to `[id]` |
 
 `createSelectionStore` keeps ids outside a component, behind the `SelectionStore` contract that
 `@weasel-js/core`'s `Scene` also satisfies.
