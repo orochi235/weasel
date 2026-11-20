@@ -1,5 +1,5 @@
 import type { DragSample } from '@weasel-js/routing';
-import type { InsertPoint, InsertEnds, InsertExtras } from '@weasel-js/core/engine';
+import { insertPreviewExtent, type InsertPoint, type InsertEnds, type InsertExtras } from '@weasel-js/core/engine';
 import { applyUserRotation, buildExtras } from './extras';
 import { insertRectFor, effectiveOriginMode } from './geometry';
 import type { InsertFrame } from './session';
@@ -116,12 +116,13 @@ function endLandings(start: unknown, end: unknown): InsertEnds['landings'] | und
  *     zero-height (or zero-width) AABB and is perfectly valid — only
  *     a zero-LENGTH drag is degenerate. (Shift-constrain makes
  *     axis-aligned the common case, which is how this surfaced.)
- *   - everything else: a zero extent in either axis is degenerate. */
-export function isCommittableExtent(
-  bounds: { width: number; height: number },
-  kind: string,
-): boolean {
+ *   - everything else: a zero extent in either axis is degenerate, the
+ *     extent being the shape the preview draws and the dep mints
+ *     (`insertPreviewExtent`): a from-center polygon's is its radius, not the box. */
+export function isCommittableExtent(bounds: Rect, extras: InsertExtras): boolean {
+  const kind = extras.kind;
   if (kind === 'pencil') return true;
   if (kind === 'line') return bounds.width !== 0 || bounds.height !== 0;
-  return bounds.width !== 0 && bounds.height !== 0;
+  const { width, height } = insertPreviewExtent({ shape: kind, bounds, extras }).bounds;
+  return width !== 0 && height !== 0;
 }
