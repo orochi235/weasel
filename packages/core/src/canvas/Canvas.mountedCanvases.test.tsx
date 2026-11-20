@@ -7,6 +7,8 @@ import { render } from '@testing-library/react';
 import { Canvas } from '@weasel-js/core/testing/BareCanvas';
 import { findMountedCanvas } from './mountedCanvases';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { fakeWorker } from './renderWorker/testing/fakeWorker';
+import type { CanvasWorkerSurface } from './renderWorker/workerStack';
 
 beforeAll(() => {
   const recorder = createGLRecorder();
@@ -26,6 +28,22 @@ describe('Canvas — mounted canvas lookup', () => {
     expect(found?.element).toBe(container.querySelector('canvas'));
     expect(found?.getView()).toEqual(view);
 
+    unmount();
+    expect(findMountedCanvas(document.body)).toBeNull();
+  });
+
+  it('follows its <canvas> when a worker stack replaces it, and back', () => {
+    (HTMLCanvasElement.prototype as unknown as { transferControlToOffscreen: () => unknown }).transferControlToOffscreen = () => ({});
+    const worker: CanvasWorkerSurface = { start: () => fakeWorker().worker, paints: () => false, inputs: () => ({}) as never };
+    const { container, rerender, unmount } = render(<Canvas width={100} height={100} layers={{}} />);
+    expect(findMountedCanvas(container)?.element).toBe(container.querySelector('canvas'));
+
+    rerender(<Canvas width={100} height={100} layers={{}} worker={worker} />);
+    expect(findMountedCanvas(container)?.element.isConnected).toBe(true);
+
+    rerender(<Canvas width={100} height={100} layers={{}} />);
+    expect(findMountedCanvas(container)?.element).toBe(container.querySelector('canvas'));
+    expect(findMountedCanvas(container)?.element.isConnected).toBe(true);
     unmount();
     expect(findMountedCanvas(document.body)).toBeNull();
   });
