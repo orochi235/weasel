@@ -26,7 +26,8 @@ export interface EffectEvalResult {
 }
 
 /** Evaluates one stage. Throw to fail it: the run records the message as the
- *  stage's `error` and leaves what it feeds unreached. */
+ *  stage's `error` and leaves what it feeds unreached. A value kind whose
+ *  `show` or `preview` throws or rejects fails the stage the same way. */
 export type EffectEvaluator = (ctx: EffectEvalContext) => EffectEvalResult | Promise<EffectEvalResult>;
 
 /** Evaluators by stage `type`. */

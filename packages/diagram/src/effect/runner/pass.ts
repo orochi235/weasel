@@ -3,6 +3,7 @@ import { PREVIEW_SIZE, shownPorts, uniqueStages } from '../draw';
 import type { EffectPipeline, EffectRun, EffectStage, EffectStageRun } from '../types';
 import { runOrder } from './order';
 import { paramValues } from './params';
+import { closeBitmaps } from './previews';
 import type { EffectEvaluator, EffectEvaluators, EffectValueKinds } from './types';
 
 /** Options for `runPipeline` and `createEffectRunner`. */
@@ -38,7 +39,10 @@ export interface EffectPass {
 export function createPass(pipeline: EffectPipeline, opts: RunPipelineOptions): EffectPass {
   const stages = new Map(uniqueStages(pipeline).map((s) => [s.id, s]));
   const queue = runOrder(pipeline).order;
+  // The outputs of each stage that ran and was shown, which feed the stages after it.
   const made = new Map<string, Readonly<Record<string, unknown>>>();
+  // Every stage's outputs, shown or not, for `dispose`.
+  const owned: Array<[EffectStage, Readonly<Record<string, unknown>>]> = [];
   const sources = opts.sources ?? {};
   const size = typeof opts.previewSize === 'object' ? opts.previewSize
     : { width: opts.previewSize ?? PREVIEW_SIZE, height: opts.previewSize ?? PREVIEW_SIZE };
@@ -58,39 +62,50 @@ export function createPass(pipeline: EffectPipeline, opts: RunPipelineOptions): 
     return Object.fromEntries(inputs);
   };
 
-  const record = async (
-    stage: EffectStage, inputs: Readonly<Record<string, unknown>>, outputs: Readonly<Record<string, unknown>>, entry: EffectStageRun,
-  ) => {
-    made.set(stage.id, outputs);
+  // What the stage shows of each shown port: its text and its preview. Closes
+  // the previews it made when a later one fails, and rethrows.
+  const shown = async (stage: EffectStage, inputs: Readonly<Record<string, unknown>>, outputs: Readonly<Record<string, unknown>>) => {
     const values: Record<string, string> = {};
     const previews: Record<string, ImageBitmap> = {};
-    for (const port of shownPorts(stage)) {
-      const value = Object.hasOwn(outputs, port.id) ? outputs[port.id] : getOwn(inputs, port.id);
-      if (value === undefined) continue;
-      const kind = kindOf(port.type);
-      const text = kind?.show !== undefined ? kind.show(value) : plainText(value);
-      if (text !== undefined) setOwn(values, port.id, text);
-      const preview = opts.previews === false ? undefined : await kind?.preview?.(value, size);
-      if (preview !== undefined) setOwn(previews, port.id, preview);
+    try {
+      for (const port of shownPorts(stage)) {
+        const value = Object.hasOwn(outputs, port.id) ? outputs[port.id] : getOwn(inputs, port.id);
+        if (value === undefined) continue;
+        const kind = kindOf(port.type);
+        const text = kind?.show !== undefined ? kind.show(value) : plainText(value);
+        if (text !== undefined) setOwn(values, port.id, text);
+        const preview = opts.previews === false ? undefined : await kind?.preview?.(value, size);
+        if (preview !== undefined) setOwn(previews, port.id, preview);
+      }
+    } catch (err) {
+      closeBitmaps(Object.values(previews));
+      throw err;
     }
-    const full: EffectStageRun = {
-      ...entry,
+    return {
       ...(Object.keys(values).length > 0 ? { values } : {}),
       ...(Object.keys(previews).length > 0 ? { previews } : {}),
     };
-    run = { stages: { ...run.stages, [stage.id]: full } };
   };
 
+  // A stage's outputs are owned (and disposed) from the moment it hands them
+  // back; they feed the stages after it only once it has shown them.
   const evaluate = async (stage: EffectStage, inputs: Record<string, unknown>) => {
-    if (stage.bypassed === true) return record(stage, inputs, passThrough(stage, inputs), {});
-    const evaluator: EffectEvaluator | undefined = stage.type === undefined ? undefined : getOwn(opts.evaluators, stage.type);
-    const params = paramValues(stage);
     const start = performance.now();
     try {
-      if (evaluator === undefined) throw new Error(`no evaluator for type "${stage.type ?? ''}"`);
-      const result = await evaluator({ stage, inputs, params, sources, time: opts.time ?? 0, signal });
-      const cost = performance.now() - start;
-      return record(stage, inputs, result.outputs, { cost, ...(result.taken !== undefined ? { taken: result.taken } : {}) });
+      let outputs: Readonly<Record<string, unknown>>;
+      let entry: EffectStageRun = {};
+      if (stage.bypassed === true) outputs = passThrough(stage, inputs);
+      else {
+        const evaluator: EffectEvaluator | undefined = stage.type === undefined ? undefined : getOwn(opts.evaluators, stage.type);
+        if (evaluator === undefined) throw new Error(`no evaluator for type "${stage.type ?? ''}"`);
+        const result = await evaluator({ stage, inputs, params: paramValues(stage), sources, time: opts.time ?? 0, signal });
+        outputs = result.outputs;
+        entry = { cost: performance.now() - start, ...(result.taken !== undefined ? { taken: result.taken } : {}) };
+      }
+      owned.push([stage, outputs]);
+      const full: EffectStageRun = { ...entry, ...(await shown(stage, inputs, outputs)) };
+      made.set(stage.id, outputs);
+      run = { stages: { ...run.stages, [stage.id]: full } };
     } catch (err) {
       signal.throwIfAborted();
       const cost = performance.now() - start;
@@ -115,8 +130,8 @@ export function createPass(pipeline: EffectPipeline, opts: RunPipelineOptions): 
     dispose() {
       const given = new Set(Object.values(sources));
       const done = new Set<unknown>();
-      for (const [id, outputs] of made) {
-        for (const port of stages.get(id)?.outputs ?? []) {
+      for (const [stage, outputs] of owned) {
+        for (const port of stage.outputs ?? []) {
           const value = getOwn(outputs, port.id);
           if (value === undefined || given.has(value) || done.has(value)) continue;
           done.add(value);
@@ -124,6 +139,7 @@ export function createPass(pipeline: EffectPipeline, opts: RunPipelineOptions): 
         }
       }
       made.clear();
+      owned.length = 0;
     },
   };
 }

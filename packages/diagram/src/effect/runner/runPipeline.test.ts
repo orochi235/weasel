@@ -147,4 +147,35 @@ describe('runPipeline', () => {
     await expect(pending).rejects.toThrow();
     expect(after).not.toHaveBeenCalled();
   });
+  it('fails only the stage whose kind\'s preview rejects, closing the previews it made for that stage', async () => {
+    const close = vi.fn();
+    const dispose = vi.fn();
+    const two = (id: string, extra: Partial<EffectStage> = {}): EffectStage => ({
+      id, title: id, type: 'pair', inputs: [num('in')], outputs: [num('a'), { id: 'b', type: 'bad' }], ...extra,
+    });
+    const p: EffectPipeline = {
+      stages: [stage('src', 'two'), two('pair'), two('skip', { bypassed: true }), stage('after', 'double', ['in'])],
+      wires: [wire('src', 'pair'), wire('src', 'skip'), wire('pair', 'after', 'a', 'in')],
+    };
+    const run = await runPipeline(p, {
+      evaluators: { ...EVAL, pair: () => ({ outputs: { a: 1, b: 2 } }) },
+      kinds: { number: { preview: () => ({ close }) as unknown as ImageBitmap, dispose }, bad: { preview: () => Promise.reject(new Error('no bitmap')) } },
+    });
+    expect(run.stages.pair).toMatchObject({ error: 'no bitmap' });
+    expect(run.stages.after).toBeUndefined();
+    expect(run.stages.src!.previews?.out).toBeDefined();
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(dispose.mock.calls).toEqual([[2], [1]]);
+  });
+
+  it('fails a stage whose kind\'s show throws, bypassed or not', async () => {
+    const p: EffectPipeline = {
+      stages: [stage('src', 'two'), stage('skip', 'double', ['in'], ['out'], { bypassed: true })],
+      wires: [wire('src', 'skip')],
+    };
+    let calls = 0;
+    const run = await runPipeline(p, { evaluators: EVAL, kinds: { number: { show: () => { if (calls++ > 0) throw new Error('no text'); return 'x'; } } } });
+    expect(run.stages.skip).toMatchObject({ error: 'no text' });
+  });
+
 });
