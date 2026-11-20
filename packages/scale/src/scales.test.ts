@@ -222,6 +222,14 @@ describe('timeScale', () => {
     const s = timeScale({ domain: [jan1, jan1 + day], range: [0, 1] });
     expect(s.ticks().map(s.format)).toEqual(['2026-01-01', '06:00', '12:00', '18:00', '2026-01-02']);
   });
+
+  it('ticks a domain wider than a Date holds on whole years across the part it holds', () => {
+    const s = timeScale({ domain: [-1e308, 1e308], range: [0, 100] });
+    const ticks = s.ticks();
+    expect(ticks.length).toBeGreaterThan(1);
+    expect(ticks.length).toBeLessThan(20);
+    expect(s.tickFormat()(ticks[1]!)).toMatch(/^-?\d+$/);
+  });
 });
 
 describe('ordinalScale', () => {

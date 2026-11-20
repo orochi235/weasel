@@ -105,10 +105,11 @@ export function formatInstant(t: number, unit: TimeUnit): string {
 export function timeScale(opts: TimeScaleOptions): TimeScale {
   const [d0, d1] = opts.domain;
   const [r0, r1] = opts.range;
-  const span = d1 - d0;
+  // Ticks lie only where a Date holds an instant, so the span they cut is the part of the domain inside that.
+  const span = Math.max(0, Math.min(Math.max(d0, d1), MAX_INSTANT) - Math.max(Math.min(d0, d1), -MAX_INSTANT));
   const { along, unmap } = proportion(d0, d1);
   const map = (v: number) => (d1 === d0 ? (r0 + r1) / 2 : lerp(r0, r1, along(v)));
-  const interval = (count = 5) => intervalFor(Math.abs(span), count);
+  const interval = (count = 5) => intervalFor(span, count);
   const format = (v: number): string => formatInstant(v, interval().unit);
   return {
     kind: 'time',
