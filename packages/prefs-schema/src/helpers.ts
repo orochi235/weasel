@@ -175,12 +175,13 @@ export function setOwnPrefValue(tree: Record<string, unknown>, key: string, valu
   setOwn(tree, key, value);
 }
 
-/** Set `value` at the dotted `path` in `root` itself, creating missing branches. */
+/** Set `value` at the dotted `path` in `root` itself, creating missing branches and replacing a branch that holds no object. */
 export function assignPrefValueAt(root: Record<string, unknown>, path: string, value: unknown): void {
   const parts = path.split('.');
   let cursor = root;
   for (const part of parts.slice(0, -1)) {
-    if (!Object.hasOwn(cursor, part) || cursor[part] == null) setOwnPrefValue(cursor, part, {});
+    const branch = getOwn(cursor, part);
+    if (typeof branch !== 'object' || branch === null) setOwnPrefValue(cursor, part, {});
     cursor = getOwn(cursor, part) as Record<string, unknown>;
   }
   setOwnPrefValue(cursor, parts[parts.length - 1]!, value);

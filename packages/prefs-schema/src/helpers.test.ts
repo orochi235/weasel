@@ -303,6 +303,11 @@ describe('paths through names every object inherits', () => {
     expect(prefValueAt(tree, '__proto__.probe')).toBe(2);
   });
 
+  it('nests a deeper path through a shorter one holding a scalar, the later write winning', () => {
+    expect(nestPrefValues({ a: 5, 'a.b': 1 })).toEqual({ a: { b: 1 } });
+    expect(nestPrefValues({ 'a.b': 1, a: 5 })).toEqual({ a: 5 });
+  });
+
   it('nests dotted values into a tree of their own, through any key', () => {
     const tree = nestPrefValues({ 'a.b': 1, 'a.c': 2, '__proto__.probe': 3, 'constructor.prototype.probe': 4 });
     expect((Object as unknown as Record<string, unknown>).probe).toBeUndefined();
