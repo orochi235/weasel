@@ -146,6 +146,7 @@ describe('onPath through an edit', () => {
     const r = constrainPathEdit(before, edit.path, ON, { origins: edit.origins });
     expect(r.constraints).toEqual([]);
   });
+
 });
 
 describe('segmentBetween', () => {
@@ -154,6 +155,18 @@ describe('segmentBetween', () => {
     expect(segmentBetween(path, 2, 1)).toEqual([1, 2]);
     expect(segmentBetween(path, 0, 3)).toEqual([3, 0]);
     expect(segmentBetween(path, 0, 2)).toBeNull();
+  });
+
+  it('answers either segment of a closed subpath of two anchors', () => {
+    const lens = new PathBuilder().moveTo(0, 0).curveTo(30, -40, 70, -40, 100, 0)
+      .curveTo(70, 40, 30, 40, 0, 0).close().build() as PolygonPath;
+    expect(segmentBetween(lens, 0, 1)).toEqual([0, 1]);
+    expect(segmentBetween(lens, 1, 0)).toEqual([1, 0]);
+  });
+
+  it('answers no closing segment for a closed subpath of one anchor', () => {
+    const dot = new PathBuilder().moveTo(0, 0).close().moveTo(10, 0).lineTo(20, 0).build() as PolygonPath;
+    expect(segmentBetween(dot, 0, 0)).toBeNull();
   });
 });
 
