@@ -110,4 +110,9 @@ describe('effectiveRangeStyle', () => {
     expect(effectiveRangeStyle({ stroke: own }, {}, { stroke }).stroke).toBe(own);
     expect('stroke' in effectiveRangeStyle(null, {}, {})).toBe(false);
   });
+
+  it('shows the node\'s own script where the range sets none', () => {
+    expect(effectiveRangeStyle({}, { script: 'super' }).script).toBe('super');
+    expect(effectiveRangeStyle({ script: 'sub' }, { script: 'super' }).script).toBe('sub');
+  });
 });
