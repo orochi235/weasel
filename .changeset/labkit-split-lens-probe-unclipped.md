@@ -3,6 +3,6 @@
 '@weasel-js/forge': patch
 ---
 
-A Split lens's Token and Contrast readouts read its compared side at the aim wherever the seam is dragged, where they found nothing once the seam passed the center.
+A Split lens's Token and Contrast readouts read its compared side wherever the seam is dragged.
 
 <!-- entry: fix -->

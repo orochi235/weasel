@@ -2,6 +2,6 @@
 '@weasel-js/forge': patch
 ---
 
-The Pixels source keeps at most a few captures for Difference lenses, and lets go of ones taken before a story edit, rather than holding every Difference capture for the workshop's life.
+The Pixels source keeps only a few Difference captures, and none taken before a story edit.
 
 <!-- entry: fix perf -->

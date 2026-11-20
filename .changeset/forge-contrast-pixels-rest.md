@@ -2,6 +2,6 @@
 '@weasel-js/forge': patch
 ---
 
-A Pixels lens's Contrast readout waits for the reticle to rest before it asks for a capture, as the lens itself does, rather than asking on every move.
+A Pixels lens's Contrast readout captures once the reticle rests, as the lens does, rather than on every move.
 
 <!-- entry: fix perf -->
