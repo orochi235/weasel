@@ -27,7 +27,7 @@ interface Stage {
   root: Stage;
   schedule(deferReady?: boolean): void;
   /** Run `fn` once item `i` has finished this transition. Never runs if the
-   *  transition is interrupted first. */
+   *  transition or the item is interrupted, before or after. */
   whenItemDone(i: number, fn: () => void, defer?: boolean): void;
   interrupt(): void;
   /** Stop item `i` in this transition and every one chained after it, as if
@@ -167,6 +167,7 @@ function makeStage<TData, TPose>(
   const removal = createStageRemoval(scene, ids, {
     cancelItem: (i) => stage.root.cancelItem(i),
     whenItemDone: (i, fn) => stage.whenItemDone(i, fn),
+    dropped: (i) => progress.dropped(i),
     present,
   });
   const armRemoval = (): void => {

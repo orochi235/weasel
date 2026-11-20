@@ -15,6 +15,8 @@ export interface RemovalHooks {
   /** Stop item `i` through the whole chain, as a later join reclaiming its node does. */
   cancelItem(i: number): void;
   whenItemDone(i: number, fn: () => void): void;
+  /** Whether item `i` was interrupted or lost, so it is never removed. */
+  dropped(i: number): boolean;
   /** Whether item `i`'s node is still the one the transition was made on. */
   present(i: number): boolean;
 }
@@ -31,6 +33,7 @@ export function createStageRemoval<TPose>(
       if (armed) return;
       armed = true;
       ids.forEach((id, i) => {
+        if (hooks.dropped(i)) return;
         const release = registerRemoval(scene, id, () => hooks.cancelItem(i));
         releases.push([id, release]);
         hooks.whenItemDone(i, () => {

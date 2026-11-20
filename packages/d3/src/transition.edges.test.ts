@@ -85,3 +85,40 @@ describe('d3Bind transition — custom tweens by name', () => {
     expect(second.at(-1)).toBe(2);
   });
 });
+
+describe('d3Bind transition — an item interrupted on its node', () => {
+  const two = (s: ReturnType<typeof setup>) => {
+    act(() => void s.bind([{ id: 'a', x: 0 }, { id: 'b', x: 0 }]));
+    return s.bind([{ id: 'a', x: 100 }, { id: 'b', x: 100 }]);
+  };
+
+  it('is not removed by a .remove() called after the interrupt', () => {
+    const s = setup();
+    act(() => {
+      const sel = two(s);
+      const t = sel.transition().duration(1000);
+      void t.end();
+      void sel.filter((d) => d.id === 'a').transition().duration(100).end();
+      t.remove();
+    });
+    s.play(1200, 100);
+    expect(s.scene.current.get('a' as never)).toBeDefined();
+    expect(s.scene.current.get('b' as never)).toBeUndefined();
+  });
+
+  it('starts no transition chained after the interrupt, which would interrupt the newer one', async () => {
+    const s = setup();
+    act(() => {
+      const sel = two(s);
+      const t = sel.transition().duration(1000);
+      void t.end();
+      void sel.filter((d) => d.id === 'a').transition().duration(100).ease(linear)
+        .pose(() => ({ x: 500, y: 0, width: 10, height: 10 })).end();
+      t.transition().pose(() => ({ x: -100, y: 0, width: 10, height: 10 }));
+    });
+    await Promise.resolve();
+    s.play(2500, 100);
+    expect(s.x('a')).toBeCloseTo(500, 6);
+    expect(s.x('b')).toBeCloseTo(-100, 6);
+  });
+});
