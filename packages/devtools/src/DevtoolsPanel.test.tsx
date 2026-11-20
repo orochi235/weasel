@@ -1,5 +1,5 @@
 /** The panel end to end against a real `<SceneCanvas>` and the hook it installs, over an in-page connection. */
-import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { PageMessage, PanelMessage, PanelTransport } from './protocol';
 import type { DispatchRecord } from '@weasel-js/core/routing';
@@ -243,5 +243,14 @@ describe('DevtoolsPanel', () => {
     expect(screen.queryByText('Connecting…')).toBeNull();
     expect(screen.getByText('Not connected.')).toBeTruthy();
     expect(screen.getByText(/protocol mismatch/)).toBeTruthy();
+  });
+  it('refuses a tabs list that names no tab', () => {
+    const t = recordingTransport();
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      expect(() => render(<DevtoolsPanel transport={t.transport} tabs={[]} />)).toThrow(RangeError);
+    } finally {
+      quiet.mockRestore();
+    }
   });
 });

@@ -2812,3 +2812,8 @@ Calls the lanes made without a ruling:
   and the end only where none does, so `present.go` reaches every page by its id and old callers keep working.
   Keeping the ends ahead of the ids, so such a page was unreachable by id, was the alternative; so was dropping
   `to: 'first' | 'last'` outright.
+
+## Audit round forty-five (2026-11-20): devtools
+
+- 2026-11-20 (the fixer's call): `DevtoolsPanel` throws a `RangeError` on a `tabs` list naming no tab (`[]`, or only
+  ids it has no tab for). Showing every tab, as with `tabs` left out, was the alternative.
