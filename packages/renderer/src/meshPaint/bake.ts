@@ -7,7 +7,8 @@
  * premultiplies.
  */
 
-import { parseColor } from '@weasel-js/paint';
+import { tryParseColor } from '@weasel-js/paint';
+import { warnOnce } from '../warnOnce';
 import { lerpColorArray, type ColorSpace } from '@weasel-js/paint';
 import { evalPatch, isValidPatch, patchBounds, type MeshPatch } from './surface';
 import type { Rect } from '@weasel-js/geom';
@@ -95,7 +96,13 @@ export function bakeMesh(
 
   for (const patch of patches) {
     if (!isValidPatch(patch)) continue;
-    const corners = patch.colors.map((c) => parseColor(c)) as Rgba[];
+    const corners = patch.colors.map((c) => tryParseColor(c));
+    const unread = patch.colors.find((_, i) => corners[i] === null);
+    if (unread !== undefined) {
+      warnOnce(`mesh-color:${unread}`, `weasel: a mesh patch's color '${unread}' does not parse; the patch is not drawn`);
+      continue;
+    }
+    const rgba = corners as Rgba[];
 
     for (let i = 0; i < grid; i++) {
       for (let j = 0; j < grid; j++) {
@@ -104,10 +111,10 @@ export function bakeMesh(
         const v0 = j / grid;
         const v1 = (j + 1) / grid;
         const quad = [
-          { at: toTexel(evalPatch(patch, u0, v0)), color: colorAt(corners, u0, v0, space) },
-          { at: toTexel(evalPatch(patch, u1, v0)), color: colorAt(corners, u1, v0, space) },
-          { at: toTexel(evalPatch(patch, u1, v1)), color: colorAt(corners, u1, v1, space) },
-          { at: toTexel(evalPatch(patch, u0, v1)), color: colorAt(corners, u0, v1, space) },
+          { at: toTexel(evalPatch(patch, u0, v0)), color: colorAt(rgba, u0, v0, space) },
+          { at: toTexel(evalPatch(patch, u1, v0)), color: colorAt(rgba, u1, v0, space) },
+          { at: toTexel(evalPatch(patch, u1, v1)), color: colorAt(rgba, u1, v1, space) },
+          { at: toTexel(evalPatch(patch, u0, v1)), color: colorAt(rgba, u0, v1, space) },
         ];
         fillTriangle(pixels, size, quad[0], quad[1], quad[2]);
         fillTriangle(pixels, size, quad[0], quad[2], quad[3]);
