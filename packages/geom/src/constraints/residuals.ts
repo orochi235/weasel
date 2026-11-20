@@ -128,11 +128,19 @@ function segmentGrad(grad: Grad, row: number, [a, b]: AnchorPair, gx: number, gy
   grad(row, 2 * a + 1, -gy);
 }
 
+/**
+ * Segment `s`'s length, its derivative handed to `grad` times `sign`. A segment
+ * with no length has no direction, so it takes the x axis's: any unit vector
+ * is a gradient of the length there, and one that is not zero lets a solve
+ * open the segment.
+ */
 function lengthOf(x: ArrayLike<number>, s: AnchorPair, grad: Grad | undefined, row: number, sign: number): number {
   const ux = dx(x, s);
   const uy = dy(x, s);
   const len = Math.hypot(ux, uy);
-  if (grad && len > 1e-12) segmentGrad(grad, row, s, (sign * ux) / len, (sign * uy) / len);
+  if (!grad) return len;
+  if (len > 1e-12) segmentGrad(grad, row, s, (sign * ux) / len, (sign * uy) / len);
+  else segmentGrad(grad, row, s, sign, 0);
   return len;
 }
 
