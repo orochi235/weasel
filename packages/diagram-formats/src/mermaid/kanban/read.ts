@@ -22,8 +22,9 @@ const CARD_WRAP = 26;
 export const BOARD_ID = 'board';
 /** The ids a column and a card giving none read as: a column numbered by its place among them, a card by its place
  *  among those giving none, each moved on past an id the board names. */
-const COLUMN = 'column';
-const CARD = 'card';
+/** The bases of the ids an unnamed column and card are given. */
+export const COLUMN = 'column';
+export const CARD = 'card';
 
 /** Room above a column's first card (the pool's header and the lane's), below each card, and a card's row height,
  *  for sizing the board to hold its longest column before the cards are measured. */

@@ -1,11 +1,15 @@
 /** One graph page as a Mermaid kanban board: a pool's lanes as columns, the shapes in each as its cards. */
 import type { DataContainer, DataNode } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
+import { IdMint } from '../../graphRead';
 import { graphOut, type GraphOut } from '../../graphWrite';
 import { titleLines } from '../common/lines';
 import { fieldName, mermaidEscaped, mermaidIds, oneLine } from '../common/text';
+import { CARD, COLUMN } from './read';
 
 const GENERATED = /^(?:column|card)-\d+$/;
+/** An id as the kanban reader takes one. */
+const ITEM_ID = /^[\p{L}\p{N}_][\p{L}\p{N}_-]*$/u;
 
 /** A metadata value, quoted with whichever quote it does not hold; one holding both has its double quotes written as
  *  single ones, which `warn` hears. */
@@ -22,14 +26,32 @@ class KanbanWriter {
   readonly lines: string[] = [];
   readonly ids: Map<string, string>;
   readonly written = new Set<string>();
+  /** Ids left unwritten, each one the reader gives back in its place. */
+  readonly unwritten = new Set<string>();
 
-  constructor(readonly out: GraphOut) {
+  constructor(readonly out: GraphOut, pool: DataContainer | undefined) {
     const lanes = (out.page.data.containers ?? []).flatMap((c) => (c.lanes ?? []).map((l) => l.id));
-    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...lanes], { unicode: true });
+    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...lanes], { unicode: true, id: ITEM_ID });
+    if (pool !== undefined) this.leaveUnwritten(pool);
+  }
+
+  /** Leaves out each id the reader would give back unwritten, minting as it does: the first it would not is written,
+   *  which moves what the reader mints after it, so the board is minted again. */
+  private leaveUnwritten(pool: DataContainer): void {
+    const items = (pool.lanes ?? []).flatMap((lane, i) => [
+      { id: lane.id, base: COLUMN, from: i + 1 },
+      ...(lane.members ?? []).filter((id) => this.out.byId.has(id)).map((id) => ({ id, base: CARD, from: 1 })),
+    ]);
+    for (const { id } of items) if (GENERATED.test(id) && this.ids.get(id) === id) this.unwritten.add(id);
+    for (let wrong: string | undefined = ''; wrong !== undefined;) {
+      const mint = new IdMint([...this.ids].filter(([id]) => !this.unwritten.has(id)).map(([, spelled]) => spelled));
+      wrong = items.find(({ id, base, from }) => this.unwritten.has(id) && mint.next(base, from) !== id)?.id;
+      if (wrong !== undefined) this.unwritten.delete(wrong);
+    }
   }
 
   head(id: string): string {
-    return GENERATED.test(id) ? '' : this.ids.get(id) ?? id;
+    return this.unwritten.has(id) ? '' : this.ids.get(id) ?? id;
   }
 
   card(n: DataNode): void {
@@ -58,9 +80,9 @@ class KanbanWriter {
 export function writeKanban(doc: DiagramDocument, opts?: WriteOptions): ExportResult {
   const out = graphOut(doc, opts, 'Mermaid', true);
   if (out === null) return { text: 'kanban\n', warnings: [] };
-  const w = new KanbanWriter(out);
-  w.lines.push(...titleLines(out.page.name), 'kanban');
   const pools = (out.page.data.containers ?? []).filter((c) => c.role === 'pool');
+  const w = new KanbanWriter(out, pools[0]);
+  w.lines.push(...titleLines(out.page.name), 'kanban');
   if (pools[0] !== undefined) w.board(pools[0]);
   if (pools.length > 1 || (out.page.data.containers ?? []).some((c) => c.role !== 'pool')) {
     out.warnings.add('Mermaid kanban boards are one pool; other pools and containers were dropped.');
