@@ -110,13 +110,18 @@ function answerFromPage(
   if (!answered) unhook = onDispose(stop);
 }
 
+/** How many different warnings a client remembers having given. */
+const WARNED_CAP = 100;
+
 /** A warning that says each different thing once, so a worker that fails the same way every
- *  frame warns once, and a new failure still warns. */
+ *  frame warns once, and a new failure still warns. Past {@link WARNED_CAP} different ones the
+ *  oldest is forgotten, and may warn again. */
 function onceEach(): (what: string, detail: unknown) => void {
   const warned = new Set<string>();
   return (what, detail) => {
     const key = `${what} ${String(detail)}`;
     if (warned.has(key)) return;
+    if (warned.size >= WARNED_CAP) warned.delete(warned.values().next().value!);
     warned.add(key);
     console.warn(`weasel: ${what}`, detail);
   };
