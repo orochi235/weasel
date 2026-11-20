@@ -71,7 +71,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   const applyAllOrNothing = createApplier(adapter, logger);
 
   const { walkTo, walkOrReturn, readSelection } = createWalk({
-    undoStack, redoStack, selection, applyAllOrNothing, refuse: journals.refuse, logger,
+    undoStack, redoStack, selection, applyAllOrNothing, logger,
   });
 
   const recorder = createRecorder({
@@ -88,11 +88,13 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       pushOrCoalesce(ops, label);
     },
     undo() {
+      journals.refuse();
       if (undoStack.length === 0) return;
       const { walked, applied } = walkTo(undoStack.length - 1);
       clock.bump(stepOf('undo', walked, applied));
     },
     redo() {
+      journals.refuse();
       if (redoStack.length === 0) return;
       const { walked, applied } = walkTo(undoStack.length + 1);
       clock.bump(stepOf('redo', walked, applied));
@@ -108,7 +110,9 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     },
     goto(n) {
       // Total length stays constant during this walk: entries only move between the two stacks.
-      if (gotoDepth(n, undoStack.length + redoStack.length) === undoStack.length) return;
+      const depth = gotoDepth(n, undoStack.length + redoStack.length);
+      journals.refuse();
+      if (depth === undoStack.length) return;
       const walked = walkOrReturn(n, () => clock.bump());
       clock.bump(stepOf('goto', walked.walked, walked.applied));
     },

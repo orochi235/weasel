@@ -97,4 +97,12 @@ describe('journal exclusivity', () => {
     h.undo();
     expect(adapter.values).toEqual([]);
   });
+
+  it('refuses undo, redo and goto while a journal is active, with nothing to step too', () => {
+    const h = createHistory({ values: [] as number[] });
+    h.beginJournal({ label: 'a' });
+    expect(() => h.undo()).toThrow(/already active/);
+    expect(() => h.redo()).toThrow(/already active/);
+    expect(() => h.goto(0)).toThrow(/already active/);
+  });
 });

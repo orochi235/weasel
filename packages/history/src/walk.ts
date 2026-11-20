@@ -17,8 +17,6 @@ export interface WalkEnv {
   redoStack: Entry[];
   selection: HistorySelection | undefined;
   applyAllOrNothing(ops: Op[], settle?: () => Op[]): boolean;
-  /** Throws when a journal's edits sit over the stack's top. */
-  refuse(): void;
   logger: HistoryLogger;
 }
 
@@ -60,7 +58,6 @@ export function createWalk(env: WalkEnv) {
    *  only once its step has run, so a throw leaves both stacks describing
    *  the state as it is. */
   function walkTo(n: number): Walked {
-    if (n !== undoStack.length) env.refuse();
     const walked: Entry[] = [];
     const applied: Op[][] = [];
     while (undoStack.length > n) {
