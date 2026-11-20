@@ -41,9 +41,11 @@ export const AUTO_POSE_DESCRIPTOR: PoseDescriptor<unknown> = {
   translate: (p, dx, dy) => isPathLike(p)
     ? pathPoseDescriptor.translate!(p, dx, dy)
     : RECT_POSE_DESCRIPTOR.translate!(p as Rect, dx, dy),
-  lerp: (a, b, t) => (isPathLike(a) && isPathLike(b)
-    ? pathPoseDescriptor.lerp!(a, b, t)
-    : RECT_POSE_DESCRIPTOR.lerp!(a as Bounds, b as Bounds, t)),
+  lerp: (a, b, t) => {
+    const pa = isPathLike(a), pb = isPathLike(b);
+    if (pa !== pb) throw new Error('AUTO_POSE_DESCRIPTOR.lerp: cannot interpolate a Path pose and a rect pose');
+    return pa ? pathPoseDescriptor.lerp!(a as Path, b as Path, t) : RECT_POSE_DESCRIPTOR.lerp!(a as Bounds, b as Bounds, t);
+  },
   axes: (p) => (isPathLike(p)
     ? pathPoseDescriptor.axes!(p) as never
     : isRectPose(p) ? RECT_POSE_DESCRIPTOR.axes!(p) as never : null),
