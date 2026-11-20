@@ -415,6 +415,15 @@ describe('PrefConditionEditor copy and paste', () => {
     await waitFor(() => expect(row(1)).toHaveTextContent('no leaf holds a value at "elsewhere.flag"'));
   });
 
+  it('says what Copy did only until the condition changes', async () => {
+    clipboard();
+    renderWithIcons(<Live start={{ path: 'view.grid', is: true }} seen={{ writes: 0 }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Copy condition' }));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Copied.'));
+    pick(row(1), /comparison/, 'is off');
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
   it('writes nothing for a clipboard that holds no condition, and says so', async () => {
     for (const text of ['not json', '{"path":"view.grid","nope":1}', '42']) {
       clipboard(text);
