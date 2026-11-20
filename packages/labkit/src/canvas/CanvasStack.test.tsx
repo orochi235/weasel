@@ -108,6 +108,34 @@ describe('<CanvasStack>', () => {
 });
 
 describe('<CanvasStack> backing size', () => {
+  it("takes its density from its own document's window, not the top one", () => {
+    const iframe = document.createElement('iframe');
+    document.body.appendChild(iframe);
+    const win = iframe.contentWindow as Window & typeof globalThis;
+    Object.defineProperty(win, 'devicePixelRatio', { value: 3, configurable: true });
+    vi.stubGlobal('devicePixelRatio', 1);
+    const rect = { left: 0, top: 0, width: 200, height: 100, right: 200, bottom: 100 };
+    vi.spyOn(win.Element.prototype, 'getBoundingClientRect').mockReturnValue(
+      rect as unknown as DOMRect,
+    );
+    const host = win.document.createElement('div');
+    win.document.body.appendChild(host);
+    const { container, unmount } = render(
+      <CanvasStack
+        layers={makeLayers(1)}
+        view={{ zoom: 1, pan: { x: 0, y: 0 } }}
+        onViewChange={vi.fn()}
+      />,
+      { container: host },
+    );
+    const canvas = container.querySelector('canvas');
+    expect([canvas?.width, canvas?.height]).toEqual([600, 300]);
+    unmount();
+    iframe.remove();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
   // jsdom has no `matchMedia`, so the stand-in below is what fires; `Lab.density.browser.test`
   // has a real one.
   it('resizes its canvases when the dpr changes and the box did not', () => {

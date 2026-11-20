@@ -94,7 +94,7 @@ function useMeasuredBox(ref: RefObject<HTMLElement | null>): {
       const box = scaled ? known : rect;
       const scale = (box.width > 0 ? rect.width / box.width : 1) * embedScale(win);
       const { width, height } = box;
-      const dpr = backingDensity(width, height, window.devicePixelRatio ?? 1, scale);
+      const dpr = backingDensity(width, height, win?.devicePixelRatio ?? 1, scale);
       setSize((prev) => {
         if (prev.width === width && prev.height === height && prev.dpr === dpr) return prev;
         return { width, height, dpr };
