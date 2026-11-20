@@ -4,6 +4,7 @@
  */
 import { mat3, PATH_CMD_LENGTHS, PATH_L, PATH_M, type PolygonPath, maxOf, minOf } from '@weasel-js/geom';
 import type { PathDrawCommand, TextDrawCommand } from '@weasel-js/renderer';
+import { paragraphDirection } from '@weasel-js/text';
 import type { ArrowStyle, HorizontalAlignment, LineObject, RectObject, TextObject, VerticalAlignment } from 'bil-lbx';
 import { axisMap, fillColor, mitersAt, plainStroke, uniformScale, type DrawState, type PlainStroke } from './style';
 
@@ -127,7 +128,7 @@ export function textObject(cmd: TextDrawCommand, state: DrawState): TextObject |
   if (!map || scale === undefined || boxWidth === undefined || cmd.height === undefined) return undefined;
   // A box states one width, which P-touch both aligns in and wraps at.
   if (Number.isFinite(cmd.maxWidth) && cmd.maxWidth !== boxWidth) return undefined;
-  if (cmd.direction === 'rtl' || cmd.runs.length === 0) return undefined;
+  if (cmd.runs.length === 0) return undefined;
   const [first] = cmd.runs;
   let color: string | undefined;
   for (const run of cmd.runs) {
@@ -142,6 +143,9 @@ export function textObject(cmd: TextDrawCommand, state: DrawState): TextObject |
   }
   const data = cmd.runs.map((run) => run.text).join('').replace(HARD_BREAK, '\n');
   if (NOT_XML.test(data) || NOT_XML_ATTR.test(first!.fontFamily)) return undefined;
+  // Only text the canvas lays out left to right is an object: `start` and `end` map to LEFT and RIGHT.
+  const direction = cmd.direction ?? cmd.style.direction ?? 'auto';
+  if (data.split('\n').some((line) => paragraphDirection(line, direction) === 'rtl')) return undefined;
   const align = cmd.justify ? 'justify' : (cmd.align ?? cmd.style.align ?? 'left');
   return {
     type: 'text',

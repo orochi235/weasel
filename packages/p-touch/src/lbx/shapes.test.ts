@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PathBuilder } from '@weasel-js/geom';
 import type { DrawCommand, TextDrawCommand } from '@weasel-js/renderer';
-import type { ResolvedRun } from '@weasel-js/text';
+import { registerBidi, type BidiEngine, type ResolvedRun } from '@weasel-js/text';
 import type { TextObject } from 'bil-lbx';
 import { tapeForWidthMm } from '../tape';
 import { lbxConfig } from './writeLbx';
@@ -67,5 +67,21 @@ describe('text boxes', () => {
     expect(await written(box({ width: 200, maxWidth: 100 }))).toBeUndefined();
     expect((await written(box({ width: undefined, maxWidth: 100 })))?.position.width).toBe(100);
     expect((await written(box({ width: 200, maxWidth: Infinity })))?.position.width).toBe(200);
+  });
+
+  it('rasterizes a box any of whose paragraphs the canvas lays out right to left', async () => {
+    expect(await written(box({ direction: 'rtl' }))).toBeUndefined();
+    expect(await written(box({ style: { direction: 'rtl' } }))).toBeUndefined();
+    expect(await written(box({ direction: 'ltr', style: { direction: 'rtl' } }))).toBeDefined();
+    // A stand-in engine reading Hebrew letters as right to left: the canvas resolves `auto` through the registered one.
+    const hebrew = (cps: readonly number[]) => cps.some((cp) => cp >= 0x5d0 && cp <= 0x5ea);
+    const off = registerBidi({ analyze: (cps: readonly number[]) => cps, paragraphLevel: (cps: never) => (hebrew(cps) ? 1 : 0) } as unknown as BidiEngine);
+    try {
+      expect(await written(box({}, [run('Label\n\u05e9\u05dc\u05d5\u05dd')]))).toBeUndefined();
+      expect(await written(box({ direction: 'ltr' }, [run('\u05e9\u05dc\u05d5\u05dd')]))).toBeDefined();
+      expect(await written(box())).toBeDefined();
+    } finally {
+      off();
+    }
   });
 });
