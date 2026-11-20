@@ -241,4 +241,16 @@ describe('variants', () => {
     await r.loadVariant('all');
     expect(r.variantState('all')).toBe('failed');
   });
+
+  it('loads a variant once when a listener asks for it again during the loading notice', async () => {
+    const r = createIconRegistry();
+    const loader = vi.fn(async () => ({ default: [core({ undo: 'u' })] }));
+    r.provideVariants({ all: loader });
+    const off = r.subscribe(() => void r.loadVariant('all'));
+    await r.loadVariant('all');
+    off();
+    expect(loader).toHaveBeenCalledTimes(1);
+    expect(r.variantState('all')).toBe('loaded');
+    expect(r.entries()).toHaveLength(1);
+  });
 });

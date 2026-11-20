@@ -35,7 +35,6 @@ export function createVariants(addTables: (tables: readonly IconTable[]) => void
       if (!loader || states.get(name) === 'loaded') return Promise.resolve();
       const inFlight = pending.get(name);
       if (inFlight) return inFlight;
-      set(name, 'loading');
       const run = Promise.resolve()
         .then(loader)
         .then((mod) => addTables(mod.default))
@@ -48,7 +47,9 @@ export function createVariants(addTables: (tables: readonly IconTable[]) => void
           pending.delete(name);
           set(name, settled);
         });
+      // In flight before the notice, so a listener asking for it again joins this load.
       pending.set(name, run);
+      set(name, 'loading');
       return run;
     },
   };
