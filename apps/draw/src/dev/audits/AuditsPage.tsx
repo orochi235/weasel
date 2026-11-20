@@ -19,7 +19,30 @@ import type { SkulkMap } from './skulkMap.types';
 import palette from './palette.module.css';
 import s from './AuditsPage.module.css';
 
-const ASIDE = { min: 240, max: 560, initial: 300 } as const;
+const ASIDE = { key: 'aside', min: 240, max: 560, initial: 300 } as const;
+const TOP = { key: 'top', min: 80, max: 900, initial: 260 } as const;
+const JOBS = { key: 'jobs', min: 80, max: 900, initial: 220 } as const;
+
+/** A pane's size the viewer dragged it to, kept between visits; `set` follows a drag, `keep` stores where it ended. */
+function usePaneSize({ key, initial }: { key: string; initial: number }): [number, (n: number) => void, (n: number) => void] {
+  const storeKey = `weasel.audits.${key}`;
+  const [size, set] = useState<number>(() => {
+    try {
+      const n = Number(localStorage.getItem(storeKey));
+      return n > 0 ? n : initial;
+    } catch {
+      return initial;
+    }
+  });
+  const keep = (n: number) => {
+    try {
+      localStorage.setItem(storeKey, String(n));
+    } catch {
+      // Nowhere to keep it; the size lasts the visit.
+    }
+  };
+  return [size, set, keep];
+}
 
 function stampOf(map: SkulkMap): string {
   const when = new Date(map.generated).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -32,11 +55,19 @@ function Chart({ map }: { map: SkulkMap }) {
   const [hovered, setHovered] = useState<string | null>(null);
   const [lit, setLit] = useState<string | null>(null);
   const { probes, palette: colors } = useAuditPalette();
-  const [asideWidth, setAsideWidth] = useState<number>(ASIDE.initial);
+  const [asideWidth, setAsideWidth, keepAside] = usePaneSize(ASIDE);
+  const [topHeight, setTopHeight, keepTop] = usePaneSize(TOP);
+  const [jobsHeight, setJobsHeight, keepJobs] = usePaneSize(JOBS);
   const mainRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     mainRef.current?.style.setProperty('--audit-aside-width', `${asideWidth}px`);
   }, [asideWidth]);
+  // The two heights are read by the page's root, which holds every pane.
+  useLayoutEffect(() => {
+    const root = mainRef.current?.parentElement;
+    root?.style.setProperty('--audit-top-height', `${topHeight}px`);
+    root?.style.setProperty('--audit-jobs-height', `${jobsHeight}px`);
+  }, [topHeight, jobsHeight]);
 
   const picked = selection.current[0] ?? null;
   const shownId = hovered ?? picked;
@@ -50,17 +81,25 @@ function Chart({ map }: { map: SkulkMap }) {
   return (
     <>
       {probes}
-      <LiveRuns runs={map.runs} now={Date.parse(map.generated)} on={on} />
+      <div className={s.top}><LiveRuns runs={map.runs} now={Date.parse(map.generated)} on={on} /></div>
+      <ResizeHandle
+        className={s.seam} orientation="horizontal" value={topHeight} min={TOP.min} max={TOP.max}
+        onInput={setTopHeight} onChange={keepTop} aria-label="Resize the runs strip"
+      />
       <Stats stats={stats} />
       <div ref={mainRef} className={s.main}>
         <Treemap scene={scene} selection={selection} areas={map.areas} palette={colors} phases={phases} onHover={setHovered} lit={lit} />
-        <ResizeHandle value={asideWidth} min={ASIDE.min} max={ASIDE.max} invert onInput={setAsideWidth} aria-label="Resize the side panel" />
+        <ResizeHandle value={asideWidth} min={ASIDE.min} max={ASIDE.max} invert onInput={setAsideWidth} onChange={keepAside} aria-label="Resize the side panel" />
         <aside className={s.aside} aria-label="Area, queue and rounds">
           <AreaDetail area={area} holder={area && runHolding(map.runs, area.id)} />
           <NextUp areas={next} onPick={pick} onLight={setLit} />
           <RoundsChart rounds={map.rounds} />
         </aside>
       </div>
+      <ResizeHandle
+        className={s.seam} orientation="horizontal" invert value={jobsHeight} min={JOBS.min} max={JOBS.max}
+        onInput={setJobsHeight} onChange={keepJobs} aria-label="Resize the jobs feed"
+      />
       <div className={s.jobs}><JobsFeed runs={map.runs} onLight={setLit} /></div>
     </>
   );
