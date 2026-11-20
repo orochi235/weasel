@@ -4,9 +4,10 @@ import {
   DEFAULT_PORTS, type DataNode, type DiagramLabel, type DiagramRouter, type EdgeStyle, type NodeStyle, type Outline, type Row,
   type RowTextStyle,
 } from '@weasel-js/diagram';
-import type { CellGeometry, RawCell } from './cells';
+import type { Vec2 } from '@weasel-js/core/math';
+import { offsetOf, type CellGeometry, type RawCell } from './cells';
 import { cellLines } from './cellText';
-import { BOX_NAMES, ORTHOGONAL_EDGE_STYLES, STADIUM_ARC, markerOf, shapeEntry } from './mapping';
+import { BOX_NAMES, ORTHOGONAL_EDGE_STYLES, STADIUM_ARC, markerOf, shapeEntry, turnedAway } from './mapping';
 import { checkedColor } from '../colorCheck';
 import { hasStyleName, shapeOf, styleFlag, styleNumber, type CellStyle } from './style';
 import { getOwn } from '@weasel-js/registry';
@@ -15,11 +16,15 @@ import { getOwn } from '@weasel-js/registry';
  *  starts `message` and names every item. */
 export type Warn = (message: string, item?: string) => void;
 
-/** The outline a vertex draws as. A shape it does not know is a rect, with a warning. */
+/** The outline a vertex draws as. A shape it does not know is a rect, and one its `direction` turns from how the diagram
+ *  draws it is drawn unturned, each with a warning. */
 export function outlineOf(style: CellStyle, warn: Warn): Outline {
   const shape = shapeOf(style);
   const known = shapeEntry(shape, (key) => style.values.get(key));
-  if (known !== undefined) return known.outline;
+  if (known !== undefined) {
+    if (turnedAway(known, style.values.get('direction'))) warn(`Shapes of kind "${shape}" turned another way were drawn as the diagram turns them.`);
+    return known.outline;
+  }
   if (styleFlag(style, 'rounded')) return (styleNumber(style, 'arcSize') ?? 0) >= STADIUM_ARC ? 'stadium' : 'roundRect';
   if (shape !== undefined && !BOX_NAMES.has(shape)) warn(`Shapes of kind "${shape}" were drawn as rects.`);
   return 'rect';
@@ -50,6 +55,14 @@ export function nodeColorsOf(style: CellStyle, warn: Warn): Partial<NodeStyle> |
     fill: colorOf(style, 'fillColor', warn, bare), stroke: colorOf(style, 'strokeColor', warn, bare), text: colorOf(style, 'fontColor', warn),
     strokeWidth: styleNumber(style, 'strokeWidth'), dash: dashOf(style),
   });
+}
+
+/** A container's, pool's, or lane's colors: a swimlane's body is its `swimlaneFillColor`, where it names one, and else its
+ *  `fillColor`, which a draw app paints in the header. */
+export function regionColorsOf(style: CellStyle, warn: Warn): Partial<NodeStyle> | undefined {
+  const colors = nodeColorsOf(style, warn);
+  const body = colorOf(style, 'swimlaneFillColor', warn);
+  return body === undefined ? colors : { ...colors, fill: body };
 }
 
 /** A cell's value as text. */
@@ -85,8 +98,11 @@ export function routerOf(style: CellStyle): DiagramRouter {
   return ORTHOGONAL_EDGE_STYLES.has(style.values.get('edgeStyle') ?? '') ? 'orthogonal' : 'straight';
 }
 
+/** The marker at one end. An end the style does not name is unset: the diagram's own, an arrow at the end and none at the
+ *  start, as a color the style does not name is the theme's. */
 function markerAt(style: CellStyle, end: 'start' | 'end', warn: Warn): MarkerRef | null {
-  const name = style.values.get(`${end}Arrow`) ?? (end === 'end' ? 'classic' : 'none');
+  const name = style.values.get(`${end}Arrow`);
+  if (name === undefined) return end === 'end' ? 'arrow' : null;
   const marker = markerOf(name, style.values.get(`${end}Fill`));
   if (marker !== undefined) return marker;
   warn(`Arrowheads of kind "${name}" were drawn as arrows.`);
@@ -117,11 +133,47 @@ export function portAt(style: CellStyle, end: 'exit' | 'entry'): string | undefi
   return best.id;
 }
 
-/** Where a label sits along its edge, from an edge or edge-label geometry: `x` runs from -1 to 1, and `y` is how far off the line. */
-export function labelPlacementOf(cell: RawCell, geo: CellGeometry): DiagramLabel | undefined {
+/** The point `fraction` of the way along `line`, by length, and the unit direction of the stretch it is on. */
+function pointAlong(line: readonly Vec2[], fraction: number): { at: Vec2; dir: Vec2 } | undefined {
+  const lengths = line.slice(1).map((b, i) => Math.hypot(b.x - line[i]!.x, b.y - line[i]!.y));
+  const total = lengths.reduce((t, l) => t + l, 0);
+  if (total === 0) return undefined;
+  let left = fraction * total;
+  for (let i = 0; i < lengths.length; i++) {
+    const l = lengths[i]!;
+    if (l === 0 || (left > l && i < lengths.length - 1)) {
+      left -= l;
+      continue;
+    }
+    const a = line[i]!;
+    const b = line[i + 1]!;
+    const dir = { x: (b.x - a.x) / l, y: (b.y - a.y) / l };
+    const t = Math.min(left, l);
+    return { at: { x: a.x + dir.x * t, y: a.y + dir.y * t }, dir };
+  }
+  return undefined;
+}
+
+/**
+ * Where a label sits along its edge, from an edge or edge-label geometry: `x` runs from -1 to 1, and `y` is how far off the
+ * line. A label dragged off its place has an `offset` point too, which a draw app adds to where `x` and `y` put it; then the
+ * label sits on `line` (the edge's ends and bends, straight between) nearest that point, `offset` the part of it across.
+ */
+export function labelPlacementOf(cell: RawCell, geo: CellGeometry, line: readonly Vec2[] = []): DiagramLabel | undefined {
   const g = cell.geometry;
-  if (g === null || (!g.hasAttribute('x') && !g.hasAttribute('y'))) return undefined;
+  const off = offsetOf(cell);
+  const moved = off.x !== 0 || off.y !== 0;
+  if (g === null || (!g.hasAttribute('x') && !g.hasAttribute('y') && !moved)) return undefined;
   const fraction = Math.min(1, Math.max(0, geo.x / 2 + 0.5));
+  const anchor = moved ? pointAlong(line, fraction) : undefined;
+  if (anchor !== undefined) {
+    // As a draw app turns `y` off the line: to the left of the direction of travel, as `offset` is.
+    const normal = { x: anchor.dir.y, y: -anchor.dir.x };
+    const across = off.x * normal.x + off.y * normal.y;
+    const along = off.x * anchor.dir.x + off.y * anchor.dir.y;
+    const offset = geo.y + across;
+    return { at: { near: { x: anchor.at.x + anchor.dir.x * along, y: anchor.at.y + anchor.dir.y * along } }, ...(offset !== 0 ? { offset } : {}) };
+  }
   const at = fraction === 0.5 ? 'mid' : fraction === 0 ? 'start' : fraction === 1 ? 'end' : fraction;
   return { at, ...(geo.y !== 0 ? { offset: geo.y } : {}) };
 }

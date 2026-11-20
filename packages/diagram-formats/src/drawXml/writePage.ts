@@ -29,13 +29,14 @@ function parentsOf(data: DiagramData, known: ReadonlySet<string>, warn: Warn): M
     return false;
   };
   const claim = (member: string, holder: string): boolean => {
-    if (!known.has(member) || parent.has(member) || within(member, holder)) return false;
+    if (!known.has(member) || !known.has(holder) || parent.has(member) || within(member, holder)) return false;
     parent.set(member, holder);
     return true;
   };
   for (const c of data.containers ?? []) {
     for (const m of c.members ?? []) claim(m, c.id);
-    for (const lane of c.lanes ?? []) {
+    // Only a pool's lanes are drawn, and written; a container's hold nothing, so their members stay where they are.
+    for (const lane of c.role === 'pool' ? c.lanes ?? [] : []) {
       claim(lane.id, c.id);
       for (const m of lane.members ?? []) claim(m, lane.id);
     }
@@ -68,7 +69,7 @@ function vertices(data: DiagramData, theme: DiagramTheme, headerOf: (id: string)
       out.push({ id: lane.id, value: regionLabel(lane), style: regionStyle({ ...lane, role: 'lane' }, headerOf(lane.id), theme, i) });
     });
   }
-  for (const g of data.clusters ?? []) out.push({ id: g.id, value: '', style: GROUP_STYLE, group: true });
+  for (const g of data.clusters ?? []) out.push({ id: g.id, value: regionLabel(g), style: GROUP_STYLE, group: true });
   for (const n of data.nodes) out.push({ id: n.id, value: nodeLines(n, warn).join('\n'), style: nodeStyle(n, theme, warn) });
   return out;
 }

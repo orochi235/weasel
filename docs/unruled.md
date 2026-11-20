@@ -2822,3 +2822,9 @@ Calls the lanes made without a ruling:
   `WriteOptions.page` names a page the document does not have, and `scenePageKinds` does the same for an `opts.page`
   its scene has no page for. Both had fallen back to the first page, so a stale id exported another page as if it
   were the one asked for. An unset `page` still means the first.
+## Audit round forty-six (2026-11-20): draw-style XML
+
+- 2026-11-20 (the fixer's call): a draw-style XML edge whose style names no `endArrow` or `startArrow` reads that end as
+  unset, the diagram's own marker, as an unnamed color reads as the theme's; a named `classic` reads as `arrow-concave`.
+  Reading the draw app's own default, `classic`, onto every such edge as an explicit `arrow-concave` was the alternative
+  (`drawXml/readStyle.ts`, `markerAt`).
