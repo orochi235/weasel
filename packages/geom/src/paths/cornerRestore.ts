@@ -205,7 +205,7 @@ function write(contours: readonly Rebuilt[], result: PolygonPath): PolygonPath {
   const flat = flatAnchorIndices(built);
   const corners: (CornerSpec | null)[] = [];
   specs.forEach((spec, k) => {
-    if (!spec) return;
+    if (!spec || flat[k]! < 0) return;
     while (corners.length < flat[k]!) corners.push(null);
     corners[flat[k]!] = spec;
   });

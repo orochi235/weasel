@@ -6,6 +6,7 @@
 import { cubicEvalAt } from '../curve';
 import type { Path, PolygonPath } from '../path';
 import { PathBuilder } from './builder';
+import { outsideSide } from './contourSides';
 import { lineSegment, pathToCubicContours, splitSegment, type CubicSegment } from './cubicContours';
 import { pathSignedArea } from './winding';
 
@@ -54,14 +55,22 @@ export function growRegion(path: Path, distance: number, opts: GrowRegionOptions
     join: opts.join ?? 'miter',
     miterLimit: opts.miterLimit ?? 4,
   };
+  const contours: Seg[][] = [];
   for (const contour of pathToCubicContours(path)) {
     const segs = contour.segs.filter((s) => !degenerate(s));
     if (segs.length === 0) continue;
     const last = segs.at(-1)!.c,
       first = segs[0]!.c;
     if (last[6] !== first[0] || last[7] !== first[1]) segs.push(lineSegment(last[6], last[7], first[0], first[1]));
-    emitContour(b, growContour(segs, ctx));
+    contours.push(segs);
   }
+  // Each contour grows toward the side the whole region leaves unfilled: a
+  // hole into itself, a separate shape outward whichever way it is wound.
+  // One inside the fill, or with no area, follows the path's winding.
+  contours.forEach((segs, i) => {
+    const side = contours.length > 1 ? outsideSide(contours, i) : null;
+    emitContour(b, growContour(segs, side === null ? ctx : { ...ctx, sigma: side }));
+  });
   return b.build();
 }
 
@@ -101,7 +110,10 @@ function joinPieces(prev: Grown, next: Grown, v: Pt, tin: Pt, tout: Pt, ctx: Ctx
   if (gap <= ctx.tol * 1e-3) return [];
   const cross = tin[0] * tout[1] - tin[1] * tout[0];
   const dot = tin[0] * tout[0] + tin[1] * tout[1];
-  const convex = ctx.sigma * cross > 0 || (Math.abs(cross) < 1e-9 && dot < 0);
+  // A U-turn is convex whichever way rounding tipped its cross product, and
+  // its round join turns outward: by sigma, not by that sign.
+  const uTurn = Math.abs(cross) < 1e-9 && dot < 0;
+  const convex = ctx.sigma * cross > 0 || uTurn;
   if (gap <= ctx.tol) return snap(prev, next, a);
   if (!convex) {
     if (trimAtCrossing(prev, next)) return [];
@@ -109,7 +121,7 @@ function joinPieces(prev: Grown, next: Grown, v: Pt, tin: Pt, tout: Pt, ctx: Ctx
   }
   const nin = normal(tin, ctx.sigma),
     nout = normal(tout, ctx.sigma);
-  if (ctx.join === 'round') return arc(v, ctx.d, nin, Math.atan2(cross, dot));
+  if (ctx.join === 'round') return arc(v, ctx.d, nin, uTurn ? ctx.sigma * Math.PI : Math.atan2(cross, dot));
   const cos = nin[0] * nout[0] + nin[1] * nout[1];
   if (1 + cos < 1e-9 || Math.sqrt(2 / (1 + cos)) > ctx.miterLimit) return [lineSegment(a[0], a[1], b[0], b[1])];
   const k = ctx.d / (1 + cos);

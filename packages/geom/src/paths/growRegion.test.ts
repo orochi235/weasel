@@ -54,6 +54,14 @@ describe('growRegion', () => {
     expect(inPath(g, -0.6, -0.6)).toBe(true);
   });
 
+  it('caps both ends of a zero-area line outward under a round join', () => {
+    const g = growRegion(pathFromD('M0 0 L10 0'), 1, { join: 'round' });
+    expect(boundsOfPath(g).x).toBeCloseTo(-1, 5);
+    expect(boundsOfPath(g).width).toBeCloseTo(12, 5);
+    expect(inPath(g, -0.5, 0.2)).toBe(true);
+    expect(inPath(g, 10.5, 0.2)).toBe(true);
+  });
+
   it('grows the same either way a region is wound', () => {
     const cw = growRegion(pathFromD('M0 0 L0 10 L10 10 L10 0 Z'), 1);
     expect(boundsOfPath(cw)).toMatchObject({
@@ -62,6 +70,15 @@ describe('growRegion', () => {
       width: 12,
       height: 12,
     });
+  });
+
+  it('grows each separate shape outward, whichever way each is wound', () => {
+    // A runs one way, B the other; both fill under 'nonzero'.
+    const g = growRegion(pathFromD('M0 0 L100 0 L100 100 L0 100 Z M200 0 L200 10 L210 10 L210 0 Z'), 2);
+    expect(inPath(g, 199, 5)).toBe(true);
+    expect(inPath(g, 205, 5)).toBe(true);
+    expect(inPath(g, 211, 5)).toBe(true);
+    expect(inPath(g, -1, 50)).toBe(true);
   });
 
   it('shrinks a hole, and fills one grown shut', () => {
