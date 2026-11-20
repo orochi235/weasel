@@ -20,6 +20,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
-    include: ['packages/*/src/**/*.bench.ts'],
+    include: ['packages/*/src/**/*.bench.ts', 'tests/perf/scene/**/*.bench.ts'],
+    // A bench reading the heap collects first.
+    execArgv: ['--expose-gc'],
   },
 });

@@ -133,6 +133,7 @@ export type {
   NodeClip,
   NodeId,
   PoseFeed,
+  SceneTouches,
   PoseOverride,
   PoseHold,
   PoseOverrides,

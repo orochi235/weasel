@@ -18,6 +18,7 @@ import { boundsOfPath, poseFrameOf } from '@weasel-js/geom';
 import { isPathLike } from 'core/geometry/autoPoseDescriptor';
 import { pixelScaleCtx } from './pixelScale';
 import { groupBoxBounds, paintGroupBox } from './nodeShapes/groupBoxPainter';
+import { poseBoxBounds } from './nodeShapes/poseBox';
 
 // `globalThis`, not `window`: a render worker has no window, and sets the density it paints at here.
 const ambientDpr = (): number => globalThis.devicePixelRatio || 1;
@@ -111,6 +112,22 @@ function screenScalesOf(view: View, pose: unknown): { scale: number; leastScale:
   const sum = a * a + b * b + c * c + d * d;
   const most = Math.sqrt((sum + Math.sqrt(Math.max(0, sum * sum - 4 * det * det))) / 2);
   return { scale: Math.sqrt(det), leastScale: most > 0 ? det / most : 0 };
+}
+
+/**
+ * {@link defaultPaintBounds}, or for a group that paints nothing of its own, its box: a
+ * visibility index places such a group there rather than everywhere, since it paints nowhere.
+ */
+export function defaultReachBounds<TData, TLayer extends string, TPose>(
+  node: Node<TData, TLayer, TPose>,
+  pose: TPose,
+  view: View,
+  ctx?: Pick<NodePaintCtx, 'inherited' | 'shapes' | 'derivedPath'>,
+): Bounds | null {
+  const b = defaultPaintBounds(node, pose, view, ctx);
+  if (b !== null || node.kind !== 'group') return b;
+  const data = node.data as { label?: string; text?: string } | null;
+  return data?.label && data.text == null ? null : poseBoxBounds(pose, null, undefined);
 }
 
 /**

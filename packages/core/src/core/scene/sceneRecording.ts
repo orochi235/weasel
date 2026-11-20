@@ -32,6 +32,8 @@ export interface SceneRecordingEnv {
   /** The adapter an edit pass's ops apply through. */
   passAdapter(): unknown;
   writePose(id: string, pose: unknown): void;
+  /** Hears every op that ran, by any path: the touched-ids feed. */
+  touched(kind: string, payload: unknown): void;
   poseWrites: Pick<PoseWriteLog<unknown>, 'labeled' | 'label' | 'unlabel' | 'replaying'>;
   config: {
     getActiveJournal?: (() => Journal | null) | undefined;
@@ -75,7 +77,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
   const ops = createOpTable({
     driven: mode.open,
     replayAlone: (step) => { replay(step); notify(); },
-    skips: stale.skips,
+    skips: stale.skips, touched: env.touched,
     // Only a replay is logged: a first apply is recorded by the entry it
     // creates, and reverting it would leave that entry describing nothing.
     applied: (kind, payload, reverted) => { if (!mode.records()) logApplied(kind, payload, reverted); },
@@ -104,7 +106,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
     lifted,
     getSelection: selection.get,
     setSelection: selection.replace,
-    notify,
+    notify, touched: env.touched,
   });
   const { atomically, logApplied } = log;
 

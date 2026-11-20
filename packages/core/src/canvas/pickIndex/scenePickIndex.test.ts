@@ -139,14 +139,27 @@ describe('scenePickIndex freshness', () => {
     expect(pick(scene, at(300, 110))).toEqual(['d']);
   });
 
-  it('a still scene does not rebuild', () => {
+  it('neither a still scene nor an edit to it rebuilds', () => {
     const scene = sceneWith({ x: 0, y: 0, width: 20, height: 20 });
     pick(scene, at(10, 10));
     const before = pickIndexBuildCount();
     for (let i = 0; i < 10; i++) pick(scene, at(i * 3, 10));
     expect(pickIndexBuildCount()).toBe(before);
-    scene.setPose(A, { x: 5, y: 0, width: 20, height: 20 });
+    scene.setPose(A, { x: 50, y: 0, width: 20, height: 20 });
+    expect(pick(scene, at(60, 10))).toEqual(['a']);
+    expect(pick(scene, at(10, 10))).toEqual([]);
+    expect(pickIndexBuildCount()).toBe(before);
+  });
+
+  it('builds again, once the scene holds still, after a change it is not told the nodes of', () => {
+    const scene = sceneWith({ x: 0, y: 0, width: 20, height: 20 });
     pick(scene, at(10, 10));
+    const before = pickIndexBuildCount();
+    scene.registerOp<null>('app:noop', { apply: () => {}, revert: () => {} });
+    scene.recordOp({ kind: 'app:noop', payload: null });
+    expect(indexed(scene, at(10, 10))).toEqual(['a']);
+    expect(pickIndexBuildCount()).toBe(before);
+    expect(indexed(scene, at(10, 10))).toEqual(['a']);
     expect(pickIndexBuildCount()).toBe(before + 1);
   });
 

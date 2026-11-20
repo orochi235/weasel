@@ -1,8 +1,9 @@
 /** How a scene tells its readers it changed. */
 import type { Notifier } from './notifier';
+import type { SceneTouchesMembers } from './sceneTouches';
 
 /** The members a scene tells its readers it changed through: a subscription and two version counters. */
-export interface SceneChanges {
+export interface SceneChanges extends SceneTouchesMembers {
   /** Hear every change, a change of selection included. Returns the unsubscribe. */
   subscribe(listener: () => void): () => void;
   /** Monotonically increasing version, 1 for a scene no write has touched. Snapshot for
@@ -14,7 +15,7 @@ export interface SceneChanges {
 }
 
 /** A scene's change members, over its notifier and its selection's own count of changes. */
-export function sceneChanges(notifier: Notifier, selection: { changes(): number }): SceneChanges {
+export function sceneChanges(notifier: Notifier, selection: { changes(): number }): Omit<SceneChanges, 'changesSince'> {
   return {
     subscribe: notifier.subscribe,
     getVersion: notifier.version,

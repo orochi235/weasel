@@ -9,7 +9,7 @@ import { createNodeFnFields } from './nodeFnFields';
 import { createNodeStore } from './nodeStore';
 import { createRenderOrder } from './renderOrder';
 import { registerSharedJSON } from './owned';
-import { serializeScene } from './serialization';
+import { serializeNode, serializeScene } from './serialization';
 import { createStaleReplay } from './staleReplay';
 import { createTreeReads } from './treeReads';
 import type { LayerRecord, NodeId, Scene, SceneRegistry } from './types';
@@ -60,7 +60,14 @@ export function createSceneState<TData, TLayer extends string, TPose>(
     },
     toJSON: () => serializeScene(state, fnFields, docValues.toJSON()),
   };
-  registerSharedJSON(reads.toJSON, () => serializeScene(state, fnFields, docValues.toJSON((v) => v), (v) => v));
+  registerSharedJSON(
+    reads.toJSON,
+    () => serializeScene(state, fnFields, docValues.toJSON((v) => v), (v) => v),
+    (id) => {
+      const node = state.nodes.get(id as NodeId);
+      return node && serializeNode(node, fnFields, (v) => v);
+    },
+  );
 
   return {
     state,

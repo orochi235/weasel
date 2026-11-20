@@ -15,6 +15,8 @@ export interface AppliedLogEnv {
   getSelection(): readonly NodeId[];
   setSelection(ids: readonly NodeId[]): void;
   notify(): void;
+  /** Called after an op is taken back, with its kind and payload. */
+  touched(kind: string, payload: unknown): void;
 }
 
 export interface AppliedLog {
@@ -59,6 +61,7 @@ export function createAppliedLog(env: AppliedLogEnv): AppliedLog {
             const handler = env.registered.get(kind)!;
             try {
               (reverted ? handler.apply : handler.revert)(payload);
+              env.touched(kind, payload);
             } catch (back) {
               console.warn(`[weasel] Scene: taking back op "${kind}" after a failed edit threw: ${String(back)}`);
             }

@@ -499,8 +499,8 @@ only story runner in the repo.
 ## Scale
 
 Arcs toward scenes far larger than a screen, in the order each builds on the last (2026-11-19, from
-comparing pezlie's wall, which pans a 1.1M-cell corpus at 60 fps). Arc 1, render-time visibility, is in
-`docs/PERF.md`; these rest on it.
+comparing pezlie's wall, which pans a 1.1M-cell corpus at 60 fps). Arc 1, render-time visibility, landed
+on 2026-11-19 (`docs/concepts.md`, "Visibility index"); these rest on its feed and reach tree.
 
 - **(P3) [agent] Level of detail: a node's representation chosen by its size on screen.** Painters get
   `pixelScale` (`packages/core/src/canvas/nodeShapeTypes.ts:23`) and nothing builds on it. A node declares
@@ -515,7 +515,7 @@ comparing pezlie's wall, which pans a 1.1M-cell corpus at 60 fps). Arc 1, render
   `renderSceneToPixels`. Closes when a layer can be marked tiled, a zoom over a static backdrop draws from
   tiles with no full redraw (measured), and the cache's bound is tested.
 - **(P3) [agent] A streaming scene source.** Nothing loads or drops nodes as the view moves; a consumer on
-  `onViewChange` pays a pick-index rebuild and an undo-history entry per change. A source answers the nodes
+  `onViewChange` pays an undo-history entry per change. A source answers the nodes
   of a world rect, loads in priority order (on screen, the margin, where a fling will land), adds and drops
   them through a mutation path outside history, and caps concurrent loads. Closes when a demo pans a scene
   larger than memory would hold whole, undo history stays empty through the pan, and the visibility index

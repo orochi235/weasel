@@ -1,15 +1,19 @@
 /**
- * The 3D world's pick index: one BVH over every node's world box as shown,
- * rebuilt whole on the first pick after the scene, its overrides or the
- * world's `bounds` function can have changed. A node whose box the tree
- * refuses (non-finite or inverted) is tested on every pick, the way the scan
- * did; one that occupies nothing is never picked.
+ * The 3D world's pick index: core's reach tree over every node's world box as
+ * shown, in three dimensions, updated from the scene's touched-ids feed and
+ * built whole again only when the feed cannot say what changed or the world
+ * takes a new `bounds` function. A node whose box the tree refuses
+ * (non-finite or inverted) is tested on every pick, the way the scan did; one
+ * that occupies nothing is never picked.
  */
 
 import type { NodeId } from '@weasel-js/routing';
 import { rectsOverlap } from '@weasel-js/geom';
 import { intersectRayAabb, type Aabb, type Ray } from '@weasel-js/geom/3d';
-import { createBvh, type Bvh, type HalfSpace } from '@weasel-js/geom/nd';
+import type { HalfSpace } from '@weasel-js/geom/nd';
+import {
+  BOX_ALL, BOX_NONE, BOX_SOME, createReachTree, type ReachQuery, type ReachRay, type ReachSource, type ReachTree,
+} from '@weasel-js/core';
 import { rectOf, viewProjectionOf, type Viewport3d } from './project';
 import { projectAabbToScreen, screenToNdc, type ScreenRect } from './screen';
 import { padQuery } from './snap/boxIndex';
@@ -75,101 +79,107 @@ function sidePlanes(vp: Viewport3d, rect: ScreenRect): HalfSpace[] {
   ];
 }
 
-class BuiltIndex<TData, TLayer extends string> implements WorldPickIndex {
-  constructor(
-    private readonly order: readonly Node3d<TData, TLayer>[],
-    private readonly boxes: readonly (Aabb | null)[],
-    private readonly tree: Bvh<number>,
-    private readonly always: readonly number[],
-  ) {}
+/** Every node is tag 1: a layer gate is the caller's, applied to each hit. */
+const EVERY = 1;
+
+class WorldIndex<TData, TLayer extends string> implements WorldPickIndex {
+  /** Each node's exact box as shown, read when the tree last boxed it; the tree's own is padded. */
+  private readonly exact = new Map<string, Aabb | null>();
+  readonly tree: ReachTree;
+  private rank: { order: readonly unknown[]; of: Map<string, number> } | null = null;
+
+  constructor(private readonly world: World3d<TData, TLayer>) {
+    this.tree = createReachTree(this.source());
+  }
+
+  private source(): ReachSource {
+    const { scene } = this.world;
+    const boxOf = worldBoxes(this.world, 'shown');
+    return {
+      dim: 3,
+      changesSince: (token) => scene.changesSince(token),
+      childrenOf: (id) => (id === null ? scene.roots : scene.get(id as NodeId)?.children ?? []),
+      parentOf: (id) => {
+        const node = scene.get(id as NodeId);
+        return node === undefined ? undefined : node.parent;
+      },
+      ownBox: (id, out, at) => {
+        const node = scene.get(id as NodeId) as Node3d<TData, TLayer> | undefined;
+        const b = node ? boxOf(node) : null;
+        this.exact.set(id, b);
+        if (b === null) return BOX_NONE;
+        if (!boxIndexable(b)) return BOX_ALL;
+        out.set(padQuery([b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z]), at);
+        return BOX_SOME;
+      },
+      tagsOf: () => EVERY,
+    };
+  }
+
+  private rankOf(id: string): number {
+    const order = this.world.scene.renderOrderNodes();
+    if (this.rank?.order !== order) this.rank = { order, of: new Map(order.map((n, i) => [n.id as string, i])) };
+    return this.rank.of.get(id) ?? Number.MAX_SAFE_INTEGER;
+  }
 
   nearestOnRay(
     ray: Ray, excluded: ReadonlySet<NodeId> | null, maxT = Infinity, layerIsPainted?: LayerGate,
   ): NodeId | null {
-    const { order, boxes } = this;
-    let best = -1;
-    let bestT = Infinity;
-    const consider = (i: number) => {
-      const box = boxes[i]!;
-      const node = order[i]!;
-      if (excluded?.has(node.id) || layerIsPainted?.(node.layer) === false) return;
-      const t = intersectRayAabb(ray, box);
-      if (t !== null && t <= maxT && (t < bestT || (t === bestT && i < best))) {
-        bestT = t;
-        best = i;
-      }
-    };
-    for (const i of this.always) consider(i);
     const { origin: o, direction: d } = ray;
-    this.tree.raycast([o.x, o.y, o.z], [d.x, d.y, d.z], (i, entryT) => {
-      // The tree's slab test rounds differently from intersectRayAabb's.
-      if (entryT > bestT * (1 + 1e-12) + 1e-12) return false;
-      consider(i);
-      return true;
+    const probe: ReachRay = { origin: [o.x, o.y, o.z], dir: [d.x, d.y, d.z], tMax: maxT * (1 + 1e-12) + 1e-12 };
+    let best: string | null = null;
+    let bestRank = Infinity;
+    let bestT = Infinity;
+    const q: ReachQuery = { wanted: EVERY, regions: [undefined, { ray: probe }] };
+    this.tree.collect(q, (id) => {
+      const box = this.exact.get(id);
+      const node = this.world.scene.get(id as NodeId);
+      if (!box || !node || excluded?.has(id as NodeId) || layerIsPainted?.(node.layer) === false) return;
+      const t = intersectRayAabb(ray, box);
+      if (t === null || t > maxT || t > bestT) return;
+      const rank = this.rankOf(id);
+      if (t < bestT || rank < bestRank) {
+        best = id;
+        bestT = t;
+        bestRank = rank;
+        // The tree's slab test rounds differently from intersectRayAabb's.
+        if (boxIndexable(box)) probe.tMax = bestT * (1 + 1e-12) + 1e-12;
+      }
     });
-    return best < 0 ? null : order[best]!.id;
+    return best;
   }
 
   inScreenRect(vp: Viewport3d, rect: ScreenRect, layerIsPainted?: LayerGate): NodeId[] {
-    const candidates = [...this.always];
-    this.tree.queryHalfSpaces(sidePlanes(vp, rect), (i) => {
-      candidates.push(i);
+    const found: string[] = [];
+    this.tree.collect({ wanted: EVERY, regions: [undefined, { planes: sidePlanes(vp, rect) }] }, (id) => {
+      found.push(id);
     });
-    candidates.sort((a, b) => a - b);
-    const hits: NodeId[] = [];
     const m = viewProjectionOf(vp);
     const pane = rectOf(vp);
-    for (const i of candidates) {
-      if (layerIsPainted?.(this.order[i]!.layer) === false) continue;
-      const box = projectAabbToScreen(this.boxes[i]!, m, pane);
-      if (box && rectsOverlap(box, rect)) hits.push(this.order[i]!.id);
+    const hits: { id: NodeId; rank: number }[] = [];
+    for (const id of found) {
+      const node = this.world.scene.get(id as NodeId);
+      const box = this.exact.get(id);
+      if (!node || !box || layerIsPainted?.(node.layer) === false) continue;
+      const screen = projectAabbToScreen(box, m, pane);
+      if (screen && rectsOverlap(screen, rect)) hits.push({ id: id as NodeId, rank: this.rankOf(id) });
     }
-    return hits;
+    hits.sort((a, b) => a.rank - b.rank);
+    return hits.map((h) => h.id);
   }
 }
 
-interface Cached {
-  version: number;
-  overrides: number;
-  bounds: unknown;
-  order: readonly unknown[];
-  index: WorldPickIndex;
-}
-
-const CACHE = new WeakMap<object, Cached>();
-
-function build<TData, TLayer extends string>(
-  world: World3d<TData, TLayer>,
-  order: readonly Node3d<TData, TLayer>[],
-): WorldPickIndex {
-  const boxOf = worldBoxes(world, 'shown');
-  const boxes = order.map(boxOf);
-  const entries: [number, number[]][] = [];
-  const always: number[] = [];
-  boxes.forEach((b, i) => {
-    if (b === null) return;
-    if (boxIndexable(b)) entries.push([i, padQuery([b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z])]);
-    else always.push(i);
-  });
-  return new BuiltIndex(order, boxes, createBvh<number>(3, entries), always);
-}
+const CACHE = new WeakMap<object, { bounds: unknown; index: WorldIndex<never, never> }>();
 
 /** The index for `world`, current as of this call. */
 export function worldPickIndex<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
 ): WorldPickIndex {
-  const { scene } = world;
-  const version = scene.getVersion();
-  const overrides = scene.overrides.getGeneration();
-  const order = scene.renderOrderNodes() as readonly Node3d<TData, TLayer>[];
-  const hit = CACHE.get(world);
-  if (
-    hit && hit.version === version && hit.overrides === overrides &&
-    hit.bounds === world.bounds && hit.order === order
-  ) {
-    return hit.index;
+  let hit = CACHE.get(world) as { bounds: unknown; index: WorldIndex<TData, TLayer> } | undefined;
+  if (hit === undefined || hit.bounds !== world.bounds) {
+    hit = { bounds: world.bounds, index: new WorldIndex(world) };
+    CACHE.set(world, hit as never);
   }
-  const index = build(world, order);
-  CACHE.set(world, { version, overrides, bounds: world.bounds, order, index });
-  return index;
+  hit.index.tree.ensure();
+  return hit.index;
 }
