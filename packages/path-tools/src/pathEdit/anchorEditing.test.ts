@@ -262,6 +262,14 @@ describe('enabled gates (the non-modal fall-through)', () => {
     expect(cutPathAtAnchorAction.enabled?.(dep2(dep))).toBe(true);
     expect(cutPathAtAnchorAction.enabled?.(dep2(makeEditAnchorsDep({ editingId: '' })))).not.toBe(true);
   });
+
+  it('cutPathAtAnchor is off where its click would cut nothing', () => {
+    const { dep } = depOverPath(triangle(), []);
+    expect(cutPathAtAnchorAction.enabled?.(dep2(dep), { x: 10, y: 0 })).toBe(true);
+    expect(cutPathAtAnchorAction.enabled?.(dep2(dep), { x: 500, y: 500 })).toBe(ActionDisabledReason.NotApplicable);
+    const open = new PathBuilder().moveTo(0, 0).lineTo(10, 0).lineTo(10, 10).build();
+    expect(cutPathAtAnchorAction.enabled?.(dep2(depOverPath(open).dep), { x: 10, y: 0 })).toBe(ActionDisabledReason.NotApplicable);
+  });
 });
 
 describe('capability eligibility', () => {

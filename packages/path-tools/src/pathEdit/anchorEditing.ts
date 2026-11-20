@@ -242,7 +242,15 @@ export const cutPathAtAnchorAction: Action = inPlane(defineAction({
       if (changed) dep.setSelectedAnchors([]);
     },
   },
-  enabled: (deps) => (openPathEditOf(deps) ? true : ActionDisabledReason.SelectionRequired),
+  // An edit that would change nothing is disabled (ruled 2026-11-10): a click off every anchor, or on an open subpath.
+  enabled: (deps, at) => {
+    const dep = openPathEditOf(deps);
+    if (!dep) return ActionDisabledReason.SelectionRequired;
+    if (!at) return true;
+    const nearest = dep.anchorUnder(at);
+    return nearest !== -1 && anchorEditWouldChange(deps, (set) => openSubpathAt(set, nearest))
+      ? true : ActionDisabledReason.NotApplicable;
+  },
 }), editingLayer);
 
 /** Shift on the press adds the marqueed anchors to the selection. */
