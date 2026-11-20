@@ -260,4 +260,33 @@ describe('LabProps.instruments', () => {
     await userEvent.click(screen.getByRole('checkbox', { name: 'Show grid' }));
     expect(undo).not.toBeDisabled();
   });
+
+  it('undoes and redoes a layer toggle the instrument snapshots on', async () => {
+    let seen: readonly string[] = [];
+    const instrument = defineInstrument<St, Record<string, never>>({
+      name: 'Probe',
+      initialState: () => ({ n: 1 }),
+      render: ({ trial }) => {
+        seen = trial.visibleLayers;
+        return null;
+      },
+      undo: { snapshotOn: ['layers.toggle'] },
+      canvas: { layers: [{ id: 'grid', draw: () => undefined }] },
+      layers: { ids: ['grid'] },
+    });
+    await renderSettled(<Lab instruments={[instrument]} />, {
+      wrapper: withIcons,
+    });
+    const box = screen.getByRole('checkbox', { name: 'Show grid' });
+    await userEvent.click(box);
+    expect([...seen]).toEqual([]);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect([...seen]).toEqual(['grid']);
+    expect(screen.getByRole('checkbox', { name: 'Show grid' })).toBeChecked();
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Redo' }));
+    expect([...seen]).toEqual([]);
+  });
 });

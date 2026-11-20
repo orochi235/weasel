@@ -1,3 +1,4 @@
+import type { Op } from '@weasel-js/core';
 import { type ReactNode, useMemo } from 'react';
 import type { TrialClock } from '../clock/trialClock';
 import type { OverAccess } from '../config/over';
@@ -12,8 +13,8 @@ export interface TrialLayerStackSources {
   config: unknown;
   over: OverAccess | undefined;
   clock: TrialClock | undefined;
-  /** The trial's snapshot-if-needed, which a change in the list takes first. */
-  snapshot: (event: string) => void;
+  /** The trial's snapshot-if-needed, which a change in the list takes first, with the entry that steps it. */
+  snapshot: (event: string, op: Op) => void;
 }
 
 /** A trial's layers: the order and visibility it keeps for them, the ones its canvas draws, and the list that
@@ -26,14 +27,14 @@ export function useTrialLayerStack({
   clock,
   snapshot,
 }: TrialLayerStackSources) {
-  const { layerVisibility, layerOrder, setOrder, setShown } = useTrialLayerState();
+  const { layers, setLayers } = useTrialLayerState();
   const { visibleLayers, canvasLayers, layerDescriptors, layerItems } = useTrialLayers({
     instrument,
     state,
     config,
     over,
-    layerVisibility,
-    layerOrder,
+    layerVisibility: layers.visibility,
+    layerOrder: layers.order,
     clock,
   });
   const list: ReactNode = useMemo(
@@ -42,11 +43,11 @@ export function useTrialLayerStack({
         <TrialLayerList
           items={layerItems}
           snapshot={snapshot}
-          setOrder={setOrder}
-          setVisibility={setShown}
+          layers={layers}
+          setLayers={setLayers}
         />
       ) : null,
-    [instrument.layers, layerDescriptors, layerItems, snapshot, setOrder, setShown],
+    [instrument.layers, layerDescriptors, layerItems, snapshot, layers, setLayers],
   );
   return { visibleLayers, canvasLayers, list };
 }
