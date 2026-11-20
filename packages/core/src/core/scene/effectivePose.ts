@@ -203,17 +203,30 @@ function depsAsRead<TPose>(
     const dep = plain(id);
     if (dep === undefined) return undefined;
     const pose = rebase(id, dep.pose);
-    return pose === dep.pose ? dep : new RebasedDep(dep, pose);
+    return pose === dep.pose ? dep : new RebasedDep(dep, pose, (p) => rebase(id, p));
   };
 }
 
-/** A dependency read from another frame: its pose rebased, and its path
- *  carried by the same frame change when asked for. */
+/** A dependency read from another frame: its pose rebased, and its path and
+ *  children carried by the same frame change when asked for. `carry` is that
+ *  change, taking a pose in the frame `dep.pose` is in to the one `pose` is. */
 class RebasedDep<TPose> implements DerivedDep<TPose> {
   readonly node: Node<unknown, string, TPose>;
 
-  constructor(private readonly dep: DerivedDep<TPose>, readonly pose: TPose) {
+  constructor(
+    private readonly dep: DerivedDep<TPose>,
+    readonly pose: TPose,
+    private readonly carry: (pose: TPose) => TPose,
+  ) {
     this.node = dep.node;
+  }
+
+  /** The dependency's children, which it hands in its own pose's frame, in this one's. */
+  get children(): readonly (DerivedDep<TPose> | undefined)[] | undefined {
+    const kids = this.dep.children;
+    if (kids === undefined) return undefined;
+    const { carry } = this;
+    return kids.map((kid) => (kid === undefined ? undefined : new RebasedDep(kid, carry(kid.pose), carry)));
   }
 
   get scene(): object | undefined {
@@ -289,9 +302,11 @@ class SceneDep<TPose> implements DerivedDep<TPose> {
     const { source, reading } = this;
     const pc = source.composition;
     const compose = pc && composesFrames(pc) && definesFrame(this.posed) ? pc.compose : null;
+    if (compose === null) return source.childrenOf(this.posed.id).map((id) => createSceneDep(source, id, reading));
+    const into = (pose: TPose) => compose(this.pose, pose);
     return source.childrenOf(this.posed.id).map((id) => {
       const dep = createSceneDep(source, id, reading);
-      return dep === undefined || compose === null ? dep : new RebasedDep(dep, compose(this.pose, dep.pose));
+      return dep === undefined ? dep : new RebasedDep(dep, into(dep.pose), into);
     });
   }
 }
