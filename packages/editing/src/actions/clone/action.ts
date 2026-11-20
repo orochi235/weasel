@@ -57,6 +57,27 @@ function landed(scratch: CloneScratch, id: NodeId, dx: number, dy: number): unkn
   return world === undefined ? undefined : scratch.frame.local(id, world);
 }
 
+/** The copied root `id` is under, or holds. */
+function rootOf(scratch: CloneScratch, id: NodeId): NodeId {
+  const roots = new Set(scratch.ids);
+  let at: NodeId | null = id;
+  while (at !== null && !roots.has(at)) at = scratch.scene.get(at)?.parent ?? null;
+  return at ?? id;
+}
+
+/** How far a placement moves the copy of `root` from where the drag alone leaves it, in world. */
+function placementShift(
+  scratch: CloneScratch, root: NodeId, placement: Parameters<CloneEnd['copyOps']>[0], dx: number, dy: number,
+): { dx: number; dy: number } {
+  const placed = placement.poses.get(root);
+  if (placed === undefined) return { dx: 0, dy: 0 };
+  const d = scratch.descriptorOf(root);
+  const dragged = landedWorld(scratch, root, dx, dy) ?? translatePoseViaDescriptor(scratch.frame.world(root), dx, dy, d);
+  const to = d.getBounds(placed);
+  const from = d.getBounds(dragged);
+  return { dx: to.x - from.x, dy: to.y - from.y };
+}
+
 /** The ops making the copies where the drag left them and selecting them;
  *  with a `placement`, each copied root goes under its parent instead, at its
  *  pose there when it has one. `null` when a copy would land in a singular
@@ -74,11 +95,20 @@ function placedCopyOps(scratch: CloneScratch, selection: OperandsDep, placement?
     scratch.scene,
     scratch.ids,
     (id, node, isRoot) => {
-      if (placement === undefined || !isRoot) {
+      if (placement === undefined) {
         return scratch.originPoses.has(id) ? kept(landed(scratch, id, dx, dy), node.pose) : node.pose;
       }
-      const world = placement.poses.get(id) ?? landedWorld(scratch, id, dx, dy) ?? node.pose;
-      return kept(scratch.frame.localUnder(parent ?? null, world), node.pose);
+      if (isRoot) {
+        const world = placement.poses.get(id) ?? landedWorld(scratch, id, dx, dy) ?? node.pose;
+        return kept(scratch.frame.localUnder(parent ?? null, world), node.pose);
+      }
+      // An envelope's child is stored in the frame the envelope sits in, which is now `parent`'s, and lands
+      // where the envelope's placement moves it.
+      if (!scratch.originPoses.has(id)) return node.pose;
+      const world = landedWorld(scratch, id, dx, dy);
+      if (world === undefined) return node.pose;
+      const shift = placementShift(scratch, rootOf(scratch, id), placement, dx, dy);
+      return kept(scratch.frame.localUnder(parent ?? null, translatePoseViaDescriptor(world, shift.dx, shift.dy, scratch.descriptorOf(id))), node.pose);
     },
     'Clone',
     parent,

@@ -65,3 +65,34 @@ describe('cloneAction with container behaviors', () => {
     expect(f.selected()).toEqual([f.token]);
   });
 });
+
+describe('cloneAction dropping an envelope into a container', () => {
+  it("stores the copy's children in the container's frame, at the slot", async () => {
+    const { makeBooleanGroup } = await import('../pathfinder/booleanGroupAction');
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const bin = scene.add({ kind: 'group', layer: 'main', data: {}, pose: BIN });
+    const a = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 4, height: 10 } });
+    const b = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 6, y: 0, width: 4, height: 10 } });
+    const env = makeBooleanGroup(scene as never, [a, b])!;
+    let selected: NodeId[] = [env];
+    const selection = { get: () => selected, set: (ids: NodeId[]) => { selected = ids; } };
+    const at = (x: number, y: number): InvocationCtx => ({
+      world: { x, y }, modifiers: MODS, deps: { operands: selection, scene },
+      drag: { start: { x: 5, y: 5 }, current: { x, y }, delta: { x: x - 5, y: y - 5 } },
+    }) as unknown as InvocationCtx;
+    const opts = { behaviors: [snapToContainer<RectPose>({
+      dwellMs: 0, isInstant: () => true,
+      findTarget: (_id, wx, wy) => (wx >= BIN.x && wx <= BIN.x + BIN.width ? { parentId: bin, slotPose: SLOT } : null),
+    })].flatMap((x) => (x.clone ? [x.clone] : [])) } as BindingOptions;
+    const handle = (cloneAction.invoker as OngoingInvoker).start(at(5, 5), opts) as OngoingHandle;
+    handle.onMove!(at(125, 27));
+    handle.onEnd!(at(125, 27), 'commit');
+    const [copy] = selected;
+    expect(copy).not.toBe(env);
+    expect(scene.get(copy!)!.parent).toBe(bin);
+    // The pair lands with its box on the slot: stored in the bin's frame, which sits at (100, 0).
+    const [ca, cb] = scene.childrenOf(copy!);
+    expect(scene.get(ca!)!.pose).toMatchObject({ x: SLOT.x - BIN.x, y: SLOT.y - BIN.y });
+    expect(scene.get(cb!)!.pose).toMatchObject({ x: SLOT.x - BIN.x + 6, y: SLOT.y - BIN.y });
+  });
+});
