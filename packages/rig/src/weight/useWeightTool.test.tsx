@@ -84,6 +84,13 @@ describe('useWeightTool', () => {
     expect(t.skin()).toBeUndefined();
   });
 
+  it('covers the ground between two pointer samples far apart', () => {
+    const t = setup();
+    t.state.setActive('a');
+    t.stroke([[110, 120], [290, 120]]);
+    expect(t.skin()).toEqual({ a: [1, 1, 1, 1] });
+  });
+
   it('makes a point\'s other joints give way', () => {
     const t = setup();
     t.state.setActive('a');

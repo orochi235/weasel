@@ -49,6 +49,11 @@ describe('brushWeights', () => {
     expect([...hits]).toEqual([[0, 0], [1, 0.5]]);
   });
 
+  it('sweeps the brush from `from`, weighing each point by its distance to the segment', () => {
+    expect([...brushWeights(coords, 30, 0, 4, undefined, 'add', { x: 0, y: 0 })]).toEqual([[0, 1], [1, 1], [2, 1], [3, 1]]);
+    expect([...brushWeights(new Float32Array([15, 2]), 30, 0, 4, undefined, 'add', { x: 0, y: 0 })]).toEqual([[0, 0.5]]);
+  });
+
   it('answers only points whose weight changes', () => {
     expect(brushWeights(coords, 100, 100, 10, undefined, 'add').size).toBe(0);
     expect(brushWeights(coords, 0, 0, 10, undefined, 'remove').size).toBe(0);

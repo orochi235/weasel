@@ -1,3 +1,4 @@
+import { pointSegmentDistance } from '@weasel-js/geom';
 import { getOwn, setOwn } from '@weasel-js/registry';
 import type { Skin } from './skin';
 
@@ -39,7 +40,8 @@ export function setJointWeights(
  * within `radius`, a weight falling off linearly from the center. `'add'` raises a point
  * toward 1 and `'remove'` lowers it toward 0; neither moves a point the other way. `current` is the joint's
  * share of each point ({@link jointShares}), not its raw weight. Answers only the points that change, by index,
- * for {@link setJointWeights}.
+ * for {@link setJointWeights}. Given `from`, the brush is swept from there to `(x, y)`, and each point's
+ * distance is to that segment, so a stroke covers the ground between two pointer samples.
  */
 export function brushWeights(
   coords: ArrayLike<number>,
@@ -48,10 +50,12 @@ export function brushWeights(
   radius: number,
   current: readonly number[] | undefined,
   mode: 'add' | 'remove',
+  from?: { readonly x: number; readonly y: number },
 ): Map<number, number> {
   const out = new Map<number, number>();
   for (let i = 0; 2 * i + 1 < coords.length; i++) {
-    const d = Math.hypot(coords[2 * i] - x, coords[2 * i + 1] - y);
+    const px = coords[2 * i], py = coords[2 * i + 1];
+    const d = from ? pointSegmentDistance(px, py, from.x, from.y, x, y) : Math.hypot(px - x, py - y);
     if (d >= radius) continue;
     const had = current?.[i] ?? 0;
     const want = mode === 'add' ? Math.max(had, 1 - d / radius) : Math.min(had, d / radius);
