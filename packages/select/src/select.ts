@@ -1,6 +1,6 @@
 import { once, sameId } from './same';
 
-/** `single` always replaces; `multi` lets a policy's keys toggle and range. */
+/** `single` always replaces; `multiple` lets a policy's keys toggle and range. */
 export type SelectionMode = 'single' | 'multiple';
 
 /** A modifier key a policy can assign to toggling or ranging. */
