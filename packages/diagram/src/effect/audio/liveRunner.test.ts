@@ -172,6 +172,21 @@ describe('createLiveAudioRunner', () => {
     expect(graph.applies.flat().filter((p) => p.kind === 'add' && p.id === 'gain')).toHaveLength(1);
   });
 
+  it('applies the other stages\' writes when one stage\'s write fails, and blames only that stage', () => {
+    const { runner, graphs } = setup();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    runner.setPipeline(withGain(440));
+    const graph = graphs[0]!;
+    graph.failWhen = (ps) => (ps.some((p) => p.kind === 'set' && p.id === 'gain') ? new Error('@weasel-js/audio: node "gain" has no param "gain"') : undefined);
+    const base = withGain(220);
+    const next = { ...base, stages: base.stages.map((s) => (s.id === 'gain' ? stage('gain', 'audio.gain', { gain: 0.5 }) : s)) };
+    runner.setPipeline(next);
+    expect(graph.applies.at(-1)).toEqual([{ kind: 'set', id: 'osc', param: 'frequency', value: 220 }]);
+    expect(runner.state.run?.stages.gain?.error).toMatch(/no param/);
+    expect(runner.state.run?.stages.osc?.error).toBeUndefined();
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
   it('resets onto a fresh graph holding the current plan, not playing', async () => {
     const { runner, graphs, engine } = setup();
     await runner.play();

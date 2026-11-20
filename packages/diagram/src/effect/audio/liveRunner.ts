@@ -57,7 +57,7 @@ const sameErrors = (a: Readonly<Record<string, string>>, b: Readonly<Record<stri
   return keys.length === Object.keys(b).length && keys.every((k) => Object.hasOwn(b, k) && a[k] === b[k]);
 };
 
-/** Applies the param writes together; when that throws, one by one, to name the stage that failed. */
+/** Applies the param writes together; when that throws, one by one, so the rest land and each failing stage is named. */
 function applySets(graph: AudioGraph, sets: readonly GraphPatch[], failures: Record<string, string>): void {
   if (sets.length === 0) return;
   try {
@@ -69,7 +69,6 @@ function applySets(graph: AudioGraph, sets: readonly GraphPatch[], failures: Rec
         graph.apply([p]);
       } catch (one) {
         if (p.kind === 'set') setOwn(failures, p.id, messageOf(one));
-        break;
       }
     }
   }
