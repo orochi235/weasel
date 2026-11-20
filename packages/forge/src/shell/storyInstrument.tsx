@@ -31,7 +31,7 @@ export function storyInstrument(options: StoryInstrumentOptions): Instrument<unk
   const frames = createFrameActions();
   const config = withGlobals(
     ready
-      ? schemaFromDescription(ready.schema, { hidden: answers.hidden, errors: answers.errors, run: frames.run })
+      ? schemaFromDescription(ready.schema, { hidden: answers.hidden, errors: answers.errors, disabled: answers.disabled, run: frames.run })
       : (f.schema({}) as ConfigSchema<unknown>),
     globals,
   );

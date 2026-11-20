@@ -32,6 +32,8 @@ export interface ConfigAnswers {
   configKey: string;
   hidden: string[];
   errors: Record<string, string[]>;
+  /** The paths whose own `.enableIf` predicate, written as code, does not hold. */
+  disabled?: string[];
 }
 
 /** One element axe faulted on, inside the frame's own document. */

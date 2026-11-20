@@ -22,6 +22,15 @@ describe('createAnswerBook', () => {
     expect(book.hidden('a.b', { ...config, d: 3 })).toBe(false);
   });
 
+  it('disables exactly a recorded path, for that config only', () => {
+    const book = createAnswerBook();
+    expect(book.disabled('d', config)).toBe(false);
+    book.record({ configKey: key, hidden: [], errors: {}, disabled: ['a.b'] });
+    expect(book.disabled('a.b', config)).toBe(true);
+    expect(book.disabled('a.b.c', config)).toBe(false);
+    expect(book.disabled('a.b', { ...config, d: 3 })).toBe(false);
+  });
+
   it('reads a trial config’s answers without its $globals pins, which the frame never sees', () => {
     const book = createAnswerBook();
     book.record({ configKey: key, hidden: ['d'], errors: {} });

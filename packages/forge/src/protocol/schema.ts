@@ -31,6 +31,10 @@ export type DescribedEntry =
       annotations: BranchAnnotations;
       section?: SectionDescription;
       conditional: boolean;
+      /** The node has an `.enableIf` written as code, which the frame answers. */
+      gated?: true;
+      /** The group's heading carries a reset. */
+      resettable?: true;
       children: DescribedShape;
     }
   | {
@@ -40,6 +44,8 @@ export type DescribedEntry =
       annotations: Annotations;
       section?: SectionDescription;
       conditional: boolean;
+      /** The node has an `.enableIf` written as code, which the frame answers. */
+      gated?: true;
       validated: boolean;
       /** The node draws its own row with `.render`, which stays in the frame. */
       customControl: boolean;
@@ -59,6 +65,8 @@ export interface SchemaDescription {
 export interface SchemaAnswers {
   hidden(path: string, config: unknown): boolean;
   errors(path: string, config: unknown): string[];
+  /** Whether the frame answered that the node at `path`'s own `.enableIf` does not hold. Absent, none is disabled. */
+  disabled?(path: string, config: unknown): boolean;
   /** Asks the frame of the panel that pressed it, which `ctx` names, to run its action at `path`. Without it, the
    *  rebuilt action's button does nothing. */
   run?(path: string, ctx: ConfigActionContext): void;
@@ -90,15 +98,21 @@ function dataOf(value: unknown, keepsKeys = false): unknown {
 function describeShape(shape: ConfigShape): DescribedShape {
   const out: DescribedShape = {};
   for (const [key, entry] of Object.entries(shape)) {
-    const { section, showIf } = entry.options;
+    const { section, showIf, enableIf } = entry.options;
     const sectionData = section === undefined ? undefined : dataOf(section, true);
     const common = {
       annotations: dataOf(entry.annotations, true) as Annotations,
       ...(sectionData === undefined ? {} : { section: sectionData as SectionDescription }),
       conditional: showIf !== undefined,
+      ...(enableIf === undefined ? {} : { gated: true as const }),
     };
     const described: DescribedEntry = isConfigBranch(entry)
-      ? { branch: true, ...common, children: describeShape(entry.children) }
+      ? {
+          branch: true,
+          ...common,
+          ...(entry.options.resettable ? { resettable: true as const } : {}),
+          children: describeShape(entry.children),
+        }
       : {
           branch: false,
           kind: entry.kind,
@@ -124,12 +138,13 @@ function rebuildShape(shape: DescribedShape, at: string, answers: SchemaAnswers)
     const options: NodeOptions = {
       ...(entry.section === undefined ? {} : { section: entry.section }),
       ...(entry.conditional ? { showIf: (config) => !answers.hidden(path, config) } : {}),
+      ...(entry.gated ? { enableIf: (config) => !(answers.disabled?.(path, config) ?? false) } : {}),
     };
     if (entry.branch) {
       const branch: ConfigBranch = {
         children: rebuildShape(entry.children, path, answers),
         annotations: entry.annotations,
-        options,
+        options: entry.resettable ? { ...options, resettable: true } : options,
       };
       setOwn(out, key, branch);
     } else {
@@ -169,8 +184,9 @@ export function schemaActionAt(schema: ConfigSchema<unknown>, path: string): Con
 export function answerSchema(
   schema: ConfigSchema<unknown>,
   config: unknown,
-): { hidden: string[]; errors: Record<string, string[]> } {
+): { hidden: string[]; errors: Record<string, string[]>; disabled: string[] } {
   const hidden: string[] = [];
+  const disabled: string[] = [];
   const errors: Record<string, string[]> = {};
   const record = config as Record<string, unknown>;
   const { group } = resolveConfigSchema(schema);
@@ -179,6 +195,7 @@ export function answerSchema(
     for (const [key, entry] of Object.entries(shape)) {
       const path = joinPath(at, key);
       if (!isConfigNodeShown(entry, record, group)) hidden.push(path);
+      if (entry.options.enableIf && !entry.options.enableIf(record)) disabled.push(path);
       if (isConfigBranch(entry)) {
         walk(entry.children, path);
         continue;
@@ -192,5 +209,5 @@ export function answerSchema(
     }
   };
   walk(schema.nodes, '');
-  return { hidden, errors };
+  return { hidden, errors, disabled };
 }

@@ -42,6 +42,25 @@ describe('schema descriptions', () => {
     expect(resolved.showIf.get('grid.spacing')?.(off as never)).toBe(false);
   });
 
+  it('answers an enableIf written as code in the frame, and carries a group reset', () => {
+    const schema = f.schema({
+      on: f.boolean(false),
+      size: f.number(1).enableIf((c) => c.on === true),
+      look: f.group({ px: f.number(4) }).resettable(),
+    });
+    const off = { on: false, size: 1, look: { px: 4 } };
+    const { disabled } = answerSchema(schema, off);
+    expect(disabled).toEqual(['size']);
+    expect(answerSchema(schema, { ...off, on: true }).disabled).toEqual([]);
+    const rebuilt = schemaFromDescription(structuredClone(describeSchema(schema)), {
+      ...noAnswers,
+      disabled: (path) => disabled.includes(path),
+    });
+    const resolved = resolveConfigSchema(rebuilt, []);
+    expect(resolved.enableIf?.get('size')?.(off)).toBe(false);
+    expect(resolved.group.children.look).toMatchObject({ resettable: true });
+  });
+
   it('answers a showIf written as data too, and ships the condition itself', () => {
     const schema = f.schema({
       on: f.boolean(false),

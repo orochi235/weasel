@@ -410,6 +410,12 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
+- **(P3) An isolated story's `.auto()` leaf, `.dialog()` row and group `.motif()` do not reach the workshop's panel**
+  (2026-11-20, `packages/forge/src/protocol/schema.ts`). The frame's schema description carries `enableIf` and
+  `resettable` but not these: `AUTO` is a symbol, which a port cannot post, so a panel that wrote it would fail the
+  next `config` message, and a dialog body and a motif are renderers. Closes when the frame path is removed, or when
+  an isolated story's auto leaf toggles and pins across the port.
+
 - **(P3) [waiting] What holds `fseventsd` when macOS file events stop arriving is not known.** Measured
   2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached neither
   `fs.watch` on that directory nor the `fsevents` module in 12 seconds, while a watch on the file
