@@ -2,6 +2,6 @@
 '@weasel-js/diagram': patch
 ---
 
-A stencil drawn inside a container that sits under a plain group or a boolean-style envelope becomes that container's member, as it does at the top level.
+A stencil drawn inside a container under a plain group or an envelope becomes that container's member.
 
 <!-- entry: fix -->

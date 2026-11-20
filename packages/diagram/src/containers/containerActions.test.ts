@@ -37,7 +37,7 @@ describe('lane affordances on a turned pool', () => {
     const { scene, poolId, first } = pool();
     scene.setPose(poolId as NodeId, { ...(pose(scene, poolId) as RectPose), rotation: Math.PI / 2 });
     const regions = createLaneAffordance(scene as never).regions({} as never);
-    const boundary = regions.find((r) => r.id === `${first}:boundary`)!.shape as { path: never };
+    const boundary = regions.find((r) => r.id === `${first}:boundary`)!.shape as unknown as { path: never };
     const b = boundsOfPath(boundary.path);
     // The first lane's far edge, y 120 from x 32 to 480, turned a quarter about the pool's center (240, 120).
     expect(b.x).toBeCloseTo(240);

@@ -2,6 +2,6 @@
 '@weasel-js/diagram': patch
 ---
 
-A theme colors a pool's lanes in turn by where they sit in the stack, and a lane added between others restripes the lanes after it, so no two neighbors share a color.
+A theme stripes a pool's lanes by where they sit in the stack, so a lane added between others leaves no two neighbors alike.
 
 <!-- entry: fix visual -->
