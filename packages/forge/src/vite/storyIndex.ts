@@ -52,7 +52,7 @@ export function createStoryIndex(options: StoryIndexOptions): StoryIndex {
       globSync(pattern, { cwd: root(), exclude: (name) => basename(String(name)) === 'node_modules' })
         .map((f) => resolve(root(), f))
         // A failed story run leaves `__screenshots__/<file>.stories.tsx/` directories that match the globs.
-        .filter((f) => statSync(f).isFile())
+        .filter((f) => statSync(f, { throwIfNoEntry: false })?.isFile() === true)
         .sort(),
     );
     return [...new Set(files)];
@@ -125,6 +125,7 @@ export function createStoryIndex(options: StoryIndexOptions): StoryIndex {
         current.set(file, read(file));
       } catch (err) {
         logError(err);
+        if (event === 'add') current.set(file, []);
         if (through.length === 0) return null;
       }
     }

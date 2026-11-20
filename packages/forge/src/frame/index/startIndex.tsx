@@ -6,9 +6,11 @@ import type { Channel } from '../../protocol/channel';
 import type { FromFrame, StoryGlobals, ToFrame } from '../../protocol/messages';
 import { describeSchema } from '../../protocol/schema';
 import type { IndexBundle } from '../../story/indexBundle';
-import { runAxe } from '../a11y';
+import { auditElement } from '../a11y';
 import type { FrameSetup } from '../FrameController';
+import { fault } from '../fault';
 import { frameDecorators } from '../frameDecorators';
+import { startFrameServices } from '../frameServices';
 import { createGlobalsTarget } from '../globalsTarget';
 import { indexEnvOf } from './indexEnv';
 import { IndexPage } from './IndexPage';
@@ -19,8 +21,6 @@ export interface StartIndexOptions {
   container: HTMLElement;
   setup?: FrameSetup;
 }
-
-const message = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
 /** Faults the frame when the page itself throws. A single story's throw stays in its own cell. */
 class PageBoundary extends Component<{ onError: (error: unknown) => void; children: ReactNode }, { failed: unknown }> {
@@ -53,8 +53,11 @@ export function startIndex(options: StartIndexOptions): () => void {
   container.append(wrapper);
   const root = createKitRoot(wrapper, setup.icons);
   const globalsTarget = createGlobalsTarget(document.documentElement, ':root');
+  const services = startFrameServices(document, send, setup.cssVarsScope);
   let globals: StoryGlobals | null = null;
   let announced = false;
+  /** `init`, `config`, `state` and `globals` messages received, as the shell counts them for a fault's `seq`. */
+  let seq = 0;
 
   const render = (): void => {
     if (!globals) return;
@@ -65,7 +68,7 @@ export function startIndex(options: StartIndexOptions): () => void {
       open: (id) => send({ type: 'open', id }),
     });
     root.render(
-      <PageBoundary onError={(error) => send({ type: 'fault', phase: 'render', message: message(error) })}>
+      <PageBoundary onError={(error) => send(fault('render', error, seq))}>
         <IndexPage env={env} render={options.bundle.render} />
       </PageBoundary>,
     );
@@ -84,19 +87,29 @@ export function startIndex(options: StartIndexOptions): () => void {
   };
 
   const off = channel.on((msg) => {
+    if (services.handle(msg)) return;
     switch (msg.type) {
+      case 'config':
+      case 'state':
+        seq += 1;
+        break;
       case 'init':
       case 'globals':
-        globals = msg.globals;
-        setup.applyGlobals?.(globals, globalsTarget);
-        flushSync(render);
+        seq += 1;
+        // A throw faults the frame as a story's input does; otherwise the trial would wait on a frame that never answers.
+        try {
+          globals = msg.globals;
+          setup.applyGlobals?.(globals, globalsTarget);
+          flushSync(render);
+        } catch (error) {
+          send(fault('render', error, seq));
+          break;
+        }
+        services.vars.scan();
         announce();
         break;
       case 'a11y.run':
-        runAxe(wrapper).then(
-          (report) => send({ type: 'a11y', id: msg.id, ok: true, report }),
-          (error: unknown) => send({ type: 'a11y', id: msg.id, ok: false, message: message(error) }),
-        );
+        void auditElement(wrapper).then((outcome) => send({ type: 'a11y', id: msg.id, ...outcome }));
         break;
       default:
         break;
@@ -105,6 +118,7 @@ export function startIndex(options: StartIndexOptions): () => void {
 
   return () => {
     off();
+    services.dispose();
     globalsTarget.dispose();
     root.unmount();
     wrapper.remove();

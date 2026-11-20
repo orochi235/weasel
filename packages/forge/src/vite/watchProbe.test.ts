@@ -64,6 +64,16 @@ describe('fileEventsArrive', () => {
     };
     await expect(fileEventsArrive({ watch, waitMs: 5000 })).resolves.toBe(false);
   });
+
+  it('rejects, rather than throwing, when it cannot make its temp directory', async () => {
+    vi.stubEnv('TMPDIR', '/no/such/forge-tmp');
+    try {
+      const arrived = fileEventsArrive({ watch: fakeWatch().watch, waitMs: 5000 });
+      await expect(arrived).rejects.toThrow('ENOENT');
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
 });
 
 describe('warnWhenWatchIsSilent', () => {
@@ -85,6 +95,14 @@ describe('warnWhenWatchIsSilent', () => {
     await warnWhenWatchIsSilent(server, async () => false);
     expect(warn.mock.calls[0]?.[0]).toContain('modification times');
     expect(warn.mock.calls[0]?.[0]).not.toContain('will not reach the page');
+  });
+
+  it('warns that it could not check, rather than rejecting, when the probe fails', async () => {
+    const { server, warn } = serverWith(undefined);
+    await warnWhenWatchIsSilent(server, async () => {
+      throw new Error('ENOSPC');
+    });
+    expect(warn.mock.calls).toEqual([['[watch] could not check whether the OS file watcher reports changes: ENOSPC']]);
   });
 
   it('says nothing when the event arrives', async () => {

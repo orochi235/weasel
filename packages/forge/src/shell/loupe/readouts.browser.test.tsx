@@ -146,3 +146,21 @@ it('passes a wheel over a compared lens to what lies beneath it, not to the lens
   expect(beneath).toHaveLength(1);
   expect(layer.hasAttribute('data-probe')).toBe(false);
 });
+
+it('reads a Split lens’s compared copy at its aim though the seam lies right of the aim', async () => {
+  const body = await comparedLens();
+  loupeKey(body, '\\');
+  const slot = await waitFor(() => {
+    const found = document.querySelector<HTMLElement>('.lk-lens-slot[data-view="split"]');
+    if (!found?.querySelector('[data-side="compared"] [data-fg-copy]:not([data-pending]) .fg-readouts-test-text')) {
+      throw new Error('no split copy yet');
+    }
+    return found;
+  });
+  // The compared side is clipped to the right of the seam, so at 80% it no longer covers the interior's center.
+  slot.style.setProperty('--lk-lens-seam', `${slot.getBoundingClientRect().width * 0.8}px`);
+  loupeKey(body, 't');
+  await waitFor(() =>
+    expect(document.querySelector('.fg-lens-token')?.textContent).toMatch(/^color ← --wzl-fg ← --wzl-gray-100 ← /),
+  );
+});

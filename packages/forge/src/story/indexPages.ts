@@ -22,13 +22,16 @@ function stemOf(file: string): string {
 }
 
 /**
- * The file that speaks for a title several story files share: the one named for the title's last segment, so
+ * The file that speaks for a title several story files share: the one named for the title's last segment, case and separators aside, so
  * `Bar.stories.tsx` over `lab/BarArc.stories.tsx` for `ui/Bar`, else the first. Its meta describes the component.
  */
 export function primaryFile(title: string, files: readonly string[]): string | undefined {
-  const name = (title.split('/').pop() ?? title).toLowerCase();
-  return files.find((file) => stemOf(file).toLowerCase() === name) ?? files[0];
+  const name = squash(title.split('/').pop() ?? title);
+  return files.find((file) => squash(stemOf(file)) === name) ?? files[0];
 }
+
+/** `name` without case or separators, which a file name may not hold: `Color Field` and `ColorField` alike. */
+const squash = (name: string): string => sanitize(name).replaceAll('-', '');
 
 /** `stories` grouped by title, in the order titles first appear, each title's primary file's stories first. */
 export function byComponent<E extends Pick<IndexEntry, 'title' | 'file'>>(stories: readonly E[]): E[] {

@@ -65,9 +65,16 @@ function Findings({ title, findings, point }: { title: string; findings: readonl
   );
 }
 
-/** What axe found in the story of the trial this is rendered inside, re-run on demand. */
+/**
+ * What axe found in the story of the trial this is rendered inside, re-run on demand. Its running count and pointed
+ * nodes belong to that trial, so they start over when the trial it is inside changes.
+ */
 export function A11yPanel() {
   const trialId = useTrialId();
+  return <TrialA11y key={trialId} trialId={trialId} />;
+}
+
+function TrialA11y({ trialId }: { trialId: string }) {
   const frame = useTrialFrame(trialId);
   const [inFlight, setInFlight] = useState(0);
   const running = inFlight > 0;

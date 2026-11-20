@@ -187,6 +187,61 @@ describe('startIndex', () => {
     };
     const { shell, received } = start({ render });
     await init(shell);
-    expect(received.find((m) => m.type === 'fault')).toMatchObject({ phase: 'render', message: 'bad page' });
+    expect(received.find((m) => m.type === 'fault')).toMatchObject({
+      phase: 'render',
+      message: 'bad page',
+      stack: expect.stringContaining('bad page'),
+      seq: 1,
+    });
+  });
+
+  it('outlines the elements an a11y.highlight names, and clears them on an empty one', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { shell } = start();
+    await init(shell);
+    shell.send({ type: 'a11y.highlight', targets: [['.fg-index h1']] });
+    await flush();
+    expect(document.querySelectorAll('[data-fg-a11y-highlight]')).toHaveLength(1);
+    shell.send({ type: 'a11y.highlight', targets: [] });
+    await flush();
+    expect(document.querySelectorAll('[data-fg-a11y-highlight]')).toHaveLength(0);
+  });
+
+  it('reports where the document stands after ready, and scrolls it where the shell says', async () => {
+    const { shell, received } = start();
+    await flush();
+    expect(received.slice(0, 2).map((m) => m.type)).toEqual(['ready', 'scroll']);
+    shell.send({ type: 'scroll', left: 0, top: 40 });
+    await flush();
+    expect((document.scrollingElement ?? document.documentElement).scrollTop).toBe(40);
+    (document.scrollingElement ?? document.documentElement).scrollTop = 0;
+  });
+
+  it('applies vars.set as an override and reports the vars the page uses', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const sheet = document.createElement('style');
+    sheet.textContent = ':root { --fg-t-index-ink: red; } .fg-index { color: var(--fg-t-index-ink); }';
+    document.head.append(sheet);
+    try {
+      const { shell, received } = start();
+      await init(shell);
+      shell.send({ type: 'vars.set', name: '--fg-t-index-ink', value: 'blue' });
+      await flush();
+      expect(document.head.querySelector('style[data-fg-overrides]')?.textContent).toContain('--fg-t-index-ink: blue;');
+      const last = received.filter((m) => m.type === 'vars').at(-1);
+      expect(last?.vars.find((v) => v.name === '--fg-t-index-ink')).toMatchObject({ value: 'blue', overridden: true });
+    } finally {
+      sheet.remove();
+    }
+  });
+
+  it('faults the frame when applying the globals throws, naming the input it answers', async () => {
+    const applyGlobals = vi.fn(() => {
+      throw new Error('no such mode');
+    });
+    const { shell, received } = start({ setup: { applyGlobals } });
+    await init(shell);
+    expect(received.find((m) => m.type === 'fault')).toMatchObject({ phase: 'render', message: 'no such mode', seq: 1 });
+    expect(received.some((m) => m.type === 'rendered')).toBe(false);
   });
 });

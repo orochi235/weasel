@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ],
+  [
+   5,
+   0
+  ]
+ ],
+ "a": [
+  "A disposed frame pool still hands out its warm frames, detached from the document",
+  "Get Info pressed on an index-page or missing-route trial leaves `infoOpen` stuck true, so the dialog later opens on its own",
+  "The a11y panel's in-flight count and pointed nodes carry over from one focused trial to the next",
+  "Changing one global writes the fallback of every other global into storage, losing a choice that `shows` only hid for a while",
+  "checkShellConfig rejects an option valued 'lab' but not one valued 'app' on a declaration that `follows`",
+  "A document trial's audit runs axe on an empty host once its story has scrolled out of view, and reports it clean"
+ ],
+ "b": [
+  "An in-document trial's a11y audit runs on an empty host once the trial is out of view, and hangs forever if it never rendered",
+  "Get Info opened on an index-page trial does nothing, then opens on its own later",
+  "A global's `shows` is asked with `App` unresolved, while `opposite` gets it resolved",
+  "The frame pool retries a frame URL that never says hello forever, every 30 s"
+ ]
+}

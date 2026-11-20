@@ -8,6 +8,9 @@ import { aim, attachPixelsLens, fresh, type PayloadFor, type PixelsLens, type Pi
 /** Why a capture is not given: the story was edited while it was being taken. */
 export const STORY_CHANGED = 'the story changed while it was captured';
 
+/** How many shots a source keeps for lens sides no attached lens shows, as Difference's are: two per open lens. */
+export const LOOSE_SHOTS = 8;
+
 /** The Pixels source, plus a way for its host to have every attached lens look again at what lies under it. */
 export interface PixelsSource extends LensSource<ForgeComparison> {
   remeasure(): void;
@@ -34,6 +37,23 @@ export function createPixelsSource(opts: PixelsSourceOptions): PixelsSource {
   const lenses = new Set<PixelsLens>();
   let unrevise: (() => void) | null = null;
   const remeasured = createEmitter<[]>();
+  // A side only `capture` writes has no detach to drop it: a stale one goes at the next write, and past
+  // `LOOSE_SHOTS` the longest unwritten go.
+  const keep = (side: string, shot: Shot) => {
+    const { shots } = shared;
+    shots.delete(side);
+    shots.set(side, shot);
+    const attached = new Set([...lenses].map((l) => l.side()));
+    const loose = [...shots].filter(([s]) => !attached.has(s));
+    let over = loose.length - LOOSE_SHOTS;
+    for (const [s, held] of loose) {
+      if (s === side) continue;
+      if (held.revision !== opts.revision() || over > 0) {
+        shots.delete(s);
+        over -= 1;
+      }
+    }
+  };
   const revised = () => {
     shared.shots.clear();
     for (const lens of [...lenses]) lens.revised();
@@ -82,7 +102,7 @@ export function createPixelsSource(opts: PixelsSourceOptions): PixelsSource {
           return { reason: STORY_CHANGED };
         }
         shot = { key: aimed.key, revision: at, bitmap, payload: aimed.payload };
-        shared.shots.set(side, shot);
+        keep(side, shot);
       }
       return { bitmap: shot.bitmap, dpr: aimed.payload.dpr, box: aimed.payload.box, at: aimed.hit.local };
     },

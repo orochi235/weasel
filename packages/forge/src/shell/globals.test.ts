@@ -150,6 +150,20 @@ describe('a global that follows the app', () => {
     expect(pins.map((option) => option.value)).toEqual(['lab', 'auto', 'light', 'dark']);
   });
 
+  it('asks a `shows` with App resolved to what the chrome says, and keeps App as the lab value', () => {
+    const screens: GlobalDeclarations = {
+      mode: following.mode!,
+      screen: {
+        label: 'Screen',
+        default: 'lcd',
+        options: [{ value: 'lcd', label: 'LCD' }, { value: 'oled', label: 'OLED' }],
+        shows: (value, globals) => globals.mode === 'dark' || value !== 'oled',
+      },
+    };
+    expect(labGlobals(screens, { mode: FOLLOW_APP, screen: 'oled' }, { mode: 'dark' })).toEqual({ mode: FOLLOW_APP, screen: 'oled' });
+    expect(labGlobals(screens, { mode: FOLLOW_APP, screen: 'oled' }, { mode: 'light' }).screen).toBe('lcd');
+  });
+
   it('resolves App to what the app’s chrome says, leaving every other value alone', () => {
     expect(followApp(following, { mode: FOLLOW_APP, font: 'inter' }, { mode: 'dark' })).toEqual({ mode: 'dark', font: 'inter' });
     const picked = { mode: 'light', font: 'inter' };

@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "a": [
+  "A story file added while it fails to parse is never indexed, even after an edit fixes it",
+  "The shell config's title and allowOrigins are not read when the config is an exported const",
+  "A Chromium that crashes or disconnects is kept, failing every capture until two quiet minutes pass",
+  "Browser contexts are made per distinct device pixel ratio and never closed while captures keep coming",
+  "One dangling symlink matching the story globs breaks the whole index"
+ ],
+ "b": [
+  "A story file added while it fails to parse is never indexed, even after it is fixed",
+  "Headless Chromium that crashes or disconnects is reused, so every capture fails until two quiet minutes pass",
+  "A capture queued when the endpoint closes relaunches Chromium after close",
+  "`folderTitles` suggests a title its own `fits` rejects, and compares the folder name case-sensitively although the rule says case is ignored",
+  "An exception from the watch probe's temp-dir setup becomes an unhandled rejection that can crash the dev server",
+  "A meta's negated tags are kept as literal tags, unlike a story's"
+ ]
+}

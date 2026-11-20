@@ -17,6 +17,16 @@ const toError = (error: unknown): Error => (error instanceof Error ? error : new
 
 type Imports = Map<string, Promise<Record<string, unknown>>>;
 
+/** A file's stories, loaded and prepared once from one import of it, for every entry that asks while it holds. */
+interface FileLoad {
+  module: Promise<Record<string, unknown>>;
+  /** What it was loaded with: a change to any of them loads the file again. */
+  ids: string;
+  setup: FrameSetup;
+  load: StoryLoadSource['load'];
+  result: Promise<Map<string, Loaded>>;
+}
+
 /**
  * `importOf`, noting each import it hands out, and whether each is still its file's in `current`: a reload drops a
  * file's import for a newer one, whose answer a load that read the old one must not overwrite when it lands late.
@@ -70,6 +80,8 @@ export function useStoryLoads(source: StoryLoadSource): StoryLoads {
   const liveRef = useLatest(source);
   // Files asked for before the importers held them: a story file added while the workshop runs lists first.
   const missing = useRef(new Set<string>());
+  // Per file, its latest load: entries asking for a file its import still answers join it rather than load again.
+  const fileLoads = useRef(new Map<string, FileLoad>());
 
   const importOf = useCallback((file: string): Promise<Record<string, unknown>> => {
     let loading = imports.current.get(file);
@@ -108,16 +120,26 @@ export function useStoryLoads(source: StoryLoadSource): StoryLoads {
       }
       const siblings = liveRef.current.index.filter((e) => e.file === entry.file && !isIndexId(e.id));
       const ids = siblings.map((e) => e.id);
-      void reads.importOf(entry.file)
-        .then(async (mod) => {
+      const module = reads.importOf(entry.file);
+      const key = ids.join('\n');
+      let shared = fileLoads.current.get(entry.file);
+      if (!shared || shared.module !== module || shared.ids !== key || shared.setup !== current || shared.load !== loadModule) {
+        const result = module.then(async (mod) => {
           const stories = loadModule(mod, entry.title, current.parameters);
-          const result = new Map<string, Loaded>();
+          const out = new Map<string, Loaded>();
           for (const sibling of siblings) {
             const story = stories.find((s) => s.exportName === sibling.exportName);
             if (!story) continue;
             await current.prepare?.(story);
-            result.set(sibling.id, { kind: 'story', story });
+            out.set(sibling.id, { kind: 'story', story });
           }
+          return out;
+        });
+        shared = { module, ids: key, setup: current, load: loadModule, result };
+        fileLoads.current.set(entry.file, shared);
+      }
+      void shared.result
+        .then((result) => {
           if (!result.has(entry.id)) throw new Error(`${entry.file} has no story export "${entry.exportName}"`);
           if (reads.latest()) settle(ids, result);
         })
@@ -129,6 +151,7 @@ export function useStoryLoads(source: StoryLoadSource): StoryLoads {
   const reload = useCallback(
     (file: string) => {
       imports.current.delete(file);
+      fileLoads.current.delete(file);
       const affected = liveRef.current.index.filter((e) => e.file === file || (isIndexId(e.id) && liveRef.current.index.some((s) => s.file === file && indexId(s.title) === e.id)));
       const ids = new Set(affected.map((e) => e.id));
       setLoaded((prev) => pruned(prev, new Set([...prev.keys()].filter((id) => !ids.has(id)))));

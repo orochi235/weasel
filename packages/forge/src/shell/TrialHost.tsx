@@ -18,7 +18,7 @@ import { watchCssVars } from '../frame/cssVarsWatch';
 import type { FrameSetup } from '../frame/FrameController';
 import { useNearViewport } from '@weasel-js/react';
 import { IN_VIEW_MARGIN } from './inViewMargin';
-import type { StoryGlobals, StoryLayout, ToFrame } from '../protocol/messages';
+import type { A11yOutcome, StoryGlobals, StoryLayout, ToFrame } from '../protocol/messages';
 import { useCssOverrides } from './cssVars/overrides';
 import { effectiveGlobals, GLOBALS_KEY } from './globals';
 import { useHostConditions } from './hostConditions';
@@ -80,12 +80,6 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
   const inView = useNearViewport(elementRef, IN_VIEW_MARGIN);
   const { live, show } = useStoryShow(host, inView);
   const [pending, setPending] = useState(true);
-  // Settles at the first render below, which an audit waits for: until then the host holds no story to judge.
-  const [rendered] = useState(() => {
-    let resolve!: () => void;
-    const promise = new Promise<void>((r) => { resolve = r; });
-    return { promise, resolve };
-  });
   const latest = useLatest({ onRendered: copy ? undefined : onRendered });
 
   const overridesRef = useHostConditions(host, { hostId, globals, overrides: persisted, setup });
@@ -107,11 +101,18 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
       overrides.set(msg.name, msg.value);
       vars.revise(msg.name);
     };
+    // Held shown for its length, so an audit judges the story whether or not the host is in view.
     const audit = async () => {
-      await rendered.promise;
-      const outcome = await auditElement(host, { page: false });
-      if (trialId) frames?.reportA11y(trialId, outcome);
-      return outcome;
+      const release = await show();
+      try {
+        const outcome: A11yOutcome = host.isConnected
+          ? await auditElement(host, { page: false })
+          : { ok: false, message: 'The story went away' };
+        if (trialId) frames?.reportA11y(trialId, outcome);
+        return outcome;
+      } finally {
+        release();
+      }
     };
     const disconnect = frames && trialId ? frames.connect(trialId, { send, audit }) : () => {};
 
@@ -120,7 +121,7 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
       highlighter.dispose();
       vars.dispose();
     };
-  }, [host, hostId, trialId, frames, copy, overridesRef, rendered]);
+  }, [host, hostId, trialId, frames, copy, overridesRef, show]);
 
   useStoryHost(trialId, copy ? null : host, show);
   // The host is hidden until its first commit has painted with its fonts, so a new trial never shows a jump.
@@ -129,11 +130,10 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
     if (!host || !live || announced.current) return;
     return afterPaint(host, () => {
       announced.current = true;
-      rendered.resolve();
       setPending(false);
       latest.current.onRendered?.();
     });
-  }, [host, live, latest, rendered]);
+  }, [host, live, latest]);
 
   return (
     <div

@@ -1,0 +1,79 @@
+{
+ "id": "forge.shell.part2",
+ "commit": "7c016ebfdf6a5facdd58c7d93e390fdfdd4ffe84",
+ "date": "2026-11-20",
+ "files": [
+  "packages/forge/src/shell/issues/TrackedIssues.tsx",
+  "packages/forge/src/shell/issues/issues.css",
+  "packages/forge/src/shell/issues/issuesSection.tsx",
+  "packages/forge/src/shell/issues/tracker.ts",
+  "packages/forge/src/shell/keptFrame.ts",
+  "packages/forge/src/shell/keys/KeysPanel.tsx",
+  "packages/forge/src/shell/keys/keyRows.ts",
+  "packages/forge/src/shell/keys/keys.css",
+  "packages/forge/src/shell/keys/keysChrome.ts",
+  "packages/forge/src/shell/labDensity.ts",
+  "packages/forge/src/shell/labHarness.ts",
+  "packages/forge/src/shell/mountWorkshop.tsx",
+  "packages/forge/src/shell/readyKey.ts",
+  "packages/forge/src/shell/revealTrial.ts",
+  "packages/forge/src/shell/routedTrial.ts",
+  "packages/forge/src/shell/shell.css",
+  "packages/forge/src/shell/storyChanges.ts",
+  "packages/forge/src/shell/storyHosts.ts",
+  "packages/forge/src/shell/storyInstrument.tsx",
+  "packages/forge/src/shell/storyLoads.ts",
+  "packages/forge/src/shell/storyMarks.ts",
+  "packages/forge/src/shell/storyShow.ts",
+  "packages/forge/src/shell/tree/StoryTree.tsx",
+  "packages/forge/src/shell/tree/buildComponents.ts",
+  "packages/forge/src/shell/tree/buildTree.ts",
+  "packages/forge/src/shell/tree/folderReveal.ts",
+  "packages/forge/src/shell/tree/openStory.ts",
+  "packages/forge/src/shell/tree/sidebarViews.ts",
+  "packages/forge/src/shell/tree/treeRows.tsx",
+  "packages/forge/src/shell/treeReveal.ts",
+  "packages/forge/src/shell/trialFrames.ts",
+  "packages/forge/src/shell/useOverflowing.ts",
+  "packages/forge/src/shell/useRoute.ts",
+  "packages/forge/src/shell/useStoryRegistry.ts"
+ ],
+ "a": 2,
+ "b": 5,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 8,
+ "unfound": 2,
+ "read": {
+  "A": 34,
+  "B": 34
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.2,
+   "B": 11.3,
+   "match": 0.1,
+   "fix": 17.9
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "weightedTokens": 2679009,
+  "costUsd": 7.73
+ },
+ "fixCommits": [
+  "1fa6fbf45eada8248cdf60f32f7708e179196412",
+  "ba5efe6cb6b8fd74a7a2f84a14daf2c9c0eb732b",
+  "563fcdd12e23072b2d964a391131bd7fc876d7ec",
+  "548d847fdf40b17619934c4ddbf37ce1926937ff",
+  "077d0d5391e27f8d1826135e87491b90c64246bd",
+  "58e64d0e271de1e60210bd505c1297b93631bee4",
+  "d07f0c7c4225ed65ea8f6a8a63720d086a099046",
+  "f283a11aa8b8e59338a2009d357a6a66090a6673"
+ ]
+}

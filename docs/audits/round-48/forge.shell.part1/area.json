@@ -1,0 +1,79 @@
+{
+ "id": "forge.shell.part1",
+ "commit": "7c016ebfdf6a5facdd58c7d93e390fdfdd4ffe84",
+ "date": "2026-11-20",
+ "files": [
+  "packages/forge/src/shell/Crumbs.css",
+  "packages/forge/src/shell/Crumbs.tsx",
+  "packages/forge/src/shell/FrameView.tsx",
+  "packages/forge/src/shell/GlobalsToolbar.tsx",
+  "packages/forge/src/shell/IndexTrial.tsx",
+  "packages/forge/src/shell/RouteKnobs.tsx",
+  "packages/forge/src/shell/StoryBody.tsx",
+  "packages/forge/src/shell/StoryGlobalsContext.ts",
+  "packages/forge/src/shell/StoryScroller.tsx",
+  "packages/forge/src/shell/StoryTrial.tsx",
+  "packages/forge/src/shell/TrialHost.tsx",
+  "packages/forge/src/shell/Workshop.tsx",
+  "packages/forge/src/shell/a11y/A11yPanel.css",
+  "packages/forge/src/shell/a11y/A11yPanel.tsx",
+  "packages/forge/src/shell/a11y/reasons.ts",
+  "packages/forge/src/shell/answers.ts",
+  "packages/forge/src/shell/breadcrumb.ts",
+  "packages/forge/src/shell/checkShellConfig.ts",
+  "packages/forge/src/shell/dependencies.ts",
+  "packages/forge/src/shell/documentInstrument.tsx",
+  "packages/forge/src/shell/followEdits.ts",
+  "packages/forge/src/shell/frameLink.ts",
+  "packages/forge/src/shell/framePool.ts",
+  "packages/forge/src/shell/globals.ts",
+  "packages/forge/src/shell/globalsMenu.tsx",
+  "packages/forge/src/shell/hostConditions.ts",
+  "packages/forge/src/shell/inViewMargin.ts",
+  "packages/forge/src/shell/index.ts",
+  "packages/forge/src/shell/info/StoryDossier.tsx",
+  "packages/forge/src/shell/info/StoryInfoDialog.tsx",
+  "packages/forge/src/shell/info/dossier.ts",
+  "packages/forge/src/shell/info/infoItem.ts",
+  "packages/forge/src/shell/instrumentCache.ts",
+  "packages/forge/src/shell/issues/IssuesPanel.tsx"
+ ],
+ "a": 6,
+ "b": 4,
+ "m": 2,
+ "distinct": 8,
+ "chapman": 10.7,
+ "unfound": 2.7,
+ "read": {
+  "A": 34,
+  "B": 33
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.9,
+   "B": 3.4,
+   "match": 0.1,
+   "fix": 14.6
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 2033002,
+  "costUsd": 5.92
+ },
+ "fixCommits": [
+  "a0ec3f5599fb92a80588418b3335665c90562084",
+  "c3cde411671ec0b2b4821be4873b82f3314ded8a",
+  "0dff16cc6d1db819828fcbc811a827a8facdfb69",
+  "d04f95cdee5ecb2b383c24822b5be5648ea12f93",
+  "6e2eee4dc143e49768e7b1e25f06e49166f05c13",
+  "1448c827739e7352c464767fb6cc732e56fee7a0",
+  "271ec416302a36eb3400cb60420a6b9ad0ed10a4",
+  "3bd39e4b88b5413791ac3778e1ef704d54038f79"
+ ]
+}

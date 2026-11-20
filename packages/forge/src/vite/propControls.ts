@@ -4,6 +4,7 @@ import { PROP_ARG_TYPES_EXPORT } from '../csf/propArgTypes.ts';
 import { API_EXPORT } from '../story/api.ts';
 import { createPropReader, type PropControlsOptions, type PropReader } from './propTypes.ts';
 import { type TypedocDocs, type TypedocHref, typedocSource, withTypedoc } from './typedoc/index.ts';
+import { messageOf } from '../messageOf.ts';
 
 /** TypeDoc's JSON, at `file`, as it now reads. */
 export interface TypedocReading {
@@ -25,7 +26,6 @@ export interface TypedocOptions {
   href?: TypedocHref;
 }
 
-const errorText = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
 /**
  * What to append to story module `file`: the argTypes read from its component's props, and its component's API, each
@@ -50,7 +50,7 @@ export function storyExports(
         sources.push(...table.sources);
       }
     } catch (err) {
-      warn(`could not read the props for ${file}: ${errorText(err)}`);
+      warn(`could not read the props for ${file}: ${messageOf(err)}`);
     }
   }
   if (api) {
@@ -70,7 +70,7 @@ export function storyExports(
       // Watched only once it exists: vite resolves a watched file as an import, and a missing one fails the story.
       if (read && typedoc && docs && read.component) sources.push(typedoc.file);
     } catch (err) {
-      warn(`could not read the API for ${file}: ${errorText(err)}`);
+      warn(`could not read the API for ${file}: ${messageOf(err)}`);
     }
   }
   return { code, sources };

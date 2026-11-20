@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ]
+ ],
+ "a": [
+  "The Issues panel goes blank when the focused trial shows a component's index page",
+  "Every open story of a file loads and prepares the whole file again, replacing its siblings' loaded stories"
+ ],
+ "b": [
+  "Focusing a second trial of the routed story overwrites its knobs with the first trial's URL params",
+  "The Issues section is empty for a trial showing a component's index page",
+  "The story hosts table keeps a ref for every trial id it has ever seen",
+  "mountWorkshop silently replaces a caller's `changes` and `revision`",
+  "Sidebar folds are stored per path while folder rows are told apart per library, so two folders sharing a path open and close together"
+ ]
+}

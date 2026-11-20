@@ -1,0 +1,51 @@
+{
+ "id": "forge.timeline",
+ "commit": "7c016ebfdf6a5facdd58c7d93e390fdfdd4ffe84",
+ "date": "2026-11-20",
+ "files": [
+  "packages/forge/src/timeline/Playhead.stories.tsx",
+  "packages/forge/src/timeline/RoutePlayhead.tsx",
+  "packages/forge/src/timeline/StoryClock.tsx",
+  "packages/forge/src/timeline/clockSpec.ts",
+  "packages/forge/src/timeline/context.ts",
+  "packages/forge/src/timeline/declare.ts",
+  "packages/forge/src/timeline/moves.ts",
+  "packages/forge/src/timeline/playheadUrl.ts",
+  "packages/forge/src/timeline/shown.ts",
+  "packages/forge/src/timeline/transport.css",
+  "packages/forge/src/timeline/types.ts",
+  "packages/forge/src/timeline/workshopHarness.tsx"
+ ],
+ "a": 1,
+ "b": 1,
+ "m": 0,
+ "distinct": 2,
+ "chapman": 3,
+ "unfound": 1,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "patches": 2,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 8.1,
+   "B": 6.5,
+   "match": 0.2,
+   "fix": 7.4
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 953047,
+  "costUsd": 2.87
+ },
+ "fixCommits": [
+  "d7027581b041af7426d1dfc36efb550c3ddb80a3",
+  "e2f18fc48bdf22fdbd497bf636b9528a9b159b54"
+ ]
+}

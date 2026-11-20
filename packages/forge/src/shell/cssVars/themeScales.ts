@@ -94,6 +94,19 @@ export function scalesFor(
   return out;
 }
 
+/** `edited` without the edit of a group none of whose steps is overridden any more, which no step shows. */
+export function liveScales(
+  edited: Readonly<Record<string, TokenScale>>,
+  overrides: Readonly<Record<string, string>>,
+): Readonly<Record<string, TokenScale>> {
+  const idle = SCALE_SOURCES.filter(
+    (source) => getOwn(edited, source.group) !== undefined && source.tokens.every((name) => getOwn(overrides, name) === undefined),
+  );
+  if (idle.length === 0) return edited;
+  const groups = new Set(idle.map((source) => source.group));
+  return Object.fromEntries(Object.entries(edited).filter(([group]) => !groups.has(group)));
+}
+
 /**
  * The edited scales a save writes, each with the steps that still hold what its edit generated. A step edited by hand
  * after its scale is left to be pinned over the scale. A scale with a step reset to the theme's value is not saved,

@@ -5,7 +5,16 @@ import { isGallery } from '../../story/tags';
 import type { IndexEntry } from '../../story/types';
 
 export type TreeNode =
-  | { kind: 'folder'; label: string; path: string; children: TreeNode[]; tag?: string; index?: IndexEntry }
+  | {
+      kind: 'folder';
+      label: string;
+      path: string;
+      children: TreeNode[];
+      tag?: string;
+      index?: IndexEntry;
+      /** What tells this folder apart from another at its path: the library of a components-view folder that groups. */
+      scope?: string;
+    }
   | { kind: 'story'; entry: IndexEntry; tag?: string; label?: string };
 
 type Folder = Extract<TreeNode, { kind: 'folder' }>;

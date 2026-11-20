@@ -9,6 +9,9 @@ export interface TrialHit {
   local: LoupePoint;
   /** Client px per host px. */
   scale: number;
+  /** The host's own layout size, in host px: what a copy of it lays out at. */
+  width: number;
+  height: number;
 }
 
 /** The element an in-document story scrolls in, inside its host; null for a host with none, as a frame's. */
@@ -32,7 +35,22 @@ export function trialAt(client: LoupePoint, doc: Document = document): TrialHit 
       host,
       local: { x: (client.x - left) / scale.x, y: (client.y - top) / scale.y },
       scale: scale.x,
+      width: host.offsetWidth,
+      height: host.offsetHeight,
     };
   }
   return null;
+}
+
+/** Calls `notify` whenever the host it is pointed at changes size, as a pane resized without the window does; pointing
+ *  it at null stops it. */
+export function createSizeWatcher(notify: () => void): (host: HTMLElement | null) => void {
+  const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => notify());
+  let watched: HTMLElement | null = null;
+  return (host) => {
+    if (host === watched) return;
+    if (watched) observer?.unobserve(watched);
+    watched = host;
+    if (host) observer?.observe(host);
+  };
 }

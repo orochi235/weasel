@@ -1,7 +1,7 @@
 import { createKitRoot } from '../kitIcons';
 import type { FrameImporters } from '../frame/mountFrame';
 import type { ComponentGraph, IndexEntry } from '../story/types';
-import { createRevision } from './loupe/captureContext';
+import { createRevision, type Revision } from './loupe/captureContext';
 import { createStoryChanges } from './storyChanges';
 import { Workshop, type WorkshopProps } from './Workshop';
 
@@ -26,14 +26,33 @@ export interface MountedWorkshop {
   unmount(): void;
 }
 
-/** Renders a `Workshop` into its own React root. Throws when no container is given and the page has no `#root`. */
+/** `own`'s count on top of `given`'s, heard when either moves: `revise` bumps the first, the caller the second. */
+export function joinRevisions(own: Revision, given: Revision | undefined): Revision {
+  if (!given) return own;
+  return {
+    get: () => own.get() + given.get(),
+    subscribe(listener) {
+      const offOwn = own.subscribe(listener);
+      const offGiven = given.subscribe(listener);
+      return () => {
+        offOwn();
+        offGiven();
+      };
+    },
+  };
+}
+
+/**
+ * Renders a `Workshop` into its own React root. A `changes` given is the one `reloadStory` emits on, and a `revision`
+ * given counts toward the one `revise` bumps. Throws when no container is given and the page has no `#root`.
+ */
 export function mountWorkshop({ container, ...props }: MountWorkshopOptions): MountedWorkshop {
   const target = container ?? document.getElementById('root');
   if (!target) throw new Error('mountWorkshop: no container given and no #root element');
   const root = createKitRoot(target, props.setup?.icons);
-  const changes = createStoryChanges();
+  const changes = props.changes ?? createStoryChanges();
   const revision = createRevision();
-  let current: WorkshopProps = { ...props, changes, revision };
+  let current: WorkshopProps = { ...props, changes, revision: joinRevisions(revision, props.revision) };
   root.render(<Workshop {...current} />);
   return {
     setIndex(index) {

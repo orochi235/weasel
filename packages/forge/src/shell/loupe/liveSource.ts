@@ -3,7 +3,7 @@ import { createEmitter } from '@weasel-js/registry';
 import type { StoryGlobals } from '../../protocol/messages';
 import type { ForgeComparison, ResolveContext, ResolvedConditions } from './conditions';
 import type { LiveLenses, LiveRequest } from './liveLenses';
-import { trialAt } from './trialAt';
+import { createSizeWatcher, trialAt } from './trialAt';
 
 export const NOTHING_UNDER = 'Nothing under the reticle';
 
@@ -30,6 +30,8 @@ function sameRequest(a: LiveRequest | null, b: LiveRequest): boolean {
     a.hit.local.x === b.hit.local.x &&
     a.hit.local.y === b.hit.local.y &&
     a.hit.scale === b.hit.scale &&
+    a.hit.width === b.hit.width &&
+    a.hit.height === b.hit.height &&
     a.factor === b.factor &&
     a.size.width === b.size.width &&
     a.size.height === b.size.height &&
@@ -100,6 +102,7 @@ export function createLiveSource(
       const watchCopy = createWatcher(notify);
       watchCopy(target);
       const watchStory = createWatcher(notify);
+      const watchSize = createSizeWatcher(() => measure());
       let request: LensSourceRequest<ForgeComparison> = first;
       let posted: LiveRequest | null = null;
       const post = (next: LiveRequest | null) => {
@@ -111,6 +114,7 @@ export function createLiveSource(
         const { lensId, reticle, conditions: compare } = request;
         const hit = trialAt(reticle, doc);
         watchStory(compare === null ? (hit?.host ?? null) : null);
+        watchSize(hit?.host ?? null);
         empty.hidden = hit !== null;
         if (!hit) {
           post(null);
@@ -140,6 +144,7 @@ export function createLiveSource(
         detach() {
           watchCopy(null);
           watchStory(null);
+          watchSize(null);
           unmeasure();
           lenses.set(liveCellId(request.lensId, request.conditions), null);
           target.remove();

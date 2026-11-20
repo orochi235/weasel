@@ -17,7 +17,7 @@ import { Button } from '@weasel-js/ui/components/Button';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { icon } from '../../icons.gen';
-import { useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { type Dispatch, type SetStateAction, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { getOwn } from '@weasel-js/registry';
 import type { StoryGlobals } from '../../protocol/messages';
 import { effectiveGlobals, GLOBALS_KEY } from '../globals';
@@ -52,7 +52,23 @@ const NO_GLOBALS: StoryGlobals = {};
  * Shows and overrides the CSS variables of the trial it is rendered inside: the theme's tokens, or what its frame
  * reports. A scale edit, and a token the theme writes out, can be saved into the theme's definition file.
  */
-export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelProps = {}) {
+export function CssVarsPanel(props: CssVarsPanelProps = {}) {
+  const [tab, setTab] = useState<Tab>('theme');
+  const [filter, setFilter] = useState('');
+  // One panel per trial, so a save still in flight when the trial changes finishes on the one it was made from.
+  return <TrialVarsPanel key={useTrialId()} {...props} view={{ tab, setTab, filter, setFilter }} />;
+}
+
+/** What the panel shows, which stays put as the trial changes. */
+interface PanelView {
+  readonly tab: Tab;
+  readonly setTab: Dispatch<SetStateAction<Tab>>;
+  readonly filter: string;
+  readonly setFilter: Dispatch<SetStateAction<string>>;
+}
+
+function TrialVarsPanel({ globals = NO_GLOBALS, themeApi, view }: CssVarsPanelProps & { readonly view: PanelView }) {
+  const { tab, setTab, filter, setFilter } = view;
   const trialId = useTrialId();
   const frame = useTrialFrame(trialId);
   const { overrides, edited, history, write, editScale } = useVarsEdits(frame.send);
@@ -61,8 +77,6 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
     {},
     { scope: 'lab' },
   );
-  const [tab, setTab] = useState<Tab>('theme');
-  const [filter, setFilter] = useState('');
 
   const themeTokens = useThemeTokens(globals, frame.vars);
   const story = useStoryTokens(frame.vars);
@@ -73,7 +87,7 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
     setTab(at);
     setFilter((was) => (name.toLowerCase().includes(was.trim().toLowerCase()) ? was : ''));
     setFolds((prev) => (prev[category] ? { ...prev, [category]: false } : prev));
-  }, [setFolds]);
+  }, [setFolds, setTab, setFilter]);
   useRevealToken(listRef, byTab, show, frame.vars.length > 0);
 
   const query = filter.trim().toLowerCase();
@@ -90,7 +104,7 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
   );
 
   const unsaved = useMemo(() => unsavedScales(edited, overrides), [edited, overrides]);
-  const { pending, saving, notice, save } = useThemeSave({ trialId, globals, themeApi, scales: unsaved, overrides, history });
+  const { pending, saving, notice, save } = useThemeSave({ globals, themeApi, scales: unsaved, overrides, history });
   const onCollapsedChange = useCallback(
     (category: TokenCategory, collapsed: boolean) => setFolds((prev) => ({ ...prev, [category]: collapsed })),
     [setFolds],

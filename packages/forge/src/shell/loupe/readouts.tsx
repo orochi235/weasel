@@ -1,3 +1,4 @@
+import { messageOf } from '../../messageOf';
 import { contrastRatio, luminanceContrast, relativeLuminance, tryParseColor, useLatest, wcagLevels } from '@weasel-js/core';
 import {
   type LensCapture,
@@ -6,6 +7,7 @@ import {
   type LoupePoint,
   readBitmap,
   requestsOf,
+  useCaptureDelay,
   useShownSource,
 } from '@weasel-js/labkit/loupe';
 import { Fragment, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
@@ -14,7 +16,6 @@ import type { ForgeComparison } from './conditions';
 import { backgroundOf, colorAt, tokenChain } from './tokenChain';
 import { trialAt } from './trialAt';
 import { varRefs } from '../../frame/cssVarUse';
-import { messageOf } from '../../vite/capture/payload';
 
 export const NO_TEXT = 'No text under the aim';
 export const NO_BACKGROUND = 'No opaque background behind the text';
@@ -143,16 +144,20 @@ export function ContrastReadout({ lens, settings, sources, reticle, size, interi
   const [pixels, setPixels] = useState<ContrastReading | null>(null);
   const [tick, setTick] = useState(0);
   useEffect(() => source?.subscribe(() => setTick((n) => n + 1)), [source]);
-  const latest = useLatest({ lens, settings, reticle, size });
+  // The cell's own request, so a change to anything it is taken from (a DPR, the size) captures again.
+  const request = kind === 'pixels' ? requestsOf(source, lens, settings, reticle, size)[0] : undefined;
+  const latest = useLatest(request);
+  const captureDelay = useCaptureDelay();
+  const { factor, conditions, dpr } = request ?? {};
+  const { width: w, height: h } = request?.size ?? {};
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the request's fields and `tick` are the signal to capture again; the capture reads `latest`
   useEffect(() => {
-    if (kind !== 'pixels' || !source?.capture) return;
+    if (!latest.current || !source?.capture) return;
     const capture = source.capture.bind(source);
     let current = true;
     const timer = setTimeout(() => {
-      const { lens: ids, settings: s, reticle: r, size: box } = latest.current;
-      const [request] = requestsOf(source, ids, s, r, box);
-      if (!request) return;
-      void capture(request).then(
+      if (!latest.current) return;
+      void capture(latest.current).then(
         (got) => {
           if (current) setPixels('reason' in got ? { unavailable: got.reason } : contrastAt('pixels', { capture: got, point: got.at }));
         },
@@ -160,12 +165,13 @@ export function ContrastReadout({ lens, settings, sources, reticle, size, interi
           if (current) setPixels({ unavailable: `Capture failed: ${messageOf(err)}` });
         },
       );
-    }, 0);
+      // At once the first time; after that, once whatever moved has come to rest, as the lens's own capture waits.
+    }, captureDelay());
     return () => {
       current = false;
       clearTimeout(timer);
     };
-  }, [source, kind, reticle.x, reticle.y, settings.factor, settings.compare, tick, latest]);
+  }, [source, reticle.x, reticle.y, factor, w, h, conditions, dpr, tick, latest, captureDelay]);
   const text = kind === 'live' ? live : kind === 'pixels' && pixels ? textOf(pixels) : null;
   return text ? <span className="fg-lens-contrast">{text}</span> : null;
 }

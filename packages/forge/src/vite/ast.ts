@@ -9,6 +9,20 @@ export function parseFile(code: string, file: string): t.Program {
   return parse(code, { sourceType: 'module', plugins }).program;
 }
 
+/** `program`'s bindings, exported or not. */
+export function bindingsOf(program: t.Program): Bindings {
+  const bindings: Bindings = new Map();
+  for (const stmt of program.body) {
+    const decl = stmt.type === 'ExportNamedDeclaration' ? stmt.declaration : stmt;
+    if (decl?.type === 'VariableDeclaration') {
+      for (const d of decl.declarations) if (d.id.type === 'Identifier' && d.init) bindings.set(d.id.name, d.init);
+    } else if (decl?.type === 'FunctionDeclaration' && decl.id) {
+      bindings.set(decl.id.name, decl);
+    }
+  }
+  return bindings;
+}
+
 /** The identifier `node` calls, through casts and top-level `const`s. */
 export function calleeOf(node: t.Node | undefined, bindings: Bindings, depth = 0): string | undefined {
   if (!node || depth > 16) return undefined;

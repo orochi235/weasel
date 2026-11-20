@@ -44,6 +44,13 @@ describe('defineShellConfig', () => {
     expect(() => defineShellConfig({ globals })).toThrow(/offers the value 'lab'/);
   });
 
+  it("throws on an option valued 'app' where the declaration follows the app, and accepts one where it does not", () => {
+    const appOptions = [{ value: FOLLOW_APP, label: 'App palette' }, ...options];
+    const follows = { d: { label: 'D', options: appOptions, default: 'a', follows: () => 'a' } };
+    expect(() => defineShellConfig({ globals: follows })).toThrow(/offers the value 'app', which .* to mean "follow the app's chrome"/);
+    expect(() => defineShellConfig({ globals: { d: { label: 'D', options: appOptions, default: 'a' } } })).not.toThrow();
+  });
+
   it('throws on a loupe.modeGlobal naming no global', () => {
     expect(() => defineShellConfig({ globals: {}, loupe: { modeGlobal: 'theme' } })).toThrow(/loupe\.modeGlobal names "theme"/);
     expect(() => defineShellConfig({})).not.toThrow();

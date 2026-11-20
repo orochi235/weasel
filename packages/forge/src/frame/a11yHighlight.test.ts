@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createA11yHighlighter, resolveTarget } from './a11yHighlight';
 
 const boxes = () => document.querySelectorAll('[data-fg-a11y-highlight]');
@@ -37,5 +37,25 @@ describe('createA11yHighlighter', () => {
     highlighter.dispose();
     expect(boxes()).toHaveLength(0);
     expect(document.querySelector('[data-fg-a11y-highlight-style]')).toBeNull();
+  });
+
+  it('places the box for an element inside a frame by the frame\'s offset, and follows the frame\'s scroll', () => {
+    const frame = document.createElement('iframe');
+    document.body.append(frame);
+    const inner = frame.contentDocument!;
+    inner.body.innerHTML = '<button id="btn"></button>';
+    const button = inner.getElementById('btn')!;
+    vi.spyOn(frame, 'getBoundingClientRect').mockReturnValue(new DOMRect(100, 50, 300, 200));
+    let buttonTop = 10;
+    vi.spyOn(button, 'getBoundingClientRect').mockImplementation(() => new DOMRect(5, buttonTop, 20, 8));
+    const highlighter = createA11yHighlighter(document);
+    highlighter.show([['iframe', '#btn']]);
+    const box = boxes()[0] as HTMLElement;
+    expect([box.style.left, box.style.top, box.style.width, box.style.height]).toEqual(['105px', '60px', '20px', '8px']);
+    buttonTop = -30;
+    frame.contentWindow!.dispatchEvent(new Event('scroll'));
+    expect(box.style.top).toBe('20px');
+    highlighter.dispose();
+    vi.restoreAllMocks();
   });
 });

@@ -51,3 +51,10 @@ describe('loadNativeModule', () => {
     expect([only?.id, only?.title]).toEqual(['thing--a', 'thing']);
   });
 });
+
+describe('a native story named the empty string', () => {
+  it('is named by its export, as the index names it', () => {
+    const [loaded] = loadNativeModule({ Primary: story({ name: '', render: () => null }) }, 'ui/Button');
+    expect(loaded?.name).toBe('Primary');
+  });
+});

@@ -279,6 +279,8 @@
  {
   "id": "apps.draw.src.dev.audits",
   "files": [
+   "apps/draw/src/dev/audits/AreaDefects.module.css",
+   "apps/draw/src/dev/audits/AreaDefects.tsx",
    "apps/draw/src/dev/audits/AreaDetail.module.css",
    "apps/draw/src/dev/audits/AreaDetail.tsx",
    "apps/draw/src/dev/audits/AuditsPage.module.css",
@@ -309,8 +311,10 @@
    "apps/draw/src/dev/audits/runData.ts",
    "apps/draw/src/dev/audits/skulkMap.types.ts",
    "apps/draw/src/dev/audits/skulkMapRoute.ts",
+   "apps/draw/src/dev/audits/useAreaDefects.ts",
    "apps/draw/src/dev/audits/useAuditPalette.tsx",
-   "apps/draw/src/dev/audits/useSkulkMap.ts"
+   "apps/draw/src/dev/audits/useSkulkMap.ts",
+   "apps/draw/src/dev/audits/viewerPref.ts"
   ]
  },
  {

@@ -64,7 +64,7 @@ function apiOf(mod: Record<string, unknown> | undefined): ApiTable | null | unde
 
 /**
  * The index page `id` names, loaded from every file its component's stories live in. Its description and library are
- * its primary file's. Rejects when no story of `index` belongs to the component.
+ * its primary file's. Each file's stories load under that file's own title, as they do opened alone. Rejects when no story of `index` belongs to the component.
  */
 export async function loadIndexBundle(id: string, source: IndexBundleSource): Promise<IndexBundle> {
   const { importOf, load = loadStories, parameters, prepare, libraries = TITLE_LIBRARIES } = source;
@@ -74,7 +74,8 @@ export async function loadIndexBundle(id: string, source: IndexBundleSource): Pr
   const { title } = primary;
   const files = [...new Set(entries.map((e) => e.file))];
   const mods = await Promise.all(files.map(importOf));
-  const byFile = new Map(files.map((file, i) => [file, load(mods[i] ?? {}, title, parameters)]));
+  const titleOf = (file: string) => entries.find((e) => e.file === file)?.title ?? title;
+  const byFile = new Map(files.map((file, i) => [file, load(mods[i] ?? {}, titleOf(file), parameters)]));
   const stories = entries.flatMap((e) => byFile.get(e.file)?.find((s) => s.exportName === e.exportName) ?? []);
   for (const story of stories) await prepare?.(story);
   const tags = commonTags(entries);

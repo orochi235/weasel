@@ -1,3 +1,4 @@
+import { watchColorScheme } from '@weasel-js/react';
 import { useEffect } from 'react';
 import { useLabContext } from '../../lab/LabContext';
 
@@ -8,8 +9,8 @@ export interface Remeasurable {
 
 /**
  * Has each source look again whenever what lies under a lens can change without a reticle moving: the trials, the
- * color mode, `also` (whatever else of the host's changes what a trial shows), a scroll, a resize, and a trial's host
- * no longer `data-pending`.
+ * color mode, `also` (whatever else of the host's changes what a trial shows), a scroll, a resize, the system color
+ * scheme, which an `auto` lab follows, and a trial's host no longer `data-pending`.
  */
 export function useLensRemeasure(
   sources: readonly Remeasurable[],
@@ -34,6 +35,7 @@ export function useLensRemeasure(
     };
     body.addEventListener('scroll', remeasure, { capture: true, passive: true });
     window.addEventListener('resize', resize);
+    const unwatchScheme = watchColorScheme(resize);
     // A host takes no pointer while `data-pending`, so a hit test skips it; a new story's host is only found once that
     // attribute goes, after the trials have already changed.
     const unveiled =
@@ -42,6 +44,7 @@ export function useLensRemeasure(
     return () => {
       body.removeEventListener('scroll', remeasure, { capture: true });
       window.removeEventListener('resize', resize);
+      unwatchScheme();
       unveiled?.disconnect();
     };
   }, [sources, body, rerender]);

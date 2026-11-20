@@ -8,11 +8,15 @@ export interface FramePool {
    * `moveBefore`; null when none is ready or the browser cannot move an iframe without reloading it.
    */
   claim(): HTMLIFrameElement | null;
+  /** Stops loading frames and drops the ones loaded; `claim` returns null from then on. */
   dispose(): void;
 }
 
 /** How long a frame document has to say hello. Longer than a cold dev server takes to serve one its first time. */
 export const HELLO_TIMEOUT_MS = 30_000;
+
+/** How many frames running may miss their hello before the pool stops loading its URL, which is then taken as broken. */
+export const MAX_HELLO_MISSES = 3;
 
 type Movable = Element & { moveBefore(node: Node, child: Node | null): void };
 
@@ -37,7 +41,8 @@ const whenIdle = (fn: () => void): (() => void) => {
 
 /**
  * Keeps `size` blank frames of `frameUrl` loaded off-screen. A claimed frame is the caller's to discard: it never
- * comes back, so nothing one story left in a document reaches the next. A replacement loads when the page is idle.
+ * comes back, so nothing one story left in a document reaches the next. A replacement loads when the page is idle. After
+ * `MAX_HELLO_MISSES` frames running miss their hello the pool loads no more, and `claim` leaves each view to load its own.
  */
 export function createFramePool(frameUrl: string, size = 2): FramePool {
   const shelf = document.createElement('div');
@@ -49,6 +54,8 @@ export function createFramePool(frameUrl: string, size = 2): FramePool {
   const waits = new Set<() => void>();
   let cancelRefill: (() => void) | null = null;
   let disposed = false;
+  /** Frames in a row that missed their hello; a hello starts it over. */
+  let misses = 0;
 
   const load = () => {
     const frame = document.createElement('iframe');
@@ -63,11 +70,13 @@ export function createFramePool(frameUrl: string, size = 2): FramePool {
       if (event.source !== frame.contentWindow || event.origin !== location.origin) return;
       if ((event.data as { type?: unknown } | null)?.type !== FRAME_HELLO) return;
       stop();
+      misses = 0;
       warm.push(frame);
     };
     const timer = setTimeout(() => {
       stop();
       frame.remove();
+      misses += 1;
       refill();
     }, HELLO_TIMEOUT_MS);
     waits.add(stop);
@@ -76,17 +85,17 @@ export function createFramePool(frameUrl: string, size = 2): FramePool {
   };
 
   const refill = () => {
-    if (disposed || cancelRefill) return;
+    if (disposed || cancelRefill || misses >= MAX_HELLO_MISSES) return;
     cancelRefill = whenIdle(() => {
       cancelRefill = null;
-      while (!disposed && warm.length + waits.size < size) load();
+      while (!disposed && misses < MAX_HELLO_MISSES && warm.length + waits.size < size) load();
     });
   };
   if (canMoveFrames()) refill();
 
   return {
     claim() {
-      if (!canMoveFrames()) return null;
+      if (disposed || !canMoveFrames()) return null;
       const frame = warm.shift() ?? null;
       refill();
       return frame;
@@ -95,6 +104,7 @@ export function createFramePool(frameUrl: string, size = 2): FramePool {
       disposed = true;
       cancelRefill?.();
       for (const stop of [...waits]) stop();
+      warm.length = 0;
       shelf.remove();
     },
   };

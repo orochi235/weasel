@@ -14,14 +14,18 @@ import { LibrariesContext } from '../../story/library';
 import { folderPathsOf, revealedFolderIn, useRowScroll } from './folderReveal';
 import { openStory } from './openStory';
 import { useSidebarViews, type View, VIEWS } from './sidebarViews';
-import { keyOf, LibraryBadge, type StoryFolder, treeRowsFor } from './treeRows';
+import { foldKeyOf, keyOf, LibraryBadge, type StoryFolder, treeRowsFor } from './treeRows';
 
 export interface StoryTreeProps {
   ctx: LabChromeContext;
   index: readonly IndexEntry[];
 }
 
-const pathOf = (byId: ReadonlyMap<string, StoryNode>, id: string): string => (byId.get(id) as StoryFolder).path;
+const folderOf = (byId: ReadonlyMap<string, StoryNode>, id: string): StoryFolder => byId.get(id) as StoryFolder;
+
+/** Whether `folder` is open: as its stored fold says, else when the routed story sits inside it. */
+const isOpen = (folder: StoryFolder, folds: Readonly<Record<string, boolean>>, routeAncestors: ReadonlySet<string>): boolean =>
+  getOwn(folds, foldKeyOf(folder)) ?? routeAncestors.has(folder.path);
 
 interface LibraryFilterProps {
   readonly libraries: readonly string[];
@@ -78,7 +82,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
 
   const { nodes, byId, folders: folderIds } = useMemo(() => treeRowsFor(shown, openIds), [shown, openIds]);
   const expanded = useMemo(
-    () => new Set(folderIds.filter((id) => filtering || (getOwn(folds, pathOf(byId, id)) ?? routeAncestors.has(pathOf(byId, id))))),
+    () => new Set(folderIds.filter((id) => filtering || isOpen(folderOf(byId, id), folds, routeAncestors))),
     [folderIds, byId, filtering, folds, routeAncestors],
   );
 
@@ -86,7 +90,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
   const onExpandedChange = (next: Set<string>): void => {
     if (filtering) return;
     const changed = folderIds.filter((id) => next.has(id) !== expanded.has(id));
-    if (changed.length) setFolds((prev) => ({ ...prev, ...Object.fromEntries(changed.map((id) => [pathOf(byId, id), next.has(id)])) }));
+    if (changed.length) setFolds((prev) => ({ ...prev, ...Object.fromEntries(changed.map((id) => [foldKeyOf(folderOf(byId, id)), next.has(id)])) }));
   };
 
   const activate = (entry: IndexEntry, another: boolean): void => openStory(ctx, entry, another);
@@ -95,16 +99,17 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
   // it, and closes it again once the selection moves on; only a manual fold is stored. The row's activation has
   // already toggled the fold, so the stored fold goes back to what it was, less a manual close, which would
   // outrank the selection.
-  const openIndex = (path: string, page: IndexEntry, another: boolean): void => {
-    const was = getOwn(folds, path);
-    setFolds(({ [path]: _toggled, ...rest }) => (was ? { ...rest, [path]: was } : rest));
+  const openIndex = (folder: StoryFolder, page: IndexEntry, another: boolean): void => {
+    const key = foldKeyOf(folder);
+    const was = getOwn(folds, key);
+    setFolds(({ [key]: _toggled, ...rest }) => (was ? { ...rest, [key]: was } : rest));
     activate(page, another);
   };
 
   const onAction: TreeProps['onAction'] = (id, mods) => {
     const node = byId.get(id);
     if (node?.kind === 'story') activate(node.entry, mods.shiftKey);
-    else if (node?.index) openIndex(node.path, node.index, mods.shiftKey);
+    else if (node?.index) openIndex(node, node.index, mods.shiftKey);
   };
 
   // A breadcrumb asks for a folder; it is shown the way clicking its row shows it, in the Tree view when the
@@ -116,13 +121,13 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
     const order = [view, ...VIEWS.map((item) => item.value).filter((v) => v !== view && enabled(v))];
     const found = revealedFolderIn(path, order, nodesOf);
     if (!found) return;
-    const { folder } = found;
+    const { folder, ancestors } = found;
     if (found.view !== view) setView(found.view);
     setQuery('');
-    setFolds((prev) => ({ ...prev, ...Object.fromEntries(folderPathsOf(folder.path).slice(0, -1).map((p) => [p, true])) }));
+    setFolds((prev) => ({ ...prev, ...Object.fromEntries(ancestors.map((above) => [foldKeyOf(above), true])) }));
     scrollToRow(keyOf(folder));
-    if (folder.index) openIndex(folder.path, folder.index, false);
-    else setFolds((prev) => ({ ...prev, [folder.path]: true }));
+    if (folder.index) openIndex(folder, folder.index, false);
+    else setFolds((prev) => ({ ...prev, [foldKeyOf(folder)]: true }));
   };
   // Resubscribed every commit, so the listener always reads this render's view and data.
   useEffect(() => onRevealInTree(reveal));

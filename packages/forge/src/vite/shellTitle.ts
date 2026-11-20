@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import type { Logger } from 'vite';
 import type * as t from '@babel/types';
-import { type Bindings, calleeOf, exportedName, objectOf, parseFile, prop, stringOf } from './ast.ts';
+import { type Bindings, bindingsOf, calleeOf, exportedName, objectOf, parseFile, prop, stringOf } from './ast.ts';
 import { warnOnce } from './warnOnce.ts';
 
 /** A shell config module's default export as the object literal its source writes, with the file's top-level `const`s. */
@@ -12,12 +12,9 @@ function configOf(code: string, file: string): { config: t.ObjectExpression | nu
   } catch {
     return null;
   }
-  const bindings: Bindings = new Map();
+  const bindings = bindingsOf(program);
   let config: t.Node | undefined;
   for (const stmt of program.body) {
-    if (stmt.type === 'VariableDeclaration') {
-      for (const d of stmt.declarations) if (d.id.type === 'Identifier' && d.init) bindings.set(d.id.name, d.init);
-    }
     if (stmt.type === 'ExportDefaultDeclaration') config = stmt.declaration;
     if (stmt.type !== 'ExportNamedDeclaration' || stmt.source) continue;
     for (const spec of stmt.specifiers) {

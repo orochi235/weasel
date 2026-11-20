@@ -1,5 +1,5 @@
 import type { LensSourceHandle, LensSourceRequest } from '@weasel-js/labkit/loupe';
-import { afterEach, beforeEach, expect, it } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { type ForgeComparison, resolveComparison } from './conditions';
 import { createLiveLenses } from './liveLenses';
 import { createLiveSource } from './liveSource';
@@ -28,9 +28,14 @@ const request = (x: number, conditions: ForgeComparison | null): LensSourceReque
   dpr: 1,
 });
 
-function attach(x: number, conditions: ForgeComparison | null, schedule?: (run: () => void) => void) {
+function attach(
+  x: number,
+  conditions: ForgeComparison | null,
+  schedule?: (run: () => void) => void,
+  lenses = createLiveLenses(),
+) {
   const source = createLiveSource(
-    createLiveLenses(),
+    lenses,
     resolveComparison,
     () => ({
       base: { mode: 'light' },
@@ -42,7 +47,7 @@ function attach(x: number, conditions: ForgeComparison | null, schedule?: (run: 
     heard += 1;
   });
   handle = source.attach(slot, request(x, conditions));
-  return handle;
+  return { handle, source };
 }
 
 const settle = () => new Promise<void>((done) => queueMicrotask(done));
@@ -82,7 +87,7 @@ it('tells its readers when the pointer or focus moves inside the story under an 
 });
 
 it('follows the reticle to the story now under it', async () => {
-  const h = attach(100, null);
+  const { handle: h } = attach(100, null);
   h.update(request(600, null));
   await settle();
   heard = 0;
@@ -96,7 +101,7 @@ it('follows the reticle to the story now under it', async () => {
 });
 
 it('stops listening to the story once it compares something, and once detached', async () => {
-  const h = attach(100, null);
+  const { handle: h } = attach(100, null);
   h.update(request(100, { kind: 'opposite-mode' }));
   await settle();
   heard = 0;
@@ -134,4 +139,50 @@ it('tells its readers once per frame, however many changes the frame holds', asy
   p.className = 'open';
   await settle();
   expect(frames).toHaveLength(1);
+});
+
+it('posts a new request when the host under a still reticle is resized, so the copy lays out at its new size', () => {
+  const lenses = createLiveLenses();
+  let width = 400;
+  Object.defineProperty(left, 'offsetWidth', { configurable: true, get: () => width });
+  Object.defineProperty(left, 'offsetHeight', { configurable: true, get: () => 300 });
+  const { source } = attach(100, null, undefined, lenses);
+  const before = lenses.forTrial('t1')[0];
+  expect(before?.hit).toMatchObject({ width: 400, height: 300 });
+  width = 600;
+  source.remeasure();
+  const after = lenses.forTrial('t1')[0];
+  expect(after).not.toBe(before);
+  expect(after?.hit).toMatchObject({ width: 600, height: 300 });
+});
+
+it('looks again when the host under it is resized, with no window resize to say so', () => {
+  const observers: { fn: () => void; watched: Set<Element> }[] = [];
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      watched = new Set<Element>();
+      constructor(public fn: () => void) {
+        observers.push(this);
+      }
+      observe(el: Element) {
+        this.watched.add(el);
+      }
+      unobserve(el: Element) {
+        this.watched.delete(el);
+      }
+      disconnect() {}
+    },
+  );
+  try {
+    const lenses = createLiveLenses();
+    let width = 400;
+    Object.defineProperty(left, 'offsetWidth', { configurable: true, get: () => width });
+    attach(100, null, undefined, lenses);
+    width = 600;
+    for (const o of observers) if (o.watched.has(left)) o.fn();
+    expect(lenses.forTrial('t1')[0]?.hit.width).toBe(600);
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });
