@@ -49,7 +49,7 @@ export type PrefFieldsOf<C> = {
  *  under that variant's tag — where the schema keeps `tag` a literal
  *  (`tag: 'type' as const`); one widened to `string` is typed by its default. */
 export type PrefValueOf<L> =
-  L extends { kind: 'number' } ? number
+  L extends { kind: 'number' } ? L extends { clearable: true } ? number | undefined : number
   : L extends { kind: 'boolean' } ? boolean
   : L extends { kind: 'string' | 'color' | 'field' } ? string
   : L extends { kind: 'paint' } ? unknown
