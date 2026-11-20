@@ -18,7 +18,6 @@ import { grownBy } from './footprint';
 import { frameFor, type FrameOptions } from './layoutFrame';
 import { DIAGRAM_TRAIT_KEY } from './trait';
 import type { DiagramCluster, PortAnchor } from './types';
-import type { Rect } from '@weasel-js/geom';
 
 /** Where an anchored node sits on its dependency. */
 export interface DiagramAnchor {
