@@ -197,6 +197,13 @@ describe('prefReader', () => {
     expect(read('stroke.ends.cap')).toBe(1);
   });
 
+  it('reads a section member keyed by the whole path before one whose key prefixes it', () => {
+    const data = { kind: 'object', name: 'Data', description: '', default: { fill: 'a' }, children: {} } as PrefObject;
+    const fill = { kind: 'string', name: 'Fill', description: '', default: 'b' } as PrefLeaf;
+    const section: PrefSection = { name: '', members: { data, 'data.fill': fill } };
+    expect(prefReader(section, {})('data.fill')).toBe('b');
+  });
+
   it('reads a path no leaf holds as undefined', () => {
     const read = prefReader(root, {});
     expect(read('snap')).toBeUndefined();

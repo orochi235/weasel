@@ -72,11 +72,11 @@ export function prefReader(schema: PrefGroup | PrefSection, values: unknown, ove
     if (held !== undefined) return held;
     if (beyond && prefSchemaHolding(schema, path, over) === over) return beyond(path);
     if (isPrefSection(schema)) {
-      for (const [key, leaf] of prefSectionLeaves(schema.members)) {
-        if (path === key) return leaf.default;
-        if (path.startsWith(`${key}.`)) return prefValueAt(leaf.default, path.slice(key.length + 1));
-      }
-      return undefined;
+      const leaves = prefSectionLeaves(schema.members);
+      const exact = leaves.find(([key]) => key === path);
+      if (exact) return exact[1].default;
+      const outer = leaves.find(([key]) => path.startsWith(`${key}.`));
+      return outer && prefValueAt(outer[1].default, path.slice(outer[0].length + 1));
     }
     const steps = path.split('.');
     let node: PrefGroup = schema;
