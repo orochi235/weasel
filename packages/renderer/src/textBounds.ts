@@ -2,7 +2,8 @@ import { mat3, type GlMat3 } from '@weasel-js/geom';
 import type { TextDrawCommand, TextLayerDrawCommand } from './DrawCommand';
 import { screenBox, strokeReachAt, type ScreenBox } from './paintedBounds';
 import { laidOutText } from './textLayout';
-import { glyphTurn } from '@weasel-js/text';
+import { glyphTurn, textEngineGeneration } from '@weasel-js/text';
+import { faceGeneration } from '@weasel-js/font';
 import { createPart } from '@weasel-js/registry';
 
 /**
@@ -48,8 +49,21 @@ export function textBox(cmd: TextDrawCommand, m: GlMat3): ScreenBox | null {
 }
 
 const IDENTITY = mat3.identity();
-/** Each stroke-free layer's box in its own space, `null` for one painting nothing. */
-const layerBoxOf = createPart((texts: readonly TextDrawCommand[]) => unionOf(texts, IDENTITY));
+/** Each stroke-free layer's box in its own space, `null` for one painting nothing, with the face and text
+ *  engine generations it was laid out under: a face landing or an engine registering moves its glyphs. */
+const layerBoxPart = createPart(
+  (_texts: readonly TextDrawCommand[]): { generation: string; box: ScreenBox | null } => ({ generation: '', box: null }),
+);
+
+function layerBoxOf(texts: readonly TextDrawCommand[]): ScreenBox | null {
+  const generation = `${faceGeneration()}:${textEngineGeneration()}`;
+  const part = layerBoxPart(texts);
+  if (part.generation !== generation) {
+    part.box = unionOf(texts, IDENTITY);
+    part.generation = generation;
+  }
+  return part.box;
+}
 
 /**
  * {@link textBox} for every text of a layer. A layer whose runs carry no
