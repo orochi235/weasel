@@ -4,7 +4,7 @@ import { amount, type Display, type Quantity } from './quantity';
 
 /** Options for presenting a range. */
 export interface RangeOptions extends PresentOptions {
-  /** What goes between the ends. Default an en dash, spaced when an end is negative. */
+  /** What goes between the ends. Default an en dash, spaced when an end shows a minus sign. */
   separator?: string;
   /** The separator read aloud. Default ` to `. */
   spokenSeparator?: string;
@@ -42,8 +42,11 @@ function rangeEnds(from: Quantity, to: Quantity, fallback?: Display, options?: P
   return [shared ? a.slice(0, a.length - tail.length) : a, b];
 }
 
-function rangeSeparator(from: Quantity, to: Quantity, options?: RangeOptions): string {
-  return options?.separator ?? (amount(from) < 0 || amount(to) < 0 ? ' – ' : '–');
+/** Whether an end shows a minus sign: a negative that rounds to 0 shows none. */
+const showsNegative = (parts: readonly Part[]) => /^\D*[-\u2212]/.test(textOf(parts));
+
+function rangeSeparator(a: readonly Part[], b: readonly Part[], options?: RangeOptions): string {
+  return options?.separator ?? (showsNegative(a) || showsNegative(b) ? ' – ' : '–');
 }
 
 /**
@@ -53,14 +56,14 @@ function rangeSeparator(from: Quantity, to: Quantity, options?: RangeOptions): s
  */
 export function rangeParts(from: Quantity, to: Quantity, fallback?: Display, options?: RangeOptions): Part[] {
   const [a, b] = rangeEnds(from, to, fallback, options);
-  return [...a, { type: SEPARATOR, value: rangeSeparator(from, to, options) }, ...b];
+  return [...a, { type: SEPARATOR, value: rangeSeparator(a, b, options) }, ...b];
 }
 
 /** A range as text, spoken text, and HTML: a `data-composite="range"` span
  *  holding a `<data value>` for each end and a `separator` part between. */
 export function presentRange(from: Quantity, to: Quantity, fallback?: Display, options?: RangeOptions): Presentation {
   const [a, b] = rangeEnds(from, to, fallback, options);
-  const separator = rangeSeparator(from, to, options);
+  const separator = rangeSeparator(a, b, options);
   const spoken = [from, to].map((q) => present(q, fallback, options).spoken);
   return {
     text: `${textOf(a)}${separator}${textOf(b)}`,

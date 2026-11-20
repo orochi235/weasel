@@ -41,3 +41,13 @@ it("writes the label's number in the locale it is given", () => {
   expect(scaleBar({ pxPerUnit: 400, scopes: [INCHES], locale: 'de-DE' }).label).toBe('0,2in');
   expect(scaleBar({ pxPerUnit: 400, scopes: [INCHES], locale: 'en-US' }).label).toBe('0.2in');
 });
+
+describe('scaleBar below one of every unit', () => {
+  const METERS: UnitScope = { system: { base: 'm', units: { mm: 0.001, m: 1, km: 1000 } } };
+  const FEET: UnitScope = { system: { base: 'ft', units: { in: 1 / 12, ft: 1 } } };
+
+  it('labels the bar in the smallest unit, not the base unit', () => {
+    expect(scaleBar({ pxPerUnit: 1e8, scopes: [METERS] })).toMatchObject({ label: '0.001mm', unit: 'mm' });
+    expect(scaleBar({ pxPerUnit: 1e10, scopes: [FEET] })).toMatchObject({ unit: 'in' });
+  });
+});

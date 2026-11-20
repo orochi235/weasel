@@ -1,5 +1,5 @@
 import { escapeMarkup, intlParts, numberPart, signed, spokenSign, textOf, type DisplayKind, type Part } from '../kind';
-import { latinDigits, MINUS_SIGN, parseNumberIn, unsignedZero } from '../number';
+import { finiteOrNaN, latinDigits, MINUS_SIGN, parseNumberIn, unsignedZero } from '../number';
 
 /** A share of one as a percentage: 0.25 shows `25%`. Typed text reads as
  *  percent with or without the sign. */
@@ -177,7 +177,7 @@ function parseFraction(typed: string, locale: string): number {
     magnitude = Number(diagonal[2] ?? 0) + fromDigits(diagonal[3]!, SUPERSCRIPT) / fromDigits(diagonal[4]!, SUBSCRIPT);
   } else return parseNumberIn(text, undefined, locale);
   const sign = (inline ?? diagonal)![1];
-  return sign === '-' || sign === MINUS_SIGN ? -magnitude : magnitude;
+  return finiteOrNaN(sign === '-' || sign === MINUS_SIGN ? -magnitude : magnitude);
 }
 
 const escape = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -229,10 +229,15 @@ export const fractionKind: DisplayKind<FractionDisplay> = {
     const constant = constantOf(d);
     if (!constant) return parseFraction(text, ctx.locale);
     const spellings = [constant.symbol, ...(constant.names ?? [])].sort((a, b) => b.length - a.length);
-    const token = new RegExp(spellings.map(escape).join('|'), 'i');
+    // Not the `e` of an exponent, between a digit and a signed digit: `1e3` is 1000.
+    const any = spellings.map(escape).join('|');
+    const token = new RegExp(`(?<!\\d)(?:${any})|(?:${any})(?![-−+]?\\d)`, 'i');
     if (!token.test(text)) return parseFraction(text, ctx.locale);
     // With the constant taken out, a bare `/2` or nothing at all counts one of it.
-    const coefficient = text.replace(token, '').replace(/^(\s*[-−+]?\s*)(?=[/⁄]|\s*$)/, '$11');
+    const rest = text.replace(token, '').trim();
+    const sign = /^[-−+]/.test(rest) ? rest[0]! : '';
+    const body = rest.slice(sign.length).trimStart();
+    const coefficient = body === '' || /^[/⁄]/.test(body) ? `${sign}1${body}` : rest;
     return parseFraction(coefficient, ctx.locale) * constant.value;
   },
   mathml: (value, d) => {
@@ -286,7 +291,7 @@ export const ratioKind: DisplayKind<RatioDisplay> = {
     // Split at the first colon after the first character, not by a lazy pattern, which backtracks quadratically.
     const at = text.trim().indexOf(':', 1);
     const [a, b] = [text.trim().slice(0, at), text.trim().slice(at + 1)];
-    return at > 0 && b.trim() !== '' ? read(a) / read(b) : read(text);
+    return at > 0 && b.trim() !== '' ? finiteOrNaN(read(a) / read(b)) : read(text);
   },
 };
 
@@ -320,7 +325,7 @@ export const multiplierKind: DisplayKind<MultiplierDisplay> = {
   parse: (text, d, ctx) => {
     const own = d.symbol !== undefined && text.trimEnd().endsWith(d.symbol)
       ? text.trimEnd().slice(0, -d.symbol.length)
-      : text.replace(/\s*[x×X]\s*$/, '');
+      : text.trimEnd().replace(/[x×X]$/, '');
     return parseNumberIn(own, undefined, ctx.locale);
   },
 };

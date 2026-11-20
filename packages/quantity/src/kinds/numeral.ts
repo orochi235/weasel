@@ -62,7 +62,7 @@ export const romanKind: DisplayKind<RomanDisplay> = {
   speak: (value, _d, ctx) => spokenSign(numberPart(roundWhole(value), ctx.locale, { maximumFractionDigits: 0, useGrouping: false }).value),
   parse: (text, _d, ctx) => {
     const r = fromRoman(text);
-    return Number.isNaN(r) ? parseNumberIn(text, undefined, ctx.locale) : r;
+    return Number.isNaN(r) ? roundWhole(parseNumberIn(text, undefined, ctx.locale)) : r;
   },
 };
 

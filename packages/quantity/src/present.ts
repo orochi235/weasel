@@ -1,5 +1,5 @@
 import { createReflectable, type Reflection } from '@weasel-js/registry';
-import { escapeMarkup as escape, textOf, type DisplayKind, type FormatContext, type Part } from './kind';
+import { escapeMarkup as escape, spokenSign, textOf, type DisplayKind, type FormatContext, type Part } from './kind';
 import { compactKind, decimalKind, integerKind } from './kinds/plain';
 import { fractionKind, multiplierKind, percentKind, ratioKind, zoomKind } from './kinds/proportion';
 import { bytesKind, currencyKind, durationKind, unitKind } from './kinds/measure';
@@ -104,7 +104,7 @@ export function present(q: Quantity, fallback?: Display, options?: PresentOption
   const text = textOf(parts);
   const out: Presentation = {
     text,
-    spoken: kind.speak ? kind.speak(value, display, ctx) : text,
+    spoken: kind.speak ? kind.speak(value, display, ctx) : spokenSign(text),
     html: partsToHtml(value, parts),
   };
   const mathml = kind.mathml?.(value, display, ctx);
@@ -183,8 +183,12 @@ export class QuantityView<Q extends Quantity = Quantity> {
     const to = unitScale(system, target);
     const base = this.value * from.factor + from.offset;
     const value = (base - to.offset) / to.factor;
-    const raw = typeof this.raw === 'number' ? tag(value, undefined, target) : { ...(this.raw as Tagged), value, unit: target };
-    return new QuantityView(raw, this.fallback, this.options);
+    const shown = (d: Display | undefined) => (d?.kind === 'unit' && d['unit'] !== undefined ? { ...d, unit: target } : d);
+    const own = typeof this.raw === 'number' ? undefined : this.raw.display;
+    const raw = typeof this.raw === 'number'
+      ? tag(value, undefined, target)
+      : { ...(this.raw as Tagged), value, unit: target, ...(own === undefined ? {} : { display: shown(own) }) };
+    return new QuantityView(raw, shown(this.fallback), this.options);
   }
   toJSON(): Q {
     return this.raw;

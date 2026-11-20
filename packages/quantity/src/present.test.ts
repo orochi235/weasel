@@ -77,6 +77,13 @@ describe('quantity shape', () => {
     expect(qty(tag(12, unit(), 'mm')).to('cm', METRIC_MM).text).toBe('1.2cm');
     expect(qty(25).to('cm', METRIC_MM).raw).toEqual({ value: 2.5, unit: 'cm' });
   });
+
+  it('converts a value shown in a named unit into the target unit', () => {
+    expect(qty(tag(12, unit('mm'), 'mm')).to('cm', METRIC_MM).text).toBe('1.2cm');
+    expect(qty(12, unit('mm')).to('cm', METRIC_MM).text).toBe('1.2cm');
+    expect(qty(tag(12, unit('mm', { places: 3 }), 'mm')).to('cm', METRIC_MM).raw)
+      .toEqual({ value: 1.2, unit: 'cm', display: unit('cm', { places: 3 }) });
+  });
 });
 
 /** [display, value, text, spoken] */
@@ -332,6 +339,13 @@ describe('registerDisplayKind', () => {
     unregister = registerDisplayKind(hex);
     expect(qty(255, { kind: 'hex' }).text).toBe('0xff');
     expect(parseAs('0x10', { kind: 'hex' })).toBe(16);
+  });
+
+  it('speaks a leading minus sign for a kind with no speak of its own', () => {
+    expect(present(-3, ordinal()).spoken).toBe('minus 3rd');
+    const signedText: DisplayKind<{ kind: 'signed' }> = { kind: 'signed', format: (v) => [{ type: 'number', value: `\u2212${Math.abs(v)}` }] };
+    unregister = registerDisplayKind(signedText);
+    expect(qty(-2, { kind: 'signed' }).spoken).toBe('minus 2');
   });
 
   it('replaces a built-in, and removing it restores the built-in', () => {

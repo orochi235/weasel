@@ -38,6 +38,13 @@ describe('presentRange', () => {
     expect(presentRange(-5, -2, decimal()).text).toBe('−5 – −2');
   });
 
+  it('spaces the dash only for an end that shows its minus sign', () => {
+    expect(textOf(rangeParts(-0.0001, 5, decimal()))).toBe('0–5');
+    expect(presentRange(-0.0001, 5, decimal()).text).toBe('0–5');
+    expect(presentRange(2, -Infinity, decimal()).text).toBe('2 – −∞');
+    expect(presentRange(-0.5, 5, decimal()).text).toBe('−0.5 – 5');
+  });
+
   it('marks the range and its separator for styling, with a value on each end', () => {
     const { html } = presentRange(1, 2, decimal());
     expect(html).toBe(

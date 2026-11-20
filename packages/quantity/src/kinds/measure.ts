@@ -1,6 +1,6 @@
 import { intlParts, numberPart, plural, spokenSign, textOf, type DisplayKind, type Part } from '../kind';
 import { catalogUnit, unitSymbol } from '../catalog';
-import { decimalOf, escapeClass, latinDigits, numberWithin, parseNumberIn, type UnitTable } from '../number';
+import { decimalOf, escapeClass, finiteOrNaN, latinDigits, numberWithin, parseNumberIn, type UnitTable } from '../number';
 
 /**
  * `value` in the unit `name` read aloud: through `Intl` where the catalog gives
@@ -135,7 +135,7 @@ function hms(value: number, places: number) {
 
 function signedSeconds(sign: string, h: string | undefined, m: string | undefined, s: string): number {
   const total = Number(h ?? 0) * 3600 + Number(m ?? 0) * 60 + Number(s);
-  return sign === '-' || sign === '−' ? -total : total;
+  return finiteOrNaN(sign === '-' || sign === '−' ? -total : total);
 }
 
 const DURATION_UNITS: UnitTable = { h: 3600, m: 60, min: 60, s: 1, ms: 0.001 };

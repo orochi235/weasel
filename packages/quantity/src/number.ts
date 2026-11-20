@@ -85,18 +85,22 @@ export function parseNumberIn(text: string, units: Readonly<UnitTable> | undefin
   return Number.isNaN(n) && locale !== 'en-US' ? readNumber(delocalized(text, 'en-US'), units) : n;
 }
 
+/** `n`, or NaN when it is infinite: an infinity reads only from a word for it, never from digits. */
+export const finiteOrNaN = (n: number): number => (Number.isFinite(n) ? n : Number.NaN);
+
 /** `parseNumber` once every number in the text is in `en-US` form with no grouping. */
 function readNumber(text: string, units?: Readonly<UnitTable>): number {
   if (units) {
     units = withSpellings(units);
     const trimmed = text.trim();
-    const unit = unitSuffixOf(trimmed, units);
+    const named = unitNames(units);
+    const unit = unitEndingAt(trimmed, trimmed.length, named);
     if (unit !== undefined) {
-      const terms = compoundTermsOf(trimmed, units);
-      if (terms !== undefined && terms.length > 1) return compoundValue(terms, trimmed);
+      const terms = compoundTermsOf(trimmed, named);
+      if (terms !== undefined && terms.length > 1) return finiteOrNaN(compoundValue(terms, trimmed));
       const [name, entry] = unit;
       const { factor, offset } = entryScale(entry);
-      return scaled(readNumber(trimmed.slice(0, -name.length)), factor) + offset;
+      return finiteOrNaN(scaled(readNumber(trimmed.slice(0, -name.length)), factor) + offset);
     }
   }
   let t = hyphenated(text.trim());
@@ -108,7 +112,7 @@ function readNumber(text: string, units?: Readonly<UnitTable>): number {
   // Scaled through the exponent rather than by multiplying: 1.1 * 1000 is 1100.0000000000002.
   const [mantissa, power = '0'] = t.toLowerCase().split('e');
   const n = Number(exponent === undefined ? t : `${mantissa}e${Number(power) + exponent}`);
-  return Number.isFinite(n) ? n : Number.NaN;
+  return finiteOrNaN(n);
 }
 
 interface NumberShape {
@@ -230,21 +234,40 @@ function scaled(n: number, factor: number): number {
  * `<number><unit>` term — which is what tells `5ft 3in` from a malformed
  * `5ft 3`. Undefined when the text is not a run of whole terms.
  */
-function compoundTermsOf(text: string, units: Readonly<UnitTable>): [string, UnitEntry][] | undefined {
+function compoundTermsOf(text: string, named: readonly [string, UnitEntry][]): [string, UnitEntry][] | undefined {
   const names: [string, UnitEntry][] = [];
-  let rest = text.trimEnd();
-  while (rest !== '') {
-    const unit = unitSuffixOf(rest, units);
+  // Walked as an index from the end, without slicing or a regex, so it runs in time linear in the text.
+  let end = blankBefore(text, text.length);
+  while (end > 0) {
+    const unit = unitEndingAt(text, end, named);
     if (unit === undefined) return undefined;
     names.push(unit);
-    const before = rest.slice(0, -unit[0].length);
-    const m = new RegExp(`(?:${TERM_NUMBER})\\s*$`).exec(before);
-    if (!m) return undefined;
-    rest = before.slice(0, m.index).trimEnd();
+    const start = termNumberEndingAt(text, blankBefore(text, end - unit[0].length));
+    if (start === undefined) return undefined;
+    end = blankBefore(text, start);
     // A sign leads the whole value, so it ends the walk rather than a term.
-    if (rest === '-' || rest === '+' || rest === MINUS_SIGN) rest = '';
+    if (end === 1 && (text[0] === '-' || text[0] === '+' || text[0] === MINUS_SIGN)) end = 0;
   }
   return names.length === 0 ? undefined : names.reverse();
+}
+
+/** Where the run of whitespace ending at `end` starts. */
+function blankBefore(text: string, end: number): number {
+  while (end > 0 && /\s/.test(text[end - 1]!)) end--;
+  return end;
+}
+
+const isDigit = (c: string | undefined) => c !== undefined && c >= '0' && c <= '9';
+
+/** Where the longest `TERM_NUMBER` ending at `end` starts, if one does. */
+function termNumberEndingAt(text: string, end: number): number | undefined {
+  let at = end;
+  while (isDigit(text[at - 1])) at--;
+  if (at === end) return undefined;
+  if (text[at - 1] !== '.') return at;
+  at--;
+  while (isDigit(text[at - 1])) at--;
+  return at;
 }
 
 /**
@@ -266,9 +289,13 @@ function compoundValue(names: [string, UnitEntry][], text: string): number {
   return sign * total;
 }
 
-/** The longest unit name `text` ends with — exact case first, then any case. */
-function unitSuffixOf(text: string, units: Readonly<UnitTable>): [string, UnitEntry] | undefined {
-  const named = Object.entries(units).filter(([n]) => n !== '').sort(([a], [b]) => b.length - a.length);
-  const lower = text.toLowerCase();
-  return named.find(([n]) => text.endsWith(n)) ?? named.find(([n]) => lower.endsWith(n.toLowerCase()));
+/** The unit names in `units`, longest first. */
+function unitNames(units: Readonly<UnitTable>): [string, UnitEntry][] {
+  return Object.entries(units).filter(([n]) => n !== '').sort(([a], [b]) => b.length - a.length);
+}
+
+/** The longest unit name `text` ends with at `end` — exact case first, then any case. */
+function unitEndingAt(text: string, end: number, named: readonly [string, UnitEntry][]): [string, UnitEntry] | undefined {
+  return named.find(([n]) => text.endsWith(n, end))
+    ?? named.find(([n]) => n.length <= end && text.slice(end - n.length, end).toLowerCase() === n.toLowerCase());
 }

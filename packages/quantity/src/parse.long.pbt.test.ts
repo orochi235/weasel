@@ -9,7 +9,7 @@ import { resolveUnitExpr } from './unitExpr';
 import { decimal, integer } from './kinds/plain';
 import { roman } from './kinds/numeral';
 import { duration, unit } from './kinds/measure';
-import { fraction, percent, ratio } from './kinds/proportion';
+import { fraction, multiplier, percent, ratio } from './kinds/proportion';
 import type { Display } from './quantity';
 import { locale, runs, timeoutFor } from './pbt.fixture';
 
@@ -24,7 +24,7 @@ const long = fc.tuple(
   fc.constantFrom('', 'x', ')', '.', ' ft', '%'),
 ).map(([piece, tail]) => piece.repeat(Math.ceil(LENGTH / piece.length)) + tail);
 
-const display = fc.constantFrom<Display>(decimal(), integer(), roman(), unit('ft', { accepts: { ft: 12, in: 1 } }), duration(), fraction(), percent(), ratio());
+const display = fc.constantFrom<Display>(decimal(), integer(), roman(), unit('ft', { accepts: { ft: 12, in: 1 } }), duration(), fraction(), fraction({ of: 'π' }), percent(), ratio(), multiplier());
 
 function timed<T>(read: () => T): T {
   const t0 = performance.now();
