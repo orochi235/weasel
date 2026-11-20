@@ -20,11 +20,15 @@ class BlockWriter {
   readonly ids: Map<string, string>;
   readonly grid: GridOptions;
   readonly order: ReadonlyMap<string, number>;
+  /** Groups an edge or a style line names, which must be written with their id even where the reader would mint it. */
+  readonly named: ReadonlySet<string>;
 
   constructor(readonly out: GraphOut) {
     this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds], { unicode: true, reserved: BLOCK_WORDS });
     this.grid = out.page.layout?.name === 'grid' ? out.page.layout.options?.grid ?? {} : {};
     this.order = new Map(out.page.data.nodes.map((n, i) => [n.id, i]));
+    const styled = (out.page.data.containers ?? []).filter((c) => c.colors !== undefined && styleProps(c.colors) !== '').map((c) => c.id);
+    this.named = new Set([...out.edges.flatMap((e) => [e.from, e.to]), ...styled]);
   }
 
   id(id: string): string {
@@ -68,7 +72,7 @@ class BlockWriter {
   }
 
   group(c: Cluster, indent: string): void {
-    const named = !ANONYMOUS.test(c.id) || this.span(c.id) !== '';
+    const named = !ANONYMOUS.test(c.id) || this.span(c.id) !== '' || this.named.has(c.id);
     this.lines.push(`${indent}block${named ? `:${this.id(c.id)}${this.span(c.id)}` : ''}`);
     const columns = this.grid.clusterColumns && getOwn(this.grid.clusterColumns, c.id);
     if (columns !== undefined) this.lines.push(`${indent}  columns ${columns}`);
