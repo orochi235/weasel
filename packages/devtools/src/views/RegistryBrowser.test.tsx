@@ -168,4 +168,15 @@ describe('RegistryBrowser — grouped categories', () => {
     expect(item('rect')).toHaveAttribute('aria-level', '3');
     expect(item('rect')).toHaveAttribute('aria-selected', 'true');
   });
+
+  it("picks the entry clicked when one category's id and entry id join to another's", () => {
+    const onSelectionChange = vi.fn();
+    const categories: RegistryCategory[] = [
+      { id: 'a/b', label: 'AB', entries: [{ id: 'c', label: 'first' }] },
+      { id: 'a', label: 'A', entries: [{ id: 'b/c', label: 'second' }] },
+    ];
+    renderWithIcons(browser({ categories, defaultOpen: ['a/b', 'a'], onSelectionChange }));
+    fireEvent.click(screen.getByText('first'));
+    expect(onSelectionChange).toHaveBeenLastCalledWith({ category: 'a/b', id: 'c' });
+  });
 });

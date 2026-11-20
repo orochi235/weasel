@@ -17,7 +17,7 @@ import {
   type GraphNode,
   type Port,
 } from '@weasel-js/diagram/layout';
-import type { ElkExtendedEdge, ElkNode, ElkPort } from 'elkjs/lib/elk-api.js';
+import type { ElkExtendedEdge, ElkLabel, ElkNode, ElkPort } from 'elkjs/lib/elk-api.js';
 
 /** One drawn edge: a stand-in `expandClusterEdges` made folds back into this. */
 export interface DrawnEdge {
@@ -70,17 +70,23 @@ export function drawnEdges(graph: Graph): DrawnEdge[] {
   return [...seen.values()];
 }
 
-/** The ELK graph for `graph`, its root carrying `layoutOptions`. */
+/** The ELK graph for `graph`, its root carrying `layoutOptions`. Throws on a graph naming two of its participants and
+ *  clusters by one id. */
 export function toElk(graph: Graph, layoutOptions: Record<string, string>): { root: ElkNode; index: ElkIndex } {
   const index: ElkIndex = { nodes: new Map(), clusters: new Map(), edges: new Map() };
   const clusters = graph.clusters ?? [];
   const elkIdOf = new Map<string, string>();
+  // An edge names its ends by id alone, so an id two of them share leaves it no way to say which it joins.
+  const claim = (id: string, elkId: string) => {
+    if (elkIdOf.has(id)) throw new Error(`diagram-elk: the graph names more than one participant or cluster "${id}"`);
+    elkIdOf.set(id, elkId);
+  };
   graph.nodes.forEach((n, i) => {
-    elkIdOf.set(n.id, `n${i}`);
+    claim(n.id, `n${i}`);
     index.nodes.set(`n${i}`, n);
   });
   clusters.forEach((g, i) => {
-    elkIdOf.set(g.id, `g${i}`);
+    claim(g.id, `g${i}`);
     index.clusters.set(`g${i}`, g);
   });
 
@@ -105,6 +111,7 @@ export function toElk(graph: Graph, layoutOptions: Record<string, string>): { ro
     return { id: elkIdOf.get(g.id)!, layoutOptions: clusterOptions(g, transposed && children.length > 0), children };
   };
 
+  const across = crossAxis(layoutOptions);
   const elkEdges: ElkExtendedEdge[] = edges.map((e, i) => {
     index.edges.set(`e${i}`, e);
     const end = (id: string, port: string | undefined) =>
@@ -115,7 +122,7 @@ export function toElk(graph: Graph, layoutOptions: Record<string, string>): { ro
       targets: [end(e.to, e.toPort)],
       // ELK leaves a label with no text at the origin, unplaced, in some
       // graphs; the text is never measured, since the size is given.
-      ...(e.label !== undefined ? { labels: [{ id: `e${i}l`, text: e.id, width: e.label.width, height: e.label.height }] } : {}),
+      ...(e.label !== undefined ? { labels: [{ id: `e${i}l`, text: e.id, ...labelRoom(e.label, across) }] } : {}),
     };
   });
 
@@ -162,6 +169,23 @@ function clusterOptions(g: GraphCluster, transposed: boolean): Record<string, st
     options['elk.nodeSize.minimum'] = transposed ? `(0, ${g.minWidth})` : `(${g.minWidth}, 0)`;
   }
   return options;
+}
+
+/** The ELK label for a label's room. ELK has no way to be told a label sits a distance off its wire on one side, so a
+ *  label with an `offset` gets a room centered on its wire, wide enough across the ranks for the label that far off on
+ *  either side; the diagram then draws it in the half its `offset` names. */
+function labelRoom(room: EdgeLabelRoom, across: 'width' | 'height'): Pick<ElkLabel, 'width' | 'height' | 'layoutOptions'> {
+  const offset = Math.abs(room.offset ?? 0);
+  if (offset === 0) return { width: room.width, height: room.height };
+  const size = { width: room.width, height: room.height };
+  size[across] = 2 * (offset + size[across]);
+  return { ...size, layoutOptions: { 'elk.edgeLabels.inline': 'true' } };
+}
+
+/** The box dimension running across the ranks, under the direction `options` lay them out in. */
+function crossAxis(options: Readonly<Record<string, string>>): 'width' | 'height' {
+  const direction = options['elk.direction'] ?? options['org.eclipse.elk.direction'];
+  return direction === 'RIGHT' || direction === 'LEFT' ? 'height' : 'width';
 }
 
 /** Whether elkjs 0.12 reads a compound node's minimum size with its axes

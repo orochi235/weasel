@@ -3,13 +3,15 @@
  * the canvas with the devtools hook, installing the hook first. A canvas that
  * never takes it keeps no root, no history record and no coord trace.
  */
+import { DEBUG_FEATURES } from '@weasel-js/core';
 import type {
   CanvasExtensionApi, CanvasInspection, ContributionDepReader, CoordTraceEntry, DebugFlags, Scene, SurfaceContribution,
 } from '@weasel-js/core';
 import { createDispatchTrace, createTraceRing } from '@weasel-js/routing';
 import { installDevtoolsHook, type WeaselDevtoolsHook } from './hook';
+import { followRing, followTrace } from './followRing';
 import { recordHistory } from './history';
-import type { DevtoolsHistoryRecord } from './protocol';
+import type { DevtoolsHistoryRecord, DevtoolsOverlays } from './protocol';
 import { describeRegistry } from './registry';
 import { createDevtoolsRoot, type DevtoolsRoot, type DevtoolsRootSource } from './root';
 
@@ -20,7 +22,10 @@ function labelOf(el: HTMLElement | null, framed: string | null | undefined): str
     || el?.parentElement?.closest('[aria-label]')?.getAttribute('aria-label') || '';
 }
 
-function dimensionOf(scene: Scene<unknown, string, unknown> | null): '2d' | '3d' {
+/** A canvas with a 3D camera is 3D, empty or not; failing one, its first root node's pose says. */
+function dimensionOf(scene: Scene<unknown, string, unknown> | null, deps: ContributionDepReader): '2d' | '3d' {
+  // `camera3d` is kernel3d's dep, which core's dep names know only where kernel3d is loaded.
+  if ((deps.get as (name: string) => unknown)('camera3d')) return '3d';
   const first = scene?.roots[0];
   const pose = first ? scene?.get(first)?.pose : undefined;
   return typeof (pose as { position?: { z?: unknown } } | undefined)?.position?.z === 'number' ? '3d' : '2d';
@@ -29,6 +34,14 @@ function dimensionOf(scene: Scene<unknown, string, unknown> | null): '2d' | '3d'
 /** What `get-registry` reports of the dep registry, as one comparable string; null for one that cannot list itself. */
 function depListingKey(deps: ReturnType<CanvasInspection['deps']>): string | null {
   return deps.list?.().map((d) => `${d.name}:${d.depth}:${d.stacked}`).join('\u0000') ?? null;
+}
+
+/** The debug flags a panel's override lays over the canvas: its feature flags, never another `DebugFlags` key. */
+function overrideFlags(o: { overlays: DevtoolsOverlays; highlight: readonly string[] }): DebugFlags {
+  const flags: DebugFlags = {};
+  for (const f of DEBUG_FEATURES) if (typeof o.overlays[f] === 'boolean') flags[f] = o.overlays[f];
+  if (o.highlight.length) flags.highlight = o.highlight;
+  return flags;
 }
 
 /** What a canvas reads before its dispatcher, or its inspection, has published its own. */
@@ -40,19 +53,27 @@ const NO_PROBES: ReadonlyMap<string, () => unknown> = new Map();
 export function canvasRoot(api: CanvasExtensionApi, deps: ContributionDepReader): { root: DevtoolsRoot; stop(): void } {
   const inspection = (): CanvasInspection | undefined => deps.get('inspection');
   const scene = (): Scene<unknown, string, unknown> | null => deps.get('scene') ?? null;
-  const history = createTraceRing<DevtoolsHistoryRecord>();
+  // Each scene gets a ring of its own, so a swapped scene's steps never sit beside the new one's position.
+  let historyRing = createTraceRing<DevtoolsHistoryRecord>();
+  const history = followRing<DevtoolsHistoryRecord>(() => historyRing);
+  const trace = followTrace(() => deps.get('dispatchTrace') ?? NO_TRACE);
+  const coords = followRing<CoordTraceEntry>(() => inspection()?.coords() ?? NO_COORDS);
   let recorded: Scene<unknown, string, unknown> | null = null;
   let stopRecording: (() => void) | null = null;
   const followHistory = (): void => {
     const s = scene();
     if (s === recorded) return;
     stopRecording?.();
+    if (recorded) {
+      historyRing = createTraceRing<DevtoolsHistoryRecord>();
+      history.sync();
+    }
     recorded = s;
-    stopRecording = s ? recordHistory(s.history, history) : null;
+    stopRecording = s ? recordHistory(s.history, historyRing) : null;
   };
   const source: DevtoolsRootSource = {
     label: () => labelOf(api.element, inspection()?.label()),
-    get dimension() { return dimensionOf(scene()); },
+    get dimension() { return dimensionOf(scene(), deps); },
     scene,
     selection: () => (deps.get('selection')?.current as readonly string[] | undefined) ?? [],
     select: (ids) => deps.get('selection')?.set([...ids] as never),
@@ -60,13 +81,11 @@ export function canvasRoot(api: CanvasExtensionApi, deps: ContributionDepReader)
     activeTool: () => inspection()?.tools().active ?? null,
     tools: () => Object.keys(inspection()?.tools().registry ?? {}),
     setTool: (id) => inspection()?.tools().setActive(id),
-    get trace() { return deps.get('dispatchTrace') ?? NO_TRACE; },
-    get coords() { return inspection()?.coords() ?? NO_COORDS; },
+    trace,
+    coords,
     frame: () => api.getDebug()?.snapshot().frame ?? null,
     overlays: () => inspection()?.debug() ?? null,
-    setOverride: (o) => inspection()?.setDebugOverride(o && ({
-      ...o.overlays, ...(o.highlight.length ? { highlight: o.highlight } : {}),
-    } as DebugFlags)),
+    setOverride: (o) => inspection()?.setDebugOverride(o && overrideFlags(o)),
     registry() {
       const i = inspection();
       if (!i) throw new Error('this canvas offers no inspection');
@@ -103,7 +122,10 @@ export function canvasRoot(api: CanvasExtensionApi, deps: ContributionDepReader)
   const root = createDevtoolsRoot(source);
   followHistory();
   const offScene = inspection()?.subscribe((change) => { if (change === 'scene') followHistory(); });
-  return { root, stop: () => { offScene?.(); stopRecording?.(); } };
+  // A dispatcher republishes `dispatchTrace` when its trace changes; the registry says so. The coord trace is
+  // the inspection's own for life once made, so it needs no such call, which would make it.
+  const offDeps = inspection()?.deps().subscribe?.(() => trace.sync());
+  return { root, stop: () => { offScene?.(); offDeps?.(); stopRecording?.(); } };
 }
 
 /** Register the canvas behind `api` with `hook`. Returns the removal. */

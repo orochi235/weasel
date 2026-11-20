@@ -102,6 +102,27 @@ describe('the background relay', () => {
     expect(content.closed).toBe(true);
   });
 
+  it('names the panel’s session in the bye it sends when the panel goes', () => {
+    const { page, panel } = setup();
+    const content = page(1);
+    const p = panel(1);
+    p.postMessage({ type: 'yo', protocol: P, session: 's1' });
+    p.disconnect();
+    expect(content.received.at(-1)).toEqual({ type: 'bye', protocol: P, session: 's1' });
+  });
+
+  it('passes on another session’s sup, which tells the panel it was replaced, and drops the rest of its traffic', () => {
+    const { page, panel } = setup();
+    const content = page(1);
+    const p = panel(1);
+    p.postMessage({ type: 'yo', protocol: P, session: 'mine' });
+    content.postMessage({ ...sup(root('r')), session: 'mine' });
+    content.postMessage({ type: 'result', protocol: P, requestId: 1, result: null, session: 'theirs' });
+    content.postMessage({ ...sup(root('r')), session: 'theirs' });
+    expect(p.received.map((m) => (m as { session?: string }).session)).toEqual(['mine', 'theirs']);
+    expect(p.received.at(-1)).toMatchObject({ type: 'sup' });
+  });
+
   it('tells the panel a frame’s roots are gone when its content script goes', () => {
     const { page, panel } = setup();
     const p = panel(1);

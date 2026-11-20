@@ -19,6 +19,28 @@ describe('gestureRouteSegments', () => {
     expect(texts('[initial] keyDown(Escape)')).toHaveLength(2);
   });
 
+  it('draws an omitted key as the wildcard, not as the * key', () => {
+    const { container } = render(<GestureRoute route="[initial] keyDown" />);
+    expect(container.querySelector('kbd')).toBeNull();
+    expect(container.textContent).toContain('(*)');
+  });
+
+  it("puts a key route's optional modifiers in the chord, apart from the key", () => {
+    const { container } = render(<GestureRoute route="[initial] keyDown(z?shift)" />);
+    expect(container.textContent).not.toContain('?shift');
+    expect(texts('[initial] keyDown(z?shift)')).toEqual(['initial', '<node>', expect.stringMatching(/^\?.+$/)]);
+  });
+
+  it("shows a hover's held slot, required or optional", () => {
+    expect(texts('[*] hover +held')).toContain('+held');
+    expect(texts('[*] hover ?held')).toContain('?held');
+    expect(texts('[*] hover')).not.toContain('+held');
+  });
+
+  it('draws a route its grammar rejects as its own text rather than throwing', () => {
+    expect(texts('[initial] dblTap => node')).toEqual(['[initial] dblTap => node']);
+  });
+
   it('chevrons every segment but the last', () => {
     const caps = gestureRouteSegments('[initial] click => handle +shift').map((seg) => seg.endCap);
     expect(caps).toEqual(['chevron', 'chevron', 'chevron', undefined]);

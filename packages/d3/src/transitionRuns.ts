@@ -5,14 +5,18 @@ import type { TweenJob } from './transitionTweens';
 
 /** What each item of one transition has running: its tweens, its pending delay, and its live-item entry. */
 export interface ItemRuns {
-  add(i: number, handle: AnimationHandle): void;
   /** Run `fn` after `ms`, unless item `i` is stopped first. */
   wait(i: number, ms: number, fn: () => void): void;
   /**
-   * After `delayMs`, unless `canceled()` by then, interrupt other chains on item `i`'s node and
-   * start its `jobs`, calling `onDone` once every one has finished.
+   * After `delayMs`, unless `canceled()` by then, build item `i`'s jobs with `prepare` (null: it
+   * has gone), interrupt other chains on its node and start them, calling `onDone` once every
+   * one has finished. A job stopped short of its
+   * end from outside (`animator.cancelKey`, `cancelAll`, a tick that threw) stops the item
+   * through `stops[i]`, as an interrupt, since that job will never finish.
    */
-  launch(i: number, jobs: readonly TweenJob[], delayMs: number, canceled: () => boolean, onDone: () => void): void;
+  launch(
+    i: number, prepare: () => readonly TweenJob[] | null, delayMs: number, canceled: () => boolean, onDone: () => void,
+  ): void;
   /** Register item `i` as running on its node, under the chain `root()` names. */
   track(i: number): void;
   untrack(i: number): void;
@@ -30,30 +34,49 @@ export function createItemRuns(
   stops: readonly (() => void)[],
   root: () => object,
 ): ItemRuns {
-  const handles = new Map<number, AnimationHandle[]>();
+  /** Each item's running tweens; `gone` once the animator has stopped one itself. */
+  const handles = new Map<number, Array<{ handle: AnimationHandle | null; gone: boolean }>>();
   const pendingDelays = new Map<number, () => void>();
   const untrack = (i: number): void => untrackItem(animator, keys[i], stops[i]);
   const runs: ItemRuns = {
-    add(i, handle) {
-      const list = handles.get(i) ?? [];
-      list.push(handle);
-      handles.set(i, list);
-    },
     wait(i, ms, fn) {
       pendingDelays.set(i, after(ms, () => {
         pendingDelays.delete(i);
         fn();
       }));
     },
-    launch(i, jobs, delayMs, canceled, onDone) {
-      let jobsLeft = jobs.length;
-      const jobDone = (): void => {
-        if (--jobsLeft === 0) onDone();
-      };
+    launch(i, prepare, delayMs, canceled, onDone) {
       const spawn = (): void => {
         if (canceled()) return;
+        const jobs = prepare();
+        if (!jobs) return;
+        let jobsLeft = jobs.length;
+        const jobDone = (): void => {
+          if (--jobsLeft === 0) onDone();
+        };
         interruptNode(animator, keys[i], root());
-        for (const job of jobs) runs.add(i, job(jobDone));
+        const list = handles.get(i) ?? [];
+        handles.set(i, list);
+        for (const job of jobs) {
+          const run: { handle: AnimationHandle | null; gone: boolean } = { handle: null, gone: false };
+          list.push(run);
+          // A finished tween stays on the animator's table until its frame is done, so a chained
+          // one starting from this `onDone` under the same key retires it, as a cancel: gone first.
+          run.handle = job(() => {
+            run.gone = true;
+            jobDone();
+          }, () => {
+            if (run.gone) return;
+            // Marked first: the stop below cancels this item's handles, and this one is already off the table.
+            run.gone = true;
+            stops[i]();
+          });
+          // Stopped while this one started: it may have missed that stop's cancel, and the rest never start.
+          if (handles.get(i) !== list) {
+            run.handle.cancel();
+            break;
+          }
+        }
       };
       if (delayMs > 0) runs.wait(i, delayMs, spawn);
       else spawn();
@@ -63,8 +86,14 @@ export function createItemRuns(
     stop(i) {
       pendingDelays.get(i)?.();
       pendingDelays.delete(i);
-      for (const h of handles.get(i) ?? []) h.cancel();
+      const list = handles.get(i) ?? [];
       handles.delete(i);
+      for (const run of list) {
+        if (!run.gone) {
+          run.gone = true;
+          run.handle?.cancel();
+        }
+      }
       untrack(i);
     },
   };

@@ -1,0 +1,44 @@
+{
+ "pairs": [
+  [
+   1,
+   4
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   2
+  ],
+  [
+   4,
+   9
+  ],
+  [
+   5,
+   7
+  ]
+ ],
+ "a": [
+  "An item only ends through its tween's `onDone`, so any other stop of the tween hangs the transition",
+  "Transitions on two scenes sharing one animator interrupt each other's nodes with the same id",
+  "A second transition on the same selection snaps every node back to its pre-join pose",
+  "A dropped item counts as done, so a later `.remove()` or chained transition acts on an interrupted node",
+  "A failed `join()` still cancels pending exit removals, leaving those nodes in the scene for good",
+  "`on('start')` fires when the transition is scheduled, before any delay has elapsed"
+ ],
+ "b": [
+  "A second transition with a different name on the same selection leaves the pose stuck at the prior pose",
+  "A chained transition's deferred item runs after that item was interrupted, and interrupts the newer transition",
+  "Calling `.remove()` after `.end()` deletes nodes that were already interrupted",
+  "Two custom tweens with the same name on one transition make it hang: `end()` never resolves",
+  "One animator shared by two scenes lets their transitions interrupt each other, because tracking and cancel keys ignore the scene",
+  "When `schedule` throws for a missing `lerp`, the transition is left scheduled, so a retried `end()` never settles",
+  "`delay(NaN)` silently starts at once, while `duration(NaN)` throws",
+  "`'start'` fires before an item's delay, and starting values are read before the delay too",
+  "An entering datum's `.pose()` is called twice, so a random pose animates instead of snapping in",
+  "`join()` cancels pending removals before it throws on a missing pose"
+ ]
+}

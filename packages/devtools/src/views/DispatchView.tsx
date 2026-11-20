@@ -27,7 +27,7 @@ const KEEP = 200;
 export function DispatchView({ client, rootId }: DevtoolsViewProps): ReactElement {
   const follower = useMemo(() => followTrace(client, rootId), [client, rootId]);
   const [entries, setEntries] = useState<Sequenced<TraceLogEntry>[]>([]);
-  const [coords, setCoords] = useState<CoordEntry[]>([]);
+  const [coords, setCoords] = useState<Sequenced<CoordEntry>[]>([]);
   const [live, setLive] = useState<DispatchRecord | null>(null);
   const [now, setNow] = useState(() => Date.now());
   // Unhandled inputs are every idle pointer move and every wheel over chrome, so they start hidden.
@@ -46,7 +46,10 @@ export function DispatchView({ client, rootId }: DevtoolsViewProps): ReactElemen
           const read = sequenced(slice.entries as unknown as TraceLogEntry[], slice.cursor);
           setEntries((prev) => [...prev, ...read].slice(-KEEP));
         }
-        if (slice.coords?.length) setCoords((prev) => [...prev, ...(slice.coords as unknown as CoordEntry[])].slice(-KEEP));
+        if (slice.coords?.length) {
+          const read = sequenced(slice.coords as unknown as CoordEntry[], slice.coordCursor!);
+          setCoords((prev) => [...prev, ...read].slice(-KEEP));
+        }
         setLive(slice.live as unknown as DispatchRecord | null);
         setNow(Date.now());
         setError(null);

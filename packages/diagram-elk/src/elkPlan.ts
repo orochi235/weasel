@@ -53,7 +53,9 @@ export interface ElkPlan extends LayoutPlan {
    *  the same route without its two ends. */
   routes: ReadonlyMap<string, readonly Vec2[]>;
   /** Pinned nodes ELK put somewhere else. Only the first pin holds: the
-   *  layout is translated onto it, and ELK has no way to be told the rest. */
+   *  layout is translated onto it, and ELK has no way to be told the rest.
+   *  An edge at one, or at a cluster holding one, gets no route, label point
+   *  or port back, since ELK routed it to where it put the node. */
   unheld: ReadonlySet<string>;
 }
 
@@ -84,14 +86,22 @@ function shortIds(options: Readonly<Record<string, string>>): Record<string, str
 
 let bundled: Promise<ElkRunner> | undefined;
 
-/** elkjs's bundled build, imported the first time a layout needs it. */
+/** elkjs's bundled build, imported the first time a layout needs it. A failed import is not kept, so the next layout
+ *  tries again: a chunk that failed to load while offline loads once the network is back. */
 function defaultElk(): Promise<ElkRunner> {
-  bundled ??= import('elkjs/lib/elk.bundled.js').then(({ default: ELKConstructor }) => new ELKConstructor());
+  bundled ??= import('elkjs/lib/elk.bundled.js').then(
+    ({ default: ELKConstructor }) => new ELKConstructor(),
+    (error: unknown) => {
+      bundled = undefined;
+      throw error;
+    },
+  );
   return bundled;
 }
 
 /** Lay `graph` out with ELK: where each participant goes, each edge's route
- *  and the port at either end, each label's place, and each cluster's box. */
+ *  and the port at either end, each label's place, and each cluster's box.
+ *  Rejects a graph naming two of its participants and clusters by one id. */
 export async function elkPlan(graph: Graph, opts: ElkLayoutOptions = {}): Promise<ElkPlan> {
   const { root, index } = toElk(graph, elkRootOptions(opts));
   const elk = opts.elk ?? (await defaultElk());
@@ -132,6 +142,11 @@ function planFrom(graph: Graph, placed: ElkPlacement, opts: ElkLayoutOptions): E
   const clusters = new Map<string, Bounds>();
   for (const [id, box] of placed.clusters) clusters.set(id, { ...box, ...shift(box) });
 
+  // ELK routed every edge to where it placed each end. A pin it could not hold stays put, and so does a cluster's box
+  // around one, so an edge at either runs straight and takes no port from ELK's route, as `layered` leaves it.
+  const displaced = new Set(unheld);
+  for (const g of graph.clusters ?? []) if (g.members.some((m) => unheld.has(m))) displaced.add(g.id);
+
   const routes = new Map<string, Vec2[]>();
   const waypoints = new Map<string, Vec2[]>();
   const labels = new Map<string, Vec2>();
@@ -139,6 +154,7 @@ function planFrom(graph: Graph, placed: ElkPlacement, opts: ElkLayoutOptions): E
   for (const edge of drawnEdges(graph)) {
     const elkRoute = placed.routes.get(edge.id);
     if (edge.authored || elkRoute === undefined || elkRoute.length < 2 || drawnBySelfLoop(edge)) continue;
+    if (displaced.has(edge.from) || displaced.has(edge.to)) continue;
     const route = elkRoute.map(shift);
     routes.set(edge.id, route);
     if (route.length > 2) waypoints.set(edge.id, route.slice(1, -1));

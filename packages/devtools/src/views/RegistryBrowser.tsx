@@ -55,7 +55,7 @@ export interface RegistryBrowserProps {
 
 const categoryKey = (id: string) => `cat:${id}`;
 const groupKey = (id: string) => `group:${id}`;
-const leafKey = (category: string, id: string) => `${category}/${id}`;
+const leafKey = (category: string, id: string) => `leaf:${JSON.stringify([category, id])}`;
 
 const countBadge = (count: number, className?: string) => (
   <Badge className={className} shape="pill" size="sm" variant="solid">{count}</Badge>

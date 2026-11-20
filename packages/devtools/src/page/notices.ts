@@ -19,6 +19,12 @@ export function createNotices(
   send: (m: PageMessage) => void,
 ): Notices {
   const following = new Map<string, () => void>();
+  /** Each followed root's info as last announced: a canvas's label or dimension can change after it registers. */
+  const announced = new Map<string, string>();
+  const infoKey = (root: DevtoolsRoot): string => {
+    const { label, dimension } = root.info();
+    return `${dimension}\u0000${label}`;
+  };
   const pending = new Map<string, Set<DevtoolsArea>>();
   let scheduled = false;
 
@@ -30,6 +36,11 @@ export function createNotices(
     for (const [rootId, areas] of batch) {
       const root = rootOf(rootId);
       if (!root || !following.has(rootId)) continue;
+      const key = infoKey(root);
+      if (key !== announced.get(rootId)) {
+        announced.set(rootId, key);
+        send({ type: 'root-added', protocol: DEVTOOLS_PROTOCOL, root: root.info() });
+      }
       const versions: Partial<Record<DevtoolsArea, number>> = {};
       for (const area of areas) versions[area] = root.version(area);
       send({ type: 'changed', protocol: DEVTOOLS_PROTOCOL, rootId, areas: versions });
@@ -39,6 +50,7 @@ export function createNotices(
   return {
     follow(root) {
       if (following.has(root.id)) return;
+      announced.set(root.id, infoKey(root));
       const releaseTrace = root.source.trace.watch();
       const releaseCoords = root.source.coords.watch();
       const releaseHistory = root.source.history?.watch();
@@ -57,6 +69,7 @@ export function createNotices(
       following.get(rootId)?.();
       following.delete(rootId);
       pending.delete(rootId);
+      announced.delete(rootId);
     },
     ids: () => [...following.keys()],
   };

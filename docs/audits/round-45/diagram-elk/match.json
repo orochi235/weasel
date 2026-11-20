@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   3,
+   1
+  ]
+ ],
+ "a": [
+  "Edges at an unheld pin keep ELK's route, label point, and ports, which point to where ELK put the pin, not where it stays",
+  "A reordering cluster's `ordered` member order never reaches ELK",
+  "An edge label's `offset` is dropped, so ELK leaves room for the label in the wrong place",
+  "A failed import of elkjs's bundled build is cached, so every later layout fails too",
+  "The README documents an `ElkPlan.groups` field, but the field is `clusters`"
+ ],
+ "b": [
+  "Routes, waypoints and ports for edges touching an unheld pinned node follow ELK's position, not the node's",
+  "A failed load of the bundled ELK is cached, so every later layout rejects",
+  "A cluster sharing an id with a node gives both the same ELK id"
+ ]
+}

@@ -53,7 +53,7 @@ export { routeToSpec } from './grammar/routeToSpec';
 export { routeGestureForSpecKind, specKindForRouteGesture } from './grammar/specKinds';
 
 // Plain-English route descriptions
-export { describeRoute, describeRouteParts, ROUTE_TERMS, ROUTE_FIELD_DEFINITIONS } from './grammar/describeRoute';
+export { describeRoute, describeRouteParts, foldKeyRoute, ROUTE_TERMS, ROUTE_FIELD_DEFINITIONS } from './grammar/describeRoute';
 export type { DescribeRouteOptions, RouteDescriptionPart, RouteTermLabel, RouteFieldName } from './grammar/describeRoute';
 
 // Modifier-key reflection helpers

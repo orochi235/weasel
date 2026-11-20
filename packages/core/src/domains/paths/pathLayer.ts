@@ -89,8 +89,14 @@ export function createPathLayer<T>(opts: CreatePathLayerOptions<T>): RenderLayer
     colorOverrides, trimOverrides,
     now = (): number => (typeof performance !== 'undefined' ? performance.now() : Date.now()),
   } = opts;
-  const warned = new Set<string>();
+  // The mismatches the last draw warned of; each draw keeps only the ones it meets again.
+  let warned = new Set<string>();
+  let meeting = new Set<string>();
   const dev = isDev();
+  const warnOnce = (key: string, message: string): void => {
+    meeting.add(key);
+    if (!warned.has(key)) console.warn(message);
+  };
   const sources = paintOverrideSources({ colorOverrides, trimOverrides });
 
   return {
@@ -129,13 +135,10 @@ export function createPathLayer<T>(opts: CreatePathLayerOptions<T>): RenderLayer
           if (vColors.length === expectedLen) {
             useVColors = vColors;
           } else if (dev) {
-            const key = `${id}:${nodeKey}:fill`;
-            if (!warned.has(key)) {
-              warned.add(key);
-              console.warn(
-                `[createPathLayer ${id}] node ${nodeKey}: fill vertexColors length ${vColors.length}, expected ${expectedLen}; dropping`,
-              );
-            }
+            warnOnce(
+              `${nodeKey}:fill`,
+              `[createPathLayer ${id}] node ${nodeKey}: fill vertexColors length ${vColors.length}, expected ${expectedLen}; dropping`,
+            );
           }
         }
 
@@ -144,13 +147,10 @@ export function createPathLayer<T>(opts: CreatePathLayerOptions<T>): RenderLayer
           if (strokeVColors.length === expectedLen) {
             useStrokeVColors = strokeVColors;
           } else if (dev) {
-            const key = `${id}:${nodeKey}:stroke`;
-            if (!warned.has(key)) {
-              warned.add(key);
-              console.warn(
-                `[createPathLayer ${id}] node ${nodeKey}: stroke vertexColors length ${strokeVColors.length}, expected ${expectedLen}; dropping`,
-              );
-            }
+            warnOnce(
+              `${nodeKey}:stroke`,
+              `[createPathLayer ${id}] node ${nodeKey}: stroke vertexColors length ${strokeVColors.length}, expected ${expectedLen}; dropping`,
+            );
           }
         }
 
@@ -166,13 +166,10 @@ export function createPathLayer<T>(opts: CreatePathLayerOptions<T>): RenderLayer
           if (strokeVWidths.length === anchorCount) {
             useStrokeVWidths = strokeVWidths;
           } else if (dev) {
-            const key = `${id}:${nodeKey}:strokeWidths`;
-            if (!warned.has(key)) {
-              warned.add(key);
-              console.warn(
-                `[createPathLayer ${id}] node ${nodeKey}: stroke vertexWidths length ${strokeVWidths.length}, expected ${anchorCount}; dropping`,
-              );
-            }
+            warnOnce(
+              `${nodeKey}:strokeWidths`,
+              `[createPathLayer ${id}] node ${nodeKey}: stroke vertexWidths length ${strokeVWidths.length}, expected ${anchorCount}; dropping`,
+            );
           }
         }
 
@@ -192,6 +189,8 @@ export function createPathLayer<T>(opts: CreatePathLayerOptions<T>): RenderLayer
           ...(useVColors != null ? { vertexColors: useVColors as number[] } : {}),
         });
       }
+      [warned, meeting] = [meeting, warned];
+      meeting.clear();
       // World-space commands; drawLayers wraps in viewToMat3 automatically.
       return children;
     },

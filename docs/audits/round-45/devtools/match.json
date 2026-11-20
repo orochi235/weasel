@@ -1,0 +1,35 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   3
+  ],
+  [
+   3,
+   2
+  ]
+ ],
+ "a": [
+  "A window-transport client resolves its pending requests with another panel's results, and hangs once its session is replaced",
+  "`close()` leaves the client half-open when sending `bye` throws",
+  "Turning coord records off and back on while a read is in flight loses the restart from the oldest record",
+  "A protocol-mismatch error shows \"Connecting…\" in the panel body forever",
+  "`tabs={[]}` renders an empty tab bar with a selected key that names no tab",
+  "The story asks for a `rect` tool core does not have",
+  "The story's canvas has no editing selection, so the panel's Select steering does nothing there"
+ ],
+ "b": [
+  "Two clients on one in-page transport get each other's replies, and one panel's `bye` ends the other's session",
+  "`close()` and `open()` leave the client broken when the transport's `send` throws, though `request()` handles that case",
+  "The panel's body says \"Connecting…\" after the connection has failed",
+  "Turning coords off and back on during a read loses the restart from the oldest record"
+ ]
+}

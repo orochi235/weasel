@@ -25,22 +25,37 @@ type Edit = { before: PolygonPath; after: PolygonPath; origins: readonly (PointO
 
 const swapped = (w: VertexWidth): VertexWidth => (typeof w === 'number' ? w : { left: w.right, right: w.left });
 
+const sideSet = (entry: VertexWidth | undefined, side: 'left' | 'right'): boolean => {
+  const v = typeof entry === 'number' ? entry : entry?.[side];
+  return typeof v === 'number' && Number.isFinite(v) && v >= 0;
+};
+
+/** The entry `t` of the way from `a` to `b`, an unset side reading `fallback`;
+ *  a side neither sets stays unset, so it goes on following the stroke's width. */
+function blendWidths(a: VertexWidth | undefined, b: VertexWidth | undefined, t: number, fallback: number): VertexWidth {
+  const ha = vertexHalfWidths(a, fallback);
+  const hb = vertexHalfWidths(b, fallback);
+  const side = (s: 'left' | 'right') =>
+    sideSet(a, s) || sideSet(b, s) ? lerp(ha[s], hb[s], t) : Number.NaN;
+  const left = side('left');
+  const right = side('right');
+  if (Number.isNaN(left) && Number.isNaN(right)) return Number.NaN;
+  if (Number.isNaN(left) || Number.isNaN(right)) return { left, right };
+  return vertexWidthFromSides(left, right);
+}
+
 /**
  * A stroke's `vertexWidths` through an edit. A kept anchor keeps its entry,
  * its sides traded where its subpath now runs the other way; a made one
- * blends the sides of the two it came between, an unset side reading the
- * stroke's own `width`; a deleted one's entry goes. Unset stays `NaN`.
+ * blends the two it came between ({@link blendWidths}); a deleted one's
+ * entry goes. Unset stays `NaN`.
  */
 function carryWidths(widths: readonly VertexWidth[], width: unknown, { before, after, origins }: Edit): VertexWidth[] {
   const fallback = typeof width === 'number' ? width : Number.NaN;
   return anchorOriginsOf(before, after, origins).map((o) => {
     if (!o) return Number.NaN;
     let entry: VertexWidth = widths[o.a] ?? Number.NaN;
-    if (o.t !== 0 && o.b !== o.a) {
-      const a = vertexHalfWidths(widths[o.a], fallback);
-      const b = vertexHalfWidths(widths[o.b], fallback);
-      entry = vertexWidthFromSides(lerp(a.left, b.left, o.t), lerp(a.right, b.right, o.t));
-    }
+    if (o.t !== 0 && o.b !== o.a) entry = blendWidths(widths[o.a], widths[o.b], o.t, fallback);
     return o.reversed ? swapped(entry) : entry;
   });
 }

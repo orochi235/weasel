@@ -5,7 +5,7 @@ import { createTransitionHandle, type StageSettings } from './transitionHandle';
 import { createTransitionProgress } from './transitionProgress';
 import { createStageRemoval } from './transitionRemoval';
 import { createItemRuns } from './transitionRuns';
-import { customTweenJob, poseTweenJob, type TweenJob } from './transitionTweens';
+import { customTweenJob, holdJob, poseTweenJob, type TweenJob } from './transitionTweens';
 import type { D3Transition } from './types';
 
 interface TransitionCtx<TData, TPose> {
@@ -14,7 +14,10 @@ interface TransitionCtx<TData, TPose> {
   geometry: PoseDescriptor<TPose>;
   ids: readonly NodeId[];
   data: readonly TData[];
-  priorPoses: ReadonlyMap<NodeId, TPose>;
+  /** Each node's pose before the join, shared by the selection and every one filtered from it.
+   *  The first transition to start on a node takes its entry, so a later one tweens from where
+   *  the node stands. */
+  priorPoses: Map<NodeId, TPose>;
   /** `scene.incarnation` of each id when the selection was made: the nodes
    *  this transition belongs to, as opposed to later ones reusing an id. */
   incarnations: ReadonlyMap<NodeId, number | undefined>;
@@ -27,7 +30,7 @@ interface Stage {
   root: Stage;
   schedule(deferReady?: boolean): void;
   /** Run `fn` once item `i` has finished this transition. Never runs if the
-   *  transition is interrupted first. */
+   *  transition or the item is interrupted, before or after. */
   whenItemDone(i: number, fn: () => void, defer?: boolean): void;
   interrupt(): void;
   /** Stop item `i` in this transition and every one chained after it, as if
@@ -37,10 +40,10 @@ interface Stage {
 
 /**
  * A transition is *lazy*: tweens don't spawn until `.end()` is called on it or
- * on a transition chained to it. The first transition in a chain tweens each
- * node from `priorPoses[id]` → the joined pose (or its `.pose()` target); a
- * chained one tweens from wherever the previous one left the node, and only
- * when it has a `.pose()`. {@link transitionCancelKey} names its tweens.
+ * on a transition chained to it. The first transition to start on a node after
+ * its join tweens it from `priorPoses[id]` → the joined pose (or its `.pose()`
+ * target), and takes that entry; any other tweens from wherever the node stands,
+ * and only when it has a `.pose()`. {@link transitionCancelKey} names its tweens.
  */
 export function createTransition<TData, TPose>(
   ctx: TransitionCtx<TData, TPose>,
@@ -48,47 +51,76 @@ export function createTransition<TData, TPose>(
   return makeStage(ctx, null, { duration: 250, easing: undefined }).handle;
 }
 
+/** Where the first transition on a node after its join tweens it: from its prior pose, by
+ *  default to its joined one. */
+interface Seed<TPose> {
+  from: TPose;
+  joined: TPose;
+}
+
 /**
- * The first transition of a chain heads by default for the post-join pose: record it, then
- * write every from-pose before any tween spawns, or non-delayed tweens flash one frame of the
- * joined pose and delayed ones hold it for the whole delay. Costs one extra setPose per node in
- * the undo log.
+ * The first transition on a node after its join heads by default for the post-join pose: take
+ * the node's prior pose, record the joined one, then write the prior pose before any tween
+ * spawns, or non-delayed tweens flash one frame of the joined pose and delayed ones hold it for
+ * the whole delay. Costs one extra setPose per node in the undo log.
  */
 function seedFromPoses<TPose>(
   scene: Scene<unknown, string, TPose>,
   ids: readonly NodeId[],
-  priorPoses: ReadonlyMap<NodeId, TPose>,
+  priorPoses: Map<NodeId, TPose>,
   present: (i: number) => boolean,
-): Map<NodeId, TPose> {
-  const joinedPoses = new Map<NodeId, TPose>();
-  ids.forEach((id, i) => {
-    if (present(i)) joinedPoses.set(id, scene.get(id)!.pose);
-  });
+): Map<NodeId, Seed<TPose>> {
+  const seeds = new Map<NodeId, Seed<TPose>>();
   ids.forEach((id, i) => {
     const from = priorPoses.get(id);
-    if (from !== undefined && present(i)) scene.setPose(id, from);
+    if (from === undefined || !present(i)) return;
+    priorPoses.delete(id);
+    // One already at its prior pose, as an exiting node is, has no move to make.
+    const joined = scene.get(id)!.pose;
+    if (from !== joined) seeds.set(id, { from, joined });
   });
-  return joinedPoses;
+  for (const [id, { from }] of seeds) scene.setPose(id, from);
+  return seeds;
+}
+
+/** Whether the first transition on these nodes would tween one: some node waiting to be
+ *  seeded stands somewhere other than its prior pose. */
+function seedsAny<TPose>(
+  scene: Scene<unknown, string, TPose>,
+  ids: readonly NodeId[],
+  priorPoses: ReadonlyMap<NodeId, TPose>,
+  present: (i: number) => boolean,
+): boolean {
+  return ids.some((id, i) => {
+    const from = priorPoses.get(id);
+    return from !== undefined && present(i) && from !== scene.get(id)!.pose;
+  });
+}
+
+/** Throws where a transition would tween a pose with no `lerp` to tween it by. */
+function refuseWithoutLerp(geometry: PoseDescriptor<unknown>): void {
+  if (geometry.lerp) return;
+  throw new Error(
+    'd3Bind.transition: its pose descriptor has no `lerp` — pass `poseDescriptor` with one in D3BindOptions',
+  );
 }
 
 /**
- * Where item `i` tweens its pose. A chained transition goes from where the node stands to its
- * `.pose()`, if any; the first of a chain from the item's prior pose to its `.pose()`, or to the
- * joined pose without one, and is null when the item has no prior or joined pose.
+ * Where item `i` tweens its pose. A node this transition seeded goes from its prior pose to its
+ * `.pose()`, or to the joined pose without one; any other from where it stands to its `.pose()`,
+ * if any.
  */
 function itemEnds<TData, TPose>(
   ctx: TransitionCtx<TData, TPose>,
   i: number,
   poseFn: ((d: TData, i: number) => TPose) | null,
-  joinedPoses: ReadonlyMap<NodeId, TPose> | null,
-): { from: TPose; to: TPose | undefined } | null {
+  seeds: ReadonlyMap<NodeId, Seed<TPose>>,
+): { from: TPose; to: TPose | undefined } {
   const id = ctx.ids[i];
-  const target = poseFn ? (): TPose => poseFn(ctx.data[i], i) : null;
-  if (!joinedPoses) return { from: ctx.scene.get(id)!.pose, to: target?.() };
-  const from = ctx.priorPoses.get(id);
-  const joined = joinedPoses.get(id);
-  if (from === undefined || joined === undefined) return null;
-  return { from, to: target ? target() : joined };
+  const target = poseFn ? poseFn(ctx.data[i], i) : undefined;
+  const seed = seeds.get(id);
+  if (!seed) return { from: ctx.scene.get(id)!.pose, to: target };
+  return { from: seed.from, to: target ?? seed.joined };
 }
 
 /** Item `i`'s tweens: its pose, when it has somewhere to go, and every custom tween; `lost`
@@ -105,17 +137,31 @@ function itemJobs<TData, TPose>(
   const d = ctx.data[i];
   const jobs: TweenJob[] = [];
   if (ends.to !== undefined) {
-    jobs.push(poseTweenJob(animator, settings, transitionCancelKey(name, id), ends.from, ends.to, ctx.geometry.lerp!, (pose) => {
+    jobs.push(poseTweenJob(animator, settings, transitionCancelKey(scene, name, id), ends.from, ends.to, ctx.geometry.lerp!, (pose) => {
       if (!lost()) scene.setPose(id, pose);
     }));
   }
   for (const ct of settings.tweens) {
     jobs.push(customTweenJob(
-      animator, settings, transitionCancelKey(name, id, ct.name), ct, ct.from(d, i), ct.to(d, i),
+      animator, settings, transitionCancelKey(scene, name, id, ct.name), ct, ct.from(d, i), ct.to(d, i),
       (value) => { if (!lost()) ct.apply(d, id, value); },
     ));
   }
+  // With nothing to tween, the item still lasts its duration, as a d3 transition does.
+  if (jobs.length === 0) jobs.push(holdJob(animator, settings, transitionCancelKey(scene, name, id)));
   return jobs;
+}
+
+/** Item `i`'s delay in ms, 0 or more. A delay function answering `NaN` is warned of and starts
+ *  the item at once: by now the transition is running, too late to refuse it. */
+function itemDelay<TData>(delay: ((d: TData, i: number) => number) | null, d: TData, i: number): number {
+  if (!delay) return 0;
+  const ms = delay(d, i);
+  if (Number.isNaN(ms)) {
+    console.warn(`d3Bind.transition.delay: the delay function answered NaN for item ${i}; starting it at once`);
+    return 0;
+  }
+  return Math.max(0, ms);
 }
 
 function makeStage<TData, TPose>(
@@ -130,9 +176,9 @@ function makeStage<TData, TPose>(
   const progress = createTransitionProgress(ids.length);
   const children: Stage[] = [];
   let scheduled = false;
-  /** Where the first transition in a chain heads by default: the post-join pose. */
-  let joinedPoses = new Map<NodeId, TPose>();
-  const keys = ids.map((id) => transitionCancelKey(name, id));
+  /** The nodes this transition is the first to start on since their join. */
+  let seeds = new Map<NodeId, Seed<TPose>>();
+  const keys = ids.map((id) => transitionCancelKey(scene, name, id));
   const stops = ids.map((_, i) => (): void => stage.root.cancelItem(i, true));
   const runs = createItemRuns(ctx.animator, keys, stops, () => stage.root);
 
@@ -153,20 +199,24 @@ function makeStage<TData, TPose>(
   };
 
   const runItem = (i: number): void => {
-    if (progress.canceled || lost(i)) return;
-    const ends = itemEnds(ctx, i, settings.pose, parent ? null : joinedPoses);
-    if (!ends) return finishItem(i);
-
-    const jobs = itemJobs(ctx, settings, i, ends, () => lost(i));
-    if (jobs.length === 0) return finishItem(i);
-    progress.start();
-    const delayMs = settings.delay ? Math.max(0, settings.delay(data[i], i)) : 0;
-    runs.launch(i, jobs, delayMs, () => progress.canceled, () => finishItem(i));
+    // Dropped already: interrupted on its node while it waited its turn on a microtask.
+    if (progress.canceled || progress.done(i) || lost(i)) return;
+    const delayMs = itemDelay(settings.delay, data[i], i);
+    // Read when the delay ends, as d3 does: where the node stands then, and `start` only then.
+    // With nothing to tween it still starts on its node, interrupting the transition of its name there.
+    const prepare = (): readonly TweenJob[] | null => {
+      if (lost(i)) return null;
+      const jobs = itemJobs(ctx, settings, i, itemEnds(ctx, i, settings.pose, seeds), () => lost(i));
+      progress.start();
+      return jobs;
+    };
+    runs.launch(i, prepare, delayMs, () => progress.canceled || progress.done(i), () => finishItem(i));
   };
 
   const removal = createStageRemoval(scene, ids, {
     cancelItem: (i) => stage.root.cancelItem(i),
     whenItemDone: (i, fn) => stage.whenItemDone(i, fn),
+    dropped: (i) => progress.dropped(i),
     present,
   });
   const armRemoval = (): void => {
@@ -177,19 +227,16 @@ function makeStage<TData, TPose>(
     root: undefined as unknown as Stage,
     schedule(deferReady = false) {
       if (scheduled || progress.canceled) return;
+      // Before anything changes, so a refused transition can be started again and refused again.
+      if (!parent && seedsAny(scene, ids, priorPoses, present)) refuseWithoutLerp(ctx.geometry as PoseDescriptor<unknown>);
       scheduled = true;
       if (settings.remove) armRemoval();
-      if (!ctx.geometry.lerp) {
-        throw new Error(
-          'd3Bind.transition: its pose descriptor has no `lerp` — pass `poseDescriptor` with one in D3BindOptions',
-        );
-      }
       ids.forEach((_, i) => runs.track(i));
       if (parent) {
         parent.schedule();
         ids.forEach((_, i) => parent.whenItemDone(i, () => runItem(i), deferReady));
       } else {
-        joinedPoses = seedFromPoses(scene, ids, priorPoses, present);
+        seeds = seedFromPoses(scene, ids, priorPoses, present);
         ids.forEach((_, i) => runItem(i));
       }
       progress.settle();
@@ -216,6 +263,7 @@ function makeStage<TData, TPose>(
 
   const handle = createTransitionHandle(settings, {
     on: progress.on,
+    pose: () => refuseWithoutLerp(ctx.geometry as PoseDescriptor<unknown>),
     chain() {
       const next = makeStage(ctx, stage, { duration: settings.duration, easing: settings.easing });
       children.push(next.stage);

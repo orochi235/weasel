@@ -33,6 +33,12 @@ export function isDevtoolsEnvelope(data: unknown): data is DevtoolsEnvelope {
     && (data as { source?: unknown }).source === DEVTOOLS_ENVELOPE;
 }
 
+/** Whether `e` was posted by `target` itself rather than by another frame. Every real sender, the page and an
+ *  extension's content script, posts on the page's own window; jsdom sets no `source`, so null passes. */
+export function postedBy(e: MessageEvent, target: Window): boolean {
+  return e.source === null || e.source === target;
+}
+
 function pair<A, B>(): [DevtoolsTransport<A, B>, DevtoolsTransport<B, A>] {
   const toA = createEmitter<[m: B]>();
   const toB = createEmitter<[m: A]>();
@@ -59,7 +65,7 @@ function windowTransport<Out extends PageMessage | PanelMessage, In>(
     },
     onMessage(listener) {
       const onEvent = (e: MessageEvent): void => {
-        if (isDevtoolsEnvelope(e.data) && e.data.side !== side) listener(e.data.message as In);
+        if (postedBy(e, target) && isDevtoolsEnvelope(e.data) && e.data.side !== side) listener(e.data.message as In);
       };
       target.addEventListener('message', onEvent);
       return () => target.removeEventListener('message', onEvent);

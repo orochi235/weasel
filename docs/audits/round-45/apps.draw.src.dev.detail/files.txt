@@ -1,0 +1,11 @@
+apps/draw/src/dev/detail/BundleDetail.tsx
+apps/draw/src/dev/detail/ExportsDetail.tsx
+apps/draw/src/dev/detail/GestureDetail.tsx
+apps/draw/src/dev/detail/IconDetail.tsx
+apps/draw/src/dev/detail/KindDetail.tsx
+apps/draw/src/dev/detail/MetaDetail.tsx
+apps/draw/src/dev/detail/OpDetail.tsx
+apps/draw/src/dev/detail/RouteBadge.tsx
+apps/draw/src/dev/detail/SlotDetail.tsx
+apps/draw/src/dev/detail/shared.tsx
+apps/draw/src/dev/detail/sourceLinks.tsx

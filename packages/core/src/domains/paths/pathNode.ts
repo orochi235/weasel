@@ -47,7 +47,11 @@ export function pathNode<TData extends object, TLayer extends string>(
     kind: 'mark',
     id: asNodeId(id),
     layer: layer ?? ('default' as TLayer),
-    pose: { x, y, width, height, ...(turn ? { rotation: turn } : {}) },
+    pose: {
+      x, y, width, height,
+      ...(turn ? { rotation: turn } : {}),
+      ...(pose?.transform ? { transform: pose.transform } : {}),
+    },
     data: { ...(data ?? ({} as TData)), path },
     ...(parent !== undefined ? { parent: parent === null ? null : asNodeId(parent) } : {}),
     ...stated,

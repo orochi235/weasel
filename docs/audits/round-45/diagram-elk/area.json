@@ -1,0 +1,46 @@
+{
+ "id": "diagram-elk",
+ "commit": "04c3a6536306f9e757e77a6ab15759ff43b02241",
+ "date": "2026-11-19",
+ "files": [
+  "packages/diagram-elk/src/elkPlan.ts",
+  "packages/diagram-elk/src/fromElk.ts",
+  "packages/diagram-elk/src/index.ts",
+  "packages/diagram-elk/src/toElk.ts"
+ ],
+ "a": 5,
+ "b": 3,
+ "m": 2,
+ "distinct": 6,
+ "chapman": 7,
+ "unfound": 1,
+ "read": {
+  "A": 4,
+  "B": 4
+ },
+ "patches": 5,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "tokens": 4079424,
+  "costUsd": 3.39
+ },
+ "fixCommits": [
+  "7416da7be25928057667789b7be4e7309c7b0a10",
+  "53d6d1a586d310ce95e3b311ebee1f129e80d9b7",
+  "3d516b93ea290e7af2f89bcf172b675bfe5cc3dd",
+  "d1cffb2ce56e27948e50e20f75c67033749bdd5a",
+  "ca1b278432c7dd21de061898e344f3d1e57eff96"
+ ]
+}

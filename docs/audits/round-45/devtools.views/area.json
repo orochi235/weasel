@@ -1,0 +1,83 @@
+{
+ "id": "devtools.views",
+ "commit": "04c3a6536306f9e757e77a6ab15759ff43b02241",
+ "date": "2026-11-19",
+ "files": [
+  "packages/devtools/src/views/Bindings.tsx",
+  "packages/devtools/src/views/CoordTable.tsx",
+  "packages/devtools/src/views/DecisionPath.tsx",
+  "packages/devtools/src/views/DispatchView.module.css",
+  "packages/devtools/src/views/DispatchView.tsx",
+  "packages/devtools/src/views/FallthroughDiagram.fixtures.ts",
+  "packages/devtools/src/views/FallthroughDiagram.module.css",
+  "packages/devtools/src/views/FallthroughDiagram.stories.tsx",
+  "packages/devtools/src/views/FallthroughDiagram.tsx",
+  "packages/devtools/src/views/FrameView.module.css",
+  "packages/devtools/src/views/FrameView.tsx",
+  "packages/devtools/src/views/GestureRoute.module.css",
+  "packages/devtools/src/views/GestureRoute.stories.module.css",
+  "packages/devtools/src/views/GestureRoute.stories.tsx",
+  "packages/devtools/src/views/GestureRoute.tsx",
+  "packages/devtools/src/views/HistoryTable.tsx",
+  "packages/devtools/src/views/HistoryView.module.css",
+  "packages/devtools/src/views/HistoryView.tsx",
+  "packages/devtools/src/views/NodeDetail.tsx",
+  "packages/devtools/src/views/RegistryBrowser.module.css",
+  "packages/devtools/src/views/RegistryBrowser.tsx",
+  "packages/devtools/src/views/RegistryEntryDetail.tsx",
+  "packages/devtools/src/views/RegistryView.module.css",
+  "packages/devtools/src/views/RegistryView.tsx",
+  "packages/devtools/src/views/SceneView.module.css",
+  "packages/devtools/src/views/SceneView.tsx",
+  "packages/devtools/src/views/StateView.module.css",
+  "packages/devtools/src/views/StateView.tsx",
+  "packages/devtools/src/views/TraceTable.module.css",
+  "packages/devtools/src/views/TraceTable.tsx",
+  "packages/devtools/src/views/ValueView.module.css",
+  "packages/devtools/src/views/ValueView.tsx",
+  "packages/devtools/src/views/formatAge.ts",
+  "packages/devtools/src/views/keyName.ts",
+  "packages/devtools/src/views/note.module.css",
+  "packages/devtools/src/views/sequenced.ts",
+  "packages/devtools/src/views/useSceneTree.ts"
+ ],
+ "a": 3,
+ "b": 8,
+ "m": 1,
+ "distinct": 10,
+ "chapman": 17,
+ "unfound": 7,
+ "read": {
+  "A": 37,
+  "B": 37
+ },
+ "patches": 9,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "tokens": 15891111,
+  "costUsd": 7.95
+ },
+ "fixCommits": [
+  "0fa35fde7974690a5ac46bd9a439df9a0b23a621",
+  "7ea1a9cbc92570bf77b316819d8ec9f3c0c7559e",
+  "88d8de3246579e18b46ea194c84757cbf1be2397",
+  "8fd3d6dceb9c03feb94d5e70b040233769cfe4c7",
+  "3822811dbef6c6a7b184feb798ef4f27cc9ef1ac",
+  "0e26f75a6f6a954a8e170fb37c5cf1e93705434f",
+  "6f282d559d2ec40b422369829e5874113d32578b",
+  "09690d7bd15b585393cc7e3b6fb738d52e2800c5",
+  "578234a2d0172dbdf6206eb0e3658e47ac4c2712"
+ ]
+}

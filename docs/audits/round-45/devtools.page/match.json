@@ -1,0 +1,46 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   2
+  ],
+  [
+   4,
+   4
+  ],
+  [
+   5,
+   3
+  ],
+  [
+   7,
+   5
+  ]
+ ],
+ "a": [
+  "`set-overlays` takes any key, so `{ highlight: true }` lands in the canvas's debug config and makes the debug sink throw",
+  "A removed root keeps the panel's overlay and highlight override on its canvas",
+  "The page accepts a `yo` and requests from any frame, so another origin's iframe can connect and steer the canvas",
+  "An emptied override still forces the debug overlay on until the panel closes",
+  "A root keeps the trace, coords and history rings it first saw, while its getters read the current dep",
+  "A root's `dimension` is reported once, from the first root node at register time, so a 3D canvas that mounts empty is listed as 2d",
+  "`connect` keeps listening on the transport after the panel says `bye`",
+  "`serialize` writes Errors, RegExps, DataViews, ArrayBuffers, DOM nodes and similar built-ins as a bare `{}`"
+ ],
+ "b": [
+  "`set-overlays` accepts any boolean-valued key, so `{ highlight: true }` reaches the debug sink as a non-array and throws",
+  "A root's override is never cleared when the root is unregistered while its canvas stays mounted",
+  "The window hook accepts a `yo` from any frame, so an embedded iframe can take over (and disconnect) the extension's session",
+  "A 3D canvas whose scene is empty when it registers is announced, and stays, `'2d'`",
+  "The history ring is not reset when the canvas's scene is swapped, so `get-history` mixes the old scene's steps with the new scene's position",
+  "`serialize` writes an Error, RegExp, ArrayBuffer, DataView, WeakMap, Promise and similar built-ins as `{}`, contrary to its contract"
+ ]
+}

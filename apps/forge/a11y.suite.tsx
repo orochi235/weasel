@@ -2,7 +2,7 @@ import '@weasel-js/forge/shell.css';
 import '@weasel-js/forge/frame.css';
 import { loadStories, runAxe, runStory } from '@weasel-js/forge/test';
 import { describe, expect, it } from 'vitest';
-import { KNOWN } from './a11y.known';
+import { KNOWN, UNSWEPT } from './a11y.known';
 import { shardOf } from './a11y.shards';
 import setup from './forge.frame';
 
@@ -132,6 +132,10 @@ async function unringed(host: HTMLElement, max = 40): Promise<string[]> {
 }
 
 const judgeFile = (path: string) => {
+  if (Object.hasOwn(UNSWEPT, path.replace('../../packages/', ''))) {
+    it.skip(`is not swept: ${UNSWEPT[path.replace('../../packages/', '')]}`, () => {});
+    return;
+  }
   const known = KNOWN[path.replace('../../packages/', '')] ?? {};
   const judged = JUDGED[path.replace('../../packages/', '')] ?? [];
   const off = Object.keys(OFF).filter((rule) => !judged.includes(rule));

@@ -10,7 +10,7 @@ import { drawnAabbOf, type NodeId, type PathNode, pathNodesOf, shownNodeOf, type
 import { type CreateOutlinesAdapter } from '../outlines/createOutlines';
 import { leavesOf } from '../shared/scenePaths';
 
-type WarpScene = Pick<AnyScene, 'get' | 'childrenOf'>;
+type WarpScene = AnyScene;
 
 /** The selection's warpable leaves. */
 export interface WarpLeaves {

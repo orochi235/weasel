@@ -48,7 +48,7 @@ describe('connectDevtools', () => {
   it('says yo, and holds the roots and kit version sup names', () => {
     const t = setup();
     const client = connectDevtools(t.transport);
-    expect(t.sent[0]).toEqual({ type: 'yo', protocol: DEVTOOLS_PROTOCOL });
+    expect(t.sent[0]).toEqual({ type: 'yo', protocol: DEVTOOLS_PROTOCOL, session: expect.any(String) });
     expect(client.state()).toMatchObject({
       status: 'connected', roots: [{ id: t.root.id, label: 'board', dimension: '2d' }],
     });
@@ -113,10 +113,45 @@ describe('connectDevtools', () => {
     expect(client.state().status).toBe('connecting');
     const pending = client.request('root-1', { type: 'get-state' });
     client.close();
-    expect(sent.at(-1)).toEqual({ type: 'bye', protocol: DEVTOOLS_PROTOCOL });
+    expect(sent.at(-1)).toEqual({ type: 'bye', protocol: DEVTOOLS_PROTOCOL, session: sent[0]!.type === 'yo' ? sent[0]!.session : null });
     await expect(pending).rejects.toThrow(/closed/);
     await expect(client.request('root-1', { type: 'get-state' })).rejects.toThrow(/closed/);
     expect(client.state().status).toBe('closed');
+  });
+
+  it('closes, unsubscribed and rejecting what is pending, when sending bye throws', async () => {
+    let listening = 0;
+    let gone = false;
+    const transport: PanelTransport = {
+      send: (m) => { if (gone || m.type === 'bye') throw new Error('port disconnected'); },
+      onMessage: () => { listening++; return () => { listening--; }; },
+    };
+    const client = connectDevtools(transport);
+    const pending = client.request('root-1', { type: 'get-state' });
+    expect(() => client.close()).not.toThrow();
+    expect(listening).toBe(0);
+    expect(client.state().status).toBe('closed');
+    await expect(pending).rejects.toThrow(/closed/);
+    gone = false;
+    client.open();
+    expect(listening).toBe(1);
+  });
+
+  it('reports a yo whose send throws, and can be opened again', () => {
+    let listening = 0;
+    let fail = true;
+    const transport: PanelTransport = {
+      send: () => { if (fail) throw new Error('port disconnected'); },
+      onMessage: () => { listening++; return () => { listening--; }; },
+    };
+    const client = createDevtoolsClient(transport);
+    expect(() => client.open()).not.toThrow();
+    expect(client.state()).toMatchObject({ status: 'error', error: /port disconnected/ });
+    expect(listening).toBe(0);
+    fail = false;
+    client.open();
+    expect(client.state().status).toBe('connecting');
+    expect(listening).toBe(1);
   });
 
   it('forgets the roots and kit version of a connection it closed', () => {
@@ -158,6 +193,17 @@ describe('connectDevtools', () => {
     expect(client.state()).toBe(held);
   });
 
+  it('keeps a re-announced root in its place', () => {
+    const page = new Set<(m: PageMessage) => void>();
+    const transport: PanelTransport = { send: () => {}, onMessage: (l) => { page.add(l); return () => page.delete(l); } };
+    const emit = (m: PageMessage): void => { for (const l of page) l(m); };
+    const client = connectDevtools(transport);
+    const info = (id: string, dimension: '2d' | '3d' = '2d') => ({ id, label: id, dimension });
+    emit({ type: 'sup', protocol: DEVTOOLS_PROTOCOL, kitVersion: '1', roots: [info('a'), info('b')] });
+    emit({ type: 'root-added', protocol: DEVTOOLS_PROTOCOL, root: info('a', '3d') });
+    expect(client.state().roots).toEqual([info('a', '3d'), info('b')]);
+  });
+
   it('rejects a request still pending about a root the page removes, and keeps the rest', async () => {
     const page = new Set<(m: PageMessage) => void>();
     const sent: PanelMessage[] = [];
@@ -187,6 +233,31 @@ describe('connectDevtools', () => {
   });
 });
 
+describe('two clients over one channel', () => {
+  it('hear only their own answers, the earlier told the later replaced it, whose session its bye leaves open', async () => {
+    const t = setup();
+    const shared = createInPagePanelTransport(t.hook);
+    const a = connectDevtools(shared);
+    expect(a.state().status).toBe('connected');
+    const onA = a.request(t.root.id, { type: 'get-state' });
+    await expect(onA).resolves.toMatchObject({ activeTool: 'select' });
+    const b = connectDevtools(shared);
+    expect(b.state().status).toBe('connected');
+    expect(a.state()).toMatchObject({ status: 'error', roots: [], error: /another devtools panel/ });
+    await expect(a.request(t.root.id, { type: 'get-state' })).rejects.toThrow(/another devtools panel/);
+    await expect(b.request(t.root.id, { type: 'get-state' })).resolves.toMatchObject({ activeTool: 'select' });
+    a.close();
+    await expect(b.request(t.root.id, { type: 'get-state' })).resolves.toMatchObject({ activeTool: 'select' });
+  });
+
+  it('ignores a page message tagged for another session', () => {
+    let deliver: (m: PageMessage) => void = () => {};
+    const client = connectDevtools({ send: () => {}, onMessage: (l) => { deliver = l; return () => {}; } });
+    deliver({ type: 'sup', protocol: DEVTOOLS_PROTOCOL, kitVersion: '1', roots: [], session: 'someone-else' });
+    expect(client.state().status).toBe('connecting');
+  });
+});
+
 describe('followTrace', () => {
   it('hands back only what was traced since the last read, with coords once asked for', async () => {
     const t = setup();
@@ -205,6 +276,27 @@ describe('followTrace', () => {
     t.coords.push({ ts: 2 } as never);
     expect((await follower.read()).coords).toMatchObject([{ ts: 1 }, { ts: 2 }]);
     expect((await follower.read()).coords).toEqual([]);
+  });
+
+  it('restarts coords from the oldest record when they are turned off and on during a read', async () => {
+    const t = setup();
+    let toggle = false;
+    const client = connectDevtools({
+      send: (m) => {
+        t.transport.send(m);
+        // The answer is already on its way when the reader turns coords off and on again.
+        if (toggle && m.type === 'get-trace') { toggle = false; follower.setCoords(false); follower.setCoords(true); }
+      },
+      onMessage: t.transport.onMessage,
+    });
+    const follower = followTrace(client, t.root.id);
+    follower.setCoords(true);
+    t.coords.push({ ts: 1 } as never);
+    t.coords.push({ ts: 2 } as never);
+    await follower.read();
+    toggle = true;
+    expect((await follower.read()).coords).toBeUndefined();
+    expect((await follower.read()).coords).toMatchObject([{ ts: 1 }, { ts: 2 }]);
   });
 
   it('reads one at a time, so two reads never hand back the same entries', async () => {

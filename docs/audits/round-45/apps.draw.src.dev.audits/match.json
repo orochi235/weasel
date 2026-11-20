@@ -1,0 +1,35 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   2,
+   7
+  ],
+  [
+   5,
+   5
+  ]
+ ],
+ "a": [
+  "A pending round's \"found\" bar draws nothing: the classes it uses (`pending`, `hatch`, `tag`) are not in RoundsChart.module.css",
+  "A dev server without the skulk plugin shows \"Couldn't read the audit map: Unexpected token '<'…\" instead of the no-server note",
+  "A 404 after a good map throws the map away, despite \"a failed ask keeps the last map it had\"",
+  "Returning to the tab does not ask \"at once\" unless a poll came due while it was hidden",
+  "A cell whose own id and parent are unchanged still loses its node, and so its selection, when an ancestor frame is re-parented",
+  "An unfinished review, or one that hit its token ceiling, is not marked bad in the jobs feed",
+  "The heat ramp's comment says the hot end is \"6 or more\"; the scale puts it at the 98th percentile, at least 8"
+ ],
+ "b": [
+  "RoundsChart uses `.pending`, `.hatch` and `.tag` classes its stylesheet never defines, so pending rounds draw as empty bars",
+  "parseJob drops the `patch <id>: did not apply: …` line, so a failed patch never shows in the jobs feed",
+  "Identical log lines give duplicate React keys in the jobs feed (`fleet: test:batch passed` once per catch-up pass)",
+  "The shared lane reads \"waiting … once every lane is patched\" while the run waits on the merge lock",
+  "The run's start-up \"control sweep: …\" announcement is listed as a finished sweep job",
+  "A review marked \"unfinished: not counted as a pass\" is not flagged bad",
+  "A failed part's span ignores its recorded start/end times and is drawn at its typical length",
+  "A 404 on a later poll throws away the map already shown"
+ ]
+}

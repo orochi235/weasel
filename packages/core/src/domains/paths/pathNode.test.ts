@@ -32,6 +32,8 @@ describe('pathNode', () => {
     const node = pathNode('p', D, {}, { layer: 'ink', parent: 'g', rotation: 0.5, pickable: false });
     expect(node).toMatchObject({ layer: 'ink', parent: 'g', pickable: false, pose: { x: 10, y: 20, width: 40, height: 40, rotation: 0.5 } });
     expect(pathNode('q', D, {}, { pose: { x: 0, y: 0, width: 4, height: 4 } }).pose).toEqual({ x: 0, y: 0, width: 4, height: 4 });
+    const skewed = { x: 0, y: 0, width: 4, height: 4, transform: [1, 0, 0.5, 1] as const };
+    expect(pathNode('s', D, {}, { pose: skewed }).pose).toEqual(skewed);
   });
 
   it('is what a scene takes as an initial node', () => {

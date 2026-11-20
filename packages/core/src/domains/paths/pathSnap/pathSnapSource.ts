@@ -58,7 +58,7 @@ export function pathSnapSource(opts: PathSnapSourceOptions = {}): SnapSource {
  *  `reachPx` screen px, or null: where a move's `geometry` probe sits. Leaves
  *  no mark. */
 export function ownGeometryAt(
-  scene: Pick<Scene<unknown, string, unknown>, 'nodes' | 'layers' | 'getVersion'>,
+  scene: Scene<unknown, string, unknown>,
   press: WorldPoint,
   ids: readonly string[],
   scale: { x: number; y: number },

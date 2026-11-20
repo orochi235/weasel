@@ -31,12 +31,15 @@ export function useSkulkMap(options: UseSkulkMapOptions = {}): SkulkMapState {
     if (!dev) return;
     let live = true;
     let stop = () => {};
-    let held = false;
+    let asking = false;
+    const noServer = () =>
+      setState((was) => (was.status === 'ready' ? { ...was, error: 'the dev server no longer answers the route' } : { status: 'no-server' }));
     const ask = async () => {
       try {
         const res = await fetch(url, { cache: 'no-store' });
         if (!live) return;
-        if (res.status === 404) return setState({ status: 'no-server' });
+        // Vite answers a route no plugin serves with its index.html fallback, not a 404.
+        if (res.status === 404 || res.headers.get('content-type')?.includes('text/html')) return noServer();
         if (!res.ok) throw new Error(`${res.status} ${(await res.text()).slice(0, 200)}`);
         const map = (await res.json()) as SkulkMap;
         if (live) setState({ status: 'ready', map });
@@ -47,20 +50,17 @@ export function useSkulkMap(options: UseSkulkMapOptions = {}): SkulkMapState {
       }
     };
     const loop = () => {
-      if (!live) return;
-      if (document.hidden) {
-        held = true;
-        return;
-      }
+      if (!live || document.hidden) return;
+      asking = true;
       void ask().finally(() => {
+        asking = false;
         if (live) stop = after(everyMs, loop);
       });
     };
     const onVisible = () => {
-      if (!document.hidden && held) {
-        held = false;
-        loop();
-      }
+      if (document.hidden || asking) return;
+      stop();
+      loop();
     };
     document.addEventListener('visibilitychange', onVisible);
     loop();

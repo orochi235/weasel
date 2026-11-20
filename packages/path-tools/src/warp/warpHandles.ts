@@ -30,7 +30,7 @@ export interface WarpHandleLayerSource {
   active(): boolean;
   /** What a fresh warp is made with. */
   settings(): WarpSettings;
-  scene(): Pick<AnyScene, 'get' | 'childrenOf'> | undefined;
+  scene(): AnyScene | undefined;
   /** What tells text from other nodes; absent, text gets no controls. */
   outlines?(): Pick<CreateOutlinesAdapter, 'getOutline'> | undefined;
   live: WarpLive;

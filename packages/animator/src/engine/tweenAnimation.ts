@@ -46,6 +46,7 @@ export function startTween<T>(ctx: AnimationContext, o: TweenOptions<T>): Animat
     kind: 'tween',
     cancelKey: o.cancelKey,
     label: o.label,
+    onCancel: o.onCancel,
     startAt: atEnd ? Math.max(o.ms, 0) : 0,
     progress: (virtualNow) => (o.ms <= 0 ? 1 : Math.min(1, Math.max(0, virtualNow / o.ms))),
     // `nowMs` is the call's own virtual time, so it still decides when the tween ends; the codec

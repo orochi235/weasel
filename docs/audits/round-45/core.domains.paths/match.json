@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   3,
+   1
+  ]
+ ],
+ "a": [
+  "Anchor markers come from a form that path edit is not showing",
+  "Inserting an anchor between two unset widths bakes the stroke's current width into it",
+  "pathNode drops `place.pose.transform`",
+  "The snap index reads `scene.get` and `scene.composition`, which its declared scene type does not include"
+ ],
+ "b": [
+  "Anchor markers come from the form even when the form no longer describes the path, so they are drawn on the wrong anchors",
+  "`ownGeometryAt` is typed to take a scene without `get`, then calls `scene.get` and `scene.composition` through a cast",
+  "`createPathLayer`'s dev-warning set grows with every node id that ever mismatched and is never pruned"
+ ]
+}

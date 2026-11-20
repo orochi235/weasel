@@ -6,13 +6,13 @@ import {
 import type { Scene } from 'core/scene/types';
 import { isAnnotationLayer } from 'core/scene/annotation';
 import { nodeGates } from 'core/scene/nodeGates';
-import { nodeFrameOf, shownIn } from '../nodeFrame';
+import { nodeFramesOf, shownIn } from '../nodeFrame';
 import type { SnapGeometry } from 'interactions/actions/snapDep';
 import { nodeSnapGeometry } from './snapGeometry';
 import { geometryGenerationOf } from 'canvas/nodeOutline';
 import { nodeMemoGeneration } from 'core/scene/nodeMemo';
 
-type SnapScene = Pick<Scene<unknown, string, unknown>, 'nodes' | 'layers' | 'getVersion'>;
+type SnapScene = Scene<unknown, string, unknown>;
 
 /** A scene's paths indexed for snapping; `ids[i]` is the node path `i` came
  *  from, or null for a path of the query's own (`also`). */
@@ -49,9 +49,11 @@ export function createSceneSnapIndexer(scene: SnapScene): (also?: SnapGeometry) 
     const ids: (string | null)[] = [];
     const paths: Path[] = [];
     const extra: PathSnapTarget[] = [];
+    const frameOf = nodeFramesOf(scene);
+    const painters = nodeShapesOf(scene);
     for (const node of scene.nodes.values()) {
       if (node.kind !== 'mark' || notes.has(node.layer) || gates.hidden(node.id)) continue;
-      const g = nodeSnapGeometry(node, shownIn(nodeFrameOf(scene as Scene<unknown, string, unknown>, node), node).pose, nodeShapesOf(scene));
+      const g = nodeSnapGeometry(node, shownIn(frameOf(node), node).pose, painters);
       if (!g) continue;
       for (const p of g.points) extra.push({ ...p, paths: [paths.length] });
       ids.push(node.id);

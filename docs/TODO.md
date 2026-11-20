@@ -561,11 +561,11 @@ on 2026-11-19 (`docs/concepts.md`, "Visibility index"); these rest on its feed a
 
 ## Release-gate & build hygiene
 
-- **(P3) [waiting] forge's axe sweep failed `Field.stories.tsx` and `ClockFrames.stories.tsx` in both modes** in
-  the full run of `006b44f98a` (2026-11-19), the first in msb-uai's new `weasel-browser` tree (cold install and
-  transforms, 14 Chromiums): `aria-input-field-name` on Field's two `Slider` thumbs. On the same node and tree
-  minutes later, the shard files and the old single-file sweep both passed those stories. Closes on a second
-  sighting, with whatever it shares with this one, or after five more full runs without it.
+- **(P3) forge's axe sweep skips `ClockFrames.stories.tsx`, and knows `Field`'s unnamed slider thumbs** (2026-11-20,
+  `apps/forge/a11y.known.ts`). Both failed every full run from 2026-11-19 on. ClockFrames throws "usePlayhead: this
+  story declares no timeline" in the browser sweep though it declares one, and renders under `runStory` in jsdom, so
+  the cause is in the browser runner's setup. Closes when the sweep renders ClockFrames and its `UNSWEPT` entry goes,
+  and when `Slider` names its thumbs so Field's `aria-input-field-name` entry goes.
 
 - **(P3) [waiting] The gate's `npm run lint` step failed in 93 ms with no output** in the full run of
   `0852e33894` (2026-11-18), while `npm run lint` alone on the same commit on the fleet linted the repo and exited

@@ -2517,6 +2517,11 @@ Calls the lanes made without a ruling:
 - 2026-11-15 (the lane's call): a d3 transition handler passed to `on('end')` twice runs once, as every `createEmitter`
   listener does.
 - Ruled 2026-11-15: d3 cancel keys are built by `transitionCancelKey`, on `compositeKey`; the format is no longer documented.
+- 2026-11-20 (my call, audit round 45): a d3 transition's second `.tween()` of one name replaces the first, as d3's
+  `transition.tween(name, …)` does, rather than throwing; the two had shared a cancel key and left `end()` unsettled.
+- 2026-11-20 (my call, audit round 45): a d3 transition's `delay(NaN)` throws a `RangeError` where it is set, as
+  `duration(NaN)` does. A delay function answering `NaN` for an item warns and starts that item at once: it is read
+  once the transition runs, too late to refuse.
 - Ruled 2026-11-15: `record[key]` reaching `Object.prototype` is checked with type information, first as an eslint rule; the same day lint ran out of heap on it, so it runs as `check:proto-index`, one program over shipped source, and its unfixed files sit on a pending list that only shrinks (TODO).
 - Ruled 2026-11-15: snapshots keep `Infinity`, `-Infinity`, `NaN` and `-0` as `{ "__num": … }` tags, and the kit's default clipboard writes through the codec.
 - Ruled 2026-11-15: a router command is disabled when every selected connector already uses it.
@@ -2883,3 +2888,12 @@ Calls the lanes made without a ruling:
   `useStencilInsert` warns once per id in development when an insert names a `stencil:` kind it was not handed,
   then hands it to the insert dep it displaced as before. Dropping the container tools from the default list, or
   having `useStencilInsert` fall back to every shipped stencil, were the alternatives.
+## Audit round forty-five (2026-11-20): devtools
+
+- 2026-11-20 (the fixer's call): `DevtoolsPanel` throws a `RangeError` on a `tabs` list naming no tab (`[]`, or only
+  ids it has no tab for). Showing every tab, as with `tabs` left out, was the alternative.
+## Audit round forty-five (2026-11-19): diagram-elk
+
+- 2026-11-19 (the fixer's call): `elkPlan` rejects a `Graph` naming two of its participants and clusters by one id,
+  since an edge names its ends by id and could join either. Giving nodes and clusters separate id maps and resolving an
+  edge's end to the node first was the alternative; `buildGraph` never produces such a graph, as scene ids are unique.

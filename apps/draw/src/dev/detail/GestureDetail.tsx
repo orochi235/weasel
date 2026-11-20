@@ -8,7 +8,7 @@ import traitSchemas from 'virtual:weasel-trait-schemas';
 import s from '../RegistryInspector.module.css';
 import { SchemaTable } from '../SchemaTable';
 import { GESTURE_BADGE_PROPS } from '../badgeTokens';
-import type { ActionEntry, GestureEntry, PhaseOutputEntry, ToolEntry } from '../registryEntries';
+import type { ActionEntry, GestureEntry, PhaseOutputEntry, ToolEntry, ToolOutputs } from '../registryEntries';
 import { getOwn } from '@weasel-js/registry';
 
 /** Plain-text route notation for a `GestureSpec` — `[*:*] drop`,
@@ -21,6 +21,10 @@ function describeGestureSpec(spec: { kind?: string } | undefined): string {
 }
 
 export interface ActionBindingRow {
+  /** Unique per binding: the action's id and the binding's place in its
+   *  `defaultBinding`. Two bindings can describe as the same route text
+   *  (they differ in `code`, `when` or `opts`), so the text can't key a row. */
+  id: string;
   actionId: string;
   specKind: string;
   bindingText: string;
@@ -33,16 +37,17 @@ export function flattenActionBindings(actions: readonly ActionEntry[]): ActionBi
     if (!raw) continue;
     // `defaultBinding` is `GestureSpec | BoundGesture | BoundGesture[]`.
     const entries: unknown[] = Array.isArray(raw) ? raw : [raw];
-    for (const entry of entries) {
+    entries.forEach((entry, index) => {
       const obj = entry as { spec?: { kind?: string }; kind?: string };
       const spec = (obj.spec ?? obj) as { kind?: string };
-      if (!spec || typeof spec.kind !== 'string') continue;
+      if (!spec || typeof spec.kind !== 'string') return;
       rows.push({
+        id: `${a.id}::${index}`,
         actionId: a.id,
         specKind: spec.kind,
         bindingText: describeGestureSpec(spec),
       });
-    }
+    });
   }
   return rows;
 }
@@ -79,15 +84,15 @@ export function GestureDetail({
   );
   const aliasSet = new Set([entry.id]);
   const actionRows = flattenActionBindings(actions)
-    .filter((r) => aliasSet.has(r.specKind))
-    .map((r) => ({ id: `${r.actionId}::${r.specKind}::${r.bindingText}`, ...r }));
+    .filter((r) => aliasSet.has(r.specKind));
   const actionEntriesById = new Map(actions.map((a) => [a.id, a] as const));
   return (
     <div>
       <h2 className={s.detailHeading}><Badge {...(GESTURE_BADGE_PROPS as BadgeProps)}>{entry.label}</Badge></h2>
       <p className={s.empty}>
-        Input channel. Tools below subscribe to it via the legacy phase
-        grammar; actions below bind to it via the modern dispatcher.
+        Input channel. Actions and tools below bind it on the gesture
+        dispatcher: an action through its default binding, a tool through its
+        bindings.
       </p>
       <GestureSpecPanel gestureId={entry.id} />
       <h3 className={s.subHeading}>Actions binding this gesture</h3>
@@ -114,17 +119,24 @@ export function GestureDetail({
         ]}
         empty="No actions bind to this gesture."
       />
-      <h3 className={s.subHeading}>Tools subscribing (phase grammar)</h3>
+      <h3 className={s.subHeading}>Tools binding this gesture</h3>
       <DataGrid
         rows={toolRows}
         columns={[
           toolNameColumn(),
         ]}
-        empty="No tools subscribe via phase grammar."
+        empty="No tools bind this gesture."
       />
     </div>
   );
 }
+
+/** What each of `ToolOutputs`' fields is. A `Record` over its keys, so a new
+ *  output fails typecheck here until it is described. */
+const OUTPUT_BLURBS: Readonly<Record<keyof ToolOutputs, string>> = {
+  overlay: 'Render layer the tool draws while it is active (`Tool.overlay`).',
+  cursor: 'CSS cursor the tool declares (string or thunk).',
+};
 
 export function PhaseOutputDetail({
   entry, tools,
@@ -132,14 +144,7 @@ export function PhaseOutputDetail({
   const rows = tools.flatMap((t) =>
     t.surface.outputs[entry.id] ? [{ id: t.id, tool: t }] : [],
   );
-  // PhaseDef docs: only `initial.overlay` is read by the runtime; the
-  // engaged-phase form is currently a declarative no-op. Same caveat doesn't
-  // apply to `cursor` / `claimsAll`, which both phases honor.
-  const blurb = entry.id === 'overlay'
-    ? 'Render layer emitted while the tool is active. Only `initial.overlay` is read by the runtime today.'
-    : entry.id === 'cursor'
-      ? 'CSS cursor the tool declares (string or thunk).'
-      : 'Modal-claim predicate. When true, the dispatcher routes every `pointerdown` to this tool and bypasses affordance hit-tests.';
+  const blurb = OUTPUT_BLURBS[entry.id];
   return (
     <div>
       <h2 className={s.detailHeading}>{entry.label}</h2>

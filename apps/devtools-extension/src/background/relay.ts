@@ -53,6 +53,12 @@ export function createRelay({ wake }: RelayOptions): Relay {
 
   function fromPage(t: Tab, frameId: number, frame: Frame, raw: PageMessage): void {
     const message = scopePageMessage(frameId, raw);
+    // Another panel's session on the frame's page: drop its traffic, but pass its `sup` on, which tells this panel
+    // the page now serves that one in its place.
+    if (message.session !== undefined && t.yo?.session !== undefined && message.session !== t.yo.session) {
+      if (message.type === 'sup') t.panel?.postMessage(message);
+      return;
+    }
     if (message.type === 'sup') {
       const before = frame.roots;
       frame.roots = new Map(message.roots.map((r) => [r.id, r]));
@@ -152,7 +158,9 @@ export function createRelay({ wake }: RelayOptions): Relay {
     });
     port.onDisconnect.addListener(() => {
       if (!t || t.panel !== port) return;
-      const bye: PanelMessage = { type: 'bye', protocol: t.yo?.protocol ?? DEVTOOLS_PROTOCOL };
+      const bye: PanelMessage = {
+        type: 'bye', protocol: t.yo?.protocol ?? DEVTOOLS_PROTOCOL, ...(t.yo?.session !== undefined ? { session: t.yo.session } : {}),
+      };
       t.panel = null;
       t.yo = null;
       for (const f of t.frames.values()) {
