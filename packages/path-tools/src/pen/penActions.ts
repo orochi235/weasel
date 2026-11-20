@@ -13,7 +13,7 @@ import { penReachOf } from './penPreviewLayer';
 import { anchorCount, resetScratch, startSubpath } from './penScratch';
 import { placeAt, withinCloseRadius, type PenPlacement } from './penTargets';
 import type { PenTrail } from './penTrail';
-import type { PenScratch } from './usePenTool';
+import type { PenDraftAnchor, PenScratch } from './usePenTool';
 
 /** The tool's options as they stand when an action runs. */
 export interface PenSettings extends PenCommitSettings {
@@ -51,6 +51,25 @@ function placementFor(env: PenActionEnv, deps: ActionDeps, x: number, y: number,
   return placeAt(deps, env.snaps, x, y, mods, closePxOf(env), env.scratch.current?.anchors.at(-1));
 }
 
+/** Whether an anchor landing at `(wx, wy)` closes the subpath onto its first anchor (>= 3 anchors). */
+function closesAt(env: PenActionEnv, deps: ActionDeps, wx: number, wy: number): boolean {
+  const cur = env.scratch.current;
+  if (!cur || cur.anchors.length < 3) return false;
+  const first = cur.anchors[0];
+  return withinCloseRadius(deps, first.x, first.y, wx, wy, closePxOf(env));
+}
+
+/** Close the current subpath. With `autoCommitOnClose` off it stays in
+ *  scratch for compound-path builds. */
+function closeCurrent(env: PenActionEnv, deps: ActionDeps): void {
+  const { scratch } = env;
+  scratch.current!.closed = true;
+  scratch.finishedSubpaths.push(scratch.current!);
+  scratch.current = null;
+  scratch.closeHintActive = false;
+  if (penOptionValues(env.settings().toolOptions, deps).autoCommitOnClose) { commitPen(scratch, deps, env.settings()); scratch.justClosed = true; }
+}
+
 function createPlaceAnchorAction(env: PenActionEnv): Action {
   const { scratch, trail } = env;
   return defineAction({
@@ -71,19 +90,10 @@ function createPlaceAnchorAction(env: PenActionEnv): Action {
         }
         const { x: wx, y: wy, hit } = placementFor(env, deps, press.x, press.y, p.mods ?? NO_KEYS);
 
-        // Close-on-first-anchor (>= 3 anchors). With `autoCommitOnClose`
-        // off the closed subpath stays in scratch for compound-path builds.
-        if (scratch.current && scratch.current.anchors.length >= 3) {
-          const first = scratch.current.anchors[0];
-          if (withinCloseRadius(deps, first.x, first.y, wx, wy, closePxOf(env))) {
-            scratch.current.closed = true;
-            scratch.finishedSubpaths.push(scratch.current);
-            scratch.current = null;
-            scratch.closeHintActive = false;
-            if (penOptionValues(env.settings().toolOptions, deps).autoCommitOnClose) { commitPen(scratch, deps, env.settings()); scratch.justClosed = true; }
-            trail.update(deps);
-            return;
-          }
+        if (closesAt(env, deps, wx, wy)) {
+          closeCurrent(env, deps);
+          trail.update(deps);
+          return;
         }
 
         const join = joinable(scratch, deps, hit);
@@ -147,13 +157,21 @@ function createDragHandleAction(env: PenActionEnv): Action {
         // Dragging on another open path's endpoint joins onto it once
         // the handle is set.
         let joinHit: PathAnchorHit | null = null;
+        // Dragging on the first anchor closes onto it, pulling its handles;
+        // cancel puts them back.
+        let closing: Pick<PenDraftAnchor, 'inHandle' | 'outHandle' | 'altBroken'> | null = null;
         if (!pickedUp) {
           const { x: ax, y: ay, hit } = placementFor(env, ctx.deps, origin.x, origin.y, ctx.modifiers);
-          if (joinable(scratch, ctx.deps, hit)) joinHit = hit;
-          scratch.current ??= startSubpath(scratch);
-          scratch.current.anchors.push({ x: ax, y: ay });
+          if (closesAt(env, ctx.deps, ax, ay)) {
+            const { inHandle, outHandle, altBroken } = scratch.current!.anchors[0];
+            closing = { inHandle, outHandle, altBroken };
+          } else {
+            if (joinable(scratch, ctx.deps, hit)) joinHit = hit;
+            scratch.current ??= startSubpath(scratch);
+            scratch.current.anchors.push({ x: ax, y: ay });
+          }
         }
-        scratch.draggingHandleAt = scratch.current!.anchors.length - 1;
+        scratch.draggingHandleAt = closing ? 0 : scratch.current!.anchors.length - 1;
         // A picked-up endpoint's in-handle belongs to the existing
         // segment into it, which the pen does not reshape.
         const handle = pullHandle(scratch, ctx, !pickedUp);
@@ -172,6 +190,8 @@ function createDragHandleAction(env: PenActionEnv): Action {
                 // cancel has to take it back out.
                 if (pickedUp) {
                   resetScratch(scratch);
+                } else if (closing && scratch.current) {
+                  Object.assign(scratch.current.anchors[0], closing);
                 } else if (scratch.current && scratch.draggingHandleAt === scratch.current.anchors.length - 1) {
                   scratch.current.anchors.pop();
                   if (scratch.current.anchors.length === 0) scratch.current = null;
@@ -181,7 +201,8 @@ function createDragHandleAction(env: PenActionEnv): Action {
               }
               handle.to(endCtx);
               scratch.draggingHandleAt = null;
-              if (joinHit && scratch.current) commitJoin(scratch, ctx.deps, joinHit, env.settings());
+              if (closing && scratch.current) closeCurrent(env, endCtx.deps);
+              else if (joinHit && scratch.current) commitJoin(scratch, ctx.deps, joinHit, env.settings());
             } finally {
               handle.end();
               trail.refresh();

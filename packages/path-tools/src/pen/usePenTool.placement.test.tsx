@@ -7,9 +7,9 @@ import {
   PATH_M,
   PATH_Z,
   type PolygonPath,
-  pathFromD, DEG_TO_RAD,
+  pathFromD, pathToAnchors, DEG_TO_RAD,
 } from '@weasel-js/geom';
-import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
+import type { Action, ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { NO_MODS, setup } from './testing/penHarness';
 
 // The real layer, recorded: the pen keeps its state to itself, and the one
@@ -185,6 +185,37 @@ describe('usePenTool', () => {
         'C 50 100 0 40 0 0',
         'Z',
       ]);
+    });
+
+    it('a drag from the first anchor closes the path and pulls that anchor\'s handles', () => {
+      const p = setup();
+      p.click(0, 0); p.click(100, 0); p.click(100, 100);
+      p.drag({ x: 1, y: 1 }, { x: 20, y: -20 });
+      expect(p.adapter.added).toHaveLength(1);
+      expect(p.adapter.added[0].closed).toBe(true);
+      const [sub] = pathToAnchors(p.adapter.added[0].path).anchors;
+      expect(sub.map((a) => [a.x, a.y])).toEqual([[0, 0], [100, 0], [100, 100]]);
+      expect(sub[0].outHandle).toEqual({ x: 20, y: -20 });
+      expect(sub[0].inHandle).toEqual({ x: -20, y: 20 });
+      expect(p.scratch.current).toBeNull();
+    });
+
+    it('a canceled drag from the first anchor leaves the path open and its first anchor as it was', () => {
+      const p = setup();
+      p.click(0, 0); p.click(100, 0); p.click(100, 100);
+      const invoker = p.actionOf('pen.dragHandle').invoker as Extract<NonNullable<Action['invoker']>, { timing: 'ongoing' }>;
+      const at = (x: number, y: number) => ({
+        world: { x, y }, screen: { x, y }, modifiers: NO_MODS, deps: p.deps,
+        drag: { start: { x: 1, y: 1 }, current: { x, y }, delta: { x: 0, y: 0 } },
+      });
+      let handle!: OngoingHandle;
+      act(() => { handle = invoker.start(at(1, 1))!; });
+      act(() => { handle.onMove?.(at(20, -20)); });
+      act(() => { handle.onEnd?.(at(20, -20), 'cancel'); });
+      expect(p.adapter.added).toHaveLength(0);
+      expect(p.scratch.current?.closed).toBe(false);
+      expect(p.scratch.current?.anchors.map((a) => [a.x, a.y, a.inHandle, a.outHandle]))
+        .toEqual([[0, 0, undefined, undefined], [100, 0, undefined, undefined], [100, 100, undefined, undefined]]);
     });
 
     it('a picked-up path keeps its existing segments: an out-handle alone does not bend the segment before it', () => {
