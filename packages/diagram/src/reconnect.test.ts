@@ -4,6 +4,7 @@ import { createReconnectAction, createDiagramEdgeEndsContribution, type EndChang
 import { EDGE_END_AFFORDANCE_KIND, createEdgeEndAffordance } from './edgeEndLayer';
 import { EDGE_DERIVE_PATH } from './edge';
 import type { GraphNodeLike } from './graph';
+import type { LayoutFrame } from './layoutFrame';
 
 interface Rect { x: number; y: number; width: number; height: number }
 
@@ -166,6 +167,18 @@ describe('createReconnectAction', () => {
     const handle = invoker.start(ctxAt(300, 20, endPress('to')));
     handle.onMove!(ctxAt(200, 400));
     expect(previewPoints(handle)[0]).toEqual({ x: 50, y: 0 });
+  });
+
+  it('places the fixed end through the caller\'s frame, as it places the candidates', () => {
+    // A plane 1000 below the descriptor's own space: every box, so every port, sits there.
+    const frame: LayoutFrame<Rect> = {
+      box: (p) => ({ x: p.x, y: p.y + 1000, width: p.width, height: p.height }),
+      translate: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
+      fromBox: (b, p) => ({ ...p, x: b.x, y: b.y - 1000, width: b.width, height: b.height }),
+    };
+    const handle = open({ frame });
+    handle.onMove!(ctxAt(200, 1400));
+    expect(previewPoints(handle)[0]).toEqual({ x: 100, y: 1020 });
   });
 
   it('will not glue an end to a body with no ports', () => {
