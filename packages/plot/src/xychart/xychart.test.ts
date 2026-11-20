@@ -159,6 +159,19 @@ describe('xyScales', () => {
     }
   });
 
+  it('a drag holds a value inside a set value-axis end, and past a fitted one lets it grow', () => {
+    const { layout, get } = byKey(SALES);
+    const bar = get('bar:0:2')!;
+    const drag = xyEditor.drag(SALES, bar.data.plotMark, SIZE, PLOT_THEME, measure)!;
+    expect(drag({ x: 0, y: layout.value.position(130) }).series[0]!.values[2]).toBe(100);
+    expect(drag({ x: 0, y: layout.value.position(-30) }).series[0]!.values[2]).toBe(0);
+    const open: XyChartData = { ...SALES, y: { min: 0 } };
+    const fitted = byKey(open);
+    const grow = xyEditor.drag(open, fitted.get('bar:0:2')!.data.plotMark, SIZE, PLOT_THEME, measure)!;
+    expect(grow({ x: 0, y: fitted.layout.value.position(130) }).series[0]!.values[2]).toBe(130);
+    expect(grow({ x: 0, y: fitted.layout.value.position(-30) }).series[0]!.values[2]).toBe(0);
+  });
+
   it('the editor puts a handle on a bar\'s end and on each point, and a drag proposes the value under the pointer', () => {
     const { layout, get } = byKey(SALES);
     const bar = get('bar:0:1')!;
@@ -173,5 +186,27 @@ describe('xyScales', () => {
   it('counts the longest of a million series without overflowing the call stack', () => {
     const series = Array.from({ length: 1_000_000 }, (_, i) => ({ kind: 'line' as const, values: i === 3 ? [1, 2, 3] : [] }));
     expect(xyLength({ kind: 'xychart', series })).toBe(3);
+  });
+});
+
+describe('xyValueDomain with one end set', () => {
+  const at = (y: XyChartData['y']): XyChartData => ({ kind: 'xychart', ...(y ? { y } : {}), series: [{ kind: 'bar', values: [1, 3, 5] }] });
+
+  it('fits the other end beyond the set one, so the axis never flips', () => {
+    expect(xyValueDomain(at({ min: 10 }))).toEqual([10, 11]);
+    expect(xyValueDomain(at({ max: -3 }))).toEqual([-4, -3]);
+    expect(xyValueDomain(at({ min: 2 }))).toEqual([2, 5]);
+  });
+
+  it('keeps a reversed domain both of whose ends are set', () => {
+    expect(xyValueDomain(at({ min: 10, max: 0 }))).toEqual([10, 0]);
+  });
+});
+
+describe('bar slots', () => {
+  it('gives a series listed twice a slot each', () => {
+    const s = { kind: 'bar', values: [1, 2] } as const;
+    const { get } = byKey({ kind: 'xychart', series: [s, s] });
+    expect(get('bar:1:0')!.pose.x).toBeGreaterThan(get('bar:0:0')!.pose.x);
   });
 });

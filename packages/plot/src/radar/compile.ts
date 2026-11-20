@@ -29,9 +29,10 @@ const radarRings = (data: RadarData): number => {
   return Number.isNaN(n) ? 5 : Math.min(RADAR_MAX_RINGS, Math.max(1, n));
 };
 
-/** The value range a radar spans: its own ends, else 0 out to its largest value. */
+/** The value range a radar spans: its own ends, else 0 out to its largest value; a missing end lies a unit past a set
+ *  one it would fall beyond. */
 export function radarDomain(data: RadarData): [number, number] {
-  const min = data.min ?? 0;
+  const min = data.min ?? (data.max !== undefined && data.max <= 0 ? data.max - 1 : 0);
   let max = data.max ?? min;
   if (data.max === undefined) for (const c of data.curves) for (const v of c.values) if (Number.isFinite(v) && v > max) max = v;
   return max === min ? [min, min + 1] : [min, max];

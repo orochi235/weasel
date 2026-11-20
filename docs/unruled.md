@@ -3066,3 +3066,12 @@ Calls the lanes made without a ruling:
   already do. Accepting either leaves a graph whose replay stops there. A gantt date is written held to the years its
   `dateFormat` reads back (`YYYY` 0 to 9999, `YY` 1969 to 2068, a format with no year 1970), so a drag past them
   stops at the edge rather than throwing.
+## Audit round fifty-three (2026-11-20): plot
+
+- 2026-11-20 (the fixer's call): `insertPacketField` throws on a field starting inside the field before it, as
+  `setPacketStart` does, so the fields never overlap. Moving the new field along to the first free bit was the
+  alternative.
+- 2026-11-20 (the fixer's call): an xychart row edit leaves a series shorter than the rows short: a row past its end
+  stays missing, and one that a move or a `setXyValue` puts inside it is `NaN`, drawn as no point. An inserted row is
+  a zero in each series that reaches it. Padding every series with zeros to the row count first, which drew the
+  missing rows as zeros, was what it did.

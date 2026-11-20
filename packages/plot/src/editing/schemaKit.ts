@@ -10,6 +10,14 @@ export const textOf = (v: PlotValue): string | undefined => (typeof v === 'strin
 /** `v` as a finite number, or `undefined` for anything else. */
 export const numberOf = (v: PlotValue): number | undefined => (isFiniteNumber(v) ? v : undefined);
 
+/** `text` as typed into a chart: a non-negative decimal, an exponent allowed, else `null`. */
+export function typedAmountOf(text: string): number | null {
+  const t = text.trim();
+  if (!/^\+?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(t)) return null;
+  const value = Number(t);
+  return Number.isFinite(value) ? value : null;
+}
+
 /** `v` as a whole number, or `undefined` for anything else. */
 export const integerOf = (v: PlotValue): number | undefined => {
   const n = numberOf(v);
