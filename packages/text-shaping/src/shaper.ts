@@ -75,6 +75,9 @@ interface FaceRecord {
 /** Shapings held per face before they are dropped together. */
 const SHAPE_CACHE_LIMIT = 512;
 
+/** Parsed feature settings held before they are dropped together. */
+const FEATURE_CACHE_LIMIT = 256;
+
 /** Decimal places kept in path data: 1e-5 em, and never exponent notation,
  *  which an SVG path tokenizer would read as a command. */
 const PRECISION = 1e5;
@@ -120,6 +123,7 @@ class HarfBuzzShaper implements TextShaper {
       const parsed = ASCII.test(tag) ? this.#hb.Feature.fromString(tag) : undefined;
       if (!parsed) throw new Error(`weasel shape: "${tag}" is not an OpenType feature setting; pass one per entry, a tag such as "smcp" or a setting such as "liga=0"`);
       f = parsed;
+      if (this.#features.size >= FEATURE_CACHE_LIMIT) this.#features.clear();
       this.#features.set(tag, f);
     }
     return f;

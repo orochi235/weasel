@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
+import { Feature } from './vendor/harfbuzzjs/index';
 import { loadShaper, type TextShaper } from './index';
 import { ARABIC, DEVANAGARI, LATIN } from './__fixtures__/fonts';
 
@@ -119,5 +120,18 @@ describe('loadShaper — refusals', () => {
 
   it('refuses a language tag holding a character outside ASCII with its own error', () => {
     expect(() => shaper.shape(LATIN, 'abc', [], 'sr\u2011Latn')).toThrow(/weasel shape: ".*" is not a BCP 47 language tag/);
+  });
+
+  it('keeps a bounded number of parsed feature settings', () => {
+    const parse = vi.spyOn(Feature, 'fromString');
+    try {
+      shaper.shape(LATIN, 'abc', ['kern[0:1]']);
+      for (let k = 1; k <= 1000; k++) shaper.shape(LATIN, 'abc', [`kern[0:${k + 1}]`]);
+      parse.mockClear();
+      shaper.shape(LATIN, 'abd', ['kern[0:1]']);
+      expect(parse).toHaveBeenCalledTimes(1);
+    } finally {
+      parse.mockRestore();
+    }
   });
 });
