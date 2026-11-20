@@ -107,6 +107,14 @@ describe('portSafePart', () => {
     expect(portSafePart(new Map([['k', cancel]]))).toBeNull();
   });
 
+  it('has no part for a Proxy, which a port refuses, and keeps the rest of an object holding one', () => {
+    const store = new Proxy({ count: 1 }, {});
+    expect(isPortSafe(store)).toBe(false);
+    expect(isPortSafe({ store })).toBe(false);
+    expect(portSafePart(store)).toBeNull();
+    expect(portSafePart({ store, label: 'x' })).toEqual({ value: { label: 'x' } });
+  });
+
   it('terminates on a cycle through an unsafe value', () => {
     const a: Record<string, unknown> = { n: 1, cancel };
     a.self = a;
