@@ -1,0 +1,22 @@
+{
+ "pairs": [
+  [
+   3,
+   1
+  ]
+ ],
+ "a": [
+  "Bake drops the symmetry group's own stated fields and data: a hidden, locked, clipped or labeled group bakes into a bare one",
+  "The guide's mirror lines, spokes and repeat line vanish when the center is more than two canvas diagonals off screen",
+  "latticePoints' ±512 index clamp drops lattice points inside the extent even when the total is under the copy cap",
+  "controller.subscribe is not told when Undo, Redo or another edit changes or removes the active group",
+  "Bake drops a copied node's own copiesFromPose, so a node that draws copies of its own bakes into one that doesn't",
+  "Every write and every cancelled drag rewrites the group's stored spec in normalized form, dropping fields symmetrySpecOf doesn't know, untracked on cancel",
+  "A wallpaper extent with negative width or height is drawn as a box by the guide but holds no lattice points"
+ ],
+ "b": [
+  "A group's center is read in the shown world but written back through the document world, so a group in a scrolled container moves by the scroll offset",
+  "The controller never listens to the scene, so an undo, a redo or an outside edit of the active group leaves subscribers and the guide stale",
+  "The wallpaper guide draws a dot at every lattice point, but copies are drawn only at the nearest few when the cell is large"
+ ]
+}

@@ -1,0 +1,47 @@
+{
+ "id": "simulation",
+ "commit": "bfc55709b4b1c35343b8417dc8f74424b58d9714",
+ "date": "2026-11-20",
+ "files": [
+  "packages/simulation/src/clockSteps.ts",
+  "packages/simulation/src/createSimulation.ts",
+  "packages/simulation/src/index.ts",
+  "packages/simulation/src/pbt.fixture.ts",
+  "packages/simulation/src/react.ts",
+  "packages/simulation/src/types.ts",
+  "packages/simulation/src/useSimulation.ts",
+  "packages/simulation/src/useSteps.ts"
+ ],
+ "a": 3,
+ "b": 1,
+ "m": 1,
+ "distinct": 3,
+ "chapman": 3,
+ "unfound": 0,
+ "read": {
+  "A": 8,
+  "B": 8
+ },
+ "patches": 2,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.1,
+   "B": 6.5,
+   "match": 0.1,
+   "fix": 5.2
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "weightedTokens": 640487,
+  "costUsd": 1.99
+ },
+ "fixCommits": [
+  "bf09aaeb39f0f02cac3347a6403e339996081f8f",
+  "88a5b5ea7540b5babc25d28be9a0555b4dfba435"
+ ]
+}

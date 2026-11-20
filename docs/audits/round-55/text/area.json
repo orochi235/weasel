@@ -1,0 +1,83 @@
+{
+ "id": "text",
+ "commit": "bfc55709b4b1c35343b8417dc8f74424b58d9714",
+ "date": "2026-11-20",
+ "files": [
+  "packages/text/src/bakeTextFit.ts",
+  "packages/text/src/fitBoxToText.ts",
+  "packages/text/src/glyphOutlines.ts",
+  "packages/text/src/glyphTurn.ts",
+  "packages/text/src/hitTest.ts",
+  "packages/text/src/index.ts",
+  "packages/text/src/isTextData.ts",
+  "packages/text/src/joiningRuns.ts",
+  "packages/text/src/joiningTypes.gen.ts",
+  "packages/text/src/markdownRenderer.ts",
+  "packages/text/src/markdownText.ts",
+  "packages/text/src/measure/graphemes.ts",
+  "packages/text/src/measure/lineBoxes.ts",
+  "packages/text/src/measure/measureText.ts",
+  "packages/text/src/measure/measureTextBounds.ts",
+  "packages/text/src/measure/verticalAlign.ts",
+  "packages/text/src/pbt.fixture.ts",
+  "packages/text/src/pose.ts",
+  "packages/text/src/renderLabel.ts",
+  "packages/text/src/runs.ts",
+  "packages/text/src/runs/codePointCuts.ts",
+  "packages/text/src/runs/delimiterRuns.ts",
+  "packages/text/src/runs/effectiveRangeStyle.ts",
+  "packages/text/src/runs/flagRange.ts",
+  "packages/text/src/runs/rangeStyle.ts",
+  "packages/text/src/runs/resolveRuns.ts",
+  "packages/text/src/runs/smallCaps.ts",
+  "packages/text/src/runs/textTransform.ts",
+  "packages/text/src/syntheticBold.ts",
+  "packages/text/src/syntheticItalic.ts",
+  "packages/text/src/test-seams.ts",
+  "packages/text/src/textClusters.ts",
+  "packages/text/src/textStyle.ts",
+  "packages/text/src/textToPath.ts",
+  "packages/text/src/visualGraphemes.ts"
+ ],
+ "a": 6,
+ "b": 7,
+ "m": 2,
+ "distinct": 11,
+ "chapman": 17.7,
+ "unfound": 6.7,
+ "read": {
+  "A": 35,
+  "B": 35
+ },
+ "patches": 11,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7,
+   "B": 14.9,
+   "match": 0.1,
+   "fix": 14.6
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 3411723,
+  "costUsd": 9.65
+ },
+ "fixCommits": [
+  "de2d4422aeb660e5e1d7393ab9af731f0455e6ce",
+  "a0d5f84b85a253d4fe4e58a3b63050d36bd6e97e",
+  "793ac7222f0c596f66d97a403e8b90b198c6edcf",
+  "dd3fdb0b1eea80742ea150ae9f06d26c6124b84c",
+  "583bd6d8fa0a57ca774fec4fb990f3158bf08a40",
+  "92043111c71a4cf9b39c7d551107f3915f733de2",
+  "45559fc90f51022a6805a34422e8911c1914ab66",
+  "824eca629e726ab770dbc6f692f2b41a31da0b0b",
+  "b5d4882bc26596183042d705eaae4282e0878fa7",
+  "1ac16c5f41c6708e1812150e2816b34827c350c7",
+  "edcd3a6e91ceafb9875e1404d0432e6cd462dfd8"
+ ]
+}

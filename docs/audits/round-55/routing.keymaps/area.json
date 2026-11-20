@@ -1,0 +1,53 @@
+{
+ "id": "routing.keymaps",
+ "commit": "bfc55709b4b1c35343b8417dc8f74424b58d9714",
+ "date": "2026-11-20",
+ "files": [
+  "packages/routing/src/keymaps/captureGesture.ts",
+  "packages/routing/src/keymaps/captureKey.ts",
+  "packages/routing/src/keymaps/capturePointer.ts",
+  "packages/routing/src/keymaps/captureSpec.ts",
+  "packages/routing/src/keymaps/createKeymapContribution.ts",
+  "packages/routing/src/keymaps/describeKeymap.ts",
+  "packages/routing/src/keymaps/index.ts",
+  "packages/routing/src/keymaps/keymapStack.ts",
+  "packages/routing/src/keymaps/useInnermostKeymap.ts",
+  "packages/routing/src/keymaps/useOpenKeymap.ts"
+ ],
+ "a": 4,
+ "b": 5,
+ "m": 2,
+ "distinct": 7,
+ "chapman": 9,
+ "unfound": 2,
+ "read": {
+  "A": 10,
+  "B": 10
+ },
+ "patches": 6,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.9,
+   "B": 4.6,
+   "match": 0.2,
+   "fix": 14.1
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 1343241,
+  "costUsd": 4.01
+ },
+ "fixCommits": [
+  "595b59603006b01eb213ada89221cb583f2793aa",
+  "daf6f2e32a488530ae7fdee187e194a66b863762",
+  "9a3e262758718b2104918d75cd207ba8992ee6f8",
+  "88f90f57fec6ab0c9188d0cc26389ae2e9587470",
+  "da5f6da46472f3b05389c7ce2d75f327ba5ff646",
+  "df7ba956938215ef3b6031a558e4a4be1683ae2a"
+ ]
+}

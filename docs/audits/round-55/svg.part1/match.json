@@ -1,0 +1,31 @@
+{
+ "pairs": [
+  [
+   2,
+   2
+  ],
+  [
+   6,
+   0
+  ]
+ ],
+ "a": [
+  "`<use>` and `<symbol>` children bypass every filter `readChildren` applies, so a `display=\"none\"` child of a symbol is drawn",
+  "`fitLeafXml` cuts a start tag at the first `>`, which `escapeAttr` leaves unescaped, producing malformed XML",
+  "`<switch>` skips a `<use>` child, drawing the next alternative instead",
+  "`stroke-dashoffset` in `em` is read against 16px, not the element's font size",
+  "An axis-aligned `<path>` rectangle traced from any corner but top-left is turned into a `rect`, moving where its dashes and trim start",
+  "A sized marker's def id can collide with another marker's key, and the second marker is drawn with the first's def",
+  "The `currentColor` fallback after a `url()` paint is painted black, not the `color` in effect",
+  "A nested `<svg>` sized in percentages makes the percentage lengths inside it read as bare numbers",
+  "A media override given as `undefined` replaces the default and makes every query on that feature fail"
+ ],
+ "b": [
+  "A `currentColor` fallback after a `url(#id)` paint is read as black, not the cascade's `color`",
+  "A pattern fill is not taken through the matrix its element's geometry is baked with",
+  "`<switch>` passes over a `<use>` child, though the parser draws `<use>`",
+  "A nested `<svg>`'s `opacity` (and SVG 2 `transform`) is dropped without a warning",
+  "A framed text node's shadow and edge are refitted onto its box on export, losing the shadow's offset and blur and the edge's inset",
+  "A percentage under a nested `<svg>` without `width`/`height` finds no viewport"
+ ]
+}

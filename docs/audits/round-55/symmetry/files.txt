@@ -1,0 +1,11 @@
+packages/symmetry/src/bake.ts
+packages/symmetry/src/controller.ts
+packages/symmetry/src/frames.ts
+packages/symmetry/src/group.ts
+packages/symmetry/src/guide.ts
+packages/symmetry/src/handleDrag.ts
+packages/symmetry/src/index.ts
+packages/symmetry/src/kinds.ts
+packages/symmetry/src/pbt.fixture.ts
+packages/symmetry/src/settings.ts
+packages/symmetry/src/wallpaper.ts

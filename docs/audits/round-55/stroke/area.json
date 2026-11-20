@@ -1,0 +1,75 @@
+{
+ "id": "stroke",
+ "commit": "bfc55709b4b1c35343b8417dc8f74424b58d9714",
+ "date": "2026-11-20",
+ "files": [
+  "packages/stroke/src/index.ts",
+  "packages/stroke/src/markerHeads.ts",
+  "packages/stroke/src/markerInset.ts",
+  "packages/stroke/src/markerSites.ts",
+  "packages/stroke/src/offsetPath.ts",
+  "packages/stroke/src/pbt.fixture.ts",
+  "packages/stroke/src/strokeAtScale.ts",
+  "packages/stroke/src/strokeEdge.ts",
+  "packages/stroke/src/strokeMarkerShapes.ts",
+  "packages/stroke/src/strokeMarkers.ts",
+  "packages/stroke/src/strokeToPath.ts",
+  "packages/stroke/src/tessellate/dash.ts",
+  "packages/stroke/src/tessellate/expandPolyline.ts",
+  "packages/stroke/src/tessellate/flattening.ts",
+  "packages/stroke/src/tessellate/innerJoins.ts",
+  "packages/stroke/src/tessellate/insets.ts",
+  "packages/stroke/src/tessellate/metric.ts",
+  "packages/stroke/src/tessellate/nib.ts",
+  "packages/stroke/src/tessellate/ribbon.ts",
+  "packages/stroke/src/tessellate/ribbonWindow.ts",
+  "packages/stroke/src/tessellate/stroke.ts",
+  "packages/stroke/src/tessellate/vertexWidths.ts",
+  "packages/stroke/src/test-seams.ts",
+  "packages/stroke/src/trim/clipRibbon.ts",
+  "packages/stroke/src/trim/clipWindow.ts",
+  "packages/stroke/src/trim/resolveTrim.ts",
+  "packages/stroke/src/trim/trimPathEnds.ts",
+  "packages/stroke/src/trim/trimSpan.ts",
+  "packages/stroke/src/trim/trimmedPath.ts",
+  "packages/stroke/src/trim/windowPolylines.ts",
+  "packages/stroke/src/wideStrokeUnion.bench.ts"
+ ],
+ "a": 4,
+ "b": 5,
+ "m": 2,
+ "distinct": 7,
+ "chapman": 9,
+ "unfound": 2,
+ "read": {
+  "A": 31,
+  "B": 31
+ },
+ "patches": 7,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 16.1,
+   "B": 8.8,
+   "match": 0.2,
+   "fix": 16.1
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 2681579,
+  "costUsd": 7.95
+ },
+ "fixCommits": [
+  "bda75b21bdd3f04084bf2c18f24c9f4db5fb3c6f",
+  "774e9cc3c0cf013f1b94233ff9b21c09aef43179",
+  "6a423eaf24f22c431f62b153338dca05d93a7876",
+  "b3b9f5eabeab60f29d00235a37d7df8e0f025416",
+  "34090f0b6ac3fb75cb957964fc1b6ce7c64e9e8b",
+  "e4b8859e1f910898a4409ace326034ce2957478f",
+  "7b0562e5303fed71119af1603a73f7958856799e"
+ ]
+}

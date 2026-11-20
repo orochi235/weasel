@@ -1,0 +1,47 @@
+{
+ "id": "select",
+ "commit": "bfc55709b4b1c35343b8417dc8f74424b58d9714",
+ "date": "2026-11-20",
+ "files": [
+  "packages/select/src/index.ts",
+  "packages/select/src/pbt.fixture.ts",
+  "packages/select/src/same.ts",
+  "packages/select/src/select.ts",
+  "packages/select/src/store.ts",
+  "packages/select/src/tree.ts"
+ ],
+ "a": 4,
+ "b": 2,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 6.5,
+ "unfound": 1.5,
+ "read": {
+  "A": 6,
+  "B": 6
+ },
+ "patches": 4,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.1,
+   "B": 6,
+   "match": 0.2,
+   "fix": 11.2
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 530398,
+  "costUsd": 1.62
+ },
+ "fixCommits": [
+  "e01f95825cbad74c373c73b071abb44d0e029246",
+  "df1d23c6a68ae5b81508b1a8e5b728e29172bb91",
+  "93d310e3271121cf657a5cb6f170d4c949161ab6",
+  "73a342fcec07da48afaba9d07738d5f0fd1b98cf"
+ ]
+}

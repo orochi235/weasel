@@ -1,0 +1,28 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   1,
+   3
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "a": [
+  "A last-operation rerun that throws is treated as having run: the original entry stays undone with nothing in its place",
+  "Last-operation rerun ignores an immediate invoker's `'pass'` and the action's `eligible` rule",
+  "`holdPreview` runs the raw descriptor it was handed, so a mute or tuning of the action's id does not reach its hold",
+  "`ActionsRegistry.begin` skips the `eligible` rule and `enabled` that `trigger` and `preview` both ask"
+ ],
+ "b": [
+  "`ActionsRegistry.paramsOf` reads tunings from the node it's called on, while `trigger` runs at the active leaf",
+  "`holdPreview` captures the static descriptor, so the hold runs an action the registry has replaced, tuned or muted",
+  "A last-operation rerun that throws counts as having run, leaving the operation undone with nothing in its place",
+  "The last-operation rerun skips the `eligible` rule that `trigger` and `preview` check"
+ ]
+}

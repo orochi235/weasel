@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   2,
+   6
+  ]
+ ],
+ "a": [
+  "A first read whose `subscribe` throws rejects instead of opening the cache empty, and ends the retry chain",
+  "A delete heard for a record the cache does not hold leaves `taken` unchanged, so a reconcile read started earlier brings the record back",
+  "`pickFile` never settles, and leaves its input in the document, where the browser does not fire `cancel`"
+ ],
+ "b": [
+  "A first read whose adapter's `subscribe` throws rejects instead of opening empty, and stops retrying for good",
+  "Reconciling a contested record compares structured-clone values by identity, so an IndexedDB Map/Date/typed-array record emits a spurious remote change",
+  "A reconcile read that throws drops the contested record for good",
+  "`flush()` on a closed cache still sends writes, though `close` says a write queued after it is never sent",
+  "A transaction whose request errors rejects with `null`",
+  "`isJsonSafe` calls an object with symbol keys safe, though JSON drops them",
+  "`pickFile` never settles, and leaves its input in the DOM, where `cancel` does not fire",
+  "A percent-encoded fragment reads as empty, and the next write wipes every record it held"
+ ]
+}

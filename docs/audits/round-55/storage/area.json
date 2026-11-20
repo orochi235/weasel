@@ -1,0 +1,62 @@
+{
+ "id": "storage",
+ "commit": "bfc55709b4b1c35343b8417dc8f74424b58d9714",
+ "date": "2026-11-20",
+ "files": [
+  "packages/storage/src/adapterContract.ts",
+  "packages/storage/src/defaultStorage.ts",
+  "packages/storage/src/fileIO.ts",
+  "packages/storage/src/firstRead.ts",
+  "packages/storage/src/index.ts",
+  "packages/storage/src/indexedDb.ts",
+  "packages/storage/src/json.ts",
+  "packages/storage/src/memory.ts",
+  "packages/storage/src/onLeave.ts",
+  "packages/storage/src/pbt.fixture.ts",
+  "packages/storage/src/records.ts",
+  "packages/storage/src/remote.ts",
+  "packages/storage/src/types.ts",
+  "packages/storage/src/urlHash.ts",
+  "packages/storage/src/urlHashAdapter.ts",
+  "packages/storage/src/webStorage.ts",
+  "packages/storage/src/writeQueue.ts"
+ ],
+ "a": 3,
+ "b": 8,
+ "m": 2,
+ "distinct": 9,
+ "chapman": 11,
+ "unfound": 2,
+ "read": {
+  "A": 17,
+  "B": 17
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.2,
+   "B": 7.8,
+   "match": 0.2,
+   "fix": 24.2
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1349140,
+  "costUsd": 4.21
+ },
+ "fixCommits": [
+  "338113126ffc3352babb5d19aca406ca97fd916f",
+  "817c4a0c714ce1267ef57be7e92e6c7a84a37906",
+  "da233f84a48a09c6c27e7ec14d38c9526161fe87",
+  "c438a4b591bc6a2509b9b55b231ffcd1a6318752",
+  "f822a1d6ab50536043a93b070058fcce32198497",
+  "99ca079ef2519617c7b6aaf95bf8a76de276cdb8",
+  "3637a58ebf4267a6d5ed3203b167d2161b443c1b",
+  "55af93c50c049566e536a87ac139893fb358442c"
+ ]
+}

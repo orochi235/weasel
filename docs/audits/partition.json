@@ -4453,6 +4453,7 @@
    "packages/labkit/src/tools/labTool.ts",
    "packages/labkit/src/tools/types.ts",
    "packages/labkit/src/undo/editStamp.ts",
+   "packages/labkit/src/undo/historyStamps.ts",
    "packages/labkit/src/undo/index.ts",
    "packages/labkit/src/undo/stateOp.ts",
    "packages/labkit/src/undo/useUndoKeys.ts",

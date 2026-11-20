@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   2,
+   3
+  ]
+ ],
+ "a": [
+  "nearestStrokeEdge reads per-vertex widths by the corner-resolved path's anchor numbers without remapping them, so on a path with `corners` its edge is not the drawn one",
+  "A trim drops zero-length subpaths (round/square-capped dots) that the untrimmed stroke draws, and the clip-ribbon path still draws them",
+  "Miter joins fall back to bevel at small scales: the parallel test compares an unnormalized cross product against an absolute 1e-9",
+  "The unknown-marker warning set grows without bound and never re-warns"
+ ],
+ "b": [
+  "A trimmed stroke with a `nib` (or `vertexWidths` under a metric) cuts at the wrong place: splitting corners in two breaks how the trim finds its segment",
+  "`nearestStrokeEdge` doesn't remap `vertexWidths` onto the corner-resolved path, so on a path with `corners` it measures different widths than the ribbon draws",
+  "`tessellateStroke` shifts a rect for inner/outer alignment even where `ribbonAligns` promises a centered ribbon (a metric that rotates the rect), and uses a metric-space width in world space",
+  "Miter joins on short segments fall back to bevel, because `lineLineIntersect`'s parallel test is an absolute 1e-9 on unnormalized vectors",
+  "`clipRibbon` keeps subpaths a fixed 1-unit gap apart but stores lengths in float32, so long paths lose the separation"
+ ]
+}

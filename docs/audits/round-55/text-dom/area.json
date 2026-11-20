@@ -1,0 +1,81 @@
+{
+ "id": "text-dom",
+ "commit": "bfc55709b4b1c35343b8417dc8f74424b58d9714",
+ "date": "2026-11-20",
+ "files": [
+  "packages/text-dom/src/armedStyle.ts",
+  "packages/text-dom/src/domOffsets.ts",
+  "packages/text-dom/src/domRuns.ts",
+  "packages/text-dom/src/editOverlay.ts",
+  "packages/text-dom/src/editSession.ts",
+  "packages/text-dom/src/heldNodeStyle.ts",
+  "packages/text-dom/src/index.ts",
+  "packages/text-dom/src/overlayBaseline.ts",
+  "packages/text-dom/src/overlayDirection.ts",
+  "packages/text-dom/src/overlayDraft.ts",
+  "packages/text-dom/src/overlayEdits.ts",
+  "packages/text-dom/src/overlayFollow.ts",
+  "packages/text-dom/src/overlayFrame.ts",
+  "packages/text-dom/src/overlayHistory.ts",
+  "packages/text-dom/src/overlayListeners.ts",
+  "packages/text-dom/src/overlayOpen.ts",
+  "packages/text-dom/src/overlayPlace.ts",
+  "packages/text-dom/src/overlayScroll.ts",
+  "packages/text-dom/src/overlaySeed.ts",
+  "packages/text-dom/src/overlaySelection.ts",
+  "packages/text-dom/src/overlayStyle.ts",
+  "packages/text-dom/src/overlayTyping.ts",
+  "packages/text-dom/src/pasteRuns.ts",
+  "packages/text-dom/src/pbt.fixture.ts",
+  "packages/text-dom/src/publishedRange.ts",
+  "packages/text-dom/src/runSplice.ts",
+  "packages/text-dom/src/runStyle.ts",
+  "packages/text-dom/src/selectionStyling.ts",
+  "packages/text-dom/src/styleShortcuts.ts",
+  "packages/text-dom/src/testing/baselineDrop.ts",
+  "packages/text-dom/src/testing/overlayDirection.ts",
+  "packages/text-dom/src/testing/overlayReady.ts",
+  "packages/text-dom/src/testing/textEditHarness.ts",
+  "packages/text-dom/src/textEditTypes.ts",
+  "packages/text-dom/src/useTextEdit.ts"
+ ],
+ "a": 5,
+ "b": 6,
+ "m": 2,
+ "distinct": 9,
+ "chapman": 13,
+ "unfound": 4,
+ "read": {
+  "A": 35,
+  "B": 35
+ },
+ "patches": 9,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.1,
+   "B": 5.5,
+   "match": 0.1,
+   "fix": 17.8
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "studio",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2039049,
+  "costUsd": 6.22
+ },
+ "fixCommits": [
+  "337905dc880d2b9cf29f4c5377c1737f0e64688e",
+  "f882cb5fe05b14bed49e7f2c33cc3ee17dfe1047",
+  "f2a95e301ff1ea2b90bc464c9e499f2663166d4e",
+  "008dce52ec3d7817f5f8be53dabc74322560d87d",
+  "46447ca10bdb928409b1a8c20400f52ca0977176",
+  "112ebc017924a87547eca1ae6bfe2f408906bb7c",
+  "e30213e75680f6f8262bd94c2d7e53a55b69d4d1",
+  "f83fa78e42cd0adf4a39370f3d8ecbbc2d4183f0",
+  "494cf6bec1afa71b49407f3af9248081f407742e"
+ ]
+}

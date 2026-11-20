@@ -1,0 +1,12 @@
+packages/scale/src/band.ts
+packages/scale/src/index.ts
+packages/scale/src/linear.ts
+packages/scale/src/log.ts
+packages/scale/src/ordinal.ts
+packages/scale/src/pbt.fixture.ts
+packages/scale/src/polar.ts
+packages/scale/src/replacedFormat.ts
+packages/scale/src/tickFormat.ts
+packages/scale/src/time.ts
+packages/scale/src/types.ts
+packages/scale/src/warp.ts

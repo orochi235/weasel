@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "A cancel or commit whose `onEnd` moves focus re-enters through the overlay's blur and writes the edit (again)",
+  "A clipped node's scroll box keeps catching presses after its pose goes `null`",
+  "Placing the overlay after a node restyle still reads the style the edit opened with",
+  "Undo/redo with no readable selection drops the current state instead of moving it to the other stack",
+  "A plain-text paste keeps a lone CR that an HTML paste turns into LF"
+ ],
+ "b": [
+  "A hidden edit overlay of a clipping node leaves its scroll box catching pointer input, so presses there neither reach the canvas nor end the edit",
+  "normalizeSmallCaps drops a `<br>` inside a small-caps run span, deleting the line break the user typed",
+  "The overlay is placed with the style the edit opened with, not the node style the edit has since rewritten",
+  "A negative `startEdit` caret throws from the edit-opening effect",
+  "Restoring focus after a chrome styling scrolls a clipping node's box back to its start",
+  "The test harnesses answer `getScreenPose` through `in` on a user-keyed table"
+ ]
+}
