@@ -30,4 +30,17 @@ describe('ActionsRegistry.trigger', () => {
     registry.register({ id: 'test.pass', label: 'Pass', invoker: { timing: 'immediate', run: () => 'pass' } });
     expect(registry.trigger('test.pass')).toBe(false);
   });
+
+  it('reads paramsOf at the active scope, where trigger runs', () => {
+    const run = vi.fn();
+    const root = new ActionsNode(null, true, () => null);
+    const canvas = new ActionsNode(root, true, () => null);
+    canvas.mount();
+    canvas.activate();
+    root.registry.register({ id: 'test.insert', label: 'Insert', invoker: { timing: 'immediate', run } });
+    canvas.registry.tune('test.insert', { params: { kind: 'ellipse' } });
+    root.registry.trigger(dynamicActionId('test.insert'));
+    expect(run.mock.calls[0]![1]).toEqual({ kind: 'ellipse' });
+    expect(root.registry.paramsOf(dynamicActionId('test.insert'))).toEqual({ kind: 'ellipse' });
+  });
 });

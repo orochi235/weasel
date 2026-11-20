@@ -52,7 +52,7 @@ export interface LastOperationHost {
   /** The params a run of `id` handed `given` starts with: every tuning's, `given` laid over them. */
   paramsOf(id: string, given: Record<string, unknown> | undefined): Record<string, unknown>;
   /** Run the action live for `id` here with `params`, as `trigger` would, and say whether it ran: false when none
-   *  is registered or its `enabled` refuses. */
+   *  is registered, its `eligible` rule or `enabled` refuses, or it passes. */
   rerun(id: string, params: Record<string, unknown>): boolean;
   /** Hand `params`, which a panel change made `id`'s for the session, to each tuning of `id` that keeps them. */
   keep(id: string, params: Readonly<Record<string, unknown>>): void;
@@ -188,13 +188,17 @@ export class LastOperationKeeper implements LastOperationStore {
         try {
           ran = held.rerun(values);
         } catch (err) {
+          ran = false;
           console.error(`weasel last operation: rerunning "${held.op.id}" threw`, err);
         }
       });
-      // An action gone or refusing since leaves the operation as it was, not undone with nothing in its place.
+      // An action gone, refusing or throwing since leaves the operation as it was, not undone with nothing in its
+      // place. A throw after it committed something leaves that, as no redo can bring the operation back over it.
       if (!ran) {
-        if (undid) stack.redo();
-        back?.();
+        if (watched.entry === null && watched.clean) {
+          if (undid) stack.redo();
+          back?.();
+        }
       } else {
         ({ entry: held.entry, clean } = watched);
       }
