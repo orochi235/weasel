@@ -1,32 +1,19 @@
 import {
   type PrefGroup,
   type PrefLeaf,
-  type PrefNumber,
   type PrefSection,
   prefAutoValue,
   prefCanAuto,
   prefValueOrDefault,
   sourceLeafIsAtReset,
 } from '@weasel-js/prefs';
-import { PropertyAutoReadout } from '@weasel-js/ui/components/Properties';
-import { createElement, type ReactNode, useMemo } from 'react';
+import { useMemo } from 'react';
 import { autoQuotes, autoResolverOf, resolveAutoConfig } from '../config/autoConfig';
 import { configValueAt } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
 import { leafValueAt } from './fields';
-import { numberText, summarizeLeaf, summarizeValue } from './inDialog';
+import { autoReadout, summarizeAuto } from './inDialog';
 import { createLabConfigSource } from './labSource';
-
-/** An auto value as tooltip text. A number with a unit or a display reads as its field shows it. Any other computed
- *  number is cut to 6 significant digits, so `0.1 + 0.2` reads `0.3`. */
-function summarizeAuto(value: unknown, leaf: PrefLeaf): string {
-  if (typeof value !== 'number') return summarizeLeaf(leaf, value);
-  const text = leaf.kind === 'number' ? numberText(leaf as PrefNumber, value) : undefined;
-  return text ?? summarizeValue(Number(value.toPrecision(6)));
-}
-
-const autoReadout = (value: string | undefined): ReactNode =>
-  value === undefined ? 'auto' : createElement(PropertyAutoReadout, { value });
 
 /** What a row reads its auto state from. */
 export interface RowAutoSource {

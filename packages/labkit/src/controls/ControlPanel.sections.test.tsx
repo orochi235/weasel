@@ -352,7 +352,11 @@ describe('<ControlPanel> group drawn as a section', () => {
   it('puts its reset and its .heading() control on the heading, as a framed group does', () => {
     const setConfig = vi.fn();
     renderWithIcons(
-      <ControlPanel schema={schema} config={{ blur: { on: false, radius: 9 } }} setConfig={setConfig} />,
+      <ControlPanel
+        schema={schema}
+        config={{ blur: { on: false, radius: 9 } }}
+        setConfig={setConfig}
+      />,
     );
     // Lifted, the control takes the heading's name and its own row is gone.
     expect(screen.getByRole('checkbox', { name: 'Blur' })).not.toBeChecked();

@@ -134,7 +134,9 @@ describe('a .dialog row whose enableIf is false', () => {
           .dialog(({ value }) => <output>{String(value)}</output>),
       }),
     );
-    renderWithIcons(<ControlPanel schema={gated} config={{ on: false, note: 'hi' }} setConfig={vi.fn()} />);
+    renderWithIcons(
+      <ControlPanel schema={gated} config={{ on: false, note: 'hi' }} setConfig={vi.fn()} />,
+    );
     open('Note');
     expect(screen.queryByRole('dialog')).toBeNull();
   });
