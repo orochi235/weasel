@@ -163,6 +163,15 @@ behavior — and pass each function the part it uses.
 entry only comes down: `npm run check:size -- --update` lowers it after a split
 and never raises it.
 
+## Architectural changes ship with before/after numbers (2026-11-19)
+
+A change to how the engine works, rather than what it offers (the render walk, an index, a cache,
+the scene's change tracking, a renderer pass, how ops apply), is benchmarked before and after on the
+same fleet node and its report states the impact. That means the win it was made for and the
+overhead it adds where it can't help (small scenes, the edit path, memory), with raw runs on disk
+and measured figures marked apart from estimated ones. Perf jobs go to the fleet one at a time
+(`--kind bench`). A regression past noise is stated and either removed or argued in the same change.
+
 ## Frame loops
 
 Every frame loop runs behind `useVisibleRaf` (`@weasel-js/react`), never a bare
