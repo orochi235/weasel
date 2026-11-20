@@ -6,6 +6,7 @@
 import { cubicEvalAt } from '../curve';
 import type { Path, PolygonPath } from '../path';
 import { PathBuilder } from './builder';
+import { outsideSide } from './contourSides';
 import { lineSegment, pathToCubicContours, splitSegment, type CubicSegment } from './cubicContours';
 import { pathSignedArea } from './winding';
 
@@ -54,14 +55,22 @@ export function growRegion(path: Path, distance: number, opts: GrowRegionOptions
     join: opts.join ?? 'miter',
     miterLimit: opts.miterLimit ?? 4,
   };
+  const contours: Seg[][] = [];
   for (const contour of pathToCubicContours(path)) {
     const segs = contour.segs.filter((s) => !degenerate(s));
     if (segs.length === 0) continue;
     const last = segs.at(-1)!.c,
       first = segs[0]!.c;
     if (last[6] !== first[0] || last[7] !== first[1]) segs.push(lineSegment(last[6], last[7], first[0], first[1]));
-    emitContour(b, growContour(segs, ctx));
+    contours.push(segs);
   }
+  // Each contour grows toward the side the whole region leaves unfilled: a
+  // hole into itself, a separate shape outward whichever way it is wound.
+  // One inside the fill, or with no area, follows the path's winding.
+  contours.forEach((segs, i) => {
+    const side = contours.length > 1 ? outsideSide(contours, i) : null;
+    emitContour(b, growContour(segs, side === null ? ctx : { ...ctx, sigma: side }));
+  });
   return b.build();
 }
 

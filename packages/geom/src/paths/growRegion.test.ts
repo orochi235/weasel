@@ -72,6 +72,15 @@ describe('growRegion', () => {
     });
   });
 
+  it('grows each separate shape outward, whichever way each is wound', () => {
+    // A runs one way, B the other; both fill under 'nonzero'.
+    const g = growRegion(pathFromD('M0 0 L100 0 L100 100 L0 100 Z M200 0 L200 10 L210 10 L210 0 Z'), 2);
+    expect(inPath(g, 199, 5)).toBe(true);
+    expect(inPath(g, 205, 5)).toBe(true);
+    expect(inPath(g, 211, 5)).toBe(true);
+    expect(inPath(g, -1, 50)).toBe(true);
+  });
+
   it('shrinks a hole, and fills one grown shut', () => {
     const ring = 'M0 0 L10 0 L10 10 L0 10 Z M3 3 L3 7 L7 7 L7 3 Z';
     expect(inPath(growRegion(pathFromD(ring), 1), 5, 5)).toBe(false);
