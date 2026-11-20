@@ -12,7 +12,7 @@ import {
 } from './pathConstraints';
 import type { ConstraintPoint, HandleRef } from './points';
 import { solveConstraints } from './solve';
-import { mapConstraintAnchors, type PathConstraint } from './types';
+import { constraintFits, mapConstraintAnchors, type PathConstraint } from './types';
 
 /** Options for {@link constrainPathEdit}. */
 export interface ConstrainPathEditOptions {
@@ -130,8 +130,10 @@ export function constrainPathsEdit(items: readonly PathsEditItem[], links: reado
   // Every constraint numbered over all the anchors before the edit, the items' own first.
   const all: PathConstraint[] = [];
   const angles: (number | undefined)[] = [];
+  // One naming an anchor its own path lacks names no anchor at all, rather than another path's.
   items.forEach((it, i) => it.constraints.forEach((c) => {
-    all.push(mapConstraintAnchors(c, (a) => wasStart[i] + a)!);
+    all.push((constraintFits(c, was[i].length) && mapConstraintAnchors(c, (a) => wasStart[i] + a))
+      || { kind: 'fixed', anchor: -1 });
     angles.push(it.axisAngle);
   }));
   const ownCount = all.length;
