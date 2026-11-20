@@ -53,11 +53,11 @@ export function exportFormats(): readonly ExportFormat[] {
 }
 
 /**
- * Write `regions` of `scene` in the format registered as `formatId`. Throws
- * for an id nothing registered, and for more or fewer than one region handed
- * to a format that is not `multiRegion`; a multi-region format takes one or
- * more. Regions given as a function of the document are counted each time
- * the export reads them.
+ * Write `regions` of `scene` in the format registered as `formatId`. Rejects
+ * for an id nothing registered, for more or fewer than one region handed to a
+ * format that is not `multiRegion` (a multi-region format takes one or more),
+ * and with whatever the format throws, synchronously or not. Regions given as
+ * a function of the document are counted each time the export reads them.
  */
 export function exportRegions(
   scene: ExportScene,
@@ -71,15 +71,13 @@ export function exportRegions(
     return Promise.reject(new Error(`exportRegions: no export format "${formatId}" is registered (registered: ${known})`));
   }
   warnUnreadOptions(format, opts);
-  if (typeof regions !== 'function') {
-    try {
-      checkCount(format, regions);
-    } catch (err) {
-      return Promise.reject(err);
-    }
-    return format.export(scene, regions, opts);
+  // Every failure rejects, a format's own synchronous throw included, so a caller has one channel to hear it on.
+  try {
+    if (typeof regions !== 'function') return Promise.resolve(format.export(scene, checkCount(format, regions), opts));
+    return Promise.resolve(format.export(scene, (doc) => checkCount(format, regions(doc)), opts));
+  } catch (err) {
+    return Promise.reject(err);
   }
-  return format.export(scene, (doc) => checkCount(format, regions(doc)), opts);
 }
 
 /** The keys every format reads, {@link ExportOptions}'s. */

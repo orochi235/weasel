@@ -172,6 +172,26 @@ describe('exportPages', () => {
   });
 });
 
+describe('a format whose export throws before it returns', () => {
+  it('rejects rather than throwing out of exportRegions and exportPages', async () => {
+    registerExportFormat({ ...fake('bad', true), export: () => { throw new Error('bad options'); } });
+    const { scene, pages } = plainScene();
+    let threw = false;
+    let got: [Promise<Blob>, Promise<Blob>, Promise<Blob>] | null = null;
+    try {
+      got = [
+        exportRegions(scene, [{ x: 0, y: 0, width: 1, height: 1 }], 'bad'),
+        exportRegions(scene, () => [{ x: 0, y: 0, width: 1, height: 1 }], 'bad'),
+        exportPages(scene, pages, 'bad'),
+      ];
+    } catch {
+      threw = true;
+    }
+    expect(threw).toBe(false);
+    for (const p of got!) await expect(p).rejects.toThrow('bad options');
+  });
+});
+
 describe('the registry\'s background option', () => {
   it('takes a function of the document drawn and hands it to the format', async () => {
     registerExportFormat(fake('two', true));
