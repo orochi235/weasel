@@ -1,7 +1,7 @@
 .root {
   position: relative;
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
   gap: var(--wzl-space-4);
   height: 100%;
   overflow: auto;
@@ -17,23 +17,37 @@
   color: var(--audit-muted);
 }
 
+.root > * { flex: none; }
+
 .main {
+  flex: 1 1 0;
+  min-height: 320px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto var(--audit-aside-width, 300px);
-  align-items: start;
+  grid-template-rows: minmax(0, 1fr);
   gap: var(--wzl-space-2);
 }
 
-.handle { align-self: stretch; }
-
 .aside {
   display: grid;
+  align-content: start;
   gap: var(--wzl-space-3);
   min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.root > .jobs {
+  max-height: 30%;
+  overflow: auto;
 }
 
 @media (max-width: 860px) {
-  .main { grid-template-columns: minmax(0, 1fr); }
+  .root > .main {
+    flex: none;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
 }
 
 .note,

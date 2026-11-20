@@ -50,14 +50,14 @@ function Chart({ map }: { map: SkulkMap }) {
       <Stats stats={stats} />
       <div ref={mainRef} className={s.main}>
         <Treemap scene={scene} selection={selection} areas={map.areas} palette={colors} onHover={setHovered} />
-        <ResizeHandle value={asideWidth} min={ASIDE.min} max={ASIDE.max} invert onInput={setAsideWidth} className={s.handle} aria-label="Resize the side panel" />
+        <ResizeHandle value={asideWidth} min={ASIDE.min} max={ASIDE.max} invert onInput={setAsideWidth} aria-label="Resize the side panel" />
         <aside className={s.aside} aria-label="Area, queue and rounds">
           <AreaDetail area={area} holder={area && runHolding(map.runs, area.id)} />
           <NextUp areas={next} onPick={pick} />
           <RoundsChart rounds={map.rounds} />
         </aside>
       </div>
-      <JobsFeed runs={map.runs} />
+      <div className={s.jobs}><JobsFeed runs={map.runs} /></div>
     </>
   );
 }
