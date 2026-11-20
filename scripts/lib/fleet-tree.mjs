@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { appendFileSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, matchesGlob } from 'node:path';
+import { isTestFile } from './fleet-triggers.mjs';
 
 /** Untracked and not ignored, so `onto test` sends it with the tree and the next sync cleans it away. */
 export const MARKER = '.onto/fleet-tree.json';
@@ -115,7 +116,7 @@ const scopeOf = (path, { scoped = [], lockScope }) => {
 
 /** Whether a branch changing `changed` runs every test: it changes a trigger no one workspace owns. */
 export const runsEverything = (changed, { triggers, scoped = [], lockScope }) =>
-  changed.some((path) => !scopeOf(path, { scoped, lockScope }) && triggers.some((glob) => matchesGlob(path, glob)));
+  changed.some((path) => !isTestFile(path) && !scopeOf(path, { scoped, lockScope }) && triggers.some((glob) => matchesGlob(path, glob)));
 
 export const branchChanges = (root, env, { triggers, scoped = [] }) => {
   const at = join(root, MARKER);

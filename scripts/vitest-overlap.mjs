@@ -17,6 +17,7 @@ import { createRequire } from 'node:module';
 import { cpus, tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
+import { fileURLToPath } from 'node:url';
 import { mergeProgress } from './lib/merge-progress.mjs';
 import { roomToOverlap, sampleLoad } from './lib/node-load.mjs';
 import { browserShape } from './lib/browser-shape.mjs';
@@ -28,7 +29,7 @@ const VITEST = join(dirname(pkg), require(pkg).bin.vitest);
 
 // On the fleet, each failure also prints as it happens (`scripts/vitest-fleet-fail.mjs`). A
 // `--reporter` flag replaces the config's reporters, so the default one is named too when none is.
-const FAIL_REPORTER = '--reporter=./scripts/vitest-fleet-fail.mjs';
+const FAIL_REPORTER = `--reporter=${fileURLToPath(new URL('./vitest-fleet-fail.mjs', import.meta.url))}`;
 const given = process.argv.slice(2);
 const fleet = Boolean(process.env.WEASEL_FLEET_COMMIT);
 const args = !fleet ? given : given.some((a) => a.startsWith('--reporter')) ? [...given, FAIL_REPORTER] : [...given, '--reporter=default', FAIL_REPORTER];
