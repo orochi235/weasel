@@ -182,6 +182,8 @@ export interface ResolvedConfig {
   renderers: Readonly<Record<string, LeafRenderer>>;
   /** Node-level `.dialog` rows, keyed by path. */
   dialogs: Readonly<Record<string, DialogSpec>>;
+  /** Each `f.custom` leaf's `validate`, keyed by path. */
+  validators?: ReadonlyMap<string, NonNullable<NodeOptions['validate']>>;
   /** The motif each group set with `.motif()` is drawn in, keyed by the group's path. */
   motifs?: ReadonlyMap<string, Motif>;
   /** The schema this one was resolved over, which its aliases point into and its conditions may read. */

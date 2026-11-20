@@ -47,6 +47,7 @@ function leafOf(resolved: ResolvedConfig, leaf: PrefLeaf, path: string): PrefLea
       dialog: entryAt(resolved.dialogs, path),
       showWhen: resolved.showIf.get(path),
       enableWhen: resolved.enableIf?.get(path),
+      validate: resolved.validators?.get(path),
     },
   );
 }
@@ -88,6 +89,7 @@ function groupOf(resolved: ResolvedConfig, group: PrefGroup, path: string): Pref
       enableIf,
       showWhen: resolved.showIf.get(path),
       enableWhen: resolved.enableIf?.get(path),
+      validate: resolved.validators?.get(path),
     },
   );
   const look = withExtras(
@@ -137,8 +139,8 @@ function membersOf(
  * paths they had. What a `PrefLeaf` has no field for rides on the node, where the editor keeps it and its export
  * prints it: a group's `as`, `overflow`, `lead`, `resettable`, and motif under `group` (which is what marks the leaf a
  * group), a section's `collapsed`, `layout`, `pack`, `className`, and motif (as `frame`), and a node's `.render`,
- * `.dialog`, and the `.showIf` and `.enableIf` written as functions (as `render`, `dialog`, `showWhen`, and
- * `enableWhen`).
+ * `.dialog`, the `.showIf` and `.enableIf` written as functions, and an `f.custom` leaf's `validate` (as `render`,
+ * `dialog`, `showWhen`, `enableWhen` and `validate`).
  */
 export function prefsFromConfig(resolved: ResolvedConfig): PrefSection {
   return { name: resolved.group.name, members: membersOf(resolved, resolved.group, '') };

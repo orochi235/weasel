@@ -46,6 +46,14 @@ describe('f.prefs', () => {
     expect(autoQuotes(schemaNodeAt(back.group, 'count') as PrefLeaf)).toBe(true);
   });
 
+  it("keeps an f.custom leaf's validate through a round trip to a prefs schema", () => {
+    const validate = () => ['two numbers'];
+    const once = resolveConfigSchema(f.schema({ vec: f.custom('vec', [0, 0], validate) }), []);
+    const back = f.prefs(prefsFromConfig(once));
+    expect((back.nodes.vec as { options: { validate?: unknown } }).options.validate).toBe(validate);
+    expect(resolveConfigSchema(back, []).validators?.get('vec')).toBe(validate);
+  });
+
   it('nests each leaf at the path its key names, as the config holds it', () => {
     const config = f.prefs(SCHEMA);
     expect(config.defaults()).toEqual({

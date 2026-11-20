@@ -20,6 +20,7 @@ import type {
   DialogSpec,
   LeafPatch,
   LeafRenderer,
+  NodeOptions,
   ResolvedConfig,
   SectionSpec,
 } from './types';
@@ -48,6 +49,7 @@ interface Sink {
   enableIf: Map<string, ConfigPredicate>;
   renderers: Record<string, LeafRenderer>;
   dialogs: Record<string, DialogSpec>;
+  validators: Map<string, NonNullable<NodeOptions['validate']>>;
   motifs: Map<string, Motif>;
   chain: readonly ConfigRule[];
 }
@@ -72,6 +74,7 @@ export function resolveConfigSchema<TC>(
     enableIf: new Map(),
     renderers: {},
     dialogs: {},
+    validators: new Map(),
     motifs: new Map(),
     chain: [...rules, ...builtinRules],
   };
@@ -93,6 +96,7 @@ export function resolveConfigSchema<TC>(
     enableIf: sink.enableIf,
     renderers: sink.renderers,
     dialogs: sink.dialogs,
+    validators: sink.validators,
     motifs: sink.motifs,
     ...(drawnOver === undefined ? {} : { over: drawnOver }),
   };
@@ -137,6 +141,8 @@ function resolveShape(shape: ConfigShape, at: string, name: string, sink: Sink):
       setOwn(sink.renderers, path, entry.options.render);
     if (!isConfigBranch(entry) && entry.options.dialog)
       setOwn(sink.dialogs, path, entry.options.dialog);
+    if (!isConfigBranch(entry) && entry.options.validate)
+      sink.validators.set(path, entry.options.validate);
   }
 
   return { name, children };
