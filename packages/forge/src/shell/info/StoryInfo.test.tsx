@@ -1,7 +1,7 @@
 import { createMemoryAdapter } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
 import { describeSchema } from '../../protocol/schema';
 import type { IndexEntry } from '../../story/types';
 import { connectFrame, flush, installResizeObserver } from '../labHarness';
@@ -100,5 +100,37 @@ describe('Get Info', () => {
     const row = within(dialog).getByRole('row', { name: /size/ });
     expect(row.textContent).toContain('How big.');
     expect(row.textContent).toContain('4');
+  });
+
+  describe('off a story', () => {
+    afterEach(() => history.replaceState(null, '', '/'));
+
+    it('names the component on its index page', async () => {
+      location.hash = '#/x:index';
+      mount();
+      await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X' })).toBeInTheDocument());
+      const dialog = await openInfo();
+      expect(within(dialog).getByRole('heading', { name: /^X/ })).toBeInTheDocument();
+      expect(dialog.textContent).toContain('Slider');
+    });
+
+    it('opens nothing on a missing story, and does not open later on its own', async () => {
+      location.hash = '#/x--a';
+      mount();
+      await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > A' })).toBeInTheDocument());
+      act(() => {
+        location.hash = '#/no-such--story';
+      });
+      await screen.findByRole('region', { name: 'Trial No story no-such--story' });
+      fireEvent.click(screen.getByRole('button', { name: /^Info/ }));
+      await flush();
+      expect(screen.queryByRole('dialog')).toBeNull();
+      act(() => {
+        location.hash = '#/x--a';
+      });
+      await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > A' })).toBeInTheDocument());
+      await flush();
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
   });
 });
