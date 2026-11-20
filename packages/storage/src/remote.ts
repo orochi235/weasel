@@ -44,13 +44,13 @@ export function createRemote(o: RemoteOptions): Remote {
         if (!o.queued(name)) contested.add(name);
         continue;
       }
+      taken.set(name, (taken.get(name) ?? 0) + 1);
       if (value === undefined) {
         if (!o.values.has(name)) continue;
         o.values.delete(name);
       } else {
         o.values.set(name, value);
       }
-      taken.set(name, (taken.get(name) ?? 0) + 1);
       applied.push({ name, value, origin: 'remote' });
     }
     if (overruled.length > 0) o.overruled(overruled);
