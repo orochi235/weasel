@@ -1,5 +1,5 @@
 import { createValueStore, type ValueStore } from '@weasel-js/registry';
-import type { NodeId, Scene } from '@weasel-js/core';
+import { nodeGates, type NodeId, type Scene } from '@weasel-js/core';
 import { measurementOf, type Measurement } from './measurement';
 
 /** One value, readable and watchable — what a readout re-renders from. */
@@ -46,12 +46,14 @@ export function measureIds(scene: Pick<Scene<unknown, string, unknown>, 'nodesOn
 }
 
 /** The measurement commands act on: the picked one while it is still in the
- *  scene, else the newest. */
+ *  scene, else the newest. A hidden one (`nodeGates`), which nothing draws, is
+ *  passed over as the hit test passes over it. */
 export function currentMeasureId(
-  scene: Pick<Scene<unknown, string, unknown>, 'nodesOnLayer' | 'get'>,
+  scene: Pick<Scene<unknown, string, unknown>, 'nodesOnLayer' | 'get'> & Partial<Pick<Scene<unknown, string, unknown>, 'layers'>>,
   ms: Pick<Measurements, 'layer' | 'picked'>,
 ): NodeId | null {
+  const hidden = nodeGates(scene).hidden;
   const picked = ms.picked.get();
-  if (picked !== null && measurementOf(scene.get(picked)) !== null) return picked;
-  return measureIds(scene, ms).at(-1) ?? null;
+  if (picked !== null && measurementOf(scene.get(picked)) !== null && !hidden(picked)) return picked;
+  return measureIds(scene, ms).reverse().find((id) => !hidden(id)) ?? null;
 }
