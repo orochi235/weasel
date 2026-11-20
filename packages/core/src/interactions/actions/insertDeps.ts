@@ -55,6 +55,7 @@ export type InsertExtras =
 export interface InsertEnds {
   start: { x: number; y: number };
   end: { x: number; y: number };
+  /** The drag grew the shape out from `start`, its center, to `end`. */
   fromCenter?: boolean;
   /** The host's own exact reading of an end a snap put where it is
    *  (`SnapOutcome.landing`), for a host that would otherwise recover it from

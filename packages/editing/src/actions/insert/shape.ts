@@ -93,9 +93,11 @@ export function insertShape(
   if (min) (extras as { minSize?: MinSize }).minSize = min;
   const style = insertStyleOf(resolved);
   if (style) (extras as { style?: InsertStyle }).style = style;
-  const landings = landingAt && endLandings(landingAt(start), landingAt(current));
+  // A from-center drag's start is its center, a line's too, not the end mirrored from the pointer.
+  const from = mode === 'center' ? frame.shaped.start : start;
+  const landings = landingAt && endLandings(landingAt(from), landingAt(current));
   const drag: InsertEnds = {
-    start: { x: start.x, y: start.y },
+    start: { x: from.x, y: from.y },
     end: { x: current.x, y: current.y },
     ...(mode === 'center' ? { fromCenter: true } : {}),
     ...(landings ? { landings } : {}),
