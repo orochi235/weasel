@@ -3,6 +3,7 @@ import { normalizeView, type PoseDescriptor, type Scene, type View } from '@weas
 import { computeFitView, type ComputeFitViewOptions, type MinimapFit } from './minimapMath';
 
 const NEVER = (): (() => void) => () => {};
+const ZERO = (): number => 0;
 
 /**
  * The minimap's fit view, recomputed when what it frames changes: the scene's
@@ -19,15 +20,16 @@ export function useFitView<TData, TLayer extends string, TPose>(
 ): View {
   const layersKey = JSON.stringify([layers.layerVisibility ?? null, layers.layerOrder ?? null]);
   const sceneVersion = useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
+  const live = fit === 'live';
   const overrideGeneration = useSyncExternalStore(
-    fit === 'live' ? scene.overrides.subscribe : NEVER,
-    scene.overrides.getGeneration,
-    scene.overrides.getGeneration,
+    live ? scene.overrides.subscribe : NEVER,
+    live ? scene.overrides.getGeneration : ZERO,
+    live ? scene.overrides.getGeneration : ZERO,
   );
   const scrollGeneration = useSyncExternalStore(
-    fit === 'live' ? scene.scroll.subscribe : NEVER,
-    scene.scroll.getGeneration,
-    scene.scroll.getGeneration,
+    live ? scene.scroll.subscribe : NEVER,
+    live ? scene.scroll.getGeneration : ZERO,
+    live ? scene.scroll.getGeneration : ZERO,
   );
   return useMemo<View>(() => {
     // A `fit` function's result is the caller's; pointer math divides by its scale.

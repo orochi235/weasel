@@ -1,9 +1,10 @@
 /** What `<MinimapCanvas>` frames: a press at its center recenters the main view on the center of its fit. */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { cleanup, createEvent, fireEvent, render } from '@testing-library/react';
-import { createScene } from '@weasel-js/core';
-import type { DrawCommand, Scene, SceneViewLayers, View } from '@weasel-js/core';
+import { act, cleanup, createEvent, fireEvent, render, renderHook } from '@testing-library/react';
+import { createScene, RECT_POSE_DESCRIPTOR } from '@weasel-js/core';
+import type { DrawCommand, PoseDescriptor, Scene, SceneViewLayers, View } from '@weasel-js/core';
 import { MinimapCanvas } from './MinimapCanvas';
+import { useFitView } from './useFitView';
 
 vi.mock('@weasel-js/renderer', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@weasel-js/core')>()),
@@ -64,5 +65,32 @@ describe('<MinimapCanvas> fit', () => {
 
   it('leaves out a layer its layerVisibility hides', () => {
     expect(pressCenter(makeScene(), { 'scene:notes': false }).x).toBeCloseTo(50, 6);
+  });
+});
+
+describe('useFitView', () => {
+  const descriptor = RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<P>;
+
+  it('keeps a "scene" fit through an override publish, which it does not read', () => {
+    const scene = makeScene();
+    const { result, rerender } = renderHook(() => useFitView(scene, 100, 100, 'scene', descriptor));
+    const first = result.current;
+    act(() => {
+      scene.overrides.set(scene.roots[0], { pose: { x: 900, y: 0, width: 100, height: 100 } });
+      scene.overrides.commit();
+    });
+    rerender();
+    expect(result.current).toBe(first);
+  });
+
+  it('refits a "live" fit on an override publish', () => {
+    const scene = makeScene();
+    const { result } = renderHook(() => useFitView(scene, 100, 100, 'live', descriptor));
+    const first = result.current;
+    act(() => {
+      scene.overrides.set(scene.roots[0], { pose: { x: -9000, y: 0, width: 100, height: 100 } });
+      scene.overrides.commit();
+    });
+    expect(result.current).not.toBe(first);
   });
 });
