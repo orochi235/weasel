@@ -13,24 +13,25 @@ const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const noMods = { shift: false, alt: false, meta: false, ctrl: false };
 
 /** a (back) at 0..10, b in front at 5..15. */
-function setup(ids: string[] = ['a', 'b'], opts: Parameters<typeof useShapeBuilderTool>[0] = {}) {
+function setup(ids: string[] = ['a', 'b'], opts: Parameters<typeof useShapeBuilderTool>[0] = {}, operandIds = ids) {
   const { result } = renderHook(() => useShapeBuilderTool(opts));
   const paths: Record<string, Path> = { a: rect(0, 0, 10, 10), b: rect(5, 0, 10, 10) };
   let n = 0;
+  let z = 1;
   const createPathNode = vi.fn((path: Path, _op: string, sourceId: string) => ({ id: `made${n++}`, path, sourceId }));
   const applyOps = vi.fn();
   const adapter: BooleansAdapter = {
     ...rootsTree(['a', 'b']),
     getSelection: () => ids as NodeId[],
     getWorldPath: (id) => paths[id],
-    compareZ: (x, y) => x.localeCompare(y),
+    compareZ: (x, y) => z * x.localeCompare(y),
     getNode: (id) => ({ id }),
     createPathNode,
     applyOps,
   };
   const deps = {
     booleansAdapter: adapter,
-    operands: { get: () => ids },
+    operands: { get: () => operandIds, set: (next: string[]) => { operandIds = next; } },
     view: { get: () => VIEW, set: () => {} },
   } as unknown as ActionDeps;
   const actionOf = (id: string): Action => {
@@ -59,7 +60,8 @@ function setup(ids: string[] = ['a', 'b'], opts: Parameters<typeof useShapeBuild
     ((result.current.overlay as RenderLayer<unknown>).draw(null, VIEW, { width: 100, height: 100, dpr: 1 }) as PathDrawCommand[])
       .map((c) => [c.fill?.paint, boundsOfPath(c.path).x, boundsOfPath(c.path).width]);
   const made = () => createPathNode.mock.calls.map(([path, op, src]) => [op, src, boundsOfPath(path).x, boundsOfPath(path).width]);
-  return { tool: () => result.current, enabled, fire, drag, painted, made, applyOps };
+  const restack = () => { z = -z; };
+  return { tool: () => result.current, enabled, fire, drag, painted, made, applyOps, restack, operands: () => operandIds };
 }
 
 describe('useShapeBuilderTool', () => {
@@ -101,6 +103,14 @@ describe('useShapeBuilderTool', () => {
     const alt = setup(['a', 'b'], { mode: 'delete' });
     alt.drag([[13, 5], [7, 5]], true).onEnd?.(handleEndCtx(), 'commit');
     expect(alt.made()).toEqual([['divide', 'a', 0, 5], ['union', 'b', 5, 10]]);
+  });
+
+  it('takes a face from the source on top when the stacking changed since it was shown', () => {
+    const s = setup();
+    s.fire('shapeBuilder.showFace', { world: { x: 7, y: 5 }, mods: noMods });
+    s.restack();
+    s.fire('shapeBuilder.takeFace', { press: { x: 7, y: 5 }, mods: noMods });
+    expect(s.made()).toContainEqual(['union', 'a', 5, 5]);
   });
 
   it('commits nothing for a canceled drag', () => {

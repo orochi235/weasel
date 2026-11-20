@@ -9,7 +9,7 @@ import { type BooleanOpOptions } from '@weasel-js/editing';
 /** Screen pixels between the points a drag is sampled at for the faces it crosses. */
 const SAMPLE_PX = 2;
 
-/** The selection's faces, recomputed only when what they are cut from changes. */
+/** The selection's faces, recomputed only when what they are cut from, or its stacking, changes. */
 function createPlanCache(opts: () => BooleanOpOptions) {
   let key: string | null = null;
   let plan: ShapeBuilderPlan | null = null;
@@ -20,7 +20,8 @@ function createPlanCache(opts: () => BooleanOpOptions) {
       const scale = deps.view?.get().scale;
       const o = { ...opts(), ...(scale ? { scale } : {}) };
       const sel = [...adapter.getSelection()] as NodeId[];
-      const next = JSON.stringify([o, sel.map((id) => [
+      const stacked = [...sel].sort((a, b) => adapter.compareZ(a, b));
+      const next = JSON.stringify([o, stacked.map((id) => [
         id, adapter.getWorldPath(id) ?? (adapter.getOutline?.(id) ? adapter.getNode(id) : null) ?? null, adapter.getPaint?.(id) ?? null,
       ])]);
       if (next !== key) {
