@@ -6,3 +6,7 @@ export type StyleField = 'fill' | 'stroke' | 'text';
  *  leaves alone. Kept apart from {@link StyleField}, so choosing a role, which hands back the
  *  colors, keeps it. */
 export type FontField = 'size';
+
+/** A part of a shape's or connector's outline the author can set by hand, which a theme then leaves
+ *  alone: its width and its dash. */
+export type LineField = 'width' | 'dash';

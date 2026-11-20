@@ -216,6 +216,17 @@ export const LANE_STROKE_WIDTH = 1;
 /** An edge's stroke width when its style gives none. */
 export const EDGE_STROKE_WIDTH = 1.5;
 
+/** Which kind of box an outline is drawn on: a shape's body, a cluster, a container or pool, or a lane. */
+export type OutlineKind = 'body' | 'cluster' | 'region' | 'lane';
+
+/** The width and dash a box of `kind` is outlined with in `style`. A lane is always
+ *  {@link LANE_STROKE_WIDTH} wide and a container or pool undashed, whatever the style says. */
+export function outlineOf(style: NodeStyle, kind: OutlineKind): { width: number; dash?: number[] } {
+  if (kind === 'lane') return { width: LANE_STROKE_WIDTH };
+  const width = style.strokeWidth ?? (kind === 'cluster' ? 1 : NODE_STROKE_WIDTH);
+  return kind !== 'region' && style.dash ? { width, dash: style.dash } : { width };
+}
+
 /** How an edge is drawn: its stroke's color, width, dash and trim, its markers, and its label color. */
 export interface EdgeStyle {
   stroke: string;
