@@ -1,8 +1,8 @@
 import {
   fitViewToPage, pageHolding, pageInView, useLatest, viewportWorldRect, type PlacedPage, type View,
 } from '@weasel-js/core';
-import { heldPointers } from '@weasel-js/gestures';
-import { useEffect, useRef, useState } from 'react';
+import { heldPointers, type HeldPointers } from '@weasel-js/gestures';
+import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 
 /** How the view moves through a document's pages: freely (`'continuous'`, the default), or coming to rest
  *  fitted to one page at a time (`'single'`). A view setting; the same document opens in either. */
@@ -30,19 +30,21 @@ function near(a: View, b: View): boolean {
     && Math.abs(a.scale.x / b.scale.x - 1) < 1e-3 && Math.abs(a.scale.y / b.scale.y - 1) < 1e-3;
 }
 
-/** Whether any pointer is down on the page, by `heldPointers`, so a pinch stays down while one finger is. */
+/** Whether any pointer is down on the page, by `heldPointers`, so a pinch stays down while one finger is. Pointers are
+ *  tracked while `on` is false too, so one pressed before it turns true reads as down; it reads false until then, so
+ *  nothing re-renders while off. */
 function usePointerDown(on: boolean): boolean {
-  const [down, setDown] = useState(false);
-  useEffect(() => {
-    if (!on) return;
+  const reader = useRef<HeldPointers | null>(null);
+  const subscribe = useCallback((notify: () => void) => {
     const held = heldPointers(document.documentElement);
-    held.subscribe(() => setDown(held.count() > 0));
+    reader.current = held;
+    held.subscribe(notify);
     return () => {
       held.release();
-      setDown(false);
+      if (reader.current === held) reader.current = null;
     };
-  }, [on]);
-  return down;
+  }, []);
+  return useSyncExternalStore(subscribe, () => on && (reader.current?.count() ?? 0) > 0, () => false);
 }
 
 /** Options for {@link usePageSettle}. */
