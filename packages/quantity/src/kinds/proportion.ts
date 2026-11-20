@@ -1,5 +1,5 @@
 import { escapeMarkup, intlParts, numberPart, signed, spokenSign, textOf, type DisplayKind, type Part } from '../kind';
-import { latinDigits, MINUS_SIGN, parseNumberIn, unsignedZero } from '../number';
+import { finiteOrNaN, latinDigits, MINUS_SIGN, parseNumberIn, unsignedZero } from '../number';
 
 /** A share of one as a percentage: 0.25 shows `25%`. Typed text reads as
  *  percent with or without the sign. */
@@ -177,7 +177,7 @@ function parseFraction(typed: string, locale: string): number {
     magnitude = Number(diagonal[2] ?? 0) + fromDigits(diagonal[3]!, SUPERSCRIPT) / fromDigits(diagonal[4]!, SUBSCRIPT);
   } else return parseNumberIn(text, undefined, locale);
   const sign = (inline ?? diagonal)![1];
-  return sign === '-' || sign === MINUS_SIGN ? -magnitude : magnitude;
+  return finiteOrNaN(sign === '-' || sign === MINUS_SIGN ? -magnitude : magnitude);
 }
 
 const escape = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -291,7 +291,7 @@ export const ratioKind: DisplayKind<RatioDisplay> = {
     // Split at the first colon after the first character, not by a lazy pattern, which backtracks quadratically.
     const at = text.trim().indexOf(':', 1);
     const [a, b] = [text.trim().slice(0, at), text.trim().slice(at + 1)];
-    return at > 0 && b.trim() !== '' ? read(a) / read(b) : read(text);
+    return at > 0 && b.trim() !== '' ? finiteOrNaN(read(a) / read(b)) : read(text);
   },
 };
 

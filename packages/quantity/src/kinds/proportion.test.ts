@@ -72,3 +72,18 @@ describe('fraction counted in e', () => {
     expect(parseAs('-e', ofE)).toBeCloseTo(-Math.E);
   });
 });
+
+describe('typed digits never read as an infinity', () => {
+  it('reads a division by zero as NaN', () => {
+    expect(parseAs('1/0', fraction())).toBeNaN();
+    expect(parseAs('-1 1/0', fraction())).toBeNaN();
+    expect(parseAs('¹⁄₀', fraction())).toBeNaN();
+    expect(parseAs('1/0π', fraction({ of: 'π' }))).toBeNaN();
+    expect(parseAs('-1:0', ratio())).toBeNaN();
+  });
+
+  it('still reads the infinity word', () => {
+    expect(parseAs('∞', fraction())).toBe(Infinity);
+    expect(parseAs('-∞', ratio())).toBe(-Infinity);
+  });
+});

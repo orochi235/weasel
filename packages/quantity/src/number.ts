@@ -85,6 +85,9 @@ export function parseNumberIn(text: string, units: Readonly<UnitTable> | undefin
   return Number.isNaN(n) && locale !== 'en-US' ? readNumber(delocalized(text, 'en-US'), units) : n;
 }
 
+/** `n`, or NaN when it is infinite: an infinity reads only from a word for it, never from digits. */
+export const finiteOrNaN = (n: number): number => (Number.isFinite(n) ? n : Number.NaN);
+
 /** `parseNumber` once every number in the text is in `en-US` form with no grouping. */
 function readNumber(text: string, units?: Readonly<UnitTable>): number {
   if (units) {
@@ -109,7 +112,7 @@ function readNumber(text: string, units?: Readonly<UnitTable>): number {
   // Scaled through the exponent rather than by multiplying: 1.1 * 1000 is 1100.0000000000002.
   const [mantissa, power = '0'] = t.toLowerCase().split('e');
   const n = Number(exponent === undefined ? t : `${mantissa}e${Number(power) + exponent}`);
-  return Number.isFinite(n) ? n : Number.NaN;
+  return finiteOrNaN(n);
 }
 
 interface NumberShape {
