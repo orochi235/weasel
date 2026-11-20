@@ -1,6 +1,7 @@
 import { Bar } from '@weasel-js/ui/components/Bar';
 import { Fragment, type ReactNode } from 'react';
 import type { RegionContribution, StatusReadout, TrialChromeContext } from '../types';
+import { groupsOf } from './groupsOf';
 
 /** Props for `<StatusRegion>`. */
 export interface StatusRegionProps<TCtx = TrialChromeContext> {
@@ -11,8 +12,8 @@ export interface StatusRegionProps<TCtx = TrialChromeContext> {
   className?: string;
 }
 
-/** Lays a bar's readouts out. The first one marked `end`, and every one after
- *  it, sits at the far end. */
+/** Lays a bar's readouts out, grouped by their `group`. Groups marked `end`
+ *  sit past one spacer at the far end. */
 export function StatusRegion<TCtx = TrialChromeContext>({
   contributions,
   ctx,
@@ -22,26 +23,32 @@ export function StatusRegion<TCtx = TrialChromeContext>({
   if (contributions.length === 0) return null;
   const shows = (c: RegionContribution<NoInfer<TCtx>>): boolean =>
     !!c.render || (c.region === region && !!c.item);
-  const firstEnd = contributions.find((c) => c.end && shows(c));
+  const groups = groupsOf(contributions);
+  const firstEnd = groups
+    .filter((g) => g.end)
+    .flatMap((g) => g.entries)
+    .find(shows);
   return (
     <Bar framed="status" divided className={className}>
-      {contributions.map((c) => {
-        let body: ReactNode;
-        let title: string | undefined;
-        if (c.render) body = c.render(ctx);
-        else if (c.region === region && c.item) {
-          const item = c.item as StatusReadout;
-          body = item.text;
-          title = item.title;
-        } else return null;
-        const spacer = c === firstEnd;
-        return (
-          <Fragment key={c.id}>
-            {spacer && <Bar.Spacer />}
-            <Bar.Readout title={title}>{body}</Bar.Readout>
-          </Fragment>
-        );
-      })}
+      {groups
+        .flatMap((g) => g.entries)
+        .map((c) => {
+          let body: ReactNode;
+          let title: string | undefined;
+          if (c.render) body = c.render(ctx);
+          else if (c.region === region && c.item) {
+            const item = c.item as StatusReadout;
+            body = item.text;
+            title = item.title;
+          } else return null;
+          const spacer = c === firstEnd;
+          return (
+            <Fragment key={c.id}>
+              {spacer && <Bar.Spacer />}
+              <Bar.Readout title={title}>{body}</Bar.Readout>
+            </Fragment>
+          );
+        })}
     </Bar>
   );
 }

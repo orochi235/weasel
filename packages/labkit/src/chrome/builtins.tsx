@@ -199,7 +199,6 @@ function zoomContributions(instrument: Instrument, ctx: TrialChromeContext): Tri
     out.push({
       id: 'fps',
       region: 'status',
-      group: 'view',
       end: true,
       render: () => <FpsMeter />,
     });
