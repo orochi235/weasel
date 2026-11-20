@@ -36,6 +36,10 @@ export interface AttachHudOptions {
    *   the host's copy of the atlas rather than the bundled one.
    *
    * Unset, the bundled atlas is fetched and registered.
+   *
+   * The pair and the bundled atlas register one family that every HUD on a
+   * page shares, so `attachHud` throws where another HUD registered it from
+   * other URLs.
    */
   readonly font?: string | FontAtlasUrls;
 }
@@ -46,7 +50,7 @@ export interface AttachHudOptions {
  * the detach function.
  *
  * Throws if the HUD is already attached — a HUD belongs to one canvas at a
- * time.
+ * time — or if its `font` pair differs from the one another HUD registered.
  */
 export function attachHud(
   api: CanvasExtensionApi,
@@ -59,7 +63,7 @@ export function attachHud(
   return () => { forget(); detach(); };
 }
 
-/** Registers the bundled font, and redraws the canvas once it arrives while the HUD is still `attached` there. */
+/** Registers the HUD's font, throwing where the family already holds other URLs, and redraws the canvas once it arrives while the HUD is still `attached` there. */
 function loadDefaultFont(api: CanvasExtensionApi, urls: FontAtlasUrls | undefined, attached: () => boolean): void {
   registerDefaultFont(urls)
     .then(() => { if (attached()) api.requestRedraw(); })

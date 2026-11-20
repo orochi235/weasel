@@ -2935,3 +2935,10 @@ Calls the lanes made without a ruling:
   then `DFLT`'s, then the rest in ScriptList order, and taking the first whose lookups cover the pair. Layout knows
   no run's script, so picking one script for every pair was the alternative, and loses kerning other scripts' lookups
   alone carry.
+
+## Audit round forty-nine (2026-11-20): hud
+
+- 2026-11-20 (the fixer's call): `attachHud` throws, attaching nothing, when its `font` pair (or the bundled atlas)
+  differs from the URLs another HUD registered `weasel-hud-default` with, since every HUD on a page shares that one
+  family. A host wanting another atlas registers it under a family of its own and passes the name. Swapping the
+  family to the newest pair with `replace`, under every HUD already drawing it, was the alternative.
