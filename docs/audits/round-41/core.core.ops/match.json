@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   0
+  ]
+ ],
+ "a": [
+  "setPath reports a no-op for a path change that only touches fillRule, openFill or corners, so history drops an edit it applied",
+  "setPath and setSelection decide \"no-op\" from the stated `from`, not from what the node holds, so a stale `from` loses the undo entry",
+  "writtenBy rebuilds op copies through defaultOpRegistry instead of the scene's own opRegistry",
+  "createDeleteOp observes the slot under the parent of the op's input node before switching to the live node, so a stale copy loses the anchor",
+  "setText never reports a no-op, unlike its sibling field ops"
+ ],
+ "b": [
+  "writtenBy rebuilds ops through defaultOpRegistry, ignoring the scene's own opRegistry",
+  "setPath and setSelection report a no-op from the stated `from`, so a real write can be dropped from history"
+ ]
+}

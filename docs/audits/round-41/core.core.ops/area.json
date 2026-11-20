@@ -1,0 +1,67 @@
+{
+ "id": "core.core.ops",
+ "commit": "782733b19c54308edbc779a6bdfcae2ca398cf65",
+ "date": "2026-11-19",
+ "files": [
+  "packages/core/src/core/ops/alreadyHolds.ts",
+  "packages/core/src/core/ops/arrange.ts",
+  "packages/core/src/core/ops/create.ts",
+  "packages/core/src/core/ops/createHistory.ts",
+  "packages/core/src/core/ops/delete.ts",
+  "packages/core/src/core/ops/index.ts",
+  "packages/core/src/core/ops/nodeFlags.ts",
+  "packages/core/src/core/ops/nodeOps.ts",
+  "packages/core/src/core/ops/registry.ts",
+  "packages/core/src/core/ops/reorder/algorithms.ts",
+  "packages/core/src/core/ops/reorder/index.ts",
+  "packages/core/src/core/ops/reorder/setChildOrder.ts",
+  "packages/core/src/core/ops/reparent.ts",
+  "packages/core/src/core/ops/select.ts",
+  "packages/core/src/core/ops/setData.ts",
+  "packages/core/src/core/ops/setDependsOn.ts",
+  "packages/core/src/core/ops/setLayer.ts",
+  "packages/core/src/core/ops/setLayout.ts",
+  "packages/core/src/core/ops/setPath.ts",
+  "packages/core/src/core/ops/setPose.ts",
+  "packages/core/src/core/ops/setText.ts",
+  "packages/core/src/core/ops/slot.ts",
+  "packages/core/src/core/ops/types.ts",
+  "packages/core/src/core/ops/writtenBy.ts"
+ ],
+ "a": 5,
+ "b": 2,
+ "m": 2,
+ "distinct": 5,
+ "chapman": 5,
+ "unfound": 0,
+ "read": {
+  "A": 24,
+  "B": 24
+ },
+ "patches": 6,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.8,
+   "B": 2.9,
+   "match": 0.2,
+   "fix": 8.7
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "tokens": 4963479,
+  "costUsd": 3.6
+ },
+ "fixCommits": [
+  "ef3ebdda31c997fbc9f7bfc58b001c5bf7dafdc6",
+  "0828a031c296e76f2e089e840bb63376fa1112c9",
+  "f23829c776b94c014350ff7668c788d4c873a055",
+  "721585ef8759dd5682d5044a1516c194ebb0d52d",
+  "84a421282f975f0f4d691b076087d25d86cf3df1",
+  "e74131180e6ec2b7eec7503fac72740927a9e27c"
+ ]
+}

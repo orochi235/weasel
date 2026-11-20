@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   2,
+   1
+  ],
+  [
+   3,
+   2
+  ]
+ ],
+ "a": [
+  "RECT_POSE_DESCRIPTOR.lerp never interpolates `transform`, so lerp(a, b, 1) is not b for poses whose transforms differ",
+  "pathPoseDescriptor's polygon axes `to`/`write` emit the pose's own coord count, not the axes' `count`, overrunning the next row when a polygon's point count changes mid-flight",
+  "pathPoseDescriptor polygon `lerp` and `axes.add` take every non-coordinate field from one side, so a polygon whose commands differ never reaches b",
+  "rotatedRectContainsPoint / rotatedRectCorners ignore the pose's `transform`, answering differently from poseFrameOf/targetCorners for the same pose",
+  "AUTO_POSE_DESCRIPTOR.axes treats a `{kind:'rect'}` Path as a rotatable rect pose while the rest of the descriptor says Paths cannot rotate"
+ ],
+ "b": [
+  "outsetBox/insetBox grow a flipped (negative-extent) box inward, so a resize dragged past the opposite edge hands constraints a drawn box 2×extent too small",
+  "pathPoseDescriptor.lerp/axes morph polygons whose command streams differ, and lerp(a, b, 1) is not b",
+  "rotatedRectContainsPoint / rotatedRectCorners ignore the pose's `transform` and its sign, answering differently from poseFrameOf",
+  "AUTO_POSE_DESCRIPTOR.lerp sends a Path/rect mixed pair to the rect kernel, producing a NaN-filled hybrid pose"
+ ]
+}

@@ -1,0 +1,20 @@
+{
+ "pairs": [
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "`heldIndex` does not truncate a fractional index, so `moveLayer` to its own slot records an undo entry",
+  "`freshIds` only steps over ids live in the document, so a minted id can collide with a node a restored history will bring back",
+  "A journal's `applyOps` records inside `scene.untracked`, where `scene.history.applyOps` throws",
+  "An edit that is refused or throws after `kit:remove` applied leaves the removed nodes' scroll offsets and pose previews dropped"
+ ],
+ "b": [
+  "`loadState` runs with a journal open and leaves that journal holding the replaced document's ops",
+  "A stale replay never skips a layer op, so an untracked layer edit leaves an undo entry that throws on every step",
+  "A journal opened on `scene.history` records `applyOps` inside `untracked`, which the history facade refuses",
+  "`reorder` with an omitted index treats it as \"the end\" in its no-op check and records \"the start\""
+ ]
+}

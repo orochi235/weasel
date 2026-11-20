@@ -1,0 +1,68 @@
+{
+ "id": "core.core.viewport",
+ "commit": "782733b19c54308edbc779a6bdfcae2ca398cf65",
+ "date": "2026-11-19",
+ "files": [
+  "packages/core/src/core/viewport/clampView.ts",
+  "packages/core/src/core/viewport/clientToWorld.ts",
+  "packages/core/src/core/viewport/createVelocityTracker.ts",
+  "packages/core/src/core/viewport/fitSize.ts",
+  "packages/core/src/core/viewport/fitViewToBounds.ts",
+  "packages/core/src/core/viewport/homeView.ts",
+  "packages/core/src/core/viewport/interpolateView.ts",
+  "packages/core/src/core/viewport/parallax.ts",
+  "packages/core/src/core/viewport/sceneNodeClientRect.ts",
+  "packages/core/src/core/viewport/screenSlop.ts",
+  "packages/core/src/core/viewport/useCanvasSize.ts",
+  "packages/core/src/core/viewport/useDecayLoop.ts",
+  "packages/core/src/core/viewport/useFitOnce.ts",
+  "packages/core/src/core/viewport/useNodeOverlayFrame.ts",
+  "packages/core/src/core/viewport/useVelocityTracker.ts",
+  "packages/core/src/core/viewport/useViewAnimation.ts",
+  "packages/core/src/core/viewport/view.ts",
+  "packages/core/src/core/viewport/viewTransform.ts",
+  "packages/core/src/core/viewport/viewportWorldRect.ts",
+  "packages/core/src/core/viewport/wheelHandler.ts",
+  "packages/core/src/core/viewport/zoomAt.ts",
+  "packages/core/src/core/viewport/zoomBounds.ts"
+ ],
+ "a": 5,
+ "b": 6,
+ "m": 2,
+ "distinct": 9,
+ "chapman": 13,
+ "unfound": 4,
+ "read": {
+  "A": 22,
+  "B": 22
+ },
+ "patches": 9,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.2,
+   "B": 2.8,
+   "match": 0.1,
+   "fix": 16.4
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "tokens": 11399310,
+  "costUsd": 6.08
+ },
+ "fixCommits": [
+  "51dc6ab3e2253164174cf25de41f7449ded718f6",
+  "f9ab55b3e55144235b04d09c72784544d0aacc7d",
+  "3c212ef49c7c897132f2f00ddec5165389e4334c",
+  "81b75358398acd615e43c43a4309f888da3976b3",
+  "c4783b465cd34ff1577d2c002105e55aa4e1ffca",
+  "508d8c28685ea34253125ab69e605267bfa707c2",
+  "86b43d16fd030cc65a8c62583c6cda2af9916ead",
+  "fb4710c20d05ae24931db4c9697d65b0018c4619",
+  "46440b6958c5d4dec982c9e50e2c0f67b0337c76"
+ ]
+}

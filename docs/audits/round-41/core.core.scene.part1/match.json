@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ],
+  [
+   3,
+   2
+  ]
+ ],
+ "a": [
+  "A derivation that throws on a re-derive leaves its memo record describing the new deps beside the old value, so later reads return the stale value without rethrowing",
+  "`bindOpToAdapter` and `bindOpToHistoryAdapter` drop the op's `caused()`, so an op that decides its effect as it runs is re-decided on undo/redo once bound",
+  "`pathFromParts` with two or more parts joins them under `nonzero`, so an `evenodd` part's holes become solid in the path picking and bounds read",
+  "`RebasedDep` drops `children`, so a group dependency read from another frame — including a group nested two deep in a boolean group — contributes nothing",
+  "`editPasses.run` counts a pass op that reported a no-op as applied, so the edit-pass op is never elided and stops coalescing",
+  "`kit:removeLayer` and `kit:addLayer`'s revert splice by the recorded index instead of finding the layer by id, so a replay onto a scene with a different layer order removes the wrong layer silently"
+ ],
+ "b": [
+  "A child that leaves a container and returns within one edit is reported as an arrival",
+  "`bindOpToAdapter` and `bindOpToHistoryAdapter` drop an op's `caused()`, so an outer op that defines it is applied unbound",
+  "A group two levels down inside a boolean group contributes nothing: `RebasedDep` has no `children`",
+  "`kit:addLayer` applies over an existing layer id, where `kit:add` refuses a colliding node id",
+  "Layer `parallax` options are stored by reference and never owned, unlike every other value a scene edit stores"
+ ]
+}

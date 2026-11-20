@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "A zero-height or zero-width box is put on the earliest page it touches, not the one it overlaps most",
+  "`createPageRun` on a scene that already has a page run makes a second run that every reader ignores",
+  "core's `adoptLegacyPages` reads an unchecked `core:pages` value, so a bad save throws a `TypeError` or lays pages out at NaN"
+ ],
+ "b": [
+  "pageOfBounds ranks pages by overlap area, so a zero-thickness box goes to the earliest page it touches, not the one it mostly lies on",
+  "createPageRun on a scene that already has a page run adds a second run that every page reader ignores",
+  "adoptLegacyPages throws a TypeError on a `core:pages` value that is not a PagesDoc",
+  "layoutPages looks `align` up in a plain object literal, so an unknown or prototype-named value gives NaN poses"
+ ]
+}
