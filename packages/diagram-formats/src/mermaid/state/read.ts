@@ -70,6 +70,8 @@ class StateReader {
         const from = this.end(s.from, scope, 'start');
         const to = this.end(s.to, scope, 'end');
         this.edges.push({ from, to, ...(s.label !== undefined ? { label: decodeEntities(s.label, true) } : {}) });
+        if (s.fromClass !== undefined) this.styles.assign(from, s.fromClass);
+        if (s.toClass !== undefined) this.styles.assign(to, s.toClass);
       } else if (s.kind === 'state') {
         const d = this.draft(s.id, scope);
         if (s.label !== undefined) Object.assign(d, { lines: [decodeEntities(s.label, true)], named: true });

@@ -6,7 +6,7 @@ import { statementsOf, type MermaidDirection, type MermaidSource, type Statement
 export type StateType = 'fork' | 'join' | 'choice';
 
 export type StateStmt =
-  | { kind: 'transition'; from: string; to: string; label?: string; line: number }
+  | { kind: 'transition'; from: string; to: string; label?: string; fromClass?: string; toClass?: string; line: number }
   | { kind: 'state'; id: string; label?: string; type?: StateType; line: number }
   | { kind: 'describe'; id: string; text: string; line: number }
   | { kind: 'composite'; id: string; label?: string; regions: StateStmt[][]; line: number }
@@ -61,11 +61,11 @@ class StateParser {
     const t = TRANSITION.exec(text);
     if (t !== null) {
       const [, from, fromClass, to, toClass, label] = t as unknown as (string | undefined)[];
-      return [
-        { kind: 'transition', from: from!, to: to!, ...(label !== undefined && label.trim() !== '' ? { label: label.trim() } : {}), line },
-        ...(fromClass !== undefined ? [{ kind: 'assign' as const, id: from!, name: fromClass, line }] : []),
-        ...(toClass !== undefined ? [{ kind: 'assign' as const, id: to!, name: toClass, line }] : []),
-      ];
+      // A class on `[*]` goes to the start or end it reads as, which only the reader knows.
+      return [{
+        kind: 'transition', from: from!, to: to!, ...(label !== undefined && label.trim() !== '' ? { label: label.trim() } : {}),
+        ...(fromClass !== undefined ? { fromClass } : {}), ...(toClass !== undefined ? { toClass } : {}), line,
+      }];
     }
     const as = STATE_AS.exec(text);
     if (as !== null) return [as[3] !== undefined ? this.composite(as[2]!, as[1]!, line) : { kind: 'state', id: as[2]!, label: as[1]!, line }];
