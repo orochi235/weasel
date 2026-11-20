@@ -26,6 +26,11 @@ function readLine(panel: Element): number {
   return (panel.querySelector(LIST) ?? panel).getBoundingClientRect().top;
 }
 
+/** What holds the bar and the panel: the section the bar sits in, docked or torn out, or else the page. */
+function rootOf(bar: Element | null): Element {
+  return bar?.closest(HOST) ?? document.body;
+}
+
 function sectionsOf(panel: Element): HTMLElement[] {
   return [...panel.querySelectorAll<HTMLElement>('[data-token-category]')];
 }
@@ -39,8 +44,8 @@ export function SectionJump() {
   const held = useRef(false);
 
   useEffect(() => {
-    // The section holding this bar holds the panel too, docked or torn out, and outlives a remount of the panel.
-    const root = ref.current?.closest(HOST) ?? document.body;
+    // The root outlives a remount of the panel.
+    const root = rootOf(ref.current);
     const read = () => {
       const panel = root.querySelector(PANEL);
       const sections = panel ? sectionsOf(panel) : [];
@@ -76,7 +81,7 @@ export function SectionJump() {
   }));
 
   const jump = (next: TokenCategory | null) => {
-    const panel = ref.current?.closest(HOST)?.querySelector(PANEL);
+    const panel = rootOf(ref.current).querySelector(PANEL);
     const target = next && panel?.querySelector(`[data-token-category="${next}"]`);
     const scroller = panel?.querySelector(LIST);
     if (!panel || !target || !scroller) return;
