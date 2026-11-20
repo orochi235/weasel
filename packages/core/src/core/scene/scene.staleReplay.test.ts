@@ -154,3 +154,45 @@ describe('Scene — replaying an entry whose node an untracked edit took', () =>
     expect(scene.get(A)!.parent).toBe(G);
   });
 });
+
+describe('Scene — replaying an entry whose layer an untracked edit took', () => {
+  function layered() {
+    const scene = createScene<{ label: string }, string>({ systemLayers: [{ id: 'default' }] });
+    const add = (id: string, layer: string) =>
+      scene.add({ id: asNodeId(id), kind: 'mark', layer, pose: { ...POSE }, data: { label: id } });
+    return { scene, add };
+  }
+
+  it('undo walks past layer edits naming a layer that is gone and reaches the entries beneath', () => {
+    const { scene, add } = layered();
+    add('b', 'default');
+    scene.setPose(B, { ...POSE, x: 7 });
+    scene.addLayer({ id: 'L', name: 'L' });
+    scene.setLayerVisible('L', false);
+    scene.setLayerLocked('L', true);
+    scene.renameLayer('L', 'M');
+    scene.moveLayer('L', 0);
+    scene.untracked(() => scene.removeLayer('L'));
+
+    for (let i = 0; i < 5; i++) expect(scene.undo()).toBe(true);
+    expect(scene.layers.map((l) => l.id)).toEqual(['default']);
+    expect(scene.undo()).toBe(true);
+    expect(scene.get(B)!.pose.x).toBe(0);
+  });
+
+  it('redo walks past a setLayer onto, and an add on, a layer that is gone', () => {
+    const { scene, add } = layered();
+    scene.addLayer({ id: 'L', name: 'L' });
+    add('a', 'default');
+    scene.setLayer(A, 'L');
+    add('b', 'L');
+    scene.undo();
+    scene.undo();
+    scene.untracked(() => scene.removeLayer('L'));
+
+    expect(scene.redo()).toBe(true);
+    expect(scene.get(A)!.layer).toBe('default');
+    expect(scene.redo()).toBe(true);
+    expect(scene.get(B)).toBeUndefined();
+  });
+});
