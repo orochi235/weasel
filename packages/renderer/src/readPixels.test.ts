@@ -22,7 +22,7 @@ describe('readPixels', () => {
       { x: NaN, y: 0, width: 1, height: 1 },
     ]) {
       expect(() => readPixelsSync(gpu, rect)).toThrow(RangeError);
-      expect(() => readPixels(gpu, rect)).toThrow(RangeError);
+      await expect(readPixels(gpu, rect)).rejects.toThrow(RangeError);
     }
   });
 });
