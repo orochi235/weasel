@@ -31,7 +31,7 @@ export function useSkulkMap(options: UseSkulkMapOptions = {}): SkulkMapState {
     if (!dev) return;
     let live = true;
     let stop = () => {};
-    let held = false;
+    let asking = false;
     const noServer = () =>
       setState((was) => (was.status === 'ready' ? { ...was, error: 'the dev server no longer answers the route' } : { status: 'no-server' }));
     const ask = async () => {
@@ -50,20 +50,17 @@ export function useSkulkMap(options: UseSkulkMapOptions = {}): SkulkMapState {
       }
     };
     const loop = () => {
-      if (!live) return;
-      if (document.hidden) {
-        held = true;
-        return;
-      }
+      if (!live || document.hidden) return;
+      asking = true;
       void ask().finally(() => {
+        asking = false;
         if (live) stop = after(everyMs, loop);
       });
     };
     const onVisible = () => {
-      if (!document.hidden && held) {
-        held = false;
-        loop();
-      }
+      if (document.hidden || asking) return;
+      stop();
+      loop();
     };
     document.addEventListener('visibilitychange', onVisible);
     loop();

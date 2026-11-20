@@ -13,8 +13,14 @@ function serve(...answers: (() => Response)[]) {
   return fetch;
 }
 
+function setHidden(hidden: boolean) {
+  Object.defineProperty(document, 'hidden', { configurable: true, get: () => hidden });
+  document.dispatchEvent(new Event('visibilitychange'));
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
+  Reflect.deleteProperty(document, 'hidden');
 });
 
 describe('useSkulkMap', () => {
@@ -28,5 +34,14 @@ describe('useSkulkMap', () => {
     serve(json, () => new Response('', { status: 404 }));
     const { result } = renderHook(() => useSkulkMap({ url: URL, everyMs: 10, dev: true }));
     await waitFor(() => expect(result.current).toMatchObject({ status: 'ready', error: expect.any(String) }));
+  });
+
+  it('asks at once when the page is shown again, though no ask came due while it was hidden', async () => {
+    const fetch = serve(json);
+    const { result } = renderHook(() => useSkulkMap({ url: URL, everyMs: 60_000, dev: true }));
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    setHidden(true);
+    setHidden(false);
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
   });
 });
