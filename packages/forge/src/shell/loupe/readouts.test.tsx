@@ -292,6 +292,48 @@ describe('ContrastReadout', () => {
   });
 });
 
+describe('ContrastReadout over Pixels, as the lens changes', () => {
+  const capturing = () => {
+    const asked: { x: number; dpr: number }[] = [];
+    const source: LensSource<ForgeComparison> = {
+      ...liveSource(),
+      kind: 'pixels',
+      produces: 'pixels',
+      capture: (r) => {
+        asked.push({ x: r.reticle.x, dpr: r.dpr });
+        return Promise.resolve(capture(r.dpr));
+      },
+    };
+    return { asked, sources: { pixels: source } };
+  };
+  const readout = (sources: LensSources<ForgeComparison>, x: number, dprs: readonly number[] = [1]) => (
+    <ContrastReadout
+      lens={IDS}
+      settings={{ ...LENS_DEFAULTS, source: 'pixels', dprs }}
+      sources={sources}
+      reticle={{ x, y: 10 }}
+      size={SIZE}
+      describe={String}
+      interior={null}
+    />
+  );
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('captures again at the lens’s new DPR under a still reticle', async () => {
+    vi.useFakeTimers();
+    pixels.image = image(30, 30, () => [0, 0, 0]);
+    const { asked, sources } = capturing();
+    const { rerender } = render(readout(sources, 10, [1]));
+    await act(async () => vi.advanceTimersByTimeAsync(0));
+    rerender(readout(sources, 10, [3]));
+    await act(async () => vi.advanceTimersByTimeAsync(0));
+    expect(asked.map((a) => a.dpr)).toEqual([1, 3]);
+  });
+});
+
 describe('TokenReadout', () => {
   it('reads the stylesheets once, not again on a re-render that changes nothing, and again once a sheet changes', async () => {
     const sheet = document.createElement('style');
