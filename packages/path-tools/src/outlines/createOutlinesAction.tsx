@@ -13,7 +13,7 @@ type OutlinesFailure = { kind: 'failed'; error: NodeOutlineError };
  * the first conversion in a session would otherwise fail. The retry converts
  * `ids`, whatever is selected by then, less any node deleted meanwhile. Warns
  * the user through `notices` (under `tag` on the console without it) when they
- * still cannot be converted.
+ * still cannot be converted, a face that failed to load included.
  */
 export async function withOutlines<R extends { kind: string } | OutlinesFailure>(
   adapter: CreateOutlinesAdapter,
@@ -28,7 +28,7 @@ export async function withOutlines<R extends { kind: string } | OutlinesFailure>
     const outlines = ids
       .map((id) => adapter.getOutline(id))
       .filter((o): o is NodeOutline => o !== undefined);
-    await Promise.all(outlines.map((o) => o.load()));
+    await Promise.allSettled(outlines.map((o) => o.load()));
     result = apply(ids.filter((id) => adapter.getNode(id) != null));
   }
   const error = failure(result);

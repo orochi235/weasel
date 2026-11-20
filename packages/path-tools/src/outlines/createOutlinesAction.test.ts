@@ -42,6 +42,8 @@ function makeAdapter(outlines: Record<string, NodeOutline>, ids = Object.keys(ou
 
 const selectionOf = (ids: string[]) => ({ get: () => ids.map(asNodeId) });
 
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
 describe('createOutlinesAction', () => {
   it('declares every dep it reads', () => {
     const { adapter } = makeAdapter({});
@@ -105,6 +107,17 @@ describe('runCreateOutlines', () => {
     expect(notices.warn).toHaveBeenCalledWith(expect.stringContaining('nowhere'), expect.objectContaining({ id: 'outlines' }));
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
+  });
+
+  it('warns rather than rejecting when a face fails to load', async () => {
+    const notices = { warn: vi.fn() };
+    const outline = lateOutline();
+    outline.load = () => Promise.reject(new Error('no such face'));
+    const { adapter, applyOps } = makeAdapter({ g: outline });
+    const result = await runCreateOutlines(adapter, notices);
+    expect(result.kind).toBe('failed');
+    expect(applyOps).not.toHaveBeenCalled();
+    expect(notices.warn).toHaveBeenCalledTimes(1);
   });
 
   it('retries through an adapter whose methods read private fields', async () => {
