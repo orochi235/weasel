@@ -82,7 +82,14 @@ export function drawSourceLens(
   ctx.clearRect(0, 0, width, height);
   const frame = source.frame();
   if (frame) {
-    const { sx, sy, sw, sh } = sourceRegion(aim, factor, diameter, box, source.canvas);
+    // The frame's own size: a capture taken before the canvas was resized still covers the box.
+    const { sx, sy, sw, sh } = sourceRegion(
+      aim,
+      factor,
+      diameter,
+      box,
+      frame as { width: number; height: number },
+    );
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(frame, sx, sy, sw, sh, 0, 0, width, height);
   }

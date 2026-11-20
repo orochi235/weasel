@@ -65,10 +65,25 @@ describe('createSampler', () => {
 describe('canvasPixelSource', () => {
   it('maps a surface point through the box to the backing store, per axis', () => {
     const pixel = vi.fn(() => Uint8ClampedArray.from([1, 2, 3, 255]));
-    const source = { canvas: { width: 200, height: 150 }, pixel } as unknown as CanvasSource;
+    const canvas = { width: 200, height: 150 };
+    const source = { canvas, frame: () => canvas, pixel } as unknown as CanvasSource;
     const layer = canvasPixelSource(source, () => ({ x: 10, y: 20, width: 100, height: 50 }));
     layer.pixel({ x: 60, y: 45 });
     expect(pixel).toHaveBeenCalledWith({ x: 100, y: 75 });
+  });
+
+  it('scales to the frame it reads, not to a canvas resized since that frame was captured', () => {
+    const pixel = vi.fn(() => Uint8ClampedArray.from([1, 2, 3, 255]));
+    const source = { canvas: { width: 400, height: 300 }, frame: () => ({ width: 200, height: 150 }), pixel } as unknown as CanvasSource;
+    canvasPixelSource(source, () => ({ x: 10, y: 20, width: 100, height: 50 })).pixel({ x: 60, y: 45 });
+    expect(pixel).toHaveBeenCalledWith({ x: 100, y: 75 });
+  });
+
+  it('reads nothing while the source has no frame', () => {
+    const pixel = vi.fn();
+    const source = { canvas: { width: 1, height: 1 }, frame: () => null, pixel } as unknown as CanvasSource;
+    expect(canvasPixelSource(source, () => ({ x: 0, y: 0, width: 1, height: 1 })).pixel({ x: 0, y: 0 })).toBeNull();
+    expect(pixel).not.toHaveBeenCalled();
   });
 
   it('reads nothing while the box is unknown', () => {

@@ -52,6 +52,50 @@ describe('loupe model: aiming', () => {
     expect(loupe.aim).toEqual({ x: 0, y: 0 });
   });
 
+  it('disposes itself when the lens goes while the pointer is still', () => {
+    let gone = false;
+    const fns = new Set<() => void>();
+    const sample = vi.fn(() => '#112233');
+    const onDispose = vi.fn();
+    const { surface, changed } = stubSurface({
+      gone: () => gone,
+      sample,
+      subscribeFrame: (fn) => { fns.add(fn); return () => fns.delete(fn); },
+    });
+    const loupe = createLoupeModel({ surface, onDispose });
+    loupe.aimAt({ x: 10, y: 10 });
+    gone = true;
+    for (const fn of [...fns]) fn();
+    expect(onDispose).toHaveBeenCalledTimes(1);
+    expect(fns.size).toBe(0);
+    expect(sample).not.toHaveBeenCalled();
+    changed.mockClear();
+    loupe.resample();
+    loupe.setFactor(2);
+    loupe.setMode('pixel');
+    expect(loupe.pick()).toBeNull();
+    expect(sample).not.toHaveBeenCalled();
+    expect(changed).not.toHaveBeenCalled();
+  });
+
+  it('disposes itself on any call once the lens is gone', () => {
+    for (const call of [
+      (l: ReturnType<typeof createLoupeModel>) => l.resample(),
+      (l: ReturnType<typeof createLoupeModel>) => l.pick(),
+      (l: ReturnType<typeof createLoupeModel>) => l.setFactor(2),
+      (l: ReturnType<typeof createLoupeModel>) => l.setMode('pixel'),
+    ]) {
+      const sample = vi.fn(() => '#112233');
+      const onDispose = vi.fn();
+      const { surface, changed } = stubSurface({ gone: () => true, sample });
+      const loupe = createLoupeModel({ surface, onDispose });
+      call(loupe);
+      expect(onDispose).toHaveBeenCalledTimes(1);
+      expect(sample).not.toHaveBeenCalled();
+      expect(changed).not.toHaveBeenCalled();
+    }
+  });
+
   it('goes quiet after dispose', () => {
     const { surface, changed } = stubSurface();
     const loupe = createLoupeModel({ surface });
@@ -78,6 +122,12 @@ describe('loupe model: factor and mode', () => {
     expect(loupe.factor).toBe(16);
     loupe.setFactor(1);
     expect(loupe.factor).toBe(2);
+  });
+
+  it('starts inside the declared range', () => {
+    const { surface } = stubSurface();
+    expect(createLoupeModel({ surface, factor: 32, maxFactor: 16 }).factor).toBe(16);
+    expect(createLoupeModel({ surface, minFactor: 10 }).factor).toBe(10);
   });
 
   it('leaves the factor alone when no range is declared', () => {
@@ -153,6 +203,21 @@ describe('loupe model: color', () => {
 
     loupe.dispose();
     expect(subs.size).toBe(0);
+  });
+});
+
+describe('loupe model: a surface that answers later', () => {
+  it('throws rather than take a promise for a color', () => {
+    const later = Promise.resolve('#112233');
+    const { surface } = stubSurface({ sample: () => later as unknown as string });
+    const onColorChange = vi.fn();
+    const onPick = vi.fn();
+    const loupe = createLoupeModel({ surface, onColorChange, onPick });
+    expect(() => loupe.aimAt({ x: 1, y: 1 })).toThrow(/answers at once/);
+    expect(() => loupe.pick()).toThrow(/answers at once/);
+    expect(loupe.color).toBeNull();
+    expect(onColorChange).not.toHaveBeenCalled();
+    expect(onPick).not.toHaveBeenCalled();
   });
 });
 

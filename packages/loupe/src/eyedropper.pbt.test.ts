@@ -1,7 +1,7 @@
 /**
  * Stateful property test of the eyedropper over a sampler that answers at once, later, out of order, or with a
  * failure: hovers, leaves, picks, the answers settling in any order, and a dispose, against a model. `color` is the
- * latest hover's answer once it has come, never an earlier one's; `onColorChange` hears every change and nothing
+ * latest hover's answer once it has come (nothing, for a failure), never an earlier one's; `onColorChange` hears every change and nothing
  * else; a pick reports what it took unless that was nothing or the eyedropper is gone; and nothing is heard after
  * a dispose.
  */
@@ -80,7 +80,7 @@ const commands = [
     const mine = r.hoverOf.get(p);
     if (fails) p.fail(); else p.settle();
     for (let i = 0; i < 4; i++) await Promise.resolve();
-    if (mine !== undefined && mine === m.latest && !fails) heardTo(m, p.hex);
+    if (mine !== undefined && mine === m.latest) heardTo(m, fails ? null : p.hex);
     seen.count(mine === m.latest ? 'latest answered' : 'stale answered');
   }, n, fails)),
   fc.constant(cmd('dispose', (m, r) => { r.eye.dispose(); m.disposed = true; })),

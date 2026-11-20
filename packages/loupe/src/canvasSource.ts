@@ -58,14 +58,17 @@ export interface CanvasSource {
    */
   capture(): void;
   /** The pixels to read now: the last capture, or the canvas itself when it
-   *  keeps its own. `null` while a captured source has no current frame. */
+   *  keeps its own. `null` while a captured source has no current frame,
+   *  which includes whenever no reader holds it. */
   frame(): CanvasImageSource | null;
   /** RGBA of the backing-store pixel at `p` (device px, not CSS px), or
    *  `null` off the canvas or while there is no frame. Read it through
    *  {@link canvasPixelSource} to sample it at a surface point. */
   pixel(p: LoupePoint): Uint8ClampedArray | null;
   /** Start reading. While any reader holds the source, `capture` copies;
-   *  returns the release. */
+   *  returns the release. A captured source has no frame while nobody holds
+   *  it, so anything reading one — a {@link canvasPixelSource} included —
+   *  holds it for as long as it reads. */
   retain(): () => void;
   /** Run `fn` after each capture lands; returns an unsubscribe. */
   subscribeFrame(fn: () => void): () => void;
@@ -121,6 +124,7 @@ export function createCanvasSource(
   let current = false;
   let missed = 0;
   let warned = false;
+  let unheldWarned = false;
   let probe: Ctx2D | null = null;
   const frames = createEmitter();
 
@@ -135,7 +139,15 @@ export function createCanvasSource(
       captured = true;
       if (readers === 0) return;
       const { width, height } = canvas;
-      if (width === 0 || height === 0) return;
+      if (width === 0 || height === 0) {
+        missed = 0;
+        // The canvas shows nothing now; the last copy is of a picture that has gone.
+        if (current) {
+          current = false;
+          frames.emit();
+        }
+        return;
+      }
       if (!snapshot) snapshot = makeCanvas(width, height);
       else if (snapshot.width !== width || snapshot.height !== height) {
         snapshot.width = width;
@@ -153,6 +165,17 @@ export function createCanvasSource(
     frame() {
       if (!captured) return canvas.width > 0 && canvas.height > 0 ? canvas : null;
       if (current && snapshot) return snapshot;
+      if (readers === 0) {
+        if (!unheldWarned) {
+          unheldWarned = true;
+          console.warn(
+            '[weasel loupe] A captured canvas source is being read while nothing holds it, so ' +
+              'capture() copies nothing and there is no frame to read. Call source.retain() ' +
+              'for as long as you read it, and call the release it returns when you stop.',
+          );
+        }
+        return null;
+      }
       if (!warned && ++missed >= MISSED_FRAMES_BEFORE_WARNING) {
         warned = true;
         console.warn(
@@ -193,6 +216,11 @@ export function createCanvasSource(
         if (!held) return;
         held = false;
         readers--;
+        if (readers === 0) {
+          // Nothing copies frames now, so the last one only goes staler.
+          current = false;
+          snapshot = null;
+        }
       };
     },
 
