@@ -163,7 +163,7 @@ describe('areaSelectAnchors', () => {
     expect(dep.marquee).toBeNull();
   });
 
-  it('replaces a selected mark', () => {
+  it('replaces a selected mark, and gives it back on cancel', () => {
     const mark = { owner: 'x', id: 'm' } as never;
     const withMark = () => {
       const { dep } = depOverPath(triangle());
@@ -185,6 +185,9 @@ describe('areaSelectAnchors', () => {
     const empty = withMark();
     sweep(empty, { x: -5, y: -5 }, 'commit');
     expect(empty.selectedMark).toBeNull();
+    const canceled = withMark();
+    sweep(canceled, { x: 11, y: 1 }, 'cancel');
+    expect(canceled.selectedMark).toBe(mark);
   });
 
   it('adds to the existing selection when shift is held', () => {

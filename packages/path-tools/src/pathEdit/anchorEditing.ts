@@ -288,6 +288,7 @@ export const areaSelectAnchorsAction: Action & { requires: string[] } = inPlane(
 
       const additive = addHeld(ctx, 'selection.add');
       const base = new Set(dep.selectedAnchors);
+      const baseMark = dep.selectedMark ?? null;
       const start = { x: ctx.world.x, y: ctx.world.y };
 
       const rectFrom = (cx: number, cy: number) => rectBetween(start.x, start.y, cx, cy);
@@ -306,7 +307,9 @@ export const areaSelectAnchorsAction: Action & { requires: string[] } = inPlane(
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           dep.setMarquee(null);
-          if (reason === 'cancel') dep.setSelectedAnchors(base);
+          if (reason !== 'cancel') return;
+          dep.setSelectedAnchors(base);
+          if (baseMark) dep.setSelectedMark?.(baseMark);
         },
       };
     },
