@@ -1,0 +1,28 @@
+.legend {
+  display: inline-grid;
+  gap: var(--wzl-space-1);
+  width: 240px;
+  vertical-align: middle;
+}
+
+.bar {
+  display: block;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--audit-heat-ramp);
+}
+
+.ticks {
+  position: relative;
+  height: 1.2em;
+  font-size: var(--wzl-font-size-xs);
+}
+
+/* Centered on its place, held inside the bar at either end. */
+.tick {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  position: absolute;
+  left: calc(var(--at) * 100%);
+  transform: translateX(calc(var(--at) * -100%));
+  white-space: nowrap;
+}

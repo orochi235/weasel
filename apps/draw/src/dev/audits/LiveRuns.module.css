@@ -5,7 +5,7 @@
 
 .run {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
   gap: var(--wzl-space-3) 18px;
   padding: var(--wzl-space-3) var(--wzl-space-4);
@@ -28,7 +28,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .run:not(.idle) .pulse { animation: ping 1.8s ease-out infinite; }
-  .seg.running { animation: breathe 2.2s ease-in-out infinite; }
+  .shared.running { animation: breathe 2.2s ease-in-out infinite; }
 }
 
 @keyframes ping {
@@ -46,92 +46,82 @@
 
 .spend {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
-  font-size: var(--wzl-font-size-sm);
+  font-size: var(--wzl-font-size-md);
   text-align: end;
   white-space: nowrap;
 }
 
 .line {
   grid-column: 2 / -1;
-  font-family: var(--wzl-font-mono);
-  font-size: var(--wzl-font-size-sm);
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size-md);
   color: var(--audit-muted);
   overflow-wrap: anywhere;
 }
 
 .lanes {
+  --span-strip-height: 26px;
+  --span-strip-text: var(--wzl-font-size-xs);
   grid-column: 1 / -1;
-  overflow-x: auto;
+  display: grid;
+  gap: var(--wzl-space-3);
+  min-width: 0;
   margin-top: var(--wzl-space-2);
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: minmax(150px, max-content) repeat(5, minmax(96px, 1fr));
-  gap: 3px var(--wzl-space-2);
-  min-width: 640px;
-}
-
-.row { display: contents; }
-
-.head {
-  padding: 0 var(--wzl-space-3) var(--wzl-space-1);
-  font-size: var(--wzl-font-size-2xs);
-  font-weight: var(--wzl-font-weight-bold);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--audit-muted);
-}
-
-.nameCell {
-  font-family: var(--wzl-font-mono);
-  font-size: var(--wzl-font-size-sm);
-  padding: var(--wzl-space-2) var(--wzl-space-3) var(--wzl-space-2) 0;
-  white-space: nowrap;
-}
-
+/* An area's name: a plain label, the strip beside it carrying the phase. */
 .name {
+  display: block;
+  width: 100%;
   padding: 0;
   border: 0;
   background: none;
+  min-width: calc(var(--audit-lead-ch, 0) * 1ch);
   font: inherit;
-  color: inherit;
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size-md);
+  line-height: 24px;
+  text-align: start;
+  color: var(--audit-ink);
   cursor: pointer;
 }
 
 .name:hover,
-.name:focus-visible { color: var(--audit-live); }
+.name:focus-visible { outline: 2px solid var(--audit-ink); outline-offset: -2px; }
 
-.seg {
-  composes: numeric from '@weasel-js/theme/numeric.module.css';
-  padding: var(--wzl-space-2) 7px;
+.sharedRow {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: var(--wzl-space-4);
+}
+
+.nameCell {
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size-md);
+  white-space: nowrap;
+}
+
+.shared {
+  padding: var(--wzl-space-2) var(--wzl-space-3);
   border: 1px dashed var(--audit-rule);
   border-radius: 3px;
-  font-size: var(--wzl-font-size-xs);
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size-sm);
   color: var(--audit-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.done {
+.shared.done {
   border: 1px solid transparent;
   background: var(--audit-depth-1);
   color: var(--audit-ink);
 }
 
-.done.fixed { background: var(--audit-settled); }
-
-.running {
+.shared.running {
   border: 1.5px solid var(--audit-live);
   background: var(--audit-live-soft);
   color: var(--audit-live);
 }
-
-.failed {
-  border: 1.5px solid var(--audit-live);
-  background: var(--audit-live);
-  color: var(--audit-ink-inverse);
-}
-
-.shared { grid-column: 2 / -1; }

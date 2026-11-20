@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { nightLanes, nightRoundOf, nightStages, readRuns } from './map.mjs';
+import { nightLanes, nightRoundOf, nightStages, nightsOf, readRuns } from './map.mjs';
 import { claimRound, writeStatus, writeSummary } from './runs.mjs';
 
 const dirs: string[] = [];
@@ -74,6 +74,19 @@ describe('nightRoundOf', () => {
     mkdirSync(join(state, 'nights', '2026-11-20T01-31-25-262Z-round41'), { recursive: true });
     writeFileSync(join(state, 'last.json'), JSON.stringify({ round: 41, started: 's', ended: 'e', areas: [] }));
     expect(readRuns(state, [])[0]!.nightDir).toBe(join(state, 'nights', '2026-11-20T01-31-25-262Z-round41'));
+  });
+
+  it('finds every round in the nights directory, the latest night of each, live where a run still holds it', () => {
+    const state = mkdtempSync(join(tmpdir(), 'skulk-map-'));
+    dirs.push(state);
+    for (const name of ['2026-11-19T22-49-35-217Z-round40', '2026-11-20T03-23-24-845Z-round42', '2026-11-20T04-00-00-000Z-round42', 'scratch']) {
+      mkdirSync(join(state, 'nights', name), { recursive: true });
+    }
+    expect(nightsOf([{ round: 42, running: true }], state)).toEqual([
+      { round: 40, started: '2026-11-19', nightDir: join(state, 'nights', '2026-11-19T22-49-35-217Z-round40'), running: false },
+      { round: 42, started: '2026-11-20', nightDir: join(state, 'nights', '2026-11-20T04-00-00-000Z-round42'), running: true },
+    ]);
+    expect(nightsOf([], join(state, 'missing'))).toEqual([]);
   });
 
   it("draws a round with no committed record from its night directory's finished areas", () => {
