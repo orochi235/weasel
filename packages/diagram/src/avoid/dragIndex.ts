@@ -6,8 +6,8 @@
  * already reads everything.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import { unionRects, growRect } from '@weasel-js/geom';
-import { ObstacleIndex } from './obstacles';
+import { unionRects } from '@weasel-js/geom';
+import { inflatedBox, ObstacleIndex } from './obstacles';
 import { SegmentIndex } from './segments';
 import { type AvoidInput, type AvoidObstacle, type Box } from './types';
 
@@ -34,7 +34,7 @@ export class DragIndex {
     routes: ReadonlyMap<string, readonly Vec2[]>,
     private readonly clearance: number,
     private readonly limit: Box,
-    labelClearance = clearance,
+    private readonly labelClearance = clearance,
   ) {
     for (const o of input.obstacles) this.committed.set(o.id, o);
     this.index = new ObstacleIndex(input.obstacles, clearance, labelClearance);
@@ -79,8 +79,8 @@ export class DragIndex {
     let limit = this.limit;
     for (const [id, o] of this.displaced) {
       for (const e of this.attached.get(id) ?? []) first.add(e);
-      this.segments.edgesMeeting(growRect(this.committed.get(id)!.box, this.clearance), meeting);
-      this.segments.edgesMeeting(growRect(o.box, this.clearance), meeting);
+      this.segments.edgesMeeting(inflatedBox(this.committed.get(id)!, this.clearance, this.labelClearance), meeting);
+      this.segments.edgesMeeting(inflatedBox(o, this.clearance, this.labelClearance), meeting);
       limit = unionRects([limit, o.box])!;
     }
     return { index: this.index, dirty: [...first, ...[...meeting].filter((e) => !first.has(e))], limit };

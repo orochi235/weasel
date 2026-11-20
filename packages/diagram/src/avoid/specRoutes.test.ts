@@ -146,4 +146,38 @@ describe('createSpecRouter', () => {
     const specs = createSpecRouter()(diagramScene(data, { layout: 'none' }));
     expect(edgeOf(specs, AB).route!.length).toBeGreaterThan(0);
   });
+
+  it('routes a self-loop naming both its ports, as the scene router does, and leaves one naming one port alone', () => {
+    const data: DiagramData = {
+      nodes: [{ id: 'a', lines: ['a'], at: { x: 0, y: 0 }, width: 100 }],
+      edges: [{ from: 'a', to: 'a', fromPort: 'e', toPort: 'n' }, { from: 'a', to: 'a', fromPort: 's' }],
+    };
+    const specs = createSpecRouter()(diagramScene(data, { layout: 'none' }));
+    const both = edgeOf(specs, edgeIdOf({ from: 'a', to: 'a', fromPort: 'e', toPort: 'n' }));
+    expect(both.router).toBe('avoid');
+    expect(both.route!.length).toBeGreaterThan(0);
+    expect(edgeOf(specs, edgeIdOf({ from: 'a', to: 'a', fromPort: 's' })).router).not.toBe('avoid');
+  });
+
+  it('routes an edge between two nodes outside a cluster around the cluster’s box', () => {
+    const data: DiagramData = {
+      nodes: [
+        { id: 'x', lines: ['x'], at: { x: 0, y: 0 }, width: 60, height: 40 },
+        { id: 'y', lines: ['y'], at: { x: 500, y: 0 }, width: 60, height: 40 },
+        { id: 'm', lines: ['m'], at: { x: 230, y: -60 }, width: 40, height: 40 },
+        { id: 'n', lines: ['n'], at: { x: 230, y: 60 }, width: 40, height: 40 },
+      ],
+      edges: [{ from: 'x', to: 'y' }],
+      clusters: [{ id: 'C', members: ['m', 'n'] }],
+    };
+    const specs = createSpecRouter()(diagramScene(data, { layout: 'none' }));
+    const c = specs.find((s) => s.id === 'C')!.pose as { x: number; y: number; width: number; height: number };
+    const route = [{ x: 60, y: 20 }, ...edgeOf(specs, edgeIdOf({ from: 'x', to: 'y' })).route!, { x: 500, y: 20 }];
+    const enters = route.slice(1).some((p, i) => {
+      const q = route[i]!;
+      const [lx, hx, ly, hy] = [Math.min(p.x, q.x), Math.max(p.x, q.x), Math.min(p.y, q.y), Math.max(p.y, q.y)];
+      return hx > c.x && lx < c.x + c.width && hy > c.y && ly < c.y + c.height;
+    });
+    expect(enters).toBe(false);
+  });
 });

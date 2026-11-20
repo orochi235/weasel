@@ -6,11 +6,11 @@ import type { Vec2 } from '@weasel-js/core/math';
 import { rectBetween } from '@weasel-js/geom';
 import { samePoints } from '../edgeTrait';
 import { changedObstacles, dirtyEdges, fullRoute, stopsKey } from './dirty';
-import { DragIndex } from './dragIndex';
+import { DragIndex, type DragFrame } from './dragIndex';
 import { labelObstacle, labelObstacles } from './labels';
 import { routeEdge, type EdgeRouteContext } from './edgeRoute';
 import { nudge, type NudgeRoute } from './nudge';
-import { ObstacleIndex } from './obstacles';
+import { inflatedBox, ObstacleIndex } from './obstacles';
 import { SegmentIndex } from './segments';
 import { AVOID_DEFAULTS, type AvoidEdge, type AvoidInput, type AvoidObstacle, type AvoidOptions, type Box } from './types';
 
@@ -20,7 +20,8 @@ export interface AvoidUpdateOptions {
    *  them, with no crossing penalty and no nudging. */
   preview?: boolean;
   /** Milliseconds a preview may spend. The connectors it does not reach keep
-   *  the route the last preview gave them. Default no limit. */
+   *  the route the last preview since {@link AvoidRouter.beginPreview} gave
+   *  them. Default no limit. */
   budgetMs?: number;
 }
 
@@ -37,17 +38,27 @@ export interface AvoidRouter {
    *  this is a preview. Answers only the connectors it rerouted, or moved
    *  while spreading a channel they share. */
   update(input: AvoidInput, opts?: AvoidUpdateOptions): AvoidRoutes;
+  /** Start a run of previews, one drag: a connector a later frame over its
+   *  budget does not reach keeps a route only from this run's frames. */
+  beginPreview(): void;
+  /** Drop what the router holds for connectors `ids`, so the next update
+   *  reroutes them: for routes the host did not store, such as a locked
+   *  connector's. */
+  forget(ids: Iterable<string>): void;
 }
 
 const now = (): number => globalThis.performance?.now() ?? Date.now();
 
-/** The box every search window may grow to: everything, with room around it. */
+/** The box every search window may grow to: everything, with room around it.
+ *  A coordinate that is not finite, a degenerate pose's, is left out, so the
+ *  limit stays one a window can reach. */
 function limitOf(input: AvoidInput, margin: number): Box {
   let x0 = Infinity;
   let y0 = Infinity;
   let x1 = -Infinity;
   let y1 = -Infinity;
   const take = (x: number, y: number) => {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
     x0 = Math.min(x0, x);
     y0 = Math.min(y0, y);
     x1 = Math.max(x1, x);
@@ -110,22 +121,7 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
   function preview(input: AvoidInput, budgetMs: number): AvoidRoutes {
     const start = now();
     if (drag === null) indexForDrag({ obstacles: [...committed.values()], edges: input.edges });
-    const frame = drag!.frame(input.obstacles);
-    const out: AvoidRoutes = new Map();
-    for (const id of frame.dirty) {
-      if (now() - start > budgetMs) {
-        const last = previews.get(id);
-        if (last !== undefined) out.set(id, last);
-        continue;
-      }
-      const edge = edgeIn(input.edges, id);
-      if (edge === undefined) continue;
-      const full = routeEdge(edge, { index: frame.index, options: opts, limit: frame.limit });
-      const route = full === null ? null : full.slice(1, -1);
-      previews.set(id, route);
-      out.set(id, route);
-    }
-    return out;
+    return previewFrame(drag!.frame(input.obstacles), (id) => edgeIn(input.edges, id), previews, opts, () => now() - start > budgetMs);
   }
 
   /** Route `dirty` around `obstacles`, which hold `input`'s labels as they stand, and commit. */
@@ -177,13 +173,45 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
     update(input, updateOpts = {}) {
       if (updateOpts.preview === true) return preview(input, updateOpts.budgetMs ?? Infinity);
       const obstacles = [...input.obstacles, ...labelObstacles(input.edges, routeOf)];
-      const changed = changedObstacles(committed, obstacles);
+      const changed = changedObstacles(committed, obstacles, (o) => inflatedBox(o, opts.clearance, opts.labelClearance));
       // The route before nudging too, which a nudge spreads a clean connector from.
-      const dirty = dirtyEdges(input.edges, keys, changed, opts.clearance, (e) => [routeOf(e), rawOf(e)], pathless);
+      const dirty = dirtyEdges(input.edges, keys, changed, (e) => [routeOf(e), rawOf(e)], pathless);
       forget(input);
       return commit(input, dirty, obstacles);
     },
+    beginPreview() {
+      previews.clear();
+    },
+    forget(ids) {
+      for (const id of ids) for (const map of [keys, raw, shown, pathless]) map.delete(id);
+    },
   };
+}
+
+/** Reroute `frame`'s dirty connectors, each found by `edgeOf`, into `previews`
+ *  and the answer; once `spent`, each left keeps the route `previews` holds. */
+function previewFrame(
+  frame: DragFrame,
+  edgeOf: (id: string) => AvoidEdge | undefined,
+  previews: Map<string, Vec2[] | null>,
+  options: EdgeRouteContext['options'],
+  spent: () => boolean,
+): AvoidRoutes {
+  const out: AvoidRoutes = new Map();
+  for (const id of frame.dirty) {
+    if (spent()) {
+      const last = previews.get(id);
+      if (last !== undefined) out.set(id, last);
+      continue;
+    }
+    const edge = edgeOf(id);
+    if (edge === undefined) continue;
+    const full = routeEdge(edge, { index: frame.index, options, limit: frame.limit });
+    const route = full === null ? null : full.slice(1, -1);
+    previews.set(id, route);
+    out.set(id, route);
+  }
+  return out;
 }
 
 /** Route each of `dirty` in turn, each counting crossings of the routes

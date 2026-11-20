@@ -68,8 +68,24 @@ function fixture() {
       },
     };
   };
-  return { scene, a, b, under, press, stop };
+  return { scene, a, b, under, press, stop, follower };
 }
+
+describe('a move starting', () => {
+  it('tells each transform follower a drag begins, once a drag, before its first frame', () => {
+    const { press, follower } = fixture();
+    const calls: string[] = [];
+    follower.begin = () => calls.push('begin');
+    const preview = follower.preview;
+    follower.preview = (frame, data) => (calls.push('preview'), preview(frame, data));
+    const drag = press();
+    drag.to(10);
+    drag.to(20);
+    drag.end('cancel', 20);
+    press().to(30);
+    expect(calls).toEqual(['begin', 'preview', 'preview', 'begin', 'preview']);
+  });
+});
 
 describe('a move previewing a transform follower\'s data', () => {
   it('shows the follower at the pose the move holds and the data its preview publishes, every frame', () => {

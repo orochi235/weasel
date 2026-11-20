@@ -49,7 +49,9 @@ export class SegmentIndex {
   }
 
   /** How many segments of connectors other than `self` the axis-aligned step
-   *  from `(x0, y0)` to `(x1, y1)` crosses at right angles. */
+   *  from `(x0, y0)` to `(x1, y1)` crosses at right angles. A run the step
+   *  meets at its lower end counts and one at its upper end does not, so two
+   *  steps meeting on a crossed run count it once between them. */
   crossings(self: string, x0: number, y0: number, x1: number, y1: number): number {
     const lx = Math.min(x0, x1);
     const hx = Math.max(x0, x1);
@@ -64,12 +66,12 @@ export class SegmentIndex {
         if (Math.abs(s.x0 - s.x1) > EPS) continue;
         const sl = Math.min(s.y0, s.y1);
         const sh = Math.max(s.y0, s.y1);
-        if (s.x0 > lx + EPS && s.x0 < hx - EPS && ly > sl + EPS && ly < sh - EPS) n++;
+        if (s.x0 > lx - EPS && s.x0 < hx - EPS && ly > sl + EPS && ly < sh - EPS) n++;
       } else {
         if (Math.abs(s.y0 - s.y1) > EPS) continue;
         const sl = Math.min(s.x0, s.x1);
         const sh = Math.max(s.x0, s.x1);
-        if (s.y0 > ly + EPS && s.y0 < hy - EPS && lx > sl + EPS && lx < sh - EPS) n++;
+        if (s.y0 > ly - EPS && s.y0 < hy - EPS && lx > sl + EPS && lx < sh - EPS) n++;
       }
     }
     return n;

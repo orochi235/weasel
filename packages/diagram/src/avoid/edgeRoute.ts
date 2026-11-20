@@ -28,6 +28,9 @@ function exitOf(port: AvoidPort, clearance: number): Vec2 {
   return { x: port.point.x + port.normal.x * k, y: port.point.y + port.normal.y * k };
 }
 
+const finiteBox = (b: Box): boolean =>
+  Number.isFinite(b.x) && Number.isFinite(b.y) && Number.isFinite(b.x + b.width) && Number.isFinite(b.y + b.height);
+
 const reversed = (v: Vec2): Vec2 => ({ x: -v.x, y: -v.y });
 
 /**
@@ -61,7 +64,8 @@ export function routeEdge(edge: AvoidEdge, ctx: EdgeRouteContext): Vec2[] | null
     for (;;) {
       const window = searchWindow(points, grow);
       found = searchLeg(sources, targets, { edge: edge.id, obstacles, window, bendPenalty, crossings });
-      if (found !== null || within(ctx.limit, window)) break;
+      // A limit no window reaches, NaN or infinite, ends the growing once the window itself overflows.
+      if (found !== null || within(ctx.limit, window) || !finiteBox(window)) break;
       // A margin of 0 would double to 0 forever.
       grow = grow > 0 ? grow * 2 : Math.max(clearance, 1);
     }

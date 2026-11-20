@@ -7,7 +7,6 @@
 import type { Vec2 } from '@weasel-js/core/math';
 import { SegmentIndex } from './segments';
 import { type AvoidEdge, type AvoidObstacle, type AvoidPort, type Box } from './types';
-import { growRect } from '@weasel-js/geom';
 
 const sameBox = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 
@@ -22,10 +21,11 @@ function sameObstacle(a: AvoidObstacle, b: AvoidObstacle): boolean {
 }
 
 /** The ids of obstacles that differ between `before` and `now`, and the old
- *  and new boxes of each. */
+ *  and new boxes of each, grown by `inflate`: the room routes keep from it. */
 export function changedObstacles(
   before: ReadonlyMap<string, AvoidObstacle>,
   now: readonly AvoidObstacle[],
+  inflate: (o: AvoidObstacle) => Box = (o) => o.box,
 ): { ids: Set<string>; boxes: Box[] } {
   const ids = new Set<string>();
   const boxes: Box[] = [];
@@ -35,13 +35,13 @@ export function changedObstacles(
     const was = before.get(o.id);
     if (was !== undefined && sameObstacle(was, o)) continue;
     ids.add(o.id);
-    boxes.push(o.box);
-    if (was !== undefined) boxes.push(was.box);
+    boxes.push(inflate(o));
+    if (was !== undefined) boxes.push(inflate(was));
   }
   for (const [id, was] of before) {
     if (seen.has(id)) continue;
     ids.add(id);
-    boxes.push(was.box);
+    boxes.push(inflate(was));
   }
   return { ids, boxes };
 }
@@ -75,9 +75,10 @@ const centroid = (ports: readonly AvoidPort[]): Vec2 => ({
 });
 
 /** `edge`'s stored route with its ends, each end at the port facing the
- *  route's nearest bend, as the edge draws it. */
+ *  route's nearest bend, as the edge draws it. A connector holding no route
+ *  runs through its waypoints, where its fallback router draws it. */
 export function fullRoute(edge: AvoidEdge): Vec2[] {
-  const route = edge.route ?? [];
+  const route = edge.route ?? edge.waypoints ?? [];
   const from = facing(edge.from.ports, route[0] ?? centroid(edge.to.ports));
   const to = facing(edge.to.ports, route[route.length - 1] ?? centroid(edge.from.ports));
   return [...(from ? [from.point] : []), ...route, ...(to ? [to.point] : [])];
@@ -86,12 +87,12 @@ export function fullRoute(edge: AvoidEdge): Vec2[] {
 /** What an update reroutes, most urgent first: connectors attached to a
  *  changed shape or with changed stops, or holding no route but those in
  *  `pathless`, which found none when last routed; then those with one of
- *  their `routes` meeting a changed obstacle. */
+ *  their `routes` meeting a changed obstacle's box, inflated as
+ *  {@link changedObstacles} answers it. */
 export function dirtyEdges(
   edges: readonly AvoidEdge[],
   keys: ReadonlyMap<string, string>,
   changed: { ids: ReadonlySet<string>; boxes: readonly Box[] },
-  clearance: number,
   routes: (edge: AvoidEdge) => readonly (readonly Vec2[])[],
   pathless: ReadonlySet<string> = new Set(),
 ): AvoidEdge[] {
@@ -100,7 +101,7 @@ export function dirtyEdges(
   if (changed.boxes.length > 0) {
     const index = new SegmentIndex();
     for (const e of edges) for (const r of routes(e)) index.add(e.id, r);
-    for (const box of changed.boxes) index.edgesMeeting(growRect(box, clearance), meeting);
+    for (const box of changed.boxes) index.edgesMeeting(box, meeting);
   }
   const rest: AvoidEdge[] = [];
   for (const e of edges) {

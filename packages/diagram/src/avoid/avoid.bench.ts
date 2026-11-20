@@ -91,13 +91,14 @@ function commits(): void {
 
 function fullRoute(): void {
   const times: number[] = [];
+  // Summed over the three layouts, as the times beside it span all three.
   let failed = 0;
   for (let run = 0; run < 3; run++) {
     const input = layout(3 + run, 500, 800);
     const t0 = performance.now();
     const routes = createAvoidRouter().update(input);
     times.push(ms(t0));
-    failed = [...routes.values()].filter((r) => r === null).length;
+    failed += [...routes.values()].filter((r) => r === null).length;
   }
   process.stdout.write(`3/${CASES} full route   500 shapes  800 connectors  unrouted ${String(failed).padStart(3)}  median ${fmt(median(times))} ms  max ${fmt(Math.max(...times))} ms  budget  150.00 ms\n`);
 }
