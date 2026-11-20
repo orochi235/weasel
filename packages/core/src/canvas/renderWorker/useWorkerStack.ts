@@ -95,22 +95,30 @@ export function useWorkerStack(
     const { viewRef, dims, requestRedraw } = frameRef.current;
     const held: { release: () => void; off: () => void }[] = [];
     let spent = false;
-    runsRef.current.forEach((run, i) => {
-      if (run.by !== 'worker' || spent) return;
-      const canvas = canvases.current.get(i);
-      if (!canvas) return;
-      const options = current.timeout === undefined ? undefined : { timeout: current.timeout };
-      const hold = holdRenderWorker(canvas, current.start, { ...current.inputs(), view: viewRef.current, ...dims() }, options);
-      if (!hold) { spent = true; return; }
-      clients.current.set(i, hold.client);
-      const offDue = hold.client.subscribe(requestRedraw);
-      const offStatus = relay.follow(hold.client);
-      held.push({ release: hold.release, off: () => { offDue(); offStatus(); } });
-    });
-    if (spent) {
-      // A canvas the stack kept went with its worker; new ones take every run.
+    const letGo = () => {
       for (const h of held) { h.off(); h.release(); }
       clients.current.clear();
+    };
+    try {
+      runsRef.current.forEach((run, i) => {
+        if (run.by !== 'worker' || spent) return;
+        const canvas = canvases.current.get(i);
+        if (!canvas) return;
+        const options = current.timeout === undefined ? undefined : { timeout: current.timeout };
+        const hold = holdRenderWorker(canvas, current.start, { ...current.inputs(), view: viewRef.current, ...dims() }, options);
+        if (!hold) { spent = true; return; }
+        clients.current.set(i, hold.client);
+        const offDue = hold.client.subscribe(requestRedraw);
+        const offStatus = relay.follow(hold.client);
+        held.push({ release: hold.release, off: () => { offDue(); offStatus(); } });
+      });
+    } catch (e) {
+      letGo();
+      throw e;
+    }
+    if (spent) {
+      // A canvas the stack kept went with its worker; new ones take every run.
+      letGo();
       setGeneration((g) => g + 1);
       return;
     }

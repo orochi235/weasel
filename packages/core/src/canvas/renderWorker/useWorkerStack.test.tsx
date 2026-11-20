@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { Activity, useRef } from 'react';
 import { createScene } from '../../core/scene/scene';
@@ -59,4 +59,17 @@ describe('useWorkerStack', () => {
     view.unmount();
   });
 
+  it('lets go of the workers it started when a later one fails to start', async () => {
+    let calls = 0;
+    const start = () => {
+      if (++calls === 2) throw new Error('no worker');
+      return startWorker();
+    };
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(() => render(<Stack start={start} />)).toThrow('no worker');
+    await act(() => new Promise((r) => setTimeout(r, 0)));
+    expect(started).toHaveLength(1);
+    expect(started[0]!.terminate).toHaveBeenCalledTimes(1);
+    vi.mocked(console.error).mockRestore();
+  });
 });
