@@ -79,13 +79,13 @@ export function d3Bind<
       if (!layer) throw new Error('d3Bind: scene has no layers; pass `layer` in options');
 
       const diff = diffJoin(scene, data, options.key, layer);
+      const values = joinValues(data, diff, mappers);
       // A node already on its way out stops that exit here: re-entering keys
       // rebind as UPDATE, and still-absent ones exit afresh.
       for (const id of [...diff.keys, ...diff.exit]) cancelPendingRemoval(scene, id);
 
       // Captured BEFORE the batch mutates them so `.transition()` can
       // interpolate from prior → new.
-      const values = joinValues(data, diff, mappers);
       const priorPoses = priorPosesOf(scene, diff, values);
       applyJoin(scene, diff, layer, values, exitFn === null);
       if (exitFn) exitFn(exitSelection(scene, diff.exit, options));

@@ -239,4 +239,17 @@ describe('d3Bind join — mappers', () => {
     act(() => s.clock.advance(50));
     expect(s.x('a')).toBe(100);
   });
+
+  it('a join that throws for a mapper leaves running exits to remove their nodes', () => {
+    const s = setup();
+    const exiting = (data: Datum[]) => s.binding(data)
+      .exit((exit) => void exit.transition().duration(100).remove().end());
+    act(() => void exiting([{ id: 'a', x: 0 }, { id: 'b', x: 0 }]).join());
+    act(() => void exiting([{ id: 'a', x: 0 }]).join());
+    expect(() => act(() => void exiting([{ id: 'a', x: 0 }, { id: 'c', x: 0 }])
+      .payload((d) => { if (d.id === 'c') throw new Error('no payload'); return {}; })
+      .join())).toThrow('no payload');
+    s.play(300);
+    expect(s.scene.current.get('b' as never)).toBeUndefined();
+  });
 });
