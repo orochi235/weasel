@@ -151,7 +151,7 @@ const begin = async (root, args, say) => {
     const started = new Date();
     const nightDir = join(STATE_DIR, 'nights', `${started.toISOString().replace(/[:.]/g, '-')}-round${p.round}`);
     mkdirSync(nightDir, { recursive: true });
-    const status = { round: p.round, commit: p.commit, started: started.toISOString(), step: 'freeze', areas: p.picked.map((a) => a.id), nightDir, tokens: 0, costUsd: 0, capUsd: args.capUsd, args };
+    const status = { round: p.round, commit: p.commit, started: started.toISOString(), step: 'freeze', areas: p.picked.map((a) => a.id), nightDir, weightedTokens: 0, costUsd: 0, capUsd: args.capUsd, args };
     writeStatus(p.round, status);
     return { p, status, started };
   } finally {
@@ -209,7 +209,7 @@ const runContext = ({ root, p, args, status, frozen, say, setStep }) => {
     refuse: (node) => slots.refuse(node),
     usage: (record) => {
       appendFileSync(join(status.nightDir, 'usage.jsonl'), `${JSON.stringify({ round: p.round, ...record })}\n`);
-      status.tokens += record.totalTokens;
+      status.weightedTokens += record.weightedTokens;
       status.costUsd += record.costUsd;
       setStep(status.step);
     },
@@ -272,7 +272,7 @@ const resume = (root, args, say) => {
   clearStop(round);
   const p = { commit, round, picked: ids.flatMap((id) => (byId.has(id) ? [byId.get(id)] : [])), passes: readPasses(root), running: liveRuns() };
   const started = new Date(prior.started);
-  const status = { round, commit, started: prior.started, resumed: new Date().toISOString(), step: 'freeze', areas: ids, nightDir: prior.nightDir, tokens: 0, costUsd: 0, capUsd: args.capUsd, args };
+  const status = { round, commit, started: prior.started, resumed: new Date().toISOString(), step: 'freeze', areas: ids, nightDir: prior.nightDir, weightedTokens: 0, costUsd: 0, capUsd: args.capUsd, args };
   writeStatus(round, status);
   say(`resuming round ${round} at ${commit.slice(0, 10)}: ${p.picked.length} areas, reusing every job whose result came home`);
   return { p, status, started };
@@ -329,8 +329,8 @@ export const runNight = async (argv = process.argv.slice(2), say = (line) => con
     if (frozen) removeWorktree(root, frozen);
     writeSummary(p.round, {
       round: p.round, commit: p.commit, started: status.started, ended: new Date().toISOString(), nightDir: status.nightDir, report, planned: status.areas,
-      tokens: status.tokens, costUsd: status.costUsd, capUsd: args.capUsd, sweep: sweepSummary(sweep, outcomes),
-      areas: results.map((s) => ({ id: s.id, a: s.a, b: s.b, m: s.m, distinct: s.distinct, chapman: s.chapman, patches: s.patches, outcome: outcomes[s.id], minutes: s.jobs.minutes, tokens: s.jobs.tokens, costUsd: s.jobs.costUsd, budgetHit: s.budgetHit })),
+      weightedTokens: status.weightedTokens, costUsd: status.costUsd, capUsd: args.capUsd, sweep: sweepSummary(sweep, outcomes),
+      areas: results.map((s) => ({ id: s.id, a: s.a, b: s.b, m: s.m, distinct: s.distinct, chapman: s.chapman, patches: s.patches, outcome: outcomes[s.id], minutes: s.jobs.minutes, weightedTokens: s.jobs.weightedTokens, costUsd: s.jobs.costUsd, budgetHit: s.budgetHit })),
     });
     clearStatus(p.round);
   }

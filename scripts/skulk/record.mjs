@@ -12,7 +12,7 @@ export const roundReadme = ({ round, commit, date, areas, sweep, outcomes }) => 
     const fate = outcomes[s.id] ?? '';
     const prev = s.previous ? `${num(s.previous.unfound)} (r${s.previous.round})` : '-';
     const fresh = s.newCode ? `${s.newCode.findings} in ${s.newCode.changedFiles} changed` : '-';
-    return `| \`${s.id}\` | ${s.files.length} | ${s.read.A}/${s.read.B} | ${s.a} | ${s.b} | ${s.m} | ${s.distinct} | ${num(s.chapman)} | ${num(s.unfound)} | ${prev} | ${fresh} | ${s.patches} | ${s.questions} | ${mtok(s.jobs.tokens)} | ${usd(s.jobs.costUsd)} | ${fate}${ceiling(s)}${unrun(s)} |`;
+    return `| \`${s.id}\` | ${s.files.length} | ${s.read.A}/${s.read.B} | ${s.a} | ${s.b} | ${s.m} | ${s.distinct} | ${num(s.chapman)} | ${num(s.unfound)} | ${prev} | ${fresh} | ${s.patches} | ${s.questions} | ${mtok(s.jobs.weightedTokens)} | ${usd(s.jobs.costUsd)} | ${fate}${ceiling(s)}${unrun(s)} |`;
   });
   const total = (k) => areas.reduce((sum, s) => sum + s[k], 0);
   return [
@@ -25,16 +25,16 @@ export const roundReadme = ({ round, commit, date, areas, sweep, outcomes }) => 
     '"Read" is how many listed files each reviewer says it read. "Est." is Chapman\'s estimate of what the area held,',
     '"left" that less the distinct findings, and "last left" the previous pass\'s figure, which this pass tests.',
     '"New code" counts findings citing a file changed since that pass. "Commits" is what the fixer committed.',
-    '"Tokens" adds input, output, cache creation and cache reads over the area\'s jobs; "cost" is list price.',
+    '"Weighted tokens" counts each kind of token at its price against an input token (`TOKEN_WEIGHTS` in `scripts/skulk/usage.mjs`); "cost" is list price.',
     'One record per job is in `usage.jsonl`. The shas in `fix.md` are the fixer\'s, on its node; the same commits',
     'as applied here are `fixCommits` in `area.json`.',
     '',
-    '| Area | Files | Read A/B | A | B | Shared | Distinct | Est. | Left | Last left | New code | Commits | Questions | Tokens | Cost | Branch |',
+    '| Area | Files | Read A/B | A | B | Shared | Distinct | Est. | Left | Last left | New code | Commits | Questions | Weighted tokens | Cost | Branch |',
     '|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|---|',
     ...rows,
     '',
     `Totals: ${total('distinct')} distinct findings, ${total('patches')} fix commits, ${total('questions')} questions, `
-      + `${mtok(areas.reduce((s, a) => s + a.jobs.tokens, 0))} tokens, ${usd(areas.reduce((s, a) => s + a.jobs.costUsd, 0))}.`,
+      + `${mtok(areas.reduce((s, a) => s + a.jobs.weightedTokens, 0))} weighted tokens, ${usd(areas.reduce((s, a) => s + a.jobs.costUsd, 0))}.`,
     '',
     ...(sweep ? sweepSection(sweep, outcomes['control-sweep']) : []),
   ].join('\n');

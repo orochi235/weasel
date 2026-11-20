@@ -61,7 +61,7 @@ describe('progress.mjs', () => {
     expect(run.stdout.split('\n').filter(Boolean)).toEqual(['onto: progress 0/3', 'onto: progress 1/3', 'onto: progress 2/3', 'onto: progress 3/3']);
     const raw = readFileSync(join(dir, 'claude.json'), 'utf8');
     expect(raw).toBe(`${RESULT}\n`);
-    expect(parseEnvelope(raw).record).toMatchObject({ terminalReason: 'completed', budgetHit: false, costUsd: 0.51, totalTokens: 535192 });
+    expect(parseEnvelope(raw).record).toMatchObject({ terminalReason: 'completed', budgetHit: false, costUsd: 0.51, weightedTokens: 121779 });
   });
 
   it('leaves an empty result file when the stream ends without a result, as a killed json run does', () => {
