@@ -10,12 +10,15 @@ export interface Hover {
   clear(): void;
 }
 
-/** `redraw` hears every change of the hovered widget but the one `clear` makes. */
-export function createHover(redraw: () => void): Hover {
+/**
+ * `redraw` hears every change of the hovered widget but the one `clear` makes. `live` answers whether a widget
+ * is still on the HUD: one taken off it, or disposed, while hovered is let go of without a `hoverleave`.
+ */
+export function createHover(redraw: () => void, live: (w: Widget) => boolean): Hover {
   let hovered: Widget | null = null;
   const release = (): boolean => {
     if (!hovered) return false;
-    hovered.onPointer({ type: 'hoverleave', native: null } satisfies HudPointerEvent);
+    if (live(hovered)) hovered.onPointer({ type: 'hoverleave', native: null } satisfies HudPointerEvent);
     hovered = null;
     return true;
   };
@@ -23,7 +26,7 @@ export function createHover(redraw: () => void): Hover {
   return {
     move(hit, sx, sy, native) {
       if (hit !== hovered) {
-        if (hovered) hovered.onPointer({ type: 'hoverleave', native } satisfies HudPointerEvent);
+        if (hovered && live(hovered)) hovered.onPointer({ type: 'hoverleave', native } satisfies HudPointerEvent);
         hovered = hit;
         redraw();
       }

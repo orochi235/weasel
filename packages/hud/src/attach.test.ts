@@ -152,6 +152,26 @@ describe('attachHud', () => {
     expect(seen).toEqual([{ x: 10, y: 10 }, { x: 40, y: 60 }]);
   });
 
+  it('sends no hoverleave to a widget taken off the HUD while hovered', () => {
+    const hud = createHud();
+    const api = makeApi();
+    const detach = attachHud(api, hud);
+    const types: string[] = [];
+    const w: Widget = {
+      id: 'w', bounds: { x: 0, y: 0, width: 100, height: 100 }, hidden: false,
+      draw: () => [], hitTest: () => true, dispose: () => { types.push('dispose'); },
+      onPointer: (e) => { types.push(e.type); },
+    };
+    hud.add(w);
+    const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    api._layer!.onUncapturedMove!(10, 10, {} as PointerEvent, view, { width: 100, height: 100 });
+    hud.remove(w);
+    api._layer!.onUncapturedMove!(20, 20, {} as PointerEvent, view, { width: 100, height: 100 });
+    api._layer!.onUncapturedLeave!();
+    detach();
+    expect(types).toEqual(['hovermove', 'dispose']);
+  });
+
   it('detach sends hoverleave so a widget is not stranded hovered', () => {
     const hud = createHud();
     const api = makeApi();

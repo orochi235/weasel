@@ -15,6 +15,7 @@ import { resolveTheme, weaselTheme, type ColorSourceContext, type ResolvedTheme 
 import { hudColor } from './colors';
 import { wireFocus } from './domFocus';
 import { createHover } from './hover';
+import { onHud } from './openPresses';
 import { createLayerDeps } from './layerDeps';
 import { createLayerDraw } from './layerDraw';
 
@@ -103,7 +104,7 @@ function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): 
   if (typeof font !== 'string') loadDefaultFont(api, font, () => attached);
 
   const hitAt = (sx: number, sy: number): Widget | null => widgetAt(hud, sx, sy);
-  const hover = createHover(() => api.requestRedraw());
+  const hover = createHover(() => api.requestRedraw(), (w) => onHud(hud, w));
 
   const layerDeps = createLayerDeps(hud);
   const depsCtx: HudDrawCtx = { dims: { width: 0, height: 0 }, defaultFont, tokens: theme, color };
@@ -126,7 +127,7 @@ function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): 
       // Exclusive: hud chrome floats over the scene, so a press on it is not a
       // press on whatever sits underneath.
       return {
-        initialScratch: { widget: hit },
+        initialScratch: { widget: hit, hud },
         strength: 'exclusive',
         claimedKinds: claimsOf(hit),
         ...(cursor !== undefined ? { cursor } : {}),

@@ -1,12 +1,19 @@
+import type { Hud } from './hud';
 import type { HudPointerEvent, Widget } from './widget';
 
 /** The presses `hud.press` opened on widgets that no click or drag has closed yet. */
 export interface OpenPresses {
-  opened(widget: Widget): void;
+  /** `hud` is the HUD `widget` is on: one taken off it before the sweep hears no `cancel`. */
+  opened(widget: Widget, hud?: Hud): void;
   /** A click or a drag's end is closing `widget`'s press with its own `up` or `cancel`. */
   closed(widget: Widget): void;
   /** Close what each release, pointer cancel or window blur in `win` leaves open. Returns the unwatch. */
   watch(win: Window): () => void;
+}
+
+/** Whether `w` is still on `hud` and not disposed: a widget taken off it hears nothing more from the pointer. */
+export function onHud(hud: Hud, w: Widget): boolean {
+  return w.disposed !== true && hud.widgets().includes(w);
 }
 
 const CANCEL: HudPointerEvent = { type: 'cancel', native: null };
@@ -18,20 +25,20 @@ const CANCEL: HudPointerEvent = { type: 'cancel', native: null };
  * its click or ended its drag, and only the presses open when it happened.
  */
 export function createOpenPresses(): OpenPresses {
-  const open = new Map<Widget, number>();
-  let serial = 0;
+  // Each press is an object of its own, so a sweep can tell a later press on the same widget from the one it saw.
+  const open = new Map<Widget, { hud: Hud | undefined }>();
   const sweep = (win: Window) => (): void => {
     const seen = [...open];
     win.setTimeout(() => {
-      for (const [widget, n] of seen) {
-        if (open.get(widget) !== n) continue;
+      for (const [widget, press] of seen) {
+        if (open.get(widget) !== press) continue;
         open.delete(widget);
-        widget.onPointer(CANCEL);
+        if (press.hud ? onHud(press.hud, widget) : widget.disposed !== true) widget.onPointer(CANCEL);
       }
     }, 0);
   };
   return {
-    opened(widget) { open.set(widget, ++serial); },
+    opened(widget, hud) { open.set(widget, { hud }); },
     closed(widget) { open.delete(widget); },
     watch(win) {
       const onEnd = sweep(win);

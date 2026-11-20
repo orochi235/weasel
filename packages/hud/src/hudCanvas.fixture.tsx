@@ -7,6 +7,7 @@ import type { SceneCanvasApi } from '@weasel-js/core';
 import { KitSettingsProvider } from '@weasel-js/react';
 import { useHud, useHudContribution } from './react';
 import type { HudPointerEvent, Widget } from './widget';
+import type { Hud } from './hud';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { useSelection } from '@weasel-js/editing';
 
@@ -15,9 +16,10 @@ interface Empty { id: string }
 /** The `gestures` kit settings a mount runs under; unset leaves the kit defaults. */
 export interface GestureSettings { longPressMs?: number; dragPx?: number }
 
-function Harness({ widget, gestures }: { widget: Widget; gestures?: GestureSettings }) {
+function Harness({ widget, gestures, onHud }: { widget: Widget; gestures?: GestureSettings; onHud?: (hud: Hud) => void }) {
   const ref = React.useRef<SceneCanvasApi>(null);
   const hud = useHud(ref);
+  React.useEffect(() => { onHud?.(hud); }, [hud, onHud]);
   React.useEffect(() => { hud.add(widget); }, [hud, widget]);
   const hudTool = useHudContribution();
   const scene = useScene<Empty>({ items: [] });
@@ -38,9 +40,11 @@ export function stubHudFonts(): void {
   global.createImageBitmap = vi.fn(async () => ({} as ImageBitmap));
 }
 
-/** Mount a HUD canvas holding `widget`; returns the canvas element. */
-export async function mountHud(widget: Widget, gestures?: GestureSettings): Promise<HTMLCanvasElement> {
-  const { container } = render(<Harness widget={widget} gestures={gestures} />);
+/** Mount a HUD canvas holding `widget`; returns the canvas element. `onHud` is handed the mounted HUD. */
+export async function mountHud(
+  widget: Widget, gestures?: GestureSettings, onHud?: (hud: Hud) => void,
+): Promise<HTMLCanvasElement> {
+  const { container } = render(<Harness widget={widget} gestures={gestures} onHud={onHud} />);
   await act(async () => {});
   return container.querySelector('canvas')!;
 }
