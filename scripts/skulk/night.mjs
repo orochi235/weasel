@@ -145,7 +145,7 @@ const printPlan = (p, args, say) => {
     say(`  ${area.id}: ${area.files.length} files${last ? `, last pass round ${last.round} (${last.distinct} distinct, ~${last.unfound} left)` : ', never audited'}`);
     say(`    ${area.files.slice(0, 4).join(' ')}${area.files.length > 4 ? ' …' : ''}`);
   }
-  say(args.sweep ? 'control sweep: one browser job at the frozen commit before the reviews, and a fixer for what it finds dead' : 'control sweep: off (--no-sweep)');
+  say(args.sweep ? 'control sweep: one browser job at the frozen commit beside the reviews, and a fixer for what it finds dead' : 'control sweep: off (--no-sweep)');
   say(`jobs: ${p.picked.length * 2} reviews, up to ${p.picked.length} matches and ${p.picked.length} fixes; then batch/${localDate()}-audit${p.round}`);
 };
 
@@ -329,19 +329,24 @@ export const runNight = async (argv = process.argv.slice(2), say = (line) => con
   let sweep = { skipped: 'off (--no-sweep)' };
   try {
     mkdirSync(join(frozen, JOB_IN), { recursive: true });
-    let sweepFix;
-    if (args.sweep) {
-      setStep('sweep');
-      sweep = await runControlSweep(ctx);
-      say(sweepLine(sweep));
-      if (sweep.dead?.length) {
+    // The sweep is one browser job on one node; the reviews fill every other slot while it runs.
+    const sweepFix = !args.sweep ? Promise.resolve(undefined) : runControlSweep(ctx).then(
+      (ran) => {
+        sweep = ran;
+        say(sweepLine(sweep));
+        if (!sweep.dead?.length) return undefined;
         ctx.total.fix += 1;
-        sweepFix = fixSweep(ctx, sweep.dead).catch((error) => {
+        return fixSweep(ctx, sweep.dead).catch((error) => {
           say(`fix ${SWEEP_ID} failed: ${error.stack ?? error}`);
           return undefined;
         });
-      }
-    }
+      },
+      (error) => {
+        sweep = { ran: false, why: String(error.message ?? error) };
+        say(sweepLine(sweep));
+        return undefined;
+      },
+    );
     setStep('review');
     await reviewAreas({ ctx, git, picked: p.picked, passes: p.passes, args, status, deadline, results });
     const sweepFixed = await sweepFix;

@@ -17,7 +17,7 @@ completes (`review 3/16 …`).
 |---|---|
 | plan | Areas come from the partition (below). The round number is one past the highest used by a `docs/audits/round-<N>/` directory, `docs/hardening.md`, or a branch named `audit<N>-…`. |
 | freeze | A detached worktree at `main`'s tip, `.worktrees/audit<N>-frozen-night`. That sha is the round's commit. |
-| sweep | The control sweep (below) at the frozen commit, one `onto do --gui` job. Its dead controls go to one fixer, which runs beside the reviews. |
+| sweep | The control sweep (below) at the frozen commit, one `onto do --gui` job that starts with the reviews and runs beside them. Its dead controls go to one fixer. The night patches nothing until both are done. |
 | review | Per area, two reviewer jobs, each `onto do` from the frozen tree with the brief in `briefs/reviewer.md` and the area's file list. Reviewers may read, search, and run `git log/show/diff/blame`, and write only `.skulk/out/`. Each lists the files it read. |
 | match | One haiku job per area pairs the two lists (`briefs/matcher.md`); the script keeps only one-to-one pairs and computes the estimate. |
 | fix | Per area with findings, one fixer job (`briefs/fixer.md`), permissions bypassed, in the node's own synced tree. It first commits the synced tree and checks it hashes to the frozen commit's tree, installs if the lockfile changed, then hands back its commits as an mbox. |
