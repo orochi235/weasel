@@ -1,7 +1,7 @@
 // What crosses between Node and the page: JSON only, so pixels travel as base64. Typed here rather
 // than from core, whose types reach React and the DOM, neither of which a Node caller has.
 import { decodeSnapshot, encodeSnapshot } from '@weasel-js/core/json';
-import { checkPixelRenderRect } from '@weasel-js/core/math';
+import { checkPixelRenderRect, pixelRenderSize } from '@weasel-js/core/math';
 import type { Rect } from '@weasel-js/geom';
 
 /** The page script's global, set once the script has run. */
@@ -42,17 +42,32 @@ export interface PageApi {
 }
 
 /** A live scene or its snapshot, as JSON carries it: encoded by core's snapshot codec. A snapshot already
- *  encoded passes through unchanged. */
+ *  encoded passes through unchanged; a live scene's `toJSON()` is always decoded, so it is encoded as it is. */
 export function sceneToWire(scene: object): object {
   if (!isRecord(scene)) refuse('scene', 'an object', scene);
   const toJSON = (scene as { toJSON?: unknown }).toJSON;
+  if (typeof toJSON === 'function') return encodeSnapshot(toJSON.call(scene)) as object;
   // Read back first, so arrays the snapshot holds already tagged are tagged once rather than escaped as data.
-  return encodeSnapshot(decodeSnapshot(typeof toJSON === 'function' ? toJSON.call(scene) : scene)) as object;
+  return encodeSnapshot(decodeSnapshot(scene)) as object;
 }
 
 /** The snapshot `sceneToWire` sent, its typed arrays restored. */
 export function sceneFromWire(wire: object): object {
   return decodeSnapshot(wire) as object;
+}
+
+/** The most bytes a result can hold: their base64 crosses as one string, and V8 caps a string at 2^29 − 24
+ *  characters. An RGBA render past it is about 10 000 × 10 000 pixels. */
+export const MAX_RESULT_BYTES = Math.floor((2 ** 29 - 24) / 4) * 3;
+
+/** Throw unless `bytes` of a `what` fit one result, naming the limit and the way past it. */
+export function checkResultBytes(bytes: number, what: string): void {
+  if (bytes > MAX_RESULT_BYTES) {
+    throw new Error(
+      `headless render request: ${what} is ${bytes} bytes, past the ${MAX_RESULT_BYTES} one result can carry `
+      + '— lower `scale` or render the source rect in tiles',
+    );
+  }
 }
 
 type UncheckedRect = { x: unknown; y: unknown; width: unknown; height: unknown };
@@ -94,6 +109,10 @@ export function readPageRequest(value: unknown): PageRequest {
     const { screen } = value;
     if (!Array.isArray(screen) || screen.length !== 9) refuse('screen', 'nine numbers', screen);
     (screen as unknown[]).forEach((n, i) => finite(`screen[${i}]`, n));
+  }
+  if (value.format === 'rgba') {
+    const { width, height } = pixelRenderSize(value.sourceRect as Rect, value.scale as { x: number; y: number });
+    checkResultBytes(width * height * 4, `a ${width} × ${height} RGBA render`);
   }
   return value as unknown as PageRequest;
 }

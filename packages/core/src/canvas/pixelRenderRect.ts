@@ -22,3 +22,14 @@ export function checkPixelRenderRect(
     if (!isFiniteNumber(v)) refuse(label, 'a finite number', v);
   }
 }
+
+/** The output pixels a render of `sourceRect` at `scale` makes, each axis rounded and at least 1, as
+ *  `renderSceneToPixels` sizes it. Call {@link checkPixelRenderRect} first. */
+export function pixelRenderSize(
+  sourceRect: { width: number; height: number }, scale: { x: number; y: number },
+): { width: number; height: number } {
+  return {
+    width: Math.max(1, Math.round(sourceRect.width * Math.abs(scale.x))),
+    height: Math.max(1, Math.round(sourceRect.height * Math.abs(scale.y))),
+  };
+}

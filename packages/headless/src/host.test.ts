@@ -49,13 +49,58 @@ describe('node raster host', () => {
     expect(closeBrowser).not.toHaveBeenCalled();
   });
 
+  it("rethrows open's own failure when closing what it opened also fails", async () => {
+    const browser = {
+      newContext: async () => ({
+        close: async () => { throw new Error('context already closed'); },
+        newPage: async () => ({ on: () => {}, addScriptTag: async () => { throw new Error('bad script'); } }),
+      }),
+    } as unknown as Browser;
+    const host = createNodeRasterHost({ browser, pageScript: 'x' });
+    await expect(host.render({ scene: fixtureScene(), ...FIXTURE_RENDER })).rejects.toThrow(/bad script/);
+  });
+
+  it('opens a new page before rendering once the one it had crashed while idle', async () => {
+    let pages = 0;
+    const crash: Array<() => void> = [];
+    const browser = {
+      close: vi.fn(async () => {}),
+      isConnected: () => true,
+      newContext: async () => {
+        const n = ++pages;
+        let evaluated = 0;
+        return {
+          close: vi.fn(async () => {}),
+          newPage: async () => ({
+            on: (event: string, fn: () => void) => { if (event === 'crash') crash[n - 1] = fn; },
+            addScriptTag: async () => {},
+            isClosed: () => false,
+            evaluate: async () => {
+              if (evaluated++ === 0) return true;
+              return { width: 1, height: 1, base64: Buffer.from([n, n, n, n]).toString('base64') };
+            },
+          }),
+        };
+      },
+    } as unknown as Browser;
+    const host = createNodeRasterHost({ browser, pageScript: 'x' });
+    expect(Array.from((await host.render({ scene: fixtureScene(), ...FIXTURE_RENDER })).data)).toEqual([1, 1, 1, 1]);
+    crash[0]!();
+    expect(Array.from((await host.render({ scene: fixtureScene(), ...FIXTURE_RENDER })).data)).toEqual([2, 2, 2, 2]);
+    expect(pages).toBe(2);
+    await host.dispose();
+  });
+
   /** A browser whose one page answers every render with `result`. */
   function fakeBrowser(result: { width: number; height: number; base64: string }) {
     const close = vi.fn(async () => {});
     let evaluated = 0;
     // The first evaluate is the open's check that the page script ran.
-    const page = { on: () => {}, addScriptTag: async () => {}, evaluate: vi.fn(async () => (evaluated++ === 0 ? true : result)) };
-    const browser = { close, newContext: async () => ({ close, newPage: async () => page }) } as unknown as Browser;
+    const page = {
+      on: () => {}, addScriptTag: async () => {}, isClosed: () => false,
+      evaluate: vi.fn(async () => (evaluated++ === 0 ? true : result)),
+    };
+    const browser = { close, isConnected: () => true, newContext: async () => ({ close, newPage: async () => page }) } as unknown as Browser;
     return { browser, page };
   }
 

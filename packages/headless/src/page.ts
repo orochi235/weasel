@@ -1,5 +1,5 @@
-import { createRasterSession, rasterToPng, warmRender } from '@weasel-js/core';
-import { PAGE_GLOBAL, type PageApi, type PageRequest, type PageResult } from './protocol';
+import { createRasterSession, rasterToPng, warmRender, type RasterImage, type RasterSession } from '@weasel-js/core';
+import { checkResultBytes, PAGE_GLOBAL, type PageApi, type PageRequest, type PageResult } from './protocol';
 import { pageRenderArgs, type PageSceneOptions } from './pageLoad';
 
 export type { PageSceneOptions } from './pageLoad';
@@ -14,7 +14,8 @@ export interface HeadlessPageOptions {
   scene?: PageSceneOptions;
 }
 
-function toBase64(bytes: Uint8Array): string {
+function toBase64(bytes: Uint8Array, what: string): string {
+  checkResultBytes(bytes.length, what);
   let binary = '';
   for (let i = 0; i < bytes.length; i += 0x8000) {
     binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
@@ -29,19 +30,40 @@ function toBase64(bytes: Uint8Array): string {
 export function serveHeadlessPage(options: HeadlessPageOptions = {}): void {
   const root = globalThis as Record<string, unknown>;
   if (Object.hasOwn(root, PAGE_GLOBAL)) throw new Error('serveHeadlessPage: this page already serves renders');
-  const session = createRasterSession();
   const sceneOptions = options.scene ?? {};
+  // The page's own canvas, so a lost context is seen and the session replaced: a lost one never comes back.
+  let canvas: HTMLCanvasElement | null = null;
+  const openSession = (): RasterSession => {
+    canvas = null;
+    return createRasterSession({
+      createCanvas: (width, height) => Object.assign(canvas = document.createElement('canvas'), { width, height }),
+    });
+  };
+  const lost = (): boolean => (canvas?.getContext('webgl2') as WebGL2RenderingContext | null)?.isContextLost() === true;
+  let session = openSession();
+  const replaceIfLost = (): void => {
+    if (!lost()) return;
+    session.dispose();
+    session = openSession();
+  };
 
   async function render(sent: PageRequest): Promise<PageResult> {
     const { args, format } = pageRenderArgs(sent, sceneOptions);
     await warmRender({ render: args });
-    const image = session.render(args);
+    replaceIfLost();
+    let image: RasterImage;
+    try {
+      image = session.render(args);
+    } catch (err) {
+      replaceIfLost();
+      throw err;
+    }
     if (format === 'png') {
       const blob = await rasterToPng(image);
-      return { width: image.width, height: image.height, base64: toBase64(new Uint8Array(await blob.arrayBuffer())) };
+      return { width: image.width, height: image.height, base64: toBase64(new Uint8Array(await blob.arrayBuffer()), `a ${image.width} × ${image.height} PNG`) };
     }
     const bytes = new Uint8Array(image.data.buffer, image.data.byteOffset, image.data.byteLength);
-    return { width: image.width, height: image.height, base64: toBase64(bytes) };
+    return { width: image.width, height: image.height, base64: toBase64(bytes, `a ${image.width} × ${image.height} RGBA render`) };
   }
 
   const api: PageApi = { render };

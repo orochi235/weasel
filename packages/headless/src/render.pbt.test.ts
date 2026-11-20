@@ -7,9 +7,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { createScene, pathFromD, planPixelRender, loadScene, type RectPose, type SavedScene } from '@weasel-js/core';
+import { createScene, pathFromD, pixelRenderSize, planPixelRender, loadScene, type RectPose, type SavedScene } from '@weasel-js/core';
 import { tagTypedArrays } from '@weasel-js/geom';
-import { readPageRequest, sceneFromWire, sceneToWire } from './protocol';
+import { MAX_RESULT_BYTES, readPageRequest, sceneFromWire, sceneToWire } from './protocol';
 
 function runs(n: number): { numRuns: number } {
   const deep = Number(globalThis.process?.env?.WEASEL_PBT_RUNS);
@@ -83,6 +83,7 @@ describe('a request Node sends', () => {
   it('is refused exactly when the page would refuse its rect and scale', () => {
     let refused = 0;
     let read = 0;
+    let big = 0;
     const empty = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     fc.assert(fc.property(fc.record({ x: edge, y: edge, width: edge, height: edge }), fc.record({ x: edge, y: edge }), (sourceRect, scale) => {
       let page: unknown;
@@ -99,11 +100,15 @@ describe('a request Node sends', () => {
           return err;
         }
       })();
-      expect(node !== undefined, `page: ${String(page)}; node: ${String(node)}`).toBe(page !== undefined);
-      if (node) refused++;
+      // Node also refuses a render whose pixels one result cannot carry, which the page would draw and then fail to send.
+      const tooBig = page === undefined && (({ width, height }) => width * height * 4 > MAX_RESULT_BYTES)(pixelRenderSize(sourceRect, scale));
+      expect(node !== undefined, `page: ${String(page)}; node: ${String(node)}`).toBe(page !== undefined || tooBig);
+      if (page) refused++;
       else read++;
+      if (tooBig) big++;
     }), runs(400));
     expect(refused).toBeGreaterThan(50);
     expect(read).toBeGreaterThan(50);
+    expect(big).toBeGreaterThan(5);
   }, timeoutFor(400, 1));
 });

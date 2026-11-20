@@ -12,6 +12,9 @@ export function nodePixels(render: { width: number; height: number; base64: stri
 
 /** How far two rasters differ: the pixels that differ at all, and the largest channel step. */
 export function difference(a: Uint8Array, b: RasterImage): { pixels: number; maxStep: number } {
+  if (a.length !== b.data.length) {
+    throw new Error(`difference: a raster of ${a.length} bytes against one of ${b.data.length} (${b.width} × ${b.height})`);
+  }
   let pixels = 0;
   let maxStep = 0;
   for (let i = 0; i < a.length; i += 4) {

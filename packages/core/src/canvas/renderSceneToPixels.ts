@@ -36,7 +36,7 @@ import { annotationLayerIds } from 'core/scene/annotation';
 import { sceneLayerKey } from './sceneLayerPaint';
 import { layerNameClaims } from 'core/layers/layerGroup';
 import { CANVAS_CONTEXT_ATTRIBUTES } from './contextAttributes';
-import { checkPixelRenderRect } from './pixelRenderRect';
+import { checkPixelRenderRect, pixelRenderSize } from './pixelRenderRect';
 
 export { warmRender, type WarmRenderOptions } from './warmRender';
 export type {
@@ -54,8 +54,7 @@ export function planPixelRender<TData, TLayer extends string, TPose>(
 ): PixelRenderPlan {
   const { sourceRect, scale } = args;
   checkPixelRenderRect(sourceRect, scale);
-  const width = Math.max(1, Math.round(sourceRect.width * Math.abs(scale.x)));
-  const height = Math.max(1, Math.round(sourceRect.height * Math.abs(scale.y)));
+  const { width, height } = pixelRenderSize(sourceRect, scale);
   const view: View = {
     x: scale.x < 0 ? sourceRect.x + sourceRect.width : sourceRect.x,
     y: scale.y < 0 ? sourceRect.y + sourceRect.height : sourceRect.y,

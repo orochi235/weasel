@@ -41,4 +41,4 @@ export { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
 export { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 export { rotatePoint } from 'core/geometry/rotatedRect';
 export { CLIP_NOTHING, clipNothing } from 'core/scene/clipNothing';
-export { checkPixelRenderRect } from 'canvas/pixelRenderRect';
+export { checkPixelRenderRect, pixelRenderSize } from 'canvas/pixelRenderRect';
