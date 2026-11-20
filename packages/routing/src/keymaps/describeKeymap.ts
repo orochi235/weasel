@@ -36,17 +36,31 @@ const GESTURE_WORDS: Partial<Record<GestureSpec['kind'], string>> = {
 
 const MOD_ORDER: readonly ModifierKey[] = ['mod', 'ctrl', 'meta', 'alt', 'shift'];
 
+/** `spec`'s held modifiers, named as `platform`'s keyboard prints them. */
+function modWords(spec: GestureSpec, platform: Platform): string[] {
+  const mods = 'mods' in spec ? spec.mods : undefined;
+  const held = MOD_ORDER.filter((m) => mods?.[m] === true).map((name) => ({ name }));
+  return keyLegendsFromMods(held, { platform, legend: 'text' }).map((k) => k.label);
+}
+
+/** A key a chip cannot draw, one bound with Ctrl or Meta as such, in words: `Ctrl-1`. */
+function keyWords(spec: GestureSpec & { key: string | string[] }, platform: Platform): string | undefined {
+  const key = [spec.key].flat()[0];
+  if (!key) return undefined;
+  return [...modWords(spec, platform), formatShortcut({ key }, { platform })].join('-');
+}
+
 /** A pointer gesture in words, modifiers first and named as `platform`'s keyboard prints them: `Cmd-click`. */
 function gestureWords(spec: GestureSpec, platform: Platform): string | undefined {
+  if (spec.kind === 'key') return keyWords(spec, platform);
   if (spec.kind === 'keyHeld') {
     const chip = keySpecShortcut(spec);
-    return chip ? `Hold ${formatShortcut(chip, { platform })}` : undefined;
+    const words = chip ? formatShortcut(chip, { platform }) : keyWords(spec, platform);
+    return words ? `Hold ${words}` : undefined;
   }
   const word = GESTURE_WORDS[spec.kind];
   if (!word) return undefined;
-  const held = MOD_ORDER.filter((m) => spec.mods?.[m] === true).map((name) => ({ name }));
-  const mods = keyLegendsFromMods(held, { platform, legend: 'text' }).map((k) => k.label);
-  const text = [...mods, word].join('-');
+  const text = [...modWords(spec, platform), word].join('-');
   return text[0]!.toUpperCase() + text.slice(1);
 }
 
