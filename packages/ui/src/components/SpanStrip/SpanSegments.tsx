@@ -13,6 +13,8 @@ function place(el: HTMLElement | null, { span, from, share, track, trackSpan, tr
   el.style.setProperty('--span-fill', Math.min(1, Math.max(0, span.fill ?? 1)).toFixed(4));
   if (span.color) el.style.setProperty('--span-color', span.color);
   else el.style.removeProperty('--span-color');
+  if (span.ink) el.style.setProperty('--span-ink', span.ink);
+  else el.style.removeProperty('--span-ink');
 }
 
 function Segment({ placed }: { placed: PlacedSpan }): ReactElement {

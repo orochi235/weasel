@@ -93,7 +93,7 @@
 
 .phaseNames {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   column-gap: var(--wzl-space-3);
   font-size: var(--wzl-font-size-xs);
   white-space: nowrap;

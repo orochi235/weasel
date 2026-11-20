@@ -7,7 +7,7 @@ import { auditNodeSpecs, breathe, syncAuditScene, type AuditPalette, type AuditS
 import { layoutMap } from './mapLayout';
 import { heatScaleOf } from './areaData';
 import { HeatLegend } from './HeatLegend';
-import { OFF_PIPELINE, PHASE_LABEL, PIPELINE, phaseClass, type AuditPhase } from './phases';
+import { OFF_PIPELINE, PHASE_LABEL, SWEEP, phaseClass, type AuditPhase } from './phases';
 import type { AuditArea } from './skulkMap.types';
 import s from './Treemap.module.css';
 
@@ -96,7 +96,7 @@ export function Treemap({ scene, selection, areas, palette, phases, onHover, lit
           in a live run:
           <span className={s.phaseRamp}>
             <i className={s.phaseBar} />
-            <span className={s.phaseNames}>{PIPELINE.map((p) => <span key={p}>{PHASE_LABEL[p]}</span>)}</span>
+            <span className={s.phaseNames}>{SWEEP.map((p) => <span key={p}>{PHASE_LABEL[p]}</span>)}</span>
           </span>
           {OFF_PIPELINE.map((p) => <span key={p} className={phaseClass(p)}><i className={`${s.key} ${s.live}`} />{PHASE_LABEL[p]}</span>)}
         </span>

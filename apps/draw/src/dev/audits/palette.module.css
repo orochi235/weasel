@@ -30,9 +30,13 @@
   --audit-phase-reviewed: oklch(0.58 0.15 245);
   --audit-phase-match: oklch(0.66 0.16 150);
   --audit-phase-fix: oklch(0.8 0.16 88);
-  --audit-phase-patch: oklch(0.72 0.18 55);
+  /* Fixed and patched: black, inked and outlined white where it is drawn. */
+  --audit-phase-patch: oklch(0.16 0 0);
+  --audit-phase-patch-ink: #fff;
+  /* The share of a patch its fixer filed rather than fixed. */
+  --audit-filed: oklch(0.38 0 0);
   --audit-phase-ramp: linear-gradient(to right, var(--audit-phase-review), var(--audit-phase-reviewed), var(--audit-phase-match),
-    var(--audit-phase-fix), var(--audit-phase-patch));
+    var(--audit-phase-fix));
   --audit-phase-conflict: var(--wzl-danger);
   --audit-phase-done: var(--wzl-fg-muted);
 }
@@ -42,7 +46,7 @@
 .phase-reviewed { --audit-phase: var(--audit-phase-reviewed); }
 .phase-match { --audit-phase: var(--audit-phase-match); }
 .phase-fix { --audit-phase: var(--audit-phase-fix); }
-.phase-patch { --audit-phase: var(--audit-phase-patch); }
+.phase-patch { --audit-phase: var(--audit-phase-patch); --audit-phase-edge: var(--audit-phase-patch-ink); }
 .phase-conflict { --audit-phase: var(--audit-phase-conflict); }
 .phase-done { --audit-phase: var(--audit-phase-done); }
 
@@ -67,6 +71,7 @@
 .depth4 { color: var(--audit-depth-4); }
 .settled { color: var(--audit-settled); }
 .live { color: var(--audit-live); }
-.phase { color: var(--audit-phase); }
+/* The map's outline for a phase: its color, or the edge it names where its color is too dark to outline with. */
+.phase { color: var(--audit-phase-edge, var(--audit-phase)); }
 .fontUi { font-family: var(--wzl-font-ui); }
 .fontNumeric { composes: numeric from '@weasel-js/theme/numeric.module.css'; }
