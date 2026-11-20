@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   3
+  ]
+ ],
+ "a": [
+  "The pen's join reads the other path from the raw scene node, not the path it hit-tested against",
+  "A double click on another path's endpoint joins, then leaves a stray one-anchor subpath in the pen",
+  "A press on the first anchor that becomes a drag places a coincident anchor instead of closing"
+ ],
+ "b": [
+  "A join reads the other path from the raw scene node, not the world-space edit path the press was targeted against",
+  "Double-clicking on another open path's end joins on the first click, then leaves a stray one-anchor path that the double-click will not take back",
+  "Continuing a path appends a lone one-anchor subpath that a new-path commit would drop",
+  "A press on the first anchor that drifts past the drag threshold adds a duplicate anchor instead of closing"
+ ]
+}

@@ -183,6 +183,16 @@ describe('createMenuController', () => {
     expect(c.stack()).toEqual([null]);
   });
 
+  it('moving from a submenu row onto a separator cancels its open, as moving into padding does', () => {
+    const { c, advance } = setup();
+    c.hover(0, 3, { x: 0, y: 0 });
+    c.hover(0, 2, { x: 0, y: 10 });
+    advance(100);
+    c.hover(0, 4, { x: 0, y: 20 });
+    advance(300);
+    expect(c.stack()).toEqual([null]);
+  });
+
   it('measures the diagonal grace from its first in-triangle move', () => {
     const { c, advance } = setup();
     c.setPanel(0, { x: 0, y: 0, width: 100, height: 100 });

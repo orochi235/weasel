@@ -1,0 +1,49 @@
+{
+ "id": "modes",
+ "commit": "830b463cc110fc3f5182a03383bb1d182067d8e3",
+ "date": "2026-11-20",
+ "files": [
+  "packages/modes/src/capabilities.ts",
+  "packages/modes/src/decorations.ts",
+  "packages/modes/src/eligibility.ts",
+  "packages/modes/src/index.ts",
+  "packages/modes/src/modeDefinition.ts",
+  "packages/modes/src/pbt.fixture.ts",
+  "packages/modes/src/presets/default.ts",
+  "packages/modes/src/registry.ts",
+  "packages/modes/src/scopingLayer.ts"
+ ],
+ "a": 2,
+ "b": 2,
+ "m": 1,
+ "distinct": 3,
+ "chapman": 3.5,
+ "unfound": 0.5,
+ "read": {
+  "A": 9,
+  "B": 9
+ },
+ "patches": 3,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.4,
+   "B": 1.7,
+   "match": 0.2,
+   "fix": 4.8
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "studio"
+  },
+  "weightedTokens": 870433,
+  "costUsd": 2.56
+ },
+ "fixCommits": [
+  "3cdeca973229280b351b31ff8e11ac171e6f17e6",
+  "d9af6f27a84cf4dc8bdbe880d05f263a37881565",
+  "447a0c480858907cd1ff7d0e3b095f0c6e4fc0d7"
+ ]
+}

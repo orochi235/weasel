@@ -88,10 +88,11 @@ export const addExtremeAnchorsAction = defineAction({
       if (next) dep.setSelectedAnchors(next);
     },
   },
-  enabled: (deps) => {
+  enabled: (deps, _at, _carried, params) => {
     const dep = openPathEditOf(deps);
     if (!dep) return ActionDisabledReason.SelectionRequired;
-    return anchorEditWouldChange(deps, (set) => addExtremesTo(set, dep.selectedAnchors, 'xy') !== null)
+    const axes = axesOf(params);
+    return anchorEditWouldChange(deps, (set) => addExtremesTo(set, dep.selectedAnchors, axes) !== null)
       ? true
       : ActionDisabledReason.NotApplicable;
   },

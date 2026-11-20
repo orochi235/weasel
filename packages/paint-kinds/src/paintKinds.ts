@@ -11,9 +11,9 @@
 import type {
   ColorSpace, Paint, GradientPaint, GradientKind, GradStop, TileKind, TilePaint,
 } from '@weasel-js/paint';
-import { gradientForBounds, isGradientPaint, isTilePaint, withGradientKind } from '@weasel-js/paint';
+import { gradientForBounds, isGradientPaint, isTilePaint, tryParseColor, withGradientKind } from '@weasel-js/paint';
 import { createReflectable, type PushOptions, type ReflectedEntry, type Reflection } from '@weasel-js/registry';
-import { getPaintDrawKind, registerPaintDrawKind, registerPaintDrawKindLoader } from '@weasel-js/renderer';
+import { isPaintKindKnown, registerPaintDrawKind, registerPaintDrawKindLoader, warmPaintKinds } from '@weasel-js/renderer';
 import type { PaintKind, PaintKindEntry, PaintKindFamily } from './paintKindEntry';
 import type { IconRef } from '@weasel-js/icons';
 import { icon } from './icons.gen';
@@ -57,6 +57,8 @@ const BUILTINS: readonly PaintKindEntry[] = [
   },
 ];
 
+const BUILTIN_ENTRIES: ReadonlySet<PaintKindEntry> = new Set(BUILTINS);
+
 function tileKind(id: TileKind, label: string): PaintKindEntry {
   return {
     id,
@@ -84,10 +86,17 @@ function gradientKind(id: GradientKind, label: string, icon: IconRef): PaintKind
     icon,
     // `bounds` units make the seed independent of the node's actual size.
     seed: (color) => gradientForBounds(id, UNIT_BOX, twoStopRamp(color), 'bounds'),
-    colorOf: (paint) => (paint as Partial<GradientPaint>).stops?.[0]?.color,
+    colorOf: (paint) => firstStop((paint as Partial<GradientPaint>).stops)?.color,
     stopsOf: (paint) => (paint as GradientPaint).stops,
     fromStops: (stops) => gradientForBounds(id, UNIT_BOX, stops, 'bounds'),
   };
+}
+
+/** The stop at the gradient's start: stop lists are drawn sorted, but need not be written so. */
+function firstStop(stops: readonly GradStop[] | undefined): GradStop | undefined {
+  let first: GradStop | undefined;
+  for (const stop of stops ?? []) if (!first || stop.offset < first.offset) first = stop;
+  return first;
 }
 
 const UNIT_BOX = { x: 0, y: 0, width: 1, height: 1 };
@@ -95,7 +104,8 @@ const UNIT_BOX = { x: 0, y: 0, width: 1, height: 1 };
 /** `color` to a contrasting end — white reads against any hue; against white
  *  itself, black does. */
 function twoStopRamp(color: string): GradStop[] {
-  const isWhite = color.slice(0, 7).toLowerCase() === '#ffffff';
+  const rgba = tryParseColor(color);
+  const isWhite = rgba !== null && rgba[0] === 1 && rgba[1] === 1 && rgba[2] === 1;
   return [{ offset: 0, color }, { offset: 1, color: isWhite ? '#000000ff' : '#ffffffff' }];
 }
 
@@ -163,6 +173,7 @@ export function registerPaintKindLoader(id: string, load: PaintKindLoader, optio
   return registerPaintDrawKindLoader(id, load, {
     fallback: options?.fallback,
     register: (entry: PaintKindEntry) => registerPaintKind(entry, options),
+    has: (kind) => KINDS.has(kind),
   });
 }
 
@@ -171,7 +182,7 @@ export function registerPaintKindLoader(id: string, load: PaintKindLoader, optio
 export function getPaintKind(kind: string | undefined): PaintKindEntry | undefined {
   const id = kind ?? 'solid';
   const entry = KINDS.get(id);
-  if (!entry) getPaintDrawKind(id);
+  if (!entry && isPaintKindKnown(id)) void warmPaintKinds([id]).catch(() => {});
   return entry;
 }
 
@@ -213,9 +224,10 @@ const gradientKinds = derivedList(
  * `paint` retargeted to gradient kind `kind`, or `undefined` when either side
  * is not a gradient kind.
  *
- * Between two of the stop gradients this is `withGradientKind`, which carries
- * the geometry. Any other pair goes through the stop list — `stopsOf` on the
- * way out, `fromStops` on the way in — keeping `interpolate` and `opacity`.
+ * Between two of the built-in stop gradients this is `withGradientKind`, which
+ * carries the geometry. Any other pair, an override of a built-in included,
+ * goes through the stop list — `stopsOf` on the way out, `fromStops` on the
+ * way in — keeping `interpolate` and `opacity`.
  * Lossy wherever the kinds hold different information.
  */
 export function withPaintKind(paint: Paint, kind: PaintKind): Paint | undefined {
@@ -223,7 +235,7 @@ export function withPaintKind(paint: Paint, kind: PaintKind): Paint | undefined 
   const to = getPaintKind(kind);
   if (!from?.stopsOf || !to?.fromStops) return undefined;
   if (from.id === to.id) return paint;
-  if (isGradientPaint(paint) && isGradientPaint({ kind } as Paint)) {
+  if (BUILTIN_ENTRIES.has(from) && BUILTIN_ENTRIES.has(to) && isGradientPaint(paint) && isGradientPaint({ kind } as Paint)) {
     return withGradientKind(paint, kind as GradientKind);
   }
   const { interpolate, opacity } = paint as { interpolate?: ColorSpace; opacity?: number };

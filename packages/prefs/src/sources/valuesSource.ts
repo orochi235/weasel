@@ -51,6 +51,7 @@ export function createValuesSource(
   };
   const source: PrefsSource = {
     schema,
+    ...(over ? { over } : {}),
     valueAt: (path): LeafReading => {
       const leaf = leafAt(path);
       const stored = prefValueAt(get(), path);

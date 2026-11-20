@@ -6,7 +6,7 @@ import {
   type AnchorSet, type ReachToMeetOptions, type OpenPathEnd, type PenAnchor, type PointOrigin, type PolygonPath,
 } from '@weasel-js/geom';
 import { pref } from '@weasel-js/prefs-schema';
-import { commitOps, type Op, type PathNode, reshapeOps, operandPathNodes, pathOperationTags } from '@weasel-js/core';
+import { anchorDataPatch, commitOps, type Op, type PathNode, reshapeOps, operandPathNodes, pathOperationTags } from '@weasel-js/core';
 import {
   pressOf, scenePathNodes, strokeReachPref, strokesBesides, type StrokePress, type StrokePressParams,
 } from '../shared/scenePaths';
@@ -158,7 +158,9 @@ export const reachToMeetAction = defineAction({
         return;
       }
       const ops: Op[] = [];
-      for (const { node, path } of plan.values()) ops.push(...reshapeOps(node, path, REACH_LABEL));
+      for (const { node, path, origins } of plan.values()) {
+        ops.push(...reshapeOps(node, path, REACH_LABEL, anchorDataPatch(node.node.data, node.path, path, origins)));
+      }
       commitOps(deps, ops, REACH_LABEL);
     },
   },

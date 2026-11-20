@@ -1,0 +1,53 @@
+{
+ "id": "prefs-editor",
+ "commit": "830b463cc110fc3f5182a03383bb1d182067d8e3",
+ "date": "2026-11-20",
+ "files": [
+  "packages/prefs-editor/src/PrefConditionEditor/ConditionClipboard.tsx",
+  "packages/prefs-editor/src/PrefConditionEditor/ConditionGroupRows.tsx",
+  "packages/prefs-editor/src/PrefConditionEditor/ConditionRow.tsx",
+  "packages/prefs-editor/src/PrefConditionEditor/PrefConditionEditor.module.css",
+  "packages/prefs-editor/src/PrefConditionEditor/PrefConditionEditor.stories.module.css",
+  "packages/prefs-editor/src/PrefConditionEditor/PrefConditionEditor.stories.tsx",
+  "packages/prefs-editor/src/PrefConditionEditor/PrefConditionEditor.tsx",
+  "packages/prefs-editor/src/icons.gen.ts",
+  "packages/prefs-editor/src/index.ts",
+  "packages/prefs-editor/src/testing/prefSchemaEditor.ts"
+ ],
+ "a": 5,
+ "b": 3,
+ "m": 2,
+ "distinct": 6,
+ "chapman": 7,
+ "unfound": 1,
+ "read": {
+  "A": 10,
+  "B": 10
+ },
+ "patches": 6,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 10,
+   "B": 9.6,
+   "match": 0.1,
+   "fix": 10.4
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1215126,
+  "costUsd": 3.64
+ },
+ "fixCommits": [
+  "dd2e029d9640f0ac77519a042017ac94a99c033f",
+  "ef80fc0ff3f0c44a58e75078d7578ac60ec02e28",
+  "d367725a90043b029d606acd20b70e953c3261ca",
+  "0a37a3602feaa1ca1ac3643be7433f9ff4df9f11",
+  "1479de7c25aac2f5af5b82a1db096366274b1b9b",
+  "f3afaea85c78573bf9e96ae3c5c46f293c3c91a1"
+ ]
+}

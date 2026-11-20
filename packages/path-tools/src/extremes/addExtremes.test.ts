@@ -58,6 +58,8 @@ describe('addExtremeAnchorsAction', () => {
     const inX = setup([]);
     run(inX.deps, { axes: 'x' });
     expect(inX.labels).toEqual([]);
+    expect(addExtremeAnchorsAction.enabled!(inX.deps, undefined, undefined, { axes: 'x' })).toBe(ActionDisabledReason.NotApplicable);
+    expect(addExtremeAnchorsAction.enabled!(inX.deps, undefined, undefined, { axes: 'y' })).toBe(true);
     const inY = setup([]);
     run(inY.deps, { axes: 'y' });
     expect(inY.anchors()).toHaveLength(6);

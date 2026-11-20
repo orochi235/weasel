@@ -1,0 +1,13 @@
+packages/paint-kinds/src/icons.gen.ts
+packages/paint-kinds/src/icons.table.ts
+packages/paint-kinds/src/index.ts
+packages/paint-kinds/src/mesh.ts
+packages/paint-kinds/src/meshKind.ts
+packages/paint-kinds/src/meshKindLazy.ts
+packages/paint-kinds/src/paintKindEntry.ts
+packages/paint-kinds/src/paintKinds.ts
+packages/paint-kinds/src/react.ts
+packages/paint-kinds/src/svgNative.ts
+packages/paint-kinds/src/test-seams.ts
+packages/paint-kinds/src/tileSvg.ts
+packages/paint-kinds/src/usePaintKinds.ts

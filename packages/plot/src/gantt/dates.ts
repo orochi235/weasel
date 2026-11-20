@@ -82,8 +82,20 @@ export function parseGanttDate(text: string, format: string): number | null {
 
 const pad = (n: number, width = 2) => String(n).padStart(width, '0');
 
-/** `t` written in Day.js `format`. */
+/** The years a date in `format` reads back as: `YYYY` four digits, `YY` 1969 to 2068, none 1970; all with `X` or `x`. */
+function yearsOf(parts: readonly Part[]): [number, number] | null {
+  const tokens = parts.flatMap((p) => ('token' in p ? [p.token] : []));
+  if (tokens.includes('X') || tokens.includes('x')) return null;
+  let years: [number, number] = tokens.includes('YYYY') || tokens.includes('YY') ? [0, 9999] : [1970, 1970];
+  if (tokens.includes('YY')) years = [Math.max(years[0], 1969), Math.min(years[1], 2068)];
+  return years;
+}
+
+/** `t` written in Day.js `format`, held to the years the format reads back. */
 export function formatGanttDate(t: number, format: string): string {
+  const parts = partsOf(format);
+  const years = yearsOf(parts);
+  if (years !== null) t = Math.min(Math.max(t, utc(years[0], 0, 1)), utc(years[1] + 1, 0, 1) - 1);
   const d = new Date(t);
   const field: Readonly<Record<Token, () => string>> = {
     YYYY: () => pad(d.getUTCFullYear(), 4), YY: () => pad(d.getUTCFullYear() % 100), MM: () => pad(d.getUTCMonth() + 1),
@@ -92,7 +104,7 @@ export function formatGanttDate(t: number, format: string): string {
     ss: () => pad(d.getUTCSeconds()), s: () => String(d.getUTCSeconds()), SSS: () => pad(d.getUTCMilliseconds(), 3),
     X: () => String(t / 1000), x: () => String(t),
   };
-  return partsOf(format).map((p) => ('token' in p ? field[p.token]() : p.literal)).join('');
+  return parts.map((p) => ('token' in p ? field[p.token]() : p.literal)).join('');
 }
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];

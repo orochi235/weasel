@@ -4,6 +4,7 @@
  * back as the geometry it makes plus the warp itself.
  */
 import type { ActionDeps } from '@weasel-js/routing';
+import { isFiniteNumber } from '@weasel-js/registry';
 import {
   transformPoint,
   boundsOfPath,
@@ -59,7 +60,9 @@ export const DEFAULT_WARP_TOLERANCE = 0.5;
 export const DEFAULT_CLOTH_SIZE = 3;
 
 const count = (v: number | undefined, fallback: number) =>
-  Math.min(16, Math.max(1, Math.round(v ?? fallback)));
+  Math.min(16, Math.max(1, Math.round(isFiniteNumber(v) ? v : fallback)));
+
+const toleranceOf = (v: number | undefined, fallback: number) => (isFiniteNumber(v) && v > 0 ? v : fallback);
 
 /** A selected path, the warp it is being warped by, and that warp's frame in
  *  world space. `fresh` when the warp was made just now rather than held. */
@@ -99,7 +102,7 @@ export function withWarpSettings(held: HeldPathWarp, settings: WarpSettings): He
     );
     next = settings.mapping && settings.mapping !== sized.mapping ? { ...sized, mapping: settings.mapping } : sized;
   }
-  const tolerance = settings.tolerance !== undefined && settings.tolerance > 0 ? settings.tolerance : held.tolerance;
+  const tolerance = toleranceOf(settings.tolerance, held.tolerance);
   if (next === warp && tolerance === held.tolerance) return held;
   return { ...held, warp: next, tolerance };
 }
@@ -199,7 +202,7 @@ export function warpTargets(
   if (!box) return out;
   const id = freshWarpId();
   const warp = freshWarp(kind, box, settings);
-  const tolerance = settings.tolerance !== undefined && settings.tolerance > 0 ? settings.tolerance : DEFAULT_WARP_TOLERANCE;
+  const tolerance = toleranceOf(settings.tolerance, DEFAULT_WARP_TOLERANCE);
   for (const node of bare) {
     const frame = warpFrameFor(node.shown, identity());
     if (!frame) continue;

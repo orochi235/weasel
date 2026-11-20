@@ -1,7 +1,6 @@
 import type { Op } from './types';
 import { registerKitOpFactory } from './registry';
-import { originOf, type PolygonPath } from '@weasel-js/geom';
-import { sameValue } from '../scene/sameValue';
+import { samePolygon, type PolygonPath } from '@weasel-js/geom';
 import { alreadyHolds } from './alreadyHolds';
 
 /** The geometry fields a `setPath` op replaces together — the path itself,
@@ -78,18 +77,7 @@ function pathEqual(a: unknown, b: unknown): boolean {
   const bo = b as { kind?: string };
   if (ao.kind !== bo.kind) return false;
   if (ao.kind === 'rect') return shallowEqual(a, b);
-  // polygon: every field that is part of the shape
-  const aa = a as PolygonPath;
-  const bb = b as PolygonPath;
-  if (aa.fillRule !== bb.fillRule || aa.openFill !== bb.openFill) return false;
-  if (!sameValue(aa.corners, bb.corners)) return false;
-  const oa = originOf(aa), ob = originOf(bb);
-  if (oa.x !== ob.x || oa.y !== ob.y) return false;
-  if (aa.commands.length !== bb.commands.length) return false;
-  if (aa.coords.length !== bb.coords.length) return false;
-  for (let i = 0; i < aa.commands.length; i++) if (aa.commands[i] !== bb.commands[i]) return false;
-  for (let i = 0; i < aa.coords.length; i++) if (aa.coords[i] !== bb.coords[i]) return false;
-  return true;
+  return samePolygon(a as PolygonPath, b as PolygonPath);
 }
 
 function shallowEqual(a: unknown, b: unknown): boolean {

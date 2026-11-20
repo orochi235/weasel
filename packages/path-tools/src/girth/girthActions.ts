@@ -66,10 +66,11 @@ export const GIRTH_UNHOVER_ID = 'girth.unhover';
 const LABEL = 'Stroke width';
 const REQUIRES = ['scene', 'view', 'operands', 'applyOps'] as const;
 
-const found = (deps: ActionDeps, env: GirthEnv, reachPx = env.reachPx()) => {
+const viewScaleOf = (deps: ActionDeps): Point => deps.view?.get().scale ?? { x: 1, y: 1 };
+
+const found = (deps: ActionDeps, env: GirthEnv, reachPx = env.reachPx(), s = viewScaleOf(deps)) => {
   const scene = deps.scene as AnyScene | undefined;
   if (!scene) return null;
-  const s = deps.view?.get().scale ?? { x: 1, y: 1 };
   return { scene, scale: meanScale(s), reach: pxReach(reachPx, s) };
 };
 
@@ -109,9 +110,11 @@ function reachOf(params: Readonly<GirthDragParams> | undefined, env: GirthEnv): 
   return params.reachPx;
 }
 
-/** The grip a press at `press` takes with `params`, read against the scene and view as they are now. */
-function gripFor(deps: ActionDeps, env: GirthEnv, press: Point, params: Readonly<GirthDragParams> | undefined): GirthGrip | null {
-  const at = found(deps, env, reachOf(params, env));
+/** The grip a press at `press` takes with `params`, read against the scene as it is now at the view scale `scale`. */
+function gripFor(
+  deps: ActionDeps, env: GirthEnv, press: Point, scale: Point, params: Readonly<GirthDragParams> | undefined,
+): GirthGrip | null {
+  const at = found(deps, env, reachOf(params, env), scale);
   const hit = at && widthEdgeAt(at.scene, press.x, press.y, at.scale, at.reach);
   return hit ? gripAt(hit) : null;
 }
@@ -144,7 +147,9 @@ function dragAction(env: GirthEnv): OngoingInvoker<GirthDragParams> {
     start: ({ deps, drag, world }, opts) => {
       const press = drag?.start ?? world;
       const read = () => resolveParams(opts?.params);
-      const grip = gripFor(deps, env, press, read());
+      // A replay reads the scale the press saw, so a zoom since changes no grip.
+      const scale = viewScaleOf(deps);
+      const grip = gripFor(deps, env, press, scale, read());
       if (!grip) return {};
       const { fallback } = grip.target;
       let widths: VertexWidth[] | null = null;
@@ -174,7 +179,7 @@ function dragAction(env: GirthEnv): OngoingInvoker<GirthDragParams> {
           env.setFocus(focusOf(grip.path, done, fallback));
         },
         replay: (params) => {
-          const again = last && gripFor(deps, env, press, params);
+          const again = last && gripFor(deps, env, press, scale, params);
           if (!last || !again) return;
           const { widths: done } = widthsAt(again, press, last.p, last.alt, params);
           commit(deps, again, done);

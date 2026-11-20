@@ -189,6 +189,29 @@ describe('computeFitView — copies and hidden nodes', () => {
     const view = computeFitView(scene, { width: 200, height: 200 }, 'scene', identityPoseBounds);
     expect(view.scale.x).toBeCloseTo(184 / 10, 6);
   });
+
+  it('leaves out a hidden node under a shown group, and a mark on a hidden layer under one', () => {
+    const scene = createScene<Data, 'bg' | 'fg', Pose>({ systemLayers: [{ id: 'bg' }, { id: 'fg', visible: false }] });
+    const g = scene.add({ kind: 'group', layer: 'bg', pose: { x: 0, y: 0, width: 0, height: 0 }, data: { label: 'g' } });
+    scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'a' }, parent: g });
+    scene.add({ kind: 'mark', layer: 'bg', pose: { x: 5000, y: 0, width: 10, height: 10 }, data: { label: 'b' }, parent: g, hidden: true });
+    scene.add({ kind: 'mark', layer: 'fg', pose: { x: -5000, y: 0, width: 10, height: 10 }, data: { label: 'c' }, parent: g });
+    const view = computeFitView(scene, { width: 200, height: 200 }, 'scene', identityPoseBounds);
+    expect(view.scale.x).toBeCloseTo(184 / 10, 6);
+  });
+
+  it('leaves out what the view\'s own layer map hides', () => {
+    const scene = createScene<Data, 'bg' | 'fg', Pose>({ systemLayers: [{ id: 'bg' }, { id: 'fg' }] });
+    scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'a' } });
+    const g = scene.add({ kind: 'group', layer: 'bg', pose: { x: 0, y: 0, width: 0, height: 0 }, data: { label: 'g' } });
+    scene.add({ kind: 'mark', layer: 'fg', pose: { x: 990, y: 0, width: 10, height: 10 }, data: { label: 'b' }, parent: g });
+    const dims = { width: 200, height: 200 };
+    expect(computeFitView(scene, dims, 'scene', identityPoseBounds).scale.x).toBeCloseTo(184 / 1000, 6);
+    const hidden = computeFitView(scene, dims, 'scene', identityPoseBounds, { layers: { layerVisibility: { 'scene:fg': false } } });
+    expect(hidden.scale.x).toBeCloseTo(184 / 10, 6);
+    const ordered = computeFitView(scene, dims, 'scene', identityPoseBounds, { layers: { layerOrder: ['scene:bg'] } });
+    expect(ordered.scale.x).toBeCloseTo(184 / 10, 6);
+  });
 });
 
 describe('computeFitView — fit={kind:"world", rect}', () => {

@@ -19,6 +19,8 @@ export interface OutlineSession {
    *  a later call; one that cannot be converted is dropped, and the first such
    *  in the gesture is reported through the `notices` dep. */
   convert(reaches?: (id: NodeId, scene: AnyScene) => boolean): PathNode[];
+  /** Whether text is left that a later {@link convert} may still take, such as text whose face is loading. */
+  waiting(): boolean;
   /** Run `apply`, the gesture's own commit, and land everything as one entry
    *  under `label`. */
   commit(apply: () => void, label: string): void;
@@ -82,6 +84,7 @@ export function outlineSession(deps: ActionDeps, texts: readonly NodeId[], label
       }
       return out;
     },
+    waiting: () => waiting.size > 0,
     commit(apply, commitLabel) {
       apply();
       if (!journal) return;

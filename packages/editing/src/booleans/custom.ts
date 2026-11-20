@@ -29,16 +29,18 @@ export interface BooleanOperands {
 }
 
 /**
- * The operands the selected nodes give a Boolean operation, back to front, as
- * the built-in operations resolve them; or why there are fewer than two.
+ * The operands the nodes among `ids` (the selection, when not given) give a
+ * Boolean operation, back to front, as the built-in operations resolve them;
+ * or why there are fewer than two.
  * Reads the adapter and changes nothing.
  */
 export function resolveBooleanOperands(
   adapter: BooleansAdapter,
   opts: BooleanOpOptions = {},
+  ids?: readonly NodeId[],
 ): BooleanOperands | Exclude<BooleanOpResult, { kind: 'applied' }> {
   const selection = [...adapter.getSelection()] as NodeId[];
-  const entries = resolveEntries(adapter, selection, 'divide', opts);
+  const entries = resolveEntries(adapter, ids ?? selection, 'divide', opts);
   if ('kind' in entries) return entries;
   return {
     selection,

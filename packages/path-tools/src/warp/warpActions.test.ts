@@ -276,6 +276,18 @@ describe('Warp Settings form', () => {
     expect(configureWarpAction.enabled?.(depsOf(scene))).toBe(true);
   });
 
+  it('is disabled by a warp an edit since has left stale, which Expand Warp still drops', () => {
+    const scene = makeScene();
+    dragControl(scene, 'plane', { warpId: null, index: 2 }, { x: 100, y: 100 }, { x: 120, y: 110 });
+    const node = scene.get(asNodeId('a'))!;
+    const triangle = new PathBuilder().moveTo(0, 0).lineTo(100, 0).lineTo(50, 80).close().build();
+    const data = { ...(node.data as object), path: triangle };
+    commitOps(depsOf(scene), [ops.setData({ id: node.id, from: node.data, to: data })], 'Edit');
+    expect(resolvePathWarp(scene.get(asNodeId('a')))).toBeNull();
+    expect(configureWarpAction.enabled?.(depsOf(scene))).not.toBe(true);
+    expect(expandWarpAction.enabled?.(depsOf(scene))).toBe(true);
+  });
+
   it('reads the held plane warp, and a Mode change reaches it as one undo step', () => {
     const scene = makeScene();
     dragControl(scene, 'plane', { warpId: null, index: 2 }, { x: 100, y: 100 }, { x: 120, y: 110 });

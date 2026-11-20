@@ -101,6 +101,16 @@ describe('images', () => {
   });
 });
 
+describe('non-finite opacity', () => {
+  it('drops and reports an image or sprites with a NaN opacity, as it does a path', async () => {
+    const img = fakeImage(4, 4);
+    const sprites: DrawCommand = { kind: 'sprites', image: img, sprites: Float32Array.from([0, 0, 4, 4, 0, 0, 4, 4, NaN]) } as DrawCommand;
+    const { content, skipped } = await render([image(img, { opacity: NaN }), sprites]);
+    expect(content).not.toContain(' Do');
+    expect(skipped.map((s) => s.detail)).toEqual(['image has a non-finite coordinate', 'sprites has a non-finite coordinate']);
+  });
+});
+
 describe('texture paint', () => {
   const handles: ReturnType<typeof registerTexture>[] = [];
   afterEach(() => {
@@ -179,6 +189,30 @@ describe('texture paint', () => {
       ]);
       expect(skipped).toEqual([]);
       expect(s).toContain('/Matrix [4 0 0 -2 0 100]');
+    } finally {
+      releaseImage(src);
+    }
+  });
+
+  it('draws a texture with the image it holds when drawn, after its image is swapped mid-export', async () => {
+    const src = 'weasel-bitmap:pdf-pattern.swap';
+    const first = Object.assign(fakeImage(4, 2), { close() {} });
+    const second = Object.assign(fakeImage(4, 2), { close() {} });
+    adoptBitmapSrc(src, first);
+    try {
+      const fill = resolvePaintPattern({ kind: 'image', src });
+      const page = { width: 200, height: 100, commands: [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 50, height: 50 }, fill: { paint: fill } } as DrawCommand] };
+      const read: ImageBitmap[] = [];
+      await writePdf([page, page], {
+        fonts: NO_FONTS,
+        compress: false,
+        readPixels: (img) => {
+          read.push(img as ImageBitmap);
+          if (img === first) adoptBitmapSrc(src, second);
+          return pixels(img.width, img.height);
+        },
+      });
+      expect(read).toEqual([first, second]);
     } finally {
       releaseImage(src);
     }

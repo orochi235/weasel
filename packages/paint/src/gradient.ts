@@ -49,17 +49,16 @@ export function sampleResolvedStops(
   if (stops.length === 0) return TRANSPARENT;
   const first = stops[0];
   const last = stops[stops.length - 1];
-  if (!(t > first.offset)) return first.rgba;
+  if (!(t >= first.offset)) return first.rgba;
   if (t >= last.offset) return last.rgba;
 
+  // At an offset several stops share, a hard color break, the last of them wins, as in CSS.
   for (let i = 0; i < stops.length - 1; i++) {
     const lo = stops[i];
     const hi = stops[i + 1];
-    if (t < lo.offset || t > hi.offset) continue;
-    const span = hi.offset - lo.offset;
-    // Coincident stops are a hard color break: take the later one.
-    if (span <= 0) return hi.rgba;
-    const f = (t - lo.offset) / span;
+    if (t < lo.offset || t >= hi.offset) continue;
+    if (t === lo.offset) return lo.rgba;
+    const f = (t - lo.offset) / (hi.offset - lo.offset);
     const [r, g, b, a] = lerpColorArray(lo.rgba, hi.rgba, f, space);
     return [r, g, b, a];
   }

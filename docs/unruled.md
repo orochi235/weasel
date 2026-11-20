@@ -578,6 +578,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-10 (property tests): `hslToSrgb` reads a hue of any number of turns, as CSS `hsl()` does.
   `srgbToHsl` caps saturation at 1, so a color past sRGB's gamut, which its doc does not take, no
   longer reports more. `lerpPaint` and `lerpStroke` answer `b`'s numbers exactly at `t = 1`.
+- 2026-11-20: `lerpStroke` interpolates `vertexWidths` and `vertexColors` entry by entry when both strokes hold an
+  array of one length, reading a missing width entry as that stroke's width; otherwise it keeps the nearer side's
+  array as written, as it keeps every other field.
 - Ruled 2026-11-10: `paintKey` keys every fully transparent solid as one, whatever its color; none draws anything.
   It still keys apart from no paint (`'none'`).
 - 2026-11-10 (property tests): `RetainedSurfaces.reserve` drops the surface's key, so until `commit` names a new
@@ -610,6 +613,18 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Open 2026-11-11: coordinates past PDF's customary real range (about ±3.4e38) are written as plain integers of
   up to 309 digits, which some readers cannot hold. Whether to drop such a command as `num` drops a non-finite
   one is unasked.
+- 2026-11-20 (my call, audit round 53): the `.lbx` writer takes P-touch to miter a polyline's corners, as it does a
+  rect's, and to end a `SQUARE` arrow at the point, as a butt cap does. A polyline with a corner the canvas rounds,
+  bevels, or cuts at its miter limit, and a square-capped line, are rasterized. Neither reading of P-touch was
+  checked against a printed label.
+- 2026-11-20 (my call, audit round 53): the `.lbx` writer takes P-touch's own line spacing and tab stops to match
+  the default `lineHeight` and `tabSize`, and rasterizes a text box that sets more than one line at another line
+  height or holds a tab at another tab size, rather than write `lineSpace`, whose unit bil-lbx does not state.
+- 2026-11-20 (my call, audit round 53): under `autoLength`, the `.lbx` writer rasterizes a shape or text box
+  reaching past either end of the label, so it is cropped there as rasterized paint is, rather than let P-touch
+  grow the label for it. An `lbxObjectsCommand` past the end is still written whole, since it cannot be
+  rasterized; whether it should be skipped instead is unasked. A carried object under a transform that scales an
+  axis to zero is dropped with no report, as paint there draws nothing.
 - Ruled 2026-11-10 (my call, overnight sweep): the `.lbx` writer writes each of UAX #14's hard breaks in a text
   box (`\r\n`, `\r`, VT, FF, NEL, U+2028, U+2029) as one `\n`, the break P-touch reads; a bare `\r` read back
   as a second line feed.
@@ -1015,6 +1030,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-11 (my call, audit round fifteen): a menu takes a space typed within the typeahead window of a letter
   as part of the search, as `rowKey` lists and the hud list do, so typing "save a" finds "Save As…" rather than
   choosing "Save" at the space. A space with no live search still chooses.
+- 2026-11-20 (my call, audit round 53): the same holds for every one-character key, not only a space, while the
+  search it extends still finds a row: a letter extends it before access letters are read, and `+`, `=` and `-` are
+  typed rather than stepping a number row, so "bo" reaches "Bold" past an "Open" whose access letter is `o`. A key
+  that would leave the search finding nothing goes on as with no search, so a space there chooses.
 - Open (2026-11-11): `matchQuery` and typeahead lowercase rather than case-fold, so `STRASSE` does not find `Straße`.
 - Open (2026-11-11): `deepEqual` over values that hold themselves (an array whose item is the array) overflows the
   stack rather than answer.
@@ -1789,7 +1808,6 @@ Calls the lanes made without a ruling:
 - A Mermaid flowchart keyword line's `;` inside double quotes doesn't end the line. Sequence participant ids hold no
   whitespace in messages, notes, and activations, as in declarations. Numbers past the double range are refused at
   read; `niceDomain` keeps an end that would overflow, and a span too fine to cut.
-- Open: `lerpStroke` drops `vertexWidths` and `vertexColors`, since the two strokes can differ in anchor count.
 - Open: a clearable number pref with a numeric default reads back as the default once cleared in a store.
 - Open: negative stroke widths pass through the draw.io, DOT, and Mermaid readers unchanged.
 - Open: `Slider` commits through `onChange` when a press or keystroke moves nothing.
@@ -3023,6 +3041,52 @@ Calls the lanes made without a ruling:
   family. A host wanting another atlas registers it under a family of its own and passes the name. Swapping the
   family to the newest pair with `replace`, under every HUD already drawing it, was the alternative.
 
+## Audit round fifty-three (2026-11-20): minimap
+
+- 2026-11-20 (the fixer's call): `<MinimapCanvas>`'s `rootView` reads back the last view it wrote until the minimap
+  next commits, so zoom samples landing before the host re-renders compound rather than overwrite each other. A host
+  that drops a write without re-rendering has the next sample in the same frame start from the dropped view; the
+  minimap's next render hands the camera back to the `mainView` prop. Holding the write until the prop itself changes
+  was the alternative, which would keep a dropped write forever.
+## Audit round fifty-three (2026-11-20): modes
+
+- 2026-11-20 (the fixer's call): the shipped `ModeDefinition`s and `DEFAULT_MODES` are deeply frozen, so
+  `NORMAL.allows.push(…)` throws; an app copies a preset to change it. `createModeRegistry` still neither
+  copies nor freezes an app's own definitions, so mutating one after registering it leaves
+  `createActiveModeReader` serving the old tags until the next `setMode`. Copying them on registration was
+  the alternative, at the cost of `byId` no longer returning the object passed in.
+## Audit round fifty-three (2026-11-20): path-tools.pathEdit
+
+- 2026-11-20 (the fixer's call): `setAnchorField` asked `enabled` with params answers as its `run` would, so an
+  entry that would change nothing is `NotApplicable`; asked with no params, as a listing asks, it answers for the
+  anchor selection alone, since what a field would write only arrives with the entry.
+## Audit round fifty-three (2026-11-20): pdf
+
+- 2026-11-20 (the fixer's call): once a PDF face has given out every two-byte code, a glyph's further reading (other
+  text, or another width) gets no code, so `writePdf` draws that glyph as an outline rather than as text. Reusing the
+  glyph's first code, as before, copied out the wrong text and moved the pen by the wrong width.
+## Audit round fifty-three (2026-11-20): plot
+
+- 2026-11-20 (the fixer's call): `setGitCommandField` throws on a branch name another branch holds, the main branch
+  included, and on a commit or merge id another command gives a commit, as `setGitMainBranch` and `setGanttTaskId`
+  already do. Accepting either leaves a graph whose replay stops there. A gantt date is written held to the years its
+  `dateFormat` reads back (`YYYY` 0 to 9999, `YY` 1969 to 2068, a format with no year 1970), so a drag past them
+  stops at the edge rather than throwing.
+## Audit round fifty-three (2026-11-20): plot
+
+- 2026-11-20 (the fixer's call): `insertPacketField` throws on a field starting inside the field before it, as
+  `setPacketStart` does, so the fields never overlap. Moving the new field along to the first free bit was the
+  alternative.
+- 2026-11-20 (the fixer's call): an xychart row edit leaves a series shorter than the rows short: a row past its end
+  stays missing, and one that a move or a `setXyValue` puts inside it is `NaN`, drawn as no point. An inserted row is
+  a zero in each series that reaches it. Padding every series with zeros to the row count first, which drew the
+  missing rows as zeros, was what it did.
+## Audit round fifty-three (2026-11-20): prefs
+
+- 2026-11-20 (the fixer's call): an enum that can be auto is refused as a selector (`checkPrefScopes` code `auto`)
+  unless its `auto.value` is one of its options, since while auto it otherwise reads `undefined` and every split
+  leaf would read and write under no option, as a clearable enum would. Reading such a selector's auto as its
+  `default` was the alternative.
 ## Audit round fifty-one (2026-11-20): labkit primitives
 
 - 2026-11-20 (the fixer's call): `<Split width>` is controlled, as a React input's `value` is. A drag reports

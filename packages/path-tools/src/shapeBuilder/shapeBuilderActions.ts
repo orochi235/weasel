@@ -5,11 +5,12 @@ import { facesAlong, planShapeBuilder, type ShapeBuilderMode, type ShapeBuilderP
 import type { Point } from '@weasel-js/geom';
 import type {} from '../actionParamSchema';
 import { type BooleanOpOptions } from '@weasel-js/editing';
+import { handBackOperands } from '../shared/handBackOperands';
 
 /** Screen pixels between the points a drag is sampled at for the faces it crosses. */
 const SAMPLE_PX = 2;
 
-/** The selection's faces, recomputed only when what they are cut from changes. */
+/** The operands' faces, recomputed only when what they are cut from, or its stacking, changes. */
 function createPlanCache(opts: () => BooleanOpOptions) {
   let key: string | null = null;
   let plan: ShapeBuilderPlan | null = null;
@@ -19,13 +20,14 @@ function createPlanCache(opts: () => BooleanOpOptions) {
       if (!adapter) return null;
       const scale = deps.view?.get().scale;
       const o = { ...opts(), ...(scale ? { scale } : {}) };
-      const sel = [...adapter.getSelection()] as NodeId[];
-      const next = JSON.stringify([o, sel.map((id) => [
+      const sel = [...(deps.operands?.get() ?? adapter.getSelection())] as NodeId[];
+      const stacked = [...sel].sort((a, b) => adapter.compareZ(a, b));
+      const next = JSON.stringify([o, stacked.map((id) => [
         id, adapter.getWorldPath(id) ?? (adapter.getOutline?.(id) ? adapter.getNode(id) : null) ?? null, adapter.getPaint?.(id) ?? null,
       ])]);
       if (next !== key) {
         key = next;
-        const planned = planShapeBuilder(adapter, o);
+        const planned = planShapeBuilder(adapter, o, sel);
         plan = planned.kind === 'faces' ? planned : null;
       }
       return plan;
@@ -103,7 +105,7 @@ export function createShapeBuilderActions(overlay: PathOverlay, settings: () => 
         if (at < 0) return;
         overlay.clear();
         plans.clear();
-        plan.commit([at], modeFor(p.mods?.alt));
+        handBackOperands(deps.operands, deps.booleansAdapter!, plan.commit([at], modeFor(p.mods?.alt)));
       },
     },
   });
@@ -140,7 +142,7 @@ export function createShapeBuilderActions(overlay: PathOverlay, settings: () => 
           onEnd: (_c, reason) => {
             overlay.clear();
             plans.clear();
-            if (reason === 'commit') plan.commit(picked, modeFor(alt));
+            if (reason === 'commit') handBackOperands(ctx.deps.operands, ctx.deps.booleansAdapter!, plan.commit(picked, modeFor(alt)));
           },
           overlay: () => (trail.length >= 2 ? { kind: 'polyline', points: trail } : null),
         };

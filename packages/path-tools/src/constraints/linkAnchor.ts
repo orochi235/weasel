@@ -160,8 +160,9 @@ function linkOps(deps: ActionDeps, path: PolygonPath, anchor: number, target: Li
  * anchor of another node, or on one of its segments, within `reachPx`
  * (params: {@link LinkAnchorParams}), it lands exactly there and a link node
  * ties it — `coincident` with the anchor, `onPath` on the segment — in the
- * same undo step as the move. Released anywhere else it is a plain move. The
- * last-operation panel replays the drop with another reach.
+ * same undo step as the move. Released anywhere else, or where no link can be
+ * made, it is a plain move. The last-operation panel replays the drop with
+ * another reach.
  */
 export const linkAnchorAction = defineAction({
   id: 'linkAnchor',
@@ -205,13 +206,13 @@ export const linkAnchorAction = defineAction({
           const scale = deps.view?.get().scale;
           const target = path && targetOf(path, params, scale);
           if (path) dropped = { path, scale };
-          if (!path || !target) {
+          const ops = path && target ? linkOps(deps, path, anchor, target, params) : [];
+          if (ops.length === 0) {
             move.onEnd!(endCtx, reason);
             return;
           }
           move.onEnd!(endCtx, 'cancel');
-          const ops = linkOps(deps, path, anchor, target, params);
-          if (ops.length > 0) commitOps(deps, ops, LABEL);
+          commitOps(deps, ops, LABEL);
         },
         replay(params): void {
           if (!dropped) return;

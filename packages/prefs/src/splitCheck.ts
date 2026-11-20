@@ -2,11 +2,12 @@
 // `scopes` that names something else: what a store warns of.
 
 import { type PrefGroup, prefHoldsValue, prefLeaves, prefOverridesOf, type PrefEnum, type PrefLeaf } from '@weasel-js/prefs-schema';
+import { prefCanAuto } from './autoReset';
 import { prefOverrideOptions, declaredSelectorsOf, prefStoredSelectors } from '@weasel-js/prefs-schema/internal';
 
 /** One thing wrong with a pref's scopes, or with what the schema admits. */
 export interface PrefScopeProblem {
-  code: 'valueless' | 'no-leaf' | 'not-enum' | 'encoded' | 'clearable' | 'split' | 'twice' | 'default' | 'per' | 'admits';
+  code: 'valueless' | 'no-leaf' | 'not-enum' | 'encoded' | 'clearable' | 'auto' | 'split' | 'twice' | 'default' | 'per' | 'admits';
   /** The path of the pref whose `scopes` it is; `''` for the schema. */
   at: string;
   /** The selector the problem is with, where it is with one. */
@@ -20,6 +21,9 @@ const refusal = (leaf: PrefLeaf | undefined): [PrefScopeProblem['code'], string]
   const selector = leaf as PrefEnum;
   if (selector.encoding) return ['encoded', 'names an enum with an encoding, whose stored value is not its option'];
   if (selector.clearable) return ['clearable', 'names a clearable enum, which may hold none of its options'];
+  if (prefCanAuto(selector) && !selector.options.some((option) => option.value === selector.auto!.value)) {
+    return ['auto', 'names an enum that can be auto with no option as its auto value, which may hold none of its options'];
+  }
   if (declaredSelectorsOf(selector)?.length) return ['split', 'names a leaf that may itself be split'];
   return undefined;
 };

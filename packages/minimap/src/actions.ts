@@ -164,10 +164,16 @@ export function createMinimapTouchZoomAction(clamp?: MinimapZoomClamp): Action {
           kind: 'pinch',
           onMove(m) {
             const p = m.multiTouch?.pinch;
-            if (!p || !(p.currentSpread > 0) || !(spread > 0)) return;
+            if (!p || !(p.currentSpread > 0)) return;
+            const next = viewScreenToWorld(camera.get(), p.centroid);
+            // Fingers that landed on one point have no spread to scale from: the first one past zero is the base.
+            if (!(spread > 0)) {
+              spread = p.currentSpread;
+              at = next;
+              return;
+            }
             const factor = p.currentSpread / spread;
             spread = p.currentSpread;
-            const next = viewScreenToWorld(camera.get(), p.centroid);
             const zoomed = zoomedAbout(root.get(), at, factor, clamp);
             root.set({ scale: zoomed.scale, x: zoomed.x + next.x - at.x, y: zoomed.y + next.y - at.y });
             at = next;

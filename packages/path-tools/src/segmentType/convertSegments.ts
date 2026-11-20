@@ -45,11 +45,17 @@ export const convertSegmentsAction = defineAction({
       commitAnchorEdit(dep, LABEL, (set) => convertSegments(set, segmentsBetweenAnchors(set, selected), typeOf(params)));
     },
   },
-  enabled: (deps) => {
+  enabled: (deps, _at, _ctx, params) => {
     const selected = [...(openPathEditOf(deps)?.selectedAnchors ?? [])];
-    const any = selected.length > 1
-      && anchorEditWouldChange(deps, (set) => convertSegments(set, segmentsBetweenAnchors(set, selected)));
-    return any ? true : ActionDisabledReason.SelectionRequired;
+    if (selected.length < 2) return ActionDisabledReason.SelectionRequired;
+    let segments = 0;
+    const changes = anchorEditWouldChange(deps, (set) => {
+      const segs = segmentsBetweenAnchors(set, selected);
+      segments = segs.length;
+      return convertSegments(set, segs, typeOf(params));
+    });
+    if (changes) return true;
+    return segments > 0 ? ActionDisabledReason.NotApplicable : ActionDisabledReason.SelectionRequired;
   },
 });
 

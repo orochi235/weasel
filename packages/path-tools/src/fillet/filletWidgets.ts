@@ -11,6 +11,7 @@ import {
 } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { DEFAULT_OVERLAY_STYLE, type PathEditExtension } from '@weasel-js/core';
+import { DEFAULT_FILLET_SHAPE } from './editFillet';
 
 /** Chrome-caps id the fillet widgets are drawn and hit-tested under. On by
  *  default. */
@@ -83,7 +84,8 @@ function cornerGlyph(c: V, toward: V, k: number): PolygonPath {
 /**
  * The widget of every corner anchor of `path`, in screen space: a small
  * square whose corner toward the anchor is cut in the corner's shape. A
- * corner with no spec draws as round, the shape a drag gives it.
+ * corner with no spec draws as {@link DEFAULT_FILLET_SHAPE}, the shape an
+ * untuned drag gives it.
  */
 export function filletWidgetCommands(path: PolygonPath, view: View, style: FilletWidgetStyle = {}): DrawCommand[] {
   const out: DrawCommand[] = [];
@@ -94,7 +96,7 @@ export function filletWidgetCommands(path: PolygonPath, view: View, style: Fille
     // On screen, the anchor lies back along the bisector.
     const bx = -frame.bisector.x * view.scale.x, by = -frame.bisector.y * view.scale.y;
     const bl = Math.hypot(bx, by) || 1;
-    const k = cornerShapeK(cornerSpecAt(path, frame.index)?.shape ?? 'round');
+    const k = cornerShapeK(cornerSpecAt(path, frame.index)?.shape ?? DEFAULT_FILLET_SHAPE);
     out.push({ kind: 'path', path: cornerGlyph(at, { x: bx / bl, y: by / bl }, k), fill, stroke });
   }
   return out;

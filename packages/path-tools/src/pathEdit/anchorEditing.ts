@@ -36,9 +36,10 @@ import {
   openSubpathAt,
   type AnchorSet, type Rect,
 } from '@weasel-js/geom';
-import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
+import { pathToAnchors, type PointOrigin, type PolygonPath } from '@weasel-js/geom';
 import { rectBetween } from '@weasel-js/geom';
 import { selectionAfterAnchorPress } from './editAnchors/editAnchors';
+import { finishPathEditFrame } from './editAnchors/preview';
 import { canDeleteSelectedMark, deleteSelectedMark, markUnder } from './pathEditMarks';
 import { editingLayer, inPlane, pathOperationTags } from '@weasel-js/core';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
@@ -59,21 +60,29 @@ function worldPathOf(dep: EditAnchorsDep): PolygonPath | null {
 }
 
 /**
- * Decode → mutate → encode → commit, in one history entry. Returns false
- * when the edit changed nothing, so callers can skip the commit rather
- * than push an empty undo step.
+ * Commit `next`, an edit of the path in edit mode, as one history entry.
+ * Returns false when it commits nothing: no edit, or one an extension
+ * cannot finish.
  */
+export function commitAnchorFrame(
+  dep: EditAnchorsDep,
+  label: string,
+  next: { path: PolygonPath; origins: readonly (PointOrigin | null)[] } | null,
+): boolean {
+  if (!next || !finishPathEditFrame(dep, dep.editingId, next.path, next.origins)) return false;
+  dep.applyEdit(dep.editingId, next.path, label, next.origins);
+  return true;
+}
+
+/** Decode → mutate → encode → commit, in one history entry
+ *  ({@link commitAnchorFrame}). Returns false when it commits nothing. */
 export function commitAnchorEdit(
   dep: EditAnchorsDep,
   label: string,
   edit: (set: AnchorSet) => boolean | void,
 ): boolean {
   const worldPath = worldPathOf(dep);
-  if (!worldPath) return false;
-  const next = editAnchorSetTracked(worldPath, edit);
-  if (!next) return false;
-  dep.applyEdit(dep.editingId, next.path, label, next.origins);
-  return true;
+  return worldPath !== null && commitAnchorFrame(dep, label, editAnchorSetTracked(worldPath, edit));
 }
 
 /** Whether `edit` would change the edited path, tried on a scratch decode. */
@@ -233,7 +242,15 @@ export const cutPathAtAnchorAction: Action = inPlane(defineAction({
       if (changed) dep.setSelectedAnchors([]);
     },
   },
-  enabled: (deps) => (openPathEditOf(deps) ? true : ActionDisabledReason.SelectionRequired),
+  // An edit that would change nothing is disabled (ruled 2026-11-10): a click off every anchor, or on an open subpath.
+  enabled: (deps, at) => {
+    const dep = openPathEditOf(deps);
+    if (!dep) return ActionDisabledReason.SelectionRequired;
+    if (!at) return true;
+    const nearest = dep.anchorUnder(at);
+    return nearest !== -1 && anchorEditWouldChange(deps, (set) => openSubpathAt(set, nearest))
+      ? true : ActionDisabledReason.NotApplicable;
+  },
 }), editingLayer);
 
 /** Shift on the press adds the marqueed anchors to the selection. */
@@ -271,6 +288,7 @@ export const areaSelectAnchorsAction: Action & { requires: string[] } = inPlane(
 
       const additive = addHeld(ctx, 'selection.add');
       const base = new Set(dep.selectedAnchors);
+      const baseMark = dep.selectedMark ?? null;
       const start = { x: ctx.world.x, y: ctx.world.y };
 
       const rectFrom = (cx: number, cy: number) => rectBetween(start.x, start.y, cx, cy);
@@ -284,10 +302,14 @@ export const areaSelectAnchorsAction: Action & { requires: string[] } = inPlane(
           // band sweeps them, rather than only on release.
           const hits = anchorsOfPathInRect(worldPath, rect);
           dep.setSelectedAnchors(additive ? new Set([...base, ...hits]) : hits);
+          // Replacing the selection with what the band holds replaces a mark too, as a bare click away does.
+          if (!additive) dep.setSelectedMark?.(null);
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           dep.setMarquee(null);
-          if (reason === 'cancel') dep.setSelectedAnchors(base);
+          if (reason !== 'cancel') return;
+          dep.setSelectedAnchors(base);
+          if (baseMark) dep.setSelectedMark?.(baseMark);
         },
       };
     },

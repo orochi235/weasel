@@ -3,7 +3,7 @@
 
 import { setOwn } from '@weasel-js/registry';
 import type { OwnedRecordCache } from '@weasel-js/storage';
-import { prefSectionLeaves, type PrefList, isPrefScope, type PrefSelection, type PrefMap, type PrefLeaf, type PrefObject, prefScopedDefault, prefVariantOf, type PrefUnion } from '@weasel-js/prefs-schema';
+import { prefSectionLeaves, type PrefList, isPrefScope, PREF_ELSE, type PrefScope, type PrefSelection, type PrefMap, type PrefLeaf, type PrefObject, prefScopedDefault, prefVariantOf, type PrefUnion } from '@weasel-js/prefs-schema';
 import { dropUnlisted, mapScopeValues, repairScope, writeDeclared, prefOverridesLookup, declaredSelectorsOf } from '@weasel-js/prefs-schema/internal';
 import { optionsOf, selectionAt } from './snapshot';
 import { isAutoRecord, recordValue, stampRecord } from './stamp';
@@ -32,6 +32,21 @@ const encodeInfinity = (leaf: PrefLeaf, value: unknown): unknown => {
   return out ?? value;
 };
 
+/** `held` with every member that holds `undefined` left out: an option written clear reads as one never written.
+ *  `undefined` where nothing is left. */
+const dropCleared = (held: unknown): unknown => {
+  if (!isPrefScope(held)) return held;
+  const $in: Record<string, unknown> = {};
+  for (const [option, member] of Object.entries(held.$in)) {
+    const kept = dropCleared(member);
+    if (kept !== undefined) setOwn($in, option, kept);
+  }
+  const rest = Object.hasOwn(held, PREF_ELSE) ? dropCleared(held[PREF_ELSE]) : undefined;
+  if (Object.keys($in).length === 0 && rest === undefined) return undefined;
+  const out: PrefScope = { $by: held.$by, $in };
+  return rest === undefined ? out : { ...out, [PREF_ELSE]: rest };
+};
+
 /** What the writes of a store are made over. */
 export interface PrefWritesSource {
   leaves: ReadonlyMap<string, PrefLeaf>;
@@ -44,11 +59,13 @@ export interface PrefWritesSource {
   version: number;
   /** The option each selector is set to, read as a write is made. */
   selection: () => PrefSelection;
+  /** What the leaf at a path holds while it is auto, repaired; nothing while it is pinned. */
+  autoHeld: (path: string) => { held: unknown } | undefined;
   warnIfClosed: (path: string | undefined) => void;
 }
 
 /** A store's `set`. */
-export function prefWrites({ leaves, cache, selectors, admitted, version, selection, warnIfClosed }: PrefWritesSource): {
+export function prefWrites({ leaves, cache, selectors, admitted, version, selection, autoHeld, warnIfClosed }: PrefWritesSource): {
   set: (path: string, value: unknown, write?: { at?: PrefSelection }) => void;
 } {
   /** The leaf's split default as stored, where it has one it can hold. */
@@ -75,16 +92,20 @@ export function prefWrites({ leaves, cache, selectors, admitted, version, select
       return;
     }
     const stored = encodeInfinity(leaf, value);
-    if (stored === undefined || !split) {
+    if (!split) {
       store(path, stored);
       return;
     }
-    const had = cache.has(path) && !isAutoRecord(cache.get(path)) ? recordValue(cache.get(path)) : unsetScope(leaf);
+    const auto = autoHeld(path);
+    const had = auto?.held !== undefined
+      ? mapScopeValues(auto.held, (member) => encodeInfinity(leaf, member))
+      : cache.has(path) && !isAutoRecord(cache.get(path)) ? recordValue(cache.get(path)) : unsetScope(leaf);
     const now = selection();
     const under = write?.at ? selectionAt(selectors, now, write.at, admitted) : now;
     const overridesOf = prefOverridesLookup(leaf);
     const absent = encodeInfinity(leaf, leaf.default);
-    store(path, writeDeclared(dropUnlisted(had, overridesOf), declaredSelectorsOf(leaf)!, under, now, stored, absent, overridesOf, had !== undefined));
+    const next = writeDeclared(dropUnlisted(had, overridesOf), declaredSelectorsOf(leaf)!, under, now, stored, absent, overridesOf, had !== undefined);
+    store(path, stored === undefined ? dropCleared(next) : next);
   };
   return { set };
 }

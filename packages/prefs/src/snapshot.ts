@@ -62,6 +62,23 @@ export function resolveHeld(source: Pick<SnapshotSource, 'blends'>, leaf: PrefLe
   return isPrefScope(held) ? blendPref(leaf, weighScope(held, weights, leaf.default, prefOverridesLookup(leaf)), source.blends) : held;
 }
 
+/** What a pinned leaf holding nothing holds: its split default, repaired, where it has one; else its default. */
+function pinnedUnsetHeld(source: Pick<SnapshotSource, 'selectors' | 'admitted' | 'validators'>, leaf: PrefLeaf): unknown {
+  const scope = prefScopedDefault(leaf);
+  return scope === undefined ? leaf.default : readStored(source, leaf, scope);
+}
+
+/** What an auto leaf holds: its `auto.value`, repaired. A store computes nothing else, so else `undefined`. */
+function autoHeldOf(source: Pick<SnapshotSource, 'selectors' | 'admitted' | 'validators'>, leaf: PrefLeaf): unknown {
+  const declared = leaf.auto?.value;
+  return declared === undefined ? undefined : readStored(source, leaf, declared);
+}
+
+/** What a leaf with nothing stored holds: auto where its schema starts it so, else pinned. */
+export function unsetHeldOf(source: Pick<SnapshotSource, 'selectors' | 'admitted' | 'validators'>, leaf: PrefLeaf): unknown {
+  return prefStartsAuto(leaf) ? autoHeldOf(source, leaf) : pinnedUnsetHeld(source, leaf);
+}
+
 /** The store's snapshots: `current` builds one when there is none, and `drop` discards it when a record changed. */
 export function createSnapshots(source: SnapshotSource): { current: () => Snapshot; peek: () => Snapshot | null; drop: () => void } {
   const { leaves, cache, selectors } = source;
@@ -69,20 +86,13 @@ export function createSnapshots(source: SnapshotSource): { current: () => Snapsh
   let previous: { raw: Map<string, unknown>; held: Map<string, unknown> } | null = null;
 
   const unsetScopes = new Map<string, unknown>();
-  /** What an unset leaf holds: its split default, repaired once, where it has one. */
   const unsetHeld = (path: string, leaf: PrefLeaf): unknown => {
-    const scope = prefScopedDefault(leaf);
-    if (scope === undefined) return leaf.default;
-    if (!unsetScopes.has(path)) unsetScopes.set(path, readStored(source, leaf, scope));
+    if (!unsetScopes.has(path)) unsetScopes.set(path, pinnedUnsetHeld(source, leaf));
     return unsetScopes.get(path);
   };
   const autoValues = new Map<string, unknown>();
-  /** What an auto leaf holds: its `auto.value`, repaired once. A store computes nothing else, so else `undefined`. */
   const autoHeld = (path: string, leaf: PrefLeaf): unknown => {
-    if (!autoValues.has(path)) {
-      const declared = leaf.auto?.value;
-      autoValues.set(path, declared === undefined ? undefined : readStored(source, leaf, declared));
-    }
+    if (!autoValues.has(path)) autoValues.set(path, autoHeldOf(source, leaf));
     return autoValues.get(path);
   };
 

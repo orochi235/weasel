@@ -1,0 +1,10 @@
+packages/minimap/src/MinimapCanvas.tsx
+packages/minimap/src/actionParamSchema.ts
+packages/minimap/src/actions.ts
+packages/minimap/src/createMinimapContribution.ts
+packages/minimap/src/index.ts
+packages/minimap/src/layers.ts
+packages/minimap/src/minimapMath.ts
+packages/minimap/src/pbt.fixture.ts
+packages/minimap/src/useFitView.ts
+packages/minimap/src/useMinimapInput.ts

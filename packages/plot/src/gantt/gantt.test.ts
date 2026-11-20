@@ -61,6 +61,16 @@ describe('gantt dates', () => {
     expect(formatHasHours('YYYY-MM-DD HH:mm')).toBe(true);
   });
 
+  it('writes a date past the years its format reads at the last one it reads, so it reads back', () => {
+    const far = Date.UTC(2000, 0, 1) + 4e14;
+    expect(formatGanttDate(far, 'YYYY-MM-DD')).toBe('9999-12-31');
+    expect(formatGanttDate(-1e15, 'YYYY-MM-DD')).toBe('0000-01-01');
+    expect(formatGanttDate(Date.UTC(2100, 5, 1), 'D/M/YY')).toBe('31/12/68');
+    expect(formatGanttDate(Date.UTC(2026, 5, 1), 'MM-DD')).toBe('12-31');
+    const moved = setGanttStartDay(PLAN, 0, 0, far);
+    expect(parseGanttDate((moved.sections[0]!.tasks[0]!.start as { date: string }).date, 'YYYY-MM-DD')).not.toBeNull();
+  });
+
   it('reads and writes a year below 100 as itself, not as 1900 and some', () => {
     const t = parseGanttDate('0050-03-01', 'YYYY-MM-DD')!;
     expect(new Date(t).getUTCFullYear()).toBe(50);
@@ -111,7 +121,7 @@ describe('scheduleGantt', () => {
     expect(excluded(at('2026-01-10'))).toBe(false);
     const none = () => false;
     expect(addGanttDuration(at('2026-01-05'), 1.5, 'h', none)).toBe(at('2026-01-05') + 5_400_000);
-    expect(addGanttDuration(at('2026-01-31'), 1, 'M', none)).toBe(at('2026-03-03'));
+    expect(addGanttDuration(at('2026-01-31'), 1, 'M', none)).toBe(at('2026-02-28'));
     expect(addGanttDuration(at('2026-01-05'), 1, 'y', none)).toBe(at('2027-01-05'));
     expect(addGanttDuration(at('2026-01-05'), 100, 'ms', none)).toBe(at('2026-01-05') + 100);
   });
@@ -172,6 +182,7 @@ describe('compileGantt', () => {
     expect(today.data.stroke?.paint.color).toBe(seriesColor(PLOT_THEME, 9));
     expect(byKey({ ...PLAN, todayMarker: 'off' }).get('today')).toBeUndefined();
     expect(byKey({ ...PLAN, todayMarker: 'stroke-width:5px,stroke:#0f0,opacity:0.5' }).get('today')!.data.stroke).toMatchObject({ paint: { color: '#0f0' }, width: 5 });
+    expect(byKey({ ...PLAN, todayMarker: 'stroke:rgb(255, 0, 0),stroke-width:3' }).get('today')!.data.stroke).toMatchObject({ paint: { color: 'rgb(255, 0, 0)' }, width: 3 });
     vi.setSystemTime(at('2027-01-01'));
     expect(byKey(PLAN).get('today')).toBeUndefined();
   });

@@ -61,6 +61,7 @@ export { boundsOfPath } from './paths/bounds';
 export {
   ORIGIN_THRESHOLD, addOrigin, coordsFrom, joinPaths, originFor, originOf, pathPoint, worldCoords,
 } from './paths/pathOrigin';
+export { samePolygon } from './paths/samePolygon';
 export {
   cornerCuts, cornerFrameAt, cornerFrames, remapPerAnchor, resolveCorners,
   resolveCornersWithSources, type CornerCut, type CornerFrame, type ResolvedCorners,

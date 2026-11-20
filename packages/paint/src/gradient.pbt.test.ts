@@ -52,7 +52,8 @@ describe('sampleResolvedStops, property', () => {
   it('extends the end stops flat past either end, NaN reading as the first', () => {
     fc.assert(fc.property(stops(), fc.double({ min: 0, max: 100, noNaN: true }), space, (ss, d, s) => {
       const r = resolveGradientStops(ss);
-      expect(sampleResolvedStops(r, r[0]!.offset - d, s)).toBe(r[0]!.rgba);
+      const before = r[0]!.offset - d;
+      if (before < r[0]!.offset) expect(sampleResolvedStops(r, before, s)).toBe(r[0]!.rgba);
       expect(sampleResolvedStops(r, r[r.length - 1]!.offset + d + 1e-9, s)).toBe(r[r.length - 1]!.rgba);
       expect(sampleResolvedStops(r, Number.NaN, s)).toBe(r[0]!.rgba);
     }), RUNS);

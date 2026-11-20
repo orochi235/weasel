@@ -65,8 +65,12 @@ function setup() {
   }, { wrapper: ({ children }: { children: ReactNode }) => createElement(DepRegistryProvider, null, children) });
   const dep = () => (result.current.get as (key: string) => EditAnchorsDep)('editAnchors');
   const followers = () => (result.current.get as (key: string) => TransformFollower[] | undefined)('transformFollowers') ?? [];
+  let noEditOps = false;
+  const editAnchors = () => (noEditOps
+    ? new Proxy(dep(), { get: (t, k) => (k === 'editOps' ? undefined : Reflect.get(t, k)) })
+    : dep());
   const deps = () => ({
-    editAnchors: dep(), transformFollowers: followers(), operands: { get: () => [editing] }, scene: loose, applyOps: adapter.applyOps,
+    editAnchors: editAnchors(), transformFollowers: followers(), operands: { get: () => [editing] }, scene: loose, applyOps: adapter.applyOps,
   }) as unknown as ActionDeps;
   const points = (id: NodeId) => pathAnchorPoints(scene.get(id)!.pose as PolygonPath);
   const ctx = (x: number, y: number, anchor: number): InvocationCtx => ({
@@ -149,7 +153,8 @@ function setup() {
     const c = constraintLinkOf(n.data);
     return c && n.id !== link ? [{ id: n.id, nodes: n.dependsOn, constraint: c }] : [];
   });
-  return { scene, square, triangle, link, drag, points, select, run, move, bend, linkDrag, links, moveDrag };
+  const dropEditOps = () => { noEditOps = true; };
+  return { scene, square, triangle, link, drag, points, select, run, move, bend, linkDrag, links, moveDrag, dropEditOps };
 }
 
 describe('constraint links', () => {
@@ -252,6 +257,14 @@ describe('constraint links', () => {
     t.linkDrag(t.triangle, 1, 0, -20);
     expect(t.points(t.triangle)[1]).toEqual({ x: 40, y: -70 });
     expect(t.links()).toHaveLength(1);
+  });
+
+  it('commits a drop it cannot tie as a plain move', () => {
+    const t = setup();
+    t.dropEditOps();
+    t.linkDrag(t.triangle, 2, -7, 47);
+    expect(t.links()).toEqual([]);
+    expect(t.points(t.triangle)[2]).toEqual({ x: 3, y: -3 });
   });
 
   it('replays the drop with another reach, tying the anchor or leaving it a plain move', () => {

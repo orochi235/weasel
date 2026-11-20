@@ -65,6 +65,8 @@ describe('resetPlan', () => {
     const section = { name: '', members: { 'pose.x': grid, inner: { name: 'In', members: { y: size } } } } as unknown as PrefSection;
     expect(prefNodeAt(section, 'pose.x')).toBe(grid);
     expect(prefNodeAt(section, 'y')).toBe(size);
+    expect(prefNodeAt(section, 'inner')).toBeUndefined();
+    expect(resetPlans(section, ['inner'], (p) => values[p] ?? one(3))).toEqual([]);
   });
 
   it('pins a leaf that starts auto at its default where the surface keeps no auto state', () => {

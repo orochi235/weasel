@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ]
+ ],
+ "a": [
+  "linkAnchor drops the whole drag when the link ops come back empty",
+  "addExtremeAnchors is enabled by an 'xy' test while its run reads params.axes",
+  "A multi-corner fillet drag or setFillets clamps each corner against its neighbors' old cuts, not their new ones",
+  "Girth's replay re-reads the live view scale where the drag read the press-time one"
+ ],
+ "b": [
+  "addExtremeAnchors is enabled by an 'xy' check whatever axis its params name",
+  "A path-edit host given a `target` never tells subscribers when the open path moves from one node to another",
+  "The fillet widget draws a sharp corner as `'round'` whatever shape `editFillet`'s params give it",
+  "`constrainAnchors` and `unconstrainAnchors` carry the `path-drag` tag though they are immediate commands",
+  "`constrainAnchors` stores any `length` param, including a negative, zero or NaN one, as a constraint that can never hold"
+ ]
+}

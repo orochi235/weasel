@@ -1,23 +1,20 @@
 import { getOwn } from '@weasel-js/registry';
 import type { PrefsCssSource } from './css';
-import { type PrefGroup, prefHoldsValue, prefLeaves, isPrefScope, type PrefSelection, prefScopedDefault } from '@weasel-js/prefs-schema';
+import { type PrefGroup, prefHoldsValue, prefLeaves, isPrefScope, type PrefSelection } from '@weasel-js/prefs-schema';
 import { assignPrefValueAt, selectionWeights } from '@weasel-js/prefs-schema/internal';
-import { readStored, resolveHeld, selectionAt } from './snapshot';
+import { resolveHeld, selectionAt, unsetHeldOf } from './snapshot';
 import { prefSelectors, admittedSelectors } from './splitCheck';
 
 /**
  * A schema's defaults read the way a store at defaults reads them, a split
- * default by its `defaultScope` — what `prefsCss` needs to write a schema's
+ * default by its `defaultScope` and a leaf that starts auto at its `auto.value` — what `prefsCss` needs to write a schema's
  * stylesheet with no store and no storage, at build time say.
  */
 export function createDefaultsSource(schema: PrefGroup): PrefsCssSource {
   const leaves = new Map([...prefLeaves(schema)].filter(([, leaf]) => prefHoldsValue(leaf)));
   const selectors = prefSelectors(leaves);
   const admitted = admittedSelectors(schema);
-  const held = new Map([...leaves].map(([path, leaf]) => {
-    const scope = prefScopedDefault(leaf);
-    return [path, scope === undefined ? leaf.default : readStored({ selectors, admitted }, leaf, scope)];
-  }));
+  const held = new Map([...leaves].map(([path, leaf]) => [path, unsetHeldOf({ selectors, admitted }, leaf)]));
   const own: PrefSelection = Object.fromEntries([...selectors.keys()].map((path) => [path, held.get(path) as string]));
 
   const read = (path: string, selection: PrefSelection): unknown => {

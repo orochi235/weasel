@@ -60,7 +60,7 @@ export interface PenScratch {
    *  around when it was picked up by its first anchor), and the commit
    *  writes back into the node. */
   continuing: PenContinuation | null;
-  /** The last press closed and committed a path; the next subpath begun
+  /** The last press closed or joined, and committed, a path; the next subpath begun
    *  `followsClose`. */
   justClosed?: boolean;
 }

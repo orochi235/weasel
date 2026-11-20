@@ -106,3 +106,15 @@ describe('createSelectionSource', () => {
     expect(off.reset.mock.calls[0]![0].map((w: { path: string }) => w.path)).toEqual(['size']);
   });
 });
+
+describe('createValuesSource over another schema', () => {
+  const CODE = { name: 'Layout', children: { grid: { kind: 'alias', name: 'Grid', description: '', default: undefined, of: 'view.grid' } } } as unknown as PrefGroup;
+
+  it("resets an alias row's target, found through `over` as a read finds it", () => {
+    const onChange = vi.fn();
+    const source = createValuesSource(CODE, () => ({ view: { grid: false } }), onChange, { over: SCHEMA });
+    expect(source.valueAt('view.grid').value).toBe(false);
+    source.reset(['view.grid']);
+    expect(onChange.mock.calls).toEqual([['view.grid', true]]);
+  });
+});

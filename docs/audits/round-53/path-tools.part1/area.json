@@ -1,0 +1,81 @@
+{
+ "id": "path-tools.part1",
+ "commit": "830b463cc110fc3f5182a03383bb1d182067d8e3",
+ "date": "2026-11-20",
+ "files": [
+  "packages/path-tools/src/actionParamSchema.ts",
+  "packages/path-tools/src/anchorSelect/anchorSelect.ts",
+  "packages/path-tools/src/bridge/bridge.ts",
+  "packages/path-tools/src/comb/comb.ts",
+  "packages/path-tools/src/constraints/anchorConstraints.ts",
+  "packages/path-tools/src/constraints/constraintGlyphs.ts",
+  "packages/path-tools/src/constraints/constraintLinkMarks.ts",
+  "packages/path-tools/src/constraints/constraintLinks.ts",
+  "packages/path-tools/src/constraints/constraintsExtension.ts",
+  "packages/path-tools/src/constraints/linkAnchor.ts",
+  "packages/path-tools/src/constraints/pathConstraints.ts",
+  "packages/path-tools/src/drape/drape.ts",
+  "packages/path-tools/src/extremes/addExtremes.ts",
+  "packages/path-tools/src/fairing/fairing.tsx",
+  "packages/path-tools/src/featurePresets.ts",
+  "packages/path-tools/src/fillet/editFillet.ts",
+  "packages/path-tools/src/fillet/filletCommands.ts",
+  "packages/path-tools/src/fillet/filletControls.ts",
+  "packages/path-tools/src/fillet/filletWidgets.ts",
+  "packages/path-tools/src/fillet/useFilletControls.ts",
+  "packages/path-tools/src/girth/girthActions.ts",
+  "packages/path-tools/src/girth/girthOverlay.ts",
+  "packages/path-tools/src/girth/index.ts",
+  "packages/path-tools/src/girth/useGirthTool.ts",
+  "packages/path-tools/src/girth/widthEdit.ts",
+  "packages/path-tools/src/groups.ts",
+  "packages/path-tools/src/handleLocks/handleLocks.tsx",
+  "packages/path-tools/src/handleSnap/handleSnap.ts",
+  "packages/path-tools/src/host/createPathEditHost.ts",
+  "packages/path-tools/src/host/usePathEditMode.ts",
+  "packages/path-tools/src/icons.gen.ts",
+  "packages/path-tools/src/icons.table.ts",
+  "packages/path-tools/src/index.ts",
+  "packages/path-tools/src/kitSettings.ts",
+  "packages/path-tools/src/knead/knead.ts",
+  "packages/path-tools/src/knead/kneadTargets.ts",
+  "packages/path-tools/src/knead/useKneadTool.ts"
+ ],
+ "a": 4,
+ "b": 5,
+ "m": 1,
+ "distinct": 8,
+ "chapman": 14,
+ "unfound": 6,
+ "read": {
+  "A": 37,
+  "B": 36
+ },
+ "patches": 7,
+ "questions": 2,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.1,
+   "B": 4.9,
+   "match": 1.7,
+   "fix": 14.9
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 2669247,
+  "costUsd": 7.7
+ },
+ "fixCommits": [
+  "5cd31ff82c72e0815c4336920d2a8c757145c8a8",
+  "7bd4b0197149beaca57d7070e0837b0bd618a0d5",
+  "6366c9f3770efd1edcf79b8c7050eb0300d8c7b4",
+  "7f8ed1fdb5b185615987e1d0285f7ccb4ccfe551",
+  "32a624a69115942412d1c8952aa60acd00746705",
+  "cb6aa033ababf352ee3f1816c461e8c8fbea72dc",
+  "9c0aeb4f251dd2ad2f120ac662aa4e0b61f0bdb9"
+ ]
+}

@@ -1,4 +1,5 @@
 /** Edits to a pie, as plain data in and out. */
+import { typedAmountOf } from '../editing/schemaKit';
 import type { PieData, PieSlice } from './types';
 
 function withSlice(data: PieData, slice: number, change: Partial<PieSlice>, who: string): PieData {
@@ -17,8 +18,5 @@ export const setPieLabel = (data: PieData, slice: number, label: string): PieDat
 /** A value as typed into the legend, its brackets optional: a non-negative number, else `null`. */
 export function pieValueOf(text: string): number | null {
   const trimmed = text.trim();
-  const bare = trimmed.startsWith('[') && trimmed.endsWith(']') ? trimmed.slice(1, -1).trim() : trimmed;
-  if (!/^\+?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(bare)) return null;
-  const value = Number(bare);
-  return Number.isFinite(value) ? value : null;
+  return typedAmountOf(trimmed.startsWith('[') && trimmed.endsWith(']') ? trimmed.slice(1, -1) : trimmed);
 }

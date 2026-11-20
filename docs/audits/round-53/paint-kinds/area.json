@@ -1,0 +1,57 @@
+{
+ "id": "paint-kinds",
+ "commit": "830b463cc110fc3f5182a03383bb1d182067d8e3",
+ "date": "2026-11-20",
+ "files": [
+  "packages/paint-kinds/src/icons.gen.ts",
+  "packages/paint-kinds/src/icons.table.ts",
+  "packages/paint-kinds/src/index.ts",
+  "packages/paint-kinds/src/mesh.ts",
+  "packages/paint-kinds/src/meshKind.ts",
+  "packages/paint-kinds/src/meshKindLazy.ts",
+  "packages/paint-kinds/src/paintKindEntry.ts",
+  "packages/paint-kinds/src/paintKinds.ts",
+  "packages/paint-kinds/src/react.ts",
+  "packages/paint-kinds/src/svgNative.ts",
+  "packages/paint-kinds/src/test-seams.ts",
+  "packages/paint-kinds/src/tileSvg.ts",
+  "packages/paint-kinds/src/usePaintKinds.ts"
+ ],
+ "a": 5,
+ "b": 4,
+ "m": 2,
+ "distinct": 7,
+ "chapman": 9,
+ "unfound": 2,
+ "read": {
+  "A": 13,
+  "B": 13
+ },
+ "patches": 7,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.5,
+   "B": 1.6,
+   "match": 0.1,
+   "fix": 12
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1102775,
+  "costUsd": 3.29
+ },
+ "fixCommits": [
+  "f6d2a19147b5dff8e0bf3380a87bde96e525b1ab",
+  "dcdff5d13c44c1e1ae37728f6f5d3ac8f82b3800",
+  "f98f4f3a1f23d54e3f5e45e0b527b66cea88db52",
+  "2dd5e340f4bf678ac605a9e7b863ce8d6df7f476",
+  "2ee9af5a8057438c4a011b9603bb8b539953fc85",
+  "d9eb0956a49e16189e2929d329cfb4604ed29170",
+  "25ee1b4dd7650941c10f8eee7428d5160b6b2d20"
+ ]
+}

@@ -96,6 +96,7 @@ export const sandAction = inPlane(defineAction({
       const trail: Sample[] = [];
       const gathered = new Set<number>();
       let current: { path: PolygonPath; origins?: readonly (PointOrigin | null)[] } | null = null;
+      let builtAt: number | null = null;
 
       const sweepTo = (p: Point): void => {
         const sample = { at: { x: p.x, y: p.y }, scale: ctx.deps.view?.get().scale };
@@ -103,8 +104,10 @@ export const sandAction = inPlane(defineAction({
         trail.push(sample);
         const before = gathered.size;
         gatherSpan(originSet, gathered, from, sample, radiusPx());
-        if (gathered.size === before) return;
-        current = editAnchorSetTracked(origin, (set) => simplifyAnchorsAt(set, gathered, toleranceOf(params())));
+        const tolerance = toleranceOf(params());
+        if (gathered.size === before && tolerance === builtAt) return;
+        builtAt = tolerance;
+        current = editAnchorSetTracked(origin, (set) => simplifyAnchorsAt(set, gathered, tolerance));
       };
       const commit = (anchors: ReadonlySet<number>, tolerance: number): void => {
         const done = anchors.size > 0 ? editAnchorSetTracked(origin, (set) => simplifyAnchorsAt(set, anchors, tolerance)) : null;

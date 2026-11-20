@@ -1,0 +1,43 @@
+{
+ "pairs": [
+  [
+   0,
+   4
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   1
+  ],
+  [
+   3,
+   2
+  ],
+  [
+   4,
+   3
+  ]
+ ],
+ "a": [
+  "A month or year duration starting past the target month's last day overflows into the next month, where Mermaid clamps",
+  "Renaming a branch in the commands table leaves later checkouts and merges on the old name, so the graph stops there",
+  "Changing a commit's id leaves cherry-picks naming the old id, so replay stops at them",
+  "Turning a command into a merge fills in the last branch created, often the branch the command runs on",
+  "moveGanttTaskToSection within one section counts `at` after removal, against its own \"before its task `at`\"",
+  "A drag that lands past year 9999 (or before year 0) writes a date the chart's own format cannot read, so the task jumps to the chart's first date",
+  "A long chain of forward `after` dependencies is scheduled by unbounded recursion and overflows the stack"
+ ],
+ "b": [
+  "Renaming a branch command leaves its checkouts and merges naming the old name, though renaming the main branch follows them",
+  "Changing a commit's id leaves cherry-picks of it naming the old id, where gantt renames follow every dependency",
+  "setGitCommandKind's filled-in defaults for cherry-pick and merge name a target the command cannot use",
+  "moveGanttTaskToSection within one section reads `at` as a move index, not \"before task at\", and throws when `at` is the length",
+  "A calendar-month duration from the end of a month overflows into the month after next instead of clamping",
+  "ganttDurationBetween counts excluded days on spans past WALK_LIMIT where addGanttDuration does not, so a long task shrinks on edit",
+  "A todayMarker stroke written as rgb()/hsl() is cut at its first comma",
+  "Undo in PlotView after a resize or theme change restores marks compiled for the old size and theme"
+ ]
+}

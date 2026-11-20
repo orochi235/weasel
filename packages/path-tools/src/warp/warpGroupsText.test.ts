@@ -7,7 +7,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { PathBuilder } from '@weasel-js/geom';
 import type { InvocationCtx, OngoingInvoker, ImmediateInvoker } from '@weasel-js/routing';
 import { asNodeId } from '@weasel-js/core';
-import { loadTestFont, outlineScene, TEXT } from '../shared/testing/outlineScene';
+import { loadTestFont, outlineScene, registerTestFont, TEXT } from '../shared/testing/outlineScene';
+import { loadFontOutlines } from '@weasel-js/font';
 import { heldPathWarpOf } from './pathWarp';
 import {
   configureWarpAction, createAddPinAction, createRemovePinAction, createWarpDragAction, expandWarpAction, type WarpHandleScratch,
@@ -24,8 +25,12 @@ import { withTextPainter } from '@weasel-js/text-tools/testing/textPainter';
 const square = (x: number) =>
   new PathBuilder().moveTo(x, 0).lineTo(x + 100, 0).lineTo(x + 100, 100).lineTo(x, 100).close().build();
 
-/** Drag control `index` of the fresh plane warp from `from` to `to`, ending with `reason`. */
-function dragFresh(deps: never, from: { x: number; y: number }, to: { x: number; y: number }, reason: 'commit' | 'cancel' = 'commit') {
+/** Drag control `index` of the fresh plane warp from `from` to `to`, ending with `reason`; `between` runs after
+ *  the press. */
+function dragFresh(
+  deps: never, from: { x: number; y: number }, to: { x: number; y: number }, reason: 'commit' | 'cancel' = 'commit',
+  between?: () => Promise<void>,
+) {
   const scratch: WarpHandleScratch = { warpId: null, index: 2 };
   const drag = (at: { x: number; y: number }) => ({
     start: from, current: at, delta: { x: at.x - from.x, y: at.y - from.y },
@@ -33,8 +38,11 @@ function dragFresh(deps: never, from: { x: number; y: number }, to: { x: number;
   });
   const ctx = (at: { x: number; y: number }) => ({ deps, world: at, drag: drag(at) }) as unknown as InvocationCtx;
   const handle = (createWarpDragAction('plane').invoker as OngoingInvoker).start(ctx(from), { params: {} });
-  if (to !== from) handle.onMove?.(ctx(to));
-  handle.onEnd?.(ctx(to), reason);
+  const finish = () => {
+    if (to !== from) handle.onMove?.(ctx(to));
+    handle.onEnd?.(ctx(to), reason);
+  };
+  return between ? between().then(finish) : finish();
 }
 
 beforeEach(loadTestFont);
@@ -135,6 +143,15 @@ describe('a warp over selected text', () => {
     dragFresh(deps, at, at);
     expect(JSON.stringify(scene.toJSON())).toBe(before);
     expect(scene.history.undoDepth()).toBe(0);
+  });
+
+  it('converts text whose face was still loading at the press once it loads', async () => {
+    registerTestFont();
+    const { scene, deps } = textScene();
+    await dragFresh(deps, { x: 200, y: 120 }, { x: 240, y: 160 }, 'commit', async () => { await loadFontOutlines('sm-inter'); await new Promise((r) => setTimeout(r, 0)); });
+    expect(scene.get(asNodeId('t'))).toBeUndefined();
+    expect(scene.renderOrderNodes().some((n) => heldPathWarpOf(n.data))).toBe(true);
+    expect(scene.history.entries().undo.map((e) => e.label)).toEqual(['Plane Warp']);
   });
 
   it('leaves text whose face has no outlines, and says so', () => {

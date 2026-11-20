@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "A condition on a `readout` number pref draws its compared value as a read-only readout, so it cannot be edited",
+  "A test read from its group (`from: 'group'`) is checked but never drawn: its row gets no comparison controls and its picker names it as a root path",
+  "The clipboard's status message never clears, so \"Copied.\" or \"The clipboard holds no condition.\" stays up through later edits",
+  "A malformed condition gets no Paste, though Paste is the editor's way to replace a condition",
+  "Rows are keyed by index, so removing a row hands its successor's controls the removed row's component state"
+ ],
+ "b": [
+  "A number row on a `readout` leaf draws its value as read-only, so the compared number cannot be set",
+  "`exclude` never reaches an entry's fields, so a field of a list/map entry is offered a condition on its own value",
+  "The clipboard's status message is never cleared, so \"Copied.\" / \"The clipboard holds no condition.\" outlives the state it described"
+ ]
+}

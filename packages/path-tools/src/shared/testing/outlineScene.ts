@@ -15,11 +15,16 @@ import { type CreateOutlinesAdapter } from '../../outlines/createOutlines';
 
 const INTER_TTF = resolve(import.meta.dirname, '../../../../../assets/fonts/inter/inter.ttf');
 
-/** Register the test face, `sm-inter`, with its outlines loaded. */
-export async function loadTestFont(): Promise<void> {
+/** Register the test face, `sm-inter`, its outlines not yet parsed: as a face is before its first use. */
+export function registerTestFont(): void {
   _resetFontRegistryForTests();
   _resetFontOutlinesForTests();
   registerFontOutlines('sm-inter', {}, new Uint8Array(readFileSync(INTER_TTF)).buffer);
+}
+
+/** Register the test face, `sm-inter`, with its outlines loaded. */
+export async function loadTestFont(): Promise<void> {
+  registerTestFont();
   await loadFontOutlines('sm-inter');
 }
 
