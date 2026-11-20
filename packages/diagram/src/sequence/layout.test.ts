@@ -92,4 +92,17 @@ describe('sequenceLayout', () => {
     expect(box.x + box.width).toBeLessThan(l.columns[2]!.x);
     expect(l.boxes[0]!.label).toBeDefined();
   });
+
+  it('ends a bar still open at a destruction at the cross, not the foot', () => {
+    const doomed: SequenceData = {
+      participants: [{ id: 'a' }, { id: 'b' }],
+      steps: [msg('m1', 'a', 'b', 'call'), msg('r1', 'b', 'a', 'done'), { kind: 'destroy', participant: 'b' }, msg('m2', 'a', 'a', 'later'), msg('m3', 'a', 'a', 'more')],
+    };
+    const opened = { ...doomed, steps: [{ ...doomed.steps[0]!, activate: 'to' as const }, ...doomed.steps.slice(1)] } as SequenceData;
+    const out = sequenceLayout(opened);
+    const line = out.lifelines.find((l) => l.id === 'b')!;
+    const bar = out.activations.find((a) => a.participant === 'b')!;
+    expect(line.destroyed).toBe(true);
+    expect(bar.box.y + bar.box.height).toBeCloseTo(line.y1);
+  });
 });
