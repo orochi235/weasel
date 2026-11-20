@@ -12,9 +12,14 @@ import type { Bounds, OutlineDef } from './types';
 const BITE = 1 - Math.SQRT1_2;
 
 /** A rounded rect whose corner radius is `maxRadius`, or a sixth of the shorter side when that is
- *  less. The built-in `roundRect` is `roundRectOutline(10)`; register another under a name of its own. */
+ *  less: `Infinity` always takes the sixth, and a negative or NaN radius throws. The built-in `roundRect`
+ *  is `roundRectOutline(10)`; register another under a name of its own. */
 export function roundRectOutline(maxRadius: number): OutlineDef {
+  if (!(maxRadius >= 0)) throw new RangeError(`roundRectOutline: maxRadius must be 0 or more, not ${maxRadius}`);
   const radiusOf = (w: number, h: number): number => Math.max(0, Math.min(maxRadius, w / 6, h / 6));
+  // The radius a box sized to content of shorter side s gets: r = min(maxRadius, (s + 2·BITE·r) / 6).
+  const radiusFor = (c: Pick<Bounds, 'width' | 'height'>): number =>
+    Math.max(0, Math.min(maxRadius, Math.min(c.width, c.height) / (6 - BITE * 2)));
   return {
     path: ({ x, y, width: w, height: h }) => {
       const r = radiusOf(w, h);
@@ -36,7 +41,10 @@ export function roundRectOutline(maxRadius: number): OutlineDef {
       const i = radiusOf(w, h) * BITE;
       return { x: x + i, y: y + i, width: w - i * 2, height: h - i * 2 };
     },
-    boxForContent: (c) => ({ width: c.width + maxRadius * BITE * 2, height: c.height + maxRadius * BITE * 2 }),
+    boxForContent: (c) => {
+      const i = radiusFor(c) * BITE * 2;
+      return { width: c.width + i, height: c.height + i };
+    },
   };
 }
 

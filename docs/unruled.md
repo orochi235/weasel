@@ -2841,3 +2841,10 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): an audio stage missing a discrete setting (`wave`, `color`, `type`, `seconds`) plays
   with its stage type's default from `AUDIO_STAGE_TYPES`, where a noise stage without `color` used to fail. Failing the
   stage with "no color" was the alternative.
+## Audit round forty-six (2026-11-20): diagram's outlines
+
+- 2026-11-20 (the fixer's call): `roundRectOutline` throws a `RangeError` on a negative or `NaN` radius, and takes
+  `Infinity` as "a sixth of the shorter side always". Clamping a negative radius to 0 was the alternative.
+- 2026-11-20 (the fixer's call): `outlineFromD` throws on path data or `detail` that does not parse or draws nothing,
+  and a `RangeError` on a `content` with no area or a non-finite side, matching what a mark's `d` does. Building an
+  outline that paints nothing, with a warning, was the alternative.
