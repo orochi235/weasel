@@ -137,6 +137,7 @@ describe('sankey edits', () => {
     expect(text(ENERGY, { edit: 'value', link: 0 }, ' 12.5 ').links[0]!.value).toBe(12.5);
     expect(text(ENERGY, { edit: 'value', link: 0 }, '-1')).toBe(ENERGY);
     expect(text(ENERGY, { edit: 'value', link: 0 }, 'lots')).toBe(ENERGY);
+    for (const typed of ['0x10', '0b11', '0o7', 'Infinity']) expect(text(ENERGY, { edit: 'value', link: 0 }, typed)).toBe(ENERGY);
     expect(text(ENERGY, { edit: 'node', node: 'Coal' }, 'Lignite').links[0]!.source).toBe('Lignite');
     expect(text(ENERGY, { edit: 'node', node: 'Coal' }, 'Gas')).toBe(ENERGY);
     expect(text(ENERGY, { edit: 'node', node: 'Coal' }, '')).toBe(ENERGY);
