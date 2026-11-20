@@ -17,7 +17,7 @@ import { _resetBitmapHoldsForTests, closeDropped, holdImageBitmaps, reclaimed } 
 import {
   _resetBitmapNamesForTests, bitmapSrc, isBitmapSrc, mintedHere, namedBitmap, retireBitmapName,
 } from './bitmapNames';
-import { forgetDecodedVector, isVectorImageSrc, loadImageBitmap, type ImageLoader } from './imageLoader';
+import { MAX_VECTOR_RASTER_PIXELS, forgetDecodedVector, isVectorImageSrc, loadImageBitmap, type ImageLoader } from './imageLoader';
 import { noteImageRead } from './imageReads';
 import { imagePatternTextureId } from '../patterns/imagePatternId';
 import { unregisterTexture } from '../textures/registerTexture';
@@ -83,8 +83,6 @@ interface Entry {
   readAt: number;
 }
 
-/** One vector raster may hold at most 64MB of RGBA. */
-const MAX_VECTOR_RASTER_PIXELS = 4096 * 4096;
 /** A raster is only shrunk once it is this many times larger than needed, so
  *  zooming back and forth across a bucket edge does not re-raster each way. */
 const SHRINK_SLACK = 4;
