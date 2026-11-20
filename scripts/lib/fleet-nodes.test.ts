@@ -31,6 +31,11 @@ describe('the fleet nodes', () => {
     expect(usableNodes(nodes, { minFree: 8 }).map((n) => n.name)).toEqual(['msb-uai']);
   });
 
+  it('bars a node onto says is quiet now, the way it prints it inside the hours', () => {
+    const quiet = STATUS.replace('msb-uai keeps quiet hours 00:00-09:00 node time', 'msb-uai is quiet until 09:00: it takes no new work');
+    expect(parseStatus(quiet, at(12)).find((n) => n.name === 'msb-uai')?.barred).toBe('quiet until 09:00');
+  });
+
   it('reads quiet hours that wrap past midnight', () => {
     expect(inQuietHours('22:00-06:00', at(23))).toBe(true);
     expect(inQuietHours('22:00-06:00', at(5, 59))).toBe(true);

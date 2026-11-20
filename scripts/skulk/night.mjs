@@ -19,7 +19,7 @@ import { batchAndTest, patchAreas, patchSweep } from './land.mjs';
 import { waitForLease } from './lease.mjs';
 import { partitionAt } from './partition.mjs';
 import { AUDITS_DIR, HARDENING, areasInFlight, gitTouched, nextRound, pickAreas, readPasses } from './rounds.mjs';
-import { claimRound, claimedRounds, clearStatus, liveRuns, planLock, pruneRuns, stopRequested, writeStatus, writeSummary } from './runs.mjs';
+import { claimRound, claimedRounds, clearStatus, clearStop, liveRuns, planLock, pruneRuns, readJson, runDir, stopRequested, writeStatus, writeSummary } from './runs.mjs';
 import { SWEEP_ID, fixSweep, runControlSweep, sweepLine } from './sweep.mjs';
 import { mayStartArea } from './usage.mjs';
 
@@ -56,6 +56,7 @@ export const parseArgs = (argv) => {
     only: value('--only')?.split(',').filter(Boolean),
     nodes: value('--nodes')?.split(',').filter(Boolean),
     dry: argv.includes('--dry'),
+    resume: value('--resume') === undefined ? undefined : number('--resume', 0),
     merge: !argv.includes('--no-merge'),
     sweep: argv.includes('--sweep'),
     capUsd: number('--cap-usd', NIGHT_USD_CAP),
@@ -150,7 +151,7 @@ const begin = async (root, args, say) => {
     const started = new Date();
     const nightDir = join(STATE_DIR, 'nights', `${started.toISOString().replace(/[:.]/g, '-')}-round${p.round}`);
     mkdirSync(nightDir, { recursive: true });
-    const status = { round: p.round, started: started.toISOString(), step: 'freeze', areas: p.picked.map((a) => a.id), nightDir, tokens: 0, costUsd: 0, capUsd: args.capUsd, args };
+    const status = { round: p.round, commit: p.commit, started: started.toISOString(), step: 'freeze', areas: p.picked.map((a) => a.id), nightDir, tokens: 0, costUsd: 0, capUsd: args.capUsd, args };
     writeStatus(p.round, status);
     return { p, status, started };
   } finally {
@@ -243,6 +244,40 @@ const startSweep = (ctx, onSweep) => runControlSweep(ctx).then(
   },
 );
 
+/**
+ * Picks a stopped or crashed round back up: its round, commit, areas and night directory, under the code and
+ * settings on disk now. Jobs whose results came home are reused, not run again (`dispatch` in area.mjs).
+ */
+const resume = (root, args, say) => {
+  const round = args.resume;
+  const prior = readJson(join(runDir(round), 'status.json')) ?? readJson(join(runDir(round), 'summary.json'));
+  if (!prior?.nightDir) throw new Error(`round ${round} left no status or summary to resume from`);
+  if (liveRuns().some((r) => r.round === round)) throw new Error(`round ${round} is still running; stop it first`);
+  const frozen = join(root, '.worktrees', `audit${round}-frozen-night`);
+  const commit = prior.commit ?? (existsSync(frozen) ? gitIn(frozen)('rev-parse', 'HEAD') : undefined);
+  if (!commit) throw new Error(`round ${round}'s commit is unknown: its status predates recording it and its frozen tree is gone`);
+  const byId = new Map(partitionAt(root, commit).map((a) => [a.id, a]));
+  // An area the stopped run already merged is done; the rest run again, reusing what came home.
+  const git = gitIn(root);
+  const inMain = (id) => {
+    try {
+      git('merge-base', '--is-ancestor', `audit${round}-${id}`, 'main');
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  const landed = new Set((prior.areas ?? []).flatMap((a) => (typeof a === 'object' && (a.patches ?? 0) > 0 && inMain(a.id) ? [a.id] : [])));
+  const ids = (prior.planned ?? prior.areas ?? []).map((a) => (typeof a === 'string' ? a : a.id)).filter((id) => !landed.has(id));
+  clearStop(round);
+  const p = { commit, round, picked: ids.flatMap((id) => (byId.has(id) ? [byId.get(id)] : [])), passes: readPasses(root), running: liveRuns() };
+  const started = new Date(prior.started);
+  const status = { round, commit, started: prior.started, resumed: new Date().toISOString(), step: 'freeze', areas: ids, nightDir: prior.nightDir, tokens: 0, costUsd: 0, capUsd: args.capUsd, args };
+  writeStatus(round, status);
+  say(`resuming round ${round} at ${commit.slice(0, 10)}: ${p.picked.length} areas, reusing every job whose result came home`);
+  return { p, status, started };
+};
+
 export const runNight = async (argv = process.argv.slice(2), say = (line) => console.log(line)) => {
   const args = parseArgs(argv);
   const root = mainCheckout();
@@ -253,7 +288,7 @@ export const runNight = async (argv = process.argv.slice(2), say = (line) => con
     return { round: p.round, dry: true };
   }
   mkdirSync(STATE_DIR, { recursive: true });
-  const { p, status, started } = await begin(root, args, say);
+  const { p, status, started } = args.resume === undefined ? await begin(root, args, say) : resume(root, args, say);
   if (!status) return { round: p.round, dry: true };
   pruneNights();
   pruneRuns(KEEP_NIGHTS);
@@ -293,7 +328,7 @@ export const runNight = async (argv = process.argv.slice(2), say = (line) => con
   } finally {
     if (frozen) removeWorktree(root, frozen);
     writeSummary(p.round, {
-      round: p.round, commit: p.commit, started: status.started, ended: new Date().toISOString(), nightDir: status.nightDir, report,
+      round: p.round, commit: p.commit, started: status.started, ended: new Date().toISOString(), nightDir: status.nightDir, report, planned: status.areas,
       tokens: status.tokens, costUsd: status.costUsd, capUsd: args.capUsd, sweep: sweepSummary(sweep, outcomes),
       areas: results.map((s) => ({ id: s.id, a: s.a, b: s.b, m: s.m, distinct: s.distinct, chapman: s.chapman, patches: s.patches, outcome: outcomes[s.id], minutes: s.jobs.minutes, tokens: s.jobs.tokens, costUsd: s.jobs.costUsd, budgetHit: s.budgetHit })),
     });

@@ -24,7 +24,8 @@ const tryGit = (git, ...args) => {
 export const addWorktree = (root, name, ref, branch) => {
   const path = join(root, '.worktrees', name);
   if (existsSync(path)) removeWorktree(root, path);
-  gitIn(root)('worktree', 'add', ...(branch ? ['-b', branch] : ['--detach']), path, ref);
+  // -B: a resumed round makes its branches again from the same commit and patches.
+  gitIn(root)('worktree', 'add', ...(branch ? ['-B', branch] : ['--detach']), path, ref);
   return path;
 };
 

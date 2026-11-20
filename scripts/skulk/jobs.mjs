@@ -4,14 +4,14 @@
  * share a tree. What a job writes under `.skulk/out` comes back to a local directory.
  */
 import { spawn, spawnSync } from 'node:child_process';
-import { createWriteStream, mkdirSync } from 'node:fs';
+import { createWriteStream, existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   CLAUDE_CONFIG, FIX_MODEL, FIX_SLOTS_PER_NODE, JOB_IN, JOB_OUT, JOB_TIMEOUT_MIN, MATCH_MODEL, NO_FIXERS,
   REFUSED_COOLDOWN_MIN, REVIEW_DENIED, REVIEW_MODEL, REVIEW_SLOTS_PER_NODE, REVIEW_TOOLS, STATE_DIR, nodesAt,
 } from './config.mjs';
-import { takeLease } from './lease.mjs';
+import { leaseAt, pidAlive, takeLease } from './lease.mjs';
 
 const NVM = 'export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"; . "$NVM_DIR/nvm.sh" >/dev/null; nvm use >/dev/null';
 export const BUSY = /working tree .* is busy/;
@@ -79,16 +79,37 @@ export const fixShell = (area, budgetUsd, findings) =>
  * so every run on this Mac shares them. `pinned` replaces the time-of-day node list; `about` goes into
  * each lease (the run's round).
  */
+/**
+ * Slots per node for `role`, read again at every lease from `<state>/limits.json` (`{ "review": n, "fix": n }`)
+ * when it names one, so a change reaches runs already going; else the config's.
+ */
+export const slotsPerNode = (role, state = STATE_DIR) => {
+  const fallback = role === 'fix' ? FIX_SLOTS_PER_NODE : REVIEW_SLOTS_PER_NODE;
+  try {
+    const n = JSON.parse(readFileSync(join(state, 'limits.json'), 'utf8'))[role === 'fix' ? 'fix' : 'review'];
+    return Number.isInteger(n) && n > 0 ? n : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
 export const createSlots = (pinned, { about = {}, state = STATE_DIR } = {}) => {
   const held = new Set();
   const refusedUntil = new Map();
   const take = (role, { now = new Date(), exclude = new Set() } = {}) => {
-    const perNode = role === 'fix' ? FIX_SLOTS_PER_NODE : REVIEW_SLOTS_PER_NODE;
-    for (const node of pinned ?? nodesAt(now)) {
+    const perNode = slotsPerNode(role, state);
+    const prefix = `weasel-skulk-${role === 'fix' ? 'f' : 'r'}`;
+    // Fewest live leases of this role first, so jobs spread across nodes instead of filling the first.
+    const busy = (node) => {
+      const dir = join(state, 'slots', node);
+      return existsSync(dir) ? readdirSync(dir).filter((t) => t.startsWith(prefix) && pidAlive(leaseAt(join(dir, t))?.pid)).length : 0;
+    };
+    const nodes = (pinned ?? nodesAt(now)).map((node, i) => ({ node, i, n: busy(node) })).sort((a, b) => a.n - b.n || a.i - b.i).map((e) => e.node);
+    for (const node of nodes) {
       if (role === 'fix' && NO_FIXERS.includes(node)) continue;
       if (exclude.has(node) || (refusedUntil.get(node) ?? 0) > now.getTime()) continue;
       for (let k = 1; k <= perNode; k++) {
-        const tree = `weasel-skulk-${role === 'fix' ? 'f' : 'r'}${k}`;
+        const tree = `${prefix}${k}`;
         const key = `${node}/${tree}`;
         const unlease = takeLease(join(state, 'slots', node, tree), { ...about, role });
         if (!unlease) continue;

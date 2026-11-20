@@ -98,8 +98,9 @@ describe('createSlots over leases', () => {
     expect(b.inUse()).toBe(2);
   });
 
-  it('keeps a fixer slot per node, and reclaims one a dead run left', () => {
+  it('keeps each node to its fixer limit, and reclaims one a dead run left', () => {
     const dir = state();
+    writeFileSync(join(dir, 'limits.json'), JSON.stringify({ fix: 1 }));
     mkdirSync(join(dir, 'slots', 'teitou'), { recursive: true });
     writeFileSync(join(dir, 'slots', 'teitou', 'weasel-skulk-f1'), JSON.stringify({ pid: deadPid(), round: 40 }));
     const a = createSlots(['studio', 'teitou'], { state: dir });
@@ -107,5 +108,25 @@ describe('createSlots over leases', () => {
     expect(a.take('fix')?.node).toBe('studio');
     expect(b.take('fix')).toMatchObject({ node: 'teitou', tree: 'weasel-skulk-f1' });
     expect(a.take('fix')).toBeUndefined();
+  });
+});
+
+describe('slotsPerNode', () => {
+  it('reads limits.json at every lease, so a change reaches runs already going', () => {
+    const dir = state();
+    const slots = createSlots(['studio'], { about: { round: 1 }, state: dir });
+    writeFileSync(join(dir, 'limits.json'), JSON.stringify({ fix: 1 }));
+    expect(slots.take('fix')?.tree).toBe('weasel-skulk-f1');
+    expect(slots.take('fix')).toBeUndefined();
+    writeFileSync(join(dir, 'limits.json'), JSON.stringify({ fix: 2 }));
+    expect(slots.take('fix')?.tree).toBe('weasel-skulk-f2');
+  });
+});
+
+describe('spreading', () => {
+  it('takes a slot on the node with the fewest live leases of the role', () => {
+    const dir = state();
+    const slots = createSlots(['studio', 'teitou'], { state: dir });
+    expect([slots.take('fix')?.node, slots.take('fix')?.node, slots.take('fix')?.node]).toEqual(['studio', 'teitou', 'studio']);
   });
 });

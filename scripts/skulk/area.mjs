@@ -29,11 +29,32 @@ const cents = (n) => Number(n.toFixed(2));
 const REVIEW_EXPECT = '8m';
 
 /**
+ * A job's earlier result, when a resumed round finds one that came home whole: an exit code, a reply that is
+ * not an error (a usage-limit refusal is), and for a fixer its mbox. Answers undefined to run it again.
+ */
+export const cameHome = (spec, role) => {
+  const exit = readIf(join(spec.to, 'exit')).trim();
+  if (exit === '' || (role === 'fix' && !existsSync(join(spec.to, 'fix.mbox')))) return undefined;
+  const raw = readIf(join(spec.to, 'claude.json'));
+  if (!raw.trim() || /"is_error":\s*true/.test(raw)) return undefined;
+  if (role.startsWith('review') && !isFinished(reviewText(readIf(join(spec.to, 'findings.md')), parseEnvelope(raw).reply))) return undefined;
+  return { exit, raw };
+};
+
+/**
  * Runs one job on whichever slot frees first, moving to another node when one turns it away. Answers
  * where it ran, how long it took, the model's reply, and the job's usage record (also passed to
  * `ctx.usage`, which counts it against the night and logs it).
  */
+
 const dispatch = async (ctx, area, role, spec) => {
+  const earlier = cameHome(spec, role);
+  if (earlier) {
+    const { reply, record } = parseEnvelope(earlier.raw);
+    const usage = { area: area.id, role, node: 'earlier', ...record, exit: earlier.exit, reused: true };
+    ctx.usage(usage);
+    return { status: 0, launched: true, node: 'earlier', minutes: 0, reply, usage };
+  }
   for (let launches = 1; ; launches++) {
     const slot = await ctx.acquire(role === 'fix' ? 'fix' : 'review');
     const t0 = Date.now();

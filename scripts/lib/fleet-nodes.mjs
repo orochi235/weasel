@@ -35,11 +35,12 @@ export const parseStatus = (text, now = new Date()) => {
       nodes.set(row[1], { name: row[1], online: row[2] === 'online', free: Number(row[3]), cores: Number(row[4]), barred: '' });
       continue;
     }
-    const note = /^\s+(\S+) (refuses (\S+)|keeps quiet hours (\d\d:\d\d-\d\d:\d\d))/.exec(line);
+    const note = /^\s+(\S+) (refuses (\S+)|keeps quiet hours (\d\d:\d\d-\d\d:\d\d)|is quiet until (\d\d:\d\d))/.exec(line);
     const node = note && nodes.get(note[1]);
     if (!node) continue;
     if (note[3] && (note[3] === REPO || note[3] === 'rotation')) node.barred = `refuses ${note[3]}`;
     if (note[4] && inQuietHours(note[4], now)) node.barred = `quiet hours ${note[4]}`;
+    if (note[5]) node.barred = `quiet until ${note[5]}`;
   }
   return [...nodes.values()];
 };
