@@ -110,6 +110,44 @@ function monthsBetween(start: number, end: number, per: number): number {
   return best;
 }
 
+/**
+ * Every node's value, each node's dependencies resolved before it, in the order `depsOf` lists them, from node 0 up. A
+ * dependency still being resolved, the far end of a cycle, takes `cycle`. Walked with a stack of its own, so a long
+ * chain of dependencies does not overflow the call stack.
+ */
+function resolveNodes(
+  count: number, depsOf: (n: number) => readonly (number | null)[], combine: (n: number, values: readonly number[]) => number,
+  cycle: number,
+): number[] {
+  const values: number[] = new Array(count);
+  const busy = new Uint8Array(count);
+  const frames: { n: number; deps: readonly (number | null)[]; got: number[] }[] = [];
+  const enter = (n: number) => {
+    busy[n] = 1;
+    frames.push({ n, deps: depsOf(n), got: [] });
+  };
+  for (let root = 0; root < count; root++) {
+    if (values[root] !== undefined) continue;
+    enter(root);
+    while (frames.length > 0) {
+      const f = frames.at(-1)!;
+      if (f.got.length < f.deps.length) {
+        const d = f.deps[f.got.length]!;
+        if (d === null || busy[d] === 1) f.got.push(cycle);
+        else if (values[d] !== undefined) f.got.push(values[d]!);
+        else enter(d);
+        continue;
+      }
+      const value = combine(f.n, f.got);
+      busy[f.n] = 0;
+      values[f.n] = value;
+      frames.pop();
+      frames.at(-1)?.got.push(value);
+    }
+  }
+  return values;
+}
+
 /** A day from `t`, or as far as the next double can be where a day is too fine to move it. */
 function widened(t: number): [number, number] {
   const by = Math.max(DAY, Math.abs(t) * Number.EPSILON);
@@ -137,39 +175,32 @@ export function scheduleGantt(data: GanttData, today = Date.now()): GanttSchedul
   const written = flat.flatMap(({ task }) => (task.start.kind === 'date' ? [parseGanttDate(task.start.date, format)] : []))
     .filter((t): t is number => t !== null);
   const first = written.length > 0 ? minOf(written) : dayOf(today) * DAY;
-  const starts: number[] = [];
-  const ends: number[] = [];
-  const busy = new Set<string>();
-  const memo = (cache: number[], i: number, tag: string, compute: () => number): number => {
-    if (cache[i] !== undefined) return cache[i]!;
-    if (busy.has(tag + i)) return first;
-    busy.add(tag + i);
-    const value = compute();
-    busy.delete(tag + i);
-    cache[i] = value;
-    return value;
+  // Node 2i is task i's start, 2i + 1 its end; `null` stands for `first`.
+  const ref = (ids: readonly string[], end: number) => ids.map((id) => (byId.has(id) ? 2 * byId.get(id)! + end : null));
+  const depsOf = (n: number): (number | null)[] => {
+    const i = Math.floor(n / 2);
+    const { start, end } = flat[i]!.task;
+    if (n % 2 === 1) return [2 * i, ...(end.kind === 'until' ? ref(end.ids, 0) : [])];
+    if (start.kind === 'date') return [];
+    if (start.kind === 'previous') return i === 0 ? [null] : [2 * i - 1];
+    return ref(start.ids, 1);
   };
-  const named = (ids: readonly string[], of: (i: number) => number) => ids.map((id) => (byId.has(id) ? of(byId.get(id)!) : first));
-  const startOf = (i: number): number => memo(starts, i, 's', () => {
-    const start = flat[i]!.task.start;
-    if (start.kind === 'date') return parseGanttDate(start.date, format) ?? first;
-    if (start.kind === 'previous') return i === 0 ? first : endOf(i - 1);
-    const after = named(start.ids, endOf);
-    return after.length > 0 ? maxOf(after) : first;
-  });
-  const endOf = (i: number): number => memo(ends, i, 'e', () => {
-    const start = startOf(i);
-    const end = flat[i]!.task.end;
-    let at: number;
-    if (end.kind === 'date') at = parseGanttDate(end.date, format) ?? start;
-    else if (end.kind === 'duration') at = addGanttDuration(start, end.amount, end.unit, excluded);
-    else {
-      const until = named(end.ids, startOf);
-      at = until.length > 0 ? minOf(until) : start;
+  const combine = (n: number, values: readonly number[]): number => {
+    const { start, end } = flat[Math.floor(n / 2)]!.task;
+    if (n % 2 === 0) {
+      if (start.kind === 'date') return parseGanttDate(start.date, format) ?? first;
+      return values.length > 0 ? maxOf(values) : first;
     }
-    return Math.max(start, at);
-  });
-  flat.forEach((_, i) => endOf(i));
+    const from = values[0]!;
+    let at: number;
+    if (end.kind === 'date') at = parseGanttDate(end.date, format) ?? from;
+    else if (end.kind === 'duration') at = addGanttDuration(from, end.amount, end.unit, excluded);
+    else at = values.length > 1 ? minOf(values.slice(1)) : from;
+    return Math.max(from, at);
+  };
+  const resolved = resolveNodes(flat.length * 2, depsOf, combine, first);
+  const starts = resolved.filter((_, n) => n % 2 === 0);
+  const ends = resolved.filter((_, n) => n % 2 === 1);
   const spans = data.sections.map(() => [] as GanttSpan[]);
   // A task inside a cycle may cache its end before its own start settles.
   flat.forEach(({ section }, i) => spans[section]!.push({ start: starts[i]!, end: Math.max(starts[i]!, ends[i]!) }));
