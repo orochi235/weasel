@@ -36,3 +36,19 @@ describe('haloFitsInBox', () => {
     expect(() => haloFitsInBox(glyph(24, 'M 5 5 l 6 6 Z'))).toThrow(/relative/);
   });
 });
+
+describe('the fit guards’ dialect', () => {
+  it('refuses an absolute command outside M, L, A and Z rather than skipping it', () => {
+    // `H 23.5` reaches past the margin; read as pairs it visits no point at all.
+    expect(() => haloFitsInBox(glyph(24, 'M 12 12 H 23.5 V 12 Z'))).toThrow(/'H'/);
+    expect(() => haloFitsInBox(glyph(24, 'M 2 2 C 4 4 6 6 8 8 Z'))).toThrow(/'C'/);
+  });
+
+  it('refuses a command whose numbers are not whole points', () => {
+    expect(() => haloFitsInBox(glyph(24, 'M 2 2 L 3 Z'))).toThrow(/whole points/);
+  });
+
+  it('refuses an elliptical arc, whose bounds a circle does not give', () => {
+    expect(() => haloFitsInBox(glyph(24, 'M 2 12 A 100 0.1 0 0 1 2 14 Z'))).toThrow(/elliptical/);
+  });
+});
