@@ -212,7 +212,7 @@ describe('lab sidebar region', () => {
     const { container } = await renderSettled(<Lab title="T" instruments={[bare]} />, {
       wrapper: withIcons,
     });
-    expect(container.querySelector('.lk-lab__panes')).toBeNull();
+    expect(container.querySelector('.lk-lab__sidebar')).toBeNull();
   });
 });
 
