@@ -50,7 +50,9 @@ const NO_PROBES: ReadonlyMap<string, () => unknown> = new Map();
 export function canvasRoot(api: CanvasExtensionApi, deps: ContributionDepReader): { root: DevtoolsRoot; stop(): void } {
   const inspection = (): CanvasInspection | undefined => deps.get('inspection');
   const scene = (): Scene<unknown, string, unknown> | null => deps.get('scene') ?? null;
-  const history = createTraceRing<DevtoolsHistoryRecord>();
+  // Each scene gets a ring of its own, so a swapped scene's steps never sit beside the new one's position.
+  let historyRing = createTraceRing<DevtoolsHistoryRecord>();
+  const history = followRing(() => historyRing);
   const trace = followTrace(() => deps.get('dispatchTrace') ?? NO_TRACE);
   const coords = followRing(() => inspection()?.coords() ?? NO_COORDS);
   let recorded: Scene<unknown, string, unknown> | null = null;
@@ -59,8 +61,12 @@ export function canvasRoot(api: CanvasExtensionApi, deps: ContributionDepReader)
     const s = scene();
     if (s === recorded) return;
     stopRecording?.();
+    if (recorded) {
+      historyRing = createTraceRing<DevtoolsHistoryRecord>();
+      history.sync();
+    }
     recorded = s;
-    stopRecording = s ? recordHistory(s.history, history) : null;
+    stopRecording = s ? recordHistory(s.history, historyRing) : null;
   };
   const source: DevtoolsRootSource = {
     label: () => labelOf(api.element, inspection()?.label()),

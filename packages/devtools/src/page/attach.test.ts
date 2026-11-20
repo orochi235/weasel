@@ -1,7 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { CanvasExtensionApi, CanvasInspection, ContributionDepReader, DebugFlags } from '@weasel-js/core';
 import { createDispatchTrace } from '@weasel-js/routing';
+import { createScene } from '@weasel-js/core';
 import { canvasRoot } from './attach';
+import { historySlice } from './history';
 import { isPanelMessage } from './messageShape';
 import { DEVTOOLS_PROTOCOL } from './protocol';
 
@@ -73,6 +75,24 @@ describe('a root over a canvas whose dispatcher republishes its trace', () => {
     release();
     expect(next.recording()).toBe(false);
     off();
+  });
+});
+
+describe('a root over a canvas whose scene is swapped', () => {
+  it('reports only the new scene\'s history steps', () => {
+    const t = swappable();
+    const first = createScene({ systemLayers: [{ id: 'main' }] });
+    t.swapScene(first);
+    const release = t.root.source.history!.watch();
+    first.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
+    const { cursor } = t.root.source.history!.since(0);
+    expect(cursor).toBe(1);
+    const second = createScene({ systemLayers: [{ id: 'main' }] });
+    t.swapScene(second);
+    second.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
+    expect(historySlice(t.root as never, 0, false).entries).toHaveLength(1);
+    expect(t.root.source.history!.since(cursor).entries).toHaveLength(1);
+    release();
   });
 });
 
