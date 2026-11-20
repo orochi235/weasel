@@ -145,3 +145,21 @@ describe('matchSpacing', () => {
     expect(m.dx).toBe(0);
   });
 });
+
+describe('matchSpacing reference gaps where the box lands', () => {
+  // A..B is a 20 gap whose strip is y 30..40. The box has a 20 gap to D on its left; the y snap to
+  // Q (a 10 gap, as P..Q) carries it 6 down, into A..B's strip.
+  const A = { x: 0, y: 0, width: 10, height: 40 };
+  const B = { x: 30, y: 30, width: 10, height: 10 };
+  const D = { x: -35, y: -20, width: 10, height: 60 };
+  const Q = { x: -5, y: 41, width: 4, height: 10 };
+  const P = { x: -5, y: 61, width: 4, height: 10 };
+  const box = { x: -5, y: -10, width: 20, height: 35 };
+
+  it('drops an x snap whose only equal gap is one the y snap carried the box into', () => {
+    const m = matchSpacing(box, [A, B, D, Q, P], tol(8));
+    expect(m.dy).toBe(6);
+    expect(m.dx).toBe(0);
+    expect(m.gapsX).toEqual([]);
+  });
+});

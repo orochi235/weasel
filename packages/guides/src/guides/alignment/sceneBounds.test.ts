@@ -51,3 +51,13 @@ describe('worldBoundsOf / worldUnionOf', () => {
     expect(worldUnionOf(scene, [])).toBeNull();
   });
 });
+
+describe('planeOf', () => {
+  it('carries a box on a parallax plane out to the camera\'s world, and leaves the rest', () => {
+    const { scene, a, b } = fixture();
+    const plane = { scale: { x: 2, y: 2 }, offset: { x: 5, y: 0 } };
+    const planeOf = (id: NodeId) => (id === b ? plane : null);
+    expect(siblingBounds(scene, [a], { planeOf })).toEqual([box(12.5, 0, 5, 5), box(100, 100, 50, 50)]);
+    expect(worldBoundsOf(scene, [a, b], { planeOf })).toEqual([box(0, 0), box(12.5, 0, 5, 5)]);
+  });
+});

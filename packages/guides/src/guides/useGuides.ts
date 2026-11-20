@@ -1,15 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { createEmitter } from '@weasel-js/registry';
+import { sameGuide } from './sameGuide';
 import type { Guide } from './types';
-
-/** Field by field, `span` by its ends. */
-function sameGuide(a: Guide, b: Guide): boolean {
-  const keys = Object.keys(a) as (keyof Guide)[];
-  if (keys.length !== Object.keys(b).length) return false;
-  return keys.every((k) => (k === 'span'
-    ? a.span?.min === b.span?.min && a.span?.max === b.span?.max && (a.span === undefined) === (b.span === undefined)
-    : Object.is(a[k], b[k])));
-}
 
 /** Return shape for `useGuides`. */
 export interface UseGuidesReturn {

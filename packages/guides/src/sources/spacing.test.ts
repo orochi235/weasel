@@ -55,6 +55,17 @@ describe('spacingSnapSource', () => {
     expect(gaps(out.marks)).toEqual([]);
   });
 
+  it('does not count a gap the other axis carries the box into', () => {
+    // The box has a 20 gap to D, as A..B is; the y snap to Q carries it 6 down, into A..B's strip.
+    const targets: Bounds[] = [
+      { x: 0, y: 0, width: 10, height: 40 }, { x: 30, y: 30, width: 10, height: 10 },
+      { x: -35, y: -20, width: 10, height: 60 }, { x: -5, y: 41, width: 4, height: 10 }, { x: -5, y: 61, width: 4, height: 10 },
+    ];
+    const out = moveBy({ sources: [row(targets)], box: { x: -5, y: -10, width: 20, height: 35 } }).by(0, 0);
+    expectNear(out.point, { x: 0, y: 6 });
+    expect(out.marks.filter((m): m is Gap => m.kind === 'gap' && m.from.y === m.to.y)).toEqual([]);
+  });
+
   it('is not offered a point gesture', () => {
     expectNear(drive({ sources: [row()] }).at({ x: 79, y: 120 }).point, { x: 79, y: 120 });
   });
