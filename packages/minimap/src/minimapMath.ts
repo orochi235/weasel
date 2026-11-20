@@ -1,5 +1,5 @@
 /** Pure math helpers for `<MinimapCanvas>`: no GL, DOM, or renderer. */
-import { fitViewToBounds, sceneContentBounds, unionAabb, viewportWorldRect, worldPoses } from '@weasel-js/core';
+import { fitViewToBounds, hidesSubtree, sceneContentBounds, unionAabb, viewportWorldRect, worldPoses } from '@weasel-js/core';
 import type { NodeId, PoseReading, Scene } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
 import type { Bounds, ViewportDims } from '@weasel-js/core';
@@ -66,7 +66,9 @@ function fitRectInto(rect: Bounds, dims: ViewportDims, padding: number): View {
  * node is boxed by the union of the marks under it, each its world pose as
  * `reading` says, read through `descriptor`; containers add no box
  * of their own, and a mark whose bounds are not finite is skipped, which would
- * otherwise make the whole union non-finite. `null` when nothing has bounds.
+ * otherwise make the whole union non-finite. A hidden node is left out with its
+ * subtree, and a mark on a hidden layer is left out alone,
+ * at any depth. `null` when nothing has bounds.
  */
 function sceneLeafBounds<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
@@ -74,11 +76,12 @@ function sceneLeafBounds<TData, TLayer extends string, TPose>(
   reading: PoseReading,
 ): Bounds | null {
   const worldPose = worldPoses(scene, reading);
+  const unpainted = new Set(scene.layers.filter((l) => l.visible === false).map((l) => l.id));
   const boxOf = (id: NodeId): Bounds | null => {
     const node = scene.get(id);
-    if (!node) return null;
+    if (!node || hidesSubtree(node)) return null;
     const parts: (Bounds | null)[] = scene.childrenOf(id).map(boxOf);
-    if (node.kind === 'mark') {
+    if (node.kind === 'mark' && !unpainted.has(node.layer)) {
       const b = poseDescriptorForNode(descriptor, node).getBounds(worldPose(id));
       if ([b.x, b.y, b.width, b.height].every(Number.isFinite)) parts.push(b);
     }
