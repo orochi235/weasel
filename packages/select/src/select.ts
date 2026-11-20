@@ -1,4 +1,4 @@
-import { sameId } from './same';
+import { once, sameId } from './same';
 
 /** `single` always replaces; `multi` lets a policy's keys toggle and range. */
 export type SelectionMode = 'single' | 'multiple';
@@ -74,7 +74,7 @@ export function select<K>(state: Selection<K>, id: K, intent: SelectIntent, cont
 }
 
 function rangeIn<K>(context: SelectContext<K>, from: K, to: K, forceSingle: (id: K) => boolean): K[] {
-  if (context.between) return context.between(from, to).filter((id) => !forceSingle(id));
+  if (context.between) return once(context.between(from, to)).filter((id) => !forceSingle(id));
   return context.order ? rangeOf(context.order, from, to, forceSingle) : [];
 }
 
