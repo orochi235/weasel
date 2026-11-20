@@ -30,8 +30,9 @@ function claim(ids: IdSpace, cellId: string, pageId: string): string {
 
 interface Reader { page: PageCells; idOf: ReadonlyMap<RawCell, string>; groups: ReadonlySet<RawCell>; warn: Warn }
 
+/** A region, lane, or connector label: its value's lines, one per line. */
 const labelOf = (cell: RawCell): string | undefined => {
-  const text = valueLines(cell).join(' ');
+  const text = valueLines(cell).join('\n');
   return text === '' ? undefined : text;
 };
 
