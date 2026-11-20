@@ -150,8 +150,10 @@ describe('PrefValueAt', () => {
     expectTypeOf<PrefValueOf<PrefUnion & { default: { type: string } }>>().toEqualTypeOf<{ type: string }>();
   });
 
-  it('adds undefined for a clearable enum and leaves a paint open', () => {
+  it('adds undefined for a clearable enum or number and leaves a paint open', () => {
     expectTypeOf<PrefValueAt<Schema, 'clear'>>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<PrefValueOf<{ kind: 'number'; clearable: true; default: undefined }>>().toEqualTypeOf<number | undefined>();
+    expectTypeOf<PrefValueOf<ReturnType<typeof pref.number>>>().toEqualTypeOf<number>();
     expectTypeOf<PrefValueAt<Schema, 'paint'>>().toEqualTypeOf<unknown>();
   });
 });

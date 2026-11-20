@@ -72,17 +72,24 @@ export function prefStatusIn(owner: PrefOwner, path: string, holds: PrefConditio
 
 const under = (prefix: string, key: string): string => (prefix === '' ? key : `${prefix}.${key}`);
 
-/** The status of the field at `rest` among the members of `owner`, whose leaves' paths start at `prefix`, or `undefined` when none is there. */
+/** The status of the field at `rest` among the members of `owner`, whose leaves' paths start at `prefix`, or `undefined` when none is there.
+ *  A member keyed by all of `rest` answers ahead of one whose key only begins it. */
 function statusAmong(
   held: PrefSection['members'], prefix: string, rest: string, owner: PrefOwner, holds: PrefConditionJudge,
 ): PrefStatus | undefined {
+  return statusMatching(held, prefix, rest, owner, holds, true) ?? statusMatching(held, prefix, rest, owner, holds, false);
+}
+
+function statusMatching(
+  held: PrefSection['members'], prefix: string, rest: string, owner: PrefOwner, holds: PrefConditionJudge, exact: boolean,
+): PrefStatus | undefined {
   for (const [key, child] of Object.entries(held)) {
     if (!isPrefLeaf(child)) {
-      const found = statusAmong(child.members, prefix, rest, { node: child, status: prefStatusUnder(owner.status, child, holds), above: owner.status }, holds);
+      const found = statusMatching(child.members, prefix, rest, { node: child, status: prefStatusUnder(owner.status, child, holds), above: owner.status }, holds, exact);
       if (found) return found;
       continue;
     }
-    if (rest !== key && !rest.startsWith(`${key}.`)) continue;
+    if (exact ? rest !== key : !rest.startsWith(`${key}.`)) continue;
     const path = under(prefix, key);
     const sits = prefStatusIn(owner, path, holds);
     const status = prefStatusUnder(sits, child, holds);

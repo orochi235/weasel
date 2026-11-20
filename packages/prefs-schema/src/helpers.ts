@@ -23,7 +23,7 @@ export function prefDisplayBounds(
   const ends = p.endless === undefined ? {} : { endless: p.endless };
   if (!p.unit) return { min: p.min, max: p.max, step: p.step ?? 1, ...ends, ...(p.stops ? { stops: p.stops } : {}) };
   const { toDisplay, toDisplayExact, places } = resolvePrefUnit(p.unit);
-  const backward = toDisplay(1) < toDisplay(0);
+  const backward = toDisplayExact(1) < toDisplayExact(0);
   const lo = p.min === undefined ? undefined : toDisplay(p.min);
   const hi = p.max === undefined ? undefined : toDisplay(p.max);
   const step = p.step === undefined ? 1 : displayStep(Math.abs(toDisplayExact(p.step) - toDisplayExact(0)), places);
@@ -175,12 +175,13 @@ export function setOwnPrefValue(tree: Record<string, unknown>, key: string, valu
   setOwn(tree, key, value);
 }
 
-/** Set `value` at the dotted `path` in `root` itself, creating missing branches. */
+/** Set `value` at the dotted `path` in `root` itself, creating missing branches and replacing a branch that holds no object. */
 export function assignPrefValueAt(root: Record<string, unknown>, path: string, value: unknown): void {
   const parts = path.split('.');
   let cursor = root;
   for (const part of parts.slice(0, -1)) {
-    if (!Object.hasOwn(cursor, part) || cursor[part] == null) setOwnPrefValue(cursor, part, {});
+    const branch = getOwn(cursor, part);
+    if (typeof branch !== 'object' || branch === null) setOwnPrefValue(cursor, part, {});
     cursor = getOwn(cursor, part) as Record<string, unknown>;
   }
   setOwnPrefValue(cursor, parts[parts.length - 1]!, value);

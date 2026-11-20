@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { prefObjectField, prefObjectWithField } from './object';
+import { prefObjectBase, prefObjectField, prefObjectWithField } from './object';
 import type { PrefObject } from './schema';
 
 const stroke: PrefObject = {
@@ -64,5 +64,15 @@ describe('a field named like an Object.prototype member', () => {
 
   it('sets a field of a field without starting from the inherited member', () => {
     expect(prefObjectWithField(stroke, { width: 2 }, 'constructor.x', 1)).toEqual({ width: 2, constructor: { x: 1 } });
+  });
+});
+
+describe('prefObjectBase', () => {
+  const lifting: PrefObject = { ...stroke, fromScalar: (w) => ({ width: w as number }) };
+
+  it('lifts a held scalar, and starts from the default where nothing is held', () => {
+    expect(prefObjectBase(lifting, 3)).toEqual({ width: 3 });
+    expect(prefObjectBase(lifting, undefined)).toEqual(stroke.default);
+    expect(prefObjectWithField(lifting, undefined, 'paint', '#f00')).toEqual({ paint: '#f00', width: 1 });
   });
 });

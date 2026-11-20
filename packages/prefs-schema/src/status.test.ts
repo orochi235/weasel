@@ -172,6 +172,17 @@ describe('prefStatusAt', () => {
     expect(prefStatusAt(root, 'stroke.cap', over({ snap: { on: true } })).shown).toBe(true);
   });
 
+  it('answers a dotted field of an object leaf by its own key ahead of a sibling keyed by its prefix', () => {
+    const nibOn = { path: 'stroke.nib' } as PrefCondition;
+    const stroke = {
+      kind: 'object', name: 'Stroke', description: '', default: {},
+      children: { nib: bool('Nib'), 'nib.angle': num('Angle', { showIf: nibOn }) },
+    } as PrefObject;
+    const root: PrefGroup = { name: '', children: { stroke } };
+    expect(prefStatusAt(root, 'stroke.nib.angle', over({ stroke: { nib: false } })).shown).toBe(false);
+    expect(prefStatusAt(root, 'stroke.nib.angle', over({ stroke: { nib: true } })).shown).toBe(true);
+  });
+
   it('stops at the last node a path reaches', () => {
     expect(prefStatusAt({ ...schema, enableIf: on }, 'no.such', over({}))).toEqual({ shown: true, enabled: false });
   });
@@ -195,6 +206,13 @@ describe('prefReader', () => {
     expect(read('snap.on')).toBe(true);
     expect(read('stroke.width')).toBe(2);
     expect(read('stroke.ends.cap')).toBe(1);
+  });
+
+  it('reads a section member keyed by the whole path before one whose key prefixes it', () => {
+    const data = { kind: 'object', name: 'Data', description: '', default: { fill: 'a' }, children: {} } as PrefObject;
+    const fill = { kind: 'string', name: 'Fill', description: '', default: 'b' } as PrefLeaf;
+    const section: PrefSection = { name: '', members: { data, 'data.fill': fill } };
+    expect(prefReader(section, {})('data.fill')).toBe('b');
   });
 
   it('reads a path no leaf holds as undefined', () => {

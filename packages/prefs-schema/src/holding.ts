@@ -10,6 +10,9 @@ import type { PrefUnion } from './union';
 /** A value the schema says nothing about: an entry of a list, a field of an app-defined kind. */
 export const UNSEEN = Symbol('unseen');
 
+/** What describes a union's field under a variant that reaches it only through a value the schema says nothing about. */
+export const UNSEEN_LEAF: PrefLeaf = { kind: 'unseen', name: '', description: '', default: undefined };
+
 /** A union on the way to a value, and the variant the value is read under. */
 export interface PrefHeldVariant {
   /** The union leaf's path. */
@@ -51,9 +54,10 @@ function insideLeaf(leaf: PrefLeaf, rest: string, at: string): PrefLeavesFound {
     const out: PrefHeld[] = [];
     for (const [key, variant] of Object.entries(variants)) {
       const found = amongFields(prefSectionLeaves(variant.children), rest, at);
-      if (found === UNSEEN) return UNSEEN;
-      for (const held of found ?? []) out.push({ ...held, variants: [{ at, tag, key }, ...(held.variants ?? [])] });
+      const held = found === UNSEEN ? [{ leaf: UNSEEN_LEAF }] : (found ?? []);
+      for (const each of held) out.push({ ...each, variants: [{ at, tag, key }, ...(each.variants ?? [])] });
     }
+    if (out.length && out.every((each) => each.leaf === UNSEEN_LEAF)) return UNSEEN;
     return out.length ? out : undefined;
   }
   return !isBuiltinPref(leaf) || leaf.kind === 'list' || leaf.kind === 'map' || leaf.kind === 'paint' ? UNSEEN : undefined;

@@ -294,6 +294,19 @@ describe('checkPrefCondition', () => {
   });
 });
 
+describe('checkPrefCondition on a union field', () => {
+  it('finds no problem where another variant holds the field inside a list', () => {
+    const variant = (children: Record<string, unknown>) => ({ kind: 'object', name: 'V', description: '', default: {}, children });
+    const toggle = { kind: 'boolean', name: 'Y', description: '', default: false };
+    const schema = { name: '', children: { u: {
+      kind: 'union', name: 'U', description: '', default: undefined, tag: 'type',
+      variants: { p: variant({ x: variant({ y: toggle }) }), q: variant({ x: { kind: 'list', name: 'L', description: '', default: [], item: toggle } }) },
+    } } } as unknown as PrefGroup;
+    expect(checkPrefCondition({ path: 'u.x.y', is: 'z' }, schema)).toEqual([]);
+    expect(checkPrefCondition({ path: 'u.x.y', is: true }, schema)).toEqual([]);
+  });
+});
+
 describe('checkPrefConditions', () => {
   it('reports every bad condition in a schema, by the node and the field holding it', () => {
     const schema: PrefGroup = {

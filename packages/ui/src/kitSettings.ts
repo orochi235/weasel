@@ -1,5 +1,5 @@
 import type {} from '@weasel-js/react';
-import { pref, PX_UNIT, type PrefNumber, type PrefValuesOf } from '@weasel-js/prefs';
+import { pref, PX_UNIT, type PrefValuesOf } from '@weasel-js/prefs';
 import { ANCHOR_SNAP_PX, CURVE_HIT_PX as FUNCTION_CURVE_HIT_PX } from './components/CurveEditor/createFunctionLayer';
 import { CURVE_HIT_PX, HANDLE_HIT_PX, KEY_HIT_PX } from './components/CurveEditor/createKeyframeLayer';
 import { REPEAT_DELAY_MS, REPEAT_EVERY_MS } from '@weasel-js/ui-input';
@@ -17,10 +17,10 @@ import { SNAP_RADIUS_PX } from './snap';
  *  `history.coalesceMs` holds until an app sets it. */
 export const HISTORY_COALESCE_MS = 800;
 
-const ms = (name: string, def: number, max: number, description: string): PrefNumber =>
+const ms = (name: string, def: number, max: number, description: string) =>
   pref.number(name, def, { description, min: 0, max, step: 10, unit: { scale: 1, suffix: 'ms' } });
 
-const px = (name: string, def: number, description: string): PrefNumber =>
+const px = (name: string, def: number, description: string) =>
   pref.number(name, def, { description, min: 0, max: 48, step: 1, unit: PX_UNIT });
 
 const surface = (name: string, of: ParamsSurface) =>

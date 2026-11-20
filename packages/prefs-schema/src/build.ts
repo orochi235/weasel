@@ -4,7 +4,7 @@
 import type { PrefAction, PrefActions } from './action';
 import type { PrefGroup, PrefSection } from './groups';
 import type { PrefLabel, PrefSeparator } from './label';
-import type { PrefBoolean, PrefColor, PrefEnumBase, PrefLeaf, PrefNumber, PrefString } from './schema';
+import type { PrefBoolean, PrefColor, PrefEnumBase, PrefLeaf, PrefNumberBase, PrefString } from './schema';
 
 /** What a builder takes after the leaf's name and default: any of the leaf's other fields. */
 export type PrefLeafRest<L> = Partial<Omit<L, 'kind' | 'name' | 'default'>>;
@@ -41,8 +41,8 @@ export const pref = {
     return { name, ...options, members };
   },
 
-  number: (name: string, def: number, rest?: PrefLeafRest<PrefNumber>): PrefNumber & { default: number } =>
-    leaf('number', name, def, rest) as PrefNumber & { default: number },
+  number: (name: string, def: number, rest?: PrefLeafRest<PrefNumberBase>): PrefNumberBase & { default: number; clearable?: false } =>
+    leaf('number', name, def, rest) as PrefNumberBase & { default: number; clearable?: false },
   boolean: (name: string, def: boolean, rest?: PrefLeafRest<PrefBoolean>): PrefBoolean => leaf('boolean', name, def, rest),
   string: (name: string, def: string, rest?: PrefLeafRest<PrefString>): PrefString => leaf('string', name, def, rest),
   color: (name: string, def: string, rest?: PrefLeafRest<PrefColor>): PrefColor => leaf('color', name, def, rest),

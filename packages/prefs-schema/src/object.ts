@@ -5,12 +5,13 @@ const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
 
 /**
  * The object a write to one field of an `object` leaf starts from: `held` itself where it is one. Where it is
- * not, the write has to make a whole object, so it starts from the scalar lifted by the leaf's `fromScalar`, else
- * from the leaf's `default`: one field on its own is a stroke with a width and no paint.
+ * not, the write has to make a whole object, so it starts from a held scalar lifted by the leaf's `fromScalar`,
+ * else from the leaf's `default`: one field on its own is a stroke with a width and no paint.
  */
 export function prefObjectBase(pref: PrefObject, held: unknown): Record<string, unknown> {
   if (isObject(held)) return held;
-  return pref.fromScalar?.(held) ?? (isObject(pref.default) ? pref.default : {});
+  const lifted = held === undefined ? undefined : pref.fromScalar?.(held);
+  return lifted ?? (isObject(pref.default) ? pref.default : {});
 }
 
 /** The value of the field `key` in `held`. A dotted key (`'nib.angle'`) names a field of a field. */

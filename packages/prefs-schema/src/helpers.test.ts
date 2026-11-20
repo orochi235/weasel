@@ -202,6 +202,11 @@ describe('prefDisplayBounds', () => {
     expect(prefDisplayBounds({ ...leaf, min: undefined, max: 10, endless: undefined })).toEqual({ min: 90, step: 1 });
   });
 
+  it('reads a decreasing unit as decreasing when its places round a unit step to zero', () => {
+    const leaf: PrefNumber = { kind: 'number', name: 'N', description: '', default: 0, min: 0, max: 5000, endless: 'max', unit: { scale: -1000, places: 0 } };
+    expect(prefDisplayBounds(leaf)).toMatchObject({ min: -5, max: 0, endless: 'min' });
+  });
+
   it('widens a step to the smallest one the shown places can display, never below the declared step', () => {
     const num = (step: number, unit: PrefNumber['unit']): PrefNumber => ({ kind: 'number', name: 'N', description: '', default: 0, step, unit });
     const cm = { scale: 10, suffix: 'cm', places: 0 };
@@ -296,6 +301,11 @@ describe('paths through names every object inherits', () => {
     expect(Object.getPrototypeOf(tree)).toBe(Object.prototype);
     expect(prefValueAt(tree, 'constructor.probe')).toBe(1);
     expect(prefValueAt(tree, '__proto__.probe')).toBe(2);
+  });
+
+  it('nests a deeper path through a shorter one holding a scalar, the later write winning', () => {
+    expect(nestPrefValues({ a: 5, 'a.b': 1 })).toEqual({ a: { b: 1 } });
+    expect(nestPrefValues({ 'a.b': 1, a: 5 })).toEqual({ a: 5 });
   });
 
   it('nests dotted values into a tree of their own, through any key', () => {
