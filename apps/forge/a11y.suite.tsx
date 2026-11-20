@@ -1,8 +1,7 @@
 import '@weasel-js/forge/shell.css';
 import '@weasel-js/forge/frame.css';
 import { loadStories, runAxe, runStory } from '@weasel-js/forge/test';
-import { act } from 'react';
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { KNOWN, UNSWEPT } from './a11y.known';
 import { shardOf } from './a11y.shards';
 import setup from './forge.frame';
@@ -50,9 +49,6 @@ const settled = (host: HTMLElement) =>
       .map((a) => a.finished.catch(() => {})),
   );
 
-/** Moves focus as `move` does, inside act(): a focus change re-renders whatever tracks it. */
-const moved = (move: () => unknown) => act(async () => { await move(); });
-
 const FOCUSABLE = 'a[href], button, input, select, textarea, summary, [tabindex], [contenteditable="true"]';
 const LOOK = [
   'outline-style', 'outline-width', 'outline-color', 'box-shadow', 'background-color', 'color', 'stroke', 'stroke-width', 'fill',
@@ -92,7 +88,7 @@ async function shotOf(el: Element): Promise<string> {
  */
 async function unringed(host: HTMLElement, max = 40): Promise<string[]> {
   // An autofocused field is read unfocused too.
-  await moved(() => (document.activeElement as HTMLElement | null)?.blur());
+  (document.activeElement as HTMLElement | null)?.blur();
   const before = new Map<Element, string>();
   for (const el of host.querySelectorAll(FOCUSABLE)) before.set(el, lookOf(el));
   const start = document.createElement('button');
@@ -105,9 +101,9 @@ async function unringed(host: HTMLElement, max = 40): Promise<string[]> {
   const out: string[] = [];
   const reached = new Set<Element>();
   try {
-    await moved(() => start.focus());
+    start.focus();
     for (let i = 0; i < max; i++) {
-      await moved(() => browser.userEvent.keyboard('{Tab}'));
+      await browser.userEvent.keyboard('{Tab}');
       const el = document.activeElement as HTMLElement | null;
       if (!el || !host.contains(el) || reached.has(el)) break;
       reached.add(el);
@@ -120,15 +116,15 @@ async function unringed(host: HTMLElement, max = 40): Promise<string[]> {
       const was = before.get(el);
       if (was === undefined || was !== lookOf(el)) continue;
       const focused = await shotOf(el);
-      await moved(() => start.focus());
+      start.focus();
       // A modal that keeps focus leaves nothing to compare against.
       const left = document.activeElement === start;
       const unfocused = left ? await shotOf(el) : '';
-      await moved(() => el.focus());
+      el.focus();
       if (left && focused === unfocused) out.push(shown(el));
     }
   } finally {
-    await moved(() => (document.activeElement as HTMLElement | null)?.blur());
+    (document.activeElement as HTMLElement | null)?.blur();
     start.remove();
     still.remove();
   }
@@ -191,5 +187,10 @@ const judgeFile = (path: string) => {
  */
 export const describeA11y = (shard: number, from: Browser) => {
   browser = from;
+  // Stories mount outside act() and the sweep waits like a user; testing-library, imported beside it, turns act on.
+  const env = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
+  let was: boolean | undefined;
+  beforeAll(() => { was = env.IS_REACT_ACT_ENVIRONMENT; env.IS_REACT_ACT_ENVIRONMENT = false; });
+  afterAll(() => { env.IS_REACT_ACT_ENVIRONMENT = was; });
   describe.each(shardOf(Object.keys(modules), shard))('%s', judgeFile);
 };
