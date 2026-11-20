@@ -42,6 +42,18 @@ describe('convertSegments', () => {
   });
 });
 
+describe('convertSegments variants', () => {
+  it('disables a variant that would change nothing', () => {
+    const t = setup();
+    t.dep.setSelectedAnchors([0, 1]);
+    expect(convertSegmentsAction.enabled!(t.deps, undefined, undefined, { to: 'line' })).toBe(ActionDisabledReason.NotApplicable);
+    expect(convertSegmentsAction.enabled!(t.deps, undefined, undefined, { to: 'curve' })).toBe(true);
+    run(convertSegmentsAction, t.deps, { to: 'curve' });
+    expect(convertSegmentsAction.enabled!(t.deps, undefined, undefined, { to: 'curve' })).toBe(ActionDisabledReason.NotApplicable);
+    expect(convertSegmentsAction.enabled!(t.deps, undefined, undefined, { to: 'line' })).toBe(true);
+  });
+});
+
 describe('convertSegmentAt', () => {
   it('converts the segment under a Shift+double-click, and nothing off every segment', () => {
     const t = setup();

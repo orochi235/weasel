@@ -63,7 +63,7 @@ export async function renderLabel<TData, TLayer extends string, TPose>(
   args: RenderLabelArgs<TData, TLayer, TPose>,
 ): Promise<RasterImage> {
   const { length, tape, media, origin, ...rest } = args;
-  const render = { background: '#ffffff', ...rest, ...labelRenderPlan({ length, tape, media, origin }) };
+  const render = { ...rest, background: rest.background ?? '#ffffff', ...labelRenderPlan({ length, tape, media, origin }) };
   await warmRender({ render });
   return renderSceneToPixels(render);
 }

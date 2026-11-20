@@ -18,6 +18,7 @@ import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import type { CursorSpec } from '@weasel-js/cursor';
 import { editAnchorSetTracked, insertAnchorOnSegment } from '@weasel-js/geom';
 import { editingLayer, inPlane, pathOperationTags, segmentUnder } from '@weasel-js/core';
+import { commitAnchorFrame } from './anchorEditing';
 import type {} from '../actionParamSchema';
 
 const INSERT_CURSOR: CursorSpec = { glyph: 'pen', mark: 'add', fallback: 'crosshair' };
@@ -44,9 +45,7 @@ export const insertPathAnchorAction: Action = inPlane(defineAction({
         inserted = insertAnchorOnSegment(set, hit);
         return inserted !== -1;
       });
-      if (!next) return;
-      dep.applyEdit(dep.editingId, next.path, 'Insert anchor', next.origins);
-      dep.setSelectedAnchors([inserted]);
+      if (commitAnchorFrame(dep, 'Insert anchor', next)) dep.setSelectedAnchors([inserted]);
     },
   },
   enabled: (deps, at) => {

@@ -17,4 +17,26 @@ describe('warp tools', () => {
     const drag = tool.bindings!.find((b) => b.actionId === 'cloth.drag')!;
     expect(resolveParams(drag.opts?.params)).toEqual({ rows: 4 });
   });
+
+  it('keeps each canvas it is attached to when another detaches', () => {
+    const tool = renderHook(() => usePlaneWarpTool()).result.current;
+    const canvas = () => {
+      const c = { redraws: 0, layers: 0 };
+      const api = {
+        requestRedraw: () => { c.redraws++; },
+        registerLayer: () => { c.layers++; return () => { c.layers--; }; },
+      };
+      return { c, api: api as never };
+    };
+    const deps = { get: () => undefined } as never;
+    const a = canvas();
+    const b = canvas();
+    tool.attach!(a.api, deps);
+    const detachB = tool.attach!(b.api, deps) as () => void;
+    detachB();
+    tool.onActivate?.();
+    expect(a.c.redraws).toBe(1);
+    expect(b.c.redraws).toBe(0);
+    expect([a.c.layers, b.c.layers]).toEqual([1, 0]);
+  });
 });

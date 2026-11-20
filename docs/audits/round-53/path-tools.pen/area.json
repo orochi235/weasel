@@ -1,0 +1,53 @@
+{
+ "id": "path-tools.pen",
+ "commit": "830b463cc110fc3f5182a03383bb1d182067d8e3",
+ "date": "2026-11-20",
+ "files": [
+  "packages/path-tools/src/pen/penActions.ts",
+  "packages/path-tools/src/pen/penCommit.ts",
+  "packages/path-tools/src/pen/penContinuation.ts",
+  "packages/path-tools/src/pen/penHandle.ts",
+  "packages/path-tools/src/pen/penJoin.ts",
+  "packages/path-tools/src/pen/penOptions.ts",
+  "packages/path-tools/src/pen/penPreviewLayer.ts",
+  "packages/path-tools/src/pen/penScratch.ts",
+  "packages/path-tools/src/pen/penTargets.ts",
+  "packages/path-tools/src/pen/penTrail.ts",
+  "packages/path-tools/src/pen/testing/penHarness.ts",
+  "packages/path-tools/src/pen/usePenTool.ts"
+ ],
+ "a": 3,
+ "b": 4,
+ "m": 3,
+ "distinct": 4,
+ "chapman": 4,
+ "unfound": 0,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "patches": 4,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.7,
+   "B": 3.4,
+   "match": 0.1,
+   "fix": 8.7
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1227456,
+  "costUsd": 3.81
+ },
+ "fixCommits": [
+  "cbf665cc02bfff271636750f549bc8f2f1f310f5",
+  "e89b2a4de3a06f2e2130c9a740f93b1579c7398c",
+  "0bee7f445b2a6eab6a997578a02a70842817d953",
+  "2429e15d18891a7767f65927da5d8cf809ad8595"
+ ]
+}

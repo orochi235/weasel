@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { lerpFill, lerpPaint, lerpStroke } from './lerpPaint';
+import type { Stroke } from './paint';
 
 describe('lerpPaint', () => {
   it('is each end at 0 and 1', () => {
@@ -14,6 +15,22 @@ describe('lerpPaint', () => {
     expect(mid.color).not.toBe('#808000');
     const g = parseInt(mid.color.slice(3, 5), 16);
     expect(g).toBeGreaterThan(0x90);
+  });
+
+  it("turns a conic gradient's start angle the short way round", () => {
+    const stops = [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }];
+    const conic = (angle: number) => ({ kind: 'conic-gradient' as const, center: { x: 0, y: 0 }, angle, stops });
+    const mid = lerpPaint(conic(3), conic(-3), 0.5) as { angle: number };
+    expect(Math.abs(Math.abs(mid.angle) - Math.PI)).toBeLessThan(1e-9);
+    expect((lerpPaint(conic(6.2), conic(0.1), 1) as { angle: number }).angle).toBe(0.1);
+    expect((lerpPaint(conic(6.2), conic(0.1), 0.5) as { angle: number }).angle).toBeCloseTo(6.2 + (0.1 + 2 * Math.PI - 6.2) / 2);
+  });
+
+  it('keeps the color of a fully transparent solid', () => {
+    const clearRed = { color: '#ff0000', opacity: 0 };
+    expect(lerpPaint(clearRed, clearRed, 0)).toEqual({ color: '#ff0000', opacity: 0 });
+    expect(lerpPaint(undefined, { color: '#ff0000' }, 0)).toEqual({ color: '#ff0000', opacity: 0 });
+    expect(lerpPaint({ color: '#ff0000' }, undefined, 1)).toEqual({ color: '#ff0000', opacity: 0 });
   });
 
   it('fades a missing side in as transparent', () => {
@@ -66,5 +83,27 @@ describe('lerpFill and lerpStroke', () => {
     expect(lerpStroke({ width: 1, dash: [4, 4], dashOffset: 2 }, { width: 1, dash: [4, 4], dashOffset: 6 }, 0.25))
       .toEqual({ width: 1, dash: [4, 4], dashOffset: 3 });
     expect(lerpStroke({ width: 1, dash: [4, 4] }, { width: 1, dash: [4, 4], dashOffset: 8 }, 0.5)?.dashOffset).toBe(4);
+  });
+});
+
+describe('lerpStroke per-anchor arrays', () => {
+  const s = (vertexWidths: Stroke['vertexWidths'], vertexColors?: number[]): Stroke => ({ paint: { color: '#000' }, width: 2, vertexWidths, ...(vertexColors ? { vertexColors } : {}) });
+
+  it('keeps them at either end', () => {
+    const a = s([1, 8, 1], [1, 0, 0, 1, 0, 0, 1, 1]);
+    expect(lerpStroke(a, a, 0)).toMatchObject({ vertexWidths: [1, 8, 1], vertexColors: [1, 0, 0, 1, 0, 0, 1, 1] });
+    expect(lerpStroke(a, a, 1)).toMatchObject({ vertexWidths: [1, 8, 1] });
+  });
+
+  it('interpolates arrays of one length, reading a missing entry as the width', () => {
+    const mid = lerpStroke(s([2, 8, { left: 1, right: 3 }], [0, 0, 0, 1]), s([4, undefined as unknown as number, 2], [1, 1, 1, 1]), 0.5)!;
+    expect(mid.vertexWidths).toEqual([3, 5, { left: 1, right: 2 }]);
+    expect(mid.vertexColors).toEqual([0.5, 0.5, 0.5, 1]);
+  });
+
+  it("takes the nearer side's array when the lengths differ", () => {
+    expect(lerpStroke(s([1, 2]), s([3, 4, 5]), 0.25)!.vertexWidths).toEqual([1, 2]);
+    expect(lerpStroke(s([1, 2]), s(undefined), 0.75)!.vertexWidths).toBeUndefined();
+    expect(lerpStroke(null, s([3, 4]), 0.25)!.vertexWidths).toEqual([3, 4]);
   });
 });

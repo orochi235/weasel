@@ -4,8 +4,9 @@
  */
 import { mat3, PATH_CMD_LENGTHS, PATH_L, PATH_M, type PolygonPath, maxOf, minOf } from '@weasel-js/geom';
 import type { PathDrawCommand, TextDrawCommand } from '@weasel-js/renderer';
+import { DEFAULT_TEXT_STYLE, paragraphDirection } from '@weasel-js/text';
 import type { ArrowStyle, HorizontalAlignment, LineObject, RectObject, TextObject, VerticalAlignment } from 'bil-lbx';
-import { axisMap, fillColor, plainStroke, uniformScale, type DrawState } from './style';
+import { axisMap, fillColor, mitersAt, plainStroke, uniformScale, type DrawState, type PlainStroke } from './style';
 
 const NO_PEN = { style: 'NULL' as const };
 const NO_BRUSH = { style: 'NULL' as const };
@@ -20,7 +21,7 @@ export function rectObject(cmd: PathDrawCommand, state: DrawState): RectObject[]
   const scale = cmd.stroke?.paint === undefined ? map.sx : uniformScale(map);
   if (scale === undefined) return undefined;
   const stroke = plainStroke(cmd.stroke, state.alpha, scale);
-  if (stroke === undefined || (stroke && stroke.join !== 'miter')) return undefined;
+  if (stroke === undefined || (stroke && !mitersAt(stroke, Math.SQRT2))) return undefined;
   if (fill === null && stroke === null) return [];
   const { path } = cmd;
   const x = Math.min(path.x, path.x + path.width);
@@ -59,7 +60,22 @@ function polylinePoints(path: PolygonPath): { x: number; y: number }[] | undefin
   return points.length >= 2 ? points : undefined;
 }
 
-const ARROW_FOR_CAP: Record<'butt' | 'round' | 'square', ArrowStyle> = { butt: 'SQUARE', round: 'ROUND', square: 'SQUARE' };
+// No end style reaches past the point, as a square cap does.
+const ARROW_FOR_CAP: Record<'butt' | 'round', ArrowStyle> = { butt: 'SQUARE', round: 'ROUND' };
+
+/** Whether every interior corner of `points` is drawn mitered, the join P-touch draws a polyline with. */
+function cornersMiter(points: readonly { x: number; y: number }[], stroke: PlainStroke): boolean {
+  for (let i = 1; i < points.length - 1; i++) {
+    const a = points[i - 1]!, b = points[i]!, c = points[i + 1]!;
+    const ux = a.x - b.x, uy = a.y - b.y, vx = c.x - b.x, vy = c.y - b.y;
+    const lengths = Math.hypot(ux, uy) * Math.hypot(vx, vy);
+    if (!(lengths > 0)) return false;
+    // A miter is 1 / sin(θ / 2) stroke widths long at a corner of angle θ.
+    const sinHalf = Math.sqrt(Math.max(0, (1 - (ux * vx + uy * vy) / lengths) / 2));
+    if (!mitersAt(stroke, 1 / sinHalf)) return false;
+  }
+  return true;
+}
 
 /** An open polyline stroked in a solid color, unfilled, as a `draw:poly`. */
 export function lineObject(cmd: PathDrawCommand, state: DrawState): LineObject | undefined {
@@ -69,11 +85,12 @@ export function lineObject(cmd: PathDrawCommand, state: DrawState): LineObject |
   if (!map || scale === undefined) return undefined;
   const local = polylinePoints(cmd.path);
   const stroke = plainStroke(cmd.stroke, state.alpha, scale);
-  if (!local || !stroke || stroke.align !== 'center') return undefined;
+  if (!local || !stroke || stroke.align !== 'center' || stroke.cap === 'square') return undefined;
   const points = local.map((p) => {
     const [x, y] = mat3.transformPoint(state.transform, p.x, p.y);
     return { x, y };
   });
+  if (!cornersMiter(points, stroke)) return undefined;
   const xs = points.map((p) => p.x);
   const ys = points.map((p) => p.y);
   const x = minOf(xs);
@@ -109,7 +126,9 @@ export function textObject(cmd: TextDrawCommand, state: DrawState): TextObject |
   const scale = map && uniformScale(map);
   const boxWidth = cmd.width ?? cmd.maxWidth;
   if (!map || scale === undefined || boxWidth === undefined || cmd.height === undefined) return undefined;
-  if (cmd.direction === 'rtl' || cmd.runs.length === 0) return undefined;
+  // A box states one width, which P-touch both aligns in and wraps at.
+  if (Number.isFinite(cmd.maxWidth) && cmd.maxWidth !== boxWidth) return undefined;
+  if (cmd.runs.length === 0) return undefined;
   const [first] = cmd.runs;
   let color: string | undefined;
   for (const run of cmd.runs) {
@@ -117,13 +136,21 @@ export function textObject(cmd: TextDrawCommand, state: DrawState): TextObject |
     if (run.fontWeight !== first!.fontWeight || run.fontStyle !== first!.fontStyle) return undefined;
     if (run.underline !== first!.underline || run.strikethrough !== first!.strikethrough) return undefined;
     if (run.stroke?.paint !== undefined || run.overline || run.sizeMap || run.rotate) return undefined;
-    if (run.letterSpacing !== 0 || run.baselineShift !== 0) return undefined;
+    if (run.letterSpacing !== 0 || run.baselineShift !== 0 || run.fontFeatures?.length) return undefined;
+    if (run.strutSize !== undefined && run.strutSize !== run.fontSize) return undefined;
     const hex = fillColor(run.fill, state.alpha);
     if (!hex || (color !== undefined && hex !== color)) return undefined;
     color = hex;
   }
   const data = cmd.runs.map((run) => run.text).join('').replace(HARD_BREAK, '\n');
   if (NOT_XML.test(data) || NOT_XML_ATTR.test(first!.fontFamily)) return undefined;
+  // P-touch spaces lines and tab stops its own way, which only the defaults are taken to match.
+  const lines = data.includes('\n') || Number.isFinite(cmd.maxWidth);
+  if (lines && (cmd.style.lineHeight ?? DEFAULT_TEXT_STYLE.lineHeight) !== DEFAULT_TEXT_STYLE.lineHeight) return undefined;
+  if (data.includes('\t') && (cmd.style.tabSize ?? DEFAULT_TEXT_STYLE.tabSize) !== DEFAULT_TEXT_STYLE.tabSize) return undefined;
+  // Only text the canvas lays out left to right is an object: `start` and `end` map to LEFT and RIGHT.
+  const direction = cmd.direction ?? cmd.style.direction ?? 'auto';
+  if (data.split('\n').some((line) => paragraphDirection(line, direction) === 'rtl')) return undefined;
   const align = cmd.justify ? 'justify' : (cmd.align ?? cmd.style.align ?? 'left');
   return {
     type: 'text',
@@ -132,7 +159,7 @@ export function textObject(cmd: TextDrawCommand, state: DrawState): TextObject |
     textStyle: { color, underline: first!.underline ? 1 : 0, strikeout: first!.strikethrough ? 1 : 0 },
     control: 'FIXEDFRAME',
     shrink: false,
-    autoLF: cmd.maxWidth !== undefined,
+    autoLF: Number.isFinite(cmd.maxWidth),
     horizontalAlignment: H_ALIGN[align] ?? 'LEFT',
     verticalAlignment: V_ALIGN[cmd.verticalAlign ?? 'top'] ?? 'TOP',
     data,

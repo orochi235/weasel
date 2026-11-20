@@ -8,7 +8,7 @@ import { useSnipTool } from './useSnipTool';
 
 const NO_MODS = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
 
-function setup() {
+function setup(extraDeps: Record<string, unknown> = {}) {
   const paths = { line: 'M0 0 H30', w1: 'M10 -10 V10', w2: 'M20 -10 V10' };
   const nodes = new Map(Object.entries(paths).map(([id, d]) => [id, {
     id: asNodeId(id), kind: 'mark', layer: 'main', pose: pathFromD(d), data: {}, parent: null,
@@ -19,7 +19,7 @@ function setup() {
     getVersion: () => 1,
     renderOrderNodes: () => [...nodes.values()],
   };
-  const deps = { scene, view: { get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }) } } as never;
+  const deps = { scene, view: { get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }) }, ...extraDeps } as never;
   const { result } = renderHook(() => useSnipTool());
   const tool = result.current;
   /** Run every binding the event matches, as the dispatcher runs every live hover. */
@@ -44,5 +44,12 @@ describe('useSnipTool', () => {
       from: { bodyTarget: 'empty' },
     } as InputEvent & { x: number; y: number });
     expect(t.drawn()).toEqual([]);
+  });
+
+  it('previews as far from a stroke as a tuned snipPath reaches', () => {
+    const tuned = { radiusPx: 14 };
+    const t = setup({ actionParams: (id: string, given: object) => (id === 'snipPath' ? { ...tuned, ...given } : given) });
+    t.dispatch({ kind: 'hover', x: 0, y: 9, clientX: 0, clientY: 9, bodyTarget: 'empty', ...NO_MODS } as InputEvent & { x: number; y: number });
+    expect(t.drawn()).toHaveLength(1);
   });
 });

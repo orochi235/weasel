@@ -1,0 +1,54 @@
+{
+ "id": "menu",
+ "commit": "830b463cc110fc3f5182a03383bb1d182067d8e3",
+ "date": "2026-11-20",
+ "files": [
+  "packages/menu/src/access.ts",
+  "packages/menu/src/controller.ts",
+  "packages/menu/src/dismiss.ts",
+  "packages/menu/src/entries.ts",
+  "packages/menu/src/heldValues.ts",
+  "packages/menu/src/index.ts",
+  "packages/menu/src/keyPlan.ts",
+  "packages/menu/src/keys.ts",
+  "packages/menu/src/links.ts",
+  "packages/menu/src/numberText.ts",
+  "packages/menu/src/numberValues.ts",
+  "packages/menu/src/pbt.fixture.ts",
+  "packages/menu/src/placement.ts",
+  "packages/menu/src/triangle.ts",
+  "packages/menu/src/typeahead.ts"
+ ],
+ "a": 1,
+ "b": 1,
+ "m": 0,
+ "distinct": 2,
+ "chapman": 3,
+ "unfound": 1,
+ "read": {
+  "A": 15,
+  "B": 15
+ },
+ "patches": 2,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.5,
+   "B": 2.5,
+   "match": 0.1,
+   "fix": 19.1
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1094338,
+  "costUsd": 3.4
+ },
+ "fixCommits": [
+  "6a59fd6ce8e492172483a1efc54974116435a41f",
+  "7977b94841480c4da84db4b4e9e5e9b53aa67ff7"
+ ]
+}

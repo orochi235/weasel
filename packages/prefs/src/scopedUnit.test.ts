@@ -24,6 +24,13 @@ describe('unitScopedPrefUnit', () => {
     expect(unit.fromDisplay(1)).toBeCloseTo(10 / 25.4, 9);
   });
 
+  it('keeps the scale exact under a scope whose offset dwarfs it', () => {
+    const FAR: UnitScope = { system: { base: 'u', units: { u: 1 } }, scale: { factor: 1e-9, offset: 1e9 } };
+    const unit = unitScopedPrefUnit([INCHES, FAR]);
+    expect(unit.scale).toBe(1e-9);
+    expect(resolvePrefUnit(unit).fromDisplay(1)).toBe(1e9 + 1e-9);
+  });
+
   it('takes every unit of the innermost system as typed text', () => {
     expect(prefUnitAccepts(unitScopedPrefUnit([INCHES, MM]))).toEqual({ mm: 1, cm: 10 });
   });

@@ -1,4 +1,4 @@
-import { toRoot, type Unit, type UnitScope } from '@weasel-js/quantity';
+import { entryScale, toRoot, type Unit, type UnitScope } from '@weasel-js/quantity';
 import { isPrefLeaf, type PrefSection, isBuiltinPref, type PrefLeaf, prefUnit, type PrefLinearUnit } from '@weasel-js/prefs-schema';
 
 /**
@@ -18,9 +18,9 @@ export function unitScopedPrefUnit(
     ...(opts?.suffix === undefined ? {} : { suffix: opts.suffix }),
     ...(opts?.compact ? { compact: true } : {}),
   });
-  // `toRoot` is affine: world = inner * k + c.
+  // `toRoot` is affine: world = inner * k + c. `k` is composed rather than differenced, which a large `c` would swamp.
   const c = toRoot(0, scopes);
-  const k = toRoot(1, scopes) - c;
+  const k = scopes.reduce((product, scope) => product * entryScale(scope.scale ?? 1).factor, 1);
   const offset = (own.offset ?? 0) * k + c;
   return { ...own, scale: own.scale * k, ...(offset === 0 ? {} : { offset }) };
 }

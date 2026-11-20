@@ -394,4 +394,20 @@ describe('writeText', () => {
       expectOutlinedInk((await render(textCmd([run('H', { ...bold, ...over })], { style }))).content, paint);
     }
   });
+
+  it('drops only the text of a text layer that holds a non-finite coordinate', async () => {
+    const texts = [textCmd([run('A')]), textCmd([run('B')], { x: NaN }), textCmd([run('C')], { y: 60 })];
+    const { bytes, skipped } = await writePdf([{ width: 300, height: 200, commands: [{ kind: 'text-layer', texts }] }], { fonts: registryFontSource, compress: false });
+    const content = latin1(bytes);
+    expect(content.match(/\bBT\n/g)).toHaveLength(2);
+    expect(skipped.map((s) => s.detail)).toEqual(['text has a non-finite coordinate']);
+  });
+
+  it('draws nothing for faked bold with no fill and a stroke whose dash is non-finite', async () => {
+    await registerAtlas('faux');
+    const over = { fill: undefined, stroke: { paint: { color: '#ff0000' }, width: 2, dash: [NaN, 2] } };
+    const { content, skipped } = await render(textCmd([run('H', { fontFamily: 'faux', fontWeight: 700, ...over })], { style: { fontFamily: 'faux', fontSize: SIZE } }));
+    expect(content).not.toMatch(/\n(f|S|Tj|TJ)\n/);
+    expect(skipped).toEqual([]);
+  });
 });

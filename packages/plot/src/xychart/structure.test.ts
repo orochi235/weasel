@@ -32,11 +32,14 @@ describe('xychart structure', () => {
     expect(xyRows(d)).toBe(3);
     const grown = insertXyRow(d, 1, 'z');
     expect(grown.x).toEqual({ kind: 'band', categories: ['a', 'z', 'b', 'c'] });
-    expect(grown.series[0]!.values).toEqual([1, 0, 2, 0]);
-    expect(moveXyRow(d, 0, 2).series[0]!.values).toEqual([2, 0, 1]);
-    expect(removeXyRow(d, 0)).toEqual({ ...d, x: { kind: 'band', categories: ['b', 'c'] }, series: [{ kind: 'bar', values: [2, 0] }] });
+    expect(grown.series[0]!.values).toEqual([1, 0, 2]);
+    expect(insertXyRow(d, 3).series[0]!.values).toEqual([1, 2]);
+    expect(moveXyRow(d, 0, 2).series[0]!.values).toEqual([2, Number.NaN, 1]);
+    expect(removeXyRow(d, 0)).toEqual({ ...d, x: { kind: 'band', categories: ['b', 'c'] }, series: [{ kind: 'bar', values: [2] }] });
     expect(() => removeXyRow(d, 3)).toThrow(/no row 3/);
     expect(setXyValue(d, 0, 2, 9).series[0]!.values).toEqual([1, 2, 9]);
+    const short: XyChartData = { ...d, series: [{ kind: 'line', values: [1] }] };
+    expect(setXyValue(short, 0, 2, 9).series[0]!.values).toEqual([1, Number.NaN, 9]);
     expect(() => setXyValue(d, 0, 3, 9)).toThrow(/holds no value 3/);
   });
 

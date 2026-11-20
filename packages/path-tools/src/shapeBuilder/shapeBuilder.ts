@@ -38,14 +38,16 @@ export interface ShapeBuilderPlan {
 const LABEL = 'Shape Builder';
 
 /**
- * The faces the selected paths cut each other into, or why there are none.
+ * The faces the paths among `ids` (the selection, when not given) cut each
+ * other into, or why there are none.
  * Reads the adapter and changes nothing; the plan's `commit` writes.
  */
 export function planShapeBuilder(
   adapter: BooleansAdapter,
   opts: BooleanOpOptions = {},
+  ids?: readonly NodeId[],
 ): ShapeBuilderPlan | Exclude<BooleanOpResult, { kind: 'applied' }> {
-  const operands = resolveBooleanOperands(adapter, opts);
+  const operands = resolveBooleanOperands(adapter, opts, ids);
   if ('kind' in operands) return operands;
   const { sources } = operands;
   const cut = pathFacePieces(...sources.map((s) => s.path))

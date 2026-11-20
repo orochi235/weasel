@@ -108,9 +108,8 @@ function keyModel(m: Model, key: string, dir: MenuDirection): boolean {
   const inward = dir === 'rtl' ? 'ArrowLeft' : 'ArrowRight';
   const outward = dir === 'rtl' ? 'ArrowRight' : 'ArrowLeft';
   const top = (i: number | null) => [...m.stack.slice(0, -1), i];
-  const search = (): boolean => {
+  const search = (step = typeaheadStep(rows, at, m.typed, key, m.now)): boolean => {
     m.pending = null;
-    const step = typeaheadStep(rows, at, m.typed, key, m.now);
     m.typed = step.buffer;
     if (step.hit !== null) {
       expect(isRow(rows[step.hit]!)).toBe(true);
@@ -119,10 +118,13 @@ function keyModel(m: Model, key: string, dir: MenuDirection): boolean {
     }
     return true;
   };
-  // A space typed while a search is live is part of it.
-  if (key === ' ' && m.typed.text !== '' && m.now - m.typed.at < TYPEAHEAD_RESET_MS) {
-    t.count('space searched');
-    return search();
+  // A character typed while a search is live is part of it, if the search then still finds a row.
+  if (isOneChar(key) && m.typed.text !== '' && m.now - m.typed.at < TYPEAHEAD_RESET_MS) {
+    const step = typeaheadStep(rows, at, m.typed, key, m.now);
+    if (step.hit !== null) {
+      if (key === ' ') t.count('space searched');
+      return search(step);
+    }
   }
   switch (key) {
     case 'ArrowDown': return nav(top(nextRow(rows, at, 1)));
@@ -178,10 +180,10 @@ function keyModel(m: Model, key: string, dir: MenuDirection): boolean {
   return search();
 }
 
-function hoverModel(m: Model, level: number, index: number | null): void {
+function hoverModel(m: Model, level: number, row: number | null): void {
   if (m.closed || level >= m.stack.length) return;
   const rows = levelOf(m.root, m.stack, level);
-  if (index !== null && !(rows[index] !== undefined && isRow(rows[index]!))) return;
+  const index = row !== null && rows[row] !== undefined && isRow(rows[row]!) ? row : null;
   const sameRow = index === m.stack[level];
   if (sameRow && m.stack.length > level + 1) { m.pending = null; return; }
   if (sameRow && m.pending) return;

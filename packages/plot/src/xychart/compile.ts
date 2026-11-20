@@ -45,7 +45,8 @@ function categoriesOf(data: XyChartData): string[] {
   return Array.from({ length: Math.max(own.length, xyLength(data)) }, (_, i) => own[i] ?? String(i + 1));
 }
 
-/** The value axis's domain: its own ends, and where one is missing, the values' reach with zero in it, made round. */
+/** The value axis's domain: its own ends, and where one is missing, the values' reach with zero in it, made round,
+ *  or a unit past the set end where that reach falls short of it. */
 export function xyValueDomain(data: XyChartData): [number, number] {
   // A loop, not a spread: a spread of a long series overflows the call stack.
   let lo = 0;
@@ -58,8 +59,9 @@ export function xyValueDomain(data: XyChartData): [number, number] {
     }
   }
   const [niceLo, niceHi] = niceDomain([lo, hi === lo ? lo + 1 : hi]);
-  const min = data.y?.min ?? niceLo;
-  const max = data.y?.max ?? niceHi;
+  const set = data.y ?? {};
+  const min = set.min ?? (set.max !== undefined && niceLo >= set.max ? set.max - 1 : niceLo);
+  const max = set.max ?? (set.min !== undefined && niceHi <= set.min ? set.min + 1 : niceHi);
   return min === max ? [min, min + 1] : [min, max];
 }
 
@@ -126,8 +128,9 @@ function seriesMarks(data: XyChartData, layout: XyLayout, theme: PlotTheme): Plo
   const [d0, d1] = value.domain;
   const inside = (v: number) => v >= Math.min(d0, d1) && v <= Math.max(d0, d1);
   const baseline = value.position(Math.min(Math.max(0, Math.min(d0, d1)), Math.max(d0, d1)));
-  const bars = data.series.filter((s) => s.kind === 'bar');
-  const barWidth = slotWidth / Math.max(1, bars.length);
+  let barCount = 0;
+  const barSlot = data.series.map((s) => (s.kind === 'bar' ? barCount++ : -1));
+  const barWidth = slotWidth / Math.max(1, barCount);
   const categories = categoriesOf(data);
   const marks: PlotMark[] = [];
   data.series.forEach((series, s) => {
@@ -135,7 +138,7 @@ function seriesMarks(data: XyChartData, layout: XyLayout, theme: PlotTheme): Plo
     const datum = (i: number) => ({ series: s, index: i, value: series.values[i]!, category: categories[i] ?? String(i + 1) });
     const placed = series.values.map((v, i) => ({ v, i })).filter(({ v, i }) => Number.isFinite(v) && Number.isFinite(slots[i] ?? Number.NaN));
     if (series.kind === 'bar') {
-      const j = bars.indexOf(series);
+      const j = barSlot[s]!;
       for (const { v, i } of placed) {
         marks.push(barMark({
           key: `bar:${s}:${i}`, x: slots[i]! - slotWidth / 2 + j * barWidth, width: barWidth, from: baseline, to: place(v), color,

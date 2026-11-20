@@ -31,7 +31,7 @@ function lateOutline({ never = false }: { never?: boolean } = {}): NodeOutline {
 function makeAdapter(outlines: Record<string, NodeOutline>, ids = Object.keys(outlines)) {
   const applyOps = vi.fn();
   const adapter: CreateOutlinesAdapter = {
-    ...rootsTree(),
+    ...rootsTree([], (id) => (id in outlines ? { id } : undefined)),
     getSelection: () => ids.map(asNodeId),
     getOutline: (id) => outlines[id],
     createPathNode: () => ({ id: 'outlined' }),
@@ -40,7 +40,12 @@ function makeAdapter(outlines: Record<string, NodeOutline>, ids = Object.keys(ou
   return { adapter, applyOps };
 }
 
-const selectionOf = (ids: string[]) => ({ get: () => ids.map(asNodeId) });
+const selectionOf = (ids: string[]) => {
+  let held = ids.map(asNodeId);
+  return { get: () => held, set: (next: readonly string[]) => { held = next.map(asNodeId); } };
+};
+
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe('createOutlinesAction', () => {
   it('declares every dep it reads', () => {
@@ -105,5 +110,64 @@ describe('runCreateOutlines', () => {
     expect(notices.warn).toHaveBeenCalledWith(expect.stringContaining('nowhere'), expect.objectContaining({ id: 'outlines' }));
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
+  });
+
+  it('converts the operands a host supplies, and hands the result back to them', async () => {
+    const { adapter, applyOps } = makeAdapter({ g: lateOutline(), h: lateOutline() }, ['h']);
+    adapter.createPathNode = (_path, source) => ({ id: `outlined-${source}` });
+    let held = [asNodeId('g')];
+    const operands = { get: () => held, set: (ids: readonly string[]) => { held = ids.map(asNodeId); } };
+    let converted = false;
+    adapter.getNode = (id) => (id === 'g' && converted ? undefined : { id });
+    applyOps.mockImplementation(() => { converted = true; });
+    (createOutlinesAction.invoker as ImmediateInvoker).run(stubDeps({ operands, createOutlinesAdapter: adapter }), {});
+    await settle();
+    expect(applyOps).toHaveBeenCalledTimes(1);
+    expect(held).toEqual(['outlined-g']);
+  });
+
+  it('warns rather than rejecting when a face fails to load', async () => {
+    const notices = { warn: vi.fn() };
+    const outline = lateOutline();
+    outline.load = () => Promise.reject(new Error('no such face'));
+    const { adapter, applyOps } = makeAdapter({ g: outline });
+    const result = await runCreateOutlines(adapter, notices);
+    expect(result.kind).toBe('failed');
+    expect(applyOps).not.toHaveBeenCalled();
+    expect(notices.warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries through an adapter whose methods read private fields', async () => {
+    const outline = lateOutline();
+    class PrivateAdapter {
+      readonly #outlines: Record<string, NodeOutline> = { g: outline };
+      readonly applied: unknown[] = [];
+      getSelection() { return [asNodeId('g')]; }
+      getOutline(id: string) { return this.#outlines[id]; }
+      createPathNode() { return { id: 'outlined' }; }
+      getNode(id: string) { return this.#outlines[id] ? { id } : undefined; }
+      getParent() { return null; }
+      getChildren() { return Object.keys(this.#outlines); }
+      applyOps(ops: unknown[]) { this.applied.push(ops); }
+    }
+    const adapter = new PrivateAdapter();
+    expect((await runCreateOutlines(adapter)).kind).toBe('applied');
+    expect(adapter.applied).toHaveLength(1);
+  });
+
+  it('leaves a node deleted while it waits out of the selection it sets', async () => {
+    let selected = ['g', 'r'];
+    const live = new Set(['g', 'r']);
+    const { adapter, applyOps } = makeAdapter({ g: lateOutline() });
+    adapter.getSelection = () => selected.map(asNodeId);
+    adapter.getNode = (id) => (live.has(id) ? { id } : undefined);
+    const pending = runCreateOutlines(adapter);
+    live.delete('r');
+    selected = ['g'];
+    expect((await pending).kind).toBe('applied');
+    const ops = applyOps.mock.calls[0]![0] as { args: { from?: unknown; to?: unknown } }[];
+    const selection = ops.at(-1)!.args;
+    expect(selection.from).toEqual(['g']);
+    expect(selection.to).toEqual(['outlined']);
   });
 });

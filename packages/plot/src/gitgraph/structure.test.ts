@@ -5,6 +5,7 @@ import {
   gitBranchNames, insertGitCommand, moveGitCommand, removeGitCommand, setGitCommandField, setGitCommandKind, setGitMainBranch,
   setGitOrientation,
 } from './structure';
+import { replayGitGraph } from './replay';
 import type { GitGraphData } from './types';
 
 const measure = (text: string) => ({ width: text.length * 7, height: 14 });
@@ -30,7 +31,7 @@ describe('gitgraph structure', () => {
   it('turns a command into another kind, keeping the fields both hold', () => {
     const d: GitGraphData = { kind: 'gitgraph', commands: [{ kind: 'commit', id: 'x', tag: 'v1', message: 'm' }] };
     expect(setGitCommandKind(d, 0, 'merge').commands[0]).toEqual({ kind: 'merge', branch: 'main', id: 'x', tag: 'v1' });
-    expect(setGitCommandKind(d, 0, 'cherry-pick').commands[0]).toEqual({ kind: 'cherry-pick', id: 'x', tag: 'v1' });
+    expect(setGitCommandKind(d, 0, 'cherry-pick').commands[0]).toEqual({ kind: 'cherry-pick', id: '', tag: 'v1' });
   });
 
   it('sets and drops fields, refusing ones a kind does not hold or needs', () => {
@@ -53,5 +54,44 @@ describe('gitgraph structure', () => {
     expect(setGitMainBranch(trunk, 'main')).toEqual(d);
     expect(() => setGitMainBranch({ ...d, commands: [{ kind: 'branch', name: 'dev' }] }, 'dev')).toThrow(/already called "dev"/);
     compiles(trunk);
+  });
+
+  it('carries a branch\'s new name into the checkouts and merges after it, refusing one another branch holds', () => {
+    const d: GitGraphData = { kind: 'gitgraph', commands: [
+      { kind: 'commit' }, { kind: 'branch', name: 'dev' }, { kind: 'commit' }, { kind: 'checkout', name: 'main' }, { kind: 'merge', branch: 'dev' },
+      { kind: 'checkout', name: 'dev' }, { kind: 'branch', name: 'other' },
+    ] };
+    const renamed = setGitCommandField(d, 1, 'name', 'feature');
+    expect(renamed.commands.slice(4, 6)).toEqual([{ kind: 'merge', branch: 'feature' }, { kind: 'checkout', name: 'feature' }]);
+    expect(replayGitGraph(renamed).error).toBeUndefined();
+    expect(() => setGitCommandField(d, 1, 'name', 'other')).toThrow(/already called "other"/);
+    expect(() => setGitCommandField(d, 1, 'name', 'main')).toThrow(/already called "main"/);
+  });
+
+  it('carries a commit\'s new id into the cherry-picks after it, refusing one another commit holds', () => {
+    const d: GitGraphData = { kind: 'gitgraph', commands: [
+      { kind: 'commit', id: 'root' }, { kind: 'branch', name: 'dev' }, { kind: 'commit', id: 'A' }, { kind: 'checkout', name: 'main' },
+      { kind: 'cherry-pick', id: 'A' },
+    ] };
+    const renamed = setGitCommandField(d, 2, 'id', 'B');
+    expect(renamed.commands[4]).toEqual({ kind: 'cherry-pick', id: 'B' });
+    expect(replayGitGraph(renamed).error).toBeUndefined();
+    const dropped = setGitCommandField(d, 2, 'id', undefined);
+    expect(replayGitGraph(dropped).error).toBeUndefined();
+    expect(() => setGitCommandField(d, 2, 'id', 'root')).toThrow(/already has id "root"/);
+  });
+
+  it('fills a new merge or cherry-pick from the history before it', () => {
+    const d: GitGraphData = { kind: 'gitgraph', commands: [
+      { kind: 'commit', id: 'm1' }, { kind: 'branch', name: 'dev' }, { kind: 'commit', id: 'd1' }, { kind: 'commit' },
+      { kind: 'checkout', name: 'main' }, { kind: 'commit' }, { kind: 'branch', name: 'late' },
+    ] };
+    expect(setGitCommandKind(d, 3, 'merge').commands[3]).toEqual({ kind: 'merge', branch: 'main' });
+    expect(setGitCommandKind(d, 5, 'merge').commands[5]).toEqual({ kind: 'merge', branch: 'dev' });
+    expect(setGitCommandKind(d, 3, 'cherry-pick').commands[3]).toEqual({ kind: 'cherry-pick', id: 'm1' });
+    expect(setGitCommandKind(d, 5, 'cherry-pick').commands[5]).toEqual({ kind: 'cherry-pick', id: 'd1' });
+    for (const [at, kind] of [[3, 'merge'], [5, 'merge'], [3, 'cherry-pick'], [5, 'cherry-pick']] as const) {
+      expect(replayGitGraph(setGitCommandKind(d, at, kind)).error).toBeUndefined();
+    }
   });
 });

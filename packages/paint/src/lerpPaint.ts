@@ -9,6 +9,8 @@ import { isSolidPaint } from './commandPaint';
 import { mixOklab } from './mix';
 import { isGradientPaint } from './gradient';
 import { lerp } from './scalar';
+import { shortArc } from './shortArc';
+import { vertexHalfWidths, vertexWidthFromSides, type VertexWidth } from './vertexWidth';
 import type { Fill, GradStop, GradientPaint, Paint, ScreenLength, Stroke } from './paint';
 
 type Rgba = [number, number, number, number];
@@ -19,9 +21,13 @@ function rgbaOf(color: string, opacity: number | undefined): Rgba {
   return [r, g, b, a * (opacity ?? 1)];
 }
 
-/** `t` of the way from `a` to `b`, through OKLab. */
+/** `t` of the way from `a` to `b`, through OKLab. Where both are clear the
+ *  color still travels, so a clear red stays red rather than turning black. */
 function mixColor(a: Rgba, b: Rgba, t: number): Rgba {
-  return mixOklab(a, b, 1 - t);
+  const mixed = mixOklab(a, b, 1 - t);
+  if (mixed[3] > 0) return mixed;
+  const [r, g, bl] = mixOklab([a[0], a[1], a[2], 1], [b[0], b[1], b[2], 1], 1 - t);
+  return [r, g, bl, 0];
 }
 
 function solidOf(rgba: Rgba): Paint {
@@ -72,15 +78,14 @@ function lerpStops(a: readonly GradStop[], b: readonly GradStop[], t: number): G
   });
 }
 
-/** A stop's color `t` of the way from `a` to `b`, alpha included. Where both
- *  are clear the color still travels, since a ramp blends toward it. */
+/** A stop's color `t` of the way from `a` to `b`, alpha included. */
 function mixStopColor(a: string, b: string, t: number): string {
-  if (a === b) return a;
-  const ca = rgbaOf(a, 1), cb = rgbaOf(b, 1);
-  const mixed = mixColor(ca, cb, t);
-  if (mixed[3] > 0) return rgbaToHex(mixed);
-  const [r, g, bl] = mixColor([ca[0], ca[1], ca[2], 1], [cb[0], cb[1], cb[2], 1], t);
-  return rgbaToHex([r, g, bl, 0]);
+  return a === b ? a : rgbaToHex(mixColor(rgbaOf(a, 1), rgbaOf(b, 1), t));
+}
+
+/** `t` of the way from angle `a` to `b` in radians, the short way round; exactly `b` at `t = 1`. */
+function lerpAngle(a: number, b: number, t: number): number {
+  return t === 1 ? b : a + shortArc(b - a) * t;
 }
 
 function lerpGradient(a: GradientPaint, b: GradientPaint, t: number): Paint | null {
@@ -105,7 +110,7 @@ function lerpGradient(a: GradientPaint, b: GradientPaint, t: number): Paint | nu
     return { kind: 'radial-gradient', center: pt(a.center, b.center), radius: lerp(a.radius, b.radius, t), ...common };
   }
   if (a.kind === 'conic-gradient' && b.kind === 'conic-gradient') {
-    return { kind: 'conic-gradient', center: pt(a.center, b.center), angle: lerp(a.angle, b.angle, t), ...common };
+    return { kind: 'conic-gradient', center: pt(a.center, b.center), angle: lerpAngle(a.angle, b.angle, t), ...common };
   }
   return null;
 }
@@ -128,9 +133,31 @@ function lerpWidth(a: ScreenLength | undefined, b: ScreenLength | undefined, t: 
   return t < 0.5 ? a : b;
 }
 
+const widthNumber = (s: Stroke): number => (typeof s.width === 'object' ? s.width.px : s.width ?? 1);
+
+/** Per-anchor widths `t` of the way from `a`'s to `b`'s, each side's missing entries read as its own width. */
+function lerpVertexWidths(a: Stroke, b: Stroke, t: number): VertexWidth[] {
+  const wa = widthNumber(a), wb = widthNumber(b);
+  return a.vertexWidths!.map((entry, i) => {
+    const p = vertexHalfWidths(entry, wa), q = vertexHalfWidths(b.vertexWidths![i], wb);
+    return vertexWidthFromSides(lerp(p.left, q.left, t), lerp(p.right, q.right, t));
+  });
+}
+
+/** A per-anchor array of `t` of the way between the two sides' when both hold one of one length; the nearer side's otherwise. */
+function lerpPerAnchor<T>(
+  a: Stroke | null | undefined, b: Stroke | null | undefined, near: Stroke,
+  read: (s: Stroke) => readonly unknown[] | undefined, mix: (a: Stroke, b: Stroke) => T[],
+): T[] | undefined {
+  const from = a ? read(a) : undefined, to = b ? read(b) : undefined;
+  if (from && to && from.length === to.length) return mix(a!, b!);
+  return read(near) as T[] | undefined;
+}
+
 /**
- * The stroke `t` of the way from `a` to `b`: width and paint interpolate, and
- * every other field is the nearer side's. A `null` or missing side is a
+ * The stroke `t` of the way from `a` to `b`: width, paint, and per-anchor
+ * widths and colors of one length on both sides interpolate, and every other
+ * field is the nearer side's. A `null` or missing side is a
  * stroke of no width in the other's color made transparent, so a stroke
  * thins and fades in or out.
  */
@@ -145,10 +172,14 @@ export function lerpStroke(a: Stroke | null | undefined, b: Stroke | null | unde
   // An offset slides the pattern, so it moves smoothly where the dash itself snaps.
   const from = a?.dashOffset, to = b?.dashOffset;
   const dashOffset = from === undefined && to === undefined ? undefined : lerp(from ?? 0, to ?? 0, t);
+  const vertexWidths = lerpPerAnchor(a, b, near, (s) => s.vertexWidths, (p, q) => lerpVertexWidths(p, q, t));
+  const vertexColors = lerpPerAnchor(a, b, near, (s) => s.vertexColors, (p, q) => p.vertexColors!.map((c, i) => lerp(c, q.vertexColors![i]!, t)));
   return {
     ...rest,
     ...(paint === undefined ? {} : { paint }),
     ...(width === undefined ? {} : { width }),
     ...(dashOffset === undefined ? {} : { dashOffset }),
+    ...(vertexWidths === undefined ? {} : { vertexWidths }),
+    ...(vertexColors === undefined ? {} : { vertexColors }),
   };
 }

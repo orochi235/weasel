@@ -12,9 +12,10 @@ const shifted = (fields: readonly PacketField[], from: number, by: number): Pack
   fields.map((f, i) => (i < from || by === 0 ? f : { ...f, start: f.start + by, end: f.end + by }));
 
 /** `data` with `field` inserted before field `at`, the fields after it moved along by its width; absent, an 8-bit
- *  field just after the one before, under a fresh label. */
+ *  field just after the one before, under a fresh label. Throws on a field starting inside the one before. */
 export function insertPacketField(data: PacketData, at: number, field?: PacketField): PacketData {
   const start = at === 0 ? 0 : (data.fields[at - 1]?.end ?? -1) + 1;
+  if (field !== undefined && field.start < start) throw new Error(`insertPacketField: a field at ${at} starts at bit ${start} or later, and ${field.start} is earlier`);
   const next = field ?? { start, end: start + 7, label: freshName('Field', data.fields.map((f) => f.label), data.fields.length + 1) };
   const room = data.fields[at] === undefined ? 0 : Math.max(0, next.end + 1 - data.fields[at]!.start);
   return { ...data, fields: insertAt(shifted(data.fields, at, room), at, next, 'insertPacketField') };

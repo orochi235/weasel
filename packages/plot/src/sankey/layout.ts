@@ -71,9 +71,23 @@ function depths(n: number, edges: readonly (readonly [number, number])[]): numbe
   return depth;
 }
 
+/** Each node's links by index, in the spec's order: those leaving it (`[0]`), and those reaching it (`[1]`). */
+type Adjacency = readonly [number[][], number[][]];
+
+function adjacency(n: number, edges: readonly (readonly [number, number, number])[]): Adjacency {
+  const leaving: number[][] = Array.from({ length: n }, () => []);
+  const reaching: number[][] = Array.from({ length: n }, () => []);
+  edges.forEach(([s, t], i) => {
+    leaving[s]!.push(i);
+    reaching[t]!.push(i);
+  });
+  return [leaving, reaching];
+}
+
 /** The nodes in each column, reordered by a few sweeps toward the mean height of their neighbors, each restacked as it is sorted. */
 function orderColumns(
-  columns: number[][], center: (k: number) => number, edges: readonly (readonly [number, number, number])[], restack: (col: number[]) => void,
+  columns: number[][], center: (k: number) => number, edges: readonly (readonly [number, number, number])[], adjacent: Adjacency,
+  restack: (col: number[]) => void,
 ): void {
   const sweep = (col: number[], near: (k: number) => (readonly [number, number])[]) => {
     const key = new Map(col.map((k) => {
@@ -84,8 +98,8 @@ function orderColumns(
     col.sort((a, b) => key.get(a)! - key.get(b)!);
     restack(col);
   };
-  const into = (k: number) => edges.filter(([, t]) => t === k).map(([s, , w]) => [s, Math.max(w, 1e-9)] as const);
-  const outOf = (k: number) => edges.filter(([s]) => s === k).map(([, t, w]) => [t, Math.max(w, 1e-9)] as const);
+  const into = (k: number) => adjacent[1][k]!.map((i) => [edges[i]![0], Math.max(edges[i]![2], 1e-9)] as const);
+  const outOf = (k: number) => adjacent[0][k]!.map((i) => [edges[i]![1], Math.max(edges[i]![2], 1e-9)] as const);
   for (let i = 0; i < SWEEPS; i++) {
     for (let c = 1; c < columns.length; c++) sweep(columns[c]!, into);
     for (let c = columns.length - 2; c >= 0; c--) sweep(columns[c]!, outOf);
@@ -101,11 +115,12 @@ export function sankeyLayout(data: SankeyData, box: Rect): SankeyLayout {
   const unit = Number.isFinite(flows.reduce((a, b) => a + b, 0)) ? 1 : flows.reduce((a, b) => Math.max(a, b), 0);
   const edges = data.links.map((l, i) => [index.get(l.source)!, index.get(l.target)!, flows[i]! / unit] as const);
   const column = depths(labels.length, edges.map(([s, t]) => [s, t] as const));
-  const ins = labels.map((_, k) => edges.filter(([, t]) => t === k).reduce((a, [, , w]) => a + w, 0));
-  const outs = labels.map((_, k) => edges.filter(([s]) => s === k).reduce((a, [, , w]) => a + w, 0));
-  const value = labels.map((_, k) => Math.max(ins[k]!, outs[k]!));
+  const adjacent = adjacency(labels.length, edges);
+  const sum = (links: readonly number[]) => links.reduce((a, i) => a + edges[i]![2], 0);
+  const value = labels.map((_, k) => Math.max(sum(adjacent[1][k]!), sum(adjacent[0][k]!)));
   const count = labels.length === 0 ? 0 : maxOf(column) + 1;
-  const columns: number[][] = Array.from({ length: count }, (_, c) => labels.flatMap((_, k) => (column[k] === c ? [k] : [])));
+  const columns: number[][] = Array.from({ length: count }, () => []);
+  column.forEach((c, k) => columns[c]!.push(k));
   const tallest = Math.max(1, maxOf(columns, (c) => c.length));
   const gap = Math.min(NODE_GAP, box.height / 2 / tallest);
   const ky = Math.max(0, minOf(columns, (c) => {
@@ -123,22 +138,24 @@ export function sankeyLayout(data: SankeyData, box: Rect): SankeyLayout {
     }
   };
   columns.forEach(stack);
-  orderColumns(columns, (k) => y[k]! + (value[k]! * scale) / 2, edges, stack);
+  orderColumns(columns, (k) => y[k]! + (value[k]! * scale) / 2, edges, adjacent, stack);
   // A box narrower than a node starts every column at its left edge rather than before it.
   const step = count > 1 ? Math.max(0, box.width - SANKEY_NODE_WIDTH) / (count - 1) : 0;
   const nodes = labels.map((label, k) => ({
     label, column: column[k]!, value: value[k]! * unit, x: box.x + column[k]! * step, y: y[k]!, width: SANKEY_NODE_WIDTH, height: value[k]! * scale,
   }));
-  return { nodes, links: ribbons(nodes, edges, scale), columns: count };
+  return { nodes, links: ribbons(nodes, edges, adjacent, scale), columns: count };
 }
 
 /** Each link's ribbon, stacked within its source by its target's height and within its target by its source's. */
-function ribbons(nodes: readonly SankeyNodeBox[], edges: readonly (readonly [number, number, number])[], scale: number): SankeyRibbon[] {
+function ribbons(
+  nodes: readonly SankeyNodeBox[], edges: readonly (readonly [number, number, number])[], adjacent: Adjacency, scale: number,
+): SankeyRibbon[] {
   const mid = (k: number) => nodes[k]!.y + nodes[k]!.height / 2;
   const offsets = (side: 0 | 1): number[] => {
     const at = new Array<number>(edges.length).fill(0);
     nodes.forEach((node, k) => {
-      const mine = edges.map((e, i) => ({ e, i })).filter(({ e }) => e[side] === k);
+      const mine = adjacent[side][k]!.map((i) => ({ e: edges[i]!, i }));
       mine.sort((a, b) => mid(a.e[1 - side]!) - mid(b.e[1 - side]!) || a.i - b.i);
       let y = node.y;
       for (const { e, i } of mine) {

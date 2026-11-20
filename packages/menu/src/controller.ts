@@ -150,9 +150,10 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
       }
       return true;
     },
-    hover(level, index, point) {
+    hover(level, row, point) {
       if (closed || level >= stack.length) return;
-      if (index !== null && !isRowAt(level, index)) return;
+      // A separator is over no row, as the panel's padding is.
+      const index = row !== null && isRowAt(level, row) ? row : null;
       const sameRow = index === stack[level];
       if (point && !sameRow && headingIntoChild(panels, stack, lastPoint, level, point)) {
         deferred = { level, index };

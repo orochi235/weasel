@@ -1,0 +1,71 @@
+{
+ "id": "pdf",
+ "commit": "830b463cc110fc3f5182a03383bb1d182067d8e3",
+ "date": "2026-11-20",
+ "files": [
+  "packages/pdf/src/color.ts",
+  "packages/pdf/src/content.ts",
+  "packages/pdf/src/deflate.ts",
+  "packages/pdf/src/drawCommands.ts",
+  "packages/pdf/src/export.ts",
+  "packages/pdf/src/fonts/embedFont.ts",
+  "packages/pdf/src/fonts/fontSource.ts",
+  "packages/pdf/src/fonts/subset.ts",
+  "packages/pdf/src/fonts/toUnicode.ts",
+  "packages/pdf/src/groupOps.ts",
+  "packages/pdf/src/images.ts",
+  "packages/pdf/src/index.ts",
+  "packages/pdf/src/latin1.ts",
+  "packages/pdf/src/num.ts",
+  "packages/pdf/src/objects.ts",
+  "packages/pdf/src/pathOps.ts",
+  "packages/pdf/src/pbt.fixture.ts",
+  "packages/pdf/src/pdfCheck.fixture.ts",
+  "packages/pdf/src/pdfReader.fixture.ts",
+  "packages/pdf/src/regionsPdf.ts",
+  "packages/pdf/src/resources.ts",
+  "packages/pdf/src/shading.ts",
+  "packages/pdf/src/strokeOps.ts",
+  "packages/pdf/src/testing/noFonts.ts",
+  "packages/pdf/src/textOps.ts",
+  "packages/pdf/src/textOutlines.ts",
+  "packages/pdf/src/textSegment.ts",
+  "packages/pdf/src/writePdf.ts"
+ ],
+ "a": 3,
+ "b": 3,
+ "m": 0,
+ "distinct": 6,
+ "chapman": 15,
+ "unfound": 9,
+ "read": {
+  "A": 28,
+  "B": 28
+ },
+ "patches": 6,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 14.1,
+   "B": 9.3,
+   "match": 0.1,
+   "fix": 11.4
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2962700,
+  "costUsd": 8.54
+ },
+ "fixCommits": [
+  "b7ab7977de8494325b3bccf642adc6fc2de4b481",
+  "c61fac24ff545690d5493ff7b1b1e0bd48e2b767",
+  "f26ff1697bfaa1e9b8150c63c4f745cb26931df1",
+  "9fcdf65336779edfe7cde41cb1b6809f64971d87",
+  "8d416082180a5dd633a2791b813d18c1e799d330",
+  "4d05907f92f48763ee1a9ba125c6e204a6ac6048"
+ ]
+}

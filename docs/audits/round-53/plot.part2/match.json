@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   4,
+   2
+  ]
+ ],
+ "a": [
+  "xychart flips its value axis when only one end is set and the data lies on the other side of it, where radar answers the same case with a unit span",
+  "insertPacketField accepts a field that overlaps the one before it, breaking the module's no-overlap invariant",
+  "A series object listed twice in an xychart draws both bar series in the same slot",
+  "sankey layout is quadratic in nodes × links on every compile",
+  "Two parsers for \"a non-negative number typed into a label\": sankey takes hex, binary and octal, pie does not",
+  "Row edits on an xychart write zeros into series that were shorter than the rows, which turns missing points into drawn zeros"
+ ],
+ "b": [
+  "An xychart drag runs a value past a fixed value-axis end, where the radar's and quadrant's drags hold it inside",
+  "Setting only one value-axis end past the data flips an xychart's value axis",
+  "The sankey's typed flow accepts hex, binary and octal literals, which the pie's typed value rejects"
+ ]
+}

@@ -1,5 +1,5 @@
 export { SHIPPED_TAGS, IMPLICIT_TAGS, capabilitiesAllowed, isShippedTag } from './capabilities';
-export type { CapabilityTag } from './capabilities';
+export type { CapabilityTag, ShippedTag } from './capabilities';
 export { defaultToolOf, eligibleForMode, modeLabel, shortcutOn } from './modeDefinition';
 export type { ModeDefinition, ModeEntry, ModeShortcut, WorkspaceVisual } from './modeDefinition';
 export { DEFAULT_MODES, defaultModeById, NORMAL, PATH_EDIT, FREE_TRANSFORM, TEXT_EDIT, CROP } from './presets/default';

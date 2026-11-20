@@ -5,7 +5,7 @@
 
 import { tryParseColor } from './color';
 import { isSolidPaint } from './commandPaint';
-import { DEFAULT_MITER_LIMIT, type Fill, type Paint, type Stroke } from './paint';
+import { DEFAULT_MITER_LIMIT, dashPattern, type Fill, type Paint, type Stroke } from './paint';
 import { resolveFill, resolveStroke, type PaintedFill, type PaintedStroke } from './resolvePaint';
 import { createPart } from '@weasel-js/registry';
 
@@ -66,12 +66,13 @@ export function fillHasInk(fill: Fill | null | undefined): fill is PaintedFill {
 }
 
 /** Whether a stroke puts ink down: it does not when it is absent, holds no
- *  paint, or has no width — whatever its per-vertex widths. */
+ *  paint, has no width — whatever its per-vertex widths — or has a dash
+ *  {@link dashPattern} reads as `'non-finite'`. */
 export function strokeHasInk(stroke: Stroke | null | undefined): stroke is PaintedStroke {
   const painted = resolveStroke(stroke);
   if (painted === null) return false;
   const width = painted.width ?? 1;
-  return (typeof width === 'number' ? width : width.px) > 0;
+  return (typeof width === 'number' ? width : width.px) > 0 && dashPattern(painted.dash) !== 'non-finite';
 }
 
 /**

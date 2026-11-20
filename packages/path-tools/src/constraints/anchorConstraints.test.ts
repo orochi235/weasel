@@ -18,6 +18,9 @@ describe('constraintsForAnchors', () => {
   it('holds the length a pair has now unless one is given', () => {
     expect(constraintsForAnchors('length', [0, 2], SQUARE)).toEqual([{ kind: 'length', segment: [0, 2], length: 50 }]);
     expect(constraintsForAnchors('length', [0, 2], SQUARE, 12)).toEqual([{ kind: 'length', segment: [0, 2], length: 12 }]);
+    for (const bad of [-10, NaN, Infinity]) {
+      expect(constraintsForAnchors('length', [0, 2], SQUARE, bad)).toEqual([{ kind: 'length', segment: [0, 2], length: 50 }]);
+    }
   });
 
   it('makes two segments from three anchors or four, and nothing from two', () => {

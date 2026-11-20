@@ -94,6 +94,16 @@ describe('prefsCss', () => {
     expect(blocks[":where(:root[data-look-mode='dark'][data-look-density='roomy'])"]).toEqual(['--gap: 8px;']);
   });
 
+  it('quotes an enum option that is a CSS-wide keyword, and writes any other ident bare', () => {
+    const at = (value: 'inherit' | 'Initial' | 'left') => {
+      const schema = pref.group('Prefs', { align: pref.enum('Align', value, ['inherit', 'Initial', 'left']) });
+      return prefsCss(createPrefsStore(schema, createRecordCache({ storage: createMemoryAdapter(), prefix: 'p.' })));
+    };
+    expect(at('inherit')).toContain("--align: 'inherit';");
+    expect(at('Initial')).toContain("--align: 'Initial';");
+    expect(at('left')).toContain('--align: left;');
+  });
+
   it('keeps a block for two selectors apart from one option whose name reads like both', () => {
     const odd = 'dark&look.density=compact';
     const schema = pref.group('Prefs', {

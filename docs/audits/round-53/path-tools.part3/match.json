@@ -1,0 +1,29 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   2
+  ],
+  [
+   4,
+   3
+  ]
+ ],
+ "a": [
+  "Snip's hover preview ignores a tuned `snipPath` radius, so the dashed piece and the click disagree",
+  "Spiro tool's deactivation leaves its snap trail session open and its pointer follower subscribed",
+  "`configureWarp` is enabled on a selection whose warp is stale, then does nothing",
+  "A warp tool attached to two canvases loses the first canvas when either detaches",
+  "Cloth warp row/column settings accept NaN, which `count` passes through to `resizeCloth`"
+ ],
+ "b": [
+  "Spiro tool's deactivate leaves its pointer follower and its trailing snap session open",
+  "A warp begun on text whose face is still loading never converts it, so the first drag on the controls shown over that text does nothing",
+  "`configureWarp` and `expandWarp` are enabled by a stale warp the run then ignores, and read different node shapes than the run",
+  "A non-finite rows/cols reaching `configureWarp` builds a NaN mesh"
+ ]
+}

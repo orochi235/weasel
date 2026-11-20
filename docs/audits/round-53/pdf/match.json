@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "writeSegment throws a TypeError on a synthetic-bold run with no fill and a stroke whose dash is non-finite",
+  "A non-finite opacity draws an image, an isolated group or a raster fully opaque, but drops the command on a path",
+  "A texture pattern's memo key leaves out the texture's source, so a re-registered texture reuses the old pixels"
+ ],
+ "b": [
+  "A solid stroke on a path with no commands writes `S` with no current path",
+  "One non-finite coordinate in any text of a `text-layer` drops every text in the layer",
+  "Once a face's spare codes run out, a glyph's second reading silently takes its first reading's code"
+ ]
+}

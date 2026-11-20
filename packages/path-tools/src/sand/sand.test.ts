@@ -117,6 +117,20 @@ describe('sand', () => {
     expect(worstOff(after, anchorsOf(original))).toBeLessThan(0.25 + 0.05);
   });
 
+  it('previews at a tolerance changed mid-stroke, as the commit applies it', () => {
+    const t = setup();
+    let tolerance = 20;
+    const h = (sandAction.invoker as OngoingInvoker).start(t.at(150, 20 * Math.sin(150 / 40)), { params: () => ({ tolerance }) });
+    for (let x = 150; x <= 250; x += 5) h.onMove?.(t.at(x, 20 * Math.sin(x / 40)));
+    const loose = anchorsOf(h.previewPose?.('p1')).length;
+    tolerance = 0.01;
+    h.onMove?.(t.at(200, 20 * Math.sin(200 / 40)));
+    const shown = anchorsOf(h.previewPose?.('p1')).length;
+    expect(shown).toBeGreaterThan(loose);
+    h.onEnd?.(t.at(200, 0), 'commit');
+    expect(anchorsOf(t.commits[0]!.path)).toHaveLength(shown);
+  });
+
   it('previews the refit while the brush is down, and commits nothing on cancel', () => {
     const { commits, at } = setup();
     const h = start(at(100, 0), { radiusPx: 60, tolerance: 0.5 });

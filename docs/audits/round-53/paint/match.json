@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   1,
+   3
+  ],
+  [
+   3,
+   4
+  ]
+ ],
+ "a": [
+  "`paintWithColor` multiplies a non-hex color's alpha into the old opacity, where its doc says the color's alpha wins",
+  "`parsesAsColor` without `CSS.supports` rejects most of the named colors `parseColor` reads",
+  "`strokeHasInk` / `strokeKey` report ink for a stroke whose dash is non-finite, which draws nothing",
+  "`lerpPaint` turns a conic gradient's start angle the long way round",
+  "`sampleResolvedStops` returns the earlier of two coincident stops at their shared offset, while its comment says the later one wins",
+  "`lerpStroke` drops `vertexWidths` and `vertexColors` from both sides, even where its doc says other fields are the nearer side's"
+ ],
+ "b": [
+  "lerpPaint turns a fully transparent solid black, even at t = 0 and t = 1",
+  "colorLiteralToHex answers null for `hsl` (and `srgb-linear`) literals the package can convert, so paletteColorAt falls back to white",
+  "parsesAsColor's fallback accepts multi-value strings that start with a color function",
+  "parsesAsColor's fallback knows 20 named colors where parseColor beside it reads all 148",
+  "lerpGradient blends a conic gradient's angle linearly, spinning the long way across ±π"
+ ]
+}

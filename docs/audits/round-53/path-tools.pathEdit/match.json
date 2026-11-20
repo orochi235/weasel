@@ -1,0 +1,32 @@
+{
+ "pairs": [
+  [
+   2,
+   3
+  ],
+  [
+   4,
+   0
+  ],
+  [
+   5,
+   2
+  ]
+ ],
+ "a": [
+  "An anchor drag released where it was pressed commits an \"Edit anchors\" undo step that changes nothing",
+  "Symmetry detection uses an absolute 1e-3 tolerance, so float32 rounding breaks it far from the origin",
+  "A replacing marquee over no anchors leaves the selected extension mark selected, unlike a bare click",
+  "Canceling a marquee restores the anchor selection but not the extension mark it cleared",
+  "insertPathAnchor selects the \"inserted\" index even when the commit was refused",
+  "setAnchorField stays enabled where its run does nothing",
+  "A Shift-press that deselects the pressed anchor still runs a snap session for a drag that moves nothing"
+ ],
+ "b": [
+  "insertPathAnchor selects an anchor even when the insert was not committed",
+  "cutPathAtAnchor is enabled for clicks that cut nothing",
+  "setAnchorField stays enabled when the entry would change nothing",
+  "A marquee that catches no anchors leaves the selected extension mark selected",
+  "Anchor drag and segment bend handle a frame no extension can finish in opposite ways, and the anchor drag finishes its commit twice"
+ ]
+}

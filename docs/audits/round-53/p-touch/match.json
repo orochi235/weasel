@@ -1,0 +1,29 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ],
+  [
+   4,
+   4
+  ]
+ ],
+ "a": [
+  "A text node that doesn't wrap is written with `autoLF` on, so P-touch wraps lines the canvas draws as one",
+  "RTL text under the default `direction: 'auto'`, or `style.direction: 'rtl'`, gets `start`/`end` mapped as if it were LTR",
+  "A run's `fontFeatures` (small caps drawn with the face's `smcp`) is dropped without notice",
+  "A polyline's `join` and `miterLimit` are ignored when it becomes a `draw:poly`",
+  "A rect stroke with `miterLimit` below √2 is written with square corners, but the canvas bevels them",
+  "`cap: 'square'` and `cap: 'butt'` both map to the same `SQUARE` arrow, so a square cap loses its overhang",
+  "`renderLabel` with `background: undefined` loses its white default"
+ ],
+ "b": [
+  "A text box aligned `start`/`end` is written LEFT/RIGHT whatever the resolved direction, so RTL text flips sides",
+  "A text box's `style.lineHeight` is dropped: multi-line text is written with P-touch's default line spacing",
+  "A text command with both `width` and `maxWidth` wraps at a different width in the file than on the canvas",
+  "A carrier under a mirrored rect clip is skipped although the clip is an axis-aligned rect",
+  "A stroked rect with `miterLimit` below √2 is written with sharp corners the canvas bevels",
+  "Raster content is cropped to the label's length while native objects past it are written whole"
+ ]
+}

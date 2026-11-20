@@ -163,6 +163,33 @@ describe('areaSelectAnchors', () => {
     expect(dep.marquee).toBeNull();
   });
 
+  it('replaces a selected mark, and gives it back on cancel', () => {
+    const mark = { owner: 'x', id: 'm' } as never;
+    const withMark = () => {
+      const { dep } = depOverPath(triangle());
+      let selectedMark: unknown = mark;
+      Object.defineProperty(dep, 'selectedMark', { get: () => selectedMark });
+      const setAnchors = dep.setSelectedAnchors.bind(dep);
+      // As core's dep: a non-empty anchor selection clears the mark, and a mark clears the anchors.
+      Object.assign(dep, {
+        setSelectedAnchors: (next: Iterable<number>) => { const set = new Set(next); if (set.size > 0) selectedMark = null; setAnchors(set); },
+        setSelectedMark: (next: unknown) => { if (next) setAnchors([]); selectedMark = next; },
+      });
+      return dep as typeof dep & { selectedMark: unknown };
+    };
+    const sweep = (dep: ReturnType<typeof withMark>, to: { x: number; y: number }, reason: 'commit' | 'cancel') => {
+      const handle = ongoing(areaSelectAnchorsAction).start(ctxWith({ editAnchors: dep }, { world: { x: -1, y: -1 } }), undefined);
+      handle.onMove?.(ctxWith({ editAnchors: dep }, { world: to }));
+      handle.onEnd?.(ctxWith({ editAnchors: dep }), reason);
+    };
+    const empty = withMark();
+    sweep(empty, { x: -5, y: -5 }, 'commit');
+    expect(empty.selectedMark).toBeNull();
+    const canceled = withMark();
+    sweep(canceled, { x: 11, y: 1 }, 'cancel');
+    expect(canceled.selectedMark).toBe(mark);
+  });
+
   it('adds to the existing selection when shift is held', () => {
     const { dep } = depOverPath(triangle(), [2]);
     const handle = ongoing(areaSelectAnchorsAction).start(
@@ -261,6 +288,14 @@ describe('enabled gates (the non-modal fall-through)', () => {
     const { dep } = depOverPath(triangle(), []);
     expect(cutPathAtAnchorAction.enabled?.(dep2(dep))).toBe(true);
     expect(cutPathAtAnchorAction.enabled?.(dep2(makeEditAnchorsDep({ editingId: '' })))).not.toBe(true);
+  });
+
+  it('cutPathAtAnchor is off where its click would cut nothing', () => {
+    const { dep } = depOverPath(triangle(), []);
+    expect(cutPathAtAnchorAction.enabled?.(dep2(dep), { x: 10, y: 0 })).toBe(true);
+    expect(cutPathAtAnchorAction.enabled?.(dep2(dep), { x: 500, y: 500 })).toBe(ActionDisabledReason.NotApplicable);
+    const open = new PathBuilder().moveTo(0, 0).lineTo(10, 0).lineTo(10, 10).build();
+    expect(cutPathAtAnchorAction.enabled?.(dep2(depOverPath(open).dep), { x: 10, y: 0 })).toBe(ActionDisabledReason.NotApplicable);
   });
 });
 

@@ -1,5 +1,5 @@
 /** The pen finishing a path by joining it onto another open subpath's end. */
-import { commitOps, resolveEditablePathOf, type Op } from '@weasel-js/core';
+import { commitOps, type Op } from '@weasel-js/core';
 import type { ActionDeps } from '@weasel-js/routing';
 import { anchorsToPath, boundsOfPath, editAnchorSetTracked, pathToAnchors, reverseAnchors, type PathAnchorHit, type PolygonPath } from '@weasel-js/geom';
 import type { PenCommitSettings } from './penCommit';
@@ -38,8 +38,7 @@ export function commitJoin(
   const current = s.current!;
   const { anchors: added, closed: addedClosed } = pathToAnchors(buildPath([...s.finishedSubpaths, current], null));
 
-  const other = (resolveEditablePathOf(scene?.get(hit.id as never)) ?? edit.getEditablePath(hit.id)) as PolygonPath;
-  const otherSet = pathToAnchors(other);
+  const otherSet = pathToAnchors(edit.getEditablePath(hit.id) as PolygonPath);
   const tail = hit.end === 'last' ? reverseAnchors(otherSet.anchors[hit.sub]) : otherSet.anchors[hit.sub];
   const joined = added[added.length - 1];
   const joint = joined[joined.length - 1];

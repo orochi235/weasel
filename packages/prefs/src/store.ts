@@ -163,7 +163,8 @@ export function createPrefsStore<S extends PrefGroup>(
     warned = true;
     console.warn(`[prefs] write to a closed store${path === undefined ? '' : ` at "${path}"`}; it will not persist`);
   };
-  const writes = prefWrites({ leaves, cache, selectors: source.selectors, admitted: source.admitted!, version, selection: () => current().selection, warnIfClosed });
+  const writes = prefWrites({ leaves, cache, selectors: source.selectors, admitted: source.admitted!, version, selection: () => current().selection,
+    autoHeld: (path) => (current().auto.has(path) ? { held: current().held.get(path) } : undefined), warnIfClosed });
   return {
     schema,
     ...writes,

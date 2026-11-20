@@ -1,0 +1,52 @@
+{
+ "id": "minimap",
+ "commit": "830b463cc110fc3f5182a03383bb1d182067d8e3",
+ "date": "2026-11-20",
+ "files": [
+  "packages/minimap/src/MinimapCanvas.tsx",
+  "packages/minimap/src/actionParamSchema.ts",
+  "packages/minimap/src/actions.ts",
+  "packages/minimap/src/createMinimapContribution.ts",
+  "packages/minimap/src/index.ts",
+  "packages/minimap/src/layers.ts",
+  "packages/minimap/src/minimapMath.ts",
+  "packages/minimap/src/pbt.fixture.ts",
+  "packages/minimap/src/useFitView.ts",
+  "packages/minimap/src/useMinimapInput.ts"
+ ],
+ "a": 4,
+ "b": 3,
+ "m": 2,
+ "distinct": 5,
+ "chapman": 5.7,
+ "unfound": 0.7,
+ "read": {
+  "A": 10,
+  "B": 10
+ },
+ "patches": 5,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.8,
+   "B": 2.8,
+   "match": 0.2,
+   "fix": 11.7
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1663632,
+  "costUsd": 4.83
+ },
+ "fixCommits": [
+  "ccc7513216c1989cdf583de5471238c68d5e1569",
+  "59944c19b81a132683195a006818ef11666e95bb",
+  "99f3aa61ea1ad42cbd4f97ee1f8a1254be33e844",
+  "46fd1b3b35225f334684f40c1090e676230b47d1",
+  "879bde028a91c25839ab7615241c51fb4058d89c"
+ ]
+}

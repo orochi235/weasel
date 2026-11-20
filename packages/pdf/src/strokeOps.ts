@@ -67,7 +67,8 @@ function writeNative(ctx: PageCtx, path: Path, stroke: CommandStroke, state: Dra
   const insets = strokeInsets(stroke as Stroke, width);
   for (const run of trimmedRuns(cut, { dashed: stroke.dash !== undefined, byClosed: true })) {
     const shaft = run.fromClosed ? run.path : shaftOf(run.path, insets.start, insets.end);
-    if (!shaft) continue;
+    // PDF has no painting operator for no path.
+    if (!shaft || (shaft.kind === 'polygon' && shaft.commands.length === 0)) continue;
     strokeStyleOps(ctx, stroke, width, length, run.dashPhase);
     pathOps(out, shaft, 'all');
     out.op('S');

@@ -22,10 +22,11 @@ const NOT_VITEST = [
   ['tests/e2e/', 'playwright — npm run test:e2e:demos (helpers/ are vitest and stay in scope)'],
   ['tests/perf/', 'playwright — npm run test:perf; vitest bench — npm run perf:bench (lib/ is vitest and stays in scope)'],
   ['apps/draw/tests-e2e/', 'playwright — npm run test:e2e:draw'],
+  ['apps/forge/a11y.', 'the browser project with WEASEL_A11Y=1 — npm run test:a11y (a11y.shards is vitest and stays in scope)'],
 ];
 
 /** Vitest directories inside a NOT_VITEST suite. */
-const VITEST_WITHIN = ['tests/e2e/helpers/', 'tests/perf/lib/'];
+const VITEST_WITHIN = ['tests/e2e/helpers/', 'tests/perf/lib/', 'apps/forge/a11y.shards'];
 
 const isVitestFile = (path) => {
   if (!/\.(test|spec)\.(ts|tsx|mts|mjs|js)$/.test(path)) return false;

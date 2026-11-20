@@ -154,7 +154,7 @@ async function isolatedGroup(ctx: PageCtx, cmd: GroupDrawCommand, state: DrawSta
   const { out } = ctx;
   out.op('q');
   out.op('cm', ...mat3.toAffine(fromPage));
-  if (inner.alpha < 1) out.op('gs', `/${ctx.resources.extGState(inner.alpha, inner.alpha)}`);
+  if (!(inner.alpha >= 1)) out.op('gs', `/${ctx.resources.extGState(inner.alpha, inner.alpha)}`);
   out.op('Do', `/${ctx.resources.xobject(form)}`);
   out.op('Q');
 }

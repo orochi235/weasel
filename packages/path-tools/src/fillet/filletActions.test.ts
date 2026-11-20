@@ -71,6 +71,15 @@ describe('editFilletAction', () => {
     expect(cornerAt(edits[0], 1)!.radius).toBeCloseTo(100, 4);
   });
 
+  it('shares an edge two selected corners both cut, so each stores the radius drawn', () => {
+    const { dep, edits } = editing(square(), [1, 2]);
+    const { handle, ctx } = start(dep, 'fillet:1', { x: 90, y: 10 });
+    handle.onMove!({ ...ctx, world: { x: -500, y: 600 } });
+    handle.onEnd!(ctx, 'commit');
+    expect(cornerAt(edits[0], 1)!.radius).toBeCloseTo(50, 4);
+    expect(cornerAt(edits[0], 2)!.radius).toBeCloseTo(50, 4);
+  });
+
   it('gives every selected corner the radius when a selected widget is pressed', () => {
     const { dep, edits } = editing(square(), [1, 2]);
     const { handle, ctx } = start(dep, 'fillet:1', { x: 90, y: 10 });
@@ -144,6 +153,15 @@ describe('setFilletsAction', () => {
     expect(cornerSpecAt(edits[0], 0)).toEqual({ shape: 'scoop', radius: 100 });
     expect(cornerSpecAt(edits[0], 2)).toEqual({ shape: 'scoop', radius: 100 });
     expect(cornerSpecAt(edits[0], 1)).toBeNull();
+  });
+
+  it('clamps adjacent selected corners against each other\'s new radius, and a corner left alone against its own', () => {
+    const { dep, edits } = editing(withCorner(square(), 2, { shape: 'round', radius: 30 }), [0, 1]);
+    run(dep, { radius: 80 });
+    // Corner 1 has 70 beside corner 2's 30; the two then split their 100-unit edge 80 : 70.
+    expect(cornerSpecAt(edits[0], 0)!.radius).toBeCloseTo(160 / 3, 6);
+    expect(cornerSpecAt(edits[0], 1)!.radius).toBeCloseTo(140 / 3, 6);
+    expect(cornerSpecAt(edits[0], 2)).toEqual({ shape: 'round', radius: 30 });
   });
 
   it('gives a bare corner a visible radius with its shape, unless the call names one', () => {

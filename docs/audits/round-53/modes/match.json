@@ -1,0 +1,16 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "`isShippedTag` narrows to `CapabilityTag`, which every string already is, so its true branch gains nothing and its false branch narrows to `never`",
+  "The preset `ModeDefinition`s are shared mutable module objects, and a registry plus `createActiveModeReader` cache them without noticing changes"
+ ],
+ "b": [
+  "`isShippedTag`'s type guard narrows a non-shipped string to `never`",
+  "PATH_EDIT's doc says it starts on \"core's `anchors` tool\", but that tool lives in path-tools"
+ ]
+}

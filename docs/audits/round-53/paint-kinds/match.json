@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   1,
+   2
+  ],
+  [
+   2,
+   0
+  ]
+ ],
+ "a": [
+  "`nativeSvgKind('texture')` reports a native SVG form, so a texture fill exports as a bare dangling `url(#id)` with no fallback",
+  "A white seed color written as `#fff`, `white` or `rgb(255,255,255)` seeds an invisible white-to-white gradient",
+  "A lazily loaded kind that fails `registerPaintKind`'s validation is dropped silently and never retried",
+  "`withPaintKind` skips a registered override of a built-in gradient kind",
+  "A gradient's `colorOf` reads `stops[0]` by array position, not by lowest offset"
+ ],
+ "b": [
+  "A lazily loaded kind that fails `registerPaintKind`'s stopsOf/fromStops check never registers and logs nothing",
+  "`getPaintKind` reads its own registry but decides whether to load from the renderer's, so the two can disagree and the editor half never loads",
+  "A gradient seeded from white written as anything other than `#ffffff…` ramps white to white",
+  "`meshGradientKind`'s doc names a module `./registerMesh` that does not exist"
+ ]
+}

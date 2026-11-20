@@ -64,4 +64,16 @@ describe('DEFAULT_MODES display', () => {
       'Normal', 'Path Edit', 'Free Transform', 'Text Edit', 'Crop',
     ]);
   });
+
+  it('the shipped modes are frozen through, so customizing one copies it', () => {
+    expect(Object.isFrozen(DEFAULT_MODES)).toBe(true);
+    for (const m of DEFAULT_MODES) {
+      expect(Object.isFrozen(m), m.id).toBe(true);
+      expect(Object.isFrozen(m.allows), m.id).toBe(true);
+      for (const part of [m.workspace, m.entry, m.entry?.targets, m.exit, m.discard, m.discard?.shortcut]) {
+        if (part !== undefined && typeof part === 'object') expect(Object.isFrozen(part), m.id).toBe(true);
+      }
+    }
+    expect(() => defaultModeById('normal').allows.push('edits-text')).toThrow(TypeError);
+  });
 });

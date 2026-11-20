@@ -70,16 +70,17 @@ export function createPathEditHost(opts: PathEditHostOptions = {}): PathEditStor
       return open !== null && (editable?.(open) ?? true) ? open : null;
     },
     setEditingId(next) {
-      if (target) {
-        if (next !== null) target.open(next);
-        else if (inMode()) target.close();
-        return;
-      }
       const wasOpen = inMode();
       const was = modes?.current().id;
-      id = next;
-      if (modes && next) modes.setMode(mode);
-      else if (modes && wasOpen) modes.setMode(exitMode);
+      if (target) {
+        if (next !== null) target.open(next);
+        else if (wasOpen) target.close();
+        else return;
+      } else {
+        id = next;
+        if (modes && next) modes.setMode(mode);
+        else if (modes && wasOpen) modes.setMode(exitMode);
+      }
       // A mode switch has told every subscriber already.
       if (modes?.current().id === was) changed.emit();
     },

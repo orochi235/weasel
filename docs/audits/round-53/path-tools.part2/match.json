@@ -1,0 +1,28 @@
+{
+ "pairs": [
+  [
+   2,
+   0
+  ],
+  [
+   4,
+   3
+  ]
+ ],
+ "a": [
+  "createOutlines / outlineStroke are enabled from `operands` but convert the adapter's selection",
+  "withOutlines leaves an unhandled rejection and no notice when an outline's load() rejects",
+  "Set Path / Set Spine / Release Spine leave a stale `foundHidden` entry, so a retargeted visible source is hidden for good",
+  "Shape Builder is enabled from `operands` but plans and commits on the booleans adapter's selection",
+  "The \"Make segments straight/curved\" variants stay enabled when they would change nothing",
+  "Sand's preview ignores a tolerance change mid-stroke that its commit applies",
+  "withOutlines' retry runs the adapter through an `Object.create` wrapper, which breaks an adapter class using private fields"
+ ],
+ "b": [
+  "Retargeting a source slot leaves a stale `foundHidden` index, so the new source is never shown again on release",
+  "Reach outside path edit drops the tracked origins, so a path's per-anchor widths and colors are lost when an end grows new segments",
+  "Shape Builder's plan cache ignores stacking order, so a reorder between hover and commit builds from stale sources",
+  "`convertSegments`' enabled check ignores the variant's `to`, so \"Make segments straight\" is enabled on already-straight segments and does nothing",
+  "A node deleted while Create Outlines / Outline Stroke waits for a face stays in the selection the retry sets"
+ ]
+}

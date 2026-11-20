@@ -28,7 +28,10 @@ function makeAdapter(paints: Record<string, PathPaint>, ids = Object.keys(paints
   return { adapter, created };
 }
 
-const selectionOf = (ids: string[]) => ({ get: () => ids.map(asNodeId) });
+const selectionOf = (ids: string[]) => {
+  let held = ids.map(asNodeId);
+  return { get: () => held, set: (next: readonly string[]) => { held = next.map(asNodeId); } };
+};
 
 describe('outlineStrokeAction', () => {
   it('declares every dep it reads', () => {

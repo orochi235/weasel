@@ -44,4 +44,9 @@ describe('packet structure', () => {
     expect(() => setPacketBitsPerRow(P, 0)).toThrow(/at least 1/);
     compiles(setPacketBitsPerRow(P, 16));
   });
+
+  it('refuses a field inserted over the one before it', () => {
+    expect(() => insertPacketField(P, 1, { start: 2, end: 5, label: 'x' })).toThrow(/insertPacketField/);
+    expect(bits(insertPacketField(P, 1, { start: 8, end: 9, label: 'x' }))).toEqual(['a:0-7', 'x:8-9', 'b:10-17', 'c:22-25']);
+  });
 });

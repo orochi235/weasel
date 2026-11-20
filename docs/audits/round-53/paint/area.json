@@ -1,0 +1,79 @@
+{
+ "id": "paint",
+ "commit": "830b463cc110fc3f5182a03383bb1d182067d8e3",
+ "date": "2026-11-20",
+ "files": [
+  "packages/paint/src/alignedStrokeRect.ts",
+  "packages/paint/src/chromaCurve.ts",
+  "packages/paint/src/color.ts",
+  "packages/paint/src/colorSpaces.ts",
+  "packages/paint/src/commandPaint.ts",
+  "packages/paint/src/contrast.ts",
+  "packages/paint/src/cssColor.ts",
+  "packages/paint/src/gradient.ts",
+  "packages/paint/src/hex.ts",
+  "packages/paint/src/hexAlpha.ts",
+  "packages/paint/src/hsl.ts",
+  "packages/paint/src/hue.ts",
+  "packages/paint/src/index.ts",
+  "packages/paint/src/isPaint.ts",
+  "packages/paint/src/lerpPaint.ts",
+  "packages/paint/src/mix.ts",
+  "packages/paint/src/paint.ts",
+  "packages/paint/src/paintDefaults.ts",
+  "packages/paint/src/paintKey.ts",
+  "packages/paint/src/paintPreview.ts",
+  "packages/paint/src/paintValue.ts",
+  "packages/paint/src/palette.ts",
+  "packages/paint/src/patternPaint.ts",
+  "packages/paint/src/patternTransform.ts",
+  "packages/paint/src/pbt.fixture.ts",
+  "packages/paint/src/ramp.ts",
+  "packages/paint/src/resolvePaint.ts",
+  "packages/paint/src/scalar.ts",
+  "packages/paint/src/shortArc.ts",
+  "packages/paint/src/strokeTrim.ts",
+  "packages/paint/src/texture.ts",
+  "packages/paint/src/vertexWidth.ts"
+ ],
+ "a": 6,
+ "b": 5,
+ "m": 2,
+ "distinct": 9,
+ "chapman": 13,
+ "unfound": 4,
+ "read": {
+  "A": 32,
+  "B": 32
+ },
+ "patches": 10,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.3,
+   "B": 3.9,
+   "match": 0.1,
+   "fix": 17
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "weightedTokens": 1670239,
+  "costUsd": 5.1
+ },
+ "fixCommits": [
+  "c1a3072918535c42c3290aef51fc883ea3fb6578",
+  "f95e34253268df790e0143ff10091e86657eee1c",
+  "d6ba47e51e8f69791fa7bb71f386ab46366d82dc",
+  "f4bfab572e61b3cc06a1e73d4db2af55074dd1b8",
+  "d11dc30ff94c972b718db962cee504c778872bae",
+  "09f0c8659e125ead3b5b75aa67edf2c718d4a20c",
+  "481218b66fa046a1db6e879ee5a47655b511b89c",
+  "0d377ec51b64ee28e6e6c92dd7cf8875bea5329a",
+  "435c2487f9506e0cc36478701837cbdea73ab5f4",
+  "1b5478ca7e6399ef5a5b2b10544d5ba2017ea65e"
+ ]
+}

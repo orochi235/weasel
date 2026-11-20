@@ -9,7 +9,7 @@ import {
   type Action, type ActionDeps, ActionDisabledReason, type ActionParamsOf, type ActionVariantOf, defineAction,
   type ImmediateInvoker,
 } from '@weasel-js/routing';
-import { deepEqual } from '@weasel-js/registry';
+import { deepEqual, isFiniteNumber } from '@weasel-js/registry';
 import {
   constraintAnchors,
   pathAnchorPoints,
@@ -65,7 +65,8 @@ function segmentPair(anchors: readonly number[]): readonly [AnchorPair, AnchorPa
  * other two end; each consecutive pair for `horizontal`,
  * `vertical`, `length`, and `coincident`; and for the kinds relating two
  * segments, three anchors as two segments sharing the middle one or four as
- * two pairs. Empty when the anchors cannot make that kind.
+ * two pairs. Empty when the anchors cannot make that kind. A `length` that is
+ * not a finite number at or above zero is ignored for the pair's measured one.
  */
 export function constraintsForAnchors(
   kind: PathConstraintKind,
@@ -88,10 +89,11 @@ export function constraintsForAnchors(
     case 'coincident': return pairsOf(anchors).map((pair) => ({ kind, anchors: pair }));
     case 'length': {
       const points = pathAnchorPoints(path);
+      const given = isFiniteNumber(length) && length >= 0 ? length : undefined;
       return pairsOf(anchors).map((segment) => ({
         kind,
         segment,
-        length: length ?? Math.hypot(points[segment[1]].x - points[segment[0]].x, points[segment[1]].y - points[segment[0]].y),
+        length: given ?? Math.hypot(points[segment[1]].x - points[segment[0]].x, points[segment[1]].y - points[segment[0]].y),
       }));
     }
     default: {
