@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { build as esbuild } from 'esbuild';
-import { build, createServer, type Rollup } from 'vite';
+import { build, createServer, type Plugin, type Rollup } from 'vite';
 import { describe, expect, it } from 'vitest';
 import { weaselIcons, type WeaselIconsOptions } from './index';
 
@@ -9,7 +9,7 @@ const iconsSrc = fileURLToPath(new URL('../../icons/src/index.ts', import.meta.u
 
 async function bundle(
   options: Partial<WeaselIconsOptions> = {},
-  { minify = false, entry = 'main.ts', alias = {} as Record<string, string>, mode = 'production' } = {},
+  { minify = false, entry = 'main.ts', alias = {} as Record<string, string>, mode = 'production', before = [] as Plugin[] } = {},
 ) {
   const out = await build({
     root,
@@ -17,7 +17,7 @@ async function bundle(
     logLevel: 'silent',
     configFile: false,
     resolve: { alias: { '@weasel-js/icons': iconsSrc, ...alias } },
-    plugins: [weaselIcons.vite({ mode: 'app', ...options })],
+    plugins: [...before, weaselIcons.vite({ mode: 'app', ...options })],
     build: { write: false, minify, rollupOptions: { input: `${root}/src/${entry}` } },
   });
   const chunks = (Array.isArray(out) ? out[0]! : (out as Rollup.RollupOutput)).output.filter(
@@ -90,6 +90,16 @@ describe('weaselIcons app mode', () => {
     const { entry } = await bundle({}, { mode: 'test' });
     expect(entry).not.toContain('fx-ring-body');
     await expect(bundle({}, { entry: 'unknown.ts', mode: 'test' })).rejects.toThrow(/icon "lib:nope" is not in/);
+  });
+
+  it('reads a module another plugin compiles to JS, such as a single-file component', async () => {
+    const sfc: Plugin = {
+      name: 'fake-sfc',
+      transform: (code, id) => (id.endsWith('.sfc') ? code.replace(/<\/?script>/g, '') : null),
+    };
+    const { entry } = await bundle({}, { entry: 'sfc.ts', before: [sfc] });
+    expect(entry).toContain('fx-ring-body');
+    expect(entry).not.toContain('fx-dot-body');
   });
 
   it('forgets the previous build when one plugin builds again, as under --watch', async () => {

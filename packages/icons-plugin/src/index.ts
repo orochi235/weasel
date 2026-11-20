@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import MagicString from 'magic-string';
-import { createUnplugin, type UnpluginInstance } from 'unplugin';
+import { createUnplugin, type UnpluginBuildContext, type UnpluginContext, type UnpluginInstance } from 'unplugin';
 import { libraryAnnotations } from './annotate.ts';
 import { assertBundler } from './bundlers.ts';
 import { fail, iconCatalog, tablesFrom } from './catalog.ts';
@@ -58,7 +58,7 @@ function liveModules(ctx: object): Set<string> | undefined {
  * literal. In `app` mode it also emits `virtual:weasel-icons`, holding only the glyphs the build
  * names, plus `/all`, `/<namespace>` and each custom variant, every one its own chunk.
  */
-export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUnplugin((options: WeaselIconsOptions, meta) => {
+export const weaselIcons: UnpluginInstance<WeaselIconsOptions, true> = createUnplugin((options: WeaselIconsOptions, meta) => {
   assertBundler(options.mode, meta.framework);
   const variants = options.variants ?? {};
   for (const name of Object.keys(variants)) {
@@ -91,67 +91,82 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
     if (stripped) fail(this, stripped);
   }
 
-  return {
-    name: 'weasel-icons',
-    enforce: 'pre',
-    transformInclude: (id) => !id.startsWith('\0') && SOURCE.test(id.split('?')[0]!),
-    async transform(code, id) {
-      const file = id.split('?')[0]!;
-      const gens: string[] = [];
-      const found = await genFiles(this, code, file, id);
-      const out = rewriteIconCalls(
-        code,
-        file,
-        (spec) => {
-          const gen = found.get(spec) ?? genFile(spec, file);
-          if (gen) gens.push(gen);
-          return gen && namespaceIn(gen);
-        },
-        (message) => this.warn(message),
-      );
-      if (out && out.dynamic > 0) {
-        this.warn(`${file}: ${out.dynamic} icon() call(s) with a computed name resolve only from a loaded variant`);
-      }
-      const named = collectIconRefs(out?.code ?? code, file);
-      if (!app) {
-        library.record(id, named);
-      } else {
-        const pkg = packageDir(file);
-        if (!dev) {
-          catalog.record(id, { file, gens, pkg, refs: named });
-        } else {
-          const fresh = pkg && !seenPackages.has(pkg) ? [pkg] : [];
-          fresh.forEach((d) => seenPackages.add(d));
-          for (const t of tablesFrom(gens, fresh)) catalog.add(this, t);
-        }
-      }
-      return out ? { code: out.code, map: out.map } : null;
-    },
-    resolveId: (id) => (app && (id === PREFIX || id.startsWith(PREFIX + '/')) ? '\0' + id : null),
-    loadInclude: (id) => variantOf(id) !== undefined,
-    load(id) {
-      const variant = variantOf(id);
-      if (variant === undefined) return null;
-      return dev ? `export default ${JSON.stringify(catalog.variant(this, variant, dev))};` : moduleFor(variant);
-    },
-    buildEnd() {
-      if (dev) return;
-      const live = liveModules(this);
-      if (live) {
-        catalog.keep(live);
-        library.keep(live);
-      }
-      if (app) catalog.settle(this);
-    },
-    vite: {
-      configResolved(config) {
-        dev = config.command === 'serve';
-        if (app && dev) for (const t of reachableTables(config.root)) catalog.add(this, t);
+  async function transform(this: UnpluginBuildContext & UnpluginContext, code: string, id: string) {
+    const file = id.split('?')[0]!;
+    const gens: string[] = [];
+    const found = await genFiles(this, code, file, id);
+    const out = rewriteIconCalls(
+      code,
+      file,
+      (spec) => {
+        const gen = found.get(spec) ?? genFile(spec, file);
+        if (gen) gens.push(gen);
+        return gen && namespaceIn(gen);
       },
-      renderChunk: lastRenderChunk,
-      generateBundle,
+      (message) => this.warn(message),
+    );
+    if (out && out.dynamic > 0) {
+      this.warn(`${file}: ${out.dynamic} icon() call(s) with a computed name resolve only from a loaded variant`);
+    }
+    const named = collectIconRefs(out?.code ?? code, file);
+    if (!app) {
+      library.record(id, named);
+    } else {
+      const pkg = packageDir(file);
+      if (!dev) {
+        catalog.record(id, { file, gens, pkg, refs: named });
+      } else {
+        const fresh = pkg && !seenPackages.has(pkg) ? [pkg] : [];
+        fresh.forEach((d) => seenPackages.add(d));
+        for (const t of tablesFrom(gens, fresh)) catalog.add(this, t);
+      }
+    }
+    return out ? { code: out.code, map: out.map } : null;
+  }
+
+  // A module another plugin compiles to JS, such as a single-file component, is read once that is done.
+  const compiled = {
+    name: 'weasel-icons:compiled',
+    enforce: 'post' as const,
+    transformInclude: (id: string) => !id.startsWith('\0') && !SOURCE.test(id.split('?')[0]!),
+    transform(this: UnpluginBuildContext & UnpluginContext, code: string, id: string) {
+      return code.includes('icons.gen') || code.includes('@icon') ? transform.call(this, code, id) : null;
     },
-    rollup: { renderChunk: lastRenderChunk, generateBundle },
-    rolldown: { renderChunk: lastRenderChunk, generateBundle },
   };
+
+  return [
+    {
+      name: 'weasel-icons',
+      enforce: 'pre',
+      transformInclude: (id) => !id.startsWith('\0') && SOURCE.test(id.split('?')[0]!),
+      transform,
+      resolveId: (id) => (app && (id === PREFIX || id.startsWith(PREFIX + '/')) ? '\0' + id : null),
+      loadInclude: (id) => variantOf(id) !== undefined,
+      load(id) {
+        const variant = variantOf(id);
+        if (variant === undefined) return null;
+        return dev ? `export default ${JSON.stringify(catalog.variant(this, variant, dev))};` : moduleFor(variant);
+      },
+      buildEnd() {
+        if (dev) return;
+        const live = liveModules(this);
+        if (live) {
+          catalog.keep(live);
+          library.keep(live);
+        }
+        if (app) catalog.settle(this);
+      },
+      vite: {
+        configResolved(config) {
+          dev = config.command === 'serve';
+          if (app && dev) for (const t of reachableTables(config.root)) catalog.add(this, t);
+        },
+        renderChunk: lastRenderChunk,
+        generateBundle,
+      },
+      rollup: { renderChunk: lastRenderChunk, generateBundle },
+      rolldown: { renderChunk: lastRenderChunk, generateBundle },
+    },
+    compiled,
+  ];
 });
