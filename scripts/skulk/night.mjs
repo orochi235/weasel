@@ -19,7 +19,7 @@ import { batchAndTest, patchAreas, patchSweep } from './land.mjs';
 import { waitForLease } from './lease.mjs';
 import { partitionAt } from './partition.mjs';
 import { AUDITS_DIR, HARDENING, areasInFlight, gitTouched, nextRound, pickAreas, readPasses } from './rounds.mjs';
-import { claimRound, claimedRounds, clearStatus, liveRuns, planLock, pruneRuns, readJson, runDir, stopRequested, writeStatus, writeSummary } from './runs.mjs';
+import { claimRound, claimedRounds, clearStatus, clearStop, liveRuns, planLock, pruneRuns, readJson, runDir, stopRequested, writeStatus, writeSummary } from './runs.mjs';
 import { SWEEP_ID, fixSweep, runControlSweep, sweepLine } from './sweep.mjs';
 import { mayStartArea } from './usage.mjs';
 
@@ -259,7 +259,8 @@ const resume = (root, args, say) => {
   const byId = new Map(partitionAt(root, commit).map((a) => [a.id, a]));
   // An area the stopped run already merged is done; the rest run again, reusing what came home.
   const landed = new Set((prior.areas ?? []).flatMap((a) => (typeof a === 'object' && /^`[^`]+`$/.test(a.outcome ?? '') ? [a.id] : [])));
-  const ids = (prior.areas ?? []).map((a) => (typeof a === 'string' ? a : a.id)).filter((id) => !landed.has(id));
+  const ids = (prior.planned ?? prior.areas ?? []).map((a) => (typeof a === 'string' ? a : a.id)).filter((id) => !landed.has(id));
+  clearStop(round);
   const p = { commit, round, picked: ids.flatMap((id) => (byId.has(id) ? [byId.get(id)] : [])), passes: readPasses(root), running: liveRuns() };
   const started = new Date(prior.started);
   const status = { round, commit, started: prior.started, resumed: new Date().toISOString(), step: 'freeze', areas: ids, nightDir: prior.nightDir, tokens: 0, costUsd: 0, capUsd: args.capUsd, args };
@@ -318,7 +319,7 @@ export const runNight = async (argv = process.argv.slice(2), say = (line) => con
   } finally {
     if (frozen) removeWorktree(root, frozen);
     writeSummary(p.round, {
-      round: p.round, commit: p.commit, started: status.started, ended: new Date().toISOString(), nightDir: status.nightDir, report,
+      round: p.round, commit: p.commit, started: status.started, ended: new Date().toISOString(), nightDir: status.nightDir, report, planned: status.areas,
       tokens: status.tokens, costUsd: status.costUsd, capUsd: args.capUsd, sweep: sweepSummary(sweep, outcomes),
       areas: results.map((s) => ({ id: s.id, a: s.a, b: s.b, m: s.m, distinct: s.distinct, chapman: s.chapman, patches: s.patches, outcome: outcomes[s.id], minutes: s.jobs.minutes, tokens: s.jobs.tokens, costUsd: s.jobs.costUsd, budgetHit: s.budgetHit })),
     });
