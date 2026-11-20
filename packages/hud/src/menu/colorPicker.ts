@@ -13,6 +13,9 @@ export interface HudColorPickers {
   entries: MenuEntry[];
   /** The color drawn in `e`'s icon column: a picker's current color, or a swatch's own. */
   swatchOf(e: MenuEntry): string | undefined;
+  /** Whether `e` is a picker's hex row, whose text the menu must not hold: it reads the picker's color as its
+   *  `value`, and what is typed goes straight to its `set`. */
+  unheld(e: MenuEntry): boolean;
 }
 
 /** `text` as the `#rrggbb` (or with `alpha`, `#rrggbbaa`) a color row writes, or undefined when it is no hex color.
@@ -35,6 +38,7 @@ export function withColorPickers(
   entries: readonly MenuEntry[], palette: readonly string[], c: () => Pick<MenuController, 'colorValue' | 'setColor'>,
 ): HudColorPickers {
   const swatches = new Map<MenuEntry, () => string | undefined>();
+  const hexes = new Set<MenuEntry>();
   const picker = (e: MenuColorEntry): MenuEntry => {
     const now = () => c().colorValue(e);
     const alpha = e.alpha === true;
@@ -61,6 +65,7 @@ export function withColorPickers(
         if (value !== undefined) c().setColor(e, value);
       },
     };
+    hexes.add(hex);
     const sub: MenuEntry = {
       kind: 'submenu', key: e.key, label: e.label, ...(e.access ? { access: e.access } : {}),
       entries: [...rows, { kind: 'separator', key: `${e.key}/|` }, hex],
@@ -74,5 +79,5 @@ export function withColorPickers(
     return e;
   });
   const out = walk(entries);
-  return { entries: out, swatchOf: (e) => swatches.get(e)?.() };
+  return { entries: out, swatchOf: (e) => swatches.get(e)?.(), unheld: (e) => hexes.has(e) };
 }

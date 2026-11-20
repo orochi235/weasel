@@ -129,4 +129,23 @@ describe('createMenuWidget: a color row', () => {
     expect(close).not.toHaveBeenCalled();
     expect(w.accessibleTree!.read().children![0]).toMatchObject({ label: 'Fill: #ff0000' });
   });
+
+  it('shows and edits from the color the picker holds in its hex row, and writes the same text typed twice', () => {
+    const row = fill('#336699');
+    const { w, type } = widget([row]);
+    const retype = ['End', 'Enter', 'Backspace', 'Backspace', 'Backspace', 'Backspace', 'Backspace', 'Backspace', 'f', '0', '0', 'Enter'];
+    type(['ArrowDown', 'ArrowRight', ...retype]);
+    type(['ArrowUp', 'Enter']);
+    expect(row.set).toHaveBeenLastCalledWith('#1e88e5');
+    const hexRow = () => w.accessibleTree!.read().children![0]!.children![0]!.children![3]!;
+    expect(hexRow().label).toBe('Hex: #1e88e5');
+    type(['End', 'Enter']);
+    expect(JSON.stringify((w.draw(ctx) as DrawCommand[]).filter((c) => c.kind === 'text'))).toContain('#1e88e5');
+    type(['Escape']);
+    type(retype);
+    expect(row.set).toHaveBeenLastCalledWith('#ff0000');
+    expect(row.set).toHaveBeenCalledTimes(3);
+    type(['End', 'Enter', 'z', 'Enter']);
+    expect(hexRow().label).toBe('Hex: #ff0000');
+  });
 });

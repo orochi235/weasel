@@ -117,6 +117,11 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   const c = createMenuController({
     entries: pickers.entries, highlightFirst: opts.open.source === 'keyboard', onClose: opts.close,
   });
+  // A picker's hex row reads and writes the picker's color, so the controller never holds its text.
+  const texts: Pick<MenuController, 'textValue' | 'setText'> = {
+    textValue: (e) => (pickers.unheld(e) ? e.value : c.textValue(e)),
+    setText: (e, text) => { if (pickers.unheld(e)) e.set?.(text); else c.setText(e, text); },
+  };
   const place = createPlacer({
     anchor: opts.toCanvas(opts.open.client),
     ...(opts.open.under ? { under: underOnCanvas(opts.open.under, opts.toCanvas) } : {}),
@@ -132,7 +137,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   let disposed = false;
   let armed = false;
   let hoverPanel: number | null = null;
-  const typing = createTextEditor(c, rev.changed);
+  const typing = createTextEditor(texts, rev.changed);
   const chips = createChipHold(c, (x, y) => chipUnder(c, panels, metricsIn(tokens), x, y), opts.repeat);
   c.subscribe(() => { replace(); rev.changed(); });
 
@@ -176,7 +181,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     }
   };
 
-  const accessibleTree: HudAccessibleTree = { read: () => accessibleMenu(c, pickers.swatchOf, locale), subscribe: c.subscribe };
+  const accessibleTree: HudAccessibleTree = { read: () => accessibleMenu({ ...c, ...texts }, pickers.swatchOf, locale), subscribe: c.subscribe };
 
   return {
     id: `weasel-menu-${opts.open.seq}`,
@@ -197,7 +202,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
       tokens = ctx.tokens;
       replace();
       const values = {
-        number: c.numberValue, text: c.textValue, editing: typing.current(), swatch: pickers.swatchOf,
+        number: c.numberValue, text: texts.textValue, editing: typing.current(), swatch: pickers.swatchOf,
         measure, locale,
       };
       return placed.flatMap(({ rect, layout }, level) =>
