@@ -33,16 +33,18 @@ export function inkExtentsBetween(inner: Bounds, outer: Bounds): InkExtents {
  * `box` grown by `e` in its own frame, still drawn in that frame: the
  * rotation and `transform` ride along. They turn a box about its own center,
  * so a box grown unevenly is moved until its center lands where the frame put
- * that point of the original.
+ * that point of the original. A flipped box (negative width or height) keeps
+ * its flip and grows outward too, `left` on its lesser-x side.
  */
 export function outsetBox(box: Bounds, e: InkExtents): Bounds {
   if (isNoInkExtents(e)) return box;
+  // A flipped box spans [x + width, x], so its far side is the one `x` names.
   const grown = {
     ...box,
-    x: box.x - e.left,
-    y: box.y - e.top,
-    width: box.width + e.left + e.right,
-    height: box.height + e.top + e.bottom,
+    x: box.width < 0 ? box.x + e.right : box.x - e.left,
+    y: box.height < 0 ? box.y + e.bottom : box.y - e.top,
+    width: box.width < 0 ? box.width - e.left - e.right : box.width + e.left + e.right,
+    height: box.height < 0 ? box.height - e.top - e.bottom : box.height + e.top + e.bottom,
   };
   const xf = targetTransformOf(box);
   if (xf.identity || (e.left === e.right && e.top === e.bottom)) return grown;
@@ -51,7 +53,7 @@ export function outsetBox(box: Bounds, e: InkExtents): Bounds {
 }
 
 /** `box` with `e` taken back off: the inverse of {@link outsetBox}, frame
- *  included. A box narrower than its extents comes out flipped. */
+ *  and flip included. A box narrower than its extents comes out flipped. */
 export function insetBox(box: Bounds, e: InkExtents): Bounds {
   return outsetBox(box, { left: -e.left, top: -e.top, right: -e.right, bottom: -e.bottom });
 }
