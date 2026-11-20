@@ -5,6 +5,7 @@ import { commitTransformOps } from '@weasel-js/core/engine';
 import { moveNodesOps, recordTransform, type RepeatableTransform } from '@weasel-js/core';
 import { resizeSelectionOps } from '../resize/replay';
 import { rotateSelectionOps } from '../rotate/replay';
+import { writesLocked } from '../lockedWrites';
 
 /** A move, rotate or resize the selection can be given: a {@link RepeatableTransform} other than a duplicate. */
 export type SelectionTransform = Exclude<RepeatableTransform, { kind: 'duplicate' }>;
@@ -36,7 +37,8 @@ export function transformSelection(deps: ActionDeps, t: SelectionTransform, labe
   const { scene, operands } = deps;
   if (!scene || !operands) return false;
   const selected = [...operands.get()] as string[];
-  if (!commitTransformOps(deps, selectionTransformOps(deps, scene, selected, t, label), label)) return false;
+  const ops = selectionTransformOps(deps, scene, selected, t, label);
+  if (writesLocked(scene, ops) || !commitTransformOps(deps, ops, label)) return false;
   recordTransform(scene, t, selected);
   return true;
 }

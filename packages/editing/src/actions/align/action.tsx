@@ -11,6 +11,7 @@ import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import type { AlignParams } from '../../actionParamSchema';
 import { icon } from '../../icons.gen';
 import { ALIGN_GROUP } from '../../actionGroups';
+import { opsAnswer, writesLocked } from '../lockedWrites';
 const ID_FOR = {
   'left': 'align.left',
   'right': 'align.right',
@@ -91,14 +92,15 @@ function makeAlignAction(edge: AlignEdge): Action {
         const selection = deps.operands;
         const scene = deps.scene;
         if (!selection || !scene) return;
-        commitTransformOps(deps, alignOps(deps, selection, scene, edge, params), 'Align');
+        const ops = alignOps(deps, selection, scene, edge, params);
+        if (!writesLocked(scene, ops)) commitTransformOps(deps, ops, 'Align');
       },
     },
     enabled: (deps, _at, _carried, params) => {
       const selection = deps?.operands;
       const scene = deps?.scene;
       if (!selection || !scene || selection.get().length === 0) return ActionDisabledReason.SelectionRequired;
-      return alignOps(deps, selection, scene, edge, params).length > 0 ? true : ActionDisabledReason.NotApplicable;
+      return opsAnswer(scene, alignOps(deps, selection, scene, edge, params));
     },
   });
 }

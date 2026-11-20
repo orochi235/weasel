@@ -14,6 +14,7 @@ import type { FlipParams } from '../../actionParamSchema';
 import { icon } from '../../icons.gen';
 import { FLIP_GROUP } from '../../actionGroups';
 import * as coreOps from '@weasel-js/core/ops';
+import { opsAnswer, writesLocked } from '../lockedWrites';
 
 /**
  * The world mirror about `axis` through the center of `pivotWorld`, written in
@@ -182,7 +183,7 @@ export const flipAction = defineAction({
       const scene = deps.scene;
       if (!selection || !scene) return;
       const ops = flipOpsFor(deps, selection, scene, params);
-      if (ops.length === 0) return;
+      if (ops.length === 0 || writesLocked(scene, ops)) return;
       const applyOps = createTransformCommit(deps);
       if (applyOps) applyOps(ops, 'Flip');
       else scene.applyBatch(ops, 'Flip', defaultCommitAdapter(scene, operandMethods(selection)));
@@ -192,6 +193,6 @@ export const flipAction = defineAction({
     const needs = requiresOperands(deps);
     if (needs !== true) return needs;
     if (!deps?.scene) return ActionDisabledReason.NotApplicable;
-    return flipOpsFor(deps, deps.operands!, deps.scene, params).length > 0 ? true : ActionDisabledReason.NotApplicable;
+    return opsAnswer(deps.scene, flipOpsFor(deps, deps.operands!, deps.scene, params));
   },
 });
