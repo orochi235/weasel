@@ -48,6 +48,14 @@ describe('jobs', () => {
     expect(parseJob('something else')).toBeNull();
   });
 
+  it('marks a review that did not finish, and says so and that it hit its ceiling', () => {
+    const line = 'review 1/4 core.ops B on teitou: 2 findings, 12/12 files read, 9.0 min, 1.20M tokens';
+    expect(parseJob(`${line}, hit its ceiling, unfinished: not counted as a pass`)).toMatchObject({
+      what: '2 findings, read 12 of 12 files, hit its ceiling, unfinished: not counted as a pass', bad: true,
+    });
+    expect(parseJob(`${line}, hit its ceiling`)).toMatchObject({ what: '2 findings, read 12 of 12 files, hit its ceiling', bad: false });
+  });
+
   it('lists every run, each newest first', () => {
     const jobs = recentJobsOf(map.runs);
     expect(jobs.map((j) => [j.round, j.job.label, j.job.area])).toEqual([

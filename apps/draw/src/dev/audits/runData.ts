@@ -57,17 +57,18 @@ export interface Job {
   readonly tokens?: number;
   /** Its place among the round's jobs of its kind, `3/16`. */
   readonly of?: string;
-  /** Whether it went wrong: a review that skipped files, a conflict, a failed fleet run. */
+  /** Whether it went wrong: a review that skipped files or did not finish, a conflict, a failed fleet run. */
   readonly bad: boolean;
 }
 
 /** The job a `night.log` line reports, or null for a line that reports none. */
 export function parseJob(line: string): Job | null {
   let m: RegExpExecArray | null;
-  if ((m = /^review (\d+)\/(\d+) (\S+) ([AB]) on (\S+): (\d+) findings, (\d+)\/(\d+) files read, ([\d.]+) min, ([\d.]+)M tokens/.exec(line))) {
+  if ((m = /^review (\d+)\/(\d+) (\S+) ([AB]) on (\S+): (\d+) findings, (\d+)\/(\d+) files read, ([\d.]+) min, ([\d.]+)M tokens(.*)$/.exec(line))) {
+    const tail = m[11]!;
     return {
-      kind: 'review', label: `review ${m[4]}`, area: m[3]!, what: `${plural(Number(m[6]), 'finding')}, read ${m[7]} of ${m[8]} files`,
-      node: m[5], minutes: Number(m[9]), tokens: Number(m[10]), of: `${m[1]}/${m[2]}`, bad: m[7] !== m[8],
+      kind: 'review', label: `review ${m[4]}`, area: m[3]!, what: `${plural(Number(m[6]), 'finding')}, read ${m[7]} of ${m[8]} files${tail}`,
+      node: m[5], minutes: Number(m[9]), tokens: Number(m[10]), of: `${m[1]}/${m[2]}`, bad: m[7] !== m[8] || tail.includes('unfinished'),
     };
   }
   if ((m = /^match (\d+)\/(\d+) (\S+): (\d+) shared of (\d+) \+ (\d+)/.exec(line))) {
