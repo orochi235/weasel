@@ -2,8 +2,10 @@
  * Turn any value into plain data a panel can display. A node's `data` is the
  * app's own type, so nothing here assumes it is JSON-safe.
  *
- * A string, a finite number, a boolean, null and undefined arrive as themselves. Everything else that is not an
- * array or a plain object arrives as an object whose `$type` names it ({@link SerializedTag}). A plain object's own
+ * A string, a finite number, a boolean, null and undefined arrive as themselves. A function, an odd number, a bigint,
+ * a symbol, a date, a map, a set and a typed array arrive as an object whose `$type` names it ({@link SerializedTag}).
+ * Any other object arrives with its own keys, and `$class` names its class or built-in kind: an `Error` adds its
+ * `name` and `message`, a `RegExp` its `source` and `flags`, a buffer or `DataView` its `byteLength`. A plain object's own
  * keys that start with `$` arrive with one more `$` in front ({@link escapeKey}), so the only unescaped `$` keys
  * are the serializer's own: `$type`, `$class` (an instance's class) and `$more` (how many keys were cut).
  */
@@ -95,6 +97,50 @@ function isTyped(value: object): value is ArrayBufferView {
 
 const tagged = (tag: SerializedTag): SerializedValue => tag as SerializedValue;
 
+type Getter = (this: object) => unknown;
+const sizeGetter = (proto: object): Getter => Object.getOwnPropertyDescriptor(proto, 'size')!.get as Getter;
+const MAP_SIZE = sizeGetter(Map.prototype);
+const SET_SIZE = sizeGetter(Set.prototype);
+
+/** Whether `obj` holds the internal slot `get` reads: a real map or set, from any realm, whatever its `toStringTag`. */
+function hasSlot(get: Getter, obj: object): boolean {
+  try {
+    get.call(obj);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** The name `$class` gives `obj`: its constructor's, or failing that its built-in tag; none for a plain object. */
+function classOf(obj: object, tag: string): string | null {
+  const proto = Object.getPrototypeOf(obj) as object | null;
+  if (proto !== null && proto !== Object.prototype) {
+    const name = (proto.constructor as { name?: unknown } | undefined)?.name;
+    if (typeof name === 'string' && name && name !== 'Object') return name;
+  }
+  return tag === 'Object' ? null : tag;
+}
+
+/** What a built-in holds outside its own keys, which is what tells one apart from another. */
+function builtinFields(obj: object, tag: string): [string, unknown][] {
+  const at = (key: 'name' | 'message' | 'source' | 'flags' | 'byteLength'): unknown => {
+    try {
+      return (obj as Partial<Record<typeof key, unknown>>)[key];
+    } catch (error) {
+      return new Threw(error);
+    }
+  };
+  if (obj instanceof Error || tag === 'Error') return [['name', at('name')], ['message', at('message')]];
+  switch (tag) {
+    case 'RegExp': return [['source', at('source')], ['flags', at('flags')]];
+    case 'ArrayBuffer':
+    case 'SharedArrayBuffer':
+    case 'DataView': return [['byteLength', at('byteLength')]];
+    default: return [];
+  }
+}
+
 /** `value` as plain data: anything JSON cannot say tagged, cycles marked, and every size capped. */
 export function serialize(value: unknown, limits: SerializeLimits = {}): SerializedValue {
   const depth = limits.depth ?? 6;
@@ -132,19 +178,20 @@ export function serialize(value: unknown, limits: SerializeLimits = {}): Seriali
         if (obj.length > items) out.push(more(obj.length));
         return out;
       }
-      const tag = tagOf(obj);
-      if (tag === 'Map' || tag === 'Set') {
-        const all = tag === 'Map' ? [...(obj as Map<unknown, unknown>)] : [...(obj as Set<unknown>)];
+      const kind = hasSlot(MAP_SIZE, obj) ? 'Map' : hasSlot(SET_SIZE, obj) ? 'Set' : null;
+      if (kind) {
+        const all: unknown[] = kind === 'Map'
+          ? [...Map.prototype.entries.call(obj as Map<unknown, unknown>)]
+          : [...Set.prototype.values.call(obj as Set<unknown>)];
         const entries = all.slice(0, items).map((x) => walk(x, level + 1));
         if (all.length > items) entries.push(more(all.length));
-        return tagged({ $type: tag, size: all.length, entries });
+        return tagged({ $type: kind, size: all.length, entries });
       }
+      const tag = tagOf(obj);
       const out: { [key: string]: SerializedValue } = {};
-      const proto = Object.getPrototypeOf(obj) as object | null;
-      if (proto !== null && proto !== Object.prototype && tag === 'Object') {
-        const name = (proto.constructor as { name?: string } | undefined)?.name;
-        if (name && name !== 'Object') out.$class = name;
-      }
+      const name = classOf(obj, tag);
+      if (name) out.$class = name;
+      for (const [key, field] of builtinFields(obj, tag)) setOwn(out, key, walk(field, level + 1));
       const keys = Object.keys(obj);
       for (const key of keys.slice(0, items)) setOwn(out, escapeKey(key), walk(read(obj, key), level + 1));
       if (keys.length > items) out.$more = keys.length - items;
