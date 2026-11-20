@@ -46,7 +46,7 @@ export function shiftTrack(shape: TrackShape, shift: number): TrackShape | null 
   const endRatio = table[SAMPLES]! - table[SAMPLES - 1]! > 0 ? per / (table[SAMPLES]! - table[SAMPLES - 1]!) : 1;
 
   /** The base fraction under shifted fraction `f`, carried on past the ends at the end's ratio. */
-  const toBase = (f: number): number => {
+  const toBaseOpen = (f: number): number => {
     const d = f * length;
     if (length <= 0 || shape.length <= 0) return f;
     if (d < 0) return (d * startRatio) / shape.length;
@@ -62,8 +62,8 @@ export function shiftTrack(shape: TrackShape, shift: number): TrackShape | null 
     return (lo + (span > 0 ? (d - table[lo]!) / span : 0)) / SAMPLES;
   };
 
-  /** The shifted fraction over base fraction `g`, the inverse of {@link toBase}. */
-  const fromBase = (g: number): number => {
+  /** The shifted fraction over base fraction `g`, the inverse of {@link toBaseOpen}. */
+  const fromBaseOpen = (g: number): number => {
     if (length <= 0 || shape.length <= 0) return g;
     if (g < 0) return (g * shape.length) / startRatio / length;
     if (g > 1) return (length + ((g - 1) * shape.length) / endRatio) / length;
@@ -71,6 +71,14 @@ export function shiftTrack(shape: TrackShape, shift: number): TrackShape | null 
     const i = Math.min(SAMPLES - 1, Math.floor(x));
     return (table[i]! + (x - i) * (table[i + 1]! - table[i]!)) / length;
   };
+
+  // A closed shape carries on round itself past its seam, so its laps past either end go through the table again.
+  const laps = (map: (f: number) => number) => (f: number): number => {
+    const n = Math.floor(f);
+    return n + map(f - n);
+  };
+  const toBase = shape.closed ? laps(toBaseOpen) : toBaseOpen;
+  const fromBase = shape.closed ? laps(fromBaseOpen) : fromBaseOpen;
 
   const at = (f: number, options?: TrackAtOptions): TrackStation =>
     moved(shape.at(toBase(options?.open ? f : clamp(f, 0, 1)), options));

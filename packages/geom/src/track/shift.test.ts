@@ -71,3 +71,21 @@ describe('shiftTrack', () => {
     expect(shiftTrack(top, 0)).toBe(top);
   });
 });
+
+describe('shiftTrack past a closed shape\'s seam', () => {
+  const ring = shiftTrack(ellipseShape({ center, radiusX: 100, radiusY: 50, start: 0, end: 0 }), 20)!;
+
+  test('an open fraction past 1 goes round the shifted track again', () => {
+    for (const f of [1.25, 1.5, -0.25]) {
+      const past = ring.at(f, { open: true }).point;
+      const same = ring.at(f - Math.floor(f)).point;
+      expect(past.x).toBeCloseTo(same.x, 6);
+      expect(past.y).toBeCloseTo(same.y, 6);
+    }
+  });
+
+  test('an open nearest past the seam reports the lap it is on', () => {
+    const p = ring.at(0.5).point;
+    expect(ring.nearest(p, { open: true, about: 1.5 }).f).toBeCloseTo(1.5, 4);
+  });
+});
