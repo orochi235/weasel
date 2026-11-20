@@ -125,6 +125,8 @@ export function textObject(cmd: TextDrawCommand, state: DrawState): TextObject |
   const scale = map && uniformScale(map);
   const boxWidth = cmd.width ?? cmd.maxWidth;
   if (!map || scale === undefined || boxWidth === undefined || cmd.height === undefined) return undefined;
+  // A box states one width, which P-touch both aligns in and wraps at.
+  if (Number.isFinite(cmd.maxWidth) && cmd.maxWidth !== boxWidth) return undefined;
   if (cmd.direction === 'rtl' || cmd.runs.length === 0) return undefined;
   const [first] = cmd.runs;
   let color: string | undefined;

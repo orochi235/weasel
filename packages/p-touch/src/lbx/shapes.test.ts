@@ -62,4 +62,10 @@ describe('text boxes', () => {
     expect((await written(box({ maxWidth: Infinity })))?.autoLF).toBe(false);
     expect((await written(box({ maxWidth: undefined })))?.autoLF).toBe(false);
   });
+
+  it('rasterizes a box that wraps at a width other than the one it aligns in', async () => {
+    expect(await written(box({ width: 200, maxWidth: 100 }))).toBeUndefined();
+    expect((await written(box({ width: undefined, maxWidth: 100 })))?.position.width).toBe(100);
+    expect((await written(box({ width: 200, maxWidth: Infinity })))?.position.width).toBe(200);
+  });
 });
