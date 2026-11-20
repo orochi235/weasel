@@ -1,6 +1,6 @@
 import type { DragSample } from '@weasel-js/routing';
 import type { InsertExtras } from '@weasel-js/core/engine';
-import type { InsertParams } from '@weasel-js/core';
+import { SHAPE_DEFAULTS, type InsertParams } from '@weasel-js/core';
 
 /** Build a typed `InsertExtras` from the static params + gesture context.
  *  Kit-built-in kinds (line / polygon / star / pencil) read kind-specific
@@ -24,7 +24,7 @@ export function buildExtras(
       // line that slopes up, not the bounds diagonal.
       return { kind: 'line', a: { x: startX, y: startY }, b: { x: currentX, y: currentY } };
     case 'polygon': {
-      const sides = Number(params?.['sides'] ?? 6);
+      const sides = Number(params?.['sides'] ?? SHAPE_DEFAULTS.sides);
       // When the tool omits rotation, point the first vertex along the
       // drag vector so dragging in a direction orients the shape that
       // way. Sub-pixel drags (no direction yet) fall back to 0.
@@ -51,8 +51,8 @@ export function buildExtras(
       return extras;
     }
     case 'star': {
-      const pts = Number(params?.['points'] ?? 5);
-      const ir = Number(params?.['innerRadiusRatio'] ?? 0.5);
+      const pts = Number(params?.['points'] ?? SHAPE_DEFAULTS.points);
+      const ir = Number(params?.['innerRadiusRatio'] ?? SHAPE_DEFAULTS.innerRadiusRatio);
       const dragAngle = (currentX === startX && currentY === startY)
         ? 0
         : Math.atan2(currentY - startY, currentX - startX);
