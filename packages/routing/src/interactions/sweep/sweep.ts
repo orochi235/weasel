@@ -124,7 +124,7 @@ export function createSweepAction<K>(opts: SweepOptions<K>): Action {
         run.enter(first);
         const reach = (x: number, y: number): void => {
           const item = itemAt(surface, opts.keyOf, x, y);
-          if (item && !Object.is(item.key, current.key)) {
+          if (item && item.element !== current.element && !Object.is(item.key, current.key)) {
             current = item;
             run.enter(item);
           }
