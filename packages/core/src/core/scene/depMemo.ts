@@ -99,7 +99,9 @@ function recordDeps<TPose>(
 }
 
 /** Run `derive` against `deps`, recording in place what it was run against.
- *  Mutating the record is what updates the memo slot, which holds this object. */
+ *  Mutating the record is what updates the memo slot, which holds this object.
+ *  A `derive` that throws leaves the record matching nothing, so the next read
+ *  derives again rather than pairing the old value with the new dependencies. */
 export function deriveRecorded<TPose, T>(
   into: DepRecord<TPose>,
   deps: readonly (DerivedDep<TPose> | undefined)[],
@@ -107,9 +109,15 @@ export function deriveRecorded<TPose, T>(
 ): T {
   const handed = recordDeps(into, deps);
   const generation = outsideGeneration();
-  const { value, outside } = withOutsideReads(() => derive(handed));
-  into.outside = outside ? generation : null;
-  return value;
+  try {
+    const { value, outside } = withOutsideReads(() => derive(handed));
+    into.outside = outside ? generation : null;
+    return value;
+  } catch (err) {
+    // No derivation has zero dependencies, so an empty record never matches.
+    into.nodes.length = 0;
+    throw err;
+  }
 }
 
 /** Whether the dependencies still resolve to what the record was taken from.

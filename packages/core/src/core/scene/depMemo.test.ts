@@ -101,3 +101,45 @@ describe('a derivation memo — what it re-checks of a dependency', () => {
     expect(routed).toBe(0);
   });
 });
+
+describe('a derivation memo — a re-derive that throws', () => {
+  it('throws again on the next read rather than answering the previous value', () => {
+    const a: Loose = { id: id('a'), pose: box(0, 0), data: { weight: 1 } };
+    const reader: Loose = {
+      id: id('r'), pose: box(0, 0), data: {}, dependsOn: [id('a')],
+      derivePose: (_n: never, [dep]: Deps) => {
+        const w = (dep!.node.data as { weight: number }).weight;
+        if (w < 0) throw new Error('negative weight');
+        return box(w, 0);
+      },
+    };
+    const source = sourceOf([a, reader]);
+    expect(derivedPose(source, reader)!.x).toBe(1);
+    a.data = { weight: -1 };
+    expect(() => derivedPose(source, reader)).toThrow(/negative/);
+    expect(() => derivedPose(source, reader)).toThrow(/negative/);
+    a.data = { weight: 4 };
+    expect(derivedPose(source, reader)!.x).toBe(4);
+  });
+
+  it('a path derivation throws again too', () => {
+    const a: Loose = { id: id('a'), pose: box(0, 0), data: {} };
+    const b: Loose = { id: id('b'), pose: box(5, 5), data: {} };
+    const wire = {
+      id: id('w'), pose: box(0, 0), data: {}, dependsOn: [id('a'), id('b')],
+      derivePath: (_n: never, [from, to]: Deps): Path => {
+        if (from!.pose.x > 50) throw new Error('out of range');
+        return segment(from!.pose, to!.pose);
+      },
+    };
+    const byId = new Map<NodeId, Loose>([[a.id, a], [b.id, b]]);
+    const depOf = (k: NodeId): DerivedDep<RectPose> | undefined => {
+      const n = byId.get(k);
+      return n && { node: n as never, pose: n.pose, path: null };
+    };
+    expect(resolveDerivedPath(wire as never, depOf, () => [])).not.toBeNull();
+    a.pose = box(60, 0);
+    expect(() => resolveDerivedPath(wire as never, depOf, () => [])).toThrow(/range/);
+    expect(() => resolveDerivedPath(wire as never, depOf, () => [])).toThrow(/range/);
+  });
+});
