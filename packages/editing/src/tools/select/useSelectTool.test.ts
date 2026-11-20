@@ -182,6 +182,15 @@ describe('useSelectTool', () => {
       .toBe(ActionDisabledReason.NotApplicable);
   });
 
+  it('a locked Shift-press defers nothing, so its release leaves the selection alone', () => {
+    // Shift reads as a replace here, but the anchor edit owns Shift-click.
+    const tool = mount({ pickEvery: () => ['a'], extendClickLocked: () => true });
+    const sel = selectionStub(['a', 'b'], { mode: 'multiple', toggle: 'meta' });
+    press(tool, sel.api, { mods: { shift: true } });
+    expect(release(tool, sel.api, { shift: true })).toBe('declined');
+    expect(sel.applyClick).not.toHaveBeenCalled();
+  });
+
   it('a deferred collapse fires once and then disarms', () => {
     const tool = mount({ pickEvery: () => ['a'] });
     const sel = selectionStub(['a', 'b', 'c']);
