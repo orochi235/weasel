@@ -114,7 +114,7 @@
 
 /* Fixed to its widest count, so the slider beside it holds still as it changes. */
 .upcomingCount {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   min-width: 3ch;
   text-align: end;
-  font-variant-numeric: tabular-nums;
 }
