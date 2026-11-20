@@ -7,8 +7,11 @@ import type { SceneTouches } from 'core/scene/sceneTouches';
 
 /** What a box holds: nothing, a finite box, or everything (a node nothing can bound). */
 export type BoxKind = 0 | 1 | 2;
+/** A box holding nothing: nothing it stands for paints. */
 export const BOX_NONE: BoxKind = 0;
+/** A finite box, read from its `[min…, max…]` coordinates. */
 export const BOX_SOME: BoxKind = 1;
+/** A box holding everything: a node nothing can bound, so no query ever prunes it. */
 export const BOX_ALL: BoxKind = 2;
 
 /** A ray from `origin` along `dir`, out to `tMax` in units of `dir`. A reader may shorten `tMax` as it finds

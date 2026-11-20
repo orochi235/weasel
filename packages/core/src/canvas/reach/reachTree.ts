@@ -18,6 +18,8 @@ import type { WideChildren } from './wideChildren';
 /** Children past which a container indexes them; below half of it, it stops. */
 export const WIDE_AT = 64;
 
+/** A scene's paint or pick boxes kept up to date from its touched-ids feed, answering which nodes meet a view, a
+ *  point or a ray without walking the whole scene. Made by `createReachTree`. */
 export interface ReachTree {
   /** Bring every box up to date with the scene, and answer true. When only a build from the whole scene would,
    *  and `rebuild` is false, forget every box instead and answer false. */
