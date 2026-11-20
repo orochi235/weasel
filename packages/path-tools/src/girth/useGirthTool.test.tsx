@@ -40,7 +40,8 @@ function setup(path: Path = LINE, stroke: Stroke = { paint: { color: '#000' }, w
   const pose = given ?? (path === LINE ? { x: 0, y: 0, width: 100, height: 0 } : { x: 0, y: -45, width: 100, height: 45 });
   const line = scene.add({ kind: 'mark', layer: 'main', pose, data: { path, stroke } });
   const { result } = renderHook(() => useGirthTool());
-  const deps = { scene, view: { get: () => VIEW, set: () => {} } } as unknown as ActionDeps;
+  let view = VIEW;
+  const deps = { scene, view: { get: () => view, set: (v: typeof VIEW) => { view = v; } } } as unknown as ActionDeps;
   const actionOf = (id: string): Action => (result.current.actions ?? []).find((x) => x.id === id)!;
   const ctx = (x: number, y: number, start = { x, y }, alt = false): InvocationCtx => ({
     world: { x, y }, screen: { x, y }, modifiers: { alt, ctrl: false, meta: false, shift: false }, deps,
@@ -77,7 +78,8 @@ function setup(path: Path = LINE, stroke: Stroke = { paint: { color: '#000' }, w
     if (invoker?.timing !== 'ongoing') throw new Error('girth.drag is not ongoing');
     invoker.start(ctx(at.x, at.y), { params }).onEnd?.({ ...ctx(0, 0), deps: {} as ActionDeps }, 'cancel');
   };
-  return { scene, line, drag, pressWith, altClick, hover, run, data, widths, marks, bounds };
+  const zoom = (k: number) => { view = { ...view, scale: { x: view.scale.x * k, y: view.scale.y * k } }; };
+  return { scene, line, drag, pressWith, altClick, hover, run, data, widths, marks, bounds, zoom };
 }
 
 describe('useGirthTool', () => {
@@ -134,6 +136,17 @@ describe('useGirthTool', () => {
     t.scene.undo();
     handle!.replay!({ reachPx: 2 });
     expect(t.widths()).toHaveLength(3);
+  });
+
+  it('replays the drag at the zoom it was made at', () => {
+    const t = setup();
+    let handle: OngoingHandle | null = null;
+    t.drag([[96, 2], [96, 10]], { peek: (h) => { handle = h; } });
+    expect(t.widths()).toEqual([NaN, 20]);
+    t.scene.undo();
+    t.zoom(4);
+    handle!.replay!({});
+    expect(t.widths()).toEqual([NaN, 20]);
   });
 
   it('inserts an anchor where an edge is grabbed between two, without changing the shape', () => {
