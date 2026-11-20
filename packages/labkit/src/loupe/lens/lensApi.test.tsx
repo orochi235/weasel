@@ -261,3 +261,41 @@ describe('a Follow reticle zoomed while its pointer rests', () => {
     expect(scene.get(asNodeId(`${lensId}:reticle`))?.pose).toEqual(want);
   });
 });
+
+describe('a lens API whose scene is in a host container’s px', () => {
+  /** A 400×300 lab body sitting 200, 100 into a 1000×800 host container, both unscaled. */
+  function boxed(left: number, top: number, width: number, height: number) {
+    const el = document.createElement('div');
+    Object.defineProperty(el, 'offsetWidth', { value: width });
+    Object.defineProperty(el, 'offsetHeight', { value: height });
+    el.getBoundingClientRect = () => new DOMRect(left, top, width, height);
+    return el;
+  }
+
+  it('places and follows lenses in the container’s px, and keeps a new body inside the lab body', () => {
+    const scene = createLensScene<null>();
+    const body = boxed(210, 110, 400, 300);
+    const frame = boxed(10, 10, 1000, 800);
+    const api = createLensApi(scene, {
+      body: { current: body },
+      frame: { current: frame },
+      pointer: { current: null },
+      focus: { current: null },
+      sources: { current: {} },
+    });
+    const lensId = api.add({ x: 300, y: 250 })!;
+    const center = (id: string) => {
+      const n = scene.get(asNodeId(id))!;
+      const p = effectivePose(scene, n);
+      return { x: p.x + p.width / 2, y: p.y + p.height / 2 };
+    };
+    expect(center(`${lensId}:reticle`)).toEqual({ x: 290, y: 240 });
+    expect(lensClient(scene, lensId, frame)?.reticle).toEqual({ x: 300, y: 250 });
+    const b = center(`${lensId}:body`);
+    expect(b.x).toBeGreaterThanOrEqual(200 + BODY_SIZE / 2);
+    expect(b.x).toBeLessThanOrEqual(600 - BODY_SIZE / 2);
+    act(() => api.apply(setAimOps(scene, lensId, 'follow')));
+    act(() => api.follow({ x: 400, y: 300 }));
+    expect(center(`${lensId}:reticle`)).toEqual({ x: 390, y: 290 });
+  });
+});

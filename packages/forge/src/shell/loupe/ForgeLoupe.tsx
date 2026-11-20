@@ -47,7 +47,7 @@ export function ForgeLoupe({ declarations, modeGlobal }: ForgeLoupeProps) {
   const labValues = useContext(StoryGlobalsContext);
   const { mode, trials, instruments } = useLabContext();
   const [scene] = useState(createLensScene<ForgeComparison>);
-  const { body, bodyRef, pointer, attachMarker } = useLabBody();
+  const { body, bodyRef, frameRef, pointer, attachMarker } = useLabBody();
   const { focus, onFocusLens } = useLensFocus();
   const conditions = useLatest<LabConditions>({ labValues, mode, declarations, modeGlobal });
   const onFrame = useFrameSchedule();
@@ -71,7 +71,7 @@ export function ForgeLoupe({ declarations, modeGlobal }: ForgeLoupeProps) {
   const [menu, setMenu] = useState<CompareMenuRequest | null>(null);
   // The menu offers the args of the story under the lens's reticle, as it is when the menu opens.
   const compare = useLatest((lensId: string) => {
-    const at = lensClient(scene, lensId, bodyRef.current);
+    const at = lensClient(scene, lensId, frameRef.current);
     if (!at) return;
     const trialId = trialAt(at.reticle)?.trialId;
     const name = trials.find((t) => t.id === trialId)?.instrumentName;
@@ -84,7 +84,7 @@ export function ForgeLoupe({ declarations, modeGlobal }: ForgeLoupeProps) {
     const choices = compareChoices(declarations, schema);
     setMenu((last) => ({ seq: (last?.seq ?? 0) + 1, client: at.body, lensId, pixels, choices }));
   });
-  const [api] = useState(() => createLensApi(scene, { body: bodyRef, pointer, focus, sources: sourcesRef, compare }));
+  const [api] = useState(() => createLensApi(scene, { body: bodyRef, frame: frameRef, pointer, focus, sources: sourcesRef, compare }));
   // Named against the trial under the reticle, whose pins the lens renders under.
   const describe = useCallback(
     (c: ForgeComparison, at: LensDescribeContext) => {
