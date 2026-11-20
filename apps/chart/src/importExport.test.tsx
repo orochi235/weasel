@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { ActionsProvider, DepRegistryProvider } from '@weasel-js/core';
 import { DIAGRAM_JSON, DIAGRAM_MERMAID, type DiagramDocument } from '@weasel-js/diagram-formats';
@@ -73,7 +73,7 @@ describe('File › Import…', () => {
     io.picked = new File([DIAGRAM_JSON.write!(DOC).text], 'flow.diagram.json');
     mount();
     choose('Import');
-    await vi.waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(['a', 'b', 'ab'])));
+    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(['a', 'b', 'ab'])));
     expect(stored()!.nodes.filter((n) => n.page !== undefined).map((n) => n.id)).toEqual(['one', 'two']);
     const a = stored()!.nodes.find((n) => n.id === 'a')!;
     expect(a.parent).toBe('one');
@@ -84,7 +84,7 @@ describe('File › Import…', () => {
     io.picked = new File(['flowchart LR\n  a[Alpha] --> b{Beta}\n  b --> c((Gamma))\n'], 'flow.mmd');
     mount();
     choose('Import');
-    await vi.waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(['a', 'b', 'c'])));
+    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(['a', 'b', 'c'])));
     const at = (id: string) => stored()!.nodes.find((n) => n.id === id)!.pose;
     expect(at('a').x).toBeLessThan(at('b').x);
     expect(at('b').x).toBeLessThan(at('c').x);
@@ -104,20 +104,20 @@ describe('File › Import…', () => {
     io.picked = new File([text], 'diagram.mmd');
     mount();
     choose('Import');
-    await vi.waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(ids)));
+    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(ids)));
   });
 
   it('opens a Mermaid xychart as a plot page, and exports it back as one', async () => {
     io.picked = new File(['xychart-beta\n  title "Sales"\n  x-axis [jan, feb]\n  bar [3, 7]\n'], 'sales.mmd');
     mount();
     choose('Import');
-    await vi.waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toContain('page-1/plot'));
+    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toContain('page-1/plot'));
     const root = stored()!.nodes.find((n) => n.id === 'page-1/plot') as unknown as { data: { plot: { data: unknown } } };
     expect(root.data.plot.data).toMatchObject({ kind: 'xychart', title: 'Sales', series: [{ kind: 'bar', values: [3, 7] }] });
     expect(stored()!.nodes.map((n) => n.id)).toContain('page-1/plot/bar:0:1');
 
     choose('Export', 'As Mermaid');
-    await vi.waitFor(() => expect(io.saved).toHaveLength(1));
+    await waitFor(() => expect(io.saved).toHaveLength(1));
     expect(io.saved[0]!.name).toBe('Sales.mmd');
     expect(await io.saved[0]!.blob.text()).toBe('xychart-beta\n  title "Sales"\n  x-axis [jan, feb]\n  bar [3, 7]\n');
   });
@@ -141,13 +141,13 @@ describe('File › Import…', () => {
     io.picked = new File([text], 'chart.mmd');
     mount();
     choose('Import');
-    await vi.waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toContain('page-1/plot'));
+    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toContain('page-1/plot'));
     const root = stored()!.nodes.find((n) => n.id === 'page-1/plot') as unknown as { data: { plot: { data: { kind: string } } } };
     expect(root.data.plot.data).toMatchObject({ kind, ...expected });
     expect(stored()!.nodes.filter((n) => n.id.startsWith('page-1/plot/')).length).toBeGreaterThan(0);
 
     choose('Export', 'As Mermaid');
-    await vi.waitFor(() => expect(io.saved).toHaveLength(1));
+    await waitFor(() => expect(io.saved).toHaveLength(1));
     const { document } = await DIAGRAM_MERMAID.read!(await io.saved[0]!.blob.text());
     expect((document.pages[0] as { data: unknown }).data).toEqual(root.data.plot.data);
   });
@@ -160,9 +160,9 @@ describe('File › Import…', () => {
     io.picked = new File([text], 'diagram.mmd');
     mount();
     choose('Import');
-    await vi.waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(ids)));
+    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(ids)));
     choose('Export', 'As Mermaid');
-    await vi.waitFor(() => expect(io.saved).toHaveLength(1));
+    await waitFor(() => expect(io.saved).toHaveLength(1));
     const lines = (await io.saved[0]!.blob.text()).split('\n').map((l) => l.trim());
     expect(lines).toContain(header);
     if (header === 'block-beta') expect(lines).toEqual(expect.arrayContaining(['columns 2', 'c:2']));
@@ -172,7 +172,7 @@ describe('File › Import…', () => {
     io.picked = new File(['sequenceDiagram\n  Alice->>+Bob: Hello\n  Bob-->>-Alice: Hi\n'], 'hello.mmd');
     mount();
     choose('Import');
-    await vi.waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toContain('page-1/sequence'));
+    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toContain('page-1/sequence'));
     const root = stored()!.nodes.find((n) => n.id === 'page-1/sequence') as unknown as { data: { diagram: { sequence: { participants: { id: string }[] } } } };
     expect(root.data.diagram.sequence.participants.map((p) => p.id)).toEqual(['Alice', 'Bob']);
     expect(stored()!.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(['page-1/sequence/head:Alice', 'page-1/sequence/msg:m1']));
@@ -191,7 +191,7 @@ describe('File › Import…', () => {
     expect(offIn('Graphviz DOT')).toBe(false);
     io.picked = new File(['sequenceDiagram\n  A->>B: x\n'], 'seq.mmd');
     choose('Import');
-    await vi.waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toContain('page-1/sequence'));
+    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toContain('page-1/sequence'));
     expect(offIn('Graphviz DOT')).toBe(true);
     expect(offIn('Mermaid')).toBe(false);
     expect(offIn('Diagram JSON')).toBe(false);
@@ -244,7 +244,7 @@ describe('File › Export › As a diagram format', () => {
   it('downloads the whole chart in that format', async () => {
     mount();
     choose('Export', 'As Diagram JSON');
-    await vi.waitFor(() => expect(io.saved).toHaveLength(1));
+    await waitFor(() => expect(io.saved).toHaveLength(1));
     expect(io.saved[0]!.name).toBe('chart.diagram.json');
     const { document } = DIAGRAM_JSON.read!(await io.saved[0]!.blob.text()) as { document: DiagramDocument };
     expect(document.pages.map((p) => p.id)).toEqual(['page-1']);
