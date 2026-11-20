@@ -2,6 +2,6 @@
 '@weasel-js/diagram': patch
 ---
 
-A live layout that restarts, stops while awaiting a planner, or ends on a step that throws stops drawing edges along the abandoned run's eased routes.
+A live layout that restarts or fails mid-run no longer leaves edges drawn along the abandoned run's routes.
 
 <!-- entry: fix visual -->
