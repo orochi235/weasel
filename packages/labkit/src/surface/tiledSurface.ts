@@ -94,7 +94,9 @@ export class TiledSurface {
   private readonly painters = new Map<string, TilePainter>();
   private readonly clears = new Map<string, SurfaceClear>();
   private stale = true;
-  private tileLeft = false;
+  /** The next measurement retiles whatever it finds: a tile left, or the scope changed, so pixels may sit where
+   *  no rect now is. */
+  private retileDue = false;
   private lastDpr = 0;
   private scopeEl: SurfaceScope = null;
   private readonly scopeChanged = createEmitter();
@@ -149,7 +151,7 @@ export class TiledSurface {
     } else {
       this.tiles.delete(id);
       // Its rect goes now, so the next measurement cannot see that it left.
-      if (this.rects.delete(id)) this.tileLeft = true;
+      if (this.rects.delete(id)) this.retileDue = true;
       this.visible.delete(id);
       this.dirty.delete(id);
     }
@@ -170,6 +172,7 @@ export class TiledSurface {
     if (sameScope(this.scopeEl, el)) return false;
     this.scopeEl = el;
     this.stale = true;
+    this.retileDue = true;
     this.scopeChanged.emit();
     return true;
   }
@@ -193,7 +196,7 @@ export class TiledSurface {
       this.dirty.clear();
       return false;
     }
-    const { moved, left } = this.remeasure(el);
+    const { moved, forced } = this.remeasure(el);
     let retiled = moved;
     const dpr = globalThis.devicePixelRatio ?? 1;
     if (dpr !== this.lastDpr) {
@@ -201,8 +204,8 @@ export class TiledSurface {
       retiled = true;
       this.markMeasured();
     }
-    // The last tile leaving dirties nothing, and still has pixels to clear.
-    if (this.dirty.size === 0 && !left) return moved;
+    // The last tile leaving, or a scope holding none, dirties nothing and still has pixels to clear.
+    if (this.dirty.size === 0 && !forced) return moved;
     const box = el.getBoundingClientRect();
     this.deliver(
       {
@@ -218,17 +221,17 @@ export class TiledSurface {
     return moved;
   }
 
-  /** Measure every tile if anything asked; `moved` when the geometry changed or a tile left. */
-  private remeasure(el: HTMLElement): { moved: boolean; left: boolean } {
-    if (!this.stale) return { moved: false, left: false };
+  /** Measure every tile if anything asked; `moved` when the geometry changed or a retile was due. */
+  private remeasure(el: HTMLElement): { moved: boolean; forced: boolean } {
+    if (!this.stale) return { moved: false, forced: false };
     this.stale = false;
     const next = measureTiles(el, this.tiles, this.scopeEl);
     const changed = !sameRects(this.rects, next.rects) || !sameRects(this.visible, next.visible);
     this.rects = next.rects;
     this.visible = next.visible;
-    const left = this.tileLeft;
-    this.tileLeft = false;
-    if (!changed && !left) return { moved: false, left };
+    const forced = this.retileDue;
+    this.retileDue = false;
+    if (!changed && !forced) return { moved: false, forced };
     this.markMeasured();
     // Geometry that changed may still be moving: a panel whose size has
     // settled while its position animates gives `ResizeObserver` nothing
@@ -236,7 +239,7 @@ export class TiledSurface {
     // mid-flight at. Measure again next frame, and keep going until a
     // measurement finds nothing moved.
     this.stale = true;
-    return { moved: true, left };
+    return { moved: true, forced };
   }
 
   private markMeasured(): void {
