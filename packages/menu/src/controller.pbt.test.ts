@@ -180,10 +180,10 @@ function keyModel(m: Model, key: string, dir: MenuDirection): boolean {
   return search();
 }
 
-function hoverModel(m: Model, level: number, index: number | null): void {
+function hoverModel(m: Model, level: number, row: number | null): void {
   if (m.closed || level >= m.stack.length) return;
   const rows = levelOf(m.root, m.stack, level);
-  if (index !== null && !(rows[index] !== undefined && isRow(rows[index]!))) return;
+  const index = row !== null && rows[row] !== undefined && isRow(rows[row]!) ? row : null;
   const sameRow = index === m.stack[level];
   if (sameRow && m.stack.length > level + 1) { m.pending = null; return; }
   if (sameRow && m.pending) return;
