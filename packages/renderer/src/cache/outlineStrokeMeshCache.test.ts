@@ -39,4 +39,16 @@ describe('outline stroke mesh cache', () => {
     const half = outlineStrokeMesh('k|line', LINE, 0.1, { trim: { start: 0, end: 0.5 } });
     expect(half).not.toBe(whole);
   });
+
+  it('builds an aligned ribbon in the metric\'s space, as it does a centered one', () => {
+    // P = diag(2, 1/2): a screen that stretches x four times as much as y.
+    const metric = { p: 2, q: 0, r: 0.5 };
+    const extent = (align: 'center' | 'outer') => {
+      const v = Array.from(outlineStrokeMesh('k|sq', SQUARE, 0.1, { align }, metric)!.vertices);
+      const xs = v.filter((_, i) => i % 2 === 0), ys = v.filter((_, i) => i % 2 === 1);
+      return [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)].map((n) => Math.round(n * 1e4) / 1e4);
+    };
+    expect(extent('center')).toEqual([-0.025, 1.025, -1.1, 0.1]);
+    expect(extent('outer')).toEqual([-0.05, 1.05, -1.2, 0.2]);
+  });
 });
