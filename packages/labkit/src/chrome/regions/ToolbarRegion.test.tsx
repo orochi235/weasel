@@ -142,4 +142,22 @@ describe('ToolbarRegion', () => {
     const button = screen.getByRole('button', { name: 'More' });
     expect(button.textContent).not.toContain('More');
   });
+
+  it('keeps a contribution without end ahead of an end group merged before it', () => {
+    renderWithIcons(
+      <ToolbarRegion
+        contributions={[
+          item('undo', { group: 'history' }),
+          item('export', { group: 'trial', end: true }),
+          item('run'),
+        ]}
+        ctx={ctx}
+      />,
+    );
+    expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual([
+      'undo',
+      'run',
+      'export',
+    ]);
+  });
 });

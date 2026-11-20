@@ -11,8 +11,9 @@ export interface ContributionGroup<T extends ContributionBase> {
   entries: T[];
 }
 
-/** Bucket by group, preserving first-appearance order. Ungrouped contributions each become their own bucket so they
- *  stay in place. A group is `end` when any member says so. */
+/** Bucket by group, preserving first-appearance order, then move every run marked `end` after the rest, keeping
+ *  their order. Ungrouped contributions each become their own bucket so they stay in place. A group is `end` when
+ *  any member says so. */
 export function groupsOf<T extends ContributionBase>(
   contributions: readonly T[],
 ): ContributionGroup<T>[] {
@@ -32,5 +33,10 @@ export function groupsOf<T extends ContributionBase>(
     if (c.end) g.end = true;
     g.entries.push(c);
   }
-  return groups;
+  return [...groups.filter((g) => !g.end), ...groups.filter((g) => g.end)];
+}
+
+/** A region's contributions in the order its groups lay them out: each group's members together, end runs last. */
+export function inLayoutOrder<T extends ContributionBase>(contributions: readonly T[]): T[] {
+  return groupsOf(contributions).flatMap((g) => g.entries);
 }
