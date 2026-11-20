@@ -6,8 +6,9 @@ import { maxOf } from '@weasel-js/geom';
 import { composeWorldPose } from '../scene/composePose';
 import { scenePoseAdapter } from '../scene/scenePoseAdapter';
 import type { NodeId, RectPose, Scene } from '../scene/types';
+import { isFiniteNumber, isPlainObject } from '@weasel-js/registry';
 import type { Page, PageLayoutOptions, PlacedPage } from './pages';
-import { layoutPages } from './pages';
+import { layoutPages, pageLayoutFault } from './pages';
 import { PAGE_RUN_LAYOUT } from './pageRunLayout';
 import { pageClip } from './pageClip';
 import type { AnyScene } from 'core/scene/anyScene';
@@ -37,6 +38,22 @@ export const PAGES_DOC_KEY = 'core:pages';
 export interface PagesDoc {
   readonly pages: readonly Page[];
   readonly layout?: PageLayoutOptions;
+}
+
+/** What is wrong with `value` as a {@link PagesDoc}, as a phrase after its name ("has no list of pages"), or
+ *  `null` when it is one: a list of pages, each with a string id and a finite size, and a layout `layoutPages`
+ *  can read. A saved `core:pages` value is checked with it before it is read. */
+export function pagesDocFault(value: unknown): string | null {
+  if (!isPlainObject(value)) return 'is not an object';
+  const { pages, layout } = value;
+  if (!Array.isArray(pages)) return 'has no list of pages';
+  for (const [i, p] of (pages as unknown[]).entries()) {
+    if (!isPlainObject(p)) return `has page ${i} that is not an object`;
+    if (typeof p.id !== 'string') return `has page ${i} without a string id`;
+    if (![p.width, p.height].every((n) => isFiniteNumber(n) && n >= 0)) return `has page "${p.id}" without a finite size`;
+  }
+  const fault = layout === undefined ? null : pageLayoutFault(layout);
+  return fault === null ? null : `has a layout that ${fault}`;
 }
 
 /** What finding a node's page reads of a scene. A `Scene` satisfies it. */

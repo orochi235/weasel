@@ -67,6 +67,23 @@ describe('adoptLegacyPages', () => {
     expect(scene.doc.get(PAGES_DOC_KEY)).toBeUndefined();
   });
 
+  it('refuses a pages doc that is not one, naming what is wrong and changing nothing', () => {
+    const bad = (value: unknown) =>
+      createScene<{ n: string }, 'l', Pose>({ systemLayers: [{ id: 'l' }], doc: { [PAGES_DOC_KEY]: value } });
+    for (const [value, what] of [
+      [{}, /has no list of pages/],
+      [{ pages: 'x' }, /has no list of pages/],
+      [{ pages: [{ id: 'a', width: 1 }] }, /page "a" without a finite size/],
+      [{ pages: [], layout: { align: 'middle' } }, /has a layout that has an `align`/],
+      [{ pages: [], layout: { gap: '40' } }, /has a layout that has a `gap`/],
+    ] as const) {
+      const scene = bad(value);
+      expect(() => adoptLegacyPages(scene)).toThrow(what);
+      expect(pageRunOf(scene)).toBeNull();
+      expect(scene.doc.get(PAGES_DOC_KEY)).toEqual(value);
+    }
+  });
+
   it('does nothing the second time', () => {
     const scene = load([]);
     expect(adoptLegacyPages(scene)).toBe(true);

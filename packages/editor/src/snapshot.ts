@@ -6,9 +6,9 @@ import type {
   UseSceneOptions,
 } from '@weasel-js/core';
 import {
-  PAGES_DOC_KEY, adoptLegacyPages, asNodeId, createScene, loadScene, setPages, specsFromSerialized,
+  PAGES_DOC_KEY, adoptLegacyPages, asNodeId, createScene, loadScene, pagesDocFault, setPages, specsFromSerialized,
 } from '@weasel-js/core';
-import { freshId, isFiniteNumber } from '@weasel-js/registry';
+import { freshId } from '@weasel-js/registry';
 
 /** How a snapshot is read: `specsFromSerialized`'s options; the pose descriptor that measures each root
  *  when a snapshot's roots are placed on their pages (default core's `placeOnPages` default); and the pages
@@ -47,7 +47,8 @@ export function adoptSnapshotPages<TData, TLayer extends string, TPose>(
 ): SavedScene<TData, TLayer, TPose> {
   if (!snapshotRebuildsTree(json as never, opts)) return json;
   const saved = json.doc?.[PAGES_DOC_KEY];
-  if (saved !== undefined) checkPagesDoc(saved);
+  const fault = saved === undefined ? null : pagesDocFault(saved);
+  if (fault !== null) throw new Error(`adoptSnapshotPages: the snapshot's ${PAGES_DOC_KEY} value ${fault}`);
   const { descriptor, pages, systemLayers: _layers, ...read } = opts;
   const taken = new Set<unknown>(json.nodes.map((n) => (n as { id?: unknown } | null)?.id));
   // The run is the one node adoption mints; a fixed id loads the same snapshot the same way every time.
@@ -60,21 +61,6 @@ export function adoptSnapshotPages<TData, TLayer extends string, TPose>(
   const place = descriptor ? { descriptor } : {};
   if (!adoptLegacyPages(scene, place)) scene.untracked(() => setPages(scene, pages!, { ...place, label: 'Adopt pages' }));
   return scene.toJSON();
-}
-
-/** Throws, saying what is wrong, on a saved `core:pages` value that is not a `PagesDoc`. */
-function checkPagesDoc(value: unknown): void {
-  const fail = (what: string): never => { throw new Error(`adoptSnapshotPages: the snapshot's ${PAGES_DOC_KEY} value ${what}`); };
-  if (value === null || typeof value !== 'object') fail('is not an object');
-  const { pages, layout } = value as { pages?: unknown; layout?: unknown };
-  if (!Array.isArray(pages)) fail('has no list of pages');
-  (pages as unknown[]).forEach((p, i) => {
-    if (p === null || typeof p !== 'object') fail(`has page ${i} that is not an object`);
-    const { id, width, height } = p as { id?: unknown; width?: unknown; height?: unknown };
-    if (typeof id !== 'string') fail(`has page ${i} without a string id`);
-    if (![width, height].every((n) => isFiniteNumber(n) && n >= 0)) fail(`has page "${String(id)}" without a finite size`);
-  });
-  if (layout !== undefined && (layout === null || typeof layout !== 'object' || Array.isArray(layout))) fail('has a layout that is not an object');
 }
 
 /** The document values a decoded snapshot carries, shaped for `useScene`'s `doc` option, or
