@@ -116,3 +116,17 @@ describe('WebGPU renderers built and freed on one shared device', () => {
     error.mockRestore();
   });
 });
+
+describe('a WebGPU canvas with no area', () => {
+  it('keeps the buffers it made for it from pass to pass rather than making new ones each time', () => {
+    const fake = fakeGpuDevice(0, 0);
+    const gpu = new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
+    const before = fake.textures.length;
+    for (let i = 0; i < 3; i++) {
+      gpu.beginPass({ target: null, viewport: { x: 0, y: 0, width: 0, height: 0 } });
+      gpu.endPass();
+    }
+    const made = fake.textures.slice(before).filter((t) => t.label.startsWith('canvas'));
+    expect(made.map((t) => t.label).sort()).toEqual(['canvas color', 'canvas resolved', 'canvas stencil']);
+  });
+});

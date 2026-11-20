@@ -117,10 +117,12 @@ export class CanvasTarget implements PassAttachments {
 
   /** Make the multisampled buffers match the canvas, keeping them while they do. */
   private ensure(): { color: GPUTextureView; resolved?: GPUTextureView; depth: GPUTextureView } {
-    const { width, height } = this;
+    // A zero-sized canvas still gets 1×1 buffers, which have to count as matching it.
+    const width = Math.max(1, this.width);
+    const height = Math.max(1, this.height);
     if (this.views && this.color!.width === width && this.color!.height === height) return this.views;
     this.dispose();
-    const size = [Math.max(1, width), Math.max(1, height)];
+    const size = [width, height];
     const device = this.host.device;
     const sampleCount = this.sampleCount;
     const single = TextureUsage.RENDER_ATTACHMENT | TextureUsage.COPY_SRC;
