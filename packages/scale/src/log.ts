@@ -72,7 +72,7 @@ export function logScale(opts: LogScaleOptions): LogScale {
       const t = r1 === r0 ? 0 : (at - r0) / (r1 - r0);
       if (t === 0 || t === 1) return t === 0 ? d0 : d1;
       // A logarithm a rounding past the double range's end would turn into Infinity or 0.
-      const v = base ** lerp(l0, l1, t);
+      const v = l1 !== l0 ? base ** lerp(l0, l1, t) : d0 + d0 * Math.expm1(t * Math.log1p((d1 - d0) / d0));
       return t > 0 && t < 1 ? Math.min(Math.max(d0, d1), Math.max(Math.min(d0, d1), v)) : v;
     },
     ticks,

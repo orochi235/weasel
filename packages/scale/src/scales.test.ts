@@ -127,6 +127,17 @@ describe('logScale', () => {
     expect(s.ticks(100).at(-1)).toBe(2 ** 50);
     expect(s.tickFormat()(2 ** 40)).toBe('1099511627776');
   });
+
+  it('inverts its positions between ends too near for their logarithms to differ', () => {
+    const d0 = 1e300;
+    const d1 = 1e300 * (1 + 1e-14);
+    const s = logScale({ domain: [d0, d1], range: [0, 100] });
+    const mid = d0 + (d1 - d0) / 2;
+    expect(Math.abs(s.position(mid) - 50)).toBeLessThan(1);
+    expect(s.invert(s.position(mid)) / mid - 1).toBeCloseTo(0, 15);
+    expect(s.invert(25)).toBeGreaterThan(d0);
+    expect(s.invert(75)).toBeLessThan(d1);
+  });
 });
 
 describe('bandScale', () => {
