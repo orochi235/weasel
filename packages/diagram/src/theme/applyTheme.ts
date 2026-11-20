@@ -6,7 +6,7 @@ import type { AnyScene } from '@weasel-js/core';
 import type { MeasureRowText } from '../body';
 import { relayoutBodies, type RelayoutScene } from '../bodyRelayout';
 import { redrawSequences } from '../sequence/commit';
-import { diagramThemeOf, themeDocValue } from './resolve';
+import { diagramThemeOf, roleStyle, themeDocValue } from './resolve';
 import { themeWrites, type ThemedScene } from './themeWrites';
 import { DIAGRAM_THEME_KEY, type DiagramTheme, type FontField, type StyleField } from './types';
 
@@ -124,12 +124,14 @@ function textNodesOf(scene: AnyScene, id: string, kind: DiagramStyleState['kind'
   }).map((n) => n.id);
 }
 
-/** The text nodes a `field` color set on `id` reaches: a header row takes the box's fill, the
- *  other rows and a connector's labels its text color, and a stroke reaches none. */
-function colorTextNodesOf(scene: AnyScene, id: string, state: DiagramStyleState, field: StyleField): string[] {
+/** The text nodes a `field` color set on `id` reaches: a header row takes the box's fill unless
+ *  `theme` names its role a header text color, the other rows and a connector's labels its text
+ *  color, and a stroke reaches none. */
+function colorTextNodesOf(scene: AnyScene, id: string, state: DiagramStyleState, field: StyleField, theme?: DiagramTheme): string[] {
   if (field === 'stroke') return [];
   const header = (scene.get(id as never)!.data as Data).diagram?.header !== undefined;
-  return textNodesOf(scene, id, state.kind).filter((t) => (header && (scene.get(t as never)!.data as Data).bodyRow === 0) === (field === 'fill'));
+  const rows = textNodesOf(scene, id, state.kind).filter((t) => (header && (scene.get(t as never)!.data as Data).bodyRow === 0) === (field === 'fill'));
+  return field === 'fill' && theme !== undefined && roleStyle(theme, state.role).headerText !== undefined ? [] : rows;
 }
 
 /**
@@ -162,10 +164,12 @@ export function diagramFontSizeOf(scene: AnyScene, id: string): number | undefin
 /**
  * Sets `field` to `color` on every shape and connector among `ids` — `text`
  * reaching a shape's rows and a connector's label — and records it in their
- * `ownStyle`, so a theme change leaves it. One undo entry. A connector has no
+ * `ownStyle`, so a theme change leaves it. A fill reaches a header row's text unless the theme
+ * names the role a `headerText`, as a shape built with that fill is drawn. One undo entry. A connector has no
  * fill, and ignores one. A locked one, or locked text of one, is left as it is.
  */
-export function setDiagramColor(scene: AnyScene, ids: readonly string[], field: StyleField, color: string, opts: Pick<DiagramStyleEditOptions, 'label'> = {}): void {
+export function setDiagramColor(scene: AnyScene, ids: readonly string[], field: StyleField, color: string, opts: DiagramStyleEditOptions = {}): void {
+  const theme = opts.theme ?? diagramThemeOf(scene);
   scene.batch(opts.label ?? `Set ${field} color`, () => {
     for (const id of ids) {
       const state = editableStyleOf(scene, id);
@@ -175,7 +179,7 @@ export function setDiagramColor(scene: AnyScene, ids: readonly string[], field: 
       const next = withTrait(data, { ...data.diagram, ownStyle: own });
       if (field !== 'text') next[field] = painted(data[field], color);
       scene.update(id as never, { data: next });
-      for (const t of colorTextNodesOf(scene, id, state, field)) {
+      for (const t of colorTextNodesOf(scene, id, state, field, theme)) {
         if (scene.isLocked(t as never)) continue;
         const text = scene.get(t as never)!.data as Data;
         scene.update(t as never, { data: { ...text, fill: painted(text.fill, color) } });
