@@ -8,12 +8,13 @@ export function encodeUrlHash(value: string): string {
 
 const LONE_SURROGATE = /[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/g;
 
-/** Decode a URL fragment written by `encodeUrlHash`, or `null` if it is
+/** Decode a URL fragment written by `encodeUrlHash`, percent-encoded or not, or `null` if it is
  *  malformed. */
 export function decodeUrlHash(hash: string): string | null {
   if (!hash) return null;
   try {
-    return decodeURIComponent(atob(hash));
+    // Base64 has no `%`, so one means something percent-encoded the fragment on the way.
+    return decodeURIComponent(atob(hash.includes('%') ? decodeURIComponent(hash) : hash));
   } catch {
     return null;
   }
