@@ -133,6 +133,7 @@ describe('areas', () => {
   it('ticks the rounds axis on round steps', () => {
     expect(ticksFor(74)).toEqual([0, 20, 40, 60, 80]);
     expect(ticksFor(0)).toEqual([0]);
+    expect(ticksFor(1.7)).toEqual([0, 0.5, 1, 1.5, 2]);
   });
 });
 

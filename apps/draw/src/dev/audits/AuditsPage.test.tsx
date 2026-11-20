@@ -47,7 +47,7 @@ describe('AuditsPage', () => {
     expect(within(stats).getByText('≈13')).toBeInTheDocument();
 
     expect(screen.getByRole('img', { name: /Treemap of every audit area/ })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Defects found and estimated per round' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Defects found and estimated per area, by round' })).toBeInTheDocument();
     expect(screen.getByText('1 finding, read 9 of 12 files')).toBeInTheDocument();
   });
 
