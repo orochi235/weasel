@@ -277,9 +277,16 @@ export function createWarpGrabAction(kind: WarpKind): Action {
   };
 }
 
-/** Whether a selected path holds a warp: what both actions below work on. */
+/** Whether a selected path holds a warp, even one an edit since has left stale: what Expand Warp drops. */
 function holdsWarp(deps?: ActionDeps): true | ActionDisabledReason {
   return selectedWarpPaths(deps).some(({ node }) => heldPathWarpOf(node.data))
+    ? true
+    : ActionDisabledReason.NotApplicable;
+}
+
+/** Whether a selected path holds a warp that still makes its shape: what Warp Settings remakes. */
+function holdsLiveWarp(deps?: ActionDeps): true | ActionDisabledReason {
+  return selectedWarpPaths(deps).some(({ shown }) => resolvePathWarp(shown))
     ? true
     : ActionDisabledReason.NotApplicable;
 }
@@ -326,7 +333,7 @@ export const configureWarpAction = defineAction({
   requires: REQUIRES,
   settings: warpSettingsForm,
   params: configureWarpParams,
-  enabled: holdsWarp,
+  enabled: holdsLiveWarp,
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
