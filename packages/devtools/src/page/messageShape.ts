@@ -11,6 +11,7 @@ const isStrings = (v: unknown): boolean => Array.isArray(v) && v.every((s) => ty
 const isRequestId = (v: unknown): v is number => Number.isSafeInteger(v);
 const optional = (v: unknown, is: (v: unknown) => boolean): boolean => v === undefined || is(v);
 const isNumber = (v: unknown): boolean => typeof v === 'number';
+const isString = (v: unknown): boolean => typeof v === 'string';
 
 function isRootInfo(v: unknown): v is DevtoolsRootInfo {
   return isFields(v) && typeof v.id === 'string' && typeof v.label === 'string' && (v.dimension === '2d' || v.dimension === '3d');
@@ -23,7 +24,7 @@ function isRootInfo(v: unknown): v is DevtoolsRootInfo {
 export function isPanelMessage(m: unknown): m is PanelMessage {
   if (!isFields(m) || typeof m.protocol !== 'number') return false;
   if (m.protocol !== DEVTOOLS_PROTOCOL) return optional(m.requestId, isRequestId);
-  if (m.type === 'yo' || m.type === 'bye') return true;
+  if (m.type === 'yo' || m.type === 'bye') return optional(m.session, isString);
   if (!isRequestId(m.requestId) || typeof m.rootId !== 'string') return false;
   switch (m.type) {
     case 'get-children': return optional(m.nodeId, (v) => typeof v === 'string');
@@ -44,7 +45,7 @@ export function isPanelMessage(m: unknown): m is PanelMessage {
 /** Whether `m` is a message a page sends, every field it reads the type the protocol gives it. A `result`'s payload
  *  is the request's to read. */
 export function isPageMessage(m: unknown): m is PageMessage {
-  if (!isFields(m) || typeof m.protocol !== 'number') return false;
+  if (!isFields(m) || typeof m.protocol !== 'number' || !optional(m.session, isString)) return false;
   switch (m.type) {
     case 'sup': return typeof m.kitVersion === 'string' && Array.isArray(m.roots) && m.roots.every(isRootInfo);
     case 'root-added': return isRootInfo(m.root);

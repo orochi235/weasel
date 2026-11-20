@@ -48,7 +48,7 @@ describe('connectDevtools', () => {
   it('says yo, and holds the roots and kit version sup names', () => {
     const t = setup();
     const client = connectDevtools(t.transport);
-    expect(t.sent[0]).toEqual({ type: 'yo', protocol: DEVTOOLS_PROTOCOL });
+    expect(t.sent[0]).toEqual({ type: 'yo', protocol: DEVTOOLS_PROTOCOL, session: expect.any(String) });
     expect(client.state()).toMatchObject({
       status: 'connected', roots: [{ id: t.root.id, label: 'board', dimension: '2d' }],
     });
@@ -113,7 +113,7 @@ describe('connectDevtools', () => {
     expect(client.state().status).toBe('connecting');
     const pending = client.request('root-1', { type: 'get-state' });
     client.close();
-    expect(sent.at(-1)).toEqual({ type: 'bye', protocol: DEVTOOLS_PROTOCOL });
+    expect(sent.at(-1)).toEqual({ type: 'bye', protocol: DEVTOOLS_PROTOCOL, session: sent[0]!.type === 'yo' ? sent[0]!.session : null });
     await expect(pending).rejects.toThrow(/closed/);
     await expect(client.request('root-1', { type: 'get-state' })).rejects.toThrow(/closed/);
     expect(client.state().status).toBe('closed');
@@ -219,6 +219,31 @@ describe('connectDevtools', () => {
     const client = connectDevtools(transport);
     deliver({ type: 'error', protocol: 2, requestId: null, message: 'protocol mismatch: the page speaks 2, the panel 1' });
     expect(client.state()).toMatchObject({ status: 'error', error: /protocol mismatch/ });
+  });
+});
+
+describe('two clients over one channel', () => {
+  it('hear only their own answers, the earlier told the later replaced it, whose session its bye leaves open', async () => {
+    const t = setup();
+    const shared = createInPagePanelTransport(t.hook);
+    const a = connectDevtools(shared);
+    expect(a.state().status).toBe('connected');
+    const onA = a.request(t.root.id, { type: 'get-state' });
+    await expect(onA).resolves.toMatchObject({ activeTool: 'select' });
+    const b = connectDevtools(shared);
+    expect(b.state().status).toBe('connected');
+    expect(a.state()).toMatchObject({ status: 'error', roots: [], error: /another devtools panel/ });
+    await expect(a.request(t.root.id, { type: 'get-state' })).rejects.toThrow(/another devtools panel/);
+    await expect(b.request(t.root.id, { type: 'get-state' })).resolves.toMatchObject({ activeTool: 'select' });
+    a.close();
+    await expect(b.request(t.root.id, { type: 'get-state' })).resolves.toMatchObject({ activeTool: 'select' });
+  });
+
+  it('ignores a page message tagged for another session', () => {
+    let deliver: (m: PageMessage) => void = () => {};
+    const client = connectDevtools({ send: () => {}, onMessage: (l) => { deliver = l; return () => {}; } });
+    deliver({ type: 'sup', protocol: DEVTOOLS_PROTOCOL, kitVersion: '1', roots: [], session: 'someone-else' });
+    expect(client.state().status).toBe('connecting');
   });
 });
 

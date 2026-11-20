@@ -30,7 +30,8 @@ export interface DevtoolsResultMap {
   'set-overlays': null;
 }
 
-/** Where a connection stands. `error` holds a message the page sent about no request, such as a protocol mismatch. */
+/** Where a connection stands. `error` holds a message the page sent about no request, such as a protocol mismatch,
+ *  or says another panel's connection replaced this one; requests reject in it until the client is closed and opened again. */
 export interface DevtoolsClientState {
   status: 'connecting' | 'connected' | 'error' | 'closed';
   kitVersion: string | null;
@@ -60,6 +61,11 @@ interface Pending {
   reject(err: Error): void;
 }
 
+function rejectAll(pending: Map<number, Pending>, err: Error): void {
+  for (const p of pending.values()) p.reject(err);
+  pending.clear();
+}
+
 /** A connection over `transport`, sending nothing until it is opened. It is connected once the page says `sup`. */
 export function createDevtoolsClient(transport: PanelTransport): DevtoolsClient {
   let state: DevtoolsClientState = { status: 'closed', kitVersion: null, roots: [], error: null };
@@ -67,6 +73,8 @@ export function createDevtoolsClient(transport: PanelTransport): DevtoolsClient 
   const changeListeners = createEmitter<[rootId: string, areas: DevtoolsArea[]]>();
   const pending = new Map<number, Pending>();
   let nextId = 1;
+  // Names this connection to the page, fresh on each open, so traffic for another panel or an earlier open is ignored.
+  let session = '';
 
   const set = (patch: Partial<DevtoolsClientState>): void => {
     const next = { ...state, ...patch };
@@ -84,8 +92,19 @@ export function createDevtoolsClient(transport: PanelTransport): DevtoolsClient 
     }
   };
 
+  const replaced = (): void => {
+    const message = 'another devtools panel connected to this page in place of this one';
+    set({ status: 'error', kitVersion: null, roots: [], error: message });
+    rejectAll(pending, new Error(message));
+  };
+
   const receive = (m: unknown): void => {
     if (state.status === 'closed' || !isPageMessage(m)) return;
+    if (m.session !== undefined && m.session !== session) {
+      // Another panel's traffic on a channel this one shares. Its `sup` after ours means the page serves it instead.
+      if (m.type === 'sup' && state.status === 'connected') replaced();
+      return;
+    }
     switch (m.type) {
       case 'sup':
         set({ status: 'connected', kitVersion: m.kitVersion, roots: m.roots, error: null });
@@ -126,6 +145,8 @@ export function createDevtoolsClient(transport: PanelTransport): DevtoolsClient 
     onChanged: changeListeners.subscribe,
     request(rootId, body) {
       if (state.status === 'closed') return Promise.reject(new Error('the devtools connection is closed'));
+      // An error about no request ends the connection: the page will not answer, or answers another panel.
+      if (state.status === 'error') return Promise.reject(new Error(state.error ?? 'the devtools connection failed'));
       const requestId = nextId++;
       return new Promise((resolve, reject) => {
         pending.set(requestId, { rootId, resolve: resolve as (r: unknown) => void, reject });
@@ -139,10 +160,11 @@ export function createDevtoolsClient(transport: PanelTransport): DevtoolsClient 
     },
     open() {
       if (off) return;
+      session = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
       off = transport.onMessage(receive);
       set({ status: 'connecting', error: null });
       try {
-        transport.send({ type: 'yo', protocol: DEVTOOLS_PROTOCOL });
+        transport.send({ type: 'yo', protocol: DEVTOOLS_PROTOCOL, session });
       } catch (err) {
         // Nothing is listening for this connection, so stop hearing the transport and leave a retry possible.
         off();
@@ -153,16 +175,14 @@ export function createDevtoolsClient(transport: PanelTransport): DevtoolsClient 
     close() {
       if (!off) return;
       try {
-        transport.send({ type: 'bye', protocol: DEVTOOLS_PROTOCOL });
+        transport.send({ type: 'bye', protocol: DEVTOOLS_PROTOCOL, session });
       } catch {
         // The other end is already gone, which is what a bye would have told it.
       }
       off();
       off = null;
       set({ status: 'closed', kitVersion: null, roots: [] });
-      const err = new Error('the devtools connection is closed');
-      for (const p of pending.values()) p.reject(err);
-      pending.clear();
+      rejectAll(pending, new Error('the devtools connection is closed'));
     },
   };
 }

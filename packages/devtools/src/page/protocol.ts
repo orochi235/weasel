@@ -39,15 +39,19 @@ export type DevtoolsRequest = { protocol: number; requestId: number; rootId: str
   | { type: 'set-overlays'; overlays: DevtoolsOverlays }
 );
 
-/** Every message a panel sends the page. */
+/**
+ * Every message a panel sends the page. `session` names the connection a `yo` opens: the page tags every message
+ * it sends that connection with it, so a panel sharing a channel with another hears only its own, and a `bye`
+ * naming another connection closes nothing. A `yo` or `bye` without one is any panel's, as before.
+ */
 export type PanelMessage =
-  | { type: 'yo'; protocol: number }
+  | { type: 'yo'; protocol: number; session?: string }
   /** The panel is closing: drop its overlays and highlight, and stop tracing for it. */
-  | { type: 'bye'; protocol: number }
+  | { type: 'bye'; protocol: number; session?: string }
   | DevtoolsRequest;
 
-/** Every message the page sends a panel. */
-export type PageMessage =
+/** Every message the page sends a panel, tagged with the `session` the panel's `yo` named, if it named one. */
+export type PageMessage = { session?: string } & (
   | { type: 'sup'; protocol: number; kitVersion: string; roots: DevtoolsRootInfo[] }
   | { type: 'root-added'; protocol: number; root: DevtoolsRootInfo }
   | { type: 'root-removed'; protocol: number; rootId: string }
@@ -55,7 +59,8 @@ export type PageMessage =
   | { type: 'changed'; protocol: number; rootId: string; areas: Partial<Record<DevtoolsArea, number>> }
   | { type: 'result'; protocol: number; requestId: number; result: DevtoolsResult }
   /** `requestId` is null for a message that was not a request. */
-  | { type: 'error'; protocol: number; requestId: number | null; message: string };
+  | { type: 'error'; protocol: number; requestId: number | null; message: string }
+);
 
 /** One child row of the scene tree. `nodeId` absent asks for the top level. */
 export interface DevtoolsNodeSummary {

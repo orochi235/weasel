@@ -90,11 +90,18 @@ Every message carries `protocol` (now `1`). Requests also carry `requestId` and 
 is a `result` or `error` with the same `requestId`. A message in another protocol gets an `error`
 naming both versions, and the panel decides how far to degrade.
 
+A `yo` may name a `session`, which the client does with a fresh id on each open. The page tags every
+message it sends that connection with it, and a `bye` naming another session closes nothing. So two
+panels sharing a channel (two clients on one in-page transport, or two window transports) each hear
+only their own answers, and the page serves the later `yo`: the earlier client hears that one's
+`sup`, goes to `error` saying another panel replaced it, and rejects what it had pending. A message
+without a `session` is any panel's, as in pages and panels built before it.
+
 | Direction | Message | Carries |
 |---|---|---|
-| panel → page | `yo` | — |
+| panel → page | `yo` | optional `session` |
 | page → panel | `sup` | `kitVersion`, `roots` |
-| panel → page | `bye` | — : drops this panel's overlays and highlight, and stops tracing for it |
+| panel → page | `bye` | optional `session`: drops this panel's overlays and highlight, and stops tracing for it |
 | page → panel | `root-added` / `root-removed` | the root / its id |
 | page → panel | `changed` | `areas`: each of `scene`, `selection`, `view`, `tool`, `trace`, `registry`, `history` that moved, with its version; at most one per root per animation frame |
 | panel → page | `get-children` | `nodeId`, or none for the top level → each child's id, kind, layer, child count, hidden / locked / pickable |

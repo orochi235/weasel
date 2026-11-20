@@ -36,7 +36,9 @@ export interface Override {
 }
 
 export function openSession(host: SessionHost, transport: PageTransport): DevtoolsSession {
-  const send = (m: PageMessage): void => transport.send(m);
+  // The `session` the panel's `yo` named, tagged on everything sent it so a panel sharing the channel ignores it.
+  let tag: string | undefined;
+  const send = (m: PageMessage): void => transport.send(tag === undefined ? m : { ...m, session: tag });
   const fail = (requestId: number | null, message: string): void =>
     send({ type: 'error', protocol: DEVTOOLS_PROTOCOL, requestId, message });
 
@@ -98,8 +100,14 @@ export function openSession(host: SessionHost, transport: PageTransport): Devtoo
         fail(requestId, `protocol mismatch: the page speaks ${DEVTOOLS_PROTOCOL}, the panel ${String(message.protocol)}`);
         return;
       }
-      if (message.type === 'yo') return greet();
-      if (message.type === 'bye') return close();
+      if (message.type === 'yo') {
+        tag = message.session;
+        return greet();
+      }
+      if (message.type === 'bye') {
+        if (message.session !== undefined && tag !== undefined && message.session !== tag) return;
+        return close();
+      }
       if (!greeted) return fail(requestId, 'send yo before any request');
       const root = host.root(message.rootId);
       if (!root) return fail(requestId, `no root "${message.rootId}"`);
