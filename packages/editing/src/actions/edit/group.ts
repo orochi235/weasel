@@ -34,9 +34,8 @@ function groupPlan(deps: ActionDeps) {
     for (const [id, p] of worlds) worlds.set(id, translatePoseViaDescriptor(p, shift.dx, shift.dy, d));
   }
   const union = drawn && { ...drawn, x: drawn.x + shift.dx, y: drawn.y + shift.dy };
-  const containerWorldPose = union === null
-    ? nodes[0]!.pose
-    : d.fromBounds(union, nodes[0]!.pose);
+  const firstWorld = worlds.get(nodes[0]!.id);
+  const containerWorldPose = union === null ? firstWorld : d.fromBounds(union, firstWorld);
   const pose = frame.localUnder(parent, containerWorldPose);
   if (pose === null || !finiteThroughout(pose)) return null;
   const locals = new Map<NodeId, unknown>();
