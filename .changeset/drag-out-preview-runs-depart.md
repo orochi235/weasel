@@ -2,6 +2,8 @@
 '@weasel-js/editing': patch
 ---
 
-Dragging a child out of a layout container previews the siblings it leaves where the drop will put them, through the container's `depart` when its strategy has one.
+Dragging a child out of a layout container previews its siblings where the drop will leave them.
+
+The preview runs the container's `depart` when its strategy has one, as the commit does.
 
 <!-- entry: fix -->

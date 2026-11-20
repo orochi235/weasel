@@ -2,6 +2,6 @@
 '@weasel-js/guides': patch
 ---
 
-A `pack({ overflow: 'grow' })` container keeps its height fitted to its shelves when its children are reordered or resized, or it is made narrower or wider.
+A growing `pack` container keeps its height fitted to its shelves when children are reordered or resized, or it is resized.
 
 <!-- entry: fix -->
