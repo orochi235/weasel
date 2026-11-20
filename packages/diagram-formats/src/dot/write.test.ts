@@ -261,4 +261,11 @@ describe('writing DOT', () => {
   it('throws on a page the document does not have, rather than writing the first', () => {
     expect(() => writeDot(pageOf({ nodes: [], edges: [] }), { page: 'p9' })).toThrow(/no page "p9"/);
   });
+
+  it('names a shape in both a container and a group, which DOT writes in the container alone', () => {
+    const doc = pageOf({ nodes: [{ id: 'a' }, { id: 'b' }], edges: [], clusters: [{ id: 'g', members: ['a', 'b'] }], containers: [
+      { id: 'k', role: 'container', members: ['a'] },
+    ] });
+    expect(writeDot(doc).warnings).toContain('DOT puts a shape or box in one box only; these were left out of the others: a.');
+  });
 });

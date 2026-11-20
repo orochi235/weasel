@@ -51,7 +51,11 @@ export function nodeLines(node: DataNode, warnings: Warnings, format: string): s
 function clusterTree(page: GraphPage, theme: DiagramTheme, warnings: Warnings, format: string, holdsPools: boolean) {
   const parent = new Map<string, string>();
   const claim = (member: string, owner: string) => {
-    if (parent.has(member) || member === owner) return;
+    if (member === owner) return;
+    if (parent.has(member)) {
+      if (parent.get(member) !== owner) warnings.list(`${format} puts a shape or box in one box only; these were left out of the others`, member);
+      return;
+    }
     for (let at: string | undefined = owner; at !== undefined; at = parent.get(at)) {
       if (at === member) {
         warnings.add(`${format} nests a box only inside another; boxes that held each other in a loop were written apart.`);
