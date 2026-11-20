@@ -153,7 +153,8 @@ function makeStage<TData, TPose>(
   };
 
   const runItem = (i: number): void => {
-    if (progress.canceled || lost(i)) return;
+    // Dropped already: interrupted on its node while it waited its turn on a microtask.
+    if (progress.canceled || progress.done(i) || lost(i)) return;
     const ends = itemEnds(ctx, i, settings.pose, parent ? null : joinedPoses);
     if (!ends) return finishItem(i);
 

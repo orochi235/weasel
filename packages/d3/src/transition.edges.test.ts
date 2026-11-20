@@ -121,4 +121,24 @@ describe('d3Bind transition — an item interrupted on its node', () => {
     expect(s.x('a')).toBeCloseTo(500, 6);
     expect(s.x('b')).toBeCloseTo(-100, 6);
   });
+
+  it('starts no chained item already queued behind a finished one when it is interrupted', async () => {
+    const s = setup();
+    let chained!: () => void;
+    act(() => {
+      const sel = two(s);
+      const t = sel.transition().duration(100).delay((_d, i) => i * 1000);
+      void t.end();
+      chained = () => {
+        t.transition().pose(() => ({ x: -100, y: 0, width: 10, height: 10 }));
+        void sel.filter((d) => d.id === 'a').transition().duration(100).ease(linear)
+          .pose(() => ({ x: 500, y: 0, width: 10, height: 10 })).end();
+      };
+    });
+    s.play(200);
+    act(() => chained());
+    await Promise.resolve();
+    s.play(200);
+    expect(s.x('a')).toBeCloseTo(500, 6);
+  });
 });
