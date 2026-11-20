@@ -3016,3 +3016,11 @@ Calls the lanes made without a ruling:
   differs from the URLs another HUD registered `weasel-hud-default` with, since every HUD on a page shares that one
   family. A host wanting another atlas registers it under a family of its own and passes the name. Swapping the
   family to the newest pair with `replace`, under every HUD already drawing it, was the alternative.
+
+## Audit round fifty-one (2026-11-20): labkit primitives
+
+- 2026-11-20 (the fixer's call): `<Split width>` is controlled, as a React input's `value` is. A drag reports
+  through `onWidthChange` and the sidebar then goes back to whatever `width` the parent renders: the dragged width
+  if it adopted it, its own clamp if it clamped, the old width if it kept it. A parent that adopts the width
+  asynchronously (after a debounce, say) sees the seam snap back until it does. Treating `width` as a starting
+  point the seam may leave, as it did before, was the alternative; `defaultWidth` with no `width` still does that.

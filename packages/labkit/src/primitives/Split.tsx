@@ -1,5 +1,13 @@
 import { useLatest } from '@weasel-js/core';
-import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import {
+  type ReactNode,
+  startTransition,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useReducer,
+  useRef,
+} from 'react';
 import { asNodeId, createNode, Store, stripStrategy } from 'windease';
 import { type ChromeMap, Container, Provider, StrategyRegistryProvider } from 'windease/react';
 import { splitFloors, useZoneWidth } from './splitFloors';
@@ -28,7 +36,9 @@ export interface SplitProps {
   /** The class on the content pane. */
   contentClassName?: string;
   /** The sidebar's current extent in pixels. Omit to leave it unpersisted: the
-   *  seam still works, its result just does not outlive the mount. */
+   *  seam still works, its result just does not outlive the mount. Given, it is
+   *  controlled: a drag the parent does not adopt through `onWidthChange` goes
+   *  back to this width, and one it clamps lands where it clamped. */
   width?: number;
   /** Where the sidebar starts before anyone drags it. */
   defaultWidth?: number;
@@ -178,13 +188,20 @@ export function Split({
     store.setMeta(SIDEBAR_ID, { title: label });
   }, [store, label]);
 
-  useEffect(() => {
-    if (width === undefined || width === widthRef.current) return;
+  // Bumped after each reported drag, so a parent that keeps its `width` still
+  // renders this and the store goes back to it. In a transition, so it renders
+  // after the parent's own update rather than before it.
+  const [reported, bumpReported] = useReducer((n: number) => n + 1, 0);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `reported` is the trigger, read through the store.
+  useLayoutEffect(() => {
+    if (width === undefined) return;
+    const held = (store.getPlacement(SIDEBAR_ID)?.size as { w?: number } | undefined)?.w;
     widthRef.current = width;
-    store.patchPlacement(SIDEBAR_ID, { size: { w: width } });
-  }, [store, width]);
+    if (held !== width) store.patchPlacement(SIDEBAR_ID, { size: { w: width } });
+  }, [store, width, reported]);
 
   const onWidthChangeRef = useLatest(onWidthChange);
+  const controlledRef = useLatest(width !== undefined);
   useEffect(
     () =>
       store.events.on('node.placementChanged', () => {
@@ -196,8 +213,9 @@ export function Split({
         if (typeof next !== 'number' || next === widthRef.current) return;
         widthRef.current = next;
         onWidthChangeRef.current?.(next);
+        if (controlledRef.current) startTransition(bumpReported);
       }),
-    [onWidthChangeRef, store],
+    [controlledRef, onWidthChangeRef, store],
   );
 
   const chrome = useMemo<ChromeMap>(
