@@ -188,13 +188,17 @@ export class LastOperationKeeper implements LastOperationStore {
         try {
           ran = held.rerun(values);
         } catch (err) {
+          ran = false;
           console.error(`weasel last operation: rerunning "${held.op.id}" threw`, err);
         }
       });
-      // An action gone or refusing since leaves the operation as it was, not undone with nothing in its place.
+      // An action gone, refusing or throwing since leaves the operation as it was, not undone with nothing in its
+      // place. A throw after it committed something leaves that, as no redo can bring the operation back over it.
       if (!ran) {
-        if (undid) stack.redo();
-        back?.();
+        if (watched.entry === null && watched.clean) {
+          if (undid) stack.redo();
+          back?.();
+        }
       } else {
         ({ entry: held.entry, clean } = watched);
       }

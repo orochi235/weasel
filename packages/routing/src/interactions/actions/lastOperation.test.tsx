@@ -31,6 +31,7 @@ function widen(doc: Doc, history: History): Action {
         const by = typeof params?.by === 'number' ? params.by : 1;
         doc.ranOn.push(doc.selected);
         if (by === 0) return;
+        if (by === 7) throw new Error('refused');
         history.applyOps([setWidth(doc, doc.width + by)], 'Widen');
         doc.selected = ['result'];
       },
@@ -128,6 +129,19 @@ describe('the last operation', () => {
     act(() => { store.adjust({ by: 4 }); });
     expect(doc.width).toBe(14);
     expect(history.undoDepth()).toBe(1);
+  });
+
+  it('leaves the operation as it was when its rerun throws', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { doc, history, registry, store } = setup();
+    act(() => { registry.trigger(dynamicActionId('widen'), { by: 3 }); });
+    act(() => { expect(store.adjust({ by: 7 })).toBe(false); });
+    expect(doc.width).toBe(13);
+    expect(doc.selected).toEqual(['result']);
+    expect(history.undoDepth()).toBe(1);
+    expect(store.get()).toBeNull();
+    expect(registry.paramsOf('widen')).toEqual({ by: 3 });
+    error.mockRestore();
   });
 
   it('lets go of an adjustment that committed more than one entry, rather than stacking the next on it', () => {
