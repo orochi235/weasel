@@ -41,6 +41,7 @@ export function snapshotFault(snapshot: unknown): string | null {
     if (!isPlainObject(b) || !isId(b.at)) return `branch ${i} has no integer \`at\``;
     const inner = entriesFault(b.entries, `branch ${i}'s \`entries\``);
     if (inner) return inner;
+    if ((b.entries as unknown[]).length === 0) return `branch ${i} has no entries`;
   }
   return null;
 }
