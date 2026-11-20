@@ -384,6 +384,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   can leave it). A selection command stays enabled when its result is the selection already held.
 - 2026-11-10 (property tests): Align, Distribute, Flip, and the reorder commands follow the ruling above:
   `NotApplicable` where they would change nothing, through the same plan their `run` commits.
+- 2026-11-20 (the fixer's call): the paint actions (`setFill`, `setStroke`, their opacity actions, `setStrokeWidth`
+  and `setVertexColor`) are ongoing, and their params usually arrive with the drag's moves rather than with the
+  binding, so their `enabled` cannot answer from params: a picker drag bound with the current color would be
+  declined before its first move. They are `NotApplicable` only where no operand holds anything they could ever
+  write, which today is `setVertexColor` with no selected node carrying `vertexColors`. A run that would write
+  what each node already wears stays enabled and commits no undo entry.
 - Ruled 2026-11-10 (my call, overnight sweep): a reorder that would shift a locked node's place in the stack
   is disabled with `Locked`, after the 2026-11-09 ruling (a node it would move is locked). It used to throw
   from the scene partway through.

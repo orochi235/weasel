@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { ActionDisabledReason } from '@weasel-js/routing';
 import { setVertexColorAction } from './setVertexColor';
 import { makeScene, makeCtx, ongoingInvoker } from './paintActionTestUtils';
 
@@ -21,5 +22,18 @@ describe('setVertexColorAction', () => {
     const ctx = makeCtx({ selectionIds: ['plain', 'short'], scene, params });
     getInvoker().start(ctx, { params }).onEnd?.(ctx, 'commit');
     expect(scene.updates).toEqual([]);
+  });
+});
+
+describe('setVertexColorAction enabled', () => {
+  const deps = (nodes: Record<string, object>) => makeCtx({ selectionIds: Object.keys(nodes), scene: makeScene(nodes) }).deps;
+  const enabled = (nodes: Record<string, object>) => setVertexColorAction.enabled!(deps(nodes), undefined, undefined, undefined);
+
+  it('is off where no selected node has vertex colors', () => {
+    expect(enabled({ plain: {} })).toBe(ActionDisabledReason.NotApplicable);
+  });
+
+  it('is on where one selected node has them', () => {
+    expect(enabled({ plain: {}, ramp: { vertexColors: RAMP } })).toBe(true);
   });
 });
