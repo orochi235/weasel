@@ -10,7 +10,7 @@ import { collapseRunWhitespace, preservesSpace } from './textWhitespace';
 import { fontSizeOf } from './fontSize';
 import { ownLang } from './textLang';
 import type { GradientTable } from './readGradients';
-import { deriveStyle, ownValue, setsOwn, type StyleContext } from './cascade';
+import { deriveStyle, ownProp, ownValue, setsOwn, type StyleContext } from './cascade';
 import { readStroke, isNonScalingStroke, setsOwnStroke, coreStroke, coreTextFill } from './readPaint';
 import { withOutlinedStroke } from './strokeOutlineSvg';
 
@@ -54,7 +54,8 @@ export function readRuns(
     const pieces = Array.from(el.childNodes).flatMap((child): Piece[] => {
       if (child.nodeType === 1 && (child as Element).tagName.toLowerCase() === 'tspan') {
         const sp = child as Element;
-        return [{ tspan: sp, run: readTspanRun(sp, gradients, leafStyle, onWarn) }];
+        const run = readTspanRun(sp, gradients, leafStyle, onWarn);
+        return [{ tspan: sp, run: ownProp(sp, 'baseline-shift') == null ? { ...run, ...inheritedShift } : run }];
       }
       if (child.nodeType === 1) onWarn(`<text> child <${(child as Element).tagName}> not supported; flattening text content`);
       else if (child.nodeType !== 3 /* TEXT_NODE */) return [];

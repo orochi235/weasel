@@ -119,6 +119,16 @@ describe('baseline-shift / relative font-size', () => {
     expect(t.runs?.[2]).toMatchObject({ text: 'c', script: 'sub' });
   });
 
+  it('carries a <text>-level shift onto a tspan naming none, so a node script with runs round-trips', () => {
+    const node: SvgNode = {
+      kind: 'text', x: 0, y: 0, width: 40, height: 14, text: 'ab',
+      style: { script: 'sub' }, runs: [{ text: 'a', bold: true }, { text: 'b' }],
+    };
+    const back = parseSvg(serializeSvg([node])).nodes[0];
+    if (back?.kind !== 'text') throw new Error('expected text');
+    expect(back.runs?.map((r) => r.script)).toEqual(['sub', 'sub']);
+  });
+
   it('maps baseline-shift="baseline" and a zero shift to neither key', () => {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
       <text x="0" y="0"><tspan baseline-shift="baseline">a</tspan><tspan baseline-shift="0">b</tspan></text>
