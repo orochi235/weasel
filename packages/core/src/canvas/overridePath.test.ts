@@ -188,4 +188,15 @@ describe('a slot with its own toPose', () => {
     });
     expect(drawn).toContain(id);
   });
+
+  it('is measured by the scene slot\'s cull, as the scene view\'s is', () => {
+    const { scene, id } = makeScene();
+    scene.setPose(id, { x: 1000, y: 0, width: 100, height: 20 });
+    const shown = polygonFromPoints([{ x: 0, y: 0 }, { x: 50, y: 0 }, { x: 50, y: 20 }]);
+    scene.overrides.set(id, { path: shown });
+    const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne, paintBounds: defaultPaintBounds }, scene);
+    const node = scene.get(id)!;
+    const b = slot.paintBounds!(node, node.pose, VIEW);
+    expect(b).toMatchObject({ x: 0, y: 0, width: 50, height: 20 });
+  });
 });

@@ -15,7 +15,7 @@
 import { forwardRef, useCallback, useEffect, useInsertionEffect, useLayoutEffect, useRef } from 'react';
 import type React from 'react';
 import type { CanvasExtensionApi } from './canvasExtension';
-import { registerMountedCanvas } from './mountedCanvases';
+import { useMountedCanvas } from './mountedCanvases';
 import { useViewHelpers } from './useViewHelpers';
 import { useViewLayerGate } from './useViewLayerGate';
 import { useSurfaceInput } from './useSurfaceInput';
@@ -89,11 +89,7 @@ function CanvasInner<TPose>(
 
   const toWorld = useClientToWorld(canvasRef, props.clientToWorld, viewRef);
 
-  useLayoutEffect(() => {
-    const element = canvasRef.current;
-    if (!element) return;
-    return registerMountedCanvas({ element, getView });
-  }, [canvasRef, detached, inputElement, getView]);
+  useMountedCanvas(canvasRef, getView);
 
   const { paintedCursor, paintedCursorLayer, cursorSink } = usePaintedCursor(canvasRef, requestRedraw);
 

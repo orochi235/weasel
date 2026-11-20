@@ -116,3 +116,28 @@ describe('<WorkerSceneView> hidden and shown again', () => {
     view.unmount();
   });
 });
+
+describe('<WorkerSceneView redrawOn>', () => {
+  it('sends the alphas an outside store changed when one of its sources notifies', async () => {
+    const dimmed = createScene({ systemLayers: [{ id: 'main' }] });
+    const id = dimmed.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 4, height: 4 }, data: {} });
+    const w = fakeWorker();
+    let dim = 1;
+    const listeners = new Set<() => void>();
+    const source = { subscribe: (fn: () => void) => { listeners.add(fn); return () => { listeners.delete(fn); }; } };
+    render(<WorkerSceneView scene={dimmed} view={VIEW} width={10} height={10} worker={() => w.worker}
+      alphaFor={() => dim} redrawOn={[source]} />);
+    await act(() => new Promise<void>((r) => requestAnimationFrame(() => r())));
+    const sentAlpha = () => JSON.stringify(w.posted).includes(`["${id}",0.5]`);
+    expect(sentAlpha()).toBe(false);
+    await act(async () => {
+      w.answer({ type: 'ready' });
+      const first = w.posted.find((m) => m.type === 'frame') as { id: number };
+      w.answer({ type: 'drawn', id: first.id });
+      dim = 0.5;
+      for (const fn of listeners) fn();
+      await new Promise<void>((r) => requestAnimationFrame(() => r()));
+    });
+    expect(sentAlpha()).toBe(true);
+  });
+});

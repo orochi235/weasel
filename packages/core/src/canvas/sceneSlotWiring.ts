@@ -14,6 +14,7 @@ import { withInheritedPaintBounds, withInheritedPaints } from './inheritedPaints
 import { withSceneShapes } from './sceneShapes';
 import { nodeShapesOf } from './nodeShapeRegistry';
 import { withDerivedPaths, withOverridePathBounds, sceneDerivedPathOf, sceneShownToPose } from './derivedPath';
+import type { PaintBoundsFn } from './paintCull';
 import { withPaintOverrides, type PaintOverrides } from './paintOverrides';
 import { nodeAsShown, shownLookup } from 'core/scene/nodeAsShown';
 import { withShownNode } from './shownNodes';
@@ -35,6 +36,20 @@ export function composeAlphaFor<TData, TLayer extends string, TPose>(
   return alphaFor ? (id: string) => alphaFor(id) * overrideAlphaFor(id) : overrideAlphaFor;
 }
 
+/**
+ * A cull's `paintBounds` measuring a node as the scene shows it: its override data, a pose
+ * override's `path`, the shapes the scene registers and the paint it inherits. `<SceneCanvas>`'s
+ * slot and the headless scene view both cull through this, so the two agree on what is off screen.
+ */
+export function sceneCullPaintBounds<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  paintBounds: PaintBoundsFn<Node<TData, TLayer, TPose>, TPose>,
+  shown = shownLookup(scene),
+  toPose?: (node: Node<TData, TLayer, TPose>) => TPose,
+): PaintBoundsFn<Node<TData, TLayer, TPose>, TPose> {
+  return withShownNode(scene.overrides, withSceneShapes(scene, withOverridePathBounds(scene, withInheritedPaintBounds(shown, paintBounds), toPose)));
+}
+
 export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
   slot: SceneSlotConfig<Node<TData, TLayer, TPose>, TPose>,
   scene: Scene<TData, TLayer, TPose>,
@@ -50,10 +65,7 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
     ...slot,
     ...(slot.toPose ? { toPose: sceneShownToPose(scene, slot.toPose) } : {}),
     ...(slot.paintBounds
-      ? {
-        paintBounds: withShownNode(scene.overrides, withSceneShapes(scene,
-          withOverridePathBounds(scene, withInheritedPaintBounds(shown, slot.paintBounds), slot.toPose))),
-      }
+      ? { paintBounds: sceneCullPaintBounds(scene, slot.paintBounds, shown, slot.toPose) }
       : {}),
     drawOne: withShownNode(scene.overrides, painted),
     ...(drawnAt ? { drawnPose: (node: Node<TData, TLayer, TPose>, pose: TPose) => drawnAt(nodeAsShown(scene.overrides, node), pose) } : {}),

@@ -22,7 +22,7 @@ import { useSurfaceSize, type SurfaceSizeProps } from './useSurfaceSize';
 import { sceneViewFrame } from './sceneViewRender';
 import { defaultDrawOne } from './defaultDrawOne';
 import { paintOverrideSources } from './paintOverrides';
-import { subscribeToSources } from '../core/layers/render';
+import { subscribeToSources, type RedrawSource } from '../core/layers/render';
 import type { RenderSceneToCanvasArgs, SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { normalizeView, type View } from '../core/viewport/view';
@@ -44,6 +44,10 @@ export interface SceneViewCanvasCommon<TData, TLayer extends string, TPose> exte
    *  scoping-dim treatment consistent across both. Defaults to `() => 1`. A
    *  worker view calls it on the page and sends the alphas that changed. */
   alphaFor?: (id: string) => number;
+  /** External state the paint reads that the scene does not carry, typically what `alphaFor`
+   *  consults, as on `<SceneCanvas redrawOn>`. Each source is subscribed while mounted and
+   *  repaints the view when it notifies. Pass the main canvas's sources with its `alphaFor`. */
+  redrawOn?: readonly RedrawSource[];
   /** Optional extra commands appended after scene commands, inside the same
    *  view transform — a world-space annotation over the scene. */
   extraCommands?: ReadonlyArray<DrawCommand>;
@@ -162,7 +166,7 @@ function PageSceneView<TData, TLayer extends string, TPose>(
     return lease.paint(canvas, commands, view, { width, height, dpr });
   };
   const { requestRedraw } = useCanvasSurface(paint, {
-    target: localRef, onCommit: 'paint', size: { width, height }, dpr, backend: props.backend,
+    target: localRef, onCommit: 'paint', size: { width, height }, dpr, backend: props.backend, redrawOn: props.redrawOn,
   });
 
   // Override writes never bump the scene version, so the version subscription

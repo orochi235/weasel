@@ -380,6 +380,24 @@ describe('<SceneViewCanvas> — pose overrides', () => {
     expect(renders).toBe(before);          // React did not
   });
 
+  it('repaints when a redrawOn source notifies, for an alphaFor reading outside state', async () => {
+    const scene = makeScene();
+    let dim = 1;
+    const listeners = new Set<() => void>();
+    const source = { subscribe: (fn: () => void) => { listeners.add(fn); return () => { listeners.delete(fn); }; } };
+    const alphaFor = () => dim;
+    render(
+      <SceneViewCanvas scene={scene} view={identityView} width={100} height={80} drawOne={drawOne} alphaFor={alphaFor} redrawOn={[source]} />,
+    );
+    renderMock.mockClear();
+    await act(async () => {
+      dim = 0.5;
+      for (const fn of listeners) fn();
+      await frame();
+    });
+    expect(renderMock).toHaveBeenCalled();
+  });
+
   it('coalesces many commits in one frame into a single paint', async () => {
     const scene = makeScene();
     const first = scene.roots[0];

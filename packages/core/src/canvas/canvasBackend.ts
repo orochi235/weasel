@@ -11,7 +11,8 @@ import { createEmitter } from '@weasel-js/registry';
  * asks for `'webgpu'` where there is no device paints nothing. A tile of a
  * shared canvas (`CanvasPaintOptions.tile`) always paints with WebGL 2: each
  * WebGPU renderer keeps a buffer of its own and presents all of it, which
- * would erase its co-tenants.
+ * would erase its co-tenants. So a canvas that already paints with WebGPU
+ * paints no tile: it cannot open WebGL 2 any more.
  */
 export type CanvasBackend = RendererBackend | 'auto';
 
@@ -20,7 +21,9 @@ export type BackendChoice =
   | { kind: 'webgl2' }
   | { kind: 'webgpu'; device: GPUDevice; fallback: boolean }
   | { kind: 'wait'; ready: Promise<unknown> }
-  | { kind: 'refuse'; reason: string };
+  | { kind: 'refuse'; reason: string }
+  /** A tile cannot paint here, though the canvas painted whole still can. */
+  | { kind: 'refuse-tile'; reason: string };
 
 type DeviceState =
   | { status: 'pending'; ready: Promise<unknown> }
@@ -73,6 +76,9 @@ export function everyProgramHasWgsl(): boolean {
 /** What `canvas` paints with when it asks for `asked`. */
 export function chooseBackend(canvas: HTMLCanvasElement, asked: CanvasBackend, shared: boolean): BackendChoice {
   const chosen = CHOSEN.get(canvas);
+  if (shared && chosen === 'webgpu') {
+    return { kind: 'refuse-tile', reason: 'it paints with WebGPU, which cannot paint a tile of a shared canvas' };
+  }
   const want = chosen ?? (shared ? 'webgl2' : asked);
   if (want === 'webgl2') return { kind: 'webgl2' };
   const state = rendererDevice();
