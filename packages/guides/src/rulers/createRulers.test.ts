@@ -66,6 +66,21 @@ describe('createRulers', () => {
     expect(rulers.get().width).toBe(400);
   });
 
+  it('forgets the canvas it was attached to when detached, and says so', () => {
+    const rulers = createRulers({ guides: store(), root: PT });
+    const api = { requestRedraw: () => {}, getSurfaceRect: () => ({ x: 0, y: 0, width: 400, height: 300 }) } as unknown as CanvasExtensionApi;
+    const detach = rulers.contribution.attach!(api, { get: () => undefined }) as () => void;
+    rulers.contribution.beforePaint!({ view: VIEW } as ContributionFrameCtx);
+    (rulers.contribution.actions!.find((a) => a.id === 'rulers.pointer')!.invoker as ImmediateInvoker)
+      .run({} as ActionDeps, { world: { x: 1, y: 1 }, over: true } as never);
+    const heard = vi.fn();
+    rulers.subscribe(heard);
+    detach();
+    expect(heard).toHaveBeenCalled();
+    expect(rulers.get()).toMatchObject({ view: null, width: 0, height: 0, pointer: null, draft: null });
+    expect(rulers.layout()).toBeNull();
+  });
+
   it('claims presses on the strips along the top and left, and the corner', () => {
     const { layers } = fixture();
     const hit = layers.find((l) => l.id === 'rulers-hit')!;
