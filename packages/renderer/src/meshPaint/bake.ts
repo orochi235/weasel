@@ -31,7 +31,7 @@ export type MeshRect = Rect;
 
 /** The bitmap `bakeMesh` produces, and the paint-space box it covers. */
 export interface BakedMesh {
-  /** `size` × `size` texels, straight RGBA. */
+  /** `size` × `size` texels, premultiplied RGBA, so a bilinear sample across a patch's edge keeps its color. */
   pixels: Uint8ClampedArray;
   /** Texels on a side; `MESH_BAKE_SIZE` unless the caller asked otherwise. */
   size: number;
@@ -155,9 +155,11 @@ function fillTriangle(
       // from dropping out.
       if (w0 < -EDGE_EPS || w1 < -EDGE_EPS || w2 < -EDGE_EPS) continue;
       const k = (y * size + x) * 4;
-      for (let ch = 0; ch < 4; ch++) {
-        pixels[k + ch] = (w0 * a.color[ch] + w1 * b.color[ch] + w2 * c.color[ch]) * 255;
+      const alpha = w0 * a.color[3] + w1 * b.color[3] + w2 * c.color[3];
+      for (let ch = 0; ch < 3; ch++) {
+        pixels[k + ch] = (w0 * a.color[ch] + w1 * b.color[ch] + w2 * c.color[ch]) * alpha * 255;
       }
+      pixels[k + 3] = alpha * 255;
     }
   }
 }

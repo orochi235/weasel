@@ -111,4 +111,12 @@ describe('bakeMesh', () => {
     // sRGB's midpoint is a dark purple; OKLCh's travels around and stays bright.
     expect(b[0] + b[1] + b[2]).toBeGreaterThan(a[0] + a[1] + a[2]);
   });
+
+  it('bakes premultiplied texels, so a translucent corner keeps its color under bilinear sampling', () => {
+    const baked = bakeMesh([squarePatch(undefined, ['#ff000080', '#ff000080', '#ff000080', '#ff000080'])], 'rgb', 16)!;
+    const [r, g, b, a] = texel(baked, 0.5, 0.5);
+    expect(a).toBeCloseTo(128, -1);
+    expect(r).toBeCloseTo(a, -1);
+    expect(g + b).toBe(0);
+  });
 });
