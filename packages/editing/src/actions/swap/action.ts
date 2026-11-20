@@ -6,6 +6,7 @@ import {
 import { icon } from '../../icons.gen';
 import { SWAP_GROUP } from '../../actionGroups';
 import { swapOps } from './swapOps';
+import { opsAnswer, writesLocked } from '../lockedWrites';
 
 /** The two selected nodes a swap trades, or null unless exactly two are selected and `swappable` lets them. */
 function pairOf(deps: ActionDeps): readonly [string, string] | null {
@@ -38,7 +39,7 @@ export const swapAction = defineAction({
       const pair = pairOf(deps);
       if (!selection || !scene || pair === null) return;
       const ops = swapOps(scene, pair[0], pair[1], deps);
-      if (ops === null || ops.length === 0) return;
+      if (ops === null || ops.length === 0 || writesLocked(scene, ops)) return;
       const applyOps = createTransformCommit(deps);
       if (applyOps) applyOps(ops, 'Swap');
       else scene.applyBatch(ops, 'Swap', defaultCommitAdapter(scene, operandMethods(selection)));
@@ -47,6 +48,8 @@ export const swapAction = defineAction({
   enabled: (deps) => {
     const needs = requiresOperands(deps);
     if (needs !== true) return needs;
-    return pairOf(deps!) !== null ? true : ActionDisabledReason.NotApplicable;
+    const pair = pairOf(deps!);
+    const ops = pair === null ? null : swapOps(deps!.scene!, pair[0], pair[1], deps!);
+    return ops === null ? ActionDisabledReason.NotApplicable : opsAnswer(deps!.scene!, ops);
   },
 });

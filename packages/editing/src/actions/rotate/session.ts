@@ -139,6 +139,8 @@ export function captureTurn(
   const boxes = drawnBoxes({ ...deps, scene }, poseFrame);
   const { originPoses, origins, visual } = captureOrigins(view, scene, ids, descriptorOf, poseFrame, boxes);
   if (originPoses.size === 0) return null;
+  // A turn rewrites every source it turns, so one that is locked stops it (ruled 2026-11-09 for commands).
+  if ([...originPoses.keys()].some((id) => scene.isLocked?.(id) === true)) return null;
   // A derived node's chrome draws its own box, not its sources' union.
   const owner = derivedBoxOwner(scene, selected);
   const union = owner === null
@@ -148,7 +150,8 @@ export function captureTurn(
     turn: {
       origins,
       pivot: { x: union.x + union.width / 2, y: union.y + union.height / 2 },
-      useUnionPivot: ids.length > 1 && pivot !== 'each',
+      // A derived node turns as one item about its own box, whatever its sources.
+      useUnionPivot: owner !== null || (ids.length > 1 && pivot !== 'each'),
       descriptorOf,
     },
     originPoses,

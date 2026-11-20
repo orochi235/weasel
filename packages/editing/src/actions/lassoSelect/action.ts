@@ -22,7 +22,7 @@ import { defineAction, resolveParams, setScratch } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
 import type { LassoSelectDep, ViewApi, LassoHitMode, LassoSelectAdapter, GestureContext, LassoSelectBehavior, LassoSelectPose } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
-import { LASSO_VERTICES } from './behaviors/selectFromLasso';
+import { LASSO_VERTICES, isTinyLasso } from './behaviors/selectFromLasso';
 import type {} from '@weasel-js/core';
 import type { Rect } from '@weasel-js/geom';
 
@@ -211,8 +211,7 @@ function endLasso(scratch: LassoScratch, reason: 'commit' | 'cancel'): boolean {
     }
   }
 
-  // Need at least 3 vertices for a meaningful polygon; otherwise no-op.
-  if (vertices.length < 3) {
+  if (isTinyLasso(vertices)) {
     if (!shiftHeld) d.setSelection([]);
     return !shiftHeld;
   }

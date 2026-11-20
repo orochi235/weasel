@@ -8,6 +8,7 @@ import type { Rect } from '@weasel-js/geom';
 import type { MoveSession } from '../session';
 import { moveSessionOf } from '../sessionOf';
 import { swapOps } from '../../swap/swapOps';
+import { writesLocked } from '../../lockedWrites';
 
 /** Options for {@link swapOnDrop}. */
 export interface SwapOnDropOptions {
@@ -148,10 +149,11 @@ export function swapBehavior(options: SwapOnDropOptions, on: (session: MoveSessi
       if (end.answered || armed === null || !session) return undefined;
       const id = draggedOf(session);
       if (id === null || !session.swaps(id, armed.id)) return undefined;
-      return swapOps(session.scene, id, armed.id, {
+      const ops = swapOps(session.scene, id, armed.id, {
         poseDescriptor: session.projection,
         ...(session.geometryProjection ? { geometryProjection: session.geometryProjection } : {}),
       });
+      return ops !== null && writesLocked(session.scene, ops) ? null : ops;
     },
   };
 }

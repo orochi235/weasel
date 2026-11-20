@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { flipAction } from './action';
 import type { NodeId } from '@weasel-js/core';
 import type { BoundGesture } from '@weasel-js/routing';
-import { taggedActionItems } from '@weasel-js/routing';
+import { ActionDisabledReason, taggedActionItems } from '@weasel-js/routing';
 
 interface Pose { x: number; y: number; width: number; height: number; rotation?: number }
 
@@ -338,5 +338,33 @@ describe('flip about a reference', () => {
 describe('flip in a search', () => {
   it('is gathered under "mirror", each way', () => {
     expect(taggedActionItems([flipAction], 'mirror').map((i) => i.label)).toEqual(['Flip Horizontal', 'Flip Vertical']);
+  });
+});
+
+describe('flip through a per-node descriptor', () => {
+  interface TaggedPose extends Pose { odd?: boolean; turnedBy?: string }
+  const base = {
+    getBounds: (p: TaggedPose) => p,
+    remapBounds: (p: TaggedPose, _src: unknown, dst: Pose) => ({ ...p, x: dst.x, y: dst.y, width: dst.width, height: dst.height }),
+    fromBounds: (b: Pose) => ({ ...b }),
+    withRotation: (p: TaggedPose, rotation: number) => ({ ...p, rotation, turnedBy: 'base' }),
+  };
+  const odd = { ...base, withRotation: (p: TaggedPose, rotation: number) => ({ ...p, rotation, turnedBy: 'odd' }) };
+  const poseDescriptor = { ...base, forNode: (node: { pose: TaggedPose }) => (node.pose.odd ? odd : undefined) };
+
+  it("mirrors each node through the descriptor its own forNode resolves", () => {
+    const scene = makeStubScene({
+      a: { x: 0, y: 0, width: 10, height: 10, rotation: 0.5 },
+      b: { x: 50, y: 0, width: 10, height: 10, rotation: 0.5, odd: true } as Pose,
+    });
+    runFlip({ operands: makeSelection(['a', 'b']), scene, poseDescriptor }, { axis: 'x' });
+    expect(scene.poses.get('a')).toMatchObject({ rotation: -0.5, turnedBy: 'base' });
+    expect(scene.poses.get('b')).toMatchObject({ rotation: -0.5, turnedBy: 'odd' });
+  });
+});
+
+describe('flip enabled with operands and no scene', () => {
+  it('is not applicable rather than throwing', () => {
+    expect(flipAction.enabled?.({ operands: makeSelection(['a']) } as never)).toBe(ActionDisabledReason.NotApplicable);
   });
 });

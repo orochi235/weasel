@@ -92,6 +92,7 @@ export const makeBooleanGroupAction: Action & { requires: string[] } = {
   enabled: (deps) => {
     const given = requiresContent(2)(deps);
     if (given !== true) return given;
-    return rootsAmong(deps!.scene as AnyScene, deps!.operands!.get()).length >= 2 ? true : ActionDisabledReason.SelectionRequired;
+    if (!deps?.scene) return ActionDisabledReason.NotApplicable;
+    return booleanGroupOps(deps.scene as AnyScene, deps.operands!.get()) !== null ? true : ActionDisabledReason.NotApplicable;
   },
 };

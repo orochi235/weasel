@@ -4,6 +4,7 @@ import { poseDescriptorOf, defaultCommitAdapter, operandMethods, createTransform
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { requiresOperands, moveNodesOps, nudgeSpec, NUDGE_LABEL, nudgeDelta, type NudgeDirection, recordTransform } from '@weasel-js/core';
 import { NUDGE_GROUP } from '../../actionGroups';
+import { opsAnswer, writesLocked } from '../lockedWrites';
 
 /**
  * Apply a world translation of (dx, dy) to the selected nodes and the
@@ -23,7 +24,7 @@ export function translateSelection(
   label = 'Nudge',
 ): boolean {
   const ops = moveNodesOps(scene, selection.get() as readonly string[], { dx, dy }, { poseDescriptor: d, geometryProjection }, label);
-  if (ops.length === 0) return false;
+  if (ops.length === 0 || writesLocked(scene, ops)) return false;
 
   if (!applyOps) return scene.applyBatch(ops, label, defaultCommitAdapter(scene, operandMethods(selection)));
   return applyOps(ops, label) !== false;
@@ -61,10 +62,11 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
     // On while some selected node would move: a step rounding absorbs moves nothing (2026-11-10 ruling).
     enabled: (deps, _at, _carried, params) => {
       const given = requiresOperands(deps);
-      if (given !== true || !deps?.scene) return given;
+      if (given !== true) return given;
+      if (!deps?.scene) return ActionDisabledReason.NotApplicable;
       const { dx, dy } = nudgeDelta(dir, params?.magnitude);
       const ops = moveNodesOps(deps.scene, deps.operands!.get() as readonly string[], { dx, dy }, deps, 'Nudge');
-      return ops.length > 0 ? true : ActionDisabledReason.NotApplicable;
+      return opsAnswer(deps.scene, ops);
     },
   };
 }

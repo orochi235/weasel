@@ -5,6 +5,7 @@ import { duplicateAction, duplicateSelection } from '../edit/duplicate';
 import { DUPLICATE_OFFSET, requiresContent, requiresOperands, lastTransform, recordTransform, type RepeatableTransform } from '@weasel-js/core';
 import { selectionTransformOps } from './transformSelection';
 import { icon } from '../../icons.gen';
+import { opsAnswer, writesLocked } from '../lockedWrites';
 import { EDIT_GROUP } from '../../actionGroups';
 
 const LABEL = 'Transform Again';
@@ -24,7 +25,7 @@ function canRepeat(deps: ActionDeps, scene: AnyScene, t: RepeatableTransform): t
   }
   const ops = selectionTransformOps(deps, scene, [...deps.operands!.get()] as string[], t, LABEL);
   const all = ops.length > 0 ? finishTransformOps(deps, ops, LABEL) : null;
-  return all && all.length > 0 ? true : ActionDisabledReason.NotApplicable;
+  return all ? opsAnswer(scene, all) : ActionDisabledReason.NotApplicable;
 }
 
 /** Apply `t` to the selection as one undo entry. Returns the ids selected
@@ -32,7 +33,8 @@ function canRepeat(deps: ActionDeps, scene: AnyScene, t: RepeatableTransform): t
 function replay(deps: ActionDeps, scene: AnyScene, t: RepeatableTransform): readonly string[] | null {
   if (t.kind === 'duplicate') return duplicateSelection(deps, t.dx, t.dy, LABEL);
   const selected = [...deps.operands!.get()] as string[];
-  return commitTransformOps(deps, selectionTransformOps(deps, scene, selected, t, LABEL), LABEL) ? selected : null;
+  const ops = selectionTransformOps(deps, scene, selected, t, LABEL);
+  return !writesLocked(scene, ops) && commitTransformOps(deps, ops, LABEL) ? selected : null;
 }
 
 /**
@@ -66,7 +68,8 @@ export const transformAgainAction: Action & { requires: string[] } = {
   },
   enabled: (deps) => {
     const selected = requiresOperands(deps);
-    if (selected !== true || !deps?.scene) return selected;
+    if (selected !== true) return selected;
+    if (!deps?.scene) return ActionDisabledReason.NotApplicable;
     return canRepeat(deps, deps.scene, lastTransform(deps.scene) ?? FIRST);
   },
 };

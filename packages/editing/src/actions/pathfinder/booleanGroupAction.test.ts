@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { pathContainsPoint, type Path } from '@weasel-js/geom';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import { createScene } from '@weasel-js/core/engine';
+import { pagedSceneForTests as pagedScene } from '@weasel-js/core/test-seams';
 import type { NodeId, RectPose } from '@weasel-js/core';
 import { createNodeRouting, sceneDerivedPathOf, inferredNodeRouting, inferredNodeProperties } from '@weasel-js/core';
 // Installs the outline reader a boolean group's derivation reads its children through.
@@ -81,5 +82,14 @@ describe('Make Boolean Group', () => {
     expect(routing.classify(node.data, node)).toBe('boolean');
     const schema = inferredNodeProperties.find((e) => e.name === 'boolean')!.schema;
     expect(Object.keys((schema.members.boolean as { members: object }).members)).toEqual(['data.boolean']);
+  });
+});
+
+describe('Make Boolean Group across layers', () => {
+  it('is not applicable for operands on more than one layer, where it would make nothing', () => {
+    const { scene } = pagedScene();
+    const paper = scene.add({ kind: 'mark', layer: 'paper', pose: { x: 300, y: 0, width: 10, height: 10 }, data: {} });
+    const ink = scene.add({ kind: 'mark', layer: 'ink', pose: { x: 320, y: 0, width: 10, height: 10 }, data: {} });
+    expect(makeBooleanGroupAction.enabled!({ scene, operands: selectionOf([paper, ink]) } as never)).toBe('not-applicable');
   });
 });

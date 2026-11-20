@@ -1,5 +1,5 @@
 import type { SceneNode as Node, NodeId, Op } from '@weasel-js/core';
-import { groupingSite, pageIdOf, translatePoseViaDescriptor, unionBounds, poseDescriptorOf, visualBoundsViaDescriptor, scenePoseFrame, commitOps } from '@weasel-js/core/engine';
+import { groupingSite, pageIdOf, translatePoseViaDescriptor, unionBounds, poseDescriptorOf, nodeDescriptors, visualBoundsViaDescriptor, scenePoseFrame, commitOps } from '@weasel-js/core/engine';
 import { rootsAmong, followerOpsFor, finiteThroughout, requiresContent, operandContent, inPaintOrder, slotAbove } from '@weasel-js/core';
 import { ActionDisabledReason, type Action, type ActionDeps, BETWEEN_GESTURES } from '@weasel-js/routing';
 import { icon } from '../../icons.gen';
@@ -23,15 +23,16 @@ function groupPlan(deps: ActionDeps) {
   if (new Set(nodes.map((n) => n.layer)).size > 1) return null;
 
   const d = poseDescriptorOf(deps.poseDescriptor);
+  const descriptorOf = nodeDescriptors(scene, d);
   const frame = scenePoseFrame(scene);
   const worlds = new Map<NodeId, unknown>();
   for (const node of nodes) worlds.set(node.id, frame.world(node.id));
   // Visual, not stored, bounds: a turned member's ink reaches outside its
   // own box, and the container has to cover what is drawn.
-  const drawn = unionBounds([...worlds.values()].map((p) => visualBoundsViaDescriptor(p, d)));
+  const drawn = unionBounds([...worlds].map(([id, p]) => visualBoundsViaDescriptor(p, descriptorOf(id))));
   const { parent, shift } = groupingSite(scene, nodes.map((n) => n.id), drawn);
   if (shift.dx !== 0 || shift.dy !== 0) {
-    for (const [id, p] of worlds) worlds.set(id, translatePoseViaDescriptor(p, shift.dx, shift.dy, d));
+    for (const [id, p] of worlds) worlds.set(id, translatePoseViaDescriptor(p, shift.dx, shift.dy, descriptorOf(id)));
   }
   const union = drawn && { ...drawn, x: drawn.x + shift.dx, y: drawn.y + shift.dy };
   const containerWorldPose = union === null
