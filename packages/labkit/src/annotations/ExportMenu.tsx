@@ -140,14 +140,14 @@ export function ExportMenu() {
 
           <ChoiceRow
             label="Format"
-            name="lk-export-format"
+            name={`${titleId}-format`}
             choices={FORMATS}
             value={format}
             onChange={setFormat}
           />
           <ChoiceRow
             label="Scale"
-            name="lk-export-scale"
+            name={`${titleId}-scale`}
             choices={SCALES.map((s) => ({ id: s, label: `${s}×` }))}
             value={scale}
             onChange={setScale}
