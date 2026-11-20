@@ -5,8 +5,6 @@ import type { FromFrame, StoryGlobals, ToFrame } from '../protocol/messages';
 import { describeSchema } from '../protocol/schema';
 import type { Decorator, LoadedStory } from '../story/types';
 import { auditElement } from './a11y';
-import { createOverrides } from './cssVars';
-import { watchCssVars } from './cssVarsWatch';
 import { fault } from './fault';
 import { createGlobalsTarget, type GlobalsTarget } from './globalsTarget';
 import { frameDecorators } from './frameDecorators';
@@ -60,19 +58,15 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
   container.append(wrapper);
   const root = createKitRoot(wrapper, setup.icons);
 
-  const overrides = createOverrides(document, setup.cssVarsScope);
   const globalsTarget = createGlobalsTarget(document.documentElement, ':root');
-  const services = startFrameServices(document, send);
-  const vars = watchCssVars(document, overrides, (report) => send({ type: 'vars', vars: report }), {
-    under: document.documentElement,
-  });
+  const services = startFrameServices(document, send, setup.cssVarsScope);
   const session = createStorySession({
     story,
     root,
     decorators: frameDecorators(setup),
     send,
     applyGlobals: (globals: StoryGlobals) => setup.applyGlobals?.(globals, globalsTarget),
-    onCommit: () => vars.scan(),
+    onCommit: () => services.vars.scan(),
   });
 
   const audit = async (id: string) => send({ type: 'a11y', id, ...(await auditElement(wrapper)) });
@@ -92,11 +86,6 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
       case 'globals':
         session.setGlobals(msg.globals);
         break;
-      case 'vars.set': {
-        overrides.set(msg.name, msg.value);
-        vars.revise(msg.name);
-        break;
-      }
       case 'a11y.run':
         void audit(msg.id);
         break;
@@ -105,8 +94,6 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
 
   return () => {
     off();
-    vars.dispose();
-    overrides.dispose();
     globalsTarget.dispose();
     services.dispose();
     root.unmount();
