@@ -58,4 +58,16 @@ describe('TiledSurface', () => {
     expect(frames[0]?.rects.size).toBe(0);
     expect(clear).toHaveBeenCalledTimes(1);
   });
+
+  it('retiles and repaints every tile when the container is swapped for one at the same place', () => {
+    const { surface, frames } = settled();
+    frames.length = 0;
+    const next = div();
+    stubBox(next, 0, 0, 800, 600);
+    surface.setContainer(next);
+    surface.step((f) => frames.push(f));
+    expect(frames).toHaveLength(1);
+    expect(frames[0]?.retiled).toBe(true);
+    expect([...(frames[0]?.dirty ?? [])].sort()).toEqual(['a', 'b']);
+  });
 });

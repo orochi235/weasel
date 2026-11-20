@@ -94,8 +94,8 @@ export class TiledSurface {
   private readonly painters = new Map<string, TilePainter>();
   private readonly clears = new Map<string, SurfaceClear>();
   private stale = true;
-  /** The next measurement retiles whatever it finds: a tile left, or the scope changed, so pixels may sit where
-   *  no rect now is. */
+  /** The next measurement retiles whatever it finds: a tile left, the scope changed or the container did, so
+   *  pixels may sit where no rect now is, or none sit where one is. */
   private retileDue = false;
   private lastDpr = 0;
   private scopeEl: SurfaceScope = null;
@@ -110,6 +110,8 @@ export class TiledSurface {
     if (this.container === el) return false;
     this.container = el;
     this.stale = true;
+    // A new container may be new buffers at the same place, blank and unsized.
+    this.retileDue = true;
     return true;
   }
 

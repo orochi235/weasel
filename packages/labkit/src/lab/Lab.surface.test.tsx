@@ -302,6 +302,74 @@ describe('<Lab> under an owner that offers no top buffer', () => {
   });
 });
 
+describe('<Lab> moving out from under an outer surface and back', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) =>
+      setTimeout(() => cb(0), 16),
+    );
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => clearTimeout(id));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  let setHosted: (hosted: boolean) => void = () => {};
+  /** Offers its surface to the lab only while hosted, so the lab stays mounted across the change. */
+  function MaybeHost({ children }: { children: ReactNode }) {
+    const [hosted, set] = useState(false);
+    setHosted = set;
+    const surface = useTiledSurface({ onFrame: () => {} });
+    return (
+      <SurfaceContext.Provider value={hosted ? surface : null}>
+        <div
+          ref={(el) => {
+            if (el) surface.containerRef(el);
+          }}
+        >
+          {children}
+        </div>
+      </SurfaceContext.Provider>
+    );
+  }
+
+  it('sizes the buffers it mounts afresh', async () => {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 800,
+      height: 600,
+      right: 800,
+      bottom: 600,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+    const { container } = await renderSettled(
+      <MaybeHost>
+        <Lab instruments={[probeInstrument]} />
+      </MaybeHost>,
+      { wrapper: withIcons },
+    );
+    const settle = () =>
+      act(async () => {
+        vi.advanceTimersByTime(64);
+      });
+    await settle();
+    const over = () => container.querySelector<HTMLCanvasElement>('.lk-lab__layer--over canvas');
+    expect([over()?.width, over()?.height]).toEqual([800, 600]);
+
+    await act(async () => setHosted(true));
+    await settle();
+    expect(over()).toBeNull();
+    await act(async () => setHosted(false));
+    await settle();
+    expect([over()?.width, over()?.height]).toEqual([800, 600]);
+  });
+});
+
 describe('<Lab> pages', () => {
   it("gives the title a way back to the project's other labs", async () => {
     const { getByRole } = await renderSettled(
