@@ -48,22 +48,31 @@ export interface DiagramNodeEntry {
  *  carries. An edge label's `label` trait and an anchored node's `anchor` are
  *  excluded the same way, and so is a pool's lane, which takes no connectors. */
 export const dataKeyReader: DiagramNodeReader = (node) => {
-  const data = node.data;
-  if (data === null || typeof data !== 'object') return null;
-  const trait = (data as Record<string, unknown>)[DIAGRAM_TRAIT_KEY];
-  if (trait === null || typeof trait !== 'object') return null;
-  if ('from' in trait && 'to' in trait) return null;
-  if ('label' in trait || 'anchor' in trait || 'mark' in trait) return null;
-  // A sequence's root and the parts drawn from it take no connectors; the sequence edits them as data.
-  if ('seq' in trait || 'sequence' in trait) return null;
-  if ((trait as DiagramNode).container?.role === 'lane') return null;
-  return trait as DiagramNode;
+  const own = ownTraitOf(node);
+  return own === 'none' || own === 'excluded' ? null : own;
 };
+
+/** The node's own `data.diagram` read as {@link dataKeyReader} reads it:
+ *  `'none'` where it has none, `'excluded'` where it is a trait that takes no
+ *  ports (an edge's, a label's, a lane's...). */
+function ownTraitOf(node: DiagramNodeLike): DiagramNode | 'none' | 'excluded' {
+  const data = node.data;
+  if (data === null || typeof data !== 'object') return 'none';
+  const trait = (data as Record<string, unknown>)[DIAGRAM_TRAIT_KEY];
+  if (trait === null || typeof trait !== 'object') return 'none';
+  if ('from' in trait && 'to' in trait) return 'excluded';
+  if ('label' in trait || 'anchor' in trait || 'mark' in trait) return 'excluded';
+  // A sequence's root and the parts drawn from it take no connectors; the sequence edits them as data.
+  if ('seq' in trait || 'sequence' in trait) return 'excluded';
+  if ((trait as DiagramNode).container?.role === 'lane') return 'excluded';
+  return trait as DiagramNode;
+}
 
 /**
  * A reader over declared kinds. A trait on the node's own data still wins, so
- * a single node can opt out of, or override, whatever its kind says. Throws on
- * a duplicate `name`.
+ * a single node can override whatever its kind says (`{ ports: [] }` opts it
+ * out), and a node whose own trait takes no ports, an edge's, a label's or a
+ * lane's, takes none from its kind either. Throws on a duplicate `name`.
  */
 export function createDiagramNodes(entries: readonly DiagramNodeEntry[]): DiagramNodeReader {
   const seen = new Set<string>();
@@ -74,8 +83,9 @@ export function createDiagramNodes(entries: readonly DiagramNodeEntry[]): Diagra
     seen.add(entry.name);
   }
   return (node) => {
-    const own = dataKeyReader(node);
-    if (own !== null) return own;
+    const own = ownTraitOf(node);
+    if (own === 'excluded') return null;
+    if (own !== 'none') return own;
     for (const entry of entries) {
       if (!entry.matches(node.data)) continue;
       return typeof entry.trait === 'function' ? entry.trait(node.data) : entry.trait;
