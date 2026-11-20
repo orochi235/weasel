@@ -64,9 +64,19 @@ export function randomEdges(rand: () => number, shapes: readonly AvoidObstacle[]
   return out;
 }
 
+/** A shape beside grid cell `i` of `n` on `cols` columns: the next in its
+ *  row, else the one before, else the one above. */
+function neighborOf(i: number, cols: number, n: number): number {
+  if (i % cols !== cols - 1 && i + 1 < n) return i + 1;
+  if (i % cols !== 0) return i - 1;
+  return i >= cols ? i - cols : i + cols;
+}
+
 /** `count` connectors, each between a shape and one within two places of it
- *  on the grid `randomShapes` lays them on, never wrapping round a row. */
+ *  on the grid `randomShapes` lays them on, never wrapping round a row. Throws
+ *  on fewer than two shapes, which no connector can join. */
 export function nearEdges(rand: () => number, shapes: readonly AvoidObstacle[], count: number): AvoidEdge[] {
+  if (shapes.length < 2) throw new Error(`nearEdges: needs two shapes, not ${shapes.length}`);
   const cols = Math.ceil(Math.sqrt(shapes.length));
   const rows = Math.ceil(shapes.length / cols);
   const out: AvoidEdge[] = [];
@@ -75,7 +85,7 @@ export function nearEdges(rand: () => number, shapes: readonly AvoidObstacle[], 
     const col = clamp((i % cols) + Math.floor(rand() * 5) - 2, 0, cols - 1);
     const row = clamp(Math.floor(i / cols) + Math.floor(rand() * 5) - 2, 0, rows - 1);
     let j = row * cols + col;
-    if (j === i || j >= shapes.length) j = i % cols === 0 ? i + 1 : i - 1;
+    if (j === i || j >= shapes.length) j = neighborOf(i, cols, shapes.length);
     out.push(edgeBetween(`e${k}`, shapes[i]!, shapes[j]!));
   }
   return out;
