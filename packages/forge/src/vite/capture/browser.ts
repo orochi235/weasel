@@ -96,6 +96,40 @@ async function guard(page: Page, url: string, allow: readonly string[], fetchImp
 }
 
 /**
+ * One context per device pixel ratio, since a context's scale factor is fixed when it is made, and per whether the
+ * dev server is served over https: only then are certificate errors ignored, for its self-signed certificate. The
+ * least recently used closes past `CONTEXT_CAP`.
+ */
+function contextCache(browser: () => Promise<Browser>) {
+  const contexts = new Map<string, Promise<BrowserContext>>();
+  const contextFor = (dpr: number, secure: boolean): Promise<BrowserContext> => {
+    const key = `${dpr}:${secure}`;
+    let context = contexts.get(key);
+    if (context) {
+      contexts.delete(key);
+      contexts.set(key, context);
+    } else {
+      // Captures run one at a time, so no page is open in a context evicted here.
+      const oldest = contexts.size >= CONTEXT_CAP ? contexts.keys().next().value : undefined;
+      if (oldest !== undefined) {
+        void contexts.get(oldest)!.then((c) => c.close()).catch(() => {});
+        contexts.delete(oldest);
+      }
+      const making = browser().then((b) =>
+        b.newContext({ deviceScaleFactor: dpr, ignoreHTTPSErrors: secure, serviceWorkers: 'block' }),
+      );
+      context = making;
+      contexts.set(key, making);
+      making.catch(() => {
+        if (contexts.get(key) === making) contexts.delete(key);
+      });
+    }
+    return context;
+  };
+  return { contextFor, clear: () => contexts.clear() };
+}
+
+/**
  * Loads Playwright and starts Chromium, or says why it cannot. Chromium closes after `IDLE_CLOSE_MS` with nothing
  * to capture and starts again for the next capture, so there is never more than one.
  */
@@ -117,7 +151,6 @@ export async function launchCaptureBrowser(
   }
 
   let chromium: Promise<Browser> | null = null;
-  const contexts = new Map<string, Promise<BrowserContext>>();
   let idle: ReturnType<typeof setTimeout> | undefined;
   let outstanding = 0;
   let tail: Promise<unknown> = Promise.resolve();
@@ -150,34 +183,7 @@ export async function launchCaptureBrowser(
     if (closed) return Promise.reject(new Error(CAPTURE_CLOSED));
     return chromium ?? adopt(playwright.chromium.launch({ headless: true }));
   };
-  /**
-   * One context per device pixel ratio, since a context's scale factor is fixed when it is made, and per whether the
-   * dev server is served over https: only then are certificate errors ignored, for its self-signed certificate.
-   */
-  const contextFor = (dpr: number, secure: boolean): Promise<BrowserContext> => {
-    const key = `${dpr}:${secure}`;
-    let context = contexts.get(key);
-    if (context) {
-      contexts.delete(key);
-      contexts.set(key, context);
-    } else {
-      // Captures run one at a time, so no page is open in a context evicted here.
-      const oldest = contexts.size >= CONTEXT_CAP ? contexts.keys().next().value : undefined;
-      if (oldest !== undefined) {
-        void contexts.get(oldest)!.then((c) => c.close()).catch(() => {});
-        contexts.delete(oldest);
-      }
-      const making = browser().then((b) =>
-        b.newContext({ deviceScaleFactor: dpr, ignoreHTTPSErrors: secure, serviceWorkers: 'block' }),
-      );
-      context = making;
-      contexts.set(key, making);
-      making.catch(() => {
-        if (contexts.get(key) === making) contexts.delete(key);
-      });
-    }
-    return context;
-  };
+  const contexts = contextCache(browser);
   const render = async (page: Page, payload: CapturePayload, url: string, allow: readonly string[]): Promise<Buffer> => {
     await guard(page, url, allow, fetchImpl);
     await page.setViewportSize({ width: Math.ceil(payload.box.width), height: Math.ceil(payload.box.height) });
@@ -197,7 +203,7 @@ export async function launchCaptureBrowser(
       timer = setTimeout(() => reject(new Error(`capture took longer than ${SHOT_DEADLINE_MS / 1000} s`)), SHOT_DEADLINE_MS);
     });
     const work = (async () => {
-      const opened = await (await contextFor(payload.dpr, url.startsWith('https:'))).newPage();
+      const opened = await (await contexts.contextFor(payload.dpr, url.startsWith('https:'))).newPage();
       page = opened;
       if (late) throw new Error('capture timed out');
       return render(opened, payload, url, allow);
