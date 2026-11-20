@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "A variant can load twice when a listener calls `loadVariant` during the `loading` notification",
+  "When the provider's `icons` change identity, its glyphs move to the end of `entries()`",
+  "`toIconSpec` drops the whole spec when `mark` is `null`",
+  "`add` checks a table's shape but not its glyphs, so a null glyph is registered"
+ ],
+ "b": [
+  "useIconGlyph and useIconVariant throw under server rendering: no getServerSnapshot",
+  "A variant that failed stays failed after its loader is replaced: mounted useIconVariant never retries"
+ ]
+}

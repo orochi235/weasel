@@ -1,0 +1,31 @@
+{
+ "pairs": [
+  [
+   1,
+   3
+  ],
+  [
+   3,
+   4
+  ],
+  [
+   4,
+   0
+  ]
+ ],
+ "a": [
+  "A HUD list keeps its keyboard row, pressed row, and hovered row as indexes, so `setRows` that inserts or reorders moves them onto other rows",
+  "A HUD list draws each label with no width limit, so a long label runs past its row instead of ellipsizing",
+  "A HUD button draws its label with no width limit, so a label wider than the button spills outside it",
+  "A HUD list with a `height` shorter than its rows draws the rows past its bounds, where no press can reach them",
+  "A HUD button presses on Space keydown and again on every auto-repeat, where a native button presses once when Space is released"
+ ],
+ "b": [
+  "A HUD button presses on Space keydown and again on every auto-repeat, where a native button presses once on Space's release",
+  "A long window title wraps onto extra lines that spill out of the titlebar; it is not ellipsized as the code says",
+  "setBounds called from a window's own onMove/onResize ends the drag after its first move",
+  "HUD list and button labels are never held to their row/button width, so a long label draws past the widget, where the DOM twin ellipsizes or clips",
+  "A list given an explicit height shorter than its rows draws every row past its bounds, and the rows below can be keyed to but not clicked",
+  "A window is held on the host only when it moves, so shrinking the canvas can leave its titlebar off-screen and the window unreachable"
+ ]
+}

@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   2
+  ]
+ ],
+ "a": [
+  "LinkedCursor flips y twice under `yAxis: 'up'`, drawing the crosshair mirrored about the frame's origin",
+  "`clampZoomAbout` rescales a pan about the host's top-left when the view sits outside the range",
+  "CanvasStack's backing density reads the global `window.devicePixelRatio`, not the element's own window",
+  "An inline `worldSpec` repaints every CanvasStack layer on every render"
+ ],
+ "b": [
+  "The linked crosshair applies one y flip too many, so under `yAxis: 'up'` it is mirrored about the frame origin",
+  "A two-finger pan stops dead at the zoom bound: `clampZoomAbout` reads the pinch's pan as part of its zoom",
+  "Raising `minZoom` (or lowering `maxZoom`) on a live camera makes its next pan jump the zoom about the top-left corner"
+ ]
+}

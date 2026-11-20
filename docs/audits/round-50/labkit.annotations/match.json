@@ -1,0 +1,40 @@
+{
+ "pairs": [
+  [
+   0,
+   4
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   3
+  ],
+  [
+   6,
+   6
+  ]
+ ],
+ "a": [
+  "A change in one target clears the store's redo list but leaves the other targets' scenes able to redo, so the lab's Redo and a pane's own Redo disagree",
+  "SVG export writes a `{ px }` stroke's dash in user units, so the dashes on a point ring and on an untitled text box come out `scale`× longer than on screen or in a PNG",
+  "Typing a mark's title in the Marks sidebar makes one undo step per keystroke",
+  "A save in the legacy format, restored before its target has a content box, is never migrated, and its old `points` show through `get`/`query`",
+  "Every trial's Export panel uses the same radio `name`s, so two open panels take each other's selected choice",
+  "The restyle gesture counter starts again at 1 when the palette remounts, so a new restyle can merge into an older, unrelated undo step",
+  "The calibration instrument's map of picture refs gains an entry per trial and never loses one"
+ ],
+ "b": [
+  "The SVG export copies a `{ px }` stroke's dashes as user units, so they scale with the export where the pane and the raster export keep them in screen pixels",
+  "Restyling a selection that spans targets or trials lands one undo step per target, not one per burst",
+  "`AnnotationOverlayProps.scene` documents a shared scene separated by each mark's `target` field, but every target has its own scene",
+  "Typing a mark's title in `<MarkList>` lands one undo step per keystroke",
+  "A new mark change clears the ordering's redo for every target but leaves the other targets' scenes holding theirs, so a pane's own Redo brings back a change the store says is gone",
+  "A target the instrument no longer (or not yet) declares reads as a 0×0 content box, so its kept marks report all-zero positions and a geometry write collapses them to the origin",
+  "`calibrationInstrument` keeps a picture ref for every trial id it has ever rendered, never dropping one",
+  "Choosing \"—\" in `<MarkList>`'s status select stores `status: ''` rather than clearing it, so \"no status\" has two representations",
+  "Every API write snaps a mark's world pose to 1/10,000 of the content box, so on a large target `add` and `update` move marks by whole pixels"
+ ]
+}

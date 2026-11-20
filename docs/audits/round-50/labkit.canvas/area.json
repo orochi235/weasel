@@ -1,0 +1,61 @@
+{
+ "id": "labkit.canvas",
+ "commit": "161b7a4394b9b3a15bb07c10137fe7b18d99acba",
+ "date": "2026-11-20",
+ "files": [
+  "packages/labkit/src/canvas/CameraInput.tsx",
+  "packages/labkit/src/canvas/CameraWheelContext.ts",
+  "packages/labkit/src/canvas/CanvasStack.less",
+  "packages/labkit/src/canvas/CanvasStack.stories.tsx",
+  "packages/labkit/src/canvas/CanvasStack.tsx",
+  "packages/labkit/src/canvas/CanvasStackContext.ts",
+  "packages/labkit/src/canvas/LinkedCursor.less",
+  "packages/labkit/src/canvas/LinkedCursor.tsx",
+  "packages/labkit/src/canvas/Orbit.less",
+  "packages/labkit/src/canvas/Orbit.tsx",
+  "packages/labkit/src/canvas/Stage.less",
+  "packages/labkit/src/canvas/Stage.tsx",
+  "packages/labkit/src/canvas/camera.ts",
+  "packages/labkit/src/canvas/cameraGestures.ts",
+  "packages/labkit/src/canvas/cameraRegistry.ts",
+  "packages/labkit/src/canvas/cameraTouch.less",
+  "packages/labkit/src/canvas/cameraView.ts",
+  "packages/labkit/src/canvas/cameraZoom.ts",
+  "packages/labkit/src/canvas/canvasCoords.ts",
+  "packages/labkit/src/canvas/hostBox.ts",
+  "packages/labkit/src/canvas/index.ts",
+  "packages/labkit/src/canvas/orbitZoom.ts",
+  "packages/labkit/src/canvas/useLayerScheduler.ts",
+  "packages/labkit/src/canvas/useThemeColors.ts",
+  "packages/labkit/src/canvas/worldSpec.ts"
+ ],
+ "a": 4,
+ "b": 3,
+ "m": 2,
+ "distinct": 5,
+ "chapman": 5.7,
+ "unfound": 0.7,
+ "read": {
+  "A": 25,
+  "B": 25
+ },
+ "patches": 7,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 10.2,
+   "B": 4.1,
+   "match": 0.1,
+   "fix": 17.2
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 1978947,
+  "costUsd": 5.69
+ },
+ "fixCommits": []
+}

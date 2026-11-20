@@ -1,0 +1,58 @@
+{
+ "id": "hud.menu",
+ "commit": "161b7a4394b9b3a15bb07c10137fe7b18d99acba",
+ "date": "2026-11-20",
+ "files": [
+  "packages/hud/src/menu/accessibleMenu.ts",
+  "packages/hud/src/menu/attachMenuHost.ts",
+  "packages/hud/src/menu/chipRepeat.ts",
+  "packages/hud/src/menu/colorPicker.ts",
+  "packages/hud/src/menu/menu.fixture.ts",
+  "packages/hud/src/menu/menuEnv.ts",
+  "packages/hud/src/menu/menuWidget.ts",
+  "packages/hud/src/menu/panelCommands.ts",
+  "packages/hud/src/menu/placePanels.ts",
+  "packages/hud/src/menu/textEdit.ts",
+  "packages/hud/src/menu/textWidth.ts",
+  "packages/hud/src/menu/typedLine.ts",
+  "packages/hud/src/menu/valueRows.ts"
+ ],
+ "a": 4,
+ "b": 4,
+ "m": 2,
+ "distinct": 6,
+ "chapman": 7.3,
+ "unfound": 1.3,
+ "read": {
+  "A": 13,
+  "B": 13
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 8.8,
+   "B": 7.6,
+   "match": 0.1,
+   "fix": 14.7
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 2113856,
+  "costUsd": 6.09
+ },
+ "fixCommits": [
+  "7c33ab3530b8e6aaa3b5e85a473038dffa64069b",
+  "021b614432ce0ddf0eee2e5f7c4dab87265159f7",
+  "c89788cbfa0bdff862056b7f4a5b13064a43a617",
+  "e994ba8cafefde7255e225931c82b04f1dd6d802",
+  "59811e4e6a74245dac5702b3ab9f19b49df62ae2",
+  "f1a4ff54903be26d9fd48f50354aee92020b5a52",
+  "05d33d10763103832cf15656e1cc39e6719a15ce",
+  "22b42791cadfdba454d3fb07623fbaccb14eb990"
+ ]
+}

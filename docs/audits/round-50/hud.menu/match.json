@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "A color picker's Hex row shows, and compares against, the last text typed rather than the color the picker holds",
+  "A text row's edit survives its submenu closing, so keys go to an invisible edit and the menu cannot be navigated",
+  "A picker's swatches draw in the alpha the row opened with but write the alpha held now",
+  "Typed text longer than its row draws outside the panel, over the label and past the panel's left edge"
+ ],
+ "b": [
+  "A text row's edit survives its submenu closing, swallowing keys into a row no longer on screen",
+  "`attachMenuHost` with `toCanvas: undefined` or `canvasSize: undefined` throws instead of using the hud's",
+  "A color picker's swatches draw in the alpha the row opened with, not the alpha it holds now",
+  "A color picker's swatch rows are exposed as checkboxes, though choosing one unchecks the rest"
+ ]
+}

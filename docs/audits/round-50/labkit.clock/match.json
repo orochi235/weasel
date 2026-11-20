@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "a": [
+  "Play on a reversed run that has reached its start does nothing; only a forward run at its end starts over",
+  "A trial's transport keeps the speed it opened at after a config edit re-declares the clock's speed",
+  "A config edit that changes only a clock's `rate` never reaches `declare`, though the declared speed follows it",
+  "HeldClock forces `rate: 0`, which also resets a declaration's rate-derived speed to 1",
+  "useLabClocks records the lab clock's position against the latest `spec` though the clock keeps the mount's",
+  "TrialTransport `replay` silently does nothing for a clock that is not seekable"
+ ],
+ "b": [
+  "Play does not restart a run that was played backward to its start",
+  "A declaration whose speed comes from `rate` is never redeclared when it changes",
+  "A trial's keyed transport answers page keys when no trial is focused, contrary to its doc"
+ ]
+}

@@ -1,0 +1,14 @@
+{
+ "pairs": [],
+ "a": [
+  "nebulaStyle counts a ramp nebula against weaselTheme, not the lab's theme, so a ramp only the lab's theme declares throws",
+  "Every floating panel is pinned to the same top-right corner, so a second one covers the first entirely",
+  "Toggling `reorderable` on a Workspace remounts every tile, trials and their state included",
+  "`onReorder` hands back tile-panel node ids (`lk-panel-<key>`), and a trial id with that prefix renders as an empty panel"
+ ],
+ "b": [
+  "Uninstalling one `useLabAmbient` caller removes every caller that installed the same array",
+  "A presenting lab blanks the host page's root and body background and resets its color-scheme even when it is not in an iframe",
+  "`presentation.enter()` in a lab with no focused trial hides the lab's chrome and presents nothing"
+ ]
+}

@@ -1,0 +1,58 @@
+{
+ "id": "labkit.chrome",
+ "commit": "161b7a4394b9b3a15bb07c10137fe7b18d99acba",
+ "date": "2026-11-20",
+ "files": [
+  "packages/labkit/src/chrome/ChromeRegions.stories.tsx",
+  "packages/labkit/src/chrome/LabChrome.tsx",
+  "packages/labkit/src/chrome/builtins.tsx",
+  "packages/labkit/src/chrome/index.ts",
+  "packages/labkit/src/chrome/labTypes.ts",
+  "packages/labkit/src/chrome/merge.ts",
+  "packages/labkit/src/chrome/regions/OverlayRegion.tsx",
+  "packages/labkit/src/chrome/regions/PaletteRegion.less",
+  "packages/labkit/src/chrome/regions/PaletteRegion.tsx",
+  "packages/labkit/src/chrome/regions/SidebarPanes.stories.tsx",
+  "packages/labkit/src/chrome/regions/SidebarPanes.tsx",
+  "packages/labkit/src/chrome/regions/SidebarRegion.less",
+  "packages/labkit/src/chrome/regions/SidebarRegion.stories.tsx",
+  "packages/labkit/src/chrome/regions/SidebarRegion.tsx",
+  "packages/labkit/src/chrome/regions/StatusRegion.tsx",
+  "packages/labkit/src/chrome/regions/TitleBarRegion.tsx",
+  "packages/labkit/src/chrome/regions/ToolbarRegion.tsx",
+  "packages/labkit/src/chrome/regions/ViewportRegion.less",
+  "packages/labkit/src/chrome/regions/ViewportRegion.tsx",
+  "packages/labkit/src/chrome/regions/groupsOf.ts",
+  "packages/labkit/src/chrome/trialActions.tsx",
+  "packages/labkit/src/chrome/types.ts"
+ ],
+ "a": 6,
+ "b": 4,
+ "m": 1,
+ "distinct": 9,
+ "chapman": 16.5,
+ "unfound": 7.5,
+ "read": {
+  "A": 22,
+  "B": 22
+ },
+ "patches": 10,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.4,
+   "B": 10,
+   "match": 0.2,
+   "fix": 18.2
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 2748128,
+  "costUsd": 7.59
+ },
+ "fixCommits": []
+}

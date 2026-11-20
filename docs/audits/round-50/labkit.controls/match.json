@@ -1,0 +1,37 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   4
+  ],
+  [
+   3,
+   2
+  ],
+  [
+   5,
+   6
+  ]
+ ],
+ "a": [
+  "A panel keeping its own auto set loses all but the last unpin when one reset writes several leaves",
+  "An alias row's reset does nothing when the panel's aliases point into another schema (`over`)",
+  "An `inDialog` body's `ctx.update` and `ctx.drafts` write straight to the config, past the dialog's draft",
+  "A group drawn `as: 'section'` drops its `resettable` reset and doesn't lift its `.heading()` control",
+  "A `.dialog` leaf's auto readout never quotes its value, though a compound row's does",
+  "The AutoControls story describes the old auto row: \"shows no control at all\""
+ ],
+ "b": [
+  "An uncontrolled panel's auto set is rebuilt from a stale closure, so several writes in one event lose all but the last one's (un)pinning",
+  "`inDialog` drops the row's `disabled`, so a dialog row under a failing `enableIf` still opens and writes",
+  "A `resettable` group drawn `as: 'section'` loses its reset button in `ControlPanel`",
+  "A matrix cell that is an alias of an enum opens a dropdown inside the popover, which stays open after a choice",
+  "An alias row into another schema (`over`) shows a reset button that writes nothing",
+  "An uncontrolled panel's auto set is seeded once and never follows a new `schema`",
+  "The AutoControls story tells the reviewer an auto row draws no control, which the panel no longer does"
+ ]
+}

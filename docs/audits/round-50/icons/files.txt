@@ -1,0 +1,15 @@
+packages/icons/src/icons.gen.ts
+packages/icons/src/icons.table.ts
+packages/icons/src/index.ts
+packages/icons/src/mark.ts
+packages/icons/src/names.ts
+packages/icons/src/pbt.fixture.ts
+packages/icons/src/react.ts
+packages/icons/src/react/IconRegistryProvider.tsx
+packages/icons/src/react/useIconGlyph.ts
+packages/icons/src/react/useIconVariant.ts
+packages/icons/src/registry.ts
+packages/icons/src/shapes.ts
+packages/icons/src/spec.ts
+packages/icons/src/table.ts
+packages/icons/src/variants.ts

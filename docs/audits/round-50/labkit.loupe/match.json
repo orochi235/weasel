@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   2,
+   0
+  ]
+ ],
+ "a": [
+  "The clone source's copy joins the story's radio groups, unchecking the story's own checked radio",
+  "A Follow lens zoomed while its pointer rests, then pinned, keeps a reticle the size of the old factor",
+  "A loupe's `mode`, `factor`, `minFactor` and `maxFactor` are read once at mount; later prop changes are dropped",
+  "`createLensApi` restarts lens ids at `lens-0`, colliding with lenses already in a host-owned scene",
+  "`createLensApi` subscribes to the scene and never unsubscribes",
+  "Turning `hollow` off while a hollow lens is up leaves its last box's tiles undamaged"
+ ],
+ "b": [
+  "A loupe's `mode`, `minFactor` and `maxFactor` are read once at mount; later prop changes never reach the model",
+  "The lab lens API places lenses in lab-body px, but the overlay draws and reads them in surface-container px",
+  "A hollow lens's damage keeps its last box in client px, so after the host scrolls the next move invalidates the wrong region"
+ ]
+}

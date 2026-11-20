@@ -1,0 +1,22 @@
+{
+ "pairs": [
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "The built-in FPS meter's `end: true` drags every instrument status readout to the far end",
+  "`group` and `end` mean different things in each region; four regions ignore `group` entirely",
+  "A group's `end` is taken from its first member only",
+  "Lab header items with `keys` lose their declared `shortcut` when no command is found",
+  "Ungrouped toolbar entries are announced by their contribution id",
+  "A tool whose key was unbound still shows its declared key on the trial rail"
+ ],
+ "b": [
+  "Copy settings as JSON ignores the instrument's auto reports, so it copies values the trial does not run with",
+  "A toolbar contribution without `end` that merges after a built-in `end` group lands at the far end",
+  "A group's `end` is taken from its first entry only, so `end` on a later entry of the group is dropped",
+  "The palette and viewport regions silently drop `end` (and the viewport drops `group`)"
+ ]
+}

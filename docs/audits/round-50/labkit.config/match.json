@@ -1,0 +1,29 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   2,
+   0
+  ]
+ ],
+ "a": [
+  "sectionTree judges conditions without the schema the config is drawn over, unlike every panel surface",
+  "An f.object / f.list / f.map / f.union inner node bypasses the rule chain and drops its options",
+  "fromPrefs exempts a section's switch leaf by member key, but inside a group's object the condition paths are root paths",
+  "prefsFromConfig drops the schema's admitted selectors, so f.prefs(prefsFromConfig(r)) loses them",
+  "A resolver that enumerates its config sees only the auto paths already resolved, so declaration order still decides",
+  "The demand proxy breaks its invariants when the config it was given is frozen",
+  "titleCase fuses an acronym into the following word",
+  "f.custom's validate is lost by prefsFromConfig / f.prefs",
+  "BaseNode.auto's docstring still names the removed `auto` export"
+ ],
+ "b": [
+  "A section's enableIf switch inside a group's `object` leaf is disabled by its own section",
+  "sectionTree and configVerdict ignore the schema's `over`, so a rail form shows and disables rows the panel does not",
+  "`f.custom`'s `validate` is stored and never run",
+  "`f.curve().range()` accepts bounds `f.number().range()` rejects"
+ ]
+}

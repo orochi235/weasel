@@ -1,0 +1,61 @@
+{
+ "id": "hud.widgets",
+ "commit": "161b7a4394b9b3a15bb07c10137fe7b18d99acba",
+ "date": "2026-11-20",
+ "files": [
+  "packages/hud/src/widgets/ButtonWidget.stories.tsx",
+  "packages/hud/src/widgets/button.ts",
+  "packages/hud/src/widgets/image.ts",
+  "packages/hud/src/widgets/label.ts",
+  "packages/hud/src/widgets/list/ListWidget.stories.tsx",
+  "packages/hud/src/widgets/list/drawList.ts",
+  "packages/hud/src/widgets/list/list.ts",
+  "packages/hud/src/widgets/list/listNav.ts",
+  "packages/hud/src/widgets/rect.ts",
+  "packages/hud/src/widgets/text.ts",
+  "packages/hud/src/widgets/widgets.stories.module.css",
+  "packages/hud/src/widgets/window/window.ts",
+  "packages/hud/src/widgets/window/windowDrag.ts",
+  "packages/hud/src/widgets/window/windowFrame.ts",
+  "packages/hud/src/widgets/window/windowLook.ts",
+  "packages/hud/src/widgets/window/zones.ts"
+ ],
+ "a": 5,
+ "b": 6,
+ "m": 3,
+ "distinct": 8,
+ "chapman": 9.5,
+ "unfound": 1.5,
+ "read": {
+  "A": 16,
+  "B": 16
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.7,
+   "B": 9.3,
+   "match": 0.2,
+   "fix": 21.1
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "weightedTokens": 2257589,
+  "costUsd": 6.45
+ },
+ "fixCommits": [
+  "23cf40dc9a1355e26da1c1f3f16b89ef40a5904a",
+  "5719dc804f96662d0a44d516595e5ccb68445007",
+  "ed0da6a320b6163b01bc42517354c2a2d005cdc8",
+  "c9f01ff81350bb5755a3fcf49b19c1f860f269d3",
+  "3ed16dfb2abe32b124d9ff6f7c0ac77bd57480b6",
+  "63e6582b12ab9c24cc24d3ec79a33076cf7ac910",
+  "d587dbaf10b22f81bc8d30093b9309a8b0b5f402",
+  "5c29e3bd21928172d5b9cb22c8599114a8cb619f"
+ ]
+}

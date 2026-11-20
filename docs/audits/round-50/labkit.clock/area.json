@@ -1,0 +1,51 @@
+{
+ "id": "labkit.clock",
+ "commit": "161b7a4394b9b3a15bb07c10137fe7b18d99acba",
+ "date": "2026-11-20",
+ "files": [
+  "packages/labkit/src/clock/ClockFrames.stories.less",
+  "packages/labkit/src/clock/ClockFrames.stories.tsx",
+  "packages/labkit/src/clock/HeldClock.tsx",
+  "packages/labkit/src/clock/TrialTransport.tsx",
+  "packages/labkit/src/clock/contexts.ts",
+  "packages/labkit/src/clock/hooks.ts",
+  "packages/labkit/src/clock/index.ts",
+  "packages/labkit/src/clock/runTo.ts",
+  "packages/labkit/src/clock/transportControl.ts",
+  "packages/labkit/src/clock/transportHold.ts",
+  "packages/labkit/src/clock/trialClock.ts",
+  "packages/labkit/src/clock/useLabClocks.ts",
+  "packages/labkit/src/clock/useTransportControl.ts",
+  "packages/labkit/src/clock/useTransportKeys.ts",
+  "packages/labkit/src/clock/useTrialClockSetup.ts"
+ ],
+ "a": 6,
+ "b": 3,
+ "m": 2,
+ "distinct": 7,
+ "chapman": 8.3,
+ "unfound": 1.3,
+ "read": {
+  "A": 15,
+  "B": 15
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.2,
+   "B": 8.6,
+   "match": 0.1,
+   "fix": 15.5
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2079293,
+  "costUsd": 5.85
+ },
+ "fixCommits": []
+}

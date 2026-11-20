@@ -1,0 +1,61 @@
+{
+ "id": "icons",
+ "commit": "161b7a4394b9b3a15bb07c10137fe7b18d99acba",
+ "date": "2026-11-20",
+ "files": [
+  "packages/icons/src/icons.gen.ts",
+  "packages/icons/src/icons.table.ts",
+  "packages/icons/src/index.ts",
+  "packages/icons/src/mark.ts",
+  "packages/icons/src/names.ts",
+  "packages/icons/src/pbt.fixture.ts",
+  "packages/icons/src/react.ts",
+  "packages/icons/src/react/IconRegistryProvider.tsx",
+  "packages/icons/src/react/useIconGlyph.ts",
+  "packages/icons/src/react/useIconVariant.ts",
+  "packages/icons/src/registry.ts",
+  "packages/icons/src/shapes.ts",
+  "packages/icons/src/spec.ts",
+  "packages/icons/src/table.ts",
+  "packages/icons/src/variants.ts"
+ ],
+ "a": 4,
+ "b": 2,
+ "m": 0,
+ "distinct": 6,
+ "chapman": 14,
+ "unfound": 8,
+ "read": {
+  "A": 15,
+  "B": 15
+ },
+ "patches": 9,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.9,
+   "B": 3.9,
+   "match": 0.1,
+   "fix": 15
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "studio"
+  },
+  "weightedTokens": 1332913,
+  "costUsd": 4.03
+ },
+ "fixCommits": [
+  "5ffc43be6c479e3b4292d82f913b850304baff0d",
+  "813a30687da1de1c325761b139524459d1892a4f",
+  "158f86886120abe33fdc0cbe8d1bbc91a4b17d4c",
+  "8e43f3f21bcc884d30156a4477ea2af8d5a9245c",
+  "201d32fb8127ff1f001b9ed278feeea5aad6be14",
+  "ffcde619d86749d7ef441d87d53c38c9bfd9f7f3",
+  "8f91a2fe5d727fa1317cc7ec49dff7797432c940",
+  "9178a0e1a67684ee6c17b76319a4fef19c266c7b",
+  "7e59224d8cff32bbd0a1e1da9ca27d15a67d37b5"
+ ]
+}

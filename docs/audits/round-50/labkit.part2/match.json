@@ -1,0 +1,22 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "A Reset or outside load of a scene that has history writes a scene with no nodes into the trial's state",
+  "`sceneTrialHistory.restore` throws `ExtensionConflictError` on every restore after the first on the same scene",
+  "The overview draws animated (`timed`) canvas layers once and never repaints them",
+  "The scene's trial history has no `clear`, so a Reset over a scene not owned by `useTrialScene` keeps stale settings entries"
+ ],
+ "b": [
+  "useTrialScene writes a Reset or an outside load back into state, because loadState's history 'clear' step is not skipped",
+  "sceneTrialHistory.restore registers a fresh TRIAL_EDIT_OP handler on every call, so a second restore into the same scene throws"
+ ]
+}

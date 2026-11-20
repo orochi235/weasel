@@ -1,0 +1,48 @@
+{
+ "id": "icons-plugin",
+ "commit": "161b7a4394b9b3a15bb07c10137fe7b18d99acba",
+ "date": "2026-11-20",
+ "files": [
+  "packages/icons-plugin/src/annotate.ts",
+  "packages/icons-plugin/src/bundlers.ts",
+  "packages/icons-plugin/src/catalog.ts",
+  "packages/icons-plugin/src/collect.ts",
+  "packages/icons-plugin/src/index.ts",
+  "packages/icons-plugin/src/parse.ts",
+  "packages/icons-plugin/src/pbt.fixture.ts",
+  "packages/icons-plugin/src/rewrite.ts",
+  "packages/icons-plugin/src/scope.ts",
+  "packages/icons-plugin/src/tables.ts",
+  "packages/icons-plugin/src/virtual.ts",
+  "packages/icons-plugin/src/walk.ts"
+ ],
+ "a": 4,
+ "b": 6,
+ "m": 2,
+ "distinct": 8,
+ "chapman": 10.7,
+ "unfound": 2.7,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "patches": 10,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 9.4,
+   "B": 4.3,
+   "match": 0.2,
+   "fix": 18.8
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2336687,
+  "costUsd": 6.72
+ },
+ "fixCommits": []
+}

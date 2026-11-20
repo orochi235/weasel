@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   3
+  ],
+  [
+   4,
+   0
+  ]
+ ],
+ "a": [
+  "The 3D pick index's exact-box map keeps an entry for every node ever boxed, deleted ones included",
+  "`camera.pinchDolly` subtracts the pane's canvas origin from a centroid that is already view-local",
+  "The line pass drops a whole segment when one end is behind the eye, where the CPU projection clips it",
+  "The 3D pick index boxes a node at its shown pose but with its stored data, where core's boxes it wholly as shown",
+  "The 3D marquee tests through the factory's camera and ignores the asking view's `viewId`, which the pick reads"
+ ],
+ "b": [
+  "Marquee hit test casts through the factory's view, ignoring the asking view's `viewId`, while the pick reads it",
+  "An unbounded box earlier in render order erases every box's shared alignment plane (NaN locus)",
+  "A level drag under a tilted `up` overwrites one world axis, leaving the level plane and the pointer",
+  "The 3D pick index's exact-box map keeps an entry for every node id it ever boxed"
+ ]
+}

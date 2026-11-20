@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "A followed `icon` used other than as a direct call is neither rewritten nor warned about, so its glyphs silently miss a trimmed build",
+  "The shadowing walk skips two scopes: a `var` in a class `static {}` block and a declaration in a TS `namespace` body don't hide the import",
+  "In dev, `virtual:weasel-icons` is never invalidated, so tables found later or glyphs added while serving are missing until a restart",
+  "`assertBundler` looks the mode up through the prototype chain"
+ ],
+ "b": [
+  "A `const`/`let`/`function`/`var` inside a TypeScript `namespace` does not shadow the imported `icon`",
+  "A `var` inside a class `static { }` block does not shadow the imported `icon`",
+  "Using `icon` as a value (`const g = icon`, `list.map(icon)`) gives no warning, unlike re-exports and namespace/default imports",
+  "`vite build --mode test` runs the dev path: nothing trimmed, missing glyphs not checked",
+  "`icon()` calls in Vue/Svelte/Astro SFC script blocks are skipped without a warning",
+  "The fallback scan in `collectIconRefs` drops refs, contrary to its docstring (\"never drops one\")"
+ ]
+}

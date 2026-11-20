@@ -297,6 +297,8 @@
    "apps/draw/src/dev/audits/RoundsChart.tsx",
    "apps/draw/src/dev/audits/Stats.module.css",
    "apps/draw/src/dev/audits/Stats.tsx",
+   "apps/draw/src/dev/audits/TopTabs.module.css",
+   "apps/draw/src/dev/audits/TopTabs.tsx",
    "apps/draw/src/dev/audits/Treemap.module.css",
    "apps/draw/src/dev/audits/Treemap.tsx",
    "apps/draw/src/dev/audits/areaData.ts",
@@ -2883,6 +2885,7 @@
    "packages/editing/src/actions/lassoSelect/behaviors/selectFromLasso.ts",
    "packages/editing/src/actions/lassoSelect/index.ts",
    "packages/editing/src/actions/lassoSelect/options.ts",
+   "packages/editing/src/actions/lockedWrites.ts",
    "packages/editing/src/actions/pathfinder/action.tsx",
    "packages/editing/src/actions/pathfinder/booleanGroupAction.ts",
    "packages/editing/src/actions/pathfinder/keymap.ts",
@@ -3162,6 +3165,7 @@
   "files": [
    "packages/font/src/outline/OutlineFace.ts",
    "packages/font/src/outline/cffCheck.ts",
+   "packages/font/src/outline/closeContours.ts",
    "packages/font/src/outline/cmapCheck.ts",
    "packages/font/src/outline/dataFork.ts",
    "packages/font/src/outline/fontEmbedding.ts",
@@ -3172,6 +3176,7 @@
    "packages/font/src/outline/outlineRegistry.ts",
    "packages/font/src/outline/sfnt.ts",
    "packages/font/src/outline/tag.ts",
+   "packages/font/src/outline/woff.ts",
    "packages/font/src/outline/writtenFont.fixture.ts"
   ]
  },
@@ -3193,6 +3198,7 @@
    "packages/forge/src/icons.gen.ts",
    "packages/forge/src/index.ts",
    "packages/forge/src/kitIcons.tsx",
+   "packages/forge/src/messageOf.ts",
    "packages/forge/src/pbt.fixture.ts",
    "packages/forge/src/play.ts",
    "packages/forge/src/protocol/channel.ts",
@@ -3226,6 +3232,7 @@
    "packages/forge/src/frame/fault.ts",
    "packages/forge/src/frame/frame.css",
    "packages/forge/src/frame/frameDecorators.tsx",
+   "packages/forge/src/frame/frameServices.ts",
    "packages/forge/src/frame/globalsTarget.ts",
    "packages/forge/src/frame/index.ts",
    "packages/forge/src/frame/index/Description.tsx",

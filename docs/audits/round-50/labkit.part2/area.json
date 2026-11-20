@@ -1,0 +1,67 @@
+{
+ "id": "labkit.part2",
+ "commit": "161b7a4394b9b3a15bb07c10137fe7b18d99acba",
+ "date": "2026-11-20",
+ "files": [
+  "packages/labkit/src/overview/TrialOverview.tsx",
+  "packages/labkit/src/overview/index.ts",
+  "packages/labkit/src/passthrough/weasel-canvas.ts",
+  "packages/labkit/src/pbt.fixture.ts",
+  "packages/labkit/src/scene/TrialSceneCanvas.less",
+  "packages/labkit/src/scene/TrialSceneCanvas.tsx",
+  "packages/labkit/src/scene/index.ts",
+  "packages/labkit/src/scene/sceneResets.ts",
+  "packages/labkit/src/scene/sceneTrialHistory.ts",
+  "packages/labkit/src/scene/useSceneCamera.ts",
+  "packages/labkit/src/scene/useSceneToolSlot.ts",
+  "packages/labkit/src/scene/useTrialScene.ts",
+  "packages/labkit/src/styles.dev.ts",
+  "packages/labkit/src/styles.less",
+  "packages/labkit/src/test-setup.ts",
+  "packages/labkit/src/testing/lab.ts",
+  "packages/labkit/src/testing/lens.ts",
+  "packages/labkit/src/testing/liveTest.ts",
+  "packages/labkit/src/theme/Interstellar.stories.less",
+  "packages/labkit/src/theme/Interstellar.stories.tsx",
+  "packages/labkit/src/theme/base.less",
+  "packages/labkit/src/theme/index.ts",
+  "packages/labkit/src/theme/interstellar.ts",
+  "packages/labkit/src/tools/labTool.ts",
+  "packages/labkit/src/tools/types.ts",
+  "packages/labkit/src/undo/editStamp.ts",
+  "packages/labkit/src/undo/index.ts",
+  "packages/labkit/src/undo/stateOp.ts",
+  "packages/labkit/src/undo/useUndoKeys.ts",
+  "packages/labkit/src/vite/index.ts",
+  "packages/labkit/src/vite/labRoutes.ts"
+ ],
+ "a": 4,
+ "b": 2,
+ "m": 2,
+ "distinct": 4,
+ "chapman": 4,
+ "unfound": 0,
+ "read": {
+  "A": 31,
+  "B": 31
+ },
+ "patches": 6,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7,
+   "B": 10.5,
+   "match": 0.1,
+   "fix": 12
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2803805,
+  "costUsd": 7.85
+ },
+ "fixCommits": []
+}

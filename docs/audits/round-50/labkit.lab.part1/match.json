@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "LabBoundary leaves several lab/trial contexts unmasked, so pieces under it still reach the enclosing lab",
+  "A sidebar/aside contribution appearing or leaving remounts every trial",
+  "LabSwitcher marks the wrong page when one page's path is a suffix of another's",
+  "LabZoom's \"outside a `<Lab>`\" path throws instead of bringing its own registry",
+  "`body:has(.lk-shell)` strips the host page's body margin for an embedded shell"
+ ],
+ "b": [
+  "LabSurface under a host's surface sets the lightbox layers to `[null]`, so no lightbox in the lab lifts the host's buffers",
+  "LabBoundary leaves several lab and trial contexts in force, so content under it still reaches the enclosing lab and trial",
+  "LabSwitcher marks the first page that matches, not the one the path names",
+  "The loading fallback ignores `header={false}` and `nebula`, so a stored lab flashes a header it never draws once loaded"
+ ]
+}

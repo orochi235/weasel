@@ -1,0 +1,64 @@
+{
+ "id": "labkit.config",
+ "commit": "161b7a4394b9b3a15bb07c10137fe7b18d99acba",
+ "date": "2026-11-20",
+ "files": [
+  "packages/labkit/src/config/auto.ts",
+  "packages/labkit/src/config/autoConfig.ts",
+  "packages/labkit/src/config/autoReports.ts",
+  "packages/labkit/src/config/baseNode.ts",
+  "packages/labkit/src/config/builder.ts",
+  "packages/labkit/src/config/compound.ts",
+  "packages/labkit/src/config/curveNode.ts",
+  "packages/labkit/src/config/declarationEmit.fixture.ts",
+  "packages/labkit/src/config/drawsOwn.ts",
+  "packages/labkit/src/config/fieldSweep.ts",
+  "packages/labkit/src/config/fromPrefs.ts",
+  "packages/labkit/src/config/headingLeaf.ts",
+  "packages/labkit/src/config/index.ts",
+  "packages/labkit/src/config/leaves.ts",
+  "packages/labkit/src/config/numberNode.ts",
+  "packages/labkit/src/config/over.ts",
+  "packages/labkit/src/config/path.ts",
+  "packages/labkit/src/config/railConditions.ts",
+  "packages/labkit/src/config/resolve.ts",
+  "packages/labkit/src/config/rules.ts",
+  "packages/labkit/src/config/sectionTree.ts",
+  "packages/labkit/src/config/storedDefault.ts",
+  "packages/labkit/src/config/stutter.ts",
+  "packages/labkit/src/config/toPrefs.ts",
+  "packages/labkit/src/config/types.ts",
+  "packages/labkit/src/config/useConfigSchema.ts",
+  "packages/labkit/src/config/useResolvedConfig.ts",
+  "packages/labkit/src/config/visible.ts"
+ ],
+ "a": 9,
+ "b": 4,
+ "m": 2,
+ "distinct": 11,
+ "chapman": 15.7,
+ "unfound": 4.7,
+ "read": {
+  "A": 28,
+  "B": 28
+ },
+ "patches": 12,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.7,
+   "B": 4.1,
+   "match": 0.8,
+   "fix": 18.5
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 3150616,
+  "costUsd": 8.7
+ },
+ "fixCommits": []
+}

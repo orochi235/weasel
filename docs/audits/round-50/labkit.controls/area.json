@@ -1,0 +1,72 @@
+{
+ "id": "labkit.controls",
+ "commit": "161b7a4394b9b3a15bb07c10137fe7b18d99acba",
+ "date": "2026-11-20",
+ "files": [
+  "packages/labkit/src/controls/AutoControls.stories.tsx",
+  "packages/labkit/src/controls/ControlBar.tsx",
+  "packages/labkit/src/controls/ControlMatrix.less",
+  "packages/labkit/src/controls/ControlMatrix.stories.less",
+  "packages/labkit/src/controls/ControlMatrix.stories.tsx",
+  "packages/labkit/src/controls/ControlMatrix.tsx",
+  "packages/labkit/src/controls/ControlPanel.less",
+  "packages/labkit/src/controls/ControlPanel.stories.tsx",
+  "packages/labkit/src/controls/ControlPanel.tsx",
+  "packages/labkit/src/controls/ControlPanelHeading.stories.tsx",
+  "packages/labkit/src/controls/ControlPanelMotif.stories.tsx",
+  "packages/labkit/src/controls/ControlRow.tsx",
+  "packages/labkit/src/controls/CurveRow.tsx",
+  "packages/labkit/src/controls/DraftDialogRow.tsx",
+  "packages/labkit/src/controls/MatrixCell.tsx",
+  "packages/labkit/src/controls/MatrixEditor.tsx",
+  "packages/labkit/src/controls/MatrixHeads.tsx",
+  "packages/labkit/src/controls/MatrixPopover.tsx",
+  "packages/labkit/src/controls/MatrixRow.tsx",
+  "packages/labkit/src/controls/MatrixSlot.tsx",
+  "packages/labkit/src/controls/PanelEditing.stories.tsx",
+  "packages/labkit/src/controls/ResetGroup.tsx",
+  "packages/labkit/src/controls/boundAction.ts",
+  "packages/labkit/src/controls/controlPack.ts",
+  "packages/labkit/src/controls/fieldChoices.ts",
+  "packages/labkit/src/controls/fields.tsx",
+  "packages/labkit/src/controls/inDialog.tsx",
+  "packages/labkit/src/controls/index.ts",
+  "packages/labkit/src/controls/labSource.ts",
+  "packages/labkit/src/controls/matrixTarget.ts",
+  "packages/labkit/src/controls/panelHeadings.tsx",
+  "packages/labkit/src/controls/panelNode.tsx",
+  "packages/labkit/src/controls/panelPaths.ts",
+  "packages/labkit/src/controls/panelRows.tsx",
+  "packages/labkit/src/controls/rowAuto.ts",
+  "packages/labkit/src/controls/rows.tsx"
+ ],
+ "a": 6,
+ "b": 7,
+ "m": 4,
+ "distinct": 9,
+ "chapman": 10.2,
+ "unfound": 1.2,
+ "read": {
+  "A": 36,
+  "B": 36
+ },
+ "patches": 12,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 9.1,
+   "B": 4.8,
+   "match": 0.2,
+   "fix": 21.8
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "weightedTokens": 1551001,
+  "costUsd": 7.73
+ },
+ "fixCommits": []
+}

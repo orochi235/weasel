@@ -1,0 +1,31 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   2
+  ],
+  [
+   3,
+   4
+  ]
+ ],
+ "a": [
+  "`DragDropCapability.pickUp` is declared and documented but nothing ever calls it",
+  "A palette item dragged from one trial drops into any other trial's canvas, through that trial's `onDrop`, with no `onDragOver` feedback",
+  "A drag that starts inside an open lightbox's content and is released over the margin closes the lightbox",
+  "With one lightbox open inside another, Escape closes the outer one instead of the inner",
+  "A job's `run` is handed the state from before `begin`, not the state its items fold into"
+ ],
+ "b": [
+  "`DragDropCapability.pickUp` is declared and documented but nothing ever calls it",
+  "A drop is applied even where `onDragOver` just answered that it would be refused",
+  "A palette item dragged from one trial drops into any other trial's canvas, with no `onDragOver` probe there",
+  "A palette item starts a carry on any mouse button, so a right- or middle-button drag drops an item",
+  "Escape closes the outermost of two nested open lightboxes first, leaving the inner one open over a page no longer inert",
+  "A controlled lightbox mounted `disabled` with `expanded` true opens when enabled, and its owner never hears it closed"
+ ]
+}
