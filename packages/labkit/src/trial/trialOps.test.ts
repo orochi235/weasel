@@ -251,6 +251,21 @@ describe('resetTrial', () => {
     expect([...(reset[0]?.auto ?? [])].sort()).toEqual(['cols', 'gap']);
   });
 
+  it('opens pinned at a seed value the schema would start auto, and resets so', () => {
+    const arr = addTrial([], instruments, 'Schemed', { config: { cols: 8 } });
+    expect(head(arr).config).toMatchObject({ cols: 8 });
+    expect(head(arr).auto ?? []).not.toContain('cols');
+    head(arr).auto = ['cols'];
+    const reset = resetTrial(arr, head(arr).id, instruments);
+    expect(reset[0]?.auto ?? []).not.toContain('cols');
+    expect(reset[0]?.config).toMatchObject({ cols: 8 });
+  });
+
+  it('leaves a seed key given as undefined to the schema, auto included', () => {
+    const arr = addTrial([], instruments, 'Schemed', { config: { cols: undefined } });
+    expect(head(arr).auto).toEqual(['cols']);
+  });
+
   it('pins a path the user un-pinned that the trial did not open on', () => {
     const arr = addTrial([], instruments, 'Schemed');
     head(arr).auto = ['cols', 'grid.size'];

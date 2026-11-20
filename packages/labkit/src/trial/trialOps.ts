@@ -60,6 +60,31 @@ function schemaAutoPaths(instrument: Instrument): string[] {
   return schema ? startAutoPathsOf(schema) : [];
 }
 
+/** The dotted paths a seed config writes a value at, so a schema's start-auto path the seed
+ *  names opens pinned at the seed's value. */
+function seededPaths(seed: Record<string, unknown> | undefined, at = ''): string[] {
+  const out: string[] = [];
+  for (const [key, value] of Object.entries(seed ?? {})) {
+    const path = at === '' ? key : `${at}.${key}`;
+    if (isRecord(value)) out.push(...seededPaths(value as Record<string, unknown>, path));
+    else if (value !== undefined) out.push(path);
+  }
+  return out;
+}
+
+/** The paths a trial opens unpinned: its schema's start-auto paths less those its seed writes a
+ *  value at or under, and every path the seed wrote as `auto`. */
+function openingAutoPaths(
+  instrument: Instrument,
+  configSeed: Record<string, unknown> | undefined,
+  autoSeed: readonly string[] | undefined,
+): string[] {
+  const set = seededPaths(configSeed);
+  const pinned = (path: string) => set.some((s) => s === path || s.startsWith(`${path}.`));
+  const fromSchema = schemaAutoPaths(instrument).filter((path) => !pinned(path));
+  return [...new Set([...fromSchema, ...(autoSeed ?? [])])];
+}
+
 /** Append a new trial running `instrumentName`, at that instrument's default
  *  config — with `options.config` written over it — and the initial state
  *  that config produces. */
@@ -71,7 +96,7 @@ export function addTrial(
 ): TrialRecord[] {
   const instrument = findInstrument(instruments, instrumentName);
   const seeded = splitAutoSeed(options.config as Record<string, unknown> | undefined);
-  const autoPaths = [...new Set([...schemaAutoPaths(instrument), ...seeded.autoPaths])];
+  const autoPaths = openingAutoPaths(instrument, seeded.config, seeded.autoPaths);
   const config = seedConfig(defaultConfigOf(instrument), seeded.config);
   const state = instrument.initialState(config);
   const record: TrialRecord = {
@@ -126,7 +151,11 @@ export function resetTrial(
   const instrument = findInstrument(instruments, current.instrumentName);
   const config = seedConfig(defaultConfigOf(instrument), current.configSeed);
   const state = instrument.initialState(config);
-  const autoPaths = [...new Set([...schemaAutoPaths(instrument), ...(current.autoSeed ?? [])])];
+  const autoPaths = openingAutoPaths(
+    instrument,
+    current.configSeed as Record<string, unknown> | undefined,
+    current.autoSeed,
+  );
   const { auto: _unpinnedNow, ...kept } = current;
   const reset: TrialRecord = {
     ...kept,
