@@ -189,8 +189,9 @@ export interface GpuProgram {
   set2f(name: string, x: number, y: number): void;
   set4f(name: string, x: number, y: number, z: number, w: number): void;
   set1i(name: string, x: number): void;
-  /** `data` as `count` elements of `type` from `offset` (elements of the
-   *  array's own type), or all of it. A matrix is column-major. */
+  /** `data` as `type`, all of it or `count` of its numbers from `offset`
+   *  (numbers, not elements of `type`), written from the uniform's start. A
+   *  matrix is column-major. */
   set(name: string, type: GpuUniformType, data: GpuUniformData, offset?: number, count?: number): void;
   /** The texture a sampler samples; `index` names an element of a sampler array. */
   setTexture(name: string, texture: GpuTexture | null, index?: number): void;
