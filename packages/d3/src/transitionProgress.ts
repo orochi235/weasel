@@ -8,9 +8,14 @@ export interface TransitionProgress {
   readonly end: Promise<void>;
   /** Mark item `i` finished, run `onMarked`, then what waits on it. Does nothing once done or canceled. */
   finish(i: number, onMarked: () => void): void;
-  /** Mark item `i` done without running what waits on it; true when it was still running. */
+  /** Mark item `i` done without running what waits on it, then or later; true when it was still running. */
   drop(i: number, interrupted: boolean): boolean;
-  /** Run `fn` once item `i` is done; at once (or on a microtask, with `defer`) if it already is. */
+  /** Whether item `i` is done, finished or dropped. */
+  done(i: number): boolean;
+  /** Whether item `i` was dropped rather than finished. */
+  dropped(i: number): boolean;
+  /** Run `fn` once item `i` finishes; at once (or on a microtask, with `defer`) if it already has.
+   *  Never for an item dropped, before or after `fn` is registered. */
   whenDone(i: number, fn: () => void, defer: boolean): void;
   /** End the transition if every item is done. */
   settle(): void;
@@ -31,6 +36,7 @@ export function createTransitionProgress(count: number): TransitionProgress {
   let ended = false;
   let interruptedItem = false;
   const itemDone = Array.from({ length: count }, () => false);
+  const itemDropped = Array.from({ length: count }, () => false);
   const itemWaiters = new Map<number, Array<() => void>>();
   let itemsLeft = count;
   let resolveEnd: (() => void) | null = null;
@@ -63,18 +69,24 @@ export function createTransitionProgress(count: number): TransitionProgress {
     drop(i, interrupted) {
       if (canceled || itemDone[i]) return false;
       itemDone[i] = true;
+      itemDropped[i] = true;
       itemsLeft--;
       itemWaiters.delete(i);
       if (interrupted) interruptedItem = true;
       return true;
     },
+    done: (i) => itemDone[i],
+    dropped: (i) => itemDropped[i],
     whenDone(i, fn, defer) {
+      if (itemDropped[i]) return;
       if (!itemDone[i]) {
         const list = itemWaiters.get(i) ?? [];
         list.push(fn);
         itemWaiters.set(i, list);
       } else if (defer) {
-        queueMicrotask(fn);
+        queueMicrotask(() => {
+          if (!canceled) fn();
+        });
       } else {
         fn();
       }

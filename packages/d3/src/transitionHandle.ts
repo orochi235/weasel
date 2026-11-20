@@ -17,6 +17,8 @@ export interface StageSettings<TData, TPose> {
 /** What a transition's handle does beyond recording settings. */
 export interface StageControls<TData, TPose> {
   on(event: 'start' | 'end' | 'interrupt', fn: () => void): void;
+  /** Called before `settings.pose` is set; throws where no pose can be tweened. */
+  pose(): void;
   /** Chain a transition after this one. */
   chain(): D3Transition<TData, TPose>;
   interrupt(): void;
@@ -41,14 +43,21 @@ export function createTransitionHandle<TData, TPose>(
       return t;
     },
     delay(arg) {
+      if (typeof arg === 'number' && Number.isNaN(arg)) {
+        throw new RangeError('d3Bind.transition.delay: ms is a time, not NaN');
+      }
       settings.delay = typeof arg === 'function' ? arg : () => arg;
       return t;
     },
     pose(fn) {
+      controls.pose();
       settings.pose = fn;
       return t;
     },
     tween(opts) {
+      // One tween per name, as d3's `transition.tween(name, …)`: a later one replaces it.
+      const at = settings.tweens.findIndex((ct) => ct.name === opts.name);
+      if (at >= 0) settings.tweens.splice(at, 1);
       settings.tweens.push({
         name: opts.name,
         from: opts.from as (d: TData, i: number) => unknown,

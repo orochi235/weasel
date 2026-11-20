@@ -11,7 +11,9 @@ export function createSelection<TData, TPose>(
   scene: Scene<unknown, string, TPose>,
   ids: readonly NodeId[],
   data: readonly TData[],
-  priorPoses: ReadonlyMap<NodeId, TPose>,
+  /** Shared with every selection filtered from this one; the first transition to start on a
+   *  node takes its entry. */
+  priorPoses: Map<NodeId, TPose>,
   animator: Animator | undefined,
   geometry: PoseDescriptor<TPose> | undefined,
   incarnations: ReadonlyMap<NodeId, number | undefined> = new Map(
@@ -59,7 +61,7 @@ export function createSelection<TData, TPose>(
     },
     interrupt(name?: string) {
       if (!animator) return sel;
-      for (const id of ids) interruptNode(animator, transitionCancelKey(name ?? '', id));
+      for (const id of ids) interruptNode(animator, transitionCancelKey(scene, name ?? '', id));
       return sel;
     },
   };

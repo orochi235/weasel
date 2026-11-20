@@ -17,8 +17,9 @@ export interface TweenTiming {
   readonly easing: EasingFn | undefined;
 }
 
-/** One tween an item runs: started with what to call when it finishes, returning its handle. */
-export type TweenJob = (done: () => void) => AnimationHandle;
+/** One tween an item runs: started with what to call when it finishes and when it is stopped
+ *  short of its end (canceled, from anywhere, or retired for a tick that threw), returning its handle. */
+export type TweenJob = (done: () => void, canceled: () => void) => AnimationHandle;
 
 /** The job tweening a node's pose from `from` to `to`, calling `onTick` with each pose. */
 export function poseTweenJob<TPose>(
@@ -30,7 +31,7 @@ export function poseTweenJob<TPose>(
   lerpPose: (a: TPose, b: TPose, t: number) => TPose,
   onTick: (pose: TPose) => void,
 ): TweenJob {
-  return (done) => animator.tween<TPose>({
+  return (done, canceled) => animator.tween<TPose>({
     from,
     to,
     ms: timing.duration,
@@ -39,6 +40,7 @@ export function poseTweenJob<TPose>(
     interpolate: (a, b, t) => (t === 1 ? b : t === 0 ? a : lerpPose(a, b, t)),
     onTick,
     onDone: done,
+    onCancel: canceled,
   });
 }
 
@@ -52,7 +54,7 @@ export function customTweenJob<TData>(
   to: unknown,
   onTick: (value: unknown) => void,
 ): TweenJob {
-  return (done) => animator.tween({
+  return (done, canceled) => animator.tween({
     from,
     to,
     ms: timing.duration,
@@ -70,5 +72,19 @@ export function customTweenJob<TData>(
         }),
     onTick,
     onDone: done,
+    onCancel: canceled,
+  });
+}
+
+/** The job that only lasts the transition's duration: for an item with nothing to tween. */
+export function holdJob(animator: Animator, timing: TweenTiming, cancelKey: string): TweenJob {
+  return (done, canceled) => animator.tween({
+    from: 0,
+    to: 1,
+    ms: timing.duration,
+    cancelKey,
+    onTick: () => {},
+    onDone: done,
+    onCancel: canceled,
   });
 }
