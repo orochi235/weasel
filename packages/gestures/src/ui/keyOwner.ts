@@ -24,7 +24,7 @@ export function isEditableTarget(target: EventTarget | null): boolean {
   if (tag === 'INPUT') return TEXT_INPUT_TYPES.has((target as HTMLInputElement).type);
   if ((target as HTMLElement).isContentEditable) return true;
   const ce = target.getAttribute('contenteditable');
-  return ce === 'true' || ce === '';
+  return ce === 'true' || ce === '' || ce === 'plaintext-only';
 }
 
 const ACTIVATED_BY_KEY = [

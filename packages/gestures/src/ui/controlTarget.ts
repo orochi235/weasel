@@ -1,6 +1,7 @@
 /** Elements that handle their own press and keys. */
 export const CONTROL_SELECTOR = [
   'button', 'input', 'select', 'textarea', 'a[href]', '[contenteditable=""]', '[contenteditable="true"]',
+  '[contenteditable="plaintext-only"]',
   '[role="button"]', '[role="checkbox"]', '[role="switch"]', '[role="menuitem"]', '[role="link"]',
 ].join(',');
 
