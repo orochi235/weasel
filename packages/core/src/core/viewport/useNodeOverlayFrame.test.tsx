@@ -173,6 +173,27 @@ describe('useNodeOverlayFrame', () => {
     near(stretched.toScreen({ x: far + 10.125, y: far + 10.125 }), -89.25, 30.375);
   });
 
+  it('keeps toScreen and toLocal inverses once the node is gone, both on the last mapping', () => {
+    const scene = sceneWith([{ id: 'a', pose: { x: 10, y: 20, width: 100, height: 50 } }]);
+    const frame = frameFor(scene, 'a', { x: 5, y: 5, scale: { x: 2, y: 3 } })!;
+    scene.remove(asNodeId('a'));
+    near(frame.toScreen({ x: 10, y: 20 }), 10, 45);
+    near(frame.toLocal({ x: 10, y: 45 }), 10, 20);
+    near(frame.toScreen(frame.toLocal({ x: 70, y: 33 })), 70, 33);
+  });
+
+  it('keeps toScreen on the last invertible mapping while a live view collapses an axis', () => {
+    const scene = sceneWith([{ id: 'a', pose: { x: 10, y: 20, width: 100, height: 50 } }]);
+    let view: View = { x: 5, y: 5, scale: { x: 2, y: 3 } };
+    const el = container();
+    const { result } = renderHook(() => {
+      const ref = useRef<HTMLDivElement>(el);
+      return useNodeOverlayFrame(scene, ref, 'a' as NodeId, { view: () => view });
+    });
+    view = { x: 5, y: 5, scale: { x: 0, y: 3 } };
+    near(result.current!.toScreen({ x: 10, y: 20 }), 10, 45);
+  });
+
   it('is null with no node id, an unknown id, or an unmeasured container', () => {
     const scene = sceneWith([{ id: 'a', pose: { x: 0, y: 0, width: 10, height: 10 } }]);
     expect(frameFor(scene, null)).toBeNull();

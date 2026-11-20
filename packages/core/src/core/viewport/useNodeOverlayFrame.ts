@@ -33,10 +33,10 @@ export interface NodeOverlayFrame {
    *  from, and the box to hand `paintToLocalUnits` / `paintToBoundsUnits`. */
   box: Rect;
   /** Node box frame → overlay pixels: the pose's rotation and `transform`,
-   *  then the view. */
+   *  then the view. While the node is gone or a live view flattens an axis, it
+   *  and `toLocal` keep the last mapping that had an inverse. */
   toScreen: (p: OverlayPoint) => OverlayPoint;
-  /** Overlay pixels → node box frame. Inverts `toScreen`; while a live view
-   *  flattens an axis, it keeps the last mapping that had an inverse. */
+  /** Overlay pixels → node box frame. Inverts `toScreen`. */
   toLocal: (p: OverlayPoint) => OverlayPoint;
   /** The container's size in CSS pixels — the overlay's own box. */
   width: number;
@@ -79,19 +79,18 @@ export function useNodeOverlayFrame<TData, TLayer extends string, TPose extends 
     return box ? projectionOf(poseFrameOf(box), resolveView(view)) : null;
   }, [scene, nodeId, compose, view]);
 
-  const toScreen = useCallback((p: OverlayPoint): OverlayPoint => {
-    const m = project();
-    return m ? forward(m, p) : p;
-  }, [project]);
-
   const lastInvertible = useRef<Projection | null>(null);
 
-  const toLocal = useCallback((p: OverlayPoint): OverlayPoint => {
+  /** The live mapping, or while there is none that inverts, the last one that did. */
+  const mapping = useCallback((): Projection => {
     const m = project();
     if (m?.invertible) lastInvertible.current = m;
-    // Published by the commit that handed this toLocal out, so there is one.
-    return backward(m?.invertible ? m : lastInvertible.current!, p);
+    // Published by the commit that handed out toScreen and toLocal, so there is one.
+    return m?.invertible ? m : lastInvertible.current!;
   }, [project]);
+
+  const toScreen = useCallback((p: OverlayPoint): OverlayPoint => forward(mapping(), p), [mapping]);
+  const toLocal = useCallback((p: OverlayPoint): OverlayPoint => backward(mapping(), p), [mapping]);
 
   const box = worldBoxOf(scene, nodeId, compose);
   const m = box && width !== 0 && height !== 0 ? project() : null;
