@@ -10,6 +10,16 @@ When work merges, retire its entry here in the same change.
 
 ## Renderer and the batch
 
+- **(P2) The first frame waits on shader compiles, about 1.9 s on Apple Metal.** x-skulk's audits page, built
+  and served with its data already in hand, showed one 1,917 ms main-thread task before its map's canvas drew,
+  in Chrome 156 on an M2 Max (ANGLE Metal), on every reload (2026-11-20, measured with a `longtask` observer).
+  Headless Chromium on the software GPU runs the same load in a few hundred milliseconds of script, and the only
+  GPU call its profile names is `getShaderParameter`. So the likely cause, inferred and not yet profiled on the GPU,
+  is the renderer compiling and linking its programs synchronously before the first draw. Candidates:
+  `KHR_parallel_shader_compile` with a poll before the first use of each program, compiling only the programs a
+  scene's first frame needs, or drawing that frame with canvas2d while the rest compile. Closes when a weasel
+  canvas's first frame on that machine comes within 300 ms of its data arriving, measured the same way.
+
 - **(P3) [waiting] Whether the batched path costs a co-tenant on the same page.** Reported, not measured
   here. A consumer benchmarking its wall against a canvas2d control found that at one rung the
   *canvas2d* side went from ~8.8 ms to 102-160 ms, and only when the page also held a build with
