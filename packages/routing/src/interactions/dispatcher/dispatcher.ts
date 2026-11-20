@@ -58,8 +58,8 @@ function firstRefusal(r: Ranking, walked: Walked): Refusal | null {
   return null;
 }
 
-/** Build a dispatcher. `getAction` overrides how action ids are resolved;
- *  by default the `DispatcherContext`'s registry is used. */
+/** Build a dispatcher. Input is matched against the `DispatcherContext`'s registry; `getAction`
+ *  resolves the ids `beginUiOngoing` starts, and without it that warns and returns `null`. */
 export function createDispatcher(opts?: {
   getAction?: (id: string) => Action | undefined;
 }): Dispatcher {
