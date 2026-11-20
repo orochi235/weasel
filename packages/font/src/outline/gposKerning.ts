@@ -15,6 +15,9 @@
  * Node, which strips types but resolves nothing else.
  */
 
+/** How many pairs a face remembers the kerning of before it starts over. */
+const PAIR_MEMO_LIMIT = 4096;
+
 /** Kerning between two glyph ids, in font units; negative pulls them together. */
 export type PairKerning = (left: number, right: number) => number;
 
@@ -68,6 +71,8 @@ export function gposPairKerning(bytes: ArrayBuffer): PairKerning | null {
     const hit = memo.get(key);
     if (hit !== undefined) return hit;
     const total = pairKerning(v, lookupSets, left, right);
+    // A face lives as long as its registration, and its pairs number up to its glyph count squared.
+    if (memo.size >= PAIR_MEMO_LIMIT) memo.clear();
     memo.set(key, total);
     return total;
   };

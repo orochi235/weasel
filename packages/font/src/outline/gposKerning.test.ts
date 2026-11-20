@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { gposPairKerning } from './gposKerning';
 
 /** A one-table sfnt holding `gpos` as its GPOS table. */
@@ -86,5 +86,23 @@ describe('gposPairKerning', () => {
   it('kerns nothing, rather than throwing, through an extension whose header lies past the end of the font', () => {
     const kern = gposPairKerning(sfntWithGpos(kernExtension(8, 0x1000)));
     expect(kern?.(1, 2) ?? 0).toBe(0);
+  });
+
+  it('remembers a bounded number of pairs, however many it is asked about', () => {
+    const kern = gposPairKerning(sfntWithGpos(perScriptKern(pairPos(3, -40), pairPos(2, -50))))!;
+    let largest = 0;
+    const set = Map.prototype.set;
+    const spy = vi.spyOn(Map.prototype, 'set').mockImplementation(function (this: Map<unknown, unknown>, k, val) {
+      const out = set.call(this, k, val);
+      largest = Math.max(largest, this.size);
+      return out;
+    });
+    try {
+      for (let l = 0; l < 100; l++) for (let r = 0; r < 100; r++) kern(l, r);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(kern(1, 2)).toBe(-50);
+    expect(largest).toBeLessThanOrEqual(4096);
   });
 });
