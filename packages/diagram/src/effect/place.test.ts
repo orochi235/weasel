@@ -35,4 +35,10 @@ describe('freeSpot', () => {
     expect(freeSpot(boxes, size, null)).toEqual({ x: 400 + PLACE_GAP, y: 40 });
     expect(freeSpot(boxes, size, { x: 0, y: 0, width: 120, height: 60 })).toEqual({ x: 400 + PLACE_GAP, y: 40 });
   });
+
+  it('ends on a view far from the origin, where a step is below the spacing of floats', () => {
+    const far = { x: 1e17, y: 1e17, width: 800, height: 600 };
+    const box = { x: far.x - 100, y: far.y - 100, width: 2000, height: 2000 };
+    expect(freeSpot([box], size, far)).toEqual({ x: box.x + box.width + PLACE_GAP, y: box.y });
+  });
 });
