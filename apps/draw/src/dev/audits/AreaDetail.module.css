@@ -33,3 +33,38 @@
   font-weight: var(--wzl-font-weight-medium);
   color: var(--audit-muted);
 }
+
+/* A, A ∩ B and B share one cell, so the two reviewers' pills can overlap across the middle third. */
+.table .vennCell {
+  padding-inline: 0;
+  text-align: center;
+}
+
+.venn {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(2.5ch, 1fr));
+  justify-items: center;
+  isolation: isolate;
+}
+
+.both { font-weight: var(--wzl-font-weight-bold); }
+
+.pillA,
+.pillB {
+  position: absolute;
+  inset-block: -1px;
+  width: 66.67%;
+  border-radius: 999px;
+  z-index: -1;
+}
+
+.pillA {
+  left: 0;
+  background: oklch(from var(--wzl-swatch-sky) l calc(c * 0.35) h / 0.3);
+}
+
+.pillB {
+  right: 0;
+  background: oklch(from var(--wzl-swatch-fuchsia) l calc(c * 0.35) h / 0.3);
+}

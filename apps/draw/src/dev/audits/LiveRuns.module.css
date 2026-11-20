@@ -45,6 +45,12 @@
   white-space: nowrap;
 }
 
+.started {
+  margin-inline-start: var(--wzl-space-2);
+  font-weight: var(--wzl-font-weight-normal);
+  color: var(--audit-muted);
+}
+
 .view {
   display: flex;
   align-items: center;
@@ -70,6 +76,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* The steps view stacks A over B in one row, so its rows are tall enough for two stripes of small text. */
+.lanes[data-mode='steps'] { --span-strip-height: 28px; }
 
 .lanes {
   --span-strip-height: 18px;
@@ -138,9 +147,15 @@
   color: var(--audit-live);
 }
 
-/* A running step's label names the node doing it; it pulses to white and back while the job runs. */
+/* Every lane label inks black, filled or not, so a running step's node name pulses the same way in each: between
+   black and 40% white while the job runs. */
+.lanes { --span-ink: #000; }
+
 @media (prefers-reduced-motion: no-preference) {
-  .lanes [data-state='active'] { animation: node-pulse 1.6s ease-in-out infinite; }
+  .lanes [data-state='active'] .node { animation: node-pulse 1.07s ease-in-out infinite; }
 }
 
-@keyframes node-pulse { 50% { color: #fff; } }
+@keyframes node-pulse {
+  0%, 100% { color: #000; }
+  50% { color: color-mix(in srgb, #fff 40%, #000); }
+}

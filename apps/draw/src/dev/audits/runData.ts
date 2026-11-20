@@ -15,8 +15,11 @@ export const minutesSince = (iso: string, now: number): string => minutesText(Ma
 const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`;
 
 /** What one step of an area's lane shows. */
+/** Between a running step's node and how long it has run, in its label. */
+export const NODE_SEP = ' · ';
+
 export function stepText(step: LaneStepName, s: LaneStep, now: number): string {
-  if (s.state === 'running') return `${s.node ?? ''} · ${s.since ? minutesSince(s.since, now) : 'running'}`;
+  if (s.state === 'running') return `${s.node ?? ''}${NODE_SEP}${s.since ? minutesSince(s.since, now) : 'running'}`;
   if (s.state === 'failed') return s.why ?? 'failed';
   if (s.state !== 'done') return step === 'patch' ? 'after fix' : 'waiting';
   if (step === 'A' || step === 'B') return `${s.findings ?? 0} found · ${minutesText(s.minutes ?? 0)}`;
@@ -39,6 +42,14 @@ export function headlineOf(run: AuditRun): string {
   if (run.running) return `Round ${run.round} running · ${run.step} · ${plural(run.areas.length, 'area')}`;
   const summary = run.report?.split(';')[0];
   return summary ? `Round ${run.round} finished · ${summary}` : `Round ${run.round} finished`;
+}
+
+/** When a round began: its clock time, and its date too when that was not today. */
+export function startedText(iso: string, now: number): string {
+  const at = new Date(iso);
+  const time = at.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  if (at.toDateString() === new Date(now).toDateString()) return `started ${time}`;
+  return `started ${at.toLocaleDateString([], { month: 'short', day: 'numeric' })}, ${time}`;
 }
 
 export function spendOf(run: AuditRun): string {

@@ -8,7 +8,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gitIn } from './batch.mjs';
-import { STATE_DIR } from './config.mjs';
+import { AREAS_PER_NIGHT, STATE_DIR } from './config.mjs';
 import { fixTallyOf } from './findings.mjs';
 import { partitionAt } from './partition.mjs';
 import { chapman, gitTouched, pickAreas, readPasses } from './rounds.mjs';
@@ -233,11 +233,12 @@ export const buildMap = (root) => {
   const areas = partitionAt(root, 'HEAD');
   const passes = readPasses(root);
   const { picked, settled } = pickAreas({ areas, passes, touched: gitTouched(git), count: Infinity });
-  const queue = new Map(picked.map((id, i) => [id, i + 1]));
   const settledSet = new Set(settled);
   const runs = readRuns();
   /** The live run holding each area. */
   const holder = new Map(runs.filter((r) => r.running).flatMap((r) => r.areas.map((id) => [id, r])));
+  // A live run's areas are being audited, not waiting, so the queue counts from 1 past them.
+  const queue = new Map(picked.filter((id) => !holder.has(id)).map((id, i) => [id, i + 1]));
 
   const out = areas.map((area) => {
     const history = (passes.get(area.id) ?? []).map((p) => passOf(p.round, p.date, p.a, p.b, p.m, p.distinct));
@@ -275,6 +276,7 @@ export const buildMap = (root) => {
   return {
     generated: new Date().toISOString(),
     head,
+    areasPerRound: AREAS_PER_NIGHT,
     runs,
     areas: out,
     rounds: [...rounds.values()].sort((x, y) => x.round - y.round).map((r) => ({ ...r, est: Math.round(r.est) })),

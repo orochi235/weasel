@@ -107,10 +107,11 @@ describe('areas', () => {
     expect(heat.at(40)).toBe(1);
     expect(heat.at(1.7)).toBeCloseTo(Math.log1p(1.7) / Math.log1p(9.668));
     const ticks = heat.ticks.map((t) => t.value);
-    expect(ticks.slice(0, -1)).toEqual([0, 0.8, 2.5, 5]);
+    expect(ticks.slice(0, -1)).toEqual([0, 1, 2, 5]);
     expect(heat.ticks.at(-1)).toMatchObject({ label: 'top', value: expect.closeTo(9.668, 2) });
     const gaps = ticks.slice(1).map((t, i) => heat.at(t) - heat.at(ticks[i]!));
-    expect(Math.max(...gaps) / Math.min(...gaps)).toBeLessThan(1.6);
+    // Whole-number ticks trade a little evenness: 0, 1, 2, 5 over 0, 0.8, 2.5, 5.
+    expect(Math.max(...gaps) / Math.min(...gaps)).toBeLessThan(1.8);
     expect(heatScaleOf([]).top).toBe(8);
   });
 

@@ -147,3 +147,21 @@ test('a text row wraps inside a figures list instead of overflowing it', () => {
     Math.abs(box(must(container.querySelector('[data-v]'))).right - box(dl).right),
   ).toBeLessThan(0.5);
 });
+
+test('columns="auto" sets rows two to a line once the list is wide enough, and one to a line below that', () => {
+  const list = (width: number) => render(
+    <div style={{ width }}>
+      <DetailList columns="auto">
+        <DetailRow label="one"><span data-v>1</span></DetailRow>
+        <DetailRow label="two"><span data-v>2</span></DetailRow>
+        <DetailRow label="three"><span data-v>3</span></DetailRow>
+      </DetailList>
+    </div>,
+  ).container;
+  const [a, b, c] = [...list(640).querySelectorAll('[data-v]')];
+  expect(Math.abs(box(a!).top - box(b!).top)).toBeLessThan(0.5);
+  expect(box(b!).left).toBeGreaterThan(box(a!).right);
+  expect(box(c!).top).toBeGreaterThan(box(a!).bottom - 0.5);
+  const [x, y] = [...list(320).querySelectorAll('[data-v]')];
+  expect(box(y!).top).toBeGreaterThan(box(x!).bottom - 0.5);
+});

@@ -4,8 +4,8 @@ import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { SpanStrips, type SpanStripSpan, type SpanStripsRow } from '@weasel-js/ui/components/SpanStrip';
 import { clockRuler } from './clock';
-import { laneStepsOf, laneViewOf, passDone, runClockOf, type LaneView } from './phases';
-import { headlineOf, lastLineOf, sharedLaneOf, spendOf } from './runData';
+import { STEP_COLUMN_COUNT, laneStepsOf, laneViewOf, passDone, runClockOf, type LaneView } from './phases';
+import { NODE_SEP, headlineOf, lastLineOf, sharedLaneOf, spendOf, startedText } from './runData';
 import { useViewerPref } from './viewerPref';
 import type { AuditLane, AuditRun } from './skulkMap.types';
 import s from './LiveRuns.module.css';
@@ -18,11 +18,18 @@ export interface AreaHandlers {
   readonly onLight: (id: string | null) => void;
 }
 
+/** A running span with its node's name marked, so the name alone pulses. */
+function withNode(span: SpanStripSpan): SpanStripSpan {
+  const at = span.state === 'active' ? span.label.indexOf(NODE_SEP) : -1;
+  if (at <= 0) return span;
+  return { ...span, content: <><span className={s.node}>{span.label.slice(0, at)}</span>{span.label.slice(at)}</> };
+}
+
 /** An area's lane as a stack row: its name, and `spans`, its steps in the view chosen. */
 function laneRow(lane: AuditLane, view: LaneView, on: AreaHandlers, spans: SpanStripSpan[]): SpanStripsRow {
   return {
     id: lane.id,
-    spans,
+    spans: spans.map(withNode),
     'aria-label': lane.id,
     valueText: view.elapsed ? `${view.phase}, ${view.elapsed} in` : view.phase,
     lead: (
@@ -51,7 +58,7 @@ function useHideComplete(): [boolean, (hide: boolean) => void] {
   return [hide, (next) => { setHide(next); keep(next); }];
 }
 
-const STEPS_WINDOW = { from: 0, to: 5 };
+const STEPS_WINDOW = { from: 0, to: STEP_COLUMN_COUNT };
 
 /** The run's areas, on the run's clock or as a grid of steps; a finished one stays, filled, until the run ends, unless
  *  the viewer hides those whose pass is done, as the map shows them. */
@@ -61,6 +68,12 @@ function Lanes({ run, now, mode, hideComplete, on }: { run: AuditRun; now: numbe
   const lanes = run.lanes.map((lane) => ({ lane, view: laneViewOf(lane, now, clock.from) })).filter(({ lane }) => !hideComplete || !passDone(lane));
   const widest = Math.max(0, ...run.lanes.map((l) => l.id.length));
   useLayoutEffect(() => { ref.current?.style.setProperty('--audit-lead-ch', String(widest)); }, [widest]);
+  // A label's element is remade whenever its text changes, restarting its pulse; one shared start keeps every pulse in step.
+  useLayoutEffect(() => {
+    for (const a of ref.current?.getAnimations?.({ subtree: true }) ?? []) {
+      if (a instanceof CSSAnimation && a.animationName.includes('node-pulse')) a.startTime = 0;
+    }
+  });
   if (lanes.length === 0) return null;
   const rows = lanes.map(({ lane, view }) => laneRow(lane, view, on, mode === 'steps' ? laneStepsOf(lane, now) : view.spans));
   return (
@@ -81,7 +94,10 @@ function RunStrip({ run, now, mode, onMode, hideComplete, onHideComplete, on }: 
   return (
     <section className={s.run} aria-label={`Round ${run.round}`}>
       <div className={s.pulse} aria-hidden="true" />
-      <div className={s.what}>{headlineOf(run)}</div>
+      <div className={s.what}>
+        <span>{headlineOf(run)}</span>
+        {run.started && <span className={s.started}>{startedText(run.started, now)}</span>}
+      </div>
       <div className={s.line} title={lastLineOf(run)}><InlineMarkdown text={lastLineOf(run)} /></div>
       <div className={s.view}>
         <Checkbox isSelected={hideComplete} onChange={onHideComplete}>Hide complete</Checkbox>
@@ -89,7 +105,7 @@ function RunStrip({ run, now, mode, onMode, hideComplete, onHideComplete, on }: 
       </div>
       <div className={s.spend}>{spendOf(run)}</div>
       {run.lanes.length > 0 && (
-        <div className={s.lanes}>
+        <div className={s.lanes} data-mode={mode}>
           <Lanes run={run} now={now} mode={mode} hideComplete={hideComplete} on={on} />
           <div className={s.sharedRow}>
             <span className={s.nameCell}>all areas</span>
