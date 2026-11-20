@@ -71,8 +71,11 @@ const gateOpen = (opts: VisibleRafOptions, intersecting: boolean): boolean =>
 const latestFor = (entries: readonly IntersectionObserverEntry[], el: Element | null): IntersectionObserverEntry | undefined =>
   entries.filter((e) => e.target === el).at(-1);
 
-const resolveTarget =(target: VisibleRafTarget | undefined): Element | null =>
-  typeof target === 'function' ? target() : (target?.current ?? null);
+/** The element `target` names, or null once that element has left its document. */
+const resolveTarget = (target: VisibleRafTarget | undefined): Element | null => {
+  const el = typeof target === 'function' ? target() : (target?.current ?? null);
+  return el?.isConnected ? el : null;
+};
 
 /**
  * A `requestAnimationFrame` loop that runs only while someone can see it: never while the document is hidden,
@@ -122,6 +125,7 @@ export function useVisibleRaf(
    *  drops the outstanding frame but keeps the request; resuming hands the
    *  loop its rebase before re-arming. */
   const syncGate = useCallback(() => {
+    syncObserver();
     if (!isVisible()) {
       if (suspendedRef.current) return;
       suspendedRef.current = true;
@@ -134,7 +138,7 @@ export function useVisibleRaf(
     if (!aliveRef.current) return;
     optsRef.current.onResume?.();
     if (pendingRef.current) scheduleRaf();
-  }, [cancelRaf, isVisible, optsRef, scheduleRaf]);
+  }, [cancelRaf, isVisible, optsRef, scheduleRaf, syncObserver]);
 
   const request = useCallback(() => {
     if (!aliveRef.current) return;
@@ -156,8 +160,11 @@ export function useVisibleRaf(
     document.addEventListener('visibilitychange', syncGate);
     if (typeof IntersectionObserver !== 'undefined') {
       observerRef.current = new IntersectionObserver((entries) => {
+        // A report on an element that has since left or been swapped out is about the old one.
+        syncObserver();
         const last = latestFor(entries, observedRef.current);
-        if (last) { intersectingRef.current = last.isIntersecting; syncGate(); }
+        if (last) intersectingRef.current = last.isIntersecting;
+        syncGate();
       });
       syncObserver();
     }
@@ -174,9 +181,8 @@ export function useVisibleRaf(
     };
   }, [cancelRaf, syncGate, syncObserver]);
 
-  // The escape hatch changes the gate with no event to say so.
-  const runWhenHidden = options.dangerouslyRunWhenHidden === true;
-  useLayoutEffect(() => { syncGate(); }, [runWhenHidden, syncGate]);
+  // The escape hatch and a re-pointed target change the gate with no event to say so.
+  useLayoutEffect(() => { syncGate(); });
 
   // Stable identity: `requestRedraw` and friends outlive the render that made
   // them, and consumers capture the handle.
