@@ -94,7 +94,7 @@ All are named constants in `config.mjs`.
 - **Nodes.** studio, teitou and msb-uai always; orochi (this Mac) too, but only from 00:00 to 09:00, since by
   day it is the machine being worked on. Fixers never run on orochi. A node onto reports as quiet or
   unavailable is skipped; a dispatch a node refuses moves to another node and keeps that one out for 30
-  minutes. Each node runs up to 3 reviewer or matcher jobs and 1 fixer at once, each in its own tree
+  minutes. Each node runs up to 6 reviewer or matcher jobs and 1 fixer at once, each in its own tree
   (`weasel-skulk-r<k>`, `weasel-skulk-f<k>`).
 - **Time.** Each job is stopped at 45 minutes, early enough that what it wrote still comes home. A night
   starts no new area after 07:00.

@@ -29,7 +29,7 @@ export const inWindow = (date, from, until) => {
 export const nodesAt = (date) => (inWindow(date, LOCAL_FROM, LOCAL_UNTIL) ? [...NODES, LOCAL_NODE] : NODES);
 
 /** Model jobs run at once on one node, each in a tree of its own. */
-export const REVIEW_SLOTS_PER_NODE = 3;
+export const REVIEW_SLOTS_PER_NODE = 6;
 export const FIX_SLOTS_PER_NODE = 1;
 
 export const AREAS_PER_NIGHT = 8;
