@@ -5,7 +5,7 @@ import { isExplicitCanvasFont } from './dynamic/dynamicAtlas';
 import { getFontFallbackPolicy, getDefaultFontFamily } from './fallback';
 import { hasFontOutlines, loadFontOutlines } from './outline/outlineRegistry';
 import {
-  atlasPending, familyLoads, firstRegisteredFamily, fontRegistry, isRegisteredFamily, registeredFamilyNames,
+  atlasPending, familyFailure, familyLoads, firstRegisteredFamily, fontRegistry, isRegisteredFamily, registeredFamilyNames,
   variantKeysOf, variantLoad, wakeFamily, wakeVariant,
 } from './registerFont';
 
@@ -31,7 +31,8 @@ export interface FontRequest {
  * variant's outline face when one is registered.
  *
  * Resolves once they have all landed; a registered variant counts as loaded.
- * Rejects when a load fails, or for a family name `registerFont` never saw —
+ * Rejects when a load fails, for a family name one of whose variants already
+ * failed to load and was not registered again, or for one `registerFont` never saw —
  * a {@link FontRequest} for such a family is not an error, since the canvas
  * and outline tiers serve families no atlas was registered for.
  */
@@ -47,6 +48,8 @@ export function warmFonts(fonts?: readonly (string | FontRequest)[]): Promise<vo
       return Promise.reject(new Error(`weasel warmFonts: "${font}" was never registered.`));
     }
     wakeFamily(font);
+    const failed = familyFailure(font);
+    if (failed !== undefined) return Promise.reject(failed);
     pending.push(...familyLoads(font));
   }
   return Promise.all(pending).then(() => undefined);

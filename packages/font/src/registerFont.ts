@@ -51,6 +51,10 @@ interface Declared {
 /** Lazy registrations not yet started, per family, keyed like `registry`. */
 const declared = new Map<string, Map<string, Declared>>();
 
+/** What each variant's last load failed with, per family and keyed like
+ *  `registry`, until `registerFont` is called for that variant again. */
+const failures = new Map<string, Map<string, unknown>>();
+
 /** Every family `registerFont` was called for, eager or lazy, in call order —
  *  what "the first registered family" means to the substitute policy. */
 const registeredFamilies = new Set<string>();
@@ -61,6 +65,7 @@ export function _resetFontRegistryForTests(): void {
   inFlight.clear();
   loads.clear();
   declared.clear();
+  failures.clear();
   registeredFamilies.clear();
   _clearFallbackWarnings();
   _clearHeldFontUrls();
@@ -124,6 +129,7 @@ export function registerFont(
   const key = variantKey(weight, style);
   registeredFamilies.add(family);
   const replacing = claimFontUrls(family, key, metricsUrl, atlasUrl, opts.replace);
+  failures.get(family)?.delete(key);
   if (replacing) return replaceVariant(family, key, metricsUrl, atlasUrl);
   if (registry.get(family)?.has(key)) return Promise.resolve();
   if (!opts.lazy) return loadVariant(family, key, metricsUrl, atlasUrl);
@@ -166,7 +172,12 @@ function loadVariant(
     const now = loads.get(family);
     if (now?.get(key) === load && now.delete(key) && now.size === 0) loads.delete(family);
   };
-  load.then(settleLoad, settleLoad);
+  load.then(settleLoad, (err: unknown) => {
+    if (loads.get(family)?.get(key) === load) {
+      failures.set(family, (failures.get(family) ?? new Map<string, unknown>()).set(key, err));
+    }
+    settleLoad();
+  });
 
   const pendingLazy = declared.get(family)?.get(key);
   if (pendingLazy) {
@@ -237,6 +248,11 @@ export function variantKeysOf(family: string): Set<string> {
   return new Set([
     ...(registry.get(family)?.keys() ?? []), ...(loads.get(family)?.keys() ?? []), ...(declared.get(family)?.keys() ?? []),
   ]);
+}
+
+/** The error a variant of `family` last failed to load with, if one has not been registered again since. */
+export function familyFailure(family: string): unknown {
+  return failures.get(family)?.values().next().value;
 }
 
 /** Every atlas fetch running for `family`. */

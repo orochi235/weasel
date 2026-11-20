@@ -798,6 +798,14 @@ describe('warmFonts', () => {
     await expect(warmFonts()).rejects.toThrow('weasel registerFont');
   });
 
+  it('rejects for a family whose load already failed, until the variant is registered again', async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('down'));
+    await registerFont('inter', {}, '/i.json', '/i.png').catch(() => {});
+    await expect(warmFonts(['inter'])).rejects.toThrow('weasel registerFont');
+    await registerFont('inter', {}, '/i.json', '/i.png');
+    await expect(warmFonts(['inter'])).resolves.toBeUndefined();
+  });
+
   describe('given the variants a render sets text in', () => {
     beforeEach(() => {
       _resetFallbackForTests();

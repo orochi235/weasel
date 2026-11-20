@@ -28,6 +28,8 @@ type State = 'declared' | 'loading' | 'loaded';
 interface Model {
   registered: Set<string>;
   variants: Map<string, Map<string, { state: State; ok: boolean }>>;
+  /** Variants whose last load failed, per family, until registered again. */
+  failed: Map<string, Set<string>>;
 }
 interface Real { t: ReturnType<typeof tally> }
 
@@ -59,10 +61,14 @@ const variantsOf = (m: Model, family: string) => {
 
 /** Every load in flight lands, or fails and is forgotten. */
 function settleModel(m: Model): void {
-  for (const variants of m.variants.values()) {
+  for (const [family, variants] of m.variants) {
     for (const [key, v] of variants) {
       if (v.state !== 'loading') continue;
-      if (v.ok) v.state = 'loaded'; else variants.delete(key);
+      if (v.ok) v.state = 'loaded';
+      else {
+        variants.delete(key);
+        m.failed.set(family, (m.failed.get(family) ?? new Set()).add(key));
+      }
     }
   }
 }
@@ -101,6 +107,7 @@ class Register implements fc.AsyncCommand<Model, Real> {
     }
     register().catch(() => {});
     m.registered.add(this.family);
+    m.failed.get(this.family)?.delete(key);
     if (was?.state === 'loaded' || was?.state === 'loading') r.t.count('joined');
     else if (this.lazy) { if (!was) variants.set(key, { state: 'declared', ok: this.ok }); }
     else variants.set(key, { state: 'loading', ok: this.ok });
@@ -127,7 +134,8 @@ class Warm implements fc.AsyncCommand<Model, Real> {
     warmFonts([this.family]).then(() => { outcome = 'resolved'; }, () => { outcome = 'rejected'; });
     const variants = m.variants.get(this.family);
     for (const v of variants?.values() ?? []) if (v.state === 'declared') v.state = 'loading';
-    const fails = !m.registered.has(this.family) || [...(variants?.values() ?? [])].some((v) => v.state === 'loading' && !v.ok);
+    const fails = !m.registered.has(this.family) || (m.failed.get(this.family)?.size ?? 0) > 0
+      || [...(variants?.values() ?? [])].some((v) => v.state === 'loading' && !v.ok);
     await release();
     settleModel(m);
     expect(outcome).toBe(fails ? 'rejected' : 'resolved');
@@ -183,7 +191,7 @@ describe('atlas registry, stateful', () => {
     const t = tally();
     await fc.assert(fc.asyncProperty(commands, async (cmds) => {
       _resetFontRegistryForTests();
-      await fc.asyncModelRun(() => ({ model: { registered: new Set<string>(), variants: new Map() }, real: { t } }), cmds);
+      await fc.asyncModelRun(() => ({ model: { registered: new Set<string>(), variants: new Map(), failed: new Map() }, real: { t } }), cmds);
       await release();
     }), runs(RUNS));
     t.atLeast('warm resolved', 50);
