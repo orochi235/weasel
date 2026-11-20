@@ -40,8 +40,9 @@ export function SectionJump() {
   const ref = useRef<HTMLDivElement>(null);
   const [present, setPresent] = useState<readonly TokenCategory[]>([]);
   const [current, setCurrent] = useState<TokenCategory | null>(null);
-  // A picked section stays lit until the reader scrolls by hand: near the end of the list it cannot reach the top.
-  const held = useRef(false);
+  // A picked section stays lit until the list moves from where the jump left it, or the reader scrolls by hand:
+  // near the end of the list it cannot reach the top.
+  const held = useRef<{ readonly scroller: Element; readonly top: number } | null>(null);
 
   useEffect(() => {
     // The root outlives a remount of the panel.
@@ -50,6 +51,8 @@ export function SectionJump() {
       const panel = root.querySelector(PANEL);
       const sections = panel ? sectionsOf(panel) : [];
       setPresent(sections.map((s) => s.dataset.tokenCategory as TokenCategory));
+      const hold = held.current;
+      if (hold && Math.abs(hold.scroller.scrollTop - hold.top) > 1) held.current = null;
       if (!panel || held.current) return;
       const line = readLine(panel) + 1;
       let top = sections[0]?.dataset.tokenCategory as TokenCategory | undefined;
@@ -57,7 +60,7 @@ export function SectionJump() {
       setCurrent(top ?? null);
     };
     const release = () => {
-      held.current = false;
+      held.current = null;
     };
     read();
     const observer = new MutationObserver(read);
@@ -85,9 +88,9 @@ export function SectionJump() {
     const target = next && panel?.querySelector(`[data-token-category="${next}"]`);
     const scroller = panel?.querySelector(LIST);
     if (!panel || !target || !scroller) return;
-    held.current = true;
     setCurrent(next);
     scroller.scrollTop = scrolledPlaceOf(target, scroller).y;
+    held.current = { scroller, top: scroller.scrollTop };
   };
 
   return (

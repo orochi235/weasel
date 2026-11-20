@@ -32,4 +32,12 @@ describe('SectionJump', () => {
     expect(lit()).toBe('Color');
   });
 
+  it('lets go of a picked section once the list moves other than by wheel, touch or key', () => {
+    const { scrollBy } = mount('lk-sidebar-section');
+    fireEvent.click(screen.getByRole('radio', { name: 'Color' }));
+    scrollBy(0);
+    expect(lit()).toBe('Color');
+    scrollBy(40);
+    expect(lit()).toBe('Motion');
+  });
 });
