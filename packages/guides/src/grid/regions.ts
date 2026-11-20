@@ -67,7 +67,9 @@ export function sceneGridRegions(
   for (const id of scene.nodes.keys()) {
     if (!ownsGrid(scene, id, owners)) continue;
     const parent = gridOwner(scene, id, owners);
-    children.set(parent, [...(children.get(parent) ?? []), id]);
+    const siblings = children.get(parent);
+    if (siblings) siblings.push(id);
+    else children.set(parent, [id]);
   }
   const build = (parent: NodeId | null): GridRegion[] => {
     const out: GridRegion[] = [];
