@@ -89,3 +89,13 @@ describe('reading cells with no id', () => {
     expect(byText.get('anon')!.id).not.toBe('cell-3');
   });
 });
+
+describe('reading pools', () => {
+  it('measures a swimlane with no startSize with the draw app\'s default header', async () => {
+    const lane = (id: string, x: number) =>
+      `<mxCell id="${id}" value="${id}" style="swimlane;" vertex="1" parent="p"><mxGeometry x="${x}" y="40" width="100" height="160" as="geometry"/></mxCell>`;
+    const { data } = await page(`<mxCell id="p" value="P" style="swimlane;" vertex="1" parent="1"><mxGeometry x="0" y="0" width="200" height="200" as="geometry"/></mxCell>`
+      + lane('l1', 0) + lane('l2', 100));
+    expect(data.containers!.map((c) => [c.id, c.role, c.lanes?.map((l) => l.id)])).toEqual([['p', 'pool', ['l1', 'l2']]]);
+  });
+});

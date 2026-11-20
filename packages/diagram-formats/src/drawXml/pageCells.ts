@@ -31,12 +31,15 @@ const SPAN = 0.9;
 
 const isSwimlane = (cell: RawCell): boolean => hasStyleName(cell.style, 'swimlane');
 
+/** The header depth a draw app gives a swimlane whose style names no `startSize` (mxGraph's `DEFAULT_STARTSIZE`). */
+const DEFAULT_START_SIZE = 40;
+
 /** Whether a swimlane's swimlane children are its lanes. */
 function holdsLanes(cell: RawCell, children: readonly RawCell[]): boolean {
   const lanes = children.filter(isSwimlane);
   if (lanes.length === 0) return false;
   const box = geometryOf(cell);
-  const head = styleNumber(cell.style, 'startSize') ?? 0;
+  const head = styleNumber(cell.style, 'startSize') ?? DEFAULT_START_SIZE;
   const rows = cell.style.values.get('horizontal') === '0';
   const across = rows ? box.width - head : box.height - head;
   return lanes.every((lane) => (rows ? geometryOf(lane).width : geometryOf(lane).height) >= across * SPAN);
