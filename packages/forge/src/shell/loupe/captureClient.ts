@@ -19,6 +19,13 @@ export interface CaptureClient {
   take(payload: CapturePayload): Promise<ImageBitmap | null>;
 }
 
+/** An error answer's JSON body, or nothing where a proxy or a restarting server answered with something else. */
+const errorBody = (res: Response): Promise<{ reason?: string; error?: string }> =>
+  res.json().then(
+    (body: unknown) => (typeof body === 'object' && body !== null ? body : {}),
+    () => ({}),
+  );
+
 export function createCaptureClient(base: string, send: typeof fetch): CaptureClient {
   const url = `${base}${CAPTURE_PATH}`;
   const listeners = createEmitter();
@@ -54,12 +61,11 @@ export function createCaptureClient(base: string, send: typeof fetch): CaptureCl
     async take(payload) {
       const res = await send(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       if (res.status === 503) {
-        setStatus(((await res.json()) as { reason?: string }).reason ?? UNAVAILABLE);
+        setStatus((await errorBody(res)).reason ?? UNAVAILABLE);
         return null;
       }
       if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? `capture failed: ${res.status}`);
+        throw new Error((await errorBody(res)).error ?? `capture failed: ${res.status}`);
       }
       return createImageBitmap(await res.blob());
     },
