@@ -183,6 +183,19 @@ describe('layoutCanvasRuns with no characters', () => {
 });
 
 describe('createMarkdownRenderer', () => {
+  it('turns each glyph of a rotated run about its own pen', () => {
+    const { ctx, fillCalls } = makeMockCtx();
+    const turns: number[][] = [];
+    Object.assign(ctx, {
+      save: () => {}, restore: () => {},
+      transform: (...m: number[]) => { turns.push(m); },
+    });
+    const r = createMarkdownRenderer(ctx, [{ text: 'ab', rotate: 90 }], 13);
+    r.renderer(ctx, 'ab', 5, 7);
+    expect(fillCalls.map((c) => c.text)).toEqual(['a', 'b']);
+    expect(turns.map((m) => m.map((v) => Math.round(v * 1e9) / 1e9))).toEqual([[0, 1, -1, 0, 5, 7], [0, 1, -1, 0, 15, 7]]);
+  });
+
   it('uses sans-serif by default', () => {
     const { ctx, fillCalls } = makeMockCtx();
     const r = createMarkdownRenderer(ctx, 'hello', 13);
