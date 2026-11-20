@@ -4,6 +4,8 @@ import { documentReads, sceneMutators } from './sceneMutators';
 import { createNotifier, type Notifier } from './notifier';
 import type { SerializedDoc } from './docValues';
 import { sceneChanges } from './sceneChanges';
+import { createSceneTouches } from './sceneTouches';
+import { createTouchJournal } from './touchJournal';
 import { createPoseWriteLog } from './poseWrites';
 import { effectivePose } from './effectivePose';
 import { createEditMode } from './editMode';
@@ -132,6 +134,14 @@ function buildScene<TData, TLayer extends string, TPose>(
   const generateId = freshIds(options.generateId ?? defaultGenerateId, (id) => state.nodes.has(id));
   const sessions = sceneSessions(doc, notifier);
   const { selection } = sessions.own;
+  const journal = createTouchJournal();
+  const touches = createSceneTouches({
+    journal,
+    nodes: state.nodes,
+    dependents: doc.store.dependents,
+    childDerived: doc.store.childDerived,
+    eachShown: (fn) => sessions.each((s) => { fn(s.overrides); fn(s.scroll); }),
+  });
 
   const recording = createSceneRecording({
     notifier,
@@ -142,6 +152,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     selection: sessions.actingSelection,
     arrivals,
     writePose,
+    touched: touches.noteOp,
     poseWrites,
     config: options,
   });
@@ -198,6 +209,7 @@ function buildScene<TData, TLayer extends string, TPose>(
       buildScene(options, json.systemLayers.map(layerFromSerialized), () => specs, json.doc); // a dry run: a bad snapshot keeps the document
       // Session state, and every id is a new node after this.
       sessions.clearShown();
+      journal.reset();
       doc.reset(json.systemLayers.map(layerFromSerialized), json.doc);
       recording.clearHistory();
       poseWrites.quiet(() => edits.construct(specs));
@@ -206,6 +218,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     },
 
     ...sceneChanges(notifier, selection),
+    changesSince: touches.changesSince,
   };
   sessions.serve(scene);
 

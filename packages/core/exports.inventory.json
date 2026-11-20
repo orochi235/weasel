@@ -1076,6 +1076,7 @@
     "SceneSlotConfig": "type",
     "SceneSlotLayers": "type",
     "SceneToAdapterOptions": "type",
+    "SceneTouches": "type",
     "SceneViewCanvas": "function",
     "SceneViewCanvasCommon": "type",
     "SceneViewCanvasProps": "type",

@@ -69,6 +69,7 @@ export type { SceneBatchOptions } from './recorder';
 export { definesFrame, derivedDepOf, derivedPose, documentDepOf, documentPose, effectivePose } from './effectivePose';
 export { createPoseFeed } from './poseFeed';
 export type { FeedDelta, FeedNode, PoseFeed } from './poseFeed';
+export type { SceneTouches, SceneTouchesMembers } from './sceneTouches';
 export { resolveDerivedPath } from './derivedPath';
 export type { PathDerivingNode } from './derivedPath';
 export type { PoseSource, PosedNode } from './effectivePose';
