@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, type ActionDeps, type ImmediateInvoker, type InvocationCtx, type OngoingHandle, type OngoingInvoker, type RectPose } from '@weasel-js/core';
+import { ActionDisabledReason, createScene, type ActionDeps, type ImmediateInvoker, type InvocationCtx, type OngoingHandle, type OngoingInvoker, type RectPose } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { EDGE_DERIVE_PATH, withDiagramRegistry } from './edge';
 import type { DiagramEdge } from './edgeTrait';
@@ -66,6 +66,22 @@ describe('a route edit in a scene', () => {
     expect(edgeOf(scene, AC).waypoints).toEqual([{ x: 500, y: 90 }]);
   });
 
+  it('is disabled by a locked edge among those it would clear, and clears none of them', () => {
+    const { scene } = load();
+    const AC = edgeIdOf({ from: 'a', to: 'c' });
+    const ctx = { deps: { scene } } as unknown as InvocationCtx;
+    commitRouteToScene({ edgeId: AB, waypoints: [{ x: 500, y: 40 }] }, ctx);
+    commitRouteToScene({ edgeId: AC, waypoints: [{ x: 500, y: 90 }] }, ctx);
+    scene.setLocked(AB as never, true);
+    const reset = createResetRouteAction<RectPose>({
+      participants: sceneParticipants(scene as never), selected: () => [AB, AC],
+    });
+    expect(reset.enabled!({ scene } as never)).toBe(ActionDisabledReason.Locked);
+    expect(() => (reset.invoker as ImmediateInvoker).run({ scene } as never, undefined)).not.toThrow();
+    expect(edgeOf(scene, AB).waypoints).toEqual([{ x: 500, y: 40 }]);
+    expect(edgeOf(scene, AC).waypoints).toEqual([{ x: 500, y: 90 }]);
+  });
+
   it('survives a layout run afterward', () => {
     const { scene, relayout } = load();
     commitRouteToScene({ edgeId: AB, waypoints: [{ x: 500, y: 40 }] }, { deps: { scene } } as unknown as InvocationCtx);
@@ -124,6 +140,14 @@ describe('waypointFollower', () => {
   it('leaves them where they are when only one end moves', () => {
     const { scene } = twoShapes();
     drag(scene, ['A']);
+    expect(scene.get('A' as never)!.pose).toMatchObject({ x: 10, y: 5 });
+    expect(waypoints(scene)).toEqual([{ x: 200, y: 100 }]);
+  });
+
+  it('leaves a locked edge\'s waypoints where they are, and the move of its ends goes through', () => {
+    const { scene } = twoShapes();
+    scene.setLocked('ab' as never, true);
+    drag(scene, ['A', 'B'], (handle) => expect([...(handle.previewIds?.() ?? [])]).not.toContain('ab'));
     expect(scene.get('A' as never)!.pose).toMatchObject({ x: 10, y: 5 });
     expect(waypoints(scene)).toEqual([{ x: 200, y: 100 }]);
   });

@@ -11,6 +11,7 @@ import { DEFAULT_FONT } from './edgeLabel';
 import { DEFAULT_NODE_STYLE, type DiagramSceneData, type NodeStyle } from './dataTypes';
 import { NODE_STROKE_WIDTH } from './dataTypes';
 import { asideFace, rowTextStyle } from './rowStyle';
+import { measureInFace } from './faceMeasure';
 import type { IconSpec } from '@weasel-js/icons';
 import type { Outline } from './outline';
 import type { Rect } from '@weasel-js/geom';
@@ -77,6 +78,9 @@ export function stencilInsertOps<TLayer extends string>(
   },
 ): { id: string; ops: Op[] } {
   const id = opts.newId();
+  const font = opts.font ?? DEFAULT_FONT;
+  // Measured in the face each row is drawn in, which `font` fills in.
+  const measure = measureInFace(font, opts.measure);
   const style = { ...(opts.style ?? DEFAULT_NODE_STYLE), ...stencil.style };
   const at = placedBounds(stencil, bounds);
   const spec: BodySpec = {
@@ -91,9 +95,9 @@ export function stencilInsertOps<TLayer extends string>(
     {
       id,
       layer: opts.layer,
-      ...(opts.measure ? { measure: opts.measure } : {}),
+      measure,
       body: (trait) => ({
-        diagram: { ...trait, ...bodyLayoutOf(spec, trait, opts.measure), ...(stencil.themeRole !== undefined ? { style: stencil.themeRole } : {}) },
+        diagram: { ...trait, ...bodyLayoutOf(spec, trait, measure), ...(stencil.themeRole !== undefined ? { style: stencil.themeRole } : {}) },
         fill: { paint: { color: style.fill } },
         stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? NODE_STROKE_WIDTH, ...(style.dash ? { dash: style.dash } : {}) },
         ...headerFillOf(trait, style),
@@ -101,14 +105,14 @@ export function stencilInsertOps<TLayer extends string>(
       row: (text, box) => box.row.kind === 'label' || box.row.kind === 'field' || box.row.kind === 'header'
         ? {
             text,
-            style: rowTextStyle(box.row, opts.font ?? DEFAULT_FONT),
+            style: rowTextStyle(box.row, font),
             fill: { paint: { color: rowTextColor(box.row, style) } },
             bodyRow: box.index,
             ...(box.row.kind === 'field' ? { bodyField: box.row.label } : {}),
           }
         : null,
       aside: (text, box) => ({
-        text, style: asideFace(rowTextStyle(box.row, opts.font ?? DEFAULT_FONT)), fill: asideFillOf(style), bodyRow: box.index, bodyAside: true,
+        text, style: asideFace(rowTextStyle(box.row, font)), fill: asideFillOf(style), bodyRow: box.index, bodyAside: true,
       }),
     },
   );

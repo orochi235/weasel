@@ -10,7 +10,7 @@
  */
 import { rotatePoint, type Vec2 } from '@weasel-js/core/math';
 import { frameFor, type FrameOptions } from './layoutFrame';
-import { outlinePolyline, rayHit } from './onOutline';
+import { outlineRings, rayHit } from './onOutline';
 import { diagramNodeOf, type DiagramNodeLike, type DiagramNodeReader } from './trait';
 import type { Port, PortAnchor, PortSpec } from './types';
 
@@ -121,7 +121,7 @@ function placerOf<TPose>(
   // per call, not once per port.
   const poly = trait.outline === undefined || bounds.width <= 0 || bounds.height <= 0
     ? null
-    : outlinePolyline(trait.outline, bounds);
+    : outlineRings(trait.outline, bounds);
 
   const place = (spec: PortSpec, at: PortAnchor, given: Vec2 | null | undefined): Port => {
     const anchored: Vec2 = {

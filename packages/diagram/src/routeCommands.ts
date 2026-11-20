@@ -9,6 +9,7 @@ import { diagramEdgeOf } from './edgeTrait';
 import { commitRouteToScene, type RouteEdit, type RouteEditOptions } from './waypointAction';
 import { WAYPOINT_HIT_PX, routeStateOf, waypointScratchOf, type EdgeRouteState } from './waypointLayer';
 import { avoid } from './edge';
+import { offersPorts } from './portAffordance';
 import { removeSegment, removeWaypoint, unpinSegment, type RouteHandle } from './waypoints';
 import type {} from './actionParamSchema';
 
@@ -36,15 +37,19 @@ function removalOf(route: EdgeRouteState, handle: RouteHandle): Vec2[] | null {
 export function createRemoveWaypointAction<TPose>(opts: RouteEditOptions<TPose>): Action {
   const { commit = commitRouteToScene, hitRadiusPx = WAYPOINT_HIT_PX } = opts;
   const endsOf = createEdgeEnds(opts.participants, opts);
-  const routeOf = (edgeId: string) => {
+  /** The route of `edgeId`, where its handles are offered: not where the edge
+   *  is hidden, locked or on a layer the view does not paint, as the layer
+   *  draws none there. */
+  const routeOf = (edgeId: string, deps: ActionDeps | undefined) => {
     const ends = endsOf(edgeId);
-    return ends === null ? null : routeStateOf(ends as never, opts.routers);
+    if (ends === null || !offersPorts(ends.edge, deps?.view) || deps?.scene?.isLocked(edgeId as never) === true) return null;
+    return routeStateOf(ends as never, opts.routers);
   };
   /** The removal a double-click at `at` makes, read off the handles as the layer places them. */
   const removalAt = (deps: ActionDeps | undefined, at: Vec2): RouteEdit | null => {
     const reach = hitRadiusPx / Math.abs(deps?.view?.get().scale.x || 1);
     for (const edgeId of opts.selected()) {
-      const route = routeOf(edgeId);
+      const route = routeOf(edgeId, deps);
       for (const handle of route?.handles ?? []) {
         if (Math.max(Math.abs(handle.at.x - at.x), Math.abs(handle.at.y - at.y)) > reach) continue;
         const waypoints = removalOf(route!, handle);
@@ -64,7 +69,7 @@ export function createRemoveWaypointAction<TPose>(opts: RouteEditOptions<TPose>)
         const world = params?.world;
         if (!world) return;
         const pressed = waypointScratchOf(params.affordance);
-        const route = pressed === null ? null : routeOf(pressed.edgeId);
+        const route = pressed === null ? null : routeOf(pressed.edgeId, deps);
         const waypoints = pressed === null || route === null ? null : removalOf(route, pressed.handle);
         const edit = pressed !== null && waypoints !== null ? { edgeId: pressed.edgeId, waypoints } : removalAt(deps, world);
         if (edit !== null) commit(edit, { world, modifiers: NO_MODIFIERS, deps } as InvocationCtx);
@@ -74,19 +79,23 @@ export function createRemoveWaypointAction<TPose>(opts: RouteEditOptions<TPose>)
   });
 }
 
-/** The selected edges that have waypoints of their own. */
-function routedEdges<TPose>(opts: RouteEditOptions<TPose>): string[] {
+/** The selected edges that have waypoints of their own, or `'locked'` where
+ *  one of them is locked, on its own, by its layer, or in `scene`. */
+function routedEdges<TPose>(opts: RouteEditOptions<TPose>, scene: ActionDeps['scene']): string[] | 'locked' {
   const ids = new Set(opts.selected());
   if (ids.size === 0) return [];
   const out: string[] = [];
-  for (const { node } of opts.participants()) {
-    if (ids.has(node.id) && (diagramEdgeOf(node)?.waypoints ?? []).length > 0) out.push(node.id);
+  for (const p of opts.participants()) {
+    if (!ids.has(p.node.id) || (diagramEdgeOf(p.node)?.waypoints ?? []).length === 0) continue;
+    if (p.locked === true || scene?.isLocked(p.node.id as never) === true) return 'locked';
+    out.push(p.node.id);
   }
   return out;
 }
 
 /** The `diagram.resetRoute` command: clears the selected edges' waypoints,
- *  in one history entry when they commit to the scene. */
+ *  in one history entry when they commit to the scene. Disabled where it
+ *  would clear a locked one, as the set-router commands are. */
 export function createResetRouteAction<TPose>(opts: RouteEditOptions<TPose>): Action {
   const { commit = commitRouteToScene } = opts;
   return {
@@ -97,13 +106,18 @@ export function createResetRouteAction<TPose>(opts: RouteEditOptions<TPose>): Ac
     invoker: {
       timing: 'immediate',
       run(deps) {
-        const edges = routedEdges(opts);
+        const edges = routedEdges(opts, deps.scene);
+        if (edges === 'locked') return;
         const ctx = { world: { x: 0, y: 0 }, modifiers: NO_MODIFIERS, deps } as InvocationCtx;
         const all = () => { for (const edgeId of edges) commit({ edgeId, waypoints: [] }, ctx); };
         if (deps.scene === undefined) all();
         else deps.scene.batch('Reset route', all);
       },
     },
-    enabled: () => (routedEdges(opts).length > 0 ? true : ActionDisabledReason.NotApplicable),
+    enabled: (deps) => {
+      const edges = routedEdges(opts, deps?.scene);
+      if (edges === 'locked') return ActionDisabledReason.Locked;
+      return edges.length > 0 ? true : ActionDisabledReason.NotApplicable;
+    },
   };
 }

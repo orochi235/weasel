@@ -30,6 +30,16 @@ const insertedNodes = (ops: { name: string; args: unknown }[]) =>
   });
 
 describe('stencilInsertOps', () => {
+  it('measures each row in the face it is drawn in', () => {
+    const measure = vi.fn((text: string, s: { fontFamily?: string; fontSize?: number }) => ({ width: text.length, height: s.fontSize ?? 16 }));
+    const font = { fontFamily: 'Inter', fontSize: 20 };
+    const { ops } = stencilInsertOps(byId('process'), { x: 0, y: 0, width: 0, height: 0 }, { layer: 'main', newId: idMinter(), measure, font });
+    expect(measure).toHaveBeenCalled();
+    for (const [, s] of measure.mock.calls) expect(s).toMatchObject(font);
+    const text = insertedNodes(ops as never)[1] as unknown as { data: { style: { fontFamily: string; fontSize: number } } };
+    expect(text.data.style).toMatchObject(font);
+  });
+
   it('turns a click on a diamond into a container at the stencil size plus one text row', () => {
     const diamond = byId('decision');
     expect(diamond.outline).toBe('diamond');

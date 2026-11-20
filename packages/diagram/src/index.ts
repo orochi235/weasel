@@ -301,7 +301,7 @@ export { routeWrites, routesOf, type LayoutRoutes, type RoutedScene } from './ro
 export { forestOf, subtreeBlocks, tree, type Forest } from './tree';
 export { radial } from './radial';
 export { grid, type GridOptions } from './grid';
-export { outlinePolyline, portsOnOutline, rayHit } from './onOutline';
+export { outlinePolyline, outlineRings, portsOnOutline, rayHit } from './onOutline';
 export {
   DEFAULT_PORT_FILL,
   DEFAULT_PORT_STROKE,

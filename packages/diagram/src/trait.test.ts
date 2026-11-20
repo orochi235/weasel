@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { dataKeyReader, diagramNodeOf, type DiagramNodeLike } from './trait';
+import { createDiagramNodes, dataKeyReader, diagramNodeOf, type DiagramNodeLike } from './trait';
 
 const node = (data: unknown, id = 'n1'): DiagramNodeLike => ({ id, kind: 'mark', data });
 
@@ -19,5 +19,20 @@ describe('dataKeyReader', () => {
 
   it('still reads a participant that declares nothing', () => {
     expect(diagramNodeOf(node({ diagram: {} }))).toEqual({});
+  });
+});
+
+describe('createDiagramNodes', () => {
+  const read = createDiagramNodes([{ name: 'any', matches: (d) => d !== null && typeof d === 'object', trait: { ports: [] } }]);
+
+  it('gives no kind trait to a node whose own trait takes no ports', () => {
+    for (const diagram of [{ from: {}, to: {} }, { label: { at: 'mid' } }, { container: { role: 'lane' } }]) {
+      expect(read(node({ diagram }))).toBeNull();
+    }
+  });
+
+  it('gives its kind trait to a node with no own trait, and lets an own trait win', () => {
+    expect(read(node({ title: 'x' }))).toEqual({ ports: [] });
+    expect(read(node({ diagram: { pinned: true } }))).toEqual({ pinned: true });
   });
 });
