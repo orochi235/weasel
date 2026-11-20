@@ -35,6 +35,7 @@ describe('lanes', () => {
     expect(sharedSpansOf(running, 'build')[1]!.label).toBe('postbuild · 75%');
     expect(states({ ...live, step: 'merge-wait' })).toEqual([['batch', 'done', 1], ['fleet', 'done', 1], ['merge', 'active', 0]]);
     expect(states(finished).every(([, state]) => state === 'done')).toBe(true);
+    expect(states({ ...finished, report: 'red: batch kept' })).toEqual([['batch', 'done', 1], ['fleet', 'failed', 1], ['merge', 'pending', 0]]);
   });
 
   it('heads each run with its round, step and spend', () => {

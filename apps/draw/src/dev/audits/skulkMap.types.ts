@@ -32,6 +32,10 @@ export interface LaneStep {
   readonly state: 'waiting' | 'running' | 'done' | 'failed';
   readonly node?: string;
   readonly since?: string;
+  /** A running step's own count of its work, as onto reports it: a reviewer's files read, a fixer's commits of its
+   *  findings. */
+  readonly done?: number;
+  readonly total?: number;
   readonly findings?: number;
   readonly read?: number;
   readonly files?: number;
@@ -45,6 +49,10 @@ export interface LaneStep {
   readonly fixed?: number;
   readonly of?: number;
   readonly extra?: number;
+  /** Of `of`, how many the fixer left for later, filed or waiting on a question, rather than fixed or found sound. */
+  readonly deferred?: number;
+  /** Of `of`, how many the fixer found were no defect. */
+  readonly dismissed?: number;
   readonly why?: string;
   /** When a done step began and ended, from onto's record of the job that ran it. */
   readonly started?: string;

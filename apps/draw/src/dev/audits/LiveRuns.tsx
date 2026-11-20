@@ -18,11 +18,14 @@ export interface AreaHandlers {
   readonly onLight: (id: string | null) => void;
 }
 
-/** A running span with its node's name marked, so the name alone pulses. */
+/** A running span with its node's name marked, so the name alone pulses: the label up to its separator, or all of it
+ *  where it has none. */
 function withNode(span: SpanStripSpan): SpanStripSpan {
-  const at = span.state === 'active' ? span.label.indexOf(NODE_SEP) : -1;
-  if (at <= 0) return span;
-  return { ...span, content: <><span className={s.node}>{span.label.slice(0, at)}</span>{span.label.slice(at)}</> };
+  if (span.state !== 'active' || span.label === '') return span;
+  const at = span.label.indexOf(NODE_SEP);
+  if (at === 0) return span;
+  const end = at === -1 ? span.label.length : at;
+  return { ...span, content: <><span className={s.node}>{span.label.slice(0, end)}</span>{span.label.slice(end)}</> };
 }
 
 /** An area's lane as a stack row: its name, and `spans`, its steps in the view chosen. */
@@ -92,7 +95,7 @@ function RunStrip({ run, now, mode, onMode, hideComplete, onHideComplete, on }: 
   hideComplete: boolean; onHideComplete: (hide: boolean) => void; on: AreaHandlers;
 }) {
   return (
-    <section className={s.run} aria-label={`Round ${run.round}`}>
+    <section className={cx(s.run, !run.running && s.idle)} aria-label={`Round ${run.round}`}>
       <div className={s.pulse} aria-hidden="true" />
       <div className={s.what}>
         <span>{headlineOf(run)}</span>
@@ -122,11 +125,14 @@ function RunStrip({ run, now, mode, onMode, hideComplete, onHideComplete, on }: 
   );
 }
 
-/** A strip for every run still running; a finished round lives on in the rounds chart and the map. */
-export function LiveRuns({ runs, now, on }: { runs: readonly AuditRun[]; now: number; on: AreaHandlers }) {
+/** A strip for every run still running, and for every finished one whose batch has not merged; a merged round lives on
+ *  in the rounds chart and the map. */
+export function LiveRuns({ runs, unmerged, now, on }: {
+  runs: readonly AuditRun[]; unmerged: ReadonlySet<number>; now: number; on: AreaHandlers;
+}) {
   const [mode, setMode] = useLaneMode();
   const [hideComplete, setHideComplete] = useHideComplete();
-  const live = runs.filter((r) => r.running);
+  const live = runs.filter((r) => r.running || unmerged.has(r.round));
   if (live.length === 0) return <section className={cx(s.run, s.idle)}><div className={s.what}>No round running</div></section>;
   return (
     <div className={s.runs} aria-live="polite">

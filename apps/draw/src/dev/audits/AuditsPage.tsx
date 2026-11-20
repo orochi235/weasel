@@ -58,6 +58,7 @@ function Chart({ map }: { map: SkulkMap }) {
   const areas = useMemo(() => withLivePasses(map.areas, map.runs), [map.areas, map.runs]);
   const area = areas.find((a) => a.id === shownId);
   const stats = useMemo(() => statsFor(areas), [areas]);
+  const unmerged = useMemo(() => new Set(map.rounds.filter((r) => r.pending === 'unmerged').map((r) => r.round)), [map.rounds]);
   const next = useMemo(() => nextUpOf(areas, NEXT_UP_ROUNDS * (map.areasPerRound ?? 16)), [areas, map.areasPerRound]);
   const phases = useMemo(() => phasesOf(map.runs), [map.runs]);
   const pick = (id: string) => selection.set([asNodeId(id)]);
@@ -67,7 +68,7 @@ function Chart({ map }: { map: SkulkMap }) {
     <>
       {probes}
       <div className={s.top}>
-        <div className={s.runs}><LiveRuns runs={map.runs} now={Date.parse(map.generated)} on={on} /></div>
+        <div className={s.runs}><LiveRuns runs={map.runs} unmerged={unmerged} now={Date.parse(map.generated)} on={on} /></div>
         <ResizeHandle className={s.vseam} value={tabsWidth} min={TABS.min} max={TABS.max} invert onInput={setTabsWidth} onChange={keepTabs} aria-label="Resize the rounds and queue tabs" />
         <TopTabs rounds={map.rounds} next={next} onPick={pick} onLight={setLit} />
       </div>

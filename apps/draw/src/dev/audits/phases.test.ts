@@ -75,15 +75,21 @@ describe('laneViewOf', () => {
     expect(laneViewOf(lane({ ...fixed, fix: done({ minutes: 9, commits: 6 }) }), NOW, START).spans.at(-1)?.label).toBe('4 found');
   });
 
-  it('splits the patch into the share fixed, shaded, and the share filed rather than fixed, hatched dark gray', () => {
-    const fixed = { A: done({ findings: 3 }), B: done({ findings: 2 }), match: matched(3, 2, 1), fix: done({ minutes: 9, commits: 6, fixed: 3, of: 4 }) };
+  it('splits the patch into the share settled, shaded, and the share left for later, hatched dark gray', () => {
+    const fixed = { A: done({ findings: 3 }), B: done({ findings: 2 }), match: matched(3, 2, 1), fix: done({ minutes: 9, commits: 6, fixed: 2, of: 4, deferred: 1 }) };
     for (const spans of [laneStepsOf(lane(fixed), NOW), laneStepsOf(lane({ ...fixed, patch: done({ commits: 6 }) }), NOW)]) {
       const [kept, filed] = spans.slice(-2);
       expect([kept!.id, kept!.ms, kept!.fill]).toEqual(['patch', 0.6 * 0.75, 1]);
       expect([filed!.id, filed!.ms, filed!.state, filed!.color, filed!.label]).toEqual(['patch-unfixed', 0.6 * 0.25, 'failed', 'var(--audit-filed)', '']);
     }
-    const all = { ...fixed, fix: done({ minutes: 9, commits: 6, fixed: 4, of: 4 }) };
-    expect(laneStepsOf(lane(all), NOW).map((s) => s.id)).not.toContain('patch-unfixed');
+    // A finding found sound is settled, not left: no hatch where nothing was deferred.
+    const sound = { ...fixed, fix: done({ minutes: 9, commits: 6, fixed: 3, of: 4, deferred: 0, dismissed: 1 }) };
+    expect(laneStepsOf(lane(sound), NOW).at(-1)?.label).toBe('3 of 4 fixed · 1 FP');
+    expect(laneStepsOf(lane(fixed), NOW).find((s) => s.id === 'patch')?.label).toBe('2 of 4 fixed · 1 filed');
+    expect(laneStepsOf(lane(sound), NOW).map((s) => s.id)).not.toContain('patch-unfixed');
+    // A tally line alone says nothing of why, so everything unfixed is left.
+    const tallied = { ...fixed, fix: done({ minutes: 9, commits: 6, fixed: 3, of: 4 }) };
+    expect(laneStepsOf(lane(tallied), NOW).find((s) => s.id === 'patch-unfixed')?.ms).toBeCloseTo(0.6 * 0.25);
   });
 
   it('counts an area\'s pass done once its fixer is, and gives the map that pass, provisionally', () => {
@@ -118,8 +124,8 @@ describe('runClockOf', () => {
 describe('laneStepsOf', () => {
   it('gives every step one equal column, filled by its state, a running one by its share of the typical time', () => {
     const spans = laneStepsOf(lane({ A: done({ findings: 5, minutes: 3 }), B: running(at(27.5)), match: W }), NOW);
-    expect(spans.map((s) => [s.id, s.ms, s.fill])).toEqual([['A', 1, 1], ['B', 1, 0.5], ['match', 1, 0], ['fix', 1, 0], ['patch', 0.6, 0]]);
-    expect(spans.map((s) => s.color)).toEqual(['review', 'reviewed', 'match', 'fix', 'patch'].map((p) => phaseColor(p as never)));
+    expect(spans.map((s) => [s.id, s.ms, s.fill])).toEqual([['A', 1, 1], ['B', 1, 0.5], ['match', 1, 0], ['fix', 1, 0], ['checks', 0.25, 0], ['patch', 0.6, 0]]);
+    expect(spans.filter((s) => s.id !== 'checks').map((s) => s.color)).toEqual(['review', 'reviewed', 'match', 'fix', 'patch'].map((p) => phaseColor(p as never)));
     expect(spans[1]!.label).toBe('studio · 2.5 min');
     expect(spans[2]!.label).toBe('');
   });
@@ -127,12 +133,25 @@ describe('laneStepsOf', () => {
   it('runs A and B in one column, A over B, and every later step a column after, across both', () => {
     const spans = laneStepsOf(lane({}), NOW);
     expect(spans.map((s) => [s.id, s.start, s.track ?? 0, s.trackSpan ?? 1])).toEqual([
-      ['A', 0, 0, 1], ['B', 0, 1, 1], ['match', 1, 0, 2], ['fix', 2, 0, 2], ['patch', 3, 0, 2],
+      ['A', 0, 0, 1], ['B', 0, 1, 1], ['match', 1, 0, 2], ['fix', 2, 0, 2], ['checks', 3, 0, 2], ['patch', 3.25, 0, 2],
     ]);
-    expect(STEP_COLUMN_COUNT).toBe(3.6);
+    expect(STEP_COLUMN_COUNT).toBe(3.85);
   });
 
   it('stops a running step short of full until it finishes', () => {
     expect(laneStepsOf(lane({ A: running(at(0)) }), NOW)[0]!.fill).toBe(0.9);
+  });
+
+  it('fills a running step by its own count where onto reports one, and says the count', () => {
+    const fixing = lane({ A: done({ findings: 5 }), B: done({ findings: 3 }), match: matched(5, 3, 0), fix: { ...running(at(6)), done: 3, total: 8 } });
+    const fix = laneStepsOf(fixing, NOW).find((s) => s.id === 'fix')!;
+    expect(fix.fill).toBe(3 / 8);
+    expect(fix.label).toMatch(/^studio · 3\/8 · \d/);
+    const checking = laneStepsOf(lane({ fix: { ...running(at(6)), done: 8, total: 8 } }), NOW);
+    expect(checking.find((s) => s.id === 'fix')!.fill).toBe(1);
+    expect(checking.find((s) => s.id === 'checks')).toMatchObject({ state: 'active', fill: 1, label: 'studio' });
+    expect(checking.find((s) => s.id === 'fix')).toMatchObject({ state: 'done' });
+    expect(checking.find((s) => s.id === 'fix')!.label).toMatch(/^8\/8 · /);
+    expect(laneStepsOf(fixing, NOW).find((s) => s.id === 'checks')!.state).toBe('pending');
   });
 });
