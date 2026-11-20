@@ -72,6 +72,8 @@ function blank(canvas: HTMLCanvasElement) {
 export interface PixelsLens extends LensSourceHandle<ForgeComparison> {
   measure(): void;
   revised(): void;
+  /** The `sideOf` its request is now. */
+  side(): string;
 }
 
 /**
@@ -170,6 +172,7 @@ export function attachPixelsLens(slot: HTMLElement, first: Request, shared: Pixe
       blank(canvas);
       measure();
     },
+    side: () => sideOf(request),
     update(next) {
       request = next;
       measure();

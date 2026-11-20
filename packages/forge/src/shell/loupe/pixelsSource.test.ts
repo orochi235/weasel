@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LensCapture } from '@weasel-js/labkit/loupe';
 import { type Bitmap, closed, endpoint, hosts, payload, request, revisions, settle, shown, stubBitmaps } from './pixels.fixture';
 import { LENS_REST_MS } from '@weasel-js/labkit/loupe';
-import { createPixelsSource } from './pixelsSource';
+import { createPixelsSource, LOOSE_SHOTS } from './pixelsSource';
 import type { TrialHit } from './trialAt';
 
 const payloadFor = (hit: TrialHit) => payload(`story-of-${hit.trialId}`);
@@ -125,6 +125,30 @@ describe('createPixelsSource', () => {
     expect(posts.map((p) => p.body.box.width)).toEqual([100, 300]);
     handle.detach();
     expect(observers.some((o) => o.watched.has(host))).toBe(false);
+  });
+
+  it('keeps a bounded number of shots for lenses that capture without attaching, as Difference does', async () => {
+    hosts();
+    const { fetch, posts } = endpoint();
+    const source = createPixelsSource({ base: '/', payloadFor, fetch, ...revisions() });
+    const take = async (lensId: string) => {
+      const got = source.capture!({ ...request(50), lensId });
+      await settle();
+      posts.at(-1)!.answer();
+      return got;
+    };
+    await take('lens-0');
+    // Asked again, the first lens's shot is served from the map.
+    await source.capture!({ ...request(50), lensId: 'lens-0' });
+    expect(posts).toHaveLength(1);
+    for (let n = 1; n <= LOOSE_SHOTS; n += 1) await take(`lens-${n}`);
+    expect(posts).toHaveLength(LOOSE_SHOTS + 1);
+    // Past the bound, the longest unwritten side is gone, and asking for it captures again.
+    const again = source.capture!({ ...request(50), lensId: 'lens-0' });
+    await settle();
+    expect(posts).toHaveLength(LOOSE_SHOTS + 2);
+    posts.at(-1)!.answer();
+    await again;
   });
 
   it('never shows a capture that was taken before the story was edited', async () => {
