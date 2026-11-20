@@ -40,7 +40,10 @@ function makeAdapter(outlines: Record<string, NodeOutline>, ids = Object.keys(ou
   return { adapter, applyOps };
 }
 
-const selectionOf = (ids: string[]) => ({ get: () => ids.map(asNodeId) });
+const selectionOf = (ids: string[]) => {
+  let held = ids.map(asNodeId);
+  return { get: () => held, set: (next: readonly string[]) => { held = next.map(asNodeId); } };
+};
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 

@@ -27,7 +27,10 @@ function makeAdapter(texts: Record<string, TextNodeSource>, ids = Object.keys(te
   return { adapter, applyOps };
 }
 
-const selectionOf = (ids: string[]) => ({ get: () => ids.map(asNodeId) });
+const selectionOf = (ids: string[]) => {
+  let held = ids.map(asNodeId);
+  return { get: () => held, set: (next: readonly string[]) => { held = next.map(asNodeId); } };
+};
 
 beforeEach(() => {
   _resetFontRegistryForTests();
