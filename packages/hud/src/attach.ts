@@ -144,7 +144,6 @@ function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): 
   const detachLayer = api.registerLayer(layer);
   const detachFocus = api.element ? wireFocus(api.element, hud, hitAt) : () => {};
 
-  // registerLayer is a no-op: the HUD's one layer is registered on `api` above.
   hud.bind(canvasHost(api));
 
   return () => {
@@ -163,7 +162,6 @@ function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): 
 function canvasHost(api: CanvasExtensionApi): HudHost {
   return {
     requestRedraw: api.requestRedraw,
-    registerLayer: () => () => {},
     subscribeFrame: api.subscribeFrame,
     toCanvas: (client) => {
       const element = api.element;

@@ -121,7 +121,7 @@ describe('Hud', () => {
   it('window() adds the widget and wires onChange to requestRedraw', () => {
     const hud = createHud();
     const redraw = vi.fn();
-    hud.bind({ requestRedraw: redraw, registerLayer: () => () => {}, subscribeFrame: () => () => {} });
+    hud.bind({ requestRedraw: redraw, subscribeFrame: () => () => {} });
     const win = hud.window({ id: 'w', x: 0, y: 0, width: 200, height: 150, title: 'T' });
     expect(hud.widgets()).toContain(win);
     redraw.mockClear();
@@ -145,7 +145,6 @@ describe('Hud', () => {
     const subs = new Set<() => void>();
     hud.bind({
       requestRedraw: () => {},
-      registerLayer: () => () => {},
       subscribeFrame: (fn) => { subs.add(fn); return () => { subs.delete(fn); }; },
     });
     for (const fn of subs) fn();
@@ -163,7 +162,6 @@ describe('Hud', () => {
     const subs = new Set<() => void>();
     hud.bind({
       requestRedraw: () => {},
-      registerLayer: () => () => {},
       subscribeFrame: (fn) => { subs.add(fn); return () => { subs.delete(fn); }; },
     });
     off();

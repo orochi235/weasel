@@ -32,7 +32,6 @@ function bindHost(hud: Hud): () => void {
   const subs = new Set<() => void>();
   hud.bind({
     requestRedraw: () => {},
-    registerLayer: () => () => {},
     subscribeFrame: (fn) => { subs.add(fn); return () => { subs.delete(fn); }; },
   });
   return () => { for (const fn of [...subs]) fn(); };
