@@ -1,7 +1,13 @@
-import { fireEvent, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
+import { ActionDisabledReason, type ActionsRegistry } from '@weasel-js/routing';
+import {
+  ActionsProvider, ActiveToolContextProvider, DepRegistryProvider, useActionsRegistry, useCommand, useGestureDispatcher,
+} from '@weasel-js/routing/react';
+import { createToastQueue, ToastRegion } from '@weasel-js/ui/components/Toast';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ButtonsAndToggles } from './ButtonsAndToggles';
+import { OverlaysAndFeedback } from './OverlaysAndFeedback';
 import { PanelsAndRows } from './PanelsAndRows';
 import { ShapePanelCell } from './ShapePanelCell';
 import { SliderCells } from './SliderCells';
@@ -46,5 +52,45 @@ describe('specimen cells', () => {
     fireEvent.input(range, { target: { value: String(Number(from) + 5) } });
     fireEvent.keyDown(range, { key: 'Escape' });
     expect(range.value).toBe(from);
+  });
+});
+
+function Refused() {
+  const registry = useActionsRegistry() as ActionsRegistry;
+  useCommand('edit.duplicate', 'Duplicate', () => {}, {
+    keys: { kind: 'key', key: 'd' },
+    enabled: () => ActionDisabledReason.SelectionRequired,
+  });
+  useGestureDispatcher({
+    canvasRef: { current: null }, actions: registry, entriesById: new Map(),
+    channels: { contextMenu: false, ingest: false }, keyboard: 'page',
+  });
+  return null;
+}
+
+describe('the specimen toast demo', () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+  });
+
+  it('leaves a refused command to the host app region', () => {
+    renderWithIcons(
+      <DepRegistryProvider>
+        <ActionsProvider>
+          <ActiveToolContextProvider>
+            <Refused />
+            <ToastRegion queue={createToastQueue()} className="host" />
+            <OverlaysAndFeedback />
+          </ActiveToolContextProvider>
+        </ActionsProvider>
+      </DepRegistryProvider>,
+    );
+    fireEvent.keyDown(document.body, { key: 'd' });
+    act(() => { vi.advanceTimersByTime(1); });
+    const told = screen.getAllByText('Selection required');
+    expect(told).toHaveLength(1);
+    expect(told[0]!.closest('.host')).not.toBeNull();
   });
 });
