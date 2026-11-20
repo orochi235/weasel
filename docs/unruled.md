@@ -2935,3 +2935,14 @@ Calls the lanes made without a ruling:
   then `DFLT`'s, then the rest in ScriptList order, and taking the first whose lookups cover the pair. Layout knows
   no run's script, so picking one script for every pair was the alternative, and loses kerning other scripts' lookups
   alone carry.
+## Audit round forty-nine (2026-11-20): history
+
+- 2026-11-20 (the fixer's call): `Journal.suspend()` throws while a journal opened inside it is active; suspend that
+  one first. Suspending the inner journals along with it was the alternative; `resumeJournal` would then have had to
+  bring them back too.
+- 2026-11-20 (the fixer's call): a raw `History`'s `apply`, `applyOps`, `recordEntry` and `restore` throw while a
+  journal is active, as `undo`, `redo` and `goto` do; a suspended journal still lets them through. `clear`, `prune`,
+  `dropRedo` and `switchBranch` still run, since none leaves an entry describing a state the document is not in.
+- Open: edits interleaved between suspended sibling journals (one edits, a second opens and edits, the first resumes
+  and edits again) cannot be taken back exactly by the enclosing journal's `cancel`, which unwinds one journal at a
+  time, latest edit first. Doing it exactly needs one log of edits across the siblings.
