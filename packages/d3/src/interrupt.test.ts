@@ -158,3 +158,57 @@ describe('d3Bind transition — cancel keys', () => {
     expect(s.x('a')).toBeCloseTo(mid, 6);
   });
 });
+
+describe('d3Bind transition — its tweens stopped from outside', () => {
+  const run = (s: ReturnType<typeof setup>, configure?: (t: ReturnType<ReturnType<typeof setup>['bind']>) => void) => {
+    const seen = { end: 0, interrupt: 0, next: 0 };
+    let end!: Promise<void>;
+    act(() => void s.bind([{ id: 'a', x: 0 }]));
+    act(() => {
+      const sel = s.bind([{ id: 'a', x: 100 }]);
+      configure?.(sel);
+      const t = sel.transition('move').duration(100)
+        .on('end', () => { seen.end++; }).on('interrupt', () => { seen.interrupt++; });
+      t.transition().on('start', () => { seen.next++; });
+      end = t.end();
+    });
+    act(() => s.clock.advance(0));
+    act(() => s.clock.advance(50));
+    return { seen, end: () => end };
+  };
+
+  it('animator.cancelKey on its pose tween ends it as an interrupt, and runs nothing chained', async () => {
+    const s = setup();
+    const r = run(s);
+    act(() => s.animator().cancelKey(transitionCancelKey('move', 'a')));
+    act(() => s.clock.advance(200));
+    expect(await settled(r.end())).toBe(true);
+    expect(r.seen).toEqual({ end: 0, interrupt: 1, next: 0 });
+  });
+
+  it('animator.cancelAll ends it as an interrupt', async () => {
+    const s = setup();
+    const r = run(s);
+    act(() => s.animator().cancelAll());
+    expect(await settled(r.end())).toBe(true);
+    expect(r.seen.interrupt).toBe(1);
+  });
+
+  it('a custom tween whose tick throws ends it as an interrupt', async () => {
+    const s = setup();
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    let end!: Promise<void>;
+    const onInterrupt = vi.fn();
+    act(() => void s.bind([{ id: 'a', x: 0 }]));
+    act(() => {
+      end = s.bind([{ id: 'a', x: 100 }]).transition('move').duration(100)
+        .tween({ name: 'fill', from: () => 'red', to: () => 'blue', apply: () => {} })
+        .on('interrupt', onInterrupt).end();
+    });
+    act(() => s.clock.advance(0));
+    act(() => s.clock.advance(50));
+    expect(await settled(end)).toBe(true);
+    expect(onInterrupt).toHaveBeenCalledTimes(1);
+    error.mockRestore();
+  });
+});
