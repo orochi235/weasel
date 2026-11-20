@@ -2,6 +2,6 @@
 "@weasel-js/devtools": patch
 ---
 
-The devtools panel's route strips draw a key binding that takes any key as `(*)` rather than as the `*` key, and draw a key's optional modifiers (`keyDown(z?shift)`) in the modifier chord.
+The devtools panel's route strips draw an any-key binding as `(*)`, and a key's optional modifiers in the chord.
 
 <!-- entry: fix -->

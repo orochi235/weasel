@@ -2,6 +2,8 @@
 "@weasel-js/devtools": patch
 ---
 
-The devtools panel draws a binding route its own grammar does not know, as from a page on another kit version, as the route's text instead of crashing.
+The devtools panel shows a binding route its grammar rejects as plain text instead of crashing.
+
+A page running another kit version can send one.
 
 <!-- entry: fix -->
