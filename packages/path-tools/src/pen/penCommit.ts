@@ -18,13 +18,14 @@ export interface PenCommitSettings {
  *  that was drawn is one open anchor. */
 export function commitPen(s: PenScratch, deps: ActionDeps, settings: PenCommitSettings): void {
   const trailing = s.current && s.current.anchors.length > 0 ? s.current : null;
+  // A new subpath of one anchor draws nothing; committing it would store an invisible one.
+  const open = trailing && trailing.anchors.length >= 2 ? trailing : null;
   if (s.continuing) {
-    commitContinuation(s, trailing, deps, settings.autoSelect);
+    // With nothing finished, `trailing` is the continued subpath itself, kept whatever its length.
+    commitContinuation(s, s.finishedSubpaths.length === 0 ? trailing : open, deps, settings.autoSelect);
     resetScratch(s);
     return;
   }
-  // One anchor draws nothing; committing it would leave an invisible node.
-  const open = trailing && trailing.anchors.length >= 2 ? trailing : null;
   if (s.finishedSubpaths.length === 0 && !open) {
     resetScratch(s);
     return;

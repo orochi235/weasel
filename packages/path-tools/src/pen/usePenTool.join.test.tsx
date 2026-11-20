@@ -84,6 +84,17 @@ describe('usePenTool', () => {
       expect(p.adapter.setSelection).toHaveBeenCalledWith(['a']);
     });
 
+    it('a double click on the other path\'s end joins and starts no new path', () => {
+      const p = setup({ paths: { b: poly('M 0 0 L 100 0 L 100 100') } });
+      p.click(0, 200);
+      p.click(0, 100);
+      p.doubleClick(1, 1);
+      expect(p.inserted).toHaveLength(1);
+      expect(pointsOf(p.inserted[0].pose.path)).toEqual([[[0, 200], [0, 100], [0, 0], [100, 0], [100, 100]]]);
+      expect(p.scratch.current).toBeNull();
+      expect(p.scratch.finishedSubpaths).toEqual([]);
+    });
+
     it('a path continued from its first anchor keeps its direction through the join', () => {
       const p = setup({ paths: { a: poly('M 0 0 L 100 0'), b: poly('M -300 0 L -200 0') } });
       p.click(0, 0);
@@ -163,6 +174,9 @@ describe('usePenTool', () => {
       scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: { x: 40, y: 40, width: 100, height: 0 }, data: { path: poly('M 0 0 L 100 0'), fill: null, stroke: 'red' } });
       // B: the same local path under a quarter turn about its AABB center
       // (350, 300), which puts it on world (350, 250)..(350, 350).
+      // C: a vertical line stored in a group at (90, 0), drawn on world (100, 0)..(100, 100).
+      const group = scene.add({ kind: 'group', layer: 'default', data: {} as Leaf, pose: { x: 90, y: 0, width: 20, height: 100 } });
+      scene.add({ id: asNodeId('c'), kind: 'mark', parent: group, layer: 'default', pose: { x: 10, y: 0, width: 0, height: 100 }, data: { path: poly('M 0 0 L 0 100'), fill: null, stroke: 'green' } });
       scene.add({ id: asNodeId('b'), kind: 'mark', layer: 'default', pose: { x: 300, y: 300, width: 100, height: 0, rotation: Math.PI / 2 }, data: { path: poly('M 0 0 L 100 0'), fill: null, stroke: 'blue' } });
       return scene as unknown as AnyScene;
     }
@@ -204,6 +218,16 @@ describe('usePenTool', () => {
       scene.undo();
       expect(worldPoints(scene, 'a')).toEqual([[[40, 40], [140, 40]]]);
       expect(worldPoints(scene, 'b')).toEqual([[[350, 250], [350, 350]]]);
+    });
+
+    it('joins onto a path inside a group where it draws, not where its pose is stored', () => {
+      const scene = realScene();
+      const p = setup({ deps: wire(scene) });
+      p.click(140, 40);
+      p.click(250, 150);
+      p.click(101, 101);
+      expect(scene.get(asNodeId('c'))).toBeUndefined();
+      expect(worldPoints(scene, 'a')).toEqual([[[40, 40], [140, 40], [250, 150], [100, 100], [100, 0]]]);
     });
   });
 });
