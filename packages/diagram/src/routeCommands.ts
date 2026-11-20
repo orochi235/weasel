@@ -79,19 +79,23 @@ export function createRemoveWaypointAction<TPose>(opts: RouteEditOptions<TPose>)
   });
 }
 
-/** The selected edges that have waypoints of their own. */
-function routedEdges<TPose>(opts: RouteEditOptions<TPose>): string[] {
+/** The selected edges that have waypoints of their own, or `'locked'` where
+ *  one of them is locked, on its own, by its layer, or in `scene`. */
+function routedEdges<TPose>(opts: RouteEditOptions<TPose>, scene: ActionDeps['scene']): string[] | 'locked' {
   const ids = new Set(opts.selected());
   if (ids.size === 0) return [];
   const out: string[] = [];
-  for (const { node } of opts.participants()) {
-    if (ids.has(node.id) && (diagramEdgeOf(node)?.waypoints ?? []).length > 0) out.push(node.id);
+  for (const p of opts.participants()) {
+    if (!ids.has(p.node.id) || (diagramEdgeOf(p.node)?.waypoints ?? []).length === 0) continue;
+    if (p.locked === true || scene?.isLocked(p.node.id as never) === true) return 'locked';
+    out.push(p.node.id);
   }
   return out;
 }
 
 /** The `diagram.resetRoute` command: clears the selected edges' waypoints,
- *  in one history entry when they commit to the scene. */
+ *  in one history entry when they commit to the scene. Disabled where it
+ *  would clear a locked one, as the set-router commands are. */
 export function createResetRouteAction<TPose>(opts: RouteEditOptions<TPose>): Action {
   const { commit = commitRouteToScene } = opts;
   return {
@@ -102,13 +106,18 @@ export function createResetRouteAction<TPose>(opts: RouteEditOptions<TPose>): Ac
     invoker: {
       timing: 'immediate',
       run(deps) {
-        const edges = routedEdges(opts);
+        const edges = routedEdges(opts, deps.scene);
+        if (edges === 'locked') return;
         const ctx = { world: { x: 0, y: 0 }, modifiers: NO_MODIFIERS, deps } as InvocationCtx;
         const all = () => { for (const edgeId of edges) commit({ edgeId, waypoints: [] }, ctx); };
         if (deps.scene === undefined) all();
         else deps.scene.batch('Reset route', all);
       },
     },
-    enabled: () => (routedEdges(opts).length > 0 ? true : ActionDisabledReason.NotApplicable),
+    enabled: (deps) => {
+      const edges = routedEdges(opts, deps?.scene);
+      if (edges === 'locked') return ActionDisabledReason.Locked;
+      return edges.length > 0 ? true : ActionDisabledReason.NotApplicable;
+    },
   };
 }
