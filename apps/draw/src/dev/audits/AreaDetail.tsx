@@ -2,6 +2,7 @@ import { Badge } from '@weasel-js/ui/components/Badge';
 import { DetailList, DetailRow } from '@weasel-js/ui/components/DetailList';
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 import type { Grade } from '@weasel-js/theme';
+import { getOwn } from '@weasel-js/registry';
 import { STAGE_LABEL, STATUS_LABEL, lastPassOf } from './areaData';
 import type { AreaStatus, AuditArea, AuditRun } from './skulkMap.types';
 import s from './AreaDetail.module.css';
@@ -42,7 +43,7 @@ export function AreaDetail({ area, holder }: { area: AuditArea | undefined; hold
             <DetailRow label="source files">{area.files}</DetailRow>
             <DetailRow label="passes">{area.passes.length}</DetailRow>
             {area.queue !== null && <DetailRow label="queue position">{area.queue}</DetailRow>}
-            {area.stage && <DetailRow label="this run" values="text">{STAGE_LABEL[area.stage] ?? area.stage}</DetailRow>}
+            {area.stage && <DetailRow label="this run" values="text">{getOwn(STAGE_LABEL, area.stage) ?? area.stage}</DetailRow>}
             {last && <DetailRow label={`left after round ${last.round}`}>{last.left.toFixed(1)}</DetailRow>}
           </DetailList>
           <Passes area={area} />

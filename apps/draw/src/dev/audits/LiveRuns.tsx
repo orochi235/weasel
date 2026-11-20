@@ -1,46 +1,89 @@
-import { LANE_STEPS, headlineOf, lastLineOf, sharedLaneOf, spendOf, stepText } from './runData';
-import type { AuditRun } from './skulkMap.types';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
+import { SpanStrips, type SpanStripSpan, type SpanStripsRow } from '@weasel-js/ui/components/SpanStrip';
+import { clockRuler } from './clock';
+import { laneStepsOf, laneViewOf, phaseClass, runClockOf, type LaneView } from './phases';
+import { headlineOf, lastLineOf, sharedLaneOf, spendOf } from './runData';
+import type { AuditLane, AuditRun } from './skulkMap.types';
 import s from './LiveRuns.module.css';
 
 const cx = (...names: (string | false | undefined)[]) => names.filter(Boolean).join(' ');
 
-/** One run's strip: what it is doing and what it has spent, its last line, and a lane per area. */
-function RunStrip({ run, now, onPick }: { run: AuditRun; now: number; onPick: (id: string) => void }) {
+/** An area's lane as a stack row: its name in its phase's color, and `spans`, its steps in the view chosen. */
+function laneRow(lane: AuditLane, view: LaneView, onPick: (id: string) => void, spans: SpanStripSpan[]): SpanStripsRow {
+  return {
+    id: lane.id,
+    className: phaseClass(view.phase),
+    spans,
+    'aria-label': lane.id,
+    valueText: view.elapsed ? `${view.phase}, ${view.elapsed} in` : view.phase,
+    lead: <button type="button" className={s.name} onClick={() => onPick(lane.id)}>{lane.id}</button>,
+  };
+}
+
+export type LaneMode = 'clock' | 'steps';
+const MODE_KEY = 'weasel.audits.lanes';
+const MODES = [{ value: 'clock', label: 'Clock' }, { value: 'steps', label: 'Steps' }] as const;
+
+/** The viewer's lane view, kept between visits: on the run's clock (the default), or as a grid of steps. */
+function useLaneMode(): [LaneMode, (mode: LaneMode) => void] {
+  const [mode, setMode] = useState<LaneMode>(() => {
+    try {
+      return localStorage.getItem(MODE_KEY) === 'steps' ? 'steps' : 'clock';
+    } catch {
+      return 'clock';
+    }
+  });
+  const choose = (next: LaneMode) => {
+    setMode(next);
+    try {
+      localStorage.setItem(MODE_KEY, next);
+    } catch {
+      // Nowhere to keep it; the choice lasts the visit.
+    }
+  };
+  return [mode, choose];
+}
+
+const STEPS_WINDOW = { from: 0, to: 5 };
+
+/** The run's areas still in flight, on the run's clock or as a grid of steps; the rest have left. */
+function Lanes({ run, now, mode, onPick }: { run: AuditRun; now: number; mode: LaneMode; onPick: (id: string) => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const clock = runClockOf(run, now);
+  const left = run.lanes.map((lane) => ({ lane, view: laneViewOf(lane, now, clock.from) })).filter(({ view }) => !view.finished);
+  // Sized for every area of the run, so the strips keep their place as lanes leave.
+  const widest = Math.max(0, ...run.lanes.map((l) => l.id.length));
+  useLayoutEffect(() => { ref.current?.style.setProperty('--audit-lead-ch', String(widest)); }, [widest]);
+  if (left.length === 0) return null;
+  const rows = left.map(({ lane, view }) => laneRow(lane, view, onPick, mode === 'steps' ? laneStepsOf(lane, now) : view.spans));
+  return (
+    <div ref={ref}>
+      {mode === 'clock'
+        ? <SpanStrips aria-label={`Round ${run.round} lanes`} window={clock} at={now} ruler={clockRuler(clock.from)} rows={rows} />
+        : <SpanStrips aria-label={`Round ${run.round} lanes`} window={STEPS_WINDOW} rows={rows} />}
+    </div>
+  );
+}
+
+/** One run's strip: what it is doing and what it has spent, its last line, and a lane per area in flight. */
+function RunStrip({ run, now, mode, onMode, onPick }: {
+  run: AuditRun; now: number; mode: LaneMode; onMode: (mode: LaneMode) => void; onPick: (id: string) => void;
+}) {
   const shared = sharedLaneOf(run);
   return (
-    <section className={cx(s.run, !run.running && s.idle)} aria-label={`Round ${run.round}`}>
+    <section className={s.run} aria-label={`Round ${run.round}`}>
       <div className={s.pulse} aria-hidden="true" />
       <div className={s.what}>{headlineOf(run)}</div>
+      <SegmentedBar aria-label="Lane view" size="sm" items={MODES} value={mode} onChange={(v) => v && onMode(v)} />
       <div className={s.spend}>{spendOf(run)}</div>
       <div className={s.line}>{lastLineOf(run)}</div>
       {run.lanes.length > 0 && (
         <div className={s.lanes}>
-          <div className={s.grid} role="table" aria-label={`Round ${run.round} lanes`}>
-            <div role="row" className={s.row}>
-              <span role="columnheader" className={s.head}>area</span>
-              {LANE_STEPS.map(({ step, label }) => <span key={step} role="columnheader" className={s.head}>{label}</span>)}
-            </div>
-            {run.lanes.map((lane) => (
-              <div key={lane.id} role="row" className={s.row}>
-                <span role="rowheader" className={s.nameCell}>
-                  <button type="button" className={s.name} onClick={() => onPick(lane.id)}>{lane.id}</button>
-                </span>
-                {LANE_STEPS.map(({ step }) => {
-                  const st = lane.steps[step];
-                  const text = stepText(step, st, now);
-                  return (
-                    <span key={step} role="cell" title={`${lane.id} · ${step}: ${text}`}
-                      className={cx(s.seg, s[st.state], st.state === 'done' && (step === 'fix' || step === 'patch') && s.fixed)}>
-                      {text}
-                    </span>
-                  );
-                })}
-              </div>
-            ))}
-            <div role="row" className={s.row}>
-              <span role="rowheader" className={s.nameCell}>all areas</span>
-              <span role="cell" className={cx(s.seg, s.shared, s[shared.state])}>{shared.text}</span>
-            </div>
+          <Lanes run={run} now={now} mode={mode} onPick={onPick} />
+          <div className={s.sharedRow}>
+            <span className={s.nameCell}>all areas</span>
+            <span className={cx(s.shared, s[shared.state])}>{shared.text}</span>
           </div>
         </div>
       )}
@@ -48,12 +91,14 @@ function RunStrip({ run, now, onPick }: { run: AuditRun; now: number; onPick: (i
   );
 }
 
-/** A strip for every live run, then for the run that finished last. */
+/** A strip for every run still running; a finished round lives on in the rounds chart and the map. */
 export function LiveRuns({ runs, now, onPick }: { runs: readonly AuditRun[]; now: number; onPick: (id: string) => void }) {
-  if (runs.length === 0) return <section className={cx(s.run, s.idle)}><div className={s.what}>No round on record.</div></section>;
+  const [mode, setMode] = useLaneMode();
+  const live = runs.filter((r) => r.running);
+  if (live.length === 0) return <section className={cx(s.run, s.idle)}><div className={s.what}>No round running</div></section>;
   return (
     <div className={s.runs} aria-live="polite">
-      {runs.map((run) => <RunStrip key={run.round} run={run} now={now} onPick={onPick} />)}
+      {live.map((run) => <RunStrip key={run.round} run={run} now={now} mode={mode} onMode={setMode} onPick={onPick} />)}
     </div>
   );
 }

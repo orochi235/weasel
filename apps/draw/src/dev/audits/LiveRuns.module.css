@@ -5,9 +5,9 @@
 
 .run {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 6px 18px;
+  gap: var(--wzl-space-3) 18px;
   padding: var(--wzl-space-3) var(--wzl-space-4);
   background: var(--audit-panel);
   border: 1px solid var(--audit-rule);
@@ -28,7 +28,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .run:not(.idle) .pulse { animation: ping 1.8s ease-out infinite; }
-  .seg.running { animation: breathe 2.2s ease-in-out infinite; }
+  .shared.running { animation: breathe 2.2s ease-in-out infinite; }
 }
 
 @keyframes ping {
@@ -45,95 +45,86 @@
 }
 
 .spend {
-  font-family: var(--wzl-font-mono);
-  font-size: var(--wzl-font-size-sm);
-  font-variant-numeric: tabular-nums;
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  font-size: var(--wzl-font-size-md);
   text-align: end;
   white-space: nowrap;
 }
 
 .line {
   grid-column: 2 / -1;
-  font-family: var(--wzl-font-mono);
-  font-size: var(--wzl-font-size-sm);
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size-md);
   color: var(--audit-muted);
   overflow-wrap: anywhere;
 }
 
 .lanes {
+  --span-strip-height: 26px;
+  --span-strip-text: var(--wzl-font-size-xs);
   grid-column: 1 / -1;
-  overflow-x: auto;
-  margin-top: 4px;
-}
-
-.grid {
   display: grid;
-  grid-template-columns: minmax(150px, max-content) repeat(5, minmax(96px, 1fr));
-  gap: 3px 4px;
-  min-width: 640px;
+  gap: var(--wzl-space-3);
+  min-width: 0;
+  margin-top: var(--wzl-space-2);
 }
 
-.row { display: contents; }
-
-.head {
-  padding: 0 6px 2px;
-  font-size: var(--wzl-font-size-2xs);
-  font-weight: var(--wzl-font-weight-bold);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--audit-muted);
-}
-
-.nameCell {
-  font-family: var(--wzl-font-mono);
-  font-size: var(--wzl-font-size-sm);
-  padding: 4px 6px 4px 0;
-  white-space: nowrap;
-}
-
+/* An area's name, worn as a chip in its phase's color, the height of its strip. */
 .name {
-  padding: 0;
+  display: block;
+  width: 100%;
+  padding: 0 var(--wzl-space-3);
   border: 0;
-  background: none;
+  border-radius: var(--wzl-radius-sm);
+  background: var(--audit-phase, transparent);
+  min-width: calc(var(--audit-lead-ch, 0) * 1ch + 2 * var(--wzl-space-3));
   font: inherit;
-  color: inherit;
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size-md);
+  font-weight: var(--wzl-font-weight-bold);
+  line-height: 24px;
+  text-align: start;
+  /* Black or white, whichever reads on the phase: the ramp runs from near black to near white. */
+  color: oklch(from var(--audit-phase, var(--audit-panel)) clamp(0, (0.564 - l) * 1000, 1) 0 0);
   cursor: pointer;
 }
 
 .name:hover,
-.name:focus-visible { color: var(--audit-live); }
+.name:focus-visible { outline: 2px solid var(--audit-ink); outline-offset: -2px; }
 
-.seg {
-  padding: 4px 7px;
+.sharedRow {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: var(--wzl-space-4);
+}
+
+.nameCell {
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size-md);
+  white-space: nowrap;
+}
+
+.shared {
+  padding: var(--wzl-space-2) var(--wzl-space-3);
   border: 1px dashed var(--audit-rule);
   border-radius: 3px;
-  font-family: var(--wzl-font-mono);
-  font-size: var(--wzl-font-size-xs);
-  font-variant-numeric: tabular-nums;
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size-sm);
   color: var(--audit-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.done {
+.shared.done {
   border: 1px solid transparent;
   background: var(--audit-depth-1);
   color: var(--audit-ink);
 }
 
-.done.fixed { background: var(--audit-settled); }
-
-.running {
+.shared.running {
   border: 1.5px solid var(--audit-live);
   background: var(--audit-live-soft);
   color: var(--audit-live);
 }
-
-.failed {
-  border: 1.5px solid var(--audit-live);
-  background: var(--audit-live);
-  color: var(--audit-ink-inverse);
-}
-
-.shared { grid-column: 2 / -1; }

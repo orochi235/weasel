@@ -1,14 +1,6 @@
 /** What the audit page says about runs: each one's headline, its lanes, and the jobs its log reports. */
 import type { AuditRun, LaneStep, LaneStepName } from './skulkMap.types';
 
-export const LANE_STEPS: readonly { step: LaneStepName; label: string }[] = [
-  { step: 'A', label: 'review A' },
-  { step: 'B', label: 'review B' },
-  { step: 'match', label: 'match' },
-  { step: 'fix', label: 'fix' },
-  { step: 'patch', label: 'patch' },
-];
-
 /** Minutes since `iso` as `<1m` or `12m`. */
 export function minutesSince(iso: string, now: number): string {
   const m = Math.max(0, (now - new Date(iso).getTime()) / 60_000);

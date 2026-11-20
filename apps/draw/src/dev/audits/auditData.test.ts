@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { depthFor, nextUpOf, runHolding, statsFor, toneOf } from './areaData';
+import { depthFor, nextUpOf, runHolding, statsFor, toneOf, wrapAtDots } from './areaData';
 import { headlineOf, parseJob, recentJobsOf, sharedLaneOf, spendOf, stepText } from './runData';
 import { ticksFor } from './RoundsChart';
 import { inset, layoutMap, squarify } from './mapLayout';
@@ -114,5 +114,19 @@ describe('treemap', () => {
       expect(c.y + c.height).toBeLessThanOrEqual(f.y + f.height);
     }
     expect(cells).toHaveLength(map.areas.length);
+  });
+});
+
+describe('wrapAtDots', () => {
+  it('breaks an id after its dots, as many pieces to a line as fit', () => {
+    expect(wrapAtDots('core.domains.paths', 20, 3)).toEqual(['core.domains.paths']);
+    expect(wrapAtDots('core.domains.paths', 13, 3)).toEqual(['core.domains.', 'paths']);
+    expect(wrapAtDots('core.domains.paths', 8, 3)).toEqual(['core.', 'domains.', 'paths']);
+  });
+
+  it('cuts the last line it has room for, and a piece too long for any line', () => {
+    expect(wrapAtDots('core.domains.paths', 8, 2)).toEqual(['core.', 'domains…']);
+    expect(wrapAtDots('interactions.x', 6, 3)).toEqual(['inter…', 'x']);
+    expect(wrapAtDots('core', 0, 3)).toEqual([]);
   });
 });

@@ -4,7 +4,7 @@
  * writes the JSON the audit map page reads.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gitIn } from './batch.mjs';
@@ -34,11 +34,20 @@ export const nightStages = (log) => {
 
 const LANE_STEPS = ['A', 'B', 'match', 'fix', 'patch'];
 
+/** The finished onto job that most likely ran a step the log says took `minutes`: the one whose run is nearest that. */
+const bestFinished = (jobs, minutes) => {
+  const took = (j) => (Date.parse(j.finished) - Date.parse(j.started)) / 60_000;
+  const off = (j) => (minutes === undefined ? -Date.parse(j.finished) : Math.abs(took(j) - minutes));
+  return [...jobs].sort((x, y) => off(x) - off(y))[0];
+};
+
 /**
  * Each area's lane: for every step of its thread (reviews A and B, match, fix, patch), whether it is done,
- * with what the log says it produced, or running, from `running`'s `audit<N>-<area>-<step>` onto tasks.
+ * with what the log says it produced, or running, from `jobs`' `audit<N>-<area>-<step>` onto tasks. A job with
+ * no `finished` is running, and gives its step's `since`; a finished one gives a done step its `ended`, and its
+ * `started` as that less the minutes the log reports.
  */
-export const nightLanes = (log, areas, running = []) => {
+export const nightLanes = (log, areas, jobs = []) => {
   const lanes = new Map(areas.map((id) => [id, Object.fromEntries(LANE_STEPS.map((s) => [s, { state: 'waiting' }]))]));
   const at = (id, step) => lanes.get(id)?.[step];
   for (const line of log.split('\n')) {
@@ -51,35 +60,63 @@ export const nightLanes = (log, areas, running = []) => {
       Object.assign(at(m[1], 'fix') ?? {}, { state: 'done', node: m[2], commits: Number(m[3]), minutes: Number(m[4]) });
     } else if ((m = /^patch (\S+): (\d+) commits on /.exec(line))) {
       Object.assign(at(m[1], 'patch') ?? {}, { state: 'done', commits: Number(m[2]) });
+    } else if ((m = /^patch (\S+): did not apply/.exec(line))) {
+      Object.assign(at(m[1], 'patch') ?? {}, { state: 'failed', why: 'did not apply' });
     } else if ((m = /^batch: audit\d+-(\S+) conflicts/.exec(line))) {
       Object.assign(at(m[1], 'patch') ?? {}, { state: 'failed', why: 'conflicts; left out of the batch' });
     }
   }
-  for (const job of running) {
+  const finished = new Map();
+  for (const job of jobs) {
     const m = /^audit\d+-(.+)-(A|B|match|fix)$/.exec(job.task ?? '');
     const step = m && at(m[1], m[2]);
-    if (step && step.state === 'waiting') Object.assign(step, { state: 'running', node: job.node, since: job.started });
+    if (!step) continue;
+    if (job.finished) {
+      const key = `${m[1]}\n${m[2]}`;
+      finished.set(key, [...(finished.get(key) ?? []), job]);
+    } else if (step.state === 'waiting') Object.assign(step, { state: 'running', node: job.node, since: job.started });
+  }
+  for (const [key, ran] of finished) {
+    const [id, name] = key.split('\n');
+    const step = at(id, name);
+    if (step.state !== 'done') continue;
+    const job = bestFinished(ran, step.minutes);
+    const ended = Date.parse(job.finished);
+    const started = step.minutes === undefined ? Date.parse(job.started) : ended - step.minutes * 60_000;
+    Object.assign(step, { started: new Date(started).toISOString(), ended: new Date(ended).toISOString() });
   }
   return [...lanes].map(([id, steps]) => ({ id, steps }));
 };
 
-/** The onto jobs running now, or none when onto cannot be asked. */
-const runningJobs = () => {
+/** The onto jobs running now or started since `since` (an ISO time), or none when onto cannot be asked. */
+const ontoJobs = (since) => {
+  const hours = Math.max(1, Math.ceil((Date.now() - Date.parse(since)) / 3_600_000) + 1);
   try {
-    const out = execFileSync('onto', ['jobs', '--json'], { encoding: 'utf8', timeout: 15_000, stdio: ['ignore', 'pipe', 'ignore'] });
-    return (JSON.parse(out).jobs ?? []).filter((j) => j.state === 'running');
+    const out = execFileSync('onto', ['jobs', '--json', '--since', `${Number.isFinite(hours) ? hours : 24}h`, '--limit', '1000'],
+      { encoding: 'utf8', timeout: 20_000, stdio: ['ignore', 'pipe', 'ignore'] });
+    return (JSON.parse(out).jobs ?? []).filter((j) => j.state === 'running' || j.finished);
   } catch {
     return [];
   }
 };
 
-/** What one run, live (`running`) or finished, says about its areas; `jobs` are onto's running jobs. */
-export const readRun = (run, running, jobs = []) => {
+/** A run's night directory: the one its record names, or else the one `night.mjs` named for its round. */
+const nightDirOf = (run, state) => {
+  if (run.nightDir) return run.nightDir;
+  const nights = join(state, 'nights');
+  if (!existsSync(nights)) return null;
+  const name = readdirSync(nights).filter((n) => n.endsWith(`-round${run.round}`)).sort().at(-1);
+  return name ? join(nights, name) : null;
+};
+
+/** What one run, live (`running`) or finished, says about its areas; `jobs` are onto's jobs, running and finished. */
+export const readRun = (found, running, jobs = [], state = STATE_DIR) => {
+  const run = { ...found, nightDir: nightDirOf(found, state) };
   const logPath = run.nightDir ? join(run.nightDir, 'night.log') : null;
   const log = logPath && existsSync(logPath) ? readFileSync(logPath, 'utf8') : '';
   const lines = log.split('\n').filter(Boolean);
   const areaIds = run.areas?.map((a) => (typeof a === 'string' ? a : a.id)) ?? [];
-  const live = running ? jobs.filter((j) => (j.task ?? '').startsWith(`audit${run.round}-`)) : [];
+  const own = jobs.filter((j) => (j.task ?? '').startsWith(`audit${run.round}-`));
   return {
     running,
     round: run.round,
@@ -91,8 +128,9 @@ export const readRun = (run, running, jobs = []) => {
     report: run.report ?? null,
     areas: areaIds,
     stages: Object.fromEntries(nightStages(log)),
-    lanes: nightLanes(log, areaIds, live),
-    sweepRunning: running && jobs.some((j) => /control-sweep$/.test(j.task ?? '')),
+    lanes: nightLanes(log, areaIds, running ? own : own.filter((j) => j.finished)),
+    sweepRunning: running && jobs.some((j) => !j.finished && /control-sweep$/.test(j.task ?? '')),
+    nightDir: run.nightDir ?? null,
     lastLine: lines.at(-1) ?? null,
     lines: lines.slice(-40),
   };
@@ -103,10 +141,44 @@ export const readRuns = (state = STATE_DIR, jobs = null) => {
   const legacy = !existsSync(join(state, 'runs'));
   const current = legacy ? readJson(join(state, 'current.json')) : null;
   // A service still on the one-night runner keeps current.json and last.json instead of runs/.
-  const last = legacy ? (current ? null : readJson(join(state, 'last.json'))) : lastFinished(state);
+  const lastJson = legacy ? readJson(join(state, 'last.json')) : null;
+  const last = legacy ? (lastJson && lastJson.round !== current?.round ? lastJson : null) : lastFinished(state);
   const live = legacy ? (current ? [current] : []) : liveRuns(state);
-  const running = live.length ? (jobs ?? runningJobs()) : [];
-  return [...live.map((r) => readRun(r, true, running)), ...(last ? [readRun(last, false)] : [])];
+  const all = [...live, ...(last ? [last] : [])];
+  const since = all.map((r) => r.started).filter(Boolean).sort()[0];
+  const known = all.length ? (jobs ?? (since ? ontoJobs(since) : [])) : [];
+  return [...live.map((r) => readRun(r, true, known, state)), ...(last ? [readRun(last, false, known, state)] : [])];
+};
+
+/**
+ * What a run's night directory holds of each area it finished: `areas/<id>/match.json` (each reviewer's claims and
+ * the pairs matched across them) and `files.txt`, the fields its `area.json` is made from.
+ */
+export const nightResults = (nightDir) => {
+  const dir = nightDir ? join(nightDir, 'areas') : null;
+  if (!dir || !existsSync(dir)) return [];
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const matchPath = join(dir, entry.name, 'match.json');
+    if (!entry.isDirectory() || !existsSync(matchPath)) return [];
+    const match = readJson(matchPath);
+    if (!match) return [];
+    const filesPath = join(dir, entry.name, 'files.txt');
+    const files = existsSync(filesPath) ? readFileSync(filesPath, 'utf8').split('\n').filter(Boolean).length : 0;
+    const [a, b, m] = [match.a?.length ?? 0, match.b?.length ?? 0, match.pairs?.length ?? 0];
+    return [{ id: entry.name, files, a, b, m, distinct: a + b - m, est: chapman(a, b, m) }];
+  });
+};
+
+/** A run's bar on the rounds chart, from its night directory: `pending` says it is `live` or `unmerged`. Null for a
+ *  run that has finished no area. */
+export const nightRoundOf = (run) => {
+  const results = nightResults(run.nightDir);
+  if (results.length === 0) return null;
+  const sum = (key) => results.reduce((n, r) => n + r[key], 0);
+  return {
+    round: run.round, date: (run.started ?? '').slice(0, 10), areas: results.length,
+    files: sum('files'), distinct: sum('distinct'), est: sum('est'), pending: run.running ? 'live' : 'unmerged',
+  };
 };
 
 export const buildMap = (root) => {
@@ -149,6 +221,12 @@ export const buildMap = (root) => {
       r.est += p.est;
       rounds.set(p.round, r);
     }
+  }
+
+  // A round whose record is not on this branch yet is drawn from its run's night directory, marked as such.
+  for (const run of runs) {
+    const bar = rounds.has(run.round) ? null : nightRoundOf(run);
+    if (bar) rounds.set(run.round, bar);
   }
 
   return {

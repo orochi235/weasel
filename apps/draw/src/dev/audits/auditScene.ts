@@ -1,9 +1,10 @@
 /** The audit map as a scene: a frame per package, a cell per area, kept in step with the map's data. */
 import { asNodeId, contrastRatio, createScene, nodeShapesOf, type NodeId, type RectPose, type Scene } from '@weasel-js/core';
-import { deepEqual } from '@weasel-js/registry';
+import { deepEqual, getOwn } from '@weasel-js/registry';
 import { AUDIT_PAINTER, type AuditCellData, type AuditFrameData, type AuditNodeData } from './auditPainter';
-import { STAGE_LABEL, cellLabelOf, clip, toneOf } from './areaData';
+import { STAGE_LABEL, cellLabelOf, toneOf, wrapAtDots } from './areaData';
 import type { MapCell, MapFrame } from './mapLayout';
+import type { AuditPhase } from './phases';
 import type { AuditArea } from './skulkMap.types';
 
 /** The colors the map paints in, read off the page's theme. */
@@ -16,6 +17,10 @@ export interface AuditPalette {
   readonly depth: readonly [string, string, string, string, string];
   readonly settled: string;
   readonly live: string;
+  /** The outline a live area's cell wears, by the phase it is in. */
+  readonly phase: Readonly<Record<AuditPhase, string>>;
+  /** The theme's faces, for labels and for numbers. */
+  readonly font: { readonly ui: string; readonly numeric: string };
 }
 
 export type AuditLayer = 'frames' | 'cells';
@@ -45,7 +50,7 @@ function frameTitle(f: MapFrame): string | undefined {
   if (!f.titled) return undefined;
   const name = f.name.toUpperCase();
   const full = `${name} · ${f.files}`;
-  return full.length * 6.6 < f.width - 8 ? full : name.slice(0, Math.max(1, Math.floor((f.width - 8) / 6.8)));
+  return full.length * TITLE_CHAR < f.width - 8 ? full : name.slice(0, Math.max(1, Math.floor((f.width - 8) / TITLE_CHAR)));
 }
 
 /** Whichever of the two inks reads better on `fill`. */
@@ -55,46 +60,63 @@ export function inkOn(fill: string, palette: AuditPalette): string {
   return inverse > plain ? palette.inkInverse : palette.ink;
 }
 
+/** Rough widths of a character of Oswald, the theme's condensed face: a cell label at 12px, a frame title at 12.5px bold. */
+const LABEL_CHAR = 6.2;
+const TITLE_CHAR = 6.9;
+/** A label line's height. */
+const LINE = 15;
+
 /** Room the pass dots take at a cell's top right, which its label stops short of. */
 const dotsRoom = (passes: number) => (passes > 0 ? Math.min(passes, 4) * 6 + 4 : 0);
 
-function cellData(area: AuditArea, cell: MapCell, palette: AuditPalette): AuditCellData {
+/** An area's label as the lines its cell has room for, broken after dots, the last cut short if it must be. */
+function labelLines(area: AuditArea, cell: MapCell, staged: boolean): string[] {
+  const room = cell.height - 6 - (staged ? LINE + 1 : 0) - (area.queue !== null ? 17 : 0);
+  return wrapAtDots(cellLabelOf(area.id), Math.floor((cell.width - 8 - dotsRoom(area.passes.length)) / LABEL_CHAR), Math.max(1, Math.floor(room / LINE)));
+}
+
+function cellData(area: AuditArea, cell: MapCell, palette: AuditPalette, phase: AuditPhase | undefined): AuditCellData {
   const tone = toneOf(area);
   const fill = tone === 'settled' ? palette.settled : tone === 'unaudited' ? palette.uncharted : palette.depth[tone];
   const ink = tone === 'unaudited' ? palette.ink : inkOn(fill, palette);
   const live = area.status === 'tonight';
-  const labeled = cell.width > 44 && cell.height > 24;
-  const showsQueue = area.queue !== null && area.queue <= 16 && !live && cell.width > 18 && cell.height > 18;
+  const labeled = cell.width > 52 && cell.height > 28;
+  const staged = live && area.stage !== null && labeled && cell.height > 46;
+  const showsQueue = area.queue !== null && area.queue <= 16 && !live && cell.width > 22 && cell.height > 22;
   return {
     kind: 'audit-cell',
     fill: { color: fill },
     ...(tone === 'unaudited' ? { over: { kind: 'hatch', color: palette.hatch, size: 6, lineWidth: 1.6 } } : {}),
     edge: palette.panel,
     ink,
-    ...(labeled ? { label: clip(cellLabelOf(area.id), Math.floor((cell.width - 8 - dotsRoom(area.passes.length)) / 6.1)) } : {}),
-    ...(live ? { live: palette.live } : {}),
-    ...(live && area.stage && labeled && cell.height > 38 ? { stage: STAGE_LABEL[area.stage] ?? area.stage } : {}),
+    ...(labeled ? { label: labelLines(area, cell, staged) } : {}),
+    ...(live ? { live: phase ? palette.phase[phase] : palette.live } : {}),
+    ...(staged ? { stage: getOwn(STAGE_LABEL, area.stage!) ?? area.stage! } : {}),
+    font: palette.font.ui,
+    numericFont: palette.font.numeric,
     ...(showsQueue ? { queue: area.queue! } : {}),
+    ...(tone === 'settled' ? { settled: true } : {}),
     dots: area.passes.length,
     pulse: 1,
   };
 }
 
-/** Every node the map needs for `areas` laid out as `frames` and `cells`. */
+/** Every node the map needs for `areas` laid out as `frames` and `cells`, a live area outlined in its phase's color. */
 export function auditNodeSpecs(
   areas: readonly AuditArea[],
   layout: { frames: readonly MapFrame[]; cells: readonly MapCell[] },
   palette: AuditPalette,
+  phases: ReadonlyMap<string, AuditPhase> = new Map(),
 ): AuditNodeSpec[] {
   const byId = new Map(areas.map((a) => [a.id, a]));
   const frames = layout.frames.map((f): AuditNodeSpec => {
     const title = frameTitle(f);
-    const data: AuditFrameData = { kind: 'audit-frame', edge: palette.ink, ink: palette.ink, ...(title ? { title } : {}) };
+    const data: AuditFrameData = { kind: 'audit-frame', edge: palette.ink, ink: palette.ink, font: palette.font.ui, ...(title ? { title } : {}) };
     return { id: frameIdOf(f.name), layer: 'frames', pose: poseOf(f), data };
   });
   const cells = layout.cells.flatMap((c): AuditNodeSpec[] => {
     const area = byId.get(c.id);
-    return area ? [{ id: asNodeId(c.id), layer: 'cells', pose: poseOf(c), data: cellData(area, c, palette) }] : [];
+    return area ? [{ id: asNodeId(c.id), layer: 'cells', pose: poseOf(c), data: cellData(area, c, palette, phases.get(area.id)) }] : [];
   });
   return [...frames, ...cells];
 }

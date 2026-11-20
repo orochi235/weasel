@@ -10,14 +10,13 @@
 }
 
 .value {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   display: block;
-  font-family: var(--wzl-font-display);
   font-size: var(--wzl-font-size-xl);
   font-weight: var(--wzl-font-weight-bold);
-  font-variant-numeric: tabular-nums;
 }
 
 .label {
-  font-size: var(--wzl-font-size-sm);
+  font-size: var(--wzl-font-size-md);
   color: var(--audit-muted);
 }

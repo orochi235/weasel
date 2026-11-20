@@ -8,15 +8,39 @@
   --audit-rule: var(--wzl-border);
   --audit-uncharted: var(--wzl-surface-sunken);
   --audit-hatch: var(--wzl-border-strong);
-  --audit-depth-0: color-mix(in oklab, var(--wzl-info) 14%, var(--wzl-surface));
-  --audit-depth-1: color-mix(in oklab, var(--wzl-info) 34%, var(--wzl-surface));
-  --audit-depth-2: color-mix(in oklab, var(--wzl-info) 56%, var(--wzl-surface));
-  --audit-depth-3: color-mix(in oklab, var(--wzl-info) 72%, var(--wzl-fg));
-  --audit-depth-4: color-mix(in oklab, var(--wzl-info) 45%, var(--wzl-fg));
-  --audit-settled: var(--wzl-success);
+  /* Estimated defects left, along a thermal-camera ramp: dark and cold for none, bright and hot for 6 or more, its
+     lightness climbing with the heat as an ironbow's does. Fixed values, which read on either page. */
+  --audit-depth-0: oklch(0.27 0.11 290);
+  --audit-depth-1: oklch(0.43 0.19 330);
+  --audit-depth-2: oklch(0.59 0.21 25);
+  --audit-depth-3: oklch(0.75 0.17 58);
+  --audit-depth-4: oklch(0.92 0.11 98);
+  /* Settled is no heat at all: a neutral fill, which the map marks with a check. */
+  --audit-settled: color-mix(in oklab, var(--wzl-fg) 14%, var(--wzl-surface));
   --audit-live: var(--wzl-swatch-rose);
   --audit-live-soft: color-mix(in oklab, var(--wzl-swatch-rose) 16%, transparent);
+  /* A live area's phase, in pipeline order along a rainbow from indigo to orange, lightness climbing step by step so
+     each reads apart; text on it flips between black and white by its lightness. Conflict is the theme's danger and
+     done its muted ink, both off the sweep. */
+  --audit-phase-review: oklch(0.5 0.18 280);
+  --audit-phase-reviewed: oklch(0.58 0.15 245);
+  --audit-phase-match: oklch(0.66 0.16 150);
+  --audit-phase-fix: oklch(0.8 0.16 88);
+  --audit-phase-patch: oklch(0.72 0.18 55);
+  --audit-phase-ramp: linear-gradient(to right, var(--audit-phase-review), var(--audit-phase-reviewed), var(--audit-phase-match),
+    var(--audit-phase-fix), var(--audit-phase-patch));
+  --audit-phase-conflict: var(--wzl-danger);
+  --audit-phase-done: var(--wzl-fg-muted);
 }
+
+/* An element wearing a phase reads `--audit-phase`. */
+.phase-review { --audit-phase: var(--audit-phase-review); }
+.phase-reviewed { --audit-phase: var(--audit-phase-reviewed); }
+.phase-match { --audit-phase: var(--audit-phase-match); }
+.phase-fix { --audit-phase: var(--audit-phase-fix); }
+.phase-patch { --audit-phase: var(--audit-phase-patch); }
+.phase-conflict { --audit-phase: var(--audit-phase-conflict); }
+.phase-done { --audit-phase: var(--audit-phase-done); }
 
 .probes {
   position: absolute;
@@ -38,3 +62,6 @@
 .depth4 { color: var(--audit-depth-4); }
 .settled { color: var(--audit-settled); }
 .live { color: var(--audit-live); }
+.phase { color: var(--audit-phase); }
+.fontUi { font-family: var(--wzl-font-ui); }
+.fontNumeric { composes: numeric from '@weasel-js/theme/numeric.module.css'; }
