@@ -20,6 +20,7 @@ import { fillsOpenSubpaths } from '../openFill';
 import type { Path, PolygonPath } from '../path';
 import { resolveCorners } from '../paths/corners';
 import { coordsFrom, originFor, worldCoords } from '../paths/pathOrigin';
+import { resolveRingFill } from './ringFill';
 
 /** A `[x, y]` 2-tuple. */
 export type Pair = [number, number];
@@ -132,7 +133,8 @@ export function pathToMultiPolygon(
   finalizeCurrent();
 
   if (rings.length === 0) return [];
-  return groupRings(rings, path.fillRule);
+  const resolved = resolveRingFill(rings, path.fillRule);
+  return resolved ? groupRings(resolved, 'nonzero') : groupRings(rings, path.fillRule);
 }
 
 /** Shoelace area of a closed ring. Sign gives the winding direction. */
@@ -186,8 +188,8 @@ function ringContains(outer: Ring, outerBox: RingBox, inner: Ring, innerBox: Rin
 }
 
 /**
- * Resolve rings into `polygon-clipping` polygons (outer ring first, hole
- * rings after) by nesting depth and `fillRule`.
+ * Resolve rings that do not meet into `polygon-clipping` polygons (outer
+ * ring first, hole rings after) by nesting depth and `fillRule`.
  *
  * Without this a path's own holes are lost: separate polygons in a
  * MultiPolygon are unioned, so a donut arrives at the clipper as a solid disc.
@@ -195,7 +197,7 @@ function ringContains(outer: Ring, outerBox: RingBox, inner: Ring, innerBox: Rin
  * Rings that bound no boundary of the filled region — a same-winding ring
  * nested inside a nonzero fill — are dropped; they contribute nothing.
  */
-function groupRings(rings: Ring[], fillRule: 'nonzero' | 'evenodd'): MultiPolygon {
+function groupRings(rings: readonly Ring[], fillRule: 'nonzero' | 'evenodd'): MultiPolygon {
   const n = rings.length;
   if (n === 1) return [[rings[0]]];
 

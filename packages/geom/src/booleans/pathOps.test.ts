@@ -264,3 +264,30 @@ describe('holes', () => {
     expect(pathContainsPoint(i, 50, 50)).toBe(false);
   });
 });
+
+describe('booleans on straight contours that partly overlap', () => {
+  /** Two squares (0,0)–(10,10) and (5,5)–(15,15) in one path, the second wound `turn`. */
+  const pair = (fillRule: 'nonzero' | 'evenodd', turn: 1 | -1): PolygonPath => {
+    const b = turn === 1 ? [5, 5, 15, 5, 15, 15, 5, 15] : [5, 5, 5, 15, 15, 15, 15, 5];
+    return {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z, PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10, ...b]),
+      fillRule,
+    };
+  };
+
+  it('leaves the overlap empty where the fill rule does', () => {
+    for (const p of [pair('evenodd', 1), pair('nonzero', -1)]) {
+      const u = pathUnion(p);
+      expect(pathContainsPoint(u, 7, 7)).toBe(false);
+      expect(pathContainsPoint(u, 2, 2)).toBe(true);
+      expect(pathContainsPoint(u, 12, 12)).toBe(true);
+      expect(pathContainsPoint(pathIntersect(p, r(-1, -1, 20, 20)), 7, 7)).toBe(false);
+    }
+  });
+
+  it('fills the overlap where the fill rule does', () => {
+    expect(pathContainsPoint(pathUnion(pair('nonzero', 1)), 7, 7)).toBe(true);
+  });
+});
