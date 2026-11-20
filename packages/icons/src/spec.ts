@@ -29,7 +29,8 @@ export function iconSpecRefs(spec: IconSpec | undefined): IconRef[] {
 
 /**
  * A value read at run time (a schema loaded as JSON) as a spec: a qualified name, or
- * `{ name, mark? }` holding them. Anything else, including a part that is not qualified, reads as none.
+ * `{ name, mark? }` holding them, a `null` mark reading as none (JSON's spelling of an absent one). Anything
+ * else, including a part that is not qualified, reads as none.
  */
 export function toIconSpec(value: unknown): IconSpec | undefined {
   if (typeof value === 'string') return toIconRef(value);
@@ -37,7 +38,7 @@ export function toIconSpec(value: unknown): IconSpec | undefined {
   const { name, mark } = value as { name?: unknown; mark?: unknown };
   const subject = typeof name === 'string' ? toIconRef(name) : undefined;
   if (!subject) return undefined;
-  if (mark === undefined) return { name: subject };
+  if (mark === undefined || mark === null) return { name: subject };
   const badge = typeof mark === 'string' ? toIconRef(mark) : undefined;
   return badge ? { name: subject, mark: badge } : undefined;
 }
