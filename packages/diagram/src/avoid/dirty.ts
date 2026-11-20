@@ -75,9 +75,10 @@ const centroid = (ports: readonly AvoidPort[]): Vec2 => ({
 });
 
 /** `edge`'s stored route with its ends, each end at the port facing the
- *  route's nearest bend, as the edge draws it. */
+ *  route's nearest bend, as the edge draws it. A connector holding no route
+ *  runs through its waypoints, where its fallback router draws it. */
 export function fullRoute(edge: AvoidEdge): Vec2[] {
-  const route = edge.route ?? [];
+  const route = edge.route ?? edge.waypoints ?? [];
   const from = facing(edge.from.ports, route[0] ?? centroid(edge.to.ports));
   const to = facing(edge.to.ports, route[route.length - 1] ?? centroid(edge.from.ports));
   return [...(from ? [from.point] : []), ...route, ...(to ? [to.point] : [])];
