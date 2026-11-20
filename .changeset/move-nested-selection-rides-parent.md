@@ -2,6 +2,8 @@
 '@weasel-js/editing': patch
 ---
 
-Dropping a group into a layout container, or snapping it into one with `snapToContainer`, keeps a selected child of that group inside it rather than placing the child on its own.
+A group dropped into a layout container, or snapped into one, keeps its selected child inside it.
+
+This covers `snapToContainer` as well as a layout drop and a release out of a layout container.
 
 <!-- entry: fix -->
