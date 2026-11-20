@@ -1,5 +1,5 @@
 import { Icon } from '@weasel-js/ui/components/Icon';
-import { type MouseEvent, type ReactNode, type Ref, useRef } from 'react';
+import { type MouseEvent, type PointerEvent, type ReactNode, type Ref, useRef } from 'react';
 import { icon } from '../icons.gen';
 import { LightboxContext } from './LightboxContext';
 import { opensLightbox } from './modal';
@@ -90,7 +90,7 @@ function LightboxButton({
  * labkit surface above is scoped to it while it is open, so pixels drawn for
  * the content from outside it come along.
  *
- * Escape, a click on the dimmed margin, the close button, or another
+ * Escape, a click pressed and released on the dimmed margin, the close button, or another
  * double-click where those open it closes it, and focus returns to wherever it
  * was. A double-click on a control, inside `[data-lk-lightbox-ignore]`, or one
  * a handler further in called `preventDefault()` on does not open it.
@@ -119,9 +119,17 @@ export function Lightbox({
     set(!expanded);
   };
 
-  // Only the margin around the frame is the root's own surface.
+  // Only the margin around the frame is the root's own surface, and a click
+  // closes only when it was pressed there too: one pressed in the content and
+  // released on the margin arrives at the root, their common ancestor.
+  const pressedMargin = useRef(false);
+  const onPointerDownCapture = (e: PointerEvent<HTMLDivElement>): void => {
+    pressedMargin.current = e.target === e.currentTarget;
+  };
   const onClick = (e: MouseEvent<HTMLDivElement>): void => {
-    if (expanded && e.target === e.currentTarget) set(false);
+    const onMargin = pressedMargin.current && e.target === e.currentTarget;
+    pressedMargin.current = false;
+    if (expanded && onMargin) set(false);
   };
 
   const classes = ['lk-lightbox'];
@@ -137,6 +145,7 @@ export function Lightbox({
         className={classes.join(' ')}
         {...(expanded ? dialogProps(label) : null)}
         onDoubleClick={onDoubleClick}
+        onPointerDownCapture={onPointerDownCapture}
         onClick={onClick}
       >
         <div className="lk-lightbox__frame">{children}</div>
