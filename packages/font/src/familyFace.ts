@@ -1,8 +1,4 @@
 import type { FontStyle } from './fontStyle';
-import { variantKey } from './variantKey';
-import { atlasResult, sharedExactResult } from './atlasResult';
-import type { FontFamilyFaces } from './registerFont';
-import type { ResolveResult } from './resolveResult';
 
 /** The face the within-family chain lands on, and what the shader fakes to close the gap. */
 export interface ChainPick {
@@ -75,22 +71,4 @@ export function farPick(keys: Iterable<string>, weight: number, style: FontStyle
   const other: FontStyle = style === 'italic' ? 'normal' : 'italic';
   const f = nearest(faces, weight, style, false) ?? nearest(faces, weight, other, false);
   return pick(f, f !== null && weight >= 600 && f.weight < 600, style === 'italic' && f?.style === 'normal');
-}
-
-/**
- * The face one family's registered `faces` serve for `(weight, style)`, walking
- * {@link chainPick}, or null when it finds none. `shared` returns an exact
- * match as the face's one frozen result.
- */
-export function familyFaceFor(
-  faces: FontFamilyFaces, family: string, weight: number, style: FontStyle, shared: boolean,
-): ResolveResult | null {
-  const exact = faces.get(variantKey(weight, style));
-  if (exact) {
-    return shared
-      ? sharedExactResult(exact, family, weight, style)
-      : atlasResult(exact, family, weight, style, false, false);
-  }
-  const p = chainPick(faces.keys(), weight, style);
-  return p && atlasResult(faces.get(p.key)!, family, p.weight, p.style, p.bold, p.italic);
 }

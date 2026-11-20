@@ -141,8 +141,7 @@ class Warm implements fc.AsyncCommand<Model, Real> {
 const landed = (m: Readonly<Model>) => [...m.variants].flatMap(([family, vs]) =>
   VARIANTS.filter((v) => vs.get(keyOf(v))?.state === 'loaded').map((v) => ({ family, variant: v })));
 
-/** Resolve the `pick`-th landed variant, cached and fresh: both land on it, and the lookup wakes the family's other
- *  declared variants. */
+/** Resolve the `pick`-th landed variant, cached and fresh: both land on it, and the lookup wakes nothing else. */
 class Resolve implements fc.AsyncCommand<Model, Real> {
   constructor(readonly pick: number) {}
   check = (m: Readonly<Model>) => landed(m).length > 0;
@@ -154,7 +153,6 @@ class Resolve implements fc.AsyncCommand<Model, Real> {
     expect(resolveFontVariant(family, weight, style)).toEqual(cached);
     expect(cached.entry).toBe(getAtlasFont(family, weight, style));
     expect(cached.resolved).toEqual({ family, weight, style });
-    for (const v of m.variants.get(family)!.values()) if (v.state === 'declared') v.state = 'loading';
     r.t.count('resolved');
     check(m);
   }

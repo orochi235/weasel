@@ -208,21 +208,11 @@ async function fetchVariant(
   }
 }
 
-/**
- * Start the lazy loads a request for `(family, weight, style)` needs: the
- * exact variant when it was declared, otherwise every declared variant of the
- * family, since the within-family chain may land on any of them.
- */
-export function wakeDeclared(family: string, weight: number, style: FontStyle): void {
-  const variants = declared.get(family);
-  if (!variants) return;
-  const exact = variantKey(weight, style);
-  const keys = variants.has(exact) ? [exact] : [...variants.keys()];
-  for (const key of keys) {
-    const { metricsUrl, atlasUrl } = variants.get(key)!;
-    // The declaration's own promise carries the failure to its caller.
-    loadVariant(family, key, metricsUrl, atlasUrl).catch(() => {});
-  }
+/** Start the lazy load of one variant of `family`, keyed like the registry, if it is still only declared. */
+export function wakeVariant(family: string, key: string): void {
+  const lazy = declared.get(family)?.get(key);
+  // The declaration's own promise carries the failure to its caller.
+  if (lazy) loadVariant(family, key, lazy.metricsUrl, lazy.atlasUrl).catch(() => {});
 }
 
 /** Start the load of every variant of `family` still declared lazily. */

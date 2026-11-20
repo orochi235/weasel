@@ -684,6 +684,21 @@ describe('registerFont — lazy', () => {
     expect(urls).toEqual(['/b.json', '/b.png']);
   });
 
+  it('fetches no other declared variant for text set in a landed one', async () => {
+    await registerFont('inter', { weight: 400 }, '/r.json', '/r.png');
+    void registerFont('inter', { weight: 700 }, '/b.json', '/b.png', { lazy: true });
+    resolveFontVariant('inter', 400, 'normal');
+    expect(fetchCalls()).toBe(2);
+  });
+
+  it('waits for the variant the chain lands on while it fetches, rather than a landed stand-in', async () => {
+    await registerFont('inter', { weight: 400 }, '/r.json', '/r.png');
+    const bold = registerFont('inter', { weight: 700 }, '/b.json', '/b.png');
+    expect(resolveFontVariant('inter', 600, 'normal').entry).toBeNull();
+    await bold;
+    expect(resolveFontVariant('inter', 600, 'normal').resolved.weight).toBe(700);
+  });
+
   it('waits for a declared exact variant rather than faking it from another', async () => {
     await registerFont('inter', { weight: 400 }, '/r.json', '/r.png');
     const bold = registerFont('inter', { weight: 700 }, '/b.json', '/b.png', { lazy: true });
@@ -796,11 +811,11 @@ describe('warmFonts', () => {
       expect(urls()).toEqual(['/b.json', '/b.png']);
     });
 
-    it('loads every declared variant when none matches, since the chain may land on any', async () => {
+    it('loads the declared variant the chain lands on when none matches', async () => {
       void registerFont('inter', { weight: 400 }, '/r.json', '/r.png', { lazy: true });
       void registerFont('inter', { weight: 700 }, '/b.json', '/b.png', { lazy: true });
       await warmFonts([{ family: 'inter', weight: 500, style: 'italic' }]);
-      expect(urls()).toEqual(['/r.json', '/r.png', '/b.json', '/b.png']);
+      expect(urls()).toEqual(['/r.json', '/r.png']);
     });
 
     it('leaves the default family alone when the requested family draws in a face of its own', async () => {

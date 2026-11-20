@@ -1,11 +1,12 @@
 import { variantKey } from './variantKey';
+import { chainPick, farPick } from './familyFace';
 import { normalizeVariant, type FontStyle } from './fontStyle';
 import { isExplicitCanvasFont } from './dynamic/dynamicAtlas';
 import { getFontFallbackPolicy, getDefaultFontFamily } from './fallback';
 import { hasFontOutlines, loadFontOutlines } from './outline/outlineRegistry';
 import {
   atlasPending, familyLoads, firstRegisteredFamily, fontRegistry, isRegisteredFamily, registeredFamilyNames,
-  variantLoad, wakeDeclared, wakeFamily,
+  variantKeysOf, variantLoad, wakeFamily, wakeVariant,
 } from './registerFont';
 
 /** One face text is set in, the way a render asks for it — what
@@ -24,11 +25,10 @@ export interface FontRequest {
  * `registerFont` was called for.
  *
  * A family name loads every variant registered for it. A {@link FontRequest}
- * loads what resolving that one variant would draw with: the exact variant
- * when one was registered, otherwise every variant of the family, since the
- * within-family chain may land on any; the family the `'substitute'` policy
- * would draw instead when the requested one has no atlas; and the variant's
- * outline face when one is registered.
+ * loads what resolving that one variant would draw with: the variant of the
+ * family the within-family chain lands on, the family the `'substitute'`
+ * policy would draw instead when the requested one has no atlas face, and the
+ * variant's outline face when one is registered.
  *
  * Resolves once they have all landed; a registered variant counts as loaded.
  * Rejects when a load fails, or for a family name `registerFont` never saw —
@@ -58,13 +58,22 @@ function variantLoads(family: string, weight: number, style: FontStyle): Promise
   const out: Promise<unknown>[] = [];
   const outlines = hasFontOutlines(family, weight, style);
   if (outlines) out.push(loadFontOutlines(family, { weight, style }));
-  const key = variantKey(weight, style);
-  if (fontRegistry.get(family)?.has(key)) return out;
-  wakeDeclared(family, weight, style);
-  const exact = variantLoad(family, key);
-  if (exact) return [...out, exact];
-  if (fontRegistry.has(family) || atlasPending(family)) return [...out, ...familyLoads(family)];
-  if (outlines || isExplicitCanvasFont(family) || getFontFallbackPolicy() !== 'substitute') return out;
+  if (fontRegistry.get(family)?.has(variantKey(weight, style))) return out;
+  const keys = variantKeysOf(family);
+  const near = chainPick(keys, weight, style);
+  if (near) return [...out, ...pickedLoad(family, near.key)];
+  if (outlines || isExplicitCanvasFont(family)) return out;
+  const far = farPick(keys, weight, style);
+  if (far) return [...out, ...pickedLoad(family, far.key)];
+  if (atlasPending(family)) return [...out, ...familyLoads(family)];
+  if (getFontFallbackPolicy() !== 'substitute') return out;
   const fallback = getDefaultFontFamily() ?? firstRegisteredFamily();
   return fallback !== null && fallback !== family ? [...out, ...variantLoads(fallback, weight, style)] : out;
+}
+
+/** The load of the variant the chain picked, started if it was only declared. */
+function pickedLoad(family: string, key: string): Promise<void>[] {
+  wakeVariant(family, key);
+  const load = variantLoad(family, key);
+  return load ? [load] : [];
 }

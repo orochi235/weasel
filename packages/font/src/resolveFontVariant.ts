@@ -8,19 +8,19 @@ import { variantKey } from './variantKey';
 import type { FontStyle } from './fontStyle';
 import { isCanvasFont, isExplicitCanvasFont, autoEnrollCanvasFont, getDynamicFace } from './dynamic/dynamicAtlas';
 import { getFontFallbackPolicy, getDefaultFontFamily } from './fallback';
-import { outlineFace } from './outline/outlineRegistry';
-import { familyFaceFor, farPick } from './familyFace';
-import { atlasResult } from './atlasResult';
+import { outlineFace, outlineStatus } from './outline/outlineRegistry';
+import { chainPick, farPick, type ChainPick } from './familyFace';
+import { atlasResult, sharedExactResult } from './atlasResult';
 import type { ResolveResult } from './resolveResult';
 import {
-  atlasPending, firstRegisteredFamily, fontRegistry, isFontPending, isRegisteredFamily, variantLoad, wakeDeclared,
+  atlasPending, firstRegisteredFamily, fontRegistry, isRegisteredFamily, variantKeysOf, wakeVariant,
 } from './registerFont';
 import {
   warnMissingFamilyOnce, warnSelfUnusableDefaultOnce, warnUnregisteredDefaultOnce, warnUnusableDefaultOnce,
 } from './registerFontWarnings';
 
 function missResolveResult(
-  family: string, weight: number, style: FontStyle, suppressWarn = false,
+  family: string, weight: number, style: FontStyle, keys: ReadonlySet<string>, suppressWarn: boolean,
 ): ResolveResult {
   // Canvas-dynamic tier. Dynamic faces rasterize the real weight/style — no
   // synthetic flags.
@@ -52,12 +52,13 @@ function missResolveResult(
     };
   }
   // Its bytes are on their way, which outranks a stand-in as a pending atlas does.
-  if (isFontPending(family, weight, style)) return pendingMiss(family, weight, style);
+  const outline = outlineStatus(family, weight, style);
+  if (outline === 'idle' || outline === 'loading') return pendingMiss(family, weight, style);
 
   // A family with any atlas face draws in one of its own before another family's.
-  const faces = fontRegistry.get(family);
-  const far = faces && farPick(faces.keys(), weight, style);
-  if (far) return atlasResult(faces.get(far.key)!, family, far.weight, far.style, far.bold, far.italic);
+  const far = farPick(keys, weight, style);
+  if (far) return atlasServe(family, weight, style, far);
+  if (atlasPending(family)) return pendingMiss(family, weight, style);
 
   const policy = getFontFallbackPolicy();
 
@@ -122,6 +123,18 @@ function missResolveResult(
   };
 }
 
+/**
+ * The atlas face the chain picked, or a pending miss while it is still on its
+ * way, whose load this starts: laying out in a stand-in's metrics now would
+ * reflow the text when the picked face lands.
+ */
+function atlasServe(family: string, weight: number, style: FontStyle, p: ChainPick): ResolveResult {
+  const entry = fontRegistry.get(family)?.get(p.key);
+  if (entry) return atlasResult(entry, family, p.weight, p.style, p.bold, p.italic);
+  wakeVariant(family, p.key);
+  return pendingMiss(family, weight, style);
+}
+
 /** A miss that is only late: nothing substituted, nothing warned. */
 function pendingMiss(family: string, weight: number, style: FontStyle): ResolveResult {
   return {
@@ -168,21 +181,18 @@ function resolveFontVariantInternal(
   suppressWarn: boolean,
   shared: boolean,
 ): ResolveResult {
-  wakeDeclared(family, weight, style);
-  // An atlas on its way outranks every stand-in: laying out in a fallback's
-  // metrics now would reflow the text when the real face lands.
-  // A landed variant is not on its way, even before its load promise settles:
-  // `fetchVariant` wakes subscribers first, and they resolve synchronously.
   const exactKey = variantKey(weight, style);
-  if (variantLoad(family, exactKey) !== undefined && !fontRegistry.get(family)?.has(exactKey)) {
-    return pendingMiss(family, weight, style);
+  // A landed variant is served even while a replacement for it fetches.
+  const exact = fontRegistry.get(family)?.get(exactKey);
+  if (exact) {
+    return shared
+      ? sharedExactResult(exact, family, weight, style)
+      : atlasResult(exact, family, weight, style, false, false);
   }
-  const familyMap = fontRegistry.get(family);
-  if (!familyMap || familyMap.size === 0) {
-    if (atlasPending(family)) return pendingMiss(family, weight, style);
-    return missResolveResult(family, weight, style, suppressWarn);
-  }
-
-  return familyFaceFor(familyMap, family, weight, style, shared)
-    ?? missResolveResult(family, weight, style, suppressWarn);
+  // The chain picks among every variant registered, landed or not, so a face
+  // on its way outranks a landed stand-in it would replace.
+  const keys = variantKeysOf(family);
+  const near = chainPick(keys, weight, style);
+  if (near) return atlasServe(family, weight, style, near);
+  return missResolveResult(family, weight, style, keys, suppressWarn);
 }
