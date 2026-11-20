@@ -4,7 +4,7 @@ import { createDistanceReadoutContribution } from './distanceReadout';
 
 type Pose = { x: number; y: number; width: number; height: number };
 
-function fixture(opts?: Parameters<typeof createDistanceReadoutContribution>[0], drawnAt?: number) {
+function fixture(opts?: Parameters<typeof createDistanceReadoutContribution>[0], drawnAt?: number, extra: Partial<ActionDeps> = {}) {
   const scene = createScene<object, 'main', Pose>({ systemLayers: [{ id: 'main', visible: true, locked: false }] });
   const frame = drawnAt === undefined ? undefined : scene.add({
     kind: 'group', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
@@ -28,6 +28,7 @@ function fixture(opts?: Parameters<typeof createDistanceReadoutContribution>[0],
     snapReadout: { store },
     nodeAtPoint,
     selection: { get: () => selected },
+    ...extra,
   } as unknown as ActionDeps;
   const r = createDistanceReadoutContribution(opts);
   const heard = vi.fn();
@@ -56,6 +57,18 @@ describe('createDistanceReadoutContribution', () => {
     const { run, store } = fixture(undefined, 2);
     run({ show: true, world: { x: 35, y: 5 } });
     expect(store.get()).toEqual([{ kind: 'distance', from: { x: 10, y: 5 }, to: { x: 30, y: 5 }, value: 10 }]);
+  });
+
+  it('measures the boxes the canvas draws, stroke included, as its spacing snap does', () => {
+    // Each shape's ink reaches 2 past its pose box: the 20-unit pose gap is 16 ink to ink.
+    const grow = (b: Pose): Pose => ({ x: b.x - 2, y: b.y - 2, width: b.width + 4, height: b.height + 4 });
+    const drawnBoxes = (() => {
+      const framed = (_id: unknown, pose: unknown) => grow(pose as Pose);
+      return { framed, aabb: framed, extents: () => ({ left: 2, right: 2, top: 2, bottom: 2 }) };
+    }) as unknown as ActionDeps['drawnBoxes'];
+    const { r, run } = fixture(undefined, undefined, { drawnBoxes });
+    run({ show: true, world: { x: 35, y: 5 } });
+    expect(r.read().gaps).toEqual([{ axis: 'x', min: 12, max: 28, at: 5 }]);
   });
 
   it('shows nothing over empty canvas, over the selection itself, or with nothing selected', () => {
