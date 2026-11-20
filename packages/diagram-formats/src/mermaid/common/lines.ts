@@ -28,6 +28,8 @@ export interface MermaidSource {
   accDescr?: string;
   /** How many `%%{…}%%` directives there were. */
   directives: number;
+  /** Each directive's text between `%%{` and `}%%`. */
+  directiveTexts: string[];
 }
 
 const widthOf = (lead: string): number => [...lead].reduce((n, c) => n + (c === '\t' ? 4 : 1), 0);
@@ -40,6 +42,7 @@ export function statementsOf(text: string): MermaidSource {
   const raw = source.slice(front.length).split('\n');
   const out: Statement[] = [];
   let directives = 0;
+  const directiveTexts: string[] = [];
   let accTitle: string | undefined;
   let accDescr: string | undefined;
   for (let k = 0; k < raw.length; k++) {
@@ -48,8 +51,11 @@ export function statementsOf(text: string): MermaidSource {
     const trimmed = full.trim();
     if (trimmed.startsWith('%%{')) {
       directives++;
+      const from = k;
       while (!raw[k]!.includes('}%%') && k < raw.length - 1) k++;
       if (!raw[k]!.includes('}%%')) throw lineError('Mermaid', line, 'a directive opened here is never closed');
+      const whole = raw.slice(from, k + 1).join('\n');
+      directiveTexts.push(whole.slice(whole.indexOf('%%{') + 3, whole.indexOf('}%%')));
       continue;
     }
     if (trimmed === '' || trimmed.startsWith('%%')) continue;
@@ -76,7 +82,7 @@ export function statementsOf(text: string): MermaidSource {
   const [header, ...body] = out;
   if (header === undefined) throw lineError('Mermaid', front.lines + 1, 'the diagram has no header');
   return {
-    header, body, directives,
+    header, body, directives, directiveTexts,
     ...(front.title !== undefined ? { title: front.title } : {}),
     ...(front.config !== undefined ? { frontConfig: front.config } : {}),
     ...(accTitle !== undefined ? { accTitle } : {}),
