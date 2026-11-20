@@ -43,19 +43,23 @@ export function openSession(host: SessionHost, transport: PageTransport): Devtoo
   let greeted = false;
   let closed = false;
   const notices = createNotices(host.root, host.schedule, (m) => { if (!closed) send(m); });
-  const overrides = new Map<string, Override>();
+  // Each override keeps its root: a removed root is gone from the host by the time the session hears of it.
+  const overrides = new Map<string, { root: DevtoolsRoot; override: Override }>();
 
   const dropOverride = (rootId: string): void => {
-    if (overrides.delete(rootId)) host.root(rootId)?.source.setOverride(null);
+    const held = overrides.get(rootId);
+    if (!held) return;
+    overrides.delete(rootId);
+    held.root.source.setOverride(null);
   };
 
   const steer = (root: DevtoolsRoot, change: Partial<Override>): void => {
-    const prev = overrides.get(root.id) ?? { overlays: {}, highlight: [] };
+    const prev = overrides.get(root.id)?.override ?? { overlays: {}, highlight: [] };
     const next: Override = {
       overlays: change.overlays ? { ...prev.overlays, ...change.overlays } : prev.overlays,
       highlight: change.highlight ?? prev.highlight,
     };
-    overrides.set(root.id, next);
+    overrides.set(root.id, { root, override: next });
     root.source.setOverride(next);
   };
 
