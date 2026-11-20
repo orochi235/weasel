@@ -42,7 +42,7 @@ export function withColorPickers(
       const value = hexColor(color, alpha, e.value) ?? color;
       const writes = (held: string | undefined) => hexColor(color, alpha, held) ?? color;
       const row: MenuEntry = {
-        kind: 'item', key: `${e.key}/${color}`, label: color,
+        kind: 'item', key: `${e.key}/${color}`, label: color, radio: true,
         keepOpen: true,
         // Checked when choosing it would write the color held now.
         get checked() {

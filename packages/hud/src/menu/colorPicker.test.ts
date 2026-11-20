@@ -104,6 +104,13 @@ describe('createMenuWidget: a color row', () => {
     expect(w.accessibleTree!.read().children![0]).toMatchObject({ label: 'Fill: #1e88e5' });
   });
 
+  it('exposes its swatches as radio rows, since choosing one unchecks the rest', () => {
+    const { w, type } = widget([fill('#1e88e5')]);
+    type(['ArrowDown', 'ArrowRight']);
+    const rows = w.accessibleTree!.read().children![0]!.children![0]!.children!;
+    expect(rows.slice(0, 2).map((r) => [r.role, r.checked])).toEqual([['menuitemradio', false], ['menuitemradio', true]]);
+  });
+
   it('takes typed hex in the picker and writes it without closing', () => {
     const row = fill('#336699');
     const { w, close, type } = widget([row]);
