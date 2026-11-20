@@ -81,9 +81,9 @@ describe('LabBoundary', () => {
     );
     const contexts: [string, Context<never>][] = [];
     for (const file of files) {
-      const names = [...readFileSync(join(root, file), 'utf8').matchAll(/(\w+) = createContext\b/g)].map(
-        (m) => m[1] as string,
-      );
+      const names = [
+        ...readFileSync(join(root, file), 'utf8').matchAll(/(\w+) = createContext\b/g),
+      ].map((m) => m[1] as string);
       if (names.length === 0) continue;
       const mod = (await import(/* @vite-ignore */ join(root, file))) as Record<string, unknown>;
       for (const name of names) {
