@@ -32,7 +32,7 @@ export interface DetailListProps {
   layout?: DetailListLayout;
   /** `text` by default. See {@link DetailListValues}. */
   values?: DetailListValues;
-  /** `1` by default. `auto` sets the rows two to a line, across then down, where the list is at least 28rem wide,
+  /** `1` by default. `auto` sets the rows two to a line, across then down, where the list is at least 20rem wide,
    *  as a property panel pairs its rows. Inline layout only. */
   columns?: DetailListColumns;
   /** Class on the outermost element: the `<dl>`, the box around it under `columns="auto"`, or the `<section>`

@@ -131,11 +131,12 @@ export const reportItems = (report) => {
 };
 
 /**
- * What a fixer's report says it did: of the `of` findings it answered, how many it `fixed`, and the `extra` defects
- * nobody had listed that it fixed besides. Counted from its verdicts ({@link reportItems}), each finding once: a fixer's own
- * `tally:` line miscounts (round 49's geom.part1 said "8 of 9" over eight fixed lines, one a duplicate, and an extra),
- * so it is read only when no verdict parses. The fixer's list splits and joins findings unlike the match, so `of` is
- * its count, not the round's. Null for a report with no verdicts.
+ * What a fixer's report says it did: of the `of` findings it answered, how many it `fixed`, the `extra` defects nobody
+ * had listed that it fixed besides, how many it left `deferred` for later, and how many it `dismissed` as no defect.
+ * Counted from its verdicts ({@link reportItems}), each finding once: a fixer's own `tally:` line miscounts (round
+ * 49's geom.part1 said "8 of 9" over eight fixed lines, one a duplicate, and an extra), so it is read only when no
+ * verdict parses. The fixer's list splits and joins findings unlike the match, so `of` is its count, not the round's.
+ * Null for a report with no verdicts.
  */
 export const fixTallyOf = (report) => {
   const items = reportItems(report);
@@ -144,5 +145,14 @@ export const fixTallyOf = (report) => {
     const t = TALLY.exec(report);
     return t ? { fixed: Number(t[1]), of: Number(t[2]), extra: Number(t[3]) } : null;
   }
-  return { fixed: listed.filter((i) => i.verdict === 'fixed').length, of: listed.length, extra: items.filter((i) => i.from === 'extra' && i.verdict === 'fixed').length };
+  return {
+    fixed: listed.filter((i) => i.verdict === 'fixed').length,
+    of: listed.length,
+    extra: items.filter((i) => i.from === 'extra' && i.verdict === 'fixed').length,
+    deferred: listed.filter((i) => DEFERRED.has(i.verdict)).length,
+    dismissed: listed.filter((i) => i.verdict === 'not a defect').length,
+  };
 };
+
+/** The verdicts that leave a finding open for later: filed or declined, or waiting on a question. */
+const DEFERRED = new Set(['not fixed', 'question']);

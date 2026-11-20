@@ -28,11 +28,14 @@ describe('lanes', () => {
     const states = (run: typeof live) => sharedSpansOf(run).map((s) => [s.id, s.state, s.fill]);
     expect(inSharedSteps(live)).toBe(false);
     expect(states({ ...live, step: 'batch' })).toEqual([['batch', 'active', 0], ['fleet', 'pending', 0], ['merge', 'pending', 0]]);
-    const fleet = sharedSpansOf({ ...live, step: 'fleet', fleet: { done: 250, total: 1000 } });
+    const running = { ...live, step: 'fleet', fleet: { tests: { done: 250, total: 1000 }, build: { done: 30, total: 40 } } };
+    const fleet = sharedSpansOf(running, 'tests');
     expect(fleet.map((s) => [s.id, s.state, s.fill])).toEqual([['batch', 'done', 1], ['fleet', 'active', 0.25], ['merge', 'pending', 0]]);
-    expect(fleet[1]!.label).toBe('fleet run · 25%');
+    expect(fleet[1]!.label).toBe('fleet tests · 25%');
+    expect(sharedSpansOf(running, 'build')[1]!.label).toBe('postbuild · 75%');
     expect(states({ ...live, step: 'merge-wait' })).toEqual([['batch', 'done', 1], ['fleet', 'done', 1], ['merge', 'active', 0]]);
     expect(states(finished).every(([, state]) => state === 'done')).toBe(true);
+    expect(states({ ...finished, report: 'red: batch kept' })).toEqual([['batch', 'done', 1], ['fleet', 'failed', 1], ['merge', 'pending', 0]]);
   });
 
   it('heads each run with its round, step and spend', () => {

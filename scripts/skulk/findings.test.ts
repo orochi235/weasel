@@ -51,7 +51,7 @@ describe('validPairs', () => {
 
 describe('fixTallyOf', () => {
   it('counts its verdicts over the fixer\'s own tally line, which it reads only when no verdict parses', () => {
-    expect(fixTallyOf('fixed 1a2b3c4d | a thing (A)\nChecks: pass\ntally: 3 of 4 fixed, 1 extra fixed\n')).toEqual({ fixed: 1, of: 1, extra: 0 });
+    expect(fixTallyOf('fixed 1a2b3c4d | a thing (A)\nChecks: pass\ntally: 3 of 4 fixed, 1 extra fixed\n')).toEqual({ fixed: 1, of: 1, extra: 0, deferred: 0, dismissed: 0 });
     expect(fixTallyOf('Checks: pass\n\ntally: 3 of 4 fixed, 1 extra fixed\n')).toEqual({ fixed: 3, of: 4, extra: 1 });
     expect(fixTallyOf('A note about a watcher; nothing was lost.')).toBeNull();
   });
@@ -63,7 +63,7 @@ describe('fixTallyOf', () => {
       'lengthTable gave 0 on overflow (A): fixed e1d05887c0',
       '', 'Extra:', 'lengths disagreed in the last bit: fixed a769170623', '', 'tally: 3 of 4 fixed, 0 extra fixed',
     ].join('\n');
-    expect(fixTallyOf(report)).toEqual({ fixed: 2, of: 2, extra: 1 });
+    expect(fixTallyOf(report)).toEqual({ fixed: 2, of: 2, extra: 1, deferred: 0, dismissed: 0 });
   });
 
   it('counts a report with no tally from its verdict lines, extras apart and checks left out', () => {
@@ -71,7 +71,8 @@ describe('fixTallyOf', () => {
       'fixed 1a2b3c4d | a thing (A)', 'not a defect (it is documented) | another (B)', 'fixed 5e6f7a8b | a third (A+B)',
       'Extra defects found while fixing:', 'fixed 9c0d1e2f | an extra (sweep)', 'Checks:', '- vitest: fixed 3 files, pass',
     ].join('\n');
-    expect(fixTallyOf(report)).toEqual({ fixed: 2, of: 3, extra: 1 });
+    expect(fixTallyOf(report)).toEqual({ fixed: 2, of: 3, extra: 1, deferred: 0, dismissed: 1 });
+    expect(fixTallyOf('fixed 1a2b3c4d | a thing (A)\nquestion: which way? | another (B)\nnot fixed: filed | a third (A)').deferred).toBe(2);
   });
 });
 

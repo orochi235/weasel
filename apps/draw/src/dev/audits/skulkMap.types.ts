@@ -32,6 +32,10 @@ export interface LaneStep {
   readonly state: 'waiting' | 'running' | 'done' | 'failed';
   readonly node?: string;
   readonly since?: string;
+  /** A running step's own count of its work, as onto reports it: a reviewer's files read, a fixer's commits of its
+   *  findings. */
+  readonly done?: number;
+  readonly total?: number;
   readonly findings?: number;
   readonly read?: number;
   readonly files?: number;
@@ -45,6 +49,10 @@ export interface LaneStep {
   readonly fixed?: number;
   readonly of?: number;
   readonly extra?: number;
+  /** Of `of`, how many the fixer left for later, filed or waiting on a question, rather than fixed or found sound. */
+  readonly deferred?: number;
+  /** Of `of`, how many the fixer found were no defect. */
+  readonly dismissed?: number;
   readonly why?: string;
   /** When a done step began and ended, from onto's record of the job that ran it. */
   readonly started?: string;
@@ -56,6 +64,12 @@ export interface AuditLane {
   readonly steps: Readonly<Record<LaneStepName, LaneStep>>;
   /** The pass this round has made of the area, once matched, as its record will hold it. */
   readonly pass?: AuditPass;
+}
+
+/** How far one fleet run has got: `done` of `total`, in whatever unit it counts. */
+export interface FleetProgress {
+  readonly done: number;
+  readonly total: number;
 }
 
 export interface AuditRun {
@@ -74,8 +88,8 @@ export interface AuditRun {
   readonly sweepRunning: boolean;
   readonly lastLine: string | null;
   readonly lines: readonly string[];
-  /** How far the batch's fleet run has got, in tests, while one runs. */
-  readonly fleet?: { readonly done: number; readonly total: number } | null;
+  /** How far the batch's two fleet runs have got while they run: its tests, and its postbuild checks. */
+  readonly fleet?: { readonly tests: FleetProgress | null; readonly build: FleetProgress | null } | null;
 }
 
 export interface AuditRound {

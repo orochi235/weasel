@@ -19,7 +19,10 @@ const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`;
 export const NODE_SEP = ' · ';
 
 export function stepText(step: LaneStepName, s: LaneStep, now: number): string {
-  if (s.state === 'running') return `${s.node ?? ''}${NODE_SEP}${s.since ? minutesSince(s.since, now) : 'running'}`;
+  if (s.state === 'running') {
+    const count = s.total ? `${s.done ?? 0}/${s.total} · ` : '';
+    return `${s.node ?? ''}${NODE_SEP}${count}${s.since ? minutesSince(s.since, now) : 'running'}`;
+  }
   if (s.state === 'failed') return s.why ?? 'failed';
   if (s.state !== 'done') return step === 'patch' ? 'after fix' : 'waiting';
   if (step === 'A' || step === 'B') return `${s.findings ?? 0} found · ${minutesText(s.minutes ?? 0)}`;
