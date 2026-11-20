@@ -531,6 +531,13 @@ comparing pezlie's wall, which pans a 1.1M-cell corpus at 60 fps). Arc 1, render
   upload the projection without that translation, as the 2D batch does (`drawBatch.ts`). Closes when a
   browser test draws a line at 6.4e6 m with the camera 10 m away and its pixels stay put under a 1 mm
   camera move.
+- **(P3) [agent] A true 3D force layout.** A diagram reaches a 3D host only through a `LayoutFrame`, a plane
+  (2026-11-19), so `force` relaxes in two dimensions: `@weasel-js/simulation`'s `SimulationNode` is
+  `{x, y, vx, vy, fx, fy}` (`packages/simulation/src/types.ts:7`) and `packages/diagram/src/force.ts` writes
+  `Vec2` places. The integrator and its forces run over an axis list instead (position, velocity and pin as
+  number arrays), `LayoutAxes` (`packages/diagram/src/layout.ts:118`) names axes by index rather than
+  `'x' | 'y'`, and a frame can answer a box in three dimensions. Closes when `force` relaxes a graph of
+  solids in 3D under kernel3d, with a test that a run over nodes all on z = 0 returns the 2D run's places.
 
 ## Backends (WebGL future)
 
