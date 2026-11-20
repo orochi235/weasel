@@ -28,6 +28,13 @@ describe('layer ops replayed onto a drifted stack', () => {
     expect(ids(s)).toEqual(['main', 'y']);
   });
 
+  it('kit:addLayer throws on a layer id the scene already holds', () => {
+    const s = make();
+    s.addLayer({ id: 'x', name: 'x' });
+    expect(() => s.replay([{ name: 'kit:addLayer', args: { record: userRecord('x'), index: 0 } }])).toThrow(/duplicate layer id "x"/);
+    expect(ids(s)).toEqual(['main', 'x']);
+  });
+
   it('undoing kit:addLayer takes out the layer it added after another moved in front of it', () => {
     const s = make();
     s.addLayer({ id: 'x', name: 'x' });

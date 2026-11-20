@@ -40,7 +40,12 @@ export function registerLayerOps<TData, TLayer extends string, TPose>(
   // does: a replay or a restored history onto a stack in another order then
   // takes out the layer it names, or throws when the scene does not hold it.
   registerKitOp<{ record: UserLayerRecord<TLayer>; index: number }>('kit:addLayer', {
-    apply: (p) => { state.layers.splice(p.index, 0, { ...p.record }); rebuildLayerIndex(); },
+    apply: (p) => {
+      // As `kit:add` refuses a node id it holds, so a diverged replay fails whole.
+      if (state.layers.some((l) => l.id === p.record.id)) throw new Error(`Scene: duplicate layer id "${p.record.id}"`);
+      state.layers.splice(p.index, 0, { ...p.record });
+      rebuildLayerIndex();
+    },
     revert: (p) => { state.layers.splice(requireLayerIndex(p.record.id), 1); rebuildLayerIndex(); },
   });
 
