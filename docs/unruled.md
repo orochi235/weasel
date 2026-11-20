@@ -3016,3 +3016,9 @@ Calls the lanes made without a ruling:
   differs from the URLs another HUD registered `weasel-hud-default` with, since every HUD on a page shares that one
   family. A host wanting another atlas registers it under a family of its own and passes the name. Swapping the
   family to the newest pair with `replace`, under every HUD already drawing it, was the alternative.
+
+## Audit round fifty-three (2026-11-20): pdf
+
+- 2026-11-20 (the fixer's call): once a PDF face has given out every two-byte code, a glyph's further reading (other
+  text, or another width) gets no code, so `writePdf` draws that glyph as an outline rather than as text. Reusing the
+  glyph's first code, as before, copied out the wrong text and moved the pen by the wrong width.
