@@ -212,6 +212,19 @@ describe('createLiveAudioRunner', () => {
     expect(graph.applies.at(-1)).toEqual([{ kind: 'set', id: 'osc', param: 'frequency', value: 220 }]);
   });
 
+  it('leaves out a wire into a port its node lacks, names the stage, and keeps following the rest', () => {
+    const { runner, graph } = setup();
+    const stale = (frequency: number): EffectPipeline => ({
+      ...withGain(frequency),
+      wires: [{ from: { stage: 'osc', port: 'out' }, to: { stage: 'gain', port: 'inn' } }, wire('gain', 'out')],
+    });
+    runner.setPipeline(stale(440));
+    expect(runner.state.run?.stages.gain?.error).toBe('no input port "inn"');
+    expect(graph.applies.flat().some((p) => p.kind === 'connect' && 'node' in p.to && p.to.port === 'inn')).toBe(false);
+    runner.setPipeline(stale(220));
+    expect(graph.applies.at(-1)).toEqual([{ kind: 'set', id: 'osc', param: 'frequency', value: 220 }]);
+  });
+
   it('resets onto a fresh graph holding the current plan, not playing', async () => {
     const { runner, graphs, engine } = setup();
     await runner.play();

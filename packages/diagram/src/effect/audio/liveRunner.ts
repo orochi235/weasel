@@ -4,7 +4,7 @@ import type { EffectPipeline, EffectRun } from '../types';
 import { audioStageNodes, type AudioSources, type AudioStageNodes } from './nodes';
 import { createLivePreviews, errorsRun } from './livePreviews';
 import { diffPlans, type BuildNode } from './patches';
-import { EMPTY_PLAN, livePlan, type LivePlan, type PlanEdge } from './plan';
+import { EMPTY_PLAN, edgeKey, livePlan, type LivePlan, type PlanEdge } from './plan';
 import type { AudioPreview } from './scope';
 
 /** What a live runner last published: its run, and whether it plays. */
@@ -74,12 +74,12 @@ function applySets(graph: AudioGraph, sets: readonly GraphPatch[], failures: Rec
   }
 }
 
-/** `plan` without the nodes in `drop` and the edges touching them. */
-function prune(plan: LivePlan, drop: ReadonlySet<string>): LivePlan {
+/** `plan` without the nodes in `drop`, the edges touching them, and the edges `cut` names by `edgeKey`. */
+function prune(plan: LivePlan, drop: ReadonlySet<string>, cut: ReadonlySet<string>): LivePlan {
   const touches = (e: PlanEdge) => drop.has(e.from) || ('node' in e.to && drop.has(e.to.node));
   return {
     nodes: Object.fromEntries(Object.entries(plan.nodes).filter(([id]) => !drop.has(id))),
-    edges: plan.edges.filter((e) => !touches(e)),
+    edges: plan.edges.filter((e) => !touches(e) && !cut.has(edgeKey(e))),
     errors: plan.errors,
   };
 }
@@ -111,9 +111,13 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
     set({ run: errorsRun(next) });
   };
 
+  /** The input ports of each node in the graph, from the def it was built with. */
+  const ports = new Map<string, ReadonlySet<string>>();
+
   /**
-   * The plan `pipeline` and `sources` give, less any node whose `build` throws, which is put in
-   * `errors` under its stage. The defs built are returned for the patches to use.
+   * The plan `pipeline` and `sources` give, less what cannot go in the graph: a node whose
+   * `build` throws, and an edge into a port its node lacks. Each is put in `errors` under its
+   * stage, and the defs built are returned for the patches to use.
    */
   const buildable = (from: LivePlan, errors: Record<string, string>) => {
     const planned = livePlan(pipeline, nodes, sources);
@@ -129,7 +133,16 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
       }
       return defs.get(id)!;
     });
-    const next = failed.size > 0 ? prune(planned, failed) : planned;
+    const cut = new Set<string>();
+    for (const e of planned.edges) {
+      if (!('node' in e.to) || failed.has(e.to.node) || failed.has(e.from)) continue;
+      const def = defs.get(e.to.node);
+      const has = def !== undefined ? Object.hasOwn(def.inputs, e.to.port) : ports.get(e.to.node)?.has(e.to.port);
+      if (has !== false) continue;
+      cut.add(edgeKey(e));
+      setOwn(errors, e.to.node, `no input port "${e.to.port}"`);
+    }
+    const next = failed.size > 0 || cut.size > 0 ? prune(planned, failed, cut) : planned;
     return { next, defs };
   };
 
@@ -155,6 +168,10 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
     }
     applySets(graph, sets, merged);
     plan = adopted;
+    if (adopted === next) {
+      for (const id of ports.keys()) if (!Object.hasOwn(next.nodes, id)) ports.delete(id);
+      for (const [id, def] of defs) ports.set(id, new Set(Object.keys(def.inputs)));
+    }
     const removed = adopted === next ? structural.flatMap((p) => (p.kind === 'remove' ? [p.id] : [])) : [];
     previews.follow(graph, removed, Object.keys(adopted.nodes));
     publishErrors(merged);
