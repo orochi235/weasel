@@ -33,6 +33,38 @@ describe('alignPlaneSource', () => {
   });
 });
 
+describe('alignPlaneSource over an unbounded box', () => {
+  it('still offers the plane a floor shares with the boxes resting on it, at a finite point', () => {
+    const scene = createScene<{ floor?: boolean }, 'solids', Pose3>({ composition: IDENTITY_POSE_COMPOSITION,
+      systemLayers: [{ id: 'solids' }],
+      initial: [
+        { kind: 'mark' as const, layer: 'solids' as const, pose: pose3({ x: 0, y: 0, z: 0 }), data: { floor: true } },
+        { kind: 'mark' as const, layer: 'solids' as const, pose: pose3({ x: 3, y: 0.5, z: -4 }), data: {} },
+      ],
+    });
+    const world = {
+      scene,
+      viewport: () => ({ camera: createCamera({}), width: 800, height: 600 }),
+      bounds: (node: { data: { floor?: boolean }; pose: Pose3 }) => (node.data.floor
+        ? { min: { x: -Infinity, y: -0.1, z: -Infinity }, max: { x: Infinity, y: 0, z: Infinity } }
+        : { min: { x: 2.5, y: 0, z: -4.5 }, max: { x: 3.5, y: 1, z: -3.5 } }),
+    };
+    const probe = { id: 'box.min', at: { x: 0.2, y: 0.02, z: 1 }, role: 'box' as const };
+    const q: SnapCollect<Vec3> = {
+      gesture: 'move', probes: [probe], delta0: ZERO, exclude: [], reachWorld: () => 0.1, reachPx: 8,
+    };
+    const found = [...alignPlaneSource(world).collect(q)];
+    for (const c of found) {
+      expect([c.locus.at.x, c.locus.at.y, c.locus.at.z].every(Number.isFinite)).toBe(true);
+    }
+    const onFloor = found.filter((c) => c.locus.at.y === 0 && c.locus.dirs.every((d) => d.y === 0));
+    expect(onFloor).toHaveLength(1);
+    const lines = (onFloor[0]!.mark as (delta: Vec3) => SnapMark<Vec3>[])(ZERO);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatchObject({ kind: 'line', to: { x: 3, y: 0, z: -4 } });
+  });
+});
+
 describe('groundGridSource', () => {
   const probe = { id: 'pointer', at: { x: 0.3, y: 0, z: -1.7 }, role: 'pointer' as const };
   const q: SnapCollect<Vec3> = {

@@ -197,7 +197,7 @@ describe('camera.pinchDolly', () => {
     expect(camera().distance).toBeCloseTo(5);
   });
 
-  it('reads the centroid from the pane origin, for a pane offset on its canvas', () => {
+  it('reads the centroid as view-local, untouched by the pane origin the wheel subtracts', () => {
     const pinch = (extra: Partial<Camera3dDep>, centroid: { x: number; y: number }) => {
       const { deps, camera } = depsFor({ distance: 10 }, extra);
       const handle = (cameraPinchDollyAction.invoker as OngoingInvoker).start(
@@ -209,7 +209,7 @@ describe('camera.pinchDolly', () => {
     };
     const plain = pinch({}, { x: 700, y: 100 });
     expect(plain.target.x).toBeGreaterThan(0);
-    expect(pinch({ origin: () => ({ x: 300, y: 50 }) }, { x: 1000, y: 150 })).toEqual(plain);
+    expect(pinch({ origin: () => ({ x: 300, y: 50 }) }, { x: 700, y: 100 })).toEqual(plain);
   });
 });
 

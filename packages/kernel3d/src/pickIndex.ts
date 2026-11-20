@@ -97,10 +97,16 @@ class WorldIndex<TData, TLayer extends string> implements WorldPickIndex {
     const boxOf = worldBoxes(this.world, 'shown');
     return {
       dim: 3,
-      changesSince: (token) => scene.changesSince(token),
+      changesSince: (token) => {
+        const changed = scene.changesSince(token);
+        // The tree boxes every node afresh after this answer.
+        if (token === undefined || changed.ids === 'unknown') this.exact.clear();
+        return changed;
+      },
       childrenOf: (id) => (id === null ? scene.roots : scene.get(id as NodeId)?.children ?? []),
       parentOf: (id) => {
         const node = scene.get(id as NodeId);
+        if (node === undefined) this.exact.delete(id);
         return node === undefined ? undefined : node.parent;
       },
       ownBox: (id, out, at) => {

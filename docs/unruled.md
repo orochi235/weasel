@@ -607,6 +607,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   entries are not finite numbers, whose `screen` is not nine of them, or whose `format`, `background`,
   `annotations`, or `overlay` has the wrong type, with an error naming the field. Fields it does not know
   pass through.
+- 2026-11-20 (my call, audit round 50): `camera.pinchDolly` anchors at the multitouch centroid as routing reports
+  it, view-local, and no longer subtracts `Camera3dDep.origin`, which now converts only a wheel's canvas-local point.
+  A host drawing its 3D pane as a sub-rect of a plain canvas, with no `<CanvasView>`, gets a pinch anchored off by
+  that origin; whether the dep should take a second offset for that case is unsettled.
 - 2026-11-11 (my call, kernel3d second property pass): `projectPoint` gives `null` for a pane with no area, and
   `projectAabbToScreen` for a rect with no area, as `rayAt` names no ray there; both give `null` for a camera whose
   near plane is its far one, where every clip depth is `NaN`.

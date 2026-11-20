@@ -105,7 +105,8 @@ export interface AreaSelect3dOptions {
 }
 
 /** Marquee: the nodes whose projected box the screen rectangle touches, in render
- *  order, less those on a layer the view the marquee was drawn in does not paint. */
+ *  order, less those on a layer the view the marquee was drawn in does not paint.
+ *  It casts through `viewId`'s camera when given, else through the asking view's. */
 export function createAreaSelect3dDep<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
   selection: { get(): readonly NodeId[]; set(ids: NodeId[]): void },
@@ -121,7 +122,8 @@ export function createAreaSelect3dDep<TData, TLayer extends string>(
   };
   return {
     hitTestArea: (bounds, view) => {
-      const hits = worldPickIndex(world).inScreenRect(viewportOf(world, viewId), bounds, layerGateOf(view));
+      const vp = viewportOf(world, viewId !== undefined ? viewId : view?.viewId);
+      const hits = worldPickIndex(world).inScreenRect(vp, bounds, layerGateOf(view));
       return scope ? hits.filter((id) => scope.isPointerInteractive(id)) : hits;
     },
     ...(entered ? { targetOf: (id: string) => pressTarget(tree, id, entered.get()) } : {}),

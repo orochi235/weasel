@@ -1,8 +1,9 @@
 /**
  * The line pass under a perspective camera, read back pixel by pixel: a trim
  * leaves only its window, the head is wider than the shaft at the window's
- * front, and neither an end behind the eye nor a head longer than its segment
- * throws a triangle across the screen.
+ * front, a segment with an end behind the eye is clipped at the near plane,
+ * and neither that nor a head longer than its segment throws a triangle
+ * across the screen.
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { lengthTable } from '@weasel-js/geom';
@@ -81,11 +82,24 @@ describe('the line pass', () => {
     expect(inked(px, offset(mid, along, 0, 1))).toBe(true);
   });
 
-  it('drops a segment with an end behind the eye rather than drawing it across the screen', () => {
+  it('draws a segment running through the eye as no more than a dot, never across the screen', () => {
     const eye = cameraEye(camera);
     const behind = { x: eye.x * 1.5, y: eye.y * 1.5, z: eye.z * 1.5 };
     const px = draw([{ runs: [{ points: [{ x: 0, y: 0, z: 0 }, behind] }], color: [1, 1, 1, 1], width: 6 }]);
-    expect(painted(px)).toEqual([]);
+    const center = screen({ x: 0, y: 0, z: 0 });
+    expect(painted(px).filter((p) => Math.hypot(p.x - center.x, p.y - center.y) > 8)).toEqual([]);
+  });
+
+  it('draws the stretch of a segment in front of the eye when its other end is behind it', () => {
+    const eye = cameraEye(camera);
+    const from: Vec3 = { x: 0, y: 0.6, z: 0 };
+    const to: Vec3 = { x: eye.x * 1.5, y: eye.y * 1.5 + 0.6, z: eye.z * 1.5 };
+    const px = draw([{ runs: [{ points: [from, to] }], color: [1, 1, 1, 1], width: 6 }]);
+    const along = (f: number): Vec3 => ({ x: from.x + (to.x - from.x) * f, y: from.y + (to.y - from.y) * f, z: from.z + (to.z - from.z) * f });
+    const seen = [0.1, 0.25, 0.4].map((f) => projectPoint(along(f), viewport))
+      .filter((p): p is P => p !== null && p.x >= 0 && p.x < W && p.y >= 0 && p.y < H);
+    expect(seen.length).toBeGreaterThan(0);
+    for (const p of seen) expect(inked(px, p)).toBe(true);
   });
 
   it('sets a head longer than its segment back along that segment, inside the line’s own reach', () => {

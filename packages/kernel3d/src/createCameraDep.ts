@@ -15,7 +15,8 @@ export interface CameraDepOptions {
   /** Where `camera.home` returns it. Omitted, `camera.home` does nothing. */
   home?: () => Camera3d;
   /** Where the pane's top-left sits on the canvas, as `Camera3dDep.origin`: the space a wheel's anchor arrives in,
-   *  which is not always the space the viewport's `originX`/`originY` are in. Default the canvas origin. */
+   *  which is not always the space the viewport's `originX`/`originY` are in. A pinch's centroid arrives view-local
+   *  and does not read it. Default the canvas origin. */
   origin?: () => { x: number; y: number };
 }
 

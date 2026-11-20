@@ -121,7 +121,7 @@ export function alignPlaneSource<TData, TLayer extends string>(world: World3d<TD
             if (Math.abs(p.at[axis] - value) > r) continue;
             yield {
               probe: p.id,
-              locus: { at: ends[0]!, dirs: ACROSS[axis] },
+              locus: { at: ends[0] ?? { ...p.at, [axis]: value }, dirs: ACROSS[axis] },
               mark: (delta: Vec3): SnapMark<Vec3>[] => {
                 const from = add(sub(p.at, q.delta0), delta);
                 return ends.map((to) => ({ kind: 'line', from, to }));
@@ -134,8 +134,9 @@ export function alignPlaneSource<TData, TLayer extends string>(world: World3d<TD
   };
 }
 
-/** Per axis, each plane value the boxes have a side or center on, and the
- *  point on it at each such box's center. */
+/** Per axis, each finite plane value the boxes have a side or center on, and
+ *  the point on it at each such box's center, where that point is finite: an
+ *  unbounded box offers its finite sides with no point to mark. */
 function planesOf(boxes: readonly Aabb[]): Map<Axis, Map<number, Vec3[]>> {
   const out = new Map<Axis, Map<number, Vec3[]>>(AXES.map((a) => [a, new Map()]));
   for (const box of boxes) {
@@ -143,10 +144,11 @@ function planesOf(boxes: readonly Aabb[]): Map<Axis, Map<number, Vec3[]>> {
     for (const axis of AXES) {
       const planes = out.get(axis)!;
       for (const value of new Set([box.min[axis], center[axis], box.max[axis]])) {
+        if (!Number.isFinite(value)) continue;
         const on = { ...center, [axis]: value };
-        const ends = planes.get(value);
-        if (ends) ends.push(on);
-        else planes.set(value, [on]);
+        let ends = planes.get(value);
+        if (!ends) planes.set(value, (ends = []));
+        if (Number.isFinite(on.x) && Number.isFinite(on.y) && Number.isFinite(on.z)) ends.push(on);
       }
     }
   }

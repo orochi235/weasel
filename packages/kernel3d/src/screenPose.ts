@@ -34,10 +34,12 @@ function onPlane(
   return castOntoPlane(vp, point, plane.normal, plane.offset);
 }
 
-/** `pose` moved by `delta`, kept at its own height along `upAxis`. */
-function movedOnLevel(pose: Pose3, delta: Vec3, upAxis: Axis): Pose3 {
-  const position = { ...add(pose.position, delta), [upAxis]: pose.position[upAxis] };
-  return { ...pose, position };
+/** `pose` moved by `delta`, which lies in its level plane. Where `up` is `upAxis` itself, that axis is
+ *  kept exactly rather than through the rounding in `delta`; a tilted `up` has no one axis to keep. */
+function movedOnLevel(pose: Pose3, delta: Vec3, up: Vec3, upAxis: Axis): Pose3 {
+  const moved = add(pose.position, delta);
+  const onAxis = (['x', 'y', 'z'] as const).every((a) => a === upAxis || up[a] === 0);
+  return { ...pose, position: onAxis ? { ...moved, [upAxis]: pose.position[upAxis] } : moved };
 }
 
 /** `pose` dragged `d` on screen from the middle of `box`, its screen box, across the plane through it normal to `up`. */
@@ -49,7 +51,7 @@ export function draggedOnLevel(
   const level = { normal: up, offset: dot(up, pose.position) };
   const before = onPlane(vp, level, from);
   const after = onPlane(vp, level, { x: from.x + d.x, y: from.y + d.y });
-  return before && after ? movedOnLevel(pose, sub(after, before), upAxis) : pose;
+  return before && after ? movedOnLevel(pose, sub(after, before), up, upAxis) : pose;
 }
 
 /**

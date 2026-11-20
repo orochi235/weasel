@@ -194,6 +194,19 @@ describe('createAreaSelect3dDep', () => {
     expect(area.hitTestArea(all, { layerIsPainted: () => true })).toHaveLength(3);
   });
 
+  it('casts through the camera of the view the marquee was drawn in', () => {
+    const scene = createTestScene();
+    // 'side' looks away from the solids, so nothing is under any rect drawn in it.
+    const away = viewport({ camera: createCamera({ distance: 12, pitch: 0.4, yaw: Math.PI, target: { x: 0, y: 0.5, z: 40 } }) });
+    const source: ViewportSource = (id) => (id === 'side' ? away : viewport());
+    const area = createAreaSelect3dDep(world(scene, source), { get: () => [], set: () => {} });
+    const all = { x: 0, y: 0, width: WIDTH, height: HEIGHT };
+    expect(area.hitTestArea(all, { viewId: null })).toHaveLength(3);
+    expect(area.hitTestArea(all, { viewId: 'side' })).toEqual([]);
+    const own = createAreaSelect3dDep(world(scene, source), { get: () => [], set: () => {} }, null);
+    expect(own.hitTestArea(all, { viewId: 'side' })).toHaveLength(3);
+  });
+
   it('reads and writes the selection it was handed', () => {
     const scene = createTestScene();
     let held: readonly NodeId[] = ['a' as NodeId];
