@@ -80,7 +80,9 @@ export function useScheduledFrame(args: ScheduledFrameArgs): { scheduleRaf: () =
   const cancelRaf = useCallback(() => {
     leaveDue();
     if (rafRef.current === null) return;
-    cancelRef.current?.(rafRef.current);
+    // Called detached: as `cancelRef.current(…)` its `this` is the ref, and the browser's cancelAnimationFrame throws on that.
+    const cancel = cancelRef.current;
+    cancel?.(rafRef.current);
     rafRef.current = null;
   }, [leaveDue]);
 
