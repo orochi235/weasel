@@ -109,6 +109,20 @@ describe('runCreateOutlines', () => {
     warn.mockRestore();
   });
 
+  it('converts the operands a host supplies, and hands the result back to them', async () => {
+    const { adapter, applyOps } = makeAdapter({ g: lateOutline(), h: lateOutline() }, ['h']);
+    adapter.createPathNode = (_path, source) => ({ id: `outlined-${source}` });
+    let held = [asNodeId('g')];
+    const operands = { get: () => held, set: (ids: readonly string[]) => { held = ids.map(asNodeId); } };
+    let converted = false;
+    adapter.getNode = (id) => (id === 'g' && converted ? undefined : { id });
+    applyOps.mockImplementation(() => { converted = true; });
+    (createOutlinesAction.invoker as ImmediateInvoker).run(stubDeps({ operands, createOutlinesAdapter: adapter }), {});
+    await settle();
+    expect(applyOps).toHaveBeenCalledTimes(1);
+    expect(held).toEqual(['outlined-g']);
+  });
+
   it('warns rather than rejecting when a face fails to load', async () => {
     const notices = { warn: vi.fn() };
     const outline = lateOutline();

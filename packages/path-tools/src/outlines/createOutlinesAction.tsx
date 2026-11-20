@@ -1,6 +1,6 @@
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason, BETWEEN_GESTURES } from '@weasel-js/routing';
-import { warnOutlines, type NodeId, type NodeOutline, type NodeOutlineError, type NoticesDep } from '@weasel-js/core';
+import { warnOutlines, type NodeId, type NodeOutline, type NodeOutlineError, type NoticesDep, type OperandsDep } from '@weasel-js/core';
 import { applyCreateOutlines, type CreateOutlinesAdapter, type CreateOutlinesResult } from './createOutlines';
 import { icon } from '../icons.gen';
 
@@ -36,6 +36,21 @@ export async function withOutlines<R extends { kind: string } | OutlinesFailure>
   return result;
 }
 
+/**
+ * Hand what a conversion left back to `operands`, where they are not the
+ * selection the conversion already updated: each converted id that is gone
+ * gives way to the conversion's results.
+ */
+export function handBackOperands(
+  operands: OperandsDep | undefined, adapter: CreateOutlinesAdapter, result: { kind: string; resultIds?: readonly string[] },
+): void {
+  if (!operands || result.kind !== 'applied' || !result.resultIds) return;
+  const now = operands.get();
+  const kept = now.filter((id) => adapter.getNode(id) != null);
+  if (kept.length === now.length) return;
+  operands.set([...kept, ...(result.resultIds as NodeId[]).filter((id) => !kept.includes(id))]);
+}
+
 /** {@link applyCreateOutlines} through {@link withOutlines}. */
 export function runCreateOutlines(
   adapter: CreateOutlinesAdapter, notices?: NoticesDep, ids: readonly NodeId[] = adapter.getSelection() as readonly NodeId[],
@@ -44,7 +59,7 @@ export function runCreateOutlines(
 }
 
 /**
- * Static descriptor for Create Outlines: replace the selected nodes that have
+ * Static descriptor for Create Outlines: replace the operands that have
  * an outline (text's glyphs) with path nodes carrying it. Reads the
  * `createOutlinesAdapter` dep, published with `useCreateOutlinesAdapter`.
  */
@@ -61,7 +76,8 @@ export const createOutlinesAction: Action = {
     timing: 'immediate',
     run: (deps) => {
       const adapter = deps.createOutlinesAdapter;
-      if (adapter) void runCreateOutlines(adapter, deps.notices);
+      if (!adapter) return;
+      void runCreateOutlines(adapter, deps.notices, deps.operands?.get()).then((r) => handBackOperands(deps.operands, adapter, r));
     },
   } satisfies ImmediateInvoker,
   enabled: (deps) => {

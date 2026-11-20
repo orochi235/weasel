@@ -2,13 +2,13 @@ import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { hasStroke } from '@weasel-js/core';
 import { applyOutlineStroke } from './outlineStroke';
-import { withOutlines } from './createOutlinesAction';
+import { handBackOperands, withOutlines } from './createOutlinesAction';
 import type { NodeId } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 import * as groups from '@weasel-js/editing/groups';
 
 /**
- * Static descriptor for Outline Stroke: replace each selected
+ * Static descriptor for Outline Stroke: replace each operand that is a
  * stroked path, or stroked outline, with the region its stroke covers, filled in
  * the stroke's paint. Reads the `createOutlinesAdapter` dep, published with
  * `useCreateOutlinesAdapter`, and needs its `getWorldPath` and `getPaint` for paths.
@@ -26,8 +26,9 @@ export const outlineStrokeAction: Action = {
       const adapter = deps.createOutlinesAdapter;
       if (!adapter) return;
       const scale = deps.view?.get().scale;
-      const ids = adapter.getSelection() as readonly NodeId[];
-      void withOutlines(adapter, ids, (at) => applyOutlineStroke(adapter, scale ? { scale } : {}, at), 'outlineStroke', deps.notices);
+      const ids = deps.operands?.get() ?? (adapter.getSelection() as readonly NodeId[]);
+      void withOutlines(adapter, ids, (at) => applyOutlineStroke(adapter, scale ? { scale } : {}, at), 'outlineStroke', deps.notices)
+        .then((r) => handBackOperands(deps.operands, adapter, r));
     },
   } satisfies ImmediateInvoker,
   enabled: (deps) => {
