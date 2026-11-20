@@ -46,4 +46,16 @@ describe('<StateView> overlays', () => {
     await flip('handles', true);
     expect(page.on()).toEqual([...DEBUG_FEATURES]);
   });
+
+  it('sends each step of a sweep whole, though the page has not answered the one before', async () => {
+    const page = fakePage([...DEBUG_FEATURES]);
+    const request = page.client.request.bind(page.client);
+    page.client.request = ((root: string, m: { type: string }) => (m.type === 'get-state' && page.sent.length > 0
+      ? new Promise(() => {})
+      : request(root, m as never))) as typeof page.client.request;
+    renderWithIcons(<StateView client={page.client} rootId="r" />);
+    await flip(DEBUG_FEATURES[0], true);
+    await flip(DEBUG_FEATURES[1], true);
+    expect(page.on()).toEqual([DEBUG_FEATURES[1]]);
+  });
 });
