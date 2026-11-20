@@ -249,4 +249,11 @@ describe('auto on a node', () => {
     expect(() => n.initial(5)).toThrow(/takes `AUTO`/);
     expect(() => n.initial(Symbol('auto'))).toThrow(/takes `AUTO`/);
   });
+
+  it("refuses a curve's inverted or non-finite range, as a number's", () => {
+    expect(() => f.curve([0, 0, 1, 1]).range(1, 0)).toThrow(
+      /f\.curve\(\)\.range\(\) leaves min 1 above max 0/,
+    );
+    expect(() => f.curve([0, 0, 1, 1]).range(0, Number.NaN)).toThrow(/finite/);
+  });
 });

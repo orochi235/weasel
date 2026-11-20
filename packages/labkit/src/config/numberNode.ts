@@ -108,20 +108,23 @@ export class NumberNode<T extends number | undefined = number> extends BaseNode<
 }
 
 /** `min` and `max` as given, after throwing on a bound that is not a finite number or a `min` above `max`. */
-function checkedBounds<Min extends number | undefined, Max extends number | undefined>(
+export function checkedBounds<Min extends number | undefined, Max extends number | undefined>(
   call: 'range' | 'min' | 'max',
   min: Min,
   max: Max,
+  builder = 'number',
 ): { min: Min; max: Max } {
   for (const bound of [min, max]) {
     if (bound !== undefined && !Number.isFinite(bound)) {
       throw new Error(
-        `labkit: f.number().${call}() was given ${String(bound)}; a bound must be a finite number.`,
+        `labkit: f.${builder}().${call}() was given ${String(bound)}; a bound must be a finite number.`,
       );
     }
   }
   if (min !== undefined && max !== undefined && min > max) {
-    throw new Error(`labkit: f.number().${call}() leaves min ${min} above max ${max}; swap them.`);
+    throw new Error(
+      `labkit: f.${builder}().${call}() leaves min ${min} above max ${max}; swap them.`,
+    );
   }
   return { min, max };
 }
