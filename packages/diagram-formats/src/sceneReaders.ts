@@ -29,7 +29,7 @@ export interface ReadScene {
 
 type Paint = { paint?: { color?: unknown }; width?: unknown; dash?: unknown; trim?: unknown; markerStart?: unknown; markerEnd?: unknown };
 type Data = {
-  diagram?: Record<string, unknown>; fill?: Paint; stroke?: Paint; text?: unknown; bodyRow?: unknown; bodyField?: unknown; bodyAside?: unknown; style?: { fontSize?: unknown };
+  diagram?: Record<string, unknown>; image?: unknown; fill?: Paint; stroke?: Paint; text?: unknown; bodyRow?: unknown; bodyField?: unknown; bodyAside?: unknown; style?: { fontSize?: unknown };
 };
 
 const ROUTERS: readonly DiagramRouter[] = ['straight', 'bezier', 'orthogonal', 'avoid'];
@@ -74,6 +74,54 @@ function withDividers(text: readonly { index: number; row: Row }[], dividers: re
   return all.sort((a, b) => a.index - b.index).map((e) => e.row);
 }
 
+type SlotRow = Extract<Row, { kind: 'slot' }>;
+
+/**
+ * The slot rows of a body: each a child drawing an image or a framed slot, and where `body` records its rows' heights,
+ * each row no text, header or divider fills. A slot child carries no row number, so it takes the first free place that
+ * lies between the text rows above and below it, one of its height first. Its height is the recorded one, else its own;
+ * its `width` is kept when it is narrower than the text rows.
+ */
+function slotRows(
+  scene: ReadScene, node: ReadNode, body: BodyLayout | undefined, texts: readonly ReadNode[], header: boolean,
+): { index: number; row: Row }[] {
+  const heights = body?.heights;
+  const located = texts.filter((t) => dataOf(t).bodyAside !== true).map((t) => ({ index: dataOf(t).bodyRow as number, y: t.pose.y }));
+  const taken = new Set([...located.map((t) => t.index), ...(body?.dividers ?? []).map((d) => d.index), ...(header ? [0] : [])]);
+  const rows = new Map<number, SlotRow>();
+  heights?.forEach((height, i) => { if (!taken.has(i)) rows.set(i, { kind: 'slot', height }); });
+  const textWidth = texts.find((t) => dataOf(t).bodyAside !== true)?.pose.width;
+  const prefix = `${node.id}/`;
+  const children = scene.childrenOf(node.id as never).map((id) => scene.get(id as never)!)
+    // A slot draws an image, or for one with an id, a frame mark; a node's own marks are named `<id>/mark:<i>`.
+    .filter((c) => typeof dataOf(c).text !== 'string' && !c.id.startsWith(`${prefix}mark:`)
+      && (dataOf(c).image !== undefined || dataOf(c).diagram?.mark !== undefined))
+    .sort((p, q) => p.pose.y - q.pose.y);
+  const last = Math.max(-1, ...taken, ...(heights ?? []).map((_, i) => i));
+  let next = 0;
+  for (const child of children) {
+    const fits = (i: number) => !taken.has(i) && located.every((t) => (t.index < i ? t.y < child.pose.y : t.y > child.pose.y));
+    const open: number[] = [];
+    for (let i = next; i <= last + children.length; i++) {
+      if (heights !== undefined && i >= heights.length) break;
+      if (fits(i)) open.push(i);
+    }
+    const at = open.find((i) => heights === undefined || Math.abs(heights[i]! - child.pose.height) < 0.5) ?? open[0];
+    if (at === undefined) continue;
+    next = at + 1;
+    taken.add(at);
+    const image = dataOf(child).image as SlotRow['image'] | undefined;
+    const rowId = child.id.startsWith(prefix) ? child.id.slice(prefix.length) : '';
+    rows.set(at, {
+      kind: 'slot', height: heights?.[at] ?? child.pose.height,
+      ...(textWidth !== undefined && child.pose.width < textWidth - 0.5 ? { width: child.pose.width } : {}),
+      ...(rowId !== '' && !/^\d+$/.test(rowId) ? { id: rowId } : {}),
+      ...(image !== undefined ? { image: { src: image.src, ...(image.opacity !== undefined ? { opacity: image.opacity } : {}) } } : {}),
+    });
+  }
+  return [...rows].map(([index, row]) => ({ index, row }));
+}
+
 /** A text row as built: a `field` while its text still starts with its label, else a `label`. */
 function textRow(data: Data, ownSize: boolean): Row {
   const text = data.text as string;
@@ -113,14 +161,15 @@ export function readShape(scene: ReadScene, node: ReadNode, page: Vec2, theme: D
   const body = trait.body as BodyLayout | undefined;
   const dividers = body?.dividers ?? [];
   const fields = rows.some((r) => typeof dataOf(r).bodyField === 'string');
+  const slots = slotRows(scene, node, body, texts, band !== undefined && rows.some(isHeader));
   return {
     id: node.id,
     outline: trait.outline as DataNode['outline'],
-    ...(ownSize || fields || dividers.length > 0 || band !== undefined
-      ? { rows: withDividers(rows.map((r) => ({
+    ...(ownSize || fields || dividers.length > 0 || band !== undefined || slots.length > 0
+      ? { rows: withDividers([...rows.map((r) => ({
           index: dataOf(r).bodyRow as number,
           row: isHeader(r) ? headerRow(dataOf(r), band!, aside === undefined ? undefined : textOf(scene, aside.id), ownSize) : textRow(dataOf(r), ownSize),
-        })), dividers) }
+        })), ...slots], dividers) }
       : { lines: rows.map((r) => dataOf(r).text as string) }),
     at: moved(pose, page),
     width: pose.width,
