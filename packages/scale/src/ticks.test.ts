@@ -104,6 +104,9 @@ describe('formatTick', () => {
   it('writes a value of 1e21 or more without an exponent, as a smaller one is', () => {
     expect(formatTick(1e21, { decimals: 1, step: 1e20 })).toBe('1000000000000000000000.0');
     expect(formatTick(-2e21, { decimals: 0, step: 1e21 })).toBe('-2000000000000000000000');
+    expect(formatTick(1e23, { decimals: 0, step: 1e22 })).toBe('100000000000000000000000');
+    expect(formatTick(-1.5e25, { decimals: 0, step: 1e24 })).toBe('-15000000000000000000000000');
+    expect(linearScale({ domain: [0, 1e23], range: [0, 100] }).tickFormat()(1e23)).toBe('100000000000000000000000');
   });
 
   it('never prints a negative zero', () => {
