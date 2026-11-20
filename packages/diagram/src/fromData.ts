@@ -64,9 +64,9 @@ export { edgeIdOf };
 function labelRoomOf(e: DataEdge, opts: DiagramSceneOptions, font: { fontFamily: string; fontSize: number },
   measure: MeasureRowText): EdgeLabelRoom | null {
   if (!e.label || e.waypoints !== undefined) return null;
-  if (e.labelPlacement !== undefined && !labelFollowsLayout(e.labelPlacement.at)) return null;
+  const { at, offset } = e.labelPlacement ?? opts.labelPlacement ?? LABEL_PLACEMENT;
+  if (!labelFollowsLayout(at)) return null;
   const style = labelStyleOf(font);
-  const offset = (e.labelPlacement ?? opts.labelPlacement ?? LABEL_PLACEMENT).offset;
   return { ...labelSize(e.label, style, measure), ...(offset !== undefined ? { offset } : {}) };
 }
 

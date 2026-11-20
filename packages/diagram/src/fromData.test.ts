@@ -365,3 +365,16 @@ describe('diagramScene under a theme', () => {
     expect(byId(diagramScene(data)).get('a')!.fill!.paint.color).toBe(DEFAULT_NODE_STYLE.fill);
   });
 });
+
+describe('diagramScene label room', () => {
+  it('asks layout for no label room when the options station labels at an end', () => {
+    const data = (labelPlacement?: DiagramLabel): DiagramData => ({
+      nodes: DATA.nodes,
+      edges: DATA.edges.map((e) => ({ ...e, label: 'a rather long label', ...(labelPlacement ? { labelPlacement } : {}) })),
+    });
+    const poses = (specs: ReturnType<typeof diagramScene>) => containers(specs).map((s) => s.pose);
+    const perEdge = poses(diagramScene(data({ at: 'start' })));
+    expect(poses(diagramScene(data(), { labelPlacement: { at: 'start' } }))).toEqual(perEdge);
+    expect(poses(diagramScene(data()))).not.toEqual(perEdge);
+  });
+});
