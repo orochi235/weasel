@@ -86,6 +86,10 @@ const autoEnrolledFamilies = new Set<string>();
 /** The calls holding each explicitly registered family, one token per call. */
 const canvasHolds = new Map<string, Set<object>>();
 let faces = new Map<string, Face>();
+/** How many faces the tier keeps measured. Past it the oldest is dropped, as
+ *  `unregisterCanvasFont` drops one, so a weight tween or a font field typed
+ *  into cannot grow the map, and the remeasure on every font load, without end. */
+export const MAX_DYNAMIC_FACES = 256;
 let rasterizer: GlyphRasterizer | null = null;
 /** Set once building the default rasterizer has failed: there is no canvas here. */
 let noCanvas = false;
@@ -307,9 +311,20 @@ export function getDynamicFace(
     },
   };
   measureFace(face);
+  if (faces.size >= MAX_DYNAMIC_FACES) dropOldestFace();
   faces.set(key, face);
   stopWatchingLoads ??= watchFontLoads(refreshFamilies);
   return face;
+}
+
+function dropOldestFace(): void {
+  const [key, oldest] = faces.entries().next().value!;
+  faces.delete(key);
+  const dropped = new Set<BmFontChar>();
+  collectGlyphs(oldest, dropped);
+  dropBakes(dropped);
+  // Text still holding the face lays out again, and asks for one afresh.
+  notifyGlyphReady();
 }
 
 /** Read `face`'s metrics off the canvas, and forget the glyphs measured before. */

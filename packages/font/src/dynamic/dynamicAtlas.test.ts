@@ -3,7 +3,7 @@ import {
   registerCanvasFont, isCanvasFont, unregisterCanvasFont, getDynamicFace,
   autoEnrollCanvasFont, listCanvasFonts,
   _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
-  PAGE_SIZE, _getPagesForTests,
+  PAGE_SIZE, MAX_DYNAMIC_FACES, _getPagesForTests,
   resetBakeBudget, syncDynamicPageTexture,
 } from './dynamicAtlas';
 import { subscribeGlyphReady } from '../glyphReady';
@@ -346,6 +346,15 @@ describe('full pages', () => {
     vi.runAllTimers();
     expect(face.font.charMap.size).toBe(2);
     expect(warn).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('how many faces it keeps', () => {
+  it('drops the oldest face past its cap, so fractional weights cannot grow it without end', () => {
+    const first = getDynamicFace('Tween', 400, 'normal');
+    for (let i = 1; i <= MAX_DYNAMIC_FACES; i++) getDynamicFace('Tween', 400 + i / 100, 'normal');
+    expect(getDynamicFace('Tween', 401, 'normal')).toBe(getDynamicFace('Tween', 401, 'normal'));
+    expect(getDynamicFace('Tween', 400, 'normal')).not.toBe(first);
   });
 });
 
