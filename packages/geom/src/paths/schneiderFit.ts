@@ -39,7 +39,8 @@ export function schneiderFit(
     return b.build();
   }
 
-  fitRecursive(samples, errorTolerance, b);
+  const n = samples.length;
+  fitRecursive(samples, errorTolerance, b, leaving(samples, 0, 1), leaving(samples, n - 1, -1));
   return b.build();
 }
 
@@ -47,24 +48,41 @@ function fitRecursive(
   samples: ReadonlyArray<Point>,
   errorTolerance: number,
   b: PathBuilder,
+  tStart: Point,
+  tEnd: Point,
 ): void {
-  if (samples.length === 2) {
-    const fit = fitOneCubic(samples);
-    b.curveTo(fit.cp1.x, fit.cp1.y, fit.cp2.x, fit.cp2.y, fit.end.x, fit.end.y);
-    return;
-  }
-  const fit = fitOneCubic(samples);
+  const fit = fitWithTangents(samples, tStart, tEnd, 4);
   const { worstIndex, worstError } = measureError(samples, fit);
-  if (worstError <= errorTolerance * errorTolerance) {
+  if (samples.length === 2 || worstError <= errorTolerance * errorTolerance) {
     b.curveTo(fit.cp1.x, fit.cp1.y, fit.cp2.x, fit.cp2.y, fit.end.x, fit.end.y);
     return;
   }
-  // Split. Both halves include the split sample so endpoints meet.
-  const left = samples.slice(0, worstIndex + 1);
-  const right = samples.slice(worstIndex);
-  fitRecursive(left, errorTolerance, b);
-  fitRecursive(right, errorTolerance, b);
+  // Split. Both halves include the split sample so endpoints meet, and share
+  // the tangent through it so the joint stays smooth.
+  const center = centerTangent(samples, worstIndex);
+  fitRecursive(samples.slice(0, worstIndex + 1), errorTolerance, b, tStart, neg(center));
+  fitRecursive(samples.slice(worstIndex), errorTolerance, b, center, tEnd);
 }
+
+/** The unit direction from sample `i` toward the first sample past it, stepping
+ *  by `step`, that sits somewhere else; zero when none does. */
+function leaving(samples: ReadonlyArray<Point>, i: number, step: 1 | -1): Point {
+  for (let k = i + step; k >= 0 && k < samples.length; k += step) {
+    const d = unit(sub(samples[k], samples[i]));
+    if (d.x !== 0 || d.y !== 0) return d;
+  }
+  return { x: 0, y: 0 };
+}
+
+/** The tangent through interior sample `w`: along its two neighbors' chord. */
+function centerTangent(samples: ReadonlyArray<Point>, w: number): Point {
+  const c = unit(sub(samples[w + 1], samples[w - 1]));
+  if (c.x !== 0 || c.y !== 0) return c;
+  const f = leaving(samples, w, 1);
+  return f.x !== 0 || f.y !== 0 ? f : neg(leaving(samples, w, -1));
+}
+
+const neg = (v: Point): Point => ({ x: -v.x, y: -v.y });
 
 function measureError(
   samples: ReadonlyArray<Point>,
@@ -92,16 +110,6 @@ interface CubicFit {
   end: Point;
   /** The curve parameter each sample was fitted at: where its error is measured. */
   ts: ReadonlyArray<number>;
-}
-
-function fitOneCubic(samples: ReadonlyArray<Point>): CubicFit {
-  const n = samples.length;
-  return fitWithTangents(
-    samples,
-    unit(sub(samples[1], samples[0])),
-    unit(sub(samples[n - 2], samples[n - 1])),
-    4,
-  );
 }
 
 /**
