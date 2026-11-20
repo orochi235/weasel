@@ -75,8 +75,10 @@
   text-overflow: ellipsis;
 }
 
-/* The steps view stacks A over B in one row, so its rows are tall enough for two stripes of small text. */
-.lanes[data-mode='steps'] { --span-strip-height: 28px; }
+/* The steps view stacks A over B in one row, and the all-areas row its two fleet runs, so those rows are tall enough
+   for two stripes of small text. */
+.lanes[data-mode='steps'],
+.lanes .shared { --span-strip-height: 28px; }
 
 .lanes {
   --span-strip-height: 18px;
@@ -87,6 +89,8 @@
   min-width: 0;
   margin-top: var(--wzl-space-2);
 }
+
+.lanesHit [role='listitem'] { cursor: pointer; }
 
 /* An area's name: a plain label, the strip beside it carrying the phase. */
 .name {
