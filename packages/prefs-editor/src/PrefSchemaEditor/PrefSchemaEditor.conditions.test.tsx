@@ -52,7 +52,7 @@ describe('PrefSchemaEditor: the conditions a node is shown and enabled by', () =
   it('sets a pref\'s from its attributes, into the schema and the exported literal, and Undo takes it back', () => {
     renderWithIcons(<Live start={BASE} />);
     select('size');
-    pick(attr('Shown if'), /Add a condition/, /Show grid/);
+    pick(attr('Shown if'), /Add a condition/, /Show grid view\.grid/);
     expect(held('view/size').showIf).toEqual({ path: 'view.grid', is: true });
     expect(held('view/size').enableIf).toBeUndefined();
     expect(screen.getByTestId('schema-literal')).toHaveTextContent(/size: \{[^}]*showIf: \{ path: 'view\.grid', is: true,? \}/);
@@ -66,7 +66,7 @@ describe('PrefSchemaEditor: the conditions a node is shown and enabled by', () =
     } } } };
     renderWithIcons(<Live start={two} />);
     select('view');
-    pick(attr('Enabled if'), /Add a condition/, /Dock/);
+    pick(attr('Enabled if'), /Add a condition/, /Dock panels\.dock/);
     expect(held('view').enableIf).toEqual({ path: 'panels.dock', is: true });
     fireEvent.click(within(attr('Enabled if')).getByRole('button', { name: 'Remove condition 1' }));
     expect(held('view')).not.toHaveProperty('enableIf');
@@ -112,7 +112,7 @@ describe('PrefSchemaEditor: the conditions a node is shown and enabled by', () =
     expect(within(shown).queryByRole('group', { name: 'Condition 1' })).toBeNull();
     expect(shown.closest('[data-mixed]')).not.toBeNull();
     expect(held('view/size').showIf).toEqual({ path: 'view.grid', is: true });
-    pick(shown, /Add a condition/, /Units/);
+    pick(shown, /Add a condition/, /Units view\.units/);
     expect(held('view/grid').showIf).toEqual({ path: 'view.units', is: 'px' });
     expect(held('view/size').showIf).toEqual({ path: 'view.units', is: 'px' });
     expect(attr('Shown if').closest('[data-mixed]')).toBeNull();
@@ -122,7 +122,7 @@ describe('PrefSchemaEditor: the conditions a node is shown and enabled by', () =
     renderWithIcons(<Live start={CONDITIONED} />);
     select('grid');
     fireEvent.click(within(structure()).getByText('units'), MOD);
-    pick(attr('Shown if'), /Add a condition/, /Grid size/);
+    pick(attr('Shown if'), /Add a condition/, /Grid size view\.size/);
     expect(held('view/grid').showIf).toEqual({ path: 'view.size', above: 0 });
     expect(held('view/units').showIf).toEqual({ path: 'view.size', above: 0 });
   });
@@ -136,9 +136,9 @@ describe('PrefSchemaEditor: the conditions a node is shown and enabled by', () =
       return names;
     };
     select('size');
-    expect(offered()).toEqual(['Show grid', 'Units']);
+    expect(offered()).toEqual(['Show grid this group: grid', 'Units this group: units', 'Show grid', 'Units']);
     fireEvent.click(within(structure()).getByText('units'), MOD);
-    expect(offered()).toEqual(['Show grid']);
+    expect(offered()).toEqual(['Show grid this group: grid', 'Show grid']);
     select('view');
     expect(within(attr('Shown if')).getByRole('button', { name: /Add a condition/ })).toBeDisabled();
   });

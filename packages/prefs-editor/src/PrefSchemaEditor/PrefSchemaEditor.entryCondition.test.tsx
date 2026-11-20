@@ -39,7 +39,7 @@ describe('PrefSchemaEditor: the condition on a list\'s entry', () => {
     expect(attributes().queryByRole('group', { name: 'Entry shown if' })).toBeNull();
     const entry = attributes().getByRole('group', { name: 'Entry enabled if' });
     fireEvent.click(within(entry).getByRole('button', { name: /Add a condition/ }));
-    expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['Locked this Phase: locked', 'Lock all view.locked']);
+    expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['Locked this Phase: locked', 'Lock all this group: locked', 'Lock all view.locked']);
     fireEvent.click(screen.getByRole('option', { name: /this Phase/ }));
     expect((nodeAt(latest, 'view/phases') as PrefList).item.enableIf).toEqual({ from: 'item', path: 'locked', is: true });
     expect(nodeAt(latest, 'view/phases')).not.toHaveProperty('enableIf');
