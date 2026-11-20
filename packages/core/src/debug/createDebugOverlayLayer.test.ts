@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import type { DrawCommand, PathDrawCommand, TextDrawCommand } from '@weasel-js/renderer';
 import { buildDebugOverlayCommands, createDebugOverlayLayer } from './createDebugOverlayLayer';
 import { createDebugSink } from './createDebugSink';
@@ -179,5 +179,22 @@ describe('theme and stroke overrides', () => {
     }, VIEW, DIMS) as PathDrawCommand[];
     expect(cmd!.stroke?.width).toBe(DEFAULT_DEBUG_STROKES.hitbox.width);
     expect(cmd!.stroke?.paint).toEqual({ kind: 'solid', color: DEFAULT_DEBUG_THEME.hitboxStroke });
+  });
+});
+
+describe('the frame-rate readout', () => {
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  const fpsLine = (cmds: DrawCommand[]) => (cmds.find((c) => c.kind === 'text') as TextDrawCommand).runs[0]!.text;
+
+  it('reads the current cadence after an idle spell, not one averaged across it', () => {
+    let now = 0;
+    vi.spyOn(performance, 'now').mockImplementation(() => now);
+    const layer = createDebugOverlayLayer({ sink: createDebugSink({ fps: true }), config: { fps: true } });
+    for (let i = 0; i < 30; i++) { now = i * 16; layer.draw(null, VIEW, DIMS); }
+    now += 10_000;
+    let cmds: DrawCommand[] = [];
+    for (let i = 0; i < 10; i++) { now += 16; cmds = layer.draw(null, VIEW, DIMS); }
+    expect(fpsLine(cmds)).toMatch(/fps\s+62\.50/);
   });
 });
