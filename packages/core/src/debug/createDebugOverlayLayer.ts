@@ -293,7 +293,7 @@ function emitIds(
     const [sx, sy] = worldToScreen(b.bounds.x, b.bounds.y, t);
     out.push(textCommandFromRuns(
       sx + 2,
-      sy + 11,
+      sy + 1,
       [{ text: b.id, fill: { paint: { kind: 'solid', color: theme.idText } } }],
       { fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 10 },
     ));

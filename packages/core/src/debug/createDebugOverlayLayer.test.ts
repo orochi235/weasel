@@ -155,3 +155,16 @@ describe('hitboxes under non-uniform zoom', () => {
     expect(e.height).toBeCloseTo(10 * Math.SQRT2, 3);
   });
 });
+
+describe('the ids feature', () => {
+  it('puts a label inside the top of its bounds, as text commands are top-anchored', () => {
+    const sink = createDebugSink({ ids: true });
+    sink.recordBounds('a', { x: 100, y: 50, width: 40, height: 12 });
+    const [label] = createDebugOverlayLayer({ sink, config: { ids: true } })
+      .draw(null, VIEW, DIMS) as TextDrawCommand[];
+    expect(label!.kind).toBe('text');
+    expect(label!.y).toBeGreaterThanOrEqual(50);
+    // A 10 px label starting inside a 12 px box ends within it.
+    expect(label!.y + 10).toBeLessThanOrEqual(62);
+  });
+});
