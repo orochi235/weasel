@@ -66,6 +66,17 @@ describe('MeasureReadout', () => {
     expect(values()).toEqual(['50.00', '30.00', '−40.00', '53.13°']);
   });
 
+  it('reads a measurement as shown while a drag moves it, before the drag commits', () => {
+    const rig = setup();
+    render(rig.view(['box']));
+    rig.add('a', { x: 0, y: 0 }, { x: 5, y: 0 });
+    const moved = measureNode('a' as NodeId, 'notes', { x: 0, y: 0 }, { x: 0, y: 9 });
+    act(() => rig.scene.overrides.set('a' as NodeId, { data: () => moved.data, pose: moved.pose } as never));
+    expect(values()[0]).toBe('9.00');
+    act(() => rig.scene.overrides.clear('a' as NodeId));
+    expect(values()[0]).toBe('5.00');
+  });
+
   it('reads a measure drag in progress over the rest', () => {
     const rig = setup();
     render(rig.view(['box']));
