@@ -36,8 +36,15 @@ export function AreaDefects({ id, version }: { id: string; version: string }) {
         <section key={r.round} className={s.round}>
           <h3 className={s.title}>
             Round {r.round}
-            <span className={s.hint}>{r.recorded ? '' : r.fixed ? ' · not merged yet' : ' · no fixer report yet'}</span>
+            <span className={s.hint}>{r.recorded ? '' : r.fixed ? ' · not merged yet' : r.commits ? ' · its fixer stopped before reporting' : ' · no fixer report yet'}</span>
           </h3>
+          {r.commits && r.commits.length > 0 && (
+            <>
+              <p className={s.hint}>Its commits:</p>
+              <ul className={s.commits}>{r.commits.map((c, i) => <li key={i}>{c}</li>)}</ul>
+              <p className={s.hint}>What the reviewers found:</p>
+            </>
+          )}
           {r.items.length === 0 ? <p className={s.hint}>Nothing found.</p> : <ol className={s.list}>{r.items.map((d, i) => <Defect key={i} d={d} />)}</ol>}
         </section>
       ))}

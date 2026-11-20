@@ -25,18 +25,27 @@ export const openItems = (match) => {
   ];
 };
 
-/** One round's items for an area, from the directory holding its files: the fixer's report, or else the match. */
+/** The subject of each commit in a fixer's mbox, a folded subject joined back into one line. */
+export const commitSubjects = (mbox) =>
+  [...mbox.matchAll(/^Subject: (?:\[PATCH[^\]]*\] )?(.*(?:\n[ \t].*)*)/gm)].map((m) => m[1].replace(/\n[ \t]+/g, ' ').trim());
+
+/**
+ * One round's items for an area, from the directory holding its files: the fixer's report, or else the match, with
+ * the commits of a fixer that left some but no report, as one stopped partway does.
+ */
 const itemsIn = (dir) => {
   const report = readIf(join(dir, 'fix.md'));
   if (report !== null) return { fixed: true, items: reportItems(report) };
   const match = readIf(join(dir, 'match.json'));
-  return match === null ? null : { fixed: false, items: openItems(JSON.parse(match)) };
+  if (match === null) return null;
+  const mbox = readIf(join(dir, 'fix.mbox'));
+  return { fixed: false, items: openItems(JSON.parse(match)), ...(mbox ? { commits: commitSubjects(mbox) } : {}) };
 };
 
 const ROUND = /^round-(\d+)$/;
 const NIGHT = /-round(\d+)$/;
 
-/** Every round that has read `id`, newest first: `{ round, recorded, fixed, items }`. */
+/** Every round that has read `id`, newest first: `{ round, recorded, fixed, items, commits? }`. */
 export const areaDefects = (root, id, state = STATE_DIR) => {
   const found = new Map();
   const audits = join(root, AUDITS_DIR);

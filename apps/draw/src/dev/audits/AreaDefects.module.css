@@ -50,3 +50,9 @@
   font-size: var(--wzl-font-size-xs);
   color: var(--audit-muted);
 }
+
+.commits {
+  margin: 0 0 var(--wzl-space-2);
+  padding-left: var(--wzl-space-4);
+  font-size: var(--wzl-font-size-sm);
+}

@@ -110,4 +110,6 @@ export interface AuditAreaRound {
   readonly recorded: boolean;
   readonly fixed: boolean;
   readonly items: readonly AuditDefect[];
+  /** The subjects of a fixer's commits where it left commits but no report, as one stopped partway does. */
+  readonly commits?: readonly string[];
 }

@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { areaDefects, openItems } from './defects.mjs';
+import { areaDefects, commitSubjects, openItems } from './defects.mjs';
 
 const dirs: string[] = [];
 afterEach(() => { for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true }); });
@@ -22,5 +22,6 @@ describe('areaDefects', () => {
       { round: 46, recorded: true, fixed: true, items: [{ claim: 'A thing breaks', from: 'A', verdict: 'fixed', note: 'It no longer does.' }] },
     ]);
     expect(openItems({})).toEqual([]);
+    expect(commitSubjects('From 1a2b Mon Sep 17 00:00:00 2001\nSubject: [PATCH 1/2] keep a lone min\n bound\n\nbody\nFrom 3c4d Mon\nSubject: [PATCH 2/2] draw a choice\n')).toEqual(['keep a lone min bound', 'draw a choice']);
   });
 });
