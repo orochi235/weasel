@@ -16,9 +16,10 @@ const MIN = { width: 48, height: 48 };
 const BOTTOM_RIGHT: ResizeAnchor = { x: 'min', y: 'min' };
 const TOP_LEFT: ResizeAnchor = { x: 'max', y: 'max' };
 
-function makeScene(): Scene<unknown, string, unknown> {
+function makeScene(a: { pose?: RectPose; minSize?: Partial<typeof MIN> } = {}): Scene<unknown, string, unknown> {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: A, kind: 'mark', layer: 'main', data: { minSize: MIN }, pose: { x: 0, y: 0, width: 100, height: 100 } });
+  const pose = a.pose ?? { x: 0, y: 0, width: 100, height: 100 };
+  scene.add({ id: A, kind: 'mark', layer: 'main', data: { minSize: a.minSize ?? MIN }, pose });
   scene.add({ id: B, kind: 'mark', layer: 'main', data: {}, pose: { x: 100, y: 0, width: 100, height: 100 } });
   return scene as unknown as Scene<unknown, string, unknown>;
 }
@@ -30,11 +31,12 @@ function drag(
   from: { x: number; y: number },
   to: { x: number; y: number },
   resizePolicy?: unknown,
+  shift = false,
 ): void {
   const ctx = (at: { x: number; y: number }) => ({
     world: at,
     screen: { x: 0, y: 0 },
-    modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+    modifiers: { alt: false, ctrl: false, meta: false, shift },
     deps: { operands: { get: () => ids }, scene, ...(resizePolicy ? { resizePolicy } : {}) },
     drag: {
       start: from,
@@ -102,5 +104,11 @@ describe('resize — a node\'s minimum size', () => {
     scene.update(B, { data: { minSize: { width: 'wide' } } });
     drag(scene, [B], BOTTOM_RIGHT, { x: 200, y: 100 }, { x: 110, y: 10 });
     expect((scene.get(B)!.pose as RectPose).width).toBeCloseTo(10);
+  });
+
+  it('lets an axis with no minimum of its own flip through its anchor', () => {
+    const scene = makeScene({ minSize: { height: 20 } });
+    drag(scene, [A], { x: 'min', y: 'free' }, { x: 100, y: 50 }, { x: -50, y: 50 });
+    expectSamePose(scene.get(A)!.pose as RectPose, { x: 0, y: 0, width: -50, height: 100 });
   });
 });
