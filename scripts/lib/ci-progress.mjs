@@ -7,6 +7,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 
 export const WEIGHTS = new URL('../ci-run.weights.json', import.meta.url);
 export const LABEL = 'ci';
+/** The bar's unit, on its total, so onto draws it as a share of the run rather than as seconds done. */
+export const UNIT = 's';
 
 export const readWeights = (url = WEIGHTS) => JSON.parse(readFileSync(url, 'utf8'));
 
@@ -41,7 +43,7 @@ export const createBar = (weights, emit, { every = 2000, cap = 0.95, now = () =>
     if (at <= shown) return;
     shown = at;
     samples.push({ t: now() - started, frac: at / total });
-    emit(`onto: progress ${at}/${total} ${LABEL}`);
+    emit(`onto: progress ${at}/${total}${UNIT} ${LABEL}`);
   };
   const stopCreep = () => {
     clearTimeout(timer);
@@ -58,7 +60,7 @@ export const createBar = (weights, emit, { every = 2000, cap = 0.95, now = () =>
     samples,
     start() {
       started = now();
-      emit(`onto: plan 0/${total} ${LABEL}`);
+      emit(`onto: plan 0/${total}${UNIT} ${LABEL}`);
       report(0);
     },
     begin(i) {

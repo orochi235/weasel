@@ -1,11 +1,16 @@
 /** What the audit page says about runs: each one's headline, its lanes, and the jobs its log reports. */
 import type { AuditRun, LaneStep, LaneStepName } from './skulkMap.types';
 
-/** Minutes since `iso` as `<1m` or `12m`. */
-export function minutesSince(iso: string, now: number): string {
-  const m = Math.max(0, (now - new Date(iso).getTime()) / 60_000);
-  return m < 1 ? '<1m' : `${Math.round(m)}m`;
+/**
+ * `m` minutes as a lane says them, `<1 min`, `8.2 min` or `12 min`, a tenth shown under ten. Spelled out: the lanes
+ * set their labels in capitals, where `8.2m` reads as 8.2 million.
+ */
+export function minutesText(m: number): string {
+  return m < 1 ? '<1 min' : m < 10 ? `${m.toFixed(1)} min` : `${Math.round(m)} min`;
 }
+
+/** Minutes since `iso`, as {@link minutesText} says them. */
+export const minutesSince = (iso: string, now: number): string => minutesText(Math.max(0, (now - new Date(iso).getTime()) / 60_000));
 
 const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`;
 
@@ -14,9 +19,9 @@ export function stepText(step: LaneStepName, s: LaneStep, now: number): string {
   if (s.state === 'running') return `${s.node ?? ''} · ${s.since ? minutesSince(s.since, now) : 'running'}`;
   if (s.state === 'failed') return s.why ?? 'failed';
   if (s.state !== 'done') return step === 'patch' ? 'after fix' : 'waiting';
-  if (step === 'A' || step === 'B') return `${s.findings ?? 0} found · ${(s.minutes ?? 0).toFixed(1)}m`;
+  if (step === 'A' || step === 'B') return `${s.findings ?? 0} found · ${minutesText(s.minutes ?? 0)}`;
   if (step === 'match') return matchText(s.shared ?? 0, s.a ?? 0, s.b ?? 0);
-  if (step === 'fix') return `${plural(s.commits ?? 0, 'commit')} · ${(s.minutes ?? 0).toFixed(0)}m`;
+  if (step === 'fix') return `${plural(s.commits ?? 0, 'commit')} · ${minutesText(s.minutes ?? 0)}`;
   return `${s.commits ?? 0} applied`;
 }
 

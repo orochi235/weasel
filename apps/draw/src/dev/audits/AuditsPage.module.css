@@ -41,6 +41,15 @@
    takes the rest. A runs strip shorter than its height keeps its own. */
 .root > .top {
   flex: 0 1 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--audit-aside-width, 300px);
+  align-items: start;
+  gap: var(--wzl-space-2);
+}
+
+/* The lanes scroll inside their column, as tall as the seam below them is dragged; the rounds chart beside them
+   stays put. */
+.runs {
   max-height: var(--audit-top-height, 260px);
   min-height: 0;
   overflow: auto;
@@ -57,6 +66,8 @@
 
 @media (max-width: 860px) {
   .root { overflow: auto; }
+
+  .root > .top { grid-template-columns: minmax(0, 1fr); }
 
   .root > .main {
     flex: none;
