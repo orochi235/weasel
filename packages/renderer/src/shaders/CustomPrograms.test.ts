@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { GpuDevice } from '../gpu/types';
 import type { ShaderProgram } from './ShaderProgram';
 import { CustomPrograms } from './CustomPrograms';
-import { registerProgram, _resetProgramRegistryForTests } from './registerProgram';
+import { programSourceRegistry, registerProgram, _resetProgramRegistryForTests } from './registerProgram';
 
 const FRAG = `#version 300 es
 precision highp float;
@@ -70,4 +70,47 @@ describe('CustomPrograms.ensure', () => {
     expect(warn.mock.calls[0]![0]).toContain('"never-registered"');
     warn.mockRestore();
   });
+});
+
+const OTHER = FRAG.replace('vec4(1.0)', 'vec4(0.5)');
+
+/** A device counting compiles and deletes, whose compiles fail for a source
+ *  holding `BROKEN` and, while `lost` holds, for every source. */
+function countingDevice() {
+  const state = { lost: false, made: [] as object[], deleted: [] as object[] };
+  const gpu = {
+    language: 'glsl',
+    createProgram: (src: { glsl: { frag: string } }) => {
+      if (state.lost || src.glsl.frag.includes('BROKEN')) throw new Error('compile failed');
+      const program = { lookupUniforms() {}, lookupUniformArrays() {}, lookupAttributes() {} };
+      state.made.push(program);
+      return program as unknown as ShaderProgram;
+    },
+    deleteProgram: (p: object) => { state.deleted.push(p); },
+  } as unknown as GpuDevice;
+  return { gpu, state };
+}
+
+describe('CustomPrograms re-registration', () => {
+  beforeEach(() => {
+    _resetProgramRegistryForTests();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  it('drops and deletes a compiled program once its source is released', () => {
+    const { gpu, state } = countingDevice();
+    const programs = new CustomPrograms(gpu);
+    const release = programSourceRegistry.register('fx', { glsl: { frag: FRAG } });
+    const compiled = programs.ensure('fx');
+    expect(compiled).not.toBeNull();
+    const epoch = programs.epoch;
+    release();
+    programs.refresh();
+    expect(programs.registry.has('fx')).toBe(false);
+    expect(state.deleted).toContain(compiled);
+    expect(programs.epoch).toBeGreaterThan(epoch);
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(programs.ensure('fx')).toBeNull();
+  });
+
 });

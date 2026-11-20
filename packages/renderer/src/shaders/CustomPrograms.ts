@@ -48,8 +48,8 @@ export class CustomPrograms {
   /** The source each compiled program was built from — or, after a failed
    *  recompile, the source that failed, so it is not retried every frame. */
   private readonly sources = new Map<string, ProgramSource>();
-  /** Advanced when a program is compiled again over one already drawn with,
-   *  which leaves every retained surface drawn by the old one stale. */
+  /** Advanced when a program is compiled again over one already drawn with, or
+   *  dropped, which leaves every retained surface drawn by the old one stale. */
   epoch = 0;
   /** The source `ensure` last failed to compile for each id, so that source
    *  is reported once and not compiled again every frame. */
@@ -78,12 +78,25 @@ export class CustomPrograms {
     this.sources.set(id, src);
   }
 
+  private drop(id: string): void {
+    const program = this.registry.get(id);
+    if (program) this.gpu.deleteProgram(program);
+    this.registry.delete(id);
+    this.sources.delete(id);
+    this.epoch++;
+  }
+
   /** Recompile every program whose module-level source was re-registered
-   *  since it was compiled. A source that fails keeps the old program drawing. */
+   *  since it was compiled, and drop every one whose source was released. A
+   *  source that fails keeps the old program drawing. */
   refresh(): void {
     for (const [id, compiled] of this.sources) {
       const src = getProgramSource(id);
-      if (!src || src === compiled) continue;
+      if (!src) {
+        this.drop(id);
+        continue;
+      }
+      if (src === compiled) continue;
       if (sameProgramSource(src, compiled)) {
         this.sources.set(id, src);
         continue;
