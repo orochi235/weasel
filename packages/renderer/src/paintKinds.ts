@@ -283,7 +283,12 @@ function startLoad(id: string): Promise<void> {
       // Displaced or disposed while it ran: the live loader, if any, answers instead.
       return KINDS.has(id) || !LOADERS.has(id) ? undefined : startLoad(id);
     }
-    if (!KINDS.has(id)) loader.drop = loader.register(entry);
+    if (KINDS.has(id)) return;
+    try {
+      loader.drop = loader.register(entry);
+    } catch (err) {
+      failed(err);
+    }
   }, failed);
   loader.started = done;
   return done;
