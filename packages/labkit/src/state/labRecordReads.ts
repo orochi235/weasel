@@ -52,7 +52,9 @@ function remoteSnapshot(
 ): SavedSnapshot[] {
   if (!isPlainObject(value)) return saves.filter((s) => s.id !== id);
   const [snapshot] = hydrateSnapshots([{ ...value, id } as SavedSnapshot], hooks, failed);
-  if (!snapshot) return saves;
+  // As for a trial: kept, the stale snapshot would be listed beside its unreadable record and
+  // written back over it.
+  if (!snapshot) return saves.filter((s) => s.id !== id);
   return saves.some((s) => s.id === id)
     ? saves.map((s) => (s.id === id ? snapshot : s))
     : [...saves, snapshot];

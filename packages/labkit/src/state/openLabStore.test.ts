@@ -668,6 +668,29 @@ describe('openLabStore — records it cannot use', () => {
     });
   });
 
+  it("drops a snapshot another tab stored with a config this one cannot migrate, and leaves that tab's record", async () => {
+    const backing = new Map<string, unknown>();
+    storeLab(backing, { trials: [trial('w1')], saves: [SNAPSHOT] });
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const migrate = (config: unknown) => {
+      if ((config as { old?: boolean }).old) throw new Error('no path from this shape');
+      return config;
+    };
+    const mine = await open(backing, { configMigrations: { T: migrate } });
+    const theirs = await open(backing);
+
+    theirs.store.setState({ savedSnapshots: [{ ...SNAPSHOT, config: { old: true } }] });
+    await theirs.records.flush();
+    await tick();
+
+    expect(mine.store.getState().savedSnapshots).toEqual([]);
+    expect(mine.store.getState().unreadable.map((u) => u.id)).toEqual(['s1']);
+    mine.store.getState().setInstruments([{ name: 'T', render: () => null } as never]);
+    await mine.close();
+    await theirs.close();
+    expect(backing.get(`${P}save:s1`)).toMatchObject({ config: { old: true } });
+  });
+
   it('ignores a record whose name no lab writes', async () => {
     const backing = new Map<string, unknown>();
     storeLab(backing, { trials: [trial('w1')] });
