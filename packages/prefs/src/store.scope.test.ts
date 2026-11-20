@@ -137,6 +137,27 @@ describe('a write at a stated selection', () => {
     expect(recordValue(cache.get('gap'))).toEqual(byMode(4, 9));
   });
 
+  it('clears only the member the selection names when it writes undefined', () => {
+    const schema = {
+      name: 'Test',
+      children: {
+        look: SCHEMA.children.look,
+        script: {
+          kind: 'enum', name: 'Script', description: '', default: undefined, clearable: true, scopes: [{ selector: MODE }],
+          options: [{ value: 'super', label: 'Super' }, { value: 'sub', label: 'Sub' }],
+        },
+      },
+    } satisfies PrefGroup;
+    const cache = createRecordCache({ storage: createMemoryAdapter(), prefix: 'p.', initial: [['script', byMode('super', 'sub')]] });
+    const store = createPrefsStore(schema, cache);
+    store.set('script', undefined, { at: { [MODE]: 'light' } });
+    expect(recordValue(cache.get('script'))).toEqual({ $by: MODE, $in: { dark: 'super' } });
+    expect(store.get('script')).toBe('super');
+    expect(store.get('script', { at: { [MODE]: 'light' } })).toBeUndefined();
+    store.set('script', undefined);
+    expect(store.isSet('script')).toBe(false);
+  });
+
   it('keeps a plain value as the shared one when it writes an option', () => {
     const { cache, store } = make([['gap', 4]]);
     store.set('gap', 9, { at: { [MODE]: 'light' } });
