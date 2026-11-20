@@ -52,9 +52,12 @@ export function useVarsHistory(state: VarsState, apply: (from: VarsState, to: Va
   const swap = (before: VarsState, after: VarsState, coalesceKey?: string) =>
     ops.swap({ name: SWAP, label: 'edit vars', before, after, emit, ...(coalesceKey !== undefined ? { coalesceKey } : {}) });
 
+  // Set while a commit after the tick's first applies, which merges into it whatever the window is.
+  const sameTick = useRef(false);
+
   const history = useMemo(() => {
     const opened = createHistory(null, {
-      coalesceWindowMs: () => coalesceMs.current,
+      coalesceWindowMs: () => (sameTick.current ? Number.POSITIVE_INFINITY : coalesceMs.current),
       historyLimit: LIMIT,
       rebuildOp: (name, args) => {
         const { before, after } = args as SwapArgs<VarsState>;
@@ -74,13 +77,18 @@ export function useVarsHistory(state: VarsState, apply: (from: VarsState, to: Va
   return {
     current,
     commit(next, key) {
+      sameTick.current = tick.current !== null;
       if (tick.current === null) {
         tick.current = key;
         queueMicrotask(() => {
           tick.current = null;
         });
       }
-      history.applyOps([swap(current(), next, tick.current)], 'edit vars');
+      try {
+        history.applyOps([swap(current(), next, tick.current)], 'edit vars');
+      } finally {
+        sameTick.current = false;
+      }
       keep();
     },
     step(to) {
