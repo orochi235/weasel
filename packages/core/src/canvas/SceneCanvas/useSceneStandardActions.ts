@@ -30,8 +30,6 @@ import {
   useLayoutDepSource,
   useNodeAtPointDepSource,
   usePoseDescriptorDepSource,
-  useSliceDepSource,
-  useLiveOperands,
   useSnapDepSource,
   useSurfaceDepSources,
   useViewDepSource,
@@ -176,8 +174,6 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(scene, props.layoutDropTarget, reflowTransition);
   useEnteredGroupApiSource(enteredGroup);
-  const operands = useLiveOperands();
-  useSliceDepSource(scene, operands, adapter, poseDescriptor);
   useSnapDepSource(
     currentViewRef,
     {

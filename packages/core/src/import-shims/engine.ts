@@ -174,7 +174,7 @@ export { drawnBoxes, poseBoxes } from '../interactions/actions/drawnBoxes';
 export type { DrawnBoxes, DrawnBoxesDeps, DrawnBoxesSource } from '../interactions/actions/drawnBoxes';
 export { refusalOf } from '../interactions/actions/dropVerdict';
 export type { DropRefusal, DropVerdict } from '../interactions/actions/dropVerdict';
-export type { ClipboardDep, SliceDep } from '../interactions/actions/editDeps';
+export type { ClipboardDep } from '../interactions/actions/editDeps';
 export type { ResizePolicy, ViewApi } from '../interactions/actions/engineDeps';
 export { PATH_GEOMETRY_PROJECTION } from '../interactions/actions/geometryProjection';
 export type { GeometryProjection, PoseChange } from '../interactions/actions/geometryProjection';

@@ -1,8 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { sliceAction } from './slice';
-import type { SliceDep } from '@weasel-js/core';
+import { createSliceAction, sliceAction } from './slice';
+import { SLICE_PATHS_REQUIRES, type SliceCommit } from './slicePaths';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
 
 const ctxAt = (x: number, y: number, start = { x: 0, y: 0 }): InvocationCtx => ({
   world: { x, y },
@@ -12,6 +11,16 @@ const ctxAt = (x: number, y: number, start = { x: 0, y: 0 }): InvocationCtx => (
   drag: { start, current: { x, y }, delta: { x: x - start.x, y: y - start.y } },
 });
 
+/** The action over a spy commit, and the commit's cuts. */
+function sliceWith() {
+  const commit = vi.fn<SliceCommit>();
+  const action = createSliceAction({ commit });
+  const start = (ctx: InvocationCtx, opts?: Parameters<OngoingInvoker['start']>[1]) =>
+    (action.invoker as OngoingInvoker).start(ctx, opts);
+  const cuts = () => commit.mock.calls.map(([cut]) => cut);
+  return { action, commit, start, cuts };
+}
+
 describe('sliceAction', () => {
   it('is an ongoing action with id "slice" and no default binding', () => {
     expect(sliceAction.id).toBe('slice');
@@ -19,82 +28,71 @@ describe('sliceAction', () => {
     expect(sliceAction.defaultBinding).toBeUndefined();
   });
 
-  it('enabled reflects slice-dep presence', () => {
-    // With the dep wired, Slice is enabled; without it the action can't do
-    // anything (onEnd no-ops), so a UI reading enabled() should show it off.
-    expect(sliceAction.enabled?.({ slice: { commit: () => {} } } as never)).toBe(true);
-    expect(sliceAction.enabled?.({} as never)).toBe(ActionDisabledReason.NotApplicable);
-    expect(sliceAction.enabled?.(undefined)).toBe(ActionDisabledReason.NotApplicable);
+  it('requires what its default commit reads, and a custom commit what it names', () => {
+    expect(sliceAction.requires).toEqual([...SLICE_PATHS_REQUIRES]);
+    expect(createSliceAction({ commit: () => {} }).requires).toEqual([]);
+    expect(createSliceAction({ commit: () => {}, requires: ['scene'] }).requires).toEqual(['scene']);
   });
 
-  it('no-ops (empty handle) when no slice dep is present', () => {
+  it('commits with no scene to cut without throwing', () => {
     const handle = (sliceAction.invoker as OngoingInvoker).start(ctxAt(0, 0));
-    expect(handle).toBeTruthy();
     expect(() => handle.onEnd?.(ctxAt(10, 10), 'commit')).not.toThrow();
   });
 
-  it('calls dep.commit with the straight cut [start, current] on commit', () => {
-    const commit = vi.fn();
-    const dep: SliceDep = { commit };
-    const start = { x: 1, y: 2 };
-    const startCtx: InvocationCtx = { ...ctxAt(1, 2, start), deps: { slice: dep } as never };
-    const handle = (sliceAction.invoker as OngoingInvoker).start(startCtx);
-    handle.onMove?.({ ...ctxAt(40, 60, start), deps: { slice: dep } as never });
-    handle.onEnd?.({ ...ctxAt(40, 60, start), deps: { slice: dep } as never }, 'commit');
-    expect(commit).toHaveBeenCalledWith([{ x: 1, y: 2 }, { x: 40, y: 60 }]);
+  it('hands the commit the straight cut [start, current], with the deps it started under', () => {
+    const { commit, start } = sliceWith();
+    const s = { x: 1, y: 2 };
+    const deps = { scene: {} } as never;
+    const handle = start({ ...ctxAt(1, 2, s), deps });
+    handle.onMove?.(ctxAt(40, 60, s));
+    // The dispatcher builds every end context with empty deps.
+    handle.onEnd?.(ctxAt(40, 60, s), 'commit');
+    expect(commit).toHaveBeenCalledWith([{ x: 1, y: 2 }, { x: 40, y: 60 }], deps);
   });
 
   describe("with params { cut: 'freehand' }", () => {
     const trail = [{ x: 0, y: 0 }, { x: 10, y: 5 }, { x: 20, y: -5 }, { x: 30, y: 0 }];
-    const at = (points: typeof trail, dep: SliceDep): InvocationCtx => {
+    const at = (points: typeof trail): InvocationCtx => {
       const last = points[points.length - 1];
       const base = ctxAt(last.x, last.y);
-      return { ...base, deps: { slice: dep } as never, drag: { ...base.drag!, points } };
+      return { ...base, drag: { ...base.drag!, points } };
     };
     const opts = { params: { cut: 'freehand' } };
 
     it('commits the whole drag trail', () => {
-      const commit = vi.fn();
-      const dep: SliceDep = { commit };
-      const handle = (sliceAction.invoker as OngoingInvoker).start({ ...ctxAt(0, 0), deps: { slice: dep } as never }, opts);
-      handle.onMove?.(at(trail.slice(0, 2), dep));
-      handle.onEnd?.(at(trail, dep), 'commit');
-      expect(commit).toHaveBeenCalledWith(trail);
+      const { start, cuts } = sliceWith();
+      const handle = start(ctxAt(0, 0), opts);
+      handle.onMove?.(at(trail.slice(0, 2)));
+      handle.onEnd?.(at(trail), 'commit');
+      expect(cuts()).toEqual([trail]);
     });
 
     it('publishes the trail so far as the overlay', () => {
-      const dep: SliceDep = { commit: vi.fn() };
-      const handle = (sliceAction.invoker as OngoingInvoker).start({ ...ctxAt(0, 0), deps: { slice: dep } as never }, opts);
-      handle.onMove?.(at(trail.slice(0, 3), dep));
+      const { start } = sliceWith();
+      const handle = start(ctxAt(0, 0), opts);
+      handle.onMove?.(at(trail.slice(0, 3)));
       expect(handle.overlay?.()).toEqual({ kind: 'polyline', points: trail.slice(0, 3), role: 'cut' });
     });
 
     it('reads a thunked param', () => {
-      const commit = vi.fn();
-      const dep: SliceDep = { commit };
-      const handle = (sliceAction.invoker as OngoingInvoker).start(
-        { ...ctxAt(0, 0), deps: { slice: dep } as never },
-        { params: () => ({ cut: 'freehand' }) },
-      );
-      handle.onEnd?.(at(trail, dep), 'commit');
-      expect(commit).toHaveBeenCalledWith(trail);
+      const { start, cuts } = sliceWith();
+      const handle = start(ctxAt(0, 0), { params: () => ({ cut: 'freehand' }) });
+      handle.onEnd?.(at(trail), 'commit');
+      expect(cuts()).toEqual([trail]);
     });
   });
 
   it('does not commit on cancel', () => {
-    const commit = vi.fn();
-    const dep: SliceDep = { commit };
-    const startCtx: InvocationCtx = { ...ctxAt(0, 0), deps: { slice: dep } as never };
-    const handle = (sliceAction.invoker as OngoingInvoker).start(startCtx);
-    handle.onEnd?.({ ...ctxAt(5, 5), deps: { slice: dep } as never }, 'cancel');
+    const { commit, start } = sliceWith();
+    const handle = start(ctxAt(0, 0));
+    handle.onEnd?.(ctxAt(5, 5), 'cancel');
     expect(commit).not.toHaveBeenCalled();
   });
 
   it('overlay publishes the cut as a world-space segment, not a paint', () => {
-    const dep: SliceDep = { commit: vi.fn() };
-    const startCtx: InvocationCtx = { ...ctxAt(0, 0), deps: { slice: dep } as never };
-    const handle = (sliceAction.invoker as OngoingInvoker).start(startCtx);
-    handle.onMove?.({ ...ctxAt(30, 0), deps: { slice: dep } as never });
+    const { start } = sliceWith();
+    const handle = start(ctxAt(0, 0));
+    handle.onMove?.(ctxAt(30, 0));
     expect(handle.overlay?.()).toEqual({
       kind: 'polyline',
       points: [{ x: 0, y: 0 }, { x: 30, y: 0 }],
@@ -103,10 +101,9 @@ describe('sliceAction', () => {
   });
 
   it('stops publishing an overlay once the gesture has ended', () => {
-    const dep: SliceDep = { commit: vi.fn() };
-    const startCtx: InvocationCtx = { ...ctxAt(0, 0), deps: { slice: dep } as never };
-    const handle = (sliceAction.invoker as OngoingInvoker).start(startCtx);
-    handle.onEnd?.({ ...ctxAt(5, 5), deps: { slice: dep } as never }, 'commit');
+    const { start } = sliceWith();
+    const handle = start(ctxAt(0, 0));
+    handle.onEnd?.(ctxAt(5, 5), 'commit');
     expect(handle.overlay?.()).toBeNull();
   });
 });

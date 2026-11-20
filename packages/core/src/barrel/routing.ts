@@ -83,7 +83,7 @@ export {
   createTouchZoomAction,
   type TouchZoomOptions,
 } from '../interactions/actions/defaults/touchZoom';
-export type { SliceDep, ClipboardDep, OperandsDep } from '../interactions/actions/depSchema';
+export type { ClipboardDep, OperandsDep } from '../interactions/actions/depSchema';
 export { createOperandList } from '../interactions/actions/operands';
 export { useActionSet, useStandardDeps } from '../interactions/actions/useActionSet';
 export type { StandardDeps } from '../interactions/actions/useActionSet';
@@ -150,7 +150,7 @@ export {
 export type {
   CornerAnchor, CornerEdge, HandleEdge, ResizeHandleAnchor, ResizeHandleLayout,
 } from '../interactions/gestures/resizeHandles';
-export { useSliceDepSource, type OpsApplier } from '../canvas/deps/slice';
+export type { OpsApplier } from '../canvas/deps/editAnchors';
 export { useLiveOperands } from '../canvas/deps/operands';
 export {
   computeSliceOps,

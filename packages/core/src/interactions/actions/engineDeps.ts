@@ -30,7 +30,7 @@ import type { PickingView } from 'core/adapters/types';
 import type { InsertDep, InsertEnds, InsertExtras, PathSymmetryDep, InsertIntoDep, InsertLive } from './insertDeps';
 import type { CommitSelection } from './defaultCommitAdapter';
 import type { LayoutDep, CanDropIntoDep } from './layoutDeps';
-import type { ClipboardDep, SliceDep } from './editDeps';
+import type { ClipboardDep } from './editDeps';
 import type { OperandsDep } from './operands';
 
 export type { EnteredGroupApi, TransformFollower, TransformPreviewNode };
@@ -38,7 +38,7 @@ export type { SnapDep, SnapGeometry } from './snapDep';
 export type { ColorAtDep, PickingView, NodeAtPointDep, AreaSelectDep, LassoSelectDep };
 export type { InsertDep, InsertEnds, InsertExtras, CommitSelection, PathSymmetryDep, InsertIntoDep, InsertLive };
 export type { LayoutDep, CanDropIntoDep };
-export type { ClipboardDep, SliceDep };
+export type { ClipboardDep };
 export type { OperandsDep };
 
 /** Minimal view API the action layer consumes. */
@@ -220,13 +220,6 @@ declare module '@weasel-js/routing' {
     layout?: LayoutDep;
     /** Which containers a move may drop into; see {@link CanDropIntoDep}. */
     canDropInto?: CanDropIntoDep;
-    /**
-     * Slice dep — the commit for the Slice action. `<SceneCanvas>` publishes
-     * `useSliceDepSource`; a consumer overrides it with `useDepSource('slice', …)`.
-     *
-     * Optional: when absent, `sliceAction` is a no-op.
-     */
-    slice?: SliceDep;
     /** Clipboard dep; see {@link ClipboardDep}. `clipboard.copy` and
      *  `clipboard.cut` both no-op when it is absent. */
     clipboard?: ClipboardDep;

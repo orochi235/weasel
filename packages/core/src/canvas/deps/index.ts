@@ -13,7 +13,6 @@ export { useSelectionSnapshotDepSource } from './selectionSnapshot';
 export type { InsertNodeFactory, InsertNodeFactories, InsertedNode, KitInsertKind } from './insertFactories';
 export { useSnapDepSource } from './snap';
 export { useTransformFollower } from './transformFollowers';
-export { useSliceDepSource } from './slice';
 export { useDebugDepSource } from './debug';
 export { usePreviewPathsDepSource, createPreviewPaths, PREVIEW_PATHS_LAYER_ID, type PreviewPathsDep } from './previewPaths';
 export { useSurfaceDepSources } from './surface';

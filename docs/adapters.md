@@ -135,7 +135,7 @@ The schema is `DepSchema` in
 | `applyOps` | optional consumer commit hook — when present, ops route through consumer history as one entry instead of `scene.applyBatch` |
 
 Plus the per-feature deps: `insert`, `areaSelect`, `lassoSelect`,
-`editAnchors`, `textEdit`, `snap`, `layout`, `slice`, `ingestion`,
+`editAnchors`, `textEdit`, `snap`, `layout`, `ingestion`,
 `resizePolicy`, `geometryProjection`, `booleansAdapter`,
 `nodeAtPoint`, `dispatcher`.
 

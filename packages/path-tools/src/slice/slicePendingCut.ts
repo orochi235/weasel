@@ -5,6 +5,7 @@ import { withinPxRadius } from '@weasel-js/geom';
 import { createEmitter } from '@weasel-js/registry';
 import { createPointerFollower, type PointerFollower } from '@weasel-js/editing';
 import type {} from '../actionParamSchema';
+import { sliceCommitOf, type SliceOptions } from './slicePaths';
 
 /** The click-by-click cut in progress, in world coords. */
 export interface SliceScratch {
@@ -34,13 +35,16 @@ export function resetPendingCut(scratch: SliceScratch, live: SliceLive): void {
   live.notify();
 }
 
-/** The actions that build a cut one point at a time. `closeHitPx` is read on
- *  each click: how near the first point, in screen px, a click closes the cut. */
+/** The actions that build a cut one point at a time and hand it to `commit`.
+ *  `closeHitPx` is read on each click: how near the first point, in screen px,
+ *  a click closes the cut. */
 export function createPendingCutActions(
   scratch: SliceScratch,
   live: SliceLive,
   closeHitPx: () => number,
+  options: SliceOptions = {},
 ): Action[] {
+  const { commit: commitCut, requires } = sliceCommitOf(options);
   const points = () => scratch.points;
   const pending = () => (points().length > 0 ? true : ActionDisabledReason.NotApplicable);
   const reset = () => resetPendingCut(scratch, live);
@@ -48,7 +52,7 @@ export function createPendingCutActions(
   const commit = (deps: ActionDeps): void => {
     const cut = points().slice();
     reset();
-    if (cut.length >= 2) deps.slice?.commit(cut);
+    if (cut.length >= 2) commitCut(cut, deps);
   };
   const place = (deps: ActionDeps, x: number, y: number): void => {
     const pts = points();
@@ -70,8 +74,7 @@ export function createPendingCutActions(
       id: 'slice.addPoint',
       label: 'Slice — place point',
       eligible,
-      requires: ['slice', 'view', 'pointer'],
-      enabled: (deps) => (deps?.['slice'] ? true : ActionDisabledReason.NotApplicable),
+      requires: [...requires, 'view', 'pointer'],
       invoker: {
         timing: 'immediate',
         run: (deps, params) => {
@@ -85,7 +88,7 @@ export function createPendingCutActions(
       id: 'slice.dragPoint',
       label: 'Slice — drag out a point',
       eligible,
-      requires: ['slice', 'view', 'pointer'],
+      requires: [...requires, 'view', 'pointer'],
       enabled: pending,
       invoker: {
         timing: 'ongoing',
@@ -104,7 +107,7 @@ export function createPendingCutActions(
       id: 'slice.finish',
       label: 'Slice — cut along the points',
       eligible,
-      requires: ['slice'],
+      requires: [...requires],
       enabled: pending,
       invoker: {
         timing: 'immediate',
