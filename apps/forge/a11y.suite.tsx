@@ -1,6 +1,7 @@
 import '@weasel-js/forge/shell.css';
 import '@weasel-js/forge/frame.css';
 import { loadStories, runAxe, runStory } from '@weasel-js/forge/test';
+import { act } from 'react';
 import { describe, expect, it } from 'vitest';
 import { KNOWN, UNSWEPT } from './a11y.known';
 import { shardOf } from './a11y.shards';
@@ -49,6 +50,9 @@ const settled = (host: HTMLElement) =>
       .map((a) => a.finished.catch(() => {})),
   );
 
+/** Moves focus as `move` does, inside act(): a focus change re-renders whatever tracks it. */
+const moved = (move: () => unknown) => act(async () => { await move(); });
+
 const FOCUSABLE = 'a[href], button, input, select, textarea, summary, [tabindex], [contenteditable="true"]';
 const LOOK = [
   'outline-style', 'outline-width', 'outline-color', 'box-shadow', 'background-color', 'color', 'stroke', 'stroke-width', 'fill',
@@ -88,7 +92,7 @@ async function shotOf(el: Element): Promise<string> {
  */
 async function unringed(host: HTMLElement, max = 40): Promise<string[]> {
   // An autofocused field is read unfocused too.
-  (document.activeElement as HTMLElement | null)?.blur();
+  await moved(() => (document.activeElement as HTMLElement | null)?.blur());
   const before = new Map<Element, string>();
   for (const el of host.querySelectorAll(FOCUSABLE)) before.set(el, lookOf(el));
   const start = document.createElement('button');
@@ -101,9 +105,9 @@ async function unringed(host: HTMLElement, max = 40): Promise<string[]> {
   const out: string[] = [];
   const reached = new Set<Element>();
   try {
-    start.focus();
+    await moved(() => start.focus());
     for (let i = 0; i < max; i++) {
-      await browser.userEvent.keyboard('{Tab}');
+      await moved(() => browser.userEvent.keyboard('{Tab}'));
       const el = document.activeElement as HTMLElement | null;
       if (!el || !host.contains(el) || reached.has(el)) break;
       reached.add(el);
@@ -116,15 +120,15 @@ async function unringed(host: HTMLElement, max = 40): Promise<string[]> {
       const was = before.get(el);
       if (was === undefined || was !== lookOf(el)) continue;
       const focused = await shotOf(el);
-      start.focus();
+      await moved(() => start.focus());
       // A modal that keeps focus leaves nothing to compare against.
       const left = document.activeElement === start;
       const unfocused = left ? await shotOf(el) : '';
-      el.focus();
+      await moved(() => el.focus());
       if (left && focused === unfocused) out.push(shown(el));
     }
   } finally {
-    (document.activeElement as HTMLElement | null)?.blur();
+    await moved(() => (document.activeElement as HTMLElement | null)?.blur());
     start.remove();
     still.remove();
   }
