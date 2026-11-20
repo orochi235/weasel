@@ -84,6 +84,9 @@ interface FaceSlot extends OutlineFaceInfo {
   glyphs: Map<number, string | null>;
   /** The in-flight or settled load, so every caller waiting on it shares one parse. */
   load: Promise<void> | null;
+  /** The source's bytes while a read is in hand, so DOM text asking first and the canvas share one read. Dropped when
+   *  the load settles, which hands DOM text its bytes itself, and when the read fails. */
+  read: Promise<ArrayBuffer> | null;
 }
 
 const slots = createReflectable<FaceSlot>({ name: 'font outlines' });
@@ -128,6 +131,7 @@ export function registerFontOutlines(
     face: null,
     glyphs: new Map(),
     load: null,
+    read: null,
   };
   slots.set(key, slot);
   // Layouts cache which tier each run resolved to and poll `glyphGeneration()`
@@ -297,8 +301,9 @@ async function runLoad(slot: FaceSlot): Promise<void> {
   slot.status = 'loading';
   slots.bump();
   try {
-    const bytes = await readSource(slot.source);
+    const bytes = await readSlot(slot);
     announceBytes(slot, bytes);
+    slot.read = null;
     slot.face = await slot.parser(bytes);
     slot.status = 'ready';
     slots.bump();
@@ -342,8 +347,7 @@ export function outlineCssSource(
   if (typeof slot.source === 'string') {
     return { registration: slot, url: `url(${cssString(slot.source)})` };
   }
-  const source = slot.source;
-  return { registration: slot, bytes: () => readSource(source) };
+  return { registration: slot, bytes: () => readSlot(slot) };
 }
 
 /** `registration` is the one {@link outlineCssSource} names. */
@@ -368,6 +372,14 @@ function announceBytes(slot: FaceSlot, bytes: ArrayBuffer): void {
   } catch {
     // DOM text falling behind must not cost the canvas its outlines.
   }
+}
+
+function readSlot(slot: FaceSlot): Promise<ArrayBuffer> {
+  if (slot.read) return slot.read;
+  const read = readSource(slot.source);
+  read.catch(() => { if (slot.read === read) slot.read = null; });
+  slot.read = read;
+  return read;
 }
 
 async function readSource(source: OutlineSource): Promise<ArrayBuffer> {
