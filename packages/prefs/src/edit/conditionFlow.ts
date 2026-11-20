@@ -37,6 +37,9 @@ export interface ConditionFlowOptions {
   over?: PrefGroup | PrefSection;
   /** The list or map whose entry the condition's node is drawn in. */
   entryOf?: PrefList | PrefMap;
+  /** The value path of the group the condition's node is declared in, empty at the root, whose prefs a test read
+   *  from its group (`from: 'group'`) names. */
+  group?: string;
   /** What the flow's last box says, which is what the condition decides. Default `holds`. */
   holds?: string;
 }
@@ -71,7 +74,7 @@ function testLines({ test, negated }: TestRow, found: ConditionLeaf | undefined)
  * bare path and an `any` of nothing a box nothing leaves, as each evaluates.
  */
 export function prefConditionFlow(condition: PrefCondition | undefined, schema: PrefGroup | PrefSection, opts: ConditionFlowOptions = {}): ConditionFlow {
-  const leaves = conditionLeaves(schema, opts.entryOf, opts.over);
+  const leaves = conditionLeaves(schema, opts.entryOf, opts.over, opts.group);
   const flow: ConditionFlow = { nodes: [{ id: CONDITION_FLOW_START, lines: ['start'], outline: 'stadium' }], edges: [], clusters: [] };
   const join = (from: readonly string[], to: string): void => { for (const id of from) flow.edges.push({ from: id, to }); };
   const box = (id: string, lines: readonly string[], entries: readonly string[]): string => {

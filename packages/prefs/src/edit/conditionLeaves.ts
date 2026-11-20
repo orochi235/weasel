@@ -15,11 +15,11 @@ import {
 } from '../index';
 
 /** A leaf a condition may read, with the path its value is read at: from the schema root, or with `from`, from the
- *  entry the condition's node is drawn in. */
+ *  entry the condition's node is drawn in or the group it is declared in. */
 export interface ConditionLeaf {
   path: string;
   leaf: PrefLeaf;
-  from?: 'item';
+  from?: PrefConditionFrom;
   /** The leaf is one of the schema the condition's is drawn over, and not of its own. */
   over?: true;
 }
@@ -36,9 +36,10 @@ export function conditionLeafOf(leaves: readonly ConditionLeaf[], test: PrefTest
  * Every leaf of `schema` that holds a value, a field of an `object` leaf among them, in schema order. With
  * `entryOf`, the list or map whose entry the condition's node is drawn in, the fields of that entry come first,
  * each read from the entry. With `over`, the schema `schema` is drawn over, that schema's leaves come last, less
- * each at a path a leaf of `schema` holds, which a condition reads there.
+ * each at a path a leaf of `schema` holds, which a condition reads there. With `group`, the value path of the group
+ * the condition's node is declared in, the leaves inside that group come after the entry's, each read from the group.
  */
-export function conditionLeaves(schema: PrefGroup | PrefSection, entryOf?: PrefList | PrefMap, over?: PrefGroup | PrefSection): ConditionLeaf[] {
+export function conditionLeaves(schema: PrefGroup | PrefSection, entryOf?: PrefList | PrefMap, over?: PrefGroup | PrefSection, group?: string): ConditionLeaf[] {
   const out: ConditionLeaf[] = [];
   const add = (path: string, leaf: PrefLeaf, mark: Pick<ConditionLeaf, 'from' | 'over'>): void => {
     if (!prefHoldsValue(leaf)) return;
@@ -59,7 +60,13 @@ export function conditionLeaves(schema: PrefGroup | PrefSection, entryOf?: PrefL
     if (isPrefSection(of)) for (const [key, leaf] of prefSectionLeaves(of.members)) add(key, leaf, mark);
     else walk(of, '');
   };
+  const own = out.length;
   all(schema, {});
+  if (group !== undefined) {
+    const prefix = group === '' ? '' : `${group}.`;
+    const inGroup = out.slice(own).filter((l) => l.path.startsWith(prefix)).map((l): ConditionLeaf => ({ path: l.path.slice(prefix.length), leaf: l.leaf, from: 'group' }));
+    out.splice(own, 0, ...inGroup);
+  }
   if (over) all(over, { over: true });
   return out;
 }

@@ -57,6 +57,12 @@ describe('PrefConditionEditor', () => {
     expect(within(row(1)).getByRole('button', { name: /pref/ })).toHaveTextContent('view.grid');
   });
 
+  it("names a test read from its group for the group's pref, and offers the group's prefs read from it", () => {
+    renderWithIcons(<PrefConditionEditor aria-label="Shown if" schema={SCHEMA} group="view" value={{ from: 'group', path: 'grid', is: true }} onChange={() => {}} />);
+    expect(within(row(1)).getByRole('button', { name: /pref/ })).toHaveTextContent('Show grid');
+    expect(offered(row(1), /pref/)).toContain('Show grid this group: grid');
+  });
+
   it('writes no condition, and not an empty all, once its last row is removed', () => {
     const seen = open({ any: [{ path: 'view.grid' }] });
     fireEvent.click(screen.getByRole('button', { name: 'Remove condition 1' }));

@@ -62,21 +62,25 @@ export interface PrefConditionEditorProps {
  * condition gets from one pref to another. A pasted test that reads a pref this schema lacks says so on its row.
  */
 export function PrefConditionEditor({ value, onChange, schema, over, exclude = NO_PATHS, entryOf, group, 'aria-label': ariaLabel, className }: PrefConditionEditorProps) {
-  const leaves = useMemo(() => conditionLeaves(schema, entryOf, over), [schema, entryOf, over]);
+  const leaves = useMemo(() => conditionLeaves(schema, entryOf, over, group), [schema, entryOf, over, group]);
   const site = useMemo<PrefConditionSite>(() => ({ ...(entryOf ? { within: entryOf } : {}), ...(group === undefined ? {} : { group }) }), [entryOf, group]);
   const prefOptions = useMemo<ListOption[]>(() => leaves
-    .filter((found) => found.from === 'item' || found.over || !exclude.some((out) => found.path === out || found.path.startsWith(`${out}.`)))
+    .filter((found) => {
+      if (found.from === 'item' || found.over) return true;
+      const at = found.from === 'group' && group ? `${group}.${found.path}` : found.path;
+      return !exclude.some((out) => at === out || at.startsWith(`${out}.`));
+    })
     .map((found) => {
       const { path, leaf, from } = found;
       // A field of the entry is named as the entry's, so it reads apart from a root pref at the same path; a pref
       // of the schema this one is drawn over is named for that schema.
-      const where = from === 'item' ? `this ${entryOf?.item.name || 'entry'}: ${path}` : found.over ? `${over?.name || 'another schema'}: ${path}` : path;
+      const where = from === 'item' ? `this ${entryOf?.item.name || 'entry'}: ${path}` : from === 'group' ? `this group: ${path}` : found.over ? `${over?.name || 'another schema'}: ${path}` : path;
       return {
         value: leafKey(found),
         label: <>{leaf.name || path} <span className={s.path}>{where}</span></>,
         textValue: `${leaf.name} ${where}`,
       };
-    }), [leaves, exclude, entryOf, over]);
+    }), [leaves, exclude, entryOf, over, group]);
   const classes = [s.editor, className].filter(Boolean).join(' ');
 
   if (value !== undefined && !isPrefCondition(value)) {
