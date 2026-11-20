@@ -7,7 +7,7 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from
 import { join } from 'node:path';
 import { JOB_IN, JOB_OUT } from './config.mjs';
 import { citedPaths, firstJson, isFinished, matchPrompt, parseFilesRead, parseFindings, reviewText, validPairs } from './findings.mjs';
-import { PROGRESS_IN, PROGRESS_SOURCE, fixShell, jobDir, matchShell, reviewShell, runJob } from './jobs.mjs';
+import { PROGRESS_IN, fixShell, jobDir, matchShell, progressSource, reviewShell, runJob } from './jobs.mjs';
 import { chapman } from './rounds.mjs';
 import { parseEnvelope, totals } from './usage.mjs';
 
@@ -134,7 +134,7 @@ export const runArea = async (ctx, area, { previous, changedSince }) => {
   const vars = { round: ctx.round, area: area.id, commit: ctx.commit, out: `${JOB_OUT}/findings.md`, files: area.files.map((f) => `- ${f}`).join('\n') };
   writeFileSync(join(inDir, 'review.md'), fill(brief('reviewer.md'), vars));
   writeFileSync(join(inDir, 'files.txt'), `${area.files.join('\n')}\n`);
-  copyFileSync(PROGRESS_SOURCE, join(ctx.frozen, PROGRESS_IN));
+  copyFileSync(progressSource(), join(ctx.frozen, PROGRESS_IN));
   const [a, b] = await Promise.all([review(ctx, area, 'A'), review(ctx, area, 'B')]);
   const dir = join(ctx.nightDir, 'areas', area.id);
   mkdirSync(dir, { recursive: true });

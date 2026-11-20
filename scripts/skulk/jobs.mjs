@@ -21,7 +21,7 @@ export const BUSY_WAIT_MS = 30_000;
 const q = (s) => `'${String(s).replace(/'/g, `'\\''`)}'`;
 
 /** The progress filter, copied into each frozen tree's `.skulk/in` so a node runs the one this run ships. */
-export const PROGRESS_SOURCE = fileURLToPath(new URL('./progress.mjs', import.meta.url));
+export const progressSource = () => fileURLToPath(new URL('./progress.mjs', import.meta.url));
 export const PROGRESS_IN = `${JOB_IN}/progress.mjs`;
 
 /**
