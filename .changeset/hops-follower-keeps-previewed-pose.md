@@ -2,6 +2,6 @@
 '@weasel-js/diagram': patch
 ---
 
-While dragging with line jumps on, a connector that is itself dragged, or that an earlier transform follower moves, keeps that pose instead of snapping back to its stored one.
+While dragging with line jumps on, a connector keeps the pose the drag or an earlier follower gives it instead of its stored one.
 
 <!-- entry: fix visual -->
