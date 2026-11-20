@@ -15,7 +15,7 @@ export type AttachMenuHostOptions =
  *  outside it, the window losing focus and a resize. Closing any other way
  *  gives focus back to the widget that held it when the menu opened, and so does the detach this returns. */
 export function attachMenuHost(hud: Hud, host: MenuHost, options: AttachMenuHostOptions = {}): () => void {
-  const opts = { toCanvas: hud.toCanvas, canvasSize: hud.canvasSize, ...options };
+  const opts = { ...options, toCanvas: options.toCanvas ?? hud.toCanvas, canvasSize: options.canvasSize ?? hud.canvasSize };
   let widget: Widget | null = null;
   let returnTo: { widget: Widget | null; visible: boolean } = { widget: null, visible: false };
 
