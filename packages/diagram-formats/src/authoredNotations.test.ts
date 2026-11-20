@@ -121,7 +121,8 @@ describe('a chart drawn from a notation type\'s stencils writes that notation, a
     ]);
     expect(text).toMatch(/^classDiagram/m);
     expect(text).toMatch(/\["Interface"\] \{\n\s+<<interface>>\n\s+\+ run\(\) void\n\s+\+ stop\(\) void\n\s+\}/);
-    expect(labels(graph(back).data.nodes[0]!).slice(0, 2)).toEqual(['<<interface>>', 'Interface']);
+    expect(text).toMatch(/\["AbstractClass"\] \{\n\s+<<abstract>>\n\s+# id int\n\s+\+ draw\(\)\* void/);
+    expect(graph(back).data.nodes.map((n) => labels(n).slice(0, 2))).toEqual([['<<interface>>', 'Interface'], ['<<abstract>>', 'AbstractClass']]);
   });
 
   it('ER', () => {

@@ -14,8 +14,8 @@ const compartments = (name: readonly Row[], attributes: readonly Row[], operatio
   verticalAlign: 'top',
 });
 
-/** UML's class-diagram and use-case symbols. A stereotype is spelled as Mermaid's class notation spells it, `<<interface>>`,
- *  so it survives its writer. */
+/** UML's class-diagram and use-case symbols. A stereotype and an abstract member are spelled as Mermaid's class notation
+ *  spells them, `<<interface>>` and `draw()*`, so they survive its writer. */
 export const UML_STENCILS: readonly DiagramStencil[] = [
   {
     id: 'uml-class', label: 'Class', outline: 'rect', size: { width: 160, height: 124 }, icon: icon('umlClass'),
@@ -34,11 +34,11 @@ export const UML_STENCILS: readonly DiagramStencil[] = [
     ),
   },
   {
-    id: 'uml-abstract', label: 'Abstract class', outline: 'rect', size: { width: 160, height: 108 }, icon: icon('umlAbstract'),
+    id: 'uml-abstract', label: 'Abstract class', outline: 'rect', size: { width: 160, height: 124 }, icon: icon('umlAbstract'),
     ...compartments(
-      [{ kind: 'label', text: 'AbstractClass', style: { bold: true, italic: true } }],
+      [{ kind: 'label', text: '<<abstract>>' }, { kind: 'label', text: 'AbstractClass', style: { bold: true, italic: true } }],
       [member('# id', 'int')],
-      [{ kind: 'field', label: '+ draw()', value: 'void', style: { italic: true } }, member('+ getId()', 'int')],
+      [{ kind: 'field', label: '+ draw()*', value: 'void', style: { italic: true } }, member('+ getId()', 'int')],
     ),
   },
   { id: 'uml-package', label: 'Package', outline: 'folder', size: { width: 120, height: 80 }, icon: icon('umlPackage') },
