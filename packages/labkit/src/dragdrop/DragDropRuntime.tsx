@@ -67,11 +67,12 @@ interface DropSink {
 
 /**
  * Run palette-to-canvas drags for a `DragDropCapability`. A palette item's
- * primary-button press starts a carry; releasing it over the canvas `target` is rendered in
- * emits `'canvas.itemAdded'` and then applies `onDrop`'s state, so an undo
- * snapshot taken on the event holds the state from before it, and releasing
- * anywhere else, or a canceled gesture, drops nothing. `onDragOver` is probed
- * at most once per frame while the carry is over the canvas.
+ * primary-button press starts a carry; releasing it over the canvas `target`
+ * is rendered in emits `'canvas.itemAdded'` and then applies `onDrop`'s state,
+ * so an undo snapshot taken on the event holds the state from before it.
+ * Releasing anywhere else, where `onDragOver` answers `ok: false`, or a
+ * canceled gesture, drops nothing. `onDragOver` is probed at most once per
+ * frame while the carry is over the canvas, and once more at the release.
  */
 export function useDragDrop<TS, TC>({
   capability,
@@ -117,6 +118,9 @@ export function useDragDrop<TS, TC>({
       },
       drop: (world, item) => {
         const live = liveRef.current;
+        // Asked again where it lands: the last frame's answer may be for another spot.
+        if (live.capability.onDragOver?.(world, item, live.state, live.config)?.ok === false)
+          return;
         live.emit('canvas.itemAdded');
         live.setState(live.capability.onDrop(world, item, live.state, live.config));
       },

@@ -228,6 +228,27 @@ describe('DragDrop integration', () => {
 });
 
 describe('DragDrop across trials and buttons', () => {
+  it('drops nothing where onDragOver refuses the drop', async () => {
+    let latest: DropState = { items: [] };
+    const refusing = defineInstrument<DropState, Record<string, never>>({
+      ...testInstrument,
+      name: 'Refusing',
+      dragDrop: {
+        ...(testInstrument.dragDrop as NonNullable<typeof testInstrument.dragDrop>),
+        onDragOver: () => ({ ok: false, reason: 'full' }),
+      },
+    });
+    await renderLab((s) => {
+      latest = s;
+    }, refusing);
+    await act(async () => {
+      pointerDown(screen.getByRole('button', { name: 'Item A' }), 0, 0);
+    });
+    await pointerUp(250, 250);
+    expect(latest.items).toHaveLength(0);
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
+  });
+
   it.each([
     ['middle', 1, 4],
     ['secondary', 2, 2],
