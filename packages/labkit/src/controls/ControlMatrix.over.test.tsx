@@ -112,3 +112,37 @@ describe('<ControlMatrix> over another schema', () => {
     ).toBeNull();
   });
 });
+
+describe("<ControlMatrix> an alias's enum cell", () => {
+  const target = resolveConfigSchema(
+    f.schema({
+      view: f.group({ mode: f.enum<string>('hard', ['hard', 'soft']).label('Mode') }),
+    }),
+  ).group;
+  const aliased = resolveConfigSchema(
+    f.schema({ looks: f.group({ window: f.group({ mode: f.alias('view.mode') }) }) }),
+    [],
+    target,
+  );
+
+  it('lists its options as radios, writes at the leaf it shows, and closes on a choice', () => {
+    const setConfig = vi.fn();
+    render(
+      <ControlMatrix
+        schema={aliased}
+        over={target}
+        columns={[{ key: 'looks.window', label: 'Win', title: 'Window' }]}
+        rows={[{ key: 'mode', label: 'Mode' }]}
+        config={{ view: { mode: 'hard' } }}
+        auto={new Set()}
+        setConfig={setConfig}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Window Mode' }));
+    const popover = screen.getByRole('dialog', { name: 'Window Mode' });
+    expect(popover.querySelectorAll('input[type="radio"]')).toHaveLength(2);
+    fireEvent.click(within(popover).getByRole('radio', { name: 'soft' }));
+    expect(setConfig).toHaveBeenCalledWith('view.mode', 'soft');
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+});
