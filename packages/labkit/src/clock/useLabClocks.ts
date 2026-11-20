@@ -13,25 +13,28 @@ import {
 const LAB_CLOCK_RECORD = valueRecord(null, 'lk-lab-clock');
 
 /** A lab's clocks, run by its one frame loop. With `spec`, the registry holds
- *  the lab's own clock, reopened where `records` kept it and kept there since. */
+ *  the lab's own clock, reopened where `records` kept it and kept there since.
+ *  `spec` is read once, at mount. */
 export function useLabClocks(
   spec: ClockCapability | undefined,
   records: RecordCache,
 ): ClockRegistry {
-  const [clocks] = useState(() =>
-    createClockRegistry(
+  const [{ clocks, opened }] = useState(() => ({
+    clocks: createClockRegistry(
       spec
         ? createTrialClock(spec, records.get(LAB_CLOCK_RECORD) as ClockPosition | undefined)
         : null,
     ),
-  );
+    opened: spec,
+  }));
   useEffect(() => {
     const lab = clocks.shared;
     if (!lab) return;
+    // Against the declaration the clock was made from, so a later `spec` is not recorded as an override.
     return lab.clock.subscribe(() =>
-      records.set(LAB_CLOCK_RECORD, clockPosition(lab.clock, spec?.duration, spec?.origin)),
+      records.set(LAB_CLOCK_RECORD, clockPosition(lab.clock, opened?.duration, opened?.origin)),
     );
-  }, [clocks, spec, records]);
+  }, [clocks, opened, records]);
   useClockLoop(clocks);
   return clocks;
 }
