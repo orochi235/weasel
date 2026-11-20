@@ -1,6 +1,7 @@
 import { Button, CLOSE_BUTTON_PROPS } from '@weasel-js/ui/components/Button';
 import { Input } from '@weasel-js/ui/components/Input';
 import { useAnnotations } from './AnnotationsContext';
+import { useMarkGesture } from './markGesture';
 import type { AnnotationMeaning } from './types';
 
 /** Props for `<MarkList>`. */
@@ -21,6 +22,8 @@ export function MarkList({ meaning, config }: MarkListProps) {
   const marks = useAnnotations();
   const all = marks.query();
   const statuses = meaning?.statuses ?? [];
+  // A burst of typing in one field is one undo step, as the palette's restyles are.
+  const gesture = useMarkGesture('mark-list');
 
   if (all.length === 0) {
     return <div className="lk-mark-list__empty">No marks yet</div>;
@@ -47,7 +50,9 @@ export function MarkList({ meaning, config }: MarkListProps) {
               aria-label={`Title of ${a.kind} on ${a.target}`}
               value={a.title ?? ''}
               placeholder="Untitled"
-              onChange={(next) => marks.update(a.id, { title: next })}
+              onChange={(next) =>
+                marks.update(a.id, { title: next }, { coalesceKey: gesture('title', a.id) })
+              }
             />
             {statuses.length > 0 ? (
               // A native select: it carries role, name and keyboard operability

@@ -82,6 +82,18 @@ describe('<MarkList>', () => {
     expect(store.query({ where: (a) => a.title === 'missing edge' })).toHaveLength(1);
   });
 
+  it('takes back a burst of typing in a title as one undo step', () => {
+    const store = seeded();
+    mount(store, MEANING);
+    const field = () => screen.getAllByRole('textbox')[0] as HTMLElement;
+    for (const value of ['c', 'cr', 'cra', 'crac', 'crack']) {
+      fireEvent.change(field(), { target: { value } });
+    }
+    expect(store.query({ where: (a) => a.title === 'crack' })).toHaveLength(1);
+    store.undo();
+    expect(store.query({ where: (a) => a.title === 'spurious ring' })).toHaveLength(1);
+  });
+
   it("marks a row stale when its target's declared config moved", () => {
     const store = seeded();
     // `flat` snapshotted angle 0 and declares it; `shaded` declares nothing
