@@ -100,7 +100,8 @@ function defaultElk(): Promise<ElkRunner> {
 }
 
 /** Lay `graph` out with ELK: where each participant goes, each edge's route
- *  and the port at either end, each label's place, and each cluster's box. */
+ *  and the port at either end, each label's place, and each cluster's box.
+ *  Rejects a graph naming two of its participants and clusters by one id. */
 export async function elkPlan(graph: Graph, opts: ElkLayoutOptions = {}): Promise<ElkPlan> {
   const { root, index } = toElk(graph, elkRootOptions(opts));
   const elk = opts.elk ?? (await defaultElk());

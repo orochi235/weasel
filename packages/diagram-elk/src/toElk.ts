@@ -70,17 +70,23 @@ export function drawnEdges(graph: Graph): DrawnEdge[] {
   return [...seen.values()];
 }
 
-/** The ELK graph for `graph`, its root carrying `layoutOptions`. */
+/** The ELK graph for `graph`, its root carrying `layoutOptions`. Throws on a graph naming two of its participants and
+ *  clusters by one id. */
 export function toElk(graph: Graph, layoutOptions: Record<string, string>): { root: ElkNode; index: ElkIndex } {
   const index: ElkIndex = { nodes: new Map(), clusters: new Map(), edges: new Map() };
   const clusters = graph.clusters ?? [];
   const elkIdOf = new Map<string, string>();
+  // An edge names its ends by id alone, so an id two of them share leaves it no way to say which it joins.
+  const claim = (id: string, elkId: string) => {
+    if (elkIdOf.has(id)) throw new Error(`diagram-elk: the graph names more than one participant or cluster "${id}"`);
+    elkIdOf.set(id, elkId);
+  };
   graph.nodes.forEach((n, i) => {
-    elkIdOf.set(n.id, `n${i}`);
+    claim(n.id, `n${i}`);
     index.nodes.set(`n${i}`, n);
   });
   clusters.forEach((g, i) => {
-    elkIdOf.set(g.id, `g${i}`);
+    claim(g.id, `g${i}`);
     index.clusters.set(`g${i}`, g);
   });
 

@@ -69,6 +69,14 @@ describe('elkPlan', () => {
     expect([...plan.clusters.keys()].sort()).toEqual(['G', 'H', 'S']);
   });
 
+  it('refuses a graph naming two participants or clusters by one id', async () => {
+    const shared = graphOf([node('x'), node('y', { cluster: 'x' })], [{ id: 'xy', from: 'x', to: 'y' }], [
+      { id: 'x', members: ['y'], inset: INSET },
+    ]);
+    await expect(elkPlan(shared)).rejects.toThrow(/"x"/);
+    await expect(elkPlan(graphOf([node('a'), node('a')], []))).rejects.toThrow(/"a"/);
+  });
+
   it('ranks a chain down the page, each node below the last', async () => {
     const graph = graphOf([node('a'), node('b'), node('c')], [
       { id: 'ab', from: 'a', to: 'b' },

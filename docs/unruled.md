@@ -2812,3 +2812,9 @@ Calls the lanes made without a ruling:
   and the end only where none does, so `present.go` reaches every page by its id and old callers keep working.
   Keeping the ends ahead of the ids, so such a page was unreachable by id, was the alternative; so was dropping
   `to: 'first' | 'last'` outright.
+
+## Audit round forty-five (2026-11-19): diagram-elk
+
+- 2026-11-19 (the fixer's call): `elkPlan` rejects a `Graph` naming two of its participants and clusters by one id,
+  since an edge names its ends by id and could join either. Giving nodes and clusters separate id maps and resolving an
+  edge's end to the node first was the alternative; `buildGraph` never produces such a graph, as scene ids are unique.
