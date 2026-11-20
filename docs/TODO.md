@@ -502,7 +502,8 @@ Arcs toward scenes far larger than a screen, in the order each builds on the las
 comparing pezlie's wall, which pans a 1.1M-cell corpus at 60 fps). Arc 1, render-time visibility, is in
 `docs/PERF.md`; these rest on it.
 
-- **(P3) [agent] Level of detail: a node's representation chosen by its size on screen.** Painters get
+- **(P3) [agent] Level of detail: a node's representation chosen by its size on screen.** Design:
+  `docs/proposals/2026-11-19-level-of-detail.md`. Painters get
   `pixelScale` (`packages/core/src/canvas/nodeShapeTypes.ts:23`) and nothing builds on it. A node declares
   representations by on-screen size, and the engine picks one with hysteresis so a zoom parked on a boundary
   does not flicker (pezlie's `wall/src/levels.ts:66` goes up at ×1.5 and down at ×0.67). Closes when a node
@@ -511,8 +512,8 @@ comparing pezlie's wall, which pans a 1.1M-cell corpus at 60 fps). Arc 1, render
 - **(P3) [agent] A tile-pyramid layer.** `retain` (`packages/renderer/src/draw/retained.ts`) survives only
   whole-device-pixel pans; any zoom redraws. A layer renders its content into `z/tx/ty` power-of-two tiles
   under a per-frame budget, draws a coarser parent until a finer tile is ready, cross-fades between levels,
-  and keeps a bounded LRU with the coarsest level pinned (pezlie's `wall/src/tiles.ts`). Tiles bake through
-  `renderSceneToPixels`. Closes when a layer can be marked tiled, a zoom over a static backdrop draws from
+  and keeps a bounded LRU with the coarsest level pinned (pezlie's `wall/src/tiles.ts`). Design:
+  `docs/proposals/2026-11-19-tile-pyramid.md`. Closes when a layer can be marked tiled, a zoom over a static backdrop draws from
   tiles with no full redraw (measured), and the cache's bound is tested.
 - **(P3) [agent] A streaming scene source.** Nothing loads or drops nodes as the view moves; a consumer on
   `onViewChange` pays a pick-index rebuild and an undo-history entry per change. A source answers the nodes
