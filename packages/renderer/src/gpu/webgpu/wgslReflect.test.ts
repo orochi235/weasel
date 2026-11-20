@@ -147,3 +147,26 @@ struct Uniforms { inner: toString, after: f32 }
     ]);
   });
 });
+
+describe('reflectWgsl on a module declaring things after their use', () => {
+  it('binds a uniform written above its struct, sized by a const below it, holding a struct declared last', () => {
+    const r = reflectWgsl(`
+@group(1) @binding(0) var<uniform> params: Params;
+struct Params { inner: Inner, weights: array<vec4f, N> }
+const N = 4;
+struct Inner { a: vec4f }
+`, STANDARD);
+    expect(r.bindings).toEqual([{ group: 1, binding: 0, name: 'params', kind: 'uniform', struct: 'Params' }]);
+    expect(r.structs.get('Params')!.size).toBe(80);
+    expect(createUniformBlock(r, 'Params').size).toBe(80);
+  });
+
+  it('still refuses a uniform whose struct cannot be laid out, naming why', () => {
+    expect(() => reflectWgsl(`
+@group(1) @binding(0) var<uniform> params: Params;
+struct Params { inner: Mid }
+struct Mid { inner: Inner }
+struct Inner { flag: bool }
+`, STANDARD)).toThrow(/bool/);
+  });
+});

@@ -207,32 +207,52 @@ export function reflectWgsl(source: string, target: WgslTarget): WgslReflection 
   const unlaid = new Map<string, Error>();
   const bindings: WgslBinding[] = [];
   const token = /\bconst\s+(\w+)\s*(?::\s*\w+\s*)?=\s*(\d+)[iu]?\s*;|\bstruct\s+(\w+)\s*\{([^}]*)\}|((?:@\w+(?:\([^)]*\))?\s*)+)var(?:<([^>]*)>)?\s+(\w+)\s*:\s*([^;]+);/g;
-  for (let m = token.exec(src); m; m = token.exec(src)) {
-    if (m[1]) {
-      consts.set(m[1], parseInt(m[2], 10));
-    } else if (m[3]) {
+  // Module-scope declarations may come in any order: consts first, then structs until none is left that the
+  // ones laid out so far can lay out, then the variables.
+  const matches = [...src.matchAll(token)];
+  for (const m of matches) if (m[1]) consts.set(m[1], parseInt(m[2], 10));
+  let pending = matches.filter((m) => m[3]);
+  for (let laid = true; laid && pending.length > 0;) {
+    laid = false;
+    pending = pending.filter((m) => {
       try {
         structs.set(m[3], parseStruct(m[3], m[4], structs, consts, unlaid));
+        unlaid.delete(m[3]);
+        laid = true;
+        return false;
+      } catch (e) {
+        unlaid.set(m[3], e as Error);
+        return true;
+      }
+    });
+  }
+  // A struct that failed before what it holds did keeps that member's own error, however deep it sits.
+  for (let i = 1; i < pending.length; i++) {
+    for (const m of pending) {
+      try {
+        parseStruct(m[3], m[4], structs, consts, unlaid);
       } catch (e) {
         unlaid.set(m[3], e as Error);
       }
-    } else {
-      const attrs = m[5];
-      const group = /@group\((\d+)\)/.exec(attrs);
-      const binding = /@binding\((\d+)\)/.exec(attrs);
-      if (!group || !binding) continue;
-      const space = (m[6] ?? '').split(',')[0].trim();
-      const type = m[8].trim();
-      if (space === 'uniform' && unlaid.has(type)) throw unlaid.get(type)!;
-      const kind: WgslBindingKind = space === 'uniform' ? 'uniform'
-        : space === 'storage' ? 'storage'
-        : /^sampler/.test(type) ? 'sampler'
-        : 'texture';
-      bindings.push({
-        group: Number(group[1]), binding: Number(binding[1]), name: m[7], kind,
-        ...(kind === 'uniform' && structs.has(type) ? { struct: type } : {}),
-      });
     }
+  }
+  for (const m of matches) {
+    if (m[1] || m[3]) continue;
+    const attrs = m[5];
+    const group = /@group\((\d+)\)/.exec(attrs);
+    const binding = /@binding\((\d+)\)/.exec(attrs);
+    if (!group || !binding) continue;
+    const space = (m[6] ?? '').split(',')[0].trim();
+    const type = m[8].trim();
+    if (space === 'uniform' && unlaid.has(type)) throw unlaid.get(type)!;
+    const kind: WgslBindingKind = space === 'uniform' ? 'uniform'
+      : space === 'storage' ? 'storage'
+      : /^sampler/.test(type) ? 'sampler'
+      : 'texture';
+    bindings.push({
+      group: Number(group[1]), binding: Number(binding[1]), name: m[7], kind,
+      ...(kind === 'uniform' && structs.has(type) ? { struct: type } : {}),
+    });
   }
   if (!target.standardLayout) {
     for (const b of bindings) if (b.struct) checkUniformLayout(structs.get(b.struct)!, structs, b.name);
