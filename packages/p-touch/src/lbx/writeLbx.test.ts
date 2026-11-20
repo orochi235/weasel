@@ -186,7 +186,7 @@ describe('lbxObjectsCommand', () => {
 
   it('drops carried objects a transform collapses to a line, as it does the paint beside them', async () => {
     const { config, skipped } = await lbxConfig(page([
-      { ...frame({ kind: 'rect', x: 0, y: 0, width: 100, height: 30 }, [lbxObjectsCommand([barcode])]), transform: mat3.scaled(mat3.identity(), 0, 1) },
+      { ...(frame({ kind: 'rect', x: 0, y: 0, width: 100, height: 30 }, [lbxObjectsCommand([barcode])]) as GroupDrawCommand), transform: mat3.scaled(mat3.identity(), 0, 1) },
     ]));
     expect(skipped).toEqual([]);
     expect(config.objects).toEqual([]);
