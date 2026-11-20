@@ -1,3 +1,4 @@
+import { sameStored } from '@weasel-js/storage';
 import { repairedConfig } from '../config/leaves';
 import { fillConfigDefaults, ownAt } from '../config/path';
 import { deserializeTrials } from './helpers';
@@ -124,7 +125,9 @@ export function rehydrated<T extends { id: string; instrumentName: string; confi
     { config: migratedConfig(hydration, held.instrumentName, held.config) },
   ]);
   if (!moved) return held;
-  return { ...held, config: filledConfig(hydration, held.instrumentName, moved.config) };
+  const config = filledConfig(hydration, held.instrumentName, moved.config);
+  // A new object for an unchanged config would rewrite the record.
+  return sameStored(config, held.config) ? held : { ...held, config };
 }
 
 function hydrated<T>(

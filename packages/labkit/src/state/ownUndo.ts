@@ -6,8 +6,8 @@ import { onTrialRestart } from './trialRestarts';
 interface Held {
   /** The history each trial's instrument has mounted now. */
   sources: Map<string, TrialHistorySource>;
-  /** What each trial's last unmounted history saved, until another mounts or the trial restarts
-   *  its undo, with the stop of the restart listener that drops it. */
+  /** What each trial's last unmounted history saved, until another mounts, the trial restarts
+   *  its undo or it closes, with the stop of the listeners that drop it. */
   parked: Map<string, { data: unknown; off: () => void }>;
   steps: Emitter<[trialId: string]>;
 }
@@ -62,7 +62,16 @@ export function holdOwnUndo(
     h.sources.delete(trialId);
     if (!source.serialize || !store.getState().trials.some((t) => t.id === trialId)) return;
     const offRestart = onTrialRestart(store, trialId, () => unpark(h, trialId));
-    h.parked.set(trialId, { data: source.serialize(), off: offRestart });
+    const offClose = store.subscribe((s) => {
+      if (!s.trials.some((t) => t.id === trialId)) unpark(h, trialId);
+    });
+    h.parked.set(trialId, {
+      data: source.serialize(),
+      off: () => {
+        offRestart();
+        offClose();
+      },
+    });
   };
 }
 

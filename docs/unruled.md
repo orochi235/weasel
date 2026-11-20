@@ -3024,3 +3024,13 @@ Calls the lanes made without a ruling:
   if it adopted it, its own clamp if it clamped, the old width if it kept it. A parent that adopts the width
   asynchronously (after a debounce, say) sees the seam snap back until it does. Treating `width` as a starting
   point the seam may leave, as it did before, was the alternative; `defaultWidth` with no `width` still does that.
+## Audit round fifty-one (2026-11-20): labkit's state
+
+- 2026-11-20 (the fixer's call): a lab whose fold of old storage cannot confirm its records stops persisting for
+  the session, keeping the old storage for the next open to fold again. Leaving `meta` out of the cache's seed, so
+  the session's first write put it down, was the alternative; a fold record that never landed would then have been
+  lost behind that `meta`.
+- 2026-11-20 (the fixer's call): `<SingletonExperimentProvider>` keeps the trial id it mounted with and warns in
+  development when `id` changes, as it does for `storageKey` and `storage`. Following the new id, opening a second
+  synthetic trial, was the alternative. `initialConfig` and `initialState` are documented as read once but not
+  warned on, since callers pass them as literals built each render.

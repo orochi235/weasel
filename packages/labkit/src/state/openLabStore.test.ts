@@ -64,6 +64,29 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+describe('openLabStore — a store that cannot be built', () => {
+  it('rejects, and stops hearing storage', async () => {
+    const memory = createMemoryAdapter(new Map());
+    let listening = 0;
+    const storage: StorageAdapter = {
+      ...memory,
+      subscribe: (prefix, on) => {
+        listening += 1;
+        const stop = memory.subscribe?.(prefix, on);
+        return () => {
+          listening -= 1;
+          stop?.();
+        };
+      },
+    };
+    const t: Instrument = { name: 'T', render: () => null } as never;
+    await expect(
+      openLabStore({ storageKey: 'test', storage, instruments: [t, { ...t }] }),
+    ).rejects.toThrow('two instruments are named "T"');
+    expect(listening).toBe(0);
+  });
+});
+
 describe('openLabStore — round trips', () => {
   it('reopens a trial it stored, with no live undo history until the trial restores one', async () => {
     const backing = new Map<string, unknown>();
@@ -350,6 +373,20 @@ describe('openLabStore — what a change writes', () => {
     opened.store.getState().updateTrialState('b', { n: 1 });
     await opened.close();
     expect(set.mock.calls.map(([key]) => key)).toEqual([`${P}trial:b`]);
+  });
+
+  it('writes nothing when an instrument is set again as an equal new object', async () => {
+    const backing = new Map<string, unknown>();
+    storeLab(backing, { trials: [trial('a')], saves: [{ ...SNAPSHOT, trialId: 'a' }] });
+    const { storage, set } = counting(backing);
+    const make = (): Instrument => ({ name: 'T', initialState: () => ({}), render: () => null });
+    const opened = await openLabStore({ storageKey: 'test', storage, instruments: [make()] });
+    const before = opened.store.getState();
+    opened.store.getState().setInstruments([make()]);
+    expect(opened.store.getState().trials[0]).toBe(before.trials[0]);
+    expect(opened.store.getState().savedSnapshots[0]).toBe(before.savedSnapshots[0]);
+    await opened.close();
+    expect(set).not.toHaveBeenCalled();
   });
 
   it('writes nothing for a change to undo history alone', async () => {
@@ -668,6 +705,29 @@ describe('openLabStore — records it cannot use', () => {
     });
   });
 
+  it("drops a snapshot another tab stored with a config this one cannot migrate, and leaves that tab's record", async () => {
+    const backing = new Map<string, unknown>();
+    storeLab(backing, { trials: [trial('w1')], saves: [SNAPSHOT] });
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const migrate = (config: unknown) => {
+      if ((config as { old?: boolean }).old) throw new Error('no path from this shape');
+      return config;
+    };
+    const mine = await open(backing, { configMigrations: { T: migrate } });
+    const theirs = await open(backing);
+
+    theirs.store.setState({ savedSnapshots: [{ ...SNAPSHOT, config: { old: true } }] });
+    await theirs.records.flush();
+    await tick();
+
+    expect(mine.store.getState().savedSnapshots).toEqual([]);
+    expect(mine.store.getState().unreadable.map((u) => u.id)).toEqual(['s1']);
+    mine.store.getState().setInstruments([{ name: 'T', render: () => null } as never]);
+    await mine.close();
+    await theirs.close();
+    expect(backing.get(`${P}save:s1`)).toMatchObject({ config: { old: true } });
+  });
+
   it('ignores a record whose name no lab writes', async () => {
     const backing = new Map<string, unknown>();
     storeLab(backing, { trials: [trial('w1')] });
@@ -739,6 +799,30 @@ describe('openLabStore — folding a version-3 document', () => {
     expect(opened.store.getState().trials.map((t) => t.id)).toEqual(['w1']);
     expect(backing.has(labDocumentKey('test'))).toBe(true);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('keeping the old storage'));
+  });
+
+  it('writes nothing more once a fold could not confirm its records, so the next open folds again', async () => {
+    const backing = new Map<string, unknown>();
+    storeV3(backing, { trials: [trial('w1')], saves: [], layout: {}, mode: 'auto' });
+    const memory = createMemoryAdapter(backing);
+    const dropsMeta: StorageAdapter = {
+      ...memory,
+      set: async (key, value) => {
+        if (key === `${P}meta`) return;
+        await memory.set(key, value);
+      },
+    };
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const opened = await openLabStore({ storageKey: 'test', storage: dropsMeta });
+    const written = structuredClone(backing.get(`${P}trial:w1`));
+    opened.store.getState().updateTrialState('w1', { n: 7 });
+    await opened.close();
+    expect(backing.get(`${P}trial:w1`)).toEqual(written);
+
+    const again = await open(backing);
+    expect(again.store.getState().trials.map((t) => t.id)).toEqual(['w1']);
+    expect(backing.has(labDocumentKey('test'))).toBe(false);
+    await again.close();
   });
 
   it('fills whatever an incomplete document is missing', async () => {

@@ -1,5 +1,5 @@
 import { createHistory } from '@weasel-js/core';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { deserializeTrials, labStorageKey, newId, serializeTrials } from './helpers';
 
 describe('labStorageKey', () => {
@@ -120,6 +120,22 @@ describe('deserializeTrials', () => {
       try {
         expect(newId()).not.toBe(newId());
       } finally {
+        Object.defineProperty(globalThis, 'crypto', { value: real, configurable: true });
+      }
+    });
+
+    it('mints different fallback ids in two pages started in the same millisecond', async () => {
+      const real = globalThis.crypto;
+      Object.defineProperty(globalThis, 'crypto', { value: {}, configurable: true });
+      vi.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000);
+      try {
+        vi.resetModules();
+        const first = (await import('./helpers')).newId();
+        vi.resetModules();
+        const second = (await import('./helpers')).newId();
+        expect(first).not.toBe(second);
+      } finally {
+        vi.restoreAllMocks();
         Object.defineProperty(globalThis, 'crypto', { value: real, configurable: true });
       }
     });
