@@ -32,6 +32,10 @@ const isMetadataBearingSvg = (text: string): boolean =>
   && sniffSvgText(text)
   && extractWeaselClipboardFromSvg(text) !== null;
 
+/** Per paste adapter, the payload it last pasted and the copies a paste of it again starts from, so a run of
+ *  Cmd+V steps on from the last paste, as `useClipboard`'s in-memory paste does. */
+const lastPasted = new WeakMap<object, { text: string; items: unknown[] }>();
+
 /** The content handler that pastes nodes a kit canvas copied, from the clipboard's weasel JSON or an SVG carrying it. */
 export const kitWeaselJsonHandler: ContentHandlerEntry = {
   id: 'kit:weasel-json',
@@ -72,16 +76,22 @@ export const kitWeaselJsonHandler: ContentHandlerEntry = {
       dwarn('clipboard', 'weasel payload unusable — declining (see prior warning if the parse threw)');
       return;
     }
-    // `ctx.point` is null for paste, so no dropPoint is threaded — the
-    // cascade offset is the placement.
-    const snapshot: ClipboardSnapshot = { items: nodes };
-    const result = materializePaste(clipboard.adapter, snapshot, {
+    // A drop lands at its point; a paste (`ctx.point` null) at the cascade offset, stepped on from the last paste
+    // of the same payload.
+    const adapter = clipboard.adapter;
+    const last = ctx.point == null ? lastPasted.get(adapter) : undefined;
+    const snapshot: ClipboardSnapshot = { items: last?.text === text ? last.items : nodes };
+    const result = materializePaste(adapter, snapshot, {
       currentSelection: [...ctx.operands.get()],
+      dropPoint: ctx.point,
       onOmitted: clipboard.onOmitted,
     });
     if (!result) return;
     ctx.applyOps(result.ops, 'Paste');
     ctx.operands.set(result.newIds as NodeId[]);
+    // A snapshot is in world, as a copy is; an adapter that has not flushed the insert answers empty.
+    const again = adapter.snapshotSelection?.call(adapter, [...result.newIds]).items ?? [];
+    lastPasted.set(adapter, { text, items: again.length > 0 ? again : result.created });
     // So kit:svg's text/plain fallback declines the SVG flavor of this copy.
     // WARNING: do not add an `await` earlier in this handle — the flag must
     // be written before lower-priority handlers' microtasks run.

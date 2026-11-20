@@ -103,6 +103,34 @@ describe('kitWeaselJsonHandler.handle — paste', () => {
     expect(onOmitted).toHaveBeenCalledWith([{ id: 'b', reason: 'dependency-not-copied', missing: ['z'] }]);
   });
 
+  it('steps a run of pastes of one payload on from the last, as the in-memory paste does', async () => {
+    const made = new Map<string, { id: string; pose: { x: number; y: number } }>();
+    let n = 0;
+    const adapter = {
+      ...stubAdapter(),
+      commitPaste: vi.fn((clipboard: { items: unknown[] }, offset?: { dx: number; dy: number }) =>
+        clipboard.items.map((raw) => {
+          const node = raw as { pose: { x: number; y: number } };
+          const out = { ...(raw as object), id: `p${n++}`, pose: { x: node.pose.x + (offset?.dx ?? 0), y: node.pose.y + (offset?.dy ?? 0) } };
+          made.set(out.id, out);
+          return out;
+        })),
+      snapshotSelection: (ids: string[]) => ({ items: ids.map((id) => made.get(id)!) }),
+    };
+    const c = ctx({ clipboard: { adapter } });
+    const text = buildWeaselClipboardText([NODES[0]]);
+    for (let i = 0; i < 3; i++) await kitWeaselJsonHandler.handle([stringItem(text)], c);
+    const xs = c.applyOps.mock.calls.map(([ops]) => ops[0].args.node.pose.x);
+    expect(xs).toEqual([13, 25, 37]);
+  });
+
+  it('lands a drop at its point: ctx.point is threaded to commitPaste as dropPoint', async () => {
+    const adapter = stubAdapter();
+    const c = ctx({ clipboard: { adapter }, point: { x: 300, y: 200 } });
+    await kitWeaselJsonHandler.handle([stringItem(buildWeaselClipboardText(NODES))], c);
+    expect(adapter.commitPaste.mock.calls[0][2]).toEqual({ dropPoint: { x: 300, y: 200 } });
+  });
+
   it('commits the paste through ctx.clipboard.adapter and applies insert + selection ops', async () => {
     const adapter = stubAdapter();
     const c = ctx({ clipboard: { adapter } });

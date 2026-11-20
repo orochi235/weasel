@@ -31,6 +31,11 @@ describe('ghostBounds', () => {
     expect(boxes).toHaveLength(1);
   });
 
+  it('keeps a file at its place among every file carried, as the handlers place it', () => {
+    const boxes = ghostBounds([pending('file', 'application/pdf'), pending('file', 'image/png')], at(), IMAGES_AND_TEXT);
+    expect(boxes).toEqual([{ x: 474, y: 474, width: 100, height: 100 }]);
+  });
+
   it('gives a drag of strings one line-shaped box, however many flavors it has', () => {
     const boxes = ghostBounds([pending('string', 'text/plain'), pending('string', 'text/html')], at(), IMAGES_AND_TEXT);
     expect(boxes).toEqual([{ x: 400, y: 487.5, width: 200, height: 25 }]);

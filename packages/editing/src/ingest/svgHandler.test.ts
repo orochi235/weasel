@@ -8,6 +8,7 @@ import {
 } from './svgHandler';
 import {
   kitImageHandler,
+  __setImageMeasureForTests,
   __setFileToDataUriForTests,
   _resetImageHandlerSeamsForTests,
 } from './imageHandler';
@@ -202,5 +203,26 @@ describe('kitSvgHandler — text/plain SVG fallback', () => {
     await runIngest([weaselItem(), svgTextItem()], c);
     expect(c.applyOps).not.toHaveBeenCalled(); // weasel declined inert
     expect(c.insert.commit).toHaveBeenCalledTimes(1); // fallback flavor lands
+  });
+});
+
+describe('one arrival across kit handlers', () => {
+  it('cascades an SVG and a raster dropped together, as their ghost did', async () => {
+    __setImageMeasureForTests(async () => ({ width: 400, height: 300 }));
+    registerContentHandler(kitSvgHandler);
+    registerContentHandler(kitImageHandler);
+    const png = new File(['x'], 'b.png', { type: 'image/png' });
+    const items = [item(svgFile('a.svg')), item(png)];
+    const c = ctx({ point: { x: 100, y: 100 }, items });
+    await runIngest(items, c);
+    const xs = c.insert.commit.mock.calls.map(([b]) => b.x + b.width / 2).sort((a, b) => a - b);
+    expect(xs).toEqual([100, 124]);
+  });
+
+  it('inserts an SVG file once when its markup rides beside it as text/plain', async () => {
+    const items = [item(svgFile('a.svg')), svgTextItem()];
+    const c = ctx({ point: { x: 0, y: 0 }, items });
+    await kitSvgHandler.handle(items, c);
+    expect(c.insert.commit).toHaveBeenCalledTimes(1);
   });
 });

@@ -24,6 +24,10 @@ import { createModeRegistry } from '@weasel-js/modes';
 import { createScene } from 'core/scene/scene';
 import * as coreTools from 'tools/builtin';
 import * as editing from '@weasel-js/editing';
+import * as corePresets from '@weasel-js/core/presets';
+import * as editingPresets from '@weasel-js/editing/presets';
+import * as pathToolsPresets from '@weasel-js/path-tools/presets';
+import * as textToolsPresets from '@weasel-js/text-tools/presets';
 
 const builtins = { ...coreTools, ...editing };
 import { createModeTriggersContribution } from 'domains/modes/modeTriggers';
@@ -208,6 +212,10 @@ export function sweepKit(): Sweep {
     [routing as unknown as Record<string, unknown>, 'routing'],
     [core as unknown as Record<string, unknown>, 'core'],
     [editing as unknown as Record<string, unknown>, 'editing'],
+    [corePresets as unknown as Record<string, unknown>, 'core/presets'],
+    [editingPresets as unknown as Record<string, unknown>, 'editing/presets'],
+    [pathToolsPresets as unknown as Record<string, unknown>, 'path-tools/presets'],
+    [textToolsPresets as unknown as Record<string, unknown>, 'text-tools/presets'],
     [pathTools as unknown as Record<string, unknown>, 'path-tools'],
     [textTools as unknown as Record<string, unknown>, 'text-tools'],
     [diagram as unknown as Record<string, unknown>, 'diagram'],

@@ -26,12 +26,12 @@ const WELL_KNOWN_CLIPBOARD_MIMES = new Set(['text/plain', 'text/html', 'image/pn
 export async function writeOsClipboard(flavors: ClipboardFlavors): Promise<void> {
   const entries = Object.entries(flavors);
   if (entries.length === 0) return;
-  const cb = typeof navigator !== 'undefined' ? navigator.clipboard : undefined;
-  if (!cb?.write || typeof ClipboardItem === 'undefined') return;
   const rejected = new Set<string>();
   for (const [mime, text] of entries) {
     if (typeof text !== 'string') text.catch(() => { rejected.add(mime); });
   }
+  const cb = typeof navigator !== 'undefined' ? navigator.clipboard : undefined;
+  if (!cb?.write || typeof ClipboardItem === 'undefined') return;
   const wireMime = (mime: string) => (WELL_KNOWN_CLIPBOARD_MIMES.has(mime) ? mime : `web ${mime}`);
   const toItem = (fs: Flavor[]) => new ClipboardItem(Object.fromEntries(
     fs.map(([mime, text]) => {

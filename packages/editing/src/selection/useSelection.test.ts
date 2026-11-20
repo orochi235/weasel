@@ -22,6 +22,15 @@ function sceneWithNodes() {
 }
 
 describe('useSelection', () => {
+  it('seeds `initial` into each scene store it is handed that has no selection yet', () => {
+    const first = sceneWithNodes();
+    const second = sceneWithNodes();
+    const { rerender } = renderHook(({ scene }) => useSelection({ scene, initial: [a] }), { initialProps: { scene: first } });
+    expect(first.getSelection()).toEqual([a]);
+    rerender({ scene: second });
+    expect(second.getSelection()).toEqual([a]);
+  });
+
   it('starts empty by default', () => {
     const { result } = renderHook(() => useSelection());
     expect(result.current.current).toEqual([]);

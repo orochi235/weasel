@@ -10,6 +10,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import type { GestureBinding } from '@weasel-js/routing';
+import * as editingPresets from '@weasel-js/editing/presets';
 import { sweepKit } from './kitSweep.fixture';
 
 /** A binding's identity apart from its id and the params its builder was configured with. */
@@ -23,6 +24,14 @@ describe('kit binding ids', () => {
 
   it('reaches the kit', () => {
     expect(sweep.found.length).toBeGreaterThan(100);
+  });
+
+  it('reaches every preset the editing presets entry exports', () => {
+    const reached = new Set(sweep.found.flatMap((f) => [...f.where.matchAll(/preset ([^:\s]+)/g)].map((m) => m[1])));
+    const presets = Object.values(editingPresets as Record<string, unknown>)
+      .filter((v): v is { id: string; ambient?: unknown } => typeof v === 'object' && v !== null && typeof (v as { id?: unknown }).id === 'string' && 'ambient' in v);
+    expect(presets.length).toBeGreaterThan(0);
+    expect(presets.map((p) => p.id).filter((id) => !reached.has(id))).toEqual([]);
   });
 
   it('gives every kit binding a declared id', () => {
