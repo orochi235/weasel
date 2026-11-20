@@ -9,6 +9,9 @@ import { CHART_SCENE_KEY } from './chartPersistence';
 import { chartPrefs } from './prefs';
 import { withIcons } from './testIcons';
 
+/** An import lays out its diagram before the scene is stored, which outlasts waitFor's default second on a loaded node. */
+const IMPORTED = { timeout: 4_000 };
+
 const io = vi.hoisted(() => ({ saved: [] as { blob: Blob; name: string }[], picked: null as File | null }));
 const extra = vi.hoisted(() => ({ warnings: [] as string[] }));
 
@@ -73,7 +76,7 @@ describe('File › Import…', () => {
     io.picked = new File([DIAGRAM_JSON.write!(DOC).text], 'flow.diagram.json');
     mount();
     choose('Import');
-    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(['a', 'b', 'ab'])));
+    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(['a', 'b', 'ab'])), IMPORTED);
     expect(stored()!.nodes.filter((n) => n.page !== undefined).map((n) => n.id)).toEqual(['one', 'two']);
     const a = stored()!.nodes.find((n) => n.id === 'a')!;
     expect(a.parent).toBe('one');
@@ -84,7 +87,7 @@ describe('File › Import…', () => {
     io.picked = new File(['flowchart LR\n  a[Alpha] --> b{Beta}\n  b --> c((Gamma))\n'], 'flow.mmd');
     mount();
     choose('Import');
-    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(['a', 'b', 'c'])));
+    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(['a', 'b', 'c'])), IMPORTED);
     const at = (id: string) => stored()!.nodes.find((n) => n.id === id)!.pose;
     expect(at('a').x).toBeLessThan(at('b').x);
     expect(at('b').x).toBeLessThan(at('c').x);
@@ -104,14 +107,14 @@ describe('File › Import…', () => {
     io.picked = new File([text], 'diagram.mmd');
     mount();
     choose('Import');
-    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(ids)));
+    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(ids)), IMPORTED);
   });
 
   it('opens a Mermaid xychart as a plot page, and exports it back as one', async () => {
     io.picked = new File(['xychart-beta\n  title "Sales"\n  x-axis [jan, feb]\n  bar [3, 7]\n'], 'sales.mmd');
     mount();
     choose('Import');
-    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toContain('page-1/plot'));
+    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toContain('page-1/plot'), IMPORTED);
     const root = stored()!.nodes.find((n) => n.id === 'page-1/plot') as unknown as { data: { plot: { data: unknown } } };
     expect(root.data.plot.data).toMatchObject({ kind: 'xychart', title: 'Sales', series: [{ kind: 'bar', values: [3, 7] }] });
     expect(stored()!.nodes.map((n) => n.id)).toContain('page-1/plot/bar:0:1');
@@ -141,7 +144,7 @@ describe('File › Import…', () => {
     io.picked = new File([text], 'chart.mmd');
     mount();
     choose('Import');
-    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toContain('page-1/plot'));
+    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toContain('page-1/plot'), IMPORTED);
     const root = stored()!.nodes.find((n) => n.id === 'page-1/plot') as unknown as { data: { plot: { data: { kind: string } } } };
     expect(root.data.plot.data).toMatchObject({ kind, ...expected });
     expect(stored()!.nodes.filter((n) => n.id.startsWith('page-1/plot/')).length).toBeGreaterThan(0);
@@ -160,7 +163,7 @@ describe('File › Import…', () => {
     io.picked = new File([text], 'diagram.mmd');
     mount();
     choose('Import');
-    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(ids)));
+    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(ids)), IMPORTED);
     choose('Export', 'As Mermaid');
     await waitFor(() => expect(io.saved).toHaveLength(1));
     const lines = (await io.saved[0]!.blob.text()).split('\n').map((l) => l.trim());
@@ -172,7 +175,7 @@ describe('File › Import…', () => {
     io.picked = new File(['sequenceDiagram\n  Alice->>+Bob: Hello\n  Bob-->>-Alice: Hi\n'], 'hello.mmd');
     mount();
     choose('Import');
-    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toContain('page-1/sequence'));
+    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toContain('page-1/sequence'), IMPORTED);
     const root = stored()!.nodes.find((n) => n.id === 'page-1/sequence') as unknown as { data: { diagram: { sequence: { participants: { id: string }[] } } } };
     expect(root.data.diagram.sequence.participants.map((p) => p.id)).toEqual(['Alice', 'Bob']);
     expect(stored()!.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(['page-1/sequence/head:Alice', 'page-1/sequence/msg:m1']));
@@ -191,7 +194,7 @@ describe('File › Import…', () => {
     expect(offIn('Graphviz DOT')).toBe(false);
     io.picked = new File(['sequenceDiagram\n  A->>B: x\n'], 'seq.mmd');
     choose('Import');
-    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toContain('page-1/sequence'));
+    await waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toContain('page-1/sequence'), IMPORTED);
     expect(offIn('Graphviz DOT')).toBe(true);
     expect(offIn('Mermaid')).toBe(false);
     expect(offIn('Diagram JSON')).toBe(false);
