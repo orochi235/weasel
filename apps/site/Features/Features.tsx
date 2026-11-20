@@ -1,5 +1,5 @@
 import {
-  actionShortcuts, BASELINE_ACTIONS, type FeaturePreset,
+  actionShortcuts, BASELINE_ACTIONS, describePresets, type FeaturePreset,
 } from '@weasel-js/core';
 import { formatShortcutParts } from '@weasel-js/gestures';
 import type { Action } from '@weasel-js/routing';
@@ -7,9 +7,8 @@ import { FEATURE_PRESETS } from '@weasel-js/editing';
 import { KeySequence } from '@weasel-js/ui/components/Keycaps';
 import s from './Features.module.css';
 
-type ToolEntry = NonNullable<FeaturePreset['tools']>[number];
-
-const toolName = (t: ToolEntry): string => (typeof t === 'string' ? t : 'id' in t ? t.id : String(t));
+/** The ids of the tools each preset mounts, its tool sets opened. */
+const TOOL_IDS = new Map(describePresets({ editing: Object.values(FEATURE_PRESETS) }).map((d) => [d.id, d.tools]));
 
 /** An action's label, then each key it answers to. */
 function ActionChip({ action }: { action: Action }) {
@@ -34,21 +33,21 @@ function List<T>({ items, render, empty = '—' }: { items: readonly T[]; render
 }
 
 function PresetRow({ name, actions, tools = [], chrome = [], includes = [] }: {
-  name: React.ReactNode; actions: readonly Action[]; tools?: readonly ToolEntry[]; chrome?: readonly string[];
+  name: React.ReactNode; actions: readonly Action[]; tools?: readonly string[]; chrome?: readonly string[];
   includes?: readonly FeaturePreset[];
 }) {
   return (
     <tr>
       <th scope="row">{name}</th>
       <td><List items={actions} render={(a) => <ActionChip key={a.id} action={a} />} /></td>
-      <td><List items={tools} render={(t) => <li key={toolName(t)}><code>{toolName(t)}</code></li>} /></td>
+      <td><List items={tools} render={(t) => <li key={t}><code>{t}</code></li>} /></td>
       <td><List items={chrome} render={(c) => <li key={c}><code>{c}</code></li>} /></td>
       <td><List items={includes} render={(p) => <li key={p.id}><code>{p.id}</code></li>} /></td>
     </tr>
   );
 }
 
-/** What each of core's presets turns on, read from the presets themselves. */
+/** What each of editing's feature presets turns on, read from the presets themselves. */
 export function Features() {
   return (
     <article className={s.page}>
@@ -56,9 +55,10 @@ export function Features() {
         <div className="ckd-eyebrow">Guide</div>
         <h2 className={s.heading}>Canvas features</h2>
         <p className="ckd-desc">
-          What each of core's presets turns on. <code>{'<SceneCanvas features>'}</code> takes the preset objects
-          (<code>presets.pick</code>, <code>presets.draw</code>, …), and <code>namedFeatures</code> from{' '}
-          <code>@weasel-js/editing</code> maps the names below to them. A canvas registers the actions, tools,
+          What each feature preset turns on. <code>{'<SceneCanvas features>'}</code> takes the preset objects
+          (<code>presets.pick</code>, <code>presets.draw</code>, … from <code>@weasel-js/editing/presets</code>), and{' '}
+          <code>namedFeatures</code> from <code>@weasel-js/editing</code> maps the names below to them. Core supplies
+          only what every canvas has. A canvas registers the actions, tools,
           and selection chrome of every preset it is given and every preset those include, and the actions its tools bind.
         </p>
       </header>
@@ -74,7 +74,7 @@ export function Features() {
               key={name}
               name={<code>{name}</code>}
               actions={preset.actions ?? []}
-              {...(preset.tools ? { tools: preset.tools } : {})}
+              tools={TOOL_IDS.get(preset.id) ?? []}
               {...(preset.chrome ? { chrome: preset.chrome } : {})}
               {...(preset.includes ? { includes: preset.includes } : {})}
             />

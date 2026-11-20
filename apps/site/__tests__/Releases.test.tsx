@@ -160,10 +160,12 @@ describe('the filter in the URL', () => {
     expect(await titles()).toHaveLength(2);
   });
 
-  it('shows the empty message for a package name that no entry carries', () => {
-    window.history.replaceState(null, '', '/?pkg=nonesuch');
+  it('ignores a package name that no entry carries, as it does a name that is not a tag', async () => {
+    window.history.replaceState(null, '', '/?pkg=nonesuch,bidi');
     render(<Releases />);
-    expect(screen.getByText('No changes match that filter.')).toBeTruthy();
+    expect(chip('bidi')).toHaveAttribute('aria-pressed', 'true');
+    expect(await titles()).toEqual(['bidi only']);
+    expect(new URLSearchParams(window.location.search).get('pkg')).toBe('bidi');
   });
 });
 

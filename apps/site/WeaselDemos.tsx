@@ -10,6 +10,7 @@ import { VersionPill } from './FrontPage/VersionPill';
 import { Wordmark } from './FrontPage/Wordmark';
 import { DEMOS_ID, FEATURES_ID, FRONT_ID, GET_STARTED_ID, RELEASES_ID, WHATS_NEW_ID, goFront, routeOf } from './routes';
 import { isPackagePage } from './Packages/catalog';
+import { ageOf } from './isoDay';
 import { SiteNav } from './SiteNav';
 import { DemoFrame } from './DemoFrame';
 import { DevtoolsSplit } from './DevtoolsSplit';
@@ -32,20 +33,6 @@ const GetStarted = lazy(() => import('./FrontPage/GetStarted').then((m) => ({ de
 const Features = lazy(() => import('./Features/Features').then((m) => ({ default: m.Features })));
 // A development aid only: production carries neither the toggle nor the panel.
 const DemoDevtools = import.meta.env.DEV ? lazy(() => import('./DemoDevtools')) : null;
-
-/** Format a git-ISO date as "3d ago" / "2w ago" / "Apr 2024" — close
- *  in time gets a relative phrasing; older falls back to a static
- *  month/year so the eyebrow doesn't fluctuate as the page sits. */
-function formatRelativeOrIso(iso: string): string {
-  const now = Date.now();
-  const ms = now - new Date(iso).getTime();
-  const day = 24 * 60 * 60 * 1000;
-  if (ms < day) return 'today';
-  const days = Math.floor(ms / day);
-  if (days < 7) return `${days}d ago`;
-  if (days < 30) return `${Math.floor(days / 7)}w ago`;
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
-}
 
 function readHash(): string {
   if (window.location.hash === `#${DEMOS_ID}`) return DEMOS[0].id;
@@ -193,7 +180,7 @@ function DemoView({ entry }: { entry: DemoEntry }) {
             <>
               <span className="ckd-eyebrow-sep" aria-hidden> · </span>
               <span className="ckd-eyebrow-date">
-                last modified <time dateTime={entry.lastModified} title={entry.lastModified}>{formatRelativeOrIso(entry.lastModified)}</time>
+                last modified <time dateTime={entry.lastModified} title={entry.lastModified}>{ageOf(entry.lastModified)}</time>
               </span>
             </>
           )}

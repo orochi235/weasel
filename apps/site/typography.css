@@ -7,7 +7,6 @@ body { font-family: var(--wzl-font-body); }
 .ckd-sidebar,
 .ckd-eyebrow,
 .ckd-canvas-wrap,
-.ckd-whatsnew-table th,
 .ckd-release-summary,
 .ckd-release-filter,
 .ckd-release-meta { font-family: var(--wzl-font-ui); }

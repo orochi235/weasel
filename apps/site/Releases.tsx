@@ -15,6 +15,24 @@ const TAG_PARAM = 'tag';
 /** A version to open and scroll to, e.g. `?v=1.9.4#__releases`. */
 const VERSION_PARAM = 'v';
 
+/** Every package and tag that appears anywhere in the history, with how many entries carry
+ *  it, so a chip can say how much filtering to it would leave. Tags keep their `TAGS` order. */
+const [PACKAGE_COUNTS, TAG_COUNTS] = (() => {
+  const byPackage = new Map<string, number>();
+  const byTag = new Map<Tag, number>();
+  for (const release of RELEASES) {
+    for (const entry of release.shape) {
+      for (const name of entry.packages) byPackage.set(name, (byPackage.get(name) ?? 0) + 1);
+      for (const tag of entry.tags) byTag.set(tag, (byTag.get(tag) ?? 0) + 1);
+    }
+  }
+  return [
+    [...byPackage].sort(([a], [b]) => a.localeCompare(b)),
+    (Object.keys(TAGS) as Tag[]).filter((t) => byTag.has(t)).map((t) => [t, byTag.get(t)!] as const),
+  ] as const;
+})();
+const KNOWN_PACKAGES = new Set(PACKAGE_COUNTS.map(([name]) => name));
+
 function readList(params: URLSearchParams, name: string): string[] {
   const raw = params.get(name);
   return raw ? raw.split(',').filter(Boolean) : [];
@@ -23,7 +41,7 @@ function readList(params: URLSearchParams, name: string): string[] {
 function readFilter(): Filter {
   const params = new URLSearchParams(window.location.search);
   return {
-    packages: readList(params, PACKAGE_PARAM),
+    packages: readList(params, PACKAGE_PARAM).filter((p) => KNOWN_PACKAGES.has(p)),
     tags: readList(params, TAG_PARAM).filter((t): t is Tag => hasOwnKey(TAGS, t)),
   };
 }
@@ -76,23 +94,6 @@ export function Releases() {
     setFilter((f) => ({ ...f, tags: toggled(f.tags, tag) }));
   }, []);
 
-  /** Every package and tag that appears anywhere in the history, with how many entries carry
-   *  it, so a chip can say how much filtering to it would leave. Tags keep their `TAGS` order. */
-  const [packageCounts, tagCounts] = useMemo(() => {
-    const byPackage = new Map<string, number>();
-    const byTag = new Map<Tag, number>();
-    for (const release of RELEASES) {
-      for (const entry of release.shape) {
-        for (const name of entry.packages) byPackage.set(name, (byPackage.get(name) ?? 0) + 1);
-        for (const tag of entry.tags) byTag.set(tag, (byTag.get(tag) ?? 0) + 1);
-      }
-    }
-    return [
-      [...byPackage].sort(([a], [b]) => a.localeCompare(b)),
-      (Object.keys(TAGS) as Tag[]).filter((t) => byTag.has(t)).map((t) => [t, byTag.get(t)!] as const),
-    ] as const;
-  }, []);
-
   const shown = useMemo(
     () => RELEASES.filter((release) => release.shape.some((e) => matches(e, filter))),
     [filter],
@@ -128,8 +129,8 @@ export function Releases() {
 
         <ReleaseFilter
           filter={filter}
-          packageCounts={packageCounts}
-          tagCounts={tagCounts}
+          packageCounts={PACKAGE_COUNTS}
+          tagCounts={TAG_COUNTS}
           onTogglePackage={togglePackage}
           onToggleTag={toggleTag}
           onClear={() => setFilter(NO_FILTER)}
