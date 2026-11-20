@@ -1,5 +1,5 @@
 import { createRasterSession, rasterToPng, warmRender, type RasterImage, type RasterSession } from '@weasel-js/core';
-import { PAGE_GLOBAL, type PageApi, type PageRequest, type PageResult } from './protocol';
+import { checkResultBytes, PAGE_GLOBAL, type PageApi, type PageRequest, type PageResult } from './protocol';
 import { pageRenderArgs, type PageSceneOptions } from './pageLoad';
 
 export type { PageSceneOptions } from './pageLoad';
@@ -14,7 +14,8 @@ export interface HeadlessPageOptions {
   scene?: PageSceneOptions;
 }
 
-function toBase64(bytes: Uint8Array): string {
+function toBase64(bytes: Uint8Array, what: string): string {
+  checkResultBytes(bytes.length, what);
   let binary = '';
   for (let i = 0; i < bytes.length; i += 0x8000) {
     binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
@@ -59,10 +60,10 @@ export function serveHeadlessPage(options: HeadlessPageOptions = {}): void {
     }
     if (format === 'png') {
       const blob = await rasterToPng(image);
-      return { width: image.width, height: image.height, base64: toBase64(new Uint8Array(await blob.arrayBuffer())) };
+      return { width: image.width, height: image.height, base64: toBase64(new Uint8Array(await blob.arrayBuffer()), `a ${image.width} × ${image.height} PNG`) };
     }
     const bytes = new Uint8Array(image.data.buffer, image.data.byteOffset, image.data.byteLength);
-    return { width: image.width, height: image.height, base64: toBase64(bytes) };
+    return { width: image.width, height: image.height, base64: toBase64(bytes, `a ${image.width} × ${image.height} RGBA render`) };
   }
 
   const api: PageApi = { render };

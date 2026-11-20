@@ -36,7 +36,8 @@ export interface NodeRenderArgs extends SerializableRenderArgs {
 
 /** A Chromium page holding one raster session, kept across renders. */
 export interface NodeRasterHost {
-  /** Render to straight RGBA, top-down, as `renderSceneToPixels` returns it. Rejects once disposed. */
+  /** Render to straight RGBA, top-down, as `renderSceneToPixels` returns it. Rejects once disposed, and
+   *  for a render or PNG of more than `MAX_RESULT_BYTES`: render a larger one in tiles. */
   render(args: NodeRenderArgs): Promise<RasterImage>;
   /** Render and encode as PNG. The page encodes through a 2D canvas, which stores premultiplied
    *  color, so a translucent pixel's color can move by a step; `render` returns the exact bytes. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sceneFromWire, sceneToWire } from './protocol';
+import { checkResultBytes, MAX_RESULT_BYTES, readPageRequest, sceneFromWire, sceneToWire } from './protocol';
 
 describe('sceneToWire', () => {
   it("sends a live scene's data as it holds it, even where it is shaped like the codec's tags", () => {
@@ -13,5 +13,23 @@ describe('sceneToWire', () => {
     const live = { toJSON: () => ({ nodes: [{ id: 'a', data }] }) };
     const back = sceneFromWire(JSON.parse(JSON.stringify(sceneToWire(live))) as object);
     expect(back).toEqual({ nodes: [{ id: 'a', data }] });
+  });
+});
+
+describe('readPageRequest', () => {
+  const req = (side: number, format: 'rgba' | 'png') =>
+    ({ scene: {}, sourceRect: { x: 0, y: 0, width: side, height: side }, scale: { x: 1, y: 1 }, format });
+
+  it('refuses an RGBA render whose bytes one result cannot carry, before a browser starts', () => {
+    expect(() => readPageRequest(req(11_600, 'rgba'))).toThrow(/11600 × 11600 RGBA render is 538240000 bytes, past the 402653166.*tiles/);
+    expect(() => readPageRequest(req(10_000, 'rgba'))).not.toThrow();
+    // A PNG's size is known only once the page has encoded it.
+    expect(() => readPageRequest(req(11_600, 'png'))).not.toThrow();
+  });
+
+  it('holds a result to what its base64 can be as one string', () => {
+    expect(Math.ceil(MAX_RESULT_BYTES / 3) * 4).toBeLessThanOrEqual(2 ** 29 - 24);
+    expect(() => checkResultBytes(MAX_RESULT_BYTES, 'a PNG')).not.toThrow();
+    expect(() => checkResultBytes(MAX_RESULT_BYTES + 1, 'a PNG')).toThrow(/a PNG is 402653167 bytes/);
   });
 });
