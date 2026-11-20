@@ -42,7 +42,7 @@ export interface SessionHost {
   readonly actingSelection: Pick<SceneSelection, 'get' | 'set' | 'replace'>;
   /** Drop `gone`, and what is out of reach, from every session's selection. */
   narrow(gone?: ReadonlySet<NodeId>): void;
-  /** Forget a removed node's previews and scroll in every session. */
+  /** Forget a removed node's previews and scroll in every session, once the edit removing it lands and if it did. */
   forget(id: NodeId): void;
   /** Clear every session's previews and scroll, for a document about to be replaced. */
   clearShown(): void;
@@ -73,6 +73,15 @@ export function createSessionHost(env: SessionStateEnv): SessionHost {
   const own = createSessionState(env);
   const opened = new Set<WeakRef<SessionState>>();
   let current: SessionState | null = null;
+  // Forgotten once the removing edit lands: one that throws or is refused puts the nodes back with their view state.
+  const forgetting = new Set<NodeId>();
+  const forgetGone = (): void => {
+    const ids = [...forgetting];
+    forgetting.clear();
+    for (const id of ids) {
+      if (env.getNode(id) === undefined) each((held) => { held.overrides.clear(id); held.scroll.set(id, null); });
+    }
+  };
   function each(fn: (state: SessionState) => void): void {
     fn(own);
     for (const ref of opened) {
@@ -105,7 +114,10 @@ export function createSessionHost(env: SessionStateEnv): SessionHost {
       replace: (ids) => host.acting().selection.replace(ids),
     },
     narrow: (gone) => each((held) => held.selection.narrow(gone)),
-    forget: (id) => each((held) => { held.overrides.clear(id); held.scroll.set(id, null); }),
+    forget(id) {
+      forgetting.add(id);
+      env.whenSettled(forgetGone);
+    },
     clearShown: () => each((held) => { held.overrides.clearAll(); held.scroll.clearAll(); }),
     keepLegal: () => each(({ selection }) => selection.replace(selection.legal(selection.get()))),
     serve(scene) { hosts.set(scene, host); },
