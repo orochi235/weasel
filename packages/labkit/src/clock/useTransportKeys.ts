@@ -38,7 +38,7 @@ interface KeyedTransport {
 
 type TransportKeys = KeyClaims<KeyedTransport>;
 
-const TransportKeysContext = createContext<TransportKeys | null>(null);
+export const TransportKeysContext = createContext<TransportKeys | null>(null);
 export const TransportKeysProvider = TransportKeysContext.Provider;
 
 /**

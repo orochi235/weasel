@@ -35,7 +35,7 @@ interface ChordClaim {
 
 type LabChords = KeyClaims<ChordClaim>;
 
-const LabChordsContext = createContext<LabChords | null>(null);
+export const LabChordsContext = createContext<LabChords | null>(null);
 export const LabChordsProvider = LabChordsContext.Provider;
 
 const keySpec = (shortcut: { key: string; shift?: boolean }) => ({
