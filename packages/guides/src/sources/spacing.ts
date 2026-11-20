@@ -1,6 +1,6 @@
 import { asNodeId, sceneMagnification, type Bounds, type SnapCollect, type SnapMark, type SnapSource } from '@weasel-js/core';
 import {
-  equalGaps, measureGapSpans, referenceGaps, spacingOffers, type MeasuredGap,
+  equalGaps, measureGapSpans, spacingOffers, type MeasuredGap,
 } from '../guides/alignment/spacing';
 import { isFiniteBox } from '../guides/alignment/finite';
 import type { SpacingEdge } from '../guides/alignment/types';
@@ -72,12 +72,11 @@ export function spacingSnapSource(opts: SpacingSnapSourceOptions = {}): SnapSour
       const measured = opts.getTargets ? measureAll(opts.getTargets()) : fromScene(q);
       if (!box || !probe || !measured) return;
       const reach = q.reachWorld(q.reachPx);
-      const refs = { x: referenceGaps(box, measured.x), y: referenceGaps(box, measured.y) };
       const seen = new Set<string>();
       const magnification = q.scene && q.ids?.length ? sceneMagnification(q.scene, q.ids.map(asNodeId)) : 1;
       for (const { axis, edge, rate } of movingSides(q)) {
         const speed = Math.hypot(rate.x, rate.y);
-        for (const o of spacingOffers(box, axis, edge, measured.boxes, refs[axis])) {
+        for (const o of spacingOffers(box, axis, edge, measured.boxes, measured[axis])) {
           const key = `${axis}:${edge}:${o.delta.toFixed(6)}:${o.size.toFixed(6)}`;
           if (Math.abs(o.delta) / speed > reach || seen.has(key)) continue;
           seen.add(key);
@@ -86,10 +85,10 @@ export function spacingSnapSource(opts: SpacingSnapSourceOptions = {}): SnapSour
             locus: sideLine(probe.at, rate, o.delta),
             mark: (delta: Point) => {
               const landed = landedBox(q, delta) ?? box;
-              return equalGaps(landed, axis, o.size, measured.boxes, refs[axis]).map((g) => gapMark(g, opts.color, magnification));
+              return equalGaps(landed, axis, o.size, measured.boxes, measured[axis]).map((g) => gapMark(g, opts.color, magnification));
             },
             // Another axis's snap can carry the box to where its neighbors leave it no such gap.
-            holds: (delta: Point) => equalGaps(landedBox(q, delta) ?? box, axis, o.size, measured.boxes, refs[axis]).length > 0,
+            holds: (delta: Point) => equalGaps(landedBox(q, delta) ?? box, axis, o.size, measured.boxes, measured[axis]).length > 0,
           };
         }
       }
