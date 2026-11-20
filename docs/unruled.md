@@ -2897,3 +2897,12 @@ Calls the lanes made without a ruling:
 - 2026-11-19 (the fixer's call): `elkPlan` rejects a `Graph` naming two of its participants and clusters by one id,
   since an edge names its ends by id and could join either. Giving nodes and clusters separate id maps and resolving an
   edge's end to the node first was the alternative; `buildGraph` never produces such a graph, as scene ids are unique.
+## Audit round forty-seven (2026-11-20): editing's insert actions
+
+- 2026-11-20 (the fixer's call): an insert's container is picked at one site, `InsertEnds.site`: the press, carried
+  with the shape when Space moves it mid-draw, and a click-place's raw click, not its snapped center. The snap's scope
+  and the preview's copies follow the same container. Picking it at the snapped start, as the dep did, was the
+  alternative.
+- 2026-11-20 (the fixer's call): a click-place builds its extras as a drag out from the click's center to the size's
+  corner does, so a polygon's first vertex points at that corner unless the binding names a `rotation`, and a custom
+  kind's extras carry `originMode: 'center'`. Inscribing a radial shape in the box unturned was the alternative.
