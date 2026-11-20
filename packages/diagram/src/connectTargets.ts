@@ -6,14 +6,10 @@
  * routed (`resolveEnd`), so it follows the shape around as things move.
  */
 import { refusalOf, type DerivedDep, type DropVerdict, type OngoingOverlay } from '@weasel-js/core';
-import {
-  AUTO_POSE_DESCRIPTOR,
-  rotatePoint,
-  type PoseDescriptor,
-  type Vec2,
-} from '@weasel-js/core/math';
+import { rotatePoint, type Vec2 } from '@weasel-js/core/math';
 import { pathContainsPoint, rectContainsPoint, type Rect } from '@weasel-js/geom';
-import { boxCenter, endAims, resolveEnd, type Router } from './edge';
+import { endAims, resolveEnd, type Router } from './edge';
+import { boxCenter, frameFor } from './layoutFrame';
 import { diagramEdgeOf } from './edgeTrait';
 import { diagramClusterOf } from './clusterBox';
 import { diagramLabelOf } from './labelTrait';
@@ -61,7 +57,7 @@ export function bodyAt<TPose>(
   at: Vec2,
   opts: PortsOptions<TPose> & { view?: ConnectView } = {},
 ): BodyHit<TPose> | null {
-  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const frame = frameFor(opts);
   let hit: BodyHit<TPose> | null = null;
   // Render order, so the last match is the one drawn on top.
   for (const participant of participants()) {
@@ -70,9 +66,9 @@ export function bodyAt<TPose>(
     if (diagramEdgeOf(node) !== null || diagramLabelOf(node) !== null || diagramClusterOf(node) !== null) continue;
     const trait = diagramNodeOf(node, opts.read);
     if (trait === null || trait.cluster !== undefined) continue;
-    const bounds = poseDescriptor.getBounds(participant.pose);
+    const bounds = frame.box(participant.pose);
     if (bounds.width <= 0 || bounds.height <= 0) continue;
-    const rotation = poseDescriptor.getRotation?.(participant.pose) ?? 0;
+    const rotation = frame.rotation?.(participant.pose) ?? 0;
     const local = rotation === 0
       ? at
       : rotatePoint(at.x, at.y, bounds.x + bounds.width / 2, bounds.y + bounds.height / 2, -rotation);
@@ -146,11 +142,8 @@ export function createTargets<TPose>(opts: TargetOptions<TPose>) {
 }
 
 function createResolver<TPose>(opts: TargetOptions<TPose>) {
-  const portOpts: PortsOptions<TPose> = {
-    ...(opts.poseDescriptor ? { poseDescriptor: opts.poseDescriptor } : {}),
-    ...(opts.read ? { read: opts.read } : {}),
-  };
-  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const frame = frameFor(opts);
+  const portOpts: PortsOptions<TPose> = { frame, ...(opts.read ? { read: opts.read } : {}) };
 
   /** The nearest port in reach that `canConnect` does not silently turn away, or `null`. */
   function portTarget(from: ConnectEnd, at: Vec2, view: ConnectView): Landing | null {
@@ -200,7 +193,7 @@ function createResolver<TPose>(opts: TargetOptions<TPose>) {
    *  else its own point. */
   function centerOf(end: ConnectEnd): Vec2 {
     const participant = participantOf(end.nodeId);
-    return participant === undefined ? end.point : boxCenter(poseDescriptor, participant.pose);
+    return participant === undefined ? end.point : boxCenter(frame, participant.pose);
   }
 
   /** The port an end is drawn to: itself, or for a body, the port facing
@@ -246,10 +239,10 @@ function createResolver<TPose>(opts: TargetOptions<TPose>) {
       : route({ from: free, to: anchored, waypoints });
   }
 
-  /** The world box of `nodeId`'s participant, or `null`. */
+  /** The box of `nodeId`'s participant on the plane, or `null`. */
   function boxOf(nodeId: string): Rect | null {
     const participant = participantOf(nodeId);
-    return participant === undefined ? null : poseDescriptor.getBounds(participant.pose);
+    return participant === undefined ? null : frame.box(participant.pose);
   }
 
   return { target, landing, portFor, preview, boxOf };

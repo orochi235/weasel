@@ -155,6 +155,8 @@ export { diagramEdgeOf, layoutOwnsPort, layoutOwnsRoute, layoutWritesRoute } fro
 export type { DiagramEdge, EdgeEnd } from './edgeTrait';
 export { selfLoop } from './selfLoop';
 export type { SelfLoop } from './selfLoop';
+export { AUTO_LAYOUT_FRAME, frameFor, layoutFrameOf } from './layoutFrame';
+export type { FrameOptions, LayoutFrame } from './layoutFrame';
 export { buildGraph } from './graph';
 export type {
   BuildGraphOptions,

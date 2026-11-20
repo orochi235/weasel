@@ -17,13 +17,13 @@ import {
   resolveStroke,
   type NodeShapeEntry,
   type Path,
-  type PoseDescriptor,
   type Stroke,
   type Fill,
   type Inherit,
 } from '@weasel-js/core';
 import { bodyRules } from './bodyRules';
 import { entryMemo } from './entryMemo';
+import { frameFor, type FrameOptions } from './layoutFrame';
 import { onOutlinesChange } from './outlines/table';
 import { outlineDetail, outlinePath, outlineSolid, type Outline } from './outline';
 import { diagramContainerOf, headerBox, laneOutlineOf } from './containers/trait';
@@ -32,21 +32,22 @@ import { sequencePartOf } from './sequence/trait';
 import type { Rect } from '@weasel-js/geom';
 
 /** Options for {@link diagramShape} and {@link registerDiagramShape}. */
-export interface DiagramShapeOptions<TPose> {
+export interface DiagramShapeOptions<TPose> extends FrameOptions<TPose> {
   /** Names the painter. The registry holds one painter per id, so painters built
    *  with different options register under different ids. Default `'diagram:outline'`. */
   id?: string;
   /** How the trait is read. Default: the node's own `data.diagram`. */
   read?: DiagramNodeReader;
-  /** Reads the box the outline is built in. Default `RECT_POSE_DESCRIPTOR`. */
-  poseDescriptor?: PoseDescriptor<TPose>;
+  /** Reads the box the outline is built in, where no `frame` is given.
+   *  Default `RECT_POSE_DESCRIPTOR`. */
+  poseDescriptor?: FrameOptions<TPose>['poseDescriptor'];
 }
 
 /** The entry, for a consumer composing their own painter list. */
 export function diagramShape<TPose>(
   opts: DiagramShapeOptions<TPose> = {},
 ): NodeShapeEntry<unknown, TPose> {
-  const poseDescriptor = opts.poseDescriptor ?? (RECT_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const frame = frameFor(opts, RECT_POSE_DESCRIPTOR as never);
   const outlineOf = (node: { id: string; kind: 'mark' | 'group'; data: unknown }) =>
     diagramNodeOf(node, opts.read)?.outline ?? laneOutlineOf(node) ?? sequenceOutlineOf(node);
 
@@ -57,7 +58,7 @@ export function diagramShape<TPose>(
       const outline = outlineOf(node);
       if (outline === undefined) return [];
       const d = node.data as { fill?: Fill | Inherit | null; stroke?: Stroke | Inherit | null };
-      const box = poseDescriptor.getBounds(pose);
+      const box = frame.box(pose);
       const declaredFill = resolveFill(d.fill, ctx?.inherited?.fill);
       const declaredStroke = resolveStroke(d.stroke, ctx?.inherited?.stroke);
       const fill = declaredFill && commandFill(declaredFill, box);
@@ -89,7 +90,7 @@ export function diagramShape<TPose>(
     // than its bounding box.
     silhouette: (node, pose) => {
       const outline = outlineOf(node);
-      return outline === undefined ? null : outlinePath(outline, poseDescriptor.getBounds(pose));
+      return outline === undefined ? null : outlinePath(outline, frame.box(pose));
     },
   };
 }
@@ -113,11 +114,11 @@ const diagramEntries = entryMemo<NodeShapeEntry<unknown, unknown>>();
  * Register {@link diagramShape}. Returns the disposer, and takes `'high'`
  * priority so a body outline wins over a `data.shape` or `data.path` the same
  * node may also carry. Calls with the same options register one painter, so
- * each may come and go on its own; a painter with its own `read` or `poseDescriptor`
+ * each may come and go on its own; a painter with its own `read`, `poseDescriptor` or `frame`
  * registered beside another (`DiagramView`'s) needs an `id` of its own.
  */
 export function registerDiagramShape<TPose>(opts: DiagramShapeOptions<TPose> = {}): () => void {
-  const entry = diagramEntries([opts.id, opts.read, opts.poseDescriptor], () => diagramShape(opts as DiagramShapeOptions<unknown>));
+  const entry = diagramEntries([opts.id, opts.read, opts.poseDescriptor, opts.frame], () => diagramShape(opts as DiagramShapeOptions<unknown>));
   const unregister = registerNodeShape(entry, { priority: 'high' });
   // A node already drawn by an outline's name was painted and picked by what the name resolved to then.
   const unwatch = onOutlinesChange(refreshNodeShapes);

@@ -3,15 +3,12 @@
  * participants are. `forceProducer` relaxes; `easedProducer` walks to a
  * destination it knows. `useLiveLayout` (`live.ts`) runs them.
  */
-import {
-  AUTO_POSE_DESCRIPTOR,
-  type NodeId,
-  type PoseDescriptor,
-} from '@weasel-js/core';
+import type { NodeId } from '@weasel-js/core';
 import type { EasingFn } from '@weasel-js/animator';
 import { easeInOutQuad, lerp } from '@weasel-js/geom';
 import { createForceRelaxation, type ForceOptions } from './force';
 import type { Graph } from './graph';
+import { frameFor, type FrameOptions } from './layoutFrame';
 import { center, type LayoutFn, type LayoutOptions, type LayoutResult } from './layout';
 
 /** What a live producer is told, and what it answers with. */
@@ -44,8 +41,7 @@ export function progress(frame: number, frames: number, easing: EasingFn): { t: 
 }
 
 /** Options for {@link forceProducer}. */
-export interface ForceProducerOptions<TPose> extends ForceOptions {
-  poseDescriptor?: PoseDescriptor<TPose>;
+export interface ForceProducerOptions<TPose> extends ForceOptions, FrameOptions<TPose> {
   /** Alpha held while something is pinned, so the graph keeps answering a drag
    *  instead of freezing under it. Default 0.3. */
   dragAlpha?: number;
@@ -74,7 +70,7 @@ export function forceProducer<TPose>(
   graph: Graph,
   opts: ForceProducerOptions<TPose> = {},
 ): LiveLayoutProducer<TPose> {
-  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const frame = frameFor(opts);
   const relaxation = createForceRelaxation(graph, opts);
   const dragAlpha = opts.dragAlpha ?? 0.3;
   const restDistance = opts.restDistance ?? REST_DISTANCE;
@@ -90,7 +86,7 @@ export function forceProducer<TPose>(
       if (held !== undefined) {
         // A dragged node holds its neighbors while they relax, which is `fx` /
         // `fy` on the integrator rather than a correction applied afterward.
-        const bounds = poseDescriptor.getBounds(held);
+        const bounds = frame.box(held);
         body.fx = center(bounds, 'x');
         body.fy = center(bounds, 'y');
       } else if (!relaxation.pinned.has(node.id)) {

@@ -26,7 +26,6 @@ import {
   type InvocationCtx,
   type OngoingHandle,
   type OngoingOverlay,
-  type PoseDescriptor,
   type Stroke,
   type Vec2,
 } from '@weasel-js/core';
@@ -35,6 +34,7 @@ import { bodyAt, createTargets, DEFAULT_SNAP_RADIUS, isBodyEnd, type ConnectEnd 
 import { DEFAULT_EDGE_STYLE } from './dataStyles';
 import { EDGE_DERIVE_PATH, ROUTERS, type Router } from './edge';
 import { edgeStrokeOf } from './edgeStroke';
+import type { FrameOptions } from './layoutFrame';
 import type { DiagramEdge, EdgeEnd } from './edgeTrait';
 import { PORT_AFFORDANCE_KIND, portScratchOf, type ParticipantSource } from './portAffordance';
 import type { DiagramNodeReader } from './trait';
@@ -81,14 +81,13 @@ export const defaultCanConnect: CanConnect = (from, to) => {
 };
 
 /** Options for {@link createConnectAction}. Only `participants` is required. */
-export interface ConnectActionOptions<TPose> {
+export interface ConnectActionOptions<TPose> extends FrameOptions<TPose> {
   /** Where the droppable ports come from. The same source the port affordance
    *  reads, so what is grabbable and what is landable cannot disagree. */
   participants: ParticipantSource<TPose>;
   /** Default {@link CONNECT_ACTION_ID}. */
   id?: string;
   read?: DiagramNodeReader;
-  poseDescriptor?: PoseDescriptor<TPose>;
   /** Default {@link defaultCanConnect}. */
   canConnect?: CanConnect;
   /** Which ports a connect may land on: a port this turns away is never a

@@ -15,12 +15,10 @@
  * `markerStart` / `markerEnd` any other stroke carries.
  */
 import {
-  AUTO_POSE_DESCRIPTOR,
   PathBuilder,
   polylineFromPoints,
   type DerivedDep,
   type Path,
-  type PoseDescriptor,
   type SceneRegistry,
   type Vec2,
 } from '@weasel-js/core';
@@ -29,6 +27,7 @@ import { ANCHOR_DERIVE_POSE, DIAGRAM_ANCHOR, DIAGRAM_CLUSTER, CLUSTER_DERIVE_POS
 import { DIAGRAM_CLUSTER_UPGRADE, upgradeClusterNames } from './clusterUpgrade';
 import { CONTAINER_LAYOUTS } from './containers/layouts';
 import { DIAGRAM_LABEL, LABEL_DERIVE_POSE } from './label';
+import { boxCenter, frameFor } from './layoutFrame';
 import { DIAGRAM_OFF_PAGE_TAG, OFF_PAGE_TAG_DERIVE_POSE } from './offPage/tag';
 import { portSitesOf, portsOf, type PortsOptions } from './ports';
 import { selfLoop } from './selfLoop';
@@ -62,12 +61,6 @@ export function resolveEnd<TPose>(
     if (sites.length > 0) return ahead.length > 0 ? facing(ahead, toward) : sites[0];
   }
   return facing(allPorts(dep), toward);
-}
-
-/** The point an end aims at when it names none: the center of its bounds. */
-export function boxCenter<TPose>(poseDescriptor: PoseDescriptor<TPose>, pose: TPose): Vec2 {
-  const b = poseDescriptor.getBounds(pose);
-  return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
 }
 
 /**
@@ -190,12 +183,12 @@ function stubsPath(stubs: readonly (readonly Vec2[])[]): Path {
 export function edgeRouter<TPose>(
   opts: EdgeRouteOptions<TPose> = {},
 ): (node: { data: unknown }, deps: readonly (DerivedDep<TPose> | undefined)[]) => ResolvedRoute | null {
-  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
-  const portOpts: PortsOptions<TPose> = { poseDescriptor, ...(opts.read ? { read: opts.read } : {}) };
+  const frame = frameFor(opts);
+  const portOpts: PortsOptions<TPose> = { frame, ...(opts.read ? { read: opts.read } : {}) };
   const allPorts = (d: DerivedDep<TPose>): Port[] =>
     portsOf(d.node as never, d.pose, portOpts);
   const standoffOf = (d: DerivedDep<TPose>): number => {
-    const b = poseDescriptor.getBounds(d.pose);
+    const b = frame.box(d.pose);
     return Math.min(b.width, b.height) / 2;
   };
 
@@ -206,7 +199,7 @@ export function edgeRouter<TPose>(
     if (fromDep === undefined || toDep === undefined) return null;
 
     const authored = edge.waypoints ?? [];
-    const aims = endAims(boxCenter(poseDescriptor, fromDep.pose), boxCenter(poseDescriptor, toDep.pose), authored, edge.route);
+    const aims = endAims(boxCenter(frame, fromDep.pose), boxCenter(frame, toDep.pose), authored, edge.route);
     const named = edge.from.port !== undefined ? 'from' : edge.to.port !== undefined ? 'to' : null;
     const loop = fromDep.node.id === toDep.node.id && (edge.from.port === undefined || edge.to.port === undefined)
       ? selfLoop(allPorts(fromDep), opts.selfLoopStandoff ?? standoffOf(fromDep), named === null ? {} : {

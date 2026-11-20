@@ -1,18 +1,15 @@
 /**
- * Where a node's ports are, in world coordinates.
+ * Where a node's ports are, on the diagram's plane (`LayoutFrame`): world
+ * coordinates, unless the host says otherwise.
  *
- * A port is placed in the node's **unrotated** bounds, then carried through
- * the pose's rotation — the same pivot every other kit reader uses, the AABB
- * center. Bounds come from the pose descriptor rather than from `pose.width`
+ * A port is placed in the node's **unrotated** box, then carried through
+ * the pose's rotation — the same pivot every other kit reader uses, the box's
+ * center. The box comes from the frame rather than from `pose.width`
  * and friends, so a node whose pose is a path, an ellipse or anything else a
  * consumer wired is connectable on the same terms as a rect.
  */
-import {
-  AUTO_POSE_DESCRIPTOR,
-  rotatePoint,
-  type PoseDescriptor,
-  type Vec2,
-} from '@weasel-js/core/math';
+import { rotatePoint, type Vec2 } from '@weasel-js/core/math';
+import { frameFor, type FrameOptions } from './layoutFrame';
 import { outlinePolyline, rayHit } from './onOutline';
 import { diagramNodeOf, type DiagramNodeLike, type DiagramNodeReader } from './trait';
 import type { Port, PortAnchor, PortSpec } from './types';
@@ -41,11 +38,9 @@ export const DEFAULT_PORTS: readonly PortSpec[] = Object.freeze([
   { id: 'w', at: COMPASS.w },
 ]);
 
-/** How ports are resolved against a node: its bounds, and its trait. */
-export interface PortsOptions<TPose> {
-  /** Reads the AABB a port is placed in, and the node's rotation. Defaults to
-   *  the kit's `AUTO_POSE_DESCRIPTOR`, which handles rect and path poses. */
-  poseDescriptor?: PoseDescriptor<TPose>;
+/** How ports are resolved against a node: its box and rotation on the plane
+ *  (`frame`, else the pose descriptor's), and its trait. */
+export interface PortsOptions<TPose> extends FrameOptions<TPose> {
   /** How the `DiagramNode` trait is read off a node. */
   read?: DiagramNodeReader;
 }
@@ -115,9 +110,9 @@ function placerOf<TPose>(
 ): { specs: readonly PortSpec[]; place: (spec: PortSpec, at: PortAnchor, normal: Vec2 | null | undefined) => Port } | null {
   const trait = diagramNodeOf(node, opts.read);
   if (trait === null) return null;
-  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
-  const bounds = poseDescriptor.getBounds(pose);
-  const rotation = poseDescriptor.getRotation?.(pose) ?? 0;
+  const frame = frameFor(opts);
+  const bounds = frame.box(pose);
+  const rotation = frame.rotation?.(pose) ?? 0;
   const cx = bounds.x + bounds.width / 2;
   const cy = bounds.y + bounds.height / 2;
   // A port is anchored in the bounds so it survives a resize, but it has to

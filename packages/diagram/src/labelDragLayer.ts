@@ -6,7 +6,6 @@
  * and no paint, composed into a layer whose id is the kind a press reports.
  */
 import {
-  AUTO_POSE_DESCRIPTOR,
   composeAffordanceLayer,
   documentDepOf,
   documentPose,
@@ -20,6 +19,7 @@ import {
 import type { Path, Vec2 } from '@weasel-js/core/math';
 import { createPart } from '@weasel-js/registry';
 import { boxIndex, boxesMeeting, keyedIndex, type BoxIndex } from './keyedIndex';
+import { AUTO_LAYOUT_FRAME } from './layoutFrame';
 import { diagramLabelOf, type DiagramLabel } from './labelTrait';
 import type { Bounds } from './outline';
 import { payloadOf } from './payload';
@@ -86,7 +86,7 @@ export function* draggableLabels(scene: AnyScene): Iterable<DraggableLabel> {
   for (const { labelId, edgeId } of editableLabels(scene)) {
     const path = documentDepOf(scene as never, edgeId)?.path ?? null;
     if (path === null) continue;
-    const box = AUTO_POSE_DESCRIPTOR.getBounds(documentPose(scene as never, scene.get(labelId) as never));
+    const box = AUTO_LAYOUT_FRAME.box(documentPose(scene as never, scene.get(labelId) as never));
     yield { labelId, edgeId, box, path };
   }
 }
