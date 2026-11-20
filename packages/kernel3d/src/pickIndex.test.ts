@@ -183,7 +183,8 @@ describe('worldPickIndex', () => {
       }
       expect(hits).toBeGreaterThan(20);
     }
-  });
+    // 1.6 s idle, 4.9 s and 12.7 s on fleet nodes busy with the rest of the suite.
+  }, 30_000);
 
   it('stays in step with pose edits, adds and removals', () => {
     const r = mulberry32(7);
