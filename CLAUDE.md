@@ -10,6 +10,12 @@ a dep, an action, a ranking rule — gets designed so a 3D host can use it too, 
 in `{x, y}` does so as a stated choice. Before calling anything "2D" in a spec, a TODO entry or a
 recommendation, check `packages/kernel3d` and `@weasel-js/geom/3d`.
 
+**Charts and diagrams are set up so 3D falls out (2026-11-19).** `plot`, `diagram` (and its
+`-elk` / `-formats`), `d3`, `scale` and `apps/chart` don't need 3D designed in, but their models
+can't foreclose it: a layout, a scale, an axis or a mark answers positions as the geometry it
+lives in, rather than `{x, y}` hard-wired below the point where a renderer picks a dimension. New
+work there keeps that seam; work that finds one closed opens it in the same change.
+
 ## Scope: weasel is an engine
 
 weasel is not a utility library, and it is not a depository for features
