@@ -732,6 +732,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## SVG and paths
 
+- Ruled 2026-11-20 (my call, audit round 49): `circlePath` throws a `RangeError` for `segments` that is not a
+  whole number of at least 3, and `roundRectPath` for `cornerSamples` that is not a whole number of at least 1,
+  rather than clamping; they built NaN coordinates or a bare `Z`.
+
 - Ruled 2026-11-10 (my call, overnight sweep): `serializeSvg` writes a character XML 1.0 cannot hold (a
   control, U+FFFE, U+FFFF, or half a surrogate pair) as U+FFFD and warns once, where it used to drop it
   silently: a writer never silently loses data.

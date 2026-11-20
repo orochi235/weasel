@@ -13,9 +13,11 @@ import type { PolygonPath } from '../path';
 /**
  * N-segment polygon approximation of a circle. Default 32 segments → max
  * radial deviation of ≈0.005·r (≈0.05 px at r=10). Bump higher for large
- * filled circles where the facets become visible.
+ * filled circles where the facets become visible. Throws a `RangeError` for
+ * `segments` that is not a whole number of at least 3.
  */
 export function circlePath(cx: number, cy: number, r: number, segments = 32): PolygonPath {
+  wholeAtLeast('circlePath', 'segments', segments, 3);
   const cmds = new Uint8Array(segments + 1);
   const coords = new Float32Array(segments * 2);
   cmds[0] = PATH_M;
@@ -57,7 +59,8 @@ export function rectMarkerPath(x: number, y: number, width: number, height: numb
 /**
  * Axis-aligned rounded rectangle. Top-left at (x, y); `r` is clamped to half
  * the shorter side. Each corner is `cornerSamples` line segments — the
- * default 8 gives the same angular resolution as `circlePath`'s 32.
+ * default 8 gives the same angular resolution as `circlePath`'s 32. Throws a
+ * `RangeError` for `cornerSamples` that is not a whole number of at least 1.
  */
 export function roundRectPath(
   x: number,
@@ -67,6 +70,7 @@ export function roundRectPath(
   r: number,
   cornerSamples = 8,
 ): PolygonPath {
+  wholeAtLeast('roundRectPath', 'cornerSamples', cornerSamples, 1);
   const radius = Math.max(0, Math.min(r, Math.min(width, height) / 2));
   if (radius === 0) return rectMarkerPath(x, y, width, height);
 
@@ -96,4 +100,8 @@ export function roundRectPath(
   }
   cmds[count] = PATH_Z;
   return { kind: 'polygon', commands: cmds, coords, fillRule: 'nonzero' };
+}
+
+function wholeAtLeast(fn: string, name: string, n: number, min: number): void {
+  if (!Number.isInteger(n) || n < min) throw new RangeError(`${fn}: ${name} must be a whole number of at least ${min}, got ${n}`);
 }
