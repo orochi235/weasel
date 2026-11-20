@@ -13,3 +13,18 @@ export function holdSession(ctx: GestureContext<unknown>, session: MoveSession):
 export function moveSessionOf(ctx: GestureContext<unknown>): MoveSession | undefined {
   return sessions.get(ctx);
 }
+
+const armedSwaps = new WeakMap<GestureContext<unknown>, Set<object>>();
+
+/** Record whether the swap behavior `owner` is armed on this drag. */
+export function holdSwap(ctx: GestureContext<unknown>, owner: object, armed: boolean): void {
+  let held = armedSwaps.get(ctx);
+  if (!held) armedSwaps.set(ctx, (held = new Set()));
+  if (armed) held.add(owner);
+  else held.delete(owner);
+}
+
+/** Whether a swap is armed on this drag: it preempts the drops at release, so they show nothing while it is. */
+export function swapArmed(ctx: GestureContext<unknown>): boolean {
+  return (armedSwaps.get(ctx)?.size ?? 0) > 0;
+}

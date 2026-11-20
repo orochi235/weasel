@@ -6,7 +6,7 @@ import type { CursorSpec } from '@weasel-js/cursor';
 import { after } from '@weasel-js/registry';
 import type { Rect } from '@weasel-js/geom';
 import type { MoveSession } from '../session';
-import { moveSessionOf } from '../sessionOf';
+import { holdSwap, moveSessionOf } from '../sessionOf';
 import { swapOps } from '../../swap/swapOps';
 
 /** Options for {@link swapOnDrop}. */
@@ -117,6 +117,7 @@ export function swapBehavior(options: SwapOnDropOptions, on: (session: MoveSessi
       const id = session ? draggedOf(session) : null;
       if (!session || id === null) {
         disarm(s);
+        holdSwap(ctx, s, false);
         return undefined;
       }
       const point = { x: ctx.pointer.worldX, y: ctx.pointer.worldY };
@@ -134,16 +135,20 @@ export function swapBehavior(options: SwapOnDropOptions, on: (session: MoveSessi
         }
       }
       const armed = s.armed;
+      holdSwap(ctx, s, armed !== null);
       if (armed === null) return undefined;
       return { poses: armed.poses, overlays: [outline(armed.bounds)], cursor: SWAP_CURSOR };
     },
     onCancel(ctx) {
-      disarm(stateOf(ctx));
+      const s = stateOf(ctx);
+      disarm(s);
+      holdSwap(ctx, s, false);
     },
     onEnd(ctx, end) {
       const s = stateOf(ctx);
       const armed = s.armed;
       disarm(s);
+      holdSwap(ctx, s, false);
       const session = moveSessionOf(ctx);
       if (end.answered || armed === null || !session) return undefined;
       const id = draggedOf(session);

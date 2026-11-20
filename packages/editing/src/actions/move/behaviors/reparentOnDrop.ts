@@ -2,6 +2,7 @@ import type { MoveBehavior } from '@weasel-js/core/engine';
 import { reparentOps, resolveDrop } from '../commit/reparent';
 import { refusalOverlays } from '../refusal';
 import type { MoveGesture } from '../session';
+import { swapArmed } from '../sessionOf';
 
 /**
  * The move behavior that reparents the selection under the node the pointer is
@@ -20,7 +21,7 @@ export function reparentOnDrop(move: MoveGesture): MoveBehavior<unknown> {
   return {
     onMove(ctx) {
       // Only a `canDropInto` dep refuses with a reason; without one, the hit-test waits for the release.
-      if (!move.session().mayRefuse) return undefined;
+      if (!move.session().mayRefuse || swapArmed(ctx)) return undefined;
       const at = { x: ctx.pointer.worldX, y: ctx.pointer.worldY };
       const drop = dropAt(at);
       return drop !== null && 'refused' in drop ? { overlays: refusalOverlays(drop.refused, at) } : undefined;
