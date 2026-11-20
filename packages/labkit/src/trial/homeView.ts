@@ -17,9 +17,15 @@ export type InstrumentCamera =
   | null;
 
 /** Which camera `instrument` declares. `canvas` wins over `stage`, whose DOM it
- *  then lays over its layers; `orbit` combines with neither, and throws. */
+ *  then lays over its layers; `orbit` combines with neither, and throws. So does
+ *  `dragDrop` without `canvas`, whose drops only a canvas receives. */
 export function cameraOf(instrument: Instrument): InstrumentCamera {
   const { canvas, stage, orbit } = instrument;
+  if (instrument.dragDrop && !canvas) {
+    throw new Error(
+      `[labkit] instrument "${instrument.name}" declares \`dragDrop\` without \`canvas\`; only a canvas takes a drop`,
+    );
+  }
   if (orbit) {
     if (canvas || stage) {
       throw new Error(

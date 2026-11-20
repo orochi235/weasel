@@ -3016,3 +3016,10 @@ Calls the lanes made without a ruling:
   differs from the URLs another HUD registered `weasel-hud-default` with, since every HUD on a page shares that one
   family. A host wanting another atlas registers it under a family of its own and passes the name. Swapping the
   family to the newest pair with `replace`, under every HUD already drawing it, was the alternative.
+
+## Audit round fifty-one (2026-11-20): labkit's trials
+
+- 2026-11-20 (the fixer's call): an instrument declaring `dragDrop` without `canvas` throws, from `cameraOf`, as
+  `orbit` beside `canvas` does: only a canvas mounts the drop target and the drag overlay, so the palette showed and
+  nothing could be dropped. Mounting a drop target for `stage` and `orbit` cameras was the alternative; an `orbit`
+  one needs a world point from a ray, which `onDrop`'s `Point` has no form for.
