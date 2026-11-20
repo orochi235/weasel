@@ -84,6 +84,8 @@ export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>,
   preview?(asset: Asset, over: SchemaRoot | undefined): ReactNode;
   /** Somewhere to send the changes: given, the Changes pane draws a Submit button that hands over every changed asset. */
   onSubmit?: SubmitAssets;
+  /** Whether an asset's changes are listed in the Changes pane and handed over by Submit. Default: every asset's. */
+  sends?(asset: Asset): boolean;
 }
 
 /** What the shown asset exports and has changed since its baseline: every change, the paths they touch, and the
@@ -107,7 +109,7 @@ function useShownChanges(changedAssets: AssetSetChanges, assetId: string, types:
  * one from `actionCatalog`. With none the pane lists the host's actions by their keys, and nothing sorts them.
  */
 export function AssetEditor(
-  { assetSet, onChange, original, codec, same = sameRoots, list = false, elsewhere, order, onElsewhere, onChangedAssets, startOn, preview, kinds = NO_KINDS, types = NO_TYPES, renderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
+  { assetSet, onChange, original, codec, same = sameRoots, list = false, elsewhere, order, onElsewhere, onChangedAssets, startOn, preview, kinds = NO_KINDS, types = NO_TYPES, renderers, unplaced, actions, draftKey, draftStorage, onSubmit, sends, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
 ) {
   const [first] = useState(assetSet);
   const base = original ?? first;
@@ -139,7 +141,7 @@ export function AssetEditor(
     view.stepped(before, doc.current());
   };
 
-  const changedAssets = useAssetChanges(base, assetSet, same, onChangedAssets);
+  const changedAssets = useAssetChanges(base, assetSet, same, onChangedAssets, sends);
   const { exported, changes, changed, changedAttrs } = useShownChanges(changedAssets, assetId, types, selection.lead);
   // The document packs every asset as sent, so every changed one is handed over, whichever is shown.
   const submit: SubmitChanges | undefined = onSubmit && (() => doc.send(() => onSubmit(changedAssets.sent(types))));

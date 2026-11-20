@@ -34,3 +34,20 @@ it('sizes the glyph in its own px when an ancestor draws the form at twice its s
   const glyph = container.querySelector<HTMLElement>('[aria-hidden="true"]')!;
   expect([glyph.style.getPropertyValue('--identity-tall'), glyph.style.getPropertyValue('--identity-end')]).toEqual(['50px', '10px']);
 });
+
+it('measures the glyph from the left edges in a right-to-left form, the end it is set against there', () => {
+  HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
+    if (this.dataset.testHost !== undefined) return DOMRect.fromRect({ x: 0, y: 0, width: 400, height: 200 });
+    const path = this.closest('[data-pref-path]')?.getAttribute('data-pref-path');
+    if (path === 'name') return DOMRect.fromRect({ x: 30, y: 0, width: 370, height: 60 });
+    if (path === 'description') return DOMRect.fromRect({ x: 30, y: 60, width: 370, height: 40 });
+    return DOMRect.fromRect({ x: 0, y: 0, width: 0, height: 0 });
+  };
+  const { container, rerender } = render(<div dir="rtl"><IdentityForm schema={schema} onChange={() => {}} icon={<b>i</b>} /></div>);
+  const host = container.firstElementChild!.firstElementChild as HTMLElement;
+  host.dataset.testHost = '';
+  host.style.direction = 'rtl';
+  rerender(<div dir="rtl"><IdentityForm schema={{ ...schema }} onChange={() => {}} icon={<b>i</b>} /></div>);
+  const glyph = container.querySelector<HTMLElement>('[aria-hidden="true"]')!;
+  expect(glyph.style.getPropertyValue('--identity-end')).toBe('30px');
+});

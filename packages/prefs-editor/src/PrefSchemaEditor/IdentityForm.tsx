@@ -26,8 +26,11 @@ export function IdentityForm({ icon, ...form }: PrefsFormProps & { icon: ReactNo
       const bottom = maxOf(rows, (r) => (r.firstElementChild ?? r).getBoundingClientRect().bottom);
       // Where a slot's content ends, inside the inset the form gives it: the edge every other row's control ends at.
       const slot = rows[0]!;
-      const right = slot.getBoundingClientRect().right - parseFloat(getComputedStyle(slot).paddingInlineEnd) * scale.x;
-      setBox({ tall: (bottom - at.top) / scale.y, end: (at.right - right) / scale.x });
+      const style = getComputedStyle(slot);
+      const pad = parseFloat(style.paddingInlineEnd) * scale.x;
+      const edge = slot.getBoundingClientRect();
+      const end = style.direction === 'rtl' ? edge.left + pad - at.left : at.right - (edge.right - pad);
+      setBox({ tall: (bottom - at.top) / scale.y, end: end / scale.x });
     };
     measure();
     return watchResize(rows, measure);

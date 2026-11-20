@@ -3,7 +3,7 @@ import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import type { LeafRenderer } from '@weasel-js/ui';
 import {
   asAssetSet, catalogIn, type CustomKinds, type DraftStorage, NO_CATALOG, NO_TYPES, LONE_SCHEMA_ID, oneAssetCodec,
-  type PrefTypes, printSchema, sameSchema, schemaOf, type AssetSet,
+  type PrefTypes, printSchema, sameSchema, schemaOf, type Asset, type AssetSet,
 } from '@weasel-js/prefs/edit';
 import { AssetEditor } from './AssetEditor';
 import { useEditorActions, type EditorAction } from './editorActions';
@@ -74,6 +74,9 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
   className?: string;
 }
 
+// The Changes pane and a submission hold the schema's changes alone: the catalog is the host's through `onActionCatalogChange`.
+const sendsSchema = (asset: Asset) => asset.id === LONE_SCHEMA_ID;
+
 /**
  * An editor for a preferences schema or a node's property schema: its structure as a tree, the selected node's
  * attributes as a form, a live preview of the result (a `PrefsForm` for the first, a `SelectionPanel` over one
@@ -101,10 +104,9 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     }
     if (schemaOf(next) !== schema) onChange(schemaOf<S>(next));
   };
-  // A submission holds the schema's changes alone: the catalog is the host's through `onActionCatalogChange`.
   const submit = onSubmit && ((sent: readonly SentAsset[]) => {
     const mine = sent.find((a) => a.id === LONE_SCHEMA_ID);
     return onSubmit(mine?.changes ?? [], mine?.literal ?? printSchema(schema, types));
   });
-  return <AssetEditor {...rest} types={types} codec={codec} same={sameSchema} assetSet={assetSet} onChange={change} original={base} onSubmit={submit} />;
+  return <AssetEditor {...rest} types={types} codec={codec} same={sameSchema} assetSet={assetSet} onChange={change} original={base} onSubmit={submit} sends={sendsSchema} />;
 }
