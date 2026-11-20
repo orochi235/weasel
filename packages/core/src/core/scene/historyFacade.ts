@@ -12,6 +12,7 @@ import { HistoryRestoreError, type History, type Journal } from '@weasel-js/hist
 import type { Op } from 'core/ops/types';
 import { dwarn } from 'debug/flag';
 import { SCENE_HISTORY_FORM, type SerializedSceneHistory } from './historyForm';
+import { idsNamedBy } from './historyIds';
 import { createSceneJournals } from './sceneJournals';
 import type { Scene } from './types';
 
@@ -69,7 +70,7 @@ function strictDepth(n: number, engine: Pick<History, 'undoDepth' | 'redoDepth'>
   return n;
 }
 
-export function createSceneHistory(env: SceneHistoryEnv): {
+export interface SceneHistoryParts {
   history: History;
   methods: SceneHistoryMethods;
   /** The innermost active journal opened through `history`, or null. */
@@ -78,10 +79,18 @@ export function createSceneHistory(env: SceneHistoryEnv): {
   targetJournal(): Journal | null;
   /** Whether a journal opened through `history` is not yet closed, suspended ones included. */
   anyJournalOpen(): boolean;
-} {
+  /** Whether a restored history adds or removes node `id`, so a minted id must pass over it. */
+  namesNode(id: string): boolean;
+  /** Empty the engine's stacks, and forget the ids a restored history named. */
+  clear(): void;
+}
+
+export function createSceneHistory(env: SceneHistoryEnv): SceneHistoryParts {
   const { engine, replay, notify, refuseUntracked } = env;
 
   const journals = createSceneJournals(env);
+  let named = new Set<string>();
+  const clear = (): void => { engine.clear(); named = new Set(); };
 
   function step(can: () => boolean, run: () => void): boolean {
     if (!can()) return false;
@@ -137,6 +146,7 @@ export function createSceneHistory(env: SceneHistoryEnv): {
       }
       // Only the stacks are rebuilt: no op applies.
       const report = engine.restore(snapshot, options);
+      named = idsNamedBy(snapshot);
       notify();
       return report;
     },
@@ -156,7 +166,7 @@ export function createSceneHistory(env: SceneHistoryEnv): {
     redo: () => { methods.redo(); },
     goto: (n) => { methods.jumpToHistoryIndex(strictDepth(n, engine, env.activeJournal() !== null)); },
     // Stack-only: nothing applies, but what `canUndo()` answers changes.
-    clear: stackOnly(() => engine.clear()),
+    clear: stackOnly(clear),
     recordEntry: stackOnly<Parameters<History['recordEntry']>>((ops, label, opts) => (journals.target() ?? engine).recordEntry(ops, label, opts)),
     prune: stackOnly<[number]>((t) => engine.prune(t)),
     switchBranch: stackOnly<[number]>((id) => engine.switchBranch(id)),
@@ -183,5 +193,6 @@ export function createSceneHistory(env: SceneHistoryEnv): {
     resumeJournal: journals.resume,
     activeJournal: () => env.activeJournal(),
   };
-  return { history, methods, openJournal: journals.innermost, targetJournal: journals.target, anyJournalOpen: () => journals.opened().length > 0 };
+  return { history, methods, openJournal: journals.innermost, targetJournal: journals.target, anyJournalOpen: () => journals.opened().length > 0,
+    namesNode: (id) => named.has(id), clear };
 }
