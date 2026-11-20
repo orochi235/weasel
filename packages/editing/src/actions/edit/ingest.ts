@@ -67,6 +67,7 @@ export function ingestFromEvent(
     point,
     items,
     viewportWorldRect: () => ingestion.viewportWorldRect(),
+    ...(ingestion.worldPerPx ? { worldPerPx: () => ingestion.worldPerPx!() } : {}),
     insert,
     applyOps: (ops, label) => {
       if (applyOps) applyOps(ops, label ?? 'Ingest');

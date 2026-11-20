@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import type { View } from 'core/viewport/view';
 import type { DepRegistry } from '@weasel-js/routing';
 import type { IngestionDep, ViewApi } from 'interactions/actions/depSchema';
-import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
+import { viewportWorldRect, worldPerPxOf } from 'core/viewport/viewportWorldRect';
 import type { ViewRect } from './canvasViewProps';
 
 export function useViewOwnDeps(
@@ -27,6 +27,7 @@ export function useViewOwnDeps(
     const base = (): IngestionDep | undefined => depRegistryRef.current?.get('ingestion');
     return {
       viewportWorldRect: () => viewportWorldRect(camera(), rectNow()),
+      worldPerPx: () => worldPerPxOf(camera()),
       get resolveSrc() { return base()?.resolveSrc; },
       get svg() { return base()?.svg; },
       get clipboard() { return base()?.clipboard; }, get handlers() { return base()?.handlers; },

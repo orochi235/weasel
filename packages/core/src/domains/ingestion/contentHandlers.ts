@@ -34,6 +34,9 @@ export interface IngestCtx {
   items?: readonly IngestItem[];
   /** Visible canvas area in world coordinates. */
   viewportWorldRect(): Rect;
+  /** The world distance one CSS px spans along each screen axis, signed so a
+   *  positive step runs right and down on screen. Absent reads as `{ x: 1, y: 1 }`. */
+  worldPerPx?(): { x: number; y: number };
   /** The kit insert dep — id/layer/undoable-op supplied; the canonical way
    *  for a handler to mint a node (`insert.commit(bounds, { kind, ... })`). */
   insert: InsertDep;
