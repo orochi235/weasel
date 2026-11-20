@@ -123,6 +123,11 @@ function readEdge({ page, idOf, groups, claimId, warn }: Reader, cell: RawCell, 
   }
   const origin = page.originOf(cell.parent);
   const points = pointsOf(cell).map((p) => moved(p, origin));
+  const middle = (c: RawCell | undefined): Vec2 => {
+    const b = c === undefined ? { x: 0, y: 0, width: 0, height: 0 } : page.boxOf(c);
+    return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+  };
+  const line = [middle(target(cell.source)), ...points, middle(target(cell.target))];
   const children = page.childrenOf(cell.id).filter((c) => labelOf(c) !== undefined);
   const endOf = (c: RawCell) => {
     const g = geometryOf(c);
@@ -143,7 +148,7 @@ function readEdge({ page, idOf, groups, claimId, warn }: Reader, cell: RawCell, 
     ...optional('fromPort', portAt(cell.style, 'exit')),
     ...optional('toPort', portAt(cell.style, 'entry')),
     ...(points.length > 0 ? { waypoints: points } : {}),
-    ...(holder !== undefined ? { label: labelOf(holder)!, ...optional('labelPlacement', labelPlacementOf(holder, geometryOf(holder))) } : {}),
+    ...(holder !== undefined ? { label: labelOf(holder)!, ...optional('labelPlacement', labelPlacementOf(holder, geometryOf(holder), line)) } : {}),
     ...(ends.length > 0 ? { endLabels } : {}),
     ...optional('colors', edgeColorsOf(cell.style, warn)),
   };

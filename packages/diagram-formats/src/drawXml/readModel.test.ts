@@ -132,3 +132,19 @@ describe('placing cells', () => {
     expect(at.get('b')).toEqual({ x: at.get('t')!.x + 190, y: at.get('t')!.y + 40 });
   });
 });
+
+describe('placing connector labels', () => {
+  it('keeps a label dragged off its connector where its offset point puts it', async () => {
+    const label = `<mxCell id="l" value="go" style="edgeLabel;" vertex="1" parent="e"><mxGeometry x="0" relative="1" as="geometry">`
+      + `<mxPoint x="30" y="-25" as="offset"/></mxGeometry></mxCell>`;
+    const { data } = await page(box('a', 0, 0) + box('b', 200, 0) + edge('e', '', label));
+    expect(data.edges[0]!.labelPlacement).toEqual({ at: { near: { x: 150, y: 10 } }, offset: 25 });
+  });
+
+  it('reads an edge\'s own label offset the same way', async () => {
+    const own = `<mxCell id="e" value="go" edge="1" parent="1" source="a" target="b"><mxGeometry x="-0.5" y="5" relative="1" as="geometry">`
+      + `<mxPoint x="0" y="10" as="offset"/></mxGeometry></mxCell>`;
+    const { data } = await page(box('a', 0, 0) + box('b', 200, 0) + own);
+    expect(data.edges[0]!.labelPlacement).toEqual({ at: { near: { x: 70, y: 10 } }, offset: -5 });
+  });
+});
