@@ -13,12 +13,12 @@ function Passes({ area }: { area: AuditArea }) {
   return (
     <table className={s.table}>
       <thead>
-        <tr><th>round</th><th>A</th><th>B</th><th>both</th><th>found</th><th>est.</th><th>left</th></tr>
+        <tr><th>round</th><th>A</th><th><abbr title="found by both">∩</abbr></th><th>B</th><th>found</th><th>est.</th><th>left</th></tr>
       </thead>
       <tbody>
         {area.passes.map((p) => (
           <tr key={p.round}>
-            <td>{p.round}</td><td>{p.a}</td><td>{p.b}</td><td>{p.shared}</td><td>{p.distinct}</td>
+            <td>{p.round}</td><td>{p.a}</td><td>{p.shared}</td><td>{p.b}</td><td>{p.distinct}</td>
             <td>{p.est.toFixed(1)}</td><td>{p.left.toFixed(1)}</td>
           </tr>
         ))}
