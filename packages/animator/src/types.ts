@@ -59,14 +59,11 @@ export interface TweenOptions<T> {
   easing?: EasingSpec;
   /** Required when T is not `number`. For T = number, defaults to linear numeric lerp. */
   interpolate?: Interpolate<T>;
-  /** Factory interpolator built once at tween start. Takes precedence over `interpolate`
-   *  when both are provided. */
+  /** Factory interpolator built once at tween start; takes precedence over `interpolate`. */
   interpolator?: InterpolatorFactory<T>;
   onTick: (value: T) => void;
   onDone?: () => void;
-  /** Runs when the tween stops short of its end: canceled by handle, by `cancelKey`, by
-   *  `cancelAll` or by another animation taking its key, or retired for a tick that threw.
-   *  Exactly one of `onDone` and `onCancel` runs. */
+  /** Runs, in place of `onDone`, when the tween is canceled by any route or retired for a throw. */
   onCancel?: () => void;
   /** Any new animation passed the same cancelKey cancels the prior one in flight. */
   cancelKey?: string;
