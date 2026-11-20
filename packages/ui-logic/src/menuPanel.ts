@@ -25,6 +25,8 @@ export interface MenuPanelMetrics {
   readonly padY: number;
   /** Between a row's icon, label, and trailing columns. */
   readonly gap: number;
+  /** Kept after a label's text, so a shortcut never sits close against it. */
+  readonly labelPad: number;
   /** A separator's 1px line and the space either side of it. */
   readonly separatorHeight: number;
   readonly minWidth: number;
@@ -44,6 +46,7 @@ export function menuPanelMetrics(env: MeasureEnv): MenuPanelMetrics {
     padX: inset + envPx(env, '--wzl-space-2'),
     padY: inset,
     gap: envPx(env, '--wzl-space-2'),
+    labelPad: envPx(env, '--wzl-space-8'),
     separatorHeight: envPx(env, '--wzl-space-1') * 2 + 1,
     minWidth: MENU_MIN_WIDTH,
     iconSize: MENU_ICON_SIZE,
@@ -105,7 +108,7 @@ export function measureMenuPanel(face: MenuPanelFace, c: Constraints, env: Measu
   const trailingWidth = (t: string | number | undefined) =>
     (t === undefined ? 0 : typeof t === 'number' ? t : env.text(t, m.font).width);
   const intrinsic = maxOf(face.rows, (r) => (r.kind === 'separator' ? 0
-    : m.padX * 2 + m.iconSize + m.gap * 2 + env.text(r.label, m.font).width + trailingWidth(r.trailing)));
+    : m.padX * 2 + m.iconSize + m.gap * 2 + env.text(r.label, m.font).width + m.labelPad + trailingWidth(r.trailing)));
   const width = clamp(Math.max(m.minWidth, Math.ceil(intrinsic)), c.minWidth, c.maxWidth);
   const last = spans.at(-1);
   const height = clamp((last ? last.y + last.h : m.padY) + m.padY, c.minHeight, c.maxHeight);

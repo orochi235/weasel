@@ -33,6 +33,8 @@ export function globImportsIn(code: string, fromDir: string): string[] {
     const exclude = patterns.filter((p) => p.startsWith('!')).map((p) => join(fromDir, p.slice(1)));
     if (include.length === 0) continue;
     for (const path of globSync(include, { exclude: (name) => name === 'node_modules' })) {
+      // A failed browser run leaves `__screenshots__/<file>.stories.tsx/` directories that match a story glob.
+      if (!statSync(path).isFile()) continue;
       if (!exclude.some((pattern) => matchesGlob(path, pattern))) out.push(path);
     }
   }
