@@ -57,6 +57,10 @@ export interface InsertEnds {
   end: { x: number; y: number };
   /** The drag grew the shape out from `start`, its center, to `end`. */
   fromCenter?: boolean;
+  /** The point that picked the container the gesture snapped and previewed in
+   *  (`insertParent`): the press, carried along when the shape is moved
+   *  mid-draw. A dep that picks a container picks it here; absent, at `start`. */
+  site?: { x: number; y: number };
   /** The host's own exact reading of an end a snap put where it is
    *  (`SnapOutcome.landing`), for a host that would otherwise recover it from
    *  the point to within rounding. Absent for an end no snap placed, or one a

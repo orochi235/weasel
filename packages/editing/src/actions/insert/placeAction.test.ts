@@ -68,6 +68,14 @@ describe('placeAction', () => {
     expect(insert.calls[0].bounds).toEqual({ x: 80, y: 40, width: 40, height: 20 });
   });
 
+  it('tells the dep to pick its container at the click, where the snap was scoped, not where the center snapped to', () => {
+    let site: unknown;
+    const insert: InsertDep = { commit: (_b, _e, ends) => { site = ends?.site; return 'n' as NodeId; } };
+    const snap: SnapDep = sessionDep(createScene({ systemLayers: [{ id: 'main' }] }) as never, [gridSource(25)]);
+    click({ kind: 'sticky', size: { width: 40, height: 20 } }, { insert, snap }, { x: 103, y: 48 });
+    expect(site).toEqual({ x: 103, y: 48 });
+  });
+
   it('tells the snap session the container the node lands in', () => {
     const scene = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
     const g = scene.add({ kind: 'group', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } }) as string;

@@ -75,6 +75,7 @@ export const placeAction: Action = inPlane(defineAction({
           { shaped: { start: at, current: { x: at.x + size.width / 2, y: at.y + size.height / 2 } }, altHeld: false },
           null, 0,
           (p) => (p === at ? landing : undefined),
+          { x, y },
         );
         committed = dep.commit(bounds, extras, ends, clearedSelection(prior)) !== null;
       } finally {

@@ -48,14 +48,21 @@ function shapeEndpoints(
 
 /** Move the drag's start point by the pointer's step from `from` to `to`, so
  *  the shape travels with the pointer instead of resizing. The start is
- *  carried unsnapped and snapped where it lands. */
+ *  carried unsnapped and snapped where it lands, in the container its site
+ *  is carried into. */
 export function carryStart(
-  session: Pick<InsertSession, 'snap' | 'gestureCtx'>,
+  session: Pick<InsertSession, 'snap' | 'gestureCtx' | 'place'>,
   from: InsertPoint,
   to: InsertPoint,
   moveCtx: Pick<InvocationCtx, 'modifiers' | 'roles'>,
 ): void {
-  const landed = session.snap.carry(to.x - from.x, to.y - from.y, snapMods(moveCtx));
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  // The site travels with the shape, and the container under it is the one the start snaps in.
+  const { place } = session;
+  place.site = { x: place.site.x + dx, y: place.site.y + dy };
+  place.parent = place.parentAt(place.site);
+  const landed = session.snap.carry(dx, dy, snapMods(moveCtx));
   session.gestureCtx.origin.set(GESTURE_KEY, landed.point);
 }
 

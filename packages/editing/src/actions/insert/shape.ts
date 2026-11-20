@@ -75,6 +75,8 @@ export function insertShape(
   userRotation: number,
   /** The snap's landing for an end at `p` (`SpanSnap.landingAt`). */
   landingAt?: (p: InsertPoint) => unknown,
+  /** The point that picked the container (`InsertEnds.site`). */
+  site?: InsertPoint,
 ): InsertShape {
   const mode = effectiveOriginMode(resolved?.['originMode'], frame.altHeld);
   const kind = insertKind(resolved);
@@ -101,6 +103,7 @@ export function insertShape(
     end: { x: current.x, y: current.y },
     ...(mode === 'center' ? { fromCenter: true } : {}),
     ...(landings ? { landings } : {}),
+    ...(site ? { site: { x: site.x, y: site.y } } : {}),
   };
   return { bounds, extras, start, ends: drag };
 }
