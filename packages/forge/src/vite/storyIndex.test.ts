@@ -1,4 +1,4 @@
-import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -39,4 +39,9 @@ describe('createStoryIndex', () => {
     expect(update?.importablesChanged).toBe(true);
   });
 
+  it('skips a dangling symlink the story globs match', () => {
+    const { index } = indexIn({ 'a.stories.tsx': story('ui/A', 'First') });
+    symlinkSync(join(dir, 'gone.tsx'), join(dir, 'dangling.stories.tsx'));
+    expect([...index.files().keys()]).toEqual([join(dir, 'a.stories.tsx')]);
+  });
 });
